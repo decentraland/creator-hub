@@ -1,6 +1,9 @@
 import type { IRenderer } from '../types';
 import { RendererHost } from './host';
 import type {
+  AssetProvider,
+  InspectorRequest,
+  InspectorRequestResult,
   RendererCommand,
   RendererOutbound,
   RendererRequest,
@@ -10,13 +13,15 @@ import type {
 import { RemoteRenderer } from './RemoteRenderer';
 
 /**
- * Force a payload through a JSON round-trip, exactly as a real postMessage /
- * structured-clone boundary would. If anything non-serializable (a Babylon
- * object, a class instance, a function) leaked into the protocol, this throws
- * or silently drops it — which is precisely what we want the loopback to expose
- * before a real worker is ever involved.
+ * Force a payload through a clone, exactly as a postMessage / structured-clone
+ * boundary would. structuredClone matches postMessage semantics faithfully —
+ * it preserves Uint8Array (asset bytes), Map, etc., while still throwing on a
+ * genuinely non-cloneable value (a function, a class instance, a Babylon
+ * object) — which is precisely what we want the loopback to expose before a
+ * real worker is involved. Falls back to JSON where structuredClone is absent.
  */
 function wire<T>(value: T): T {
+  if (typeof structuredClone === 'function') return structuredClone(value);
   return JSON.parse(JSON.stringify(value)) as T;
 }
 
@@ -29,12 +34,20 @@ function wire<T>(value: T): T {
  * Swapping this for a mini-rpc-over-postMessage transport is then purely a
  * transport change — the host, the mirror, and all consumers stay identical.
  */
-export function createLoopback(target: IRenderer): {
+export function createLoopback(
+  target: IRenderer,
+  assets?: AssetProvider,
+): {
   remote: RemoteRenderer;
   host: RendererHost;
   dispose(): void;
 } {
   let outboundHandler: ((message: RendererOutbound) => void) | null = null;
+  let inspectorRequestHandler:
+    | (<K extends InspectorRequest['kind']>(
+        request: Extract<InspectorRequest, { kind: K }>,
+      ) => Promise<InspectorRequestResult[K]>)
+    | null = null;
 
   const host = new RendererHost(target, message => {
     // Renderer → inspector, across the "wire".
@@ -57,12 +70,26 @@ export function createLoopback(target: IRenderer): {
         if (outboundHandler === handler) outboundHandler = null;
       };
     },
+    onRequest(handler) {
+      inspectorRequestHandler = handler;
+      return () => {
+        if (inspectorRequestHandler === handler) inspectorRequestHandler = null;
+      };
+    },
+    async requestInspector<K extends InspectorRequest['kind']>(
+      request: Extract<InspectorRequest, { kind: K }>,
+    ): Promise<InspectorRequestResult[K]> {
+      if (!inspectorRequestHandler) return null as InspectorRequestResult[K];
+      const result = await inspectorRequestHandler(wire(request));
+      return wire(result);
+    },
     dispose() {
       outboundHandler = null;
+      inspectorRequestHandler = null;
     },
   };
 
-  const remote = new RemoteRenderer(transport);
+  const remote = new RemoteRenderer(transport, assets);
 
   // Prime the mirror with the current state so sync reads work immediately.
   host.pushState();

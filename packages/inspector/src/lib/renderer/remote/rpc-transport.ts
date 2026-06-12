@@ -3,6 +3,8 @@ import { RPC } from '@dcl/mini-rpc';
 
 import type { RendererHost } from './host';
 import type {
+  InspectorRequest,
+  InspectorRequestResult,
   RendererCommand,
   RendererOutbound,
   RendererRequest,
@@ -31,16 +33,21 @@ import type {
 const CHANNEL = 'renderer-boundary';
 
 enum Method {
+  /** Inspector → renderer (e.g. getPointerWorldPoint). */
   REQUEST = 'request',
+  /** Renderer → inspector (asset loading). */
+  INSPECT_REQUEST = 'inspect_request',
 }
 
 type Params = {
   [Method.REQUEST]: RendererRequest;
+  [Method.INSPECT_REQUEST]: InspectorRequest;
 };
 
 type Result = {
-  // The union of possible request results; narrowed by the caller per request.
+  // The union of possible results; narrowed by the caller per request.
   [Method.REQUEST]: RendererRequestResult[RendererRequest['kind']];
+  [Method.INSPECT_REQUEST]: InspectorRequestResult[InspectorRequest['kind']];
 };
 
 enum EventType {
@@ -77,6 +84,11 @@ export function createRpcRendererTransport(transport: Transport): RendererTransp
       rpc.on(EventType.OUTBOUND, listener);
       return () => rpc.off(EventType.OUTBOUND, listener);
     },
+    onRequest(handler) {
+      rpc.handle(Method.INSPECT_REQUEST, request => handler(request as never));
+      // mini-rpc has no unhandle; replace with a no-op resolver on teardown.
+      return () => rpc.handle(Method.INSPECT_REQUEST, async () => null as never);
+    },
     dispose() {
       rpc.dispose();
     },
@@ -87,14 +99,30 @@ export function createRpcRendererTransport(transport: Transport): RendererTransp
  * Renderer side: binds a {@link RendererHost} to a mini-rpc `Transport`. The
  * host emits outbound messages (events + snapshots) which we forward, and we
  * route inbound commands/requests into the host.
+ *
+ * `createHost` receives a `requestInspector` so the renderer can ask the
+ * inspector for assets (the reverse request direction) — an out-of-process
+ * renderer's only route to file bytes.
  */
 export function serveRendererHost(
   transport: Transport,
-  createHost: (emitOutbound: (message: RendererOutbound) => void) => RendererHost,
+  createHost: (
+    emitOutbound: (message: RendererOutbound) => void,
+    requestInspector: <K extends InspectorRequest['kind']>(
+      request: Extract<InspectorRequest, { kind: K }>,
+    ) => Promise<InspectorRequestResult[K]>,
+  ) => RendererHost,
 ): { host: RendererHost; dispose(): void } {
   const rpc: RendererRPC = new RPC(CHANNEL, transport);
 
-  const host = createHost(message => rpc.emit(EventType.OUTBOUND, message));
+  const requestInspector = async <K extends InspectorRequest['kind']>(
+    request: Extract<InspectorRequest, { kind: K }>,
+  ): Promise<InspectorRequestResult[K]> => {
+    const result = await rpc.request(Method.INSPECT_REQUEST, request);
+    return result as InspectorRequestResult[K];
+  };
+
+  const host = createHost(message => rpc.emit(EventType.OUTBOUND, message), requestInspector);
 
   rpc.on(EventType.COMMAND, command => host.handleCommand(command));
   rpc.handle(Method.REQUEST, request => host.handleRequest(request as never));

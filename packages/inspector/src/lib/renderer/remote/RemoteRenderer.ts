@@ -17,7 +17,7 @@ import type {
   SpawnPointTarget,
   Unsubscribe,
 } from '../types';
-import type { RendererSnapshot, RendererTransport } from './protocol';
+import type { AssetProvider, RendererSnapshot, RendererTransport } from './protocol';
 
 const EMPTY_SNAPSHOT: RendererSnapshot = {
   camera: { speed: 0, position: { x: 0, y: 0, z: 0 }, target: { x: 0, y: 0, z: 0 }, fov: 0 },
@@ -60,8 +60,12 @@ export class RemoteRenderer implements IRenderer {
   >();
   #spawnVisibilityHandlers = new Set<(e: { name: string; visible: boolean }) => void>();
   #disposeOutbound: () => void;
+  #disposeRequest: (() => void) | undefined;
 
-  constructor(private readonly transport: RendererTransport) {
+  constructor(
+    private readonly transport: RendererTransport,
+    assets?: AssetProvider,
+  ) {
     this.#disposeOutbound = transport.onOutbound(message => {
       if (message.kind === 'event') {
         // Forward the renderer's reverse-channel events onto the local bus.
@@ -70,6 +74,19 @@ export class RemoteRenderer implements IRenderer {
         this.#applySnapshot(message.snapshot);
       }
     });
+
+    // Serve renderer→inspector requests (asset loading) when both an asset
+    // provider and a transport that supports the reverse direction are present.
+    if (assets && transport.onRequest) {
+      this.#disposeRequest = transport.onRequest(async request => {
+        switch (request.kind) {
+          case 'getFile':
+            return (await assets.getFile(request.src)) as never;
+          default:
+            return null as never;
+        }
+      });
+    }
 
     this.camera = this.#createCamera();
     this.gizmos = this.#createGizmos();
@@ -206,6 +223,7 @@ export class RemoteRenderer implements IRenderer {
 
   dispose(): void {
     this.#disposeOutbound();
+    this.#disposeRequest?.();
     this.transport.dispose();
     this.events.all.clear();
     this.#frameHandlers.clear();

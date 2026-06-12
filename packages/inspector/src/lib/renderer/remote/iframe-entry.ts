@@ -3,7 +3,16 @@ import { MessageTransport } from '@dcl/mini-rpc';
 
 import type { IRenderer } from '../types';
 import { RendererHost } from './host';
+import type { InspectorRequest, InspectorRequestResult } from './protocol';
 import { serveRendererHost } from './rpc-transport';
+
+/** Ask the inspector to fulfil a request (assets). Passed to the renderer factory. */
+export type RequestInspector = <K extends InspectorRequest['kind']>(
+  request: Extract<InspectorRequest, { kind: K }>,
+) => Promise<InspectorRequestResult[K]>;
+
+/** Load file bytes through the boundary — what an iframe renderer wires getFile to. */
+export type RemoteAssetLoader = (src: string) => Promise<Uint8Array | null>;
 
 /**
  * Bootstrap that runs *inside* a renderer iframe (Unity/Bevy/Babylon-in-iframe).
@@ -24,8 +33,13 @@ export interface RendererIframeOptions {
    * when unset; callers should pass the inspector origin in production.
    */
   parentOrigin?: string;
-  /** Build the engine-side IRenderer (constructed once the engine is ready). */
-  createRenderer: () => IRenderer;
+  /**
+   * Build the engine-side IRenderer. Receives a `loadAsset` that fetches file
+   * bytes from the inspector across the boundary — the engine wires its
+   * file-loading (GLBs, textures) to it, since it cannot reach the inspector's
+   * data layer directly.
+   */
+  createRenderer: (loadAsset: RemoteAssetLoader) => IRenderer;
   /** Override the parent window (tests). Defaults to window.parent. */
   parentWindow?: Window;
   /** Override the local window (tests). Defaults to window. */
@@ -52,11 +66,12 @@ export function startRendererIframe(options: RendererIframeOptions): RendererIfr
       options.parentOrigin ?? '*',
     );
 
-  const renderer = options.createRenderer();
-  const served = serveRendererHost(
-    transport,
-    emitOutbound => new RendererHost(renderer, emitOutbound),
-  );
+  let renderer!: IRenderer;
+  const served = serveRendererHost(transport, (emitOutbound, requestInspector) => {
+    const loadAsset: RemoteAssetLoader = src => requestInspector({ kind: 'getFile', src });
+    renderer = options.createRenderer(loadAsset);
+    return new RendererHost(renderer, emitOutbound);
+  });
 
   // Push initial state so the inspector mirror is populated immediately on
   // connect, then let the host's own change/frame subscriptions keep it fresh.

@@ -55,6 +55,18 @@ export type RendererRequestResult = {
   getPointerWorldPoint: Vector3 | null;
 };
 
+// --- Requests: renderer → inspector, awaiting one response -----------------
+// The reverse direction. An out-of-process renderer cannot reach the inspector's
+// data layer to load assets, so it asks for file bytes across the boundary. The
+// inspector resolves them against the scene content mappings and ships the bytes
+// back (Uint8Array → transferable over a real worker/iframe).
+
+export type InspectorRequest = { kind: 'getFile'; src: string };
+
+export type InspectorRequestResult = {
+  getFile: Uint8Array | null;
+};
+
 // --- Events: renderer → inspector ------------------------------------------
 // The reverse channel, plus snapshot pushes. Reuses RendererEvents verbatim for
 // the interaction events so the host can forward them unchanged.
@@ -100,5 +112,24 @@ export interface RendererTransport {
   ): Promise<RendererRequestResult[K]>;
   /** Renderer → inspector: subscribe to events and snapshot pushes. */
   onOutbound(handler: (message: RendererOutbound) => void): () => void;
+  /**
+   * Inspector side: register the handler that answers renderer→inspector
+   * requests (asset loading). Optional — a transport may be used purely
+   * inspector-driven, but out-of-process renderers need it for assets.
+   */
+  onRequest?(
+    handler: <K extends InspectorRequest['kind']>(
+      request: Extract<InspectorRequest, { kind: K }>,
+    ) => Promise<InspectorRequestResult[K]>,
+  ): () => void;
+  /** Renderer side: ask the inspector to fulfil a request (asset loading). */
+  requestInspector?<K extends InspectorRequest['kind']>(
+    request: Extract<InspectorRequest, { kind: K }>,
+  ): Promise<InspectorRequestResult[K]>;
   dispose(): void;
+}
+
+/** What the inspector side provides to answer renderer asset requests. */
+export interface AssetProvider {
+  getFile(src: string): Promise<Uint8Array | null>;
 }

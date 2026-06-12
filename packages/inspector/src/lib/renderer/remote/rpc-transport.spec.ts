@@ -160,4 +160,37 @@ describe('renderer RPC transport (cross-context proof)', () => {
       expect(point).toEqual({ x: 9, y: 0, z: 9 });
     });
   });
+
+  describe('asset loading (renderer -> inspector requests)', () => {
+    it('should deliver file bytes from the inspector asset provider to the renderer', async () => {
+      // Fresh pair so we can capture the renderer-side requestInspector.
+      const insp = new InMemoryTransport();
+      const rend = new InMemoryTransport();
+      insp.connect(rend);
+      rend.connect(insp);
+
+      const bytes = new Uint8Array([1, 2, 3, 4]);
+      const getFile = vi.fn(async (src: string) => (src === 'model.glb' ? bytes : null));
+
+      // Inspector side serves the asset provider.
+      const remoteWithAssets = new RemoteRenderer(createRpcRendererTransport(insp), { getFile });
+
+      // Renderer side captures requestInspector and serves a host.
+      let loadAsset!: (src: string) => Promise<Uint8Array | null>;
+      const served = serveRendererHost(rend, (emitOutbound, requestInspector) => {
+        loadAsset = src => requestInspector({ kind: 'getFile', src });
+        return new RendererHost(fake.renderer, emitOutbound);
+      });
+
+      await flush();
+      const result = await loadAsset('model.glb');
+
+      expect(getFile).toHaveBeenCalledWith('model.glb');
+      expect(result).toEqual(bytes);
+      expect(await loadAsset('missing.glb')).toBeNull();
+
+      remoteWithAssets.dispose();
+      served.dispose();
+    });
+  });
 });
