@@ -3,9 +3,8 @@
 The Decentraland inspector is **renderer-agnostic**. It owns the scene as
 `@dcl/ecs` state (a CRDT-synced entity/component graph) and talks to whatever
 draws that scene through a single interface, `IRenderer`. Babylon.js is the
-default renderer; Three.js ships as a second one. You can add your own (Unity,
-Bevy, PlayCanvas, a custom WebGL/WebGPU engine, …) without modifying the
-inspector core.
+built-in renderer. You can add your own (Unity, Bevy, PlayCanvas, a custom
+WebGL/WebGPU engine, …) without modifying the inspector core.
 
 This document is the contract spec. The public API lives at `@dcl/inspector`
 (see `src/lib/renderer/index.ts`).
@@ -42,12 +41,14 @@ those are the inspector's. You implement drawing + input.
 
 ## Coordinate system & conventions
 
-- **Right-handed, Y-up, meters.** Same as the SDK. (Babylon is left-handed
-  internally; its adapter converts. Three.js is right-handed and maps directly.)
+- **Right-handed, Y-up, meters.** Same as the SDK glTF convention. (Babylon is
+  left-handed internally; its adapter converts. Your renderer is responsible for
+  mapping the SDK convention to its own.)
 - **Vectors on the boundary are plain data**: `{ x, y, z }` (`@dcl/ecs-math`
   `Vector3`) and `{ x, y, z, w }` quaternions. **Never** pass a live engine
-  object (a `THREE.Object3D`, a `BABYLON.Mesh`) across the contract — only IDs,
-  scalars, and plain vectors. This is what lets a renderer run out-of-process.
+  object (a `BABYLON.Mesh`, a WASM handle, any scene node) across the contract —
+  only IDs, scalars, and plain vectors. This is what lets a renderer run
+  out-of-process.
 - **Entities are numbers** (`@dcl/ecs` `Entity`). The root is entity `0`.
 
 ---
@@ -153,9 +154,10 @@ toolbar picker; selecting yours persists the choice and reloads with it active.
 data layer — use it instead of `fetch`; the inspector owns where assets live.
 
 The forward path: connect your `engine` to CRDT (the inspector does this from
-your returned `engine`), and project component changes. The cleanest template is
-`src/lib/renderer/three/ThreeSceneContext.ts` — a ~150-line CRDT subscriber that
-turns `Transform`/`GltfContainer`/`MeshRenderer` into a Three scene graph.
+your returned `engine`), and project component changes. The pattern is a CRDT
+subscriber — your `@dcl/ecs` engine's `onChangeFunction` translates the SDK
+components you support (`Transform`, `GltfContainer`, `MeshRenderer`, …) into
+your engine's scene graph. The built-in Babylon `SceneContext` is the reference.
 
 ---
 

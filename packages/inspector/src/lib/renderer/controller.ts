@@ -7,7 +7,6 @@ import { getHardcodedLoadableScene } from '../sdk/test-local-scene';
 import type { AssetPack } from '../logic/catalog';
 import type { InspectorPreferences } from '../logic/preferences/types';
 import { BabylonRenderer } from './babylon/BabylonRenderer';
-import { ThreeRenderer } from './three/ThreeRenderer';
 import { connectReverseChannel } from './reverse-channel';
 import { getRegisteredRenderers, getRendererPlugin, registerRenderer } from './plugin';
 import type { MountedRenderer, RendererMountContext } from './plugin';
@@ -101,7 +100,8 @@ export async function buildRenderer(
 }
 
 // --- Built-in renderer plugins ---------------------------------------------
-// Babylon and Three.js register through the same public API a third party uses.
+// The built-in Babylon renderer registers through the same public API a
+// third-party renderer uses (see docs/authoring-a-renderer.md).
 
 let builtInsRegistered = false;
 
@@ -138,39 +138,6 @@ export function registerBuiltInRenderers(
         },
       };
       return built;
-    },
-  });
-
-  registerRenderer({
-    id: 'three',
-    label: 'Three.js',
-    mount: ({ canvas, container, loadAsset }) => {
-      const threeCanvas = document.createElement('canvas');
-      threeCanvas.className = 'three-canvas';
-      threeCanvas.style.width = '100%';
-      threeCanvas.style.height = '100%';
-      canvas.style.display = 'none';
-      container.appendChild(threeCanvas);
-
-      const three = new ThreeRenderer(threeCanvas, loadAsset);
-      const disconnect = connectReverseChannel({
-        engine: three.context.engine,
-        operations: three.context.operations,
-        editorComponents: three.context.editorComponents,
-        Transform: three.context.Transform,
-        rendererEvents: three.events,
-      });
-
-      return {
-        renderer: three,
-        engine: three.context.engine,
-        dispose: () => {
-          disconnect();
-          three.dispose();
-          threeCanvas.remove();
-          canvas.style.display = '';
-        },
-      };
     },
   });
 }

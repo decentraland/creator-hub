@@ -49,7 +49,7 @@ export type SdkContextValue = {
    */
   renderer: IRenderer;
 
-  /** Which renderer is active this session ('babylon' | 'three'). */
+  /** The id of the renderer active this session (a registered plugin id). */
   currentRendererId: RendererId;
 };
 

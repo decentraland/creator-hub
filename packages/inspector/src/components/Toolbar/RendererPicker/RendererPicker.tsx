@@ -12,13 +12,14 @@ import type { RendererId } from '../../../lib/renderer/controller';
 import './RendererPicker.css';
 
 /**
- * Toolbar control to choose the active 3D renderer (Babylon.js / Three.js).
+ * Toolbar control to choose the active 3D renderer from the registered plugins
+ * (see {@link registerRenderer}). With only the built-in Babylon renderer
+ * registered the picker lists a single option; it lights up automatically as
+ * renderers are registered.
  *
- * A test tool for the pluggable-renderer boundary. Selecting a renderer persists
- * the choice and reloads the inspector so it initializes with that engine — the
- * editor UI is wired to the Babylon scene in places, so a clean reload is
- * simpler and safer than a live swap. Three.js is the minimal-proof renderer
- * (entities + camera + pick); editor extras won't appear there.
+ * Selecting a renderer persists the choice and reloads the inspector so it
+ * initializes with that engine — the editor UI is wired to the scene in places,
+ * so a clean reload is simpler and safer than a live swap.
  */
 const RendererPicker = withSdk(() => {
   const current = getSelectedRenderer();

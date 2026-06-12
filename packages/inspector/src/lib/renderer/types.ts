@@ -15,8 +15,8 @@ import type { GizmoType } from '../utils/gizmo';
  * Design rules (these are what make the boundary actually swappable):
  *
  *  1. The contract speaks **entity IDs and plain scalars/vectors**, never
- *     renderer objects. No `BABYLON.Mesh`, no `THREE.Object3D` crosses this
- *     line. A method that today takes a Babylon node (e.g. `centerViewOnEntity`)
+ *     renderer objects. No live engine node (a `BABYLON.Mesh`, a WASM handle,
+ *     …) crosses this line. A method that would otherwise take an engine node
  *     is re-expressed to take an `Entity` and resolve the node internally.
  *
  *  2. Vectors use `@dcl/ecs-math` (`Vector3`/`Quaternion`) — the same plain

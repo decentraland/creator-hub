@@ -143,8 +143,8 @@ export function createRendererConformanceSuite(options: RendererConformanceOptio
       it('ingests an engine tick without throwing', async () => {
         // The contract doesn't expose the scene graph, so the kit only asserts
         // the renderer ingests engine changes cleanly. Authors should add their
-        // own scene-graph assertions (see ThreeSceneContext.spec.ts) for full
-        // forward-path coverage — a green run here is necessary, not sufficient.
+        // own scene-graph assertions for full forward-path coverage — a green
+        // run here is necessary, not sufficient.
         engine.addEntity();
         await engine.update(1);
         // reaching here = no throw
