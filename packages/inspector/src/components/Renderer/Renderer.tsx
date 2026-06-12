@@ -206,7 +206,7 @@ const Renderer: React.FC = () => {
 
   const getDropPosition = async () => {
     // Renderer-agnostic: ask the active renderer where the pointer hits the
-    // ground, then snap. Works for any renderer.
+    // ground, then snap. Works for any renderer (Babylon, three, …).
     const point = (await sdk!.renderer.getPointerWorldPoint()) ?? { x: 0, y: 0, z: 0 };
     // Plain {x,y,z} throughout — no Babylon Vector3, so this works for any renderer.
     return snapPositionValue({ x: fixedNumber(point.x), y: 0, z: fixedNumber(point.z) });

@@ -9,10 +9,10 @@ import type { IRenderer } from './types';
  *
  * A renderer author implements {@link IRenderer} (see docs/authoring-a-renderer.md)
  * and registers it with {@link registerRenderer}. The inspector then offers it in
- * the renderer picker and mounts it like the built-in Babylon renderer, which is
- * itself registered through this same API, with no special casing.
+ * the renderer picker and mounts it like any built-in — Babylon and Three.js are
+ * themselves registered through this same API, with no special casing.
  *
- * The dependency on a concrete engine (Babylon, Unity, Bevy, …) is entirely the
+ * The dependency on a concrete engine (Babylon, Three, …) is entirely the
  * plugin's; the inspector core knows only this descriptor and {@link IRenderer}.
  */
 
@@ -21,8 +21,8 @@ export interface RendererMountContext {
   /**
    * The inspector's shared viewport canvas. An in-process renderer may render
    * into it directly, or create its own canvas inside `container` and leave
-   * this one hidden. An out-of-process renderer typically ignores it and uses
-   * an iframe in `container`.
+   * this one hidden (as the three renderer does). An out-of-process renderer
+   * typically ignores it and uses an iframe in `container`.
    */
   canvas: HTMLCanvasElement;
   /** The viewport container element — attach extra canvases/iframes here. */
@@ -44,7 +44,7 @@ export interface MountedRenderer {
   /**
    * The renderer's `@dcl/ecs` engine — the inspector connects it to the CRDT
    * stream so the scene state flows in. Every renderer drives its scene from
-   * its own engine fed by CRDT (see the Babylon SceneContext).
+   * its own engine fed by CRDT (see ThreeSceneContext / Babylon SceneContext).
    */
   engine: IEngine;
   /** Tear everything down (renderer, reverse channel, any canvas/iframe). */
@@ -60,7 +60,7 @@ export interface MountedRenderer {
 
 /** A registerable renderer. */
 export interface RendererPlugin {
-  /** Stable unique id (e.g. 'babylon', 'my-org.my-renderer'). */
+  /** Stable unique id (e.g. 'babylon', 'three', 'my-org.my-renderer'). */
   id: string;
   /** Human label shown in the renderer picker. */
   label: string;

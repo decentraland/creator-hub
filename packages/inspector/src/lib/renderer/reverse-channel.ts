@@ -8,10 +8,10 @@ import type { PickTarget, RendererEvents } from './types';
 
 /**
  * The minimal surface the reverse-channel handler needs from a renderer's scene
- * engine: an `@dcl/ecs` engine plus engine-bound operations, editor components,
- * the Transform component, and an event bus. Babylon's SceneContext satisfies
- * this; any renderer provides the same shape. Keeping it an interface — not the
- * Babylon SceneContext — is what lets any renderer reuse the handler.
+ * engine. Babylon's SceneContext satisfies this; the three renderer's
+ * ThreeSceneContext provides the same (engine + engine-bound operations,
+ * editor components, Transform) plus its own event bus. Keeping it an interface
+ * — not the Babylon SceneContext — is what lets any renderer reuse the handler.
  */
 export interface ReverseChannelTarget {
   engine: IEngine;

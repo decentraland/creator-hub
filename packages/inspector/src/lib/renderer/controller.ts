@@ -2,6 +2,7 @@ import { getDataLayerInterface } from '../../redux/data-layer';
 import type { AssetPack } from '../logic/catalog';
 import type { InspectorPreferences } from '../logic/preferences/types';
 import { registerBabylonRenderer } from './babylon/register';
+import { registerThreeRenderer } from './three/register';
 import { connectReverseChannel } from './reverse-channel';
 import { getRegisteredRenderers, getRendererPlugin } from './plugin';
 import type { MountedRenderer, RendererMountContext } from './plugin';
@@ -85,8 +86,8 @@ export async function buildRenderer(
 
 // --- Built-in renderer plugins ---------------------------------------------
 // Built-in renderers register through the same public API a third-party
-// renderer uses. The Babylon registration is Babylon-specific and lives in
-// `babylon/register.ts`, so this orchestration layer stays engine-agnostic.
+// renderer uses. Each registration is engine-specific and lives in its own
+// `<engine>/register.ts`, so this orchestration layer stays engine-agnostic.
 
 let builtInsRegistered = false;
 
@@ -98,6 +99,7 @@ export function registerBuiltInRenderers(
   if (builtInsRegistered) return;
   builtInsRegistered = true;
   registerBabylonRenderer(catalog, preferences);
+  registerThreeRenderer();
 }
 
 export type { MountedRenderer };
