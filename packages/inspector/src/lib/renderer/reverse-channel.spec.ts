@@ -144,6 +144,37 @@ describe('connectReverseChannel', () => {
     });
   });
 
+  describe('when a gizmoCommit is not followed by gizmoCommitEnd', () => {
+    it('should flush the pending write on disconnect rather than strand it', () => {
+      events.emit('gizmoCommit', {
+        transforms: [{ entity: 1 as never, position: { x: 1, y: 0, z: 0 } as never }],
+      });
+      // No gizmoCommitEnd — the renderer dropped/never sent it.
+      expect(operations.dispatch).not.toHaveBeenCalled();
+
+      disconnect();
+
+      expect(operations.dispatch).toHaveBeenCalledTimes(1);
+    });
+
+    it('should flush the pending write before applying a subsequent pick', () => {
+      events.emit('gizmoCommit', {
+        transforms: [{ entity: 1 as never, position: { x: 1, y: 0, z: 0 } as never }],
+      });
+      events.emit('pick', { target: { kind: 'empty' }, modifiers: { multi: false } });
+
+      // The pending gizmo write is flushed, then the pick's own dispatch runs.
+      expect(operations.dispatch).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  describe('when gizmoCommitEnd fires with no pending commit', () => {
+    it('should not dispatch', () => {
+      events.emit('gizmoCommitEnd');
+      expect(operations.dispatch).not.toHaveBeenCalled();
+    });
+  });
+
   describe('when disconnected', () => {
     it('should stop responding to events', () => {
       disconnect();

@@ -1,27 +1,29 @@
 import type { IEngine } from '@dcl/ecs';
 
-import type { IRenderer, RendererEvents } from './types';
+import type { IRenderer } from './types';
 
 /**
  * Conformance test kit for renderer authors.
  *
- * Call {@link createRendererConformanceSuite} from a test file (vitest/jest
- * globals: `describe`/`it`/`expect`) to verify your {@link IRenderer} satisfies
- * the contract's observable behavior. It exercises the boundary only — it never
- * looks inside your scene graph — so it works for any engine.
+ * Verifies an {@link IRenderer} satisfies the contract's observable behavior. It
+ * exercises the boundary only — it never looks inside your scene graph — so it
+ * works for any engine.
  *
+ *   import { describe, it, beforeEach, afterEach, expect } from 'vitest';
  *   import { createRendererConformanceSuite } from '@dcl/inspector';
  *
  *   createRendererConformanceSuite({
+ *     harness: { describe, it, beforeEach, afterEach, expect },
  *     setup: () => {
  *       const r = buildMyRenderer();
  *       return { renderer: r, engine: r.engine, dispose: () => r.dispose() };
  *     },
  *   });
  *
- * It does NOT assert pixels — it can't see your framebuffer. It asserts the
- * contract: shape, event emission, sync-read coherence, graceful degradation,
- * and clean teardown.
+ * The test harness is **injected** rather than assumed-global, so the kit works
+ * under any runner (vitest, jest, node:test wrappers, …). It does NOT assert
+ * pixels — it can't see your framebuffer. It asserts the contract: shape,
+ * sync-read coherence, subscribe/unsubscribe, graceful degradation, teardown.
  */
 
 export interface RendererConformanceSetup {
@@ -33,47 +35,57 @@ export interface RendererConformanceSetup {
   dispose(): void;
 }
 
+/**
+ * The minimal slice of a test framework the kit uses. Pass your runner's
+ * primitives (e.g. vitest's `{ describe, it, beforeEach, afterEach, expect }`).
+ * `expect` only needs the matchers below.
+ */
+export interface ConformanceHarness {
+  describe(name: string, fn: () => void): void;
+  it(name: string, fn: () => void | Promise<void>): void;
+  beforeEach(fn: () => void | Promise<void>): void;
+  afterEach(fn: () => void | Promise<void>): void;
+  expect(actual: unknown): ConformanceMatchers;
+}
+
+export interface ConformanceMatchers {
+  toBe(expected: unknown): void;
+  toBeDefined(): void;
+  toBeCloseTo(expected: number, numDigits?: number): void;
+  toBeGreaterThanOrEqual(n: number): void;
+}
+
 export interface RendererConformanceOptions {
+  /** The test framework primitives (injected, not assumed-global). */
+  harness: ConformanceHarness;
   /** Build a fresh renderer (+ engine) for each test case. */
   setup: () => RendererConformanceSetup | Promise<RendererConformanceSetup>;
   /**
-   * Optionally skip cases for capabilities you haven't implemented yet (the
-   * contract allows graceful no-ops). e.g. `{ gizmos: false }`.
+   * Skip cases for capabilities you haven't implemented yet (the contract allows
+   * graceful no-ops). e.g. `{ gizmos: true }` to skip the gizmo checks.
    */
-  skip?: Partial<Record<'gizmos' | 'metrics' | 'spawnPoints', boolean>>;
+  skip?: Partial<Record<'gizmos' | 'metrics', boolean>>;
 }
 
-// These are vitest/jest globals; declared loosely so this file imports without
-// a hard test-framework dependency.
-declare const describe: (name: string, fn: () => void) => void;
-declare const it: (name: string, fn: () => void | Promise<void>) => void;
-declare const beforeEach: (fn: () => void | Promise<void>) => void;
-declare const afterEach: (fn: () => void | Promise<void>) => void;
-declare const expect: (actual: unknown) => {
-  toBe(v: unknown): void;
-  toBeTypeOf(t: string): void;
-  toBeDefined(): void;
-  toBeGreaterThanOrEqual(n: number): void;
-  not: { toThrow(): void };
-};
+const isFn = (v: unknown): boolean => typeof v === 'function';
 
 export function createRendererConformanceSuite(options: RendererConformanceOptions): void {
-  const { setup, skip = {} } = options;
+  const { harness, setup, skip = {} } = options;
+  const { describe, it, beforeEach, afterEach, expect } = harness;
 
   describe('IRenderer conformance', () => {
     let renderer: IRenderer;
     let engine: IEngine;
     let teardown: () => void;
-    let disposed = false;
 
     beforeEach(async () => {
       const s = await setup();
       renderer = s.renderer;
       engine = s.engine;
-      disposed = false;
+      let done = false;
       teardown = () => {
-        if (disposed) return;
-        disposed = true;
+        if (done) return;
+        done = true;
         s.dispose();
       };
     });
@@ -81,80 +93,71 @@ export function createRendererConformanceSuite(options: RendererConformanceOptio
     afterEach(() => teardown());
 
     describe('shape', () => {
-      it('exposes the required sub-interfaces', () => {
+      it('exposes the required sub-interfaces and methods', () => {
         expect(renderer.events).toBeDefined();
         expect(renderer.camera).toBeDefined();
         expect(renderer.gizmos).toBeDefined();
         expect(renderer.metrics).toBeDefined();
         expect(renderer.viewport).toBeDefined();
         expect(renderer.spawnPoints).toBeDefined();
-        expect(renderer.setSelection).toBeTypeOf('function');
-        expect(renderer.getPointerWorldPoint).toBeTypeOf('function');
-        expect(renderer.getEntityAnimations).toBeTypeOf('function');
-        expect(renderer.setGridVisible).toBeTypeOf('function');
-        expect(renderer.dispose).toBeTypeOf('function');
+        expect(isFn(renderer.setSelection)).toBe(true);
+        expect(isFn(renderer.getPointerWorldPoint)).toBe(true);
+        expect(isFn(renderer.getEntityAnimations)).toBe(true);
+        expect(isFn(renderer.setGridVisible)).toBe(true);
+        expect(isFn(renderer.dispose)).toBe(true);
       });
     });
 
     describe('camera', () => {
-      it('returns a plain-vector pose with a numeric fov and speed', () => {
+      it('returns a numeric pose, fov and speed', () => {
         const pose = renderer.camera.getPose();
-        expect(pose.position.x).toBeTypeOf('number');
-        expect(pose.target.z).toBeTypeOf('number');
-        expect(pose.fov).toBeTypeOf('number');
-        expect(renderer.camera.getSpeed()).toBeTypeOf('number');
+        expect(typeof pose.position.x).toBe('number');
+        expect(typeof pose.target.z).toBe('number');
+        expect(typeof pose.fov).toBe('number');
+        expect(typeof renderer.camera.getSpeed()).toBe('number');
       });
 
-      it('round-trips a set pose into the reported pose', () => {
+      it('reflects a set pose in the reported position', () => {
         renderer.camera.setPose({ x: 5, y: 6, z: 7 }, { x: 0, y: 0, z: 0 });
         const { position } = renderer.camera.getPose();
-        // exact equality is not required (renderers may normalize), but the
-        // reported position must move toward what was set.
-        expect(position.x).toBeTypeOf('number');
+        // The contract requires setPose to take effect on the reported pose.
+        expect(position.x).toBeCloseTo(5, 3);
+        expect(position.y).toBeCloseTo(6, 3);
+        expect(position.z).toBeCloseTo(7, 3);
       });
     });
 
     describe('viewport', () => {
-      it('returns a (possibly empty) Map from getEntityWorldPositions', () => {
-        const positions = renderer.viewport.getEntityWorldPositions([]);
-        expect(positions instanceof Map).toBe(true);
+      it('returns a Map from getEntityWorldPositions', () => {
+        expect(renderer.viewport.getEntityWorldPositions([]) instanceof Map).toBe(true);
       });
 
-      it('onFrame returns an unsubscribe function', () => {
+      it('onFrame returns a working unsubscribe', () => {
         const off = renderer.viewport.onFrame(() => {});
-        expect(off).toBeTypeOf('function');
-        expect(() => off()).not.toThrow();
+        expect(isFn(off)).toBe(true);
+        off(); // must not throw
       });
     });
 
     describe('forward channel (ECS → scene)', () => {
       it('ingests an engine tick without throwing', async () => {
-        // The contract intentionally doesn't expose the scene graph, so the kit
-        // asserts the renderer ingests engine changes cleanly. Authors should
-        // add their own scene-graph assertions (see ThreeSceneContext.spec.ts as
-        // a template) for full forward-path coverage.
+        // The contract doesn't expose the scene graph, so the kit only asserts
+        // the renderer ingests engine changes cleanly. Authors should add their
+        // own scene-graph assertions (see ThreeSceneContext.spec.ts) for full
+        // forward-path coverage — a green run here is necessary, not sufficient.
         engine.addEntity();
-        let threw = false;
-        try {
-          await engine.update(1);
-        } catch {
-          threw = true;
-        }
-        expect(threw).toBe(false);
+        await engine.update(1);
+        // reaching here = no throw
+        expect(true).toBe(true);
       });
     });
 
     describe('reverse channel', () => {
-      it('events bus accepts subscription and emission', () => {
-        const received: RendererEvents['pick'][] = [];
-        const handler = (e: RendererEvents['pick']) => received.push(e);
+      it('accepts subscribe and unsubscribe without throwing', () => {
+        const handler = () => {};
         renderer.events.on('pick', handler);
-        renderer.events.emit('pick', {
-          target: { kind: 'empty' },
-          modifiers: { multi: false },
-        });
-        expect(received.length).toBeGreaterThanOrEqual(1);
         renderer.events.off('pick', handler);
+        expect(true).toBe(true);
       });
     });
 
@@ -162,25 +165,27 @@ export function createRendererConformanceSuite(options: RendererConformanceOptio
       describe('metrics', () => {
         it('reports numeric scene metrics', () => {
           const m = renderer.metrics.getSceneMetrics();
-          expect(m.triangles).toBeTypeOf('number');
-          expect(m.bodies).toBeTypeOf('number');
+          expect(typeof m.triangles).toBe('number');
+          expect(typeof m.bodies).toBe('number');
+          expect(m.triangles).toBeGreaterThanOrEqual(0);
         });
       });
     }
 
     if (!skip.gizmos) {
       describe('gizmos', () => {
-        it('reports boolean alignment state and accepts mode changes', () => {
-          expect(renderer.gizmos.isWorldAligned()).toBeTypeOf('boolean');
-          expect(() => renderer.gizmos.setEnabled(true)).not.toThrow();
+        it('reports a boolean alignment state and accepts setEnabled', () => {
+          expect(typeof renderer.gizmos.isWorldAligned()).toBe('boolean');
+          renderer.gizmos.setEnabled(true); // must not throw
+          expect(true).toBe(true);
         });
       });
     }
 
     describe('teardown', () => {
       it('disposes without throwing', () => {
-        expect(() => renderer.dispose()).not.toThrow();
-        // afterEach calls teardown() again; dispose must be idempotent-safe.
+        renderer.dispose();
+        expect(true).toBe(true);
       });
     });
   });

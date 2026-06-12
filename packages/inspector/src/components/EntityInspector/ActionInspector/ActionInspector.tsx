@@ -222,7 +222,7 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
       // entity's GLTF source changes.
       sdk.renderer
         .getEntityAnimations(entityId)
-        .then(setAnimations)
+        .then(clips => setAnimations(clips.map(c => c.name)))
         .catch(() => setAnimations([]));
     } else {
       setAnimations([]);

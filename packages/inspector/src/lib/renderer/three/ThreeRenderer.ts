@@ -7,6 +7,7 @@ import { Vector3 as DclVector3 } from '@dcl/ecs-math';
 import type {
   GroundPlane,
   IRenderer,
+  RendererAnimation,
   RendererCamera,
   RendererDebug,
   RendererEvents,
@@ -52,6 +53,7 @@ export class ThreeRenderer implements IRenderer {
   #speed = 4;
   #disposed = false;
   #onPointerDown: (e: PointerEvent) => void;
+  #resizeObserver: ResizeObserver | null = null;
 
   constructor(
     private readonly canvas: HTMLCanvasElement,
@@ -86,13 +88,29 @@ export class ThreeRenderer implements IRenderer {
     this.#onPointerDown = e => this.#handlePick(e);
     canvas.addEventListener('pointerdown', this.#onPointerDown);
 
+    // Keep the drawing buffer + camera aspect in sync with the canvas size
+    // (matches Babylon's ResizeObserver in babylon/setup/init.ts).
+    if (typeof ResizeObserver !== 'undefined') {
+      this.#resizeObserver = new ResizeObserver(() => this.#resize());
+      this.#resizeObserver.observe(canvas);
+    }
+
     this.#renderer.setAnimationLoop(() => this.#onFrame());
+  }
+
+  #resize() {
+    const w = this.canvas.clientWidth || 1;
+    const h = this.canvas.clientHeight || 1;
+    this.#renderer.setSize(w, h, false);
+    this.#camera.aspect = w / h;
+    this.#camera.updateProjectionMatrix();
   }
 
   #onFrame() {
     if (this.#disposed) return;
     this.#renderer.render(this.context.scene, this.#camera);
-    for (const h of this.#frameHandlers) h();
+    // Iterate a copy: a handler may unsubscribe (mutating the Set) mid-iteration.
+    for (const h of [...this.#frameHandlers]) h();
   }
 
   #handlePick(event: PointerEvent) {
@@ -240,8 +258,8 @@ export class ThreeRenderer implements IRenderer {
     return DclVector3.create(p.x, 0, p.z);
   }
 
-  async getEntityAnimations(entity: Entity): Promise<string[]> {
-    return this.context.getAnimationNames(entity);
+  async getEntityAnimations(entity: Entity): Promise<RendererAnimation[]> {
+    return this.context.getAnimationNames(entity).map(name => ({ name }));
   }
 
   setGridVisible(visible: boolean): void {
@@ -252,6 +270,8 @@ export class ThreeRenderer implements IRenderer {
   dispose(): void {
     this.#disposed = true;
     this.#renderer.setAnimationLoop(null);
+    this.#resizeObserver?.disconnect();
+    this.#resizeObserver = null;
     this.canvas.removeEventListener('pointerdown', this.#onPointerDown);
     this.context.dispose();
     this.#renderer.dispose();

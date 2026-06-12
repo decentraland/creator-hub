@@ -64,13 +64,26 @@ export function connectReverseChannel(context: ReverseChannelTarget): () => void
     }
   }
 
-  // Write the transforms but do NOT dispatch — a multi-entity drag emits one
-  // gizmoCommit per entity, and the batch is flushed once on gizmoCommitEnd so
-  // it stays a single engine update / undo step.
+  // A gizmoCommit writes Transforms but defers dispatch: a multi-entity drag
+  // emits one commit per entity and the batch is flushed once on gizmoCommitEnd,
+  // keeping it a single engine update / undo step. `pendingCommit` guards
+  // against a renderer that emits commits but never the matching End (an
+  // exception mid-drag, a dropped out-of-process message, a buggy third-party
+  // renderer) — which would otherwise leave a written-but-unflushed Transform
+  // that the next unrelated dispatch silently absorbs, corrupting undo history.
+  let pendingCommit = false;
+
+  function flushPending() {
+    if (!pendingCommit) return;
+    pendingCommit = false;
+    void operations.dispatch();
+  }
+
   function applyGizmoCommit(transforms: RendererEvents['gizmoCommit']['transforms']) {
     for (const t of transforms) {
       const current = context.Transform.getOrNull(t.entity);
       if (!current) continue;
+      pendingCommit = true;
       operations.updateValue(context.Transform, t.entity, {
         ...current,
         ...(t.position ? { position: t.position } : {}),
@@ -80,16 +93,23 @@ export function connectReverseChannel(context: ReverseChannelTarget): () => void
     }
   }
 
-  const onPick = ({ target, modifiers }: RendererEvents['pick']) => applyPick(target, modifiers);
+  // Any pick mid-drag flushes the pending gizmo batch first, so its write can't
+  // be silently folded into the selection dispatch.
+  const onPick = ({ target, modifiers }: RendererEvents['pick']) => {
+    flushPending();
+    applyPick(target, modifiers);
+  };
   const onGizmoCommit = ({ transforms }: RendererEvents['gizmoCommit']) =>
     applyGizmoCommit(transforms);
-  const onGizmoCommitEnd = () => void operations.dispatch();
+  const onGizmoCommitEnd = () => flushPending();
 
   context.rendererEvents.on('pick', onPick);
   context.rendererEvents.on('gizmoCommit', onGizmoCommit);
   context.rendererEvents.on('gizmoCommitEnd', onGizmoCommitEnd);
 
   return () => {
+    // Flush any drag still in flight at teardown rather than stranding the write.
+    flushPending();
     context.rendererEvents.off('pick', onPick);
     context.rendererEvents.off('gizmoCommit', onGizmoCommit);
     context.rendererEvents.off('gizmoCommitEnd', onGizmoCommitEnd);

@@ -7,6 +7,7 @@ import type { GizmoType } from '../../utils/gizmo';
 import type {
   GroundPlane,
   IRenderer,
+  RendererAnimation,
   RendererCamera,
   RendererDebug,
   RendererEvents,
@@ -225,7 +226,7 @@ export class RemoteRenderer implements IRenderer {
     return this.transport.request({ kind: 'getPointerWorldPoint' });
   }
 
-  getEntityAnimations(entity: Entity): Promise<string[]> {
+  getEntityAnimations(entity: Entity): Promise<RendererAnimation[]> {
     return this.transport.request({ kind: 'getEntityAnimations', entity });
   }
 

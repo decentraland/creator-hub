@@ -11,6 +11,30 @@ const ROOT = 0 as Entity;
 
 type AssetLoader = (src: string) => Promise<Uint8Array | null>;
 
+/** Dispose a material and every texture it references. three.js frees no GPU
+ * memory automatically — geometries, materials and textures must be disposed. */
+function disposeMaterial(material: THREE.Material): void {
+  for (const key of Object.keys(material)) {
+    const value = (material as unknown as Record<string, unknown>)[key];
+    if (value instanceof THREE.Texture) value.dispose();
+  }
+  material.dispose();
+}
+
+/** Recursively dispose an object's geometries, materials and textures, then
+ * detach it from its parent. Safe to call on any Object3D subtree. */
+function disposeObject(object: THREE.Object3D): void {
+  object.traverse(node => {
+    const mesh = node as THREE.Mesh;
+    if (mesh.geometry) mesh.geometry.dispose();
+    const material = mesh.material;
+    if (material) {
+      (Array.isArray(material) ? material : [material]).forEach(disposeMaterial);
+    }
+  });
+  object.removeFromParent();
+}
+
 /**
  * The three.js counterpart of Babylon's `SceneContext`: it owns an `@dcl/ecs`
  * engine, subscribes to its changes, and projects entity/component state into a
@@ -40,6 +64,9 @@ export class ThreeSceneContext {
 
   #objects = new Map<Entity, THREE.Object3D>();
   #animations = new Map<Entity, string[]>();
+  // Monotonic per-entity token guarding against out-of-order GLTF loads: a
+  // load only applies if its token is still the latest for that entity.
+  #gltfLoadToken = new Map<Entity, number>();
   #gltfLoader = new GLTFLoader();
 
   constructor(private readonly loadAsset: AssetLoader) {
@@ -82,8 +109,10 @@ export class ThreeSceneContext {
   #remove(entity: Entity) {
     const obj = this.#objects.get(entity);
     if (!obj) return;
-    obj.removeFromParent();
+    disposeObject(obj);
     this.#objects.delete(entity);
+    this.#animations.delete(entity);
+    this.#gltfLoadToken.delete(entity);
   }
 
   #applyTransform(entity: Entity, obj: THREE.Object3D) {
@@ -106,20 +135,33 @@ export class ThreeSceneContext {
 
   async #applyGltf(entity: Entity, obj: THREE.Object3D) {
     const value = this.GltfContainer.getOrNull(entity) as { src: string } | null;
-    // Clear any previously-loaded gltf for this entity.
+
+    // Bump the load token first — any in-flight load for this entity is now stale.
+    const token = (this.#gltfLoadToken.get(entity) ?? 0) + 1;
+    this.#gltfLoadToken.set(entity, token);
+
+    // Clear any previously-loaded gltf for this entity (disposing its GPU memory).
     const existing = obj.getObjectByName('gltf');
-    if (existing) existing.removeFromParent();
+    if (existing) disposeObject(existing);
+    this.#animations.delete(entity);
     if (!value?.src) return;
 
     const bytes = await this.loadAsset(value.src);
-    if (!bytes) return;
-    // Entity may have been removed while loading.
-    if (!this.#objects.has(entity)) return;
+    const gltf = bytes
+      ? await this.#gltfLoader.parseAsync(
+          bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer,
+          '',
+        )
+      : null;
 
-    const gltf = await this.#gltfLoader.parseAsync(
-      bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer,
-      '',
-    );
+    // A newer load (or an entity removal) superseded this one while awaiting:
+    // discard the now-stale result, freeing its GPU memory.
+    if (!gltf) return;
+    if (this.#gltfLoadToken.get(entity) !== token || !this.#objects.has(entity)) {
+      disposeObject(gltf.scene);
+      return;
+    }
+
     gltf.scene.name = 'gltf';
     obj.add(gltf.scene);
     this.#animations.set(
@@ -134,7 +176,7 @@ export class ThreeSceneContext {
 
   #applyMeshRenderer(entity: Entity, obj: THREE.Object3D) {
     const existing = obj.getObjectByName('mesh');
-    if (existing) existing.removeFromParent();
+    if (existing) disposeObject(existing);
     const value = this.MeshRenderer.getOrNull(entity);
     if (!value) return;
     // Minimal proof: any MeshRenderer renders as a unit box.
@@ -165,7 +207,15 @@ export class ThreeSceneContext {
   }
 
   dispose() {
-    this.#objects.clear();
+    // Free all GPU resources before dropping references (scene.clear alone leaks).
+    for (const obj of this.#objects.values()) disposeObject(obj);
+    this.scene.traverse(node => {
+      const mesh = node as THREE.Mesh;
+      if (mesh.geometry) mesh.geometry.dispose();
+    });
     this.scene.clear();
+    this.#objects.clear();
+    this.#animations.clear();
+    this.#gltfLoadToken.clear();
   }
 }

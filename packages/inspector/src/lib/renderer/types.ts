@@ -1,4 +1,3 @@
-import type { Emitter } from 'mitt';
 import type { Entity } from '@dcl/ecs';
 import type { Vector3, Quaternion } from '@dcl/ecs-math';
 
@@ -38,8 +37,19 @@ import type { GizmoType } from '../utils/gizmo';
  *         renderer-native dev tools. Optional by construction.
  */
 
-/** A frame-rate-safe unsubscribe handle returned by every `on*` subscription. */
+/** Unsubscribe handle returned by every `on*` subscription. */
 export type Unsubscribe = () => void;
+
+/**
+ * Read-only view of the reverse-channel event bus that the inspector exposes to
+ * consumers: they may subscribe (`on`/`off`) but not `emit` or `clear`. Only the
+ * renderer implementation (which holds the full `Emitter`) emits events — that
+ * exclusivity is the integrity guarantee of the reverse channel.
+ */
+export interface EventSubscriber<Events extends Record<string, unknown>> {
+  on<K extends keyof Events>(type: K, handler: (event: Events[K]) => void): void;
+  off<K extends keyof Events>(type: K, handler: (event: Events[K]) => void): void;
+}
 
 // ---------------------------------------------------------------------------
 // Reverse channel: events the renderer emits back to the inspector.
@@ -261,13 +271,26 @@ export interface RendererDebug {
   toggle(): void;
 }
 
+/**
+ * An animation clip exposed by a renderer (see `getEntityAnimations`). Only
+ * `name` is consumed today; the object shape leaves room to add `duration`,
+ * `loopable`, etc. without breaking the public contract.
+ */
+export interface RendererAnimation {
+  name: string;
+}
+
 // ---------------------------------------------------------------------------
 // The core interface every renderer implements.
 // ---------------------------------------------------------------------------
 
 export interface IRenderer {
-  /** Reverse-channel events (pick, gizmoCommit, cameraChange, …). */
-  readonly events: Emitter<RendererEvents>;
+  /**
+   * Reverse-channel events (pick, gizmoCommit, cameraChange, …). Consumers
+   * subscribe via `on`/`off` only — the renderer is the sole emitter (it holds
+   * the underlying `Emitter`); see {@link EventSubscriber}.
+   */
+  readonly events: EventSubscriber<RendererEvents>;
 
   readonly camera: RendererCamera;
   readonly gizmos: RendererGizmos;
@@ -289,12 +312,14 @@ export interface IRenderer {
   getPointerWorldPoint(): Promise<Vector3 | null>;
 
   /**
-   * Resolve the animation clip names available on an entity's loaded GLTF.
-   * Used by the Animator/Action inspectors to populate animation pickers. Waits
-   * for the GLTF to load; returns [] if the entity has no GLTF/animations or the
-   * renderer can't introspect them. Names only — serialization-safe.
+   * Resolve the animation clips available on an entity's loaded GLTF. Used by
+   * the Animator/Action inspectors to populate animation pickers. Waits for the
+   * GLTF to load; returns [] if the entity has no GLTF/animations or the
+   * renderer can't introspect them. Returns {@link RendererAnimation} objects
+   * (not bare strings) so the shape can grow — e.g. with `duration` — without a
+   * breaking change.
    */
-  getEntityAnimations(entity: Entity): Promise<string[]>;
+  getEntityAnimations(entity: Entity): Promise<RendererAnimation[]>;
 
   /** Toggle the editor ground grid. */
   setGridVisible(visible: boolean): void;

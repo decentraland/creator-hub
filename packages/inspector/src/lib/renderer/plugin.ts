@@ -64,10 +64,19 @@ export interface RendererPlugin {
 const registry = new Map<string, RendererPlugin>();
 
 /**
- * Register a renderer. Idempotent per id (re-registering replaces). Call at
- * module load so the renderer is available when the inspector initializes.
+ * Register a renderer. Idempotent: re-registering the same plugin object (e.g.
+ * via HMR) is silent, but replacing a *different* plugin under an existing id
+ * warns — a likely id collision between renderers.
  */
 export function registerRenderer(plugin: RendererPlugin): void {
+  const existing = registry.get(plugin.id);
+  if (existing && existing !== plugin) {
+    // eslint-disable-next-line no-console
+    console.warn(
+      `[renderer] registerRenderer: replacing a different renderer already registered as "${plugin.id}". ` +
+        'Renderer ids must be unique (e.g. "my-org.my-renderer").',
+    );
+  }
   registry.set(plugin.id, plugin);
 }
 

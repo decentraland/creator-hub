@@ -96,5 +96,8 @@ function buildConformantRenderer() {
 }
 
 createRendererConformanceSuite({
+  // The kit takes the test harness by injection; here we hand it vitest's
+  // globals (proving the kit is framework-agnostic, not vitest-coupled).
+  harness: { describe, it, beforeEach, afterEach, expect },
   setup: buildConformantRenderer,
 });

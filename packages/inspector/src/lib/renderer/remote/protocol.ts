@@ -2,7 +2,7 @@ import type { Entity } from '@dcl/ecs';
 import type { Vector3 } from '@dcl/ecs-math';
 
 import type { GizmoType } from '../../utils/gizmo';
-import type { GroundPlane, RendererEvents, SpawnPointTarget } from '../types';
+import type { GroundPlane, RendererAnimation, RendererEvents, SpawnPointTarget } from '../types';
 
 /**
  * Wire protocol for an out-of-process renderer.
@@ -58,7 +58,7 @@ export type RendererRequest =
 
 export type RendererRequestResult = {
   getPointerWorldPoint: Vector3 | null;
-  getEntityAnimations: string[];
+  getEntityAnimations: RendererAnimation[];
 };
 
 // --- Requests: renderer → inspector, awaiting one response -----------------
@@ -86,6 +86,20 @@ export type OutboundEventPayload = RendererEvents[OutboundEventName];
 
 // --- Snapshot: the pushed state the mirror answers sync reads from ---------
 
+/**
+ * Each sub-object MUST be sent whole (the inspector-side mirror shallow-merges
+ * top-level keys; a partial sub-object would drop its unsent fields).
+ *
+ * Known out-of-process gaps vs the in-process renderer (intentional for now):
+ *  - `spawnPoints.hidden` is not yet populated by the host, so `isHidden`/
+ *    `onVisibilityChange` are inert out-of-process.
+ *  - debug-overlay visibility is not mirrored (RemoteRenderer.debug.isVisible
+ *    returns false).
+ *  - the spawn-gizmo drag-position callback is not streamed back over the wire.
+ * The reverse channel also assumes the renderer pre-mutates its own
+ * spawn-point selection before emitting a `spawnPoint` pick (the inspector only
+ * mirrors ECS selection) — a remote renderer must replicate that.
+ */
 export interface RendererSnapshot {
   camera: { speed: number; position: Vector3; target: Vector3; fov: number };
   gizmos: { enabled: boolean; worldAligned: boolean; worldAlignmentDisabled: boolean };

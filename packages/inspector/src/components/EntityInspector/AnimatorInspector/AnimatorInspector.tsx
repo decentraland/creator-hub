@@ -43,7 +43,7 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
 
     const checkAndInitializeAnimator = async () => {
       try {
-        const clipNames = await sdk.renderer.getEntityAnimations(entityId);
+        const clipNames = (await sdk.renderer.getEntityAnimations(entityId)).map(a => a.name);
 
         // only add Animator component if there are actual animations
         if (clipNames.length > 0) {
@@ -63,7 +63,7 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
 
     const loadAnimations = async () => {
       try {
-        const clipNames = await sdk.renderer.getEntityAnimations(entityId);
+        const clipNames = (await sdk.renderer.getEntityAnimations(entityId)).map(a => a.name);
         if (clipNames.length && (!states.length || states[0].clip !== clipNames[0])) {
           setStates(mapAnimationNamesToStates(clipNames));
         }

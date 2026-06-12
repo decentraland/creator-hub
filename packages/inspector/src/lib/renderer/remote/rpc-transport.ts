@@ -63,21 +63,55 @@ type EventData = {
 type RendererRPC = RPC<Method, Params, Result, EventType, EventData>;
 
 /**
+ * Default ceiling for an awaited request. mini-rpc never times out or rejects
+ * outstanding requests on its own, so without this a request to a renderer that
+ * crashed/navigated would hang forever (wedging the awaiting UI flow).
+ */
+const REQUEST_TIMEOUT_MS = 15_000;
+
+/**
  * Inspector side: the {@link RendererTransport} the {@link RemoteRenderer}
  * drives. Construct with a mini-rpc `Transport` to the renderer context.
  */
-export function createRpcRendererTransport(transport: Transport): RendererTransport {
+export function createRpcRendererTransport(
+  transport: Transport,
+  options: { requestTimeoutMs?: number } = {},
+): RendererTransport {
   const rpc: RendererRPC = new RPC(CHANNEL, transport);
+  const timeoutMs = options.requestTimeoutMs ?? REQUEST_TIMEOUT_MS;
+
+  // Track in-flight request rejecters so dispose() can settle them — otherwise
+  // a teardown mid-request leaves the caller's promise hanging forever.
+  const inFlight = new Set<(reason: Error) => void>();
+  let disposed = false;
 
   return {
     sendCommand(command: RendererCommand) {
       rpc.emit(EventType.COMMAND, command);
     },
-    async request<K extends RendererRequest['kind']>(
+    request<K extends RendererRequest['kind']>(
       request: Extract<RendererRequest, { kind: K }>,
     ): Promise<RendererRequestResult[K]> {
-      const result = await rpc.request(Method.REQUEST, request);
-      return result as RendererRequestResult[K];
+      if (disposed) return Promise.reject(new Error('renderer transport disposed'));
+      return new Promise<RendererRequestResult[K]>((resolve, reject) => {
+        let settled = false;
+        const done = (fn: () => void) => {
+          if (settled) return;
+          settled = true;
+          inFlight.delete(reject);
+          clearTimeout(timer);
+          fn();
+        };
+        const timer = setTimeout(
+          () => done(() => reject(new Error(`renderer request "${request.kind}" timed out`))),
+          timeoutMs,
+        );
+        inFlight.add(reject);
+        rpc
+          .request(Method.REQUEST, request)
+          .then(result => done(() => resolve(result as RendererRequestResult[K])))
+          .catch(error => done(() => reject(error)));
+      });
     },
     onOutbound(handler: (message: RendererOutbound) => void) {
       const listener = (message: RendererOutbound) => handler(message);
@@ -90,6 +124,10 @@ export function createRpcRendererTransport(transport: Transport): RendererTransp
       return () => rpc.handle(Method.INSPECT_REQUEST, async () => null as never);
     },
     dispose() {
+      disposed = true;
+      const reject = [...inFlight];
+      inFlight.clear();
+      reject.forEach(r => r(new Error('renderer transport disposed')));
       rpc.dispose();
     },
   };

@@ -58,13 +58,17 @@ export interface RendererIframeHandle {
 }
 
 export function startRendererIframe(options: RendererIframeOptions): RendererIframeHandle {
-  const transport: Transport =
-    options.transport ??
-    new MessageTransport(
-      options.selfWindow ?? window,
-      options.parentWindow ?? window.parent,
-      options.parentOrigin ?? '*',
-    );
+  // We own (and must dispose) the transport only when we created it; an injected
+  // transport (tests) is owned by the caller.
+  const ownedTransport =
+    options.transport == null
+      ? new MessageTransport(
+          options.selfWindow ?? window,
+          options.parentWindow ?? window.parent,
+          options.parentOrigin ?? '*',
+        )
+      : null;
+  const transport: Transport = options.transport ?? (ownedTransport as Transport);
 
   let renderer!: IRenderer;
   const served = serveRendererHost(transport, (emitOutbound, requestInspector) => {
@@ -83,6 +87,7 @@ export function startRendererIframe(options: RendererIframeOptions): RendererIfr
     dispose() {
       served.dispose();
       renderer.dispose();
+      ownedTransport?.dispose();
     },
   };
 }

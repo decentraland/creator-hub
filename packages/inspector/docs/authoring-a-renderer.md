@@ -56,7 +56,7 @@ those are the inspector's. You implement drawing + input.
 
 ```ts
 interface IRenderer {
-  readonly events: Emitter<RendererEvents>;     // reverse channel (you emit)
+  readonly events: EventSubscriber<RendererEvents>;  // reverse channel (consumers subscribe; you, the renderer, emit on your own Emitter)
   readonly camera: RendererCamera;
   readonly gizmos: RendererGizmos;
   readonly metrics: RendererMetrics;
@@ -66,11 +66,16 @@ interface IRenderer {
 
   setSelection(entities: Entity[]): void;
   getPointerWorldPoint(): Promise<Vector3 | null>;
-  getEntityAnimations(entity: Entity): Promise<string[]>;
+  getEntityAnimations(entity: Entity): Promise<RendererAnimation[]>;  // [{ name }, …]
   setGridVisible(visible: boolean): void;
   dispose(): void;
 }
 ```
+
+> `events` is typed `EventSubscriber` (read-only `on`/`off`) in the contract:
+> only the renderer emits, so hold your own `mitt` `Emitter` internally and
+> expose it as `events`. `getEntityAnimations` returns `RendererAnimation[]`
+> (objects, not bare strings) so the shape can grow without a breaking change.
 
 ### Reverse-channel events (you emit these)
 
@@ -179,18 +184,29 @@ requests asset bytes back across the boundary.
 
 ## Verifying your implementation
 
-Run the conformance suite against your `IRenderer` (see
-`src/lib/renderer/conformance.ts`):
+Run the conformance suite against your `IRenderer` from a test file. The suite
+takes the test harness by injection (so it works under vitest, jest, etc.) plus
+a `setup` that builds a fresh renderer per case:
 
 ```ts
+import { describe, it, beforeEach, afterEach, expect } from 'vitest';
 import { createRendererConformanceSuite } from '@dcl/inspector';
 
-createRendererConformanceSuite(() => buildMyRendererForTest());
+createRendererConformanceSuite({
+  harness: { describe, it, beforeEach, afterEach, expect },
+  setup: () => {
+    const renderer = buildMyRendererForTest();
+    return { renderer, engine: renderer.engine, dispose: () => renderer.dispose() };
+  },
+  // skip: { gizmos: true } // for capabilities you haven't implemented yet
+});
 ```
 
-It checks the contract's observable behavior: building scene objects from ECS
-changes, `pick` emission, camera pose round-trips, graceful degradation of
-unimplemented features, and clean `dispose`.
+It checks the contract's observable behavior: shape, camera pose round-trips
+(`setPose` reflected in `getPose`), sync-read coherence, subscribe/unsubscribe,
+graceful degradation of unimplemented features, and clean `dispose`. It can't
+see your framebuffer — a green run is necessary, not sufficient; add your own
+scene-graph assertions for full forward-path coverage.
 
 ---
 

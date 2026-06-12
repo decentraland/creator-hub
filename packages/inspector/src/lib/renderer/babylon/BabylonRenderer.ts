@@ -14,6 +14,7 @@ import type { GizmoType } from '../../utils/gizmo';
 import type {
   GroundPlane,
   IRenderer,
+  RendererAnimation,
   RendererCamera,
   RendererDebug,
   RendererEvents,
@@ -54,6 +55,7 @@ export class BabylonRenderer implements IRenderer {
   readonly debug: RendererDebug;
 
   #axisHelper: AxisHelperHandle;
+  #disposeSpeedBridge: () => void;
 
   constructor(
     private readonly context: SceneContext,
@@ -84,9 +86,12 @@ export class BabylonRenderer implements IRenderer {
     });
 
     // Bridge the renderer's native speed observable into the agnostic event bus.
-    cameraManager.getSpeedChangeObservable().on('change', speed => {
-      this.events.emit('cameraSpeedChange', { speed });
-    });
+    // The observable belongs to the longer-lived CameraManager, so we must
+    // detach on dispose or this adapter (and its event bus) leaks.
+    const speedEmitter = cameraManager.getSpeedChangeObservable();
+    const onSpeed = (speed: number) => this.events.emit('cameraSpeedChange', { speed });
+    speedEmitter.on('change', onSpeed);
+    this.#disposeSpeedBridge = () => speedEmitter.off('change', onSpeed);
   }
 
   setSelection(_entities: Entity[]): void {
@@ -101,11 +106,11 @@ export class BabylonRenderer implements IRenderer {
     return point ? DclVector3.create(point.x, point.y, point.z) : null;
   }
 
-  async getEntityAnimations(entity: Entity): Promise<string[]> {
+  async getEntityAnimations(entity: Entity): Promise<RendererAnimation[]> {
     const node = this.context.getEntityOrNull(entity);
     if (!node) return [];
     const container = await node.onGltfContainerLoaded();
-    return container.animationGroups.map(group => group.name);
+    return container.animationGroups.map(group => ({ name: group.name }));
   }
 
   setGridVisible(visible: boolean): void {
@@ -114,6 +119,7 @@ export class BabylonRenderer implements IRenderer {
   }
 
   dispose(): void {
+    this.#disposeSpeedBridge();
     this.#axisHelper.dispose();
     this.events.all.clear();
   }

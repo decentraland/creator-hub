@@ -21,9 +21,13 @@ import type {
  * pushes the cheap full state on demand (`pushSnapshot`) and the per-frame
  * spatial slice each frame (`pushFrame`) for the entities the inspector tracks.
  */
+/** ~30Hz: the per-frame snapshot cadence (render loop runs at ~60Hz). */
+const FRAME_PUSH_INTERVAL_MS = 33;
+
 export class RendererHost {
-  #disposeEvents: () => void;
+  #disposers: Array<() => void> = [];
   #trackedEntities: Entity[] = [];
+  #lastFramePush = 0;
 
   constructor(
     private readonly renderer: IRenderer,
@@ -35,18 +39,17 @@ export class RendererHost {
       (payload: unknown) =>
         this.emitOutbound({ kind: 'event', event, payload } as RendererOutbound);
 
-    const offs = (Object.keys(EVENT_NAMES) as Array<keyof typeof EVENT_NAMES>).map(name => {
+    for (const name of Object.keys(EVENT_NAMES) as Array<keyof typeof EVENT_NAMES>) {
       const handler = forward(name);
       this.renderer.events.on(name, handler as never);
-      return () => this.renderer.events.off(name, handler as never);
-    });
-    this.#disposeEvents = () => offs.forEach(off => off());
+      this.#disposers.push(() => this.renderer.events.off(name, handler as never));
+    }
 
     // Keep the per-frame spatial slice flowing while a frame subscription is live.
-    this.renderer.viewport.onFrame(() => this.pushFrame());
+    this.#disposers.push(this.renderer.viewport.onFrame(() => this.pushFrame()));
     // Re-push the cheap state whenever metrics/gizmos signal a change.
-    this.renderer.metrics.onChange(() => this.pushState());
-    this.renderer.gizmos.onChange(() => this.pushState());
+    this.#disposers.push(this.renderer.metrics.onChange(() => this.pushState()));
+    this.#disposers.push(this.renderer.gizmos.onChange(() => this.pushState()));
   }
 
   /** Apply a command from the inspector to the wrapped renderer. */
@@ -103,7 +106,9 @@ export class RendererHost {
         return (await this.renderer.getPointerWorldPoint()) as RendererRequestResult[K];
       case 'getEntityAnimations': {
         const { entity } = request as Extract<RendererRequest, { kind: 'getEntityAnimations' }>;
-        return (await this.renderer.getEntityAnimations(entity)) as RendererRequestResult[K];
+        return (await this.renderer.getEntityAnimations(
+          entity,
+        )) as unknown as RendererRequestResult[K];
       }
       default:
         throw new Error(`Unknown renderer request: ${(request as { kind: string }).kind}`);
@@ -147,8 +152,17 @@ export class RendererHost {
     this.emitOutbound({ kind: 'snapshot', snapshot });
   }
 
-  /** Push the per-frame spatial slice (camera pose + tracked entity positions). */
+  /**
+   * Push the per-frame spatial slice (camera pose + tracked entity positions).
+   * Throttled to {@link FRAME_PUSH_INTERVAL_MS}: the render loop calls this at
+   * ~60Hz, but the inspector overlays (minimap) only need ~30Hz, so we halve the
+   * serialize+postMessage cost. Also a no-op when nothing is tracked.
+   */
   pushFrame(): void {
+    const now = Date.now();
+    if (now - this.#lastFramePush < FRAME_PUSH_INTERVAL_MS) return;
+    this.#lastFramePush = now;
+
     const r = this.renderer;
     const pose = r.camera.getPose();
     const positions = r.viewport.getEntityWorldPositions(this.#trackedEntities);
@@ -167,7 +181,8 @@ export class RendererHost {
   }
 
   dispose(): void {
-    this.#disposeEvents();
+    for (const off of this.#disposers) off();
+    this.#disposers = [];
   }
 }
 

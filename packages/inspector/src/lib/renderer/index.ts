@@ -21,7 +21,9 @@ export type {
   SpawnPointController,
   SpawnPointTarget,
   RendererDebug,
+  RendererAnimation,
   RendererEvents,
+  EventSubscriber,
   PickTarget,
   PickModifiers,
   GroundPlane,
@@ -40,7 +42,12 @@ export type { ReverseChannelTarget } from './reverse-channel';
 
 // Conformance kit — verify an IRenderer implementation against the contract.
 export { createRendererConformanceSuite } from './conformance';
-export type { RendererConformanceOptions, RendererConformanceSetup } from './conformance';
+export type {
+  RendererConformanceOptions,
+  RendererConformanceSetup,
+  ConformanceHarness,
+  ConformanceMatchers,
+} from './conformance';
 
 // Out-of-process (iframe/worker) renderer support: run inside the renderer
 // document, bridge it to the inspector over postMessage RPC.
