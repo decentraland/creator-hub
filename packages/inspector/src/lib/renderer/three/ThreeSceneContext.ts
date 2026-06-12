@@ -4,6 +4,9 @@ import type { ComponentDefinition, Entity, IEngine, TransformType } from '@dcl/e
 import { CrdtMessageType, Engine } from '@dcl/ecs';
 import * as components from '@dcl/ecs/dist/components';
 
+import { createOperations } from '../../sdk/operations';
+import { createEditorComponents } from '../../sdk/components';
+
 const ROOT = 0 as Entity;
 
 type AssetLoader = (src: string) => Promise<Uint8Array | null>;
@@ -30,7 +33,13 @@ export class ThreeSceneContext {
   readonly GltfContainer = components.GltfContainer(this.engine);
   readonly MeshRenderer = components.MeshRenderer(this.engine);
 
+  // Engine-bound operations + editor components, so the reverse-channel handler
+  // can apply picks/edits against this renderer's engine just like Babylon's.
+  readonly operations = createOperations(this.engine);
+  readonly editorComponents = createEditorComponents(this.engine);
+
   #objects = new Map<Entity, THREE.Object3D>();
+  #animations = new Map<Entity, string[]>();
   #gltfLoader = new GLTFLoader();
 
   constructor(private readonly loadAsset: AssetLoader) {
@@ -113,6 +122,14 @@ export class ThreeSceneContext {
     );
     gltf.scene.name = 'gltf';
     obj.add(gltf.scene);
+    this.#animations.set(
+      entity,
+      gltf.animations.map(clip => clip.name),
+    );
+  }
+
+  getAnimationNames(entity: Entity): string[] {
+    return this.#animations.get(entity) ?? [];
   }
 
   #applyMeshRenderer(entity: Entity, obj: THREE.Object3D) {

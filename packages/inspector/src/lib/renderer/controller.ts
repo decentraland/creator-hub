@@ -90,11 +90,23 @@ export function buildRenderer(
     container.appendChild(threeCanvas);
 
     const three = new ThreeRenderer(threeCanvas, loadAssetFromDataLayer);
+
+    // Wire the reverse channel so viewport picks/edits become ECS operations,
+    // exactly as Babylon does — the three context provides the same surface.
+    const disconnect = connectReverseChannel({
+      engine: three.context.engine,
+      operations: three.context.operations,
+      editorComponents: three.context.editorComponents,
+      Transform: three.context.Transform,
+      rendererEvents: three.events,
+    });
+
     return {
       id,
       renderer: three,
       engine: three.context.engine,
       dispose: () => {
+        disconnect();
         three.dispose();
         threeCanvas.remove();
         canvas.style.display = '';

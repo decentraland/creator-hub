@@ -218,6 +218,9 @@ export class ThreeRenderer implements IRenderer {
       setVisible: () => {},
       onSelectionChange: () => () => {},
       onVisibilityChange: () => () => {},
+      attachGizmo: () => {},
+      detachGizmo: () => {},
+      setPosition: () => {},
     };
   }
 
@@ -235,6 +238,10 @@ export class ThreeRenderer implements IRenderer {
     if (t < 0) return null;
     const p = this.#camera.position.clone().addScaledVector(dir, t);
     return DclVector3.create(p.x, 0, p.z);
+  }
+
+  async getEntityAnimations(entity: Entity): Promise<string[]> {
+    return this.context.getAnimationNames(entity);
   }
 
   setGridVisible(visible: boolean): void {

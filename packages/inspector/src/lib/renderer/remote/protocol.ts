@@ -42,6 +42,9 @@ export type RendererCommand =
   | { kind: 'spawnPoints.select'; index: number | null }
   | { kind: 'spawnPoints.selectCameraTarget'; index: number }
   | { kind: 'spawnPoints.setVisible'; index: number; name: string; visible: boolean }
+  | { kind: 'spawnPoints.attachGizmo'; index: number; target: SpawnPointTarget }
+  | { kind: 'spawnPoints.detachGizmo' }
+  | { kind: 'spawnPoints.setPosition'; index: number; target: SpawnPointTarget; position: Vector3 }
   | { kind: 'debug.toggle' };
 
 // --- Requests: inspector → renderer, awaiting one response -----------------
@@ -49,10 +52,13 @@ export type RendererCommand =
 // or callbacks-with-result. These DO round-trip; that's acceptable because they
 // are user-initiated one-offs, not per-frame.
 
-export type RendererRequest = { kind: 'getPointerWorldPoint' };
+export type RendererRequest =
+  | { kind: 'getPointerWorldPoint' }
+  | { kind: 'getEntityAnimations'; entity: Entity };
 
 export type RendererRequestResult = {
   getPointerWorldPoint: Vector3 | null;
+  getEntityAnimations: string[];
 };
 
 // --- Requests: renderer → inspector, awaiting one response -----------------

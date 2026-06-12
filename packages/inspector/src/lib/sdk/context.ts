@@ -1,14 +1,10 @@
-import type { Scene } from '@babylonjs/core';
 import type { Emitter } from 'mitt';
 import { MessageTransport } from '@dcl/mini-rpc';
 import type { ComponentDefinition, CrdtMessageType, Entity, IEngine } from '@dcl/ecs';
 
-import type { SceneContext } from '../babylon/decentraland/SceneContext';
 import { buildRenderer, getSelectedRenderer } from '../renderer/controller';
 import type { RendererId } from '../renderer/controller';
 import type { IRenderer } from '../renderer/types';
-import type { Gizmos } from '../babylon/decentraland/GizmoManager';
-import type { CameraManager } from '../babylon/decentraland/camera';
 import type { InspectorPreferences } from '../logic/preferences/types';
 import { SceneMetricsServer } from '../../lib/rpc/scene-metrics/server';
 import { SceneServer } from '../rpc/scene/server';
@@ -51,21 +47,6 @@ export type SdkContextValue = {
 
   /** Which renderer is active this session ('babylon' | 'three'). */
   currentRendererId: RendererId;
-
-  /**
-   * @deprecated Raw Babylon handles for the few not-yet-migrated consumers
-   * (GLTF introspection in Action/Animator inspectors, getDropPosition, the
-   * addEngines debug hook). Present only when the Babylon renderer is active;
-   * the not-yet-migrated inspectors are Babylon-only for now. Do not add new
-   * usages — migrate to `renderer`.
-   */
-  scene: Scene;
-  /** @deprecated Use `renderer.*`. Babylon-only. */
-  sceneContext: SceneContext;
-  /** @deprecated Use `renderer.gizmos`. Babylon-only. */
-  gizmos: Gizmos;
-  /** @deprecated Use `renderer.camera`. Babylon-only. */
-  editorCamera: CameraManager;
 };
 
 export async function createSdkContext(
@@ -103,15 +84,6 @@ export async function createSdkContext(
     new SceneMetricsServer(transport, store);
   }
 
-  // The deprecated Babylon-only handles. When the three renderer is active these
-  // are absent; the not-yet-migrated inspectors that read them are Babylon-only.
-  const babylonOnly = {
-    scene: built.babylon?.scene as Scene,
-    sceneContext: built.sceneContext as SceneContext,
-    gizmos: built.sceneContext?.gizmos as Gizmos,
-    editorCamera: built.babylon?.editorCamera as CameraManager,
-  };
-
   return {
     engine,
     components,
@@ -121,6 +93,5 @@ export async function createSdkContext(
     enumEntity: createEnumEntityId(engine),
     renderer: built.renderer,
     currentRendererId: built.id,
-    ...babylonOnly,
   };
 }

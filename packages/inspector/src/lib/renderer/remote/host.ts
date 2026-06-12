@@ -81,6 +81,14 @@ export class RendererHost {
         return r.spawnPoints.selectCameraTarget(command.index);
       case 'spawnPoints.setVisible':
         return r.spawnPoints.setVisible(command.index, command.name, command.visible);
+      case 'spawnPoints.attachGizmo':
+        // Drag-position feedback isn't streamed back over the wire yet; the
+        // handle still attaches in the renderer.
+        return r.spawnPoints.attachGizmo(command.index, command.target, () => {});
+      case 'spawnPoints.detachGizmo':
+        return r.spawnPoints.detachGizmo();
+      case 'spawnPoints.setPosition':
+        return r.spawnPoints.setPosition(command.index, command.target, command.position);
       case 'debug.toggle':
         return r.debug?.toggle();
     }
@@ -93,6 +101,10 @@ export class RendererHost {
     switch (request.kind) {
       case 'getPointerWorldPoint':
         return (await this.renderer.getPointerWorldPoint()) as RendererRequestResult[K];
+      case 'getEntityAnimations': {
+        const { entity } = request as Extract<RendererRequest, { kind: 'getEntityAnimations' }>;
+        return (await this.renderer.getEntityAnimations(entity)) as RendererRequestResult[K];
+      }
       default:
         throw new Error(`Unknown renderer request: ${(request as { kind: string }).kind}`);
     }

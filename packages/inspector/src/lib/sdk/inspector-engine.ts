@@ -5,17 +5,7 @@ import type { SdkContextEvents, SdkContextValue } from './context';
 
 export function createInspectorEngine(): Omit<
   SdkContextValue,
-  | 'scene'
-  | 'sceneContext'
-  | 'dataLayer'
-  | 'operations'
-  | 'gizmos'
-  | 'editorCamera'
-  | 'preferences'
-  | 'enumEntity'
-  | 'renderer'
-  | 'currentRendererId'
-  | 'setRenderer'
+  'operations' | 'enumEntity' | 'renderer' | 'currentRendererId'
 > {
   const events = mitt<SdkContextEvents>();
   const { engine, components } = createEngineContext({

@@ -198,6 +198,14 @@ export class RemoteRenderer implements IRenderer {
         this.#spawnVisibilityHandlers.add(cb);
         return () => this.#spawnVisibilityHandlers.delete(cb);
       },
+      attachGizmo: (index, target) =>
+        // NOTE: the drag-position callback is not delivered out-of-process yet
+        // (it would need a dedicated event channel). The handle attaches; live
+        // position feedback during a spawn-point drag is future work.
+        this.transport.sendCommand({ kind: 'spawnPoints.attachGizmo', index, target }),
+      detachGizmo: () => this.transport.sendCommand({ kind: 'spawnPoints.detachGizmo' }),
+      setPosition: (index, target, position) =>
+        this.transport.sendCommand({ kind: 'spawnPoints.setPosition', index, target, position }),
     };
   }
 
@@ -215,6 +223,10 @@ export class RemoteRenderer implements IRenderer {
 
   getPointerWorldPoint(): Promise<Vector3 | null> {
     return this.transport.request({ kind: 'getPointerWorldPoint' });
+  }
+
+  getEntityAnimations(entity: Entity): Promise<string[]> {
+    return this.transport.request({ kind: 'getEntityAnimations', entity });
   }
 
   setGridVisible(visible: boolean): void {

@@ -18,7 +18,7 @@ import {
   isValidSpeed,
   isValidWeight,
   initializeAnimatorComponent,
-  mapAnimationGroupsToStates,
+  mapAnimationNamesToStates,
 } from './utils';
 import type { Props } from './types';
 
@@ -27,9 +27,6 @@ type ChangeEvt = React.ChangeEvent<HTMLInputElement>;
 export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) => {
   const { Animator, GltfContainer } = sdk.components;
 
-  // GLTF animation introspection is a Babylon-only capability today; with a
-  // non-Babylon renderer there is no sceneContext, so this degrades to null.
-  const entity = sdk.sceneContext?.getEntityOrNull(entityId) ?? null;
   const hasAnimator = useHasComponent(entityId, Animator);
   const [componentValue, setComponentValue, isComponentEqual] = useComponentValue<PBAnimator>(
     entityId,
@@ -42,15 +39,15 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
   );
 
   useEffect(() => {
-    if (!entity || !gltfValue || hasAnimator) return;
+    if (!gltfValue || hasAnimator) return;
 
     const checkAndInitializeAnimator = async () => {
       try {
-        const { animationGroups } = await entity.onGltfContainerLoaded();
+        const clipNames = await sdk.renderer.getEntityAnimations(entityId);
 
         // only add Animator component if there are actual animations
-        if (animationGroups.length > 0) {
-          await initializeAnimatorComponent(sdk, entityId, animationGroups);
+        if (clipNames.length > 0) {
+          await initializeAnimatorComponent(sdk, entityId, clipNames);
         }
       } catch (error) {
         // eslint-disable-next-line no-console
@@ -59,20 +56,16 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
     };
 
     void checkAndInitializeAnimator();
-  }, [entity, gltfValue, hasAnimator]);
+  }, [sdk, entityId, gltfValue, hasAnimator]);
 
   useEffect(() => {
-    if (!entity || !gltfValue || !hasAnimator) return;
+    if (!gltfValue || !hasAnimator) return;
 
     const loadAnimations = async () => {
       try {
-        const { animationGroups } = await entity.onGltfContainerLoaded();
-        if (
-          animationGroups.length &&
-          (!states.length || states[0].clip !== animationGroups[0].name)
-        ) {
-          const newStates = mapAnimationGroupsToStates(animationGroups);
-          setStates(newStates);
+        const clipNames = await sdk.renderer.getEntityAnimations(entityId);
+        if (clipNames.length && (!states.length || states[0].clip !== clipNames[0])) {
+          setStates(mapAnimationNamesToStates(clipNames));
         }
       } catch (error) {
         // eslint-disable-next-line no-console
@@ -81,7 +74,7 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
     };
 
     void loadAnimations();
-  }, [entity, gltfValue, hasAnimator, states]);
+  }, [sdk, entityId, gltfValue, hasAnimator, states]);
 
   useEffect(() => {
     if (isComponentEqual({ states })) {

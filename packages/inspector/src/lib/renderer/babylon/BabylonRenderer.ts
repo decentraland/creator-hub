@@ -68,7 +68,7 @@ export class BabylonRenderer implements IRenderer {
     this.gizmos = createGizmosFacade(babylonGizmos);
     this.metrics = createMetricsFacade(scene, context);
     this.viewport = createViewportFacade(scene, context);
-    this.spawnPoints = createSpawnPointsFacade(spawnPoints);
+    this.spawnPoints = createSpawnPointsFacade(spawnPoints, babylonGizmos);
     this.debug = createDebugFacade(scene);
 
     // The axis indicator is a renderer editor-visual: it draws an orientation
@@ -99,6 +99,13 @@ export class BabylonRenderer implements IRenderer {
   async getPointerWorldPoint(): Promise<Vector3 | null> {
     const point = await getPointerCoords(this.context.scene);
     return point ? DclVector3.create(point.x, point.y, point.z) : null;
+  }
+
+  async getEntityAnimations(entity: Entity): Promise<string[]> {
+    const node = this.context.getEntityOrNull(entity);
+    if (!node) return [];
+    const container = await node.onGltfContainerLoaded();
+    return container.animationGroups.map(group => group.name);
   }
 
   setGridVisible(visible: boolean): void {
@@ -218,7 +225,13 @@ function createViewportFacade(scene: BABYLON.Scene, context: SceneContext): Rend
 
 // --- Spawn points facade ---------------------------------------------------
 
-function createSpawnPointsFacade(sp: SceneContext['spawnPoints']): SpawnPointController {
+function createSpawnPointsFacade(
+  sp: SceneContext['spawnPoints'],
+  gizmos: Gizmos,
+): SpawnPointController {
+  const nodeFor = (index: number, target: SpawnPointTarget) =>
+    target === 'cameraTarget' ? sp.getCameraTargetNode(index) : sp.getSpawnPointNode(index);
+
   return {
     getSelectedIndex: () => sp.getSelectedIndex(),
     getSelectedTarget: () => sp.getSelectedTarget() as SpawnPointTarget | null,
@@ -231,6 +244,21 @@ function createSpawnPointsFacade(sp: SceneContext['spawnPoints']): SpawnPointCon
         cb({ index, target: target as SpawnPointTarget | null }),
       ),
     onVisibilityChange: cb => sp.onVisibilityChange(({ name, visible }) => cb({ name, visible })),
+    attachGizmo: (index, target, onPositionChange) => {
+      const node = nodeFor(index, target);
+      if (!node) return;
+      gizmos.attachToSpawnPoint(
+        node,
+        index,
+        (i, p) => onPositionChange(i, DclVector3.create(p.x, p.y, p.z)),
+        target,
+      );
+    },
+    detachGizmo: () => gizmos.detachFromSpawnPoint(),
+    setPosition: (index, target, position) => {
+      const node = nodeFor(index, target);
+      node?.position.set(position.x, position.y, position.z);
+    },
   };
 }
 

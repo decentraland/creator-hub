@@ -233,6 +233,23 @@ export interface SpawnPointController {
     cb: (e: { index: number | null; target: SpawnPointTarget | null }) => void,
   ): Unsubscribe;
   onVisibilityChange(cb: (e: { name: string; visible: boolean }) => void): Unsubscribe;
+
+  /**
+   * Attach a move-handle to a spawn point (or its camera target), reporting the
+   * dragged position back. The renderer draws/manipulates the handle however it
+   * likes; the inspector only supplies index + target and consumes positions. A
+   * renderer without spawn-point handles may no-op (the panel still edits values
+   * via the form).
+   */
+  attachGizmo(
+    index: number,
+    target: SpawnPointTarget,
+    onPositionChange: (index: number, position: Vector3) => void,
+  ): void;
+  /** Detach the spawn-point move-handle. */
+  detachGizmo(): void;
+  /** Force a spawn point's (or camera target's) position — used for out-of-bounds correction. */
+  setPosition(index: number, target: SpawnPointTarget, position: Vector3): void;
 }
 
 // ---------------------------------------------------------------------------
@@ -270,6 +287,14 @@ export interface IRenderer {
    * Returns null if nothing was hit.
    */
   getPointerWorldPoint(): Promise<Vector3 | null>;
+
+  /**
+   * Resolve the animation clip names available on an entity's loaded GLTF.
+   * Used by the Animator/Action inspectors to populate animation pickers. Waits
+   * for the GLTF to load; returns [] if the entity has no GLTF/animations or the
+   * renderer can't introspect them. Names only — serialization-safe.
+   */
+  getEntityAnimations(entity: Entity): Promise<string[]>;
 
   /** Toggle the editor ground grid. */
   setGridVisible(visible: boolean): void;

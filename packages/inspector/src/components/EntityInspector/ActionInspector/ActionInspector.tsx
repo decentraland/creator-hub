@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { VscTrash as RemoveIcon } from 'react-icons/vsc';
-import type { AnimationGroup } from '@babylonjs/core';
 import { AvatarAnchorPointType } from '@dcl/ecs';
 import type { Action, ActionPayload } from '@dcl/asset-packs';
 import {
@@ -21,7 +20,6 @@ import { useArrayState } from '../../../hooks/useArrayState';
 import { analytics, Event } from '../../../lib/logic/analytics';
 import type { EditorComponentsTypes } from '../../../lib/sdk/components';
 import { getAssetByModel } from '../../../lib/logic/catalog';
-import { updateGltfForEntity } from '../../../lib/babylon/decentraland/sdkComponents/gltf-container';
 
 import { Block } from '../../Block';
 import { Container } from '../../Container';
@@ -141,13 +139,10 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
   const [componentValue, setComponentValue, isComponentEqual] = useComponentValue<
     EditorComponentsTypes['Actions']
   >(entityId, Actions);
-  // GLTF animation introspection is a Babylon-only capability today; with a
-  // non-Babylon renderer there is no sceneContext, so this degrades to null.
-  const entity = sdk.sceneContext?.getEntityOrNull(entityId) ?? null;
   const [actions, addAction, modifyAction, removeAction] = useArrayState<Action>(
     componentValue === null ? [] : componentValue.value,
   );
-  const [animations, setAnimations] = useState<AnimationGroup[]>([]);
+  const [animations, setAnimations] = useState<string[]>([]);
   const [states, setStates] = useState<string[]>(States.getOrNull(entityId)?.value || []);
 
   const hasActions = useHasComponent(entityId, Actions);
@@ -222,27 +217,17 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
   );
 
   useEffect(() => {
-    if (entity && hasGltf && hasActions) {
-      const currentGltfSrc = entity.ecsComponentValues.gltfContainer?.src;
-      const isChangingGltf = currentGltfSrc !== gltfValue.src;
-
-      if (isChangingGltf) {
-        entity.resetGltfAssetContainerLoading();
-        updateGltfForEntity(entity, gltfValue);
-      }
-
-      entity
-        .onGltfContainerLoaded()
-        .then(gltfAssetContainer => {
-          setAnimations([...gltfAssetContainer.animationGroups]);
-        })
-        .catch(() => {
-          setAnimations([]);
-        });
+    if (hasGltf && hasActions) {
+      // The renderer owns GLTF loading; re-request clip names whenever the
+      // entity's GLTF source changes.
+      sdk.renderer
+        .getEntityAnimations(entityId)
+        .then(setAnimations)
+        .catch(() => setAnimations([]));
     } else {
       setAnimations([]);
     }
-  }, [entity, gltfValue, hasActions, hasGltf]);
+  }, [sdk, entityId, gltfValue?.src, hasActions, hasGltf]);
 
   const isValidAction = useCallback(
     (action: Action) => {

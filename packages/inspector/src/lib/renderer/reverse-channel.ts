@@ -1,8 +1,25 @@
-import type { Entity } from '@dcl/ecs';
+import type { Emitter } from 'mitt';
+import type { IEngine } from '@dcl/ecs';
 
-import type { SceneContext } from '../babylon/decentraland/SceneContext';
+import type { createOperations } from '../sdk/operations';
+import type { EditorComponents, SdkComponents } from '../sdk/components';
 import { getAncestors, isAncestor, mapNodes } from '../sdk/nodes';
 import type { PickTarget, RendererEvents } from './types';
+
+/**
+ * The minimal surface the reverse-channel handler needs from a renderer's scene
+ * engine. Babylon's SceneContext satisfies this; the three renderer's
+ * ThreeSceneContext provides the same (engine + engine-bound operations,
+ * editor components, Transform) plus its own event bus. Keeping it an interface
+ * — not the Babylon SceneContext — is what lets any renderer reuse the handler.
+ */
+export interface ReverseChannelTarget {
+  engine: IEngine;
+  operations: ReturnType<typeof createOperations>;
+  editorComponents: EditorComponents;
+  Transform: SdkComponents['Transform'];
+  rendererEvents: Emitter<RendererEvents>;
+}
 
 /**
  * The inspector-side handler for the renderer's reverse channel.
@@ -10,14 +27,10 @@ import type { PickTarget, RendererEvents } from './types';
  * The renderer is a pure input/render device: it picks, classifies, and drags,
  * then *emits* what happened (`pick`, `gizmoCommit`). It never mutates ECS
  * itself. This module is the single place that turns those events into ECS
- * operations — the inspector owning every scene edit. A non-Babylon renderer
- * reuses this exact handler by emitting the same events.
- *
- * It writes through `context.operations` (the renderer's scene engine), which
- * is the same target the old in-renderer code used, so behavior is unchanged;
- * the change is purely *who* issues the write.
+ * operations — the inspector owning every scene edit. Any renderer reuses this
+ * exact handler by emitting the same events against its own scene engine.
  */
-export function connectReverseChannel(context: SceneContext): () => void {
+export function connectReverseChannel(context: ReverseChannelTarget): () => void {
   const { engine, operations, editorComponents } = context;
 
   function applyPick(target: PickTarget, modifiers: { multi: boolean }) {
@@ -82,6 +95,3 @@ export function connectReverseChannel(context: SceneContext): () => void {
     context.rendererEvents.off('gizmoCommitEnd', onGizmoCommitEnd);
   };
 }
-
-// Re-export for callers that only need the entity-id type.
-export type { Entity };

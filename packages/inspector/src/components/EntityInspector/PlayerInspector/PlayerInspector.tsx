@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import cx from 'classnames';
-import type { Vector3 } from '@babylonjs/core';
+import type { SpawnPointTarget } from '../../../lib/renderer/types';
 import { withSdk } from '../../../hoc/withSdk';
 import { useComponentValue } from '../../../hooks/sdk/useComponentValue';
 import { useArrayState } from '../../../hooks/useArrayState';
@@ -54,15 +54,14 @@ export default withSdk<Props>(({ sdk }) => {
     }
   }
 
-  // Spawn-point 3D handles are a Babylon-only capability today (they manipulate
-  // Babylon nodes via the gizmo manager). With a non-Babylon renderer these are
-  // absent; the panel still renders spawn-point data, just without the in-scene
-  // handles.
-  const spawnPointManager = sdk.sceneContext?.spawnPoints;
-  const gizmoManager = sdk.gizmos;
+  // Spawn-point handles go through the renderer-agnostic contract. A renderer
+  // without in-scene handles (e.g. three) no-ops them; the panel still edits
+  // spawn-point values via the form. (Named *controller* to avoid colliding
+  // with the `spawnPoints` array-state above.)
+  const spawnPointController = sdk.renderer.spawnPoints;
 
-  const [selectedSpawnPointIndex, setSelectedSpawnPointIndex] = useState<number | null>(
-    () => spawnPointManager?.getSelectedIndex() ?? null,
+  const [selectedSpawnPointIndex, setSelectedSpawnPointIndex] = useState<number | null>(() =>
+    spawnPointController.getSelectedIndex(),
   );
 
   const { pushNotification } = useSnackbar();
@@ -82,7 +81,11 @@ export default withSdk<Props>(({ sdk }) => {
   const layout = componentValue?.layout;
 
   const handleFieldChange = useCallback(
-    (index: number, field: 'position' | 'cameraTarget', position: Vector3) => {
+    (
+      index: number,
+      field: 'position' | 'cameraTarget',
+      position: { x: number; y: number; z: number },
+    ) => {
       if (index < 0 || index >= spawnPoints.length) return;
       const spawnPoint = spawnPoints[index];
       const input = fromSceneSpawnPoint(spawnPoint);
@@ -93,19 +96,13 @@ export default withSdk<Props>(({ sdk }) => {
           const effectiveOffset = input.randomOffset ? input.maxOffset : 0;
           if (!isSpawnAreaInBounds(layout, newPos, effectiveOffset)) {
             showBoundsWarning('Spawn area must be within scene bounds');
-            const node = spawnPointManager?.getSpawnPointNode(index);
-            if (node) {
-              node.position.set(input.position.x, input.position.y, input.position.z);
-            }
+            spawnPointController.setPosition(index, 'position', input.position);
             return;
           }
         } else if (field === 'cameraTarget') {
           if (!isPositionInBounds(layout, newPos)) {
             showBoundsWarning('Camera target must be within scene bounds');
-            const node = spawnPointManager?.getCameraTargetNode(index);
-            if (node) {
-              node.position.set(input.cameraTarget.x, input.cameraTarget.y, input.cameraTarget.z);
-            }
+            spawnPointController.setPosition(index, 'cameraTarget', input.cameraTarget);
             return;
           }
         }
@@ -120,11 +117,11 @@ export default withSdk<Props>(({ sdk }) => {
     },
     [
       spawnPoints,
+      spawnPointController,
       modifySpawnPoint,
       layout,
       showBoundsWarning,
       clearBoundsWarning,
-      spawnPointManager,
     ],
   );
 
@@ -132,47 +129,32 @@ export default withSdk<Props>(({ sdk }) => {
   fieldChangeRef.current = handleFieldChange;
 
   useEffect(() => {
-    // Spawn-point gizmo manipulation requires the Babylon renderer.
-    if (!spawnPointManager || !gizmoManager) return;
-
-    const attachGizmo = (index: number | null, target: 'position' | 'cameraTarget') => {
+    const attachGizmo = (index: number | null, target: SpawnPointTarget | null) => {
       setSelectedSpawnPointIndex(index);
-
       if (index === null) {
-        gizmoManager.detachFromSpawnPoint();
+        spawnPointController.detachGizmo();
         return;
       }
-
-      const node =
-        target === 'cameraTarget'
-          ? spawnPointManager.getCameraTargetNode(index)
-          : spawnPointManager.getSpawnPointNode(index);
-
-      if (node) {
-        gizmoManager.attachToSpawnPoint(
-          node,
-          index,
-          (i, p) => fieldChangeRef.current(i, target, p),
-          target,
-        );
-      }
+      spawnPointController.attachGizmo(index, target ?? 'position', (i, p) =>
+        fieldChangeRef.current(i, target ?? 'position', p),
+      );
     };
 
-    // Attach gizmo for any already-selected spawn point
-    const currentIndex = spawnPointManager.getSelectedIndex();
+    // Attach handle for any already-selected spawn point
+    const currentIndex = spawnPointController.getSelectedIndex();
     if (currentIndex !== null) {
-      attachGizmo(currentIndex, spawnPointManager.getSelectedTarget());
+      attachGizmo(currentIndex, spawnPointController.getSelectedTarget());
     }
 
-    const unsubscribe = spawnPointManager.onSelectionChange(({ index, target }) => {
+    const unsubscribe = spawnPointController.onSelectionChange(({ index, target }) => {
       attachGizmo(index, target);
     });
     return () => {
       unsubscribe();
-      gizmoManager.detachFromSpawnPoint();
-      spawnPointManager.selectSpawnPoint(null);
+      spawnPointController.detachGizmo();
+      spawnPointController.select(null);
     };
-  }, [spawnPointManager, gizmoManager]);
+  }, [spawnPointController]);
 
   const handleAddSpawnArea = useCallback(() => {
     const existingNames = spawnPoints.map(sp => sp.name);
@@ -236,9 +218,9 @@ export default withSdk<Props>(({ sdk }) => {
         e.stopPropagation();
         if (isLastSpawnArea) return;
         if (isSelected) {
-          spawnPointManager?.selectSpawnPoint(null);
+          spawnPointController.select(null);
         } else if (selectedSpawnPointIndex !== null && selectedSpawnPointIndex > index) {
-          spawnPointManager?.selectSpawnPoint(selectedSpawnPointIndex - 1);
+          spawnPointController.select(selectedSpawnPointIndex - 1);
         }
         const wasDefault = input.default;
         removeSpawnPoint(index);
@@ -380,7 +362,7 @@ export default withSdk<Props>(({ sdk }) => {
       selectedSpawnPointIndex,
       handleFocusInput,
       handleBlurInput,
-      spawnPointManager,
+      spawnPointController,
       spawnPoints,
       layout,
       revertAndWarn,

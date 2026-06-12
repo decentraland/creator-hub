@@ -1,4 +1,3 @@
-import type { AnimationGroup } from '@babylonjs/core';
 import type { Entity } from '@dcl/ecs';
 import { Animator } from '@dcl/ecs';
 
@@ -77,7 +76,7 @@ describe('NumberUtils', () => {
         },
       };
       const entity: Entity = 512 as Entity;
-      const animations: AnimationGroup[] = [{ name: 'animation' }] as AnimationGroup[];
+      const animations: string[] = ['animation'];
 
       const result = await initializeAnimatorComponent(
         sdk as any as SdkContextValue,
@@ -111,7 +110,7 @@ describe('NumberUtils', () => {
         },
       };
       const entity: Entity = 512 as Entity;
-      const animations: AnimationGroup[] = [];
+      const animations: string[] = [];
 
       const result = await initializeAnimatorComponent(
         sdk as any as SdkContextValue,

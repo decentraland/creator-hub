@@ -1,4 +1,3 @@
-import type { AnimationGroup } from '@babylonjs/core';
 import type { Entity, PBAnimationState, PBAnimator } from '@dcl/ecs';
 import { Animator } from '@dcl/ecs';
 
@@ -22,26 +21,26 @@ export function isValidSpeed(speed: string | undefined): boolean {
   return !isNaN(parseFloat(value)) && parseFloat(value) >= 0 && parseFloat(value) <= 200;
 }
 
-export function mapAnimationGroupsToStates(animations: AnimationGroup[]): PBAnimationState[] {
-  return animations.map($ => {
-    const weight = isValidWeight($.weight?.toString()) ? $.weight : 1;
-    return {
-      weight,
-      clip: $.name,
-      playing: !!$.isPlaying,
-      speed: $.speedRatio ?? 1,
-      loop: $.loopAnimation ?? false,
-      shouldReset: false,
-    };
-  });
+// Build animation states from clip names. A freshly-loaded clip uses the
+// default playback values (weight 1, not playing, speed 1, no loop) — the same
+// values the renderer's animation groups report at load time.
+export function mapAnimationNamesToStates(clipNames: string[]): PBAnimationState[] {
+  return clipNames.map(clip => ({
+    weight: 1,
+    clip,
+    playing: false,
+    speed: 1,
+    loop: false,
+    shouldReset: false,
+  }));
 }
 
 export async function initializeAnimatorComponent(
   sdk: SdkContextValue,
   entity: Entity,
-  animations: AnimationGroup[],
+  clipNames: string[],
 ): Promise<PBAnimator> {
-  const states = mapAnimationGroupsToStates(animations);
+  const states = mapAnimationNamesToStates(clipNames);
   const value: PBAnimator = { states };
 
   try {
