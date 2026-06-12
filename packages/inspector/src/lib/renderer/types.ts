@@ -264,13 +264,6 @@ export interface IRenderer {
   setSelection(entities: Entity[]): void;
 
   /**
-   * Map a viewport coordinate to an entity, if any. Used for drop placement and
-   * any picking the inspector initiates (as opposed to user clicks, which arrive
-   * as `events.pick`). Returns the ground-plane point too, for snap-to-grid drops.
-   */
-  pickAt(x: number, y: number): { entity: Entity | null; point: Vector3 | null };
-
-  /**
    * Resolve the world-space point under the pointer on the next pointer tick.
    * This is the drop-placement primitive: the inspector asks "where is the
    * pointer aiming in the scene right now?" without knowing screen coordinates.

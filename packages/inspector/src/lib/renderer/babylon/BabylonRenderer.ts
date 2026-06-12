@@ -96,17 +96,6 @@ export class BabylonRenderer implements IRenderer {
     // ECS-driven path remains the source of truth during migration.
   }
 
-  pickAt(x: number, y: number): { entity: Entity | null; point: Vector3 | null } {
-    const pick = this.context.scene.pick(x, y, undefined, false);
-    const mesh = pick?.pickedMesh ?? null;
-    const entity = mesh ? this.findEntityByMesh(mesh) : null;
-    const p = pick?.pickedPoint;
-    return {
-      entity,
-      point: p ? DclVector3.create(p.x, p.y, p.z) : null,
-    };
-  }
-
   async getPointerWorldPoint(): Promise<Vector3 | null> {
     const point = await getPointerCoords(this.context.scene);
     return point ? DclVector3.create(point.x, point.y, point.z) : null;
@@ -120,16 +109,6 @@ export class BabylonRenderer implements IRenderer {
   dispose(): void {
     this.#axisHelper.dispose();
     this.events.all.clear();
-  }
-
-  private findEntityByMesh(mesh: BABYLON.AbstractMesh): Entity | null {
-    let node: BABYLON.Node | null = mesh;
-    while (node) {
-      const entity = (node as { entityId?: Entity }).entityId;
-      if (entity !== undefined) return entity;
-      node = node.parent;
-    }
-    return null;
   }
 }
 
