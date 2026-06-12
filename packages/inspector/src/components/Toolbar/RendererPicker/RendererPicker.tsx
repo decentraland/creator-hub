@@ -3,7 +3,7 @@ import { TbBox } from 'react-icons/tb';
 
 import { withSdk } from '../../../hoc/withSdk';
 import {
-  AVAILABLE_RENDERERS,
+  getAvailableRenderers,
   getSelectedRenderer,
   setSelectedRenderer,
 } from '../../../lib/renderer/controller';
@@ -22,6 +22,7 @@ import './RendererPicker.css';
  */
 const RendererPicker = withSdk(() => {
   const current = getSelectedRenderer();
+  const available = getAvailableRenderers();
 
   const handleChange = useCallback(
     (event: React.ChangeEvent<HTMLSelectElement>) => {
@@ -43,7 +44,7 @@ const RendererPicker = withSdk(() => {
         value={current}
         onChange={handleChange}
       >
-        {AVAILABLE_RENDERERS.map(({ id, label }) => (
+        {available.map(({ id, label }) => (
           <option
             key={id}
             value={id}

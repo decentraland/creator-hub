@@ -2,7 +2,11 @@ import type { Emitter } from 'mitt';
 import { MessageTransport } from '@dcl/mini-rpc';
 import type { ComponentDefinition, CrdtMessageType, Entity, IEngine } from '@dcl/ecs';
 
-import { buildRenderer, getSelectedRenderer } from '../renderer/controller';
+import {
+  buildRenderer,
+  getSelectedRenderer,
+  registerBuiltInRenderers,
+} from '../renderer/controller';
 import type { RendererId } from '../renderer/controller';
 import type { IRenderer } from '../renderer/types';
 import type { InspectorPreferences } from '../logic/preferences/types';
@@ -57,11 +61,12 @@ export async function createSdkContext(
   // create inspector engine context and components
   const { engine, components, events, dispose: disposeEngine } = createInspectorEngine();
 
-  // Build the renderer chosen for this session (persisted; switching it reloads
-  // the inspector — see RendererPicker). Each renderer owns its own canvas in
-  // the Renderer container.
+  // Build the renderer chosen for this session through the open plugin registry
+  // (persisted; switching it reloads the inspector — see RendererPicker). Each
+  // renderer owns its own canvas in the Renderer container.
   const container = canvas.parentElement ?? document.body;
-  const built = buildRenderer(getSelectedRenderer(), canvas, container, catalog, preferences);
+  registerBuiltInRenderers(catalog, preferences);
+  const built = await buildRenderer(getSelectedRenderer(), canvas, container, catalog, preferences);
 
   const dispose = () => {
     built.dispose();
@@ -76,11 +81,12 @@ export async function createSdkContext(
   Object.assign(globalThis, { inspectorEngine: engine });
 
   // if there is a parent, initialize rpc servers. The scene RPC server uses the
-  // raw Babylon setup bundle (screenshots/camera); only wired for Babylon.
+  // raw Babylon setup bundle (screenshots/camera); only wired for the built-in
+  // Babylon renderer.
   const config = getConfig();
-  if (config.dataLayerRpcParentUrl && built.babylon) {
+  if (config.dataLayerRpcParentUrl && built.babylonInternals) {
     const transport = new MessageTransport(window, window.parent, config.dataLayerRpcParentUrl);
-    new SceneServer(transport, store, built.babylon);
+    new SceneServer(transport, store, built.babylonInternals.babylon);
     new SceneMetricsServer(transport, store);
   }
 

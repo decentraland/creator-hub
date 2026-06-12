@@ -9,30 +9,34 @@ import type { InspectorPreferences } from '../logic/preferences/types';
 import { BabylonRenderer } from './babylon/BabylonRenderer';
 import { ThreeRenderer } from './three/ThreeRenderer';
 import { connectReverseChannel } from './reverse-channel';
-import type { IRenderer } from './types';
+import { getRegisteredRenderers, getRendererPlugin, registerRenderer } from './plugin';
+import type { MountedRenderer, RendererMountContext } from './plugin';
 
-export type RendererId = 'babylon' | 'three';
+/** A renderer id is now an open string (any registered plugin), not a fixed union. */
+export type RendererId = string;
 
-export const AVAILABLE_RENDERERS: { id: RendererId; label: string }[] = [
-  { id: 'babylon', label: 'Babylon.js' },
-  { id: 'three', label: 'Three.js' },
-];
-
+const DEFAULT_RENDERER: RendererId = 'babylon';
 const STORAGE_KEY = 'inspector:renderer';
+
+/** The renderers available to pick, in registration order. */
+export function getAvailableRenderers(): { id: string; label: string }[] {
+  return getRegisteredRenderers().map(({ id, label }) => ({ id, label }));
+}
 
 /**
  * Which renderer to mount. Persisted in localStorage and applied at init —
  * switching renderers reloads the inspector (the editor UI is wired to the
- * Babylon scene in places, so a clean reload is simpler and safer than a live
- * swap). See {@link RendererPicker}.
+ * scene in places, so a clean reload is simpler and safer than a live swap).
+ * Falls back to the default if the persisted id is no longer registered.
  */
 export function getSelectedRenderer(): RendererId {
   try {
     const value = globalThis.localStorage?.getItem(STORAGE_KEY);
-    return value === 'three' ? 'three' : 'babylon';
+    if (value && getRendererPlugin(value)) return value;
   } catch {
-    return 'babylon';
+    // ignore (storage unavailable)
   }
+  return DEFAULT_RENDERER;
 }
 
 export function setSelectedRenderer(id: RendererId): void {
@@ -46,22 +50,20 @@ export function setSelectedRenderer(id: RendererId): void {
 const SCENE_URN =
   'urn:decentraland:entity:bafkreid44xhavttoz4nznidmyj3rjnrgdza7v6l7kd46xdmleor5lmsxfm1';
 
-/**
- * What `createSdkContext` gets from building a renderer: the IRenderer itself,
- * its ECS engine (to wire to the CRDT stream), and — for Babylon — the raw
- * setup bundle + SceneContext the scene RPC server and the not-yet-migrated
- * inspectors still need.
- */
-export interface BuiltRenderer {
-  id: RendererId;
-  renderer: IRenderer;
-  engine: IEngine;
-  dispose(): void;
-  babylon?: ReturnType<typeof initRenderer>;
-  sceneContext?: SceneContext;
+/** Raw Babylon bits the inspector's scene RPC server needs (Babylon-only). */
+export interface BabylonInternals {
+  babylon: ReturnType<typeof initRenderer>;
+  sceneContext: SceneContext;
 }
 
-/** In-process asset loading via the data layer (used by the three renderer). */
+/** What `createSdkContext` gets from building the selected renderer. */
+export interface BuiltRenderer extends MountedRenderer {
+  id: RendererId;
+  /** Present only for the built-in Babylon renderer (scene RPC server uses it). */
+  babylonInternals?: BabylonInternals;
+}
+
+/** In-process asset loading via the data layer. */
 async function loadAssetFromDataLayer(src: string): Promise<Uint8Array | null> {
   const dataLayer = getDataLayerInterface();
   if (!dataLayer || !src) return null;
@@ -73,67 +75,105 @@ async function loadAssetFromDataLayer(src: string): Promise<Uint8Array | null> {
   }
 }
 
-/** Build the selected renderer. Babylon uses the given canvas; three creates its own. */
-export function buildRenderer(
+/**
+ * Build the selected renderer through the open plugin registry. The id resolves
+ * to a registered {@link RendererPlugin} (built-in or third-party); its `mount`
+ * brings the renderer up and returns its IRenderer + engine.
+ */
+export async function buildRenderer(
   id: RendererId,
   canvas: HTMLCanvasElement,
   container: HTMLElement,
+  _catalog: AssetPack[],
+  _preferences: InspectorPreferences,
+): Promise<BuiltRenderer> {
+  const plugin = getRendererPlugin(id) ?? getRendererPlugin(DEFAULT_RENDERER);
+  if (!plugin) throw new Error(`No renderer registered for "${id}"`);
+
+  const ctx: RendererMountContext = {
+    canvas,
+    container,
+    loadAsset: loadAssetFromDataLayer,
+    connectReverseChannel,
+  };
+  const mounted = await plugin.mount(ctx);
+  return { id: plugin.id, ...mounted };
+}
+
+// --- Built-in renderer plugins ---------------------------------------------
+// Babylon and Three.js register through the same public API a third party uses.
+
+let builtInsRegistered = false;
+
+/** Register the built-in renderers. Called once before the first build. */
+export function registerBuiltInRenderers(
   catalog: AssetPack[],
   preferences: InspectorPreferences,
-): BuiltRenderer {
-  if (id === 'three') {
-    const threeCanvas = document.createElement('canvas');
-    threeCanvas.className = 'three-canvas';
-    threeCanvas.style.width = '100%';
-    threeCanvas.style.height = '100%';
-    canvas.style.display = 'none';
-    container.appendChild(threeCanvas);
+): void {
+  if (builtInsRegistered) return;
+  builtInsRegistered = true;
 
-    const three = new ThreeRenderer(threeCanvas, loadAssetFromDataLayer);
-
-    // Wire the reverse channel so viewport picks/edits become ECS operations,
-    // exactly as Babylon does — the three context provides the same surface.
-    const disconnect = connectReverseChannel({
-      engine: three.context.engine,
-      operations: three.context.operations,
-      editorComponents: three.context.editorComponents,
-      Transform: three.context.Transform,
-      rendererEvents: three.events,
-    });
-
-    return {
-      id,
-      renderer: three,
-      engine: three.context.engine,
-      dispose: () => {
-        disconnect();
-        three.dispose();
-        threeCanvas.remove();
-        canvas.style.display = '';
-      },
-    };
-  }
-
-  const babylon = initRenderer(canvas, preferences);
-  const ctx = new SceneContext(
-    babylon.engine,
-    babylon.scene,
-    getHardcodedLoadableScene(SCENE_URN, catalog),
-  );
-  ctx.rootNode.position.set(0, 0, 0);
-
-  const adapter = new BabylonRenderer(ctx, babylon.editorCamera);
-  const disconnectReverseChannel = connectReverseChannel(ctx);
-
-  return {
+  registerRenderer({
     id: 'babylon',
-    renderer: adapter,
-    engine: ctx.engine,
-    babylon,
-    sceneContext: ctx,
-    dispose: () => {
-      disconnectReverseChannel();
-      adapter.dispose();
+    label: 'Babylon.js',
+    mount: ({ canvas }) => {
+      canvas.style.display = '';
+      const babylon = initRenderer(canvas, preferences);
+      const ctx = new SceneContext(
+        babylon.engine,
+        babylon.scene,
+        getHardcodedLoadableScene(SCENE_URN, catalog),
+      );
+      ctx.rootNode.position.set(0, 0, 0);
+      const adapter = new BabylonRenderer(ctx, babylon.editorCamera);
+      const disconnect = connectReverseChannel(ctx);
+      const built: BuiltRenderer = {
+        id: 'babylon',
+        renderer: adapter,
+        engine: ctx.engine,
+        babylonInternals: { babylon, sceneContext: ctx },
+        dispose: () => {
+          disconnect();
+          adapter.dispose();
+        },
+      };
+      return built;
     },
-  };
+  });
+
+  registerRenderer({
+    id: 'three',
+    label: 'Three.js',
+    mount: ({ canvas, container, loadAsset }) => {
+      const threeCanvas = document.createElement('canvas');
+      threeCanvas.className = 'three-canvas';
+      threeCanvas.style.width = '100%';
+      threeCanvas.style.height = '100%';
+      canvas.style.display = 'none';
+      container.appendChild(threeCanvas);
+
+      const three = new ThreeRenderer(threeCanvas, loadAsset);
+      const disconnect = connectReverseChannel({
+        engine: three.context.engine,
+        operations: three.context.operations,
+        editorComponents: three.context.editorComponents,
+        Transform: three.context.Transform,
+        rendererEvents: three.events,
+      });
+
+      return {
+        renderer: three,
+        engine: three.context.engine,
+        dispose: () => {
+          disconnect();
+          three.dispose();
+          threeCanvas.remove();
+          canvas.style.display = '';
+        },
+      };
+    },
+  });
 }
+
+export type { MountedRenderer };
+export type { IEngine };

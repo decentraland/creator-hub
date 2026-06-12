@@ -1,0 +1,86 @@
+import type { IEngine } from '@dcl/ecs';
+
+import { connectReverseChannel } from './reverse-channel';
+import type { ReverseChannelTarget } from './reverse-channel';
+import type { IRenderer } from './types';
+
+/**
+ * The open renderer-registration API.
+ *
+ * A renderer author implements {@link IRenderer} (see docs/authoring-a-renderer.md)
+ * and registers it with {@link registerRenderer}. The inspector then offers it in
+ * the renderer picker and mounts it like any built-in — Babylon and Three.js are
+ * themselves registered through this same API, with no special casing.
+ *
+ * The dependency on a concrete engine (Babylon, Three, …) is entirely the
+ * plugin's; the inspector core knows only this descriptor and {@link IRenderer}.
+ */
+
+/** What a plugin's `mount` receives to bring its renderer up. */
+export interface RendererMountContext {
+  /**
+   * The inspector's shared viewport canvas. An in-process renderer may render
+   * into it directly, or create its own canvas inside `container` and leave
+   * this one hidden (as the three renderer does). An out-of-process renderer
+   * typically ignores it and uses an iframe in `container`.
+   */
+  canvas: HTMLCanvasElement;
+  /** The viewport container element — attach extra canvases/iframes here. */
+  container: HTMLElement;
+  /** Load asset bytes (GLBs, textures) by scene path, via the data layer. */
+  loadAsset(src: string): Promise<Uint8Array | null>;
+  /**
+   * Wire a renderer's reverse channel (pick/gizmo events) into the inspector's
+   * ECS operations. Call this with the renderer's scene-engine surface so
+   * viewport interactions become scene edits. Returns a disconnect fn — invoke
+   * it in your `dispose`.
+   */
+  connectReverseChannel(target: ReverseChannelTarget): () => void;
+}
+
+/** What a plugin's `mount` returns. */
+export interface MountedRenderer {
+  renderer: IRenderer;
+  /**
+   * The renderer's `@dcl/ecs` engine — the inspector connects it to the CRDT
+   * stream so the scene state flows in. Every renderer drives its scene from
+   * its own engine fed by CRDT (see ThreeSceneContext / Babylon SceneContext).
+   */
+  engine: IEngine;
+  /** Tear everything down (renderer, reverse channel, any canvas/iframe). */
+  dispose(): void;
+}
+
+/** A registerable renderer. */
+export interface RendererPlugin {
+  /** Stable unique id (e.g. 'babylon', 'three', 'my-org.my-renderer'). */
+  id: string;
+  /** Human label shown in the renderer picker. */
+  label: string;
+  /** Bring the renderer up. Called once when this renderer becomes active. */
+  mount(ctx: RendererMountContext): MountedRenderer | Promise<MountedRenderer>;
+}
+
+const registry = new Map<string, RendererPlugin>();
+
+/**
+ * Register a renderer. Idempotent per id (re-registering replaces). Call at
+ * module load so the renderer is available when the inspector initializes.
+ */
+export function registerRenderer(plugin: RendererPlugin): void {
+  registry.set(plugin.id, plugin);
+}
+
+/** All registered renderers, in registration order. */
+export function getRegisteredRenderers(): RendererPlugin[] {
+  return [...registry.values()];
+}
+
+/** Look up a plugin by id, or undefined if not registered. */
+export function getRendererPlugin(id: string): RendererPlugin | undefined {
+  return registry.get(id);
+}
+
+/** Re-exported so a plugin's mount can satisfy the reverse-channel surface. */
+export type { ReverseChannelTarget };
+export { connectReverseChannel };
