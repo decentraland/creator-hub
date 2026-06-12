@@ -121,11 +121,21 @@ export class SceneContext {
   // this future is resolved when the scene is disposed
   readonly stopped = future<void>();
 
+  /**
+   * How file bytes are fetched. Defaults to the inspector's data layer (the
+   * in-process path). When this SceneContext runs inside an out-of-process
+   * renderer iframe, the boundary's `loadAsset` is injected instead, since the
+   * data layer is unreachable from there.
+   */
+  #assetLoader?: (src: string) => Promise<Uint8Array | null>;
+
   constructor(
     public babylon: BABYLON.Engine,
     public scene: BABYLON.Scene,
     public loadableScene: LoadableScene,
+    assetLoader?: (src: string) => Promise<Uint8Array | null>,
   ) {
+    this.#assetLoader = assetLoader;
     this.rootNode = this.getOrCreateEntity(ROOT);
     Object.assign(globalThis, { babylon: this.engine });
   }
@@ -193,6 +203,9 @@ export class SceneContext {
   async getFile(src: string, retryCount = 3): Promise<Uint8Array | null> {
     if (!src) return null;
     try {
+      // Out-of-process: fetch bytes across the renderer boundary.
+      if (this.#assetLoader) return await this.#assetLoader(src);
+      // In-process: read from the inspector's data layer directly.
       // TODO: how we handle this with redux ?
       const dataLayer = getDataLayerInterface();
       if (!dataLayer) return null;
