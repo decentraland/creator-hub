@@ -54,11 +54,15 @@ export default withSdk<Props>(({ sdk }) => {
     }
   }
 
-  const spawnPointManager = sdk.sceneContext.spawnPoints;
+  // Spawn-point 3D handles are a Babylon-only capability today (they manipulate
+  // Babylon nodes via the gizmo manager). With a non-Babylon renderer these are
+  // absent; the panel still renders spawn-point data, just without the in-scene
+  // handles.
+  const spawnPointManager = sdk.sceneContext?.spawnPoints;
   const gizmoManager = sdk.gizmos;
 
-  const [selectedSpawnPointIndex, setSelectedSpawnPointIndex] = useState<number | null>(() =>
-    spawnPointManager.getSelectedIndex(),
+  const [selectedSpawnPointIndex, setSelectedSpawnPointIndex] = useState<number | null>(
+    () => spawnPointManager?.getSelectedIndex() ?? null,
   );
 
   const { pushNotification } = useSnackbar();
@@ -89,7 +93,7 @@ export default withSdk<Props>(({ sdk }) => {
           const effectiveOffset = input.randomOffset ? input.maxOffset : 0;
           if (!isSpawnAreaInBounds(layout, newPos, effectiveOffset)) {
             showBoundsWarning('Spawn area must be within scene bounds');
-            const node = spawnPointManager.getSpawnPointNode(index);
+            const node = spawnPointManager?.getSpawnPointNode(index);
             if (node) {
               node.position.set(input.position.x, input.position.y, input.position.z);
             }
@@ -98,7 +102,7 @@ export default withSdk<Props>(({ sdk }) => {
         } else if (field === 'cameraTarget') {
           if (!isPositionInBounds(layout, newPos)) {
             showBoundsWarning('Camera target must be within scene bounds');
-            const node = spawnPointManager.getCameraTargetNode(index);
+            const node = spawnPointManager?.getCameraTargetNode(index);
             if (node) {
               node.position.set(input.cameraTarget.x, input.cameraTarget.y, input.cameraTarget.z);
             }
@@ -128,6 +132,9 @@ export default withSdk<Props>(({ sdk }) => {
   fieldChangeRef.current = handleFieldChange;
 
   useEffect(() => {
+    // Spawn-point gizmo manipulation requires the Babylon renderer.
+    if (!spawnPointManager || !gizmoManager) return;
+
     const attachGizmo = (index: number | null, target: 'position' | 'cameraTarget') => {
       setSelectedSpawnPointIndex(index);
 
@@ -229,9 +236,9 @@ export default withSdk<Props>(({ sdk }) => {
         e.stopPropagation();
         if (isLastSpawnArea) return;
         if (isSelected) {
-          spawnPointManager.selectSpawnPoint(null);
+          spawnPointManager?.selectSpawnPoint(null);
         } else if (selectedSpawnPointIndex !== null && selectedSpawnPointIndex > index) {
-          spawnPointManager.selectSpawnPoint(selectedSpawnPointIndex - 1);
+          spawnPointManager?.selectSpawnPoint(selectedSpawnPointIndex - 1);
         }
         const wasDefault = input.default;
         removeSpawnPoint(index);

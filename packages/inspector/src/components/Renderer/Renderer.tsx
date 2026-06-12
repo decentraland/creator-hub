@@ -16,7 +16,6 @@ import type {
 import { getNode, DROP_TYPES, isDropType, DropTypesEnum } from '../../lib/sdk/drag-drop';
 import { useRenderer } from '../../hooks/sdk/useRenderer';
 import { useSdk } from '../../hooks/sdk/useSdk';
-import { getPointerCoords } from '../../lib/babylon/decentraland/mouse-utils';
 import { snapPosition } from '../../lib/babylon/decentraland/snap-manager';
 import { ROOT } from '../../lib/sdk/tree';
 import type { CustomAsset } from '../../lib/logic/catalog';
@@ -207,8 +206,10 @@ const Renderer: React.FC = () => {
   }, [showSingleTileHint, setShowSingleTileHint]);
 
   const getDropPosition = async () => {
-    const pointerCoords = await getPointerCoords(sdk!.scene);
-    return snapPosition(new Vector3(fixedNumber(pointerCoords.x), 0, fixedNumber(pointerCoords.z)));
+    // Renderer-agnostic: ask the active renderer where the pointer hits the
+    // ground, then snap. Works for any renderer (Babylon, three, …).
+    const point = (await sdk!.renderer.getPointerWorldPoint()) ?? { x: 0, y: 0, z: 0 };
+    return snapPosition(new Vector3(fixedNumber(point.x), 0, fixedNumber(point.z)));
   };
 
   const addAsset = async (

@@ -3,11 +3,9 @@ import type { Emitter } from 'mitt';
 import { MessageTransport } from '@dcl/mini-rpc';
 import type { ComponentDefinition, CrdtMessageType, Entity, IEngine } from '@dcl/ecs';
 
-import { SceneContext } from '../babylon/decentraland/SceneContext';
-import { initRenderer } from '../babylon/setup/init';
-import { BabylonRenderer } from '../renderer/babylon/BabylonRenderer';
-import { connectReverseChannel } from '../renderer/reverse-channel';
-import { RendererRegistry } from '../renderer/registry';
+import type { SceneContext } from '../babylon/decentraland/SceneContext';
+import { buildRenderer, getSelectedRenderer } from '../renderer/controller';
+import type { RendererId } from '../renderer/controller';
 import type { IRenderer } from '../renderer/types';
 import type { Gizmos } from '../babylon/decentraland/GizmoManager';
 import type { CameraManager } from '../babylon/decentraland/camera';
@@ -17,9 +15,9 @@ import { SceneServer } from '../rpc/scene/server';
 import { getConfig } from '../logic/config';
 import type { AssetPack } from '../logic/catalog';
 import { store } from '../../redux/store';
+import { addEngines } from '../../redux/sdk';
 import { createOperations } from './operations';
 import { createInspectorEngine } from './inspector-engine';
-import { getHardcodedLoadableScene } from './test-local-scene';
 import type { EditorComponents, SdkComponents } from './components';
 import type { EnumEntity } from './enum-entity';
 import { createEnumEntityId } from './enum-entity';
@@ -46,98 +44,73 @@ export type SdkContextValue = {
 
   /**
    * The renderer-agnostic boundary — the inspector's preferred handle on
-   * whatever is drawing the scene (in-process Babylon today; an out-of-process
-   * Unity/Bevy iframe via the registry). New code goes through here. See
+   * whatever is drawing the scene. New code goes through here. See
    * `lib/renderer/types.ts`.
    */
   renderer: IRenderer;
 
+  /** Which renderer is active this session ('babylon' | 'three'). */
+  currentRendererId: RendererId;
+
   /**
    * @deprecated Raw Babylon handles for the few not-yet-migrated consumers
    * (GLTF introspection in Action/Animator inspectors, getDropPosition, the
-   * addEngines debug hook). Only present for the in-process Babylon renderer;
-   * an out-of-process renderer will not have these. Do not add new usages.
+   * addEngines debug hook). Present only when the Babylon renderer is active;
+   * the not-yet-migrated inspectors are Babylon-only for now. Do not add new
+   * usages — migrate to `renderer`.
    */
   scene: Scene;
-  /** @deprecated Use `renderer.*`. Migration-only; absent out-of-process. */
+  /** @deprecated Use `renderer.*`. Babylon-only. */
   sceneContext: SceneContext;
-  /** @deprecated Use `renderer.gizmos`. Migration-only; absent out-of-process. */
+  /** @deprecated Use `renderer.gizmos`. Babylon-only. */
   gizmos: Gizmos;
-  /** @deprecated Use `renderer.camera`. Migration-only; absent out-of-process. */
+  /** @deprecated Use `renderer.camera`. Babylon-only. */
   editorCamera: CameraManager;
 };
-
-/**
- * Build the in-process Babylon renderer as an {@link IRenderer}: the Babylon
- * engine, its SceneContext, the renderer-agnostic adapter, and the reverse
- * channel that turns viewport interactions into ECS edits. Disposing it tears
- * the whole thing down — so the registry can unmount and swap it cleanly.
- */
-function createBabylonRenderer(
-  canvas: HTMLCanvasElement,
-  catalog: AssetPack[],
-  preferences: InspectorPreferences,
-) {
-  const babylon = initRenderer(canvas, preferences);
-
-  const ctx = new SceneContext(
-    babylon.engine,
-    babylon.scene,
-    getHardcodedLoadableScene(
-      'urn:decentraland:entity:bafkreid44xhavttoz4nznidmyj3rjnrgdza7v6l7kd46xdmleor5lmsxfm1',
-      catalog,
-    ),
-  );
-  ctx.rootNode.position.set(0, 0, 0);
-
-  const adapter = new BabylonRenderer(ctx, babylon.editorCamera);
-
-  // The inspector owns the response to viewport interactions (pick/gizmo) — the
-  // renderer only emits them. This is the single viewport → ECS edit path.
-  const disconnectReverseChannel = connectReverseChannel(ctx);
-
-  const baseDispose = adapter.dispose.bind(adapter);
-  adapter.dispose = () => {
-    disconnectReverseChannel();
-    baseDispose();
-  };
-
-  // `babylon` is the raw Babylon setup bundle still needed by the scene RPC
-  // server (screenshots/camera). `ctx`/gizmos/camera back the deprecated
-  // SdkContextValue fields the few not-yet-migrated consumers still read.
-  return { adapter, babylon, ctx };
-}
 
 export async function createSdkContext(
   canvas: HTMLCanvasElement,
   catalog: AssetPack[],
   preferences: InspectorPreferences,
 ): Promise<SdkContextValue> {
-  // Mount the renderer through the registry. Today this is the in-process
-  // Babylon renderer; an out-of-process Unity/Bevy iframe is mounted the same
-  // way (see RendererRegistry), and the rest of the inspector is unaffected.
-  const { adapter, babylon, ctx } = createBabylonRenderer(canvas, catalog, preferences);
-  const registry = new RendererRegistry();
-  await registry.mount({ id: 'babylon', kind: 'in-process', create: () => adapter });
-
   // create inspector engine context and components
   const { engine, components, events, dispose: disposeEngine } = createInspectorEngine();
 
+  // Build the renderer chosen for this session (persisted; switching it reloads
+  // the inspector — see RendererPicker). Each renderer owns its own canvas in
+  // the Renderer container.
+  const container = canvas.parentElement ?? document.body;
+  const built = buildRenderer(getSelectedRenderer(), canvas, container, catalog, preferences);
+
   const dispose = () => {
-    registry.unmount();
+    built.dispose();
     disposeEngine();
   };
+
+  // Register both engines so the connect-stream saga wires them to the CRDT
+  // stream (inspector + the active renderer's engine).
+  store.dispatch(addEngines({ inspector: engine, babylon: built.engine }));
 
   // register some globals for debugging
   Object.assign(globalThis, { inspectorEngine: engine });
 
-  // if there is a parent, initialize rpc servers
+  // if there is a parent, initialize rpc servers. The scene RPC server uses the
+  // raw Babylon setup bundle (screenshots/camera); only wired for Babylon.
   const config = getConfig();
-  if (config.dataLayerRpcParentUrl) {
+  if (config.dataLayerRpcParentUrl && built.babylon) {
     const transport = new MessageTransport(window, window.parent, config.dataLayerRpcParentUrl);
-    new SceneServer(transport, store, babylon);
+    new SceneServer(transport, store, built.babylon);
     new SceneMetricsServer(transport, store);
   }
+
+  // The deprecated Babylon-only handles. When the three renderer is active these
+  // are absent; the not-yet-migrated inspectors that read them are Babylon-only.
+  const babylonOnly = {
+    scene: built.babylon?.scene as Scene,
+    sceneContext: built.sceneContext as SceneContext,
+    gizmos: built.sceneContext?.gizmos as Gizmos,
+    editorCamera: built.babylon?.editorCamera as CameraManager,
+  };
 
   return {
     engine,
@@ -146,10 +119,8 @@ export async function createSdkContext(
     dispose,
     operations: createOperations(engine),
     enumEntity: createEnumEntityId(engine),
-    renderer: registry.current,
-    scene: babylon.scene,
-    sceneContext: ctx,
-    gizmos: ctx.gizmos,
-    editorCamera: babylon.editorCamera,
+    renderer: built.renderer,
+    currentRendererId: built.id,
+    ...babylonOnly,
   };
 }

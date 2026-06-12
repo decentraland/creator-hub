@@ -27,7 +27,9 @@ type ChangeEvt = React.ChangeEvent<HTMLInputElement>;
 export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) => {
   const { Animator, GltfContainer } = sdk.components;
 
-  const entity = sdk.sceneContext.getEntityOrNull(entityId);
+  // GLTF animation introspection is a Babylon-only capability today; with a
+  // non-Babylon renderer there is no sceneContext, so this degrades to null.
+  const entity = sdk.sceneContext?.getEntityOrNull(entityId) ?? null;
   const hasAnimator = useHasComponent(entityId, Animator);
   const [componentValue, setComponentValue, isComponentEqual] = useComponentValue<PBAnimator>(
     entityId,

@@ -14,6 +14,8 @@ export function createInspectorEngine(): Omit<
   | 'preferences'
   | 'enumEntity'
   | 'renderer'
+  | 'currentRendererId'
+  | 'setRenderer'
 > {
   const events = mitt<SdkContextEvents>();
   const { engine, components } = createEngineContext({
