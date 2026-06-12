@@ -8,23 +8,27 @@ import type { SceneContext } from '../../babylon/decentraland/SceneContext';
 import type { CameraManager } from '../../babylon/decentraland/camera';
 import type { Gizmos } from '../../babylon/decentraland/GizmoManager';
 import { getPointerCoords } from '../../babylon/decentraland/mouse-utils';
-import { getLayoutManager } from '../../babylon/decentraland/layout-manager';
+import { setupAxisHelper } from '../../babylon/setup/axisHelper';
+import { GROUND_MESH_PREFIX } from '../../utils/scene';
 import type { GizmoType } from '../../utils/gizmo';
 import type {
+  GroundPlane,
   IRenderer,
   RendererCamera,
   RendererDebug,
   RendererEvents,
   RendererGizmos,
   RendererMetrics,
+  RendererViewport,
   SpawnPointController,
   SpawnPointTarget,
   Unsubscribe,
 } from '../types';
+import { computeEntitiesOutsideLayout, computeSceneMetrics } from './metrics';
 
 const ZOOM_AXIS = new BABYLON.Vector3(0, 0, 1.1);
-const GROUND_MESH_PREFIX = 'BackgroundPlane';
-const IGNORE_MESHES = ['BackgroundHelper', 'BackgroundSkybox'];
+
+type AxisHelperHandle = { dispose(): void };
 
 /**
  * The Babylon implementation of {@link IRenderer}.
@@ -42,8 +46,11 @@ export class BabylonRenderer implements IRenderer {
   readonly camera: RendererCamera;
   readonly gizmos: RendererGizmos;
   readonly metrics: RendererMetrics;
+  readonly viewport: RendererViewport;
   readonly spawnPoints: SpawnPointController;
   readonly debug: RendererDebug;
+
+  #axisHelper: AxisHelperHandle;
 
   constructor(
     private readonly context: SceneContext,
@@ -56,8 +63,21 @@ export class BabylonRenderer implements IRenderer {
     this.camera = createCameraFacade(cameraManager, context);
     this.gizmos = createGizmosFacade(babylonGizmos);
     this.metrics = createMetricsFacade(scene, context);
+    this.viewport = createViewportFacade(scene, context);
     this.spawnPoints = createSpawnPointsFacade(spawnPoints);
     this.debug = createDebugFacade(scene);
+
+    // The axis indicator is a renderer editor-visual: it draws an orientation
+    // gizmo into a secondary scene and follows the editor camera. The inspector
+    // no longer reaches into the scene to set it up — the renderer owns it.
+    this.#axisHelper = setupAxisHelper(scene, () => {
+      const camera = cameraManager.getCamera();
+      const direction = camera.target.subtract(camera.position).normalize();
+      return {
+        alpha: Math.atan2(direction.x, direction.z),
+        beta: Math.acos(direction.y),
+      };
+    });
 
     // Bridge the renderer's native speed observable into the agnostic event bus.
     cameraManager.getSpeedChangeObservable().on('change', speed => {
@@ -94,6 +114,7 @@ export class BabylonRenderer implements IRenderer {
   }
 
   dispose(): void {
+    this.#axisHelper.dispose();
     this.events.all.clear();
   }
 
@@ -163,56 +184,51 @@ function createGizmosFacade(g: Gizmos): RendererGizmos {
 // --- Metrics facade --------------------------------------------------------
 
 function createMetricsFacade(scene: BABYLON.Scene, context: SceneContext): RendererMetrics {
-  function relevantMeshes() {
-    return scene.meshes.filter(
-      mesh => !IGNORE_MESHES.includes(mesh.id) && !mesh.id.startsWith(GROUND_MESH_PREFIX),
-    );
-  }
-
   return {
-    getSceneMetrics: () => {
-      const meshes = relevantMeshes();
-      let triangles = 0;
-      const materials = new Set<BABYLON.Material>();
-      const textures = new Set<BABYLON.BaseTexture>();
-      for (const mesh of meshes) {
-        triangles += mesh.getTotalIndices() / 3;
-        const material = mesh.material;
-        if (!material) continue;
-        const subs = material instanceof BABYLON.MultiMaterial ? material.subMaterials : [material];
-        for (const sub of subs) {
-          if (!sub) continue;
-          materials.add(sub);
-          for (const tex of sub.getActiveTextures()) textures.add(tex);
-        }
-      }
-      return {
-        triangles: Math.floor(triangles),
-        entities: meshes.length,
-        materials: materials.size,
-        textures: textures.size,
-      };
-    },
-    getEntitiesOutsideLayout: () => {
-      const { isEntityOutsideLayout } = getLayoutManager(scene);
-      const outside: Entity[] = [];
-      for (const node of context.getAllEntities()) {
-        if (node.boundingInfoMesh && isEntityOutsideLayout(node.boundingInfoMesh)) {
-          outside.push(node.entityId);
-        }
-      }
-      return outside;
-    },
+    getSceneMetrics: () => computeSceneMetrics(scene),
+    getEntitiesOutsideLayout: () => computeEntitiesOutsideLayout(scene, context),
     onChange: (cb): Unsubscribe => {
       const handler = () => cb();
+      // Anything that can change triangle/material/texture counts or
+      // layout-bounds membership: mesh lifecycle, async data loads, and the
+      // out-of-layout multi-material the bounds visual creates/removes.
       scene.onDataLoadedObservable.add(handler);
       scene.onMeshRemovedObservable.add(handler);
       scene.onNewMeshAddedObservable.add(handler);
+      scene.onNewMultiMaterialAddedObservable.add(handler);
+      scene.onMaterialRemovedObservable.add(handler);
       return () => {
         scene.onDataLoadedObservable.removeCallback(handler);
         scene.onMeshRemovedObservable.removeCallback(handler);
         scene.onNewMeshAddedObservable.removeCallback(handler);
+        scene.onNewMultiMaterialAddedObservable.removeCallback(handler);
+        scene.onMaterialRemovedObservable.removeCallback(handler);
       };
+    },
+  };
+}
+
+// --- Viewport facade -------------------------------------------------------
+
+function createViewportFacade(scene: BABYLON.Scene, context: SceneContext): RendererViewport {
+  return {
+    onFrame: (cb): Unsubscribe => {
+      const observer = scene.onAfterRenderObservable.add(() => cb());
+      return () => scene.onAfterRenderObservable.remove(observer);
+    },
+    getGroundPlanes: (): GroundPlane[] =>
+      scene.meshes
+        .filter(mesh => mesh.name.startsWith(GROUND_MESH_PREFIX))
+        .map(mesh => ({ x: mesh.absolutePosition.x, z: mesh.absolutePosition.z })),
+    getEntityWorldPositions: (entities: Entity[]): Map<Entity, Vector3> => {
+      const positions = new Map<Entity, Vector3>();
+      for (const entity of entities) {
+        const node = context.getEntityOrNull(entity);
+        if (!node || !node.isEnabled()) continue;
+        const p = node.absolutePosition;
+        positions.set(entity, DclVector3.create(p.x, p.y, p.z));
+      }
+      return positions;
     },
   };
 }

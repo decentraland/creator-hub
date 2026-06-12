@@ -116,6 +116,43 @@ export interface RendererCamera {
 }
 
 // ---------------------------------------------------------------------------
+// Viewport: read-only spatial data the inspector needs to draw 2D overlays
+// (the scene minimap today). The inspector owns the drawing; the renderer only
+// supplies world-space data.
+//
+// Deliberately *batched*: per-frame reads take an array of entity IDs and
+// return all positions in one call, rather than a per-entity getter. In-process
+// this reads like a granular getter; out-of-process it stays one message per
+// frame instead of N. Ground planes change rarely, so they have their own
+// getter meant to be called on scene-change, not every frame.
+// ---------------------------------------------------------------------------
+
+export interface GroundPlane {
+  /** World-space center of the parcel plane. */
+  x: number;
+  z: number;
+}
+
+export interface RendererViewport {
+  /**
+   * Subscribe to a render tick. The callback fires once per rendered frame so
+   * the inspector can refresh frame-coupled overlays. The inspector throttles
+   * its own redraw cadence; the renderer just signals "a frame happened".
+   */
+  onFrame(cb: () => void): Unsubscribe;
+
+  /** World-space centers of the ground/parcel planes. Call on scene-change. */
+  getGroundPlanes(): GroundPlane[];
+
+  /**
+   * Batched world positions for the given entities. Entities with no node, or
+   * currently disabled, are omitted from the result map — callers should treat
+   * a missing id as "not drawable this frame".
+   */
+  getEntityWorldPositions(entities: Entity[]): Map<Entity, Vector3>;
+}
+
+// ---------------------------------------------------------------------------
 // Gizmos: the inspector owns *semantics* (which mode, world/local, enabled);
 // the renderer owns rendering + drag interaction and reports commits as events.
 // ---------------------------------------------------------------------------
@@ -137,10 +174,14 @@ export interface RendererGizmos {
 // ---------------------------------------------------------------------------
 
 export interface RendererMetrics {
-  /** Geometry/material counts for the scene metrics panel. */
+  /**
+   * Geometry/material counts for the scene metrics panel. `bodies` is the
+   * count of drawable objects (meshes); entity *count* stays inspector-side
+   * since it derives from the ECS Nodes tree, not the renderer.
+   */
   getSceneMetrics(): {
     triangles: number;
-    entities: number;
+    bodies: number;
     materials: number;
     textures: number;
   };
@@ -189,6 +230,7 @@ export interface IRenderer {
   readonly camera: RendererCamera;
   readonly gizmos: RendererGizmos;
   readonly metrics: RendererMetrics;
+  readonly viewport: RendererViewport;
   readonly spawnPoints: SpawnPointController;
   /** Present only if the renderer ships native dev tooling. */
   readonly debug?: RendererDebug;
