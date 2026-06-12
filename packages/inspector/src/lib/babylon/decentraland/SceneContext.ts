@@ -1,9 +1,13 @@
 import type * as BABYLON from '@babylonjs/core';
 import future from 'fp-future';
+import mitt from 'mitt';
+import type { Emitter } from 'mitt';
 import type { ComponentDefinition, Entity } from '@dcl/ecs';
 import { CrdtMessageType, Engine } from '@dcl/ecs';
 import * as components from '@dcl/ecs/dist/components';
 import type * as Schemas from '@dcl/schemas';
+
+import type { RendererEvents } from '../../renderer/types';
 
 import { createEditorComponents } from '../../sdk/components';
 import { createOperations } from '../../sdk/operations';
@@ -56,6 +60,14 @@ export class SceneContext {
   operations = createOperations(this.engine);
   gizmos = createGizmoManager(this);
   spawnPoints = createSpawnPointManager(this.scene);
+
+  /**
+   * Reverse-channel event bus (pick/gizmoCommit/…). The renderer emits viewport
+   * interactions here; the inspector subscribes and owns the ECS response. This
+   * is the single path from viewport → ECS edits. {@link BabylonRenderer}
+   * re-exposes this as its `events`, and input.ts / GizmoManager emit onto it.
+   */
+  rendererEvents: Emitter<RendererEvents> = mitt<RendererEvents>();
 
   Billboard = components.Billboard(this.engine);
   Transform = components.Transform(this.engine);

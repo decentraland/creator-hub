@@ -52,15 +52,32 @@ export type PickModifiers = {
   multi: boolean;
 };
 
+/**
+ * What the user clicked in the viewport. The renderer does the picking and
+ * classification (it owns the scene graph); the inspector owns the response.
+ *  - `entity`: an ECS entity's mesh was clicked.
+ *  - `spawnPoint`: a player spawn-point/camera-target handle was clicked. The
+ *    renderer has already updated its own spawn-point selection state; the
+ *    inspector only needs to mirror the ECS selection (Player vs Root).
+ *  - `empty`: sky/ground — deselect.
+ */
+export type PickTarget =
+  | { kind: 'entity'; entity: Entity }
+  | { kind: 'spawnPoint'; selected: boolean }
+  | { kind: 'empty' };
+
 export type RendererEvents = {
   /** Emitted once the renderer has mounted and is ready to receive state. */
   ready: void;
 
   /**
-   * The user clicked an entity in the viewport. `entity` is null when empty
-   * space (sky/grid) was clicked — the inspector interprets that as deselect.
+   * The user clicked in the viewport (a committed click, post drag-detection).
+   * The renderer reports *what* was hit and the modifier intent; the inspector
+   * decides what it means for ECS selection (select/multi-select, expand
+   * ancestors, deselect). This is the single path — the renderer never mutates
+   * ECS selection itself.
    */
-  pick: { entity: Entity | null; modifiers: PickModifiers };
+  pick: { target: PickTarget; modifiers: PickModifiers };
 
   /**
    * A gizmo drag committed (drag-end). Carries the *final* transform per
@@ -78,6 +95,14 @@ export type RendererEvents = {
       scale?: Vector3;
     }>;
   };
+
+  /**
+   * Drag-end flush. Emitted once after the `gizmoCommit`(s) of a single drag,
+   * telling the inspector to commit the batch (engine update + undo/redo
+   * snapshot). Keeps a multi-entity drag a single undo step, matching the
+   * write-then-flush split the gizmo always had.
+   */
+  gizmoCommitEnd: void;
 
   /** The camera moved (user-driven). Lets the inspector mirror framing/minimap state. */
   cameraChange: void;

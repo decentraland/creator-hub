@@ -1,5 +1,5 @@
 import * as BABYLON from '@babylonjs/core';
-import mitt from 'mitt';
+import type { Emitter } from 'mitt';
 import type { Entity } from '@dcl/ecs';
 import type { Vector3 } from '@dcl/ecs-math';
 import { Vector3 as DclVector3 } from '@dcl/ecs-math';
@@ -41,7 +41,10 @@ type AxisHelperHandle = { dispose(): void };
  * objects never escape this file.
  */
 export class BabylonRenderer implements IRenderer {
-  readonly events = mitt<RendererEvents>();
+  // The reverse-channel bus lives on SceneContext so the Babylon input/gizmo
+  // code can emit onto it; the adapter just re-exposes it as the contract's
+  // `events`. Same emitter, two views.
+  readonly events: Emitter<RendererEvents>;
 
   readonly camera: RendererCamera;
   readonly gizmos: RendererGizmos;
@@ -60,6 +63,7 @@ export class BabylonRenderer implements IRenderer {
     const babylonGizmos = context.gizmos;
     const spawnPoints = context.spawnPoints;
 
+    this.events = context.rendererEvents;
     this.camera = createCameraFacade(cameraManager, context);
     this.gizmos = createGizmosFacade(babylonGizmos);
     this.metrics = createMetricsFacade(scene, context);

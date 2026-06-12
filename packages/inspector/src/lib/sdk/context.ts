@@ -6,6 +6,7 @@ import type { ComponentDefinition, CrdtMessageType, Entity, IEngine } from '@dcl
 import { SceneContext } from '../babylon/decentraland/SceneContext';
 import { initRenderer } from '../babylon/setup/init';
 import { BabylonRenderer } from '../renderer/babylon/BabylonRenderer';
+import { connectReverseChannel } from '../renderer/reverse-channel';
 import type { IRenderer } from '../renderer/types';
 import type { Gizmos } from '../babylon/decentraland/GizmoManager';
 import type { CameraManager } from '../babylon/decentraland/camera';
@@ -84,8 +85,17 @@ export async function createSdkContext(
   // renderer-agnostic boundary over the Babylon scene context
   const rendererAdapter = new BabylonRenderer(ctx, renderer.editorCamera);
 
+  // inspector owns the response to viewport interactions (pick/gizmo) — the
+  // renderer only emits them. This is the single viewport → ECS edit path.
+  const disconnectReverseChannel = connectReverseChannel(ctx);
+
   // create inspector engine context and components
-  const { engine, components, events, dispose } = createInspectorEngine();
+  const { engine, components, events, dispose: disposeEngine } = createInspectorEngine();
+
+  const dispose = () => {
+    disconnectReverseChannel();
+    disposeEngine();
+  };
 
   // register some globals for debugging
   Object.assign(globalThis, { inspectorEngine: engine });
