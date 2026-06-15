@@ -244,10 +244,10 @@ export async function consumePresentationMessages(): Promise<
   PresentationState | 'stopped' | undefined
 > {
   try {
-    const response = await consumeMessages({ topic: PRESENTATION_TOPIC });
+    const { messages } = await consumeMessages({ topic: PRESENTATION_TOPIC });
 
     let latestState: PresentationState | 'stopped' | undefined;
-    for (const msg of response) {
+    for (const msg of messages) {
       try {
         const parsed = JSON.parse(msg.data);
         if (parsed.type === 'presentation:state') {

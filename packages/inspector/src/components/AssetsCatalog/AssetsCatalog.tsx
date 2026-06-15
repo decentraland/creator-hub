@@ -12,7 +12,7 @@ import { Props } from './types';
 
 import './AssetsCatalog.css';
 
-const AssetsCatalog: React.FC<Props> = ({ catalog }) => {
+const AssetsCatalog: React.FC<Props> = ({ catalog, onAddToFilesystem }) => {
   const [selectedTheme, setSelectedTheme] = useState<AssetPack>();
   const [search, setSearch] = useState<string>('');
 
@@ -99,11 +99,16 @@ const AssetsCatalog: React.FC<Props> = ({ catalog }) => {
 
   const renderAssets = useCallback(() => {
     if (filteredCatalog.length > 0) {
-      return <Assets assets={filteredCatalog} />;
+      return (
+        <Assets
+          assets={filteredCatalog}
+          onAddToFilesystem={onAddToFilesystem}
+        />
+      );
     }
 
     return renderEmptySearch();
-  }, [filteredCatalog, renderEmptySearch]);
+  }, [filteredCatalog, renderEmptySearch, onAddToFilesystem]);
 
   if (!catalog) {
     return null;
@@ -123,6 +128,7 @@ const AssetsCatalog: React.FC<Props> = ({ catalog }) => {
         <Categories
           onGoBack={handleThemeChange}
           value={selectedTheme}
+          onAddToFilesystem={onAddToFilesystem}
         />
       ) : (
         <div className="assets-catalog-theme-container">

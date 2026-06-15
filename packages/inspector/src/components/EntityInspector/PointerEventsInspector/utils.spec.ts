@@ -31,6 +31,8 @@ describe('InputUtils', () => {
           maxDistance: 10,
           showFeedback: true,
           showHighlight: true,
+          maxPlayerDistance: 0,
+          priority: 0,
         },
       };
       expect(result).toEqual(expected);
@@ -55,6 +57,8 @@ describe('InputUtils', () => {
           maxDistance: 15,
           showFeedback: false,
           showHighlight: false,
+          maxPlayerDistance: 0,
+          priority: 0,
         },
       };
       expect(result).toEqual(expected);
@@ -79,6 +83,8 @@ describe('InputUtils', () => {
           maxDistance: 10,
           showFeedback: true,
           showHighlight: true,
+          maxPlayerDistance: 0,
+          priority: 0,
         },
       };
       expect(DEFAULTS).toEqual(expected);
