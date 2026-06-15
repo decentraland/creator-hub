@@ -86,6 +86,7 @@ make protoc        # Regenerate TypeScript from .proto files
 - State management: Redux Toolkit + Redux-Saga.
 - Data layer communicates via Protocol Buffers (gRPC-like, using `@dcl/mini-rpc`).
 - Build: custom `build.js` using esbuild.
+- **Codegen safety (`engine-to-composite.ts`):** when emitting author-controlled strings (e.g. `core-schema::Name`) into generated TS source, escape BOTH positions — *values* via `JSON.stringify(...)` and *identifiers* (enum keys, interface/type/member names) via the `toSafeIdentifier` chokepoint (sanitize + reserved-word guard). Raw `"${name}"` interpolation is an injection / build-break vector.
 
 ### Asset Packs
 
