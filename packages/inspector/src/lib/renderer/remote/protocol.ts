@@ -5,6 +5,13 @@ import type { GizmoType } from '../../utils/gizmo';
 import type { GroundPlane, RendererAnimation, RendererEvents, SpawnPointTarget } from '../types';
 
 /**
+ * Wire-protocol version. Bump on any breaking change to the message shapes.
+ * The host reports it in its first snapshot so the inspector can detect skew
+ * between independently-deployed inspector and out-of-process renderer.
+ */
+export const PROTOCOL_VERSION = 1;
+
+/**
  * Wire protocol for an out-of-process renderer.
  *
  * The renderer-agnostic {@link IRenderer} contract has *synchronous* getters
@@ -45,7 +52,11 @@ export type RendererCommand =
   | { kind: 'spawnPoints.attachGizmo'; index: number; target: SpawnPointTarget }
   | { kind: 'spawnPoints.detachGizmo' }
   | { kind: 'spawnPoints.setPosition'; index: number; target: SpawnPointTarget; position: Vector3 }
-  | { kind: 'debug.toggle' };
+  | { kind: 'debug.toggle' }
+  // Sent by the inspector once the channel is connected, so the host pushes a
+  // full snapshot *after* the handshake (the synchronous initial push at mount
+  // can be dropped before the connection is live).
+  | { kind: 'requestSnapshot' };
 
 // --- Requests: inspector → renderer, awaiting one response -----------------
 // For the genuinely async operations the contract already exposes as Promises
@@ -101,6 +112,9 @@ export type OutboundEventPayload = RendererEvents[OutboundEventName];
  * mirrors ECS selection) — a remote renderer must replicate that.
  */
 export interface RendererSnapshot {
+  /** {@link PROTOCOL_VERSION} at the host. Sent with the full state push so the
+   * inspector can detect version skew. Omitted on per-frame slices. */
+  version: number;
   camera: { speed: number; position: Vector3; target: Vector3; fov: number };
   gizmos: { enabled: boolean; worldAligned: boolean; worldAlignmentDisabled: boolean };
   spawnPoints: {

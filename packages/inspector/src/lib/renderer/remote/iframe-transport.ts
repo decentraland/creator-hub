@@ -69,6 +69,12 @@ function defaultMount({
     iframe.style.width = '100%';
     iframe.style.height = '100%';
     iframe.setAttribute('allow', 'autoplay; fullscreen; xr-spatial-tracking');
+    // Sandbox the renderer document: it may run untrusted third-party code.
+    // `allow-scripts` (run the renderer) + `allow-same-origin` (so it can use
+    // WebGL/asset URLs and postMessage with a real origin) is the minimum a
+    // renderer needs; everything else (top-nav, popups, forms) stays denied.
+    iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin');
+    iframe.setAttribute('referrerpolicy', 'no-referrer');
 
     let settled = false;
     const timer = setTimeout(() => {

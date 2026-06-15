@@ -29,8 +29,11 @@ export type RemoteAssetLoader = (src: string) => Promise<Uint8Array | null>;
  */
 export interface RendererIframeOptions {
   /**
-   * Allowed parent origin for the postMessage channel. Defaults to '*' only
-   * when unset; callers should pass the inspector origin in production.
+   * Allowed parent origin for the postMessage channel. **Required** when this
+   * builds a real `MessageTransport` (i.e. when `transport` is not injected):
+   * the channel is fail-closed, so omitting it throws rather than defaulting to
+   * the wildcard `'*'`, which would let any cross-origin window drive the host.
+   * Pass `'*'` explicitly only if you genuinely intend an unrestricted channel.
    */
   parentOrigin?: string;
   /**
@@ -60,14 +63,20 @@ export interface RendererIframeHandle {
 export function startRendererIframe(options: RendererIframeOptions): RendererIframeHandle {
   // We own (and must dispose) the transport only when we created it; an injected
   // transport (tests) is owned by the caller.
-  const ownedTransport =
-    options.transport == null
-      ? new MessageTransport(
-          options.selfWindow ?? window,
-          options.parentWindow ?? window.parent,
-          options.parentOrigin ?? '*',
-        )
-      : null;
+  let ownedTransport: MessageTransport | null = null;
+  if (options.transport == null) {
+    if (options.parentOrigin == null) {
+      throw new Error(
+        'startRendererIframe: parentOrigin is required (fail-closed). Pass the inspector ' +
+          "origin, or '*' to explicitly opt into an unrestricted postMessage channel.",
+      );
+    }
+    ownedTransport = new MessageTransport(
+      options.selfWindow ?? window,
+      options.parentWindow ?? window.parent,
+      options.parentOrigin,
+    );
+  }
   const transport: Transport = options.transport ?? (ownedTransport as Transport);
 
   let renderer!: IRenderer;

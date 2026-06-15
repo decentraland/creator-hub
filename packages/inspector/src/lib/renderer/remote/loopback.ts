@@ -18,11 +18,18 @@ import { RemoteRenderer } from './RemoteRenderer';
  * it preserves Uint8Array (asset bytes), Map, etc., while still throwing on a
  * genuinely non-cloneable value (a function, a class instance, a Babylon
  * object) — which is precisely what we want the loopback to expose before a
- * real worker is involved. Falls back to JSON where structuredClone is absent.
+ * real worker is involved. If structuredClone is unavailable we throw rather
+ * than fall back to JSON (which would silently corrupt Uint8Array).
  */
 function wire<T>(value: T): T {
-  if (typeof structuredClone === 'function') return structuredClone(value);
-  return JSON.parse(JSON.stringify(value)) as T;
+  // structuredClone faithfully preserves Uint8Array (asset bytes), Map, etc.,
+  // matching a real postMessage boundary. A JSON fallback would silently corrupt
+  // Uint8Array into a plain object — so fail loudly instead. structuredClone is
+  // available in all environments this runs in (Node 17+, all modern browsers).
+  if (typeof structuredClone !== 'function') {
+    throw new Error('renderer loopback requires structuredClone (Node 17+/modern browser)');
+  }
+  return structuredClone(value);
 }
 
 /**
@@ -48,20 +55,24 @@ export function createLoopback(
         request: Extract<InspectorRequest, { kind: K }>,
       ) => Promise<InspectorRequestResult[K]>)
     | null = null;
+  let disposed = false;
 
   const host = new RendererHost(target, message => {
     // Renderer → inspector, across the "wire".
-    outboundHandler?.(wire(message));
+    if (!disposed) outboundHandler?.(wire(message));
   });
 
   const transport: RendererTransport = {
     sendCommand(command: RendererCommand) {
+      if (disposed) return;
       host.handleCommand(wire(command));
     },
     async request<K extends RendererRequest['kind']>(
       request: Extract<RendererRequest, { kind: K }>,
     ): Promise<RendererRequestResult[K]> {
+      if (disposed) throw new Error('renderer transport disposed');
       const result = await host.handleRequest(wire(request));
+      if (disposed) throw new Error('renderer transport disposed');
       return wire(result);
     },
     onOutbound(handler) {
@@ -79,11 +90,15 @@ export function createLoopback(
     async requestInspector<K extends InspectorRequest['kind']>(
       request: Extract<InspectorRequest, { kind: K }>,
     ): Promise<InspectorRequestResult[K]> {
-      if (!inspectorRequestHandler) return null as InspectorRequestResult[K];
+      if (disposed || !inspectorRequestHandler) {
+        if (disposed) throw new Error('renderer transport disposed');
+        return null as InspectorRequestResult[K];
+      }
       const result = await inspectorRequestHandler(wire(request));
       return wire(result);
     },
     dispose() {
+      disposed = true;
       outboundHandler = null;
       inspectorRequestHandler = null;
     },
@@ -98,6 +113,7 @@ export function createLoopback(
     remote,
     host,
     dispose() {
+      transport.dispose();
       remote.dispose();
       host.dispose();
     },

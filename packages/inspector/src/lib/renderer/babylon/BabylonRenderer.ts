@@ -56,6 +56,8 @@ export class BabylonRenderer implements IRenderer {
 
   #axisHelper: AxisHelperHandle;
   #disposeSpeedBridge: () => void;
+  #disposeCameraBridge: () => void;
+  #disposed = false;
 
   constructor(
     private readonly context: SceneContext,
@@ -92,6 +94,22 @@ export class BabylonRenderer implements IRenderer {
     const onSpeed = (speed: number) => this.events.emit('cameraSpeedChange', { speed });
     speedEmitter.on('change', onSpeed);
     this.#disposeSpeedBridge = () => speedEmitter.off('change', onSpeed);
+
+    // Emit `cameraChange` whenever the camera moves, so the inspector can mirror
+    // framing/minimap state (contract event that was previously never fired).
+    const babylonCamera = cameraManager.getCamera();
+    const cameraObserver = babylonCamera.onViewMatrixChangedObservable.add(() => {
+      this.events.emit('cameraChange', undefined);
+    });
+    this.#disposeCameraBridge = () =>
+      babylonCamera.onViewMatrixChangedObservable.remove(cameraObserver);
+
+    // Signal readiness once construction completes. Deferred to a microtask so a
+    // consumer that subscribes synchronously right after `new BabylonRenderer()`
+    // still receives it.
+    queueMicrotask(() => {
+      if (!this.#disposed) this.events.emit('ready', undefined);
+    });
   }
 
   setSelection(_entities: Entity[]): void {
@@ -110,7 +128,13 @@ export class BabylonRenderer implements IRenderer {
     const node = this.context.getEntityOrNull(entity);
     if (!node) return [];
     const container = await node.onGltfContainerLoaded();
-    return container.animationGroups.map(group => ({ name: group.name }));
+    return container.animationGroups.map(group => ({
+      name: group.name,
+      weight: group.weight,
+      speed: group.speedRatio,
+      loop: group.loopAnimation,
+      playing: group.isPlaying,
+    }));
   }
 
   setGridVisible(visible: boolean): void {
@@ -119,7 +143,9 @@ export class BabylonRenderer implements IRenderer {
   }
 
   dispose(): void {
+    this.#disposed = true;
     this.#disposeSpeedBridge();
+    this.#disposeCameraBridge();
     this.#axisHelper.dispose();
     this.events.all.clear();
   }

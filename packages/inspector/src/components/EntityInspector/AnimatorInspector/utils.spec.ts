@@ -2,12 +2,14 @@ import type { Entity } from '@dcl/ecs';
 import { Animator } from '@dcl/ecs';
 
 import type { SdkContextValue } from '../../../lib/sdk/context';
+import type { RendererAnimation } from '../../../lib/renderer/types';
 import {
   fromNumber,
   toNumber,
   isValidWeight,
   isValidSpeed,
   initializeAnimatorComponent,
+  mapAnimationsToStates,
 } from './utils';
 
 vi.mock('../../../lib/sdk/context');
@@ -76,7 +78,7 @@ describe('NumberUtils', () => {
         },
       };
       const entity: Entity = 512 as Entity;
-      const animations: string[] = ['animation'];
+      const animations: RendererAnimation[] = [{ name: 'animation' }];
 
       const result = await initializeAnimatorComponent(
         sdk as any as SdkContextValue,
@@ -110,7 +112,7 @@ describe('NumberUtils', () => {
         },
       };
       const entity: Entity = 512 as Entity;
-      const animations: string[] = [];
+      const animations: RendererAnimation[] = [];
 
       const result = await initializeAnimatorComponent(
         sdk as any as SdkContextValue,
@@ -124,6 +126,24 @@ describe('NumberUtils', () => {
       expect(sdk.operations.addComponent).toHaveBeenCalledWith(entity, Animator.componentId);
       expect(sdk.operations.updateValue).toHaveBeenCalledWith(Animator, entity, result);
       expect(sdk.operations.dispatch).toHaveBeenCalled();
+    });
+  });
+
+  describe('mapAnimationsToStates', () => {
+    it('preserves GLTF-authored playback values', () => {
+      const states = mapAnimationsToStates([
+        { name: 'idle', weight: 0.5, speed: 2, loop: true, playing: true },
+      ]);
+      expect(states).toEqual([
+        { clip: 'idle', weight: 0.5, speed: 2, loop: true, playing: true, shouldReset: false },
+      ]);
+    });
+
+    it('falls back to defaults for omitted fields', () => {
+      const states = mapAnimationsToStates([{ name: 'walk' }]);
+      expect(states).toEqual([
+        { clip: 'walk', weight: 1, speed: 1, loop: false, playing: false, shouldReset: false },
+      ]);
     });
   });
 });

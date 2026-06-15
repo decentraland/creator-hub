@@ -1,14 +1,9 @@
-import type { IEngine } from '@dcl/ecs';
-
 import { getDataLayerInterface } from '../../redux/data-layer';
-import { initRenderer } from '../babylon/setup/init';
-import { SceneContext } from '../babylon/decentraland/SceneContext';
-import { getHardcodedLoadableScene } from '../sdk/test-local-scene';
 import type { AssetPack } from '../logic/catalog';
 import type { InspectorPreferences } from '../logic/preferences/types';
-import { BabylonRenderer } from './babylon/BabylonRenderer';
+import { registerBabylonRenderer } from './babylon/register';
 import { connectReverseChannel } from './reverse-channel';
-import { getRegisteredRenderers, getRendererPlugin, registerRenderer } from './plugin';
+import { getRegisteredRenderers, getRendererPlugin } from './plugin';
 import type { MountedRenderer, RendererMountContext } from './plugin';
 
 /** A renderer id is now an open string (any registered plugin), not a fixed union. */
@@ -46,20 +41,9 @@ export function setSelectedRenderer(id: RendererId): void {
   }
 }
 
-const SCENE_URN =
-  'urn:decentraland:entity:bafkreid44xhavttoz4nznidmyj3rjnrgdza7v6l7kd46xdmleor5lmsxfm1';
-
-/** Raw Babylon bits the inspector's scene RPC server needs (Babylon-only). */
-export interface BabylonInternals {
-  babylon: ReturnType<typeof initRenderer>;
-  sceneContext: SceneContext;
-}
-
 /** What `createSdkContext` gets from building the selected renderer. */
 export interface BuiltRenderer extends MountedRenderer {
   id: RendererId;
-  /** Present only for the built-in Babylon renderer (scene RPC server uses it). */
-  babylonInternals?: BabylonInternals;
 }
 
 /** In-process asset loading via the data layer. */
@@ -100,8 +84,9 @@ export async function buildRenderer(
 }
 
 // --- Built-in renderer plugins ---------------------------------------------
-// The built-in Babylon renderer registers through the same public API a
-// third-party renderer uses (see docs/authoring-a-renderer.md).
+// Built-in renderers register through the same public API a third-party
+// renderer uses. The Babylon registration is Babylon-specific and lives in
+// `babylon/register.ts`, so this orchestration layer stays engine-agnostic.
 
 let builtInsRegistered = false;
 
@@ -112,35 +97,7 @@ export function registerBuiltInRenderers(
 ): void {
   if (builtInsRegistered) return;
   builtInsRegistered = true;
-
-  registerRenderer({
-    id: 'babylon',
-    label: 'Babylon.js',
-    mount: ({ canvas }) => {
-      canvas.style.display = '';
-      const babylon = initRenderer(canvas, preferences);
-      const ctx = new SceneContext(
-        babylon.engine,
-        babylon.scene,
-        getHardcodedLoadableScene(SCENE_URN, catalog),
-      );
-      ctx.rootNode.position.set(0, 0, 0);
-      const adapter = new BabylonRenderer(ctx, babylon.editorCamera);
-      const disconnect = connectReverseChannel(ctx);
-      const built: BuiltRenderer = {
-        id: 'babylon',
-        renderer: adapter,
-        engine: ctx.engine,
-        babylonInternals: { babylon, sceneContext: ctx },
-        dispose: () => {
-          disconnect();
-          adapter.dispose();
-        },
-      };
-      return built;
-    },
-  });
+  registerBabylonRenderer(catalog, preferences);
 }
 
 export type { MountedRenderer };
-export type { IEngine };

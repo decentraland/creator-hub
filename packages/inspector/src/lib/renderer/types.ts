@@ -45,6 +45,11 @@ export type Unsubscribe = () => void;
  * consumers: they may subscribe (`on`/`off`) but not `emit` or `clear`. Only the
  * renderer implementation (which holds the full `Emitter`) emits events — that
  * exclusivity is the integrity guarantee of the reverse channel.
+ *
+ * Unlike the other subscription APIs here (`onFrame`/`onChange`/…), `on` returns
+ * `void` rather than an `Unsubscribe` — this mirrors the `mitt` `Emitter` it
+ * directly proxies, so a renderer can expose its raw emitter as `events` with no
+ * wrapper. Unsubscribe via `off` with the same handler reference.
  */
 export interface EventSubscriber<Events extends Record<string, unknown>> {
   on<K extends keyof Events>(type: K, handler: (event: Events[K]) => void): void;
@@ -278,6 +283,16 @@ export interface RendererDebug {
  */
 export interface RendererAnimation {
   name: string;
+  /**
+   * GLTF-authored / load-time playback defaults, when the renderer can read
+   * them. Omitted fields fall back to the inspector's defaults (weight 1, not
+   * playing, speed 1, no loop). Carried here so a GLTF that bakes in e.g.
+   * `loop: true` isn't silently flattened to the default.
+   */
+  weight?: number;
+  speed?: number;
+  loop?: boolean;
+  playing?: boolean;
 }
 
 // ---------------------------------------------------------------------------

@@ -8,6 +8,7 @@ import {
   registerBuiltInRenderers,
 } from '../renderer/controller';
 import type { RendererId } from '../renderer/controller';
+import { asBabylonInternals } from '../renderer/babylon/register';
 import type { IRenderer } from '../renderer/types';
 import type { InspectorPreferences } from '../logic/preferences/types';
 import { SceneMetricsServer } from '../../lib/rpc/scene-metrics/server';
@@ -80,14 +81,25 @@ export async function createSdkContext(
   // register some globals for debugging
   Object.assign(globalThis, { inspectorEngine: engine });
 
-  // if there is a parent, initialize rpc servers. The scene RPC server uses the
-  // raw Babylon setup bundle (screenshots/camera); only wired for the built-in
-  // Babylon renderer.
+  // If embedded, initialize the scene RPC servers. The scene RPC server needs
+  // the raw Babylon setup bundle (screenshots/camera) — a Babylon-only
+  // capability for now. With a non-Babylon renderer it's skipped, which means
+  // the host's thumbnail/camera features are unavailable; warn so the silent
+  // gap is visible rather than mysterious.
   const config = getConfig();
-  if (config.dataLayerRpcParentUrl && built.babylonInternals) {
-    const transport = new MessageTransport(window, window.parent, config.dataLayerRpcParentUrl);
-    new SceneServer(transport, store, built.babylonInternals.babylon);
-    new SceneMetricsServer(transport, store);
+  if (config.dataLayerRpcParentUrl) {
+    const babylonInternals = asBabylonInternals(built.internals);
+    if (babylonInternals) {
+      const transport = new MessageTransport(window, window.parent, config.dataLayerRpcParentUrl);
+      new SceneServer(transport, store, babylonInternals.babylon);
+      new SceneMetricsServer(transport, store);
+    } else {
+      // eslint-disable-next-line no-console
+      console.warn(
+        '[renderer] Scene RPC server (screenshots/camera) is only available with the Babylon ' +
+          `renderer; skipped for "${built.id}". Host thumbnail/camera control will be unavailable.`,
+      );
+    }
   }
 
   return {

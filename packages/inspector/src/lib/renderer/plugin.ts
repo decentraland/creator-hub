@@ -49,6 +49,13 @@ export interface MountedRenderer {
   engine: IEngine;
   /** Tear everything down (renderer, reverse channel, any canvas/iframe). */
   dispose(): void;
+  /**
+   * Optional renderer-specific escape hatch for the inspector's own
+   * integration needs (e.g. the built-in Babylon renderer exposes its raw
+   * setup bundle here so the scene-RPC server can take screenshots). Opaque to
+   * the registry; the consumer narrows it. Third-party renderers leave it unset.
+   */
+  internals?: unknown;
 }
 
 /** A registerable renderer. */
@@ -64,17 +71,20 @@ export interface RendererPlugin {
 const registry = new Map<string, RendererPlugin>();
 
 /**
- * Register a renderer. Idempotent: re-registering the same plugin object (e.g.
- * via HMR) is silent, but replacing a *different* plugin under an existing id
- * warns — a likely id collision between renderers.
+ * Register a renderer. Fail-closed on id collision: registering a *different*
+ * plugin under an id that's already taken **throws**, so a third-party renderer
+ * can't silently clobber another. Re-registering the *same* plugin object (HMR)
+ * is a no-op. Pass `{ override: true }` to intentionally replace.
  */
-export function registerRenderer(plugin: RendererPlugin): void {
+export function registerRenderer(
+  plugin: RendererPlugin,
+  options: { override?: boolean } = {},
+): void {
   const existing = registry.get(plugin.id);
-  if (existing && existing !== plugin) {
-    // eslint-disable-next-line no-console
-    console.warn(
-      `[renderer] registerRenderer: replacing a different renderer already registered as "${plugin.id}". ` +
-        'Renderer ids must be unique (e.g. "my-org.my-renderer").',
+  if (existing && existing !== plugin && !options.override) {
+    throw new Error(
+      `registerRenderer: a different renderer is already registered as "${plugin.id}". ` +
+        'Renderer ids must be unique (e.g. "my-org.my-renderer"); pass { override: true } to replace.',
     );
   }
   registry.set(plugin.id, plugin);

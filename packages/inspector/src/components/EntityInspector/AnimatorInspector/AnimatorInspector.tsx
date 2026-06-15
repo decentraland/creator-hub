@@ -18,7 +18,7 @@ import {
   isValidSpeed,
   isValidWeight,
   initializeAnimatorComponent,
-  mapAnimationNamesToStates,
+  mapAnimationsToStates,
 } from './utils';
 import type { Props } from './types';
 
@@ -43,11 +43,11 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
 
     const checkAndInitializeAnimator = async () => {
       try {
-        const clipNames = (await sdk.renderer.getEntityAnimations(entityId)).map(a => a.name);
+        const animations = await sdk.renderer.getEntityAnimations(entityId);
 
         // only add Animator component if there are actual animations
-        if (clipNames.length > 0) {
-          await initializeAnimatorComponent(sdk, entityId, clipNames);
+        if (animations.length > 0) {
+          await initializeAnimatorComponent(sdk, entityId, animations);
         }
       } catch (error) {
         // eslint-disable-next-line no-console
@@ -63,9 +63,9 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
 
     const loadAnimations = async () => {
       try {
-        const clipNames = (await sdk.renderer.getEntityAnimations(entityId)).map(a => a.name);
-        if (clipNames.length && (!states.length || states[0].clip !== clipNames[0])) {
-          setStates(mapAnimationNamesToStates(clipNames));
+        const animations = await sdk.renderer.getEntityAnimations(entityId);
+        if (animations.length && (!states.length || states[0].clip !== animations[0].name)) {
+          setStates(mapAnimationsToStates(animations));
         }
       } catch (error) {
         // eslint-disable-next-line no-console

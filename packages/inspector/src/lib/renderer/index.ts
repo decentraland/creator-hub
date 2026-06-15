@@ -49,9 +49,13 @@ export type {
   ConformanceMatchers,
 } from './conformance';
 
-// Out-of-process (iframe/worker) renderer support: run inside the renderer
-// document, bridge it to the inspector over postMessage RPC.
+// Out-of-process (iframe/worker) renderer support. These are an *intentionally
+// public* part of the author contract: a renderer that runs in an iframe
+// (Unity, Bevy, …) calls `startRendererIframe` from inside its document and may
+// reference the protocol/snapshot types. In-process renderer authors don't need
+// them. (If this surface grows, consider a `@dcl/inspector/remote` subpath.)
 export { startRendererIframe } from './remote/iframe-entry';
+export { PROTOCOL_VERSION } from './remote/protocol';
 export type {
   RendererIframeOptions,
   RendererIframeHandle,

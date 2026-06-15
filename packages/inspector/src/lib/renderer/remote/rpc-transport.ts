@@ -64,10 +64,50 @@ type RendererRPC = RPC<Method, Params, Result, EventType, EventData>;
 
 /**
  * Default ceiling for an awaited request. mini-rpc never times out or rejects
- * outstanding requests on its own, so without this a request to a renderer that
- * crashed/navigated would hang forever (wedging the awaiting UI flow).
+ * outstanding requests on its own, so without this a request to a peer that
+ * crashed/navigated would hang forever (wedging the awaiting flow).
  */
 const REQUEST_TIMEOUT_MS = 15_000;
+
+/**
+ * Tracks in-flight requests so they can be (a) timed out and (b) rejected on
+ * dispose — mini-rpc does neither. Used by both directions (inspector→renderer
+ * and renderer→inspector) so neither can hang a caller forever.
+ */
+function createRequestTracker(timeoutMs: number) {
+  const inFlight = new Set<(reason: Error) => void>();
+  let disposed = false;
+
+  return {
+    run<T>(label: string, send: () => Promise<unknown>): Promise<T> {
+      if (disposed) return Promise.reject(new Error('renderer transport disposed'));
+      return new Promise<T>((resolve, reject) => {
+        let settled = false;
+        const done = (fn: () => void) => {
+          if (settled) return;
+          settled = true;
+          inFlight.delete(reject);
+          clearTimeout(timer);
+          fn();
+        };
+        const timer = setTimeout(
+          () => done(() => reject(new Error(`renderer request "${label}" timed out`))),
+          timeoutMs,
+        );
+        inFlight.add(reject);
+        send()
+          .then(result => done(() => resolve(result as T)))
+          .catch(error => done(() => reject(error)));
+      });
+    },
+    dispose() {
+      disposed = true;
+      const rejecters = [...inFlight];
+      inFlight.clear();
+      rejecters.forEach(r => r(new Error('renderer transport disposed')));
+    },
+  };
+}
 
 /**
  * Inspector side: the {@link RendererTransport} the {@link RemoteRenderer}
@@ -79,11 +119,15 @@ export function createRpcRendererTransport(
 ): RendererTransport {
   const rpc: RendererRPC = new RPC(CHANNEL, transport);
   const timeoutMs = options.requestTimeoutMs ?? REQUEST_TIMEOUT_MS;
+  const tracker = createRequestTracker(timeoutMs);
 
-  // Track in-flight request rejecters so dispose() can settle them — otherwise
-  // a teardown mid-request leaves the caller's promise hanging forever.
-  const inFlight = new Set<(reason: Error) => void>();
-  let disposed = false;
+  // The currently-active inspector-request handler (asset loading). Identity is
+  // tracked so a stale teardown can't clobber a newer handler on a reused channel.
+  let activeInspectRequestHandler:
+    | (<K extends InspectorRequest['kind']>(
+        request: Extract<InspectorRequest, { kind: K }>,
+      ) => Promise<InspectorRequestResult[K]>)
+    | null = null;
 
   return {
     sendCommand(command: RendererCommand) {
@@ -92,26 +136,9 @@ export function createRpcRendererTransport(
     request<K extends RendererRequest['kind']>(
       request: Extract<RendererRequest, { kind: K }>,
     ): Promise<RendererRequestResult[K]> {
-      if (disposed) return Promise.reject(new Error('renderer transport disposed'));
-      return new Promise<RendererRequestResult[K]>((resolve, reject) => {
-        let settled = false;
-        const done = (fn: () => void) => {
-          if (settled) return;
-          settled = true;
-          inFlight.delete(reject);
-          clearTimeout(timer);
-          fn();
-        };
-        const timer = setTimeout(
-          () => done(() => reject(new Error(`renderer request "${request.kind}" timed out`))),
-          timeoutMs,
-        );
-        inFlight.add(reject);
-        rpc
-          .request(Method.REQUEST, request)
-          .then(result => done(() => resolve(result as RendererRequestResult[K])))
-          .catch(error => done(() => reject(error)));
-      });
+      return tracker.run<RendererRequestResult[K]>(request.kind, () =>
+        rpc.request(Method.REQUEST, request),
+      );
     },
     onOutbound(handler: (message: RendererOutbound) => void) {
       const listener = (message: RendererOutbound) => handler(message);
@@ -119,15 +146,21 @@ export function createRpcRendererTransport(
       return () => rpc.off(EventType.OUTBOUND, listener);
     },
     onRequest(handler) {
-      rpc.handle(Method.INSPECT_REQUEST, request => handler(request as never));
-      // mini-rpc has no unhandle; replace with a no-op resolver on teardown.
-      return () => rpc.handle(Method.INSPECT_REQUEST, async () => null as never);
+      // Track this handler's identity so a later teardown only resets if it's
+      // still the active one (a second RemoteRenderer may have re-registered).
+      const active = handler;
+      rpc.handle(Method.INSPECT_REQUEST, request =>
+        activeInspectRequestHandler === active
+          ? handler(request as never)
+          : Promise.resolve(null as never),
+      );
+      activeInspectRequestHandler = active;
+      return () => {
+        if (activeInspectRequestHandler === active) activeInspectRequestHandler = null;
+      };
     },
     dispose() {
-      disposed = true;
-      const reject = [...inFlight];
-      inFlight.clear();
-      reject.forEach(r => r(new Error('renderer transport disposed')));
+      tracker.dispose();
       rpc.dispose();
     },
   };
@@ -152,13 +185,14 @@ export function serveRendererHost(
   ) => RendererHost,
 ): { host: RendererHost; dispose(): void } {
   const rpc: RendererRPC = new RPC(CHANNEL, transport);
+  const tracker = createRequestTracker(REQUEST_TIMEOUT_MS);
 
-  const requestInspector = async <K extends InspectorRequest['kind']>(
+  const requestInspector = <K extends InspectorRequest['kind']>(
     request: Extract<InspectorRequest, { kind: K }>,
-  ): Promise<InspectorRequestResult[K]> => {
-    const result = await rpc.request(Method.INSPECT_REQUEST, request);
-    return result as InspectorRequestResult[K];
-  };
+  ): Promise<InspectorRequestResult[K]> =>
+    tracker.run<InspectorRequestResult[K]>(request.kind, () =>
+      rpc.request(Method.INSPECT_REQUEST, request),
+    );
 
   const host = createHost(message => rpc.emit(EventType.OUTBOUND, message), requestInspector);
 
@@ -168,6 +202,7 @@ export function serveRendererHost(
   return {
     host,
     dispose() {
+      tracker.dispose();
       host.dispose();
       rpc.dispose();
     },

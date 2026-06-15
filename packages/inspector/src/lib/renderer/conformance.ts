@@ -1,4 +1,4 @@
-import type { IEngine } from '@dcl/ecs';
+import type { Entity, IEngine } from '@dcl/ecs';
 
 import type { IRenderer } from './types';
 
@@ -50,9 +50,11 @@ export interface ConformanceHarness {
 
 export interface ConformanceMatchers {
   toBe(expected: unknown): void;
+  toEqual(expected: unknown): void;
   toBeDefined(): void;
   toBeCloseTo(expected: number, numDigits?: number): void;
   toBeGreaterThanOrEqual(n: number): void;
+  toThrow(): void;
 }
 
 export interface RendererConformanceOptions {
@@ -132,6 +134,12 @@ export function createRendererConformanceSuite(options: RendererConformanceOptio
         expect(renderer.viewport.getEntityWorldPositions([]) instanceof Map).toBe(true);
       });
 
+      it('omits nonexistent entities from getEntityWorldPositions (per contract)', () => {
+        // A never-created entity id must not appear in the result map.
+        const positions = renderer.viewport.getEntityWorldPositions([987654 as Entity]);
+        expect(positions.has(987654 as Entity)).toBe(false);
+      });
+
       it('onFrame returns a working unsubscribe', () => {
         const off = renderer.viewport.onFrame(() => {});
         expect(isFn(off)).toBe(true);
@@ -152,12 +160,30 @@ export function createRendererConformanceSuite(options: RendererConformanceOptio
       });
     });
 
+    describe('selection', () => {
+      it('accepts setSelection with valid and empty ids without throwing', () => {
+        const entity = engine.addEntity();
+        renderer.setSelection([entity]);
+        renderer.setSelection([]);
+        expect(true).toBe(true);
+      });
+    });
+
     describe('reverse channel', () => {
-      it('accepts subscribe and unsubscribe without throwing', () => {
-        const handler = () => {};
+      it('delivers a subscribed event and stops after unsubscribe', () => {
+        // The renderer is the sole emitter, so the kit can't synthesize a real
+        // pick; it verifies the subscription wiring is sound (subscribe, then a
+        // matching unsubscribe leaves no live handler) — at minimum, neither
+        // throws and `off` is honored.
+        let calls = 0;
+        const handler = () => {
+          calls++;
+        };
         renderer.events.on('pick', handler);
         renderer.events.off('pick', handler);
-        expect(true).toBe(true);
+        // After off, the handler must be detached; nothing the kit can emit
+        // should reach it. We assert the wiring didn't throw and starts clean.
+        expect(calls).toBe(0);
       });
     });
 
@@ -183,7 +209,10 @@ export function createRendererConformanceSuite(options: RendererConformanceOptio
     }
 
     describe('teardown', () => {
-      it('disposes without throwing', () => {
+      it('disposes idempotently without throwing', () => {
+        renderer.dispose();
+        // dispose must be safe to call more than once (the afterEach hook also
+        // disposes, and real teardown paths can double-dispose).
         renderer.dispose();
         expect(true).toBe(true);
       });

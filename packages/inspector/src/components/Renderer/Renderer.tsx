@@ -2,8 +2,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { useDrop } from 'react-dnd';
 import cx from 'classnames';
-import { Vector3 } from '@babylonjs/core';
-import type { Entity } from '@dcl/ecs';
+import type { Entity, Vector3Type } from '@dcl/ecs';
 
 import { DIRECTORY } from '../../lib/data-layer/host/fs-utils';
 import { useAppSelector } from '../../redux/hooks';
@@ -16,7 +15,7 @@ import type {
 import { getNode, DROP_TYPES, isDropType, DropTypesEnum } from '../../lib/sdk/drag-drop';
 import { useRenderer } from '../../hooks/sdk/useRenderer';
 import { useSdk } from '../../hooks/sdk/useSdk';
-import { snapPosition } from '../../lib/babylon/decentraland/snap-manager';
+import { snapPositionValue } from '../../lib/babylon/decentraland/snap-manager';
 import { ROOT } from '../../lib/sdk/tree';
 import type { CustomAsset } from '../../lib/logic/catalog';
 import { isGround, isSmart, type Asset } from '../../lib/logic/catalog';
@@ -209,12 +208,13 @@ const Renderer: React.FC = () => {
     // Renderer-agnostic: ask the active renderer where the pointer hits the
     // ground, then snap. Works for any renderer.
     const point = (await sdk!.renderer.getPointerWorldPoint()) ?? { x: 0, y: 0, z: 0 };
-    return snapPosition(new Vector3(fixedNumber(point.x), 0, fixedNumber(point.z)));
+    // Plain {x,y,z} throughout — no Babylon Vector3, so this works for any renderer.
+    return snapPositionValue({ x: fixedNumber(point.x), y: 0, z: fixedNumber(point.z) });
   };
 
   const addAsset = async (
     asset: AssetNodeItem,
-    position: Vector3,
+    position: Vector3Type,
     basePath: string,
     isCustom: boolean,
   ) => {

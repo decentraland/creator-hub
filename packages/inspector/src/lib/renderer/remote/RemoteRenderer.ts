@@ -18,9 +18,11 @@ import type {
   SpawnPointTarget,
   Unsubscribe,
 } from '../types';
+import { PROTOCOL_VERSION } from './protocol';
 import type { AssetProvider, RendererSnapshot, RendererTransport } from './protocol';
 
 const EMPTY_SNAPSHOT: RendererSnapshot = {
+  version: 0,
   camera: { speed: 0, position: { x: 0, y: 0, z: 0 }, target: { x: 0, y: 0, z: 0 }, fov: 0 },
   gizmos: { enabled: false, worldAligned: true, worldAlignmentDisabled: false },
   spawnPoints: { selectedIndex: null, selectedTarget: null, hidden: [] },
@@ -62,6 +64,7 @@ export class RemoteRenderer implements IRenderer {
   #spawnVisibilityHandlers = new Set<(e: { name: string; visible: boolean }) => void>();
   #disposeOutbound: () => void;
   #disposeRequest: (() => void) | undefined;
+  #warnedSkew = false;
 
   constructor(
     private readonly transport: RendererTransport,
@@ -70,6 +73,10 @@ export class RemoteRenderer implements IRenderer {
     this.#disposeOutbound = transport.onOutbound(message => {
       if (message.kind === 'event') {
         // Forward the renderer's reverse-channel events onto the local bus.
+        // `event` and `payload` are a correlated pair on the wire but the type
+        // system can't re-correlate them after deserialization, so `as never`
+        // bridges into mitt's `emit<K>(type, Events[K])`. Runtime-safe: the host
+        // only ever emits matching (event, payload) pairs (see EVENT_NAMES).
         this.events.emit(message.event, message.payload as never);
       } else {
         this.#applySnapshot(message.snapshot);
@@ -95,9 +102,27 @@ export class RemoteRenderer implements IRenderer {
     this.viewport = this.#createViewport();
     this.spawnPoints = this.#createSpawnPoints();
     this.debug = this.#createDebug();
+
+    // Request a full snapshot now that we're listening. mini-rpc queues this
+    // until the handshake completes, so it's delivered once the channel is live
+    // — avoiding the race where the host's synchronous initial push is dropped
+    // and the mirror is stranded at EMPTY_SNAPSHOT.
+    this.transport.sendCommand({ kind: 'requestSnapshot' });
   }
 
   #applySnapshot(partial: Partial<RendererSnapshot>) {
+    // Warn once on protocol-version skew between inspector and renderer.
+    if (
+      partial.version !== undefined &&
+      partial.version !== PROTOCOL_VERSION &&
+      !this.#warnedSkew
+    ) {
+      this.#warnedSkew = true;
+      // eslint-disable-next-line no-console
+      console.warn(
+        `[renderer] protocol version skew: inspector=${PROTOCOL_VERSION}, renderer=${partial.version}`,
+      );
+    }
     const prev = this.#snapshot;
     this.#snapshot = { ...prev, ...partial };
 
@@ -112,6 +137,21 @@ export class RemoteRenderer implements IRenderer {
       const sp = partial.spawnPoints;
       for (const h of this.#spawnSelectionHandlers)
         h({ index: sp.selectedIndex, target: sp.selectedTarget });
+
+      // Fire visibility handlers for any name whose hidden-state changed since
+      // the previous snapshot (diff prev vs next `hidden` sets).
+      const prevHidden = new Set(prev.spawnPoints.hidden);
+      const nextHidden = new Set(sp.hidden);
+      for (const name of prevHidden) {
+        if (!nextHidden.has(name)) {
+          for (const h of this.#spawnVisibilityHandlers) h({ name, visible: true });
+        }
+      }
+      for (const name of nextHidden) {
+        if (!prevHidden.has(name)) {
+          for (const h of this.#spawnVisibilityHandlers) h({ name, visible: false });
+        }
+      }
     }
   }
 

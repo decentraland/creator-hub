@@ -1,12 +1,13 @@
 import type { Entity } from '@dcl/ecs';
 
 import type { IRenderer } from '../types';
-import type {
-  RendererCommand,
-  RendererOutbound,
-  RendererRequest,
-  RendererRequestResult,
-  RendererSnapshot,
+import {
+  PROTOCOL_VERSION,
+  type RendererCommand,
+  type RendererOutbound,
+  type RendererRequest,
+  type RendererRequestResult,
+  type RendererSnapshot,
 } from './protocol';
 
 /**
@@ -94,6 +95,15 @@ export class RendererHost {
         return r.spawnPoints.setPosition(command.index, command.target, command.position);
       case 'debug.toggle':
         return r.debug?.toggle();
+      case 'requestSnapshot':
+        return this.pushState();
+      default:
+        // Exhaustiveness guard: an unknown command (e.g. version skew with a
+        // newer inspector) is logged rather than silently dropped.
+        // eslint-disable-next-line no-console
+        return void console.warn(
+          `[renderer host] unknown command "${(command as { kind: string }).kind}" (ignored)`,
+        );
     }
   }
 
@@ -101,17 +111,24 @@ export class RendererHost {
   async handleRequest<K extends RendererRequest['kind']>(
     request: Extract<RendererRequest, { kind: K }>,
   ): Promise<RendererRequestResult[K]> {
-    switch (request.kind) {
-      case 'getPointerWorldPoint':
-        return (await this.renderer.getPointerWorldPoint()) as RendererRequestResult[K];
-      case 'getEntityAnimations': {
-        const { entity } = request as Extract<RendererRequest, { kind: 'getEntityAnimations' }>;
-        return (await this.renderer.getEntityAnimations(
-          entity,
-        )) as unknown as RendererRequestResult[K];
+    try {
+      switch (request.kind) {
+        case 'getPointerWorldPoint':
+          return (await this.renderer.getPointerWorldPoint()) as RendererRequestResult[K];
+        case 'getEntityAnimations': {
+          const { entity } = request as Extract<RendererRequest, { kind: 'getEntityAnimations' }>;
+          return (await this.renderer.getEntityAnimations(
+            entity,
+          )) as unknown as RendererRequestResult[K];
+        }
+        default:
+          throw new Error(`Unknown renderer request: ${(request as { kind: string }).kind}`);
       }
-      default:
-        throw new Error(`Unknown renderer request: ${(request as { kind: string }).kind}`);
+    } catch (error) {
+      // Re-throw with context so the inspector side sees which request failed
+      // rather than an opaque rejection from across the boundary.
+      const message = error instanceof Error ? error.message : String(error);
+      throw new Error(`renderer request "${request.kind}" failed: ${message}`);
     }
   }
 
@@ -129,6 +146,7 @@ export class RendererHost {
     const pose = r.camera.getPose();
     const sp = r.spawnPoints;
     const snapshot: Partial<RendererSnapshot> = {
+      version: PROTOCOL_VERSION,
       camera: {
         speed: r.camera.getSpeed(),
         position: pose.position,
@@ -159,7 +177,9 @@ export class RendererHost {
    * serialize+postMessage cost. Also a no-op when nothing is tracked.
    */
   pushFrame(): void {
-    const now = Date.now();
+    // performance.now() is monotonic — Date.now() can jump backward (NTP /
+    // sleep-wake) and wedge the throttle for a long time.
+    const now = performance.now();
     if (now - this.#lastFramePush < FRAME_PUSH_INTERVAL_MS) return;
     this.#lastFramePush = now;
 

@@ -2,6 +2,7 @@ import type { Entity, PBAnimationState, PBAnimator } from '@dcl/ecs';
 import { Animator } from '@dcl/ecs';
 
 import type { SdkContextValue } from '../../../lib/sdk/context';
+import type { RendererAnimation } from '../../../lib/renderer/types';
 
 export function fromNumber(value: string | number, mul: number = 100) {
   return Number(value) * mul;
@@ -21,16 +22,16 @@ export function isValidSpeed(speed: string | undefined): boolean {
   return !isNaN(parseFloat(value)) && parseFloat(value) >= 0 && parseFloat(value) <= 200;
 }
 
-// Build animation states from clip names. A freshly-loaded clip uses the
-// default playback values (weight 1, not playing, speed 1, no loop) — the same
-// values the renderer's animation groups report at load time.
-export function mapAnimationNamesToStates(clipNames: string[]): PBAnimationState[] {
-  return clipNames.map(clip => ({
-    weight: 1,
-    clip,
-    playing: false,
-    speed: 1,
-    loop: false,
+// Build animation states from the renderer's clips, honoring any GLTF-authored
+// playback values the renderer reports and falling back to the inspector
+// defaults (weight 1, not playing, speed 1, no loop) for anything omitted.
+export function mapAnimationsToStates(animations: RendererAnimation[]): PBAnimationState[] {
+  return animations.map(({ name, weight, speed, loop, playing }) => ({
+    weight: weight ?? 1,
+    clip: name,
+    playing: playing ?? false,
+    speed: speed ?? 1,
+    loop: loop ?? false,
     shouldReset: false,
   }));
 }
@@ -38,9 +39,9 @@ export function mapAnimationNamesToStates(clipNames: string[]): PBAnimationState
 export async function initializeAnimatorComponent(
   sdk: SdkContextValue,
   entity: Entity,
-  clipNames: string[],
+  animations: RendererAnimation[],
 ): Promise<PBAnimator> {
-  const states = mapAnimationNamesToStates(clipNames);
+  const states = mapAnimationsToStates(animations);
   const value: PBAnimator = { states };
 
   try {
