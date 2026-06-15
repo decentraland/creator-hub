@@ -4,16 +4,27 @@
   height: 100%;
   background: #1e1f23;
   display: flex;
-  align-items: center;
-  justify-content: center;
   overflow: auto;
 }
 
-.ui-designer-canvas-root {
+/* Reserves the canvas's *scaled* footprint (sized inline in Canvas.tsx). With
+   margin: auto it centres when it fits the viewport and aligns to the top-left
+   (fully scrollable) when it overflows — so the canvas keeps a strict size and
+   never shrinks to fit the screen. */
+.ui-designer-canvas-stage {
   position: relative;
-  width: 1920px;
-  height: 1080px;
-  transform-origin: center center;
+  flex: 0 0 auto;
+  margin: auto;
+}
+
+/* The logical canvas. Width/height/scale are set inline (per-UI size + editor
+   zoom) with transform-origin: top left so the scaled picture aligns to the
+   stage's box. Absolutely positioned so its un-scaled layout box never inflates
+   the stage's scroll size. */
+.ui-designer-canvas-root {
+  position: absolute;
+  top: 0;
+  left: 0;
   background: #2a2c30;
   box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.1);
   display: flex;
@@ -124,6 +135,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  width: 100%;
   height: 100%;
   color: #888;
 }

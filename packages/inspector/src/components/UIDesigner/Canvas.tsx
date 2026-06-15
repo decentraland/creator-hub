@@ -10,12 +10,19 @@ import { getSelectedNode, getTool, selectNode } from '../../redux/ui-designer';
 import { UI_DESIGNER_DND_TYPE, type UIDesignerDragItem } from './Palette';
 import { useUINodeTree } from './useUINodeTree';
 import { clearNodeRegistry, registerNodeElement, unregisterNodeElement } from './node-registry';
-import { previewBoundText, type UINode } from './tree-model';
+import {
+  DEFAULT_CANVAS_HEIGHT,
+  DEFAULT_CANVAS_WIDTH,
+  previewBoundText,
+  type UINode,
+} from './tree-model';
 
-// Logical canvas is 1920×1080. The default visual scale is 0.4; the user can
-// zoom (see the zoom controls in CanvasComponent). `canvasScale` is the LIVE
-// scale, read by the drag/resize coordinate math and by measure.ts so px↔%
-// conversions stay correct at any zoom level.
+// The canvas size is per-UI (canvasWidth × canvasHeight on the root's
+// `asset-packs::UI` marker, default 1920×1080) — it is the UI's design/virtual
+// resolution, scaled to fit the player's screen at runtime. The default visual
+// scale below is the EDITOR zoom (the user can zoom; see CanvasComponent).
+// `canvasScale` is the LIVE zoom, read by the drag/resize coordinate math and by
+// measure.ts so px↔% conversions stay correct at any zoom level.
 export const DEFAULT_CANVAS_SCALE = 0.4;
 const ZOOM_MIN = 0.1;
 const ZOOM_MAX = 2;
@@ -750,6 +757,11 @@ const CanvasComponent: React.FC = () => {
   const [scale, setScale] = useState(getCanvasScale());
   const viewportRef = useRef<HTMLDivElement>(null);
 
+  // Per-UI design canvas size. The stage reserves the *scaled* footprint so the
+  // canvas holds a strict size and the viewport scrolls when it overflows.
+  const canvasWidth = tree?.canvasWidth ?? DEFAULT_CANVAS_WIDTH;
+  const canvasHeight = tree?.canvasHeight ?? DEFAULT_CANVAS_HEIGHT;
+
   // Keep the module-level scale (read by the drag/resize coordinate math and by
   // measure.ts) in sync with the rendered zoom.
   useEffect(() => {
@@ -809,10 +821,20 @@ const CanvasComponent: React.FC = () => {
             </button>
           </div>
           <div
-            className="ui-designer-canvas-root"
-            style={{ transform: `scale(${scale})` }}
+            className="ui-designer-canvas-stage"
+            style={{ width: canvasWidth * scale, height: canvasHeight * scale }}
           >
-            <CanvasNode node={tree} />
+            <div
+              className="ui-designer-canvas-root"
+              style={{
+                width: canvasWidth,
+                height: canvasHeight,
+                transform: `scale(${scale})`,
+                transformOrigin: 'top left',
+              }}
+            >
+              <CanvasNode node={tree} />
+            </div>
           </div>
         </>
       ) : (

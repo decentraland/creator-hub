@@ -88,6 +88,7 @@ make protoc        # Regenerate TypeScript from .proto files
 - Build: custom `build.js` using esbuild.
 - **Codegen safety (`engine-to-composite.ts`):** when emitting author-controlled strings (e.g. `core-schema::Name`) into generated TS source, escape BOTH positions — *values* via `JSON.stringify(...)` and *identifiers* (enum keys, interface/type/member names) via the `toSafeIdentifier` chokepoint (sanitize + reserved-word guard). Raw `"${name}"` interpolation is an injection / build-break vector.
 - **UI Designer entities (`core::UiTransform`-parented):** UI Designer nodes carry only `core::UiTransform` (parent index) — never `core::Transform` — and never appear in the editor `Nodes` tree. Generic Transform-based helpers silently no-op on them: `removeEntity` / `getComponentEntityTree(…, Transform)` yield nothing, so they delete/walk nothing. For any UI-node lifecycle op (delete/duplicate/reparent/reorder), use a dedicated `*-ui-*` operation that walks the UiTransform parent index via `collectDescendants` (`lib/sdk/operations/tree-walk.ts`).
+- **UI Designer canvas size is the runtime virtual resolution:** the `asset-packs::UI` marker's `canvasWidth`/`canvasHeight` (default 1920×1080) are both the editor design-canvas size AND the `virtualWidth`/`virtualHeight` passed to `addUiRenderer` (`packages/asset-packs/src/ui-renderer.tsx`); the runtime scales the UI by `min(screenW/vW, screenH/vH)` to fit the player's screen. It is **not** editor-only — persisting it on the marker is what delivers it to runtime (no codegen). The inspector `Canvas.tsx` reads it from the root `UINode` and renders a fixed-size "scaled stage" (`size·scale`, `transform-origin: top left`) so the canvas keeps a strict size and scrolls instead of shrinking with the panel.
 
 ### Asset Packs
 
@@ -99,6 +100,7 @@ make protoc        # Regenerate TypeScript from .proto files
 ## Code Style
 
 - **ESLint**: `@typescript-eslint/consistent-type-imports` is enforced (use `import type` for type-only imports).
+- **Lint scope**: `make lint` / `npm run lint` runs `eslint . --ext js,cjs,ts` — it does **not** lint `.tsx` files. Don't rely on the lint gate to catch `.tsx` issues; a standalone `eslint <file>.tsx` may surface a pre-existing `consistent-type-imports` false-positive on the `@dcl/react-ecs` JSX-pragma default import (e.g. `ui-renderer.tsx`).
 - **Prettier**: single quotes, semicolons, trailing commas, 100 char print width, `arrowParens: "avoid"`.
 - **Import order**: ESLint enforced. React first, then `@dcl/*`, then `decentraland-*`, then MUI/internal, then relative.
 - **Unused vars**: prefix with `_` (e.g., `_unused`).

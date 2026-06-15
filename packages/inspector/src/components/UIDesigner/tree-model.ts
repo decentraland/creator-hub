@@ -3,6 +3,13 @@ import { ComponentName, SegmentKind } from '@dcl/asset-packs';
 
 export type UINodeType = 'UiEntity' | 'Label' | 'Button' | 'Input' | 'Dropdown';
 
+// Default design/virtual resolution for a UI. Authors can override it per UI
+// (stored on the `asset-packs::UI` marker as canvasWidth/canvasHeight); this is
+// the fallback for new UIs and for legacy roots created before the field existed.
+// It is also the runtime virtualWidth/virtualHeight the UI scales to fit the screen.
+export const DEFAULT_CANVAS_WIDTH = 1920;
+export const DEFAULT_CANVAS_HEIGHT = 1080;
+
 export type CanvasSegment = { kind: string; value: string };
 export type CanvasBindingRow = { field: string; variable: string; segments?: CanvasSegment[] };
 
@@ -16,6 +23,10 @@ export interface UINode {
   uiInput?: unknown;
   uiDropdown?: unknown;
   bindings?: CanvasBindingRow[];
+  // Only set on the root node — the per-UI design canvas size (px), sanitized
+  // to a positive value with the DEFAULT_CANVAS_* fallback applied.
+  canvasWidth?: number;
+  canvasHeight?: number;
   children: UINode[];
 }
 
@@ -27,6 +38,7 @@ interface ComponentBag {
   UiDropdown: any;
   Name?: any;
   UIBindings?: any;
+  UI?: any;
 }
 
 // Canonical SDK component IDs (verified against
@@ -49,6 +61,7 @@ export function getComponentBag(engine: IEngine): ComponentBag {
     UiDropdown: engine.getComponentOrNull(COMPONENT_IDS.UiDropdown),
     Name: engine.getComponentOrNull(COMPONENT_IDS.Name),
     UIBindings: engine.getComponentOrNull(ComponentName.UI_BINDINGS),
+    UI: engine.getComponentOrNull(ComponentName.UI),
   };
 }
 
@@ -126,5 +139,11 @@ export function buildUINodeTree(engine: IEngine, rootEntity: Entity): UINode | n
     return node;
   }
 
-  return visit(rootEntity);
+  const root = visit(rootEntity);
+  // The design canvas size lives on the root's `asset-packs::UI` marker. Sanitize
+  // to a positive number, falling back to the default for new/legacy roots.
+  const ui = bag.UI?.getOrNull(rootEntity);
+  root.canvasWidth = ui?.canvasWidth > 0 ? ui.canvasWidth : DEFAULT_CANVAS_WIDTH;
+  root.canvasHeight = ui?.canvasHeight > 0 ? ui.canvasHeight : DEFAULT_CANVAS_HEIGHT;
+  return root;
 }

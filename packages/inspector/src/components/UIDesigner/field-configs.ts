@@ -93,7 +93,25 @@ const NAME = 'core-schema::Name';
 // lives at the top of the Layout group instead — see `LAYOUT_VISIBLE_FIELD`.)
 export const UI_ROOT_GROUP = {
   title: 'UI',
-  fields: [{ label: 'Name', componentId: UI_MARKER, path: 'name', kind: 'string' as const }],
+  fields: [
+    { label: 'Name', componentId: UI_MARKER, path: 'name', kind: 'string' as const },
+    {
+      label: 'Canvas width',
+      componentId: UI_MARKER,
+      path: 'canvasWidth',
+      kind: 'number' as const,
+      bindable: false,
+      info: 'UI design resolution width in px. The UI scales to fit the player’s screen.',
+    },
+    {
+      label: 'Canvas height',
+      componentId: UI_MARKER,
+      path: 'canvasHeight',
+      kind: 'number' as const,
+      bindable: false,
+      info: 'UI design resolution height in px. The UI scales to fit the player’s screen.',
+    },
+  ],
 };
 
 // Shown at the top of the property panel for child UI nodes (non-root).

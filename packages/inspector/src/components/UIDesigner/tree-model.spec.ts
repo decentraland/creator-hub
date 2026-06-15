@@ -1,7 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import type { Entity, IEngine } from '@dcl/ecs';
 
-import { buildUINodeTree, previewBoundText } from './tree-model';
+import {
+  buildUINodeTree,
+  DEFAULT_CANVAS_HEIGHT,
+  DEFAULT_CANVAS_WIDTH,
+  previewBoundText,
+} from './tree-model';
 
 interface MockComponent {
   store: Map<Entity, any>;
@@ -120,6 +125,48 @@ describe('buildUINodeTree', () => {
       const tree = buildUINodeTree(engine, a);
       expect(tree).not.toBeNull();
       // No infinite recursion — the visited set short-circuits.
+    });
+  });
+
+  describe('when the root UI marker has a canvas size', () => {
+    it('should use the marker canvasWidth/canvasHeight on the root node', () => {
+      const root = 1 as Entity;
+      const UiTransform = makeComponent([[root, { parent: undefined }]]);
+      const UI = makeComponent([[root, { canvasWidth: 1280, canvasHeight: 720 }]]);
+      const engine = makeEngine({
+        'core::UiTransform': UiTransform,
+        'asset-packs::UI': UI,
+      });
+
+      const tree = buildUINodeTree(engine, root);
+      expect(tree!.canvasWidth).toBe(1280);
+      expect(tree!.canvasHeight).toBe(720);
+    });
+  });
+
+  describe('when the root canvas size is zero or the marker is absent', () => {
+    it('should fall back to the default size for zero values', () => {
+      const root = 1 as Entity;
+      const UiTransform = makeComponent([[root, { parent: undefined }]]);
+      const UI = makeComponent([[root, { canvasWidth: 0, canvasHeight: 0 }]]);
+      const engine = makeEngine({
+        'core::UiTransform': UiTransform,
+        'asset-packs::UI': UI,
+      });
+
+      const tree = buildUINodeTree(engine, root);
+      expect(tree!.canvasWidth).toBe(DEFAULT_CANVAS_WIDTH);
+      expect(tree!.canvasHeight).toBe(DEFAULT_CANVAS_HEIGHT);
+    });
+
+    it('should fall back to the default size when there is no UI marker component', () => {
+      const root = 1 as Entity;
+      const UiTransform = makeComponent([[root, { parent: undefined }]]);
+      const engine = makeEngine({ 'core::UiTransform': UiTransform });
+
+      const tree = buildUINodeTree(engine, root);
+      expect(tree!.canvasWidth).toBe(DEFAULT_CANVAS_WIDTH);
+      expect(tree!.canvasHeight).toBe(DEFAULT_CANVAS_HEIGHT);
     });
   });
 });

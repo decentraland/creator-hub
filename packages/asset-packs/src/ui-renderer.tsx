@@ -424,8 +424,14 @@ export function createUIRendererSystem(engine: IEngine) {
   return function uiRendererSystem(_dt: number) {
     const UI = engine.getComponent(ComponentName.UI);
 
-    for (const [entity] of engine.getEntitiesWith(UI as any)) {
+    for (const [entity, marker] of engine.getEntitiesWith(UI as any)) {
       if (registered.has(entity)) continue;
+      // The UI is authored against a design/virtual resolution (canvasWidth ×
+      // canvasHeight on the marker); addUiRenderer scales it to fit the player's
+      // screen. Fall back to 1920×1080 for legacy UIs created before these fields.
+      const m = marker as { canvasWidth?: number; canvasHeight?: number };
+      const virtualWidth = m?.canvasWidth && m.canvasWidth > 0 ? m.canvasWidth : 1920;
+      const virtualHeight = m?.canvasHeight && m.canvasHeight > 0 ? m.canvasHeight : 1080;
       ReactEcsRenderer.addUiRenderer(
         entity,
         () => (
@@ -434,7 +440,7 @@ export function createUIRendererSystem(engine: IEngine) {
             engine={engine}
           />
         ),
-        { virtualWidth: 1920, virtualHeight: 1080 },
+        { virtualWidth, virtualHeight },
       );
       registered.add(entity);
     }

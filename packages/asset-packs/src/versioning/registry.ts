@@ -201,6 +201,11 @@ const COMPONENT_REGISTRY = {
     {
       name: Schemas.String,
       visible: Schemas.Boolean,
+      // Design/virtual resolution (px) the UI is authored against. At runtime
+      // it is passed to addUiRenderer as virtualWidth/virtualHeight so the UI
+      // scales to fit the player's screen. 0 → fall back to 1920×1080.
+      canvasWidth: Schemas.Number,
+      canvasHeight: Schemas.Number,
       variables: Schemas.Array(
         Schemas.Map({
           name: Schemas.String,

@@ -8,6 +8,10 @@ import { UiTransform as UiTransformEngine, Name as NameEngine } from '@dcl/ecs';
 import type { UI } from '@dcl/asset-packs';
 import { ComponentName } from '@dcl/asset-packs';
 
+import {
+  DEFAULT_CANVAS_HEIGHT,
+  DEFAULT_CANVAS_WIDTH,
+} from '../../../components/UIDesigner/tree-model';
 import { generateUniqueName } from './add-child';
 
 // PBUiTransform uses YGUnit enum (const enum in @dcl/ecs):
@@ -32,7 +36,13 @@ export function createUIRoot(engine: IEngine) {
 
     const uniqueName = generateUniqueName(engine, Name, name);
 
-    UIComp.createOrReplace(entity, { name: uniqueName, visible: true, variables: [] });
+    UIComp.createOrReplace(entity, {
+      name: uniqueName,
+      visible: true,
+      canvasWidth: DEFAULT_CANVAS_WIDTH,
+      canvasHeight: DEFAULT_CANVAS_HEIGHT,
+      variables: [],
+    });
     UiTransform.createOrReplace(entity, {
       width: 100,
       widthUnit: YGU_PERCENT,
