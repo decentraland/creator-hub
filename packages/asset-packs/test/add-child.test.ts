@@ -5,9 +5,11 @@ import {
   substituteAssetPathInComposite,
   allocateIdsForSpawnedComponents,
   remapTriggerReferences,
+  remapSyncComponentIds,
   initializeComponentIdsFromComposite,
 } from '../src/add-child';
 import { ComponentName, createComponents, getComponents } from '../src/definitions';
+import { getExplorerComponents } from '../src/components';
 import { createEntityMap } from '../src/mapping';
 
 function makeComponent(
@@ -521,5 +523,77 @@ describe('initializeComponentIdsFromComposite (round trip)', () => {
     expect(allocatedId).toBeTypeOf('number');
     expect(allocatedId).not.toBe(0);
     expect((Triggers.get(dest).value[0].actions[0] as any).id).toBe(allocatedId);
+  });
+});
+
+describe('remapSyncComponentIds', () => {
+  let engine: IEngine;
+  let errorSpy: ReturnType<typeof vi.spyOn>;
+
+  beforeEach(() => {
+    engine = Engine();
+    createComponents(engine);
+    errorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+  });
+
+  afterEach(() => {
+    errorSpy.mockRestore();
+  });
+
+  it('should resolve component-name placeholders to numeric component ids', () => {
+    const { SyncComponents, Transform } = getExplorerComponents(engine);
+    const { States } = getComponents(engine);
+    const dest = engine.addEntity();
+    SyncComponents.createOrReplace(dest, {
+      componentIds: ['asset-packs::States', 'core::Transform'],
+    } as any);
+
+    remapSyncComponentIds(engine, [[dest, 100]]);
+
+    expect(SyncComponents.get(dest).componentIds).toEqual([
+      States.componentId,
+      Transform.componentId,
+    ]);
+  });
+
+  it('should pass already-numeric ids through while resolving name entries', () => {
+    const { SyncComponents } = getExplorerComponents(engine);
+    const { States } = getComponents(engine);
+    const dest = engine.addEntity();
+    SyncComponents.createOrReplace(dest, {
+      componentIds: [States.componentId, 'asset-packs::States'],
+    } as any);
+
+    remapSyncComponentIds(engine, [[dest, 100]]);
+
+    expect(SyncComponents.get(dest).componentIds).toEqual([States.componentId, States.componentId]);
+  });
+
+  it('should drop unknown component names and log an error', () => {
+    const { SyncComponents } = getExplorerComponents(engine);
+    const { States } = getComponents(engine);
+    const dest = engine.addEntity();
+    SyncComponents.createOrReplace(dest, {
+      componentIds: ['asset-packs::States', 'asset-packs::DoesNotExist'],
+    } as any);
+
+    remapSyncComponentIds(engine, [[dest, 100]]);
+
+    expect(SyncComponents.get(dest).componentIds).toEqual([States.componentId]);
+    expect(errorSpy).toHaveBeenCalledWith(expect.stringContaining('asset-packs::DoesNotExist'));
+  });
+
+  it('should leave an already-numeric array untouched', () => {
+    const { SyncComponents } = getExplorerComponents(engine);
+    const dest = engine.addEntity();
+    SyncComponents.createOrReplace(dest, { componentIds: [1, 1030, 999] } as any);
+
+    expect(() => remapSyncComponentIds(engine, [[dest, 100]])).not.toThrow();
+    expect(SyncComponents.get(dest).componentIds).toEqual([1, 1030, 999]);
+  });
+
+  it('should skip entities without a SyncComponents component', () => {
+    const dest = engine.addEntity();
+    expect(() => remapSyncComponentIds(engine, [[dest, 100]])).not.toThrow();
   });
 });

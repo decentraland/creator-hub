@@ -150,6 +150,21 @@ same source tree. In `asset-packs` source files and tests, import these
 constants from the leaf module directly (`from './id'`, `from './types'`,
 etc.) rather than via the `definitions.ts` barrel.
 
+### Asset-pack composite placeholders must resolve before the engine serializes
+
+Asset-pack `composite.json` files encode references as portable placeholders:
+paths as `{assetPath}/...`, ids as `{self}` / `{self:Component}` / `{N:Component}`,
+and `SyncComponents.componentIds` as component-**name** strings (e.g.
+`"asset-packs::States"`). Each must be resolved to a concrete value before the
+runtime engine serializes the component. The runtime `core-schema::Sync-Components`
+`componentIds` schema is `Array(Int64)`, so an unresolved name reaching it makes
+the CRDT serializer throw `SyntaxError: Cannot convert <name> to a BigInt` every
+tick. Resolution lives in two places: the Inspector resolves names→ids on ingest
+(`add-asset`'s `parseSyncComponents`); the SPAWN_ENTITY runtime path resolves
+post-`Composite.instance` in `add-child.ts` (`remapSyncComponentIds`, beside the
+`{self}` id/trigger remap). When adding a placeholder-bearing field — or debugging
+a `Cannot convert … to a BigInt` serialize crash — ensure both paths resolve it.
+
 ## Skills
 
 Skills live in `.ai/skills/*/SKILL.md`. Read the relevant `SKILL.md` when a task matches a skill's domain.

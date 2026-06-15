@@ -21,6 +21,7 @@ import type { Entity, IEngine } from '@dcl/ecs';
 import { type Composite } from '@dcl/ecs';
 import { COMPONENTS_WITH_ID, getNextId, type EntityMap } from './mapping';
 import { getComponents } from './definitions';
+import { getExplorerComponents } from './components';
 
 // ─── Constants ──────────────────────────────────────────────────────────────
 
@@ -342,6 +343,51 @@ export function remapTriggerReferences(
 }
 
 /**
+ * Rewrite `core-schema::Sync-Components`.`componentIds` on the spawned subtree
+ * from component-*name* placeholders to the numeric component ids the engine
+ * serializes.
+ *
+ * Asset-pack composites store these ids as portable names (e.g.
+ * `"asset-packs::States"`) — the same convention the Inspector resolves via
+ * `parseSyncComponents` when placing a smart item from the catalog. The
+ * SPAWN_ENTITY path loads the composite.json directly, so without this pass the
+ * raw names reach the live `SyncComponents` component, whose schema is
+ * `Array(Int64)`; the CRDT serializer then throws
+ * `Cannot convert <name> to a BigInt` every tick.
+ *
+ * Runs post-instance (alongside `remapTriggerReferences`) so every component
+ * the composite references is already registered and resolvable by name.
+ * Numeric entries pass through unchanged — some packs already ship resolved
+ * ids — and the write is skipped entirely when nothing needed resolving, to
+ * avoid a redundant CRDT update.
+ */
+export function remapSyncComponentIds(
+  engine: IEngine,
+  spawnedEntities: Iterable<[Entity, number]>,
+): void {
+  const { SyncComponents } = getExplorerComponents(engine);
+  for (const [destEntity] of spawnedEntities) {
+    const sync = SyncComponents.getOrNull(destEntity);
+    if (!sync || !Array.isArray(sync.componentIds)) continue;
+
+    let changed = false;
+    const resolved = (sync.componentIds as unknown[]).reduce<number[]>((acc, id) => {
+      if (typeof id === 'number') {
+        acc.push(id);
+      } else if (typeof id === 'string') {
+        changed = true;
+        const component = engine.getComponentOrNull(id);
+        if (component) acc.push(component.componentId);
+        else console.error(`[asset-packs] SyncComponents references unknown component "${id}"`);
+      }
+      return acc;
+    }, []);
+
+    if (changed) SyncComponents.createOrReplace(destEntity, { componentIds: resolved });
+  }
+}
+
+/**
  * After `Composite.instance` spawns a smart-item subtree, resolve its
  * placeholder IDs so handlers can fire:
  *
@@ -349,6 +395,8 @@ export function remapTriggerReferences(
  *      composite-side id is the literal `{self}`.
  *   2. Rewrite Trigger `actions[].id` / `conditions[].id` placeholders to
  *      point at the newly-allocated numeric IDs.
+ *   3. Resolve `SyncComponents.componentIds` component-name placeholders to
+ *      their numeric component ids.
  *
  * The caller supplies the composite-entity → live-entity map directly (via
  * the `EntityMap` populated by `EMM_DIRECT_MAPPING`). We no longer read it
@@ -373,4 +421,5 @@ export function initializeComponentIdsFromComposite(
 
   const ids = allocateIdsForSpawnedComponents(engine, composite, spawnedEntityByCompositeId);
   remapTriggerReferences(engine, inverse, ids);
+  remapSyncComponentIds(engine, inverse);
 }
