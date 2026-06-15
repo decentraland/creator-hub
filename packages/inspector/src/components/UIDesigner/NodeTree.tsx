@@ -10,7 +10,6 @@ import type { Entity } from '@dcl/ecs';
 
 import { useSdk } from '../../hooks/sdk/useSdk';
 import { useAppDispatch, useAppSelector } from '../../redux/hooks';
-import { collectDescendants } from '../../lib/sdk/operations/tree-walk';
 import {
   getExpanded,
   getSelectedNode,
@@ -125,15 +124,10 @@ const NodeTreeImpl: React.FC = () => {
   const handleRemove = useCallback(
     (node: UINode) => {
       if (!sdk) return;
-      // UI children are parented via core::UiTransform.parent (not core::Transform),
-      // so cascade the subtree ourselves and remove each entity.
-      const subtree = collectDescendants(sdk.engine, node.entity);
-      for (const target of subtree) {
-        sdk.operations.removeEntity(target);
-      }
+      const removed = sdk.operations.removeUINode(node.entity);
       void sdk.operations.dispatch();
       // If the deleted subtree held the selection, fall back to the parent (or root).
-      if (selectedNode !== null && subtree.has(selectedNode as Entity)) {
+      if (selectedNode !== null && removed.has(selectedNode as Entity)) {
         const parent = tree ? findParent(tree, node) : null;
         dispatch(selectNode({ node: parent?.entity ?? selectedRoot }));
       }

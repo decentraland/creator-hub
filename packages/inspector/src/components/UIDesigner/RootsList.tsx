@@ -7,7 +7,6 @@ import { ComponentName } from '@dcl/asset-packs';
 
 import { useSdk } from '../../hooks/sdk/useSdk';
 import { useEntitiesWith } from '../../hooks/sdk/useEntitiesWith';
-import { collectDescendants } from '../../lib/sdk/operations/tree-walk';
 import { useAppDispatch, useAppSelector } from '../../redux/hooks';
 import { getSelectedRoot, selectRoot } from '../../redux/ui-designer';
 import { Button } from '../Button';
@@ -85,12 +84,7 @@ export const RootsList: React.FC = () => {
   const handleRemove = useCallback(
     (node: UIRootNode) => {
       if (!sdk) return;
-      // UI subtrees are parented via core::UiTransform.parent. collectDescendants
-      // returns the root + every descendant; remove each entity.
-      const subtree = collectDescendants(sdk.engine, node.entity);
-      for (const target of subtree) {
-        sdk.operations.removeEntity(target);
-      }
+      sdk.operations.removeUINode(node.entity);
       void sdk.operations.dispatch();
       if (selected === node.entity) dispatch(selectRoot({ root: null }));
     },

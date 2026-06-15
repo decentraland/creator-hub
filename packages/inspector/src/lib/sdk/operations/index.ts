@@ -24,6 +24,7 @@ import createUIRoot from './create-ui-root';
 import reorderUISibling from './reorder-ui-sibling';
 import setUIParent from './set-ui-parent';
 import duplicateUINode from './duplicate-ui-node';
+import removeUINode from './remove-ui-node';
 import declareVariable from './declare-variable';
 import renameVariable from './rename-variable';
 import deleteVariable from './delete-variable';
@@ -54,6 +55,7 @@ export function createOperations(engine: IEngine) {
     reorderUISibling: reorderUISibling(engine),
     setUIParent: setUIParent(engine),
     duplicateUINode: duplicateUINode(engine),
+    removeUINode: removeUINode(engine),
     declareVariable: declareVariable(engine),
     renameVariable: renameVariable(engine),
     deleteVariable: deleteVariable(engine),

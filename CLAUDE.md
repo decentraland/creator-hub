@@ -87,6 +87,7 @@ make protoc        # Regenerate TypeScript from .proto files
 - Data layer communicates via Protocol Buffers (gRPC-like, using `@dcl/mini-rpc`).
 - Build: custom `build.js` using esbuild.
 - **Codegen safety (`engine-to-composite.ts`):** when emitting author-controlled strings (e.g. `core-schema::Name`) into generated TS source, escape BOTH positions — *values* via `JSON.stringify(...)` and *identifiers* (enum keys, interface/type/member names) via the `toSafeIdentifier` chokepoint (sanitize + reserved-word guard). Raw `"${name}"` interpolation is an injection / build-break vector.
+- **UI Designer entities (`core::UiTransform`-parented):** UI Designer nodes carry only `core::UiTransform` (parent index) — never `core::Transform` — and never appear in the editor `Nodes` tree. Generic Transform-based helpers silently no-op on them: `removeEntity` / `getComponentEntityTree(…, Transform)` yield nothing, so they delete/walk nothing. For any UI-node lifecycle op (delete/duplicate/reparent/reorder), use a dedicated `*-ui-*` operation that walks the UiTransform parent index via `collectDescendants` (`lib/sdk/operations/tree-walk.ts`).
 
 ### Asset Packs
 
