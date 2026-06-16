@@ -55,6 +55,9 @@ export class RemoteRenderer implements IRenderer {
   readonly debug: RendererDebug;
 
   #snapshot: RendererSnapshot = EMPTY_SNAPSHOT;
+  // Cached lookup view of `#snapshot.entityPositions`, rebuilt only when that
+  // slice arrives in a snapshot (~30Hz) rather than on every viewport read.
+  #entityPositionMap = new Map<Entity, Vector3>();
   #frameHandlers = new Set<() => void>();
   #gizmoChangeHandlers = new Set<() => void>();
   #metricsChangeHandlers = new Set<() => void>();
@@ -125,6 +128,12 @@ export class RemoteRenderer implements IRenderer {
     }
     const prev = this.#snapshot;
     this.#snapshot = { ...prev, ...partial };
+
+    // Rebuild the lookup view once per snapshot that carries new positions,
+    // not on every getEntityWorldPositions read.
+    if (partial.entityPositions) {
+      this.#entityPositionMap = new Map(partial.entityPositions);
+    }
 
     // Fire the mirror's own change subscriptions when the relevant slice moved.
     if (partial.entityPositions || partial.camera || partial.groundPlanes) {
@@ -209,11 +218,11 @@ export class RemoteRenderer implements IRenderer {
       },
       getGroundPlanes: (): GroundPlane[] => this.#snapshot.groundPlanes,
       getEntityWorldPositions: (entities: Entity[]): Map<Entity, Vector3> => {
-        // Rebuild the Map from the pushed pairs, filtered to the requested ids.
-        const all = new Map(this.#snapshot.entityPositions);
+        // Read from the cached view (rebuilt in #applySnapshot), filtered to
+        // the requested ids.
         const result = new Map<Entity, Vector3>();
         for (const entity of entities) {
-          const pos = all.get(entity);
+          const pos = this.#entityPositionMap.get(entity);
           if (pos) result.set(entity, pos);
         }
         return result;

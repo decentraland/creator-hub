@@ -210,7 +210,19 @@ function createMetricsFacade(scene: BABYLON.Scene, context: SceneContext): Rende
     getSceneMetrics: () => computeSceneMetrics(scene),
     getEntitiesOutsideLayout: () => computeEntitiesOutsideLayout(scene, context),
     onChange: (cb): Unsubscribe => {
-      const handler = () => cb();
+      // Coalesce bursts: a scene load adding N meshes fires the observables N
+      // times synchronously, and each consumer (Metrics.tsx, SceneMinimap.tsx)
+      // recomputes per fire. Collapse a synchronous burst into one callback via
+      // a microtask so the batch triggers a single recompute.
+      let queued = false;
+      const handler = () => {
+        if (queued) return;
+        queued = true;
+        queueMicrotask(() => {
+          queued = false;
+          cb();
+        });
+      };
       // Anything that can change triangle/material/texture counts or
       // layout-bounds membership: mesh lifecycle, async data loads, and the
       // out-of-layout multi-material the bounds visual creates/removes.

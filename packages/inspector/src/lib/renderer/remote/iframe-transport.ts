@@ -69,10 +69,18 @@ function defaultMount({
     iframe.style.width = '100%';
     iframe.style.height = '100%';
     iframe.setAttribute('allow', 'autoplay; fullscreen; xr-spatial-tracking');
-    // Sandbox the renderer document: it may run untrusted third-party code.
+    // Sandbox the renderer document as defense-in-depth (it may run
+    // third-party renderer code).
     // `allow-scripts` (run the renderer) + `allow-same-origin` (so it can use
     // WebGL/asset URLs and postMessage with a real origin) is the minimum a
     // renderer needs; everything else (top-nav, popups, forms) stays denied.
+    //
+    // SECURITY: `allow-scripts allow-same-origin` together let the framed
+    // document remove its own sandbox attribute at runtime — this pair is not a
+    // hard containment boundary. It's unavoidable for WebGL renderers that need
+    // same-origin access. Origin validation on the MessageTransport mitigates
+    // cross-origin message injection, but renderer documents must still be
+    // trusted code; do not point this at an untrusted URL.
     iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin');
     iframe.setAttribute('referrerpolicy', 'no-referrer');
 

@@ -1,7 +1,6 @@
 import { useCallback } from 'react';
 import { TbBox } from 'react-icons/tb';
 
-import { withSdk } from '../../../hoc/withSdk';
 import { useAppSelector } from '../../../redux/hooks';
 import { selectCanSave } from '../../../redux/app';
 import {
@@ -23,7 +22,7 @@ import './RendererPicker.css';
  * initializes with that engine — the editor UI is wired to the scene in places,
  * so a clean reload is simpler and safer than a live swap.
  */
-const RendererPicker = withSdk(() => {
+const RendererPicker = () => {
   const current = getSelectedRenderer();
   const available = getAvailableRenderers();
   const hasUnsavedChanges = useAppSelector(selectCanSave);
@@ -69,6 +68,6 @@ const RendererPicker = withSdk(() => {
       </select>
     </div>
   );
-});
+};
 
 export default RendererPicker;
