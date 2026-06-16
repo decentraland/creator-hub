@@ -1,5 +1,5 @@
 // Single validated codec per VariableType, shared by the asset-packs runtime
-// renderer (ui-renderer.tsx) and the inspector's Variables editor. Pure module:
+// renderer (ui-runtime.ts) and the inspector's Variables editor. Pure module:
 // strings, numbers, and plain { r, g, b, a } objects only — no node APIs, no
 // vitest imports (unit tests live in the inspector to avoid lib-build types
 // leakage). Switch arms use the same lowercase tag values as VariableType.

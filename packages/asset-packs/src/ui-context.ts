@@ -62,7 +62,7 @@ export function clearUiCallback(uiRoot: Entity, name: string): void {
   map.delete(name);
 }
 
-// --- Internal read accessors used by ui-renderer.tsx ---
+// --- Internal read accessors used by ui-runtime.ts ---
 
 /** @internal */
 export function getUiContextValue(uiRoot: Entity, name: string): unknown {

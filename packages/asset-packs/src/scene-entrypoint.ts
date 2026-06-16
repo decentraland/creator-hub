@@ -11,7 +11,7 @@ import { createTransformSystem } from './transform';
 import { createInputActionSystem } from './input-actions';
 import { createCounterBarSystem } from './counter-bar';
 import { createAdminToolkitSystem } from './admin-toolkit';
-import { createUIRendererSystem } from './ui-renderer';
+import { createUIRuntimeSystem } from './ui-runtime';
 
 let initialized: boolean = false;
 /**
@@ -50,7 +50,7 @@ export function initAssetPacks(
     engine.addSystem(createInputActionSystem(inputSystem));
     engine.addSystem(createCounterBarSystem(engine, components));
     engine.addSystem(createTransformSystem(components));
-    engine.addSystem(createUIRendererSystem(engine));
+    engine.addSystem(createUIRuntimeSystem(engine, pointerEventsSystem));
     engine.addSystem(
       createAdminToolkitSystem(
         engine,

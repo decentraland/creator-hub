@@ -5,7 +5,7 @@ import type { Entity, IEngine } from '@dcl/ecs';
  * `root` (inclusive). Used by variable / binding cascade operations.
  *
  * Mirrors the parent-index DFS pattern also present in
- * `packages/asset-packs/src/ui-renderer.tsx` and
+ * `packages/asset-packs/src/ui-runtime.ts` and
  * `packages/inspector/src/lib/data-layer/host/utils/engine-to-composite.ts`;
  * those sites are not unified into this helper because they live in a
  * different package or cast `Entity` through `unknown as number` — see the

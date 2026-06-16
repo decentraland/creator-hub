@@ -398,6 +398,26 @@ const LAYOUT_BOX_FIELDS: FieldConfig[] = [
   },
 ];
 
+// Roots resolve their size from the Canvas width/height on the marker, not from
+// their UiTransform — so a root exposes only Padding from the box fields. Size /
+// Min / Max / Align self / Position type / Position / Margin are intentionally
+// omitted (the root always fills the screen at 100% × 100% relative).
+const LAYOUT_BOX_FIELDS_ROOT: FieldConfig[] = [
+  {
+    label: 'Padding',
+    componentId: TRANSFORM,
+    path: '',
+    kind: 'quad-pixels' as const,
+    subFields: [
+      { path: 'paddingTop', leftLabel: 'T' },
+      { path: 'paddingRight', leftLabel: 'R' },
+      { path: 'paddingBottom', leftLabel: 'B' },
+      { path: 'paddingLeft', leftLabel: 'L' },
+    ],
+    bindable: false,
+  },
+];
+
 /**
  * Compose the Layout group for a given node type.
  * @param isRoot prepend the Visible toggle (only roots have the marker).
@@ -407,7 +427,7 @@ export function buildLayoutGroup(isRoot: boolean, isContainer: boolean) {
   const fields: FieldConfig[] = [];
   if (isRoot) fields.push(LAYOUT_VISIBLE_FIELD);
   if (isContainer) fields.push(...LAYOUT_FLEX_FIELDS);
-  fields.push(...LAYOUT_BOX_FIELDS);
+  fields.push(...(isRoot ? LAYOUT_BOX_FIELDS_ROOT : LAYOUT_BOX_FIELDS));
   return { title: 'Layout', fields };
 }
 

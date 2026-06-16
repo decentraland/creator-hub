@@ -30,6 +30,7 @@ import type {
   AudioSourceComponentDefinitionExtended,
   PBUiInput,
   PBUiInputResult,
+  PBUiDropdownResult,
   PBUiCanvasInformation,
   InputModifierComponentDefinitionExtended,
   PBSkyboxTime,
@@ -347,6 +348,7 @@ export type EngineComponents = {
   UiBackground: LastWriteWinElementSetComponentDefinition<PBUiBackground>;
   UiInput: LastWriteWinElementSetComponentDefinition<PBUiInput>;
   UiInputResult: LastWriteWinElementSetComponentDefinition<PBUiInputResult>;
+  UiDropdownResult: LastWriteWinElementSetComponentDefinition<PBUiDropdownResult>;
   UiCanvasInformation: LastWriteWinElementSetComponentDefinition<PBUiCanvasInformation>;
   Billboard: LastWriteWinElementSetComponentDefinition<PBBillboard>;
   Name: LastWriteWinElementSetComponentDefinition<NameType>;

@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import type { Entity } from '@dcl/ecs';
 
 import { useChange } from '../../hooks/sdk/useChange';
@@ -21,6 +21,15 @@ export function useUINodeTree(): UINode | null {
   const bumpTick = useCallback(() => setTick(t => (t + 1) & 0x7fffffff), []);
   const debouncedBump = useCallback(debounce(bumpTick, 10), [bumpTick]);
   useChange(debouncedBump, []);
+
+  // Self-heal legacy roots that were saved with a non-canonical UiTransform
+  // (e.g. absolute / fixed 1920px before "root is the screen"). Fires once per
+  // root selection; the op no-ops (and we skip dispatch) when already canonical.
+  useEffect(() => {
+    if (!sdk || root === null) return;
+    const repaired = sdk.operations.repairUIRoot(root as Entity);
+    if (repaired) void sdk.operations.dispatch();
+  }, [sdk, root]);
 
   if (!sdk || root === null) return null;
   return buildUINodeTree(sdk.engine, root as Entity);

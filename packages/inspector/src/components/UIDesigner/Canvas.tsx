@@ -706,6 +706,28 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node }) => {
     style = { ...style, ...textureStyle(texUrl, background.textureMode) };
   }
 
+  // The root IS the screen: its authored size/position must never distort the
+  // frame. Force it to fill the .ui-designer-canvas-root box regardless of what
+  // its stored UiTransform says (a legacy root may have been saved absolute or
+  // a fixed 1920px). The runtime + repair op keep it 100% relative; this is the
+  // editor-side guarantee.
+  if (isRoot) {
+    style = {
+      ...style,
+      position: 'relative',
+      width: '100%',
+      height: '100%',
+      top: undefined,
+      right: undefined,
+      bottom: undefined,
+      left: undefined,
+      marginTop: undefined,
+      marginRight: undefined,
+      marginBottom: undefined,
+      marginLeft: undefined,
+    };
+  }
+
   return (
     <div
       ref={setRef}

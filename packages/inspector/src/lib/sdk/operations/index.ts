@@ -21,6 +21,7 @@ import hide from './hide';
 import addUINode from './add-ui-node';
 import createCustomAsset from './create-custom-asset';
 import createUIRoot from './create-ui-root';
+import repairUIRoot from './repair-ui-root';
 import reorderUISibling from './reorder-ui-sibling';
 import setUIParent from './set-ui-parent';
 import duplicateUINode from './duplicate-ui-node';
@@ -52,6 +53,7 @@ export function createOperations(engine: IEngine) {
     duplicateEntity: duplicateEntity(engine),
     createCustomAsset: createCustomAsset(engine),
     createUIRoot: createUIRoot(engine),
+    repairUIRoot: repairUIRoot(engine),
     reorderUISibling: reorderUISibling(engine),
     setUIParent: setUIParent(engine),
     duplicateUINode: duplicateUINode(engine),
