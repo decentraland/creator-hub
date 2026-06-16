@@ -8,8 +8,7 @@ import type { Entity, IEngine } from '@dcl/ecs';
  * `packages/asset-packs/src/ui-runtime.ts` and
  * `packages/inspector/src/lib/data-layer/host/utils/engine-to-composite.ts`;
  * those sites are not unified into this helper because they live in a
- * different package or cast `Entity` through `unknown as number` — see the
- * Future-work note in this spec's `plan.md`.
+ * different package or cast `Entity` through `unknown as number`.
  */
 export function collectDescendants(engine: IEngine, root: Entity): Set<Entity> {
   const UiTransform = engine.getComponent('core::UiTransform');
