@@ -58,3 +58,9 @@
 .GeneralTab .ShowInPlaces {
   margin-top: -16px;
 }
+
+.GeneralTab .SinglePlayerNote {
+  margin-top: -8px;
+  padding-left: 32px;
+  color: var(--dcl-silver);
+}
