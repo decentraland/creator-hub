@@ -288,25 +288,29 @@ const uiComponent = (
   //   - "Ensure critical UI is inside the safe area"
   //   - "Scale up UI sizes by 3× for Mobile to improve readability"
   //
-  // Mobile layout: toggle + panel centered horizontally in the safe zone,
+  // Mobile layout: toggle + panel in the safe zone,
   // toggle on top, panel expanding downward (column-reverse since toggle is last child).
   // Desktop layout: completely unchanged — panel + toggle side-by-side at top-right.
 
-  const toggleBtnSize = isMobile ? 126 : 42; // 42 × 3 = 126
-  const tabBtnWidth = isMobile ? 147 : 49; // 49 × 3 = 147
-  const tabBtnHeight = isMobile ? 126 : 42; // 42 × 3 = 126
+  const SCALE_FACTOR = 2.5;
+  const toggleBtnSize = isMobile ? 42 * SCALE_FACTOR : 42;
+  const tabBtnWidth = isMobile ? 49 * SCALE_FACTOR : 49;
+  const tabBtnHeight = isMobile ? 42 * SCALE_FACTOR : 42;
   const panelWidth = isMobile ? 900 : 500; // fits within center safe zone (~50% of 1920)
-  const headerHeight = isMobile ? 150 : 50; // 50 × 3 = 150
-  const fontSize = isMobile ? 60 : 20; // 20 × 3 = 60
+  const headerHeight = isMobile ? 50 * SCALE_FACTOR : 50;
+  const fontSize = isMobile ? 40 : 20;
 
   // Desktop: row layout, anchored top-right (unchanged from original).
   // Mobile: column-reverse layout, centered horizontally at top of safe zone.
   //   top: 60 clears the OS status bar / notch.
-  //   left: centers the panel in the 1920-wide virtual canvas.
+  //   left: 100 clears the top-left actions and centers the panel in the 1920-wide virtual canvas.
   //   column-reverse: toggle (last child) renders on top, panel expands below it.
   const outerPosition = isMobile
-    ? { top: 60, left: Math.round((ADMIN_TOOLKIT_VIRTUAL_UI_SIZE.virtualWidth - panelWidth) / 2) }
-    : { top: 120, right: 10 };
+    ? {
+        top: 30,
+        left: 100 + Math.round((ADMIN_TOOLKIT_VIRTUAL_UI_SIZE.virtualWidth - panelWidth) / 2),
+      }
+    : { top: 120, right: 14 };
 
   return [
     <UiEntity
@@ -320,8 +324,7 @@ const uiComponent = (
         <UiEntity
           uiTransform={{
             positionType: 'absolute',
-            flexDirection: isMobile ? 'column-reverse' : 'row',
-            alignItems: isMobile ? 'center' : undefined,
+            flexDirection: isMobile ? 'row-reverse' : 'row',
             position: outerPosition,
           }}
         >
@@ -331,7 +334,7 @@ const uiComponent = (
               width: panelWidth,
               pointerFilter: 'block',
               flexDirection: 'column',
-              margin: isMobile ? { top: 8 } : { right: 8 },
+              margin: isMobile ? { left: 8 } : { right: 8 },
             }}
           >
             <UiEntity
