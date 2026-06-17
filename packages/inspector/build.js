@@ -43,10 +43,11 @@ async function main() {
 
   if (WATCH_MODE) {
     await context.watch();
-    let { host, port } = await context.serve({
+    let { hosts, port } = await context.serve({
+      host: 'localhost',
       servedir: 'public',
     });
-    console.log(`> Serving on http://${host}:${port}`);
+    console.log(`> Serving on http://${hosts[0] ?? 'localhost'}:${port}`);
   } else {
     console.time('> Building browser bundle');
     await context.rebuild();
@@ -122,8 +123,13 @@ function runTypeChecker() {
 }
 
 function getNotBundledModules() {
-  // || true is added because `npm ls` fails installing a package from S3
-  const child = child_process.execSync('npm ls --all --json || true', {});
+  // || true is added because `npm ls` fails installing a package from S3.
+  // stderr is muted so harmless transitive-dependency warnings don't pollute
+  // the dev server output; stdout stays piped for JSON.parse below.
+  const child = child_process.execSync('npm ls --all --json || true', {
+    stdio: ['ignore', 'pipe', 'ignore'],
+    maxBuffer: 64 * 1024 * 1024,
+  });
   const ret = JSON.parse(child.toString());
 
   const externalModules = new Set();
