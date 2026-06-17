@@ -413,7 +413,8 @@
         "max_offset": "Desplazamiento Máximo",
         "general": "General",
         "single_player": "Un Solo Jugador",
-        "show_in_places": "Mostrar en Places"
+        "show_in_places": "Mostrar en Places",
+        "single_player_streaming_note": "La transmisión en vivo no es compatible con el modo un solo jugador."
       },
       "details": {
         "world_title": "Título del Mundo",
