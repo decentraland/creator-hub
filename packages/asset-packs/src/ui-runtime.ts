@@ -246,10 +246,6 @@ type RootState = {
   pointerWired: Set<Entity>;
 };
 
-// Decode an asset-packs::UIDesign value into the design shape the materialize* helpers
-// consume. parent/rightOf are stored as entity fields (for composite remapping); the rest
-// of the transform + the text/input/dropdown design are JSON-encoded. UIDesign is authored
-// and never written by the runtime, so this is always the pristine, unscaled design.
 // The composite JSON is attacker-controllable; a malformed UIDesign string field must not
 // throw out of the per-frame UI system. Parse defensively: on failure log and fall back, so
 // one bad node renders with defaults rather than breaking the whole scene UI every tick.
@@ -263,6 +259,10 @@ function safeParse<T>(raw: string | undefined, fallback: T, entity: Entity, fiel
   }
 }
 
+// Decode an asset-packs::UIDesign value into the design shape the materialize* helpers
+// consume. parent/rightOf are stored as entity fields (for composite remapping); the rest
+// of the transform + the text/input/dropdown design are JSON-encoded. UIDesign is authored
+// and never written by the runtime, so this is always the pristine, unscaled design.
 function decodeDesign(uiDesign: AnyRecord, entity: Entity): NodeDesign {
   const transform: AnyRecord = {
     ...safeParse<AnyRecord>(uiDesign.transform as string | undefined, {}, entity, 'transform'),
