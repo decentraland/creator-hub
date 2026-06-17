@@ -14,7 +14,8 @@ import { GenerateStreamKey } from './GenerateStreamKey';
 import { DeleteStreamKeyConfirmation } from './DeleteStreamKey';
 
 export const LIVEKIT_STREAM_SRC = 'livekit-video://current-stream';
-export const STREAMING_SUPPORT_URL = 'https://docs.decentraland.org//creator/editor/live-streaming';
+export const STREAMING_SUPPORT_URL =
+  'https://docs.decentraland.org/creator/scene-editor/operate-live/live-streaming';
 
 export function LiveStream({
   engine,
