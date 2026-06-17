@@ -55,9 +55,9 @@ export default withSdk<Props>(({ sdk }) => {
   }
 
   // Spawn-point handles go through the renderer-agnostic contract. A renderer
-  // without in-scene handles no-ops them; the panel still edits spawn-point
-  // values via the form. (Named *controller* to avoid colliding with the
-  // `spawnPoints` array-state above.)
+  // without in-scene handles (e.g. three) no-ops them; the panel still edits
+  // spawn-point values via the form. (Named *controller* to avoid colliding
+  // with the `spawnPoints` array-state above.)
   const spawnPointController = sdk.renderer.spawnPoints;
 
   const [selectedSpawnPointIndex, setSelectedSpawnPointIndex] = useState<number | null>(() =>

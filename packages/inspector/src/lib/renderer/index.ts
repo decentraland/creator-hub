@@ -3,12 +3,12 @@
  *
  * The inspector is renderer-agnostic: it owns the scene as `@dcl/ecs` state and
  * talks to whatever draws it through {@link IRenderer}. To add a renderer
- * (Unity, Bevy, a custom WebGL/WebGPU engine, …) implement `IRenderer` and
- * {@link registerRenderer} it. The built-in Babylon renderer uses this exact API.
+ * (Three.js, Unity, Bevy, …) implement `IRenderer` and {@link registerRenderer}
+ * it. Built-in Babylon and Three.js use this exact API.
  *
- * See `docs/authoring-a-renderer.md` for the contract semantics, and
- * {@link createRendererConformanceSuite} (in `./conformance`) to verify an
- * implementation.
+ * See `docs/authoring-a-renderer.md` for the contract semantics and a worked
+ * example, and {@link createRendererConformanceSuite} (in `./conformance`) to
+ * verify an implementation.
  */
 
 // The contract every renderer implements.
