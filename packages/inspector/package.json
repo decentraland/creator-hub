@@ -61,7 +61,8 @@
   ],
   "main": "dist/tooling-entrypoint.js",
   "repository": {
-    "url": "git+https://github.com/decentraland/creator-hub",
+    "type": "git",
+    "url": "git+https://github.com/decentraland/creator-hub.git",
     "directory": "packages/inspector"
   },
   "scripts": {
