@@ -14,6 +14,13 @@ import type { UI, UIBindings } from '@dcl/asset-packs';
 import { buildUiChildrenIndex, descendantsFromIndex } from '../../../sdk/operations/tree-walk';
 import type { FileSystemInterface } from '../../types';
 
+const UI_RENDER_COMPONENT_NAMES = new Set([
+  'core::UiTransform',
+  'core::UiText',
+  'core::UiInput',
+  'core::UiDropdown',
+]);
+
 function componentToCompositeComponentData<T>(
   $case: 'json' | 'binary',
   value: DeepReadonly<T>,
@@ -76,17 +83,23 @@ export function dumpEngineToComposite(
     composite.components.push(compositeComponent);
   }
 
+  // UI-Designer membership: only entities reachable from an asset-packs::UI marker via the
+  // core::UiTransform parent index are real UI nodes. core::Ui* suppression and the
+  // UIDesign re-emission below are gated on this set so a stray/tampered core::UiTransform on
+  // a non-UI entity is dumped verbatim under its own name (not silently folded into UIDesign).
+  const uiMarker = engine.getComponentOrNull(ComponentName.UI);
+  const uiChildrenIndex = buildUiChildrenIndex(engine);
+  const uiMemberEntities = new Set<Entity>();
+  if (uiMarker) {
+    for (const [rootEntity] of engine.getEntitiesWith(uiMarker)) {
+      for (const e of descendantsFromIndex(uiChildrenIndex, rootEntity)) uiMemberEntities.add(e);
+    }
+  }
+
   const ignoreComponentNames = [
     'inspector:Selection',
     'editor::Toggle',
     CompositeRoot.componentName,
-    // UI Designer render components are persisted as asset-packs::UIDesign instead (see
-    // the UIDesign-emission pass below). They only ever appear on UI nodes, so suppressing
-    // them globally is safe.
-    'core::UiTransform',
-    'core::UiText',
-    'core::UiInput',
-    'core::UiDropdown',
   ];
 
   for (const itComponentDefinition of engine.componentsIter()) {
@@ -105,6 +118,14 @@ export function dumpEngineToComposite(
       // TODO: see for overrides? check if the value has changed or not (should we tag it?)
       // For now, the entities from children composite are ignored
       if (ignoreEntities.has(entity)) continue;
+      // core::Ui* on a real UI-Designer node is re-emitted as asset-packs::UIDesign below;
+      // skip it here. core::Ui* on a non-member entity is dumped verbatim (defense-in-depth).
+      if (
+        UI_RENDER_COMPONENT_NAMES.has(itComponentDefinition.componentName) &&
+        uiMemberEntities.has(entity)
+      ) {
+        continue;
+      }
 
       const componentData: ComponentData = componentToCompositeComponentData(
         internalDataType,
@@ -143,6 +164,7 @@ export function dumpEngineToComposite(
     };
     for (const [entity, transform] of engine.getEntitiesWith(UiTransform)) {
       if (ignoreEntities.has(entity)) continue;
+      if (!uiMemberEntities.has(entity)) continue; // not a UI-Designer node — leave verbatim.
       const { parent, rightOf, ...transformRest } = transform as Record<string, unknown>;
       const text = UiText?.getOrNull(entity);
       const input = UiInput?.getOrNull(entity);

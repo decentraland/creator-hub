@@ -32,7 +32,17 @@ describe('when round-tripping UI Designer nodes through the composite boundary',
     UiTransform = components.UiTransform(source);
     UiText = components.UiText(source);
 
+    // The UI-Designer root carries the asset-packs::UI marker; the dump treats only the
+    // subtree reachable from a marker (via the core::UiTransform parent index) as UI nodes.
+    const UI = source.getComponent(ComponentName.UI);
     root = source.addEntity();
+    UI.create(root, {
+      name: 'UI',
+      visible: true,
+      canvasWidth: 1920,
+      canvasHeight: 1080,
+      variables: [],
+    } as never);
     UiTransform.create(root, { parent: 0 } as never);
 
     child = source.addEntity();

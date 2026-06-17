@@ -250,17 +250,43 @@ type RootState = {
 // consume. parent/rightOf are stored as entity fields (for composite remapping); the rest
 // of the transform + the text/input/dropdown design are JSON-encoded. UIDesign is authored
 // and never written by the runtime, so this is always the pristine, unscaled design.
-function decodeDesign(uiDesign: AnyRecord): NodeDesign {
+// The composite JSON is attacker-controllable; a malformed UIDesign string field must not
+// throw out of the per-frame UI system. Parse defensively: on failure log and fall back, so
+// one bad node renders with defaults rather than breaking the whole scene UI every tick.
+function safeParse<T>(raw: string | undefined, fallback: T, entity: Entity, field: string): T {
+  if (!raw) return fallback;
+  try {
+    return JSON.parse(raw) as T;
+  } catch {
+    console.error(`decodeDesign: malformed UIDesign.${field} on entity ${entity}; using fallback`);
+    return fallback;
+  }
+}
+
+function decodeDesign(uiDesign: AnyRecord, entity: Entity): NodeDesign {
   const transform: AnyRecord = {
-    ...(JSON.parse((uiDesign.transform as string) || '{}') as AnyRecord),
+    ...safeParse<AnyRecord>(uiDesign.transform as string | undefined, {}, entity, 'transform'),
     parent: uiDesign.parent,
     rightOf: uiDesign.rightOf,
   };
-  const text = uiDesign.text ? (JSON.parse(uiDesign.text as string) as AnyRecord) : undefined;
-  const input = uiDesign.input ? (JSON.parse(uiDesign.input as string) as AnyRecord) : undefined;
-  const dropdown = uiDesign.dropdown
-    ? (JSON.parse(uiDesign.dropdown as string) as AnyRecord)
-    : undefined;
+  const text = safeParse<AnyRecord | undefined>(
+    uiDesign.text as string | undefined,
+    undefined,
+    entity,
+    'text',
+  );
+  const input = safeParse<AnyRecord | undefined>(
+    uiDesign.input as string | undefined,
+    undefined,
+    entity,
+    'input',
+  );
+  const dropdown = safeParse<AnyRecord | undefined>(
+    uiDesign.dropdown as string | undefined,
+    undefined,
+    entity,
+    'dropdown',
+  );
   return { transform, text, input, dropdown };
 }
 
@@ -321,13 +347,13 @@ function materializeTransform(
   bag: ComponentBag,
   entity: Entity,
   root: Entity,
-  snap: NodeDesign,
+  design: NodeDesign,
   bindings: Bindings,
   varDefs: VarDefs,
   displayOverride: number | undefined,
   scale: number,
 ): void {
-  const target: AnyRecord = { ...snap.transform };
+  const target: AnyRecord = { ...design.transform };
   for (const key of bindings.keys()) {
     if (!key.startsWith('core::UiTransform.')) continue;
     const fieldPath = key.slice('core::UiTransform.'.length);
@@ -337,7 +363,7 @@ function materializeTransform(
       root,
       'core::UiTransform',
       fieldPath,
-      snap.transform[fieldPath],
+      design.transform[fieldPath],
     );
   }
   if (displayOverride !== undefined) target.display = displayOverride;
@@ -349,13 +375,13 @@ function materializeText(
   bag: ComponentBag,
   entity: Entity,
   root: Entity,
-  snapText: AnyRecord,
+  designText: AnyRecord,
   bindings: Bindings,
   mixedContent: MixedContent,
   varDefs: VarDefs,
   scale: number,
 ): void {
-  const target: AnyRecord = { ...snapText };
+  const target: AnyRecord = { ...designText };
   target.value = resolveTextField(
     mixedContent,
     bindings,
@@ -363,7 +389,7 @@ function materializeText(
     root,
     'core::UiText',
     'value',
-    snapText.value as string,
+    designText.value as string,
   );
   target.color = resolveBoundValue(
     bindings,
@@ -371,7 +397,7 @@ function materializeText(
     root,
     'core::UiText',
     'color',
-    snapText.color,
+    designText.color,
   );
   target.fontSize = resolveBoundValue(
     bindings,
@@ -379,7 +405,7 @@ function materializeText(
     root,
     'core::UiText',
     'fontSize',
-    snapText.fontSize,
+    designText.fontSize,
   );
   if (scale !== 1 && typeof target.fontSize === 'number') {
     target.fontSize = (target.fontSize as number) * scale;
@@ -391,12 +417,12 @@ function materializeInput(
   bag: ComponentBag,
   entity: Entity,
   root: Entity,
-  snapInput: AnyRecord,
+  designInput: AnyRecord,
   bindings: Bindings,
   mixedContent: MixedContent,
   varDefs: VarDefs,
 ): void {
-  const target: AnyRecord = { ...snapInput };
+  const target: AnyRecord = { ...designInput };
   target.value = resolveTextField(
     mixedContent,
     bindings,
@@ -404,7 +430,7 @@ function materializeInput(
     root,
     'core::UiInput',
     'value',
-    snapInput.value as string,
+    designInput.value as string,
   );
   target.placeholder = resolveTextField(
     mixedContent,
@@ -413,7 +439,7 @@ function materializeInput(
     root,
     'core::UiInput',
     'placeholder',
-    snapInput.placeholder as string,
+    designInput.placeholder as string,
   );
   target.disabled = resolveBoundValue(
     bindings,
@@ -421,7 +447,7 @@ function materializeInput(
     root,
     'core::UiInput',
     'disabled',
-    snapInput.disabled,
+    designInput.disabled,
   );
   writeIfChanged(bag.UiInput, entity, target);
 }
@@ -430,18 +456,18 @@ function materializeDropdown(
   bag: ComponentBag,
   entity: Entity,
   root: Entity,
-  snapDropdown: AnyRecord,
+  designDropdown: AnyRecord,
   bindings: Bindings,
   varDefs: VarDefs,
 ): void {
-  const target: AnyRecord = { ...snapDropdown };
+  const target: AnyRecord = { ...designDropdown };
   target.options = resolveBoundValue(
     bindings,
     varDefs,
     root,
     'core::UiDropdown',
     'options',
-    snapDropdown.options,
+    designDropdown.options,
   );
   target.selectedIndex = resolveBoundValue(
     bindings,
@@ -449,7 +475,7 @@ function materializeDropdown(
     root,
     'core::UiDropdown',
     'selectedIndex',
-    snapDropdown.selectedIndex,
+    designDropdown.selectedIndex,
   );
   target.disabled = resolveBoundValue(
     bindings,
@@ -457,7 +483,7 @@ function materializeDropdown(
     root,
     'core::UiDropdown',
     'disabled',
-    snapDropdown.disabled,
+    designDropdown.disabled,
   );
   writeIfChanged(bag.UiDropdown, entity, target);
 }
@@ -603,12 +629,12 @@ function materializeSubtree(
   scale: number,
 ): void {
   const uiDesign = bag.UIDesign.getOrNull(entity) as AnyRecord | null;
-  if (!uiDesign) return;
+  if (!uiDesign) return; // subtreeOf only yields UIDesign-bearing entities; defensive no-op.
 
   // Decode (cache by raw value identity; UIDesign is pristine so this never compounds).
   let entry = state.design.get(entity);
   if (!entry || entry.raw !== uiDesign) {
-    entry = { raw: uiDesign, decoded: decodeDesign(uiDesign) };
+    entry = { raw: uiDesign, decoded: decodeDesign(uiDesign, entity) };
     state.design.set(entity, entry);
   }
   const design = entry.decoded;
@@ -629,10 +655,12 @@ function materializeSubtree(
   if (design.dropdown) materializeDropdown(bag, entity, root, design.dropdown, bindings, varDefs);
 }
 
-// Engine-native UI Designer runtime. The SDK engine renders the stored
-// core::UiTransform tree directly; this system resolves variable bindings,
-// wires interactivity, and (Phase C) scales the design to the screen — writing
-// in place into the live components rather than rendering a second tree.
+// Engine-native UI Designer runtime. Each UI node carries a pristine, authored
+// asset-packs::UIDesign (the design source — the runtime never writes it). On every tick
+// this system reads UIDesign, resolves variable bindings, wires interactivity, and recreates
+// the scaled core::UiTransform/UiText/UiInput/UiDropdown render components the SDK engine
+// renders. Input (UIDesign) and output (core::*) are distinct components, so re-running over
+// a kept CRDT re-derives the output from pristine input and never compounds (Tween pattern).
 export function createUIRuntimeSystem(engine: IEngine, pointerEventsSystem: PointerEventsSystem) {
   const roots = new Map<Entity, RootState>();
   // Module-lifetime guard: the ECS Component.onChange API has no unsubscribe,
