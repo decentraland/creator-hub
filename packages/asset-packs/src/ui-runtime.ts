@@ -246,17 +246,37 @@ type RootState = {
   pointerWired: Set<Entity>;
 };
 
+// Keys an attacker could place in composite JSON to attempt prototype pollution; stripped from
+// every decoded object before it reaches createOrReplace. Variable-key delete avoids the
+// linter's no-proto literal-access rule. Keep IN LOCKSTEP with the copy in
+// packages/inspector/src/lib/data-layer/host/utils/ui-design-migration.ts.
+const DANGEROUS_KEYS = ['__proto__', 'prototype', 'constructor'];
+
 // The composite JSON is attacker-controllable; a malformed UIDesign string field must not
-// throw out of the per-frame UI system. Parse defensively: on failure log and fall back, so
-// one bad node renders with defaults rather than breaking the whole scene UI every tick.
-function safeParse<T>(raw: string | undefined, fallback: T, entity: Entity, field: string): T {
+// throw out of the per-frame UI system, nor reach a core::* component as a wrong-shape value
+// or with prototype-polluting keys. Parse defensively: on throw OR non-plain-object shape, log
+// and fall back; otherwise strip dangerous keys and return. exported for unit tests.
+export function safeParse<T>(
+  raw: string | undefined,
+  fallback: T,
+  entity: Entity,
+  field: string,
+): T {
   if (!raw) return fallback;
+  let parsed: unknown;
   try {
-    return JSON.parse(raw) as T;
+    parsed = JSON.parse(raw);
   } catch {
     console.error(`decodeDesign: malformed UIDesign.${field} on entity ${entity}; using fallback`);
     return fallback;
   }
+  if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
+    console.error(`decodeDesign: non-object UIDesign.${field} on entity ${entity}; using fallback`);
+    return fallback;
+  }
+  const obj = parsed as AnyRecord;
+  for (const k of DANGEROUS_KEYS) delete obj[k];
+  return obj as T;
 }
 
 // Decode an asset-packs::UIDesign value into the design shape the materialize* helpers
@@ -290,15 +310,23 @@ function decodeDesign(uiDesign: AnyRecord, entity: Entity): NodeDesign {
   return { transform, text, input, dropdown };
 }
 
-// Structural equality for plain PB component values (objects, arrays, scalars).
-function deepEqual(a: unknown, b: unknown): boolean {
+// Decoded UIDesign values are attacker-controllable; a deeply-nested value would otherwise
+// overflow the stack here, because writeIfChanged compares the stored object reference every
+// frame. Real UI component values are ~2-3 levels deep, so 32 never trips for valid content;
+// anything deeper is treated as "changed" (return false) so writeIfChanged falls through to
+// createOrReplace instead of recursing without bound.
+const MAX_DEEP_EQUAL_DEPTH = 32;
+
+// Structural equality for plain PB component values (objects, arrays, scalars). exported for tests.
+export function deepEqual(a: unknown, b: unknown, depth = 0): boolean {
   if (a === b) return true;
+  if (depth >= MAX_DEEP_EQUAL_DEPTH) return false;
   if (typeof a !== 'object' || typeof b !== 'object' || a === null || b === null) return false;
   const aArr = Array.isArray(a);
   const bArr = Array.isArray(b);
   if (aArr || bArr) {
     if (!aArr || !bArr || a.length !== b.length) return false;
-    for (let i = 0; i < a.length; i++) if (!deepEqual(a[i], b[i])) return false;
+    for (let i = 0; i < a.length; i++) if (!deepEqual(a[i], b[i], depth + 1)) return false;
     return true;
   }
   const ak = Object.keys(a as AnyRecord);
@@ -306,7 +334,7 @@ function deepEqual(a: unknown, b: unknown): boolean {
   if (ak.length !== bk.length) return false;
   for (const k of ak) {
     if (!Object.prototype.hasOwnProperty.call(b, k)) return false;
-    if (!deepEqual((a as AnyRecord)[k], (b as AnyRecord)[k])) return false;
+    if (!deepEqual((a as AnyRecord)[k], (b as AnyRecord)[k], depth + 1)) return false;
   }
   return true;
 }

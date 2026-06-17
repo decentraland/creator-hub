@@ -5,7 +5,7 @@ import * as components from '@dcl/ecs/dist/components';
 import { ComponentName, createComponents } from '@dcl/asset-packs';
 
 import { dumpEngineToComposite } from './engine-to-composite';
-import { splitUIDesignToCore } from './ui-design-migration';
+import { safeParse, splitUIDesignToCore } from './ui-design-migration';
 
 // Register the core UI render components + the asset-packs UIDesign component on an
 // engine, mirroring the inspector editing engine (which carries both).
@@ -113,5 +113,46 @@ describe('when round-tripping UI Designer nodes through the composite boundary',
     const rootTransform = TargetUiTransform.get(root) as Record<string, unknown>;
     expect(rootTransform.parent).toBe(0);
     expect(TargetUiText.getOrNull(root)).toBeNull();
+  });
+});
+
+describe('safeParse hardens composite-sourced JSON', () => {
+  it('falls back on malformed JSON and well-formed-but-wrong shapes', () => {
+    expect(safeParse<Record<string, unknown>>('{', {}, 0, 'transform')).toEqual({});
+    expect(safeParse<Record<string, unknown>>('[1,2,3]', {}, 0, 'transform')).toEqual({});
+    expect(safeParse<Record<string, unknown>>('42', {}, 0, 'transform')).toEqual({});
+    expect(safeParse<Record<string, unknown>>('null', {}, 0, 'transform')).toEqual({});
+    expect(
+      safeParse<Record<string, unknown> | undefined>('5', undefined, 0, 'text'),
+    ).toBeUndefined();
+  });
+
+  it('strips prototype-polluting keys but keeps real fields', () => {
+    const out = safeParse<Record<string, unknown>>(
+      '{"placeholder":"x","__proto__":{"polluted":true},"constructor":{},"prototype":{}}',
+      {},
+      0,
+      'input',
+    );
+    expect(out.placeholder).toBe('x');
+    expect(Object.prototype.hasOwnProperty.call(out, '__proto__')).toBe(false);
+    expect(Object.prototype.hasOwnProperty.call(out, 'constructor')).toBe(false);
+    expect(Object.prototype.hasOwnProperty.call(out, 'prototype')).toBe(false);
+    expect(({} as Record<string, unknown>).polluted).toBeUndefined();
+  });
+
+  it('splitUIDesignToCore tolerates hostile UIDesign fields without throwing', () => {
+    const engine = setupEngine();
+    const UIDesign = engine.getComponent(ComponentName.UI_DESIGN);
+    const node = engine.addEntity();
+    UIDesign.create(node, {
+      parent: 0,
+      rightOf: 0,
+      transform: '[1,2,3]', // wrong shape -> {} fallback
+      text: '42', // wrong shape -> undefined -> no UiText
+    } as never);
+
+    expect(() => splitUIDesignToCore(engine)).not.toThrow();
+    expect(UIDesign.getOrNull(node)).toBeNull();
   });
 });
