@@ -14,6 +14,7 @@ export const BaseComponentNames = {
   PLACEHOLDER: 'asset-packs::Placeholder',
   UI: 'asset-packs::UI',
   UI_BINDINGS: 'asset-packs::UIBindings',
+  UI_DESIGN: 'asset-packs::UIDesign',
 } as const;
 
 export enum AdminPermissions {

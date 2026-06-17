@@ -19,6 +19,7 @@ import {
 } from './utils/engine-to-composite';
 import type { CompositeManager } from './utils/fs-composite-provider';
 import { createFsCompositeProvider } from './utils/fs-composite-provider';
+import { splitUIDesignToCore } from './utils/ui-design-migration';
 import { toSceneComponent } from './utils/component';
 import { addNodesComponentsToPlayerAndCamera } from './utils/migrations/add-nodes-to-player-and-camera';
 import { fixNetworkEntityValues } from './utils/migrations/fix-network-entity-values';
@@ -128,6 +129,7 @@ export class CompositeProvider implements StateProvider {
     fixNetworkEntityValues(this.engine);
     selectSceneEntity(this.engine);
     migrateAllAssetPacksComponents(this.engine);
+    splitUIDesignToCore(this.engine);
     migrateAllInspectorComponents(this.engine);
     createTagsComponent(this.engine);
   }

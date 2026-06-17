@@ -70,6 +70,7 @@ interface ComponentBag {
   UiDropdownResult: any;
   UiCanvasInformation: any;
   UIBindings: any;
+  UIDesign: any;
 }
 
 function getBag(engine: IEngine): ComponentBag {
@@ -84,20 +85,21 @@ function getBag(engine: IEngine): ComponentBag {
     UiDropdownResult: engine.getComponent('core::UiDropdownResult'),
     UiCanvasInformation: engine.getComponent('core::UiCanvasInformation'),
     UIBindings: engine.getComponent(ComponentName.UI_BINDINGS),
+    UIDesign: engine.getComponent(ComponentName.UI_DESIGN),
   };
 }
 
-// Build a parent -> children index from every entity carrying core::UiTransform.
+// Build a parent -> children index from every entity carrying asset-packs::UIDesign.
 function getChildrenOf(engine: IEngine, bag: ComponentBag): Map<Entity, Entity[]> {
-  const out = new Map<Entity, Entity[]>();
-  for (const [entity, value] of engine.getEntitiesWith(bag.UiTransform)) {
-    const parent: Entity | undefined = (value as any).parent;
+  const childrenOf = new Map<Entity, Entity[]>();
+  for (const [entity, value] of engine.getEntitiesWith(bag.UIDesign)) {
+    const parent = (value as AnyRecord).parent as Entity | undefined;
     if (parent === undefined) continue;
-    const list = out.get(parent) ?? [];
-    list.push(entity);
-    out.set(parent, list);
+    const siblings = childrenOf.get(parent) ?? [];
+    siblings.push(entity);
+    childrenOf.set(parent, siblings);
   }
-  return out;
+  return childrenOf;
 }
 
 type VarDefs = Map<string, { type: string; defaultValue: string }>;
@@ -228,7 +230,7 @@ function resolveTextField(
 // Engine-native runtime
 // ============================================================================
 
-type NodeSnapshot = {
+type NodeDesign = {
   transform: AnyRecord; // design core::UiTransform (always present)
   text?: AnyRecord; // design core::UiText
   input?: AnyRecord; // design core::UiInput
@@ -236,14 +238,30 @@ type NodeSnapshot = {
 };
 
 type RootState = {
-  // Immutable design values per node entity (lazily captured on first encounter).
-  snapshot: Map<Entity, NodeSnapshot>;
-  // Entities whose pointer handlers we registered (for teardown).
+  // Perf cache of decoded designs, keyed by entity. Re-decoded when the raw UIDesign
+  // value changes (UIDesign is pristine, so caching never causes compounding).
+  design: Map<Entity, { raw: AnyRecord; decoded: NodeDesign }>;
+  // One-time interactivity wiring per entity (pointer handlers + result subscriptions).
+  wired: Set<Entity>;
   pointerWired: Set<Entity>;
 };
 
-function cloneOrUndefined(v: AnyRecord | null): AnyRecord | undefined {
-  return v ? { ...v } : undefined;
+// Decode an asset-packs::UIDesign value into the design shape the materialize* helpers
+// consume. parent/rightOf are stored as entity fields (for composite remapping); the rest
+// of the transform + the text/input/dropdown design are JSON-encoded. UIDesign is authored
+// and never written by the runtime, so this is always the pristine, unscaled design.
+function decodeDesign(uiDesign: AnyRecord): NodeDesign {
+  const transform: AnyRecord = {
+    ...(JSON.parse((uiDesign.transform as string) || '{}') as AnyRecord),
+    parent: uiDesign.parent,
+    rightOf: uiDesign.rightOf,
+  };
+  const text = uiDesign.text ? (JSON.parse(uiDesign.text as string) as AnyRecord) : undefined;
+  const input = uiDesign.input ? (JSON.parse(uiDesign.input as string) as AnyRecord) : undefined;
+  const dropdown = uiDesign.dropdown
+    ? (JSON.parse(uiDesign.dropdown as string) as AnyRecord)
+    : undefined;
+  return { transform, text, input, dropdown };
 }
 
 // Structural equality for plain PB component values (objects, arrays, scalars).
@@ -303,7 +321,7 @@ function materializeTransform(
   bag: ComponentBag,
   entity: Entity,
   root: Entity,
-  snap: NodeSnapshot,
+  snap: NodeDesign,
   bindings: Bindings,
   varDefs: VarDefs,
   displayOverride: number | undefined,
@@ -525,8 +543,7 @@ function materializeRoot(
   if (!marker) return;
   const varDefs = buildVarDefs(bag, root);
 
-  // Root visibility -> display override on the root transform only (display:none
-  // cascades to the subtree in Yoga).
+  // Root visibility -> display override on the root transform only.
   const { single: rootBindings } = buildBindingMaps(bag, root);
   const resolvedVisible = resolveBoundValue(
     rootBindings,
@@ -538,9 +555,7 @@ function materializeRoot(
   ) as boolean;
   const rootDisplay = resolvedVisible === false ? YGD_NONE : YGD_FLEX;
 
-  // Virtual-resolution scale: design canvas (marker) -> player screen. Same
-  // min-fit formula the react-ecs addUiRenderer wiring used. Legacy UIs (no
-  // canvasWidth) fall back to 1920×1080. Scale 1 when the screen size is unknown.
+  // Virtual-resolution scale: design canvas (marker) -> player screen.
   const m = marker as { canvasWidth?: number; canvasHeight?: number };
   const canvasWidth = m?.canvasWidth && m.canvasWidth > 0 ? m.canvasWidth : 1920;
   const canvasHeight = m?.canvasHeight && m.canvasHeight > 0 ? m.canvasHeight : 1080;
@@ -549,10 +564,11 @@ function materializeRoot(
       ? Math.min(screen.width / canvasWidth, screen.height / canvasHeight)
       : 1;
 
-  // Drop (and tear down) snapshot entries whose entity left the tree.
-  for (const e of Array.from(state.snapshot.keys())) {
-    if (!bag.UiTransform.has(e)) {
-      state.snapshot.delete(e);
+  // Drop cache/wiring for entities whose UIDesign left the tree.
+  for (const e of Array.from(state.design.keys())) {
+    if (!bag.UIDesign.has(e)) {
+      state.design.delete(e);
+      state.wired.delete(e);
       if (state.pointerWired.has(e)) {
         teardownPointer(pointerEventsSystem, e);
         state.pointerWired.delete(e);
@@ -561,40 +577,56 @@ function materializeRoot(
   }
 
   for (const entity of subtreeOf(root, childrenIndex)) {
-    const liveTransform = bag.UiTransform.getOrNull(entity);
-    if (!liveTransform) continue;
-
-    // Lazy snapshot on first encounter — live still equals design here.
-    let snap = state.snapshot.get(entity);
-    if (!snap) {
-      snap = {
-        transform: { ...(liveTransform as AnyRecord) },
-        text: cloneOrUndefined(bag.UiText.getOrNull(entity)),
-        input: cloneOrUndefined(bag.UiInput.getOrNull(entity)),
-        dropdown: cloneOrUndefined(bag.UiDropdown.getOrNull(entity)),
-      };
-      state.snapshot.set(entity, snap);
-      wireInteractivity(bag, pointerEventsSystem, root, entity, state, resultSubscribed);
-    }
-
-    const { single: bindings, mixed: mixedContent } = buildBindingMaps(bag, entity);
-
-    materializeTransform(
+    materializeSubtree(
       bag,
-      entity,
+      pointerEventsSystem,
       root,
-      snap,
-      bindings,
+      entity,
+      state,
+      resultSubscribed,
       varDefs,
       entity === root ? rootDisplay : undefined,
       scale,
     );
-    if (snap.text)
-      materializeText(bag, entity, root, snap.text, bindings, mixedContent, varDefs, scale);
-    if (snap.input)
-      materializeInput(bag, entity, root, snap.input, bindings, mixedContent, varDefs);
-    if (snap.dropdown) materializeDropdown(bag, entity, root, snap.dropdown, bindings, varDefs);
   }
+}
+
+function materializeSubtree(
+  bag: ComponentBag,
+  pointerEventsSystem: PointerEventsSystem,
+  root: Entity,
+  entity: Entity,
+  state: RootState,
+  resultSubscribed: Set<Entity>,
+  varDefs: VarDefs,
+  displayOverride: number | undefined,
+  scale: number,
+): void {
+  const uiDesign = bag.UIDesign.getOrNull(entity) as AnyRecord | null;
+  if (!uiDesign) return;
+
+  // Decode (cache by raw value identity; UIDesign is pristine so this never compounds).
+  let entry = state.design.get(entity);
+  if (!entry || entry.raw !== uiDesign) {
+    entry = { raw: uiDesign, decoded: decodeDesign(uiDesign) };
+    state.design.set(entity, entry);
+  }
+  const design = entry.decoded;
+
+  // Wire interactivity once per entity.
+  if (!state.wired.has(entity)) {
+    state.wired.add(entity);
+    wireInteractivity(bag, pointerEventsSystem, root, entity, state, resultSubscribed);
+  }
+
+  const { single: bindings, mixed: mixedContent } = buildBindingMaps(bag, entity);
+
+  materializeTransform(bag, entity, root, design, bindings, varDefs, displayOverride, scale);
+  if (design.text)
+    materializeText(bag, entity, root, design.text, bindings, mixedContent, varDefs, scale);
+  if (design.input)
+    materializeInput(bag, entity, root, design.input, bindings, mixedContent, varDefs);
+  if (design.dropdown) materializeDropdown(bag, entity, root, design.dropdown, bindings, varDefs);
 }
 
 // Engine-native UI Designer runtime. The SDK engine renders the stored
@@ -614,7 +646,7 @@ export function createUIRuntimeSystem(engine: IEngine, pointerEventsSystem: Poin
     // Register newly-appeared roots.
     for (const [rootEntity] of engine.getEntitiesWith(bag.UI)) {
       if (!roots.has(rootEntity)) {
-        roots.set(rootEntity, { snapshot: new Map(), pointerWired: new Set() });
+        roots.set(rootEntity, { design: new Map(), wired: new Set(), pointerWired: new Set() });
       }
     }
 

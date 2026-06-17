@@ -326,6 +326,7 @@ export function createComponents(engine: IEngine) {
     Placeholder: components[BaseComponentNames.PLACEHOLDER],
     UI: components[BaseComponentNames.UI],
     UIBindings: components[BaseComponentNames.UI_BINDINGS],
+    UIDesign: components[BaseComponentNames.UI_DESIGN],
   };
 }
 
@@ -504,5 +505,8 @@ export type UIBindingsComponent = Components['UIBindings'];
 export type UIBindings = ReturnType<UIBindingsComponent['schema']['deserialize']>;
 export type UIBinding = UIBindings['value'][0];
 export type UISegment = NonNullable<UIBinding['segments']>[number];
+
+export type UIDesignComponent = Components['UIDesign'];
+export type UIDesign = ReturnType<UIDesignComponent['schema']['deserialize']>;
 
 export { setUiContext, clearUiContext, setUiCallback, clearUiCallback } from './ui-context';

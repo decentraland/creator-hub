@@ -233,6 +233,23 @@ const COMPONENT_REGISTRY = {
       ),
     },
   ],
+  'asset-packs::UIDesign': [
+    {
+      // Sibling-order + parent links of the node. Entity-typed so the composite
+      // loader remaps them into the scene's entity range on load; the runtime sets
+      // core::UiTransform.parent/rightOf from these (see Phase 2).
+      parent: Schemas.Entity,
+      rightOf: Schemas.Entity,
+      // The remaining core::UiTransform fields (everything EXCEPT parent/rightOf),
+      // JSON-encoded. Lossless + resilient to PBUiTransform additions; no entity refs.
+      transform: Schemas.String,
+      // JSON-encoded core::UiText / UiInput / UiDropdown design. Absent on nodes that
+      // don't carry the corresponding render component.
+      text: Schemas.Optional(Schemas.String),
+      input: Schemas.Optional(Schemas.String),
+      dropdown: Schemas.Optional(Schemas.String),
+    },
+  ],
 } as const;
 
 export type AssetPacksVersionedComponents = VersionedComponents<typeof COMPONENT_REGISTRY>;

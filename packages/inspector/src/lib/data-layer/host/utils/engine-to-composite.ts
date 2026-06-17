@@ -9,7 +9,9 @@ import type {
 } from '@dcl/ecs';
 import { ComponentType, PutComponentOperation, getCompositeRootComponent, Name } from '@dcl/ecs';
 import { ReadWriteByteBuffer } from '@dcl/ecs/dist/serialization/ByteBuffer';
+import { ComponentName } from '@dcl/asset-packs';
 import type { UI, UIBindings } from '@dcl/asset-packs';
+import { buildUiChildrenIndex, descendantsFromIndex } from '../../../sdk/operations/tree-walk';
 import type { FileSystemInterface } from '../../types';
 
 function componentToCompositeComponentData<T>(
@@ -78,6 +80,13 @@ export function dumpEngineToComposite(
     'inspector:Selection',
     'editor::Toggle',
     CompositeRoot.componentName,
+    // UI Designer render components are persisted as asset-packs::UIDesign instead (see
+    // the UIDesign-emission pass below). They only ever appear on UI nodes, so suppressing
+    // them globally is safe.
+    'core::UiTransform',
+    'core::UiText',
+    'core::UiInput',
+    'core::UiDropdown',
   ];
 
   for (const itComponentDefinition of engine.componentsIter()) {
@@ -110,6 +119,54 @@ export function dumpEngineToComposite(
       composite.components.push(itCompositeComponent);
     }
   }
+
+  // Emit asset-packs::UIDesign for every UI node, bundling its core render components.
+  // This is the persisted form of the design; the runtime (asset-packs) recreates the
+  // core::* components from it (scaled), and the inspector load-side migration splits it
+  // back into live core::* (see splitUIDesignToCore).
+  const UiTransform = engine.getComponentOrNull('core::UiTransform');
+  const UIDesign = engine.getComponentOrNull(ComponentName.UI_DESIGN);
+  if (UiTransform && UIDesign) {
+    const UiText = engine.getComponentOrNull(
+      'core::UiText',
+    ) as LastWriteWinElementSetComponentDefinition<unknown> | null;
+    const UiInput = engine.getComponentOrNull(
+      'core::UiInput',
+    ) as LastWriteWinElementSetComponentDefinition<unknown> | null;
+    const UiDropdown = engine.getComponentOrNull(
+      'core::UiDropdown',
+    ) as LastWriteWinElementSetComponentDefinition<unknown> | null;
+    const uiDesignComposite: CompositeComponent = {
+      name: UIDesign.componentName,
+      jsonSchema: UIDesign.schema.jsonSchema,
+      data: new Map(),
+    };
+    for (const [entity, transform] of engine.getEntitiesWith(UiTransform)) {
+      if (ignoreEntities.has(entity)) continue;
+      const { parent, rightOf, ...transformRest } = transform as Record<string, unknown>;
+      const text = UiText?.getOrNull(entity);
+      const input = UiInput?.getOrNull(entity);
+      const dropdown = UiDropdown?.getOrNull(entity);
+      const value = {
+        parent: parent ?? 0,
+        rightOf: rightOf ?? 0,
+        transform: JSON.stringify(transformRest),
+        text: text ? JSON.stringify(text) : undefined,
+        input: input ? JSON.stringify(input) : undefined,
+        dropdown: dropdown ? JSON.stringify(dropdown) : undefined,
+      };
+      uiDesignComposite.data.set(
+        entity,
+        componentToCompositeComponentData(
+          internalDataType,
+          value,
+          UIDesign as LastWriteWinElementSetComponentDefinition<unknown>,
+        ),
+      );
+    }
+    if (uiDesignComposite.data.size > 0) composite.components.push(uiDesignComposite);
+  }
+
   return composite;
 }
 
@@ -338,7 +395,7 @@ export async function generateUiContextsType(
     const UiTransform = engine.getComponentOrNull('core::UiTransform');
     if (!UiTransform) return;
 
-    const descendantsOf = buildUiDescendantIndex(engine, UiTransform);
+    const childrenIndex = buildUiChildrenIndex(engine);
 
     const blocks: string[] = [];
     const usedTypeNames = new Set<string>();
@@ -356,12 +413,12 @@ export async function generateUiContextsType(
       usedTypeNames.add(typeName);
 
       // Walk descendants to find callback bindings for THIS root.
-      const descSet = descendantsOf(rootEntity as unknown as number);
+      const descSet = descendantsFromIndex(childrenIndex, rootEntity as Entity);
       const callbackFieldsByVar = new Map<string, Set<string>>();
       if (UIBindings) {
         const UIBindingsLww = UIBindings as LastWriteWinElementSetComponentDefinition<UIBindings>;
         for (const e of descSet) {
-          const b = UIBindingsLww.getOrNull(e as unknown as Entity);
+          const b = UIBindingsLww.getOrNull(e);
           if (!b) continue;
           for (const row of b.value) {
             const fieldKey = row.field;
@@ -455,39 +512,6 @@ function buildEnumEntries(names: string[]): Array<{ original: string; valid: str
   return out;
 }
 
-/**
- * Build a descendant resolver over the `core::UiTransform.parent` pointer.
- * Returns `descendantsOf(root)` → the inclusive set of `root` and every entity
- * reachable through UiTransform parent links. Pure: reads the engine once,
- * holds no external state. Shared by the UI codegen generators.
- */
-function buildUiDescendantIndex(
-  engine: IEngine,
-  UiTransform: ReturnType<IEngine['getComponentOrNull']>,
-): (root: number) => Set<number> {
-  const childrenOf = new Map<number, number[]>();
-  for (const [entity, value] of engine.getEntitiesWith(
-    UiTransform as Parameters<IEngine['getEntitiesWith']>[0],
-  )) {
-    const parent = (value as { parent?: number }).parent;
-    if (parent === undefined) continue;
-    const list = childrenOf.get(parent) ?? [];
-    list.push(entity as unknown as number);
-    childrenOf.set(parent, list);
-  }
-  return (root: number): Set<number> => {
-    const out = new Set<number>();
-    const stack: number[] = [root];
-    while (stack.length) {
-      const e = stack.pop()!;
-      if (out.has(e)) continue;
-      out.add(e);
-      for (const c of childrenOf.get(e) ?? []) stack.push(c);
-    }
-    return out;
-  };
-}
-
 let __UI_ENTITY_NAMES_CACHE = '';
 
 /**
@@ -508,17 +532,17 @@ export async function generateUiEntityNamesType(
     const NameComponent = engine.getComponentOrNull(Name.componentId) as typeof Name | null;
     if (!UIComp || !UiTransform || !NameComponent) return;
 
-    const descendantsOf = buildUiDescendantIndex(engine, UiTransform);
+    const childrenIndex = buildUiChildrenIndex(engine);
 
     // Union of every UI root and its descendants.
-    const uiEntities = new Set<number>();
+    const uiEntities = new Set<Entity>();
     for (const [rootEntity] of engine.getEntitiesWith(UIComp)) {
-      for (const e of descendantsOf(rootEntity as unknown as number)) uiEntities.add(e);
+      for (const e of descendantsFromIndex(childrenIndex, rootEntity as Entity)) uiEntities.add(e);
     }
 
     const names: string[] = [];
     for (const e of uiEntities) {
-      const value = NameComponent.getOrNull(e as unknown as Entity)?.value;
+      const value = NameComponent.getOrNull(e)?.value;
       if (value) names.push(value);
     }
     names.sort();

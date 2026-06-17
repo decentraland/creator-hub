@@ -21,6 +21,7 @@ export const ComponentName = {
   PLACEHOLDER: getLatestVersionName(BaseComponentNames.PLACEHOLDER),
   UI: getLatestVersionName(BaseComponentNames.UI),
   UI_BINDINGS: getLatestVersionName(BaseComponentNames.UI_BINDINGS),
+  UI_DESIGN: getLatestVersionName(BaseComponentNames.UI_DESIGN),
 } as const;
 
 export type ComponentName = (typeof ComponentName)[keyof typeof ComponentName];

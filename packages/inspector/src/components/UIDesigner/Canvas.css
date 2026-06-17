@@ -173,11 +173,6 @@
   opacity: 0.7;
 }
 
-.ui-designer-canvas-placeholder {
-  opacity: 0.5;
-  font-style: italic;
-}
-
 .ui-designer-canvas-zoom {
   position: absolute;
   bottom: 16px;
