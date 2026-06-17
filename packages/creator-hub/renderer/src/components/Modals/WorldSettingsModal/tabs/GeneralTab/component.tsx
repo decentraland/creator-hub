@@ -118,6 +118,11 @@ const GeneralTab: React.FC<Props> = ({ worldSettings, onChangeSettings }) => {
           }
           label={t('modal.world_settings.general.single_player')}
         />
+        {worldSettings.singlePlayer && (
+          <Typography variant="body2" className="SinglePlayerNote">
+            {t('modal.world_settings.general.single_player_streaming_note')}
+          </Typography>
+        )}
         <FormControlLabel
           className="ShowInPlaces"
           control={
