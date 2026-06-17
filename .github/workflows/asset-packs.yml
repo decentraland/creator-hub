@@ -23,7 +23,7 @@ jobs:
       version: ${{ steps.version.outputs.version }}
       previous_version: ${{ steps.version.outputs.previous_version }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
@@ -46,8 +46,8 @@ jobs:
     needs: [version]
     if: ${{ needs.version.outputs.changed == 'true' }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
         with:
           node-version: 24
           cache: 'npm'
@@ -68,11 +68,11 @@ jobs:
     outputs:
       s3_bucket_key: ${{ steps.s3-upload.outputs.s3-key }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: 24
           cache: 'npm'
@@ -125,7 +125,6 @@ jobs:
         id: npm-publish
         with:
           working-directory: ./packages/asset-packs
-          npm-token: ${{ secrets.NPM_TOKEN }}
           initial-tag: 'latest'
           access: 'public'
 
@@ -134,8 +133,8 @@ jobs:
     needs: [version, publish]
     if: ${{ needs.version.outputs.changed == 'true' && github.ref == 'refs/heads/main' }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
         with:
           node-version: 24
           cache: 'npm'
@@ -189,7 +188,7 @@ jobs:
     if: ${{ needs.version.outputs.changed == 'true' }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
