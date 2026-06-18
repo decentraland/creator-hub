@@ -300,15 +300,7 @@ const uiComponent = (
   //   - Top-right  25% × 23%    → Profile access, camera controllers
   //   - Bottom-right 25% × 55%  → Interaction buttons
   //   GREEN (safe) zone = CENTER of screen
-  //
-  // Guide recommendations applied here:
-  //   - "Put all actionable dialogues at center of screen"
-  //   - "Ensure critical UI is inside the safe area"
 
-  // Author every size/font in BASE units. On mobile the global UI scale
-  // factor (set via the shrunk virtual canvas) multiplies them by MOBILE_UI_SCALE
-  // automatically — including the fonts inside every child tab. Only values that
-  // are a genuinely different mobile *layout* (not just a zoom) stay conditional.
   const toggleBtnSize = isMobile ? 54 : 42;
 
   // Desktop: row layout, anchored top-right (unchanged from original).
