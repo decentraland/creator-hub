@@ -283,21 +283,6 @@ function isAllowedAdmin(
   return isAdmin || isPreview();
 }
 
-/**
- * Mobile detection using the recommended SDK approach (see Decentraland Building-for-Mobile guide).
- * Uses `getExplorerInformation` from `~system/Runtime` to query the actual platform
- * reported by the explorer client ('mobile' | 'desktop' | 'web').
- * Resolved once at startup and cached — same pattern as `isMobile()` from `@dcl/sdk/platform`.
- */
-let _isMobile: boolean = false;
-void getExplorerInformation({})
-  .then(info => {
-    _isMobile = info.platform?.toLowerCase() === 'mobile';
-  })
-  .catch(err => {
-    console.error('Admin Tools: failed to detect platform:', err);
-  });
-
 const uiComponent = (
   engine: IEngine,
   pointerEventsSystem: PointerEventsSystem,
