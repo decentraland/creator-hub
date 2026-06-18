@@ -243,11 +243,14 @@ const COMPONENT_REGISTRY = {
       // The remaining core::UiTransform fields (everything EXCEPT parent/rightOf),
       // JSON-encoded. Lossless + resilient to PBUiTransform additions; no entity refs.
       transform: Schemas.String,
-      // JSON-encoded core::UiText / UiInput / UiDropdown design. Absent on nodes that
-      // don't carry the corresponding render component.
+      // JSON-encoded core::UiText / UiInput / UiDropdown / UiBackground design. Absent on
+      // nodes that don't carry the corresponding render component. Background is folded in
+      // here (not kept as a separate verbatim core::UiBackground) so the runtime re-derives
+      // it every tick like the other render components — see ui-runtime.ts:materializeBackground.
       text: Schemas.Optional(Schemas.String),
       input: Schemas.Optional(Schemas.String),
       dropdown: Schemas.Optional(Schemas.String),
+      background: Schemas.Optional(Schemas.String),
     },
   ],
 } as const;

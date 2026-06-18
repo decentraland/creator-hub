@@ -235,6 +235,7 @@ type NodeDesign = {
   text?: AnyRecord; // design core::UiText
   input?: AnyRecord; // design core::UiInput
   dropdown?: AnyRecord; // design core::UiDropdown
+  background?: AnyRecord; // design core::UiBackground
 };
 
 type RootState = {
@@ -307,7 +308,13 @@ function decodeDesign(uiDesign: AnyRecord, entity: Entity): NodeDesign {
     entity,
     'dropdown',
   );
-  return { transform, text, input, dropdown };
+  const background = safeParse<AnyRecord | undefined>(
+    uiDesign.background as string | undefined,
+    undefined,
+    entity,
+    'background',
+  );
+  return { transform, text, input, dropdown, background };
 }
 
 // Decoded UIDesign values are attacker-controllable; a deeply-nested value would otherwise
@@ -516,6 +523,29 @@ function materializeDropdown(
   writeIfChanged(bag.UiDropdown, entity, target);
 }
 
+// Resolve the design background into the live core::UiBackground. Background carries no
+// spatial fields, so (unlike transform/fontSize) nothing scales — texture/textureMode/uvs
+// pass through verbatim, with core::UiBackground.color overridable by a variable binding.
+function materializeBackground(
+  bag: ComponentBag,
+  entity: Entity,
+  root: Entity,
+  designBackground: AnyRecord,
+  bindings: Bindings,
+  varDefs: VarDefs,
+): void {
+  const target: AnyRecord = { ...designBackground };
+  target.color = resolveBoundValue(
+    bindings,
+    varDefs,
+    root,
+    'core::UiBackground',
+    'color',
+    designBackground.color,
+  );
+  writeIfChanged(bag.UiBackground, entity, target);
+}
+
 // Register pointer handlers + input/dropdown result subscriptions once per node.
 // Callbacks resolve at fire time (getUiCallback reads the live callback map, so
 // scene code can (re)register via setUiCallback after wiring).
@@ -676,6 +706,8 @@ function materializeSubtree(
   const { single: bindings, mixed: mixedContent } = buildBindingMaps(bag, entity);
 
   materializeTransform(bag, entity, root, design, bindings, varDefs, displayOverride, scale);
+  if (design.background)
+    materializeBackground(bag, entity, root, design.background, bindings, varDefs);
   if (design.text)
     materializeText(bag, entity, root, design.text, bindings, mixedContent, varDefs, scale);
   if (design.input)

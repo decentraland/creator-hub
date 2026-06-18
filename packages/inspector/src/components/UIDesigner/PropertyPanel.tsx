@@ -49,6 +49,11 @@ type Color4 = { r: number; g: number; b: number; a?: number };
 // component on an entity from the property panel.
 const COMPONENT_DEFAULTS: Record<string, Record<string, unknown>> = {
   'core::UiBackground': {
+    // Transparent by default — a freshly-created background (e.g. on the UI root, which
+    // spans the whole canvas) must not paint an opaque rectangle over the scene. PB's
+    // own default color is opaque white, so we set a:0 explicitly. Picking a color in the
+    // panel overrides this via the patch.
+    color: { r: 0, g: 0, b: 0, a: 0 },
     textureMode: 0, // BackgroundTextureMode.NINE_SLICES
     uvs: [0, 0, 0, 1, 1, 0, 1, 0], // proto default winding from ui_background.proto
   },

@@ -19,6 +19,7 @@ const UI_RENDER_COMPONENT_NAMES = new Set([
   'core::UiText',
   'core::UiInput',
   'core::UiDropdown',
+  'core::UiBackground',
 ]);
 
 function componentToCompositeComponentData<T>(
@@ -157,6 +158,9 @@ export function dumpEngineToComposite(
     const UiDropdown = engine.getComponentOrNull(
       'core::UiDropdown',
     ) as LastWriteWinElementSetComponentDefinition<unknown> | null;
+    const UiBackground = engine.getComponentOrNull(
+      'core::UiBackground',
+    ) as LastWriteWinElementSetComponentDefinition<unknown> | null;
     const uiDesignComposite: CompositeComponent = {
       name: UIDesign.componentName,
       jsonSchema: UIDesign.schema.jsonSchema,
@@ -169,6 +173,7 @@ export function dumpEngineToComposite(
       const text = UiText?.getOrNull(entity);
       const input = UiInput?.getOrNull(entity);
       const dropdown = UiDropdown?.getOrNull(entity);
+      const background = UiBackground?.getOrNull(entity);
       const value = {
         parent: parent ?? 0,
         rightOf: rightOf ?? 0,
@@ -176,6 +181,7 @@ export function dumpEngineToComposite(
         text: text ? JSON.stringify(text) : undefined,
         input: input ? JSON.stringify(input) : undefined,
         dropdown: dropdown ? JSON.stringify(dropdown) : undefined,
+        background: background ? JSON.stringify(background) : undefined,
       };
       uiDesignComposite.data.set(
         entity,

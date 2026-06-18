@@ -15,6 +15,7 @@ function setupEngine(): IEngine {
   components.UiText(engine);
   components.UiInput(engine);
   components.UiDropdown(engine);
+  components.UiBackground(engine);
   // Registers asset-packs::UIDesign (and siblings) on the engine.
   createComponents(engine as never);
   return engine;
@@ -24,6 +25,7 @@ describe('when round-tripping UI Designer nodes through the composite boundary',
   let source: IEngine;
   let UiTransform: ReturnType<typeof components.UiTransform>;
   let UiText: ReturnType<typeof components.UiText>;
+  let UiBackground: ReturnType<typeof components.UiBackground>;
   let root: Entity;
   let child: Entity;
 
@@ -31,6 +33,7 @@ describe('when round-tripping UI Designer nodes through the composite boundary',
     source = setupEngine();
     UiTransform = components.UiTransform(source);
     UiText = components.UiText(source);
+    UiBackground = components.UiBackground(source);
 
     // The UI-Designer root carries the asset-packs::UI marker; the dump treats only the
     // subtree reachable from a marker (via the core::UiTransform parent index) as UI nodes.
@@ -53,6 +56,11 @@ describe('when round-tripping UI Designer nodes through the composite boundary',
       positionLeft: 45,
     } as never);
     UiText.create(child, { value: 'hello world' } as never);
+    UiBackground.create(child, {
+      color: { r: 0.2, g: 0.4, b: 0.8, a: 1 },
+      textureMode: 0,
+      uvs: [0, 0, 0, 1, 1, 0, 1, 0],
+    } as never);
   });
 
   it('dumps the core UI components as asset-packs::UIDesign and suppresses core::Ui*', () => {
@@ -64,6 +72,7 @@ describe('when round-tripping UI Designer nodes through the composite boundary',
     expect(names).not.toContain('core::UiText');
     expect(names).not.toContain('core::UiInput');
     expect(names).not.toContain('core::UiDropdown');
+    expect(names).not.toContain('core::UiBackground');
   });
 
   it('splits asset-packs::UIDesign back into identical core::UiTransform/UiText on load', () => {
@@ -109,10 +118,16 @@ describe('when round-tripping UI Designer nodes through the composite boundary',
     const text = TargetUiText.get(child) as Record<string, unknown>;
     expect(text.value).toBe('hello world');
 
-    // Root node round-trips too (parent 0, no text).
+    // Background round-trips through UIDesign (folded in, not a verbatim core::UiBackground).
+    const TargetUiBackground = components.UiBackground(target);
+    const background = TargetUiBackground.get(child) as Record<string, unknown>;
+    expect(background.color).toEqual({ r: 0.2, g: 0.4, b: 0.8, a: 1 });
+
+    // Root node round-trips too (parent 0, no text, no background).
     const rootTransform = TargetUiTransform.get(root) as Record<string, unknown>;
     expect(rootTransform.parent).toBe(0);
     expect(TargetUiText.getOrNull(root)).toBeNull();
+    expect(TargetUiBackground.getOrNull(root)).toBeNull();
   });
 });
 

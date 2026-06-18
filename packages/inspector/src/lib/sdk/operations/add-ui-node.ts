@@ -2,6 +2,7 @@ import type {
   Entity,
   IEngine,
   LastWriteWinElementSetComponentDefinition,
+  NameComponent,
   PBUiBackground,
   PBUiDropdown,
   PBUiInput,
@@ -10,6 +11,7 @@ import type {
 } from '@dcl/ecs';
 
 import type { UINodeType } from '../../../components/UIDesigner/tree-model';
+import { generateUniqueUiName } from './add-child';
 
 // Canonical SDK UI component IDs (verified against
 // node_modules/@dcl/ecs/dist/components/generated/component-names.gen.js).
@@ -78,11 +80,14 @@ export function addUINode(engine: IEngine) {
     const UiDropdown = engine.getComponent(
       COMPONENT_IDS.UiDropdown,
     ) as LastWriteWinElementSetComponentDefinition<PBUiDropdown>;
-    const NameComp = engine.getComponentOrNull(
-      COMPONENT_IDS.Name,
-    ) as LastWriteWinElementSetComponentDefinition<{ value: string }> | null;
+    const NameComp = engine.getComponentOrNull(COMPONENT_IDS.Name) as NameComponent | null;
     if (NameComp) {
-      NameComp.createOrReplace(entity, { value: DEFAULT_NAMES[type] });
+      // Globally-unique name (Label, Label_1, …) so engine.getEntityByName resolves each
+      // node unambiguously — the codegen enum-key dedup alone leaves the Name *values*
+      // colliding, which breaks getEntityByName from scene code.
+      NameComp.createOrReplace(entity, {
+        value: generateUniqueUiName(engine, NameComp, DEFAULT_NAMES[type]),
+      });
     }
 
     switch (type) {

@@ -4,7 +4,7 @@ import { Engine } from '@dcl/ecs';
 import type { SdkComponents } from '../components';
 import { createComponents, createEditorComponents } from '../components';
 import { pushChild } from '../nodes';
-import { generateUniqueName, getSuffixDigits } from './add-child';
+import { generateUniqueName, generateUniqueUiName, getSuffixDigits } from './add-child';
 
 describe('generateUniqueName', () => {
   let engine: IEngine;
@@ -104,6 +104,61 @@ describe('generateUniqueName', () => {
     const result = generateUniqueName(engine, Name, 'SomeName');
 
     expect(result).toBe('SomeName');
+  });
+});
+
+describe('generateUniqueUiName', () => {
+  let engine: IEngine;
+  let Name: SdkComponents['Name'];
+
+  beforeEach(() => {
+    engine = Engine();
+    const coreComponents = createComponents(engine);
+    createEditorComponents(engine); // so generateUniqueName's getNodes() can read inspector::Nodes
+    Name = coreComponents.Name;
+  });
+
+  // UI Designer nodes carry a Name but are NOT pushed into the editor `Nodes` tree,
+  // so generateUniqueName (getNodes-based) can't see them — generateUniqueUiName scans
+  // the Name component directly.
+  const addNamedEntity = (value: string): Entity => {
+    const entity = engine.addEntity();
+    Name.create(entity, { value });
+    return entity;
+  };
+
+  it('returns the base name when no entity carries it', () => {
+    expect(generateUniqueUiName(engine, Name, 'Label')).toBe('Label');
+  });
+
+  it('sees UI nodes that the editor Nodes tree (generateUniqueName) misses', () => {
+    addNamedEntity('Label'); // not pushed into Nodes
+    expect(generateUniqueName(engine, Name, 'Label')).toBe('Label'); // misses it
+    expect(generateUniqueUiName(engine, Name, 'Label')).toBe('Label_1'); // sees it
+  });
+
+  it('assigns Label, Label_1, Label_2, Label_3 across siblings (_1-based)', () => {
+    expect(generateUniqueUiName(engine, Name, 'Label')).toBe('Label');
+    addNamedEntity('Label');
+    expect(generateUniqueUiName(engine, Name, 'Label')).toBe('Label_1');
+    addNamedEntity('Label_1');
+    expect(generateUniqueUiName(engine, Name, 'Label')).toBe('Label_2');
+    addNamedEntity('Label_2');
+    expect(generateUniqueUiName(engine, Name, 'Label')).toBe('Label_3');
+  });
+
+  it('fills the smallest free suffix when one is missing', () => {
+    addNamedEntity('Label');
+    addNamedEntity('Label_2');
+    expect(generateUniqueUiName(engine, Name, 'Label')).toBe('Label_1');
+  });
+
+  it('is case-insensitive and normalizes a passed-in suffixed base', () => {
+    addNamedEntity('label');
+    expect(generateUniqueUiName(engine, Name, 'Label')).toBe('Label_1');
+    // A suffixed input collapses to its base before searching.
+    addNamedEntity('Label_1');
+    expect(generateUniqueUiName(engine, Name, 'Label_1')).toBe('Label_2');
   });
 });
 

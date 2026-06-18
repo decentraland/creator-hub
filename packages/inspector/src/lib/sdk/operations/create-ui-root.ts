@@ -12,7 +12,7 @@ import {
   DEFAULT_CANVAS_HEIGHT,
   DEFAULT_CANVAS_WIDTH,
 } from '../../../components/UIDesigner/tree-model';
-import { generateUniqueName } from './add-child';
+import { generateUniqueUiName } from './add-child';
 
 // PBUiTransform uses YGUnit enum (const enum in @dcl/ecs):
 //   YGU_UNDEFINED = 0, YGU_POINT = 1, YGU_PERCENT = 2, YGU_AUTO = 3
@@ -34,11 +34,16 @@ export function createUIRoot(engine: IEngine) {
     ) as LastWriteWinElementSetComponentDefinition<PBUiTransform>;
     const Name = engine.getComponent(NameEngine.componentName) as typeof NameEngine;
 
-    const uniqueName = generateUniqueName(engine, Name, name);
+    const uniqueName = generateUniqueUiName(engine, Name, name);
+
+    // The first UI root is visible; subsequent roots default to hidden so multiple
+    // full-canvas roots don't render stacked on top of each other ("UI collapsing").
+    // Visibility is togglable per root from the property panel afterwards.
+    const hasExistingRoot = Array.from(engine.getEntitiesWith(UIComp)).length > 0;
 
     UIComp.createOrReplace(entity, {
       name: uniqueName,
-      visible: true,
+      visible: !hasExistingRoot,
       canvasWidth: DEFAULT_CANVAS_WIDTH,
       canvasHeight: DEFAULT_CANVAS_HEIGHT,
       variables: [],

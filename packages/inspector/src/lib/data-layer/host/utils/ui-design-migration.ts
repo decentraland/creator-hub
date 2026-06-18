@@ -51,6 +51,7 @@ export function splitUIDesignToCore(engine: IEngine): void {
   const UiText = engine.getComponent('core::UiText') as Lww;
   const UiInput = engine.getComponent('core::UiInput') as Lww;
   const UiDropdown = engine.getComponent('core::UiDropdown') as Lww;
+  const UiBackground = engine.getComponent('core::UiBackground') as Lww;
 
   for (const [entity, design] of engine.getEntitiesWith(UIDesign)) {
     const d = design as {
@@ -60,6 +61,7 @@ export function splitUIDesignToCore(engine: IEngine): void {
       text?: string;
       input?: string;
       dropdown?: string;
+      background?: string;
     };
     const transform = {
       ...safeParse<Record<string, unknown>>(d.transform, {}, entity, 'transform'),
@@ -83,6 +85,13 @@ export function splitUIDesignToCore(engine: IEngine): void {
       'dropdown',
     );
     if (dropdown) UiDropdown.createOrReplace(entity, dropdown);
+    const background = safeParse<Record<string, unknown> | undefined>(
+      d.background,
+      undefined,
+      entity,
+      'background',
+    );
+    if (background) UiBackground.createOrReplace(entity, background);
     UIDesign.deleteFrom(entity);
   }
 }
