@@ -90,7 +90,7 @@ const ManagedProjectsList: React.FC<Props> = React.memo(props => {
       }
       setSettingsModal({ isOpen: true, activeTab, isOwner });
     },
-    [],
+    [wallet],
   );
 
   const handleCloseSettingsModal = useCallback(() => {
