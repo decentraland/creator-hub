@@ -25,21 +25,21 @@ ASSET_PACKS_PATH = packages/asset-packs
 SYNC_PACK = node_modules/.bin/syncpack
 
 install:
-	npm i --silent
+	npm i
 	make install-protoc
 	make install-asset-packs
 	make install-inspector
 	make install-creator-hub
 
 install-asset-packs:
-	cd $(ASSET_PACKS_PATH); npm i --silent
+	cd $(ASSET_PACKS_PATH); npm i
 
 install-inspector:
 	make install-protoc
-	cd $(INSPECTOR_PATH); npm i --silent
+	cd $(INSPECTOR_PATH); npm i
 
 install-creator-hub:
-	cd $(CH_PATH); npm i --silent
+	cd $(CH_PATH); npm i
 	make init-submodules
 
 init-submodules:

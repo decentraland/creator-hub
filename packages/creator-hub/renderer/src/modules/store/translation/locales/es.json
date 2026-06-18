@@ -427,10 +427,7 @@
         "set_image": "Elegir imagen",
         "no_image": "No hay imagen",
         "age_rating_options": {
-          "everyone": "E (Todos, PG 13+)",
-          "teen": "T (Adolescentes, PG 13+)",
-          "adult": "A (Adultos, PG 18+)",
-          "restricted": "R (Restringido)"
+          "adult": "A (Adultos, PG 18+)"
         },
         "categories_options": {
           "art": "🎨 Arte",
@@ -565,7 +562,7 @@
         }
       },
       "collaborators": {
-        "description": "<span>Agrega hasta 10 colaboradores</span> y gestiona sus permisos para publicar o transmitir en tu Mundo.",
+        "description": "<span>Agrega hasta 100 colaboradores</span> y gestiona sus permisos para publicar o transmitir en tu Mundo.",
         "empty_list": "Aún no has agregado ningún colaborador",
         "add_collaborator": "Agregar colaborador",
         "add": "Agregar",

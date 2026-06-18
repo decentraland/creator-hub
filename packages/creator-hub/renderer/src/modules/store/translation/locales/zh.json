@@ -427,10 +427,7 @@
         "set_image": "选择图片",
         "no_image": "未设置图片",
         "age_rating_options": {
-          "everyone": "E（所有人，PG 13+）",
-          "teen": "T（青少年，PG 13+）",
-          "adult": "A（成人，PG 18+）",
-          "restricted": "R（限制级）"
+          "adult": "A（成人，PG 18+）"
         },
         "categories_options": {
           "art": "🎨 艺术",
@@ -565,7 +562,7 @@
         }
       },
       "collaborators": {
-        "description": "<span>添加最多 10 个协作者</span>并管理他们在您世界中的部署或流媒体权限。",
+        "description": "<span>添加最多 100 个协作者</span>并管理他们在您世界中的部署或流媒体权限。",
         "empty_list": "您还没有添加任何协作者",
         "add_collaborator": "添加协作者",
         "add": "添加",

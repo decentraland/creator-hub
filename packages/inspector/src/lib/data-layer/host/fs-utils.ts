@@ -57,6 +57,7 @@ export const EXTENSIONS = [
   '.png',
   '.composite',
   '.composite.bin',
+  '.json',
   '.gltf',
   '.jpg',
   '.jpeg',
