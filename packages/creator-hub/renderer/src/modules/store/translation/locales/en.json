@@ -427,10 +427,7 @@
         "set_image": "Choose image",
         "no_image": "No image set",
         "age_rating_options": {
-          "everyone": "E (Everyone, PG 13+)",
-          "teen": "T (Teens, PG 13+)",
-          "adult": "A (Adults, PG 18+)",
-          "restricted": "R (Restricted)"
+          "adult": "A (Adults, PG 18+)"
         },
         "categories_options": {
           "art": "🎨 Art",
@@ -565,7 +562,7 @@
         }
       },
       "collaborators": {
-        "description": "<span>Add up to 10 collaborators</span> and manage their permission to deploy, or stream into your World.",
+        "description": "<span>Add up to 100 collaborators</span> and manage their permission to deploy, or stream into your World.",
         "empty_list": "You haven't added any collaborators yet",
         "add_collaborator": "Add collaborator",
         "add": "Add",

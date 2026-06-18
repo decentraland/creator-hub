@@ -12,7 +12,7 @@ describe('Assets', () => {
     await installMouseHelper(page);
     // Page is already navigated in setup
     await App.waitUntilReady();
-  }, 30_000);
+  });
 
   test('Drag asset from file system into renderer', async () => {
     // There should not be an entity in the Hierarchy tree with the name example.glb at the start
@@ -27,7 +27,7 @@ describe('Assets', () => {
 
     // There should be an entity in the Hierarchy tree with the name model.glb
     await expect(Hierarchy.getId('model.glb')).resolves.toBeGreaterThanOrEqual(152);
-  }, 30_000);
+  });
 
   test('Drag asset from Builder into renderer', async () => {
     // There should not be an entity in the Hierarchy tree with the name Pebbles at the start
@@ -39,5 +39,5 @@ describe('Assets', () => {
 
     // There should be an entity in the Hierarchy tree with the name Pebbles
     await expect(Hierarchy.getId('Pebbles')).resolves.toBeGreaterThanOrEqual(152);
-  }, 30_000);
+  });
 });

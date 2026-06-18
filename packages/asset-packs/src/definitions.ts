@@ -59,12 +59,13 @@ export const VIDEO_URL_TYPE = 'https://';
 export * from './enums';
 export * from './action-types';
 export * from './events';
-export * from './id';
+export * from './mapping';
 export * from './states';
 export * from './clone';
 export * from './lww';
 export * from './types';
 export * from './versioning';
+export * from './add-child';
 
 export const ActionSchemas = {
   [ActionType.PLAY_ANIMATION]: Schemas.Map({
@@ -270,6 +271,10 @@ export const ActionSchemas = {
     message: Schemas.String,
   }),
   [ActionType.DELETE]: Schemas.Map({}),
+  [ActionType.SPAWN_ENTITY]: Schemas.Map({
+    src: Schemas.String,
+    position: Schemas.Vector3,
+  }),
 };
 
 export type ActionPayload<T extends ActionType = any> = T extends keyof typeof ActionSchemas

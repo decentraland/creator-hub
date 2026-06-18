@@ -36,7 +36,7 @@ jobs:
       version: ${{ steps.detect-changes.outputs.version }}
       previous_version: ${{ steps.semantic-version.outputs.previous_version }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
@@ -93,13 +93,13 @@ jobs:
       s3_bucket_key: ${{ steps.s3-upload.outputs.s3-key }}
       preview_url: ${{ steps.set-preview-url.outputs.preview_url }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
-          node-version: 22
+          node-version: 24
           cache: 'npm'
 
       - name: install
@@ -184,7 +184,6 @@ jobs:
         id: npm-publish
         with:
           working-directory: ./packages/inspector
-          npm-token: ${{ secrets.NPM_TOKEN }}
           initial-tag: 'latest'
           access: 'public'
 
@@ -221,7 +220,7 @@ jobs:
     if: ${{ needs.version.outputs.changed == 'true' }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
 

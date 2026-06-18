@@ -12,7 +12,7 @@ export const MoreOptionsMenu = ({
   options,
   icon,
 }: {
-  children?: JSX.Element | JSX.Element[];
+  children?: React.ReactNode;
   options?: OptionProp[];
   icon?: JSX.Element;
 }) => {
@@ -31,6 +31,14 @@ export const MoreOptionsMenu = ({
     setShowMoreOptions(false);
   }, [showMoreOptions, setShowMoreOptions]);
 
+  const handleContentClick = useCallback(
+    (e: React.MouseEvent<HTMLDivElement>) => {
+      e.stopPropagation();
+      setShowMoreOptions(false);
+    },
+    [setShowMoreOptions],
+  );
+
   const ref = useOutsideClick(handleClosePanel);
 
   return (
@@ -47,7 +55,7 @@ export const MoreOptionsMenu = ({
       {showMoreOptions && (
         <div
           className="MoreOptionsContent"
-          onClick={handleClosePanel}
+          onClick={handleContentClick}
         >
           {options
             ? options.map((opt, i) => (

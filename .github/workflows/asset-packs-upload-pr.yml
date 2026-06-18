@@ -48,14 +48,14 @@ jobs:
             core.info(`✅ Workflow authorized for @${author}'s PR by @${triggeredBy}`);
 
       - name: checkout PR branch
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           ref: refs/pull/${{ github.event.issue.number }}/head
           fetch-depth: 0
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
-          node-version: 22
+          node-version: 24
           cache: 'npm'
 
       - name: install

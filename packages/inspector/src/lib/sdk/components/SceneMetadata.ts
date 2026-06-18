@@ -2,7 +2,6 @@ import type { IEngine } from '@dcl/ecs';
 import { Schemas } from '@dcl/ecs/dist/schemas';
 
 export enum SceneAgeRating {
-  Teen = 'T',
   Adult = 'A',
 }
 
@@ -35,7 +34,7 @@ export const SceneMetadataV0 = {
   name: Schemas.Optional(Schemas.String),
   description: Schemas.Optional(Schemas.String),
   thumbnail: Schemas.Optional(Schemas.String),
-  ageRating: Schemas.Optional(Schemas.EnumString(SceneAgeRating, SceneAgeRating.Teen)),
+  ageRating: Schemas.Optional(Schemas.EnumString(SceneAgeRating, SceneAgeRating.Adult)),
   categories: Schemas.Optional(
     Schemas.Array(Schemas.EnumString(SceneCategory, SceneCategory.GAME)),
   ),
