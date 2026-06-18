@@ -328,9 +328,13 @@ type CanvasNodeProps = { node: UINode };
 const CanvasNode: React.FC<CanvasNodeProps> = ({ node }) => {
   const sdk = useSdk();
   const dispatch = useAppDispatch();
-  const selectedNode = useAppSelector(getSelectedNode);
+  // Subscribe to a derived boolean rather than the raw selected-entity id: selecting
+  // a node is a Redux action that does NOT rebuild the node tree, so a raw
+  // `getSelectedNode` subscription would re-render every CanvasNode on each click.
+  // react-redux only re-renders when the selector OUTPUT changes, so this confines
+  // the re-render to the two nodes whose selection actually flips.
+  const isSelected = useAppSelector(state => getSelectedNode(state) === node.entity);
   const tool = useAppSelector(getTool);
-  const isSelected = selectedNode === node.entity;
   const text = (node.uiText ?? {}) as { value?: string };
   const input = (node.uiInput ?? {}) as { placeholder?: string; value?: string };
   const dropdown = (node.uiDropdown ?? {}) as {

@@ -124,36 +124,37 @@ const PropertyPanelComponent: React.FC = () => {
     return !!UI && UI.has(selected as Entity);
   }, [sdk, selected, tick]);
 
-  // Read `asset-packs::UIBindings` on the selected entity and build a map
-  // from `componentId.fieldPath` to bound variable name. Re-runs on engine
-  // change via the existing `tick` from `useChange + debouncedBump`.
-  const bindingsByField = useMemo<Record<string, string>>(() => {
-    if (!sdk || selected === null) return {};
+  // Read the raw `asset-packs::UIBindings` value once. Its reference is stable
+  // across ticks where bindings didn't change, so the two derived maps below only
+  // rebuild on an actual bindings change — not on every engine tick — keeping each
+  // FieldRow's `bindings`/`mixed` props referentially stable (so the memoized rows
+  // can bail out).
+  const bindingsValue = useMemo(() => {
+    if (!sdk || selected === null) return null;
     const Bindings = sdk.engine.getComponentOrNull(
       ComponentName.UI_BINDINGS,
     ) as LastWriteWinElementSetComponentDefinition<UIBindings> | null;
-    if (!Bindings) return {};
-    const value = Bindings.getOrNull(selected as Entity);
-    if (!value) return {};
-    return Object.fromEntries(
-      value.value.filter(b => !b.segments?.length).map(b => [b.field, b.variable]),
-    );
+    return Bindings?.getOrNull(selected as Entity) ?? null;
   }, [sdk, selected, tick]);
+
+  // Map `componentId.fieldPath` -> bound variable name (rows without segments).
+  const bindingsByField = useMemo<Record<string, string>>(() => {
+    if (!bindingsValue) return {};
+    return Object.fromEntries(
+      bindingsValue.value.filter(b => !b.segments?.length).map(b => [b.field, b.variable]),
+    );
+  }, [bindingsValue]);
 
   // Mixed-content rows live in the same `UIBindings` component (rows carrying a
   // non-empty `segments` list). Map `componentId.fieldPath` -> segment list.
   const mixedByField = useMemo<Record<string, UISegment[]>>(() => {
-    if (!sdk || selected === null) return {};
-    const Bindings = sdk.engine.getComponentOrNull(
-      ComponentName.UI_BINDINGS,
-    ) as LastWriteWinElementSetComponentDefinition<UIBindings> | null;
-    if (!Bindings) return {};
-    const value = Bindings.getOrNull(selected as Entity);
-    if (!value) return {};
+    if (!bindingsValue) return {};
     return Object.fromEntries(
-      value.value.filter(b => b.segments?.length).map(b => [b.field, b.segments as UISegment[]]),
+      bindingsValue.value
+        .filter(b => b.segments?.length)
+        .map(b => [b.field, b.segments as UISegment[]]),
     );
-  }, [sdk, selected, tick]);
+  }, [bindingsValue]);
 
   const writeAndDispatch = useCallback(
     (componentId: string, patch: Record<string, unknown>) => {
@@ -219,7 +220,7 @@ const PropertyPanelComponent: React.FC = () => {
                 bound={bindingsByField[`${field.componentId}.${field.path}`]}
                 bindings={bindingsByField}
                 mixed={mixedByField[`${field.componentId}.${field.path}`]}
-                onPatch={patch => writeAndDispatch(field.componentId, patch)}
+                write={writeAndDispatch}
               />
             );
           })}
@@ -237,10 +238,13 @@ interface FieldRowProps {
   bound?: string;
   bindings?: Record<string, string>;
   mixed?: UISegment[];
-  onPatch: (patch: Record<string, unknown>) => void;
+  // The stable component writer; FieldRow binds it to its own field.componentId.
+  // Passing the writer (not a per-field arrow) keeps the prop stable so the
+  // memoized row only re-renders when its value/bindings actually change.
+  write: (componentId: string, patch: Record<string, unknown>) => void;
 }
 
-const FieldRow: React.FC<FieldRowProps> = ({
+const FieldRow = React.memo(function FieldRow({
   field,
   componentValue,
   entity,
@@ -248,8 +252,12 @@ const FieldRow: React.FC<FieldRowProps> = ({
   bound,
   bindings,
   mixed,
-  onPatch,
-}) => {
+  write,
+}: FieldRowProps) {
+  const onPatch = useCallback(
+    (patch: Record<string, unknown>) => write(field.componentId, patch),
+    [write, field.componentId],
+  );
   const boundProp = bound ? { variable: bound } : undefined;
   const raw = componentValue?.[field.path];
   const fieldDisabled =
@@ -602,7 +610,7 @@ const FieldRow: React.FC<FieldRowProps> = ({
     default:
       return null;
   }
-};
+});
 
 export const PropertyPanel = React.memo(PropertyPanelComponent);
 

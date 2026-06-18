@@ -434,9 +434,12 @@ export async function generateUiContextsType(
       const typeBase = toSafeIdentifier(marker.name);
       let typeName = typeBase;
       let suffix = 1;
+      // Smallest free suffix starting at _1 (Hud, Hud_1, Hud_2, …) — matches
+      // buildEnumEntries so context type names line up with the entity-name enum
+      // dedup instead of skipping _1.
       while (usedTypeNames.has(typeName)) {
-        suffix += 1;
         typeName = `${typeBase}_${suffix}`;
+        suffix += 1;
       }
       usedTypeNames.add(typeName);
 

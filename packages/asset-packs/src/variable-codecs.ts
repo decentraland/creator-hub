@@ -7,7 +7,10 @@
 type Rgba = { r: number; g: number; b: number; a: number };
 
 const COLOR_HEX = /^[0-9a-fA-F]{6}([0-9a-fA-F]{2})?$/;
-const NUMBER_DEFAULT = /^-?\d+(\.\d+)?$/;
+// Decimal with optional sign, fraction, and exponent. Exponent included so the
+// validator accepts the scientific-notation values parseVariableDefault's Number()
+// already parses (e.g. "1e5", "1.5e-3") — validator and parser stay in lockstep.
+const NUMBER_DEFAULT = /^-?\d+(\.\d+)?([eE][+-]?\d+)?$/;
 
 // Strict hex -> Color4-shaped { r, g, b, a } in [0..1]. Stored as '#RRGGBB' or
 // '#RRGGBBAA'. Rejects any length other than 6/8 hex digits (returns opaque
@@ -33,6 +36,9 @@ export function parseHexColor(raw: string): Rgba {
 export function parseVariableDefault(type: string, raw: string): unknown {
   switch (type) {
     case 'number': {
+      // Accept exactly what validateVariableDefault accepts: Number() alone would
+      // also coerce hex / whitespace / 'Infinity' that the validator rejects.
+      if (!NUMBER_DEFAULT.test(raw)) return 0;
       const n = Number(raw);
       return Number.isFinite(n) ? n : 0;
     }

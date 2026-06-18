@@ -1,8 +1,14 @@
-import type { Entity, IEngine, LastWriteWinElementSetComponentDefinition } from '@dcl/ecs';
+import type {
+  Entity,
+  IEngine,
+  LastWriteWinElementSetComponentDefinition,
+  NameComponent,
+} from '@dcl/ecs';
 
 import { isLastWriteWinComponent } from '../../../hooks/sdk/useComponentValue';
 import { collectDescendants } from './tree-walk';
 import reorderUISibling from './reorder-ui-sibling';
+import { generateUniqueUiName } from './add-child';
 
 const UI_TRANSFORM_ID = 'core::UiTransform';
 const NAME_ID = 'core-schema::Name';
@@ -67,15 +73,26 @@ export function duplicateUINode(engine: IEngine) {
 
     const cloneRoot = map.get(entity)!;
 
-    // 4) Distinguish the copy with a "<name> copy" display name. (Not
-    //    generateUniqueName: that walks the editor Nodes tree, which excludes
-    //    UI nodes; the codegen identifier-dedup handles enum collisions.)
-    const Name = engine.getComponentOrNull(NAME_ID) as LastWriteWinElementSetComponentDefinition<{
-      value: string;
-    }> | null;
+    // 4) Give every clone a globally-unique core-schema::Name. The copy-all loop
+    //    above carried each original's Name verbatim, but UI Name *values* must be
+    //    globally unique: scene code resolves UI nodes via engine.getEntityByName and
+    //    the generated UiEntityNames enum, and duplicate values make those lookups
+    //    ambiguous. generateUniqueName can't help (it walks the editor Nodes tree,
+    //    which excludes UiTransform-only UI nodes) — generateUniqueUiName scans the
+    //    Name component directly. The clone root additionally gets a "<name> copy"
+    //    base. Renaming in-loop (createOrReplace before the next lookup) means each
+    //    call sees prior assignments, so siblings dedupe incrementally (Label_1, …).
+    const Name = engine.getComponentOrNull(NAME_ID) as NameComponent | null;
     if (Name) {
-      const base = Name.getOrNull(entity)?.value ?? '';
-      Name.createOrReplace(cloneRoot, { value: base ? `${base} copy` : 'copy' });
+      for (const [original, clone] of map) {
+        const originalName = Name.getOrNull(original)?.value ?? '';
+        if (clone === cloneRoot) {
+          const base = originalName ? `${originalName} copy` : 'copy';
+          Name.createOrReplace(clone, { value: generateUniqueUiName(engine, Name, base) });
+        } else if (originalName) {
+          Name.createOrReplace(clone, { value: generateUniqueUiName(engine, Name, originalName) });
+        }
+      }
     }
 
     // 5) Place the copy immediately after the original among its siblings.

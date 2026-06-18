@@ -21,6 +21,10 @@ type UIRootNode = {
 
 const RootTree = Tree<UIRootNode>();
 
+// Hoisted once (every root row shows the same icon) — mirrors NodeTree's
+// module-level TYPE_ICONS, so getIcon returns a stable element identity.
+const LAYER_ICON = <IoLayersOutline />;
+
 export const RootsList: React.FC = () => {
   const sdk = useSdk();
   const dispatch = useAppDispatch();
@@ -109,7 +113,7 @@ export const RootsList: React.FC = () => {
   const getId = useCallback((n: UIRootNode) => String(n.entity), []);
   const getChildren = useCallback(() => [] as UIRootNode[], []);
   const getLabel = useCallback((n: UIRootNode) => n.name || 'Untitled UI', []);
-  const getIcon = useCallback(() => <IoLayersOutline />, []);
+  const getIcon = useCallback(() => LAYER_ICON, []);
   const isOpen = useCallback(() => false, []);
   const isSelected = useCallback((n: UIRootNode) => n.entity === selected, [selected]);
   const isHidden = useCallback(() => false, []);

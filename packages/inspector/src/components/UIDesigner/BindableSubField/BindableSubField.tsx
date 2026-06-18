@@ -3,7 +3,7 @@ import type { Entity } from '@dcl/ecs';
 
 import { Pill } from '../../ui/Pill';
 import type { FieldConfig } from '../field-configs';
-import { VariablePicker } from '../VariablePicker';
+import { BindAffordance } from '../BindAffordance';
 import { useFieldBinding } from '../useFieldBinding';
 
 import './BindableSubField.css';
@@ -39,24 +39,14 @@ export const BindableSubField: React.FC<BindableSubFieldProps> = ({
   return (
     <div className="ui-designer-bindable-subfield">
       <div className="ui-designer-bindable-subfield-content">{children}</div>
-      <button
-        ref={anchorRef}
-        type="button"
-        className="ui-designer-bindable-link"
-        onClick={() => setPickerOpen(true)}
-        aria-label="Bind to variable"
-      >
-        {'\u{1F517}'}
-      </button>
-      {pickerOpen && (
-        <VariablePicker
-          field={field}
-          selectedRoot={selectedRoot}
-          anchorRef={anchorRef}
-          onPick={onBind}
-          onDismiss={() => setPickerOpen(false)}
-        />
-      )}
+      <BindAffordance
+        field={field}
+        selectedRoot={selectedRoot}
+        anchorRef={anchorRef}
+        pickerOpen={pickerOpen}
+        setPickerOpen={setPickerOpen}
+        onBind={onBind}
+      />
     </div>
   );
 };

@@ -2,9 +2,18 @@ import type { Entity, IEngine, PointerEventsSystem } from '@dcl/ecs';
 import { InputAction } from '@dcl/ecs';
 
 import { ComponentName } from './enums';
-import { getUiContextValue, getUiCallback } from './ui-context';
+import { getUiContextValue, getUiCallback, clearUiContext, clearUiCallbacks } from './ui-context';
 import { coerceToString } from './coerce';
 import { parseVariableDefault } from './variable-codecs';
+import { safeParse } from './safe-parse';
+
+// Re-exported so existing importers (and the unit test) keep resolving safeParse
+// from this module; the implementation lives in ./safe-parse, shared with the
+// inspector migration.
+export { safeParse } from './safe-parse';
+
+// Fallback logging for malformed composite-sourced UIDesign JSON (runtime side).
+const DECODE_LOG = { label: 'decodeDesign', warn: (msg: string) => console.error(msg) };
 
 // YGDisplay: YGD_FLEX = 0 (default), YGD_NONE = 1.
 const YGD_FLEX = 0;
@@ -90,6 +99,11 @@ function getBag(engine: IEngine): ComponentBag {
 }
 
 // Build a parent -> children index from every entity carrying asset-packs::UIDesign.
+// Rebuilt each tick (not cached): it is a global aggregate over all UIDesign entities,
+// sensitive to both membership and per-node parent changes, so a correct invalidation
+// check would cost the same O(N) pass as the rebuild. The expensive per-entity work
+// (design decode, binding maps) is cached separately by raw-value identity; this pass
+// is a cheap linear walk over a small node set.
 function getChildrenOf(engine: IEngine, bag: ComponentBag): Map<Entity, Entity[]> {
   const childrenOf = new Map<Entity, Entity[]>();
   for (const [entity, value] of engine.getEntitiesWith(bag.UIDesign)) {
@@ -143,6 +157,27 @@ function buildBindingMaps(
     }
   }
   return { single, mixed };
+}
+
+// Cached binding-map accessor: rebuilds only when the raw UIBindings value changes
+// (reference identity, same strategy as the design cache). `changed` is true only
+// when an entity that already had cached bindings sees a *new* raw value — i.e. a
+// live re-bind / hot-reload after the initial wiring, which must trigger a pointer
+// re-wire. It is false on the first build, so initial wiring runs through the normal
+// `wired` gate.
+function getBindingMaps(
+  bag: ComponentBag,
+  entity: Entity,
+  state: RootState,
+): { single: Bindings; mixed: MixedContent; changed: boolean } {
+  const raw = bag.UIBindings?.getOrNull(entity) ?? null;
+  const cached = state.bindings.get(entity);
+  if (cached && cached.raw === raw) {
+    return { single: cached.single, mixed: cached.mixed, changed: false };
+  }
+  const { single, mixed } = buildBindingMaps(bag, entity);
+  state.bindings.set(entity, { raw, single, mixed });
+  return { single, mixed, changed: cached !== undefined };
 }
 
 function resolveBoundValue(
@@ -242,43 +277,14 @@ type RootState = {
   // Perf cache of decoded designs, keyed by entity. Re-decoded when the raw UIDesign
   // value changes (UIDesign is pristine, so caching never causes compounding).
   design: Map<Entity, { raw: AnyRecord; decoded: NodeDesign }>;
+  // Perf cache of built binding maps, keyed by entity. Re-built only when the raw
+  // UIBindings value changes; doubles as the change-detector that drives pointer
+  // re-wiring on a live re-bind / hot-reload (see materializeSubtree).
+  bindings: Map<Entity, { raw: unknown; single: Bindings; mixed: MixedContent }>;
   // One-time interactivity wiring per entity (pointer handlers + result subscriptions).
   wired: Set<Entity>;
   pointerWired: Set<Entity>;
 };
-
-// Keys an attacker could place in composite JSON to attempt prototype pollution; stripped from
-// every decoded object before it reaches createOrReplace. Variable-key delete avoids the
-// linter's no-proto literal-access rule. Keep IN LOCKSTEP with the copy in
-// packages/inspector/src/lib/data-layer/host/utils/ui-design-migration.ts.
-const DANGEROUS_KEYS = ['__proto__', 'prototype', 'constructor'];
-
-// The composite JSON is attacker-controllable; a malformed UIDesign string field must not
-// throw out of the per-frame UI system, nor reach a core::* component as a wrong-shape value
-// or with prototype-polluting keys. Parse defensively: on throw OR non-plain-object shape, log
-// and fall back; otherwise strip dangerous keys and return. exported for unit tests.
-export function safeParse<T>(
-  raw: string | undefined,
-  fallback: T,
-  entity: Entity,
-  field: string,
-): T {
-  if (!raw) return fallback;
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(raw);
-  } catch {
-    console.error(`decodeDesign: malformed UIDesign.${field} on entity ${entity}; using fallback`);
-    return fallback;
-  }
-  if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
-    console.error(`decodeDesign: non-object UIDesign.${field} on entity ${entity}; using fallback`);
-    return fallback;
-  }
-  const obj = parsed as AnyRecord;
-  for (const k of DANGEROUS_KEYS) delete obj[k];
-  return obj as T;
-}
 
 // Decode an asset-packs::UIDesign value into the design shape the materialize* helpers
 // consume. parent/rightOf are stored as entity fields (for composite remapping); the rest
@@ -286,7 +292,13 @@ export function safeParse<T>(
 // and never written by the runtime, so this is always the pristine, unscaled design.
 function decodeDesign(uiDesign: AnyRecord, entity: Entity): NodeDesign {
   const transform: AnyRecord = {
-    ...safeParse<AnyRecord>(uiDesign.transform as string | undefined, {}, entity, 'transform'),
+    ...safeParse<AnyRecord>(
+      uiDesign.transform as string | undefined,
+      {},
+      entity,
+      'transform',
+      DECODE_LOG,
+    ),
     parent: uiDesign.parent,
     rightOf: uiDesign.rightOf,
   };
@@ -295,24 +307,28 @@ function decodeDesign(uiDesign: AnyRecord, entity: Entity): NodeDesign {
     undefined,
     entity,
     'text',
+    DECODE_LOG,
   );
   const input = safeParse<AnyRecord | undefined>(
     uiDesign.input as string | undefined,
     undefined,
     entity,
     'input',
+    DECODE_LOG,
   );
   const dropdown = safeParse<AnyRecord | undefined>(
     uiDesign.dropdown as string | undefined,
     undefined,
     entity,
     'dropdown',
+    DECODE_LOG,
   );
   const background = safeParse<AnyRecord | undefined>(
     uiDesign.background as string | undefined,
     undefined,
     entity,
     'background',
+    DECODE_LOG,
   );
   return { transform, text, input, dropdown, background };
 }
@@ -352,6 +368,14 @@ function writeIfChanged(component: any, entity: Entity, target: AnyRecord): void
   const live = component.getOrNull(entity);
   if (live && deepEqual(live, target)) return;
   component.createOrReplace(entity, target);
+}
+
+// Delete a derived render component only if it is currently present — keeps the
+// "stable UI produces zero CRDT writes" guarantee while ensuring a render component
+// disappears when its UIDesign field is removed (e.g. a hot-reload that drops the
+// node's background/text). Without this, the previously-derived component lingers.
+function clearIfPresent(component: any, entity: Entity): void {
+  if (component.has(entity)) component.deleteFrom(entity);
 }
 
 // DFS collect a root entity + every descendant via the parent index.
@@ -556,8 +580,8 @@ function wireInteractivity(
   entity: Entity,
   state: RootState,
   resultSubscribed: Set<Entity>,
+  bindings: Bindings,
 ): void {
-  const { single: bindings } = buildBindingMaps(bag, entity);
   const opts = { button: InputAction.IA_POINTER };
 
   if (bindings.has('asset-packs::UI.onMouseDown')) {
@@ -586,7 +610,10 @@ function wireInteractivity(
   }
 
   // Input result -> onChange / onSubmit. Push subscription (no unsubscribe API),
-  // so guard against double-subscribe. Mirrors react-ecs reconciler:191-211.
+  // so guard against double-subscribe. Mirrors react-ecs reconciler:191-211. The
+  // subscription outlives any binding change, so it resolves the bound variable
+  // LIVE at fire time (reading the current UIBindings) rather than capturing the
+  // wire-time snapshot.
   if (
     (bindings.has('core::UiInput.onChange') || bindings.has('core::UiInput.onSubmit')) &&
     !resultSubscribed.has(entity)
@@ -596,20 +623,22 @@ function wireInteractivity(
       entity,
       (value: { value?: string; isSubmit?: boolean } | undefined) => {
         if (!value) return;
+        const live = buildBindingMaps(bag, entity).single;
         if (value.isSubmit) {
-          resolveBoundCallback(bindings, root, 'core::UiInput', 'onSubmit')?.(value.value);
+          resolveBoundCallback(live, root, 'core::UiInput', 'onSubmit')?.(value.value);
         }
-        resolveBoundCallback(bindings, root, 'core::UiInput', 'onChange')?.(value.value);
+        resolveBoundCallback(live, root, 'core::UiInput', 'onChange')?.(value.value);
       },
     );
   }
 
-  // Dropdown result -> onChange.
+  // Dropdown result -> onChange (also resolved live at fire time).
   if (bindings.has('core::UiDropdown.onChange') && !resultSubscribed.has(entity)) {
     resultSubscribed.add(entity);
     bag.UiDropdownResult.onChange(entity, (value: { value?: number } | undefined) => {
       if (!value) return;
-      resolveBoundCallback(bindings, root, 'core::UiDropdown', 'onChange')?.(value.value);
+      const live = buildBindingMaps(bag, entity).single;
+      resolveBoundCallback(live, root, 'core::UiDropdown', 'onChange')?.(value.value);
     });
   }
 }
@@ -627,7 +656,11 @@ function materializeRoot(
   if (!marker) return;
   const varDefs = buildVarDefs(bag, root);
 
-  // Root visibility -> display override on the root transform only.
+  // Root visibility -> display override on the root transform only. Built uncached
+  // (not via getBindingMaps): the subtree loop below must be the first cache
+  // interaction for the root, so it — not this call — observes a binding change and
+  // re-wires the root's pointer handlers. This is one extra map build for a single
+  // entity per tick.
   const { single: rootBindings } = buildBindingMaps(bag, root);
   const resolvedVisible = resolveBoundValue(
     rootBindings,
@@ -652,6 +685,7 @@ function materializeRoot(
   for (const e of Array.from(state.design.keys())) {
     if (!bag.UIDesign.has(e)) {
       state.design.delete(e);
+      state.bindings.delete(e);
       state.wired.delete(e);
       if (state.pointerWired.has(e)) {
         teardownPointer(pointerEventsSystem, e);
@@ -697,22 +731,47 @@ function materializeSubtree(
   }
   const design = entry.decoded;
 
-  // Wire interactivity once per entity.
-  if (!state.wired.has(entity)) {
-    state.wired.add(entity);
-    wireInteractivity(bag, pointerEventsSystem, root, entity, state, resultSubscribed);
+  const {
+    single: bindings,
+    mixed: mixedContent,
+    changed: bindingsChanged,
+  } = getBindingMaps(bag, entity, state);
+
+  // A live re-bind / hot-reload changed this entity's bindings after it was wired:
+  // tear down its pointer handlers so the block below re-wires from the new bindings
+  // (the set of bound pointer events can grow or shrink). Result-component
+  // subscriptions are intentionally left in place (no unsubscribe API) — they resolve
+  // the bound variable live at fire time, and a newly-added binding still subscribes
+  // on re-wire via the resultSubscribed guard.
+  if (bindingsChanged && state.wired.has(entity)) {
+    if (state.pointerWired.has(entity)) {
+      teardownPointer(pointerEventsSystem, entity);
+      state.pointerWired.delete(entity);
+    }
+    state.wired.delete(entity);
   }
 
-  const { single: bindings, mixed: mixedContent } = buildBindingMaps(bag, entity);
+  // Wire interactivity once per entity (or re-wire after a binding change above).
+  if (!state.wired.has(entity)) {
+    state.wired.add(entity);
+    wireInteractivity(bag, pointerEventsSystem, root, entity, state, resultSubscribed, bindings);
+  }
 
   materializeTransform(bag, entity, root, design, bindings, varDefs, displayOverride, scale);
+  // Each optional render component is re-derived when its design field is present,
+  // and removed when absent — so dropping a field (e.g. on hot-reload) doesn't leave
+  // a previously-derived component stranded on the entity.
   if (design.background)
     materializeBackground(bag, entity, root, design.background, bindings, varDefs);
+  else clearIfPresent(bag.UiBackground, entity);
   if (design.text)
     materializeText(bag, entity, root, design.text, bindings, mixedContent, varDefs, scale);
+  else clearIfPresent(bag.UiText, entity);
   if (design.input)
     materializeInput(bag, entity, root, design.input, bindings, mixedContent, varDefs);
+  else clearIfPresent(bag.UiInput, entity);
   if (design.dropdown) materializeDropdown(bag, entity, root, design.dropdown, bindings, varDefs);
+  else clearIfPresent(bag.UiDropdown, entity);
 }
 
 // Engine-native UI Designer runtime. Each UI node carries a pristine, authored
@@ -727,14 +786,26 @@ export function createUIRuntimeSystem(engine: IEngine, pointerEventsSystem: Poin
   // so we subscribe a result component at most once per entity for the whole
   // system lifetime (survives root teardown/re-add of recycled entity ids).
   const resultSubscribed = new Set<Entity>();
+  // The component bag (definition references) is stable for the system's lifetime,
+  // so build it once on the first tick and reuse it — avoids a per-tick object alloc
+  // plus 11 engine.getComponent lookups every frame. Built lazily (not at factory
+  // time) so it never depends on component-registration order: getComponent throws
+  // for an unregistered component, and by the first tick all core + asset-pack UI
+  // components are registered.
+  let cachedBag: ComponentBag | null = null;
 
   return function uiRuntimeSystem(_dt: number) {
-    const bag = getBag(engine);
+    const bag = (cachedBag ??= getBag(engine));
 
     // Register newly-appeared roots.
     for (const [rootEntity] of engine.getEntitiesWith(bag.UI)) {
       if (!roots.has(rootEntity)) {
-        roots.set(rootEntity, { design: new Map(), wired: new Set(), pointerWired: new Set() });
+        roots.set(rootEntity, {
+          design: new Map(),
+          bindings: new Map(),
+          wired: new Set(),
+          pointerWired: new Set(),
+        });
       }
     }
 
@@ -744,6 +815,12 @@ export function createUIRuntimeSystem(engine: IEngine, pointerEventsSystem: Poin
         const state = roots.get(rootEntity) as RootState;
         for (const entity of state.pointerWired) teardownPointer(pointerEventsSystem, entity);
         roots.delete(rootEntity);
+        // Reclaim the per-root context + callback maps so they don't grow without
+        // bound as UIs are created/destroyed. Context/callbacks are keyed by the root
+        // entity, so a single clear per map suffices. Result subscriptions stay inert
+        // (no unsubscribe API) and resolve live, so a recycled id sees fresh state.
+        clearUiContext(rootEntity);
+        clearUiCallbacks(rootEntity);
       }
     }
 

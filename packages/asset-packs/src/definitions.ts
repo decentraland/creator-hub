@@ -67,6 +67,7 @@ export * from './lww';
 export * from './types';
 export * from './versioning';
 export * from './variable-codecs';
+export * from './safe-parse';
 export * from './add-child';
 
 export const ActionSchemas = {
@@ -514,4 +515,10 @@ export type UISegment = NonNullable<UIBinding['segments']>[number];
 export type UIDesignComponent = Components['UIDesign'];
 export type UIDesign = ReturnType<UIDesignComponent['schema']['deserialize']>;
 
-export { setUiContext, clearUiContext, setUiCallback, clearUiCallback } from './ui-context';
+export {
+  setUiContext,
+  clearUiContext,
+  setUiCallback,
+  clearUiCallback,
+  clearUiCallbacks,
+} from './ui-context';

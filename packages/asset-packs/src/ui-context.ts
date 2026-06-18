@@ -62,6 +62,11 @@ export function clearUiCallback(uiRoot: Entity, name: string): void {
   map.delete(name);
 }
 
+/** Drop every registered callback for a UI (e.g. when its root entity is removed). */
+export function clearUiCallbacks(uiRoot: Entity): void {
+  uiCallbacks.delete(uiRoot);
+}
+
 // --- Internal read accessors used by ui-runtime.ts ---
 
 /** @internal */

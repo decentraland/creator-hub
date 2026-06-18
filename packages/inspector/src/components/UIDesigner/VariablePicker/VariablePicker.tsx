@@ -1,10 +1,11 @@
-import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useMemo, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import type { Entity, LastWriteWinElementSetComponentDefinition } from '@dcl/ecs';
 import type { UI, UIVariable } from '@dcl/asset-packs';
 import { ComponentName, VariableType } from '@dcl/asset-packs';
 
 import { useSdk } from '../../../hooks/sdk/useSdk';
+import { usePopoverPosition } from '../../ui/usePopoverPosition';
 import type { FieldConfig, FieldKind } from '../field-configs';
 
 import './VariablePicker.css';
@@ -53,37 +54,8 @@ export const VariablePicker: React.FC<VariablePickerProps> = ({
 }) => {
   const sdk = useSdk();
   const popoverRef = useRef<HTMLDivElement>(null);
-  const [pos, setPos] = useState<{ top: number; left: number }>({ top: 0, left: 0 });
-
-  useLayoutEffect(() => {
-    const place = () => {
-      const a = anchorRef.current?.getBoundingClientRect();
-      if (!a) return;
-      const MENU_WIDTH = 200;
-      const GAP = 4;
-      // Prefer left-aligned to the anchor; clamp to the viewport's right edge.
-      const left = Math.min(a.left, window.innerWidth - MENU_WIDTH - GAP);
-      setPos({ top: a.bottom + GAP, left: Math.max(GAP, left) });
-    };
-    place();
-    window.addEventListener('scroll', place, { capture: true, passive: true });
-    window.addEventListener('resize', place);
-    return () => {
-      window.removeEventListener('scroll', place, true);
-      window.removeEventListener('resize', place);
-    };
-  }, [anchorRef]);
-
-  useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      const t = e.target as Node;
-      if (popoverRef.current?.contains(t)) return;
-      if (anchorRef.current?.contains(t)) return;
-      onDismiss();
-    };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, [onDismiss, anchorRef]);
+  // Mounted only while open (the parent gates with `pickerOpen`), so `open` is true.
+  const pos = usePopoverPosition({ anchorRef, popoverRef, open: true, onDismiss, width: 200 });
 
   const compatible = useMemo<UIVariable[]>(() => {
     if (!sdk) return [];

@@ -34,13 +34,16 @@ describe('parseHexColor', () => {
 
 describe('validateVariableDefault', () => {
   describe('when the type is number', () => {
-    it('accepts integers and decimals', () => {
+    it('accepts integers, decimals, and scientific notation', () => {
       expect(validateVariableDefault('number', '42')).toBeNull();
       expect(validateVariableDefault('number', '-3.14')).toBeNull();
+      expect(validateVariableDefault('number', '1e5')).toBeNull();
+      expect(validateVariableDefault('number', '1.5e-3')).toBeNull();
     });
 
     it('rejects non-numeric input', () => {
       expect(validateVariableDefault('number', 'abc')).toBe('Must be a number');
+      expect(validateVariableDefault('number', '0x10')).toBe('Must be a number');
     });
   });
 
@@ -76,9 +79,12 @@ describe('validateVariableDefault', () => {
 });
 
 describe('parseVariableDefault', () => {
-  it('coerces a finite number, else 0', () => {
+  it('coerces a finite number (incl. scientific notation), else 0', () => {
     expect(parseVariableDefault('number', '7.5')).toBe(7.5);
+    expect(parseVariableDefault('number', '1e5')).toBe(100000);
     expect(parseVariableDefault('number', 'nope')).toBe(0);
+    // Values the validator rejects coerce to 0 rather than Number()'s loose parse.
+    expect(parseVariableDefault('number', '0x10')).toBe(0);
   });
 
   it('coerces a boolean from the literal "true"', () => {

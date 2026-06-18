@@ -102,7 +102,7 @@ make protoc        # Regenerate TypeScript from .proto files
 - Runtime built with `@dcl/sdk-commands` (SDK7 scene).
 - TypeScript library (`dist/`) + catalog.json + binary assets (`bin/`).
 - Scripts for validating, uploading to S3, and downloading assets.
-- Public API is exported via `src/definitions.ts` (built to `dist/definitions.js`, the package `main`). Cross-package VALUE imports from `@dcl/asset-packs` in the inspector only resolve after rebuilding asset-packs (`make build-asset-packs`).
+- Public API is exported via `src/definitions.ts` (built to `dist/definitions.js`, the package `main`). Cross-package VALUE imports from `@dcl/asset-packs` in the inspector only resolve after rebuilding asset-packs (`make build-asset-packs`). This also affects the inspector's **vitest unit tests**, which import the built `@dcl/asset-packs` — a source edit in asset-packs won't be seen (in imports, typecheck, or tests) until rebuilt. `npm run build:lib` (in `packages/asset-packs`) is the minimal/fast rebuild to refresh `dist/`.
 
 ## Code Style
 
@@ -110,6 +110,7 @@ make protoc        # Regenerate TypeScript from .proto files
 - **Lint scope**: `make lint` / `npm run lint` runs `eslint . --ext js,cjs,ts` — it does **not** lint `.tsx` files. Don't rely on the lint gate to catch `.tsx` issues; a standalone `eslint <file>.tsx` may surface a pre-existing `consistent-type-imports` false-positive on the `@dcl/react-ecs` JSX-pragma default import (e.g. `ui-renderer.tsx`).
 - **Prettier**: single quotes, semicolons, trailing commas, 100 char print width, `arrowParens: "avoid"`.
 - **Import order**: ESLint enforced. React first, then `@dcl/*`, then `decentraland-*`, then MUI/internal, then relative.
+- **Component-directory barrels**: inspector component directories use a per-directory `index.ts` barrel (`export { X } from './X'`) — ~30/31 dirs follow this. Add one when creating a component; don't strip these barrels for file-count reduction — it breaks the established convention.
 - **Unused vars**: prefix with `_` (e.g., `_unused`).
 - **Module type**: ESM (`"type": "module"` in all package.json files).
 - **Node version**: 22.x or higher required.

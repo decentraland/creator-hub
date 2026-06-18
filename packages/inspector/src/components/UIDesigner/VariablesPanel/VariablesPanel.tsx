@@ -7,6 +7,7 @@ import { useChange } from '../../../hooks/sdk/useChange';
 import { useSdk } from '../../../hooks/sdk/useSdk';
 import { useAppSelector } from '../../../redux/hooks';
 import { getSelectedRoot } from '../../../redux/ui-designer';
+import { isValidIdentifier } from '../../../lib/sdk/operations/validators';
 import { debounce } from '../../../lib/utils/debounce';
 import { Container } from '../../Container';
 import { Block } from '../../Block';
@@ -15,8 +16,6 @@ import { RgbaColorField } from '../../ui/RgbaColorField';
 import { color4ToHex, hexToColor4 } from '../../ui/RgbaColorField/color';
 
 import './VariablesPanel.css';
-
-const VALID_IDENTIFIER = /^[A-Za-z_$][A-Za-z0-9_$]*$/;
 
 const TYPE_OPTIONS: { value: VariableType; label: string }[] = [
   { value: VariableType.STRING, label: 'String' },
@@ -51,6 +50,10 @@ const VariablesPanelComponent: React.FC = () => {
     if (!UIComp) return null;
     return UIComp.getOrNull(selectedRoot as Entity);
   }, [sdk, selectedRoot, tick]);
+
+  // Stable array shared by every row (used for duplicate-name validation), so it
+  // isn't rebuilt per-row on each render and keeps each row's commit callback stable.
+  const existingNames = useMemo(() => marker?.variables.map(x => x.name) ?? [], [marker]);
 
   const addVariable = useCallback(() => {
     if (!sdk || selectedRoot === null || !marker) return;
@@ -121,7 +124,7 @@ const VariablesPanelComponent: React.FC = () => {
         <VariableRow
           key={v.name}
           variable={v}
-          existingNames={marker.variables.map(x => x.name)}
+          existingNames={existingNames}
           onRename={(next: string) => rename(v.name, next)}
           onPatch={(patch: Partial<UIVariable>) => patchVariable(v.name, patch)}
           onDelete={() => removeVariable(v.name)}
@@ -157,22 +160,28 @@ const VariableRow: React.FC<VariableRowProps> = ({
   const [nameError, setNameError] = useState<string | undefined>(undefined);
   const [localDefault, setLocalDefault] = useState(variable.defaultValue);
   const [defaultError, setDefaultError] = useState<string | undefined>(undefined);
+  const [nameFocused, setNameFocused] = useState(false);
+  const [defaultFocused, setDefaultFocused] = useState(false);
 
   // Re-sync local fields when the underlying variable changes (e.g. external
-  // rename, type change resetting default).
+  // rename, type change resetting default) — but never while the user owns the
+  // field, so an in-flight engine round-trip can't clobber a just-typed value
+  // (see docs/coding-standards.md "Don't mirror props into local state").
   useEffect(() => {
+    if (nameFocused) return;
     setLocalName(variable.name);
-  }, [variable.name]);
+  }, [variable.name, nameFocused]);
   useEffect(() => {
+    if (defaultFocused) return;
     setLocalDefault(variable.defaultValue);
-  }, [variable.defaultValue]);
+  }, [variable.defaultValue, defaultFocused]);
 
   const commitName = useCallback(() => {
     if (localName === variable.name) {
       setNameError(undefined);
       return;
     }
-    if (!VALID_IDENTIFIER.test(localName)) {
+    if (!isValidIdentifier(localName)) {
       setNameError('Not a valid identifier');
       return;
     }
@@ -204,7 +213,11 @@ const VariableRow: React.FC<VariableRowProps> = ({
         <TextField
           value={localName}
           onChange={e => setLocalName(e.target.value)}
-          onBlur={commitName}
+          onFocus={() => setNameFocused(true)}
+          onBlur={() => {
+            setNameFocused(false);
+            commitName();
+          }}
           error={nameError}
         />
       </Block>
@@ -247,7 +260,11 @@ const VariableRow: React.FC<VariableRowProps> = ({
           <TextField
             value={localDefault}
             onChange={e => setLocalDefault(e.target.value)}
-            onBlur={commitDefault}
+            onFocus={() => setDefaultFocused(true)}
+            onBlur={() => {
+              setDefaultFocused(false);
+              commitDefault();
+            }}
             disabled={variable.type === VariableType.CALLBACK}
             error={defaultError}
           />
