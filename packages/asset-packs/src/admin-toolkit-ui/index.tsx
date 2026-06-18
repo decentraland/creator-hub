@@ -1,4 +1,5 @@
 import { Color4 } from '@dcl/sdk/math';
+import { isMobile as detectIsMobile } from '@dcl/sdk/platform';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars -- ReactEcs is required for JSX factory
 import ReactEcs, {
   Label,
@@ -7,7 +8,6 @@ import ReactEcs, {
   type ReactBasedUiSystem,
 } from '@dcl/react-ecs';
 import { type Entity, type IEngine, type PointerEventsSystem } from '@dcl/ecs';
-import { getExplorerInformation } from '~system/Runtime';
 import {
   getComponents,
   type GetPlayerDataRes,
@@ -37,21 +37,6 @@ import { initAdminMessageBus, getAdminMessageBus } from './admin-message-bus';
 
 export const nextTickFunctions: (() => void)[] = [];
 
-/**
- * Mobile detection using the recommended SDK approach (see Decentraland Building-for-Mobile guide).
- * Uses `getExplorerInformation` from `~system/Runtime` to query the actual platform
- * reported by the explorer client ('mobile' | 'desktop' | 'web').
- * Resolved once at startup and cached — same pattern as `isMobile()` from `@dcl/sdk/platform`.
- */
-let _isMobile = false;
-const platformDetection = getExplorerInformation({})
-  .then(info => {
-    _isMobile = info.platform?.toLowerCase() === 'mobile';
-  })
-  .catch(err => {
-    console.error('Admin Tools: failed to detect platform:', err);
-  });
-
 // Mobile scaling: shrink the virtual canvas on
 // mobile so the SDK's global UI scale factor — min(screen/virtual), see
 // @dcl/react-ecs getUiScaleFactor — multiplies EVERYTHING (geometry and
@@ -61,7 +46,7 @@ const MOBILE_UI_SCALE = 2;
 const BASE_VIRTUAL_UI_SIZE = { virtualWidth: 1920, virtualHeight: 1080 };
 
 function getVirtualUiSize() {
-  return _isMobile
+  return detectIsMobile()
     ? {
         virtualWidth: BASE_VIRTUAL_UI_SIZE.virtualWidth / MOBILE_UI_SCALE,
         virtualHeight: BASE_VIRTUAL_UI_SIZE.virtualHeight / MOBILE_UI_SCALE,
@@ -259,15 +244,13 @@ export function createAdminToolkitUI(
   playersHelper?: IPlayersHelper,
 ) {
   // Initialize admin data before setting up the UI
-  Promise.all([initializeAdminData(engine, sdkHelpers, playersHelper), platformDetection]).then(
-    () => {
-      console.log('createAdminToolkitUI - initialized');
-      reactBasedUiSystem.setUiRenderer(
-        () => uiComponent(engine, pointerEventsSystem, sdkHelpers, playersHelper),
-        getVirtualUiSize(),
-      );
-    },
-  );
+  initializeAdminData(engine, sdkHelpers, playersHelper).then(() => {
+    console.log('createAdminToolkitUI - initialized');
+    reactBasedUiSystem.setUiRenderer(
+      () => uiComponent(engine, pointerEventsSystem, sdkHelpers, playersHelper),
+      getVirtualUiSize(),
+    );
+  });
 }
 
 function isAllowedAdmin(
@@ -285,14 +268,14 @@ function isAllowedAdmin(
 
 const uiComponent = (
   engine: IEngine,
-  pointerEventsSystem: PointerEventsSystem,
-  sdkHelpers?: ISDKHelpers,
+  _pointerEventsSystem: PointerEventsSystem,
+  _sdkHelpers?: ISDKHelpers,
   playersHelper?: IPlayersHelper,
 ) => {
   const adminToolkitEntity = getAdminToolkitComponent(engine);
   const player = playersHelper?.getPlayer();
   const isPlayerAdmin = isAllowedAdmin(engine, adminToolkitEntity, player);
-  const isMobile = _isMobile;
+  const isMobile = detectIsMobile();
 
   // Mobile safe area (from Decentraland Building-for-Mobile guide):
   //   RED (unsafe) zones:
@@ -301,12 +284,11 @@ const uiComponent = (
   //   - Bottom-right 25% × 55%  → Interaction buttons
   //   GREEN (safe) zone = CENTER of screen
 
-  const toggleBtnSize = isMobile ? 54 : 42;
-
   // Desktop: row layout, anchored top-right (unchanged from original).
   // Mobile: row layout, anchored top-left inside the safe zone.
-  const outerPosition = isMobile ? { top: 12, left: 300 } : { top: 120, right: 14 };
-  const innerPosition = isMobile ? { left: 8, top: 12 } : { right: 8 };
+  const outerPosition = isMobile ? { top: 16, left: 300 } : { top: 120, right: 14 };
+  const innerPosition = isMobile ? { left: 8, top: 2 } : { right: 8 };
+  const toggleBtnSize = isMobile ? 54 : 42;
 
   return [
     <UiEntity
@@ -495,7 +477,7 @@ const uiComponent = (
                 // Mobile: cap the tab content to the viewport and scroll the
                 // overflow, so tall tabs (e.g. permissions) stay fully reachable.
                 // The header above stays fixed; desktop is left untouched.
-                maxHeight: isMobile ? '90vh' : undefined,
+                maxHeight: isMobile ? '85vh' : undefined,
                 overflow: isMobile ? 'scroll' : 'visible',
               }}
             >
