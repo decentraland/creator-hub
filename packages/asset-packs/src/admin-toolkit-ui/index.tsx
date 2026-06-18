@@ -36,7 +36,38 @@ import { isPreview } from './fetch-utils';
 import { initAdminMessageBus, getAdminMessageBus } from './admin-message-bus';
 
 export const nextTickFunctions: (() => void)[] = [];
-const ADMIN_TOOLKIT_VIRTUAL_UI_SIZE = { virtualWidth: 1920, virtualHeight: 1080 };
+
+/**
+ * Mobile detection using the recommended SDK approach (see Decentraland Building-for-Mobile guide).
+ * Uses `getExplorerInformation` from `~system/Runtime` to query the actual platform
+ * reported by the explorer client ('mobile' | 'desktop' | 'web').
+ * Resolved once at startup and cached — same pattern as `isMobile()` from `@dcl/sdk/platform`.
+ */
+let _isMobile = false;
+const platformDetection = getExplorerInformation({})
+  .then(info => {
+    _isMobile = info.platform?.toLowerCase() === 'mobile';
+  })
+  .catch(err => {
+    console.error('Admin Tools: failed to detect platform:', err);
+  });
+
+// Mobile scaling: shrink the virtual canvas on
+// mobile so the SDK's global UI scale factor — min(screen/virtual), see
+// @dcl/react-ecs getUiScaleFactor — multiplies EVERYTHING (geometry and
+// fontSize) uniformly by MOBILE_UI_SCALE. We author a single base layout and
+// mobile gets the zoom for free, including every child component's text.
+const MOBILE_UI_SCALE = 2;
+const BASE_VIRTUAL_UI_SIZE = { virtualWidth: 1920, virtualHeight: 1080 };
+
+function getVirtualUiSize() {
+  return _isMobile
+    ? {
+        virtualWidth: BASE_VIRTUAL_UI_SIZE.virtualWidth / MOBILE_UI_SCALE,
+        virtualHeight: BASE_VIRTUAL_UI_SIZE.virtualHeight / MOBILE_UI_SCALE,
+      }
+    : BASE_VIRTUAL_UI_SIZE;
+}
 
 export const state: State = {
   adminToolkitUiEntity: 0 as Entity,
@@ -228,13 +259,15 @@ export function createAdminToolkitUI(
   playersHelper?: IPlayersHelper,
 ) {
   // Initialize admin data before setting up the UI
-  initializeAdminData(engine, sdkHelpers, playersHelper).then(() => {
-    console.log('createAdminToolkitUI - initialized');
-    reactBasedUiSystem.setUiRenderer(
-      () => uiComponent(engine, pointerEventsSystem, sdkHelpers, playersHelper),
-      ADMIN_TOOLKIT_VIRTUAL_UI_SIZE,
-    );
-  });
+  Promise.all([initializeAdminData(engine, sdkHelpers, playersHelper), platformDetection]).then(
+    () => {
+      console.log('createAdminToolkitUI - initialized');
+      reactBasedUiSystem.setUiRenderer(
+        () => uiComponent(engine, pointerEventsSystem, sdkHelpers, playersHelper),
+        getVirtualUiSize(),
+      );
+    },
+  );
 }
 
 function isAllowedAdmin(
@@ -286,31 +319,17 @@ const uiComponent = (
   // Guide recommendations applied here:
   //   - "Put all actionable dialogues at center of screen"
   //   - "Ensure critical UI is inside the safe area"
-  //   - "Scale up UI sizes by 3× for Mobile to improve readability"
-  //
-  // Mobile layout: toggle + panel in the safe zone,
-  // toggle on top, panel expanding downward (column-reverse since toggle is last child).
-  // Desktop layout: completely unchanged — panel + toggle side-by-side at top-right.
 
-  const SCALE_FACTOR = 2.5;
-  const toggleBtnSize = isMobile ? 42 * SCALE_FACTOR : 42;
-  const tabBtnWidth = isMobile ? 49 * SCALE_FACTOR : 49;
-  const tabBtnHeight = isMobile ? 42 * SCALE_FACTOR : 42;
-  const panelWidth = isMobile ? 900 : 500; // fits within center safe zone (~50% of 1920)
-  const headerHeight = isMobile ? 50 * SCALE_FACTOR : 50;
-  const fontSize = isMobile ? 40 : 20;
+  // Author every size/font in BASE units. On mobile the global UI scale
+  // factor (set via the shrunk virtual canvas) multiplies them by MOBILE_UI_SCALE
+  // automatically — including the fonts inside every child tab. Only values that
+  // are a genuinely different mobile *layout* (not just a zoom) stay conditional.
+  const toggleBtnSize = isMobile ? 54 : 42;
 
   // Desktop: row layout, anchored top-right (unchanged from original).
-  // Mobile: column-reverse layout, centered horizontally at top of safe zone.
-  //   top: 60 clears the OS status bar / notch.
-  //   left: 100 clears the top-left actions and centers the panel in the 1920-wide virtual canvas.
-  //   column-reverse: toggle (last child) renders on top, panel expands below it.
-  const outerPosition = isMobile
-    ? {
-        top: 30,
-        left: 100 + Math.round((ADMIN_TOOLKIT_VIRTUAL_UI_SIZE.virtualWidth - panelWidth) / 2),
-      }
-    : { top: 120, right: 14 };
+  // Mobile: row layout, anchored top-left inside the safe zone.
+  const outerPosition = isMobile ? { top: 12, left: 300 } : { top: 120, right: 14 };
+  const innerPosition = isMobile ? { left: 8, top: 12 } : { right: 8 };
 
   return [
     <UiEntity
@@ -331,16 +350,16 @@ const uiComponent = (
           <UiEntity
             uiTransform={{
               display: state.panelOpen ? 'flex' : 'none',
-              width: panelWidth,
+              width: 500,
               pointerFilter: 'block',
               flexDirection: 'column',
-              margin: isMobile ? { left: 8 } : { right: 8 },
+              margin: innerPosition,
             }}
           >
             <UiEntity
               uiTransform={{
                 width: '100%',
-                height: headerHeight,
+                height: 50,
                 flexDirection: 'row',
                 alignItems: 'center',
                 borderRadius: 12,
@@ -353,7 +372,7 @@ const uiComponent = (
             >
               <Label
                 value="ADMIN TOOLS"
-                fontSize={fontSize}
+                fontSize={20}
                 color={Color4.create(160, 155, 168, 1)}
                 uiTransform={{ flexGrow: 1 }}
               />
@@ -367,8 +386,8 @@ const uiComponent = (
                     adminToolkitEntity.moderationControl.isEnabled && !isPreview()
                       ? 'flex'
                       : 'none',
-                  width: tabBtnWidth,
-                  height: tabBtnHeight,
+                  width: 49,
+                  height: 42,
                   margin: { right: 8 },
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -402,8 +421,8 @@ const uiComponent = (
                 onlyIcon
                 uiTransform={{
                   display: adminToolkitEntity.videoControl.isEnabled ? 'flex' : 'none',
-                  width: tabBtnWidth,
-                  height: tabBtnHeight,
+                  width: 49,
+                  height: 42,
                   margin: { right: 8 },
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -436,8 +455,8 @@ const uiComponent = (
                 onlyIcon
                 uiTransform={{
                   display: adminToolkitEntity.smartItemsControl.isEnabled ? 'flex' : 'none',
-                  width: tabBtnWidth,
-                  height: tabBtnHeight,
+                  width: 49,
+                  height: 42,
                   margin: { right: 8 },
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -470,8 +489,8 @@ const uiComponent = (
                 onlyIcon
                 uiTransform={{
                   display: adminToolkitEntity.textAnnouncementControl.isEnabled ? 'flex' : 'none',
-                  width: tabBtnWidth,
-                  height: tabBtnHeight,
+                  width: 49,
+                  height: 42,
                   margin: { right: 8 },
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -492,33 +511,45 @@ const uiComponent = (
                 }}
               />
             </UiEntity>
-            {state.activeTab === TabType.TEXT_ANNOUNCEMENT_CONTROL ? (
-              <TextAnnouncementsControl
-                engine={engine}
-                state={state}
-                player={player}
-              />
-            ) : null}
-            {state.activeTab === TabType.VIDEO_CONTROL ? (
-              <VideoControl
-                engine={engine}
-                state={state}
-                playerAddress={player?.userId}
-              />
-            ) : null}
-            {state.activeTab === TabType.SMART_ITEMS_CONTROL ? (
-              <SmartItemsControl
-                engine={engine}
-                state={state}
-              />
-            ) : null}
-            {state.activeTab === TabType.MODERATION_CONTROL && (
-              <ModerationControl
-                engine={engine}
-                player={player}
-                sceneAdmins={sceneAdminsCache}
-              />
-            )}
+            <UiEntity
+              uiTransform={{
+                width: '100%',
+                flexDirection: 'column',
+                // Mobile: cap the tab content to the viewport and scroll the
+                // overflow, so tall tabs (e.g. permissions) stay fully reachable.
+                // The header above stays fixed; desktop is left untouched.
+                maxHeight: isMobile ? '90vh' : undefined,
+                overflow: isMobile ? 'scroll' : 'visible',
+              }}
+            >
+              {state.activeTab === TabType.TEXT_ANNOUNCEMENT_CONTROL ? (
+                <TextAnnouncementsControl
+                  engine={engine}
+                  state={state}
+                  player={player}
+                />
+              ) : null}
+              {state.activeTab === TabType.VIDEO_CONTROL ? (
+                <VideoControl
+                  engine={engine}
+                  state={state}
+                  playerAddress={player?.userId}
+                />
+              ) : null}
+              {state.activeTab === TabType.SMART_ITEMS_CONTROL ? (
+                <SmartItemsControl
+                  engine={engine}
+                  state={state}
+                />
+              ) : null}
+              {state.activeTab === TabType.MODERATION_CONTROL && (
+                <ModerationControl
+                  engine={engine}
+                  player={player}
+                  sceneAdmins={sceneAdminsCache}
+                />
+              )}
+            </UiEntity>
           </UiEntity>
           <UiEntity
             uiTransform={{
