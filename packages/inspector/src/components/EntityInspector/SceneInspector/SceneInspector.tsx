@@ -10,9 +10,8 @@ import { TextField } from '../../ui/TextField';
 import { FileUploadField } from '../../ui/FileUploadField';
 import { ACCEPTED_FILE_TYPES } from '../../ui/FileUploadField/types';
 
-import './SceneInspector.css';
 import type { EditorComponentsTypes } from '../../../lib/sdk/components';
-import { SceneAgeRating, SceneCategory } from '../../../lib/sdk/components';
+import { SceneCategory } from '../../../lib/sdk/components';
 import { Dropdown } from '../../ui/Dropdown';
 import { Label, TextArea } from '../../ui';
 import { WalletField } from '../../ui/WalletField';
@@ -37,16 +36,7 @@ import type { Props } from './types';
 import { fromScene, toScene, isValidInput, isImage, MIDDAY_SECONDS } from './utils';
 import { SceneInfoInput } from './SceneInfoInput';
 
-const AGE_RATING_OPTIONS = [
-  {
-    value: SceneAgeRating.Teen,
-    label: 'T (Teens, PG 13+)',
-  },
-  {
-    value: SceneAgeRating.Adult,
-    label: 'A (Adults, PG 18+)',
-  },
-];
+import './SceneInspector.css';
 
 const CATEGORIES_OPTIONS = [
   {
@@ -100,11 +90,12 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
 
   const hasScene = useHasComponent(entity, Scene);
   const imageOptions = useAssetOptions(ACCEPTED_FILE_TYPES['image']);
-  const { getInputProps } = useComponentInput(entity, Scene, fromScene, toScene, isValidInput);
+  const { getInputProps } = useComponentInput(entity, Scene, fromScene, toScene, {
+    validateInput: isValidInput,
+  });
   const nameProps = getInputProps('name');
   const descriptionProps = getInputProps('description');
   const thumbnailProps = getInputProps('thumbnail');
-  const ageRatingProps = getInputProps('ageRating');
   const categoriesProps = getInputProps('categories');
   const authorProps = getInputProps('author');
   const emailProps = getInputProps('email');
@@ -112,6 +103,10 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
   const silenceVoiceChatProps = getInputProps('silenceVoiceChat', e => e.target.checked);
   const disablePortableExperiencesProps = getInputProps(
     'disablePortableExperiences',
+    e => e.target.checked,
+  );
+  const disableNearbyVoiceChatProps = getInputProps(
+    'disableNearbyVoiceChat',
     e => e.target.checked,
   );
 
@@ -283,11 +278,6 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
             />
           </span>
           <Dropdown
-            label="Age Rating"
-            options={AGE_RATING_OPTIONS}
-            {...ageRatingProps}
-          />
-          <Dropdown
             label="Categories"
             options={CATEGORIES_OPTIONS}
             multiple
@@ -345,9 +335,14 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
             {...silenceVoiceChatProps}
           />
           <CheckboxField
-            label="Disable Portable Experiences"
+            label="Disable Smart Wearables & Portable Experiences"
             checked={componentValue.disablePortableExperiences}
             {...disablePortableExperiencesProps}
+          />
+          <CheckboxField
+            label="Disable Nearby Voice Chat"
+            checked={componentValue.disableNearbyVoiceChat}
+            {...disableNearbyVoiceChatProps}
           />
           <Block
             label="Skybox"

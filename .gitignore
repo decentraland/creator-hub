@@ -25,3 +25,6 @@ yarn-error.log*
 **/gen
 **/tsconfig.tsbuildinfo
 **/tsconfig.check.tsbuildinfo
+
+settings.local.json
+.serena/

@@ -187,7 +187,7 @@ const VideoScreenBasicView = withSdk<Props>(({ sdk, entity }) => {
         className={cx({ hover: isHover, droppeable: canDrop })}
       >
         <Block
-          label="Video Path or Vimeo URL"
+          label="Video Path or .m3u8 URL"
           ref={drop}
         >
           <TextField

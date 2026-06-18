@@ -291,11 +291,14 @@ export function Tree<T>() {
               : undefined;
           sdk.operations.removeSelectedEntities();
           if (selectedEntities.length > 1) {
+            let insertAfter = selectedEntities[selectedEntities.length - 1];
             selectedEntities.forEach(entity => {
               if (typeof entity === typeof value) {
-                onDuplicate(entity as T, preferredGizmo);
+                const cloned = sdk.operations.duplicateEntity(entity, preferredGizmo, insertAfter);
+                insertAfter = cloned;
               }
             });
+            void sdk.operations.dispatch();
           } else {
             onDuplicate(value, preferredGizmo);
           }
@@ -431,7 +434,9 @@ function DisclosureWidget({ enabled, isOpen, onOpen }: DisclosureWidgetProps) {
 }
 
 function TreeChildren<T>(props: Props<T>) {
-  const CompTree = Tree<T>();
+  // `Tree<T>()` builds a fresh component each call; memoize so children
+  // keep a stable identity across re-renders and don't remount on engine updates.
+  const CompTree = useMemo(() => Tree<T>(), []);
   const { value, level = getDefaultLevel(), getChildren, getId, isOpen, isHidden } = props;
   const children = getChildren(value);
   const open = isOpen(value);

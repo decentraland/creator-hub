@@ -22,6 +22,7 @@ export type CustomNotification = CommonNotificationProps<CustomNotificationType>
 export type GenericNotification = CommonNotificationProps<{ type: 'generic' }> & {
   severity: Severity;
   message: string;
+  description?: string;
 };
 
 export type Notification = CustomNotification | GenericNotification;

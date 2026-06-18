@@ -1,5 +1,6 @@
 import { beforeAll, afterAll } from 'vitest';
 import { chromium, type Browser, type Page } from 'playwright';
+import { mockContentRequests } from './utils/mock-content';
 
 let browser: Browser;
 let page: Page;
@@ -69,6 +70,10 @@ beforeAll(async () => {
   (global as any).E2E_URL = serverUrl;
 
   const contentUrl = process.env.E2E_CONTENT_URL || 'https://builder-items.decentraland.zone';
+
+  // Intercept all requests to the content URL and serve from local asset-packs
+  await mockContentRequests(page, contentUrl);
+
   await page.goto(`${serverUrl}?contentUrl=${encodeURIComponent(contentUrl)}`);
 
   try {
@@ -87,5 +92,14 @@ beforeAll(async () => {
 }, 120000);
 
 afterAll(async () => {
-  await browser?.close();
+  try {
+    await page?.close();
+  } catch {
+    // ignore teardown errors so they don't cascade into the next spec file
+  }
+  try {
+    await browser?.close();
+  } catch {
+    // ignore teardown errors so they don't cascade into the next spec file
+  }
 });

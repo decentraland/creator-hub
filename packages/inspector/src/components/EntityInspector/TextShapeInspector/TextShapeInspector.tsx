@@ -21,7 +21,7 @@ export default withSdk<Props>(({ sdk, entities, initialOpen = true }) => {
     TextShape,
     fromTextShape,
     toTextShape,
-    isValidInput,
+    { validateInput: isValidInput },
   );
 
   const handleRemove = useCallback(async () => {
@@ -50,6 +50,8 @@ export default withSdk<Props>(({ sdk, entities, initialOpen = true }) => {
           type="help"
         />
       }
+      component={TextShape}
+      entity={entities}
       onRemoveContainer={handleRemove}
     >
       <Block>

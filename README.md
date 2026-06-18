@@ -325,6 +325,8 @@ The Inspector package uses Protocol Buffers for data layer communication:
 - Generated TypeScript files are in `packages/inspector/src/lib/data-layer/proto/gen/`
 - Use `make protoc` to regenerate after `.proto` changes
 
+For a detailed guide to how the three packages connect and communicate at runtime, see [`docs/architecture.md`](docs/architecture.md).
+
 ## 🧪 Testing
 
 ### Unit Tests

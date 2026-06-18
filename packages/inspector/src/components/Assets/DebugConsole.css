@@ -1,0 +1,32 @@
+.DebugConsole {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--tree-bg-color);
+}
+
+.DebugConsole-logs {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 4px 12px;
+  font-family: "Cascadia Code", "Fira Code", "JetBrains Mono", "Consolas", monospace;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--base-01);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.DebugConsole-logs > span {
+  display: block;
+}
+
+.DebugConsole-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--base-08);
+  font-size: 13px;
+}

@@ -13,6 +13,19 @@ export enum TabType {
 
 export type SelectedSmartItem = { visible: boolean; selectedAction: string };
 
+export type PresentationState = {
+  id: string;
+  fileName: string;
+  currentSlide: number;
+  slideCount: number;
+  fileType: 'pdf' | 'pptx';
+  slideVideos: Array<{
+    url: string;
+    geometry: { x: number; y: number; width: number; height: number };
+  }>;
+  videoState: 'idle' | 'loading' | 'playing' | 'paused';
+};
+
 export type State = {
   adminToolkitUiEntity: Entity;
   panelOpen: boolean;
@@ -21,6 +34,8 @@ export type State = {
     selectedVideoPlayer: number | undefined;
     selectedStream: 'live' | 'dcl-cast' | undefined;
     dclCast: DclCastResponse | undefined;
+    isMinimized: boolean;
+    presentationState: PresentationState | undefined;
   };
   smartItemsControl: {
     selectedSmartItem: number | undefined;

@@ -170,6 +170,7 @@ function Error({ path, title, onClose }: { path: string; title: string; onClose:
         open={open}
         disableGoBack
         project={project}
+        // initialStep="deploy"
         onClose={onClose}
       />
     </>

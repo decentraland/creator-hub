@@ -1,6 +1,16 @@
 import { platform } from 'node:process';
 import { app } from 'electron';
-import * as Sentry from '@sentry/electron/main';
+import {
+  init as sentryInit,
+  captureException,
+  electronBreadcrumbsIntegration,
+  electronContextIntegration,
+  childProcessIntegration,
+  onUncaughtExceptionIntegration,
+  onUnhandledRejectionIntegration,
+  linkedErrorsIntegration,
+  normalizePathsIntegration,
+} from '@sentry/electron/main';
 import log from 'electron-log/main';
 
 import { restoreOrCreateMainWindow } from '/@/mainWindow';
@@ -18,8 +28,27 @@ import '/@/security-restrictions';
 log.initialize();
 
 if (import.meta.env.PROD) {
-  Sentry.init({
+  sentryInit({
     dsn: import.meta.env.VITE_SENTRY_DSN,
+    skipOpenTelemetrySetup: true,
+    defaultIntegrations: false,
+    integrations: [
+      electronBreadcrumbsIntegration(),
+      electronContextIntegration(),
+      childProcessIntegration({
+        events: false,
+      }),
+      onUncaughtExceptionIntegration(),
+      onUnhandledRejectionIntegration(),
+      linkedErrorsIntegration(),
+      normalizePathsIntegration(),
+    ],
+    beforeSend(event) {
+      if (event.message?.includes("process exited with 'abnormal-exit'")) {
+        return null;
+      }
+      return event;
+    },
   });
 }
 
@@ -63,7 +92,17 @@ app
 
     handleAppArguments(process.argv);
 
-    initIpc();
+    initIpc({
+      beforeQuitCleanup: async () => {
+        setSkipBeforeQuitCleanup();
+        try {
+          await killAll();
+        } catch (error) {
+          skipBeforeQuitCleanup = false;
+          throw error;
+        }
+      },
+    });
     log.info('[IPC] Ready');
     await restoreOrCreateMainWindow();
     log.info('[BrowserWindow] Ready');
@@ -77,6 +116,12 @@ app
   })
   .catch(e => log.error('Failed create window:', e));
 
+let skipBeforeQuitCleanup = false;
+
+export function setSkipBeforeQuitCleanup() {
+  skipBeforeQuitCleanup = true;
+}
+
 export async function killAll() {
   const promises: Promise<unknown>[] = [killAllPreviews()];
   if (deployServer) {
@@ -88,14 +133,14 @@ export async function killAll() {
 }
 
 app.on('before-quit', async event => {
+  if (skipBeforeQuitCleanup) {
+    return;
+  }
   event.preventDefault();
   try {
     await killAll();
   } catch (error) {
-    Sentry.captureException(error, {
-      tags: { source: 'before-quit' },
-      extra: { context: 'Before quit error' },
-    });
+    captureException(error, { tags: { source: 'before-quit' } });
     log.error('[App] Failed to kill all servers:', error);
   }
   log.info('[App] Quit');

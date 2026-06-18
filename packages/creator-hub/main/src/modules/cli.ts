@@ -3,6 +3,7 @@ import fs from 'fs/promises';
 import { realpathSync } from 'fs';
 import log from 'electron-log/main';
 import { app } from 'electron';
+import QRCode from 'qrcode';
 
 import type { PreviewOptions } from '/shared/types/settings';
 import {
@@ -18,6 +19,8 @@ import { getAvailablePort } from './port';
 import { getProjectId, track } from './analytics';
 import { install } from './npm';
 import { downloadGithubRepo } from './download-github-folder';
+import { startMobileDebugServer } from './mobile-debug-server';
+import { getLanIp } from './network';
 
 export type Preview = { child: Child; url: string; opts: PreviewOptions };
 
@@ -96,6 +99,12 @@ function isPreviewRunning(preview?: Preview): preview is Preview {
   return !!(preview?.child.alive() && preview.url);
 }
 
+function getDeepLinkParam(raw: string, key: string): string | null {
+  const queryIdx = raw.indexOf('?');
+  if (queryIdx < 0) return null;
+  return new URLSearchParams(raw.slice(queryIdx + 1)).get(key);
+}
+
 function getPreviewServerUrl(deepLinkUrl: string): string | null {
   try {
     const params = new URLSearchParams(deepLinkUrl);
@@ -130,7 +139,48 @@ export async function getMobilePreview(path: string): Promise<{ url: string; qr:
     }
     const json = await response.json();
     if (json.ok && json.data) {
-      return { url: json.data.url, qr: json.data.qr };
+      let { url, qr } = json.data as { url: string; qr: string };
+
+      log.info(
+        '[CLI] getMobilePreview: got URL from SDK, attempting mobile debug server setup...',
+        {
+          url: url.substring(0, 80),
+          serverUrl,
+        },
+      );
+      try {
+        const wsPort = await startMobileDebugServer();
+        // Extract the host from the mobile preview URL (not serverUrl which may be 127.0.0.1)
+        // The mobile URL has the LAN IP that the phone can reach
+        const mobilePreviewParam = getDeepLinkParam(url, 'preview');
+        let previewHost = mobilePreviewParam
+          ? new URL(mobilePreviewParam).hostname
+          : new URL(serverUrl).hostname;
+        if (previewHost === '127.0.0.1' || previewHost === 'localhost') {
+          previewHost = getLanIp();
+        }
+        const sceneInspectorTarget = `ws://${previewHost}:${wsPort}`;
+
+        // Append scene-inspector param to the mobile URL
+        if (url.includes('?')) {
+          url = `${url}&scene-inspector=${encodeURIComponent(sceneInspectorTarget)}`;
+        } else {
+          url = `${url}?scene-inspector=${encodeURIComponent(sceneInspectorTarget)}`;
+        }
+
+        // Regenerate QR with the modified URL
+        qr = await QRCode.toDataURL(url, { width: 512, margin: 2 });
+
+        log.info(`[mobile-debug] WS at ws://0.0.0.0:${wsPort}, mobile URL updated`);
+      } catch (wsError: unknown) {
+        if (wsError instanceof Error) {
+          log.error('[CLI] Could not start mobile debug server:', wsError.message, wsError.stack);
+        } else {
+          log.error('[CLI] Could not start mobile debug server:', wsError);
+        }
+      }
+
+      return { url, qr };
     }
     return null;
   } catch (error) {
@@ -292,11 +342,21 @@ export async function legacyDeploy({
   return port;
 }
 
-async function shouldRunLegacyDeploy(path: string) {
-  const file = await fs.readFile(
+async function readDeployCommandFile(path: string) {
+  return fs.readFile(
     join(path, 'node_modules', '@dcl/sdk-commands/dist/commands/deploy/index.js'),
+    'utf-8',
   );
+}
+
+async function shouldRunLegacyDeploy(path: string) {
+  const file = await readDeployCommandFile(path);
   return !file.includes('--programmatic');
+}
+
+async function supportsMultiSceneDeploy(path: string) {
+  const file = await readDeployCommandFile(path);
+  return file.includes('--multi-scene');
 }
 // ############################################################################################
 
@@ -333,6 +393,7 @@ export async function deploy({
   }
 
   const port = await getAvailablePort();
+  const multiScene = await supportsMultiSceneDeploy(path);
 
   const { stop } = await runCommand(path, 'deploy', [
     '--dir',
@@ -343,6 +404,8 @@ export async function deploy({
     ...(target ? ['--target', target] : []),
     ...(targetContent ? ['--target-content', targetContent] : []),
     '--programmatic',
+    '--yes',
+    ...(multiScene ? ['--multi-scene'] : []),
     ...(language ? ['--language', language] : []),
   ]);
 

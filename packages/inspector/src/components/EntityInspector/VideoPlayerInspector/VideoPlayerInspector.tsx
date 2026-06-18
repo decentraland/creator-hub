@@ -34,8 +34,7 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
     VideoPlayer,
     fromVideoPlayer,
     toVideoPlayer,
-    () => true,
-    [files],
+    { deps: [files] },
   );
 
   const handleRemove = useCallback(async () => {
@@ -100,6 +99,8 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
           type="help"
         />
       }
+      component={VideoPlayer}
+      entity={entity}
       onRemoveContainer={handleRemove}
     >
       <Block

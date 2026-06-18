@@ -1,4 +1,3 @@
-import { captureException } from '@sentry/electron/renderer';
 import { ErrorBase } from '/shared/types/error';
 
 export type File = {
@@ -62,14 +61,6 @@ export class DeploymentError extends ErrorBase<ErrorName> {
     public error?: Error,
   ) {
     super(name, error?.message || `Deployment error: ${name}`);
-    // Report the error to Sentry
-    captureException(error || this, {
-      tags: {
-        source: 'deployment',
-        errorType: name,
-      },
-      fingerprint: ['deployment-error', name],
-    });
   }
 }
 

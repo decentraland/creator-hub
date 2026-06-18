@@ -26,7 +26,7 @@ export default withSdk<Props>(({ sdk, entities, initialOpen = true }) => {
     LightSource,
     fromComponent,
     toComponent,
-    isValidInput,
+    { validateInput: isValidInput },
   );
 
   const handleRemove = useCallback(async () => {
@@ -64,6 +64,8 @@ export default withSdk<Props>(({ sdk, entities, initialOpen = true }) => {
           type="help"
         />
       }
+      component={LightSource}
+      entity={entities}
       onRemoveContainer={handleRemove}
     >
       <Block>

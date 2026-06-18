@@ -12,6 +12,26 @@
       }
     },
     {
+      "name": "core::MeshCollider",
+      "jsonSchema": {
+        "type": "object",
+        "properties": {},
+        "serializationType": "protocol-buffer",
+        "protocolBuffer": "PBMeshCollider"
+      },
+      "data": {
+        "0": {
+          "json": {
+            "collisionMask": 1,
+            "mesh": {
+              "$case": "box",
+              "box": {}
+            }
+          }
+        }
+      }
+    },
+    {
       "name": "asset-packs::Triggers",
       "data": {
         "0": {

@@ -45,6 +45,7 @@
         "code": "代码",
         "preview": "预览",
         "publish": "发布",
+        "refresh": "从磁盘重新加载场景",
         "preview_options": {
           "title": "预览选项",
           "debugger": "在预览期间打开控制台窗口",
@@ -260,6 +261,7 @@
             "invalid_url": "出了问题。\n请重试。",
             "invalid_identity": "身份验证失败。",
             "max_file_size_exceeded": "一个或多个资产超过了允许的限制（{maxFileSizeInMb}MB）。\n优化或移除大文件并重试。",
+            "max_scene_size_exceeded": "您的场景超过了允许的最大大小。\n请减少资产的数量或大小，然后重试。",
             "unknown": "出了问题。\n请重试。",
             "invalid_creator_wallet": "创建者必须是有效的以太坊钱包地址。"
           },
@@ -410,7 +412,8 @@
         "auto_skybox": "自动（Decentraland 时间）",
         "max_offset": "最大偏移",
         "general": "常规",
-        "single_player": "单人游戏"
+        "single_player": "单人游戏",
+        "show_in_places": "在 Places 中显示"
       },
       "details": {
         "world_title": "世界标题",
@@ -424,10 +427,7 @@
         "set_image": "选择图片",
         "no_image": "未设置图片",
         "age_rating_options": {
-          "everyone": "E（所有人，PG 13+）",
-          "teen": "T（青少年，PG 13+）",
-          "adult": "A（成人，PG 18+）",
-          "restricted": "R（限制级）"
+          "adult": "A（成人，PG 18+）"
         },
         "categories_options": {
           "art": "🎨 艺术",
@@ -562,7 +562,7 @@
         }
       },
       "collaborators": {
-        "description": "<span>添加最多 10 个协作者</span>并管理他们在您世界中的部署或流媒体权限。",
+        "description": "<span>添加最多 100 个协作者</span>并管理他们在您世界中的部署或流媒体权限。",
         "empty_list": "您还没有添加任何协作者",
         "add_collaborator": "添加协作者",
         "add": "添加",
@@ -623,7 +623,7 @@
       "cancel": "取消"
     },
     "mobile_qr": {
-      "title": "移动端预览",
+      "title": "连接 Mobile Debug Session",
       "description": "使用移动设备扫描此二维码预览场景",
       "disclaimer": "您的电脑和移动设备必须在同一网络中"
     }
@@ -645,6 +645,7 @@
       "invalid_scenes_folder": "无效的场景文件夹。请在创建场景之前在设置中配置有效的场景文件夹。",
       "create_scene_failed": "尝试创建场景时发生错误。请重试。",
       "run_scene_failed": "加载项目失败。请重试。",
+      "preview_scene_failed": "启动预览失败。请检查场景代码是否有错误。",
       "url_copied": "URL已复制到剪贴板",
       "fetch_managed_projects_failed": "获取管理项目失败",
       "fetch_world_settings_failed": "获取世界设置失败。请重试。",
@@ -855,6 +856,7 @@
         "edit_name": "编辑名称",
         "permissions": "权限",
         "parcel": "地块",
+        "view_storage": "查看存储",
         "unpublish": "取消发布"
       },
       "no_scene": {

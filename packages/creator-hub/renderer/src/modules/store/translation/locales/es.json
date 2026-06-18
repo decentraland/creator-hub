@@ -45,6 +45,7 @@
         "code": "Código",
         "preview": "Previsualizar",
         "publish": "Publicar",
+        "refresh": "Recargar escena desde disco",
         "preview_options": {
           "title": "Opciones de Previsualización",
           "debugger": "Abrir la ventana de la Consola durante la previsualización",
@@ -260,6 +261,7 @@
             "invalid_url": "Algo salió mal.\nPor favor, inténtalo de nuevo.",
             "invalid_identity": "No se pudo validar su identidad.",
             "max_file_size_exceeded": "Uno o más activos exceden el límite permitido ({maxFileSizeInMb}MB).\nOptimiza o elimina archivos grandes y vuelve a intentarlo.",
+            "max_scene_size_exceeded": "Tu escena excede el tamaño máximo permitido.\nReducí la cantidad o el tamaño de los assets e intentá de nuevo.",
             "unknown": "Algo salió mal.\nPor favor, inténtalo de nuevo.",
             "invalid_creator_wallet": "El creador debe ser una dirección de billetera Ethereum válida."
           },
@@ -410,7 +412,8 @@
         "auto_skybox": "Auto (hora de Decentraland)",
         "max_offset": "Desplazamiento Máximo",
         "general": "General",
-        "single_player": "Un Solo Jugador"
+        "single_player": "Un Solo Jugador",
+        "show_in_places": "Mostrar en Places"
       },
       "details": {
         "world_title": "Título del Mundo",
@@ -424,10 +427,7 @@
         "set_image": "Elegir imagen",
         "no_image": "No hay imagen",
         "age_rating_options": {
-          "everyone": "E (Todos, PG 13+)",
-          "teen": "T (Adolescentes, PG 13+)",
-          "adult": "A (Adultos, PG 18+)",
-          "restricted": "R (Restringido)"
+          "adult": "A (Adultos, PG 18+)"
         },
         "categories_options": {
           "art": "🎨 Arte",
@@ -562,7 +562,7 @@
         }
       },
       "collaborators": {
-        "description": "<span>Agrega hasta 10 colaboradores</span> y gestiona sus permisos para publicar o transmitir en tu Mundo.",
+        "description": "<span>Agrega hasta 100 colaboradores</span> y gestiona sus permisos para publicar o transmitir en tu Mundo.",
         "empty_list": "Aún no has agregado ningún colaborador",
         "add_collaborator": "Agregar colaborador",
         "add": "Agregar",
@@ -623,7 +623,7 @@
       "cancel": "Cancelar"
     },
     "mobile_qr": {
-      "title": "Vista previa móvil",
+      "title": "Conectar Mobile Debug Session",
       "description": "Escanea este código QR con tu dispositivo móvil para previsualizar la escena",
       "disclaimer": "Tu computadora y dispositivo móvil deben estar en la misma red"
     }
@@ -645,6 +645,7 @@
       "invalid_scenes_folder": "Carpeta de escenas inválida. Por favor, ingresa una carpeta de escenas válida en la configuración de la aplicación antes de crear una escena.",
       "create_scene_failed": "Ocurrió un error al crear la escena. Por favor, inténtalo nuevamente.",
       "run_scene_failed": "Error al cargar el proyecto. Por favor, inténtalo de nuevo.",
+      "preview_scene_failed": "Error al iniciar la vista previa. Revisá el código de la escena en busca de errores.",
       "url_copied": "URL copiada al portapapeles",
       "fetch_managed_projects_failed": "Error al cargar los proyectos gestionados",
       "fetch_world_settings_failed": "Error al cargar la configuración del mundo. Por favor, inténtalo de nuevo.",
@@ -855,6 +856,7 @@
         "edit_name": "Editar Nombre",
         "permissions": "Permisos",
         "parcel": "Parcela",
+        "view_storage": "Ver Almacenamiento",
         "unpublish": "Despublicar"
       },
       "no_scene": {

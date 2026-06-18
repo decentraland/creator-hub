@@ -21,7 +21,7 @@ export default withSdk<Props>(({ sdk, entities, initialOpen = true }) => {
     MeshCollider,
     fromMeshCollider,
     toMeshCollider,
-    isValidInput,
+    { validateInput: isValidInput },
   );
 
   const handleRemove = useCallback(async () => {
@@ -57,6 +57,8 @@ export default withSdk<Props>(({ sdk, entities, initialOpen = true }) => {
           type="help"
         />
       }
+      component={MeshCollider}
+      entity={entities}
       onRemoveContainer={handleRemove}
     >
       <Block>

@@ -15,13 +15,9 @@ import './CounterBarInspector.css';
 export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
   const { CounterBar } = sdk.components;
 
-  const { getInputProps } = useComponentInput(
-    entity,
-    CounterBar,
-    fromCounterBar,
-    toCounterBar,
-    isValidInput,
-  );
+  const { getInputProps } = useComponentInput(entity, CounterBar, fromCounterBar, toCounterBar, {
+    validateInput: isValidInput,
+  });
 
   const hasCounterBar = useHasComponent(entity, CounterBar);
 
@@ -46,6 +42,8 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
         />
       }
       initialOpen={initialOpen}
+      component={CounterBar}
+      entity={entity}
       onRemoveContainer={handleRemove}
     >
       <TextField

@@ -15,6 +15,7 @@ import {
 } from '@dcl/asset-packs';
 import type { AssetData } from '../../../logic/catalog';
 import { isValidHttpsUrl } from '../../../utils/url';
+import { getRelativeResourcePath, getResourcesBasePath } from '../../../utils/path-utils';
 import { CoreComponents, EditorComponentNames } from '../../components';
 import { processMaterialTextures } from './utils';
 
@@ -36,42 +37,24 @@ const excludeComponents: string[] = [
   CoreComponents.NETWORK_ENTITY,
 ];
 
-const componentsWithResources: Record<string, string[]> = {};
+const componentsWithResources: Record<string, string[][]> = {};
 
-// Modified handleResource function to be strongly typed with array paths
 function handleResource(type: string, keys: string[]): void {
-  componentsWithResources[type] = (keys as string[]).map(String);
+  if (!componentsWithResources[type]) {
+    componentsWithResources[type] = [];
+  }
+  componentsWithResources[type].push(keys);
 }
 
-// Update the handlers to use proper typing with array paths
 handleResource(CoreComponents.GLTF_CONTAINER, ['src']);
 handleResource(CoreComponents.AUDIO_SOURCE, ['audioClipUrl']);
 handleResource(CoreComponents.VIDEO_PLAYER, ['src']);
-handleResource(CoreComponents.MATERIAL, ['material', 'pbr', 'texture', 'tex', 'texture', 'src']);
-handleResource(CoreComponents.MATERIAL, [
-  'material',
-  'pbr',
-  'alphaTexture',
-  'tex',
-  'texture',
-  'src',
-]);
-handleResource(CoreComponents.MATERIAL, [
-  'material',
-  'pbr',
-  'emissiveTexture',
-  'tex',
-  'texture',
-  'src',
-]);
-handleResource(CoreComponents.MATERIAL, [
-  'material',
-  'pbr',
-  'bumpTexture',
-  'tex',
-  'texture',
-  'src',
-]);
+
+const PBR_TEXTURE_SLOTS = ['texture', 'alphaTexture', 'emissiveTexture', 'bumpTexture'];
+for (const slot of PBR_TEXTURE_SLOTS) {
+  handleResource(CoreComponents.MATERIAL, ['material', 'pbr', slot, 'tex', 'texture', 'src']);
+}
+handleResource(CoreComponents.MATERIAL, ['material', 'unlit', 'texture', 'tex', 'texture', 'src']);
 
 // Add these action types at the top with other constants
 const RESOURCE_ACTION_TYPES = [
@@ -202,6 +185,68 @@ export function createCustomAsset(engine: IEngine) {
       centroid = calculateCentroid(transformValues, roots);
     }
 
+    // Phase 1b: Pre-pass to collect all resource paths and compute base path
+    const collectedResources: string[] = [];
+    for (const entity of allEntities) {
+      for (const component of engine.componentsIter()) {
+        const { componentName } = component;
+        if (excludeComponents.includes(componentName)) continue;
+
+        const Component = engine.getComponent(
+          component.componentId,
+        ) as LastWriteWinElementSetComponentDefinition<unknown>;
+        if (!Component.has(entity)) continue;
+        const componentValue = Component.get(entity);
+        if (!componentValue) continue;
+
+        const value = JSON.parse(JSON.stringify(componentValue)) as Record<string, unknown>;
+
+        if (componentsWithResources[componentName]) {
+          for (const propertyKeys of componentsWithResources[componentName]) {
+            let nestedValue: unknown = value;
+            for (let i = 0; i < propertyKeys.length - 1; i++) {
+              if (nestedValue === undefined || nestedValue === null) break;
+              nestedValue = (nestedValue as Record<string, unknown>)[propertyKeys[i]];
+            }
+            if (nestedValue && propertyKeys.length > 0) {
+              const originalValue = (nestedValue as Record<string, string>)[
+                propertyKeys[propertyKeys.length - 1]
+              ];
+              if (originalValue && !isValidHttpsUrl(originalValue)) {
+                collectedResources.push(originalValue);
+              }
+            }
+          }
+        }
+
+        if (componentName === AssetPackComponentNames.ACTIONS) {
+          const actions = value.value as Action[] | undefined;
+          if (Array.isArray(actions)) {
+            for (const action of actions) {
+              if (RESOURCE_ACTION_TYPES.includes(action.type)) {
+                const payload = JSON.parse(action.jsonPayload) as { src?: string };
+                if (payload.src && !isValidHttpsUrl(payload.src)) {
+                  collectedResources.push(payload.src);
+                }
+              }
+            }
+          }
+        }
+
+        if (componentName === EditorComponentNames.Script) {
+          const scriptValue = value.value as { path?: string }[] | undefined;
+          if (Array.isArray(scriptValue)) {
+            for (const scriptItem of scriptValue) {
+              if (scriptItem.path && !isValidHttpsUrl(scriptItem.path)) {
+                collectedResources.push(scriptItem.path);
+              }
+            }
+          }
+        }
+      }
+    }
+    const resourcesBasePath = getResourcesBasePath(collectedResources);
+
     // Phase 2: Process each component for each scene entity and map it to the custom asset entity
     for (const entity of allEntities) {
       const isRoot = roots.has(entity);
@@ -264,23 +309,25 @@ export function createCustomAsset(engine: IEngine) {
 
         // Handle special components
         if (componentsWithResources[componentName]) {
-          const propertyKeys = componentsWithResources[componentName];
-          let value = processedComponentValue;
+          for (const propertyKeys of componentsWithResources[componentName]) {
+            let value = processedComponentValue;
 
-          // Navigate through the property chain safely
-          for (let i = 0; i < propertyKeys.length - 1; i++) {
-            if (value === undefined || value === null) break;
-            value = value[propertyKeys[i]];
-          }
+            // Navigate through the property chain safely
+            for (let i = 0; i < propertyKeys.length - 1; i++) {
+              if (value === undefined || value === null) break;
+              value = value[propertyKeys[i]];
+            }
 
-          // Only process if we have a valid value and final key
-          if (value && propertyKeys.length > 0) {
-            const finalKey = propertyKeys[propertyKeys.length - 1];
-            const originalValue: string = value[finalKey];
-            // Only local asset resources are supported
-            if (originalValue && !isValidHttpsUrl(originalValue)) {
-              value[finalKey] = originalValue.replace(/^.*[/]([^/]+)$/, '{assetPath}/$1');
-              resources.push(originalValue);
+            // Only process if we have a valid value and final key
+            if (value && propertyKeys.length > 0) {
+              const finalKey = propertyKeys[propertyKeys.length - 1];
+              const originalValue: string = value[finalKey];
+              // Only local asset resources are supported
+              if (originalValue && !isValidHttpsUrl(originalValue)) {
+                const relativePath = getRelativeResourcePath(originalValue, resourcesBasePath);
+                value[finalKey] = `{assetPath}/${relativePath}`;
+                resources.push(originalValue);
+              }
             }
           }
         }
@@ -292,9 +339,12 @@ export function createCustomAsset(engine: IEngine) {
             processedComponentValue.value = actions.map(action => {
               if (RESOURCE_ACTION_TYPES.includes(action.type)) {
                 const payload = JSON.parse(action.jsonPayload);
-                const originalValue: string = payload.src;
-                payload.src = originalValue.replace(/^.*[/]([^/]+)$/, '{assetPath}/$1');
-                resources.push(originalValue);
+                if (payload.src) {
+                  const originalValue: string = payload.src;
+                  const relativePath = getRelativeResourcePath(originalValue, resourcesBasePath);
+                  payload.src = `{assetPath}/${relativePath}`;
+                  resources.push(originalValue);
+                }
                 action.jsonPayload = JSON.stringify(payload);
               }
               return action;
@@ -312,7 +362,8 @@ export function createCustomAsset(engine: IEngine) {
                 // Process script path
                 if (scriptItem.path) {
                   const originalPath: string = scriptItem.path;
-                  updatedScriptItem.path = originalPath.replace(/^.*[/]([^/]+)$/, '{assetPath}/$1');
+                  const relativePath = getRelativeResourcePath(originalPath, resourcesBasePath);
+                  updatedScriptItem.path = `{assetPath}/${relativePath}`;
                   resources.push(originalPath);
                 }
 

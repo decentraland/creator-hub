@@ -21,7 +21,12 @@ export function SnackbarComponent() {
   const getComponent = useCallback((notification: Notification) => {
     switch (notification.type) {
       case 'generic':
-        return <Generic {...notification} />;
+        return (
+          <Generic
+            {...notification}
+            onClose={notification.duration === 0 ? close(notification.id) : undefined}
+          />
+        );
       case 'missing-scenes':
         return <MissingScenes onClose={close(notification.id)} />;
       case 'new-dependency-version':

@@ -45,6 +45,7 @@
         "code": "Code",
         "preview": "Preview",
         "publish": "Publish",
+        "refresh": "Reload scene from disk",
         "preview_options": {
           "title": "Preview Options",
           "debugger": "Open Debug Console",
@@ -260,6 +261,7 @@
             "invalid_url": "Something went wrong.\nPlease, try again.",
             "invalid_identity": "Failed to validate your identity.",
             "max_file_size_exceeded": "One or more assets exceed the allowed limit ({maxFileSizeInMb}MB).\nOptimize or remove large files and try again.",
+            "max_scene_size_exceeded": "Your scene exceeds the maximum allowed size.\nReduce the number or size of assets and try again.",
             "unknown": "Something went wrong.\nPlease, try again.",
             "invalid_creator_wallet": "Creator must be a valid Ethereum wallet address."
           },
@@ -410,7 +412,8 @@
         "auto_skybox": "Auto (decentraland time)",
         "max_offset": "Max Offset",
         "general": "General",
-        "single_player": "Single Player"
+        "single_player": "Single Player",
+        "show_in_places": "Show in Places"
       },
       "details": {
         "world_title": "World Title",
@@ -424,10 +427,7 @@
         "set_image": "Choose image",
         "no_image": "No image set",
         "age_rating_options": {
-          "everyone": "E (Everyone, PG 13+)",
-          "teen": "T (Teens, PG 13+)",
-          "adult": "A (Adults, PG 18+)",
-          "restricted": "R (Restricted)"
+          "adult": "A (Adults, PG 18+)"
         },
         "categories_options": {
           "art": "🎨 Art",
@@ -562,7 +562,7 @@
         }
       },
       "collaborators": {
-        "description": "<span>Add up to 10 collaborators</span> and manage their permission to deploy, or stream into your World.",
+        "description": "<span>Add up to 100 collaborators</span> and manage their permission to deploy, or stream into your World.",
         "empty_list": "You haven't added any collaborators yet",
         "add_collaborator": "Add collaborator",
         "add": "Add",
@@ -623,7 +623,7 @@
       "cancel": "Cancel"
     },
     "mobile_qr": {
-      "title": "Mobile Preview",
+      "title": "Connect Mobile Debug Session",
       "description": "Scan this QR code with your mobile device to preview the scene",
       "disclaimer": "Both your computer and mobile device must be on the same network"
     }
@@ -645,6 +645,7 @@
       "invalid_scenes_folder": "Invalid Scenes Folder. Please configure a valid Scenes Folder in Settings before creating a scene.",
       "create_scene_failed": "An error occurred while trying to create the scene. Please try again.",
       "run_scene_failed": "Failed to load project. Please try again.",
+      "preview_scene_failed": "Failed to start preview. Check your scene code for errors.",
       "url_copied": "URL copied to clipboard",
       "fetch_managed_projects_failed": "Failed to fetch managed projects",
       "fetch_world_settings_failed": "Failed to fetch world settings. Please try again.",
@@ -855,6 +856,7 @@
         "edit_name": "Edit Name",
         "permissions": "Permissions",
         "parcel": "Parcel",
+        "view_storage": "View Storage",
         "unpublish": "Unpublish"
       },
       "no_scene": {

@@ -1,6 +1,7 @@
 import equal from 'fast-deep-equal';
 import { getCatalystServersFromCache } from 'dcl-catalyst-client/dist/contracts-snapshots';
 import { type SerializedError } from '@reduxjs/toolkit';
+import { captureException } from '@sentry/electron/renderer';
 import { type AuthChain, Authenticator } from '@dcl/crypto';
 import { ChainId } from '@dcl/schemas';
 import type { AuthIdentity } from 'decentraland-crypto-fetch';
@@ -68,8 +69,10 @@ export const deploy = async (
   );
 
   if (!resp.ok) {
-    const data = await resp.json();
+    const data = await resp.json().catch(() => ({ message: `HTTP ${resp.status}` }));
     let error = data.message;
+    console.log('[DEPLOY ERROR] raw data:', JSON.stringify(data));
+    console.log('[DEPLOY ERROR] error message:', error);
     if (/Response was/.test(error)) {
       try {
         error = error.match(/\["(.*?)"\]/)?.[1] ?? error;
@@ -77,7 +80,12 @@ export const deploy = async (
         // Keep original error if parsing fails
       }
     }
-    throw new Error(error);
+    const serverError = new Error(error);
+    captureException(serverError, {
+      tags: { source: 'deployment', event: 'deploy-request' },
+      extra: { status: resp.status, url },
+    });
+    throw serverError;
   }
 };
 
@@ -331,9 +339,7 @@ export function translateError(error: SerializedError) {
     case 'INVALID_CREATOR_WALLET':
       return t('modal.publish_project.deploy.deploying.errors.invalid_creator_wallet');
     case 'MAX_POINTER_SIZE_EXCEEDED':
-      return t('modal.publish_project.deploy.deploying.errors.max_file_size_exceeded', {
-        maxFileSizeInMb: MAX_POINTER_SIZE_BYTES / 1e6,
-      });
+      return t('modal.publish_project.deploy.deploying.errors.max_scene_size_exceeded');
     default:
       return t('modal.publish_project.deploy.deploying.errors.unknown');
   }
@@ -341,9 +347,7 @@ export function translateError(error: SerializedError) {
 
 export function isMaxPointerSizeExceededError(error: any): boolean {
   if ('message' in error) {
-    return error.message.includes(
-      `The deployment is too big. The maximum allowed size per pointer is ${MAX_POINTER_SIZE_BYTES / 1e6} MB for scene.`,
-    );
+    return /The deployment is too big/i.test(error.message);
   }
 
   return false;

@@ -1,8 +1,8 @@
 import path from 'path';
 import fs from 'fs/promises';
-import * as Sentry from '@sentry/electron/main';
 import log from 'electron-log/main';
 import { future } from 'fp-future';
+import { captureException } from '@sentry/electron/main';
 
 import { SCENES_DIRECTORY } from '/shared/paths';
 import { FileSystemStorage, type IFileSystemStorage } from '/shared/types/storage';
@@ -26,9 +26,7 @@ export async function runMigrations() {
     log.info('[Migrations] Migrations completed');
     migrationsFuture.resolve();
   } catch (error) {
-    Sentry.captureException(error, {
-      tags: { source: 'migrations' },
-    });
+    captureException(error, { tags: { source: 'migrations' } });
     const err = error instanceof Error ? error : new Error(String(error));
     migrationsFuture.reject(err);
     throw error;

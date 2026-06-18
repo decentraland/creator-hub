@@ -3,6 +3,7 @@ import { autoUpdater } from 'electron-updater';
 import type { UpdateInfo, UpdateCheckResult } from 'electron-updater';
 import {
   checkForUpdates,
+  quitAndInstall,
   setupUpdaterEvents,
   writeInstalledVersion,
   getInstalledVersion,
@@ -198,6 +199,53 @@ describe('Updater Module', () => {
         expect(autoUpdater.on).toHaveBeenCalledWith(event, expect.any(Function)),
       );
     });
+  });
+});
+
+describe('quitAndInstall', () => {
+  let mockBeforeQuitCleanup: ReturnType<typeof vi.fn>;
+
+  beforeEach(() => {
+    mockBeforeQuitCleanup = vi.fn().mockResolvedValue(undefined);
+    vi.clearAllMocks();
+  });
+
+  test('should run beforeQuitCleanup before launching installer', async () => {
+    await quitAndInstall('5.0.0', mockBeforeQuitCleanup);
+
+    expect(mockBeforeQuitCleanup).toHaveBeenCalled();
+    expect(autoUpdater.quitAndInstall).toHaveBeenCalled();
+  });
+
+  test('should call beforeQuitCleanup before quitAndInstall', async () => {
+    const callOrder: string[] = [];
+    mockBeforeQuitCleanup.mockImplementation(() => {
+      callOrder.push('beforeQuitCleanup');
+      return Promise.resolve();
+    });
+    vi.mocked(autoUpdater.quitAndInstall).mockImplementation(() => {
+      callOrder.push('quitAndInstall');
+    });
+
+    await quitAndInstall('5.0.0', mockBeforeQuitCleanup);
+
+    expect(callOrder).toEqual(['beforeQuitCleanup', 'quitAndInstall']);
+  });
+
+  test('should write installed version before cleanup', async () => {
+    await quitAndInstall('5.0.0', mockBeforeQuitCleanup);
+
+    expect(globalThis.__fileSystemStorageMocks__.set).toHaveBeenCalledWith(
+      'installed_version',
+      '5.0.0',
+    );
+  });
+
+  test('should not call quitAndInstall when beforeQuitCleanup rejects', async () => {
+    mockBeforeQuitCleanup.mockRejectedValue(new Error('cleanup failed'));
+
+    await expect(quitAndInstall('5.0.0', mockBeforeQuitCleanup)).rejects.toThrow('cleanup failed');
+    expect(autoUpdater.quitAndInstall).not.toHaveBeenCalled();
   });
 });
 
