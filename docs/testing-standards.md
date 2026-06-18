@@ -64,3 +64,15 @@ machine and self-document what the test is gating on.
 Examples in `packages/inspector/test/e2e/pageObjects/Hierarchy.ts`:
 `waitForLabel`, the post-`duplicate` count-change wait, the post-`remove`
 detach wait.
+
+### Run each E2E spec file in its own forked process
+
+`vitest.e2e.config.js` uses `pool: 'forks'` with `singleFork: false` **and**
+`fileParallelism: false`: each spec file runs in a fresh forked process, one at
+a time. Do not set `singleFork: true` — sharing one long-lived worker across all
+files accumulates Chromium/Babylon native memory until the CI runner kills the
+process. The signature is `Error: Worker exited unexpectedly` at a *moving*
+spec-file boundary (every test that ran passed; no V8 heap-OOM message) — it
+reads like flakiness but is memory exhaustion, so raising `--max-old-space-size`
+won't help. A fresh process per file reclaims memory; sequential execution keeps
+only one headless Chromium alive at a time.

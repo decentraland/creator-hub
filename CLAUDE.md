@@ -67,6 +67,14 @@ branches that pin `@dcl/*` packages to SDK-toolchain tarball URLs (syncpack
 reports `UnsupportedMismatch`). When this happens, run `npm run lint:fix`
 directly to skip syncpack and still get ESLint autofixes.
 
+**Note:** npm won't repair a missing transitive lockfile node. When `npm ls` /
+a build's `ELSPROBLEMS` reports a transitive dep `missing` (e.g. `buffer-crc32`
+under the `@dcl/sdk-commands` tarball subtree), a plain `npm install` will NOT
+add it — npm trusts the existing lockfile and reports "up to date". Add the
+`node_modules/<dep>` package node to `package-lock.json` directly (version +
+registry `resolved`/`integrity`), then `npm install`/`npm ci` to reify it. Since
+the parent packages declare the dep, the node then sticks.
+
 ### Protocol Buffers
 
 Proto files live at `packages/inspector/src/lib/data-layer/proto/`. After modifying `.proto` files:
