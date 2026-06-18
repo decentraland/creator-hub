@@ -8,7 +8,6 @@ vi.mock('dcl-catalyst-client/dist/contracts-snapshots', () => ({
       case 'sepolia':
         return [
           { address: 'https://peer.decentraland.zone' },
-          { address: 'https://peer.decentraland.zone' },
         ];
       default:
         return [
@@ -50,7 +49,6 @@ describe('getAvailableCatalystServer', () => {
   describe('when no servers in cache', () => {
     it('should throw error', () => {
       const triedServers = new Set<string>([
-        'https://peer.decentraland.zone',
         'https://peer.decentraland.zone',
       ]);
 
