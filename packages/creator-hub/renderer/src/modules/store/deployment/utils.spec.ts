@@ -8,7 +8,7 @@ vi.mock('dcl-catalyst-client/dist/contracts-snapshots', () => ({
       case 'sepolia':
         return [
           { address: 'https://peer.decentraland.zone' },
-          { address: 'https://peer-ec2.decentraland.zone' },
+          { address: 'https://peer.decentraland.zone' },
         ];
       default:
         return [
@@ -51,7 +51,7 @@ describe('getAvailableCatalystServer', () => {
     it('should throw error', () => {
       const triedServers = new Set<string>([
         'https://peer.decentraland.zone',
-        'https://peer-ec2.decentraland.zone',
+        'https://peer.decentraland.zone',
       ]);
 
       expect(() => getAvailableCatalystServer(triedServers, ChainId.ETHEREUM_SEPOLIA)).toThrow(
