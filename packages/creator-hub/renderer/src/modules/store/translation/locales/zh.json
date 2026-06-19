@@ -413,7 +413,8 @@
         "max_offset": "最大偏移",
         "general": "常规",
         "single_player": "单人游戏",
-        "show_in_places": "在 Places 中显示"
+        "show_in_places": "在 Places 中显示",
+        "single_player_streaming_note": "单人模式下不支持直播。"
       },
       "details": {
         "world_title": "世界标题",
