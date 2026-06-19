@@ -1,4 +1,5 @@
 import React from 'react';
+import { IoLinkOutline } from 'react-icons/io5';
 import type { Entity } from '@dcl/ecs';
 
 import type { FieldConfig } from './field-configs';
@@ -33,7 +34,7 @@ export const BindAffordance: React.FC<BindAffordanceProps> = ({
       onClick={() => setPickerOpen(true)}
       aria-label="Bind to variable"
     >
-      {'\u{1F517}'}
+      <IoLinkOutline aria-hidden="true" />
     </button>
     {pickerOpen && (
       <VariablePicker

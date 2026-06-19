@@ -1,8 +1,26 @@
 .ui-designer-nodetree {
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-  padding: 4px 0;
+  border-top: 1px solid var(--ui-designer-hairline);
+  border-bottom: 1px solid var(--ui-designer-hairline);
+  padding: var(--uid-space-1) 0;
   max-height: 240px;
   overflow-y: auto;
   font-size: 12px;
+}
+
+/* The shared Tree renders the type icon as an <svg> directly inside
+   .selectable-area, which the generic `.item > div > svg` margin rule in
+   Tree.css does not match — so the icon sits flush against the label. Add the
+   gap on the flex row (scoped to the UI Designer trees so the Hierarchy tree
+   is untouched). Also give each row a little breathing room. */
+.ui-designer-nodetree .selectable-area {
+  gap: var(--uid-space-2);
+}
+
+.ui-designer-nodetree .item-area {
+  padding-top: 3px;
+  padding-bottom: 3px;
+}
+
+.ui-designer-nodetree .selectable-area svg {
+  color: rgba(255, 255, 255, 0.6);
 }

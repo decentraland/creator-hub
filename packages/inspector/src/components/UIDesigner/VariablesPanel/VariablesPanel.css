@@ -46,6 +46,12 @@
 }
 
 .ui-designer-variables-add:hover {
-  border-color: rgba(80, 200, 255, 0.5);
-  color: rgba(80, 200, 255, 0.9);
+  border-color: var(--ui-designer-accent-40);
+  color: var(--ui-designer-accent);
+}
+
+.ui-designer-variables-add:focus-visible,
+.ui-designer-variable-delete:focus-visible {
+  outline: 2px solid var(--ui-designer-accent);
+  outline-offset: 1px;
 }

@@ -2,8 +2,9 @@
   min-width: 200px;
   max-height: 240px;
   overflow-y: auto;
-  background: var(--inspector-bg, #1a1a1a);
-  border: 1px solid var(--inspector-border, #2a2a2a);
+  overscroll-behavior: contain;
+  background: var(--tree-bg-color);
+  border: 1px solid var(--ui-designer-control-border);
   border-radius: 4px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
   padding: 4px;
@@ -30,11 +31,18 @@
 
 .ui-designer-variable-picker-row:hover,
 .ui-designer-variable-picker-add:hover {
-  background: var(--inspector-row-hover, #2a2a2a);
+  background: var(--ui-designer-accent-12);
+}
+
+.ui-designer-variable-picker-row:focus-visible,
+.ui-designer-variable-picker-add:focus-visible {
+  outline: none;
+  background: var(--ui-designer-accent-12);
+  box-shadow: inset 0 0 0 1px var(--ui-designer-accent);
 }
 
 .ui-designer-variable-picker-add {
-  border-top: 1px solid var(--inspector-border, #2a2a2a);
+  border-top: 1px solid var(--ui-designer-control-border);
   margin-top: 4px;
   font-style: italic;
 }

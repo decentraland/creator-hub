@@ -11,6 +11,7 @@ import { useAppDispatch, useAppSelector } from '../../redux/hooks';
 import { getSelectedRoot, selectRoot } from '../../redux/ui-designer';
 import { Button } from '../Button';
 import { Tree } from '../Tree';
+import { useCreateUIRoot } from './useCreateUIRoot';
 
 import './RootsList.css';
 
@@ -52,16 +53,7 @@ export const RootsList: React.FC = () => {
     }));
   }, [sdk, uiEntities]);
 
-  const handleCreate = useCallback(async () => {
-    if (!sdk) return;
-    const entity = sdk.operations.createUIRoot('Untitled UI');
-    // Await the dispatch so the engine has fully flushed the new entity's
-    // components before we trigger the tree re-derive. Without this, the
-    // walker runs against a stale snapshot and returns null until something
-    // else triggers a change event (rename, etc.).
-    await sdk.operations.dispatch();
-    dispatch(selectRoot({ root: entity }));
-  }, [sdk, dispatch]);
+  const handleCreate = useCreateUIRoot();
 
   const handleSelect = useCallback(
     (node: UIRootNode) => dispatch(selectRoot({ root: node.entity })),

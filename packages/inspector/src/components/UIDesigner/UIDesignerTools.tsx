@@ -31,6 +31,8 @@ const UIDesignerToolsComponent: React.FC = () => {
           className={cx('ui-designer-tool', t.id, { active: tool === t.id })}
           onClick={handleSelect(t.id)}
           title={t.title}
+          aria-label={t.title}
+          aria-pressed={tool === t.id}
         >
           {t.icon}
         </ToolbarButton>

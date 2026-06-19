@@ -1,26 +1,15 @@
-import React, { useCallback, useMemo } from 'react';
-import {
-  IoCaretDownOutline,
-  IoCreateOutline,
-  IoEllipseOutline,
-  IoSquareOutline,
-  IoTextOutline,
-} from 'react-icons/io5';
+import React, { useCallback, useEffect, useMemo, useRef } from 'react';
 import type { Entity } from '@dcl/ecs';
 
 import { useSdk } from '../../hooks/sdk/useSdk';
 import { useAppDispatch, useAppSelector } from '../../redux/hooks';
-import {
-  getExpanded,
-  getSelectedNode,
-  getSelectedRoot,
-  selectNode,
-  setExpanded,
-} from '../../redux/ui-designer';
+import { getExpanded, getSelectedNode, selectNode, setExpanded } from '../../redux/ui-designer';
 import { Tree } from '../Tree';
 import type { DropType } from '../Tree/utils';
+import { useUINodeActions } from './useUINodeActions';
 import { useUINodeTree } from './useUINodeTree';
-import type { UINode, UINodeType } from './tree-model';
+import { WIDGET_ICONS } from './widget-catalog';
+import type { UINode } from './tree-model';
 
 import './NodeTree.css';
 
@@ -30,14 +19,6 @@ import './NodeTree.css';
 // the tree's DnD bus separate from the palette/canvas bus. Cross-surface
 // reparent (canvas ↔ tree) is documented as V2 in learnings/phase-8.md.
 const NODE_TREE_DND_TYPE = 'ui-designer-tree';
-
-const TYPE_ICONS: Record<UINodeType, JSX.Element> = {
-  UiEntity: <IoSquareOutline />,
-  Label: <IoTextOutline />,
-  Button: <IoEllipseOutline />,
-  Input: <IoCreateOutline />,
-  Dropdown: <IoCaretDownOutline />,
-};
 
 // Walk a UINode tree and locate the parent of `target`. Returns null if
 // `target` is the root or not found.
@@ -50,22 +31,60 @@ function findParent(root: UINode, target: UINode): UINode | null {
   return null;
 }
 
+// Entities on the path from `root` down to (but excluding) `target`. Used to
+// auto-expand every ancestor so a selected node is always revealed in the tree.
+function collectAncestors(root: UINode, target: Entity): Entity[] {
+  const path: Entity[] = [];
+  const walk = (node: UINode): boolean => {
+    if (node.entity === target) return true;
+    for (const child of node.children) {
+      if (walk(child)) {
+        path.push(node.entity);
+        return true;
+      }
+    }
+    return false;
+  };
+  walk(root);
+  return path;
+}
+
 const NodeTreeImpl: React.FC = () => {
   const sdk = useSdk();
   const dispatch = useAppDispatch();
   const tree = useUINodeTree();
   const expanded = useAppSelector(getExpanded);
   const selectedNode = useAppSelector(getSelectedNode);
-  const selectedRoot = useAppSelector(getSelectedRoot);
 
   // Memoise the Tree<UINode> component once per mount — Tree<T>() returns a
   // memoised component factory; constructing it in render would defeat memo.
   const NodeTreeComponent = useMemo(() => Tree<UINode>(), []);
 
+  // Reveal the selected node in the tree: expand any collapsed ancestors and
+  // scroll its row into view. Guarded by a ref so it only fires when the
+  // selection itself changes — not when the user manually collapses a branch
+  // (which would otherwise immediately re-expand under them).
+  const lastRevealed = useRef<Entity | null>(null);
+  useEffect(() => {
+    if (!tree || selectedNode === null) return;
+    if (lastRevealed.current === selectedNode) return;
+    lastRevealed.current = selectedNode;
+    for (const ancestor of collectAncestors(tree, selectedNode as Entity)) {
+      if (expanded[ancestor as unknown as number] === false) {
+        dispatch(setExpanded({ entity: ancestor, expanded: true }));
+      }
+    }
+    requestAnimationFrame(() => {
+      document
+        .querySelector(`.ui-designer-nodetree [data-test-id="${String(selectedNode)}"]`)
+        ?.scrollIntoView({ block: 'nearest' });
+    });
+  }, [tree, selectedNode, expanded, dispatch]);
+
   const getId = useCallback((n: UINode) => String(n.entity), []);
   const getChildren = useCallback((n: UINode) => n.children, []);
   const getLabel = useCallback((n: UINode) => n.name || `${n.type} ${String(n.entity)}`, []);
-  const getIcon = useCallback((n: UINode) => TYPE_ICONS[n.type], []);
+  const getIcon = useCallback((n: UINode) => WIDGET_ICONS[n.type], []);
   const isOpen = useCallback(
     (n: UINode) => expanded[n.entity as unknown as number] !== false,
     [expanded],
@@ -121,29 +140,11 @@ const NodeTreeImpl: React.FC = () => {
     [sdk, tree],
   );
 
-  const handleRemove = useCallback(
-    (node: UINode) => {
-      if (!sdk) return;
-      const removed = sdk.operations.removeUINode(node.entity);
-      void sdk.operations.dispatch();
-      // If the deleted subtree held the selection, fall back to the parent (or root).
-      if (selectedNode !== null && removed.has(selectedNode as Entity)) {
-        const parent = tree ? findParent(tree, node) : null;
-        dispatch(selectNode({ node: parent?.entity ?? selectedRoot }));
-      }
-    },
-    [sdk, tree, selectedNode, selectedRoot, dispatch],
-  );
-
-  const handleDuplicate = useCallback(
-    async (node: UINode) => {
-      if (!sdk) return;
-      const clone = sdk.operations.duplicateUINode(node.entity);
-      await sdk.operations.dispatch();
-      dispatch(selectNode({ node: clone }));
-    },
-    [sdk, dispatch],
-  );
+  // Remove / duplicate share the canvas action bar's logic (selection fallback
+  // included) via the useUINodeActions hook.
+  const { remove, duplicate } = useUINodeActions();
+  const handleRemove = useCallback((node: UINode) => remove(node.entity), [remove]);
+  const handleDuplicate = useCallback((node: UINode) => duplicate(node.entity), [duplicate]);
 
   const noop = useCallback(() => undefined, []);
 

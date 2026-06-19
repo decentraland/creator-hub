@@ -1,15 +1,25 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useDrop } from 'react-dnd';
+import { IoCopyOutline, IoLayersOutline, IoTrashOutline } from 'react-icons/io5';
 import cx from 'classnames';
-import type { PBUiTransform } from '@dcl/ecs';
+import type { Entity, PBUiTransform } from '@dcl/ecs';
 
 import { useSdk } from '../../hooks/sdk/useSdk';
 import { useAssetUrl } from '../../hooks/useAssetUrl';
 import { useAppDispatch, useAppSelector } from '../../redux/hooks';
 import { getSelectedNode, getTool, selectNode } from '../../redux/ui-designer';
+import { Button } from '../Button';
 import { UI_DESIGNER_DND_TYPE, type UIDesignerDragItem } from './Palette';
+import { EmptyState } from './EmptyState';
+import { useCreateUIRoot } from './useCreateUIRoot';
+import { useUINodeActions } from './useUINodeActions';
 import { useUINodeTree } from './useUINodeTree';
-import { clearNodeRegistry, registerNodeElement, unregisterNodeElement } from './node-registry';
+import {
+  clearNodeRegistry,
+  getNodeElement,
+  registerNodeElement,
+  unregisterNodeElement,
+} from './node-registry';
 import {
   DEFAULT_CANVAS_HEIGHT,
   DEFAULT_CANVAS_WIDTH,
@@ -325,6 +335,40 @@ function textureStyle(url: string, textureMode: number | undefined): React.CSSPr
 
 type CanvasNodeProps = { node: UINode };
 
+// Floating Duplicate / Delete bar shown on the selected (non-root) node. Mounted
+// only for the selected node, so `useUINodeActions` (and its tree subscription)
+// isn't paid per-node. Counter-scaled via --uid-scale so it stays legible at any
+// canvas zoom. Stops mouse events so clicking it never starts a node drag.
+const CanvasNodeActions: React.FC<{ entity: Entity }> = ({ entity }) => {
+  const { remove, duplicate } = useUINodeActions();
+  return (
+    <div
+      className="ui-designer-node-actions"
+      onMouseDown={e => e.stopPropagation()}
+      onClick={e => e.stopPropagation()}
+    >
+      <button
+        type="button"
+        className="ui-designer-node-action"
+        aria-label="Duplicate node"
+        title="Duplicate"
+        onClick={() => void duplicate(entity)}
+      >
+        <IoCopyOutline aria-hidden="true" />
+      </button>
+      <button
+        type="button"
+        className="ui-designer-node-action"
+        aria-label="Delete node"
+        title="Delete"
+        onClick={() => remove(entity)}
+      >
+        <IoTrashOutline aria-hidden="true" />
+      </button>
+    </div>
+  );
+};
+
 const CanvasNode: React.FC<CanvasNodeProps> = ({ node }) => {
   const sdk = useSdk();
   const dispatch = useAppDispatch();
@@ -453,6 +497,10 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node }) => {
   // Force re-render during move without storing the offset in state directly
   // (state writes during pointermove would batch-cancel each other in React).
   const [, setRenderTick] = useState(0);
+  // On release we hold the node at its dropped position until the committed
+  // transform catches up — the engine write round-trips asynchronously, so
+  // without this the node snaps back to its old spot for a frame, then jumps.
+  const [optimisticPos, setOptimisticPos] = useState<{ top: number; left: number } | null>(null);
 
   // --- Resize-tool state ---
   const resizeOriginRef = useRef<{
@@ -516,6 +564,7 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node }) => {
         startLeft,
       };
       liveOffsetRef.current = { dx: 0, dy: 0 };
+      setOptimisticPos(null);
       setIsDragging(true);
       // Selection follows the drag — feels natural in every editor.
       dispatch(selectNode({ node: node.entity }));
@@ -554,14 +603,18 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node }) => {
 
       if (!sdk || !origin) return;
       if (offset.dx === 0 && offset.dy === 0) return;
+      const top = Math.round(origin.startTop + offset.dy);
+      const left = Math.round(origin.startLeft + offset.dx);
+      // Hold the dropped position until the committed transform reflects it.
+      setOptimisticPos({ top, left });
       const UiTransform = sdk.components.UiTransform;
       const current = (UiTransform.getOrNull(node.entity) ?? {}) as PBUiTransform;
       UiTransform.createOrReplace(node.entity, {
         ...current,
         positionType: 1, // ABSOLUTE
-        positionTop: Math.round(origin.startTop + offset.dy),
+        positionTop: top,
         positionTopUnit: 1,
-        positionLeft: Math.round(origin.startLeft + offset.dx),
+        positionLeft: left,
         positionLeftUnit: 1,
       } as unknown as PBUiTransform);
       void sdk.operations.dispatch();
@@ -574,6 +627,16 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node }) => {
       window.removeEventListener('mouseup', handleUp);
     };
   }, [isDragging, sdk, node.entity]);
+
+  // Clear the optimistic hold once the committed transform matches the dropped
+  // position (so external edits / the property panel drive rendering again).
+  useEffect(() => {
+    if (!optimisticPos) return;
+    const t = node.uiTransform as PBUiTransform | undefined;
+    const top = Math.round((t?.positionTop as number | undefined) ?? NaN);
+    const left = Math.round((t?.positionLeft as number | undefined) ?? NaN);
+    if (top === optimisticPos.top && left === optimisticPos.left) setOptimisticPos(null);
+  }, [node, optimisticPos]);
 
   // --- Resize handle interaction ---
   const handleResizeStart = useCallback(
@@ -704,6 +767,17 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node }) => {
     }
   }
 
+  // Hold the just-dropped position until the committed transform catches up,
+  // preventing the snap-back-then-jump flicker on release.
+  if (optimisticPos && !isDragging && !isResizing) {
+    style = {
+      ...style,
+      position: 'absolute',
+      top: `${optimisticPos.top}px`,
+      left: `${optimisticPos.left}px`,
+    };
+  }
+
   // Layer the resolved file-texture on top. backgroundColor (a separate
   // property) survives as a fallback while the blob URL is still loading.
   if (texUrl) {
@@ -774,14 +848,37 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node }) => {
             />
           ))
         : null}
+      {isSelected && !isRoot ? <CanvasNodeActions entity={node.entity} /> : null}
     </div>
   );
 };
 
 const CanvasComponent: React.FC = () => {
   const tree = useUINodeTree();
+  const createRoot = useCreateUIRoot();
+  const selectedNode = useAppSelector(getSelectedNode);
   const [scale, setScale] = useState(getCanvasScale());
   const viewportRef = useRef<HTMLDivElement>(null);
+
+  // When a node is selected from elsewhere (tree / roots list) and it sits
+  // fully outside the viewport, scroll it into view. We only act when it's
+  // entirely off-screen so clicking an already-visible node on the canvas never
+  // makes the view jump.
+  useEffect(() => {
+    if (selectedNode === null) return;
+    const vp = viewportRef.current;
+    const el = getNodeElement(selectedNode);
+    if (!vp || !el) return;
+    requestAnimationFrame(() => {
+      const er = el.getBoundingClientRect();
+      const vr = vp.getBoundingClientRect();
+      const offscreen =
+        er.right < vr.left || er.left > vr.right || er.bottom < vr.top || er.top > vr.bottom;
+      if (!offscreen) return;
+      vp.scrollLeft += er.left + er.width / 2 - (vr.left + vr.width / 2);
+      vp.scrollTop += er.top + er.height / 2 - (vr.top + vr.height / 2);
+    });
+  }, [selectedNode]);
 
   // Per-UI design canvas size. The stage reserves the *scaled* footprint so the
   // canvas holds a strict size and the viewport scrolls when it overflows.
@@ -834,6 +931,8 @@ const CanvasComponent: React.FC = () => {
               className="ui-designer-canvas-zoom-level"
               onClick={() => setScale(DEFAULT_CANVAS_SCALE)}
               title="Reset zoom"
+              aria-label="Reset zoom"
+              aria-live="polite"
             >
               {Math.round(scale * 100)}%
             </button>
@@ -852,12 +951,17 @@ const CanvasComponent: React.FC = () => {
           >
             <div
               className="ui-designer-canvas-root"
-              style={{
-                width: canvasWidth,
-                height: canvasHeight,
-                transform: `scale(${scale})`,
-                transformOrigin: 'top left',
-              }}
+              style={
+                {
+                  width: canvasWidth,
+                  height: canvasHeight,
+                  transform: `scale(${scale})`,
+                  transformOrigin: 'top left',
+                  // Exposed so selection chrome (action bar) can counter-scale to
+                  // stay legible at any zoom without re-rendering each node.
+                  '--uid-scale': scale,
+                } as React.CSSProperties
+              }
             >
               <CanvasNode node={tree} />
             </div>
@@ -865,7 +969,12 @@ const CanvasComponent: React.FC = () => {
         </>
       ) : (
         <div className="ui-designer-canvas-empty">
-          <p>No UI selected. Create one from the left rail.</p>
+          <EmptyState
+            icon={<IoLayersOutline />}
+            title="No UI yet"
+            message="Create a UI to start designing your scene's interface, then drag widgets from the palette below."
+            action={<Button onClick={createRoot}>+ New UI</Button>}
+          />
         </div>
       )}
     </div>

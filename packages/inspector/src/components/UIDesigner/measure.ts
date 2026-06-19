@@ -17,6 +17,17 @@ export function measureParentBox(entity: Entity): { width: number; height: numbe
   return { width: r.width / scale, height: r.height / scale };
 }
 
+// Measure the rendered box of the node itself, in logical (Yoga) px. Used by the
+// anchor grid to compute concrete px positions (and to detect the active cell).
+export function measureNodeBox(entity: Entity): { width: number; height: number } | null {
+  const el = getNodeElement(entity);
+  if (!el) return null;
+  const r = el.getBoundingClientRect();
+  if (!r.width && !r.height) return null;
+  const scale = getCanvasScale();
+  return { width: r.width / scale, height: r.height / scale };
+}
+
 // Which parent dimension a length path is a percentage of.
 // height/top/bottom paths are a percentage of height; the rest of width.
 export function axisForPath(path: string): 'width' | 'height' {

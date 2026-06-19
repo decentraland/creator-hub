@@ -22,7 +22,13 @@ export type FieldKind =
   | 'string-array'
   | 'index'
   | 'callback'
-  | 'texture';
+  | 'texture'
+  // Unity-style 3×3 anchor grid → writes positionType + edge insets / auto
+  // margins onto the UiTransform (path '', reads the whole component).
+  | 'align-preset'
+  // Nested margin→padding→content box (CSS-devtools style) → writes the 8
+  // margin*/padding* px fields on the UiTransform (path '').
+  | 'box-model';
 
 export interface EnumOption {
   value: number;
@@ -356,6 +362,14 @@ const LAYOUT_BOX_FIELDS: FieldConfig[] = [
     info: 'Absolute positions via Top/Right/Bottom/Left; Relative flows in layout.',
   },
   {
+    label: 'Anchor',
+    componentId: TRANSFORM,
+    path: '',
+    kind: 'align-preset' as const,
+    bindable: false,
+    info: 'Pin the node to a point of its parent. Clicking a preset switches it to Absolute.',
+  },
+  {
     label: 'Position',
     componentId: TRANSFORM,
     path: '',
@@ -369,32 +383,12 @@ const LAYOUT_BOX_FIELDS: FieldConfig[] = [
     bindable: false,
   },
   {
-    label: 'Padding',
+    label: 'Spacing',
     componentId: TRANSFORM,
     path: '',
-    kind: 'quad-pixels' as const,
-    subFields: [
-      { path: 'paddingTop', leftLabel: 'T' },
-      { path: 'paddingRight', leftLabel: 'R' },
-      { path: 'paddingBottom', leftLabel: 'B' },
-      { path: 'paddingLeft', leftLabel: 'L' },
-    ],
+    kind: 'box-model' as const,
     bindable: false,
-  },
-  {
-    label: 'Margin',
-    componentId: TRANSFORM,
-    path: '',
-    kind: 'quad-pixels' as const,
-    subFields: [
-      { path: 'marginTop', leftLabel: 'T' },
-      { path: 'marginRight', leftLabel: 'R' },
-      { path: 'marginBottom', leftLabel: 'B' },
-      { path: 'marginLeft', leftLabel: 'L' },
-    ],
-    bindable: false,
-    info: 'Ignored when Position type is Absolute.',
-    disabledWhen: v => (v.positionType as number) === 1,
+    info: 'Margin (outer) wraps padding (inner). Margin is ignored when Position type is Absolute.',
   },
 ];
 

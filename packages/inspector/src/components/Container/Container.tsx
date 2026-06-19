@@ -141,7 +141,11 @@ const Container: React.FC<React.PropsWithChildren<Props>> = props => {
       {props.label && (
         <div
           className="title"
-          onClick={() => setOpen(!open)}
+          onClick={() => {
+            const next = !open;
+            setOpen(next);
+            props.onToggle?.(next);
+          }}
         >
           {Icon}
           <span>{props.label}</span>

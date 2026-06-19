@@ -5,10 +5,25 @@
 }
 
 .ui-designer-roots-header {
-  padding: 8px;
+  padding: var(--uid-space-2);
 }
 
 .ui-designer-roots-tree {
   flex: 1;
   overflow: auto;
+}
+
+/* Match the node tree: separate the root's layers icon from its name (the
+   shared Tree.css svg margin rule misses icons nested in .selectable-area). */
+.ui-designer-roots-tree .selectable-area {
+  gap: var(--uid-space-2);
+}
+
+.ui-designer-roots-tree .item-area {
+  padding-top: 3px;
+  padding-bottom: 3px;
+}
+
+.ui-designer-roots-tree .selectable-area svg {
+  color: rgba(255, 255, 255, 0.6);
 }

@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { IoListOutline } from 'react-icons/io5';
 import type { Entity, LastWriteWinElementSetComponentDefinition } from '@dcl/ecs';
 import type { UI, UIVariable } from '@dcl/asset-packs';
 import { ComponentName, VariableType, validateVariableDefault } from '@dcl/asset-packs';
@@ -14,6 +15,7 @@ import { Block } from '../../Block';
 import { TextField } from '../../ui';
 import { RgbaColorField } from '../../ui/RgbaColorField';
 import { color4ToHex, hexToColor4 } from '../../ui/RgbaColorField/color';
+import { EmptyState } from '../EmptyState';
 
 import './VariablesPanel.css';
 
@@ -111,15 +113,17 @@ const VariablesPanelComponent: React.FC = () => {
 
   if (!sdk || selectedRoot === null) {
     return (
-      <div className="ui-designer-variables-empty">
-        <p>Select a UI to declare variables.</p>
-      </div>
+      <EmptyState
+        icon={<IoListOutline />}
+        title="No UI selected"
+        message="Select a UI to declare variables you can bind fields to."
+      />
     );
   }
   if (!marker) return null;
 
   return (
-    <Container label="Variables">
+    <Container>
       {marker.variables.map(v => (
         <VariableRow
           key={v.name}

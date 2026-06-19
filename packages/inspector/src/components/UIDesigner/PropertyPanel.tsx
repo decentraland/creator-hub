@@ -1,4 +1,5 @@
 import React, { useCallback, useMemo, useState } from 'react';
+import { IoOptionsOutline } from 'react-icons/io5';
 import type {
   Entity,
   IEngine,
@@ -10,17 +11,26 @@ import { ComponentName } from '@dcl/asset-packs';
 
 import { useChange } from '../../hooks/sdk/useChange';
 import { useSdk } from '../../hooks/sdk/useSdk';
-import { useAppSelector } from '../../redux/hooks';
-import { getSelectedNode, getSelectedRoot } from '../../redux/ui-designer';
+import { useAppDispatch, useAppSelector } from '../../redux/hooks';
+import {
+  getCollapsedGroups,
+  getSelectedNode,
+  getSelectedRoot,
+  setGroupCollapsed,
+} from '../../redux/ui-designer';
 import { Block } from '../Block';
 import { Container } from '../Container';
+import Search from '../Search';
 import { TextField } from '../ui';
 import { RgbaColorField } from '../ui/RgbaColorField';
 import { debounce } from '../../lib/utils/debounce';
 import { measureParentBox, axisForPath, convertLength } from './measure';
 import { classifyNode, getComponentBag, type UINodeType } from './tree-model';
+import { AnchorPresetField } from './AnchorPresetField';
 import { BindableField } from './BindableField';
+import { BoxModelField } from './BoxModelField';
 import { BindableSubField } from './BindableSubField';
+import { EmptyState } from './EmptyState';
 import { MixedContentField } from './MixedContentField';
 import { seedSegments } from './MixedContentField/segments';
 import { TextureField } from './TextureField';
@@ -100,8 +110,11 @@ function expandWriteAll(
 
 const PropertyPanelComponent: React.FC = () => {
   const sdk = useSdk();
+  const dispatch = useAppDispatch();
   const selected = useAppSelector(getSelectedNode);
   const selectedRoot = useAppSelector(getSelectedRoot);
+  const collapsed = useAppSelector(getCollapsedGroups);
+  const [query, setQuery] = useState('');
   // Bump on engine change to re-read component values without rebuilding the tree.
   const [tick, setTick] = useState(0);
   const debouncedBump = useMemo(() => debounce(() => setTick(t => t + 1), 10), []);
@@ -179,9 +192,11 @@ const PropertyPanelComponent: React.FC = () => {
 
   if (!sdk || selected === null || type === null) {
     return (
-      <div className="ui-designer-property-panel-empty">
-        <p>Select a node to edit its properties.</p>
-      </div>
+      <EmptyState
+        icon={<IoOptionsOutline />}
+        title="No node selected"
+        message="Select a node on the canvas or in the tree to edit its properties."
+      />
     );
   }
 
@@ -196,36 +211,61 @@ const PropertyPanelComponent: React.FC = () => {
   //   - Child nodes get Node (Name) — feeds the auto-generated
   //     `entity-names.ts` for scene code (`SceneEntityNames.ScoreText`, …).
   const layoutGroup = buildLayoutGroup(isUIRoot, type === 'UiEntity');
-  const groups = isUIRoot
-    ? [UI_ROOT_GROUP, layoutGroup, ...config.groups, EFFECTS_GROUP, BORDER_GROUP]
-    : [NODE_GROUP, layoutGroup, ...config.groups, EFFECTS_GROUP, BORDER_GROUP];
+  // Event groups (Mouse / Input / Dropdown events) always sit at the very bottom
+  // of the panel, after Effects/Border, so the layout + content props stay on top.
+  const eventGroups = config.groups.filter(g => /event/i.test(g.title));
+  const contentGroups = config.groups.filter(g => !/event/i.test(g.title));
+  const head = isUIRoot ? UI_ROOT_GROUP : NODE_GROUP;
+  const groups = [head, layoutGroup, ...contentGroups, EFFECTS_GROUP, BORDER_GROUP, ...eventGroups];
+
+  const q = query.trim().toLowerCase();
+  const searching = q.length > 0;
 
   return (
     <div className="ui-designer-property-panel">
-      {groups.map(group => (
-        <Container
-          key={group.title}
-          label={group.title}
-        >
-          {group.fields.map(field => {
-            const component = resolveComponent(sdk.engine, field.componentId);
-            const value = component?.getOrNull(selected as Entity) ?? null;
-            return (
-              <FieldRow
-                key={`${field.componentId}:${field.path}:${field.label}`}
-                field={field}
-                componentValue={value as Record<string, unknown> | null}
-                entity={selected as Entity}
-                selectedRoot={(selectedRoot ?? selected) as Entity}
-                bound={bindingsByField[`${field.componentId}.${field.path}`]}
-                bindings={bindingsByField}
-                mixed={mixedByField[`${field.componentId}.${field.path}`]}
-                write={writeAndDispatch}
-              />
-            );
-          })}
-        </Container>
-      ))}
+      <div className="ui-designer-property-search">
+        <Search
+          value={query}
+          onChange={setQuery}
+          placeholder="Search properties…"
+        />
+      </div>
+      {groups.map(group => {
+        // While searching, show only matching fields and force every group open
+        // so matches aren't hidden behind a collapsed header.
+        const fields = searching
+          ? group.fields.filter(field => (field.label ?? '').toLowerCase().includes(q))
+          : group.fields;
+        if (searching && fields.length === 0) return null;
+        return (
+          <Container
+            // Re-key when toggling search so initialOpen re-seeds (Container
+            // owns its open state once mounted).
+            key={searching ? `${group.title}::search` : group.title}
+            label={group.title}
+            initialOpen={searching ? true : !collapsed[group.title]}
+            onToggle={open => dispatch(setGroupCollapsed({ title: group.title, collapsed: !open }))}
+          >
+            {fields.map(field => {
+              const component = resolveComponent(sdk.engine, field.componentId);
+              const value = component?.getOrNull(selected as Entity) ?? null;
+              return (
+                <FieldRow
+                  key={`${field.componentId}:${field.path}:${field.label}`}
+                  field={field}
+                  componentValue={value as Record<string, unknown> | null}
+                  entity={selected as Entity}
+                  selectedRoot={(selectedRoot ?? selected) as Entity}
+                  bound={bindingsByField[`${field.componentId}.${field.path}`]}
+                  bindings={bindingsByField}
+                  mixed={mixedByField[`${field.componentId}.${field.path}`]}
+                  write={writeAndDispatch}
+                />
+              );
+            })}
+          </Container>
+        );
+      })}
     </div>
   );
 };
@@ -344,6 +384,7 @@ const FieldRow = React.memo(function FieldRow({
           bound={boundProp}
         >
           <select
+            aria-label={field.label}
             value={String(v)}
             onChange={e => onPatch({ [field.path]: Number(e.target.value) })}
           >
@@ -387,6 +428,7 @@ const FieldRow = React.memo(function FieldRow({
               }
             />
             <select
+              aria-label="Unit"
               value={String(unit)}
               onChange={e => {
                 const nextUnit = Number(e.target.value);
@@ -454,6 +496,7 @@ const FieldRow = React.memo(function FieldRow({
           })}
           <div className="ui-designer-unit-selector">
             <select
+              aria-label="Unit"
               value={String(unit)}
               onChange={e => {
                 const nextUnit = Number(e.target.value);
@@ -605,6 +648,33 @@ const FieldRow = React.memo(function FieldRow({
         >
           <span className="ui-designer-callback-hint">Bind a callback variable…</span>
         </BindableField>
+      );
+    }
+    case 'align-preset': {
+      return (
+        <Block
+          label={field.label}
+          info={field.info}
+        >
+          <AnchorPresetField
+            value={componentValue}
+            entity={entity}
+            onPatch={onPatch}
+          />
+        </Block>
+      );
+    }
+    case 'box-model': {
+      return (
+        <Block
+          label={field.label}
+          info={field.info}
+        >
+          <BoxModelField
+            value={componentValue}
+            onPatch={onPatch}
+          />
+        </Block>
       );
     }
     default:

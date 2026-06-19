@@ -35,6 +35,7 @@
   border-radius: 4px;
   cursor: grab;
   user-select: none;
+  touch-action: manipulation;
 }
 
 .ui-designer-palette-card:active {
@@ -80,8 +81,78 @@
 }
 
 .ui-designer-bottom-bar .ui-designer-palette-card:hover {
-  background-color: rgba(80, 200, 255, 0.08);
-  border-color: rgba(80, 200, 255, 0.4);
+  background-color: var(--ui-designer-accent-08);
+  border-color: var(--ui-designer-accent-40);
+}
+
+.ui-designer-bottom-bar .ui-designer-palette-card:focus-visible {
+  outline: 2px solid var(--ui-designer-accent);
+  outline-offset: 1px;
+}
+
+/* Native <select> theming — the property + variables panels render raw
+   <select>s which would otherwise paint as bright white OS controls on the
+   dark panel. Match the inspector's .InputContainer (var(--gray-0) bg, 4px
+   radius, hairline border) and draw our own chevron so they read as one
+   control family. Scoped to the rails so the rest of the inspector is
+   untouched. */
+.ui-designer-left-rail select,
+.ui-designer-right-rail select {
+  appearance: none;
+  -webkit-appearance: none;
+  box-sizing: border-box;
+  background-color: var(--ui-designer-control-bg);
+  color: var(--white);
+  border: 1px solid var(--ui-designer-control-border);
+  border-radius: 4px;
+  padding: 4px 26px 4px 8px;
+  font-family: var(--font-family);
+  font-size: 12px;
+  line-height: 1.4;
+  cursor: pointer;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='white' stroke-opacity='0.55' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><path d='M6 9l6 6 6-6'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 7px center;
+}
+
+.ui-designer-left-rail select:hover,
+.ui-designer-right-rail select:hover {
+  border-color: var(--ui-designer-accent-40);
+}
+
+.ui-designer-left-rail select:focus-visible,
+.ui-designer-right-rail select:focus-visible {
+  outline: none;
+  border-color: var(--ui-designer-accent);
+  box-shadow: 0 0 0 1px var(--ui-designer-accent);
+}
+
+/* The native option popup is OS-drawn; give it a dark palette so it doesn't
+   flash white on open. */
+.ui-designer-left-rail select option,
+.ui-designer-right-rail select option {
+  background-color: var(--tree-bg-color);
+  color: var(--white);
+}
+
+/* Field-level enum selects (Display / Flex direction / Justify / Align self /
+   Position type / variable Type) are direct children of a Block `.content`;
+   stretch them full-width so they align into one tidy column with the text
+   inputs. The small `px` unit pickers live in .ui-designer-unit-selector /
+   .ui-designer-length-row and are intentionally excluded. */
+.ui-designer-right-rail .content > select {
+  width: 100%;
+}
+
+/* Honor reduced-motion across the whole UI Designer surface — the hover
+   reveals, outline fades and palette transitions all collapse to instant. */
+@media (prefers-reduced-motion: reduce) {
+  [class*='ui-designer'],
+  [class*='ui-designer'] * {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
 }
 
 .ui-designer-bottom-bar .ui-designer-palette-icon {
@@ -145,14 +216,83 @@
   padding: 8px 12px 4px;
 }
 
-.ui-designer-right-rail-variables {
-  flex: 0 0 auto;
-  max-height: 35%;
-  overflow-y: auto;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+.ui-designer-rail-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
-.ui-designer-right-rail-properties {
+.ui-designer-rail-add {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  background: transparent;
+  border: 1px solid var(--ui-designer-control-border);
+  border-radius: 4px;
+  color: rgba(255, 255, 255, 0.7);
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.ui-designer-rail-add:hover:not(:disabled) {
+  border-color: var(--ui-designer-accent-40);
+  color: var(--ui-designer-accent);
+}
+
+.ui-designer-rail-add:focus-visible {
+  outline: 2px solid var(--ui-designer-accent);
+  outline-offset: 1px;
+}
+
+.ui-designer-rail-add:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.ui-designer-rail-add svg {
+  width: 14px;
+  height: 14px;
+}
+
+.ui-designer-right-rail-tabs {
+  display: flex;
+  flex: 0 0 auto;
+  border-bottom: 1px solid var(--ui-designer-hairline);
+}
+
+.ui-designer-right-rail-tab {
+  flex: 1 1 0;
+  padding: 9px 12px;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: rgba(255, 255, 255, 0.5);
+  font-family: var(--font-family);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.ui-designer-right-rail-tab:hover {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.ui-designer-right-rail-tab.active {
+  color: var(--white);
+  border-bottom-color: var(--ui-designer-accent);
+}
+
+.ui-designer-right-rail-tab:focus-visible {
+  outline: 2px solid var(--ui-designer-accent);
+  outline-offset: -2px;
+}
+
+.ui-designer-right-rail-tabpanel {
   flex: 1 1 auto;
   min-height: 0;
   overflow-y: auto;
@@ -160,19 +300,19 @@
   padding: 4px 0 16px;
 }
 
-.ui-designer-right-rail-properties::-webkit-scrollbar {
+.ui-designer-right-rail-tabpanel::-webkit-scrollbar {
   width: 8px;
 }
 
-.ui-designer-right-rail-properties::-webkit-scrollbar-track {
+.ui-designer-right-rail-tabpanel::-webkit-scrollbar-track {
   background: transparent;
 }
 
-.ui-designer-right-rail-properties::-webkit-scrollbar-thumb {
+.ui-designer-right-rail-tabpanel::-webkit-scrollbar-thumb {
   background: rgba(255, 255, 255, 0.12);
   border-radius: 4px;
 }
 
-.ui-designer-right-rail-properties::-webkit-scrollbar-thumb:hover {
+.ui-designer-right-rail-tabpanel::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.22);
 }
