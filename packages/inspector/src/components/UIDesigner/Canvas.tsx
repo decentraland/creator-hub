@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useDrop } from 'react-dnd';
-import { IoCopyOutline, IoLayersOutline, IoTrashOutline } from 'react-icons/io5';
+import { IoAddOutline, IoCopyOutline, IoLayersOutline, IoTrashOutline } from 'react-icons/io5';
 import cx from 'classnames';
 import type { Entity, PBUiTransform } from '@dcl/ecs';
 
@@ -11,6 +11,7 @@ import { getSelectedNode, getTool, selectNode } from '../../redux/ui-designer';
 import { Button } from '../Button';
 import { UI_DESIGNER_DND_TYPE, type UIDesignerDragItem } from './Palette';
 import { EmptyState } from './EmptyState';
+import { WidgetPicker } from './WidgetPicker';
 import { useCreateUIRoot } from './useCreateUIRoot';
 import { useUINodeActions } from './useUINodeActions';
 import { useUINodeTree } from './useUINodeTree';
@@ -341,12 +342,24 @@ type CanvasNodeProps = { node: UINode };
 // canvas zoom. Stops mouse events so clicking it never starts a node drag.
 const CanvasNodeActions: React.FC<{ entity: Entity }> = ({ entity }) => {
   const { remove, duplicate } = useUINodeActions();
+  const [addOpen, setAddOpen] = useState(false);
+  const addBtnRef = useRef<HTMLButtonElement>(null);
   return (
     <div
       className="ui-designer-node-actions"
       onMouseDown={e => e.stopPropagation()}
       onClick={e => e.stopPropagation()}
     >
+      <button
+        ref={addBtnRef}
+        type="button"
+        className="ui-designer-node-action"
+        aria-label="Add child"
+        title="Add child"
+        onClick={() => setAddOpen(true)}
+      >
+        <IoAddOutline aria-hidden="true" />
+      </button>
       <button
         type="button"
         className="ui-designer-node-action"
@@ -365,6 +378,13 @@ const CanvasNodeActions: React.FC<{ entity: Entity }> = ({ entity }) => {
       >
         <IoTrashOutline aria-hidden="true" />
       </button>
+      {addOpen ? (
+        <WidgetPicker
+          parent={entity}
+          anchorRef={addBtnRef}
+          onDismiss={() => setAddOpen(false)}
+        />
+      ) : null}
     </div>
   );
 };
@@ -497,10 +517,16 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node }) => {
   // Force re-render during move without storing the offset in state directly
   // (state writes during pointermove would batch-cancel each other in React).
   const [, setRenderTick] = useState(0);
-  // On release we hold the node at its dropped position until the committed
+  // On release we hold the node at its dropped position/size until the committed
   // transform catches up — the engine write round-trips asynchronously, so
-  // without this the node snaps back to its old spot for a frame, then jumps.
-  const [optimisticPos, setOptimisticPos] = useState<{ top: number; left: number } | null>(null);
+  // without this the node snaps back to its old box for a frame, then jumps.
+  // Move sets top/left; resize also sets width/height.
+  const [optimisticPos, setOptimisticPos] = useState<{
+    top: number;
+    left: number;
+    width?: number;
+    height?: number;
+  } | null>(null);
 
   // --- Resize-tool state ---
   const resizeOriginRef = useRef<{
@@ -633,9 +659,12 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node }) => {
   useEffect(() => {
     if (!optimisticPos) return;
     const t = node.uiTransform as PBUiTransform | undefined;
-    const top = Math.round((t?.positionTop as number | undefined) ?? NaN);
-    const left = Math.round((t?.positionLeft as number | undefined) ?? NaN);
-    if (top === optimisticPos.top && left === optimisticPos.left) setOptimisticPos(null);
+    const num = (v: unknown) => Math.round((v as number | undefined) ?? NaN);
+    if (num(t?.positionTop) !== optimisticPos.top || num(t?.positionLeft) !== optimisticPos.left)
+      return;
+    if (optimisticPos.width !== undefined && num(t?.width) !== optimisticPos.width) return;
+    if (optimisticPos.height !== undefined && num(t?.height) !== optimisticPos.height) return;
+    setOptimisticPos(null);
   }, [node, optimisticPos]);
 
   // --- Resize handle interaction ---
@@ -662,6 +691,7 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node }) => {
         dir,
       };
       resizeLiveRef.current = { dx: 0, dy: 0, dw: 0, dh: 0 };
+      setOptimisticPos(null);
       setIsResizing(true);
       dispatch(selectNode({ node: node.entity }));
     },
@@ -715,6 +745,12 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node }) => {
       setIsResizing(false);
       if (!sdk || !origin) return;
       if (live.dx === 0 && live.dy === 0 && live.dw === 0 && live.dh === 0) return;
+      const top = Math.round(origin.startTop + live.dy);
+      const left = Math.round(origin.startLeft + live.dx);
+      const width = Math.max(0, Math.round(origin.startW + live.dw));
+      const height = Math.max(0, Math.round(origin.startH + live.dh));
+      // Hold the dropped box until the committed transform reflects it.
+      setOptimisticPos({ top, left, width, height });
       const UiTransform = sdk.components.UiTransform;
       const current = (UiTransform.getOrNull(node.entity) ?? {}) as PBUiTransform;
       // Resizing forces the node to absolute positioning + px units. Trying to
@@ -723,13 +759,13 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node }) => {
       UiTransform.createOrReplace(node.entity, {
         ...current,
         positionType: 1,
-        positionTop: Math.round(origin.startTop + live.dy),
+        positionTop: top,
         positionTopUnit: 1,
-        positionLeft: Math.round(origin.startLeft + live.dx),
+        positionLeft: left,
         positionLeftUnit: 1,
-        width: Math.max(0, Math.round(origin.startW + live.dw)),
+        width,
         widthUnit: 1,
-        height: Math.max(0, Math.round(origin.startH + live.dh)),
+        height,
         heightUnit: 1,
       } as unknown as PBUiTransform);
       void sdk.operations.dispatch();
@@ -776,6 +812,8 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node }) => {
       top: `${optimisticPos.top}px`,
       left: `${optimisticPos.left}px`,
     };
+    if (optimisticPos.width !== undefined) style.width = `${optimisticPos.width}px`;
+    if (optimisticPos.height !== undefined) style.height = `${optimisticPos.height}px`;
   }
 
   // Layer the resolved file-texture on top. backgroundColor (a separate
