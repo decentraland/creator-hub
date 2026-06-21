@@ -58,6 +58,7 @@
   justify-content: flex-end;
   align-items: center;
   font-size: 14px;
+  gap: 8px;
 }
 
 .EntityHeader .RightContent > .Dropdown.Trigger > .DropdownContainer.AddComponent > .OptionList {

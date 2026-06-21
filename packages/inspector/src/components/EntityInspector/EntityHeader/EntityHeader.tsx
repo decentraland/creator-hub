@@ -18,7 +18,8 @@ import { selectCustomAssets } from '../../../redux/app';
 import { Edit as EditInput } from '../../Tree/Edit';
 import { Block } from '../../Block';
 import CustomAssetIcon from '../../Icons/CustomAsset';
-import { Dropdown, Divider } from '../../ui';
+import EntityIcon from '../../Hierarchy/EntityIcon';
+import { Dropdown } from '../../ui';
 
 import MoreOptionsMenu from '../MoreOptionsMenu';
 import { TagsInspector } from '../TagsInspector';
@@ -358,7 +359,7 @@ export default React.memo(
       <div className="EntityHeader">
         <div className="TitleWrapper">
           <div className="Title">
-            {instanceOf && <CustomAssetIcon />}
+            <EntityIcon value={entity} />
             {!editMode ? (
               <>{label}</>
             ) : typeof label === 'string' ? (

@@ -58,6 +58,9 @@ code {
 .App {
   width: 100%;
   height: 100%;
+  padding: 4px;
+  box-sizing: border-box;
+  background: var(--base-21);
 }
 
 .App .horizontal-handle {
@@ -87,4 +90,21 @@ code {
   border: none;
   margin: 0px;
   padding: 0px;
+}
+
+.App .Box.composite-renderer,
+.App .Box.composite-inspector,
+.App .Box.entity-inspector,
+.App .Box.scene-info-panel {
+  border-radius: 8px;
+  overflow: hidden;
+  height: 100%;
+}
+
+.App .Box.composite-renderer > .content,
+.App .Box.composite-inspector > .content,
+.App .Box.entity-inspector > .content,
+.App .Box.scene-info-panel > .content {
+  border-radius: 8px;
+  overflow: hidden;
 }
