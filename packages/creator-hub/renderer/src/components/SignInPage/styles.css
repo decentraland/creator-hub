@@ -10,17 +10,6 @@
   margin-bottom: 40px;
 }
 
-.SignIn .code {
-  display: flex;
-  align-items: center;
-}
-
-.SignIn .code .verificationCode {
-  font-size: 6rem;
-  font-weight: "bold";
-  margin-right: 24px;
-}
-
 .SignIn .background {
   position: fixed;
   height: 100%;

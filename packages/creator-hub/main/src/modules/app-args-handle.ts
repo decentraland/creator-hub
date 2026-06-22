@@ -3,6 +3,7 @@ import { Env } from '/shared/types/env';
 import log from 'electron-log';
 import { openDevToolsWindow } from './devtools';
 import { setEnvOverride } from './electron';
+import { handleDeeplink, isDeeplink } from './deeplink';
 
 function getArgs(argv: string[]): string[] {
   const isDev = process.defaultApp || /electron(\.exe)?$/i.test(path.basename(process.execPath));
@@ -49,6 +50,13 @@ export function handleAppArguments(argv: string[]): void {
   log.info(`[Args] Parsing arguments: ${args.join(', ')}`);
 
   for (const arg of args) {
+    // Windows/Linux deliver deeplinks as a CLI argument rather than via `open-url`.
+    if (isDeeplink(arg)) {
+      log.info(`[Args] Detected deeplink argument: ${arg}`);
+      void handleDeeplink(arg);
+      continue;
+    }
+
     for (const [prefix, handler] of Object.entries(ARG_HANDLERS)) {
       log.info(`[Args] Handling argument: ${arg} with prefix: ${prefix}`);
       if (!arg.startsWith(prefix)) continue;
