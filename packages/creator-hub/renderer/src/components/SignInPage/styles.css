@@ -22,6 +22,16 @@
   gap: 24px;
 }
 
+.SignIn .reopen {
+  color: var(--dcl-silver);
+}
+
+.SignIn .reopen .action-link {
+  color: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
 .SignIn .background {
   position: fixed;
   height: 100%;

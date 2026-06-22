@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { captureException, setUser } from '@sentry/electron/renderer';
 import { ChainId, type Avatar } from '@dcl/schemas';
 import { useDispatch } from '#store';
-import { auth } from '#preload';
+import { auth, misc } from '#preload';
 import { config } from '/@/config';
 import { AuthServerProvider, SignInError } from '/@/lib/auth';
 import { Profiles } from '/@/lib/profile';
@@ -49,6 +49,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const { pushGeneric } = useSnackbar();
   const signInAttemptCountRef = useRef<number>(0);
   const deepLinkCleanupRef = useRef<(() => void) | null>(null);
+  const requestIdRef = useRef<string | null>(null);
   const [wallet, setWallet] = useState<string>();
   const [avatar, setAvatar] = useState<Avatar>();
   const [isSignedIn, setIsSignedIn] = useState(false);
@@ -120,6 +121,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       deepLinkCleanupRef.current = cleanup;
 
       const requestId = await AuthServerProvider.createSignInRequest();
+      requestIdRef.current = requestId;
       navigate('/sign-in');
       AuthServerProvider.openAuthDapp(requestId, true);
     } catch (error: any) {
@@ -135,8 +137,27 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const cancelSignIn = useCallback(() => {
     stopDeepLinkListener();
+    requestIdRef.current = null;
     setIsSigningIn(false);
   }, [stopDeepLinkListener]);
+
+  // Re-opens the auth dapp for the in-progress sign in, e.g. if the browser
+  // failed to open the first time. Safe no-op if there is no active request.
+  const reopenSignInDapp = useCallback(() => {
+    if (requestIdRef.current) {
+      AuthServerProvider.openAuthDapp(requestIdRef.current, true);
+    }
+  }, []);
+
+  // Copies the auth dapp URL for the in-progress sign in to the clipboard so the
+  // user can open it manually if the app cannot launch the browser. No-op when
+  // there is no active request.
+  const copySignInUrl = useCallback(async () => {
+    if (!requestIdRef.current) return;
+    const url = AuthServerProvider.getAuthDappUrl(requestIdRef.current, true);
+    await misc.copyToClipboard(url);
+    pushGeneric('success', t('snackbar.generic.url_copied'));
+  }, [pushGeneric]);
 
   const signOut = useCallback(() => {
     setWallet(undefined);
@@ -214,6 +235,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         isSigningIn,
         signIn,
         cancelSignIn,
+        reopenSignInDapp,
+        copySignInUrl,
         signOut,
         changeNetwork,
       }}

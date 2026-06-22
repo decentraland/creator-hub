@@ -261,11 +261,19 @@ export class AuthServerProvider {
   };
 
   /**
+   * Builds the auth dapp URL for the given request id. If `deeplink` is true,
+   * the dapp will trigger a deep link back to the app once sign in completes.
+   */
+  static getAuthDappUrl = (requestId: string, deeplink?: boolean) => {
+    return `${AuthServerProvider.authDappUrl}/requests/${requestId}${deeplink ? '?targetConfigId=creator-hub&flow=deeplink' : ''}`;
+  };
+
+  /**
    * Opens the browser on the auth dapp requests page for the given request id.
    * If `deeplink` is true, the dapp will trigger a deep link back to the app once the sign in flow is completed.
    */
   static openAuthDapp = (requestId: string, deeplink?: boolean) => {
-    const url = `${AuthServerProvider.authDappUrl}/requests/${requestId}${deeplink ? '?targetConfigId=creator-hub&flow=deeplink' : ''}`;
+    const url = AuthServerProvider.getAuthDappUrl(requestId, deeplink);
     const target = '_blank';
     const features = 'noopener,noreferrer';
     AuthServerProvider.openBrowser

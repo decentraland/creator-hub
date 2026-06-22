@@ -708,8 +708,9 @@
   "sign_in": {
     "back": "Volver",
     "content": {
-      "title": "Paso de inicio de sesión seguro",
-      "body": "Completa el inicio de sesión en tu navegador web.<br></br>Una vez que confirmes en el navegador, se iniciará tu sesión automáticamente."
+      "title": "Continúa en tu navegador",
+      "body": "Abrimos tu navegador para que termines de iniciar sesión.<br></br>Cuando termines, volverás aquí automáticamente.",
+      "reopen": "¿No se abrió el navegador? <a>Ábrelo de nuevo</a> o <b>copia el enlace</b>"
     },
     "errors": {
       "max_attempts": "Se alcanzó el máximo de intentos de inicio de sesión. Por favor, inténtalo de nuevo más tarde.",

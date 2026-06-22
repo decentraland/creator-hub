@@ -708,8 +708,9 @@
   "sign_in": {
     "back": "Back",
     "content": {
-      "title": "Secure sign-in step",
-      "body": "Complete sign-in in your web browser.<br></br>Once you confirm in your browser, you'll be signed in automatically."
+      "title": "Continue in your browser",
+      "body": "We've opened your browser to finish signing in.<br></br>Once you're done, you'll be redirected here automatically.",
+      "reopen": "Browser didn't open? <a>Open it again</a> or <b>copy the link</b>"
     },
     "errors": {
       "max_attempts": "Maximum signin attempts reached. Please try again later.",

@@ -9,6 +9,8 @@ interface AuthContextProps {
   isSigningIn: boolean;
   signIn: () => Promise<void>;
   cancelSignIn: () => void;
+  reopenSignInDapp: () => void;
+  copySignInUrl: () => Promise<void>;
   signOut: () => void;
   changeNetwork: (chainId: ChainId) => Promise<void>;
 }

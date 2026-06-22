@@ -13,12 +13,40 @@ import './styles.css';
 
 export function SignInPage() {
   const navigate = useNavigate();
-  const { cancelSignIn } = useAuth();
+  const { cancelSignIn, reopenSignInDapp, copySignInUrl } = useAuth();
 
   const handleBack = useCallback(() => {
     cancelSignIn();
     navigate(-1);
   }, [cancelSignIn, navigate]);
+
+  const reopenAnchor = useCallback(
+    (content: string) => (
+      <a
+        className="action-link"
+        role="button"
+        tabIndex={0}
+        onClick={reopenSignInDapp}
+      >
+        {content}
+      </a>
+    ),
+    [reopenSignInDapp],
+  );
+
+  const copyAnchor = useCallback(
+    (content: string) => (
+      <a
+        className="action-link"
+        role="button"
+        tabIndex={0}
+        onClick={copySignInUrl}
+      >
+        {content}
+      </a>
+    ),
+    [copySignInUrl],
+  );
 
   return (
     <Grid
@@ -50,6 +78,12 @@ export function SignInPage() {
               {t('sign_in.content.title')}
             </Typography>
             <Typography variant="h6">{t('sign_in.content.body', { br: () => <br /> })}</Typography>
+            <Typography
+              className="reopen"
+              variant="body1"
+            >
+              {t('sign_in.content.reopen', { a: reopenAnchor, b: copyAnchor })}
+            </Typography>
           </Column>
           <img
             className="illustration"
