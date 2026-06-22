@@ -4,6 +4,10 @@ import { Button, Grid, Typography } from 'decentraland-ui2';
 import { ChevronLeftOutlined } from '@mui/icons-material';
 import { t } from '/@/modules/store/translation/utils';
 import { useAuth } from '/@/hooks/useAuth';
+import { Row } from '../Row';
+import { Column } from '../Column';
+
+import EditorImage from '/assets/images/editor.png';
 
 import './styles.css';
 
@@ -27,7 +31,7 @@ export function SignInPage() {
       <div className="background"></div>
       <Grid
         className="content"
-        xs={4}
+        xs={9}
         item
       >
         <Button
@@ -37,13 +41,22 @@ export function SignInPage() {
         >
           <ChevronLeftOutlined /> {t('sign_in.back')}
         </Button>
-        <Typography
-          variant="h4"
-          gutterBottom
-        >
-          {t('sign_in.content.title')}
-        </Typography>
-        <Typography variant="body1">{t('sign_in.content.body', { br: () => <br /> })}</Typography>
+        <Row className="content-row">
+          <Column className="text-column">
+            <Typography
+              variant="h3"
+              gutterBottom
+            >
+              {t('sign_in.content.title')}
+            </Typography>
+            <Typography variant="h6">{t('sign_in.content.body', { br: () => <br /> })}</Typography>
+          </Column>
+          <img
+            className="illustration"
+            src={EditorImage}
+            alt="Decentraland Creator Hub illustration"
+          />
+        </Row>
       </Grid>
     </Grid>
   );
