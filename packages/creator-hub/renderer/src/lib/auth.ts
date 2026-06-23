@@ -152,7 +152,9 @@ export class AuthServerProvider {
   static fetchIdentity = async (
     identityId: string,
   ): Promise<{ identity: AuthIdentity; signer: string }> => {
-    const response = await fetch(`${AuthServerProvider.authServerUrl}/identities/${identityId}`);
+    const response = await fetch(
+      `${AuthServerProvider.authServerUrl}/identities/${encodeURIComponent(identityId)}`,
+    );
 
     if (response.status === 404) {
       throw new SignInError('not_found', 'Sign in identity not found');

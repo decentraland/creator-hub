@@ -1,18 +1,12 @@
 import { app } from 'electron';
 import log from 'electron-log';
 
+import { AUTH_DEEPLINK_SIGNIN_CHANNEL } from '/shared/deeplink';
 import { restoreOrCreateMainWindow } from '/@/mainWindow';
 
-/**
- * Custom URL scheme used for deeplinks into the app (e.g. `dcl-creator-hub://open`).
- */
+/** Custom URL scheme used for deeplinks into the app (e.g. `dcl-creator-hub://open`). */
 export const DEEPLINK_PROTOCOL = 'dcl-creator-hub';
 const DEEPLINK_PREFIX = `${DEEPLINK_PROTOCOL}://`;
-
-/**
- * Channel used to push a deep-link sign-in identityId to the renderer.
- */
-export const AUTH_DEEPLINK_SIGNIN_CHANNEL = 'auth:deep-link-signin';
 
 export type Deeplink = {
   /** The deeplink "host" segment, e.g. `open` in `dcl-creator-hub://open`. */
@@ -78,13 +72,12 @@ export async function handleDeeplink(url: string): Promise<void> {
   if (!deeplink) return;
 
   if (!app.isReady()) {
-    log.info(`[Deeplink] App not ready, buffering deeplink: ${url}`);
     pendingDeeplink = url;
     return;
   }
 
   log.info(
-    `[Deeplink] Handling deeplink: action="${deeplink.action}" params="${deeplink.params.toString()}"`,
+    `[Deeplink] Handling deeplink: action="${deeplink.action}" params-keys="${Array.from(deeplink.params.keys()).join(',')}"`,
   );
 
   const signin = deeplink.params.get('signin');

@@ -68,7 +68,7 @@ app.on('second-instance', async (_e: unknown, argv: string[]) => {
 });
 
 /**
- * Register the app as the handler for the `dcl-creator-hub://` deeplink scheme.
+ * Register the app as the handler for the deeplink scheme.
  * In development the executable is Electron itself, so the path to the app entry
  * point must be passed explicitly for the registration to resolve correctly.
  */
@@ -132,7 +132,6 @@ app
     log.info('[IPC] Ready');
     await restoreOrCreateMainWindow();
     log.info('[BrowserWindow] Ready');
-    await flushPendingDeeplink();
     await addEditorsPathsToConfig();
     const analytics = await getAnalytics();
     if (analytics) {
@@ -140,6 +139,7 @@ app
     } else {
       log.info('[Analytics] API key not provided, analytics disabled');
     }
+    await flushPendingDeeplink();
   })
   .catch(e => log.error('Failed create window:', e));
 

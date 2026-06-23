@@ -82,7 +82,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         setIsSignedIn(true);
         fetchAvatar(signer);
         signInAttemptCountRef.current = 0;
-      } catch (error: any) {
+      } catch (error) {
         captureException(error, {
           tags: { source: 'auth', event: 'signin-deeplink' },
         });
@@ -192,6 +192,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       fetchAvatar(connectedAccount);
     }
   }, []);
+
+  useEffect(() => {
+    return () => stopDeepLinkListener();
+  }, [stopDeepLinkListener]);
 
   useEffect(() => {
     if (wallet && chainId) {
