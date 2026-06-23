@@ -38,6 +38,7 @@ type AllowedOrigins<IsDev extends boolean> = IsDev extends true
   : `https://${string}`;
 const ALLOWED_EXTERNAL_ORIGINS = new Set<AllowedOrigins<typeof IS_DEV>>([
   'https://decentraland.org',
+  'https://auth-git-feat-creator-hub-target-config-decentraland1.vercel.app',
   'https://decentraland.today',
   'https://decentraland.zone',
   'https://studios.decentraland.org',
