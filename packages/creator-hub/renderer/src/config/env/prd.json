@@ -2,7 +2,7 @@
   "CHAIN_ID": "1",
   "ENVIRONMENT": "production",
   "AUTH_SERVER_URL": "https://auth-api.decentraland.org",
-  "AUTH_DAPP_URL": "https://auth-git-feat-creator-hub-target-config-decentraland1.vercel.app/auth",
+  "AUTH_DAPP_URL": "https://decentraland.org/auth",
   "DCL_NAME_STATS_URL": "https://dcl-name-stats.decentraland.org",
   "PEER_URL": "https://peer.decentraland.org",
   "WORLDS_CONTENT_SERVER_URL": "https://worlds-content-server.decentraland.org",
