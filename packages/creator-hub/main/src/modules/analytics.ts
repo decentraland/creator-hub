@@ -34,6 +34,32 @@ export async function getAnonymousId() {
   return userId;
 }
 
+/**
+ * Detects and tracks first-install and app-update events once per launch by
+ * comparing the current app version against markers persisted in config.json.
+ * Must run before any other `track()` call so the existing-user check (presence
+ * of `userId`) is not poisoned by the anonymous id that `track()` lazily creates.
+ */
+export async function trackLifecycleEvent(version: string): Promise<void> {
+  const config = await getConfigStorage();
+  const installedAt = await config.get('installedAt');
+  const lastVersion = await config.get('lastVersion');
+  // A persisted userId means analytics has run before on this machine, i.e. a
+  // pre-existing user upgrading into this feature — not a fresh install.
+  const isExistingUser = !!(await config.get('userId'));
+
+  if (!installedAt && !lastVersion && !isExistingUser) {
+    await track('Install Creator Hub', { version });
+  } else if (lastVersion && lastVersion !== version) {
+    await track('Update Creator Hub', { version, previous_version: lastVersion });
+  }
+
+  if (!installedAt) {
+    await config.set('installedAt', new Date().toISOString());
+  }
+  await config.set('lastVersion', version);
+}
+
 export function getAnalytics(): Analytics | null {
   if (analytics) {
     return analytics;
