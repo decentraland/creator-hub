@@ -7,10 +7,16 @@ import { getContentsUrl, isSmart, isGround } from '../../../lib/logic/catalog';
 import { Asset } from '../../../lib/logic/catalog';
 import { fetchImage, resizeImage } from '../../../lib/utils/img';
 import { useIsMounted } from '../../../hooks/useIsMounted';
+import { openCatalogAssetContextMenu } from './ContextMenu/ContextMenu';
 
 import './Asset.css';
 
-const Asset = React.forwardRef<HTMLDivElement, { value: Asset }>(({ value }, ref) => {
+type AssetProps = {
+  value: Asset;
+  onAddToFilesystem?: (asset: Asset) => void;
+};
+
+const Asset = React.forwardRef<HTMLDivElement, AssetProps>(({ value, onAddToFilesystem }, ref) => {
   const [, drag, preview] = useDrag(() => ({ type: 'catalog-asset', item: { value } }), [value]);
   const isSmartItem = isSmart(value);
   const isGroundItem = isGround(value);
@@ -25,6 +31,14 @@ const Asset = React.forwardRef<HTMLDivElement, { value: Asset }>(({ value }, ref
       .then(canvas => isMounted() && setPreviewImg(canvas.toDataURL()));
   }, [imgSrc, setPreviewImg, isMounted]);
 
+  const handleContextMenu = (event: React.MouseEvent) => {
+    if (!onAddToFilesystem) return;
+    openCatalogAssetContextMenu(event, {
+      asset: value,
+      onAddToFilesystem,
+    });
+  };
+
   return (
     <div ref={ref}>
       {previewImg && (
@@ -38,6 +52,7 @@ const Asset = React.forwardRef<HTMLDivElement, { value: Asset }>(({ value }, ref
         ref={drag}
         data-test-id={value.id}
         data-test-label={value.name}
+        onContextMenu={handleContextMenu}
       >
         <img
           src={imgSrc}

@@ -17,7 +17,7 @@ export function fromScene(value: EditorComponentsTypes['Scene']): SceneInput {
     description: value.description || '',
     thumbnail: value.thumbnail || '',
     creator: value.creator || '',
-    ageRating: value.ageRating || SceneAgeRating.Teen,
+    ageRating: value.ageRating || SceneAgeRating.Adult,
     categories: value.categories || [],
     tags: value.tags ? value.tags.join(', ') : '',
     author: value.author || '',
@@ -32,6 +32,8 @@ export function fromScene(value: EditorComponentsTypes['Scene']): SceneInput {
       typeof value.disablePortableExperiences === 'boolean'
         ? value.disablePortableExperiences
         : false,
+    disableNearbyVoiceChat:
+      typeof value.disableNearbyVoiceChat === 'boolean' ? value.disableNearbyVoiceChat : false,
     spawnPoints: Array.isArray(value.spawnPoints)
       ? value.spawnPoints.map(spawnPoint => fromSceneSpawnPoint(spawnPoint))
       : [],
@@ -47,7 +49,7 @@ export function toScene(inputs: SceneInput): EditorComponentsTypes['Scene'] {
     name: inputs.name,
     description: inputs.description,
     thumbnail: inputs.thumbnail,
-    ageRating: inputs.ageRating as SceneAgeRating,
+    ageRating: SceneAgeRating.Adult,
     creator: inputs.creator,
     categories: inputs.categories as SceneCategory[],
     tags: inputs.tags.split(',').map(tag => tag.trim()),
@@ -60,6 +62,7 @@ export function toScene(inputs: SceneInput): EditorComponentsTypes['Scene'] {
     },
     silenceVoiceChat: inputs.silenceVoiceChat,
     disablePortableExperiences: inputs.disablePortableExperiences,
+    disableNearbyVoiceChat: inputs.disableNearbyVoiceChat,
     spawnPoints: inputs.spawnPoints.map(spawnPoint => toSceneSpawnPoint(spawnPoint)),
     layout: {
       base: parseParcels(inputs.layout.base)[0],

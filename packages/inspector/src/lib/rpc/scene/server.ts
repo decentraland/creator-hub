@@ -6,8 +6,9 @@ import { type Store } from '../../../redux/store';
 import { type initRenderer } from '../../babylon/setup/init';
 import type { AssetsTab, PanelName, SceneInspectorTab } from '../../../redux/ui/types';
 import { setHasCustomCode } from '../../../redux/scene-metrics';
-import { setDebugConsoleEnabled } from '../../../redux/ui';
+import { setDebugConsoleEnabled, setMobileDebugSessionEnabled } from '../../../redux/ui';
 import * as debugLogStore from '../../logic/debug-log-store';
+import * as mobileDebugStore from '../../logic/mobile-debug-store';
 import { setFeatureFlags } from '../../../redux/feature-flags';
 
 enum Method {
@@ -26,6 +27,8 @@ enum Method {
   PUSH_DEBUG_LOGS = 'push_debug_logs',
   CLEAR_DEBUG_LOGS = 'clear_debug_logs',
   SET_FEATURE_FLAGS = 'set_feature_flags',
+  PUSH_MOBILE_DEBUG_ENTRIES = 'push_mobile_debug_entries',
+  SET_MOBILE_DEBUG_SESSION_ENABLED = 'set_mobile_debug_session_enabled',
 }
 
 type Params = {
@@ -44,6 +47,17 @@ type Params = {
   [Method.PUSH_DEBUG_LOGS]: { logs: string[] };
   [Method.CLEAR_DEBUG_LOGS]: Record<string, never>;
   [Method.SET_FEATURE_FLAGS]: { flags: Record<string, boolean> };
+  [Method.PUSH_MOBILE_DEBUG_ENTRIES]: { entries: unknown[] };
+  [Method.SET_MOBILE_DEBUG_SESSION_ENABLED]: {
+    enabled: boolean;
+    sessions: {
+      id: number;
+      sessionId: string | null;
+      deviceName: string | null;
+      status: 'active' | 'ended';
+      messageCount: number;
+    }[];
+  };
 };
 
 type Result = {
@@ -62,6 +76,8 @@ type Result = {
   [Method.PUSH_DEBUG_LOGS]: void;
   [Method.CLEAR_DEBUG_LOGS]: void;
   [Method.SET_FEATURE_FLAGS]: void;
+  [Method.PUSH_MOBILE_DEBUG_ENTRIES]: void;
+  [Method.SET_MOBILE_DEBUG_SESSION_ENABLED]: void;
 };
 
 export class SceneServer extends RPC<Method, Params, Result> {
@@ -131,6 +147,15 @@ export class SceneServer extends RPC<Method, Params, Result> {
 
     this.handle('set_feature_flags', async ({ flags }) => {
       store.dispatch(setFeatureFlags(flags));
+    });
+
+    this.handle('push_mobile_debug_entries', async ({ entries }) => {
+      mobileDebugStore.pushEntries(entries);
+    });
+
+    this.handle('set_mobile_debug_session_enabled', async ({ enabled, sessions }) => {
+      store.dispatch(setMobileDebugSessionEnabled({ enabled }));
+      mobileDebugStore.updateSessions(sessions);
     });
   }
 }

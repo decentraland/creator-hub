@@ -20,6 +20,21 @@ export type IpcError = {
   };
 };
 
+export interface MobileDebugSessionInfo {
+  id: number;
+  sessionId: string | null;
+  deviceName: string | null;
+  connectedAt: string;
+  disconnectedAt: string | null;
+  status: 'active' | 'ended';
+  messageCount: number;
+}
+
+export interface MobileDebugBroadcastResult {
+  ok: boolean;
+  results: { sessionId: number; ok: boolean; data: unknown }[];
+}
+
 export interface Ipc {
   'electron.getEnvOverride': () => Env | null;
   'electron.getUserDataPath': () => string;
@@ -66,4 +81,25 @@ export interface Ipc {
   'npm.install': (path: string, packages?: string[]) => Promise<void>;
   'npm.getOutdatedDeps': (path: string, packages?: string[]) => Promise<Outdated>;
   'npm.getContextFiles': (path: string) => Promise<void>;
+  'mobileDebug.getSessions': () => Promise<MobileDebugSessionInfo[]>;
+  'mobileDebug.subscribeEntries': () => Promise<void>;
+  'mobileDebug.unsubscribeEntries': () => Promise<void>;
+  'mobileDebug.subscribeSessions': () => Promise<void>;
+  'mobileDebug.unsubscribeSessions': () => Promise<void>;
+  'mobileDebug.broadcastCommand': (
+    cmd: string,
+    args: Record<string, unknown>,
+  ) => Promise<MobileDebugBroadcastResult>;
+  'mobileDebug.startServer': () => Promise<{ port: number }>;
+  'mobileDebug.stopServer': () => Promise<void>;
+  'mobileDebug.getServerStatus': () => Promise<{
+    running: boolean;
+    port: number | null;
+    sessions: number;
+  }>;
+  'mobileDebug.getStandaloneDeeplink': () => Promise<{
+    url: string;
+    qr: string;
+    port: number;
+  }>;
 }

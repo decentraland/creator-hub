@@ -92,5 +92,14 @@ beforeAll(async () => {
 }, 120000);
 
 afterAll(async () => {
-  await browser?.close();
+  try {
+    await page?.close();
+  } catch {
+    // ignore teardown errors so they don't cascade into the next spec file
+  }
+  try {
+    await browser?.close();
+  } catch {
+    // ignore teardown errors so they don't cascade into the next spec file
+  }
 });

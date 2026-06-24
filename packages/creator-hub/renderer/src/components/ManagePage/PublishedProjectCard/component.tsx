@@ -1,5 +1,5 @@
 import React, { useCallback, useMemo } from 'react';
-import type { ManagedProject, WorldSettingsTab } from '/shared/types/manage';
+import { type ManagedProject, WorldSettingsTab } from '/shared/types/manage';
 import { ManagedProjectType } from '/shared/types/manage';
 import WorldSettingsIcon from '@mui/icons-material/SpaceDashboard';
 import ParcelsIcon from '@mui/icons-material/Layers';
@@ -17,7 +17,7 @@ import { Image } from '../../Image';
 import { Button } from '../../Button';
 import { Dropdown } from '../../Dropdown';
 import type { Option } from '../../Dropdown';
-import { formatName, getJumpInUrl, getLogo, isENSDomain } from './utils';
+import { formatName, getJumpInUrl, getLogo, getStorageUrl, isENSDomain } from './utils';
 import './styles.css';
 
 const BUILDER_URL = 'https://decentraland.org/builder';
@@ -36,7 +36,7 @@ function isCollaboratorRole(role: LandRoleType | WorldRoleType): role is Collabo
 
 export type Props = {
   project: ManagedProject;
-  onOpenSettings: (tab?: WorldSettingsTab) => void;
+  onOpenSettings: (tab: WorldSettingsTab) => void;
   onOpenPermissions: () => void;
   onViewScenes: () => void;
   onUnpublishWorld: () => void;
@@ -70,6 +70,11 @@ const PublishedProjectCard: React.FC<Props> = React.memo(
       analytics.track('Manage Worlds External Action', { action: 'View Parcel in Web Builder' });
       void misc.openExternal(`${BUILDER_URL}/land/${id}`);
     }, [id]);
+
+    const handleViewStorage = useCallback(() => {
+      analytics.track('Manage Worlds External Action', { action: 'View Storage' });
+      void misc.openExternal(getStorageUrl(type, id));
+    }, [id, type]);
 
     const dropdownOptions = useMemo(() => {
       const options: Array<Option & { active: boolean }> = [
@@ -108,6 +113,13 @@ const PublishedProjectCard: React.FC<Props> = React.memo(
           active: type === ManagedProjectType.WORLD && role === WorldRoleType.OWNER,
         },
         {
+          text: t('manage.cards.menu.view_storage'),
+          icon: <OpenInNew />,
+          handler: handleViewStorage,
+          active:
+            type === ManagedProjectType.LAND || (type === ManagedProjectType.WORLD && !!deployment),
+        },
+        {
           text: t('manage.cards.menu.unpublish'),
           handler: onUnpublishWorld,
           active:
@@ -117,7 +129,15 @@ const PublishedProjectCard: React.FC<Props> = React.memo(
         },
       ];
       return options.filter(option => option.active) as Option[];
-    }, [project, handleJumpIn, handleCopyURL, handleEditName, handleViewParcel, onOpenPermissions]);
+    }, [
+      project,
+      handleJumpIn,
+      handleCopyURL,
+      handleEditName,
+      handleViewParcel,
+      handleViewStorage,
+      onOpenPermissions,
+    ]);
 
     return (
       <div className="PublishedProjectCard">
@@ -176,15 +196,23 @@ const PublishedProjectCard: React.FC<Props> = React.memo(
                   : t('manage.cards.worlds.published_world')}
               </Typography>
               <Typography className="ProjectTitle">{deployment.title}</Typography>
-              {type === 'world' && role === WorldRoleType.OWNER && (
+              {type === 'world' && (
                 <Button
                   variant="contained"
                   color="secondary"
                   startIcon={<WorldSettingsIcon />}
                   className="WorldSettingsButton"
-                  onClick={() => onOpenSettings()}
+                  onClick={() =>
+                    onOpenSettings(
+                      role === WorldRoleType.OWNER
+                        ? WorldSettingsTab.DETAILS
+                        : WorldSettingsTab.LAYOUT,
+                    )
+                  }
                 >
-                  {t('manage.cards.worlds.world_settings')}
+                  {role === WorldRoleType.OWNER
+                    ? t('manage.cards.worlds.world_settings')
+                    : t('manage.cards.worlds.layout')}
                 </Button>
               )}
             </div>

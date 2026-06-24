@@ -77,6 +77,7 @@ export type SpawnPoint = {
 export type FeatureToggles = {
   voiceChat?: string;
   portableExperiences?: string;
+  nearbyVoiceChat?: string;
 };
 
 export type SkyboxConfig = {
@@ -165,11 +166,7 @@ export type WorldSettings = {
 };
 
 export enum SceneAgeRating {
-  RatingPending = 'RP',
-  Everyone = 'E',
-  Teen = 'T',
   Adult = 'A',
-  Restricted = 'R',
 }
 
 export enum SceneCategory {

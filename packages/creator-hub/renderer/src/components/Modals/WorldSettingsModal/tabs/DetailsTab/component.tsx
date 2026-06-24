@@ -3,22 +3,11 @@ import cx from 'classnames';
 import FolderIcon from '@mui/icons-material/Folder';
 import type { TextFieldProps } from 'decentraland-ui2';
 import { Box, FormLabel, MenuItem, TextField, Typography } from 'decentraland-ui2';
-import { SceneAgeRating, SceneCategory, type WorldSettings } from '/@/lib/worlds';
+import { SceneCategory, type WorldSettings } from '/@/lib/worlds';
 import { t } from '/@/modules/store/translation/utils';
 import { Select } from '/@/components/Select';
 import { Button } from '/@/components/Button';
 import './styles.css';
-
-const AGE_RATING_OPTIONS = [
-  {
-    value: SceneAgeRating.Teen,
-    label: t('modal.world_settings.details.age_rating_options.teen'),
-  },
-  {
-    value: SceneAgeRating.Adult,
-    label: t('modal.world_settings.details.age_rating_options.adult'),
-  },
-];
 
 const CATEGORIES_OPTIONS = [
   {
@@ -151,25 +140,6 @@ const DetailsTab: React.FC<Props> = React.memo(({ worldSettings, onChangeSetting
           />
         </Button>
       </Box>
-
-      <InputLabel
-        label={t('modal.world_settings.details.age_rating')}
-        className="ColHalf"
-      >
-        <Select
-          value={worldSettings.contentRating || ''}
-          onChange={e => onChangeSettings({ contentRating: e.target.value as SceneAgeRating })}
-        >
-          {AGE_RATING_OPTIONS.map(option => (
-            <MenuItem
-              key={option.value}
-              value={option.value}
-            >
-              {option.label}
-            </MenuItem>
-          ))}
-        </Select>
-      </InputLabel>
 
       <InputLabel
         label={t('modal.world_settings.details.categories')}

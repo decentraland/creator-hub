@@ -26,12 +26,19 @@ import {
   getAssetCatalog,
   getDataLayerInterface,
 } from '../../redux/data-layer';
-import { getSelectedAssetsTab, selectAssetsTab, getDebugConsoleEnabled } from '../../redux/ui';
+import {
+  getSelectedAssetsTab,
+  selectAssetsTab,
+  getDebugConsoleEnabled,
+  getMobileDebugSessionEnabled,
+} from '../../redux/ui';
 import { AssetsTab } from '../../redux/ui/types';
 import { useScanAssets } from '../../hooks/useScanAssets';
+import { useImportAssetToFilesystem } from '../../hooks/useImportAssetToFilesystem';
 import { FolderOpen } from '../Icons/Folder';
 import CleanupIcon from '../Icons/Cleanup';
 import { AssetsCatalog } from '../AssetsCatalog';
+import { CatalogAssetContextMenu } from '../AssetsCatalog/Asset/ContextMenu/CatalogAssetContextMenu';
 import { ProjectAssetExplorer } from '../ProjectAssetExplorer';
 import ImportAsset from '../ImportAsset';
 import { CustomAssets } from '../CustomAssets';
@@ -42,6 +49,7 @@ import type { InputRef } from '../FileInput/FileInput';
 import { Button } from '../Button';
 import { InfoTooltip } from '../ui';
 import DebugConsole from './DebugConsole';
+import MobileDebugSession from './MobileDebugSession/MobileDebugSession';
 
 import './Assets.css';
 
@@ -58,11 +66,14 @@ function Assets({ isAssetsPanelCollapsed }: { isAssetsPanelCollapsed: boolean })
   const removedAssets = useAppSelector(selectRemovedFiles);
   const hasRecoverableFiles = useAppSelector(selectHasRecoverableFiles);
   const debugConsoleEnabled = useAppSelector(getDebugConsoleEnabled);
+  const mobileDebugSessionEnabled = useAppSelector(getMobileDebugSessionEnabled);
   const [showCleanAssetsModal, setShowCleanAssetsModal] = useState(false);
   const [selectedCleanAssets, setSelectedCleanAssets] = useState<Set<string>>(new Set());
   const { pushNotification } = useSnackbar();
 
   const inputRef = useRef<InputRef>(null);
+  const { importCatalogAssetToFilesystem, importCustomAssetToFilesystem } =
+    useImportAssetToFilesystem();
 
   const {
     assets: cleanAssets,
@@ -329,8 +340,24 @@ function Assets({ isAssetsPanelCollapsed }: { isAssetsPanelCollapsed: boolean })
             </div>
           </div>
         )}
+        {mobileDebugSessionEnabled && (
+          <div
+            className="tab"
+            onClick={handleTabClick(AssetsTab.MobileDebugSession)}
+            data-test-id={AssetsTab.MobileDebugSession}
+          >
+            <div className={cx({ underlined: tab === AssetsTab.MobileDebugSession })}>
+              <VscTerminal />
+              <span>MOBILE DEBUG SESSION</span>
+            </div>
+          </div>
+        )}
       </div>
-      {tab === AssetsTab.DebugConsole ? (
+      {tab === AssetsTab.MobileDebugSession ? (
+        <div className={cx('Assets-content', { Hide: isAssetsPanelCollapsed })}>
+          <MobileDebugSession />
+        </div>
+      ) : tab === AssetsTab.DebugConsole ? (
         <div className={cx('Assets-content', { Hide: isAssetsPanelCollapsed })}>
           <DebugConsole />
         </div>
@@ -349,10 +376,15 @@ function Assets({ isAssetsPanelCollapsed }: { isAssetsPanelCollapsed: boolean })
                   </p>
                 </div>
               ) : (
-                <AssetsCatalog catalog={filteredCatalog} />
+                <AssetsCatalog
+                  catalog={filteredCatalog}
+                  onAddToFilesystem={importCatalogAssetToFilesystem}
+                />
               ))}
             {tab === AssetsTab.FileSystem && <ProjectAssetExplorer />}
-            {tab === AssetsTab.CustomAssets && <CustomAssets />}
+            {tab === AssetsTab.CustomAssets && (
+              <CustomAssets onAddToFilesystem={importCustomAssetToFilesystem} />
+            )}
             {tab === AssetsTab.RenameAsset && assetToRename && (
               <RenameAsset
                 assetId={assetToRename.id}
@@ -363,6 +395,7 @@ function Assets({ isAssetsPanelCollapsed }: { isAssetsPanelCollapsed: boolean })
           </div>
         </ImportAsset>
       )}
+      <CatalogAssetContextMenu />
       <CleanAssets
         isOpen={showCleanAssetsModal}
         assets={cleanAssets}

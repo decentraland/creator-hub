@@ -6,6 +6,7 @@ import { config } from '/@/config';
 
 const IS_DEV = import.meta.env.DEV;
 const WORLDS_CONTENT_SERVER_URL = config.get('WORLDS_CONTENT_SERVER_URL');
+const WORLDS_STORAGE_SERVICE_URL = config.get('WORLDS_STORAGE_SERVICE_URL');
 
 export const isENSDomain = (name: string) => {
   return name.endsWith('.eth') && !name.endsWith('.dcl.eth');
@@ -41,4 +42,15 @@ export const getJumpInUrl = (world: string) => {
   return IS_DEV
     ? `https://decentraland.zone/play/?realm=${WORLDS_CONTENT_SERVER_URL}/world/${world}&NETWORK=sepolia`
     : `https://decentraland.org/play/world/${world}`;
+};
+
+/**
+ * Build a link to the storage service UI. Worlds pass the realm name; the page
+ * lets the user pick a scene from there. Lands pass the parcel coords directly.
+ */
+export const getStorageUrl = (type: ManagedProjectType, id: string) => {
+  if (type === ManagedProjectType.WORLD) {
+    return `${WORLDS_STORAGE_SERVICE_URL}/env?realm=${encodeURIComponent(id)}`;
+  }
+  return `${WORLDS_STORAGE_SERVICE_URL}/env?position=${encodeURIComponent(id)}`;
 };

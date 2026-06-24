@@ -1,13 +1,14 @@
-import { IEngine } from '@dcl/ecs';
+import type { IEngine } from '@dcl/ecs';
 import { Color4 } from '@dcl/ecs-math';
 import ReactEcs, { UiEntity, Label } from '@dcl/react-ecs';
 
 import { Button } from '../Button';
-import { deleteSceneAdmin } from './api';
-import { moderationControlState, SceneAdmin } from '.';
 import { LoadingDots } from '../Loading';
 import { Error } from '../Error';
-import { fetchSceneAdmins } from '..';
+import { fetchAndSyncSceneAdmins } from '..';
+import { deleteSceneAdmin } from './api';
+import { moderationControlState } from '.';
+import type { SceneAdmin } from '.';
 
 export function RemoveAdminConfirmation({ admin, engine }: { admin: SceneAdmin; engine: IEngine }) {
   const [isLoading, setIsLoading] = ReactEcs.useState(false);
@@ -38,7 +39,7 @@ export function RemoveAdminConfirmation({ admin, engine }: { admin: SceneAdmin; 
       >
         <UiEntity uiTransform={{ flexDirection: 'row', maxWidth: 675 }}>
           <Label
-            value={`Are you sure you want to remove `}
+            value={'Are you sure you want to remove '}
             fontSize={18}
             color={Color4.White()}
           />
@@ -48,7 +49,7 @@ export function RemoveAdminConfirmation({ admin, engine }: { admin: SceneAdmin; 
             color={Color4.fromHexString('#FF2D55')}
           />
           <Label
-            value={` from the Admin list?`}
+            value={' from the Admin list?'}
             fontSize={18}
             color={Color4.White()}
           />
@@ -114,7 +115,7 @@ export function RemoveAdminConfirmation({ admin, engine }: { admin: SceneAdmin; 
                     setError(error);
                   } else {
                     moderationControlState.adminToRemove = undefined;
-                    await fetchSceneAdmins();
+                    await fetchAndSyncSceneAdmins();
                   }
                   setIsLoading(false);
                 }

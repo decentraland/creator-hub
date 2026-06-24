@@ -18,7 +18,7 @@ import {
 } from '../../WorldPermissionsItem';
 import './styles.css';
 
-const MAX_COLLABORATORS = 10;
+const MAX_COLLABORATORS = 100;
 
 function noop() {}
 

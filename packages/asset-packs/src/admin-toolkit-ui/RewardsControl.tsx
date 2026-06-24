@@ -1,15 +1,26 @@
-import { Entity, IEngine } from '@dcl/ecs';
+import type { Entity, IEngine } from '@dcl/ecs';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import ReactEcs, { UiEntity, Label, Dropdown } from '@dcl/react-ecs';
 import { Color4 } from '@dcl/sdk/math';
-import { AdminTools, getActionEvents, getComponents, getPayload, Action } from '../definitions';
+import {
+  getActionEvents,
+  getComponents,
+  getPayload,
+  type Action,
+  type AdminTools,
+} from '../definitions';
 import { Button } from './Button';
-import { CONTENT_URL } from './constants';
-import { State } from './types';
+import { getContentUrl } from './constants';
+import { type State } from './types';
 
 const ICONS = {
-  REWARDS_CONTROL: `${CONTENT_URL}/admin_toolkit/assets/icons/rewards-control.png`,
-  SEND: `${CONTENT_URL}/admin_toolkit/assets/icons/rewards-send.png`,
-} as const;
+  get REWARDS_CONTROL() {
+    return `${getContentUrl()}/admin_toolkit/assets/icons/rewards-control.png`;
+  },
+  get SEND() {
+    return `${getContentUrl()}/admin_toolkit/assets/icons/rewards-send.png`;
+  },
+};
 
 // Helper Functions
 function getAdminToolkitRewardsControl(engine: IEngine) {

@@ -13,7 +13,7 @@ describe('Transform', () => {
   beforeAll(async () => {
     await installMouseHelper(page);
     await App.waitUntilReady();
-  }, 30_000);
+  });
 
   afterAll(async () => {
     // Clean up entity and deselect to reset scene state for other test suites
@@ -27,7 +27,7 @@ describe('Transform', () => {
     await page.click('body', { position: { x: 0, y: 0 } });
     await page.keyboard.press('Escape');
     await sleep(1000);
-  }, 30_000);
+  });
 
   test('create and select entity', async () => {
     await Hierarchy.addChild(ROOT, 'rotation-test');
@@ -38,20 +38,20 @@ describe('Transform', () => {
     const item = await page.$(Hierarchy.getItemSelectorById(entityId));
     await item!.click();
     await Transform.waitUntilVisible();
-  }, 30_000);
+  });
 
   test('rotation fields should default to 0', async () => {
     expect(await Transform.getRotationValue('X')).toBe('0.00');
     expect(await Transform.getRotationValue('Y')).toBe('0.00');
     expect(await Transform.getRotationValue('Z')).toBe('0.00');
-  }, 30_000);
+  });
 
   test('set rotation X to 90 should preserve value', async () => {
     await Transform.setRotationValue('X', '90');
     await sleep(200);
     const value = await Transform.getRotationValue('X');
     expect(parseFloat(value)).toBeCloseTo(90, 0);
-  }, 30_000);
+  });
 
   test('set rotation Y to 90 should preserve X', async () => {
     await Transform.setRotationValue('Y', '90');
@@ -61,7 +61,7 @@ describe('Transform', () => {
     expect(parseFloat(xValue)).toBeCloseTo(90, 0);
     const yValue = await Transform.getRotationValue('Y');
     expect(parseFloat(yValue)).toBeCloseTo(90, 0);
-  }, 30_000);
+  });
 
   test('set rotation Z to 90 should preserve X and Y (gimbal lock)', async () => {
     await Transform.setRotationValue('Z', '90');
@@ -74,7 +74,7 @@ describe('Transform', () => {
     expect(parseFloat(xValue)).toBeCloseTo(90, 0);
     expect(parseFloat(yValue)).toBeCloseTo(90, 0);
     expect(parseFloat(zValue)).toBeCloseTo(90, 0);
-  }, 30_000);
+  });
 
   test('editing rotation Z should not change X or Y', async () => {
     // Reset all rotations to 0
@@ -99,5 +99,5 @@ describe('Transform', () => {
     expect(parseFloat(xValue)).toBeCloseTo(45, 0);
     expect(parseFloat(yValue)).toBeCloseTo(30, 0);
     expect(parseFloat(zValue)).toBeCloseTo(60, 0);
-  }, 30_000);
+  });
 });

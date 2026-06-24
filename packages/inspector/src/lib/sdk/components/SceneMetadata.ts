@@ -2,7 +2,6 @@ import type { IEngine } from '@dcl/ecs';
 import { Schemas } from '@dcl/ecs/dist/schemas';
 
 export enum SceneAgeRating {
-  Teen = 'T',
   Adult = 'A',
 }
 
@@ -35,7 +34,7 @@ export const SceneMetadataV0 = {
   name: Schemas.Optional(Schemas.String),
   description: Schemas.Optional(Schemas.String),
   thumbnail: Schemas.Optional(Schemas.String),
-  ageRating: Schemas.Optional(Schemas.EnumString(SceneAgeRating, SceneAgeRating.Teen)),
+  ageRating: Schemas.Optional(Schemas.EnumString(SceneAgeRating, SceneAgeRating.Adult)),
   categories: Schemas.Optional(
     Schemas.Array(Schemas.EnumString(SceneCategory, SceneCategory.GAME)),
   ),
@@ -129,6 +128,11 @@ const SceneMetadataV3 = {
   ),
 };
 
+const SceneMetadataV4 = {
+  ...SceneMetadataV3,
+  disableNearbyVoiceChat: Schemas.Optional(Schemas.Boolean),
+};
+
 const SceneMetadata = 'inspector::SceneMetadata';
 
 export const VERSIONS = [
@@ -136,6 +140,7 @@ export const VERSIONS = [
   { key: `${SceneMetadata}-v1`, value: SceneMetadataV1 },
   { key: `${SceneMetadata}-v2`, value: SceneMetadataV2 },
   { key: `${SceneMetadata}-v3`, value: SceneMetadataV3 },
+  { key: `${SceneMetadata}-v4`, value: SceneMetadataV4 },
 ];
 
 export function getLatestSceneComponentVersion() {

@@ -1,0 +1,41 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core-schema::Name",
+      "data": {
+        "0": {
+          "json": {
+            "value": "Impulse Area"
+          }
+        }
+      }
+    },
+    {
+      "name": "asset-packs::Script",
+      "data": {
+        "0": {
+          "json": {
+            "value": [
+              {
+                "path": "{assetPath}/impulseArea.tsx",
+                "priority": 0,
+                "layout": "{\"params\":{\"strength\":{\"type\":\"number\",\"optional\":true,\"value\":40},\"debug\":{\"type\":\"boolean\",\"optional\":false,\"tooltip\":\"If true, the area that applies the force becomes visible in your scene\",\"value\":false}}}"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "asset-packs::Placeholder",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/impulse-area.glb"
+          }
+        }
+      }
+    }
+  ]
+}

@@ -8,6 +8,7 @@ import * as code from './code';
 import * as analytics from './analytics';
 import * as npm from './npm';
 import * as config from './config';
+import * as mobileDebug from './mobile-debug-server';
 
 interface InitIpcOptions {
   beforeQuitCleanup: () => Promise<void>;
@@ -47,6 +48,33 @@ export function initIpc({ beforeQuitCleanup }: InitIpcOptions) {
   handle('cli.deploy', (_event, opts) => cli.deploy(opts));
   handle('cli.killPreview', (_event, path) => cli.killPreview(path));
   handle('cli.getMobilePreview', (_event, path) => cli.getMobilePreview(path));
+
+  // mobile debug session
+  handle('mobileDebug.getSessions', async () => mobileDebug.getMobileDebugSessionInfos());
+  handle('mobileDebug.subscribeEntries', async event => {
+    mobileDebug.subscribeEntries(event.sender);
+  });
+  handle('mobileDebug.unsubscribeEntries', async event => {
+    mobileDebug.unsubscribeEntries(event.sender);
+  });
+  handle('mobileDebug.subscribeSessions', async event => {
+    mobileDebug.subscribeSessions(event.sender);
+  });
+  handle('mobileDebug.unsubscribeSessions', async event => {
+    mobileDebug.unsubscribeSessions(event.sender);
+  });
+  handle(
+    'mobileDebug.broadcastCommand',
+    async (_event, cmd: string, args: Record<string, unknown>) =>
+      mobileDebug.broadcastCommand(cmd, args),
+  );
+  handle('mobileDebug.startServer', async () => {
+    const serverPort = await mobileDebug.startMobileDebugServer();
+    return { port: serverPort };
+  });
+  handle('mobileDebug.stopServer', async () => mobileDebug.stopMobileDebugServer());
+  handle('mobileDebug.getServerStatus', async () => mobileDebug.getMobileDebugServerStatus());
+  handle('mobileDebug.getStandaloneDeeplink', async () => mobileDebug.getStandaloneDeeplink());
 
   // config
   handle('config.getConfig', () => config.getConfig());
