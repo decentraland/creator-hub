@@ -413,7 +413,8 @@
         "max_offset": "最大偏移",
         "general": "常规",
         "single_player": "单人游戏",
-        "show_in_places": "在 Places 中显示"
+        "show_in_places": "在 Places 中显示",
+        "single_player_streaming_note": "单人模式下不支持直播。"
       },
       "details": {
         "world_title": "世界标题",
@@ -427,10 +428,7 @@
         "set_image": "选择图片",
         "no_image": "未设置图片",
         "age_rating_options": {
-          "everyone": "E（所有人，PG 13+）",
-          "teen": "T（青少年，PG 13+）",
-          "adult": "A（成人，PG 18+）",
-          "restricted": "R（限制级）"
+          "adult": "A（成人，PG 18+）"
         },
         "categories_options": {
           "art": "🎨 艺术",
@@ -872,6 +870,7 @@
         "scenes_count": "{count} {count, plural, one {场景} other {场景}}",
         "scene_settings": "场景设置",
         "world_settings": "设置",
+        "layout": "布局",
         "published_world": "已发布的世界"
       },
       "land": {

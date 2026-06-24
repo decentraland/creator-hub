@@ -434,7 +434,9 @@ function DisclosureWidget({ enabled, isOpen, onOpen }: DisclosureWidgetProps) {
 }
 
 function TreeChildren<T>(props: Props<T>) {
-  const CompTree = Tree<T>();
+  // `Tree<T>()` builds a fresh component each call; memoize so children
+  // keep a stable identity across re-renders and don't remount on engine updates.
+  const CompTree = useMemo(() => Tree<T>(), []);
   const { value, level = getDefaultLevel(), getChildren, getId, isOpen, isHidden } = props;
   const children = getChildren(value);
   const open = isOpen(value);

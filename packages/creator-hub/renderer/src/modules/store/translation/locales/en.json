@@ -413,7 +413,8 @@
         "max_offset": "Max Offset",
         "general": "General",
         "single_player": "Single Player",
-        "show_in_places": "Show in Places"
+        "show_in_places": "Show in Places",
+        "single_player_streaming_note": "Live streaming is not supported in single player mode."
       },
       "details": {
         "world_title": "World Title",
@@ -427,10 +428,7 @@
         "set_image": "Choose image",
         "no_image": "No image set",
         "age_rating_options": {
-          "everyone": "E (Everyone, PG 13+)",
-          "teen": "T (Teens, PG 13+)",
-          "adult": "A (Adults, PG 18+)",
-          "restricted": "R (Restricted)"
+          "adult": "A (Adults, PG 18+)"
         },
         "categories_options": {
           "art": "🎨 Art",
@@ -872,6 +870,7 @@
         "scenes_count": "{count} {count, plural, one {scene} other {scenes}}",
         "scene_settings": "Scene Settings",
         "world_settings": "Settings",
+        "layout": "Layout",
         "published_world": "Published World"
       },
       "land": {

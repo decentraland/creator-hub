@@ -62,6 +62,19 @@ make format-fix    # Prettier write
 make typecheck     # TypeScript type checking across all workspaces
 ```
 
+**Note:** `make lint-fix` runs `make sync-deps` first, which can fail on
+branches that pin `@dcl/*` packages to SDK-toolchain tarball URLs (syncpack
+reports `UnsupportedMismatch`). When this happens, run `npm run lint:fix`
+directly to skip syncpack and still get ESLint autofixes.
+
+**Note:** npm won't repair a missing transitive lockfile node. When `npm ls` /
+a build's `ELSPROBLEMS` reports a transitive dep `missing` (e.g. `buffer-crc32`
+under the `@dcl/sdk-commands` tarball subtree), a plain `npm install` will NOT
+add it — npm trusts the existing lockfile and reports "up to date". Add the
+`node_modules/<dep>` package node to `package-lock.json` directly (version +
+registry `resolved`/`integrity`), then `npm install`/`npm ci` to reify it. Since
+the parent packages declare the dep, the node then sticks.
+
 ### Protocol Buffers
 
 Proto files live at `packages/inspector/src/lib/data-layer/proto/`. After modifying `.proto` files:
@@ -123,6 +136,50 @@ Files matching `*.styled.ts` / `*.styled.tsx` must follow these rules:
 - React: use `@testing-library/react` with accessible queries (`getByRole`, `getByLabelText`).
 - E2E: Playwright for both Electron app and web inspector.
 
+### Redux state freeze + in-place mutating helpers
+
+Redux Toolkit auto-freezes state via Immer (the `createSlice` default). Helpers
+that mutate objects in place (e.g. asset-packs'
+`deepReplaceAssetPath` / `substituteAssetPathInComposite`) throw
+`TypeError: Cannot assign to read only property` — or fail silently — when
+passed payloads read from Redux. Deep-clone (`structuredClone(x)`) at the
+boundary before passing Redux-sourced data to any mutating helper. Symptoms
+when missed: writes silently no-op, original placeholder tokens (e.g.
+`{assetPath}/...`) survive into the engine.
+
+### Asset-packs circular imports & vitest
+
+`packages/asset-packs/src/definitions.ts` re-exports every internal module via
+`export * from './...'`. Production bundlers hoist these bindings, but the
+Vitest loader resolves the re-export *before* the leaf module finishes
+evaluating — so importing constants like `COMPONENTS_WITH_ID` or `getNextId`
+through `definitions.ts` will see them as `undefined` at call time inside the
+same source tree. In `asset-packs` source files and tests, import these
+constants from the leaf module directly (`from './id'`, `from './types'`,
+etc.) rather than via the `definitions.ts` barrel.
+
+### Asset-pack composite placeholders must resolve before the engine serializes
+
+Asset-pack `composite.json` files encode references as portable placeholders:
+paths as `{assetPath}/...`, ids as `{self}` / `{self:Component}` / `{N:Component}`,
+and `SyncComponents.componentIds` as component-**name** strings (e.g.
+`"asset-packs::States"`). Each must be resolved to a concrete value before the
+runtime engine serializes the component. The runtime `core-schema::Sync-Components`
+`componentIds` schema is `Array(Int64)`, so an unresolved name reaching it makes
+the CRDT serializer throw `SyntaxError: Cannot convert <name> to a BigInt` every
+tick. Resolution lives in two places: the Inspector resolves names→ids on ingest
+(`add-asset`'s `parseSyncComponents`); the SPAWN_ENTITY runtime path resolves
+post-`Composite.instance` in `add-child.ts` (`remapSyncComponentIds`, beside the
+`{self}` id/trigger remap). When adding a placeholder-bearing field — or debugging
+a `Cannot convert … to a BigInt` serialize crash — ensure both paths resolve it.
+
 ## Skills
 
 Skills live in `.ai/skills/*/SKILL.md`. Read the relevant `SKILL.md` when a task matches a skill's domain.
+
+## Standards
+
+Read the relevant standards doc when the task touches its domain:
+
+- [`docs/coding-standards.md`](docs/coding-standards.md) — React patterns and antipatterns (controlled-input prop-sync, memoized components built in render). Read when touching `TextField`, the tree `<Input>`, or building any component with a buffered value.
+- [`docs/testing-standards.md`](docs/testing-standards.md) — E2E patterns (real keyboard input vs `fill()`, locators vs `ElementHandle`s, focus-actually-on-element gates, outcome waits vs fixed sleeps). Read when writing or debugging Playwright tests.
