@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import log from 'electron-log';
 
 import { trackLifecycleEvent } from '../src/modules/analytics';
 
@@ -123,6 +124,16 @@ describe('trackLifecycleEvent', () => {
       );
       expect(configData.installedAt).toBe('2020-01-01T00:00:00.000Z');
       expect(configData.lastVersion).toBe('1.2.0');
+    });
+  });
+
+  describe('when reading the config fails', () => {
+    it('should swallow the error and log it instead of throwing', async () => {
+      configStorage.get.mockRejectedValueOnce(new Error('corrupt config'));
+
+      await expect(trackLifecycleEvent('1.2.0')).resolves.toBeUndefined();
+      expect(trackSpy).not.toHaveBeenCalled();
+      expect(log.error).toHaveBeenCalledWith('Error tracking lifecycle event', expect.any(Error));
     });
   });
 });

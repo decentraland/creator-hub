@@ -41,23 +41,27 @@ export async function getAnonymousId() {
  * of `userId`) is not poisoned by the anonymous id that `track()` lazily creates.
  */
 export async function trackLifecycleEvent(version: string): Promise<void> {
-  const config = await getConfigStorage();
-  const installedAt = await config.get('installedAt');
-  const lastVersion = await config.get('lastVersion');
-  // A persisted userId means analytics has run before on this machine, i.e. a
-  // pre-existing user upgrading into this feature — not a fresh install.
-  const isExistingUser = !!(await config.get('userId'));
+  try {
+    const config = await getConfigStorage();
+    const installedAt = await config.get('installedAt');
+    const lastVersion = await config.get('lastVersion');
+    // A persisted userId means analytics has run before on this machine, i.e. a
+    // pre-existing user upgrading into this feature — not a fresh install.
+    const isExistingUser = !!(await config.get('userId'));
 
-  if (!installedAt && !lastVersion && !isExistingUser) {
-    await track('Install Creator Hub', { version });
-  } else if (lastVersion && lastVersion !== version) {
-    await track('Update Creator Hub', { version, previous_version: lastVersion });
-  }
+    if (!installedAt && !lastVersion && !isExistingUser) {
+      await track('Install Creator Hub', { version });
+    } else if (lastVersion && lastVersion !== version) {
+      await track('Update Creator Hub', { version, previous_version: lastVersion });
+    }
 
-  if (!installedAt) {
-    await config.set('installedAt', new Date().toISOString());
+    if (!installedAt) {
+      await config.set('installedAt', new Date().toISOString());
+    }
+    await config.set('lastVersion', version);
+  } catch (error) {
+    log.error('Error tracking lifecycle event', error);
   }
-  await config.set('lastVersion', version);
 }
 
 export function getAnalytics(): Analytics | null {
