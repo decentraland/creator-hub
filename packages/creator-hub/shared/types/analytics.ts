@@ -107,6 +107,5 @@ export type Events = {
   };
   'Sign In Completed': {
     method: 'deeplink';
-    duration_ms: number;
   };
 };

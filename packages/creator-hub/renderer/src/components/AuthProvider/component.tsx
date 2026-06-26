@@ -50,7 +50,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const signInAttemptCountRef = useRef<number>(0);
   const deepLinkCleanupRef = useRef<(() => void) | null>(null);
   const requestIdRef = useRef<string | null>(null);
-  const signInStartRef = useRef<number>(0);
+
   const [wallet, setWallet] = useState<string>();
   const [avatar, setAvatar] = useState<Avatar>();
   const [isSignedIn, setIsSignedIn] = useState(false);
@@ -83,10 +83,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         setIsSignedIn(true);
         fetchAvatar(signer);
         signInAttemptCountRef.current = 0;
-        void analytics.track('Sign In Completed', {
-          method: 'deeplink',
-          duration_ms: Math.round(performance.now() - signInStartRef.current),
-        });
+        void analytics.track('Sign In Completed', { method: 'deeplink' });
       } catch (error) {
         captureException(error, {
           tags: { source: 'auth', event: 'signin-deeplink' },
@@ -115,7 +112,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     try {
       signInAttemptCountRef.current += 1;
       setIsSigningIn(true);
-      signInStartRef.current = performance.now();
 
       // Listen for the deep link that completes this attempt. Scoped to the
       // attempt: it fires once, then unsubscribes (also on cancel/re-entry).
