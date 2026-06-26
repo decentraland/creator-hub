@@ -1,15 +1,9 @@
-import { createPublicClient, http, type Hex } from 'viem';
+import { createPublicClient, http } from 'viem';
 import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
 import { type Socket, io } from 'socket.io-client';
 import { ChainId, ProviderType } from '@dcl/schemas';
-import { Authenticator, type AuthIdentity, AuthLinkType, type AuthChain } from '@dcl/crypto';
+import { Authenticator, type AuthIdentity, type AuthChain } from '@dcl/crypto';
 import * as sso from '@dcl/single-sign-on-client';
-
-export type EphemeralAuthAccount = {
-  address: string;
-  privateKey: Hex;
-  publicKey: Hex;
-};
 
 const STORAGE_KEY_ADDRESS = 'auth-server-provider-address';
 const STORAGE_KEY_CHAIN_ID = 'auth-server-provider-chain-id';
@@ -18,6 +12,25 @@ type Payload = {
   method: string;
   params: any[];
 };
+
+/**
+ * Reason a deep-link sign in failed, used to surface a translated message.
+ */
+export type SignInErrorReason = 'not_found' | 'expired' | 'network' | 'unknown';
+
+/**
+ * Error thrown while fetching/applying a deep-link sign in identity. Carries a
+ * `reason` so the UI can map it to a translated, actionable message.
+ */
+export class SignInError extends Error {
+  constructor(
+    readonly reason: SignInErrorReason,
+    message: string,
+  ) {
+    super(message);
+    this.name = 'SignInError';
+  }
+}
 
 export type OutcomeError = {
   code: number;
@@ -92,7 +105,7 @@ export class AuthServerProvider {
   }
 
   /**
-   * Set the time it will take for the identity created on 'finishSignIn' to expire.
+   * Set the time it will take for the ephemeral message used on sign in to expire.
    */
   static setIdentityExpiration(millis: number) {
     AuthServerProvider.identityExpirationInMillis = millis;
@@ -106,90 +119,77 @@ export class AuthServerProvider {
   }
 
   /**
-   * Initializes the first part of the sign in process.
-   * It returns data such as the request expiration as well as the verification code which can be used on the frontend.
-   * The returned data should be passed back to the `finishSignIn` method.
+   * Creates an auth request and returns its id.
+   * An ephemeral key pair is generated only to form the `dcl_personal_sign`
+   * request body; the identity fetched on completion is self-contained, so this
+   * local key pair is not reused.
    */
-  static initSignIn = async () => {
-    const socket = await AuthServerProvider.getSocket();
-
+  static createSignInRequest = async (): Promise<string> => {
     const privateKey = generatePrivateKey();
     const account = privateKeyToAccount(privateKey);
-    const ephemeralAccount: EphemeralAuthAccount = {
-      address: account.address,
-      privateKey,
-      publicKey: account.publicKey,
-    };
     const expiration = new Date(Date.now() + AuthServerProvider.identityExpirationInMillis);
-    const ephemeralMessage = Authenticator.getEphemeralMessage(
-      ephemeralAccount.address,
-      expiration,
-    );
+    const ephemeralMessage = Authenticator.getEphemeralMessage(account.address, expiration);
 
-    const requestResponse = await AuthServerProvider.createRequest(socket, {
-      method: 'dcl_personal_sign',
-      params: [ephemeralMessage],
+    const response = await fetch(`${AuthServerProvider.authServerUrl}/requests`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ method: 'dcl_personal_sign', params: [ephemeralMessage] }),
     });
 
-    return {
-      socket,
-      ephemeralAccount,
-      expiration,
-      ephemeralMessage,
-      requestResponse,
-    };
+    if (!response.ok) {
+      throw new Error(`Failed to create auth request (${response.status})`);
+    }
+
+    const { requestId } = await response.json();
+    return requestId;
   };
 
   /**
-   * Should be called after the 'initSignIn' method with the same data it returned.
-   * These methods are separate to allow the frontend to consume and display certain data before opening the auth dapp.
+   * Fetches a stored identity by its id (delivered via deep link). The identity
+   * is single-use and self-contained (includes the ephemeral key pair). Returns
+   * the identity together with the resolved signer address.
    */
-  static finishSignIn = async ({
-    socket,
-    ephemeralAccount,
-    expiration,
-    ephemeralMessage,
-    requestResponse,
-  }: {
-    socket: Socket;
-    ephemeralAccount: EphemeralAuthAccount;
-    expiration: Date;
-    ephemeralMessage: string;
-    requestResponse: any;
-  }) => {
-    AuthServerProvider.openAuthDapp(requestResponse);
+  static fetchIdentity = async (
+    identityId: string,
+  ): Promise<{ identity: AuthIdentity; signer: string }> => {
+    const response = await fetch(
+      `${AuthServerProvider.authServerUrl}/identities/${encodeURIComponent(identityId)}`,
+    );
 
-    const outcome = await AuthServerProvider.awaitOutcomeWithTimeout(socket, requestResponse);
-
-    if (outcome.error) {
-      throw outcome.error;
+    if (response.status === 404) {
+      throw new SignInError('not_found', 'Sign in identity not found');
+    }
+    if (response.status === 410) {
+      throw new SignInError('expired', 'Sign in identity expired');
+    }
+    if (response.status === 403) {
+      throw new SignInError(
+        'network',
+        'Sign in identity could not be retrieved (network mismatch)',
+      );
+    }
+    if (!response.ok) {
+      throw new SignInError('unknown', `Failed to fetch identity (${response.status})`);
     }
 
-    const { sender: signer, result: signature } = outcome;
+    const { identity } = await response.json();
+    const payload = identity?.authChain?.[0]?.payload;
+    if (typeof payload !== 'string') {
+      throw new SignInError('unknown', 'Malformed identity response');
+    }
 
-    const identity: AuthIdentity = {
-      expiration,
-      ephemeralIdentity: {
-        address: ephemeralAccount.address,
-        privateKey: ephemeralAccount.privateKey,
-        publicKey: ephemeralAccount.publicKey,
-      },
-      authChain: [
-        {
-          type: AuthLinkType.SIGNER,
-          payload: signer.toLowerCase(),
-          signature: '',
-        },
-        {
-          type: AuthLinkType.ECDSA_PERSONAL_EPHEMERAL,
-          payload: ephemeralMessage,
-          signature: signature,
-        },
-      ],
-    };
+    return { identity, signer: payload.toLowerCase() };
+  };
 
-    localStorage.setItem(STORAGE_KEY_ADDRESS, signer.toLowerCase());
+  /**
+   * Completes a deep-link sign in: fetches the identity for the given id and
+   * persists it. Returns the signer address.
+   */
+  static applyDeepLinkIdentity = async (identityId: string): Promise<string> => {
+    const { identity, signer } = await AuthServerProvider.fetchIdentity(identityId);
+    localStorage.setItem(STORAGE_KEY_ADDRESS, signer);
     sso.localStorageStoreIdentity(signer, identity);
+    return signer;
   };
 
   /**
@@ -263,10 +263,19 @@ export class AuthServerProvider {
   };
 
   /**
-   * Opens the browser on the auth dapp requests page for the given request id.
+   * Builds the auth dapp URL for the given request id. If `deeplink` is true,
+   * the dapp will trigger a deep link back to the app once sign in completes.
    */
-  private static openAuthDapp = (requestResponse: any) => {
-    const url = `${AuthServerProvider.authDappUrl}/requests/${requestResponse.requestId}`;
+  static getAuthDappUrl = (requestId: string, deeplink?: boolean) => {
+    return `${AuthServerProvider.authDappUrl}/requests/${requestId}${deeplink ? '?targetConfigId=creator-hub&flow=deeplink' : ''}`;
+  };
+
+  /**
+   * Opens the browser on the auth dapp requests page for the given request id.
+   * If `deeplink` is true, the dapp will trigger a deep link back to the app once the sign in flow is completed.
+   */
+  static openAuthDapp = (requestId: string, deeplink?: boolean) => {
+    const url = AuthServerProvider.getAuthDappUrl(requestId, deeplink);
     const target = '_blank';
     const features = 'noopener,noreferrer';
     AuthServerProvider.openBrowser
@@ -409,7 +418,7 @@ export class AuthServerProvider {
       authChain: identity?.authChain,
     });
 
-    AuthServerProvider.openAuthDapp(requestResponse);
+    AuthServerProvider.openAuthDapp(requestResponse.requestId);
 
     const outcome = await AuthServerProvider.awaitOutcomeWithTimeout(socket, requestResponse);
 

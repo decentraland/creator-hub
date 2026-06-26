@@ -1,4 +1,5 @@
 import { platform } from 'node:process';
+import path from 'node:path';
 import { app } from 'electron';
 import {
   init as sentryInit,
@@ -21,6 +22,7 @@ import { killInspectorServer } from '/@/modules/inspector';
 import { runMigrations } from '/@/modules/migrations';
 import { getAnalytics, track, trackLifecycleEvent } from './modules/analytics';
 import { handleAppArguments } from './modules/app-args-handle';
+import { DEEPLINK_PROTOCOL, flushPendingDeeplink, handleDeeplink } from './modules/deeplink';
 import { addEditorsPathsToConfig } from './modules/code';
 
 import '/@/security-restrictions';
@@ -63,6 +65,30 @@ if (!isSingleInstance) {
 app.on('second-instance', async (_e: unknown, argv: string[]) => {
   await restoreOrCreateMainWindow();
   handleAppArguments(argv);
+});
+
+/**
+ * Register the app as the handler for the deeplink scheme.
+ * In development the executable is Electron itself, so the path to the app entry
+ * point must be passed explicitly for the registration to resolve correctly.
+ */
+if (process.defaultApp) {
+  if (process.argv.length >= 2) {
+    app.setAsDefaultProtocolClient(DEEPLINK_PROTOCOL, process.execPath, [
+      path.resolve(process.argv[1]),
+    ]);
+  }
+} else {
+  app.setAsDefaultProtocolClient(DEEPLINK_PROTOCOL);
+}
+
+/**
+ * macOS deeplink entry point. This can fire before `app.whenReady()`, so
+ * `handleDeeplink` buffers the URL and it is replayed via `flushPendingDeeplink`.
+ */
+app.on('open-url', (event: Electron.Event, url: string) => {
+  event.preventDefault();
+  void handleDeeplink(url);
 });
 
 /**
@@ -115,6 +141,7 @@ app
     } else {
       log.info('[Analytics] API key not provided, analytics disabled');
     }
+    await flushPendingDeeplink();
   })
   .catch(e => log.error('Failed create window:', e));
 

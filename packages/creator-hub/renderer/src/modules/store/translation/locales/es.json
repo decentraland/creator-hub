@@ -708,16 +708,17 @@
   "sign_in": {
     "back": "Volver",
     "content": {
-      "title": "Paso de inicio de sesión seguro",
-      "body": "Recuerda el número de verificación a continuación.<br></br>Se te pedirá que lo confirmes en tu navegador web para vincular de forma segura tu inicio de sesión.",
-      "verification_code_info": "Mantén este número en privado. Asegurará que tu inicio de sesión sea seguro y único para ti.",
-      "expiration": "El número de verificación expirará en {minutes}:{seconds} minutos"
+      "title": "Continúa en tu navegador",
+      "body": "Abrimos tu navegador para que termines de iniciar sesión.<br></br>Cuando termines, volverás aquí automáticamente.",
+      "reopen": "¿No se abrió el navegador? <a>Ábrelo de nuevo</a> o <b>copia el enlace</b>"
     },
     "errors": {
       "max_attempts": "Se alcanzó el máximo de intentos de inicio de sesión. Por favor, inténtalo de nuevo más tarde.",
       "failed": "Error al iniciar sesión. Por favor, inténtalo de nuevo.",
-      "timeout": "La solicitud de inicio de sesión expiró. Por favor, verifica tu conexión e inténtalo de nuevo.",
-      "init_failed": "No se pudo inicializar el inicio de sesión. Por favor, verifica tu conexión."
+      "init_failed": "No se pudo inicializar el inicio de sesión. Por favor, verifica tu conexión.",
+      "identity_not_found": "No se pudo completar el inicio de sesión. Por favor, inténtalo de nuevo.",
+      "identity_expired": "Tu solicitud de inicio de sesión expiró. Por favor, inténtalo de nuevo.",
+      "network_mismatch": "No se pudo completar el inicio de sesión. Desactiva cualquier VPN o relay privado del navegador e inténtalo de nuevo."
     }
   },
   "more": {

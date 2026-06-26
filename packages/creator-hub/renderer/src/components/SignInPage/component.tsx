@@ -1,43 +1,52 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Box, Button, Grid, Tooltip, Typography } from 'decentraland-ui2';
-import { InfoOutlined, ChevronLeftOutlined } from '@mui/icons-material';
+import { Button, Grid, Typography } from 'decentraland-ui2';
+import { ChevronLeftOutlined } from '@mui/icons-material';
 import { t } from '/@/modules/store/translation/utils';
 import { useAuth } from '/@/hooks/useAuth';
+import { Row } from '../Row';
+import { Column } from '../Column';
+
+import EditorImage from '/assets/images/editor.png';
 
 import './styles.css';
 
 export function SignInPage() {
   const navigate = useNavigate();
-  const { expirationTime, verificationCode } = useAuth();
-  const updateExpirationIntervalRef = useRef<NodeJS.Timeout>();
-  const [expirationCountdown, setExpirationCountdown] = useState({ minutes: '0', seconds: '00' });
+  const { cancelSignIn, reopenSignInDapp, copySignInUrl } = useAuth();
 
   const handleBack = useCallback(() => {
+    cancelSignIn();
     navigate(-1);
-  }, [navigate]);
+  }, [cancelSignIn, navigate]);
 
-  const calculateAndSetExpirationCountdown = useCallback(() => {
-    const diff = new Date(expirationTime ?? 0).getTime() - Date.now();
+  const reopenAnchor = useCallback(
+    (content: string) => (
+      <a
+        className="action-link"
+        role="button"
+        tabIndex={0}
+        onClick={reopenSignInDapp}
+      >
+        {content}
+      </a>
+    ),
+    [reopenSignInDapp],
+  );
 
-    setExpirationCountdown({
-      minutes: Math.floor(diff / 1000 / 60).toString(),
-      seconds: Math.floor((diff / 1000) % 60)
-        .toString()
-        .padStart(2, '0'),
-    });
-  }, [expirationTime]);
-
-  useEffect(() => {
-    calculateAndSetExpirationCountdown();
-    updateExpirationIntervalRef.current = setInterval(calculateAndSetExpirationCountdown, 1000);
-
-    return () => {
-      if (updateExpirationIntervalRef.current) {
-        clearInterval(updateExpirationIntervalRef.current);
-      }
-    };
-  }, [calculateAndSetExpirationCountdown]);
+  const copyAnchor = useCallback(
+    (content: string) => (
+      <a
+        className="action-link"
+        role="button"
+        tabIndex={0}
+        onClick={copySignInUrl}
+      >
+        {content}
+      </a>
+    ),
+    [copySignInUrl],
+  );
 
   return (
     <Grid
@@ -50,7 +59,7 @@ export function SignInPage() {
       <div className="background"></div>
       <Grid
         className="content"
-        xs={4}
+        xs={9}
         item
       >
         <Button
@@ -60,30 +69,28 @@ export function SignInPage() {
         >
           <ChevronLeftOutlined /> {t('sign_in.back')}
         </Button>
-        <Typography
-          variant="h4"
-          gutterBottom
-        >
-          {t('sign_in.content.title')}
-        </Typography>
-        <Typography variant="body1">{t('sign_in.content.body', { br: () => <br /> })}</Typography>
-        <Box className="code">
-          <Typography className="verificationCode">{verificationCode}</Typography>
-          <div className="tooltip">
-            <Tooltip
-              placement="right"
-              title={t('sign_in.content.verification_code_info')}
+        <Row className="content-row">
+          <Column className="text-column">
+            <Typography
+              variant="h3"
+              gutterBottom
             >
-              <InfoOutlined />
-            </Tooltip>
-          </div>
-        </Box>
-        <Typography variant="body2">
-          {t('sign_in.content.expiration', {
-            minutes: expirationCountdown.minutes,
-            seconds: expirationCountdown.seconds,
-          })}
-        </Typography>
+              {t('sign_in.content.title')}
+            </Typography>
+            <Typography variant="h6">{t('sign_in.content.body', { br: () => <br /> })}</Typography>
+            <Typography
+              className="reopen"
+              variant="body1"
+            >
+              {t('sign_in.content.reopen', { a: reopenAnchor, b: copyAnchor })}
+            </Typography>
+          </Column>
+          <img
+            className="illustration"
+            src={EditorImage}
+            alt="Decentraland Creator Hub illustration"
+          />
+        </Row>
       </Grid>
     </Grid>
   );
