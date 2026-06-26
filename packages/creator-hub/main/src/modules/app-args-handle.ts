@@ -52,7 +52,7 @@ export function handleAppArguments(argv: string[]): void {
   for (const arg of args) {
     // Windows/Linux deliver deeplinks as a CLI argument rather than via `open-url`.
     if (isDeeplink(arg)) {
-      log.info(`[Args] Detected deeplink argument: ${arg}`);
+      log.info('[Args] Detected deeplink argument');
       void handleDeeplink(arg);
       continue;
     }
