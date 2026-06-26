@@ -11,16 +11,40 @@ const creatorHubDir = join(__dirname, '..');
 
 let electronApp: ElectronApplication;
 
+/**
+ * Cold-launching Electron is the slowest, most run-to-run-variable step on a
+ * contended CI runner. Retry a couple of times so a single spawn/CDP-connect
+ * hiccup doesn't fail the whole suite. `timeout` is Playwright's own launch
+ * timeout (default 30s); the beforeAll hook gets a larger budget on top.
+ */
+async function launchApp(attempts = 3): Promise<ElectronApplication> {
+  let lastError: unknown;
+  for (let attempt = 1; attempt <= attempts; attempt++) {
+    try {
+      return await electron.launch({
+        executablePath: electronPath,
+        args: ['.'],
+        cwd: creatorHubDir,
+        timeout: 60_000,
+      });
+    } catch (error) {
+      lastError = error;
+      console.warn(`[e2e] Electron launch attempt ${attempt}/${attempts} failed:`, error);
+    }
+  }
+  throw lastError;
+}
+
 beforeAll(async () => {
-  electronApp = await electron.launch({
-    executablePath: electronPath,
-    args: ['.'],
-    cwd: creatorHubDir,
-  });
-});
+  electronApp = await launchApp();
+}, 120_000);
 
 afterAll(async () => {
-  await electronApp.close();
+  try {
+    await electronApp?.close();
+  } catch {
+    // ignore teardown errors so they don't cascade into the next spec file
+  }
 });
 
 test('Main window state', async () => {

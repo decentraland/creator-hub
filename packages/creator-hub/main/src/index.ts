@@ -20,7 +20,7 @@ import { initIpc } from '/@/modules/ipc';
 import { deployServer, killAllPreviews } from '/@/modules/cli';
 import { killInspectorServer } from '/@/modules/inspector';
 import { runMigrations } from '/@/modules/migrations';
-import { getAnalytics, track } from './modules/analytics';
+import { getAnalytics, track, trackLifecycleEvent } from './modules/analytics';
 import { handleAppArguments } from './modules/app-args-handle';
 import { DEEPLINK_PROTOCOL, flushPendingDeeplink, handleDeeplink } from './modules/deeplink';
 import { addEditorsPathsToConfig } from './modules/code';
@@ -133,9 +133,11 @@ app
     await restoreOrCreateMainWindow();
     log.info('[BrowserWindow] Ready');
     await addEditorsPathsToConfig();
+    const version = app.getVersion();
     const analytics = await getAnalytics();
     if (analytics) {
-      await track('Open Editor', { version: app.getVersion() });
+      await trackLifecycleEvent(version);
+      await track('Open Editor', { version });
     } else {
       log.info('[Analytics] API key not provided, analytics disabled');
     }

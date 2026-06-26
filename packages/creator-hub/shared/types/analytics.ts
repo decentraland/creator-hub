@@ -2,8 +2,12 @@ export type Events = {
   'Open Editor': {
     version: string;
   };
-  'Auto Update Editor': {
+  'Install Creator Hub': {
     version: string;
+  };
+  'Update Creator Hub': {
+    version: string;
+    previous_version: string;
   };
   'Scene created': {
     projectType: 'github-repo';
