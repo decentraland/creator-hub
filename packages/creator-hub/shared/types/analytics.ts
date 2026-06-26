@@ -105,4 +105,8 @@ export type Events = {
   'Unpublish Entire World': {
     world_name: string;
   };
+  'Sign In Completed': {
+    method: 'deeplink';
+    duration_ms: number;
+  };
 };
