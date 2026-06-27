@@ -1,4 +1,4 @@
-import type { Outdated } from '/shared/types/npm';
+import type { DistTags, Outdated } from '/shared/types/npm';
 import log from 'electron-log/main';
 
 import { run, StreamError } from './bin';
@@ -84,6 +84,59 @@ export function parseOutdated(buffer: Buffer): Outdated {
           current: info.current as string,
           latest: info.latest as string,
         };
+      }
+    }
+
+    return result;
+  } catch (_) {
+    return {};
+  }
+}
+
+/**
+ * Fetches the npm dist-tags for a package (e.g. `latest`, `next`, `auth-server`).
+ * It runs `npm view <pkg> dist-tags --json` and parses the output.
+ *
+ * @param _path - The directory path where the npm command should be executed.
+ * @param pkg - The package name to query.
+ * @returns A Promise resolving to a map of tag name -> version. Empty object on failure.
+ */
+export async function getDistTags(_path: string, pkg: string): Promise<DistTags> {
+  try {
+    const npmView = run('npm', 'npm', {
+      args: ['view', pkg, 'dist-tags', '--json'],
+      cwd: _path,
+    });
+
+    const stdout = await npmView.wait();
+    return parseDistTags(stdout);
+  } catch (e) {
+    if (e instanceof StreamError) {
+      return parseDistTags(e.stdout);
+    }
+    return {};
+  }
+}
+
+/**
+ * Parses the result of `npm view <pkg> dist-tags --json` into a `DistTags` map,
+ * keeping only string version values.
+ *
+ * @param buffer - The Buffer output from the `npm view` command.
+ * @returns An object mapping each dist-tag to its version.
+ */
+export function parseDistTags(buffer: Buffer): DistTags {
+  try {
+    const parsed = JSON.parse(buffer.toString('utf8'));
+
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+      return {};
+    }
+
+    const result: DistTags = {};
+    for (const [tag, version] of Object.entries(parsed)) {
+      if (typeof version === 'string') {
+        result[tag] = version;
       }
     }
 

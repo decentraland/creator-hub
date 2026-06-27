@@ -7,6 +7,7 @@ import {
   type Project,
   type ProjectInfo,
 } from '/shared/types/projects';
+import type { DistTags } from '/shared/types/npm';
 import { PACKAGES_LIST } from '/shared/types/pkg';
 import { DEFAULT_DEPENDENCY_UPDATE_STRATEGY } from '/shared/types/settings';
 import type { GetProjectsOpts, Template, Workspace } from '/shared/types/workspace';
@@ -16,6 +17,7 @@ import { fetch } from '/shared/fetch';
 import type { Services } from '../services';
 
 import { getScene, getRowsAndCols, parseCoords, updateSceneThumbnail } from './scene';
+import { resolveOutdated } from './outdated';
 import { getDefaultScenesPath, getScenesPath } from './settings';
 
 import { DEFAULT_THUMBNAIL, NEW_SCENE_NAME, EMPTY_SCENE_TEMPLATE_REPO } from './constants';
@@ -97,14 +99,38 @@ export function initializeWorkspace(services: Services) {
     _path: string,
     timeoutMs: number = 5_000,
   ): Promise<DependencyState> {
-    try {
-      const outdatedPromise = npm.getOutdatedDeps(_path, PACKAGES_LIST);
-      const timeoutPromise = new Promise<never>((_, reject) => {
-        setTimeout(() => reject(new Error('getOutdatedPackages timeout')), timeoutMs);
-      });
+    // `npm outdated` only compares against the `latest` dist-tag, so it flags
+    // experimental/auth-server commit builds even when "updating" to latest would
+    // be a downgrade. We also fetch each package's dist-tags so `resolveOutdated`
+    // can suppress those misleading prompts (or retarget them to the auth-server build).
+    const resolvePromise = (async (): Promise<DependencyState> => {
+      const [outdated, distTagsEntries] = await Promise.all([
+        npm.getOutdatedDeps(_path, PACKAGES_LIST),
+        Promise.all(
+          PACKAGES_LIST.map(
+            async name =>
+              [name, await npm.getDistTags(_path, name).catch((): DistTags => ({}))] as const,
+          ),
+        ),
+      ]);
+      const distTagsByPackage = Object.fromEntries(distTagsEntries);
 
-      const outdated = await Promise.race([outdatedPromise, timeoutPromise]);
-      return outdated as DependencyState;
+      const result: DependencyState = {};
+      for (const [name, info] of Object.entries(outdated)) {
+        const resolved = resolveOutdated(info, distTagsByPackage[name] ?? {});
+        if (resolved) {
+          result[name as keyof DependencyState] = resolved;
+        }
+      }
+      return result;
+    })();
+
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      setTimeout(() => reject(new Error('getOutdatedPackages timeout')), timeoutMs);
+    });
+
+    try {
+      return await Promise.race([resolvePromise, timeoutPromise]);
     } catch (error: any) {
       console.warn('Failed to get outdated packages:', error?.message);
       return {} as DependencyState;
