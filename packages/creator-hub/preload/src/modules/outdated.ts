@@ -26,6 +26,9 @@ function getBaseVersion(version: string): string | null {
  *
  *  - A prerelease/commit build of the official `latest` line (e.g.
  *    `7.24.3-<run>.commit-<hash>` while latest is `7.24.3`) is NOT outdated.
+ *  - A build whose base version is *ahead* of `latest` and not on the auth-server
+ *    line (e.g. a `next`/`canary`/`experimental` commit build) is NOT outdated —
+ *    "updating" to `latest` would be a downgrade.
  *  - A build on the `auth-server` line is never pushed to the official latest:
  *    if it's the current auth-server build it's up to date; if it's an older
  *    build on that line, the update target is rewritten to the auth-server build.
@@ -62,6 +65,13 @@ export function resolveOutdated(info: OutdatedInfo, distTags: DistTags): Outdate
       // Same line but not behind the auth-server build -> nothing to offer.
       return null;
     }
+  }
+
+  // Installed build is ahead of the official latest and not on the auth-server line
+  // (e.g. a `next`/`canary`/`experimental` commit build). `npm outdated` still flags
+  // it because it only knows `latest`, but "updating" would be a downgrade -> suppress.
+  if (currentBase && latestBase && semver.gt(currentBase, latestBase)) {
+    return null;
   }
 
   // Genuinely behind the official latest.

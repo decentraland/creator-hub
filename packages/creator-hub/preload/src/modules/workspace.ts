@@ -95,6 +95,13 @@ export function initializeWorkspace(services: Services) {
     }
   }
 
+  function withTimeout<T>(promise: Promise<T>, timeoutMs: number, label: string): Promise<T> {
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      setTimeout(() => reject(new Error(`${label} timeout`)), timeoutMs);
+    });
+    return Promise.race([promise, timeoutPromise]);
+  }
+
   async function getOutdatedPackages(
     _path: string,
     timeoutMs: number = 5_000,
@@ -103,15 +110,32 @@ export function initializeWorkspace(services: Services) {
     // experimental/auth-server commit builds even when "updating" to latest would
     // be a downgrade. We also fetch each package's dist-tags so `resolveOutdated`
     // can suppress those misleading prompts (or retarget them to the auth-server build).
-    const resolvePromise = (async (): Promise<DependencyState> => {
-      const [outdated, distTagsEntries] = await Promise.all([
-        npm.getOutdatedDeps(_path, PACKAGES_LIST),
+    //
+    // `npm outdated` and the dist-tag fetches each get their own timeout budget so the
+    // extra `npm view` calls can't push the (already-finished) outdated result past the
+    // timeout — a dist-tag timeout degrades resolution to empty tags (handled the same as
+    // a per-package failure below) instead of suppressing *all* prompts via the outer catch.
+    try {
+      const distTagsPromise = withTimeout(
         Promise.all(
-          PACKAGES_LIST.map(
-            async name =>
-              [name, await npm.getDistTags(_path, name).catch((): DistTags => ({}))] as const,
-          ),
+          PACKAGES_LIST.map(async name => {
+            const tags = await npm.getDistTags(_path, name).catch((error: any): DistTags => {
+              console.warn(`Failed to get dist-tags for "${name}":`, error?.message);
+              return {};
+            });
+            return [name, tags] as const;
+          }),
         ),
+        timeoutMs,
+        'getDistTags',
+      ).catch((error: any) => {
+        console.warn('Failed to get dist-tags:', error?.message);
+        return [] as (readonly [string, DistTags])[];
+      });
+
+      const [outdated, distTagsEntries] = await Promise.all([
+        withTimeout(npm.getOutdatedDeps(_path, PACKAGES_LIST), timeoutMs, 'getOutdatedPackages'),
+        distTagsPromise,
       ]);
       const distTagsByPackage = Object.fromEntries(distTagsEntries);
 
@@ -123,14 +147,6 @@ export function initializeWorkspace(services: Services) {
         }
       }
       return result;
-    })();
-
-    const timeoutPromise = new Promise<never>((_, reject) => {
-      setTimeout(() => reject(new Error('getOutdatedPackages timeout')), timeoutMs);
-    });
-
-    try {
-      return await Promise.race([resolvePromise, timeoutPromise]);
     } catch (error: any) {
       console.warn('Failed to get outdated packages:', error?.message);
       return {} as DependencyState;

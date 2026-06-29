@@ -44,6 +44,30 @@ describe('resolveOutdated', () => {
     });
   });
 
+  describe('when the installed version is ahead of latest and not on the auth-server line', () => {
+    it('should suppress a build whose base is newer than latest (e.g. next/canary)', () => {
+      // current=19.3.0-canary, latest=19.2.7, auth-server on a different line -> downgrade prompt avoided
+      expect(
+        resolveOutdated({ current: '19.3.0-canary-d5736f09-20260507', latest: '19.2.7' }, distTags),
+      ).toBeNull();
+    });
+
+    it('should suppress even when there is no auth-server dist-tag', () => {
+      expect(
+        resolveOutdated(
+          { current: '19.3.0-canary-d5736f09-20260507', latest: '19.2.7' },
+          { latest: '19.2.7' },
+        ),
+      ).toBeNull();
+    });
+
+    it('should suppress a build one patch ahead of latest', () => {
+      expect(
+        resolveOutdated({ current: '7.24.3-28000000000.commit-aaaaaaa', latest: '7.24.2' }, {}),
+      ).toBeNull();
+    });
+  });
+
   describe('when the installed version is genuinely behind the official latest', () => {
     it('should keep a normal release that is behind latest', () => {
       const info = { current: '7.20.0', latest: '7.24.2' };
