@@ -88,7 +88,12 @@ function generatePreviewArguments(opts: PreviewOptions) {
   const args: string[] = [];
   for (const key in resolved) {
     const typedKey = key as keyof PreviewArguments;
-    if (resolved[typedKey] && typedKey in PREVIEW_OPTIONS_MAP) {
+    if (typedKey === 'enableLandscapeTerrains') {
+      // Landscape terrain is on by default in the Explorer; only pass the flag to disable it
+      if (!resolved[typedKey]) {
+        args.push(PREVIEW_OPTIONS_MAP[typedKey], 'false');
+      }
+    } else if (resolved[typedKey] && typedKey in PREVIEW_OPTIONS_MAP) {
       args.push(PREVIEW_OPTIONS_MAP[typedKey]);
     }
   }
@@ -211,7 +216,12 @@ function updateDeepLinkWithOpts(params: string, newOpts: PreviewOptions): string
 
     // Multi-instance preview requires authentication to differentiate players
     setOrDeleteParam(PREVIEW_OPTIONS_MAP.skipAuthScreen, !newOpts.multiInstance);
-    setOrDeleteParam(PREVIEW_OPTIONS_MAP.enableLandscapeTerrains, newOpts.enableLandscapeTerrains);
+    // Landscape terrain is on by default in the Explorer; only inject the param to disable it
+    if (!newOpts.enableLandscapeTerrains) {
+      urlParams.set(stripLeadingDashes(PREVIEW_OPTIONS_MAP.enableLandscapeTerrains), 'false');
+    } else {
+      urlParams.delete(stripLeadingDashes(PREVIEW_OPTIONS_MAP.enableLandscapeTerrains));
+    }
     setOrDeleteParam(PREVIEW_OPTIONS_MAP.multiInstance, newOpts.multiInstance);
 
     // this param is different from what we recieved from the CLI that the one that the launcher uses.
