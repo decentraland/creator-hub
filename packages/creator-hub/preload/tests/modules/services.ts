@@ -36,6 +36,8 @@ export const getMockServices = (): DeepMock<Services> => ({
   npm: {
     install: vi.fn(),
     getOutdatedDeps: vi.fn(),
+    getDistTags: vi.fn(),
+    getContextFiles: vi.fn(),
   },
   pkg: {
     getPackageJson: vi.fn(),

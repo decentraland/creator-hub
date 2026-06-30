@@ -1,6 +1,6 @@
 import type { OpenDialogOptions } from 'electron';
 
-import type { Outdated } from '/shared/types/npm';
+import type { DistTags, Outdated } from '/shared/types/npm';
 import type { Events } from '/shared/types/analytics';
 import type { DeployOptions } from '/shared/types/deploy';
 
@@ -80,6 +80,7 @@ export interface Ipc {
   'analytics.getProjectId': (path: string) => Promise<string>;
   'npm.install': (path: string, packages?: string[]) => Promise<void>;
   'npm.getOutdatedDeps': (path: string, packages?: string[]) => Promise<Outdated>;
+  'npm.getDistTags': (path: string, pkg: string) => Promise<DistTags>;
   'npm.getContextFiles': (path: string) => Promise<void>;
   'mobileDebug.getSessions': () => Promise<MobileDebugSessionInfo[]>;
   'mobileDebug.subscribeEntries': () => Promise<void>;
