@@ -89,8 +89,8 @@ function generatePreviewArguments(opts: PreviewOptions) {
   for (const key in resolved) {
     const typedKey = key as keyof PreviewArguments;
     if (typedKey === 'enableLandscapeTerrains') {
-      // Landscape terrain is on by default in the Explorer; only pass the flag to disable it
-      if (!resolved[typedKey]) {
+      // "Disable Landscape Terrain" checkbox: when checked, tell Explorer to turn off terrain
+      if (resolved[typedKey]) {
         args.push(PREVIEW_OPTIONS_MAP[typedKey], 'false');
       }
     } else if (resolved[typedKey] && typedKey in PREVIEW_OPTIONS_MAP) {
@@ -216,8 +216,8 @@ function updateDeepLinkWithOpts(params: string, newOpts: PreviewOptions): string
 
     // Multi-instance preview requires authentication to differentiate players
     setOrDeleteParam(PREVIEW_OPTIONS_MAP.skipAuthScreen, !newOpts.multiInstance);
-    // Landscape terrain is on by default in the Explorer; only inject the param to disable it
-    if (!newOpts.enableLandscapeTerrains) {
+    // "Disable Landscape Terrain" checkbox: when checked, tell Explorer to turn off terrain
+    if (newOpts.enableLandscapeTerrains) {
       urlParams.set(stripLeadingDashes(PREVIEW_OPTIONS_MAP.enableLandscapeTerrains), 'false');
     } else {
       urlParams.delete(stripLeadingDashes(PREVIEW_OPTIONS_MAP.enableLandscapeTerrains));
