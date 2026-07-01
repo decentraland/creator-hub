@@ -67,9 +67,16 @@ async function main() {
 
 // Reverse-proxy in front of esbuild's dev server that adds the cross-origin
 // isolation headers on every response (esbuild's serve() can't set headers).
-// Without COOP/COEP the browser refuses SharedArrayBuffer, so the bevy-explorer
-// engine wasm (served from public/bevy-engine) won't boot. Resolves with the
-// public port it bound.
+// Without cross-origin isolation the browser refuses SharedArrayBuffer, so the
+// bevy-explorer engine wasm (served from public/bevy-engine) won't boot.
+// Resolves with the public port it bound.
+//
+// COEP is `credentialless`, not `require-corp`: the engine loads cross-origin
+// subresources (CDN scripts, and at runtime scene assets) that don't all send
+// CORP. `require-corp` would block those; `credentialless` still yields
+// crossOriginIsolated (so SharedArrayBuffer works) while fetching cross-origin
+// no-cors subresources without credentials. This matches what the engine's own
+// service worker sets (see bevy-engine/service_worker.js + its issue #807 note).
 function serveWithCrossOriginIsolation(upstreamHost, upstreamPort) {
   const server = http.createServer((req, res) => {
     const proxyReq = http.request(
@@ -84,7 +91,7 @@ function serveWithCrossOriginIsolation(upstreamHost, upstreamPort) {
         res.writeHead(proxyRes.statusCode ?? 502, {
           ...proxyRes.headers,
           'Cross-Origin-Opener-Policy': 'same-origin',
-          'Cross-Origin-Embedder-Policy': 'require-corp',
+          'Cross-Origin-Embedder-Policy': 'credentialless',
           // Lets the isolated top document embed the engine's own subresources.
           'Cross-Origin-Resource-Policy': 'cross-origin',
         });
