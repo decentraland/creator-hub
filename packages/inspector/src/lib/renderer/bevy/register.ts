@@ -1,6 +1,7 @@
 import { connectReverseChannel } from '../reverse-channel';
 import { registerRenderer } from '../plugin';
 import { BevyRenderer } from './BevyRenderer';
+import { mountBevyEngine } from './engine-iframe';
 
 /**
  * Bevy renderer registration. Lives here (not in the renderer-agnostic
@@ -8,21 +9,20 @@ import { BevyRenderer } from './BevyRenderer';
  * on Bevy — Bevy is just another plugin behind the public {@link registerRenderer}
  * API, exactly like the built-in Babylon renderer and the Three proof renderer.
  *
- * This is the **conformance spike**: it stands up the Bevy {@link IRenderer}
- * surface and wires the reverse channel, but the bevy-explorer wasm is not
- * mounted yet. The real engine runs out-of-process in an iframe (see the
- * feasibility study); the next slice wires `startRendererIframe` +
- * `@dcl-regenesislabs/bevy-explorer-web` here. Registering now proves the plugin
- * satisfies the boundary and appears in the renderer picker.
+ * Current state: the engine boots. The bevy-explorer wasm is served same-origin
+ * from `public/bevy-engine` (see copy-bevy-engine.ts + build.js COOP/COEP) and
+ * mounted in an iframe; the renderer drives it over the same-origin console seam
+ * (contentWindow.engine_console_command_args), the way bevy-editor does. Feeding
+ * the engine the scene CRDT and wiring gizmos/picking are the next slices — the
+ * reverse channel is already connected so those land without touching this file.
  */
 export function registerBevyRenderer(): void {
   registerRenderer({
     id: 'bevy',
     label: 'Bevy (preview)',
-    mount: ({ canvas }) => {
-      // No wasm/iframe yet: the shared (Babylon) canvas is hidden while Bevy is
-      // active and restored on dispose, matching the Three renderer's handling.
-      // The real mount will create an iframe in `container` for the engine.
+    mount: async ({ canvas, container }) => {
+      // The engine runs in its own iframe in the viewport container; the shared
+      // (Babylon) canvas is hidden while Bevy is active and restored on dispose.
       const previousDisplay = canvas.style.display;
       canvas.style.display = 'none';
 
@@ -35,11 +35,18 @@ export function registerBevyRenderer(): void {
         rendererEvents: bevy.events,
       });
 
+      // Boot the engine iframe. `mount` awaits it so the inspector only proceeds
+      // once the engine console is live; a boot failure rejects here and surfaces
+      // to the caller rather than leaving a half-mounted renderer.
+      const engine = await mountBevyEngine({ container });
+      bevy.attachEngine(engine.engineWindow);
+
       return {
         renderer: bevy,
         engine: bevy.context.engine,
         dispose: () => {
           disconnect();
+          engine.dispose();
           bevy.dispose();
           canvas.style.display = previousDisplay;
         },

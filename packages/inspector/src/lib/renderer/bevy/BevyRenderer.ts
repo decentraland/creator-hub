@@ -19,6 +19,7 @@ import type {
 } from '../types';
 import type { GizmoType } from '../../utils/gizmo';
 import { BevySceneContext } from './BevySceneContext';
+import type { EngineWindow } from './console';
 
 /**
  * A minimal Bevy {@link IRenderer} — the conformance spike.
@@ -60,6 +61,9 @@ export class BevyRenderer implements IRenderer {
   #speed = 4;
   #gridVisible = true;
   #disposed = false;
+  // The engine's window, once its iframe has booted (attachEngine). Null until
+  // then (and in the conformance path, which runs the renderer with no engine).
+  #engineWindow: EngineWindow | null = null;
 
   constructor() {
     this.context = new BevySceneContext();
@@ -70,14 +74,19 @@ export class BevyRenderer implements IRenderer {
     this.viewport = this.#createViewport();
     this.spawnPoints = this.#createSpawnPointStub();
     this.debug = { isVisible: () => false, toggle: () => {} };
+  }
 
-    // Signal readiness once construction completes (deferred to a microtask so a
-    // consumer subscribing synchronously after `new BevyRenderer()` still gets
-    // it), matching the Babylon and Three renderers. `cameraChange` is not
-    // emitted: with no wasm camera there is no user-driven camera motion yet.
-    queueMicrotask(() => {
-      if (!this.#disposed) this.events.emit('ready', undefined);
-    });
+  /**
+   * Called by `register` once the engine iframe has booted and its console API
+   * is live. This is when the renderer is truly ready — it's what flips the
+   * inspector's boot gate. Until the wasm is fed the CRDT (a later slice) the
+   * engine renders nothing, but the boundary is established. Emitting `ready`
+   * here (not from the constructor) ties readiness to the real engine.
+   */
+  attachEngine(engineWindow: EngineWindow): void {
+    if (this.#disposed) return;
+    this.#engineWindow = engineWindow;
+    this.events.emit('ready', undefined);
   }
 
   #createCamera(): RendererCamera {
@@ -184,8 +193,15 @@ export class BevyRenderer implements IRenderer {
     return this.#gridVisible;
   }
 
+  /** The booted engine window, or null before `attachEngine` (the next slice
+   * drives CRDT/gizmo/pick console commands through this). */
+  get engineWindow(): EngineWindow | null {
+    return this.#engineWindow;
+  }
+
   dispose(): void {
     this.#disposed = true;
+    this.#engineWindow = null;
     this.context.dispose();
     this.events.all.clear();
   }

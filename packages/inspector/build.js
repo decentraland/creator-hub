@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 const child_process = require('child_process');
 const { builtinModules } = require('module');
+const http = require('http');
 const path = require('path');
 const fs = require('fs');
 const { future } = require('fp-future');
@@ -43,10 +44,16 @@ async function main() {
 
   if (WATCH_MODE) {
     await context.watch();
-    let { host, port } = await context.serve({
-      servedir: 'public',
-    });
-    console.log(`> Serving on http://${host}:${port}`);
+    // esbuild serves the bundle + public/ on an internal port; a thin proxy in
+    // front stamps COOP/COEP on every response. The bevy-explorer engine wasm
+    // (served under public/bevy-engine) uses SharedArrayBuffer threads, which
+    // the browser only enables for cross-origin-isolated documents — i.e. ones
+    // served with `Cross-Origin-Opener-Policy: same-origin` +
+    // `Cross-Origin-Embedder-Policy: require-corp`. esbuild's serve() can't set
+    // response headers, so we can't add them there directly.
+    const internal = await context.serve({ servedir: 'public' });
+    const publicPort = await serveWithCrossOriginIsolation(internal.host, internal.port);
+    console.log(`> Serving on http://localhost:${publicPort}`);
   } else {
     console.time('> Building browser bundle');
     await context.rebuild();
@@ -56,6 +63,44 @@ async function main() {
 
   await buildCommonJsDistributable();
   await runTypeChecker();
+}
+
+// Reverse-proxy in front of esbuild's dev server that adds the cross-origin
+// isolation headers on every response (esbuild's serve() can't set headers).
+// Without COOP/COEP the browser refuses SharedArrayBuffer, so the bevy-explorer
+// engine wasm (served from public/bevy-engine) won't boot. Resolves with the
+// public port it bound.
+function serveWithCrossOriginIsolation(upstreamHost, upstreamPort) {
+  const server = http.createServer((req, res) => {
+    const proxyReq = http.request(
+      {
+        host: upstreamHost,
+        port: upstreamPort,
+        method: req.method,
+        path: req.url,
+        headers: req.headers,
+      },
+      proxyRes => {
+        res.writeHead(proxyRes.statusCode ?? 502, {
+          ...proxyRes.headers,
+          'Cross-Origin-Opener-Policy': 'same-origin',
+          'Cross-Origin-Embedder-Policy': 'require-corp',
+          // Lets the isolated top document embed the engine's own subresources.
+          'Cross-Origin-Resource-Policy': 'cross-origin',
+        });
+        proxyRes.pipe(res);
+      },
+    );
+    proxyReq.on('error', () => {
+      res.writeHead(502).end('bad gateway');
+    });
+    req.pipe(proxyReq);
+  });
+  return new Promise((resolve, reject) => {
+    server.once('error', reject);
+    // Ephemeral port (0), matching esbuild's default; the caller logs it.
+    server.listen(0, upstreamHost, () => resolve(server.address().port));
+  });
 }
 
 async function buildCommonJsDistributable() {
