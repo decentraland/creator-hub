@@ -1,7 +1,27 @@
 import { vi } from 'vitest';
 
 import type { EngineWindow } from './console';
-import { mountBevyEngine } from './engine-iframe';
+import { buildEngineUrl, mountBevyEngine } from './engine-iframe';
+
+describe('buildEngineUrl', () => {
+  it('should return the bare directory URL when no realm/position given', () => {
+    expect(buildEngineUrl('/bevy-engine/')).toBe('/bevy-engine/');
+  });
+
+  it('should append realm + position as query params', () => {
+    const url = buildEngineUrl('/bevy-engine/', 'http://localhost:8004', '0,0');
+    expect(url).toContain('/bevy-engine/?');
+    const query = new URLSearchParams(url.split('?')[1]);
+    expect(query.get('realm')).toBe('http://localhost:8004');
+    expect(query.get('position')).toBe('0,0');
+  });
+
+  it('should include only realm when position is omitted', () => {
+    const url = buildEngineUrl('/bevy-engine/', 'http://localhost:8004');
+    expect(url).toContain('realm=');
+    expect(url).not.toContain('position=');
+  });
+});
 
 /**
  * Boot handshake for the engine iframe. The real bevy-explorer wasm can't run in
@@ -80,5 +100,18 @@ describe('mountBevyEngine', () => {
     // paths resolve under /bevy-engine/ rather than /bevy-engine/index.html/.
     expect(iframe.src).toContain('/bevy-engine/');
     expect(iframe.src).not.toContain('index.html');
+  });
+
+  it('should pass realm + position through to the iframe URL', () => {
+    const iframe = fakeIframe({} as EngineWindow);
+    mountBevyEngine({
+      container,
+      createIframe: () => iframe,
+      bootTimeoutMs: 1000,
+      realm: 'http://localhost:8004',
+      position: '0,0',
+    }).catch(() => {});
+    expect(iframe.src).toContain('realm=');
+    expect(iframe.src).toContain('position=');
   });
 });

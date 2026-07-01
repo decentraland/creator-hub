@@ -31,8 +31,17 @@ export interface BevyEngineMount {
 export interface MountEngineOptions {
   /** Where to attach the engine iframe (the renderer's viewport container). */
   container: HTMLElement;
-  /** Override the engine URL (tests / a custom serve path). */
+  /** Override the engine base URL (tests / a custom serve path). */
   url?: string;
+  /**
+   * Realm the engine loads the scene from — an HTTP URL to a running content
+   * server (e.g. a headless `sdk-commands start --no-browser --no-client`). The
+   * engine fetches /about, the scene entity, and the compiled bundle from here.
+   * Omit to let the engine load its default (public) realm.
+   */
+  realm?: string;
+  /** Parcel coords to spawn at, e.g. "0,0" (the scene's base). */
+  position?: string;
   /** How long to wait for the engine console to appear before failing. */
   bootTimeoutMs?: number;
   /**
@@ -40,6 +49,19 @@ export interface MountEngineOptions {
    * Tests inject a fake with a controllable `contentWindow`.
    */
   createIframe?: () => HTMLIFrameElement;
+}
+
+/**
+ * Build the engine iframe URL. The engine reads `realm` + `position` from its
+ * own `location.search` (engine.js), so they go on the query string of the
+ * directory URL. Kept pure + exported for testing.
+ */
+export function buildEngineUrl(base: string, realm?: string, position?: string): string {
+  const params = new URLSearchParams();
+  if (realm) params.set('realm', realm);
+  if (position) params.set('position', position);
+  const query = params.toString();
+  return query ? `${base}?${query}` : base;
 }
 
 /**
@@ -55,12 +77,14 @@ export function mountBevyEngine(options: MountEngineOptions): Promise<BevyEngine
   const {
     container,
     url = BEVY_ENGINE_URL,
+    realm,
+    position,
     bootTimeoutMs = DEFAULT_BOOT_TIMEOUT_MS,
     createIframe = () => document.createElement('iframe'),
   } = options;
 
   const iframe = createIframe();
-  iframe.src = url;
+  iframe.src = buildEngineUrl(url, realm, position);
   iframe.title = 'Bevy engine';
   iframe.style.border = 'none';
   iframe.style.width = '100%';

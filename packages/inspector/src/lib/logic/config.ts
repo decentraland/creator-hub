@@ -11,6 +11,15 @@ export type InspectorConfig = {
   segmentKey: string | null;
   projectId: string | null;
   catalystBaseUrl: string | null;
+  /**
+   * Realm the Bevy renderer loads its scene from — an HTTP URL to a running
+   * content server (e.g. a headless `sdk-commands start --no-browser
+   * --no-client`). The Bevy engine fetches /about + the scene bundle from here.
+   * Null → the engine loads its default realm (renders no project scene).
+   */
+  bevyRealm: string | null;
+  /** Parcel coords the Bevy engine spawns at, e.g. "0,0". */
+  bevyPosition: string | null;
 };
 
 export type GlobalWithConfig = typeof globalThis & {
@@ -42,5 +51,7 @@ export function getConfig(): InspectorConfig {
     segmentKey: params.get('segmentKey') || config?.segmentKey || null,
     projectId: params.get('projectId') || config?.projectId || null,
     catalystBaseUrl: params.get('catalystBaseUrl') || config?.catalystBaseUrl || CATALYST_BASE_URL,
+    bevyRealm: params.get('bevyRealm') || config?.bevyRealm || null,
+    bevyPosition: params.get('bevyPosition') || config?.bevyPosition || null,
   };
 }
