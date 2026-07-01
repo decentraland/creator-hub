@@ -7,8 +7,15 @@ import { engineReady } from './console';
  * (build.js) serves it with the COOP/COEP headers the engine wasm needs. The
  * iframe is **same-origin** with the inspector, which is what lets the Bevy
  * renderer reach `contentWindow.engine_console_command_args` directly.
+ *
+ * The URL points at the **directory** (trailing slash), not `index.html`: the
+ * engine's own `main.js` derives its service-worker scope + asset paths from
+ * `location.pathname` and assumes a directory root. Pointing at the explicit
+ * `.../index.html` makes it compute `/bevy-engine/index.html/service_worker.js`
+ * (a 404) and the asset-loader worker crashes. Serving the directory index keeps
+ * every document-relative path resolving under `/bevy-engine/`.
  */
-export const BEVY_ENGINE_URL = '/bevy-engine/index.html';
+export const BEVY_ENGINE_URL = '/bevy-engine/';
 
 /** Poll cadence + boot ceiling, matching bevy-editor's proven values. */
 const READY_POLL_INTERVAL_MS = 250;
