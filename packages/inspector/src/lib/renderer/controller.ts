@@ -2,6 +2,7 @@ import { getDataLayerInterface } from '../../redux/data-layer';
 import type { AssetPack } from '../logic/catalog';
 import type { InspectorPreferences } from '../logic/preferences/types';
 import { registerBabylonRenderer } from './babylon/register';
+import { registerBevyRenderer } from './bevy/register';
 import { connectReverseChannel } from './reverse-channel';
 import { getRegisteredRenderers, getRendererPlugin } from './plugin';
 import type { MountedRenderer, RendererMountContext } from './plugin';
@@ -85,8 +86,9 @@ export async function buildRenderer(
 
 // --- Built-in renderer plugins ---------------------------------------------
 // Built-in renderers register through the same public API a third-party
-// renderer uses. The Babylon registration is Babylon-specific and lives in
-// `babylon/register.ts`, so this orchestration layer stays engine-agnostic.
+// renderer uses. Each registration is engine-specific and lives beside its
+// renderer (`babylon/register.ts`, `bevy/register.ts`), so this orchestration
+// layer stays engine-agnostic.
 
 let builtInsRegistered = false;
 
@@ -98,6 +100,11 @@ export function registerBuiltInRenderers(
   if (builtInsRegistered) return;
   builtInsRegistered = true;
   registerBabylonRenderer(catalog, preferences);
+  // Bevy is a preview: the plugin surface + conformance are in place, but the
+  // bevy-explorer wasm is not mounted yet, so selecting it renders nothing. It
+  // is registered so it shows in the picker and its boundary stays exercised;
+  // Babylon remains the default (see DEFAULT_RENDERER).
+  registerBevyRenderer();
 }
 
 export type { MountedRenderer };
