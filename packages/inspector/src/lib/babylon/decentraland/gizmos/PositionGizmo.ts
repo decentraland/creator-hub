@@ -22,6 +22,7 @@ export class PositionGizmo implements IGizmoTransformer {
   private currentEntities: EcsEntity[] = [];
   private updateEntityPosition: ((entity: EcsEntity) => void) | null = null;
   private dispatchOperations: (() => void) | null = null;
+  private onLiveDragUpdate: (() => void) | null = null;
   private isWorldAligned = true;
   private parentMatrixCache = new Map<TransformNode, Matrix>();
 
@@ -110,9 +111,11 @@ export class PositionGizmo implements IGizmoTransformer {
   setUpdateCallbacks(
     updateEntityPosition: (entity: EcsEntity) => void,
     dispatchOperations: () => void,
+    onLiveDragUpdate?: () => void,
   ): void {
     this.updateEntityPosition = updateEntityPosition;
     this.dispatchOperations = dispatchOperations;
+    this.onLiveDragUpdate = onLiveDragUpdate ?? null;
   }
 
   setWorldAligned(value: boolean): void {
@@ -210,6 +213,12 @@ export class PositionGizmo implements IGizmoTransformer {
       const gizmoNode = this.gizmoManager.attachedNode as TransformNode;
       if (gizmoNode) {
         this.update(this.currentEntities, gizmoNode);
+        // NOTE: we intentionally do NOT call updateEntitiesInRealTime() here.
+        // Writing to the renderer ECS on every drag frame would cause the
+        // renderer's engine.update() to flush intermediate values to the data
+        // layer, creating unwanted undo entries.  The final ECS sync happens
+        // in onDragEndObservable instead.
+        this.onLiveDragUpdate?.();
       }
     });
 

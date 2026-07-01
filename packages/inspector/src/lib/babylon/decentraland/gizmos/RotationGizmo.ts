@@ -256,6 +256,7 @@ export class RotationGizmo implements IGizmoTransformer {
   private updateEntityRotation: ((entity: EcsEntity) => void) | null = null;
   private updateEntityPosition: ((entity: EcsEntity) => void) | null = null;
   private dispatchOperations: (() => void) | null = null;
+  private onLiveDragUpdate: (() => void) | null = null;
 
   // Configuration
   private isWorldAligned = true;
@@ -669,11 +670,13 @@ export class RotationGizmo implements IGizmoTransformer {
     updateEntityPosition: (entity: EcsEntity) => void,
     dispatchOperations: () => void,
     sceneContext?: any,
+    onLiveDragUpdate?: () => void,
   ): void {
     this.updateEntityRotation = updateEntityRotation;
     this.updateEntityPosition = updateEntityPosition;
     this.dispatchOperations = dispatchOperations;
     this.sceneContext = sceneContext;
+    this.onLiveDragUpdate = onLiveDragUpdate ?? null;
   }
 
   setWorldAligned(value: boolean): void {
@@ -772,14 +775,22 @@ export class RotationGizmo implements IGizmoTransformer {
     this.dragObserver = rotationGizmo.onDragObservable.add(() => {
       if (this.gizmoManager.attachedNode) {
         this.update(this.currentEntities, this.gizmoManager.attachedNode as TransformNode);
-
-        if (this.updateEntityRotation) {
-          this.currentEntities.forEach(this.updateEntityRotation);
-        }
+        // NOTE: we intentionally do NOT call updateEntityRotation here.
+        // Writing to the renderer ECS on every drag frame would cause
+        // intermediate undo entries.  The final ECS sync happens at drag end.
+        this.onLiveDragUpdate?.();
       }
     });
 
     this.dragEndObserver = rotationGizmo.onDragEndObservable.add(() => {
+      // For single entity, sync final rotation to renderer ECS before dispatch.
+      // Multi-entity is handled by onDragEnd → updateMultipleEntitiesRotation.
+      if (this.currentEntities.length === 1) {
+        if (this.updateEntityRotation) {
+          this.currentEntities.forEach(this.updateEntityRotation);
+        }
+      }
+
       this.onDragEnd();
 
       if (this.dispatchOperations) {

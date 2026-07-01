@@ -7,6 +7,7 @@ import {
 } from '@babylonjs/core';
 import { Vector3 as DclVector3 } from '@dcl/ecs-math';
 import { GizmoType } from '../../utils/gizmo';
+import { suppressCrdtUpdates, resumeCrdtUpdates } from '../../sdk/crdt-update-guard';
 import type { SceneContext } from './SceneContext';
 import type { EcsEntity } from './EcsEntity';
 import { GizmoType as TransformerType } from './gizmos/types';
@@ -24,6 +25,34 @@ export function createGizmoManager(context: SceneContext) {
   let isEnabled = true;
   let currentTransformer: IGizmoTransformer | null = null;
   let isUpdatingFromGizmo = false;
+  let liveDragCallback: ((entities: EcsEntity[]) => void) | null = null;
+  let isDragInProgress = false;
+
+  function notifyLiveDrag() {
+    if (!isDragInProgress) {
+      isDragInProgress = true;
+      // Suppress renderer engine CRDT updates during drag to prevent
+      // intermediate undo entries from async message round-trips.
+      suppressCrdtUpdates(context.engine);
+    }
+    liveDragCallback?.(selectedEntities);
+  }
+
+  function endDragSuppression() {
+    if (isDragInProgress) {
+      isDragInProgress = false;
+      resumeCrdtUpdates(context.engine);
+    }
+  }
+
+  function dispatchAndClearFlag(): void {
+    try {
+      endDragSuppression();
+      void context.operations.dispatch();
+    } finally {
+      isUpdatingFromGizmo = false;
+    }
+  }
 
   // Spawn point gizmo state
   let attachedSpawnPointIndex: number | null = null;
@@ -256,11 +285,6 @@ export function createGizmoManager(context: SceneContext) {
     }
   }
 
-  function dispatchAndClearFlag(): void {
-    void context.operations.dispatch();
-    isUpdatingFromGizmo = false;
-  }
-
   function updateSnap() {
     if (currentTransformer && 'setSnapDistance' in currentTransformer) {
       if (gizmoManager.rotationGizmoEnabled) {
@@ -288,6 +312,7 @@ export function createGizmoManager(context: SceneContext) {
     setEnabled(value: boolean) {
       isEnabled = value;
       if (!isEnabled) {
+        endDragSuppression();
         gizmoManager.attachToNode(null);
       }
     },
@@ -307,6 +332,7 @@ export function createGizmoManager(context: SceneContext) {
       return selectedEntities[0];
     },
     removeEntity(entity: EcsEntity) {
+      endDragSuppression();
       selectedEntities = selectedEntities.filter(e => e.entityId !== entity.entityId);
       if (selectedEntities.length === 0 && attachedSpawnPointIndex === null) {
         gizmoManager.attachToNode(null);
@@ -327,6 +353,11 @@ export function createGizmoManager(context: SceneContext) {
       return [GizmoType.FREE, GizmoType.POSITION, GizmoType.ROTATION, GizmoType.SCALE] as const;
     },
     setGizmoType(type: GizmoType) {
+      // Safety: ensure suppression is lifted before switching gizmo types.
+      // If a drag is interrupted (e.g. gizmo switch mid-drag), endDragSuppression
+      // would never be called from the drag-end callback.
+      endDragSuppression();
+
       // Then disable all Babylon gizmos
       gizmoManager.positionGizmoEnabled = false;
       gizmoManager.rotationGizmoEnabled = false;
@@ -345,7 +376,11 @@ export function createGizmoManager(context: SceneContext) {
           activateTransformer(positionTransformer, snapManager.getPositionSnap());
           // Set up callbacks for ECS updates
           if ('setUpdateCallbacks' in positionTransformer) {
-            positionTransformer.setUpdateCallbacks(updateEntityPosition, dispatchAndClearFlag);
+            positionTransformer.setUpdateCallbacks(
+              updateEntityPosition,
+              dispatchAndClearFlag,
+              notifyLiveDrag,
+            );
           }
           break;
         }
@@ -359,6 +394,7 @@ export function createGizmoManager(context: SceneContext) {
               updateEntityPosition,
               dispatchAndClearFlag,
               context,
+              notifyLiveDrag,
             );
           }
           break;
@@ -368,7 +404,11 @@ export function createGizmoManager(context: SceneContext) {
           activateTransformer(scaleTransformer, snapManager.getScaleSnap());
           // Set up callbacks for ECS updates
           if ('setUpdateCallbacks' in scaleTransformer) {
-            scaleTransformer.setUpdateCallbacks(updateEntityScale, dispatchAndClearFlag);
+            scaleTransformer.setUpdateCallbacks(
+              updateEntityScale,
+              dispatchAndClearFlag,
+              notifyLiveDrag,
+            );
           }
           break;
         }
@@ -381,7 +421,11 @@ export function createGizmoManager(context: SceneContext) {
           }
           // Set up callbacks for ECS updates
           if ('setUpdateCallbacks' in freeTransformer) {
-            freeTransformer.setUpdateCallbacks(updateEntityPosition, dispatchAndClearFlag);
+            freeTransformer.setUpdateCallbacks(
+              updateEntityPosition,
+              dispatchAndClearFlag,
+              notifyLiveDrag,
+            );
           }
           // Set up callback to update gizmo position after drag ends
           if ('setOnDragEndCallback' in freeTransformer) {
@@ -415,6 +459,9 @@ export function createGizmoManager(context: SceneContext) {
       if (selectedEntities.length > 0) {
         updateGizmoTransform();
       }
+    },
+    setLiveDragCallback(cb: (entities: EcsEntity[]) => void) {
+      liveDragCallback = cb;
     },
     /**
      * Attaches the position gizmo to a spawn point transform node
@@ -561,6 +608,7 @@ export function createGizmoManager(context: SceneContext) {
     },
     detachFromSpawnPoint() {
       if (attachedSpawnPointIndex === null) return;
+      endDragSuppression();
 
       if (attachedSpawnPointTarget === 'cameraTarget') {
         context.spawnPoints.setCameraTargetOutOfBoundsVisible(attachedSpawnPointIndex, false);

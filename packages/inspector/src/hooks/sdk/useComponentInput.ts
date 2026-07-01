@@ -279,6 +279,15 @@ export const useMultiComponentInput = <ComponentValueType extends object, InputT
   }
   const sdk = useSdk();
 
+  // During live drag (skipEngineSync events), the inspector engine is NOT
+  // updated, so getComponentValue() returns stale data.  We accumulate
+  // per-entity overrides in this ref so that when multiple entities are
+  // dragged together (events fire synchronously for each entity), we always
+  // merge with the latest values.  The map is cleared when a normal (non-
+  // skipEngineSync) event arrives, meaning the engine is back in sync.
+  const liveDragOverridesRef = useRef(new Map<Entity, ComponentValueType>());
+  const pendingLiveDragMergeRef = useRef(false);
+
   // Get initial merged value from all entities
   const initialEntityValues = getEntityAndComponentValue(entities, component);
   const initialMergedValue = useMemo(
@@ -293,6 +302,13 @@ export const useMultiComponentInput = <ComponentValueType extends object, InputT
   const [value, setMergeValue] = useState(initialMergedValue);
   const [isValid, setIsValid] = useState(true);
   const [isFocused, setIsFocused] = useState(false);
+
+  // Refs for values accessed inside the microtask-deferred live drag merge,
+  // so the closure always reads the latest state.
+  const valueRef = useRef(value);
+  valueRef.current = value;
+  const isFocusedRef = useRef(isFocused);
+  isFocusedRef.current = isFocused;
 
   // Handle input updates
   const handleUpdate = useCallback(
@@ -363,17 +379,42 @@ export const useMultiComponentInput = <ComponentValueType extends object, InputT
 
       if (!isRelevantUpdate) return;
 
-      const updatedEntityValues = getEntityAndComponentValue(entities, component);
-      const newMergedValue = mergeComponentValues(
-        updatedEntityValues.map(([_, component]) => component),
-        fromComponentValueToInput,
+      if (event.skipEngineSync) {
+        // Live drag: engine was NOT updated, so we can't trust getComponentValue.
+        // Store the override — all N entity events fire synchronously, so we
+        // defer the expensive merge to a single microtask after the batch.
+        liveDragOverridesRef.current.set(event.entity, event.value as ComponentValueType);
+        if (!pendingLiveDragMergeRef.current) {
+          pendingLiveDragMergeRef.current = true;
+          queueMicrotask(() => {
+            pendingLiveDragMergeRef.current = false;
+            const componentValues = entities.map(
+              entity =>
+                liveDragOverridesRef.current.get(entity) ??
+                (getComponentValue(entity, component) as ComponentValueType),
+            );
+            const newMergedValue = mergeComponentValues(componentValues, fromComponentValueToInput);
+            if (hasDiff(valueRef.current, newMergedValue, 2) && !isFocusedRef.current) {
+              setMergeValue(newMergedValue);
+            }
+          });
+        }
+        return;
+      }
+
+      // Normal event: engine is in sync, clear any stale overrides.
+      liveDragOverridesRef.current.clear();
+      const componentValues = getEntityAndComponentValue(entities, component).map(
+        ([_, compValue]) => compValue,
       );
 
-      if (!hasDiff(value, newMergedValue, 2) || isFocused) return;
+      const newMergedValue = mergeComponentValues(componentValues, fromComponentValueToInput);
+
+      if (!hasDiff(valueRef.current, newMergedValue, 2) || isFocusedRef.current) return;
 
       setMergeValue(newMergedValue);
     },
-    [entities, component, fromComponentValueToInput, value, isFocused, ...deps],
+    [entities, component, fromComponentValueToInput, ...deps],
   );
 
   useEffect(() => {
