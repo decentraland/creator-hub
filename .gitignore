@@ -22,6 +22,7 @@ yarn-error.log*
 
 **/public/bundle*
 **/public/bin
+**/public/bevy-engine
 **/gen
 **/tsconfig.tsbuildinfo
 **/tsconfig.check.tsbuildinfo
