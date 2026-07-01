@@ -1,3 +1,4 @@
+import { getConfig } from '../../logic/config';
 import { connectReverseChannel } from '../reverse-channel';
 import { registerRenderer } from '../plugin';
 import { BevyRenderer } from './BevyRenderer';
@@ -9,12 +10,20 @@ import { mountBevyEngine } from './engine-iframe';
  * on Bevy — Bevy is just another plugin behind the public {@link registerRenderer}
  * API, exactly like the built-in Babylon renderer and the Three proof renderer.
  *
- * Current state: the engine boots. The bevy-explorer wasm is served same-origin
- * from `public/bevy-engine` (see copy-bevy-engine.ts + build.js COOP/COEP) and
- * mounted in an iframe; the renderer drives it over the same-origin console seam
- * (contentWindow.engine_console_command_args), the way bevy-editor does. Feeding
- * the engine the scene CRDT and wiring gizmos/picking are the next slices — the
- * reverse channel is already connected so those land without touching this file.
+ * Current state: the engine boots and loads a scene. The bevy-explorer wasm is
+ * served same-origin from `public/bevy-engine` (see copy-bevy-engine.ts +
+ * build.js COOP/COEP) and mounted in an iframe pointed at a realm; the renderer
+ * drives it over the same-origin console seam
+ * (contentWindow.engine_console_command_args), the way bevy-editor does.
+ *
+ * The scene comes from a realm — a content server the engine loads from. Point
+ * the `bevyRealm` config (URL param `?bevyRealm=http://localhost:8004`) at a
+ * headless `sdk-commands start --no-browser --no-client` serving the project;
+ * the engine fetches /about + the scene bundle and runs it. Without a realm the
+ * engine loads its default (public) realm and shows no project scene.
+ *
+ * Wiring gizmos/picking is the next slice — the reverse channel is already
+ * connected so those land without touching this file.
  */
 export function registerBevyRenderer(): void {
   registerRenderer({
@@ -35,10 +44,15 @@ export function registerBevyRenderer(): void {
         rendererEvents: bevy.events,
       });
 
-      // Boot the engine iframe. `mount` awaits it so the inspector only proceeds
-      // once the engine console is live; a boot failure rejects here and surfaces
-      // to the caller rather than leaving a half-mounted renderer.
-      const engine = await mountBevyEngine({ container });
+      // Boot the engine iframe pointed at the configured realm. `mount` awaits it
+      // so the inspector only proceeds once the engine console is live; a boot
+      // failure rejects here rather than leaving a half-mounted renderer.
+      const config = getConfig();
+      const engine = await mountBevyEngine({
+        container,
+        realm: config.bevyRealm ?? undefined,
+        position: config.bevyPosition ?? undefined,
+      });
       bevy.attachEngine(engine.engineWindow);
 
       return {
