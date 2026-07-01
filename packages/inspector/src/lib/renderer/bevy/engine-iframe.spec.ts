@@ -73,9 +73,12 @@ describe('mountBevyEngine', () => {
     expect(container.contains(iframe)).toBe(false);
   });
 
-  it('should point the iframe at the engine URL', () => {
+  it('should point the iframe at the engine directory (trailing slash, not index.html)', () => {
     const iframe = fakeIframe({} as EngineWindow);
     mountBevyEngine({ container, createIframe: () => iframe, bootTimeoutMs: 1000 }).catch(() => {});
-    expect(iframe.src).toContain('/bevy-engine/index.html');
+    // Directory URL, so the engine's document-relative service-worker + asset
+    // paths resolve under /bevy-engine/ rather than /bevy-engine/index.html/.
+    expect(iframe.src).toContain('/bevy-engine/');
+    expect(iframe.src).not.toContain('index.html');
   });
 });
