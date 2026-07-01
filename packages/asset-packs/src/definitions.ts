@@ -30,6 +30,7 @@ import type {
   AudioSourceComponentDefinitionExtended,
   PBUiInput,
   PBUiInputResult,
+  PBUiDropdownResult,
   PBUiCanvasInformation,
   InputModifierComponentDefinitionExtended,
   PBSkyboxTime,
@@ -65,6 +66,8 @@ export * from './clone';
 export * from './lww';
 export * from './types';
 export * from './versioning';
+export * from './variable-codecs';
+export * from './safe-parse';
 export * from './add-child';
 
 export const ActionSchemas = {
@@ -306,6 +309,8 @@ export function getComponents(engine: IEngine) {
     VideoControlState: getComponent<VideoControlState>(ComponentName.VIDEO_CONTROL_STATE, engine),
     Script: getComponent<Script>(ComponentName.SCRIPT, engine),
     Placeholder: getComponent<Placeholder>(ComponentName.PLACEHOLDER, engine),
+    UI: getComponent<UI>(ComponentName.UI, engine),
+    UIBindings: getComponent<UIBindings>(ComponentName.UI_BINDINGS, engine),
   };
 }
 
@@ -325,6 +330,9 @@ export function createComponents(engine: IEngine) {
     VideoScreen: components[BaseComponentNames.VIDEO_SCREEN],
     Script: components[BaseComponentNames.SCRIPT],
     Placeholder: components[BaseComponentNames.PLACEHOLDER],
+    UI: components[BaseComponentNames.UI],
+    UIBindings: components[BaseComponentNames.UI_BINDINGS],
+    UIDesign: components[BaseComponentNames.UI_DESIGN],
   };
 }
 
@@ -347,6 +355,7 @@ export type EngineComponents = {
   UiBackground: LastWriteWinElementSetComponentDefinition<PBUiBackground>;
   UiInput: LastWriteWinElementSetComponentDefinition<PBUiInput>;
   UiInputResult: LastWriteWinElementSetComponentDefinition<PBUiInputResult>;
+  UiDropdownResult: LastWriteWinElementSetComponentDefinition<PBUiDropdownResult>;
   UiCanvasInformation: LastWriteWinElementSetComponentDefinition<PBUiCanvasInformation>;
   Billboard: LastWriteWinElementSetComponentDefinition<PBBillboard>;
   Name: LastWriteWinElementSetComponentDefinition<NameType>;
@@ -493,3 +502,23 @@ export type Script = ReturnType<ScriptComponent['schema']['deserialize']>;
 
 export type PlaceholderComponent = Components['Placeholder'];
 export type Placeholder = ReturnType<PlaceholderComponent['schema']['deserialize']>;
+
+export type UIComponent = Components['UI'];
+export type UI = ReturnType<UIComponent['schema']['deserialize']>;
+export type UIVariable = UI['variables'][0];
+
+export type UIBindingsComponent = Components['UIBindings'];
+export type UIBindings = ReturnType<UIBindingsComponent['schema']['deserialize']>;
+export type UIBinding = UIBindings['value'][0];
+export type UISegment = NonNullable<UIBinding['segments']>[number];
+
+export type UIDesignComponent = Components['UIDesign'];
+export type UIDesign = ReturnType<UIDesignComponent['schema']['deserialize']>;
+
+export {
+  setUiContext,
+  clearUiContext,
+  setUiCallback,
+  clearUiCallback,
+  clearUiCallbacks,
+} from './ui-context';

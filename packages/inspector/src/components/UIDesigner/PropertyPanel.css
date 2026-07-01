@@ -1,0 +1,165 @@
+.ui-designer-property-panel {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  flex: 1 1 auto;
+}
+
+.ui-designer-property-search {
+  padding: var(--uid-space-2) var(--uid-space-3) var(--uid-space-1);
+}
+
+/* The shared Search renders a light default input that clashed with the dark
+   panel. Re-skin it to the control family: dark fill, hairline border, accent
+   focus ring, muted icon + placeholder. */
+.ui-designer-property-search .Search {
+  padding: 0;
+  background: var(--ui-designer-control-bg);
+  border: 1px solid var(--ui-designer-control-border);
+  border-radius: 4px;
+}
+
+.ui-designer-property-search .Search:focus-within {
+  border-color: var(--ui-designer-accent);
+  box-shadow: 0 0 0 1px var(--ui-designer-accent);
+}
+
+.ui-designer-property-search .Search-icon {
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.ui-designer-property-search .Search input {
+  width: 100%;
+  background: transparent;
+  border: none;
+  color: var(--white);
+  padding: 6px 8px 6px 30px;
+}
+
+.ui-designer-property-search .Search input::placeholder {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.ui-designer-property-panel-empty {
+  padding: 12px;
+  color: var(--text-muted, #888);
+  font-size: 12px;
+  text-align: center;
+}
+
+/* Inline unit selector that sits under a stacked `length-vec` group. Kept
+   short and right-aligned so it reads as a modifier of the values above. */
+.ui-designer-unit-selector {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 2px;
+}
+
+.ui-designer-unit-selector select {
+  width: 60px;
+}
+
+/* Inline `Label  [control]` row used for enums + booleans. Saves the
+   vertical real estate that a stacked Block would consume when there are
+   many simple controls (Flex direction / Justify content / Align items /
+   Display / Visible / …). Uses the same `Label` primitive as the rest of
+   the inspector. */
+.ui-designer-inline-field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0;
+  min-height: 28px;
+}
+
+.ui-designer-inline-field > .Label {
+  flex: 0 0 110px;
+  margin-bottom: 0;
+}
+
+.ui-designer-inline-field > select {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.ui-designer-inline-field > input[type='checkbox'] {
+  flex: 0 0 auto;
+}
+
+.ui-designer-string-array {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 64px;
+  resize: vertical;
+  background-color: var(--ui-designer-control-bg);
+  color: var(--white);
+  border: 1px solid var(--ui-designer-control-border);
+  border-radius: 4px;
+  padding: 6px 8px;
+  font-family: var(--font-family);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.ui-designer-string-array:focus-visible {
+  outline: none;
+  border-color: var(--ui-designer-accent);
+  box-shadow: 0 0 0 1px var(--ui-designer-accent);
+}
+
+/* Keep every control inside its panel — without border-box the padded
+   selects/inputs overran the right edge (the unit selector clipped by ~11px). */
+.ui-designer-property-panel * {
+  box-sizing: border-box;
+}
+
+/* Vec groups (Size / Min / Max / Position) render their sub-fields in a Block
+   `.content`. Lay them out as a single flex row: each input flex-grows to fill
+   the available width (with a sensible min) and the unit selector sits inline at
+   the end rather than dropping to its own line. Wraps only if it can't fit. */
+.ui-designer-property-panel .content:has(> .ui-designer-bindable-subfield) {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--uid-space-1) var(--uid-space-2);
+}
+
+.ui-designer-property-panel .ui-designer-bindable-subfield {
+  flex: 1 1 72px;
+  min-width: 72px;
+}
+
+.ui-designer-property-panel
+  .content:has(> .ui-designer-bindable-subfield)
+  > .ui-designer-unit-selector {
+  flex: 0 0 auto;
+  margin-top: 0;
+}
+
+/* Single length value + unit (e.g. a lone length field): input grows, unit
+   selector stays intrinsic, both on one line. */
+.ui-designer-length-row {
+  display: flex;
+  align-items: center;
+  gap: var(--uid-space-2);
+}
+
+.ui-designer-length-row > :first-child {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.ui-designer-length-row > select {
+  flex: 0 0 auto;
+}
+
+.ui-designer-callback-hint {
+  color: rgba(255, 255, 255, 0.5);
+  font-style: italic;
+  font-size: 12px;
+}
+
+/* Numeric fields read as aligned columns (W/H, T/R/B/L, indices). */
+.ui-designer-property-panel input[type='number'] {
+  font-variant-numeric: tabular-nums;
+}

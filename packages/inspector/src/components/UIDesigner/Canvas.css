@@ -1,0 +1,262 @@
+.ui-designer-canvas-viewport {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  background: #1e1f23;
+  display: grid;
+  place-content: safe center;
+  overflow: auto;
+}
+
+/* Reserves the canvas's *scaled* footprint (sized inline in Canvas.tsx). A grid
+   item under the viewport's `place-content: safe center` — centred when it fits,
+   top-left aligned (fully scrollable) when it overflows. The canvas keeps a
+   strict size and never shrinks to fit the screen. */
+.ui-designer-canvas-stage {
+  position: relative;
+}
+
+/* The logical canvas. Width/height/scale are set inline (per-UI size + editor
+   zoom) with transform-origin: top left so the scaled picture aligns to the
+   stage's box. Absolutely positioned so its un-scaled layout box never inflates
+   the stage's scroll size. */
+.ui-designer-canvas-root {
+  position: absolute;
+  top: 0;
+  left: 0;
+  background: #2a2c30;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.1);
+  display: flex;
+}
+
+.ui-designer-canvas-node {
+  outline: 1px solid transparent;
+  transition: outline-color 60ms linear;
+}
+
+/* Container nodes (UiEntity) get a faint dotted outline so they remain
+   visible even when empty or transparent — same affordance as Unreal's
+   designer markers. Hover / selection styles override the colour. */
+.ui-designer-canvas-node[data-type="UiEntity"] {
+  outline-style: dotted;
+  outline-color: rgba(255, 255, 255, 0.22);
+}
+
+.ui-designer-canvas-node:hover {
+  outline-color: var(--ui-designer-accent-40);
+}
+
+.ui-designer-canvas-node.selected {
+  outline-color: var(--ui-designer-accent);
+  outline-width: 2px;
+}
+
+.ui-designer-canvas-node.drop-over {
+  outline: 2px dashed var(--ui-designer-accent-80);
+  background: var(--ui-designer-accent-05);
+}
+
+.ui-designer-canvas-node.movable {
+  cursor: move;
+}
+
+.ui-designer-canvas-node.dragging {
+  cursor: grabbing;
+  outline-color: var(--ui-designer-accent);
+  outline-style: dashed;
+  user-select: none;
+}
+
+.ui-designer-canvas-node.resizing {
+  outline-color: var(--ui-designer-accent);
+  outline-style: solid;
+  outline-width: 2px;
+}
+
+/* Resize handles — 8 small squares pinned around the selected node when the
+   Resize tool is active. Sized in logical px so they remain ~8 viewport px
+   at the canvas's 0.4 scale. */
+.ui-designer-resize-handle {
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  background: #fff;
+  border: 2px solid var(--ui-designer-accent);
+  border-radius: 2px;
+  z-index: 100;
+}
+
+.ui-designer-resize-handle.nw {
+  top: -10px;
+  left: -10px;
+  cursor: nwse-resize;
+}
+.ui-designer-resize-handle.n {
+  top: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  cursor: ns-resize;
+}
+.ui-designer-resize-handle.ne {
+  top: -10px;
+  right: -10px;
+  cursor: nesw-resize;
+}
+.ui-designer-resize-handle.e {
+  top: 50%;
+  right: -10px;
+  transform: translateY(-50%);
+  cursor: ew-resize;
+}
+.ui-designer-resize-handle.se {
+  bottom: -10px;
+  right: -10px;
+  cursor: nwse-resize;
+}
+.ui-designer-resize-handle.s {
+  bottom: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  cursor: ns-resize;
+}
+.ui-designer-resize-handle.sw {
+  bottom: -10px;
+  left: -10px;
+  cursor: nesw-resize;
+}
+.ui-designer-resize-handle.w {
+  top: 50%;
+  left: -10px;
+  transform: translateY(-50%);
+  cursor: ew-resize;
+}
+
+/* Floating action bar over the selected node. `bottom: 100%` floats it just
+   above the node; the counter-scale keeps it legible at any canvas zoom. */
+.ui-designer-node-actions {
+  position: absolute;
+  bottom: 100%;
+  right: 0;
+  margin-bottom: 4px;
+  display: flex;
+  gap: 2px;
+  padding: 3px;
+  background: rgba(0, 0, 0, 0.65);
+  border: 1px solid var(--ui-designer-control-border);
+  border-radius: 6px;
+  transform: scale(calc(1 / var(--uid-scale, 1)));
+  transform-origin: bottom right;
+  z-index: 50;
+}
+
+.ui-designer-node-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  color: rgba(255, 255, 255, 0.85);
+  cursor: pointer;
+}
+
+.ui-designer-node-action:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.ui-designer-node-action[aria-label='Delete node']:hover {
+  background: rgba(255, 90, 90, 0.25);
+  color: rgb(255, 140, 140);
+}
+
+.ui-designer-node-action:focus-visible {
+  outline: 2px solid var(--ui-designer-accent);
+  outline-offset: 1px;
+}
+
+.ui-designer-node-action svg {
+  width: 15px;
+  height: 15px;
+}
+
+.ui-designer-canvas-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  color: #888;
+}
+
+.ui-designer-canvas-input {
+  flex: 1 1 auto;
+  min-width: 40px;
+  padding: 2px 6px;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 4px;
+  color: rgba(255, 255, 255, 0.85);
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.ui-designer-canvas-dropdown {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1 1 auto;
+  min-width: 40px;
+  padding: 2px 6px;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 4px;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.ui-designer-canvas-dropdown-label {
+  flex: 1 1 auto;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.ui-designer-canvas-dropdown-chevron {
+  font-size: 9px;
+  opacity: 0.7;
+}
+
+.ui-designer-canvas-zoom {
+  position: absolute;
+  bottom: 16px;
+  right: 12px;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px;
+  background: rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 6px;
+  z-index: 1000;
+}
+
+.ui-designer-canvas-zoom-btn,
+.ui-designer-canvas-zoom-level {
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.85);
+  cursor: pointer;
+  font-size: 13px;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.ui-designer-canvas-zoom-btn:hover,
+.ui-designer-canvas-zoom-level:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.ui-designer-canvas-zoom-level {
+  min-width: 44px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}

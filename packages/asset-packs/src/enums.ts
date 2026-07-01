@@ -19,6 +19,9 @@ export const ComponentName = {
   VIDEO_CONTROL_STATE: getLatestVersionName(BaseComponentNames.VIDEO_CONTROL_STATE),
   SCRIPT: getLatestVersionName(BaseComponentNames.SCRIPT),
   PLACEHOLDER: getLatestVersionName(BaseComponentNames.PLACEHOLDER),
+  UI: getLatestVersionName(BaseComponentNames.UI),
+  UI_BINDINGS: getLatestVersionName(BaseComponentNames.UI_BINDINGS),
+  UI_DESIGN: getLatestVersionName(BaseComponentNames.UI_DESIGN),
 } as const;
 
 export type ComponentName = (typeof ComponentName)[keyof typeof ComponentName];
@@ -183,6 +186,13 @@ export enum ProximityLayer {
   PLAYER = 'player',
   NON_PLAYER = 'non_player',
 }
+
+// Re-export from variable-enums (standalone module — see ./variable-enums.ts
+// for why it's not defined inline here).
+export { VariableType } from './variable-enums';
+
+// Re-export from segment-enums (standalone module — see ./segment-enums.ts).
+export { SegmentKind } from './segment-enums';
 
 // Re-export for backward compatibility
 export { AdminPermissions, MediaSource } from './constants';

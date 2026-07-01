@@ -119,6 +119,30 @@
   --modal-content-border-color: var(--tree-border-color);
   --modal-overlay-bg-color: rgba(0, 0, 0, 0.6);
 
+  /* UI Designer
+     Accent is the canvas/selection cyan, promoted from the ~12 hardcoded
+     rgba(80,200,255,…) literals to a single named token with the alpha steps
+     the components actually use. Value preserved so the token swap is visually
+     identical. Distinct from the pink --primary-main "armed tool" signal. */
+  --ui-designer-accent: rgb(80, 200, 255);
+  --ui-designer-accent-80: rgba(80, 200, 255, 0.8);
+  --ui-designer-accent-40: rgba(80, 200, 255, 0.4);
+  --ui-designer-accent-12: rgba(80, 200, 255, 0.12);
+  --ui-designer-accent-08: rgba(80, 200, 255, 0.08);
+  --ui-designer-accent-05: rgba(80, 200, 255, 0.05);
+  /* Control chrome — matches the inspector's .InputContainer so selects,
+     textareas and inputs read as one family. */
+  --ui-designer-control-bg: var(--gray-0);
+  --ui-designer-control-border: rgba(255, 255, 255, 0.12);
+  --ui-designer-hairline: rgba(255, 255, 255, 0.07);
+  /* 4px spacing scale */
+  --uid-space-1: 4px;
+  --uid-space-2: 8px;
+  --uid-space-3: 12px;
+  --uid-space-4: 16px;
+  --uid-space-5: 20px;
+  --uid-space-6: 24px;
+
   /* Margins */
   --sidebar: 314px;
   --label-margin-bottom: 4.5px;

@@ -1,5 +1,5 @@
 import React from 'react';
-import { useAssetUrl } from './useAssetUrl';
+import { useAssetUrl } from '../../../hooks/useAssetUrl';
 
 interface AssetVideoProps extends React.VideoHTMLAttributes<HTMLVideoElement> {}
 

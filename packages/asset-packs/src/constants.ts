@@ -12,6 +12,9 @@ export const BaseComponentNames = {
   VIDEO_CONTROL_STATE: 'asset-packs::VideoControlState',
   SCRIPT: 'asset-packs::Script',
   PLACEHOLDER: 'asset-packs::Placeholder',
+  UI: 'asset-packs::UI',
+  UI_BINDINGS: 'asset-packs::UIBindings',
+  UI_DESIGN: 'asset-packs::UIDesign',
 } as const;
 
 export enum AdminPermissions {
