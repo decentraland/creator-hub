@@ -1,5 +1,6 @@
 import { createRendererConformanceSuite } from '../conformance';
 import { BevyRenderer } from './BevyRenderer';
+import type { EngineWindow } from './console';
 
 /**
  * Runs the Bevy renderer spike through the public conformance kit — the whole
@@ -20,4 +21,47 @@ createRendererConformanceSuite({
     const renderer = new BevyRenderer();
     return { renderer, engine: renderer.context.engine, dispose: () => renderer.dispose() };
   },
+});
+
+describe('BevyRenderer engine attach', () => {
+  let renderer: BevyRenderer;
+
+  beforeEach(() => {
+    renderer = new BevyRenderer();
+  });
+
+  afterEach(() => {
+    renderer.dispose();
+  });
+
+  it('should not be ready and expose no engine window before attach', () => {
+    let ready = false;
+    renderer.events.on('ready', () => {
+      ready = true;
+    });
+    expect(renderer.engineWindow).toBe(null);
+    expect(ready).toBe(false);
+  });
+
+  it('should emit ready and expose the engine window on attachEngine', () => {
+    let ready = 0;
+    renderer.events.on('ready', () => {
+      ready++;
+    });
+    const engineWindow = { engine_console_command_args: async () => '' } as unknown as EngineWindow;
+    renderer.attachEngine(engineWindow);
+    expect(ready).toBe(1);
+    expect(renderer.engineWindow).toBe(engineWindow);
+  });
+
+  it('should not attach or emit ready after dispose', () => {
+    let ready = 0;
+    renderer.events.on('ready', () => {
+      ready++;
+    });
+    renderer.dispose();
+    renderer.attachEngine({} as EngineWindow);
+    expect(ready).toBe(0);
+    expect(renderer.engineWindow).toBe(null);
+  });
 });
