@@ -1,6 +1,7 @@
 import { ipcRenderer, type IpcRendererEvent } from 'electron';
 
 import type { DeployOptions } from '/shared/types/deploy';
+import type { OptimizeOptions } from '/shared/types/optimize';
 import type { MobileDebugSessionInfo } from '/shared/types/ipc';
 
 import { invoke } from '../services/ipc';
@@ -63,6 +64,10 @@ export async function killPreviewScene(path: string) {
 export async function publishScene(opts: DeployOptions) {
   const port = await invoke('cli.deploy', opts);
   return port;
+}
+
+export async function optimizeScene(opts: OptimizeOptions) {
+  return invoke('cli.optimize', opts);
 }
 
 export async function openPreview(port: number) {
