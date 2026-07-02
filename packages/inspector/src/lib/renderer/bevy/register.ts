@@ -4,6 +4,7 @@ import { registerRenderer } from '../plugin';
 import { BevyRenderer } from './BevyRenderer';
 import { mountBevyEngine } from './engine-iframe';
 import { createForwardEditBridge } from './forward-edits';
+import { createPickBridge } from './pick-bridge';
 
 /**
  * Bevy renderer registration. Lives here (not in the renderer-agnostic
@@ -53,6 +54,7 @@ export function registerBevyRenderer(): void {
         container,
         realm: config.bevyRealm ?? undefined,
         position: config.bevyPosition ?? undefined,
+        systemScene: config.bevySystemScene ?? undefined,
       });
       bevy.attachEngine(engine.engineWindow);
 
@@ -64,10 +66,17 @@ export function registerBevyRenderer(): void {
         engineWindow: engine.engineWindow,
       });
 
+      // Reverse channel: the editor-agent portable experience (loaded via
+      // systemScene) posts viewport picks over a BroadcastChannel; turn them
+      // into `pick` events for the reverse-channel handler → ECS selection.
+      // Only meaningful when a systemScene agent is configured.
+      const disconnectPick = createPickBridge({ events: bevy.events });
+
       return {
         renderer: bevy,
         engine: bevy.context.engine,
         dispose: () => {
+          disconnectPick();
           disconnectForward();
           disconnect();
           engine.dispose();
