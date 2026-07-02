@@ -636,6 +636,7 @@
     "generic": {
       "import_scene": "导入场景...",
       "import_scene_failed": "场景导入失败",
+      "import_scene_already_imported": "场景已导入",
       "duplicate_scene": "复制场景...",
       "duplicate_scene_failed": "复制场景失败",
       "delete_scene": "删除场景...",

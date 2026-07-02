@@ -7,7 +7,12 @@ import { fs, npm, pkg, scene, settings, workspace } from '#preload';
 
 import { createAsyncThunk } from '/@/modules/store/thunk';
 
-import { type DependencyState, type Project, ProjectError } from '/shared/types/projects';
+import {
+  type DependencyState,
+  type Project,
+  ProjectError,
+  PROJECT_ALREADY_IMPORTED_ERROR_PREFIX,
+} from '/shared/types/projects';
 import type { DEPENDENCY_UPDATE_STRATEGY } from '/shared/types/settings';
 import { PACKAGES } from '/shared/types/pkg';
 import { WorkspaceError } from '/shared/types/workspace';
@@ -27,7 +32,22 @@ export const duplicateProject = createAsyncThunk(
   'workspace/duplicateProject',
   workspace.duplicateProject,
 );
-export const importProject = createAsyncThunk('workspace/importProject', workspace.importProject);
+export const importProject = createAsyncThunk(
+  'workspace/importProject',
+  async (_, { rejectWithValue }) => {
+    try {
+      return await workspace.importProject();
+    } catch (error: any) {
+      if (
+        typeof error?.message === 'string' &&
+        error.message.startsWith(PROJECT_ALREADY_IMPORTED_ERROR_PREFIX)
+      ) {
+        return rejectWithValue(new ProjectError('PROJECT_ALREADY_IMPORTED', error.message));
+      }
+      throw error;
+    }
+  },
+);
 export const reimportProject = createAsyncThunk(
   'workspace/reimportProject',
   workspace.reimportProject,
