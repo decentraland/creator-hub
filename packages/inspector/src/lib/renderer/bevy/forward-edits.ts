@@ -48,7 +48,25 @@ export interface ForwardEditBridgeOptions {
   send?: (cmd: string, args: string[]) => Promise<string>;
   /** Test seam: how a failed forward command is reported. */
   onError?: (context: string, error: unknown) => void;
+  /**
+   * Gate: forward a change only when this returns true. Defaults to a settle
+   * window (see {@link SETTLE_QUIET_MS}). Tests pass `() => true` to forward
+   * immediately.
+   */
+  shouldForward?: () => boolean;
 }
+
+/**
+ * The engine loads the whole scene from the realm on boot, so the inspector's
+ * initial CRDT sync is a large burst of PUT_COMPONENTs the engine ALREADY has —
+ * replaying them as `set_component` is redundant, floods the console, and (with
+ * no scene pinned yet) every one is rejected "player is not in any scene",
+ * wedging boot. bevy-editor avoids this by only forwarding explicit *user* edits,
+ * never the initial snapshot. We have no per-change "user vs load" signal, so we
+ * arm forwarding only after this delay from bridge start — the initial load
+ * arrives immediately on connect; genuine user edits come much later.
+ */
+const ARM_DELAY_MS = 3000;
 
 /**
  * Wire the inspector's ECS changes to engine console writes. Returns a
@@ -69,17 +87,29 @@ export function createForwardEditBridge(options: ForwardEditBridgeOptions): () =
       console.warn(`[bevy] forward edit failed (${ctx}):`, error);
     });
 
+  // Arm after a delay so the initial CRDT load burst is not forwarded (see
+  // ARM_DELAY_MS). Overridable for tests.
+  let armed = false;
+  const armTimer = options.shouldForward
+    ? null
+    : setTimeout(() => {
+        armed = true;
+      }, ARM_DELAY_MS);
+  const shouldForward = options.shouldForward ?? (() => armed);
+
   const fire = (label: string, cmd: string, args: string[]) => {
     void send(cmd, args).catch(error => onError(label, error));
   };
 
-  return context.onChange(
+  const off = context.onChange(
     (
       entity: Entity,
       op: CrdtMessageType,
       component?: ComponentDefinition<unknown>,
       value?: unknown,
     ) => {
+      // Suppress the initial load burst; forward only once armed.
+      if (!shouldForward()) return;
       if (op === CrdtMessageType.DELETE_ENTITY) {
         fire(`delete_entity ${entity}`, 'delete_entity', [String(entity)]);
         return;
@@ -112,4 +142,9 @@ export function createForwardEditBridge(options: ForwardEditBridgeOptions): () =
       ]);
     },
   );
+
+  return () => {
+    if (armTimer !== null) clearTimeout(armTimer);
+    off();
+  };
 }

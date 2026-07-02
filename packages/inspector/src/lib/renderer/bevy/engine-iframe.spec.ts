@@ -21,6 +21,26 @@ describe('buildEngineUrl', () => {
     expect(url).toContain('realm=');
     expect(url).not.toContain('position=');
   });
+
+  it('should append systemScene + agent-boot params when given', () => {
+    const url = buildEngineUrl(
+      '/bevy-engine/',
+      'http://localhost:8004',
+      '0,0',
+      'http://localhost:8005',
+    );
+    const query = new URLSearchParams(url.split('?')[1]);
+    expect(query.get('systemScene')).toBe('http://localhost:8005');
+    // portables pinned empty (skip the remote basiccontroller PX) + embed mode
+    expect(query.get('portables')).toBe('');
+    expect(query.get('embed')).toBe('true');
+  });
+
+  it('should NOT set portables/embed without a systemScene (unchanged plain-realm boot)', () => {
+    const url = buildEngineUrl('/bevy-engine/', 'http://localhost:8004', '0,0');
+    expect(url).not.toContain('portables');
+    expect(url).not.toContain('embed');
+  });
 });
 
 /**

@@ -20,6 +20,13 @@ export type InspectorConfig = {
   bevyRealm: string | null;
   /** Parcel coords the Bevy engine spawns at, e.g. "0,0". */
   bevyPosition: string | null;
+  /**
+   * Realm URL of the super-user editor-agent scene loaded into the Bevy engine
+   * as a portable experience (the engine's `?systemScene=` param). It does
+   * viewport picking and posts results to the inspector over a BroadcastChannel.
+   * Null → no agent, so no viewport-side selection (edits still work forward).
+   */
+  bevySystemScene: string | null;
 };
 
 export type GlobalWithConfig = typeof globalThis & {
@@ -53,5 +60,6 @@ export function getConfig(): InspectorConfig {
     catalystBaseUrl: params.get('catalystBaseUrl') || config?.catalystBaseUrl || CATALYST_BASE_URL,
     bevyRealm: params.get('bevyRealm') || config?.bevyRealm || null,
     bevyPosition: params.get('bevyPosition') || config?.bevyPosition || null,
+    bevySystemScene: params.get('bevySystemScene') || config?.bevySystemScene || null,
   };
 }

@@ -22,6 +22,8 @@ describe('createForwardEditBridge', () => {
     disconnect = createForwardEditBridge({
       context: ctx,
       engineWindow,
+      // Forward immediately in tests (skip the initial-load arm delay).
+      shouldForward: () => true,
       send: async (cmd, args) => {
         sent.push({ cmd, args });
         return '';
@@ -90,6 +92,30 @@ describe('createForwardEditBridge', () => {
     });
   });
 
+  describe('when the forward gate is closed (initial-load suppression)', () => {
+    it('should not forward changes while shouldForward is false', async () => {
+      const gatedSent: Array<{ cmd: string; args: string[] }> = [];
+      const gatedCtx = new BevySceneContext();
+      const off = createForwardEditBridge({
+        context: gatedCtx,
+        engineWindow,
+        shouldForward: () => false, // gate closed (simulates the arm delay)
+        send: async (cmd, args) => {
+          gatedSent.push({ cmd, args });
+          return '';
+        },
+      });
+
+      const entity = gatedCtx.engine.addEntity();
+      gatedCtx.Transform.create(entity, { ...IDENTITY, position: { x: 1, y: 1, z: 1 } });
+      await gatedCtx.engine.update(1);
+
+      expect(gatedSent).toEqual([]);
+      off();
+      gatedCtx.dispose();
+    });
+  });
+
   describe('when a console command fails', () => {
     it('should report via onError and not throw into the change loop', async () => {
       const errors: string[] = [];
@@ -97,6 +123,7 @@ describe('createForwardEditBridge', () => {
       const off = createForwardEditBridge({
         context: failCtx,
         engineWindow,
+        shouldForward: () => true,
         send: async () => {
           throw new Error('engine console gone');
         },
