@@ -42,6 +42,11 @@ export interface MountEngineOptions {
   realm?: string;
   /** Parcel coords to spawn at, e.g. "0,0" (the scene's base). */
   position?: string;
+  /**
+   * Realm URL of the super-user editor-agent scene, loaded as a portable
+   * experience via the engine's `?systemScene=` param. Provides viewport picking.
+   */
+  systemScene?: string;
   /** How long to wait for the engine console to appear before failing. */
   bootTimeoutMs?: number;
   /**
@@ -52,14 +57,33 @@ export interface MountEngineOptions {
 }
 
 /**
- * Build the engine iframe URL. The engine reads `realm` + `position` from its
- * own `location.search` (engine.js), so they go on the query string of the
- * directory URL. Kept pure + exported for testing.
+ * Build the engine iframe URL. The engine reads `realm`, `position`,
+ * `systemScene`, `portables` and `embed` from its own `location.search`
+ * (engine.js / ui.js), so they go on the query string of the directory URL.
+ * Kept pure + exported for testing.
+ *
+ * When a `systemScene` (the editor-agent PX) is set we also pin two params that
+ * matter only for the agent boot path (they mirror bevy-editor):
+ *  - `portables=` (empty) — the engine otherwise defaults to the remote
+ *    `basiccontroller.dcl.eth` PX, which fetches from the public content server
+ *    during boot and can stall the loading screen.
+ *  - `embed=true` — bevy-editor sets this for the iframe-hosted engine.
+ * Leaving them off the plain-realm path keeps that (working) boot unchanged.
  */
-export function buildEngineUrl(base: string, realm?: string, position?: string): string {
+export function buildEngineUrl(
+  base: string,
+  realm?: string,
+  position?: string,
+  systemScene?: string,
+): string {
   const params = new URLSearchParams();
   if (realm) params.set('realm', realm);
   if (position) params.set('position', position);
+  if (systemScene) {
+    params.set('systemScene', systemScene);
+    params.set('portables', '');
+    params.set('embed', 'true');
+  }
   const query = params.toString();
   return query ? `${base}?${query}` : base;
 }
@@ -79,12 +103,13 @@ export function mountBevyEngine(options: MountEngineOptions): Promise<BevyEngine
     url = BEVY_ENGINE_URL,
     realm,
     position,
+    systemScene,
     bootTimeoutMs = DEFAULT_BOOT_TIMEOUT_MS,
     createIframe = () => document.createElement('iframe'),
   } = options;
 
   const iframe = createIframe();
-  iframe.src = buildEngineUrl(url, realm, position);
+  iframe.src = buildEngineUrl(url, realm, position, systemScene);
   iframe.title = 'Bevy engine';
   iframe.style.border = 'none';
   iframe.style.width = '100%';
