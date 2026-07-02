@@ -10,6 +10,14 @@ import { createEditorComponents } from '../../sdk/components';
 
 const ROOT = 0 as Entity;
 
+/** A raw ECS-change subscriber (see {@link BevySceneContext.onChange}). */
+export type EcsChangeHandler = (
+  entity: Entity,
+  op: CrdtMessageType,
+  component?: ComponentDefinition<unknown>,
+  value?: unknown,
+) => void;
+
 /**
  * The Bevy counterpart of Babylon's `SceneContext` / Three's `ThreeSceneContext`
  * — the CRDT-subscriber core, engine-side but renderer-agnostic.
@@ -35,7 +43,8 @@ const ROOT = 0 as Entity;
  */
 export class BevySceneContext {
   readonly engine: IEngine = Engine({
-    onChangeFunction: (entity, op, component) => this.#processEcsChange(entity, op, component),
+    onChangeFunction: (entity, op, component, value) =>
+      this.#processEcsChange(entity, op, component, value),
   });
 
   readonly Transform = components.Transform(this.engine);
@@ -51,17 +60,35 @@ export class BevySceneContext {
   // sync getter can answer without a renderer present.
   #worldPositions = new Map<Entity, Vector3>();
   #frameHandlers = new Set<() => void>();
+  // Subscribers to raw ECS changes (the forward edit bridge translates these to
+  // engine console commands). `@dcl/ecs` exposes only the single construction-time
+  // onChangeFunction — which this context owns — so anything else that needs the
+  // change stream subscribes here rather than trying to hook the engine directly.
+  #changeHandlers = new Set<EcsChangeHandler>();
 
-  #processEcsChange(entity: Entity, op: CrdtMessageType, component?: ComponentDefinition<unknown>) {
+  #processEcsChange(
+    entity: Entity,
+    op: CrdtMessageType,
+    component?: ComponentDefinition<unknown>,
+    value?: unknown,
+  ) {
     if (op === CrdtMessageType.DELETE_ENTITY) {
       this.#worldPositions.delete(entity);
-      return;
+    } else if (component && component.componentId === this.Transform.componentId) {
+      // A transform changed — recompute world positions for the whole tracked
+      // set, since a parent move shifts its descendants. Small in the spike; the
+      // wasm path will replace this with positions mirrored from Bevy.
+      this.#recomputeWorldPositions();
     }
-    if (!component || component.componentId !== this.Transform.componentId) return;
-    // A transform changed — recompute world positions for the whole tracked set,
-    // since a parent move shifts its descendants. The tracked set is small in the
-    // spike; the wasm path will replace this with positions mirrored from Bevy.
-    this.#recomputeWorldPositions();
+    // Fan out to change subscribers (forward edit bridge). Iterate a copy so a
+    // handler that unsubscribes mid-iteration doesn't disturb the walk.
+    for (const h of [...this.#changeHandlers]) h(entity, op, component, value);
+  }
+
+  /** Subscribe to raw ECS changes. Returns an unsubscribe fn. */
+  onChange(handler: EcsChangeHandler): () => void {
+    this.#changeHandlers.add(handler);
+    return () => this.#changeHandlers.delete(handler);
   }
 
   #recomputeWorldPositions() {

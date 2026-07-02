@@ -3,6 +3,7 @@ import { connectReverseChannel } from '../reverse-channel';
 import { registerRenderer } from '../plugin';
 import { BevyRenderer } from './BevyRenderer';
 import { mountBevyEngine } from './engine-iframe';
+import { createForwardEditBridge } from './forward-edits';
 
 /**
  * Bevy renderer registration. Lives here (not in the renderer-agnostic
@@ -55,10 +56,19 @@ export function registerBevyRenderer(): void {
       });
       bevy.attachEngine(engine.engineWindow);
 
+      // Forward inspector edits into the running engine scene as console
+      // commands (the only live-edit path — the loaded scene has no CRDT channel
+      // back in). Transform-only for now; see forward-edits.ts.
+      const disconnectForward = createForwardEditBridge({
+        context: bevy.context,
+        engineWindow: engine.engineWindow,
+      });
+
       return {
         renderer: bevy,
         engine: bevy.context.engine,
         dispose: () => {
+          disconnectForward();
           disconnect();
           engine.dispose();
           bevy.dispose();
