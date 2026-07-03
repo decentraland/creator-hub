@@ -8,19 +8,19 @@ export class Button {
    * Pressing it plays the button's press animation and sound.
    *
    * @param hoverText - Text shown when the player points at the button.
-   * @param animation - Name of the animation clip in the button's model that plays when the button is pressed. Leave empty for no animation.
-   * @param sound - Name of an audio file inside this smart item's folder (e.g. sound.mp3), played whenever the button is pressed. Leave empty for no sound.
    * @param onClick - Action triggered every time the button is pressed.
    * @param inputButton - Input that presses the button: 0 = mouse click, 1 = E key, 2 = F key.
+   * @param sound - Name of an audio file inside this smart item's folder (e.g. sound.mp3), played whenever the button is pressed. Leave empty for no sound.
+   * @param animation - Name of the animation clip in the button's model that plays when the button is pressed. Leave empty for no animation.
    */
   constructor(
     public src: string, // DO NOT REMOVE
     public entity: Entity, // DO NOT REMOVE
     public hoverText: string = 'Press',
-    public animation: string = 'trigger',
-    public sound: string = 'sound.mp3',
     public onClick?: ActionCallback,
     public inputButton: number = 1,
+    public sound: string = 'sound.mp3',
+    public animation: string = 'trigger',
   ) {}
 
   /**
