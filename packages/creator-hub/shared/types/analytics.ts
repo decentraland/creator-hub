@@ -105,4 +105,21 @@ export type Events = {
   'Unpublish Entire World': {
     world_name: string;
   };
+  'Sign In Action': {
+    method: 'deeplink';
+  };
+  'Sign In Blocked': {
+    method: 'deeplink';
+    reason: 'offline' | 'max_attempts';
+  };
+  'Sign In Dapp Opened': {
+    method: 'deeplink';
+  };
+  'Sign In Copy URL Action': {
+    method: 'deeplink';
+  };
+  'Sign In Completed': {
+    method: 'deeplink';
+  };
+  'Sign Out Action': undefined;
 };

@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { captureException, setUser } from '@sentry/electron/renderer';
 import { ChainId, type Avatar } from '@dcl/schemas';
 import { useDispatch } from '#store';
-import { auth, misc } from '#preload';
+import { analytics, auth, misc } from '#preload';
 import { config } from '/@/config';
 import { AuthServerProvider, SignInError } from '/@/lib/auth';
 import { Profiles } from '/@/lib/profile';
@@ -50,6 +50,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const signInAttemptCountRef = useRef<number>(0);
   const deepLinkCleanupRef = useRef<(() => void) | null>(null);
   const requestIdRef = useRef<string | null>(null);
+
   const [wallet, setWallet] = useState<string>();
   const [avatar, setAvatar] = useState<Avatar>();
   const [isSignedIn, setIsSignedIn] = useState(false);
@@ -82,6 +83,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         setIsSignedIn(true);
         fetchAvatar(signer);
         signInAttemptCountRef.current = 0;
+        void analytics.track('Sign In Completed', { method: 'deeplink' });
       } catch (error) {
         captureException(error, {
           tags: { source: 'auth', event: 'signin-deeplink' },
@@ -97,12 +99,16 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   );
 
   const signIn = useCallback(async () => {
+    void analytics.track('Sign In Action', { method: 'deeplink' });
+
     if (!isNavigatorOnline()) {
+      void analytics.track('Sign In Blocked', { method: 'deeplink', reason: 'offline' });
       pushGeneric('error', t('connection.offline.message'));
       return;
     }
 
     if (signInAttemptCountRef.current >= MAX_SIGNIN_ATTEMPTS) {
+      void analytics.track('Sign In Blocked', { method: 'deeplink', reason: 'max_attempts' });
       pushGeneric('error', t('sign_in.errors.max_attempts'));
       return;
     }
@@ -154,12 +160,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   // there is no active request.
   const copySignInUrl = useCallback(async () => {
     if (!requestIdRef.current) return;
+    void analytics.track('Sign In Copy URL Action', { method: 'deeplink' });
     const url = AuthServerProvider.getAuthDappUrl(requestIdRef.current, true);
     await misc.copyToClipboard(url);
     pushGeneric('success', t('snackbar.generic.url_copied'));
   }, [pushGeneric]);
 
   const signOut = useCallback(() => {
+    void analytics.track('Sign Out Action', undefined);
     setWallet(undefined);
     setAvatar(undefined);
     setIsSignedIn(false);
