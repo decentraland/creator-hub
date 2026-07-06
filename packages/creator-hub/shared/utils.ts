@@ -10,8 +10,7 @@ export function isUrl(url: string) {
 }
 
 // Windows reserved device names (case-insensitive), with or without an extension.
-const RESERVED_WINDOWS_NAMES =
-  /^(CON|PRN|AUX|NUL|COM[0-9]|LPT[0-9])(\..*)?$/i;
+const RESERVED_WINDOWS_NAMES = /^(CON|PRN|AUX|NUL|COM[0-9]|LPT[0-9])(\..*)?$/i;
 
 // Characters that are illegal in file/folder names on at least one of the major OSes
 // (Windows: < > : " / \ | ? * and control chars; POSIX: / and the null byte).

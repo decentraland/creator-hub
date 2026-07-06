@@ -41,8 +41,7 @@ export function Projects({ projects }: Props) {
 
 function Project({ project }: { project: Project }) {
   const { getDeployment, getDeploymentHistory } = useDeploy();
-  const { runProject, duplicateProject, deleteProject, openFolder, renameProject } =
-    useWorkspace();
+  const { runProject, duplicateProject, deleteProject, openFolder, renameProject } = useWorkspace();
   const [openDeleteModal, setOpenDeleteModal] = useState(false);
   const [openHistoryModal, setOpenHistoryModal] = useState(false);
   const [openRenameModal, setOpenRenameModal] = useState(false);
