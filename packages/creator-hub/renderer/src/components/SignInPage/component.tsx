@@ -51,6 +51,7 @@ export function SignInPage() {
   return (
     <Grid
       className="SignIn"
+      data-testid="sign-in-page"
       container
       direction="row"
       alignItems="center"
