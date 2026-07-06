@@ -78,6 +78,7 @@
       "delete_project": "Delete from My Scenes",
       "duplicate_project": "Duplicate",
       "open_folder": "Open Folder Location",
+      "rename_folder": "Rename Folder",
       "view_deployments": "View Deployments"
     },
     "no_scenes": {
@@ -125,6 +126,14 @@
       "title": "Are you sure you want to delete {title} from 'My Scenes'?",
       "files_checkbox": "Also delete this scene's files from my computer",
       "files_warning": "Deleting scene files from your computer is permanent, you won't be able to access this scene again."
+    },
+    "rename_folder": {
+      "title": "Rename Folder",
+      "field_label": "Folder Name",
+      "errors": {
+        "invalid_name": "That name isn't valid. Avoid empty names and characters like / \\ : * ? \" < > |.",
+        "rename_failed": "Couldn't rename the folder. A folder with that name may already exist."
+      }
     },
     "publish_project": {
       "title": "Publish \"{title}\"",

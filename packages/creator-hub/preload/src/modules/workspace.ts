@@ -13,6 +13,7 @@ import { DEFAULT_DEPENDENCY_UPDATE_STRATEGY } from '/shared/types/settings';
 import type { GetProjectsOpts, Template, Workspace } from '/shared/types/workspace';
 import { FileSystemStorage } from '/shared/types/storage';
 import { fetch } from '/shared/fetch';
+import { isValidFolderName } from '/shared/utils';
 
 import type { Services } from '../services';
 
@@ -375,6 +376,45 @@ export function initializeWorkspace(services: Services) {
   }
 
   /**
+   * Renames a project's folder on disk. The project keeps its identity (`.editor/` metadata,
+   * `scene.json` title, etc.) since those live inside the folder and simply move along with it.
+   *
+   * @param path - The current path of the project directory to rename.
+   * @param newName - The desired new folder name (not a full path).
+   * @returns A Promise that resolves to the renamed Project.
+   */
+  async function renameProject({
+    path: _path,
+    newName,
+  }: {
+    path: string;
+    newName: string;
+  }): Promise<Project> {
+    const trimmedName = newName.trim();
+    if (!isValidFolderName(trimmedName)) {
+      throw new Error(`Invalid folder name: "${newName}"`);
+    }
+
+    const newPath = path.join(path.dirname(_path), trimmedName);
+
+    if (newPath === _path) {
+      return getProject({ path: _path });
+    }
+
+    if (await fs.exists(newPath)) {
+      throw new Error(`A folder named "${trimmedName}" already exists`);
+    }
+
+    await fs.rename(_path, newPath);
+
+    await config.setConfig(config => {
+      config.workspace.paths = config.workspace.paths.map($ => ($ === _path ? newPath : $));
+    });
+
+    return getProject({ path: newPath });
+  }
+
+  /**
    * Returns whether or not the provided directory is a valid base path to create new scenes/projects.
    * A valid base path is a writable directory.
    */
@@ -520,6 +560,7 @@ export function initializeWorkspace(services: Services) {
     unlistProjects,
     deleteProject,
     duplicateProject,
+    renameProject,
     reimportProject,
     saveThumbnail,
     openFolder,

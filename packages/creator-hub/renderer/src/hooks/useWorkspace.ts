@@ -43,6 +43,10 @@ export const useWorkspace = () => {
     dispatch(workspaceActions.duplicateProject(project.path));
   }, []);
 
+  const renameProject = useCallback((project: Project, newName: string) => {
+    return dispatch(workspaceActions.renameProject({ path: project.path, newName })).unwrap();
+  }, []);
+
   const importProject = useCallback(() => {
     dispatch(workspaceActions.importProject());
   }, []);
@@ -108,6 +112,7 @@ export const useWorkspace = () => {
     createProject,
     deleteProject,
     duplicateProject,
+    renameProject,
     importProject,
     reimportProject,
     unlistProjects,
