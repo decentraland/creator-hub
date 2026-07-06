@@ -1,26 +1,23 @@
-import { fileURLToPath } from 'node:url';
-import { dirname, join } from 'node:path';
 import type { ElectronApplication, JSHandle } from 'playwright';
-import { _electron as electron } from 'playwright';
 import { afterAll, beforeAll, expect, test } from 'vitest';
 import type { BrowserWindow } from 'electron';
-
-const electronPath = require('electron') as string;
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const creatorHubDir = join(__dirname, '..');
+import { launchApp } from './helpers/app';
 
 let electronApp: ElectronApplication;
+let cleanup: () => void;
 
 beforeAll(async () => {
-  electronApp = await electron.launch({
-    executablePath: electronPath,
-    args: ['.'],
-    cwd: creatorHubDir,
-  });
-});
+  ({ electronApp, cleanup } = await launchApp());
+}, 120_000);
 
 afterAll(async () => {
-  await electronApp.close();
+  try {
+    await electronApp?.close();
+  } catch {
+    // ignore teardown errors so they don't cascade into the next spec file
+  } finally {
+    cleanup?.();
+  }
 });
 
 test('Main window state', async () => {

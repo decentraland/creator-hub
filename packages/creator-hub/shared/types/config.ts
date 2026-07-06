@@ -19,6 +19,8 @@ export type Config = {
   settings: AppSettings;
   userId?: string;
   editors?: EditorConfig[];
+  installedAt?: string;
+  lastVersion?: string;
 };
 
 export const DEFAULT_CONFIG: Config = {
