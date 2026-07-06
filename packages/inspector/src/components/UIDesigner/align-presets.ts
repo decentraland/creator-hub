@@ -4,12 +4,12 @@
 // node is *truly* centered and dragging afterwards behaves like any other
 // absolute node (plain Top/Left px). The active cell is derived by comparing the
 // current Top/Left against the 9 computed positions.
-//
-// YGUnit numerics (erased const enum — hard-coded with comments): 0 undefined,
-// 1 point(px).
-const YGU_UNDEFINED = 0;
-const YGU_POINT = 1;
-const POSITION_ABSOLUTE = 1; // YGPositionType.YGPT_ABSOLUTE
+
+import {
+  YGU_UNDEFINED,
+  YGU_POINT,
+  YGPT_ABSOLUTE as POSITION_ABSOLUTE,
+} from '../../lib/sdk/ui-transform-constants';
 
 type Edge = 'Top' | 'Right' | 'Bottom' | 'Left';
 const EDGES: Edge[] = ['Top', 'Right', 'Bottom', 'Left'];

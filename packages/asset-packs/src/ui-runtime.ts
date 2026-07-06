@@ -6,6 +6,7 @@ import { getUiContextValue, getUiCallback, clearUiContext, clearUiCallbacks } fr
 import { coerceToString } from './coerce';
 import { parseVariableDefault } from './variable-codecs';
 import { safeParse } from './safe-parse';
+import { buildChildrenIndex, descendants } from './tree-walk';
 
 // Re-exported so existing importers (and the unit test) keep resolving safeParse
 // from this module; the implementation lives in ./safe-parse, shared with the
@@ -96,24 +97,6 @@ function getBag(engine: IEngine): ComponentBag {
     UIBindings: engine.getComponent(ComponentName.UI_BINDINGS),
     UIDesign: engine.getComponent(ComponentName.UI_DESIGN),
   };
-}
-
-// Build a parent -> children index from every entity carrying asset-packs::UIDesign.
-// Rebuilt each tick (not cached): it is a global aggregate over all UIDesign entities,
-// sensitive to both membership and per-node parent changes, so a correct invalidation
-// check would cost the same O(N) pass as the rebuild. The expensive per-entity work
-// (design decode, binding maps) is cached separately by raw-value identity; this pass
-// is a cheap linear walk over a small node set.
-function getChildrenOf(engine: IEngine, bag: ComponentBag): Map<Entity, Entity[]> {
-  const childrenOf = new Map<Entity, Entity[]>();
-  for (const [entity, value] of engine.getEntitiesWith(bag.UIDesign)) {
-    const parent = (value as AnyRecord).parent as Entity | undefined;
-    if (parent === undefined) continue;
-    const siblings = childrenOf.get(parent) ?? [];
-    siblings.push(entity);
-    childrenOf.set(parent, siblings);
-  }
-  return childrenOf;
 }
 
 type VarDefs = Map<string, { type: string; defaultValue: string }>;
@@ -376,21 +359,6 @@ function writeIfChanged(component: any, entity: Entity, target: AnyRecord): void
 // node's background/text). Without this, the previously-derived component lingers.
 function clearIfPresent(component: any, entity: Entity): void {
   if (component.has(entity)) component.deleteFrom(entity);
-}
-
-// DFS collect a root entity + every descendant via the parent index.
-function subtreeOf(root: Entity, childrenIndex: Map<Entity, Entity[]>): Entity[] {
-  const out: Entity[] = [];
-  const seen = new Set<Entity>();
-  const stack: Entity[] = [root];
-  while (stack.length) {
-    const e = stack.pop() as Entity;
-    if (seen.has(e)) continue;
-    seen.add(e);
-    out.push(e);
-    for (const c of childrenIndex.get(e) ?? []) stack.push(c);
-  }
-  return out;
 }
 
 function teardownPointer(pointerEventsSystem: PointerEventsSystem, entity: Entity): void {
@@ -672,14 +640,18 @@ function materializeRoot(
   ) as boolean;
   const rootDisplay = resolvedVisible === false ? YGD_NONE : YGD_FLEX;
 
-  // Virtual-resolution scale: design canvas (marker) -> player screen.
-  const m = marker as { canvasWidth?: number; canvasHeight?: number };
+  // Virtual-resolution scale: design canvas (marker) -> player screen. When
+  // scaleToFit is explicitly false, lay out in real screen pixels (scale 1);
+  // undefined/true keeps the fit-to-screen behavior (backward compatible).
+  const m = marker as { canvasWidth?: number; canvasHeight?: number; scaleToFit?: boolean };
   const canvasWidth = m?.canvasWidth && m.canvasWidth > 0 ? m.canvasWidth : 1920;
   const canvasHeight = m?.canvasHeight && m.canvasHeight > 0 ? m.canvasHeight : 1080;
   const scale =
-    screen && screen.width > 0 && screen.height > 0
-      ? Math.min(screen.width / canvasWidth, screen.height / canvasHeight)
-      : 1;
+    m?.scaleToFit === false
+      ? 1
+      : screen && screen.width > 0 && screen.height > 0
+        ? Math.min(screen.width / canvasWidth, screen.height / canvasHeight)
+        : 1;
 
   // Drop cache/wiring for entities whose UIDesign left the tree.
   for (const e of Array.from(state.design.keys())) {
@@ -694,7 +666,7 @@ function materializeRoot(
     }
   }
 
-  for (const entity of subtreeOf(root, childrenIndex)) {
+  for (const entity of descendants(childrenIndex, root)) {
     materializeSubtree(
       bag,
       pointerEventsSystem,
@@ -721,7 +693,7 @@ function materializeSubtree(
   scale: number,
 ): void {
   const uiDesign = bag.UIDesign.getOrNull(entity) as AnyRecord | null;
-  if (!uiDesign) return; // subtreeOf only yields UIDesign-bearing entities; defensive no-op.
+  if (!uiDesign) return; // the descendants walk only yields UIDesign-bearing entities; defensive no-op.
 
   // Decode (cache by raw value identity; UIDesign is pristine so this never compounds).
   let entry = state.design.get(entity);
@@ -824,8 +796,15 @@ export function createUIRuntimeSystem(engine: IEngine, pointerEventsSystem: Poin
       }
     }
 
-    // Materialize every live root.
-    const childrenIndex = getChildrenOf(engine, bag);
+    // Materialize every live root. The parent->children index is rebuilt each tick (not
+    // cached): it is a global aggregate over all UIDesign entities, sensitive to both
+    // membership and per-node parent changes, so a correct invalidation check would cost
+    // the same O(N) pass as the rebuild. The expensive per-entity work (design decode,
+    // binding maps) is cached separately by raw-value identity; this is a cheap linear walk.
+    const childrenIndex = buildChildrenIndex(
+      engine.getEntitiesWith(bag.UIDesign),
+      value => (value as AnyRecord).parent as Entity | undefined,
+    );
     const canvasInfo = bag.UiCanvasInformation.getOrNull(engine.RootEntity) as {
       width?: number;
       height?: number;

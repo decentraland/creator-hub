@@ -26,9 +26,18 @@ export type FieldKind =
   // Unity-style 3×3 anchor grid → writes positionType + edge insets / auto
   // margins onto the UiTransform (path '', reads the whole component).
   | 'align-preset'
+  // Positioning mode switch (in flow ⟷ absolute). Renders like `enum` but the
+  // write is mode-preserving: → Absolute bakes the current on-screen offset as
+  // Top/Left px; → In flow clears all position offsets (Yoga applies position*
+  // to RELATIVE nodes too, so stale values would shift the node in flow).
+  | 'position-mode'
   // Nested margin→padding→content box (CSS-devtools style) → writes the 8
   // margin*/padding* px fields on the UiTransform (path '').
-  | 'box-model';
+  | 'box-model'
+  // Texture sub-region (atlas/spritesheet) → writes the `uvs` 8-float array.
+  | 'uv-region'
+  // Nine-slice border insets → writes `textureSlices` {top,right,bottom,left}.
+  | 'border-rect';
 
 export interface EnumOption {
   value: number;
@@ -78,6 +87,12 @@ export interface FieldConfig {
    * disabled when positionType === Absolute (Yoga ignores it).
    */
   disabledWhen?: (componentValue: Record<string, unknown>) => boolean;
+  /**
+   * When this returns true (given the field's component value), the field is
+   * not rendered at all (vs. `disabledWhen` which greys it). Used to show the
+   * texture-region editor only in Stretch mode and slices only in nine-slices.
+   */
+  hiddenWhen?: (componentValue: Record<string, unknown>) => boolean;
   /** One-line help shown as a hover tooltip beside the field label. */
   info?: string;
 }
@@ -102,12 +117,20 @@ export const UI_ROOT_GROUP = {
   fields: [
     { label: 'Name', componentId: UI_MARKER, path: 'name', kind: 'string' as const },
     {
+      label: 'Scale to fit screen',
+      componentId: UI_MARKER,
+      path: 'scaleToFit',
+      kind: 'boolean' as const,
+      bindable: false,
+      info: 'On: the UI scales to fit the player’s screen using the canvas as a virtual resolution. Off: the UI uses real screen pixels.',
+    },
+    {
       label: 'Canvas width',
       componentId: UI_MARKER,
       path: 'canvasWidth',
       kind: 'number' as const,
       bindable: false,
-      info: 'UI design resolution width in px. The UI scales to fit the player’s screen.',
+      info: 'UI design resolution width in px (also the editor canvas size).',
     },
     {
       label: 'Canvas height',
@@ -115,7 +138,7 @@ export const UI_ROOT_GROUP = {
       path: 'canvasHeight',
       kind: 'number' as const,
       bindable: false,
-      info: 'UI design resolution height in px. The UI scales to fit the player’s screen.',
+      info: 'UI design resolution height in px (also the editor canvas size).',
     },
   ],
 };
@@ -170,7 +193,7 @@ const ALIGN_OPTIONS: EnumOption[] = [
 
 // YGPositionType
 const POSITION_TYPE_OPTIONS: EnumOption[] = [
-  { value: 0, label: 'Relative' },
+  { value: 0, label: 'In flow' },
   { value: 1, label: 'Absolute' },
 ];
 
@@ -353,13 +376,13 @@ const LAYOUT_BOX_FIELDS: FieldConfig[] = [
     bindable: false,
   },
   {
-    label: 'Position type',
+    label: 'Positioning',
     componentId: TRANSFORM,
     path: 'positionType',
-    kind: 'enum' as const,
+    kind: 'position-mode' as const,
     options: POSITION_TYPE_OPTIONS,
     bindable: false,
-    info: 'Absolute positions via Top/Right/Bottom/Left; Relative flows in layout.',
+    info: 'In flow: laid out by the parent (order, gaps, alignment). Absolute: pinned at Top/Left offsets. Switching keeps the node where it is on screen.',
   },
   {
     label: 'Anchor',
@@ -367,7 +390,8 @@ const LAYOUT_BOX_FIELDS: FieldConfig[] = [
     path: '',
     kind: 'align-preset' as const,
     bindable: false,
-    info: 'Pin the node to a point of its parent. Clicking a preset switches it to Absolute.',
+    disabledWhen: v => ((v.positionType as number | undefined) ?? 0) !== 1,
+    info: 'Pin the node to a point of its parent. Available when Positioning is Absolute.',
   },
   {
     label: 'Position',
@@ -502,6 +526,27 @@ const BACKGROUND_GROUP = {
       kind: 'texture' as const,
       bindable: false,
       info: 'Pick an image asset from your scene.',
+    },
+    {
+      label: 'Texture region',
+      componentId: BACKGROUND,
+      path: '',
+      kind: 'uv-region' as const,
+      bindable: false,
+      info: 'Use a rectangular sub-region of the texture (atlas / spritesheet). Normalized 0–1.',
+      // Stretch mode only, and only when a texture is set.
+      hiddenWhen: (v: Record<string, unknown>) =>
+        (v.textureMode as number | undefined) !== 2 || !v.texture,
+    },
+    {
+      label: 'Texture slices',
+      componentId: BACKGROUND,
+      path: 'textureSlices',
+      kind: 'border-rect' as const,
+      bindable: false,
+      info: 'Nine-slice border sizes as a fraction (0–1) of the texture per edge.',
+      hiddenWhen: (v: Record<string, unknown>) =>
+        (v.textureMode as number | undefined) !== 0 || !v.texture,
     },
   ],
 };
@@ -675,8 +720,8 @@ const DROPDOWN_EVENTS_GROUP = {
 // the field-order and root/container variants in one place.
 export const NODE_FIELD_CONFIGS: Record<UINodeType, NodeFieldConfig> = {
   UiEntity: { groups: [BACKGROUND_GROUP, MOUSE_EVENTS_GROUP] },
-  Label: { groups: [BACKGROUND_GROUP, TEXT_GROUP, MOUSE_EVENTS_GROUP] },
-  Button: { groups: [BACKGROUND_GROUP, TEXT_GROUP, MOUSE_EVENTS_GROUP] },
+  Label: { groups: [TEXT_GROUP, BACKGROUND_GROUP, MOUSE_EVENTS_GROUP] },
+  Button: { groups: [TEXT_GROUP, BACKGROUND_GROUP, MOUSE_EVENTS_GROUP] },
   Input: { groups: [INPUT_GROUP, INPUT_EVENTS_GROUP, MOUSE_EVENTS_GROUP] },
   Dropdown: { groups: [DROPDOWN_GROUP, DROPDOWN_EVENTS_GROUP, MOUSE_EVENTS_GROUP] },
 };

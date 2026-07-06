@@ -163,3 +163,14 @@
 .ui-designer-property-panel input[type='number'] {
   font-variant-numeric: tabular-nums;
 }
+
+.ui-designer-add-component {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 8px 12px;
+}
+
+.ui-designer-add-component button {
+  font-size: 12px;
+}

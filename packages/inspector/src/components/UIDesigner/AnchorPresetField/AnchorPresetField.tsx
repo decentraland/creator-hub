@@ -10,18 +10,26 @@ interface AnchorPresetFieldProps {
   // The whole UiTransform value (the field uses path '').
   value: Record<string, unknown> | null;
   entity: Entity;
+  disabled?: boolean;
   onPatch: (patch: Record<string, unknown>) => void;
 }
 
 // 3×3 grid that snaps the node to an absolute pixel position (true corner / edge
 // / center placement) computed from the node + parent size. The active cell is
-// derived by comparing the node's current Top/Left to those positions.
-export const AnchorPresetField: React.FC<AnchorPresetFieldProps> = ({ value, entity, onPatch }) => {
+// derived by comparing the node's current Top/Left to those positions. Disabled
+// (with a hint) while the node is in flow — anchoring is absolute-only.
+export const AnchorPresetField: React.FC<AnchorPresetFieldProps> = ({
+  value,
+  entity,
+  disabled,
+  onPatch,
+}) => {
   const elem = measureNodeBox(entity);
   const parent = measureParentBox(entity);
-  const active = value && elem && parent ? patchToPreset(value, elem, parent) : null;
+  const active = !disabled && value && elem && parent ? patchToPreset(value, elem, parent) : null;
 
   const apply = (preset: (typeof ANCHOR_PRESETS)[number]) => {
+    if (disabled) return;
     const e = measureNodeBox(entity);
     const p = measureParentBox(entity);
     if (!e || !p) return;
@@ -30,7 +38,7 @@ export const AnchorPresetField: React.FC<AnchorPresetFieldProps> = ({ value, ent
 
   return (
     <div
-      className="ui-designer-anchor-grid"
+      className={`ui-designer-anchor-grid${disabled ? ' disabled' : ''}`}
       role="group"
       aria-label="Anchor preset"
     >
@@ -43,7 +51,8 @@ export const AnchorPresetField: React.FC<AnchorPresetFieldProps> = ({ value, ent
             className={`ui-designer-anchor-cell${preset === active ? ' active' : ''}`}
             aria-label={label}
             aria-pressed={preset === active}
-            title={label}
+            title={disabled ? 'Switch Positioning to Absolute to anchor' : label}
+            disabled={disabled}
             onClick={() => apply(preset)}
           >
             <span
@@ -53,6 +62,9 @@ export const AnchorPresetField: React.FC<AnchorPresetFieldProps> = ({ value, ent
           </button>
         );
       })}
+      {disabled ? (
+        <span className="ui-designer-anchor-hint">Switch Positioning to Absolute to anchor</span>
+      ) : null}
     </div>
   );
 };

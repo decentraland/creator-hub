@@ -1,18 +1,31 @@
 import { describe, expect, it } from 'vitest';
 import type { Entity, IEngine } from '@dcl/ecs';
 
+import { YGPT_ABSOLUTE, YGPT_RELATIVE, YGU_POINT, YGU_UNDEFINED } from '../ui-transform-constants';
 import { setUIParent } from './set-ui-parent';
 
+type UiTransformValue = {
+  parent?: number;
+  rightOf?: number;
+  positionType?: number;
+  positionTop?: number;
+  positionTopUnit?: number;
+  positionLeft?: number;
+  positionLeftUnit?: number;
+  positionRight?: number;
+  positionRightUnit?: number;
+  positionBottom?: number;
+  positionBottomUnit?: number;
+};
+
 interface MockUiTransform {
-  store: Map<Entity, { parent?: number; rightOf?: number }>;
+  store: Map<Entity, UiTransformValue>;
   has(entity: Entity): boolean;
-  getOrNull(entity: Entity): { parent?: number; rightOf?: number } | null;
-  createOrReplace(entity: Entity, value: { parent?: number; rightOf?: number }): void;
+  getOrNull(entity: Entity): UiTransformValue | null;
+  createOrReplace(entity: Entity, value: UiTransformValue): void;
 }
 
-function makeUiTransform(
-  initial: Array<[Entity, { parent?: number; rightOf?: number }]>,
-): MockUiTransform {
+function makeUiTransform(initial: Array<[Entity, UiTransformValue]>): MockUiTransform {
   const store = new Map(initial);
   return {
     store,
@@ -102,6 +115,134 @@ describe('setUIParent', () => {
       const engine = makeEngine(uiTransform);
       const op = setUIParent(engine);
       expect(op(child, parent)).toBe(false);
+    });
+  });
+
+  describe('when reparenting with a position override', () => {
+    const root = 1 as Entity;
+    const oldParent = 2 as Entity;
+    const newParent = 3 as Entity;
+    const child = 4 as Entity;
+
+    it('rebases an absolute child onto the new parent and clears right/bottom', () => {
+      const uiTransform = makeUiTransform([
+        [root, { parent: 0 }],
+        [oldParent, { parent: root as unknown as number }],
+        [newParent, { parent: root as unknown as number }],
+        [
+          child,
+          {
+            parent: oldParent as unknown as number,
+            positionType: YGPT_ABSOLUTE,
+            positionTop: 100,
+            positionTopUnit: YGU_POINT,
+            positionLeft: 200,
+            positionLeftUnit: YGU_POINT,
+            rightOf: 99,
+          },
+        ],
+      ]);
+      const op = setUIParent(makeEngine(uiTransform));
+
+      expect(op(child, newParent, { position: { top: 10, left: 20 } })).toBe(true);
+
+      const written = uiTransform.store.get(child)!;
+      expect(written.parent).toBe(newParent as unknown as number);
+      expect(written.positionTop).toBe(10);
+      expect(written.positionLeft).toBe(20);
+      expect(written.positionTopUnit).toBe(YGU_POINT);
+      expect(written.positionLeftUnit).toBe(YGU_POINT);
+      expect(written.positionRight).toBe(0);
+      expect(written.positionRightUnit).toBe(YGU_UNDEFINED);
+      expect(written.positionBottom).toBe(0);
+      expect(written.positionBottomUnit).toBe(YGU_UNDEFINED);
+      expect(written.rightOf).toBe(0);
+    });
+
+    it('ignores the override for an in-flow (relative) child', () => {
+      const uiTransform = makeUiTransform([
+        [root, { parent: 0 }],
+        [oldParent, { parent: root as unknown as number }],
+        [newParent, { parent: root as unknown as number }],
+        [
+          child,
+          {
+            parent: oldParent as unknown as number,
+            positionType: YGPT_RELATIVE,
+            positionTop: 100,
+            positionTopUnit: YGU_POINT,
+            positionLeft: 200,
+            positionLeftUnit: YGU_POINT,
+          },
+        ],
+      ]);
+      const op = setUIParent(makeEngine(uiTransform));
+
+      expect(op(child, newParent, { position: { top: 10, left: 20 } })).toBe(true);
+
+      const written = uiTransform.store.get(child)!;
+      expect(written.parent).toBe(newParent as unknown as number);
+      // Override ignored — offsets unchanged from the original.
+      expect(written.positionTop).toBe(100);
+      expect(written.positionLeft).toBe(200);
+    });
+
+    it('leaves position fields unchanged for an absolute child with no override', () => {
+      const uiTransform = makeUiTransform([
+        [root, { parent: 0 }],
+        [oldParent, { parent: root as unknown as number }],
+        [newParent, { parent: root as unknown as number }],
+        [
+          child,
+          {
+            parent: oldParent as unknown as number,
+            positionType: YGPT_ABSOLUTE,
+            positionTop: 100,
+            positionTopUnit: YGU_POINT,
+            positionLeft: 200,
+            positionLeftUnit: YGU_POINT,
+          },
+        ],
+      ]);
+      const op = setUIParent(makeEngine(uiTransform));
+
+      expect(op(child, newParent)).toBe(true);
+
+      const written = uiTransform.store.get(child)!;
+      expect(written.parent).toBe(newParent as unknown as number);
+      expect(written.positionTop).toBe(100);
+      expect(written.positionLeft).toBe(200);
+      // Right/bottom were never present and stay absent (no positionPatch applied).
+      expect(written.positionRight).toBeUndefined();
+      expect(written.positionBottom).toBeUndefined();
+    });
+
+    it('never rewrites a descendant of the moved node', () => {
+      // root(1) -> moved(2) -> leaf(4); sibling(3) is the new parent.
+      const moved = 2 as Entity;
+      const sibling = 3 as Entity;
+      const leaf = 4 as Entity;
+      const leafValue: UiTransformValue = {
+        parent: moved as unknown as number,
+        positionType: YGPT_ABSOLUTE,
+        positionTop: 5,
+        positionTopUnit: YGU_POINT,
+        positionLeft: 7,
+        positionLeftUnit: YGU_POINT,
+      };
+      const uiTransform = makeUiTransform([
+        [root, { parent: 0 }],
+        [moved, { parent: root as unknown as number, positionType: YGPT_ABSOLUTE }],
+        [sibling, { parent: root as unknown as number }],
+        [leaf, { ...leafValue }],
+      ]);
+      const before = structuredClone(leafValue);
+      const op = setUIParent(makeEngine(uiTransform));
+
+      expect(op(moved, sibling, { position: { top: 10, left: 20 } })).toBe(true);
+
+      // The moved node's descendant is byte-identical — no path rewrites children.
+      expect(uiTransform.store.get(leaf)).toEqual(before);
     });
   });
 });

@@ -6,12 +6,7 @@ import type {
 } from '@dcl/ecs';
 import { UiTransform as UiTransformEngine } from '@dcl/ecs';
 
-// PBUiTransform uses YGUnit enum (const enum in @dcl/ecs):
-//   YGU_UNDEFINED = 0, YGU_POINT = 1, YGU_PERCENT = 2, YGU_AUTO = 3
-// PBUiTransform uses YGPositionType enum:
-//   YGPT_RELATIVE = 0, YGPT_ABSOLUTE = 1
-const YGU_PERCENT = 2;
-const YGPT_RELATIVE = 0;
+import { YGU_PERCENT, YGPT_RELATIVE } from '../ui-transform-constants';
 
 /**
  * A UI root is the screen: its size/position are not author-editable (the

@@ -51,3 +51,14 @@
 .ui-designer-anchor-cell.active .ui-designer-anchor-dot {
   background: #fff;
 }
+
+.ui-designer-anchor-grid.disabled .ui-designer-anchor-cell {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.ui-designer-anchor-hint {
+  grid-column: 1 / -1;
+  font-size: 11px;
+  opacity: 0.6;
+}

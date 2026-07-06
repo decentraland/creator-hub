@@ -260,3 +260,48 @@
   text-align: center;
   font-variant-numeric: tabular-nums;
 }
+
+.ui-designer-reorder-indicator {
+  background: var(--ui-designer-accent);
+  border-radius: 1px;
+  z-index: 1000;
+}
+
+.ui-designer-canvas-node.reordering {
+  opacity: 0.75;
+}
+
+/* Thin divider between the zoom controls and the device-preview controls in
+   the floating canvas toolbar. */
+.ui-designer-canvas-zoom-sep {
+  width: 1px;
+  align-self: stretch;
+  margin: 2px 2px;
+  background: rgba(255, 255, 255, 0.15);
+}
+
+/* Active device-preview / safe-area toggle — reuse the selection accent so the
+   pressed state reads the same as elsewhere on the canvas. */
+.ui-designer-canvas-zoom-btn.active {
+  background: var(--ui-designer-accent);
+  color: #000;
+}
+
+/* Mobile device-preview frame. A grid item under the viewport's
+   `place-content: safe center` (same as .ui-designer-canvas-stage) so it
+   centres when it fits and scrolls when it overflows. Reserves the *scaled*
+   device footprint (sized inline in Canvas.tsx). */
+.ui-designer-device-frame {
+  position: relative;
+  background: #000;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+/* The device screen: the reference resolution, editor-zoom-scaled with
+   transform-origin: top left, matching the desktop canvas-root pattern. The
+   letterboxed UI + safe-area overlay are absolutely positioned inside it. */
+.ui-designer-device-screen {
+  position: relative;
+  overflow: hidden;
+}

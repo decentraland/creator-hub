@@ -19,12 +19,14 @@ import {
   setGroupCollapsed,
 } from '../../redux/ui-designer';
 import { Block } from '../Block';
+import { Button } from '../Button';
 import { Container } from '../Container';
 import Search from '../Search';
 import { TextField } from '../ui';
 import { RgbaColorField } from '../ui/RgbaColorField';
 import { debounce } from '../../lib/utils/debounce';
-import { measureParentBox, axisForPath, convertLength } from './measure';
+import { UI_REQUIRED_FIELD_DEFAULTS } from '../../lib/sdk/operations/ui-component-defaults';
+import { measureParentBox, measureNodeOffset, axisForPath, convertLength } from './measure';
 import { classifyNode, getComponentBag, type UINodeType } from './tree-model';
 import { AnchorPresetField } from './AnchorPresetField';
 import { BindableField } from './BindableField';
@@ -34,6 +36,7 @@ import { EmptyState } from './EmptyState';
 import { MixedContentField } from './MixedContentField';
 import { seedSegments } from './MixedContentField/segments';
 import { TextureField } from './TextureField';
+import { regionToUvs, uvsToRegion } from './uv-region';
 import {
   buildLayoutGroup,
   BORDER_GROUP,
@@ -46,37 +49,65 @@ import {
 
 import './PropertyPanel.css';
 
-// YGUnit numeric mapping (verified in ui_transform.gen.d.ts).
-const YGU_UNDEFINED = 0;
-const YGU_POINT = 1;
-const YGU_PERCENT = 2;
+import {
+  YGU_UNDEFINED,
+  YGU_POINT,
+  YGU_PERCENT,
+  YGPT_RELATIVE,
+  YGPT_ABSOLUTE,
+} from '../../lib/sdk/ui-transform-constants';
 
 type Color4 = { r: number; g: number; b: number; a?: number };
 
-// PB `repeated` and required scalar fields must be present on the serialized
-// object — leaving them undefined crashes the generated encoder ("uvs is not
-// iterable"). We apply these defaults whenever we createOrReplace a fresh
-// component on an entity from the property panel.
+// Defaults applied whenever the panel createOrReplaces a fresh component on an entity:
+// the shared serializer-safe baseline (UI_REQUIRED_FIELD_DEFAULTS) plus the panel's own
+// minimal-safe visual values. Property edits override these via the patch.
 const COMPONENT_DEFAULTS: Record<string, Record<string, unknown>> = {
   'core::UiBackground': {
+    ...UI_REQUIRED_FIELD_DEFAULTS['core::UiBackground'],
     // Transparent by default — a freshly-created background (e.g. on the UI root, which
     // spans the whole canvas) must not paint an opaque rectangle over the scene. PB's
-    // own default color is opaque white, so we set a:0 explicitly. Picking a color in the
-    // panel overrides this via the patch.
+    // own default color is opaque white, so we set a:0 explicitly.
     color: { r: 0, g: 0, b: 0, a: 0 },
-    textureMode: 0, // BackgroundTextureMode.NINE_SLICES
-    uvs: [0, 0, 0, 1, 1, 0, 1, 0], // proto default winding from ui_background.proto
   },
   'core::UiInput': {
+    ...UI_REQUIRED_FIELD_DEFAULTS['core::UiInput'],
     placeholder: '',
-    disabled: false,
   },
   'core::UiDropdown': {
-    acceptEmpty: false,
-    disabled: false,
+    ...UI_REQUIRED_FIELD_DEFAULTS['core::UiDropdown'],
     options: [],
-    selectedIndex: 0,
   },
+};
+
+// Optional UI render components the panel lets you add/remove per node. Sections
+// for these render only when the component is present; when absent they surface
+// in "+ Add component". (Type-defining components — UiText on a Label, UiInput,
+// UiDropdown — are never here: removing them would reclassify the node.)
+const OPTIONAL_UI_COMPONENTS = new Set<string>(['core::UiBackground']);
+
+// Which optional components each node type may add.
+const APPLICABLE_OPTIONAL: Record<UINodeType, string[]> = {
+  UiEntity: ['core::UiBackground'],
+  Label: ['core::UiBackground'],
+  Button: ['core::UiBackground'],
+  Input: ['core::UiBackground'],
+  Dropdown: ['core::UiBackground'],
+};
+
+// Components whose values are copy/paste-able via the group's MoreOptionsMenu.
+// Enabled on the FIRST group carrying each id (Layout wins UiTransform over
+// Effects/Border), so one component is never offered twice.
+const CLIPBOARD_UI_COMPONENTS = new Set<string>([
+  'core::UiTransform',
+  'core::UiBackground',
+  'core::UiText',
+  'core::UiInput',
+  'core::UiDropdown',
+]);
+
+const UI_COMPONENT_LABELS: Record<string, string> = {
+  'core::UiBackground': 'Background',
 };
 
 function resolveComponent(
@@ -190,6 +221,32 @@ const PropertyPanelComponent: React.FC = () => {
     [sdk, selected],
   );
 
+  const addUIComponent = useCallback(
+    (componentId: string) => {
+      if (!sdk || selected === null) return;
+      const component = resolveComponent(sdk.engine, componentId);
+      if (!component) return;
+      const defaults = COMPONENT_DEFAULTS[componentId] ?? {};
+      // addComponent op uses component.create(entity, value) — pass the
+      // serializer-safe defaults so the PB encoder doesn't crash on a missing
+      // repeated/required field (e.g. UiBackground.uvs).
+      sdk.operations.addComponent(selected as Entity, component.componentId, defaults);
+      void sdk.operations.dispatch();
+    },
+    [sdk, selected],
+  );
+
+  const removeUIComponent = useCallback(
+    (componentId: string) => {
+      if (!sdk || selected === null) return;
+      const component = resolveComponent(sdk.engine, componentId);
+      if (!component) return;
+      sdk.operations.removeComponent(selected as Entity, component);
+      void sdk.operations.dispatch();
+    },
+    [sdk, selected],
+  );
+
   if (!sdk || selected === null || type === null) {
     return (
       <EmptyState
@@ -211,12 +268,36 @@ const PropertyPanelComponent: React.FC = () => {
   //   - Child nodes get Node (Name) — feeds the auto-generated
   //     `entity-names.ts` for scene code (`SceneEntityNames.ScoreText`, …).
   const layoutGroup = buildLayoutGroup(isUIRoot, type === 'UiEntity');
-  // Event groups (Mouse / Input / Dropdown events) always sit at the very bottom
-  // of the panel, after Effects/Border, so the layout + content props stay on top.
   const eventGroups = config.groups.filter(g => /event/i.test(g.title));
   const contentGroups = config.groups.filter(g => !/event/i.test(g.title));
   const head = isUIRoot ? UI_ROOT_GROUP : NODE_GROUP;
-  const groups = [head, layoutGroup, ...contentGroups, EFFECTS_GROUP, BORDER_GROUP, ...eventGroups];
+
+  // The root IS the screen: it needs only identity (UI_ROOT_GROUP) + layout
+  // (padding). Border / Effects / Mouse-events don't apply to the frame.
+  const trailing = isUIRoot ? [] : [EFFECTS_GROUP, BORDER_GROUP, ...eventGroups];
+  const allGroups = [head, layoutGroup, ...contentGroups, ...trailing];
+
+  // A group's single backing component id, or null when it spans several
+  // (e.g. the root Layout group mixes the UI marker's Visible with UiTransform).
+  const groupComponentId = (g: { fields: FieldConfig[] }): string | null => {
+    const ids = new Set(g.fields.map(f => f.componentId));
+    return ids.size === 1 ? (g.fields[0]?.componentId ?? null) : null;
+  };
+  const hasComponent = (componentId: string): boolean =>
+    !!resolveComponent(sdk.engine, componentId)?.has(selected as Entity);
+
+  // Presence-driven: hide an optional component's section until it's added.
+  const visibleGroups = allGroups.filter(g => {
+    const cid = groupComponentId(g);
+    return cid && OPTIONAL_UI_COMPONENTS.has(cid) ? hasComponent(cid) : true;
+  });
+
+  // Optional components applicable to this node type but not yet present.
+  const addableComponents = (APPLICABLE_OPTIONAL[type] ?? []).filter(cid => !hasComponent(cid));
+
+  // First-occurrence guard so a component (esp. UiTransform, shared by
+  // Layout/Effects/Border) offers clipboard on exactly one group.
+  const clipboardSeen = new Set<string>();
 
   const q = query.trim().toLowerCase();
   const searching = q.length > 0;
@@ -230,7 +311,18 @@ const PropertyPanelComponent: React.FC = () => {
           placeholder="Search properties…"
         />
       </div>
-      {groups.map(group => {
+      {visibleGroups.map(group => {
+        const cid = groupComponentId(group);
+        // Clipboard on the first group of each allowed component.
+        let clipboardComponent = null;
+        if (cid && CLIPBOARD_UI_COMPONENTS.has(cid) && !clipboardSeen.has(cid)) {
+          clipboardSeen.add(cid);
+          clipboardComponent = resolveComponent(sdk.engine, cid);
+        }
+        // Remove only optional components that are present.
+        const onRemoveContainer =
+          cid && OPTIONAL_UI_COMPONENTS.has(cid) ? () => removeUIComponent(cid) : undefined;
+
         // While searching, show only matching fields and force every group open
         // so matches aren't hidden behind a collapsed header.
         const fields = searching
@@ -245,10 +337,15 @@ const PropertyPanelComponent: React.FC = () => {
             label={group.title}
             initialOpen={searching ? true : !collapsed[group.title]}
             onToggle={open => dispatch(setGroupCollapsed({ title: group.title, collapsed: !open }))}
+            entity={clipboardComponent ? (selected as Entity) : undefined}
+            component={clipboardComponent ?? undefined}
+            onRemoveContainer={onRemoveContainer}
           >
             {fields.map(field => {
               const component = resolveComponent(sdk.engine, field.componentId);
               const value = component?.getOrNull(selected as Entity) ?? null;
+              if ((field as FieldConfig).hiddenWhen?.((value ?? {}) as Record<string, unknown>))
+                return null;
               return (
                 <FieldRow
                   key={`${field.componentId}:${field.path}:${field.label}`}
@@ -266,6 +363,18 @@ const PropertyPanelComponent: React.FC = () => {
           </Container>
         );
       })}
+      {!searching && addableComponents.length > 0 ? (
+        <div className="ui-designer-add-component">
+          {addableComponents.map(cid => (
+            <Button
+              key={cid}
+              onClick={() => addUIComponent(cid)}
+            >
+              + Add {UI_COMPONENT_LABELS[cid] ?? cid}
+            </Button>
+          ))}
+        </div>
+      ) : null}
     </div>
   );
 };
@@ -599,7 +708,16 @@ const FieldRow = React.memo(function FieldRow({
         >
           <TextureField
             value={componentValue?.texture as TextureUnion | undefined}
-            onChange={next => onPatch({ texture: next })}
+            onChange={next => {
+              const color = componentValue?.color as
+                | { r: number; g: number; b: number; a?: number }
+                | undefined;
+              const transparent = !color || (color.a ?? 1) === 0;
+              // A textured background almost always wants full-opacity display;
+              // a transparent tint is only meaningful for a solid color fill.
+              const tint = next && transparent ? { color: { r: 1, g: 1, b: 1, a: 1 } } : {};
+              onPatch({ texture: next, ...tint });
+            }}
           />
         </Block>
       );
@@ -650,6 +768,64 @@ const FieldRow = React.memo(function FieldRow({
         </BindableField>
       );
     }
+    case 'position-mode': {
+      const v = (raw as number | undefined) ?? YGPT_RELATIVE;
+      const onModeChange = (next: number) => {
+        if (next === v) return;
+        if (next === YGPT_ABSOLUTE) {
+          // Bake the current on-screen offset so switching modes never moves the node.
+          const offset = measureNodeOffset(entity);
+          onPatch({
+            positionType: YGPT_ABSOLUTE,
+            positionTop: offset?.top ?? 0,
+            positionTopUnit: YGU_POINT,
+            positionLeft: offset?.left ?? 0,
+            positionLeftUnit: YGU_POINT,
+            positionRight: 0,
+            positionRightUnit: YGU_UNDEFINED,
+            positionBottom: 0,
+            positionBottomUnit: YGU_UNDEFINED,
+          });
+        } else {
+          // Back into flow: clear baked offsets — Yoga applies position* to
+          // RELATIVE nodes too, so stale values would shift the node in flow.
+          onPatch({
+            positionType: YGPT_RELATIVE,
+            positionTop: 0,
+            positionTopUnit: YGU_UNDEFINED,
+            positionRight: 0,
+            positionRightUnit: YGU_UNDEFINED,
+            positionBottom: 0,
+            positionBottomUnit: YGU_UNDEFINED,
+            positionLeft: 0,
+            positionLeftUnit: YGU_UNDEFINED,
+          });
+        }
+      };
+      return (
+        <BindableField
+          field={field}
+          entity={entity}
+          selectedRoot={selectedRoot}
+          bound={boundProp}
+        >
+          <select
+            aria-label={field.label}
+            value={String(v)}
+            onChange={e => onModeChange(Number(e.target.value))}
+          >
+            {field.options?.map(opt => (
+              <option
+                key={opt.value}
+                value={String(opt.value)}
+              >
+                {opt.label}
+              </option>
+            ))}
+          </select>
+        </BindableField>
+      );
+    }
     case 'align-preset': {
       return (
         <Block
@@ -659,6 +835,7 @@ const FieldRow = React.memo(function FieldRow({
           <AnchorPresetField
             value={componentValue}
             entity={entity}
+            disabled={fieldDisabled}
             onPatch={onPatch}
           />
         </Block>
@@ -674,6 +851,60 @@ const FieldRow = React.memo(function FieldRow({
             value={componentValue}
             onPatch={onPatch}
           />
+        </Block>
+      );
+    }
+    case 'uv-region': {
+      const region = uvsToRegion(componentValue?.uvs as number[] | undefined);
+      const setField = (key: keyof typeof region, raw: string) =>
+        onPatch({ uvs: regionToUvs({ ...region, [key]: clampNumber(raw) }) });
+      const rows: { key: keyof typeof region; leftLabel: string }[] = [
+        { key: 'uMin', leftLabel: 'U₀' },
+        { key: 'vMin', leftLabel: 'V₀' },
+        { key: 'uMax', leftLabel: 'U₁' },
+        { key: 'vMax', leftLabel: 'V₁' },
+      ];
+      return (
+        <Block
+          label={field.label}
+          info={field.info}
+        >
+          {rows.map(r => (
+            <TextField
+              key={r.key}
+              type="number"
+              leftLabel={r.leftLabel}
+              value={String(region[r.key])}
+              onChange={e => setField(r.key, e.target.value)}
+            />
+          ))}
+        </Block>
+      );
+    }
+    case 'border-rect': {
+      const rect = (raw as Record<string, number> | undefined) ?? {};
+      const setSide = (side: string, v: string) =>
+        onPatch({ textureSlices: { ...rect, [side]: clampNumber(v) } });
+      const sides: { key: string; leftLabel: string }[] = [
+        { key: 'top', leftLabel: 'T' },
+        { key: 'right', leftLabel: 'R' },
+        { key: 'bottom', leftLabel: 'B' },
+        { key: 'left', leftLabel: 'L' },
+      ];
+      return (
+        <Block
+          label={field.label}
+          info={field.info}
+        >
+          {sides.map(s => (
+            <TextField
+              key={s.key}
+              type="number"
+              leftLabel={s.leftLabel}
+              value={String(rect[s.key] ?? 0)}
+              onChange={e => setSide(s.key, e.target.value)}
+            />
+          ))}
         </Block>
       );
     }

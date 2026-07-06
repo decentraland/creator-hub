@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo } from 'react';
+import React, { useCallback, useEffect, useMemo } from 'react';
 import { IoLayersOutline } from 'react-icons/io5';
 import type { Entity, LastWriteWinElementSetComponentDefinition } from '@dcl/ecs';
 import { Name as NameEngine } from '@dcl/ecs';
@@ -52,6 +52,16 @@ export const RootsList: React.FC = () => {
       name: UIComp.getOrNull(entity)?.name ?? '',
     }));
   }, [sdk, uiEntities]);
+
+  // On open (or after the selected root is removed while others remain), select
+  // the first root so the canvas shows it instead of the "No UI yet" empty state
+  // — which otherwise looks like the UI was lost. When the LAST root is removed,
+  // `roots` is empty and this stays a no-op (no fight with the deliberate clear).
+  useEffect(() => {
+    if (selected === null && roots.length > 0) {
+      dispatch(selectRoot({ root: roots[0].entity }));
+    }
+  }, [selected, roots, dispatch]);
 
   const handleCreate = useCreateUIRoot();
 

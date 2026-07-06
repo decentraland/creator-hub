@@ -1,10 +1,11 @@
-import React, { useCallback, useMemo, useRef } from 'react';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import type { Entity, LastWriteWinElementSetComponentDefinition } from '@dcl/ecs';
 import type { UI, UIVariable } from '@dcl/asset-packs';
 import { ComponentName, VariableType } from '@dcl/asset-packs';
 
 import { useSdk } from '../../../hooks/sdk/useSdk';
+import { isValidIdentifier } from '../../../lib/sdk/operations/validators';
 import { usePopoverPosition } from '../../ui/usePopoverPosition';
 import type { FieldConfig, FieldKind } from '../field-configs';
 
@@ -57,6 +58,11 @@ export const VariablePicker: React.FC<VariablePickerProps> = ({
   // Mounted only while open (the parent gates with `pickerOpen`), so `open` is true.
   const pos = usePopoverPosition({ anchorRef, popoverRef, open: true, onDismiss, width: 200 });
 
+  const suggested = field.path.replace(/[^A-Za-z0-9_$]/g, '_') || 'variable';
+  const [adding, setAdding] = useState(false);
+  const [name, setName] = useState(suggested);
+  const [error, setError] = useState<string | undefined>(undefined);
+
   const compatible = useMemo<UIVariable[]>(() => {
     if (!sdk) return [];
     const UIComp = sdk.engine.getComponentOrNull(
@@ -69,7 +75,7 @@ export const VariablePicker: React.FC<VariablePickerProps> = ({
     return marker.variables.filter(v => allowed.includes(v.type));
   }, [sdk, selectedRoot, field.kind]);
 
-  const onAddNew = useCallback(() => {
+  const commitNew = useCallback(() => {
     if (!sdk) return;
     const UIComp = sdk.engine.getComponentOrNull(
       ComponentName.UI,
@@ -77,22 +83,24 @@ export const VariablePicker: React.FC<VariablePickerProps> = ({
     if (!UIComp) return;
     const marker = UIComp.getOrNull(selectedRoot);
     if (!marker) return;
-    const allowed = KIND_TO_VARIABLE_TYPES[field.kind] ?? [VariableType.STRING];
-    const base = field.path.replace(/[^A-Za-z0-9_$]/g, '_') || 'variable';
-    let name = base;
-    let n = 1;
-    while (marker.variables.some(v => v.name === name)) {
-      n += 1;
-      name = `${base}_${n}`;
+    const trimmed = name.trim();
+    if (!isValidIdentifier(trimmed)) {
+      setError('Not a valid name (letters, digits, _ ; no leading digit)');
+      return;
     }
+    if (marker.variables.some(v => v.name === trimmed)) {
+      setError('Name already in use');
+      return;
+    }
+    const allowed = KIND_TO_VARIABLE_TYPES[field.kind] ?? [VariableType.STRING];
     sdk.operations.declareVariable(selectedRoot, {
-      name,
+      name: trimmed,
       type: allowed[0],
       defaultValue: '',
     });
     void sdk.operations.dispatch();
-    onPick(name);
-  }, [sdk, selectedRoot, field, onPick]);
+    onPick(trimmed);
+  }, [sdk, selectedRoot, field, name, onPick]);
 
   return createPortal(
     <div
@@ -113,13 +121,47 @@ export const VariablePicker: React.FC<VariablePickerProps> = ({
           {coercionLabel(field, v)}
         </button>
       ))}
-      <button
-        type="button"
-        className="ui-designer-variable-picker-add"
-        onClick={onAddNew}
-      >
-        + Add new variable…
-      </button>
+      {adding ? (
+        <div className="ui-designer-variable-picker-new">
+          <input
+            className="ui-designer-variable-picker-name"
+            autoFocus
+            spellCheck={false}
+            autoCorrect="off"
+            autoCapitalize="off"
+            value={name}
+            placeholder="Variable name"
+            onChange={e => {
+              setName(e.target.value);
+              setError(undefined);
+            }}
+            onKeyDown={e => {
+              if (e.key === 'Enter') commitNew();
+              if (e.key === 'Escape') setAdding(false);
+            }}
+          />
+          <button
+            type="button"
+            className="ui-designer-variable-picker-confirm"
+            onClick={commitNew}
+          >
+            Add
+          </button>
+          {error ? <div className="ui-designer-variable-picker-error">{error}</div> : null}
+        </div>
+      ) : (
+        <button
+          type="button"
+          className="ui-designer-variable-picker-add"
+          onClick={() => {
+            setName(suggested);
+            setError(undefined);
+            setAdding(true);
+          }}
+        >
+          + Add new variable…
+        </button>
+      )}
     </div>,
     document.body,
   );

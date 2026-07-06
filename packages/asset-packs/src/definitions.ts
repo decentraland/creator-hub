@@ -69,6 +69,7 @@ export * from './versioning';
 export * from './variable-codecs';
 export * from './safe-parse';
 export * from './add-child';
+export * from './tree-walk';
 
 export const ActionSchemas = {
   [ActionType.PLAY_ANIMATION]: Schemas.Map({

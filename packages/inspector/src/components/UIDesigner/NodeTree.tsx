@@ -1,11 +1,14 @@
 import React, { useCallback, useEffect, useMemo, useRef } from 'react';
-import type { Entity } from '@dcl/ecs';
+import type { Entity, LastWriteWinElementSetComponentDefinition } from '@dcl/ecs';
+import { ComponentName } from '@dcl/asset-packs';
 
 import { useSdk } from '../../hooks/sdk/useSdk';
 import { useAppDispatch, useAppSelector } from '../../redux/hooks';
 import { getExpanded, getSelectedNode, selectNode, setExpanded } from '../../redux/ui-designer';
+import { YGPT_ABSOLUTE } from '../../lib/sdk/ui-transform-constants';
 import { Tree } from '../Tree';
 import type { DropType } from '../Tree/utils';
+import { measureReparentOffset } from './measure';
 import { useUINodeActions } from './useUINodeActions';
 import { useUINodeTree } from './useUINodeTree';
 import { WIDGET_ICONS } from './widget-catalog';
@@ -92,7 +95,7 @@ const NodeTreeImpl: React.FC = () => {
   const isSelected = useCallback((n: UINode) => n.entity === selectedNode, [selectedNode]);
   const isHidden = useCallback(() => false, []);
   const canAddChild = useCallback(() => false, []);
-  const canRename = useCallback(() => false, []);
+  const canRename = useCallback(() => true, []);
 
   const handleSetOpen = useCallback(
     (n: UINode, open: boolean) => dispatch(setExpanded({ entity: n.entity, expanded: open })),
@@ -109,8 +112,19 @@ const NodeTreeImpl: React.FC = () => {
       if (!sdk || !tree) return;
       if (source.entity === target.entity) return;
 
+      // For an absolutely-positioned node, rebase its Top/Left onto the new
+      // parent's box so it keeps its on-screen position (measured from the DOM
+      // BEFORE the write — afterwards the old layout is gone).
+      const positionFor = (newParent: Entity) => {
+        const t = source.uiTransform as { positionType?: number } | undefined;
+        if ((t?.positionType ?? 0) !== YGPT_ABSOLUTE) return undefined;
+        return measureReparentOffset(source.entity, newParent) ?? undefined;
+      };
+
       if (dropType === 'inside') {
-        const ok = sdk.operations.setUIParent(source.entity, target.entity);
+        const ok = sdk.operations.setUIParent(source.entity, target.entity, {
+          position: positionFor(target.entity),
+        });
         if (ok) void sdk.operations.dispatch();
         return;
       }
@@ -122,7 +136,9 @@ const NodeTreeImpl: React.FC = () => {
       const targetParent = findParent(tree, target);
       if (!targetParent) return; // Dropping next to the root makes no sense.
 
-      const reparentOk = sdk.operations.setUIParent(source.entity, targetParent.entity);
+      const reparentOk = sdk.operations.setUIParent(source.entity, targetParent.entity, {
+        position: positionFor(targetParent.entity),
+      });
       if (!reparentOk) return;
 
       if (dropType === 'after') {
@@ -146,6 +162,34 @@ const NodeTreeImpl: React.FC = () => {
   const handleRemove = useCallback((node: UINode) => remove(node.entity), [remove]);
   const handleDuplicate = useCallback((node: UINode) => duplicate(node.entity), [duplicate]);
 
+  const handleRename = useCallback(
+    (node: UINode, label: string) => {
+      if (!sdk) return;
+      const next = label.trim();
+      if (!next) return;
+      // The root row edits the marker name (mirrored into Name), same as
+      // RootsList; child nodes go through the uniqueness-safe UI rename op.
+      if (tree && node.entity === tree.entity) {
+        const UIComp = sdk.engine.getComponentOrNull(
+          ComponentName.UI,
+        ) as LastWriteWinElementSetComponentDefinition<{ name: string }> | null;
+        if (UIComp?.getOrNull(node.entity)) {
+          sdk.operations.updateValue(UIComp, node.entity, { name: next });
+        }
+        const Name = sdk.engine.getComponentOrNull(
+          'core-schema::Name',
+        ) as LastWriteWinElementSetComponentDefinition<{ value: string }> | null;
+        if (Name?.getOrNull(node.entity)) {
+          sdk.operations.updateValue(Name, node.entity, { value: next });
+        }
+      } else {
+        sdk.operations.renameUINode(node.entity, next);
+      }
+      void sdk.operations.dispatch();
+    },
+    [sdk, tree],
+  );
+
   const noop = useCallback(() => undefined, []);
 
   if (!tree) return null;
@@ -166,7 +210,7 @@ const NodeTreeImpl: React.FC = () => {
         onSetOpen={handleSetOpen}
         onSelect={handleSelect}
         onDrop={handleDrop}
-        onRename={noop}
+        onRename={handleRename}
         onAddChild={noop}
         onRemove={handleRemove}
         onDuplicate={handleDuplicate}

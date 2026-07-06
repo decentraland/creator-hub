@@ -9,17 +9,17 @@ import type { UINodeType } from './tree-model';
 export const UI_DESIGNER_DND_TYPE = 'ui-designer-node';
 
 export type UIDesignerDragItem =
-  | { source: 'palette'; type: UINodeType }
+  | { source: 'palette'; type: UINodeType; preset?: 'image' }
   | { source: 'tree'; entity: number };
 
 const PaletteCard: React.FC<{ entry: WidgetDef }> = ({ entry }) => {
   const [{ isDragging }, drag] = useDrag<UIDesignerDragItem, unknown, { isDragging: boolean }>(
     () => ({
       type: UI_DESIGNER_DND_TYPE,
-      item: { source: 'palette', type: entry.type },
+      item: { source: 'palette', type: entry.type, preset: entry.preset },
       collect: monitor => ({ isDragging: monitor.isDragging() }),
     }),
-    [entry.type],
+    [entry.type, entry.preset],
   );
 
   return (
@@ -40,7 +40,7 @@ const PaletteComponent: React.FC = () => (
   <div className="ui-designer-palette">
     {WIDGET_LIST.map(entry => (
       <PaletteCard
-        key={entry.type}
+        key={entry.id}
         entry={entry}
       />
     ))}

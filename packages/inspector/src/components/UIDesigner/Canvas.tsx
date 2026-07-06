@@ -1,6 +1,15 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useDrop } from 'react-dnd';
-import { IoAddOutline, IoCopyOutline, IoLayersOutline, IoTrashOutline } from 'react-icons/io5';
+import {
+  IoAddOutline,
+  IoCopyOutline,
+  IoDesktopOutline,
+  IoLayersOutline,
+  IoPhoneLandscapeOutline,
+  IoScanOutline,
+  IoTrashOutline,
+} from 'react-icons/io5';
 import cx from 'classnames';
 import type { Entity, PBUiTransform } from '@dcl/ecs';
 
@@ -12,6 +21,8 @@ import { Button } from '../Button';
 import { UI_DESIGNER_DND_TYPE, type UIDesignerDragItem } from './Palette';
 import { EmptyState } from './EmptyState';
 import { WidgetPicker } from './WidgetPicker';
+import { SafeAreaOverlay } from './SafeAreaOverlay';
+import { MOBILE_REFERENCE, type DeviceKind } from './safe-areas';
 import { useCreateUIRoot } from './useCreateUIRoot';
 import { useUINodeActions } from './useUINodeActions';
 import { useUINodeTree } from './useUINodeTree';
@@ -27,6 +38,15 @@ import {
   previewBoundText,
   type UINode,
 } from './tree-model';
+import {
+  YGU_UNDEFINED,
+  YGU_POINT,
+  YGU_PERCENT,
+  YGU_AUTO,
+  YGD_NONE,
+  YGPT_RELATIVE,
+  YGPT_ABSOLUTE,
+} from '../../lib/sdk/ui-transform-constants';
 
 // The canvas size is per-UI (canvasWidth × canvasHeight on the root's
 // `asset-packs::UI` marker, default 1920×1080) — it is the UI's design/virtual
@@ -74,26 +94,10 @@ const HANDLE_DIRS: HandleDir[] = ['nw', 'n', 'ne', 'e', 'se', 's', 'sw', 'w'];
 
 import './Canvas.css';
 
-// PB enums are exported as `const enum`s; importing them at runtime is risky
-// across module boundaries (they're erased at compile time and dist may not
-// preserve them). We hard-code the numeric values here with comments — the
-// mappings are stable wire-format constants defined in
-// node_modules/@dcl/ecs/dist/components/generated/pb/decentraland/sdk/components/ui_transform.gen.d.ts
-// and common/texts.gen.d.ts.
-
-// YGUnit
-const YGU_UNDEFINED = 0;
-const YGU_POINT = 1;
-const YGU_PERCENT = 2;
-const YGU_AUTO = 3;
-
-// YGDisplay
-const YGD_NONE = 1;
-
-// YGPositionType
-const YGPT_ABSOLUTE = 1;
-
-// BackgroundTextureMode (PB) — NINE_SLICES=0, CENTER=1, STRETCH=2. See
+// BackgroundTextureMode (PB) — NINE_SLICES=0, CENTER=1, STRETCH=2. This PB enum
+// is exported as a `const enum` (erased at compile time), so its numeric value
+// is hard-coded here with a comment — same convention as the UiTransform enums
+// centralized in ../../lib/sdk/ui-transform-constants. See
 // node_modules/@dcl/ecs/dist/components/generated/pb/decentraland/sdk/components/ui_background.gen.d.ts
 // Only CENTER needs distinct handling; STRETCH and NINE_SLICES (approximated)
 // both map to a full-box stretch.
@@ -319,19 +323,87 @@ function safeTextureUrl(url: string): string | undefined {
 // the image is still loading. NINE_SLICES has no clean CSS equivalent here;
 // we approximate it with a full stretch (border-image slicing would need the
 // per-side slice values and is out of scope for the preview).
-function textureStyle(url: string, textureMode: number | undefined): React.CSSProperties {
+function textureStyle(
+  url: string,
+  textureMode: number | undefined,
+  uvs: number[] | undefined,
+): React.CSSProperties {
   const safe = safeTextureUrl(url);
-  const base: React.CSSProperties = {
-    backgroundRepeat: 'no-repeat',
-  };
-  if (safe) {
-    base.backgroundImage = `url("${safe}")`;
-  }
+  const base: React.CSSProperties = { backgroundRepeat: 'no-repeat' };
+  if (safe) base.backgroundImage = `url("${safe}")`;
   if (textureMode === BTM_CENTER) {
     return { ...base, backgroundSize: 'auto', backgroundPosition: 'center' };
   }
-  // STRETCH and NINE_SLICES (approximated) both cover the full box.
+  // STRETCH with a sub-region: show that region scaled to fill the box. UV v is
+  // bottom-up, CSS background-position y is top-down — hence (1 - vMax) below.
+  // Approximate preview; runtime uses the raw uvs.
+  if (textureMode === 2 && uvs && uvs.length >= 8) {
+    const us = [uvs[0], uvs[2], uvs[4], uvs[6]];
+    const vs = [uvs[1], uvs[3], uvs[5], uvs[7]];
+    const uMin = Math.min(...us);
+    const uMax = Math.max(...us);
+    const vMin = Math.min(...vs);
+    const vMax = Math.max(...vs);
+    const rw = uMax - uMin;
+    const rh = vMax - vMin;
+    if (rw > 0 && rh > 0 && (rw < 1 || rh < 1)) {
+      const posX = rw < 1 ? (uMin / (1 - rw)) * 100 : 0;
+      const posY = rh < 1 ? ((1 - vMax) / (1 - rh)) * 100 : 0;
+      return {
+        ...base,
+        backgroundSize: `${(1 / rw) * 100}% ${(1 / rh) * 100}%`,
+        backgroundPosition: `${posX}% ${posY}%`,
+      };
+    }
+  }
   return { ...base, backgroundSize: '100% 100%' };
+}
+
+// Compute the insertion-indicator line for a reorder drag, in the parent's
+// local (logical) px — the portal target is the parent node, which lives inside
+// the scaled canvas root, so logical px are correct as-is.
+function reorderIndicatorStyle(ro: {
+  parentEl: HTMLElement;
+  axis: 'x' | 'y';
+  reversed: boolean;
+  siblings: { entity: Entity; el: HTMLElement }[];
+  index: number;
+}): React.CSSProperties {
+  const parentRect = ro.parentEl.getBoundingClientRect();
+  const scale = getCanvasScale();
+  const before = ro.index > 0 ? ro.siblings[ro.index - 1].el.getBoundingClientRect() : null;
+  const after =
+    ro.index < ro.siblings.length ? ro.siblings[ro.index].el.getBoundingClientRect() : null;
+  if (ro.axis === 'x') {
+    const prevEdge = ro.reversed
+      ? (before?.left ?? parentRect.right)
+      : (before?.right ?? parentRect.left);
+    const nextEdge = ro.reversed
+      ? (after?.right ?? parentRect.left)
+      : (after?.left ?? parentRect.right);
+    return {
+      position: 'absolute',
+      left: ((prevEdge + nextEdge) / 2 - parentRect.left) / scale - 1,
+      top: 0,
+      width: 2,
+      height: parentRect.height / scale,
+      pointerEvents: 'none',
+    };
+  }
+  const prevEdge = ro.reversed
+    ? (before?.top ?? parentRect.bottom)
+    : (before?.bottom ?? parentRect.top);
+  const nextEdge = ro.reversed
+    ? (after?.bottom ?? parentRect.top)
+    : (after?.top ?? parentRect.bottom);
+  return {
+    position: 'absolute',
+    top: ((prevEdge + nextEdge) / 2 - parentRect.top) / scale - 1,
+    left: 0,
+    height: 2,
+    width: parentRect.width / scale,
+    pointerEvents: 'none',
+  };
 }
 
 type CanvasNodeProps = { node: UINode };
@@ -420,6 +492,7 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node }) => {
   const background = (node.uiBackground ?? {}) as {
     texture?: { tex?: { $case: string; texture?: { src?: string } } };
     textureMode?: number;
+    uvs?: number[];
   };
   const tex = background.texture?.tex;
   const texSrc = tex?.$case === 'texture' ? tex.texture?.src : undefined;
@@ -454,7 +527,7 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node }) => {
           localX = Math.round((clientOffset.x - rect.left) / getCanvasScale());
           localY = Math.round((clientOffset.y - rect.top) / getCanvasScale());
         }
-        const newEntity = sdk.operations.addUINode(node.entity, item.type);
+        const newEntity = sdk.operations.addUINode(node.entity, item.type, item.preset);
         // Default behaviour: absolutely positioned at the drop point. Users
         // can flip `positionType` to `relative` in the property panel for
         // flex flow.
@@ -462,11 +535,11 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node }) => {
         const current = (UiTransform.getOrNull(newEntity) ?? {}) as PBUiTransform;
         UiTransform.createOrReplace(newEntity, {
           ...current,
-          positionType: 1, // YGPositionType.YGPT_ABSOLUTE
+          positionType: YGPT_ABSOLUTE,
           positionTop: localY,
-          positionTopUnit: 1, // YGUnit.YGU_POINT
+          positionTopUnit: YGU_POINT,
           positionLeft: localX,
-          positionLeftUnit: 1, // YGUnit.YGU_POINT
+          positionLeftUnit: YGU_POINT,
         } as unknown as PBUiTransform);
         // Await the dispatch so the engine flushes the new entity's components
         // before we trigger any tree re-derive. Without this the NodeTree
@@ -522,10 +595,34 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node }) => {
   // without this the node snaps back to its old box for a frame, then jumps.
   // Move sets top/left; resize also sets width/height.
   const [optimisticPos, setOptimisticPos] = useState<{
-    top: number;
-    left: number;
+    top?: number;
+    left?: number;
     width?: number;
     height?: number;
+  } | null>(null);
+
+  // --- Reorder-drag state (in-flow nodes) ---
+  // Dragging an in-flow node reorders it among its in-flow siblings along the
+  // parent's flex axis (Figma/Penpot flex-layout semantics) — it NEVER changes
+  // positionType. Alt+drag opts into the legacy convert-to-absolute move.
+  const reorderRef = useRef<{
+    parentEl: HTMLElement;
+    axis: 'x' | 'y';
+    reversed: boolean;
+    // In-flow siblings excluding self, in DOM order (= flow order).
+    siblings: { entity: Entity; el: HTMLElement }[];
+    // Insertion index (into the `siblings` gaps, 0..siblings.length) that
+    // equals a no-op drop, and the live index under the cursor.
+    selfIndex: number;
+    index: number;
+  } | null>(null);
+  const [isReordering, setIsReordering] = useState(false);
+  // Hold the drag offset after a reorder drop until the committed `rightOf`
+  // lands (same async round-trip rationale as `optimisticPos`).
+  const [pendingReorder, setPendingReorder] = useState<{
+    rightOf: number;
+    dx: number;
+    dy: number;
   } | null>(null);
 
   // --- Resize-tool state ---
@@ -537,6 +634,7 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node }) => {
     startW: number;
     startH: number;
     dir: HandleDir;
+    isAbsolute: boolean;
   } | null>(null);
   const resizeLiveRef = useRef<{ dx: number; dy: number; dw: number; dh: number }>({
     dx: 0,
@@ -565,13 +663,53 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node }) => {
       e.stopPropagation();
       e.preventDefault();
 
+      // In-flow node without Alt: reorder among siblings instead of moving.
+      // (Alt+drag falls through to the legacy convert-to-absolute capture.)
+      const isAbsolute = t?.positionType === YGPT_ABSOLUTE;
+      if (!isAbsolute && !e.altKey) {
+        const el = divRef.current;
+        const parentEl = el?.parentElement;
+        if (el && parentEl) {
+          const flexDir = getComputedStyle(parentEl).flexDirection || 'column';
+          const all = Array.from(parentEl.children).filter(
+            (c): c is HTMLElement =>
+              c instanceof HTMLElement && c.classList.contains('ui-designer-canvas-node'),
+          );
+          const inFlow = all.filter(c => getComputedStyle(c).position !== 'absolute');
+          const selfIndex = Math.max(0, inFlow.indexOf(el));
+          const siblings = inFlow
+            .filter(c => c !== el)
+            .map(c => ({ entity: Number(c.dataset.entity) as Entity, el: c }))
+            .filter(s => Number.isInteger(s.entity as unknown as number));
+          reorderRef.current = {
+            parentEl,
+            axis: flexDir.startsWith('row') ? 'x' : 'y',
+            reversed: flexDir.endsWith('reverse'),
+            siblings,
+            selfIndex,
+            index: selfIndex,
+          };
+          dragOriginRef.current = {
+            mouseX: e.clientX,
+            mouseY: e.clientY,
+            startTop: 0,
+            startLeft: 0,
+          };
+          liveOffsetRef.current = { dx: 0, dy: 0 };
+          setOptimisticPos(null);
+          setPendingReorder(null);
+          setIsReordering(true);
+          dispatch(selectNode({ node: node.entity }));
+          return;
+        }
+      }
+
       // If the node is currently in flex flow, anchor its starting position
       // at where it was just rendered (relative to its parent). The mouseup
       // path will write positionType=ABSOLUTE plus these coords, effectively
       // converting the node into a free-positioned child.
       let startTop = (t?.positionTop ?? 0) as number;
       let startLeft = (t?.positionLeft ?? 0) as number;
-      const isAbsolute = t?.positionType === 1;
       if (!isAbsolute) {
         const el = divRef.current;
         const parentEl = el?.parentElement;
@@ -637,11 +775,11 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node }) => {
       const current = (UiTransform.getOrNull(node.entity) ?? {}) as PBUiTransform;
       UiTransform.createOrReplace(node.entity, {
         ...current,
-        positionType: 1, // ABSOLUTE
+        positionType: YGPT_ABSOLUTE,
         positionTop: top,
-        positionTopUnit: 1,
+        positionTopUnit: YGU_POINT,
         positionLeft: left,
-        positionLeftUnit: 1,
+        positionLeftUnit: YGU_POINT,
       } as unknown as PBUiTransform);
       void sdk.operations.dispatch();
     };
@@ -654,14 +792,76 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node }) => {
     };
   }, [isDragging, sdk, node.entity]);
 
+  useEffect(() => {
+    if (!isReordering) return;
+
+    const handleMove = (e: MouseEvent) => {
+      const origin = dragOriginRef.current;
+      const ro = reorderRef.current;
+      if (!origin || !ro) return;
+      liveOffsetRef.current = {
+        dx: (e.clientX - origin.mouseX) / getCanvasScale(),
+        dy: (e.clientY - origin.mouseY) / getCanvasScale(),
+      };
+      // Insertion index = number of sibling midpoints the cursor has passed
+      // along the flow axis (comparison flips for *-reverse directions).
+      const cursor = ro.axis === 'x' ? e.clientX : e.clientY;
+      let index = 0;
+      for (const s of ro.siblings) {
+        const r = s.el.getBoundingClientRect();
+        const mid = ro.axis === 'x' ? r.left + r.width / 2 : r.top + r.height / 2;
+        if (ro.reversed ? cursor < mid : cursor > mid) index += 1;
+      }
+      ro.index = index;
+      setRenderTick(tick => tick + 1);
+    };
+
+    const handleUp = () => {
+      const ro = reorderRef.current;
+      const offset = liveOffsetRef.current;
+      reorderRef.current = null;
+      dragOriginRef.current = null;
+      liveOffsetRef.current = { dx: 0, dy: 0 };
+      setIsReordering(false);
+      if (!sdk || !ro) return;
+      // No-op drops: no movement, or released over the slot it already holds.
+      if ((offset.dx === 0 && offset.dy === 0) || ro.index === ro.selfIndex) return;
+      const leftSibling = ro.index > 0 ? ro.siblings[ro.index - 1].entity : undefined;
+      // Hold the drag offset until the committed rightOf lands, then release —
+      // the node then reflows into the slot the indicator promised.
+      setPendingReorder({
+        rightOf: leftSibling !== undefined ? (leftSibling as unknown as number) : 0,
+        dx: offset.dx,
+        dy: offset.dy,
+      });
+      sdk.operations.reorderUISibling(node.entity, leftSibling);
+      void sdk.operations.dispatch();
+    };
+
+    window.addEventListener('mousemove', handleMove);
+    window.addEventListener('mouseup', handleUp);
+    return () => {
+      window.removeEventListener('mousemove', handleMove);
+      window.removeEventListener('mouseup', handleUp);
+    };
+  }, [isReordering, sdk, node.entity]);
+
+  // Release the reorder hold once the committed rightOf matches the write.
+  useEffect(() => {
+    if (!pendingReorder) return;
+    const rt = node.uiTransform as { rightOf?: number } | undefined;
+    if ((rt?.rightOf ?? 0) !== pendingReorder.rightOf) return;
+    setPendingReorder(null);
+  }, [node, pendingReorder]);
+
   // Clear the optimistic hold once the committed transform matches the dropped
   // position (so external edits / the property panel drive rendering again).
   useEffect(() => {
     if (!optimisticPos) return;
     const t = node.uiTransform as PBUiTransform | undefined;
     const num = (v: unknown) => Math.round((v as number | undefined) ?? NaN);
-    if (num(t?.positionTop) !== optimisticPos.top || num(t?.positionLeft) !== optimisticPos.left)
-      return;
+    if (optimisticPos.top !== undefined && num(t?.positionTop) !== optimisticPos.top) return;
+    if (optimisticPos.left !== undefined && num(t?.positionLeft) !== optimisticPos.left) return;
     if (optimisticPos.width !== undefined && num(t?.width) !== optimisticPos.width) return;
     if (optimisticPos.height !== undefined && num(t?.height) !== optimisticPos.height) return;
     setOptimisticPos(null);
@@ -689,6 +889,7 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node }) => {
         startW: elRect.width / getCanvasScale(),
         startH: elRect.height / getCanvasScale(),
         dir,
+        isAbsolute: (t?.positionType ?? YGPT_RELATIVE) === YGPT_ABSOLUTE,
       };
       resizeLiveRef.current = { dx: 0, dy: 0, dw: 0, dh: 0 };
       setOptimisticPos(null);
@@ -708,13 +909,19 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node }) => {
       const dyRaw = (e.clientY - origin.mouseY) / getCanvasScale();
       const axes = HANDLE_AXES[origin.dir];
 
+      // In-flow nodes can't move from a resize — the parent lays them out. Zero
+      // the position axes so the live preview matches the commit (box grows in
+      // place instead of following the top/left handles).
+      const dxAxis = origin.isAbsolute ? axes.dx : 0;
+      const dyAxis = origin.isAbsolute ? axes.dy : 0;
+
       // Snap the FINAL position/size, not the delta, so the grid is anchored
       // to absolute logical coords (consistent with move).
       const snap = (v: number) => Math.round(v / DRAG_SNAP_GRID) * DRAG_SNAP_GRID;
       const doSnap = !e.shiftKey;
 
-      let nextLeft = origin.startLeft + dxRaw * axes.dx;
-      let nextTop = origin.startTop + dyRaw * axes.dy;
+      let nextLeft = origin.startLeft + dxRaw * dxAxis;
+      let nextTop = origin.startTop + dyRaw * dyAxis;
       let nextW = origin.startW + dxRaw * axes.dw;
       let nextH = origin.startH + dyRaw * axes.dh;
 
@@ -749,25 +956,36 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node }) => {
       const left = Math.round(origin.startLeft + live.dx);
       const width = Math.max(0, Math.round(origin.startW + live.dw));
       const height = Math.max(0, Math.round(origin.startH + live.dh));
-      // Hold the dropped box until the committed transform reflects it.
-      setOptimisticPos({ top, left, width, height });
-      const UiTransform = sdk.components.UiTransform;
-      const current = (UiTransform.getOrNull(node.entity) ?? {}) as PBUiTransform;
-      // Resizing forces the node to absolute positioning + px units. Trying to
-      // resize a %-sized node in-place would require ambient knowledge of the
-      // parent's current size; flattening to px is the predictable choice.
-      UiTransform.createOrReplace(node.entity, {
-        ...current,
-        positionType: 1,
-        positionTop: top,
-        positionTopUnit: 1,
-        positionLeft: left,
-        positionLeftUnit: 1,
-        width,
-        widthUnit: 1,
-        height,
-        heightUnit: 1,
-      } as unknown as PBUiTransform);
+      const UiTransform2 = sdk.components.UiTransform;
+      const current = (UiTransform2.getOrNull(node.entity) ?? {}) as PBUiTransform;
+      if (origin.isAbsolute) {
+        // Hold the dropped box until the committed transform reflects it.
+        setOptimisticPos({ top, left, width, height });
+        UiTransform2.createOrReplace(node.entity, {
+          ...current,
+          positionType: YGPT_ABSOLUTE,
+          positionTop: top,
+          positionTopUnit: YGU_POINT,
+          positionLeft: left,
+          positionLeftUnit: YGU_POINT,
+          width,
+          widthUnit: YGU_POINT,
+          height,
+          heightUnit: YGU_POINT,
+        } as unknown as PBUiTransform);
+      } else {
+        // In-flow node: resize is a pure size change — never detach from layout.
+        // (Width/height still flatten to px; resizing a %-sized node by hand
+        // implies pixel intent, same rationale as the absolute branch.)
+        setOptimisticPos({ width, height });
+        UiTransform2.createOrReplace(node.entity, {
+          ...current,
+          width,
+          widthUnit: YGU_POINT,
+          height,
+          heightUnit: YGU_POINT,
+        } as unknown as PBUiTransform);
+      }
       void sdk.operations.dispatch();
     };
 
@@ -782,7 +1000,12 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node }) => {
   // Apply the live drag offset visually via CSS transform so we don't write
   // to the CRDT/data-layer until the user releases the mouse.
   const baseStyle = nodeStyle(node);
-  const liveOffset = isDragging ? liveOffsetRef.current : null;
+  const liveOffset =
+    isDragging || isReordering
+      ? liveOffsetRef.current
+      : pendingReorder
+        ? { dx: pendingReorder.dx, dy: pendingReorder.dy }
+        : null;
   let style: React.CSSProperties = liveOffset
     ? {
         ...baseStyle,
@@ -806,12 +1029,12 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node }) => {
   // Hold the just-dropped position until the committed transform catches up,
   // preventing the snap-back-then-jump flicker on release.
   if (optimisticPos && !isDragging && !isResizing) {
-    style = {
-      ...style,
-      position: 'absolute',
-      top: `${optimisticPos.top}px`,
-      left: `${optimisticPos.left}px`,
-    };
+    style = { ...style };
+    if (optimisticPos.top !== undefined && optimisticPos.left !== undefined) {
+      style.position = 'absolute';
+      style.top = `${optimisticPos.top}px`;
+      style.left = `${optimisticPos.left}px`;
+    }
     if (optimisticPos.width !== undefined) style.width = `${optimisticPos.width}px`;
     if (optimisticPos.height !== undefined) style.height = `${optimisticPos.height}px`;
   }
@@ -819,7 +1042,7 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node }) => {
   // Layer the resolved file-texture on top. backgroundColor (a separate
   // property) survives as a fallback while the blob URL is still loading.
   if (texUrl) {
-    style = { ...style, ...textureStyle(texUrl, background.textureMode) };
+    style = { ...style, ...textureStyle(texUrl, background.textureMode, background.uvs) };
   }
 
   // The root IS the screen: its authored size/position must never distort the
@@ -851,6 +1074,7 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node }) => {
         selected: isSelected,
         'drop-over': isOver,
         dragging: isDragging,
+        reordering: isReordering,
         resizing: isResizing,
         movable: canDragMove,
       })}
@@ -858,6 +1082,7 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node }) => {
       onClick={handleClick}
       onMouseDown={handleMouseDown}
       data-type={node.type}
+      data-entity={String(node.entity)}
     >
       {node.type === 'Input' ? <span className="ui-designer-canvas-input">{inputText}</span> : null}
       {node.type === 'Dropdown' ? (
@@ -887,6 +1112,15 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node }) => {
           ))
         : null}
       {isSelected && !isRoot ? <CanvasNodeActions entity={node.entity} /> : null}
+      {isReordering && reorderRef.current && reorderRef.current.siblings.length > 0
+        ? createPortal(
+            <div
+              className="ui-designer-reorder-indicator"
+              style={reorderIndicatorStyle(reorderRef.current)}
+            />,
+            reorderRef.current.parentEl,
+          )
+        : null}
     </div>
   );
 };
@@ -896,6 +1130,8 @@ const CanvasComponent: React.FC = () => {
   const createRoot = useCreateUIRoot();
   const selectedNode = useAppSelector(getSelectedNode);
   const [scale, setScale] = useState(getCanvasScale());
+  const [device, setDevice] = useState<DeviceKind>('desktop');
+  const [showSafeAreas, setShowSafeAreas] = useState(false);
   const viewportRef = useRef<HTMLDivElement>(null);
 
   // When a node is selected from elsewhere (tree / roots list) and it sits
@@ -922,6 +1158,13 @@ const CanvasComponent: React.FC = () => {
   // canvas holds a strict size and the viewport scrolls when it overflows.
   const canvasWidth = tree?.canvasWidth ?? DEFAULT_CANVAS_WIDTH;
   const canvasHeight = tree?.canvasHeight ?? DEFAULT_CANVAS_HEIGHT;
+
+  // Mobile preview: the UI is scaled to fit a reference device screen (mirrors
+  // the runtime materializeRoot formula), letterboxed inside the device frame.
+  const fitScale =
+    device === 'mobile'
+      ? Math.min(MOBILE_REFERENCE.width / canvasWidth, MOBILE_REFERENCE.height / canvasHeight)
+      : 1;
 
   // Keep the module-level scale (read by the drag/resize coordinate math and by
   // measure.ts) in sync with the rendered zoom.
@@ -982,28 +1225,113 @@ const CanvasComponent: React.FC = () => {
             >
               +
             </button>
-          </div>
-          <div
-            className="ui-designer-canvas-stage"
-            style={{ width: canvasWidth * scale, height: canvasHeight * scale }}
-          >
-            <div
-              className="ui-designer-canvas-root"
-              style={
-                {
-                  width: canvasWidth,
-                  height: canvasHeight,
-                  transform: `scale(${scale})`,
-                  transformOrigin: 'top left',
-                  // Exposed so selection chrome (action bar) can counter-scale to
-                  // stay legible at any zoom without re-rendering each node.
-                  '--uid-scale': scale,
-                } as React.CSSProperties
-              }
+            <span className="ui-designer-canvas-zoom-sep" />
+            <button
+              type="button"
+              className={cx('ui-designer-canvas-zoom-btn', { active: device === 'desktop' })}
+              onClick={() => setDevice('desktop')}
+              title="Desktop preview"
+              aria-label="Desktop preview"
+              aria-pressed={device === 'desktop'}
             >
-              <CanvasNode node={tree} />
-            </div>
+              <IoDesktopOutline />
+            </button>
+            <button
+              type="button"
+              className={cx('ui-designer-canvas-zoom-btn', { active: device === 'mobile' })}
+              onClick={() => setDevice('mobile')}
+              title="Mobile preview"
+              aria-label="Mobile preview"
+              aria-pressed={device === 'mobile'}
+            >
+              <IoPhoneLandscapeOutline />
+            </button>
+            <button
+              type="button"
+              className={cx('ui-designer-canvas-zoom-btn', { active: showSafeAreas })}
+              onClick={() => setShowSafeAreas(s => !s)}
+              title="Toggle safe-area guides"
+              aria-label="Toggle safe-area guides"
+              aria-pressed={showSafeAreas}
+            >
+              <IoScanOutline />
+            </button>
           </div>
+          {device === 'desktop' ? (
+            <div
+              className="ui-designer-canvas-stage"
+              style={{ width: canvasWidth * scale, height: canvasHeight * scale }}
+            >
+              <div
+                className="ui-designer-canvas-root"
+                style={
+                  {
+                    width: canvasWidth,
+                    height: canvasHeight,
+                    transform: `scale(${scale})`,
+                    transformOrigin: 'top left',
+                    // Exposed so selection chrome (action bar) can counter-scale to
+                    // stay legible at any zoom without re-rendering each node.
+                    '--uid-scale': scale,
+                  } as React.CSSProperties
+                }
+              >
+                <CanvasNode node={tree} />
+                {showSafeAreas ? (
+                  <SafeAreaOverlay
+                    width={canvasWidth}
+                    height={canvasHeight}
+                    device="desktop"
+                  />
+                ) : null}
+              </div>
+            </div>
+          ) : (
+            <div
+              className="ui-designer-device-frame"
+              style={{
+                width: MOBILE_REFERENCE.width * scale,
+                height: MOBILE_REFERENCE.height * scale,
+              }}
+            >
+              <div
+                className="ui-designer-device-screen"
+                style={
+                  {
+                    width: MOBILE_REFERENCE.width,
+                    height: MOBILE_REFERENCE.height,
+                    transform: `scale(${scale})`,
+                    transformOrigin: 'top left',
+                    '--uid-scale': scale * fitScale,
+                  } as React.CSSProperties
+                }
+              >
+                {/* UI scaled-to-fit + letterboxed, inspection-only (no editing). */}
+                <div
+                  className="ui-designer-canvas-root preview-only"
+                  style={{
+                    width: canvasWidth,
+                    height: canvasHeight,
+                    transform: `scale(${fitScale})`,
+                    transformOrigin: 'top left',
+                    position: 'absolute',
+                    left: (MOBILE_REFERENCE.width - canvasWidth * fitScale) / 2,
+                    top: (MOBILE_REFERENCE.height - canvasHeight * fitScale) / 2,
+                    pointerEvents: 'none',
+                  }}
+                >
+                  <CanvasNode node={tree} />
+                </div>
+                {showSafeAreas ? (
+                  <SafeAreaOverlay
+                    width={MOBILE_REFERENCE.width}
+                    height={MOBILE_REFERENCE.height}
+                    device="mobile"
+                  />
+                ) : null}
+              </div>
+            </div>
+          )}
         </>
       ) : (
         <div className="ui-designer-canvas-empty">

@@ -46,6 +46,7 @@ export function createUIRoot(engine: IEngine) {
       visible: !hasExistingRoot,
       canvasWidth: DEFAULT_CANVAS_WIDTH,
       canvasHeight: DEFAULT_CANVAS_HEIGHT,
+      scaleToFit: true,
       variables: [],
     });
     UiTransform.createOrReplace(entity, {

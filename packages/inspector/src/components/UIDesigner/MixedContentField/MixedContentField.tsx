@@ -195,6 +195,7 @@ export const MixedContentField: React.FC<MixedContentFieldProps> = ({
         ref={editorRef}
         className="ui-designer-mixed-editable"
         contentEditable
+        spellCheck={false}
         suppressContentEditableWarning
         role="textbox"
         aria-label={field.label}

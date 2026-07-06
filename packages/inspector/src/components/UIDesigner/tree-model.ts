@@ -30,7 +30,7 @@ export interface UINode {
   children: UINode[];
 }
 
-interface ComponentBag {
+export interface ComponentBag {
   UiTransform: any;
   UiBackground: any;
   UiText: any;
@@ -95,6 +95,40 @@ export function classifyNode(bag: ComponentBag, entity: Entity): UINodeType {
   return 'UiEntity';
 }
 
+// Order a sibling list by its `rightOf` linked chain (SDK7 UI sibling order):
+// each node points at the sibling it renders after; 0/dangling/self = head.
+// DFS from heads through claimants keeps ties (several nodes claiming one slot
+// — e.g. legacy all-zero chains) in stable creation order, and the final
+// defensive pass appends cycle leftovers so nodes never vanish from the tree.
+// Exported for tests.
+export function orderSiblings(list: Entity[], bag: ComponentBag): Entity[] {
+  if (list.length < 2) return list;
+  const inSet = new Set<number>(list as unknown as number[]);
+  const claimants = new Map<number, Entity[]>(); // rightOf → followers (creation order)
+  const heads: Entity[] = [];
+  for (const entity of list) {
+    const r: number = bag.UiTransform.getOrNull(entity)?.rightOf ?? 0;
+    if (r !== 0 && inSet.has(r) && r !== (entity as unknown as number)) {
+      const arr = claimants.get(r) ?? [];
+      arr.push(entity);
+      claimants.set(r, arr);
+    } else {
+      heads.push(entity);
+    }
+  }
+  const ordered: Entity[] = [];
+  const seen = new Set<Entity>();
+  const visit = (entity: Entity) => {
+    if (seen.has(entity)) return;
+    seen.add(entity);
+    ordered.push(entity);
+    for (const follower of claimants.get(entity as unknown as number) ?? []) visit(follower);
+  };
+  for (const head of heads) visit(head);
+  for (const entity of list) visit(entity); // cycle leftovers, defensive
+  return ordered;
+}
+
 export function buildUINodeTree(engine: IEngine, rootEntity: Entity): UINode | null {
   const bag = getComponentBag(engine);
   if (!bag.UiTransform || !bag.UiTransform.has(rootEntity)) return null;
@@ -134,7 +168,7 @@ export function buildUINodeTree(engine: IEngine, rootEntity: Entity): UINode | n
       uiInput: bag.UiInput?.getOrNull(entity) ?? undefined,
       uiDropdown: bag.UiDropdown?.getOrNull(entity) ?? undefined,
       bindings: bag.UIBindings?.getOrNull(entity)?.value as CanvasBindingRow[] | undefined,
-      children: (childrenOf.get(entity) ?? []).map(visit),
+      children: orderSiblings(childrenOf.get(entity) ?? [], bag).map(visit),
     };
     return node;
   }

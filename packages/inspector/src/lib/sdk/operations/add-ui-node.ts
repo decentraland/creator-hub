@@ -12,6 +12,7 @@ import type {
 
 import type { UINodeType } from '../../../components/UIDesigner/tree-model';
 import { generateUniqueUiName } from './add-child';
+import { UI_REQUIRED_FIELD_DEFAULTS } from './ui-component-defaults';
 
 // Canonical SDK UI component IDs (verified against
 // node_modules/@dcl/ecs/dist/components/generated/component-names.gen.js).
@@ -44,26 +45,17 @@ const DEFAULT_NAMES: Record<UINodeType, string> = {
 // YGJustify: YGJ_FLEX_START=0, YGJ_CENTER=1, YGJ_FLEX_END=2, YGJ_SPACE_BETWEEN=3,
 //            YGJ_SPACE_AROUND=4, YGJ_SPACE_EVENLY=5
 // YGAlign: YGA_AUTO=0, YGA_FLEX_START=1, YGA_CENTER=2, YGA_FLEX_END=3, YGA_STRETCH=4, ...
-// BackgroundTextureMode: NINE_SLICES=0, CENTER=1, STRETCH=2
 const YGU_POINT = 1; /* YGUnit_Point */
 const YGU_AUTO = 3; /* YGUnit_Auto */
 const YGD_FLEX = 0; /* YGDisplay_Flex */
 const YGJ_CENTER = 1; /* YGJustify_Center */
 const YGA_CENTER = 2; /* YGAlign_Center */
-const BG_NINE_SLICES = 0; /* BackgroundTextureMode_NINE_SLICES */
 
 const WHITE = { r: 1, g: 1, b: 1, a: 1 };
 const BLUE = { r: 0.2, g: 0.4, b: 0.8, a: 1 };
 
-// PB `repeated` fields are non-optional; they must be present (at least as
-// an empty array) for the serializer to walk them. UiBackground has `uvs`
-// which the gen'd encoder iterates unconditionally — missing it crashes the
-// CRDT serializer ("message.uvs is not iterable"). The default UV winding
-// is documented in ui_background.proto as `[0,0,0,1,1,0,1,0]`.
-const DEFAULT_UVS: number[] = [0, 0, 0, 1, 1, 0, 1, 0];
-
 export function addUINode(engine: IEngine) {
-  return function addUINode(parent: Entity, type: UINodeType): Entity {
+  return function addUINode(parent: Entity, type: UINodeType, preset?: 'image'): Entity {
     const entity = engine.addEntity();
     const UiTransform = engine.getComponent(
       COMPONENT_IDS.UiTransform,
@@ -85,8 +77,9 @@ export function addUINode(engine: IEngine) {
       // Globally-unique name (Label, Label_1, …) so engine.getEntityByName resolves each
       // node unambiguously — the codegen enum-key dedup alone leaves the Name *values*
       // colliding, which breaks getEntityByName from scene code.
+      const baseName = preset === 'image' ? 'Image' : DEFAULT_NAMES[type];
       NameComp.createOrReplace(entity, {
-        value: generateUniqueUiName(engine, NameComp, DEFAULT_NAMES[type]),
+        value: generateUniqueUiName(engine, NameComp, baseName),
       });
     }
 
@@ -100,6 +93,12 @@ export function addUINode(engine: IEngine) {
           height: 100,
           heightUnit: YGU_POINT,
         } as unknown as PBUiTransform);
+        if (preset === 'image') {
+          UiBackground.createOrReplace(entity, {
+            ...UI_REQUIRED_FIELD_DEFAULTS['core::UiBackground'],
+            color: WHITE, // opaque so the assigned texture shows at full strength
+          } as unknown as PBUiBackground);
+        }
         break;
       case 'Label':
         UiTransform.createOrReplace(entity, {
@@ -128,9 +127,8 @@ export function addUINode(engine: IEngine) {
           alignItems: YGA_CENTER,
         } as unknown as PBUiTransform);
         UiBackground.createOrReplace(entity, {
+          ...UI_REQUIRED_FIELD_DEFAULTS['core::UiBackground'],
           color: BLUE,
-          textureMode: BG_NINE_SLICES,
-          uvs: DEFAULT_UVS,
         } as unknown as PBUiBackground);
         UiText.createOrReplace(entity, {
           value: 'Button',
@@ -148,8 +146,8 @@ export function addUINode(engine: IEngine) {
           heightUnit: YGU_POINT,
         } as unknown as PBUiTransform);
         UiInput.createOrReplace(entity, {
+          ...UI_REQUIRED_FIELD_DEFAULTS['core::UiInput'],
           placeholder: 'Enter text',
-          disabled: false,
         } as unknown as PBUiInput);
         break;
       case 'Dropdown':
@@ -162,10 +160,8 @@ export function addUINode(engine: IEngine) {
           heightUnit: YGU_POINT,
         } as unknown as PBUiTransform);
         UiDropdown.createOrReplace(entity, {
-          acceptEmpty: false,
-          disabled: false,
+          ...UI_REQUIRED_FIELD_DEFAULTS['core::UiDropdown'],
           options: ['Option 1', 'Option 2'],
-          selectedIndex: 0,
         } as unknown as PBUiDropdown);
         break;
     }

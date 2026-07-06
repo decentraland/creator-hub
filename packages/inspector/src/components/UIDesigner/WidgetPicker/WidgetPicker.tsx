@@ -8,7 +8,6 @@ import { selectNode } from '../../../redux/ui-designer';
 import { usePopoverPosition } from '../../ui/usePopoverPosition';
 import Search from '../../Search';
 import { WIDGET_CATALOG } from '../widget-catalog';
-import type { UINodeType } from '../tree-model';
 
 import './WidgetPicker.css';
 
@@ -42,9 +41,9 @@ export const WidgetPicker: React.FC<WidgetPickerProps> = ({ parent, anchorRef, o
     })).filter(c => c.items.length > 0);
   }, [q]);
 
-  const add = (type: UINodeType) => {
+  const add = (item: (typeof WIDGET_CATALOG)[number]['items'][number]) => {
     if (!sdk) return;
-    const entity = sdk.operations.addUINode(parent, type);
+    const entity = sdk.operations.addUINode(parent, item.type, item.preset);
     void sdk.operations.dispatch();
     dispatch(selectNode({ node: entity }));
     onDismiss();
@@ -74,10 +73,10 @@ export const WidgetPicker: React.FC<WidgetPickerProps> = ({ parent, anchorRef, o
           <div className="ui-designer-widget-picker-category">{c.category}</div>
           {c.items.map(item => (
             <button
-              key={item.type}
+              key={item.id}
               type="button"
               className="ui-designer-widget-picker-row"
-              onClick={() => add(item.type)}
+              onClick={() => add(item)}
             >
               <span
                 className="ui-designer-widget-picker-icon"

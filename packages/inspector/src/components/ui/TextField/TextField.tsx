@@ -180,6 +180,9 @@ const TextField = React.forwardRef<HTMLInputElement, Props>((props, ref) => {
           onMouseLeave={handleMouseLeave}
           onWheel={handleWheel}
           disabled={disabled}
+          spellCheck={false}
+          autoCorrect="off"
+          autoCapitalize="off"
           {...rest}
         />
         {renderRightContent()}

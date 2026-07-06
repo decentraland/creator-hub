@@ -8,6 +8,7 @@ import { getComponentValue, isLastWriteWinComponent } from './useComponentValue'
 
 const CLIPBOARD_TAG = '__dclComponent';
 const TRANSFORM_COMPONENT_NAME = 'core::Transform';
+const UI_TRANSFORM_COMPONENT_NAME = 'core::UiTransform';
 
 type ClipboardPayload = {
   [CLIPBOARD_TAG]: string;
@@ -63,12 +64,21 @@ const getDisplayName = (componentName: string): string => {
   return (match && match[0]) || componentName;
 };
 
-const stripParentForTransform = (componentName: string, value: unknown): unknown => {
-  if (componentName !== TRANSFORM_COMPONENT_NAME || !value || typeof value !== 'object') {
-    return value;
+// Copy/paste of a transform must not carry tree-structure pointers: for
+// `core::Transform` that's `parent`; for `core::UiTransform` it's `parent` AND
+// `rightOf` (the UI sibling-order link). Pasting either would silently reparent
+// / reorder the target — see CLAUDE.md on UiTransform parent/rightOf.
+const stripTreePointers = (componentName: string, value: unknown): unknown => {
+  if (!value || typeof value !== 'object') return value;
+  if (componentName === TRANSFORM_COMPONENT_NAME) {
+    const { parent: _p, ...rest } = value as Record<string, unknown>;
+    return rest;
   }
-  const { parent: _parent, ...rest } = value as Record<string, unknown>;
-  return rest;
+  if (componentName === UI_TRANSFORM_COMPONENT_NAME) {
+    const { parent: _p, rightOf: _r, ...rest } = value as Record<string, unknown>;
+    return rest;
+  }
+  return value;
 };
 
 export const useComponentClipboard = <T>(
@@ -86,7 +96,7 @@ export const useComponentClipboard = <T>(
     if (entities.length === 0) return;
     try {
       const value = getComponentValue(entities[0], component);
-      const normalized = stripParentForTransform(component.componentName, value);
+      const normalized = stripTreePointers(component.componentName, value);
       const payload: ClipboardPayload = {
         [CLIPBOARD_TAG]: component.componentName,
         value: normalized,
@@ -139,7 +149,7 @@ export const useComponentClipboard = <T>(
     }
 
     try {
-      const value = stripParentForTransform(component.componentName, parsed.value) as T;
+      const value = stripTreePointers(component.componentName, parsed.value) as T;
       const lwwComponent = component as LastWriteWinElementSetComponentDefinition<T>;
       for (const entity of entities) {
         sdk.operations.updateValue(lwwComponent, entity, value as Partial<T>);

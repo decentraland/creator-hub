@@ -206,6 +206,10 @@ const COMPONENT_REGISTRY = {
       // scales to fit the player's screen. 0 → fall back to 1920×1080.
       canvasWidth: Schemas.Number,
       canvasHeight: Schemas.Number,
+      // When true (default), the UI scales to fit the player's screen using the
+      // canvas as a virtual resolution. When false, the UI lays out in real
+      // screen pixels (scale 1) — canvas size then only sizes the editor preview.
+      scaleToFit: Schemas.Boolean,
       variables: Schemas.Array(
         Schemas.Map({
           name: Schemas.String,
