@@ -243,10 +243,13 @@ const DclCast = ({
   };
 
   ReactEcs.useEffect(() => {
-    fetchDclCastInfo();
-    if (playerAddress) {
-      ensurePresenterRole(playerAddress);
-    }
+    // ensurePresenterRole requires the stream/room that fetchDclCastInfo creates,
+    // so it must run after that call resolves, not in parallel with it.
+    fetchDclCastInfo().then(() => {
+      if (playerAddress) {
+        ensurePresenterRole(playerAddress);
+      }
+    });
   }, []);
 
   // Sync selectedStream when video.src arrives after mount (late-joiner fix)
