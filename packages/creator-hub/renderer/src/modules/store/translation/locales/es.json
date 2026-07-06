@@ -636,6 +636,7 @@
     "generic": {
       "import_scene": "Importando escena...",
       "import_scene_failed": "Error al importar escena",
+      "import_scene_already_imported": "La escena ya fue importada",
       "duplicate_scene": "Duplicando escena...",
       "duplicate_scene_failed": "Error al duplicar escena",
       "delete_scene": "Borrando escena...",
