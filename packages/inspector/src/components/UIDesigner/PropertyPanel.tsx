@@ -86,15 +86,6 @@ const COMPONENT_DEFAULTS: Record<string, Record<string, unknown>> = {
 // UiDropdown — are never here: removing them would reclassify the node.)
 const OPTIONAL_UI_COMPONENTS = new Set<string>(['core::UiBackground']);
 
-// Which optional components each node type may add.
-const APPLICABLE_OPTIONAL: Record<UINodeType, string[]> = {
-  UiEntity: ['core::UiBackground'],
-  Label: ['core::UiBackground'],
-  Button: ['core::UiBackground'],
-  Input: ['core::UiBackground'],
-  Dropdown: ['core::UiBackground'],
-};
-
 // Components whose values are copy/paste-able via the group's MoreOptionsMenu.
 // Enabled on the FIRST group carrying each id (Layout wins UiTransform over
 // Effects/Border), so one component is never offered twice.
@@ -292,8 +283,8 @@ const PropertyPanelComponent: React.FC = () => {
     return cid && OPTIONAL_UI_COMPONENTS.has(cid) ? hasComponent(cid) : true;
   });
 
-  // Optional components applicable to this node type but not yet present.
-  const addableComponents = (APPLICABLE_OPTIONAL[type] ?? []).filter(cid => !hasComponent(cid));
+  // Optional components not yet present on the node (order-stable from the set).
+  const addableComponents = [...OPTIONAL_UI_COMPONENTS].filter(cid => !hasComponent(cid));
 
   // First-occurrence guard so a component (esp. UiTransform, shared by
   // Layout/Effects/Border) offers clipboard on exactly one group.

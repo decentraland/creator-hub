@@ -19,5 +19,4 @@ export const YGU_AUTO = 3; // YGUnit.YGU_AUTO
 export const YGPT_RELATIVE = 0; // YGPositionType.YGPT_RELATIVE (in flow)
 export const YGPT_ABSOLUTE = 1; // YGPositionType.YGPT_ABSOLUTE
 
-export const YGD_FLEX = 0; // YGDisplay.YGD_FLEX
 export const YGD_NONE = 1; // YGDisplay.YGD_NONE
