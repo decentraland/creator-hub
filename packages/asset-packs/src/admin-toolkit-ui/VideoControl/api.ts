@@ -235,17 +235,27 @@ export function requestPresentationState(): void {
   });
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
+}
+
+// consumeMessages resolves to a bare array of { sender, data }; tolerate a
+// { messages: [...] } wrapper too in case the runtime shape changes. Narrow
+// each entry to a string `data` before it reaches JSON.parse.
+function extractMessages(response: unknown): { data: string }[] {
+  const raw = Array.isArray(response)
+    ? response
+    : isRecord(response) && Array.isArray(response.messages)
+      ? response.messages
+      : [];
+  return raw.filter((m): m is { data: string } => isRecord(m) && typeof m.data === 'string');
+}
+
 export async function consumePresentationMessages(): Promise<
   PresentationState | 'stopped' | undefined
 > {
   try {
-    const response: unknown = await consumeMessages({ topic: PRESENTATION_TOPIC });
-
-    // consumeMessages returns a bare array of { sender, data }; tolerate a
-    // { messages: [...] } wrapper too in case the runtime shape changes.
-    const messages: { data: string }[] = Array.isArray(response)
-      ? (response as { data: string }[])
-      : ((response as { messages?: { data: string }[] })?.messages ?? []);
+    const messages = extractMessages(await consumeMessages({ topic: PRESENTATION_TOPIC }));
 
     let latestState: PresentationState | 'stopped' | undefined;
     for (const msg of messages) {

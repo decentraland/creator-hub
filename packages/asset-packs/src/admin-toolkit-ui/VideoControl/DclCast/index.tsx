@@ -16,7 +16,7 @@ import {
   ensurePresenterRole,
   type FlattenedTrack,
 } from '../api';
-import { createVideoPlayerControls } from '../utils';
+import { CAST_SRC_PREFIX, createVideoPlayerControls } from '../utils';
 import { showcaseState, sharePresentationState } from './state';
 import DclCastInfo from './DclCastInfo';
 import CompactDclCast from './CompactDclCast';
@@ -68,9 +68,6 @@ const DclCast = ({
     const latestTracks = await getActiveStreams();
     if (!latestTracks) return;
 
-    // Debug: log all track data to review presentation bot metadata
-    console.log('[DclCast] Active tracks:', JSON.stringify(latestTracks, null, 2));
-
     const closeModal = () => {
       showcaseState.show = false;
     };
@@ -104,7 +101,7 @@ const DclCast = ({
 
     if (!result) {
       setError(true);
-    } else if (video?.src?.startsWith('livekit-video://') && !state.videoControl.selectedStream) {
+    } else if (video?.src?.startsWith(CAST_SRC_PREFIX) && !state.videoControl.selectedStream) {
       state.videoControl.selectedStream = 'dcl-cast';
     }
 
@@ -146,7 +143,7 @@ const DclCast = ({
   // Sync selectedStream when video.src arrives after mount (late-joiner fix)
   const videoSrc = video?.src;
   ReactEcs.useEffect(() => {
-    if (videoSrc?.startsWith('livekit-video://') && !state.videoControl.selectedStream) {
+    if (videoSrc?.startsWith(CAST_SRC_PREFIX) && !state.videoControl.selectedStream) {
       state.videoControl.selectedStream = 'dcl-cast';
     }
   }, [videoSrc]);
@@ -259,7 +256,7 @@ const DclCast = ({
               fontSize={16}
               color={colors.white}
               onMouseDown={() => {
-                handleGetDclCastInfo(state);
+                fetchDclCastInfo();
               }}
               uiTransform={styles.retryButton}
             />
