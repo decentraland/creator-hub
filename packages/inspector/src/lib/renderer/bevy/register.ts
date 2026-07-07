@@ -5,6 +5,7 @@ import { BevyRenderer } from './BevyRenderer';
 import { mountBevyEngine } from './engine-iframe';
 import { createForwardEditBridge } from './forward-edits';
 import { createPickBridge } from './pick-bridge';
+import { createSelectionBridge } from './selection-bridge';
 
 /**
  * Bevy renderer registration. Lives here (not in the renderer-agnostic
@@ -72,10 +73,15 @@ export function registerBevyRenderer(): void {
       // Only meaningful when a systemScene agent is configured.
       const disconnectPick = createPickBridge({ events: bevy.events });
 
+      // Forward the inspector's selection to the agent so its gizmo attaches to
+      // the selected entity (from a viewport pick OR a tree click).
+      const disconnectSelection = createSelectionBridge({ context: bevy.context });
+
       return {
         renderer: bevy,
         engine: bevy.context.engine,
         dispose: () => {
+          disconnectSelection();
           disconnectPick();
           disconnectForward();
           disconnect();
