@@ -1,9 +1,9 @@
 import type { Emitter } from 'mitt';
 import type { Entity } from '@dcl/ecs';
 
+import { EDITOR_BUS_CHANNEL } from '@dcl/inspector-bevy-protocol';
+import type { AgentToPage, BusEnvelope } from '@dcl/inspector-bevy-protocol';
 import type { RendererEvents } from '../types';
-import { EDITOR_BUS_CHANNEL } from './bus-protocol';
-import type { AgentToPage, BusEnvelope } from './bus-protocol';
 
 /**
  * Reverse-channel bridge: the super-user editor-agent scene (a separate SDK7
@@ -13,7 +13,8 @@ import type { AgentToPage, BusEnvelope } from './bus-protocol';
  * matching event on the renderer's emitter (`pick`, `gizmoCommit`,
  * `gizmoCommitEnd`). The inspector's reverse-channel handler
  * (connectReverseChannel) then applies them to ECS selection / Transform writes.
- * The wire shapes are the shared {@link ./bus-protocol} both sides import.
+ * The wire shapes are the shared `@dcl/inspector-bevy-protocol` package both
+ * sides depend on.
  *
  * The stock engine has no console command for viewport interaction, so this
  * BroadcastChannel is the only path — it's allowlisted for super-user scenes on

@@ -7,6 +7,9 @@
     "start": "sdk-commands start",
     "build": "sdk-commands build"
   },
+  "dependencies": {
+    "@dcl/inspector-bevy-protocol": "file:../protocol"
+  },
   "devDependencies": {
     "@dcl/ecs": "7.22.6-25007982108.commit-83012ab",
     "@dcl/js-runtime": "7.22.6-25007982108.commit-83012ab",

@@ -3,13 +3,13 @@
  * same-origin BroadcastChannel between the inspector (host page) and the Bevy
  * editor-agent scene (`agents/bevy`, which runs in the engine's wasm sandbox).
  *
- * Imported by BOTH sides — the inspector's pick-bridge / selection-bridge AND
- * the agent (via a relative path, since the agent is a separate sdk-commands
- * project). So it MUST stay pure types + constants with ZERO imports: the two
- * sides build with different toolchains/SDKs, and only a dependency-free module
- * bundles cleanly in both (the same reason bevy-editor keeps its bus protocol in
- * a pure-types `@dcl-editor/contract`). Vectors are plain `{x,y,z}`, entity ids
- * are numbers — no `@dcl/ecs` types cross the wire.
+ * A standalone, dependency-free package (`@dcl/inspector-bevy-protocol`) both
+ * sides depend on via `file:` — so neither reaches into the other's source. It
+ * MUST stay pure types + constants with ZERO imports: the two sides build with
+ * different toolchains/SDKs, and only a dependency-free module resolves + bundles
+ * cleanly in both (the same reason bevy-editor keeps its bus protocol in a
+ * pure-types `@dcl-editor/contract`). Vectors are plain `{x,y,z}`, entity ids are
+ * numbers — no `@dcl/ecs` types cross the wire.
  */
 
 /** The BroadcastChannel name both sides open. */

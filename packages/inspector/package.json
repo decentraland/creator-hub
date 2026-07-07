@@ -17,6 +17,7 @@
     "@dcl-regenesislabs/bevy-explorer-web": "0.1.0-28063284821.commit-cbfd320",
     "@dcl/ecs-math": "2.1.0",
     "@dcl/gltf-validator-ts": "^1.0.19",
+    "@dcl/inspector-bevy-protocol": "file:agents/protocol",
     "@dcl/mini-rpc": "^1.0.7",
     "@dcl/rpc": "^1.1.1",
     "@dcl/schemas": "26.5.0",
