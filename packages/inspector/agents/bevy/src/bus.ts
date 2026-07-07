@@ -5,17 +5,17 @@
  * super-user sandbox by upstream bevy-explorer and spans the iframe/worker
  * boundary same-origin.
  *
- * The message shapes are the SHARED protocol, imported (via a relative path)
- * from the inspector's bus-protocol.ts — the single source of truth, so the two
- * sides can't drift. It's pure types + a const, so it bundles fine in the
- * sdk-commands build.
+ * The message shapes are the SHARED protocol package
+ * (`@dcl/inspector-bevy-protocol`, a file: dep) — the single source of truth
+ * both sides depend on, so they can't drift. It's pure types + a const, so it
+ * resolves + bundles fine in the sdk-commands build.
  */
 import {
   EDITOR_BUS_CHANNEL,
   type AgentToPage,
   type PageToScene,
   type BusEnvelope,
-} from '../../../src/lib/renderer/bevy/bus-protocol';
+} from '@dcl/inspector-bevy-protocol';
 
 export type { AgentToPage, PageToScene };
 

@@ -1,8 +1,8 @@
 import type { Entity } from '@dcl/ecs';
 
+import { EDITOR_BUS_CHANNEL } from '@dcl/inspector-bevy-protocol';
+import type { BusEnvelope, PageToScene } from '@dcl/inspector-bevy-protocol';
 import type { BevySceneContext } from './BevySceneContext';
-import { EDITOR_BUS_CHANNEL } from './bus-protocol';
-import type { BusEnvelope, PageToScene } from './bus-protocol';
 
 /**
  * Forward the inspector's current selection to the editor-agent scene over the
@@ -12,7 +12,7 @@ import type { BusEnvelope, PageToScene } from './bus-protocol';
  * The `Selection` editor component marks selected entities in the ECS; the same
  * CRDT stream feeds BevySceneContext's engine, so we observe selection changes
  * there and post the current selected entity (`set-selection`, the shared
- * {@link ./bus-protocol} message). The gizmo is single-entity for now, so we
+ * `@dcl/inspector-bevy-protocol` message). The gizmo is single-entity for now, so we
  * send the first selected entity (or null).
  */
 
