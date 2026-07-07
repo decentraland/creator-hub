@@ -25,8 +25,12 @@ import { createSelectionBridge } from './selection-bridge';
  * the engine fetches /about + the scene bundle and runs it. Without a realm the
  * engine loads its default (public) realm and shows no project scene.
  *
- * Wiring gizmos/picking is the next slice — the reverse channel is already
- * connected so those land without touching this file.
+ * Editing (viewport pick + translate gizmo) is driven by a super-user editor-
+ * agent scene loaded via `bevySystemScene` (?systemScene=). That scene is a
+ * SEPARATE SDK7 project at `packages/inspector/agents/bevy` (its own sdk-commands
+ * build, excluded from the inspector build); it runs inside the engine's wasm
+ * sandbox and talks to this side over the `dcl-editor-bus` BroadcastChannel. The
+ * pick-bridge / selection-bridge here are its inspector-side peers.
  */
 export function registerBevyRenderer(): void {
   registerRenderer({
