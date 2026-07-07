@@ -293,7 +293,11 @@ describe('createCustomAsset', () => {
           const createCustomAssetFn = createCustomAsset(engine);
           const result = createCustomAssetFn([entity]);
 
-          const placeholderValue = findComponentValue(result, 'asset-packs::Placeholder', 0 as Entity);
+          const placeholderValue = findComponentValue(
+            result,
+            'asset-packs::Placeholder',
+            0 as Entity,
+          );
           expect(placeholderValue.src).toBe('{assetPath}/placeholder.glb');
           expect(result.resources).toContain('scene/assets/pack/subfolder/placeholder.glb');
         });
@@ -312,7 +316,11 @@ describe('createCustomAsset', () => {
           const gltfValue = findComponentValue(result, CoreComponents.GLTF_CONTAINER, 0 as Entity);
           expect(gltfValue.src).toBe('{assetPath}/models/mesh.glb');
 
-          const placeholderValue = findComponentValue(result, 'asset-packs::Placeholder', 0 as Entity);
+          const placeholderValue = findComponentValue(
+            result,
+            'asset-packs::Placeholder',
+            0 as Entity,
+          );
           expect(placeholderValue.src).toBe('{assetPath}/placeholders/placeholder.glb');
 
           expect(result.resources).toContain('scene/assets/pack/models/mesh.glb');
