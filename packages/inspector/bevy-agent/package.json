@@ -1,0 +1,17 @@
+{
+  "name": "bevy-editor-agent",
+  "version": "1.0.0",
+  "description": "Super-user editor-agent scene for the inspector's Bevy renderer (pick + translate gizmo). Built with sdk-commands; loaded into the engine as a portable experience via ?systemScene=.",
+  "private": true,
+  "scripts": {
+    "start": "sdk-commands start",
+    "build": "sdk-commands build"
+  },
+  "devDependencies": {
+    "@dcl/ecs": "7.22.6-25007982108.commit-83012ab",
+    "@dcl/js-runtime": "7.22.6-25007982108.commit-83012ab",
+    "@dcl/react-ecs": "7.22.6-25007982108.commit-83012ab",
+    "@dcl/sdk": "7.22.6-25007982108.commit-83012ab",
+    "@dcl/sdk-commands": "7.22.6-25007982108.commit-83012ab"
+  }
+}
