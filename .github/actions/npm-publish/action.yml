@@ -7,8 +7,9 @@ inputs:
     required: false
     default: '.'
   npm-token:
-    description: 'NPM authentication token'
-    required: true
+    description: 'NPM authentication token (leave empty for OIDC Trusted Publishing)'
+    required: false
+    default: ''
   initial-tag:
     description: 'Initial dist-tag for the published package'
     required: false
@@ -32,7 +33,7 @@ inputs:
   node-version:
     description: 'Node.js version to use'
     required: false
-    default: '22'
+    default: '24'
 
 outputs:
   published:
@@ -58,18 +59,14 @@ runs:
   using: 'composite'
   steps:
     - name: Setup Node.js with npm authentication
-      uses: actions/setup-node@v4
+      uses: actions/setup-node@v6
       with:
         node-version: ${{ inputs.node-version }}
         registry-url: ${{ inputs.registry }}
-      env:
-        NODE_AUTH_TOKEN: ${{ inputs.npm-token }}
 
     - name: Get package info
       shell: bash
       working-directory: ${{ inputs.working-directory }}
-      env:
-        NODE_AUTH_TOKEN: ${{ inputs.npm-token }}
       run: |
         if [ ! -f "package.json" ]; then
           echo "❌ Error: package.json not found in ${{ inputs.working-directory }}"
@@ -91,11 +88,11 @@ runs:
       id: package-info
 
     - name: Verify npm authentication
+      if: inputs.npm-token != ''
       shell: bash
       env:
         NODE_AUTH_TOKEN: ${{ inputs.npm-token }}
       run: |
-        # Verify authentication
         if [ "${{ inputs.dry-run }}" != "true" ]; then
           echo "🔐 Verifying npm authentication..."
           if npm whoami > /dev/null 2>&1; then
@@ -115,8 +112,12 @@ runs:
       shell: bash
       working-directory: ${{ inputs.working-directory }}
       env:
-        NODE_AUTH_TOKEN: ${{ inputs.npm-token }}
+        INPUT_NPM_TOKEN: ${{ inputs.npm-token }}
       run: |
+        if [ -n "$INPUT_NPM_TOKEN" ]; then
+          export NODE_AUTH_TOKEN="$INPUT_NPM_TOKEN"
+        fi
+
         PACKAGE_NAME="${{ steps.package-info.outputs.package-name }}"
         VERSION="${{ steps.package-info.outputs.version }}"
         INITIAL_TAG="${{ inputs.initial-tag }}"
@@ -149,8 +150,12 @@ runs:
       shell: bash
       working-directory: ${{ inputs.working-directory }}
       env:
-        NODE_AUTH_TOKEN: ${{ inputs.npm-token }}
+        INPUT_NPM_TOKEN: ${{ inputs.npm-token }}
       run: |
+        if [ -n "$INPUT_NPM_TOKEN" ]; then
+          export NODE_AUTH_TOKEN="$INPUT_NPM_TOKEN"
+        fi
+
         PACKAGE_NAME="${{ steps.package-info.outputs.package-name }}"
         VERSION="${{ steps.package-info.outputs.version }}"
         ADDITIONAL_TAGS="${{ inputs.additional-tags }}"
@@ -179,8 +184,6 @@ runs:
     - name: Summary
       if: always()
       shell: bash
-      env:
-        NODE_AUTH_TOKEN: ${{ inputs.npm-token }}
       run: |
         PACKAGE_NAME="${{ steps.package-info.outputs.package-name }}"
         VERSION="${{ steps.package-info.outputs.version }}"

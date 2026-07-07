@@ -35,7 +35,9 @@ class TransformPageObject {
     const input = this.getRotationInput(axis);
     await input.click();
     await page.keyboard.press('ControlOrMeta+a');
-    await page.keyboard.type(value);
+    // Locator-scoped typing: focuses the field before each keystroke, so the
+    // value can't be lost to a focus race on a slow runner. Still real per-char events.
+    await input.pressSequentially(value);
     // Allow React to process the input state update before blur
     await sleep(100);
     await page.keyboard.press('Tab');

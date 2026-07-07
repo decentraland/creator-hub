@@ -47,7 +47,7 @@ function Project({ project }: { project: Project }) {
   const deployment = getDeployment(project.path);
   const history = getDeploymentHistory(project.path);
   const hasDeployments = !!deployment || history.length > 0;
-  const parcels = project.layout.cols * project.layout.rows;
+  const parcels = project.scene.parcels.length;
 
   const handleClick = useCallback(() => {
     runProject(project);

@@ -2,6 +2,10 @@
   width: 900px;
 }
 
+.WorldSettingsModal.Collaborator.TabsModal {
+  width: 740px;
+}
+
 .WorldSettingsModal .Loader {
   height: 100%;
 }

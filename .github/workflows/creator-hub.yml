@@ -36,15 +36,15 @@ jobs:
         os: [ macos-latest, windows-latest ]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
           fetch-tags: true
           submodules: true
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
-          node-version: 22
+          node-version: 24
           cache: 'npm'
 
       - name: install
@@ -93,7 +93,7 @@ jobs:
       # Download 'SSLcom/esigner-codesign' to a folder called 'esigner-codesign' in the root of the project
       - name: Checkout esigner-codesign repository (Windows)
         if: ${{github.ref == 'refs/heads/main' && matrix.os == 'windows-latest' && !inputs.dry-run}}
-        uses: actions/checkout@v3
+        uses: actions/checkout@v6
         with:
           repository: 'SSLcom/esigner-codesign'
           path: esigner-codesign

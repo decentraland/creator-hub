@@ -96,7 +96,7 @@ export function VideoControl({
   }, [state.videoControl.selectedVideoPlayer]);
 
   return (
-    <UiEntity uiTransform={{ flexDirection: 'column', width: '100%', height: '100%' }}>
+    <UiEntity uiTransform={{ flexDirection: 'column', width: '100%' }}>
       <Card
         uiTransform={{
           padding: {
@@ -110,7 +110,6 @@ export function VideoControl({
         <UiEntity
           uiTransform={{
             width: '100%',
-            height: '100%',
             flexDirection: 'column',
           }}
         >

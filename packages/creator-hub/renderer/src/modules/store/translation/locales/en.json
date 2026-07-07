@@ -413,7 +413,8 @@
         "max_offset": "Max Offset",
         "general": "General",
         "single_player": "Single Player",
-        "show_in_places": "Show in Places"
+        "show_in_places": "Show in Places",
+        "single_player_streaming_note": "Live streaming is not supported in single player mode."
       },
       "details": {
         "world_title": "World Title",
@@ -427,10 +428,7 @@
         "set_image": "Choose image",
         "no_image": "No image set",
         "age_rating_options": {
-          "everyone": "E (Everyone, PG 13+)",
-          "teen": "T (Teens, PG 13+)",
-          "adult": "A (Adults, PG 18+)",
-          "restricted": "R (Restricted)"
+          "adult": "A (Adults, PG 18+)"
         },
         "categories_options": {
           "art": "🎨 Art",
@@ -565,7 +563,7 @@
         }
       },
       "collaborators": {
-        "description": "<span>Add up to 10 collaborators</span> and manage their permission to deploy, or stream into your World.",
+        "description": "<span>Add up to 100 collaborators</span> and manage their permission to deploy, or stream into your World.",
         "empty_list": "You haven't added any collaborators yet",
         "add_collaborator": "Add collaborator",
         "add": "Add",
@@ -638,6 +636,7 @@
     "generic": {
       "import_scene": "Importing scene...",
       "import_scene_failed": "Failed importing scene",
+      "import_scene_already_imported": "Scene already imported",
       "duplicate_scene": "Duplicating scene...",
       "duplicate_scene_failed": "Failed duplicating scene",
       "delete_scene": "Deleting scene...",
@@ -710,16 +709,17 @@
   "sign_in": {
     "back": "Back",
     "content": {
-      "title": "Secure sign-in step",
-      "body": "Remember the verification number below.<br></br>You'll be prompted to confirm it in your web browser to securely link your sign in.",
-      "verification_code_info": "Keep this number private. It ensures that your sign-in is secure and unique to you.",
-      "expiration": "Verification number will expire in {minutes}:{seconds} minutes"
+      "title": "Continue in your browser",
+      "body": "We've opened your browser to finish signing in.<br></br>Once you're done, you'll be redirected here automatically.",
+      "reopen": "Browser didn't open? <a>Open it again</a> or <b>copy the link</b>"
     },
     "errors": {
       "max_attempts": "Maximum signin attempts reached. Please try again later.",
       "failed": "Signin failed. Please try again.",
-      "timeout": "Signin request timed out. Please check your connection and try again.",
-      "init_failed": "Failed to initialize signin. Please check your connection."
+      "init_failed": "Failed to initialize signin. Please check your connection.",
+      "identity_not_found": "Sign-in could not be completed. Please try signing in again.",
+      "identity_expired": "Your sign-in request expired. Please try signing in again.",
+      "network_mismatch": "Couldn't complete sign-in. Disable any VPN or browser private relay and try again."
     }
   },
   "more": {
@@ -750,7 +750,7 @@
         },
         "land": {
           "title": "LAND",
-          "description": "Publish Scenes, creata Estates and manage permissions of your LAND."
+          "description": "Publish Scenes, create Estates and manage permissions of your LAND."
         }
       },
       "open_in_browser": "Open in Browser"
@@ -872,6 +872,7 @@
         "scenes_count": "{count} {count, plural, one {scene} other {scenes}}",
         "scene_settings": "Scene Settings",
         "world_settings": "Settings",
+        "layout": "Layout",
         "published_world": "Published World"
       },
       "land": {

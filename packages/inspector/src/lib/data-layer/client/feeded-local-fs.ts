@@ -43,7 +43,7 @@ export function generateMinimalComposite({ engine, components }: TempEngine) {
     name: 'Test Scene',
     description: 'This is a test scene',
     thumbnail: 'assets/scene/thumbnail.png',
-    ageRating: SceneAgeRating.Teen,
+    ageRating: SceneAgeRating.Adult,
     skyboxConfig: {
       fixedTime: 36000,
       transitionMode: TransitionMode.TM_FORWARD,

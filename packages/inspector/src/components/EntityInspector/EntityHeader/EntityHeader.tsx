@@ -18,7 +18,7 @@ import { selectCustomAssets } from '../../../redux/app';
 import { Edit as EditInput } from '../../Tree/Edit';
 import { Block } from '../../Block';
 import CustomAssetIcon from '../../Icons/CustomAsset';
-import { Dropdown, Divider } from '../../ui';
+import { Dropdown } from '../../ui';
 
 import MoreOptionsMenu from '../MoreOptionsMenu';
 import { TagsInspector } from '../TagsInspector';
@@ -187,6 +187,10 @@ export default React.memo(
           description:
             'Add a light source. Can be point (in all directions) or spot light (in a specific direction).',
           link: 'https://docs.decentraland.org/creator/scenes-sdk7/3d-content-essentials/lights',
+        }),
+        createOption(sdk.components.ParticleSystem, 'Particle System', {
+          description:
+            'Create dynamic visual effects by emitting and animating particles. Use for fire, smoke, rain, sparks, magic auras, and more.',
         }),
         createOption(sdk.components.VirtualCamera, 'Virtual Camera', {
           description:

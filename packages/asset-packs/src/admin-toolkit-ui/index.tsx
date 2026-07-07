@@ -1,4 +1,5 @@
 import { Color4 } from '@dcl/sdk/math';
+import { isMobile as detectIsMobile } from '@dcl/sdk/platform';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars -- ReactEcs is required for JSX factory
 import ReactEcs, {
   Label,
@@ -32,12 +33,28 @@ import { showcaseState, sharePresentationState } from './VideoControl/DclCast';
 import { SpeakerShowcase } from './VideoControl/DclCast/SpeakerShowcase';
 import SharePresentationModal from './VideoControl/DclCast/SharePresentationModal';
 import { isPreview } from './fetch-utils';
+import { initAdminMessageBus, getAdminMessageBus } from './admin-message-bus';
 
 export const nextTickFunctions: (() => void)[] = [];
-const ADMIN_TOOLKIT_VIRTUAL_UI_SIZE = { virtualWidth: 1920, virtualHeight: 1080 };
 
-// eslint-disable-next-line prefer-const
-export let state: State = {
+// Mobile scaling: shrink the virtual canvas on
+// mobile so the SDK's global UI scale factor — min(screen/virtual), see
+// @dcl/react-ecs getUiScaleFactor — multiplies EVERYTHING (geometry and
+// fontSize) uniformly by MOBILE_UI_SCALE. We author a single base layout and
+// mobile gets the zoom for free, including every child component's text.
+const MOBILE_UI_SCALE = 2;
+const BASE_VIRTUAL_UI_SIZE = { virtualWidth: 1920, virtualHeight: 1080 };
+
+function getVirtualUiSize() {
+  return detectIsMobile()
+    ? {
+        virtualWidth: BASE_VIRTUAL_UI_SIZE.virtualWidth / MOBILE_UI_SCALE,
+        virtualHeight: BASE_VIRTUAL_UI_SIZE.virtualHeight / MOBILE_UI_SCALE,
+      }
+    : BASE_VIRTUAL_UI_SIZE;
+}
+
+export const state: State = {
   adminToolkitUiEntity: 0 as Entity,
   panelOpen: false,
   activeTab: TabType.NONE,
@@ -107,7 +124,6 @@ export async function fetchSceneAdmins() {
   const [error, response] = await getSceneAdmins();
 
   if (error) {
-    // user doesnt have permissions
     console.log(JSON.stringify({ error }));
     sceneAdminsCache = [];
     return;
@@ -121,6 +137,16 @@ export async function fetchSceneAdmins() {
       canBeRemoved: !!$.canBeRemoved,
     }))
     .sort(a => (a.canBeRemoved ? 1 : -1));
+  if (adminDataInitialized) {
+    getAdminMessageBus().updateAdminList(sceneAdminsCache);
+  }
+}
+
+export async function fetchAndSyncSceneAdmins() {
+  await fetchSceneAdmins();
+  if (adminDataInitialized) {
+    getAdminMessageBus().emitSyncAdmins();
+  }
 }
 
 export async function fetchSceneBans() {
@@ -144,13 +170,6 @@ export function getSmartItems(engine: IEngine) {
   return Array.from(adminToolkitComponent.smartItemsControl.smartItems ?? []);
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-function getRewards(engine: IEngine) {
-  const adminToolkitComponent = getAdminToolkitComponent(engine);
-
-  return Array.from(adminToolkitComponent?.rewardsControl?.rewardItems ?? []);
-}
-
 function initTextAnnouncementSync(engine: IEngine) {
   const { TextAnnouncements } = getComponents(engine);
 
@@ -163,9 +182,13 @@ function initTextAnnouncementSync(engine: IEngine) {
 
 // Initialize admin data before UI rendering
 let adminDataInitialized = false;
-export async function initializeAdminData(engine: IEngine, sdkHelpers?: ISDKHelpers) {
+export async function initializeAdminData(
+  engine: IEngine,
+  sdkHelpers?: ISDKHelpers,
+  playersHelper?: IPlayersHelper,
+) {
   if (!adminDataInitialized) {
-    const { TextAnnouncements, VideoControlState } = getComponents(engine);
+    const { VideoControlState } = getComponents(engine);
 
     // Initialize AdminToolkitUiEntity
     state.adminToolkitUiEntity = getAdminToolkitEntity(engine) ?? engine.addEntity();
@@ -182,7 +205,7 @@ export async function initializeAdminData(engine: IEngine, sdkHelpers?: ISDKHelp
 
     sdkHelpers?.syncEntity?.(
       state.adminToolkitUiEntity,
-      [VideoControlState.componentId, TextAnnouncements.componentId],
+      [VideoControlState.componentId],
       ADMIN_TOOLS_ENTITY,
     );
 
@@ -198,6 +221,15 @@ export async function initializeAdminData(engine: IEngine, sdkHelpers?: ISDKHelp
     // Initialize scene data
     await Promise.all([fetchSceneAdmins(), fetchSceneBans()]);
 
+    // Initialize admin message bus with sender validation
+    initAdminMessageBus(
+      engine,
+      sceneAdminsCache,
+      state.adminToolkitUiEntity,
+      playersHelper,
+      fetchSceneAdmins,
+    );
+
     adminDataInitialized = true;
 
     console.log('initializeAdminData - initialized');
@@ -212,11 +244,11 @@ export function createAdminToolkitUI(
   playersHelper?: IPlayersHelper,
 ) {
   // Initialize admin data before setting up the UI
-  initializeAdminData(engine, sdkHelpers).then(() => {
+  initializeAdminData(engine, sdkHelpers, playersHelper).then(() => {
     console.log('createAdminToolkitUI - initialized');
     reactBasedUiSystem.setUiRenderer(
       () => uiComponent(engine, pointerEventsSystem, sdkHelpers, playersHelper),
-      ADMIN_TOOLKIT_VIRTUAL_UI_SIZE,
+      getVirtualUiSize(),
     );
   });
 }
@@ -236,13 +268,27 @@ function isAllowedAdmin(
 
 const uiComponent = (
   engine: IEngine,
-  pointerEventsSystem: PointerEventsSystem,
-  sdkHelpers?: ISDKHelpers,
+  _pointerEventsSystem: PointerEventsSystem,
+  _sdkHelpers?: ISDKHelpers,
   playersHelper?: IPlayersHelper,
 ) => {
   const adminToolkitEntity = getAdminToolkitComponent(engine);
   const player = playersHelper?.getPlayer();
   const isPlayerAdmin = isAllowedAdmin(engine, adminToolkitEntity, player);
+  const isMobile = detectIsMobile();
+
+  // Mobile safe area (from Decentraland Building-for-Mobile guide):
+  //   RED (unsafe) zones:
+  //   - Left 25%  (full height)  → Chat, Search, Profile, Joystick, Emotes
+  //   - Top-right  25% × 23%    → Profile access, camera controllers
+  //   - Bottom-right 25% × 55%  → Interaction buttons
+  //   GREEN (safe) zone = CENTER of screen
+
+  // Desktop: row layout, anchored top-right (unchanged from original).
+  // Mobile: row layout, anchored top-left inside the safe zone.
+  const outerPosition = isMobile ? { top: 16, left: 300 } : { top: 120, right: 14 };
+  const innerPosition = isMobile ? { left: 8, top: 2 } : { right: 8 };
+  const toggleBtnSize = isMobile ? 54 : 42;
 
   return [
     <UiEntity
@@ -256,8 +302,8 @@ const uiComponent = (
         <UiEntity
           uiTransform={{
             positionType: 'absolute',
-            flexDirection: 'row',
-            position: { top: 120, right: 14 },
+            flexDirection: isMobile ? 'row-reverse' : 'row',
+            position: outerPosition,
           }}
         >
           <UiEntity
@@ -266,7 +312,7 @@ const uiComponent = (
               width: 500,
               pointerFilter: 'block',
               flexDirection: 'column',
-              margin: { right: 8 },
+              margin: innerPosition,
             }}
           >
             <UiEntity
@@ -424,39 +470,51 @@ const uiComponent = (
                 }}
               />
             </UiEntity>
-            {state.activeTab === TabType.TEXT_ANNOUNCEMENT_CONTROL ? (
-              <TextAnnouncementsControl
-                engine={engine}
-                state={state}
-                player={player}
-              />
-            ) : null}
-            {state.activeTab === TabType.VIDEO_CONTROL ? (
-              <VideoControl
-                engine={engine}
-                state={state}
-                playerAddress={player?.userId}
-              />
-            ) : null}
-            {state.activeTab === TabType.SMART_ITEMS_CONTROL ? (
-              <SmartItemsControl
-                engine={engine}
-                state={state}
-              />
-            ) : null}
-            {state.activeTab === TabType.MODERATION_CONTROL && (
-              <ModerationControl
-                engine={engine}
-                player={player}
-                sceneAdmins={sceneAdminsCache}
-              />
-            )}
+            <UiEntity
+              uiTransform={{
+                width: '100%',
+                flexDirection: 'column',
+                // Mobile: cap the tab content to the viewport and scroll the
+                // overflow, so tall tabs (e.g. permissions) stay fully reachable.
+                // The header above stays fixed; desktop is left untouched.
+                maxHeight: isMobile ? '85vh' : undefined,
+                overflow: isMobile ? 'scroll' : 'visible',
+              }}
+            >
+              {state.activeTab === TabType.TEXT_ANNOUNCEMENT_CONTROL ? (
+                <TextAnnouncementsControl
+                  engine={engine}
+                  state={state}
+                  player={player}
+                />
+              ) : null}
+              {state.activeTab === TabType.VIDEO_CONTROL ? (
+                <VideoControl
+                  engine={engine}
+                  state={state}
+                  playerAddress={player?.userId}
+                />
+              ) : null}
+              {state.activeTab === TabType.SMART_ITEMS_CONTROL ? (
+                <SmartItemsControl
+                  engine={engine}
+                  state={state}
+                />
+              ) : null}
+              {state.activeTab === TabType.MODERATION_CONTROL && (
+                <ModerationControl
+                  engine={engine}
+                  player={player}
+                  sceneAdmins={sceneAdminsCache}
+                />
+              )}
+            </UiEntity>
           </UiEntity>
           <UiEntity
             uiTransform={{
               display: 'flex',
-              height: 42,
-              width: 42,
+              height: toggleBtnSize,
+              width: toggleBtnSize,
               alignItems: 'center',
               alignContent: 'center',
               justifyContent: 'center',
@@ -473,8 +531,8 @@ const uiComponent = (
             <DCLButton
               value=""
               uiTransform={{
-                height: 40,
-                width: 40,
+                height: toggleBtnSize - 2,
+                width: toggleBtnSize - 2,
                 alignItems: 'center',
                 alignContent: 'center',
                 justifyContent: 'center',

@@ -413,7 +413,8 @@
         "max_offset": "最大偏移",
         "general": "常规",
         "single_player": "单人游戏",
-        "show_in_places": "在 Places 中显示"
+        "show_in_places": "在 Places 中显示",
+        "single_player_streaming_note": "单人模式下不支持直播。"
       },
       "details": {
         "world_title": "世界标题",
@@ -427,10 +428,7 @@
         "set_image": "选择图片",
         "no_image": "未设置图片",
         "age_rating_options": {
-          "everyone": "E（所有人，PG 13+）",
-          "teen": "T（青少年，PG 13+）",
-          "adult": "A（成人，PG 18+）",
-          "restricted": "R（限制级）"
+          "adult": "A（成人，PG 18+）"
         },
         "categories_options": {
           "art": "🎨 艺术",
@@ -565,7 +563,7 @@
         }
       },
       "collaborators": {
-        "description": "<span>添加最多 10 个协作者</span>并管理他们在您世界中的部署或流媒体权限。",
+        "description": "<span>添加最多 100 个协作者</span>并管理他们在您世界中的部署或流媒体权限。",
         "empty_list": "您还没有添加任何协作者",
         "add_collaborator": "添加协作者",
         "add": "添加",
@@ -638,6 +636,7 @@
     "generic": {
       "import_scene": "导入场景...",
       "import_scene_failed": "场景导入失败",
+      "import_scene_already_imported": "场景已导入",
       "duplicate_scene": "复制场景...",
       "duplicate_scene_failed": "复制场景失败",
       "delete_scene": "删除场景...",
@@ -710,16 +709,17 @@
   "sign_in": {
     "back": "後退",
     "content": {
-      "title": "安全登入步驟",
-      "body": "請記住下面的驗證碼。<br></br>系統會提示您在網頁瀏覽器中進行確認，以安全地連結您的登入。",
-      "verification_code_info": "請將此號碼保密。它確保您的登入是安全的且對您來說是唯一的。",
-      "expiration": "驗證碼將在{minutes}:{seconds}分鐘後過期"
+      "title": "請在瀏覽器中繼續",
+      "body": "我們已開啟您的瀏覽器以完成登入。<br></br>完成後，您將自動返回此處。",
+      "reopen": "瀏覽器未開啟？<a>重新開啟</a>或<b>複製連結</b>"
     },
     "errors": {
       "max_attempts": "已達到最大登入嘗試次數。請稍後再試。",
       "failed": "登入失敗。請重試。",
-      "timeout": "登入請求超時。請檢查您的連接並重試。",
-      "init_failed": "無法初始化登入。請檢查您的連接。"
+      "init_failed": "無法初始化登入。請檢查您的連接。",
+      "identity_not_found": "無法完成登入。請重新登入。",
+      "identity_expired": "您的登入請求已過期。請重新登入。",
+      "network_mismatch": "無法完成登入。請停用任何 VPN 或瀏覽器私人轉送（例如 iCloud 私人轉送）後再試。"
     }
   },
   "more": {
@@ -872,6 +872,7 @@
         "scenes_count": "{count} {count, plural, one {场景} other {场景}}",
         "scene_settings": "场景设置",
         "world_settings": "设置",
+        "layout": "布局",
         "published_world": "已发布的世界"
       },
       "land": {

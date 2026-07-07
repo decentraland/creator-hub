@@ -1,9 +1,10 @@
 import type { Entity, IEngine, TransformComponentExtended } from '@dcl/ecs';
 import { getComponentEntityTree } from '@dcl/ecs';
-import { getNextId, requiresId } from './id';
+import { createIdMap, createEntityMap, remapTriggerActionRefs, requiresId } from './mapping';
 import { isLastWriteWinComponent } from './lww';
 import type { ISDKHelpers, TriggersComponent } from './definitions';
 import { getExplorerComponents } from './components';
+import { getNextId } from './mapping';
 
 export function clone(
   entity: Entity,
@@ -12,8 +13,8 @@ export function clone(
   Triggers: TriggersComponent,
   sdkHelpers?: ISDKHelpers,
 ) {
-  const ids = new Map<number, number>();
-  const entities = new Map<Entity, Entity>();
+  const idMap = createIdMap();
+  const entityMap = createEntityMap();
   const tree = getComponentEntityTree(engine, entity, Transform);
   const { NetworkEntity, SyncComponents } = getExplorerComponents(engine);
   for (const original of tree) {
@@ -25,7 +26,7 @@ export function clone(
         if (requiresId(component)) {
           const oldId = newValue.id;
           const newId = getNextId(engine);
-          ids.set(oldId, newId);
+          idMap.remember(oldId, newId);
           newValue = {
             ...newValue,
             id: newId,
@@ -37,36 +38,16 @@ export function clone(
         }
       }
     }
-    entities.set(original, cloned);
+    entityMap.put(original, cloned);
   }
 
-  const clones = Array.from(entities.values()).reverse();
+  const clones = Array.from(entityMap.entries(), ([, dst]) => dst).reverse();
 
   for (const cloned of clones) {
     // if the entity has triggers, remap the old ids in the actions and conditions to the new ones
-
     if (Triggers.has(cloned)) {
       const triggers = Triggers.getMutable(cloned);
-      for (const trigger of triggers.value) {
-        for (const action of trigger.actions) {
-          if (action.id) {
-            const newId = ids.get(action.id);
-            if (newId) {
-              action.id = newId;
-            }
-          }
-        }
-        if (trigger.conditions) {
-          for (const condition of trigger.conditions) {
-            if (condition.id) {
-              const newId = ids.get(condition.id);
-              if (newId) {
-                condition.id = newId;
-              }
-            }
-          }
-        }
-      }
+      remapTriggerActionRefs(triggers.value, idMap);
     }
 
     // Fix the NetworkEntity component for the new entity.
@@ -81,7 +62,7 @@ export function clone(
     // TODO: should we fix the parent network entity also ?
     const transform = Transform.getMutableOrNull(cloned);
     if (transform && transform.parent) {
-      const newParent = entities.get(transform.parent);
+      const newParent = entityMap.get(transform.parent);
       if (newParent) {
         transform.parent = newParent;
       }
@@ -89,6 +70,14 @@ export function clone(
   }
 
   const cloned = clones[0];
+
+  // Maintain the existing shape (`ids: Map<number, number>`, `entities:
+  // Map<Entity, Entity>`) for callers that previously read the maps
+  // directly. The new primitives back both views with the same data.
+  const ids = new Map<number, number>();
+  for (const [oldId, newId] of idMap.entries()) ids.set(oldId, newId);
+  const entities = new Map<Entity, Entity>();
+  for (const [src, dst] of entityMap.entries()) entities.set(src, dst);
 
   return { ids, entities, cloned };
 }
