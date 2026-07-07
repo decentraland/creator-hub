@@ -29,7 +29,9 @@ import {
 } from './ModerationControl';
 import { getSceneAdmins, getSceneBans, type SceneBanUser } from './ModerationControl/api';
 import { ModalUserList, UserListType } from './ModerationControl/UsersList';
-import { showcaseState, sharePresentationState } from './VideoControl/DclCast';
+import { showcaseState, sharePresentationState } from './VideoControl/DclCast/state';
+import { startPresentationDetection } from './VideoControl/DclCast/presentation-detector';
+import { findActiveCastScreenIndex } from './VideoControl/utils';
 import { SpeakerShowcase } from './VideoControl/DclCast/SpeakerShowcase';
 import SharePresentationModal from './VideoControl/DclCast/SharePresentationModal';
 import { isPreview } from './fetch-utils';
@@ -250,7 +252,49 @@ export function createAdminToolkitUI(
       () => uiComponent(engine, pointerEventsSystem, sdkHelpers, playersHelper),
       getVirtualUiSize(),
     );
+
+    // Background service: auto-open the panel to the DCL Cast tab when a
+    // presentation goes live, regardless of which tab (if any) the admin is on.
+    startPresentationDetection(
+      engine,
+      state,
+      () => !!isAllowedAdmin(engine, getAdminToolkitComponent(engine), playersHelper?.getPlayer()),
+      () => playersHelper?.getPlayer()?.userId,
+      () => openPresentationPanel(engine),
+    );
   });
+}
+
+// Opens the admin panel to the DCL Cast tab. Called by the background detector
+// when a presentation goes live. All activeTab/panelOpen writes live in this file.
+function openPresentationPanel(engine: IEngine) {
+  state.panelOpen = true;
+
+  // Point the panel at the screen actually casting so VideoControl resolves its
+  // sub-tab to 'dcl-cast' (it derives `selected` from the selected player's src).
+  // If no screen is casting yet, degrade gracefully: the panel still opens to
+  // Video Control and the presentation UI appears once a screen is activated.
+  // Never auto-activate a screen here — setSource is a scene-wide side effect.
+  const castIndex = findActiveCastScreenIndex(engine);
+  if (castIndex !== undefined) {
+    state.videoControl.selectedVideoPlayer = castIndex;
+  }
+  state.videoControl.selectedStream = 'dcl-cast';
+
+  // Show the compact DCL Cast view: its presentation controls surface from the
+  // live bot track (presentationBotInRoom), so they appear even when the slide
+  // state topic hasn't delivered. The full view's controls require presentationState.
+  state.videoControl.isMinimized = true;
+
+  // Mirror the tab-button "blink" so the tab content subtree remounts and
+  // re-derives its sub-tab — but only when not already on Video Control, to
+  // avoid a needless flicker/remount on the presenter's own client.
+  if (state.activeTab !== TabType.VIDEO_CONTROL) {
+    state.activeTab = TabType.NONE;
+    nextTickFunctions.push(() => {
+      state.activeTab = TabType.VIDEO_CONTROL;
+    });
+  }
 }
 
 function isAllowedAdmin(

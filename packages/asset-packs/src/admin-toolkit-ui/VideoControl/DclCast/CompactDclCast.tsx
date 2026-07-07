@@ -1,4 +1,5 @@
 import type { DeepReadonlyObject, Entity, IEngine, PBVideoPlayer } from '@dcl/ecs';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- ReactEcs is required for JSX factory
 import ReactEcs, { Label, UiEntity } from '@dcl/react-ecs';
 import { Color4 } from '@dcl/sdk/math';
 import { getContentUrl } from '../../constants';
@@ -8,7 +9,7 @@ import { LIVEKIT_STREAM_SRC } from '../LiveStream';
 import { isPresentationBot, stopPresentation } from '../api';
 import { VideoControlVolume } from '../VolumeControl';
 import { createVideoPlayerControls, isDclCast } from '../utils';
-import { showcaseState } from '.';
+import { showcaseState } from './state';
 import PresentationPanel from './PresentationPanel';
 import { getCompactBarStyles, getDclCastBackgrounds, getDclCastColors } from './styles';
 
