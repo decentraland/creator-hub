@@ -1,6 +1,8 @@
 import type { Entity } from '@dcl/ecs';
 
 import type { BevySceneContext } from './BevySceneContext';
+import { EDITOR_BUS_CHANNEL } from './bus-protocol';
+import type { BusEnvelope, PageToScene } from './bus-protocol';
 
 /**
  * Forward the inspector's current selection to the editor-agent scene over the
@@ -9,11 +11,10 @@ import type { BevySceneContext } from './BevySceneContext';
  *
  * The `Selection` editor component marks selected entities in the ECS; the same
  * CRDT stream feeds BevySceneContext's engine, so we observe selection changes
- * there and post the current selected entity (`set-selection`). The gizmo is
- * single-entity for now, so we send the first selected entity (or null).
+ * there and post the current selected entity (`set-selection`, the shared
+ * {@link ./bus-protocol} message). The gizmo is single-entity for now, so we
+ * send the first selected entity (or null).
  */
-
-const EDITOR_BUS_CHANNEL = 'dcl-editor-bus';
 
 /** Minimal BroadcastChannel surface (also used by pick-bridge). */
 interface Channel {
@@ -48,12 +49,12 @@ export function createSelectionBridge(options: SelectionBridgeOptions): () => vo
     // Send the entity's world position too: the agent scene can't read the
     // inspected scene's Transform from its own engine, so the inspector (which
     // owns the CRDT) supplies where to place the gizmo.
-    const position =
+    const wp =
       entity === null ? null : (context.getEntityWorldPositions([entity]).get(entity) ?? null);
-    channel.postMessage({
-      to: 'scene',
-      msg: { kind: 'set-selection', entity: value, position },
-    });
+    const position = wp === null ? null : { x: wp.x, y: wp.y, z: wp.z };
+    const msg: PageToScene = { kind: 'set-selection', entity: value, position };
+    const envelope: BusEnvelope = { to: 'scene', msg };
+    channel.postMessage(envelope);
   };
 
   // Post whenever a Selection component is added/removed.
