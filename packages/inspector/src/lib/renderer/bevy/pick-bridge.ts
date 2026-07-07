@@ -5,12 +5,14 @@ import type { Vector3 } from '@dcl/ecs-math';
 import type { RendererEvents } from '../types';
 
 /**
- * Reverse-channel bridge: the super-user editor-agent scene (loaded into the
- * engine as a portable experience) does viewport picking + gizmo dragging and
- * posts the results over a same-origin BroadcastChannel; this turns each message
- * into the matching event on the renderer's emitter (`pick`, `gizmoCommit`,
+ * Reverse-channel bridge: the super-user editor-agent scene (a separate SDK7
+ * project at `packages/inspector/agents/bevy`, loaded into the engine as a
+ * portable experience) does viewport picking + gizmo dragging and posts the
+ * results over a same-origin BroadcastChannel; this turns each message into the
+ * matching event on the renderer's emitter (`pick`, `gizmoCommit`,
  * `gizmoCommitEnd`). The inspector's reverse-channel handler
  * (connectReverseChannel) then applies them to ECS selection / Transform writes.
+ * Keep the message shapes here in sync with `agents/bevy/src/bus.ts`.
  *
  * The stock engine has no console command for viewport interaction, so this
  * BroadcastChannel is the only path — it's allowlisted for super-user scenes on
