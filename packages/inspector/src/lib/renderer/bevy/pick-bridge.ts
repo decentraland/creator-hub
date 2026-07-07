@@ -1,8 +1,9 @@
 import type { Emitter } from 'mitt';
 import type { Entity } from '@dcl/ecs';
-import type { Vector3 } from '@dcl/ecs-math';
 
 import type { RendererEvents } from '../types';
+import { EDITOR_BUS_CHANNEL } from './bus-protocol';
+import type { AgentToPage, BusEnvelope } from './bus-protocol';
 
 /**
  * Reverse-channel bridge: the super-user editor-agent scene (a separate SDK7
@@ -12,43 +13,34 @@ import type { RendererEvents } from '../types';
  * matching event on the renderer's emitter (`pick`, `gizmoCommit`,
  * `gizmoCommitEnd`). The inspector's reverse-channel handler
  * (connectReverseChannel) then applies them to ECS selection / Transform writes.
- * Keep the message shapes here in sync with `agents/bevy/src/bus.ts`.
+ * The wire shapes are the shared {@link ./bus-protocol} both sides import.
  *
  * The stock engine has no console command for viewport interaction, so this
  * BroadcastChannel is the only path — it's allowlisted for super-user scenes on
  * stock bevy-explorer and spans the iframe/worker boundary same-origin.
  *
- * Envelope matches the agent scene: `{ to: 'page', msg: { kind, … } }`.
  * `to:'page'` is agent→inspector; we ignore anything else (incl. our own posts).
  */
 
-const EDITOR_BUS_CHANNEL = 'dcl-editor-bus';
-
-// entity 0 = clean miss (deselect).
-type PickMsg = { kind: 'pick'; entity: number; shift: boolean; ctrl: boolean };
-type GizmoCommitMsg = {
-  kind: 'gizmoCommit';
-  transforms: { entity: number; position?: Vector3; rotation?: unknown; scale?: Vector3 }[];
-};
-type GizmoCommitEndMsg = { kind: 'gizmoCommitEnd' };
-type AgentMsg = PickMsg | GizmoCommitMsg | GizmoCommitEndMsg;
-
-interface BusEnvelope {
-  to: 'page' | 'scene';
-  msg: unknown;
-}
-
-/** A well-formed agent→inspector envelope carrying one of our message kinds. */
-function toAgentMsg(data: unknown): AgentMsg | null {
+/** Validate + narrow a raw bus message to a well-formed agent→inspector one. */
+function toAgentMsg(data: unknown): AgentToPage | null {
   if (!data || typeof data !== 'object') return null;
-  const env = data as BusEnvelope;
+  const env = data as Partial<BusEnvelope>;
   if (env.to !== 'page' || !env.msg || typeof env.msg !== 'object') return null;
   const msg = env.msg as { kind?: unknown };
-  if (msg.kind === 'pick' && typeof (msg as PickMsg).entity === 'number') return msg as PickMsg;
-  if (msg.kind === 'gizmoCommit' && Array.isArray((msg as GizmoCommitMsg).transforms)) {
-    return msg as GizmoCommitMsg;
+  if (
+    msg.kind === 'pick' &&
+    typeof (msg as AgentToPage & { entity?: unknown }).entity === 'number'
+  ) {
+    return env.msg as AgentToPage;
   }
-  if (msg.kind === 'gizmoCommitEnd') return msg as GizmoCommitEndMsg;
+  if (
+    msg.kind === 'gizmoCommit' &&
+    Array.isArray((msg as Extract<AgentToPage, { kind: 'gizmoCommit' }>).transforms)
+  ) {
+    return env.msg as AgentToPage;
+  }
+  if (msg.kind === 'gizmoCommitEnd') return env.msg as AgentToPage;
   return null;
 }
 
@@ -91,12 +83,12 @@ export function createPickBridge(options: PickBridgeOptions): () => void {
         });
         break;
       case 'gizmoCommit':
+        // The agent sends position only; the reverse-channel handler merges it
+        // into the entity's existing Transform (preserving rotation/scale/parent).
         events.emit('gizmoCommit', {
           transforms: msg.transforms.map(t => ({
             entity: t.entity as Entity,
             position: t.position,
-            rotation: t.rotation as never,
-            scale: t.scale,
           })),
         });
         break;
