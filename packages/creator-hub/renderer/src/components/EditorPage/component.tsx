@@ -324,12 +324,14 @@ export function EditorPage() {
       // The engine loads the scene at its real parcel; the base coord is bevyPosition.
       params.append('bevyPosition', project.scene.base);
     }
-    // The super-user editor-agent portable experience (viewport pick + gizmo).
-    // Served same-origin from the inspector's public/ in production; a dev server
-    // can be pointed at via VITE_BEVY_SYSTEM_SCENE.
+    // The super-user editor-agent portable experience (viewport pick + gizmo),
+    // shipped as a static realm at public/bevy-agent and served same-origin by the
+    // inspector http-server. The engine loads it as a realm (GETs
+    // `<systemScene>/about`); the export nests `<realmName>/about`, hence the
+    // doubled path segment. A dev server can override via VITE_BEVY_SYSTEM_SCENE.
     params.append(
       'bevySystemScene',
-      import.meta.env.VITE_BEVY_SYSTEM_SCENE || `${htmlUrl}/bevy-agent`,
+      import.meta.env.VITE_BEVY_SYSTEM_SCENE || `${htmlUrl}/bevy-agent/bevy-agent`,
     );
   } else {
     params.append('dataLayerRpcParentUrl', window.location.origin);

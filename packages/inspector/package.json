@@ -68,10 +68,11 @@
     "directory": "packages/inspector"
   },
   "scripts": {
-    "build": "npm run copy-bin && npm run copy-bevy-engine && node ./build.js --production",
+    "build": "npm run copy-bin && npm run copy-bevy-engine && npm run copy-bevy-agent && node ./build.js --production",
+    "copy-bevy-agent": "ts-node --project ./scripts/tsconfig.json ./scripts/copy-bevy-agent.ts",
     "copy-bevy-engine": "ts-node --project ./scripts/tsconfig.json ./scripts/copy-bevy-engine.ts",
     "copy-bin": "ts-node --project ./scripts/tsconfig.json ./scripts/copy-bin.ts",
-    "start": "npm run copy-bin && npm run copy-bevy-engine && node ./build.js --watch",
+    "start": "npm run copy-bin && npm run copy-bevy-engine && npm run copy-bevy-agent && node ./build.js --watch",
     "test": "npm run test:unit",
     "test:e2e": "vitest run --config vitest.e2e.config.js",
     "test:unit": "vitest run",
