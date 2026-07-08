@@ -27,7 +27,15 @@ import { showcaseState } from './state';
 // presenters — hence we promote the admin before subscribing (getDclCastInfo lazily
 // creates the room ensurePresenterRole depends on, so the two must be sequenced).
 
-const POLL_INTERVAL_MS = 5000;
+// Detection poll cadence. The poll runs continuously — it never stops on detect —
+// because it is the authoritative teardown/re-arm path and the only backstop for an
+// ungraceful bot exit that sends no `presentation:stopped`. Its cost (one runtime
+// call per second) is dwarfed by the consume system below, so keep it continuous;
+// do not "optimize" it into a stop-on-detect, which would wedge detection.
+const POLL_INTERVAL_MS = 1000;
+// Status consume cadence. ~4Hz is visually instant for a slide counter / video state
+// and far cheaper than draining the comms topic every frame.
+const CONSUME_INTERVAL_MS = 250;
 
 // Detection lifecycle (module singletons, reset by stopPresentationDetection).
 let detectionStarted = false;
@@ -40,7 +48,7 @@ let intervalSystem: ((dt: number) => void) | null = null;
 // guards against concurrent setup while an in-flight attempt is awaiting.
 let presentationActive = false;
 let startingSystem = false;
-let presentationSystem: (() => void) | null = null;
+let presentationSystem: ((dt: number) => void) | null = null;
 let consuming = false;
 
 async function startPresentationSystem(
@@ -66,8 +74,12 @@ async function startPresentationSystem(
 
     subscribeToPresentationTopic();
 
-    // Keep presentationState (slide counter, video state) in sync with the topic.
-    const system = () => {
+    // Keep presentationState (slide counter, video state) in sync with the topic,
+    // throttled to CONSUME_INTERVAL_MS — draining every frame is far more than a
+    // slide counter needs. The `consuming` guard prevents overlap if a drain
+    // outlasts one interval; each drain returns the latest state, so throttling
+    // never drops the final message (including `presentation:stopped`).
+    const consume = () => {
       if (consuming) return;
       consuming = true;
       consumePresentationMessages()
@@ -81,7 +93,7 @@ async function startPresentationSystem(
         .catch(error => {
           // consumePresentationMessages swallows its own errors and resolves to
           // undefined, so this only fires on an unexpected rejection — log it
-          // rather than dropping it silently, then retry on the next frame.
+          // rather than dropping it silently, then retry on the next tick.
           console.error('[DclCast] Failed to consume presentation messages', error);
         })
         .finally(() => {
@@ -89,8 +101,7 @@ async function startPresentationSystem(
         });
     };
 
-    engine.addSystem(system);
-    presentationSystem = system;
+    presentationSystem = setInterval(engine, consume, CONSUME_INTERVAL_MS);
   } catch (error) {
     // Setup failed (e.g. a network call rejected). Leave presentationSystem null
     // so the next poll tick retries instead of wedging detection permanently.
@@ -102,7 +113,7 @@ async function startPresentationSystem(
 
 function stopPresentationSystem(engine: IEngine, state: State): void {
   if (presentationSystem) {
-    engine.removeSystem(presentationSystem);
+    clearInterval(engine, presentationSystem);
     presentationSystem = null;
   }
   state.videoControl.presentationState = undefined;
@@ -153,7 +164,7 @@ export function startPresentationDetection(
     }
   };
 
-  // Poll immediately, then every 5 seconds.
+  // Poll immediately, then every second.
   poll();
   intervalSystem = setInterval(engine, poll, POLL_INTERVAL_MS);
 }
