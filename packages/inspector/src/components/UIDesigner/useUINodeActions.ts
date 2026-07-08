@@ -6,6 +6,8 @@ import { useAppDispatch, useAppSelector } from '../../redux/hooks';
 import { getSelectedNode, getSelectedRoot, selectNode } from '../../redux/ui-designer';
 import { useUINodeTree } from './useUINodeTree';
 import type { UINode } from './tree-model';
+import { UI_DESIGNER_CODE_MODE } from './code/config';
+import { spliceRemoveNode } from './code/store';
 
 function findParentEntity(root: UINode, target: Entity): Entity | null {
   for (const child of root.children) {
@@ -31,6 +33,11 @@ export function useUINodeActions(): {
 
   const remove = useCallback(
     (entity: Entity) => {
+      if (UI_DESIGNER_CODE_MODE) {
+        void spliceRemoveNode(entity as unknown as number);
+        if (selectedNode === entity) dispatch(selectNode({ node: null }));
+        return;
+      }
       if (!sdk) return;
       const removed = sdk.operations.removeUINode(entity);
       void sdk.operations.dispatch();
@@ -45,6 +52,7 @@ export function useUINodeActions(): {
 
   const duplicate = useCallback(
     async (entity: Entity) => {
+      if (UI_DESIGNER_CODE_MODE) return; // TODO(code-mode): duplicate via emit + insertChild
       if (!sdk) return;
       const clone = sdk.operations.duplicateUINode(entity);
       await sdk.operations.dispatch();

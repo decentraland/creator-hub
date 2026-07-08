@@ -2,6 +2,8 @@ import React from 'react';
 
 import { Box } from '../Box';
 import { Canvas } from './Canvas';
+import { CodeEditorPanel } from './code/CodeEditorPanel';
+import { UI_DESIGNER_CODE_MODE } from './code/config';
 import { useUINodeHotkeys } from './useUINodeHotkeys';
 
 import './UIDesigner.css';
@@ -17,9 +19,24 @@ const UIDesigner: React.FC = () => {
       ref={containerRef}
       style={{ width: '100%', height: '100%' }}
     >
-      <Box className="ui-designer-canvas-container">
-        <Canvas />
-      </Box>
+      {UI_DESIGNER_CODE_MODE ? (
+        // Code-mode: canvas + live .tsx editor side by side, both views over
+        // the same source buffer (the store).
+        <div style={{ display: 'flex', width: '100%', height: '100%' }}>
+          <div style={{ flex: 1, minWidth: 0, height: '100%' }}>
+            <Box className="ui-designer-canvas-container">
+              <Canvas />
+            </Box>
+          </div>
+          <div style={{ flex: 1, minWidth: 0, height: '100%', borderLeft: '1px solid #2a2a2e' }}>
+            <CodeEditorPanel />
+          </div>
+        </div>
+      ) : (
+        <Box className="ui-designer-canvas-container">
+          <Canvas />
+        </Box>
+      )}
     </div>
   );
 };

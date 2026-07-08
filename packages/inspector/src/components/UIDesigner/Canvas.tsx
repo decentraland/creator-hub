@@ -26,6 +26,8 @@ import { MOBILE_REFERENCE, type DeviceKind } from './safe-areas';
 import { useCreateUIRoot } from './useCreateUIRoot';
 import { useUINodeActions } from './useUINodeActions';
 import { useUINodeTree } from './useUINodeTree';
+import { UI_DESIGNER_CODE_MODE } from './code/config';
+import { spliceAddChild, spliceUiTransformPosition, spliceUiTransformSize } from './code/store';
 import {
   clearNodeRegistry,
   getNodeElement,
@@ -37,6 +39,7 @@ import {
   DEFAULT_CANVAS_WIDTH,
   previewBoundText,
   type UINode,
+  type UINodeType,
 } from './tree-model';
 import {
   YGU_UNDEFINED,
@@ -511,9 +514,15 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node }) => {
       accept: UI_DESIGNER_DND_TYPE,
       collect: monitor => ({ isOver: monitor.isOver({ shallow: true }) }),
       drop: async (item, monitor) => {
-        if (!sdk) return;
         if (monitor.didDrop()) return;
         if (item.source !== 'palette') return;
+        // Code-mode: add the child by splicing a new element into the parent's
+        // source (drop position is not honored yet — appended as a child).
+        if (UI_DESIGNER_CODE_MODE) {
+          void spliceAddChild(node.entity as unknown as number, item.type as UINodeType);
+          return;
+        }
+        if (!sdk) return;
 
         // Translate the drop's viewport offset to logical-pixel coordinates
         // local to this node. The canvas root is scaled by CANVAS_SCALE; the
@@ -666,7 +675,14 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node }) => {
       // In-flow node without Alt: reorder among siblings instead of moving.
       // (Alt+drag falls through to the legacy convert-to-absolute capture.)
       const isAbsolute = t?.positionType === YGPT_ABSOLUTE;
-      if (!isAbsolute && !e.altKey) {
+      // Code-mode: in-flow reorder isn't spliced yet — select only. Absolute
+      // nodes fall through to the drag-move path (which splices position).
+      if (UI_DESIGNER_CODE_MODE && !isAbsolute) {
+        e.stopPropagation();
+        dispatch(selectNode({ node: node.entity }));
+        return;
+      }
+      if (!isAbsolute && !e.altKey && !UI_DESIGNER_CODE_MODE) {
         const el = divRef.current;
         const parentEl = el?.parentElement;
         if (el && parentEl) {
@@ -771,6 +787,11 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node }) => {
       const left = Math.round(origin.startLeft + offset.dx);
       // Hold the dropped position until the committed transform reflects it.
       setOptimisticPos({ top, left });
+      // Code-mode: splice `position: { top, left }` into the .tsx source.
+      if (UI_DESIGNER_CODE_MODE) {
+        void spliceUiTransformPosition(node.entity as unknown as number, top, left);
+        return;
+      }
       const UiTransform = sdk.components.UiTransform;
       const current = (UiTransform.getOrNull(node.entity) ?? {}) as PBUiTransform;
       UiTransform.createOrReplace(node.entity, {
@@ -950,6 +971,18 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node }) => {
       resizeOriginRef.current = null;
       resizeLiveRef.current = { dx: 0, dy: 0, dw: 0, dh: 0 };
       setIsResizing(false);
+      // Code-mode write path: splice the new width/height into the .tsx source
+      // (top-level ergonomic fields) and reparse. Position from top/left handles
+      // is not spliced yet (nested `position` field — follow-up).
+      if (UI_DESIGNER_CODE_MODE) {
+        if (!origin) return;
+        if (live.dw === 0 && live.dh === 0) return;
+        const width = Math.max(0, Math.round(origin.startW + live.dw));
+        const height = Math.max(0, Math.round(origin.startH + live.dh));
+        setOptimisticPos({ width, height });
+        void spliceUiTransformSize(node.entity as unknown as number, width, height);
+        return;
+      }
       if (!sdk || !origin) return;
       if (live.dx === 0 && live.dy === 0 && live.dw === 0 && live.dh === 0) return;
       const top = Math.round(origin.startTop + live.dy);

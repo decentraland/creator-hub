@@ -8,6 +8,7 @@ import { fs, custom, workspace } from '#preload';
 import { SceneRpcClient } from './scene/client';
 import { SceneRpcServer } from './scene/server';
 import { type Method, type Params, type Result, StorageRPC } from './storage';
+import { CodeParserRPC } from './code';
 
 export type RPCInfo = {
   iframe: HTMLIFrameElement;
@@ -40,6 +41,7 @@ export function initRpc(iframe: HTMLIFrameElement, project: Project, cbs: Partia
   const sceneServer = new SceneRpcServer(transport, project);
   const params = { iframe, project, scene: sceneClient };
   const storage = new StorageRPC(transport, cbs, params);
+  const codeParser = new CodeParserRPC(transport);
 
   void Promise.all([
     sceneClient.selectAssetsTab('AssetsPack'),
@@ -60,6 +62,7 @@ export function initRpc(iframe: HTMLIFrameElement, project: Project, cbs: Partia
     ...params,
     dispose: () => {
       storage.dispose();
+      codeParser.dispose();
       sceneServer.dispose();
       sceneClient.dispose();
     },

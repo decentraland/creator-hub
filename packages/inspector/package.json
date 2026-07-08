@@ -4,6 +4,7 @@
   "dependencies": {
     "@babel/parser": "7.28.5",
     "@dcl/asset-packs": "file:../asset-packs",
+    "monaco-editor": "^0.52.2",
     "ts-deepmerge": "^7.0.0"
   },
   "devDependencies": {
