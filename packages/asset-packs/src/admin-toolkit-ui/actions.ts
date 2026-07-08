@@ -1,6 +1,6 @@
 import type { Entity } from '@dcl/ecs';
 import { state } from './store';
-import { TabType, type PresentationState, type SelectedSmartItem } from './types';
+import { TabType, type PresentationState } from './types';
 import type { DclCastResponse, FlattenedTrack, Participant } from './VideoControl/api';
 import type { SceneAdmin } from './ModerationControl';
 
@@ -51,15 +51,19 @@ export function selectSmartItem(idx: number, entity: Entity, defaultAction: stri
 }
 
 export function setSmartItemAction(entity: Entity, actionName: string): void {
+  const current = state.smartItemsControl.smartItems.get(entity);
+  if (!current) return;
   const next = new Map(state.smartItemsControl.smartItems);
-  const current = next.get(entity) as SelectedSmartItem;
   next.set(entity, { ...current, selectedAction: actionName });
   state.smartItemsControl = { ...state.smartItemsControl, smartItems: next };
 }
 
 export function setSmartItemVisibility(entity: Entity, visible: boolean): void {
   const current = state.smartItemsControl.smartItems.get(entity);
-  if (current) current.visible = visible;
+  if (!current) return;
+  const next = new Map(state.smartItemsControl.smartItems);
+  next.set(entity, { ...current, visible });
+  state.smartItemsControl = { ...state.smartItemsControl, smartItems: next };
 }
 
 // --- DCL Cast compact/full ---

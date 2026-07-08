@@ -86,8 +86,12 @@ async function startPresentationSystem(
     // so it must resolve before ensurePresenterRole (see PR #1356).
     const [, castData] = await getDclCastInfo();
     if (castData) setDclCastInfo(castData);
+
+    // Bail (leaving presentationSystem null) if we couldn't confirm presenter
+    // status — the consume loop would otherwise run forever receiving nothing,
+    // with no retry. The next poll tick re-attempts the whole setup.
     const address = getPlayerAddress();
-    if (address) await ensurePresenterRole(address);
+    if (!address || !(await ensurePresenterRole(address))) return;
 
     // The presentation may have ended while we were setting up — bail so we don't
     // leave an orphaned system running for a presentation that's already gone.
@@ -105,6 +109,11 @@ async function startPresentationSystem(
       consuming = true;
       consumePresentationMessages()
         .then(latestState => {
+          // This promise can resolve after a falling-edge teardown cleared the
+          // state (stopPresentationSystem). Bail if the presentation is no longer
+          // active so a late drain can't repopulate stale slide controls that
+          // nothing would then clear.
+          if (!presentationActive) return;
           if (latestState === 'stopped') {
             signalPresentationEnded(onPresentationEnded);
           } else if (latestState) {

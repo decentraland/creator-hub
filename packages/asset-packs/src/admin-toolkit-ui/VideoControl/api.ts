@@ -87,19 +87,22 @@ export async function promotePresenter(address: string): Promise<Result<void, st
   });
 }
 
-export async function ensurePresenterRole(playerAddress: string): Promise<void> {
+// Resolves true if the player is (or was successfully promoted to) a presenter,
+// false if the lookup or promotion failed. Callers that gate on presenter-only
+// data (the presentation:state topic) should retry when this is false.
+export async function ensurePresenterRole(playerAddress: string): Promise<boolean> {
   const [error, response] = await getPresenters();
-  if (error || !response) return;
+  if (error || !response) return false;
 
   // The endpoint returns { presenters: string[] }, and addresses may be
   // checksummed — compare case-insensitively against the lowercased player.
   const addr = playerAddress.toLowerCase();
   const presenters = Array.isArray(response.presenters) ? response.presenters : [];
   const isPresenter = presenters.some(p => p.toLowerCase() === addr);
+  if (isPresenter) return true;
 
-  if (!isPresenter) {
-    await promotePresenter(addr);
-  }
+  const [promoteError] = await promotePresenter(addr);
+  return !promoteError;
 }
 
 type PresentationBotTokenResponse = {

@@ -251,7 +251,11 @@ export function initAdminMessageBus(
   }
 
   onAdminMessage(MSG.SYNC_STATE, (payload: SyncStatePayload, sender) => {
-    if (sender !== 'self') receivedRemoteState = true;
+    // Only a reply that carries video state stops the late-joiner retry (below).
+    // An announcement-only SYNC_STATE (video: []) is a valid reply but doesn't
+    // deliver the video src the revert system would otherwise clobber, so it must
+    // not cancel the retry — same reasoning as not keying on adminHasActed.
+    if (sender !== 'self' && payload.video.length > 0) receivedRemoteState = true;
     for (const vs of payload.video) {
       const entity = vs.entity as Entity;
       authoritativeVideo.set(entity, {
@@ -303,9 +307,10 @@ export function initAdminMessageBus(
   // reverted every frame). So retry until a remote SYNC_STATE reply lands, bounded
   // by MAX_REQUEST_ATTEMPTS. This only recovers state that predates the join —
   // live changes after joining arrive via SET_VIDEO regardless. The stop signal is
-  // receivedRemoteState specifically (a full SYNC_STATE from another participant),
-  // not adminHasActed: a live SET_ANNOUNCEMENT would flip adminHasActed without
-  // ever delivering the video state we're still missing.
+  // receivedRemoteState specifically (a SYNC_STATE from another participant that
+  // carries video state), not adminHasActed and not an announcement-only reply:
+  // either would stop the retry without ever delivering the video state we're
+  // still missing.
   const REQUEST_RETRY_INTERVAL_MS = 1000;
   const MAX_REQUEST_ATTEMPTS = 10;
   let requestAttempts = 1;
