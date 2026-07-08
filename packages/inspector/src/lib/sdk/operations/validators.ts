@@ -15,6 +15,21 @@
 const IDENTIFIER = /^[A-Za-z_$][A-Za-z0-9_$]*$/;
 const FIELD_PATH = /^[A-Za-z0-9_:-]+\.[A-Za-z0-9_.]+$/;
 
+// Author-controlled node/root NAMES (core-schema::Name.value, asset-packs::UI.name)
+// are less strict than variable identifiers — they are human labels that may
+// contain spaces ("My Button") — so they can't reuse `isValidIdentifier`. But
+// they still flow into generated TypeScript (the `UiEntityNames` enum keys via
+// `toSafeIdentifier`, and `Name.value` via `engine.getEntityByName`), which
+// CLAUDE.md flags as a code-injection / build-break vector. Strip the
+// injection-capable characters (quotes, backticks, `${`, newlines, backslashes,
+// …) at the write boundary as defense-in-depth alongside the codegen escaping
+// pass, keeping only alphanumerics, underscore, dollar, and spaces.
+const NODE_NAME_DISALLOWED = /[^A-Za-z0-9_$ ]/g;
+
+export function sanitizeNodeName(s: string): string {
+  return s.replace(NODE_NAME_DISALLOWED, '');
+}
+
 export function isValidIdentifier(s: string): boolean {
   return IDENTIFIER.test(s);
 }

@@ -1,6 +1,11 @@
 import { describe, it, expect } from 'vitest';
 
-import { isValidFieldPath, isValidIdentifier, assertFieldPath } from './validators';
+import {
+  isValidFieldPath,
+  isValidIdentifier,
+  assertFieldPath,
+  sanitizeNodeName,
+} from './validators';
 
 describe('isValidFieldPath', () => {
   it('accepts core component field paths', () => {
@@ -39,5 +44,26 @@ describe('isValidIdentifier', () => {
     expect(isValidIdentifier('_x$1')).toBe(true);
     expect(isValidIdentifier('1bad')).toBe(false);
     expect(isValidIdentifier('has-hyphen')).toBe(false);
+  });
+});
+
+describe('sanitizeNodeName', () => {
+  it('keeps alphanumerics, underscore, dollar, and spaces', () => {
+    expect(sanitizeNodeName('My Button_2')).toBe('My Button_2');
+    expect(sanitizeNodeName('Score$Text')).toBe('Score$Text');
+  });
+
+  it('strips characters that could inject into generated TypeScript', () => {
+    // Quotes, backticks, `${`, backslashes and newlines are the codegen
+    // injection / build-break vectors called out in CLAUDE.md. `$` itself is a
+    // legal identifier char (kept), but the `{`/`}` that make `${...}`
+    // interpolation are stripped, and `.` (not in the allow-set) goes too.
+    expect(sanitizeNodeName('name"; evil()//')).toBe('name evil');
+    expect(sanitizeNodeName('`${process.env}`')).toBe('$processenv');
+    expect(sanitizeNodeName('a\nb\\c')).toBe('abc');
+  });
+
+  it('reduces a fully-hostile name to empty (caller treats as no-op)', () => {
+    expect(sanitizeNodeName('<>/{}()"\'`')).toBe('');
   });
 });

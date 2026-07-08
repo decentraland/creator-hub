@@ -431,7 +431,11 @@ const FieldRow = React.memo(function FieldRow({
         >
           <TextField
             value={v}
-            onChange={e => onPatch({ [field.path]: e.target.value })}
+            onChange={e =>
+              onPatch({
+                [field.path]: field.sanitize ? field.sanitize(e.target.value) : e.target.value,
+              })
+            }
           />
         </BindableField>
       );

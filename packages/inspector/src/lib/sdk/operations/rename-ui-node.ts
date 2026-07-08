@@ -1,5 +1,7 @@
 import type { Entity, IEngine, NameComponent } from '@dcl/ecs';
 
+import { sanitizeNodeName } from './validators';
+
 const NAME_ID = 'core-schema::Name';
 
 // Rename a UI node's core-schema::Name, keeping the value GLOBALLY unique
@@ -12,7 +14,9 @@ export function renameUINode(engine: IEngine) {
   return function renameUINode(entity: Entity, requested: string): string | null {
     const Name = engine.getComponentOrNull(NAME_ID) as NameComponent | null;
     if (!Name || !Name.has(entity)) return null;
-    const base = requested.trim();
+    // Strip injection-capable characters before the value reaches the CRDT and,
+    // downstream, generated TypeScript — parity with variable-name validation.
+    const base = sanitizeNodeName(requested).trim();
     if (!base) return null;
 
     // Split any existing numeric suffix off the requested base so re-suffixing

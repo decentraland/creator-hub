@@ -127,4 +127,25 @@ describe('renameUINode', () => {
       expect(name.store.get(a)).toEqual({ value: 'Label_2' });
     });
   });
+
+  describe('when the requested name contains injection characters', () => {
+    it('strips them before writing (parity with variable-name validation)', () => {
+      const a = 1 as Entity;
+      const name = makeName([[a, { value: 'Old' }]]);
+      const op = renameUINode(makeEngine(name));
+
+      // Quotes/backticks/`${`/parens would otherwise flow into generated TS.
+      expect(op(a, 'Score`${x}`Text"')).toBe('Score$xText');
+      expect(name.store.get(a)).toEqual({ value: 'Score$xText' });
+    });
+
+    it('treats an all-illegal name as a no-op (nothing written)', () => {
+      const a = 1 as Entity;
+      const name = makeName([[a, { value: 'Keep' }]]);
+      const op = renameUINode(makeEngine(name));
+
+      expect(op(a, '<>/{}()"')).toBeNull();
+      expect(name.store.get(a)).toEqual({ value: 'Keep' });
+    });
+  });
 });

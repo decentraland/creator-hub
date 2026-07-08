@@ -1,3 +1,4 @@
+import { sanitizeNodeName } from '../../lib/sdk/operations/validators';
 import type { UINodeType } from './tree-model';
 
 // PB enum values are `const enum`s; importing them at runtime is risky across
@@ -93,6 +94,13 @@ export interface FieldConfig {
    * texture-region editor only in Stretch mode and slices only in nine-slices.
    */
   hiddenWhen?: (componentValue: Record<string, unknown>) => boolean;
+  /**
+   * When set, the raw input value is passed through this function before being
+   * written. Used by identity-name fields (UI.name, Name.value) to strip
+   * injection-capable characters at the write boundary — see `sanitizeNodeName`.
+   * Only consulted for `kind: 'string'` fields.
+   */
+  sanitize?: (value: string) => string;
   /** One-line help shown as a hover tooltip beside the field label. */
   info?: string;
 }
@@ -115,7 +123,13 @@ const NAME = 'core-schema::Name';
 export const UI_ROOT_GROUP = {
   title: 'UI',
   fields: [
-    { label: 'Name', componentId: UI_MARKER, path: 'name', kind: 'string' as const },
+    {
+      label: 'Name',
+      componentId: UI_MARKER,
+      path: 'name',
+      kind: 'string' as const,
+      sanitize: sanitizeNodeName,
+    },
     {
       label: 'Scale to fit screen',
       componentId: UI_MARKER,
@@ -149,7 +163,15 @@ export const UI_ROOT_GROUP = {
 // scene code (e.g. `import { ScoreText } from './entity-names'`).
 export const NODE_GROUP = {
   title: 'Node',
-  fields: [{ label: 'Name', componentId: NAME, path: 'value', kind: 'string' as const }],
+  fields: [
+    {
+      label: 'Name',
+      componentId: NAME,
+      path: 'value',
+      kind: 'string' as const,
+      sanitize: sanitizeNodeName,
+    },
+  ],
 };
 
 // Pinned at the top of the Layout group for UI roots only — same component
