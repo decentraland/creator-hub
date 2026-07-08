@@ -1,42 +1,13 @@
-import { fileURLToPath } from 'node:url';
-import { dirname, join } from 'node:path';
 import type { ElectronApplication, JSHandle } from 'playwright';
-import { _electron as electron } from 'playwright';
 import { afterAll, beforeAll, expect, test } from 'vitest';
 import type { BrowserWindow } from 'electron';
-
-const electronPath = require('electron') as string;
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const creatorHubDir = join(__dirname, '..');
+import { launchApp } from './helpers/app';
 
 let electronApp: ElectronApplication;
-
-/**
- * Cold-launching Electron is the slowest, most run-to-run-variable step on a
- * contended CI runner. Retry a couple of times so a single spawn/CDP-connect
- * hiccup doesn't fail the whole suite. `timeout` is Playwright's own launch
- * timeout (default 30s); the beforeAll hook gets a larger budget on top.
- */
-async function launchApp(attempts = 3): Promise<ElectronApplication> {
-  let lastError: unknown;
-  for (let attempt = 1; attempt <= attempts; attempt++) {
-    try {
-      return await electron.launch({
-        executablePath: electronPath,
-        args: ['.'],
-        cwd: creatorHubDir,
-        timeout: 60_000,
-      });
-    } catch (error) {
-      lastError = error;
-      console.warn(`[e2e] Electron launch attempt ${attempt}/${attempts} failed:`, error);
-    }
-  }
-  throw lastError;
-}
+let cleanup: () => void;
 
 beforeAll(async () => {
-  electronApp = await launchApp();
+  ({ electronApp, cleanup } = await launchApp());
 }, 120_000);
 
 afterAll(async () => {
@@ -44,6 +15,8 @@ afterAll(async () => {
     await electronApp?.close();
   } catch {
     // ignore teardown errors so they don't cascade into the next spec file
+  } finally {
+    cleanup?.();
   }
 });
 

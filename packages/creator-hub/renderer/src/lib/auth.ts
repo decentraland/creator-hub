@@ -4,6 +4,7 @@ import { type Socket, io } from 'socket.io-client';
 import { ChainId, ProviderType } from '@dcl/schemas';
 import { Authenticator, type AuthIdentity, type AuthChain } from '@dcl/crypto';
 import * as sso from '@dcl/single-sign-on-client';
+import { analytics } from '#preload';
 
 const STORAGE_KEY_ADDRESS = 'auth-server-provider-address';
 const STORAGE_KEY_CHAIN_ID = 'auth-server-provider-chain-id';
@@ -281,6 +282,12 @@ export class AuthServerProvider {
     AuthServerProvider.openBrowser
       ? AuthServerProvider.openBrowser(url, target, features)
       : window.open(url, target, features);
+    if (deeplink) {
+      // Only the deep-link sign-in flow passes `deeplink`; the wallet-signature
+      // flow in `request()` opens the dapp without it, so gating here keeps the
+      // sign-in funnel from counting transaction-signing opens.
+      void analytics.track('Sign In Dapp Opened', { method: 'deeplink' });
+    }
   };
 
   /**

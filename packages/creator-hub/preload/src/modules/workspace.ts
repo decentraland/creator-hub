@@ -6,6 +6,7 @@ import {
   SortBy,
   type Project,
   type ProjectInfo,
+  PROJECT_ALREADY_IMPORTED_ERROR_PREFIX,
 } from '/shared/types/projects';
 import type { DistTags } from '/shared/types/npm';
 import { PACKAGES_LIST } from '/shared/types/pkg';
@@ -459,7 +460,9 @@ export function initializeWorkspace(services: Services) {
     const isAvailable = await isProjectPathAvailable(projectPath);
 
     if (!isAvailable) {
-      throw new Error(`"${pathBaseName}" is already on the projects library`);
+      throw new Error(
+        `${PROJECT_ALREADY_IMPORTED_ERROR_PREFIX}: "${pathBaseName}" is already on the projects library`,
+      );
     }
 
     const isDCLProject = await isDCL(projectPath);
