@@ -48,6 +48,11 @@
         "refresh": "Recargar escena desde disco",
         "preview_options": {
           "title": "Opciones de Previsualización",
+          "client": {
+            "label": "Previsualizar con",
+            "desktop": "Cliente de Escritorio",
+            "bevy_web": "Bevy (Web)"
+          },
           "debugger": "Abrir la ventana de la Consola durante la previsualización",
           "skip_auth_screen": "Omitir la pantalla de autenticación",
           "open_new_instance": "Abrir multiples clientes",
