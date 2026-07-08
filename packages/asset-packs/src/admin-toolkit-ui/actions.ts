@@ -1,5 +1,6 @@
+import type { Entity } from '@dcl/ecs';
 import { state } from './store';
-import { TabType, type PresentationState } from './types';
+import { TabType, type PresentationState, type SelectedSmartItem } from './types';
 import type { DclCastResponse, FlattenedTrack, Participant } from './VideoControl/api';
 import type { SceneAdmin } from './ModerationControl';
 
@@ -8,6 +9,13 @@ import type { SceneAdmin } from './ModerationControl';
 // Keep this a leaf: import only ./store and ./types, so any service (e.g. the
 // presentation detector) can drive the UI without touching the component graph.
 // Render code reads `state` and calls these; it must not assign `state.*` directly.
+
+// --- Bootstrap ---
+// The entity that holds the AdminTools/VideoControlState components, resolved
+// once during UI setup.
+export function setAdminToolkitUiEntity(entity: Entity): void {
+  state.adminToolkitUiEntity = entity;
+}
 
 // --- Panel ---
 export function openPanel(): void {
@@ -30,6 +38,28 @@ export function selectVideoSubTab(tab: 'video-url' | 'live' | 'dcl-cast'): void 
 
 export function selectVideoPlayer(index: number): void {
   state.videoControl.selectedVideoPlayer = index;
+}
+
+// --- Smart Items ---
+export function selectSmartItem(idx: number, entity: Entity, defaultAction: string): void {
+  state.smartItemsControl.selectedSmartItem = idx;
+  if (!state.smartItemsControl.smartItems.has(entity)) {
+    const next = new Map(state.smartItemsControl.smartItems);
+    next.set(entity, { visible: true, selectedAction: defaultAction });
+    state.smartItemsControl = { ...state.smartItemsControl, smartItems: next };
+  }
+}
+
+export function setSmartItemAction(entity: Entity, actionName: string): void {
+  const next = new Map(state.smartItemsControl.smartItems);
+  const current = next.get(entity) as SelectedSmartItem;
+  next.set(entity, { ...current, selectedAction: actionName });
+  state.smartItemsControl = { ...state.smartItemsControl, smartItems: next };
+}
+
+export function setSmartItemVisibility(entity: Entity, visible: boolean): void {
+  const current = state.smartItemsControl.smartItems.get(entity);
+  if (current) current.visible = visible;
 }
 
 // --- DCL Cast compact/full ---
@@ -126,6 +156,14 @@ export function closeSharePresentation(): void {
 }
 
 // --- Text Announcements ---
+export function setAnnouncementText(text: string): void {
+  state.textAnnouncementControl.text = text;
+}
+
+export function clearAnnouncements(): void {
+  state.textAnnouncementControl.announcements = [];
+}
+
 export function showAnnouncementBanner(kind: 'sent' | 'cleared'): void {
   state.textAnnouncementControl.banner = kind;
 }
@@ -159,6 +197,6 @@ export function cancelRemoveAdmin(): void {
   state.moderationControl.adminToRemove = undefined;
 }
 
-export function setUnbanMessage(message: string | null): void {
+export function setUnbanMessage(message: string | undefined): void {
   state.moderationControl.unbanMessage = message;
 }

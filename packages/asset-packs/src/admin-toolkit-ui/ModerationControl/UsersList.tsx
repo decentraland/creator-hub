@@ -112,7 +112,7 @@ export function ModalUserList({ users, engine, type }: ModalUserListProps) {
         () => {
           counter += 100;
           if (counter >= 3000) {
-            setUnbanMessage(null);
+            setUnbanMessage(undefined);
           }
         },
         100,

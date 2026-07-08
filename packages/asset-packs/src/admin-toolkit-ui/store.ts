@@ -49,6 +49,6 @@ export const state: State = {
     showModalAdminList: false,
     adminToRemove: undefined,
     showModalBanList: false,
-    unbanMessage: null,
+    unbanMessage: undefined,
   },
 };

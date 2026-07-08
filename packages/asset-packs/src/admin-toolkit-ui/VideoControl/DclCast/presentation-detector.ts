@@ -48,16 +48,29 @@ const CONSUME_INTERVAL_MS = 250;
 let detectionStarted = false;
 
 // Presentation lifecycle. presentationActive is an edge tracker for the bot
-// track (drives the one-shot auto-open); presentationSystem is the running
+// track (drives the one-shot auto-open); presentationEnded latches the end
+// callback so it fires once per presentation even though two paths can signal
+// the end (see signalPresentationEnded). presentationSystem is the running
 // consume system (null = not running) and is only assigned on successful setup,
 // so a failed setup naturally retries on the next poll tick. startingSystem
 // guards against concurrent setup while an in-flight attempt is awaiting, and
 // polling / consuming guard against a slow tick overlapping the next one.
 let presentationActive = false;
+let presentationEnded = false;
 let startingSystem = false;
 let presentationSystem: ((dt: number) => void) | null = null;
 let polling = false;
 let consuming = false;
+
+// Fire the end callback exactly once per presentation. Both the bot's comms
+// `presentation:stopped` message (consume) and the track-gone poll edge signal
+// the end; without this latch dismissPresentation runs twice on a graceful stop.
+// Reset on the start edge so the next presentation can end again.
+function signalPresentationEnded(onPresentationEnded: () => void): void {
+  if (presentationEnded) return;
+  presentationEnded = true;
+  onPresentationEnded();
+}
 
 async function startPresentationSystem(
   engine: IEngine,
@@ -93,7 +106,7 @@ async function startPresentationSystem(
       consumePresentationMessages()
         .then(latestState => {
           if (latestState === 'stopped') {
-            onPresentationEnded();
+            signalPresentationEnded(onPresentationEnded);
           } else if (latestState) {
             setPresentationState(latestState);
           }
@@ -166,6 +179,7 @@ export function startPresentationDetection(
         // re-opens the panel the admin may have since closed.
         if (!presentationActive) {
           presentationActive = true;
+          presentationEnded = false;
           onPresentationStarted();
         }
         // Ensure the consume system is running. Retries a previously failed setup
@@ -173,7 +187,7 @@ export function startPresentationDetection(
         await startPresentationSystem(engine, getPlayerAddress, onPresentationEnded);
       } else if (presentationActive) {
         presentationActive = false;
-        onPresentationEnded();
+        signalPresentationEnded(onPresentationEnded);
         stopPresentationSystem(engine);
       }
     } catch (error) {

@@ -15,6 +15,7 @@ import { getContentUrl } from './constants';
 import { type State } from './types';
 import { Header } from './Header';
 import { Card } from './Card';
+import { selectSmartItem, setSmartItemAction, setSmartItemVisibility } from './actions';
 import { getSmartItems } from '.';
 
 // Constants
@@ -45,41 +46,18 @@ function handleExecuteAction(
 }
 
 function handleSelectSmartItem(
-  state: State,
   smartItems: NonNullable<AdminTools['smartItemsControl']['smartItems']>,
   idx: number,
 ) {
-  state.smartItemsControl.selectedSmartItem = idx;
   const smartItem = smartItems[idx];
-
-  if (!state.smartItemsControl.smartItems.has(smartItem.entity as Entity)) {
-    const stateSmartItems = new Map(state.smartItemsControl.smartItems);
-    stateSmartItems.set(smartItem.entity as Entity, {
-      visible: true,
-      selectedAction: smartItem.defaultAction,
-    });
-    state.smartItemsControl = {
-      ...state.smartItemsControl,
-      smartItems: new Map(stateSmartItems),
-    };
-  }
+  selectSmartItem(idx, smartItem.entity as Entity, smartItem.defaultAction);
 }
 
 function handleSelectAction(
-  state: State,
   smartItem: NonNullable<AdminTools['smartItemsControl']['smartItems']>[0],
   action: Action,
 ) {
-  const stateSmartItems = new Map(state.smartItemsControl.smartItems);
-  stateSmartItems.set(smartItem.entity as Entity, {
-    ...stateSmartItems.get(smartItem.entity as Entity)!,
-    selectedAction: action.name,
-  });
-
-  state.smartItemsControl = {
-    ...state.smartItemsControl,
-    smartItems: new Map(stateSmartItems),
-  };
+  setSmartItemAction(smartItem.entity as Entity, action.name);
 }
 
 function handleHideShowEntity(
@@ -93,7 +71,7 @@ function handleHideShowEntity(
   const smartItem = state.smartItemsControl.smartItems.get(smartItemEntity);
 
   const toggleVisibility = !smartItem!.visible;
-  state.smartItemsControl.smartItems.get(smartItemEntity)!.visible = toggleVisibility;
+  setSmartItemVisibility(smartItemEntity, toggleVisibility);
 
   const visibility = VisibilityComponent.getOrCreateMutable(smartItemEntity);
   visibility.visible = toggleVisibility;
@@ -300,7 +278,7 @@ export function SmartItemsControl({ engine, state }: { engine: IEngine; state: S
           smartItems={smartItems}
           selectedIndex={state.smartItemsControl.selectedSmartItem}
           onSelect={idx => {
-            handleSelectSmartItem(state, smartItems, idx);
+            handleSelectSmartItem(smartItems, idx);
           }}
         />
 
@@ -311,7 +289,6 @@ export function SmartItemsControl({ engine, state }: { engine: IEngine; state: S
           onChange={idx => {
             if (state.smartItemsControl.selectedSmartItem !== undefined) {
               handleSelectAction(
-                state,
                 smartItems[state.smartItemsControl.selectedSmartItem],
                 actions[idx],
               );

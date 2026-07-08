@@ -9,7 +9,12 @@ import { Header } from './Header';
 import { Card } from './Card';
 import { type State } from './types';
 import { getAdminMessageBus } from './admin-message-bus';
-import { showAnnouncementBanner, clearAnnouncementBanner } from './actions';
+import {
+  showAnnouncementBanner,
+  clearAnnouncementBanner,
+  setAnnouncementText,
+  clearAnnouncements,
+} from './actions';
 
 const ICONS = {
   get TEXT_ANNOUNCEMENT_CONTROL() {
@@ -63,7 +68,7 @@ export function TextAnnouncementsControl({
               handleSendTextAnnouncement(engine, state, value, player);
             }}
             onChange={value => {
-              state.textAnnouncementControl.text = value;
+              setAnnouncementText(value);
               clearAnnouncementBanner();
             }}
             fontSize={16}
@@ -159,15 +164,15 @@ export function TextAnnouncementsControl({
   );
 }
 
-function handleClearTextAnnouncement(_engine: IEngine, state: State) {
+function handleClearTextAnnouncement(_engine: IEngine, _state: State) {
   getAdminMessageBus().emitClearAnnouncement();
-  state.textAnnouncementControl.announcements = [];
+  clearAnnouncements();
   showAnnouncementBanner('cleared');
 }
 
 function handleSendTextAnnouncement(
   _engine: IEngine,
-  state: State,
+  _state: State,
   text: string | undefined,
   player?: GetPlayerDataRes | null,
 ) {
@@ -179,6 +184,6 @@ function handleSendTextAnnouncement(
   const timestamp = Date.now();
   getAdminMessageBus().emitSetAnnouncement(text.slice(0, 90), author, `${timestamp}-${author}`);
 
-  state.textAnnouncementControl.text = '';
+  setAnnouncementText('');
   showAnnouncementBanner('sent');
 }

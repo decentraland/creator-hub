@@ -40,7 +40,7 @@ const ICONS = {
   },
 };
 
-export async function handleGetDclCastInfo() {
+async function handleGetDclCastInfo() {
   const [error, data] = await getDclCastInfo();
   if (error) {
     console.error(error);

@@ -31,7 +31,13 @@ import SharePresentationModal from './VideoControl/DclCast/SharePresentationModa
 import { isPreview } from './fetch-utils';
 import { initAdminMessageBus, getAdminMessageBus } from './admin-message-bus';
 import { state } from './store';
-import { setActiveTab, togglePanel, showPresentation, dismissPresentation } from './actions';
+import {
+  setActiveTab,
+  togglePanel,
+  showPresentation,
+  dismissPresentation,
+  setAdminToolkitUiEntity,
+} from './actions';
 
 // Mobile scaling: shrink the virtual canvas on
 // mobile so the SDK's global UI scale factor — min(screen/virtual), see
@@ -157,7 +163,7 @@ export async function initializeAdminData(
     const { VideoControlState } = getComponents(engine);
 
     // Initialize AdminToolkitUiEntity
-    state.adminToolkitUiEntity = getAdminToolkitEntity(engine) ?? engine.addEntity();
+    setAdminToolkitUiEntity(getAdminToolkitEntity(engine) ?? engine.addEntity());
 
     // Initialize TextAnnouncements sync component
     initTextAnnouncementSync(engine);

@@ -69,6 +69,6 @@ export type State = {
     showModalAdminList: boolean;
     adminToRemove: SceneAdmin | undefined;
     showModalBanList: boolean;
-    unbanMessage: string | null;
+    unbanMessage: string | undefined;
   };
 };
