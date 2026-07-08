@@ -48,6 +48,11 @@
         "refresh": "Reload scene from disk",
         "preview_options": {
           "title": "Preview Options",
+          "client": {
+            "label": "Preview with",
+            "desktop": "Desktop Client",
+            "bevy_web": "Bevy (Web)"
+          },
           "debugger": "Open Debug Console",
           "skip_auth_screen": "Skip Auth Screen",
           "open_new_instance": "Open multiple instances",

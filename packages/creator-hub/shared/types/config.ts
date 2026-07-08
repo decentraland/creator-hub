@@ -1,6 +1,6 @@
 import deepmerge from 'deepmerge';
 import { type AppSettings } from './settings';
-import { DEFAULT_DEPENDENCY_UPDATE_STRATEGY } from './settings';
+import { DEFAULT_DEPENDENCY_UPDATE_STRATEGY, DEFAULT_PREVIEW_CLIENT } from './settings';
 
 export const CURRENT_CONFIG_VERSION = 2;
 
@@ -38,6 +38,7 @@ export const DEFAULT_CONFIG: Config = {
       openNewInstance: false,
       multiInstance: false,
       showWarnings: true,
+      client: DEFAULT_PREVIEW_CLIENT,
     },
   },
   editors: [],
