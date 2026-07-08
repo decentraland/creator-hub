@@ -1,6 +1,7 @@
-import { IEngine, UiTransform } from '@dcl/ecs';
+import type { IEngine } from '@dcl/ecs';
 import { Color4 } from '@dcl/ecs-math';
-import ReactEcs, { UiEntity, UiTransformProps } from '@dcl/react-ecs';
+import type { UiTransformProps } from '@dcl/react-ecs';
+import ReactEcs, { UiEntity } from '@dcl/react-ecs';
 import { clearInterval, setInterval } from './utils';
 
 interface LoadingProps {

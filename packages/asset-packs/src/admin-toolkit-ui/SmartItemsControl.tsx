@@ -100,12 +100,10 @@ function handleHideShowEntity(
 }
 
 function SmartItemSelector({
-  engine,
   smartItems,
   selectedIndex,
   onSelect,
 }: {
-  engine: IEngine;
   smartItems: NonNullable<AdminTools['smartItemsControl']['smartItems']>;
   selectedIndex: number | undefined;
   onSelect: (idx: number) => void;
@@ -149,13 +147,11 @@ function SmartItemSelector({
 }
 
 function ActionSelector({
-  engine,
   actions,
   selectedIndex,
   disabled,
   onChange,
 }: {
-  engine: IEngine;
   actions: Action[];
   selectedIndex: number | undefined;
   disabled: boolean;
@@ -206,13 +202,11 @@ function ActionButtons({
   engine,
   state,
   smartItems,
-  actions,
   selectedAction,
 }: {
   engine: IEngine;
   state: State;
   smartItems: NonNullable<AdminTools['smartItemsControl']['smartItems']>;
-  actions: Action[];
   selectedAction: Action | undefined;
 }) {
   const selectedSmartItem =
@@ -303,7 +297,6 @@ export function SmartItemsControl({ engine, state }: { engine: IEngine; state: S
         />
 
         <SmartItemSelector
-          engine={engine}
           smartItems={smartItems}
           selectedIndex={state.smartItemsControl.selectedSmartItem}
           onSelect={idx => {
@@ -312,7 +305,6 @@ export function SmartItemsControl({ engine, state }: { engine: IEngine; state: S
         />
 
         <ActionSelector
-          engine={engine}
           actions={actions}
           selectedIndex={selectedActionIndex}
           disabled={state.smartItemsControl.selectedSmartItem === undefined}
@@ -331,7 +323,6 @@ export function SmartItemsControl({ engine, state }: { engine: IEngine; state: S
           engine={engine}
           state={state}
           smartItems={smartItems}
-          actions={actions}
           selectedAction={
             selectedActionIndex !== undefined ? actions[selectedActionIndex] : undefined
           }

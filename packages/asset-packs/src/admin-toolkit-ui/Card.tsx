@@ -1,4 +1,6 @@
-import ReactEcs, { UiEntity, UiTransformProps } from '@dcl/react-ecs';
+// eslint-disable-next-line @typescript-eslint/consistent-type-imports -- ReactEcs is the JSX factory (runtime value), not just the ReactEcs.JSX.Element type
+import ReactEcs, { UiEntity } from '@dcl/react-ecs';
+import type { UiTransformProps } from '@dcl/react-ecs';
 import { containerBackgroundColor } from '.';
 
 export function Card({
