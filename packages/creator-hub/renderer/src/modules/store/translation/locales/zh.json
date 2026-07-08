@@ -348,6 +348,11 @@
         "app_warnings": {
           "label": "应用警告",
           "show_warnings": "每次预览或发布包含自定义代码的场景时显示警告消息"
+        },
+        "renderer": {
+          "label": "场景渲染器",
+          "babylon": "Babylon（默认）",
+          "bevy": "Bevy（预览）"
         }
       },
       "actions": {
