@@ -14,6 +14,7 @@ import {
 } from 'decentraland-ui2';
 
 import type { EditorConfig } from '/shared/types/config';
+import { RENDERER } from '/shared/types/settings';
 import { t } from '/@/modules/store/translation/utils';
 import type { EditorTabProps } from '../../types';
 
@@ -55,6 +56,13 @@ const EditorTab: React.FC<EditorTabProps> = ({
         },
       };
       updateSettings(newSettings);
+    },
+    [settings, updateSettings],
+  );
+
+  const handleRendererChange = useCallback(
+    (renderer: RENDERER) => {
+      updateSettings({ ...settings, renderer });
     },
     [settings, updateSettings],
   );
@@ -108,6 +116,19 @@ const EditorTab: React.FC<EditorTabProps> = ({
             </MenuItem>
           </Select>
         )}
+      </FormGroup>
+      <FormGroup className="RendererFormGroup">
+        <Typography variant="body1">{t('modal.app_settings.fields.renderer.label')}</Typography>
+        <Select
+          fullWidth
+          value={settings.renderer}
+          onChange={event => handleRendererChange(event.target.value as RENDERER)}
+        >
+          <MenuItem value={RENDERER.BABYLON}>
+            {t('modal.app_settings.fields.renderer.babylon')}
+          </MenuItem>
+          <MenuItem value={RENDERER.BEVY}>{t('modal.app_settings.fields.renderer.bevy')}</MenuItem>
+        </Select>
       </FormGroup>
       <FormGroup className="PreviewOptionsFormGroup">
         <Typography variant="body1">{t('editor.header.actions.preview_options.title')}</Typography>

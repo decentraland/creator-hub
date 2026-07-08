@@ -347,6 +347,11 @@
         "app_warnings": {
           "label": "Advertencias de la Aplicación",
           "show_warnings": "Mostrar un mensaje de advertencia cada vez que previsualizas o publicas una escena que contiene código personalizado"
+        },
+        "renderer": {
+          "label": "Motor de renderizado",
+          "babylon": "Babylon (predeterminado)",
+          "bevy": "Bevy (vista previa)"
         }
       },
       "actions": {

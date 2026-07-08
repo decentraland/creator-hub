@@ -347,6 +347,11 @@
         "app_warnings": {
           "label": "App Warnings",
           "show_warnings": "Show a warning message each time you preview or publish a scene that contains custom code"
+        },
+        "renderer": {
+          "label": "Scene renderer",
+          "babylon": "Babylon (default)",
+          "bevy": "Bevy (preview)"
         }
       },
       "actions": {
