@@ -8,7 +8,16 @@ to the inspector over a same-origin `BroadcastChannel` (`dcl-editor-bus`).
 
 It is a **separate SDK7 project** (own `sdk-commands` build, own `node_modules`),
 not part of the inspector's TS build — the inspector's `tsconfig` only includes
-`src/`, so this dir is excluded from its typecheck/bundle.
+`src/`, so this dir is excluded from its typecheck/bundle. It builds with the
+engine's companion protocol SDK (`@dcl/sdk@7.22.6-…commit-83012ab`), which must
+match the engine bundle — a mismatch crashes the engine's asset loader.
+
+> **This package is NOT a workspace** (it lives at `packages/inspector/agents/bevy`,
+> outside the root `packages/*` glob) and has its **own `node_modules`**. The
+> repo-wide `make init` / root `npm install` does **not** install it — you must
+> run `npm install` here (see [Build / run](#build--run-for-testing)). Its one
+> dependency, the shared `@dcl/inspector-bevy-protocol` bus contract, is a
+> sibling package linked via `file:../protocol`.
 
 ## How it fits
 
@@ -20,13 +29,16 @@ not part of the inspector's TS build — the inspector's `tsconfig` only include
 - **Pick:** raycasts the inspected scene's colliders on pointer-down, posts the
   hit entity → inspector `pick-bridge` → `events.emit('pick')`.
 - **Gizmo:** the inspector sends the selected entity + its world position
-  (`set-selection`), since the agent can't read another scene's Transform. The
-  gizmo attaches there; dragging an axis previews via `set_component` and, on
-  release, posts `gizmoCommit` + `gizmoCommitEnd` → the inspector writes the
-  authoritative Transform.
+  (`set-selection`), since the agent can't read another scene's Transform. A
+  translate gizmo attaches there, rendered on-top via a `TextureCamera` composite
+  and grabbed by analytic ray-vs-axis hit-testing (engine raycast is unreliable
+  for the small handles). On release it posts `gizmoCommit` + `gizmoCommitEnd`;
+  the inspector merges the position into the entity's Transform (preserving
+  rotation/scale) and does the authoritative write.
 
-Bus message shapes are kept in sync with the inspector's `pick-bridge.ts` /
-`selection-bridge.ts`.
+Bus message shapes are the shared `@dcl/inspector-bevy-protocol` package that both
+this scene and the inspector (`pick-bridge.ts` / `selection-bridge.ts`) import —
+one source of truth, no drift.
 
 ## Build / run (for testing)
 
@@ -41,7 +53,6 @@ for the full three-server + dual-URL setup.
 
 ## Scope / TODO
 
-- Translate only (no rotate/scale, no on-top TextureCamera composite).
-- Assumes the selected entity's given world position is meaningful (root-level).
+- Translate only (no rotate/scale gizmo modes yet).
 - The engine expansion splits a glTF into separate collider + mesh entities;
-  picking selects the hit entity as-is.
+  picking selects the hit entity as-is (may be a collider, not the visible mesh).

@@ -2,12 +2,17 @@ import { useCallback } from 'react';
 import {
   Checkbox,
   Divider,
+  FormControl,
   FormControlLabel,
   FormGroup,
+  FormLabel,
   ListItemButton,
   ListItemText,
+  Radio,
+  RadioGroup,
 } from 'decentraland-ui2';
 
+import { PREVIEW_CLIENT } from '/shared/types/settings';
 import { t } from '/@/modules/store/translation/utils';
 
 import type { PreviewOptionsProps } from './types';
@@ -25,9 +30,35 @@ export function PreviewOptions({
     [onChange, options],
   );
 
+  const handleClientChange = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      onChange({ ...options, client: event.target.value as PREVIEW_CLIENT });
+    },
+    [onChange, options],
+  );
+
   return (
     <div className="PreviewOptions">
       <span className="title">{t('editor.header.actions.preview_options.title')}</span>
+      <FormControl>
+        <FormLabel>{t('editor.header.actions.preview_options.client.label')}</FormLabel>
+        <RadioGroup
+          value={options.client}
+          onChange={handleClientChange}
+        >
+          <FormControlLabel
+            value={PREVIEW_CLIENT.DESKTOP}
+            control={<Radio />}
+            label={t('editor.header.actions.preview_options.client.desktop')}
+          />
+          <FormControlLabel
+            value={PREVIEW_CLIENT.BEVY_WEB}
+            control={<Radio />}
+            label={t('editor.header.actions.preview_options.client.bevy_web')}
+          />
+        </RadioGroup>
+      </FormControl>
+      <Divider />
       <FormGroup>
         <FormControlLabel
           control={
