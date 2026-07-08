@@ -24,6 +24,8 @@ import {
   closeSharePresentation,
   setStream,
   setParticipants,
+  setDclCastInfo,
+  minimizeCast,
 } from '../../actions';
 import DclCastInfo from './DclCastInfo';
 import CompactDclCast from './CompactDclCast';
@@ -38,14 +40,14 @@ const ICONS = {
   },
 };
 
-export async function handleGetDclCastInfo(state: State) {
+export async function handleGetDclCastInfo() {
   const [error, data] = await getDclCastInfo();
   if (error) {
     console.error(error);
     return null;
   } else {
     if (data) {
-      state.videoControl.dclCast = data;
+      setDclCastInfo(data);
       return data;
     }
   }
@@ -95,7 +97,7 @@ const DclCast = ({
     setIsLoading(true);
     setError(false);
 
-    const result = await handleGetDclCastInfo(state);
+    const result = await handleGetDclCastInfo();
 
     if (!result) {
       setError(true);
@@ -184,9 +186,7 @@ const DclCast = ({
             />
           </UiEntity>
           <UiEntity
-            onMouseDown={() => {
-              state.videoControl.isMinimized = true;
-            }}
+            onMouseDown={() => minimizeCast()}
             uiTransform={styles.chevronButton}
             uiBackground={{
               textureMode: 'stretch',

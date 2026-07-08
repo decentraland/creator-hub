@@ -212,7 +212,6 @@ export function createAdminToolkitUI(
     // presentation goes live, regardless of which tab (if any) the admin is on.
     startPresentationDetection(
       engine,
-      state,
       () => !!isAllowedAdmin(engine, getAdminToolkitComponent(engine), playersHelper?.getPlayer()),
       () => playersHelper?.getPlayer()?.userId,
       () => showPresentation(findActiveCastScreenIndex(engine)),

@@ -1,5 +1,4 @@
 import type { IEngine } from '@dcl/ecs';
-import type { State } from '../../types';
 import { clearInterval, setInterval } from '../../utils';
 import { getAdminToolkitVideoControl, getVideoPlayers } from '../utils';
 import {
@@ -11,14 +10,21 @@ import {
   hasPresentationTrack,
   subscribeToPresentationTopic,
 } from '../api';
-import { setParticipants } from '../../actions';
+import {
+  setParticipants,
+  setDclCastInfo,
+  setPresentationState,
+  clearPresentationState,
+} from '../../actions';
 
 // Background presentation detection.
 //
 // Runs as a boot-time engine service (for admins) instead of as a side effect of
 // the DclCast component mounting, so the panel can auto-open regardless of which
 // tab (if any) the admin is viewing. Data flows one way:
-//   detector -> state.videoControl.presentationState -> view components.
+//   detector -> (actions) -> state.videoControl -> view components.
+// It never reads or assigns `state` directly — all writes go through actions,
+// which own the store singleton.
 //
 // Auto-open is triggered by the presentation bot's LiveKit TRACK appearing
 // (hasPresentationTrack over getActiveStreams) — a signal available to every scene
@@ -37,23 +43,24 @@ const POLL_INTERVAL_MS = 1000;
 // and far cheaper than draining the comms topic every frame.
 const CONSUME_INTERVAL_MS = 250;
 
-// Detection lifecycle (module singletons, reset by stopPresentationDetection).
+// Boot-once guard: the poll is registered exactly once per session and runs for the
+// scene's lifetime (see the POLL_INTERVAL_MS note above).
 let detectionStarted = false;
-let intervalSystem: ((dt: number) => void) | null = null;
 
 // Presentation lifecycle. presentationActive is an edge tracker for the bot
 // track (drives the one-shot auto-open); presentationSystem is the running
 // consume system (null = not running) and is only assigned on successful setup,
 // so a failed setup naturally retries on the next poll tick. startingSystem
-// guards against concurrent setup while an in-flight attempt is awaiting.
+// guards against concurrent setup while an in-flight attempt is awaiting, and
+// polling / consuming guard against a slow tick overlapping the next one.
 let presentationActive = false;
 let startingSystem = false;
 let presentationSystem: ((dt: number) => void) | null = null;
+let polling = false;
 let consuming = false;
 
 async function startPresentationSystem(
   engine: IEngine,
-  state: State,
   getPlayerAddress: () => string | undefined,
   onPresentationEnded: () => void,
 ): Promise<void> {
@@ -65,7 +72,7 @@ async function startPresentationSystem(
     // first. getDclCastInfo lazily creates the room ensurePresenterRole depends on,
     // so it must resolve before ensurePresenterRole (see PR #1356).
     const [, castData] = await getDclCastInfo();
-    if (castData) state.videoControl.dclCast = castData;
+    if (castData) setDclCastInfo(castData);
     const address = getPlayerAddress();
     if (address) await ensurePresenterRole(address);
 
@@ -88,7 +95,7 @@ async function startPresentationSystem(
           if (latestState === 'stopped') {
             onPresentationEnded();
           } else if (latestState) {
-            state.videoControl.presentationState = latestState;
+            setPresentationState(latestState);
           }
         })
         .catch(error => {
@@ -112,12 +119,12 @@ async function startPresentationSystem(
   }
 }
 
-function stopPresentationSystem(engine: IEngine, state: State): void {
+function stopPresentationSystem(engine: IEngine): void {
   if (presentationSystem) {
     clearInterval(engine, presentationSystem);
     presentationSystem = null;
   }
-  state.videoControl.presentationState = undefined;
+  clearPresentationState();
 }
 
 function isCastCapableScene(engine: IEngine): boolean {
@@ -127,7 +134,6 @@ function isCastCapableScene(engine: IEngine): boolean {
 
 export function startPresentationDetection(
   engine: IEngine,
-  state: State,
   getIsAdmin: () => boolean,
   getPlayerAddress: () => string | undefined,
   onPresentationStarted: () => void,
@@ -141,49 +147,46 @@ export function startPresentationDetection(
     // detection begins as soon as the player/admin list resolves.
     if (!getIsAdmin() || !isCastCapableScene(engine)) return;
 
-    const tracks = await getActiveStreams();
-    if (!tracks) return;
+    // Skip if a previous tick is still in flight — getActiveStreams and the system
+    // setup it triggers can outlast POLL_INTERVAL_MS. Mirrors the `consuming` guard.
+    if (polling) return;
+    polling = true;
+    try {
+      const tracks = await getActiveStreams();
+      if (!tracks) return;
 
-    // Keep the Speaker Showcase list fresh (also drives the compact view's
-    // presentation controls via presentationBotInRoom).
-    setParticipants(groupTracksByParticipant(tracks));
+      // Keep the Speaker Showcase list fresh (also drives the compact view's
+      // presentation controls via presentationBotInRoom).
+      setParticipants(groupTracksByParticipant(tracks));
 
-    const hasPresentation = hasPresentationTrack(tracks);
-    if (hasPresentation) {
-      // Auto-open once, on the track-appeared edge — independent of whether the
-      // consume system has finished (or failed) its setup, so a setup retry never
-      // re-opens the panel the admin may have since closed.
-      if (!presentationActive) {
-        presentationActive = true;
-        onPresentationStarted();
+      const hasPresentation = hasPresentationTrack(tracks);
+      if (hasPresentation) {
+        // Auto-open once, on the track-appeared edge — independent of whether the
+        // consume system has finished (or failed) its setup, so a setup retry never
+        // re-opens the panel the admin may have since closed.
+        if (!presentationActive) {
+          presentationActive = true;
+          onPresentationStarted();
+        }
+        // Ensure the consume system is running. Retries a previously failed setup
+        // because presentationSystem is only assigned on success.
+        await startPresentationSystem(engine, getPlayerAddress, onPresentationEnded);
+      } else if (presentationActive) {
+        presentationActive = false;
+        onPresentationEnded();
+        stopPresentationSystem(engine);
       }
-      // Ensure the consume system is running. Retries a previously failed setup
-      // because presentationSystem is only assigned on success.
-      await startPresentationSystem(engine, state, getPlayerAddress, onPresentationEnded);
-    } else if (presentationActive) {
-      presentationActive = false;
-      onPresentationEnded();
-      stopPresentationSystem(engine, state);
+    } catch (error) {
+      // A rejected network call (getActiveStreams) or setup step would otherwise
+      // surface as an unhandled rejection; log and retry on the next tick.
+      console.error('[DclCast] Presentation detection poll failed, will retry', error);
+    } finally {
+      polling = false;
     }
   };
 
-  // Poll immediately, then every second.
+  // Poll immediately, then every second. The handle is intentionally discarded:
+  // detection runs for the scene's lifetime and is never torn down.
   poll();
-  intervalSystem = setInterval(engine, poll, POLL_INTERVAL_MS);
-}
-
-// Cleanup/reset path: removes the poll interval and consume systems from the
-// engine and resets all module state so detection can be safely restarted (e.g.
-// on UI teardown or in tests). Without this the module singletons persist and
-// the boot-time `detectionStarted` guard would block any restart.
-export function stopPresentationDetection(engine: IEngine, state: State): void {
-  if (intervalSystem) {
-    clearInterval(engine, intervalSystem);
-    intervalSystem = null;
-  }
-  stopPresentationSystem(engine, state);
-  detectionStarted = false;
-  presentationActive = false;
-  startingSystem = false;
-  consuming = false;
+  setInterval(engine, poll, POLL_INTERVAL_MS);
 }

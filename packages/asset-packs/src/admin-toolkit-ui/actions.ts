@@ -1,6 +1,6 @@
 import { state } from './store';
-import { TabType } from './types';
-import type { FlattenedTrack, Participant } from './VideoControl/api';
+import { TabType, type PresentationState } from './types';
+import type { DclCastResponse, FlattenedTrack, Participant } from './VideoControl/api';
 import type { SceneAdmin } from './ModerationControl';
 
 // Named view-state transitions — the only writers of shared panel/view state.
@@ -12,10 +12,6 @@ import type { SceneAdmin } from './ModerationControl';
 // --- Panel ---
 export function openPanel(): void {
   state.panelOpen = true;
-}
-
-export function closePanel(): void {
-  state.panelOpen = false;
 }
 
 export function togglePanel(): void {
@@ -30,6 +26,10 @@ export function setActiveTab(tab: TabType): void {
 // --- Video Control sub-view ---
 export function selectVideoSubTab(tab: 'video-url' | 'live' | 'dcl-cast'): void {
   state.videoControl.selectedTab = tab;
+}
+
+export function selectVideoPlayer(index: number): void {
+  state.videoControl.selectedVideoPlayer = index;
 }
 
 // --- DCL Cast compact/full ---
@@ -47,25 +47,41 @@ export function expandCast(): void {
 // mount-derived local. Pass the casting screen index (findActiveCastScreenIndex) if
 // one is live so the panel points at it; never auto-activates a screen.
 export function showPresentation(castScreenIndex?: number): void {
-  state.panelOpen = true;
+  openPanel();
+  // Force VIDEO_CONTROL open — not setActiveTab, which would toggle it closed if
+  // the admin is already on it.
   state.activeTab = TabType.VIDEO_CONTROL;
-  state.videoControl.selectedTab = 'dcl-cast';
+  selectVideoSubTab('dcl-cast');
   if (castScreenIndex !== undefined) {
-    state.videoControl.selectedVideoPlayer = castScreenIndex;
+    selectVideoPlayer(castScreenIndex);
   }
-  state.videoControl.selectedStream = 'dcl-cast';
-  state.videoControl.isMinimized = true;
+  setStream('dcl-cast');
+  minimizeCast();
 }
 
 // Called on presentation end (bot 'stopped' or track gone). Returns to the full
 // DCL Cast panel: clears slide state and un-minimizes; leaves panel/tab as-is.
 export function dismissPresentation(): void {
+  clearPresentationState();
+  expandCast();
+}
+
+// Detector-driven slide/video state (arrives over the 'presentation' comms topic).
+export function setPresentationState(presentation: PresentationState): void {
+  state.videoControl.presentationState = presentation;
+}
+
+export function clearPresentationState(): void {
   state.videoControl.presentationState = undefined;
-  state.videoControl.isMinimized = false;
 }
 
 export function setStream(stream: 'live' | 'dcl-cast' | undefined): void {
   state.videoControl.selectedStream = stream;
+}
+
+// Cast room info (streaming key, room id) fetched from getDclCastInfo.
+export function setDclCastInfo(info: DclCastResponse): void {
+  state.videoControl.dclCast = info;
 }
 
 // --- Speaker Showcase / Share Presentation modals ---
@@ -86,7 +102,13 @@ export function openShowcase(handlers: {
 }
 
 export function closeShowcase(): void {
-  state.videoControl.showcase.show = false;
+  const { showcase } = state.videoControl;
+  showcase.show = false;
+  // Drop the stored handlers so their captured render closures (entity/engine/
+  // controls) aren't retained while the modal is hidden.
+  showcase.onSelectTrack = undefined;
+  showcase.onSetDefault = undefined;
+  showcase.onClose = undefined;
 }
 
 export function setShowcaseActiveTrack(sid: string | undefined): void {
@@ -100,6 +122,7 @@ export function openSharePresentation(onClose: () => void): void {
 
 export function closeSharePresentation(): void {
   state.videoControl.sharePresentation.show = false;
+  state.videoControl.sharePresentation.onClose = undefined;
 }
 
 // --- Text Announcements ---

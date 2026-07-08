@@ -8,7 +8,7 @@ import type { AdminTools } from '../../definitions';
 import { Header } from '../Header';
 import { Active } from '../Active';
 import { Card } from '../Card';
-import { selectVideoSubTab, dismissPresentation } from '../actions';
+import { selectVideoSubTab, selectVideoPlayer, dismissPresentation } from '../actions';
 import {
   getVideoPlayers,
   isDclCast,
@@ -141,7 +141,7 @@ export function VideoControl({
                       `<b>${player.customName}</b>`,
                   )}
                   selectedIndex={state.videoControl.selectedVideoPlayer ?? 0}
-                  onChange={idx => (state.videoControl.selectedVideoPlayer = idx)}
+                  onChange={idx => selectVideoPlayer(idx)}
                   textAlign="middle-left"
                   fontSize={16}
                   uiTransform={{

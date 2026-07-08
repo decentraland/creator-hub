@@ -9,7 +9,7 @@ import { LIVEKIT_STREAM_SRC } from '../LiveStream';
 import { isPresentationBot, stopPresentation } from '../api';
 import { VideoControlVolume } from '../VolumeControl';
 import { createVideoPlayerControls, isDclCast } from '../utils';
-import { setStream, dismissPresentation } from '../../actions';
+import { setStream, dismissPresentation, expandCast } from '../../actions';
 import PresentationPanel from './PresentationPanel';
 import { getCompactBarStyles, getDclCastBackgrounds, getDclCastColors } from './styles';
 
@@ -51,7 +51,7 @@ const CompactDclCast = ({
   const hasPresentation = isActive && (!!presentationState || presentationBotInRoom);
 
   const handleExpand = () => {
-    state.videoControl.isMinimized = false;
+    expandCast();
   };
 
   const handleActivate = () => {
