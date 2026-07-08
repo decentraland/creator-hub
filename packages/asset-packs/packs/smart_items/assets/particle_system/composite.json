@@ -1,0 +1,53 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core-schema::Name",
+      "data": {
+        "0": {
+          "json": {
+            "value": "Particle System"
+          }
+        }
+      }
+    },
+    {
+      "name": "core::ParticleSystem",
+      "data": {
+        "0": {
+          "json": {
+            "rate": 40,
+            "lifetime": 2,
+            "maxParticles": 200,
+            "initialSize": {
+              "start": 0.1,
+              "end": 0.3
+            },
+            "sizeOverTime": {
+              "start": 1.0,
+              "end": 0.0
+            },
+            "initialColor": {
+              "start": { "r": 1, "g": 0.6, "b": 0.1, "a": 1 },
+              "end": { "r": 1, "g": 0.2, "b": 0, "a": 1 }
+            },
+            "colorOverTime": {
+              "start": { "r": 1, "g": 0.5, "b": 0.1, "a": 1 },
+              "end": { "r": 0.2, "g": 0, "b": 0, "a": 0 }
+            },
+            "initialVelocitySpeed": {
+              "start": 1.5,
+              "end": 2.5
+            },
+            "gravity": -0.3,
+            "blendMode": 1,
+            "shape": {
+              "$case": "point",
+              "point": {}
+            }
+          }
+        }
+      }
+    }
+  ]
+}

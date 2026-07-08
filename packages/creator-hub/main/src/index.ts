@@ -1,4 +1,5 @@
 import { platform } from 'node:process';
+import path from 'node:path';
 import { app } from 'electron';
 import {
   init as sentryInit,
@@ -19,8 +20,9 @@ import { initIpc } from '/@/modules/ipc';
 import { deployServer, killAllPreviews } from '/@/modules/cli';
 import { killInspectorServer } from '/@/modules/inspector';
 import { runMigrations } from '/@/modules/migrations';
-import { getAnalytics, track } from './modules/analytics';
+import { getAnalytics, track, trackLifecycleEvent } from './modules/analytics';
 import { handleAppArguments } from './modules/app-args-handle';
+import { DEEPLINK_PROTOCOL, flushPendingDeeplink, handleDeeplink } from './modules/deeplink';
 import { addEditorsPathsToConfig } from './modules/code';
 
 import '/@/security-restrictions';
@@ -66,6 +68,30 @@ app.on('second-instance', async (_e: unknown, argv: string[]) => {
 });
 
 /**
+ * Register the app as the handler for the deeplink scheme.
+ * In development the executable is Electron itself, so the path to the app entry
+ * point must be passed explicitly for the registration to resolve correctly.
+ */
+if (process.defaultApp) {
+  if (process.argv.length >= 2) {
+    app.setAsDefaultProtocolClient(DEEPLINK_PROTOCOL, process.execPath, [
+      path.resolve(process.argv[1]),
+    ]);
+  }
+} else {
+  app.setAsDefaultProtocolClient(DEEPLINK_PROTOCOL);
+}
+
+/**
+ * macOS deeplink entry point. This can fire before `app.whenReady()`, so
+ * `handleDeeplink` buffers the URL and it is replayed via `flushPendingDeeplink`.
+ */
+app.on('open-url', (event: Electron.Event, url: string) => {
+  event.preventDefault();
+  void handleDeeplink(url);
+});
+
+/**
  * Shut down background process if all windows was closed
  */
 app.on('window-all-closed', async () => {
@@ -107,12 +133,15 @@ app
     await restoreOrCreateMainWindow();
     log.info('[BrowserWindow] Ready');
     await addEditorsPathsToConfig();
+    const version = app.getVersion();
     const analytics = await getAnalytics();
     if (analytics) {
-      await track('Open Editor', { version: app.getVersion() });
+      await trackLifecycleEvent(version);
+      await track('Open Editor', { version });
     } else {
       log.info('[Analytics] API key not provided, analytics disabled');
     }
+    await flushPendingDeeplink();
   })
   .catch(e => log.error('Failed create window:', e));
 

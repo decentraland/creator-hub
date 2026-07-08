@@ -3,8 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import { captureException, setUser } from '@sentry/electron/renderer';
 import { ChainId, type Avatar } from '@dcl/schemas';
 import { useDispatch } from '#store';
+import { analytics, auth, misc } from '#preload';
 import { config } from '/@/config';
-import { AuthServerProvider } from '/@/lib/auth';
+import { AuthServerProvider, SignInError } from '/@/lib/auth';
 import { Profiles } from '/@/lib/profile';
 import { fetchTiles } from '/@/modules/store/land';
 import {
@@ -17,7 +18,6 @@ import { AuthContext } from '/@/contexts/AuthContext';
 import { isNavigatorOnline } from '/@/lib/connection';
 import { useSnackbar } from '/@/hooks/useSnackbar';
 import { t } from '/@/modules/store/translation/utils';
-import type { AuthSignInProps } from './types';
 
 AuthServerProvider.setAuthServerUrl(config.get('AUTH_SERVER_URL'));
 AuthServerProvider.setAuthDappUrl(config.get('AUTH_DAPP_URL'));
@@ -28,21 +28,34 @@ const DEFAULT_CHAIN_ID: ChainId = (Number(config.get('CHAIN_ID')) ||
 export const provider = new AuthServerProvider();
 
 const MAX_SIGNIN_ATTEMPTS = 3;
-const SIGNIN_TIMEOUT_IN_MS = 60_000;
+
+function signInErrorMessage(error: unknown): string {
+  if (error instanceof SignInError) {
+    switch (error.reason) {
+      case 'not_found':
+        return t('sign_in.errors.identity_not_found');
+      case 'expired':
+        return t('sign_in.errors.identity_expired');
+      case 'network':
+        return t('sign_in.errors.network_mismatch');
+    }
+  }
+  return t('sign_in.errors.failed');
+}
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const { pushGeneric } = useSnackbar();
-  const initSignInResultRef = useRef<AuthSignInProps>();
   const signInAttemptCountRef = useRef<number>(0);
-  const activeSignInTabsRef = useRef<Set<string>>(new Set());
+  const deepLinkCleanupRef = useRef<(() => void) | null>(null);
+  const requestIdRef = useRef<string | null>(null);
+
   const [wallet, setWallet] = useState<string>();
   const [avatar, setAvatar] = useState<Avatar>();
   const [isSignedIn, setIsSignedIn] = useState(false);
+  const [isSigningIn, setIsSigningIn] = useState(false);
   const [chainId, setChainId] = useState<ChainId>(DEFAULT_CHAIN_ID);
-
-  const isSigningIn = !!initSignInResultRef?.current;
 
   const fetchAvatar = useCallback(async (address: string) => {
     try {
@@ -54,74 +67,107 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   }, []);
 
-  const finishSignIn = useCallback(async () => {
-    const hasValidIdentity = AuthServerProvider.hasValidIdentity();
-    const connectedAccount = AuthServerProvider.getAccount();
-    if (hasValidIdentity && connectedAccount) {
-      setWallet(connectedAccount);
-      setIsSignedIn(true);
-      fetchAvatar(connectedAccount);
-      signInAttemptCountRef.current = 0;
-    }
-  }, [fetchAvatar]);
+  // Stops listening for the deep-link sign-in of the current attempt, if any.
+  const stopDeepLinkListener = useCallback(() => {
+    deepLinkCleanupRef.current?.();
+    deepLinkCleanupRef.current = null;
+  }, []);
+
+  const finishSignIn = useCallback(
+    async (identityId: string) => {
+      // This only runs while a sign in is in progress (the listener is scoped to
+      // the attempt), so we are always on the sign-in page here.
+      try {
+        const signer = await AuthServerProvider.applyDeepLinkIdentity(identityId);
+        setWallet(signer);
+        setIsSignedIn(true);
+        fetchAvatar(signer);
+        signInAttemptCountRef.current = 0;
+        void analytics.track('Sign In Completed', { method: 'deeplink' });
+      } catch (error) {
+        captureException(error, {
+          tags: { source: 'auth', event: 'signin-deeplink' },
+        });
+        console.error('Signin error:', error);
+        pushGeneric('error', signInErrorMessage(error));
+      } finally {
+        setIsSigningIn(false);
+        navigate(-1);
+      }
+    },
+    [fetchAvatar, navigate, pushGeneric],
+  );
 
   const signIn = useCallback(async () => {
+    void analytics.track('Sign In Action', { method: 'deeplink' });
+
     if (!isNavigatorOnline()) {
+      void analytics.track('Sign In Blocked', { method: 'deeplink', reason: 'offline' });
       pushGeneric('error', t('connection.offline.message'));
       return;
     }
 
     if (signInAttemptCountRef.current >= MAX_SIGNIN_ATTEMPTS) {
+      void analytics.track('Sign In Blocked', { method: 'deeplink', reason: 'max_attempts' });
       pushGeneric('error', t('sign_in.errors.max_attempts'));
       return;
     }
 
     try {
       signInAttemptCountRef.current += 1;
+      setIsSigningIn(true);
 
-      const initSignInPromise = AuthServerProvider.initSignIn();
-      const timeoutPromise = new Promise<never>((_, reject) => {
-        setTimeout(() => reject(new Error('Signin timeout')), SIGNIN_TIMEOUT_IN_MS);
+      // Listen for the deep link that completes this attempt. Scoped to the
+      // attempt: it fires once, then unsubscribes (also on cancel/re-entry).
+      stopDeepLinkListener();
+      const { cleanup } = auth.onDeepLinkSignIn(identityId => {
+        stopDeepLinkListener();
+        void finishSignIn(identityId);
       });
+      deepLinkCleanupRef.current = cleanup;
 
-      const initSignInResult = await Promise.race([initSignInPromise, timeoutPromise]);
-      initSignInResultRef.current = initSignInResult;
-
-      const sessionId = Date.now().toString();
-      activeSignInTabsRef.current.add(sessionId);
-
+      const requestId = await AuthServerProvider.createSignInRequest();
+      requestIdRef.current = requestId;
       navigate('/sign-in');
-
-      AuthServerProvider.finishSignIn(initSignInResult)
-        .then(finishSignIn)
-        .catch(error => {
-          captureException(error, {
-            tags: { source: 'auth', event: 'signin-finish' },
-          });
-          console.error('Signin error:', error);
-          pushGeneric('error', error?.message || t('sign_in.errors.failed'));
-        })
-        .finally(() => {
-          initSignInResultRef.current = undefined;
-          activeSignInTabsRef.current.delete(sessionId);
-          navigate(-1);
-        });
+      AuthServerProvider.openAuthDapp(requestId, true);
     } catch (error: any) {
+      stopDeepLinkListener();
       captureException(error, {
         tags: { source: 'auth', event: 'signin-init' },
       });
       console.error('Signin initialization error:', error);
-      pushGeneric(
-        'error',
-        error?.message === 'Signin timeout'
-          ? t('sign_in.errors.timeout')
-          : t('sign_in.errors.init_failed'),
-      );
-      initSignInResultRef.current = undefined;
+      pushGeneric('error', t('sign_in.errors.init_failed'));
+      setIsSigningIn(false);
     }
-  }, [navigate, pushGeneric, finishSignIn]);
+  }, [navigate, pushGeneric, finishSignIn, stopDeepLinkListener]);
+
+  const cancelSignIn = useCallback(() => {
+    stopDeepLinkListener();
+    requestIdRef.current = null;
+    setIsSigningIn(false);
+  }, [stopDeepLinkListener]);
+
+  // Re-opens the auth dapp for the in-progress sign in, e.g. if the browser
+  // failed to open the first time. Safe no-op if there is no active request.
+  const reopenSignInDapp = useCallback(() => {
+    if (requestIdRef.current) {
+      AuthServerProvider.openAuthDapp(requestIdRef.current, true);
+    }
+  }, []);
+
+  // Copies the auth dapp URL for the in-progress sign in to the clipboard so the
+  // user can open it manually if the app cannot launch the browser. No-op when
+  // there is no active request.
+  const copySignInUrl = useCallback(async () => {
+    if (!requestIdRef.current) return;
+    void analytics.track('Sign In Copy URL Action', { method: 'deeplink' });
+    const url = AuthServerProvider.getAuthDappUrl(requestIdRef.current, true);
+    await misc.copyToClipboard(url);
+    pushGeneric('success', t('snackbar.generic.url_copied'));
+  }, [pushGeneric]);
 
   const signOut = useCallback(() => {
+    void analytics.track('Sign Out Action', undefined);
     setWallet(undefined);
     setAvatar(undefined);
     setIsSignedIn(false);
@@ -154,6 +200,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       fetchAvatar(connectedAccount);
     }
   }, []);
+
+  useEffect(() => {
+    return () => stopDeepLinkListener();
+  }, [stopDeepLinkListener]);
 
   useEffect(() => {
     if (wallet && chainId) {
@@ -193,11 +243,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         wallet,
         avatar,
         chainId,
-        verificationCode: initSignInResultRef.current?.requestResponse.code,
-        expirationTime: initSignInResultRef.current?.requestResponse.expiration,
         isSignedIn,
         isSigningIn,
         signIn,
+        cancelSignIn,
+        reopenSignInDapp,
+        copySignInUrl,
         signOut,
         changeNetwork,
       }}
