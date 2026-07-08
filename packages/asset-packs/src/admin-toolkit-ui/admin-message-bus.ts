@@ -312,14 +312,18 @@ export function initAdminMessageBus(
 
   emitMessage(MSG.REQUEST_STATE, {});
 
-  const requestStateRetry = setInterval(engine, () => {
-    if (receivedRemoteState || requestAttempts >= MAX_REQUEST_ATTEMPTS) {
-      clearInterval(engine, requestStateRetry);
-      return;
-    }
-    requestAttempts += 1;
-    emitMessage(MSG.REQUEST_STATE, {});
-  }, REQUEST_RETRY_INTERVAL_MS);
+  const requestStateRetry = setInterval(
+    engine,
+    () => {
+      if (receivedRemoteState || requestAttempts >= MAX_REQUEST_ATTEMPTS) {
+        clearInterval(engine, requestStateRetry);
+        return;
+      }
+      requestAttempts += 1;
+      emitMessage(MSG.REQUEST_STATE, {});
+    },
+    REQUEST_RETRY_INTERVAL_MS,
+  );
 
   // ── 5. Revert system ───────────────────────────────────────────────────────
   //
