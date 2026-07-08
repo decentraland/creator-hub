@@ -17,16 +17,10 @@ import {
 import { VideoControl } from './VideoControl';
 import { TextAnnouncementsControl } from './TextAnnouncementsControl';
 import { SmartItemsControl } from './SmartItemsControl';
-import { Button } from './Button';
 import { TextAnnouncements } from './TextAnnouncements';
 import { getContentUrl } from './constants';
 import { type State, TabType, type SelectedSmartItem } from './types';
-import {
-  getBtnModerationControl,
-  ModerationControl,
-  moderationControlState,
-  type SceneAdmin,
-} from './ModerationControl';
+import { ModerationControl, moderationControlState, type SceneAdmin } from './ModerationControl';
 import { getSceneAdmins, getSceneBans, type SceneBanUser } from './ModerationControl/api';
 import { ModalUserList, UserListType } from './ModerationControl/UsersList';
 import { showcaseState, sharePresentationState } from './VideoControl/DclCast';
@@ -34,6 +28,8 @@ import { SpeakerShowcase } from './VideoControl/DclCast/SpeakerShowcase';
 import SharePresentationModal from './VideoControl/DclCast/SharePresentationModal';
 import { isPreview } from './fetch-utils';
 import { initAdminMessageBus, getAdminMessageBus } from './admin-message-bus';
+import { COLORS, RADIUS, SPACING, TYPE } from './theme';
+import { IconTab, Divider } from './Primitives';
 
 export const nextTickFunctions: (() => void)[] = [];
 
@@ -57,7 +53,7 @@ function getVirtualUiSize() {
 export const state: State = {
   adminToolkitUiEntity: 0 as Entity,
   panelOpen: false,
-  activeTab: TabType.NONE,
+  activeTab: TabType.VIDEO_CONTROL,
   videoControl: {
     selectedVideoPlayer: undefined,
     selectedStream: undefined,
@@ -88,15 +84,6 @@ let sceneBansCache: SceneBanUser[] = [];
 // const BTN_REWARDS_CONTROL_ACTIVE = `${CONTENT_URL}/admin_toolkit/assets/icons/admin-panel-rewards-control-active-button.png`
 
 const ADMIN_ICONS = {
-  get BTN_VIDEO_CONTROL() {
-    return `${getContentUrl()}/admin_toolkit/assets/icons/admin-panel-video-control-button.png`;
-  },
-  get BTN_SMART_ITEM_CONTROL() {
-    return `${getContentUrl()}/admin_toolkit/assets/icons/admin-panel-smart-item-control-button.png`;
-  },
-  get BTN_TEXT_ANNOUNCEMENT_CONTROL() {
-    return `${getContentUrl()}/admin_toolkit/assets/icons/admin-panel-text-announcement-control-button.png`;
-  },
   get BTN_ADMIN_TOOLKIT_CONTROL() {
     return `${getContentUrl()}/admin_toolkit/assets/icons/admin-panel-control-button.png`;
   },
@@ -104,8 +91,6 @@ const ADMIN_ICONS = {
     return `${getContentUrl()}/admin_toolkit/assets/backgrounds/admin-tool-background.png`;
   },
 };
-
-export const containerBackgroundColor = Color4.create(0, 0, 0, 0.75);
 
 // The editor starts using entities from [8001].
 const ADMIN_TOOLS_ENTITY = 8000 as Entity;
@@ -253,6 +238,17 @@ export function createAdminToolkitUI(
   });
 }
 
+// Switch tabs. Re-mount the target via a NONE tick so the incoming tab starts
+// fresh; clicking the already-active tab is a no-op (the panel always shows a
+// tab, matching the design — the floating toggle handles open/close).
+function selectTab(tab: TabType) {
+  if (state.activeTab === tab) return;
+  state.activeTab = TabType.NONE;
+  nextTickFunctions.push(() => {
+    state.activeTab = tab;
+  });
+}
+
 function isAllowedAdmin(
   _engine: IEngine,
   adminToolkitEntitie: ReturnType<typeof getAdminToolkitComponent>,
@@ -309,174 +305,72 @@ const uiComponent = (
           <UiEntity
             uiTransform={{
               display: state.panelOpen ? 'flex' : 'none',
-              width: 500,
+              width: 400,
               pointerFilter: 'block',
               flexDirection: 'column',
               margin: innerPosition,
+              borderRadius: RADIUS.xl,
+              borderWidth: 1,
+              borderColor: COLORS.divider,
+              overflow: 'hidden',
             }}
+            uiBackground={{ color: COLORS.panel }}
           >
+            {/* Header: title + icon tabs */}
             <UiEntity
               uiTransform={{
                 width: '100%',
-                height: 50,
                 flexDirection: 'row',
                 alignItems: 'center',
-                borderRadius: 12,
+                justifyContent: 'space-between',
                 padding: {
-                  left: 12,
-                  right: 12,
+                  left: SPACING.xxl,
+                  right: SPACING.xxl,
+                  top: SPACING.xl,
+                  bottom: SPACING.xl,
                 },
+                borderColor: COLORS.divider,
               }}
-              uiBackground={{ color: containerBackgroundColor }}
             >
               <Label
-                value="ADMIN TOOLS"
-                fontSize={20}
-                color={Color4.create(160, 155, 168, 1)}
-                uiTransform={{ flexGrow: 1 }}
+                value="<b>Admin tools</b>"
+                fontSize={TYPE.header}
+                color={COLORS.textPrimary}
               />
-              <Button
-                id="admin_toolkit_moderation_control"
-                variant={state.activeTab === TabType.MODERATION_CONTROL ? 'primary' : 'text'}
-                icon={getBtnModerationControl()}
-                onlyIcon
-                uiTransform={{
-                  display:
-                    adminToolkitEntity.moderationControl.isEnabled && !isPreview()
-                      ? 'flex'
-                      : 'none',
-                  width: 49,
-                  height: 42,
-                  margin: { right: 8 },
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-                iconBackground={{
-                  color:
-                    state.activeTab === TabType.MODERATION_CONTROL
-                      ? Color4.Black()
-                      : Color4.White(),
-                }}
-                iconTransform={{ height: '100%', width: '100%' }}
-                onMouseDown={() => {
-                  if (state.activeTab !== TabType.MODERATION_CONTROL) {
-                    state.activeTab = TabType.NONE;
-                    nextTickFunctions.push(() => {
-                      state.activeTab = TabType.MODERATION_CONTROL;
-                    });
-                  } else {
-                    state.activeTab = TabType.NONE;
-                  }
-                }}
-              />
-              <Button
-                id="admin_toolkit_panel_video_control"
-                variant={state.activeTab === TabType.VIDEO_CONTROL ? 'primary' : 'text'}
-                icon={ADMIN_ICONS.BTN_VIDEO_CONTROL}
-                iconBackground={{
-                  color:
-                    state.activeTab === TabType.VIDEO_CONTROL ? Color4.Black() : Color4.White(),
-                }}
-                onlyIcon
-                uiTransform={{
-                  display: adminToolkitEntity.videoControl.isEnabled ? 'flex' : 'none',
-                  width: 49,
-                  height: 42,
-                  margin: { right: 8 },
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-                iconTransform={{
-                  height: '100%',
-                  width: '100%',
-                }}
-                onMouseDown={() => {
-                  if (state.activeTab !== TabType.VIDEO_CONTROL) {
-                    state.activeTab = TabType.NONE;
-                    nextTickFunctions.push(() => {
-                      state.activeTab = TabType.VIDEO_CONTROL;
-                    });
-                  } else {
-                    state.activeTab = TabType.NONE;
-                  }
-                }}
-              />
-              <Button
-                id="admin_toolkit_panel_smart_items_control"
-                variant={state.activeTab === TabType.SMART_ITEMS_CONTROL ? 'primary' : 'text'}
-                icon={ADMIN_ICONS.BTN_SMART_ITEM_CONTROL}
-                iconBackground={{
-                  color:
-                    state.activeTab === TabType.SMART_ITEMS_CONTROL
-                      ? Color4.Black()
-                      : Color4.White(),
-                }}
-                onlyIcon
-                uiTransform={{
-                  display: adminToolkitEntity.smartItemsControl.isEnabled ? 'flex' : 'none',
-                  width: 49,
-                  height: 42,
-                  margin: { right: 8 },
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-                iconTransform={{
-                  height: '100%',
-                  width: '100%',
-                }}
-                onMouseDown={() => {
-                  if (state.activeTab !== TabType.SMART_ITEMS_CONTROL) {
-                    state.activeTab = TabType.NONE;
-                    nextTickFunctions.push(() => {
-                      state.activeTab = TabType.SMART_ITEMS_CONTROL;
-                    });
-                  } else {
-                    state.activeTab = TabType.NONE;
-                  }
-                }}
-              />
-              <Button
-                id="admin_toolkit_panel_text_announcement_control"
-                variant={state.activeTab === TabType.TEXT_ANNOUNCEMENT_CONTROL ? 'primary' : 'text'}
-                icon={ADMIN_ICONS.BTN_TEXT_ANNOUNCEMENT_CONTROL}
-                iconBackground={{
-                  color:
-                    state.activeTab === TabType.TEXT_ANNOUNCEMENT_CONTROL
-                      ? Color4.Black()
-                      : Color4.White(),
-                }}
-                onlyIcon
-                uiTransform={{
-                  display: adminToolkitEntity.textAnnouncementControl.isEnabled ? 'flex' : 'none',
-                  width: 49,
-                  height: 42,
-                  margin: { right: 8 },
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-                iconTransform={{
-                  height: '100%',
-                  width: '100%',
-                }}
-                onMouseDown={() => {
-                  if (state.activeTab !== TabType.TEXT_ANNOUNCEMENT_CONTROL) {
-                    state.activeTab = TabType.NONE;
-                    nextTickFunctions.push(() => {
-                      state.activeTab = TabType.TEXT_ANNOUNCEMENT_CONTROL;
-                    });
-                  } else {
-                    state.activeTab = TabType.NONE;
-                  }
-                }}
-              />
+              <UiEntity uiTransform={{ flexDirection: 'row', alignItems: 'center' }}>
+                <IconTab
+                  name="users"
+                  active={state.activeTab === TabType.MODERATION_CONTROL}
+                  enabled={adminToolkitEntity.moderationControl.isEnabled && !isPreview()}
+                  onClick={() => selectTab(TabType.MODERATION_CONTROL)}
+                />
+                <IconTab
+                  name="tv"
+                  active={state.activeTab === TabType.VIDEO_CONTROL}
+                  enabled={adminToolkitEntity.videoControl.isEnabled}
+                  onClick={() => selectTab(TabType.VIDEO_CONTROL)}
+                />
+                <IconTab
+                  name="bolt"
+                  active={state.activeTab === TabType.SMART_ITEMS_CONTROL}
+                  enabled={adminToolkitEntity.smartItemsControl.isEnabled}
+                  onClick={() => selectTab(TabType.SMART_ITEMS_CONTROL)}
+                />
+                <IconTab
+                  name="message"
+                  active={state.activeTab === TabType.TEXT_ANNOUNCEMENT_CONTROL}
+                  enabled={adminToolkitEntity.textAnnouncementControl.isEnabled}
+                  onClick={() => selectTab(TabType.TEXT_ANNOUNCEMENT_CONTROL)}
+                />
+              </UiEntity>
             </UiEntity>
+            <Divider />
             <UiEntity
               uiTransform={{
                 width: '100%',
                 flexDirection: 'column',
                 // Mobile: cap the tab content to the viewport and scroll the
-                // overflow, so tall tabs (e.g. permissions) stay fully reachable.
-                // The header above stays fixed; desktop is left untouched.
+                // overflow, so tall tabs stay fully reachable.
                 maxHeight: isMobile ? '85vh' : undefined,
                 overflow: isMobile ? 'scroll' : 'visible',
               }}

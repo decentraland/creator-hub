@@ -1,26 +1,17 @@
 import type { Entity, IEngine } from '@dcl/ecs';
 import type { DeepReadonlyObject, PBVideoPlayer } from '@dcl/ecs';
-// eslint-disable-next-line @typescript-eslint/no-unused-vars -- ReactEcs is required for JSX factory
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- ReactEcs is the JSX factory
 import ReactEcs, { Label, UiEntity } from '@dcl/react-ecs';
-import { Color4 } from '@dcl/sdk/math';
 import { copyToClipboard } from '~system/RestrictedActions';
 import { Button } from '../../Button';
-import { getContentUrl } from '../../constants';
-import { FeedbackButton } from '../../FeedbackButton';
 import type { State } from '../../types';
 import { LIVEKIT_STREAM_SRC } from '../LiveStream';
-import { VideoControlVolume } from '../VolumeControl';
 import { createVideoPlayerControls, isDclCast } from '../utils';
-import { getDclCastStyles, getDclCastColors, getDclCastBackgrounds } from './styles';
-
-const ICONS = {
-  get COPY_TO_CLIPBOARD_ICON() {
-    return `${getContentUrl()}/admin_toolkit/assets/icons/copy-to-clipboard.png`;
-  },
-  get STAR() {
-    return `${getContentUrl()}/admin_toolkit/assets/icons/star.png`;
-  },
-};
+import { COLORS, RADIUS, SPACING, TYPE } from '../../theme';
+import { FieldLabel, Surface, Divider, Icon } from '../../Primitives';
+import { CopyRow, Slider, ActionLink } from '../../Controls';
+import { icon } from '../../icons';
+import PresentationPanel from './PresentationPanel';
 
 const DclCastInfo = ({
   state,
@@ -40,182 +31,165 @@ const DclCastInfo = ({
   video: DeepReadonlyObject<PBVideoPlayer> | undefined;
 }) => {
   const controls = createVideoPlayerControls(entity, engine);
-  const styles = getDclCastStyles();
-  const colors = getDclCastColors();
-  const backgrounds = getDclCastBackgrounds();
+  const active = !!(video?.src && isDclCast(video.src));
+  const volume = video?.volume ?? 1;
+
   return (
-    <UiEntity uiTransform={{ flexDirection: 'column' }}>
-      <UiEntity uiTransform={styles.fullContainer}>
-        <UiEntity uiTransform={styles.mainBorderedContainer}>
-          <UiEntity uiTransform={styles.headerRow}>
-            <UiEntity uiTransform={styles.columnFlexStart}>
-              <Label
-                value={'<b>Room ID</b>'}
-                fontSize={24}
-                color={Color4.White()}
-              />
-              <Label
-                value={`Expires in ${state.videoControl.dclCast?.expiresInDays} days`}
-                fontSize={14}
-                color={colors.gray}
-                uiTransform={styles.marginTopSmall}
-              />
-            </UiEntity>
-            {video?.src && isDclCast(video.src) ? (
-              <Button
-                id="dcl_cast_deactivate"
-                value="<b>Deactivate</b>"
-                variant="text"
-                fontSize={16}
-                color={colors.white}
-                uiTransform={styles.activateButton}
-                onMouseDown={() => {
-                  controls.setSource('');
-                  state.videoControl.selectedStream = undefined;
-                }}
-              />
-            ) : (
-              <Button
-                id="dcl_cast_activate"
-                value="<b>Activate</b>"
-                labelTransform={styles.activateButtonLabel}
-                uiTransform={styles.activateButton}
-                fontSize={16}
-                uiBackground={backgrounds.success}
-                color={colors.black}
-                onMouseDown={() => {
-                  controls.setSource(LIVEKIT_STREAM_SRC);
-                  state.videoControl.selectedStream = 'dcl-cast';
-                }}
-              />
-            )}
-          </UiEntity>
-          <UiEntity uiTransform={styles.columnContainer}>
-            <UiEntity uiTransform={styles.rowCenterSpaceBetween}>
-              <UiEntity
-                uiTransform={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                }}
-              >
-                <Label
-                  value={'<b>Cast speakers</b>'}
-                  fontSize={18}
-                  color={colors.white}
-                />
-                <UiEntity
-                  uiText={{
-                    value: 'This link grants streaming access.',
-                    fontSize: 14,
-                    color: colors.gray,
-                    textAlign: 'top-left',
-                  }}
-                />
-              </UiEntity>
-              <FeedbackButton
-                id="dcl_cast_copy_stream_link"
-                value="<b>Copy Link</b>"
-                variant="text"
-                fontSize={18}
-                color={colors.white}
-                iconRight={ICONS.COPY_TO_CLIPBOARD_ICON}
-                iconRightTransform={styles.iconSmall}
-                labelTransform={styles.marginRightSmall}
-                uiTransform={styles.copyLinkButton}
-                onMouseDown={() => {
-                  state.videoControl.dclCast?.streamLink &&
-                    copyToClipboard({
-                      text: state.videoControl.dclCast.streamLink,
-                    });
-                }}
-              />
-            </UiEntity>
-            <UiEntity uiTransform={styles.separatorLine} />
-            <UiEntity uiTransform={styles.rowCenterSpaceBetween}>
-              <UiEntity uiTransform={styles.textInfoContainer}>
-                <Label
-                  value={'<b>Viewers</b>'}
-                  fontSize={18}
-                  color={colors.white}
-                />
-                <UiEntity
-                  uiText={{
-                    value: 'This link grants viewing access.',
-                    fontSize: 14,
-                    color: colors.gray,
-                    textAlign: 'top-left',
-                  }}
-                />
-              </UiEntity>
-              <FeedbackButton
-                id="dcl_cast_copy_watcher_link"
-                value="<b>Copy Link</b>"
-                variant="text"
-                fontSize={18}
-                color={colors.white}
-                iconRight={ICONS.COPY_TO_CLIPBOARD_ICON}
-                iconRightTransform={styles.iconSmall}
-                labelTransform={styles.marginRightSmall}
-                uiTransform={styles.copyLinkButton}
-                onMouseDown={() => {
-                  state.videoControl.dclCast?.watcherLink &&
-                    copyToClipboard({
-                      text: state.videoControl.dclCast.watcherLink,
-                    });
-                }}
-              />
-            </UiEntity>
-          </UiEntity>
+    <UiEntity uiTransform={{ flexDirection: 'column', width: '100%' }}>
+      {/* Access links */}
+      <Surface>
+        <CopyRow
+          id="dcl_cast_copy_stream_link"
+          badge="mic"
+          badgeVariant="magenta"
+          title="Speaker link"
+          description="Grants streaming access"
+          onCopy={() =>
+            state.videoControl.dclCast?.streamLink &&
+            copyToClipboard({ text: state.videoControl.dclCast.streamLink })
+          }
+        />
+        <UiEntity
+          uiTransform={{ width: '100%', height: 1 }}
+          uiBackground={{ color: COLORS.border }}
+        />
+        <CopyRow
+          id="dcl_cast_copy_watcher_link"
+          badge="eye"
+          badgeVariant="blue"
+          title="Viewer link"
+          description="Grants viewing access"
+          onCopy={() =>
+            state.videoControl.dclCast?.watcherLink &&
+            copyToClipboard({ text: state.videoControl.dclCast.watcherLink })
+          }
+        />
+      </Surface>
+
+      {/* Volume */}
+      <UiEntity
+        uiTransform={{ flexDirection: 'column', width: '100%', margin: { top: SPACING.xl } }}
+      >
+        <FieldLabel text="Volume" />
+        <UiEntity uiTransform={{ flexDirection: 'row', alignItems: 'center', width: '100%' }}>
+          <Icon
+            name="volume"
+            size={18}
+            color={COLORS.textSecondary}
+            uiTransform={{ margin: { right: SPACING.lg } }}
+          />
+          <Slider
+            value={volume}
+            onSet={v => controls.setVolumeExact(v)}
+          />
+          <Label
+            value={`${Math.round(volume * 100)}%`}
+            fontSize={TYPE.body}
+            color={COLORS.textPrimary}
+            uiTransform={{ margin: { left: SPACING.lg } }}
+          />
         </UiEntity>
-        <UiEntity uiTransform={styles.columnWithMarginTop}>
-          <UiEntity uiTransform={styles.volumeShowcaseRow}>
-            <VideoControlVolume
-              engine={engine}
-              entity={entity}
-              video={video}
-              label="<b>Cast controls</b>"
-            />
-            {video?.src && isDclCast(video.src) && (
-              <Button
-                id="dcl_cast_showcase_list"
-                value="<b>Speakers</b>"
-                icon={ICONS.STAR}
-                iconTransform={styles.starIcon}
-                variant="secondary"
-                fontSize={16}
-                color={colors.white}
-                uiTransform={styles.showcaseButton}
-                onMouseDown={onShowShowcaseModal}
-              />
-            )}
-          </UiEntity>
-          <UiEntity uiTransform={styles.castControlsRow}>
+      </UiEntity>
+
+      {/* Primary actions — presentation controls while presenting, otherwise
+          the Share presentation / Speakers row. */}
+      <UiEntity
+        uiTransform={{ flexDirection: 'column', width: '100%', margin: { top: SPACING.xl } }}
+      >
+        {state.videoControl.presentationState ? (
+          <PresentationPanel
+            presentationState={state.videoControl.presentationState}
+            idPrefix="dcl_cast"
+            onStopSharing={() => {
+              state.videoControl.presentationState = undefined;
+            }}
+          />
+        ) : (
+          <UiEntity
+            uiTransform={{
+              flexDirection: 'row',
+              width: '100%',
+              display: active ? 'flex' : 'none',
+            }}
+          >
             <Button
               id="dcl_cast_share_presentation_id"
-              value={
-                state.videoControl.presentationState
-                  ? '<b>Replace Presentation</b>'
-                  : '<b>Share Presentation</b>'
-              }
-              variant="text"
-              fontSize={16}
-              color={colors.white}
+              value="<b>Share presentation</b>"
+              variant="primary"
+              fontSize={TYPE.body}
+              icon={icon('presentation')}
+              iconTransform={{ width: 16, height: 16, margin: { right: SPACING.sm } }}
+              iconBackground={{ color: COLORS.white }}
               uiTransform={{
-                ...styles.resetButton,
-                display: video?.src && isDclCast(video.src) ? 'flex' : 'none',
+                flexGrow: 1,
+                flexBasis: 0,
+                minWidth: 0,
+                height: 40,
+                borderRadius: RADIUS.md,
+                alignItems: 'center',
+                justifyContent: 'center',
+                margin: { right: SPACING.md },
               }}
               onMouseDown={onSharePresentation}
             />
             <Button
-              id="dcl_cast_reset_room_id"
-              value="<b>Reset Room</b>"
-              variant="text"
-              fontSize={16}
-              color={colors.danger}
-              uiTransform={styles.resetButton}
-              onMouseDown={onResetRoomId}
+              id="dcl_cast_showcase_list"
+              value="<b>Speakers</b>"
+              variant="secondary"
+              fontSize={TYPE.body}
+              color={COLORS.textTertiary}
+              icon={icon('star')}
+              iconTransform={{ width: 16, height: 16, margin: { right: SPACING.sm } }}
+              iconBackground={{ color: COLORS.textTertiary }}
+              uiTransform={{
+                flexGrow: 1,
+                flexBasis: 0,
+                minWidth: 0,
+                height: 40,
+                borderRadius: RADIUS.md,
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+              onMouseDown={onShowShowcaseModal}
             />
           </UiEntity>
+        )}
+      </UiEntity>
+
+      {/* Bottom row: activate/deactivate + reset */}
+      <UiEntity
+        uiTransform={{ flexDirection: 'column', width: '100%', margin: { top: SPACING.xl } }}
+      >
+        <Divider />
+        <UiEntity
+          uiTransform={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            width: '100%',
+            margin: { top: SPACING.xl },
+          }}
+        >
+          <ActionLink
+            label={active ? 'Deactivate room' : 'Activate room'}
+            iconName="power"
+            color={COLORS.textSecondary}
+            onClick={() => {
+              if (active) {
+                controls.setSource('');
+                state.videoControl.selectedStream = undefined;
+              } else {
+                controls.setSource(LIVEKIT_STREAM_SRC);
+                state.videoControl.selectedStream = 'dcl-cast';
+              }
+            }}
+          />
+          <ActionLink
+            label="Reset room"
+            iconName="refresh"
+            color={COLORS.danger}
+            onClick={onResetRoomId}
+          />
         </UiEntity>
       </UiEntity>
     </UiEntity>

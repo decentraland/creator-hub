@@ -1,6 +1,6 @@
 import type { DeepReadonlyObject, Entity, IEngine, PBVideoPlayer } from '@dcl/ecs';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- ReactEcs is the JSX factory
 import ReactEcs, { Label, UiEntity } from '@dcl/react-ecs';
-import { Color4 } from '@dcl/sdk/math';
 import { getContentUrl } from '../../constants';
 import { Button } from '../../Button';
 import type { State } from '../../types';
@@ -8,9 +8,10 @@ import { LIVEKIT_STREAM_SRC } from '../LiveStream';
 import { isPresentationBot, stopPresentation } from '../api';
 import { VideoControlVolume } from '../VolumeControl';
 import { createVideoPlayerControls, isDclCast } from '../utils';
-import { showcaseState } from '.';
+import { COLORS, RADIUS, TYPE } from '../../theme';
 import PresentationPanel from './PresentationPanel';
-import { getCompactBarStyles, getDclCastBackgrounds, getDclCastColors } from './styles';
+import { getCompactBarStyles, getDclCastColors } from './styles';
+import { showcaseState } from '.';
 
 const ICONS = {
   get DCL_CAST_ICON() {
@@ -39,7 +40,6 @@ const CompactDclCast = ({
 }) => {
   const styles = getCompactBarStyles();
   const colors = getDclCastColors();
-  const backgrounds = getDclCastBackgrounds();
   const controls = createVideoPlayerControls(entity, engine);
 
   const isActive = !!(video?.src && isDclCast(video.src));
@@ -70,7 +70,7 @@ const CompactDclCast = ({
           />
           <Label
             value={'<b>DCL Cast</b>'}
-            fontSize={24}
+            fontSize={TYPE.title}
             color={colors.white}
           />
         </UiEntity>
@@ -80,11 +80,10 @@ const CompactDclCast = ({
             <Button
               id="compact_dcl_cast_activate"
               value="<b>Activate</b>"
+              variant="success"
               labelTransform={styles.activateButtonLabel}
               uiTransform={styles.activateButton}
-              fontSize={16}
-              uiBackground={backgrounds.success}
-              color={colors.black}
+              fontSize={TYPE.button}
               onMouseDown={handleActivate}
             />
           </UiEntity>
@@ -96,17 +95,25 @@ const CompactDclCast = ({
                   ? `Slide ${presentationState.currentSlide + 1} / ${presentationState.slideCount}`
                   : ''
               }
-              fontSize={16}
+              fontSize={TYPE.body}
               color={colors.gray}
               uiTransform={{ height: 24, minWidth: 120 }}
             />
           </UiEntity>
           <UiEntity
             onMouseDown={handleExpand}
-            uiTransform={styles.chevronButton}
+            uiTransform={{
+              width: 28,
+              height: 28,
+              borderRadius: RADIUS.sm,
+              borderWidth: 1,
+              borderColor: COLORS.divider,
+              padding: 6,
+              margin: { left: 8 },
+            }}
             uiBackground={{
               textureMode: 'stretch',
-              color: Color4.White(),
+              color: COLORS.textPrimary,
               texture: {
                 src: ICONS.CHEVRON_DOWN,
               },
@@ -147,7 +154,7 @@ const CompactDclCast = ({
           icon={ICONS.STAR}
           iconTransform={styles.starIcon}
           variant="secondary"
-          fontSize={16}
+          fontSize={TYPE.button}
           color={colors.white}
           uiTransform={styles.showcaseButton}
           onMouseDown={onShowShowcaseModal}
@@ -182,7 +189,7 @@ const CompactDclCast = ({
           id="compact_dcl_cast_stop_sharing"
           value="<b>Stop Sharing</b>"
           variant="text"
-          fontSize={16}
+          fontSize={TYPE.button}
           color={colors.danger}
           uiTransform={{ height: 42, padding: { left: 8, right: 8 } }}
           onMouseDown={() => {

@@ -1,5 +1,6 @@
-import ReactEcs, { UiEntity, UiTransformProps } from '@dcl/react-ecs';
-import { containerBackgroundColor } from '.';
+// eslint-disable-next-line @typescript-eslint/consistent-type-imports, @typescript-eslint/no-unused-vars -- ReactEcs is the JSX factory
+import ReactEcs, { UiEntity, type UiTransformProps } from '@dcl/react-ecs';
+import { COLORS, RADIUS, SPACING } from './theme';
 
 export function Card({
   children,
@@ -12,22 +13,22 @@ export function Card({
     <UiEntity
       uiTransform={{
         width: '100%',
-        borderRadius: 12,
+        borderRadius: RADIUS.lg,
         margin: {
-          top: 10,
+          top: SPACING.sm,
           right: 0,
           bottom: 0,
           left: 0,
         },
         padding: {
-          top: 32,
-          right: 32,
-          bottom: 32,
-          left: 32,
+          top: SPACING.xl,
+          right: SPACING.xl,
+          bottom: SPACING.xl,
+          left: SPACING.xl,
         },
         ...uiTransform,
       }}
-      uiBackground={{ color: containerBackgroundColor }}
+      uiBackground={{ color: COLORS.panel }}
     >
       {children}
     </UiEntity>

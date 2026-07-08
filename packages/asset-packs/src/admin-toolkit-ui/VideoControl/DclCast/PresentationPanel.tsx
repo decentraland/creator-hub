@@ -1,49 +1,21 @@
-// eslint-disable-next-line @typescript-eslint/no-unused-vars -- ReactEcs is required for JSX factory
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- ReactEcs is the JSX factory
 import ReactEcs, { Label, UiEntity } from '@dcl/react-ecs';
-import { getContentUrl } from '../../constants';
 import { Button } from '../../Button';
 import type { PresentationState } from '../../types';
+import { COLORS, RADIUS, SPACING, TYPE } from '../../theme';
+import { icon } from '../../icons';
 import {
   nextSlide,
   prevSlide,
   playPresentationVideo,
   pausePresentationVideo,
-  stopPresentationVideo,
   stopPresentation,
 } from '../api';
-import { getDclCastStyles, getDclCastColors } from './styles';
-
-const ICONS = {
-  get PREV() {
-    return `${getContentUrl()}/admin_toolkit/assets/icons/arrow-back.png`;
-  },
-  get NEXT() {
-    return `${getContentUrl()}/admin_toolkit/assets/icons/arrow-forward.png`;
-  },
-  get STOP() {
-    return `${getContentUrl()}/admin_toolkit/assets/icons/stop.png`;
-  },
-  get PLAY() {
-    return `${getContentUrl()}/admin_toolkit/assets/icons/video-control-play-button.png`;
-  },
-  get PAUSE() {
-    return `${getContentUrl()}/admin_toolkit/assets/icons/video-control-pause-button.png`;
-  },
-};
-
-const MAX_TITLE_LENGTH = 30;
-
-function trimTitle(title: string, maxLength: number = MAX_TITLE_LENGTH): string {
-  if (title.length <= maxLength) return title;
-  return title.substring(0, maxLength) + '...';
-}
 
 const PresentationPanel = ({
   presentationState,
-  compact,
   idPrefix = 'presentation_panel',
   onStopSharing,
-  hideStopSharing,
 }: {
   presentationState: PresentationState | undefined;
   compact?: boolean;
@@ -51,129 +23,114 @@ const PresentationPanel = ({
   onStopSharing?: () => void;
   hideStopSharing?: boolean;
 }) => {
-  const styles = getDclCastStyles();
-  const colors = getDclCastColors();
-
   const isVideoPlaying =
     presentationState?.videoState === 'playing' || presentationState?.videoState === 'loading';
   const hasSlideVideo = (presentationState?.slideVideos?.length ?? 0) > 0;
 
+  const ctrl = {
+    flexGrow: 1,
+    flexBasis: 0,
+    minWidth: 0,
+    height: 34,
+    borderRadius: RADIUS.md,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+    padding: { left: 4, right: 4 },
+    margin: { right: SPACING.md },
+  };
+  const iconTf = { width: 15, height: 15 };
+
   return (
-    <UiEntity
-      uiTransform={{
-        flexDirection: 'column',
-        width: '100%',
-      }}
-    >
-      {!compact && (
-        <UiEntity uiTransform={{ flexDirection: 'column', width: '100%' }}>
-          {/* Title row: fileName + Slide X / Y */}
-          <UiEntity
-            uiTransform={{
-              flexDirection: 'row',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              width: '100%',
-              height: 30,
-            }}
-          >
-            <Label
-              value={`<b>${trimTitle(presentationState?.fileName ?? '', 15)}</b>`}
-              fontSize={24}
-              color={colors.white}
-              textAlign="middle-left"
-              uiTransform={{ height: 30 }}
-            />
-            <Label
-              value={
-                presentationState
-                  ? `Slide ${presentationState.currentSlide + 1} / ${presentationState.slideCount}`
-                  : ''
-              }
-              fontSize={16}
-              textAlign="middle-right"
-              color={colors.gray}
-              uiTransform={{ height: 30, minWidth: 144 }}
-            />
-          </UiEntity>
-
-          {/* "Presentation controls" label */}
-          <Label
-            value="Presentation controls"
-            fontSize={14}
-            color={colors.white}
-            uiTransform={{ height: 20, margin: { top: 16 } }}
-          />
-        </UiEntity>
-      )}
-
-      {/* Control buttons row */}
+    <UiEntity uiTransform={{ flexDirection: 'column', width: '100%' }}>
+      {/* Status row */}
       <UiEntity
         uiTransform={{
+          width: '100%',
           flexDirection: 'row',
           alignItems: 'center',
-          width: '100%',
-          margin: { top: compact ? 0 : 16 },
+          justifyContent: 'space-between',
+          margin: { bottom: SPACING.md },
         }}
       >
+        <UiEntity uiTransform={{ flexDirection: 'row', alignItems: 'center' }}>
+          <UiEntity
+            uiTransform={{ width: 6, height: 6, borderRadius: 3, margin: { right: 5 } }}
+            uiBackground={{ color: COLORS.success }}
+          />
+          <Label
+            value="Presenting"
+            fontSize={TYPE.label}
+            color={COLORS.success}
+          />
+        </UiEntity>
+        <Label
+          value={`Slide ${(presentationState?.currentSlide ?? 0) + 1} of ${
+            presentationState?.slideCount ?? 0
+          }`}
+          fontSize={TYPE.label}
+          color={COLORS.textSecondary}
+        />
+      </UiEntity>
+
+      {/* Controls */}
+      <UiEntity uiTransform={{ flexDirection: 'row', alignItems: 'center', width: '100%' }}>
         <Button
           id={`${idPrefix}_prev`}
-          value="<b>Prev</b>"
-          icon={ICONS.PREV}
-          iconTransform={styles.controlButtonIcon}
-          fontSize={16}
-          color={colors.black}
-          uiTransform={{ ...styles.controlButton, margin: { right: 8 } }}
+          value="Prev"
+          variant="secondary"
+          fontSize={TYPE.body}
+          color={COLORS.textTertiary}
+          icon={icon('arrowL')}
+          iconTransform={{ ...iconTf, margin: { right: 5 } }}
+          iconBackground={{ color: COLORS.textTertiary }}
+          uiTransform={ctrl}
           onMouseDown={() => prevSlide()}
         />
         <Button
           id={`${idPrefix}_next`}
-          value="<b>Next</b>"
-          iconRight={ICONS.NEXT}
-          iconRightTransform={styles.controlButtonIcon}
-          fontSize={16}
-          color={colors.black}
-          uiTransform={{ ...styles.controlButton, margin: { right: 8 } }}
+          value="Next"
+          variant="secondary"
+          fontSize={TYPE.body}
+          color={COLORS.textTertiary}
+          iconRight={icon('arrowR')}
+          iconRightTransform={{ ...iconTf, margin: { left: 5 } }}
+          iconRightBackground={{ color: COLORS.textTertiary }}
+          uiTransform={ctrl}
           onMouseDown={() => nextSlide()}
         />
         <Button
           id={`${idPrefix}_play`}
-          value={isVideoPlaying ? '<b>Pause Video</b>' : '<b>Play Video</b>'}
-          icon={isVideoPlaying ? ICONS.PAUSE : ICONS.PLAY}
-          iconTransform={styles.controlButtonIcon}
-          fontSize={16}
-          color={colors.black}
+          value={isVideoPlaying ? 'Pause video' : 'Play video'}
+          variant="secondary"
+          fontSize={TYPE.body}
+          color={COLORS.textTertiary}
           disabled={!hasSlideVideo}
-          uiTransform={{ ...styles.controlButton, margin: { right: 8 } }}
+          icon={isVideoPlaying ? icon('pause') : icon('play')}
+          iconTransform={{ ...iconTf, margin: { right: 5 } }}
+          iconBackground={{ color: COLORS.textTertiary }}
+          uiTransform={ctrl}
           onMouseDown={() => (isVideoPlaying ? pausePresentationVideo() : playPresentationVideo(0))}
         />
         <Button
           id={`${idPrefix}_stop`}
-          value="Stop"
-          fontSize={16}
-          onlyIcon={true}
-          icon={ICONS.STOP}
-          iconTransform={styles.controlButtonIcon}
-          disabled={!hasSlideVideo}
-          uiTransform={styles.controlButton}
-          onMouseDown={() => stopPresentationVideo()}
-        />
-      </UiEntity>
-
-      {!hideStopSharing && (
-        <Button
-          id={`${idPrefix}_stop_sharing`}
-          value="<b>Stop Sharing</b>"
-          variant="text"
-          fontSize={16}
-          color={colors.danger}
-          uiTransform={{ ...styles.resetButton, margin: { top: 16 } }}
+          onlyIcon
+          variant="primary"
+          icon={icon('stop')}
+          iconTransform={iconTf}
+          iconBackground={{ color: COLORS.white }}
+          uiTransform={{
+            width: 36,
+            height: 34,
+            borderRadius: RADIUS.md,
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
           onMouseDown={() => {
             stopPresentation();
             onStopSharing?.();
           }}
         />
-      )}
+      </UiEntity>
     </UiEntity>
   );
 };

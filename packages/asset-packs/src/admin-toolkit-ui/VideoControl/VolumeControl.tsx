@@ -1,10 +1,10 @@
 import type { DeepReadonlyObject, Entity, IEngine, PBVideoPlayer } from '@dcl/ecs';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import ReactEcs, { Label, UiEntity } from '@dcl/react-ecs';
-import { Color4 } from '@dcl/ecs-math';
 import { Button } from '../Button';
+import { COLORS, SPACING, TYPE } from '../theme';
 import { createVideoPlayerControls, getAdminToolkitVideoControl } from './utils';
-import { COLORS, DEFAULT_VOLUME, ICONS, VOLUME_STEP } from '.';
+import { DEFAULT_VOLUME, ICONS, VOLUME_STEP } from '.';
 
 export function VideoControlVolume({
   engine,
@@ -26,38 +26,38 @@ export function VideoControlVolume({
 
   if (isSoundDisabled) {
     return (
-      <UiEntity uiTransform={{ margin: { top: 4 } }}>
+      <UiEntity uiTransform={{ margin: { top: SPACING.xs } }}>
         <UiEntity
           uiTransform={{
             width: 24,
             height: 24,
-            margin: { right: 8 },
+            margin: { right: SPACING.sm },
           }}
           uiBackground={{
             textureMode: 'stretch',
             texture: {
               src: ICONS.MUTE,
             },
-            color: Color4.fromHexString('#A09BA8'),
+            color: COLORS.textSecondary,
           }}
         />
         <Label
           value="Sound is disabled for all screens"
-          color={Color4.fromHexString('#A09BA8')}
-          fontSize={14}
+          color={COLORS.textSecondary}
+          fontSize={TYPE.body}
         />
         <UiEntity
           uiTransform={{
             width: 25,
             height: 25,
-            margin: { left: 8 },
+            margin: { left: SPACING.sm },
           }}
           uiBackground={{
             textureMode: 'stretch',
             texture: {
               src: ICONS.INFO,
             },
-            color: Color4.White(),
+            color: COLORS.textSecondary,
           }}
         />
       </UiEntity>
@@ -68,15 +68,15 @@ export function VideoControlVolume({
     <UiEntity
       uiTransform={{
         flexDirection: 'column',
-        margin: { top: 16 },
+        margin: { top: SPACING.lg },
       }}
     >
       <Label
         value={label}
-        fontSize={16}
-        color={COLORS.WHITE}
+        fontSize={TYPE.label}
+        color={COLORS.textPrimary}
         uiTransform={{
-          margin: { top: 0, right: 0, bottom: 10, left: 0 },
+          margin: { top: 0, right: 0, bottom: SPACING.sm, left: 0 },
         }}
       />
 
@@ -88,10 +88,12 @@ export function VideoControlVolume({
         <Button
           id={`${idPrefix}_minus`}
           value="Minus"
-          fontSize={14}
+          variant="secondary"
+          fontSize={TYPE.button}
           uiTransform={{
-            margin: { top: 0, right: 16, bottom: 0, left: 0 },
+            margin: { top: 0, right: SPACING.lg, bottom: 0, left: 0 },
             width: 49,
+            height: 42,
             alignItems: 'center',
             justifyContent: 'center',
             padding: 0,
@@ -102,15 +104,16 @@ export function VideoControlVolume({
             width: 25,
             height: 25,
           }}
+          iconBackground={{ color: COLORS.textPrimary }}
           onMouseDown={() => controls.setVolume(-VOLUME_STEP)}
           disabled={isSoundDisabled || video?.volume === 0}
         />
         <Label
           value={volumePercentage}
-          fontSize={18}
-          color={COLORS.GRAY}
+          fontSize={TYPE.subtitle}
+          color={COLORS.textSecondary}
           uiTransform={{
-            margin: { top: 0, right: 16, bottom: 0, left: 0 },
+            margin: { top: 0, right: SPACING.lg, bottom: 0, left: 0 },
             alignItems: 'center',
             justifyContent: 'center',
             padding: 0,
@@ -120,16 +123,19 @@ export function VideoControlVolume({
         <Button
           id={`${idPrefix}_plus`}
           value="Plus"
-          fontSize={14}
+          variant="secondary"
+          fontSize={TYPE.button}
           icon={ICONS.VOLUME_PLUS_BUTTON}
           onlyIcon={true}
           iconTransform={{
             width: 25,
             height: 25,
           }}
+          iconBackground={{ color: COLORS.textPrimary }}
           uiTransform={{
-            margin: { top: 0, right: 16, bottom: 0, left: 0 },
+            margin: { top: 0, right: SPACING.lg, bottom: 0, left: 0 },
             width: 49,
+            height: 42,
             alignItems: 'center',
             justifyContent: 'center',
             padding: 0,
@@ -140,12 +146,12 @@ export function VideoControlVolume({
         <Button
           id={`${idPrefix}_mute`}
           variant={video?.volume === 0 ? 'primary' : 'secondary'}
-          fontSize={18}
+          fontSize={TYPE.subtitle}
           iconTransform={{ width: 24, height: 24 }}
           onlyIcon
           icon={ICONS.MUTE}
           iconBackground={{
-            color: video?.volume === 0 ? Color4.Black() : Color4.White(),
+            color: COLORS.textPrimary,
           }}
           uiTransform={{
             width: 49,

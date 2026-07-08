@@ -1,7 +1,8 @@
 import ReactEcs, { UiEntity, Label } from '@dcl/react-ecs';
-import { Color4 } from '@dcl/sdk/math';
 import { startTimeout, stopTimeout } from '../timer';
-import { Button, ButtonVariant, type CompositeButtonProps } from './Button';
+import type { ButtonVariant } from './Button';
+import { Button, type CompositeButtonProps } from './Button';
+import { COLORS } from './theme';
 import { state } from '.';
 
 const FEEDBACK_TIMEOUT_ACTION_PREFIX = 'feedback_button_';
@@ -14,20 +15,15 @@ interface FeedbackButtonProps extends CompositeButtonProps {
 const getUiBackgroundColor = (variant?: ButtonVariant) => {
   switch (variant) {
     case 'primary':
-      return Color4.fromHexString('#FFFFFF');
+      return COLORS.primary;
+    case 'success':
+      return COLORS.success;
     default:
-      return Color4.fromHexString('#43404A');
+      return COLORS.surfaceHover;
   }
 };
 
-const getLabelTextColor = (variant?: ButtonVariant) => {
-  switch (variant) {
-    case 'primary':
-      return Color4.Black();
-    default:
-      return Color4.White();
-  }
-};
+const getLabelTextColor = (_variant?: ButtonVariant) => COLORS.textOnPrimary;
 
 export const FeedbackButton = (props: FeedbackButtonProps) => {
   const {

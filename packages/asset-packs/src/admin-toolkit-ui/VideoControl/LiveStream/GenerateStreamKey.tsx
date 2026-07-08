@@ -1,11 +1,11 @@
-import { Color4 } from '@dcl/sdk/math';
-import { IEngine } from '@dcl/ecs';
+import type { IEngine } from '@dcl/ecs';
 import ReactEcs, { UiEntity, Label } from '@dcl/react-ecs';
 import { Button } from '../../Button';
 import { Error } from '../../Error';
-import { generateStreamKey, getStreamKey } from '../api';
+import { generateStreamKey } from '../api';
 import { LoadingDots } from '../../Loading';
 import { getComponents } from '../../../definitions';
+import { COLORS, TYPE } from '../../theme';
 import { state } from '../..';
 
 export function GenerateStreamKey({
@@ -33,8 +33,8 @@ export function GenerateStreamKey({
           <LoadingDots engine={engine} />
           <Label
             value="Generating your Stream Key"
-            color={Color4.fromHexString('#A09BA8')}
-            fontSize={16}
+            color={COLORS.textSecondary}
+            fontSize={TYPE.body}
             uiTransform={{ margin: { top: 16 } }}
           />
         </UiEntity>
@@ -44,7 +44,7 @@ export function GenerateStreamKey({
             <Button
               id="video_control_live_generate_key"
               value="<b>Get Stream Key</b>"
-              fontSize={18}
+              fontSize={TYPE.subtitle}
               uiTransform={{
                 height: 52,
                 padding: 16,

@@ -1,5 +1,4 @@
 import { type IEngine } from '@dcl/ecs';
-import { Color4 } from '@dcl/ecs-math';
 import ReactEcs, { UiEntity, Label } from '@dcl/react-ecs';
 
 import { getContentUrl } from '../constants';
@@ -148,12 +147,12 @@ export function ModalUserList({ users, engine, type }: ModalUserListProps) {
             />
             <Label
               value={getModalTitle(type)}
-              fontSize={24}
+              fontSize={20}
               color={colors.white}
             />
             <Label
               value={getCounterText(type, users.length)}
-              fontSize={16}
+              fontSize={14}
               color={colors.gray}
               uiTransform={styles.usersCount}
             />
@@ -255,7 +254,7 @@ export function ModalUserList({ users, engine, type }: ModalUserListProps) {
               value="Prev"
               variant="secondary"
               disabled={page <= 1}
-              fontSize={18}
+              fontSize={14}
               icon={ICONS.BACK}
               iconTransform={styles.prevIcon}
               iconBackground={{ color: getPaginationColor(page <= 1) }}
@@ -273,7 +272,7 @@ export function ModalUserList({ users, engine, type }: ModalUserListProps) {
               id="next"
               value="<b>Next</b>"
               variant="secondary"
-              fontSize={18}
+              fontSize={14}
               iconRight={ICONS.NEXT}
               iconRightTransform={styles.nextIcon}
               labelTransform={styles.nextLabel}
@@ -293,7 +292,7 @@ export function ModalUserList({ users, engine, type }: ModalUserListProps) {
             <Label
               value={moderationControlState.unbanMessage}
               fontSize={14}
-              color={Color4.White()}
+              color={colors.white}
               uiTransform={styles.messageLabel}
             />
           </UiEntity>

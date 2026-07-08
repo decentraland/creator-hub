@@ -1,6 +1,7 @@
 import { Color4 } from '@dcl/sdk/math';
 import type { UiTransformProps } from '@dcl/react-ecs';
 import { getContentUrl } from '../../constants';
+import { COLORS, RADIUS, SPACING } from '../../theme';
 import {
   getModalStyles,
   getModalBackgrounds,
@@ -85,15 +86,13 @@ export const getDclCastStyles = (): Record<string, UiTransformProps> => ({
   mainBorderedContainer: {
     width: '100%',
     height: 'auto',
-    borderWidth: 2,
-    borderColor: Color4.fromHexString('#716B7C'),
     flexDirection: 'column',
-    borderRadius: 12,
+    borderRadius: RADIUS.md,
     padding: {
-      left: 16,
-      right: 16,
-      top: 24,
-      bottom: 8,
+      left: SPACING.lg,
+      right: SPACING.lg,
+      top: SPACING.lg,
+      bottom: SPACING.lg,
     },
   },
 
@@ -110,6 +109,8 @@ export const getDclCastStyles = (): Record<string, UiTransformProps> => ({
     minWidth: 120,
     height: 42,
     padding: { left: 8, right: 8 },
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 
   activateButtonLabel: {
@@ -195,11 +196,11 @@ export const getDclCastStyles = (): Record<string, UiTransformProps> => ({
   },
 
   separatorLine: {
-    margin: { top: 16, bottom: 16 },
+    margin: { top: SPACING.lg, bottom: SPACING.lg },
     width: '100%',
     height: 1,
     borderWidth: 1,
-    borderColor: Color4.fromHexString('#43404A'),
+    borderColor: COLORS.divider,
   },
 
   textInfoContainer: {
@@ -231,17 +232,18 @@ export const getDclCastStyles = (): Record<string, UiTransformProps> => ({
 });
 
 export const getDclCastColors = () => ({
-  white: Color4.White(),
-  black: Color4.Black(),
-  gray: Color4.fromHexString('#716B7C'),
-  lightGray: Color4.fromHexString('#A09BA8'),
-  success: Color4.fromHexString('#34CE77'),
-  danger: Color4.fromHexString('#FB3B3B'),
-  darkGray: Color4.Gray(),
+  white: COLORS.textPrimary,
+  black: COLORS.black,
+  gray: COLORS.textSecondary,
+  lightGray: COLORS.textSecondary,
+  success: COLORS.success,
+  danger: COLORS.danger,
+  darkGray: COLORS.textDisabled,
 });
 
 export const getDclCastBackgrounds = () => ({
-  success: { color: Color4.fromHexString('#34CE77') },
+  success: { color: COLORS.success },
+  elevated: { color: COLORS.surfaceElevated },
   iconStretch: {
     textureMode: 'stretch' as const,
   },
@@ -335,6 +337,8 @@ export const getCompactBarStyles = (): Record<string, UiTransformProps> => ({
     minWidth: 120,
     height: 42,
     padding: { left: 8, right: 8 },
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 
   activateButtonLabel: {
@@ -345,14 +349,14 @@ export const getCompactBarStyles = (): Record<string, UiTransformProps> => ({
 // ── Speaker Showcase ───────────────────────────────────────────────────
 
 export const SHOWCASE_DROPDOWN_COLORS = {
-  idle: Color4.fromHexString('#716B7C'),
-  hover: Color4.fromHexString('#FF2D55'),
-  active: Color4.White(),
-  hoverBg: Color4.fromHexString('#242129'),
-  transparentBg: Color4.create(0, 0, 0, 0),
+  idle: COLORS.textSecondary,
+  hover: COLORS.primary,
+  active: COLORS.textPrimary,
+  hoverBg: COLORS.surfaceElevated,
+  transparentBg: COLORS.transparent,
 };
 
-export const SHOWCASE_PAGE_INDICATOR_COLOR = Color4.fromHexString('#A09BA8');
+export const SHOWCASE_PAGE_INDICATOR_COLOR = COLORS.textSecondary;
 
 export const getSpeakerShowcaseStyles = (): Record<string, UiTransformProps> => {
   const base = getModalStyles();

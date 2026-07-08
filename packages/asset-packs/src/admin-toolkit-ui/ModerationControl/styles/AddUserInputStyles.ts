@@ -1,6 +1,6 @@
-import { Color4 } from '@dcl/ecs-math';
 import type { UiTransformProps } from '@dcl/react-ecs';
 import { getContentUrl } from '../../constants';
+import { COLORS, RADIUS, TYPE } from '../../theme';
 
 const getErrorIcon = () => `${getContentUrl()}/admin_toolkit/assets/icons/error.png`;
 
@@ -15,8 +15,8 @@ export const getAddUserInputStyles = (): Record<string, UiTransformProps> => ({
   },
   input: {
     width: '100%',
-    borderWidth: 4,
-    borderRadius: 8,
+    borderWidth: 1,
+    borderRadius: RADIUS.sm,
     height: 48,
   },
   button: {
@@ -55,14 +55,15 @@ export const getAddUserInputStyles = (): Record<string, UiTransformProps> => ({
 });
 
 export const getAddUserInputColors = () => ({
-  white: Color4.White(),
-  black: Color4.Black(),
-  red: Color4.Red(),
-  pink: Color4.fromHexString('#FB3B3B'),
+  white: COLORS.textPrimary,
+  black: COLORS.black,
+  red: COLORS.danger,
+  pink: COLORS.danger,
+  inputBorder: COLORS.inputBorder,
 });
 
 export const getAddUserInputBackgrounds = () => ({
-  input: { color: Color4.White() },
+  input: { color: COLORS.inputBackground },
   errorIcon: {
     textureMode: 'stretch' as const,
     texture: {
@@ -72,7 +73,7 @@ export const getAddUserInputBackgrounds = () => ({
 });
 
 export const getBanUserTextStyles = () => ({
-  fontSize: 14,
-  color: Color4.White(),
+  fontSize: TYPE.body,
+  color: COLORS.textSecondary,
   textAlign: 'top-left' as const,
 });
