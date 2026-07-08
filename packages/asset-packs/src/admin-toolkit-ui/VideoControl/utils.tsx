@@ -2,7 +2,7 @@ import type { DeepReadonlyObject, Entity, IEngine, PBVideoPlayer } from '@dcl/ec
 import type { AdminTools } from '../../definitions';
 import { getComponents, LIVEKIT_STREAM_SRC, VIDEO_URL_TYPE } from '../../definitions';
 import { getExplorerComponents } from '../../components';
-import { state } from '../index';
+import { state } from '../store';
 import { getAdminMessageBus } from '../admin-message-bus';
 import { DEFAULT_VOLUME } from '.';
 

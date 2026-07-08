@@ -6,7 +6,6 @@ import { getContentUrl } from '../../constants';
 import type { State } from '../../types';
 import { Button } from '../../Button';
 import { LoadingDots } from '../../Loading';
-import { nextTickFunctions } from '../..';
 import { LIVEKIT_STREAM_SRC } from '../LiveStream';
 import {
   getDclCastInfo,
@@ -17,7 +16,15 @@ import {
   type FlattenedTrack,
 } from '../api';
 import { CAST_SRC_PREFIX, createVideoPlayerControls } from '../utils';
-import { showcaseState, sharePresentationState } from './state';
+import {
+  openShowcase,
+  closeShowcase,
+  setShowcaseActiveTrack,
+  openSharePresentation,
+  closeSharePresentation,
+  setStream,
+  setParticipants,
+} from '../../actions';
 import DclCastInfo from './DclCastInfo';
 import CompactDclCast from './CompactDclCast';
 import { getDclCastStyles, getDclCastColors } from './styles';
@@ -68,28 +75,19 @@ const DclCast = ({
     const latestTracks = await getActiveStreams();
     if (!latestTracks) return;
 
-    const closeModal = () => {
-      showcaseState.show = false;
-    };
-
-    showcaseState.participants = groupTracksByParticipant(latestTracks);
-
-    showcaseState.onSelectTrack = (track: FlattenedTrack) => {
-      controls.setSource(track.sid);
-      showcaseState.activeTrackSid = track.sid;
-      state.videoControl.selectedStream = 'dcl-cast';
-    };
-
-    showcaseState.onSetDefault = () => {
-      controls.setSource(LIVEKIT_STREAM_SRC);
-      showcaseState.activeTrackSid = undefined;
-      state.videoControl.selectedStream = 'dcl-cast';
-    };
-
-    showcaseState.onClose = closeModal;
-
-    nextTickFunctions.push(() => {
-      showcaseState.show = true;
+    setParticipants(groupTracksByParticipant(latestTracks));
+    openShowcase({
+      onSelectTrack: (track: FlattenedTrack) => {
+        controls.setSource(track.sid);
+        setShowcaseActiveTrack(track.sid);
+        setStream('dcl-cast');
+      },
+      onSetDefault: () => {
+        controls.setSource(LIVEKIT_STREAM_SRC);
+        setShowcaseActiveTrack(undefined);
+        setStream('dcl-cast');
+      },
+      onClose: () => closeShowcase(),
     });
   };
 
@@ -102,19 +100,14 @@ const DclCast = ({
     if (!result) {
       setError(true);
     } else if (video?.src?.startsWith(CAST_SRC_PREFIX) && !state.videoControl.selectedStream) {
-      state.videoControl.selectedStream = 'dcl-cast';
+      setStream('dcl-cast');
     }
 
     setIsLoading(false);
   };
 
   const onSharePresentation = () => {
-    sharePresentationState.onClose = () => {
-      sharePresentationState.show = false;
-    };
-    nextTickFunctions.push(() => {
-      sharePresentationState.show = true;
-    });
+    openSharePresentation(() => closeSharePresentation());
   };
 
   const handleResetRoomId = async () => {
@@ -144,17 +137,9 @@ const DclCast = ({
   const videoSrc = video?.src;
   ReactEcs.useEffect(() => {
     if (videoSrc?.startsWith(CAST_SRC_PREFIX) && !state.videoControl.selectedStream) {
-      state.videoControl.selectedStream = 'dcl-cast';
+      setStream('dcl-cast');
     }
   }, [videoSrc]);
-
-  // Auto-minimize when a presentation starts so the compact view
-  // (with presentation controls) is immediately visible
-  ReactEcs.useEffect(() => {
-    if (state.videoControl.presentationState) {
-      state.videoControl.isMinimized = true;
-    }
-  }, [!!state.videoControl.presentationState]);
 
   const isMinimized = state.videoControl.isMinimized;
 

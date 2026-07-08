@@ -9,6 +9,7 @@ import { Header } from './Header';
 import { Card } from './Card';
 import { type State } from './types';
 import { getAdminMessageBus } from './admin-message-bus';
+import { showAnnouncementBanner, clearAnnouncementBanner } from './actions';
 
 const ICONS = {
   get TEXT_ANNOUNCEMENT_CONTROL() {
@@ -25,8 +26,6 @@ const ICONS = {
   },
 };
 
-let ANNOUNCEMENT_STATE: 'sent' | 'cleared';
-
 export function TextAnnouncementsControl({
   engine,
   state,
@@ -36,6 +35,7 @@ export function TextAnnouncementsControl({
   state: State;
   player?: GetPlayerDataRes | null;
 }) {
+  const banner = state.textAnnouncementControl.banner;
   return (
     <Card>
       <UiEntity
@@ -64,6 +64,7 @@ export function TextAnnouncementsControl({
             }}
             onChange={value => {
               state.textAnnouncementControl.text = value;
+              clearAnnouncementBanner();
             }}
             fontSize={16}
             placeholder={'Write your announcement here'}
@@ -135,7 +136,7 @@ export function TextAnnouncementsControl({
         <UiEntity uiTransform={{ minHeight: 30 }}>
           <UiEntity
             uiTransform={{
-              display: ANNOUNCEMENT_STATE !== undefined ? 'flex' : 'none',
+              display: banner !== undefined ? 'flex' : 'none',
               width: 30,
               height: 30,
             }}
@@ -146,9 +147,9 @@ export function TextAnnouncementsControl({
           />
           <Label
             uiTransform={{
-              display: ANNOUNCEMENT_STATE !== undefined ? 'flex' : 'none',
+              display: banner !== undefined ? 'flex' : 'none',
             }}
-            value={`Message ${ANNOUNCEMENT_STATE === 'sent' ? 'sent' : 'cleared'}!`}
+            value={`Message ${banner === 'sent' ? 'sent' : 'cleared'}!`}
             fontSize={14}
             color={Color4.create(187 / 255, 187 / 255, 187 / 255, 1)}
           />
@@ -161,7 +162,7 @@ export function TextAnnouncementsControl({
 function handleClearTextAnnouncement(_engine: IEngine, state: State) {
   getAdminMessageBus().emitClearAnnouncement();
   state.textAnnouncementControl.announcements = [];
-  ANNOUNCEMENT_STATE = 'cleared';
+  showAnnouncementBanner('cleared');
 }
 
 function handleSendTextAnnouncement(
@@ -179,5 +180,5 @@ function handleSendTextAnnouncement(
   getAdminMessageBus().emitSetAnnouncement(text.slice(0, 90), author, `${timestamp}-${author}`);
 
   state.textAnnouncementControl.text = '';
-  ANNOUNCEMENT_STATE = 'sent';
+  showAnnouncementBanner('sent');
 }

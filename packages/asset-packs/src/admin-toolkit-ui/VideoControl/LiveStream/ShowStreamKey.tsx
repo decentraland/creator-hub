@@ -12,7 +12,7 @@ import { LoadingDots } from '../../Loading';
 import { VideoControlVolume } from '../VolumeControl';
 import { getStreamKey } from '../api';
 import { createVideoPlayerControls } from '../utils';
-import { state } from '../..';
+import { state } from '../../store';
 import { COLORS } from '..';
 
 const STREAM_ICONS = {

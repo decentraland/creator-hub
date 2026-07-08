@@ -4,7 +4,7 @@ import type { DeepReadonlyObject, Entity, IEngine, PBVideoPlayer } from '@dcl/ec
 import { openExternalUrl } from '~system/RestrictedActions';
 import { getComponents } from '../../../definitions';
 import { ICONS } from '..';
-import { state } from '../..';
+import { state } from '../../store';
 import { getStreamKey } from '../api';
 import { Header } from '../../Header';
 import { LoadingDots } from '../../Loading';

@@ -11,7 +11,7 @@ import {
   hasPresentationTrack,
   subscribeToPresentationTopic,
 } from '../api';
-import { showcaseState } from './state';
+import { setParticipants } from '../../actions';
 
 // Background presentation detection.
 //
@@ -55,6 +55,7 @@ async function startPresentationSystem(
   engine: IEngine,
   state: State,
   getPlayerAddress: () => string | undefined,
+  onPresentationEnded: () => void,
 ): Promise<void> {
   if (presentationSystem || startingSystem) return;
   startingSystem = true;
@@ -85,7 +86,7 @@ async function startPresentationSystem(
       consumePresentationMessages()
         .then(latestState => {
           if (latestState === 'stopped') {
-            state.videoControl.presentationState = undefined;
+            onPresentationEnded();
           } else if (latestState) {
             state.videoControl.presentationState = latestState;
           }
@@ -130,6 +131,7 @@ export function startPresentationDetection(
   getIsAdmin: () => boolean,
   getPlayerAddress: () => string | undefined,
   onPresentationStarted: () => void,
+  onPresentationEnded: () => void,
 ): void {
   if (detectionStarted) return;
   detectionStarted = true;
@@ -144,7 +146,7 @@ export function startPresentationDetection(
 
     // Keep the Speaker Showcase list fresh (also drives the compact view's
     // presentation controls via presentationBotInRoom).
-    showcaseState.participants = groupTracksByParticipant(tracks);
+    setParticipants(groupTracksByParticipant(tracks));
 
     const hasPresentation = hasPresentationTrack(tracks);
     if (hasPresentation) {
@@ -157,9 +159,10 @@ export function startPresentationDetection(
       }
       // Ensure the consume system is running. Retries a previously failed setup
       // because presentationSystem is only assigned on success.
-      await startPresentationSystem(engine, state, getPlayerAddress);
+      await startPresentationSystem(engine, state, getPlayerAddress, onPresentationEnded);
     } else if (presentationActive) {
       presentationActive = false;
+      onPresentationEnded();
       stopPresentationSystem(engine, state);
     }
   };

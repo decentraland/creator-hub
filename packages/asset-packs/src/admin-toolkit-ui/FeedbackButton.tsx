@@ -1,8 +1,8 @@
 import ReactEcs, { UiEntity, Label } from '@dcl/react-ecs';
 import { Color4 } from '@dcl/sdk/math';
 import { startTimeout, stopTimeout } from '../timer';
-import { Button, ButtonVariant, type CompositeButtonProps } from './Button';
-import { state } from '.';
+import { Button, type ButtonVariant, type CompositeButtonProps } from './Button';
+import { state } from './store';
 
 const FEEDBACK_TIMEOUT_ACTION_PREFIX = 'feedback_button_';
 
