@@ -25,10 +25,22 @@ export type PreviewOptions = {
   client: PREVIEW_CLIENT;
 };
 
+export enum RENDERER {
+  // The built-in Babylon.js renderer (default).
+  BABYLON = 'babylon',
+  // The Bevy engine renderer. Editing runs against a headless sdk-commands realm
+  // + the super-user editor-agent portable experience.
+  BEVY = 'bevy',
+}
+
+export const DEFAULT_RENDERER = RENDERER.BABYLON;
+
 export type AppSettings = {
   scenesPath: string;
   dependencyUpdateStrategy: DEPENDENCY_UPDATE_STRATEGY;
   previewOptions: PreviewOptions;
+  // Which engine the inspector uses to render the scene in the editor viewport.
+  renderer: RENDERER;
 };
 
 export interface ReleaseNotes {

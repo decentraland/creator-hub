@@ -52,7 +52,21 @@ export async function start() {
     inspectorPath = resolve(app.getAppPath(), 'node_modules', '@dcl', 'inspector', 'public');
   }
 
-  inspectorServer = createServer({ root: inspectorPath });
+  // Cross-origin isolation headers. The Bevy engine (served same-origin from the
+  // inspector's public/bevy-engine) needs SharedArrayBuffer, which browsers only
+  // grant to a cross-origin-isolated context. These mirror what the inspector's
+  // dev build proxy sets (build.js) and what the engine's own service worker
+  // targets — COEP is `credentialless` (NOT `require-corp`) so the engine's own
+  // subresource loads aren't blocked. Harmless for the Babylon renderer, which
+  // doesn't rely on them.
+  inspectorServer = createServer({
+    root: inspectorPath,
+    headers: {
+      'Cross-Origin-Opener-Policy': 'same-origin',
+      'Cross-Origin-Embedder-Policy': 'credentialless',
+      'Cross-Origin-Resource-Policy': 'cross-origin',
+    },
+  });
   inspectorServer.listen(port, () => {
     log.info(`Inspector running at http://localhost:${port}`);
   });

@@ -2,6 +2,7 @@ import { handle, handleSync } from './handle';
 import * as electron from './electron';
 import * as updater from './updater';
 import * as inspector from './inspector';
+import * as bevyRealm from './bevy-realm';
 import * as cli from './cli';
 import * as bin from './bin';
 import * as code from './code';
@@ -41,6 +42,10 @@ export function initIpc({ beforeQuitCleanup }: InitIpcOptions) {
   handle('inspector.start', () => inspector.start());
   handle('inspector.attachSceneDebugger', (_event, path) => inspector.attachSceneDebugger(path));
   handle('inspector.detachSceneDebugger', (_event, path) => inspector.detachSceneDebugger(path));
+
+  // bevy realm (headless sdk-commands server feeding the embedded Bevy editor engine)
+  handle('bevyRealm.start', (_event, path) => bevyRealm.start(path));
+  handle('bevyRealm.kill', (_event, path) => bevyRealm.kill(path));
 
   // cli
   handle('cli.init', (_event, path, repo) => cli.init(path, repo));

@@ -9,6 +9,7 @@ import { CircularProgress as Loader, Tooltip } from 'decentraland-ui2';
 
 import { isClientNotInstalledError } from '/shared/types/client';
 import { isProjectError } from '/shared/types/projects';
+import { RENDERER } from '/shared/types/settings';
 import { isWorkspaceError } from '/shared/types/workspace';
 
 import { t } from '/@/modules/store/translation/utils';
@@ -64,6 +65,8 @@ export function EditorPage() {
     getMobileQR,
     supportsMultiInstance,
     isPreviewRunning,
+    startBevyRealm,
+    killBevyRealm,
   } = useEditor();
   const { settings, updateAppSettings } = useSettings();
   const { flags: featureFlags } = useFeatureFlags();
@@ -83,6 +86,11 @@ export function EditorPage() {
   const iframeRef = useRef<ReturnType<typeof initRpc>>();
   const [modalState, setModalState] = useState<ModalState>({ type: undefined });
   const [mobileQRData, setMobileQRData] = useState<{ url: string; qr: string } | null>(null);
+  // When the Bevy renderer is selected the engine loads from a headless
+  // sdk-commands realm, and the inspector shares its data-layer WS. We start it
+  // for the project and hold the URLs to thread into the iframe config below.
+  const useBevy = settings.renderer === RENDERER.BEVY;
+  const [bevyRealm, setBevyRealm] = useState<{ url: string; wsUrl: string } | null>(null);
 
   const isOffline = status === ConnectionStatus.OFFLINE;
   const showDebugPanel = settings.previewOptions.debugger;
@@ -137,7 +145,31 @@ export function EditorPage() {
     };
   }, [error]);
 
-  const isReady = !!project && inspectorPort > 0;
+  // Start (or tear down) the Bevy realm as the renderer setting / project changes.
+  // The iframe render is gated on the realm being ready when Bevy is selected, so
+  // the inspector boots already pointed at the right data-layer + realm.
+  const projectPath = project?.path;
+  useEffect(() => {
+    if (!projectPath || !useBevy) {
+      setBevyRealm(null);
+      return;
+    }
+    let cancelled = false;
+    void startBevyRealm(projectPath)
+      .then(realm => {
+        if (!cancelled) setBevyRealm(realm ?? null);
+      })
+      .catch(error => {
+        console.error('[Bevy] Failed to start realm:', error);
+        if (!cancelled) setBevyRealm(null);
+      });
+    return () => {
+      cancelled = true;
+      void killBevyRealm(projectPath);
+    };
+  }, [projectPath, useBevy, startBevyRealm, killBevyRealm]);
+
+  const isReady = !!project && inspectorPort > 0 && (!useBevy || bevyRealm !== null);
 
   const openModal = useCallback((type: ModalType, initialStep?: ModalState['initialStep']) => {
     setModalState({ type, initialStep });
@@ -279,9 +311,29 @@ export function EditorPage() {
   // query params
   const params = new URLSearchParams();
 
-  // params.append('dataLayerRpcWsUrl', `ws://localhost:${previewPort}/data-layer`); // this connects the inspector to the data layer running on the preview server
-
-  params.append('dataLayerRpcParentUrl', window.location.origin);
+  if (useBevy && bevyRealm) {
+    // Bevy editor: the inspector shares the realm's data-layer WS so entity ids
+    // align with the engine (forward edits land on the right entities), and the
+    // engine loads the scene from the realm. `dataLayerRpcWsUrl` takes precedence
+    // over `dataLayerRpcParentUrl` in the inspector, so we set the WS instead of
+    // the parent-window data-layer here.
+    params.append('dataLayerRpcWsUrl', bevyRealm.wsUrl);
+    params.append('renderer', RENDERER.BEVY);
+    params.append('bevyRealm', bevyRealm.url);
+    if (project) {
+      // The engine loads the scene at its real parcel; the base coord is bevyPosition.
+      params.append('bevyPosition', project.scene.base);
+    }
+    // The super-user editor-agent portable experience (viewport pick + gizmo).
+    // Served same-origin from the inspector's public/ in production; a dev server
+    // can be pointed at via VITE_BEVY_SYSTEM_SCENE.
+    params.append(
+      'bevySystemScene',
+      import.meta.env.VITE_BEVY_SYSTEM_SCENE || `${htmlUrl}/bevy-agent`,
+    );
+  } else {
+    params.append('dataLayerRpcParentUrl', window.location.origin);
+  }
 
   if (import.meta.env.VITE_ASSET_PACKS_CONTENT_URL) {
     // this is for local development of the asset-packs repo, or to use a different environment like .zone
