@@ -78,6 +78,9 @@ export class BevyRenderer implements IRenderer {
   #editorCameraMode: EditorCameraMode = 'avatar';
   #postCameraMode: ((mode: EditorCameraMode) => void) | null = null;
   #cameraModeHandlers = new Set<(mode: EditorCameraMode) => void>();
+  // Posts a focus-on-entity to the agent (framing a world position). Injected by
+  // `register`; null in the conformance path (focusOnEntity is then a no-op).
+  #postFocus: ((position: Vector3) => void) | null = null;
 
   constructor() {
     this.context = new BevySceneContext();
@@ -111,8 +114,16 @@ export class BevyRenderer implements IRenderer {
         this.#cameraPosition = DclVector3.create(8, 12, 24);
         this.#cameraTarget = DclVector3.create(8, 0, 8);
       },
-      // No wasm camera to frame with yet; the pose stays put.
-      focusOnEntity: () => {},
+      focusOnEntity: (entity: Entity) => {
+        // The engine camera lives in the agent; resolve the entity's world
+        // position (we own the CRDT) and ask the agent to frame it. Also flip our
+        // editor-camera mode to 'free' so the toolbar toggle reflects that focus
+        // engaged the fly-camera (the agent switches to free to frame).
+        const pos = this.context.getEntityWorldPositions([entity]).get(entity);
+        if (!pos || !this.#postFocus) return;
+        this.editorCamera.setMode('free');
+        this.#postFocus(pos);
+      },
       setInvertRotation: () => {},
       zoom: () => {},
       getPose: () => ({
@@ -204,6 +215,11 @@ export class BevyRenderer implements IRenderer {
    */
   setCameraModePoster(post: (mode: EditorCameraMode) => void): void {
     this.#postCameraMode = post;
+  }
+
+  /** Wire focus-on-entity to the agent (frames a world position over the bus). */
+  setFocusPoster(post: (position: Vector3) => void): void {
+    this.#postFocus = post;
   }
 
   #createEditorCamera(): RendererEditorCamera {
