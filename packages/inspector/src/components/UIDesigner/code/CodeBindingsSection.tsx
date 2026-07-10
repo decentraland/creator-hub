@@ -9,9 +9,11 @@ import './CodeBindingsSection.css';
 
 const TYPES = ['string', 'number', 'boolean'];
 
-// Code-mode binding UI: surfaces the /** @ui-bind */ variables and
-// /** @ui-action */ handlers parsed from the source, and lets the selected node
-// reference one (value={var} / onMouseDown={handler}) or declare a new variable.
+// Code-mode binding UI: surfaces the bindable variables from the typed `state`
+// object (the primary convention) plus the /** @ui-bind */ variables and
+// /** @ui-action */ handlers parsed as a fallback for foreign code, and lets the
+// selected node reference one (value={state.x} / onMouseDown={handler}) or declare
+// a new variable.
 export const CodeBindingsSection: React.FC = () => {
   const { bindingSurface } = useCodeState();
   const selected = useAppSelector(getSelectedNode);

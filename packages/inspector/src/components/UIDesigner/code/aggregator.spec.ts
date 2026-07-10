@@ -19,6 +19,20 @@ describe('when generating the file-per-root aggregator', () => {
     expect(parseSync('index.tsx', src).errors).toHaveLength(0);
   });
 
+  it('should drop a root whose component name is not a valid identifier', () => {
+    const src = generateUiIndex([
+      { component: 'MyScreen', from: './MyScreen' },
+      // A crafted basename that would splice code into the import/JSX if emitted.
+      { component: "A } from 'x';someCall();//", from: './evil' },
+    ]);
+    expect(src).toContain("import { MyScreen } from './MyScreen'");
+    expect(src).toContain('<MyScreen />');
+    expect(src).not.toContain('someCall');
+    expect(src).not.toContain("from './evil'");
+    // The dropped root doesn't break the emit: the output is still valid TSX.
+    expect(parseSync('index.tsx', src).errors).toHaveLength(0);
+  });
+
   it('should generate a valid, parseable starter root component', () => {
     const src = generateRootComponent('MyScreen');
     const result = parseSync('MyScreen.tsx', src);

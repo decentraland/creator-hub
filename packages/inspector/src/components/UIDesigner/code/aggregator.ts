@@ -12,8 +12,18 @@ export interface UiRoot {
 // Generate the ui/index.tsx aggregator source that composes every root under a
 // full-screen container and wires it to the SDK UI renderer.
 export function generateUiIndex(roots: UiRoot[]): string {
-  const imports = roots.map(r => `import { ${r.component} } from '${r.from}'`).join('\n');
-  const children = roots.map(r => `        <${r.component} />`).join('\n');
+  // Emit-sink backstop: the component name is spliced verbatim into `import`/JSX,
+  // so reject any non-identifier here even if a caller bypasses the refreshRoots
+  // trust boundary (mirrors engine-to-composite's toSafeIdentifier chokepoint).
+  // Filter (not throw) so one bad root can't break the whole aggregator.
+  const VALID = /^[A-Za-z_][A-Za-z0-9_]*$/;
+  const safeRoots = roots.filter(r => {
+    if (VALID.test(r.component)) return true;
+    console.warn('[code-mode] skipping root with non-identifier component name', r.component);
+    return false;
+  });
+  const imports = safeRoots.map(r => `import { ${r.component} } from '${r.from}'`).join('\n');
+  const children = safeRoots.map(r => `        <${r.component} />`).join('\n');
   return `/** @jsx ReactEcs.createElement */
 import ReactEcs, { UiEntity, ReactEcsRenderer } from '@dcl/sdk/react-ecs'
 ${imports}

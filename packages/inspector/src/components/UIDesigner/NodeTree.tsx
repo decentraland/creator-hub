@@ -15,11 +15,10 @@ import type { UINode } from './tree-model';
 
 import './NodeTree.css';
 
-// Distinct from `UI_DESIGNER_DND_TYPE` (palette + canvas) and `'ui-roots'`
-// (RootsList). The generic Tree<T> dispatches `{ items: T[], context }`
-// payloads which are not compatible with `UIDesignerDragItem`, so we keep
-// the tree's DnD bus separate from the palette/canvas bus. Cross-surface
-// reparent (canvas ↔ tree) is documented as V2 in learnings/phase-8.md.
+// Distinct from `UI_DESIGNER_DND_TYPE` (the palette + canvas DnD bus). The generic
+// Tree<T> dispatches `{ items: T[], context }` payloads which are not compatible
+// with `UIDesignerDragItem`, so the tree keeps its own DnD bus separate from the
+// palette/canvas one.
 const NODE_TREE_DND_TYPE = 'ui-designer-tree';
 
 // Entities on the path from `root` down to (but excluding) `target`. Used to

@@ -17,9 +17,8 @@ import './CodeRootsList.css';
 
 // Code-mode roots list. Roots are files under src/ui/ (one component per file),
 // not ECS marker entities — so this is backed by the code store rather than the
-// engine (cf. the classic RootsList). "+ New UI" generates src/ui/<Name>.tsx and
-// regenerates the aggregator; selecting a root loads its file as the active
-// source the canvas/Monaco edit.
+// engine. "+ New UI" generates src/ui/<Name>.tsx and regenerates the aggregator;
+// selecting a root loads its file as the active source the canvas edits.
 export const CodeRootsList: React.FC = () => {
   const { roots, filename, parsed } = useCodeState();
   const dispatch = useAppDispatch();

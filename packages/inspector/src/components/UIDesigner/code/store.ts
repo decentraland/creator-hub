@@ -183,7 +183,12 @@ export async function loadAndParse(
       program,
       error: parsed ? null : 'This file does not follow the UI Designer convention',
     });
-    if (opts.persist !== false) void writeToDisk(filename, source);
+    if (opts.persist !== false) {
+      pendingWrites++;
+      void writeToDisk(filename, source).finally(() => {
+        pendingWrites--;
+      });
+    }
   } catch (e) {
     set({ parsing: false, error: e instanceof Error ? e.message : String(e) });
   }
@@ -223,6 +228,11 @@ async function refreshRoots(): Promise<CodeRoot[]> {
   const roots = entries
     .filter(e => !e.isDirectory && e.name.endsWith(TSX) && e.name !== 'index.tsx')
     .map(e => ({ name: e.name.slice(0, -TSX.length), filename: `${UI_DIR}/${e.name}` }))
+    // Reject files whose basename is not already a valid component identifier:
+    // refreshRoots is a trust boundary (a scene may be shared/downloaded), and the
+    // name flows verbatim into generated src/ui/index.tsx. toComponentName is the
+    // same sanitizer createRoot/renameRoot use; a conforming name is a fixed point.
+    .filter(r => toComponentName(r.name) === r.name)
     .sort((a, b) => a.name.localeCompare(b.name));
   if (rootsKey(roots) !== rootsKey(state.roots)) set({ roots });
   return roots;
@@ -263,7 +273,16 @@ async function removeLegacySingleFile(): Promise<void> {
   const storage = getStorage();
   if (!storage) return;
   try {
-    if (await storage.exists(LEGACY_UI_FILE)) await storage.delete(LEGACY_UI_FILE);
+    if (!(await storage.exists(LEGACY_UI_FILE))) return;
+    const content = await readFromDisk(LEGACY_UI_FILE);
+    // Preserve hand-authored UI: only delete outright when empty/whitespace (the
+    // stock template). Non-empty content is backed up to src/ui.tsx.bak (write-new
+    // + delete, since storage has no rename) so opening a scene never silently
+    // destroys a valid layout the user may not have meant to migrate.
+    if (content.trim() !== '') {
+      await writeToDisk(`${LEGACY_UI_FILE}.bak`, content);
+    }
+    await storage.delete(LEGACY_UI_FILE);
   } catch {
     // ignore
   }
@@ -363,20 +382,27 @@ export async function renameRoot(filename: string, desiredName: string): Promise
 // ---------------------------------------------------------------------------
 // Disk watcher: reflect external edits (VSCode / vim / Notepad) onto the canvas.
 // Polls the active root file for content changes and the src/ui/ dir for
-// added/removed roots. Because our own writes are immediate, disk == state.source
-// right after a canvas edit, so the poll never mistakes it for an external change.
+// added/removed roots. Our own writes land asynchronously (fire-and-forget, after
+// the parse), so a `pendingWrites` guard makes pollDisk skip content
+// reconciliation while a local write is in flight — during that window disk still
+// holds the OLD content while state.source holds the NEW, and reparsing stale
+// disk would clobber the fresh canvas edit.
 // ---------------------------------------------------------------------------
 
 let watchTimer: ReturnType<typeof setInterval> | null = null;
 let polling = false;
+let pendingWrites = 0;
 
 async function pollDisk(): Promise<void> {
   if (polling) return;
   polling = true;
   try {
     // 1. External edits to the active root file → reparse (do not re-persist).
+    //    Skip while a local write is in flight: during that window disk still holds
+    //    the OLD content while state.source holds the NEW, so a naive disk !=
+    //    state.source check would reparse stale disk and clobber the fresh edit.
     const file = state.filename;
-    if (file) {
+    if (file && pendingWrites === 0) {
       const disk = await readFromDisk(file);
       if (disk && disk !== state.source) await loadAndParse(file, disk, { persist: false });
     }
