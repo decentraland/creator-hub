@@ -1,6 +1,6 @@
 import { bus } from './bus';
 import { getBevyApi } from './bevy-api';
-import { setCameraMode, setupCamera } from './camera';
+import { frameTarget, setCameraMode, setCameraSceneOffset, setupCamera } from './camera';
 import { getGroundPointAtPointer, setupGizmo, setSelectedEntity, setSceneOffset } from './gizmo';
 
 /**
@@ -42,6 +42,12 @@ export function main(): void {
     // Toggle the editor camera (native avatar ⇄ editor fly-camera).
     if (msg.kind === 'set-camera') {
       setCameraMode(msg.mode);
+      return;
+    }
+    // Frame an entity with the editor camera (world position supplied by the
+    // inspector, which owns the Transform).
+    if (msg.kind === 'focus-camera') {
+      frameTarget(msg.position);
       return;
     }
   });
@@ -100,12 +106,14 @@ async function pinInspectedScene(): Promise<void> {
       if (target) {
         await api.consoleCommand('set_scene', [target.hash]);
         // Base parcel = min corner of the scene's parcels; drives the
-        // scene-local → engine-world offset the gizmo needs (see setSceneOffset).
+        // scene-local → engine-world offset that BOTH the gizmo and the focus
+        // camera need to place things where the scene actually is.
         const ps = target.parcels ?? [];
         if (ps.length > 0) {
           const baseX = Math.min(...ps.map(p => p.x));
           const baseY = Math.min(...ps.map(p => p.y));
           setSceneOffset(baseX, baseY);
+          setCameraSceneOffset(baseX, baseY);
         }
         return;
       }

@@ -20,17 +20,22 @@ export interface CameraBridgeOptions {
 
 export interface CameraBridge {
   setMode(mode: CameraMode): void;
+  /** Frame a target world position with the editor camera (focus-on-entity). */
+  focus(position: { x: number; y: number; z: number }): void;
   disconnect(): void;
 }
 
 export function createCameraBridge(options: CameraBridgeOptions = {}): CameraBridge {
   const channel = options.channel ?? (new BroadcastChannel(EDITOR_BUS_CHANNEL) as Channel);
 
-  const setMode = (mode: CameraMode): void => {
-    const msg: PageToScene = { kind: 'set-camera', mode };
+  const post = (msg: PageToScene): void => {
     const envelope: BusEnvelope = { to: 'scene', msg };
     channel.postMessage(envelope);
   };
 
-  return { setMode, disconnect: () => channel.close() };
+  return {
+    setMode: (mode: CameraMode) => post({ kind: 'set-camera', mode }),
+    focus: position => post({ kind: 'focus-camera', position }),
+    disconnect: () => channel.close(),
+  };
 }

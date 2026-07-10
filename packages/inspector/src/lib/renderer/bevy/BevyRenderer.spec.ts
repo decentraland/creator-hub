@@ -108,3 +108,44 @@ describe('BevyRenderer editor camera', () => {
     expect(seen).toEqual([]);
   });
 });
+
+describe('BevyRenderer focusOnEntity', () => {
+  let renderer: BevyRenderer;
+
+  beforeEach(() => {
+    renderer = new BevyRenderer();
+  });
+
+  afterEach(() => {
+    renderer.dispose();
+  });
+
+  const IDENTITY = { rotation: { x: 0, y: 0, z: 0, w: 1 }, scale: { x: 1, y: 1, z: 1 } };
+
+  it("should post the entity's world position and engage the free camera", async () => {
+    const focused: Array<{ x: number; y: number; z: number }> = [];
+    renderer.setFocusPoster(p => focused.push({ x: p.x, y: p.y, z: p.z }));
+
+    const ctx = renderer.context;
+    const entity = ctx.engine.addEntity();
+    ctx.Transform.create(entity, {
+      ...IDENTITY,
+      position: { x: 4, y: 1, z: 2 },
+      parent: ctx.engine.RootEntity,
+    });
+    await ctx.engine.update(1);
+
+    renderer.camera.focusOnEntity(entity);
+
+    expect(focused).toEqual([{ x: 4, y: 1, z: 2 }]);
+    expect(renderer.editorCamera.getMode()).toBe('free');
+  });
+
+  it('should do nothing for an entity with no tracked transform', () => {
+    const focused: unknown[] = [];
+    renderer.setFocusPoster(p => focused.push(p));
+    renderer.camera.focusOnEntity(987654 as never);
+    expect(focused).toEqual([]);
+    expect(renderer.editorCamera.getMode()).toBe('avatar');
+  });
+});

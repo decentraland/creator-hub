@@ -98,7 +98,12 @@ export type PageToScene =
   // Toggle the editor camera. `avatar` = the engine's native player camera (walk
   // /look/zoom); `free` = an editor fly-camera the agent drives (WASD + mouse-
   // look), with avatar input disabled. The inspector's camera toggle sends this.
-  | { kind: 'set-camera'; mode: CameraMode };
+  | { kind: 'set-camera'; mode: CameraMode }
+  // Frame an entity with the editor camera (the inspector's focusOnEntity / F).
+  // The agent can't read the inspected scene's Transform, so the inspector sends
+  // the target's WORLD position; the agent switches to the fly-camera and tweens
+  // it to a standoff aimed at the target.
+  | { kind: 'focus-camera'; position: BusVec3 };
 
 /** Every message is wrapped so a peer ignores its own posts / the wrong direction. */
 export interface BusEnvelope {

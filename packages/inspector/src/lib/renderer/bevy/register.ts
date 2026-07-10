@@ -93,6 +93,7 @@ export function registerBevyRenderer(): void {
       // enacts the fly-camera takeover in the engine.
       const cameraBridge = createCameraBridge();
       bevy.setCameraModePoster(mode => cameraBridge.setMode(mode));
+      bevy.setFocusPoster(position => cameraBridge.focus(position));
 
       // Input focus: the engine iframe is same-origin, so when the viewport holds
       // focus its keydowns go to the engine window (not ours). Forward editor
