@@ -81,8 +81,12 @@ export function registerBevyRenderer(): void {
       const disconnectPick = createPickBridge({ events: bevy.events });
 
       // Forward the inspector's selection to the agent so its gizmo attaches to
-      // the selected entity (from a viewport pick OR a tree click).
-      const disconnectSelection = createSelectionBridge({ context: bevy.context });
+      // the selected entity (from a viewport pick OR a tree click). The gizmos
+      // handle carries the "align to world" setting along with it.
+      const disconnectSelection = createSelectionBridge({
+        context: bevy.context,
+        gizmos: bevy.gizmos,
+      });
 
       // Drag-drop placement: the agent raycasts the ground under the pointer and
       // replies over the bus; wire it into the renderer's getPointerWorldPoint.

@@ -88,11 +88,15 @@ export type PageToScene =
       kind: 'set-selection';
       entity: number | null;
       position: BusVec3 | null;
-      // The entity's world rotation, so the scale gizmo can align its handles to
-      // the entity's local axes (scale is only meaningful on local axes — the
-      // scale gizmo is ALWAYS locally aligned, independent of the align-to-world
-      // setting, matching the Babylon ScaleGizmo). Null when nothing is selected.
+      // The entity's world rotation, so gizmos can align their handles to the
+      // entity's local axes (the scale gizmo always does — scale is only
+      // meaningful on local axes, matching the Babylon ScaleGizmo; the translate
+      // gizmo does when `alignToWorld` is false). Null when nothing is selected.
       rotation: BusQuat | null;
+      // The toolbar's "align to world" checkbox: true = translate handles on the
+      // WORLD axes, false = on the entity's local axes. Scale ignores it (always
+      // local); rotate is world-aligned for now.
+      alignToWorld: boolean;
       // Which gizmo to show for the selection (translate/rotate/scale), or `free`
       // when none is active. Drives which handles the agent draws + how a drag
       // commits. The inspector owns the mode (its Gizmos toolbar writes it to the

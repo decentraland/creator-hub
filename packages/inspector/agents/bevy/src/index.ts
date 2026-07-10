@@ -35,7 +35,7 @@ export function main(): void {
     // Track the current selection + its world position so the gizmo attaches to
     // it (the agent can't read the inspected scene's Transform).
     if (msg.kind === 'set-selection') {
-      setSelectedEntity(msg.entity, msg.position, msg.mode, msg.rotation);
+      setSelectedEntity(msg.entity, msg.position, msg.mode, msg.rotation, msg.alignToWorld);
       return;
     }
     // Drag-drop placement: raycast the ground under the pointer and reply with

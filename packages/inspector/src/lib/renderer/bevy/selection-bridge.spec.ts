@@ -48,6 +48,7 @@ describe('createSelectionBridge', () => {
           entity: entity as number,
           position: { x: 4, y: 1, z: 2 },
           rotation: { x: 0.5, y: 0.5, z: 0.5, w: 0.5 },
+          alignToWorld: true,
           mode: 'translate',
         },
       });
@@ -72,6 +73,7 @@ describe('createSelectionBridge', () => {
           entity: entity as number,
           position: null,
           rotation: null,
+          alignToWorld: true,
           mode: 'rotate',
         },
       });
@@ -104,7 +106,51 @@ describe('createSelectionBridge', () => {
           entity: entity as number,
           position: { x: 2, y: 0, z: 1 },
           rotation: { x: 0, y: 0.5, z: 0, w: 0.5 },
+          alignToWorld: true,
           mode: 'scale',
+        },
+      });
+    });
+  });
+
+  describe('when the "align to world" setting toggles', () => {
+    it('should re-post the current selection with the new alignment', async () => {
+      // A dedicated bridge wired with a fake gizmos handle (the renderer's
+      // world-alignment state + change subscription).
+      disconnect();
+      posted.length = 0;
+      let worldAligned = true;
+      const gizmoHandlers = new Set<() => void>();
+      disconnect = createSelectionBridge({
+        context: ctx,
+        gizmos: {
+          isWorldAligned: () => worldAligned,
+          onChange: cb => {
+            gizmoHandlers.add(cb);
+            return () => gizmoHandlers.delete(cb);
+          },
+        },
+        channel: { postMessage: m => posted.push(m), close() {} },
+      });
+
+      const entity = ctx.engine.addEntity();
+      ctx.editorComponents.Selection.create(entity, { gizmo: 1 }); // translate
+      await ctx.engine.update(1);
+      posted.length = 0;
+
+      // The user unchecks "align to world" in the Gizmos toolbar.
+      worldAligned = false;
+      for (const h of [...gizmoHandlers]) h();
+
+      expect(posted).toContainEqual({
+        to: 'scene',
+        msg: {
+          kind: 'set-selection',
+          entity: entity as number,
+          position: null,
+          rotation: null,
+          alignToWorld: false,
+          mode: 'translate',
         },
       });
     });
@@ -122,7 +168,14 @@ describe('createSelectionBridge', () => {
 
       expect(posted).toContainEqual({
         to: 'scene',
-        msg: { kind: 'set-selection', entity: null, position: null, rotation: null, mode: 'free' },
+        msg: {
+          kind: 'set-selection',
+          entity: null,
+          position: null,
+          rotation: null,
+          alignToWorld: true,
+          mode: 'free',
+        },
       });
     });
   });

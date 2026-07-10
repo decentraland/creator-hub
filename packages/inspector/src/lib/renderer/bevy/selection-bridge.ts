@@ -39,12 +39,16 @@ interface Channel {
 
 export interface SelectionBridgeOptions {
   context: BevySceneContext;
+  /** The renderer's gizmo settings — world alignment for the translate gizmo
+   * (the toolbar's "align to world" checkbox). Optional so the bridge can run
+   * without a renderer (tests); then `alignToWorld` is always true. */
+  gizmos?: { isWorldAligned(): boolean; onChange(cb: () => void): () => void };
   /** Test seam: the channel to post on. Defaults to a real BroadcastChannel. */
   channel?: Channel;
 }
 
 export function createSelectionBridge(options: SelectionBridgeOptions): () => void {
-  const { context } = options;
+  const { context, gizmos } = options;
   const channel = options.channel ?? (new BroadcastChannel(EDITOR_BUS_CHANNEL) as Channel);
   const Selection = context.editorComponents.Selection;
 
@@ -74,7 +78,15 @@ export function createSelectionBridge(options: SelectionBridgeOptions): () => vo
     const position = wp === null ? null : { x: wp.x, y: wp.y, z: wp.z };
     const wr = entity === null ? null : context.getEntityWorldRotation(entity);
     const rotation = wr === null ? null : { x: wr.x, y: wr.y, z: wr.z, w: wr.w };
-    const msg: PageToScene = { kind: 'set-selection', entity: value, position, rotation, mode };
+    const alignToWorld = gizmos?.isWorldAligned() ?? true;
+    const msg: PageToScene = {
+      kind: 'set-selection',
+      entity: value,
+      position,
+      rotation,
+      alignToWorld,
+      mode,
+    };
     const serialized = JSON.stringify(msg);
     if (serialized === lastPosted) return;
     lastPosted = serialized;
@@ -97,8 +109,13 @@ export function createSelectionBridge(options: SelectionBridgeOptions): () => vo
     }
   });
 
+  // Re-post when the "align to world" setting toggles, so the agent re-orients
+  // the translate gizmo on the current selection.
+  const offGizmos = gizmos?.onChange(post);
+
   return () => {
     off();
+    offGizmos?.();
     channel.close();
   };
 }
