@@ -1,3 +1,18 @@
+.ui-designer-roots-list {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.ui-designer-roots-header {
+  padding: var(--uid-space-2);
+}
+
+.ui-designer-roots-tree {
+  flex: 1;
+  overflow: auto;
+}
+
 .ui-designer-code-root-row {
   display: flex;
   align-items: center;
@@ -26,6 +41,17 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.ui-designer-code-root-name-input {
+  flex: 1;
+  min-width: 0;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 3px;
+  color: #fff;
+  padding: 1px 4px;
+  font: inherit;
 }
 
 .ui-designer-code-root-remove {

@@ -13,7 +13,6 @@ import {
 import cx from 'classnames';
 import type { Entity, PBUiTransform } from '@dcl/ecs';
 
-import { useSdk } from '../../hooks/sdk/useSdk';
 import { useAssetUrl } from '../../hooks/useAssetUrl';
 import { useAppDispatch, useAppSelector } from '../../redux/hooks';
 import { getSelectedNode, getTool, selectNode } from '../../redux/ui-designer';
@@ -23,10 +22,8 @@ import { EmptyState } from './EmptyState';
 import { WidgetPicker } from './WidgetPicker';
 import { SafeAreaOverlay } from './SafeAreaOverlay';
 import { MOBILE_REFERENCE, type DeviceKind } from './safe-areas';
-import { useCreateUIRoot } from './useCreateUIRoot';
 import { useUINodeActions } from './useUINodeActions';
 import { useUINodeTree } from './useUINodeTree';
-import { UI_DESIGNER_CODE_MODE } from './code/config';
 import {
   createRoot as createCodeRoot,
   spliceAddChild,
@@ -473,7 +470,6 @@ const CanvasNodeActions: React.FC<{ entity: Entity }> = ({ entity }) => {
 };
 
 const CanvasNode: React.FC<CanvasNodeProps> = ({ node }) => {
-  const sdk = useSdk();
   const dispatch = useAppDispatch();
   // Subscribe to a derived boolean rather than the raw selected-entity id: selecting
   // a node is a Redux action that does NOT rebuild the node tree, so a raw
@@ -524,49 +520,12 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node }) => {
       drop: async (item, monitor) => {
         if (monitor.didDrop()) return;
         if (item.source !== 'palette') return;
-        // Code-mode: add the child by splicing a new element into the parent's
-        // source (drop position is not honored yet — appended as a child).
-        if (UI_DESIGNER_CODE_MODE) {
-          void spliceAddChild(node.entity as unknown as number, item.type as UINodeType);
-          return;
-        }
-        if (!sdk) return;
-
-        // Translate the drop's viewport offset to logical-pixel coordinates
-        // local to this node. The canvas root is scaled by CANVAS_SCALE; the
-        // div's getBoundingClientRect already reflects the post-transform
-        // box, so dividing by the scale recovers logical (Yoga) pixels.
-        const clientOffset = monitor.getClientOffset();
-        const rect = divRef.current?.getBoundingClientRect();
-        let localX = 0;
-        let localY = 0;
-        if (clientOffset && rect) {
-          localX = Math.round((clientOffset.x - rect.left) / getCanvasScale());
-          localY = Math.round((clientOffset.y - rect.top) / getCanvasScale());
-        }
-        const newEntity = sdk.operations.addUINode(node.entity, item.type, item.preset);
-        // Default behaviour: absolutely positioned at the drop point. Users
-        // can flip `positionType` to `relative` in the property panel for
-        // flex flow.
-        const UiTransform = sdk.components.UiTransform;
-        const current = (UiTransform.getOrNull(newEntity) ?? {}) as PBUiTransform;
-        UiTransform.createOrReplace(newEntity, {
-          ...current,
-          positionType: YGPT_ABSOLUTE,
-          positionTop: localY,
-          positionTopUnit: YGU_POINT,
-          positionLeft: localX,
-          positionLeftUnit: YGU_POINT,
-        } as unknown as PBUiTransform);
-        // Await the dispatch so the engine flushes the new entity's components
-        // before we trigger any tree re-derive. Without this the NodeTree
-        // walker runs against a stale snapshot and the new child only appears
-        // after the next unrelated change fires `useChange`.
-        await sdk.operations.dispatch();
-        dispatch(selectNode({ node: newEntity }));
+        // Add the child by splicing a new element into the parent's source
+        // (drop position not honored yet — appended as a child).
+        void spliceAddChild(node.entity as unknown as number, item.type as UINodeType);
       },
     }),
-    [sdk, node.entity, dispatch],
+    [node.entity],
   );
 
   const setRef = useCallback(
@@ -753,38 +712,18 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node }) => {
       const top = Math.round(origin.startTop + offset.dy);
       const left = Math.round(origin.startLeft + offset.dx);
 
-      // Code-mode: MOVE by splicing the source. Absolute nodes get a new
-      // `position`; in-flow nodes get a new `margin` (current margin + drag
-      // delta), keeping them responsive rather than converting to absolute.
-      if (UI_DESIGNER_CODE_MODE) {
-        const id = node.entity as unknown as number;
-        if (isAbs) {
-          setOptimisticPos({ top, left });
-          void spliceUiTransformPosition(id, top, left);
-        } else {
-          const marginTop = Math.round(((t?.marginTop as number) ?? 0) + offset.dy);
-          const marginLeft = Math.round(((t?.marginLeft as number) ?? 0) + offset.dx);
-          // Hold the new margin until the reparse lands, so the node doesn't
-          // snap back to its old flow position for a frame (the drop flicker).
-          setOptimisticPos({ marginTop, marginLeft });
-          void spliceUiTransformMargin(id, marginTop, marginLeft);
-        }
-        return;
+      // MOVE by splicing the source: absolute nodes get a new `position`; in-flow
+      // nodes get a new `margin` (current margin + drag delta), staying responsive.
+      const id = node.entity as unknown as number;
+      if (isAbs) {
+        setOptimisticPos({ top, left });
+        void spliceUiTransformPosition(id, top, left);
+      } else {
+        const marginTop = Math.round(((t?.marginTop as number) ?? 0) + offset.dy);
+        const marginLeft = Math.round(((t?.marginLeft as number) ?? 0) + offset.dx);
+        setOptimisticPos({ marginTop, marginLeft });
+        void spliceUiTransformMargin(id, marginTop, marginLeft);
       }
-      // Hold the dropped position until the committed transform reflects it.
-      setOptimisticPos({ top, left });
-      if (!sdk) return;
-      const UiTransform = sdk.components.UiTransform;
-      const current = (UiTransform.getOrNull(node.entity) ?? {}) as PBUiTransform;
-      UiTransform.createOrReplace(node.entity, {
-        ...current,
-        positionType: YGPT_ABSOLUTE,
-        positionTop: top,
-        positionTopUnit: YGU_POINT,
-        positionLeft: left,
-        positionLeftUnit: YGU_POINT,
-      } as unknown as PBUiTransform);
-      void sdk.operations.dispatch();
     };
 
     window.addEventListener('mousemove', handleMove);
@@ -793,7 +732,7 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node }) => {
       window.removeEventListener('mousemove', handleMove);
       window.removeEventListener('mouseup', handleUp);
     };
-  }, [isDragging, sdk, node.entity]);
+  }, [isDragging, node.entity]);
 
   useEffect(() => {
     if (!isReordering) return;
@@ -831,31 +770,17 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node }) => {
       if ((offset.dx === 0 && offset.dy === 0) || ro.index === ro.selfIndex) return;
       const leftSibling = ro.index > 0 ? ro.siblings[ro.index - 1].entity : undefined;
 
-      // Code-mode: reorder by moving the element's source after the left sibling
-      // (or before the first sibling when dropped at the head). The reparse
-      // reflows the node — no optimistic hold needed.
-      if (UI_DESIGNER_CODE_MODE) {
-        const id = node.entity as unknown as number;
-        if (leftSibling !== undefined) {
-          void spliceMove(id, { kind: 'after', targetId: leftSibling as unknown as number });
-        } else if (ro.siblings.length > 0) {
-          void spliceMove(id, {
-            kind: 'before',
-            targetId: ro.siblings[0].entity as unknown as number,
-          });
-        }
-        return;
+      // Reorder by moving the element's source after the left sibling (or before
+      // the first sibling when dropped at the head). The reparse reflows the node.
+      const id = node.entity as unknown as number;
+      if (leftSibling !== undefined) {
+        void spliceMove(id, { kind: 'after', targetId: leftSibling as unknown as number });
+      } else if (ro.siblings.length > 0) {
+        void spliceMove(id, {
+          kind: 'before',
+          targetId: ro.siblings[0].entity as unknown as number,
+        });
       }
-      if (!sdk) return;
-      // Hold the drag offset until the committed rightOf lands, then release —
-      // the node then reflows into the slot the indicator promised.
-      setPendingReorder({
-        rightOf: leftSibling !== undefined ? (leftSibling as unknown as number) : 0,
-        dx: offset.dx,
-        dy: offset.dy,
-      });
-      sdk.operations.reorderUISibling(node.entity, leftSibling);
-      void sdk.operations.dispatch();
     };
 
     window.addEventListener('mousemove', handleMove);
@@ -864,7 +789,7 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node }) => {
       window.removeEventListener('mousemove', handleMove);
       window.removeEventListener('mouseup', handleUp);
     };
-  }, [isReordering, sdk, node.entity]);
+  }, [isReordering, node.entity]);
 
   // Release the reorder hold once the committed rightOf matches the write.
   useEffect(() => {
@@ -974,55 +899,14 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node }) => {
       resizeOriginRef.current = null;
       resizeLiveRef.current = { dx: 0, dy: 0, dw: 0, dh: 0 };
       setIsResizing(false);
-      // Code-mode write path: splice the new width/height into the .tsx source
-      // (top-level ergonomic fields) and reparse. Position from top/left handles
-      // is not spliced yet (nested `position` field — follow-up).
-      if (UI_DESIGNER_CODE_MODE) {
-        if (!origin) return;
-        if (live.dw === 0 && live.dh === 0) return;
-        const width = Math.max(0, Math.round(origin.startW + live.dw));
-        const height = Math.max(0, Math.round(origin.startH + live.dh));
-        setOptimisticPos({ width, height });
-        void spliceUiTransformSize(node.entity as unknown as number, width, height);
-        return;
-      }
-      if (!sdk || !origin) return;
-      if (live.dx === 0 && live.dy === 0 && live.dw === 0 && live.dh === 0) return;
-      const top = Math.round(origin.startTop + live.dy);
-      const left = Math.round(origin.startLeft + live.dx);
+      // Splice the new width/height into the .tsx source (top-level ergonomic
+      // fields) and reparse. Position from top/left handles is a follow-up.
+      if (!origin) return;
+      if (live.dw === 0 && live.dh === 0) return;
       const width = Math.max(0, Math.round(origin.startW + live.dw));
       const height = Math.max(0, Math.round(origin.startH + live.dh));
-      const UiTransform2 = sdk.components.UiTransform;
-      const current = (UiTransform2.getOrNull(node.entity) ?? {}) as PBUiTransform;
-      if (origin.isAbsolute) {
-        // Hold the dropped box until the committed transform reflects it.
-        setOptimisticPos({ top, left, width, height });
-        UiTransform2.createOrReplace(node.entity, {
-          ...current,
-          positionType: YGPT_ABSOLUTE,
-          positionTop: top,
-          positionTopUnit: YGU_POINT,
-          positionLeft: left,
-          positionLeftUnit: YGU_POINT,
-          width,
-          widthUnit: YGU_POINT,
-          height,
-          heightUnit: YGU_POINT,
-        } as unknown as PBUiTransform);
-      } else {
-        // In-flow node: resize is a pure size change — never detach from layout.
-        // (Width/height still flatten to px; resizing a %-sized node by hand
-        // implies pixel intent, same rationale as the absolute branch.)
-        setOptimisticPos({ width, height });
-        UiTransform2.createOrReplace(node.entity, {
-          ...current,
-          width,
-          widthUnit: YGU_POINT,
-          height,
-          heightUnit: YGU_POINT,
-        } as unknown as PBUiTransform);
-      }
-      void sdk.operations.dispatch();
+      setOptimisticPos({ width, height });
+      void spliceUiTransformSize(node.entity as unknown as number, width, height);
     };
 
     window.addEventListener('mousemove', handleMove);
@@ -1031,7 +915,7 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node }) => {
       window.removeEventListener('mousemove', handleMove);
       window.removeEventListener('mouseup', handleUp);
     };
-  }, [isResizing, sdk, node.entity]);
+  }, [isResizing, node.entity]);
 
   // Apply the live drag offset visually via CSS transform so we don't write
   // to the CRDT/data-layer until the user releases the mouse.
@@ -1210,9 +1094,8 @@ const CanvasNodeView: React.FC<CanvasNodeProps> = ({ node }) =>
 
 const CanvasComponent: React.FC = () => {
   const tree = useUINodeTree();
-  const createEcsRoot = useCreateUIRoot();
   // Code-mode roots are files under src/ui/ (see code/store), not ECS entities.
-  const createRoot = UI_DESIGNER_CODE_MODE ? () => void createCodeRoot() : createEcsRoot;
+  const createRoot = useCallback(() => void createCodeRoot(), []);
   const selectedNode = useAppSelector(getSelectedNode);
   const [scale, setScale] = useState(getCanvasScale());
   const [device, setDevice] = useState<DeviceKind>('desktop');

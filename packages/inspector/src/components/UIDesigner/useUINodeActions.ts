@@ -1,22 +1,9 @@
 import { useCallback } from 'react';
 import type { Entity } from '@dcl/ecs';
 
-import { useSdk } from '../../hooks/sdk/useSdk';
 import { useAppDispatch, useAppSelector } from '../../redux/hooks';
-import { getSelectedNode, getSelectedRoot, selectNode } from '../../redux/ui-designer';
-import { useUINodeTree } from './useUINodeTree';
-import type { UINode } from './tree-model';
-import { UI_DESIGNER_CODE_MODE } from './code/config';
+import { getSelectedNode, selectNode } from '../../redux/ui-designer';
 import { spliceDuplicate, spliceRemoveNode } from './code/store';
-
-function findParentEntity(root: UINode, target: Entity): Entity | null {
-  for (const child of root.children) {
-    if (child.entity === target) return root.entity;
-    const deeper = findParentEntity(child, target);
-    if (deeper !== null) return deeper;
-  }
-  return null;
-}
 
 // Shared remove / duplicate actions for a UI node, used by both the NodeTree
 // context menu and the canvas selection action bar so the selection-fallback
@@ -25,43 +12,23 @@ export function useUINodeActions(): {
   remove: (entity: Entity) => void;
   duplicate: (entity: Entity) => Promise<void>;
 } {
-  const sdk = useSdk();
   const dispatch = useAppDispatch();
-  const tree = useUINodeTree();
   const selectedNode = useAppSelector(getSelectedNode);
-  const selectedRoot = useAppSelector(getSelectedRoot);
 
   const remove = useCallback(
     (entity: Entity) => {
-      if (UI_DESIGNER_CODE_MODE) {
-        void spliceRemoveNode(entity as unknown as number);
-        if (selectedNode === entity) dispatch(selectNode({ node: null }));
-        return;
-      }
-      if (!sdk) return;
-      const removed = sdk.operations.removeUINode(entity);
-      void sdk.operations.dispatch();
-      // If the deleted subtree held the selection, fall back to the parent (or root).
-      if (selectedNode !== null && removed.has(selectedNode)) {
-        const parent = tree ? findParentEntity(tree, entity) : null;
-        dispatch(selectNode({ node: parent ?? selectedRoot }));
-      }
+      void spliceRemoveNode(entity as unknown as number);
+      if (selectedNode === entity) dispatch(selectNode({ node: null }));
     },
-    [sdk, tree, selectedNode, selectedRoot, dispatch],
+    [selectedNode, dispatch],
   );
 
   const duplicate = useCallback(
     async (entity: Entity) => {
-      if (UI_DESIGNER_CODE_MODE) {
-        await spliceDuplicate(entity as unknown as number);
-        return;
-      }
-      if (!sdk) return;
-      const clone = sdk.operations.duplicateUINode(entity);
-      await sdk.operations.dispatch();
-      dispatch(selectNode({ node: clone }));
+      const cloneId = await spliceDuplicate(entity as unknown as number);
+      if (cloneId != null) dispatch(selectNode({ node: cloneId as unknown as Entity }));
     },
-    [sdk, dispatch],
+    [dispatch],
   );
 
   return { remove, duplicate };

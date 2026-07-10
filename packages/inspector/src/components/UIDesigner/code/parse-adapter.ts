@@ -329,6 +329,33 @@ function findComponentReturnJsx(program: AnyNode, componentName?: string): AnyNo
   return null;
 }
 
+// Source span of the exported component's *identifier* (for a rename splice).
+// Recognizes the same forms as findComponentReturnJsx. Returns null if no
+// declaration named `componentName` is found. We rename only this token, never
+// string literals (e.g. a Label's value) that happen to contain the name.
+export function findComponentIdSpan(
+  program: AnyNode,
+  componentName: string,
+): { start: number; end: number } | null {
+  for (const stmt of (program.body ?? []) as AnyNode[]) {
+    const decl =
+      stmt.type === 'ExportNamedDeclaration' && stmt.declaration
+        ? (stmt.declaration as AnyNode)
+        : stmt;
+    if (decl.type === 'FunctionDeclaration' && decl.id?.name === componentName) {
+      return { start: decl.id.start, end: decl.id.end };
+    }
+    if (decl.type === 'VariableDeclaration') {
+      for (const d of (decl.declarations ?? []) as AnyNode[]) {
+        if (d.id?.type === 'Identifier' && d.id.name === componentName) {
+          return { start: d.id.start, end: d.id.end };
+        }
+      }
+    }
+  }
+  return null;
+}
+
 // Extract a single returned JSXElement from a function/arrow body: either a
 // concise arrow body (`=> <jsx/>` / `=> (<jsx/>)`, where the body IS the
 // expression) or a block body with a `return <jsx/>`. Fragments and non-JSX

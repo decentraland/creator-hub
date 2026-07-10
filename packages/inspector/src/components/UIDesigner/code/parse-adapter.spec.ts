@@ -2,7 +2,7 @@ import { parseSync } from 'oxc-parser';
 import { describe, expect, it } from 'vitest';
 
 import { YGU_POINT } from '../../../lib/sdk/ui-transform-constants';
-import { codeToUINodes } from './parse-adapter';
+import { codeToUINodes, findComponentIdSpan } from './parse-adapter';
 import type { CodeUINode } from './types';
 
 function parse(source: string) {
@@ -151,5 +151,32 @@ export const uiMenu = () => (
       const parsed = parse('export const x = 1');
       expect(parsed).toBeNull();
     });
+  });
+});
+
+describe('when locating the exported component identifier (for rename)', () => {
+  const prog = (src: string) => parseSync('MyScreen.tsx', src).program as any;
+
+  it('should return the id span of an `export function` component', () => {
+    const src = 'export function MainUI() { return <UiEntity /> }';
+    const span = findComponentIdSpan(prog(src), 'MainUI');
+    expect(src.slice(span!.start, span!.end)).toBe('MainUI');
+  });
+
+  it('should return the id span of an `export const arrow` component', () => {
+    const src = 'export const Hud = () => <UiEntity />';
+    const span = findComponentIdSpan(prog(src), 'Hud');
+    expect(src.slice(span!.start, span!.end)).toBe('Hud');
+  });
+
+  it('should not match a name that appears only in a string literal', () => {
+    const src = 'export function MainUI() { return <Label value="MainUI" /> }';
+    const span = findComponentIdSpan(prog(src), 'MainUI');
+    // The returned span is the declaration id, never the literal.
+    expect(span!.start).toBeLessThan(src.indexOf('value='));
+  });
+
+  it('should return null when no matching component exists', () => {
+    expect(findComponentIdSpan(prog('const x = 1'), 'MainUI')).toBeNull();
   });
 });

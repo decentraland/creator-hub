@@ -62,18 +62,9 @@ make format-fix    # Prettier write
 make typecheck     # TypeScript type checking across all workspaces
 ```
 
-**Note:** `make lint-fix` runs `make sync-deps` first, which can fail on
-branches that pin `@dcl/*` packages to SDK-toolchain tarball URLs (syncpack
-reports `UnsupportedMismatch`). When this happens, run `npm run lint:fix`
-directly to skip syncpack and still get ESLint autofixes.
+**Note:** `make lint-fix` runs `make sync-deps` first, which can fail on branches that pin `@dcl/*` packages to SDK-toolchain tarball URLs (syncpack reports `UnsupportedMismatch`). When this happens, run `npm run lint:fix` directly to skip syncpack and still get ESLint autofixes.
 
-**Note:** npm won't repair a missing transitive lockfile node. When `npm ls` /
-a build's `ELSPROBLEMS` reports a transitive dep `missing` (e.g. `buffer-crc32`
-under the `@dcl/sdk-commands` tarball subtree), a plain `npm install` will NOT
-add it — npm trusts the existing lockfile and reports "up to date". Add the
-`node_modules/<dep>` package node to `package-lock.json` directly (version +
-registry `resolved`/`integrity`), then `npm install`/`npm ci` to reify it. Since
-the parent packages declare the dep, the node then sticks.
+**Note:** npm won't repair a missing transitive lockfile node. When `npm ls` / a build's `ELSPROBLEMS` reports a transitive dep `missing` (e.g. `buffer-crc32` under the `@dcl/sdk-commands` tarball subtree), a plain `npm install` will NOT add it — npm trusts the existing lockfile and reports "up to date". Add the `node_modules/<dep>` package node to `package-lock.json` directly (version + registry `resolved`/`integrity`), then `npm install`/`npm ci` to reify it. Since the parent packages declare the dep, the node then sticks.
 
 ### Protocol Buffers
 
@@ -99,13 +90,17 @@ make protoc        # Regenerate TypeScript from .proto files
 - State management: Redux Toolkit + Redux-Saga.
 - Data layer communicates via Protocol Buffers (gRPC-like, using `@dcl/mini-rpc`).
 - Build: custom `build.js` using esbuild.
-- **Codegen safety (`engine-to-composite.ts`):** when emitting author-controlled strings (e.g. `core-schema::Name`) into generated TS source, escape BOTH positions — *values* via `JSON.stringify(...)` and *identifiers* (enum keys, interface/type/member names) via the `toSafeIdentifier` chokepoint (sanitize + reserved-word guard). Raw `"${name}"` interpolation is an injection / build-break vector.
+- **Codegen safety (`engine-to-composite.ts`):** when emitting author-controlled strings (e.g. `core-schema::Name`) into generated TS source, escape BOTH positions — _values_ via `JSON.stringify(...)` and _identifiers_ (enum keys, interface/type/member names) via the `toSafeIdentifier` chokepoint (sanitize + reserved-word guard). Raw `"${name}"` interpolation is an injection / build-break vector.
 - **UI Designer entities (`core::UiTransform`-parented):** UI Designer nodes carry only `core::UiTransform` (parent index) — never `core::Transform` — and never appear in the editor `Nodes` tree. Generic Transform-based helpers silently no-op on them: `removeEntity` / `getComponentEntityTree(…, Transform)` yield nothing, so they delete/walk nothing. For any UI-node lifecycle op (delete/duplicate/reparent/reorder), use a dedicated `*-ui-*` operation that walks the UiTransform parent index via `collectDescendants` (`lib/sdk/operations/tree-walk.ts`).
 - **UI Designer canvas size is the runtime virtual resolution:** the `asset-packs::UI` marker's `canvasWidth`/`canvasHeight` (default 1920×1080) are both the editor design-canvas size AND the `virtualWidth`/`virtualHeight` passed to `addUiRenderer` (`packages/asset-packs/src/ui-renderer.tsx`); the runtime scales the UI by `min(screenW/vW, screenH/vH)` to fit the player's screen. It is **not** editor-only — persisting it on the marker is what delivers it to runtime (no codegen). The inspector `Canvas.tsx` reads it from the root `UINode` and renders a fixed-size "scaled stage" (`size·scale`, `transform-origin: top left`) so the canvas keeps a strict size and scrolls instead of shrinking with the panel.
-- **UI Designer render components are *derived* from `asset-packs::UIDesign` (Tween pattern), not persisted standalone:** on save the inspector folds each UI node's `core::UiTransform`/`UiText`/`UiInput`/`UiDropdown`/`UiBackground` into `UIDesign` (`engine-to-composite.ts`, gated by `UI_RENDER_COMPONENT_NAMES`), splits them back on load (`splitUIDesignToCore` in `ui-design-migration.ts`), and the runtime re-derives them every tick (`ui-runtime.ts` `materialize*`). A render component left OUT of this pipeline is never re-derived and silently drops on hot-reload (this was the `UiBackground` bug). Adding a new UI render component means touching all five: the `UIDesign` schema (`versioning/registry.ts`), `UI_RENDER_COMPONENT_NAMES`, the encode loop, `splitUIDesignToCore`, and a `materialize*`.
-- **Don't use `generateUniqueName` for UI node names:** it walks the editor `Nodes` tree (`getNodes`), which excludes UiTransform-only UI nodes, so it can't see existing UI names — and the codegen enum-dedup only makes enum *keys* unique (the `Name` *values* still collide, breaking `engine.getEntityByName` from scene code). Use `generateUniqueUiName` (`lib/sdk/operations/add-child.ts`), which scans the `core-schema::Name` component directly for global uniqueness (`Label`, `Label_1`, …).
-- **UI Designer canvas direct-manipulation commits are async.** A drag/resize handler writes the new `UiTransform` to the engine, which round-trips (data-layer → tree rebuild) several frames later. Clearing the live CSS offset / `isDragging` on mouseup *before* that lands snaps the node back to its old position for a frame, then jumps to the new one. Hold the dropped state optimistically (local state applied in render) until the committed `UiTransform` matches, then release it (`Canvas.tsx` `optimisticPos`).
-- **Testing the UI Designer in the Creator Hub app:** CH loads the inspector iframe from `packages/inspector/public` at *runtime* (`creator-hub/main/src/modules/inspector.ts`), so rebuilding the inspector's `public/` (e.g. `npm run start` watch in `packages/inspector`) is enough — no CH rebuild. The UI Designer panel is hidden by default (`inspector/src/redux/ui/index.ts` → `hiddenPanels: { [PanelName.UI_DESIGNER]: true }`) and CH ships no toggle, so exercising it requires temporarily flipping that default (revert before commit). Rendering authored UI in a scene at runtime requires the built `@dcl/asset-packs` (the `UIDesign` derive pipeline) — a fresh scene pulls a stale CDN version, so overlay the local `dist/`+`bin/`+`catalog.json` into the scene's `node_modules/@dcl/asset-packs`.
+- **UI Designer render components are _derived_ from `asset-packs::UIDesign` (Tween pattern), not persisted standalone:** on save the inspector folds each UI node's `core::UiTransform`/`UiText`/`UiInput`/`UiDropdown`/`UiBackground` into `UIDesign` (`engine-to-composite.ts`, gated by `UI_RENDER_COMPONENT_NAMES`), splits them back on load (`splitUIDesignToCore` in `ui-design-migration.ts`), and the runtime re-derives them every tick (`ui-runtime.ts` `materialize*`). A render component left OUT of this pipeline is never re-derived and silently drops on hot-reload (this was the `UiBackground` bug). Adding a new UI render component means touching all five: the `UIDesign` schema (`versioning/registry.ts`), `UI_RENDER_COMPONENT_NAMES`, the encode loop, `splitUIDesignToCore`, and a `materialize*`.
+- **Don't use `generateUniqueName` for UI node names:** it walks the editor `Nodes` tree (`getNodes`), which excludes UiTransform-only UI nodes, so it can't see existing UI names — and the codegen enum-dedup only makes enum _keys_ unique (the `Name` _values_ still collide, breaking `engine.getEntityByName` from scene code). Use `generateUniqueUiName` (`lib/sdk/operations/add-child.ts`), which scans the `core-schema::Name` component directly for global uniqueness (`Label`, `Label_1`, …).
+- **UI Designer canvas direct-manipulation commits are async.** A drag/resize handler writes the new `UiTransform` to the engine, which round-trips (data-layer → tree rebuild) several frames later. Clearing the live CSS offset / `isDragging` on mouseup _before_ that lands snaps the node back to its old position for a frame, then jumps to the new one. Hold the dropped state optimistically (local state applied in render) until the committed `UiTransform` matches, then release it (`Canvas.tsx` `optimisticPos`).
+- **Testing the UI Designer in the Creator Hub app:** CH loads the inspector iframe from `packages/inspector/public` at _runtime_ (`creator-hub/main/src/modules/inspector.ts`), so rebuilding the inspector's `public/` (e.g. `npm run start` watch in `packages/inspector`) is enough — no CH rebuild. The UI Designer panel is hidden by default (`inspector/src/redux/ui/index.ts` → `hiddenPanels: { [PanelName.UI_DESIGNER]: true }`) and CH ships no toggle, so exercising it requires temporarily flipping that default (revert before commit). Rendering authored UI in a scene at runtime requires the built `@dcl/asset-packs` (the `UIDesign` derive pipeline) — a fresh scene pulls a stale CDN version, so overlay the local `dist/`+`bin/`+`catalog.json` into the scene's `node_modules/@dcl/asset-packs`. This applies to scenes still on the classic ECS-composite pipeline (previous bullet); a UI authored via code-as-source (next bullet) is plain `@dcl/react-ecs` and needs no such overlay.
+- **Code-as-source is now the UI Designer's single source of truth.** The editor no longer authors an ECS composite for new work — every UI root is a real `@dcl/react-ecs` component file under the scene's `src/ui/` (file-per-root, with a generated `src/ui/index.tsx` aggregator that calls `ReactEcsRenderer.setUiRenderer` directly, no `asset-packs` involvement), and the canvas is a live view that splices that source in place (byte-span edits via `emit-adapter.ts`, never a full AST regeneration). The classic ECS-composite editing path (the entity/`UiTransform`/`UIDesign`-derive bullets above) has been removed from the editor UI for new work; the cross-package `asset-packs::UIDesign` derive/split/materialize runtime pipeline itself is untouched and keeps serving scenes authored before this change. See `docs/solutions/feature-implementation/ui-designer-code-as-source.md` for the full parse/splice architecture.
+- **Binding surface = typed `export const state: State` object (primary), with hand-authored `@ui-bind`/`@ui-action` JSDoc markers as the fallback.** A field bound to the typed convention reads as `value={state.score}` in source; a marker-bound field reads as `value={score}`. Adding a variable through the editor always seeds/writes into the typed `state` object (`code/state-convention.ts`) — markers only ever originate from hand-authored or foreign code, never from the editor itself.
+- **UI root lifecycle ops live in `code/store.ts`** (`createRoot`/`renameRoot`/`removeRoot`). Rename is write-new-file + delete-old-file, not a true rename — the scene-storage bridge only exposes read/write/delete, no `rename`.
+- **Adding a representable react-ecs element or prop to the code-as-source parser means touching three files together:** `code/parse-adapter.ts` (read — recognize it, otherwise it silently falls back to an opaque/read-only node), `code/emit-adapter.ts` (write — a new span-splice `Edit` builder), and `code/ecs-shape.ts` (PB ⇄ ergonomic value transform, when the prop needs one). Mirror the existing thin-slice pattern rather than growing a general-purpose codegen.
 
 ### Asset Packs
 
@@ -149,40 +144,15 @@ Files matching `*.styled.ts` / `*.styled.tsx` must follow these rules:
 
 ### Redux state freeze + in-place mutating helpers
 
-Redux Toolkit auto-freezes state via Immer (the `createSlice` default). Helpers
-that mutate objects in place (e.g. asset-packs'
-`deepReplaceAssetPath` / `substituteAssetPathInComposite`) throw
-`TypeError: Cannot assign to read only property` — or fail silently — when
-passed payloads read from Redux. Deep-clone (`structuredClone(x)`) at the
-boundary before passing Redux-sourced data to any mutating helper. Symptoms
-when missed: writes silently no-op, original placeholder tokens (e.g.
-`{assetPath}/...`) survive into the engine.
+Redux Toolkit auto-freezes state via Immer (the `createSlice` default). Helpers that mutate objects in place (e.g. asset-packs' `deepReplaceAssetPath` / `substituteAssetPathInComposite`) throw `TypeError: Cannot assign to read only property` — or fail silently — when passed payloads read from Redux. Deep-clone (`structuredClone(x)`) at the boundary before passing Redux-sourced data to any mutating helper. Symptoms when missed: writes silently no-op, original placeholder tokens (e.g. `{assetPath}/...`) survive into the engine.
 
 ### Asset-packs circular imports & vitest
 
-`packages/asset-packs/src/definitions.ts` re-exports every internal module via
-`export * from './...'`. Production bundlers hoist these bindings, but the
-Vitest loader resolves the re-export *before* the leaf module finishes
-evaluating — so importing constants like `COMPONENTS_WITH_ID` or `getNextId`
-through `definitions.ts` will see them as `undefined` at call time inside the
-same source tree. In `asset-packs` source files and tests, import these
-constants from the leaf module directly (`from './id'`, `from './types'`,
-etc.) rather than via the `definitions.ts` barrel.
+`packages/asset-packs/src/definitions.ts` re-exports every internal module via `export * from './...'`. Production bundlers hoist these bindings, but the Vitest loader resolves the re-export _before_ the leaf module finishes evaluating — so importing constants like `COMPONENTS_WITH_ID` or `getNextId` through `definitions.ts` will see them as `undefined` at call time inside the same source tree. In `asset-packs` source files and tests, import these constants from the leaf module directly (`from './id'`, `from './types'`, etc.) rather than via the `definitions.ts` barrel.
 
 ### Asset-pack composite placeholders must resolve before the engine serializes
 
-Asset-pack `composite.json` files encode references as portable placeholders:
-paths as `{assetPath}/...`, ids as `{self}` / `{self:Component}` / `{N:Component}`,
-and `SyncComponents.componentIds` as component-**name** strings (e.g.
-`"asset-packs::States"`). Each must be resolved to a concrete value before the
-runtime engine serializes the component. The runtime `core-schema::Sync-Components`
-`componentIds` schema is `Array(Int64)`, so an unresolved name reaching it makes
-the CRDT serializer throw `SyntaxError: Cannot convert <name> to a BigInt` every
-tick. Resolution lives in two places: the Inspector resolves names→ids on ingest
-(`add-asset`'s `parseSyncComponents`); the SPAWN_ENTITY runtime path resolves
-post-`Composite.instance` in `add-child.ts` (`remapSyncComponentIds`, beside the
-`{self}` id/trigger remap). When adding a placeholder-bearing field — or debugging
-a `Cannot convert … to a BigInt` serialize crash — ensure both paths resolve it.
+Asset-pack `composite.json` files encode references as portable placeholders: paths as `{assetPath}/...`, ids as `{self}` / `{self:Component}` / `{N:Component}`, and `SyncComponents.componentIds` as component-**name** strings (e.g. `"asset-packs::States"`). Each must be resolved to a concrete value before the runtime engine serializes the component. The runtime `core-schema::Sync-Components` `componentIds` schema is `Array(Int64)`, so an unresolved name reaching it makes the CRDT serializer throw `SyntaxError: Cannot convert <name> to a BigInt` every tick. Resolution lives in two places: the Inspector resolves names→ids on ingest (`add-asset`'s `parseSyncComponents`); the SPAWN_ENTITY runtime path resolves post-`Composite.instance` in `add-child.ts` (`remapSyncComponentIds`, beside the `{self}` id/trigger remap). When adding a placeholder-bearing field — or debugging a `Cannot convert … to a BigInt` serialize crash — ensure both paths resolve it.
 
 ## Skills
 

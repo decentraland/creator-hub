@@ -1,19 +1,16 @@
 import React, { useCallback, useEffect, useMemo, useRef } from 'react';
-import type { Entity, LastWriteWinElementSetComponentDefinition } from '@dcl/ecs';
-import { ComponentName } from '@dcl/asset-packs';
+import { IoWarningOutline } from 'react-icons/io5';
+import type { Entity } from '@dcl/ecs';
 
-import { useSdk } from '../../hooks/sdk/useSdk';
 import { useAppDispatch, useAppSelector } from '../../redux/hooks';
 import { getExpanded, getSelectedNode, selectNode, setExpanded } from '../../redux/ui-designer';
-import { YGPT_ABSOLUTE } from '../../lib/sdk/ui-transform-constants';
 import { Tree } from '../Tree';
 import type { DropType } from '../Tree/utils';
-import { measureReparentOffset } from './measure';
 import { useUINodeActions } from './useUINodeActions';
 import { useUINodeTree } from './useUINodeTree';
 import { WIDGET_ICONS } from './widget-catalog';
-import { UI_DESIGNER_CODE_MODE } from './code/config';
-import { spliceMove } from './code/store';
+import { renameRoot, spliceMove, useCodeState } from './code/store';
+import type { CodeUINode } from './code/types';
 import type { UINode } from './tree-model';
 
 import './NodeTree.css';
@@ -24,17 +21,6 @@ import './NodeTree.css';
 // the tree's DnD bus separate from the palette/canvas bus. Cross-surface
 // reparent (canvas ↔ tree) is documented as V2 in learnings/phase-8.md.
 const NODE_TREE_DND_TYPE = 'ui-designer-tree';
-
-// Walk a UINode tree and locate the parent of `target`. Returns null if
-// `target` is the root or not found.
-function findParent(root: UINode, target: UINode): UINode | null {
-  for (const child of root.children) {
-    if (child.entity === target.entity) return root;
-    const deeper = findParent(child, target);
-    if (deeper) return deeper;
-  }
-  return null;
-}
 
 // Entities on the path from `root` down to (but excluding) `target`. Used to
 // auto-expand every ancestor so a selected node is always revealed in the tree.
@@ -55,9 +41,9 @@ function collectAncestors(root: UINode, target: Entity): Entity[] {
 }
 
 const NodeTreeImpl: React.FC = () => {
-  const sdk = useSdk();
   const dispatch = useAppDispatch();
   const tree = useUINodeTree();
+  const activeFile = useCodeState().filename;
   const expanded = useAppSelector(getExpanded);
   const selectedNode = useAppSelector(getSelectedNode);
 
@@ -89,7 +75,10 @@ const NodeTreeImpl: React.FC = () => {
   const getId = useCallback((n: UINode) => String(n.entity), []);
   const getChildren = useCallback((n: UINode) => n.children, []);
   const getLabel = useCallback((n: UINode) => n.name || `${n.type} ${String(n.entity)}`, []);
-  const getIcon = useCallback((n: UINode) => WIDGET_ICONS[n.type], []);
+  const getIcon = useCallback(
+    (n: UINode) => ((n as CodeUINode).opaque ? <IoWarningOutline /> : WIDGET_ICONS[n.type]),
+    [],
+  );
   const isOpen = useCallback(
     (n: UINode) => expanded[n.entity as unknown as number] !== false,
     [expanded],
@@ -97,7 +86,7 @@ const NodeTreeImpl: React.FC = () => {
   const isSelected = useCallback((n: UINode) => n.entity === selectedNode, [selectedNode]);
   const isHidden = useCallback(() => false, []);
   const canAddChild = useCallback(() => false, []);
-  const canRename = useCallback(() => true, []);
+  const canRename = useCallback((n: UINode) => !!tree && n.entity === tree.entity, [tree]);
 
   const handleSetOpen = useCallback(
     (n: UINode, open: boolean) => dispatch(setExpanded({ entity: n.entity, expanded: open })),
@@ -109,66 +98,18 @@ const NodeTreeImpl: React.FC = () => {
     [dispatch],
   );
 
-  const handleDrop = useCallback(
-    (source: UINode, target: UINode, dropType: DropType) => {
-      if (source.entity === target.entity) return;
-
-      // Code-mode: reparent/reorder by moving the element's source (the code
-      // equivalent of setUIParent + reorderUISibling). 'inside' → last child of
-      // target; 'before'/'after' → relative to the target sibling.
-      if (UI_DESIGNER_CODE_MODE) {
-        void spliceMove(source.entity as unknown as number, {
-          kind: dropType === 'inside' ? 'into' : dropType,
-          targetId: target.entity as unknown as number,
-        });
-        return;
-      }
-
-      if (!sdk || !tree) return;
-
-      // For an absolutely-positioned node, rebase its Top/Left onto the new
-      // parent's box so it keeps its on-screen position (measured from the DOM
-      // BEFORE the write — afterwards the old layout is gone).
-      const positionFor = (newParent: Entity) => {
-        const t = source.uiTransform as { positionType?: number } | undefined;
-        if ((t?.positionType ?? 0) !== YGPT_ABSOLUTE) return undefined;
-        return measureReparentOffset(source.entity, newParent) ?? undefined;
-      };
-
-      if (dropType === 'inside') {
-        const ok = sdk.operations.setUIParent(source.entity, target.entity, {
-          position: positionFor(target.entity),
-        });
-        if (ok) void sdk.operations.dispatch();
-        return;
-      }
-
-      // before / after — reparent under target's parent (if it differs),
-      // then reorder via `rightOf`. `Tree<T>.utils.calculateDropType` only
-      // emits 'inside' or 'after' today (no 'before'), but we handle both
-      // defensively for future-proofing.
-      const targetParent = findParent(tree, target);
-      if (!targetParent) return; // Dropping next to the root makes no sense.
-
-      const reparentOk = sdk.operations.setUIParent(source.entity, targetParent.entity, {
-        position: positionFor(targetParent.entity),
-      });
-      if (!reparentOk) return;
-
-      if (dropType === 'after') {
-        sdk.operations.reorderUISibling(source.entity, target.entity);
-      } else {
-        // 'before' — place source where target currently is by finding the
-        // sibling immediately to target's left.
-        const siblings = targetParent.children;
-        const idx = siblings.findIndex(c => c.entity === target.entity);
-        const leftOfTarget = idx > 0 ? siblings[idx - 1] : undefined;
-        sdk.operations.reorderUISibling(source.entity, leftOfTarget?.entity);
-      }
-      void sdk.operations.dispatch();
-    },
-    [sdk, tree],
-  );
+  const handleDrop = useCallback((source: UINode, target: UINode, dropType: DropType) => {
+    if (source.entity === target.entity) return;
+    // Opaque nodes are read-only internally — never insert a child into one.
+    if ((target as CodeUINode).opaque && dropType === 'inside') return;
+    // Reparent/reorder by moving the element's source (the code equivalent of
+    // setUIParent + reorderUISibling). 'inside' → last child of target;
+    // 'before'/'after' → relative to the target sibling.
+    void spliceMove(source.entity as unknown as number, {
+      kind: dropType === 'inside' ? 'into' : dropType,
+      targetId: target.entity as unknown as number,
+    });
+  }, []);
 
   // Remove / duplicate share the canvas action bar's logic (selection fallback
   // included) via the useUINodeActions hook.
@@ -178,30 +119,11 @@ const NodeTreeImpl: React.FC = () => {
 
   const handleRename = useCallback(
     (node: UINode, label: string) => {
-      if (!sdk) return;
       const next = label.trim();
-      if (!next) return;
-      // The root row edits the marker name (mirrored into Name), same as
-      // RootsList; child nodes go through the uniqueness-safe UI rename op.
-      if (tree && node.entity === tree.entity) {
-        const UIComp = sdk.engine.getComponentOrNull(
-          ComponentName.UI,
-        ) as LastWriteWinElementSetComponentDefinition<{ name: string }> | null;
-        if (UIComp?.getOrNull(node.entity)) {
-          sdk.operations.updateValue(UIComp, node.entity, { name: next });
-        }
-        const Name = sdk.engine.getComponentOrNull(
-          'core-schema::Name',
-        ) as LastWriteWinElementSetComponentDefinition<{ value: string }> | null;
-        if (Name?.getOrNull(node.entity)) {
-          sdk.operations.updateValue(Name, node.entity, { value: next });
-        }
-      } else {
-        sdk.operations.renameUINode(node.entity, next);
-      }
-      void sdk.operations.dispatch();
+      if (!next || !tree || node.entity !== tree.entity || !activeFile) return;
+      void renameRoot(activeFile, next);
     },
-    [sdk, tree],
+    [tree, activeFile],
   );
 
   const noop = useCallback(() => undefined, []);

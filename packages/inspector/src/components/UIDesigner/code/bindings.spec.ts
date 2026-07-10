@@ -28,9 +28,9 @@ export function onStop() {}
 export function S() { return <UiEntity /> }`;
     const surface = surfaceOf(source);
     expect(surface.variables).toEqual([
-      { name: 'score', type: 'number' }, // explicit annotation
-      { name: 'title', type: 'string' }, // inferred from string literal
-      { name: 'enabled', type: 'boolean' }, // inferred from boolean literal
+      { name: 'score', type: 'number', expr: 'score' }, // explicit annotation
+      { name: 'title', type: 'string', expr: 'title' }, // inferred from string literal
+      { name: 'enabled', type: 'boolean', expr: 'enabled' }, // inferred from boolean literal
     ]);
     expect(surface.actions).toEqual([{ name: 'onStart' }, { name: 'onStop' }]);
   });
@@ -51,6 +51,6 @@ let alsoNot = 2`;
 let a = 1
 let b = 2`;
     const surface = surfaceOf(source);
-    expect(surface.variables).toEqual([{ name: 'a', type: 'number' }]);
+    expect(surface.variables).toEqual([{ name: 'a', type: 'number', expr: 'a' }]);
   });
 });

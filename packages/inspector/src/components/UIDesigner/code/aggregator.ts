@@ -1,10 +1,6 @@
 // File-per-root codegen: each UI root is its own component file
-// (ui/MyScreen.tsx), and a generated ui/index.tsx imports and composes them
-// into setupUi(). The scene's src/index.ts main() calls setupUi().
-//
-// The PoC currently drives a single file (src/ui.tsx); this module provides the
-// aggregator/composition generation that the multi-root RootsList wiring (the
-// documented next step) will use.
+// (src/ui/<Name>.tsx) with a typed `state` binding surface, and a generated
+// src/ui/index.tsx composes them into setupUi(). Consumed by code/store.ts.
 
 export interface UiRoot {
   // Exported component name, e.g. "MyScreen".
@@ -36,6 +32,9 @@ ${children}
 export function generateRootComponent(component: string): string {
   return `/** @jsx ReactEcs.createElement */
 import ReactEcs, { UiEntity, Label } from '@dcl/sdk/react-ecs'
+
+export interface State {}
+export const state: State = {}
 
 export function ${component}() {
   return (

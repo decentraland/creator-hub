@@ -4,7 +4,8 @@ import { getCodeParser } from '../../../lib/logic/code-parser/iframe';
 import { getStorage } from '../../../lib/data-layer/client/iframe-data-layer';
 import type { UINodeType } from '../tree-model';
 import { generateRootComponent, generateUiIndex } from './aggregator';
-import { type BindingSurface, extractBindingSurface } from './bindings';
+import { type BindingSurface, type BindVariable, extractBindingSurface } from './bindings';
+import { addStateProperty, findStateNodes, readStateVariables } from './state-convention';
 import {
   afterImports,
   applyEdits,
@@ -18,7 +19,7 @@ import {
   setObjectField,
 } from './emit-adapter';
 import { pbToErgonomicTransform } from './ecs-shape';
-import { codeToUINodes } from './parse-adapter';
+import { codeToUINodes, findComponentIdSpan } from './parse-adapter';
 import { toComponentName, uniqueRootName } from './root-naming';
 import type { CodeUINode, ParsedUI } from './types';
 
@@ -136,6 +137,23 @@ async function readFromDisk(path: string): Promise<string> {
   }
 }
 
+// Merge the two binding conventions into one surface: the typed `state` object
+// is primary (`value={state.x}`); hand-authored /** @ui-bind */ markers are the
+// fallback for foreign code (`value={x}`). A state var shadows a same-named
+// marker var. Actions come only from @ui-action markers (the state convention
+// has no action concept).
+function buildBindingSurface(program: unknown, comments: unknown, source: string): BindingSurface {
+  const markers = extractBindingSurface(program as any, comments as any, source);
+  const stateVars: BindVariable[] = readStateVariables(program as any).map(v => ({
+    name: v.name,
+    type: v.type,
+    expr: `state.${v.name}`,
+  }));
+  const seen = new Set(stateVars.map(v => v.name));
+  const variables = [...stateVars, ...markers.variables.filter(v => !seen.has(v.name))];
+  return { variables, actions: markers.actions };
+}
+
 // Parse `source` (via the RPC bridge) and update the active tree. Keeps the
 // previous parsed tree on failure so a transient broken-code state doesn't blank
 // the canvas — the error is surfaced separately. `persist` (default true) writes
@@ -157,7 +175,7 @@ export async function loadAndParse(
     // result.program is the ESTree AST as plain JSON (typed `unknown` over RPC).
     const program = result.program as Parameters<typeof codeToUINodes>[0];
     const parsed = codeToUINodes(program, source);
-    const bindingSurface = extractBindingSurface(program, result.comments as any, source);
+    const bindingSurface = buildBindingSurface(program, result.comments as any, source);
     set({
       parsing: false,
       parsed: parsed ?? state.parsed,
@@ -298,6 +316,48 @@ export async function removeRoot(filename: string): Promise<void> {
         bindingSurface: { variables: [], actions: [] },
       });
   }
+}
+
+// Rename a root: rewrite the exported component identifier, write the new
+// src/ui/<NewName>.tsx, delete the old file, regenerate the aggregator + wire,
+// and reselect. Storage has no rename, so this is write-new + delete-old. The
+// Label text / other literals containing the old name are untouched (we splice
+// only the declaration identifier's span).
+export async function renameRoot(filename: string, desiredName: string): Promise<void> {
+  const root = state.roots.find(r => r.filename === filename);
+  if (!root) return;
+  const newName = uniqueRootName(
+    toComponentName(desiredName),
+    state.roots.filter(r => r.filename !== filename).map(r => r.name),
+  );
+  if (newName === root.name) return; // no-op (same name, or only case/space diff resolved back)
+
+  const source = filename === state.filename ? state.source : await readFromDisk(filename);
+  if (!source) return;
+  const parser = getCodeParser();
+  if (!parser) return;
+  const { program } = await parser.parse(filename, source);
+  const idSpan = findComponentIdSpan(
+    program as Parameters<typeof findComponentIdSpan>[0],
+    root.name,
+  );
+  if (!idSpan) return; // non-conforming file — leave it alone
+
+  const renamed = source.slice(0, idSpan.start) + newName + source.slice(idSpan.end);
+  const newFilename = `${UI_DIR}/${newName}${TSX}`;
+  await writeToDisk(newFilename, renamed);
+
+  const storage = getStorage();
+  try {
+    if (storage) await storage.delete(filename);
+  } catch {
+    // ignore
+  }
+
+  const roots = await refreshRoots();
+  await regenerateAggregator(roots);
+  await ensureMainWired();
+  await selectRootFile(newFilename);
 }
 
 // ---------------------------------------------------------------------------
@@ -530,12 +590,22 @@ export async function spliceMove(entityId: number, anchor: MoveAnchor): Promise<
 }
 
 // Duplicate a node: insert a verbatim copy of its source immediately after it
-// (as a following sibling) — the code equivalent of duplicateUINode.
-export async function spliceDuplicate(entityId: number): Promise<void> {
+// (as a following sibling) — the code equivalent of duplicateUINode. Returns the
+// new clone's synthetic id (or null). Parse ids are assigned in source order and
+// the copy's JSX starts one char past the original (after the inserted '\n'), so
+// after the reparse the clone is the node whose span begins at that offset.
+export async function spliceDuplicate(entityId: number): Promise<number | null> {
   const el = astNodeFor(entityId) as Parameters<typeof removeNode>[0] | undefined;
-  if (!el) return;
+  if (!el) return null;
   const raw = state.source.slice(el.start, el.end);
+  const cloneStart = el.end + 1; // just after the inserted leading '\n'
   await applySourceEdits([{ start: el.end, end: el.end, text: `\n${raw}` }]);
+  const spans = state.parsed?.spans;
+  if (!spans) return null;
+  for (const [id, span] of spans) {
+    if (span[0] === cloneStart) return id;
+  }
+  return null;
 }
 
 // Bind a top-level attribute to a variable/handler expression — `value={score}`,
@@ -546,14 +616,20 @@ export async function bindAttribute(entityId: number, name: string, expr: string
   await applySourceEdits(setAttributeExpr(ast, name, expr));
 }
 
-const VARIABLE_DEFAULT: Record<string, string> = { number: '0', string: "''", boolean: 'false' };
-
-// Insert a new /** @ui-bind */ variable declaration after the imports and
-// reparse (the binding surface then includes it).
+// Add a bindable variable to the typed `state` object (seeding an empty
+// `state`/`State` scaffold first if the file doesn't have one yet), then
+// reparse. The binding surface then includes it as `state.<name>`.
 export async function addBindVariable(name: string, type: string): Promise<void> {
   if (!state.program) return;
-  const at = afterImports(state.program as Parameters<typeof afterImports>[0]);
-  const value = VARIABLE_DEFAULT[type] ?? "''";
-  const text = `\n\n/** @ui-bind */\nlet ${name}: ${type} = ${value}`;
-  await applySourceEdits([{ start: at, end: at, text }]);
+  // `as any` matches the existing adapter style (cf. store.ts `result.comments as any`).
+  let program = state.program as any;
+  if (!findStateNodes(program).object) {
+    const at = afterImports(program);
+    await applySourceEdits([
+      { start: at, end: at, text: '\n\nexport interface State {}\nexport const state: State = {}' },
+    ]);
+    program = state.program as any;
+  }
+  const edits = addStateProperty(program, name, type);
+  if (edits.length) await applySourceEdits(edits);
 }

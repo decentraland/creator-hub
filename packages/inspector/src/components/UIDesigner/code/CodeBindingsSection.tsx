@@ -35,8 +35,8 @@ export const CodeBindingsSection: React.FC = () => {
             <button
               key={v.name}
               type="button"
-              title={`Bind value to {${v.name}}`}
-              onClick={() => void bindAttribute(id, 'value', v.name)}
+              title={`Bind value to {${v.expr}}`}
+              onClick={() => void bindAttribute(id, 'value', v.expr)}
             >
               {v.name}
               <em>{v.type}</em>

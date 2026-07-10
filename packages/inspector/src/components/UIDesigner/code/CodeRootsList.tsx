@@ -1,12 +1,18 @@
-import React, { useCallback, useEffect, useRef } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { IoClose, IoLayersOutline } from 'react-icons/io5';
 
 import { useAppDispatch } from '../../../redux/hooks';
 import { selectNode } from '../../../redux/ui-designer';
 import { Button } from '../../Button';
-import { type CodeRoot, createRoot, removeRoot, selectRootFile, useCodeState } from './store';
+import {
+  type CodeRoot,
+  createRoot,
+  removeRoot,
+  renameRoot,
+  selectRootFile,
+  useCodeState,
+} from './store';
 
-import '../RootsList.css';
 import './CodeRootsList.css';
 
 // Code-mode roots list. Roots are files under src/ui/ (one component per file),
@@ -17,6 +23,23 @@ import './CodeRootsList.css';
 export const CodeRootsList: React.FC = () => {
   const { roots, filename, parsed } = useCodeState();
   const dispatch = useAppDispatch();
+
+  const [editing, setEditing] = useState<string | null>(null);
+  const [draft, setDraft] = useState('');
+
+  const beginEdit = useCallback((root: CodeRoot) => {
+    setEditing(root.filename);
+    setDraft(root.name);
+  }, []);
+
+  const commitEdit = useCallback(
+    (root: CodeRoot) => {
+      const next = draft.trim();
+      setEditing(null);
+      if (next && next !== root.name) void renameRoot(root.filename, next);
+    },
+    [draft],
+  );
 
   // When the active root file changes (and its tree has parsed), select the root
   // node so the canvas / "Add widget" / PropertyPanel target it. Guarded by a ref
@@ -57,7 +80,33 @@ export const CodeRootsList: React.FC = () => {
             onClick={() => handleSelect(root)}
           >
             <IoLayersOutline aria-hidden="true" />
-            <span className="ui-designer-code-root-name">{root.name}</span>
+            {editing === root.filename ? (
+              <input
+                className="ui-designer-code-root-name-input"
+                value={draft}
+                autoFocus
+                spellCheck={false}
+                autoCorrect="off"
+                autoCapitalize="off"
+                onClick={e => e.stopPropagation()}
+                onChange={e => setDraft(e.target.value)}
+                onKeyDown={e => {
+                  if (e.key === 'Enter') commitEdit(root);
+                  else if (e.key === 'Escape') setEditing(null);
+                }}
+                onBlur={() => commitEdit(root)}
+              />
+            ) : (
+              <span
+                className="ui-designer-code-root-name"
+                onDoubleClick={e => {
+                  e.stopPropagation();
+                  beginEdit(root);
+                }}
+              >
+                {root.name}
+              </span>
+            )}
             <button
               type="button"
               className="ui-designer-code-root-remove"

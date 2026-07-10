@@ -11,6 +11,8 @@
 // shared by the reader (bindings.ts) and the writer (emit-adapter.ts) and
 // unit-tested in isolation.
 
+import type { Edit } from './emit-adapter';
+
 interface AstNode {
   type: string;
   start: number;
@@ -103,4 +105,44 @@ export function readStateVariables(program: AstNode): StateVar[] {
     vars.push({ name, type: typeByName.get(name) ?? inferType(prop.value as AstNode) });
   }
   return vars;
+}
+
+// Literal default per bindable type, used when seeding a new state property.
+const STATE_DEFAULT: Record<string, string> = { number: '0', string: "''", boolean: 'false' };
+
+// Produce the edits that add `name` to the `state` object (and, when an
+// interface types it, to that interface). Returns [] when no `state` object
+// exists — the caller seeds the scaffold first (see store.addBindVariable).
+// Pure: located entirely by the AST spans from findStateNodes, so it round-trips
+// without reprinting.
+export function addStateProperty(program: AstNode, name: string, type: string): Edit[] {
+  const { object, interfaceBody } = findStateNodes(program);
+  if (!object) return [];
+  const value = STATE_DEFAULT[type] ?? "''";
+  const edits: Edit[] = [];
+
+  const props = (object.properties ?? []) as AstNode[];
+  if (props.length > 0) {
+    const last = props[props.length - 1];
+    edits.push({ start: last.end, end: last.end, text: `,\n  ${name}: ${value}` });
+  } else {
+    // Empty object literal `{}` → seed the first property.
+    edits.push({ start: object.start + 1, end: object.end - 1, text: `\n  ${name}: ${value},\n` });
+  }
+
+  if (interfaceBody) {
+    const members = (interfaceBody.body ?? []) as AstNode[];
+    if (members.length > 0) {
+      const last = members[members.length - 1];
+      edits.push({ start: last.end, end: last.end, text: `\n  ${name}: ${type}` });
+    } else {
+      edits.push({
+        start: interfaceBody.start + 1,
+        end: interfaceBody.end - 1,
+        text: `\n  ${name}: ${type}\n`,
+      });
+    }
+  }
+
+  return edits;
 }

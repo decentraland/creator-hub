@@ -27,9 +27,8 @@ import { RgbaColorField } from '../ui/RgbaColorField';
 import { debounce } from '../../lib/utils/debounce';
 import { UI_REQUIRED_FIELD_DEFAULTS } from '../../lib/sdk/operations/ui-component-defaults';
 import { measureParentBox, measureNodeOffset, axisForPath, convertLength } from './measure';
-import { classifyNode, getComponentBag, type UINodeType } from './tree-model';
+import { type UINodeType } from './tree-model';
 import { CodeBindingsSection } from './code/CodeBindingsSection';
-import { UI_DESIGNER_CODE_MODE } from './code/config';
 import { codeComponentValue, findCodeNode, spliceComponentPatch, useCodeState } from './code/store';
 import type { CodeUINode } from './code/types';
 import { AnchorPresetField } from './AnchorPresetField';
@@ -151,7 +150,7 @@ const PropertyPanelComponent: React.FC = () => {
   const codeState = useCodeState();
   const codeNode: CodeUINode | undefined = useMemo(
     () =>
-      UI_DESIGNER_CODE_MODE && selected !== null
+      selected !== null
         ? findCodeNode(
             codeState.parsed?.root as CodeUINode | undefined,
             selected as unknown as number,
@@ -160,24 +159,11 @@ const PropertyPanelComponent: React.FC = () => {
     [codeState, selected],
   );
 
-  const type: UINodeType | null = useMemo(() => {
-    if (UI_DESIGNER_CODE_MODE) return codeNode?.type ?? null;
-    if (!sdk || selected === null) return null;
-    const bag = getComponentBag(sdk.engine);
-    if (!bag.UiTransform || !bag.UiTransform.has(selected as Entity)) return null;
-    // `tick` (in the dep array) re-runs this when components are added/removed on the entity.
-    return classifyNode(bag, selected as Entity);
-  }, [sdk, selected, tick, codeNode]);
+  const type: UINodeType | null = useMemo(() => codeNode?.type ?? null, [codeNode]);
 
-  // True when the selected entity carries the `asset-packs::UI` marker —
-  // i.e. it's a UI root, not a child node. We expose Name + Visible at the
-  // top of the panel only in that case.
-  const isUIRoot = useMemo(() => {
-    if (UI_DESIGNER_CODE_MODE) return false;
-    if (!sdk || selected === null) return false;
-    const UI = sdk.engine.getComponentOrNull('asset-packs::UI');
-    return !!UI && UI.has(selected as Entity);
-  }, [sdk, selected, tick]);
+  // Code-mode nodes carry no asset-packs::UI marker, so no node is a "UI root"
+  // in the classic sense (the root component is just the top JSX element).
+  const isUIRoot = false;
 
   // Read the raw `asset-packs::UIBindings` value once. Its reference is stable
   // across ticks where bindings didn't change, so the two derived maps below only
@@ -214,28 +200,10 @@ const PropertyPanelComponent: React.FC = () => {
   const writeAndDispatch = useCallback(
     (componentId: string, patch: Record<string, unknown>) => {
       if (selected === null) return;
-      // Code-mode: route the patch to a .tsx source splice instead of the ECS.
-      if (UI_DESIGNER_CODE_MODE) {
-        void spliceComponentPatch(selected as unknown as number, componentId, patch);
-        return;
-      }
-      if (!sdk) return;
-      const component = resolveComponent(sdk.engine, componentId);
-      if (!component) return;
-      const entity = selected as Entity;
-      const current = component.getOrNull(entity);
-      if (current === null) {
-        // Component not yet on the entity — create with required-field
-        // defaults merged in so the PB serializer doesn't crash on missing
-        // repeated/required scalars (e.g. UiBackground.uvs, UiInput.disabled).
-        const defaults = COMPONENT_DEFAULTS[componentId] ?? {};
-        component.createOrReplace(entity, { ...defaults, ...patch });
-      } else {
-        sdk.operations.updateValue(component, entity, patch);
-      }
-      void sdk.operations.dispatch();
+      // Route the patch to a .tsx source splice.
+      void spliceComponentPatch(selected as unknown as number, componentId, patch);
     },
-    [sdk, selected],
+    [selected],
   );
 
   const addUIComponent = useCallback(
@@ -301,9 +269,7 @@ const PropertyPanelComponent: React.FC = () => {
     return ids.size === 1 ? (g.fields[0]?.componentId ?? null) : null;
   };
   const hasComponent = (componentId: string): boolean =>
-    UI_DESIGNER_CODE_MODE
-      ? codeComponentValue(codeNode, componentId) != null
-      : !!resolveComponent(sdk.engine, componentId)?.has(selected as Entity);
+    codeComponentValue(codeNode, componentId) != null;
 
   // Presence-driven: hide an optional component's section until it's added.
   const visibleGroups = allGroups.filter(g => {
@@ -311,12 +277,9 @@ const PropertyPanelComponent: React.FC = () => {
     return cid && OPTIONAL_UI_COMPONENTS.has(cid) ? hasComponent(cid) : true;
   });
 
-  // Optional components not yet present on the node (order-stable from the set).
-  // Add-component isn't wired for code-mode yet (would need to insert the
-  // attr/prop into source), so no add buttons there for now.
-  const addableComponents = UI_DESIGNER_CODE_MODE
-    ? []
-    : [...OPTIONAL_UI_COMPONENTS].filter(cid => !hasComponent(cid));
+  // Add-component isn't wired for code-mode (would need to insert the attr/prop
+  // into source), so no add buttons.
+  const addableComponents: string[] = [];
 
   // First-occurrence guard so a component (esp. UiTransform, shared by
   // Layout/Effects/Border) offers clipboard on exactly one group.
@@ -334,7 +297,7 @@ const PropertyPanelComponent: React.FC = () => {
           placeholder="Search properties…"
         />
       </div>
-      {UI_DESIGNER_CODE_MODE ? <CodeBindingsSection /> : null}
+      <CodeBindingsSection />
       {visibleGroups.map(group => {
         const cid = groupComponentId(group);
         // Clipboard on the first group of each allowed component.
@@ -366,12 +329,8 @@ const PropertyPanelComponent: React.FC = () => {
             onRemoveContainer={onRemoveContainer}
           >
             {fields.map(field => {
-              // Code-mode reads field values from the parsed node; ECS mode reads
-              // them from the live component on the selected entity.
-              const value = UI_DESIGNER_CODE_MODE
-                ? codeComponentValue(codeNode, field.componentId)
-                : (resolveComponent(sdk.engine, field.componentId)?.getOrNull(selected as Entity) ??
-                  null);
+              // Field values come from the parsed .tsx node (by synthetic id).
+              const value = codeComponentValue(codeNode, field.componentId);
               if ((field as FieldConfig).hiddenWhen?.((value ?? {}) as Record<string, unknown>))
                 return null;
               return (

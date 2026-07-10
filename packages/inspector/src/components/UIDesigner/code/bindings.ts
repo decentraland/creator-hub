@@ -26,6 +26,9 @@ export interface BindVariable {
   // literal-initializer inference, else 'string'. OXC parses but does not
   // type-check, so inferred/complex types aren't resolved.
   type: string;
+  // The expression a field binds to (`value={<expr>}`). A marker variable binds
+  // bare (`score`); a state variable binds through the object (`state.score`).
+  expr: string;
 }
 
 export interface BindAction {
@@ -92,7 +95,11 @@ export function extractBindingSurface(
       const d = decl.declarations?.[0] as AstNode | undefined;
       const name = d?.id?.name as string | undefined;
       if (name) {
-        variables.push({ name, type: annotationType(d?.id) ?? inferInitializerType(d?.init) });
+        variables.push({
+          name,
+          type: annotationType(d?.id) ?? inferInitializerType(d?.init),
+          expr: name,
+        });
       }
     } else if (marker === 'action' && decl.type === 'FunctionDeclaration') {
       const name = decl.id?.name as string | undefined;

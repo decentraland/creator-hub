@@ -160,4 +160,23 @@ export function MainUI() {
     expect(src).toContain('<MyScreen />');
     expect(src).toContain('<Hud />');
   });
+
+  it('should duplicate a child as a following sibling whose span starts one char past the original', () => {
+    const src = generateRootComponent('MainUI');
+    const parsed = parse('MainUI.tsx', src);
+    const child = parsed.root.children[0];
+    const [childStart, childEnd] = parsed.spans.get(child.entity as unknown as number)!;
+
+    // The exact edit store.spliceDuplicate applies: insert `\n<copy>` at el.end.
+    const raw = src.slice(childStart, childEnd);
+    const next = applyEdits(src, [{ start: childEnd, end: childEnd, text: `\n${raw}` }]);
+
+    const reparsed = parse('MainUI.tsx', next);
+    expect(reparsed.root.children).toHaveLength(2);
+    expect(reparsed.root.children[1].type).toBe(child.type);
+    // The clone's span starts at the original end + 1 (the inserted '\n') — the
+    // offset store.spliceDuplicate uses to recover the clone's new id.
+    const cloneSpan = reparsed.spans.get(reparsed.root.children[1].entity as unknown as number)!;
+    expect(cloneSpan[0]).toBe(childEnd + 1);
+  });
 });
