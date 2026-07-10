@@ -8,6 +8,7 @@ import { Header } from '../Header';
 import { Button } from '../Button';
 import { Card } from '../Card';
 import { fetchSceneBans } from '..';
+import { openAdminList, openBanList } from '../actions';
 import { AddUserInput, PermissionType } from './AddUserInput';
 import {
   getModerationControlStyles,
@@ -42,19 +43,6 @@ export type SceneAdmin = {
   canBeRemoved: boolean;
 };
 
-type State = {
-  showModalAdminList?: boolean;
-  adminToRemove?: SceneAdmin;
-  showModalBanList?: boolean;
-  unbanMessage?: string | null;
-};
-export const moderationControlState: State = {
-  showModalAdminList: false,
-  showModalBanList: false,
-  adminToRemove: undefined,
-  unbanMessage: null as string | null,
-};
-
 export function ModerationControl({ engine: _engine, player: _player, sceneAdmins }: Props) {
   const styles = getModerationControlStyles();
   const colors = getModerationControlColors();
@@ -79,7 +67,7 @@ export function ModerationControl({ engine: _engine, player: _player, sceneAdmin
           uiTransform={styles.viewListButton}
           icon={MODERATION_ICONS.VERIFIED_USER_ICON}
           iconTransform={styles.viewListIcon}
-          onMouseDown={() => (moderationControlState.showModalAdminList = true)}
+          onMouseDown={() => openAdminList()}
         />
         <UiEntity uiTransform={styles.divider} />
         <AddUserInput
@@ -97,7 +85,7 @@ export function ModerationControl({ engine: _engine, player: _player, sceneAdmin
           iconTransform={styles.viewListIcon}
           onMouseDown={async () => {
             await fetchSceneBans();
-            moderationControlState.showModalBanList = true;
+            openBanList();
           }}
         />
       </UiEntity>

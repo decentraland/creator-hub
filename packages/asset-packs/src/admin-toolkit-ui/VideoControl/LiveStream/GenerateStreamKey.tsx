@@ -1,12 +1,12 @@
 import { Color4 } from '@dcl/sdk/math';
-import { IEngine } from '@dcl/ecs';
+import type { IEngine } from '@dcl/ecs';
 import ReactEcs, { UiEntity, Label } from '@dcl/react-ecs';
 import { Button } from '../../Button';
 import { Error } from '../../Error';
-import { generateStreamKey, getStreamKey } from '../api';
+import { generateStreamKey } from '../api';
 import { LoadingDots } from '../../Loading';
 import { getComponents } from '../../../definitions';
-import { state } from '../..';
+import { state } from '../../store';
 
 export function GenerateStreamKey({
   engine,

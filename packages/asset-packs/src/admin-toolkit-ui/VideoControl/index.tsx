@@ -8,6 +8,7 @@ import type { AdminTools } from '../../definitions';
 import { Header } from '../Header';
 import { Active } from '../Active';
 import { Card } from '../Card';
+import { selectVideoSubTab, selectVideoPlayer, dismissPresentation } from '../actions';
 import {
   getVideoPlayers,
   isDclCast,
@@ -81,19 +82,18 @@ export function VideoControl({
 }) {
   const [selectedEntity, selectedVideo] = useSelectedVideoPlayer(engine) ?? [];
   const videoPlayers = getVideoPlayers(engine);
-  const [selected, setSelected] = ReactEcs.useState<'video-url' | 'live' | 'dcl-cast' | undefined>(
-    undefined,
-  );
+  const selected = state.videoControl.selectedTab;
 
   ReactEcs.useEffect(() => {
-    setSelected(
-      selectedVideo && isDclCast(selectedVideo.src)
-        ? 'dcl-cast'
-        : selectedVideo && isVideoUrl(selectedVideo.src)
-          ? 'video-url'
-          : 'live',
-    );
-  }, [state.videoControl.selectedVideoPlayer]);
+    // An explicit DCL Cast context (auto-open on a presentation, or an active cast
+    // stream) wins over src-derivation, so the panel lands on DCL Cast even when no
+    // scene screen is casting yet. Otherwise reflect the selected screen's source.
+    if (state.videoControl.selectedStream === 'dcl-cast') {
+      selectVideoSubTab('dcl-cast');
+      return;
+    }
+    selectVideoSubTab(selectedVideo && isVideoUrl(selectedVideo.src) ? 'video-url' : 'live');
+  }, [state.videoControl.selectedVideoPlayer, state.videoControl.selectedStream]);
 
   return (
     <UiEntity uiTransform={{ flexDirection: 'column', width: '100%' }}>
@@ -141,7 +141,7 @@ export function VideoControl({
                       `<b>${player.customName}</b>`,
                   )}
                   selectedIndex={state.videoControl.selectedVideoPlayer ?? 0}
-                  onChange={idx => (state.videoControl.selectedVideoPlayer = idx)}
+                  onChange={idx => selectVideoPlayer(idx)}
                   textAlign="middle-left"
                   fontSize={16}
                   uiTransform={{
@@ -178,7 +178,7 @@ export function VideoControl({
                   id="video_control_url"
                   value="<b>VIDEO URL</b>"
                   icon={ICONS.VIDEO_SOURCE}
-                  onClick={() => setSelected('video-url')}
+                  onClick={() => selectVideoSubTab('video-url')}
                   selected={selected === 'video-url'}
                   active={selectedVideo && isVideoUrl(selectedVideo.src)}
                 />
@@ -193,7 +193,7 @@ export function VideoControl({
                   id="video_control_dcl_cast"
                   value="<b>DCL CAST</b>"
                   icon={ICONS.DCL_CAST_SOURCE}
-                  onClick={() => setSelected('dcl-cast')}
+                  onClick={() => selectVideoSubTab('dcl-cast')}
                   selected={selected === 'dcl-cast'}
                   active={selectedVideo && isDclCast(selectedVideo.src)}
                 />
@@ -208,7 +208,7 @@ export function VideoControl({
                   id="video_control_live"
                   value="<b>STREAM</b>"
                   icon={ICONS.LIVE_SOURCE}
-                  onClick={() => setSelected('live')}
+                  onClick={() => selectVideoSubTab('live')}
                   active={selectedVideo && isLiveStream(selectedVideo.src)}
                   selected={selected === 'live'}
                 />
@@ -256,9 +256,7 @@ export function VideoControl({
           >
             <PresentationPanel
               presentationState={state.videoControl.presentationState}
-              onStopSharing={() => {
-                state.videoControl.presentationState = undefined;
-              }}
+              onStopSharing={() => dismissPresentation()}
             />
           </Card>
         </UiEntity>

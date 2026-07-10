@@ -1,4 +1,4 @@
-import { IEngine } from '@dcl/ecs';
+import type { IEngine } from '@dcl/ecs';
 import { Color4 } from '@dcl/ecs-math';
 import ReactEcs, { UiEntity, Label } from '@dcl/react-ecs';
 
@@ -7,7 +7,7 @@ import { LoadingDots } from '../../Loading';
 import { Error } from '../../Error';
 import { resetStreamKey } from '../api';
 import { getComponents } from '../../../definitions';
-import { state } from '../..';
+import { state } from '../../store';
 
 export function DeleteStreamKeyConfirmation({
   engine,

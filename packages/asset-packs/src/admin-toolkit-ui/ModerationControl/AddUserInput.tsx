@@ -8,7 +8,7 @@ import {
 import { handleAddAdmin, handleBanUser } from './utils';
 import { BanUserDescription } from './BanUserDescription';
 
-import { SceneAdmin } from '.';
+import type { SceneAdmin } from '.';
 
 export enum PermissionType {
   ADMIN = 'admin',
