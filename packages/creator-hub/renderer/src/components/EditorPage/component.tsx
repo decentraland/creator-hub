@@ -210,10 +210,10 @@ export function EditorPage() {
   const handleBack = useCallback(async () => {
     const rpc = iframeRef.current;
     // Refresh the project (saves + regenerates the thumbnail) on the way out, but
-    // never let it block navigation. The thumbnail comes from a Babylon-canvas
-    // screenshot over the scene RPC; with the Bevy renderer active that canvas is
-    // hidden and the RPC never resolves, so skip it in Bevy mode and guard the
-    // Babylon path so a hang/throw can't wedge the Back button.
+    // never let it block navigation. The thumbnail is a Babylon-canvas screenshot
+    // over the scene RPC, which has no server under Bevy — skip it in that mode,
+    // and guard the Babylon path so a throw can't wedge Back. (`takeScreenshot`
+    // is also timeout-bounded, so even an unexpected stall can't hang here.)
     if (rpc && !useBevy) {
       try {
         await refreshProject(rpc);
@@ -271,35 +271,41 @@ export function EditorPage() {
     await handleActionWithWarningCheck(handleOpenPreviewWithErrorHandling);
   }, [handleActionWithWarningCheck, handleOpenPreviewWithErrorHandling]);
 
-  const handlePublishScene = useCallback(async () => {
+  // The thumbnail comes from a Babylon-canvas screenshot over the scene RPC, which
+  // has no server under the Bevy renderer (the request would just time out and
+  // yield no thumbnail). Skip it in Bevy mode rather than fire a doomed request.
+  // (`takeScreenshot` is also timeout-guarded so this can never hang the flow.)
+  const saveThumbnailIfSupported = useCallback(() => {
     const rpc = iframeRef.current;
-    if (rpc) saveAndGetThumbnail(rpc);
+    if (rpc && !useBevy) saveAndGetThumbnail(rpc);
+  }, [useBevy, saveAndGetThumbnail]);
+
+  const handlePublishScene = useCallback(async () => {
+    saveThumbnailIfSupported();
     await handleOpenPublishModal();
-  }, [saveAndGetThumbnail, handleOpenPublishModal]);
+  }, [saveThumbnailIfSupported, handleOpenPublishModal]);
 
   const handleDeployWorld = useCallback(async () => {
     if (!project) return;
-    const rpc = iframeRef.current;
-    if (rpc) saveAndGetThumbnail(rpc);
+    saveThumbnailIfSupported();
     try {
       await publishScene({ targetContent: config.get('WORLDS_CONTENT_SERVER_URL') });
       executeDeployment(project.path);
     } catch {
       openModal('publish', 'deploy');
     }
-  }, [project, saveAndGetThumbnail, publishScene, executeDeployment, openModal]);
+  }, [project, saveThumbnailIfSupported, publishScene, executeDeployment, openModal]);
 
   const handleDeployLand = useCallback(async () => {
     if (!project) return;
-    const rpc = iframeRef.current;
-    if (rpc) saveAndGetThumbnail(rpc);
+    saveThumbnailIfSupported();
     try {
       await publishScene({ target: config.get('PEER_URL') });
       executeDeployment(project.path);
     } catch {
       openModal('publish', 'deploy');
     }
-  }, [project, saveAndGetThumbnail, publishScene, executeDeployment, openModal]);
+  }, [project, saveThumbnailIfSupported, publishScene, executeDeployment, openModal]);
 
   const publishOptions = useMemo(
     () =>

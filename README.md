@@ -139,8 +139,12 @@ Notes for reviewers:
 
 - Switching back to **Babylon** in the same setting restores the default renderer.
 - Bevy is wired end to end: the scene renders, inspector edits forward into the
-  engine, and viewport pick + a translate gizmo work. Rotate/scale gizmo modes
-  are not implemented yet.
+  engine, viewport pick + a translate gizmo work, and drag-dropped assets place
+  under the cursor. Known gaps (expected, not bugs — Bevy feature parity is
+  in progress): rotate/scale gizmo modes, camera controls / zoom / focus (Bevy
+  drives its own camera), the scene-metrics panel and minimap, animator clip
+  dropdowns, and 3D spawn-point handles. Pick may select a model's collider
+  rather than its visible mesh on scenes that split the two.
 - If you change any code under `packages/inspector` (including the Bevy agent),
   rerun `make build-inspector` — the app serves a **prebuilt** inspector bundle,
   so running the Creator Hub in watch mode (`cd packages/creator-hub && npm run

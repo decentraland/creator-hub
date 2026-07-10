@@ -91,9 +91,32 @@ export type Result = {
   [Method.SET_MOBILE_DEBUG_SESSION_ENABLED]: void;
 };
 
+// @dcl/mini-rpc's request() never settles if no server answers (it just parks a
+// future keyed by id). The scene RPC server only exists for the Babylon renderer
+// (see inspector context.ts); under the Bevy renderer there is no handler, so
+// every scene-RPC call from the host would leak a forever-pending promise —
+// silently, since callers fire-and-forget most of them. Bound every request so it
+// rejects instead of hanging; callers already treat a failed scene-RPC call as
+// "not applied" (they .catch/ignore), so this degrades gracefully under Bevy (and
+// against any transport stall) rather than leaking.
+const REQUEST_TIMEOUT_MS = 5000;
+
 export class SceneRpcClient extends RPC<Method, Params, Result> {
   constructor(transport: Transport) {
     super('SceneRpcInbound', transport);
+  }
+
+  override request<T extends Method>(method: `${T}`, params: Params[T]): Promise<Result[T]> {
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const timeout = new Promise<never>((_resolve, reject) => {
+      timer = setTimeout(
+        () => reject(new Error(`Scene RPC "${method}" timed out (no renderer response)`)),
+        REQUEST_TIMEOUT_MS,
+      );
+    });
+    return Promise.race([super.request(method, params), timeout]).finally(() =>
+      clearTimeout(timer),
+    );
   }
 
   toggleComponent = (component: string, enabled: boolean) => {
