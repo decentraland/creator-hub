@@ -1,5 +1,6 @@
 import { bus } from './bus';
 import { getBevyApi } from './bevy-api';
+import { setCameraMode, setupCamera } from './camera';
 import { getGroundPointAtPointer, setupGizmo, setSelectedEntity, setSceneOffset } from './gizmo';
 
 /**
@@ -38,10 +39,17 @@ export function main(): void {
       bus.postToPage({ kind: 'drop-point', id: msg.id, position: getGroundPointAtPointer() });
       return;
     }
+    // Toggle the editor camera (native avatar ⇄ editor fly-camera).
+    if (msg.kind === 'set-camera') {
+      setCameraMode(msg.mode);
+      return;
+    }
   });
 
   // setupGizmo installs the pointer-down handler (grab-or-pick) + drag system.
   setupGizmo();
+  // setupCamera installs the (initially inactive) editor fly-camera.
+  setupCamera();
 
   void boot();
 }

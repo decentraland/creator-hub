@@ -38,6 +38,12 @@ export interface BusQuat {
 export type GizmoMode = 'translate' | 'rotate' | 'scale' | 'free';
 
 /**
+ * The editor camera. `avatar` = the engine's native player camera; `free` = an
+ * editor fly-camera the agent drives (avatar input disabled while active).
+ */
+export type CameraMode = 'avatar' | 'free';
+
+/**
  * agent → inspector (`to: 'page'`). Viewport interaction results:
  *  - `pick`: entity under the click (entity 0 = clean miss / deselect).
  *  - `gizmoCommit`: the committed transform(s) of a gizmo drag (position only
@@ -88,7 +94,11 @@ export type PageToScene =
       // Selection component); it's forwarded here so the agent needn't read it.
       mode: GizmoMode;
     }
-  | { kind: 'query-drop-point'; id: number };
+  | { kind: 'query-drop-point'; id: number }
+  // Toggle the editor camera. `avatar` = the engine's native player camera (walk
+  // /look/zoom); `free` = an editor fly-camera the agent drives (WASD + mouse-
+  // look), with avatar input disabled. The inspector's camera toggle sends this.
+  | { kind: 'set-camera'; mode: CameraMode };
 
 /** Every message is wrapped so a peer ignores its own posts / the wrong direction. */
 export interface BusEnvelope {
