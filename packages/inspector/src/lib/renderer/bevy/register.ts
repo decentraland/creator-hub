@@ -6,6 +6,7 @@ import { mountBevyEngine } from './engine-iframe';
 import { createCameraBridge } from './camera-bridge';
 import { createDropPointBridge } from './drop-point-bridge';
 import { createForwardEditBridge } from './forward-edits';
+import { createInputFocusBridge } from './input-focus-bridge';
 import { createPickBridge } from './pick-bridge';
 import { createSelectionBridge } from './selection-bridge';
 
@@ -93,10 +94,21 @@ export function registerBevyRenderer(): void {
       const cameraBridge = createCameraBridge();
       bevy.setCameraModePoster(mode => cameraBridge.setMode(mode));
 
+      // Input focus: the engine iframe is same-origin, so when the viewport holds
+      // focus its keydowns go to the engine window (not ours). Forward editor
+      // shortcuts up to the host so they fire regardless of focus, and refocus the
+      // iframe on viewport pointer-down so the fly camera's WASD resumes without a
+      // deliberate focus click. (engineWindow is the iframe's contentWindow.)
+      const disconnectInputFocus = createInputFocusBridge({
+        engineWindow: engine.engineWindow as unknown as Window,
+        iframe: engine.iframe,
+      });
+
       return {
         renderer: bevy,
         engine: bevy.context.engine,
         dispose: () => {
+          disconnectInputFocus();
           cameraBridge.disconnect();
           dropPoint.disconnect();
           disconnectSelection();
