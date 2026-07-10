@@ -290,6 +290,9 @@ export function Slider({
           <UiEntity
             key={`cell-${i}`}
             uiTransform={{ flexGrow: 1, flexBasis: 0, height: 18 }}
+            // A background (even transparent) is required for the element to be
+            // hit-tested; without it the onMouseDown never fires.
+            uiBackground={{ color: COLORS.transparent }}
             onMouseDown={() => onSet((i + 1) / steps)}
           />
         ))}

@@ -53,7 +53,11 @@ export function TextAnnouncementsControl({
 
       <Input
         key={`announcement-input-${clearNonce}`}
-        onSubmit={value => handleSendTextAnnouncement(engine, state, value, player)}
+        onSubmit={value => {
+          if (!value) return;
+          handleSendTextAnnouncement(engine, state, value, player);
+          setClearNonce(n => n + 1);
+        }}
         onChange={value => setAnnouncementText(value)}
         fontSize={TYPE.body}
         placeholder="Write your announcement…"
@@ -93,9 +97,11 @@ export function TextAnnouncementsControl({
           label="Share"
           iconName="send"
           variant="filled"
-          onClick={() =>
-            handleSendTextAnnouncement(engine, state, state.textAnnouncementControl.text, player)
-          }
+          onClick={() => {
+            if (!state.textAnnouncementControl.text) return;
+            handleSendTextAnnouncement(engine, state, state.textAnnouncementControl.text, player);
+            setClearNonce(n => n + 1);
+          }}
         />
       </UiEntity>
     </UiEntity>
