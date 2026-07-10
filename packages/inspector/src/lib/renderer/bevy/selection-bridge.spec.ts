@@ -30,11 +30,12 @@ describe('createSelectionBridge', () => {
 
   // GizmoType: FREE=0, POSITION=1, ROTATION=2, SCALE=3.
   describe('when an entity gains the Selection component', () => {
-    it('should post set-selection with that entity, its world position, and gizmo mode', async () => {
+    it('should post set-selection with that entity, its world position, rotation, and gizmo mode', async () => {
       const entity = ctx.engine.addEntity();
       ctx.Transform.create(entity, {
         ...IDENTITY,
         position: { x: 4, y: 1, z: 2 },
+        rotation: { x: 0.5, y: 0.5, z: 0.5, w: 0.5 },
         parent: ctx.engine.RootEntity,
       });
       ctx.editorComponents.Selection.create(entity, { gizmo: 1 }); // POSITION → translate
@@ -46,6 +47,7 @@ describe('createSelectionBridge', () => {
           kind: 'set-selection',
           entity: entity as number,
           position: { x: 4, y: 1, z: 2 },
+          rotation: { x: 0.5, y: 0.5, z: 0.5, w: 0.5 },
           mode: 'translate',
         },
       });
@@ -69,7 +71,40 @@ describe('createSelectionBridge', () => {
           kind: 'set-selection',
           entity: entity as number,
           position: null,
+          rotation: null,
           mode: 'rotate',
+        },
+      });
+    });
+  });
+
+  describe("when the selected entity's Transform changes", () => {
+    it('should re-post with the new position and rotation', async () => {
+      const entity = ctx.engine.addEntity();
+      ctx.Transform.create(entity, {
+        ...IDENTITY,
+        position: { x: 1, y: 0, z: 1 },
+        parent: ctx.engine.RootEntity,
+      });
+      ctx.editorComponents.Selection.create(entity, { gizmo: 3 }); // SCALE
+      await ctx.engine.update(1);
+      posted.length = 0;
+
+      // A rotation edit lands while selected (panel edit, undo, gizmo commit) —
+      // the scale gizmo must re-align, so the bridge re-posts the selection.
+      const mutable = ctx.Transform.getMutable(entity);
+      mutable.position = { x: 2, y: 0, z: 1 };
+      mutable.rotation = { x: 0, y: 0.5, z: 0, w: 0.5 };
+      await ctx.engine.update(1);
+
+      expect(posted).toContainEqual({
+        to: 'scene',
+        msg: {
+          kind: 'set-selection',
+          entity: entity as number,
+          position: { x: 2, y: 0, z: 1 },
+          rotation: { x: 0, y: 0.5, z: 0, w: 0.5 },
+          mode: 'scale',
         },
       });
     });
@@ -87,7 +122,7 @@ describe('createSelectionBridge', () => {
 
       expect(posted).toContainEqual({
         to: 'scene',
-        msg: { kind: 'set-selection', entity: null, position: null, mode: 'free' },
+        msg: { kind: 'set-selection', entity: null, position: null, rotation: null, mode: 'free' },
       });
     });
   });

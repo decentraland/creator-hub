@@ -37,10 +37,10 @@ import { bus } from './bus';
  * write — matching the IRenderer reverse-channel contract (renderer previews,
  * inspector commits).
  *
- * The selected entity's world position is SUPPLIED BY THE INSPECTOR over the bus
- * (set-selection), because a super-user agent can't read another scene's
- * Transform from its own engine. Scope: translate only, no rotate/scale, no
- * TextureCamera composite (handles render in the world, not on-top).
+ * The selected entity's world position + rotation are SUPPLIED BY THE INSPECTOR
+ * over the bus (set-selection), because a super-user agent can't read another
+ * scene's Transform from its own engine. Translate, rotate and scale gizmos are
+ * supported; handles composite on top of the viewport via a TextureCamera.
  */
 
 type Axis = 'x' | 'y' | 'z';
@@ -67,6 +67,13 @@ const AXIS_COLOR: Record<Axis, Color4> = {
 const axisVec = (a: Axis): Vector3 =>
   a === 'x' ? Vector3.Right() : a === 'y' ? Vector3.Up() : Vector3.Forward();
 
+/** The world-space direction of a gizmo axis handle. Scale handles follow the
+ * entity's rotation (see the selectedRot note); translate/rotate handles are
+ * world axes. */
+function gizmoAxisDir(a: Axis): Vector3 {
+  return gizmoMode === 'scale' ? Vector3.rotate(axisVec(a), selectedRot) : axisVec(a);
+}
+
 let gizmoRoot: Entity | null = null;
 // Translate arm containers + rotate ring containers, per axis. Shown/hidden by
 // mode (setModeVisibility): translate shows the arms, rotate shows the rings.
@@ -84,12 +91,21 @@ const RING_SEG_R = 0.03;
 // Scale handle geometry: a short axis shaft capped with a cube (vs translate's
 // arrow), grabbed like the translate arm; drag distance → per-axis multiplier.
 const SCALE_BOX = 0.18;
+// The white cube at the scale gizmo's center: dragging it scales all three axes
+// proportionally (matching the Babylon ScaleGizmo's uniform-scale center cube).
+const SCALE_CENTER_BOX = 0.25;
+let scaleCenterGroup: Entity | null = null;
 let selected: Entity | null = null;
 // The selected entity's world position, supplied by the inspector (the agent
 // can't read the inspected scene's Transform). The gizmo's anchor.
 let selectedPos: Vector3 | null = null;
-// Which gizmo the inspector wants shown (translate/rotate/scale/free). Only
-// `translate` draws handles today; rotate/scale are later slices.
+// The selected entity's world rotation (inspector-supplied, like selectedPos).
+// The SCALE gizmo aligns its handles to this — always, independent of any
+// align-to-world setting, because per-axis scaling only makes sense on the
+// entity's LOCAL axes (the committed multiplier applies to local scale).
+// Translate/rotate handles stay world-aligned.
+let selectedRot: Quaternion = Quaternion.Identity();
+// Which gizmo the inspector wants shown (translate/rotate/scale/free).
 let gizmoMode: GizmoMode = 'translate';
 // Scene-local → engine-world offset (base parcel × 16m). The inspector renders
 // every scene at the ORIGIN (SceneContext.rootNode at 0,0,0), so the positions
@@ -101,14 +117,21 @@ let rayTs = 0;
 
 interface DragState {
   mode: 'translate' | 'rotate' | 'scale';
-  axis: Axis;
+  // 'xyz' = the scale gizmo's center cube (uniform scale on all three axes).
+  axis: Axis | 'xyz';
+  // World-space direction the drag projects onto, captured at grab time:
+  // the world axis (translate), the entity-local axis (scale), or the camera's
+  // up-right diagonal (uniform scale). Frozen for the whole drag so a mid-drag
+  // selection repost can't change the math under the pointer.
+  axisDir: Vector3;
   center: Vector3; // entity world position at drag start
   planeNormal: Vector3;
   startHit: Vector3;
   // Rotate only: the signed angle (radians) swept so far, about `axis`.
   angle?: number;
-  // Scale only: the along-axis offset of the start hit from center, and the
-  // current scale factor for the axis (committed on release).
+  // Scale only: the along-axis offset of the start hit from center (per-axis) or
+  // the normalizing arm length (uniform), and the current scale factor
+  // (committed on release).
   startAlong?: number;
   factor?: number;
 }
@@ -178,17 +201,23 @@ export function getGroundPointAtPointer(): { x: number; y: number; z: number } |
 }
 
 /** Attach the gizmo to an entity at a scene-local position (or hide when null).
- * The scene offset is added so it lands in the engine's world space. */
+ * The scene offset is added so it lands in the engine's world space. The world
+ * rotation orients the scale gizmo's handles (rotation is offset-free). */
 export function setSelectedEntity(
   entity: number | null,
   position: { x: number; y: number; z: number } | null,
   mode: GizmoMode = 'translate',
+  rotation: { x: number; y: number; z: number; w: number } | null = null,
 ): void {
   selected = entity !== null && entity !== 0 ? (entity as Entity) : null;
   selectedPos =
     selected !== null && position
       ? Vector3.add(Vector3.create(position.x, position.y, position.z), sceneOffset)
       : null;
+  selectedRot =
+    selected !== null && rotation
+      ? Quaternion.create(rotation.x, rotation.y, rotation.z, rotation.w)
+      : Quaternion.Identity();
   gizmoMode = mode;
   // Show handles for translate / rotate / scale; `free` shows none.
   const supported = mode === 'translate' || mode === 'rotate' || mode === 'scale';
@@ -296,6 +325,30 @@ function buildGizmo(): void {
     buildRotateRing(root, axis);
     buildScaleHandle(root, axis);
   }
+  buildScaleCenter(root);
+}
+
+/**
+ * The scale gizmo's white center cube: dragging it scales all three axes
+ * proportionally. Grab is analytic (ray-vs-center distance in
+ * pickScaleHandleAnalytic), so no collider. Shown only in scale mode.
+ */
+function buildScaleCenter(root: Entity): void {
+  const group = engine.addEntity();
+  Transform.create(group, { parent: root });
+  scaleCenterGroup = group;
+
+  const cube = engine.addEntity();
+  Transform.create(cube, {
+    scale: Vector3.create(SCALE_CENTER_BOX, SCALE_CENTER_BOX, SCALE_CENTER_BOX),
+    parent: group,
+  });
+  MeshRenderer.setBox(cube);
+  Material.setPbrMaterial(cube, {
+    albedoColor: Color4.White(),
+    emissiveColor: Color3.White(),
+    emissiveIntensity: 0.4,
+  });
 }
 
 /**
@@ -396,6 +449,9 @@ function setModeVisibility(): void {
         Transform.getMutable(group).scale = gizmoMode === mode ? shown : hidden;
     }
   }
+  if (scaleCenterGroup !== null) {
+    Transform.getMutable(scaleCenterGroup).scale = gizmoMode === 'scale' ? shown : hidden;
+  }
 }
 
 function hideGizmo(): void {
@@ -474,7 +530,8 @@ function raySegmentDistance(
 
 /** Analytic grab: which axis arm the pointer ray is closest to (within a
  * screen-scaled tolerance), or null. Anchored at the gizmo center (selectedPos),
- * arms extend `SHAFT_LEN * scale` along each world axis. */
+ * arms extend `SHAFT_LEN * scale` along each handle axis (world for translate,
+ * entity-local for scale — gizmoAxisDir). */
 function pickAxisAnalytic(ray: { origin: Vector3; dir: Vector3 }): Axis | null {
   if (selectedPos === null) return null;
   const scale = cameraDistanceScale(selectedPos);
@@ -485,7 +542,7 @@ function pickAxisAnalytic(ray: { origin: Vector3; dir: Vector3 }): Axis | null {
   let best: Axis | null = null;
   let bestDist = Infinity;
   for (const axis of AXES) {
-    const end = Vector3.add(selectedPos, Vector3.scale(axisVec(axis), armLen));
+    const end = Vector3.add(selectedPos, Vector3.scale(gizmoAxisDir(axis), armLen));
     const { dist } = raySegmentDistance(ray.origin, ray.dir, selectedPos, end);
     if (dist <= tol && dist < bestDist) {
       bestDist = dist;
@@ -493,6 +550,27 @@ function pickAxisAnalytic(ray: { origin: Vector3; dir: Vector3 }): Axis | null {
     }
   }
   return best;
+}
+
+/** Closest distance between a ray (origin, unit dir, t≥0) and a point. */
+function rayPointDistance(origin: Vector3, dir: Vector3, p: Vector3): number {
+  const toP = Vector3.subtract(p, origin);
+  const t = Vector3.dot(toP, dir);
+  if (t < 0) return Vector3.length(toP); // point is behind the ray
+  return Vector3.distance(Vector3.add(origin, Vector3.scale(dir, t)), p);
+}
+
+/** Analytic scale grab: the center cube ('xyz', uniform scale) or an axis arm.
+ * The center is tested FIRST — every arm starts at the center, so near the
+ * middle all three arms are within the arm tolerance and would shadow it. */
+function pickScaleHandleAnalytic(ray: { origin: Vector3; dir: Vector3 }): Axis | 'xyz' | null {
+  if (selectedPos === null) return null;
+  const scale = cameraDistanceScale(selectedPos);
+  // Forgiving, screen-constant grab radius around the center cube (~1.4× its
+  // half-diagonal), same hand-aimed-click reasoning as the arm tolerance.
+  const centerTol = SCALE_CENTER_BOX * 1.4 * scale;
+  if (rayPointDistance(ray.origin, ray.dir, selectedPos) <= centerTol) return 'xyz';
+  return pickAxisAnalytic(ray);
 }
 
 /** Analytic rotate grab: which ring the pointer ray meets (hit on the axis plane
@@ -574,7 +652,9 @@ function gizmoSystemInner(): void {
   if (selected !== null && selectedPos !== null && drag === null) {
     const t = Transform.getMutable(gizmoRoot);
     t.position = { ...selectedPos };
-    t.rotation = Quaternion.Identity();
+    // Scale mode: orient the handles to the entity's rotation (always — see the
+    // selectedRot note). Translate/rotate stay world-aligned.
+    t.rotation = gizmoMode === 'scale' ? { ...selectedRot } : Quaternion.Identity();
     const s = cameraDistanceScale(selectedPos);
     t.scale = Vector3.create(s, s, s);
   }
@@ -596,7 +676,9 @@ function gizmoSystemInner(): void {
           ? null
           : gizmoMode === 'rotate'
             ? pickRotateAxisAnalytic(ray)
-            : pickAxisAnalytic(ray);
+            : gizmoMode === 'scale'
+              ? pickScaleHandleAnalytic(ray)
+              : pickAxisAnalytic(ray);
       if (grabbedAxis !== null) {
         beginDrag(grabbedAxis);
       } else {
@@ -664,11 +746,40 @@ function isGizmoHandle(id: number): boolean {
   return false;
 }
 
-function beginDrag(axis: Axis): void {
+function beginDrag(axis: Axis | 'xyz'): void {
   if (selected === null || selectedPos === null) return;
   const center = { ...selectedPos };
   const ray = pointerRay();
   if (ray === null) return;
+  const camT = Transform.getOrNull(engine.CameraEntity);
+  const camForward =
+    camT === null ? Vector3.Forward() : Vector3.rotate(Vector3.Forward(), camT.rotation);
+
+  if (axis === 'xyz') {
+    // Uniform scale (the center cube): drag in the camera-facing plane through
+    // the center; motion along the camera's up-right diagonal drives the factor
+    // (right/up grows, left/down shrinks — matching the Babylon center cube).
+    const camRight =
+      camT === null ? Vector3.Right() : Vector3.rotate(Vector3.Right(), camT.rotation);
+    const camUp = camT === null ? Vector3.Up() : Vector3.rotate(Vector3.Up(), camT.rotation);
+    const refDir = Vector3.normalize(Vector3.add(camRight, camUp));
+    const planeNormal = camForward;
+    const startHit = rayPlaneIntersect(ray.origin, ray.dir, center, planeNormal);
+    if (startHit === null) return;
+    drag = {
+      mode: 'scale',
+      axis,
+      axisDir: refDir,
+      center,
+      planeNormal,
+      startHit,
+      // Normalize the drag by the arm length so the feel is camera-distance
+      // invariant: dragging one arm-length up-right doubles the scale.
+      startAlong: SHAFT_LEN * cameraDistanceScale(center),
+      factor: 1,
+    };
+    return;
+  }
 
   if (gizmoMode === 'rotate') {
     // Rotate: drag in the ring's plane (normal = the axis). Record the start
@@ -676,17 +787,23 @@ function beginDrag(axis: Axis): void {
     const planeNormal = axisVec(axis);
     const startHit = rayPlaneIntersect(ray.origin, ray.dir, center, planeNormal);
     if (startHit === null) return;
-    drag = { mode: 'rotate', axis, center, planeNormal, startHit, angle: 0 };
+    drag = {
+      mode: 'rotate',
+      axis,
+      axisDir: axisVec(axis),
+      center,
+      planeNormal,
+      startHit,
+      angle: 0,
+    };
     return;
   }
 
   // Translate + scale: drag in a plane containing the axis and most facing the
   // camera, projecting the pointer onto the axis. They differ only in what the
   // along-axis motion means (position offset vs scale factor).
-  const camT = Transform.getOrNull(engine.CameraEntity);
-  const camForward =
-    camT === null ? Vector3.Forward() : Vector3.rotate(Vector3.Forward(), camT.rotation);
-  const planeNormal = axisDragPlaneNormal(axisVec(axis), camForward);
+  const axisDir = gizmoAxisDir(axis);
+  const planeNormal = axisDragPlaneNormal(axisDir, camForward);
   const startHit = rayPlaneIntersect(ray.origin, ray.dir, center, planeNormal);
   if (startHit === null) return;
 
@@ -694,10 +811,11 @@ function beginDrag(axis: Axis): void {
     // Distance from center to the grab point along the axis = the "current arm
     // length"; the factor is (current distance / start distance), so dragging
     // outward grows and inward shrinks. Clamp start away from 0 to avoid blow-up.
-    const startAlong = Vector3.dot(Vector3.subtract(startHit, center), axisVec(axis));
+    const startAlong = Vector3.dot(Vector3.subtract(startHit, center), axisDir);
     drag = {
       mode: 'scale',
       axis,
+      axisDir,
       center,
       planeNormal,
       startHit,
@@ -707,7 +825,7 @@ function beginDrag(axis: Axis): void {
     return;
   }
 
-  drag = { mode: 'translate', axis, center, planeNormal, startHit };
+  drag = { mode: 'translate', axis, axisDir, center, planeNormal, startHit };
   dragPos = center;
 }
 
@@ -718,7 +836,7 @@ function updateDrag(): void {
   const hit = rayPlaneIntersect(ray.origin, ray.dir, drag.center, drag.planeNormal);
   if (hit === null) return;
 
-  if (drag.mode === 'rotate') {
+  if (drag.mode === 'rotate' && drag.axis !== 'xyz') {
     // Swept angle since drag start, unwrapped across the ±π seam so a drag past
     // half a turn keeps accumulating instead of flipping sign.
     const startAngle = angleOnRing(drag.startHit, drag.center, drag.axis);
@@ -739,21 +857,33 @@ function updateDrag(): void {
   }
 
   if (drag.mode === 'scale') {
-    // Factor = current along-axis distance / start distance. Dragging the handle
-    // outward grows, inward shrinks; clamp to keep the factor positive + sane.
-    const nowAlong = Vector3.dot(Vector3.subtract(hit, drag.center), axisVec(drag.axis));
-    const raw = nowAlong / (drag.startAlong ?? 1);
+    // Per-axis: factor = current along-axis distance / start distance (dragging
+    // the handle outward grows, inward shrinks). Uniform ('xyz'): factor = 1 +
+    // motion along the camera's up-right diagonal / arm length. Clamp to keep
+    // the factor positive + sane.
+    const raw =
+      drag.axis === 'xyz'
+        ? 1 +
+          Vector3.dot(Vector3.subtract(hit, drag.startHit), drag.axisDir) / (drag.startAlong ?? 1)
+        : Vector3.dot(Vector3.subtract(hit, drag.center), drag.axisDir) / (drag.startAlong ?? 1);
     const factor = Math.min(Math.max(raw, 0.01), 100);
     drag.factor = factor;
-    // Feedback: stretch the gizmo along the axis (the container is axis-oriented
-    // with +Y along the axis, so scale Y). Only the active axis' handle stretches.
-    const group = scaleGroupOf[drag.axis];
-    if (group !== undefined) Transform.getMutable(group).scale = Vector3.create(1, factor, 1);
+    // Feedback: stretch the handle(s) along their axis (each container is
+    // axis-oriented with +Y along the axis, so scale Y). Per-axis stretches only
+    // the active arm; uniform stretches all three plus the center cube.
+    const feedbackAxes: Axis[] = drag.axis === 'xyz' ? AXES : [drag.axis];
+    for (const axis of feedbackAxes) {
+      const group = scaleGroupOf[axis];
+      if (group !== undefined) Transform.getMutable(group).scale = Vector3.create(1, factor, 1);
+    }
+    if (drag.axis === 'xyz' && scaleCenterGroup !== null) {
+      Transform.getMutable(scaleCenterGroup).scale = Vector3.create(factor, factor, factor);
+    }
     return;
   }
 
   const worldDelta = Vector3.subtract(hit, drag.startHit);
-  const dir = axisVec(drag.axis);
+  const dir = drag.axisDir;
   const along = Vector3.dot(worldDelta, dir);
   const newPos = Vector3.add(drag.center, Vector3.scale(dir, along));
   dragPos = newPos;
@@ -770,7 +900,7 @@ function endDrag(): void {
   dragPos = null;
   if (d === null || selected === null) return;
 
-  if (d.mode === 'rotate') {
+  if (d.mode === 'rotate' && d.axis !== 'xyz') {
     const angle = d.angle ?? 0;
     // Reset the gizmo visual (the entity's real rotation updates via the commit,
     // flows back over the CRDT, and the inspector re-anchors the gizmo).
@@ -795,18 +925,23 @@ function endDrag(): void {
 
   if (d.mode === 'scale') {
     const factor = d.factor ?? 1;
-    // Reset the stretched handle visual (the entity's real scale updates via the
-    // commit → CRDT, and the inspector re-anchors the gizmo).
-    const group = scaleGroupOf[d.axis];
-    if (group !== undefined) Transform.getMutable(group).scale = Vector3.One();
+    // Reset the stretched handle visuals (the entity's real scale updates via
+    // the commit → CRDT, and the inspector re-anchors the gizmo).
+    for (const axis of AXES) {
+      const group = scaleGroupOf[axis];
+      if (group !== undefined) Transform.getMutable(group).scale = Vector3.One();
+    }
+    if (scaleCenterGroup !== null) Transform.getMutable(scaleCenterGroup).scale = Vector3.One();
     if (Math.abs(factor - 1) < 1e-3) return; // no-op drag
-    // Commit a per-axis scale MULTIPLIER (1 on the untouched axes); the inspector
-    // multiplies it onto the entity's current scale. Scale is dimensionless, so
-    // no scene-offset conversion.
+    // Commit a per-axis scale MULTIPLIER (1 on the untouched axes; the center
+    // cube multiplies all three — uniform); the inspector multiplies it onto
+    // the entity's current scale. Scale is dimensionless, so no scene-offset
+    // conversion — and it applies to LOCAL scale, which is why the handles are
+    // aligned to the entity's local axes.
     const mul = {
-      x: d.axis === 'x' ? factor : 1,
-      y: d.axis === 'y' ? factor : 1,
-      z: d.axis === 'z' ? factor : 1,
+      x: d.axis === 'x' || d.axis === 'xyz' ? factor : 1,
+      y: d.axis === 'y' || d.axis === 'xyz' ? factor : 1,
+      z: d.axis === 'z' || d.axis === 'xyz' ? factor : 1,
     };
     bus.postToPage({
       kind: 'gizmoCommit',
