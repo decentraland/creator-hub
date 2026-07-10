@@ -1,8 +1,23 @@
 import type { Entity } from '@dcl/ecs';
 
 import { EDITOR_BUS_CHANNEL } from '@dcl/inspector-bevy-protocol';
-import type { BusEnvelope, PageToScene } from '@dcl/inspector-bevy-protocol';
+import type { BusEnvelope, GizmoMode, PageToScene } from '@dcl/inspector-bevy-protocol';
+import { GizmoType } from '../../utils/gizmo';
 import type { BevySceneContext } from './BevySceneContext';
+
+/** Map the ECS Selection gizmo enum → the wire's gizmo mode string. */
+function toGizmoMode(gizmo: GizmoType | undefined): GizmoMode {
+  switch (gizmo) {
+    case GizmoType.POSITION:
+      return 'translate';
+    case GizmoType.ROTATION:
+      return 'rotate';
+    case GizmoType.SCALE:
+      return 'scale';
+    default:
+      return 'free';
+  }
+}
 
 /**
  * Forward the inspector's current selection to the editor-agent scene over the
@@ -33,31 +48,39 @@ export function createSelectionBridge(options: SelectionBridgeOptions): () => vo
   const channel = options.channel ?? (new BroadcastChannel(EDITOR_BUS_CHANNEL) as Channel);
   const Selection = context.editorComponents.Selection;
 
-  let lastPosted: number | null | undefined;
+  let lastEntity: number | null | undefined;
+  let lastMode: GizmoMode | undefined;
 
   const post = () => {
     // Current selection = entities carrying the Selection component. Single-entity
-    // gizmo → take the first (or null when nothing is selected).
+    // gizmo → take the first (or null when nothing is selected). The selected
+    // entity also carries the active gizmo mode (Selection.gizmo).
     let entity: Entity | null = null;
-    for (const [e] of context.engine.getEntitiesWith(Selection)) {
+    let gizmo: GizmoType | undefined;
+    for (const [e, selection] of context.engine.getEntitiesWith(Selection)) {
       entity = e;
+      gizmo = selection.gizmo;
       break;
     }
     const value = entity === null ? null : (entity as number);
-    if (value === lastPosted) return; // only post on change
-    lastPosted = value;
+    const mode = toGizmoMode(gizmo);
+    // Re-post when either the entity OR the mode changes (the user can switch
+    // gizmo mode on the same selection via the Gizmos toolbar).
+    if (value === lastEntity && mode === lastMode) return;
+    lastEntity = value;
+    lastMode = mode;
     // Send the entity's world position too: the agent scene can't read the
     // inspected scene's Transform from its own engine, so the inspector (which
     // owns the CRDT) supplies where to place the gizmo.
     const wp =
       entity === null ? null : (context.getEntityWorldPositions([entity]).get(entity) ?? null);
     const position = wp === null ? null : { x: wp.x, y: wp.y, z: wp.z };
-    const msg: PageToScene = { kind: 'set-selection', entity: value, position };
+    const msg: PageToScene = { kind: 'set-selection', entity: value, position, mode };
     const envelope: BusEnvelope = { to: 'scene', msg };
     channel.postMessage(envelope);
   };
 
-  // Post whenever a Selection component is added/removed.
+  // Post whenever a Selection component changes (added/removed OR gizmo mode edit).
   const off = context.onChange((_entity, _op, component) => {
     if (component && component.componentId === Selection.componentId) post();
   });
