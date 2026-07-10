@@ -30,7 +30,6 @@ import {
 } from '../../hooks/useHotkey';
 import { Gizmos } from './Gizmos';
 import { Preferences } from './Preferences';
-import { RendererPicker } from './RendererPicker';
 import { ToolbarButton } from './ToolbarButton';
 
 import './Toolbar.css';
@@ -98,7 +97,6 @@ const Toolbar = withSdk(({ sdk }) => {
       </ToolbarButton>
       <Gizmos />
       <Preferences />
-      <RendererPicker />
       <ToolbarButton
         className="babylonjs-inspector"
         onClick={handleInspector}

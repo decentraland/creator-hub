@@ -311,6 +311,13 @@ export function EditorPage() {
   // query params
   const params = new URLSearchParams();
 
+  // Always tell the inspector which renderer to use, so IT doesn't offer an
+  // independent (un-plumbed) choice via its own toolbar picker — the host owns
+  // renderer selection and supplies each renderer's config. Without this, picking
+  // Bevy inside the inspector mounts the engine with no realm and boots the wrong
+  // (default) world.
+  params.append('renderer', useBevy ? RENDERER.BEVY : RENDERER.BABYLON);
+
   if (useBevy && bevyRealm) {
     // Bevy editor: the inspector shares the realm's data-layer WS so entity ids
     // align with the engine (forward edits land on the right entities), and the
@@ -318,7 +325,6 @@ export function EditorPage() {
     // over `dataLayerRpcParentUrl` in the inspector, so we set the WS instead of
     // the parent-window data-layer here.
     params.append('dataLayerRpcWsUrl', bevyRealm.wsUrl);
-    params.append('renderer', RENDERER.BEVY);
     params.append('bevyRealm', bevyRealm.url);
     if (project) {
       // The engine loads the scene at its real parcel; the base coord is bevyPosition.
@@ -467,6 +473,13 @@ export function EditorPage() {
             className="inspector"
             src={iframeUrl}
             onLoad={handleIframeRef}
+            // Grant cross-origin isolation to the inspector iframe so the Bevy
+            // engine (nested one level deeper) can use SharedArrayBuffer. The
+            // renderer document + inspector server carry COOP/COEP, but a
+            // cross-origin child frame only becomes crossOriginIsolated when the
+            // embedder explicitly delegates it via this Permissions-Policy. Inert
+            // for the Babylon renderer.
+            allow="cross-origin-isolated"
           ></iframe>
           <DeployModal
             type={modalState.type}
