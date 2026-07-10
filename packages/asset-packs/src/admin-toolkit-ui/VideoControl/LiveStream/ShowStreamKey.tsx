@@ -8,7 +8,8 @@ import { getStreamKey } from '../api';
 import { createVideoPlayerControls } from '../utils';
 import { COLORS, RADIUS, SPACING, TYPE } from '../../theme';
 import { FieldLabel, Icon, Divider } from '../../Primitives';
-import { CopyButton, Slider, ActionLink, PillButton } from '../../Controls';
+import { CopyButton, ActionLink, PillButton } from '../../Controls';
+import { VolumeSlider } from '../VolumeSlider';
 import { state } from '../../store';
 import { setStream } from '../../actions';
 import { STREAMING_SUPPORT_URL } from '.';
@@ -64,7 +65,6 @@ export function ShowStreamKey({
   const controls = createVideoPlayerControls(entity, engine);
   const [showStreamkey, setShowStreamkey] = ReactEcs.useState(false);
   const [streamKey, setStreamKey] = ReactEcs.useState<string | undefined>(undefined);
-  const volume = video?.volume ?? 1;
   const isLive = video?.src === LIVEKIT_STREAM_SRC && state.videoControl.selectedStream === 'live';
 
   ReactEcs.useEffect(() => {
@@ -111,7 +111,6 @@ export function ShowStreamKey({
 
   return (
     <UiEntity uiTransform={{ flexDirection: 'column', width: '100%' }}>
-      {/* RTMP server */}
       <UiEntity uiTransform={{ flexDirection: 'column', width: '100%' }}>
         <FieldLabel text="RTMP server" />
         <UiEntity uiTransform={{ flexDirection: 'row', alignItems: 'center', width: '100%' }}>
@@ -123,7 +122,6 @@ export function ShowStreamKey({
         </UiEntity>
       </UiEntity>
 
-      {/* Stream key */}
       <UiEntity
         uiTransform={{ flexDirection: 'column', width: '100%', margin: { top: SPACING.xl } }}
       >
@@ -150,9 +148,19 @@ export function ShowStreamKey({
             onCopy={copyKey}
           />
         </UiEntity>
+        <UiEntity
+          uiTransform={{ width: '100%', margin: { top: SPACING.sm } }}
+          uiText={{
+            value:
+              'Do not share your stream key with anyone, and be careful not to display it on screen while streaming.',
+            fontSize: TYPE.label,
+            color: COLORS.danger,
+            textAlign: 'top-left',
+            textWrap: 'wrap',
+          }}
+        />
       </UiEntity>
 
-      {/* Expiry + activate */}
       <UiEntity
         uiTransform={{
           flexDirection: 'row',
@@ -195,34 +203,12 @@ export function ShowStreamKey({
         />
       </UiEntity>
 
-      {/* Volume */}
-      <UiEntity
-        uiTransform={{ flexDirection: 'column', width: '100%', margin: { top: SPACING.xl } }}
-      >
-        <FieldLabel text="Volume" />
-        <UiEntity uiTransform={{ flexDirection: 'row', alignItems: 'center', width: '100%' }}>
-          <Icon
-            name="volume"
-            size={18}
-            color={COLORS.textSecondary}
-            uiTransform={{ margin: { right: SPACING.lg } }}
-          />
-          <Slider
-            value={volume}
-            onSet={v => controls.setVolumeExact(v)}
-          />
-          <UiEntity
-            uiTransform={{ margin: { left: SPACING.lg } }}
-            uiText={{
-              value: `${Math.round(volume * 100)}%`,
-              fontSize: TYPE.body,
-              color: COLORS.textPrimary,
-            }}
-          />
-        </UiEntity>
-      </UiEntity>
+      <VolumeSlider
+        engine={engine}
+        entity={entity}
+        video={video}
+      />
 
-      {/* Bottom row */}
       <Divider uiTransform={{ margin: { top: SPACING.xl } }} />
       <UiEntity
         uiTransform={{

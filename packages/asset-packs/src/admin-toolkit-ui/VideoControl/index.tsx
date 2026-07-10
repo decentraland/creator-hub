@@ -1,6 +1,5 @@
 import { type IEngine } from '@dcl/ecs';
 import ReactEcs, { UiEntity, Dropdown } from '@dcl/react-ecs';
-import { getContentUrl } from '../constants';
 import { type State } from '../types';
 import type { AdminTools } from '../../definitions';
 import { COLORS, RADIUS, SPACING, TYPE } from '../theme';
@@ -12,47 +11,6 @@ import { VideoControlURL } from './VideoUrl';
 import { LiveStream } from './LiveStream';
 import DclCast from './DclCast';
 
-// Legacy icon getters kept for sub-components that still reference them.
-export const ICONS = {
-  get VIDEO_CONTROL() {
-    return `${getContentUrl()}/admin_toolkit/assets/icons/video-control.png`;
-  },
-  get PREVIOUS_BUTTON() {
-    return `${getContentUrl()}/admin_toolkit/assets/icons/video-control-previous-button.png`;
-  },
-  get FORWARD_BUTTON() {
-    return `${getContentUrl()}/admin_toolkit/assets/icons/video-control-forward-button.png`;
-  },
-  get PLAY_BUTTON() {
-    return `${getContentUrl()}/admin_toolkit/assets/icons/video-control-play-button.png`;
-  },
-  get MUTE() {
-    return `${getContentUrl()}/admin_toolkit/assets/icons/video-control-mute.png`;
-  },
-  get LOOP() {
-    return `${getContentUrl()}/admin_toolkit/assets/icons/video-control-loop.png`;
-  },
-  get VOLUME_MINUS_BUTTON() {
-    return `${getContentUrl()}/admin_toolkit/assets/icons/video-control-volume-minus-button.png`;
-  },
-  get VOLUME_PLUS_BUTTON() {
-    return `${getContentUrl()}/admin_toolkit/assets/icons/video-control-volume-plus-button.png`;
-  },
-  get VIDEO_SOURCE() {
-    return `${getContentUrl()}/admin_toolkit/assets/icons/video-control-video-icon.png`;
-  },
-  get LIVE_SOURCE() {
-    return `${getContentUrl()}/admin_toolkit/assets/icons/video-control-live.png`;
-  },
-  get DCL_CAST_SOURCE() {
-    return `${getContentUrl()}/admin_toolkit/assets/icons/video-control-dcl-cast.png`;
-  },
-  get INFO() {
-    return `${getContentUrl()}/admin_toolkit/assets/icons/info.png`;
-  },
-};
-
-export const VOLUME_STEP = 0.1;
 export const DEFAULT_VOLUME = 1;
 
 type MediaSource = 'video-url' | 'dcl-cast' | 'live';

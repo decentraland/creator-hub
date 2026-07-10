@@ -8,10 +8,11 @@ import type { State } from '../../types';
 import { LIVEKIT_STREAM_SRC } from '../LiveStream';
 import { createVideoPlayerControls, isDclCast } from '../utils';
 import { COLORS, RADIUS, SPACING, TYPE } from '../../theme';
-import { FieldLabel, Surface, Divider, Icon } from '../../Primitives';
-import { CopyRow, Slider, ActionLink } from '../../Controls';
+import { Surface, Divider } from '../../Primitives';
+import { CopyRow, ActionLink } from '../../Controls';
 import { icon } from '../../icons';
 import { setStream, dismissPresentation } from '../../actions';
+import { VolumeSlider } from '../VolumeSlider';
 import PresentationPanel from './PresentationPanel';
 
 // Speakers showcase button — shown whenever the cast room is active, both while
@@ -61,11 +62,9 @@ const DclCastInfo = ({
 }) => {
   const controls = createVideoPlayerControls(entity, engine);
   const active = !!(video?.src && isDclCast(video.src));
-  const volume = video?.volume ?? 1;
 
   return (
     <UiEntity uiTransform={{ flexDirection: 'column', width: '100%' }}>
-      {/* Access links */}
       <Surface>
         <CopyRow
           id="dcl_cast_copy_stream_link"
@@ -95,35 +94,13 @@ const DclCastInfo = ({
         />
       </Surface>
 
-      {/* Volume */}
-      <UiEntity
-        uiTransform={{ flexDirection: 'column', width: '100%', margin: { top: SPACING.xl } }}
-      >
-        <FieldLabel text="Volume" />
-        <UiEntity uiTransform={{ flexDirection: 'row', alignItems: 'center', width: '100%' }}>
-          <Icon
-            name="volume"
-            size={18}
-            color={COLORS.textSecondary}
-            uiTransform={{ margin: { right: SPACING.lg } }}
-          />
-          <Slider
-            value={volume}
-            onSet={v => controls.setVolumeExact(v)}
-          />
-          <Label
-            value={`${Math.round(volume * 100)}%`}
-            fontSize={TYPE.body}
-            color={COLORS.textPrimary}
-            uiTransform={{ margin: { left: SPACING.lg } }}
-          />
-        </UiEntity>
-      </UiEntity>
+      <VolumeSlider
+        engine={engine}
+        entity={entity}
+        video={video}
+      />
 
-      {/* Primary actions — presentation controls while presenting, otherwise the
-          Share presentation button. The Speakers button stays available whenever
-          the cast room is active (beside Share when idle, below the panel while
-          presenting). */}
+      {/* Speakers stays available whether presenting or idle. */}
       <UiEntity
         uiTransform={{ flexDirection: 'column', width: '100%', margin: { top: SPACING.xl } }}
       >
@@ -173,7 +150,6 @@ const DclCastInfo = ({
         )}
       </UiEntity>
 
-      {/* Bottom row: activate/deactivate + reset */}
       <UiEntity
         uiTransform={{ flexDirection: 'column', width: '100%', margin: { top: SPACING.xl } }}
       >

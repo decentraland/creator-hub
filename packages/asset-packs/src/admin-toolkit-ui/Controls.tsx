@@ -228,11 +228,11 @@ export function ActionLink({
 }
 
 // Volume-style slider. react-ecs has no drag, so the track is split into
-// `steps` invisible cells — clicking a cell sets the value to that stop.
+// `steps` clickable cells spanning the full 0..1 range (leftmost cell mutes).
 export function Slider({
   value,
   onSet,
-  steps = 10,
+  steps = 11,
 }: {
   value: number;
   onSet: (value: number) => void;
@@ -249,12 +249,10 @@ export function Slider({
         justifyContent: 'center',
       }}
     >
-      {/* Track */}
       <UiEntity
         uiTransform={{ width: '100%', height: 4, borderRadius: 2 }}
         uiBackground={{ color: COLORS.surfaceHover }}
       >
-        {/* Fill + knob */}
         <UiEntity
           uiTransform={{
             positionType: 'absolute',
@@ -276,7 +274,6 @@ export function Slider({
           />
         </UiEntity>
       </UiEntity>
-      {/* Clickable cells overlay (tap-to-set) */}
       <UiEntity
         uiTransform={{
           positionType: 'absolute',
@@ -293,7 +290,7 @@ export function Slider({
             // A background (even transparent) is required for the element to be
             // hit-tested; without it the onMouseDown never fires.
             uiBackground={{ color: COLORS.transparent }}
-            onMouseDown={() => onSet((i + 1) / steps)}
+            onMouseDown={() => onSet(i / (steps - 1))}
           />
         ))}
       </UiEntity>

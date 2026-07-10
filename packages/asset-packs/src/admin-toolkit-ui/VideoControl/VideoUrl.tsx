@@ -4,7 +4,8 @@ import { openExternalUrl } from '~system/RestrictedActions';
 import { LIVEKIT_STREAM_SRC } from '../../definitions';
 import { COLORS, RADIUS, SPACING, TYPE } from '../theme';
 import { SectionHeader, FieldLabel, Icon } from '../Primitives';
-import { PillButton, Slider } from '../Controls';
+import { PillButton } from '../Controls';
+import { VolumeSlider } from './VolumeSlider';
 import { createVideoPlayerControls, isVideoUrl } from './utils';
 
 const VIDEO_PLAYER_HELP_URL =
@@ -26,7 +27,6 @@ export function VideoControlURL({
   }, [entity]);
   const controls = createVideoPlayerControls(entity, engine);
   const isActive = !!(video && isVideoUrl(video.src));
-  const volume = video?.volume ?? 1;
   const changed = !!(video?.src && videoURL !== video.src && video.src !== LIVEKIT_STREAM_SRC);
   const primaryLabel = isActive && !changed ? 'Deactivate' : changed ? 'Update' : 'Activate';
 
@@ -59,7 +59,6 @@ export function VideoControlURL({
         }}
       />
 
-      {/* URL input + activate */}
       <UiEntity uiTransform={{ flexDirection: 'row', alignItems: 'center', width: '100%' }}>
         <Input
           onChange={setVideoURL}
@@ -91,7 +90,6 @@ export function VideoControlURL({
         />
       </UiEntity>
 
-      {/* Playback */}
       <UiEntity
         uiTransform={{ flexDirection: 'column', width: '100%', margin: { top: SPACING.xl } }}
       >
@@ -161,32 +159,11 @@ export function VideoControlURL({
         </UiEntity>
       </UiEntity>
 
-      {/* Volume */}
-      <UiEntity
-        uiTransform={{ flexDirection: 'column', width: '100%', margin: { top: SPACING.xl } }}
-      >
-        <FieldLabel text="Volume" />
-        <UiEntity uiTransform={{ flexDirection: 'row', alignItems: 'center', width: '100%' }}>
-          <Icon
-            name="volume"
-            size={18}
-            color={COLORS.textSecondary}
-            uiTransform={{ margin: { right: SPACING.lg } }}
-          />
-          <Slider
-            value={volume}
-            onSet={v => controls.setVolumeExact(v)}
-          />
-          <UiEntity
-            uiTransform={{ margin: { left: SPACING.lg } }}
-            uiText={{
-              value: `${Math.round(volume * 100)}%`,
-              fontSize: TYPE.body,
-              color: COLORS.textPrimary,
-            }}
-          />
-        </UiEntity>
-      </UiEntity>
+      <VolumeSlider
+        engine={engine}
+        entity={entity}
+        video={video}
+      />
     </UiEntity>
   );
 }

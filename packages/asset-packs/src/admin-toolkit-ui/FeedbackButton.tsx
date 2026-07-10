@@ -38,18 +38,14 @@ export const FeedbackButton = (props: FeedbackButtonProps) => {
   const timeoutAction = `${FEEDBACK_TIMEOUT_ACTION_PREFIX}${id}`;
 
   const handleClick = () => {
-    // Stop any existing timeout
     stopTimeout(state.adminToolkitUiEntity, timeoutAction);
 
-    // Show feedback
     setShowFeedback(true);
 
-    // Start timeout to hide feedback
     startTimeout(state.adminToolkitUiEntity, timeoutAction, feedbackDurationSeconds, () => {
       setShowFeedback(false);
     });
 
-    // Call original onMouseDown handler
     if (onMouseDown) onMouseDown();
   };
 

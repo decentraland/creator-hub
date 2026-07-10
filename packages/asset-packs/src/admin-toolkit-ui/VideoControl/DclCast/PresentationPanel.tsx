@@ -42,7 +42,6 @@ const PresentationPanel = ({
 
   return (
     <UiEntity uiTransform={{ flexDirection: 'column', width: '100%' }}>
-      {/* Status row */}
       <UiEntity
         uiTransform={{
           width: '100%',
@@ -72,7 +71,6 @@ const PresentationPanel = ({
         />
       </UiEntity>
 
-      {/* Controls */}
       <UiEntity uiTransform={{ flexDirection: 'row', alignItems: 'center', width: '100%' }}>
         <Button
           id={`${idPrefix}_prev`}

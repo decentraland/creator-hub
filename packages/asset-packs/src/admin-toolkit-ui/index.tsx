@@ -142,7 +142,6 @@ function initTextAnnouncementSync(engine: IEngine) {
   });
 }
 
-// Initialize admin data before UI rendering
 let adminDataInitialized = false;
 export async function initializeAdminData(
   engine: IEngine,
@@ -152,14 +151,9 @@ export async function initializeAdminData(
   if (!adminDataInitialized) {
     const { VideoControlState } = getComponents(engine);
 
-    // Initialize AdminToolkitUiEntity
     setAdminToolkitUiEntity(getAdminToolkitEntity(engine) ?? engine.addEntity());
 
-    // Initialize TextAnnouncements sync component
     initTextAnnouncementSync(engine);
-
-    // // Initialize Rewards sync
-    // initRewardsSync(engine, sdkHelpers)
 
     if (!VideoControlState.getOrNull(state.adminToolkitUiEntity)) {
       VideoControlState.create(state.adminToolkitUiEntity);
@@ -171,10 +165,8 @@ export async function initializeAdminData(
       ADMIN_TOOLS_ENTITY,
     );
 
-    // Initialize scene data
     await Promise.all([fetchSceneAdmins(), fetchSceneBans()]);
 
-    // Initialize admin message bus with sender validation
     initAdminMessageBus(
       engine,
       sceneAdminsCache,
@@ -196,7 +188,6 @@ export function createAdminToolkitUI(
   sdkHelpers?: ISDKHelpers,
   playersHelper?: IPlayersHelper,
 ) {
-  // Initialize admin data before setting up the UI
   initializeAdminData(engine, sdkHelpers, playersHelper).then(() => {
     console.log('createAdminToolkitUI - initialized');
     reactBasedUiSystem.setUiRenderer(
@@ -283,7 +274,6 @@ const uiComponent = (
             }}
             uiBackground={{ color: COLORS.panel }}
           >
-            {/* Header: title + icon tabs */}
             <UiEntity
               uiTransform={{
                 width: '100%',
