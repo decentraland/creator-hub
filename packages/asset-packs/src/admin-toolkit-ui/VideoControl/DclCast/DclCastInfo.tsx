@@ -14,6 +14,34 @@ import { icon } from '../../icons';
 import { setStream, dismissPresentation } from '../../actions';
 import PresentationPanel from './PresentationPanel';
 
+// Speakers showcase button — shown whenever the cast room is active, both while
+// presenting and idle. flexGrow lets it sit beside "Share presentation" (half
+// width) or stand alone (full width).
+function SpeakersButton({ onShowShowcaseModal }: { onShowShowcaseModal: () => Promise<void> }) {
+  return (
+    <Button
+      id="dcl_cast_showcase_list"
+      value="<b>Speakers</b>"
+      variant="secondary"
+      fontSize={TYPE.body}
+      color={COLORS.textTertiary}
+      icon={icon('star')}
+      iconTransform={{ width: 16, height: 16, margin: { right: SPACING.sm } }}
+      iconBackground={{ color: COLORS.textTertiary }}
+      uiTransform={{
+        flexGrow: 1,
+        flexBasis: 0,
+        minWidth: 0,
+        height: 40,
+        borderRadius: RADIUS.md,
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}
+      onMouseDown={onShowShowcaseModal}
+    />
+  );
+}
+
 const DclCastInfo = ({
   state,
   engine,
@@ -92,17 +120,26 @@ const DclCastInfo = ({
         </UiEntity>
       </UiEntity>
 
-      {/* Primary actions — presentation controls while presenting, otherwise
-          the Share presentation / Speakers row. */}
+      {/* Primary actions — presentation controls while presenting, otherwise the
+          Share presentation button. The Speakers button stays available whenever
+          the cast room is active (beside Share when idle, below the panel while
+          presenting). */}
       <UiEntity
         uiTransform={{ flexDirection: 'column', width: '100%', margin: { top: SPACING.xl } }}
       >
         {state.videoControl.presentationState ? (
-          <PresentationPanel
-            presentationState={state.videoControl.presentationState}
-            idPrefix="dcl_cast"
-            onStopSharing={() => dismissPresentation()}
-          />
+          <UiEntity uiTransform={{ flexDirection: 'column', width: '100%' }}>
+            <PresentationPanel
+              presentationState={state.videoControl.presentationState}
+              idPrefix="dcl_cast"
+              onStopSharing={() => dismissPresentation()}
+            />
+            <UiEntity
+              uiTransform={{ flexDirection: 'row', width: '100%', margin: { top: SPACING.md } }}
+            >
+              <SpeakersButton onShowShowcaseModal={onShowShowcaseModal} />
+            </UiEntity>
+          </UiEntity>
         ) : (
           <UiEntity
             uiTransform={{
@@ -131,26 +168,7 @@ const DclCastInfo = ({
               }}
               onMouseDown={onSharePresentation}
             />
-            <Button
-              id="dcl_cast_showcase_list"
-              value="<b>Speakers</b>"
-              variant="secondary"
-              fontSize={TYPE.body}
-              color={COLORS.textTertiary}
-              icon={icon('star')}
-              iconTransform={{ width: 16, height: 16, margin: { right: SPACING.sm } }}
-              iconBackground={{ color: COLORS.textTertiary }}
-              uiTransform={{
-                flexGrow: 1,
-                flexBasis: 0,
-                minWidth: 0,
-                height: 40,
-                borderRadius: RADIUS.md,
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-              onMouseDown={onShowShowcaseModal}
-            />
+            <SpeakersButton onShowShowcaseModal={onShowShowcaseModal} />
           </UiEntity>
         )}
       </UiEntity>

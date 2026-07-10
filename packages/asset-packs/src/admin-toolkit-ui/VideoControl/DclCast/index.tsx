@@ -27,7 +27,6 @@ import {
 import { COLORS, SPACING, TYPE } from '../../theme';
 import { SectionHeader, Icon } from '../../Primitives';
 import DclCastInfo from './DclCastInfo';
-import CompactDclCast from './CompactDclCast';
 import { getDclCastStyles, getDclCastColors } from './styles';
 
 async function handleGetDclCastInfo() {
@@ -133,25 +132,10 @@ const DclCast = ({
     }
   }, [videoSrc]);
 
-  const isMinimized = state.videoControl.isMinimized;
-
   return (
     <UiEntity uiTransform={styles.fullContainer}>
-      {/* Compact bar — always rendered, toggled via display */}
-      <UiEntity uiTransform={{ display: isMinimized ? 'flex' : 'none', width: '100%' }}>
-        <CompactDclCast
-          engine={engine}
-          state={state}
-          entity={entity}
-          video={video}
-          onShowShowcaseModal={onShowShowcaseModal}
-        />
-      </UiEntity>
-
-      {/* Full panel — always rendered, toggled via display */}
       <UiEntity
         uiTransform={{
-          display: isMinimized ? 'none' : 'flex',
           flexDirection: 'column',
           width: '100%',
         }}

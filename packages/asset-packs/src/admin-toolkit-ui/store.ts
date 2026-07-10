@@ -18,7 +18,6 @@ export const state: State = {
     selectedStream: undefined,
     selectedTab: undefined,
     dclCast: undefined,
-    isMinimized: false,
     presentationState: undefined,
     participants: [],
     showcase: {

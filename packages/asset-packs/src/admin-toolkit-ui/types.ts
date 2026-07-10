@@ -35,7 +35,6 @@ export type State = {
     selectedStream: 'live' | 'dcl-cast' | undefined;
     selectedTab: 'video-url' | 'live' | 'dcl-cast' | undefined;
     dclCast: DclCastResponse | undefined;
-    isMinimized: boolean;
     presentationState: PresentationState | undefined;
     participants: Participant[];
     showcase: {
