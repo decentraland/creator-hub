@@ -36,6 +36,26 @@ export interface ReverseChannelTarget {
  * operations — the inspector owning every scene edit. Any renderer reuses this
  * exact handler by emitting the same events against its own scene engine.
  */
+// A multiplicative scale gizmo can never recover a zero scale (0 × factor = 0),
+// and a drag can otherwise produce one (a tiny factor, or the snap step rounding
+// a small result to 0). Like Babylon's ScaleGizmo `minScaleValue`, keep both the
+// base and the merged result at least MIN_SCALE in magnitude, preserving sign
+// (0 counts as positive).
+const MIN_SCALE = 0.01;
+
+function clampScaleComponent(value: number): number {
+  if (Math.abs(value) >= MIN_SCALE) return value;
+  return value < 0 ? -MIN_SCALE : MIN_SCALE;
+}
+
+function clampScale(scale: { x: number; y: number; z: number }) {
+  return {
+    x: clampScaleComponent(scale.x),
+    y: clampScaleComponent(scale.y),
+    z: clampScaleComponent(scale.z),
+  };
+}
+
 export function connectReverseChannel(context: ReverseChannelTarget): () => void {
   const { engine, operations, editorComponents } = context;
 
@@ -108,7 +128,12 @@ export function connectReverseChannel(context: ReverseChannelTarget): () => void
       const rotation = t.rotation
         ? snapRotationValue(Quaternion.multiply(t.rotation, current.rotation))
         : undefined;
-      const scale = t.scale ? snapScaleValue(Vector3.multiply(current.scale, t.scale)) : undefined;
+      // Scale: clamp the base away from 0 first (so a zeroed entity is
+      // recoverable), multiply, snap, then clamp again (snapping can round a
+      // small result back to 0).
+      const scale = t.scale
+        ? clampScale(snapScaleValue(Vector3.multiply(clampScale(current.scale), t.scale)))
+        : undefined;
       operations.updateValue(context.Transform, t.entity, {
         ...current,
         ...(position ? { position } : {}),

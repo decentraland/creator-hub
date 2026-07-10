@@ -196,6 +196,42 @@ describe('connectReverseChannel', () => {
       const written = (operations.updateValue as ReturnType<typeof vi.fn>).mock.calls[0][2];
       expect(written.scale).toEqual(Vector3.multiply(transformValue.scale, factor));
     });
+
+    it('should clamp a committed scale away from zero', () => {
+      transformValue = {
+        position: { x: 0, y: 0, z: 0 },
+        rotation: Quaternion.Identity(),
+        scale: { x: 1, y: 1, z: 1 },
+      };
+
+      events.emit('gizmoCommit', {
+        transforms: [{ entity: 7 as never, scale: { x: 0.001, y: 1, z: 1 } as never }],
+      });
+
+      const written = (operations.updateValue as ReturnType<typeof vi.fn>).mock.calls[0][2];
+      expect(written.scale.x).toBeCloseTo(0.01, 10);
+      expect(written.scale.y).toBeCloseTo(1, 10);
+      expect(written.scale.z).toBeCloseTo(1, 10);
+    });
+
+    it('should recover an entity whose scale is already zero', () => {
+      // 0 × factor = 0 forever — the base is clamped to the minimum first, so an
+      // outward drag stretches the entity back into shape.
+      transformValue = {
+        position: { x: 0, y: 0, z: 0 },
+        rotation: Quaternion.Identity(),
+        scale: { x: 0, y: 0, z: 0 },
+      };
+
+      events.emit('gizmoCommit', {
+        transforms: [{ entity: 7 as never, scale: { x: 50, y: 50, z: 50 } as never }],
+      });
+
+      const written = (operations.updateValue as ReturnType<typeof vi.fn>).mock.calls[0][2];
+      expect(written.scale.x).toBeCloseTo(0.5, 10);
+      expect(written.scale.y).toBeCloseTo(0.5, 10);
+      expect(written.scale.z).toBeCloseTo(0.5, 10);
+    });
   });
 
   describe('when snapping is enabled', () => {
@@ -254,6 +290,24 @@ describe('connectReverseChannel', () => {
       expect(written.scale.x).toBeCloseTo(1.1, 10);
       expect(written.scale.y).toBeCloseTo(1, 10);
       expect(written.scale.z).toBeCloseTo(1, 10);
+    });
+
+    it('should clamp a snapped-to-zero scale away from zero', () => {
+      // 1 × 0.01 = 0.01, which the 0.1 snap step rounds to 0 — the final clamp
+      // must keep it recoverable.
+      transformValue = {
+        position: { x: 0, y: 0, z: 0 },
+        rotation: Quaternion.Identity(),
+        scale: { x: 1, y: 1, z: 1 },
+      };
+
+      events.emit('gizmoCommit', {
+        transforms: [{ entity: 7 as never, scale: { x: 0.01, y: 1, z: 1 } as never }],
+      });
+
+      const written = (operations.updateValue as ReturnType<typeof vi.fn>).mock.calls[0][2];
+      expect(written.scale.x).toBeCloseTo(0.01, 10);
+      expect(written.scale.y).toBeCloseTo(1, 10);
     });
   });
 

@@ -268,18 +268,26 @@ export function setSelectedEntity(
   snap = snapValues;
   gizmoMode = mode;
   // Show handles for translate / rotate / scale; `free` shows none.
-  const supported = mode === 'translate' || mode === 'rotate' || mode === 'scale';
-  if (selected === null || selectedPos === null || !supported) {
+  if (selected === null || selectedPos === null || !isSupportedMode(mode)) {
     hideGizmo();
   } else {
     setModeVisibility();
   }
 }
 
+/** Modes that draw handles (`free` draws none — the gizmo stays hidden). */
+function isSupportedMode(mode: GizmoMode): boolean {
+  return mode === 'translate' || mode === 'rotate' || mode === 'scale';
+}
+
 export function setupGizmo(): void {
   picker = engine.addEntity();
   Transform.create(picker);
   buildGizmo();
+  // Initialize per-mode handle visibility: buildGizmo creates EVERY handle group
+  // visible (scale One), so without this the first anchored frame would show all
+  // three gizmos overlapping until a mode change toggles the groups.
+  setModeVisibility();
   setupGizmoCamera();
   hideGizmo();
   engine.addSystem(gizmoSystem);
@@ -793,8 +801,10 @@ function gizmoSystemInner(): void {
   }
 
   // Position + scale the gizmo on the selected entity each frame (the inspector
-  // supplied selectedPos; during a drag we update it locally below).
-  if (selected !== null && selectedPos !== null && drag === null) {
+  // supplied selectedPos; during a drag we update it locally below). Only for
+  // modes that draw handles: re-anchoring in `free` mode would undo hideGizmo's
+  // park and show whatever groups happen to be visible.
+  if (selected !== null && selectedPos !== null && drag === null && isSupportedMode(gizmoMode)) {
     const t = Transform.getMutable(gizmoRoot);
     t.position = { ...selectedPos };
     // Orient the handles to the entity's rotation when locally aligned (scale
