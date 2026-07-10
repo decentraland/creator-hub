@@ -65,3 +65,46 @@ describe('BevyRenderer engine attach', () => {
     expect(renderer.engineWindow).toBe(null);
   });
 });
+
+describe('BevyRenderer editor camera', () => {
+  let renderer: BevyRenderer;
+
+  beforeEach(() => {
+    renderer = new BevyRenderer();
+  });
+
+  afterEach(() => {
+    renderer.dispose();
+  });
+
+  it('should default to avatar mode', () => {
+    expect(renderer.editorCamera.getMode()).toBe('avatar');
+  });
+
+  it('should post the mode to the agent and notify subscribers on change', () => {
+    const posted: string[] = [];
+    renderer.setCameraModePoster(mode => posted.push(mode));
+    const seen: string[] = [];
+    renderer.editorCamera.onModeChange(mode => seen.push(mode));
+
+    renderer.editorCamera.setMode('free');
+    expect(renderer.editorCamera.getMode()).toBe('free');
+    expect(posted).toEqual(['free']);
+    expect(seen).toEqual(['free']);
+  });
+
+  it('should ignore a no-op set to the current mode', () => {
+    const posted: string[] = [];
+    renderer.setCameraModePoster(mode => posted.push(mode));
+    renderer.editorCamera.setMode('avatar'); // already avatar
+    expect(posted).toEqual([]);
+  });
+
+  it('should stop notifying after unsubscribe', () => {
+    const seen: string[] = [];
+    const off = renderer.editorCamera.onModeChange(mode => seen.push(mode));
+    off();
+    renderer.editorCamera.setMode('free');
+    expect(seen).toEqual([]);
+  });
+});

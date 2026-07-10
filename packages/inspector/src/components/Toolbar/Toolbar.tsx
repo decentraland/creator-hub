@@ -1,5 +1,5 @@
-import { useCallback } from 'react';
-import { BiUndo, BiRedo, BiSave, BiBadgeCheck } from 'react-icons/bi';
+import { useCallback, useEffect, useState } from 'react';
+import { BiUndo, BiRedo, BiSave, BiBadgeCheck, BiVideo } from 'react-icons/bi';
 import { RiListSettingsLine } from 'react-icons/ri';
 import { FaPencilAlt } from 'react-icons/fa';
 import { AiOutlineInfoCircle as InfoIcon } from 'react-icons/ai';
@@ -24,10 +24,12 @@ import {
   REDO_ALT_2,
   SAVE,
   SAVE_ALT,
+  TOGGLE_FREE_CAMERA,
   UNDO,
   UNDO_ALT,
   useHotkey,
 } from '../../hooks/useHotkey';
+import type { EditorCameraMode } from '../../lib/renderer/types';
 import { Gizmos } from './Gizmos';
 import { Preferences } from './Preferences';
 import { ToolbarButton } from './ToolbarButton';
@@ -51,6 +53,25 @@ const Toolbar = withSdk(({ sdk }) => {
   const handleInspector = useCallback(() => {
     sdk.renderer.debug?.toggle();
   }, [sdk]);
+
+  // Editor camera toggle — only for renderers whose native camera isn't already a
+  // free editor camera (Bevy exposes `editorCamera`; Babylon omits it). Tracks the
+  // mode so the button reflects on/off, and stays in sync if the mode changes
+  // elsewhere.
+  const editorCamera = sdk.renderer.editorCamera;
+  const [cameraMode, setCameraMode] = useState<EditorCameraMode>(
+    editorCamera?.getMode() ?? 'avatar',
+  );
+  useEffect(() => {
+    if (!editorCamera) return;
+    setCameraMode(editorCamera.getMode());
+    return editorCamera.onModeChange(setCameraMode);
+  }, [editorCamera]);
+  const handleToggleFreeCamera = useCallback(() => {
+    if (!editorCamera) return;
+    editorCamera.setMode(editorCamera.getMode() === 'free' ? 'avatar' : 'free');
+  }, [editorCamera]);
+  useHotkey([TOGGLE_FREE_CAMERA], handleToggleFreeCamera);
 
   const handleSaveClick = useCallback(() => dispatch(save()), []);
   const handleUndo = useCallback(() => dispatch(undo()), []);
@@ -96,6 +117,15 @@ const Toolbar = withSdk(({ sdk }) => {
         <BiRedo />
       </ToolbarButton>
       <Gizmos />
+      {editorCamera && (
+        <ToolbarButton
+          className={cx('free-camera', { active: cameraMode === 'free' })}
+          onClick={handleToggleFreeCamera}
+          title="Free camera (`)"
+        >
+          <BiVideo />
+        </ToolbarButton>
+      )}
       <Preferences />
       <ToolbarButton
         className="babylonjs-inspector"
