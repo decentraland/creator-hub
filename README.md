@@ -139,9 +139,9 @@ Notes for reviewers:
 
 - Switching back to **Babylon** in the same setting restores the default renderer.
 - Bevy is wired end to end: the scene renders, inspector edits forward into the
-  engine, viewport pick + a translate gizmo work, and drag-dropped assets place
-  under the cursor. Known gaps (expected, not bugs — Bevy feature parity is
-  in progress): rotate/scale gizmo modes, camera controls / zoom / focus (Bevy
+  engine, viewport pick works, the translate / rotate / scale gizmos work, and
+  drag-dropped assets place under the cursor. Known gaps (expected, not bugs —
+  Bevy feature parity is in progress): camera controls / zoom / focus (Bevy
   drives its own camera), the scene-metrics panel and minimap, animator clip
   dropdowns, and 3D spawn-point handles. Pick may select a model's collider
   rather than its visible mesh on scenes that split the two.
