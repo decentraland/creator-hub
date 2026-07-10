@@ -22,6 +22,21 @@ export interface BusVec3 {
   z: number;
 }
 
+/** A plain quaternion on the wire (no engine quaternion type). */
+export interface BusQuat {
+  x: number;
+  y: number;
+  z: number;
+  w: number;
+}
+
+/**
+ * Which gizmo the agent should show/drag. Mirrors the inspector's `GizmoType`
+ * (POSITION/ROTATION/SCALE/FREE) as plain strings so no `@dcl/*` enum crosses the
+ * wire. `free` = no gizmo (nothing selected for transform).
+ */
+export type GizmoMode = 'translate' | 'rotate' | 'scale' | 'free';
+
 /**
  * agent → inspector (`to: 'page'`). Viewport interaction results:
  *  - `pick`: entity under the click (entity 0 = clean miss / deselect).
@@ -31,7 +46,18 @@ export interface BusVec3 {
  */
 export type AgentToPage =
   | { kind: 'pick'; entity: number; shift: boolean; ctrl: boolean }
-  | { kind: 'gizmoCommit'; transforms: { entity: number; position?: BusVec3 }[] }
+  // A committed gizmo drag. Only the field(s) the active mode changes are sent
+  // (translate → position, rotate → rotation, scale → scale); the inspector
+  // merges them into the entity's existing Transform, preserving the rest.
+  | {
+      kind: 'gizmoCommit';
+      transforms: {
+        entity: number;
+        position?: BusVec3;
+        rotation?: BusQuat;
+        scale?: BusVec3;
+      }[];
+    }
   | { kind: 'gizmoCommitEnd' }
   // Reply to `query-drop-point`: the world point under the engine's current
   // pointer on the scene ground plane (null if the pointer ray misses / isn't
@@ -48,7 +74,16 @@ export type AgentToPage =
  *    correlates request/reply.
  */
 export type PageToScene =
-  | { kind: 'set-selection'; entity: number | null; position: BusVec3 | null }
+  | {
+      kind: 'set-selection';
+      entity: number | null;
+      position: BusVec3 | null;
+      // Which gizmo to show for the selection (translate/rotate/scale), or `free`
+      // when none is active. Drives which handles the agent draws + how a drag
+      // commits. The inspector owns the mode (its Gizmos toolbar writes it to the
+      // Selection component); it's forwarded here so the agent needn't read it.
+      mode: GizmoMode;
+    }
   | { kind: 'query-drop-point'; id: number };
 
 /** Every message is wrapped so a peer ignores its own posts / the wrong direction. */

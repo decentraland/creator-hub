@@ -84,12 +84,16 @@ export function createPickBridge(options: PickBridgeOptions): () => void {
         });
         break;
       case 'gizmoCommit':
-        // The agent sends position only; the reverse-channel handler merges it
-        // into the entity's existing Transform (preserving rotation/scale/parent).
+        // The agent sends only the field(s) the active gizmo mode changed
+        // (translate → position, rotate → rotation, scale → scale); the
+        // reverse-channel handler merges them into the entity's existing
+        // Transform, preserving the untouched fields + parent.
         events.emit('gizmoCommit', {
           transforms: msg.transforms.map(t => ({
             entity: t.entity as Entity,
             position: t.position,
+            rotation: t.rotation,
+            scale: t.scale,
           })),
         });
         break;

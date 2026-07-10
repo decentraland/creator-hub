@@ -20,6 +20,7 @@ import {
 import type { Entity } from '@dcl/sdk/ecs';
 import ReactEcs, { ReactEcsRenderer, UiEntity } from '@dcl/sdk/react-ecs';
 import { Vector3, Quaternion, Color4, Color3 } from '@dcl/sdk/math';
+import type { GizmoMode } from '@dcl/inspector-bevy-protocol';
 
 import { bus } from './bus';
 
@@ -68,6 +69,9 @@ let selected: Entity | null = null;
 // The selected entity's world position, supplied by the inspector (the agent
 // can't read the inspected scene's Transform). The gizmo's anchor.
 let selectedPos: Vector3 | null = null;
+// Which gizmo the inspector wants shown (translate/rotate/scale/free). Only
+// `translate` draws handles today; rotate/scale are later slices.
+let gizmoMode: GizmoMode = 'translate';
 // Scene-local → engine-world offset (base parcel × 16m). The inspector renders
 // every scene at the ORIGIN (SceneContext.rootNode at 0,0,0), so the positions
 // it sends are scene-LOCAL; the engine loads the scene at its real parcel, so we
@@ -152,13 +156,18 @@ export function getGroundPointAtPointer(): { x: number; y: number; z: number } |
 export function setSelectedEntity(
   entity: number | null,
   position: { x: number; y: number; z: number } | null,
+  mode: GizmoMode = 'translate',
 ): void {
   selected = entity !== null && entity !== 0 ? (entity as Entity) : null;
   selectedPos =
     selected !== null && position
       ? Vector3.add(Vector3.create(position.x, position.y, position.z), sceneOffset)
       : null;
-  if (selected === null || selectedPos === null) hideGizmo();
+  gizmoMode = mode;
+  // No gizmo when nothing is selected, no anchor, or the mode is `free`
+  // (translate is the only mode with handles today; rotate/scale land in later
+  // slices — until then those modes show no handles rather than the wrong ones).
+  if (selected === null || selectedPos === null || mode !== 'translate') hideGizmo();
 }
 
 export function setupGizmo(): void {
