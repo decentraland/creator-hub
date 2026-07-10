@@ -39,10 +39,17 @@ interface Channel {
 
 export interface SelectionBridgeOptions {
   context: BevySceneContext;
-  /** The renderer's gizmo settings — world alignment for the translate gizmo
-   * (the toolbar's "align to world" checkbox). Optional so the bridge can run
-   * without a renderer (tests); then `alignToWorld` is always true. */
+  /** The renderer's gizmo settings — world alignment for the translate/rotate
+   * gizmos (the toolbar's "align to world" checkbox). Optional so the bridge can
+   * run without a renderer (tests); then `alignToWorld` is always true. */
   gizmos?: { isWorldAligned(): boolean; onChange(cb: () => void): () => void };
+  /** The editor's snap settings (the toolbar's Snap panel): the increments when
+   * snapping is enabled, or null when it's off. Optional (tests); absent =
+   * snapping off. */
+  snap?: {
+    getSnap(): { position: number; rotation: number; scale: number } | null;
+    onChange(cb: () => void): () => void;
+  };
   /** Test seam: the channel to post on. Defaults to a real BroadcastChannel. */
   channel?: Channel;
 }
@@ -79,12 +86,14 @@ export function createSelectionBridge(options: SelectionBridgeOptions): () => vo
     const wr = entity === null ? null : context.getEntityWorldRotation(entity);
     const rotation = wr === null ? null : { x: wr.x, y: wr.y, z: wr.z, w: wr.w };
     const alignToWorld = gizmos?.isWorldAligned() ?? true;
+    const snap = options.snap?.getSnap() ?? null;
     const msg: PageToScene = {
       kind: 'set-selection',
       entity: value,
       position,
       rotation,
       alignToWorld,
+      snap,
       mode,
     };
     const serialized = JSON.stringify(msg);
@@ -109,13 +118,16 @@ export function createSelectionBridge(options: SelectionBridgeOptions): () => vo
     }
   });
 
-  // Re-post when the "align to world" setting toggles, so the agent re-orients
-  // the translate gizmo on the current selection.
+  // Re-post when the "align to world" setting toggles (the agent re-orients the
+  // gizmo on the current selection) or the snap settings change (the agent
+  // re-quantizes its drags).
   const offGizmos = gizmos?.onChange(post);
+  const offSnap = options.snap?.onChange(post);
 
   return () => {
     off();
     offGizmos?.();
+    offSnap?.();
     channel.close();
   };
 }

@@ -49,6 +49,7 @@ describe('createSelectionBridge', () => {
           position: { x: 4, y: 1, z: 2 },
           rotation: { x: 0.5, y: 0.5, z: 0.5, w: 0.5 },
           alignToWorld: true,
+          snap: null,
           mode: 'translate',
         },
       });
@@ -74,6 +75,7 @@ describe('createSelectionBridge', () => {
           position: null,
           rotation: null,
           alignToWorld: true,
+          snap: null,
           mode: 'rotate',
         },
       });
@@ -107,6 +109,7 @@ describe('createSelectionBridge', () => {
           position: { x: 2, y: 0, z: 1 },
           rotation: { x: 0, y: 0.5, z: 0, w: 0.5 },
           alignToWorld: true,
+          snap: null,
           mode: 'scale',
         },
       });
@@ -150,7 +153,52 @@ describe('createSelectionBridge', () => {
           position: null,
           rotation: null,
           alignToWorld: false,
+          snap: null,
           mode: 'translate',
+        },
+      });
+    });
+  });
+
+  describe('when the snap settings change', () => {
+    it('should re-post the current selection with the new snap values', async () => {
+      // A dedicated bridge wired with a fake snap handle (the editor's snap
+      // settings + change subscription).
+      disconnect();
+      posted.length = 0;
+      let snap: { position: number; rotation: number; scale: number } | null = null;
+      const snapHandlers = new Set<() => void>();
+      disconnect = createSelectionBridge({
+        context: ctx,
+        snap: {
+          getSnap: () => snap,
+          onChange: cb => {
+            snapHandlers.add(cb);
+            return () => snapHandlers.delete(cb);
+          },
+        },
+        channel: { postMessage: m => posted.push(m), close() {} },
+      });
+
+      const entity = ctx.engine.addEntity();
+      ctx.editorComponents.Selection.create(entity, { gizmo: 2 }); // rotate
+      await ctx.engine.update(1);
+      posted.length = 0;
+
+      // The user enables snapping / edits the Snap panel values.
+      snap = { position: 0.25, rotation: Math.PI / 2, scale: 0.1 };
+      for (const h of [...snapHandlers]) h();
+
+      expect(posted).toContainEqual({
+        to: 'scene',
+        msg: {
+          kind: 'set-selection',
+          entity: entity as number,
+          position: null,
+          rotation: null,
+          alignToWorld: true,
+          snap: { position: 0.25, rotation: Math.PI / 2, scale: 0.1 },
+          mode: 'rotate',
         },
       });
     });
@@ -174,6 +222,7 @@ describe('createSelectionBridge', () => {
           position: null,
           rotation: null,
           alignToWorld: true,
+          snap: null,
           mode: 'free',
         },
       });

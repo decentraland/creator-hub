@@ -3,6 +3,7 @@ import type { Emitter } from 'mitt';
 import { Quaternion, Vector3 } from '@dcl/ecs-math';
 
 import type { SceneContext } from '../babylon/decentraland/SceneContext';
+import { snapManager } from '../babylon/decentraland/snap-manager';
 import { connectReverseChannel } from './reverse-channel';
 import type { RendererEvents } from './types';
 
@@ -34,6 +35,9 @@ describe('connectReverseChannel', () => {
       dispatch: vi.fn().mockResolvedValue(undefined),
     };
     transformValue = { position: { x: 0, y: 0, z: 0 } };
+    // The merge tests below assert pure composition; snapping (enabled by
+    // default) is exercised by its own describe.
+    snapManager.setEnabled(false);
 
     context = {
       rendererEvents: events,
@@ -129,14 +133,15 @@ describe('connectReverseChannel', () => {
     });
 
     it('should COMPOSE a rotation delta onto the current rotation', () => {
-      // Current: 90° about Y. Delta: 90° about Y. Expected: 180° about Y.
+      // Current: 90° about Y. World-frame delta: 90° about Y. Expected: 180°
+      // about Y (new = delta ⊗ current).
       transformValue = {
         position: { x: 0, y: 0, z: 0 },
         rotation: Quaternion.fromEulerDegrees(0, 90, 0),
         scale: { x: 1, y: 1, z: 1 },
       };
       const delta = Quaternion.fromEulerDegrees(0, 90, 0);
-      const expected = Quaternion.multiply(transformValue.rotation, delta);
+      const expected = Quaternion.multiply(delta, transformValue.rotation);
 
       events.emit('gizmoCommit', {
         transforms: [{ entity: 7 as never, rotation: delta as never }],
@@ -148,6 +153,32 @@ describe('connectReverseChannel', () => {
       }
       // Rotation-only commit leaves position/scale untouched.
       expect(written.position).toEqual({ x: 0, y: 0, z: 0 });
+    });
+
+    it('should apply the rotation delta in the WORLD frame (delta ⊗ current, not current ⊗ delta)', () => {
+      // Current: 90° about Y (local X points along world -Z). A world-aligned
+      // ring drag about world X must rotate about world X regardless of the
+      // entity's orientation — only delta ⊗ current does that; the two orders
+      // differ here (unlike the same-axis case above).
+      transformValue = {
+        position: { x: 0, y: 0, z: 0 },
+        rotation: Quaternion.fromEulerDegrees(0, 90, 0),
+        scale: { x: 1, y: 1, z: 1 },
+      };
+      const delta = Quaternion.fromEulerDegrees(90, 0, 0); // 90° about world X
+      const expected = Quaternion.multiply(delta, transformValue.rotation);
+      const wrongOrder = Quaternion.multiply(transformValue.rotation, delta);
+
+      events.emit('gizmoCommit', {
+        transforms: [{ entity: 7 as never, rotation: delta as never }],
+      });
+
+      const written = (operations.updateValue as ReturnType<typeof vi.fn>).mock.calls[0][2];
+      for (const k of ['x', 'y', 'z', 'w'] as const) {
+        expect(written.rotation[k]).toBeCloseTo(expected[k], 5);
+      }
+      // Sanity: the two orders genuinely differ for this case.
+      expect(Math.abs(Quaternion.dot(expected, wrongOrder))).toBeLessThan(0.999);
     });
 
     it('should MULTIPLY a scale factor onto the current scale', () => {
@@ -164,6 +195,65 @@ describe('connectReverseChannel', () => {
 
       const written = (operations.updateValue as ReturnType<typeof vi.fn>).mock.calls[0][2];
       expect(written.scale).toEqual(Vector3.multiply(transformValue.scale, factor));
+    });
+  });
+
+  describe('when snapping is enabled', () => {
+    beforeEach(() => {
+      snapManager.setEnabled(true);
+      snapManager.setPositionSnap(0.25);
+      snapManager.setRotationSnap(Math.PI / 2); // 90°
+      snapManager.setScaleSnap(0.1);
+    });
+
+    afterEach(() => {
+      snapManager.setEnabled(false);
+    });
+
+    it('should snap a committed position to the position step', () => {
+      events.emit('gizmoCommit', {
+        transforms: [{ entity: 42 as never, position: { x: 1.1, y: 2.04, z: 2.9 } as never }],
+      });
+
+      const written = (operations.updateValue as ReturnType<typeof vi.fn>).mock.calls[0][2];
+      expect(written.position).toEqual({ x: 1, y: 2, z: 3 });
+    });
+
+    it('should snap the composed rotation to the rotation step', () => {
+      // Identity ⊕ 80° about Y, snapped to 90° steps → 90° about Y.
+      transformValue = {
+        position: { x: 0, y: 0, z: 0 },
+        rotation: Quaternion.Identity(),
+        scale: { x: 1, y: 1, z: 1 },
+      };
+      const delta = Quaternion.fromEulerDegrees(0, 80, 0);
+      const expected = Quaternion.fromEulerDegrees(0, 90, 0);
+
+      events.emit('gizmoCommit', {
+        transforms: [{ entity: 7 as never, rotation: delta as never }],
+      });
+
+      const written = (operations.updateValue as ReturnType<typeof vi.fn>).mock.calls[0][2];
+      for (const k of ['x', 'y', 'z', 'w'] as const) {
+        expect(written.rotation[k]).toBeCloseTo(expected[k], 5);
+      }
+    });
+
+    it('should snap the multiplied scale to the scale step', () => {
+      transformValue = {
+        position: { x: 0, y: 0, z: 0 },
+        rotation: Quaternion.Identity(),
+        scale: { x: 1, y: 1, z: 1 },
+      };
+
+      events.emit('gizmoCommit', {
+        transforms: [{ entity: 7 as never, scale: { x: 1.07, y: 1, z: 1 } as never }],
+      });
+
+      const written = (operations.updateValue as ReturnType<typeof vi.fn>).mock.calls[0][2];
+      expect(written.scale.x).toBeCloseTo(1.1, 10);
+      expect(written.scale.y).toBeCloseTo(1, 10);
+      expect(written.scale.z).toBeCloseTo(1, 10);
     });
   });
 

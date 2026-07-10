@@ -1,4 +1,5 @@
 import { getConfig } from '../../logic/config';
+import { snapManager } from '../../babylon/decentraland/snap-manager';
 import { connectReverseChannel } from '../reverse-channel';
 import { registerRenderer } from '../plugin';
 import { BevyRenderer } from './BevyRenderer';
@@ -82,10 +83,22 @@ export function registerBevyRenderer(): void {
 
       // Forward the inspector's selection to the agent so its gizmo attaches to
       // the selected entity (from a viewport pick OR a tree click). The gizmos
-      // handle carries the "align to world" setting along with it.
+      // handle carries the "align to world" setting; the snap handle carries the
+      // Snap panel's increments (null while snapping is off).
       const disconnectSelection = createSelectionBridge({
         context: bevy.context,
         gizmos: bevy.gizmos,
+        snap: {
+          getSnap: () =>
+            snapManager.isEnabled()
+              ? {
+                  position: snapManager.getPositionSnap(),
+                  rotation: snapManager.getRotationSnap(),
+                  scale: snapManager.getScaleSnap(),
+                }
+              : null,
+          onChange: cb => snapManager.onChange(cb),
+        },
       });
 
       // Drag-drop placement: the agent raycasts the ground under the pointer and

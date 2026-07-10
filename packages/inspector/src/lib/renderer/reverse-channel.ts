@@ -5,6 +5,11 @@ import { Quaternion, Vector3 } from '@dcl/ecs-math';
 import type { createOperations } from '../sdk/operations';
 import type { EditorComponents, SdkComponents } from '../sdk/components';
 import { getAncestors, isAncestor, mapNodes } from '../sdk/nodes';
+import {
+  snapPositionValue,
+  snapRotationValue,
+  snapScaleValue,
+} from '../babylon/decentraland/snap-manager';
 import type { PickTarget, RendererEvents } from './types';
 
 /**
@@ -88,16 +93,25 @@ export function connectReverseChannel(context: ReverseChannelTarget): () => void
       // A renderer that can't read the entity's base transform (e.g. the Bevy
       // agent, which lives in a separate engine) sends a gizmo drag as a DELTA:
       // - position is absolute (the renderer is given the world anchor up front);
-      // - rotation is a delta quaternion, composed onto the current rotation;
+      // - rotation is a WORLD-frame delta quaternion about the dragged ring's
+      //   world normal: new = delta ⊗ current. (For a locally-aligned ring the
+      //   normal is the entity's rotated axis, so the same composition applies
+      //   the delta about the entity's local axis.)
       // - scale is a per-axis multiplier, applied to the current scale.
       // Composing here (where we own the real Transform) keeps the untouched
       // fields exact and needs a single write per drag (the renderer commits once
-      // on release), so deltas don't accumulate.
-      const rotation = t.rotation ? Quaternion.multiply(current.rotation, t.rotation) : undefined;
-      const scale = t.scale ? Vector3.multiply(current.scale, t.scale) : undefined;
+      // on release), so deltas don't accumulate. The merged values are snapped
+      // AUTHORITATIVELY here when the editor's snap setting is enabled — the
+      // renderer only quantizes its drag feedback; the real Transform quantizes
+      // where it's written, so committed values land on the snap grid.
+      const position = t.position ? snapPositionValue(t.position) : undefined;
+      const rotation = t.rotation
+        ? snapRotationValue(Quaternion.multiply(t.rotation, current.rotation))
+        : undefined;
+      const scale = t.scale ? snapScaleValue(Vector3.multiply(current.scale, t.scale)) : undefined;
       operations.updateValue(context.Transform, t.entity, {
         ...current,
-        ...(t.position ? { position: t.position } : {}),
+        ...(position ? { position } : {}),
         ...(rotation ? { rotation } : {}),
         ...(scale ? { scale } : {}),
       });

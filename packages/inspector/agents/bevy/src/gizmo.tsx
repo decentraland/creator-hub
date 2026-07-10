@@ -92,10 +92,9 @@ const isPlaneKey = (a: Axis | 'xyz' | PlaneKey): a is PlaneKey =>
 
 /** Whether the gizmo handles follow the entity's rotation instead of the world
  * axes: scale always does (per-axis scaling is only meaningful on local axes);
- * translate does when the "align to world" checkbox is off. Rotate rings stay
- * world-aligned. */
+ * translate and rotate do when the "align to world" checkbox is off. */
 function isGizmoLocallyAligned(): boolean {
-  return gizmoMode === 'scale' || (gizmoMode === 'translate' && !alignToWorld);
+  return gizmoMode === 'scale' || !alignToWorld;
 }
 
 /** The world-space direction of a gizmo axis handle (rotated into the entity's
@@ -138,6 +137,16 @@ let selectedPos: Vector3 | null = null;
 let selectedRot: Quaternion = Quaternion.Identity();
 // The toolbar's "align to world" checkbox (inspector-supplied via set-selection).
 let alignToWorld = true;
+// The editor's snap increments (position: world units, rotation: radians,
+// scale: factor) when snapping is on, else null. Inspector-supplied via
+// set-selection. Drags quantize their feedback + committed deltas to these; the
+// inspector re-snaps the merged Transform authoritatively on commit.
+let snap: { position: number; rotation: number; scale: number } | null = null;
+
+/** Quantize `value` to multiples of `step` (no-op for step ≤ 0). */
+function snapStep(value: number, step: number): number {
+  return step > 0 ? Math.round(value / step) * step : value;
+}
 // Which gizmo the inspector wants shown (translate/rotate/scale/free).
 let gizmoMode: GizmoMode = 'translate';
 // Scene-local → engine-world offset (base parcel × 16m). The inspector renders
@@ -244,6 +253,7 @@ export function setSelectedEntity(
   mode: GizmoMode = 'translate',
   rotation: { x: number; y: number; z: number; w: number } | null = null,
   worldAligned: boolean = true,
+  snapValues: { position: number; rotation: number; scale: number } | null = null,
 ): void {
   selected = entity !== null && entity !== 0 ? (entity as Entity) : null;
   selectedPos =
@@ -255,6 +265,7 @@ export function setSelectedEntity(
       ? Quaternion.create(rotation.x, rotation.y, rotation.z, rotation.w)
       : Quaternion.Identity();
   alignToWorld = worldAligned;
+  snap = snapValues;
   gizmoMode = mode;
   // Show handles for translate / rotate / scale; `free` shows none.
   const supported = mode === 'translate' || mode === 'rotate' || mode === 'scale';
@@ -707,7 +718,8 @@ function pickScaleHandleAnalytic(ray: { origin: Vector3; dir: Vector3 }): Axis |
 
 /** Analytic rotate grab: which ring the pointer ray meets (hit on the axis plane
  * within a tolerance band around the ring radius), or null. The ring for `axis`
- * lies in the plane through the center with normal = axis. */
+ * lies in the plane through the center with normal = the handle axis (world, or
+ * the entity's rotated axis when locally aligned). */
 function pickRotateAxisAnalytic(ray: { origin: Vector3; dir: Vector3 }): Axis | null {
   if (selectedPos === null) return null;
   const scale = cameraDistanceScale(selectedPos);
@@ -716,7 +728,7 @@ function pickRotateAxisAnalytic(ray: { origin: Vector3; dir: Vector3 }): Axis | 
   let best: Axis | null = null;
   let bestErr = Infinity;
   for (const axis of AXES) {
-    const n = axisVec(axis);
+    const n = gizmoAxisDir(axis);
     const hit = rayPlaneIntersect(ray.origin, ray.dir, selectedPos, n);
     if (hit === null) continue;
     const r = Vector3.distance(hit, selectedPos);
@@ -729,12 +741,13 @@ function pickRotateAxisAnalytic(ray: { origin: Vector3; dir: Vector3 }): Axis | 
   return best;
 }
 
-/** The angle (radians) of `hit` around `center` in the plane ⊥ `axis`, measured
- * in a stable basis so successive frames compare consistently. */
-function angleOnRing(hit: Vector3, center: Vector3, axis: Axis): number {
-  const n = axisVec(axis);
-  // Two orthonormal in-plane basis vectors (u, v) with u×v = n.
-  const ref = axis === 'y' ? Vector3.Forward() : Vector3.Up();
+/** The angle (radians) of `hit` around `center` in the plane ⊥ `n` (the ring's
+ * world normal), measured in a stable basis so successive frames compare
+ * consistently. */
+function angleOnRing(hit: Vector3, center: Vector3, n: Vector3): number {
+  // Two orthonormal in-plane basis vectors (u, v) with u×v = n; the reference
+  // just needs to not be parallel to n.
+  const ref = Math.abs(n.y) > 0.99 ? Vector3.Forward() : Vector3.Up();
   const u = Vector3.normalize(Vector3.cross(ref, n));
   const v = Vector3.cross(n, u);
   const d = Vector3.subtract(hit, center);
@@ -926,15 +939,16 @@ function beginDrag(axis: Axis | 'xyz' | PlaneKey): void {
   }
 
   if (gizmoMode === 'rotate') {
-    // Rotate: drag in the ring's plane (normal = the axis). Record the start
-    // angle around the ring; the drag tracks the swept angle.
-    const planeNormal = axisVec(axis);
+    // Rotate: drag in the ring's plane (normal = the handle axis — world, or the
+    // entity's rotated axis when locally aligned). Record the start angle around
+    // the ring; the drag tracks the swept angle about that world-space normal.
+    const planeNormal = gizmoAxisDir(axis);
     const startHit = rayPlaneIntersect(ray.origin, ray.dir, center, planeNormal);
     if (startHit === null) return;
     drag = {
       mode: 'rotate',
       axis,
-      axisDir: axisVec(axis),
+      axisDir: planeNormal,
       center,
       planeNormal,
       startHit,
@@ -981,21 +995,24 @@ function updateDrag(): void {
   if (hit === null) return;
 
   if (drag.mode === 'rotate' && isAxis(drag.axis)) {
-    // Swept angle since drag start, unwrapped across the ±π seam so a drag past
-    // half a turn keeps accumulating instead of flipping sign.
-    const startAngle = angleOnRing(drag.startHit, drag.center, drag.axis);
-    const nowAngle = angleOnRing(hit, drag.center, drag.axis);
+    // Swept angle since drag start about the ring's world normal, unwrapped
+    // across the ±π seam so a drag past half a turn keeps accumulating instead
+    // of flipping sign. `drag.angle` keeps the RAW angle (so unwrapping stays
+    // continuous); snapping applies to what's shown and committed.
+    const startAngle = angleOnRing(drag.startHit, drag.center, drag.axisDir);
+    const nowAngle = angleOnRing(hit, drag.center, drag.axisDir);
     let delta = nowAngle - startAngle;
     const prev = drag.angle ?? 0;
     while (delta - prev > Math.PI) delta -= Math.PI * 2;
     while (delta - prev < -Math.PI) delta += Math.PI * 2;
     drag.angle = delta;
-    // Spin the whole gizmo visual about the axis for feedback.
+    // Spin the whole gizmo visual about the ring normal for feedback, on top of
+    // its base orientation (the entity's rotation when locally aligned).
     if (gizmoRoot !== null) {
-      Transform.getMutable(gizmoRoot).rotation = Quaternion.fromAngleAxis(
-        (delta * 180) / Math.PI,
-        axisVec(drag.axis),
-      );
+      const shown = snap !== null ? snapStep(delta, snap.rotation) : delta;
+      const spin = Quaternion.fromAngleAxis((shown * 180) / Math.PI, drag.axisDir);
+      const base = isGizmoLocallyAligned() ? selectedRot : Quaternion.Identity();
+      Transform.getMutable(gizmoRoot).rotation = Quaternion.multiply(spin, base);
     }
     return;
   }
@@ -1010,7 +1027,8 @@ function updateDrag(): void {
         ? 1 +
           Vector3.dot(Vector3.subtract(hit, drag.startHit), drag.axisDir) / (drag.startAlong ?? 1)
         : Vector3.dot(Vector3.subtract(hit, drag.center), drag.axisDir) / (drag.startAlong ?? 1);
-    const factor = Math.min(Math.max(raw, 0.01), 100);
+    const snapped = snap !== null ? snapStep(raw, snap.scale) : raw;
+    const factor = Math.min(Math.max(snapped, 0.01), 100);
     drag.factor = factor;
     // Feedback: stretch the handle(s) along their axis (each container is
     // axis-oriented with +Y along the axis, so scale Y). Per-axis stretches only
@@ -1028,10 +1046,25 @@ function updateDrag(): void {
 
   const worldDelta = Vector3.subtract(hit, drag.startHit);
   // Plane handle: take the whole in-plane delta (both hits lie on the drag
-  // plane). Axis arm: project the delta onto the arm's direction.
-  const newPos = isPlaneKey(drag.axis)
-    ? Vector3.add(drag.center, worldDelta)
-    : Vector3.add(drag.center, Vector3.scale(drag.axisDir, Vector3.dot(worldDelta, drag.axisDir)));
+  // plane), snapping each in-plane component. Axis arm: project the delta onto
+  // the arm's direction, snapping the along-axis distance.
+  let newPos: Vector3;
+  if (isPlaneKey(drag.axis)) {
+    let delta = worldDelta;
+    if (snap !== null) {
+      const [a0, a1] = PLANE_AXES[drag.axis];
+      const du = gizmoAxisDir(a0);
+      const dv = gizmoAxisDir(a1);
+      const u = snapStep(Vector3.dot(worldDelta, du), snap.position);
+      const v = snapStep(Vector3.dot(worldDelta, dv), snap.position);
+      delta = Vector3.add(Vector3.scale(du, u), Vector3.scale(dv, v));
+    }
+    newPos = Vector3.add(drag.center, delta);
+  } else {
+    const rawAlong = Vector3.dot(worldDelta, drag.axisDir);
+    const along = snap !== null ? snapStep(rawAlong, snap.position) : rawAlong;
+    newPos = Vector3.add(drag.center, Vector3.scale(drag.axisDir, along));
+  }
   dragPos = newPos;
 
   // Move only the gizmo visual during the drag (feedback); the entity itself is
@@ -1047,15 +1080,23 @@ function endDrag(): void {
   if (d === null || selected === null) return;
 
   if (d.mode === 'rotate' && isAxis(d.axis)) {
-    const angle = d.angle ?? 0;
-    // Reset the gizmo visual (the entity's real rotation updates via the commit,
-    // flows back over the CRDT, and the inspector re-anchors the gizmo).
-    if (gizmoRoot !== null) Transform.getMutable(gizmoRoot).rotation = Quaternion.Identity();
+    const raw = d.angle ?? 0;
+    const angle = snap !== null ? snapStep(raw, snap.rotation) : raw;
+    // Reset the gizmo visual to its base orientation (the entity's real rotation
+    // updates via the commit, flows back over the CRDT, and the inspector
+    // re-anchors + re-aligns the gizmo).
+    if (gizmoRoot !== null) {
+      Transform.getMutable(gizmoRoot).rotation = isGizmoLocallyAligned()
+        ? { ...selectedRot }
+        : Quaternion.Identity();
+    }
     if (Math.abs(angle) < 1e-4) return; // no-op drag → nothing to commit
-    // Commit a DELTA rotation about the axis; the inspector composes it onto the
-    // entity's current rotation (the agent can't read that base). Rotation is
-    // orientation-only, so — unlike position — no scene-offset conversion.
-    const delta = Quaternion.fromAngleAxis((angle * 180) / Math.PI, axisVec(d.axis));
+    // Commit a WORLD-frame DELTA rotation about the ring's world normal (the
+    // entity's rotated axis when locally aligned); the inspector composes it
+    // onto the entity's current rotation as delta ⊗ current (the agent can't
+    // read that base). Rotation is orientation-only, so — unlike position — no
+    // scene-offset conversion.
+    const delta = Quaternion.fromAngleAxis((angle * 180) / Math.PI, d.axisDir);
     bus.postToPage({
       kind: 'gizmoCommit',
       transforms: [
