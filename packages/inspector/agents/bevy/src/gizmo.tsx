@@ -64,7 +64,17 @@ const axisVec = (a: Axis): Vector3 =>
   a === 'x' ? Vector3.Right() : a === 'y' ? Vector3.Up() : Vector3.Forward();
 
 let gizmoRoot: Entity | null = null;
+// Translate arm containers + rotate ring containers, per axis. Shown/hidden by
+// mode (setModeVisibility): translate shows the arms, rotate shows the rings.
 const handleOf: Partial<Record<Axis, Entity>> = {};
+const translateGroupOf: Partial<Record<Axis, Entity>> = {};
+const rotateGroupOf: Partial<Record<Axis, Entity>> = {};
+
+// Rotation ring geometry: a ring of short cylinder segments (no torus mesh in
+// the SDK) in the plane perpendicular to its axis, radius RING_R at scale 1.
+const RING_R = 1.0;
+const RING_SEGMENTS = 24;
+const RING_SEG_R = 0.03;
 let selected: Entity | null = null;
 // The selected entity's world position, supplied by the inspector (the agent
 // can't read the inspected scene's Transform). The gizmo's anchor.
@@ -81,10 +91,13 @@ let picker: Entity | null = null;
 let rayTs = 0;
 
 interface DragState {
+  mode: 'translate' | 'rotate';
   axis: Axis;
   center: Vector3; // entity world position at drag start
   planeNormal: Vector3;
   startHit: Vector3;
+  // Rotate only: the signed angle (radians) swept so far, about `axis`.
+  angle?: number;
 }
 let drag: DragState | null = null;
 // A pointer-down sets this; the next raycast result decides drag-vs-pick.
@@ -164,10 +177,14 @@ export function setSelectedEntity(
       ? Vector3.add(Vector3.create(position.x, position.y, position.z), sceneOffset)
       : null;
   gizmoMode = mode;
-  // No gizmo when nothing is selected, no anchor, or the mode is `free`
-  // (translate is the only mode with handles today; rotate/scale land in later
-  // slices — until then those modes show no handles rather than the wrong ones).
-  if (selected === null || selectedPos === null || mode !== 'translate') hideGizmo();
+  // Show handles for translate + rotate; scale lands in a later slice (until
+  // then scale/free show nothing rather than the wrong handles).
+  const supported = mode === 'translate' || mode === 'rotate';
+  if (selected === null || selectedPos === null || !supported) {
+    hideGizmo();
+  } else {
+    setModeVisibility();
+  }
 }
 
 export function setupGizmo(): void {
@@ -239,6 +256,7 @@ function buildGizmo(): void {
   for (const axis of AXES) {
     const container = engine.addEntity();
     Transform.create(container, { rotation: AXIS_ROTATION[axis], parent: root });
+    translateGroupOf[axis] = container;
 
     const shaft = engine.addEntity();
     Transform.create(shaft, {
@@ -262,6 +280,67 @@ function buildGizmo(): void {
     });
     MeshCollider.setCylinder(handle, HANDLE_R, HANDLE_R, ColliderLayer.CL_POINTER);
     handleOf[axis] = handle;
+
+    buildRotateRing(root, axis);
+  }
+}
+
+/**
+ * A rotation ring for `axis`: RING_SEGMENTS short cylinders laid end-to-end
+ * around a circle in the plane perpendicular to the axis (the SDK has no torus).
+ * Grab is analytic (ray-vs-circle in `pickRotateAxisAnalytic`), so these are
+ * visual only — no colliders. Parented to a per-axis group toggled by mode.
+ */
+function buildRotateRing(root: Entity, axis: Axis): void {
+  const group = engine.addEntity();
+  Transform.create(group, { parent: root });
+  rotateGroupOf[axis] = group;
+
+  // The ring lies in the plane whose normal is the axis. Build it in local XZ
+  // (normal = +Y) then rotate the group so +Y maps to the axis.
+  const toAxis: Record<Axis, Quaternion> = {
+    x: Quaternion.fromEulerDegrees(0, 0, 90), // +Y → +X
+    y: Quaternion.Identity(),
+    z: Quaternion.fromEulerDegrees(90, 0, 0), // +Y → +Z
+  };
+  Transform.getMutable(group).rotation = toAxis[axis];
+
+  for (let i = 0; i < RING_SEGMENTS; i++) {
+    const a0 = (i / RING_SEGMENTS) * Math.PI * 2;
+    const a1 = ((i + 1) / RING_SEGMENTS) * Math.PI * 2;
+    const p0 = Vector3.create(Math.cos(a0) * RING_R, 0, Math.sin(a0) * RING_R);
+    const p1 = Vector3.create(Math.cos(a1) * RING_R, 0, Math.sin(a1) * RING_R);
+    const mid = Vector3.scale(Vector3.add(p0, p1), 0.5);
+    const seg = Vector3.subtract(p1, p0);
+    const segLen = Vector3.length(seg);
+    const chordDir = Vector3.normalize(seg);
+    const cyl = engine.addEntity();
+    // A cylinder is +Y-long; rotate its +Y axis onto the chord direction.
+    Transform.create(cyl, {
+      position: mid,
+      rotation: Quaternion.fromToRotation(Vector3.Up(), chordDir),
+      scale: Vector3.create(1, segLen, 1),
+      parent: group,
+    });
+    MeshRenderer.setCylinder(cyl, RING_SEG_R, RING_SEG_R);
+    Material.setPbrMaterial(cyl, {
+      albedoColor: AXIS_COLOR[axis],
+      emissiveColor: Color3.create(AXIS_COLOR[axis].r, AXIS_COLOR[axis].g, AXIS_COLOR[axis].b),
+      emissiveIntensity: 0.4,
+    });
+  }
+}
+
+/** Show the handle group for the active mode, hide the other. */
+function setModeVisibility(): void {
+  const showRotate = gizmoMode === 'rotate';
+  for (const axis of AXES) {
+    const tg = translateGroupOf[axis];
+    const rg = rotateGroupOf[axis];
+    if (tg !== undefined)
+      Transform.getMutable(tg).scale = showRotate ? Vector3.Zero() : Vector3.One();
+    if (rg !== undefined)
+      Transform.getMutable(rg).scale = showRotate ? Vector3.One() : Vector3.Zero();
   }
 }
 
@@ -362,6 +441,42 @@ function pickAxisAnalytic(ray: { origin: Vector3; dir: Vector3 }): Axis | null {
   return best;
 }
 
+/** Analytic rotate grab: which ring the pointer ray meets (hit on the axis plane
+ * within a tolerance band around the ring radius), or null. The ring for `axis`
+ * lies in the plane through the center with normal = axis. */
+function pickRotateAxisAnalytic(ray: { origin: Vector3; dir: Vector3 }): Axis | null {
+  if (selectedPos === null) return null;
+  const scale = cameraDistanceScale(selectedPos);
+  const ringR = RING_R * scale;
+  const tol = ringR * 0.25; // forgiving band around the ring
+  let best: Axis | null = null;
+  let bestErr = Infinity;
+  for (const axis of AXES) {
+    const n = axisVec(axis);
+    const hit = rayPlaneIntersect(ray.origin, ray.dir, selectedPos, n);
+    if (hit === null) continue;
+    const r = Vector3.distance(hit, selectedPos);
+    const err = Math.abs(r - ringR);
+    if (err <= tol && err < bestErr) {
+      bestErr = err;
+      best = axis;
+    }
+  }
+  return best;
+}
+
+/** The angle (radians) of `hit` around `center` in the plane ⊥ `axis`, measured
+ * in a stable basis so successive frames compare consistently. */
+function angleOnRing(hit: Vector3, center: Vector3, axis: Axis): number {
+  const n = axisVec(axis);
+  // Two orthonormal in-plane basis vectors (u, v) with u×v = n.
+  const ref = axis === 'y' ? Vector3.Forward() : Vector3.Up();
+  const u = Vector3.normalize(Vector3.cross(ref, n));
+  const v = Vector3.cross(n, u);
+  const d = Vector3.subtract(hit, center);
+  return Math.atan2(Vector3.dot(d, v), Vector3.dot(d, u));
+}
+
 // NOTE: no live set_component preview during the drag. The agent can't read the
 // inspected entity's real Transform (cross-engine), so a preview write would have
 // to guess rotation/scale/parent — and writing identity/unit values CLOBBERS the
@@ -422,7 +537,12 @@ function gizmoSystemInner(): void {
   if (drag === null && !grabPending && down) {
     const ray = pointerRay();
     if (ray !== null && picker !== null) {
-      const grabbedAxis = selected === null ? null : pickAxisAnalytic(ray);
+      const grabbedAxis =
+        selected === null
+          ? null
+          : gizmoMode === 'rotate'
+            ? pickRotateAxisAnalytic(ray)
+            : pickAxisAnalytic(ray);
       if (grabbedAxis !== null) {
         beginDrag(grabbedAxis);
       } else {
@@ -495,13 +615,25 @@ function beginDrag(axis: Axis): void {
   const center = { ...selectedPos };
   const ray = pointerRay();
   if (ray === null) return;
+
+  if (gizmoMode === 'rotate') {
+    // Rotate: drag in the ring's plane (normal = the axis). Record the start
+    // angle around the ring; the drag tracks the swept angle.
+    const planeNormal = axisVec(axis);
+    const startHit = rayPlaneIntersect(ray.origin, ray.dir, center, planeNormal);
+    if (startHit === null) return;
+    drag = { mode: 'rotate', axis, center, planeNormal, startHit, angle: 0 };
+    return;
+  }
+
+  // Translate: drag in a plane containing the axis and most facing the camera.
   const camT = Transform.getOrNull(engine.CameraEntity);
   const camForward =
     camT === null ? Vector3.Forward() : Vector3.rotate(Vector3.Forward(), camT.rotation);
   const planeNormal = axisDragPlaneNormal(axisVec(axis), camForward);
   const startHit = rayPlaneIntersect(ray.origin, ray.dir, center, planeNormal);
   if (startHit === null) return;
-  drag = { axis, center, planeNormal, startHit };
+  drag = { mode: 'translate', axis, center, planeNormal, startHit };
   dragPos = center;
 }
 
@@ -511,6 +643,27 @@ function updateDrag(): void {
   if (ray === null) return;
   const hit = rayPlaneIntersect(ray.origin, ray.dir, drag.center, drag.planeNormal);
   if (hit === null) return;
+
+  if (drag.mode === 'rotate') {
+    // Swept angle since drag start, unwrapped across the ±π seam so a drag past
+    // half a turn keeps accumulating instead of flipping sign.
+    const startAngle = angleOnRing(drag.startHit, drag.center, drag.axis);
+    const nowAngle = angleOnRing(hit, drag.center, drag.axis);
+    let delta = nowAngle - startAngle;
+    const prev = drag.angle ?? 0;
+    while (delta - prev > Math.PI) delta -= Math.PI * 2;
+    while (delta - prev < -Math.PI) delta += Math.PI * 2;
+    drag.angle = delta;
+    // Spin the whole gizmo visual about the axis for feedback.
+    if (gizmoRoot !== null) {
+      Transform.getMutable(gizmoRoot).rotation = Quaternion.fromAngleAxis(
+        (delta * 180) / Math.PI,
+        axisVec(drag.axis),
+      );
+    }
+    return;
+  }
+
   const worldDelta = Vector3.subtract(hit, drag.startHit);
   const dir = axisVec(drag.axis);
   const along = Vector3.dot(worldDelta, dir);
@@ -527,7 +680,32 @@ function endDrag(): void {
   const finalPos = dragPos;
   drag = null;
   dragPos = null;
-  if (d === null || selected === null || finalPos === null) return;
+  if (d === null || selected === null) return;
+
+  if (d.mode === 'rotate') {
+    const angle = d.angle ?? 0;
+    // Reset the gizmo visual (the entity's real rotation updates via the commit,
+    // flows back over the CRDT, and the inspector re-anchors the gizmo).
+    if (gizmoRoot !== null) Transform.getMutable(gizmoRoot).rotation = Quaternion.Identity();
+    if (Math.abs(angle) < 1e-4) return; // no-op drag → nothing to commit
+    // Commit a DELTA rotation about the axis; the inspector composes it onto the
+    // entity's current rotation (the agent can't read that base). Rotation is
+    // orientation-only, so — unlike position — no scene-offset conversion.
+    const delta = Quaternion.fromAngleAxis((angle * 180) / Math.PI, axisVec(d.axis));
+    bus.postToPage({
+      kind: 'gizmoCommit',
+      transforms: [
+        {
+          entity: selected as number,
+          rotation: { x: delta.x, y: delta.y, z: delta.z, w: delta.w },
+        },
+      ],
+    });
+    bus.postToPage({ kind: 'gizmoCommitEnd' });
+    return;
+  }
+
+  if (finalPos === null) return;
   // Adopt the committed position as the gizmo's new anchor (engine-world).
   selectedPos = finalPos;
   // Convert back to SCENE-LOCAL before committing: the inspector's Transform is
