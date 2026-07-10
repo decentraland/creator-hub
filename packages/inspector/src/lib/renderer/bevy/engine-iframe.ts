@@ -114,7 +114,10 @@ export function mountBevyEngine(options: MountEngineOptions): Promise<BevyEngine
   iframe.style.border = 'none';
   iframe.style.width = '100%';
   iframe.style.height = '100%';
-  iframe.setAttribute('allow', 'autoplay; fullscreen; xr-spatial-tracking');
+  // `cross-origin-isolated` propagates the embedder's isolation into this frame,
+  // which the engine wasm needs for SharedArrayBuffer. Same-origin frames inherit
+  // it, but declaring it is explicit and harmless.
+  iframe.setAttribute('allow', 'autoplay; fullscreen; xr-spatial-tracking; cross-origin-isolated');
   container.appendChild(iframe);
 
   let pollTimer: ReturnType<typeof setInterval> | null = null;

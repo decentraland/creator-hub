@@ -62,9 +62,10 @@ export async function createSdkContext(
   // create inspector engine context and components
   const { engine, components, events, dispose: disposeEngine } = createInspectorEngine();
 
-  // Build the renderer chosen for this session through the open plugin registry
-  // (persisted; switching it reloads the inspector — see RendererPicker). Each
-  // renderer owns its own canvas in the Renderer container.
+  // Build the renderer chosen for this session through the open plugin registry.
+  // The choice comes from the `renderer` config param (a host app like creator-hub
+  // drives it), falling back to localStorage then the default — see
+  // getSelectedRenderer. Each renderer owns its own canvas in the Renderer container.
   const container = canvas.parentElement ?? document.body;
   registerBuiltInRenderers(catalog, preferences);
   const built = await buildRenderer(getSelectedRenderer(), canvas, container, catalog, preferences);
