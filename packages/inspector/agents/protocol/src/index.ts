@@ -103,7 +103,11 @@ export type PageToScene =
   // The agent can't read the inspected scene's Transform, so the inspector sends
   // the target's WORLD position; the agent switches to the fly-camera and tweens
   // it to a standoff aimed at the target.
-  | { kind: 'focus-camera'; position: BusVec3 };
+  | { kind: 'focus-camera'; position: BusVec3 }
+  // Reset the editor camera to a default framing of the scene (toolbar / Space).
+  // The inspector sends the scene-local point to frame (its center); the agent
+  // tweens the fly-camera to a fixed default standoff looking at it.
+  | { kind: 'reset-camera'; position: BusVec3 };
 
 /** Every message is wrapped so a peer ignores its own posts / the wrong direction. */
 export interface BusEnvelope {
