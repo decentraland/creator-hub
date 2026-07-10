@@ -1,5 +1,6 @@
 import mitt from 'mitt';
 import type { Emitter } from 'mitt';
+import { Quaternion, Vector3 } from '@dcl/ecs-math';
 
 import type { SceneContext } from '../babylon/decentraland/SceneContext';
 import { connectReverseChannel } from './reverse-channel';
@@ -125,6 +126,44 @@ describe('connectReverseChannel', () => {
       });
 
       expect(operations.updateValue).not.toHaveBeenCalled();
+    });
+
+    it('should COMPOSE a rotation delta onto the current rotation', () => {
+      // Current: 90° about Y. Delta: 90° about Y. Expected: 180° about Y.
+      transformValue = {
+        position: { x: 0, y: 0, z: 0 },
+        rotation: Quaternion.fromEulerDegrees(0, 90, 0),
+        scale: { x: 1, y: 1, z: 1 },
+      };
+      const delta = Quaternion.fromEulerDegrees(0, 90, 0);
+      const expected = Quaternion.multiply(transformValue.rotation, delta);
+
+      events.emit('gizmoCommit', {
+        transforms: [{ entity: 7 as never, rotation: delta as never }],
+      });
+
+      const written = (operations.updateValue as ReturnType<typeof vi.fn>).mock.calls[0][2];
+      for (const k of ['x', 'y', 'z', 'w'] as const) {
+        expect(written.rotation[k]).toBeCloseTo(expected[k], 5);
+      }
+      // Rotation-only commit leaves position/scale untouched.
+      expect(written.position).toEqual({ x: 0, y: 0, z: 0 });
+    });
+
+    it('should MULTIPLY a scale factor onto the current scale', () => {
+      transformValue = {
+        position: { x: 0, y: 0, z: 0 },
+        rotation: Quaternion.Identity(),
+        scale: { x: 2, y: 3, z: 4 },
+      };
+      const factor = { x: 2, y: 2, z: 0.5 };
+
+      events.emit('gizmoCommit', {
+        transforms: [{ entity: 7 as never, scale: factor as never }],
+      });
+
+      const written = (operations.updateValue as ReturnType<typeof vi.fn>).mock.calls[0][2];
+      expect(written.scale).toEqual(Vector3.multiply(transformValue.scale, factor));
     });
   });
 

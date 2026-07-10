@@ -46,9 +46,13 @@ export type GizmoMode = 'translate' | 'rotate' | 'scale' | 'free';
  */
 export type AgentToPage =
   | { kind: 'pick'; entity: number; shift: boolean; ctrl: boolean }
-  // A committed gizmo drag. Only the field(s) the active mode changes are sent
-  // (translate → position, rotate → rotation, scale → scale); the inspector
-  // merges them into the entity's existing Transform, preserving the rest.
+  // A committed gizmo drag. Only the field(s) the active mode changes are sent;
+  // the inspector merges them into the entity's existing Transform, preserving
+  // the rest. The agent can't read the entity's base transform (separate engine),
+  // so rotation/scale are DELTAS the inspector composes onto the current value:
+  //  - position: ABSOLUTE world point (the agent is given the anchor up front).
+  //  - rotation: a DELTA quaternion → newRotation = current ⊗ delta.
+  //  - scale:    a per-axis MULTIPLIER → newScale = current * factor.
   | {
       kind: 'gizmoCommit';
       transforms: {
