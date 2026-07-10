@@ -276,6 +276,22 @@ export interface RendererDebug {
   toggle(): void;
 }
 
+/** The editor camera mode: the engine's native player camera, or an editor fly-camera. */
+export type EditorCameraMode = 'avatar' | 'free';
+
+/**
+ * Optional capability for renderers whose default camera is NOT already a free
+ * editor camera. Babylon's editor camera is always free-fly, so it omits this.
+ * The Bevy renderer's native camera is the player avatar, so it implements this
+ * to let the user toggle a dedicated editor fly-camera on/off.
+ */
+export interface RendererEditorCamera {
+  getMode(): EditorCameraMode;
+  setMode(mode: EditorCameraMode): void;
+  /** Notify on mode change (e.g. so a toolbar toggle reflects the current state). */
+  onModeChange(cb: (mode: EditorCameraMode) => void): Unsubscribe;
+}
+
 /**
  * An animation clip exposed by a renderer (see `getEntityAnimations`). Only
  * `name` is consumed today; the object shape leaves room to add `duration`,
@@ -314,6 +330,12 @@ export interface IRenderer {
   readonly spawnPoints: SpawnPointController;
   /** Present only if the renderer ships native dev tooling. */
   readonly debug?: RendererDebug;
+  /**
+   * Present only if the renderer's default camera isn't already a free editor
+   * camera (Babylon's is, so it omits this; Bevy's native camera is the player
+   * avatar, so it exposes a toggle to an editor fly-camera).
+   */
+  readonly editorCamera?: RendererEditorCamera;
 
   /** Set the editor selection by entity ID (the renderer draws it however it likes). */
   setSelection(entities: Entity[]): void;

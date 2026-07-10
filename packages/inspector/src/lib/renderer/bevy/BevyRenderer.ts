@@ -5,11 +5,13 @@ import { Vector3 as DclVector3 } from '@dcl/ecs-math';
 import type { Vector3 } from '@dcl/ecs-math';
 
 import type {
+  EditorCameraMode,
   GroundPlane,
   IRenderer,
   RendererAnimation,
   RendererCamera,
   RendererDebug,
+  RendererEditorCamera,
   RendererEvents,
   RendererGizmos,
   RendererMetrics,
@@ -53,6 +55,7 @@ export class BevyRenderer implements IRenderer {
   readonly viewport: RendererViewport;
   readonly spawnPoints: SpawnPointController;
   readonly debug: RendererDebug;
+  readonly editorCamera: RendererEditorCamera;
 
   // In-memory camera pose. No wasm camera yet; this exists so the pose getters
   // are coherent (setPose → getPose) as the contract requires.
@@ -69,11 +72,18 @@ export class BevyRenderer implements IRenderer {
   // `register` wires this to the drop-point bridge. Null until wired (and in the
   // conformance path) → getPointerWorldPoint falls back to null like the stub.
   #resolveDropPoint: (() => Promise<Vector3 | null>) | null = null;
+  // Editor camera (avatar ⇄ free fly). The mode change is enacted by the agent
+  // over the bus; `register` injects the poster. Mode state + subscribers live
+  // here so the toolbar toggle reflects the current mode.
+  #editorCameraMode: EditorCameraMode = 'avatar';
+  #postCameraMode: ((mode: EditorCameraMode) => void) | null = null;
+  #cameraModeHandlers = new Set<(mode: EditorCameraMode) => void>();
 
   constructor() {
     this.context = new BevySceneContext();
 
     this.camera = this.#createCamera();
+    this.editorCamera = this.#createEditorCamera();
     this.gizmos = this.#createGizmoStub();
     this.metrics = this.#createMetrics();
     this.viewport = this.#createViewport();
@@ -185,6 +195,31 @@ export class BevyRenderer implements IRenderer {
    */
   setDropPointResolver(resolve: () => Promise<Vector3 | null>): void {
     this.#resolveDropPoint = resolve;
+  }
+
+  /**
+   * Wire the editor-camera mode change to the agent (over the bus). `register`
+   * calls this after mounting the engine; without it (conformance path) the mode
+   * toggle just tracks state locally with no effect.
+   */
+  setCameraModePoster(post: (mode: EditorCameraMode) => void): void {
+    this.#postCameraMode = post;
+  }
+
+  #createEditorCamera(): RendererEditorCamera {
+    return {
+      getMode: () => this.#editorCameraMode,
+      setMode: (mode: EditorCameraMode) => {
+        if (mode === this.#editorCameraMode) return;
+        this.#editorCameraMode = mode;
+        this.#postCameraMode?.(mode);
+        for (const cb of this.#cameraModeHandlers) cb(mode);
+      },
+      onModeChange: (cb: (mode: EditorCameraMode) => void): Unsubscribe => {
+        this.#cameraModeHandlers.add(cb);
+        return () => this.#cameraModeHandlers.delete(cb);
+      },
+    };
   }
 
   async getPointerWorldPoint(): Promise<Vector3 | null> {

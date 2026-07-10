@@ -3,6 +3,7 @@ import { connectReverseChannel } from '../reverse-channel';
 import { registerRenderer } from '../plugin';
 import { BevyRenderer } from './BevyRenderer';
 import { mountBevyEngine } from './engine-iframe';
+import { createCameraBridge } from './camera-bridge';
 import { createDropPointBridge } from './drop-point-bridge';
 import { createForwardEditBridge } from './forward-edits';
 import { createPickBridge } from './pick-bridge';
@@ -87,10 +88,16 @@ export function registerBevyRenderer(): void {
       const dropPoint = createDropPointBridge();
       bevy.setDropPointResolver(() => dropPoint.query());
 
+      // Editor camera: the toggle posts the chosen mode to the agent, which
+      // enacts the fly-camera takeover in the engine.
+      const cameraBridge = createCameraBridge();
+      bevy.setCameraModePoster(mode => cameraBridge.setMode(mode));
+
       return {
         renderer: bevy,
         engine: bevy.context.engine,
         dispose: () => {
+          cameraBridge.disconnect();
           dropPoint.disconnect();
           disconnectSelection();
           disconnectPick();
