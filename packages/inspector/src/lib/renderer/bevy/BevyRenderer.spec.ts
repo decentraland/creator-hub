@@ -148,4 +148,12 @@ describe('BevyRenderer focusOnEntity', () => {
     expect(focused).toEqual([]);
     expect(renderer.editorCamera.getMode()).toBe('avatar');
   });
+
+  it('should post a default scene-local framing and engage the free camera on reset', () => {
+    const reset: Array<{ x: number; y: number; z: number }> = [];
+    renderer.setResetPoster(p => reset.push({ x: p.x, y: p.y, z: p.z }));
+    renderer.camera.reset();
+    expect(reset).toEqual([{ x: 8, y: 0, z: 8 }]);
+    expect(renderer.editorCamera.getMode()).toBe('free');
+  });
 });

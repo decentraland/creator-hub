@@ -81,6 +81,9 @@ export class BevyRenderer implements IRenderer {
   // Posts a focus-on-entity to the agent (framing a world position). Injected by
   // `register`; null in the conformance path (focusOnEntity is then a no-op).
   #postFocus: ((position: Vector3) => void) | null = null;
+  // Posts a camera reset to the agent (default scene framing). Injected by
+  // `register`; null in the conformance path (reset falls back to the in-memory pose).
+  #postReset: ((position: Vector3) => void) | null = null;
 
   constructor() {
     this.context = new BevySceneContext();
@@ -111,8 +114,15 @@ export class BevyRenderer implements IRenderer {
     return {
       getSpeed: () => this.#speed,
       reset: () => {
+        // Keep the in-memory pose coherent (contract), and ask the agent to fly
+        // the editor camera to a default framing of the scene (center of the base
+        // parcel, scene-local — the agent adds the scene offset). Reset also
+        // engages free-cam so the toolbar reflects it.
         this.#cameraPosition = DclVector3.create(8, 12, 24);
         this.#cameraTarget = DclVector3.create(8, 0, 8);
+        if (!this.#postReset) return;
+        this.editorCamera.setMode('free');
+        this.#postReset(DclVector3.create(8, 0, 8));
       },
       focusOnEntity: (entity: Entity) => {
         // The engine camera lives in the agent; resolve the entity's world
@@ -220,6 +230,11 @@ export class BevyRenderer implements IRenderer {
   /** Wire focus-on-entity to the agent (frames a world position over the bus). */
   setFocusPoster(post: (position: Vector3) => void): void {
     this.#postFocus = post;
+  }
+
+  /** Wire camera reset to the agent (default scene framing over the bus). */
+  setResetPoster(post: (position: Vector3) => void): void {
+    this.#postReset = post;
   }
 
   #createEditorCamera(): RendererEditorCamera {

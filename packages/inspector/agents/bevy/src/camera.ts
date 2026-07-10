@@ -120,6 +120,24 @@ export function frameTarget(worldPos: { x: number; y: number; z: number }): void
   startTween(Vector3.subtract(target, Vector3.scale(dir, frameDist)), dir);
 }
 
+/**
+ * Reset the editor camera to a default framing of the scene (toolbar / Space).
+ * The inspector supplies the scene-local point to look at (its center); we tween
+ * the fly-camera to a fixed elevated standoff looking down at it — a consistent
+ * "home" view regardless of where the user flew.
+ */
+export function resetCamera(sceneLocalCenter: { x: number; y: number; z: number }): void {
+  if (camEntity === null) return;
+  if (mode !== 'free') setCameraMode('free');
+  const center = Vector3.add(
+    Vector3.create(sceneLocalCenter.x, sceneLocalCenter.y, sceneLocalCenter.z),
+    sceneOffset,
+  );
+  // A ¾ overhead view: back on +Z, up on +Y — the usual editor "home" angle.
+  const from = Vector3.add(center, Vector3.create(0, 12, 18));
+  startTween(from, Vector3.subtract(center, from));
+}
+
 /** Install the fly-camera system + VirtualCamera. Call once on boot. */
 export function setupCamera(): void {
   if (camEntity !== null) return;

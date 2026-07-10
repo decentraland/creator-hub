@@ -1,6 +1,12 @@
 import { bus } from './bus';
 import { getBevyApi } from './bevy-api';
-import { frameTarget, setCameraMode, setCameraSceneOffset, setupCamera } from './camera';
+import {
+  frameTarget,
+  resetCamera,
+  setCameraMode,
+  setCameraSceneOffset,
+  setupCamera,
+} from './camera';
 import { getGroundPointAtPointer, setupGizmo, setSelectedEntity, setSceneOffset } from './gizmo';
 
 /**
@@ -48,6 +54,11 @@ export function main(): void {
     // inspector, which owns the Transform).
     if (msg.kind === 'focus-camera') {
       frameTarget(msg.position);
+      return;
+    }
+    // Reset the editor camera to a default framing of the scene.
+    if (msg.kind === 'reset-camera') {
+      resetCamera(msg.position);
       return;
     }
   });

@@ -22,6 +22,8 @@ export interface CameraBridge {
   setMode(mode: CameraMode): void;
   /** Frame a target world position with the editor camera (focus-on-entity). */
   focus(position: { x: number; y: number; z: number }): void;
+  /** Reset the editor camera to a default framing of the given scene-local point. */
+  reset(position: { x: number; y: number; z: number }): void;
   disconnect(): void;
 }
 
@@ -36,6 +38,7 @@ export function createCameraBridge(options: CameraBridgeOptions = {}): CameraBri
   return {
     setMode: (mode: CameraMode) => post({ kind: 'set-camera', mode }),
     focus: position => post({ kind: 'focus-camera', position }),
+    reset: position => post({ kind: 'reset-camera', position }),
     disconnect: () => channel.close(),
   };
 }

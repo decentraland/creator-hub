@@ -140,11 +140,12 @@ Notes for reviewers:
 - Switching back to **Babylon** in the same setting restores the default renderer.
 - Bevy is wired end to end: the scene renders, inspector edits forward into the
   engine, viewport pick works, the translate / rotate / scale gizmos work, and
-  drag-dropped assets place under the cursor. Known gaps (expected, not bugs —
-  Bevy feature parity is in progress): camera controls / zoom / focus (Bevy
-  drives its own camera), the scene-metrics panel and minimap, animator clip
-  dropdowns, and 3D spawn-point handles. Pick may select a model's collider
-  rather than its visible mesh on scenes that split the two.
+  drag-dropped assets place under the cursor, and a free-fly editor camera
+  (toggle in the toolbar / backtick) supports focus-on-entity (F / double-click)
+  and reset (Space). Known gaps (expected, not bugs — Bevy feature parity is in
+  progress): the scene-metrics panel and minimap, animator clip dropdowns, and
+  3D spawn-point handles. Pick may select a model's collider rather than its
+  visible mesh on scenes that split the two.
 - If you change any code under `packages/inspector` (including the Bevy agent),
   rerun `make build-inspector` — the app serves a **prebuilt** inspector bundle,
   so running the Creator Hub in watch mode (`cd packages/creator-hub && npm run
