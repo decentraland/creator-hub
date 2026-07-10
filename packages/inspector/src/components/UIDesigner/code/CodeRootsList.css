@@ -1,0 +1,49 @@
+.ui-designer-code-root-row {
+  display: flex;
+  align-items: center;
+  gap: var(--uid-space-2);
+  padding: 3px var(--uid-space-2);
+  cursor: pointer;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.ui-designer-code-root-row svg {
+  color: rgba(255, 255, 255, 0.6);
+  flex-shrink: 0;
+}
+
+.ui-designer-code-root-row:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.ui-designer-code-root-row.is-active {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.ui-designer-code-root-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ui-designer-code-root-remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px;
+  border: none;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.4);
+  cursor: pointer;
+  opacity: 0;
+}
+
+.ui-designer-code-root-row:hover .ui-designer-code-root-remove {
+  opacity: 1;
+}
+
+.ui-designer-code-root-remove:hover {
+  color: rgba(255, 255, 255, 0.9);
+}

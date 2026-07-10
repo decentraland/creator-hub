@@ -78,3 +78,43 @@ export function ergonomicToPBTransform(ergo: Record<string, unknown>): Record<st
 
   return pb;
 }
+
+// Inverse of ergonomicToPBTransform: a flattened PBUiTransform (what the
+// PropertyPanel edits) → the ergonomic react-ecs prop object we splice back into
+// source. Units become '%' / 'auto' / bare number; `positionType` becomes
+// 'absolute' (relative is the default, so it's omitted); edge groups
+// (position/margin/padding) fold back into `{ top, right, bottom, left }`.
+// Fields with an undefined/unrecognized unit are dropped, so switching back to
+// in-flow (which zeroes position with undefined units) cleanly removes them.
+function pbLen(value: unknown, unit: unknown): Len | undefined {
+  if (typeof value !== 'number') return undefined;
+  if (unit === YGU_PERCENT) return `${value}%`;
+  if (unit === YGU_AUTO) return 'auto';
+  if (unit === YGU_POINT) return value;
+  return undefined;
+}
+
+export function pbToErgonomicTransform(pb: Record<string, unknown>): Record<string, unknown> {
+  const ergo: Record<string, unknown> = {};
+
+  for (const dim of DIMENSIONS) {
+    const l = pbLen(pb[dim], pb[`${dim}Unit`]);
+    if (l !== undefined) ergo[dim] = l;
+  }
+
+  if (pb.positionType === YGPT_ABSOLUTE) ergo.positionType = 'absolute';
+
+  for (const prefix of ['position', 'margin', 'padding'] as const) {
+    const edges: Record<string, Len> = {};
+    for (const edge of EDGES) {
+      const l = pbLen(pb[`${prefix}${edge}`], pb[`${prefix}${edge}Unit`]);
+      if (l !== undefined) edges[edge.toLowerCase()] = l;
+    }
+    if (Object.keys(edges).length > 0) ergo[prefix] = edges;
+  }
+
+  if (typeof pb.flexGrow === 'number') ergo.flexGrow = pb.flexGrow;
+  if (typeof pb.flexShrink === 'number') ergo.flexShrink = pb.flexShrink;
+
+  return ergo;
+}

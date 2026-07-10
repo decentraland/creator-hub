@@ -166,7 +166,7 @@ export function codeToUINodes(
 
   // Map a JSXElement to a CodeUINode. Unknown element names, spreads, and
   // member-expression names collapse the node to opaque.
-  const visitElement = (el: AnyNode): CodeUINode => {
+  const visitElement = (el: AnyNode, parentEntity?: number): CodeUINode => {
     const name = elementName(el);
     if (name == null) return opaqueNode(el, 'member-name-element', 'Unknown');
     const type = ELEMENT_TYPE[name];
@@ -190,6 +190,18 @@ export function codeToUINodes(
       // canvas renders it identically to the ECS-backed path.
       if (v.ok) node.uiTransform = ergonomicToPBTransform(v.value as Record<string, unknown>);
       else dynamicProps = true;
+    }
+
+    // Record the structural parent (from JSX nesting) as PBUiTransform.parent so
+    // the canvas can tell the root (no parent → fills the screen, not
+    // draggable/resizable) from children (interactive). Mirrors the ECS shape,
+    // where UiTransform always carries a parent entity. The root is visited with
+    // no parentEntity, so it keeps no parent.
+    if (parentEntity !== undefined) {
+      node.uiTransform = {
+        ...((node.uiTransform as Record<string, unknown> | undefined) ?? {}),
+        parent: parentEntity,
+      };
     }
 
     const uiBackgroundAttr = attrs.get('uiBackground');
@@ -216,7 +228,7 @@ export function codeToUINodes(
 
     // Children.
     for (const child of (el.children ?? []) as AnyNode[]) {
-      const mapped = visitChild(child, type);
+      const mapped = visitChild(child, type, id as unknown as number);
       if (mapped) node.children.push(mapped);
     }
     return node;
@@ -225,8 +237,12 @@ export function codeToUINodes(
   // Map a JSX child. Elements recurse; text folds into a Label's value;
   // expression containers that aren't a simple literal become opaque children
   // (loops via `.map`, conditionals, variable refs).
-  const visitChild = (child: AnyNode, parentType: UINodeType): CodeUINode | null => {
-    if (child.type === 'JSXElement') return visitElement(child);
+  const visitChild = (
+    child: AnyNode,
+    parentType: UINodeType,
+    parentEntity: number,
+  ): CodeUINode | null => {
+    if (child.type === 'JSXElement') return visitElement(child, parentEntity);
     if (child.type === 'JSXText') {
       const text = String(child.value ?? '').trim();
       if (text && parentType === 'Label') {
@@ -269,32 +285,64 @@ function isMapCall(expr: AnyNode | undefined): boolean {
   );
 }
 
-// Find the JSX returned by the target exported component. Looks for
-// `export function <name>() { return <jsx/> }` (or the first such export).
+// Find the JSX returned by the target exported component. Recognizes the common
+// react-ecs component forms (the stock scene template uses the arrow/const one):
+//   export function X() { return <jsx/> }   |  function X() { return <jsx/> }
+//   export const X = () => <jsx/>            (arrow, concise body)
+//   export const X = () => (<jsx/>)          (arrow, parenthesized body)
+//   export const X = () => { return <jsx/> } (arrow, block body)
+//   export const X = function () { … }       (function expression)
+//   const X = () => <jsx/>
+// The first declaration whose body yields a single JSXElement wins, so helpers
+// that return no JSX (e.g. the template's `setupUi`) are skipped. A
+// `componentName` pins a specific one (and returns null if it isn't JSX).
 function findComponentReturnJsx(program: AnyNode, componentName?: string): AnyNode | null {
   for (const stmt of (program.body ?? []) as AnyNode[]) {
     const decl =
       stmt.type === 'ExportNamedDeclaration' && stmt.declaration
         ? (stmt.declaration as AnyNode)
-        : stmt.type === 'FunctionDeclaration'
-          ? stmt
-          : null;
-    if (!decl || decl.type !== 'FunctionDeclaration') continue;
-    if (componentName && decl.id?.name !== componentName) continue;
-    const jsx = returnedJsx(decl.body);
-    if (jsx) return jsx;
-    if (componentName) return null;
+        : stmt;
+
+    if (decl.type === 'FunctionDeclaration') {
+      if (componentName && decl.id?.name !== componentName) continue;
+      const jsx = fnBodyJsx(decl.body);
+      if (jsx) return jsx;
+      if (componentName) return null;
+      continue;
+    }
+
+    if (decl.type === 'VariableDeclaration') {
+      for (const d of (decl.declarations ?? []) as AnyNode[]) {
+        if (componentName && d.id?.name !== componentName) continue;
+        const init = d.init ? unparen(d.init as AnyNode) : undefined;
+        if (
+          !init ||
+          (init.type !== 'ArrowFunctionExpression' && init.type !== 'FunctionExpression')
+        )
+          continue;
+        const jsx = fnBodyJsx(init.body as AnyNode | undefined);
+        if (jsx) return jsx;
+        if (componentName) return null;
+      }
+    }
   }
   return null;
 }
 
-function returnedJsx(body: AnyNode | undefined): AnyNode | null {
-  for (const stmt of (body?.body ?? []) as AnyNode[]) {
+// Extract a single returned JSXElement from a function/arrow body: either a
+// concise arrow body (`=> <jsx/>` / `=> (<jsx/>)`, where the body IS the
+// expression) or a block body with a `return <jsx/>`. Fragments and non-JSX
+// returns aren't representable as a single root yet → null.
+function fnBodyJsx(body: AnyNode | undefined): AnyNode | null {
+  if (!body) return null;
+  if (body.type !== 'BlockStatement') {
+    const arg = unparen(body);
+    return arg.type === 'JSXElement' ? arg : null;
+  }
+  for (const stmt of (body.body ?? []) as AnyNode[]) {
     if (stmt.type === 'ReturnStatement' && stmt.argument) {
       const arg = unparen(stmt.argument as AnyNode);
-      if (arg.type === 'JSXElement') return arg;
-      // A parenthesized/fragment return we can't represent as a single root yet.
-      return null;
+      return arg.type === 'JSXElement' ? arg : null;
     }
   }
   return null;

@@ -106,6 +106,46 @@ export function MyScreen() {
     });
   });
 
+  describe('and the component is the stock scene template (arrow/const export)', () => {
+    // The default Decentraland scene ships this exact ui.tsx shape: a `setupUi`
+    // helper (returns no JSX) plus an arrow-const `uiMenu` with a parenthesized
+    // concise body. Both must be handled — skip `setupUi`, read `uiMenu`.
+    const source = `import ReactEcs, { ReactEcsRenderer, UiEntity } from "@dcl/sdk/react-ecs"
+
+export function setupUi() {
+    ReactEcsRenderer.setUiRenderer(uiMenu, { virtualWidth: 1920, virtualHeight: 1080 })
+}
+
+export const uiMenu = () => (
+    <UiEntity uiTransform={{ width: 300 }}>
+    </UiEntity>
+)`;
+
+    it('should find and map the arrow-const component, skipping the JSX-less helper', () => {
+      const parsed = parse(source);
+      expect(parsed).not.toBeNull();
+      expect(parsed!.root.type).toBe('UiEntity');
+      expect(parsed!.root.uiTransform).toEqual({ width: 300, widthUnit: YGU_POINT });
+      // The span points at the real <UiEntity>, so write-path splices land right.
+      expect(source.slice(parsed!.root.span[0], parsed!.root.span[1]).startsWith('<UiEntity')).toBe(
+        true,
+      );
+    });
+  });
+
+  describe('and the arrow component uses a block body with a return', () => {
+    const source = `export const Hud = () => {
+  return <UiEntity uiTransform={{ height: 50 }} />
+}`;
+
+    it('should read the returned JSX from the block body', () => {
+      const parsed = parse(source);
+      expect(parsed).not.toBeNull();
+      expect(parsed!.root.type).toBe('UiEntity');
+      expect(parsed!.root.uiTransform).toEqual({ height: 50, heightUnit: YGU_POINT });
+    });
+  });
+
   describe('and there is no component returning JSX', () => {
     it('should return null', () => {
       const parsed = parse('export const x = 1');

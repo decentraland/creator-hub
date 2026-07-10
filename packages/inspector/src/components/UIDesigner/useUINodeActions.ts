@@ -7,7 +7,7 @@ import { getSelectedNode, getSelectedRoot, selectNode } from '../../redux/ui-des
 import { useUINodeTree } from './useUINodeTree';
 import type { UINode } from './tree-model';
 import { UI_DESIGNER_CODE_MODE } from './code/config';
-import { spliceRemoveNode } from './code/store';
+import { spliceDuplicate, spliceRemoveNode } from './code/store';
 
 function findParentEntity(root: UINode, target: Entity): Entity | null {
   for (const child of root.children) {
@@ -52,7 +52,10 @@ export function useUINodeActions(): {
 
   const duplicate = useCallback(
     async (entity: Entity) => {
-      if (UI_DESIGNER_CODE_MODE) return; // TODO(code-mode): duplicate via emit + insertChild
+      if (UI_DESIGNER_CODE_MODE) {
+        await spliceDuplicate(entity as unknown as number);
+        return;
+      }
       if (!sdk) return;
       const clone = sdk.operations.duplicateUINode(entity);
       await sdk.operations.dispatch();

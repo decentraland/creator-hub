@@ -52,10 +52,15 @@ function findAttr(el: AstNode, name: string): AstNode | undefined {
   );
 }
 
-// Serialize a JS value to its TSX source form.
+// Serialize a JS value to its TSX source form. Plain objects emit as react-ecs
+// style object literals (`{ top: 0, left: 0 }`, unquoted keys) rather than JSON
+// so spliced values match hand-authored code.
 function serializeValue(v: unknown): string {
   if (typeof v === 'string') return JSON.stringify(v);
   if (typeof v === 'number' || typeof v === 'boolean') return String(v);
+  if (v !== null && typeof v === 'object' && !Array.isArray(v)) {
+    return emitObject(v as Record<string, unknown>);
+  }
   return JSON.stringify(v);
 }
 
@@ -206,6 +211,22 @@ export function setAttributeExpr(el: AstNode, name: string, expr: string): Edit[
 // Remove an element (or opaque node) by deleting its exact span.
 export function removeNode(el: AstNode): Edit[] {
   return [{ start: el.start, end: el.end, text: '' }];
+}
+
+// Move an element's exact source to a new location: delete it from its current
+// span and re-insert it verbatim at `insertAt` (the code equivalent of a
+// sibling reorder). The two edits are non-overlapping as long as `insertAt` lies
+// outside the element's own span (guaranteed for reorder to a sibling). A
+// separating newline keeps the result parseable; exact indentation is left to a
+// formatter.
+export function moveElement(source: string, el: AstNode, insertAt: number): Edit[] {
+  const raw = source.slice(el.start, el.end);
+  // Inserting after the element's old position → lead with a newline; before → trail.
+  const text = insertAt >= el.end ? `\n${raw}` : `${raw}\n`;
+  return [
+    { start: el.start, end: el.end, text: '' },
+    { start: insertAt, end: insertAt, text },
+  ];
 }
 
 // Offset just after the last import declaration (or 0) — insertion point for a

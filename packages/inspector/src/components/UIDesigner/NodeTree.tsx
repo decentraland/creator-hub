@@ -12,6 +12,8 @@ import { measureReparentOffset } from './measure';
 import { useUINodeActions } from './useUINodeActions';
 import { useUINodeTree } from './useUINodeTree';
 import { WIDGET_ICONS } from './widget-catalog';
+import { UI_DESIGNER_CODE_MODE } from './code/config';
+import { spliceMove } from './code/store';
 import type { UINode } from './tree-model';
 
 import './NodeTree.css';
@@ -109,8 +111,20 @@ const NodeTreeImpl: React.FC = () => {
 
   const handleDrop = useCallback(
     (source: UINode, target: UINode, dropType: DropType) => {
-      if (!sdk || !tree) return;
       if (source.entity === target.entity) return;
+
+      // Code-mode: reparent/reorder by moving the element's source (the code
+      // equivalent of setUIParent + reorderUISibling). 'inside' → last child of
+      // target; 'before'/'after' → relative to the target sibling.
+      if (UI_DESIGNER_CODE_MODE) {
+        void spliceMove(source.entity as unknown as number, {
+          kind: dropType === 'inside' ? 'into' : dropType,
+          targetId: target.entity as unknown as number,
+        });
+        return;
+      }
+
+      if (!sdk || !tree) return;
 
       // For an absolutely-positioned node, rebase its Top/Left onto the new
       // parent's box so it keeps its on-screen position (measured from the DOM

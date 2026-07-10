@@ -27,7 +27,15 @@ import { useCreateUIRoot } from './useCreateUIRoot';
 import { useUINodeActions } from './useUINodeActions';
 import { useUINodeTree } from './useUINodeTree';
 import { UI_DESIGNER_CODE_MODE } from './code/config';
-import { spliceAddChild, spliceUiTransformPosition, spliceUiTransformSize } from './code/store';
+import {
+  createRoot as createCodeRoot,
+  spliceAddChild,
+  spliceMove,
+  spliceUiTransformMargin,
+  spliceUiTransformPosition,
+  spliceUiTransformSize,
+} from './code/store';
+import type { CodeUINode } from './code/types';
 import {
   clearNodeRegistry,
   getNodeElement,
@@ -608,6 +616,8 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node }) => {
     left?: number;
     width?: number;
     height?: number;
+    marginTop?: number;
+    marginLeft?: number;
   } | null>(null);
 
   // --- Reorder-drag state (in-flow nodes) ---
@@ -672,58 +682,14 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node }) => {
       e.stopPropagation();
       e.preventDefault();
 
-      // In-flow node without Alt: reorder among siblings instead of moving.
-      // (Alt+drag falls through to the legacy convert-to-absolute capture.)
+      // Canvas drag = MOVE. Reorder / reparent live in the Nodes tree, so a drag
+      // never has to disambiguate move-vs-reorder. The move adapts to the node's
+      // layout mode on drop (see the drag handleUp): absolute → position,
+      // in-flow → margin. No positionType conversion.
       const isAbsolute = t?.positionType === YGPT_ABSOLUTE;
-      // Code-mode: in-flow reorder isn't spliced yet — select only. Absolute
-      // nodes fall through to the drag-move path (which splices position).
-      if (UI_DESIGNER_CODE_MODE && !isAbsolute) {
-        e.stopPropagation();
-        dispatch(selectNode({ node: node.entity }));
-        return;
-      }
-      if (!isAbsolute && !e.altKey && !UI_DESIGNER_CODE_MODE) {
-        const el = divRef.current;
-        const parentEl = el?.parentElement;
-        if (el && parentEl) {
-          const flexDir = getComputedStyle(parentEl).flexDirection || 'column';
-          const all = Array.from(parentEl.children).filter(
-            (c): c is HTMLElement =>
-              c instanceof HTMLElement && c.classList.contains('ui-designer-canvas-node'),
-          );
-          const inFlow = all.filter(c => getComputedStyle(c).position !== 'absolute');
-          const selfIndex = Math.max(0, inFlow.indexOf(el));
-          const siblings = inFlow
-            .filter(c => c !== el)
-            .map(c => ({ entity: Number(c.dataset.entity) as Entity, el: c }))
-            .filter(s => Number.isInteger(s.entity as unknown as number));
-          reorderRef.current = {
-            parentEl,
-            axis: flexDir.startsWith('row') ? 'x' : 'y',
-            reversed: flexDir.endsWith('reverse'),
-            siblings,
-            selfIndex,
-            index: selfIndex,
-          };
-          dragOriginRef.current = {
-            mouseX: e.clientX,
-            mouseY: e.clientY,
-            startTop: 0,
-            startLeft: 0,
-          };
-          liveOffsetRef.current = { dx: 0, dy: 0 };
-          setOptimisticPos(null);
-          setPendingReorder(null);
-          setIsReordering(true);
-          dispatch(selectNode({ node: node.entity }));
-          return;
-        }
-      }
 
-      // If the node is currently in flex flow, anchor its starting position
-      // at where it was just rendered (relative to its parent). The mouseup
-      // path will write positionType=ABSOLUTE plus these coords, effectively
-      // converting the node into a free-positioned child.
+      // Anchor the drag at the node's current rendered position (relative to its
+      // parent) for the live snap grid; in-flow nodes read it from the DOM.
       let startTop = (t?.positionTop ?? 0) as number;
       let startLeft = (t?.positionLeft ?? 0) as number;
       if (!isAbsolute) {
@@ -781,17 +747,33 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node }) => {
       liveOffsetRef.current = { dx: 0, dy: 0 };
       setIsDragging(false);
 
-      if (!sdk || !origin) return;
+      if (!origin) return;
       if (offset.dx === 0 && offset.dy === 0) return;
+      const isAbs = t?.positionType === YGPT_ABSOLUTE;
       const top = Math.round(origin.startTop + offset.dy);
       const left = Math.round(origin.startLeft + offset.dx);
-      // Hold the dropped position until the committed transform reflects it.
-      setOptimisticPos({ top, left });
-      // Code-mode: splice `position: { top, left }` into the .tsx source.
+
+      // Code-mode: MOVE by splicing the source. Absolute nodes get a new
+      // `position`; in-flow nodes get a new `margin` (current margin + drag
+      // delta), keeping them responsive rather than converting to absolute.
       if (UI_DESIGNER_CODE_MODE) {
-        void spliceUiTransformPosition(node.entity as unknown as number, top, left);
+        const id = node.entity as unknown as number;
+        if (isAbs) {
+          setOptimisticPos({ top, left });
+          void spliceUiTransformPosition(id, top, left);
+        } else {
+          const marginTop = Math.round(((t?.marginTop as number) ?? 0) + offset.dy);
+          const marginLeft = Math.round(((t?.marginLeft as number) ?? 0) + offset.dx);
+          // Hold the new margin until the reparse lands, so the node doesn't
+          // snap back to its old flow position for a frame (the drop flicker).
+          setOptimisticPos({ marginTop, marginLeft });
+          void spliceUiTransformMargin(id, marginTop, marginLeft);
+        }
         return;
       }
+      // Hold the dropped position until the committed transform reflects it.
+      setOptimisticPos({ top, left });
+      if (!sdk) return;
       const UiTransform = sdk.components.UiTransform;
       const current = (UiTransform.getOrNull(node.entity) ?? {}) as PBUiTransform;
       UiTransform.createOrReplace(node.entity, {
@@ -844,10 +826,27 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node }) => {
       dragOriginRef.current = null;
       liveOffsetRef.current = { dx: 0, dy: 0 };
       setIsReordering(false);
-      if (!sdk || !ro) return;
+      if (!ro) return;
       // No-op drops: no movement, or released over the slot it already holds.
       if ((offset.dx === 0 && offset.dy === 0) || ro.index === ro.selfIndex) return;
       const leftSibling = ro.index > 0 ? ro.siblings[ro.index - 1].entity : undefined;
+
+      // Code-mode: reorder by moving the element's source after the left sibling
+      // (or before the first sibling when dropped at the head). The reparse
+      // reflows the node — no optimistic hold needed.
+      if (UI_DESIGNER_CODE_MODE) {
+        const id = node.entity as unknown as number;
+        if (leftSibling !== undefined) {
+          void spliceMove(id, { kind: 'after', targetId: leftSibling as unknown as number });
+        } else if (ro.siblings.length > 0) {
+          void spliceMove(id, {
+            kind: 'before',
+            targetId: ro.siblings[0].entity as unknown as number,
+          });
+        }
+        return;
+      }
+      if (!sdk) return;
       // Hold the drag offset until the committed rightOf lands, then release —
       // the node then reflows into the slot the indicator promised.
       setPendingReorder({
@@ -885,6 +884,10 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node }) => {
     if (optimisticPos.left !== undefined && num(t?.positionLeft) !== optimisticPos.left) return;
     if (optimisticPos.width !== undefined && num(t?.width) !== optimisticPos.width) return;
     if (optimisticPos.height !== undefined && num(t?.height) !== optimisticPos.height) return;
+    if (optimisticPos.marginTop !== undefined && num(t?.marginTop) !== optimisticPos.marginTop)
+      return;
+    if (optimisticPos.marginLeft !== undefined && num(t?.marginLeft) !== optimisticPos.marginLeft)
+      return;
     setOptimisticPos(null);
   }, [node, optimisticPos]);
 
@@ -1070,6 +1073,9 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node }) => {
     }
     if (optimisticPos.width !== undefined) style.width = `${optimisticPos.width}px`;
     if (optimisticPos.height !== undefined) style.height = `${optimisticPos.height}px`;
+    // In-flow move hold: keep the node at its new margin (no positionType change).
+    if (optimisticPos.marginTop !== undefined) style.marginTop = `${optimisticPos.marginTop}px`;
+    if (optimisticPos.marginLeft !== undefined) style.marginLeft = `${optimisticPos.marginLeft}px`;
   }
 
   // Layer the resolved file-texture on top. backgroundColor (a separate
@@ -1130,7 +1136,7 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node }) => {
         <span className="ui-designer-canvas-text">{labelText}</span>
       ) : null}
       {node.children.map(child => (
-        <CanvasNode
+        <CanvasNodeView
           key={String(child.entity)}
           node={child}
         />
@@ -1158,9 +1164,55 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node }) => {
   );
 };
 
+// A grayed, read-only stand-in for code the UI Designer can't represent (loops,
+// conditionals, custom components, spread/dynamic props). It keeps the node's
+// place in the layout and is selectable (so the code view can locate it), but
+// carries none of the drag/resize/drop machinery — it is edited only in code.
+const CanvasOpaqueNode: React.FC<{ node: CodeUINode }> = ({ node }) => {
+  const dispatch = useAppDispatch();
+  const isSelected = useAppSelector(state => getSelectedNode(state) === node.entity);
+  const setRef = useCallback(
+    (el: HTMLDivElement | null) => {
+      if (el) registerNodeElement(node.entity, el);
+      else unregisterNodeElement(node.entity);
+    },
+    [node.entity],
+  );
+  const reason = node.opaque?.reason ?? 'non-standard';
+  return (
+    <div
+      ref={setRef}
+      className={cx('ui-designer-canvas-node', 'opaque', { selected: isSelected })}
+      style={nodeStyle(node)}
+      onClick={e => {
+        e.stopPropagation();
+        dispatch(selectNode({ node: node.entity }));
+      }}
+      data-type={node.type}
+      data-entity={String(node.entity)}
+      title={`Doesn't follow the UI Designer convention (${reason}) — edit in code`}
+    >
+      <span className="ui-designer-canvas-opaque-badge">⚠ non-standard · edit in code</span>
+    </div>
+  );
+};
+
+// Route each node to the right renderer: representable nodes get the full
+// interactive CanvasNode; anything flagged opaque gets the read-only block. A
+// node flipping between the two (as code is edited) swaps component type, which
+// remounts cleanly — no shared hook state to get out of sync.
+const CanvasNodeView: React.FC<CanvasNodeProps> = ({ node }) =>
+  (node as CodeUINode).opaque ? (
+    <CanvasOpaqueNode node={node as CodeUINode} />
+  ) : (
+    <CanvasNode node={node} />
+  );
+
 const CanvasComponent: React.FC = () => {
   const tree = useUINodeTree();
-  const createRoot = useCreateUIRoot();
+  const createEcsRoot = useCreateUIRoot();
+  // Code-mode roots are files under src/ui/ (see code/store), not ECS entities.
+  const createRoot = UI_DESIGNER_CODE_MODE ? () => void createCodeRoot() : createEcsRoot;
   const selectedNode = useAppSelector(getSelectedNode);
   const [scale, setScale] = useState(getCanvasScale());
   const [device, setDevice] = useState<DeviceKind>('desktop');
@@ -1309,7 +1361,7 @@ const CanvasComponent: React.FC = () => {
                   } as React.CSSProperties
                 }
               >
-                <CanvasNode node={tree} />
+                <CanvasNodeView node={tree} />
                 {showSafeAreas ? (
                   <SafeAreaOverlay
                     width={canvasWidth}
@@ -1353,7 +1405,7 @@ const CanvasComponent: React.FC = () => {
                     pointerEvents: 'none',
                   }}
                 >
-                  <CanvasNode node={tree} />
+                  <CanvasNodeView node={tree} />
                 </div>
                 {showSafeAreas ? (
                   <SafeAreaOverlay

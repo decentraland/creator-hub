@@ -5,8 +5,8 @@ import { useAppSelector } from '../../redux/hooks';
 import { getSelectedNode, getSelectedRoot } from '../../redux/ui-designer';
 import { Box } from '../Box';
 import { NodeTree } from './NodeTree';
-import { RootsList } from './RootsList';
 import { WidgetPicker } from './WidgetPicker';
+import { CodeRootsList } from './code/CodeRootsList';
 
 import './UIDesigner.css';
 
@@ -24,7 +24,7 @@ const UIDesignerLeftRail: React.FC = () => {
     <Box className="ui-designer-left-rail">
       <div className="ui-designer-rail-section">
         <div className="ui-designer-rail-header">UI Roots</div>
-        <RootsList />
+        <CodeRootsList />
       </div>
       <div className="ui-designer-rail-section ui-designer-rail-section-grow">
         <div className="ui-designer-rail-header ui-designer-rail-header-row">

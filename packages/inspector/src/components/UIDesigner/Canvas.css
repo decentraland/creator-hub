@@ -56,6 +56,34 @@
   background: var(--ui-designer-accent-05);
 }
 
+/* Code that doesn't follow the UI Designer convention (loops, conditionals,
+   custom components, spread/dynamic props): a grayed, hatched, read-only block —
+   visible and selectable, but edited only in code. */
+.ui-designer-canvas-node.opaque {
+  display: inline-flex;
+  align-items: center;
+  min-width: 40px;
+  min-height: 24px;
+  padding: 4px 8px;
+  background: repeating-linear-gradient(
+    45deg,
+    rgba(255, 255, 255, 0.04),
+    rgba(255, 255, 255, 0.04) 6px,
+    rgba(255, 255, 255, 0.08) 6px,
+    rgba(255, 255, 255, 0.08) 12px
+  );
+  outline: 1px dashed rgba(255, 255, 255, 0.3);
+  color: rgba(255, 255, 255, 0.55);
+  cursor: default;
+}
+
+.ui-designer-canvas-opaque-badge {
+  font-size: 10px;
+  line-height: 1;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
 .ui-designer-canvas-node.movable {
   cursor: move;
 }

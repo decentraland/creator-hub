@@ -2,8 +2,8 @@ import { useSyncExternalStore } from 'react';
 
 import { getCodeParser } from '../../../lib/logic/code-parser/iframe';
 import { getStorage } from '../../../lib/data-layer/client/iframe-data-layer';
-import { debounce } from '../../../lib/utils/debounce';
 import type { UINodeType } from '../tree-model';
+import { generateRootComponent, generateUiIndex } from './aggregator';
 import { type BindingSurface, extractBindingSurface } from './bindings';
 import {
   afterImports,
@@ -11,24 +11,46 @@ import {
   type Edit,
   emitElement,
   insertChild,
+  moveElement,
   removeNode,
   setAttribute,
   setAttributeExpr,
   setObjectField,
 } from './emit-adapter';
+import { pbToErgonomicTransform } from './ecs-shape';
 import { codeToUINodes } from './parse-adapter';
+import { toComponentName, uniqueRootName } from './root-naming';
 import type { CodeUINode, ParsedUI } from './types';
 
-// Code-mode store: the .tsx source buffer is the single source of truth; the
-// canvas and (later) Monaco are views over it. Parsing is delegated to CH main
-// over the CodeParser RPC. Implemented as a tiny external store so Canvas,
-// NodeTree, and PropertyPanel all read the same state via useSyncExternalStore.
+// Code-mode store: the scene's real .tsx files on disk are the single source of
+// truth; the canvas is a view over them, and an external editor (VSCode / vim /
+// Notepad) edits the same files. A disk watcher (poll) reflects external edits
+// onto the canvas; canvas edits splice the source and write it straight back to
+// the scene folder. Parsing is delegated to CH main over the CodeParser RPC.
+// Implemented as a tiny external store so Canvas, NodeTree, CodeRootsList, and
+// PropertyPanel all read the same state via useSyncExternalStore.
+//
+// Layout is file-per-root: each UI root is one file under src/ui/, and a
+// generated src/ui/index.tsx aggregator composes them into setupUi(). `filename`
+// is the *active* root file (the one the canvas edits); the aggregator is
+// generated-only and never loaded as active.
+
+// One UI root = one component file under src/ui/.
+export interface CodeRoot {
+  // Exported component name, e.g. "MainUI".
+  name: string;
+  // Full path, e.g. "src/ui/MainUI.tsx".
+  filename: string;
+}
 
 export interface CodeState {
+  // The active root file the canvas edits (null before any root loads).
   filename: string | null;
   source: string;
   parsed: ParsedUI | null;
-  // @ui-bind / @ui-action declarations found in the current source.
+  // The roots discovered under src/ui/ (each a component file).
+  roots: CodeRoot[];
+  // @ui-bind / @ui-action declarations found in the active source.
   bindingSurface: BindingSurface;
   // Raw ESTree program (for insertion-point math, e.g. afterImports).
   program: unknown;
@@ -40,6 +62,7 @@ let state: CodeState = {
   filename: null,
   source: '',
   parsed: null,
+  roots: [],
   bindingSurface: { variables: [], actions: [] },
   program: undefined,
   error: null,
@@ -66,31 +89,58 @@ export function useCodeState(): CodeState {
   return useSyncExternalStore(subscribe, getSnapshot);
 }
 
-// The scene file backing code-mode. Single-file for the PoC; a ui/ directory +
-// ui/index.tsx aggregator (file-per-root) is the documented next step.
-export const UI_FILE = 'src/ui.tsx';
+// The scene files backing code-mode (file-per-root).
+export const UI_DIR = 'src/ui';
+export const UI_INDEX = 'src/ui/index.tsx';
+const SCENE_ENTRY = 'src/index.ts';
+// The stock single-file template we replace with the src/ui/ directory (see
+// removeLegacySingleFile).
+const LEGACY_UI_FILE = 'src/ui.tsx';
+const TSX = '.tsx';
 
-// Persist the source to disk through the inspector's storage bridge (debounced,
-// so rapid edits coalesce into one write). Only valid parses are persisted, so
-// a transient broken-code buffer never reaches the scene's dev build.
+// readFile returns raw bytes; over the iframe↔CH RPC a Node Buffer arrives as a
+// plain Uint8Array (the Buffer subclass prototype is lost), so `.toString('utf8')`
+// would yield a comma-joined byte string ("47,42,…") instead of text. Decode with
+// TextDecoder / encode with TextEncoder (matches fs-composite-provider).
+function decodeUtf8(bytes: unknown): string {
+  if (!bytes) return '';
+  try {
+    return new TextDecoder().decode(bytes as Uint8Array);
+  } catch {
+    return '';
+  }
+}
+
+// Write a file to the scene folder through the storage bridge. The parent
+// StorageRPC mkdir -p's the parent dir, so a nested path (src/ui/X.tsx) creates
+// src/ui/ automatically. Writes are immediate (no debounce): canvas ops are
+// discrete (mouseup), and immediate writes keep disk == state.source so the disk
+// watcher never mistakes our own write for an external edit.
 async function writeToDisk(path: string, source: string): Promise<void> {
   const storage = getStorage();
   if (!storage) return;
   try {
-    await storage.writeFile(path, Buffer.from(source, 'utf8'));
+    await storage.writeFile(path, new TextEncoder().encode(source) as unknown as Buffer);
   } catch (e) {
-    console.error('[code-mode] failed to persist', path, e);
+    console.error('[code-mode] failed to write', path, e);
   }
 }
-const persistToDisk = debounce(
-  (path: string, source: string) => void writeToDisk(path, source),
-  400,
-);
 
-// Parse `source` (via the RPC bridge) and update the tree. Keeps the previous
-// parsed tree on failure so a transient broken-code state doesn't blank the
-// canvas — the error is surfaced separately. `persist` (default true) writes the
-// source back to disk on a successful parse; the initial file read passes false.
+async function readFromDisk(path: string): Promise<string> {
+  const storage = getStorage();
+  if (!storage) return '';
+  try {
+    return decodeUtf8(await storage.readFile(path));
+  } catch {
+    return '';
+  }
+}
+
+// Parse `source` (via the RPC bridge) and update the active tree. Keeps the
+// previous parsed tree on failure so a transient broken-code state doesn't blank
+// the canvas — the error is surfaced separately. `persist` (default true) writes
+// the source back to disk on a successful parse; disk reads (bootstrap / watcher)
+// pass false.
 export async function loadAndParse(
   filename: string,
   source: string,
@@ -113,21 +163,203 @@ export async function loadAndParse(
       parsed: parsed ?? state.parsed,
       bindingSurface,
       program,
-      error: parsed ? null : 'No exported component returning JSX was found',
+      error: parsed ? null : 'This file does not follow the UI Designer convention',
     });
-    if (opts.persist !== false) persistToDisk(filename, source);
+    if (opts.persist !== false) void writeToDisk(filename, source);
   } catch (e) {
     set({ parsing: false, error: e instanceof Error ? e.message : String(e) });
   }
 }
 
-// Apply source edits (from a visual op) to the buffer and reparse. Returns the
-// new source so callers can also push it into Monaco.
+// Apply source edits (from a visual op) to the active buffer and reparse (+
+// persist to the scene folder).
 export async function applySourceEdits(edits: Edit[]): Promise<string> {
+  const file = state.filename;
+  if (!file) return state.source;
   const next = applyEdits(state.source, edits);
-  await loadAndParse(state.filename ?? UI_FILE, next);
+  await loadAndParse(file, next);
   return next;
 }
+
+// ---------------------------------------------------------------------------
+// File-per-root management (src/ui/*.tsx + generated src/ui/index.tsx).
+// ---------------------------------------------------------------------------
+
+const rootsKey = (rs: readonly CodeRoot[]): string => rs.map(r => r.filename).join('|');
+
+// Re-list src/ui/ and update `roots` (only when the set actually changed, so the
+// 1s watcher poll doesn't re-render the tree every tick). Excludes the generated
+// index.tsx.
+async function refreshRoots(): Promise<CodeRoot[]> {
+  const storage = getStorage();
+  if (!storage) {
+    if (state.roots.length) set({ roots: [] });
+    return [];
+  }
+  let entries: { name: string; isDirectory: boolean }[] = [];
+  try {
+    entries = await storage.list(UI_DIR);
+  } catch {
+    entries = []; // dir doesn't exist yet
+  }
+  const roots = entries
+    .filter(e => !e.isDirectory && e.name.endsWith(TSX) && e.name !== 'index.tsx')
+    .map(e => ({ name: e.name.slice(0, -TSX.length), filename: `${UI_DIR}/${e.name}` }))
+    .sort((a, b) => a.name.localeCompare(b.name));
+  if (rootsKey(roots) !== rootsKey(state.roots)) set({ roots });
+  return roots;
+}
+
+// (Re)generate the src/ui/index.tsx aggregator from the current root set.
+async function regenerateAggregator(roots: CodeRoot[]): Promise<void> {
+  const src = generateUiIndex(roots.map(r => ({ component: r.name, from: `./${r.name}` })));
+  await writeToDisk(UI_INDEX, src);
+}
+
+// Ensure src/index.ts main() calls setupUi(). Best-effort + guarded: uncomment a
+// commented //setupUi() (the stock scene template) and make sure the import
+// exists; never inject into an unrecognized main().
+async function ensureMainWired(): Promise<void> {
+  const source = await readFromDisk(SCENE_ENTRY);
+  if (!source) return; // no entry file to wire
+  let next = source;
+
+  // Uncomment a commented-out setupUi() call, if present.
+  if (!/(^|\n)[ \t]*setupUi\s*\(\s*\)/.test(next)) {
+    next = next.replace(/\/\/[ \t]*setupUi\s*\(\s*\)/, 'setupUi()');
+  }
+  // If we now call setupUi() but never import it, add the import.
+  const callsSetup = /(^|\n)[ \t]*setupUi\s*\(\s*\)/.test(next);
+  const importsSetup = /import\s*\{[^}]*\bsetupUi\b[^}]*\}\s*from\s*['"]\.\/ui['"]/.test(next);
+  if (callsSetup && !importsSetup) {
+    next = `import { setupUi } from './ui'\n${next}`;
+  }
+
+  if (next !== source) await writeToDisk(SCENE_ENTRY, next);
+}
+
+// Remove the stock single-file src/ui.tsx when we adopt the src/ui/ directory:
+// `import … from './ui'` resolves the FILE before the DIRECTORY, so leaving it
+// would make the scene preview silently use the empty stock file.
+async function removeLegacySingleFile(): Promise<void> {
+  const storage = getStorage();
+  if (!storage) return;
+  try {
+    if (await storage.exists(LEGACY_UI_FILE)) await storage.delete(LEGACY_UI_FILE);
+  } catch {
+    // ignore
+  }
+}
+
+// Create a new root: write src/ui/<Name>.tsx, refresh + regenerate the
+// aggregator, wire main(), then select it. Returns the resolved name.
+export async function createRoot(desiredName?: string): Promise<string> {
+  const name = uniqueRootName(
+    toComponentName(desiredName ?? 'MainUI'),
+    state.roots.map(r => r.name),
+  );
+  const filename = `${UI_DIR}/${name}${TSX}`;
+  const source = generateRootComponent(name);
+  await writeToDisk(filename, source);
+  const roots = await refreshRoots();
+  await regenerateAggregator(roots);
+  await ensureMainWired();
+  await loadAndParse(filename, source, { persist: false });
+  return name;
+}
+
+// Make `filename` the active root (read + parse; do not persist — it's on disk).
+export async function selectRootFile(filename: string): Promise<void> {
+  const source = await readFromDisk(filename);
+  if (!source) return;
+  await loadAndParse(filename, source, { persist: false });
+}
+
+// Delete a root file, regenerate the aggregator, and reselect another root.
+export async function removeRoot(filename: string): Promise<void> {
+  const storage = getStorage();
+  if (!storage) return;
+  try {
+    await storage.delete(filename);
+  } catch {
+    // ignore
+  }
+  const roots = await refreshRoots();
+  await regenerateAggregator(roots);
+  if (state.filename === filename) {
+    if (roots.length > 0) await selectRootFile(roots[0].filename);
+    else
+      set({
+        filename: null,
+        source: '',
+        parsed: null,
+        program: undefined,
+        error: null,
+        bindingSurface: { variables: [], actions: [] },
+      });
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Disk watcher: reflect external edits (VSCode / vim / Notepad) onto the canvas.
+// Polls the active root file for content changes and the src/ui/ dir for
+// added/removed roots. Because our own writes are immediate, disk == state.source
+// right after a canvas edit, so the poll never mistakes it for an external change.
+// ---------------------------------------------------------------------------
+
+let watchTimer: ReturnType<typeof setInterval> | null = null;
+let polling = false;
+
+async function pollDisk(): Promise<void> {
+  if (polling) return;
+  polling = true;
+  try {
+    // 1. External edits to the active root file → reparse (do not re-persist).
+    const file = state.filename;
+    if (file) {
+      const disk = await readFromDisk(file);
+      if (disk && disk !== state.source) await loadAndParse(file, disk, { persist: false });
+    }
+    // 2. Roots added/removed externally → refresh the list + keep the aggregator
+    //    in sync so the new/removed root renders (or stops rendering) in-scene.
+    const prev = rootsKey(state.roots);
+    const roots = await refreshRoots();
+    if (rootsKey(roots) !== prev) await regenerateAggregator(roots);
+  } finally {
+    polling = false;
+  }
+}
+
+function startWatching(): void {
+  if (watchTimer) return;
+  watchTimer = setInterval(() => void pollDisk(), 1000);
+}
+
+let bootstrapped = false;
+
+// Bootstrap code-mode for the current scene: adopt the src/ui/ directory layout.
+// If it's empty, seed one starter root; otherwise sync the aggregator/wiring and
+// open the first root. Then start the disk watcher. Runs once.
+export function bootstrapCodeMode(): void {
+  if (bootstrapped) return;
+  bootstrapped = true;
+  void (async () => {
+    const roots = await refreshRoots();
+    await removeLegacySingleFile();
+    if (roots.length === 0) {
+      await createRoot('MainUI');
+    } else {
+      await regenerateAggregator(roots);
+      await ensureMainWired();
+      await selectRootFile(roots[0].filename);
+    }
+    startWatching();
+  })();
+}
+
+// ---------------------------------------------------------------------------
+// Read helpers (PropertyPanel / canvas node lookup).
+// ---------------------------------------------------------------------------
 
 // Look up the backing AST node for a code-mode UINode (by its synthetic id).
 function astNodeFor(entityId: number): unknown | undefined {
@@ -172,24 +404,11 @@ export function codeComponentValue(
   }
 }
 
-// uiTransform fields that map cleanly to top-level ergonomic props (bare
-// numbers, same key). Units, enums (positionType), and nested edges
-// (position/margin/padding) need PB→ergonomic translation and are skipped for
-// now (a follow-up).
-const TRANSFORM_SPLICE_FIELDS = new Set([
-  'width',
-  'height',
-  'minWidth',
-  'maxWidth',
-  'minHeight',
-  'maxHeight',
-  'flexBasis',
-  'flexGrow',
-  'flexShrink',
-]);
+// ---------------------------------------------------------------------------
+// Write helpers (canvas / panel visual ops → source splices).
+// ---------------------------------------------------------------------------
 
-// Route a PropertyPanel component patch to source splices. Handles the fields
-// that map cleanly to ergonomic react-ecs props; silently skips the rest.
+// Route a PropertyPanel component patch to source splices.
 export async function spliceComponentPatch(
   entityId: number,
   componentId: string,
@@ -200,11 +419,15 @@ export async function spliceComponentPatch(
   const edits: Edit[] = [];
 
   if (componentId === 'core::UiTransform') {
-    for (const [key, value] of Object.entries(patch)) {
-      if (TRANSFORM_SPLICE_FIELDS.has(key) && typeof value === 'number') {
-        edits.push(...setObjectField(ast, 'uiTransform', key, value));
-      }
-    }
+    // The panel patches flattened PB fields (dimensions + units, positionType,
+    // position/margin/padding edges). Re-emit the whole ergonomic uiTransform
+    // from the node's current PB merged with the patch, so enums, units, and
+    // nested edges all round-trip (not just bare-number dimensions). The
+    // synthetic `parent` (structural, from JSX nesting) is never emitted.
+    const node = findCodeNode(state.parsed?.root, entityId);
+    const merged = { ...((node?.uiTransform as Record<string, unknown>) ?? {}), ...patch };
+    delete merged.parent;
+    edits.push(...setAttribute(ast, 'uiTransform', pbToErgonomicTransform(merged)));
   } else if (componentId === 'core::UiBackground') {
     if (patch.color !== undefined)
       edits.push(...setObjectField(ast, 'uiBackground', 'color', patch.color));
@@ -219,7 +442,7 @@ export async function spliceComponentPatch(
 }
 
 // Splice a resize (width/height, top-level ergonomic uiTransform fields) into
-// the source and reparse. The first write-path op wired from the canvas.
+// the source and reparse.
 export async function spliceUiTransformSize(
   entityId: number,
   width: number,
@@ -234,8 +457,9 @@ export async function spliceUiTransformSize(
   await applySourceEdits(edits);
 }
 
-// Splice a drag-move (absolute reposition) into the source: set the ergonomic
-// `position: { top, left }` object on uiTransform.
+// Move an ABSOLUTE node: splice the ergonomic `position: { top, left }` edges.
+// (Only used for nodes already positionType:'absolute' — the canvas moves in-flow
+// nodes via margin instead, see spliceUiTransformMargin.)
 export async function spliceUiTransformPosition(
   entityId: number,
   top: number,
@@ -244,6 +468,21 @@ export async function spliceUiTransformPosition(
   const ast = astNodeFor(entityId) as Parameters<typeof setObjectField>[0] | undefined;
   if (!ast) return;
   await applySourceEdits(setObjectField(ast, 'uiTransform', 'position', { top, left }));
+}
+
+// Move an IN-FLOW node without leaving the flow: splice the ergonomic
+// `margin: { top, left }` (the caller passes current margin + drag delta). Keeps
+// the node responsive (laid out by the parent) rather than converting it to
+// absolute. Note: margin offsets the node from its flow origin, so elements
+// after it in the flow shift accordingly.
+export async function spliceUiTransformMargin(
+  entityId: number,
+  top: number,
+  left: number,
+): Promise<void> {
+  const ast = astNodeFor(entityId) as Parameters<typeof setObjectField>[0] | undefined;
+  if (!ast) return;
+  await applySourceEdits(setObjectField(ast, 'uiTransform', 'margin', { top, left }));
 }
 
 // Insert a new child element of the given type into a parent node.
@@ -268,6 +507,37 @@ export async function spliceRemoveNode(entityId: number): Promise<void> {
   await applySourceEdits(removeNode(ast));
 }
 
+// Move a node's element to a new location — the code equivalent of
+// reorderUISibling / setUIParent. `after`/`before` reorder relative to a sibling
+// (works across parents too); `into` reparents as the last child of the target.
+export type MoveAnchor = { kind: 'after' | 'before' | 'into'; targetId: number };
+
+export async function spliceMove(entityId: number, anchor: MoveAnchor): Promise<void> {
+  const el = astNodeFor(entityId) as Parameters<typeof removeNode>[0] | undefined;
+  const target = astNodeFor(anchor.targetId) as Parameters<typeof insertChild>[0] | undefined;
+  if (!el || !target || anchor.targetId === entityId) return;
+  // Never move an element into itself or one of its own descendants.
+  if (target.start >= el.start && target.end <= el.end) return;
+
+  let edits: Edit[];
+  if (anchor.kind === 'into') {
+    const raw = state.source.slice(el.start, el.end);
+    edits = [...removeNode(el), ...insertChild(target, state.source, raw)];
+  } else {
+    edits = moveElement(state.source, el, anchor.kind === 'after' ? target.end : target.start);
+  }
+  await applySourceEdits(edits);
+}
+
+// Duplicate a node: insert a verbatim copy of its source immediately after it
+// (as a following sibling) — the code equivalent of duplicateUINode.
+export async function spliceDuplicate(entityId: number): Promise<void> {
+  const el = astNodeFor(entityId) as Parameters<typeof removeNode>[0] | undefined;
+  if (!el) return;
+  const raw = state.source.slice(el.start, el.end);
+  await applySourceEdits([{ start: el.end, end: el.end, text: `\n${raw}` }]);
+}
+
 // Bind a top-level attribute to a variable/handler expression — `value={score}`,
 // `onMouseDown={onStart}` — the @ui-bind / @ui-action write path.
 export async function bindAttribute(entityId: number, name: string, expr: string): Promise<void> {
@@ -279,67 +549,11 @@ export async function bindAttribute(entityId: number, name: string, expr: string
 const VARIABLE_DEFAULT: Record<string, string> = { number: '0', string: "''", boolean: 'false' };
 
 // Insert a new /** @ui-bind */ variable declaration after the imports and
-// reparse (the binding surface then includes it). Fixes feedback #15 — a real,
-// named, typed variable instead of an auto-named "value".
+// reparse (the binding surface then includes it).
 export async function addBindVariable(name: string, type: string): Promise<void> {
   if (!state.program) return;
   const at = afterImports(state.program as Parameters<typeof afterImports>[0]);
   const value = VARIABLE_DEFAULT[type] ?? "''";
   const text = `\n\n/** @ui-bind */\nlet ${name}: ${type} = ${value}`;
   await applySourceEdits([{ start: at, end: at, text }]);
-}
-
-// PoC seed so code-mode renders something immediately. Real file loading
-// (open a scene's ui/*.tsx) arrives with M5 / Monaco.
-const SAMPLE_SOURCE = `/** @jsx ReactEcs.createElement */
-import ReactEcs, { UiEntity, Label } from '@dcl/sdk/react-ecs'
-
-/** @ui-bind */
-let score = 0
-
-export function MyScreen() {
-  return (
-    <UiEntity
-      uiTransform={{ width: 640, height: 320, positionType: 'absolute', position: { top: 60, left: 60 } }}
-      uiBackground={{ color: { r: 0, g: 0, b: 0, a: 0.6 } }}
-    >
-      <Label
-        value="Hello from code!"
-        fontSize={40}
-        uiTransform={{ width: 600, height: 80, margin: { top: 24, left: 24 } }}
-      />
-      <Label
-        value="Edit the .tsx and watch this update"
-        fontSize={22}
-        uiTransform={{ width: 600, height: 40, margin: { left: 24 } }}
-      />
-    </UiEntity>
-  )
-}
-`;
-
-let bootstrapped = false;
-
-// Bootstrap code-mode: read the scene's real src/ui.tsx and parse it. If the
-// file is missing/empty, seed the sample and create it. Runs once.
-export function bootstrapFromFile(): void {
-  if (bootstrapped || state.source || state.parsing) return;
-  bootstrapped = true;
-  void (async () => {
-    const storage = getStorage();
-    let source = '';
-    if (storage) {
-      try {
-        const buf = await storage.readFile(UI_FILE);
-        source = buf?.toString('utf8') ?? '';
-      } catch {
-        // File may not exist yet — fall back to seeding it below.
-      }
-    }
-    if (source.trim()) {
-      await loadAndParse(UI_FILE, source, { persist: false });
-    } else {
-      await loadAndParse(UI_FILE, SAMPLE_SOURCE, { persist: true });
-    }
-  })();
 }

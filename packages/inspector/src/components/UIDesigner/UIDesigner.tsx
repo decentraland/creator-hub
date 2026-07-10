@@ -2,41 +2,48 @@ import React from 'react';
 
 import { Box } from '../Box';
 import { Canvas } from './Canvas';
-import { CodeEditorPanel } from './code/CodeEditorPanel';
-import { UI_DESIGNER_CODE_MODE } from './code/config';
+import { useCodeState } from './code/store';
 import { useUINodeHotkeys } from './useUINodeHotkeys';
 
 import './UIDesigner.css';
 
+// Code-mode only: the canvas is a live view over the scene's real .tsx files.
+// Edit them in your code editor (VSCode / vim / Notepad) or on the canvas —
+// both write to the scene folder; the disk watcher reflects external edits back
+// onto the canvas. (The in-app Monaco editor is intentionally not mounted here.)
 const UIDesigner: React.FC = () => {
-  // The shared <Box> is a plain function component that does NOT forward refs,
-  // so we hang the ref on a real wrapper element (filling the panel) that the
-  // hotkeys hook can visibility-check via offsetParent.
   const containerRef = React.useRef<HTMLDivElement>(null);
+  const { filename } = useCodeState();
   useUINodeHotkeys(containerRef);
   return (
     <div
       ref={containerRef}
-      style={{ width: '100%', height: '100%' }}
+      style={{ display: 'flex', flexDirection: 'column', width: '100%', height: '100%' }}
     >
-      {UI_DESIGNER_CODE_MODE ? (
-        // Code-mode: canvas + live .tsx editor side by side, both views over
-        // the same source buffer (the store).
-        <div style={{ display: 'flex', width: '100%', height: '100%' }}>
-          <div style={{ flex: 1, minWidth: 0, height: '100%' }}>
-            <Box className="ui-designer-canvas-container">
-              <Canvas />
-            </Box>
-          </div>
-          <div style={{ flex: 1, minWidth: 0, height: '100%', borderLeft: '1px solid #2a2a2e' }}>
-            <CodeEditorPanel />
-          </div>
-        </div>
-      ) : (
+      <div
+        style={{
+          padding: '4px 10px',
+          fontSize: 11,
+          color: '#8a8a92',
+          borderBottom: '1px solid #2a2a2e',
+          whiteSpace: 'nowrap',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+        }}
+      >
+        {filename ? (
+          <>
+            Editing <code>{filename}</code> — edit on the canvas or in your code editor
+          </>
+        ) : (
+          'No UI root selected'
+        )}
+      </div>
+      <div style={{ flex: 1, minHeight: 0 }}>
         <Box className="ui-designer-canvas-container">
           <Canvas />
         </Box>
-      )}
+      </div>
     </div>
   );
 };
