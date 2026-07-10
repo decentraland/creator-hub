@@ -6,7 +6,7 @@ import { generateStreamKey } from '../api';
 import { LoadingDots } from '../../Loading';
 import { getComponents } from '../../../definitions';
 import { COLORS, TYPE } from '../../theme';
-import { state } from '../..';
+import { state } from '../../store';
 
 export function GenerateStreamKey({
   engine,

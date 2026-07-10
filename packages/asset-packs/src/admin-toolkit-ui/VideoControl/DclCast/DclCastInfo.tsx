@@ -11,6 +11,7 @@ import { COLORS, RADIUS, SPACING, TYPE } from '../../theme';
 import { FieldLabel, Surface, Divider, Icon } from '../../Primitives';
 import { CopyRow, Slider, ActionLink } from '../../Controls';
 import { icon } from '../../icons';
+import { setStream, dismissPresentation } from '../../actions';
 import PresentationPanel from './PresentationPanel';
 
 const DclCastInfo = ({
@@ -100,9 +101,7 @@ const DclCastInfo = ({
           <PresentationPanel
             presentationState={state.videoControl.presentationState}
             idPrefix="dcl_cast"
-            onStopSharing={() => {
-              state.videoControl.presentationState = undefined;
-            }}
+            onStopSharing={() => dismissPresentation()}
           />
         ) : (
           <UiEntity
@@ -177,10 +176,10 @@ const DclCastInfo = ({
             onClick={() => {
               if (active) {
                 controls.setSource('');
-                state.videoControl.selectedStream = undefined;
+                setStream(undefined);
               } else {
                 controls.setSource(LIVEKIT_STREAM_SRC);
-                state.videoControl.selectedStream = 'dcl-cast';
+                setStream('dcl-cast');
               }
             }}
           />

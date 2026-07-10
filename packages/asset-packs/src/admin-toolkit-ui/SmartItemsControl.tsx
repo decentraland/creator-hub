@@ -13,6 +13,7 @@ import { type State } from './types';
 import { COLORS, RADIUS, SPACING, TYPE } from './theme';
 import { FieldLabel } from './Primitives';
 import { PillButton } from './Controls';
+import { selectSmartItem, setSmartItemAction, setSmartItemVisibility } from './actions';
 import { getSmartItems } from '.';
 
 type SmartItemList = NonNullable<AdminTools['smartItemsControl']['smartItems']>;
@@ -28,32 +29,13 @@ function handleExecuteAction(smartItem: SmartItemList[0], action: Action) {
   actionEvents.emit(action.name, getPayload(action));
 }
 
-function handleSelectSmartItem(state: State, smartItems: SmartItemList, idx: number) {
-  state.smartItemsControl.selectedSmartItem = idx;
+function handleSelectSmartItem(smartItems: SmartItemList, idx: number) {
   const smartItem = smartItems[idx];
-  if (!state.smartItemsControl.smartItems.has(smartItem.entity as Entity)) {
-    const stateSmartItems = new Map(state.smartItemsControl.smartItems);
-    stateSmartItems.set(smartItem.entity as Entity, {
-      visible: true,
-      selectedAction: smartItem.defaultAction,
-    });
-    state.smartItemsControl = {
-      ...state.smartItemsControl,
-      smartItems: new Map(stateSmartItems),
-    };
-  }
+  selectSmartItem(idx, smartItem.entity as Entity, smartItem.defaultAction);
 }
 
-function handleSelectAction(state: State, smartItem: SmartItemList[0], action: Action) {
-  const stateSmartItems = new Map(state.smartItemsControl.smartItems);
-  stateSmartItems.set(smartItem.entity as Entity, {
-    ...stateSmartItems.get(smartItem.entity as Entity)!,
-    selectedAction: action.name,
-  });
-  state.smartItemsControl = {
-    ...state.smartItemsControl,
-    smartItems: new Map(stateSmartItems),
-  };
+function handleSelectAction(smartItem: SmartItemList[0], action: Action) {
+  setSmartItemAction(smartItem.entity as Entity, action.name);
 }
 
 function handleHideShowEntity(engine: IEngine, state: State, smartItems: SmartItemList) {
@@ -61,7 +43,7 @@ function handleHideShowEntity(engine: IEngine, state: State, smartItems: SmartIt
   const smartItemEntity = smartItems[state.smartItemsControl.selectedSmartItem!].entity as Entity;
   const smartItem = state.smartItemsControl.smartItems.get(smartItemEntity);
   const toggleVisibility = !smartItem!.visible;
-  state.smartItemsControl.smartItems.get(smartItemEntity)!.visible = toggleVisibility;
+  setSmartItemVisibility(smartItemEntity, toggleVisibility);
   const visibility = VisibilityComponent.getOrCreateMutable(smartItemEntity);
   visibility.visible = toggleVisibility;
 }
@@ -117,7 +99,7 @@ export function SmartItemsControl({ engine, state }: { engine: IEngine; state: S
           emptyLabel="Select smart item"
           options={smartItems.map((item: SmartItemList[0]) => item.customName)}
           selectedIndex={selectedIndex ?? -1}
-          onChange={idx => handleSelectSmartItem(state, smartItems, idx)}
+          onChange={idx => handleSelectSmartItem(smartItems, idx)}
           textAlign="middle-left"
           fontSize={TYPE.body}
           color={COLORS.inputText}
@@ -137,7 +119,7 @@ export function SmartItemsControl({ engine, state }: { engine: IEngine; state: S
           selectedIndex={selectedActionIndex}
           disabled={!hasSelection}
           onChange={idx => {
-            if (hasSelection) handleSelectAction(state, smartItems[selectedIndex], actions[idx]);
+            if (hasSelection) handleSelectAction(smartItems[selectedIndex], actions[idx]);
           }}
           textAlign="middle-left"
           fontSize={TYPE.body}

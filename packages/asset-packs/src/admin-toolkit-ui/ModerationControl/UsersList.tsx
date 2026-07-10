@@ -4,10 +4,12 @@ import ReactEcs, { UiEntity, Label } from '@dcl/react-ecs';
 import { getContentUrl } from '../constants';
 import { Button } from '../Button';
 import { clearInterval, setInterval } from '../utils';
+import { state } from '../store';
+import { closeAdminList, closeBanList, confirmRemoveAdmin, setUnbanMessage } from '../actions';
 import { RemoveAdminConfirmation } from './RemoveAdminConfirmation';
 import { type SceneBanUser } from './api';
 import { handleUnbanUser } from './utils';
-import { moderationControlState, type SceneAdmin } from './.';
+import { type SceneAdmin } from './.';
 import {
   getModalStyles,
   getModalBackgrounds,
@@ -73,9 +75,9 @@ const getActionButtonText = (type: UserListType) => {
 
 const closeModal = (type: UserListType) => {
   if (type === UserListType.ADMIN) {
-    moderationControlState.showModalAdminList = false;
+    closeAdminList();
   } else {
-    moderationControlState.showModalBanList = false;
+    closeBanList();
   }
 };
 
@@ -87,29 +89,29 @@ export function ModalUserList({ users, engine, type }: ModalUserListProps) {
 
   const handleRemoveUser = async (user: SceneAdmin | SceneBanUser) => {
     if (type === UserListType.ADMIN) {
-      moderationControlState.adminToRemove = user as SceneAdmin;
+      confirmRemoveAdmin(user as SceneAdmin);
     } else {
       const bannedUser = user as SceneBanUser;
 
       const success = await handleUnbanUser(bannedUser.bannedAddress);
       if (success) {
         const username = bannedUser.name || bannedUser.bannedAddress;
-        moderationControlState.unbanMessage = `${username} has been unbanned from your scene`;
+        setUnbanMessage(`${username} has been unbanned from your scene`);
       } else {
-        moderationControlState.unbanMessage = 'We were unable to unban this user';
+        setUnbanMessage('We were unable to unban this user');
       }
     }
   };
 
   ReactEcs.useEffect(() => {
-    if (moderationControlState.unbanMessage) {
+    if (state.moderationControl.unbanMessage) {
       let counter = 0;
       const interval = setInterval(
         engine,
         () => {
           counter += 100;
           if (counter >= 3000) {
-            moderationControlState.unbanMessage = null;
+            setUnbanMessage(undefined);
           }
         },
         100,
@@ -117,12 +119,13 @@ export function ModalUserList({ users, engine, type }: ModalUserListProps) {
 
       return () => clearInterval(engine, interval);
     }
-  }, [moderationControlState.unbanMessage]);
+  }, [state.moderationControl.unbanMessage]);
 
-  if (moderationControlState.adminToRemove) {
+  const adminToRemove = state.moderationControl.adminToRemove;
+  if (adminToRemove) {
     return (
       <RemoveAdminConfirmation
-        admin={moderationControlState.adminToRemove}
+        admin={adminToRemove}
         engine={engine}
       />
     );
@@ -287,10 +290,10 @@ export function ModalUserList({ users, engine, type }: ModalUserListProps) {
           </UiEntity>
         )}
 
-        {type === UserListType.BAN && moderationControlState.unbanMessage && (
+        {type === UserListType.BAN && state.moderationControl.unbanMessage && (
           <UiEntity uiTransform={styles.messageContainer}>
             <Label
-              value={moderationControlState.unbanMessage}
+              value={state.moderationControl.unbanMessage}
               fontSize={14}
               color={colors.white}
               uiTransform={styles.messageLabel}

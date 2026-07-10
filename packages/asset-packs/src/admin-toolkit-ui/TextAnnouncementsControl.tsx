@@ -6,6 +6,7 @@ import { type State } from './types';
 import { COLORS, RADIUS, SPACING, TYPE } from './theme';
 import { PillButton, ActionLink } from './Controls';
 import { getAdminMessageBus } from './admin-message-bus';
+import { setAnnouncementText, clearAnnouncements } from './actions';
 
 export function TextAnnouncementsControl({
   engine,
@@ -53,7 +54,7 @@ export function TextAnnouncementsControl({
       <Input
         key={`announcement-input-${clearNonce}`}
         onSubmit={value => handleSendTextAnnouncement(engine, state, value, player)}
-        onChange={value => (state.textAnnouncementControl.text = value)}
+        onChange={value => setAnnouncementText(value)}
         fontSize={TYPE.body}
         placeholder="Write your announcement…"
         placeholderColor={COLORS.inputPlaceholder}
@@ -83,7 +84,7 @@ export function TextAnnouncementsControl({
           color={COLORS.textSecondary}
           onClick={() => {
             handleClearTextAnnouncement(engine, state);
-            state.textAnnouncementControl.text = '';
+            setAnnouncementText('');
             setClearNonce(n => n + 1);
           }}
         />
@@ -101,14 +102,14 @@ export function TextAnnouncementsControl({
   );
 }
 
-function handleClearTextAnnouncement(_engine: IEngine, state: State) {
+function handleClearTextAnnouncement(_engine: IEngine, _state: State) {
   getAdminMessageBus().emitClearAnnouncement();
-  state.textAnnouncementControl.announcements = [];
+  clearAnnouncements();
 }
 
 function handleSendTextAnnouncement(
   _engine: IEngine,
-  state: State,
+  _state: State,
   text: string | undefined,
   player?: GetPlayerDataRes | null,
 ) {
@@ -116,5 +117,5 @@ function handleSendTextAnnouncement(
   const author = player?.name;
   const timestamp = Date.now();
   getAdminMessageBus().emitSetAnnouncement(text.slice(0, 90), author, `${timestamp}-${author}`);
-  state.textAnnouncementControl.text = '';
+  setAnnouncementText('');
 }

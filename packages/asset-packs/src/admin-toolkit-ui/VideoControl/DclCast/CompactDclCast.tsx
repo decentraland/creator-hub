@@ -9,9 +9,9 @@ import { isPresentationBot, stopPresentation } from '../api';
 import { VideoControlVolume } from '../VolumeControl';
 import { createVideoPlayerControls, isDclCast } from '../utils';
 import { COLORS, RADIUS, TYPE } from '../../theme';
+import { setStream, dismissPresentation, expandCast } from '../../actions';
 import PresentationPanel from './PresentationPanel';
 import { getCompactBarStyles, getDclCastColors } from './styles';
-import { showcaseState } from '.';
 
 const ICONS = {
   get DCL_CAST_ICON() {
@@ -44,16 +44,18 @@ const CompactDclCast = ({
 
   const isActive = !!(video?.src && isDclCast(video.src));
   const presentationState = state.videoControl.presentationState;
-  const presentationBotInRoom = showcaseState.participants.some(p => isPresentationBot(p.name));
+  const presentationBotInRoom = state.videoControl.participants.some(p =>
+    isPresentationBot(p.name),
+  );
   const hasPresentation = isActive && (!!presentationState || presentationBotInRoom);
 
   const handleExpand = () => {
-    state.videoControl.isMinimized = false;
+    expandCast();
   };
 
   const handleActivate = () => {
     controls.setSource(LIVEKIT_STREAM_SRC);
-    state.videoControl.selectedStream = 'dcl-cast';
+    setStream('dcl-cast');
   };
 
   return (
@@ -135,9 +137,7 @@ const CompactDclCast = ({
           compact
           hideStopSharing
           idPrefix="compact_dcl_cast"
-          onStopSharing={() => {
-            state.videoControl.presentationState = undefined;
-          }}
+          onStopSharing={() => dismissPresentation()}
         />
       </UiEntity>
 
@@ -194,7 +194,7 @@ const CompactDclCast = ({
           uiTransform={{ height: 42, padding: { left: 8, right: 8 } }}
           onMouseDown={() => {
             stopPresentation();
-            state.videoControl.presentationState = undefined;
+            dismissPresentation();
           }}
         />
       </UiEntity>

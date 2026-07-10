@@ -6,7 +6,8 @@ import type { AdminTools } from '../../definitions';
 import { COLORS, RADIUS, SPACING, TYPE } from '../theme';
 import { SectionHeader, FieldLabel, ActivePill, Divider } from '../Primitives';
 import { Segmented } from '../Controls';
-import { getVideoPlayers, isDclCast, isVideoUrl, useSelectedVideoPlayer } from './utils';
+import { selectVideoSubTab, selectVideoPlayer } from '../actions';
+import { getVideoPlayers, isVideoUrl, useSelectedVideoPlayer } from './utils';
 import { VideoControlURL } from './VideoUrl';
 import { LiveStream } from './LiveStream';
 import DclCast from './DclCast';
@@ -74,17 +75,18 @@ export function VideoControl({
 }) {
   const [selectedEntity, selectedVideo] = useSelectedVideoPlayer(engine) ?? [];
   const videoPlayers = getVideoPlayers(engine);
-  const [selected, setSelected] = ReactEcs.useState<MediaSource | undefined>(undefined);
+  const selected = state.videoControl.selectedTab;
 
   ReactEcs.useEffect(() => {
-    setSelected(
-      selectedVideo && isDclCast(selectedVideo.src)
-        ? 'dcl-cast'
-        : selectedVideo && isVideoUrl(selectedVideo.src)
-          ? 'video-url'
-          : 'live',
-    );
-  }, [state.videoControl.selectedVideoPlayer]);
+    // An explicit DCL Cast context (auto-open on a presentation, or an active cast
+    // stream) wins over src-derivation, so the panel lands on DCL Cast even when no
+    // scene screen is casting yet. Otherwise reflect the selected screen's source.
+    if (state.videoControl.selectedStream === 'dcl-cast') {
+      selectVideoSubTab('dcl-cast');
+      return;
+    }
+    selectVideoSubTab(selectedVideo && isVideoUrl(selectedVideo.src) ? 'video-url' : 'live');
+  }, [state.videoControl.selectedVideoPlayer, state.videoControl.selectedStream]);
 
   const isActive = !!(selectedVideo?.src && selectedVideo.src.length > 0);
 
@@ -107,7 +109,7 @@ export function VideoControl({
                   player.customName,
               )}
               selectedIndex={state.videoControl.selectedVideoPlayer ?? 0}
-              onChange={idx => (state.videoControl.selectedVideoPlayer = idx)}
+              onChange={idx => selectVideoPlayer(idx)}
               textAlign="middle-left"
               fontSize={TYPE.body}
               color={COLORS.inputText}
@@ -134,7 +136,7 @@ export function VideoControl({
               { key: 'live', label: 'Stream', icon: 'broadcast' },
             ]}
             selected={selected}
-            onSelect={setSelected}
+            onSelect={selectVideoSubTab}
           />
         </UiEntity>
       </UiEntity>

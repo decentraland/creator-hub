@@ -3,7 +3,7 @@ import { startTimeout, stopTimeout } from '../timer';
 import type { ButtonVariant } from './Button';
 import { Button, type CompositeButtonProps } from './Button';
 import { COLORS } from './theme';
-import { state } from '.';
+import { state } from './store';
 
 const FEEDBACK_TIMEOUT_ACTION_PREFIX = 'feedback_button_';
 

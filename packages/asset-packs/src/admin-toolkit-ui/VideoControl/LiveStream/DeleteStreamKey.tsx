@@ -7,7 +7,7 @@ import { Error } from '../../Error';
 import { resetStreamKey } from '../api';
 import { getComponents } from '../../../definitions';
 import { COLORS, TYPE } from '../../theme';
-import { state } from '../..';
+import { state } from '../../store';
 
 export function DeleteStreamKeyConfirmation({
   engine,

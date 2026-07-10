@@ -9,7 +9,8 @@ import { createVideoPlayerControls } from '../utils';
 import { COLORS, RADIUS, SPACING, TYPE } from '../../theme';
 import { FieldLabel, Icon, Divider } from '../../Primitives';
 import { CopyButton, Slider, ActionLink, PillButton } from '../../Controls';
-import { state } from '../..';
+import { state } from '../../store';
+import { setStream } from '../../actions';
 import { STREAMING_SUPPORT_URL } from '.';
 
 const AUTO_HIDE_DURATION_SECONDS = 30;
@@ -185,10 +186,10 @@ export function ShowStreamKey({
           onClick={() => {
             if (isLive) {
               controls.setSource('');
-              state.videoControl.selectedStream = undefined;
+              setStream(undefined);
             } else {
               controls.setSource(LIVEKIT_STREAM_SRC);
-              state.videoControl.selectedStream = 'live';
+              setStream('live');
             }
           }}
         />

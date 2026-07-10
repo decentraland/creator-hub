@@ -6,8 +6,8 @@ import { LoadingDots } from '../Loading';
 import { Error } from '../Error';
 import { COLORS, RADIUS, TYPE } from '../theme';
 import { fetchAndSyncSceneAdmins } from '..';
+import { cancelRemoveAdmin } from '../actions';
 import { deleteSceneAdmin } from './api';
-import { moderationControlState } from '.';
 import type { SceneAdmin } from '.';
 
 export function RemoveAdminConfirmation({ admin, engine }: { admin: SceneAdmin; engine: IEngine }) {
@@ -89,7 +89,7 @@ export function RemoveAdminConfirmation({ admin, engine }: { admin: SceneAdmin; 
                 margin: { right: 30, left: 30 },
               }}
               onMouseDown={() => {
-                moderationControlState.adminToRemove = undefined;
+                cancelRemoveAdmin();
               }}
             />
           )}
@@ -112,7 +112,7 @@ export function RemoveAdminConfirmation({ admin, engine }: { admin: SceneAdmin; 
                   if (error) {
                     setError(error);
                   } else {
-                    moderationControlState.adminToRemove = undefined;
+                    cancelRemoveAdmin();
                     await fetchAndSyncSceneAdmins();
                   }
                   setIsLoading(false);

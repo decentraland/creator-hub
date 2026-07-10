@@ -19,19 +19,26 @@ import { TextAnnouncementsControl } from './TextAnnouncementsControl';
 import { SmartItemsControl } from './SmartItemsControl';
 import { TextAnnouncements } from './TextAnnouncements';
 import { getContentUrl } from './constants';
-import { type State, TabType, type SelectedSmartItem } from './types';
-import { ModerationControl, moderationControlState, type SceneAdmin } from './ModerationControl';
+import { TabType } from './types';
+import { ModerationControl, type SceneAdmin } from './ModerationControl';
 import { getSceneAdmins, getSceneBans, type SceneBanUser } from './ModerationControl/api';
 import { ModalUserList, UserListType } from './ModerationControl/UsersList';
-import { showcaseState, sharePresentationState } from './VideoControl/DclCast';
+import { startPresentationDetection } from './VideoControl/DclCast/presentation-detector';
+import { findActiveCastScreenIndex } from './VideoControl/utils';
 import { SpeakerShowcase } from './VideoControl/DclCast/SpeakerShowcase';
 import SharePresentationModal from './VideoControl/DclCast/SharePresentationModal';
 import { isPreview } from './fetch-utils';
 import { initAdminMessageBus, getAdminMessageBus } from './admin-message-bus';
+import { state } from './store';
+import {
+  setActiveTab,
+  togglePanel,
+  showPresentation,
+  dismissPresentation,
+  setAdminToolkitUiEntity,
+} from './actions';
 import { COLORS, RADIUS, SPACING, TYPE } from './theme';
 import { IconTab, Divider } from './Primitives';
-
-export const nextTickFunctions: (() => void)[] = [];
 
 // Mobile scaling: shrink the virtual canvas on
 // mobile so the SDK's global UI scale factor — min(screen/virtual), see
@@ -50,38 +57,8 @@ function getVirtualUiSize() {
     : BASE_VIRTUAL_UI_SIZE;
 }
 
-export const state: State = {
-  adminToolkitUiEntity: 0 as Entity,
-  panelOpen: false,
-  activeTab: TabType.VIDEO_CONTROL,
-  videoControl: {
-    selectedVideoPlayer: undefined,
-    selectedStream: undefined,
-    dclCast: undefined,
-    isMinimized: false,
-    presentationState: undefined,
-  },
-  smartItemsControl: {
-    selectedSmartItem: undefined,
-    smartItems: new Map<Entity, SelectedSmartItem>(),
-  },
-  textAnnouncementControl: {
-    entity: undefined,
-    text: undefined,
-    messageRateTracker: new Map<string, number>(),
-    announcements: [],
-    maxAnnouncements: 4,
-  },
-  rewardsControl: {
-    selectedRewardItem: undefined,
-  },
-};
-
 let sceneAdminsCache: SceneAdmin[] = [];
 let sceneBansCache: SceneBanUser[] = [];
-
-// const BTN_REWARDS_CONTROL = `${CONTENT_URL}/admin_toolkit/assets/icons/admin-panel-rewards-control-button.png`
-// const BTN_REWARDS_CONTROL_ACTIVE = `${CONTENT_URL}/admin_toolkit/assets/icons/admin-panel-rewards-control-active-button.png`
 
 const ADMIN_ICONS = {
   get BTN_ADMIN_TOOLKIT_CONTROL() {
@@ -176,7 +153,7 @@ export async function initializeAdminData(
     const { VideoControlState } = getComponents(engine);
 
     // Initialize AdminToolkitUiEntity
-    state.adminToolkitUiEntity = getAdminToolkitEntity(engine) ?? engine.addEntity();
+    setAdminToolkitUiEntity(getAdminToolkitEntity(engine) ?? engine.addEntity());
 
     // Initialize TextAnnouncements sync component
     initTextAnnouncementSync(engine);
@@ -193,15 +170,6 @@ export async function initializeAdminData(
       [VideoControlState.componentId],
       ADMIN_TOOLS_ENTITY,
     );
-
-    engine.addSystem(() => {
-      if (nextTickFunctions.length > 0) {
-        const nextTick = nextTickFunctions.shift();
-        if (nextTick) {
-          nextTick();
-        }
-      }
-    }, Number.POSITIVE_INFINITY);
 
     // Initialize scene data
     await Promise.all([fetchSceneAdmins(), fetchSceneBans()]);
@@ -235,17 +203,16 @@ export function createAdminToolkitUI(
       () => uiComponent(engine, pointerEventsSystem, sdkHelpers, playersHelper),
       getVirtualUiSize(),
     );
-  });
-}
 
-// Switch tabs. Re-mount the target via a NONE tick so the incoming tab starts
-// fresh; clicking the already-active tab is a no-op (the panel always shows a
-// tab, matching the design — the floating toggle handles open/close).
-function selectTab(tab: TabType) {
-  if (state.activeTab === tab) return;
-  state.activeTab = TabType.NONE;
-  nextTickFunctions.push(() => {
-    state.activeTab = tab;
+    // Background service: auto-open the panel to the DCL Cast tab when a
+    // presentation goes live, regardless of which tab (if any) the admin is on.
+    startPresentationDetection(
+      engine,
+      () => !!isAllowedAdmin(engine, getAdminToolkitComponent(engine), playersHelper?.getPlayer()),
+      () => playersHelper?.getPlayer()?.userId,
+      () => showPresentation(findActiveCastScreenIndex(engine)),
+      () => dismissPresentation(),
+    );
   });
 }
 
@@ -342,25 +309,25 @@ const uiComponent = (
                   name="users"
                   active={state.activeTab === TabType.MODERATION_CONTROL}
                   enabled={adminToolkitEntity.moderationControl.isEnabled && !isPreview()}
-                  onClick={() => selectTab(TabType.MODERATION_CONTROL)}
+                  onClick={() => setActiveTab(TabType.MODERATION_CONTROL)}
                 />
                 <IconTab
                   name="tv"
                   active={state.activeTab === TabType.VIDEO_CONTROL}
                   enabled={adminToolkitEntity.videoControl.isEnabled}
-                  onClick={() => selectTab(TabType.VIDEO_CONTROL)}
+                  onClick={() => setActiveTab(TabType.VIDEO_CONTROL)}
                 />
                 <IconTab
                   name="bolt"
                   active={state.activeTab === TabType.SMART_ITEMS_CONTROL}
                   enabled={adminToolkitEntity.smartItemsControl.isEnabled}
-                  onClick={() => selectTab(TabType.SMART_ITEMS_CONTROL)}
+                  onClick={() => setActiveTab(TabType.SMART_ITEMS_CONTROL)}
                 />
                 <IconTab
                   name="message"
                   active={state.activeTab === TabType.TEXT_ANNOUNCEMENT_CONTROL}
                   enabled={adminToolkitEntity.textAnnouncementControl.isEnabled}
-                  onClick={() => selectTab(TabType.TEXT_ANNOUNCEMENT_CONTROL)}
+                  onClick={() => setActiveTab(TabType.TEXT_ANNOUNCEMENT_CONTROL)}
                 />
               </UiEntity>
             </UiEntity>
@@ -370,7 +337,8 @@ const uiComponent = (
                 width: '100%',
                 flexDirection: 'column',
                 // Mobile: cap the tab content to the viewport and scroll the
-                // overflow, so tall tabs stay fully reachable.
+                // overflow, so tall tabs (e.g. permissions) stay fully reachable.
+                // The header above stays fixed; desktop is left untouched.
                 maxHeight: isMobile ? '85vh' : undefined,
                 overflow: isMobile ? 'scroll' : 'visible',
               }}
@@ -438,9 +406,7 @@ const uiComponent = (
                 textureMode: 'stretch',
                 color: Color4.create(1, 1, 1, 1),
               }}
-              onMouseDown={() => {
-                state.panelOpen = !state.panelOpen;
-              }}
+              onMouseDown={() => togglePanel()}
             />
           </UiEntity>
         </UiEntity>
@@ -450,35 +416,35 @@ const uiComponent = (
         state={state}
       />
     </UiEntity>,
-    moderationControlState.showModalAdminList && (
+    state.moderationControl.showModalAdminList && (
       <ModalUserList
         users={sceneAdminsCache ?? []}
         engine={engine}
         type={UserListType.ADMIN}
       />
     ),
-    moderationControlState.showModalBanList && (
+    state.moderationControl.showModalBanList && (
       <ModalUserList
         users={sceneBansCache ?? []}
         engine={engine}
         type={UserListType.BAN}
       />
     ),
-    showcaseState.show &&
-      showcaseState.onSelectTrack &&
-      showcaseState.onSetDefault &&
-      showcaseState.onClose && (
+    state.videoControl.showcase.show &&
+      state.videoControl.showcase.onSelectTrack &&
+      state.videoControl.showcase.onSetDefault &&
+      state.videoControl.showcase.onClose && (
         <SpeakerShowcase
-          participants={showcaseState.participants}
-          activeTrackSid={showcaseState.activeTrackSid}
-          onSelectTrack={showcaseState.onSelectTrack}
-          onSetDefault={showcaseState.onSetDefault}
-          onClose={showcaseState.onClose}
+          participants={state.videoControl.participants}
+          activeTrackSid={state.videoControl.showcase.activeTrackSid}
+          onSelectTrack={state.videoControl.showcase.onSelectTrack}
+          onSetDefault={state.videoControl.showcase.onSetDefault}
+          onClose={state.videoControl.showcase.onClose}
         />
       ),
-    sharePresentationState.show && sharePresentationState.onClose && (
+    state.videoControl.sharePresentation.show && state.videoControl.sharePresentation.onClose && (
       <SharePresentationModal
-        onClose={sharePresentationState.onClose}
+        onClose={state.videoControl.sharePresentation.onClose}
         streamingKey={state.videoControl.dclCast?.streamingKey ?? ''}
       />
     ),

@@ -3,7 +3,7 @@ import ReactEcs, { UiEntity } from '@dcl/react-ecs';
 import type { DeepReadonlyObject, Entity, IEngine, PBVideoPlayer } from '@dcl/ecs';
 import { openExternalUrl } from '~system/RestrictedActions';
 import { getComponents } from '../../../definitions';
-import { state } from '../..';
+import { state } from '../../store';
 import { getStreamKey } from '../api';
 import { COLORS, SPACING, TYPE } from '../../theme';
 import { SectionHeader, Icon } from '../../Primitives';

@@ -7,6 +7,7 @@ import { COLORS, RADIUS, SPACING, TYPE } from '../theme';
 import { Divider } from '../Primitives';
 import { PillButton } from '../Controls';
 import { fetchSceneBans } from '..';
+import { openAdminList, openBanList } from '../actions';
 import { AddUserInput, PermissionType } from './AddUserInput';
 
 type Props = {
@@ -21,19 +22,6 @@ export type SceneAdmin = {
   role?: 'owner' | 'operator' | 'admin';
   verified?: boolean;
   canBeRemoved: boolean;
-};
-
-type State = {
-  showModalAdminList?: boolean;
-  adminToRemove?: SceneAdmin;
-  showModalBanList?: boolean;
-  unbanMessage?: string | null;
-};
-export const moderationControlState: State = {
-  showModalAdminList: false,
-  showModalBanList: false,
-  adminToRemove: undefined,
-  unbanMessage: null as string | null,
 };
 
 // The "Banned users can / can't" rules card.
@@ -129,7 +117,7 @@ export function ModerationControl({ engine: _engine, player: _player, sceneAdmin
           label="View admin list"
           iconName="shield"
           variant="outlined"
-          onClick={() => (moderationControlState.showModalAdminList = true)}
+          onClick={() => openAdminList()}
         />
       </UiEntity>
 
@@ -157,7 +145,7 @@ export function ModerationControl({ engine: _engine, player: _player, sceneAdmin
           variant="outlined"
           onClick={async () => {
             await fetchSceneBans();
-            moderationControlState.showModalBanList = true;
+            openBanList();
           }}
         />
       </UiEntity>
