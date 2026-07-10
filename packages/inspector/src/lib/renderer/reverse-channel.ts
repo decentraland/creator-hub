@@ -1,5 +1,6 @@
 import type { Emitter } from 'mitt';
 import type { IEngine } from '@dcl/ecs';
+import { Quaternion, Vector3 } from '@dcl/ecs-math';
 
 import type { createOperations } from '../sdk/operations';
 import type { EditorComponents, SdkComponents } from '../sdk/components';
@@ -84,11 +85,21 @@ export function connectReverseChannel(context: ReverseChannelTarget): () => void
       const current = context.Transform.getOrNull(t.entity);
       if (!current) continue;
       pendingCommit = true;
+      // A renderer that can't read the entity's base transform (e.g. the Bevy
+      // agent, which lives in a separate engine) sends a gizmo drag as a DELTA:
+      // - position is absolute (the renderer is given the world anchor up front);
+      // - rotation is a delta quaternion, composed onto the current rotation;
+      // - scale is a per-axis multiplier, applied to the current scale.
+      // Composing here (where we own the real Transform) keeps the untouched
+      // fields exact and needs a single write per drag (the renderer commits once
+      // on release), so deltas don't accumulate.
+      const rotation = t.rotation ? Quaternion.multiply(current.rotation, t.rotation) : undefined;
+      const scale = t.scale ? Vector3.multiply(current.scale, t.scale) : undefined;
       operations.updateValue(context.Transform, t.entity, {
         ...current,
         ...(t.position ? { position: t.position } : {}),
-        ...(t.rotation ? { rotation: t.rotation } : {}),
-        ...(t.scale ? { scale: t.scale } : {}),
+        ...(rotation ? { rotation } : {}),
+        ...(scale ? { scale } : {}),
       });
     }
   }
