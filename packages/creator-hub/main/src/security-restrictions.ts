@@ -66,6 +66,37 @@ app.on('ready', () => {
       },
     });
   });
+
+  // Cross-origin isolation for the Bevy engine's SharedArrayBuffer.
+  //
+  // `self.crossOriginIsolated` (which SharedArrayBuffer requires) is only true
+  // when the top-level document AND every ancestor frame are isolated via
+  // COOP: same-origin + COEP. The Bevy engine runs three frames deep:
+  //   creator-hub renderer (top)  ->  inspector iframe  ->  bevy-engine iframe
+  // The inspector + engine are served by our http-server, which already stamps
+  // these headers. But the TOP document — the renderer — loads from `file://` in
+  // production (mainWindow.ts `loadFile`), which carries no HTTP headers, so the
+  // whole chain stays un-isolated and the engine's asset-loader worker throws
+  // `SharedArrayBuffer transfer requires self.crossOriginIsolated`.
+  //
+  // Inject the headers onto the renderer document here. Scope to the app's own
+  // documents (file:// renderer + localhost inspector) so external embeds
+  // (YouTube, docs, studios) are unaffected — a blanket COEP would block their
+  // cross-origin subresources. COEP is `credentialless` (not `require-corp`) so
+  // the inspector iframe's cross-origin subresources load without needing CORP on
+  // every one, matching what the inspector http-server and engine service worker
+  // already use.
+  const isolationFilter = { urls: ['file://*/*', 'http://localhost/*', 'http://localhost:*/*'] };
+  session.defaultSession.webRequest.onHeadersReceived(isolationFilter, (details, callback) => {
+    callback({
+      responseHeaders: {
+        ...details.responseHeaders,
+        'Cross-Origin-Opener-Policy': ['same-origin'],
+        'Cross-Origin-Embedder-Policy': ['credentialless'],
+        'Cross-Origin-Resource-Policy': ['cross-origin'],
+      },
+    });
+  });
 });
 
 app.on('web-contents-created', (_, contents) => {
