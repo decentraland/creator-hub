@@ -1,6 +1,6 @@
 import { bus } from './bus';
 import { getBevyApi } from './bevy-api';
-import { setupGizmo, setSelectedEntity, setSceneOffset } from './gizmo';
+import { getGroundPointAtPointer, setupGizmo, setSelectedEntity, setSceneOffset } from './gizmo';
 
 /**
  * Super-user editor agent for the inspector's Bevy renderer.
@@ -23,10 +23,21 @@ import { setupGizmo, setSelectedEntity, setSceneOffset } from './gizmo';
  */
 
 export function main(): void {
-  // Inspector → agent: track the current selection + its world position so the
-  // gizmo attaches to it (the agent can't read the inspected scene's Transform).
+  // Inspector → agent messages.
   bus.onSceneMessage(msg => {
-    if (msg.kind === 'set-selection') setSelectedEntity(msg.entity, msg.position);
+    // Track the current selection + its world position so the gizmo attaches to
+    // it (the agent can't read the inspected scene's Transform).
+    if (msg.kind === 'set-selection') {
+      setSelectedEntity(msg.entity, msg.position);
+      return;
+    }
+    // Drag-drop placement: raycast the ground under the pointer and reply with
+    // the scene-local point (null if the ray misses). The inspector awaits the
+    // matching `id`, falling back to a default if we can't answer.
+    if (msg.kind === 'query-drop-point') {
+      bus.postToPage({ kind: 'drop-point', id: msg.id, position: getGroundPointAtPointer() });
+      return;
+    }
   });
 
   // setupGizmo installs the pointer-down handler (grab-or-pick) + drag system.

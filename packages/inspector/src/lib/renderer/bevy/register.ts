@@ -3,6 +3,7 @@ import { connectReverseChannel } from '../reverse-channel';
 import { registerRenderer } from '../plugin';
 import { BevyRenderer } from './BevyRenderer';
 import { mountBevyEngine } from './engine-iframe';
+import { createDropPointBridge } from './drop-point-bridge';
 import { createForwardEditBridge } from './forward-edits';
 import { createPickBridge } from './pick-bridge';
 import { createSelectionBridge } from './selection-bridge';
@@ -81,10 +82,16 @@ export function registerBevyRenderer(): void {
       // the selected entity (from a viewport pick OR a tree click).
       const disconnectSelection = createSelectionBridge({ context: bevy.context });
 
+      // Drag-drop placement: the agent raycasts the ground under the pointer and
+      // replies over the bus; wire it into the renderer's getPointerWorldPoint.
+      const dropPoint = createDropPointBridge();
+      bevy.setDropPointResolver(() => dropPoint.query());
+
       return {
         renderer: bevy,
         engine: bevy.context.engine,
         dispose: () => {
+          dropPoint.disconnect();
           disconnectSelection();
           disconnectPick();
           disconnectForward();

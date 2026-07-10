@@ -64,6 +64,11 @@ export class BevyRenderer implements IRenderer {
   // The engine's window, once its iframe has booted (attachEngine). Null until
   // then (and in the conformance path, which runs the renderer with no engine).
   #engineWindow: EngineWindow | null = null;
+  // Resolves the ground point under the pointer for drag-drop placement. The
+  // engine's raycast lives in the editor-agent scene, reached over the bus, so
+  // `register` wires this to the drop-point bridge. Null until wired (and in the
+  // conformance path) → getPointerWorldPoint falls back to null like the stub.
+  #resolveDropPoint: (() => Promise<Vector3 | null>) | null = null;
 
   constructor() {
     this.context = new BevySceneContext();
@@ -173,10 +178,19 @@ export class BevyRenderer implements IRenderer {
     // no-op proof stub for now.
   }
 
+  /**
+   * Wire the drag-drop ground raycast (the editor-agent answers it over the bus).
+   * `register` calls this after mounting the engine; without it (conformance
+   * path) getPointerWorldPoint stays a null stub.
+   */
+  setDropPointResolver(resolve: () => Promise<Vector3 | null>): void {
+    this.#resolveDropPoint = resolve;
+  }
+
   async getPointerWorldPoint(): Promise<Vector3 | null> {
-    // Needs the wasm raycast (bevy-editor's collider-layer pick); not available
-    // in the spike.
-    return null;
+    // The ground raycast lives in the editor-agent scene (the wasm can't be
+    // reached in-process); delegate to the bus-backed resolver when wired.
+    return this.#resolveDropPoint ? this.#resolveDropPoint() : null;
   }
 
   async getEntityAnimations(_entity: Entity): Promise<RendererAnimation[]> {

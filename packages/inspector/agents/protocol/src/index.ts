@@ -32,18 +32,24 @@ export interface BusVec3 {
 export type AgentToPage =
   | { kind: 'pick'; entity: number; shift: boolean; ctrl: boolean }
   | { kind: 'gizmoCommit'; transforms: { entity: number; position?: BusVec3 }[] }
-  | { kind: 'gizmoCommitEnd' };
+  | { kind: 'gizmoCommitEnd' }
+  // Reply to `query-drop-point`: the world point under the engine's current
+  // pointer on the scene ground plane (null if the pointer ray misses / isn't
+  // available). `id` correlates the reply with its request.
+  | { kind: 'drop-point'; id: number; position: BusVec3 | null };
 
 /**
- * inspector → agent (`to: 'scene'`). Selection sync: the agent can't read the
- * inspected scene's Transform from its own engine, so the inspector supplies the
- * selected entity's world position for the gizmo to anchor to (null = cleared).
+ * inspector → agent (`to: 'scene'`).
+ *  - `set-selection`: the agent can't read the inspected scene's Transform from
+ *    its own engine, so the inspector supplies the selected entity's world
+ *    position for the gizmo to anchor to (null = cleared).
+ *  - `query-drop-point`: ask the agent to raycast the ground under the current
+ *    pointer (for placing a drag-dropped asset); answered by `drop-point`. `id`
+ *    correlates request/reply.
  */
-export type PageToScene = {
-  kind: 'set-selection';
-  entity: number | null;
-  position: BusVec3 | null;
-};
+export type PageToScene =
+  | { kind: 'set-selection'; entity: number | null; position: BusVec3 | null }
+  | { kind: 'query-drop-point'; id: number };
 
 /** Every message is wrapped so a peer ignores its own posts / the wrong direction. */
 export interface BusEnvelope {

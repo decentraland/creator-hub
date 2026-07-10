@@ -129,6 +129,24 @@ export function setSceneOffset(baseParcelX: number, baseParcelY: number): void {
   sceneOffset = Vector3.create(baseParcelX * 16, 0, baseParcelY * 16);
 }
 
+/**
+ * The scene-local ground point under the engine's current pointer — for placing
+ * a drag-dropped asset (the inspector's `getPointerWorldPoint` for Bevy). Casts
+ * the current pointer ray onto the scene ground plane (engine-world y=0) and
+ * converts back to scene-local (subtracting the scene offset), matching the
+ * coordinate space the inspector operates in. Null if the pointer/ray isn't
+ * available or the ray doesn't meet the ground (e.g. aimed at the sky).
+ */
+export function getGroundPointAtPointer(): { x: number; y: number; z: number } | null {
+  const ray = pointerRay();
+  if (ray === null) return null;
+  // Ground plane at engine-world y=0 (the scene's base plane), normal up.
+  const hit = rayPlaneIntersect(ray.origin, ray.dir, sceneOffset, Vector3.Up());
+  if (hit === null) return null;
+  const local = Vector3.subtract(hit, sceneOffset);
+  return { x: local.x, y: 0, z: local.z };
+}
+
 /** Attach the gizmo to an entity at a scene-local position (or hide when null).
  * The scene offset is added so it lands in the engine's world space. */
 export function setSelectedEntity(
