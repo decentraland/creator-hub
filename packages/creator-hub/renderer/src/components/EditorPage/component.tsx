@@ -209,10 +209,21 @@ export function EditorPage() {
 
   const handleBack = useCallback(async () => {
     const rpc = iframeRef.current;
-    if (rpc) await refreshProject(rpc);
+    // Refresh the project (saves + regenerates the thumbnail) on the way out, but
+    // never let it block navigation. The thumbnail comes from a Babylon-canvas
+    // screenshot over the scene RPC; with the Bevy renderer active that canvas is
+    // hidden and the RPC never resolves, so skip it in Bevy mode and guard the
+    // Babylon path so a hang/throw can't wedge the Back button.
+    if (rpc && !useBevy) {
+      try {
+        await refreshProject(rpc);
+      } catch (error) {
+        console.error('[Editor] refreshProject on back failed:', error);
+      }
+    }
     killPreview();
     navigate('/scenes');
-  }, [navigate, iframeRef.current]);
+  }, [navigate, useBevy, refreshProject, killPreview]);
 
   const handleOpenPublishModal = useCallback(async () => {
     await handleActionWithWarningCheck(() => openModal('publish'));
