@@ -1,5 +1,5 @@
 import type { Emitter } from 'mitt';
-import type { IEngine } from '@dcl/ecs';
+import type { IEngine, TransformType } from '@dcl/ecs';
 import { Quaternion, Vector3 } from '@dcl/ecs-math';
 
 import type { createOperations } from '../sdk/operations';
@@ -90,13 +90,13 @@ export function connectReverseChannel(context: ReverseChannelTarget): () => void
     }
   }
 
-  // A gizmoCommit writes Transforms but defers dispatch: a multi-entity drag
-  // emits one commit per entity and the batch is flushed once on gizmoCommitEnd,
-  // keeping it a single engine update / undo step. `pendingCommit` guards
-  // against a renderer that emits commits but never the matching End (an
-  // exception mid-drag, a dropped out-of-process message, a buggy third-party
-  // renderer) — which would otherwise leave a written-but-unflushed Transform
-  // that the next unrelated dispatch silently absorbs, corrupting undo history.
+  // A gizmoCommit writes Transforms but defers dispatch: a drag emits one commit
+  // per entity and the batch is flushed once on gizmoCommitEnd, keeping it a
+  // single engine update / undo step. `pendingCommit` guards against a renderer
+  // that emits commits but never the matching End (an exception mid-drag, a
+  // dropped out-of-process message, a buggy third-party renderer) — which would
+  // otherwise leave a written-but-unflushed Transform that the next unrelated
+  // dispatch silently absorbs, corrupting undo history.
   let pendingCommit = false;
 
   function flushPending() {
@@ -105,42 +105,72 @@ export function connectReverseChannel(context: ReverseChannelTarget): () => void
     void operations.dispatch();
   }
 
+  // Merge a renderer's gizmo delta onto an entity's current Transform. A renderer
+  // that can't read the entity's base transform (e.g. the Bevy agent, in a
+  // separate engine) sends the drag as a DELTA:
+  // - position is absolute (the renderer is given the world anchor up front);
+  // - rotation is a WORLD-frame delta quaternion about the dragged ring's world
+  //   normal: new = delta ⊗ current. (For a locally-aligned ring the normal is
+  //   the entity's rotated axis, so the same composition applies the delta about
+  //   the entity's local axis.)
+  // - scale is a per-axis multiplier, applied to the current scale.
+  // Values are snapped AUTHORITATIVELY here when the editor's snap is enabled —
+  // the renderer only quantizes its feedback; the merge quantizes where it lands.
+  function mergeTransform(
+    current: TransformType,
+    t: {
+      position?: { x: number; y: number; z: number };
+      rotation?: { x: number; y: number; z: number; w: number };
+      scale?: { x: number; y: number; z: number };
+    },
+  ): TransformType {
+    const position = t.position ? snapPositionValue(t.position) : undefined;
+    const rotation = t.rotation
+      ? snapRotationValue(Quaternion.multiply(t.rotation, current.rotation))
+      : undefined;
+    // Scale: clamp the base away from 0 first (so a zeroed entity is
+    // recoverable), multiply, snap, then clamp again (snapping can round a small
+    // result back to 0).
+    const scale = t.scale
+      ? clampScale(snapScaleValue(Vector3.multiply(clampScale(current.scale), t.scale)))
+      : undefined;
+    return {
+      ...current,
+      ...(position ? { position } : {}),
+      ...(rotation ? { rotation } : {}),
+      ...(scale ? { scale } : {}),
+    };
+  }
+
   function applyGizmoCommit(transforms: RendererEvents['gizmoCommit']['transforms']) {
     for (const t of transforms) {
       const current = context.Transform.getOrNull(t.entity);
       if (!current) continue;
       pendingCommit = true;
-      // A renderer that can't read the entity's base transform (e.g. the Bevy
-      // agent, which lives in a separate engine) sends a gizmo drag as a DELTA:
-      // - position is absolute (the renderer is given the world anchor up front);
-      // - rotation is a WORLD-frame delta quaternion about the dragged ring's
-      //   world normal: new = delta ⊗ current. (For a locally-aligned ring the
-      //   normal is the entity's rotated axis, so the same composition applies
-      //   the delta about the entity's local axis.)
-      // - scale is a per-axis multiplier, applied to the current scale.
-      // Composing here (where we own the real Transform) keeps the untouched
-      // fields exact and needs a single write per drag (the renderer commits once
-      // on release), so deltas don't accumulate. The merged values are snapped
-      // AUTHORITATIVELY here when the editor's snap setting is enabled — the
-      // renderer only quantizes its drag feedback; the real Transform quantizes
-      // where it's written, so committed values land on the snap grid.
-      const position = t.position ? snapPositionValue(t.position) : undefined;
-      const rotation = t.rotation
-        ? snapRotationValue(Quaternion.multiply(t.rotation, current.rotation))
-        : undefined;
-      // Scale: clamp the base away from 0 first (so a zeroed entity is
-      // recoverable), multiply, snap, then clamp again (snapping can round a
-      // small result back to 0).
-      const scale = t.scale
-        ? clampScale(snapScaleValue(Vector3.multiply(clampScale(current.scale), t.scale)))
-        : undefined;
-      operations.updateValue(context.Transform, t.entity, {
-        ...current,
-        ...(position ? { position } : {}),
-        ...(rotation ? { rotation } : {}),
-        ...(scale ? { scale } : {}),
+      operations.updateValue(context.Transform, t.entity, mergeTransform(current, t));
+    }
+  }
+
+  // Live (mid-drag) preview: merge the delta onto the current Transform exactly
+  // like a commit, but emit the absolute result as `previewTransforms` instead of
+  // writing the CRDT. An out-of-process renderer (Bevy) previews these in its
+  // engine directly, so the entity tracks the gizmo every frame WITHOUT a CRDT
+  // write / undo entry per frame — the authoritative write is the drag-end commit.
+  function applyGizmoPreview(transforms: RendererEvents['gizmoDrag']['transforms']) {
+    const merged: RendererEvents['previewTransforms']['transforms'] = [];
+    for (const t of transforms) {
+      const current = context.Transform.getOrNull(t.entity);
+      if (!current) continue;
+      const m = mergeTransform(current, t);
+      merged.push({
+        entity: t.entity,
+        position: m.position,
+        rotation: m.rotation,
+        scale: m.scale,
+        parent: m.parent,
       });
     }
+    if (merged.length > 0) context.rendererEvents.emit('previewTransforms', { transforms: merged });
   }
 
   // Any pick mid-drag flushes the pending gizmo batch first, so its write can't
@@ -151,10 +181,13 @@ export function connectReverseChannel(context: ReverseChannelTarget): () => void
   };
   const onGizmoCommit = ({ transforms }: RendererEvents['gizmoCommit']) =>
     applyGizmoCommit(transforms);
+  const onGizmoPreview = ({ transforms }: RendererEvents['gizmoDrag']) =>
+    applyGizmoPreview(transforms);
   const onGizmoCommitEnd = () => flushPending();
 
   context.rendererEvents.on('pick', onPick);
   context.rendererEvents.on('gizmoCommit', onGizmoCommit);
+  context.rendererEvents.on('gizmoDrag', onGizmoPreview);
   context.rendererEvents.on('gizmoCommitEnd', onGizmoCommitEnd);
 
   return () => {
@@ -162,6 +195,7 @@ export function connectReverseChannel(context: ReverseChannelTarget): () => void
     flushPending();
     context.rendererEvents.off('pick', onPick);
     context.rendererEvents.off('gizmoCommit', onGizmoCommit);
+    context.rendererEvents.off('gizmoDrag', onGizmoPreview);
     context.rendererEvents.off('gizmoCommitEnd', onGizmoCommitEnd);
   };
 }

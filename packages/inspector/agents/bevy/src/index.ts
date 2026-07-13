@@ -84,7 +84,17 @@ export function main(): void {
 
 async function boot(): Promise<void> {
   await autoLogin();
-  await pinInspectedScene();
+  const sceneLocalCenter = await pinInspectedScene();
+  // Editor default: the free-fly camera, not the avatar camera. A scene editor
+  // wants an overview it can fly around, not a walking avatar. Enacted here
+  // (after the scene is pinned and the native camera exists) so the takeover
+  // seeds its pose from the live camera; the inspector's editorCamera state also
+  // defaults to 'free' so the toolbar toggle matches without a round-trip.
+  setCameraMode('free');
+  // Frame the scene at a sensible default standoff rather than leaving the camera
+  // wherever the avatar happened to spawn (which is far off for a large parcel
+  // and looks "lost" on load). resetCamera adds the scene offset back internally.
+  if (sceneLocalCenter !== null) resetCamera(sceneLocalCenter);
 }
 
 /**
@@ -117,10 +127,13 @@ async function autoLogin(): Promise<void> {
  * whatever scene is pinned — WITHOUT this the ray hits nothing. Picks the
  * non-portable, non-super scene (the project scene; the agent itself is the
  * super/portable one). Retries: liveSceneInfo can be empty right after boot.
+ *
+ * Returns the scene's SCENE-LOCAL center (parcel span midpoint, in the origin
+ * frame the inspector uses) so boot can frame it, or null if no scene was found.
  */
-async function pinInspectedScene(): Promise<void> {
+async function pinInspectedScene(): Promise<{ x: number; y: number; z: number } | null> {
   const api = getBevyApi();
-  if (!api) return;
+  if (!api) return null;
   for (let attempt = 0; attempt < 10; attempt++) {
     try {
       const scenes = (await api.liveSceneInfo()) ?? [];
@@ -131,13 +144,19 @@ async function pinInspectedScene(): Promise<void> {
         // scene-local → engine-world offset that BOTH the gizmo and the focus
         // camera need to place things where the scene actually is.
         const ps = target.parcels ?? [];
-        if (ps.length > 0) {
-          const baseX = Math.min(...ps.map(p => p.x));
-          const baseY = Math.min(...ps.map(p => p.y));
-          setSceneOffset(baseX, baseY);
-          setCameraSceneOffset(baseX, baseY);
-        }
-        return;
+        if (ps.length === 0) return null;
+        const xs = ps.map(p => p.x);
+        const ys = ps.map(p => p.y);
+        const baseX = Math.min(...xs);
+        const baseY = Math.min(...ys);
+        setSceneOffset(baseX, baseY);
+        setCameraSceneOffset(baseX, baseY);
+        // Scene-LOCAL center: the parcel span's midpoint relative to the base,
+        // in metres (16m/parcel), centred within the parcel (+8). The offset is
+        // re-added by resetCamera, so this stays in the inspector's origin frame.
+        const spanX = (Math.max(...xs) - baseX) * 16 + 16;
+        const spanY = (Math.max(...ys) - baseY) * 16 + 16;
+        return { x: spanX / 2, y: 0, z: spanY / 2 };
       }
     } catch (e) {
       console.error('[bevy-agent] pin attempt failed:', e);
@@ -145,4 +164,5 @@ async function pinInspectedScene(): Promise<void> {
     await new Promise<void>(resolve => setTimeout(() => resolve(), 500));
   }
   console.error('[bevy-agent] no inspectable scene found to pin — picking will not work');
+  return null;
 }

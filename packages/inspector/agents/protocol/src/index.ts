@@ -72,6 +72,20 @@ export type AgentToPage =
       }[];
     }
   | { kind: 'gizmoCommitEnd' }
+  // A LIVE (mid-drag) gizmo update — same delta shape as `gizmoCommit`, emitted
+  // every frame the drag changes. The inspector merges it into the entity's real
+  // Transform and previews it in the engine WITHOUT touching the CRDT / undo
+  // history (that happens once on `gizmoCommit` + `gizmoCommitEnd` at release), so
+  // the entity tracks the gizmo continuously but a whole drag stays one undo step.
+  | {
+      kind: 'gizmoPreview';
+      transforms: {
+        entity: number;
+        position?: BusVec3;
+        rotation?: BusQuat;
+        scale?: BusVec3;
+      }[];
+    }
   // Reply to `query-drop-point`: the world point under the engine's current
   // pointer on the scene ground plane (null if the pointer ray misses / isn't
   // available). `id` correlates the reply with its request.

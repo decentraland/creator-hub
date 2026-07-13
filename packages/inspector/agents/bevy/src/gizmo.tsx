@@ -1246,6 +1246,7 @@ function updateDrag(): void {
       const base = isGizmoLocallyAligned() ? selectedRot : Quaternion.Identity();
       Transform.getMutable(gizmoRoot).rotation = Quaternion.multiply(spin, base);
     }
+    emitLiveDragCommit();
     return;
   }
 
@@ -1273,6 +1274,7 @@ function updateDrag(): void {
     if (drag.axis === 'xyz' && scaleCenterGroup !== null) {
       Transform.getMutable(scaleCenterGroup).scale = Vector3.create(factor, factor, factor);
     }
+    emitLiveDragCommit();
     return;
   }
 
@@ -1310,84 +1312,55 @@ function updateDrag(): void {
   }
   dragPos = newPos;
 
-  // Move only the gizmo visual during the drag (feedback); the entity itself is
-  // moved by the inspector on commit (see the note above previewMove's removal).
+  // Move the gizmo visual for immediate feedback, then push a live commit so the
+  // inspector moves the actual entity too (tracks the gizmo, not just on release).
   if (gizmoRoot !== null) Transform.getMutable(gizmoRoot).position = newPos;
+  emitLiveDragCommit();
 }
 
-function endDrag(): void {
-  const d = drag;
-  const finalPos = dragPos;
-  drag = null;
-  dragPos = null;
-  if (d === null || selected === null) return;
+/** A commit transform on the wire (entity id + the field(s) the mode changed). */
+type CommitTransform = {
+  entity: number;
+  position?: { x: number; y: number; z: number };
+  rotation?: { x: number; y: number; z: number; w: number };
+  scale?: { x: number; y: number; z: number };
+};
+
+/**
+ * Build the per-entity commit transforms for the drag's current state (empty for
+ * a no-op drag). The deltas are always cumulative FROM DRAG START (total swept
+ * angle / total factor / absolute position), so the same result is safe to emit
+ * every frame (live preview) AND on release — the inspector composes each against
+ * the entity's drag-start Transform, so repeats don't compound. Multi-selection
+ * transforms each entity about the centroid; single-selection sends only the
+ * changed field (no position write, so a rotate/scale never disturbs position).
+ */
+function buildDragTransforms(d: DragState, finalPos: Vector3 | null): CommitTransform[] {
+  const multi = d.entities.length > 1;
 
   if (d.mode === 'rotate' && isAxis(d.axis)) {
     const raw = d.angle ?? 0;
     const angle = snap !== null ? snapStep(raw, snap.rotation) : raw;
-    // Reset the gizmo visual to its base orientation (the entity's real rotation
-    // updates via the commit, flows back over the CRDT, and the inspector
-    // re-anchors + re-aligns the gizmo).
-    if (gizmoRoot !== null) {
-      Transform.getMutable(gizmoRoot).rotation = isGizmoLocallyAligned()
-        ? { ...selectedRot }
-        : Quaternion.Identity();
-    }
-    if (Math.abs(angle) < 1e-4) return; // no-op drag → nothing to commit
-    // Commit a WORLD-frame DELTA rotation about the ring's world normal (the
-    // entity's rotated axis when locally aligned); the inspector composes it
-    // onto each entity's current rotation as delta ⊗ current (the agent can't
-    // read that base). Rotation is orientation-only, so — unlike position — no
-    // scene-offset conversion.
-    //
-    // Multi-selection: every entity rotates by the same delta AND orbits the
-    // centroid — newWorldPos = centroid + delta·offset (offset cached at drag
-    // start). Position is absolute, so subtract the scene offset before sending.
-    // Single-selection: offset is 0, so the position is unchanged (only rotation).
+    if (Math.abs(angle) < 1e-4) return []; // no-op
     const delta = Quaternion.fromAngleAxis((angle * 180) / Math.PI, d.axisDir);
     const rotation = { x: delta.x, y: delta.y, z: delta.z, w: delta.w };
-    // Orbit only matters for multi-selection (offset ≠ 0). For a single entity
-    // (offset 0) send rotation ONLY, so a rotate never disturbs — or snaps — its
-    // position, matching the single-entity behavior before multi-select.
-    const multi = d.entities.length > 1;
-    const transforms = d.entities.map(e => {
+    return d.entities.map(e => {
       if (!multi) return { entity: e.entity as number, rotation };
       const worldPos = Vector3.add(d.center, Vector3.rotate(e.offset, delta));
       const localPos = Vector3.subtract(worldPos, sceneOffset);
       return { entity: e.entity as number, position: { ...localPos }, rotation };
     });
-    bus.postToPage({ kind: 'gizmoCommit', transforms });
-    bus.postToPage({ kind: 'gizmoCommitEnd' });
-    return;
   }
 
   if (d.mode === 'scale') {
     const factor = d.factor ?? 1;
-    // Reset the stretched handle visuals (the entity's real scale updates via
-    // the commit → CRDT, and the inspector re-anchors the gizmo).
-    for (const axis of AXES) {
-      const group = scaleGroupOf[axis];
-      if (group !== undefined) Transform.getMutable(group).scale = Vector3.One();
-    }
-    if (scaleCenterGroup !== null) Transform.getMutable(scaleCenterGroup).scale = Vector3.One();
-    if (Math.abs(factor - 1) < 1e-3) return; // no-op drag
-    // Commit a per-axis scale MULTIPLIER (1 on the untouched axes; the center
-    // cube multiplies all three — uniform); the inspector multiplies it onto
-    // each entity's current scale. Scale is dimensionless, so no scene-offset
-    // conversion — and it applies to LOCAL scale, which is why the handles are
-    // aligned to the entity's local axes.
-    //
-    // Multi-selection: every entity scales by the multiplier AND moves outward
-    // from the centroid proportionally — newWorldPos = centroid + offset⊙mul
-    // (matching the Babylon ScaleGizmo's proportional multi-scale). Single-
-    // selection: offset 0, so scale ONLY (no position write / snap disturbance).
+    if (Math.abs(factor - 1) < 1e-3) return []; // no-op
     const mul = {
       x: d.axis === 'x' || d.axis === 'xyz' ? factor : 1,
       y: d.axis === 'y' || d.axis === 'xyz' ? factor : 1,
       z: d.axis === 'z' || d.axis === 'xyz' ? factor : 1,
     };
-    const multi = d.entities.length > 1;
-    const transforms = d.entities.map(e => {
+    return d.entities.map(e => {
       if (!multi) return { entity: e.entity as number, scale: mul };
       const scaledOffset = Vector3.create(
         e.offset.x * mul.x,
@@ -1397,24 +1370,92 @@ function endDrag(): void {
       const localPos = Vector3.subtract(Vector3.add(d.center, scaledOffset), sceneOffset);
       return { entity: e.entity as number, position: { ...localPos }, scale: mul };
     });
-    bus.postToPage({ kind: 'gizmoCommit', transforms });
-    bus.postToPage({ kind: 'gizmoCommitEnd' });
-    return;
   }
 
-  if (finalPos === null) return;
-  // Adopt the committed centroid as the gizmo's new anchor (engine-world).
-  selectedPos = finalPos;
-  // The whole selection translates by the same world delta the centroid moved:
-  // each entity's new world position = its start position + delta (its offset
-  // from the centroid is preserved). Convert back to SCENE-LOCAL before sending
-  // (the inspector's Transform is scene-local; it renders every scene at the
-  // origin), so subtract the offset we added when placing.
+  // Translate: the whole selection moves by the centroid's world delta.
+  if (finalPos === null) return [];
   const delta = Vector3.subtract(finalPos, d.center);
-  const transforms = d.entities.map(e => {
+  return d.entities.map(e => {
     const localPos = Vector3.subtract(Vector3.add(e.startPos, delta), sceneOffset);
     return { entity: e.entity as number, position: { ...localPos } };
   });
+}
+
+/**
+ * Emit a LIVE preview for the drag's current state (`gizmoPreview`, not
+ * `gizmoCommit`). The inspector previews it directly in the engine WITHOUT
+ * touching the CRDT / undo history — so the entity tracks the gizmo every frame,
+ * while the authoritative write + undo step happen once on release (endDrag).
+ */
+let liveCommitted = false;
+
+function emitLiveDragCommit(): void {
+  if (drag === null) return;
+  const transforms = buildDragTransforms(drag, dragPos);
+  if (transforms.length > 0) {
+    bus.postToPage({ kind: 'gizmoPreview', transforms });
+    liveCommitted = true;
+  }
+}
+
+/** Restore each entity to its drag-start pose after a net no-op drag that
+ * nonetheless moved live (dragged out then back below threshold). The inspector
+ * composes deltas against the drag-start base, so a NEUTRAL delta (identity
+ * rotation / unit scale) + the start position restores it exactly. */
+function dragStartTransforms(d: DragState): CommitTransform[] {
+  const rotate = d.mode === 'rotate';
+  const scale = d.mode === 'scale';
+  return d.entities.map(e => {
+    const localPos = Vector3.subtract(e.startPos, sceneOffset);
+    return {
+      entity: e.entity as number,
+      position: { ...localPos },
+      ...(rotate ? { rotation: { x: 0, y: 0, z: 0, w: 1 } } : {}),
+      ...(scale ? { scale: { x: 1, y: 1, z: 1 } } : {}),
+    };
+  });
+}
+
+function endDrag(): void {
+  const d = drag;
+  const finalPos = dragPos;
+  drag = null;
+  dragPos = null;
+  if (d === null || selected === null) return;
+
+  // Reset the drag's visual feedback on the gizmo; the entity's real transform
+  // updates via the commit → CRDT, and the inspector re-anchors + re-aligns.
+  if (d.mode === 'rotate' && gizmoRoot !== null) {
+    Transform.getMutable(gizmoRoot).rotation = isGizmoLocallyAligned()
+      ? { ...selectedRot }
+      : Quaternion.Identity();
+  }
+  if (d.mode === 'scale') {
+    for (const axis of AXES) {
+      const group = scaleGroupOf[axis];
+      if (group !== undefined) Transform.getMutable(group).scale = Vector3.One();
+    }
+    if (scaleCenterGroup !== null) Transform.getMutable(scaleCenterGroup).scale = Vector3.One();
+  }
+  if (d.mode === 'translate' && finalPos !== null) {
+    // Adopt the committed centroid as the gizmo's new anchor (engine-world).
+    selectedPos = finalPos;
+  }
+
+  // Commit the final state as one undo step. buildDragTransforms carries the same
+  // cumulative deltas the live commits used, so the flush lands on the same value
+  // the user last saw — with `gizmoCommitEnd` dispatching it (one undo step).
+  const hadLive = liveCommitted;
+  liveCommitted = false;
+  const transforms = buildDragTransforms(d, finalPos);
+  if (transforms.length === 0) {
+    // Net no-op drag. If live previews already moved the engine (dragged out then
+    // back below threshold), send a final PREVIEW restoring the drag-start pose so
+    // the engine matches the (unchanged) CRDT state. No gizmoCommit/End — nothing
+    // was committed, so there's no undo step to flush.
+    if (hadLive) bus.postToPage({ kind: 'gizmoPreview', transforms: dragStartTransforms(d) });
+    return;
+  }
   bus.postToPage({ kind: 'gizmoCommit', transforms });
   bus.postToPage({ kind: 'gizmoCommitEnd' });
 }

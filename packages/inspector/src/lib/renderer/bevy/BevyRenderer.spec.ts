@@ -77,8 +77,8 @@ describe('BevyRenderer editor camera', () => {
     renderer.dispose();
   });
 
-  it('should default to avatar mode', () => {
-    expect(renderer.editorCamera.getMode()).toBe('avatar');
+  it('should default to free mode (the editor camera)', () => {
+    expect(renderer.editorCamera.getMode()).toBe('free');
   });
 
   it('should post the mode to the agent and notify subscribers on change', () => {
@@ -87,16 +87,16 @@ describe('BevyRenderer editor camera', () => {
     const seen: string[] = [];
     renderer.editorCamera.onModeChange(mode => seen.push(mode));
 
-    renderer.editorCamera.setMode('free');
-    expect(renderer.editorCamera.getMode()).toBe('free');
-    expect(posted).toEqual(['free']);
-    expect(seen).toEqual(['free']);
+    renderer.editorCamera.setMode('avatar');
+    expect(renderer.editorCamera.getMode()).toBe('avatar');
+    expect(posted).toEqual(['avatar']);
+    expect(seen).toEqual(['avatar']);
   });
 
   it('should ignore a no-op set to the current mode', () => {
     const posted: string[] = [];
     renderer.setCameraModePoster(mode => posted.push(mode));
-    renderer.editorCamera.setMode('avatar'); // already avatar
+    renderer.editorCamera.setMode('free'); // already free
     expect(posted).toEqual([]);
   });
 
@@ -104,7 +104,7 @@ describe('BevyRenderer editor camera', () => {
     const seen: string[] = [];
     const off = renderer.editorCamera.onModeChange(mode => seen.push(mode));
     off();
-    renderer.editorCamera.setMode('free');
+    renderer.editorCamera.setMode('avatar');
     expect(seen).toEqual([]);
   });
 });
@@ -184,6 +184,8 @@ describe('BevyRenderer focusOnEntity', () => {
   it('should do nothing for an entity with no tracked transform', () => {
     const focused: unknown[] = [];
     renderer.setFocusPoster(p => focused.push(p));
+    // Start from avatar so a no-op focus is observably not forcing free mode.
+    renderer.editorCamera.setMode('avatar');
     renderer.camera.focusOnEntity(987654 as never);
     expect(focused).toEqual([]);
     expect(renderer.editorCamera.getMode()).toBe('avatar');

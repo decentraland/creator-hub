@@ -234,6 +234,49 @@ describe('connectReverseChannel', () => {
     });
   });
 
+  describe('when a live gizmo drag arrives (gizmoDrag)', () => {
+    it('should emit merged previewTransforms WITHOUT writing the CRDT or dispatching', () => {
+      transformValue = {
+        position: { x: 0, y: 0, z: 0 },
+        rotation: Quaternion.Identity(),
+        scale: { x: 1, y: 1, z: 1 },
+      };
+      const previews: RendererEvents['previewTransforms'][] = [];
+      events.on('previewTransforms', p => previews.push(p));
+
+      const delta = Quaternion.fromEulerDegrees(0, 90, 0);
+      events.emit('gizmoDrag', {
+        transforms: [
+          { entity: 7 as never, position: { x: 5, y: 0, z: 0 }, rotation: delta } as never,
+        ],
+      });
+
+      // Merged, absolute values are emitted for the renderer to preview…
+      expect(previews).toHaveLength(1);
+      const t = previews[0].transforms[0];
+      expect(t.entity).toBe(7);
+      expect(t.position).toEqual({ x: 5, y: 0, z: 0 });
+      const expected = Quaternion.multiply(delta, transformValue.rotation);
+      for (const k of ['x', 'y', 'z', 'w'] as const) {
+        expect(t.rotation[k]).toBeCloseTo(expected[k], 5);
+      }
+      // …but NOTHING is written to the CRDT and no dispatch happens (no undo entry).
+      expect(operations.updateValue).not.toHaveBeenCalled();
+      expect(operations.dispatch).not.toHaveBeenCalled();
+    });
+
+    it('should skip preview entities that no longer have a Transform', () => {
+      (context.Transform.getOrNull as ReturnType<typeof vi.fn>).mockReturnValueOnce(null);
+      const previews: RendererEvents['previewTransforms'][] = [];
+      events.on('previewTransforms', p => previews.push(p));
+
+      events.emit('gizmoDrag', {
+        transforms: [{ entity: 99 as never, position: { x: 1, y: 1, z: 1 } } as never],
+      });
+      expect(previews).toEqual([]);
+    });
+  });
+
   describe('when snapping is enabled', () => {
     beforeEach(() => {
       snapManager.setEnabled(true);

@@ -119,6 +119,43 @@ export type RendererEvents = {
    */
   gizmoCommitEnd: void;
 
+  /**
+   * A LIVE (mid-drag) gizmo update — the same DELTA shape as `gizmoCommit`, but
+   * emitted every frame the drag changes rather than once on release. The
+   * inspector merges it and re-emits {@link RendererEvents.previewTransforms} for
+   * the renderer to preview, WITHOUT touching the CRDT / undo history. A renderer
+   * that previews a drag by moving its own meshes (Babylon) never emits this.
+   */
+  gizmoDrag: {
+    transforms: Array<{
+      entity: Entity;
+      position?: Vector3;
+      rotation?: Quaternion;
+      scale?: Vector3;
+    }>;
+  };
+
+  /**
+   * LIVE (mid-drag) transforms, already merged into the entity's real Transform
+   * (same absolute values a commit would write), derived by the inspector from a
+   * {@link RendererEvents.gizmoDrag}. A renderer that edits an out-of-process
+   * engine subscribes to preview the move WITHOUT a CRDT write / undo entry per
+   * frame — the authoritative write is the drag-end `gizmoCommit`. Renderers that
+   * move their own meshes during a drag (Babylon) ignore this.
+   */
+  previewTransforms: {
+    transforms: Array<{
+      entity: Entity;
+      position: Vector3;
+      rotation: Quaternion;
+      scale: Vector3;
+      // The entity's parent (from its current Transform), so a renderer that
+      // REPLACES the whole component when previewing (Bevy's `set_component`)
+      // doesn't reset it. Undefined for a root-parented entity.
+      parent?: Entity;
+    }>;
+  };
+
   /** The camera moved (user-driven). Lets the inspector mirror framing/minimap state. */
   cameraChange: void;
 
