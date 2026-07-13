@@ -112,7 +112,7 @@ export function SectionHeader({
         fontSize={TYPE.title}
         color={COLORS.textPrimary}
       />
-      {right ? right : <UiEntity uiTransform={{ width: 0, height: 0 }} />}
+      {right}
     </UiEntity>
   );
 }

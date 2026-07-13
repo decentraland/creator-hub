@@ -158,14 +158,6 @@ export function clearAnnouncements(): void {
   state.textAnnouncementControl.announcements = [];
 }
 
-export function showAnnouncementBanner(kind: 'sent' | 'cleared'): void {
-  state.textAnnouncementControl.banner = kind;
-}
-
-export function clearAnnouncementBanner(): void {
-  state.textAnnouncementControl.banner = undefined;
-}
-
 // --- Moderation modals ---
 export function openAdminList(): void {
   state.moderationControl.showModalAdminList = true;

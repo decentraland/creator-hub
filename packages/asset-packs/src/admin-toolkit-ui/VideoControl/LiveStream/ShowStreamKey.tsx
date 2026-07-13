@@ -3,7 +3,7 @@ import type { DeepReadonlyObject, Entity, IEngine, PBVideoPlayer } from '@dcl/ec
 import ReactEcs, { UiEntity, Label } from '@dcl/react-ecs';
 import { copyToClipboard, openExternalUrl } from '~system/RestrictedActions';
 import { LIVEKIT_STREAM_SRC } from '../../../definitions';
-import { startTimeout, stopTimeout, stopInterval } from '../../../timer';
+import { startTimeout, stopTimeout } from '../../../timer';
 import { getStreamKey } from '../api';
 import { createVideoPlayerControls } from '../utils';
 import { COLORS, RADIUS, SPACING, TYPE } from '../../theme';
@@ -16,7 +16,6 @@ import { STREAMING_SUPPORT_URL } from '.';
 
 const AUTO_HIDE_DURATION_SECONDS = 30;
 const STREAM_KEY_TIMEOUT_ACTION = 'video_control_stream_key_timeout';
-const STREAM_KEY_INTERVAL_ACTION = 'video_control_stream_key_interval';
 const RTMP_SERVER_URL = 'rtmps://dcl.rtmp.livekit.cloud/x';
 
 // A read-only field (RTMP server / stream key) with an optional trailing slot.
@@ -80,7 +79,6 @@ export function ShowStreamKey({
       );
       return () => {
         stopTimeout(state.adminToolkitUiEntity, STREAM_KEY_TIMEOUT_ACTION);
-        stopInterval(state.adminToolkitUiEntity, STREAM_KEY_INTERVAL_ACTION);
       };
     }
   }, [streamKey]);
@@ -188,7 +186,7 @@ export function ShowStreamKey({
           />
         </UiEntity>
         <PillButton
-          id="video_control_share_screen_share"
+          id="video_control_stream_activate"
           label={isLive ? 'Deactivate' : 'Activate'}
           variant="filled"
           onClick={() => {

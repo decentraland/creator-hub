@@ -62,7 +62,6 @@ export type State = {
       timestamp: number;
     }[];
     maxAnnouncements: number;
-    banner: 'sent' | 'cleared' | undefined;
   };
   moderationControl: {
     showModalAdminList: boolean;

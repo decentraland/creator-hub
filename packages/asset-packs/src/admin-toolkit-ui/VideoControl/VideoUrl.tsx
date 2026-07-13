@@ -81,7 +81,7 @@ export function VideoControlURL({
           }}
         />
         <PillButton
-          id="video_control_share_screen_share"
+          id="video_control_url_activate"
           label={primaryLabel}
           variant="filled"
           disabled={primaryLabel !== 'Deactivate' && !isVideoUrl(videoURL)}
@@ -100,6 +100,7 @@ export function VideoControlURL({
             label="Play"
             iconName="play"
             variant="outlined"
+            disabled={!isActive}
             uiTransform={{
               flexGrow: 1,
               flexBasis: 0,
@@ -114,6 +115,7 @@ export function VideoControlURL({
             label="Pause"
             iconName="pause"
             variant="outlined"
+            disabled={!isActive}
             uiTransform={{
               flexGrow: 1,
               flexBasis: 0,
@@ -128,6 +130,7 @@ export function VideoControlURL({
             label="Restart"
             iconName="refresh"
             variant="outlined"
+            disabled={!isActive}
             uiTransform={{
               flexGrow: 1,
               flexBasis: 0,
@@ -148,12 +151,14 @@ export function VideoControlURL({
               justifyContent: 'center',
             }}
             uiBackground={{ color: video?.loop ? COLORS.primary : COLORS.transparent }}
-            onMouseDown={() => controls.setLoop(!video?.loop)}
+            onMouseDown={() => isActive && controls.setLoop(!video?.loop)}
           >
             <Icon
               name="loop"
               size={15}
-              color={video?.loop ? COLORS.white : COLORS.textTertiary}
+              color={
+                !isActive ? COLORS.textDisabled : video?.loop ? COLORS.white : COLORS.textTertiary
+              }
             />
           </UiEntity>
         </UiEntity>

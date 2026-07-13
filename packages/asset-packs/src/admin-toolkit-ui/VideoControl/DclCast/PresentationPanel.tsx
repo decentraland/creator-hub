@@ -18,10 +18,8 @@ const PresentationPanel = ({
   onStopSharing,
 }: {
   presentationState: PresentationState | undefined;
-  compact?: boolean;
   idPrefix?: string;
   onStopSharing?: () => void;
-  hideStopSharing?: boolean;
 }) => {
   const isVideoPlaying =
     presentationState?.videoState === 'playing' || presentationState?.videoState === 'loading';

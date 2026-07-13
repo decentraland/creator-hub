@@ -239,6 +239,7 @@ export function Slider({
   steps?: number;
 }) {
   const pct = Math.max(0, Math.min(1, value));
+  const safeSteps = Math.max(2, steps);
   return (
     <UiEntity
       uiTransform={{
@@ -283,14 +284,14 @@ export function Slider({
           flexDirection: 'row',
         }}
       >
-        {Array.from({ length: steps }).map((_, i) => (
+        {Array.from({ length: safeSteps }).map((_, i) => (
           <UiEntity
             key={`cell-${i}`}
             uiTransform={{ flexGrow: 1, flexBasis: 0, height: 18 }}
             // A background (even transparent) is required for the element to be
             // hit-tested; without it the onMouseDown never fires.
             uiBackground={{ color: COLORS.transparent }}
-            onMouseDown={() => onSet(i / (steps - 1))}
+            onMouseDown={() => onSet(i / (safeSteps - 1))}
           />
         ))}
       </UiEntity>

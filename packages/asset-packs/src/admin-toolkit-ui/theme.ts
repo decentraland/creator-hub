@@ -12,8 +12,6 @@ function withAlpha(hex: string, alpha: number): Color4 {
 const COLORS = {
   // brand
   primary: Color4.fromHexString('#FF2D55'),
-  primaryHover: Color4.fromHexString('#FF4569'),
-  primaryPressed: Color4.fromHexString('#F70038'),
 
   // surfaces
   panel: Color4.fromHexString('#16161E'),
@@ -27,7 +25,6 @@ const COLORS = {
   textTertiary: Color4.fromHexString('#D0D0DA'),
   textDisabled: withAlpha('#8A8A99', 0.5),
   textOnPrimary: Color4.White(),
-  textOnLight: Color4.fromHexString('#16161E'),
 
   // borders & dividers
   border: Color4.fromHexString('#32323E'),
@@ -37,14 +34,10 @@ const COLORS = {
 
   // semantic
   success: Color4.fromHexString('#4ADE80'),
-  successHover: Color4.fromHexString('#3BCB70'),
   successBg: withAlpha('#4ADE80', 0.12),
   info: Color4.fromHexString('#8F9AFF'),
-  infoBg: withAlpha('#8F9AFF', 0.14),
   danger: Color4.fromHexString('#FF5C7C'),
-  dangerHover: Color4.fromHexString('#FF4569'),
   dangerOverlay: withAlpha('#FF2D55', 0.14),
-  warning: Color4.fromHexString('#FE9C2A'),
 
   // tinted icon-badge backgrounds
   badgeMagenta: withAlpha('#FF2D55', 0.14),

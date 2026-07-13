@@ -42,7 +42,6 @@ export const state: State = {
     messageRateTracker: new Map<string, number>(),
     announcements: [],
     maxAnnouncements: 4,
-    banner: undefined,
   },
   moderationControl: {
     showModalAdminList: false,
