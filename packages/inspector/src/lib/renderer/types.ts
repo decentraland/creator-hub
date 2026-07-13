@@ -330,6 +330,22 @@ export interface RendererEditorCamera {
 }
 
 /**
+ * Optional capability for renderers that RUN the scene's SDK7 code live (its
+ * systems / timers / onUpdate tick). Such a renderer can freeze the scene to a
+ * static subject for editing. Babylon doesn't execute scene code (it renders the
+ * authored components only), so it omits this; the Bevy renderer runs the real
+ * scene in the engine, so it exposes a run/freeze toggle (default: frozen).
+ */
+export interface RendererSceneRun {
+  /** True when the scene is running live; false when frozen (static). */
+  isRunning(): boolean;
+  /** Run the scene live (true) or freeze it to a static subject (false). */
+  setRunning(running: boolean): void;
+  /** Notify on run/freeze change (so a toolbar toggle reflects the state). */
+  onRunChange(cb: (running: boolean) => void): Unsubscribe;
+}
+
+/**
  * An animation clip exposed by a renderer (see `getEntityAnimations`). Only
  * `name` is consumed today; the object shape leaves room to add `duration`,
  * `loopable`, etc. without breaking the public contract.
@@ -373,6 +389,12 @@ export interface IRenderer {
    * avatar, so it exposes a toggle to an editor fly-camera).
    */
   readonly editorCamera?: RendererEditorCamera;
+  /**
+   * Present only if the renderer executes the scene's SDK7 code live (Bevy runs
+   * the real scene, so it exposes a run/freeze toggle — default frozen; Babylon
+   * only renders authored components, so it omits this).
+   */
+  readonly sceneRun?: RendererSceneRun;
 
   /** Set the editor selection by entity ID (the renderer draws it however it likes). */
   setSelection(entities: Entity[]): void;

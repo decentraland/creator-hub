@@ -72,6 +72,11 @@ export function main(): void {
       setSpawnGizmo(msg.position);
       return;
     }
+    // Freeze (static) or run the inspected scene (the toolbar's run/freeze toggle).
+    if (msg.kind === 'set-scene-frozen') {
+      void setSceneFrozen(msg.frozen);
+      return;
+    }
   });
 
   // setupGizmo installs the pointer-down handler (grab-or-pick) + drag system.
@@ -95,6 +100,35 @@ async function boot(): Promise<void> {
   // wherever the avatar happened to spawn (which is far off for a large parcel
   // and looks "lost" on load). resetCamera adds the scene offset back internally.
   if (sceneLocalCenter !== null) resetCamera(sceneLocalCenter);
+  // Editor default: the inspected scene is FROZEN (static — no SDK7 systems /
+  // timers / onUpdate run), so it's a stable subject to edit. The editor agent
+  // itself keeps ticking (it's a super scene, exempt from the freeze). The
+  // toolbar toggle can unfreeze to run the scene live.
+  await setSceneFrozen(true);
+}
+
+/**
+ * Freeze (static) or run the pinned inspection scene via the engine's
+ * `/freeze_scene` / `/unfreeze_scene` console commands. Retries a few times when
+ * freezing right after boot: the scene entity can take a moment to be resolvable
+ * even once `/set_scene` has recorded it as the active inspection target.
+ */
+async function setSceneFrozen(frozen: boolean): Promise<void> {
+  const api = getBevyApi();
+  if (!api) return;
+  const command = frozen ? 'freeze_scene' : 'unfreeze_scene';
+  const attempts = frozen ? 6 : 1;
+  for (let attempt = 0; attempt < attempts; attempt++) {
+    try {
+      const reply = await api.consoleCommand(command, []);
+      // The engine replies "frozen at tick N" / "unfrozen …" on success, and
+      // "scene is already frozen/not frozen" if it's a no-op — both are fine.
+      if (!/could not find|player is not in any scene/i.test(reply)) return;
+    } catch (e) {
+      console.error(`[bevy-agent] ${command} attempt failed:`, e);
+    }
+    await new Promise<void>(resolve => setTimeout(() => resolve(), 500));
+  }
 }
 
 /**

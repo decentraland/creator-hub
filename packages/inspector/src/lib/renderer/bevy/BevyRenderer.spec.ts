@@ -109,6 +109,47 @@ describe('BevyRenderer editor camera', () => {
   });
 });
 
+describe('BevyRenderer scene run/freeze', () => {
+  let renderer: BevyRenderer;
+
+  beforeEach(() => {
+    renderer = new BevyRenderer();
+  });
+
+  afterEach(() => renderer.dispose());
+
+  it('should default to frozen (not running)', () => {
+    expect(renderer.sceneRun.isRunning()).toBe(false);
+  });
+
+  it('should post the run state to the agent and notify subscribers on change', () => {
+    const posted: boolean[] = [];
+    renderer.setSceneRunPoster(running => posted.push(running));
+    const seen: boolean[] = [];
+    renderer.sceneRun.onRunChange(running => seen.push(running));
+
+    renderer.sceneRun.setRunning(true);
+    expect(renderer.sceneRun.isRunning()).toBe(true);
+    expect(posted).toEqual([true]);
+    expect(seen).toEqual([true]);
+  });
+
+  it('should ignore a no-op set to the current state', () => {
+    const posted: boolean[] = [];
+    renderer.setSceneRunPoster(running => posted.push(running));
+    renderer.sceneRun.setRunning(false); // already frozen
+    expect(posted).toEqual([]);
+  });
+
+  it('should stop notifying after unsubscribe', () => {
+    const seen: boolean[] = [];
+    const off = renderer.sceneRun.onRunChange(running => seen.push(running));
+    off();
+    renderer.sceneRun.setRunning(true);
+    expect(seen).toEqual([]);
+  });
+});
+
 describe('BevyRenderer gizmo world alignment', () => {
   let renderer: BevyRenderer;
 

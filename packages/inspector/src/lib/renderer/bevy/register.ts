@@ -11,6 +11,7 @@ import { createInputFocusBridge } from './input-focus-bridge';
 import { createModifierTracker } from './modifier-tracker';
 import { createPickBridge } from './pick-bridge';
 import { createPreviewBridge } from './preview-bridge';
+import { createSceneRunBridge } from './scene-run-bridge';
 import { createSelectionBridge } from './selection-bridge';
 import { createSpawnGizmoBridge } from './spawn-gizmo-bridge';
 
@@ -136,6 +137,12 @@ export function registerBevyRenderer(): void {
       bevy.setFocusPoster(position => cameraBridge.focus(position));
       bevy.setResetPoster(position => cameraBridge.reset(position));
 
+      // Scene run/freeze: the toolbar toggle posts the intent to the agent, which
+      // runs /freeze_scene or /unfreeze_scene on the pinned scene. Default frozen
+      // (the agent freezes on boot); the toggle runs it live.
+      const sceneRunBridge = createSceneRunBridge();
+      bevy.setSceneRunPoster(running => sceneRunBridge.setRunning(running));
+
       // Spawn-point handle: the controller shows/hides the move-handle via the
       // bridge; the agent reports drags back, which the bridge routes to the
       // controller → the active spawn point's form (onPositionChange).
@@ -162,6 +169,7 @@ export function registerBevyRenderer(): void {
           modifiers.disconnect();
           disconnectPreview();
           spawnGizmo.disconnect();
+          sceneRunBridge.disconnect();
           cameraBridge.disconnect();
           dropPoint.disconnect();
           disconnectSelection();

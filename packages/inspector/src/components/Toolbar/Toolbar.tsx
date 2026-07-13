@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { BiUndo, BiRedo, BiSave, BiBadgeCheck, BiVideo } from 'react-icons/bi';
+import { BiUndo, BiRedo, BiSave, BiBadgeCheck, BiVideo, BiPlay, BiPause } from 'react-icons/bi';
 import { RiListSettingsLine } from 'react-icons/ri';
 import { FaPencilAlt } from 'react-icons/fa';
 import { AiOutlineInfoCircle as InfoIcon } from 'react-icons/ai';
@@ -73,6 +73,21 @@ const Toolbar = withSdk(({ sdk }) => {
   }, [editorCamera]);
   useHotkey([TOGGLE_FREE_CAMERA], handleToggleFreeCamera);
 
+  // Scene run/freeze toggle — only for renderers that execute the scene's SDK7
+  // code (Bevy exposes `sceneRun`; Babylon omits it). The editor default is
+  // frozen (static); this runs it live so the user can test it.
+  const sceneRun = sdk.renderer.sceneRun;
+  const [sceneRunning, setSceneRunning] = useState<boolean>(sceneRun?.isRunning() ?? false);
+  useEffect(() => {
+    if (!sceneRun) return;
+    setSceneRunning(sceneRun.isRunning());
+    return sceneRun.onRunChange(setSceneRunning);
+  }, [sceneRun]);
+  const handleToggleSceneRun = useCallback(() => {
+    if (!sceneRun) return;
+    sceneRun.setRunning(!sceneRun.isRunning());
+  }, [sceneRun]);
+
   const handleSaveClick = useCallback(() => dispatch(save()), []);
   const handleUndo = useCallback(() => dispatch(undo()), []);
   const handleRedo = useCallback(() => dispatch(redo()), []);
@@ -124,6 +139,15 @@ const Toolbar = withSdk(({ sdk }) => {
           title="Free camera (`)"
         >
           <BiVideo />
+        </ToolbarButton>
+      )}
+      {sceneRun && (
+        <ToolbarButton
+          className={cx('scene-run', { active: sceneRunning })}
+          onClick={handleToggleSceneRun}
+          title={sceneRunning ? 'Freeze scene (stop running)' : 'Run scene'}
+        >
+          {sceneRunning ? <BiPause /> : <BiPlay />}
         </ToolbarButton>
       )}
       <Preferences />
