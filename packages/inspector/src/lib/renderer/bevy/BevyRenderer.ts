@@ -17,11 +17,24 @@ import type {
   RendererMetrics,
   RendererViewport,
   SpawnPointController,
+  SpawnPointTarget,
   Unsubscribe,
 } from '../types';
 import type { GizmoType } from '../../utils/gizmo';
+import type { SceneSpawnPointCoord } from '../../sdk/components';
 import { BevySceneContext } from './BevySceneContext';
 import type { EngineWindow } from './console';
+import { createSpawnPointController } from './spawn-point-controller';
+import type { BevySpawnPointController } from './spawn-point-controller';
+
+/** A spawn-point coordinate resolves to a single value, or a range's midpoint. */
+function spawnCoordValue(coord: SceneSpawnPointCoord): number {
+  if (coord.$case === 'range') {
+    const [a, b] = coord.value;
+    return b === undefined ? a : (a + b) / 2;
+  }
+  return coord.value;
+}
 
 /**
  * A minimal Bevy {@link IRenderer} — the conformance spike.
@@ -90,6 +103,11 @@ export class BevyRenderer implements IRenderer {
   // to the agent over the bus.
   #gizmosWorldAligned = true;
   #gizmoChangeHandlers = new Set<() => void>();
+  // Spawn-point controller + its handle poster (injected by `register` → bus).
+  #spawnPointController: BevySpawnPointController;
+  #spawnGizmoPoster: ((position: { x: number; y: number; z: number } | null) => void) | null = null;
+  // Unsubscribe for the Scene-metadata watcher that re-syncs the spawn handle.
+  #offSceneChange: (() => void) | null = null;
 
   constructor() {
     this.context = new BevySceneContext();
@@ -99,7 +117,22 @@ export class BevyRenderer implements IRenderer {
     this.gizmos = this.#createGizmos();
     this.metrics = this.#createMetrics();
     this.viewport = this.#createViewport();
-    this.spawnPoints = this.#createSpawnPointStub();
+    // The spawn-point controller shows its move-handle through a poster we
+    // delegate to `#spawnGizmoPoster` — `register` injects the real one (the bus
+    // bridge); until then it's a no-op (conformance path).
+    this.#spawnPointController = createSpawnPointController(
+      { show: position => this.#spawnGizmoPoster?.(position) },
+      (index, target) => this.#resolveSpawnPosition(index, target),
+    );
+    this.spawnPoints = this.#spawnPointController;
+    // Keep the spawn handle synced to the Scene metadata: a valid form edit (and
+    // the gizmo-commit round-trip) writes the Scene component but never pushes a
+    // position to the controller, so re-resolve + re-show the handle whenever the
+    // Scene component changes. Mirrors Babylon's `updateFromSceneComponent`.
+    const sceneComponentId = this.context.editorComponents.Scene.componentId;
+    this.#offSceneChange = this.context.onChange((_entity, _op, component) => {
+      if (component?.componentId === sceneComponentId) this.#spawnPointController.refreshHandle();
+    });
     this.debug = { isVisible: () => false, toggle: () => {} };
   }
 
@@ -206,22 +239,6 @@ export class BevyRenderer implements IRenderer {
     };
   }
 
-  #createSpawnPointStub(): SpawnPointController {
-    return {
-      getSelectedIndex: () => null,
-      getSelectedTarget: () => null,
-      isHidden: () => false,
-      select: () => {},
-      selectCameraTarget: () => {},
-      setVisible: () => {},
-      onSelectionChange: () => () => {},
-      onVisibilityChange: () => () => {},
-      attachGizmo: () => {},
-      detachGizmo: () => {},
-      setPosition: () => {},
-    };
-  }
-
   setSelection(_entities: Entity[]): void {
     // Selection visuals map to bevy-editor's `/highlight` in the next slice;
     // no-op proof stub for now.
@@ -253,6 +270,39 @@ export class BevyRenderer implements IRenderer {
   /** Wire camera reset to the agent (default scene framing over the bus). */
   setResetPoster(post: (position: Vector3) => void): void {
     this.#postReset = post;
+  }
+
+  /** Wire the spawn-point handle poster (shows/hides the handle over the bus). */
+  setSpawnGizmoPoster(post: (position: { x: number; y: number; z: number } | null) => void): void {
+    this.#spawnGizmoPoster = post;
+  }
+
+  /** Route an agent-reported spawn-handle drag to the active spawn point. */
+  handleSpawnGizmoCommit(position: { x: number; y: number; z: number }): void {
+    this.#spawnPointController.handleGizmoCommit(position);
+  }
+
+  /**
+   * Read a spawn point's (or camera target's) current scene-local position from
+   * the Scene metadata component on the root entity — the same source Babylon's
+   * spawn-point manager builds its meshes from. Ranges resolve to their midpoint.
+   */
+  #resolveSpawnPosition(
+    index: number,
+    target: SpawnPointTarget,
+  ): { x: number; y: number; z: number } | null {
+    const scene = this.context.editorComponents.Scene.getOrNull(this.context.engine.RootEntity);
+    const sp = scene?.spawnPoints?.[index];
+    if (!sp) return null;
+    if (target === 'cameraTarget') {
+      const ct = sp.cameraTarget;
+      return ct ? { x: ct.x, y: ct.y, z: ct.z } : null;
+    }
+    return {
+      x: spawnCoordValue(sp.position.x),
+      y: spawnCoordValue(sp.position.y),
+      z: spawnCoordValue(sp.position.z),
+    };
   }
 
   #createEditorCamera(): RendererEditorCamera {
@@ -301,6 +351,8 @@ export class BevyRenderer implements IRenderer {
     this.#disposed = true;
     this.#engineWindow = null;
     this.#gizmoChangeHandlers.clear();
+    this.#offSceneChange?.();
+    this.#offSceneChange = null;
     this.context.dispose();
     this.events.all.clear();
   }

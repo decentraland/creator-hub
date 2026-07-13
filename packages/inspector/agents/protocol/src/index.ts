@@ -75,7 +75,10 @@ export type AgentToPage =
   // Reply to `query-drop-point`: the world point under the engine's current
   // pointer on the scene ground plane (null if the pointer ray misses / isn't
   // available). `id` correlates the reply with its request.
-  | { kind: 'drop-point'; id: number; position: BusVec3 | null };
+  | { kind: 'drop-point'; id: number; position: BusVec3 | null }
+  // A committed spawn-point handle drag (world position). The inspector routes it
+  // to the active spawn point's onPositionChange (scene metadata, not a Transform).
+  | { kind: 'spawn-gizmo-commit'; position: BusVec3 };
 
 /**
  * inspector → agent (`to: 'scene'`).
@@ -124,7 +127,12 @@ export type PageToScene =
   // Reset the editor camera to a default framing of the scene (toolbar / Space).
   // The inspector sends the scene-local point to frame (its center); the agent
   // tweens the fly-camera to a fixed default standoff looking at it.
-  | { kind: 'reset-camera'; position: BusVec3 };
+  | { kind: 'reset-camera'; position: BusVec3 }
+  // Show a position-only handle for a spawn point (or its camera target) at the
+  // given scene-local position, or hide it (null). Dragging it reports back over
+  // `spawn-gizmo-commit`. Spawn points are scene metadata, so this is a bare
+  // move-handle, not tied to a scene entity.
+  | { kind: 'set-spawn-gizmo'; position: BusVec3 | null };
 
 /** Every message is wrapped so a peer ignores its own posts / the wrong direction. */
 export interface BusEnvelope {

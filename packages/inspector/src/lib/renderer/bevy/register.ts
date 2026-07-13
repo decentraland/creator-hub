@@ -10,6 +10,7 @@ import { createForwardEditBridge } from './forward-edits';
 import { createInputFocusBridge } from './input-focus-bridge';
 import { createPickBridge } from './pick-bridge';
 import { createSelectionBridge } from './selection-bridge';
+import { createSpawnGizmoBridge } from './spawn-gizmo-bridge';
 
 /**
  * Bevy renderer registration. Lives here (not in the renderer-agnostic
@@ -113,6 +114,14 @@ export function registerBevyRenderer(): void {
       bevy.setFocusPoster(position => cameraBridge.focus(position));
       bevy.setResetPoster(position => cameraBridge.reset(position));
 
+      // Spawn-point handle: the controller shows/hides the move-handle via the
+      // bridge; the agent reports drags back, which the bridge routes to the
+      // controller → the active spawn point's form (onPositionChange).
+      const spawnGizmo = createSpawnGizmoBridge({
+        onCommit: position => bevy.handleSpawnGizmoCommit(position),
+      });
+      bevy.setSpawnGizmoPoster(position => spawnGizmo.show(position));
+
       // Input focus: the engine iframe is same-origin, so when the viewport holds
       // focus its keydowns go to the engine window (not ours). Forward editor
       // shortcuts up to the host so they fire regardless of focus, and refocus the
@@ -128,6 +137,7 @@ export function registerBevyRenderer(): void {
         engine: bevy.context.engine,
         dispose: () => {
           disconnectInputFocus();
+          spawnGizmo.disconnect();
           cameraBridge.disconnect();
           dropPoint.disconnect();
           disconnectSelection();
