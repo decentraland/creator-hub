@@ -30,11 +30,12 @@ describe('createSelectionBridge', () => {
 
   // GizmoType: FREE=0, POSITION=1, ROTATION=2, SCALE=3.
   describe('when an entity gains the Selection component', () => {
-    it('should post set-selection with that entity, its world position, and gizmo mode', async () => {
+    it('should post set-selection with that entity, its world position, rotation, and gizmo mode', async () => {
       const entity = ctx.engine.addEntity();
       ctx.Transform.create(entity, {
         ...IDENTITY,
         position: { x: 4, y: 1, z: 2 },
+        rotation: { x: 0.5, y: 0.5, z: 0.5, w: 0.5 },
         parent: ctx.engine.RootEntity,
       });
       ctx.editorComponents.Selection.create(entity, { gizmo: 1 }); // POSITION → translate
@@ -46,6 +47,9 @@ describe('createSelectionBridge', () => {
           kind: 'set-selection',
           entity: entity as number,
           position: { x: 4, y: 1, z: 2 },
+          rotation: { x: 0.5, y: 0.5, z: 0.5, w: 0.5 },
+          alignToWorld: true,
+          snap: null,
           mode: 'translate',
         },
       });
@@ -69,6 +73,131 @@ describe('createSelectionBridge', () => {
           kind: 'set-selection',
           entity: entity as number,
           position: null,
+          rotation: null,
+          alignToWorld: true,
+          snap: null,
+          mode: 'rotate',
+        },
+      });
+    });
+  });
+
+  describe("when the selected entity's Transform changes", () => {
+    it('should re-post with the new position and rotation', async () => {
+      const entity = ctx.engine.addEntity();
+      ctx.Transform.create(entity, {
+        ...IDENTITY,
+        position: { x: 1, y: 0, z: 1 },
+        parent: ctx.engine.RootEntity,
+      });
+      ctx.editorComponents.Selection.create(entity, { gizmo: 3 }); // SCALE
+      await ctx.engine.update(1);
+      posted.length = 0;
+
+      // A rotation edit lands while selected (panel edit, undo, gizmo commit) —
+      // the scale gizmo must re-align, so the bridge re-posts the selection.
+      const mutable = ctx.Transform.getMutable(entity);
+      mutable.position = { x: 2, y: 0, z: 1 };
+      mutable.rotation = { x: 0, y: 0.5, z: 0, w: 0.5 };
+      await ctx.engine.update(1);
+
+      expect(posted).toContainEqual({
+        to: 'scene',
+        msg: {
+          kind: 'set-selection',
+          entity: entity as number,
+          position: { x: 2, y: 0, z: 1 },
+          rotation: { x: 0, y: 0.5, z: 0, w: 0.5 },
+          alignToWorld: true,
+          snap: null,
+          mode: 'scale',
+        },
+      });
+    });
+  });
+
+  describe('when the "align to world" setting toggles', () => {
+    it('should re-post the current selection with the new alignment', async () => {
+      // A dedicated bridge wired with a fake gizmos handle (the renderer's
+      // world-alignment state + change subscription).
+      disconnect();
+      posted.length = 0;
+      let worldAligned = true;
+      const gizmoHandlers = new Set<() => void>();
+      disconnect = createSelectionBridge({
+        context: ctx,
+        gizmos: {
+          isWorldAligned: () => worldAligned,
+          onChange: cb => {
+            gizmoHandlers.add(cb);
+            return () => gizmoHandlers.delete(cb);
+          },
+        },
+        channel: { postMessage: m => posted.push(m), close() {} },
+      });
+
+      const entity = ctx.engine.addEntity();
+      ctx.editorComponents.Selection.create(entity, { gizmo: 1 }); // translate
+      await ctx.engine.update(1);
+      posted.length = 0;
+
+      // The user unchecks "align to world" in the Gizmos toolbar.
+      worldAligned = false;
+      for (const h of [...gizmoHandlers]) h();
+
+      expect(posted).toContainEqual({
+        to: 'scene',
+        msg: {
+          kind: 'set-selection',
+          entity: entity as number,
+          position: null,
+          rotation: null,
+          alignToWorld: false,
+          snap: null,
+          mode: 'translate',
+        },
+      });
+    });
+  });
+
+  describe('when the snap settings change', () => {
+    it('should re-post the current selection with the new snap values', async () => {
+      // A dedicated bridge wired with a fake snap handle (the editor's snap
+      // settings + change subscription).
+      disconnect();
+      posted.length = 0;
+      let snap: { position: number; rotation: number; scale: number } | null = null;
+      const snapHandlers = new Set<() => void>();
+      disconnect = createSelectionBridge({
+        context: ctx,
+        snap: {
+          getSnap: () => snap,
+          onChange: cb => {
+            snapHandlers.add(cb);
+            return () => snapHandlers.delete(cb);
+          },
+        },
+        channel: { postMessage: m => posted.push(m), close() {} },
+      });
+
+      const entity = ctx.engine.addEntity();
+      ctx.editorComponents.Selection.create(entity, { gizmo: 2 }); // rotate
+      await ctx.engine.update(1);
+      posted.length = 0;
+
+      // The user enables snapping / edits the Snap panel values.
+      snap = { position: 0.25, rotation: Math.PI / 2, scale: 0.1 };
+      for (const h of [...snapHandlers]) h();
+
+      expect(posted).toContainEqual({
+        to: 'scene',
+        msg: {
+          kind: 'set-selection',
+          entity: entity as number,
+          position: null,
+          rotation: null,
+          alignToWorld: true,
+          snap: { position: 0.25, rotation: Math.PI / 2, scale: 0.1 },
           mode: 'rotate',
         },
       });
@@ -87,7 +216,15 @@ describe('createSelectionBridge', () => {
 
       expect(posted).toContainEqual({
         to: 'scene',
-        msg: { kind: 'set-selection', entity: null, position: null, mode: 'free' },
+        msg: {
+          kind: 'set-selection',
+          entity: null,
+          position: null,
+          rotation: null,
+          alignToWorld: true,
+          snap: null,
+          mode: 'free',
+        },
       });
     });
   });

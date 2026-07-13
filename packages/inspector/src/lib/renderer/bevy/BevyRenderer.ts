@@ -84,13 +84,19 @@ export class BevyRenderer implements IRenderer {
   // Posts a camera reset to the agent (default scene framing). Injected by
   // `register`; null in the conformance path (reset falls back to the in-memory pose).
   #postReset: ((position: Vector3) => void) | null = null;
+  // Gizmo world-alignment (the toolbar's "align to world" checkbox). The gizmo
+  // itself is drawn/dragged by the editor-agent scene; this renderer owns the
+  // SETTING so the toolbar can bind to it, and the selection bridge forwards it
+  // to the agent over the bus.
+  #gizmosWorldAligned = true;
+  #gizmoChangeHandlers = new Set<() => void>();
 
   constructor() {
     this.context = new BevySceneContext();
 
     this.camera = this.#createCamera();
     this.editorCamera = this.#createEditorCamera();
-    this.gizmos = this.#createGizmoStub();
+    this.gizmos = this.#createGizmos();
     this.metrics = this.#createMetrics();
     this.viewport = this.#createViewport();
     this.spawnPoints = this.#createSpawnPointStub();
@@ -174,17 +180,29 @@ export class BevyRenderer implements IRenderer {
     };
   }
 
-  // Editor manipulation not yet implemented for Bevy — honest stubs. These map
-  // to bevy-editor's scene-side gizmo/TextureCamera composite in the next slice.
-  #createGizmoStub(): RendererGizmos {
+  // Gizmo drawing + dragging live in the editor-agent scene (over the bus); the
+  // renderer owns the gizmo SETTINGS the toolbar binds to — world alignment. Mode
+  // is driven through the Selection component (not setMode) and enable/disable
+  // isn't wired, so those stay honest no-ops.
+  #createGizmos(): RendererGizmos {
     return {
       isEnabled: () => false,
       setEnabled: () => {},
       setMode: (_mode: GizmoType) => {},
-      isWorldAligned: () => true,
-      setWorldAligned: () => {},
-      isWorldAlignmentDisabled: () => true,
-      onChange: () => () => {},
+      isWorldAligned: () => this.#gizmosWorldAligned,
+      setWorldAligned: (aligned: boolean) => {
+        if (this.#gizmosWorldAligned === aligned) return;
+        this.#gizmosWorldAligned = aligned;
+        // Iterate a copy: a handler may unsubscribe mid-iteration.
+        for (const h of [...this.#gizmoChangeHandlers]) h();
+      },
+      isWorldAlignmentDisabled: () => false,
+      onChange: (cb: () => void) => {
+        this.#gizmoChangeHandlers.add(cb);
+        return () => {
+          this.#gizmoChangeHandlers.delete(cb);
+        };
+      },
     };
   }
 
@@ -282,6 +300,7 @@ export class BevyRenderer implements IRenderer {
   dispose(): void {
     this.#disposed = true;
     this.#engineWindow = null;
+    this.#gizmoChangeHandlers.clear();
     this.context.dispose();
     this.events.all.clear();
   }

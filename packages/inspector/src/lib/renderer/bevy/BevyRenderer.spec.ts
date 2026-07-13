@@ -109,6 +109,46 @@ describe('BevyRenderer editor camera', () => {
   });
 });
 
+describe('BevyRenderer gizmo world alignment', () => {
+  let renderer: BevyRenderer;
+
+  beforeEach(() => {
+    renderer = new BevyRenderer();
+  });
+
+  afterEach(() => {
+    renderer.dispose();
+  });
+
+  it('should default to world-aligned with the toggle enabled', () => {
+    expect(renderer.gizmos.isWorldAligned()).toBe(true);
+    expect(renderer.gizmos.isWorldAlignmentDisabled()).toBe(false);
+  });
+
+  it('should update the alignment and notify subscribers on change', () => {
+    let changes = 0;
+    renderer.gizmos.onChange(() => changes++);
+    renderer.gizmos.setWorldAligned(false);
+    expect(renderer.gizmos.isWorldAligned()).toBe(false);
+    expect(changes).toBe(1);
+  });
+
+  it('should ignore a no-op set to the current alignment', () => {
+    let changes = 0;
+    renderer.gizmos.onChange(() => changes++);
+    renderer.gizmos.setWorldAligned(true); // already world-aligned
+    expect(changes).toBe(0);
+  });
+
+  it('should stop notifying after unsubscribe', () => {
+    let changes = 0;
+    const off = renderer.gizmos.onChange(() => changes++);
+    off();
+    renderer.gizmos.setWorldAligned(false);
+    expect(changes).toBe(0);
+  });
+});
+
 describe('BevyRenderer focusOnEntity', () => {
   let renderer: BevyRenderer;
 

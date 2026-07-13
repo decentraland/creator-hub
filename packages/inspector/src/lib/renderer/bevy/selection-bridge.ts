@@ -39,17 +39,29 @@ interface Channel {
 
 export interface SelectionBridgeOptions {
   context: BevySceneContext;
+  /** The renderer's gizmo settings — world alignment for the translate/rotate
+   * gizmos (the toolbar's "align to world" checkbox). Optional so the bridge can
+   * run without a renderer (tests); then `alignToWorld` is always true. */
+  gizmos?: { isWorldAligned(): boolean; onChange(cb: () => void): () => void };
+  /** The editor's snap settings (the toolbar's Snap panel): the increments when
+   * snapping is enabled, or null when it's off. Optional (tests); absent =
+   * snapping off. */
+  snap?: {
+    getSnap(): { position: number; rotation: number; scale: number } | null;
+    onChange(cb: () => void): () => void;
+  };
   /** Test seam: the channel to post on. Defaults to a real BroadcastChannel. */
   channel?: Channel;
 }
 
 export function createSelectionBridge(options: SelectionBridgeOptions): () => void {
-  const { context } = options;
+  const { context, gizmos } = options;
   const channel = options.channel ?? (new BroadcastChannel(EDITOR_BUS_CHANNEL) as Channel);
   const Selection = context.editorComponents.Selection;
 
-  let lastEntity: number | null | undefined;
-  let lastMode: GizmoMode | undefined;
+  // Dedupe by the full serialized message: a repost fires for entity, mode,
+  // position AND rotation changes (any of them moves/re-orients the gizmo).
+  let lastPosted: string | undefined;
 
   const post = () => {
     // Current selection = entities carrying the Selection component. Single-entity
@@ -64,29 +76,58 @@ export function createSelectionBridge(options: SelectionBridgeOptions): () => vo
     }
     const value = entity === null ? null : (entity as number);
     const mode = toGizmoMode(gizmo);
-    // Re-post when either the entity OR the mode changes (the user can switch
-    // gizmo mode on the same selection via the Gizmos toolbar).
-    if (value === lastEntity && mode === lastMode) return;
-    lastEntity = value;
-    lastMode = mode;
-    // Send the entity's world position too: the agent scene can't read the
-    // inspected scene's Transform from its own engine, so the inspector (which
-    // owns the CRDT) supplies where to place the gizmo.
+    // Send the entity's world position + rotation too: the agent scene can't
+    // read the inspected scene's Transform from its own engine, so the inspector
+    // (which owns the CRDT) supplies where to place the gizmo and how to orient
+    // it (the scale gizmo aligns its handles to the entity's rotation).
     const wp =
       entity === null ? null : (context.getEntityWorldPositions([entity]).get(entity) ?? null);
     const position = wp === null ? null : { x: wp.x, y: wp.y, z: wp.z };
-    const msg: PageToScene = { kind: 'set-selection', entity: value, position, mode };
+    const wr = entity === null ? null : context.getEntityWorldRotation(entity);
+    const rotation = wr === null ? null : { x: wr.x, y: wr.y, z: wr.z, w: wr.w };
+    const alignToWorld = gizmos?.isWorldAligned() ?? true;
+    const snap = options.snap?.getSnap() ?? null;
+    const msg: PageToScene = {
+      kind: 'set-selection',
+      entity: value,
+      position,
+      rotation,
+      alignToWorld,
+      snap,
+      mode,
+    };
+    const serialized = JSON.stringify(msg);
+    if (serialized === lastPosted) return;
+    lastPosted = serialized;
     const envelope: BusEnvelope = { to: 'scene', msg };
     channel.postMessage(envelope);
   };
 
-  // Post whenever a Selection component changes (added/removed OR gizmo mode edit).
+  // Post whenever a Selection component changes (added/removed OR gizmo mode
+  // edit), and on Transform changes so the gizmo tracks moves/rotations made
+  // while selected (a gizmo commit, a properties-panel edit, undo). Any
+  // entity's Transform can matter (a parent move shifts the selection's world
+  // pose); the value-dedupe in post() drops the no-op reposts.
   const off = context.onChange((_entity, _op, component) => {
-    if (component && component.componentId === Selection.componentId) post();
+    if (!component) return;
+    if (
+      component.componentId === Selection.componentId ||
+      component.componentId === context.Transform.componentId
+    ) {
+      post();
+    }
   });
+
+  // Re-post when the "align to world" setting toggles (the agent re-orients the
+  // gizmo on the current selection) or the snap settings change (the agent
+  // re-quantizes its drags).
+  const offGizmos = gizmos?.onChange(post);
+  const offSnap = options.snap?.onChange(post);
 
   return () => {
     off();
+    offGizmos?.();
+    offSnap?.();
     channel.close();
   };
 }
