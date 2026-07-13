@@ -48,6 +48,14 @@ function toAgentMsg(data: unknown): AgentToPage | null {
 export interface PickBridgeOptions {
   events: Emitter<RendererEvents>;
   /**
+   * Whether a multi-select modifier (Shift / Ctrl / Cmd) is held. The agent runs
+   * in the wasm sandbox and can't read raw DOM modifiers, so its pick always
+   * reports single-select; the host tracks the real modifier state (see
+   * modifier-tracker) and supplies it here. Absent → fall back to the agent's
+   * own flags (tests / renderers that report their own modifiers).
+   */
+  isMultiSelect?: () => boolean;
+  /**
    * Test seam: the BroadcastChannel-like object to listen on. Defaults to a real
    * `BroadcastChannel('dcl-editor-bus')`. Tests inject a fake.
    */
@@ -80,7 +88,9 @@ export function createPickBridge(options: PickBridgeOptions): () => void {
           // correct (a distinct, selectable node), not a bug.
           target:
             msg.entity === 0 ? { kind: 'empty' } : { kind: 'entity', entity: msg.entity as Entity },
-          modifiers: { multi: msg.shift || msg.ctrl },
+          // The host's live modifier state wins (the agent can't read DOM keys);
+          // fall back to the agent's flags when no tracker is wired.
+          modifiers: { multi: options.isMultiSelect?.() ?? (msg.shift || msg.ctrl) },
         });
         break;
       case 'gizmoCommit':

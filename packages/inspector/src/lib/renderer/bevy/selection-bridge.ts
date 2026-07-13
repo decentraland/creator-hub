@@ -1,7 +1,12 @@
 import type { Entity } from '@dcl/ecs';
 
 import { EDITOR_BUS_CHANNEL } from '@dcl/inspector-bevy-protocol';
-import type { BusEnvelope, GizmoMode, PageToScene } from '@dcl/inspector-bevy-protocol';
+import type {
+  BusEnvelope,
+  GizmoMode,
+  PageToScene,
+  SelectionEntity,
+} from '@dcl/inspector-bevy-protocol';
 import { GizmoType } from '../../utils/gizmo';
 import type { BevySceneContext } from './BevySceneContext';
 
@@ -26,9 +31,10 @@ function toGizmoMode(gizmo: GizmoType | undefined): GizmoMode {
  *
  * The `Selection` editor component marks selected entities in the ECS; the same
  * CRDT stream feeds BevySceneContext's engine, so we observe selection changes
- * there and post the current selected entity (`set-selection`, the shared
- * `@dcl/inspector-bevy-protocol` message). The gizmo is single-entity for now, so we
- * send the first selected entity (or null).
+ * there and post EVERY selected entity's world pose (`set-selection`, the shared
+ * `@dcl/inspector-bevy-protocol` message). The agent anchors the gizmo at their
+ * centroid and transforms each about that virtual pivot — so multi-selection
+ * works for all gizmo modes.
  */
 
 /** Minimal BroadcastChannel surface (also used by pick-bridge). */
@@ -64,34 +70,37 @@ export function createSelectionBridge(options: SelectionBridgeOptions): () => vo
   let lastPosted: string | undefined;
 
   const post = () => {
-    // Current selection = entities carrying the Selection component. Single-entity
-    // gizmo → take the first (or null when nothing is selected). The selected
-    // entity also carries the active gizmo mode (Selection.gizmo).
-    let entity: Entity | null = null;
+    // Current selection = every entity carrying the Selection component. The
+    // gizmo mode is a per-selection setting (Selection.gizmo), shared across the
+    // selection — read it from whichever entity we see first.
+    const selected: Entity[] = [];
     let gizmo: GizmoType | undefined;
     for (const [e, selection] of context.engine.getEntitiesWith(Selection)) {
-      entity = e;
-      gizmo = selection.gizmo;
-      break;
+      if (gizmo === undefined) gizmo = selection.gizmo;
+      selected.push(e);
     }
-    const value = entity === null ? null : (entity as number);
     const mode = toGizmoMode(gizmo);
-    // Send the entity's world position + rotation too: the agent scene can't
-    // read the inspected scene's Transform from its own engine, so the inspector
-    // (which owns the CRDT) supplies where to place the gizmo and how to orient
-    // it (the scale gizmo aligns its handles to the entity's rotation).
-    const wp =
-      entity === null ? null : (context.getEntityWorldPositions([entity]).get(entity) ?? null);
-    const position = wp === null ? null : { x: wp.x, y: wp.y, z: wp.z };
-    const wr = entity === null ? null : context.getEntityWorldRotation(entity);
-    const rotation = wr === null ? null : { x: wr.x, y: wr.y, z: wr.z, w: wr.w };
+    // Send each entity's world position + rotation: the agent scene can't read
+    // the inspected scene's Transform from its own engine, so the inspector
+    // (which owns the CRDT) supplies where to place the gizmo (their centroid)
+    // and how to orient it (single-selection scale/local-align uses the rotation).
+    const worldPositions = context.getEntityWorldPositions(selected);
+    const entities: SelectionEntity[] = [];
+    for (const e of selected) {
+      const wp = worldPositions.get(e) ?? null;
+      if (wp === null) continue; // no transform tracked → can't place a handle
+      const wr = context.getEntityWorldRotation(e);
+      entities.push({
+        entity: e as number,
+        position: { x: wp.x, y: wp.y, z: wp.z },
+        rotation: wr === null ? { x: 0, y: 0, z: 0, w: 1 } : { x: wr.x, y: wr.y, z: wr.z, w: wr.w },
+      });
+    }
     const alignToWorld = gizmos?.isWorldAligned() ?? true;
     const snap = options.snap?.getSnap() ?? null;
     const msg: PageToScene = {
       kind: 'set-selection',
-      entity: value,
-      position,
-      rotation,
+      entities,
       alignToWorld,
       snap,
       mode,

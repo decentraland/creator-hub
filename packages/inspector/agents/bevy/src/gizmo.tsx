@@ -141,16 +141,29 @@ let spawnGroup: Entity | null = null;
 let spawnPos: Vector3 | null = null; // engine-world; null = hidden
 let spawnDrag: { center: Vector3; startHit: Vector3 } | null = null;
 
+// One selected entity's world pose (engine-world; inspector-supplied, offset
+// already added). The agent can't read the inspected scene's Transform, so the
+// inspector sends these.
+interface SelectionEntry {
+  entity: Entity;
+  pos: Vector3;
+  rot: Quaternion;
+}
+// Every selected entity. The gizmo anchors to their centroid (`selectedPos`);
+// a drag transforms each about that virtual pivot (offsets cached at drag start,
+// see beginDrag). Single-selection is just N=1.
+let selectedEntities: SelectionEntry[] = [];
+// A representative selected entity id (the first) — drives the grab/overlay/
+// anchor guards below, which only care THAT something is selected. Null = empty.
 let selected: Entity | null = null;
-// The selected entity's world position, supplied by the inspector (the agent
-// can't read the inspected scene's Transform). The gizmo's anchor.
+// The gizmo's world anchor: the CENTROID of the selected entities' positions
+// (the single entity's position when N=1). Null when nothing is selected.
 let selectedPos: Vector3 | null = null;
-// The selected entity's world rotation (inspector-supplied, like selectedPos).
-// The SCALE gizmo aligns its handles to this — always, independent of any
-// align-to-world setting, because per-axis scaling only makes sense on the
-// entity's LOCAL axes (the committed multiplier applies to local scale). The
-// TRANSLATE gizmo aligns to it when `alignToWorld` is false; rotate rings stay
-// world-aligned.
+// The rotation the gizmo's handles align to when locally aligned: the single
+// entity's world rotation, or IDENTITY for a multi-selection (per-axis handles
+// on a group have no shared local frame — matches the Babylon gizmos, which
+// reset to identity for multi). The SCALE gizmo aligns to this always (scale is
+// only meaningful on local axes); TRANSLATE/ROTATE when `alignToWorld` is off.
 let selectedRot: Quaternion = Quaternion.Identity();
 // The toolbar's "align to world" checkbox (inspector-supplied via set-selection).
 let alignToWorld = true;
@@ -196,6 +209,11 @@ interface DragState {
   // (committed on release).
   startAlong?: number;
   factor?: number;
+  // The selection snapshot at drag start: each entity's start world pose + its
+  // offset from the centroid (`center`). Frozen for the drag so the per-entity
+  // commit transforms them about the pivot (offset constant for translate,
+  // rotated for rotate, scaled for scale). Single-selection → one entry, offset 0.
+  entities: { entity: Entity; startPos: Vector3; startRot: Quaternion; offset: Vector3 }[];
 }
 let drag: DragState | null = null;
 // A pointer-down sets this; the next raycast result decides drag-vs-pick.
@@ -262,26 +280,34 @@ export function getGroundPointAtPointer(): { x: number; y: number; z: number } |
   return { x: local.x, y: 0, z: local.z };
 }
 
-/** Attach the gizmo to an entity at a scene-local position (or hide when null).
- * The scene offset is added so it lands in the engine's world space. The world
- * rotation orients the scale gizmo's handles (rotation is offset-free). */
+/** Attach the gizmo to the current selection (empty array = hide). Each entity's
+ * position is scene-local; the scene offset is added so it lands in engine-world.
+ * The gizmo anchors to the selection's CENTROID; a drag transforms each entity
+ * about that pivot (see beginDrag/endDrag). */
 export function setSelectedEntity(
-  entity: number | null,
-  position: { x: number; y: number; z: number } | null,
+  entities: {
+    entity: number;
+    position: { x: number; y: number; z: number };
+    rotation: { x: number; y: number; z: number; w: number };
+  }[],
   mode: GizmoMode = 'translate',
-  rotation: { x: number; y: number; z: number; w: number } | null = null,
   worldAligned: boolean = true,
   snapValues: { position: number; rotation: number; scale: number } | null = null,
 ): void {
-  selected = entity !== null && entity !== 0 ? (entity as Entity) : null;
-  selectedPos =
-    selected !== null && position
-      ? Vector3.add(Vector3.create(position.x, position.y, position.z), sceneOffset)
-      : null;
+  // Drop the ROOT/null entity (0) — it's never a real transform target.
+  selectedEntities = entities
+    .filter(e => e.entity !== 0)
+    .map(e => ({
+      entity: e.entity as Entity,
+      pos: Vector3.add(Vector3.create(e.position.x, e.position.y, e.position.z), sceneOffset),
+      rot: Quaternion.create(e.rotation.x, e.rotation.y, e.rotation.z, e.rotation.w),
+    }));
+  selected = selectedEntities.length > 0 ? selectedEntities[0].entity : null;
+  selectedPos = selectedEntities.length > 0 ? centroidOf(selectedEntities) : null;
+  // Local-align handle orientation: the single entity's rotation, else identity
+  // for a group (no shared local frame — matches the Babylon multi gizmos).
   selectedRot =
-    selected !== null && rotation
-      ? Quaternion.create(rotation.x, rotation.y, rotation.z, rotation.w)
-      : Quaternion.Identity();
+    selectedEntities.length === 1 ? { ...selectedEntities[0].rot } : Quaternion.Identity();
   alignToWorld = worldAligned;
   snap = snapValues;
   gizmoMode = mode;
@@ -291,6 +317,13 @@ export function setSelectedEntity(
   } else {
     setModeVisibility();
   }
+}
+
+/** The average of the selected entities' world positions — the gizmo's pivot. */
+function centroidOf(entries: SelectionEntry[]): Vector3 {
+  let sum = Vector3.Zero();
+  for (const e of entries) sum = Vector3.add(sum, e.pos);
+  return Vector3.scale(sum, 1 / entries.length);
 }
 
 /**
@@ -1050,13 +1083,32 @@ function beginDrag(axis: DragAxis): void {
   const camForward =
     camT === null ? Vector3.Forward() : Vector3.rotate(Vector3.Forward(), camT.rotation);
 
+  // Snapshot the selection about the centroid: each entity's offset from the
+  // pivot (constant through the drag), plus its start pose. The drag transforms
+  // each about `center` on commit (endDrag). Frozen so a mid-drag selection
+  // repost can't shift the math under the pointer.
+  const dragEntities = selectedEntities.map(e => ({
+    entity: e.entity,
+    startPos: { ...e.pos },
+    startRot: { ...e.rot },
+    offset: Vector3.subtract(e.pos, center),
+  }));
+
   if (axis === 'free') {
     // Free move: drag on the world XZ plane (normal = +Y, through the entity).
     // The whole in-plane start→now delta moves the entity (X and Z only).
     const planeNormal = Vector3.Up();
     const startHit = rayPlaneIntersect(ray.origin, ray.dir, center, planeNormal);
     if (startHit === null) return;
-    drag = { mode: 'translate', axis, axisDir: planeNormal, center, planeNormal, startHit };
+    drag = {
+      mode: 'translate',
+      axis,
+      axisDir: planeNormal,
+      center,
+      planeNormal,
+      startHit,
+      entities: dragEntities,
+    };
     dragPos = center;
     return;
   }
@@ -1068,7 +1120,15 @@ function beginDrag(axis: DragAxis): void {
     const planeNormal = gizmoAxisDir(PLANE_NORMAL_AXIS[axis]);
     const startHit = rayPlaneIntersect(ray.origin, ray.dir, center, planeNormal);
     if (startHit === null) return;
-    drag = { mode: 'translate', axis, axisDir: planeNormal, center, planeNormal, startHit };
+    drag = {
+      mode: 'translate',
+      axis,
+      axisDir: planeNormal,
+      center,
+      planeNormal,
+      startHit,
+      entities: dragEntities,
+    };
     dragPos = center;
     return;
   }
@@ -1095,6 +1155,7 @@ function beginDrag(axis: DragAxis): void {
       // invariant: dragging one arm-length up-right doubles the scale.
       startAlong: SHAFT_LEN * cameraDistanceScale(center),
       factor: 1,
+      entities: dragEntities,
     };
     return;
   }
@@ -1114,6 +1175,7 @@ function beginDrag(axis: DragAxis): void {
       planeNormal,
       startHit,
       angle: 0,
+      entities: dragEntities,
     };
     return;
   }
@@ -1140,11 +1202,20 @@ function beginDrag(axis: DragAxis): void {
       startHit,
       startAlong: Math.abs(startAlong) < 1e-3 ? 1e-3 : startAlong,
       factor: 1,
+      entities: dragEntities,
     };
     return;
   }
 
-  drag = { mode: 'translate', axis, axisDir, center, planeNormal, startHit };
+  drag = {
+    mode: 'translate',
+    axis,
+    axisDir,
+    center,
+    planeNormal,
+    startHit,
+    entities: dragEntities,
+  };
   dragPos = center;
 }
 
@@ -1265,19 +1336,27 @@ function endDrag(): void {
     if (Math.abs(angle) < 1e-4) return; // no-op drag → nothing to commit
     // Commit a WORLD-frame DELTA rotation about the ring's world normal (the
     // entity's rotated axis when locally aligned); the inspector composes it
-    // onto the entity's current rotation as delta ⊗ current (the agent can't
+    // onto each entity's current rotation as delta ⊗ current (the agent can't
     // read that base). Rotation is orientation-only, so — unlike position — no
     // scene-offset conversion.
+    //
+    // Multi-selection: every entity rotates by the same delta AND orbits the
+    // centroid — newWorldPos = centroid + delta·offset (offset cached at drag
+    // start). Position is absolute, so subtract the scene offset before sending.
+    // Single-selection: offset is 0, so the position is unchanged (only rotation).
     const delta = Quaternion.fromAngleAxis((angle * 180) / Math.PI, d.axisDir);
-    bus.postToPage({
-      kind: 'gizmoCommit',
-      transforms: [
-        {
-          entity: selected as number,
-          rotation: { x: delta.x, y: delta.y, z: delta.z, w: delta.w },
-        },
-      ],
+    const rotation = { x: delta.x, y: delta.y, z: delta.z, w: delta.w };
+    // Orbit only matters for multi-selection (offset ≠ 0). For a single entity
+    // (offset 0) send rotation ONLY, so a rotate never disturbs — or snaps — its
+    // position, matching the single-entity behavior before multi-select.
+    const multi = d.entities.length > 1;
+    const transforms = d.entities.map(e => {
+      if (!multi) return { entity: e.entity as number, rotation };
+      const worldPos = Vector3.add(d.center, Vector3.rotate(e.offset, delta));
+      const localPos = Vector3.subtract(worldPos, sceneOffset);
+      return { entity: e.entity as number, position: { ...localPos }, rotation };
     });
+    bus.postToPage({ kind: 'gizmoCommit', transforms });
     bus.postToPage({ kind: 'gizmoCommitEnd' });
     return;
   }
@@ -1294,34 +1373,49 @@ function endDrag(): void {
     if (Math.abs(factor - 1) < 1e-3) return; // no-op drag
     // Commit a per-axis scale MULTIPLIER (1 on the untouched axes; the center
     // cube multiplies all three — uniform); the inspector multiplies it onto
-    // the entity's current scale. Scale is dimensionless, so no scene-offset
+    // each entity's current scale. Scale is dimensionless, so no scene-offset
     // conversion — and it applies to LOCAL scale, which is why the handles are
     // aligned to the entity's local axes.
+    //
+    // Multi-selection: every entity scales by the multiplier AND moves outward
+    // from the centroid proportionally — newWorldPos = centroid + offset⊙mul
+    // (matching the Babylon ScaleGizmo's proportional multi-scale). Single-
+    // selection: offset 0, so scale ONLY (no position write / snap disturbance).
     const mul = {
       x: d.axis === 'x' || d.axis === 'xyz' ? factor : 1,
       y: d.axis === 'y' || d.axis === 'xyz' ? factor : 1,
       z: d.axis === 'z' || d.axis === 'xyz' ? factor : 1,
     };
-    bus.postToPage({
-      kind: 'gizmoCommit',
-      transforms: [{ entity: selected as number, scale: mul }],
+    const multi = d.entities.length > 1;
+    const transforms = d.entities.map(e => {
+      if (!multi) return { entity: e.entity as number, scale: mul };
+      const scaledOffset = Vector3.create(
+        e.offset.x * mul.x,
+        e.offset.y * mul.y,
+        e.offset.z * mul.z,
+      );
+      const localPos = Vector3.subtract(Vector3.add(d.center, scaledOffset), sceneOffset);
+      return { entity: e.entity as number, position: { ...localPos }, scale: mul };
     });
+    bus.postToPage({ kind: 'gizmoCommit', transforms });
     bus.postToPage({ kind: 'gizmoCommitEnd' });
     return;
   }
 
   if (finalPos === null) return;
-  // Adopt the committed position as the gizmo's new anchor (engine-world).
+  // Adopt the committed centroid as the gizmo's new anchor (engine-world).
   selectedPos = finalPos;
-  // Convert back to SCENE-LOCAL before committing: the inspector's Transform is
-  // scene-local (it renders every scene at the origin), so subtract the offset
-  // we added when placing. Without this, a world position would be written into
-  // a local Transform and the entity would jump by the parcel offset.
-  const localPos = Vector3.subtract(finalPos, sceneOffset);
-  bus.postToPage({
-    kind: 'gizmoCommit',
-    transforms: [{ entity: selected as number, position: { ...localPos } }],
+  // The whole selection translates by the same world delta the centroid moved:
+  // each entity's new world position = its start position + delta (its offset
+  // from the centroid is preserved). Convert back to SCENE-LOCAL before sending
+  // (the inspector's Transform is scene-local; it renders every scene at the
+  // origin), so subtract the offset we added when placing.
+  const delta = Vector3.subtract(finalPos, d.center);
+  const transforms = d.entities.map(e => {
+    const localPos = Vector3.subtract(Vector3.add(e.startPos, delta), sceneOffset);
+    return { entity: e.entity as number, position: { ...localPos } };
   });
+  bus.postToPage({ kind: 'gizmoCommit', transforms });
   bus.postToPage({ kind: 'gizmoCommitEnd' });
 }
 

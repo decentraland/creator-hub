@@ -80,11 +80,23 @@ export type AgentToPage =
   // to the active spawn point's onPositionChange (scene metadata, not a Transform).
   | { kind: 'spawn-gizmo-commit'; position: BusVec3 };
 
+/** One selected entity's world pose, supplied by the inspector (the agent can't
+ * read the inspected scene's Transform from its own engine). */
+export interface SelectionEntity {
+  entity: number;
+  position: BusVec3;
+  // World rotation, so gizmos can align their handles to the entity's local axes
+  // (single-selection only — a multi-selection gizmo is world/identity aligned,
+  // matching the Babylon gizmos).
+  rotation: BusQuat;
+}
+
 /**
  * inspector → agent (`to: 'scene'`).
  *  - `set-selection`: the agent can't read the inspected scene's Transform from
- *    its own engine, so the inspector supplies the selected entity's world
- *    position for the gizmo to anchor to (null = cleared).
+ *    its own engine, so the inspector supplies every selected entity's world
+ *    pose. The gizmo anchors to their centroid; a drag transforms each entity
+ *    about that virtual pivot (empty array = cleared).
  *  - `query-drop-point`: ask the agent to raycast the ground under the current
  *    pointer (for placing a drag-dropped asset); answered by `drop-point`. `id`
  *    correlates request/reply.
@@ -92,16 +104,13 @@ export type AgentToPage =
 export type PageToScene =
   | {
       kind: 'set-selection';
-      entity: number | null;
-      position: BusVec3 | null;
-      // The entity's world rotation, so gizmos can align their handles to the
-      // entity's local axes (the scale gizmo always does — scale is only
-      // meaningful on local axes, matching the Babylon ScaleGizmo; the translate
-      // gizmo does when `alignToWorld` is false). Null when nothing is selected.
-      rotation: BusQuat | null;
+      // Every selected entity's world pose. The gizmo anchors to their centroid;
+      // each entity's offset from the centroid is cached at drag start and the
+      // drag transforms them about that pivot. Empty = nothing selected.
+      entities: SelectionEntity[];
       // The toolbar's "align to world" checkbox: true = translate/rotate handles
       // on the WORLD axes, false = on the entity's local axes. Scale ignores it
-      // (always local).
+      // (always local). Local alignment applies to single selection only.
       alignToWorld: boolean;
       // The editor's snap increments (position: world units, rotation: RADIANS,
       // scale: factor) when snapping is enabled, or null when it's off. The

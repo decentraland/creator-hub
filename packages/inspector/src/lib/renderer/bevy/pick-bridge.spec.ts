@@ -59,6 +59,24 @@ describe('createPickBridge', () => {
     });
   });
 
+  describe('when an isMultiSelect predicate is supplied (the host modifier state)', () => {
+    it('should use the predicate over the agent flags', () => {
+      // The agent can't read DOM modifiers, so its flags are always false; the
+      // host's live modifier state decides. Predicate true → multi even though
+      // the agent reported single.
+      disconnect();
+      let held = true;
+      disconnect = createPickBridge({ events, channel: fakeChannel, isMultiSelect: () => held });
+
+      emit({ to: 'page', msg: { kind: 'pick', entity: 512, shift: false, ctrl: false } });
+      expect(picks.at(-1)?.modifiers.multi).toBe(true);
+
+      held = false;
+      emit({ to: 'page', msg: { kind: 'pick', entity: 512, shift: true, ctrl: true } });
+      expect(picks.at(-1)?.modifiers.multi).toBe(false);
+    });
+  });
+
   describe('when the agent posts a clean miss (entity 0)', () => {
     it('should emit an empty pick (deselect)', () => {
       emit({ to: 'page', msg: { kind: 'pick', entity: 0, shift: false, ctrl: false } });
