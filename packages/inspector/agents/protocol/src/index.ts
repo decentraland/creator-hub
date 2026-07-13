@@ -155,7 +155,13 @@ export type PageToScene =
   // given scene-local position, or hide it (null). Dragging it reports back over
   // `spawn-gizmo-commit`. Spawn points are scene metadata, so this is a bare
   // move-handle, not tied to a scene entity.
-  | { kind: 'set-spawn-gizmo'; position: BusVec3 | null };
+  | { kind: 'set-spawn-gizmo'; position: BusVec3 | null }
+  // Freeze (`frozen: true`) or run (`false`) the inspected scene. Frozen = the
+  // scene stops ticking (no SDK7 systems / timers / onUpdate) so it's a static
+  // subject to edit; the editor agent keeps running regardless. Editor default is
+  // frozen; the toolbar toggle sends this. Enacted via the engine's
+  // `/freeze_scene` / `/unfreeze_scene` console commands on the pinned scene.
+  | { kind: 'set-scene-frozen'; frozen: boolean };
 
 /** Every message is wrapped so a peer ignores its own posts / the wrong direction. */
 export interface BusEnvelope {

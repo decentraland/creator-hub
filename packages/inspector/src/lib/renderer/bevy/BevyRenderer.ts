@@ -15,6 +15,7 @@ import type {
   RendererEvents,
   RendererGizmos,
   RendererMetrics,
+  RendererSceneRun,
   RendererViewport,
   SpawnPointController,
   SpawnPointTarget,
@@ -69,6 +70,7 @@ export class BevyRenderer implements IRenderer {
   readonly spawnPoints: SpawnPointController;
   readonly debug: RendererDebug;
   readonly editorCamera: RendererEditorCamera;
+  readonly sceneRun: RendererSceneRun;
 
   // In-memory camera pose. No wasm camera yet; this exists so the pose getters
   // are coherent (setPose → getPose) as the contract requires.
@@ -93,6 +95,12 @@ export class BevyRenderer implements IRenderer {
   #editorCameraMode: EditorCameraMode = 'free';
   #postCameraMode: ((mode: EditorCameraMode) => void) | null = null;
   #cameraModeHandlers = new Set<(mode: EditorCameraMode) => void>();
+  // Scene run/freeze. The editor default is FROZEN (static — the agent freezes
+  // the scene on boot), so this starts false. The toolbar toggle flips it; the
+  // poster (injected by `register`) forwards the intent to the agent.
+  #sceneRunning = false;
+  #postSceneRunning: ((running: boolean) => void) | null = null;
+  #sceneRunHandlers = new Set<(running: boolean) => void>();
   // Posts a focus-on-entity to the agent (framing a world position). Injected by
   // `register`; null in the conformance path (focusOnEntity is then a no-op).
   #postFocus: ((position: Vector3) => void) | null = null;
@@ -116,6 +124,7 @@ export class BevyRenderer implements IRenderer {
 
     this.camera = this.#createCamera();
     this.editorCamera = this.#createEditorCamera();
+    this.sceneRun = this.#createSceneRun();
     this.gizmos = this.#createGizmos();
     this.metrics = this.#createMetrics();
     this.viewport = this.#createViewport();
@@ -264,6 +273,11 @@ export class BevyRenderer implements IRenderer {
     this.#postCameraMode = post;
   }
 
+  /** Wire the scene run/freeze poster (forwards run/freeze intent to the agent). */
+  setSceneRunPoster(post: (running: boolean) => void): void {
+    this.#postSceneRunning = post;
+  }
+
   /** Wire focus-on-entity to the agent (frames a world position over the bus). */
   setFocusPoster(post: (position: Vector3) => void): void {
     this.#postFocus = post;
@@ -319,6 +333,22 @@ export class BevyRenderer implements IRenderer {
       onModeChange: (cb: (mode: EditorCameraMode) => void): Unsubscribe => {
         this.#cameraModeHandlers.add(cb);
         return () => this.#cameraModeHandlers.delete(cb);
+      },
+    };
+  }
+
+  #createSceneRun(): RendererSceneRun {
+    return {
+      isRunning: () => this.#sceneRunning,
+      setRunning: (running: boolean) => {
+        if (running === this.#sceneRunning) return;
+        this.#sceneRunning = running;
+        this.#postSceneRunning?.(running);
+        for (const cb of this.#sceneRunHandlers) cb(running);
+      },
+      onRunChange: (cb: (running: boolean) => void): Unsubscribe => {
+        this.#sceneRunHandlers.add(cb);
+        return () => this.#sceneRunHandlers.delete(cb);
       },
     };
   }
