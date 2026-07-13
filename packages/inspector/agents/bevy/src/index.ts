@@ -42,6 +42,11 @@ export function main(): void {
     // it (the agent can't read the inspected scene's Transform).
     if (msg.kind === 'set-selection') {
       setSelectedEntity(msg.entities, msg.mode, msg.alignToWorld, msg.snap);
+      // Outline the selected entities in the viewport (render-only, never saved —
+      // see the engine's /highlight). Empty selection clears it. These are the
+      // inspected scene's entity ids, which /highlight resolves on the pinned
+      // scene — the same ids the gizmo/pick use.
+      highlightEntities(msg.entities.map(e => e.entity));
       return;
     }
     // Drag-drop placement: raycast the ground under the pointer and reply with
@@ -105,6 +110,23 @@ async function boot(): Promise<void> {
   // itself keeps ticking (it's a super scene, exempt from the freeze). The
   // toolbar toggle can unfreeze to run the scene live.
   await setSceneFrozen(true);
+}
+
+/**
+ * Outline the selected entities in the engine viewport via the `/highlight`
+ * console command — a render-only editor selection outline (never written to the
+ * scene's components / snapshot / save). Called on every selection change; an
+ * empty list clears the outline. The ROOT entity (0) isn't a real target, so
+ * it's dropped (matching the gizmo's selection filter).
+ */
+function highlightEntities(entities: number[]): void {
+  const api = getBevyApi();
+  if (!api) return;
+  const ids = entities.filter(e => e !== 0).map(String);
+  // `/highlight` with no ids clears; otherwise replaces the previous set.
+  void api.consoleCommand('highlight', ids).catch(e => {
+    console.error('[bevy-agent] highlight failed:', e);
+  });
 }
 
 /**
