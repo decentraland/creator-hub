@@ -2,8 +2,8 @@ import type { ComponentDefinition, Entity, TransformType } from '@dcl/ecs';
 import { CrdtMessageType, Engine } from '@dcl/ecs';
 import type { IEngine } from '@dcl/ecs';
 import * as components from '@dcl/ecs/dist/components';
-import { Vector3 as DclVector3 } from '@dcl/ecs-math';
-import type { Vector3 } from '@dcl/ecs-math';
+import { Quaternion as DclQuaternion, Vector3 as DclVector3 } from '@dcl/ecs-math';
+import type { Quaternion, Vector3 } from '@dcl/ecs-math';
 
 import { createOperations } from '../../sdk/operations';
 import { createEditorComponents } from '../../sdk/components';
@@ -116,6 +116,36 @@ export class BevySceneContext {
       current = t.parent as Entity | undefined;
     }
     return DclVector3.create(x, y, z);
+  }
+
+  /**
+   * An entity's world rotation, composed down the Transform.parent chain
+   * (world = parent-world ⊗ local) — the rotation analogue of
+   * {@link BevySceneContext.#resolveWorldPosition}, with the same spike-level
+   * fidelity (parent scale is ignored). Null when the entity has no Transform.
+   * The selection bridge sends this to the agent so the scale gizmo can align
+   * its handles to the entity's rotation.
+   */
+  getEntityWorldRotation(entity: Entity): Quaternion | null {
+    // Collect local rotations from the entity up to the root…
+    const locals: Quaternion[] = [];
+    let current: Entity | undefined = entity;
+    // Bound the walk so a malformed cyclic parent chain can't spin forever.
+    let guard = 0;
+    while (current !== undefined && current !== ROOT && guard++ < 1024) {
+      const t = this.Transform.getOrNull(current) as TransformType | null;
+      if (!t) break;
+      locals.push(t.rotation);
+      current = t.parent as Entity | undefined;
+    }
+    if (locals.length === 0) return null;
+    // …then compose top-down: world = R(topmost ancestor) ⊗ … ⊗ R(entity).
+    let world = DclQuaternion.Identity();
+    for (let i = locals.length - 1; i >= 0; i--) {
+      const q = locals[i];
+      world = DclQuaternion.multiply(world, DclQuaternion.create(q.x, q.y, q.z, q.w));
+    }
+    return world;
   }
 
   /**

@@ -57,7 +57,10 @@ export type AgentToPage =
   // the rest. The agent can't read the entity's base transform (separate engine),
   // so rotation/scale are DELTAS the inspector composes onto the current value:
   //  - position: ABSOLUTE world point (the agent is given the anchor up front).
-  //  - rotation: a DELTA quaternion → newRotation = current ⊗ delta.
+  //  - rotation: a WORLD-frame DELTA quaternion about the dragged ring's world
+  //    normal → newRotation = delta ⊗ current. (A locally-aligned ring's normal
+  //    is the entity's rotated axis, which makes the same composition apply the
+  //    delta about the entity's local axis.)
   //  - scale:    a per-axis MULTIPLIER → newScale = current * factor.
   | {
       kind: 'gizmoCommit';
@@ -88,6 +91,20 @@ export type PageToScene =
       kind: 'set-selection';
       entity: number | null;
       position: BusVec3 | null;
+      // The entity's world rotation, so gizmos can align their handles to the
+      // entity's local axes (the scale gizmo always does — scale is only
+      // meaningful on local axes, matching the Babylon ScaleGizmo; the translate
+      // gizmo does when `alignToWorld` is false). Null when nothing is selected.
+      rotation: BusQuat | null;
+      // The toolbar's "align to world" checkbox: true = translate/rotate handles
+      // on the WORLD axes, false = on the entity's local axes. Scale ignores it
+      // (always local).
+      alignToWorld: boolean;
+      // The editor's snap increments (position: world units, rotation: RADIANS,
+      // scale: factor) when snapping is enabled, or null when it's off. The
+      // agent quantizes drag feedback + committed deltas to these; the inspector
+      // additionally snaps the merged Transform authoritatively on commit.
+      snap: { position: number; rotation: number; scale: number } | null;
       // Which gizmo to show for the selection (translate/rotate/scale), or `free`
       // when none is active. Drives which handles the agent draws + how a drag
       // commits. The inspector owns the mode (its Gizmos toolbar writes it to the
