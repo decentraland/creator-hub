@@ -7,7 +7,13 @@ import {
   setCameraSceneOffset,
   setupCamera,
 } from './camera';
-import { getGroundPointAtPointer, setupGizmo, setSelectedEntity, setSceneOffset } from './gizmo';
+import {
+  getGroundPointAtPointer,
+  setSpawnGizmo,
+  setupGizmo,
+  setSelectedEntity,
+  setSceneOffset,
+} from './gizmo';
 
 /**
  * Super-user editor agent for the inspector's Bevy renderer.
@@ -66,6 +72,11 @@ export function main(): void {
     // Reset the editor camera to a default framing of the scene.
     if (msg.kind === 'reset-camera') {
       resetCamera(msg.position);
+      return;
+    }
+    // Show/hide the spawn-point move-handle at a scene-local position.
+    if (msg.kind === 'set-spawn-gizmo') {
+      setSpawnGizmo(msg.position);
       return;
     }
   });
