@@ -41,6 +41,12 @@ function toAgentMsg(data: unknown): AgentToPage | null {
   ) {
     return env.msg as AgentToPage;
   }
+  if (
+    msg.kind === 'gizmoPreview' &&
+    Array.isArray((msg as Extract<AgentToPage, { kind: 'gizmoPreview' }>).transforms)
+  ) {
+    return env.msg as AgentToPage;
+  }
   if (msg.kind === 'gizmoCommitEnd') return env.msg as AgentToPage;
   return null;
 }
@@ -99,6 +105,19 @@ export function createPickBridge(options: PickBridgeOptions): () => void {
         // reverse-channel handler merges them into the entity's existing
         // Transform, preserving the untouched fields + parent.
         events.emit('gizmoCommit', {
+          transforms: msg.transforms.map(t => ({
+            entity: t.entity as Entity,
+            position: t.position,
+            rotation: t.rotation,
+            scale: t.scale,
+          })),
+        });
+        break;
+      case 'gizmoPreview':
+        // A live mid-drag update (same delta shape). The reverse-channel merges
+        // it and re-emits `previewTransforms` for the renderer to show, without a
+        // CRDT write / undo entry (the authoritative write is the drag-end commit).
+        events.emit('gizmoDrag', {
           transforms: msg.transforms.map(t => ({
             entity: t.entity as Entity,
             position: t.position,

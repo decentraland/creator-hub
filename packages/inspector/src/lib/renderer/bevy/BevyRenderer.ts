@@ -88,7 +88,9 @@ export class BevyRenderer implements IRenderer {
   // Editor camera (avatar ⇄ free fly). The mode change is enacted by the agent
   // over the bus; `register` injects the poster. Mode state + subscribers live
   // here so the toolbar toggle reflects the current mode.
-  #editorCameraMode: EditorCameraMode = 'avatar';
+  // The editor defaults to the free-fly camera (the agent enters it on boot); the
+  // toolbar toggle reflects this without waiting on a round-trip from the agent.
+  #editorCameraMode: EditorCameraMode = 'free';
   #postCameraMode: ((mode: EditorCameraMode) => void) | null = null;
   #cameraModeHandlers = new Set<(mode: EditorCameraMode) => void>();
   // Posts a focus-on-entity to the agent (framing a world position). Injected by

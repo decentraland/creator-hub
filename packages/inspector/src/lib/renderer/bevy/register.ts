@@ -10,6 +10,7 @@ import { createForwardEditBridge } from './forward-edits';
 import { createInputFocusBridge } from './input-focus-bridge';
 import { createModifierTracker } from './modifier-tracker';
 import { createPickBridge } from './pick-bridge';
+import { createPreviewBridge } from './preview-bridge';
 import { createSelectionBridge } from './selection-bridge';
 import { createSpawnGizmoBridge } from './spawn-gizmo-bridge';
 
@@ -74,6 +75,15 @@ export function registerBevyRenderer(): void {
       // back in). Transform-only for now; see forward-edits.ts.
       const disconnectForward = createForwardEditBridge({
         context: bevy.context,
+        engineWindow: engine.engineWindow,
+      });
+
+      // Live gizmo preview: a drag emits `previewTransforms` every frame (merged
+      // by the reverse-channel, not written to the CRDT). Push each straight to
+      // the engine console so the entity tracks the gizmo live, without a
+      // per-frame undo entry — the committed write lands once on drag-end.
+      const disconnectPreview = createPreviewBridge({
+        events: bevy.events,
         engineWindow: engine.engineWindow,
       });
 
@@ -150,6 +160,7 @@ export function registerBevyRenderer(): void {
         dispose: () => {
           disconnectInputFocus();
           modifiers.disconnect();
+          disconnectPreview();
           spawnGizmo.disconnect();
           cameraBridge.disconnect();
           dropPoint.disconnect();
