@@ -86,9 +86,9 @@ const PLANE_SIZE = 0.35; // quad side length at scale 1
 const PLANE_OFFSET = 0.5; // quad center's offset from the gizmo center, per axis
 const planeGroupOf: Partial<Record<PlaneKey, Entity>> = {};
 
-const isAxis = (a: Axis | 'xyz' | PlaneKey): a is Axis => a === 'x' || a === 'y' || a === 'z';
-const isPlaneKey = (a: Axis | 'xyz' | PlaneKey): a is PlaneKey =>
-  a === 'xy' || a === 'xz' || a === 'yz';
+type DragAxis = Axis | 'xyz' | PlaneKey | 'free';
+const isAxis = (a: DragAxis): a is Axis => a === 'x' || a === 'y' || a === 'z';
+const isPlaneKey = (a: DragAxis): a is PlaneKey => a === 'xy' || a === 'xz' || a === 'yz';
 
 /** Whether the gizmo handles follow the entity's rotation instead of the world
  * axes: scale always does (per-axis scaling is only meaningful on local axes);
@@ -124,6 +124,10 @@ const SCALE_BOX = 0.18;
 // proportionally (matching the Babylon ScaleGizmo's uniform-scale center cube).
 const SCALE_CENTER_BOX = 0.25;
 let scaleCenterGroup: Entity | null = null;
+// The free gizmo's indicator: a small box at the entity center. Dragging it moves
+// the entity on the world XZ plane (Y=0), matching the Babylon free gizmo.
+const FREE_BOX = 0.22;
+let freeGroup: Entity | null = null;
 let selected: Entity | null = null;
 // The selected entity's world position, supplied by the inspector (the agent
 // can't read the inspected scene's Transform). The gizmo's anchor.
@@ -160,8 +164,9 @@ let rayTs = 0;
 interface DragState {
   mode: 'translate' | 'rotate' | 'scale';
   // 'xyz' = the scale gizmo's center cube (uniform scale on all three axes);
-  // a PlaneKey = a translate plane handle (free drag within that plane).
-  axis: Axis | 'xyz' | PlaneKey;
+  // a PlaneKey = a translate plane handle (free drag within that plane);
+  // 'free' = the free gizmo's center indicator (move on the world XZ plane).
+  axis: DragAxis;
   // World-space direction the drag projects onto, captured at grab time: the
   // handle's axis (world or entity-local per alignment), the camera's up-right
   // diagonal (uniform scale), or the plane normal (plane drags — unused, the
@@ -275,9 +280,9 @@ export function setSelectedEntity(
   }
 }
 
-/** Modes that draw handles (`free` draws none — the gizmo stays hidden). */
+/** Modes that draw handles. `free` draws a center indicator (world-XZ move). */
 function isSupportedMode(mode: GizmoMode): boolean {
-  return mode === 'translate' || mode === 'rotate' || mode === 'scale';
+  return mode === 'translate' || mode === 'rotate' || mode === 'scale' || mode === 'free';
 }
 
 export function setupGizmo(): void {
@@ -397,6 +402,7 @@ function buildGizmo(): void {
   }
   buildTranslatePlanes(root);
   buildScaleCenter(root);
+  buildFreeIndicator(root);
 }
 
 /**
@@ -459,6 +465,30 @@ function buildScaleCenter(root: Entity): void {
   Material.setPbrMaterial(cube, {
     albedoColor: Color4.White(),
     emissiveColor: Color3.White(),
+    emissiveIntensity: 0.4,
+  });
+}
+
+/**
+ * The free gizmo's indicator: a small box at the entity center. Dragging it moves
+ * the entity freely on the world XZ plane (Y=0), matching the Babylon free gizmo.
+ * Grab is analytic (ray-vs-center in pickFreeAnalytic), so no collider. Shown only
+ * in `free` mode.
+ */
+function buildFreeIndicator(root: Entity): void {
+  const group = engine.addEntity();
+  Transform.create(group, { parent: root });
+  freeGroup = group;
+
+  const box = engine.addEntity();
+  Transform.create(box, {
+    scale: Vector3.create(FREE_BOX, FREE_BOX, FREE_BOX),
+    parent: group,
+  });
+  MeshRenderer.setBox(box);
+  Material.setPbrMaterial(box, {
+    albedoColor: Color4.create(0.9, 0.9, 0.2, 1),
+    emissiveColor: Color3.create(0.9, 0.9, 0.2),
     emissiveIntensity: 0.4,
   });
 }
@@ -563,6 +593,9 @@ function setModeVisibility(): void {
   }
   if (scaleCenterGroup !== null) {
     Transform.getMutable(scaleCenterGroup).scale = gizmoMode === 'scale' ? shown : hidden;
+  }
+  if (freeGroup !== null) {
+    Transform.getMutable(freeGroup).scale = gizmoMode === 'free' ? shown : hidden;
   }
   for (const key of PLANE_KEYS) {
     const group = planeGroupOf[key];
@@ -724,6 +757,15 @@ function pickScaleHandleAnalytic(ray: { origin: Vector3; dir: Vector3 }): Axis |
   return pickAxisAnalytic(ray);
 }
 
+/** Analytic free grab: the center indicator (ray-vs-center distance), or null.
+ * A hit starts a world-XZ move; a miss falls through to a scene pick. */
+function pickFreeAnalytic(ray: { origin: Vector3; dir: Vector3 }): 'free' | null {
+  if (selectedPos === null) return null;
+  const scale = cameraDistanceScale(selectedPos);
+  const centerTol = FREE_BOX * 1.6 * scale;
+  return rayPointDistance(ray.origin, ray.dir, selectedPos) <= centerTol ? 'free' : null;
+}
+
 /** Analytic rotate grab: which ring the pointer ray meets (hit on the axis plane
  * within a tolerance band around the ring radius), or null. The ring for `axis`
  * lies in the plane through the center with normal = the handle axis (world, or
@@ -833,7 +875,9 @@ function gizmoSystemInner(): void {
             ? pickRotateAxisAnalytic(ray)
             : gizmoMode === 'scale'
               ? pickScaleHandleAnalytic(ray)
-              : pickTranslateHandleAnalytic(ray);
+              : gizmoMode === 'free'
+                ? pickFreeAnalytic(ray)
+                : pickTranslateHandleAnalytic(ray);
       if (grabbedAxis !== null) {
         beginDrag(grabbedAxis);
       } else {
@@ -901,7 +945,7 @@ function isGizmoHandle(id: number): boolean {
   return false;
 }
 
-function beginDrag(axis: Axis | 'xyz' | PlaneKey): void {
+function beginDrag(axis: DragAxis): void {
   if (selected === null || selectedPos === null) return;
   const center = { ...selectedPos };
   const ray = pointerRay();
@@ -909,6 +953,17 @@ function beginDrag(axis: Axis | 'xyz' | PlaneKey): void {
   const camT = Transform.getOrNull(engine.CameraEntity);
   const camForward =
     camT === null ? Vector3.Forward() : Vector3.rotate(Vector3.Forward(), camT.rotation);
+
+  if (axis === 'free') {
+    // Free move: drag on the world XZ plane (normal = +Y, through the entity).
+    // The whole in-plane start→now delta moves the entity (X and Z only).
+    const planeNormal = Vector3.Up();
+    const startHit = rayPlaneIntersect(ray.origin, ray.dir, center, planeNormal);
+    if (startHit === null) return;
+    drag = { mode: 'translate', axis, axisDir: planeNormal, center, planeNormal, startHit };
+    dragPos = center;
+    return;
+  }
 
   if (isPlaneKey(axis)) {
     // Plane drag (translate): move freely within the handle's plane. Start and
@@ -1055,11 +1110,22 @@ function updateDrag(): void {
   }
 
   const worldDelta = Vector3.subtract(hit, drag.startHit);
-  // Plane handle: take the whole in-plane delta (both hits lie on the drag
-  // plane), snapping each in-plane component. Axis arm: project the delta onto
-  // the arm's direction, snapping the along-axis distance.
+  // Plane handle / free move: take the whole in-plane delta (both hits lie on the
+  // drag plane), snapping each in-plane component. Axis arm: project the delta
+  // onto the arm's direction, snapping the along-axis distance.
   let newPos: Vector3;
-  if (isPlaneKey(drag.axis)) {
+  if (drag.axis === 'free') {
+    // Free move lives on the world XZ plane — snap world X and Z independently.
+    let delta = worldDelta;
+    if (snap !== null) {
+      delta = Vector3.create(
+        snapStep(worldDelta.x, snap.position),
+        0,
+        snapStep(worldDelta.z, snap.position),
+      );
+    }
+    newPos = Vector3.add(drag.center, delta);
+  } else if (isPlaneKey(drag.axis)) {
     let delta = worldDelta;
     if (snap !== null) {
       const [a0, a1] = PLANE_AXES[drag.axis];
