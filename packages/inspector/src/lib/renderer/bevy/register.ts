@@ -8,6 +8,7 @@ import { createCameraBridge } from './camera-bridge';
 import { createDropPointBridge } from './drop-point-bridge';
 import { createForwardEditBridge } from './forward-edits';
 import { createInputFocusBridge } from './input-focus-bridge';
+import { createModifierTracker } from './modifier-tracker';
 import { createPickBridge } from './pick-bridge';
 import { createSelectionBridge } from './selection-bridge';
 import { createSpawnGizmoBridge } from './spawn-gizmo-bridge';
@@ -76,11 +77,22 @@ export function registerBevyRenderer(): void {
         engineWindow: engine.engineWindow,
       });
 
+      // A viewport pick is a multi-select when Shift/Ctrl/Cmd is held. The agent
+      // (wasm sandbox) can't read DOM modifiers, so the host tracks their live
+      // state from the same-origin engine + host windows and the pick bridge
+      // consults it.
+      const modifiers = createModifierTracker({
+        engineWindow: engine.engineWindow as unknown as Window,
+      });
+
       // Reverse channel: the editor-agent portable experience (loaded via
       // systemScene) posts viewport picks over a BroadcastChannel; turn them
       // into `pick` events for the reverse-channel handler → ECS selection.
       // Only meaningful when a systemScene agent is configured.
-      const disconnectPick = createPickBridge({ events: bevy.events });
+      const disconnectPick = createPickBridge({
+        events: bevy.events,
+        isMultiSelect: () => modifiers.isMultiSelect(),
+      });
 
       // Forward the inspector's selection to the agent so its gizmo attaches to
       // the selected entity (from a viewport pick OR a tree click). The gizmos
@@ -137,6 +149,7 @@ export function registerBevyRenderer(): void {
         engine: bevy.context.engine,
         dispose: () => {
           disconnectInputFocus();
+          modifiers.disconnect();
           spawnGizmo.disconnect();
           cameraBridge.disconnect();
           dropPoint.disconnect();

@@ -3,7 +3,9 @@ import { createSelectionBridge } from './selection-bridge';
 
 /**
  * The selection bridge posts the inspector's current selection to the agent over
- * the bus (`set-selection`) so the gizmo tracks it. Driven with a real
+ * the bus (`set-selection`) so the gizmo tracks it. Every selected entity's world
+ * pose is sent as an `entities` array (the agent anchors the gizmo at their
+ * centroid); the mode/align/snap ride alongside. Driven with a real
  * BevySceneContext (its engine carries the Selection editor component) + a fake
  * channel recorder.
  */
@@ -28,6 +30,26 @@ describe('createSelectionBridge', () => {
 
   const IDENTITY = { rotation: { x: 0, y: 0, z: 0, w: 1 }, scale: { x: 1, y: 1, z: 1 } };
 
+  // The last set-selection message posted (the bridge dedupes, so the most recent
+  // post reflects the current state).
+  const lastSelection = () => {
+    const envelopes = posted.filter(
+      (m): m is { to: string; msg: { kind: string } } =>
+        !!m &&
+        typeof m === 'object' &&
+        (m as { msg?: { kind?: string } }).msg?.kind === 'set-selection',
+    );
+    return envelopes.at(-1)?.msg as
+      | {
+          kind: string;
+          entities: { entity: number; position: unknown; rotation: unknown }[];
+          alignToWorld: boolean;
+          snap: unknown;
+          mode: string;
+        }
+      | undefined;
+  };
+
   // GizmoType: FREE=0, POSITION=1, ROTATION=2, SCALE=3.
   describe('when an entity gains the Selection component', () => {
     it('should post set-selection with that entity, its world position, rotation, and gizmo mode', async () => {
@@ -41,24 +63,64 @@ describe('createSelectionBridge', () => {
       ctx.editorComponents.Selection.create(entity, { gizmo: 1 }); // POSITION → translate
       await ctx.engine.update(1);
 
-      expect(posted).toContainEqual({
-        to: 'scene',
-        msg: {
-          kind: 'set-selection',
-          entity: entity as number,
-          position: { x: 4, y: 1, z: 2 },
-          rotation: { x: 0.5, y: 0.5, z: 0.5, w: 0.5 },
-          alignToWorld: true,
-          snap: null,
-          mode: 'translate',
-        },
+      expect(lastSelection()).toEqual({
+        kind: 'set-selection',
+        entities: [
+          {
+            entity: entity as number,
+            position: { x: 4, y: 1, z: 2 },
+            rotation: { x: 0.5, y: 0.5, z: 0.5, w: 0.5 },
+          },
+        ],
+        alignToWorld: true,
+        snap: null,
+        mode: 'translate',
       });
+    });
+  });
+
+  describe('when multiple entities are selected', () => {
+    it('should post every selected entity with its world pose', async () => {
+      const a = ctx.engine.addEntity();
+      ctx.Transform.create(a, {
+        ...IDENTITY,
+        position: { x: 0, y: 0, z: 0 },
+        parent: ctx.engine.RootEntity,
+      });
+      const b = ctx.engine.addEntity();
+      ctx.Transform.create(b, {
+        ...IDENTITY,
+        position: { x: 4, y: 0, z: 0 },
+        parent: ctx.engine.RootEntity,
+      });
+      ctx.editorComponents.Selection.create(a, { gizmo: 1 });
+      ctx.editorComponents.Selection.create(b, { gizmo: 1 });
+      await ctx.engine.update(1);
+
+      const sel = lastSelection();
+      expect(sel?.entities).toContainEqual({
+        entity: a as number,
+        position: { x: 0, y: 0, z: 0 },
+        rotation: { x: 0, y: 0, z: 0, w: 1 },
+      });
+      expect(sel?.entities).toContainEqual({
+        entity: b as number,
+        position: { x: 4, y: 0, z: 0 },
+        rotation: { x: 0, y: 0, z: 0, w: 1 },
+      });
+      expect(sel?.entities).toHaveLength(2);
+      expect(sel?.mode).toBe('translate');
     });
   });
 
   describe('when the gizmo mode changes on the same selection', () => {
     it('should re-post with the new mode', async () => {
       const entity = ctx.engine.addEntity();
+      ctx.Transform.create(entity, {
+        ...IDENTITY,
+        position: { x: 1, y: 0, z: 1 },
+        parent: ctx.engine.RootEntity,
+      });
       ctx.editorComponents.Selection.create(entity, { gizmo: 1 }); // translate
       await ctx.engine.update(1);
       posted.length = 0;
@@ -67,18 +129,8 @@ describe('createSelectionBridge', () => {
       ctx.editorComponents.Selection.getMutable(entity).gizmo = 2; // ROTATION
       await ctx.engine.update(1);
 
-      expect(posted).toContainEqual({
-        to: 'scene',
-        msg: {
-          kind: 'set-selection',
-          entity: entity as number,
-          position: null,
-          rotation: null,
-          alignToWorld: true,
-          snap: null,
-          mode: 'rotate',
-        },
-      });
+      expect(lastSelection()?.mode).toBe('rotate');
+      expect(lastSelection()?.entities).toHaveLength(1);
     });
   });
 
@@ -101,17 +153,18 @@ describe('createSelectionBridge', () => {
       mutable.rotation = { x: 0, y: 0.5, z: 0, w: 0.5 };
       await ctx.engine.update(1);
 
-      expect(posted).toContainEqual({
-        to: 'scene',
-        msg: {
-          kind: 'set-selection',
-          entity: entity as number,
-          position: { x: 2, y: 0, z: 1 },
-          rotation: { x: 0, y: 0.5, z: 0, w: 0.5 },
-          alignToWorld: true,
-          snap: null,
-          mode: 'scale',
-        },
+      expect(lastSelection()).toEqual({
+        kind: 'set-selection',
+        entities: [
+          {
+            entity: entity as number,
+            position: { x: 2, y: 0, z: 1 },
+            rotation: { x: 0, y: 0.5, z: 0, w: 0.5 },
+          },
+        ],
+        alignToWorld: true,
+        snap: null,
+        mode: 'scale',
       });
     });
   });
@@ -137,6 +190,11 @@ describe('createSelectionBridge', () => {
       });
 
       const entity = ctx.engine.addEntity();
+      ctx.Transform.create(entity, {
+        ...IDENTITY,
+        position: { x: 1, y: 0, z: 1 },
+        parent: ctx.engine.RootEntity,
+      });
       ctx.editorComponents.Selection.create(entity, { gizmo: 1 }); // translate
       await ctx.engine.update(1);
       posted.length = 0;
@@ -145,18 +203,8 @@ describe('createSelectionBridge', () => {
       worldAligned = false;
       for (const h of [...gizmoHandlers]) h();
 
-      expect(posted).toContainEqual({
-        to: 'scene',
-        msg: {
-          kind: 'set-selection',
-          entity: entity as number,
-          position: null,
-          rotation: null,
-          alignToWorld: false,
-          snap: null,
-          mode: 'translate',
-        },
-      });
+      expect(lastSelection()?.alignToWorld).toBe(false);
+      expect(lastSelection()?.mode).toBe('translate');
     });
   });
 
@@ -181,6 +229,11 @@ describe('createSelectionBridge', () => {
       });
 
       const entity = ctx.engine.addEntity();
+      ctx.Transform.create(entity, {
+        ...IDENTITY,
+        position: { x: 1, y: 0, z: 1 },
+        parent: ctx.engine.RootEntity,
+      });
       ctx.editorComponents.Selection.create(entity, { gizmo: 2 }); // rotate
       await ctx.engine.update(1);
       posted.length = 0;
@@ -189,24 +242,19 @@ describe('createSelectionBridge', () => {
       snap = { position: 0.25, rotation: Math.PI / 2, scale: 0.1 };
       for (const h of [...snapHandlers]) h();
 
-      expect(posted).toContainEqual({
-        to: 'scene',
-        msg: {
-          kind: 'set-selection',
-          entity: entity as number,
-          position: null,
-          rotation: null,
-          alignToWorld: true,
-          snap: { position: 0.25, rotation: Math.PI / 2, scale: 0.1 },
-          mode: 'rotate',
-        },
-      });
+      expect(lastSelection()?.snap).toEqual({ position: 0.25, rotation: Math.PI / 2, scale: 0.1 });
+      expect(lastSelection()?.mode).toBe('rotate');
     });
   });
 
   describe('when the selection is cleared', () => {
-    it('should post set-selection null with free mode', async () => {
+    it('should post set-selection with an empty entities array and free mode', async () => {
       const entity = ctx.engine.addEntity();
+      ctx.Transform.create(entity, {
+        ...IDENTITY,
+        position: { x: 1, y: 0, z: 1 },
+        parent: ctx.engine.RootEntity,
+      });
       ctx.editorComponents.Selection.create(entity, { gizmo: 1 });
       await ctx.engine.update(1);
       posted.length = 0;
@@ -214,17 +262,12 @@ describe('createSelectionBridge', () => {
       ctx.editorComponents.Selection.deleteFrom(entity);
       await ctx.engine.update(1);
 
-      expect(posted).toContainEqual({
-        to: 'scene',
-        msg: {
-          kind: 'set-selection',
-          entity: null,
-          position: null,
-          rotation: null,
-          alignToWorld: true,
-          snap: null,
-          mode: 'free',
-        },
+      expect(lastSelection()).toEqual({
+        kind: 'set-selection',
+        entities: [],
+        alignToWorld: true,
+        snap: null,
+        mode: 'free',
       });
     });
   });
