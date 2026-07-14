@@ -191,8 +191,7 @@ export const useTree = () => {
   const centerViewOnEntity = useCallback(
     (entity: Entity) => {
       if (!sdk || entity === ROOT) return;
-      const babylonEntity = sdk.sceneContext.getEntityOrNull(entity);
-      if (babylonEntity !== null) sdk.editorCamera.centerViewOnEntity(babylonEntity);
+      sdk.renderer.camera.focusOnEntity(entity);
     },
     [sdk],
   );

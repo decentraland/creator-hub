@@ -7,6 +7,7 @@ import {
 } from '@babylonjs/core';
 import { Vector3 as DclVector3 } from '@dcl/ecs-math';
 import { GizmoType } from '../../utils/gizmo';
+import type { RendererEvents } from '../../renderer/types';
 import type { SceneContext } from './SceneContext';
 import type { EcsEntity } from './EcsEntity';
 import { GizmoType as TransformerType } from './gizmos/types';
@@ -100,41 +101,44 @@ export function createGizmoManager(context: SceneContext) {
     gizmoNode.computeWorldMatrix(true);
   }
 
-  function updateEntityPosition(entity: EcsEntity) {
-    const currentTransform = context.Transform.getOrNull(entity.entityId);
-    if (!currentTransform) return;
-
+  // The gizmo is a renderer input device: it drags the local Babylon node, then
+  // *emits* the committed transform. The inspector-side reverse-channel handler
+  // performs the actual ECS write. `isUpdatingFromGizmo` still guards the
+  // Transform.onChange re-sync: mitt emits synchronously, so the ECS write
+  // happens inline within emitGizmoCommit — same ordering as the old direct
+  // write — and the flag brackets it correctly.
+  function emitGizmoCommit(transforms: RendererEvents['gizmoCommit']['transforms']) {
     isUpdatingFromGizmo = true;
-    context.operations.updateValue(context.Transform, entity.entityId, {
-      ...currentTransform,
-      position: DclVector3.create(entity.position.x, entity.position.y, entity.position.z),
-    });
+    context.rendererEvents.emit('gizmoCommit', { transforms });
+  }
+
+  function updateEntityPosition(entity: EcsEntity) {
+    if (!context.Transform.getOrNull(entity.entityId)) return;
+    emitGizmoCommit([
+      {
+        entity: entity.entityId,
+        position: DclVector3.create(entity.position.x, entity.position.y, entity.position.z),
+      },
+    ]);
   }
 
   function updateEntityRotation(entity: EcsEntity) {
-    const currentTransform = context.Transform.getOrNull(entity.entityId);
-    if (!currentTransform || !entity.rotationQuaternion) return;
-
-    isUpdatingFromGizmo = true;
-    // The RotationGizmo already applies the rotation in local coordinates
-    // We only need to use the Babylon rotation directly
+    if (!context.Transform.getOrNull(entity.entityId) || !entity.rotationQuaternion) return;
+    // The RotationGizmo already applies the rotation in local coordinates;
+    // use the Babylon rotation directly.
     const { x, y, z, w } = entity.rotationQuaternion;
-    context.operations.updateValue(context.Transform, entity.entityId, {
-      ...currentTransform,
-      rotation: { x, y, z, w },
-    });
+    emitGizmoCommit([{ entity: entity.entityId, rotation: { x, y, z, w } }]);
   }
 
   function updateEntityScale(entity: EcsEntity) {
-    const currentTransform = context.Transform.getOrNull(entity.entityId);
-    if (!currentTransform) return;
-
-    isUpdatingFromGizmo = true;
-    context.operations.updateValue(context.Transform, entity.entityId, {
-      ...currentTransform,
-      scale: DclVector3.create(entity.scaling.x, entity.scaling.y, entity.scaling.z),
-      position: DclVector3.create(entity.position.x, entity.position.y, entity.position.z),
-    });
+    if (!context.Transform.getOrNull(entity.entityId)) return;
+    emitGizmoCommit([
+      {
+        entity: entity.entityId,
+        scale: DclVector3.create(entity.scaling.x, entity.scaling.y, entity.scaling.z),
+        position: DclVector3.create(entity.position.x, entity.position.y, entity.position.z),
+      },
+    ]);
   }
 
   // Calculate centroid of selected entities
@@ -257,7 +261,7 @@ export function createGizmoManager(context: SceneContext) {
   }
 
   function dispatchAndClearFlag(): void {
-    void context.operations.dispatch();
+    context.rendererEvents.emit('gizmoCommitEnd');
     isUpdatingFromGizmo = false;
   }
 
