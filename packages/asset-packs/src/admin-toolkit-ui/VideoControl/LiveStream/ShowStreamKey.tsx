@@ -147,7 +147,7 @@ export function ShowStreamKey({
           />
         </UiEntity>
         <UiEntity
-          uiTransform={{ width: '100%', margin: { top: SPACING.sm } }}
+          uiTransform={{ width: '100%', height: 44, margin: { top: SPACING.sm } }}
           uiText={{
             value:
               'Do not share your stream key with anyone, and be careful not to display it on screen while streaming.',
