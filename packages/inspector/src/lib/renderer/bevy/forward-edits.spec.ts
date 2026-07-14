@@ -1,3 +1,5 @@
+import * as components from '@dcl/ecs/dist/components';
+
 import type { EngineWindow } from './console';
 import { BevySceneContext } from './BevySceneContext';
 import { createForwardEditBridge } from './forward-edits';
@@ -52,6 +54,83 @@ describe('createForwardEditBridge', () => {
       expect(write!.args[1]).toBe('Transform'); // core:: stripped
       const value = JSON.parse(write!.args[2]);
       expect(value.position).toEqual({ x: 1, y: 2, z: 3 });
+    });
+  });
+
+  describe('when a GltfContainer is written (a newly added/dropped model)', () => {
+    it('should refresh the content map (scene_content) BEFORE writing GltfContainer', async () => {
+      const GltfContainer = components.GltfContainer(ctx.engine);
+      const entity = ctx.engine.addEntity();
+      GltfContainer.create(entity, { src: 'assets/thing.glb', visibleMeshesCollisionMask: 3 });
+      await ctx.engine.update(1);
+      // Let the sequenced async fire (scene_content → set_component) settle.
+      await new Promise(r => setTimeout(r, 0));
+
+      const refreshIdx = sent.findIndex(s => s.cmd === 'scene_content');
+      const setIdx = sent.findIndex(
+        s => s.cmd === 'set_component' && s.args[1] === 'GltfContainer',
+      );
+      expect(refreshIdx).toBeGreaterThanOrEqual(0);
+      expect(setIdx).toBeGreaterThanOrEqual(0);
+      // Content refresh must precede the GltfContainer set so the src resolves and
+      // the model renders instead of a placeholder cube.
+      expect(refreshIdx).toBeLessThan(setIdx);
+
+      const write = sent[setIdx];
+      expect(write.args[0]).toBe(String(entity));
+      expect(JSON.parse(write.args[2]).src).toBe('assets/thing.glb');
+    });
+  });
+
+  describe('when a NEW entity is added (Name + engine components, like a dropped asset)', () => {
+    it('should instantiate it via new_entity before forwarding its engine components', async () => {
+      const GltfContainer = components.GltfContainer(ctx.engine);
+      const entity = ctx.engine.addEntity();
+      // Mirror add-asset's write order: engine components first, then Name (the
+      // custom component that anchors instantiation) — the case that failed live.
+      ctx.Transform.create(entity, {
+        ...IDENTITY,
+        position: { x: 1, y: 0, z: 2 },
+        parent: ctx.engine.RootEntity,
+      });
+      GltfContainer.create(entity, { src: 'assets/car.glb', visibleMeshesCollisionMask: 3 });
+      ctx.Name.create(entity, { value: 'Car' });
+      await ctx.engine.update(1);
+      // Let the per-entity async queue (new_entity → set_component…) drain.
+      await new Promise(r => setTimeout(r, 0));
+      await new Promise(r => setTimeout(r, 0));
+
+      const newEntityIdx = sent.findIndex(s => s.cmd === 'new_entity');
+      expect(newEntityIdx).toBeGreaterThanOrEqual(0);
+      // Instantiate at the exact inspector id, anchored by the Name component.
+      const args = sent[newEntityIdx].args;
+      expect(args[0]).toBe(String(ctx.Name.componentId));
+      expect(args).toContain('--ids');
+      expect(args).toContain(String(entity));
+
+      // The engine components (Transform, GltfContainer) are (re)sent AFTER the
+      // instantiation, so they land on the now-existing entity.
+      const gltfIdx = sent.findIndex(
+        s => s.cmd === 'set_component' && s.args[1] === 'GltfContainer',
+      );
+      const tfIdx = sent.findIndex(s => s.cmd === 'set_component' && s.args[1] === 'Transform');
+      expect(gltfIdx).toBeGreaterThan(newEntityIdx);
+      expect(tfIdx).toBeGreaterThan(newEntityIdx);
+    });
+
+    it('should NOT instantiate when only editing an existing entity (no Name write)', async () => {
+      const entity = ctx.engine.addEntity();
+      ctx.Transform.create(entity, { ...IDENTITY, position: { x: 0, y: 0, z: 0 } });
+      await ctx.engine.update(1);
+      sent.length = 0;
+
+      // A gizmo-style move: Transform changes, no Name — must not trigger new_entity.
+      ctx.Transform.getMutable(entity).position = { x: 5, y: 0, z: 5 };
+      await ctx.engine.update(1);
+      await new Promise(r => setTimeout(r, 0));
+
+      expect(sent.some(s => s.cmd === 'new_entity')).toBe(false);
+      expect(sent.some(s => s.cmd === 'set_component' && s.args[1] === 'Transform')).toBe(true);
     });
   });
 

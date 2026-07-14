@@ -38,6 +38,12 @@ export function removeEntity(engine: IEngine) {
           component.deleteFrom(entityIterator);
         }
       }
+      // Emit a DELETE_ENTITY (not just per-component deletes) so a renderer that
+      // mirrors the CRDT to a separate engine (Bevy → forward-edits → delete_entity)
+      // removes the whole entity from the viewport, including any spawned GLTF /
+      // placeholder mesh. Babylon's SceneContext already handles DELETE_ENTITY, so
+      // this is safe for it too (the components were just cleared above).
+      engine.removeEntity(entityIterator);
     }
   };
 }

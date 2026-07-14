@@ -9,10 +9,22 @@ import { createInputFocusBridge } from './input-focus-bridge';
 describe('createInputFocusBridge', () => {
   type Listener = (e: any) => void;
 
-  function fakeWindow() {
+  function fakeWindow(withDocument = false) {
     const listeners = new Map<string, Set<Listener>>();
     return {
       dispatched: [] as any[],
+      // The host window carries a `document` — the bridge dispatches forwarded
+      // keys there (that's where the inspector's hotkeys listen). Its own dispatch
+      // recorder lets tests assert the event landed on `document`, not `window`.
+      document: withDocument
+        ? {
+            dispatched: [] as any[],
+            dispatchEvent(e: any) {
+              (this as any).dispatched.push(e);
+              return true;
+            },
+          }
+        : undefined,
       addEventListener: (type: string, fn: Listener) => {
         if (!listeners.has(type)) listeners.set(type, new Set());
         listeners.get(type)!.add(fn);
@@ -61,7 +73,7 @@ describe('createInputFocusBridge', () => {
 
   beforeEach(() => {
     engineWindow = fakeWindow();
-    hostWindow = fakeWindow();
+    hostWindow = fakeWindow(true);
     iframe = {
       focused: 0,
       focus() {
@@ -77,23 +89,27 @@ describe('createInputFocusBridge', () => {
 
   afterEach(() => disconnect());
 
-  it('should re-dispatch a bare editor shortcut key onto the host', () => {
+  it('should re-dispatch a bare editor shortcut key onto the host document (bubbling)', () => {
     engineWindow.emit('keydown', keyEvent('f')); // focus-selected
-    expect(hostWindow.dispatched).toHaveLength(1);
-    expect(hostWindow.dispatched[0].key).toBe('f');
+    // Lands on the host DOCUMENT (where hotkeys-js listens), not `window`.
+    expect(hostWindow.document!.dispatched).toHaveLength(1);
+    expect(hostWindow.dispatched).toHaveLength(0);
+    expect(hostWindow.document!.dispatched[0].key).toBe('f');
+    expect(hostWindow.document!.dispatched[0].bubbles).toBe(true);
   });
 
   it('should NOT forward bare movement keys (they stay engine-only)', () => {
     for (const k of ['w', 'a', 's', 'd', ' ']) engineWindow.emit('keydown', keyEvent(k));
-    expect(hostWindow.dispatched).toHaveLength(0);
+    expect(hostWindow.document!.dispatched).toHaveLength(0);
   });
 
-  it('should forward modifier combos and preventDefault the browser default', () => {
-    const e = keyEvent('d', { metaKey: true }); // Cmd+D (duplicate; browser = bookmark)
+  it('should forward modifier combos (e.g. Ctrl+Z undo) and preventDefault the browser default', () => {
+    const e = keyEvent('z', { ctrlKey: true }); // Ctrl+Z (undo)
     engineWindow.emit('keydown', e);
     expect(e.defaultPrevented).toBe(true);
-    expect(hostWindow.dispatched).toHaveLength(1);
-    expect(hostWindow.dispatched[0].metaKey).toBe(true);
+    expect(hostWindow.document!.dispatched).toHaveLength(1);
+    expect(hostWindow.document!.dispatched[0].key).toBe('z');
+    expect(hostWindow.document!.dispatched[0].ctrlKey).toBe(true);
   });
 
   it('should NOT preventDefault a bare shortcut key (movement must stay uncancelled)', () => {

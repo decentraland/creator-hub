@@ -65,7 +65,13 @@ export function createInputFocusBridge(options: InputFocusBridgeOptions): () => 
     if (e.metaKey || e.ctrlKey) e.preventDefault();
     // Re-dispatch on the host so the inspector's shortcut listeners fire as if it
     // had focus. The engine still receives the original event (not cancelled).
-    hostWindow.dispatchEvent(
+    //
+    // Dispatch on the host DOCUMENT with bubbles:true — the inspector's hotkeys
+    // (hotkeys-js via useHotkey) listen on `document`, so an event dispatched on
+    // `window` (or a non-bubbling one) never reaches them; that's what left
+    // undo/redo/save/etc. dead when the engine iframe held focus. Bubbling from
+    // document also reaches any window-level listeners.
+    (hostWindow.document ?? hostWindow).dispatchEvent(
       new KeyboardEvent(e.type, {
         key: e.key,
         code: e.code,
@@ -73,7 +79,7 @@ export function createInputFocusBridge(options: InputFocusBridgeOptions): () => 
         ctrlKey: e.ctrlKey,
         metaKey: e.metaKey,
         altKey: e.altKey,
-        bubbles: false,
+        bubbles: true,
         cancelable: true,
       }),
     );

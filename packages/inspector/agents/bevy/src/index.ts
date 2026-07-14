@@ -53,7 +53,11 @@ export function main(): void {
     // the scene-local point (null if the ray misses). The inspector awaits the
     // matching `id`, falling back to a default if we can't answer.
     if (msg.kind === 'query-drop-point') {
-      bus.postToPage({ kind: 'drop-point', id: msg.id, position: getGroundPointAtPointer() });
+      bus.postToPage({
+        kind: 'drop-point',
+        id: msg.id,
+        position: getGroundPointAtPointer(msg.ndc),
+      });
       return;
     }
     // Toggle the editor camera (native avatar ⇄ editor fly-camera).

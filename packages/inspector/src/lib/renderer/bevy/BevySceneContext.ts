@@ -49,6 +49,40 @@ export class BevySceneContext {
 
   readonly Transform = components.Transform(this.engine);
 
+  // Register the core visual SDK components on this engine so their CRDT stream
+  // (DataLayer → this engine, via connectCrdtToEngine) DECODES — otherwise an
+  // unregistered component arrives undecodable and its onChange never reports the
+  // real `componentName`, so the forward-edit bridge can't recognise it and skips
+  // it. That's what left a dropped model's GltfContainer unforwarded (rendered as
+  // a placeholder cube). The set matches forward-edits' ENGINE_COMPONENT_NAMES.
+  readonly #registeredComponents = [
+    this.Transform,
+    components.GltfContainer(this.engine),
+    components.MeshRenderer(this.engine),
+    components.MeshCollider(this.engine),
+    components.Material(this.engine),
+    components.VisibilityComponent(this.engine),
+    components.Billboard(this.engine),
+    components.TextShape(this.engine),
+  ];
+
+  /**
+   * The engine components forwarded to the wasm engine, keyed by `@dcl/ecs`
+   * componentName — so the forward-edit bridge can look one up (e.g. to re-send an
+   * entity's current components after instantiating it). Transform + the core
+   * visual set registered above.
+   */
+  getForwardableComponent(componentName: string): ComponentDefinition<unknown> | null {
+    return this.#registeredComponents.find(c => c.componentName === componentName) ?? null;
+  }
+
+  // The Name component (core-schema::Name) — a CUSTOM (non-engine) component that
+  // round-trips scene↔renderer. forward-edits uses it to INSTANTIATE a new entity
+  // in the engine scene (`/new_entity`, which requires a custom component; engine
+  // components like Transform flow one-way and can't anchor an entity). Registered
+  // here so it decodes off the CRDT stream and exposes its id + schema.
+  readonly Name = components.Name(this.engine);
+
   // Engine-bound operations + editor components, so the reverse-channel handler
   // can apply picks/edits against this renderer's engine just like Babylon and
   // Three do — the shared handler needs this exact surface.
@@ -97,6 +131,30 @@ export class BevySceneContext {
       if (entity === ROOT) continue;
       this.#worldPositions.set(entity, this.#resolveWorldPosition(entity));
     }
+  }
+
+  /**
+   * Convert a scene-WORLD position into an entity's LOCAL (parent-relative)
+   * position — i.e. subtract the parent's accumulated world position. The gizmo
+   * agent works in world space (it's given world anchors and reports world
+   * positions), but Transform.position is stored relative to the parent; without
+   * this a NESTED child would be written its world position as if local and jump
+   * by the parent's offset. Root-parented entities are unaffected (parent world
+   * position is 0). Translation only — parent rotation/scale of the frame is not
+   * applied (matches the spike-level world-position model in #resolveWorldPosition).
+   */
+  worldToLocalPosition(entity: Entity, world: { x: number; y: number; z: number }): Vector3 {
+    const t = this.Transform.getOrNull(entity) as TransformType | null;
+    const parent = t?.parent as Entity | undefined;
+    if (parent === undefined || parent === ROOT) {
+      return DclVector3.create(world.x, world.y, world.z);
+    }
+    const parentWorld = this.#resolveWorldPosition(parent);
+    return DclVector3.create(
+      world.x - parentWorld.x,
+      world.y - parentWorld.y,
+      world.z - parentWorld.z,
+    );
   }
 
   /** Resolve an entity's world position by walking its Transform.parent chain. */

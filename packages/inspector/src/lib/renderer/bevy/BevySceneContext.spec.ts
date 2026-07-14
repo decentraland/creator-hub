@@ -54,6 +54,35 @@ describe('BevySceneContext', () => {
     });
   });
 
+  describe('worldToLocalPosition', () => {
+    it('should subtract the parent world position for a nested child', async () => {
+      const parent = ctx.engine.addEntity();
+      const child = ctx.engine.addEntity();
+      ctx.Transform.create(parent, {
+        ...IDENTITY,
+        position: { x: 10, y: 0, z: 0 },
+        parent: ctx.engine.RootEntity,
+      });
+      ctx.Transform.create(child, { ...IDENTITY, position: { x: 5, y: 0, z: 0 }, parent });
+      await ctx.engine.update(1);
+
+      // A gizmo drop at world (15,0,0) must become local (5,0,0) for the child so
+      // it doesn't jump by the parent's offset when written to Transform.position.
+      expect(ctx.worldToLocalPosition(child, { x: 15, y: 0, z: 0 })).toEqual({ x: 5, y: 0, z: 0 });
+    });
+
+    it('should pass a root-parented entity through unchanged', async () => {
+      const entity = ctx.engine.addEntity();
+      ctx.Transform.create(entity, {
+        ...IDENTITY,
+        position: { x: 3, y: 0, z: 4 },
+        parent: ctx.engine.RootEntity,
+      });
+      await ctx.engine.update(1);
+      expect(ctx.worldToLocalPosition(entity, { x: 8, y: 1, z: 9 })).toEqual({ x: 8, y: 1, z: 9 });
+    });
+  });
+
   describe('getEntityWorldPositions', () => {
     it('should omit entities with no tracked transform (per contract)', () => {
       const positions = ctx.getEntityWorldPositions([987654 as Entity]);

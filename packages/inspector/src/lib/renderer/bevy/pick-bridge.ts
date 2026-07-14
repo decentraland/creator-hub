@@ -62,6 +62,17 @@ export interface PickBridgeOptions {
    */
   isMultiSelect?: () => boolean;
   /**
+   * Convert a committed/previewed gizmo WORLD position into the entity's LOCAL
+   * (parent-relative) frame. The agent reports world positions; Transform.position
+   * is parent-relative, so a nested child would otherwise be written its world
+   * position as if local and jump by the parent's offset. Absent → positions pass
+   * through unchanged (root-only scenes / tests).
+   */
+  worldToLocalPosition?: (
+    entity: Entity,
+    world: { x: number; y: number; z: number },
+  ) => { x: number; y: number; z: number };
+  /**
    * Test seam: the BroadcastChannel-like object to listen on. Defaults to a real
    * `BroadcastChannel('dcl-editor-bus')`. Tests inject a fake.
    */
@@ -79,6 +90,23 @@ export function createPickBridge(options: PickBridgeOptions): () => void {
     (new BroadcastChannel(EDITOR_BUS_CHANNEL) as unknown as NonNullable<
       PickBridgeOptions['channel']
     >);
+
+  // Map an agent transform → a renderer transform, converting its WORLD position
+  // (if any) into the entity's LOCAL frame so a nested child doesn't jump by its
+  // parent's offset when written to Transform.position.
+  const toRendererTransform = (t: {
+    entity: number;
+    position?: { x: number; y: number; z: number };
+    rotation?: { x: number; y: number; z: number; w: number };
+    scale?: { x: number; y: number; z: number };
+  }) => {
+    const entity = t.entity as Entity;
+    const position =
+      t.position && options.worldToLocalPosition
+        ? options.worldToLocalPosition(entity, t.position)
+        : t.position;
+    return { entity, position, rotation: t.rotation, scale: t.scale };
+  };
 
   channel.onmessage = ({ data }: { data: unknown }) => {
     const msg = toAgentMsg(data);
@@ -103,28 +131,15 @@ export function createPickBridge(options: PickBridgeOptions): () => void {
         // The agent sends only the field(s) the active gizmo mode changed
         // (translate → position, rotate → rotation, scale → scale); the
         // reverse-channel handler merges them into the entity's existing
-        // Transform, preserving the untouched fields + parent.
-        events.emit('gizmoCommit', {
-          transforms: msg.transforms.map(t => ({
-            entity: t.entity as Entity,
-            position: t.position,
-            rotation: t.rotation,
-            scale: t.scale,
-          })),
-        });
+        // Transform, preserving the untouched fields + parent. Positions are
+        // converted world → local (nested children).
+        events.emit('gizmoCommit', { transforms: msg.transforms.map(toRendererTransform) });
         break;
       case 'gizmoPreview':
         // A live mid-drag update (same delta shape). The reverse-channel merges
         // it and re-emits `previewTransforms` for the renderer to show, without a
         // CRDT write / undo entry (the authoritative write is the drag-end commit).
-        events.emit('gizmoDrag', {
-          transforms: msg.transforms.map(t => ({
-            entity: t.entity as Entity,
-            position: t.position,
-            rotation: t.rotation,
-            scale: t.scale,
-          })),
-        });
+        events.emit('gizmoDrag', { transforms: msg.transforms.map(toRendererTransform) });
         break;
       case 'gizmoCommitEnd':
         events.emit('gizmoCommitEnd', undefined);

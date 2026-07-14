@@ -13,6 +13,7 @@ describe('createPickBridge', () => {
   let events: Emitter<RendererEvents>;
   let picks: RendererEvents['pick'][];
   let commits: RendererEvents['gizmoCommit'][];
+  let drags: RendererEvents['gizmoDrag'][];
   let commitEnds: number;
   let fakeChannel: {
     onmessage: ((ev: { data: unknown }) => void) | null;
@@ -27,9 +28,11 @@ describe('createPickBridge', () => {
     events = mitt<RendererEvents>();
     picks = [];
     commits = [];
+    drags = [];
     commitEnds = 0;
     events.on('pick', e => picks.push(e));
     events.on('gizmoCommit', e => commits.push(e));
+    events.on('gizmoDrag', e => drags.push(e));
     events.on('gizmoCommitEnd', () => {
       commitEnds++;
     });
@@ -81,6 +84,51 @@ describe('createPickBridge', () => {
     it('should emit an empty pick (deselect)', () => {
       emit({ to: 'page', msg: { kind: 'pick', entity: 0, shift: false, ctrl: false } });
       expect(picks[0].target).toEqual({ kind: 'empty' });
+    });
+  });
+
+  describe('when a worldToLocalPosition converter is supplied (nested children)', () => {
+    it('should convert commit + preview positions to the local frame', () => {
+      disconnect();
+      // Fake converter: parent world offset of (10,0,10) for any entity.
+      disconnect = createPickBridge({
+        events,
+        channel: fakeChannel,
+        worldToLocalPosition: (_e, w) => ({ x: w.x - 10, y: w.y, z: w.z - 10 }),
+      });
+
+      emit({
+        to: 'page',
+        msg: {
+          kind: 'gizmoCommit',
+          transforms: [{ entity: 512, position: { x: 12, y: 1, z: 13 } }],
+        },
+      });
+      expect(commits.at(-1)?.transforms[0].position).toEqual({ x: 2, y: 1, z: 3 });
+
+      emit({
+        to: 'page',
+        msg: {
+          kind: 'gizmoPreview',
+          transforms: [{ entity: 512, position: { x: 12, y: 1, z: 13 } }],
+        },
+      });
+      expect(drags.at(-1)?.transforms[0].position).toEqual({ x: 2, y: 1, z: 3 });
+    });
+
+    it('should leave rotation/scale-only transforms (no position) untouched', () => {
+      disconnect();
+      disconnect = createPickBridge({
+        events,
+        channel: fakeChannel,
+        worldToLocalPosition: (_e, w) => ({ x: w.x - 10, y: w.y, z: w.z - 10 }),
+      });
+      emit({
+        to: 'page',
+        msg: { kind: 'gizmoCommit', transforms: [{ entity: 512, scale: { x: 2, y: 2, z: 2 } }] },
+      });
+      expect(commits.at(-1)?.transforms[0].position).toBeUndefined();
+      expect(commits.at(-1)?.transforms[0].scale).toEqual({ x: 2, y: 2, z: 2 });
     });
   });
 
