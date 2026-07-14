@@ -171,6 +171,12 @@ jobs:
           publish_dir: ./packages/inspector/public
           destination_dir: inspector/${{ steps.sanitize-branch.outputs.safe_branch }}
           keep_files: true
+          # Exclude the Bevy engine wasm bundle + editor-agent realm from the
+          # gh-pages browser preview: the engine bundle (webgpu_build_bg.wasm) is
+          # ~105 MB, over GitHub's 100 MB per-file push limit, and neither is used
+          # by the web preview (they're runtime assets shipped in the npm tarball
+          # / creator-hub, not needed to render the Babylon-based inspector).
+          exclude_assets: '.github,bevy-engine,bevy-engine/**,bevy-agent,bevy-agent/**'
 
       - name: set preview url
         id: set-preview-url
