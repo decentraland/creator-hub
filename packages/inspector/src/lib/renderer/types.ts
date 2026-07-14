@@ -402,10 +402,15 @@ export interface IRenderer {
   /**
    * Resolve the world-space point under the pointer on the next pointer tick.
    * This is the drop-placement primitive: the inspector asks "where is the
-   * pointer aiming in the scene right now?" without knowing screen coordinates.
-   * Returns null if nothing was hit.
+   * pointer aiming in the scene right now?" Returns null if nothing was hit.
+   *
+   * `ndc` optionally supplies the target in normalized device coords (x,y ∈
+   * [-1,1], y up) — used when the renderer's own pointer can't be trusted, e.g. an
+   * out-of-process (iframe) renderer during an HTML5 drag, where the host captures
+   * the cursor and the engine's pointer is stale. Renderers that read their live
+   * pointer directly (Babylon) may ignore it.
    */
-  getPointerWorldPoint(): Promise<Vector3 | null>;
+  getPointerWorldPoint(ndc?: { x: number; y: number }): Promise<Vector3 | null>;
 
   /**
    * Resolve the animation clips available on an entity's loaded GLTF. Used by

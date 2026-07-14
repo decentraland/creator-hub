@@ -103,6 +103,9 @@ export function registerBevyRenderer(): void {
       const disconnectPick = createPickBridge({
         events: bevy.events,
         isMultiSelect: () => modifiers.isMultiSelect(),
+        // Convert committed/previewed gizmo world positions into each entity's
+        // local frame so nested children don't jump by their parent's offset.
+        worldToLocalPosition: (entity, world) => bevy.context.worldToLocalPosition(entity, world),
       });
 
       // Forward the inspector's selection to the agent so its gizmo attaches to
@@ -128,7 +131,7 @@ export function registerBevyRenderer(): void {
       // Drag-drop placement: the agent raycasts the ground under the pointer and
       // replies over the bus; wire it into the renderer's getPointerWorldPoint.
       const dropPoint = createDropPointBridge();
-      bevy.setDropPointResolver(() => dropPoint.query());
+      bevy.setDropPointResolver(ndc => dropPoint.query(ndc));
 
       // Editor camera: the toggle posts the chosen mode to the agent, which
       // enacts the fly-camera takeover in the engine.

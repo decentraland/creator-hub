@@ -137,7 +137,12 @@ export type PageToScene =
       // Selection component); it's forwarded here so the agent needn't read it.
       mode: GizmoMode;
     }
-  | { kind: 'query-drop-point'; id: number }
+  // Ask the agent for the ground point under a viewport position. `ndc` is the
+  // drop location in normalized device coords (x,y ∈ [-1,1], y up) so the agent
+  // can raycast from the real cursor — during an HTML5 drag the engine's own
+  // pointer is stale (the host overlay captures the drag). Omit `ndc` to fall back
+  // to the engine's current pointer. `id` correlates the `drop-point` reply.
+  | { kind: 'query-drop-point'; id: number; ndc?: { x: number; y: number } }
   // Toggle the editor camera. `avatar` = the engine's native player camera (walk
   // /look/zoom); `free` = an editor fly-camera the agent drives (WASD + mouse-
   // look), with avatar input disabled. The inspector's camera toggle sends this.

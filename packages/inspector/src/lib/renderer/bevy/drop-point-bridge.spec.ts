@@ -50,6 +50,18 @@ describe('createDropPointBridge', () => {
       const point = await promise;
       expect(point).toEqual({ x: 5, y: 0, z: 7 });
     });
+
+    it('should forward the ndc target when supplied (accurate drop cursor)', async () => {
+      const promise = bridge.query({ x: -0.5, y: 0.25 });
+      expect(posted[0].msg.ndc).toEqual({ x: -0.5, y: 0.25 });
+      reply({ kind: 'drop-point', id: posted[0].msg.id, position: { x: 1, y: 0, z: 2 } });
+      expect(await promise).toEqual({ x: 1, y: 0, z: 2 });
+    });
+
+    it('should omit ndc when not supplied', async () => {
+      void bridge.query();
+      expect(posted[0].msg.ndc).toBeUndefined();
+    });
   });
 
   describe('when the agent reports a miss (null position)', () => {

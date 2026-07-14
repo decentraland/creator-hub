@@ -86,7 +86,7 @@ export class BevyRenderer implements IRenderer {
   // engine's raycast lives in the editor-agent scene, reached over the bus, so
   // `register` wires this to the drop-point bridge. Null until wired (and in the
   // conformance path) → getPointerWorldPoint falls back to null like the stub.
-  #resolveDropPoint: (() => Promise<Vector3 | null>) | null = null;
+  #resolveDropPoint: ((ndc?: { x: number; y: number }) => Promise<Vector3 | null>) | null = null;
   // Editor camera (avatar ⇄ free fly). The mode change is enacted by the agent
   // over the bus; `register` injects the poster. Mode state + subscribers live
   // here so the toolbar toggle reflects the current mode.
@@ -260,7 +260,7 @@ export class BevyRenderer implements IRenderer {
    * `register` calls this after mounting the engine; without it (conformance
    * path) getPointerWorldPoint stays a null stub.
    */
-  setDropPointResolver(resolve: () => Promise<Vector3 | null>): void {
+  setDropPointResolver(resolve: (ndc?: { x: number; y: number }) => Promise<Vector3 | null>): void {
     this.#resolveDropPoint = resolve;
   }
 
@@ -353,10 +353,12 @@ export class BevyRenderer implements IRenderer {
     };
   }
 
-  async getPointerWorldPoint(): Promise<Vector3 | null> {
+  async getPointerWorldPoint(ndc?: { x: number; y: number }): Promise<Vector3 | null> {
     // The ground raycast lives in the editor-agent scene (the wasm can't be
-    // reached in-process); delegate to the bus-backed resolver when wired.
-    return this.#resolveDropPoint ? this.#resolveDropPoint() : null;
+    // reached in-process); delegate to the bus-backed resolver when wired. The
+    // NDC target is forwarded so the agent raycasts from the real drop cursor
+    // (the engine's own pointer is stale during an HTML5 drag).
+    return this.#resolveDropPoint ? this.#resolveDropPoint(ndc) : null;
   }
 
   async getEntityAnimations(_entity: Entity): Promise<RendererAnimation[]> {

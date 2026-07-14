@@ -34,8 +34,13 @@ export interface DropPointBridgeOptions {
 const DEFAULT_TIMEOUT_MS = 1000;
 
 export interface DropPointBridge {
-  /** Ask the agent for the ground point under the pointer (scene-local). */
-  query(): Promise<Vector3 | null>;
+  /**
+   * Ask the agent for the ground point (scene-local) under a viewport position.
+   * `ndc` is the drop point in normalized device coords (x,y ∈ [-1,1], y up); the
+   * agent raycasts from there (the engine's own pointer is stale during an HTML5
+   * drag). Omit to use the engine's current pointer.
+   */
+  query(ndc?: { x: number; y: number }): Promise<Vector3 | null>;
   /** Detach the listener and close the channel, settling any pending query null. */
   disconnect(): void;
 }
@@ -62,9 +67,9 @@ export function createDropPointBridge(options: DropPointBridgeOptions = {}): Dro
     resolve(p ? DclVector3.create(p.x, p.y, p.z) : null);
   };
 
-  const query = (): Promise<Vector3 | null> => {
+  const query = (ndc?: { x: number; y: number }): Promise<Vector3 | null> => {
     const id = nextId++;
-    const msg: PageToScene = { kind: 'query-drop-point', id };
+    const msg: PageToScene = { kind: 'query-drop-point', id, ...(ndc ? { ndc } : {}) };
     const envelope: BusEnvelope = { to: 'scene', msg };
     return new Promise<Vector3 | null>(resolve => {
       const timer = setTimeout(() => {

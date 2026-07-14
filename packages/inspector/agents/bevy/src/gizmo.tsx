@@ -270,14 +270,39 @@ export function setSceneOffset(baseParcelX: number, baseParcelY: number): void {
  * coordinate space the inspector operates in. Null if the pointer/ray isn't
  * available or the ray doesn't meet the ground (e.g. aimed at the sky).
  */
-export function getGroundPointAtPointer(): { x: number; y: number; z: number } | null {
-  const ray = pointerRay();
+export function getGroundPointAtPointer(ndc?: {
+  x: number;
+  y: number;
+}): { x: number; y: number; z: number } | null {
+  // Prefer a ray built from the supplied NDC (the inspector's real drop cursor —
+  // the engine's own PrimaryPointerInfo is stale during an HTML5 drag because the
+  // host overlay captures it). Fall back to the engine pointer when no NDC given.
+  const ray = ndc ? rayFromNdc(ndc.x, ndc.y) : pointerRay();
   if (ray === null) return null;
   // Ground plane at engine-world y=0 (the scene's base plane), normal up.
   const hit = rayPlaneIntersect(ray.origin, ray.dir, sceneOffset, Vector3.Up());
   if (hit === null) return null;
   const local = Vector3.subtract(hit, sceneOffset);
   return { x: local.x, y: 0, z: local.z };
+}
+
+/**
+ * Build a world-space ray from a normalized-device-coord point (x,y ∈ [-1,1], y
+ * up) through the camera — the pinhole-camera unproject. Uses the camera's
+ * transform + the engine's vertical FOV + the viewport aspect (so a drop lands
+ * where the cursor is, independent of the engine's own pointer). Null if the
+ * camera isn't available.
+ */
+function rayFromNdc(ndcX: number, ndcY: number): { origin: Vector3; dir: Vector3 } | null {
+  const camT = Transform.getOrNull(engine.CameraEntity);
+  if (camT === null) return null;
+  const canvas = UiCanvasInformation.getOrNull(engine.RootEntity);
+  const aspect = canvas && canvas.height > 0 ? canvas.width / canvas.height : 16 / 9;
+  const tanHalfFovY = Math.tan(engineFovY / 2);
+  // Camera-space direction: +x right, +y up, forward is +z (SDK convention).
+  const camDir = Vector3.create(ndcX * tanHalfFovY * aspect, ndcY * tanHalfFovY, 1);
+  const dir = Vector3.normalize(Vector3.rotate(camDir, camT.rotation as Quaternion));
+  return { origin: { ...camT.position }, dir };
 }
 
 /** Attach the gizmo to the current selection (empty array = hide). Each entity's
