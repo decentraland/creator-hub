@@ -49,6 +49,84 @@ export function MyScreen() {
       expect(label.uiText).toEqual({ value: 'Hello', fontSize: 24 });
     });
 
+    it('should record a variable-bound text prop as a binding row (not opaque)', () => {
+      const src = `/** @jsx ReactEcs.createElement */
+import ReactEcs, { UiEntity, Label } from '@dcl/sdk/react-ecs'
+export const state = { score: 0 }
+export function MyScreen() {
+  return <UiEntity><Label value={state.score} /></UiEntity>
+}
+`;
+      const label = parse(src)!.root.children.find(c => c.type === 'Label') as CodeUINode;
+      expect(label.dynamicProps).toBeUndefined();
+      expect(label.bindings).toEqual([{ field: 'core::UiText.value', variable: 'state.score' }]);
+    });
+
+    it('should record an interpolated template value as mixed-content segments', () => {
+      const src = `/** @jsx ReactEcs.createElement */
+import ReactEcs, { UiEntity, Label } from '@dcl/sdk/react-ecs'
+export const state = { name: '' }
+export function MyScreen() {
+  return <UiEntity><Label value={\`Hi \${state.name}!\`} /></UiEntity>
+}
+`;
+      const label = parse(src)!.root.children.find(c => c.type === 'Label') as CodeUINode;
+      expect(label.bindings).toEqual([
+        {
+          field: 'core::UiText.value',
+          variable: '',
+          segments: [
+            { kind: 'literal', value: 'Hi ' },
+            { kind: 'binding', value: 'state.name' },
+            { kind: 'literal', value: '!' },
+          ],
+        },
+      ]);
+    });
+
+    it('should record an event-handler binding under the event field key', () => {
+      const src = `/** @jsx ReactEcs.createElement */
+import ReactEcs, { UiEntity } from '@dcl/sdk/react-ecs'
+/** @ui-action */ function onClick() {}
+export function MyScreen() {
+  return <UiEntity onMouseDown={onClick} />
+}
+`;
+      const root = parse(src)!.root;
+      expect(root.dynamicProps).toBeUndefined();
+      expect(root.bindings).toEqual([
+        { field: 'asset-packs::UI.onMouseDown', variable: 'onClick' },
+      ]);
+    });
+
+    it('should extract the handler name from a thunk event binding', () => {
+      const src = `/** @jsx ReactEcs.createElement */
+import ReactEcs, { UiEntity } from '@dcl/sdk/react-ecs'
+export const state = { counter: 0 }
+/** @ui-action */ function onClick(state) { state.counter += 1 }
+export function MyScreen() {
+  return <UiEntity onMouseDown={() => onClick(state)} />
+}
+`;
+      const root = parse(src)!.root;
+      expect(root.dynamicProps).toBeUndefined();
+      expect(root.bindings).toEqual([
+        { field: 'asset-packs::UI.onMouseDown', variable: 'onClick' },
+      ]);
+    });
+
+    it('should normalize Label textAlign / font strings to PB numeric enums', () => {
+      const src = `/** @jsx ReactEcs.createElement */
+import ReactEcs, { UiEntity, Label } from '@dcl/sdk/react-ecs'
+export function MyScreen() {
+  return <UiEntity><Label value="Hi" textAlign="middle-center" font="serif" /></UiEntity>
+}
+`;
+      const label = parse(src)!.root.children.find(c => c.type === 'Label') as CodeUINode;
+      // TextAlignMode.TAM_MIDDLE_CENTER = 4, Font.F_SERIF = 1.
+      expect(label.uiText).toMatchObject({ value: 'Hi', textAlign: 4, font: 1 });
+    });
+
     it('should represent the .map loop as an opaque node preserving its source', () => {
       const parsed = parse(source)!;
       expect(parsed.hasOpaque).toBe(true);
@@ -178,5 +256,75 @@ describe('when locating the exported component identifier (for rename)', () => {
 
   it('should return null when no matching component exists', () => {
     expect(findComponentIdSpan(prog('const x = 1'), 'MainUI')).toBeNull();
+  });
+});
+
+describe('when a JSX element references another editor root (component nesting)', () => {
+  function parseWith(source: string, knownComponents: string[]) {
+    const result = parseSync('MainUI.tsx', source);
+    expect(result.errors).toHaveLength(0);
+    return codeToUINodes(result.program as any, source, { knownComponents });
+  }
+
+  const source = `/** @jsx ReactEcs.createElement */
+import ReactEcs, { UiEntity } from '@dcl/sdk/react-ecs'
+import { OtroNombre } from './OtroNombre'
+
+export function MainUI() {
+  return (
+    <UiEntity uiTransform={{ width: 400, height: 200 }}>
+      <OtroNombre />
+      <Foreign />
+    </UiEntity>
+  )
+}
+`;
+
+  it('maps a known component to a first-class component-ref node (not opaque)', () => {
+    const parsed = parseWith(source, ['OtroNombre'])!;
+    const ref = parsed.root.children[0];
+    expect(ref.componentRef).toEqual({ name: 'OtroNombre', props: [] });
+    expect(ref.opaque).toBeUndefined();
+    // Its span/AST are registered so move/remove/duplicate splices work.
+    expect(parsed.astNodes.get(ref.entity as unknown as number)).toBeTruthy();
+    // The structural parent is recorded so the canvas lays it out.
+    expect((ref.uiTransform as any).parent).toBe(parsed.root.entity);
+  });
+
+  it('leaves an unknown custom component opaque', () => {
+    const parsed = parseWith(source, ['OtroNombre'])!;
+    const foreign = parsed.root.children[1];
+    expect(foreign.componentRef).toBeUndefined();
+    expect(foreign.opaque?.reason).toBe('custom-component');
+  });
+
+  it('keeps a component opaque when it is not in knownComponents', () => {
+    const parsed = parseWith(source, [])!;
+    expect(parsed.root.children[0].opaque?.reason).toBe('custom-component');
+    expect(parsed.root.children[0].componentRef).toBeUndefined();
+  });
+
+  it('parses the instance prop values (literal → value, expression → expr)', () => {
+    const withProps = `/** @jsx ReactEcs.createElement */
+import ReactEcs, { UiEntity } from '@dcl/sdk/react-ecs'
+import { Card } from './Card'
+
+export function MainUI() {
+  return (
+    <UiEntity>
+      <Card title="Hi" count={5} active={state.on} />
+    </UiEntity>
+  )
+}
+`;
+    const parsed = parseWith(withProps, ['Card'])!;
+    expect(parsed.root.children[0].componentRef).toEqual({
+      name: 'Card',
+      props: [
+        { name: 'title', value: 'Hi' },
+        { name: 'count', value: 5 },
+        { name: 'active', expr: 'state.on' },
+      ],
+    });
   });
 });

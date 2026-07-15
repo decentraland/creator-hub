@@ -1,106 +1,110 @@
 import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import type { Entity, LastWriteWinElementSetComponentDefinition } from '@dcl/ecs';
-import type { UI, UIVariable } from '@dcl/asset-packs';
-import { ComponentName, VariableType } from '@dcl/asset-packs';
 
-import { useSdk } from '../../../hooks/sdk/useSdk';
 import { isValidIdentifier } from '../../../lib/sdk/operations/validators';
 import { usePopoverPosition } from '../../ui/usePopoverPosition';
 import type { FieldConfig, FieldKind } from '../field-configs';
+import type { BindVariable } from '../code/bindings';
+import { addBindAction, addBindVariable, useCodeState } from '../code/store';
 
 import './VariablePicker.css';
 
-const KIND_TO_VARIABLE_TYPES: Partial<Record<FieldKind, VariableType[]>> = {
-  string: [
-    VariableType.STRING,
-    VariableType.NUMBER,
-    VariableType.BOOLEAN,
-    VariableType.COLOR,
-    VariableType.STRING_ARRAY,
-  ],
-  number: [VariableType.NUMBER],
-  length: [VariableType.NUMBER],
-  index: [VariableType.NUMBER],
-  boolean: [VariableType.BOOLEAN],
-  color: [VariableType.COLOR],
-  'string-array': [VariableType.STRING_ARRAY],
-  callback: [VariableType.CALLBACK],
+// Which code-mode variable types a field kind can bind to. A string field takes
+// any (it coerces to text at render); numeric fields take numbers; booleans take
+// booleans. `callback` is handled separately (it lists event handlers, not
+// variables). Fields with no compatible code type (color / arrays) offer none.
+const KIND_TO_CODE_TYPES: Partial<Record<FieldKind, string[]>> = {
+  string: ['string', 'number', 'boolean'],
+  number: ['number'],
+  length: ['number'],
+  index: ['number'],
+  boolean: ['boolean'],
 };
 
 // On a string-kind field every non-string variable is shown (it coerces to a
-// string at render time). Make that explicit in the row label so the creator
-// knows what they're embedding, e.g. "score (number → string)".
-function coercionLabel(field: FieldConfig, v: UIVariable): string {
-  if (field.kind === 'string' && v.type !== VariableType.STRING) {
+// string at render time). Make that explicit in the row label, e.g.
+// "score (number → string)".
+function coercionLabel(field: FieldConfig, v: BindVariable): string {
+  if (field.kind === 'string' && v.type !== 'string') {
     return `${v.name} (${v.type} → string)`;
   }
   return v.name;
 }
 
+interface PickItem {
+  key: string;
+  label: string;
+  // The expression spliced into the attribute: `state.score` (variable) or a
+  // bare handler name (callback).
+  expr: string;
+}
+
 interface VariablePickerProps {
   field: FieldConfig;
-  selectedRoot: Entity;
   anchorRef: React.RefObject<HTMLElement>;
-  onPick: (name: string) => void;
+  onPick: (expr: string) => void;
   onDismiss: () => void;
 }
 
 export const VariablePicker: React.FC<VariablePickerProps> = ({
   field,
-  selectedRoot,
   anchorRef,
   onPick,
   onDismiss,
 }) => {
-  const sdk = useSdk();
+  const { bindingSurface } = useCodeState();
   const popoverRef = useRef<HTMLDivElement>(null);
   // Mounted only while open (the parent gates with `pickerOpen`), so `open` is true.
   const pos = usePopoverPosition({ anchorRef, popoverRef, open: true, onDismiss, width: 200 });
 
-  const suggested = field.path.replace(/[^A-Za-z0-9_$]/g, '_') || 'variable';
+  const isCallback = field.kind === 'callback';
+  const suggested =
+    field.path.replace(/[^A-Za-z0-9_$]/g, '_') || (isCallback ? 'onEvent' : 'variable');
   const [adding, setAdding] = useState(false);
   const [name, setName] = useState(suggested);
   const [error, setError] = useState<string | undefined>(undefined);
 
-  const compatible = useMemo<UIVariable[]>(() => {
-    if (!sdk) return [];
-    const UIComp = sdk.engine.getComponentOrNull(
-      ComponentName.UI,
-    ) as LastWriteWinElementSetComponentDefinition<UI> | null;
-    if (!UIComp) return [];
-    const marker = UIComp.getOrNull(selectedRoot);
-    if (!marker) return [];
-    const allowed = KIND_TO_VARIABLE_TYPES[field.kind] ?? [];
-    return marker.variables.filter(v => allowed.includes(v.type));
-  }, [sdk, selectedRoot, field.kind]);
+  // Callback fields list event handlers (@ui-action markers); everything else
+  // lists the typed-state / marker variables compatible with the field kind.
+  const items = useMemo<PickItem[]>(() => {
+    if (isCallback) {
+      // Events bind through a thunk that passes `state` to the handler.
+      return bindingSurface.actions.map(a => ({
+        key: a.name,
+        label: `${a.name}()`,
+        expr: `() => ${a.name}(state)`,
+      }));
+    }
+    const allowed = KIND_TO_CODE_TYPES[field.kind] ?? [];
+    return bindingSurface.variables
+      .filter(v => allowed.includes(v.type))
+      .map(v => ({ key: v.name, label: coercionLabel(field, v), expr: v.expr }));
+  }, [bindingSurface, field, isCallback]);
 
-  const commitNew = useCallback(() => {
-    if (!sdk) return;
-    const UIComp = sdk.engine.getComponentOrNull(
-      ComponentName.UI,
-    ) as LastWriteWinElementSetComponentDefinition<UI> | null;
-    if (!UIComp) return;
-    const marker = UIComp.getOrNull(selectedRoot);
-    if (!marker) return;
+  const commitNew = useCallback(async () => {
     const trimmed = name.trim();
     if (!isValidIdentifier(trimmed)) {
       setError('Not a valid name (letters, digits, _ ; no leading digit)');
       return;
     }
-    if (marker.variables.some(v => v.name === trimmed)) {
+    const taken = isCallback
+      ? bindingSurface.actions.some(a => a.name === trimmed)
+      : bindingSurface.variables.some(v => v.name === trimmed);
+    if (taken) {
       setError('Name already in use');
       return;
     }
-    const allowed = KIND_TO_VARIABLE_TYPES[field.kind] ?? [VariableType.STRING];
-    sdk.operations.declareVariable(selectedRoot, {
-      name: trimmed,
-      type: allowed[0],
-      defaultValue: '',
-    });
-    void sdk.operations.dispatch();
-    onPick(trimmed);
-  }, [sdk, selectedRoot, field, name, onPick]);
+    // MUST await: the add splices + reparses (shifting byte offsets); binding
+    // before that lands would splice with stale AST spans and corrupt the file.
+    if (isCallback) {
+      await addBindAction(trimmed);
+      onPick(`() => ${trimmed}(state)`);
+    } else {
+      const type = (KIND_TO_CODE_TYPES[field.kind] ?? ['string'])[0];
+      await addBindVariable(trimmed, type);
+      onPick(`state.${trimmed}`); // a new variable is seeded into the typed `state` object
+    }
+  }, [bindingSurface, field, isCallback, name, onPick]);
 
   return createPortal(
     <div
@@ -108,17 +112,19 @@ export const VariablePicker: React.FC<VariablePickerProps> = ({
       className="ui-designer-variable-picker"
       style={{ position: 'fixed', top: pos.top, left: pos.left }}
     >
-      {compatible.length === 0 ? (
-        <div className="ui-designer-variable-picker-empty">No compatible variables.</div>
+      {items.length === 0 ? (
+        <div className="ui-designer-variable-picker-empty">
+          {isCallback ? 'No callbacks yet.' : 'No compatible variables.'}
+        </div>
       ) : null}
-      {compatible.map(v => (
+      {items.map(item => (
         <button
-          key={v.name}
+          key={item.key}
           type="button"
           className="ui-designer-variable-picker-row"
-          onClick={() => onPick(v.name)}
+          onClick={() => onPick(item.expr)}
         >
-          {coercionLabel(field, v)}
+          {item.label}
         </button>
       ))}
       {adding ? (
@@ -130,20 +136,20 @@ export const VariablePicker: React.FC<VariablePickerProps> = ({
             autoCorrect="off"
             autoCapitalize="off"
             value={name}
-            placeholder="Variable name"
+            placeholder={isCallback ? 'Callback name' : 'Variable name'}
             onChange={e => {
               setName(e.target.value);
               setError(undefined);
             }}
             onKeyDown={e => {
-              if (e.key === 'Enter') commitNew();
+              if (e.key === 'Enter') void commitNew();
               if (e.key === 'Escape') setAdding(false);
             }}
           />
           <button
             type="button"
             className="ui-designer-variable-picker-confirm"
-            onClick={commitNew}
+            onClick={() => void commitNew()}
           >
             Add
           </button>
@@ -159,7 +165,7 @@ export const VariablePicker: React.FC<VariablePickerProps> = ({
             setAdding(true);
           }}
         >
-          + Add new variable…
+          {isCallback ? '+ Add new callback…' : '+ Add new variable…'}
         </button>
       )}
     </div>,

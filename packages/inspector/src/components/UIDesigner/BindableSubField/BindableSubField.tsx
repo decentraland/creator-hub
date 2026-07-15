@@ -11,7 +11,6 @@ import './BindableSubField.css';
 interface BindableSubFieldProps {
   field: FieldConfig; // synthetic: { componentId, path, kind }
   entity: Entity;
-  selectedRoot: Entity;
   bound?: string;
   children: React.ReactNode;
 }
@@ -19,7 +18,6 @@ interface BindableSubFieldProps {
 export const BindableSubField: React.FC<BindableSubFieldProps> = ({
   field,
   entity,
-  selectedRoot,
   bound,
   children,
 }) => {
@@ -41,7 +39,6 @@ export const BindableSubField: React.FC<BindableSubFieldProps> = ({
       <div className="ui-designer-bindable-subfield-content">{children}</div>
       <BindAffordance
         field={field}
-        selectedRoot={selectedRoot}
         anchorRef={anchorRef}
         pickerOpen={pickerOpen}
         setPickerOpen={setPickerOpen}

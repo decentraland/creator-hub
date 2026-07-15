@@ -12,18 +12,11 @@ import './BindableField.css';
 interface BindableFieldProps {
   field: FieldConfig;
   entity: Entity;
-  selectedRoot: Entity;
   bound?: { variable: string };
   children: React.ReactNode;
 }
 
-export const BindableField: React.FC<BindableFieldProps> = ({
-  field,
-  entity,
-  selectedRoot,
-  bound,
-  children,
-}) => {
+export const BindableField: React.FC<BindableFieldProps> = ({ field, entity, bound, children }) => {
   const isBindable = field.bindable !== false;
   const { pickerOpen, setPickerOpen, anchorRef, onBind, onUnbind } = useFieldBinding(field, entity);
 
@@ -61,7 +54,6 @@ export const BindableField: React.FC<BindableFieldProps> = ({
         <div className="ui-designer-bindable-content">{children}</div>
         <BindAffordance
           field={field}
-          selectedRoot={selectedRoot}
           anchorRef={anchorRef}
           pickerOpen={pickerOpen}
           setPickerOpen={setPickerOpen}

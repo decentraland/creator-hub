@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useDrop } from 'react-dnd';
 import {
@@ -27,11 +27,14 @@ import { useUINodeTree } from './useUINodeTree';
 import {
   createRoot as createCodeRoot,
   spliceAddChild,
+  spliceInsertComponent,
   spliceMove,
   spliceUiTransformMargin,
   spliceUiTransformPosition,
   spliceUiTransformSize,
+  useCodeState,
 } from './code/store';
+import { buildResolveMap } from './code/bindings';
 import type { CodeUINode } from './code/types';
 import {
   clearNodeRegistry,
@@ -102,6 +105,14 @@ const HANDLE_DIRS: HandleDir[] = ['nw', 'n', 'ne', 'e', 'se', 's', 'sw', 'w'];
 
 import './Canvas.css';
 
+// Resolves a binding expression (`state.name`) to its default value for the
+// canvas text preview (so `value={state.name}` with default 'John' renders
+// "John", not "[state.name]"). Built once at the Canvas root from the binding
+// surface and read by each CanvasNode; default returns undefined (→ placeholder).
+const VarPreviewContext = React.createContext<(expr: string) => string | undefined>(
+  () => undefined,
+);
+
 // BackgroundTextureMode (PB) — NINE_SLICES=0, CENTER=1, STRETCH=2. This PB enum
 // is exported as a `const enum` (erased at compile time), so its numeric value
 // is hard-coded here with a comment — same convention as the UiTransform enums
@@ -148,8 +159,9 @@ const OVERFLOW: Record<number, React.CSSProperties['overflow']> = {
 };
 
 // TextAlignMode (PB) → CSS text-align. PB combines vertical+horizontal in a
-// single 9-value enum; CSS text-align is horizontal only. V1: project to the
-// horizontal axis and ignore the vertical component.
+// single 9-value enum; CSS text-align is horizontal only, so this covers the
+// horizontal axis of multi-line wrapping inside the text span. The box-level
+// anchoring (both axes) is done with flexbox via TEXT_ALIGN_FLEX below.
 const TEXT_ALIGN_H: Record<number, React.CSSProperties['textAlign']> = {
   0: 'left', // TOP_LEFT
   1: 'center', // TOP_CENTER
@@ -160,6 +172,37 @@ const TEXT_ALIGN_H: Record<number, React.CSSProperties['textAlign']> = {
   6: 'left', // BOTTOM_LEFT
   7: 'center', // BOTTOM_CENTER
   8: 'right', // BOTTOM_RIGHT
+};
+
+// TextAlignMode (PB, row-major: top/middle/bottom × left/center/right) → the
+// flex justify/align pair that anchors a Label's text span in its box, so the
+// canvas reproduces react-ecs's 2D text placement (not just the horizontal
+// axis). flexDirection stays 'row', so justifyContent is the horizontal axis and
+// alignItems the vertical one. PB default is TAM_TOP_LEFT (0) — react-ecs adds no
+// default of its own, so an unset textAlign anchors top-left in-world.
+const TEXT_ALIGN_FLEX: Record<
+  number,
+  {
+    justifyContent: React.CSSProperties['justifyContent'];
+    alignItems: React.CSSProperties['alignItems'];
+  }
+> = {
+  0: { justifyContent: 'flex-start', alignItems: 'flex-start' },
+  1: { justifyContent: 'center', alignItems: 'flex-start' },
+  2: { justifyContent: 'flex-end', alignItems: 'flex-start' },
+  3: { justifyContent: 'flex-start', alignItems: 'center' },
+  4: { justifyContent: 'center', alignItems: 'center' },
+  5: { justifyContent: 'flex-end', alignItems: 'center' },
+  6: { justifyContent: 'flex-start', alignItems: 'flex-end' },
+  7: { justifyContent: 'center', alignItems: 'flex-end' },
+  8: { justifyContent: 'flex-end', alignItems: 'flex-end' },
+};
+
+// Font (PB) → CSS font-family, for a faithful preview of the Label `font` prop.
+const FONT_FAMILY: Record<number, string> = {
+  0: 'sans-serif',
+  1: 'serif',
+  2: 'monospace',
 };
 
 function cssLen(value: number | undefined, unit: number | undefined): string | undefined {
@@ -185,16 +228,19 @@ function nodeStyle(node: UINode): React.CSSProperties {
     color?: { r: number; g: number; b: number; a?: number };
     fontSize?: number;
     textAlign?: number;
+    font?: number;
   };
 
-  // Yoga's defaults differ from CSS flexbox in two important ways. Apply Yoga's
-  // values up-front so the canvas preview matches in-world rendering:
-  //   - flexDirection: Yoga defaults to COLUMN, CSS defaults to ROW.
-  //   - flexShrink:    Yoga defaults to 0,     CSS defaults to 1.
+  // The DCL react-ecs runtime seeds a default UiTransform, so apply those same
+  // defaults up-front for a faithful preview when a prop is unset:
+  //   - flexDirection: react-ecs defaults to ROW (its UiEntity overrides Yoga's
+  //     COLUMN default; @dcl/react-ecs uiTransform defaultUiTransform). This also
+  //     matches CSS flexbox's row default.
+  //   - flexShrink:    Yoga/react-ecs default 0; CSS defaults 1 — set explicitly.
   const style: React.CSSProperties = {
     display: t.display === YGD_NONE ? 'none' : 'flex',
     position: t.positionType === YGPT_ABSOLUTE ? 'absolute' : 'relative',
-    flexDirection: 'column',
+    flexDirection: 'row',
     flexShrink: 0,
     boxSizing: 'border-box',
   };
@@ -307,7 +353,22 @@ function nodeStyle(node: UINode): React.CSSProperties {
   if (text?.fontSize !== undefined) {
     style.fontSize = `${text.fontSize}px`;
   }
-  if (text?.textAlign !== undefined && TEXT_ALIGN_H[text.textAlign]) {
+  // Label text: anchor the text span in its box exactly as react-ecs does. The
+  // textAlign enum drives BOTH axes via flexbox (justify = horizontal, align =
+  // vertical), overriding the generic container justify/align — a Label's only
+  // "child" is its text. An unset textAlign anchors middle-center (4): the
+  // in-world default per @dcl/ecs PBUiText ("alignment within the bounds
+  // (default: center)"), NOT the proto-3 zero (top-left).
+  if (node.type === 'Label') {
+    const ta = typeof text.textAlign === 'number' ? text.textAlign : 4;
+    const flex = TEXT_ALIGN_FLEX[ta] ?? TEXT_ALIGN_FLEX[4];
+    style.justifyContent = flex.justifyContent;
+    style.alignItems = flex.alignItems;
+    style.textAlign = TEXT_ALIGN_H[ta] ?? 'center';
+    if (text.font !== undefined && FONT_FAMILY[text.font]) {
+      style.fontFamily = FONT_FAMILY[text.font];
+    }
+  } else if (text?.textAlign !== undefined && TEXT_ALIGN_H[text.textAlign]) {
     style.textAlign = TEXT_ALIGN_H[text.textAlign];
   }
   return style;
@@ -486,12 +547,24 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node }) => {
     emptyLabel?: string;
   };
 
-  // Preview bound/mixed text: the value may live in UIBindings (segments or a
-  // whole-field binding) rather than the static PB value, so compose it here.
-  const labelText = previewBoundText(node.bindings, 'core::UiText.value', text.value ?? '');
+  // Preview bound/mixed text: a bound field composes from its binding row
+  // (single expr or template segments), resolving each variable to its default
+  // value (`state.name` → "John") via the Canvas-root resolver.
+  const resolveVar = useContext(VarPreviewContext);
+  const labelText = previewBoundText(
+    node.bindings,
+    'core::UiText.value',
+    text.value ?? '',
+    resolveVar,
+  );
   const inputText =
-    previewBoundText(node.bindings, 'core::UiInput.value', input.value ?? '') ||
-    previewBoundText(node.bindings, 'core::UiInput.placeholder', input.placeholder ?? '') ||
+    previewBoundText(node.bindings, 'core::UiInput.value', input.value ?? '', resolveVar) ||
+    previewBoundText(
+      node.bindings,
+      'core::UiInput.placeholder',
+      input.placeholder ?? '',
+      resolveVar,
+    ) ||
     'Input';
 
   // Only the FILE texture variant is previewable as a CSS background-image.
@@ -519,10 +592,14 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node }) => {
       collect: monitor => ({ isOver: monitor.isOver({ shallow: true }) }),
       drop: async (item, monitor) => {
         if (monitor.didDrop()) return;
-        if (item.source !== 'palette') return;
         // Add the child by splicing a new element into the parent's source
         // (drop position not honored yet — appended as a child).
-        void spliceAddChild(node.entity as unknown as number, item.type as UINodeType);
+        if (item.source === 'palette') {
+          void spliceAddChild(node.entity as unknown as number, item.type as UINodeType);
+        } else if (item.source === 'component') {
+          // Nest another root as a component (guarded against reference cycles).
+          void spliceInsertComponent(node.entity as unknown as number, item.name);
+        }
       },
     }),
     [node.entity],
@@ -1081,19 +1158,155 @@ const CanvasOpaqueNode: React.FC<{ node: CodeUINode }> = ({ node }) => {
   );
 };
 
-// Route each node to the right renderer: representable nodes get the full
-// interactive CanvasNode; anything flagged opaque gets the read-only block. A
-// node flipping between the two (as code is edited) swaps component type, which
-// remounts cleanly — no shared hook state to get out of sync.
-const CanvasNodeView: React.FC<CanvasNodeProps> = ({ node }) =>
-  (node as CodeUINode).opaque ? (
-    <CanvasOpaqueNode node={node as CodeUINode} />
-  ) : (
-    <CanvasNode node={node} />
+// Read-only recursive render of a resolved component tree (Phase 2). Purely
+// visual: applies nodeStyle + text/background like CanvasNode, but registers no
+// node element and wires no interaction (its ids belong to another file and must
+// not collide with the active tree). `pointer-events: none` (on the root) lets
+// clicks fall through to the enclosing component-ref block, so selecting still
+// targets the reference, not its internals.
+const CanvasReadonlyNode: React.FC<{
+  node: CodeUINode;
+  resolveMap: Record<string, string>;
+  isRoot?: boolean;
+}> = ({ node, resolveMap, isRoot }) => {
+  const resolve = useCallback((expr: string) => resolveMap[expr], [resolveMap]);
+  let style = nodeStyle(node);
+  if (isRoot) {
+    // The nested component fills the block the wrapper sizes — neutralize its own
+    // root transform (a standalone root may be absolute / fixed-size).
+    style = {
+      ...style,
+      position: 'relative',
+      width: '100%',
+      height: '100%',
+      top: undefined,
+      left: undefined,
+      right: undefined,
+      bottom: undefined,
+      marginTop: undefined,
+      marginRight: undefined,
+      marginBottom: undefined,
+      marginLeft: undefined,
+      pointerEvents: 'none',
+    };
+  }
+  const text = (node.uiText ?? {}) as { value?: string };
+  const input = (node.uiInput ?? {}) as { placeholder?: string; value?: string };
+  const dropdown = (node.uiDropdown ?? {}) as {
+    options?: string[];
+    selectedIndex?: number;
+    emptyLabel?: string;
+  };
+  const labelText =
+    node.type === 'Label'
+      ? previewBoundText(node.bindings, 'core::UiText.value', text.value ?? '', resolve)
+      : '';
+  const inputText =
+    node.type === 'Input'
+      ? previewBoundText(node.bindings, 'core::UiInput.value', input.value ?? '', resolve) ||
+        previewBoundText(
+          node.bindings,
+          'core::UiInput.placeholder',
+          input.placeholder ?? '',
+          resolve,
+        ) ||
+        'Input'
+      : '';
+  return (
+    <div
+      className="ui-designer-canvas-readonly-node"
+      style={style}
+      data-type={node.type}
+    >
+      {node.componentRef ? (
+        <span className="ui-designer-canvas-component-badge">◈ {node.componentRef.name}</span>
+      ) : null}
+      {node.type === 'Input' ? <span className="ui-designer-canvas-input">{inputText}</span> : null}
+      {node.type === 'Dropdown' ? (
+        <span className="ui-designer-canvas-dropdown">
+          <span className="ui-designer-canvas-dropdown-label">
+            {dropdown.options?.[dropdown.selectedIndex ?? 0] ?? dropdown.emptyLabel ?? 'Select…'}
+          </span>
+          <span className="ui-designer-canvas-dropdown-chevron">▼</span>
+        </span>
+      ) : null}
+      {node.type === 'Label' && labelText ? (
+        <span className="ui-designer-canvas-text">{labelText}</span>
+      ) : null}
+      {node.children.map(child => (
+        <CanvasReadonlyNode
+          key={String(child.entity)}
+          node={child}
+          resolveMap={resolveMap}
+        />
+      ))}
+    </div>
   );
+};
+
+// A first-class reference to another root used as a component (`<OtroNOmbre />`).
+// Unlike an opaque block it is selectable (and movable/removable via the tree +
+// actions, since its span is a real JSX element); it's edited in code by opening
+// the referenced root. When the referenced tree has resolved it renders inline
+// read-only (edits to the original reflect here); until then, a labeled block.
+const CanvasComponentRefNode: React.FC<{ node: CodeUINode }> = ({ node }) => {
+  const isSelected = useAppSelector(state => getSelectedNode(state) === node.entity);
+  const { componentTrees } = useCodeState();
+  const setRef = useCallback(
+    (el: HTMLDivElement | null) => {
+      if (el) registerNodeElement(node.entity, el);
+      else unregisterNodeElement(node.entity);
+    },
+    [node.entity],
+  );
+  const name = node.componentRef?.name ?? node.name;
+  const resolved = componentTrees[name] ?? null;
+  // pointer-events:none (CSS) makes this block transparent — clicks/drags reach
+  // the wrapper UiEntity (the movable/resizable unit). Selection outline still
+  // shows when the ref is picked in the node tree.
+  return (
+    <div
+      ref={setRef}
+      className={cx('ui-designer-canvas-node', 'component-ref', { selected: isSelected })}
+      style={{ minWidth: 80, minHeight: 40, width: '100%', height: '100%', ...nodeStyle(node) }}
+      data-type="component-ref"
+      data-entity={String(node.entity)}
+      title={`<${name} /> — a nested UI component. Edit it by opening "${name}".`}
+    >
+      {resolved ? (
+        <CanvasReadonlyNode
+          node={resolved.parsed.root}
+          resolveMap={resolved.resolveMap}
+          isRoot
+        />
+      ) : (
+        <span className="ui-designer-canvas-component-badge">◈ {name}</span>
+      )}
+    </div>
+  );
+};
+
+// Route each node to the right renderer: a component reference gets the
+// first-class block, anything flagged opaque gets the read-only block, and
+// representable nodes get the full interactive CanvasNode. A node flipping
+// between these (as code is edited) swaps component type, which remounts cleanly
+// — no shared hook state to get out of sync.
+const CanvasNodeView: React.FC<CanvasNodeProps> = ({ node }) => {
+  const cn = node as CodeUINode;
+  if (cn.componentRef) return <CanvasComponentRefNode node={cn} />;
+  if (cn.opaque) return <CanvasOpaqueNode node={cn} />;
+  return <CanvasNode node={node} />;
+};
 
 const CanvasComponent: React.FC = () => {
   const tree = useUINodeTree();
+  // Resolve `state.<var>` → its default value for the text preview (built once
+  // here; every CanvasNode reads it via VarPreviewContext).
+  const { bindingSurface } = useCodeState();
+  const resolveVar = useMemo(() => {
+    const map = buildResolveMap(bindingSurface.variables);
+    return (expr: string) => map[expr];
+  }, [bindingSurface]);
   // Code-mode roots are files under src/ui/ (see code/store), not ECS entities.
   const createRoot = useCallback(() => void createCodeRoot(), []);
   const selectedNode = useAppSelector(getSelectedNode);
@@ -1160,158 +1373,160 @@ const CanvasComponent: React.FC = () => {
   }, []);
 
   return (
-    <div
-      ref={viewportRef}
-      className="ui-designer-canvas-viewport"
-    >
-      {tree ? (
-        <>
-          <div className="ui-designer-canvas-zoom">
-            <button
-              type="button"
-              className="ui-designer-canvas-zoom-btn"
-              onClick={() => setScale(s => clampZoom(s - ZOOM_STEP))}
-              aria-label="Zoom out"
-            >
-              −
-            </button>
-            <button
-              type="button"
-              className="ui-designer-canvas-zoom-level"
-              onClick={() => setScale(DEFAULT_CANVAS_SCALE)}
-              title="Reset zoom"
-              aria-label="Reset zoom"
-              aria-live="polite"
-            >
-              {Math.round(scale * 100)}%
-            </button>
-            <button
-              type="button"
-              className="ui-designer-canvas-zoom-btn"
-              onClick={() => setScale(s => clampZoom(s + ZOOM_STEP))}
-              aria-label="Zoom in"
-            >
-              +
-            </button>
-            <span className="ui-designer-canvas-zoom-sep" />
-            <button
-              type="button"
-              className={cx('ui-designer-canvas-zoom-btn', { active: device === 'desktop' })}
-              onClick={() => setDevice('desktop')}
-              title="Desktop preview"
-              aria-label="Desktop preview"
-              aria-pressed={device === 'desktop'}
-            >
-              <IoDesktopOutline />
-            </button>
-            <button
-              type="button"
-              className={cx('ui-designer-canvas-zoom-btn', { active: device === 'mobile' })}
-              onClick={() => setDevice('mobile')}
-              title="Mobile preview"
-              aria-label="Mobile preview"
-              aria-pressed={device === 'mobile'}
-            >
-              <IoPhoneLandscapeOutline />
-            </button>
-            <button
-              type="button"
-              className={cx('ui-designer-canvas-zoom-btn', { active: showSafeAreas })}
-              onClick={() => setShowSafeAreas(s => !s)}
-              title="Toggle safe-area guides"
-              aria-label="Toggle safe-area guides"
-              aria-pressed={showSafeAreas}
-            >
-              <IoScanOutline />
-            </button>
-          </div>
-          {device === 'desktop' ? (
-            <div
-              className="ui-designer-canvas-stage"
-              style={{ width: canvasWidth * scale, height: canvasHeight * scale }}
-            >
-              <div
-                className="ui-designer-canvas-root"
-                style={
-                  {
-                    width: canvasWidth,
-                    height: canvasHeight,
-                    transform: `scale(${scale})`,
-                    transformOrigin: 'top left',
-                    // Exposed so selection chrome (action bar) can counter-scale to
-                    // stay legible at any zoom without re-rendering each node.
-                    '--uid-scale': scale,
-                  } as React.CSSProperties
-                }
+    <VarPreviewContext.Provider value={resolveVar}>
+      <div
+        ref={viewportRef}
+        className="ui-designer-canvas-viewport"
+      >
+        {tree ? (
+          <>
+            <div className="ui-designer-canvas-zoom">
+              <button
+                type="button"
+                className="ui-designer-canvas-zoom-btn"
+                onClick={() => setScale(s => clampZoom(s - ZOOM_STEP))}
+                aria-label="Zoom out"
               >
-                <CanvasNodeView node={tree} />
-                {showSafeAreas ? (
-                  <SafeAreaOverlay
-                    width={canvasWidth}
-                    height={canvasHeight}
-                    device="desktop"
-                  />
-                ) : null}
-              </div>
+                −
+              </button>
+              <button
+                type="button"
+                className="ui-designer-canvas-zoom-level"
+                onClick={() => setScale(DEFAULT_CANVAS_SCALE)}
+                title="Reset zoom"
+                aria-label="Reset zoom"
+                aria-live="polite"
+              >
+                {Math.round(scale * 100)}%
+              </button>
+              <button
+                type="button"
+                className="ui-designer-canvas-zoom-btn"
+                onClick={() => setScale(s => clampZoom(s + ZOOM_STEP))}
+                aria-label="Zoom in"
+              >
+                +
+              </button>
+              <span className="ui-designer-canvas-zoom-sep" />
+              <button
+                type="button"
+                className={cx('ui-designer-canvas-zoom-btn', { active: device === 'desktop' })}
+                onClick={() => setDevice('desktop')}
+                title="Desktop preview"
+                aria-label="Desktop preview"
+                aria-pressed={device === 'desktop'}
+              >
+                <IoDesktopOutline />
+              </button>
+              <button
+                type="button"
+                className={cx('ui-designer-canvas-zoom-btn', { active: device === 'mobile' })}
+                onClick={() => setDevice('mobile')}
+                title="Mobile preview"
+                aria-label="Mobile preview"
+                aria-pressed={device === 'mobile'}
+              >
+                <IoPhoneLandscapeOutline />
+              </button>
+              <button
+                type="button"
+                className={cx('ui-designer-canvas-zoom-btn', { active: showSafeAreas })}
+                onClick={() => setShowSafeAreas(s => !s)}
+                title="Toggle safe-area guides"
+                aria-label="Toggle safe-area guides"
+                aria-pressed={showSafeAreas}
+              >
+                <IoScanOutline />
+              </button>
             </div>
-          ) : (
-            <div
-              className="ui-designer-device-frame"
-              style={{
-                width: MOBILE_REFERENCE.width * scale,
-                height: MOBILE_REFERENCE.height * scale,
-              }}
-            >
+            {device === 'desktop' ? (
               <div
-                className="ui-designer-device-screen"
-                style={
-                  {
-                    width: MOBILE_REFERENCE.width,
-                    height: MOBILE_REFERENCE.height,
-                    transform: `scale(${scale})`,
-                    transformOrigin: 'top left',
-                    '--uid-scale': scale * fitScale,
-                  } as React.CSSProperties
-                }
+                className="ui-designer-canvas-stage"
+                style={{ width: canvasWidth * scale, height: canvasHeight * scale }}
               >
-                {/* UI scaled-to-fit + letterboxed, inspection-only (no editing). */}
                 <div
-                  className="ui-designer-canvas-root preview-only"
-                  style={{
-                    width: canvasWidth,
-                    height: canvasHeight,
-                    transform: `scale(${fitScale})`,
-                    transformOrigin: 'top left',
-                    position: 'absolute',
-                    left: (MOBILE_REFERENCE.width - canvasWidth * fitScale) / 2,
-                    top: (MOBILE_REFERENCE.height - canvasHeight * fitScale) / 2,
-                    pointerEvents: 'none',
-                  }}
+                  className="ui-designer-canvas-root"
+                  style={
+                    {
+                      width: canvasWidth,
+                      height: canvasHeight,
+                      transform: `scale(${scale})`,
+                      transformOrigin: 'top left',
+                      // Exposed so selection chrome (action bar) can counter-scale to
+                      // stay legible at any zoom without re-rendering each node.
+                      '--uid-scale': scale,
+                    } as React.CSSProperties
+                  }
                 >
                   <CanvasNodeView node={tree} />
+                  {showSafeAreas ? (
+                    <SafeAreaOverlay
+                      width={canvasWidth}
+                      height={canvasHeight}
+                      device="desktop"
+                    />
+                  ) : null}
                 </div>
-                {showSafeAreas ? (
-                  <SafeAreaOverlay
-                    width={MOBILE_REFERENCE.width}
-                    height={MOBILE_REFERENCE.height}
-                    device="mobile"
-                  />
-                ) : null}
               </div>
-            </div>
-          )}
-        </>
-      ) : (
-        <div className="ui-designer-canvas-empty">
-          <EmptyState
-            icon={<IoLayersOutline />}
-            title="No UI yet"
-            message="Create a UI to start designing your scene's interface, then drag widgets from the palette below."
-            action={<Button onClick={createRoot}>+ New UI</Button>}
-          />
-        </div>
-      )}
-    </div>
+            ) : (
+              <div
+                className="ui-designer-device-frame"
+                style={{
+                  width: MOBILE_REFERENCE.width * scale,
+                  height: MOBILE_REFERENCE.height * scale,
+                }}
+              >
+                <div
+                  className="ui-designer-device-screen"
+                  style={
+                    {
+                      width: MOBILE_REFERENCE.width,
+                      height: MOBILE_REFERENCE.height,
+                      transform: `scale(${scale})`,
+                      transformOrigin: 'top left',
+                      '--uid-scale': scale * fitScale,
+                    } as React.CSSProperties
+                  }
+                >
+                  {/* UI scaled-to-fit + letterboxed, inspection-only (no editing). */}
+                  <div
+                    className="ui-designer-canvas-root preview-only"
+                    style={{
+                      width: canvasWidth,
+                      height: canvasHeight,
+                      transform: `scale(${fitScale})`,
+                      transformOrigin: 'top left',
+                      position: 'absolute',
+                      left: (MOBILE_REFERENCE.width - canvasWidth * fitScale) / 2,
+                      top: (MOBILE_REFERENCE.height - canvasHeight * fitScale) / 2,
+                      pointerEvents: 'none',
+                    }}
+                  >
+                    <CanvasNodeView node={tree} />
+                  </div>
+                  {showSafeAreas ? (
+                    <SafeAreaOverlay
+                      width={MOBILE_REFERENCE.width}
+                      height={MOBILE_REFERENCE.height}
+                      device="mobile"
+                    />
+                  ) : null}
+                </div>
+              </div>
+            )}
+          </>
+        ) : (
+          <div className="ui-designer-canvas-empty">
+            <EmptyState
+              icon={<IoLayersOutline />}
+              title="No UI yet"
+              message="Create a UI to start designing your scene's interface, then drag widgets from the palette below."
+              action={<Button onClick={createRoot}>+ New UI</Button>}
+            />
+          </div>
+        )}
+      </div>
+    </VarPreviewContext.Provider>
   );
 };
 

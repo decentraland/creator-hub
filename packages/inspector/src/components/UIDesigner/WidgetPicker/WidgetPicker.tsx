@@ -2,11 +2,10 @@ import React, { useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import type { Entity } from '@dcl/ecs';
 
-import { useSdk } from '../../../hooks/sdk/useSdk';
-import { useAppDispatch } from '../../../redux/hooks';
-import { selectNode } from '../../../redux/ui-designer';
 import { usePopoverPosition } from '../../ui/usePopoverPosition';
 import Search from '../../Search';
+import { spliceAddChild } from '../code/store';
+import { type UINodeType } from '../tree-model';
 import { WIDGET_CATALOG } from '../widget-catalog';
 
 import './WidgetPicker.css';
@@ -21,11 +20,10 @@ interface WidgetPickerProps {
 }
 
 // Godot "Create Node" / UMG palette style picker: a searchable, categorized list
-// of widgets. Picking one adds it under `parent` as a flow child (no absolute
-// positioning — that's the palette-drop path) and selects it.
+// of widgets. Picking one splices a new flow child under `parent` into the active
+// .tsx (the same code path as the palette drag-drop; no ECS entity, no absolute
+// positioning).
 export const WidgetPicker: React.FC<WidgetPickerProps> = ({ parent, anchorRef, onDismiss }) => {
-  const sdk = useSdk();
-  const dispatch = useAppDispatch();
   const popoverRef = useRef<HTMLDivElement>(null);
   const [query, setQuery] = useState('');
   const pos = usePopoverPosition({ anchorRef, popoverRef, open: true, onDismiss, width: WIDTH });
@@ -42,10 +40,7 @@ export const WidgetPicker: React.FC<WidgetPickerProps> = ({ parent, anchorRef, o
   }, [q]);
 
   const add = (item: (typeof WIDGET_CATALOG)[number]['items'][number]) => {
-    if (!sdk) return;
-    const entity = sdk.operations.addUINode(parent, item.type, item.preset);
-    void sdk.operations.dispatch();
-    dispatch(selectNode({ node: entity }));
+    void spliceAddChild(parent as unknown as number, item.type as UINodeType);
     onDismiss();
   };
 

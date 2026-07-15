@@ -1,30 +1,30 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import { VariableType } from '@dcl/asset-packs';
 
 import { VariablePicker } from './VariablePicker';
 
-vi.mock('../../../hooks/sdk/useSdk', () => ({
-  useSdk: () => ({
-    engine: {
-      getComponentOrNull: () => ({
-        getOrNull: () => ({
-          variables: [
-            { name: 'label', type: VariableType.STRING, defaultValue: '' },
-            { name: 'onClick', type: VariableType.CALLBACK, defaultValue: '' },
-          ],
-        }),
-      }),
+// Code mode: the picker lists the parsed binding surface (typed `state` vars +
+// @ui-bind markers), not the classic asset-packs::UI marker.
+vi.mock('../code/store', () => ({
+  useCodeState: () => ({
+    bindingSurface: {
+      variables: [
+        { name: 'label', type: 'string', expr: 'state.label' },
+        { name: 'score', type: 'number', expr: 'state.score' },
+        { name: 'flag', type: 'boolean', expr: 'state.flag' },
+      ],
+      actions: [{ name: 'onClick' }, { name: 'onHover' }],
     },
   }),
+  addBindVariable: vi.fn(),
+  addBindAction: vi.fn(),
 }));
 
-function renderPicker(kind: 'callback' | 'color') {
+function renderPicker(kind: string) {
   const anchorRef = { current: document.createElement('button') };
   return render(
     <VariablePicker
-      field={{ label: 'X', componentId: 'core::UiInput', path: 'onChange', kind } as any}
-      selectedRoot={1 as any}
+      field={{ label: 'X', componentId: 'core::UiText', path: 'value', kind } as any}
       anchorRef={anchorRef as any}
       onPick={() => {}}
       onDismiss={() => {}}
@@ -32,15 +32,32 @@ function renderPicker(kind: 'callback' | 'color') {
   );
 }
 
-describe('VariablePicker type restriction', () => {
-  it('offers only callback variables for a callback field', () => {
-    renderPicker('callback');
-    expect(screen.getByText('onClick')).toBeTruthy();
-    expect(screen.queryByText('label')).toBeNull();
+describe('VariablePicker type restriction (code mode)', () => {
+  it('offers every variable for a string field, flagging coercions', () => {
+    renderPicker('string');
+    expect(screen.getByText('label')).toBeTruthy();
+    expect(screen.getByText('score (number → string)')).toBeTruthy();
+    expect(screen.getByText('flag (boolean → string)')).toBeTruthy();
   });
 
-  it('never offers callback variables for a non-callback field', () => {
+  it('offers only number variables for a number field', () => {
+    renderPicker('number');
+    expect(screen.getByText('score')).toBeTruthy();
+    expect(screen.queryByText('label')).toBeNull();
+    expect(screen.queryByText(/flag/)).toBeNull();
+  });
+
+  it('offers no variables for a color field (no compatible code type)', () => {
     renderPicker('color');
-    expect(screen.queryByText('onClick')).toBeNull();
+    expect(screen.getByText('No compatible variables.')).toBeTruthy();
+  });
+
+  it('lists event handlers (not variables) for a callback field', () => {
+    renderPicker('callback');
+    expect(screen.getByText('onClick()')).toBeTruthy();
+    expect(screen.getByText('onHover()')).toBeTruthy();
+    // Variables are not offered on a callback field.
+    expect(screen.queryByText('label')).toBeNull();
+    expect(screen.getByText('+ Add new callback…')).toBeTruthy();
   });
 });

@@ -4,9 +4,12 @@ import { describe, expect, it } from 'vitest';
 import {
   applyEdits,
   emitElement,
+  ensureNamedImport,
   insertChild,
+  removeAttribute,
   setAttribute,
   setAttributeExpr,
+  setAttributeSegments,
   setObjectField,
 } from './emit-adapter';
 import { codeToUINodes } from './parse-adapter';
@@ -128,6 +131,54 @@ describe('when splicing visual edits back into the source', () => {
     });
   });
 
+  describe('and writing mixed-content segments / removing an attribute', () => {
+    const LABEL = `export function S() {
+  return <Label value="Hi" />
+}`;
+
+    it('should collapse an all-literal segment list to a plain string attribute', () => {
+      const parsed = parse(LABEL);
+      const next = applyEdits(
+        LABEL,
+        setAttributeSegments(rootAst(parsed), 'value', [{ kind: 'literal', value: 'Bye' }]),
+      );
+      expect(next).toContain('value="Bye"');
+    });
+
+    it('should collapse a single binding to a bare expression', () => {
+      const parsed = parse(LABEL);
+      const next = applyEdits(
+        LABEL,
+        setAttributeSegments(rootAst(parsed), 'value', [{ kind: 'binding', value: 'state.score' }]),
+      );
+      expect(next).toContain('value={state.score}');
+    });
+
+    it('should emit a template literal for mixed literal + binding segments', () => {
+      const parsed = parse(LABEL);
+      const next = applyEdits(
+        LABEL,
+        setAttributeSegments(rootAst(parsed), 'value', [
+          { kind: 'literal', value: 'Score: ' },
+          { kind: 'binding', value: 'state.score' },
+        ]),
+      );
+      expect(next).toContain('value={`Score: ${state.score}`}');
+      // Round-trips: the reparse recovers the segments.
+      const reparsed = parse(next);
+      expect(reparsed.root.bindings?.[0].segments).toEqual([
+        { kind: 'literal', value: 'Score: ' },
+        { kind: 'binding', value: 'state.score' },
+      ]);
+    });
+
+    it('should remove an attribute entirely (unbind), absorbing one leading space', () => {
+      const parsed = parse(LABEL);
+      const next = applyEdits(LABEL, removeAttribute(rootAst(parsed), LABEL, 'value'));
+      expect(next).toContain('<Label />');
+    });
+  });
+
   describe('applyEdits guardrails', () => {
     it('should reject overlapping edits', () => {
       expect(() =>
@@ -137,5 +188,34 @@ describe('when splicing visual edits back into the source', () => {
         ]),
       ).toThrow(/overlapping/);
     });
+  });
+});
+
+describe('ensureNamedImport', () => {
+  function prog(source: string) {
+    const r = parseSync('S.tsx', source);
+    expect(r.errors).toHaveLength(0);
+    return r.program as any;
+  }
+
+  it('adds a fresh import line after the existing imports', () => {
+    const src =
+      "import ReactEcs from '@dcl/sdk/react-ecs'\n\nexport function S() { return <UiEntity /> }";
+    const next = applyEdits(src, ensureNamedImport(prog(src), 'OtroNombre', './OtroNombre'));
+    expect(next).toContain("import { OtroNombre } from './OtroNombre'");
+    expect(parseSync('S.tsx', next).errors).toHaveLength(0);
+  });
+
+  it('is a no-op when the name is already imported from that module', () => {
+    const src =
+      "import { OtroNombre } from './OtroNombre'\nexport function S() { return <OtroNombre /> }";
+    expect(ensureNamedImport(prog(src), 'OtroNombre', './OtroNombre')).toEqual([]);
+  });
+
+  it('appends to an existing named import from the same module', () => {
+    const src = "import { A } from './lib'\nexport function S() { return <A /> }";
+    const next = applyEdits(src, ensureNamedImport(prog(src), 'B', './lib'));
+    expect(next).toContain("import { A, B } from './lib'");
+    expect(parseSync('S.tsx', next).errors).toHaveLength(0);
   });
 });

@@ -84,6 +84,37 @@
   pointer-events: none;
 }
 
+.ui-designer-canvas-node.component-ref {
+  overflow: hidden;
+  background: rgba(94, 129, 244, 0.08);
+  outline: 1px dashed rgba(94, 129, 244, 0.6);
+  color: rgba(180, 200, 255, 0.9);
+  /* Transparent to pointer events so clicks/drags fall through to the wrapper
+     UiEntity (the movable/resizable unit); the ref is selected via the tree. */
+  pointer-events: none;
+}
+
+.ui-designer-canvas-node.component-ref.selected {
+  outline-style: solid;
+  outline-color: var(--ui-designer-accent);
+}
+
+.ui-designer-canvas-readonly-node {
+  box-sizing: border-box;
+}
+
+.ui-designer-canvas-component-badge {
+  align-self: flex-start;
+  margin: 2px;
+  padding: 1px 5px;
+  border-radius: 3px;
+  background: rgba(94, 129, 244, 0.25);
+  font-size: 10px;
+  line-height: 1.4;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
 .ui-designer-canvas-node.movable {
   cursor: move;
 }
@@ -195,7 +226,7 @@
   background: rgba(255, 255, 255, 0.12);
 }
 
-.ui-designer-node-action[aria-label='Delete node']:hover {
+.ui-designer-node-action[aria-label="Delete node"]:hover {
   background: rgba(255, 90, 90, 0.25);
   color: rgb(255, 140, 140);
 }

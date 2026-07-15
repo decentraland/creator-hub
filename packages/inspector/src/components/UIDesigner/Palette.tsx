@@ -10,6 +10,7 @@ export const UI_DESIGNER_DND_TYPE = 'ui-designer-node';
 
 export type UIDesignerDragItem =
   | { source: 'palette'; type: UINodeType; preset?: 'image' }
+  | { source: 'component'; name: string }
   | { source: 'tree'; entity: number };
 
 const PaletteCard: React.FC<{ entry: WidgetDef }> = ({ entry }) => {

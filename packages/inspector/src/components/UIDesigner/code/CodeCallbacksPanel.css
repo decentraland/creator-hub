@@ -1,0 +1,164 @@
+.ui-designer-callbacks {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px;
+  border-top: 1px solid var(--base-10, #2a2a2e);
+}
+
+.ui-designer-callbacks-title {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  opacity: 0.6;
+}
+
+.ui-designer-callbacks-empty {
+  font-size: 12px;
+  opacity: 0.5;
+}
+
+.ui-designer-callback-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 6px;
+  border: 1px solid var(--base-10, #2a2a2e);
+  border-radius: 4px;
+}
+
+.ui-designer-callback-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ui-designer-callback-name {
+  flex: 1;
+  min-width: 0;
+  font-size: 12px;
+  font-family: monospace;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ui-designer-callback-delete {
+  font-size: 12px;
+  line-height: 1;
+  padding: 2px 6px;
+  border-radius: 4px;
+  border: 1px solid var(--base-12, #3a3a40);
+  background: var(--base-04, #26262a);
+  color: inherit;
+  cursor: pointer;
+}
+
+.ui-designer-callback-body {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.ui-designer-callback-textarea {
+  width: 100%;
+  box-sizing: border-box;
+  font-family: monospace;
+  font-size: 12px;
+  line-height: 1.4;
+  padding: 4px 6px;
+  resize: vertical;
+  min-height: 40px;
+}
+
+.ui-designer-callback-textarea.is-invalid {
+  border-color: var(--danger, #e2445c);
+  outline-color: var(--danger, #e2445c);
+}
+
+.ui-designer-callback-invalid {
+  font-size: 10px;
+  color: var(--danger, #e2445c);
+}
+
+.ui-designer-callback-invalid code {
+  opacity: 0.85;
+}
+
+.ui-designer-callback-autocomplete {
+  position: absolute;
+  z-index: 20;
+  top: 100%;
+  left: 0;
+  right: 0;
+  max-height: 160px;
+  overflow-y: auto;
+  background: var(--base-02, #1e1e22);
+  border: 1px solid var(--base-12, #3a3a40);
+  border-radius: 4px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+}
+
+.ui-designer-callback-autocomplete-row {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border: none;
+  background: transparent;
+  color: inherit;
+  font-size: 12px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.ui-designer-callback-autocomplete-row:hover {
+  background: var(--base-06, #2e2e34);
+}
+
+.ui-designer-callback-autocomplete-row em {
+  margin-left: auto;
+  opacity: 0.5;
+  font-style: normal;
+}
+
+.ui-designer-callback-hint {
+  font-size: 10px;
+  opacity: 0.5;
+}
+
+.ui-designer-callback-hint code {
+  opacity: 0.85;
+}
+
+.ui-designer-callbacks-add {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  margin-top: 4px;
+}
+
+.ui-designer-callbacks-add input {
+  flex: 1;
+  min-width: 0;
+  font-size: 12px;
+  padding: 2px 6px;
+}
+
+.ui-designer-callbacks-add button {
+  font-size: 12px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  border: 1px solid var(--base-12, #3a3a40);
+  background: var(--base-04, #26262a);
+  color: inherit;
+  cursor: pointer;
+}
+
+.ui-designer-callbacks-add button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}

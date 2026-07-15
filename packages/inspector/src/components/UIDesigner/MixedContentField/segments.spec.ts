@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { SegmentKind } from '@dcl/asset-packs';
-import { normalizeSegments, routeStorage, seedSegments, serializeNodes } from './segments';
+import { isSafeBindingExpr, normalizeSegments, seedSegments, serializeNodes } from './segments';
 
 function chip(variable: string): HTMLElement {
   const span = document.createElement('span');
@@ -33,7 +33,7 @@ describe('serializeNodes', () => {
       { kind: SegmentKind.LITERAL, value: 'b' },
     ]);
   });
-  it('does not mint a binding for a data-variable that fails the identifier grammar', () => {
+  it('does not mint a binding for a data-variable that fails the safe-expr grammar', () => {
     // A foreign element (paste/drop) can carry an attacker-chosen data-variable.
     // It must be rejected at the read boundary rather than minted as a binding.
     const root = editorWith('a', chip('not a valid id; alert(1)'), 'b');
@@ -41,6 +41,25 @@ describe('serializeNodes', () => {
       { kind: SegmentKind.LITERAL, value: 'a' },
       { kind: SegmentKind.LITERAL, value: 'b' },
     ]);
+  });
+  it('accepts a state member-access binding (state.score)', () => {
+    const root = editorWith(chip('state.score'));
+    expect(serializeNodes(root)).toEqual([{ kind: SegmentKind.BINDING, value: 'state.score' }]);
+  });
+});
+
+describe('isSafeBindingExpr', () => {
+  it('accepts identifiers and single-level member access', () => {
+    expect(isSafeBindingExpr('score')).toBe(true);
+    expect(isSafeBindingExpr('state.score')).toBe(true);
+    expect(isSafeBindingExpr('_$x1')).toBe(true);
+  });
+  it('rejects operators, calls, whitespace, and template breakouts', () => {
+    expect(isSafeBindingExpr('a.b.c')).toBe(false);
+    expect(isSafeBindingExpr('x} ${alert(1)')).toBe(false);
+    expect(isSafeBindingExpr('foo()')).toBe(false);
+    expect(isSafeBindingExpr('1abc')).toBe(false);
+    expect(isSafeBindingExpr('')).toBe(false);
   });
 });
 
@@ -62,31 +81,6 @@ describe('normalizeSegments', () => {
   });
   it('returns an empty array for all-empty input', () => {
     expect(normalizeSegments([{ kind: SegmentKind.LITERAL, value: '' }])).toEqual([]);
-  });
-});
-
-describe('routeStorage', () => {
-  it('routes empty to a literal empty string', () => {
-    expect(routeStorage([])).toEqual({ mode: 'literal', text: '' });
-  });
-  it('routes a single literal to literal', () => {
-    expect(routeStorage([{ kind: SegmentKind.LITERAL, value: 'hi' }])).toEqual({
-      mode: 'literal',
-      text: 'hi',
-    });
-  });
-  it('routes a single binding to single-bind', () => {
-    expect(routeStorage([{ kind: SegmentKind.BINDING, value: 'name' }])).toEqual({
-      mode: 'single-bind',
-      variable: 'name',
-    });
-  });
-  it('routes multiple segments to mixed', () => {
-    const segs = [
-      { kind: SegmentKind.LITERAL, value: 'Hi ' },
-      { kind: SegmentKind.BINDING, value: 'name' },
-    ];
-    expect(routeStorage(segs)).toEqual({ mode: 'mixed', segments: segs });
   });
 });
 

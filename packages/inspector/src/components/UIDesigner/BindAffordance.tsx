@@ -1,17 +1,15 @@
 import React from 'react';
 import { IoLinkOutline } from 'react-icons/io5';
-import type { Entity } from '@dcl/ecs';
 
 import type { FieldConfig } from './field-configs';
 import { VariablePicker } from './VariablePicker';
 
 interface BindAffordanceProps {
   field: FieldConfig;
-  selectedRoot: Entity;
   anchorRef: React.RefObject<HTMLButtonElement>;
   pickerOpen: boolean;
   setPickerOpen: (open: boolean) => void;
-  onBind: (variable: string) => void;
+  onBind: (expr: string) => void;
 }
 
 // The 🔗 affordance shared by BindableField and BindableSubField: a link button
@@ -20,7 +18,6 @@ interface BindAffordanceProps {
 // instance and the two wrappers (Block vs div) stay distinct.
 export const BindAffordance: React.FC<BindAffordanceProps> = ({
   field,
-  selectedRoot,
   anchorRef,
   pickerOpen,
   setPickerOpen,
@@ -39,7 +36,6 @@ export const BindAffordance: React.FC<BindAffordanceProps> = ({
     {pickerOpen && (
       <VariablePicker
         field={field}
-        selectedRoot={selectedRoot}
         anchorRef={anchorRef}
         onPick={onBind}
         onDismiss={() => setPickerOpen(false)}

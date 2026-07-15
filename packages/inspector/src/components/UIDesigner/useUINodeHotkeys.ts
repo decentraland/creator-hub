@@ -2,7 +2,6 @@ import { useEffect, useRef } from 'react';
 import type { RefObject } from 'react';
 import type { Entity } from '@dcl/ecs';
 
-import { useSdk } from '../../hooks/sdk/useSdk';
 import { useAppSelector } from '../../redux/hooks';
 import { getSelectedNode } from '../../redux/ui-designer';
 import { useUINodeActions } from './useUINodeActions';
@@ -14,14 +13,13 @@ import { useUINodeActions } from './useUINodeActions';
 // Ctrl+C/V/D/Delete. A UI-node "clipboard" is just the last-copied entity id
 // (in a ref); paste clones it via duplicateUINode (sibling of the original).
 export function useUINodeHotkeys(containerRef: RefObject<HTMLElement>): void {
-  const sdk = useSdk();
   const selectedNode = useAppSelector(getSelectedNode);
   const { remove, duplicate } = useUINodeActions();
   const copiedRef = useRef<Entity | null>(null);
 
   // Keep the latest values addressable from the stable listener.
-  const state = useRef({ sdk, selectedNode, remove, duplicate });
-  state.current = { sdk, selectedNode, remove, duplicate };
+  const state = useRef({ selectedNode, remove, duplicate });
+  state.current = { selectedNode, remove, duplicate };
 
   useEffect(() => {
     const isEditable = (el: EventTarget | null): boolean => {
@@ -39,8 +37,7 @@ export function useUINodeHotkeys(containerRef: RefObject<HTMLElement>): void {
       if (!container || container.offsetParent === null) return;
       if (isEditable(e.target)) return;
 
-      const { sdk, selectedNode, remove, duplicate } = state.current;
-      if (!sdk) return;
+      const { selectedNode, remove, duplicate } = state.current;
       const mod = e.ctrlKey || e.metaKey;
       const key = e.key.toLowerCase();
 

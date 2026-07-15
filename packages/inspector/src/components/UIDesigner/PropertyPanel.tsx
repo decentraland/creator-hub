@@ -1,35 +1,18 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import { IoOptionsOutline } from 'react-icons/io5';
-import type {
-  Entity,
-  IEngine,
-  LastWriteWinElementSetComponentDefinition,
-  TextureUnion,
-} from '@dcl/ecs';
-import type { UIBindings, UISegment } from '@dcl/asset-packs';
-import { ComponentName } from '@dcl/asset-packs';
+import type { Entity, TextureUnion } from '@dcl/ecs';
 
-import { useChange } from '../../hooks/sdk/useChange';
-import { useSdk } from '../../hooks/sdk/useSdk';
 import { useAppDispatch, useAppSelector } from '../../redux/hooks';
-import {
-  getCollapsedGroups,
-  getSelectedNode,
-  getSelectedRoot,
-  setGroupCollapsed,
-} from '../../redux/ui-designer';
+import { getCollapsedGroups, getSelectedNode, setGroupCollapsed } from '../../redux/ui-designer';
 import { Block } from '../Block';
-import { Button } from '../Button';
 import { Container } from '../Container';
 import Search from '../Search';
 import { TextField } from '../ui';
 import { RgbaColorField } from '../ui/RgbaColorField';
-import { debounce } from '../../lib/utils/debounce';
-import { UI_REQUIRED_FIELD_DEFAULTS } from '../../lib/sdk/operations/ui-component-defaults';
 import { measureParentBox, measureNodeOffset, axisForPath, convertLength } from './measure';
-import { type UINodeType } from './tree-model';
-import { CodeBindingsSection } from './code/CodeBindingsSection';
+import { type CanvasSegment, type UINodeType } from './tree-model';
 import { codeComponentValue, findCodeNode, spliceComponentPatch, useCodeState } from './code/store';
+import { ComponentRefPanel } from './code/ComponentRefPanel';
 import type { CodeUINode } from './code/types';
 import { AnchorPresetField } from './AnchorPresetField';
 import { BindableField } from './BindableField';
@@ -46,7 +29,6 @@ import {
   EFFECTS_GROUP,
   NODE_FIELD_CONFIGS,
   NODE_GROUP,
-  UI_ROOT_GROUP,
   type FieldConfig,
 } from './field-configs';
 
@@ -61,57 +43,6 @@ import {
 } from '../../lib/sdk/ui-transform-constants';
 
 type Color4 = { r: number; g: number; b: number; a?: number };
-
-// Defaults applied whenever the panel createOrReplaces a fresh component on an entity:
-// the shared serializer-safe baseline (UI_REQUIRED_FIELD_DEFAULTS) plus the panel's own
-// minimal-safe visual values. Property edits override these via the patch.
-const COMPONENT_DEFAULTS: Record<string, Record<string, unknown>> = {
-  'core::UiBackground': {
-    ...UI_REQUIRED_FIELD_DEFAULTS['core::UiBackground'],
-    // Transparent by default — a freshly-created background (e.g. on the UI root, which
-    // spans the whole canvas) must not paint an opaque rectangle over the scene. PB's
-    // own default color is opaque white, so we set a:0 explicitly.
-    color: { r: 0, g: 0, b: 0, a: 0 },
-  },
-  'core::UiInput': {
-    ...UI_REQUIRED_FIELD_DEFAULTS['core::UiInput'],
-    placeholder: '',
-  },
-  'core::UiDropdown': {
-    ...UI_REQUIRED_FIELD_DEFAULTS['core::UiDropdown'],
-    options: [],
-  },
-};
-
-// Optional UI render components the panel lets you add/remove per node. Sections
-// for these render only when the component is present; when absent they surface
-// in "+ Add component". (Type-defining components — UiText on a Label, UiInput,
-// UiDropdown — are never here: removing them would reclassify the node.)
-const OPTIONAL_UI_COMPONENTS = new Set<string>(['core::UiBackground']);
-
-// Components whose values are copy/paste-able via the group's MoreOptionsMenu.
-// Enabled on the FIRST group carrying each id (Layout wins UiTransform over
-// Effects/Border), so one component is never offered twice.
-const CLIPBOARD_UI_COMPONENTS = new Set<string>([
-  'core::UiTransform',
-  'core::UiBackground',
-  'core::UiText',
-  'core::UiInput',
-  'core::UiDropdown',
-]);
-
-const UI_COMPONENT_LABELS: Record<string, string> = {
-  'core::UiBackground': 'Background',
-};
-
-function resolveComponent(
-  engine: IEngine,
-  componentId: string,
-): LastWriteWinElementSetComponentDefinition<Record<string, unknown>> | null {
-  return engine.getComponentOrNull(componentId) as LastWriteWinElementSetComponentDefinition<
-    Record<string, unknown>
-  > | null;
-}
 
 function clampNumber(raw: string): number {
   const n = Number(raw);
@@ -134,16 +65,10 @@ function expandWriteAll(
 }
 
 const PropertyPanelComponent: React.FC = () => {
-  const sdk = useSdk();
   const dispatch = useAppDispatch();
   const selected = useAppSelector(getSelectedNode);
-  const selectedRoot = useAppSelector(getSelectedRoot);
   const collapsed = useAppSelector(getCollapsedGroups);
   const [query, setQuery] = useState('');
-  // Bump on engine change to re-read component values without rebuilding the tree.
-  const [tick, setTick] = useState(0);
-  const debouncedBump = useMemo(() => debounce(() => setTick(t => t + 1), 10), []);
-  useChange(debouncedBump, []);
 
   // Code-mode: the selected node's data comes from the parsed .tsx tree (by its
   // synthetic id), not the ECS engine.
@@ -161,41 +86,19 @@ const PropertyPanelComponent: React.FC = () => {
 
   const type: UINodeType | null = useMemo(() => codeNode?.type ?? null, [codeNode]);
 
-  // Code-mode nodes carry no asset-packs::UI marker, so no node is a "UI root"
-  // in the classic sense (the root component is just the top JSX element).
-  const isUIRoot = false;
-
-  // Read the raw `asset-packs::UIBindings` value once. Its reference is stable
-  // across ticks where bindings didn't change, so the two derived maps below only
-  // rebuild on an actual bindings change — not on every engine tick — keeping each
-  // FieldRow's `bindings`/`mixed` props referentially stable (so the memoized rows
-  // can bail out).
-  const bindingsValue = useMemo(() => {
-    if (!sdk || selected === null) return null;
-    const Bindings = sdk.engine.getComponentOrNull(
-      ComponentName.UI_BINDINGS,
-    ) as LastWriteWinElementSetComponentDefinition<UIBindings> | null;
-    return Bindings?.getOrNull(selected as Entity) ?? null;
-  }, [sdk, selected, tick]);
-
-  // Map `componentId.fieldPath` -> bound variable name (rows without segments).
-  const bindingsByField = useMemo<Record<string, string>>(() => {
-    if (!bindingsValue) return {};
-    return Object.fromEntries(
-      bindingsValue.value.filter(b => !b.segments?.length).map(b => [b.field, b.variable]),
-    );
-  }, [bindingsValue]);
-
-  // Mixed-content rows live in the same `UIBindings` component (rows carrying a
-  // non-empty `segments` list). Map `componentId.fieldPath` -> segment list.
-  const mixedByField = useMemo<Record<string, UISegment[]>>(() => {
-    if (!bindingsValue) return {};
-    return Object.fromEntries(
-      bindingsValue.value
-        .filter(b => b.segments?.length)
-        .map(b => [b.field, b.segments as UISegment[]]),
-    );
-  }, [bindingsValue]);
+  // Bindings come from the parsed source (`node.bindings`, keyed by
+  // `componentId.field`): a `value={state.x}` attribute is a single-variable
+  // binding, a `value={`…${x}…`}` template is mixed content. No
+  // asset-packs::UIBindings read.
+  const { bindingsByField, mixedByField } = useMemo(() => {
+    const byField: Record<string, string> = {};
+    const mixed: Record<string, CanvasSegment[]> = {};
+    for (const row of codeNode?.bindings ?? []) {
+      if (row.segments && row.segments.length > 0) mixed[row.field] = row.segments;
+      else byField[row.field] = row.variable;
+    }
+    return { bindingsByField: byField, mixedByField: mixed };
+  }, [codeNode]);
 
   const writeAndDispatch = useCallback(
     (componentId: string, patch: Record<string, unknown>) => {
@@ -206,33 +109,7 @@ const PropertyPanelComponent: React.FC = () => {
     [selected],
   );
 
-  const addUIComponent = useCallback(
-    (componentId: string) => {
-      if (!sdk || selected === null) return;
-      const component = resolveComponent(sdk.engine, componentId);
-      if (!component) return;
-      const defaults = COMPONENT_DEFAULTS[componentId] ?? {};
-      // addComponent op uses component.create(entity, value) — pass the
-      // serializer-safe defaults so the PB encoder doesn't crash on a missing
-      // repeated/required field (e.g. UiBackground.uvs).
-      sdk.operations.addComponent(selected as Entity, component.componentId, defaults);
-      void sdk.operations.dispatch();
-    },
-    [sdk, selected],
-  );
-
-  const removeUIComponent = useCallback(
-    (componentId: string) => {
-      if (!sdk || selected === null) return;
-      const component = resolveComponent(sdk.engine, componentId);
-      if (!component) return;
-      sdk.operations.removeComponent(selected as Entity, component);
-      void sdk.operations.dispatch();
-    },
-    [sdk, selected],
-  );
-
-  if (!sdk || selected === null || type === null) {
+  if (selected === null || type === null) {
     return (
       <EmptyState
         icon={<IoOptionsOutline />}
@@ -242,48 +119,30 @@ const PropertyPanelComponent: React.FC = () => {
     );
   }
 
+  // A nested component reference edits the values passed to the instance (its
+  // props), not the generic UiEntity fields.
+  if (codeNode?.componentRef) {
+    return <ComponentRefPanel node={codeNode} />;
+  }
+
   const config = NODE_FIELD_CONFIGS[type];
   // Build the Layout group dynamically:
-  //   - Visible (boolean) lives at the top of Layout only for UI roots.
   //   - Display / Flex direction / Justify / Align items are
   //     CONTAINER-only fields (UiEntity); leaves don't need them.
   //   - Size / Position type / Position / Padding / Margin always show.
-  // Naming group on top:
-  //   - Roots get UI (Name) — letting creators name e.g. "MainHUD".
-  //   - Child nodes get Node (Name) — feeds the auto-generated
-  //     `entity-names.ts` for scene code (`SceneEntityNames.ScoreText`, …).
-  const layoutGroup = buildLayoutGroup(isUIRoot, type === 'UiEntity');
+  // The Node (Name) group heads the panel; it feeds the auto-generated
+  // `entity-names.ts` for scene code (`SceneEntityNames.ScoreText`, …).
+  const layoutGroup = buildLayoutGroup(false, type === 'UiEntity');
   const eventGroups = config.groups.filter(g => /event/i.test(g.title));
   const contentGroups = config.groups.filter(g => !/event/i.test(g.title));
-  const head = isUIRoot ? UI_ROOT_GROUP : NODE_GROUP;
-
-  // The root IS the screen: it needs only identity (UI_ROOT_GROUP) + layout
-  // (padding). Border / Effects / Mouse-events don't apply to the frame.
-  const trailing = isUIRoot ? [] : [EFFECTS_GROUP, BORDER_GROUP, ...eventGroups];
-  const allGroups = [head, layoutGroup, ...contentGroups, ...trailing];
-
-  // A group's single backing component id, or null when it spans several
-  // (e.g. the root Layout group mixes the UI marker's Visible with UiTransform).
-  const groupComponentId = (g: { fields: FieldConfig[] }): string | null => {
-    const ids = new Set(g.fields.map(f => f.componentId));
-    return ids.size === 1 ? (g.fields[0]?.componentId ?? null) : null;
-  };
-  const hasComponent = (componentId: string): boolean =>
-    codeComponentValue(codeNode, componentId) != null;
-
-  // Presence-driven: hide an optional component's section until it's added.
-  const visibleGroups = allGroups.filter(g => {
-    const cid = groupComponentId(g);
-    return cid && OPTIONAL_UI_COMPONENTS.has(cid) ? hasComponent(cid) : true;
-  });
-
-  // Add-component isn't wired for code-mode (would need to insert the attr/prop
-  // into source), so no add buttons.
-  const addableComponents: string[] = [];
-
-  // First-occurrence guard so a component (esp. UiTransform, shared by
-  // Layout/Effects/Border) offers clipboard on exactly one group.
-  const clipboardSeen = new Set<string>();
+  const allGroups = [
+    NODE_GROUP,
+    layoutGroup,
+    ...contentGroups,
+    EFFECTS_GROUP,
+    BORDER_GROUP,
+    ...eventGroups,
+  ];
 
   const q = query.trim().toLowerCase();
   const searching = q.length > 0;
@@ -297,19 +156,7 @@ const PropertyPanelComponent: React.FC = () => {
           placeholder="Search properties…"
         />
       </div>
-      <CodeBindingsSection />
-      {visibleGroups.map(group => {
-        const cid = groupComponentId(group);
-        // Clipboard on the first group of each allowed component.
-        let clipboardComponent = null;
-        if (cid && CLIPBOARD_UI_COMPONENTS.has(cid) && !clipboardSeen.has(cid)) {
-          clipboardSeen.add(cid);
-          clipboardComponent = resolveComponent(sdk.engine, cid);
-        }
-        // Remove only optional components that are present.
-        const onRemoveContainer =
-          cid && OPTIONAL_UI_COMPONENTS.has(cid) ? () => removeUIComponent(cid) : undefined;
-
+      {allGroups.map(group => {
         // While searching, show only matching fields and force every group open
         // so matches aren't hidden behind a collapsed header.
         const fields = searching
@@ -324,9 +171,6 @@ const PropertyPanelComponent: React.FC = () => {
             label={group.title}
             initialOpen={searching ? true : !collapsed[group.title]}
             onToggle={open => dispatch(setGroupCollapsed({ title: group.title, collapsed: !open }))}
-            entity={clipboardComponent ? (selected as Entity) : undefined}
-            component={clipboardComponent ?? undefined}
-            onRemoveContainer={onRemoveContainer}
           >
             {fields.map(field => {
               // Field values come from the parsed .tsx node (by synthetic id).
@@ -339,7 +183,6 @@ const PropertyPanelComponent: React.FC = () => {
                   field={field}
                   componentValue={value as Record<string, unknown> | null}
                   entity={selected as Entity}
-                  selectedRoot={(selectedRoot ?? selected) as Entity}
                   bound={bindingsByField[`${field.componentId}.${field.path}`]}
                   bindings={bindingsByField}
                   mixed={mixedByField[`${field.componentId}.${field.path}`]}
@@ -350,18 +193,6 @@ const PropertyPanelComponent: React.FC = () => {
           </Container>
         );
       })}
-      {!searching && addableComponents.length > 0 ? (
-        <div className="ui-designer-add-component">
-          {addableComponents.map(cid => (
-            <Button
-              key={cid}
-              onClick={() => addUIComponent(cid)}
-            >
-              + Add {UI_COMPONENT_LABELS[cid] ?? cid}
-            </Button>
-          ))}
-        </div>
-      ) : null}
     </div>
   );
 };
@@ -370,10 +201,9 @@ interface FieldRowProps {
   field: FieldConfig;
   componentValue: Record<string, unknown> | null;
   entity: Entity;
-  selectedRoot: Entity;
   bound?: string;
   bindings?: Record<string, string>;
-  mixed?: UISegment[];
+  mixed?: CanvasSegment[];
   // The stable component writer; FieldRow binds it to its own field.componentId.
   // Passing the writer (not a per-field arrow) keeps the prop stable so the
   // memoized row only re-renders when its value/bindings actually change.
@@ -384,7 +214,6 @@ const FieldRow = React.memo(function FieldRow({
   field,
   componentValue,
   entity,
-  selectedRoot,
   bound,
   bindings,
   mixed,
@@ -410,9 +239,7 @@ const FieldRow = React.memo(function FieldRow({
             <MixedContentField
               field={field}
               entity={entity}
-              selectedRoot={selectedRoot}
               segments={seedSegments(raw, mixed, bound)}
-              onPatch={onPatch}
             />
           </Block>
         );
@@ -422,7 +249,6 @@ const FieldRow = React.memo(function FieldRow({
         <BindableField
           field={field}
           entity={entity}
-          selectedRoot={selectedRoot}
           bound={boundProp}
         >
           <TextField
@@ -442,7 +268,6 @@ const FieldRow = React.memo(function FieldRow({
         <BindableField
           field={field}
           entity={entity}
-          selectedRoot={selectedRoot}
           bound={boundProp}
         >
           <TextField
@@ -462,7 +287,6 @@ const FieldRow = React.memo(function FieldRow({
         <BindableField
           field={field}
           entity={entity}
-          selectedRoot={selectedRoot}
           bound={boundProp}
         >
           <input
@@ -474,13 +298,14 @@ const FieldRow = React.memo(function FieldRow({
       );
     }
     case 'enum': {
-      // Inline `Label  [dropdown]` — see boolean above for rationale.
-      const v = (raw as number | undefined) ?? 0;
+      // Inline `Label  [dropdown]` — see boolean above for rationale. An unset
+      // value shows the field's in-world default (e.g. textAlign → center),
+      // falling back to the zero option.
+      const v = (raw as number | undefined) ?? field.defaultValue ?? 0;
       return (
         <BindableField
           field={field}
           entity={entity}
-          selectedRoot={selectedRoot}
           bound={boundProp}
         >
           <select
@@ -512,7 +337,6 @@ const FieldRow = React.memo(function FieldRow({
         <BindableField
           field={field}
           entity={entity}
-          selectedRoot={selectedRoot}
           bound={boundProp}
         >
           <div className="ui-designer-length-row">
@@ -562,7 +386,6 @@ const FieldRow = React.memo(function FieldRow({
         <BindableField
           field={field}
           entity={entity}
-          selectedRoot={selectedRoot}
           bound={boundProp}
         >
           {subs.map(sub => {
@@ -577,7 +400,6 @@ const FieldRow = React.memo(function FieldRow({
                   kind: 'length',
                 }}
                 entity={entity}
-                selectedRoot={selectedRoot}
                 bound={subBound}
               >
                 <TextField
@@ -627,7 +449,6 @@ const FieldRow = React.memo(function FieldRow({
         <BindableField
           field={field}
           entity={entity}
-          selectedRoot={selectedRoot}
           bound={boundProp}
         >
           {subs.map(sub => {
@@ -642,7 +463,6 @@ const FieldRow = React.memo(function FieldRow({
                   kind: 'length',
                 }}
                 entity={entity}
-                selectedRoot={selectedRoot}
                 bound={subBound}
               >
                 <TextField
@@ -674,7 +494,6 @@ const FieldRow = React.memo(function FieldRow({
         <BindableField
           field={field}
           entity={entity}
-          selectedRoot={selectedRoot}
           bound={boundProp}
         >
           <RgbaColorField
@@ -719,7 +538,6 @@ const FieldRow = React.memo(function FieldRow({
         <BindableField
           field={field}
           entity={entity}
-          selectedRoot={selectedRoot}
           bound={boundProp}
         >
           <textarea
@@ -736,7 +554,6 @@ const FieldRow = React.memo(function FieldRow({
         <BindableField
           field={field}
           entity={entity}
-          selectedRoot={selectedRoot}
           bound={boundProp}
         >
           <TextField
@@ -752,10 +569,9 @@ const FieldRow = React.memo(function FieldRow({
         <BindableField
           field={field}
           entity={entity}
-          selectedRoot={selectedRoot}
           bound={boundProp}
         >
-          <span className="ui-designer-callback-hint">Bind a callback variable…</span>
+          <span className="ui-designer-callback-hint">Bind an event handler…</span>
         </BindableField>
       );
     }
@@ -797,7 +613,6 @@ const FieldRow = React.memo(function FieldRow({
         <BindableField
           field={field}
           entity={entity}
-          selectedRoot={selectedRoot}
           bound={boundProp}
         >
           <select

@@ -1,22 +1,20 @@
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { Entity } from '@dcl/ecs';
 import { SegmentKind } from '@dcl/asset-packs';
-import type { UISegment } from '@dcl/asset-packs';
 
-import { useSdk } from '../../../hooks/sdk/useSdk';
 import { debounce } from '../../../lib/utils/debounce';
 import type { FieldConfig } from '../field-configs';
+import type { CanvasSegment } from '../tree-model';
 import { VariablePicker } from '../VariablePicker';
-import { normalizeSegments, routeStorage, serializeNodes } from './segments';
+import { setMixedContentAttribute } from '../code/store';
+import { normalizeSegments, serializeNodes } from './segments';
 
 import './MixedContentField.css';
 
 interface MixedContentFieldProps {
   field: FieldConfig;
   entity: Entity;
-  selectedRoot: Entity;
-  segments: UISegment[];
-  onPatch: (patch: Record<string, unknown>) => void;
+  segments: CanvasSegment[];
 }
 
 function createChip(variable: string): HTMLSpanElement {
@@ -35,7 +33,7 @@ function createChip(variable: string): HTMLSpanElement {
   return chip;
 }
 
-function renderSegments(editor: HTMLElement, segments: UISegment[]): void {
+function renderSegments(editor: HTMLElement, segments: CanvasSegment[]): void {
   editor.replaceChildren();
   for (const seg of segments) {
     if (seg.kind === SegmentKind.BINDING) {
@@ -49,11 +47,8 @@ function renderSegments(editor: HTMLElement, segments: UISegment[]): void {
 export const MixedContentField: React.FC<MixedContentFieldProps> = ({
   field,
   entity,
-  selectedRoot,
   segments,
-  onPatch,
 }) => {
-  const sdk = useSdk();
   const editorRef = useRef<HTMLDivElement>(null);
   const anchorRef = useRef<HTMLButtonElement>(null);
   const savedRange = useRef<Range | null>(null);
@@ -61,28 +56,20 @@ export const MixedContentField: React.FC<MixedContentFieldProps> = ({
   const lastCommittedRef = useRef<string>('');
   const [pickerOpen, setPickerOpen] = useState(false);
 
-  const pathKey = `${field.componentId}.${field.path}`;
-  const seedKey = `${entity}:${pathKey}`;
+  const seedKey = `${entity}:${field.componentId}.${field.path}`;
 
   const commit = useCallback(() => {
     const editor = editorRef.current;
-    if (!sdk || !editor) return;
+    if (!editor) return;
     const normalized = normalizeSegments(serializeNodes(editor));
     const signature = JSON.stringify(normalized);
     if (signature === lastCommittedRef.current) return; // nothing changed
     lastCommittedRef.current = signature;
-    const plan = routeStorage(normalized);
-    // Exactly one UIBindings write per commit (literal also patches the PB value):
-    if (plan.mode === 'literal') {
-      onPatch({ [field.path]: plan.text });
-      sdk.operations.unbindField(entity, pathKey);
-    } else if (plan.mode === 'single-bind') {
-      sdk.operations.bindField(entity, pathKey, plan.variable);
-    } else {
-      sdk.operations.setMixedContent(entity, pathKey, plan.segments);
-    }
-    void sdk.operations.dispatch();
-  }, [sdk, entity, field.path, pathKey, onPatch]);
+    // Code-as-source: splice the attribute as a template literal / plain string
+    // / bare expression (setAttributeSegments collapses the three cases). No
+    // asset-packs::UIBindings write.
+    void setMixedContentAttribute(entity as unknown as number, field.path, normalized);
+  }, [entity, field.path]);
 
   // Stable debounced wrapper that always invokes the latest `commit`.
   const commitRef = useRef(commit);
@@ -226,7 +213,6 @@ export const MixedContentField: React.FC<MixedContentFieldProps> = ({
       {pickerOpen ? (
         <VariablePicker
           field={field}
-          selectedRoot={selectedRoot}
           anchorRef={anchorRef}
           onPick={onPick}
           onDismiss={() => setPickerOpen(false)}

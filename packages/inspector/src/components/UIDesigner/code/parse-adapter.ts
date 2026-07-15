@@ -1,8 +1,21 @@
 import type { Entity } from '@dcl/ecs';
 
-import { DEFAULT_CANVAS_HEIGHT, DEFAULT_CANVAS_WIDTH, type UINodeType } from '../tree-model';
-import { ergonomicToPBTransform } from './ecs-shape';
-import type { CodeUINode, ParsedUI, Span } from './types';
+import {
+  type CanvasBindingRow,
+  type CanvasSegment,
+  DEFAULT_CANVAS_HEIGHT,
+  DEFAULT_CANVAS_WIDTH,
+  type UINodeType,
+} from '../tree-model';
+
+// Segment-kind string values, matching @dcl/asset-packs' SegmentKind
+// ('literal' / 'binding') — the values previewBoundText compares against. Kept
+// as local constants (not the asset-packs enum) so this pure, Node-testable
+// parser doesn't pull the asset-packs runtime.
+const SEG_LITERAL = 'literal';
+const SEG_BINDING = 'binding';
+import { ergonomicToPBText, ergonomicToPBTransform } from './ecs-shape';
+import type { CodeUINode, ComponentRefProp, ParsedUI, Span } from './types';
 
 // ---------------------------------------------------------------------------
 // Minimal OXC/ESTree node shapes we read. OXC emits an ESTree-conformant AST,
@@ -126,10 +139,90 @@ function attrValue(attr: AnyNode): { ok: true; value: unknown } | { ok: false } 
   return { ok: false };
 }
 
+// If a JSX attribute is bound to a simple variable expression — `attr={ident}`
+// or `attr={obj.prop}` (the code-as-source binding form, e.g.
+// `value={state.score}`) — return that expression's verbatim source text; else
+// null. This is what lets the panel show the field as bound (and re-bind it)
+// rather than collapsing the whole node to opaque dynamic content.
+function bindingExpr(attr: AnyNode, source: string): string | null {
+  const v = attr.value as AnyNode | null;
+  if (v?.type !== 'JSXExpressionContainer') return null;
+  const e = unparen(v.expression as AnyNode);
+  if (e && (e.type === 'Identifier' || e.type === 'MemberExpression')) {
+    return source.slice(e.start, e.end);
+  }
+  return null;
+}
+
+// Extract the handler NAME an event attr is bound to, from either the thunk form
+// the editor writes (`onMouseDown={() => onClick(state)}`) or a bare reference
+// (`onMouseDown={onClick}`, e.g. hand-authored). Returns null for anything else
+// (an inline arrow with a body, a dynamic expression). The name is what the panel
+// shows as bound; re-binding always re-emits the thunk.
+function eventHandlerName(attr: AnyNode): string | null {
+  const v = attr.value as AnyNode | null;
+  if (v?.type !== 'JSXExpressionContainer') return null;
+  const e = unparen(v.expression as AnyNode);
+  if (e.type === 'Identifier') return e.name as string;
+  if (e.type === 'ArrowFunctionExpression') {
+    const body = unparen(e.body as AnyNode);
+    if (body.type === 'CallExpression' && body.callee?.type === 'Identifier') {
+      return body.callee.name as string;
+    }
+  }
+  return null;
+}
+
+// A `value={`literal ${expr} …`}` template literal → ordered mixed-content
+// segments (literal quasis + `${expr}` bindings), so the mixed editor round-trips
+// a code-authored interpolated string. Returns null for anything that isn't a
+// template literal or that interpolates a non-simple expression.
+function templateSegments(attr: AnyNode, source: string): CanvasSegment[] | null {
+  const v = attr.value as AnyNode | null;
+  if (v?.type !== 'JSXExpressionContainer') return null;
+  const e = unparen(v.expression as AnyNode);
+  if (!e || e.type !== 'TemplateLiteral') return null;
+  const quasis = (e.quasis ?? []) as AnyNode[];
+  const exprs = (e.expressions ?? []) as AnyNode[];
+  const segs: CanvasSegment[] = [];
+  for (let i = 0; i < quasis.length; i++) {
+    const cooked = (quasis[i].value as { cooked?: string })?.cooked ?? '';
+    if (cooked) segs.push({ kind: SEG_LITERAL, value: cooked });
+    if (i < exprs.length) {
+      const expr = unparen(exprs[i]);
+      if (expr.type !== 'Identifier' && expr.type !== 'MemberExpression') return null;
+      segs.push({ kind: SEG_BINDING, value: source.slice(expr.start, expr.end) });
+    }
+  }
+  return segs;
+}
+
+// Event-handler attrs → the field-config componentId the panel keys their
+// bindings under (mirrors field-configs' event groups): mouse events on the UI
+// marker; onChange/onSubmit on the Input/Dropdown component. Returns null for a
+// non-event attr.
+function eventFieldKey(type: UINodeType, attr: string): string | null {
+  if (
+    attr === 'onMouseDown' ||
+    attr === 'onMouseUp' ||
+    attr === 'onMouseEnter' ||
+    attr === 'onMouseLeave'
+  )
+    return `asset-packs::UI.${attr}`;
+  if (attr === 'onChange' || attr === 'onSubmit')
+    return `${type === 'Dropdown' ? 'core::UiDropdown' : 'core::UiInput'}.${attr}`;
+  return null;
+}
+
 export interface CodeToUINodesOptions {
   // Name of the exported component to read (defaults to the first exported
   // function declaration returning JSX).
   componentName?: string;
+  // Names of OTHER editor roots that may be used as components. A JSX element
+  // whose name is in this set (e.g. `<OtroNOmbre />`) becomes a first-class
+  // `component-ref` node instead of an opaque block. Everything else unknown
+  // stays opaque.
+  knownComponents?: string[];
 }
 
 // Build a code-mode UINode tree from an OXC-parsed program.
@@ -145,8 +238,43 @@ export function codeToUINodes(
 
   const spans = new Map<number, Span>();
   const astNodes = new Map<number, AnyNode>();
+  const known = new Set(options.knownComponents ?? []);
   let nextId = 1;
   let hasOpaque = false;
+
+  // A reference to another editor root used as a component. First-class (not
+  // opaque): its span/AST are registered so move/remove/duplicate splices work.
+  // Its own children (react-ecs slots) are not walked here — the inline preview
+  // comes from resolving the referenced file (store.augmentComponentRefs); the
+  // structural parent is recorded on uiTransform so the canvas lays it out.
+  const componentRefNode = (node: AnyNode, name: string, parentEntity?: number): CodeUINode => {
+    const id = nextId++ as unknown as Entity;
+    const span: Span = [node.start, node.end];
+    spans.set(id as unknown as number, span);
+    astNodes.set(id as unknown as number, node);
+    // Parse the values set on THIS instance (`<Name title="Hi" n={5} x={expr} />`)
+    // so the panel shows + edits them per instance.
+    const { attrs } = readAttributes(node);
+    const props: ComponentRefProp[] = [];
+    for (const [attrName, attr] of attrs) {
+      const v = attrValue(attr);
+      if (v.ok) {
+        props.push({ name: attrName, value: v.value as string | number | boolean });
+      } else {
+        const e = (attr.value as AnyNode | null)?.expression as AnyNode | undefined;
+        props.push({ name: attrName, expr: e ? source.slice(e.start, e.end) : '' });
+      }
+    }
+    return {
+      entity: id,
+      type: 'UiEntity',
+      name,
+      span,
+      componentRef: { name, props },
+      uiTransform: parentEntity !== undefined ? { parent: parentEntity } : undefined,
+      children: [],
+    };
+  };
 
   const opaqueNode = (node: AnyNode, reason: string, name: string): CodeUINode => {
     hasOpaque = true;
@@ -170,7 +298,12 @@ export function codeToUINodes(
     const name = elementName(el);
     if (name == null) return opaqueNode(el, 'member-name-element', 'Unknown');
     const type = ELEMENT_TYPE[name];
-    if (!type) return opaqueNode(el, 'custom-component', name);
+    if (!type) {
+      // A known editor root used as a component → a first-class reference node;
+      // any other unknown element stays opaque (edit in code).
+      if (known.has(name)) return componentRefNode(el, name, parentEntity);
+      return opaqueNode(el, 'custom-component', name);
+    }
 
     const { attrs, hasSpread } = readAttributes(el);
     if (hasSpread) return opaqueNode(el, 'spread-props', name);
@@ -182,6 +315,10 @@ export function codeToUINodes(
 
     let dynamicProps = false;
     const node: CodeUINode = { entity: id, type, name, span, children: [] };
+    // Simple-expression bindings on this element (text props + event handlers),
+    // keyed by the panel's `componentId.field` so a bound attribute previews on
+    // the canvas and shows as bound in the panel.
+    const bindings: CanvasBindingRow[] = [];
 
     const uiTransformAttr = attrs.get('uiTransform');
     if (uiTransformAttr) {
@@ -211,19 +348,45 @@ export function codeToUINodes(
       else dynamicProps = true;
     }
 
-    // Label text props fold into uiText.
+    // Label text props fold into uiText; a text prop bound to a variable
+    // (`value={state.x}`) or an interpolated template (`value={`Hi ${name}`}`)
+    // is recorded as a binding row instead — previewed on the canvas via
+    // previewBoundText and shown as bound in the panel — rather than collapsing
+    // the node to opaque dynamic content.
     if (type === 'Label') {
       const uiText: Record<string, unknown> = {};
       for (const key of UI_TEXT_PROPS) {
         const attr = attrs.get(key);
         if (!attr) continue;
         const v = attrValue(attr);
-        if (v.ok) uiText[key] = v.value;
+        if (v.ok) {
+          uiText[key] = v.value;
+          continue;
+        }
+        const field = `core::UiText.${key}`;
+        const segments = templateSegments(attr, source);
+        const expr = bindingExpr(attr, source);
+        if (segments) bindings.push({ field, variable: '', segments });
+        else if (expr) bindings.push({ field, variable: expr });
         else dynamicProps = true;
       }
-      if (Object.keys(uiText).length > 0) node.uiText = uiText;
+      // Normalize react-ecs's ergonomic text enums (textAlign/font strings) to
+      // the flattened PBUiText numeric enums the canvas + PropertyPanel read.
+      if (Object.keys(uiText).length > 0) node.uiText = ergonomicToPBText(uiText);
     }
 
+    // Event-handler bindings — the thunk `onMouseDown={() => onClick(state)}` the
+    // editor writes (or a bare `onMouseDown={onClick}`). Record the handler NAME
+    // as the bound value; handlers are never static so they don't fold into a
+    // component value.
+    for (const [attrName, attr] of attrs) {
+      const field = eventFieldKey(type, attrName);
+      if (!field) continue;
+      const handler = eventHandlerName(attr);
+      if (handler) bindings.push({ field, variable: handler });
+    }
+
+    if (bindings.length > 0) node.bindings = bindings;
     if (dynamicProps) node.dynamicProps = true;
 
     // Children.

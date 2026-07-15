@@ -73,3 +73,26 @@
 .ui-designer-code-root-remove:hover {
   color: rgba(255, 255, 255, 0.9);
 }
+
+.ui-designer-code-root-toplevel {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.ui-designer-code-root-toplevel svg {
+  color: rgba(255, 255, 255, 0.65);
+}
+
+.ui-designer-code-root-toplevel:not(.is-on) svg {
+  color: var(--ui-designer-accent, #5e81f4);
+}
+
+.ui-designer-code-root-toplevel:hover svg {
+  color: rgba(255, 255, 255, 1);
+}

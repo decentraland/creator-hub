@@ -29,6 +29,14 @@ export interface BindVariable {
   // The expression a field binds to (`value={<expr>}`). A marker variable binds
   // bare (`score`); a state variable binds through the object (`state.score`).
   expr: string;
+  // The default value (statically-evaluated literal), used to preview a bound
+  // field on the canvas. Undefined for markers and non-literal initializers.
+  value?: string | number | boolean;
+  // Set when this variable is declared in ANOTHER file (imported via
+  // `import { name } from '<imported>'`) — the target file's scene-relative
+  // path. Such vars are bindable here but read-only (edit them in their own
+  // file). Undefined for local state/marker vars. See code/imports.ts.
+  imported?: string;
 }
 
 export interface BindAction {
@@ -41,6 +49,16 @@ export interface BindingSurface {
 }
 
 const EMPTY: BindingSurface = { variables: [], actions: [] };
+
+// Build a default-value lookup (binding expr → value string) from a surface's
+// variables, for previewing bound text on the canvas (`state.score` → "0"). Only
+// vars carrying a known default (state vars / literal markers) are included;
+// props and expression bindings have none.
+export function buildResolveMap(variables: BindVariable[]): Record<string, string> {
+  const map: Record<string, string> = {};
+  for (const v of variables) if (v.value !== undefined) map[v.expr] = String(v.value);
+  return map;
+}
 
 function annotationType(id: AstNode | undefined): string | null {
   const t = id?.typeAnnotation?.typeAnnotation?.type;
@@ -59,8 +77,9 @@ function inferInitializerType(init: AstNode | undefined): string {
 }
 
 // A leading JSDoc marker for a declaration: a comment whose end abuts the
-// declaration's start (only whitespace between) and carries the tag.
-function markerFor(
+// declaration's start (only whitespace between) and carries the tag. Exported so
+// the action reader (code/actions.ts) recognizes @ui-action handlers the same way.
+export function markerFor(
   comments: Comment[],
   declStart: number,
   source: string,

@@ -1,19 +1,128 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { IoClose, IoLayersOutline } from 'react-icons/io5';
+import { useDrag } from 'react-dnd';
+import { IoClose, IoEyeOffOutline, IoEyeOutline, IoLayersOutline } from 'react-icons/io5';
 
 import { useAppDispatch } from '../../../redux/hooks';
 import { selectNode } from '../../../redux/ui-designer';
 import { Button } from '../../Button';
+import { UI_DESIGNER_DND_TYPE, type UIDesignerDragItem } from '../Palette';
 import {
   type CodeRoot,
   createRoot,
   removeRoot,
   renameRoot,
   selectRootFile,
+  toggleTopLevel,
   useCodeState,
 } from './store';
 
 import './CodeRootsList.css';
+
+// One row in the roots list: selects on click, renames on double-click, and is a
+// DnD source so it can be dragged onto a canvas node to nest it as a component.
+// The eye toggle flips top-level (aggregated screen) vs component (nested-only).
+const RootRow: React.FC<{
+  root: CodeRoot;
+  active: boolean;
+  editing: boolean;
+  draft: string;
+  onSelect: () => void;
+  onBeginEdit: () => void;
+  onDraft: (value: string) => void;
+  onCommit: () => void;
+  onCancel: () => void;
+  onRemove: (e: React.MouseEvent) => void;
+}> = ({
+  root,
+  active,
+  editing,
+  draft,
+  onSelect,
+  onBeginEdit,
+  onDraft,
+  onCommit,
+  onCancel,
+  onRemove,
+}) => {
+  const [{ isDragging }, drag] = useDrag<UIDesignerDragItem, unknown, { isDragging: boolean }>(
+    () => ({
+      type: UI_DESIGNER_DND_TYPE,
+      item: { source: 'component', name: root.name },
+      collect: monitor => ({ isDragging: monitor.isDragging() }),
+    }),
+    [root.name],
+  );
+
+  return (
+    <div
+      // Not draggable while renaming (the input owns the pointer).
+      ref={editing ? undefined : (drag as unknown as React.Ref<HTMLDivElement>)}
+      className={`ui-designer-code-root-row ${active ? 'is-active' : ''}`}
+      style={{ opacity: isDragging ? 0.4 : 1 }}
+      onClick={onSelect}
+      title={`Drag onto the canvas to nest ${root.name} as a component`}
+    >
+      <IoLayersOutline aria-hidden="true" />
+      {editing ? (
+        <input
+          className="ui-designer-code-root-name-input"
+          value={draft}
+          autoFocus
+          spellCheck={false}
+          autoCorrect="off"
+          autoCapitalize="off"
+          onClick={e => e.stopPropagation()}
+          onChange={e => onDraft(e.target.value)}
+          onKeyDown={e => {
+            if (e.key === 'Enter') onCommit();
+            else if (e.key === 'Escape') onCancel();
+          }}
+          onBlur={onCommit}
+        />
+      ) : (
+        <span
+          className="ui-designer-code-root-name"
+          onDoubleClick={e => {
+            e.stopPropagation();
+            onBeginEdit();
+          }}
+        >
+          {root.name}
+        </span>
+      )}
+      <button
+        type="button"
+        className={`ui-designer-code-root-toplevel ${root.topLevel ? 'is-on' : ''}`}
+        title={
+          root.topLevel
+            ? 'Top-level: rendered on its own. Click to make it a nested-only component.'
+            : 'Component: only rendered where it is nested. Click to make it top-level.'
+        }
+        aria-label={`Toggle top-level for ${root.name}`}
+        aria-pressed={root.topLevel}
+        onClick={e => {
+          e.stopPropagation();
+          void toggleTopLevel(root.filename);
+        }}
+      >
+        {root.topLevel ? (
+          <IoEyeOutline aria-hidden="true" />
+        ) : (
+          <IoEyeOffOutline aria-hidden="true" />
+        )}
+      </button>
+      <button
+        type="button"
+        className="ui-designer-code-root-remove"
+        title={`Delete ${root.name}`}
+        aria-label={`Delete ${root.name}`}
+        onClick={onRemove}
+      >
+        <IoClose aria-hidden="true" />
+      </button>
+    </div>
+  );
+};
 
 // Code-mode roots list. Roots are files under src/ui/ (one component per file),
 // not ECS marker entities — so this is backed by the code store rather than the
@@ -73,49 +182,19 @@ export const CodeRootsList: React.FC = () => {
       </div>
       <div className="ui-designer-roots-tree">
         {roots.map(root => (
-          <div
+          <RootRow
             key={root.filename}
-            className={`ui-designer-code-root-row ${root.filename === filename ? 'is-active' : ''}`}
-            onClick={() => handleSelect(root)}
-          >
-            <IoLayersOutline aria-hidden="true" />
-            {editing === root.filename ? (
-              <input
-                className="ui-designer-code-root-name-input"
-                value={draft}
-                autoFocus
-                spellCheck={false}
-                autoCorrect="off"
-                autoCapitalize="off"
-                onClick={e => e.stopPropagation()}
-                onChange={e => setDraft(e.target.value)}
-                onKeyDown={e => {
-                  if (e.key === 'Enter') commitEdit(root);
-                  else if (e.key === 'Escape') setEditing(null);
-                }}
-                onBlur={() => commitEdit(root)}
-              />
-            ) : (
-              <span
-                className="ui-designer-code-root-name"
-                onDoubleClick={e => {
-                  e.stopPropagation();
-                  beginEdit(root);
-                }}
-              >
-                {root.name}
-              </span>
-            )}
-            <button
-              type="button"
-              className="ui-designer-code-root-remove"
-              title={`Delete ${root.name}`}
-              aria-label={`Delete ${root.name}`}
-              onClick={e => handleRemove(e, root)}
-            >
-              <IoClose aria-hidden="true" />
-            </button>
-          </div>
+            root={root}
+            active={root.filename === filename}
+            editing={editing === root.filename}
+            draft={draft}
+            onSelect={() => handleSelect(root)}
+            onBeginEdit={() => beginEdit(root)}
+            onDraft={setDraft}
+            onCommit={() => commitEdit(root)}
+            onCancel={() => setEditing(null)}
+            onRemove={e => handleRemove(e, root)}
+          />
         ))}
       </div>
     </div>

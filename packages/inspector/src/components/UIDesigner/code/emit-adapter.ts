@@ -208,6 +208,48 @@ export function setAttributeExpr(el: AstNode, name: string, expr: string): Edit[
   return [{ start: attr.start, end: attr.end, text: attrText }];
 }
 
+// Remove a top-level JSX attribute entirely (e.g. unbind a field back to
+// unset). Absorbs one leading whitespace char so `<X a b />` → `<X b />` rather
+// than leaving a double space. No-op when the attribute isn't present.
+export function removeAttribute(el: AstNode, source: string, name: string): Edit[] {
+  const attr = findAttr(el, name);
+  if (!attr) return [];
+  let start = attr.start;
+  if (start > 0 && /\s/.test(source[start - 1])) start -= 1;
+  return [{ start, end: attr.end, text: '' }];
+}
+
+// Set a top-level attribute to a mixed-content template literal built from
+// ordered segments (literal text + variable expressions), e.g.
+// `value={`Score: ${state.score}`}`. An all-literal list collapses to a plain
+// string attribute (`value="Score: 0"`); a single binding collapses to a bare
+// expression (`value={state.score}`) — matching how a hand-author would write it.
+export function setAttributeSegments(
+  el: AstNode,
+  name: string,
+  segments: { kind: string; value: string }[],
+): Edit[] {
+  const hasBinding = segments.some(s => s.kind === 'binding');
+  if (!hasBinding) {
+    const text = segments.map(s => s.value).join('');
+    return setAttribute(el, name, text);
+  }
+  if (segments.length === 1) {
+    // Single binding → bare expression.
+    return setAttributeExpr(el, name, segments[0].value);
+  }
+  // Build a template literal. Escape backtick / `${` / backslash in literal
+  // parts so author text can't break out of the template.
+  const body = segments
+    .map(s =>
+      s.kind === 'binding'
+        ? `\${${s.value}}`
+        : s.value.replace(/\\/g, '\\\\').replace(/`/g, '\\`').replace(/\$\{/g, '\\${'),
+    )
+    .join('');
+  return setAttributeExpr(el, name, `\`${body}\``);
+}
+
 // Remove an element (or opaque node) by deleting its exact span.
 export function removeNode(el: AstNode): Edit[] {
   return [{ start: el.start, end: el.end, text: '' }];
@@ -238,4 +280,34 @@ export function afterImports(program: { body?: AstNode[] }): number {
     else break;
   }
   return at;
+}
+
+// Ensure `import { name } from '<from>'` is present. Three cases: already
+// imported → no-op; a named import from `<from>` exists → append `name` to it;
+// otherwise → add a fresh import line after the existing imports. Used when
+// nesting a component so the referenced root is in scope.
+export function ensureNamedImport(
+  program: { body?: AstNode[] },
+  name: string,
+  from: string,
+): Edit[] {
+  const imports = (program.body ?? []).filter(s => s.type === 'ImportDeclaration');
+  const fromImport = imports.find(s => (s as AstNode).source?.value === from) as
+    | AstNode
+    | undefined;
+  if (fromImport) {
+    const specs = ((fromImport.specifiers ?? []) as AstNode[]).filter(
+      s => s.type === 'ImportSpecifier',
+    );
+    if (specs.some(s => (s.imported?.name ?? s.local?.name) === name)) return [];
+    if (specs.length > 0) {
+      const last = specs[specs.length - 1];
+      return [{ start: last.end, end: last.end, text: `, ${name}` }];
+    }
+    // Import exists but has no named group (default/namespace only) → fall through
+    // and add a separate named import line.
+  }
+  const at = afterImports(program);
+  const line = `import { ${name} } from '${from}'`;
+  return [{ start: at, end: at, text: at === 0 ? `${line}\n` : `\n${line}` }];
 }

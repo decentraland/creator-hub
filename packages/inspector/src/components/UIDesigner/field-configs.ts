@@ -103,6 +103,15 @@ export interface FieldConfig {
   sanitize?: (value: string) => string;
   /** One-line help shown as a hover tooltip beside the field label. */
   info?: string;
+  /**
+   * For `enum` fields whose in-world default is not the zero option: the value
+   * the dropdown shows when the component leaves the prop unset. e.g. UiText
+   * `textAlign` defaults to `center` (4) in the runtime (@dcl/ecs PBUiText:
+   * "alignment within the bounds (default: center)"), not the proto-3 zero
+   * (top-left). Reads only — leaving the prop unset still renders the default;
+   * the value is written only if the user picks an option.
+   */
+  defaultValue?: number;
 }
 
 export interface NodeFieldConfig {
@@ -586,6 +595,8 @@ const TEXT_GROUP = {
       kind: 'enum' as const,
       options: TEXT_ALIGN_OPTIONS,
       bindable: false,
+      // UiText.textAlign defaults to center (4) in-world, not the zero option.
+      defaultValue: 4,
     },
     {
       label: 'Font',
@@ -632,6 +643,8 @@ const INPUT_GROUP = {
       kind: 'enum' as const,
       options: TEXT_ALIGN_OPTIONS,
       bindable: false,
+      // UiText.textAlign defaults to center (4) in-world, not the zero option.
+      defaultValue: 4,
     },
     {
       label: 'Font',
@@ -679,6 +692,8 @@ const DROPDOWN_GROUP = {
       kind: 'enum' as const,
       options: TEXT_ALIGN_OPTIONS,
       bindable: false,
+      // UiText.textAlign defaults to center (4) in-world, not the zero option.
+      defaultValue: 4,
     },
     {
       label: 'Font',

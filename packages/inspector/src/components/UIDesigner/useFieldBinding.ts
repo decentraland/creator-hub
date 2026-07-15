@@ -1,33 +1,29 @@
 import { useCallback, useRef, useState } from 'react';
 import type { Entity } from '@dcl/ecs';
 
-import { useSdk } from '../../hooks/sdk/useSdk';
 import type { FieldConfig } from './field-configs';
+import { bindAttribute, unbindAttribute } from './code/store';
 
 // Shared bind/unbind + picker state for BindableField and BindableSubField.
-// Extracted because both components had a verbatim copy of this logic
-// (review.md §2 — "Consolidate BindableField and BindableSubField").
+// Code-as-source: binding a field splices `<El attr={expr} />` into the .tsx
+// (bindAttribute) and unbinding removes the attribute (unbindAttribute) — no
+// asset-packs::UIBindings write. `field.path` is the JSX attribute name.
 export function useFieldBinding(field: FieldConfig, entity: Entity) {
-  const sdk = useSdk();
   const [pickerOpen, setPickerOpen] = useState(false);
   const anchorRef = useRef<HTMLButtonElement>(null);
-  const pathKey = `${field.componentId}.${field.path}`;
+  const id = entity as unknown as number;
 
   const onBind = useCallback(
-    (variableName: string) => {
-      if (!sdk) return;
-      sdk.operations.bindField(entity, pathKey, variableName);
-      void sdk.operations.dispatch();
+    (expr: string) => {
+      void bindAttribute(id, field.path, expr);
       setPickerOpen(false);
     },
-    [sdk, entity, pathKey],
+    [id, field.path],
   );
 
   const onUnbind = useCallback(() => {
-    if (!sdk) return;
-    sdk.operations.unbindField(entity, pathKey);
-    void sdk.operations.dispatch();
-  }, [sdk, entity, pathKey]);
+    void unbindAttribute(id, field.path);
+  }, [id, field.path]);
 
   return { pickerOpen, setPickerOpen, anchorRef, onBind, onUnbind };
 }
