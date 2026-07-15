@@ -42,6 +42,7 @@
     "ignore": "^7.0.5",
     "mitt": "^3.0.1",
     "node-fetch": "^2.7.0",
+    "prettier": "3.5.3",
     "react": "18.3.1",
     "react-colorful": "^5.6.1",
     "react-contexify": "^6.0.0",

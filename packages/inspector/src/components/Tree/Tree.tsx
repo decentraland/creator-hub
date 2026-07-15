@@ -50,6 +50,10 @@ type Props<T> = {
   dndType?: string;
   onLastSelectedChange?: (value: T) => void;
   isRoot?: (value: T) => boolean;
+  // Replaces the built-in engine-entity ActionArea (lock/hide via ECS
+  // components). Trees over non-entity values (e.g. the UI Designer's code
+  // nodes) supply their own affordances here.
+  renderActionArea?: (value: T) => React.ReactNode;
 };
 
 type EmptyString = '';
@@ -385,7 +389,9 @@ export function Tree<T>() {
               >
                 {props.getIcon && props.getIcon(value)}
                 <div>{label || id}</div>
-                {isEntity && <ActionArea entity={value as Entity} />}
+                {props.renderActionArea
+                  ? props.renderActionArea(value)
+                  : isEntity && <ActionArea entity={value as Entity} />}
                 {!isRoot?.(value as T) && isEntityOutOfBoundaries && (
                   <InfoTooltip
                     text="This entity is out of bounds and might not display correctly in-world."

@@ -1,7 +1,15 @@
 import { useSyncExternalStore } from 'react';
+import type { Entity } from '@dcl/ecs';
 
 import { getCodeParser } from '../../../lib/logic/code-parser/iframe';
 import { getStorage } from '../../../lib/data-layer/client/iframe-data-layer';
+import { store as reduxStore } from '../../../redux/store';
+import {
+  getSelectedNode,
+  remapNodeIds,
+  resetNodeState,
+  selectNode,
+} from '../../../redux/ui-designer';
 import type { UINodeType } from '../tree-model';
 import { generateRootComponent, generateUiIndex } from './aggregator';
 import {
@@ -28,18 +36,23 @@ import {
 } from './state-convention';
 import {
   addPropsProperty,
+  propTypeToTs,
   type PropVar,
   readPropsVariables,
   removePropsProperty,
   setPropsPropertyType,
 } from './props-convention';
-import { collectComponentRefNames, wouldCycle } from './component-graph';
+import {
+  collectComponentRefNames,
+  referencesRoot,
+  renameComponentRefEdits,
+  wouldCycle,
+} from './component-graph';
 import { componentMarkerEdit, hasComponentMarker } from './component-marker';
 import {
   afterImports,
   applyEdits,
   type Edit,
-  emitElement,
   ensureNamedImport,
   insertChild,
   moveElement,
@@ -49,8 +62,11 @@ import {
   setAttributeExpr,
   setAttributeSegments,
   setObjectField,
+  setObjectFields,
 } from './emit-adapter';
-import { pbToErgonomicText, pbToErgonomicTransform } from './ecs-shape';
+import { pbBackgroundFieldToErgo, pbToErgonomicText } from './ecs-shape';
+import { formatUiSource } from './formatting';
+import { uiTransformPatchEdits } from './transform-patch';
 import { codeToUINodes, findComponentIdSpan } from './parse-adapter';
 import { toComponentName, uniqueRootName } from './root-naming';
 import type { CodeUINode, ParsedUI } from './types';
@@ -111,6 +127,10 @@ export interface CodeState {
   program: unknown;
   error: string | null;
   parsing: boolean;
+  // Whether the ACTIVE file has splice history to undo/redo (drives the
+  // toolbar buttons; the stacks themselves are module-private).
+  canUndo: boolean;
+  canRedo: boolean;
 }
 
 let state: CodeState = {
@@ -124,6 +144,8 @@ let state: CodeState = {
   program: undefined,
   error: null,
   parsing: false,
+  canUndo: false,
+  canRedo: false,
 };
 
 const listeners = new Set<() => void>();
@@ -216,7 +238,10 @@ function buildBindingSurface(
     value: v.value,
   }));
   const seenState = new Set(stateVars.map(v => v.name));
-  // Props are bindable INSIDE the component render; they carry no default value.
+  // Props are bindable INSIDE the component render; they carry no default
+  // value. All declared props are surfaced (the props manager lists them);
+  // the pickers filter by TYPE, so 'unknown'/'callback' props are never
+  // offered where they can't bind.
   const propVars: BindVariable[] = componentName
     ? readPropsVariables(program as any, componentName)
         .filter(v => !seenState.has(v.name))
@@ -412,6 +437,64 @@ async function augmentComponentRefs(filename: string, source: string): Promise<v
   if (!same) set({ componentTrees: Object.fromEntries(entries) });
 }
 
+// ---------------------------------------------------------------------------
+// Selection re-anchoring. Synthetic node ids are assigned in SOURCE ORDER on
+// every parse, so any edit earlier in the file shifts every later node's id —
+// a raw id held in redux would silently point at a DIFFERENT node after a
+// reparse, and the next panel write would mutate the wrong element. After each
+// same-file reparse we re-resolve the selected node by its child-index path
+// (stable across content edits) and re-dispatch when the id moved.
+// ---------------------------------------------------------------------------
+
+// Child-index path from the root to the node with `entityId`, or null.
+function pathToNode(root: CodeUINode, entityId: number): number[] | null {
+  if ((root.entity as unknown as number) === entityId) return [];
+  for (let i = 0; i < root.children.length; i++) {
+    const sub = pathToNode(root.children[i], entityId);
+    if (sub) return [i, ...sub];
+  }
+  return null;
+}
+
+function nodeAtPath(root: CodeUINode, path: number[]): CodeUINode | undefined {
+  let node: CodeUINode | undefined = root;
+  for (const i of path) node = node?.children[i];
+  return node;
+}
+
+// Re-map ALL id-keyed redux node state (selection, expansion, hidden, locked)
+// from the pre-parse tree onto the new tree. Same path + same element type →
+// same logical node (content edits, external text edits). A vanished path
+// (node deleted externally) drops its entries and clears the selection so a
+// later write can't hit an unrelated node that inherited the id.
+function reanchorNodeState(prev: ParsedUI | null, next: ParsedUI | null): void {
+  if (!prev?.root || !next?.root) return;
+
+  // oldId → newId for every node whose child-index path survives with the
+  // same element type.
+  const mapping: Record<number, number> = {};
+  const walk = (node: CodeUINode, path: number[]): void => {
+    const target = nodeAtPath(next.root, path);
+    if (target && target.type === node.type) {
+      mapping[node.entity as unknown as number] = target.entity as unknown as number;
+    }
+    node.children.forEach((child, i) => walk(child, [...path, i]));
+  };
+  walk(prev.root, []);
+  reduxStore.dispatch(remapNodeIds({ mapping }));
+
+  const selected = getSelectedNode(reduxStore.getState() as never);
+  if (selected == null) return;
+  const id = selected as unknown as number;
+  if (!pathToNode(prev.root, id)) return; // selection wasn't in this tree
+  const mapped = mapping[id];
+  if (mapped === undefined) {
+    reduxStore.dispatch(selectNode({ node: null }));
+  } else if (mapped !== id) {
+    reduxStore.dispatch(selectNode({ node: mapped as unknown as Entity }));
+  }
+}
+
 // Parse `source` (via the RPC bridge) and update the active tree. Keeps the
 // previous parsed tree on failure so a transient broken-code state doesn't blank
 // the canvas — the error is surfaced separately. `persist` (default true) writes
@@ -459,6 +542,12 @@ export async function loadAndParse(
       source,
       callbackVars(bindingSurface.variables),
     );
+    // Same-file reparse → ids were reassigned in source order; re-anchor every
+    // id-keyed consumer (selection, expansion, hidden/locked). A file SWITCH
+    // instead resets that state — the previous file's positional ids would
+    // collide with the new file's.
+    const sameFile = state.filename === filename;
+    const prevParsed = state.parsed;
     set({
       filename,
       source,
@@ -469,6 +558,9 @@ export async function loadAndParse(
       program,
       error: parsed ? null : 'This file does not follow the UI Designer convention',
     });
+    if (sameFile && parsed) reanchorNodeState(prevParsed, parsed);
+    else if (!sameFile) reduxStore.dispatch(resetNodeState());
+    publishHistory();
     // Phase 2 (async, non-blocking): fold in @ui-bind vars imported from other
     // files. The local surface is already live above, so the canvas doesn't wait.
     void augmentWithImports(filename, source, program, result.comments);
@@ -485,13 +577,133 @@ export async function loadAndParse(
   }
 }
 
-// Apply source edits (from a visual op) to the active buffer and reparse (+
-// persist to the scene folder).
-export async function applySourceEdits(edits: Edit[]): Promise<string> {
+// ---------------------------------------------------------------------------
+// Op serialization: every mutating op COMPUTES its span edits from the live
+// state and then applies them through an async RPC parse. Two ops in flight at
+// once would compute against the same stale tree — the second one's byte
+// offsets would be wrong against the first one's output (lost update or a
+// mis-placed splice). `exclusive` chains each public mutating op behind the
+// previous one; PRIVATE helpers (ensureStateScaffold, refreshRoots, …) stay
+// unqueued because they run inside an already-queued op (re-entrancy would
+// deadlock).
+// ---------------------------------------------------------------------------
+
+let opQueue: Promise<unknown> = Promise.resolve();
+
+function exclusive<A extends unknown[], R>(
+  fn: (...args: A) => Promise<R>,
+): (...args: A) => Promise<R> {
+  return (...args: A) => {
+    const run = opQueue.then(() => fn(...args));
+    opQueue = run.then(
+      () => undefined,
+      () => undefined,
+    );
+    return run;
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Undo/redo: per-file source-snapshot stacks. Every visual op flows through
+// applySourceEdits, which pushes the pre-edit source; undo/redo swap whole
+// buffers (source strings are small and splices are discrete ops, so snapshots
+// beat operational transforms in simplicity). External edits (disk watcher)
+// CLEAR the file's history — the external editor owns its own undo, and mixing
+// the two timelines silently reverts work the user did elsewhere.
+// ---------------------------------------------------------------------------
+
+const UNDO_CAP = 100;
+const undoStacks = new Map<string, string[]>();
+const redoStacks = new Map<string, string[]>();
+
+// Reflect the ACTIVE file's stack depths into reactive state (the toolbar's
+// undo/redo buttons read these). Cheap + idempotent — call after any stack
+// mutation or active-file change.
+function publishHistory(): void {
+  const file = state.filename;
+  const canUndo = !!file && (undoStacks.get(file)?.length ?? 0) > 0;
+  const canRedo = !!file && (redoStacks.get(file)?.length ?? 0) > 0;
+  if (canUndo !== state.canUndo || canRedo !== state.canRedo) set({ canUndo, canRedo });
+}
+
+function pushUndoSnapshot(filename: string, source: string): void {
+  const stack = undoStacks.get(filename) ?? [];
+  stack.push(source);
+  if (stack.length > UNDO_CAP) stack.shift();
+  undoStacks.set(filename, stack);
+  redoStacks.delete(filename); // a new edit invalidates the redo branch
+  publishHistory();
+}
+
+function clearHistory(filename: string): void {
+  undoStacks.delete(filename);
+  redoStacks.delete(filename);
+  publishHistory();
+}
+
+// Undo the last visual edit on the active file. Returns false when there is
+// nothing to undo.
+async function undoCodeUnlocked(): Promise<boolean> {
+  const file = state.filename;
+  if (!file) return false;
+  const stack = undoStacks.get(file);
+  const prev = stack?.pop();
+  if (prev === undefined) return false;
+  const redo = redoStacks.get(file) ?? [];
+  redo.push(state.source);
+  redoStacks.set(file, redo);
+  await loadAndParse(file, prev);
+  publishHistory();
+  return true;
+}
+
+async function redoCodeUnlocked(): Promise<boolean> {
+  const file = state.filename;
+  if (!file) return false;
+  const stack = redoStacks.get(file);
+  const next = stack?.pop();
+  if (next === undefined) return false;
+  const undo = undoStacks.get(file) ?? [];
+  undo.push(state.source);
+  undoStacks.set(file, undo);
+  await loadAndParse(file, next);
+  publishHistory();
+  return true;
+}
+
+// Format the ACTIVE buffer and reparse. Runs as part of every editor splice
+// (see applySourceEdits); ops that span-match offsets after their splice
+// (duplicate/move re-selection) pass `format: false` and call this AFTER the
+// match — formatting shifts every offset, and the reparse re-anchors ids via
+// the path mapping so the selection survives. No undo snapshot: the format is
+// part of the op, and undoing back to the pre-op source is what users expect.
+export async function formatActiveFile(): Promise<void> {
+  const file = state.filename;
+  if (!file || !state.source || state.error) return;
+  const formatted = await formatUiSource(state.source);
+  if (formatted === state.source) return;
+  await loadAndParse(file, formatted);
+}
+
+// Apply source edits (from a visual op) to the active buffer, format, and
+// reparse (+ persist to the scene folder). Pushes an undo snapshot of the
+// pre-edit source; a refused edit (splice produced a syntax error → not saved)
+// rolls the snapshot back off so undo never becomes a no-op entry.
+export async function applySourceEdits(
+  edits: Edit[],
+  opts: { format?: boolean } = {},
+): Promise<string> {
   const file = state.filename;
   if (!file) return state.source;
   const next = applyEdits(state.source, edits);
+  pushUndoSnapshot(file, state.source);
   await loadAndParse(file, next);
+  if (state.source !== next) {
+    undoStacks.get(file)?.pop();
+    publishHistory();
+    return next;
+  }
+  if (opts.format !== false) await formatActiveFile();
   return next;
 }
 
@@ -597,7 +809,7 @@ async function removeLegacySingleFile(): Promise<void> {
 
 // Create a new root: write src/ui/<Name>.tsx, refresh + regenerate the
 // aggregator, wire main(), then select it. Returns the resolved name.
-export async function createRoot(desiredName?: string): Promise<string> {
+async function createRootUnlocked(desiredName?: string): Promise<string> {
   const name = uniqueRootName(
     toComponentName(desiredName ?? 'MainUI'),
     state.roots.map(r => r.name),
@@ -619,15 +831,55 @@ export async function selectRootFile(filename: string): Promise<void> {
   await loadAndParse(filename, source, { persist: false });
 }
 
+// Parse every root except `exceptFilename` and return the ones whose source
+// references root `name` (imports it or renders `<Name />`).
+async function findReferrers(
+  name: string,
+  exceptFilename: string,
+): Promise<{ root: CodeRoot; source: string; program: unknown }[]> {
+  const parser = getCodeParser();
+  if (!parser) return [];
+  const out: { root: CodeRoot; source: string; program: unknown }[] = [];
+  for (const root of state.roots) {
+    if (root.filename === exceptFilename) continue;
+    const source =
+      root.filename === state.filename ? state.source : await readFromDisk(root.filename);
+    if (!source) continue;
+    try {
+      const result = await parser.parse(root.filename, source);
+      if (result.errors && result.errors.length > 0) continue;
+      if (referencesRoot(result.program as any, name)) {
+        out.push({ root, source, program: result.program });
+      }
+    } catch {
+      // unparseable file — can't be safely rewritten; treated as non-referrer
+    }
+  }
+  return out;
+}
+
 // Delete a root file, regenerate the aggregator, and reselect another root.
-export async function removeRoot(filename: string): Promise<void> {
+// BLOCKED (no delete) when other roots still reference the component — a
+// delete would leave them with a dangling import and break the scene build.
+// Returns the referrer names when blocked, null when deleted.
+async function removeRootUnlocked(filename: string): Promise<string[] | null> {
   const storage = getStorage();
-  if (!storage) return;
+  if (!storage) return null;
+  const name = state.roots.find(r => r.filename === filename)?.name;
+  if (name) {
+    const referrers = await findReferrers(name, filename);
+    if (referrers.length > 0) {
+      const names = referrers.map(r => r.root.name);
+      set({ error: `Can't delete ${name} — used by ${names.join(', ')}` });
+      return names;
+    }
+  }
   try {
     await storage.delete(filename);
   } catch {
     // ignore
   }
+  clearHistory(filename);
   const roots = await refreshRoots();
   await regenerateAggregator(roots);
   if (state.filename === filename) {
@@ -643,14 +895,16 @@ export async function removeRoot(filename: string): Promise<void> {
         componentTrees: {},
       });
   }
+  return null;
 }
 
 // Rename a root: rewrite the exported component identifier, write the new
-// src/ui/<NewName>.tsx, delete the old file, regenerate the aggregator + wire,
-// and reselect. Storage has no rename, so this is write-new + delete-old. The
-// Label text / other literals containing the old name are untouched (we splice
-// only the declaration identifier's span).
-export async function renameRoot(filename: string, desiredName: string): Promise<void> {
+// src/ui/<NewName>.tsx, delete the old file, RETARGET every referrer (other
+// roots importing/rendering the component get their import + JSX spliced to the
+// new name), regenerate the aggregator + wire, and reselect. Storage has no
+// rename, so this is write-new + delete-old. The Label text / other literals
+// containing the old name are untouched (we splice only identifier spans).
+async function renameRootUnlocked(filename: string, desiredName: string): Promise<void> {
   const root = state.roots.find(r => r.filename === filename);
   if (!root) return;
   const newName = uniqueRootName(
@@ -670,6 +924,10 @@ export async function renameRoot(filename: string, desiredName: string): Promise
   );
   if (!idSpan) return; // non-conforming file — leave it alone
 
+  // Collect referrers BEFORE the delete so their sources still parse against
+  // the old on-disk state.
+  const referrers = await findReferrers(root.name, filename);
+
   const renamed = source.slice(0, idSpan.start) + newName + source.slice(idSpan.end);
   const newFilename = `${UI_DIR}/${newName}${TSX}`;
   await writeToDisk(newFilename, renamed);
@@ -679,6 +937,16 @@ export async function renameRoot(filename: string, desiredName: string): Promise
     if (storage) await storage.delete(filename);
   } catch {
     // ignore
+  }
+  clearHistory(filename); // history keyed by the old path would strand
+
+  // Retarget referrers: import source ('./Old' → './New'), imported specifier,
+  // and (for unaliased imports) the JSX element names.
+  for (const ref of referrers) {
+    const edits = renameComponentRefEdits(ref.program as any, root.name, newName);
+    if (!edits.length) continue;
+    const next = applyEdits(ref.source, edits);
+    await writeToDisk(ref.root.filename, next);
   }
 
   const roots = await refreshRoots();
@@ -712,7 +980,12 @@ async function pollDisk(): Promise<void> {
     const file = state.filename;
     if (file && pendingWrites === 0) {
       const disk = await readFromDisk(file);
-      if (disk && disk !== state.source) await loadAndParse(file, disk, { persist: false });
+      if (disk && disk !== state.source) {
+        // An external editor changed the file — its editor owns that history;
+        // mixing timelines would let our undo silently revert external work.
+        clearHistory(file);
+        await loadAndParse(file, disk, { persist: false });
+      }
     }
     // 2. Roots added/removed externally → refresh the list + keep the aggregator
     //    in sync so the new/removed root renders (or stops rendering) in-scene.
@@ -808,8 +1081,39 @@ export function codeComponentValue(
 // Write helpers (canvas / panel visual ops → source splices).
 // ---------------------------------------------------------------------------
 
-// Route a PropertyPanel component patch to source splices.
-export async function spliceComponentPatch(
+// Gate for the element-prop write paths (uiTransform/uiBackground/…):
+// - A node whose props contain values the parser could not statically evaluate
+//   (a `state.x` binding, a spread) — the parsed model is LOSSY for those, and
+//   a re-emit would erase them from source.
+// - A component-ref instance — `<Name />` accepts only its DECLARED props;
+//   writing uiTransform onto it emits code its props type rejects (scene
+//   typecheck error). Position/size the instance via its wrapper UiEntity.
+// - An opaque node — not a representable element at all.
+function guardElementWrite(entityId: number, opName: string): boolean {
+  const node = findCodeNode(state.parsed?.root, entityId);
+  if (node?.componentRef) {
+    console.warn(
+      `[code-mode] ${opName}: <${node.componentRef.name} /> takes only its declared props — move/size its wrapper UiEntity instead`,
+    );
+    return false;
+  }
+  if (node?.opaque) {
+    console.warn(`[code-mode] ${opName}: opaque node — edit it in code instead`);
+    return false;
+  }
+  if (node?.dynamicProps) {
+    console.warn(
+      `[code-mode] ${opName}: node has dynamic props (bindings/spreads in uiTransform or uiBackground) — edit it in code instead`,
+    );
+    return false;
+  }
+  return true;
+}
+
+// Route a PropertyPanel component patch to source splices. Writes are SURGICAL:
+// only the ergonomic keys the patch touches are spliced — hand-authored props
+// the editor doesn't model survive byte-for-byte.
+async function spliceComponentPatchUnlocked(
   entityId: number,
   componentId: string,
   patch: Record<string, unknown>,
@@ -820,24 +1124,48 @@ export async function spliceComponentPatch(
 
   if (componentId === 'core::UiTransform') {
     // The panel patches flattened PB fields (dimensions + units, positionType,
-    // position/margin/padding edges). Re-emit the whole ergonomic uiTransform
-    // from the node's current PB merged with the patch, so enums, units, and
-    // nested edges all round-trip (not just bare-number dimensions). The
-    // synthetic `parent` (structural, from JSX nesting) is never emitted.
+    // position/margin/padding edges, border groups, opacity/zIndex). Each
+    // touched flattened key maps to one ergonomic uiTransform key, recomputed
+    // from the node's current PB merged with the patch (transform-patch.ts).
+    if (!guardElementWrite(entityId, 'spliceComponentPatch')) return;
     const node = findCodeNode(state.parsed?.root, entityId);
-    const merged = { ...((node?.uiTransform as Record<string, unknown>) ?? {}), ...patch };
-    delete merged.parent;
-    edits.push(...setAttribute(ast, 'uiTransform', pbToErgonomicTransform(merged)));
+    const current = (node?.uiTransform as Record<string, unknown>) ?? {};
+    edits.push(...uiTransformPatchEdits(ast, current, patch));
   } else if (componentId === 'core::UiBackground') {
-    if (patch.color !== undefined)
-      edits.push(...setObjectField(ast, 'uiBackground', 'color', patch.color));
-  } else if (componentId === 'core::UiText') {
-    // Label text props are top-level JSX attributes, not a nested object. The
-    // panel patches the PB numeric enums for textAlign/font; convert them back
-    // to the ergonomic strings react-ecs's <Label> expects before emitting
-    // (value/fontSize/color are the same shape on both sides).
+    if (!guardElementWrite(entityId, 'spliceComponentPatch')) return;
+    // Per-key surgical writes; PB shapes (TextureUnion, numeric enums) convert
+    // back to the ergonomic react-ecs form. A PB texture variant that react-ecs
+    // can't express (videoTexture) is skipped with a warning.
+    const fields: Record<string, unknown> = {};
+    for (const key of ['color', 'texture', 'textureMode', 'textureSlices', 'uvs']) {
+      if (!(key in patch)) continue;
+      const ergo = pbBackgroundFieldToErgo(key, patch[key]);
+      if (!ergo) {
+        console.warn(
+          `[code-mode] uiBackground.${key}: value not expressible in react-ecs — skipped`,
+        );
+        continue;
+      }
+      // Switching (or clearing) the texture kind must clear the other
+      // variant's ergonomic prop — react-ecs applies whichever is present.
+      if (ergo.key === 'texture' || ergo.key === 'avatarTexture') {
+        fields.texture = undefined;
+        fields.avatarTexture = undefined;
+      }
+      fields[ergo.key] = ergo.value;
+    }
+    if (Object.keys(fields).length) edits.push(...setObjectFields(ast, 'uiBackground', fields));
+  } else if (
+    componentId === 'core::UiText' ||
+    componentId === 'core::UiInput' ||
+    componentId === 'core::UiDropdown'
+  ) {
+    // Text / Input / Dropdown props are top-level JSX attributes, not a nested
+    // object. The panel patches the PB numeric enums for textAlign/font;
+    // convert them back to the ergonomic strings react-ecs expects before
+    // emitting (every other prop is the same shape on both sides).
     const ergo = pbToErgonomicText(patch);
-    for (const key of ['value', 'fontSize', 'color', 'textAlign', 'font']) {
+    for (const key of Object.keys(ergo)) {
       if (ergo[key] !== undefined) edits.push(...setAttribute(ast, key, ergo[key]));
     }
   }
@@ -846,31 +1174,29 @@ export async function spliceComponentPatch(
 }
 
 // Splice a resize (width/height, top-level ergonomic uiTransform fields) into
-// the source and reparse.
-export async function spliceUiTransformSize(
+// the source and reparse. One setObjectFields call: both fields compose against
+// the same AST pass (two separate calls would emit a duplicate attribute when
+// uiTransform is absent, or a comma-less pair when it's `{{}}`).
+async function spliceUiTransformSizeUnlocked(
   entityId: number,
   width: number,
   height: number,
 ): Promise<void> {
   const ast = astNodeFor(entityId) as Parameters<typeof setObjectField>[0] | undefined;
-  if (!ast) return;
-  const edits: Edit[] = [
-    ...setObjectField(ast, 'uiTransform', 'width', width),
-    ...setObjectField(ast, 'uiTransform', 'height', height),
-  ];
-  await applySourceEdits(edits);
+  if (!ast || !guardElementWrite(entityId, 'spliceUiTransformSize')) return;
+  await applySourceEdits(setObjectFields(ast, 'uiTransform', { width, height }));
 }
 
 // Move an ABSOLUTE node: splice the ergonomic `position: { top, left }` edges.
 // (Only used for nodes already positionType:'absolute' — the canvas moves in-flow
 // nodes via margin instead, see spliceUiTransformMargin.)
-export async function spliceUiTransformPosition(
+async function spliceUiTransformPositionUnlocked(
   entityId: number,
   top: number,
   left: number,
 ): Promise<void> {
   const ast = astNodeFor(entityId) as Parameters<typeof setObjectField>[0] | undefined;
-  if (!ast) return;
+  if (!ast || !guardElementWrite(entityId, 'spliceUiTransformPosition')) return;
   await applySourceEdits(setObjectField(ast, 'uiTransform', 'position', { top, left }));
 }
 
@@ -879,29 +1205,50 @@ export async function spliceUiTransformPosition(
 // the node responsive (laid out by the parent) rather than converting it to
 // absolute. Note: margin offsets the node from its flow origin, so elements
 // after it in the flow shift accordingly.
-export async function spliceUiTransformMargin(
+async function spliceUiTransformMarginUnlocked(
   entityId: number,
   top: number,
   left: number,
 ): Promise<void> {
   const ast = astNodeFor(entityId) as Parameters<typeof setObjectField>[0] | undefined;
-  if (!ast) return;
+  if (!ast || !guardElementWrite(entityId, 'spliceUiTransformMargin')) return;
   await applySourceEdits(setObjectField(ast, 'uiTransform', 'margin', { top, left }));
 }
 
-// Insert a new child element of the given type into a parent node.
-export async function spliceAddChild(parentEntityId: number, type: UINodeType): Promise<void> {
+// Seed JSX per widget type — each palette entry inserts its REAL react-ecs
+// element (an Input drop must produce `<Input …/>`, not a container). Every
+// react-ecs element accepts EntityPropTypes (uiTransform/uiBackground/mouse
+// events), so each template seeds a uiTransform — the dropped widget is
+// immediately sized, movable, and resizable.
+const CHILD_TEMPLATES: Record<UINodeType, string> = {
+  UiEntity:
+    '<UiEntity uiTransform={{ width: 200, height: 100 }} uiBackground={{ color: { r: 1, g: 1, b: 1, a: 0.1 } }} />',
+  Label: '<Label value="Label" fontSize={24} uiTransform={{ width: 200, height: 36 }} />',
+  Button: '<Button value="Button" fontSize={18} uiTransform={{ width: 160, height: 44 }} />',
+  Input: '<Input placeholder="Type here" fontSize={18} uiTransform={{ width: 240, height: 44 }} />',
+  Dropdown:
+    "<Dropdown options={['Option 1', 'Option 2']} fontSize={18} uiTransform={{ width: 240, height: 44 }} />",
+};
+
+// The Image preset: a container seeded texture-ready (opaque white tint +
+// stretch) so picking a file in the panel's Texture field lights it up.
+const IMAGE_TEMPLATE =
+  "<UiEntity uiTransform={{ width: 200, height: 200 }} uiBackground={{ color: { r: 1, g: 1, b: 1, a: 1 }, textureMode: 'stretch' }} />";
+
+// Insert a new child element of the given type (or creation preset) into a
+// parent node.
+async function spliceAddChildUnlocked(
+  parentEntityId: number,
+  type: UINodeType,
+  preset?: 'image',
+): Promise<void> {
   const ast = astNodeFor(parentEntityId) as Parameters<typeof insertChild>[0] | undefined;
-  if (!ast) return;
-  const node =
-    type === 'Label'
-      ? { type: 'Label' as const, uiText: { value: 'Label', fontSize: 24 } }
-      : {
-          type: 'UiEntity' as const,
-          uiTransform: { width: 200, height: 100 },
-          uiBackground: { color: { r: 1, g: 1, b: 1, a: 0.1 } },
-        };
-  await applySourceEdits(insertChild(ast, state.source, emitElement(node)));
+  // A component instance doesn't render arbitrary children — refuse the drop
+  // (guardElementWrite also covers opaque/dynamic parents).
+  if (!ast || !guardElementWrite(parentEntityId, 'spliceAddChild')) return;
+  const jsx =
+    preset === 'image' ? IMAGE_TEMPLATE : (CHILD_TEMPLATES[type] ?? CHILD_TEMPLATES.UiEntity);
+  await applySourceEdits(insertChild(ast, state.source, jsx));
 }
 
 // ---------------------------------------------------------------------------
@@ -946,7 +1293,7 @@ export async function canNest(parentRootName: string, childName: string): Promis
 
 // Nest a component: splice `<Name />` as a child of the parent node and ensure
 // `import { Name } from './Name'`. No-ops (with a warning) if it would cycle.
-export async function spliceInsertComponent(
+async function spliceInsertComponentUnlocked(
   parentEntityId: number,
   componentName: string,
 ): Promise<void> {
@@ -974,7 +1321,7 @@ export async function spliceInsertComponent(
 // (`<Name prop={value} />`) on the reference element, coercing `rawValue` to the
 // declared type. This is the per-instance counterpart to declaring the prop on
 // the component (addBindProp).
-export async function spliceInstanceProp(
+async function spliceInstancePropUnlocked(
   entityId: number,
   name: string,
   type: string,
@@ -982,6 +1329,13 @@ export async function spliceInstanceProp(
 ): Promise<void> {
   const ast = astNodeFor(entityId) as Parameters<typeof setAttribute>[0] | undefined;
   if (!ast) return;
+  // A non-primitive declared prop type can't be represented by a coerced
+  // literal — writing one would corrupt a hand-authored value (e.g. a
+  // function). The panel renders these read-only; this is the backstop.
+  if (type !== 'string' && type !== 'number' && type !== 'boolean') {
+    console.warn(`[code-mode] prop "${name}" has a non-primitive type — edit it in code`);
+    return;
+  }
   const value: string | number | boolean =
     type === 'number'
       ? Number.isFinite(Number(rawValue))
@@ -995,7 +1349,7 @@ export async function spliceInstanceProp(
 
 // Clear a prop on the instance (remove its JSX attribute → the prop falls back
 // to whatever default the component applies).
-export async function unsetInstanceProp(entityId: number, name: string): Promise<void> {
+async function unsetInstancePropUnlocked(entityId: number, name: string): Promise<void> {
   const ast = astNodeFor(entityId) as Parameters<typeof removeAttribute>[0] | undefined;
   if (!ast) return;
   await applySourceEdits(removeAttribute(ast, state.source, name));
@@ -1004,7 +1358,7 @@ export async function unsetInstanceProp(entityId: number, name: string): Promise
 // Toggle a root between top-level (aggregated screen) and component (nested-only):
 // splice the `/** @ui-component */` marker in/out, update the root list, and
 // regenerate the aggregator.
-export async function toggleTopLevel(filename: string): Promise<void> {
+async function toggleTopLevelUnlocked(filename: string): Promise<void> {
   const root = state.roots.find(r => r.filename === filename);
   if (!root) return;
   const newTopLevel = !root.topLevel;
@@ -1024,8 +1378,12 @@ export async function toggleTopLevel(filename: string): Promise<void> {
   );
   if (edits.length) {
     const next = applyEdits(source, edits);
-    if (isActive) await loadAndParse(filename, next);
-    else await writeToDisk(filename, next);
+    if (isActive) {
+      pushUndoSnapshot(filename, source);
+      await loadAndParse(filename, next);
+    } else {
+      await writeToDisk(filename, next);
+    }
   }
   const roots = state.roots.map(r =>
     r.filename === filename ? { ...r, topLevel: newTopLevel } : r,
@@ -1035,7 +1393,7 @@ export async function toggleTopLevel(filename: string): Promise<void> {
 }
 
 // Delete a node (or opaque block) by removing its source span.
-export async function spliceRemoveNode(entityId: number): Promise<void> {
+async function spliceRemoveNodeUnlocked(entityId: number): Promise<void> {
   const ast = astNodeFor(entityId) as Parameters<typeof removeNode>[0] | undefined;
   if (!ast) return;
   await applySourceEdits(removeNode(ast));
@@ -1046,21 +1404,69 @@ export async function spliceRemoveNode(entityId: number): Promise<void> {
 // (works across parents too); `into` reparents as the last child of the target.
 export type MoveAnchor = { kind: 'after' | 'before' | 'into'; targetId: number };
 
-export async function spliceMove(entityId: number, anchor: MoveAnchor): Promise<void> {
-  const el = astNodeFor(entityId) as Parameters<typeof removeNode>[0] | undefined;
-  const target = astNodeFor(anchor.targetId) as Parameters<typeof insertChild>[0] | undefined;
+async function spliceMoveUnlocked(entityId: number, anchor: MoveAnchor): Promise<void> {
+  const el = astNodeFor(entityId) as
+    | (Parameters<typeof removeNode>[0] & Record<string, any>)
+    | undefined;
+  const target = astNodeFor(anchor.targetId) as
+    | (Parameters<typeof insertChild>[0] & Record<string, any>)
+    | undefined;
   if (!el || !target || anchor.targetId === entityId) return;
   // Never move an element into itself or one of its own descendants.
   if (target.start >= el.start && target.end <= el.end) return;
+  // Never move a node INTO a component instance — `<Name />` doesn't render
+  // arbitrary children (store-level backstop; the tree also blocks the drop).
+  if (anchor.kind === 'into') {
+    const targetNode = findCodeNode(state.parsed?.root, anchor.targetId);
+    if (targetNode?.componentRef) {
+      console.warn('[code-mode] cannot nest children inside a component instance');
+      return;
+    }
+  }
 
+  const elLen = el.end - el.start;
+  // Where the moved element's text will START in the post-edit source — the
+  // insertion offset adjusted for the removal of the element's own span when
+  // that span precedes the insertion point. Mirrors moveElement/insertChild's
+  // text layout (leading '\n' when moving forward; '>\n  ' when converting a
+  // self-closing parent).
+  let expectedStart: number;
   let edits: Edit[];
   if (anchor.kind === 'into') {
     const raw = state.source.slice(el.start, el.end);
     edits = [...removeNode(el), ...insertChild(target, state.source, raw)];
+    const closing = target.closingElement as { start: number } | undefined;
+    if (closing) {
+      const at = closing.start;
+      expectedStart = el.end <= at ? at - elLen : at;
+    } else {
+      const open = target.openingElement as { end: number };
+      const slashGt = state.source.lastIndexOf('/>', open.end);
+      const at = slashGt >= 0 ? slashGt : open.end - 2;
+      expectedStart = (el.end <= at ? at - elLen : at) + '>\n  '.length;
+    }
   } else {
-    edits = moveElement(state.source, el, anchor.kind === 'after' ? target.end : target.start);
+    const insertAt = anchor.kind === 'after' ? target.end : target.start;
+    edits = moveElement(state.source, el, insertAt);
+    expectedStart = insertAt >= el.end ? insertAt - elLen + 1 : insertAt;
   }
-  await applySourceEdits(edits);
+  await applySourceEdits(edits, { format: false });
+
+  // Re-select the moved node: the generic path re-anchor can't follow a
+  // structural move (its path changed on purpose), so span-match the expected
+  // start offset — the same technique spliceDuplicate uses. Splice runs
+  // UNFORMATTED so the offset math holds; format afterwards (the reparse
+  // re-anchors the selection via the path mapping).
+  const spans = state.parsed?.spans;
+  if (spans) {
+    for (const [id, span] of spans) {
+      if (span[0] === expectedStart) {
+        reduxStore.dispatch(selectNode({ node: id as unknown as Entity }));
+        break;
+      }
+    }
+  }
+  await formatActiveFile();
 }
 
 // Duplicate a node: insert a verbatim copy of its source immediately after it
@@ -1068,23 +1474,31 @@ export async function spliceMove(entityId: number, anchor: MoveAnchor): Promise<
 // new clone's synthetic id (or null). Parse ids are assigned in source order and
 // the copy's JSX starts one char past the original (after the inserted '\n'), so
 // after the reparse the clone is the node whose span begins at that offset.
-export async function spliceDuplicate(entityId: number): Promise<number | null> {
+async function spliceDuplicateUnlocked(entityId: number): Promise<number | null> {
   const el = astNodeFor(entityId) as Parameters<typeof removeNode>[0] | undefined;
   if (!el) return null;
   const raw = state.source.slice(el.start, el.end);
   const cloneStart = el.end + 1; // just after the inserted leading '\n'
-  await applySourceEdits([{ start: el.end, end: el.end, text: `\n${raw}` }]);
+  // Splice UNFORMATTED so the clone's expected offset stays valid for the
+  // span-match below; format afterwards (the reparse re-anchors the id).
+  await applySourceEdits([{ start: el.end, end: el.end, text: `\n${raw}` }], { format: false });
   const spans = state.parsed?.spans;
   if (!spans) return null;
+  let cloneId: number | null = null;
   for (const [id, span] of spans) {
-    if (span[0] === cloneStart) return id;
+    if (span[0] === cloneStart) {
+      cloneId = id;
+      break;
+    }
   }
-  return null;
+  if (cloneId !== null) reduxStore.dispatch(selectNode({ node: cloneId as unknown as Entity }));
+  await formatActiveFile();
+  return cloneId;
 }
 
 // Bind a top-level attribute to a variable/handler expression — `value={score}`,
 // `onMouseDown={onStart}` — the @ui-bind / @ui-action write path.
-export async function bindAttribute(entityId: number, name: string, expr: string): Promise<void> {
+async function bindAttributeUnlocked(entityId: number, name: string, expr: string): Promise<void> {
   const ast = astNodeFor(entityId) as Parameters<typeof setAttributeExpr>[0] | undefined;
   if (!ast) return;
   await applySourceEdits(setAttributeExpr(ast, name, expr));
@@ -1093,7 +1507,7 @@ export async function bindAttribute(entityId: number, name: string, expr: string
 // Unbind a top-level attribute: remove it entirely so the field reverts to
 // unset (the author can then type a literal). The code equivalent of the classic
 // unbindField op.
-export async function unbindAttribute(entityId: number, name: string): Promise<void> {
+async function unbindAttributeUnlocked(entityId: number, name: string): Promise<void> {
   const ast = astNodeFor(entityId) as Parameters<typeof removeAttribute>[0] | undefined;
   if (!ast) return;
   await applySourceEdits(removeAttribute(ast, state.source, name));
@@ -1103,7 +1517,7 @@ export async function unbindAttribute(entityId: number, name: string): Promise<v
 // expressions) as a template literal, e.g. `value={`Score: ${state.score}`}`. An
 // all-literal list collapses to a plain string; a single binding to a bare
 // expression (see emit-adapter setAttributeSegments).
-export async function setMixedContentAttribute(
+async function setMixedContentAttributeUnlocked(
   entityId: number,
   name: string,
   segments: { kind: string; value: string }[],
@@ -1128,7 +1542,7 @@ async function ensureStateScaffold(): Promise<void> {
 // Add a bindable variable to the typed `state` object (seeding the scaffold first
 // if absent), then reparse. `rawDefault` (optional) is the user-entered default;
 // omitted → the type's zero default. The surface then includes `state.<name>`.
-export async function addBindVariable(
+async function addBindVariableUnlocked(
   name: string,
   type: string,
   rawDefault?: string,
@@ -1140,7 +1554,7 @@ export async function addBindVariable(
 }
 
 // Set a state variable's default value (splices its object initializer).
-export async function setStateVariableValue(
+async function setStateVariableValueUnlocked(
   name: string,
   type: string,
   rawDefault: string,
@@ -1151,23 +1565,29 @@ export async function setStateVariableValue(
 }
 
 // Add an event-handler callback: seed a top-level `/** @ui-action */ function
-// <name>(state: State) {}`. Taking `state` as a PARAMETER (rather than closing
-// over the module const) keeps the handler a pure function of state and avoids
-// use-before-declaration when it's emitted above the `state` const. It appears in
-// the callbacks panel and binds to an event via a thunk
-// (`onMouseDown={() => <name>(state)}`). ensureStateScaffold runs first so the
-// `State` param type exists.
-export async function addBindAction(name: string): Promise<void> {
+// <name>(state: State, value?) {}`. Taking `state` as a PARAMETER (rather than
+// closing over the module const) keeps the handler a pure function of state and
+// avoids use-before-declaration when it's emitted above the `state` const.
+// `value` carries the event payload — Input.onChange/onSubmit deliver the typed
+// text and Dropdown.onChange the selected index; mouse events leave it
+// undefined. It appears in the callbacks panel and binds to an event via a
+// thunk (`onChange={(value) => <name>(state, value)}`). ensureStateScaffold
+// runs first so the `State` param type exists.
+async function addBindActionUnlocked(name: string): Promise<void> {
   await ensureStateScaffold();
   if (!state.program) return;
   const at = afterImports(state.program as any);
   await applySourceEdits([
-    { start: at, end: at, text: `\n\n/** @ui-action */\nfunction ${name}(state: State) {}` },
+    {
+      start: at,
+      end: at,
+      text: `\n\n/** @ui-action */\nfunction ${name}(state: State, value?: string | number) {}`,
+    },
   ]);
 }
 
 // Remove an entire callback handler (function + its @ui-action comment).
-export async function removeAction(name: string): Promise<void> {
+async function removeActionUnlocked(name: string): Promise<void> {
   if (!state.program) return;
   const edits = removeActionDecl(state.program as any, name, lastComments as any, state.source);
   if (edits.length) await applySourceEdits(edits);
@@ -1176,7 +1596,7 @@ export async function removeAction(name: string): Promise<void> {
 // Set a handler's whole body from a `{{ var }}` template: resolve each
 // placeholder to the variable's expression, then splice the body. props are out
 // of scope in a handler, so they're excluded from the resolvable set.
-export async function setActionBody(name: string, template: string): Promise<void> {
+async function setActionBodyUnlocked(name: string, template: string): Promise<void> {
   if (!state.program) return;
   const code = templateToBody(template, callbackVars(state.bindingSurface.variables));
   const edits = setActionBodyEdit(state.program as any, name, code);
@@ -1184,7 +1604,7 @@ export async function setActionBody(name: string, template: string): Promise<voi
 }
 
 // Remove a variable from the typed `state` object (+ its interface member).
-export async function removeStateVariable(name: string): Promise<void> {
+async function removeStateVariableUnlocked(name: string): Promise<void> {
   if (!state.program) return;
   const edits = removeStateProperty(state.program as any, name);
   if (edits.length) await applySourceEdits(edits);
@@ -1192,7 +1612,7 @@ export async function removeStateVariable(name: string): Promise<void> {
 
 // Change a state variable's type (rewrites the interface member type and resets
 // the initializer to the new type's default).
-export async function retypeStateVariable(name: string, type: string): Promise<void> {
+async function retypeStateVariableUnlocked(name: string, type: string): Promise<void> {
   if (!state.program) return;
   const edits = setStatePropertyType(state.program as any, name, type);
   if (edits.length) await applySourceEdits(edits);
@@ -1206,15 +1626,15 @@ function activeComponentName(): string | undefined {
 // Declare a prop on the active component (seeding the `props: {}` parameter when
 // absent). It then appears as `props.<name>` in the field-binding surface, and a
 // nested instance can set its value (see spliceInstanceProp).
-export async function addBindProp(name: string, type: string): Promise<void> {
+async function addBindPropUnlocked(name: string, type: string): Promise<void> {
   const cn = activeComponentName();
   if (!state.program || !cn) return;
-  const edits = addPropsProperty(state.program as any, state.source, cn, name, type);
+  const edits = addPropsProperty(state.program as any, state.source, cn, name, propTypeToTs(type));
   if (edits.length) await applySourceEdits(edits);
 }
 
 // Remove a prop from the active component's props type.
-export async function removeProp(name: string): Promise<void> {
+async function removePropUnlocked(name: string): Promise<void> {
   const cn = activeComponentName();
   if (!state.program || !cn) return;
   const edits = removePropsProperty(state.program as any, cn, name);
@@ -1222,9 +1642,44 @@ export async function removeProp(name: string): Promise<void> {
 }
 
 // Change a prop's type.
-export async function retypeProp(name: string, type: string): Promise<void> {
+async function retypePropUnlocked(name: string, type: string): Promise<void> {
   const cn = activeComponentName();
   if (!state.program || !cn) return;
-  const edits = setPropsPropertyType(state.program as any, cn, name, type);
+  const edits = setPropsPropertyType(state.program as any, cn, name, propTypeToTs(type));
   if (edits.length) await applySourceEdits(edits);
 }
+
+// ---------------------------------------------------------------------------
+// Public mutating API — every op is serialized through the exclusive queue
+// (see `exclusive` above). Add new mutating ops HERE, not as bare exports.
+// ---------------------------------------------------------------------------
+export const undoCode = exclusive(undoCodeUnlocked);
+export const redoCode = exclusive(redoCodeUnlocked);
+export const createRoot = exclusive(createRootUnlocked);
+export const removeRoot = exclusive(removeRootUnlocked);
+export const renameRoot = exclusive(renameRootUnlocked);
+export const toggleTopLevel = exclusive(toggleTopLevelUnlocked);
+export const spliceComponentPatch = exclusive(spliceComponentPatchUnlocked);
+export const spliceUiTransformSize = exclusive(spliceUiTransformSizeUnlocked);
+export const spliceUiTransformPosition = exclusive(spliceUiTransformPositionUnlocked);
+export const spliceUiTransformMargin = exclusive(spliceUiTransformMarginUnlocked);
+export const spliceAddChild = exclusive(spliceAddChildUnlocked);
+export const spliceInsertComponent = exclusive(spliceInsertComponentUnlocked);
+export const spliceInstanceProp = exclusive(spliceInstancePropUnlocked);
+export const unsetInstanceProp = exclusive(unsetInstancePropUnlocked);
+export const spliceRemoveNode = exclusive(spliceRemoveNodeUnlocked);
+export const spliceMove = exclusive(spliceMoveUnlocked);
+export const spliceDuplicate = exclusive(spliceDuplicateUnlocked);
+export const bindAttribute = exclusive(bindAttributeUnlocked);
+export const unbindAttribute = exclusive(unbindAttributeUnlocked);
+export const setMixedContentAttribute = exclusive(setMixedContentAttributeUnlocked);
+export const addBindVariable = exclusive(addBindVariableUnlocked);
+export const setStateVariableValue = exclusive(setStateVariableValueUnlocked);
+export const addBindAction = exclusive(addBindActionUnlocked);
+export const removeAction = exclusive(removeActionUnlocked);
+export const setActionBody = exclusive(setActionBodyUnlocked);
+export const removeStateVariable = exclusive(removeStateVariableUnlocked);
+export const retypeStateVariable = exclusive(retypeStateVariableUnlocked);
+export const addBindProp = exclusive(addBindPropUnlocked);
+export const removeProp = exclusive(removePropUnlocked);
+export const retypeProp = exclusive(retypePropUnlocked);

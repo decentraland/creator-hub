@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { applyEdits } from './emit-adapter';
 import {
   addPropsProperty,
+  propTypeToTs,
   readPropsVariables,
   removePropsProperty,
   setPropsPropertyType,
@@ -85,5 +86,44 @@ describe('removePropsProperty / setPropsPropertyType', () => {
   it('returns [] for an unknown prop', () => {
     expect(removePropsProperty(program(WITH_PROPS), 'Card', 'nope')).toEqual([]);
     expect(setPropsPropertyType(program(WITH_PROPS), 'Card', 'nope', 'string')).toEqual([]);
+  });
+});
+
+describe('callback-typed props', () => {
+  it('reads a function-typed member as type "callback"', () => {
+    const src = `export function Card(props: { title: string; onSave: (value?: string | number) => void }) {
+  return <UiEntity />
+}`;
+    expect(readPropsVariables(program(src), 'Card')).toEqual([
+      { name: 'title', type: 'string' },
+      { name: 'onSave', type: 'callback' },
+    ]);
+  });
+
+  it('reads a non-primitive non-function member as "unknown" (not coerced to string)', () => {
+    const src = `export function Card(props: { style: { color: string } }) {
+  return <UiEntity />
+}`;
+    expect(readPropsVariables(program(src), 'Card')).toEqual([{ name: 'style', type: 'unknown' }]);
+  });
+
+  it('propTypeToTs maps callback to the handler-shaped function type', () => {
+    expect(propTypeToTs('callback')).toBe('(value?: string | number) => void');
+    expect(propTypeToTs('string')).toBe('string');
+  });
+
+  it('declaring a callback prop splices a valid function type that round-trips', () => {
+    const src = `export function Card(props: { title: string }) {
+  return <UiEntity />
+}`;
+    const next = applyEdits(
+      src,
+      addPropsProperty(program(src), src, 'Card', 'onSave', propTypeToTs('callback')),
+    );
+    expect(next).toContain('onSave: (value?: string | number) => void');
+    expect(readPropsVariables(program(next), 'Card')).toEqual([
+      { name: 'title', type: 'string' },
+      { name: 'onSave', type: 'callback' },
+    ]);
   });
 });

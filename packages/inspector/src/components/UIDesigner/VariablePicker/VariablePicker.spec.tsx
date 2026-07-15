@@ -1,10 +1,10 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 
-import { VariablePicker } from './VariablePicker';
+import { VariablePicker, thunkExprFor } from './VariablePicker';
 
-// Code mode: the picker lists the parsed binding surface (typed `state` vars +
-// @ui-bind markers), not the classic asset-packs::UI marker.
+// The picker lists the parsed binding surface (typed `state` vars +
+// @ui-bind markers).
 vi.mock('../code/store', () => ({
   useCodeState: () => ({
     bindingSurface: {
@@ -59,5 +59,31 @@ describe('VariablePicker type restriction (code mode)', () => {
     // Variables are not offered on a callback field.
     expect(screen.queryByText('label')).toBeNull();
     expect(screen.getByText('+ Add new callback…')).toBeTruthy();
+  });
+});
+
+describe('thunkExprFor', () => {
+  const field = (componentId: string, path: string) =>
+    ({ label: path, componentId, path, kind: 'callback' }) as never;
+
+  it('emits a zero-arg thunk for mouse events (react-ecs Callback takes no args)', () => {
+    expect(thunkExprFor(field('ui::events', 'onMouseDown'), 'onClick')).toBe(
+      '() => onClick(state)',
+    );
+  });
+
+  it('emits a typed value-bearing thunk for Input/Dropdown events', () => {
+    expect(thunkExprFor(field('core::UiInput', 'onChange'), 'onType')).toBe(
+      '(value: string | number) => onType(state, value)',
+    );
+    expect(thunkExprFor(field('core::UiDropdown', 'onChange'), 'onPick')).toBe(
+      '(value: string | number) => onPick(state, value)',
+    );
+  });
+
+  it('emits an optional-param thunk for callback props (declared `(value?: …) => void`)', () => {
+    expect(thunkExprFor(field('ui::props', 'onSave'), 'onSave')).toBe(
+      '(value?: string | number) => onSave(state, value)',
+    );
   });
 });

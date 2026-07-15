@@ -8,13 +8,12 @@ import {
   type UINodeType,
 } from '../tree-model';
 
-// Segment-kind string values, matching @dcl/asset-packs' SegmentKind
-// ('literal' / 'binding') — the values previewBoundText compares against. Kept
-// as local constants (not the asset-packs enum) so this pure, Node-testable
-// parser doesn't pull the asset-packs runtime.
+// Segment-kind string values ('literal' / 'binding') — the values
+// previewBoundText compares against (tree-model's SegmentKind). Kept as local
+// constants so this pure parser has no value imports beyond types.
 const SEG_LITERAL = 'literal';
 const SEG_BINDING = 'binding';
-import { ergonomicToPBText, ergonomicToPBTransform } from './ecs-shape';
+import { ergonomicToPBBackground, ergonomicToPBText, ergonomicToPBTransform } from './ecs-shape';
 import type { CodeUINode, ComponentRefProp, ParsedUI, Span } from './types';
 
 // ---------------------------------------------------------------------------
@@ -41,8 +40,48 @@ const ELEMENT_TYPE: Record<string, UINodeType> = {
   Button: 'Button',
 };
 
-// Props folded into `uiText` for a Label (kept minimal for the thin slice).
-const UI_TEXT_PROPS = new Set(['value', 'fontSize', 'textAlign', 'color', 'font']);
+// Props folded into `uiText` for a Label / Button (Button extends
+// UiLabelProps in react-ecs).
+const UI_TEXT_PROPS = new Set(['value', 'fontSize', 'textAlign', 'color', 'font', 'textWrap']);
+
+// Props folded into `uiInput` for an Input (react-ecs UiInputProps —
+// PBUiInput fields with textAlign/font as ergonomic strings).
+const UI_INPUT_PROPS = new Set([
+  'placeholder',
+  'value',
+  'color',
+  'placeholderColor',
+  'disabled',
+  'textAlign',
+  'font',
+  'fontSize',
+]);
+
+// Props folded into `uiDropdown` for a Dropdown (react-ecs UiDropdownProps).
+const UI_DROPDOWN_PROPS = new Set([
+  'acceptEmpty',
+  'emptyLabel',
+  'options',
+  'selectedIndex',
+  'disabled',
+  'color',
+  'textAlign',
+  'font',
+  'fontSize',
+]);
+
+// Which prop set folds into which node field, per element type.
+const TYPED_PROP_GROUPS: Partial<
+  Record<
+    UINodeType,
+    { props: Set<string>; field: 'uiText' | 'uiInput' | 'uiDropdown'; componentId: string }
+  >
+> = {
+  Label: { props: UI_TEXT_PROPS, field: 'uiText', componentId: 'core::UiText' },
+  Button: { props: UI_TEXT_PROPS, field: 'uiText', componentId: 'core::UiText' },
+  Input: { props: UI_INPUT_PROPS, field: 'uiInput', componentId: 'core::UiInput' },
+  Dropdown: { props: UI_DROPDOWN_PROPS, field: 'uiDropdown', componentId: 'core::UiDropdown' },
+};
 
 // oxc-parser defaults to `preserveParens: true`, so `( expr )` is wrapped in a
 // ParenthesizedExpression node. Peel those off before inspecting an expression.
@@ -54,8 +93,12 @@ function unparen(node: AnyNode): AnyNode {
 
 // Static-evaluate an expression to a plain JS value. Returns `{ ok: false }`
 // for anything non-literal (identifiers, calls, member access) so the caller
-// can decide whether to skip the prop or mark the node dynamic.
-function evalExpr(input: AnyNode): { ok: true; value: unknown } | { ok: false } {
+// can decide whether to skip the prop or mark the node dynamic. For object
+// literals the evaluation is PARTIAL: unevaluable fields/spreads are dropped
+// from the value and reported via `dynamic: true` — the caller MUST treat a
+// dynamic result as read-only (a write re-emitting the partial value would
+// erase the dynamic parts from source).
+function evalExpr(input: AnyNode): { ok: true; value: unknown; dynamic?: boolean } | { ok: false } {
   const node = unparen(input);
   switch (node.type) {
     case 'Literal':
@@ -63,14 +106,16 @@ function evalExpr(input: AnyNode): { ok: true; value: unknown } | { ok: false } 
     case 'UnaryExpression': {
       const arg = evalExpr(node.argument);
       if (!arg.ok) return { ok: false };
-      if (node.operator === '-') return { ok: true, value: -(arg.value as number) };
-      if (node.operator === '+') return { ok: true, value: +(arg.value as number) };
-      if (node.operator === '!') return { ok: true, value: !arg.value };
+      if (node.operator === '-')
+        return { ok: true, value: -(arg.value as number), dynamic: arg.dynamic };
+      if (node.operator === '+')
+        return { ok: true, value: +(arg.value as number), dynamic: arg.dynamic };
+      if (node.operator === '!') return { ok: true, value: !arg.value, dynamic: arg.dynamic };
       return { ok: false };
     }
     case 'ObjectExpression': {
       const r = evalObject(node);
-      return { ok: true, value: r.obj };
+      return { ok: true, value: r.obj, dynamic: r.hadDynamic || undefined };
     }
     case 'ArrayExpression': {
       const out: unknown[] = [];
@@ -88,7 +133,7 @@ function evalExpr(input: AnyNode): { ok: true; value: unknown } | { ok: false } 
 }
 
 // Evaluate an ObjectExpression's literal properties. `hadDynamic` is true when
-// a value (or a spread) could not be statically evaluated.
+// a value (or a spread, or any NESTED value) could not be statically evaluated.
 function evalObject(node: AnyNode): { obj: Record<string, unknown>; hadDynamic: boolean } {
   const obj: Record<string, unknown> = {};
   let hadDynamic = false;
@@ -99,8 +144,12 @@ function evalObject(node: AnyNode): { obj: Record<string, unknown>; hadDynamic: 
     }
     const key = prop.key.type === 'Identifier' ? prop.key.name : prop.key.value;
     const v = evalExpr(prop.value);
-    if (v.ok) obj[String(key)] = v.value;
-    else hadDynamic = true;
+    if (v.ok) {
+      obj[String(key)] = v.value;
+      if (v.dynamic) hadDynamic = true;
+    } else {
+      hadDynamic = true;
+    }
   }
   return { obj, hadDynamic };
 }
@@ -130,8 +179,10 @@ function readAttributes(el: AnyNode): { attrs: Map<string, AnyNode>; hasSpread: 
 
 // Resolve a JSXAttribute's value to a static JS value. Handles the two forms:
 // bare string (`value="x"` → Literal) and braces (`fontSize={24}` →
-// JSXExpressionContainer). Returns `{ ok:false }` for dynamic expressions.
-function attrValue(attr: AnyNode): { ok: true; value: unknown } | { ok: false } {
+// JSXExpressionContainer). Returns `{ ok:false }` for dynamic expressions;
+// `dynamic: true` flags a PARTIALLY-static object (some fields unevaluable) —
+// display it, never re-emit it.
+function attrValue(attr: AnyNode): { ok: true; value: unknown; dynamic?: boolean } | { ok: false } {
   const v = attr.value as AnyNode | null;
   if (v == null) return { ok: true, value: true }; // bare boolean attr
   if (v.type === 'Literal') return { ok: true, value: v.value };
@@ -198,9 +249,9 @@ function templateSegments(attr: AnyNode, source: string): CanvasSegment[] | null
 }
 
 // Event-handler attrs → the field-config componentId the panel keys their
-// bindings under (mirrors field-configs' event groups): mouse events on the UI
-// marker; onChange/onSubmit on the Input/Dropdown component. Returns null for a
-// non-event attr.
+// bindings under (mirrors field-configs' event groups): mouse events in the
+// editor-internal `ui::events` namespace; onChange/onSubmit on the
+// Input/Dropdown component. Returns null for a non-event attr.
 function eventFieldKey(type: UINodeType, attr: string): string | null {
   if (
     attr === 'onMouseDown' ||
@@ -208,7 +259,7 @@ function eventFieldKey(type: UINodeType, attr: string): string | null {
     attr === 'onMouseEnter' ||
     attr === 'onMouseLeave'
   )
-    return `asset-packs::UI.${attr}`;
+    return `ui::events.${attr}`;
   if (attr === 'onChange' || attr === 'onSubmit')
     return `${type === 'Dropdown' ? 'core::UiDropdown' : 'core::UiInput'}.${attr}`;
   return null;
@@ -324,9 +375,16 @@ export function codeToUINodes(
     if (uiTransformAttr) {
       const v = attrValue(uiTransformAttr);
       // Normalize react-ecs's ergonomic shape → flattened PBUiTransform so the
-      // canvas renders it identically to the ECS-backed path.
-      if (v.ok) node.uiTransform = ergonomicToPBTransform(v.value as Record<string, unknown>);
-      else dynamicProps = true;
+      // canvas renders it identically to the ECS-backed path. A PARTIALLY
+      // static object (e.g. `{ width: state.w, height: 100 }`) still renders
+      // from its static fields but marks the node dynamic so no write path
+      // re-emits the lossy value over the source.
+      if (v.ok) {
+        node.uiTransform = ergonomicToPBTransform(v.value as Record<string, unknown>);
+        if (v.dynamic) dynamicProps = true;
+      } else {
+        dynamicProps = true;
+      }
     }
 
     // Record the structural parent (from JSX nesting) as PBUiTransform.parent so
@@ -344,26 +402,34 @@ export function codeToUINodes(
     const uiBackgroundAttr = attrs.get('uiBackground');
     if (uiBackgroundAttr) {
       const v = attrValue(uiBackgroundAttr);
-      if (v.ok) node.uiBackground = v.value;
-      else dynamicProps = true;
+      if (v.ok) {
+        // Normalize react-ecs's ergonomic background (string enums, bare
+        // texture object) → the flattened-PB shape the panel reads.
+        node.uiBackground = ergonomicToPBBackground(v.value as Record<string, unknown>);
+        if (v.dynamic) dynamicProps = true;
+      } else {
+        dynamicProps = true;
+      }
     }
 
-    // Label text props fold into uiText; a text prop bound to a variable
+    // Typed element props fold into their node field (Label/Button → uiText,
+    // Input → uiInput, Dropdown → uiDropdown); a prop bound to a variable
     // (`value={state.x}`) or an interpolated template (`value={`Hi ${name}`}`)
     // is recorded as a binding row instead — previewed on the canvas via
     // previewBoundText and shown as bound in the panel — rather than collapsing
     // the node to opaque dynamic content.
-    if (type === 'Label') {
-      const uiText: Record<string, unknown> = {};
-      for (const key of UI_TEXT_PROPS) {
+    const group = TYPED_PROP_GROUPS[type];
+    if (group) {
+      const values: Record<string, unknown> = {};
+      for (const key of group.props) {
         const attr = attrs.get(key);
         if (!attr) continue;
         const v = attrValue(attr);
         if (v.ok) {
-          uiText[key] = v.value;
+          values[key] = v.value;
           continue;
         }
-        const field = `core::UiText.${key}`;
+        const field = `${group.componentId}.${key}`;
         const segments = templateSegments(attr, source);
         const expr = bindingExpr(attr, source);
         if (segments) bindings.push({ field, variable: '', segments });
@@ -371,8 +437,8 @@ export function codeToUINodes(
         else dynamicProps = true;
       }
       // Normalize react-ecs's ergonomic text enums (textAlign/font strings) to
-      // the flattened PBUiText numeric enums the canvas + PropertyPanel read.
-      if (Object.keys(uiText).length > 0) node.uiText = ergonomicToPBText(uiText);
+      // the flattened numeric enums the canvas + PropertyPanel read.
+      if (Object.keys(values).length > 0) node[group.field] = ergonomicToPBText(values);
     }
 
     // Event-handler bindings — the thunk `onMouseDown={() => onClick(state)}` the

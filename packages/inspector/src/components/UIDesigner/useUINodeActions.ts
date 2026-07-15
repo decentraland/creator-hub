@@ -23,13 +23,11 @@ export function useUINodeActions(): {
     [selectedNode, dispatch],
   );
 
-  const duplicate = useCallback(
-    async (entity: Entity) => {
-      const cloneId = await spliceDuplicate(entity as unknown as number);
-      if (cloneId != null) dispatch(selectNode({ node: cloneId as unknown as Entity }));
-    },
-    [dispatch],
-  );
+  const duplicate = useCallback(async (entity: Entity) => {
+    // spliceDuplicate selects the clone itself (before its post-splice format
+    // pass — the reparse re-anchors the selection through the reflow).
+    await spliceDuplicate(entity as unknown as number);
+  }, []);
 
   return { remove, duplicate };
 }

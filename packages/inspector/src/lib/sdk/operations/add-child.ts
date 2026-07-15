@@ -45,26 +45,6 @@ export function generateUniqueName(engine: IEngine, Name: NameComponent, value: 
   return `${baseName}${suffix}`;
 }
 
-// UI Designer nodes carry only core::UiTransform and never enter the editor `Nodes`
-// tree, so generateUniqueName (which walks getNodes) can't see them. Scan every named
-// entity instead: names must be GLOBALLY unique for engine.getEntityByName to resolve a
-// UI node unambiguously. Uses the smallest free suffix starting at _1 (Label, Label_1,
-// Label_2, …) — matching the codegen enum-key dedup (engine-to-composite.buildEnumEntries),
-// so entity Name values line up with the generated UiEntityNames keys.
-export function generateUniqueUiName(engine: IEngine, Name: NameComponent, value: string): string {
-  const baseName = getSuffixDigits(value) !== -1 ? value.slice(0, value.lastIndexOf('_')) : value;
-  const taken = new Set<string>();
-  for (const [, name] of engine.getEntitiesWith(Name)) {
-    const current = (name?.value || '').toLowerCase();
-    if (current) taken.add(current);
-  }
-
-  if (!taken.has(baseName.toLowerCase())) return baseName;
-  let suffix = 1;
-  while (taken.has(`${baseName.toLowerCase()}_${suffix}`)) suffix++;
-  return `${baseName}_${suffix}`;
-}
-
 export function getSuffixDigits(name: string): number {
   const underscoreIndex = name.lastIndexOf('_');
   if (underscoreIndex === -1 || underscoreIndex === name.length - 1) return -1;

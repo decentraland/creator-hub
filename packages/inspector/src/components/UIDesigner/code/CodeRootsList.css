@@ -96,3 +96,13 @@
 .ui-designer-code-root-toplevel:hover svg {
   color: rgba(255, 255, 255, 1);
 }
+
+.ui-designer-roots-error {
+  margin: 4px 8px;
+  padding: 6px 8px;
+  border-radius: 4px;
+  background: rgba(214, 77, 77, 0.15);
+  color: #e08585;
+  font-size: 11px;
+  line-height: 1.4;
+}

@@ -1,15 +1,32 @@
 import React, { useEffect, useState } from 'react';
+import type { Entity } from '@dcl/ecs';
 
+import { BindAffordance } from '../BindAffordance';
+import type { FieldConfig, FieldKind } from '../field-configs';
+import { useFieldBinding } from '../useFieldBinding';
 import type { PropVar } from './props-convention';
 import { selectRootFile, spliceInstanceProp, unsetInstanceProp, useCodeState } from './store';
 import type { CodeUINode, ComponentRefProp } from './types';
 
 import './CodeVariablesPanel.css';
 
-// One editable instance-prop row: the value passed to THIS `<Name … />`. Buffered
-// (commits on blur) so a mid-edit reparse can't clobber the caret; booleans use a
-// checkbox. A prop bound to an expression in code (`x={state.on}`) is shown
-// read-only — edit it in code.
+// Declared prop type → the field kind the VariablePicker filters by. A
+// 'callback' prop lists @ui-action handlers; primitives list matching-type
+// state variables; 'unknown' (a hand-authored non-primitive) can't bind.
+const PROP_KIND: Record<string, FieldKind | undefined> = {
+  string: 'string',
+  number: 'number',
+  boolean: 'boolean',
+  callback: 'callback',
+};
+
+// One editable instance-prop row: the value passed to THIS `<Name … />`.
+// Literal values are buffered inputs (commit on blur; booleans a checkbox);
+// the 🔗 binds the prop to the ACTIVE file's binding surface instead — a state
+// variable (`title={state.playerName}`) or, for a callback-typed prop, an
+// @ui-action handler (`onClick={(value) => onSave(state, value)}`). A prop
+// bound to an expression shows the expression; ✕ clears the attribute so the
+// prop falls back to the component's own default handling.
 const InstancePropRow: React.FC<{
   entity: number;
   prop: PropVar;
@@ -19,6 +36,22 @@ const InstancePropRow: React.FC<{
   const currentValue = current?.value !== undefined ? String(current.value) : '';
   const [local, setLocal] = useState(currentValue);
   const [focused, setFocused] = useState(false);
+
+  const kind = PROP_KIND[prop.type];
+  // Synthesized field config: `path` is the JSX attribute the binding splices.
+  // strictTypes keeps the picker to exact-type variables — a TS-typed prop
+  // doesn't get render-time string coercion.
+  const field: FieldConfig = {
+    label: prop.name,
+    componentId: 'ui::props',
+    path: prop.name,
+    kind: kind ?? 'string',
+    strictTypes: kind && kind !== 'callback' ? [prop.type] : undefined,
+  };
+  const { pickerOpen, setPickerOpen, anchorRef, onBind } = useFieldBinding(
+    field,
+    entity as unknown as Entity,
+  );
 
   useEffect(() => {
     if (!focused) setLocal(currentValue);
@@ -34,9 +67,25 @@ const InstancePropRow: React.FC<{
       {bound ? (
         <em
           className="ui-designer-code-variable-source"
-          title="Bound to an expression in code"
+          title="Bound to an expression — ✕ clears it"
         >
           {current?.expr}
+        </em>
+      ) : prop.type === 'callback' ? (
+        <em
+          className="ui-designer-code-variable-source"
+          title="Bind an event handler with the link button"
+        >
+          (unbound)
+        </em>
+      ) : prop.type === 'unknown' ? (
+        // A non-primitive declared type (function/union/object) — a text-field
+        // write would corrupt it, so it's edit-in-code only.
+        <em
+          className="ui-designer-code-variable-source"
+          title="Non-primitive prop type — edit it in code"
+        >
+          (code)
         </em>
       ) : prop.type === 'boolean' ? (
         <input
@@ -68,6 +117,15 @@ const InstancePropRow: React.FC<{
           }}
         />
       )}
+      {kind ? (
+        <BindAffordance
+          field={field}
+          anchorRef={anchorRef}
+          pickerOpen={pickerOpen}
+          setPickerOpen={setPickerOpen}
+          onBind={onBind}
+        />
+      ) : null}
       {current ? (
         <button
           type="button"
@@ -99,7 +157,7 @@ export const ComponentRefPanel: React.FC<{ node: CodeUINode }> = ({ node }) => {
     <div className="ui-designer-code-variables">
       <div className="ui-designer-code-variables-title">Component · {name}</div>
       <div className="ui-designer-code-variables-hint">
-        Values passed to this instance. Edit <code>{name}</code> to change the component itself.
+        Values passed to this instance. Type a literal or 🔗 a variable/handler from this file.
       </div>
 
       {declared.length === 0 ? (

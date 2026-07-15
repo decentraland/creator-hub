@@ -36,6 +36,11 @@ export interface UIDesignerState {
   selectedRoot: Entity | null;
   selectedNode: Entity | null;
   expanded: Record<number, boolean>;
+  // Editor-only canvas affordances (never written to code): a hidden node
+  // isn't rendered on the canvas; a locked node can't be selected/dragged/
+  // resized there. Keyed by the synthetic node id (session-only).
+  hidden: Record<number, boolean>;
+  locked: Record<number, boolean>;
   collapsedGroups: Record<string, boolean>;
   tool: UIDesignerTool;
 }
@@ -44,6 +49,8 @@ export const initialState: UIDesignerState = {
   selectedRoot: null,
   selectedNode: null,
   expanded: {},
+  hidden: {},
+  locked: {},
   collapsedGroups: loadCollapsedGroups(),
   tool: 'move',
 };
@@ -63,6 +70,32 @@ export const uiDesignerSlice = createSlice({
     setExpanded: (state, { payload }: PayloadAction<{ entity: Entity; expanded: boolean }>) => {
       state.expanded[payload.entity as unknown as number] = payload.expanded;
     },
+    setNodeHidden: (state, { payload }: PayloadAction<{ entity: Entity; hidden: boolean }>) => {
+      const id = payload.entity as unknown as number;
+      if (payload.hidden) state.hidden[id] = true;
+      else delete state.hidden[id];
+    },
+    setNodeLocked: (state, { payload }: PayloadAction<{ entity: Entity; locked: boolean }>) => {
+      const id = payload.entity as unknown as number;
+      if (payload.locked) state.locked[id] = true;
+      else delete state.locked[id];
+    },
+    // Synthetic node ids are positional per parse — after a reparse the code
+    // store re-anchors every id-keyed map through an oldId→newId mapping
+    // (unmapped ids are dropped: the node no longer exists).
+    remapNodeIds: (state, { payload }: PayloadAction<{ mapping: Record<number, number> }>) => {
+      const remap = (rec: Record<number, boolean>): Record<number, boolean> => {
+        const next: Record<number, boolean> = {};
+        for (const [old, v] of Object.entries(rec)) {
+          const mapped = payload.mapping[Number(old)];
+          if (mapped !== undefined) next[mapped] = v;
+        }
+        return next;
+      };
+      state.expanded = remap(state.expanded);
+      state.hidden = remap(state.hidden);
+      state.locked = remap(state.locked);
+    },
     setGroupCollapsed: (
       state,
       { payload }: PayloadAction<{ title: string; collapsed: boolean }>,
@@ -73,18 +106,37 @@ export const uiDesignerSlice = createSlice({
     resetExpanded: state => {
       state.expanded = {};
     },
+    // Clear all id-keyed node state — dispatched on active-file switches, where
+    // the positional ids of the previous file would collide with the new one's.
+    resetNodeState: state => {
+      state.expanded = {};
+      state.hidden = {};
+      state.locked = {};
+    },
     setTool: (state, { payload }: PayloadAction<{ tool: UIDesignerTool }>) => {
       state.tool = payload.tool;
     },
   },
 });
 
-export const { selectRoot, selectNode, setExpanded, setGroupCollapsed, resetExpanded, setTool } =
-  uiDesignerSlice.actions;
+export const {
+  selectRoot,
+  selectNode,
+  setExpanded,
+  setNodeHidden,
+  setNodeLocked,
+  remapNodeIds,
+  setGroupCollapsed,
+  resetExpanded,
+  resetNodeState,
+  setTool,
+} = uiDesignerSlice.actions;
 
 export const getSelectedRoot = (state: RootState) => state.uiDesigner.selectedRoot;
 export const getSelectedNode = (state: RootState) => state.uiDesigner.selectedNode;
 export const getExpanded = (state: RootState) => state.uiDesigner.expanded;
+export const getHiddenNodes = (state: RootState) => state.uiDesigner.hidden;
+export const getLockedNodes = (state: RootState) => state.uiDesigner.locked;
 export const getCollapsedGroups = (state: RootState) => state.uiDesigner.collapsedGroups;
 export const getTool = (state: RootState) => state.uiDesigner.tool;
 

@@ -1,5 +1,4 @@
-import { SegmentKind } from '@dcl/asset-packs';
-
+import { SegmentKind } from '../tree-model';
 import type { CanvasSegment } from '../tree-model';
 
 // Pure helpers for the mixed-content inline editor. Extracted from the

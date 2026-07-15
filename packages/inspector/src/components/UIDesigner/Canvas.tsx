@@ -15,7 +15,13 @@ import type { Entity, PBUiTransform } from '@dcl/ecs';
 
 import { useAssetUrl } from '../../hooks/useAssetUrl';
 import { useAppDispatch, useAppSelector } from '../../redux/hooks';
-import { getSelectedNode, getTool, selectNode } from '../../redux/ui-designer';
+import {
+  getHiddenNodes,
+  getLockedNodes,
+  getSelectedNode,
+  getTool,
+  selectNode,
+} from '../../redux/ui-designer';
 import { Button } from '../Button';
 import { UI_DESIGNER_DND_TYPE, type UIDesignerDragItem } from './Palette';
 import { EmptyState } from './EmptyState';
@@ -59,9 +65,9 @@ import {
   YGPT_ABSOLUTE,
 } from '../../lib/sdk/ui-transform-constants';
 
-// The canvas size is per-UI (canvasWidth × canvasHeight on the root's
-// `asset-packs::UI` marker, default 1920×1080) — it is the UI's design/virtual
-// resolution, scaled to fit the player's screen at runtime. The default visual
+// The canvas size (canvasWidth × canvasHeight on the parsed root node, default
+// 1920×1080) is the UI's design/virtual resolution, scaled to fit the player's
+// screen at runtime. The default visual
 // scale below is the EDITOR zoom (the user can zoom; see CanvasComponent).
 // `canvasScale` is the LIVE zoom, read by the drag/resize coordinate math and by
 // measure.ts so px↔% conversions stay correct at any zoom level.
@@ -475,7 +481,13 @@ function reorderIndicatorStyle(ro: {
   };
 }
 
-type CanvasNodeProps = { node: UINode };
+// `hidden` = editor-only canvas hide (tree eye button): render with
+// `visibility: hidden` so the node keeps its layout box — siblings must NOT
+// reflow — but paints nothing and takes no pointer events.
+type CanvasNodeProps = { node: UINode; hidden?: boolean };
+
+const hiddenStyle = (style: React.CSSProperties, hidden?: boolean): React.CSSProperties =>
+  hidden ? { ...style, visibility: 'hidden' } : style;
 
 // Floating Duplicate / Delete bar shown on the selected (non-root) node. Mounted
 // only for the selected node, so `useUINodeActions` (and its tree subscription)
@@ -530,7 +542,7 @@ const CanvasNodeActions: React.FC<{ entity: Entity }> = ({ entity }) => {
   );
 };
 
-const CanvasNode: React.FC<CanvasNodeProps> = ({ node }) => {
+const CanvasNode: React.FC<CanvasNodeProps> = ({ node, hidden }) => {
   const dispatch = useAppDispatch();
   // Subscribe to a derived boolean rather than the raw selected-entity id: selecting
   // a node is a Redux action that does NOT rebuild the node tree, so a raw
@@ -539,6 +551,12 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node }) => {
   // the re-render to the two nodes whose selection actually flips.
   const isSelected = useAppSelector(state => getSelectedNode(state) === node.entity);
   const tool = useAppSelector(getTool);
+  // Editor-only canvas lock (tree lock button): the node still renders but
+  // takes no select/drag/resize. Derived boolean for the same re-render
+  // reasons as isSelected.
+  const isLocked = useAppSelector(
+    state => !!getLockedNodes(state)[node.entity as unknown as number],
+  );
   const text = (node.uiText ?? {}) as { value?: string };
   const input = (node.uiInput ?? {}) as { placeholder?: string; value?: string };
   const dropdown = (node.uiDropdown ?? {}) as {
@@ -595,7 +613,11 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node }) => {
         // Add the child by splicing a new element into the parent's source
         // (drop position not honored yet — appended as a child).
         if (item.source === 'palette') {
-          void spliceAddChild(node.entity as unknown as number, item.type as UINodeType);
+          void spliceAddChild(
+            node.entity as unknown as number,
+            item.type as UINodeType,
+            item.preset,
+          );
         } else if (item.source === 'component') {
           // Nest another root as a component (guarded against reference cycles).
           void spliceInsertComponent(node.entity as unknown as number, item.name);
@@ -701,14 +723,16 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node }) => {
 
   const handleClick = useCallback(
     (e: React.MouseEvent) => {
+      if (isLocked) return; // locked: clicks fall through, node not selectable
       e.stopPropagation();
       dispatch(selectNode({ node: node.entity }));
     },
-    [dispatch, node.entity],
+    [dispatch, node.entity, isLocked],
   );
 
   const handleMouseDown = useCallback(
     (e: React.MouseEvent) => {
+      if (isLocked) return;
       if (!canDragMove) return;
       // Ignore clicks inside inputs / interactive children so the property
       // panel doesn't end up dragging the parent node.
@@ -751,7 +775,7 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node }) => {
       // Selection follows the drag — feels natural in every editor.
       dispatch(selectNode({ node: node.entity }));
     },
-    [canDragMove, t, dispatch, node.entity],
+    [canDragMove, t, dispatch, node.entity, isLocked],
   );
 
   useEffect(() => {
@@ -896,7 +920,7 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node }) => {
   // --- Resize handle interaction ---
   const handleResizeStart = useCallback(
     (dir: HandleDir) => (e: React.MouseEvent) => {
-      if (!divRef.current) return;
+      if (isLocked || !divRef.current) return;
       e.stopPropagation();
       e.preventDefault();
       const el = divRef.current;
@@ -922,7 +946,7 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node }) => {
       setIsResizing(true);
       dispatch(selectNode({ node: node.entity }));
     },
-    [dispatch, node.entity],
+    [dispatch, node.entity, isLocked],
   );
 
   useEffect(() => {
@@ -1078,7 +1102,7 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node }) => {
         resizing: isResizing,
         movable: canDragMove,
       })}
-      style={style}
+      style={hiddenStyle(style, hidden)}
       onClick={handleClick}
       onMouseDown={handleMouseDown}
       data-type={node.type}
@@ -1129,7 +1153,7 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node }) => {
 // conditionals, custom components, spread/dynamic props). It keeps the node's
 // place in the layout and is selectable (so the code view can locate it), but
 // carries none of the drag/resize/drop machinery — it is edited only in code.
-const CanvasOpaqueNode: React.FC<{ node: CodeUINode }> = ({ node }) => {
+const CanvasOpaqueNode: React.FC<{ node: CodeUINode; hidden?: boolean }> = ({ node, hidden }) => {
   const dispatch = useAppDispatch();
   const isSelected = useAppSelector(state => getSelectedNode(state) === node.entity);
   const setRef = useCallback(
@@ -1144,7 +1168,7 @@ const CanvasOpaqueNode: React.FC<{ node: CodeUINode }> = ({ node }) => {
     <div
       ref={setRef}
       className={cx('ui-designer-canvas-node', 'opaque', { selected: isSelected })}
-      style={nodeStyle(node)}
+      style={hiddenStyle(nodeStyle(node), hidden)}
       onClick={e => {
         e.stopPropagation();
         dispatch(selectNode({ node: node.entity }));
@@ -1249,7 +1273,10 @@ const CanvasReadonlyNode: React.FC<{
 // actions, since its span is a real JSX element); it's edited in code by opening
 // the referenced root. When the referenced tree has resolved it renders inline
 // read-only (edits to the original reflect here); until then, a labeled block.
-const CanvasComponentRefNode: React.FC<{ node: CodeUINode }> = ({ node }) => {
+const CanvasComponentRefNode: React.FC<{ node: CodeUINode; hidden?: boolean }> = ({
+  node,
+  hidden,
+}) => {
   const isSelected = useAppSelector(state => getSelectedNode(state) === node.entity);
   const { componentTrees } = useCodeState();
   const setRef = useCallback(
@@ -1268,7 +1295,10 @@ const CanvasComponentRefNode: React.FC<{ node: CodeUINode }> = ({ node }) => {
     <div
       ref={setRef}
       className={cx('ui-designer-canvas-node', 'component-ref', { selected: isSelected })}
-      style={{ minWidth: 80, minHeight: 40, width: '100%', height: '100%', ...nodeStyle(node) }}
+      style={hiddenStyle(
+        { minWidth: 80, minHeight: 40, width: '100%', height: '100%', ...nodeStyle(node) },
+        hidden,
+      )}
       data-type="component-ref"
       data-entity={String(node.entity)}
       title={`<${name} /> — a nested UI component. Edit it by opening "${name}".`}
@@ -1292,10 +1322,32 @@ const CanvasComponentRefNode: React.FC<{ node: CodeUINode }> = ({ node }) => {
 // between these (as code is edited) swaps component type, which remounts cleanly
 // — no shared hook state to get out of sync.
 const CanvasNodeView: React.FC<CanvasNodeProps> = ({ node }) => {
+  // Editor-only canvas hide (tree eye button): rendered with visibility:
+  // hidden so the layout box stays (siblings don't reflow) — code untouched.
+  const isNodeHidden = useAppSelector(
+    state => !!getHiddenNodes(state)[node.entity as unknown as number],
+  );
   const cn = node as CodeUINode;
-  if (cn.componentRef) return <CanvasComponentRefNode node={cn} />;
-  if (cn.opaque) return <CanvasOpaqueNode node={cn} />;
-  return <CanvasNode node={node} />;
+  if (cn.componentRef)
+    return (
+      <CanvasComponentRefNode
+        node={cn}
+        hidden={isNodeHidden}
+      />
+    );
+  if (cn.opaque)
+    return (
+      <CanvasOpaqueNode
+        node={cn}
+        hidden={isNodeHidden}
+      />
+    );
+  return (
+    <CanvasNode
+      node={node}
+      hidden={isNodeHidden}
+    />
+  );
 };
 
 const CanvasComponent: React.FC = () => {

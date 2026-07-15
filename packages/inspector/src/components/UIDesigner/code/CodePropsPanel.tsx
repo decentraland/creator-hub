@@ -6,7 +6,9 @@ import { addBindProp, removeProp, retypeProp, useCodeState } from './store';
 
 import './CodeVariablesPanel.css';
 
-const TYPES = ['string', 'number', 'boolean'];
+// 'callback' declares a function-typed prop (`(value?: string | number) =>
+// void`) — the instance binds an @ui-action handler to it via the 🔗.
+const TYPES = ['string', 'number', 'boolean', 'callback'];
 
 // Per-component props manager (the functional analog of the state-variable editor
 // — see props-convention.ts). Declares the props the active root exposes; a field
@@ -61,6 +63,15 @@ const CodePropsPanelComponent: React.FC = () => {
                 {t}
               </option>
             ))}
+            {!TYPES.includes(v.type) ? (
+              // A hand-authored non-primitive type — shown as-is, edit in code.
+              <option
+                value={v.type}
+                disabled
+              >
+                {v.type}
+              </option>
+            ) : null}
           </select>
           <button
             type="button"

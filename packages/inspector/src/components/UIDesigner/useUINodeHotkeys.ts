@@ -11,7 +11,7 @@ import { useUINodeActions } from './useUINodeActions';
 // typing or the 3D editor's hotkeys. Deliberately NOT built on useHotkey — that
 // hook's cleanup unbinds keys GLOBALLY and would clobber the Renderer's
 // Ctrl+C/V/D/Delete. A UI-node "clipboard" is just the last-copied entity id
-// (in a ref); paste clones it via duplicateUINode (sibling of the original).
+// (in a ref); paste clones it via spliceDuplicate (sibling of the original).
 export function useUINodeHotkeys(containerRef: RefObject<HTMLElement>): void {
   const selectedNode = useAppSelector(getSelectedNode);
   const { remove, duplicate } = useUINodeActions();
@@ -40,6 +40,10 @@ export function useUINodeHotkeys(containerRef: RefObject<HTMLElement>): void {
       const { selectedNode, remove, duplicate } = state.current;
       const mod = e.ctrlKey || e.metaKey;
       const key = e.key.toLowerCase();
+
+      // Undo/redo are NOT handled here: the Toolbar owns the Ctrl+Z/Y hotkeys
+      // (useHotkey) and routes them to the code store when the UI Designer is
+      // open — a second document-level listener would double-fire.
 
       if (mod && key === 'c') {
         if (selectedNode === null) return;

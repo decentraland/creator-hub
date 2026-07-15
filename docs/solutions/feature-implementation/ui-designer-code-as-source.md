@@ -20,7 +20,7 @@ status: completed
 
 # UI Designer: code as the single source of truth
 
-The UI Designer no longer stores its own render-only representation of a scene's UI. The scene's real `@dcl/react-ecs` `.tsx` files under `src/ui/` ARE the design — the canvas is a live view over them, spliced in place, and any external editor (VSCode, vim, …) can edit the same files: a 1s disk watcher reflects those edits back onto the canvas. This replaces the classic ECS-composite editing path (`asset-packs::UIDesign` derive/split/materialize) **inside the editor only** — that runtime pipeline is untouched and still serves other scenes (see [UI Designer UIDesign Derive Pipeline](./ui-designer-uidesign-pipeline.md)).
+The UI Designer does not store its own render-only representation of a scene's UI. The scene's real `@dcl/react-ecs` `.tsx` files under `src/ui/` ARE the design — the canvas is a live view over them, spliced in place, and any external editor (VSCode, vim, …) can edit the same files: a 1s disk watcher reflects those edits back onto the canvas. The earlier ECS-composite pipeline (`asset-packs::UI`/`UIBindings`/`UIDesign` + the derive/split/materialize runtime) has been fully removed — code-as-source is the only representation.
 
 ## Why code-as-source instead of an ECS mirror
 
@@ -97,9 +97,6 @@ Every binding-surface entry (`BindVariable`, `bindings.ts:23`) carries both a `n
 
 ## Known residuals and future work
 
-(Carried from `plan.md`'s "Future work" — not reproduced in full here, see the spec for detail.)
-
-- The cross-package `asset-packs::UIDesign` derive/split/materialize runtime pipeline and the classic UI Designer outside `UIDesigner/` are deliberately untouched — a separate, compatibility-sensitive removal effort.
 - PropertyPanel add/remove-component + component-clipboard machinery stays ECS-shaped and is runtime-dead in code mode (synthetic ids never resolve to a real engine entity) — purging it reaches into `FieldRow`/`Container` and is out of scope.
 - No in-app editor is mounted (`CodeEditorPanel`/Monaco exists but isn't wired) — editing today is external editor + the 1s disk watcher.
 - No browser-only (standalone `:8000`) code mode — the parser is CH-main only.

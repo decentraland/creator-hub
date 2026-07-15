@@ -11,6 +11,7 @@ import {
   setAttributeExpr,
   setAttributeSegments,
   setObjectField,
+  setObjectFields,
 } from './emit-adapter';
 import { codeToUINodes } from './parse-adapter';
 import type { CodeUINode } from './types';
@@ -217,5 +218,100 @@ describe('ensureNamedImport', () => {
     const next = applyEdits(src, ensureNamedImport(prog(src), 'B', './lib'));
     expect(next).toContain("import { A, B } from './lib'");
     expect(parseSync('S.tsx', next).errors).toHaveLength(0);
+  });
+});
+
+describe('when setting multiple object fields in one call (setObjectFields)', () => {
+  const parseEl = (src: string) => {
+    const parsed = parse(src);
+    return {
+      src,
+      el: parsed.astNodes.get(parsed.root.entity as unknown as number) as any,
+    };
+  };
+
+  it('composes into ONE attribute when uiTransform is absent (no duplicate attr)', () => {
+    const { src, el } = parseEl('export function S() { return <UiEntity /> }');
+    const next = applyEdits(src, setObjectFields(el, 'uiTransform', { width: 50, height: 100 }));
+    expect(next.match(/uiTransform/g)).toHaveLength(1);
+    const reparsed = parse(next);
+    expect(reparsed.root.uiTransform).toMatchObject({ width: 50, height: 100 });
+  });
+
+  it('composes with a separating comma when uiTransform is an empty object', () => {
+    const { src, el } = parseEl('export function S() { return <UiEntity uiTransform={{}} /> }');
+    const next = applyEdits(src, setObjectFields(el, 'uiTransform', { width: 50, height: 100 }));
+    expect(parseSync('S.tsx', next).errors).toHaveLength(0);
+    expect(parse(next).root.uiTransform).toMatchObject({ width: 50, height: 100 });
+  });
+
+  it('removes a field when its value is undefined, absorbing the comma', () => {
+    const { src, el } = parseEl(
+      'export function S() { return <UiEntity uiTransform={{ width: 50, height: 100, flexGrow: 1 }} /> }',
+    );
+    const next = applyEdits(src, setObjectFields(el, 'uiTransform', { height: undefined }));
+    expect(next).not.toContain('height');
+    expect(next).toContain('width: 50');
+    expect(next).toContain('flexGrow: 1');
+    expect(parseSync('S.tsx', next).errors).toHaveLength(0);
+  });
+
+  it('removes ADJACENT fields without overlapping edits', () => {
+    const { src, el } = parseEl(
+      'export function S() { return <UiEntity uiTransform={{ width: 50, height: 100, flexGrow: 1 }} /> }',
+    );
+    const next = applyEdits(
+      src,
+      setObjectFields(el, 'uiTransform', { width: undefined, height: undefined }),
+    );
+    expect(next).not.toContain('width');
+    expect(next).not.toContain('height');
+    expect(next).toContain('flexGrow: 1');
+    expect(parseSync('S.tsx', next).errors).toHaveLength(0);
+  });
+
+  it('replaces, inserts and removes in one call', () => {
+    const { src, el } = parseEl(
+      'export function S() { return <UiEntity uiTransform={{ width: 50, height: 100 }} /> }',
+    );
+    const next = applyEdits(
+      src,
+      setObjectFields(el, 'uiTransform', { width: 75, height: undefined, flexGrow: 1 }),
+    );
+    expect(parse(next).root.uiTransform).toMatchObject({ width: 75, flexGrow: 1 });
+    expect(next).not.toContain('height');
+  });
+});
+
+describe('when a string attribute needs escape sequences', () => {
+  const label = (src: string) => {
+    const parsed = parse(src);
+    const node = parsed.root.children[0];
+    return { parsed, el: parsed.astNodes.get(node.entity as unknown as number) as any };
+  };
+  const SRC = 'export function S() { return <UiEntity><Label value="Hi" /></UiEntity> }';
+
+  it('emits a double quote via the braces form (plain JSX attr strings cannot escape)', () => {
+    const { el } = label(SRC);
+    const next = applyEdits(SRC, setAttribute(el, 'value', 'say "hi"'));
+    expect(parseSync('S.tsx', next).errors).toHaveLength(0);
+    const reparsed = parse(next);
+    expect((reparsed.root.children[0].uiText as Record<string, unknown>).value).toBe('say "hi"');
+  });
+
+  it('round-trips a newline as a real newline, not a literal backslash-n', () => {
+    const { el } = label(SRC);
+    const next = applyEdits(SRC, setAttribute(el, 'value', 'line1\nline2'));
+    expect(parseSync('S.tsx', next).errors).toHaveLength(0);
+    const reparsed = parse(next);
+    expect((reparsed.root.children[0].uiText as Record<string, unknown>).value).toBe(
+      'line1\nline2',
+    );
+  });
+
+  it('keeps the plain ="…" form for escape-free strings', () => {
+    const { el } = label(SRC);
+    const next = applyEdits(SRC, setAttribute(el, 'value', 'plain text'));
+    expect(next).toContain('value="plain text"');
   });
 });

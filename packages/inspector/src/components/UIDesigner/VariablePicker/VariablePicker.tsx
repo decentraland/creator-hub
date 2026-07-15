@@ -21,6 +21,29 @@ const KIND_TO_CODE_TYPES: Partial<Record<FieldKind, string[]>> = {
   boolean: ['boolean'],
 };
 
+// Event fields that DELIVER a value to their callback (react-ecs calls them
+// with the typed text / selected index). Everything else — the four mouse
+// events — is a zero-arg `Callback`, where a value-taking arrow would not
+// typecheck ("Target signature provides too few arguments").
+const VALUE_EVENT_FIELDS = new Set([
+  'core::UiInput.onChange',
+  'core::UiInput.onSubmit',
+  'core::UiDropdown.onChange',
+]);
+
+// The thunk spliced into an event attribute / callback prop for handler `name`.
+// The param is annotated (scene tsconfigs are strict — a bare `(value)` is an
+// implicit any), and its optionality mirrors the assignment target: a callback
+// PROP is declared `(value?: …) => void`, so under strict function types the
+// bound arrow's param must be optional too.
+export function thunkExprFor(field: FieldConfig, name: string): string {
+  const key = `${field.componentId}.${field.path}`;
+  if (VALUE_EVENT_FIELDS.has(key)) return `(value: string | number) => ${name}(state, value)`;
+  if (field.componentId === 'ui::props')
+    return `(value?: string | number) => ${name}(state, value)`;
+  return `() => ${name}(state)`;
+}
+
 // On a string-kind field every non-string variable is shown (it coerces to a
 // string at render time). Make that explicit in the row label, e.g.
 // "score (number → string)".
@@ -68,14 +91,18 @@ export const VariablePicker: React.FC<VariablePickerProps> = ({
   // lists the typed-state / marker variables compatible with the field kind.
   const items = useMemo<PickItem[]>(() => {
     if (isCallback) {
-      // Events bind through a thunk that passes `state` to the handler.
+      // Events bind through a thunk that passes `state` (plus the event's
+      // value where the event delivers one) to the handler — see thunkExprFor.
       return bindingSurface.actions.map(a => ({
         key: a.name,
         label: `${a.name}()`,
-        expr: `() => ${a.name}(state)`,
+        expr: thunkExprFor(field, a.name),
       }));
     }
-    const allowed = KIND_TO_CODE_TYPES[field.kind] ?? [];
+    // `strictTypes` (e.g. a typed component prop) lists exact-type matches
+    // only — the render-time string coercion that makes any variable valid on
+    // a text FIELD does not apply to a TS-typed prop.
+    const allowed = field.strictTypes ?? KIND_TO_CODE_TYPES[field.kind] ?? [];
     return bindingSurface.variables
       .filter(v => allowed.includes(v.type))
       .map(v => ({ key: v.name, label: coercionLabel(field, v), expr: v.expr }));
@@ -98,7 +125,7 @@ export const VariablePicker: React.FC<VariablePickerProps> = ({
     // before that lands would splice with stale AST spans and corrupt the file.
     if (isCallback) {
       await addBindAction(trimmed);
-      onPick(`() => ${trimmed}(state)`);
+      onPick(thunkExprFor(field, trimmed));
     } else {
       const type = (KIND_TO_CODE_TYPES[field.kind] ?? ['string'])[0];
       await addBindVariable(trimmed, type);

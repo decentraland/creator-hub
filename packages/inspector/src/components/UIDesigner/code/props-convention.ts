@@ -33,7 +33,16 @@ function tsKeywordToType(t: string | undefined): string | null {
   if (t === 'TSNumberKeyword') return 'number';
   if (t === 'TSStringKeyword') return 'string';
   if (t === 'TSBooleanKeyword') return 'boolean';
+  // A function-typed prop (`onClick: (value?: …) => void`) is a callback —
+  // bindable to an @ui-action handler at the usage site.
+  if (t === 'TSFunctionType') return 'callback';
   return null;
+}
+
+// Editor prop type → the TS source text spliced into the props type literal.
+// 'callback' matches the @ui-action handler shape (see store.addBindAction).
+export function propTypeToTs(type: string): string {
+  return type === 'callback' ? '(value?: string | number) => void' : type;
 }
 
 // The exported function declaration for `componentName`.
@@ -53,14 +62,17 @@ function findPropsTypeLiteral(fn: AstNode | undefined): AstNode | undefined {
 }
 
 // Read the props declared by `componentName` (name + type; props carry no
-// default). Non-primitive member types fall back to 'string'.
+// default). A non-primitive member type (a function, a union, an object) is
+// reported as 'unknown' — NOT coerced to 'string': writing a string literal
+// over e.g. a hand-authored `onClick: () => void` prop would corrupt it, so
+// consumers render 'unknown' props read-only.
 export function readPropsVariables(program: AstNode, componentName: string): PropVar[] {
   const lit = findPropsTypeLiteral(findComponentFn(program, componentName));
   if (!lit) return [];
   const vars: PropVar[] = [];
   for (const m of (lit.members ?? []) as AstNode[]) {
     if (m.type !== 'TSPropertySignature' || m.key?.type !== 'Identifier') continue;
-    const type = tsKeywordToType(m.typeAnnotation?.typeAnnotation?.type) ?? 'string';
+    const type = tsKeywordToType(m.typeAnnotation?.typeAnnotation?.type) ?? 'unknown';
     vars.push({ name: m.key.name as string, type });
   }
   return vars;

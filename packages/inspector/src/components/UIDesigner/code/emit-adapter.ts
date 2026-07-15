@@ -77,59 +77,117 @@ function emitObject(o: Record<string, unknown>): string {
 }
 
 // Set a single field inside an object-literal prop (e.g. uiTransform.width).
-// Handles all four cases: field exists (replace value), field missing (insert
-// into object), object empty, or the attribute/prop absent entirely (add it).
 export function setObjectField(
   el: AstNode,
   attrName: string,
   fieldName: string,
   value: unknown,
 ): Edit[] {
-  const literal = serializeValue(value);
+  return setObjectFields(el, attrName, { [fieldName]: value });
+}
+
+// Set MULTIPLE fields inside an object-literal prop in one AST pass. A single
+// call composes correctly where repeated setObjectField calls against the same
+// (stale) AST would not: two "attribute absent" inserts would emit a duplicate
+// attribute (one field silently lost), and two "empty object" splices would
+// emit adjacent fields with no separating comma (refused edit). Handles all
+// four container cases: attribute absent (add it), non-object value (own it),
+// field exists (replace its value span), field missing (insert). A field whose
+// value is `undefined` is REMOVED from the object (used when a panel edit
+// unsets a value, e.g. switching back to in-flow clears position edges).
+export function setObjectFields(
+  el: AstNode,
+  attrName: string,
+  fields: Record<string, unknown>,
+): Edit[] {
+  const entries = Object.entries(fields);
+  const setEntries = entries.filter(([, v]) => v !== undefined);
+  const fieldText = (k: string, v: unknown) => `${k}: ${serializeValue(v)}`;
   const attr = findAttr(el, attrName);
 
-  // Attribute absent → add `attrName={{ fieldName: literal }}` after the tag name.
+  // Attribute absent → add `attrName={{ a: 1, b: 2 }}` after the tag name.
   if (!attr) {
+    if (setEntries.length === 0) return [];
     const at = el.openingElement.name.end;
-    return [{ start: at, end: at, text: ` ${attrName}={{ ${fieldName}: ${literal} }}` }];
+    const body = setEntries.map(([k, v]) => fieldText(k, v)).join(', ');
+    return [{ start: at, end: at, text: ` ${attrName}={{ ${body} }}` }];
   }
 
   const container = attr.value;
   // Attribute value isn't a `{ ... }` expression container → own it.
   if (!container || container.type !== 'JSXExpressionContainer') {
-    return [
-      { start: attr.start, end: attr.end, text: `${attrName}={{ ${fieldName}: ${literal} }}` },
-    ];
+    const body = setEntries.map(([k, v]) => fieldText(k, v)).join(', ');
+    return [{ start: attr.start, end: attr.end, text: `${attrName}={{ ${body} }}` }];
   }
 
   const obj = unparen(container.expression);
   // Expression isn't an object literal (dynamic) → replace it with one.
+  // (Callers guard dynamic nodes before getting here; this is the last resort.)
   if (obj.type !== 'ObjectExpression') {
+    const body = setEntries.map(([k, v]) => fieldText(k, v)).join(', ');
     return [
-      {
-        start: container.expression.start,
-        end: container.expression.end,
-        text: `{ ${fieldName}: ${literal} }`,
-      },
+      { start: container.expression.start, end: container.expression.end, text: `{ ${body} }` },
     ];
   }
 
-  const prop = (obj.properties ?? []).find(
-    (p: AstNode) => p.type === 'Property' && !p.computed && keyName(p.key) === fieldName,
-  );
-  // Field exists → replace just its value span (the tight, common case).
-  if (prop) {
-    return [{ start: prop.value.start, end: prop.value.end, text: literal }];
-  }
-
-  // Field missing → insert into the object.
   const props = (obj.properties ?? []) as AstNode[];
-  if (props.length > 0) {
-    const last = props[props.length - 1];
-    return [{ start: last.end, end: last.end, text: `, ${fieldName}: ${literal}` }];
+  const propFor = (name: string): AstNode | undefined =>
+    props.find(p => p.type === 'Property' && !p.computed && keyName(p.key) === name);
+
+  const edits: Edit[] = [];
+  const toInsert: string[] = [];
+  const removeIdx = new Set<number>();
+  for (const [k, v] of entries) {
+    const prop = propFor(k);
+    if (v === undefined) {
+      if (prop) removeIdx.add(props.indexOf(prop));
+      continue;
+    }
+    if (prop) {
+      // Field exists → replace just its value span (the tight, common case).
+      edits.push({ start: prop.value.start, end: prop.value.end, text: serializeValue(v) });
+    } else {
+      toInsert.push(fieldText(k, v));
+    }
   }
-  // Empty object literal `{}`.
-  return [{ start: obj.start + 1, end: obj.end - 1, text: ` ${fieldName}: ${literal} ` }];
+  // Removals: coalesce maximal runs of adjacent removed properties into one
+  // edit each so the separating commas are absorbed without overlap.
+  for (let i = 0; i < props.length; i++) {
+    if (!removeIdx.has(i)) continue;
+    let j = i;
+    while (j + 1 < props.length && removeIdx.has(j + 1)) j++;
+    if (j + 1 < props.length)
+      edits.push({ start: props[i].start, end: props[j + 1].start, text: '' });
+    else if (i > 0) edits.push({ start: props[i - 1].end, end: props[j].end, text: '' });
+    else edits.push({ start: obj.start + 1, end: obj.end - 1, text: '' });
+    i = j;
+  }
+  if (toInsert.length > 0) {
+    // Anchor the insert after the last SURVIVING property so it can't land
+    // inside a removal span.
+    let anchor = -1;
+    for (let i = props.length - 1; i >= 0; i--) {
+      if (!removeIdx.has(i)) {
+        anchor = i;
+        break;
+      }
+    }
+    if (anchor >= 0) {
+      edits.push({
+        start: props[anchor].end,
+        end: props[anchor].end,
+        text: `, ${toInsert.join(', ')}`,
+      });
+    } else if (props.length > 0) {
+      // Everything removed → the removal edit already cleared the interior;
+      // re-insert inside the braces just before the closing one.
+      edits.push({ start: obj.end - 1, end: obj.end - 1, text: ` ${toInsert.join(', ')} ` });
+    } else {
+      // Empty object literal `{}`.
+      edits.push({ start: obj.start + 1, end: obj.end - 1, text: ` ${toInsert.join(', ')} ` });
+    }
+  }
+  return edits;
 }
 
 // Emit a new JSX element from a code-mode node (used when adding a child).
@@ -143,7 +201,7 @@ export function emitElement(
     props.push(`uiBackground={${emitObject(node.uiBackground as Record<string, unknown>)}}`);
   if (node.type === 'Label' && node.uiText) {
     const t = node.uiText as Record<string, unknown>;
-    if (t.value !== undefined) props.push(`value=${serializeValue(t.value)}`);
+    if (t.value !== undefined) props.push(jsxStringAttr('value', String(t.value)));
     if (t.fontSize !== undefined) props.push(`fontSize={${serializeValue(t.fontSize)}}`);
   }
   return `<${node.type}${props.length ? ' ' + props.join(' ') : ''} />`;
@@ -174,18 +232,30 @@ export function insertChild(parentEl: AstNode, source: string, childJsx: string)
   return [{ start: at, end: open.end, text: `>\n  ${childJsx}\n</${tag}>` }];
 }
 
+// A JSX plain attribute string (`value="…"`) does NOT process escape
+// sequences — the literal runs to the next quote, so a `"` in the value emits
+// invalid JSX ("Unterminated string") and a `\n` reads back as a literal
+// backslash-n. Only the escape-free case is safe as a plain attribute; any
+// value needing escapes is emitted as a JS string literal inside braces
+// (`value={"…"}`), where escapes ARE processed.
+function jsxStringAttr(name: string, value: string): string {
+  const json = JSON.stringify(value);
+  if (json === `"${value}"`) return `${name}=${json}`;
+  return `${name}={${json}}`;
+}
+
 // Set or add a top-level JSX attribute — for element props that aren't nested
-// in an object (e.g. a Label's `value` / `fontSize` / `color`). Strings use the
-// `="..."` form; numbers/booleans/objects use `={...}`. Replaces the whole
+// in an object (e.g. a Label's `value` / `fontSize` / `color`). Escape-free
+// strings use the `="..."` form (strings needing escapes use `={"..."}` — see
+// jsxStringAttr); numbers/booleans/objects use `={...}`. Replaces the whole
 // attribute when it already exists (robust to a form change).
 export function setAttribute(el: AstNode, name: string, value: unknown): Edit[] {
-  const isString = typeof value === 'string';
-  const inner = isString
-    ? JSON.stringify(value)
-    : typeof value === 'number' || typeof value === 'boolean'
-      ? String(value)
-      : emitObject(value as Record<string, unknown>);
-  const attrText = isString ? `${name}=${inner}` : `${name}={${inner}}`;
+  const attrText =
+    typeof value === 'string'
+      ? jsxStringAttr(name, value)
+      : typeof value === 'number' || typeof value === 'boolean'
+        ? `${name}={${String(value)}}`
+        : `${name}={${serializeValue(value)}}`;
 
   const attr = findAttr(el, name);
   if (!attr) {

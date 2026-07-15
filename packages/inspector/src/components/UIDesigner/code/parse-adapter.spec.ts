@@ -94,9 +94,7 @@ export function MyScreen() {
 `;
       const root = parse(src)!.root;
       expect(root.dynamicProps).toBeUndefined();
-      expect(root.bindings).toEqual([
-        { field: 'asset-packs::UI.onMouseDown', variable: 'onClick' },
-      ]);
+      expect(root.bindings).toEqual([{ field: 'ui::events.onMouseDown', variable: 'onClick' }]);
     });
 
     it('should extract the handler name from a thunk event binding', () => {
@@ -110,9 +108,7 @@ export function MyScreen() {
 `;
       const root = parse(src)!.root;
       expect(root.dynamicProps).toBeUndefined();
-      expect(root.bindings).toEqual([
-        { field: 'asset-packs::UI.onMouseDown', variable: 'onClick' },
-      ]);
+      expect(root.bindings).toEqual([{ field: 'ui::events.onMouseDown', variable: 'onClick' }]);
     });
 
     it('should normalize Label textAlign / font strings to PB numeric enums', () => {
@@ -326,5 +322,86 @@ export function MainUI() {
         { name: 'active', expr: 'state.on' },
       ],
     });
+  });
+});
+
+describe('when parsing Input / Dropdown / Button props (form coverage)', () => {
+  function parseTree(source: string) {
+    const r = parseSync('S.tsx', source);
+    expect(r.errors).toHaveLength(0);
+    const parsed = codeToUINodes(r.program as any, source)!;
+    expect(parsed).not.toBeNull();
+    return parsed;
+  }
+
+  it('folds Input props into uiInput (textAlign/font normalized to enums)', () => {
+    const parsed = parseTree(`export function S() {
+  return (
+    <UiEntity>
+      <Input placeholder="Name" fontSize={18} color={{ r: 1, g: 1, b: 1, a: 1 }} font="serif" />
+    </UiEntity>
+  )
+}`);
+    const input = parsed.root.children[0];
+    expect(input.type).toBe('Input');
+    expect(input.uiInput).toMatchObject({ placeholder: 'Name', fontSize: 18, font: 1 });
+  });
+
+  it('folds Dropdown props into uiDropdown, keeping the options array', () => {
+    const parsed = parseTree(`export function S() {
+  return (
+    <UiEntity>
+      <Dropdown options={['A', 'B']} selectedIndex={1} emptyLabel="Pick one" />
+    </UiEntity>
+  )
+}`);
+    const dd = parsed.root.children[0];
+    expect(dd.type).toBe('Dropdown');
+    expect(dd.uiDropdown).toMatchObject({
+      options: ['A', 'B'],
+      selectedIndex: 1,
+      emptyLabel: 'Pick one',
+    });
+  });
+
+  it('folds Button text props into uiText (Button extends UiLabelProps)', () => {
+    const parsed = parseTree(`export function S() {
+  return (
+    <UiEntity>
+      <Button value="Click me" fontSize={18} />
+    </UiEntity>
+  )
+}`);
+    const btn = parsed.root.children[0];
+    expect(btn.type).toBe('Button');
+    expect(btn.uiText).toMatchObject({ value: 'Click me', fontSize: 18 });
+  });
+
+  it('records a bound Input value as a binding row (not opaque)', () => {
+    const parsed = parseTree(`export function S() {
+  return (
+    <UiEntity>
+      <Input placeholder="Name" value={state.name} />
+    </UiEntity>
+  )
+}`);
+    const input = parsed.root.children[0];
+    expect(input.bindings).toEqual(
+      expect.arrayContaining([{ field: 'core::UiInput.value', variable: 'state.name' }]),
+    );
+  });
+
+  it('reads the handler name from a value-bearing thunk (typed param, as the editor emits)', () => {
+    const parsed = parseTree(`export function S() {
+  return (
+    <UiEntity>
+      <Input onChange={(value: string | number) => onType(state, value)} />
+    </UiEntity>
+  )
+}`);
+    const input = parsed.root.children[0];
+    expect(input.bindings).toEqual(
+      expect.arrayContaining([{ field: 'core::UiInput.onChange', variable: 'onType' }]),
+    );
   });
 });

@@ -17,8 +17,8 @@ export interface WidgetDef {
   label: string;
   icon: JSX.Element;
   keywords?: string[];
-  // Optional creation preset routed into addUINode (e.g. 'image' seeds a
-  // texture-ready UiBackground on a plain container).
+  // Optional creation preset routed into spliceAddChild (e.g. 'image' seeds a
+  // texture-ready uiBackground on a plain container).
   preset?: 'image';
 }
 

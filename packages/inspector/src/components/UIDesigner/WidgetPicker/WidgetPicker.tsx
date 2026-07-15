@@ -40,7 +40,7 @@ export const WidgetPicker: React.FC<WidgetPickerProps> = ({ parent, anchorRef, o
   }, [q]);
 
   const add = (item: (typeof WIDGET_CATALOG)[number]['items'][number]) => {
-    void spliceAddChild(parent as unknown as number, item.type as UINodeType);
+    void spliceAddChild(parent as unknown as number, item.type as UINodeType, item.preset);
     onDismiss();
   };
 

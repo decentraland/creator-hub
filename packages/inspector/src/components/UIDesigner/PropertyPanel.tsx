@@ -28,7 +28,6 @@ import {
   BORDER_GROUP,
   EFFECTS_GROUP,
   NODE_FIELD_CONFIGS,
-  NODE_GROUP,
   type FieldConfig,
 } from './field-configs';
 
@@ -88,8 +87,7 @@ const PropertyPanelComponent: React.FC = () => {
 
   // Bindings come from the parsed source (`node.bindings`, keyed by
   // `componentId.field`): a `value={state.x}` attribute is a single-variable
-  // binding, a `value={`…${x}…`}` template is mixed content. No
-  // asset-packs::UIBindings read.
+  // binding, a `value={`…${x}…`}` template is mixed content.
   const { bindingsByField, mixedByField } = useMemo(() => {
     const byField: Record<string, string> = {};
     const mixed: Record<string, CanvasSegment[]> = {};
@@ -125,24 +123,21 @@ const PropertyPanelComponent: React.FC = () => {
     return <ComponentRefPanel node={codeNode} />;
   }
 
+  // The canvas drop wraps `<Name />` in a positioning UiEntity, and canvas
+  // clicks select that WRAPPER (the ref block is click-transparent so the
+  // wrapper stays draggable) — so surface the nested instance's props here
+  // too, below the wrapper's own fields.
+  const refChildren = (codeNode?.children ?? []).filter(c => c.componentRef);
+
   const config = NODE_FIELD_CONFIGS[type];
   // Build the Layout group dynamically:
   //   - Display / Flex direction / Justify / Align items are
   //     CONTAINER-only fields (UiEntity); leaves don't need them.
   //   - Size / Position type / Position / Padding / Margin always show.
-  // The Node (Name) group heads the panel; it feeds the auto-generated
-  // `entity-names.ts` for scene code (`SceneEntityNames.ScoreText`, …).
-  const layoutGroup = buildLayoutGroup(false, type === 'UiEntity');
+  const layoutGroup = buildLayoutGroup(type === 'UiEntity');
   const eventGroups = config.groups.filter(g => /event/i.test(g.title));
   const contentGroups = config.groups.filter(g => !/event/i.test(g.title));
-  const allGroups = [
-    NODE_GROUP,
-    layoutGroup,
-    ...contentGroups,
-    EFFECTS_GROUP,
-    BORDER_GROUP,
-    ...eventGroups,
-  ];
+  const allGroups = [layoutGroup, ...contentGroups, EFFECTS_GROUP, BORDER_GROUP, ...eventGroups];
 
   const q = query.trim().toLowerCase();
   const searching = q.length > 0;
@@ -193,6 +188,12 @@ const PropertyPanelComponent: React.FC = () => {
           </Container>
         );
       })}
+      {refChildren.map(child => (
+        <ComponentRefPanel
+          key={child.entity as unknown as number}
+          node={child}
+        />
+      ))}
     </div>
   );
 };

@@ -11,15 +11,9 @@ import type { InspectorPreferences } from '../../logic/preferences/types';
 import { buildNodesHierarchyIfNotExists } from './utils/migrations/build-nodes-hierarchy';
 import { removeLegacyEntityNodeComponents } from './utils/migrations/legacy-entity-node';
 import { DIRECTORY, withAssetDir } from './fs-utils';
-import {
-  dumpEngineToComposite,
-  generateEntityNamesType,
-  generateUiContextsType,
-  generateUiEntityNamesType,
-} from './utils/engine-to-composite';
+import { dumpEngineToComposite, generateEntityNamesType } from './utils/engine-to-composite';
 import type { CompositeManager } from './utils/fs-composite-provider';
 import { createFsCompositeProvider } from './utils/fs-composite-provider';
-import { splitUIDesignToCore } from './utils/ui-design-migration';
 import { toSceneComponent } from './utils/component';
 import { addNodesComponentsToPlayerAndCamera } from './utils/migrations/add-nodes-to-player-and-camera';
 import { fixNetworkEntityValues } from './utils/migrations/fix-network-entity-values';
@@ -39,8 +33,6 @@ enum DirtyState {
 }
 
 export const ENTITY_NAMES_PATH = 'entity-names.ts';
-export const UI_CONTEXTS_PATH = 'ui-contexts.ts';
-export const UI_ENTITY_NAMES_PATH = 'ui-entity-names.ts';
 
 export class CompositeProvider implements StateProvider {
   readonly name = 'composite';
@@ -129,7 +121,6 @@ export class CompositeProvider implements StateProvider {
     fixNetworkEntityValues(this.engine);
     selectSceneEntity(this.engine);
     migrateAllAssetPacksComponents(this.engine);
-    splitUIDesignToCore(this.engine);
     migrateAllInspectorComponents(this.engine);
     createTagsComponent(this.engine);
   }
@@ -242,18 +233,6 @@ export class CompositeProvider implements StateProvider {
         this.engine,
         withAssetDir(DIRECTORY.SCENE + '/' + ENTITY_NAMES_PATH),
         'EntityNames',
-        this.fs,
-      );
-
-      await generateUiContextsType(
-        this.engine,
-        withAssetDir(DIRECTORY.SCENE + '/' + UI_CONTEXTS_PATH),
-        this.fs,
-      );
-
-      await generateUiEntityNamesType(
-        this.engine,
-        withAssetDir(DIRECTORY.SCENE + '/' + UI_ENTITY_NAMES_PATH),
         this.fs,
       );
 

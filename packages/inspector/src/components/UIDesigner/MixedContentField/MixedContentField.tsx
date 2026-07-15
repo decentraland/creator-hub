@@ -1,9 +1,9 @@
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { Entity } from '@dcl/ecs';
-import { SegmentKind } from '@dcl/asset-packs';
 
 import { debounce } from '../../../lib/utils/debounce';
 import type { FieldConfig } from '../field-configs';
+import { SegmentKind } from '../tree-model';
 import type { CanvasSegment } from '../tree-model';
 import { VariablePicker } from '../VariablePicker';
 import { setMixedContentAttribute } from '../code/store';
@@ -65,9 +65,8 @@ export const MixedContentField: React.FC<MixedContentFieldProps> = ({
     const signature = JSON.stringify(normalized);
     if (signature === lastCommittedRef.current) return; // nothing changed
     lastCommittedRef.current = signature;
-    // Code-as-source: splice the attribute as a template literal / plain string
-    // / bare expression (setAttributeSegments collapses the three cases). No
-    // asset-packs::UIBindings write.
+    // Splice the attribute as a template literal / plain string / bare
+    // expression (setAttributeSegments collapses the three cases).
     void setMixedContentAttribute(entity as unknown as number, field.path, normalized);
   }, [entity, field.path]);
 

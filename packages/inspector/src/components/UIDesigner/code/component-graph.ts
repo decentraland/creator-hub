@@ -3,9 +3,15 @@
 // (A renders B, B renders A) infinite-recurses at runtime. Before inserting
 // `<Child />` into a root we check the edge wouldn't close a cycle. Pure: the
 // store builds the `refs` map by parsing each root (IO) and feeds it here.
+// Also owns the pure half of cross-file rename integrity: the span edits that
+// retarget a referrer's import + JSX usages when a root is renamed.
+
+import type { Edit } from './emit-adapter';
 
 interface AstNode {
   type: string;
+  start: number;
+  end: number;
   [k: string]: any;
 }
 
@@ -66,4 +72,96 @@ export function reaches(refs: Map<string, string[]>, from: string, to: string): 
 // parent → child, so it's unsafe iff `child` already reaches `parent`.
 export function wouldCycle(refs: Map<string, string[]>, parent: string, child: string): boolean {
   return reaches(refs, child, parent);
+}
+
+// The final path segment of a module specifier, extension stripped —
+// './Card' / '../ui/Card' / './Card.tsx' all yield 'Card'.
+function specifierBasename(spec: string): string {
+  const last = spec.split('/').pop() ?? spec;
+  return last.replace(/\.[tj]sx?$/, '');
+}
+
+// Whether a parsed module references root `name`: imports it by name (even
+// unused — a rename/delete would still break the import) or renders `<Name />`.
+export function referencesRoot(program: AstNode | undefined, name: string): boolean {
+  for (const stmt of (program?.body ?? []) as AstNode[]) {
+    if (stmt.type !== 'ImportDeclaration') continue;
+    const from = stmt.source?.value;
+    if (typeof from === 'string' && from.startsWith('.') && specifierBasename(from) === name)
+      return true;
+    for (const s of (stmt.specifiers ?? []) as AstNode[]) {
+      if (s.type === 'ImportSpecifier' && (s.imported?.name ?? s.imported?.value) === name)
+        return true;
+    }
+  }
+  return collectComponentRefNames(program, new Set([name])).length > 0;
+}
+
+// Span edits that retarget every reference to root `oldName` in a REFERRER file
+// onto `newName`: the import source ('./Old' → './New', directory prefix and
+// extension preserved), the imported specifier identifier, and — when the
+// local binding is the plain (unaliased) name — the `<Old>` / `</Old>` JSX
+// identifiers. An aliased import (`{ Old as O }`) keeps its alias and its JSX
+// untouched; only the imported name and module source are rewritten.
+export function renameComponentRefEdits(
+  program: AstNode | undefined,
+  oldName: string,
+  newName: string,
+): Edit[] {
+  const edits: Edit[] = [];
+  let renameJsx = false;
+
+  for (const stmt of (program?.body ?? []) as AstNode[]) {
+    if (stmt.type !== 'ImportDeclaration') continue;
+    const source = stmt.source;
+    const from = source?.value;
+    const fromMatches =
+      typeof from === 'string' && from.startsWith('.') && specifierBasename(from) === oldName;
+    if (fromMatches) {
+      // Replace only the basename inside the string literal (quotes kept).
+      const lastSlash = from.lastIndexOf('/');
+      const ext = (from.split('/').pop() ?? '').match(/\.[tj]sx?$/)?.[0] ?? '';
+      const inner = `${from.slice(0, lastSlash + 1)}${newName}${ext}`;
+      edits.push({ start: source.start + 1, end: source.end - 1, text: inner });
+    }
+    for (const s of (stmt.specifiers ?? []) as AstNode[]) {
+      if (s.type !== 'ImportSpecifier') continue;
+      const imported = s.imported;
+      if ((imported?.name ?? imported?.value) !== oldName) continue;
+      if (!fromMatches) continue; // same-named import from another module — not ours
+      edits.push({ start: imported.start, end: imported.end, text: newName });
+      // Shorthand `{ Old }`: imported and local are the same node, so the local
+      // binding is renamed by the splice above → JSX usages must follow.
+      if (s.local?.start === imported.start) renameJsx = true;
+    }
+  }
+
+  if (renameJsx) {
+    // Rename only ELEMENT-NAME identifiers (`<Old`, `</Old`, `<Old.Slot`) —
+    // never attribute names, which are also JSXIdentifiers.
+    const nameEdit = (n: any): void => {
+      const target = n?.type === 'JSXMemberExpression' ? n.object : n;
+      if (target?.type === 'JSXIdentifier' && target.name === oldName) {
+        edits.push({ start: target.start, end: target.end, text: newName });
+      }
+    };
+    const visit = (node: any): void => {
+      if (!node || typeof node !== 'object') return;
+      if (Array.isArray(node)) {
+        for (const n of node) visit(n);
+        return;
+      }
+      if (node.type === 'JSXElement') {
+        nameEdit(node.openingElement?.name);
+        nameEdit(node.closingElement?.name);
+      }
+      for (const key in node) {
+        if (key === 'type' || key === 'start' || key === 'end') continue;
+        visit(node[key]);
+      }
+    };
+    visit(program?.body);
+  }
+
+  return edits;
 }

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { SegmentKind } from '@dcl/asset-packs';
+import { SegmentKind } from '../tree-model';
 import { isSafeBindingExpr, normalizeSegments, seedSegments, serializeNodes } from './segments';
 
 function chip(variable: string): HTMLElement {

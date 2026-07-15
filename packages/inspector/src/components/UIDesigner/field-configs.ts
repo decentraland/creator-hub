@@ -1,4 +1,3 @@
-import { sanitizeNodeName } from '../../lib/sdk/operations/validators';
 import type { UINodeType } from './tree-model';
 
 // PB enum values are `const enum`s; importing them at runtime is risky across
@@ -72,8 +71,6 @@ export interface FieldConfig {
    * Whether this string field uses the inline mixed-content editor (literal
    * text interleaved with variable chips). Only meaningful for `kind: 'string'`
    * renderable text fields (UiText.value, UiInput.value, UiInput.placeholder).
-   * Identity fields (UI.name, Name.value) leave this false — they feed codegen
-   * via `sanitizeIdentifier` and must stay plain.
    */
   mixable?: boolean;
   /**
@@ -96,11 +93,15 @@ export interface FieldConfig {
   hiddenWhen?: (componentValue: Record<string, unknown>) => boolean;
   /**
    * When set, the raw input value is passed through this function before being
-   * written. Used by identity-name fields (UI.name, Name.value) to strip
-   * injection-capable characters at the write boundary — see `sanitizeNodeName`.
-   * Only consulted for `kind: 'string'` fields.
+   * written. Only consulted for `kind: 'string'` fields.
    */
   sanitize?: (value: string) => string;
+  /**
+   * Exact variable types the VariablePicker may offer for this field,
+   * overriding the kind-based coercion table. Used by TS-typed component
+   * props, where render-time string coercion doesn't apply.
+   */
+  strictTypes?: string[];
   /** One-line help shown as a hover tooltip beside the field label. */
   info?: string;
   /**
@@ -123,74 +124,10 @@ const BACKGROUND = 'core::UiBackground';
 const TEXT = 'core::UiText';
 const INPUT = 'core::UiInput';
 const DROPDOWN = 'core::UiDropdown';
-const UI_MARKER = 'asset-packs::UI';
-const NAME = 'core-schema::Name';
-
-// Shown at the top of the property panel ONLY when the selected entity has
-// the `asset-packs::UI` marker — i.e. when editing a UI root. (Visible
-// lives at the top of the Layout group instead — see `LAYOUT_VISIBLE_FIELD`.)
-export const UI_ROOT_GROUP = {
-  title: 'UI',
-  fields: [
-    {
-      label: 'Name',
-      componentId: UI_MARKER,
-      path: 'name',
-      kind: 'string' as const,
-      sanitize: sanitizeNodeName,
-    },
-    {
-      label: 'Scale to fit screen',
-      componentId: UI_MARKER,
-      path: 'scaleToFit',
-      kind: 'boolean' as const,
-      bindable: false,
-      info: 'On: the UI scales to fit the player’s screen using the canvas as a virtual resolution. Off: the UI uses real screen pixels.',
-    },
-    {
-      label: 'Canvas width',
-      componentId: UI_MARKER,
-      path: 'canvasWidth',
-      kind: 'number' as const,
-      bindable: false,
-      info: 'UI design resolution width in px (also the editor canvas size).',
-    },
-    {
-      label: 'Canvas height',
-      componentId: UI_MARKER,
-      path: 'canvasHeight',
-      kind: 'number' as const,
-      bindable: false,
-      info: 'UI design resolution height in px (also the editor canvas size).',
-    },
-  ],
-};
-
-// Shown at the top of the property panel for child UI nodes (non-root).
-// `Name.value` is what `generateEntityNamesType` reads to emit the constant
-// in `entity-names.ts`, so editing this is how creators expose a node to
-// scene code (e.g. `import { ScoreText } from './entity-names'`).
-export const NODE_GROUP = {
-  title: 'Node',
-  fields: [
-    {
-      label: 'Name',
-      componentId: NAME,
-      path: 'value',
-      kind: 'string' as const,
-      sanitize: sanitizeNodeName,
-    },
-  ],
-};
-
-// Pinned at the top of the Layout group for UI roots only — same component
-// as the UI marker, conceptually a layout/visibility toggle.
-export const LAYOUT_VISIBLE_FIELD = {
-  label: 'Visible',
-  componentId: UI_MARKER,
-  path: 'visible',
-  kind: 'boolean' as const,
-};
+// Editor-internal namespace for element-level event fields (onMouseDown, …).
+// Only used to key binding rows between the parse adapter and the panel —
+// never written into source. Must match parse-adapter's eventFieldKey.
+const UI_EVENTS = 'ui::events';
 
 // YGFlexDirection
 const FLEX_DIRECTION_OPTIONS: EnumOption[] = [
@@ -447,36 +384,14 @@ const LAYOUT_BOX_FIELDS: FieldConfig[] = [
   },
 ];
 
-// Roots resolve their size from the Canvas width/height on the marker, not from
-// their UiTransform — so a root exposes only Padding from the box fields. Size /
-// Min / Max / Align self / Position type / Position / Margin are intentionally
-// omitted (the root always fills the screen at 100% × 100% relative).
-const LAYOUT_BOX_FIELDS_ROOT: FieldConfig[] = [
-  {
-    label: 'Padding',
-    componentId: TRANSFORM,
-    path: '',
-    kind: 'quad-pixels' as const,
-    subFields: [
-      { path: 'paddingTop', leftLabel: 'T' },
-      { path: 'paddingRight', leftLabel: 'R' },
-      { path: 'paddingBottom', leftLabel: 'B' },
-      { path: 'paddingLeft', leftLabel: 'L' },
-    ],
-    bindable: false,
-  },
-];
-
 /**
  * Compose the Layout group for a given node type.
- * @param isRoot prepend the Visible toggle (only roots have the marker).
  * @param isContainer include the flex-layout fields (only UiEntity nodes).
  */
-export function buildLayoutGroup(isRoot: boolean, isContainer: boolean) {
+export function buildLayoutGroup(isContainer: boolean) {
   const fields: FieldConfig[] = [];
-  if (isRoot) fields.push(LAYOUT_VISIBLE_FIELD);
   if (isContainer) fields.push(...LAYOUT_FLEX_FIELDS);
-  fields.push(...(isRoot ? LAYOUT_BOX_FIELDS_ROOT : LAYOUT_BOX_FIELDS));
+  fields.push(...LAYOUT_BOX_FIELDS);
   return { title: 'Layout', fields };
 }
 
@@ -712,25 +627,25 @@ const MOUSE_EVENTS_GROUP = {
   fields: [
     {
       label: 'On mouse down',
-      componentId: UI_MARKER,
+      componentId: UI_EVENTS,
       path: 'onMouseDown',
       kind: 'callback' as const,
     },
     {
       label: 'On mouse up',
-      componentId: UI_MARKER,
+      componentId: UI_EVENTS,
       path: 'onMouseUp',
       kind: 'callback' as const,
     },
     {
       label: 'On mouse enter',
-      componentId: UI_MARKER,
+      componentId: UI_EVENTS,
       path: 'onMouseEnter',
       kind: 'callback' as const,
     },
     {
       label: 'On mouse leave',
-      componentId: UI_MARKER,
+      componentId: UI_EVENTS,
       path: 'onMouseLeave',
       kind: 'callback' as const,
     },
@@ -755,10 +670,16 @@ const DROPDOWN_EVENTS_GROUP = {
 // Per-node-type extra groups. The Layout group is composed dynamically by
 // `buildLayoutGroup` in PropertyPanel and is NOT listed here — that keeps
 // the field-order and root/container variants in one place.
+// EVERY react-ecs element accepts the full EntityPropTypes (uiTransform,
+// uiBackground, mouse events — see @dcl/react-ecs components/types.ts), so
+// every type lists BACKGROUND_GROUP + MOUSE_EVENTS_GROUP alongside its own
+// props (and gets Layout/Effects/Border from the panel).
 export const NODE_FIELD_CONFIGS: Record<UINodeType, NodeFieldConfig> = {
   UiEntity: { groups: [BACKGROUND_GROUP, MOUSE_EVENTS_GROUP] },
   Label: { groups: [TEXT_GROUP, BACKGROUND_GROUP, MOUSE_EVENTS_GROUP] },
   Button: { groups: [TEXT_GROUP, BACKGROUND_GROUP, MOUSE_EVENTS_GROUP] },
-  Input: { groups: [INPUT_GROUP, INPUT_EVENTS_GROUP, MOUSE_EVENTS_GROUP] },
-  Dropdown: { groups: [DROPDOWN_GROUP, DROPDOWN_EVENTS_GROUP, MOUSE_EVENTS_GROUP] },
+  Input: { groups: [INPUT_GROUP, BACKGROUND_GROUP, INPUT_EVENTS_GROUP, MOUSE_EVENTS_GROUP] },
+  Dropdown: {
+    groups: [DROPDOWN_GROUP, BACKGROUND_GROUP, DROPDOWN_EVENTS_GROUP, MOUSE_EVENTS_GROUP],
+  },
 };

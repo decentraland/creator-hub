@@ -129,7 +129,7 @@ const RootRow: React.FC<{
 // engine. "+ New UI" generates src/ui/<Name>.tsx and regenerates the aggregator;
 // selecting a root loads its file as the active source the canvas edits.
 export const CodeRootsList: React.FC = () => {
-  const { roots, filename, parsed } = useCodeState();
+  const { roots, filename, parsed, error } = useCodeState();
   const dispatch = useAppDispatch();
 
   const [editing, setEditing] = useState<string | null>(null);
@@ -180,6 +180,14 @@ export const CodeRootsList: React.FC = () => {
       <div className="ui-designer-roots-header">
         <Button onClick={handleCreate}>+ New UI</Button>
       </div>
+      {error ? (
+        <div
+          className="ui-designer-roots-error"
+          role="alert"
+        >
+          {error}
+        </div>
+      ) : null}
       <div className="ui-designer-roots-tree">
         {roots.map(root => (
           <RootRow

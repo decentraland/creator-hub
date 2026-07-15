@@ -1,9 +1,23 @@
 import React, { useCallback, useEffect, useMemo, useRef } from 'react';
-import { IoWarningOutline } from 'react-icons/io5';
+import {
+  IoEyeOutline as VisibleIcon,
+  IoEyeOffOutline as InvisibleIcon,
+  IoWarningOutline,
+} from 'react-icons/io5';
+import { MdOutlineLock as LockIcon, MdOutlineLockOpen as UnlockIcon } from 'react-icons/md';
 import type { Entity } from '@dcl/ecs';
 
 import { useAppDispatch, useAppSelector } from '../../redux/hooks';
-import { getExpanded, getSelectedNode, selectNode, setExpanded } from '../../redux/ui-designer';
+import {
+  getExpanded,
+  getHiddenNodes,
+  getLockedNodes,
+  getSelectedNode,
+  selectNode,
+  setExpanded,
+  setNodeHidden,
+  setNodeLocked,
+} from '../../redux/ui-designer';
 import { Tree } from '../Tree';
 import type { DropType } from '../Tree/utils';
 import { useUINodeActions } from './useUINodeActions';
@@ -45,6 +59,8 @@ const NodeTreeImpl: React.FC = () => {
   const activeFile = useCodeState().filename;
   const expanded = useAppSelector(getExpanded);
   const selectedNode = useAppSelector(getSelectedNode);
+  const hiddenNodes = useAppSelector(getHiddenNodes);
+  const lockedNodes = useAppSelector(getLockedNodes);
 
   // Memoise the Tree<UINode> component once per mount — Tree<T>() returns a
   // memoised component factory; constructing it in render would defeat memo.
@@ -100,7 +116,10 @@ const NodeTreeImpl: React.FC = () => {
   const handleDrop = useCallback((source: UINode, target: UINode, dropType: DropType) => {
     if (source.entity === target.entity) return;
     // Opaque nodes are read-only internally — never insert a child into one.
+    // A component instance (`<Name />`) doesn't render arbitrary children
+    // either; reorder relative to it instead.
     if ((target as CodeUINode).opaque && dropType === 'inside') return;
+    if ((target as CodeUINode).componentRef && dropType === 'inside') return;
     // Reparent/reorder by moving the element's source (the code equivalent of
     // setUIParent + reorderUISibling). 'inside' → last child of target;
     // 'before'/'after' → relative to the target sibling.
@@ -127,6 +146,54 @@ const NodeTreeImpl: React.FC = () => {
 
   const noop = useCallback(() => undefined, []);
 
+  // Editor-only lock/eye per row (replaces the generic Tree's engine-entity
+  // ActionArea, which writes ECS Lock/Hide components — meaningless for code
+  // nodes). Hide removes the node from the CANVAS render; lock blocks canvas
+  // select/drag/resize and tree drags. Neither touches the code.
+  const renderActionArea = useCallback(
+    (n: UINode) => {
+      const id = n.entity as unknown as number;
+      const isLocked = !!lockedNodes[id];
+      const isNodeHidden = !!hiddenNodes[id];
+      return (
+        <div className="action-area">
+          <div
+            className="action-button"
+            role="button"
+            aria-label={isLocked ? 'Unlock node' : 'Lock node'}
+            onClick={e => {
+              e.stopPropagation();
+              dispatch(setNodeLocked({ entity: n.entity, locked: !isLocked }));
+            }}
+          >
+            {isLocked ? <LockIcon className="lock-icon" /> : <UnlockIcon className="unlock-icon" />}
+          </div>
+          <div
+            className="action-button"
+            role="button"
+            aria-label={isNodeHidden ? 'Show node' : 'Hide node'}
+            onClick={e => {
+              e.stopPropagation();
+              dispatch(setNodeHidden({ entity: n.entity, hidden: !isNodeHidden }));
+            }}
+          >
+            {isNodeHidden ? (
+              <InvisibleIcon className="invisible-icon" />
+            ) : (
+              <VisibleIcon className="visible-icon" />
+            )}
+          </div>
+        </div>
+      );
+    },
+    [hiddenNodes, lockedNodes, dispatch],
+  );
+
+  const canDrag = useCallback(
+    (n: UINode) => !lockedNodes[n.entity as unknown as number],
+    [lockedNodes],
+  );
+
   if (!tree) return null;
 
   return (
@@ -149,6 +216,8 @@ const NodeTreeImpl: React.FC = () => {
         onAddChild={noop}
         onRemove={handleRemove}
         onDuplicate={handleDuplicate}
+        canDrag={canDrag}
+        renderActionArea={renderActionArea}
         dndType={NODE_TREE_DND_TYPE}
       />
     </div>

@@ -31,6 +31,7 @@ import {
   useHotkey,
 } from '../../hooks/useHotkey';
 import { UIDesignerTools } from '../UIDesigner/UIDesignerTools';
+import { redoCode, undoCode, useCodeState } from '../UIDesigner/code/store';
 import { Gizmos } from './Gizmos';
 import { Preferences } from './Preferences';
 import { ToolbarButton } from './ToolbarButton';
@@ -41,8 +42,9 @@ const Toolbar = withSdk(({ sdk }) => {
   const canSave = useAppSelector(selectCanSave);
   const preferences = useAppSelector(selectInspectorPreferences);
   const isAutosaveEnabled = preferences?.autosaveEnabled ?? true;
-  const canUndo = useAppSelector(selectCanUndo);
-  const canRedo = useAppSelector(selectCanRedo);
+  const dataCanUndo = useAppSelector(selectCanUndo);
+  const dataCanRedo = useAppSelector(selectCanRedo);
+  const { canUndo: codeCanUndo, canRedo: codeCanRedo } = useCodeState();
   const sceneInfoContent = useAppSelector(selectSceneInfo).content;
   const hiddenPanels = useAppSelector(getHiddenPanels);
   const dispatch = useAppDispatch();
@@ -51,6 +53,12 @@ const Toolbar = withSdk(({ sdk }) => {
   const showSceneInfoButton = !!sceneInfoContent;
   const isSceneInfoPanelOpen = !!uiState?.sceneInfoPanelVisible;
   const isUIDesignerOpen = !hiddenPanels[PanelName.UI_DESIGNER];
+
+  // With the UI Designer open, undo/redo operate on the code store's splice
+  // history (the .tsx source snapshots); otherwise on the 3D scene's CRDT
+  // history. One owner per mode — buttons AND hotkeys route the same way.
+  const canUndo = isUIDesignerOpen ? codeCanUndo : dataCanUndo;
+  const canRedo = isUIDesignerOpen ? codeCanRedo : dataCanRedo;
 
   // TODO: Remove withSdk
   const handleInspector = useCallback(() => {
@@ -63,8 +71,14 @@ const Toolbar = withSdk(({ sdk }) => {
   }, [sdk]);
 
   const handleSaveClick = useCallback(() => dispatch(save()), []);
-  const handleUndo = useCallback(() => dispatch(undo()), []);
-  const handleRedo = useCallback(() => dispatch(redo()), []);
+  const handleUndo = useCallback(() => {
+    if (isUIDesignerOpen) void undoCode();
+    else dispatch(undo());
+  }, [isUIDesignerOpen]);
+  const handleRedo = useCallback(() => {
+    if (isUIDesignerOpen) void redoCode();
+    else dispatch(redo());
+  }, [isUIDesignerOpen]);
   const handleToggleSceneInfo = useCallback(() => {
     updateUIState({ sceneInfoPanelVisible: !isSceneInfoPanelOpen });
   }, [isSceneInfoPanelOpen, updateUIState]);
