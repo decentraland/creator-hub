@@ -2,6 +2,8 @@ import { URL } from 'node:url';
 import { session, type Session } from 'electron';
 import { app, shell } from 'electron';
 
+import { STUDIOS_ADMIN_URL } from '/shared/urls';
+
 const IS_DEV = import.meta.env.DEV;
 
 /**
@@ -41,7 +43,7 @@ const ALLOWED_EXTERNAL_ORIGINS = new Set<AllowedOrigins<typeof IS_DEV>>([
   'https://decentraland.today',
   'https://decentraland.zone',
   'https://studios.decentraland.org',
-  'https://studios-admin.decentraland.org',
+  STUDIOS_ADMIN_URL,
   'https://docs.decentraland.org',
   'https://youtube.com',
   'https://www.youtube.com',
@@ -51,7 +53,7 @@ const ALLOWED_EXTERNAL_ORIGINS = new Set<AllowedOrigins<typeof IS_DEV>>([
 
 app.on('ready', () => {
   const filter = {
-    urls: ['https://studios.decentraland.org/*', 'https://studios-admin.decentraland.org/*'],
+    urls: ['https://studios.decentraland.org/*', `${STUDIOS_ADMIN_URL}/*`],
   };
 
   session.defaultSession.webRequest.onBeforeSendHeaders(filter, (details, callback) => {

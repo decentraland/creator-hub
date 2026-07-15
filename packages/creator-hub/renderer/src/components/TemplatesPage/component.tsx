@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { MenuItem, type SelectChangeEvent, Chip, Typography } from 'decentraland-ui2';
 
 import type { Template } from '/shared/types/workspace';
+import { STUDIOS_ADMIN_URL } from '/shared/urls';
 
 import { useWorkspace } from '/@/hooks/useWorkspace';
 import { ProjectCard } from '/@/components/ProjectCard';
@@ -112,7 +113,7 @@ export function TemplatesPage() {
     ({ image_1: imageUrl, video_1: videoUrl }: Template) => {
       const assetId = videoUrl || imageUrl;
       if (!assetId) return undefined;
-      const url = `https://studios-admin.decentraland.org/assets/${assetId}`;
+      const url = `${STUDIOS_ADMIN_URL}/assets/${assetId}`;
       return videoUrl ? { videoUrl: url } : { imageUrl: url };
     },
     [],

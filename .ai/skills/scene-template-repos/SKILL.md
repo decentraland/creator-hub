@@ -32,7 +32,7 @@ There are 12 scene template repos. The blank scene lives in the `decentraland` o
 | 11  | mansion-template-scene   | decentraland-scenes | Mansion                              |
 | 12  | Video-Streaming-Template | decentraland-scenes | Video Streaming                      |
 
-The blank scene repo is referenced in the Creator Hub codebase at `packages/creator-hub/preload/src/modules/constants.ts` as `EMPTY_SCENE_TEMPLATE_REPO`. The other 11 templates are fetched dynamically from the Directus API at `https://studios-admin.decentraland.org/items/resources?limit=-1` filtered by `scene_type` containing "Scene template". The response is wrapped in a `{ data: [...] }` envelope (Directus convention).
+The blank scene repo is referenced in the Creator Hub codebase at `packages/creator-hub/preload/src/modules/constants.ts` as `EMPTY_SCENE_TEMPLATE_REPO`. The other 11 templates are fetched dynamically from the API at `https://studios-admin.decentraland.org/items/resources?limit=-1` filtered by `scene_type` containing "Scene template".
 
 ## Local directory convention
 
