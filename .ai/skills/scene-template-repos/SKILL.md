@@ -32,7 +32,7 @@ There are 12 scene template repos. The blank scene lives in the `decentraland` o
 | 11  | mansion-template-scene   | decentraland-scenes | Mansion                              |
 | 12  | Video-Streaming-Template | decentraland-scenes | Video Streaming                      |
 
-The blank scene repo is referenced in the Creator Hub codebase at `packages/creator-hub/preload/src/modules/constants.ts` as `EMPTY_SCENE_TEMPLATE_REPO`. The other 11 templates are fetched dynamically from the API at `https://studios.decentraland.org/api/get/resources` filtered by `scene_type` containing "Scene template".
+The blank scene repo is referenced in the Creator Hub codebase at `packages/creator-hub/preload/src/modules/constants.ts` as `EMPTY_SCENE_TEMPLATE_REPO`. The other 11 templates are fetched dynamically from the Directus API at `https://studios-admin.decentraland.org/items/resources?limit=-1` filtered by `scene_type` containing "Scene template". The response is wrapped in a `{ data: [...] }` envelope (Directus convention).
 
 ## Local directory convention
 
@@ -59,7 +59,7 @@ Create a `scene-templates/` folder as a sibling to this repo (i.e. in the same p
 Before cloning or applying changes, always verify the current list of templates by fetching from the API:
 
 ```bash
-curl -s "https://studios.decentraland.org/api/get/resources" | jq '[.[] | select(.scene_type | test("Scene template")) | {title, github_link}]'
+curl -s "https://studios-admin.decentraland.org/items/resources?limit=-1" | jq '[.data[] | select(.scene_type | test("Scene template")) | {title, github_link}]'
 ```
 
 Compare the returned `github_link` values against the table above. If templates have been added, removed, or their repos changed, inform the user and update the workflow accordingly. The blank scene (`sdk-empty-scene-template`) is not returned by this API — it is hardcoded in the Creator Hub codebase.

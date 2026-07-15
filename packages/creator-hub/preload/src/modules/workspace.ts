@@ -225,8 +225,13 @@ export function initializeWorkspace(services: Services) {
    */
   async function getTemplates(): Promise<Template[]> {
     try {
-      const response = await fetch('https://studios.decentraland.org/api/get/resources', {}, 5000);
-      const templates: Template[] = (await response.json()) as Template[];
+      const response = await fetch(
+        'https://studios-admin.decentraland.org/items/resources?limit=-1',
+        {},
+        5000,
+      );
+      const json = (await response.json()) as { data: Template[] };
+      const templates: Template[] = json.data;
       return templates.filter($ => $.scene_type?.includes('Scene template'));
     } catch (e) {
       console.warn('[Preload] Could not get templates', e);

@@ -112,7 +112,7 @@ export function TemplatesPage() {
     ({ image_1: imageUrl, video_1: videoUrl }: Template) => {
       const assetId = videoUrl || imageUrl;
       if (!assetId) return undefined;
-      const url = `https://admin.dclstudios.org/assets/${assetId}`;
+      const url = `https://studios-admin.decentraland.org/assets/${assetId}`;
       return videoUrl ? { videoUrl: url } : { imageUrl: url };
     },
     [],

@@ -41,6 +41,7 @@ const ALLOWED_EXTERNAL_ORIGINS = new Set<AllowedOrigins<typeof IS_DEV>>([
   'https://decentraland.today',
   'https://decentraland.zone',
   'https://studios.decentraland.org',
+  'https://studios-admin.decentraland.org',
   'https://docs.decentraland.org',
   'https://youtube.com',
   'https://www.youtube.com',
@@ -50,7 +51,7 @@ const ALLOWED_EXTERNAL_ORIGINS = new Set<AllowedOrigins<typeof IS_DEV>>([
 
 app.on('ready', () => {
   const filter = {
-    urls: ['https://studios.decentraland.org/*'],
+    urls: ['https://studios.decentraland.org/*', 'https://studios-admin.decentraland.org/*'],
   };
 
   session.defaultSession.webRequest.onBeforeSendHeaders(filter, (details, callback) => {
