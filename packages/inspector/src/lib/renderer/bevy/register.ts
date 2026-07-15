@@ -51,13 +51,20 @@ export function registerBevyRenderer(): void {
       canvas.style.display = 'none';
 
       const bevy = new BevyRenderer();
-      const disconnect = connectReverseChannel({
-        engine: bevy.context.engine,
-        operations: bevy.context.operations,
-        editorComponents: bevy.context.editorComponents,
-        Transform: bevy.context.Transform,
-        rendererEvents: bevy.events,
-      });
+      const disconnect = connectReverseChannel(
+        {
+          engine: bevy.context.engine,
+          operations: bevy.context.operations,
+          editorComponents: bevy.context.editorComponents,
+          Transform: bevy.context.Transform,
+          rendererEvents: bevy.events,
+        },
+        // The Bevy agent lives in a separate engine and can't read the entity's
+        // base transform, so its gizmo commits are DELTAS (rotation = world-frame
+        // delta quaternion, scale = multiplier). Babylon emits absolute values and
+        // uses the default (absolute) mode.
+        { gizmoDeltas: true },
+      );
 
       // Boot the engine iframe pointed at the configured realm. `mount` awaits it
       // so the inspector only proceeds once the engine console is live; a boot

@@ -55,6 +55,14 @@ describe('connectReverseChannel', () => {
     vi.clearAllMocks();
   });
 
+  // Reconnect in DELTA mode (the Bevy agent path): rotation is a world-frame delta
+  // quaternion and scale a multiplier, composed onto the current value. The default
+  // connection (above) is ABSOLUTE mode (Babylon: the committed value is set as-is).
+  const reconnectDelta = () => {
+    disconnect();
+    disconnect = connectReverseChannel(context, { gizmoDeltas: true });
+  };
+
   describe('when an entity is picked', () => {
     it('should expand ancestors, select the entity with the multi flag, and dispatch', () => {
       events.emit('pick', {
@@ -107,7 +115,9 @@ describe('connectReverseChannel', () => {
     });
   });
 
-  describe('when a gizmo commit arrives', () => {
+  describe('when a gizmo commit arrives (delta mode — Bevy agent)', () => {
+    beforeEach(reconnectDelta);
+
     it('should merge each transform onto the current value without dispatching', () => {
       events.emit('gizmoCommit', {
         transforms: [{ entity: 42 as never, position: { x: 1, y: 2, z: 3 } as never }],
@@ -234,7 +244,49 @@ describe('connectReverseChannel', () => {
     });
   });
 
+  describe('when a gizmo commit arrives (absolute mode — default, Babylon)', () => {
+    // Babylon drags the local node and emits the FINAL rotation/scale; the merge
+    // must SET them, not compose/multiply onto the current value (that was the
+    // regression — rotation doubled, scale compounded — when the shared handler
+    // assumed the Bevy delta semantics for every renderer).
+    it('should SET the committed rotation, not compose it onto the current', () => {
+      transformValue = {
+        position: { x: 0, y: 0, z: 0 },
+        rotation: Quaternion.fromEulerDegrees(0, 90, 0),
+        scale: { x: 1, y: 1, z: 1 },
+      };
+      const committed = Quaternion.fromEulerDegrees(0, 45, 0); // the entity's NEW rotation
+
+      events.emit('gizmoCommit', {
+        transforms: [{ entity: 7 as never, rotation: committed as never }],
+      });
+
+      const written = (operations.updateValue as ReturnType<typeof vi.fn>).mock.calls[0][2];
+      for (const k of ['x', 'y', 'z', 'w'] as const) {
+        expect(written.rotation[k]).toBeCloseTo(committed[k], 5);
+      }
+    });
+
+    it('should SET the committed scale, not multiply it onto the current', () => {
+      transformValue = {
+        position: { x: 0, y: 0, z: 0 },
+        rotation: Quaternion.Identity(),
+        scale: { x: 2, y: 3, z: 4 },
+      };
+      const committed = { x: 5, y: 5, z: 5 }; // the entity's NEW scale
+
+      events.emit('gizmoCommit', {
+        transforms: [{ entity: 7 as never, scale: committed as never }],
+      });
+
+      const written = (operations.updateValue as ReturnType<typeof vi.fn>).mock.calls[0][2];
+      expect(written.scale).toEqual(committed);
+    });
+  });
+
   describe('when a live gizmo drag arrives (gizmoDrag)', () => {
+    beforeEach(reconnectDelta);
+
     it('should emit merged previewTransforms WITHOUT writing the CRDT or dispatching', () => {
       transformValue = {
         position: { x: 0, y: 0, z: 0 },

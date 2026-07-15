@@ -56,8 +56,27 @@ function clampScale(scale: { x: number; y: number; z: number }) {
   };
 }
 
-export function connectReverseChannel(context: ReverseChannelTarget): () => void {
+export interface ReverseChannelOptions {
+  /**
+   * How the renderer's `gizmoCommit` expresses rotation + scale:
+   *  - `false` (default): ABSOLUTE — the committed value IS the entity's new
+   *    rotation/scale (Babylon drags the local node and emits its final value).
+   *    The merge SETS them.
+   *  - `true`: DELTAS — a renderer that can't read the entity's base transform
+   *    (the Bevy agent, in a separate engine) sends rotation as a WORLD-frame
+   *    delta quaternion and scale as a per-axis multiplier. The merge COMPOSES
+   *    (delta ⊗ current) / MULTIPLIES onto the current value.
+   * Position is ABSOLUTE in both modes (the anchor is known up front).
+   */
+  gizmoDeltas?: boolean;
+}
+
+export function connectReverseChannel(
+  context: ReverseChannelTarget,
+  options: ReverseChannelOptions = {},
+): () => void {
   const { engine, operations, editorComponents } = context;
+  const gizmoDeltas = options.gizmoDeltas ?? false;
 
   function applyPick(target: PickTarget, modifiers: { multi: boolean }) {
     switch (target.kind) {
@@ -105,15 +124,14 @@ export function connectReverseChannel(context: ReverseChannelTarget): () => void
     void operations.dispatch();
   }
 
-  // Merge a renderer's gizmo delta onto an entity's current Transform. A renderer
-  // that can't read the entity's base transform (e.g. the Bevy agent, in a
-  // separate engine) sends the drag as a DELTA:
-  // - position is absolute (the renderer is given the world anchor up front);
-  // - rotation is a WORLD-frame delta quaternion about the dragged ring's world
-  //   normal: new = delta ⊗ current. (For a locally-aligned ring the normal is
-  //   the entity's rotated axis, so the same composition applies the delta about
-  //   the entity's local axis.)
-  // - scale is a per-axis multiplier, applied to the current scale.
+  // Merge a renderer's gizmo commit onto an entity's current Transform. Position
+  // is always ABSOLUTE (the anchor is known up front). Rotation + scale depend on
+  // `gizmoDeltas`:
+  //  - absolute (Babylon): the committed value IS the new rotation/scale — SET it.
+  //  - delta (Bevy agent, separate engine, can't read the base): rotation is a
+  //    WORLD-frame delta quaternion (new = delta ⊗ current — for a locally-aligned
+  //    ring the normal is the entity's rotated axis, so the same composition
+  //    applies the delta about the local axis); scale is a per-axis multiplier.
   // Values are snapped AUTHORITATIVELY here when the editor's snap is enabled —
   // the renderer only quantizes its feedback; the merge quantizes where it lands.
   function mergeTransform(
@@ -126,13 +144,19 @@ export function connectReverseChannel(context: ReverseChannelTarget): () => void
   ): TransformType {
     const position = t.position ? snapPositionValue(t.position) : undefined;
     const rotation = t.rotation
-      ? snapRotationValue(Quaternion.multiply(t.rotation, current.rotation))
+      ? snapRotationValue(
+          gizmoDeltas ? Quaternion.multiply(t.rotation, current.rotation) : t.rotation,
+        )
       : undefined;
-    // Scale: clamp the base away from 0 first (so a zeroed entity is
-    // recoverable), multiply, snap, then clamp again (snapping can round a small
-    // result back to 0).
+    // Scale: clamp away from 0 first (so a zeroed entity is recoverable). In delta
+    // mode multiply onto the current scale; in absolute mode use the value as-is.
+    // Snap, then clamp again (snapping can round a small result back to 0).
     const scale = t.scale
-      ? clampScale(snapScaleValue(Vector3.multiply(clampScale(current.scale), t.scale)))
+      ? clampScale(
+          snapScaleValue(
+            gizmoDeltas ? Vector3.multiply(clampScale(current.scale), t.scale) : t.scale,
+          ),
+        )
       : undefined;
     return {
       ...current,
