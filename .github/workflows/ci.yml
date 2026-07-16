@@ -26,11 +26,15 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  build:
+    uses: ./.github/workflows/build.yml
   lint:
     uses: ./.github/workflows/lint.yml
   typechecking:
+    needs: [ build ]
     uses: ./.github/workflows/typechecking.yml
   tests:
+    needs: [ build ]
     uses: ./.github/workflows/tests.yml
   drop_pre_release:
     name: drop pre-release
