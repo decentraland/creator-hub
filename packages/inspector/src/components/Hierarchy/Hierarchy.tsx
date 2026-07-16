@@ -66,7 +66,7 @@ const HierarchyIcon = withSdk<{ value: Entity }>(({ sdk, value }) => {
 const EntityTree = Tree<Entity>();
 
 const Hierarchy = withSdk(({ sdk }) => {
-  const spawnPointManager = sdk.sceneContext.spawnPoints;
+  const spawnPointManager = sdk.renderer.spawnPoints;
   const {
     addChild,
     setParent,
@@ -157,7 +157,7 @@ const Hierarchy = withSdk(({ sdk }) => {
   const handleBackgroundDeselect = useCallback(
     (e: React.MouseEvent<HTMLDivElement>) => {
       if (e.target !== e.currentTarget) return; // Ignore clicks on children elements
-      spawnPointManager.selectSpawnPoint(null);
+      spawnPointManager.select(null);
       void select(ROOT, false);
     },
     [select, spawnPointManager],

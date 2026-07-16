@@ -12,7 +12,8 @@ import { LoadingDots } from '../../Loading';
 import { VideoControlVolume } from '../VolumeControl';
 import { getStreamKey } from '../api';
 import { createVideoPlayerControls } from '../utils';
-import { state } from '../..';
+import { state } from '../../store';
+import { setStream } from '../../actions';
 import { COLORS } from '..';
 
 const STREAM_ICONS = {
@@ -312,7 +313,7 @@ export function ShowStreamKey({
             }}
             onMouseDown={() => {
               controls.setSource('');
-              state.videoControl.selectedStream = undefined;
+              setStream(undefined);
             }}
           />
         ) : (
@@ -330,7 +331,7 @@ export function ShowStreamKey({
             color={Color4.Black()}
             onMouseDown={() => {
               controls.setSource(LIVEKIT_STREAM_SRC);
-              state.videoControl.selectedStream = 'live';
+              setStream('live');
             }}
           />
         )}

@@ -11,6 +11,7 @@ import type { State } from '../../types';
 import { LIVEKIT_STREAM_SRC } from '../LiveStream';
 import { VideoControlVolume } from '../VolumeControl';
 import { createVideoPlayerControls, isDclCast } from '../utils';
+import { setStream } from '../../actions';
 import { getDclCastStyles, getDclCastColors, getDclCastBackgrounds } from './styles';
 
 const ICONS = {
@@ -71,7 +72,7 @@ const DclCastInfo = ({
                 uiTransform={styles.activateButton}
                 onMouseDown={() => {
                   controls.setSource('');
-                  state.videoControl.selectedStream = undefined;
+                  setStream(undefined);
                 }}
               />
             ) : (
@@ -85,7 +86,7 @@ const DclCastInfo = ({
                 color={colors.black}
                 onMouseDown={() => {
                   controls.setSource(LIVEKIT_STREAM_SRC);
-                  state.videoControl.selectedStream = 'dcl-cast';
+                  setStream('dcl-cast');
                 }}
               />
             )}

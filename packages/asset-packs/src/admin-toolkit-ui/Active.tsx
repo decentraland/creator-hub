@@ -1,6 +1,7 @@
-import { IEngine } from '@dcl/ecs';
+import type { IEngine } from '@dcl/ecs';
 import { Color4 } from '@dcl/ecs-math';
-import ReactEcs, { Label, UiEntity, UiTransformProps } from '@dcl/react-ecs';
+import type { UiTransformProps } from '@dcl/react-ecs';
+import ReactEcs, { Label, UiEntity } from '@dcl/react-ecs';
 import { clearInterval, setInterval } from './utils';
 import { COLORS } from './VideoControl';
 

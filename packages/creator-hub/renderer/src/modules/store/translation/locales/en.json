@@ -52,6 +52,7 @@
           "skip_auth_screen": "Skip Auth Screen",
           "open_new_instance": "Open multiple instances",
           "landscape_terrain_enabled": "Enable Landscape Terrains",
+          "landscape_terrain_disabled_by_scene": "Landscape terrain is hidden by this scene's settings",
           "multi_instance": "Multi-Instance Preview",
           "mobile_preview": "Show QR Code for Mobile"
         },

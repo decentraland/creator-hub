@@ -1,4 +1,5 @@
 import type { DeepReadonlyObject, Entity, IEngine, PBVideoPlayer } from '@dcl/ecs';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- ReactEcs is required for JSX factory
 import ReactEcs, { Label, UiEntity } from '@dcl/react-ecs';
 import { Color4 } from '@dcl/sdk/math';
 import { getContentUrl } from '../../constants';
@@ -8,7 +9,7 @@ import { LIVEKIT_STREAM_SRC } from '../LiveStream';
 import { isPresentationBot, stopPresentation } from '../api';
 import { VideoControlVolume } from '../VolumeControl';
 import { createVideoPlayerControls, isDclCast } from '../utils';
-import { showcaseState } from '.';
+import { setStream, dismissPresentation, expandCast } from '../../actions';
 import PresentationPanel from './PresentationPanel';
 import { getCompactBarStyles, getDclCastBackgrounds, getDclCastColors } from './styles';
 
@@ -44,16 +45,18 @@ const CompactDclCast = ({
 
   const isActive = !!(video?.src && isDclCast(video.src));
   const presentationState = state.videoControl.presentationState;
-  const presentationBotInRoom = showcaseState.participants.some(p => isPresentationBot(p.name));
+  const presentationBotInRoom = state.videoControl.participants.some(p =>
+    isPresentationBot(p.name),
+  );
   const hasPresentation = isActive && (!!presentationState || presentationBotInRoom);
 
   const handleExpand = () => {
-    state.videoControl.isMinimized = false;
+    expandCast();
   };
 
   const handleActivate = () => {
     controls.setSource(LIVEKIT_STREAM_SRC);
-    state.videoControl.selectedStream = 'dcl-cast';
+    setStream('dcl-cast');
   };
 
   return (
@@ -128,9 +131,7 @@ const CompactDclCast = ({
           compact
           hideStopSharing
           idPrefix="compact_dcl_cast"
-          onStopSharing={() => {
-            state.videoControl.presentationState = undefined;
-          }}
+          onStopSharing={() => dismissPresentation()}
         />
       </UiEntity>
 
@@ -187,7 +188,7 @@ const CompactDclCast = ({
           uiTransform={{ height: 42, padding: { left: 8, right: 8 } }}
           onMouseDown={() => {
             stopPresentation();
-            state.videoControl.presentationState = undefined;
+            dismissPresentation();
           }}
         />
       </UiEntity>

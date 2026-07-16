@@ -370,6 +370,7 @@ export function EditorPage() {
                     onChange={handleChangePreviewOptions}
                     onShowMobileQR={handleShowMobileQR}
                     supportsMultiInstance={supportsMultiInstance}
+                    projectPath={project.path}
                   />
                 }
               >

@@ -14,6 +14,7 @@ import type { GetProjectsOpts, Template, Workspace } from '/shared/types/workspa
 import { FileSystemStorage } from '/shared/types/storage';
 import { fetch } from '/shared/fetch';
 import { isValidFolderName } from '/shared/utils';
+import { STUDIOS_ADMIN_URL } from '/shared/urls';
 
 import type { Services } from '../services';
 
@@ -226,8 +227,9 @@ export function initializeWorkspace(services: Services) {
    */
   async function getTemplates(): Promise<Template[]> {
     try {
-      const response = await fetch('https://studios.decentraland.org/api/get/resources', {}, 5000);
-      const templates: Template[] = (await response.json()) as Template[];
+      const response = await fetch(`${STUDIOS_ADMIN_URL}/items/resources?limit=-1`, {}, 5000);
+      const json = (await response.json()) as { data: Template[] };
+      const templates: Template[] = json.data;
       return templates.filter($ => $.scene_type?.includes('Scene template'));
     } catch (e) {
       console.warn('[Preload] Could not get templates', e);

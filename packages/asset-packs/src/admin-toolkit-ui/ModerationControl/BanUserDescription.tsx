@@ -1,3 +1,4 @@
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- ReactEcs is required for JSX factory
 import ReactEcs, { UiEntity } from '@dcl/react-ecs';
 import { getAddUserInputStyles, getBanUserTextStyles } from './styles/AddUserInputStyles';
 
