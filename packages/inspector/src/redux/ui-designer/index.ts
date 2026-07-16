@@ -4,8 +4,6 @@ import type { Entity } from '@dcl/ecs';
 
 import type { RootState } from '../store';
 
-export type UIDesignerTool = 'move' | 'resize';
-
 // Persist the property-panel group collapse state across reloads. There is no
 // persistence middleware in this app, so we read/write localStorage directly
 // (guarded for non-browser/test environments).
@@ -42,7 +40,6 @@ export interface UIDesignerState {
   hidden: Record<number, boolean>;
   locked: Record<number, boolean>;
   collapsedGroups: Record<string, boolean>;
-  tool: UIDesignerTool;
 }
 
 export const initialState: UIDesignerState = {
@@ -52,7 +49,6 @@ export const initialState: UIDesignerState = {
   hidden: {},
   locked: {},
   collapsedGroups: loadCollapsedGroups(),
-  tool: 'move',
 };
 
 export const uiDesignerSlice = createSlice({
@@ -113,9 +109,6 @@ export const uiDesignerSlice = createSlice({
       state.hidden = {};
       state.locked = {};
     },
-    setTool: (state, { payload }: PayloadAction<{ tool: UIDesignerTool }>) => {
-      state.tool = payload.tool;
-    },
   },
 });
 
@@ -129,7 +122,6 @@ export const {
   setGroupCollapsed,
   resetExpanded,
   resetNodeState,
-  setTool,
 } = uiDesignerSlice.actions;
 
 export const getSelectedRoot = (state: RootState) => state.uiDesigner.selectedRoot;
@@ -138,6 +130,5 @@ export const getExpanded = (state: RootState) => state.uiDesigner.expanded;
 export const getHiddenNodes = (state: RootState) => state.uiDesigner.hidden;
 export const getLockedNodes = (state: RootState) => state.uiDesigner.locked;
 export const getCollapsedGroups = (state: RootState) => state.uiDesigner.collapsedGroups;
-export const getTool = (state: RootState) => state.uiDesigner.tool;
 
 export default uiDesignerSlice.reducer;

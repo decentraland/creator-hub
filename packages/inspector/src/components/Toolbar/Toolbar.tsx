@@ -30,7 +30,6 @@ import {
   UNDO_ALT,
   useHotkey,
 } from '../../hooks/useHotkey';
-import { UIDesignerTools } from '../UIDesigner/UIDesignerTools';
 import { redoCode, undoCode, useCodeState } from '../UIDesigner/code/store';
 import { Gizmos } from './Gizmos';
 import { Preferences } from './Preferences';
@@ -118,7 +117,11 @@ const Toolbar = withSdk(({ sdk }) => {
       >
         <BiRedo />
       </ToolbarButton>
-      {isUIDesignerOpen ? <UIDesignerTools /> : <Gizmos />}
+      {/* UI Designer uses direct-manipulation canvas editing (drag = move,
+          border handles = resize) — no move/resize mode toggle, so the tool
+          buttons are gone and only the 3D scene's Gizmos remain (hidden while
+          the designer is open). */}
+      {isUIDesignerOpen ? null : <Gizmos />}
       <Preferences />
       <ToolbarButton
         className="babylonjs-inspector"
