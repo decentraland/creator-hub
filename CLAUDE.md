@@ -116,6 +116,7 @@ make protoc        # Regenerate TypeScript from .proto files
 - **Import order**: ESLint enforced. React first, then `@dcl/*`, then `decentraland-*`, then MUI/internal, then relative.
 - **Component-directory barrels**: inspector component directories use a per-directory `index.ts` barrel (`export { X } from './X'`) — ~30/31 dirs follow this. Add one when creating a component; don't strip these barrels for file-count reduction — it breaks the established convention.
 - **Unused vars**: prefix with `_` (e.g., `_unused`).
+- **Comments**: code must be self-explanatory (clear names, small functions). Do NOT write comments that only restate what the next line does — delete them. Keep only comments that add value the code can't convey: the non-obvious *why* (rationale, trade-off, gotcha, bug/constraint reference), invariants, or warnings.
 - **Module type**: ESM (`"type": "module"` in all package.json files).
 - **Node version**: 22.x or higher required.
 
@@ -163,3 +164,4 @@ Read the relevant standards doc when the task touches its domain:
 
 - [`docs/coding-standards.md`](docs/coding-standards.md) — React patterns and antipatterns (controlled-input prop-sync, memoized components built in render). Read when touching `TextField`, the tree `<Input>`, or building any component with a buffered value.
 - [`docs/testing-standards.md`](docs/testing-standards.md) — E2E patterns (real keyboard input vs `fill()`, locators vs `ElementHandle`s, focus-actually-on-element gates, outcome waits vs fixed sleeps). Read when writing or debugging Playwright tests.
+- [`docs/DESIGN.md`](docs/DESIGN.md) — the inspector design system: `theme/vars.css` palette by role, the light→dark `--base-*` ramp gotcha + correct dark-surface pairing, spacing/fonts, and focus/contrast/motion/ARIA conventions. Read when writing or reviewing inspector CSS/`.tsx` styling (colors, focus states, accessibility). Note: `brand-guidelines` (Anthropic) does NOT apply here.
