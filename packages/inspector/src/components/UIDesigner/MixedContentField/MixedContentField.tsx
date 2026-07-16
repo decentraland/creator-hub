@@ -15,6 +15,9 @@ interface MixedContentFieldProps {
   field: FieldConfig;
   entity: Entity;
   segments: CanvasSegment[];
+  // Focus the editor (caret at end) on mount — used by the canvas inline editor,
+  // which mounts this on a double-click.
+  autoFocus?: boolean;
 }
 
 function createChip(variable: string): HTMLSpanElement {
@@ -48,6 +51,7 @@ export const MixedContentField: React.FC<MixedContentFieldProps> = ({
   field,
   entity,
   segments,
+  autoFocus,
 }) => {
   const editorRef = useRef<HTMLDivElement>(null);
   const anchorRef = useRef<HTMLButtonElement>(null);
@@ -87,6 +91,19 @@ export const MixedContentField: React.FC<MixedContentFieldProps> = ({
     renderSegments(editor, segments);
     lastCommittedRef.current = JSON.stringify(normalizeSegments(segments));
   }, [seedKey, segments]);
+
+  useEffect(() => {
+    if (!autoFocus) return;
+    const editor = editorRef.current;
+    if (!editor) return;
+    editor.focus();
+    const range = document.createRange();
+    range.selectNodeContents(editor);
+    range.collapse(false);
+    const sel = document.getSelection();
+    sel?.removeAllRanges();
+    sel?.addRange(range);
+  }, [autoFocus]);
 
   const saveSelection = useCallback(() => {
     const sel = document.getSelection();
@@ -167,13 +184,39 @@ export const MixedContentField: React.FC<MixedContentFieldProps> = ({
     e.preventDefault();
   }, []);
 
-  const onKeyDown = useCallback((e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      // Single-line field: prevent <br>/<div> insertion.
-      e.preventDefault();
-      editorRef.current?.blur();
-    }
-  }, []);
+  const onKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key === 'Enter') {
+        // Single-line field: prevent <br>/<div> insertion.
+        e.preventDefault();
+        editorRef.current?.blur();
+        return;
+      }
+      // Typing `{{` opens the variable/prop picker, consuming the first `{`.
+      if (e.key === '{') {
+        const sel = document.getSelection();
+        const anchor = sel?.anchorNode;
+        const offset = sel?.anchorOffset ?? 0;
+        if (
+          anchor?.nodeType === Node.TEXT_NODE &&
+          offset > 0 &&
+          anchor.textContent?.[offset - 1] === '{'
+        ) {
+          e.preventDefault();
+          const txt = anchor.textContent ?? '';
+          anchor.textContent = txt.slice(0, offset - 1) + txt.slice(offset);
+          const range = document.createRange();
+          range.setStart(anchor, offset - 1);
+          range.collapse(true);
+          sel?.removeAllRanges();
+          sel?.addRange(range);
+          saveSelection();
+          setPickerOpen(true);
+        }
+      }
+    },
+    [saveSelection],
+  );
 
   return (
     <div className="ui-designer-mixed-field">

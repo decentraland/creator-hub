@@ -305,24 +305,28 @@
   opacity: 0.7;
 }
 
-/* Inline text editor (double-click a Label/Button). Sits in place of the text
-   span and inherits the node's font/color so editing reads as in-canvas. The
-   outline is counter-scaled like the node markers to stay crisp at any zoom. */
+/* Inline mixed-content editor (double-click a Label/Button). Wraps the shared
+   MixedContentField in place of the text: the editable inherits the node's
+   font/color so it reads as in-canvas, the accent outline marks the active edit
+   (counter-scaled to stay crisp at any zoom), and the insert-variable button is
+   always visible while editing. */
 .ui-designer-canvas-inline-edit {
-  flex: 1 1 auto;
-  min-width: 40px;
-  margin: 0;
-  padding: 0;
-  border: none;
+  display: inline-flex;
+  min-width: 60px;
+  max-width: 100%;
   background: var(--ui-designer-accent-12);
-  color: inherit;
-  font: inherit;
-  text-align: inherit;
   outline: calc(1px / var(--uid-scale, 1)) solid var(--ui-designer-accent);
 }
 
-.ui-designer-canvas-inline-edit:focus-visible {
-  outline: calc(2px / var(--uid-scale, 1)) solid var(--border-focused);
+.ui-designer-canvas-inline-edit .ui-designer-mixed-editable {
+  font: inherit;
+  color: inherit;
+  min-height: 0;
+  border: none;
+}
+
+.ui-designer-canvas-inline-edit .ui-designer-mixed-link {
+  opacity: 1;
 }
 
 .ui-designer-canvas-zoom {

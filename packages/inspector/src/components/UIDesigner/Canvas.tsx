@@ -32,7 +32,6 @@ import { useUINodeTree } from './useUINodeTree';
 import {
   createRoot as createCodeRoot,
   spliceAddChild,
-  spliceComponentPatch,
   spliceInsertComponent,
   spliceMove,
   spliceUiTransformMargin,
@@ -42,6 +41,9 @@ import {
 } from './code/store';
 import { buildResolveMap } from './code/bindings';
 import type { CodeUINode } from './code/types';
+import { MixedContentField } from './MixedContentField';
+import { seedSegments } from './MixedContentField/segments';
+import type { FieldConfig } from './field-configs';
 import {
   clearNodeRegistry,
   getNodeElement,
@@ -230,6 +232,16 @@ function color4ToRgba(c: { r: number; g: number; b: number; a?: number }): strin
 // black. Match it so the canvas preview doesn't fall back to `currentColor` (the
 // node's light text color), which read as a mismatch against the panel swatch.
 const DEFAULT_BORDER_COLOR = { r: 0, g: 0, b: 0, a: 1 };
+
+// The Label/Button text field, driving the inline mixed-content editor (literal
+// text + variable/prop bindings). Same UiText.value field the panel binds.
+const TEXT_VALUE_FIELD: FieldConfig = {
+  label: 'Text',
+  componentId: 'core::UiText',
+  path: 'value',
+  kind: 'string',
+  mixable: true,
+};
 
 function nodeStyle(node: UINode): React.CSSProperties {
   const t = (node.uiTransform ?? {}) as Record<string, number | undefined>;
@@ -733,15 +745,14 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node, hidden }) => {
   const [isResizing, setIsResizing] = useState(false);
 
   // --- Inline canvas text editing (double-click a Label/Button) ---
-  // The buffer lives in a ref (the commit source of truth — no stale closure)
-  // mirrored into state for the controlled input. Only LITERAL text is editable:
-  // a bound value (`value={state.x}`) is an expression, edited in the panel.
-  const [editingText, setEditingText] = useState<string | null>(null);
-  const editingTextRef = useRef<string | null>(null);
-  const isTextEditable =
-    !isLocked &&
-    (node.type === 'Label' || node.type === 'Button') &&
-    !node.bindings?.some(b => b.field === 'core::UiText.value');
+  // Reuses the panel's MixedContentField, so the inline editor handles literal
+  // text AND variable/prop bindings (type, or insert a chip via the picker) —
+  // including editing an already-bound value. Editing ends on a click outside
+  // the editor and its (portaled) picker, or on Escape.
+  const [editing, setEditing] = useState(false);
+  const editingRef = useRef(false);
+  editingRef.current = editing;
+  const isTextEditable = !isLocked && (node.type === 'Label' || node.type === 'Button');
 
   const handleClick = useCallback(
     (e: React.MouseEvent) => {
@@ -756,49 +767,37 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node, hidden }) => {
     (e: React.MouseEvent) => {
       if (!isTextEditable) return;
       e.stopPropagation();
-      const seed = (text.value ?? '') as string;
-      editingTextRef.current = seed;
-      setEditingText(seed);
+      setEditing(true);
       dispatch(selectNode({ node: node.entity }));
     },
-    [isTextEditable, text.value, dispatch, node.entity],
+    [isTextEditable, dispatch, node.entity],
   );
 
-  const commitInlineEdit = useCallback(() => {
-    const value = editingTextRef.current;
-    if (value === null) return;
-    editingTextRef.current = null;
-    setEditingText(null);
-    // Same async source-splice path the property panel uses for text.
-    void spliceComponentPatch(node.entity as unknown as number, 'core::UiText', { value });
-  }, [node.entity]);
-
-  const handleInlineKeyDown = useCallback(
-    (e: React.KeyboardEvent) => {
-      e.stopPropagation();
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        commitInlineEdit();
-      } else if (e.key === 'Escape') {
-        e.preventDefault();
-        editingTextRef.current = null;
-        setEditingText(null);
-      }
-    },
-    [commitInlineEdit],
-  );
-
-  const handleInlineChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    editingTextRef.current = e.target.value;
-    setEditingText(e.target.value);
-  }, []);
+  useEffect(() => {
+    if (!editing) return;
+    const onDown = (e: MouseEvent) => {
+      const t = e.target as HTMLElement;
+      if (t.closest('.ui-designer-mixed-field') || t.closest('.ui-designer-variable-picker'))
+        return;
+      setEditing(false);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setEditing(false);
+    };
+    document.addEventListener('mousedown', onDown, true);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', onDown, true);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [editing]);
 
   const handleMouseDown = useCallback(
     (e: React.MouseEvent) => {
       if (e.button !== 0) return; // left-drag moves; right/middle bubble to the canvas pan
       if (isLocked) return;
       if (!canDragMove) return;
-      if (editingTextRef.current !== null) return; // don't drag while editing text inline
+      if (editingRef.current) return; // don't drag while editing text inline
       // Ignore clicks inside inputs / interactive children so the property
       // panel doesn't end up dragging the parent node.
       const target = e.target as HTMLElement;
@@ -1204,22 +1203,29 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node, hidden }) => {
           <span className="ui-designer-canvas-dropdown-chevron">▼</span>
         </span>
       ) : null}
-      {/* Label/Button text: an inline editor while editing (double-click), else
-          the resolved preview text. Button had no text branch before, so it
-          painted as an empty box. */}
+      {/* Label/Button text: a mixed-content editor while editing (double-click) —
+          literal text + variable/prop chips — else the resolved preview text.
+          Button had no text branch before, so it painted as an empty box. */}
       {node.type === 'Label' || node.type === 'Button' ? (
-        editingText !== null ? (
-          <input
+        editing ? (
+          <span
             className="ui-designer-canvas-inline-edit"
-            value={editingText}
-            autoFocus
-            aria-label={`Edit ${node.type} text`}
-            onChange={handleInlineChange}
-            onKeyDown={handleInlineKeyDown}
-            onBlur={commitInlineEdit}
             onMouseDown={e => e.stopPropagation()}
             onClick={e => e.stopPropagation()}
-          />
+          >
+            <MixedContentField
+              field={TEXT_VALUE_FIELD}
+              entity={node.entity}
+              autoFocus
+              segments={seedSegments(
+                text.value,
+                node.bindings?.find(b => b.field === 'core::UiText.value' && b.segments?.length)
+                  ?.segments,
+                node.bindings?.find(b => b.field === 'core::UiText.value' && !b.segments?.length)
+                  ?.variable,
+              )}
+            />
+          </span>
         ) : labelText ? (
           <span className="ui-designer-canvas-text">{labelText}</span>
         ) : null
