@@ -4,6 +4,14 @@ description: >-
   (proto-gen, asset-packs-dist, inspector-dist) into their package
   directories, so QA jobs consume them instead of rebuilding.
 
+inputs:
+  include-creator-hub:
+    description: >-
+      Also download the prebuilt creator-hub dist (main/preload/renderer).
+      Only the E2E job launches the built app, so it defaults off.
+    required: false
+    default: 'false'
+
 runs:
   using: composite
   steps:
@@ -26,3 +34,10 @@ runs:
       with:
         name: inspector-dist
         path: packages/inspector
+
+    - name: download creator-hub-dist
+      if: inputs.include-creator-hub == 'true'
+      uses: actions/download-artifact@v4
+      with:
+        name: creator-hub-dist
+        path: packages/creator-hub

@@ -64,9 +64,13 @@ jobs:
       - name: install Playwright browsers
         run: npx playwright install
 
-      # Reuse the shared build (proto gen + asset-packs + inspector dist) so the
-      # inspector server below serves the prebuilt bundle without rebuilding here.
+      # Reuse the shared build: the inspector server below serves the prebuilt
+      # bundle, and test-e2e-ci launches the prebuilt creator-hub app — so
+      # nothing is rebuilt on this (macOS) runner. include-creator-hub pulls the
+      # extra creator-hub dist that only the E2E job needs.
       - uses: ./.github/actions/download-build
+        with:
+          include-creator-hub: 'true'
 
       - name: start inspector server
         shell: bash
@@ -76,7 +80,7 @@ jobs:
           sleep 5
 
       - name: e2e
-        run: make test-e2e
+        run: make test-e2e-ci
         env:
           NODE_OPTIONS: "--max-old-space-size=8192"
           E2E_CONTENT_URL: https://builder-items.decentraland.zone
