@@ -90,60 +90,6 @@
   outline-offset: 1px;
 }
 
-/* Native <select> theming — the property + variables panels render raw
-   <select>s which would otherwise paint as bright white OS controls on the
-   dark panel. Match the inspector's .InputContainer (var(--gray-0) bg, 4px
-   radius, hairline border) and draw our own chevron so they read as one
-   control family. Scoped to the rails so the rest of the inspector is
-   untouched. */
-.ui-designer-left-rail select,
-.ui-designer-right-rail select {
-  appearance: none;
-  -webkit-appearance: none;
-  box-sizing: border-box;
-  background-color: var(--ui-designer-control-bg);
-  color: var(--white);
-  border: 1px solid var(--ui-designer-control-border);
-  border-radius: 4px;
-  padding: 4px 26px 4px 8px;
-  font-family: var(--font-family);
-  font-size: 12px;
-  line-height: 1.4;
-  cursor: pointer;
-  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='white' stroke-opacity='0.55' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><path d='M6 9l6 6 6-6'/></svg>");
-  background-repeat: no-repeat;
-  background-position: right 7px center;
-}
-
-.ui-designer-left-rail select:hover,
-.ui-designer-right-rail select:hover {
-  border-color: var(--ui-designer-accent-40);
-}
-
-.ui-designer-left-rail select:focus-visible,
-.ui-designer-right-rail select:focus-visible {
-  outline: none;
-  border-color: var(--ui-designer-accent);
-  box-shadow: 0 0 0 1px var(--ui-designer-accent);
-}
-
-/* The native option popup is OS-drawn; give it a dark palette so it doesn't
-   flash white on open. */
-.ui-designer-left-rail select option,
-.ui-designer-right-rail select option {
-  background-color: var(--tree-bg-color);
-  color: var(--white);
-}
-
-/* Field-level enum selects (Display / Flex direction / Justify / Align self /
-   Position type / variable Type) are direct children of a Block `.content`;
-   stretch them full-width so they align into one tidy column with the text
-   inputs. The small `px` unit pickers live in .ui-designer-unit-selector /
-   .ui-designer-length-row and are intentionally excluded. */
-.ui-designer-right-rail .content > select {
-  width: 100%;
-}
-
 /* Honor reduced-motion across the whole UI Designer surface — the hover
    reveals, outline fades and palette transitions all collapse to instant. */
 @media (prefers-reduced-motion: reduce) {
