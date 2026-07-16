@@ -5,6 +5,7 @@ import { registerRenderer } from '../plugin';
 import { BevyRenderer } from './BevyRenderer';
 import { mountBevyEngine } from './engine-iframe';
 import { createCameraBridge } from './camera-bridge';
+import { createAnimationsBridge } from './animations-bridge';
 import { createDropPointBridge } from './drop-point-bridge';
 import { createForwardEditBridge } from './forward-edits';
 import { createInputFocusBridge } from './input-focus-bridge';
@@ -140,6 +141,12 @@ export function registerBevyRenderer(): void {
       const dropPoint = createDropPointBridge();
       bevy.setDropPointResolver(ndc => dropPoint.query(ndc));
 
+      // Animator: the agent reads an entity's GLTF animation clip names from the
+      // engine (GltfContainerLoadingState) and replies over the bus; wire it into
+      // getEntityAnimations so the Animator panel's clip dropdown populates.
+      const animations = createAnimationsBridge();
+      bevy.setAnimationsResolver(entity => animations.query(entity as number));
+
       // Editor camera: the toggle posts the chosen mode to the agent, which
       // enacts the fly-camera takeover in the engine.
       const cameraBridge = createCameraBridge();
@@ -182,6 +189,7 @@ export function registerBevyRenderer(): void {
           sceneRunBridge.disconnect();
           cameraBridge.disconnect();
           dropPoint.disconnect();
+          animations.disconnect();
           disconnectSelection();
           disconnectPick();
           disconnectForward();

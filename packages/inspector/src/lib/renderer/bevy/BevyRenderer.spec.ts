@@ -240,3 +240,33 @@ describe('BevyRenderer focusOnEntity', () => {
     expect(renderer.editorCamera.getMode()).toBe('free');
   });
 });
+
+describe('BevyRenderer getEntityAnimations', () => {
+  let renderer: BevyRenderer;
+
+  beforeEach(() => {
+    renderer = new BevyRenderer();
+  });
+
+  afterEach(() => renderer.dispose());
+
+  it('should map the agent-resolved clip names to RendererAnimations', async () => {
+    renderer.setAnimationsResolver(async () => ['Idle', 'Walk']);
+    const anims = await renderer.getEntityAnimations(512 as never);
+    expect(anims).toEqual([{ name: 'Idle' }, { name: 'Walk' }]);
+  });
+
+  it('should pass the queried entity to the resolver', async () => {
+    const asked: number[] = [];
+    renderer.setAnimationsResolver(async entity => {
+      asked.push(entity as number);
+      return [];
+    });
+    await renderer.getEntityAnimations(700 as never);
+    expect(asked).toEqual([700]);
+  });
+
+  it('should return none when no resolver is wired (conformance path)', async () => {
+    expect(await renderer.getEntityAnimations(512 as never)).toEqual([]);
+  });
+});
