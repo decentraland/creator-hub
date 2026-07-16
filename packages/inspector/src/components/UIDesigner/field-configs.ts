@@ -105,6 +105,14 @@ export interface FieldConfig {
   /** One-line help shown as a hover tooltip beside the field label. */
   info?: string;
   /**
+   * Always shown in the panel — the curated baseline for its group. Optional
+   * scalar-ish fields WITHOUT this flag are hidden until set (or added via the
+   * group's `+ Add property` menu) and carry a `−` to unset them. Composite /
+   * context-gated fields (texture, box-model, anchor, uv-region, callbacks) are
+   * always shown regardless. See PropertyPanel `isTogglable`.
+   */
+  core?: boolean;
+  /**
    * For `enum` fields whose in-world default is not the zero option: the value
    * the dropdown shows when the component leaves the prop unset. e.g. UiText
    * `textAlign` defaults to `center` (4) in the runtime (@dcl/ecs PBUiText:
@@ -237,6 +245,8 @@ const LAYOUT_FLEX_FIELDS: FieldConfig[] = [
     kind: 'enum' as const,
     options: DISPLAY_OPTIONS,
     bindable: false,
+    core: true,
+    info: 'Flex lays out the node and its children; None removes it from layout entirely.',
   },
   {
     label: 'Flex direction',
@@ -245,6 +255,7 @@ const LAYOUT_FLEX_FIELDS: FieldConfig[] = [
     kind: 'enum' as const,
     options: FLEX_DIRECTION_OPTIONS,
     bindable: false,
+    info: 'Main axis children flow along: row (horizontal) or column (vertical).',
   },
   {
     label: 'Justify content',
@@ -253,6 +264,7 @@ const LAYOUT_FLEX_FIELDS: FieldConfig[] = [
     kind: 'enum' as const,
     options: JUSTIFY_CONTENT_OPTIONS,
     bindable: false,
+    info: 'Distributes children along the main axis, including the space between them.',
   },
   {
     label: 'Align items',
@@ -261,6 +273,7 @@ const LAYOUT_FLEX_FIELDS: FieldConfig[] = [
     kind: 'enum' as const,
     options: ALIGN_OPTIONS,
     bindable: false,
+    info: 'Aligns children on the cross axis (perpendicular to the flex direction).',
   },
   {
     label: 'Align content',
@@ -269,6 +282,7 @@ const LAYOUT_FLEX_FIELDS: FieldConfig[] = [
     kind: 'enum' as const,
     options: ALIGN_OPTIONS,
     bindable: false,
+    info: 'Aligns wrapped lines on the cross axis. Applies only when Flex wrap is on.',
   },
   {
     label: 'Flex wrap',
@@ -277,6 +291,7 @@ const LAYOUT_FLEX_FIELDS: FieldConfig[] = [
     kind: 'enum' as const,
     options: FLEX_WRAP_OPTIONS,
     bindable: false,
+    info: 'Lets children flow onto multiple lines when they do not fit on one.',
   },
   {
     label: 'Flex grow',
@@ -290,6 +305,7 @@ const LAYOUT_FLEX_FIELDS: FieldConfig[] = [
     componentId: TRANSFORM,
     path: 'flexShrink',
     kind: 'number' as const,
+    info: 'How much this item shrinks when space is tight (0 = never shrink).',
   },
   {
     label: 'Overflow',
@@ -298,6 +314,7 @@ const LAYOUT_FLEX_FIELDS: FieldConfig[] = [
     kind: 'enum' as const,
     options: OVERFLOW_OPTIONS,
     bindable: false,
+    info: 'How content larger than the box is handled: visible, hidden, or scroll.',
   },
 ];
 
@@ -312,6 +329,8 @@ const LAYOUT_BOX_FIELDS: FieldConfig[] = [
       { path: 'height', leftLabel: 'H' },
     ],
     bindable: false,
+    core: true,
+    info: 'Width and height. Each supports px or % of the parent.',
   },
   {
     label: 'Min size',
@@ -323,6 +342,7 @@ const LAYOUT_BOX_FIELDS: FieldConfig[] = [
       { path: 'minHeight', leftLabel: 'H' },
     ],
     bindable: false,
+    info: 'Lower bound on size; the node never renders smaller. Supports px or %.',
   },
   {
     label: 'Max size',
@@ -334,6 +354,7 @@ const LAYOUT_BOX_FIELDS: FieldConfig[] = [
       { path: 'maxHeight', leftLabel: 'H' },
     ],
     bindable: false,
+    info: 'Upper bound on size; the node never renders larger. Supports px or %.',
   },
   {
     label: 'Align self',
@@ -342,6 +363,7 @@ const LAYOUT_BOX_FIELDS: FieldConfig[] = [
     kind: 'enum' as const,
     options: ALIGN_OPTIONS,
     bindable: false,
+    info: "Overrides the parent's Align items for this node only.",
   },
   {
     label: 'Positioning',
@@ -350,6 +372,7 @@ const LAYOUT_BOX_FIELDS: FieldConfig[] = [
     kind: 'position-mode' as const,
     options: POSITION_TYPE_OPTIONS,
     bindable: false,
+    core: true,
     info: 'In flow: laid out by the parent (order, gaps, alignment). Absolute: pinned at Top/Left offsets. Switching keeps the node where it is on screen.',
   },
   {
@@ -373,6 +396,7 @@ const LAYOUT_BOX_FIELDS: FieldConfig[] = [
       { path: 'positionLeft', leftLabel: 'L' },
     ],
     bindable: false,
+    info: 'Top / Right / Bottom / Left offsets. Applied when Positioning is Absolute.',
   },
   {
     label: 'Spacing',
@@ -456,7 +480,14 @@ export const BORDER_GROUP = {
 const BACKGROUND_GROUP = {
   title: 'Background',
   fields: [
-    { label: 'Color', componentId: BACKGROUND, path: 'color', kind: 'color' as const },
+    {
+      label: 'Color',
+      componentId: BACKGROUND,
+      path: 'color',
+      kind: 'color' as const,
+      core: true,
+      info: "Fill color behind the node's content.",
+    },
     {
       label: 'Texture mode',
       componentId: BACKGROUND,
@@ -464,6 +495,7 @@ const BACKGROUND_GROUP = {
       kind: 'enum' as const,
       options: TEXTURE_MODE_OPTIONS,
       bindable: false,
+      info: 'How the texture fills the box: nine-slice, center, or stretch.',
     },
     {
       label: 'Texture',
@@ -500,9 +532,23 @@ const BACKGROUND_GROUP = {
 const TEXT_GROUP = {
   title: 'Text',
   fields: [
-    { label: 'Value', componentId: TEXT, path: 'value', kind: 'string' as const, mixable: true },
+    {
+      label: 'Value',
+      componentId: TEXT,
+      path: 'value',
+      kind: 'string' as const,
+      mixable: true,
+      core: true,
+    },
     { label: 'Color', componentId: TEXT, path: 'color', kind: 'color' as const },
-    { label: 'Font size', componentId: TEXT, path: 'fontSize', kind: 'number' as const },
+    {
+      label: 'Font size',
+      componentId: TEXT,
+      path: 'fontSize',
+      kind: 'number' as const,
+      core: true,
+      info: 'Text size in pixels.',
+    },
     {
       label: 'Text align',
       componentId: TEXT,
@@ -512,6 +558,7 @@ const TEXT_GROUP = {
       bindable: false,
       // UiText.textAlign defaults to center (4) in-world, not the zero option.
       defaultValue: 4,
+      info: 'Anchors the text within its box. Defaults to middle center.',
     },
     {
       label: 'Font',
@@ -520,6 +567,7 @@ const TEXT_GROUP = {
       kind: 'enum' as const,
       options: FONT_OPTIONS,
       bindable: false,
+      info: 'Typeface: sans serif, serif, or monospace.',
     },
     {
       label: 'Text wrap',
@@ -528,6 +576,7 @@ const TEXT_GROUP = {
       kind: 'enum' as const,
       options: TEXT_WRAP_OPTIONS,
       bindable: false,
+      info: 'Wrap long text onto multiple lines, or keep it on one line.',
     },
   ],
 };
@@ -541,8 +590,16 @@ const INPUT_GROUP = {
       path: 'placeholder',
       kind: 'string' as const,
       mixable: true,
+      core: true,
     },
-    { label: 'Value', componentId: INPUT, path: 'value', kind: 'string' as const, mixable: true },
+    {
+      label: 'Value',
+      componentId: INPUT,
+      path: 'value',
+      kind: 'string' as const,
+      mixable: true,
+      core: true,
+    },
     { label: 'Disabled', componentId: INPUT, path: 'disabled', kind: 'boolean' as const },
     { label: 'Color', componentId: INPUT, path: 'color', kind: 'color' as const },
     {
@@ -576,7 +633,13 @@ const INPUT_GROUP = {
 const DROPDOWN_GROUP = {
   title: 'Dropdown',
   fields: [
-    { label: 'Options', componentId: DROPDOWN, path: 'options', kind: 'string-array' as const },
+    {
+      label: 'Options',
+      componentId: DROPDOWN,
+      path: 'options',
+      kind: 'string-array' as const,
+      core: true,
+    },
     {
       label: 'Selected index',
       componentId: DROPDOWN,

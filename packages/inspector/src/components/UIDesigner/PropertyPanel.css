@@ -5,119 +5,224 @@
   flex: 1 1 auto;
 }
 
-.ui-designer-property-search {
-  padding: var(--uid-space-2) var(--uid-space-3) var(--uid-space-1);
-}
-
-/* The shared Search renders a light default input that clashed with the dark
-   panel. Re-skin it to the control family: dark fill, hairline border, accent
-   focus ring, muted icon + placeholder. */
-.ui-designer-property-search .Search {
-  padding: 0;
-  background: var(--ui-designer-control-bg);
-  border: 1px solid var(--ui-designer-control-border);
-  border-radius: 4px;
-}
-
-.ui-designer-property-search .Search:focus-within {
-  border-color: var(--ui-designer-accent);
-  box-shadow: 0 0 0 1px var(--ui-designer-accent);
-}
-
-.ui-designer-property-search .Search-icon {
-  color: rgba(255, 255, 255, 0.45);
-}
-
-.ui-designer-property-search .Search input {
-  width: 100%;
-  background: transparent;
-  border: none;
-  color: var(--white);
-  padding: 6px 8px 6px 30px;
-}
-
-.ui-designer-property-search .Search input::placeholder {
-  color: rgba(255, 255, 255, 0.4);
-}
-
 .ui-designer-property-panel-empty {
   padding: 12px;
-  color: var(--text-muted, #888);
+  color: var(--sub-text);
   font-size: 12px;
   text-align: center;
 }
 
-/* Inline unit selector that sits under a stacked `length-vec` group. Kept
-   short and right-aligned so it reads as a modifier of the values above. */
-.ui-designer-unit-selector {
-  display: flex;
-  justify-content: flex-end;
-  margin-top: 2px;
-}
-
-.ui-designer-unit-selector select {
-  width: 60px;
-}
-
-/* Inline `Label  [control]` row used for enums + booleans. Saves the
-   vertical real estate that a stacked Block would consume when there are
-   many simple controls (Flex direction / Justify content / Align items /
-   Display / Visible / …). Uses the same `Label` primitive as the rest of
-   the inspector. */
-.ui-designer-inline-field {
-  display: flex;
+/* --- Inline 2-column field layout (Phase F1) ---
+   Scoped to the panel so the SHARED Block (used by EntityInspector) is untouched.
+   Turn each Block from stacked (label over control) into a grid: label column +
+   a 1fr control column. Every row's control then aligns to the same width,
+   fixing the ragged/auto-sized rows. */
+.ui-designer-property-panel .Block {
+  display: grid;
+  /* Label column + a control column CAPPED at a compact width (Figma-style):
+     controls stay dense and left-aligned instead of stretching across a wide
+     panel. In a narrow rail the control simply fills the smaller space. */
+  grid-template-columns: minmax(72px, 92px) minmax(0, 260px);
+  column-gap: var(--uid-space-2);
   align-items: center;
-  gap: 8px;
-  padding: 4px 0;
-  min-height: 28px;
+  margin: 0;
+  padding: var(--uid-space-1) 0;
 }
 
-.ui-designer-inline-field > .Label {
-  flex: 0 0 110px;
+/* Label column: vertically centered, truncates instead of pushing the control
+   out of alignment (WIG long-content). */
+.ui-designer-property-panel .Block-label-row {
   margin-bottom: 0;
+  min-width: 0;
+  overflow: hidden;
 }
 
-.ui-designer-inline-field > select {
+.ui-designer-property-panel .Block-label-row .Label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Control column fills the cell — the single "control fills the column"
+   contract that replaces the old fill/intrinsic/fixed mix. Every direct child of
+   `.content` stretches; the bindable wrapper is made flex so a nested Field's own
+   flex-grow fills too. Intrinsic controls (color swatch, checkbox) keep their
+   size but sit at the column start, which is what aligns the rows. Fixed-width
+   exceptions (unit selectors) override below via higher specificity. */
+.ui-designer-property-panel .Block > .content {
+  min-width: 0;
+  align-items: center;
+}
+
+.ui-designer-property-panel .Block > .content > * {
   flex: 1 1 auto;
   min-width: 0;
 }
 
-.ui-designer-inline-field > input[type='checkbox'] {
+.ui-designer-property-panel .ui-designer-bindable-content {
+  display: flex;
+  align-items: center;
+}
+
+/* Intrinsic widgets keep their natural size and sit at the column start instead
+   of being blown up by the fill rule above (the anchor grid is width:max-content
+   ~96px; without this it stretched to the full column — the "huge Anchor box"). */
+.ui-designer-property-panel .Block > .content > .ui-designer-anchor-grid {
   flex: 0 0 auto;
 }
 
-.ui-designer-string-array {
-  box-sizing: border-box;
-  width: 100%;
-  min-height: 64px;
-  resize: vertical;
-  background-color: var(--ui-designer-control-bg);
-  color: var(--white);
-  border: 1px solid var(--ui-designer-control-border);
-  border-radius: 4px;
-  padding: 6px 8px;
-  font-family: var(--font-family);
-  font-size: 12px;
-  line-height: 1.4;
+/* Wide composite widgets (box-model / anchor grid / uv-region / nine-slice)
+   can't render usefully in the narrow control column — like Figma, they stack
+   full-width with the label above. Set on the row wrapper by PropertyPanel. */
+.ui-designer-property-panel .ui-designer-property-row.wide .Block {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
 }
 
-.ui-designer-string-array:focus-visible {
-  outline: none;
-  border-color: var(--ui-designer-accent);
-  box-shadow: 0 0 0 1px var(--ui-designer-accent);
+.ui-designer-property-panel .ui-designer-property-row.wide .Block-label-row {
+  margin-bottom: var(--label-margin-bottom);
+}
+
+/* --- Row wrapper + remove (−) affordance (Phase F3) --- */
+.ui-designer-property-row {
+  position: relative;
+}
+
+/* Hover/focus-revealed remove button for an optional (non-core) property. */
+.ui-designer-prop-remove {
+  position: absolute;
+  top: var(--uid-space-1);
+  right: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: none;
+  border-radius: 3px;
+  background: transparent;
+  color: var(--sub-text);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 60ms linear;
+}
+
+.ui-designer-property-row:hover .ui-designer-prop-remove,
+.ui-designer-property-row:focus-within .ui-designer-prop-remove {
+  opacity: 1;
+}
+
+.ui-designer-prop-remove:hover {
+  background: var(--ui-designer-accent-12);
+  color: var(--title);
+}
+
+.ui-designer-prop-remove:focus-visible {
+  opacity: 1;
+  outline: 2px solid var(--border-focused);
+  outline-offset: 1px;
+}
+
+.ui-designer-prop-remove svg {
+  width: 13px;
+  height: 13px;
+}
+
+/* --- + Add property menu (Phase F3) — native <details> disclosure --- */
+.ui-designer-add-prop {
+  margin-top: var(--uid-space-1);
+}
+
+.ui-designer-add-prop-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 6px;
+  border-radius: 4px;
+  color: var(--ui-designer-accent);
+  font-size: 12px;
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
+}
+
+.ui-designer-add-prop-trigger::-webkit-details-marker {
+  display: none;
+}
+
+.ui-designer-add-prop-trigger:hover {
+  background: var(--ui-designer-accent-12);
+}
+
+.ui-designer-add-prop-trigger:focus-visible {
+  outline: 2px solid var(--border-focused);
+  outline-offset: 1px;
+}
+
+.ui-designer-add-prop-menu {
+  list-style: none;
+  margin: 4px 0 0;
+  padding: 4px;
+  border: 1px solid var(--ui-designer-control-border);
+  border-radius: 4px;
+  background: var(--tree-bg-color);
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  max-height: 240px;
+  overflow-y: auto;
+}
+
+.ui-designer-add-prop-menu button {
+  width: 100%;
+  text-align: left;
+  padding: 5px 8px;
+  border: none;
+  border-radius: 3px;
+  background: transparent;
+  color: var(--title);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.ui-designer-add-prop-menu button:hover {
+  background: var(--ui-designer-accent-12);
+}
+
+.ui-designer-add-prop-menu button:focus-visible {
+  outline: 2px solid var(--border-focused);
+  outline-offset: -1px;
+}
+
+/* Inline unit selector under a stacked `length-vec` group — short + trailing. */
+.ui-designer-unit-selector {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.ui-designer-unit-selector .Dropdown.Field {
+  flex: 0 0 56px;
+  width: 56px;
+}
+
+/* The shared TextArea defaults to `resize: both`; the narrow rail only tolerates
+   vertical growth. */
+.ui-designer-string-array textarea {
+  resize: vertical;
+  min-height: 64px;
 }
 
 /* Keep every control inside its panel — without border-box the padded
-   selects/inputs overran the right edge (the unit selector clipped by ~11px). */
+   selects/inputs overran the right edge. */
 .ui-designer-property-panel * {
   box-sizing: border-box;
 }
 
-/* Vec groups (Size / Min / Max / Position) render their sub-fields in a Block
-   `.content`. Lay them out as a single flex row: each input flex-grows to fill
-   the available width (with a sensible min) and the unit selector sits inline at
-   the end rather than dropping to its own line. Wraps only if it can't fit. */
-.ui-designer-property-panel .content:has(> .ui-designer-bindable-subfield) {
+/* Vec groups (Size / Min / Max / Position) render sub-fields in the control
+   column: a single flex-wrap row of inputs with the unit selector trailing. */
+.ui-designer-property-panel .Block > .content:has(> .ui-designer-bindable-subfield) {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -125,23 +230,23 @@
 }
 
 .ui-designer-property-panel .ui-designer-bindable-subfield {
-  flex: 1 1 72px;
-  min-width: 72px;
+  flex: 1 1 56px;
+  min-width: 52px;
 }
 
 .ui-designer-property-panel
-  .content:has(> .ui-designer-bindable-subfield)
+  .Block
+  > .content:has(> .ui-designer-bindable-subfield)
   > .ui-designer-unit-selector {
   flex: 0 0 auto;
-  margin-top: 0;
 }
 
-/* Single length value + unit (e.g. a lone length field): input grows, unit
-   selector stays intrinsic, both on one line. */
+/* Single length value + unit on one line: input grows, unit stays intrinsic. */
 .ui-designer-length-row {
   display: flex;
   align-items: center;
   gap: var(--uid-space-2);
+  width: 100%;
 }
 
 .ui-designer-length-row > :first-child {
@@ -149,12 +254,13 @@
   min-width: 0;
 }
 
-.ui-designer-length-row > select {
-  flex: 0 0 auto;
+.ui-designer-length-row > .Dropdown.Field {
+  flex: 0 0 56px;
+  width: 56px;
 }
 
 .ui-designer-callback-hint {
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--sub-text);
   font-style: italic;
   font-size: 12px;
 }
@@ -164,13 +270,8 @@
   font-variant-numeric: tabular-nums;
 }
 
-.ui-designer-add-component {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  padding: 8px 12px;
-}
-
-.ui-designer-add-component button {
-  font-size: 12px;
+@media (prefers-reduced-motion: reduce) {
+  .ui-designer-prop-remove {
+    transition: none;
+  }
 }

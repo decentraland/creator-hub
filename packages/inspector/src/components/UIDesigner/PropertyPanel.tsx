@@ -1,14 +1,14 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useRef } from 'react';
 import { IoOptionsOutline } from 'react-icons/io5';
+import { VscTrash } from 'react-icons/vsc';
+import { AiOutlinePlus } from 'react-icons/ai';
 import type { Entity, TextureUnion } from '@dcl/ecs';
 
 import { useAppDispatch, useAppSelector } from '../../redux/hooks';
 import { getCollapsedGroups, getSelectedNode, setGroupCollapsed } from '../../redux/ui-designer';
 import { Block } from '../Block';
 import { Container } from '../Container';
-import Search from '../Search';
-import { TextField } from '../ui';
-import { RgbaColorField } from '../ui/RgbaColorField';
+import { CheckboxField, Dropdown, RgbaColorField, TextArea, TextField } from '../ui';
 import { measureParentBox, measureNodeOffset, axisForPath, convertLength } from './measure';
 import { type CanvasSegment, type UINodeType } from './tree-model';
 import { codeComponentValue, findCodeNode, spliceComponentPatch, useCodeState } from './code/store';
@@ -63,11 +63,150 @@ function expandWriteAll(
   return patch;
 }
 
+const UNIT_OPTIONS = [
+  { value: YGU_POINT, label: 'px' },
+  { value: YGU_PERCENT, label: '%' },
+];
+
+// --- Figma-style add/remove property model (Phase F) ---
+// A field is one of three buckets:
+//   • core        → always shown (structural props; see field-configs `core`).
+//   • togglable   → a simple scalar-ish prop shown only when SET in source, with
+//                   a `−` to unset it and a group `+ Add property` entry when
+//                   unset. This is what tames the panel clutter.
+//   • always-on   → composite / context-gated props (texture, box-model, anchor,
+//                   uv-region, event callbacks) that stay visible (subject to
+//                   their own hiddenWhen/disabledWhen).
+const TOGGLABLE_KINDS = new Set([
+  'number',
+  'index',
+  'boolean',
+  'string',
+  'string-array',
+  'color',
+  'enum',
+  'length',
+  'length-vec',
+  'position-mode',
+]);
+
+function isTogglable(field: FieldConfig): boolean {
+  return !field.core && !field.hiddenWhen && TOGGLABLE_KINDS.has(field.kind);
+}
+
+// Composite widgets that render full-width (stacked) rather than in the inline
+// control column — the nested box-model and the 4-input texture editors need the
+// width (Figma stacks these too). The 3×3 anchor grid is compact (~96px) and
+// stays inline in the control column.
+const WIDE_KINDS = new Set(['box-model', 'uv-region', 'border-rect']);
+
+// The concrete PB paths whose presence means "this field is authored in source".
+function fieldSetPaths(field: FieldConfig): string[] {
+  if (field.writeAll) return field.writeAll;
+  if (field.subFields) return field.subFields.map(s => s.path);
+  return field.path ? [field.path] : [];
+}
+
+// The parser only populates keys physically present in source (ecs-shape never
+// synthesizes proto defaults), so a present key means "explicitly set".
+function isFieldSet(field: FieldConfig, value: Record<string, unknown> | null): boolean {
+  if (!value) return false;
+  return fieldSetPaths(field).some(p => p in value);
+}
+
+// Seed patch written when the user ADDS an optional prop — a sensible default so
+// the newly-shown row isn't empty/degenerate (border width 1 so it's visible,
+// opacity 1, enums at their default option, lengths in px).
+function buildAddPatch(field: FieldConfig): Record<string, unknown> {
+  switch (field.kind) {
+    case 'number':
+      return { [field.path]: field.path === 'opacity' ? 1 : 0 };
+    case 'index':
+      return { [field.path]: 0 };
+    case 'boolean':
+      return { [field.path]: false };
+    case 'string':
+      return { [field.path]: '' };
+    case 'string-array':
+      return { [field.path]: [] };
+    case 'enum':
+    case 'position-mode':
+      return { [field.path]: field.defaultValue ?? field.options?.[0]?.value ?? 0 };
+    case 'color': {
+      const black = { r: 0, g: 0, b: 0, a: 1 };
+      return field.writeAll ? expandWriteAll(field.writeAll, black) : { [field.path]: black };
+    }
+    case 'length': {
+      const seed = /width/i.test(field.path) ? 1 : 0;
+      return field.writeAll
+        ? expandWriteAll(field.writeAll, seed, { unit: YGU_POINT })
+        : { [field.path]: seed, [`${field.path}Unit`]: YGU_POINT };
+    }
+    case 'length-vec': {
+      const patch: Record<string, unknown> = {};
+      for (const s of field.subFields ?? []) {
+        patch[s.path] = 0;
+        patch[`${s.path}Unit`] = YGU_POINT;
+      }
+      return patch;
+    }
+    default:
+      return {};
+  }
+}
+
+// Unset patch written when the user REMOVES a prop — every set path (and its
+// `Unit` companion; harmless where none exists) resolves to undefined, which the
+// splice layer removes from source (uiTransformPatchEdits / setObjectFields /
+// removeAttribute all treat undefined as "delete").
+function buildRemovePatch(field: FieldConfig): Record<string, unknown> {
+  const patch: Record<string, unknown> = {};
+  for (const p of fieldSetPaths(field)) {
+    patch[p] = undefined;
+    patch[`${p}Unit`] = undefined;
+  }
+  return patch;
+}
+
+// Native <details> disclosure — keyboard-accessible with no popover math. Lists
+// the group's unset optional props; picking one splices its seed default.
+const AddPropertyMenu: React.FC<{ fields: FieldConfig[]; onAdd: (f: FieldConfig) => void }> = ({
+  fields,
+  onAdd,
+}) => {
+  const ref = useRef<HTMLDetailsElement>(null);
+  return (
+    <details
+      className="ui-designer-add-prop"
+      ref={ref}
+    >
+      <summary className="ui-designer-add-prop-trigger">
+        <AiOutlinePlus aria-hidden />
+        Add property
+      </summary>
+      <ul className="ui-designer-add-prop-menu">
+        {fields.map(f => (
+          <li key={`${f.componentId}:${f.path}:${f.label}`}>
+            <button
+              type="button"
+              onClick={() => {
+                onAdd(f);
+                if (ref.current) ref.current.open = false;
+              }}
+            >
+              {f.label}
+            </button>
+          </li>
+        ))}
+      </ul>
+    </details>
+  );
+};
+
 const PropertyPanelComponent: React.FC = () => {
   const dispatch = useAppDispatch();
   const selected = useAppSelector(getSelectedNode);
   const collapsed = useAppSelector(getCollapsedGroups);
-  const [query, setQuery] = useState('');
 
   // Code-mode: the selected node's data comes from the parsed .tsx tree (by its
   // synthetic id), not the ECS engine.
@@ -139,52 +278,69 @@ const PropertyPanelComponent: React.FC = () => {
   const contentGroups = config.groups.filter(g => !/event/i.test(g.title));
   const allGroups = [layoutGroup, ...contentGroups, EFFECTS_GROUP, BORDER_GROUP, ...eventGroups];
 
-  const q = query.trim().toLowerCase();
-  const searching = q.length > 0;
-
   return (
     <div className="ui-designer-property-panel">
-      <div className="ui-designer-property-search">
-        <Search
-          value={query}
-          onChange={setQuery}
-          placeholder="Search properties…"
-        />
-      </div>
       {allGroups.map(group => {
-        // While searching, show only matching fields and force every group open
-        // so matches aren't hidden behind a collapsed header.
-        const fields = searching
-          ? group.fields.filter(field => (field.label ?? '').toLowerCase().includes(q))
-          : group.fields;
-        if (searching && fields.length === 0) return null;
+        // Bucket each field: shown (core / set / always-on) → a row (with a `−`
+        // when it's an optional set prop); togglable-and-unset → the group's
+        // `+ Add property` menu. Field values come from the parsed .tsx node.
+        const rows: React.ReactNode[] = [];
+        const addable: FieldConfig[] = [];
+        // The group consts have narrow inferred field types; treat them uniformly.
+        for (const field of group.fields as FieldConfig[]) {
+          const value = codeComponentValue(codeNode, field.componentId) as Record<
+            string,
+            unknown
+          > | null;
+          if (field.hiddenWhen?.((value ?? {}) as Record<string, unknown>)) continue;
+          const togglable = isTogglable(field);
+          if (togglable && !isFieldSet(field, value)) {
+            addable.push(field);
+            continue;
+          }
+          rows.push(
+            <div
+              className={`ui-designer-property-row${WIDE_KINDS.has(field.kind) ? ' wide' : ''}`}
+              key={`${field.componentId}:${field.path}:${field.label}`}
+            >
+              <FieldRow
+                field={field}
+                componentValue={value}
+                entity={selected as Entity}
+                bound={bindingsByField[`${field.componentId}.${field.path}`]}
+                bindings={bindingsByField}
+                mixed={mixedByField[`${field.componentId}.${field.path}`]}
+                write={writeAndDispatch}
+              />
+              {togglable ? (
+                <button
+                  type="button"
+                  className="ui-designer-prop-remove"
+                  aria-label={`Remove ${field.label ?? 'property'}`}
+                  title={`Remove ${field.label ?? 'property'}`}
+                  onClick={() => writeAndDispatch(field.componentId, buildRemovePatch(field))}
+                >
+                  <VscTrash aria-hidden />
+                </button>
+              ) : null}
+            </div>,
+          );
+        }
+        if (rows.length === 0 && addable.length === 0) return null;
         return (
           <Container
-            // Re-key when toggling search so initialOpen re-seeds (Container
-            // owns its open state once mounted).
-            key={searching ? `${group.title}::search` : group.title}
+            key={group.title}
             label={group.title}
-            initialOpen={searching ? true : !collapsed[group.title]}
+            initialOpen={!collapsed[group.title]}
             onToggle={open => dispatch(setGroupCollapsed({ title: group.title, collapsed: !open }))}
           >
-            {fields.map(field => {
-              // Field values come from the parsed .tsx node (by synthetic id).
-              const value = codeComponentValue(codeNode, field.componentId);
-              if ((field as FieldConfig).hiddenWhen?.((value ?? {}) as Record<string, unknown>))
-                return null;
-              return (
-                <FieldRow
-                  key={`${field.componentId}:${field.path}:${field.label}`}
-                  field={field}
-                  componentValue={value as Record<string, unknown> | null}
-                  entity={selected as Entity}
-                  bound={bindingsByField[`${field.componentId}.${field.path}`]}
-                  bindings={bindingsByField}
-                  mixed={mixedByField[`${field.componentId}.${field.path}`]}
-                  write={writeAndDispatch}
-                />
-              );
-            })}
+            {rows}
+            {addable.length > 0 ? (
+              <AddPropertyMenu
+                fields={addable}
+                onAdd={f => writeAndDispatch(f.componentId, buildAddPatch(f))}
+              />
+            ) : null}
           </Container>
         );
       })}
@@ -280,9 +436,8 @@ const FieldRow = React.memo(function FieldRow({
       );
     }
     case 'boolean': {
-      // Inline `Label  [checkbox]` — saves vertical space when there are
-      // many toggles (e.g. Visible / Disabled / etc.) and uses the wide
-      // horizontal area of the right rail.
+      // Fields stack label-over-control: `BindableField` → `Block` owns the
+      // visible Label; the control gets an aria-label for screen readers.
       const v = !!raw;
       return (
         <BindableField
@@ -290,18 +445,17 @@ const FieldRow = React.memo(function FieldRow({
           entity={entity}
           bound={boundProp}
         >
-          <input
-            type="checkbox"
+          <CheckboxField
             checked={v}
+            aria-label={field.label}
             onChange={e => onPatch({ [field.path]: e.target.checked })}
           />
         </BindableField>
       );
     }
     case 'enum': {
-      // Inline `Label  [dropdown]` — see boolean above for rationale. An unset
-      // value shows the field's in-world default (e.g. textAlign → center),
-      // falling back to the zero option.
+      // An unset value shows the field's in-world default (e.g. textAlign →
+      // center), falling back to the zero option.
       const v = (raw as number | undefined) ?? field.defaultValue ?? 0;
       return (
         <BindableField
@@ -309,20 +463,12 @@ const FieldRow = React.memo(function FieldRow({
           entity={entity}
           bound={boundProp}
         >
-          <select
+          <Dropdown
+            options={field.options ?? []}
+            value={v}
             aria-label={field.label}
-            value={String(v)}
             onChange={e => onPatch({ [field.path]: Number(e.target.value) })}
-          >
-            {field.options?.map(opt => (
-              <option
-                key={opt.value}
-                value={String(opt.value)}
-              >
-                {opt.label}
-              </option>
-            ))}
-          </select>
+          />
         </BindableField>
       );
     }
@@ -352,9 +498,10 @@ const FieldRow = React.memo(function FieldRow({
                 )
               }
             />
-            <select
+            <Dropdown
+              options={UNIT_OPTIONS}
+              value={unit}
               aria-label="Unit"
-              value={String(unit)}
               onChange={e => {
                 const nextUnit = Number(e.target.value);
                 const parent = measureParentBox(entity);
@@ -366,10 +513,7 @@ const FieldRow = React.memo(function FieldRow({
                     : { [field.path]: nextValue, [unitKey]: nextUnit },
                 );
               }}
-            >
-              <option value={String(YGU_POINT)}>px</option>
-              <option value={String(YGU_PERCENT)}>%</option>
-            </select>
+            />
           </div>
         </BindableField>
       );
@@ -418,9 +562,10 @@ const FieldRow = React.memo(function FieldRow({
             );
           })}
           <div className="ui-designer-unit-selector">
-            <select
+            <Dropdown
+              options={UNIT_OPTIONS}
+              value={unit}
               aria-label="Unit"
-              value={String(unit)}
               onChange={e => {
                 const nextUnit = Number(e.target.value);
                 const parent = measureParentBox(entity);
@@ -433,10 +578,7 @@ const FieldRow = React.memo(function FieldRow({
                 }
                 onPatch(patch);
               }}
-            >
-              <option value={String(YGU_POINT)}>px</option>
-              <option value={String(YGU_PERCENT)}>%</option>
-            </select>
+            />
           </div>
         </BindableField>
       );
@@ -541,8 +683,9 @@ const FieldRow = React.memo(function FieldRow({
           entity={entity}
           bound={boundProp}
         >
-          <textarea
+          <TextArea
             className="ui-designer-string-array"
+            aria-label={field.label}
             value={arr.join('\n')}
             onChange={e => onPatch({ [field.path]: e.target.value.split('\n') })}
           />
@@ -616,20 +759,12 @@ const FieldRow = React.memo(function FieldRow({
           entity={entity}
           bound={boundProp}
         >
-          <select
+          <Dropdown
+            options={field.options ?? []}
+            value={v}
             aria-label={field.label}
-            value={String(v)}
             onChange={e => onModeChange(Number(e.target.value))}
-          >
-            {field.options?.map(opt => (
-              <option
-                key={opt.value}
-                value={String(opt.value)}
-              >
-                {opt.label}
-              </option>
-            ))}
-          </select>
+          />
         </BindableField>
       );
     }
