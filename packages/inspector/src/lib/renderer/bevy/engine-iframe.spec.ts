@@ -1,7 +1,13 @@
 import { vi } from 'vitest';
 
 import type { EngineWindow } from './console';
-import { buildEngineUrl, mountBevyEngine } from './engine-iframe';
+import { BEVY_ENGINE_URL, buildEngineUrl, mountBevyEngine } from './engine-iframe';
+
+describe('BEVY_ENGINE_URL', () => {
+  it('should point at our engine.html host page (not the package`s CDN index.html)', () => {
+    expect(BEVY_ENGINE_URL).toBe('/bevy-engine/engine.html');
+  });
+});
 
 describe('buildEngineUrl', () => {
   it('should return the bare directory URL when no realm/position given', () => {
@@ -22,7 +28,7 @@ describe('buildEngineUrl', () => {
     expect(url).not.toContain('position=');
   });
 
-  it('should append systemScene + agent-boot params when given', () => {
+  it('should append systemScene when given', () => {
     const url = buildEngineUrl(
       '/bevy-engine/',
       'http://localhost:8004',
@@ -31,13 +37,18 @@ describe('buildEngineUrl', () => {
     );
     const query = new URLSearchParams(url.split('?')[1]);
     expect(query.get('systemScene')).toBe('http://localhost:8005');
-    // portables pinned empty (skip the remote basiccontroller PX) + embed mode
-    expect(query.get('portables')).toBe('');
-    expect(query.get('embed')).toBe('true');
   });
 
-  it('should NOT set portables/embed without a systemScene (unchanged plain-realm boot)', () => {
-    const url = buildEngineUrl('/bevy-engine/', 'http://localhost:8004', '0,0');
+  it('should pass only realm/position/systemScene (portables + boot are the host page`s job)', () => {
+    // buildEngineUrl targets our engine.html host page, which derives `portables`
+    // and drives the boot contract itself — the URL no longer carries engine-boot
+    // params (the old self-booting `?portables=&embed=` layout is gone).
+    const url = buildEngineUrl(
+      '/bevy-engine/engine.html',
+      'http://localhost:8004',
+      '0,0',
+      'http://localhost:8005',
+    );
     expect(url).not.toContain('portables');
     expect(url).not.toContain('embed');
   });
