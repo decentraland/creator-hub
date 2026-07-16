@@ -87,6 +87,10 @@ export class BevyRenderer implements IRenderer {
   // `register` wires this to the drop-point bridge. Null until wired (and in the
   // conformance path) → getPointerWorldPoint falls back to null like the stub.
   #resolveDropPoint: ((ndc?: { x: number; y: number }) => Promise<Vector3 | null>) | null = null;
+  // Resolves an entity's GLTF animation clip names via the editor-agent (over the
+  // bus). Null until `register` wires it (and in the conformance path) →
+  // getEntityAnimations returns none.
+  #resolveAnimations: ((entity: Entity) => Promise<string[]>) | null = null;
   // Editor camera (avatar ⇄ free fly). The mode change is enacted by the agent
   // over the bus; `register` injects the poster. Mode state + subscribers live
   // here so the toolbar toggle reflects the current mode.
@@ -265,6 +269,15 @@ export class BevyRenderer implements IRenderer {
   }
 
   /**
+   * Wire the GLTF-animation-names lookup to the agent (over the bus). `register`
+   * calls this after mounting the engine; without it getEntityAnimations returns
+   * none (conformance path).
+   */
+  setAnimationsResolver(resolve: (entity: Entity) => Promise<string[]>): void {
+    this.#resolveAnimations = resolve;
+  }
+
+  /**
    * Wire the editor-camera mode change to the agent (over the bus). `register`
    * calls this after mounting the engine; without it (conformance path) the mode
    * toggle just tracks state locally with no effect.
@@ -361,9 +374,15 @@ export class BevyRenderer implements IRenderer {
     return this.#resolveDropPoint ? this.#resolveDropPoint(ndc) : null;
   }
 
-  async getEntityAnimations(_entity: Entity): Promise<RendererAnimation[]> {
-    // Needs the loaded GLTF in the wasm engine; none in the spike.
-    return [];
+  async getEntityAnimations(entity: Entity): Promise<RendererAnimation[]> {
+    // The GLTF is loaded in the wasm engine; the editor-agent reads its clip names
+    // (GltfContainerLoadingState.animationNames) and replies over the bus. We only
+    // get names — per-clip GLTF-authored defaults aren't exposed — so weight/speed/
+    // loop are omitted and the inspector applies its defaults. Null resolver
+    // (conformance path) → no animations.
+    if (!this.#resolveAnimations) return [];
+    const names = await this.#resolveAnimations(entity);
+    return names.map(name => ({ name }));
   }
 
   setGridVisible(visible: boolean): void {

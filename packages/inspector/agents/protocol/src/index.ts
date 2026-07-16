@@ -92,7 +92,13 @@ export type AgentToPage =
   | { kind: 'drop-point'; id: number; position: BusVec3 | null }
   // A committed spawn-point handle drag (world position). The inspector routes it
   // to the active spawn point's onPositionChange (scene metadata, not a Transform).
-  | { kind: 'spawn-gizmo-commit'; position: BusVec3 };
+  | { kind: 'spawn-gizmo-commit'; position: BusVec3 }
+  // Reply to `query-animations`: the animation clip names of the entity's loaded
+  // GLTF (empty if none / not loaded). The agent reads them from the engine's
+  // `GltfContainerLoadingState.animationNames` — a field the inspector's older
+  // `@dcl/ecs` can't decode, so it must come from the engine over the bus. `id`
+  // correlates the reply with its request.
+  | { kind: 'animations'; id: number; names: string[] };
 
 /** One selected entity's world pose, supplied by the inspector (the agent can't
  * read the inspected scene's Transform from its own engine). */
@@ -143,6 +149,11 @@ export type PageToScene =
   // pointer is stale (the host overlay captures the drag). Omit `ndc` to fall back
   // to the engine's current pointer. `id` correlates the `drop-point` reply.
   | { kind: 'query-drop-point'; id: number; ndc?: { x: number; y: number } }
+  // Ask the agent for the animation clip names of an entity's loaded GLTF. The
+  // agent reads `GltfContainerLoadingState.animationNames` from the engine (the
+  // inspector's `@dcl/ecs` can't decode that field); answered by `animations`.
+  // `id` correlates request/reply.
+  | { kind: 'query-animations'; id: number; entity: number }
   // Toggle the editor camera. `avatar` = the engine's native player camera (walk
   // /look/zoom); `free` = an editor fly-camera the agent drives (WASD + mouse-
   // look), with avatar input disabled. The inspector's camera toggle sends this.

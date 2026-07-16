@@ -1,3 +1,6 @@
+import { GltfContainerLoadingState } from '@dcl/sdk/ecs';
+import type { Entity } from '@dcl/sdk/ecs';
+
 import { bus } from './bus';
 import { getBevyApi } from './bevy-api';
 import {
@@ -57,6 +60,17 @@ export function main(): void {
         kind: 'drop-point',
         id: msg.id,
         position: getGroundPointAtPointer(msg.ndc),
+      });
+      return;
+    }
+    // Animation clip names of an entity's loaded GLTF — read from the engine's
+    // GltfContainerLoadingState (a field the inspector's older @dcl/ecs can't
+    // decode, so it asks us). Empty if the entity has no GLTF / it isn't loaded.
+    if (msg.kind === 'query-animations') {
+      bus.postToPage({
+        kind: 'animations',
+        id: msg.id,
+        names: entityAnimationNames(msg.entity as Entity),
       });
       return;
     }
@@ -131,6 +145,18 @@ function highlightEntities(entities: number[]): void {
   void api.consoleCommand('highlight', ids).catch(e => {
     console.error('[bevy-agent] highlight failed:', e);
   });
+}
+
+/**
+ * The animation clip names of an entity's loaded GLTF, from the engine's
+ * GltfContainerLoadingState.animationNames. The agent shares the engine's ECS, so
+ * this reads the same component the engine wrote when the GLTF finished loading.
+ * Empty when the entity has no GltfContainer or it hasn't loaded yet (the
+ * inspector re-queries as loading state changes).
+ */
+function entityAnimationNames(entity: Entity): string[] {
+  const state = GltfContainerLoadingState.getOrNull(entity);
+  return state?.animationNames ?? [];
 }
 
 /**
