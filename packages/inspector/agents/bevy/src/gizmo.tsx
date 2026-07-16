@@ -47,13 +47,17 @@ type Axis = 'x' | 'y' | 'z';
 const AXES: Axis[] = ['x', 'y', 'z'];
 
 // Gizmo geometry (world units at scale 1; the root is scaled by camera distance).
-const SHAFT_LEN = 1.2;
-const SHAFT_R = 0.03;
-const HANDLE_R = 0.12;
+// Slim, minimal proportions (Roblox/Blender-style) — thin shafts + small heads
+// read cleaner than chunky ones. Grab stays easy because picking is ANALYTIC with
+// its own generous tolerances (tol = armLen * 0.4, etc.), independent of these
+// visual radii — so thinning the meshes never makes a handle harder to click.
+const SHAFT_LEN = 1.1;
+const SHAFT_R = 0.02;
+const HANDLE_R = 0.12; // legacy collider radius (grab is analytic; kept for the mesh)
 // Translate arrow-head cone at the tip of each arm (a cylinder with zero top
 // radius — the SDK has no dedicated cone mesh).
-const CONE_LEN = 0.3;
-const CONE_R = 0.09;
+const CONE_LEN = 0.26;
+const CONE_R = 0.075;
 const SCALE_FACTOR = 0.12; // fraction of camera distance
 const MIN_SCALE = 0.2;
 const MAX_SCALE = 50;
@@ -140,8 +144,8 @@ const PLANE_AXES: Record<PlaneKey, [Axis, Axis]> = {
   yz: ['y', 'z'],
 };
 const PLANE_NORMAL_AXIS: Record<PlaneKey, Axis> = { xy: 'z', xz: 'y', yz: 'x' };
-const PLANE_SIZE = 0.35; // quad side length at scale 1
-const PLANE_OFFSET = 0.5; // quad center's offset from the gizmo center, per axis
+const PLANE_SIZE = 0.24; // quad side length at scale 1 (small, Blender-style patch)
+const PLANE_OFFSET = 0.42; // quad center's offset from the gizmo center, per axis
 const planeGroupOf: Partial<Record<PlaneKey, Entity>> = {};
 
 type DragAxis = Axis | 'xyz' | PlaneKey | 'free';
@@ -170,17 +174,18 @@ const rotateGroupOf: Partial<Record<Axis, Entity>> = {};
 const scaleGroupOf: Partial<Record<Axis, Entity>> = {};
 
 // Rotation ring geometry: a ring of short cylinder segments (no torus mesh in
-// the SDK) in the plane perpendicular to its axis, radius RING_R at scale 1.
-const RING_R = 1.0;
-const RING_SEGMENTS = 24;
-const RING_SEG_R = 0.03;
+// the SDK) in the plane perpendicular to its axis, radius RING_R at scale 1. More
+// segments + a thinner tube read as a smooth, fine ring rather than a chunky one.
+const RING_R = 0.95;
+const RING_SEGMENTS = 32;
+const RING_SEG_R = 0.02;
 
 // Scale handle geometry: a short axis shaft capped with a cube (vs translate's
 // arrow), grabbed like the translate arm; drag distance → per-axis multiplier.
-const SCALE_BOX = 0.18;
+const SCALE_BOX = 0.14;
 // The white cube at the scale gizmo's center: dragging it scales all three axes
 // proportionally (matching the Babylon ScaleGizmo's uniform-scale center cube).
-const SCALE_CENTER_BOX = 0.25;
+const SCALE_CENTER_BOX = 0.18;
 let scaleCenterGroup: Entity | null = null;
 // The free gizmo's indicator: a small box at the entity center. Dragging it moves
 // the entity on the world XZ plane (Y=0), matching the Babylon free gizmo.
@@ -919,9 +924,11 @@ function pickTranslateHandleAnalytic(ray: {
 function pickScaleHandleAnalytic(ray: { origin: Vector3; dir: Vector3 }): Axis | 'xyz' | null {
   if (selectedPos === null) return null;
   const scale = cameraDistanceScale(selectedPos);
-  // Forgiving, screen-constant grab radius around the center cube (~1.4× its
-  // half-diagonal), same hand-aimed-click reasoning as the arm tolerance.
-  const centerTol = SCALE_CENTER_BOX * 1.4 * scale;
+  // Forgiving, screen-constant grab radius around the center cube. The multiplier
+  // is generous (~1.9×) so the now-slim cube stays easy to hit — the grab area is
+  // deliberately larger than the visual, same hand-aimed-click reasoning as the
+  // arm tolerance.
+  const centerTol = SCALE_CENTER_BOX * 1.9 * scale;
   if (rayPointDistance(ray.origin, ray.dir, selectedPos) <= centerTol) return 'xyz';
   return pickAxisAnalytic(ray);
 }
