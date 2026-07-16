@@ -186,6 +186,9 @@ const Dropdown = React.forwardRef<HTMLInputElement, Props>((props, parentRef) =>
         })}
         onClick={handleClick}
         ref={parentRef}
+        role="combobox"
+        aria-expanded={showOptions}
+        aria-label={props['aria-label']}
       >
         {isField ? renderPlaceholder() : trigger}
         {showOptions ? (

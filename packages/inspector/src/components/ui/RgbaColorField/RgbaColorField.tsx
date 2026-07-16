@@ -7,6 +7,12 @@ import { type Color4, color4ToRgba, rgbaToColor4 } from './color';
 
 import './RgbaColorField.css';
 
+// One of three color controls in this library, each with a distinct value
+// model — do not consolidate them:
+// - `ColorField` edits hex strings (preset dropdown + custom hex input).
+// - `ColorPicker` wraps the native `<input type="color">`, hex strings.
+// - `RgbaColorField` (this one) edits `Color4` float rgba (the ECS PB color
+//   shape) and is the only one with an alpha channel.
 interface RgbaColorFieldProps {
   value: Color4;
   onChange: (c: Color4) => void;
@@ -29,16 +35,16 @@ export const RgbaColorField: React.FC<RgbaColorFieldProps> = ({ value, onChange 
   const swatchBg = `rgba(${rgba.r}, ${rgba.g}, ${rgba.b}, ${rgba.a})`;
 
   return (
-    <div className="ui-designer-color-field">
+    <div className="RgbaColorField">
       <button
         ref={anchorRef}
         type="button"
-        className="ui-designer-color-swatch"
+        className="RgbaColorSwatch"
         onClick={() => setOpen(o => !o)}
         aria-label="Pick color"
       >
         <span
-          className="ui-designer-color-swatch-fill"
+          className="RgbaColorSwatchFill"
           style={{ backgroundColor: swatchBg }}
         />
       </button>
@@ -46,7 +52,7 @@ export const RgbaColorField: React.FC<RgbaColorFieldProps> = ({ value, onChange 
         ? createPortal(
             <div
               ref={popRef}
-              className="ui-designer-color-popover"
+              className="RgbaColorPopover"
               style={{ position: 'fixed', top: pos.top, left: pos.left }}
             >
               <RgbaColorPicker
