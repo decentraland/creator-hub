@@ -27,7 +27,8 @@ export function createAdminToolkitSystem(
   // it is a client, and forever on the server. A failed query defaults to client
   // behavior so the toolkit is never lost on a real client.
   let runsOnServer: boolean | undefined = undefined;
-  isServer({})
+  Promise.resolve()
+    .then(() => isServer({}))
     .then(result => {
       runsOnServer = result.isServer;
     })
