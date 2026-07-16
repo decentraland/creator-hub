@@ -1,21 +1,24 @@
-import type { Scene } from '@babylonjs/core';
 import type { Emitter } from 'mitt';
 import { MessageTransport } from '@dcl/mini-rpc';
 import type { ComponentDefinition, CrdtMessageType, Entity, IEngine } from '@dcl/ecs';
 
-import { SceneContext } from '../babylon/decentraland/SceneContext';
-import { initRenderer } from '../babylon/setup/init';
-import type { Gizmos } from '../babylon/decentraland/GizmoManager';
-import type { CameraManager } from '../babylon/decentraland/camera';
+import {
+  buildRenderer,
+  getSelectedRenderer,
+  registerBuiltInRenderers,
+} from '../renderer/controller';
+import type { RendererId } from '../renderer/controller';
+import { asBabylonInternals } from '../renderer/babylon/register';
+import type { IRenderer } from '../renderer/types';
 import type { InspectorPreferences } from '../logic/preferences/types';
 import { SceneMetricsServer } from '../../lib/rpc/scene-metrics/server';
 import { SceneServer } from '../rpc/scene/server';
 import { getConfig } from '../logic/config';
 import type { AssetPack } from '../logic/catalog';
 import { store } from '../../redux/store';
+import { addEngines } from '../../redux/sdk';
 import { createOperations } from './operations';
 import { createInspectorEngine } from './inspector-engine';
-import { getHardcodedLoadableScene } from './test-local-scene';
 import type { EditorComponents, SdkComponents } from './components';
 import type { EnumEntity } from './enum-entity';
 import { createEnumEntityId } from './enum-entity';
@@ -35,14 +38,20 @@ export type SdkContextComponents = EditorComponents & SdkComponents;
 export type SdkContextValue = {
   engine: IEngine;
   components: SdkContextComponents;
-  scene: Scene;
-  sceneContext: SceneContext;
   events: Emitter<SdkContextEvents>;
   dispose(): void;
   operations: ReturnType<typeof createOperations>;
-  gizmos: Gizmos;
-  editorCamera: CameraManager;
   enumEntity: EnumEntity;
+
+  /**
+   * The renderer-agnostic boundary — the inspector's preferred handle on
+   * whatever is drawing the scene. New code goes through here. See
+   * `lib/renderer/types.ts`.
+   */
+  renderer: IRenderer;
+
+  /** The id of the renderer active this session (a registered plugin id). */
+  currentRendererId: RendererId;
 };
 
 export async function createSdkContext(
@@ -50,44 +59,57 @@ export async function createSdkContext(
   catalog: AssetPack[],
   preferences: InspectorPreferences,
 ): Promise<SdkContextValue> {
-  const renderer = initRenderer(canvas, preferences);
-  const { scene } = renderer;
-
-  // create scene context
-  const ctx = new SceneContext(
-    renderer.engine,
-    scene,
-    getHardcodedLoadableScene(
-      'urn:decentraland:entity:bafkreid44xhavttoz4nznidmyj3rjnrgdza7v6l7kd46xdmleor5lmsxfm1',
-      catalog,
-    ),
-  );
-  ctx.rootNode.position.set(0, 0, 0);
-
   // create inspector engine context and components
-  const { engine, components, events, dispose } = createInspectorEngine();
+  const { engine, components, events, dispose: disposeEngine } = createInspectorEngine();
+
+  // Build the renderer chosen for this session through the open plugin registry
+  // (persisted; switching it reloads the inspector — see RendererPicker). Each
+  // renderer owns its own canvas in the Renderer container.
+  const container = canvas.parentElement ?? document.body;
+  registerBuiltInRenderers(catalog, preferences);
+  const built = await buildRenderer(getSelectedRenderer(), canvas, container, catalog, preferences);
+
+  const dispose = () => {
+    built.dispose();
+    disposeEngine();
+  };
+
+  // Register both engines so the connect-stream saga wires them to the CRDT
+  // stream (inspector + the active renderer's engine).
+  store.dispatch(addEngines({ inspector: engine, babylon: built.engine }));
 
   // register some globals for debugging
   Object.assign(globalThis, { inspectorEngine: engine });
 
-  // if there is a parent, initialize rpc servers
+  // If embedded, initialize the scene RPC servers. The scene RPC server needs
+  // the raw Babylon setup bundle (screenshots/camera) — a Babylon-only
+  // capability for now. With a non-Babylon renderer it's skipped, which means
+  // the host's thumbnail/camera features are unavailable; warn so the silent
+  // gap is visible rather than mysterious.
   const config = getConfig();
   if (config.dataLayerRpcParentUrl) {
-    const transport = new MessageTransport(window, window.parent, config.dataLayerRpcParentUrl);
-    new SceneServer(transport, store, renderer);
-    new SceneMetricsServer(transport, store);
+    const babylonInternals = asBabylonInternals(built.internals);
+    if (babylonInternals) {
+      const transport = new MessageTransport(window, window.parent, config.dataLayerRpcParentUrl);
+      new SceneServer(transport, store, babylonInternals.babylon);
+      new SceneMetricsServer(transport, store);
+    } else {
+      // eslint-disable-next-line no-console
+      console.warn(
+        '[renderer] Scene RPC server (screenshots/camera) is only available with the Babylon ' +
+          `renderer; skipped for "${built.id}". Host thumbnail/camera control will be unavailable.`,
+      );
+    }
   }
 
   return {
     engine,
     components,
     events,
-    scene,
-    sceneContext: ctx,
     dispose,
     operations: createOperations(engine),
-    gizmos: ctx.gizmos,
-    editorCamera: renderer.editorCamera,
     enumEntity: createEnumEntityId(engine),
+    renderer: built.renderer,
+    currentRendererId: built.id,
   };
 }

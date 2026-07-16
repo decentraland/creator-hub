@@ -1,11 +1,11 @@
 import React, { useEffect, useRef } from 'react';
-import type { AbstractMesh } from '@babylonjs/core';
 
 import type { WithSdkProps } from '../../../hoc/withSdk';
 import { withSdk } from '../../../hoc/withSdk';
 import { useFeatureFlag } from '../../../hooks/useFeatureFlag';
 import { InspectorFeatureFlags } from '../../../redux/feature-flags/types';
-import { PARCEL_SIZE, GROUND_MESH_PREFIX } from '../../../lib/utils/scene';
+import { PARCEL_SIZE } from '../../../lib/utils/scene';
+import type { GroundPlane } from '../../../lib/renderer/types';
 import { ROOT, PLAYER, CAMERA } from '../../../lib/sdk/tree';
 
 import './SceneMinimap.css';
@@ -36,7 +36,7 @@ interface Bounds {
   maxZ: number;
 }
 
-function computeBounds(planes: { absolutePosition: { x: number; z: number } }[]): Bounds {
+function computeBounds(planes: GroundPlane[]): Bounds {
   if (planes.length === 0) {
     return { minX: 0, maxX: PARCEL_SIZE, minZ: 0, maxZ: PARCEL_SIZE };
   }
@@ -47,8 +47,8 @@ function computeBounds(planes: { absolutePosition: { x: number; z: number } }[])
   let maxZ = -Infinity;
 
   for (const plane of planes) {
-    const px = plane.absolutePosition.x;
-    const pz = plane.absolutePosition.z;
+    const px = plane.x;
+    const pz = plane.z;
     minX = Math.min(minX, px - PARCEL_SIZE / 2);
     maxX = Math.max(maxX, px + PARCEL_SIZE / 2);
     minZ = Math.min(minZ, pz - PARCEL_SIZE / 2);
@@ -79,7 +79,7 @@ const SKIP_ENTITIES = new Set([ROOT, PLAYER, CAMERA]);
 const SceneMinimap = withSdk<WithSdkProps>(({ sdk }) => {
   const enabled = useFeatureFlag(InspectorFeatureFlags.SceneMinimap);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const groundMeshesRef = useRef<AbstractMesh[]>([]);
+  const groundPlanesRef = useRef<GroundPlane[]>([]);
 
   useEffect(() => {
     if (!enabled) return;
@@ -90,18 +90,19 @@ const SceneMinimap = withSdk<WithSdkProps>(({ sdk }) => {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
+    const { viewport, camera: rendererCamera } = sdk.renderer;
+
     const dpr = window.devicePixelRatio || 1;
     canvas.width = MINIMAP_SIZE * dpr;
     canvas.height = MINIMAP_SIZE * dpr;
     ctx.scale(dpr, dpr);
 
-    const updateGroundMeshes = () => {
-      groundMeshesRef.current = sdk.scene.meshes.filter(m => m.name.startsWith(GROUND_MESH_PREFIX));
+    const updateGroundPlanes = () => {
+      groundPlanesRef.current = viewport.getGroundPlanes();
     };
-    updateGroundMeshes();
+    updateGroundPlanes();
 
-    const addObs = sdk.scene.onNewMeshAddedObservable.add(updateGroundMeshes);
-    const removeObs = sdk.scene.onMeshRemovedObservable.add(updateGroundMeshes);
+    const unsubscribeMetrics = sdk.renderer.metrics.onChange(updateGroundPlanes);
 
     let lastRenderTime = 0;
 
@@ -110,7 +111,7 @@ const SceneMinimap = withSdk<WithSdkProps>(({ sdk }) => {
       if (now - lastRenderTime < RENDER_INTERVAL_MS) return;
       lastRenderTime = now;
 
-      const planes = groundMeshesRef.current;
+      const planes = groundPlanesRef.current;
       const bounds = computeBounds(planes);
 
       ctx.clearRect(0, 0, MINIMAP_SIZE, MINIMAP_SIZE);
@@ -123,8 +124,8 @@ const SceneMinimap = withSdk<WithSdkProps>(({ sdk }) => {
 
       // Parcel grid
       for (const plane of planes) {
-        const px = plane.absolutePosition.x;
-        const pz = plane.absolutePosition.z;
+        const px = plane.x;
+        const pz = plane.z;
         const tl = worldToMinimap(px - PARCEL_SIZE / 2, pz + PARCEL_SIZE / 2, bounds);
         const br = worldToMinimap(px + PARCEL_SIZE / 2, pz - PARCEL_SIZE / 2, bounds);
         const w = br.x - tl.x;
@@ -137,16 +138,20 @@ const SceneMinimap = withSdk<WithSdkProps>(({ sdk }) => {
         ctx.strokeRect(tl.x, tl.y, w, h);
       }
 
-      // Entity dots
+      // Entity dots — collect ids first, then batch the world-position read so
+      // it stays a single call across the renderer boundary (one message/frame
+      // even out-of-process), rather than a per-entity round-trip.
       const { Transform } = sdk.components;
       const selectedEntities = new Set(sdk.operations.getSelectedEntities());
 
+      const entityIds = [];
       for (const [entity] of sdk.engine.getEntitiesWith(Transform)) {
         if (SKIP_ENTITIES.has(entity)) continue;
-        const node = sdk.sceneContext.getEntityOrNull(entity);
-        if (!node || !node.isEnabled()) continue;
+        entityIds.push(entity);
+      }
+      const worldPositions = viewport.getEntityWorldPositions(entityIds);
 
-        const pos = node.absolutePosition;
+      for (const [entity, pos] of worldPositions) {
         const mapped = worldToMinimap(pos.x, pos.z, bounds);
         const isSelected = selectedEntities.has(entity);
 
@@ -163,9 +168,7 @@ const SceneMinimap = withSdk<WithSdkProps>(({ sdk }) => {
       }
 
       // Camera indicator
-      const camera = sdk.editorCamera.getCamera();
-      const camPos = camera.position;
-      const camTarget = camera.target;
+      const { position: camPos, target: camTarget, fov } = rendererCamera.getPose();
       const camMapped = worldToMinimap(camPos.x, camPos.z, bounds);
 
       const dx = camTarget.x - camPos.x;
@@ -181,7 +184,7 @@ const SceneMinimap = withSdk<WithSdkProps>(({ sdk }) => {
         const mdy = -ndz;
 
         // FOV cone
-        const halfFov = camera.fov * 0.5;
+        const halfFov = fov * 0.5;
         const cosF = Math.cos(halfFov);
         const sinF = Math.sin(halfFov);
 
@@ -220,12 +223,11 @@ const SceneMinimap = withSdk<WithSdkProps>(({ sdk }) => {
       ctx.fill();
     };
 
-    const observer = sdk.scene.onAfterRenderObservable.add(renderMinimap);
+    const unsubscribeFrame = viewport.onFrame(renderMinimap);
 
     return () => {
-      sdk.scene.onAfterRenderObservable.remove(observer);
-      sdk.scene.onNewMeshAddedObservable.remove(addObs);
-      sdk.scene.onMeshRemovedObservable.remove(removeObs);
+      unsubscribeFrame();
+      unsubscribeMetrics();
     };
   }, [enabled, sdk]);
 

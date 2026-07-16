@@ -240,6 +240,11 @@ const COMPONENT_REGISTRY = {
     {
       disableNearbyVoiceChat: Schemas.Optional(Schemas.Boolean),
     },
+    // V5 - Added hideLandscapeTerrain. Stored inverted (scene.json uses landscapeTerrain)
+    // because Schemas.Optional drops falsy values during CRDT serialization.
+    {
+      hideLandscapeTerrain: Schemas.Optional(Schemas.Boolean),
+    },
   ],
 } as const;
 
