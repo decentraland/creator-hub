@@ -2,20 +2,21 @@ import type { EngineWindow } from './console';
 import { engineReady } from './console';
 
 /**
- * Where the bevy-explorer web bundle is served from. `copy-bevy-engine.ts` copies
- * the installed npm package into `public/bevy-engine/`, and the dev server
- * (build.js) serves it with the COOP/COEP headers the engine wasm needs. The
- * iframe is **same-origin** with the inspector, which is what lets the Bevy
- * renderer reach `contentWindow.engine_console_command_args` directly.
+ * Our engine HOST page, served same-origin from `public/bevy-engine/`
+ * (copy-bevy-engine.ts copies the npm engine bundle there + adds `engine.html`).
+ * The dev server (build.js) + Electron stamp the COOP/COEP headers the engine
+ * wasm needs. Same-origin is what lets the Bevy renderer reach
+ * `contentWindow.engine_console_command` directly and share the `dcl-editor-bus`.
  *
- * The URL points at the **directory** (trailing slash), not `index.html`: the
- * engine's own `main.js` derives its service-worker scope + asset paths from
- * `location.pathname` and assumes a directory root. Pointing at the explicit
- * `.../index.html` makes it compute `/bevy-engine/index.html/service_worker.js`
- * (a 404) and the asset-loader worker crashes. Serving the directory index keeps
- * every document-relative path resolving under `/bevy-engine/`.
+ * We point at OUR `engine.html`, not the package's root index.html: since the
+ * "react-web" engine layout (~commit-4472a75) the package's index.html is the
+ * full Decentraland React HUD loaded from a CDN, not an embeddable engine.
+ * `engine.html` is a bare host page that boots the engine in-document via its
+ * boot contract (`engine/boot.js` + `__bevyLaunch`) — see the file for details.
+ * The realm / position / systemScene ride on this page's query string; the host
+ * page reads them and drives the launch.
  */
-export const BEVY_ENGINE_URL = '/bevy-engine/';
+export const BEVY_ENGINE_URL = '/bevy-engine/engine.html';
 
 /** Poll cadence + boot ceiling, matching bevy-editor's proven values. */
 const READY_POLL_INTERVAL_MS = 250;
@@ -57,18 +58,11 @@ export interface MountEngineOptions {
 }
 
 /**
- * Build the engine iframe URL. The engine reads `realm`, `position`,
- * `systemScene`, `portables` and `embed` from its own `location.search`
- * (engine.js / ui.js), so they go on the query string of the directory URL.
- * Kept pure + exported for testing.
- *
- * When a `systemScene` (the editor-agent PX) is set we also pin two params that
- * matter only for the agent boot path (they mirror bevy-editor):
- *  - `portables=` (empty) — the engine otherwise defaults to the remote
- *    `basiccontroller.dcl.eth` PX, which fetches from the public content server
- *    during boot and can stall the loading screen.
- *  - `embed=true` — bevy-editor sets this for the iframe-hosted engine.
- * Leaving them off the plain-realm path keeps that (working) boot unchanged.
+ * Build the engine iframe URL: our host page (`engine.html`) with `realm`,
+ * `position` and `systemScene` on its query string. The host page reads them and
+ * drives the engine's boot contract (`__bevyBootConfig` + `__bevyLaunch`) — it
+ * also derives `portables` from `systemScene` (empty, to skip the default remote
+ * PX). Kept pure + exported for testing.
  */
 export function buildEngineUrl(
   base: string,
@@ -79,11 +73,7 @@ export function buildEngineUrl(
   const params = new URLSearchParams();
   if (realm) params.set('realm', realm);
   if (position) params.set('position', position);
-  if (systemScene) {
-    params.set('systemScene', systemScene);
-    params.set('portables', '');
-    params.set('embed', 'true');
-  }
+  if (systemScene) params.set('systemScene', systemScene);
   const query = params.toString();
   return query ? `${base}?${query}` : base;
 }
