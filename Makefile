@@ -125,11 +125,20 @@ test-e2e:
 	make test-inspector-e2e
 	make test-creator-hub-e2e
 
+# CI variant: reuse the prebuilt creator-hub dist (downloaded from the build
+# job) instead of rebuilding it inside test:e2e.
+test-e2e-ci:
+	make test-inspector-e2e
+	make test-creator-hub-e2e-ci
+
 test-inspector-e2e:
 	cd $(INSPECTOR_PATH)/; npm run test:e2e
 
 test-creator-hub-e2e:
 	cd $(CH_PATH); npm run test:e2e
+
+test-creator-hub-e2e-ci:
+	cd $(CH_PATH); npm run test:e2e:ci
 
 format:
 	npm run format

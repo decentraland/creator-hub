@@ -49,6 +49,9 @@ jobs:
             packages/inspector/public/bundle.js.map
             packages/inspector/public/bin
             packages/inspector/src/lib/data-layer/proto/gen
+            packages/creator-hub/main/dist
+            packages/creator-hub/preload/dist
+            packages/creator-hub/renderer/dist
           key: >-
             ${{ runner.os }}-build-${{ hashFiles(
               'packages/asset-packs/src/**',
@@ -60,6 +63,12 @@ jobs:
               'packages/inspector/scripts/**',
               'packages/inspector/tsconfig*.json',
               'packages/inspector/package.json',
+              'packages/creator-hub/main/**',
+              'packages/creator-hub/preload/**',
+              'packages/creator-hub/renderer/**',
+              'packages/creator-hub/shared/**',
+              'packages/creator-hub/types/**',
+              'packages/creator-hub/package.json',
               'package-lock.json',
               'Makefile',
               '.github/actions/setup/action.yml') }}
@@ -75,6 +84,12 @@ jobs:
       - name: build inspector
         if: steps.build-cache.outputs.cache-hit != 'true'
         run: make build-inspector
+        env:
+          NODE_OPTIONS: "--max-old-space-size=8192"
+
+      - name: build creator-hub
+        if: steps.build-cache.outputs.cache-hit != 'true'
+        run: make build-creator-hub
         env:
           NODE_OPTIONS: "--max-old-space-size=8192"
 
@@ -104,5 +119,16 @@ jobs:
           path: |
             packages/inspector/dist
             packages/inspector/public
+          if-no-files-found: error
+          retention-days: 1
+
+      - name: upload creator-hub-dist
+        uses: actions/upload-artifact@v4
+        with:
+          name: creator-hub-dist
+          path: |
+            packages/creator-hub/main/dist
+            packages/creator-hub/preload/dist
+            packages/creator-hub/renderer/dist
           if-no-files-found: error
           retention-days: 1
