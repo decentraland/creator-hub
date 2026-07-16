@@ -4,7 +4,7 @@ import cx from 'classnames';
 import { InfoTooltip } from '../InfoTooltip';
 import { Message, MessageType } from '../Message';
 
-import { Props } from './types';
+import type { Props } from './types';
 
 import './TextArea.css';
 
