@@ -1,3 +1,3 @@
 import Texture from './Texture';
-import { Props, VideoTexture } from './types';
-export { Texture, Props, VideoTexture };
+import { Props } from './types';
+export { Texture, Props };

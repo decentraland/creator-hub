@@ -1,14 +1,21 @@
-import React, { useMemo, useState } from 'react';
+import React, { useState } from 'react';
 import type { TextureUnion } from '@dcl/ecs';
 import { validateAssetPath } from '@dcl/asset-packs';
 
-import { useSdk } from '../../../hooks/sdk/useSdk';
-import { useEntitiesWith } from '../../../hooks/sdk/useEntitiesWith';
+import { useVideoPlayerOptions } from '../../../hooks/sdk/useVideoPlayerOptions';
 import { useAssetOptions } from '../../../hooks/useAssetOptions';
 import { Dropdown, FileUploadField, TextField } from '../../ui';
 import { ACCEPTED_FILE_TYPES } from '../../ui/FileUploadField/types';
 
 import './TextureField.css';
+
+// Kept separate from `EntityInspector/MaterialInspector/Texture` on purpose,
+// despite the similar UX (Type dropdown + per-variant editor): that one edits
+// an engine-bound Material through `getInputProps` flattened string paths and
+// carries sampler fields (wrapMode/filterMode/offset/tiling, no Avatar); this
+// one is a controlled `TextureUnion` editor committing via source splices and
+// adds the Avatar variant. They share the leaf primitives (ui/Dropdown,
+// ui/FileUploadField, ui/TextField, useAssetOptions, useVideoPlayerOptions).
 
 type TexCase = 'texture' | 'avatarTexture' | 'videoTexture';
 
@@ -24,17 +31,8 @@ interface TextureFieldProps {
 }
 
 const TextureFieldComponent: React.FC<TextureFieldProps> = ({ value, onChange }) => {
-  const sdk = useSdk();
   const imageOptions = useAssetOptions(ACCEPTED_FILE_TYPES.image);
-  const entitiesWithVideoPlayer = useEntitiesWith(components => components.VideoPlayer);
-
-  const videoPlayerOptions = useMemo(() => {
-    const Name = sdk?.components.Name;
-    return entitiesWithVideoPlayer.map(entity => ({
-      value: String(entity),
-      label: (Name?.getOrNull(entity)?.value ?? `Entity ${entity}`) as string,
-    }));
-  }, [sdk, entitiesWithVideoPlayer]);
+  const videoPlayerOptions = useVideoPlayerOptions();
 
   const [fileError, setFileError] = useState<string | undefined>(undefined);
 
@@ -49,9 +47,12 @@ const TextureFieldComponent: React.FC<TextureFieldProps> = ({ value, onChange })
         onChange({ tex: { $case: 'avatarTexture', avatarTexture: { userId: '' } } });
         return;
       case 'videoTexture': {
-        const first = entitiesWithVideoPlayer[0];
+        const first = videoPlayerOptions[0];
         onChange({
-          tex: { $case: 'videoTexture', videoTexture: { videoPlayerEntity: Number(first ?? 0) } },
+          tex: {
+            $case: 'videoTexture',
+            videoTexture: { videoPlayerEntity: first ? Number(first.value) : 0 },
+          },
         });
         return;
       }
