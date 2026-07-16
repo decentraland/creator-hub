@@ -1,11 +1,26 @@
+/* Infinite canvas. The viewport is a plain positioned clip layer — the zoom pill
+   anchors to it, so its bottom-right position is independent of the stage. The
+   inner stagewrap centres the stage, which is moved by a CSS translate (see
+   Canvas.tsx `pan`) and never clipped by scroll bounds. No scrollbars — wheel /
+   two-finger / right-drag pan, ctrl-⌘ wheel zooms. */
 .ui-designer-canvas-viewport {
   position: relative;
   width: 100%;
   height: 100%;
   background: #1e1f23;
+  overflow: hidden;
+}
+
+.ui-designer-canvas-stagewrap {
+  width: 100%;
+  height: 100%;
   display: grid;
-  place-content: safe center;
-  overflow: auto;
+  place-content: center;
+  overflow: hidden;
+}
+
+.ui-designer-canvas-viewport.panning {
+  cursor: grabbing;
 }
 
 /* Reserves the canvas's *scaled* footprint (sized inline in Canvas.tsx). A grid
@@ -29,17 +44,17 @@
   display: flex;
 }
 
+/* Every node carries a faint dotted marker so ALL elements (not just
+   containers) stay locatable when empty or transparent. Outlines paint INSIDE
+   the scaled canvas-root (transform: scale(--uid-scale)), so a raw 1px renders
+   sub-pixel at the default 0.4 zoom; counter-scale by --uid-scale to hold a
+   ~1px hairline (and ~2px selection ring) on screen at any zoom. Hover /
+   selection override the colour. */
 .ui-designer-canvas-node {
-  outline: 1px solid transparent;
+  outline: calc(1px / var(--uid-scale, 1)) dotted rgba(255, 255, 255, 0.28);
+  outline-offset: calc(-1px / var(--uid-scale, 1));
   transition: outline-color 60ms linear;
-}
-
-/* Container nodes (UiEntity) get a faint dotted outline so they remain
-   visible even when empty or transparent — same affordance as Unreal's
-   designer markers. Hover / selection styles override the colour. */
-.ui-designer-canvas-node[data-type="UiEntity"] {
-  outline-style: dotted;
-  outline-color: rgba(255, 255, 255, 0.22);
+  touch-action: manipulation;
 }
 
 .ui-designer-canvas-node:hover {
@@ -47,8 +62,9 @@
 }
 
 .ui-designer-canvas-node.selected {
+  outline-style: solid;
+  outline-width: calc(2px / var(--uid-scale, 1));
   outline-color: var(--ui-designer-accent);
-  outline-width: 2px;
 }
 
 .ui-designer-canvas-node.drop-over {
@@ -129,63 +145,68 @@
 .ui-designer-canvas-node.resizing {
   outline-color: var(--ui-designer-accent);
   outline-style: solid;
-  outline-width: 2px;
+  outline-width: calc(2px / var(--uid-scale, 1));
 }
 
 /* Resize handles — 8 small squares pinned around the selected node when the
    Resize tool is active. Sized in logical px so they remain ~8 viewport px
    at the canvas's 0.4 scale. */
 .ui-designer-resize-handle {
+  /* Counter-scaled by --uid-scale so a handle stays ~11px on screen at any zoom
+     (a fixed 20px logical handle renders 8px at 0.4 zoom but 40px at 2x). --o
+     centres each handle on its edge. */
+  --h: calc(11px / var(--uid-scale, 1));
+  --o: calc(var(--h) / -2);
   position: absolute;
-  width: 20px;
-  height: 20px;
+  width: var(--h);
+  height: var(--h);
   background: #fff;
-  border: 2px solid var(--ui-designer-accent);
-  border-radius: 2px;
+  border: calc(2px / var(--uid-scale, 1)) solid var(--ui-designer-accent);
+  border-radius: calc(2px / var(--uid-scale, 1));
   z-index: 100;
 }
 
 .ui-designer-resize-handle.nw {
-  top: -10px;
-  left: -10px;
+  top: var(--o);
+  left: var(--o);
   cursor: nwse-resize;
 }
 .ui-designer-resize-handle.n {
-  top: -10px;
+  top: var(--o);
   left: 50%;
   transform: translateX(-50%);
   cursor: ns-resize;
 }
 .ui-designer-resize-handle.ne {
-  top: -10px;
-  right: -10px;
+  top: var(--o);
+  right: var(--o);
   cursor: nesw-resize;
 }
 .ui-designer-resize-handle.e {
   top: 50%;
-  right: -10px;
+  right: var(--o);
   transform: translateY(-50%);
   cursor: ew-resize;
 }
 .ui-designer-resize-handle.se {
-  bottom: -10px;
-  right: -10px;
+  bottom: var(--o);
+  right: var(--o);
   cursor: nwse-resize;
 }
 .ui-designer-resize-handle.s {
-  bottom: -10px;
+  bottom: var(--o);
   left: 50%;
   transform: translateX(-50%);
   cursor: ns-resize;
 }
 .ui-designer-resize-handle.sw {
-  bottom: -10px;
-  left: -10px;
+  bottom: var(--o);
+  left: var(--o);
   cursor: nesw-resize;
 }
 .ui-designer-resize-handle.w {
   top: 50%;
-  left: -10px;
+  left: var(--o);
   transform: translateY(-50%);
   cursor: ew-resize;
 }
@@ -284,6 +305,26 @@
   opacity: 0.7;
 }
 
+/* Inline text editor (double-click a Label/Button). Sits in place of the text
+   span and inherits the node's font/color so editing reads as in-canvas. The
+   outline is counter-scaled like the node markers to stay crisp at any zoom. */
+.ui-designer-canvas-inline-edit {
+  flex: 1 1 auto;
+  min-width: 40px;
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: var(--ui-designer-accent-12);
+  color: inherit;
+  font: inherit;
+  text-align: inherit;
+  outline: calc(1px / var(--uid-scale, 1)) solid var(--ui-designer-accent);
+}
+
+.ui-designer-canvas-inline-edit:focus-visible {
+  outline: calc(2px / var(--uid-scale, 1)) solid var(--border-focused);
+}
+
 .ui-designer-canvas-zoom {
   position: absolute;
   bottom: 16px;
@@ -312,6 +353,12 @@
 .ui-designer-canvas-zoom-btn:hover,
 .ui-designer-canvas-zoom-level:hover {
   background: rgba(255, 255, 255, 0.1);
+}
+
+.ui-designer-canvas-zoom-btn:focus-visible,
+.ui-designer-canvas-zoom-level:focus-visible {
+  outline: 2px solid var(--border-focused);
+  outline-offset: 1px;
 }
 
 .ui-designer-canvas-zoom-level {

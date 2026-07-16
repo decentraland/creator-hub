@@ -19,7 +19,6 @@ import {
   getHiddenNodes,
   getLockedNodes,
   getSelectedNode,
-  getTool,
   selectNode,
 } from '../../redux/ui-designer';
 import { Button } from '../Button';
@@ -33,11 +32,12 @@ import { useUINodeTree } from './useUINodeTree';
 import {
   createRoot as createCodeRoot,
   spliceAddChild,
+  spliceComponentPatch,
   spliceInsertComponent,
   spliceMove,
   spliceUiTransformMargin,
   spliceUiTransformPosition,
-  spliceUiTransformSize,
+  spliceUiTransformResize,
   useCodeState,
 } from './code/store';
 import { buildResolveMap } from './code/bindings';
@@ -225,6 +225,12 @@ function color4ToRgba(c: { r: number; g: number; b: number; a?: number }): strin
   return `rgba(${Math.round(c.r * 255)}, ${Math.round(c.g * 255)}, ${Math.round(c.b * 255)}, ${a})`;
 }
 
+// react-ecs writes no border color when a width is set but no color is given; the
+// in-world renderer and the property panel both treat that default as opaque
+// black. Match it so the canvas preview doesn't fall back to `currentColor` (the
+// node's light text color), which read as a mismatch against the panel swatch.
+const DEFAULT_BORDER_COLOR = { r: 0, g: 0, b: 0, a: 1 };
+
 function nodeStyle(node: UINode): React.CSSProperties {
   const t = (node.uiTransform ?? {}) as Record<string, number | undefined>;
   const b = (node.uiBackground ?? {}) as {
@@ -339,7 +345,9 @@ function nodeStyle(node: UINode): React.CSSProperties {
     if (w !== undefined) {
       (style as Record<string, unknown>)[`border${side}Width`] = w;
       (style as Record<string, unknown>)[`border${side}Style`] = 'solid';
-      if (color) (style as Record<string, unknown>)[`border${side}Color`] = color4ToRgba(color);
+      (style as Record<string, unknown>)[`border${side}Color`] = color4ToRgba(
+        color ?? DEFAULT_BORDER_COLOR,
+      );
     }
   };
   // Border colors are color objects, not the numbers `t` is typed as; read
@@ -550,7 +558,6 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node, hidden }) => {
   // react-redux only re-renders when the selector OUTPUT changes, so this confines
   // the re-render to the two nodes whose selection actually flips.
   const isSelected = useAppSelector(state => getSelectedNode(state) === node.entity);
-  const tool = useAppSelector(getTool);
   // Editor-only canvas lock (tree lock button): the node still renders but
   // takes no select/drag/resize. Derived boolean for the same re-render
   // reasons as isSelected.
@@ -651,8 +658,12 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node, hidden }) => {
   // to absolute on the first drag and pin it at the position it was rendered
   // at — same as Unreal's Canvas Panel behaviour.
   const isRoot = !t?.parent;
-  const canDragMove = !isRoot && tool === 'move';
-  const showResizeHandles = !isRoot && tool === 'resize' && isSelected;
+  // Direct manipulation (Figma-style, no mode toggle): any non-root node is
+  // draggable to move (unless locked), and its 8 resize handles appear whenever
+  // it's selected. handleResizeStart stopPropagation keeps a border-handle drag
+  // from also starting a body move.
+  const canDragMove = !isRoot && !isLocked;
+  const showResizeHandles = !isRoot && isSelected && !isLocked;
 
   const dragOriginRef = useRef<{
     mouseX: number;
@@ -721,6 +732,17 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node, hidden }) => {
   });
   const [isResizing, setIsResizing] = useState(false);
 
+  // --- Inline canvas text editing (double-click a Label/Button) ---
+  // The buffer lives in a ref (the commit source of truth — no stale closure)
+  // mirrored into state for the controlled input. Only LITERAL text is editable:
+  // a bound value (`value={state.x}`) is an expression, edited in the panel.
+  const [editingText, setEditingText] = useState<string | null>(null);
+  const editingTextRef = useRef<string | null>(null);
+  const isTextEditable =
+    !isLocked &&
+    (node.type === 'Label' || node.type === 'Button') &&
+    !node.bindings?.some(b => b.field === 'core::UiText.value');
+
   const handleClick = useCallback(
     (e: React.MouseEvent) => {
       if (isLocked) return; // locked: clicks fall through, node not selectable
@@ -730,10 +752,53 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node, hidden }) => {
     [dispatch, node.entity, isLocked],
   );
 
+  const handleDoubleClick = useCallback(
+    (e: React.MouseEvent) => {
+      if (!isTextEditable) return;
+      e.stopPropagation();
+      const seed = (text.value ?? '') as string;
+      editingTextRef.current = seed;
+      setEditingText(seed);
+      dispatch(selectNode({ node: node.entity }));
+    },
+    [isTextEditable, text.value, dispatch, node.entity],
+  );
+
+  const commitInlineEdit = useCallback(() => {
+    const value = editingTextRef.current;
+    if (value === null) return;
+    editingTextRef.current = null;
+    setEditingText(null);
+    // Same async source-splice path the property panel uses for text.
+    void spliceComponentPatch(node.entity as unknown as number, 'core::UiText', { value });
+  }, [node.entity]);
+
+  const handleInlineKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      e.stopPropagation();
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        commitInlineEdit();
+      } else if (e.key === 'Escape') {
+        e.preventDefault();
+        editingTextRef.current = null;
+        setEditingText(null);
+      }
+    },
+    [commitInlineEdit],
+  );
+
+  const handleInlineChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    editingTextRef.current = e.target.value;
+    setEditingText(e.target.value);
+  }, []);
+
   const handleMouseDown = useCallback(
     (e: React.MouseEvent) => {
+      if (e.button !== 0) return; // left-drag moves; right/middle bubble to the canvas pan
       if (isLocked) return;
       if (!canDragMove) return;
+      if (editingTextRef.current !== null) return; // don't drag while editing text inline
       // Ignore clicks inside inputs / interactive children so the property
       // panel doesn't end up dragging the parent node.
       const target = e.target as HTMLElement;
@@ -959,19 +1024,18 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node, hidden }) => {
       const dyRaw = (e.clientY - origin.mouseY) / getCanvasScale();
       const axes = HANDLE_AXES[origin.dir];
 
-      // In-flow nodes can't move from a resize — the parent lays them out. Zero
-      // the position axes so the live preview matches the commit (box grows in
-      // place instead of following the top/left handles).
-      const dxAxis = origin.isAbsolute ? axes.dx : 0;
-      const dyAxis = origin.isAbsolute ? axes.dy : 0;
-
+      // The box follows the dragged handle in BOTH layout modes: left/top edges
+      // move the top-left (axes.dx/dy) while shrinking width/height (axes.dw/dh),
+      // so the opposite edge stays put and the box grows toward the dragged edge.
+      // The live translate and the commit both honor this (in-flow nodes commit
+      // the top-left shift as margin), so the preview matches the result.
       // Snap the FINAL position/size, not the delta, so the grid is anchored
       // to absolute logical coords (consistent with move).
       const snap = (v: number) => Math.round(v / DRAG_SNAP_GRID) * DRAG_SNAP_GRID;
       const doSnap = !e.shiftKey;
 
-      let nextLeft = origin.startLeft + dxRaw * dxAxis;
-      let nextTop = origin.startTop + dyRaw * dyAxis;
+      let nextLeft = origin.startLeft + dxRaw * axes.dx;
+      let nextTop = origin.startTop + dyRaw * axes.dy;
       let nextW = origin.startW + dxRaw * axes.dw;
       let nextH = origin.startH + dyRaw * axes.dh;
 
@@ -1000,14 +1064,36 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node, hidden }) => {
       resizeOriginRef.current = null;
       resizeLiveRef.current = { dx: 0, dy: 0, dw: 0, dh: 0 };
       setIsResizing(false);
-      // Splice the new width/height into the .tsx source (top-level ergonomic
-      // fields) and reparse. Position from top/left handles is a follow-up.
       if (!origin) return;
-      if (live.dw === 0 && live.dh === 0) return;
+      if (live.dw === 0 && live.dh === 0 && live.dx === 0 && live.dy === 0) return;
+      // Commit size AND the top-left shift the handle produced, in one splice, so
+      // a left/top-edge drag grows toward that edge instead of always down-right.
       const width = Math.max(0, Math.round(origin.startW + live.dw));
       const height = Math.max(0, Math.round(origin.startH + live.dh));
-      setOptimisticPos({ width, height });
-      void spliceUiTransformSize(node.entity as unknown as number, width, height);
+      const id = node.entity as unknown as number;
+      const hasMove = live.dx !== 0 || live.dy !== 0;
+      if (origin.isAbsolute) {
+        // Absolute → reposition via `position: { top, left }`.
+        const top = Math.round(origin.startTop + live.dy);
+        const left = Math.round(origin.startLeft + live.dx);
+        setOptimisticPos(hasMove ? { top, left, width, height } : { width, height });
+        void spliceUiTransformResize(id, {
+          width,
+          height,
+          position: hasMove ? { top, left } : undefined,
+        });
+      } else {
+        // In-flow → shift via `margin` (current + delta), mirroring the move path.
+        // Right/bottom-edge drags leave dx/dy at 0, so margin is left untouched.
+        const marginTop = Math.round(((t?.marginTop as number) ?? 0) + live.dy);
+        const marginLeft = Math.round(((t?.marginLeft as number) ?? 0) + live.dx);
+        setOptimisticPos(hasMove ? { marginTop, marginLeft, width, height } : { width, height });
+        void spliceUiTransformResize(id, {
+          width,
+          height,
+          margin: hasMove ? { top: marginTop, left: marginLeft } : undefined,
+        });
+      }
     };
 
     window.addEventListener('mousemove', handleMove);
@@ -1104,6 +1190,7 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node, hidden }) => {
       })}
       style={hiddenStyle(style, hidden)}
       onClick={handleClick}
+      onDoubleClick={handleDoubleClick}
       onMouseDown={handleMouseDown}
       data-type={node.type}
       data-entity={String(node.entity)}
@@ -1117,8 +1204,25 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node, hidden }) => {
           <span className="ui-designer-canvas-dropdown-chevron">▼</span>
         </span>
       ) : null}
-      {node.type === 'Label' && labelText ? (
-        <span className="ui-designer-canvas-text">{labelText}</span>
+      {/* Label/Button text: an inline editor while editing (double-click), else
+          the resolved preview text. Button had no text branch before, so it
+          painted as an empty box. */}
+      {node.type === 'Label' || node.type === 'Button' ? (
+        editingText !== null ? (
+          <input
+            className="ui-designer-canvas-inline-edit"
+            value={editingText}
+            autoFocus
+            aria-label={`Edit ${node.type} text`}
+            onChange={handleInlineChange}
+            onKeyDown={handleInlineKeyDown}
+            onBlur={commitInlineEdit}
+            onMouseDown={e => e.stopPropagation()}
+            onClick={e => e.stopPropagation()}
+          />
+        ) : labelText ? (
+          <span className="ui-designer-canvas-text">{labelText}</span>
+        ) : null
       ) : null}
       {node.children.map(child => (
         <CanvasNodeView
@@ -1366,11 +1470,16 @@ const CanvasComponent: React.FC = () => {
   const [device, setDevice] = useState<DeviceKind>('desktop');
   const [showSafeAreas, setShowSafeAreas] = useState(false);
   const viewportRef = useRef<HTMLDivElement>(null);
+  // Infinite-canvas pan (Figma-style): the viewport centres the stage and this
+  // translate offsets it, so it can be moved anywhere at any zoom.
+  const [pan, setPan] = useState({ x: 0, y: 0 });
+  const panDragRef = useRef<{ startX: number; startY: number; panX: number; panY: number } | null>(
+    null,
+  );
+  const [isPanning, setIsPanning] = useState(false);
 
-  // When a node is selected from elsewhere (tree / roots list) and it sits
-  // fully outside the viewport, scroll it into view. We only act when it's
-  // entirely off-screen so clicking an already-visible node on the canvas never
-  // makes the view jump.
+  // A node selected from the tree / roots list that's fully off-screen is
+  // recentred by adjusting the pan; an already-visible node never jumps the view.
   useEffect(() => {
     if (selectedNode === null) return;
     const vp = viewportRef.current;
@@ -1382,8 +1491,10 @@ const CanvasComponent: React.FC = () => {
       const offscreen =
         er.right < vr.left || er.left > vr.right || er.bottom < vr.top || er.top > vr.bottom;
       if (!offscreen) return;
-      vp.scrollLeft += er.left + er.width / 2 - (vr.left + vr.width / 2);
-      vp.scrollTop += er.top + er.height / 2 - (vr.top + vr.height / 2);
+      setPan(p => ({
+        x: p.x + (vr.left + vr.width / 2 - (er.left + er.width / 2)),
+        y: p.y + (vr.top + vr.height / 2 - (er.top + er.height / 2)),
+      }));
     });
   }, [selectedNode]);
 
@@ -1410,173 +1521,220 @@ const CanvasComponent: React.FC = () => {
   // `setRef`; this guards against an entry surviving a full canvas teardown.
   useEffect(() => () => clearNodeRegistry(), []);
 
-  // Ctrl/⌘ + wheel to zoom. Native non-passive listener so we can preventDefault
-  // (otherwise the browser page-zooms). Attached to the always-mounted viewport.
+  // Wheel pans; ctrl/⌘ + wheel zooms. Non-passive so preventDefault stops the
+  // browser page-zoom / back-swipe.
   useEffect(() => {
     const el = viewportRef.current;
     if (!el) return;
     const onWheel = (e: WheelEvent) => {
-      if (!e.ctrlKey && !e.metaKey) return;
       e.preventDefault();
-      setScale(s => clampZoom(s - e.deltaY * 0.0015));
+      if (e.ctrlKey || e.metaKey) {
+        setScale(s => clampZoom(s - e.deltaY * 0.0015));
+        return;
+      }
+      setPan(p => ({ x: p.x - e.deltaX, y: p.y - e.deltaY }));
     };
     el.addEventListener('wheel', onWheel, { passive: false });
     return () => el.removeEventListener('wheel', onWheel);
   }, []);
 
+  // Right-/middle-drag pans.
+  const handlePanStart = useCallback(
+    (e: React.MouseEvent) => {
+      if (e.button !== 2 && e.button !== 1) return;
+      e.preventDefault();
+      panDragRef.current = { startX: e.clientX, startY: e.clientY, panX: pan.x, panY: pan.y };
+      setIsPanning(true);
+    },
+    [pan.x, pan.y],
+  );
+
+  useEffect(() => {
+    if (!isPanning) return;
+    const move = (e: MouseEvent) => {
+      const o = panDragRef.current;
+      if (!o) return;
+      setPan({ x: o.panX + (e.clientX - o.startX), y: o.panY + (e.clientY - o.startY) });
+    };
+    const up = () => {
+      panDragRef.current = null;
+      setIsPanning(false);
+    };
+    window.addEventListener('mousemove', move);
+    window.addEventListener('mouseup', up);
+    return () => {
+      window.removeEventListener('mousemove', move);
+      window.removeEventListener('mouseup', up);
+    };
+  }, [isPanning]);
+
   return (
     <VarPreviewContext.Provider value={resolveVar}>
       <div
         ref={viewportRef}
-        className="ui-designer-canvas-viewport"
+        className={cx('ui-designer-canvas-viewport', { panning: isPanning })}
+        onMouseDown={handlePanStart}
+        onContextMenu={e => e.preventDefault()}
       >
-        {tree ? (
-          <>
-            <div className="ui-designer-canvas-zoom">
-              <button
-                type="button"
-                className="ui-designer-canvas-zoom-btn"
-                onClick={() => setScale(s => clampZoom(s - ZOOM_STEP))}
-                aria-label="Zoom out"
-              >
-                −
-              </button>
-              <button
-                type="button"
-                className="ui-designer-canvas-zoom-level"
-                onClick={() => setScale(DEFAULT_CANVAS_SCALE)}
-                title="Reset zoom"
-                aria-label="Reset zoom"
-                aria-live="polite"
-              >
-                {Math.round(scale * 100)}%
-              </button>
-              <button
-                type="button"
-                className="ui-designer-canvas-zoom-btn"
-                onClick={() => setScale(s => clampZoom(s + ZOOM_STEP))}
-                aria-label="Zoom in"
-              >
-                +
-              </button>
-              <span className="ui-designer-canvas-zoom-sep" />
-              <button
-                type="button"
-                className={cx('ui-designer-canvas-zoom-btn', { active: device === 'desktop' })}
-                onClick={() => setDevice('desktop')}
-                title="Desktop preview"
-                aria-label="Desktop preview"
-                aria-pressed={device === 'desktop'}
-              >
-                <IoDesktopOutline />
-              </button>
-              <button
-                type="button"
-                className={cx('ui-designer-canvas-zoom-btn', { active: device === 'mobile' })}
-                onClick={() => setDevice('mobile')}
-                title="Mobile preview"
-                aria-label="Mobile preview"
-                aria-pressed={device === 'mobile'}
-              >
-                <IoPhoneLandscapeOutline />
-              </button>
-              <button
-                type="button"
-                className={cx('ui-designer-canvas-zoom-btn', { active: showSafeAreas })}
-                onClick={() => setShowSafeAreas(s => !s)}
-                title="Toggle safe-area guides"
-                aria-label="Toggle safe-area guides"
-                aria-pressed={showSafeAreas}
-              >
-                <IoScanOutline />
-              </button>
-            </div>
-            {device === 'desktop' ? (
-              <div
-                className="ui-designer-canvas-stage"
-                style={{ width: canvasWidth * scale, height: canvasHeight * scale }}
-              >
+        <div className="ui-designer-canvas-stagewrap">
+          {tree ? (
+            <>
+              {device === 'desktop' ? (
                 <div
-                  className="ui-designer-canvas-root"
-                  style={
-                    {
-                      width: canvasWidth,
-                      height: canvasHeight,
-                      transform: `scale(${scale})`,
-                      transformOrigin: 'top left',
-                      // Exposed so selection chrome (action bar) can counter-scale to
-                      // stay legible at any zoom without re-rendering each node.
-                      '--uid-scale': scale,
-                    } as React.CSSProperties
-                  }
+                  className="ui-designer-canvas-stage"
+                  style={{
+                    width: canvasWidth * scale,
+                    height: canvasHeight * scale,
+                    transform: `translate(${pan.x}px, ${pan.y}px)`,
+                  }}
                 >
-                  <CanvasNodeView node={tree} />
-                  {showSafeAreas ? (
-                    <SafeAreaOverlay
-                      width={canvasWidth}
-                      height={canvasHeight}
-                      device="desktop"
-                    />
-                  ) : null}
-                </div>
-              </div>
-            ) : (
-              <div
-                className="ui-designer-device-frame"
-                style={{
-                  width: MOBILE_REFERENCE.width * scale,
-                  height: MOBILE_REFERENCE.height * scale,
-                }}
-              >
-                <div
-                  className="ui-designer-device-screen"
-                  style={
-                    {
-                      width: MOBILE_REFERENCE.width,
-                      height: MOBILE_REFERENCE.height,
-                      transform: `scale(${scale})`,
-                      transformOrigin: 'top left',
-                      '--uid-scale': scale * fitScale,
-                    } as React.CSSProperties
-                  }
-                >
-                  {/* UI scaled-to-fit + letterboxed, inspection-only (no editing). */}
                   <div
-                    className="ui-designer-canvas-root preview-only"
-                    style={{
-                      width: canvasWidth,
-                      height: canvasHeight,
-                      transform: `scale(${fitScale})`,
-                      transformOrigin: 'top left',
-                      position: 'absolute',
-                      left: (MOBILE_REFERENCE.width - canvasWidth * fitScale) / 2,
-                      top: (MOBILE_REFERENCE.height - canvasHeight * fitScale) / 2,
-                      pointerEvents: 'none',
-                    }}
+                    className="ui-designer-canvas-root"
+                    style={
+                      {
+                        width: canvasWidth,
+                        height: canvasHeight,
+                        transform: `scale(${scale})`,
+                        transformOrigin: 'top left',
+                        // Exposed so selection chrome (action bar) can counter-scale to
+                        // stay legible at any zoom without re-rendering each node.
+                        '--uid-scale': scale,
+                      } as React.CSSProperties
+                    }
                   >
                     <CanvasNodeView node={tree} />
+                    {showSafeAreas ? (
+                      <SafeAreaOverlay
+                        width={canvasWidth}
+                        height={canvasHeight}
+                        device="desktop"
+                      />
+                    ) : null}
                   </div>
-                  {showSafeAreas ? (
-                    <SafeAreaOverlay
-                      width={MOBILE_REFERENCE.width}
-                      height={MOBILE_REFERENCE.height}
-                      device="mobile"
-                    />
-                  ) : null}
                 </div>
-              </div>
-            )}
-          </>
-        ) : (
-          <div className="ui-designer-canvas-empty">
-            <EmptyState
-              icon={<IoLayersOutline />}
-              title="No UI yet"
-              message="Create a UI to start designing your scene's interface, then drag widgets from the palette below."
-              action={<Button onClick={createRoot}>+ New UI</Button>}
-            />
+              ) : (
+                <div
+                  className="ui-designer-device-frame"
+                  style={{
+                    width: MOBILE_REFERENCE.width * scale,
+                    height: MOBILE_REFERENCE.height * scale,
+                    transform: `translate(${pan.x}px, ${pan.y}px)`,
+                  }}
+                >
+                  <div
+                    className="ui-designer-device-screen"
+                    style={
+                      {
+                        width: MOBILE_REFERENCE.width,
+                        height: MOBILE_REFERENCE.height,
+                        transform: `scale(${scale})`,
+                        transformOrigin: 'top left',
+                        '--uid-scale': scale * fitScale,
+                      } as React.CSSProperties
+                    }
+                  >
+                    {/* UI scaled-to-fit + letterboxed, inspection-only (no editing). */}
+                    <div
+                      className="ui-designer-canvas-root preview-only"
+                      style={{
+                        width: canvasWidth,
+                        height: canvasHeight,
+                        transform: `scale(${fitScale})`,
+                        transformOrigin: 'top left',
+                        position: 'absolute',
+                        left: (MOBILE_REFERENCE.width - canvasWidth * fitScale) / 2,
+                        top: (MOBILE_REFERENCE.height - canvasHeight * fitScale) / 2,
+                        pointerEvents: 'none',
+                      }}
+                    >
+                      <CanvasNodeView node={tree} />
+                    </div>
+                    {showSafeAreas ? (
+                      <SafeAreaOverlay
+                        width={MOBILE_REFERENCE.width}
+                        height={MOBILE_REFERENCE.height}
+                        device="mobile"
+                      />
+                    ) : null}
+                  </div>
+                </div>
+              )}
+            </>
+          ) : (
+            <div className="ui-designer-canvas-empty">
+              <EmptyState
+                icon={<IoLayersOutline />}
+                title="No UI yet"
+                message="Create a UI to start designing your scene's interface, then drag widgets from the palette below."
+                action={<Button onClick={createRoot}>+ New UI</Button>}
+              />
+            </div>
+          )}
+        </div>
+        {tree ? (
+          <div className="ui-designer-canvas-zoom">
+            <button
+              type="button"
+              className="ui-designer-canvas-zoom-btn"
+              onClick={() => setScale(s => clampZoom(s - ZOOM_STEP))}
+              aria-label="Zoom out"
+            >
+              −
+            </button>
+            <button
+              type="button"
+              className="ui-designer-canvas-zoom-level"
+              onClick={() => {
+                setScale(DEFAULT_CANVAS_SCALE);
+                setPan({ x: 0, y: 0 });
+              }}
+              title="Reset view"
+              aria-label="Reset view"
+              aria-live="polite"
+            >
+              {Math.round(scale * 100)}%
+            </button>
+            <button
+              type="button"
+              className="ui-designer-canvas-zoom-btn"
+              onClick={() => setScale(s => clampZoom(s + ZOOM_STEP))}
+              aria-label="Zoom in"
+            >
+              +
+            </button>
+            <span className="ui-designer-canvas-zoom-sep" />
+            <button
+              type="button"
+              className={cx('ui-designer-canvas-zoom-btn', { active: device === 'desktop' })}
+              onClick={() => setDevice('desktop')}
+              title="Desktop preview"
+              aria-label="Desktop preview"
+              aria-pressed={device === 'desktop'}
+            >
+              <IoDesktopOutline />
+            </button>
+            <button
+              type="button"
+              className={cx('ui-designer-canvas-zoom-btn', { active: device === 'mobile' })}
+              onClick={() => setDevice('mobile')}
+              title="Mobile preview"
+              aria-label="Mobile preview"
+              aria-pressed={device === 'mobile'}
+            >
+              <IoPhoneLandscapeOutline />
+            </button>
+            <button
+              type="button"
+              className={cx('ui-designer-canvas-zoom-btn', { active: showSafeAreas })}
+              onClick={() => setShowSafeAreas(s => !s)}
+              title="Toggle safe-area guides"
+              aria-label="Toggle safe-area guides"
+              aria-pressed={showSafeAreas}
+            >
+              <IoScanOutline />
+            </button>
           </div>
-        )}
+        ) : null}
       </div>
     </VarPreviewContext.Provider>
   );
