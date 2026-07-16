@@ -27,20 +27,11 @@ jobs:
         env:
           PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: '1'
 
-      - name: protoc
-        run: make protoc
-
-      - name: build asset-packs
-        run: make build-asset-packs
+      # Reuse the shared build instead of regenerating protoc / rebuilding asset-packs.
+      - uses: ./.github/actions/download-build
 
       - name: test
         run: make test
-
-      - name: upload protoc
-        uses: actions/upload-artifact@v4
-        with:
-          name: protoc
-          path: packages/inspector/src/lib/data-layer/proto/gen
 
   E2E:
     needs: unit
@@ -73,19 +64,9 @@ jobs:
       - name: install Playwright browsers
         run: npx playwright install
 
-      - name: download protoc
-        uses: actions/download-artifact@v4
-        with:
-          name: protoc
-          path: packages/inspector/src/lib/data-layer/proto/gen
-
-      - name: build asset-packs
-        run: make build-asset-packs
-
-      - name: build inspector
-        run: make build-inspector
-        env:
-          NODE_OPTIONS: "--max-old-space-size=8192"
+      # Reuse the shared build (proto gen + asset-packs + inspector dist) so the
+      # inspector server below serves the prebuilt bundle without rebuilding here.
+      - uses: ./.github/actions/download-build
 
       - name: start inspector server
         shell: bash

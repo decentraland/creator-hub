@@ -28,9 +28,8 @@ jobs:
         env:
           PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: '1'
 
-      - run: make protoc
-      - name: build asset-packs typecheck deps
-        run: |
-          npm run -w @dcl/asset-packs build:lib
-          npm run -w @dcl/asset-packs build:catalog
+      # Reuse the shared build (proto gen + asset-packs + inspector dist)
+      # instead of regenerating protoc and rebuilding asset-packs here.
+      - uses: ./.github/actions/download-build
+
       - run: npm run typecheck --if-present

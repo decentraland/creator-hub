@@ -1,0 +1,28 @@
+name: Download build artifacts
+description: >-
+  Download the shared build outputs produced by the `build` workflow
+  (proto-gen, asset-packs-dist, inspector-dist) into their package
+  directories, so QA jobs consume them instead of rebuilding.
+
+runs:
+  using: composite
+  steps:
+    # Download paths mirror each artifact's least-common-ancestor root
+    # (see .github/workflows/build.yml upload steps).
+    - name: download proto-gen
+      uses: actions/download-artifact@v4
+      with:
+        name: proto-gen
+        path: packages/inspector/src/lib/data-layer/proto/gen
+
+    - name: download asset-packs-dist
+      uses: actions/download-artifact@v4
+      with:
+        name: asset-packs-dist
+        path: packages/asset-packs
+
+    - name: download inspector-dist
+      uses: actions/download-artifact@v4
+      with:
+        name: inspector-dist
+        path: packages/inspector

@@ -1,0 +1,108 @@
+name: Build
+on: [ workflow_call ]
+
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: 'bash'
+
+# Builds the portable (JS/JSON) artifacts once per run so the QA jobs
+# (typechecking, tests) can download them instead of each rebuilding the
+# monorepo. A combined source-hash cache lets an unchanged tree skip the
+# build entirely across runs.
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: true
+      - uses: ./.github/actions/setup
+        id: setup
+        with:
+          cache-protoc: 'true'
+
+      - name: install
+        if: steps.setup.outputs.node-modules-cache-hit != 'true'
+        run: make install
+        env:
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: '1'
+
+      # Combined build cache: one key over every input that affects the shared
+      # build outputs. Inspector bundles asset-packs and consumes the generated
+      # proto code, so its output depends on asset-packs source and the .proto
+      # files too — a single union key over-invalidates but is never stale.
+      # No restore-keys: a partial restore of compiled output would be silently wrong.
+      - name: Restore build cache
+        id: build-cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            packages/asset-packs/dist
+            packages/asset-packs/bin
+            packages/asset-packs/catalog.json
+            packages/inspector/dist
+            packages/inspector/public/bundle.js
+            packages/inspector/public/bundle.js.map
+            packages/inspector/public/bin
+            packages/inspector/src/lib/data-layer/proto/gen
+          key: >-
+            ${{ runner.os }}-build-${{ hashFiles(
+              'packages/asset-packs/src/**',
+              'packages/asset-packs/scripts/**',
+              'packages/asset-packs/tsconfig*.json',
+              'packages/asset-packs/package.json',
+              'packages/inspector/src/**',
+              'packages/inspector/build.js',
+              'packages/inspector/scripts/**',
+              'packages/inspector/tsconfig*.json',
+              'packages/inspector/package.json',
+              'package-lock.json',
+              'Makefile',
+              '.github/actions/setup/action.yml') }}
+
+      - name: protoc
+        if: steps.build-cache.outputs.cache-hit != 'true'
+        run: make protoc
+
+      - name: build asset-packs
+        if: steps.build-cache.outputs.cache-hit != 'true'
+        run: make build-asset-packs
+
+      - name: build inspector
+        if: steps.build-cache.outputs.cache-hit != 'true'
+        run: make build-inspector
+        env:
+          NODE_OPTIONS: "--max-old-space-size=8192"
+
+      - name: upload proto-gen
+        uses: actions/upload-artifact@v4
+        with:
+          name: proto-gen
+          path: packages/inspector/src/lib/data-layer/proto/gen
+          if-no-files-found: error
+          retention-days: 1
+
+      - name: upload asset-packs-dist
+        uses: actions/upload-artifact@v4
+        with:
+          name: asset-packs-dist
+          path: |
+            packages/asset-packs/dist
+            packages/asset-packs/bin
+            packages/asset-packs/catalog.json
+          if-no-files-found: error
+          retention-days: 1
+
+      - name: upload inspector-dist
+        uses: actions/upload-artifact@v4
+        with:
+          name: inspector-dist
+          path: |
+            packages/inspector/dist
+            packages/inspector/public
+          if-no-files-found: error
+          retention-days: 1

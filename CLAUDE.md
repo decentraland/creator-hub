@@ -106,6 +106,29 @@ make protoc        # Regenerate TypeScript from .proto files
 - TypeScript library (`dist/`) + catalog.json + binary assets (`bin/`).
 - Scripts for validating, uploading to S3, and downloading assets.
 
+## CI / GitHub Actions
+
+CI is orchestrated by `.github/workflows/ci.yml`, which calls reusable
+(`on: [workflow_call]`) sub-workflows. Key conventions and gotchas:
+
+- **Build once, reuse.** `build.yml` builds the portable artifacts (proto gen,
+  asset-packs `dist/bin/catalog.json`, inspector `dist/public`) a single time per
+  run, gated by a combined source-hash `actions/cache`. QA jobs (`typechecking`,
+  `tests`) consume them via the `.github/actions/download-build` composite action
+  instead of rebuilding. Don't reintroduce per-job `make protoc` / `make build-*`
+  in the QA jobs. The publish chain (asset-packs → inspector → creator-hub) still
+  builds its own tarballs on purpose.
+- **A reusable workflow's `needs:` can only reference jobs in the same file.**
+  Cross-workflow ordering and artifact prerequisites are expressed at the
+  `ci.yml` caller level (e.g. `tests: needs: [build]`), not inside `tests.yml`.
+  Artifacts are run-scoped and shared across all called reusable workflows.
+- **Lint workflows with `actionlint`, not the JS toolchain.** `make format`/
+  `make lint`/`make test` do NOT cover `.github/**` YAML (Prettier globs
+  `js,ts,tsx,json` and `.prettierignore` excludes `.github`; ESLint is `js,cjs,ts`).
+- **`actionlint` mis-lints composite `action.yml` files** as workflows and reports
+  bogus "jobs/on section missing" errors. Validate `.github/actions/*/action.yml`
+  with a YAML parser instead; run `actionlint` on `.github/workflows/*.yml`.
+
 ## Code Style
 
 - **ESLint**: `@typescript-eslint/consistent-type-imports` is enforced (use `import type` for type-only imports).
