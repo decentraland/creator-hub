@@ -64,6 +64,9 @@ const RootRow: React.FC<{
     >
       <IoLayersOutline aria-hidden="true" />
       {editing ? (
+        // Deliberately a raw <input>, not ui/TextField: a transient inline
+        // rename editor (autoFocus + Enter/Escape/blur lifecycle) where
+        // TextField's chrome (InputContainer, Message slot) adds noise.
         <input
           className="ui-designer-code-root-name-input"
           value={draft}

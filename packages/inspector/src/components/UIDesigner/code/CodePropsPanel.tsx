@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 
 import { isValidIdentifier } from '../../../lib/sdk/operations/validators';
+import { Dropdown, TextField } from '../../ui';
 import type { BindVariable } from './bindings';
 import { addBindProp, removeProp, retypeProp, useCodeState } from './store';
 
@@ -9,6 +10,7 @@ import './CodeVariablesPanel.css';
 // 'callback' declares a function-typed prop (`(value?: string | number) =>
 // void`) — the instance binds an @ui-action handler to it via the 🔗.
 const TYPES = ['string', 'number', 'boolean', 'callback'];
+const TYPE_OPTIONS = TYPES.map(t => ({ value: t, label: t }));
 
 // Per-component props manager (the functional analog of the state-variable editor
 // — see props-convention.ts). Declares the props the active root exposes; a field
@@ -50,29 +52,17 @@ const CodePropsPanelComponent: React.FC = () => {
           className="ui-designer-code-variable-row"
         >
           <span className="ui-designer-code-variable-name">{v.name}</span>
-          <select
+          <Dropdown
             aria-label={`Type of ${v.name}`}
+            options={
+              TYPES.includes(v.type)
+                ? TYPE_OPTIONS
+                : // A hand-authored non-primitive type — shown as-is, edit in code.
+                  [...TYPE_OPTIONS, { value: v.type, label: v.type, disabled: true }]
+            }
             value={v.type}
-            onChange={e => void retypeProp(v.name, e.target.value)}
-          >
-            {TYPES.map(t => (
-              <option
-                key={t}
-                value={t}
-              >
-                {t}
-              </option>
-            ))}
-            {!TYPES.includes(v.type) ? (
-              // A hand-authored non-primitive type — shown as-is, edit in code.
-              <option
-                value={v.type}
-                disabled
-              >
-                {v.type}
-              </option>
-            ) : null}
-          </select>
+            onChange={e => void retypeProp(v.name, String(e.target.value))}
+          />
           <button
             type="button"
             className="ui-designer-code-variable-delete"
@@ -86,30 +76,21 @@ const CodePropsPanelComponent: React.FC = () => {
       ))}
 
       <div className="ui-designer-code-variables-add">
-        <input
+        <TextField
+          aria-label="New prop name"
           value={name}
           placeholder="new prop"
-          spellCheck={false}
-          autoCorrect="off"
-          autoCapitalize="off"
           onChange={e => setName(e.target.value)}
           onKeyDown={e => {
             if (e.key === 'Enter') add();
           }}
         />
-        <select
+        <Dropdown
+          aria-label="New prop type"
+          options={TYPE_OPTIONS}
           value={type}
-          onChange={e => setType(e.target.value)}
-        >
-          {TYPES.map(t => (
-            <option
-              key={t}
-              value={t}
-            >
-              {t}
-            </option>
-          ))}
-        </select>
+          onChange={e => setType(String(e.target.value))}
+        />
         <button
           type="button"
           disabled={!canAdd}

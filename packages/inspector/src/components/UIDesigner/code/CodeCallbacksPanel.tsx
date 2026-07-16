@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 
 import { isValidIdentifier } from '../../../lib/sdk/operations/validators';
+import { TextField } from '../../ui';
 import { type CodeAction, isValidTemplate } from './actions';
 import type { BindVariable } from './bindings';
 import { addBindAction, removeAction, setActionBody, useCodeState } from './store';
@@ -21,6 +22,9 @@ function openTemplate(value: string, caret: number): { start: number; partial: s
 
 // The `{{ var }}`-template body editor for one callback: a plain code textarea
 // (buffered, commits on blur) with a `{{` autocomplete over the binding surface.
+// Deliberately a raw <textarea>, not ui/TextArea: the autocomplete needs direct
+// caret access (`selectionStart` / `setSelectionRange`) on the element, which
+// TextArea's buffered value layer doesn't expose reliably.
 const CallbackBodyEditor: React.FC<{ name: string; template: string; vars: BindVariable[] }> = ({
   name,
   template,
@@ -196,12 +200,10 @@ const CodeCallbacksPanelComponent: React.FC = () => {
       ))}
 
       <div className="ui-designer-callbacks-add">
-        <input
+        <TextField
+          aria-label="New callback name"
           value={name}
           placeholder="new callback"
-          spellCheck={false}
-          autoCorrect="off"
-          autoCapitalize="off"
           onChange={e => setName(e.target.value)}
           onKeyDown={e => {
             if (e.key === 'Enter') add();

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import type { Entity } from '@dcl/ecs';
 
+import { CheckboxField, TextField } from '../../ui';
 import { BindAffordance } from '../BindAffordance';
 import type { FieldConfig, FieldKind } from '../field-configs';
 import { useFieldBinding } from '../useFieldBinding';
@@ -88,8 +89,7 @@ const InstancePropRow: React.FC<{
           (code)
         </em>
       ) : prop.type === 'boolean' ? (
-        <input
-          type="checkbox"
+        <CheckboxField
           aria-label={prop.name}
           checked={current?.value === true || current?.value === 'true'}
           onChange={e =>
@@ -102,13 +102,12 @@ const InstancePropRow: React.FC<{
           }
         />
       ) : (
-        <input
+        <TextField
           className="ui-designer-code-variable-default"
           aria-label={prop.name}
           type={prop.type === 'number' ? 'number' : 'text'}
           value={local}
           placeholder={prop.type}
-          spellCheck={false}
           onChange={e => setLocal(e.target.value)}
           onFocus={() => setFocused(true)}
           onBlur={() => {

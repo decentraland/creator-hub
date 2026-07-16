@@ -3,7 +3,7 @@
   flex-direction: column;
   gap: 6px;
   padding: 10px;
-  border-top: 1px solid var(--base-10, #2a2a2e);
+  border-top: 1px solid var(--ui-designer-control-border);
 }
 
 .ui-designer-callbacks-title {
@@ -11,12 +11,12 @@
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  opacity: 0.6;
+  color: var(--sub-text);
 }
 
 .ui-designer-callbacks-empty {
   font-size: 12px;
-  opacity: 0.5;
+  color: var(--sub-text);
 }
 
 .ui-designer-callback-card {
@@ -24,7 +24,7 @@
   flex-direction: column;
   gap: 4px;
   padding: 6px;
-  border: 1px solid var(--base-10, #2a2a2e);
+  border: 1px solid var(--ui-designer-control-border);
   border-radius: 4px;
 }
 
@@ -38,21 +38,35 @@
   flex: 1;
   min-width: 0;
   font-size: 12px;
-  font-family: monospace;
+  font-family: var(--font-monospace);
+  color: var(--title);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .ui-designer-callback-delete {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   font-size: 12px;
   line-height: 1;
   padding: 2px 6px;
   border-radius: 4px;
-  border: 1px solid var(--base-12, #3a3a40);
-  background: var(--base-04, #26262a);
-  color: inherit;
+  border: 1px solid var(--ui-designer-control-border);
+  background: transparent;
+  color: var(--sub-text);
   cursor: pointer;
+}
+
+.ui-designer-callback-delete:hover {
+  background: var(--ui-designer-accent-12);
+  color: var(--title);
+}
+
+.ui-designer-callback-delete:focus-visible {
+  outline: 2px solid var(--border-focused);
+  outline-offset: 1px;
 }
 
 .ui-designer-callback-body {
@@ -65,28 +79,41 @@
 .ui-designer-callback-textarea {
   width: 100%;
   box-sizing: border-box;
-  font-family: monospace;
+  font-family: var(--font-monospace);
   font-size: 12px;
   line-height: 1.4;
   padding: 4px 6px;
+  border: 1px solid var(--ui-designer-control-border);
+  border-radius: 4px;
+  background: var(--ui-designer-control-bg);
+  color: var(--title);
   resize: vertical;
   min-height: 40px;
 }
 
+.ui-designer-callback-textarea:focus-visible {
+  outline: 2px solid var(--border-focused);
+  outline-offset: -1px;
+  border-color: var(--border-focused);
+}
+
 .ui-designer-callback-textarea.is-invalid {
-  border-color: var(--danger, #e2445c);
-  outline-color: var(--danger, #e2445c);
+  border-color: var(--error-main);
+  outline-color: var(--error-main);
 }
 
 .ui-designer-callback-invalid {
   font-size: 10px;
-  color: var(--danger, #e2445c);
+  color: var(--error-light);
 }
 
 .ui-designer-callback-invalid code {
   opacity: 0.85;
 }
 
+/* Variable autocomplete popover. Dark surface + explicit light foreground — the
+   ramp is light→dark, so `--base-02`/`--base-06` here rendered near-white
+   (unreadable white-on-white). See docs/DESIGN.md. */
 .ui-designer-callback-autocomplete {
   position: absolute;
   z-index: 20;
@@ -95,8 +122,8 @@
   right: 0;
   max-height: 160px;
   overflow-y: auto;
-  background: var(--base-02, #1e1e22);
-  border: 1px solid var(--base-12, #3a3a40);
+  background: var(--tree-bg-color);
+  border: 1px solid var(--ui-designer-control-border);
   border-radius: 4px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
 }
@@ -109,25 +136,31 @@
   padding: 4px 8px;
   border: none;
   background: transparent;
-  color: inherit;
+  color: var(--title);
   font-size: 12px;
   text-align: left;
   cursor: pointer;
 }
 
-.ui-designer-callback-autocomplete-row:hover {
-  background: var(--base-06, #2e2e34);
+.ui-designer-callback-autocomplete-row:hover,
+.ui-designer-callback-autocomplete-row[aria-selected='true'] {
+  background: var(--ui-designer-accent-12);
+}
+
+.ui-designer-callback-autocomplete-row:focus-visible {
+  outline: 2px solid var(--border-focused);
+  outline-offset: -2px;
 }
 
 .ui-designer-callback-autocomplete-row em {
   margin-left: auto;
-  opacity: 0.5;
+  color: var(--sub-text);
   font-style: normal;
 }
 
 .ui-designer-callback-hint {
   font-size: 10px;
-  opacity: 0.5;
+  color: var(--sub-text);
 }
 
 .ui-designer-callback-hint code {
@@ -141,21 +174,23 @@
   margin-top: 4px;
 }
 
-.ui-designer-callbacks-add input {
-  flex: 1;
-  min-width: 0;
-  font-size: 12px;
-  padding: 2px 6px;
-}
-
 .ui-designer-callbacks-add button {
   font-size: 12px;
   padding: 2px 8px;
   border-radius: 4px;
-  border: 1px solid var(--base-12, #3a3a40);
-  background: var(--base-04, #26262a);
-  color: inherit;
+  border: 1px solid var(--ui-designer-control-border);
+  background: transparent;
+  color: var(--title);
   cursor: pointer;
+}
+
+.ui-designer-callbacks-add button:hover:not(:disabled) {
+  background: var(--ui-designer-accent-12);
+}
+
+.ui-designer-callbacks-add button:focus-visible {
+  outline: 2px solid var(--border-focused);
+  outline-offset: 1px;
 }
 
 .ui-designer-callbacks-add button:disabled {

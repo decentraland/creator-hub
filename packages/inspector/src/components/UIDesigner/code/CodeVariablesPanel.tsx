@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { IoListOutline } from 'react-icons/io5';
 
 import { isValidIdentifier } from '../../../lib/sdk/operations/validators';
+import { CheckboxField, Dropdown, TextField } from '../../ui';
 import { EmptyState } from '../EmptyState';
 import type { BindVariable } from './bindings';
 import {
@@ -15,6 +16,7 @@ import {
 import './CodeVariablesPanel.css';
 
 const TYPES = ['string', 'number', 'boolean'];
+const TYPE_OPTIONS = TYPES.map(t => ({ value: t, label: t }));
 
 // One editable row for a typed-state variable: type (retype), default value
 // (buffered — commits on blur so a mid-edit reparse can't clobber the caret; see
@@ -37,23 +39,14 @@ const CodeVariableRow: React.FC<{ v: BindVariable }> = ({ v }) => {
   return (
     <div className="ui-designer-code-variable-row">
       <span className="ui-designer-code-variable-name">{v.name}</span>
-      <select
+      <Dropdown
         aria-label={`Type of ${v.name}`}
+        options={TYPE_OPTIONS}
         value={v.type}
-        onChange={e => void retypeStateVariable(v.name, e.target.value)}
-      >
-        {TYPES.map(t => (
-          <option
-            key={t}
-            value={t}
-          >
-            {t}
-          </option>
-        ))}
-      </select>
+        onChange={e => void retypeStateVariable(v.name, String(e.target.value))}
+      />
       {v.type === 'boolean' ? (
-        <input
-          type="checkbox"
+        <CheckboxField
           aria-label={`Default of ${v.name}`}
           checked={v.value === true || v.value === 'true'}
           onChange={e =>
@@ -61,13 +54,12 @@ const CodeVariableRow: React.FC<{ v: BindVariable }> = ({ v }) => {
           }
         />
       ) : (
-        <input
+        <TextField
           className="ui-designer-code-variable-default"
           aria-label={`Default of ${v.name}`}
           type={v.type === 'number' ? 'number' : 'text'}
           value={local}
           placeholder="default"
-          spellCheck={false}
           onChange={e => setLocal(e.target.value)}
           onFocus={() => setFocused(true)}
           onBlur={() => {
@@ -175,35 +167,26 @@ const CodeVariablesPanelComponent: React.FC = () => {
       ))}
 
       <div className="ui-designer-code-variables-add">
-        <input
+        <TextField
+          aria-label="New variable name"
           value={name}
           placeholder="new variable"
-          spellCheck={false}
-          autoCorrect="off"
-          autoCapitalize="off"
           onChange={e => setName(e.target.value)}
           onKeyDown={e => {
             if (e.key === 'Enter') add();
           }}
         />
-        <select
+        <Dropdown
+          aria-label="New variable type"
+          options={TYPE_OPTIONS}
           value={type}
-          onChange={e => setType(e.target.value)}
-        >
-          {TYPES.map(t => (
-            <option
-              key={t}
-              value={t}
-            >
-              {t}
-            </option>
-          ))}
-        </select>
-        <input
+          onChange={e => setType(String(e.target.value))}
+        />
+        <TextField
           className="ui-designer-code-variable-default"
+          aria-label="New variable default"
           value={def}
           placeholder="default"
-          spellCheck={false}
           onChange={e => setDef(e.target.value)}
           onKeyDown={e => {
             if (e.key === 'Enter') add();

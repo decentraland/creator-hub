@@ -156,6 +156,9 @@ export const VariablePicker: React.FC<VariablePickerProps> = ({
       ))}
       {adding ? (
         <div className="ui-designer-variable-picker-new">
+          {/* Deliberately a raw <input>, not ui/TextField: a transient inline
+              editor (autoFocus + Enter/Escape lifecycle) where TextField's
+              chrome (InputContainer, Message slot) adds noise, not value. */}
           <input
             className="ui-designer-variable-picker-name"
             autoFocus
