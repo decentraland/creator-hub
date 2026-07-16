@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
   Checkbox,
   Divider,
@@ -6,7 +6,10 @@ import {
   FormGroup,
   ListItemButton,
   ListItemText,
+  Tooltip,
 } from 'decentraland-ui2';
+
+import { scene } from '#preload';
 
 import { t } from '/@/modules/store/translation/utils';
 
@@ -17,7 +20,27 @@ export function PreviewOptions({
   options,
   onShowMobileQR,
   supportsMultiInstance,
+  projectPath,
 }: PreviewOptionsProps) {
+  const [terrainHiddenByScene, setTerrainHiddenByScene] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    scene
+      .getScene(projectPath)
+      .then(sceneJson => {
+        if (!cancelled) {
+          setTerrainHiddenByScene(
+            (sceneJson as { landscapeTerrain?: boolean }).landscapeTerrain === false,
+          );
+        }
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [projectPath]);
+
   const handleChange = useCallback(
     (newOptions: Partial<PreviewOptionsProps['options']>) => () => {
       onChange({ ...options, ...newOptions });
@@ -38,15 +61,27 @@ export function PreviewOptions({
           }
           label={t('editor.header.actions.preview_options.debugger')}
         />
-        <FormControlLabel
-          control={
-            <Checkbox
-              checked={!!options.enableLandscapeTerrains}
-              onChange={handleChange({ enableLandscapeTerrains: !options.enableLandscapeTerrains })}
-            />
+        <Tooltip
+          title={
+            terrainHiddenByScene
+              ? t('editor.header.actions.preview_options.landscape_terrain_disabled_by_scene')
+              : ''
           }
-          label={t('editor.header.actions.preview_options.landscape_terrain_enabled')}
-        />
+          placement="left"
+        >
+          <FormControlLabel
+            control={
+              <Checkbox
+                checked={terrainHiddenByScene ? false : !!options.enableLandscapeTerrains}
+                disabled={terrainHiddenByScene}
+                onChange={handleChange({
+                  enableLandscapeTerrains: !options.enableLandscapeTerrains,
+                })}
+              />
+            }
+            label={t('editor.header.actions.preview_options.landscape_terrain_enabled')}
+          />
+        </Tooltip>
         {supportsMultiInstance && (
           <FormControlLabel
             control={

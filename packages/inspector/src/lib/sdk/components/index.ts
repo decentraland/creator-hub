@@ -81,6 +81,7 @@ export type SceneComponent = {
   silenceVoiceChat?: boolean;
   disablePortableExperiences?: boolean;
   disableNearbyVoiceChat?: boolean;
+  hideLandscapeTerrain?: boolean;
   spawnPoints?: SceneSpawnPoint[];
 };
 

@@ -99,6 +99,15 @@ function isPreviewRunning(preview?: Preview): preview is Preview {
   return !!(preview?.child.alive() && preview.url);
 }
 
+async function sceneHasLandscapeTerrain(path: string): Promise<boolean> {
+  try {
+    const sceneJson = JSON.parse(await fs.readFile(join(path, 'scene.json'), 'utf-8'));
+    return sceneJson.landscapeTerrain !== false;
+  } catch {
+    return true;
+  }
+}
+
 function getDeepLinkParam(raw: string, key: string): string | null {
   const queryIdx = raw.indexOf('?');
   if (queryIdx < 0) return null;
@@ -259,6 +268,12 @@ export async function start(
   opts: PreviewOptions & { retry?: boolean },
 ): Promise<string> {
   const { retry = true } = opts;
+
+  // The scene-level landscapeTerrain opt-out overrides the preview preference
+  if (!(await sceneHasLandscapeTerrain(path))) {
+    opts = { ...opts, enableLandscapeTerrains: false };
+  }
+
   const preview = previewCache.get(path);
 
   // If we have a preview running for this path open it
