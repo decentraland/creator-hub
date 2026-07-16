@@ -71,6 +71,64 @@ const AXIS_COLOR: Record<Axis, Color4> = {
 const axisVec = (a: Axis): Vector3 =>
   a === 'x' ? Vector3.Right() : a === 'y' ? Vector3.Up() : Vector3.Forward();
 
+// The bright gold every handle turns when hovered, so the hovered one reads
+// unambiguously regardless of its base axis colour (Blender/Roblox-style).
+const HOVER_COLOR = Color4.create(1, 0.78, 0.12, 1);
+
+// Hover registry: each gizmo visual mesh, keyed by the DragAxis handle it belongs
+// to, with its base colour so the per-frame hover resolver can paint the hovered
+// handle gold and restore the rest. Populated by paintVisual as handles are built.
+interface HoverVisual {
+  mesh: Entity;
+  base: Color4;
+  translucent: boolean;
+}
+const hoverVisuals: Partial<Record<DragAxis, HoverVisual[]>> = {};
+// The handle currently painted as hovered (null = none), so we only re-paint on a
+// change rather than every frame.
+let hoverKey: DragAxis | null = null;
+
+/**
+ * Set a gizmo visual's material to `color` and record it under `key` for hover
+ * highlighting. Emissive tracks the albedo; `translucent` (plane quads) keeps an
+ * alpha so overlapping handles read. Call instead of Material.setPbrMaterial for
+ * anything that should highlight on hover.
+ */
+function paintVisual(mesh: Entity, key: DragAxis, color: Color4, translucent = false): void {
+  const hovered = false;
+  applyVisualMaterial(mesh, color, hovered, translucent);
+  (hoverVisuals[key] ??= []).push({ mesh, base: color, translucent });
+}
+
+/** The actual material write shared by paintVisual (base) and the hover resolver. */
+function applyVisualMaterial(
+  mesh: Entity,
+  color: Color4,
+  hovered: boolean,
+  translucent: boolean,
+): void {
+  const c = hovered ? HOVER_COLOR : color;
+  Material.setPbrMaterial(mesh, {
+    albedoColor: translucent ? Color4.create(c.r, c.g, c.b, hovered ? 0.9 : 0.5) : c,
+    emissiveColor: Color3.create(c.r, c.g, c.b),
+    emissiveIntensity: hovered ? 1.0 : 0.4,
+  });
+}
+
+/** Paint `key`'s visuals gold (or all back to base when `key` is null). Only the
+ * changed handles are touched. */
+function setHover(key: DragAxis | null): void {
+  if (key === hoverKey) return;
+  const repaint = (k: DragAxis | null, hovered: boolean) => {
+    if (k === null) return;
+    for (const v of hoverVisuals[k] ?? [])
+      applyVisualMaterial(v.mesh, v.base, hovered, v.translucent);
+  };
+  repaint(hoverKey, false); // restore the previously-hovered handle
+  repaint(key, true); // highlight the newly-hovered one
+  hoverKey = key;
+}
+
 // Translate plane handles: small quads offset from the center in each pair of
 // axes, for dragging freely within that plane (Babylon/Blender-style). Colored
 // by the plane's NORMAL axis, like Blender's patches.
@@ -232,6 +290,24 @@ const PICK_OR_HANDLE_MASK = 1 | 2;
 // the gizmo is always visible regardless of world geometry (never occluded).
 const GIZMO_LAYER = 4;
 let gizmoCamera: Entity | null = null;
+// The canvas size the gizmo render target is currently sized for (device px +
+// dpr), so gizmoSystemInner re-syncs the target only when the viewport changes.
+let lastCanvasW = 0;
+let lastCanvasH = 0;
+let lastCanvasDpr = 0;
+
+// Size the gizmo render target in DEVICE pixels. UiCanvasInformation width/height
+// are VIRTUAL (logical) px; on a retina display the real framebuffer is dpr×
+// bigger, so sizing to logical px renders the gizmo at half resolution and the
+// composite upscales it (soft, aliased handles). Multiply by dpr; cap the longest
+// side at 2048 to bound the render-target cost.
+function gizmoTextureSize(w: number, h: number, dpr: number): { width: number; height: number } {
+  const dw = w * dpr;
+  const dh = h * dpr;
+  const scale = Math.min(1, 2048 / Math.max(dw, dh, 1));
+  const clamp = (n: number): number => Math.max(16, Math.round(n * scale));
+  return { width: clamp(dw), height: clamp(dh) };
+}
 
 // The engine's actual vertical FOV (radians). The gizmo composite MUST use the
 // same FOV as the main camera, or the rendered arrows land at a different screen
@@ -395,11 +471,22 @@ export function setupGizmo(): void {
 function setupGizmoCamera(): void {
   if (gizmoCamera !== null) return;
   const canvas = UiCanvasInformation.getOrNull(engine.RootEntity);
+  // Size the target in device pixels up front so the first frame is crisp; if the
+  // canvas isn't ready yet, gizmoSystemInner re-syncs once it is (see lastCanvas*).
+  const size =
+    canvas && canvas.width > 0 && canvas.height > 0
+      ? gizmoTextureSize(canvas.width, canvas.height, canvas.devicePixelRatio || 1)
+      : { width: 1280, height: 720 };
+  if (canvas && canvas.width > 0 && canvas.height > 0) {
+    lastCanvasW = canvas.width;
+    lastCanvasH = canvas.height;
+    lastCanvasDpr = canvas.devicePixelRatio;
+  }
   const cam = engine.addEntity();
   Transform.create(cam);
   TextureCamera.create(cam, {
-    width: canvas?.width ?? 1280,
-    height: canvas?.height ?? 720,
+    width: size.width,
+    height: size.height,
     layer: GIZMO_LAYER,
     clearColor: Color4.create(0, 0, 0, 0), // transparent → only the gizmo shows
     mode: { $case: 'perspective', perspective: { fieldOfView: engineFovY } },
@@ -454,11 +541,7 @@ function buildGizmo(): void {
       parent: container,
     });
     MeshRenderer.setCylinder(shaft, SHAFT_R, SHAFT_R);
-    Material.setPbrMaterial(shaft, {
-      albedoColor: AXIS_COLOR[axis],
-      emissiveColor: Color3.create(AXIS_COLOR[axis].r, AXIS_COLOR[axis].g, AXIS_COLOR[axis].b),
-      emissiveIntensity: 0.4,
-    });
+    paintVisual(shaft, axis, AXIS_COLOR[axis]);
 
     // Arrow head: a cone (zero-top-radius cylinder) pointing outward at the tip.
     const cone = engine.addEntity();
@@ -468,11 +551,7 @@ function buildGizmo(): void {
       parent: container,
     });
     MeshRenderer.setCylinder(cone, CONE_R, 0);
-    Material.setPbrMaterial(cone, {
-      albedoColor: AXIS_COLOR[axis],
-      emissiveColor: Color3.create(AXIS_COLOR[axis].r, AXIS_COLOR[axis].g, AXIS_COLOR[axis].b),
-      emissiveIntensity: 0.4,
-    });
+    paintVisual(cone, axis, AXIS_COLOR[axis]);
 
     // A fat collider along the axis so the handle is easy to grab.
     const handle = engine.addEntity();
@@ -552,11 +631,7 @@ function buildTranslatePlanes(root: Entity): void {
     });
     MeshRenderer.setPlane(quad);
     const n = PLANE_NORMAL_AXIS[key];
-    Material.setPbrMaterial(quad, {
-      albedoColor: AXIS_COLOR[n],
-      emissiveColor: Color3.create(AXIS_COLOR[n].r, AXIS_COLOR[n].g, AXIS_COLOR[n].b),
-      emissiveIntensity: 0.4,
-    });
+    paintVisual(quad, key, AXIS_COLOR[n], true);
   }
 }
 
@@ -576,11 +651,7 @@ function buildScaleCenter(root: Entity): void {
     parent: group,
   });
   MeshRenderer.setBox(cube);
-  Material.setPbrMaterial(cube, {
-    albedoColor: Color4.White(),
-    emissiveColor: Color3.White(),
-    emissiveIntensity: 0.4,
-  });
+  paintVisual(cube, 'xyz', Color4.White());
 }
 
 /**
@@ -600,11 +671,7 @@ function buildFreeIndicator(root: Entity): void {
     parent: group,
   });
   MeshRenderer.setBox(box);
-  Material.setPbrMaterial(box, {
-    albedoColor: Color4.create(0.9, 0.9, 0.2, 1),
-    emissiveColor: Color3.create(0.9, 0.9, 0.2),
-    emissiveIntensity: 0.4,
-  });
+  paintVisual(box, 'free', Color4.create(0.9, 0.9, 0.2, 1));
 }
 
 /**
@@ -624,11 +691,7 @@ function buildScaleHandle(root: Entity, axis: Axis): void {
     parent: group,
   });
   MeshRenderer.setCylinder(shaft, SHAFT_R, SHAFT_R);
-  Material.setPbrMaterial(shaft, {
-    albedoColor: AXIS_COLOR[axis],
-    emissiveColor: Color3.create(AXIS_COLOR[axis].r, AXIS_COLOR[axis].g, AXIS_COLOR[axis].b),
-    emissiveIntensity: 0.4,
-  });
+  paintVisual(shaft, axis, AXIS_COLOR[axis]);
 
   const cap = engine.addEntity();
   Transform.create(cap, {
@@ -637,11 +700,7 @@ function buildScaleHandle(root: Entity, axis: Axis): void {
     parent: group,
   });
   MeshRenderer.setBox(cap);
-  Material.setPbrMaterial(cap, {
-    albedoColor: AXIS_COLOR[axis],
-    emissiveColor: Color3.create(AXIS_COLOR[axis].r, AXIS_COLOR[axis].g, AXIS_COLOR[axis].b),
-    emissiveIntensity: 0.4,
-  });
+  paintVisual(cap, axis, AXIS_COLOR[axis]);
 }
 
 /**
@@ -682,11 +741,7 @@ function buildRotateRing(root: Entity, axis: Axis): void {
       parent: group,
     });
     MeshRenderer.setCylinder(cyl, RING_SEG_R, RING_SEG_R);
-    Material.setPbrMaterial(cyl, {
-      albedoColor: AXIS_COLOR[axis],
-      emissiveColor: Color3.create(AXIS_COLOR[axis].r, AXIS_COLOR[axis].g, AXIS_COLOR[axis].b),
-      emissiveIntensity: 0.4,
-    });
+    paintVisual(cyl, axis, AXIS_COLOR[axis]);
   }
 }
 
@@ -905,6 +960,23 @@ function pickRotateAxisAnalytic(ray: { origin: Vector3; dir: Vector3 }): Axis | 
   return best;
 }
 
+/** The handle the ray meets in the CURRENT gizmo mode, as a DragAxis (or null).
+ * Shared by the pointer-down grab and the per-frame hover highlight so both agree
+ * on what's under the pointer. */
+function pickHandleAtRay(ray: { origin: Vector3; dir: Vector3 }): DragAxis | null {
+  if (selected === null) return null;
+  switch (gizmoMode) {
+    case 'rotate':
+      return pickRotateAxisAnalytic(ray);
+    case 'scale':
+      return pickScaleHandleAnalytic(ray);
+    case 'free':
+      return pickFreeAnalytic(ray);
+    default:
+      return pickTranslateHandleAnalytic(ray);
+  }
+}
+
 /** The angle (radians) of `hit` around `center` in the plane ⊥ `n` (the ring's
  * world normal), measured in a stable basis so successive frames compare
  * consistently. */
@@ -954,6 +1026,30 @@ function gizmoSystemInner(): void {
     if (tc !== null && tc.mode?.$case === 'perspective') {
       tc.mode.perspective.fieldOfView = engineFovY;
     }
+    // Re-sync the render target to the LIVE canvas so the gizmo stays crisp. The
+    // target is created once at boot (when UiCanvasInformation may be unready → a
+    // stale low-res target that upscales over the real viewport = blurry handles),
+    // and the viewport can resize after; re-size it whenever the canvas changes.
+    // Sized in DEVICE pixels (width/height are logical px — on a retina display the
+    // framebuffer is dpr× bigger, so logical sizing renders at half-res and the
+    // composite upscales it, soft + aliased). See gizmoTextureSize.
+    const canvas = tc !== null ? UiCanvasInformation.getOrNull(engine.RootEntity) : null;
+    if (
+      tc !== null &&
+      canvas !== null &&
+      canvas.width > 0 &&
+      canvas.height > 0 &&
+      (canvas.width !== lastCanvasW ||
+        canvas.height !== lastCanvasH ||
+        canvas.devicePixelRatio !== lastCanvasDpr)
+    ) {
+      lastCanvasW = canvas.width;
+      lastCanvasH = canvas.height;
+      lastCanvasDpr = canvas.devicePixelRatio;
+      const size = gizmoTextureSize(canvas.width, canvas.height, canvas.devicePixelRatio || 1);
+      tc.width = size.width;
+      tc.height = size.height;
+    }
   }
 
   // Position + scale the gizmo on the selected entity each frame (the inspector
@@ -968,6 +1064,19 @@ function gizmoSystemInner(): void {
     t.rotation = isGizmoLocallyAligned() ? { ...selectedRot } : Quaternion.Identity();
     const s = cameraDistanceScale(selectedPos);
     t.scale = Vector3.create(s, s, s);
+  }
+
+  // Hover highlight: the handle under the pointer glows gold, so the gizmo reacts
+  // before you click (the "feel"). During a drag the grabbed handle stays lit; the
+  // gizmo being hidden / a spawn handle active clears it. setHover only re-paints
+  // on a change, so this is cheap per frame.
+  if (drag !== null) {
+    setHover(drag.axis);
+  } else if (selected !== null && selectedPos !== null && isSupportedMode(gizmoMode)) {
+    const ray = pointerRay();
+    setHover(ray !== null ? pickHandleAtRay(ray) : null);
+  } else {
+    setHover(null);
   }
 
   // Anchor + size the spawn-point handle at its world position each frame (unless
@@ -1022,16 +1131,7 @@ function gizmoSystemInner(): void {
   if (drag === null && spawnDrag === null && !grabPending && down && spawnPos === null) {
     const ray = pointerRay();
     if (ray !== null && picker !== null) {
-      const grabbedAxis =
-        selected === null
-          ? null
-          : gizmoMode === 'rotate'
-            ? pickRotateAxisAnalytic(ray)
-            : gizmoMode === 'scale'
-              ? pickScaleHandleAnalytic(ray)
-              : gizmoMode === 'free'
-                ? pickFreeAnalytic(ray)
-                : pickTranslateHandleAnalytic(ray);
+      const grabbedAxis = pickHandleAtRay(ray);
       if (grabbedAxis !== null) {
         beginDrag(grabbedAxis);
       } else {
@@ -1339,7 +1439,17 @@ function updateDrag(): void {
 
   // Move the gizmo visual for immediate feedback, then push a live commit so the
   // inspector moves the actual entity too (tracks the gizmo, not just on release).
-  if (gizmoRoot !== null) Transform.getMutable(gizmoRoot).position = newPos;
+  if (gizmoRoot !== null) {
+    const t = Transform.getMutable(gizmoRoot);
+    t.position = newPos;
+    // Keep the on-screen size constant as the gizmo moves toward/away from the
+    // camera. The per-frame anchor that normally does this is gated on
+    // `drag === null`, so without recomputing here the gizmo would hold its
+    // drag-start scale and then visibly snap to the correct size on release.
+    // (Only translate/free move the gizmo; rotate/scale feedback owns the scale.)
+    const s = cameraDistanceScale(newPos);
+    t.scale = Vector3.create(s, s, s);
+  }
   emitLiveDragCommit();
 }
 
