@@ -1166,7 +1166,10 @@ async function spliceComponentPatchUnlocked(
     // emitting (every other prop is the same shape on both sides).
     const ergo = pbToErgonomicText(patch);
     for (const key of Object.keys(ergo)) {
-      if (ergo[key] !== undefined) edits.push(...setAttribute(ast, key, ergo[key]));
+      // An undefined value means "unset this prop" (a panel Remove/−) → delete
+      // the JSX attribute; any other value writes/replaces it.
+      if (ergo[key] === undefined) edits.push(...removeAttribute(ast, state.source, key));
+      else edits.push(...setAttribute(ast, key, ergo[key]));
     }
   }
 
@@ -1215,6 +1218,29 @@ async function spliceUiTransformMarginUnlocked(
   await applySourceEdits(setObjectField(ast, 'uiTransform', 'margin', { top, left }));
 }
 
+// Resize a node: write width/height AND its new top-left in ONE setObjectFields
+// pass (one AST pass — two calls would corrupt an absent/`{{}}` uiTransform, see
+// spliceUiTransformSize). Absolute nodes reposition via `position: { top, left }`;
+// in-flow nodes shift via `margin: { top, left }` (mirroring the move path) so a
+// drag from the left/top edge grows the box toward that edge instead of always
+// to the right/bottom.
+async function spliceUiTransformResizeUnlocked(
+  entityId: number,
+  opts: {
+    position?: { top: number; left: number };
+    margin?: { top: number; left: number };
+    width: number;
+    height: number;
+  },
+): Promise<void> {
+  const ast = astNodeFor(entityId) as Parameters<typeof setObjectField>[0] | undefined;
+  if (!ast || !guardElementWrite(entityId, 'spliceUiTransformResize')) return;
+  const fields: Record<string, unknown> = { width: opts.width, height: opts.height };
+  if (opts.position) fields.position = opts.position;
+  if (opts.margin) fields.margin = opts.margin;
+  await applySourceEdits(setObjectFields(ast, 'uiTransform', fields));
+}
+
 // Seed JSX per widget type — each palette entry inserts its REAL react-ecs
 // element (an Input drop must produce `<Input …/>`, not a container). Every
 // react-ecs element accepts EntityPropTypes (uiTransform/uiBackground/mouse
@@ -1248,7 +1274,15 @@ async function spliceAddChildUnlocked(
   if (!ast || !guardElementWrite(parentEntityId, 'spliceAddChild')) return;
   const jsx =
     preset === 'image' ? IMAGE_TEMPLATE : (CHILD_TEMPLATES[type] ?? CHILD_TEMPLATES.UiEntity);
-  await applySourceEdits(insertChild(ast, state.source, jsx));
+  // Ensure the element's react-ecs identifier is imported — a spliced `<Button/>`
+  // whose `Button` isn't in the import block won't compile. `type` is the tag name
+  // for every widget (UiEntity/Label/Button/Input/Dropdown); the `image` preset
+  // resolves to `UiEntity` via `type`. Mirrors the component-nesting import step.
+  const edits = [...insertChild(ast, state.source, jsx)];
+  if (state.program) {
+    edits.push(...ensureNamedImport(state.program as any, type, '@dcl/sdk/react-ecs'));
+  }
+  await applySourceEdits(edits);
 }
 
 // ---------------------------------------------------------------------------
@@ -1663,6 +1697,7 @@ export const spliceComponentPatch = exclusive(spliceComponentPatchUnlocked);
 export const spliceUiTransformSize = exclusive(spliceUiTransformSizeUnlocked);
 export const spliceUiTransformPosition = exclusive(spliceUiTransformPositionUnlocked);
 export const spliceUiTransformMargin = exclusive(spliceUiTransformMarginUnlocked);
+export const spliceUiTransformResize = exclusive(spliceUiTransformResizeUnlocked);
 export const spliceAddChild = exclusive(spliceAddChildUnlocked);
 export const spliceInsertComponent = exclusive(spliceInsertComponentUnlocked);
 export const spliceInstanceProp = exclusive(spliceInstancePropUnlocked);

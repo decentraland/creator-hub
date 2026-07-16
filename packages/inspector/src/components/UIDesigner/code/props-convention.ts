@@ -91,6 +91,8 @@ function paramParens(fn: AstNode, source: string): { open: number; close: number
 // Add a prop to `componentName`: append to its props type literal, seeding the
 // `props: { … }` parameter first when absent. Returns [] when the component
 // isn't found, or when it already has a non-props parameter (left untouched).
+// Every editor-declared prop is emitted OPTIONAL (`name?: type`) so a consuming
+// `<Component/>` that omits it still typechecks — the editor never forces a prop.
 export function addPropsProperty(
   program: AstNode,
   source: string,
@@ -105,14 +107,14 @@ export function addPropsProperty(
     const members = (lit.members ?? []) as AstNode[];
     if (members.length > 0) {
       const last = members[members.length - 1];
-      return [{ start: last.end, end: last.end, text: `; ${name}: ${type}` }];
+      return [{ start: last.end, end: last.end, text: `; ${name}?: ${type}` }];
     }
-    return [{ start: lit.start + 1, end: lit.end - 1, text: ` ${name}: ${type} ` }];
+    return [{ start: lit.start + 1, end: lit.end - 1, text: ` ${name}?: ${type} ` }];
   }
   if ((fn.params ?? []).length > 0) return []; // a non-props param — don't touch
   const parens = paramParens(fn, source);
   if (!parens) return [];
-  return [{ start: parens.open + 1, end: parens.close, text: `props: { ${name}: ${type} }` }];
+  return [{ start: parens.open + 1, end: parens.close, text: `props: { ${name}?: ${type} }` }];
 }
 
 function memberByName(lit: AstNode, name: string): { members: AstNode[]; index: number } {

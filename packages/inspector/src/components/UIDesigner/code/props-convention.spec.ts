@@ -40,27 +40,40 @@ describe('readPropsVariables', () => {
 });
 
 describe('addPropsProperty', () => {
-  it('seeds the props parameter on a param-less component', () => {
+  it('seeds the props parameter on a param-less component (optional)', () => {
     const next = applyEdits(
       NO_PROPS,
       addPropsProperty(program(NO_PROPS), NO_PROPS, 'Card', 'title', 'string'),
     );
-    expect(next).toContain('function Card(props: { title: string })');
+    expect(next).toContain('function Card(props: { title?: string })');
     expect(parseSync('Card.tsx', next).errors).toHaveLength(0);
     expect(readPropsVariables(program(next), 'Card')).toEqual([{ name: 'title', type: 'string' }]);
   });
 
-  it('appends to an existing props type literal', () => {
+  it('appends to an existing props type literal, marking the new prop optional', () => {
     const next = applyEdits(
       WITH_PROPS,
       addPropsProperty(program(WITH_PROPS), WITH_PROPS, 'Card', 'active', 'boolean'),
     );
+    expect(next).toContain('active?: boolean');
     expect(readPropsVariables(program(next), 'Card')).toEqual([
       { name: 'title', type: 'string' },
       { name: 'count', type: 'number' },
       { name: 'active', type: 'boolean' },
     ]);
     expect(parseSync('Card.tsx', next).errors).toHaveLength(0);
+  });
+
+  it('declares every added prop optional so consumers may omit it', () => {
+    // A component whose only prop is editor-declared must accept `<Card />` with
+    // no attributes — i.e. the prop is `?`-optional, not required.
+    const seeded = applyEdits(
+      NO_PROPS,
+      addPropsProperty(program(NO_PROPS), NO_PROPS, 'Card', 'title', 'string'),
+    );
+    expect(seeded).toContain('title?: string');
+    const scene = `${seeded}\nexport function App() { return <Card /> }\n`;
+    expect(parseSync('App.tsx', scene).errors).toHaveLength(0);
   });
 });
 
@@ -120,7 +133,7 @@ describe('callback-typed props', () => {
       src,
       addPropsProperty(program(src), src, 'Card', 'onSave', propTypeToTs('callback')),
     );
-    expect(next).toContain('onSave: (value?: string | number) => void');
+    expect(next).toContain('onSave?: (value?: string | number) => void');
     expect(readPropsVariables(program(next), 'Card')).toEqual([
       { name: 'title', type: 'string' },
       { name: 'onSave', type: 'callback' },

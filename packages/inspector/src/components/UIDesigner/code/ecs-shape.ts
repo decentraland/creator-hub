@@ -396,6 +396,7 @@ export function pbBackgroundFieldToErgo(
   value: unknown,
 ): { key: string; value: unknown } | null {
   if (key === 'textureMode') {
+    if (value == null) return { key, value: undefined }; // unset (panel Remove/−)
     if (typeof value !== 'number') return null;
     const s = TEXTURE_MODE_ENUM[value];
     return s !== undefined ? { key, value: s } : null;
