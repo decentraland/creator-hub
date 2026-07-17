@@ -52,6 +52,7 @@ const ENGINE_COMPONENT_NAMES: Record<string, string> = {
   'core::VisibilityComponent': 'VisibilityComponent',
   'core::Billboard': 'Billboard',
   'core::TextShape': 'TextShape',
+  'core::Animator': 'Animator',
 };
 
 export interface ForwardEditBridgeOptions {
@@ -78,6 +79,12 @@ export interface ForwardEditBridgeOptions {
    * immediately.
    */
   shouldForward?: () => boolean;
+  /**
+   * Whether the scene is currently frozen (paused). Read when forwarding arms so
+   * animations that loaded playing are paused to match the editor's default-frozen
+   * state (#1382). Defaults to frozen (the editor boots static).
+   */
+  isFrozen?: () => boolean;
 }
 
 /**
@@ -100,8 +107,19 @@ const ARM_DELAY_MS = 3000;
  * `onError`) but never throws into the ECS change loop — a dropped edit must not
  * wedge the inspector.
  */
-export function createForwardEditBridge(options: ForwardEditBridgeOptions): () => void {
+export interface ForwardEditBridge {
+  /** Tear down the change subscription + arm timer. */
+  disconnect(): void;
+  /** Pause (frozen=true) or resume (false) GLTF animation playback by forwarding
+   * each animated entity's Animator with playing:false, or the authored value
+   * (#1382). Driven by the scene run/freeze toggle. */
+  setAnimationsFrozen(frozen: boolean): void;
+}
+
+export function createForwardEditBridge(options: ForwardEditBridgeOptions): ForwardEditBridge {
   const { context, engineWindow } = options;
+  // Default frozen — the editor boots static (see setAnimationsFrozen / #1382).
+  const isFrozen = options.isFrozen ?? (() => true);
   const send =
     options.send ?? ((cmd: string, args: string[]) => consoleCommand(engineWindow, cmd, args));
   const onError =
@@ -156,6 +174,10 @@ export function createForwardEditBridge(options: ForwardEditBridgeOptions): () =
         });
       }
     }
+    // #1382: the editor boots frozen, but a scene loads with its Animator clips
+    // playing — pause them to match the frozen state (setAnimationsFrozen forwards
+    // playing:false; the toolbar toggle later resumes/re-pauses).
+    if (isFrozen()) setAnimationsFrozen(true);
   };
 
   // Arm after a delay so the initial CRDT load burst is not forwarded (see
@@ -405,8 +427,36 @@ export function createForwardEditBridge(options: ForwardEditBridgeOptions): () =
     }
   }
 
-  return () => {
-    if (armTimer !== null) clearTimeout(armTimer);
-    off();
+  // #1382: pause/resume GLTF animation playback with the scene freeze. Freezing
+  // stops the SDK7 tick but the engine's AnimationPlayers keep advancing GLTF
+  // clips (update_animations sets each clip's speed from Animator.states[].playing
+  // — playing:false → speed 0). So while FROZEN, forward every animated entity's
+  // Animator with all states playing:false (engine pauses the clips); on UNFREEZE,
+  // re-forward the AUTHORED Animator so it resumes as the scene intends. The CRDT
+  // keeps the authored value — this only changes what the engine plays.
+  const forwardAnimatorFrozen = (entity: Entity, animator: unknown, frozen: boolean) => {
+    const a = animator as { states?: Array<Record<string, unknown>> } | null | undefined;
+    const value = frozen ? { states: (a?.states ?? []).map(s => ({ ...s, playing: false })) } : a;
+    if (value == null) return;
+    enqueue(entity, async () => {
+      await ensureInstantiated(entity);
+      await forwardSet(entity, 'Animator', value);
+    });
+  };
+
+  const setAnimationsFrozen = (frozen: boolean) => {
+    const Animator = context.getForwardableComponent('core::Animator');
+    if (!Animator) return;
+    for (const [entity, animator] of context.engine.getEntitiesWith(Animator)) {
+      forwardAnimatorFrozen(entity, animator, frozen);
+    }
+  };
+
+  return {
+    disconnect: () => {
+      if (armTimer !== null) clearTimeout(armTimer);
+      off();
+    },
+    setAnimationsFrozen,
   };
 }

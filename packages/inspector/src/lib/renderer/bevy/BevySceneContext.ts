@@ -65,6 +65,11 @@ export class BevySceneContext {
     components.VisibilityComponent(this.engine),
     components.Billboard(this.engine),
     components.TextShape(this.engine),
+    // Animator: needed so the freeze can pause GLTF animation playback (#1382).
+    // A frozen scene stops ticking but its AnimationPlayers keep advancing; the
+    // forward bridge sets all Animator states to playing:false while frozen (engine
+    // update_animations → speed 0) and restores the authored value on unfreeze.
+    components.Animator(this.engine),
   ];
 
   /**

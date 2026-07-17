@@ -87,13 +87,13 @@ export function registerBevyRenderer(): void {
       // (#1369) reboots the engine iframe, replacing that window — so these are
       // held in mutable holders and rebuilt against the new window on reload (the
       // bus-based bridges below survive a reboot, and `modifiers` is retargeted).
-      let disconnectForward = () => {};
+      let forwardBridge: ReturnType<typeof createForwardEditBridge> | null = null;
       let disconnectPreview = () => {};
       let disconnectInputFocus = () => {};
       let disconnectVertical = () => {};
 
       const rewireEngineBindings = (engineWindow: typeof engine.engineWindow) => {
-        disconnectForward();
+        forwardBridge?.disconnect();
         disconnectPreview();
         disconnectInputFocus();
         disconnectVertical();
@@ -103,9 +103,11 @@ export function registerBevyRenderer(): void {
 
         // Forward inspector edits into the running engine scene as console commands
         // (the only live-edit path — the loaded scene has no CRDT channel back in).
-        disconnectForward = createForwardEditBridge({
+        forwardBridge = createForwardEditBridge({
           context: bevy.context,
           engineWindow,
+          // On arm, pause loaded Animator clips if the scene is frozen (#1382).
+          isFrozen: () => !sceneRunBridge.isRunning(),
         });
 
         // Live gizmo preview: a drag emits `previewTransforms` every frame (merged
@@ -224,7 +226,12 @@ export function registerBevyRenderer(): void {
       // runs /freeze_scene or /unfreeze_scene on the pinned scene. Default frozen
       // (the agent freezes on boot); the toggle runs it live.
       const sceneRunBridge = createSceneRunBridge();
-      bevy.setSceneRunPoster(running => sceneRunBridge.setRunning(running));
+      bevy.setSceneRunPoster(running => {
+        sceneRunBridge.setRunning(running);
+        // #1382: freezing stops the SDK7 tick but not the engine's GLTF animation
+        // playback — so also pause/resume Animator clips with the run state.
+        forwardBridge?.setAnimationsFrozen(!running);
+      });
 
       // Wire the engine-window bindings for the initial boot. Re-run on reboot.
       rewireEngineBindings(engine.engineWindow);
@@ -302,7 +309,7 @@ export function registerBevyRenderer(): void {
           disconnectSelection();
           disconnectPick();
           disconnectLayoutReload();
-          disconnectForward();
+          forwardBridge?.disconnect();
           disconnect();
           engine.dispose();
           bevy.dispose();
