@@ -30,7 +30,7 @@ jobs:
 
       - name: Bump release version
         id: version
-        uses: paulhatch/semantic-version@v6.0.3
+        uses: paulhatch/semantic-version@502226b17e3e242e4befd0a45690fcbb27dd1373 # v6.0.3
         with:
           tag_prefix: "@dcl/asset-packs@"
           version_format: ${major}.${minor}.${patch}

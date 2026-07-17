@@ -75,7 +75,7 @@ jobs:
       # Machine-level backstop: a re-run is clean (fresh forks + browser per spec
       # file, in-page data layer) and a real regression fails both attempts.
       - name: e2e
-        uses: nick-fields/retry@v4
+        uses: nick-fields/retry@ad984534de44a9489a53aefd81eb77f87c70dc60 # v4.0.0
         with:
           timeout_minutes: 20
           max_attempts: 2
