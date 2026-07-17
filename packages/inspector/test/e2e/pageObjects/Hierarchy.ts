@@ -309,6 +309,28 @@ class HierarchyPageObject {
     }, this.getItemSelectorById(entityId));
   }
 
+  async waitForRowInTreeViewport(entityId: number, timeout = 5_000) {
+    await page.waitForFunction(
+      sel => {
+        const el = document.querySelector(sel);
+        const container = document.querySelector('.Hierarchy-tree');
+        if (!el || !container) return false;
+        const rect = el.getBoundingClientRect();
+        const containerRect = container.getBoundingClientRect();
+        return rect.top >= containerRect.top && rect.bottom <= containerRect.bottom;
+      },
+      this.getItemSelectorById(entityId),
+      { timeout },
+    );
+  }
+
+  async scrollTreeToTop() {
+    await page.evaluate(() => {
+      const container = document.querySelector('.Hierarchy-tree');
+      if (container) container.scrollTop = 0;
+    });
+  }
+
   async addComponent(entityId: number, componentName: string) {
     const item = await this.getItem(entityId, this.getItemSelectorById);
     await item.click({ button: 'right' });

@@ -98,7 +98,7 @@ const Hierarchy = withSdk(({ sdk }) => {
   const [lastSelectedItem, setLastSelectedItem] = useState<Entity | undefined>(undefined);
   const [search, setSearch] = useState('');
   const [scrollTarget, setScrollTarget] = useState<Entity | null>(null);
-  const hierarchyRef = useRef<HTMLDivElement>(null);
+  const treeRef = useRef<HTMLDivElement>(null);
 
   const searchTerm = search.trim().toLowerCase();
 
@@ -234,7 +234,7 @@ const Hierarchy = withSdk(({ sdk }) => {
   const handleClearSearch = useCallback(() => {
     setSearch('');
     // keep the current selection visible after the filter is removed
-    const selected = selectedEntities.find(entity => entity !== ROOT);
+    const selected = selectedEntities.find(entity => entity !== ROOT && entity !== PLAYER);
     if (selected !== undefined) {
       void revealInTree(selected);
       setScrollTarget(selected);
@@ -251,18 +251,48 @@ const Hierarchy = withSdk(({ sdk }) => {
     [handleClearSearch],
   );
 
-  // scroll to the entity that was selected when the search was cleared; retries across
-  // renders since its row only exists once collapsed ancestors are re-opened
+  /** Reveal an entity's row (outside of an active search) and queue a scroll to it. */
+  const revealAndScrollTo = useCallback(
+    (entity: Entity) => {
+      if (entity === ROOT || entity === PLAYER) return;
+      // while filtering every visible row is already revealed; don't touch persisted open state
+      if (!isFiltering) void revealInTree(entity);
+      setScrollTarget(entity);
+    },
+    [isFiltering, revealInTree],
+  );
+
+  // auto-scroll to a newly selected entity (e.g. picked in the 3D viewport) so the
+  // selection is always visible in the tree
+  const prevSelectedRef = useRef<Entity[]>([]);
   useEffect(() => {
-    if (scrollTarget === null || isFiltering) return;
-    const row = hierarchyRef.current?.querySelector(
-      `.Tree[data-test-id="${scrollTarget}"] > .item`,
-    );
-    if (row) {
-      row.scrollIntoView({ block: 'center' });
-      setScrollTarget(null);
-    }
-  }, [scrollTarget, isFiltering, tree]);
+    const prev = prevSelectedRef.current;
+    prevSelectedRef.current = selectedEntities;
+    const added = selectedEntities.filter(entity => entity !== ROOT && !prev.includes(entity));
+    if (added.length === 1) revealAndScrollTo(added[0]);
+  }, [selectedEntities, revealAndScrollTo]);
+
+  // scroll to the entity the camera focuses on (F key), even if it was already selected
+  useEffect(() => {
+    const handleFocusEntity = ({ entity }: { entity: Entity }) => revealAndScrollTo(entity);
+    sdk.events.on('focusEntity', handleFocusEntity);
+    return () => sdk.events.off('focusEntity', handleFocusEntity);
+  }, [sdk, revealAndScrollTo]);
+
+  // scroll to the pending target once its row exists — collapsed ancestors may need to be
+  // re-opened first, and a filtered-out row only appears after the search is cleared;
+  // rows already fully in view are left alone so tree clicks never cause jumps
+  useEffect(() => {
+    if (scrollTarget === null) return;
+    const container = treeRef.current;
+    const row = container?.querySelector(`.Tree[data-test-id="${scrollTarget}"] > .item`);
+    if (!container || !row) return;
+    const rowRect = row.getBoundingClientRect();
+    const containerRect = container.getBoundingClientRect();
+    const isInView = rowRect.top >= containerRect.top && rowRect.bottom <= containerRect.bottom;
+    if (!isInView) row.scrollIntoView({ block: 'center' });
+    setScrollTarget(null);
+  }, [scrollTarget, tree, visibleEntities]);
 
   const showPlayer = !isFiltering || 'player'.includes(searchTerm);
 
@@ -294,10 +324,7 @@ const Hierarchy = withSdk(({ sdk }) => {
   };
 
   return (
-    <div
-      className="Hierarchy"
-      ref={hierarchyRef}
-    >
+    <div className="Hierarchy">
       <div
         className="Hierarchy-search"
         onContextMenu={e => e.stopPropagation()}
@@ -320,6 +347,7 @@ const Hierarchy = withSdk(({ sdk }) => {
       </div>
       <div
         className="Hierarchy-tree"
+        ref={treeRef}
         onClick={handleBackgroundDeselect}
       >
         {showPlayer && (
