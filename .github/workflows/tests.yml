@@ -33,13 +33,15 @@ jobs:
       - name: test
         run: make test
 
-  # Inspector E2E is Playwright driving headless Chromium against the built
-  # bundle served over http — no Electron — so it runs on cheap Linux. Splitting
-  # it off the macOS runner isolates it from the Electron suite (each gets a
-  # fresh runner, so neither starves the other of memory) and cuts macOS minutes.
+  # Inspector E2E is Playwright driving Chromium against the built bundle served
+  # over http (no Electron). It renders a Babylon (WebGL) scene, which needs real
+  # hardware GL — Linux runners have no GPU and software WebGL (SwiftShader) leaves
+  # the canvas unpainted, so it runs on macOS. It's still its own job (separate
+  # from the Electron suite) so the two heavy suites don't starve each other of
+  # memory — the isolation that fixed the original flakiness.
   e2e-inspector:
     needs: unit
-    runs-on: ubuntu-latest
+    runs-on: macos-latest
     steps:
       - uses: actions/checkout@v6
         with:
@@ -65,7 +67,7 @@ jobs:
             ${{ runner.os }}-playwright-
 
       - name: install Playwright browsers
-        run: npx playwright install --with-deps
+        run: npx playwright install
 
       - name: start inspector server
         shell: bash
