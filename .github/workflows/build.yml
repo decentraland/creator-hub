@@ -45,9 +45,7 @@ jobs:
             packages/asset-packs/bin
             packages/asset-packs/catalog.json
             packages/inspector/dist
-            packages/inspector/public/bundle.js
-            packages/inspector/public/bundle.js.map
-            packages/inspector/public/bin
+            packages/inspector/public
             packages/inspector/src/lib/data-layer/proto/gen
             packages/creator-hub/main/dist
             packages/creator-hub/preload/dist
@@ -71,7 +69,8 @@ jobs:
               'packages/creator-hub/package.json',
               'package-lock.json',
               'Makefile',
-              '.github/actions/setup/action.yml') }}
+              '.github/actions/setup/action.yml',
+              '.github/workflows/build.yml') }}
 
       - name: protoc
         if: steps.build-cache.outputs.cache-hit != 'true'
