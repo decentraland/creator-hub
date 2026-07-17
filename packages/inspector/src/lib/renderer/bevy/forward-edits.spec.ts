@@ -13,7 +13,7 @@ import { createForwardEditBridge } from './forward-edits';
 describe('createForwardEditBridge', () => {
   let ctx: BevySceneContext;
   let sent: Array<{ cmd: string; args: string[] }>;
-  let disconnect: () => void;
+  let bridge: ReturnType<typeof createForwardEditBridge>;
 
   const IDENTITY = { rotation: { x: 0, y: 0, z: 0, w: 1 }, scale: { x: 1, y: 1, z: 1 } };
   const engineWindow = {} as EngineWindow;
@@ -21,7 +21,7 @@ describe('createForwardEditBridge', () => {
   beforeEach(() => {
     ctx = new BevySceneContext();
     sent = [];
-    disconnect = createForwardEditBridge({
+    bridge = createForwardEditBridge({
       context: ctx,
       engineWindow,
       // Forward immediately in tests (skip the initial-load arm delay).
@@ -34,7 +34,7 @@ describe('createForwardEditBridge', () => {
   });
 
   afterEach(() => {
-    disconnect();
+    bridge.disconnect();
     ctx.dispose();
   });
 
@@ -163,7 +163,7 @@ describe('createForwardEditBridge', () => {
 
   describe('after disconnect', () => {
     it('should stop forwarding changes', async () => {
-      disconnect();
+      bridge.disconnect();
       const entity = ctx.engine.addEntity();
       ctx.Transform.create(entity, { ...IDENTITY, position: { x: 9, y: 9, z: 9 } });
       await ctx.engine.update(1);
@@ -190,7 +190,7 @@ describe('createForwardEditBridge', () => {
       await gatedCtx.engine.update(1);
 
       expect(gatedSent).toEqual([]);
-      off();
+      off.disconnect();
       gatedCtx.dispose();
     });
   });
@@ -285,6 +285,52 @@ describe('createForwardEditBridge', () => {
     });
   });
 
+  describe('setAnimationsFrozen (#1382)', () => {
+    it('should forward Animator with all states playing:false when frozen', async () => {
+      const Animator = components.Animator(ctx.engine);
+      const entity = ctx.engine.addEntity();
+      ctx.Name.create(entity, { value: 'Zombie' });
+      Animator.create(entity, {
+        states: [
+          { clip: 'walk', playing: true, loop: true },
+          { clip: 'idle', playing: false },
+        ],
+      });
+      await ctx.engine.update(1);
+      await new Promise(r => setTimeout(r, 0));
+      sent.length = 0;
+
+      bridge.setAnimationsFrozen(true);
+      await new Promise(r => setTimeout(r, 0));
+      await new Promise(r => setTimeout(r, 0));
+
+      const write = sent.find(s => s.cmd === 'set_component' && s.args[1] === 'Animator');
+      expect(write).toBeDefined();
+      const value = JSON.parse(write!.args[2]);
+      expect(value.states.every((s: { playing: boolean }) => s.playing === false)).toBe(true);
+    });
+
+    it('should restore the authored Animator when unfrozen', async () => {
+      const Animator = components.Animator(ctx.engine);
+      const entity = ctx.engine.addEntity();
+      ctx.Name.create(entity, { value: 'Zombie' });
+      Animator.create(entity, { states: [{ clip: 'walk', playing: true, loop: true }] });
+      await ctx.engine.update(1);
+      await new Promise(r => setTimeout(r, 0));
+      sent.length = 0;
+
+      bridge.setAnimationsFrozen(false);
+      await new Promise(r => setTimeout(r, 0));
+      await new Promise(r => setTimeout(r, 0));
+
+      const write = sent.find(s => s.cmd === 'set_component' && s.args[1] === 'Animator');
+      expect(write).toBeDefined();
+      const value = JSON.parse(write!.args[2]);
+      // The AUTHORED value (walk still playing) is restored.
+      expect(value.states[0].playing).toBe(true);
+    });
+  });
+
   describe('when a console command fails', () => {
     it('should report via onError and not throw into the change loop', async () => {
       const errors: string[] = [];
@@ -307,7 +353,7 @@ describe('createForwardEditBridge', () => {
       await Promise.resolve();
 
       expect(errors.length).toBeGreaterThanOrEqual(1);
-      off();
+      off.disconnect();
       failCtx.dispose();
     });
   });
