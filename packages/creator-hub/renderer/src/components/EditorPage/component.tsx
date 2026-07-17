@@ -91,6 +91,12 @@ export function EditorPage() {
   // for the project and hold the URLs to thread into the iframe config below.
   const useBevy = settings.renderer === RENDERER.BEVY;
   const [bevyRealm, setBevyRealm] = useState<{ url: string; wsUrl: string } | null>(null);
+  // A broken scene (e.g. a TS error) makes the Bevy realm's `sdk-commands start`
+  // fail, or the scene never finishes loading — leaving the editor stuck on the
+  // loader with no way out. Capture the failure (or a load timeout) so the loading
+  // screen can offer Back + Open code + the error message (#1380).
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [loadTimedOut, setLoadTimedOut] = useState(false);
 
   const isOffline = status === ConnectionStatus.OFFLINE;
   const showDebugPanel = settings.previewOptions.debugger;
@@ -155,13 +161,21 @@ export function EditorPage() {
       return;
     }
     let cancelled = false;
+    setLoadError(null);
+    setLoadTimedOut(false);
     void startBevyRealm(projectPath)
       .then(realm => {
         if (!cancelled) setBevyRealm(realm ?? null);
       })
       .catch(error => {
         console.error('[Bevy] Failed to start realm:', error);
-        if (!cancelled) setBevyRealm(null);
+        if (!cancelled) {
+          setBevyRealm(null);
+          // Surface the failure so the loader shows Back + the error instead of
+          // spinning forever. `sdk-commands start` rejects with the build error
+          // line (see bevy-realm.ts waitFor) — show it.
+          setLoadError(error instanceof Error ? error.message : String(error));
+        }
       });
     return () => {
       cancelled = true;
@@ -170,6 +184,19 @@ export function EditorPage() {
   }, [projectPath, useBevy, startBevyRealm, killBevyRealm]);
 
   const isReady = !!project && inspectorPort > 0 && (!useBevy || bevyRealm !== null);
+
+  // A load timeout backstop: even if the realm "starts", a broken scene can leave
+  // the editor never becoming ready. After a grace period on the loader, offer the
+  // same escape hatch (Back + Open code) rather than an infinite spinner.
+  useEffect(() => {
+    if (isReady || loadError) {
+      setLoadTimedOut(false);
+      return;
+    }
+    const timer = setTimeout(() => setLoadTimedOut(true), 45_000);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isReady, loadError, projectPath, useBevy]);
 
   const openModal = useCallback((type: ModalType, initialStep?: ModalState['initialStep']) => {
     setModalState({ type, initialStep });
@@ -396,15 +423,48 @@ export function EditorPage() {
   // iframe src
   const iframeUrl = `${htmlUrl}?${params}`;
 
-  const renderLoading = () => (
-    <div className="loading">
-      <img src={EditorPng} />
-      <Row>
-        <Loader />
-        {t('editor.loading.title')}
-      </Row>
-    </div>
-  );
+  const renderLoading = () => {
+    // Recoverable stuck-load state (#1380): the realm failed to start (broken code)
+    // or the scene never finished loading. Offer Back + Open code + the error,
+    // instead of an infinite spinner with no way out.
+    const stuck = loadError !== null || loadTimedOut;
+    if (stuck) {
+      return (
+        <div className="loading loading-error">
+          <img src={EditorPng} />
+          <div className="loading-error-title">{t('editor.loading.failed.title')}</div>
+          <div className="loading-error-message">
+            {loadError ?? t('editor.loading.failed.timeout')}
+          </div>
+          <Row>
+            <Button
+              color="secondary"
+              startIcon={<ArrowBackIosIcon />}
+              onClick={handleBack}
+            >
+              {t('editor.loading.failed.back')}
+            </Button>
+            <Button
+              color="secondary"
+              startIcon={<CodeIcon />}
+              onClick={openCode}
+            >
+              {t('editor.header.actions.code')}
+            </Button>
+          </Row>
+        </div>
+      );
+    }
+    return (
+      <div className="loading">
+        <img src={EditorPng} />
+        <Row>
+          <Loader />
+          {t('editor.loading.title')}
+        </Row>
+      </div>
+    );
+  };
 
   return (
     <main className="Editor">

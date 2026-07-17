@@ -38,7 +38,12 @@
   },
   "editor": {
     "loading": {
-      "title": "Loading..."
+      "title": "Loading...",
+      "failed": {
+        "title": "Loading failed",
+        "timeout": "The scene is taking too long to load. It may have an error in its code.",
+        "back": "Back to scenes"
+      }
     },
     "header": {
       "actions": {

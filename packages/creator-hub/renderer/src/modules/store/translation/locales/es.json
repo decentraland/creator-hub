@@ -38,7 +38,12 @@
   },
   "editor": {
     "loading": {
-      "title": "Preparando tu escena..."
+      "title": "Preparando tu escena...",
+      "failed": {
+        "title": "Error al cargar",
+        "timeout": "La escena está tardando demasiado en cargar. Puede tener un error en su código.",
+        "back": "Volver a escenas"
+      }
     },
     "header": {
       "actions": {

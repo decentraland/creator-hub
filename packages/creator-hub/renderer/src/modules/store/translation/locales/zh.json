@@ -38,7 +38,12 @@
   },
   "editor": {
     "loading": {
-      "title": "正在准备场景..."
+      "title": "正在准备场景...",
+      "failed": {
+        "title": "加载失败",
+        "timeout": "场景加载时间过长，可能其代码中存在错误。",
+        "back": "返回场景"
+      }
     },
     "header": {
       "actions": {
