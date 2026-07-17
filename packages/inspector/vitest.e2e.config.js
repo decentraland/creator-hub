@@ -6,11 +6,13 @@ export default defineConfig({
     globals: true,
     environment: 'node',
     include: ['test/e2e/**/*.spec.ts'],
-    // 60s (was 30s): on a heavily-loaded CI runner with slowMo:100, legitimately
-    // long sequences (e.g. the multi-select drag test does 4 addChilds + a drag)
-    // can exceed 30s. A genuinely hung/broken test still fails at 60s.
-    testTimeout: 60000,
-    hookTimeout: 60000,
+    // 120s (was 60s, was 30s): the E2E job runs on Linux CI, where headless
+    // Chromium renders Babylon through software WebGL (SwiftShader) ~2-3x slower
+    // than macOS hardware GL. With slowMo:100, the heaviest sequences (e.g. the
+    // multi-select drag test: 4 addChilds + a drag) exceed 60s under SwiftShader.
+    // A genuinely hung/broken test still fails in reasonable time at 120s.
+    testTimeout: 120000,
+    hookTimeout: 120000,
     setupFiles: ['./test/e2e/setup.ts'],
     setupFilesAfterEnv: ['./test/e2e/types.d.ts'],
     pool: 'forks', // use forks instead of threads for better isolation
