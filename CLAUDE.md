@@ -135,6 +135,11 @@ CI is orchestrated by `.github/workflows/ci.yml`, which calls reusable
   (plus the `inspector-e2e-diagnostics` artifact). The suite dumps DOM boxes,
   console/page errors, and a screenshot on readiness timeout — match those before
   changing any config.
+- **Pin third-party actions to a full commit SHA** with a trailing `# vX.Y.Z`
+  comment (e.g. `nick-fields/retry@<sha> # v4.0.0`); leave first-party `actions/*`
+  as major tags. `upload-artifact` (max v7) and `download-artifact` (v8) are
+  independently versioned but artifact-format-compatible across v4+ — keep both
+  at v7 for consistency.
 
 ## Code Style
 
