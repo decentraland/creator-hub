@@ -9,10 +9,8 @@ defaults:
   run:
     shell: 'bash'
 
-# Builds the portable (JS/JSON) artifacts once per run so the QA jobs
-# (typechecking, tests) can download them instead of each rebuilding the
-# monorepo. A combined source-hash cache lets an unchanged tree skip the
-# build entirely across runs.
+# Builds the shared artifacts once per run; QA jobs download them instead of
+# rebuilding. A source-hash cache skips the build when inputs are unchanged.
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -31,11 +29,9 @@ jobs:
         env:
           PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: '1'
 
-      # Combined build cache: one key over every input that affects the shared
-      # build outputs. Inspector bundles asset-packs and consumes the generated
-      # proto code, so its output depends on asset-packs source and the .proto
-      # files too — a single union key over-invalidates but is never stale.
-      # No restore-keys: a partial restore of compiled output would be silently wrong.
+      # One combined key: inspector's bundle embeds asset-packs and the proto gen,
+      # so per-package caches could go stale. No restore-keys — a partial restore
+      # of compiled output would be silently wrong.
       - name: Restore build cache
         id: build-cache
         uses: actions/cache@v6

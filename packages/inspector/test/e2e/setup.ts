@@ -30,9 +30,7 @@ beforeAll(async () => {
   browser = await chromium.launch({
     headless: process.env.CI ? true : false,
     slowMo: process.env.CI ? 100 : 50, // Increase slowMo for CI
-    // Shared CI runners can be slow to spawn the browser process; Playwright's
-    // 30s launch default has been observed to trip on contended machines.
-    timeout: 60_000,
+    timeout: 60_000, // slow shared runners can exceed the 30s launch default
     args: [
       '--disable-dev-shm-usage',
       '--disable-web-security',
@@ -48,14 +46,10 @@ beforeAll(async () => {
   });
   page = await browser.newPage();
 
-  // CI machines are slow and shared: raise Playwright's 30s default for every
-  // action/wait that doesn't set its own timeout. Deliberate short timeouts
-  // (e.g. Hierarchy's retry loops) are unaffected — they pass explicit values.
+  // Raise Playwright's 30s default for slow CI runners; explicit timeouts are unaffected.
   page.setDefaultTimeout(60_000);
 
-  // Capture browser console + page errors so the flaky-CI diagnostics
-  // (see AppPageObject.waitUntilReady) can report what the page logged when
-  // the inspector fails to become ready.
+  // Feed browser console + page errors to the failure diagnostics (App.waitUntilReady).
   const consoleLogs: string[] = [];
   page.on('console', msg => consoleLogs.push(`[${msg.type()}] ${msg.text()}`));
   page.on('pageerror', err => consoleLogs.push(`[pageerror] ${err.message}`));

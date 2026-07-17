@@ -28,8 +28,7 @@ jobs:
         env:
           PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: '1'
 
-      # Reuse the shared build (proto gen + asset-packs + inspector dist)
-      # instead of regenerating protoc and rebuilding asset-packs here.
+      # Reuse the shared build instead of regenerating protoc / rebuilding asset-packs.
       - uses: ./.github/actions/download-build
 
       - run: npm run typecheck --if-present

@@ -33,12 +33,8 @@ jobs:
       - name: test
         run: make test
 
-  # Inspector E2E is Playwright driving Chromium against the built bundle served
-  # over http (no Electron). It renders a Babylon (WebGL) scene, which needs real
-  # hardware GL — Linux runners have no GPU and software WebGL (SwiftShader) leaves
-  # the canvas unpainted, so it runs on macOS. It's still its own job (separate
-  # from the Electron suite) so the two heavy suites don't starve each other of
-  # memory — the isolation that fixed the original flakiness.
+  # Playwright + Chromium against the served bundle (no Electron). Kept separate
+  # from the Electron suite so the two heavy suites get memory-isolated runners.
   e2e-inspector:
     needs: unit
     runs-on: macos-latest
@@ -76,11 +72,8 @@ jobs:
           npx http-server public -p 8000 --cors -a localhost &
           sleep 5
 
-      # Whole-suite retry as a machine-level backstop: shared runners can be
-      # slow/contended in ways no timeout tuning fully absorbs. A re-run is clean
-      # (fresh forked processes + fresh browser per spec file; the data layer is
-      # in-page; http-server stays up across attempts), and a real regression
-      # still fails both attempts — with the e2e diagnostics printed each time.
+      # Machine-level backstop: a re-run is clean (fresh forks + browser per spec
+      # file, in-page data layer) and a real regression fails both attempts.
       - name: e2e
         uses: nick-fields/retry@v4
         with:
@@ -103,10 +96,8 @@ jobs:
           if-no-files-found: ignore
           retention-days: 3
 
-  # Creator Hub E2E cold-launches the real Electron app (Playwright _electron),
-  # so it must run on macOS. It reuses the prebuilt creator-hub dist and launches
-  # via test:e2e:ci (no rebuild). _electron drives the app's own Chromium, so no
-  # Playwright browser download is needed here.
+  # Cold-launches the real Electron app via Playwright _electron (drives the
+  # app's own Chromium — no browser download); runs the prebuilt dist.
   e2e-creator-hub:
     needs: unit
     runs-on: macos-latest
