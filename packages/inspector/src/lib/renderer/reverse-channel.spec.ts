@@ -43,7 +43,13 @@ describe('connectReverseChannel', () => {
       rendererEvents: events,
       operations,
       engine: { RootEntity: ROOT, PlayerEntity: PLAYER },
-      editorComponents: { Nodes: { componentId: 1 } },
+      // Lock/Hide are consulted by applyPick to block locked/hidden entities from
+      // viewport selection (#1366/#1367). Default: neither set (getOrNull → null).
+      editorComponents: {
+        Nodes: { componentId: 1 },
+        Lock: { componentId: 3, getOrNull: vi.fn(() => null) },
+        Hide: { componentId: 4, getOrNull: vi.fn(() => null) },
+      },
       Transform: { componentId: 2, getOrNull: vi.fn(() => transformValue) },
     } as unknown as SceneContext;
 
@@ -78,6 +84,30 @@ describe('connectReverseChannel', () => {
       );
       expect(operations.updateSelectedEntity).toHaveBeenCalledWith(42, true);
       expect(operations.dispatch).toHaveBeenCalledTimes(1);
+    });
+
+    it('should ignore a pick on a LOCKED entity (#1366)', () => {
+      (context.editorComponents.Lock.getOrNull as ReturnType<typeof vi.fn>).mockReturnValueOnce({
+        value: true,
+      });
+      events.emit('pick', {
+        target: { kind: 'entity', entity: 42 as never },
+        modifiers: { multi: false },
+      });
+      expect(operations.updateSelectedEntity).not.toHaveBeenCalled();
+      expect(operations.dispatch).not.toHaveBeenCalled();
+    });
+
+    it('should ignore a pick on a HIDDEN entity (#1367)', () => {
+      (context.editorComponents.Hide.getOrNull as ReturnType<typeof vi.fn>).mockReturnValueOnce({
+        value: true,
+      });
+      events.emit('pick', {
+        target: { kind: 'entity', entity: 42 as never },
+        modifiers: { multi: false },
+      });
+      expect(operations.updateSelectedEntity).not.toHaveBeenCalled();
+      expect(operations.dispatch).not.toHaveBeenCalled();
     });
   });
 
