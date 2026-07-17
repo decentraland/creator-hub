@@ -143,6 +143,19 @@ export function createForwardEditBridge(options: ForwardEditBridgeOptions): () =
     for (const [entity] of context.engine.getEntitiesWith(context.editorComponents.Placeholder)) {
       forwardPlaceholder(entity, false);
     }
+    // #1373: re-forward each loaded GltfContainer so forwardSet re-applies the
+    // editor's pointer-pickable mask — a model saved without a pointer collider is
+    // otherwise unclickable after a reload (the load burst that carried its
+    // authored mask was suppressed).
+    const gltf = context.getForwardableComponent(GLTF_CONTAINER);
+    if (gltf) {
+      for (const [entity, current] of context.engine.getEntitiesWith(gltf)) {
+        enqueue(entity, async () => {
+          await ensureInstantiated(entity);
+          await forwardSet(entity, 'GltfContainer', current);
+        });
+      }
+    }
   };
 
   // Arm after a delay so the initial CRDT load burst is not forwarded (see
@@ -365,14 +378,26 @@ export function createForwardEditBridge(options: ForwardEditBridgeOptions): () =
   /** Send one engine component, refreshing the content map first for GltfContainer
    * (its `src` points at a project file the engine must be able to resolve). */
   async function forwardSet(entity: Entity, engineName: string, current: unknown): Promise<void> {
-    const setArgs = [String(entity), engineName, JSON.stringify(current)];
+    let payload = current;
     if (engineName === 'GltfContainer') {
+      // #1373: in the EDITOR, force all visible meshes to be pointer-pickable so a
+      // model without an authored pointer collider can still be clicked to select
+      // it (matching Babylon, where every visible mesh is pickable). CL_POINTER is
+      // bit 1; OR it into visibleMeshesCollisionMask. Editor-only — the CRDT keeps
+      // the authored mask, so preview/live collision is unchanged.
+      const CL_POINTER = 1;
+      const g = (current ?? {}) as { visibleMeshesCollisionMask?: number };
+      payload = {
+        ...g,
+        visibleMeshesCollisionMask: (g.visibleMeshesCollisionMask ?? 0) | CL_POINTER,
+      };
       try {
         await send('scene_content', []);
       } catch (error) {
         onError(`scene_content (before ${entity} GltfContainer)`, error);
       }
     }
+    const setArgs = [String(entity), engineName, JSON.stringify(payload)];
     try {
       await send('set_component', setArgs);
     } catch (error) {

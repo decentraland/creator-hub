@@ -195,6 +195,37 @@ describe('createForwardEditBridge', () => {
     });
   });
 
+  describe('when a GltfContainer is forwarded (#1373: editor pointer-pickable)', () => {
+    it('should OR the pointer bit into visibleMeshesCollisionMask', async () => {
+      const GltfContainer = components.GltfContainer(ctx.engine);
+      const entity = ctx.engine.addEntity();
+      // A model authored with NO pointer collision (mask 0) — unpickable as-is.
+      GltfContainer.create(entity, { src: 'assets/thing.glb', visibleMeshesCollisionMask: 0 });
+      await ctx.engine.update(1);
+      await new Promise(r => setTimeout(r, 0));
+
+      const write = sent.find(s => s.cmd === 'set_component' && s.args[1] === 'GltfContainer');
+      expect(write).toBeDefined();
+      const value = JSON.parse(write!.args[2]);
+      // CL_POINTER (bit 1) forced on so the editor pick ray hits it.
+      expect(value.visibleMeshesCollisionMask & 1).toBe(1);
+    });
+
+    it('should preserve other collision bits already set', async () => {
+      const GltfContainer = components.GltfContainer(ctx.engine);
+      const entity = ctx.engine.addEntity();
+      // Authored with CL_PHYSICS (bit 2) only.
+      GltfContainer.create(entity, { src: 'assets/thing.glb', visibleMeshesCollisionMask: 2 });
+      await ctx.engine.update(1);
+      await new Promise(r => setTimeout(r, 0));
+
+      const write = sent.find(s => s.cmd === 'set_component' && s.args[1] === 'GltfContainer');
+      const mask = JSON.parse(write!.args[2]).visibleMeshesCollisionMask;
+      expect(mask & 1).toBe(1); // pointer added
+      expect(mask & 2).toBe(2); // physics preserved
+    });
+  });
+
   describe('when an editor Placeholder is written (#1372)', () => {
     it('should forward it as a GltfContainer pointed at the placeholder src', async () => {
       const entity = ctx.engine.addEntity();
@@ -207,7 +238,11 @@ describe('createForwardEditBridge', () => {
 
       const write = sent.find(s => s.cmd === 'set_component' && s.args[1] === 'GltfContainer');
       expect(write).toBeDefined();
-      expect(JSON.parse(write!.args[2])).toEqual({ src: 'assets/placeholder.glb' });
+      const value = JSON.parse(write!.args[2]);
+      expect(value.src).toBe('assets/placeholder.glb');
+      // forwardSet also makes it pointer-pickable (#1373) so the placeholder can
+      // be clicked to select the item.
+      expect(value.visibleMeshesCollisionMask & 1).toBe(1);
     });
 
     it('should NOT forward a placeholder when the entity has an authored GltfContainer', async () => {
