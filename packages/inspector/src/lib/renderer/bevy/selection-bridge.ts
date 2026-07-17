@@ -78,6 +78,11 @@ export function createSelectionBridge(options: SelectionBridgeOptions): () => vo
     const selected: Entity[] = [];
     let gizmo: GizmoType | undefined;
     for (const [e, selection] of context.engine.getEntitiesWith(Selection)) {
+      // Player/Root aren't gizmo-able entities: selecting the Player marks a spawn
+      // point (scene metadata), which drives its OWN gizmo via the spawn controller
+      // (set-spawn-gizmo). Posting an entity selection for them here would fight
+      // that — clear the entity gizmo instead by skipping them.
+      if (e === context.engine.PlayerEntity || e === context.engine.RootEntity) continue;
       // Locked or hidden entities get no gizmo — they can be selected in the tree
       // (to see/edit their components) but must not be movable in the viewport.
       // Skip them from the gizmo targets so the agent shows/drags nothing. Mirrors
