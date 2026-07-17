@@ -125,15 +125,29 @@ export function registerBevyRenderer(): void {
         context: bevy.context,
         gizmos: bevy.gizmos,
         snap: {
-          getSnap: () =>
-            snapManager.isEnabled()
+          // Holding Shift toggles snapping for the drag (#1375): the Snap panel's
+          // enabled state is the base, and Shift inverts it — snap on → smooth,
+          // snap off → snapped. Matches Babylon's `initKeyboard`.
+          getSnap: () => {
+            const snapping = snapManager.isEnabled() !== modifiers.isShift();
+            return snapping
               ? {
                   position: snapManager.getPositionSnap(),
                   rotation: snapManager.getRotationSnap(),
                   scale: snapManager.getScaleSnap(),
                 }
-              : null,
-          onChange: cb => snapManager.onChange(cb),
+              : null;
+          },
+          // Re-post the selection both when the Snap panel changes AND when Shift
+          // is pressed/released (Shift inverts the snap live during a drag).
+          onChange: cb => {
+            const offSnap = snapManager.onChange(cb);
+            const offShift = modifiers.onShiftChange(cb);
+            return () => {
+              offSnap?.();
+              offShift();
+            };
+          },
         },
       });
 
