@@ -195,6 +195,61 @@ describe('createForwardEditBridge', () => {
     });
   });
 
+  describe('when an editor Placeholder is written (#1372)', () => {
+    it('should forward it as a GltfContainer pointed at the placeholder src', async () => {
+      const entity = ctx.engine.addEntity();
+      ctx.Name.create(entity, { value: 'Trigger Area' });
+      ctx.editorComponents.Placeholder.create(entity, { src: 'assets/placeholder.glb' });
+      await ctx.engine.update(1);
+      // let the per-entity enqueue chain (ensureInstantiated → set) drain
+      await new Promise(r => setTimeout(r, 0));
+      await new Promise(r => setTimeout(r, 0));
+
+      const write = sent.find(s => s.cmd === 'set_component' && s.args[1] === 'GltfContainer');
+      expect(write).toBeDefined();
+      expect(JSON.parse(write!.args[2])).toEqual({ src: 'assets/placeholder.glb' });
+    });
+
+    it('should NOT forward a placeholder when the entity has an authored GltfContainer', async () => {
+      const GltfContainer = components.GltfContainer(ctx.engine);
+      const entity = ctx.engine.addEntity();
+      ctx.Name.create(entity, { value: 'Real Model' });
+      GltfContainer.create(entity, { src: 'assets/real.glb', visibleMeshesCollisionMask: 3 });
+      ctx.editorComponents.Placeholder.create(entity, { src: 'assets/placeholder.glb' });
+      await ctx.engine.update(1);
+      await Promise.resolve();
+      await Promise.resolve();
+
+      // The only GltfContainer set is the authored model; the placeholder src
+      // never overrides it.
+      const gltfWrites = sent.filter(
+        s => s.cmd === 'set_component' && s.args[1] === 'GltfContainer',
+      );
+      expect(gltfWrites.every(s => JSON.parse(s.args[2]).src === 'assets/real.glb')).toBe(true);
+      expect(gltfWrites.some(s => JSON.parse(s.args[2]).src === 'assets/placeholder.glb')).toBe(
+        false,
+      );
+    });
+
+    it('should delete the engine GltfContainer when the placeholder is removed', async () => {
+      const entity = ctx.engine.addEntity();
+      ctx.Name.create(entity, { value: 'Trigger Area' });
+      ctx.editorComponents.Placeholder.create(entity, { src: 'assets/placeholder.glb' });
+      await ctx.engine.update(1);
+      await Promise.resolve();
+      await Promise.resolve();
+      sent.length = 0;
+
+      ctx.editorComponents.Placeholder.deleteFrom(entity);
+      await ctx.engine.update(1);
+      await new Promise(r => setTimeout(r, 0));
+      await new Promise(r => setTimeout(r, 0));
+
+      const del = sent.find(s => s.cmd === 'delete_component' && s.args[1] === 'GltfContainer');
+      expect(del).toBeDefined();
+    });
+  });
+
   describe('when a console command fails', () => {
     it('should report via onError and not throw into the change loop', async () => {
       const errors: string[] = [];
