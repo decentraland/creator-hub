@@ -20,6 +20,12 @@ function openTemplate(value: string, caret: number): { start: number; partial: s
   return { start: open, partial: inner.trim() };
 }
 
+// The `{{ }}` token for a variable — props are QUALIFIED (`props.x`) so they can't
+// collide with a same-named state variable; state/markers stay bare.
+function tokenFor(v: BindVariable): string {
+  return v.expr.startsWith('props.') ? `props.${v.name}` : v.name;
+}
+
 // The `{{ var }}`-template body editor for one callback: a plain code textarea
 // (buffered, commits on blur) with a `{{` autocomplete over the binding surface.
 // Deliberately a raw <textarea>, not ui/TextArea: the autocomplete needs direct
@@ -95,7 +101,7 @@ const CallbackBodyEditor: React.FC<{ name: string; template: string; vars: BindV
         onKeyDown={e => {
           if (partial !== null && e.key === 'Enter' && matches.length > 0) {
             e.preventDefault();
-            pick(matches[0].name);
+            pick(tokenFor(matches[0]));
           } else if (e.key === 'Escape') {
             setPartial(null);
           }
@@ -111,16 +117,16 @@ const CallbackBodyEditor: React.FC<{ name: string; template: string; vars: BindV
         <div className="ui-designer-callback-autocomplete">
           {matches.map(v => (
             <button
-              key={v.name}
+              key={v.expr}
               type="button"
               className="ui-designer-callback-autocomplete-row"
               // Keep the textarea focused so the caret survives the click.
               onMouseDown={e => {
                 e.preventDefault();
-                pick(v.name);
+                pick(tokenFor(v));
               }}
             >
-              {v.name}
+              {tokenFor(v)}
               <em>{v.type}</em>
             </button>
           ))}
@@ -163,7 +169,7 @@ const CallbackCard: React.FC<{ action: CodeAction; vars: BindVariable[] }> = ({ 
   </div>
 );
 
-// Callback (event-handler) manager for the active UI file. Lists each
+// Action (event-handler) manager for the active UI file. Lists each
 // /** @ui-action */ handler and edits its body as a `{{ var }}` template, or
 // declares a new one; the per-field 🔗 then binds it to an event.
 const CodeCallbacksPanelComponent: React.FC = () => {
@@ -183,27 +189,27 @@ const CodeCallbacksPanelComponent: React.FC = () => {
 
   return (
     <div className="ui-designer-callbacks">
-      <div className="ui-designer-callbacks-title">Callbacks</div>
+      <div className="ui-designer-callbacks-title">Actions</div>
 
       {actions.length === 0 ? (
-        <div className="ui-designer-callbacks-empty">No callbacks yet.</div>
+        <div className="ui-designer-callbacks-empty">No actions yet.</div>
       ) : null}
 
       {actions.map(a => (
         <CallbackCard
           key={a.name}
           action={a}
-          // props (`props.x`) are out of scope in a top-level handler body — omit
-          // them from the template autocomplete.
-          vars={bindingSurface.variables.filter(v => !v.expr.startsWith('props.'))}
+          // Handlers take the args object `{ state, props, value }`, so both state
+          // variables and props are referenceable in the `{{ }}` body.
+          vars={bindingSurface.variables}
         />
       ))}
 
       <div className="ui-designer-callbacks-add">
         <TextField
-          aria-label="New callback name"
+          aria-label="New action name"
           value={name}
-          placeholder="new callback"
+          placeholder="new action"
           onChange={e => setName(e.target.value)}
           onKeyDown={e => {
             if (e.key === 'Enter') add();

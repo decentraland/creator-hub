@@ -558,6 +558,31 @@ function findComponentReturnJsx(program: AnyNode, componentName?: string): AnyNo
   return null;
 }
 
+// The component's function node (a FunctionDeclaration, or the arrow / function
+// expression assigned to a `const`) — the node whose `.body` we splice to place
+// the FIRST element into an empty root. Mirrors findComponentReturnJsx's forms.
+export function findComponentFn(program: AnyNode, componentName?: string): AnyNode | null {
+  for (const stmt of (program.body ?? []) as AnyNode[]) {
+    const decl =
+      stmt.type === 'ExportNamedDeclaration' && stmt.declaration
+        ? (stmt.declaration as AnyNode)
+        : stmt;
+    if (decl.type === 'FunctionDeclaration') {
+      if (componentName && decl.id?.name !== componentName) continue;
+      return decl;
+    }
+    if (decl.type === 'VariableDeclaration') {
+      for (const d of (decl.declarations ?? []) as AnyNode[]) {
+        if (componentName && d.id?.name !== componentName) continue;
+        const init = d.init ? unparen(d.init as AnyNode) : undefined;
+        if (init && (init.type === 'ArrowFunctionExpression' || init.type === 'FunctionExpression'))
+          return init;
+      }
+    }
+  }
+  return null;
+}
+
 // Source span of the exported component's *identifier* (for a rename splice).
 // Recognizes the same forms as findComponentReturnJsx. Returns null if no
 // declaration named `componentName` is found. We rename only this token, never

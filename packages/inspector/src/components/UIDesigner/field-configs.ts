@@ -62,6 +62,20 @@ export interface FieldConfig {
   // For `length-vec` / `quad-pixels`: side-by-side sub-fields inside one Block.
   subFields?: VecSubField[];
   /**
+   * For a `length-vec` with a compact projection (e.g. Position shown as X/Y):
+   * the sub-fields shown by default, with a reveal toggle that expands to the
+   * full `subFields`. Absent → all `subFields` are always shown. The toggle
+   * starts expanded when a sub-field outside this compact set is already
+   * authored (so a right/bottom-anchored node still shows its real edges).
+   */
+  collapsedSubFields?: VecSubField[];
+  /**
+   * For the Size `length-vec`: render an aspect-ratio lock toggle that constrains
+   * width/height to their current ratio on edit (panel edits + canvas resize).
+   * Editor-only — the lock lives in redux (getAspectLockedNodes), never in source.
+   */
+  aspectLockable?: boolean;
+  /**
    * Whether this field can be bound to a declared UI variable. Defaults to true.
    * Composite kinds (`length`, `length-vec`, `quad-pixels`) and enum/index
    * kinds set this to false in V1 — they have no scalar variable-type counterpart.
@@ -330,7 +344,8 @@ const LAYOUT_BOX_FIELDS: FieldConfig[] = [
     ],
     bindable: false,
     core: true,
-    info: 'Width and height. Each supports px or % of the parent.',
+    aspectLockable: true,
+    info: 'Width and height. Each supports px or % of the parent. Lock keeps their ratio on resize.',
   },
   {
     label: 'Min size',
@@ -395,8 +410,18 @@ const LAYOUT_BOX_FIELDS: FieldConfig[] = [
       { path: 'positionBottom', leftLabel: 'B' },
       { path: 'positionLeft', leftLabel: 'L' },
     ],
+    // Shown as X (left) / Y (top) by default; the reveal toggle expands to the
+    // full T/R/B/L for anchored nodes. Storage stays the four named edges.
+    collapsedSubFields: [
+      { path: 'positionLeft', leftLabel: 'X' },
+      { path: 'positionTop', leftLabel: 'Y' },
+    ],
     bindable: false,
-    info: 'Top / Right / Bottom / Left offsets. Applied when Positioning is Absolute.',
+    // Always shown (never routed to the "+ Add property" menu), but greyed when
+    // the node is In flow — Yoga only honours position offsets when Absolute.
+    core: true,
+    disabledWhen: v => ((v.positionType as number | undefined) ?? 0) !== 1,
+    info: 'X (left) / Y (top) offset from the parent; reveal shows all four edges. Applied when Positioning is Absolute.',
   },
   {
     label: 'Spacing',

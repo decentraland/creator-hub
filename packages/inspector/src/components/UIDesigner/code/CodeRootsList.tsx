@@ -129,7 +129,7 @@ const RootRow: React.FC<{
 
 // Code-mode roots list. Roots are files under src/ui/ (one component per file),
 // not ECS marker entities — so this is backed by the code store rather than the
-// engine. "+ New UI" generates src/ui/<Name>.tsx and regenerates the aggregator;
+// engine. "+ New GUI" generates src/ui/<Name>.tsx and regenerates the aggregator;
 // selecting a root loads its file as the active source the canvas edits.
 export const CodeRootsList: React.FC = () => {
   const { roots, filename, parsed, error } = useCodeState();
@@ -181,7 +181,7 @@ export const CodeRootsList: React.FC = () => {
   return (
     <div className="ui-designer-roots-list">
       <div className="ui-designer-roots-header">
-        <Button onClick={handleCreate}>+ New UI</Button>
+        <Button onClick={handleCreate}>+ New GUI</Button>
       </div>
       {error ? (
         <div

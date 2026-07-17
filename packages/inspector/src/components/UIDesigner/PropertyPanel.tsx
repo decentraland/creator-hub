@@ -1,11 +1,17 @@
-import React, { useCallback, useMemo, useRef } from 'react';
-import { IoOptionsOutline } from 'react-icons/io5';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
+import { IoOptionsOutline, IoLockClosedOutline, IoLockOpenOutline } from 'react-icons/io5';
 import { VscTrash } from 'react-icons/vsc';
 import { AiOutlinePlus } from 'react-icons/ai';
 import type { Entity, TextureUnion } from '@dcl/ecs';
 
 import { useAppDispatch, useAppSelector } from '../../redux/hooks';
-import { getCollapsedGroups, getSelectedNode, setGroupCollapsed } from '../../redux/ui-designer';
+import {
+  getAspectLockedNodes,
+  getCollapsedGroups,
+  getSelectedNode,
+  setAspectLocked,
+  setGroupCollapsed,
+} from '../../redux/ui-designer';
 import { Block } from '../Block';
 import { Container } from '../Container';
 import { CheckboxField, Dropdown, RgbaColorField, TextArea, TextField } from '../ui';
@@ -280,6 +286,15 @@ const PropertyPanelComponent: React.FC = () => {
 
   return (
     <div className="ui-designer-property-panel">
+      {/* A nested component's Inputs are the primary thing to edit on an instance,
+          so surface them at the TOP — above the wrapper's Layout/Background groups
+          (which only position the instance). */}
+      {refChildren.map(child => (
+        <ComponentRefPanel
+          key={child.entity as unknown as number}
+          node={child}
+        />
+      ))}
       {allGroups.map(group => {
         // Bucket each field: shown (core / set / always-on) → a row (with a `−`
         // when it's an optional set prop); togglable-and-unset → the group's
@@ -344,15 +359,145 @@ const PropertyPanelComponent: React.FC = () => {
           </Container>
         );
       })}
-      {refChildren.map(child => (
-        <ComponentRefPanel
-          key={child.entity as unknown as number}
-          node={child}
-        />
-      ))}
     </div>
   );
 };
+
+interface LengthVecFieldProps {
+  field: FieldConfig;
+  componentValue: Record<string, unknown> | null;
+  entity: Entity;
+  bindings?: Record<string, string>;
+  boundProp?: { variable: string };
+  fieldDisabled: boolean;
+  onPatch: (patch: Record<string, unknown>) => void;
+}
+
+// A `length-vec` group (Size / Min / Max / Position). Sub-fields stack in the
+// control column with a shared unit selector. When the field declares
+// `collapsedSubFields`, it renders that compact projection (Position → X/Y) with
+// a reveal toggle to the full edge set (T/R/B/L). The toggle seeds expanded when
+// an edge outside the compact set is already authored — a right/bottom-anchored
+// node then shows its real values without a manual reveal.
+const LengthVecField = React.memo(function LengthVecField({
+  field,
+  componentValue,
+  entity,
+  bindings,
+  boundProp,
+  fieldDisabled,
+  onPatch,
+}: LengthVecFieldProps) {
+  const dispatch = useAppDispatch();
+  const aspectLockedMap = useAppSelector(getAspectLockedNodes);
+  const aspectLocked = !!field.aspectLockable && !!aspectLockedMap[entity as unknown as number];
+  const fullSubs = field.subFields ?? [];
+  const compactSubs = field.collapsedSubFields;
+  const hasFacade = !!compactSubs && compactSubs.length > 0;
+  const extraPaths = hasFacade
+    ? fullSubs.filter(s => !compactSubs!.some(c => c.path === s.path)).map(s => s.path)
+    : [];
+  const autoExpand = !!componentValue && extraPaths.some(p => p in componentValue);
+  // null = follow the data (autoExpand); a boolean = the user's explicit choice.
+  const [userExpanded, setUserExpanded] = useState<boolean | null>(null);
+  const expanded = userExpanded ?? autoExpand;
+  const subs = hasFacade && !expanded ? compactSubs! : fullSubs;
+
+  const firstUnitKey = subs[0] ? `${subs[0].path}Unit` : '';
+  const firstUnitRaw = (componentValue?.[firstUnitKey] as number | undefined) ?? YGU_UNDEFINED;
+  const unit = firstUnitRaw === YGU_UNDEFINED ? YGU_POINT : firstUnitRaw;
+
+  return (
+    <BindableField
+      field={field}
+      entity={entity}
+      bound={boundProp}
+    >
+      {subs.map(sub => {
+        const v = (componentValue?.[sub.path] as number | undefined) ?? 0;
+        const subBound = bindings?.[`${field.componentId}.${sub.path}`];
+        return (
+          <BindableSubField
+            key={sub.path}
+            field={{ componentId: field.componentId, path: sub.path, kind: 'length' }}
+            entity={entity}
+            bound={subBound}
+          >
+            <TextField
+              type="number"
+              leftLabel={sub.leftLabel}
+              value={String(v)}
+              disabled={fieldDisabled}
+              onChange={e => {
+                const next = clampNumber(e.target.value);
+                const patch: Record<string, unknown> = {
+                  [sub.path]: next,
+                  [`${sub.path}Unit`]: unit,
+                };
+                // Aspect lock: scale the sibling axis to preserve the current ratio.
+                if (aspectLocked && subs.length === 2) {
+                  const other = subs.find(s => s.path !== sub.path);
+                  const curThis = (componentValue?.[sub.path] as number | undefined) ?? 0;
+                  const curOther = other
+                    ? ((componentValue?.[other.path] as number | undefined) ?? 0)
+                    : 0;
+                  if (other && curThis > 0 && curOther > 0) {
+                    patch[other.path] = Math.max(0, Math.round(next * (curOther / curThis)));
+                    patch[`${other.path}Unit`] = unit;
+                  }
+                }
+                onPatch(patch);
+              }}
+            />
+          </BindableSubField>
+        );
+      })}
+      <div className="ui-designer-unit-selector">
+        {field.aspectLockable ? (
+          <button
+            type="button"
+            className={`ui-designer-vec-lock${aspectLocked ? ' active' : ''}`}
+            aria-pressed={aspectLocked}
+            aria-label={aspectLocked ? 'Unlock aspect ratio' : 'Lock aspect ratio'}
+            title={aspectLocked ? 'Unlock aspect ratio' : 'Lock aspect ratio'}
+            onClick={() => dispatch(setAspectLocked({ entity, locked: !aspectLocked }))}
+          >
+            {aspectLocked ? <IoLockClosedOutline aria-hidden /> : <IoLockOpenOutline aria-hidden />}
+          </button>
+        ) : null}
+        {hasFacade ? (
+          <button
+            type="button"
+            className="ui-designer-vec-reveal"
+            aria-expanded={expanded}
+            aria-label={expanded ? 'Show X and Y only' : 'Show all edges'}
+            onClick={() => setUserExpanded(!expanded)}
+          >
+            {expanded ? 'X / Y' : 'T R B L'}
+          </button>
+        ) : null}
+        <Dropdown
+          options={UNIT_OPTIONS}
+          value={unit}
+          aria-label="Unit"
+          disabled={fieldDisabled}
+          onChange={e => {
+            const nextUnit = Number(e.target.value);
+            const parent = measureParentBox(entity);
+            const patch: Record<string, unknown> = {};
+            for (const sub of subs) {
+              const cur = (componentValue?.[sub.path] as number | undefined) ?? 0;
+              const dim = parent ? parent[axisForPath(sub.path)] : 0;
+              patch[sub.path] = convertLength(cur, unit, nextUnit, dim);
+              patch[`${sub.path}Unit`] = nextUnit;
+            }
+            onPatch(patch);
+          }}
+        />
+      </div>
+    </BindableField>
+  );
+});
 
 interface FieldRowProps {
   field: FieldConfig;
@@ -519,68 +664,16 @@ const FieldRow = React.memo(function FieldRow({
       );
     }
     case 'length-vec': {
-      // Vec group — TextFields stack vertically inside the Block, matching
-      // how `TransformInspector` lays out Position/Rotation/Scale (X/Y/Z).
-      // Each sub-field writes a `(path, pathUnit)` pair. Shared unit selector
-      // sits at the bottom of the group.
-      const subs = field.subFields ?? [];
-      const firstUnitKey = subs[0] ? `${subs[0].path}Unit` : '';
-      const firstUnitRaw = (componentValue?.[firstUnitKey] as number | undefined) ?? YGU_UNDEFINED;
-      const unit = firstUnitRaw === YGU_UNDEFINED ? YGU_POINT : firstUnitRaw;
       return (
-        <BindableField
+        <LengthVecField
           field={field}
+          componentValue={componentValue}
           entity={entity}
-          bound={boundProp}
-        >
-          {subs.map(sub => {
-            const v = (componentValue?.[sub.path] as number | undefined) ?? 0;
-            const subBound = bindings?.[`${field.componentId}.${sub.path}`];
-            return (
-              <BindableSubField
-                key={sub.path}
-                field={{
-                  componentId: field.componentId,
-                  path: sub.path,
-                  kind: 'length',
-                }}
-                entity={entity}
-                bound={subBound}
-              >
-                <TextField
-                  type="number"
-                  leftLabel={sub.leftLabel}
-                  value={String(v)}
-                  onChange={e =>
-                    onPatch({
-                      [sub.path]: clampNumber(e.target.value),
-                      [`${sub.path}Unit`]: unit,
-                    })
-                  }
-                />
-              </BindableSubField>
-            );
-          })}
-          <div className="ui-designer-unit-selector">
-            <Dropdown
-              options={UNIT_OPTIONS}
-              value={unit}
-              aria-label="Unit"
-              onChange={e => {
-                const nextUnit = Number(e.target.value);
-                const parent = measureParentBox(entity);
-                const patch: Record<string, unknown> = {};
-                for (const sub of subs) {
-                  const cur = (componentValue?.[sub.path] as number | undefined) ?? 0;
-                  const dim = parent ? parent[axisForPath(sub.path)] : 0;
-                  patch[sub.path] = convertLength(cur, unit, nextUnit, dim);
-                  patch[`${sub.path}Unit`] = nextUnit;
-                }
-                onPatch(patch);
-              }}
-            />
-          </div>
-        </BindableField>
+          bindings={bindings}
+          boundProp={boundProp}
+          fieldDisabled={fieldDisabled}
+          onPatch={onPatch}
+        />
       );
     }
     case 'quad-pixels': {

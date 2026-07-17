@@ -37,13 +37,13 @@ const CodePropsPanelComponent: React.FC = () => {
 
   return (
     <div className="ui-designer-code-variables ui-designer-code-props">
-      <div className="ui-designer-code-variables-title">Props</div>
+      <div className="ui-designer-code-variables-title">Inputs</div>
       <div className="ui-designer-code-variables-hint">
-        Inputs this component receives when nested. Bind a field to <code>props.name</code>.
+        Values this component receives when nested. Bind a field to <code>props.name</code>.
       </div>
 
       {propVars.length === 0 ? (
-        <div className="ui-designer-code-variables-empty">No props yet.</div>
+        <div className="ui-designer-code-variables-empty">No inputs yet.</div>
       ) : null}
 
       {propVars.map((v: BindVariable) => (
@@ -77,16 +77,16 @@ const CodePropsPanelComponent: React.FC = () => {
 
       <div className="ui-designer-code-variables-add">
         <TextField
-          aria-label="New prop name"
+          aria-label="New input name"
           value={name}
-          placeholder="new prop"
+          placeholder="new input"
           onChange={e => setName(e.target.value)}
           onKeyDown={e => {
             if (e.key === 'Enter') add();
           }}
         />
         <Dropdown
-          aria-label="New prop type"
+          aria-label="New input type"
           options={TYPE_OPTIONS}
           value={type}
           onChange={e => setType(String(e.target.value))}

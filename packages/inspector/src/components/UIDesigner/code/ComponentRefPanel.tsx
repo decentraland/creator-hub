@@ -156,12 +156,12 @@ export const ComponentRefPanel: React.FC<{ node: CodeUINode }> = ({ node }) => {
     <div className="ui-designer-code-variables">
       <div className="ui-designer-code-variables-title">Component · {name}</div>
       <div className="ui-designer-code-variables-hint">
-        Values passed to this instance. Type a literal or 🔗 a variable/handler from this file.
+        Values passed to this instance. Type a literal or 🔗 a state variable/action from this file.
       </div>
 
       {declared.length === 0 ? (
         <div className="ui-designer-code-variables-empty">
-          No props declared. Open {name} and add props (Variables tab) to configure it here.
+          No inputs declared. Open {name} and add inputs (Logic tab) to configure it here.
         </div>
       ) : (
         declared.map(p => (

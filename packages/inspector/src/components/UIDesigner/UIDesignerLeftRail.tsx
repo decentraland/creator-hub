@@ -23,7 +23,7 @@ const UIDesignerLeftRail: React.FC = () => {
   return (
     <Box className="ui-designer-left-rail">
       <div className="ui-designer-rail-section">
-        <div className="ui-designer-rail-header">UI Roots</div>
+        <div className="ui-designer-rail-header">GUIs</div>
         <CodeRootsList />
       </div>
       <div className="ui-designer-rail-section ui-designer-rail-section-grow">

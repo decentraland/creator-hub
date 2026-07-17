@@ -13,8 +13,11 @@ import './WidgetPicker.css';
 const WIDTH = 240;
 
 interface WidgetPickerProps {
-  // Entity the new node is added under.
-  parent: Entity;
+  // Entity the new node is added under (when `onAdd` is not supplied).
+  parent?: Entity;
+  // Override where the picked widget goes — e.g. the empty-root drop zone routes
+  // it to spliceSetRootChild (place the FIRST element) instead of spliceAddChild.
+  onAdd?: (type: UINodeType, preset?: 'image') => void;
   anchorRef: React.RefObject<HTMLElement>;
   onDismiss: () => void;
 }
@@ -22,8 +25,13 @@ interface WidgetPickerProps {
 // Godot "Create Node" / UMG palette style picker: a searchable, categorized list
 // of widgets. Picking one splices a new flow child under `parent` into the active
 // .tsx (the same code path as the palette drag-drop; no ECS entity, no absolute
-// positioning).
-export const WidgetPicker: React.FC<WidgetPickerProps> = ({ parent, anchorRef, onDismiss }) => {
+// positioning) — or routes to `onAdd` when supplied.
+export const WidgetPicker: React.FC<WidgetPickerProps> = ({
+  parent,
+  onAdd,
+  anchorRef,
+  onDismiss,
+}) => {
   const popoverRef = useRef<HTMLDivElement>(null);
   const [query, setQuery] = useState('');
   const pos = usePopoverPosition({ anchorRef, popoverRef, open: true, onDismiss, width: WIDTH });
@@ -40,7 +48,11 @@ export const WidgetPicker: React.FC<WidgetPickerProps> = ({ parent, anchorRef, o
   }, [q]);
 
   const add = (item: (typeof WIDGET_CATALOG)[number]['items'][number]) => {
-    void spliceAddChild(parent as unknown as number, item.type as UINodeType, item.preset);
+    if (onAdd) {
+      onAdd(item.type as UINodeType, item.preset);
+    } else if (parent !== undefined) {
+      void spliceAddChild(parent as unknown as number, item.type as UINodeType, item.preset);
+    }
     onDismiss();
   };
 

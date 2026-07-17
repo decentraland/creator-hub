@@ -70,6 +70,15 @@
   flex: 0 0 auto;
 }
 
+/* In the instance-props / component panel the 🔗 is a PRIMARY action (bind an
+   input to a state variable or an action). Keep it always visible: the
+   property-panel rows hover-reveal it via `.ui-designer-bindable-row`, which does
+   NOT wrap these rows, so without this the link stays opacity:0 forever. */
+.ui-designer-code-variable-row .ui-designer-bindable-link {
+  opacity: 1;
+  flex: 0 0 auto;
+}
+
 .Text.Field.ui-designer-code-variable-default {
   flex: 0 0 72px;
   width: 72px;

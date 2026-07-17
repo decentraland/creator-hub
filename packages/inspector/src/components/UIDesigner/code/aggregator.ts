@@ -38,20 +38,23 @@ ${children}
 `;
 }
 
-// A starter root component file for a newly created root.
+// A starter root component file for a newly created root — an EMPTY component
+// (a plain `return`, no elements). The editor treats this as a valid empty GUI
+// and shows a "drop your first element" canvas; the first widget added splices
+// the `return (<…/>)` (see store.spliceSetRootChild). Starting empty makes it
+// easy to build reusable components, not just full screens. `ReactEcs` stays
+// imported (the JSX pragma references it); element imports are added on demand.
+// The `props: {}` param is always present so the `UiAction` args type can refer
+// to `Parameters<typeof ${component}>[0]` (see the callbacks contract).
 export function generateRootComponent(component: string): string {
   return `/** @jsx ReactEcs.createElement */
-import ReactEcs, { UiEntity, Label } from '@dcl/sdk/react-ecs'
+import ReactEcs from '@dcl/sdk/react-ecs'
 
 export interface State {}
 export const state: State = {}
 
-export function ${component}() {
-  return (
-    <UiEntity uiTransform={{ width: 400, height: 200, positionType: 'absolute', position: { top: 40, left: 40 } }}>
-      <Label value="${component}" fontSize={32} uiTransform={{ width: 360, height: 48, margin: { top: 16, left: 16 } }} />
-    </UiEntity>
-  )
+export function ${component}(props: {}) {
+  return
 }
 `;
 }

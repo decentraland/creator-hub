@@ -113,6 +113,19 @@ describe('callback-typed props', () => {
     ]);
   });
 
+  it('reads props from the signature even when the body has no single JSX root', () => {
+    // codeToUINodes returns null for an empty `return;` (or a fragment), but a
+    // nested instance must still see the declared props — incl. callbacks — since
+    // they live on the signature, not the body. resolveComponentTree relies on
+    // this to expose inputs of empty/opaque-body components.
+    const emptyBody = `export function Card(props: { onSave: (value?: string | number) => void }) {
+  return
+}`;
+    expect(readPropsVariables(program(emptyBody), 'Card')).toEqual([
+      { name: 'onSave', type: 'callback' },
+    ]);
+  });
+
   it('reads a non-primitive non-function member as "unknown" (not coerced to string)', () => {
     const src = `export function Card(props: { style: { color: string } }) {
   return <UiEntity />
@@ -121,7 +134,7 @@ describe('callback-typed props', () => {
   });
 
   it('propTypeToTs maps callback to the handler-shaped function type', () => {
-    expect(propTypeToTs('callback')).toBe('(value?: string | number) => void');
+    expect(propTypeToTs('callback')).toBe('(value?: unknown) => void');
     expect(propTypeToTs('string')).toBe('string');
   });
 
@@ -133,7 +146,7 @@ describe('callback-typed props', () => {
       src,
       addPropsProperty(program(src), src, 'Card', 'onSave', propTypeToTs('callback')),
     );
-    expect(next).toContain('onSave?: (value?: string | number) => void');
+    expect(next).toContain('onSave?: (value?: unknown) => void');
     expect(readPropsVariables(program(next), 'Card')).toEqual([
       { name: 'title', type: 'string' },
       { name: 'onSave', type: 'callback' },

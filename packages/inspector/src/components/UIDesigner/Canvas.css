@@ -271,6 +271,66 @@
   color: #888;
 }
 
+/* Empty-GUI drop zone: a dashed target for the first element. */
+.ui-designer-canvas-emptyroot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--uid-space-2);
+  padding: var(--uid-space-6);
+  min-width: 320px;
+  min-height: 180px;
+  border: 2px dashed var(--ui-designer-control-border);
+  border-radius: 8px;
+  color: var(--sub-text);
+  text-align: center;
+  transition: border-color 120ms ease, background-color 120ms ease;
+}
+
+.ui-designer-canvas-emptyroot.over {
+  border-color: var(--ui-designer-accent);
+  background-color: var(--ui-designer-accent-08);
+}
+
+.ui-designer-canvas-emptyroot-title {
+  margin: 0;
+  color: var(--title);
+  font-weight: 600;
+}
+
+.ui-designer-canvas-emptyroot-hint {
+  margin: 0;
+  max-width: 260px;
+  font-size: 12px;
+}
+
+.ui-designer-canvas-emptyroot-add {
+  margin-top: var(--uid-space-2);
+  padding: 6px 12px;
+  background: var(--ui-designer-accent);
+  border: none;
+  border-radius: 6px;
+  color: var(--base-20);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.ui-designer-canvas-emptyroot-add:hover {
+  filter: brightness(1.08);
+}
+
+.ui-designer-canvas-emptyroot-add:focus-visible {
+  outline: 2px solid var(--border-focused);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ui-designer-canvas-emptyroot {
+    transition: none;
+  }
+}
+
 .ui-designer-canvas-input {
   flex: 1 1 auto;
   min-width: 40px;

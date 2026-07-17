@@ -14,10 +14,12 @@ import type { UINodeType } from '../tree-model';
 import { generateRootComponent, generateUiIndex } from './aggregator';
 import {
   type CodeAction,
+  migrateActionsToArgsObject,
   readActions,
   removeActionDecl,
   setActionBodyEdit,
   templateToBody,
+  uiActionTypeEdit,
 } from './actions';
 import {
   type BindingSurface,
@@ -36,6 +38,7 @@ import {
 } from './state-convention';
 import {
   addPropsProperty,
+  ensurePropsParamEdit,
   propTypeToTs,
   type PropVar,
   readPropsVariables,
@@ -55,6 +58,7 @@ import {
   type Edit,
   ensureNamedImport,
   insertChild,
+  insertSibling,
   moveElement,
   removeAttribute,
   removeNode,
@@ -63,11 +67,12 @@ import {
   setAttributeSegments,
   setObjectField,
   setObjectFields,
+  setReturnJsx,
 } from './emit-adapter';
 import { pbBackgroundFieldToErgo, pbToErgonomicText } from './ecs-shape';
 import { formatUiSource } from './formatting';
 import { uiTransformPatchEdits } from './transform-patch';
-import { codeToUINodes, findComponentIdSpan } from './parse-adapter';
+import { codeToUINodes, findComponentFn, findComponentIdSpan } from './parse-adapter';
 import { toComponentName, uniqueRootName } from './root-naming';
 import type { CodeUINode, ParsedUI } from './types';
 
@@ -99,7 +104,11 @@ export interface CodeRoot {
 // A referenced component's parsed tree (+ its default-value map) for the inline
 // read-only preview a component-ref node renders.
 export interface ResolvedComponent {
-  parsed: ParsedUI;
+  // null when the component's body doesn't reduce to a single JSX root (an empty
+  // `return;`, a fragment, or an opaque body). Its props are still read from the
+  // signature, so a nested instance can bind them regardless — only the inline
+  // canvas preview needs `parsed`.
+  parsed: ParsedUI | null;
   // expr (`state.x` / bare marker) → default value string, so a bound Label in
   // the nested component previews its default (`value={state.title}` → "Menu").
   resolveMap: Record<string, string>;
@@ -126,6 +135,10 @@ export interface CodeState {
   // Raw ESTree program (for insertion-point math, e.g. afterImports).
   program: unknown;
   error: string | null;
+  // The active component exists but returns no JSX (an empty `return`) — a valid
+  // EMPTY GUI, not a convention error. Drives the canvas "drop your first
+  // element" state. Distinct from `!parsed && error` (a non-conforming file).
+  emptyRoot: boolean;
   parsing: boolean;
   // Whether the ACTIVE file has splice history to undo/redo (drives the
   // toolbar buttons; the stacks themselves are module-private).
@@ -143,6 +156,7 @@ let state: CodeState = {
   actions: [],
   program: undefined,
   error: null,
+  emptyRoot: false,
   parsing: false,
   canUndo: false,
   canRedo: false,
@@ -256,10 +270,11 @@ function buildBindingSurface(
   return { variables, actions: markers.actions };
 }
 
-// props (`props.x`) are valid in the render but NOT in a top-level @ui-action
-// handler body (out of scope there) — filter them out of the callback surface.
+// The callback (handler) surface. Handlers receive the args object
+// `{ state, props, value }`, so both state variables and props are in scope —
+// `{{ counter }}` resolves to `state.counter`, `{{ props.x }}` to `props.x`.
 function callbackVars(variables: BindVariable[]): BindVariable[] {
-  return variables.filter(v => !v.expr.startsWith('props.'));
+  return variables;
 }
 
 // True while `filename`/`source` are still the active parse. The async second-
@@ -406,15 +421,16 @@ async function resolveComponentTree(name: string): Promise<ResolvedComponent | n
       componentName: name,
       knownComponents,
     });
-    let resolved: ResolvedComponent | null = null;
-    if (parsed) {
-      const surface = buildBindingSurface(result.program, result.comments, source);
-      resolved = {
-        parsed,
-        resolveMap: buildResolveMap(surface.variables),
-        props: readPropsVariables(result.program as any, name),
-      };
-    }
+    // Props live on the component's function SIGNATURE — read them even when the
+    // body doesn't reduce to a single JSX root (empty/opaque body), so a nested
+    // instance can still bind its inputs (incl. callbacks). Only the inline
+    // preview needs `parsed`.
+    const surface = buildBindingSurface(result.program, result.comments, source);
+    const resolved: ResolvedComponent = {
+      parsed,
+      resolveMap: buildResolveMap(surface.variables),
+      props: readPropsVariables(result.program as any, name),
+    };
     componentTreeCache.set(root.filename, { content: source, resolved });
     return resolved;
   } catch {
@@ -533,6 +549,22 @@ export async function loadAndParse(
     // this file's own component so a stray self-reference stays opaque.
     const activeName = state.roots.find(r => r.filename === filename)?.name;
     const knownComponents = state.roots.map(r => r.name).filter(n => n !== activeName);
+    // Auto-migrate legacy positional @ui-action handlers to the args-object
+    // contract ({ state, props, value }). Idempotent — once migrated the handlers
+    // are new-form, so the re-parse migrates nothing. Skipped on non-persisting
+    // parses (never silently rewrite a file we're only reading).
+    if (activeName && opts.persist !== false) {
+      const migration = migrateActionsToArgsObject(
+        program as any,
+        result.comments as any,
+        source,
+        activeName,
+      );
+      if (migration.length > 0) {
+        await loadAndParse(filename, applyEdits(source, migration), opts);
+        return;
+      }
+    }
     const parsed = codeToUINodes(program, source, { knownComponents });
     lastComments = (result.comments as unknown[]) ?? [];
     const bindingSurface = buildBindingSurface(program, result.comments as any, source, activeName);
@@ -548,15 +580,22 @@ export async function loadAndParse(
     // collide with the new file's.
     const sameFile = state.filename === filename;
     const prevParsed = state.parsed;
+    // A component that EXISTS but returns no JSX is a valid empty GUI (the user
+    // adds the first element via the canvas drop zone). Only a file with no
+    // recognizable component at all is a convention error.
+    const emptyRoot = !parsed && !!activeName && findComponentIdSpan(program, activeName) !== null;
     set({
       filename,
       source,
       parsing: false,
-      parsed: parsed ?? state.parsed,
+      // For an empty root, drop the tree (don't fall back to the previous file's
+      // stale tree); for a transient broken parse, keep the last-good tree.
+      parsed: parsed ?? (emptyRoot ? null : state.parsed),
       bindingSurface,
       actions,
       program,
-      error: parsed ? null : 'This file does not follow the UI Designer convention',
+      error: parsed || emptyRoot ? null : 'This file does not follow the UI Designer convention',
+      emptyRoot,
     });
     if (sameFile && parsed) reanchorNodeState(prevParsed, parsed);
     else if (!sameFile) reduxStore.dispatch(resetNodeState());
@@ -1261,6 +1300,11 @@ const CHILD_TEMPLATES: Record<UINodeType, string> = {
 const IMAGE_TEMPLATE =
   "<UiEntity uiTransform={{ width: 200, height: 200 }} uiBackground={{ color: { r: 1, g: 1, b: 1, a: 1 }, textureMode: 'stretch' }} />";
 
+// The JSX snippet for a widget type (or the image preset).
+function widgetJsx(type: UINodeType, preset?: 'image'): string {
+  return preset === 'image' ? IMAGE_TEMPLATE : (CHILD_TEMPLATES[type] ?? CHILD_TEMPLATES.UiEntity);
+}
+
 // Insert a new child element of the given type (or creation preset) into a
 // parent node.
 async function spliceAddChildUnlocked(
@@ -1272,8 +1316,7 @@ async function spliceAddChildUnlocked(
   // A component instance doesn't render arbitrary children — refuse the drop
   // (guardElementWrite also covers opaque/dynamic parents).
   if (!ast || !guardElementWrite(parentEntityId, 'spliceAddChild')) return;
-  const jsx =
-    preset === 'image' ? IMAGE_TEMPLATE : (CHILD_TEMPLATES[type] ?? CHILD_TEMPLATES.UiEntity);
+  const jsx = widgetJsx(type, preset);
   // Ensure the element's react-ecs identifier is imported — a spliced `<Button/>`
   // whose `Button` isn't in the import block won't compile. `type` is the tag name
   // for every widget (UiEntity/Label/Button/Input/Dropdown); the `image` preset
@@ -1282,6 +1325,50 @@ async function spliceAddChildUnlocked(
   if (state.program) {
     edits.push(...ensureNamedImport(state.program as any, type, '@dcl/sdk/react-ecs'));
   }
+  await applySourceEdits(edits);
+}
+
+// Insert a new widget at a precise tree position: `inside` appends it as the
+// anchor's last child; `before`/`after` insert it as a sibling of the anchor in
+// the anchor's parent. Used by the Nodes-tree drop target (item 6) so a dropped
+// widget lands exactly where the insertion line showed, not always appended.
+async function spliceAddWidgetUnlocked(
+  anchorEntityId: number,
+  dropType: 'before' | 'after' | 'inside',
+  type: UINodeType,
+  preset?: 'image',
+): Promise<void> {
+  const ast = astNodeFor(anchorEntityId) as Parameters<typeof insertChild>[0] | undefined;
+  if (!ast || !state.program) return;
+  const jsx = widgetJsx(type, preset);
+  let edits: Edit[];
+  if (dropType === 'inside') {
+    // Anchor IS the parent — append as its last child.
+    if (!guardElementWrite(anchorEntityId, 'spliceAddWidget')) return;
+    edits = [...insertChild(ast, state.source, jsx)];
+  } else {
+    // Anchor is a SIBLING — insert relative to it within its parent.
+    edits = [...insertSibling(ast, state.source, jsx, dropType)];
+  }
+  edits.push(...ensureNamedImport(state.program as any, type, '@dcl/sdk/react-ecs'));
+  await applySourceEdits(edits);
+}
+
+// Place the FIRST element into an EMPTY root: splice `return (<jsx/>)` into the
+// active component (which currently returns nothing) and ensure the import. Used
+// by the canvas empty-root drop zone / "+ Add element" (item 1). Once this lands
+// the reparse yields a real tree and the root is no longer empty.
+async function spliceSetRootChildUnlocked(type: UINodeType, preset?: 'image'): Promise<void> {
+  if (!state.program || !state.filename) return;
+  const activeName = state.roots.find(r => r.filename === state.filename)?.name;
+  if (!activeName) return;
+  const fn = findComponentFn(state.program as Parameters<typeof findComponentFn>[0], activeName);
+  if (!fn) return;
+  const jsx = widgetJsx(type, preset);
+  const edits = [
+    ...setReturnJsx(fn as Parameters<typeof setReturnJsx>[0], state.source, jsx),
+    ...ensureNamedImport(state.program as any, type, '@dcl/sdk/react-ecs'),
+  ];
   await applySourceEdits(edits);
 }
 
@@ -1598,24 +1685,39 @@ async function setStateVariableValueUnlocked(
   if (edits.length) await applySourceEdits(edits);
 }
 
+// Ensure the `UiAction` args-object scaffold exists: a `props: {}` param on the
+// component (so `Parameters<typeof C>[0]` is valid) + the `type UiAction = { state;
+// props; value? }` alias. Seeded before the first callback. State must exist first
+// (UiAction references it) — callers run ensureStateScaffold beforehand.
+async function ensureUiActionScaffold(): Promise<void> {
+  if (!state.program) return;
+  const cn = activeComponentName();
+  if (!cn) return;
+  const edits: Edit[] = [];
+  const propsEdit = ensurePropsParamEdit(state.program as any, state.source, cn);
+  if (propsEdit) edits.push(propsEdit);
+  const typeEdit = uiActionTypeEdit(state.program as any, cn);
+  if (typeEdit) edits.push(typeEdit);
+  if (edits.length) await applySourceEdits(edits);
+}
+
 // Add an event-handler callback: seed a top-level `/** @ui-action */ function
-// <name>(state: State, value?) {}`. Taking `state` as a PARAMETER (rather than
-// closing over the module const) keeps the handler a pure function of state and
-// avoids use-before-declaration when it's emitted above the `state` const.
-// `value` carries the event payload — Input.onChange/onSubmit deliver the typed
-// text and Dropdown.onChange the selected index; mouse events leave it
-// undefined. It appears in the callbacks panel and binds to an event via a
-// thunk (`onChange={(value) => <name>(state, value)}`). ensureStateScaffold
-// runs first so the `State` param type exists.
+// <name>({ state, props, value }: UiAction) {}`. The args OBJECT lets a handler
+// read/mutate `state`, read/call `props` (e.g. invoke a callback the parent
+// passed, after any pre-logic), and receive the event `value` — all order-free
+// and extensible. `value` is typed `unknown` (its value-linking design is
+// deferred). ensureStateScaffold + ensureUiActionScaffold run first so `State`
+// and `UiAction` exist.
 async function addBindActionUnlocked(name: string): Promise<void> {
   await ensureStateScaffold();
+  await ensureUiActionScaffold();
   if (!state.program) return;
   const at = afterImports(state.program as any);
   await applySourceEdits([
     {
       start: at,
       end: at,
-      text: `\n\n/** @ui-action */\nfunction ${name}(state: State, value?: string | number) {}`,
+      text: `\n\n/** @ui-action */\nfunction ${name}({ state, props, value }: UiAction) {}`,
     },
   ]);
 }
@@ -1699,6 +1801,8 @@ export const spliceUiTransformPosition = exclusive(spliceUiTransformPositionUnlo
 export const spliceUiTransformMargin = exclusive(spliceUiTransformMarginUnlocked);
 export const spliceUiTransformResize = exclusive(spliceUiTransformResizeUnlocked);
 export const spliceAddChild = exclusive(spliceAddChildUnlocked);
+export const spliceAddWidget = exclusive(spliceAddWidgetUnlocked);
+export const spliceSetRootChild = exclusive(spliceSetRootChildUnlocked);
 export const spliceInsertComponent = exclusive(spliceInsertComponentUnlocked);
 export const spliceInstanceProp = exclusive(spliceInstancePropUnlocked);
 export const unsetInstanceProp = exclusive(unsetInstancePropUnlocked);

@@ -33,14 +33,16 @@ describe('when generating the file-per-root aggregator', () => {
     expect(parseSync('index.tsx', src).errors).toHaveLength(0);
   });
 
-  it('should generate a valid, parseable starter root component', () => {
+  it('should generate a valid, parseable EMPTY starter component', () => {
     const src = generateRootComponent('MyScreen');
     const result = parseSync('MyScreen.tsx', src);
     expect(result.errors).toHaveLength(0);
-    // The editor can read it back: a UiEntity root containing a Label.
-    const parsed = codeToUINodes(result.program as any, src)!;
-    expect(parsed.root.type).toBe('UiEntity');
-    expect(parsed.root.children[0].type).toBe('Label');
-    expect(parsed.root.children[0].uiText).toEqual({ value: 'MyScreen', fontSize: 32 });
+    expect(src).toContain('export function MyScreen(props: {})');
+    // Starts empty: no elements yet, so there's no canvas tree. The store treats
+    // this as a valid empty GUI (emptyRoot) and shows the "drop your first
+    // element" canvas; the first widget added splices `return (<…/>)`.
+    expect(codeToUINodes(result.program as any, src)).toBeNull();
+    // The State scaffold is present so the State/Logic panel has an anchor.
+    expect(src).toContain('export const state: State = {}');
   });
 });

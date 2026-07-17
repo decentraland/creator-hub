@@ -200,11 +200,72 @@
 .ui-designer-unit-selector {
   display: flex;
   justify-content: flex-end;
+  align-items: center;
+  gap: var(--uid-space-2);
 }
 
 .ui-designer-unit-selector .Dropdown.Field {
   flex: 0 0 56px;
   width: 56px;
+}
+
+/* Compact reveal toggle for a length-vec facade (Position X/Y ⇄ T/R/B/L). */
+.ui-designer-vec-reveal {
+  flex: 0 0 auto;
+  padding: 2px 6px;
+  background: transparent;
+  border: 1px solid var(--ui-designer-control-border);
+  border-radius: 4px;
+  color: var(--sub-text);
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+}
+
+.ui-designer-vec-reveal:hover {
+  color: var(--title);
+  border-color: var(--ui-designer-accent);
+}
+
+.ui-designer-vec-reveal:focus-visible {
+  outline: 2px solid var(--border-focused);
+  outline-offset: 1px;
+}
+
+/* Aspect-ratio lock toggle for the Size vec. */
+.ui-designer-vec-lock {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3px;
+  background: transparent;
+  border: 1px solid var(--ui-designer-control-border);
+  border-radius: 4px;
+  color: var(--sub-text);
+  cursor: pointer;
+}
+
+.ui-designer-vec-lock:hover {
+  color: var(--title);
+  border-color: var(--ui-designer-accent);
+}
+
+.ui-designer-vec-lock.active {
+  color: var(--ui-designer-accent);
+  border-color: var(--ui-designer-accent);
+}
+
+.ui-designer-vec-lock:focus-visible {
+  outline: 2px solid var(--border-focused);
+  outline-offset: 1px;
+}
+
+.ui-designer-vec-lock svg {
+  width: 14px;
+  height: 14px;
+  display: block;
 }
 
 /* The shared TextArea defaults to `resize: both`; the narrow rail only tolerates

@@ -3,6 +3,7 @@ import {
   IoEyeOutline as VisibleIcon,
   IoEyeOffOutline as InvisibleIcon,
   IoWarningOutline,
+  IoCubeOutline,
 } from 'react-icons/io5';
 import { MdOutlineLock as LockIcon, MdOutlineLockOpen as UnlockIcon } from 'react-icons/md';
 import type { Entity } from '@dcl/ecs';
@@ -20,10 +21,11 @@ import {
 } from '../../redux/ui-designer';
 import { Tree } from '../Tree';
 import type { DropType } from '../Tree/utils';
+import { UI_DESIGNER_DND_TYPE, type UIDesignerDragItem } from './Palette';
 import { useUINodeActions } from './useUINodeActions';
 import { useUINodeTree } from './useUINodeTree';
 import { WIDGET_ICONS } from './widget-catalog';
-import { renameRoot, spliceMove, useCodeState } from './code/store';
+import { renameRoot, spliceAddWidget, spliceMove, useCodeState } from './code/store';
 import type { CodeUINode } from './code/types';
 import type { UINode } from './tree-model';
 
@@ -34,6 +36,24 @@ import './NodeTree.css';
 // with `UIDesignerDragItem`, so the tree keeps its own DnD bus separate from the
 // palette/canvas one.
 const NODE_TREE_DND_TYPE = 'ui-designer-tree';
+
+// The tree also ACCEPTS the palette bus so a new widget can be dropped straight
+// into the hierarchy at a precise position. Module-level so the array reference
+// stays stable across renders (avoids re-registering the drop target).
+const EXTERNAL_DND_TYPES = [UI_DESIGNER_DND_TYPE];
+
+// A UiEntity wrapping exactly one component-ref (and nothing else) is the
+// positioning wrapper `spliceInsertComponent` emits. The tree collapses it into
+// a single "component" row (item 8): the wrapper stays in source (it carries the
+// instance's layout), but the editor presents wrapper+ref as ONE node — select it
+// and the panel shows the wrapper's Layout/Background + the component Inputs
+// (PropertyPanel already renders the ref child's ComponentRefPanel below the
+// wrapper's groups). Anything with extra children renders normally.
+function soleComponentRef(n: UINode): CodeUINode | null {
+  if (n.children.length !== 1) return null;
+  const child = n.children[0] as CodeUINode;
+  return child.componentRef ? child : null;
+}
 
 // Entities on the path from `root` down to (but excluding) `target`. Used to
 // auto-expand every ancestor so a selected node is always revealed in the tree.
@@ -88,12 +108,17 @@ const NodeTreeImpl: React.FC = () => {
   }, [tree, selectedNode, expanded, dispatch]);
 
   const getId = useCallback((n: UINode) => String(n.entity), []);
-  const getChildren = useCallback((n: UINode) => n.children, []);
-  const getLabel = useCallback((n: UINode) => n.name || `${n.type} ${String(n.entity)}`, []);
-  const getIcon = useCallback(
-    (n: UINode) => ((n as CodeUINode).opaque ? <IoWarningOutline /> : WIDGET_ICONS[n.type]),
-    [],
-  );
+  // Hide the sole component-ref child so the wrapper reads as one component node.
+  const getChildren = useCallback((n: UINode) => (soleComponentRef(n) ? [] : n.children), []);
+  const getLabel = useCallback((n: UINode) => {
+    const ref = soleComponentRef(n);
+    if (ref) return ref.componentRef?.name ?? ref.name;
+    return n.name || `${n.type} ${String(n.entity)}`;
+  }, []);
+  const getIcon = useCallback((n: UINode) => {
+    if (soleComponentRef(n)) return <IoCubeOutline />;
+    return (n as CodeUINode).opaque ? <IoWarningOutline /> : WIDGET_ICONS[n.type];
+  }, []);
   const isOpen = useCallback(
     (n: UINode) => expanded[n.entity as unknown as number] !== false,
     [expanded],
@@ -128,6 +153,25 @@ const NodeTreeImpl: React.FC = () => {
       targetId: target.entity as unknown as number,
     });
   }, []);
+
+  // A palette widget dropped onto the tree ADDS a new node at that exact spot —
+  // `inside` appends it as the target's last child, `before`/`after` insert it as
+  // a sibling. (Reordering existing nodes stays in handleDrop above.)
+  const handleExternalDrop = useCallback(
+    (item: unknown, target: UINode, dropType: DropType) => {
+      const drag = item as UIDesignerDragItem;
+      if (drag.source !== 'palette') return; // only palette widgets add a node here
+      const t = target as CodeUINode;
+      // The root has no parent, so before/after has nowhere to go — append inside.
+      const dt: DropType =
+        target.entity === tree?.entity && dropType !== 'inside' ? 'inside' : dropType;
+      // Can't nest INSIDE an opaque node or a component instance (no editable
+      // children); before/after still works (it inserts into their parent).
+      if (dt === 'inside' && (t.opaque || t.componentRef)) return;
+      void spliceAddWidget(target.entity as unknown as number, dt, drag.type, drag.preset);
+    },
+    [tree],
+  );
 
   // Remove / duplicate share the canvas action bar's logic (selection fallback
   // included) via the useUINodeActions hook.
@@ -219,6 +263,9 @@ const NodeTreeImpl: React.FC = () => {
         canDrag={canDrag}
         renderActionArea={renderActionArea}
         dndType={NODE_TREE_DND_TYPE}
+        externalDndTypes={EXTERNAL_DND_TYPES}
+        onExternalDrop={handleExternalDrop}
+        allowBeforeDrop
       />
     </div>
   );

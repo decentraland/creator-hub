@@ -40,9 +40,11 @@ function tsKeywordToType(t: string | undefined): string | null {
 }
 
 // Editor prop type → the TS source text spliced into the props type literal.
-// 'callback' matches the @ui-action handler shape (see store.addBindAction).
+// 'callback' matches the @ui-action handler shape (see store.addBindAction). The
+// value is typed `unknown` — the editor has no way yet to pass typed values from
+// the UI, so `unknown` is honest until a value-linking design lands.
 export function propTypeToTs(type: string): string {
-  return type === 'callback' ? '(value?: string | number) => void' : type;
+  return type === 'callback' ? '(value?: unknown) => void' : type;
 }
 
 // The exported function declaration for `componentName`.
@@ -76,6 +78,23 @@ export function readPropsVariables(program: AstNode, componentName: string): Pro
     vars.push({ name: m.key.name as string, type });
   }
   return vars;
+}
+
+// Ensure the component has a `props` parameter (seed an empty `props: {}` when it
+// has none), so `Parameters<typeof Component>[0]` — the `UiAction` args type — is
+// always valid. Returns null when the component already has a parameter or isn't
+// found.
+export function ensurePropsParamEdit(
+  program: AstNode,
+  source: string,
+  componentName: string,
+): Edit | null {
+  const fn = findComponentFn(program, componentName);
+  if (!fn) return null;
+  if ((fn.params ?? []).length > 0) return null;
+  const parens = paramParens(fn, source);
+  if (!parens) return null;
+  return { start: parens.open + 1, end: parens.close, text: 'props: {}' };
 }
 
 // Interior offsets of the component fn's param list (`(` … `)`).

@@ -8,13 +8,12 @@ import { CodeCallbacksPanel } from './code/CodeCallbacksPanel';
 
 import './UIDesigner.css';
 
-type RightTab = 'properties' | 'variables';
+type RightTab = 'properties' | 'logic';
 
-// Right rail as tabs: Properties (per-node) and Variables (per-root). The
-// Variables tab is the code-mode manager for the active root's logic surface —
-// its typed `state` object (CodeVariablesPanel), the props it exposes when nested
-// (CodePropsPanel), and its /** @ui-action */ event handlers (CodeCallbacksPanel).
-// The classic asset-packs UIBindings panel is unused in code-as-source.
+// Right rail as tabs: Properties (per-node) and Logic (per-root). The Logic tab
+// is the code-mode manager for the active root's logic surface — its typed
+// `state` object (State section), the inputs it exposes when nested (Inputs
+// section), and its /** @ui-action */ event handlers (Actions section).
 const UIDesignerRightRail: React.FC = () => {
   const [tab, setTab] = useState<RightTab>('properties');
   return (
@@ -35,11 +34,11 @@ const UIDesignerRightRail: React.FC = () => {
         <button
           type="button"
           role="tab"
-          aria-selected={tab === 'variables'}
-          className={`ui-designer-right-rail-tab${tab === 'variables' ? ' active' : ''}`}
-          onClick={() => setTab('variables')}
+          aria-selected={tab === 'logic'}
+          className={`ui-designer-right-rail-tab${tab === 'logic' ? ' active' : ''}`}
+          onClick={() => setTab('logic')}
         >
-          Variables
+          Logic
         </button>
       </div>
       <div className="ui-designer-right-rail-tabpanel">

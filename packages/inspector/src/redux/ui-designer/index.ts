@@ -39,6 +39,9 @@ export interface UIDesignerState {
   // resized there. Keyed by the synthetic node id (session-only).
   hidden: Record<number, boolean>;
   locked: Record<number, boolean>;
+  // Editor-only: nodes whose width/height are constrained to their aspect ratio
+  // when resized (panel edits + canvas handles). Keyed by synthetic node id.
+  aspectLocked: Record<number, boolean>;
   collapsedGroups: Record<string, boolean>;
 }
 
@@ -48,6 +51,7 @@ export const initialState: UIDesignerState = {
   expanded: {},
   hidden: {},
   locked: {},
+  aspectLocked: {},
   collapsedGroups: loadCollapsedGroups(),
 };
 
@@ -76,6 +80,11 @@ export const uiDesignerSlice = createSlice({
       if (payload.locked) state.locked[id] = true;
       else delete state.locked[id];
     },
+    setAspectLocked: (state, { payload }: PayloadAction<{ entity: Entity; locked: boolean }>) => {
+      const id = payload.entity as unknown as number;
+      if (payload.locked) state.aspectLocked[id] = true;
+      else delete state.aspectLocked[id];
+    },
     // Synthetic node ids are positional per parse — after a reparse the code
     // store re-anchors every id-keyed map through an oldId→newId mapping
     // (unmapped ids are dropped: the node no longer exists).
@@ -91,6 +100,7 @@ export const uiDesignerSlice = createSlice({
       state.expanded = remap(state.expanded);
       state.hidden = remap(state.hidden);
       state.locked = remap(state.locked);
+      state.aspectLocked = remap(state.aspectLocked);
     },
     setGroupCollapsed: (
       state,
@@ -108,6 +118,7 @@ export const uiDesignerSlice = createSlice({
       state.expanded = {};
       state.hidden = {};
       state.locked = {};
+      state.aspectLocked = {};
     },
   },
 });
@@ -118,6 +129,7 @@ export const {
   setExpanded,
   setNodeHidden,
   setNodeLocked,
+  setAspectLocked,
   remapNodeIds,
   setGroupCollapsed,
   resetExpanded,
@@ -129,6 +141,7 @@ export const getSelectedNode = (state: RootState) => state.uiDesigner.selectedNo
 export const getExpanded = (state: RootState) => state.uiDesigner.expanded;
 export const getHiddenNodes = (state: RootState) => state.uiDesigner.hidden;
 export const getLockedNodes = (state: RootState) => state.uiDesigner.locked;
+export const getAspectLockedNodes = (state: RootState) => state.uiDesigner.aspectLocked;
 export const getCollapsedGroups = (state: RootState) => state.uiDesigner.collapsedGroups;
 
 export default uiDesignerSlice.reducer;

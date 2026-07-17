@@ -16,6 +16,7 @@ import type { Entity, PBUiTransform } from '@dcl/ecs';
 import { useAssetUrl } from '../../hooks/useAssetUrl';
 import { useAppDispatch, useAppSelector } from '../../redux/hooks';
 import {
+  getAspectLockedNodes,
   getHiddenNodes,
   getLockedNodes,
   getSelectedNode,
@@ -34,6 +35,7 @@ import {
   spliceAddChild,
   spliceInsertComponent,
   spliceMove,
+  spliceSetRootChild,
   spliceUiTransformMargin,
   spliceUiTransformPosition,
   spliceUiTransformResize,
@@ -576,6 +578,15 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node, hidden }) => {
   const isLocked = useAppSelector(
     state => !!getLockedNodes(state)[node.entity as unknown as number],
   );
+  // Aspect-ratio lock (Size row toggle). Held in a ref too, so the window resize
+  // handler reads the latest value without re-subscribing its effect.
+  const aspectLocked = useAppSelector(
+    state => !!getAspectLockedNodes(state)[node.entity as unknown as number],
+  );
+  const aspectLockedRef = useRef(aspectLocked);
+  useEffect(() => {
+    aspectLockedRef.current = aspectLocked;
+  }, [aspectLocked]);
   const text = (node.uiText ?? {}) as { value?: string };
   const input = (node.uiInput ?? {}) as { placeholder?: string; value?: string };
   const dropdown = (node.uiDropdown ?? {}) as {
@@ -702,9 +713,10 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node, hidden }) => {
   } | null>(null);
 
   // --- Reorder-drag state (in-flow nodes) ---
-  // Dragging an in-flow node reorders it among its in-flow siblings along the
-  // parent's flex axis (Figma/Penpot flex-layout semantics) — it NEVER changes
-  // positionType. Alt+drag opts into the legacy convert-to-absolute move.
+  // NOTE: currently UNUSED — canvas drag MOVES (in-flow via margin; see
+  // handleMouseDown / the drag handleUp), and node reordering lives in the Nodes
+  // tree. This scaffolding (insertion indicator + spliceMove) is kept for a
+  // possible future opt-in; nothing sets `isReordering` today.
   const reorderRef = useRef<{
     parentEl: HTMLElement;
     axis: 'x' | 'y';
@@ -717,13 +729,6 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node, hidden }) => {
     index: number;
   } | null>(null);
   const [isReordering, setIsReordering] = useState(false);
-  // Hold the drag offset after a reorder drop until the committed `rightOf`
-  // lands (same async round-trip rationale as `optimisticPos`).
-  const [pendingReorder, setPendingReorder] = useState<{
-    rightOf: number;
-    dx: number;
-    dy: number;
-  } | null>(null);
 
   // --- Resize-tool state ---
   const resizeOriginRef = useRef<{
@@ -806,10 +811,9 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node, hidden }) => {
       e.stopPropagation();
       e.preventDefault();
 
-      // Canvas drag = MOVE. Reorder / reparent live in the Nodes tree, so a drag
-      // never has to disambiguate move-vs-reorder. The move adapts to the node's
-      // layout mode on drop (see the drag handleUp): absolute → position,
-      // in-flow → margin. No positionType conversion.
+      // Canvas drag = MOVE. The move adapts to the node's layout mode on drop
+      // (see the drag handleUp): absolute → position, in-flow → margin. No
+      // positionType conversion. (Reorder/reparent live in the Nodes tree.)
       const isAbsolute = t?.positionType === YGPT_ABSOLUTE;
 
       // Anchor the drag at the node's current rendered position (relative to its
@@ -956,14 +960,6 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node, hidden }) => {
     };
   }, [isReordering, node.entity]);
 
-  // Release the reorder hold once the committed rightOf matches the write.
-  useEffect(() => {
-    if (!pendingReorder) return;
-    const rt = node.uiTransform as { rightOf?: number } | undefined;
-    if ((rt?.rightOf ?? 0) !== pendingReorder.rightOf) return;
-    setPendingReorder(null);
-  }, [node, pendingReorder]);
-
   // Clear the optimistic hold once the committed transform matches the dropped
   // position (so external edits / the property panel drive rendering again).
   useEffect(() => {
@@ -1033,20 +1029,39 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node, hidden }) => {
       const snap = (v: number) => Math.round(v / DRAG_SNAP_GRID) * DRAG_SNAP_GRID;
       const doSnap = !e.shiftKey;
 
-      let nextLeft = origin.startLeft + dxRaw * axes.dx;
-      let nextTop = origin.startTop + dyRaw * axes.dy;
       let nextW = origin.startW + dxRaw * axes.dw;
       let nextH = origin.startH + dyRaw * axes.dh;
 
       if (doSnap) {
-        nextLeft = snap(nextLeft);
-        nextTop = snap(nextTop);
         nextW = snap(nextW);
         nextH = snap(nextH);
       }
       // Don't allow negative sizes — clamp at 0.
       nextW = Math.max(0, nextW);
       nextH = Math.max(0, nextH);
+
+      // Aspect-ratio lock (Size toggle) or Ctrl held → constrain to the node's
+      // original W:H. The axis that moved more (normalised by the ratio) drives;
+      // the other is derived. macOS turns Ctrl+click into a secondary click, so
+      // the handles preventDefault their contextmenu (see render).
+      if ((aspectLockedRef.current || e.ctrlKey) && origin.startW > 0 && origin.startH > 0) {
+        const ratio = origin.startW / origin.startH;
+        const drivesWidth =
+          axes.dw !== 0 &&
+          (axes.dh === 0 ||
+            Math.abs(nextW - origin.startW) * origin.startH >=
+              Math.abs(nextH - origin.startH) * origin.startW);
+        if (drivesWidth) nextH = Math.max(0, nextW / ratio);
+        else nextW = Math.max(0, nextH * ratio);
+      }
+
+      // Keep the edge opposite the dragged handle fixed by deriving the top-left
+      // from the (possibly constrained) size, so left/top drags grow toward the
+      // handle and the anchor never drifts. dx===1 ⇔ a left-moving handle;
+      // dy===1 ⇔ a top-moving handle.
+      const nextLeft =
+        axes.dx === 1 ? origin.startLeft + (origin.startW - nextW) : origin.startLeft;
+      const nextTop = axes.dy === 1 ? origin.startTop + (origin.startH - nextH) : origin.startTop;
 
       resizeLiveRef.current = {
         dx: nextLeft - origin.startLeft,
@@ -1106,12 +1121,7 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node, hidden }) => {
   // Apply the live drag offset visually via CSS transform so we don't write
   // to the CRDT/data-layer until the user releases the mouse.
   const baseStyle = nodeStyle(node);
-  const liveOffset =
-    isDragging || isReordering
-      ? liveOffsetRef.current
-      : pendingReorder
-        ? { dx: pendingReorder.dx, dy: pendingReorder.dy }
-        : null;
+  const liveOffset = isDragging || isReordering ? liveOffsetRef.current : null;
   let style: React.CSSProperties = liveOffset
     ? {
         ...baseStyle,
@@ -1242,6 +1252,9 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node, hidden }) => {
               key={dir}
               className={cx('ui-designer-resize-handle', dir)}
               onMouseDown={handleResizeStart(dir)}
+              // Ctrl+drag constrains the ratio; on macOS Ctrl+click is a
+              // secondary click, so suppress the context menu on the handle.
+              onContextMenu={e => e.preventDefault()}
             />
           ))
         : null}
@@ -1413,7 +1426,7 @@ const CanvasComponentRefNode: React.FC<{ node: CodeUINode; hidden?: boolean }> =
       data-entity={String(node.entity)}
       title={`<${name} /> — a nested UI component. Edit it by opening "${name}".`}
     >
-      {resolved ? (
+      {resolved?.parsed ? (
         <CanvasReadonlyNode
           node={resolved.parsed.root}
           resolveMap={resolved.resolveMap}
@@ -1460,11 +1473,59 @@ const CanvasNodeView: React.FC<CanvasNodeProps> = ({ node }) => {
   );
 };
 
+// Shown when a GUI is selected but its component is EMPTY (a plain `return`, no
+// elements). A drop target for the first element: drag a widget from the palette,
+// or click "+ Add element". Either routes through spliceSetRootChild, which
+// splices the `return (<…/>)` and turns the empty root into a real tree.
+const EmptyRootDropZone: React.FC = () => {
+  const btnRef = useRef<HTMLButtonElement>(null);
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [{ isOver }, drop] = useDrop<UIDesignerDragItem, unknown, { isOver: boolean }>(
+    () => ({
+      accept: UI_DESIGNER_DND_TYPE,
+      drop: (item, monitor) => {
+        if (monitor.didDrop()) return;
+        if (item.source === 'palette') void spliceSetRootChild(item.type, item.preset);
+      },
+      collect: monitor => ({ isOver: monitor.isOver({ shallow: true }) }),
+    }),
+    [],
+  );
+  return (
+    <div className="ui-designer-canvas-empty">
+      <div
+        ref={drop}
+        className={cx('ui-designer-canvas-emptyroot', { over: isOver })}
+      >
+        <p className="ui-designer-canvas-emptyroot-title">This GUI is empty</p>
+        <p className="ui-designer-canvas-emptyroot-hint">
+          Drag a widget from the palette here to add your first element.
+        </p>
+        <button
+          ref={btnRef}
+          type="button"
+          className="ui-designer-canvas-emptyroot-add"
+          onClick={() => setPickerOpen(true)}
+        >
+          + Add element
+        </button>
+        {pickerOpen ? (
+          <WidgetPicker
+            anchorRef={btnRef}
+            onAdd={(type, preset) => void spliceSetRootChild(type, preset)}
+            onDismiss={() => setPickerOpen(false)}
+          />
+        ) : null}
+      </div>
+    </div>
+  );
+};
+
 const CanvasComponent: React.FC = () => {
   const tree = useUINodeTree();
   // Resolve `state.<var>` → its default value for the text preview (built once
   // here; every CanvasNode reads it via VarPreviewContext).
-  const { bindingSurface } = useCodeState();
+  const { bindingSurface, emptyRoot } = useCodeState();
   const resolveVar = useMemo(() => {
     const map = buildResolveMap(bindingSurface.variables);
     return (expr: string) => map[expr];
@@ -1666,13 +1727,15 @@ const CanvasComponent: React.FC = () => {
                 </div>
               )}
             </>
+          ) : emptyRoot ? (
+            <EmptyRootDropZone />
           ) : (
             <div className="ui-designer-canvas-empty">
               <EmptyState
                 icon={<IoLayersOutline />}
-                title="No UI yet"
-                message="Create a UI to start designing your scene's interface, then drag widgets from the palette below."
-                action={<Button onClick={createRoot}>+ New UI</Button>}
+                title="No GUI yet"
+                message="Create a GUI to start designing your scene's interface, then drag widgets from the palette below."
+                action={<Button onClick={createRoot}>+ New GUI</Button>}
               />
             </div>
           )}

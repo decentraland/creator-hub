@@ -32,16 +32,18 @@ const VALUE_EVENT_FIELDS = new Set([
 ]);
 
 // The thunk spliced into an event attribute / callback prop for handler `name`.
-// The param is annotated (scene tsconfigs are strict — a bare `(value)` is an
-// implicit any), and its optionality mirrors the assignment target: a callback
-// PROP is declared `(value?: …) => void`, so under strict function types the
-// bound arrow's param must be optional too.
+// The handler takes the args OBJECT `{ state, props, value }`, so the thunk passes
+// `{ state, props }` (both are in scope inside the component render), adding
+// `value` for events that deliver one. The `value` param is annotated (scene
+// tsconfigs are strict — a bare `(value)` is an implicit any) and typed `unknown`
+// (its value-linking design is deferred); its optionality mirrors the target — a
+// callback PROP is `(value?: unknown) => void`, so the arrow's param is optional.
 export function thunkExprFor(field: FieldConfig, name: string): string {
   const key = `${field.componentId}.${field.path}`;
-  if (VALUE_EVENT_FIELDS.has(key)) return `(value: string | number) => ${name}(state, value)`;
+  if (VALUE_EVENT_FIELDS.has(key)) return `(value: unknown) => ${name}({ state, props, value })`;
   if (field.componentId === 'ui::props')
-    return `(value?: string | number) => ${name}(state, value)`;
-  return `() => ${name}(state)`;
+    return `(value?: unknown) => ${name}({ state, props, value })`;
+  return `() => ${name}({ state, props })`;
 }
 
 // On a string-kind field every non-string variable is shown (it coerces to a
@@ -141,7 +143,7 @@ export const VariablePicker: React.FC<VariablePickerProps> = ({
     >
       {items.length === 0 ? (
         <div className="ui-designer-variable-picker-empty">
-          {isCallback ? 'No callbacks yet.' : 'No compatible variables.'}
+          {isCallback ? 'No actions yet.' : 'No compatible variables.'}
         </div>
       ) : null}
       {items.map(item => (
@@ -166,7 +168,7 @@ export const VariablePicker: React.FC<VariablePickerProps> = ({
             autoCorrect="off"
             autoCapitalize="off"
             value={name}
-            placeholder={isCallback ? 'Callback name' : 'Variable name'}
+            placeholder={isCallback ? 'Action name' : 'Variable name'}
             onChange={e => {
               setName(e.target.value);
               setError(undefined);
@@ -195,7 +197,7 @@ export const VariablePicker: React.FC<VariablePickerProps> = ({
             setAdding(true);
           }}
         >
-          {isCallback ? '+ Add new callback…' : '+ Add new variable…'}
+          {isCallback ? '+ Add new action…' : '+ Add new variable…'}
         </button>
       )}
     </div>,

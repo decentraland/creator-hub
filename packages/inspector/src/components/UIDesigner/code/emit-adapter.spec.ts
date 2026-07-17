@@ -6,14 +6,16 @@ import {
   emitElement,
   ensureNamedImport,
   insertChild,
+  insertSibling,
   removeAttribute,
   setAttribute,
   setAttributeExpr,
   setAttributeSegments,
   setObjectField,
   setObjectFields,
+  setReturnJsx,
 } from './emit-adapter';
-import { codeToUINodes } from './parse-adapter';
+import { codeToUINodes, findComponentFn } from './parse-adapter';
 import type { CodeUINode } from './types';
 
 function parse(source: string) {
@@ -92,6 +94,41 @@ describe('when splicing visual edits back into the source', () => {
       expect((added.uiTransform as Record<string, number>).width).toBe(10);
       // The pre-existing Label is untouched.
       expect(reparsed.root.children[0].type).toBe('Label');
+    });
+  });
+
+  describe('and inserting a sibling relative to a target element', () => {
+    const firstChildAst = (parsed: ReturnType<typeof parse>) =>
+      parsed.astNodes.get(parsed.root.children[0].entity as unknown as number) as any;
+
+    it('inserts a new element BEFORE the target sibling', () => {
+      const parsed = parse(SOURCE);
+      const edits = insertSibling(
+        firstChildAst(parsed),
+        SOURCE,
+        '<Button value="B" fontSize={12} />',
+        'before',
+      );
+      const reparsed = parse(applyEdits(SOURCE, edits));
+      expect(reparsed.root.children).toHaveLength(2);
+      expect(reparsed.root.children[0].type).toBe('Button');
+      expect(reparsed.root.children[1].type).toBe('Label');
+    });
+
+    it('inserts a new element AFTER the target sibling and reparses cleanly', () => {
+      const parsed = parse(SOURCE);
+      const edits = insertSibling(
+        firstChildAst(parsed),
+        SOURCE,
+        '<Button value="B" fontSize={12} />',
+        'after',
+      );
+      const next = applyEdits(SOURCE, edits);
+      expect(parseSync('S.tsx', next).errors).toHaveLength(0);
+      const reparsed = parse(next);
+      expect(reparsed.root.children).toHaveLength(2);
+      expect(reparsed.root.children[0].type).toBe('Label');
+      expect(reparsed.root.children[1].type).toBe('Button');
     });
   });
 
@@ -313,5 +350,46 @@ describe('when a string attribute needs escape sequences', () => {
     const { el } = label(SRC);
     const next = applyEdits(SRC, setAttribute(el, 'value', 'plain text'));
     expect(next).toContain('value="plain text"');
+  });
+});
+
+describe('setReturnJsx (place the first element into a component body)', () => {
+  const fnOf = (source: string) => {
+    const r = parseSync('S.tsx', source);
+    expect(r.errors).toHaveLength(0);
+    return findComponentFn(r.program as any, 'S') as any;
+  };
+
+  it('inserts the argument after a bare `return` (empty root → first element)', () => {
+    const src = 'export function S() {\n  return\n}';
+    const next = applyEdits(src, setReturnJsx(fnOf(src), src, '<UiEntity />'));
+    expect(parseSync('S.tsx', next).errors).toHaveLength(0);
+    expect(parse(next).root.type).toBe('UiEntity');
+  });
+
+  it('replaces a `return null` with the element', () => {
+    const src = 'export function S() {\n  return null\n}';
+    const next = applyEdits(
+      src,
+      setReturnJsx(fnOf(src), src, '<Label value="Hi" fontSize={12} />'),
+    );
+    expect(next).not.toContain('null');
+    expect(parse(next).root.type).toBe('Label');
+  });
+
+  it('replaces an existing returned element', () => {
+    const src = 'export function S() {\n  return (\n    <UiEntity />\n  )\n}';
+    const next = applyEdits(
+      src,
+      setReturnJsx(fnOf(src), src, '<Label value="Hi" fontSize={12} />'),
+    );
+    expect(parse(next).root.type).toBe('Label');
+  });
+
+  it('inserts a return when the body has none', () => {
+    const src = 'export function S() {\n}';
+    const next = applyEdits(src, setReturnJsx(fnOf(src), src, '<UiEntity />'));
+    expect(parseSync('S.tsx', next).errors).toHaveLength(0);
+    expect(parse(next).root.type).toBe('UiEntity');
   });
 });

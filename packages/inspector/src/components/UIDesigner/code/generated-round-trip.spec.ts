@@ -22,9 +22,39 @@ function parse(filename: string, source: string) {
   return parsed!;
 }
 
+// A representative SEEDED root (UiEntity + Label). generateRootComponent now
+// starts empty (see the empty-seed test below), so the canvas<->code round-trip
+// tests use this fixture to exercise real content.
+function seededRoot(name: string): string {
+  return `/** @jsx ReactEcs.createElement */
+import ReactEcs, { UiEntity, Label } from '@dcl/sdk/react-ecs'
+
+export interface State {}
+export const state: State = {}
+
+export function ${name}() {
+  return (
+    <UiEntity uiTransform={{ width: 400, height: 200, positionType: 'absolute', position: { top: 40, left: 40 } }}>
+      <Label value="${name}" fontSize={32} uiTransform={{ width: 360, height: 48, margin: { top: 16, left: 16 } }} />
+    </UiEntity>
+  )
+}
+`;
+}
+
 describe('when round-tripping a generated root file (code <-> canvas)', () => {
-  it('should parse the generated root and derive the expected canvas tree', () => {
+  it('seeds an EMPTY component (no elements) — a valid empty GUI, not an error', () => {
     const source = generateRootComponent('MyScreen');
+    const result = parseSync('MyScreen.tsx', source);
+    expect(result.errors).toHaveLength(0);
+    // Empty body → no single JSX root → codeToUINodes is null. The store treats
+    // this as a valid empty GUI (emptyRoot), not the convention error, and shows
+    // a "drop your first element" canvas.
+    expect(codeToUINodes(result.program as any, source)).toBeNull();
+  });
+
+  it('should parse the generated root and derive the expected canvas tree', () => {
+    const source = seededRoot('MyScreen');
     const { root } = parse('MyScreen.tsx', source);
     expect(root.type).toBe('UiEntity');
     const label = root.children[0] as CodeUINode;
@@ -36,7 +66,7 @@ describe('when round-tripping a generated root file (code <-> canvas)', () => {
   });
 
   it('should reflect a canvas resize back into the generated code (canvas -> code)', () => {
-    const source = generateRootComponent('MyScreen');
+    const source = seededRoot('MyScreen');
     const parsed = parse('MyScreen.tsx', source);
     const rootAst = parsed.astNodes.get(parsed.root.entity as unknown as number) as any;
 
@@ -55,7 +85,7 @@ describe('when round-tripping a generated root file (code <-> canvas)', () => {
   });
 
   it('should reflect a canvas add-child back into the generated code (canvas -> code)', () => {
-    const source = generateRootComponent('MyScreen');
+    const source = seededRoot('MyScreen');
     const parsed = parse('MyScreen.tsx', source);
     const rootAst = parsed.astNodes.get(parsed.root.entity as unknown as number) as any;
 
@@ -92,7 +122,7 @@ export function MainUI() {
   });
 
   it('should mark children with a parent so the canvas treats only the root as root', () => {
-    const source = generateRootComponent('MyScreen');
+    const source = seededRoot('MyScreen');
     const { root } = parse('MyScreen.tsx', source);
     // Root has no parent (fills the screen); the child carries the root's id.
     expect((root.uiTransform as any)?.parent).toBeUndefined();
@@ -100,7 +130,7 @@ export function MainUI() {
   });
 
   it('should move an in-flow node by splicing margin (canvas move → code)', () => {
-    const source = generateRootComponent('MyScreen');
+    const source = seededRoot('MyScreen');
     const parsed = parse('MyScreen.tsx', source);
     const labelAst = parsed.astNodes.get(
       parsed.root.children[0].entity as unknown as number,
@@ -120,7 +150,7 @@ export function MainUI() {
   });
 
   it('should switch an in-flow node to absolute via a whole-uiTransform re-emit (panel → code)', () => {
-    const source = generateRootComponent('MyScreen');
+    const source = seededRoot('MyScreen');
     const parsed = parse('MyScreen.tsx', source);
     const label = parsed.root.children[0] as CodeUINode;
     const labelAst = parsed.astNodes.get(label.entity as unknown as number) as any;
@@ -162,7 +192,19 @@ export function MainUI() {
   });
 
   it('should duplicate a child as a following sibling whose span starts one char past the original', () => {
-    const src = generateRootComponent('MainUI');
+    // A seeded (non-empty) root — generateRootComponent now starts EMPTY, so use
+    // an inline source with a child to exercise the duplicate-splice offset.
+    const src = `/** @jsx ReactEcs.createElement */
+import ReactEcs, { UiEntity, Label } from '@dcl/sdk/react-ecs'
+
+export function MainUI() {
+  return (
+    <UiEntity uiTransform={{ width: 400, height: 200 }}>
+      <Label value="MainUI" fontSize={32} />
+    </UiEntity>
+  )
+}
+`;
     const parsed = parse('MainUI.tsx', src);
     const child = parsed.root.children[0];
     const [childStart, childEnd] = parsed.spans.get(child.entity as unknown as number)!;

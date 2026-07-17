@@ -96,8 +96,8 @@ const CodeVariablesPanelComponent: React.FC = () => {
     return (
       <EmptyState
         icon={<IoListOutline />}
-        title="No UI root"
-        message="Create or select a UI root to declare variables you can bind fields to."
+        title="No GUI selected"
+        message="Create or select a GUI to declare state variables you can bind fields to."
       />
     );
   }
@@ -127,12 +127,13 @@ const CodeVariablesPanelComponent: React.FC = () => {
 
   return (
     <div className="ui-designer-code-variables">
+      <div className="ui-designer-code-variables-title">State</div>
       <div className="ui-designer-code-variables-hint">
-        Variables for <code>{filename.split('/').pop()}</code>
+        This GUI's own data · <code>{filename.split('/').pop()}</code>
       </div>
 
       {stateVars.length === 0 && markerVars.length === 0 && importedVars.length === 0 ? (
-        <div className="ui-designer-code-variables-empty">No variables yet.</div>
+        <div className="ui-designer-code-variables-empty">No state variables yet.</div>
       ) : null}
 
       {stateVars.map(v => (

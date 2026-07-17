@@ -232,6 +232,46 @@ export function insertChild(parentEl: AstNode, source: string, childJsx: string)
   return [{ start: at, end: open.end, text: `>\n  ${childJsx}\n</${tag}>` }];
 }
 
+// Insert a NEW element as a sibling of `targetEl`, before or after it, matching
+// the target's indentation. Used by the tree's drop-at-position (a palette widget
+// dropped in the top/bottom third of a row lands before/after that sibling).
+export function insertSibling(
+  targetEl: AstNode,
+  source: string,
+  childJsx: string,
+  position: 'before' | 'after',
+): Edit[] {
+  const indent = lineIndent(source, targetEl.start);
+  if (position === 'before') {
+    return [{ start: targetEl.start, end: targetEl.start, text: `${childJsx}\n${indent}` }];
+  }
+  return [{ start: targetEl.end, end: targetEl.end, text: `\n${indent}${childJsx}` }];
+}
+
+// Set (or insert) the JSX a component returns — places the FIRST element into an
+// empty root. Handles `return <existing/>` (replace the argument), `return` /
+// `return;` (insert the argument after the keyword), and a body with no return
+// at all (insert one before the closing brace). `fnNode` is the component
+// function node (parse-adapter.findComponentFn); its `.body` must be a block.
+export function setReturnJsx(fnNode: AstNode, source: string, childJsx: string): Edit[] {
+  const body = fnNode.body as AstNode | undefined;
+  if (!body || body.type !== 'BlockStatement') return [];
+  const stmts = (body.body ?? []) as AstNode[];
+  const ret = stmts.find(s => s.type === 'ReturnStatement');
+  const indent = lineIndent(source, (ret ?? body).start);
+  const wrapped = `(\n${indent}  ${childJsx}\n${indent})`;
+  if (ret) {
+    const arg = ret.argument as AstNode | undefined;
+    if (arg) return [{ start: arg.start, end: arg.end, text: wrapped }];
+    // Bare `return` / `return;` — insert the argument right after the keyword.
+    const at = source.indexOf('return', ret.start) + 'return'.length;
+    return [{ start: at, end: at, text: ` ${wrapped}` }];
+  }
+  // No return statement — insert one just before the block's closing brace.
+  const at = body.end - 1;
+  return [{ start: at, end: at, text: `${indent}  return ${wrapped}\n${indent}` }];
+}
+
 // A JSX plain attribute string (`value="…"`) does NOT process escape
 // sequences — the literal runs to the next quote, so a `"` in the value emits
 // invalid JSX ("Unterminated string") and a `\n` reads back as a literal
