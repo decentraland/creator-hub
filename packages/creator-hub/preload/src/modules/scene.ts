@@ -21,7 +21,28 @@ function getScenePath(_path: string): string {
  */
 export async function getScene(_path: string): Promise<Scene> {
   const scene = await fs.readFile(getScenePath(_path), 'utf8');
-  return JSON.parse(scene);
+  return sanitizeScene(JSON.parse(scene));
+}
+
+const DEFAULT_PARCEL = '0,0';
+const PARCEL_REGEX = /^\s*-?\d+\s*,\s*-?\d+\s*$/;
+
+function isValidParcel(value: unknown): value is string {
+  return typeof value === 'string' && PARCEL_REGEX.test(value);
+}
+
+/**
+ * Replaces invalid parcels/base values with defaults so a malformed scene.json
+ * (e.g. numeric parcels like [0,0] instead of ["0,0"]) can't break project loading.
+ */
+export function sanitizeScene(scene: Scene): Scene {
+  const rawParcels = Array.isArray(scene?.scene?.parcels) ? scene.scene.parcels : [];
+  const parcels = rawParcels.filter(isValidParcel);
+  const base = isValidParcel(scene?.scene?.base)
+    ? scene.scene.base
+    : (parcels[0] ?? DEFAULT_PARCEL);
+  if (parcels.length === 0) parcels.push(base);
+  return { ...scene, scene: { ...scene?.scene, parcels, base } };
 }
 
 /**

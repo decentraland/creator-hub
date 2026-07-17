@@ -5,7 +5,7 @@ import type { Scene } from '@dcl/schemas';
 import type { FileSystemInterface } from '../types';
 import type { EditorComponentsTypes } from '../../sdk/components';
 import { EditorComponentNames } from '../../sdk/components';
-import { fromSceneComponent } from './utils/component';
+import { fromSceneComponent, getValidParcels } from './utils/component';
 import {
   type StateProvider,
   type Operation,
@@ -49,11 +49,19 @@ export class SceneProvider implements StateProvider {
   }
 
   private static augmentDefaults(scene: Scene): SceneWithDefaults {
+    // a scene must always have at least one valid parcel: fall back to the base parcel,
+    // and only to 0,0 when there is no other known set of coordinates
+    const { parcels, base } = getValidParcels(scene.scene);
     return {
       ...scene,
       display: {
         ...scene.display,
         title: scene.display?.title || '',
+      },
+      scene: {
+        ...scene.scene,
+        base,
+        parcels,
       },
     };
   }
