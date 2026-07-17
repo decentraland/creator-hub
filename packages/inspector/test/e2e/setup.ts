@@ -45,6 +45,14 @@ beforeAll(async () => {
   });
   page = await browser.newPage();
 
+  // Capture browser console + page errors so the flaky-CI diagnostics
+  // (see AppPageObject.waitUntilReady) can report what the page logged when
+  // the inspector fails to become ready.
+  const consoleLogs: string[] = [];
+  page.on('console', msg => consoleLogs.push(`[${msg.type()}] ${msg.text()}`));
+  page.on('pageerror', err => consoleLogs.push(`[pageerror] ${err.message}`));
+  (global as any).__e2eConsoleLogs = consoleLogs;
+
   // Optimize page performance
   await page.addInitScript(() => {
     // Disable animations and transitions

@@ -82,6 +82,16 @@ jobs:
           NODE_OPTIONS: "--max-old-space-size=8192"
           E2E_CONTENT_URL: https://builder-items.decentraland.zone
 
+      # Diagnostics for the flaky "app never becomes visible" failure.
+      - name: upload e2e diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: inspector-e2e-diagnostics
+          path: packages/inspector/test-results
+          if-no-files-found: ignore
+          retention-days: 3
+
   # Creator Hub E2E cold-launches the real Electron app (Playwright _electron),
   # so it must run on macOS. It reuses the prebuilt creator-hub dist and launches
   # via test:e2e:ci (no rebuild). _electron drives the app's own Chromium, so no
