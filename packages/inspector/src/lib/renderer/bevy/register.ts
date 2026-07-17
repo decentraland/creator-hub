@@ -225,25 +225,41 @@ export function registerBevyRenderer(): void {
       const sceneRunBridge = createSceneRunBridge();
       bevy.setSceneRunPoster(running => sceneRunBridge.setRunning(running));
 
-      // Wire the engine-window bindings for the initial boot. Re-run on reload.
+      // Wire the engine-window bindings for the initial boot. Re-run on reboot.
       rewireEngineBindings(engine.engineWindow);
+
+      // Reboot the engine iframe from scratch: re-navigates it (re-fetching the
+      // realm's /about + scene bundle = the scene's authored INITIAL state) and
+      // re-wires the engine-window bindings against the new window. Shared by the
+      // layout-reload bridge (#1369) and Stop/reset (#1376). A fresh boot re-runs
+      // the initial CRDT load burst, so the forward bridge re-arms and re-applies
+      // the editor visibility overrides.
+      const rebootEngine = async () => {
+        const engineWindow = await engine.reload();
+        rewireEngineBindings(engineWindow);
+      };
 
       // Parcel-layout changes (#1369): the engine reads its parcel bounds from the
       // realm's /about at BOOT — a runtime `reload` re-runs the scene code but does
       // NOT re-read dimensions, so the only way to reflect a layout edit is a full
       // engine reboot (what close/reopen does). Watch the Scene component's parcels
-      // and reboot the engine iframe when they change; a fresh boot re-fetches the
-      // realm (new parcels) and re-runs the initial CRDT load — which re-arms the
-      // forward bridge, re-applying the editor visibility overrides. Then re-assert
-      // the current freeze/run state (the agent's boot-freeze applied to the OLD
-      // engine instance is gone).
+      // and reboot when they change; re-assert the current freeze/run state
+      // afterwards (the agent's boot-freeze applied to the OLD engine is gone).
       const disconnectLayoutReload = createLayoutReloadBridge({
         context: bevy.context,
-        reboot: async () => {
-          const engineWindow = await engine.reload();
-          rewireEngineBindings(engineWindow);
-        },
+        reboot: rebootEngine,
         onReloaded: () => sceneRunBridge.setRunning(sceneRunBridge.isRunning()),
+      });
+
+      // Stop/reset (#1376): restart the inspected scene to its initial state, then
+      // freeze it (the editor default). Play/Pause only run/halt the scene where it
+      // is; this is the way back to the start. Uses the agent's scene-scoped
+      // `reload` (fast — NO engine/iframe reboot, unlike a layout change which must
+      // reboot to re-read dimensions); a freshly reloaded scene starts running, so
+      // re-assert freeze right after.
+      bevy.setSceneResetter(async () => {
+        sceneRunBridge.reset();
+        sceneRunBridge.setRunning(false);
       });
 
       // Spawn-point handle: the controller shows/hides the move-handle via the

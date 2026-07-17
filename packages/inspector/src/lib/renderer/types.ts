@@ -343,6 +343,14 @@ export interface RendererSceneRun {
   setRunning(running: boolean): void;
   /** Notify on run/freeze change (so a toolbar toggle reflects the state). */
   onRunChange(cb: (running: boolean) => void): Unsubscribe;
+  /**
+   * Stop: reset the scene to its initial state and freeze it. Play/Pause only
+   * run/halt the scene where it is — there's no way back to the start (e.g. a
+   * character that walked toward the player). Reset reboots the scene from the
+   * realm (its authored initial state) and leaves it frozen. Resolves once the
+   * reset completes.
+   */
+  reset(): Promise<void>;
 }
 
 /**

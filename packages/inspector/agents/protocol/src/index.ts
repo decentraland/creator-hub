@@ -184,6 +184,13 @@ export type PageToScene =
   // frozen; the toolbar toggle sends this. Enacted via the engine's
   // `/freeze_scene` / `/unfreeze_scene` console commands on the pinned scene.
   | { kind: 'set-scene-frozen'; frozen: boolean }
+  // Stop/reset the inspected scene to its authored initial state (the toolbar's
+  // Stop button, #1376). The agent restarts the scene in place via the engine's
+  // `reload <hash>` console command on the pinned scene — fast, scene-scoped
+  // (leaves the editor-agent portable running), and re-runs the SDK7 code from
+  // scratch so anything that moved (a walking NPC) returns to start. Freeze is
+  // re-asserted by the inspector afterwards (a fresh scene starts running).
+  | { kind: 'reset-scene' }
   // Vertical fly-camera movement held state (E = up, Q = down). Unlike WASD/Space
   // — which the engine delivers to the fly camera as InputActions — Q has NO
   // Decentraland `InputAction`, so the engine can't read it. The inspector (host)

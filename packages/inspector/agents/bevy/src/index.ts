@@ -40,6 +40,11 @@ import {
  * both grab and pick), so index.ts only wires selection + boot.
  */
 
+/** The pinned inspected scene's content hash (set by pinInspectedScene). Used to
+ * scope `reload <hash>` for Stop/reset so only the inspected scene restarts, not
+ * the editor-agent portable. */
+let pinnedSceneHash: string | null = null;
+
 export function main(): void {
   // Inspector → agent messages.
   bus.onSceneMessage(msg => {
@@ -100,6 +105,11 @@ export function main(): void {
     // Freeze (static) or run the inspected scene (the toolbar's run/freeze toggle).
     if (msg.kind === 'set-scene-frozen') {
       void setSceneFrozen(msg.frozen);
+      return;
+    }
+    // Stop/reset: restart the inspected scene to its initial state (toolbar Stop).
+    if (msg.kind === 'reset-scene') {
+      void resetScene();
       return;
     }
     // Vertical fly-camera keys forwarded by the host (E = up, Q = down): Q has no
@@ -196,6 +206,24 @@ async function setSceneFrozen(frozen: boolean): Promise<void> {
   }
 }
 
+/**
+ * Stop/reset (#1376): restart the inspected scene to its authored initial state.
+ * Uses the engine's `reload <hash>` console command scoped to the pinned scene —
+ * fast (no engine/iframe reboot) and it leaves the editor-agent portable running,
+ * while re-running the scene's SDK7 code from scratch so anything that moved (a
+ * walking NPC) returns to start. The inspector re-asserts freeze afterwards (a
+ * freshly reloaded scene starts running).
+ */
+async function resetScene(): Promise<void> {
+  const api = getBevyApi();
+  if (!api || !pinnedSceneHash) return;
+  try {
+    await api.consoleCommand('reload', [pinnedSceneHash]);
+  } catch (e) {
+    console.error('[bevy-agent] reset (reload) failed:', e);
+  }
+}
+
 /** Resolve once the player entity has actually spawned, or false after `ms`. */
 async function playerWithin(ms: number): Promise<boolean> {
   const deadline = Date.now() + ms;
@@ -262,6 +290,7 @@ async function pinInspectedScene(): Promise<{ x: number; y: number; z: number } 
       const scenes = (await api.liveSceneInfo()) ?? [];
       const target = scenes.find(s => !s.isPortable && !s.isSuper);
       if (target) {
+        pinnedSceneHash = target.hash;
         await api.consoleCommand('set_scene', [target.hash]);
         // Base parcel = min corner of the scene's parcels; drives the
         // scene-local → engine-world offset that BOTH the gizmo and the focus

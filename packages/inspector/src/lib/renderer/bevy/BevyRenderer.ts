@@ -108,6 +108,9 @@ export class BevyRenderer implements IRenderer {
   #sceneRunning = false;
   #postSceneRunning: ((running: boolean) => void) | null = null;
   #sceneRunHandlers = new Set<(running: boolean) => void>();
+  // Resets the scene to its initial state (reboot the engine + re-freeze).
+  // Injected by `register`; null in the conformance path (reset is then a no-op).
+  #sceneResetter: (() => Promise<void>) | null = null;
   // Posts a focus-on-entity to the agent (framing a world position). Injected by
   // `register`; null in the conformance path (focusOnEntity is then a no-op).
   #postFocus: ((position: Vector3) => void) | null = null;
@@ -314,6 +317,12 @@ export class BevyRenderer implements IRenderer {
     this.#postSceneRunning = post;
   }
 
+  /** Wire the scene resetter (Stop = reboot the engine to the scene's initial
+   * state + re-freeze). Injected by `register`. */
+  setSceneResetter(reset: () => Promise<void>): void {
+    this.#sceneResetter = reset;
+  }
+
   /** Wire focus-on-entity to the agent (frames a world position over the bus). */
   setFocusPoster(post: (position: Vector3) => void): void {
     this.#postFocus = post;
@@ -385,6 +394,18 @@ export class BevyRenderer implements IRenderer {
       onRunChange: (cb: (running: boolean) => void): Unsubscribe => {
         this.#sceneRunHandlers.add(cb);
         return () => this.#sceneRunHandlers.delete(cb);
+      },
+      reset: async (): Promise<void> => {
+        // Reboot the engine to the scene's authored initial state, then land on
+        // frozen (static) — the editor's default — regardless of the prior
+        // run/freeze state. `#sceneResetter` reboots and re-freezes; reflect the
+        // frozen state locally + notify listeners so the toolbar shows Play.
+        if (!this.#sceneResetter) return;
+        await this.#sceneResetter();
+        if (this.#sceneRunning) {
+          this.#sceneRunning = false;
+          for (const cb of this.#sceneRunHandlers) cb(false);
+        }
       },
     };
   }
