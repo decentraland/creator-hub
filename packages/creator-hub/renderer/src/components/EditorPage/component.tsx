@@ -195,7 +195,6 @@ export function EditorPage() {
     }
     const timer = setTimeout(() => setLoadTimedOut(true), 45_000);
     return () => clearTimeout(timer);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isReady, loadError, projectPath, useBevy]);
 
   const openModal = useCallback((type: ModalType, initialStep?: ModalState['initialStep']) => {

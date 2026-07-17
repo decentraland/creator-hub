@@ -1,9 +1,10 @@
 import React, { useCallback } from 'react';
 import { IoEyeOutline as VisibleIcon, IoEyeOffOutline as InvisibleIcon } from 'react-icons/io5';
 import { MdOutlineLock as LockIcon, MdOutlineLockOpen as UnlockIcon } from 'react-icons/md';
-import { Entity } from '@dcl/ecs';
+import type { Entity } from '@dcl/ecs';
 
-import { WithSdkProps, withSdk } from '../../../hoc/withSdk';
+import type { WithSdkProps } from '../../../hoc/withSdk';
+import { withSdk } from '../../../hoc/withSdk';
 import { useHasComponent } from '../../../hooks/sdk/useHasComponent';
 import { CAMERA, PLAYER, ROOT } from '../../../lib/sdk/tree';
 import { InfoTooltip } from '../../ui';
