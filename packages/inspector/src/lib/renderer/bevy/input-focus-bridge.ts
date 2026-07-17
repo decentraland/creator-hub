@@ -66,22 +66,32 @@ export function createInputFocusBridge(options: InputFocusBridgeOptions): () => 
     // Re-dispatch on the host so the inspector's shortcut listeners fire as if it
     // had focus. The engine still receives the original event (not cancelled).
     //
-    // Dispatch on the host DOCUMENT with bubbles:true — the inspector's hotkeys
-    // (hotkeys-js via useHotkey) listen on `document`, so an event dispatched on
-    // `window` (or a non-bubbling one) never reaches them; that's what left
-    // undo/redo/save/etc. dead when the engine iframe held focus. Bubbling from
-    // document also reaches any window-level listeners.
-    (hostWindow.document ?? hostWindow).dispatchEvent(
+    // Two things the forwarded event MUST carry, or nothing fires (#1370):
+    //  - keyCode/which: hotkeys-js matches shortcuts by NUMERIC keyCode, not
+    //    `key`. A KeyboardEvent built without keyCode reports keyCode 0, so
+    //    hotkeys-js matches nothing — this is why forwarded shortcuts were dead.
+    //  - the right dispatch target: hotkeys-js attaches a listener PER bound
+    //    element and only fires handlers bound to the element that received the
+    //    event. The Toolbar binds undo/redo/save on `document`; the Renderer binds
+    //    copy/paste/delete/duplicate/focus/zoom on `document.body`. Dispatching on
+    //    `body` fires the body listener AND bubbles to the document listener (each
+    //    filters to its own handlers — no double-fire), so BOTH sets work. A
+    //    dispatch on `document` alone would miss the body-bound ones.
+    const doc = hostWindow.document;
+    const target = (doc && (doc.body ?? doc)) ?? hostWindow;
+    target.dispatchEvent(
       new KeyboardEvent(e.type, {
         key: e.key,
         code: e.code,
+        keyCode: e.keyCode,
+        which: e.which,
         shiftKey: e.shiftKey,
         ctrlKey: e.ctrlKey,
         metaKey: e.metaKey,
         altKey: e.altKey,
         bubbles: true,
         cancelable: true,
-      }),
+      } as KeyboardEventInit),
     );
   };
 
