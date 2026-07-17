@@ -100,9 +100,6 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      # Source maps bloat the gh-pages tip (2.6GB of 3.6GB at time of writing),
-      # and every preview deploy clones that tip. New deploys exclude *.map;
-      # this purges the already-deployed ones and any future stragglers.
       - name: Purge source maps
         run: |
           git config user.name "github-actions[bot]"
