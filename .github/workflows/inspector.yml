@@ -43,7 +43,7 @@ jobs:
 
       - name: Bump release version
         id: semantic-version
-        uses: paulhatch/semantic-version@v5.4.0
+        uses: paulhatch/semantic-version@v6.0.3
         with:
           tag_prefix: "@dcl/inspector@"
           version_format: ${major}.${minor}.${patch}

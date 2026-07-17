@@ -38,7 +38,7 @@ jobs:
       # No restore-keys: a partial restore of compiled output would be silently wrong.
       - name: Restore build cache
         id: build-cache
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: |
             packages/asset-packs/dist
@@ -93,7 +93,7 @@ jobs:
           NODE_OPTIONS: "--max-old-space-size=8192"
 
       - name: upload proto-gen
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: proto-gen
           path: packages/inspector/src/lib/data-layer/proto/gen
@@ -101,7 +101,7 @@ jobs:
           retention-days: 1
 
       - name: upload asset-packs-dist
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: asset-packs-dist
           path: |
@@ -112,7 +112,7 @@ jobs:
           retention-days: 1
 
       - name: upload inspector-dist
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: inspector-dist
           path: |
@@ -122,7 +122,7 @@ jobs:
           retention-days: 1
 
       - name: upload creator-hub-dist
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: creator-hub-dist
           path: |

@@ -34,7 +34,7 @@ runs:
 
     - name: Cache node_modules
       id: cache-node-modules
-      uses: actions/cache@v4
+      uses: actions/cache@v6
       with:
         path: |
           node_modules
@@ -52,21 +52,21 @@ runs:
 
     - name: Cache protoc
       if: inputs.cache-protoc == 'true'
-      uses: actions/cache@v4
+      uses: actions/cache@v6
       with:
         path: node_modules/.bin/protobuf
         key: ${{ runner.os }}-protoc-${{ steps.protoc-version.outputs.version }}
 
     - name: Cache Playwright browsers
       if: inputs.cache-playwright == 'true'
-      uses: actions/cache@v4
+      uses: actions/cache@v6
       with:
         path: ~/.cache/ms-playwright
         key: ${{ runner.os }}-playwright-${{ hashFiles('package-lock.json') }}
 
     - name: Cache Electron
       if: inputs.cache-electron == 'true'
-      uses: actions/cache@v4
+      uses: actions/cache@v6
       with:
         path: |
           ~/.cache/electron
