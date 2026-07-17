@@ -20,6 +20,7 @@ export enum Method {
   OPEN_DIRECTORY = 'open_directory',
   PUSH_NOTIFICATION = 'push_notification',
   BROADCAST_MOBILE_DEBUG_COMMAND = 'broadcast_mobile_debug_command',
+  GET_FEATURE_FLAGS = 'get_feature_flags',
 }
 
 export type Params = {
@@ -27,6 +28,7 @@ export type Params = {
   [Method.OPEN_DIRECTORY]: { path: string; createIfNotExists?: boolean };
   [Method.PUSH_NOTIFICATION]: { notification: NotificationRequest };
   [Method.BROADCAST_MOBILE_DEBUG_COMMAND]: { cmd: string; args: Record<string, unknown> };
+  [Method.GET_FEATURE_FLAGS]: Record<string, never>;
 };
 
 export type Result = {
@@ -37,6 +39,7 @@ export type Result = {
     ok: boolean;
     results: { sessionId: number; ok: boolean; data: unknown }[];
   };
+  [Method.GET_FEATURE_FLAGS]: { flags: Record<string, boolean> };
 };
 
 export class SceneRpcServer extends RPC<Method, Params, Result> {
@@ -75,6 +78,12 @@ export class SceneRpcServer extends RPC<Method, Params, Result> {
 
     this.handle('broadcast_mobile_debug_command', async ({ cmd, args }) => {
       return editor.broadcastMobileDebugCommand(cmd, args);
+    });
+
+    // The inspector pulls flags once its scene server is ready — the initial push
+    // (setFeatureFlags) can land before a slow-booting renderer's server exists.
+    this.handle('get_feature_flags', async () => {
+      return { flags: store.getState().featureFlags.flags };
     });
   }
 }

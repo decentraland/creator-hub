@@ -14,7 +14,7 @@
     "@babylonjs/loaders": "8.7.0",
     "@babylonjs/materials": "8.7.0",
     "@babylonjs/serializers": "8.7.0",
-    "@dcl-regenesislabs/bevy-explorer-web": "0.1.0-28685093573.commit-4472a75",
+    "@dcl-regenesislabs/bevy-explorer-web": "0.1.0-28063284821.commit-cbfd320",
     "@dcl/ecs-math": "2.1.0",
     "@dcl/gltf-validator-ts": "^1.0.19",
     "@dcl/inspector-bevy-protocol": "file:agents/protocol",

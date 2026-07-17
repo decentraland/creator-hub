@@ -120,4 +120,30 @@ describe('BevySceneContext', () => {
       expect(calls).toBe(1);
     });
   });
+
+  describe('getGroundPlanes', () => {
+    it('should return [] when the scene has no layout', () => {
+      expect(ctx.getGroundPlanes()).toEqual([]);
+    });
+
+    it('should map layout parcels to base-relative world centers (scene at origin)', () => {
+      // Scene based at parcel (10, 20) with two parcels; the scene renders at the
+      // origin, so parcels are placed relative to the base and each ground plane
+      // is the parcel CENTER (grid*16 + 8).
+      ctx.editorComponents.Scene.createOrReplace(ctx.engine.RootEntity, {
+        layout: {
+          base: { x: 10, y: 20 },
+          parcels: [
+            { x: 10, y: 20 }, // base parcel → (0*16+8, 0*16+8) = (8, 8)
+            { x: 11, y: 20 }, // one east → (1*16+8, 0*16+8) = (24, 8)
+          ],
+        },
+      } as never);
+
+      expect(ctx.getGroundPlanes()).toEqual([
+        { x: 8, z: 8 },
+        { x: 24, z: 8 },
+      ]);
+    });
+  });
 });

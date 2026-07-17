@@ -9,6 +9,7 @@ import { createAnimationsBridge } from './animations-bridge';
 import { createDropPointBridge } from './drop-point-bridge';
 import { createForwardEditBridge } from './forward-edits';
 import { createInputFocusBridge } from './input-focus-bridge';
+import { createVerticalInputBridge } from './vertical-input-bridge';
 import { createModifierTracker } from './modifier-tracker';
 import { createPickBridge } from './pick-bridge';
 import { createPreviewBridge } from './preview-bridge';
@@ -148,8 +149,21 @@ export function registerBevyRenderer(): void {
       bevy.setAnimationsResolver(entity => animations.query(entity as number));
 
       // Editor camera: the toggle posts the chosen mode to the agent, which
-      // enacts the fly-camera takeover in the engine.
-      const cameraBridge = createCameraBridge();
+      // enacts the fly-camera takeover in the engine. The agent also streams the
+      // fly-camera's live pose back (scene-local) so the minimap tracks it —
+      // mirror it into the renderer's pose (what camera.getPose() reports).
+      const cameraBridge = createCameraBridge({
+        onPose: ({ position, target }) => {
+          bevy.camera.setPose(position, target);
+          // The Bevy engine renders in its own iframe, so there's no in-process
+          // render loop to drive `viewport.onFrame` subscribers (the minimap).
+          // The agent streams the camera pose every few engine frames regardless
+          // of movement, so treat each pose as a frame tick — it's a steady
+          // ~10fps signal that redraws the minimap (camera indicator + entity
+          // dots) with fresh data.
+          bevy.context.tick();
+        },
+      });
       bevy.setCameraModePoster(mode => cameraBridge.setMode(mode));
       bevy.setFocusPoster(position => cameraBridge.focus(position));
       bevy.setResetPoster(position => cameraBridge.reset(position));
@@ -178,10 +192,19 @@ export function registerBevyRenderer(): void {
         iframe: engine.iframe,
       });
 
+      // E/Q vertical fly movement: no SDK InputAction is bound to Q, so the engine
+      // can't read it. Capture E/Q on the engine window here and forward the held
+      // state to the agent's fly camera over the camera bridge.
+      const disconnectVertical = createVerticalInputBridge({
+        engineWindow: engine.engineWindow as unknown as Window,
+        onChange: (up, down) => cameraBridge.setVertical(up, down),
+      });
+
       return {
         renderer: bevy,
         engine: bevy.context.engine,
         dispose: () => {
+          disconnectVertical();
           disconnectInputFocus();
           modifiers.disconnect();
           disconnectPreview();
