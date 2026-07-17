@@ -44,6 +44,19 @@ export type GizmoMode = 'translate' | 'rotate' | 'scale' | 'free';
 export type CameraMode = 'avatar' | 'free';
 
 /**
+ * A spawn area to draw in the editor (#1374). `center` is the scene-local spawn
+ * position (the range midpoint on each axis); `halfExtents` is the box's half-size
+ * on X/Z derived from the coordinate ranges (0 when an axis is a single value —
+ * i.e. a point, not an area). `isDefault` marks the scene's default spawn point
+ * (drawn emphasized). Multiple spawn points → multiple areas.
+ */
+export interface SpawnArea {
+  center: BusVec3;
+  halfExtents: { x: number; z: number };
+  isDefault: boolean;
+}
+
+/**
  * agent → inspector (`to: 'page'`). Viewport interaction results:
  *  - `pick`: entity under the click (entity 0 = clean miss / deselect).
  *  - `gizmoCommit`: the committed transform(s) of a gizmo drag (position only
@@ -104,7 +117,13 @@ export type AgentToPage =
   // vectors are SCENE-LOCAL (the agent subtracts the scene offset) since the
   // inspector works in the scene's origin frame. `target` is a point the camera
   // looks at (position + forward). Throttled by the agent.
-  | { kind: 'camera-pose'; position: BusVec3; target: BusVec3 };
+  | { kind: 'camera-pose'; position: BusVec3; target: BusVec3 }
+  // The agent has booted and is listening. One-shot editor state that the host
+  // pushes (rather than the user triggering) — notably the spawn areas (#1374) —
+  // is lost if posted before the agent's message listener is up. The agent emits
+  // this once its bus is wired so the host can (re)send that state. Also fires
+  // after an engine reboot (#1369/#1376), which restarts the agent.
+  | { kind: 'editor-ready' };
 
 /** One selected entity's world pose, supplied by the inspector (the agent can't
  * read the inspected scene's Transform from its own engine). */
@@ -178,6 +197,11 @@ export type PageToScene =
   // `spawn-gizmo-commit`. Spawn points are scene metadata, so this is a bare
   // move-handle, not tied to a scene entity.
   | { kind: 'set-spawn-gizmo'; position: BusVec3 | null }
+  // Draw the scene's spawn AREAS (#1374): a translucent box per spawn point,
+  // always visible, so the user sees where the avatar can spawn (incl. ranges and
+  // multiple points). The inspector recomputes + resends the full set whenever the
+  // scene's spawnPoints metadata changes; an empty array clears them.
+  | { kind: 'set-spawn-areas'; areas: SpawnArea[] }
   // Freeze (`frozen: true`) or run (`false`) the inspected scene. Frozen = the
   // scene stops ticking (no SDK7 systems / timers / onUpdate) so it's a static
   // subject to edit; the editor agent keeps running regardless. Editor default is

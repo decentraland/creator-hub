@@ -16,6 +16,7 @@ import { createPickBridge } from './pick-bridge';
 import { createPreviewBridge } from './preview-bridge';
 import { createSceneRunBridge } from './scene-run-bridge';
 import { createSelectionBridge } from './selection-bridge';
+import { createSpawnAreasBridge } from './spawn-areas-bridge';
 import { createSpawnGizmoBridge } from './spawn-gizmo-bridge';
 
 /**
@@ -270,6 +271,20 @@ export function registerBevyRenderer(): void {
       });
       bevy.setSpawnGizmoPoster(position => spawnGizmo.show(position));
 
+      // Spawn areas (#1374): draw a translucent box per spawn point (all of them,
+      // always visible) so the user sees where the avatar can spawn — including
+      // ranges and multiple points. Watches the Scene metadata's spawnPoints and
+      // posts the boxes to the agent, which renders them in the viewport.
+      const disconnectSpawnAreas = createSpawnAreasBridge({
+        context: bevy.context,
+        // Honor the tree's per-spawn-point eye toggle: a hidden spawn point's
+        // marker is omitted, and toggling re-posts.
+        visibility: {
+          isHidden: name => bevy.spawnPoints.isHidden(name),
+          onChange: cb => bevy.spawnPoints.onVisibilityChange(() => cb()),
+        },
+      });
+
       return {
         renderer: bevy,
         engine: bevy.context.engine,
@@ -279,6 +294,7 @@ export function registerBevyRenderer(): void {
           modifiers.disconnect();
           disconnectPreview();
           spawnGizmo.disconnect();
+          disconnectSpawnAreas();
           sceneRunBridge.disconnect();
           cameraBridge.disconnect();
           dropPoint.disconnect();

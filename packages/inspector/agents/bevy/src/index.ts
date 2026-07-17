@@ -19,6 +19,7 @@ import {
   setSelectedEntity,
   setSceneOffset,
 } from './gizmo';
+import { setSpawnAreas } from './spawn-areas';
 
 /**
  * Super-user editor agent for the inspector's Bevy renderer.
@@ -102,6 +103,11 @@ export function main(): void {
       setSpawnGizmo(msg.position);
       return;
     }
+    // Draw the scene's spawn areas (translucent boxes; #1374).
+    if (msg.kind === 'set-spawn-areas') {
+      setSpawnAreas(msg.areas);
+      return;
+    }
     // Freeze (static) or run the inspected scene (the toolbar's run/freeze toggle).
     if (msg.kind === 'set-scene-frozen') {
       void setSceneFrozen(msg.frozen);
@@ -132,6 +138,14 @@ export function main(): void {
 async function boot(): Promise<void> {
   await autoLogin();
   const sceneLocalCenter = await pinInspectedScene();
+  // Announce we're listening + the scene offset is known, so the host (re)sends
+  // one-shot pushed state — the spawn areas especially. This MUST come AFTER
+  // pinInspectedScene: it sets the scene→world offset the agent adds when placing
+  // the spawn markers; firing before it would place them at the origin parcel
+  // (invisible in the real scene) — the bug where areas only appeared after a
+  // move re-posted them post-boot. Fires again after an engine reboot (which
+  // restarts the agent and re-runs boot).
+  bus.postToPage({ kind: 'editor-ready' });
   // Editor default: AVATAR camera (do NOT force free on boot). Forcing free here
   // (`ec468098`) disabled the player's input before it ever became the engine's
   // active movement controller, and toggling back to avatar then never restored
