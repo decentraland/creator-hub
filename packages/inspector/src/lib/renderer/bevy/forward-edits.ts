@@ -111,14 +111,32 @@ export function createForwardEditBridge(options: ForwardEditBridgeOptions): () =
       console.warn(`[bevy] forward edit failed (${ctx}):`, error);
     });
 
-  // The load burst is suppressed (shouldForward === false), so entities the saved
-  // scene hides carry `Hide` but their VisibilityComponent override is never
-  // forwarded — they'd render visible in the engine. Once forwarding arms, replay
-  // Hide for every currently-hidden entity so the engine matches the saved state.
-  const reconcileHideOnArm = () => {
+  // The load burst is suppressed (shouldForward === false), so the editor's
+  // visibility overrides never reach the engine on load. Once forwarding arms,
+  // replay the effective editor visibility for every entity whose engine render
+  // must differ from what it loaded:
+  //  - editor `Hide` set  → force invisible (else it'd load visible)
+  //  - authored VisibilityComponent{visible:false} → force VISIBLE in the editor
+  //    (#1377; else it'd load invisible and be unselectable)
+  // forwardEditorVisibility computes the right value for each; we just need to
+  // touch every candidate entity once.
+  const reconcileVisibilityOnArm = () => {
     const Hide = context.editorComponents.Hide;
+    const seen = new Set<Entity>();
     for (const [entity, hide] of context.engine.getEntitiesWith(Hide)) {
-      if ((hide as { value?: boolean } | undefined)?.value) forwardHide(entity, false);
+      if ((hide as { value?: boolean } | undefined)?.value && !seen.has(entity)) {
+        seen.add(entity);
+        forwardEditorVisibility(entity);
+      }
+    }
+    const visComp = context.getForwardableComponent('core::VisibilityComponent');
+    if (visComp) {
+      for (const [entity, v] of context.engine.getEntitiesWith(visComp)) {
+        if ((v as { visible?: boolean } | undefined)?.visible === false && !seen.has(entity)) {
+          seen.add(entity);
+          forwardEditorVisibility(entity);
+        }
+      }
     }
   };
 
@@ -129,7 +147,7 @@ export function createForwardEditBridge(options: ForwardEditBridgeOptions): () =
     ? null
     : setTimeout(() => {
         armed = true;
-        reconcileHideOnArm();
+        reconcileVisibilityOnArm();
       }, ARM_DELAY_MS);
   const shouldForward = options.shouldForward ?? (() => armed);
 
@@ -154,40 +172,33 @@ export function createForwardEditBridge(options: ForwardEditBridgeOptions): () =
 
   const NAME_COMPONENT = context.Name.componentName; // 'core-schema::Name'
 
-  // Editor `Hide` (the tree eye-icon) is an inspector-only component with no
-  // engine counterpart, so it's normally skipped by the forward table. But the
-  // engine still renders the entity — to actually hide it in the viewport,
-  // translate Hide into the engine's VisibilityComponent (visible:false while
-  // hidden). On unhide, restore the entity's AUTHORED VisibilityComponent if it
-  // has one, else remove ours. Mirrors Babylon's setEnabled(false) on hide.
+  // What visibility the ENGINE should render for an entity in the editor, which
+  // is NOT the entity's authored VisibilityComponent. Two editor rules override
+  // the scene's runtime visibility, both mirroring the Babylon editor:
   //
-  // `deleted` = the Hide component itself was removed (unhide via the eye icon);
-  // otherwise the current Hide value decides hidden vs visible. Existing scene
-  // entities already live in the engine, so we never `/new_entity` here — we only
-  // ensureInstantiated so a NEW entity hidden before its model instantiates still
-  // gets the override (no-op for entities the engine already loaded).
-  const forwardHide = (entity: Entity, deleted: boolean) => {
+  //  1. Editor `Hide` (the tree eye-icon) — an inspector-only component with no
+  //     engine counterpart. When Hide is true the entity is invisible in the
+  //     viewport (Babylon: setEnabled(false)).
+  //  2. Authored `VisibilityComponent{visible:false}` (#1377) — a runtime concern
+  //     the editor IGNORES so the entity stays visible/selectable while editing
+  //     (Babylon has no VisibilityComponent handler at all, so it never hides).
+  //     Preview/live still hide it: the CRDT keeps the authored value; we only
+  //     override what the ENGINE renders.
+  //
+  // So the effective editor visibility is simply: visible unless Hide is set.
+  // Forward that as the engine's VisibilityComponent. Existing scene entities
+  // already live in the engine, so we never `/new_entity` here — ensureInstantiated
+  // only matters for a NEW entity edited before its model instantiates (a no-op
+  // for entities the engine already loaded).
+  const forwardEditorVisibility = (entity: Entity) => {
     const hideValue = context.editorComponents.Hide.getOrNull(entity) as
       | { value?: boolean }
       | null
       | undefined;
-    const hidden = !deleted && !!hideValue?.value;
-    const visComp = context.getForwardableComponent('core::VisibilityComponent') as {
-      getOrNull?: (e: Entity) => unknown;
-    } | null;
-    const authored = visComp?.getOrNull?.(entity);
+    const visible = !hideValue?.value;
     enqueue(entity, async () => {
       await ensureInstantiated(entity);
-      if (hidden) {
-        await forwardSet(entity, 'VisibilityComponent', { visible: false });
-      } else if (authored != null) {
-        await forwardSet(entity, 'VisibilityComponent', authored);
-      } else {
-        fire(`delete_component ${entity} VisibilityComponent`, 'delete_component', [
-          String(entity),
-          'VisibilityComponent',
-        ]);
-      }
+      await forwardSet(entity, 'VisibilityComponent', { visible });
     });
   };
 
@@ -248,6 +259,9 @@ export function createForwardEditBridge(options: ForwardEditBridgeOptions): () =
         enqueue(entity, async () => {
           await ensureInstantiated(entity);
           for (const [ecsName, engineName] of Object.entries(ENGINE_COMPONENT_NAMES)) {
+            // VisibilityComponent is decided by the editor, not the authored value
+            // (see forwardEditorVisibility) — forward it separately, below.
+            if (engineName === 'VisibilityComponent') continue;
             const c = context.getForwardableComponent(ecsName) as {
               getOrNull?: (e: Entity) => unknown;
             } | null;
@@ -255,12 +269,20 @@ export function createForwardEditBridge(options: ForwardEditBridgeOptions): () =
             if (v != null) await forwardSet(entity, engineName, v);
           }
         });
+        // Always assert the editor's effective visibility for a new entity (visible
+        // unless Hidden) — overriding any authored VisibilityComponent{false}.
+        forwardEditorVisibility(entity);
         return;
       }
 
-      // Editor `Hide` → engine VisibilityComponent (see forwardHide's comment).
-      if (component.componentName === context.editorComponents.Hide.componentName) {
-        forwardHide(entity, op === CrdtMessageType.DELETE_COMPONENT);
+      // Editor `Hide` OR authored `VisibilityComponent` → the editor's effective
+      // visibility (see forwardEditorVisibility). Both are re-derived there, so a
+      // change to either just re-asserts the computed value.
+      if (
+        component.componentName === context.editorComponents.Hide.componentName ||
+        component.componentName === 'core::VisibilityComponent'
+      ) {
+        forwardEditorVisibility(entity);
         return;
       }
 
