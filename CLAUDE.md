@@ -128,6 +128,13 @@ CI is orchestrated by `.github/workflows/ci.yml`, which calls reusable
 - **`actionlint` mis-lints composite `action.yml` files** as workflows and reports
   bogus "jobs/on section missing" errors. Validate `.github/actions/*/action.yml`
   with a YAML parser instead; run `actionlint` on `.github/workflows/*.yml`.
+- **Cache whole output directories, not file lists.** The build cache once listed
+  inspector outputs individually and missed `bundle.css`; warm-cache runs then
+  served an unstyled app, and every e2e "flake" was really a cache hit (`build.yml`).
+- **Debugging `e2e-inspector` failures: read the `[e2e-diag]` log lines first**
+  (plus the `inspector-e2e-diagnostics` artifact). The suite dumps DOM boxes,
+  console/page errors, and a screenshot on readiness timeout — match those before
+  changing any config.
 
 ## Code Style
 
