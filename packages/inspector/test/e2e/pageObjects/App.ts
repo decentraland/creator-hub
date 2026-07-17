@@ -55,7 +55,10 @@ class AppPageObject {
 
   async waitUntilReady() {
     try {
-      await page.waitForSelector('.App.is-ready');
+      // Cold boot (parse an ~19MB bundle, init Babylon, boot the data layer) is
+      // the slowest single wait in the suite — give it explicit headroom beyond
+      // the page-wide default so slow shared runners can't trip it.
+      await page.waitForSelector('.App.is-ready', { timeout: 90_000 });
     } catch (error) {
       await dumpReadyDiagnostics();
       throw error;

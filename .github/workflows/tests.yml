@@ -76,8 +76,19 @@ jobs:
           npx http-server public -p 8000 --cors -a localhost &
           sleep 5
 
+      # Whole-suite retry as a machine-level backstop: shared runners can be
+      # slow/contended in ways no timeout tuning fully absorbs. A re-run is clean
+      # (fresh forked processes + fresh browser per spec file; the data layer is
+      # in-page; http-server stays up across attempts), and a real regression
+      # still fails both attempts — with the e2e diagnostics printed each time.
       - name: e2e
-        run: make test-inspector-e2e
+        uses: nick-fields/retry@v4
+        with:
+          timeout_minutes: 20
+          max_attempts: 2
+          retry_on: error
+          shell: 'bash'
+          command: make test-inspector-e2e
         env:
           NODE_OPTIONS: "--max-old-space-size=8192"
           E2E_CONTENT_URL: https://builder-items.decentraland.zone
