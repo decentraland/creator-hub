@@ -99,3 +99,21 @@ jobs:
           fi
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # Source maps bloat the gh-pages tip (2.6GB of 3.6GB at time of writing),
+      # and every preview deploy clones that tip. New deploys exclude *.map;
+      # this purges the already-deployed ones and any future stragglers.
+      - name: Purge source maps
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git rm -r --ignore-unmatch -- '*.map'
+
+          if git diff --staged --quiet; then
+            echo "✅ No source maps to purge"
+          else
+            git commit -m "Purge source maps from preview deploys"
+            git push
+            echo "✅ Purged source maps"
+          fi
