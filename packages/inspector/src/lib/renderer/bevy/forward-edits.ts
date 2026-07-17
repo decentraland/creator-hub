@@ -112,15 +112,17 @@ export function createForwardEditBridge(options: ForwardEditBridgeOptions): () =
     });
 
   // The load burst is suppressed (shouldForward === false), so the editor's
-  // visibility overrides never reach the engine on load. Once forwarding arms,
-  // replay the effective editor visibility for every entity whose engine render
-  // must differ from what it loaded:
+  // component-derived overrides never reach the engine on load. Once forwarding
+  // arms, replay them for every entity whose engine render must differ from what
+  // it loaded:
   //  - editor `Hide` set  → force invisible (else it'd load visible)
   //  - authored VisibilityComponent{visible:false} → force VISIBLE in the editor
   //    (#1377; else it'd load invisible and be unselectable)
-  // forwardEditorVisibility computes the right value for each; we just need to
-  // touch every candidate entity once.
-  const reconcileVisibilityOnArm = () => {
+  //  - editor `Placeholder` → render its GLTF (#1372; a model-less item like a
+  //    Trigger Area is otherwise invisible in the editor)
+  // The forward* helpers compute the right value for each; we just touch every
+  // candidate entity once.
+  const reconcileEditorOverridesOnArm = () => {
     const Hide = context.editorComponents.Hide;
     const seen = new Set<Entity>();
     for (const [entity, hide] of context.engine.getEntitiesWith(Hide)) {
@@ -138,6 +140,9 @@ export function createForwardEditBridge(options: ForwardEditBridgeOptions): () =
         }
       }
     }
+    for (const [entity] of context.engine.getEntitiesWith(context.editorComponents.Placeholder)) {
+      forwardPlaceholder(entity, false);
+    }
   };
 
   // Arm after a delay so the initial CRDT load burst is not forwarded (see
@@ -147,7 +152,7 @@ export function createForwardEditBridge(options: ForwardEditBridgeOptions): () =
     ? null
     : setTimeout(() => {
         armed = true;
-        reconcileVisibilityOnArm();
+        reconcileEditorOverridesOnArm();
       }, ARM_DELAY_MS);
   const shouldForward = options.shouldForward ?? (() => armed);
 
@@ -199,6 +204,37 @@ export function createForwardEditBridge(options: ForwardEditBridgeOptions): () =
     enqueue(entity, async () => {
       await ensureInstantiated(entity);
       await forwardSet(entity, 'VisibilityComponent', { visible });
+    });
+  };
+
+  // Editor `Placeholder` (#1372) — an inspector-only component `{ src }` holding a
+  // GLTF that stands in for an otherwise-invisible item (e.g. a Trigger Area) so
+  // it can be seen/selected in the editor but NOT in preview. The engine has no
+  // Placeholder component, so translate it to a `GltfContainer` pointed at the
+  // placeholder src. Only forward it when the entity has no AUTHORED GltfContainer
+  // (a real model already renders; the placeholder is for model-less items) — else
+  // we'd clobber the real model. Editor-only: the CRDT keeps just the Placeholder
+  // component, so preview (which ignores editor components) never shows it.
+  const GLTF_CONTAINER = 'core::GltfContainer';
+  const forwardPlaceholder = (entity: Entity, deleted: boolean) => {
+    const authoredGltf = context.getForwardableComponent(GLTF_CONTAINER) as {
+      getOrNull?: (e: Entity) => unknown;
+    } | null;
+    // A real authored model wins — never override it with a placeholder.
+    if (authoredGltf?.getOrNull?.(entity) != null) return;
+    const placeholder = deleted
+      ? null
+      : (context.editorComponents.Placeholder.getOrNull(entity) as { src?: string } | null);
+    enqueue(entity, async () => {
+      await ensureInstantiated(entity);
+      if (placeholder?.src) {
+        await forwardSet(entity, 'GltfContainer', { src: placeholder.src });
+      } else {
+        fire(`delete_component ${entity} GltfContainer`, 'delete_component', [
+          String(entity),
+          'GltfContainer',
+        ]);
+      }
     });
   };
 
@@ -272,6 +308,11 @@ export function createForwardEditBridge(options: ForwardEditBridgeOptions): () =
         // Always assert the editor's effective visibility for a new entity (visible
         // unless Hidden) — overriding any authored VisibilityComponent{false}.
         forwardEditorVisibility(entity);
+        // A new entity that carries a Placeholder (and no authored model) — render
+        // its placeholder GLTF (a dropped Trigger Area etc.).
+        if (context.editorComponents.Placeholder.getOrNull(entity) != null) {
+          forwardPlaceholder(entity, false);
+        }
         return;
       }
 
@@ -283,6 +324,13 @@ export function createForwardEditBridge(options: ForwardEditBridgeOptions): () =
         component.componentName === 'core::VisibilityComponent'
       ) {
         forwardEditorVisibility(entity);
+        return;
+      }
+
+      // Editor `Placeholder` → engine GltfContainer (see forwardPlaceholder): shows
+      // the placeholder GLTF in the editor for model-less items (Trigger Area etc).
+      if (component.componentName === context.editorComponents.Placeholder.componentName) {
+        forwardPlaceholder(entity, op === CrdtMessageType.DELETE_COMPONENT);
         return;
       }
 
