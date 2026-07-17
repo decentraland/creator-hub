@@ -192,18 +192,6 @@ let scaleCenterGroup: Entity | null = null;
 const FREE_BOX = 0.22;
 let freeGroup: Entity | null = null;
 
-// --- Spawn-point gizmo -----------------------------------------------------
-// A spawn point is scene METADATA, not a CRDT entity, so it gets its own bare
-// move-handle independent of the entity-selection gizmo above: a small box at an
-// inspector-supplied world position; dragging it on the world XZ plane posts
-// `spawn-gizmo-commit` (the inspector routes it to the spawn point's form). The
-// inspector's positions are scene-local, so we add/subtract sceneOffset like the
-// entity gizmo. Position-only (spawn points + camera targets are points).
-const SPAWN_BOX = 0.3;
-let spawnGroup: Entity | null = null;
-let spawnPos: Vector3 | null = null; // engine-world; null = hidden
-let spawnDrag: { center: Vector3; startHit: Vector3 } | null = null;
-
 // One selected entity's world pose (engine-world; inspector-supplied, offset
 // already added). The agent can't read the inspected scene's Transform, so the
 // inspector sends these.
@@ -334,7 +322,7 @@ async function refreshEngineFov(): Promise<void> {
 }
 
 export function isGizmoDragging(): boolean {
-  return drag !== null || spawnDrag !== null || grabPending;
+  return drag !== null || grabPending;
 }
 
 /** Set the scene-local → engine-world offset from the inspected scene's base
@@ -406,6 +394,13 @@ export function setSelectedEntity(
   worldAligned: boolean = true,
   snapValues: { position: number; rotation: number; scale: number } | null = null,
 ): void {
+  // A spawn point owns the gizmo via the SPAWN_SENTINEL (set by setSpawnGizmo). The
+  // inspector's selection bridge fires an EMPTY entity selection alongside it (the
+  // Player/Root that carries the spawn's ECS selection is skipped there), which
+  // would otherwise clear the sentinel and hide the spawn gizmo. Ignore an empty
+  // clear while the sentinel is active — UNLESS setSpawnGizmo itself is driving
+  // this (drivingSpawn), which is the one path allowed to attach/clear the spawn.
+  if (entities.length === 0 && isSpawnSentinel() && !drivingSpawn) return;
   // Drop the ROOT/null entity (0) — it's never a real transform target.
   selectedEntities = entities
     .filter(e => e.entity !== 0)
@@ -438,16 +433,52 @@ function centroidOf(entries: SelectionEntry[]): Vector3 {
   return Vector3.scale(sum, 1 / entries.length);
 }
 
+// A reserved entity id used to drive the FULL translate gizmo for a spawn point.
+// Spawn points are scene metadata, not scene entities, so there's no real entity
+// to select — but the entity gizmo is a complete 3-axis translate implementation.
+// We select this sentinel at the spawn's position so all the gizmo machinery
+// (handles, analytic grab, axis-constrained drag, snap) applies; the two commit
+// sites detect the sentinel and post `spawn-gizmo-commit` (scene-local) instead
+// of `gizmoCommit`. Below 512 so it can never collide with a real picked entity.
+const SPAWN_SENTINEL = 1 as Entity;
+// Set while setSpawnGizmo drives setSelectedEntity, so the empty-clear guard in
+// setSelectedEntity doesn't block the spawn controller's own clear/attach.
+let drivingSpawn = false;
+
+function isSpawnSentinel(): boolean {
+  return selected === (SPAWN_SENTINEL as unknown as Entity);
+}
+
 /**
- * Show the spawn-point move-handle at a scene-local position (adds the scene
- * offset to reach engine-world), or hide it (null). Independent of entity
- * selection — a spawn point is scene metadata.
+ * Show the spawn-point gizmo at a scene-local position, or hide it (null). A spawn
+ * point is scene metadata (not an entity), so we drive the entity TRANSLATE gizmo
+ * via the SPAWN_SENTINEL id anchored at the spawn — giving it the full 3-axis
+ * gizmo. Commits are intercepted and posted as `spawn-gizmo-commit`. Reuses the
+ * current snap/align settings.
  */
 export function setSpawnGizmo(position: { x: number; y: number; z: number } | null): void {
-  spawnPos = position
-    ? Vector3.add(Vector3.create(position.x, position.y, position.z), sceneOffset)
-    : null;
-  if (spawnPos === null) spawnDrag = null;
+  drivingSpawn = true;
+  try {
+    if (position === null) {
+      // Clear only if the sentinel is what's selected (don't stomp a real entity).
+      if (isSpawnSentinel()) setSelectedEntity([]);
+      return;
+    }
+    setSelectedEntity(
+      [
+        {
+          entity: SPAWN_SENTINEL as unknown as number,
+          position,
+          rotation: { x: 0, y: 0, z: 0, w: 1 },
+        },
+      ],
+      'translate',
+      alignToWorld,
+      snap,
+    );
+  } finally {
+    drivingSpawn = false;
+  }
 }
 
 /** Modes that draw handles. `free` draws a center indicator (world-XZ move). */
@@ -513,12 +544,10 @@ function setupGizmoCamera(): void {
 }
 
 function gizmoOverlay(): ReactEcs.JSX.Element | null {
-  // Show the composite while any gizmo is up: an entity gizmo (selected entity)
-  // OR the spawn-point handle (a spawn point / camera target is selected — no
-  // CRDT entity, so `selected` stays null but `spawnPos` is set).
-  const entityGizmoUp = selected !== null && selectedPos !== null;
-  const spawnGizmoUp = spawnPos !== null;
-  if (gizmoCamera === null || (!entityGizmoUp && !spawnGizmoUp)) return null;
+  // Show the composite while a gizmo is up — an entity selection OR a spawn point
+  // (driven via the SPAWN_SENTINEL, so `selected`/`selectedPos` are set for it too).
+  const gizmoUp = selected !== null && selectedPos !== null;
+  if (gizmoCamera === null || !gizmoUp) return null;
   return (
     <UiEntity
       uiTransform={{
@@ -580,33 +609,6 @@ function buildGizmo(): void {
   buildTranslatePlanes(root);
   buildScaleCenter(root);
   buildFreeIndicator(root);
-  buildSpawnIndicator();
-}
-
-/**
- * The spawn-point move-handle: a cyan box shown at an inspector-supplied world
- * position while a spawn point (or camera target) is selected. It's a TOP-LEVEL
- * entity (its own GIZMO_LAYER root, not under gizmoRoot) so it's positioned
- * independently of the entity gizmo — a spawn point isn't a scene entity. Grab is
- * analytic (ray-vs-center); drag moves it on the world XZ plane.
- */
-function buildSpawnIndicator(): void {
-  const group = engine.addEntity();
-  Transform.create(group, { scale: Vector3.Zero() });
-  CameraLayers.create(group, { layers: [GIZMO_LAYER] });
-  spawnGroup = group;
-
-  const box = engine.addEntity();
-  Transform.create(box, {
-    scale: Vector3.create(SPAWN_BOX, SPAWN_BOX, SPAWN_BOX),
-    parent: group,
-  });
-  MeshRenderer.setBox(box);
-  Material.setPbrMaterial(box, {
-    albedoColor: Color4.create(0.2, 0.85, 0.95, 1),
-    emissiveColor: Color3.create(0.2, 0.85, 0.95),
-    emissiveIntensity: 0.5,
-  });
 }
 
 /**
@@ -1092,63 +1094,26 @@ function gizmoSystemInner(): void {
     setHover(null);
   }
 
-  // Anchor + size the spawn-point handle at its world position each frame (unless
-  // mid-drag, when the drag drives it). Hidden (scale 0) when no spawn point is
-  // selected.
-  if (spawnGroup !== null) {
-    const g = Transform.getMutable(spawnGroup);
-    if (spawnPos !== null && spawnDrag === null) {
-      g.position = { ...spawnPos };
-      const s = cameraDistanceScale(spawnPos);
-      g.scale = Vector3.create(s, s, s);
-    } else if (spawnPos === null) {
-      g.scale = Vector3.Zero();
-    }
-  }
-
   const down = inputSystem.isTriggered(InputAction.IA_POINTER, PointerEventType.PET_DOWN);
   const up =
     inputSystem.isTriggered(InputAction.IA_POINTER, PointerEventType.PET_UP) ||
     !inputSystem.isPressed(InputAction.IA_POINTER);
 
-  // Spawn-point handle takes priority on pointer-down when one is shown: it's the
-  // only thing being edited then, and its own drag is independent of the entity
-  // gizmo. A hit begins a world-XZ move; a miss falls through to the entity path.
-  if (drag === null && spawnDrag === null && !grabPending && down && spawnPos !== null) {
-    const ray = pointerRay();
-    if (ray !== null) {
-      const tol = SPAWN_BOX * 1.6 * cameraDistanceScale(spawnPos);
-      if (rayPointDistance(ray.origin, ray.dir, spawnPos) <= tol) {
-        const startHit = rayPlaneIntersect(ray.origin, ray.dir, spawnPos, Vector3.Up());
-        if (startHit !== null) spawnDrag = { center: { ...spawnPos }, startHit };
-      }
-    }
-  }
-
-  // Drive / finish a spawn-point drag (before the entity grab, so a spawn drag
-  // isn't interrupted by entity picking).
-  if (spawnDrag !== null) {
-    if (up) endSpawnDrag();
-    else updateSpawnDrag();
-  }
-
   // On pointer-down: FIRST try to grab a gizmo axis analytically (ray-vs-axis-
   // segment) — the engine's collider raycast is unreliable for these tiny,
   // screen-scaled handles (it lands offset, camera-dependently). If no axis is
   // grabbed, fall through to an engine raycast for entity picking.
-  //
-  // Suppressed while a spawn-point handle is shown: a spawn point owns the
-  // selection then (it has no scene entity), so a click that misses its box
-  // must NOT re-pick an entity underneath — that would silently detach the
-  // spawn gizmo and make the box seem to vanish / jump mid-edit.
-  if (drag === null && spawnDrag === null && !grabPending && down && spawnPos === null) {
+  if (drag === null && !grabPending && down) {
     const ray = pointerRay();
     if (ray !== null && picker !== null) {
       const grabbedAxis = pickHandleAtRay(ray);
       if (grabbedAxis !== null) {
         beginDrag(grabbedAxis);
-      } else {
+      } else if (!isSpawnSentinel()) {
         // Not a gizmo grab → raycast the scene for a pick (resolved next frame).
+        // Suppressed while a SPAWN point owns the selection: it has no scene
+        // entity, so a click that misses its gizmo must NOT re-pick an entity
+        // underneath — that would silently detach the spawn selection mid-edit.
         Transform.createOrReplace(picker, { position: { ...ray.origin } });
         rayTs += 1;
         Raycast.createOrReplace(picker, {
@@ -1540,10 +1505,18 @@ let liveCommitted = false;
 function emitLiveDragCommit(): void {
   if (drag === null) return;
   const transforms = buildDragTransforms(drag, dragPos);
-  if (transforms.length > 0) {
-    bus.postToPage({ kind: 'gizmoPreview', transforms });
+  if (transforms.length === 0) return;
+  // Spawn point: no scene entity to preview — report the dragged position live so
+  // the inspector's spawn form + the area marker track the drag (same as a commit,
+  // just continuous). The inspector routes spawn-gizmo-commit either way.
+  if (isSpawnSentinel()) {
+    const p = transforms[0].position;
+    if (p) bus.postToPage({ kind: 'spawn-gizmo-commit', position: p });
     liveCommitted = true;
+    return;
   }
+  bus.postToPage({ kind: 'gizmoPreview', transforms });
+  liveCommitted = true;
 }
 
 /** Restore each entity to its drag-start pose after a net no-op drag that
@@ -1596,6 +1569,16 @@ function endDrag(): void {
   const hadLive = liveCommitted;
   liveCommitted = false;
   const transforms = buildDragTransforms(d, finalPos);
+
+  // Spawn point (sentinel): commit the final position as a spawn-gizmo-commit; the
+  // inspector applies it to the spawn point's form (scene metadata, no Transform /
+  // undo batch). A net no-op needs no restore (the form was tracking live commits).
+  if (isSpawnSentinel()) {
+    const p = transforms[0]?.position;
+    if (p) bus.postToPage({ kind: 'spawn-gizmo-commit', position: p });
+    return;
+  }
+
   if (transforms.length === 0) {
     // Net no-op drag. If live previews already moved the engine (dragged out then
     // back below threshold), send a final PREVIEW restoring the drag-start pose so
@@ -1606,36 +1589,4 @@ function endDrag(): void {
   }
   bus.postToPage({ kind: 'gizmoCommit', transforms });
   bus.postToPage({ kind: 'gizmoCommitEnd' });
-}
-
-/** Move the spawn-point handle on the world XZ plane during a drag (with snap). */
-function updateSpawnDrag(): void {
-  if (spawnDrag === null || spawnGroup === null) return;
-  const ray = pointerRay();
-  if (ray === null) return;
-  const hit = rayPlaneIntersect(ray.origin, ray.dir, spawnDrag.center, Vector3.Up());
-  if (hit === null) return;
-  const worldDelta = Vector3.subtract(hit, spawnDrag.startHit);
-  const delta =
-    snap !== null
-      ? Vector3.create(
-          snapStep(worldDelta.x, snap.position),
-          0,
-          snapStep(worldDelta.z, snap.position),
-        )
-      : Vector3.create(worldDelta.x, 0, worldDelta.z);
-  spawnPos = Vector3.add(spawnDrag.center, delta);
-  Transform.getMutable(spawnGroup).position = { ...spawnPos };
-}
-
-/** Commit the spawn-point handle's position (scene-local) on release. */
-function endSpawnDrag(): void {
-  const d = spawnDrag;
-  spawnDrag = null;
-  if (d === null || spawnPos === null) return;
-  const localPos = Vector3.subtract(spawnPos, sceneOffset);
-  bus.postToPage({
-    kind: 'spawn-gizmo-commit',
-    position: { x: localPos.x, y: localPos.y, z: localPos.z },
-  });
 }
