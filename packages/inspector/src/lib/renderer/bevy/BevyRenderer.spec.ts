@@ -77,8 +77,11 @@ describe('BevyRenderer editor camera', () => {
     renderer.dispose();
   });
 
-  it('should default to free mode (the editor camera)', () => {
-    expect(renderer.editorCamera.getMode()).toBe('free');
+  it('should default to avatar mode (the editor camera)', () => {
+    // Avatar is the deliberate default: booting in free mode disabled the
+    // player's input before it became the active controller, which broke WASD
+    // walking (see the agent boot comment / the free-default WASD regression).
+    expect(renderer.editorCamera.getMode()).toBe('avatar');
   });
 
   it('should post the mode to the agent and notify subscribers on change', () => {
@@ -87,16 +90,16 @@ describe('BevyRenderer editor camera', () => {
     const seen: string[] = [];
     renderer.editorCamera.onModeChange(mode => seen.push(mode));
 
-    renderer.editorCamera.setMode('avatar');
-    expect(renderer.editorCamera.getMode()).toBe('avatar');
-    expect(posted).toEqual(['avatar']);
-    expect(seen).toEqual(['avatar']);
+    renderer.editorCamera.setMode('free');
+    expect(renderer.editorCamera.getMode()).toBe('free');
+    expect(posted).toEqual(['free']);
+    expect(seen).toEqual(['free']);
   });
 
   it('should ignore a no-op set to the current mode', () => {
     const posted: string[] = [];
     renderer.setCameraModePoster(mode => posted.push(mode));
-    renderer.editorCamera.setMode('free'); // already free
+    renderer.editorCamera.setMode('avatar'); // already avatar
     expect(posted).toEqual([]);
   });
 
@@ -147,6 +150,28 @@ describe('BevyRenderer scene run/freeze', () => {
     off();
     renderer.sceneRun.setRunning(true);
     expect(seen).toEqual([]);
+  });
+
+  it('should reset by invoking the resetter and landing on frozen', async () => {
+    let resets = 0;
+    renderer.setSceneResetter(async () => {
+      resets++;
+    });
+    const seen: boolean[] = [];
+    renderer.sceneRun.onRunChange(running => seen.push(running));
+
+    renderer.sceneRun.setRunning(true); // running before reset
+    seen.length = 0;
+
+    await renderer.sceneRun.reset();
+    expect(resets).toBe(1);
+    expect(renderer.sceneRun.isRunning()).toBe(false); // reset lands on frozen
+    expect(seen).toEqual([false]); // subscribers told it's frozen again
+  });
+
+  it('should be a no-op reset when no resetter is wired (conformance path)', async () => {
+    await expect(renderer.sceneRun.reset()).resolves.toBeUndefined();
+    expect(renderer.sceneRun.isRunning()).toBe(false);
   });
 });
 

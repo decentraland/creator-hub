@@ -1,5 +1,14 @@
 import { useCallback, useEffect, useState } from 'react';
-import { BiUndo, BiRedo, BiSave, BiBadgeCheck, BiVideo, BiPlay, BiPause } from 'react-icons/bi';
+import {
+  BiUndo,
+  BiRedo,
+  BiSave,
+  BiBadgeCheck,
+  BiVideo,
+  BiPlay,
+  BiPause,
+  BiStop,
+} from 'react-icons/bi';
 import { RiListSettingsLine } from 'react-icons/ri';
 import { FaPencilAlt } from 'react-icons/fa';
 import { AiOutlineInfoCircle as InfoIcon } from 'react-icons/ai';
@@ -87,6 +96,9 @@ const Toolbar = withSdk(({ sdk }) => {
     if (!sceneRun) return;
     sceneRun.setRunning(!sceneRun.isRunning());
   }, [sceneRun]);
+  const handleResetScene = useCallback(() => {
+    void sceneRun?.reset();
+  }, [sceneRun]);
 
   const handleSaveClick = useCallback(() => dispatch(save()), []);
   const handleUndo = useCallback(() => dispatch(undo()), []);
@@ -145,9 +157,18 @@ const Toolbar = withSdk(({ sdk }) => {
         <ToolbarButton
           className={cx('scene-run', { active: sceneRunning })}
           onClick={handleToggleSceneRun}
-          title={sceneRunning ? 'Freeze scene (stop running)' : 'Run scene'}
+          title={sceneRunning ? 'Pause scene' : 'Run scene'}
         >
           {sceneRunning ? <BiPause /> : <BiPlay />}
+        </ToolbarButton>
+      )}
+      {sceneRun && (
+        <ToolbarButton
+          className="scene-reset"
+          onClick={handleResetScene}
+          title="Stop and reset scene to its initial state"
+        >
+          <BiStop />
         </ToolbarButton>
       )}
       <Preferences />

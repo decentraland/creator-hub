@@ -22,6 +22,10 @@ export interface SceneRunBridge {
    * Used to RE-assert freeze/run after a scene reload, which drops the freeze the
    * agent applied to the previous scene instance. */
   isRunning(): boolean;
+  /** Stop/reset (#1376): ask the agent to restart the inspected scene to its
+   * initial state (via the engine's scene-scoped `reload`). Fast — no engine
+   * reboot. The caller re-asserts freeze afterwards. */
+  reset(): void;
   disconnect(): void;
 }
 
@@ -44,9 +48,16 @@ export function createSceneRunBridge(options: SceneRunBridgeOptions = {}): Scene
     channel.postMessage(envelope);
   };
 
+  const reset = (): void => {
+    const msg: PageToScene = { kind: 'reset-scene' };
+    const envelope: BusEnvelope = { to: 'scene', msg };
+    channel.postMessage(envelope);
+  };
+
   return {
     setRunning,
     isRunning: () => running,
+    reset,
     disconnect: () => channel.close(),
   };
 }

@@ -35,6 +35,19 @@ describe('createSceneRunBridge', () => {
     expect(posted).toEqual([{ to: 'scene', msg: { kind: 'set-scene-frozen', frozen: true } }]);
   });
 
+  it('should track the last requested run state via isRunning', () => {
+    expect(bridge.isRunning()).toBe(false); // boots frozen
+    bridge.setRunning(true);
+    expect(bridge.isRunning()).toBe(true);
+    bridge.setRunning(false);
+    expect(bridge.isRunning()).toBe(false);
+  });
+
+  it('should post reset-scene when reset (Stop)', () => {
+    bridge.reset();
+    expect(posted).toEqual([{ to: 'scene', msg: { kind: 'reset-scene' } }]);
+  });
+
   it('should close the channel on disconnect', () => {
     bridge.disconnect();
     expect(closed).toBe(true);
