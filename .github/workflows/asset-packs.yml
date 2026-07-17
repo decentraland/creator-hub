@@ -26,6 +26,7 @@ jobs:
       - uses: actions/checkout@v6
         with:
           fetch-depth: 0
+          filter: blob:none
 
       - name: Bump release version
         id: version
@@ -72,6 +73,7 @@ jobs:
       - uses: actions/checkout@v6
         with:
           fetch-depth: 0
+          filter: blob:none
 
       - uses: ./.github/actions/setup
         id: setup
@@ -194,6 +196,7 @@ jobs:
       - uses: actions/checkout@v6
         with:
           fetch-depth: 0
+          filter: blob:none
 
       - name: generate release notes
         if: ${{ github.ref == 'refs/heads/main' }}

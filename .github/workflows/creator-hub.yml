@@ -41,6 +41,7 @@ jobs:
           fetch-depth: 0
           fetch-tags: true
           submodules: true
+          filter: blob:none
 
       - uses: ./.github/actions/setup
         id: setup
