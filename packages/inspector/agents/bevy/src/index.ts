@@ -1,5 +1,6 @@
 import { GltfContainerLoadingState } from '@dcl/sdk/ecs';
 import type { Entity } from '@dcl/sdk/ecs';
+import { getPlayer } from '@dcl/sdk/players';
 
 import { bus } from './bus';
 import { getBevyApi } from './bevy-api';
@@ -8,6 +9,7 @@ import {
   resetCamera,
   setCameraMode,
   setCameraSceneOffset,
+  setVerticalInput,
   setupCamera,
 } from './camera';
 import {
@@ -100,6 +102,13 @@ export function main(): void {
       void setSceneFrozen(msg.frozen);
       return;
     }
+    // Vertical fly-camera keys forwarded by the host (E = up, Q = down): Q has no
+    // SDK InputAction so the engine can't read it; the host captures E/Q on the
+    // engine window and sends the held state here.
+    if (msg.kind === 'set-vertical-input') {
+      setVerticalInput(msg.up, msg.down);
+      return;
+    }
   });
 
   // setupGizmo installs the pointer-down handler (grab-or-pick) + drag system.
@@ -113,20 +122,24 @@ export function main(): void {
 async function boot(): Promise<void> {
   await autoLogin();
   const sceneLocalCenter = await pinInspectedScene();
-  // Editor default: the free-fly camera, not the avatar camera. A scene editor
-  // wants an overview it can fly around, not a walking avatar. Enacted here
-  // (after the scene is pinned and the native camera exists) so the takeover
-  // seeds its pose from the live camera; the inspector's editorCamera state also
-  // defaults to 'free' so the toolbar toggle matches without a round-trip.
-  setCameraMode('free');
-  // Frame the scene at a sensible default standoff rather than leaving the camera
-  // wherever the avatar happened to spawn (which is far off for a large parcel
-  // and looks "lost" on load). resetCamera adds the scene offset back internally.
-  if (sceneLocalCenter !== null) resetCamera(sceneLocalCenter);
+  // Editor default: AVATAR camera (do NOT force free on boot). Forcing free here
+  // (`ec468098`) disabled the player's input before it ever became the engine's
+  // active movement controller, and toggling back to avatar then never restored
+  // walking — the WASD-walk regression. Booting in avatar (as before `ec468098`,
+  // and as bevy-editor does) keeps the avatar walkable; a free⇄avatar toggle from
+  // there round-trips cleanly (verified). The user toggles to the fly camera when
+  // they want it. NOTE: the inspector's editorCamera state also defaults to
+  // avatar to match this without a round-trip (see register.ts / EditorPage).
+  // Deliberately NOT calling resetCamera() on boot: it forces free mode (which
+  // re-triggers the input-disable regression). In avatar mode the native camera
+  // follows the player, so no framing is needed; resetCamera is used by the F /
+  // toolbar "reset view" action once the user is in the fly camera.
+  void sceneLocalCenter;
   // Editor default: the inspected scene is FROZEN (static — no SDK7 systems /
   // timers / onUpdate run), so it's a stable subject to edit. The editor agent
   // itself keeps ticking (it's a super scene, exempt from the freeze). The
-  // toolbar toggle can unfreeze to run the scene live.
+  // toolbar toggle can unfreeze to run the scene live. Freeze does NOT block
+  // avatar walking (bevy-editor walks the avatar while frozen too).
   await setSceneFrozen(true);
 }
 
@@ -183,11 +196,26 @@ async function setSceneFrozen(frozen: boolean): Promise<void> {
   }
 }
 
+/** Resolve once the player entity has actually spawned, or false after `ms`. */
+async function playerWithin(ms: number): Promise<boolean> {
+  const deadline = Date.now() + ms;
+  while (Date.now() < deadline) {
+    if (getPlayer() !== null) return true;
+    await new Promise<void>(resolve => setTimeout(() => resolve(), 200));
+  }
+  return getPlayer() !== null;
+}
+
 /**
- * Log in so the engine gets an identity + spawns a player: reuse a previous
- * profile if present, else a guest session. Mirrors bevy-editor's autoLogin.
- * WITHOUT this the engine logs "disconnecting comms, no identity" and the
- * loading screen hangs. Fire-and-forget; failures logged, never thrown.
+ * Log in AND wait for the player to actually spawn: reuse a previous profile if
+ * present, else a guest session (retried). Mirrors bevy-editor's autoLogin.
+ *
+ * The wait is load-bearing, not just anti-hang: the engine only takes the player
+ * OUT of its `OutOfWorld` state (which disables avatar WALKING while leaving the
+ * camera working) once the player exists AND settles into the loaded scene. If
+ * boot proceeds (pin scene, freeze) before the player spawns, the player can stay
+ * OutOfWorld and WASD does nothing. So block here until the player is present.
+ * Bounded — worst case we continue anyway (the fly camera doesn't need the avatar).
  */
 async function autoLogin(): Promise<void> {
   const api = getBevyApi();
@@ -199,9 +227,18 @@ async function autoLogin(): Promise<void> {
     const previous = await api.getPreviousLogin().catch(() => null);
     if (previous?.userId) {
       const result = await api.loginPrevious().catch(e => ({ success: false, error: String(e) }));
-      if (result.success) return;
+      if (result.success && (await playerWithin(10000))) return;
     }
-    api.loginGuest();
+    for (let attempt = 0; attempt < 5; attempt++) {
+      try {
+        api.loginGuest();
+      } catch (e) {
+        console.error('[bevy-agent] loginGuest threw:', e);
+      }
+      if (await playerWithin(8000)) return;
+      console.log(`[bevy-agent] guest login attempt ${attempt + 1}: no player yet, retrying…`);
+    }
+    console.error('[bevy-agent] autoLogin: player never appeared after retries — continuing');
   } catch (e) {
     console.error('[bevy-agent] login failed:', e);
   }

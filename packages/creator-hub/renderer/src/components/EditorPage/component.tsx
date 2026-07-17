@@ -335,6 +335,13 @@ export function EditorPage() {
   // (default) world.
   params.append('renderer', useBevy ? RENDERER.BEVY : RENDERER.BABYLON);
 
+  // The parent-window scene-RPC control channel (host↔inspector feature flags,
+  // notifications, file/dir open) is wired whenever this is set — for BOTH
+  // renderers. Babylon also uses it as its data-layer transport; Bevy instead
+  // uses the realm WS (set below, which takes precedence), but still needs this
+  // channel or the host's feature flags never reach it (e.g. SceneMinimap).
+  params.append('dataLayerRpcParentUrl', window.location.origin);
+
   if (useBevy && bevyRealm) {
     // Bevy editor: the inspector shares the realm's data-layer WS so entity ids
     // align with the engine (forward edits land on the right entities), and the
@@ -356,8 +363,6 @@ export function EditorPage() {
       'bevySystemScene',
       import.meta.env.VITE_BEVY_SYSTEM_SCENE || `${htmlUrl}/bevy-agent/bevy-agent`,
     );
-  } else {
-    params.append('dataLayerRpcParentUrl', window.location.origin);
   }
 
   if (import.meta.env.VITE_ASSET_PACKS_CONTENT_URL) {

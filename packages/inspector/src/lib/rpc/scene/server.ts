@@ -81,9 +81,16 @@ type Result = {
 };
 
 export class SceneServer extends RPC<Method, Params, Result> {
-  constructor(transport: Transport, store: Store, renderer: ReturnType<typeof initRenderer>) {
+  // `renderer` (the Babylon internals) is OPTIONAL: only the camera + screenshot
+  // handlers need it. Every other message is renderer-agnostic store dispatch
+  // (feature flags, tab/panel toggles, debug console/logs, custom-code, mobile
+  // debug), so the server runs under ANY renderer and the host's flags/debug/tab
+  // controls reach the inspector — without those, e.g. the SceneMinimap feature
+  // flag never arrives under Bevy and the minimap never shows. The Babylon-only
+  // handlers are registered only when `renderer` is present; under Bevy a call to
+  // one rejects (unhandled method) rather than silently doing nothing wrong.
+  constructor(transport: Transport, store: Store, renderer?: ReturnType<typeof initRenderer>) {
     super('SceneRpcInbound', transport);
-    const camera = renderer.editorCamera.getCamera();
 
     this.handle('toggle_component', async ({ component, enabled }) => {
       store.dispatch({ type: 'ui/toggleComponent', payload: { component, enabled } });
@@ -113,21 +120,26 @@ export class SceneServer extends RPC<Method, Params, Result> {
       store.dispatch({ type: 'ui/toggleGroundGrid', payload: { enabled } });
     });
 
-    this.handle('set_camera_position', async ({ x, y, z }) => {
-      camera.position.set(x, y, z);
-    });
+    // Camera + screenshot need the Babylon internals; only wired when present.
+    if (renderer) {
+      const camera = renderer.editorCamera.getCamera();
 
-    this.handle('set_camera_target', async ({ x, y, z }) => {
-      camera.setTarget(new Vector3(x, y, z));
-    });
-
-    this.handle('take_screenshot', async ({ width, height, precision }) => {
-      return ScreenshotTools.CreateScreenshotAsync(renderer.engine, camera, {
-        width,
-        height,
-        precision,
+      this.handle('set_camera_position', async ({ x, y, z }) => {
+        camera.position.set(x, y, z);
       });
-    });
+
+      this.handle('set_camera_target', async ({ x, y, z }) => {
+        camera.setTarget(new Vector3(x, y, z));
+      });
+
+      this.handle('take_screenshot', async ({ width, height, precision }) => {
+        return ScreenshotTools.CreateScreenshotAsync(renderer.engine, camera, {
+          width,
+          height,
+          precision,
+        });
+      });
+    }
 
     this.handle('set_scene_custom_code', async ({ hasCustomCode }) => {
       store.dispatch(setHasCustomCode(hasCustomCode));

@@ -13,6 +13,8 @@ import type { Entity } from '@dcl/sdk/ecs';
 import { Quaternion, Vector3 } from '@dcl/sdk/math';
 import type { CameraMode } from '@dcl/inspector-bevy-protocol';
 
+import { bus } from './bus';
+
 /**
  * Editor fly-camera for the Bevy renderer (slice 1: free-fly only).
  *
@@ -39,7 +41,15 @@ let camEntity: Entity | null = null;
 let mode: CameraMode = 'avatar';
 let yaw = 0;
 let pitch = 0;
-let avatarInputDisabled = false;
+// Whether the avatar's WASD walk input is currently enabled (engine default:
+// enabled). Toggled to match the camera mode by reconcileAvatarInput.
+let avatarWalkEnabled = true;
+// Vertical fly held state from the host (E = up, Q = down). Q has no SDK
+// InputAction, so the engine can't read it; the inspector captures E/Q and
+// forwards the held state over the bus (see setVerticalInput). Added to the
+// per-frame fly move alongside the engine-read IA_JUMP (Space) = up.
+let verticalUp = false;
+let verticalDown = false;
 // Scene-local → engine-world offset (base parcel × 16m). The inspector sends
 // world positions in SCENE-LOCAL coords (it renders every scene at the origin),
 // but the engine loads the scene at its real parcel — so we add this offset to
@@ -49,6 +59,12 @@ let sceneOffset: Vector3 = Vector3.Zero();
 /** Set the scene-local → engine-world offset from the inspected scene's base parcel. */
 export function setCameraSceneOffset(baseParcelX: number, baseParcelY: number): void {
   sceneOffset = Vector3.create(baseParcelX * 16, 0, baseParcelY * 16);
+}
+
+/** Set the vertical fly-camera held state forwarded by the host (E = up, Q = down). */
+export function setVerticalInput(up: boolean, down: boolean): void {
+  verticalUp = up;
+  verticalDown = down;
 }
 
 // An eased move to a framing pose (focus-on-entity); cancelled by any manual input.
@@ -162,19 +178,27 @@ export function setCameraMode(next: CameraMode): void {
     }
     vt.rotation = lookRotation();
     MainCamera.createOrReplace(engine.CameraEntity, { virtualCameraEntity: camEntity });
-    setAvatarInput(false);
   } else {
     MainCamera.deleteFrom(engine.CameraEntity);
-    setAvatarInput(true);
   }
   mode = next;
+  // Flip avatar input synchronously on the mode change (matching the original
+  // behavior), and let the per-frame reconcile keep it converged.
+  reconcileAvatarInput();
 }
 
-/** Disable/enable the avatar's movement input (so WASD drives the camera, not it). */
-function setAvatarInput(enabled: boolean): void {
-  if (enabled === !avatarInputDisabled) return;
-  avatarInputDisabled = !enabled;
-  if (enabled) {
+/**
+ * Follow the camera mode: in AVATAR mode the player walks (WASD); in the editor
+ * fly-camera its input is disabled so WASD drives the camera. Gated on the camera
+ * mode ONLY — a frozen scene must still let the avatar walk around to inspect it
+ * (walking is engine-native player movement, not a scene system). Idempotent, and
+ * run every frame so a mode toggle always converges.
+ */
+function reconcileAvatarInput(): void {
+  const enable = mode === 'avatar';
+  if (enable === avatarWalkEnabled) return;
+  avatarWalkEnabled = enable;
+  if (enable) {
     InputModifier.deleteFrom(engine.PlayerEntity);
   } else {
     InputModifier.createOrReplace(engine.PlayerEntity, {
@@ -185,6 +209,7 @@ function setAvatarInput(enabled: boolean): void {
 
 function cameraSystem(dt: number): void {
   try {
+    reconcileAvatarInput();
     cameraSystemInner(dt);
   } catch (e) {
     // A throw here would halt the engine's system loop; keep it isolated.
@@ -192,8 +217,33 @@ function cameraSystem(dt: number): void {
   }
 }
 
+// Throttle the camera-pose stream to the inspector: the minimap only redraws at
+// ~10Hz, so posting every frame is wasted bus traffic. Every ~6th frame (~10Hz at
+// 60fps) is plenty for the minimap dot to track smoothly.
+let poseTick = 0;
+
+/** Stream the fly-camera's pose to the inspector (minimap) in SCENE-LOCAL coords
+ * (subtract the scene offset — the inspector works in the scene's origin frame).
+ * `target` is a point straight ahead of the camera (position + forward). */
+function postCameraPose(): void {
+  if (camEntity === null) return;
+  const t = Transform.get(camEntity);
+  const forward = Vector3.rotate(Vector3.Forward(), t.rotation as Quaternion);
+  const posLocal = Vector3.subtract(t.position, sceneOffset);
+  const tgtLocal = Vector3.add(posLocal, forward);
+  bus.postToPage({
+    kind: 'camera-pose',
+    position: { x: posLocal.x, y: posLocal.y, z: posLocal.z },
+    target: { x: tgtLocal.x, y: tgtLocal.y, z: tgtLocal.z },
+  });
+}
+
 function cameraSystemInner(dt: number): void {
   if (camEntity === null || mode !== 'free') return;
+
+  // Stream the pose to the inspector's minimap (throttled). Runs before the early
+  // returns below so it fires regardless of the tween path.
+  if (poseTick++ % 6 === 0) postCameraPose();
 
   // Mouse-look only while the pointer is locked (dragging to look), matching the
   // native camera's feel; otherwise the cursor is free for the tree/panels.
@@ -206,8 +256,10 @@ function cameraSystemInner(dt: number): void {
   const backKey = inputSystem.isPressed(InputAction.IA_BACKWARD);
   const rightKey = inputSystem.isPressed(InputAction.IA_RIGHT);
   const leftKey = inputSystem.isPressed(InputAction.IA_LEFT);
-  const upKey = inputSystem.isPressed(InputAction.IA_JUMP);
-  const anyMove = forwardKey || backKey || rightKey || leftKey || upKey;
+  // Up = Space (engine InputAction) OR E (host-forwarded); down = Q (host-forwarded).
+  const upKey = inputSystem.isPressed(InputAction.IA_JUMP) || verticalUp;
+  const downKey = verticalDown;
+  const anyMove = forwardKey || backKey || rightKey || leftKey || upKey || downKey;
 
   // A focus tween eases to the framing pose; any manual input cancels it.
   if (tween !== null) {
@@ -241,9 +293,11 @@ function cameraSystemInner(dt: number): void {
   if (backKey) move = Vector3.subtract(move, forward);
   if (rightKey) move = Vector3.add(move, right);
   if (leftKey) move = Vector3.subtract(move, right);
-  // Jump = up. (No dedicated "down" input action in this SDK; vertical-down can
-  // come with orbit/dolly in a later slice.)
+  // Vertical: E / Space = up, Q = down (world up, not camera-relative — matches
+  // Unity/Unreal fly verticals). E/Q arrive from the host (no SDK InputAction);
+  // Space is the engine-read IA_JUMP folded into upKey above.
   if (upKey) move = Vector3.add(move, Vector3.Up());
+  if (downKey) move = Vector3.subtract(move, Vector3.Up());
 
   const t = Transform.getMutable(camEntity);
   if (Vector3.lengthSquared(move) > 1e-6) {

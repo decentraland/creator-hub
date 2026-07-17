@@ -98,7 +98,13 @@ export type AgentToPage =
   // `GltfContainerLoadingState.animationNames` — a field the inspector's older
   // `@dcl/ecs` can't decode, so it must come from the engine over the bus. `id`
   // correlates the reply with its request.
-  | { kind: 'animations'; id: number; names: string[] };
+  | { kind: 'animations'; id: number; names: string[] }
+  // The editor (free-fly) camera's live pose, streamed while free-cam is active so
+  // the inspector's minimap can track it (the camera lives in the engine). Both
+  // vectors are SCENE-LOCAL (the agent subtracts the scene offset) since the
+  // inspector works in the scene's origin frame. `target` is a point the camera
+  // looks at (position + forward). Throttled by the agent.
+  | { kind: 'camera-pose'; position: BusVec3; target: BusVec3 };
 
 /** One selected entity's world pose, supplied by the inspector (the agent can't
  * read the inspected scene's Transform from its own engine). */
@@ -177,7 +183,15 @@ export type PageToScene =
   // subject to edit; the editor agent keeps running regardless. Editor default is
   // frozen; the toolbar toggle sends this. Enacted via the engine's
   // `/freeze_scene` / `/unfreeze_scene` console commands on the pinned scene.
-  | { kind: 'set-scene-frozen'; frozen: boolean };
+  | { kind: 'set-scene-frozen'; frozen: boolean }
+  // Vertical fly-camera movement held state (E = up, Q = down). Unlike WASD/Space
+  // — which the engine delivers to the fly camera as InputActions — Q has NO
+  // Decentraland `InputAction`, so the engine can't read it. The inspector (host)
+  // captures E/Q keydown/keyup on the engine window and forwards the held state
+  // here; the agent's fly camera adds it to its per-frame move. `up`/`down` are the
+  // current held state of each key (keydown → true, keyup → false); both may be
+  // true (net zero) or false (no vertical). Ignored outside free-camera mode.
+  | { kind: 'set-vertical-input'; up: boolean; down: boolean };
 
 /** Every message is wrapped so a peer ignores its own posts / the wrong direction. */
 export interface BusEnvelope {

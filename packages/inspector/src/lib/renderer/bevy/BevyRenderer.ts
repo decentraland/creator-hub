@@ -94,9 +94,12 @@ export class BevyRenderer implements IRenderer {
   // Editor camera (avatar ⇄ free fly). The mode change is enacted by the agent
   // over the bus; `register` injects the poster. Mode state + subscribers live
   // here so the toolbar toggle reflects the current mode.
-  // The editor defaults to the free-fly camera (the agent enters it on boot); the
-  // toolbar toggle reflects this without waiting on a round-trip from the agent.
-  #editorCameraMode: EditorCameraMode = 'free';
+  // The editor defaults to the AVATAR camera (the agent boots in avatar mode so
+  // the player is walkable — forcing free on boot disabled avatar input before the
+  // player activated and broke WASD walking). The toolbar toggle reflects this
+  // without waiting on a round-trip from the agent; the user switches to the fly
+  // camera when they want it.
+  #editorCameraMode: EditorCameraMode = 'avatar';
   #postCameraMode: ((mode: EditorCameraMode) => void) | null = null;
   #cameraModeHandlers = new Set<(mode: EditorCameraMode) => void>();
   // Scene run/freeze. The editor default is FROZEN (static — the agent freezes
@@ -117,6 +120,10 @@ export class BevyRenderer implements IRenderer {
   // to the agent over the bus.
   #gizmosWorldAligned = true;
   #gizmoChangeHandlers = new Set<() => void>();
+  // Metrics-change subscribers. The minimap listens here to refresh its ground
+  // planes, which are derived from the Scene layout — so we notify these whenever
+  // the Scene component changes (see the onChange wiring in the constructor).
+  #metricsChangeHandlers = new Set<() => void>();
   // Spawn-point controller + its handle poster (injected by `register` → bus).
   #spawnPointController: BevySpawnPointController;
   #spawnGizmoPoster: ((position: { x: number; y: number; z: number } | null) => void) | null = null;
@@ -146,7 +153,14 @@ export class BevyRenderer implements IRenderer {
     // Scene component changes. Mirrors Babylon's `updateFromSceneComponent`.
     const sceneComponentId = this.context.editorComponents.Scene.componentId;
     this.#offSceneChange = this.context.onChange((_entity, _op, component) => {
-      if (component?.componentId === sceneComponentId) this.#spawnPointController.refreshHandle();
+      if (component?.componentId !== sceneComponentId) return;
+      this.#spawnPointController.refreshHandle();
+      // The Scene layout drives the minimap's ground planes; the layout can land
+      // AFTER the minimap has mounted (the scene loads async), so notify metrics
+      // subscribers to re-read. Without this the minimap's ground planes stay at
+      // their empty mount-time value → no parcel grid and collapsed bounds that
+      // pile every entity dot onto one point.
+      for (const h of [...this.#metricsChangeHandlers]) h();
     });
     this.debug = { isVisible: () => false, toggle: () => {} };
   }
@@ -211,7 +225,9 @@ export class BevyRenderer implements IRenderer {
   #createViewport(): RendererViewport {
     return {
       onFrame: (cb): Unsubscribe => this.context.onFrame(cb),
-      getGroundPlanes: (): GroundPlane[] => [],
+      // Parcel planes come from the Scene layout metadata (the inspector owns it),
+      // so the minimap draws the real parcel grid — no engine round-trip.
+      getGroundPlanes: (): GroundPlane[] => this.context.getGroundPlanes(),
       getEntityWorldPositions: (entities: Entity[]): Map<Entity, Vector3> =>
         this.context.getEntityWorldPositions(entities),
     };
@@ -224,7 +240,14 @@ export class BevyRenderer implements IRenderer {
     return {
       getSceneMetrics: () => ({ triangles: 0, bodies: 0, materials: 0, textures: 0 }),
       getEntitiesOutsideLayout: () => [],
-      onChange: () => () => {},
+      // Fires when the Scene layout changes (wired in the constructor). The
+      // minimap uses this to re-read ground planes once the scene has loaded.
+      onChange: (cb: () => void) => {
+        this.#metricsChangeHandlers.add(cb);
+        return () => {
+          this.#metricsChangeHandlers.delete(cb);
+        };
+      },
     };
   }
 
@@ -404,6 +427,7 @@ export class BevyRenderer implements IRenderer {
     this.#disposed = true;
     this.#engineWindow = null;
     this.#gizmoChangeHandlers.clear();
+    this.#metricsChangeHandlers.clear();
     this.#offSceneChange?.();
     this.#offSceneChange = null;
     this.context.dispose();

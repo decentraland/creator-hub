@@ -1,5 +1,5 @@
-import type { ComponentDefinition, Entity, TransformType } from '@dcl/ecs';
-import { CrdtMessageType, Engine } from '@dcl/ecs';
+import type { ComponentDefinition, Entity, TransformType, CrdtMessageType } from '@dcl/ecs';
+import { Engine } from '@dcl/ecs';
 import type { IEngine } from '@dcl/ecs';
 import * as components from '@dcl/ecs/dist/components';
 import { Quaternion as DclQuaternion, Vector3 as DclVector3 } from '@dcl/ecs-math';
@@ -7,6 +7,7 @@ import type { Quaternion, Vector3 } from '@dcl/ecs-math';
 
 import { createOperations } from '../../sdk/operations';
 import { createEditorComponents } from '../../sdk/components';
+import { PARCEL_SIZE } from '../../utils/scene';
 
 const ROOT = 0 as Entity;
 
@@ -89,10 +90,6 @@ export class BevySceneContext {
   readonly operations = createOperations(this.engine);
   readonly editorComponents = createEditorComponents(this.engine);
 
-  // Local world-space position per entity. A pure CRDT projection: no scene
-  // graph, just the transform hierarchy resolved to world space so the viewport
-  // sync getter can answer without a renderer present.
-  #worldPositions = new Map<Entity, Vector3>();
   #frameHandlers = new Set<() => void>();
   // Subscribers to raw ECS changes (the forward edit bridge translates these to
   // engine console commands). `@dcl/ecs` exposes only the single construction-time
@@ -106,16 +103,10 @@ export class BevySceneContext {
     component?: ComponentDefinition<unknown>,
     value?: unknown,
   ) {
-    if (op === CrdtMessageType.DELETE_ENTITY) {
-      this.#worldPositions.delete(entity);
-    } else if (component && component.componentId === this.Transform.componentId) {
-      // A transform changed — recompute world positions for the whole tracked
-      // set, since a parent move shifts its descendants. Small in the spike; the
-      // wasm path will replace this with positions mirrored from Bevy.
-      this.#recomputeWorldPositions();
-    }
     // Fan out to change subscribers (forward edit bridge). Iterate a copy so a
-    // handler that unsubscribes mid-iteration doesn't disturb the walk.
+    // handler that unsubscribes mid-iteration doesn't disturb the walk. World
+    // positions aren't cached here — getEntityWorldPositions resolves them on
+    // demand from the Transform chain, so there's nothing to invalidate.
     for (const h of [...this.#changeHandlers]) h(entity, op, component, value);
   }
 
@@ -123,14 +114,6 @@ export class BevySceneContext {
   onChange(handler: EcsChangeHandler): () => void {
     this.#changeHandlers.add(handler);
     return () => this.#changeHandlers.delete(handler);
-  }
-
-  #recomputeWorldPositions() {
-    this.#worldPositions.clear();
-    for (const [entity] of this.engine.getEntitiesWith(this.Transform)) {
-      if (entity === ROOT) continue;
-      this.#worldPositions.set(entity, this.#resolveWorldPosition(entity));
-    }
   }
 
   /**
@@ -207,33 +190,59 @@ export class BevySceneContext {
   }
 
   /**
-   * World positions for the requested entities. Entities with no tracked
-   * transform are omitted — the {@link IRenderer} contract says a missing id
-   * means "not drawable this frame".
+   * World positions for the requested entities. Resolved on demand by walking
+   * each entity's Transform.parent chain — NOT from the `#worldPositions` cache,
+   * which is only refreshed on a Transform-change event and so is empty for the
+   * bulk of a scene loaded before the first such event (the minimap would then
+   * show almost no entities). Entities with no Transform are omitted — the
+   * {@link IRenderer} contract says a missing id means "not drawable this frame".
    */
   getEntityWorldPositions(entities: Entity[]): Map<Entity, Vector3> {
     const out = new Map<Entity, Vector3>();
     for (const entity of entities) {
-      const pos = this.#worldPositions.get(entity);
-      if (pos) out.set(entity, pos);
+      if (entity === ROOT) continue;
+      if (!this.Transform.getOrNull(entity)) continue;
+      out.set(entity, this.#resolveWorldPosition(entity));
     }
     return out;
   }
 
-  /** Subscribe to a render tick. In the spike a tick is driven by `tick()`. */
+  /**
+   * The scene's parcel ground planes, as world-space CENTERS `{x, z}` — for the
+   * minimap grid. Derived from the Scene metadata's layout (the inspector owns it;
+   * no engine round-trip): the scene renders at the ORIGIN, so a parcel is placed
+   * relative to the layout base — grid `(p - base)` → center
+   * `((p.x-base.x)*16 + 8, (p.y-base.y)*16 + 8)`, matching Babylon's ground tiles.
+   */
+  getGroundPlanes(): { x: number; z: number }[] {
+    const scene = this.editorComponents.Scene.getOrNull(this.engine.RootEntity);
+    const layout = scene?.layout;
+    if (!layout) return [];
+    const { base, parcels } = layout;
+    return parcels.map(p => ({
+      x: (p.x - base.x) * PARCEL_SIZE + PARCEL_SIZE / 2,
+      z: (p.y - base.y) * PARCEL_SIZE + PARCEL_SIZE / 2,
+    }));
+  }
+
+  /**
+   * Subscribe to a render tick. The Bevy engine renders in its own iframe, so
+   * there's no in-process render loop here — `tick()` is driven off the agent's
+   * camera-pose stream (see register.ts), a steady ~10fps signal. Used by the
+   * minimap to redraw.
+   */
   onFrame(cb: () => void): () => void {
     this.#frameHandlers.add(cb);
     return () => this.#frameHandlers.delete(cb);
   }
 
-  /** Signal a frame to onFrame subscribers (the wasm render loop drives this later). */
+  /** Signal a frame to onFrame subscribers (driven by the camera-pose stream). */
   tick(): void {
     // Iterate a copy: a handler may unsubscribe (mutating the Set) mid-iteration.
     for (const h of [...this.#frameHandlers]) h();
   }
 
   dispose(): void {
-    this.#worldPositions.clear();
     this.#frameHandlers.clear();
   }
 }
