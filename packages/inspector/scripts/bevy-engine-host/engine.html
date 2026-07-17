@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Bevy Engine</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        overflow: hidden;
+        background: #000;
+      }
+      #canvas-parent {
+        position: fixed;
+        inset: 0;
+      }
+      #mygame-canvas {
+        width: 100%;
+        height: 100%;
+        display: block;
+      }
+    </style>
+    <!-- Media libs the engine wasm expects as window globals (LivekitClient, Hls);
+         same third-party CDNs the engine's own boot pages have always used. -->
+    <script
+      src="https://cdn.jsdelivr.net/npm/livekit-client/dist/livekit-client.umd.min.js"
+      crossorigin="anonymous"
+    ></script>
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@1" crossorigin="anonymous"></script>
+  </head>
+  <body>
+    <div id="canvas-parent">
+      <canvas id="mygame-canvas"></canvas>
+    </div>
+    <!-- gpu_cache.js flips this to `flex` while shaders compile; kept empty so it
+         shows nothing (the inspector owns any loading overlay). -->
+    <div id="shader-compiling" style="display: none"></div>
+
+    <!--
+      Bevy engine host page.
+
+      The engine npm package's own root index.html is the full Decentraland React
+      HUD, loaded from a CDN — not an embeddable, same-origin engine. So the
+      inspector owns this bare host page instead: it boots the engine IN THIS
+      DOCUMENT via the package's boot contract (`engine/boot.js` + `__bevyLaunch`),
+      served same-origin from `/bevy-engine/`. Same-origin is required so the
+      inspector can reach `contentWindow.engine_console_command` directly and share
+      the `dcl-editor-bus` BroadcastChannel with the editor-agent scene.
+
+      The inspector mounts this page in its viewport iframe with the realm /
+      position / systemScene on the query string (see engine-iframe.ts); we read
+      them here and drive the boot contract.
+    -->
+    <script type="module">
+      const params = new URLSearchParams(window.location.search);
+      const realm = params.get('realm') ?? undefined;
+      const position = params.get('position') ?? undefined;
+      const systemScene = params.get('systemScene') ?? undefined;
+      // Leave `portables` UNDEFINED so the engine loads its default
+      // `basiccontroller.dcl.eth` portable — same as bevy-editor. Since the
+      // react-web engine layout, that PX PROVIDES the player's movement controller,
+      // so it's REQUIRED for avatar WASD walking. (We previously forced
+      // `portables=''` to skip its content-server fetch on the old engine, where
+      // movement was engine-built-in; on this engine that silently killed WASD
+      // walking while leaving camera/arrows working — a confusing footgun.)
+      const portables = undefined;
+
+      // The engine's asset processor reads/writes a cache the service worker
+      // manages; register it under `/bevy-engine/` (this page's dir → that scope).
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('service_worker.js').catch(e => {
+            console.warn('[bevy engine-host] service worker registration failed', e);
+          });
+        });
+      }
+
+      // Boot contract, set BEFORE injecting boot.js (it reads these at module
+      // eval). `PUBLIC_URL` is intentionally left UNSET so engine.js resolves its
+      // `pkg/` wasm relative to its own module URL — i.e. the same-origin
+      // `/bevy-engine/engine/` dir we serve — instead of a CDN.
+      window.__bevyBootConfig = { systemScene, portables };
+
+      // Load the engine's boot module as a runtime <script> (NOT an import): it
+      // ships in the engine package under `/bevy-engine/engine/` and must load
+      // from there, same-origin, with a relative URL.
+      const boot = document.createElement('script');
+      boot.type = 'module';
+      boot.src = 'engine/boot.js';
+      boot.onerror = () => console.error('[bevy engine-host] failed to load engine/boot.js');
+      document.head.appendChild(boot);
+
+      // The engine fetches `<systemScene>/about` exactly once at launch to load the
+      // editor-agent PX; a refused connection silently drops the agent for the whole
+      // session. Boot is near-instant once the GPU/wasm caches are warm, so it can
+      // win the race against a still-starting realm server — hold the launch until
+      // the systemScene realm actually answers (bounded), then launch.
+      async function waitForServer(url, timeoutMs) {
+        const deadline = Date.now() + timeoutMs;
+        while (Date.now() < deadline) {
+          try {
+            const res = await fetch(url, { signal: AbortSignal.timeout(1500) });
+            if (res.ok) return;
+          } catch {
+            /* not up yet — retry */
+          }
+          await new Promise(r => setTimeout(r, 500));
+        }
+        console.warn(`[bevy engine-host] ${url} still not answering — launching anyway`);
+      }
+
+      async function launchWhenReady() {
+        if (systemScene) await waitForServer(`${systemScene}/about`, 120_000);
+        while (window.__bevyReadyToLaunch !== true) {
+          await new Promise(r => setTimeout(r, 100));
+        }
+        window.__bevyLaunch(realm, position);
+      }
+
+      void launchWhenReady();
+    </script>
+  </body>
+</html>
