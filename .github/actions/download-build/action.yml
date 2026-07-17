@@ -17,26 +17,26 @@ runs:
   steps:
     # Paths mirror the upload roots in .github/workflows/build.yml.
     - name: download proto-gen
-      uses: actions/download-artifact@v8
+      uses: actions/download-artifact@v7
       with:
         name: proto-gen
         path: packages/inspector/src/lib/data-layer/proto/gen
 
     - name: download asset-packs-dist
-      uses: actions/download-artifact@v8
+      uses: actions/download-artifact@v7
       with:
         name: asset-packs-dist
         path: packages/asset-packs
 
     - name: download inspector-dist
-      uses: actions/download-artifact@v8
+      uses: actions/download-artifact@v7
       with:
         name: inspector-dist
         path: packages/inspector
 
     - name: download creator-hub-dist
       if: inputs.include-creator-hub == 'true'
-      uses: actions/download-artifact@v8
+      uses: actions/download-artifact@v7
       with:
         name: creator-hub-dist
         path: packages/creator-hub

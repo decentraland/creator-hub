@@ -83,7 +83,7 @@ jobs:
 
       - name: Bump release version
         id: version
-        uses: paulhatch/semantic-version@v6.0.3
+        uses: paulhatch/semantic-version@502226b17e3e242e4befd0a45690fcbb27dd1373 # v6.0.3
         with:
           tag_prefix: ""
           version_format: ${major}.${minor}.${patch}
@@ -104,7 +104,7 @@ jobs:
 
       - name: Compile creator-hub artifacts ${{ inputs.dry-run && ' ' || 'and upload them to github release' }}
         # I use this action because it is capable of retrying multiple times if there are any issues with the distribution server
-        uses: nick-fields/retry@v3
+        uses: nick-fields/retry@ce71cc2ab81d554ebbe88c79ab5975992d79ba08 # v3
         with:
           timeout_minutes: 60
           max_attempts: 6
