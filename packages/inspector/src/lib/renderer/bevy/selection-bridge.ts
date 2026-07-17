@@ -65,6 +65,7 @@ export function createSelectionBridge(options: SelectionBridgeOptions): () => vo
   const channel = options.channel ?? (new BroadcastChannel(EDITOR_BUS_CHANNEL) as Channel);
   const Selection = context.editorComponents.Selection;
   const Lock = context.editorComponents.Lock;
+  const Hide = context.editorComponents.Hide;
 
   // Dedupe by the full serialized message: a repost fires for entity, mode,
   // position AND rotation changes (any of them moves/re-orients the gizmo).
@@ -77,11 +78,12 @@ export function createSelectionBridge(options: SelectionBridgeOptions): () => vo
     const selected: Entity[] = [];
     let gizmo: GizmoType | undefined;
     for (const [e, selection] of context.engine.getEntitiesWith(Selection)) {
-      // Locked entities get no gizmo — they can be selected in the tree (to see
-      // their components) but must not be movable in the viewport. Skip them from
-      // the gizmo targets so the agent shows/drags nothing for them. Mirrors
-      // Babylon, which unsets the gizmo manager for a locked entity.
+      // Locked or hidden entities get no gizmo — they can be selected in the tree
+      // (to see/edit their components) but must not be movable in the viewport.
+      // Skip them from the gizmo targets so the agent shows/drags nothing. Mirrors
+      // Babylon, which unsets the gizmo manager for a locked OR hidden entity.
       if (Lock.getOrNull(e)?.value) continue;
+      if (Hide.getOrNull(e)?.value) continue;
       if (gizmo === undefined) gizmo = selection.gizmo;
       selected.push(e);
     }
@@ -128,8 +130,9 @@ export function createSelectionBridge(options: SelectionBridgeOptions): () => vo
     if (
       component.componentId === Selection.componentId ||
       component.componentId === context.Transform.componentId ||
-      // Locking/unlocking a selected entity adds/removes its gizmo, so re-post.
-      component.componentId === Lock.componentId
+      // Locking/hiding a selected entity adds/removes its gizmo, so re-post.
+      component.componentId === Lock.componentId ||
+      component.componentId === Hide.componentId
     ) {
       post();
     }
