@@ -9,6 +9,7 @@ import { createAnimationsBridge } from './animations-bridge';
 import { createDropPointBridge } from './drop-point-bridge';
 import { createForwardEditBridge } from './forward-edits';
 import { createInputFocusBridge } from './input-focus-bridge';
+import { createLayoutReloadBridge } from './layout-reload-bridge';
 import { createVerticalInputBridge } from './vertical-input-bridge';
 import { createModifierTracker } from './modifier-tracker';
 import { createPickBridge } from './pick-bridge';
@@ -80,22 +81,58 @@ export function registerBevyRenderer(): void {
       });
       bevy.attachEngine(engine.engineWindow);
 
-      // Forward inspector edits into the running engine scene as console
-      // commands (the only live-edit path — the loaded scene has no CRDT channel
-      // back in). Transform-only for now; see forward-edits.ts.
-      const disconnectForward = createForwardEditBridge({
-        context: bevy.context,
-        engineWindow: engine.engineWindow,
-      });
+      // Bindings tied to the engine's WINDOW (its iframe contentWindow): the edit
+      // forward, gizmo preview, focus forwarding and E/Q capture. A layout reload
+      // (#1369) reboots the engine iframe, replacing that window — so these are
+      // held in mutable holders and rebuilt against the new window on reload (the
+      // bus-based bridges below survive a reboot, and `modifiers` is retargeted).
+      let disconnectForward = () => {};
+      let disconnectPreview = () => {};
+      let disconnectInputFocus = () => {};
+      let disconnectVertical = () => {};
 
-      // Live gizmo preview: a drag emits `previewTransforms` every frame (merged
-      // by the reverse-channel, not written to the CRDT). Push each straight to
-      // the engine console so the entity tracks the gizmo live, without a
-      // per-frame undo entry — the committed write lands once on drag-end.
-      const disconnectPreview = createPreviewBridge({
-        events: bevy.events,
-        engineWindow: engine.engineWindow,
-      });
+      const rewireEngineBindings = (engineWindow: typeof engine.engineWindow) => {
+        disconnectForward();
+        disconnectPreview();
+        disconnectInputFocus();
+        disconnectVertical();
+
+        bevy.attachEngine(engineWindow);
+        modifiers.retarget(engineWindow as unknown as Window);
+
+        // Forward inspector edits into the running engine scene as console commands
+        // (the only live-edit path — the loaded scene has no CRDT channel back in).
+        disconnectForward = createForwardEditBridge({
+          context: bevy.context,
+          engineWindow,
+        });
+
+        // Live gizmo preview: a drag emits `previewTransforms` every frame (merged
+        // by the reverse-channel, not written to the CRDT). Push each straight to
+        // the engine console so the entity tracks the gizmo live, without a
+        // per-frame undo entry — the committed write lands once on drag-end.
+        disconnectPreview = createPreviewBridge({
+          events: bevy.events,
+          engineWindow,
+        });
+
+        // Input focus: the engine iframe is same-origin, so when the viewport holds
+        // focus its keydowns go to the engine window. Forward editor shortcuts up
+        // to the host so they fire regardless of focus, and refocus the iframe on
+        // viewport pointer-down so the fly camera's WASD resumes.
+        disconnectInputFocus = createInputFocusBridge({
+          engineWindow: engineWindow as unknown as Window,
+          iframe: engine.iframe,
+        });
+
+        // E/Q vertical fly movement: no SDK InputAction is bound to Q, so the
+        // engine can't read it. Capture E/Q on the engine window and forward the
+        // held state to the agent's fly camera over the camera bridge.
+        disconnectVertical = createVerticalInputBridge({
+          engineWindow: engineWindow as unknown as Window,
+          onChange: (up, down) => cameraBridge.setVertical(up, down),
+        });
+      };
 
       // A viewport pick is a multi-select when Shift/Ctrl/Cmd is held. The agent
       // (wasm sandbox) can't read DOM modifiers, so the host tracks their live
@@ -188,6 +225,27 @@ export function registerBevyRenderer(): void {
       const sceneRunBridge = createSceneRunBridge();
       bevy.setSceneRunPoster(running => sceneRunBridge.setRunning(running));
 
+      // Wire the engine-window bindings for the initial boot. Re-run on reload.
+      rewireEngineBindings(engine.engineWindow);
+
+      // Parcel-layout changes (#1369): the engine reads its parcel bounds from the
+      // realm's /about at BOOT — a runtime `reload` re-runs the scene code but does
+      // NOT re-read dimensions, so the only way to reflect a layout edit is a full
+      // engine reboot (what close/reopen does). Watch the Scene component's parcels
+      // and reboot the engine iframe when they change; a fresh boot re-fetches the
+      // realm (new parcels) and re-runs the initial CRDT load — which re-arms the
+      // forward bridge, re-applying the editor visibility overrides. Then re-assert
+      // the current freeze/run state (the agent's boot-freeze applied to the OLD
+      // engine instance is gone).
+      const disconnectLayoutReload = createLayoutReloadBridge({
+        context: bevy.context,
+        reboot: async () => {
+          const engineWindow = await engine.reload();
+          rewireEngineBindings(engineWindow);
+        },
+        onReloaded: () => sceneRunBridge.setRunning(sceneRunBridge.isRunning()),
+      });
+
       // Spawn-point handle: the controller shows/hides the move-handle via the
       // bridge; the agent reports drags back, which the bridge routes to the
       // controller → the active spawn point's form (onPositionChange).
@@ -195,24 +253,6 @@ export function registerBevyRenderer(): void {
         onCommit: position => bevy.handleSpawnGizmoCommit(position),
       });
       bevy.setSpawnGizmoPoster(position => spawnGizmo.show(position));
-
-      // Input focus: the engine iframe is same-origin, so when the viewport holds
-      // focus its keydowns go to the engine window (not ours). Forward editor
-      // shortcuts up to the host so they fire regardless of focus, and refocus the
-      // iframe on viewport pointer-down so the fly camera's WASD resumes without a
-      // deliberate focus click. (engineWindow is the iframe's contentWindow.)
-      const disconnectInputFocus = createInputFocusBridge({
-        engineWindow: engine.engineWindow as unknown as Window,
-        iframe: engine.iframe,
-      });
-
-      // E/Q vertical fly movement: no SDK InputAction is bound to Q, so the engine
-      // can't read it. Capture E/Q on the engine window here and forward the held
-      // state to the agent's fly camera over the camera bridge.
-      const disconnectVertical = createVerticalInputBridge({
-        engineWindow: engine.engineWindow as unknown as Window,
-        onChange: (up, down) => cameraBridge.setVertical(up, down),
-      });
 
       return {
         renderer: bevy,
@@ -229,6 +269,7 @@ export function registerBevyRenderer(): void {
           animations.disconnect();
           disconnectSelection();
           disconnectPick();
+          disconnectLayoutReload();
           disconnectForward();
           disconnect();
           engine.dispose();

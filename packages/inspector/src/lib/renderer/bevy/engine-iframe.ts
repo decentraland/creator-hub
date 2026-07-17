@@ -26,6 +26,15 @@ export interface BevyEngineMount {
   iframe: HTMLIFrameElement;
   /** The engine's window — call console commands on it. */
   engineWindow: EngineWindow;
+  /**
+   * Re-navigate the iframe to boot the engine again from scratch (re-fetching the
+   * realm's /about + scene bundle), and resolve with the NEW engine window once it
+   * is ready. Used to pick up realm-level changes the running engine won't re-read
+   * live — notably the parcel layout (#1369), which is a boot/realm property, not
+   * scene-runtime state that the `reload` console command touches. The caller must
+   * re-attach every engine-window-bound binding to the returned window.
+   */
+  reload(): Promise<EngineWindow>;
   dispose(): void;
 }
 
@@ -100,7 +109,8 @@ export function mountBevyEngine(options: MountEngineOptions): Promise<BevyEngine
   } = options;
 
   const iframe = createIframe();
-  iframe.src = buildEngineUrl(url, realm, position, systemScene);
+  const src = buildEngineUrl(url, realm, position, systemScene);
+  iframe.src = src;
   iframe.title = 'Bevy engine';
   iframe.style.border = 'none';
   iframe.style.width = '100%';
@@ -113,7 +123,6 @@ export function mountBevyEngine(options: MountEngineOptions): Promise<BevyEngine
 
   let pollTimer: ReturnType<typeof setInterval> | null = null;
   let bootTimer: ReturnType<typeof setTimeout> | null = null;
-  let settled = false;
 
   const cleanupTimers = () => {
     if (pollTimer !== null) clearInterval(pollTimer);
@@ -127,24 +136,43 @@ export function mountBevyEngine(options: MountEngineOptions): Promise<BevyEngine
     iframe.remove();
   };
 
-  return new Promise<BevyEngineMount>((resolve, reject) => {
-    bootTimer = setTimeout(() => {
-      if (settled) return;
-      settled = true;
-      dispose();
-      reject(new Error(`Bevy engine (${url}) did not become ready within ${bootTimeoutMs}ms`));
-    }, bootTimeoutMs);
-
-    // The engine installs its console function on its own window some time after
-    // the iframe's `load` fires (wasm init runs async), so poll `contentWindow`
-    // rather than resolving on `load`.
-    pollTimer = setInterval(() => {
-      if (settled) return;
-      const engineWindow = iframe.contentWindow as EngineWindow | null;
-      if (!engineReady(engineWindow)) return;
-      settled = true;
+  // Poll the iframe's contentWindow until the engine installs its console function
+  // (wasm init runs async, after `load` fires), or reject on the boot timeout.
+  const waitForReady = (): Promise<EngineWindow> =>
+    new Promise<EngineWindow>((resolve, reject) => {
+      let settled = false;
       cleanupTimers();
-      resolve({ iframe, engineWindow: engineWindow as EngineWindow, dispose });
-    }, READY_POLL_INTERVAL_MS);
-  });
+      bootTimer = setTimeout(() => {
+        if (settled) return;
+        settled = true;
+        cleanupTimers();
+        reject(new Error(`Bevy engine (${url}) did not become ready within ${bootTimeoutMs}ms`));
+      }, bootTimeoutMs);
+      pollTimer = setInterval(() => {
+        if (settled) return;
+        const engineWindow = iframe.contentWindow as EngineWindow | null;
+        if (!engineReady(engineWindow)) return;
+        settled = true;
+        cleanupTimers();
+        resolve(engineWindow as EngineWindow);
+      }, READY_POLL_INTERVAL_MS);
+    });
+
+  // Re-navigate to boot the engine from scratch, then wait for ready again. Re-set
+  // `src` to the SAME URL — assigning it reloads even when unchanged — so the
+  // engine re-fetches the realm's /about (new parcels) and re-runs the scene.
+  const reload = async (): Promise<EngineWindow> => {
+    iframe.src = 'about:blank'; // force a full teardown before re-navigating
+    iframe.src = src;
+    return waitForReady();
+  };
+
+  return waitForReady().then(
+    engineWindow => ({ iframe, engineWindow, reload, dispose }),
+    error => {
+      // A boot timeout removes the iframe (fail closed), matching the old behaviour.
+      dispose();
+      throw error;
+    },
+  );
 }
