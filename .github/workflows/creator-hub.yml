@@ -83,7 +83,7 @@ jobs:
 
       - name: Bump release version
         id: version
-        uses: paulhatch/semantic-version@v5.4.0
+        uses: paulhatch/semantic-version@v6.0.3
         with:
           tag_prefix: ""
           version_format: ${major}.${minor}.${patch}

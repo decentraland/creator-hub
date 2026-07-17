@@ -59,7 +59,7 @@ jobs:
       - uses: ./.github/actions/download-build
 
       - name: cache Playwright browsers
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ${{ runner.os == 'Linux' && '~/.cache/ms-playwright' || runner.os == 'macOS' && '~/Library/Caches/ms-playwright' || '~\AppData\Local\ms-playwright' }}
           key: ${{ runner.os }}-playwright-${{ hashFiles('package-lock.json') }}
@@ -85,7 +85,7 @@ jobs:
       # Diagnostics for the flaky "app never becomes visible" failure.
       - name: upload e2e diagnostics
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: inspector-e2e-diagnostics
           path: packages/inspector/test-results
