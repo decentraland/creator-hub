@@ -216,3 +216,33 @@ export function Card(props: {}) { return }
     expect(migrateActionsToArgsObject(program, comments, clean, 'Card')).toEqual([]);
   });
 });
+
+describe('callback inputs — code-side ?. only', () => {
+  const CB_VARS: BoundVar[] = [
+    { name: 'counter', expr: 'state.counter', type: 'number' },
+    { name: 'elcolo', expr: 'props.elcolo', type: 'callback' },
+  ];
+
+  it('adds ?. when writing a callback-input call (template → code)', () => {
+    expect(templateToBody("{{ props.elcolo }}('x')", CB_VARS)).toBe("props.elcolo?.('x')");
+    // A bare reference (no call) is left as-is — no dangling ?.
+    expect(templateToBody('const f = {{ props.elcolo }}', CB_VARS)).toBe('const f = props.elcolo');
+  });
+
+  it('strips ?. when reading a callback-input call (code → clean template)', () => {
+    const src = "/** @ui-action */ function f({ state, props }: UiAction) { props.elcolo?.('x') }";
+    const { program, comments } = parsed(src);
+    expect(readActions(program, comments, src, CB_VARS)[0].template).toBe(
+      "{{ props.elcolo }}('x')",
+    );
+  });
+
+  it('round-trips: clean call in the template, optional-chained in code', () => {
+    const template = "{{ props.elcolo }}('x')";
+    const code = templateToBody(template, CB_VARS);
+    expect(code).toBe("props.elcolo?.('x')");
+    const src = `/** @ui-action */ function f({ state, props }: UiAction) { ${code} }`;
+    const { program, comments } = parsed(src);
+    expect(readActions(program, comments, src, CB_VARS)[0].template).toBe(template);
+  });
+});

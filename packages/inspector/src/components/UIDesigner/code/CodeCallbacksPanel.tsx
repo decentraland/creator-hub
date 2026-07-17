@@ -26,6 +26,12 @@ function tokenFor(v: BindVariable): string {
   return v.expr.startsWith('props.') ? `props.${v.name}` : v.name;
 }
 
+// A callback input is invoked, not interpolated — the autocomplete inserts a
+// ready `{{ props.x }}()` call (the code-side `?.` is added on write).
+function isCallbackInput(v: BindVariable): boolean {
+  return v.type === 'callback' && v.expr.startsWith('props.');
+}
+
 // The `{{ var }}`-template body editor for one callback: a plain code textarea
 // (buffered, commits on blur) with a `{{` autocomplete over the binding surface.
 // Deliberately a raw <textarea>, not ui/TextArea: the autocomplete needs direct
@@ -66,14 +72,16 @@ const CallbackBodyEditor: React.FC<{ name: string; template: string; vars: BindV
     if (!invalid && local !== template) void setActionBody(name, local);
   };
 
-  const pick = (variable: string) => {
+  const pick = (token: string, isCall = false) => {
     const el = ref.current;
     if (!el) return;
     const caret = el.selectionStart ?? local.length;
     const open = openTemplate(local, caret);
     if (!open) return;
-    const next = `${local.slice(0, open.start)}{{ ${variable} }}${local.slice(caret)}`;
-    const pos = open.start + `{{ ${variable} }}`.length;
+    const insert = isCall ? `{{ ${token} }}()` : `{{ ${token} }}`;
+    const next = `${local.slice(0, open.start)}${insert}${local.slice(caret)}`;
+    // A callback insert drops the caret INSIDE the () so args can be typed.
+    const pos = open.start + (isCall ? `{{ ${token} }}(`.length : insert.length);
     setLocal(next);
     setPartial(null);
     // Restore focus + caret after the controlled re-render.
@@ -101,7 +109,7 @@ const CallbackBodyEditor: React.FC<{ name: string; template: string; vars: BindV
         onKeyDown={e => {
           if (partial !== null && e.key === 'Enter' && matches.length > 0) {
             e.preventDefault();
-            pick(tokenFor(matches[0]));
+            pick(tokenFor(matches[0]), isCallbackInput(matches[0]));
           } else if (e.key === 'Escape') {
             setPartial(null);
           }
@@ -123,7 +131,7 @@ const CallbackBodyEditor: React.FC<{ name: string; template: string; vars: BindV
               // Keep the textarea focused so the caret survives the click.
               onMouseDown={e => {
                 e.preventDefault();
-                pick(tokenFor(v));
+                pick(tokenFor(v), isCallbackInput(v));
               }}
             >
               {tokenFor(v)}

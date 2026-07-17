@@ -38,10 +38,21 @@ interface Comment {
 }
 
 // A bound variable the template can reference: `name` is what appears inside
-// `{{ }}`, `expr` is the code it resolves to (`state.name` or bare `name`).
+// `{{ }}`, `expr` is the code it resolves to (`state.name` / `props.name` / bare
+// marker `name`). `type` distinguishes a callback input (invoked optional-chained
+// in code) from a value.
 export interface BoundVar {
   name: string;
   expr: string;
+  type?: string;
+}
+
+// Names of callback-typed PROPS. Invoking one in a handler body is optional-
+// chained in CODE (`props.x?.(…)` — editor inputs are always optional), but shown
+// clean in the template (`{{ props.x }}(…)`); the `?.` is added on write and
+// stripped on read so it lives code-side only.
+function callbackPropNames(vars: BoundVar[]): string[] {
+  return vars.filter(v => v.type === 'callback' && v.expr === `props.${v.name}`).map(v => v.name);
 }
 
 export interface CodeAction {
@@ -171,6 +182,11 @@ function codeToTemplate(body: AstNode, source: string, vars: BoundVar[]): string
     cursor = r.end;
   }
   out += source.slice(cursor, innerEnd);
+  // A callback input's `?.` is code-side only — strip it so the template shows a
+  // clean `{{ props.x }}(…)` call. templateToBody re-adds it on write.
+  for (const name of callbackPropNames(vars)) {
+    out = out.replaceAll(`{{ props.${name} }}?.(`, `{{ props.${name} }}(`);
+  }
   return dedent(out);
 }
 
@@ -213,9 +229,16 @@ export function isValidTemplate(text: string): boolean {
 // qualified — so a state var and a prop of the same name can't collide.
 export function templateToBody(template: string, vars: BoundVar[]): string {
   const byName = new Map(vars.filter(v => !v.expr.startsWith('props.')).map(v => [v.name, v.expr]));
-  return template.replace(/\{\{\s*((?:props\.)?[A-Za-z_$][\w$]*)\s*\}\}/g, (_m, ref: string) =>
+  let code = template.replace(/\{\{\s*((?:props\.)?[A-Za-z_$][\w$]*)\s*\}\}/g, (_m, ref: string) =>
     ref.startsWith('props.') ? ref : (byName.get(ref) ?? ref),
   );
+  // Callback inputs are optional — invoke them optional-chained in code (a no-op
+  // if the parent didn't wire them). Idempotent: `props.x(` matches, an already
+  // optional-chained `props.x?.(` does not.
+  for (const name of callbackPropNames(vars)) {
+    code = code.replaceAll(`props.${name}(`, `props.${name}?.(`);
+  }
+  return code;
 }
 
 // Splice a handler's body with `code`, re-indented one level. An empty body
