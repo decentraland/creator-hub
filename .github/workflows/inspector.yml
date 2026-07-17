@@ -176,6 +176,11 @@ jobs:
           publish_dir: ./packages/inspector/public
           destination_dir: inspector/${{ steps.sanitize-branch.outputs.safe_branch }}
           keep_files: true
+          # Skip source maps: they're ~72% of the payload (bundle.js.map alone is
+          # ~80MB) and the preview only needs them if devtools is opened. Excluding
+          # them speeds the deploy push and curbs gh-pages branch bloat (keep_files
+          # accumulates every deploy forever).
+          exclude_assets: '.github,*.map'
 
       - name: set preview url
         id: set-preview-url
