@@ -81,6 +81,11 @@ export function connectReverseChannel(
   function applyPick(target: PickTarget, modifiers: { multi: boolean }) {
     switch (target.kind) {
       case 'entity': {
+        // Locked entities can't be selected by clicking in the viewport (e.g. a
+        // default ground is locked so it isn't moved by accident) — matching
+        // Babylon, where a locked entity's gizmo won't attach. Ignore the pick.
+        const lock = editorComponents.Lock.getOrNull(target.entity);
+        if (lock?.value) break;
         // Expand the clicked entity's ancestors in the tree, then select it.
         const ancestors = getAncestors(engine, target.entity);
         const nodes = mapNodes(engine, node =>
