@@ -25,6 +25,11 @@ export interface ModifierTracker {
    * sends to the agent depends on `isShift()`, so a Shift toggle must re-post the
    * selection — this fires exactly when `isShift()` flips. Returns an unsubscribe. */
   onShiftChange(cb: () => void): () => void;
+  /** Move the engine-window listeners to a new engine window (after the engine
+   * iframe reboots on a layout reload — its contentWindow is replaced). The host
+   * window listener is untouched; the tracker object identity is preserved so its
+   * consumers (pick/selection bridges) keep working. */
+  retarget(engineWindow: Window): void;
   disconnect(): void;
 }
 
@@ -61,13 +66,24 @@ export function createModifierTracker(options: ModifierTrackerOptions): Modifier
     setShift(false);
   };
 
-  const windows = new Set<Window>([hostWindow, engineWindow]);
-  for (const w of windows) {
+  const attach = (w: Window) => {
     for (const type of ['keydown', 'keyup'] as const) {
       w.addEventListener(type, sync as EventListener, { capture: true });
     }
     w.addEventListener('blur', clear, { capture: true });
-  }
+  };
+  const detach = (w: Window) => {
+    for (const type of ['keydown', 'keyup'] as const) {
+      w.removeEventListener(type, sync as EventListener, { capture: true } as never);
+    }
+    w.removeEventListener('blur', clear, { capture: true } as never);
+  };
+
+  // Track the engine window separately so it can be swapped on a reboot; the host
+  // window stays put for the tracker's lifetime.
+  let currentEngineWindow = engineWindow;
+  attach(hostWindow);
+  attach(currentEngineWindow);
 
   return {
     isMultiSelect: () => multi,
@@ -76,14 +92,17 @@ export function createModifierTracker(options: ModifierTrackerOptions): Modifier
       shiftListeners.add(cb);
       return () => shiftListeners.delete(cb);
     },
+    retarget: (nextEngineWindow: Window) => {
+      if (nextEngineWindow === currentEngineWindow) return;
+      detach(currentEngineWindow);
+      currentEngineWindow = nextEngineWindow;
+      clear(); // a reboot drops any held keys
+      attach(currentEngineWindow);
+    },
     disconnect: () => {
       shiftListeners.clear();
-      for (const w of windows) {
-        for (const type of ['keydown', 'keyup'] as const) {
-          w.removeEventListener(type, sync as EventListener, { capture: true } as never);
-        }
-        w.removeEventListener('blur', clear, { capture: true } as never);
-      }
+      detach(hostWindow);
+      detach(currentEngineWindow);
     },
   };
 }
