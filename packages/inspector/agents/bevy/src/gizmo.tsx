@@ -343,6 +343,12 @@ export function setSceneOffset(baseParcelX: number, baseParcelY: number): void {
   sceneOffset = Vector3.create(baseParcelX * 16, 0, baseParcelY * 16);
 }
 
+/** The current scene-local → engine-world offset (see setSceneOffset). Other
+ * agent modules (spawn areas) add it to place scene-local positions in the world. */
+export function getSceneOffset(): Vector3 {
+  return sceneOffset;
+}
+
 /**
  * The scene-local ground point under the engine's current pointer — for placing
  * a drag-dropped asset (the inspector's `getPointerWorldPoint` for Bevy). Casts
