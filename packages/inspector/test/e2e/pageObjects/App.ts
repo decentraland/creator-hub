@@ -1,9 +1,7 @@
 /**
- * On the flaky CI failure where `.App.is-ready` is present but never becomes
- * visible, dump what the DOM actually looks like (computed visibility + box of
- * `.App`/`#root`, viewport, canvas presence, engine-ready flag) plus any browser
- * console/page errors, and save a screenshot. This turns the opaque
- * "waitForSelector timeout" into evidence of *why* the app didn't paint.
+ * When `.App.is-ready` never becomes visible, dump the DOM state (visibility,
+ * boxes, canvas count, engine flag), captured console/page errors, and a
+ * screenshot — so the timeout reports *why* the app didn't paint.
  */
 async function dumpReadyDiagnostics() {
   try {
@@ -55,9 +53,7 @@ class AppPageObject {
 
   async waitUntilReady() {
     try {
-      // Cold boot (parse an ~19MB bundle, init Babylon, boot the data layer) is
-      // the slowest single wait in the suite — give it explicit headroom beyond
-      // the page-wide default so slow shared runners can't trip it.
+      // Cold boot (bundle parse + Babylon init) is the slowest wait in the suite.
       await page.waitForSelector('.App.is-ready', { timeout: 90_000 });
     } catch (error) {
       await dumpReadyDiagnostics();

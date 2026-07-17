@@ -15,8 +15,7 @@ inputs:
 runs:
   using: composite
   steps:
-    # Download paths mirror each artifact's least-common-ancestor root
-    # (see .github/workflows/build.yml upload steps).
+    # Paths mirror the upload roots in .github/workflows/build.yml.
     - name: download proto-gen
       uses: actions/download-artifact@v8
       with:

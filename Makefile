@@ -131,8 +131,7 @@ test-inspector-e2e:
 test-creator-hub-e2e:
 	cd $(CH_PATH); npm run test:e2e
 
-# CI variant: reuse the prebuilt creator-hub dist (downloaded from the build
-# job) instead of rebuilding it inside test:e2e.
+# CI variant: runs against the prebuilt dist (skips the npm run build in test:e2e).
 test-creator-hub-e2e-ci:
 	cd $(CH_PATH); npm run test:e2e:ci
 

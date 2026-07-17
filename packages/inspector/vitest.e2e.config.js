@@ -6,12 +6,9 @@ export default defineConfig({
     globals: true,
     environment: 'node',
     include: ['test/e2e/**/*.spec.ts'],
-    // 120s (was 60s, was 30s): shared CI runners are slow and contended, and with
-    // slowMo:100 the heaviest sequences (e.g. the multi-select drag test: 4
-    // addChilds + a drag) have been observed hitting 60s. The per-action waits
-    // (Playwright default 60s, app cold-boot 90s) need room to fail first so
-    // their error — not a blunt vitest timeout — reports the cause. A genuinely
-    // hung test still fails in reasonable time at 120s.
+    // 120s: heavy sequences with slowMo:100 have been observed exceeding 60s on
+    // contended runners, and the per-action waits (60s default, 90s cold boot)
+    // must fail first so their error — not a blunt vitest timeout — names the cause.
     testTimeout: 120000,
     hookTimeout: 120000,
     setupFiles: ['./test/e2e/setup.ts'],
