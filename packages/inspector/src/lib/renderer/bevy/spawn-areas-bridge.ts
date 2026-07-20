@@ -7,6 +7,8 @@ import type {
   PageToScene,
   SpawnArea,
 } from '@dcl/inspector-bevy-protocol';
+import { resolveActiveSceneComponent } from '../../sdk/components/scene-metadata-version';
+import { VERSIONS_REGISTRY } from '../../sdk/components/versioning/registry';
 import type { BevySceneContext } from './BevySceneContext';
 
 /**
@@ -88,15 +90,23 @@ export function toSpawnAreas(spawnPoints: SpawnPoint[] | undefined): SpawnArea[]
 export function createSpawnAreasBridge(options: SpawnAreasBridgeOptions): () => void {
   const { context, visibility } = options;
   const channel = options.channel ?? (new BroadcastChannel(EDITOR_BUS_CHANNEL) as Channel);
-  const Scene = context.editorComponents.Scene as unknown as SpawnSceneComponent & {
-    componentId: number;
-  };
   const RootEntity = context.engine.RootEntity;
+  // Read spawn points from the SceneMetadata version the DATA-LAYER actually uses
+  // (may be older than this inspector's latest — see resolveActiveSceneComponent),
+  // resolved fresh each read so it self-corrects once the host's load lands.
+  const activeScene = () =>
+    resolveActiveSceneComponent(context.engine) as unknown as SpawnSceneComponent;
+  // All SceneMetadata version ids, so onChange matches whichever the host streams.
+  const sceneComponentIds = new Set(
+    (VERSIONS_REGISTRY['inspector::SceneMetadata'] ?? [])
+      .map(v => context.engine.getComponentOrNull(v.versionName)?.componentId)
+      .filter((id): id is number => id !== undefined),
+  );
 
   let lastPosted: string | undefined;
 
   const post = (force = false) => {
-    const spawnPoints = Scene.getOrNull(RootEntity)?.spawnPoints;
+    const spawnPoints = activeScene().getOrNull(RootEntity)?.spawnPoints;
     // Omit spawn points hidden via the tree's eye toggle (matches Babylon, which
     // setEnabled(false)s the hidden spawn point's visuals).
     const visible = visibility
@@ -117,7 +127,7 @@ export function createSpawnAreasBridge(options: SpawnAreasBridgeOptions): () => 
   // remove a spawn point (the settings form rewrites Scene). The value-dedupe in
   // post() drops the changes that didn't touch spawnPoints.
   const off = context.onChange((_entity, _op, component) => {
-    if (!component || component.componentId !== Scene.componentId) return;
+    if (!component || !sceneComponentIds.has(component.componentId)) return;
     post();
   });
 
