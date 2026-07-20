@@ -214,6 +214,11 @@ async function setSceneFrozen(frozen: boolean): Promise<void> {
       // "scene is already frozen/not frozen" if it's a no-op — both are fine.
       if (!/could not find|player is not in any scene/i.test(reply)) return;
     } catch (e) {
+      // The engine THROWS "scene is already frozen/not frozen" for a no-op — that's
+      // the desired state already, so treat it as success (don't log/retry). Only a
+      // real failure (scene not resolvable yet) should keep retrying.
+      const msg = e instanceof Error ? e.message : String(e);
+      if (/already (frozen|not frozen|running)/i.test(msg)) return;
       console.error(`[bevy-agent] ${command} attempt failed:`, e);
     }
     await new Promise<void>(resolve => setTimeout(() => resolve(), 500));
@@ -223,18 +228,41 @@ async function setSceneFrozen(frozen: boolean): Promise<void> {
 /**
  * Stop/reset (#1376): restart the inspected scene to its authored initial state.
  * Uses the engine's `reload <hash>` console command scoped to the pinned scene —
- * fast (no engine/iframe reboot) and it leaves the editor-agent portable running,
- * while re-running the scene's SDK7 code from scratch so anything that moved (a
- * walking NPC) returns to start. The inspector re-asserts freeze afterwards (a
- * freshly reloaded scene starts running).
+ * fast (no engine/iframe reboot), leaves the editor-agent portable running, and
+ * re-runs the scene's SDK7 code from scratch so anything that moved (a walking
+ * NPC) returns to start.
+ *
+ * `reload` drops the scene by hash; the engine re-loads it as a NEW instance
+ * (same content hash, new scene Entity). That INVALIDATES the ActiveInspectionScene
+ * pin set by `/set_scene` — so we must re-pin the scene after it respawns, or
+ * freeze/pause (which target the pinned scene) silently no-op afterwards (the bug:
+ * "hit stop → play/pause dead"). And a freshly reloaded scene starts RUNNING, so
+ * we must re-freeze to land paused (the editor default). Re-pin + re-freeze here,
+ * with retries since the new scene entity takes a beat to resolve after reload.
  */
 async function resetScene(): Promise<void> {
   const api = getBevyApi();
   if (!api || !pinnedSceneHash) return;
+  const hash = pinnedSceneHash;
   try {
-    await api.consoleCommand('reload', [pinnedSceneHash]);
+    await api.consoleCommand('reload', [hash]);
   } catch (e) {
     console.error('[bevy-agent] reset (reload) failed:', e);
+    return;
+  }
+  // Re-pin the reloaded scene (its ActiveInspectionScene Entity was invalidated by
+  // the reload), retrying until the new instance resolves, then re-freeze it.
+  for (let attempt = 0; attempt < 10; attempt++) {
+    await new Promise<void>(resolve => setTimeout(() => resolve(), 500));
+    try {
+      const reply = await api.consoleCommand('set_scene', [hash]);
+      if (!/could not find|not found|no longer exists/i.test(reply)) {
+        await setSceneFrozen(true);
+        return;
+      }
+    } catch (e) {
+      console.error('[bevy-agent] reset re-pin attempt failed:', e);
+    }
   }
 }
 

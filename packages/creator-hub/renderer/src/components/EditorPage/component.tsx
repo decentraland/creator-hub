@@ -160,6 +160,16 @@ export function EditorPage() {
       setBevyRealm(null);
       return;
     }
+    // Wait for dependency install to finish before starting the realm. On a
+    // freshly created scene CH installs deps, then this effect fires — starting
+    // `sdk-commands start` while node_modules is still being written fails with
+    // "Could not find package.json for module @dcl/sdk-commands". Gating on
+    // isInstallingProject (in the deps below) re-runs this once install completes,
+    // and keeps the loader spinning (not the error screen) meanwhile.
+    if (isInstallingProject) {
+      setBevyRealm(null);
+      return;
+    }
     let cancelled = false;
     setLoadError(null);
     setLoadTimedOut(false);
@@ -181,21 +191,23 @@ export function EditorPage() {
       cancelled = true;
       void killBevyRealm(projectPath);
     };
-  }, [projectPath, useBevy, startBevyRealm, killBevyRealm]);
+  }, [projectPath, useBevy, isInstallingProject, startBevyRealm, killBevyRealm]);
 
   const isReady = !!project && inspectorPort > 0 && (!useBevy || bevyRealm !== null);
 
   // A load timeout backstop: even if the realm "starts", a broken scene can leave
   // the editor never becoming ready. After a grace period on the loader, offer the
-  // same escape hatch (Back + Open code) rather than an infinite spinner.
+  // same escape hatch (Back + Open code) rather than an infinite spinner. Don't run
+  // the timer while deps are still installing — a fresh scene's npm install can
+  // exceed the grace period and isn't a load failure.
   useEffect(() => {
-    if (isReady || loadError) {
+    if (isReady || loadError || isInstallingProject) {
       setLoadTimedOut(false);
       return;
     }
     const timer = setTimeout(() => setLoadTimedOut(true), 45_000);
     return () => clearTimeout(timer);
-  }, [isReady, loadError, projectPath, useBevy]);
+  }, [isReady, loadError, isInstallingProject, projectPath, useBevy]);
 
   const openModal = useCallback((type: ModalType, initialStep?: ModalState['initialStep']) => {
     setModalState({ type, initialStep });

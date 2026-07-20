@@ -25,6 +25,13 @@ interface Channel {
 export interface CameraBridgeOptions {
   /** Called with the fly-camera's live pose (scene-local) as the agent streams it. */
   onPose?: (pose: { position: BusVec3; target: BusVec3 }) => void;
+  /**
+   * Called when the agent signals `editor-ready` (booted + listening). Used to send
+   * the initial camera mode: the agent boots in avatar (to avoid the free-on-boot
+   * WASD race) and the host switches it to the default (free) once ready. Also
+   * fires after an engine reboot, which restarts the agent.
+   */
+  onReady?: () => void;
   /** Test seam: the channel to use. Defaults to a real BroadcastChannel. */
   channel?: Channel;
 }
@@ -53,7 +60,7 @@ export function createCameraBridge(options: CameraBridgeOptions = {}): CameraBri
     channel.postMessage(envelope);
   };
 
-  if (options.onPose) {
+  if (options.onPose || options.onReady) {
     channel.onmessage = ({ data }: { data: unknown }) => {
       if (!data || typeof data !== 'object') return;
       const env = data as Partial<BusEnvelope>;
@@ -61,6 +68,7 @@ export function createCameraBridge(options: CameraBridgeOptions = {}): CameraBri
       const msg = env.msg as AgentToPage;
       if (msg.kind === 'camera-pose')
         options.onPose?.({ position: msg.position, target: msg.target });
+      else if (msg.kind === 'editor-ready') options.onReady?.();
     };
   }
 

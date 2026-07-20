@@ -114,6 +114,11 @@ export interface ForwardEditBridge {
    * each animated entity's Animator with playing:false, or the authored value
    * (#1382). Driven by the scene run/freeze toggle. */
   setAnimationsFrozen(frozen: boolean): void;
+  /** Re-establish editor overrides after a scene reload (Stop/#1376), which
+   * re-creates the engine entities: marks existing entities instantiated (no
+   * re-`new_entity` → no id collision) and replays placeholder/visibility/pickable/
+   * animation overrides so they survive the reload. */
+  reconcileAfterReload(): void;
 }
 
 export function createForwardEditBridge(options: ForwardEditBridgeOptions): ForwardEditBridge {
@@ -452,11 +457,28 @@ export function createForwardEditBridge(options: ForwardEditBridgeOptions): Forw
     }
   };
 
+  // Re-establish the editor overrides after a scene `reload` (Stop/#1376). The
+  // reload RE-CREATES the scene's engine entities at their original ids, so:
+  //  - every Name-bearing entity already exists in the engine again — mark them
+  //    instantiated so the re-forward doesn't `/new_entity` them (which collides:
+  //    "id 512 already live") and drop the placeholder/visibility override (the
+  //    bug where a Trigger Area's placeholder vanished after Stop and never came
+  //    back), and
+  //  - the fresh entities lost the forwarded overrides (placeholder GLTF, editor
+  //    visibility, pointer-pickable mask, animation pause) — replay them.
+  const reconcileAfterReload = () => {
+    for (const [entity] of context.engine.getEntitiesWith(context.Name)) {
+      instantiated.add(entity);
+    }
+    reconcileEditorOverridesOnArm();
+  };
+
   return {
     disconnect: () => {
       if (armTimer !== null) clearTimeout(armTimer);
       off();
     },
     setAnimationsFrozen,
+    reconcileAfterReload,
   };
 }
