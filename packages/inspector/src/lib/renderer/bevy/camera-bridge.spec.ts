@@ -76,4 +76,20 @@ describe('createCameraBridge', () => {
       expect(onmessage).toBeNull();
     });
   });
+
+  describe('the editor-ready signal', () => {
+    it('should invoke onReady when the agent signals editor-ready', () => {
+      let ready = 0;
+      const bridge = createCameraBridge({ channel, onReady: () => (ready += 1) });
+      deliver({ kind: 'editor-ready' });
+      expect(ready).toBe(1);
+      bridge.disconnect();
+    });
+
+    it('should listen for editor-ready even without an onPose handler', () => {
+      const bridge = createCameraBridge({ channel, onReady: () => {} });
+      expect(onmessage).not.toBeNull();
+      bridge.disconnect();
+    });
+  });
 });

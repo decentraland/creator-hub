@@ -622,6 +622,7 @@
         "create": "創建"
       },
       "errors": {
+        "invalid_directory": "该文件夹路径不存在。请使用文件夹按钮为场景选择一个已存在的位置。",
         "path_exists_or_not_writable": "项目路径已存在或无法在其中保存文件。请选择其他文件夹。"
       }
     },

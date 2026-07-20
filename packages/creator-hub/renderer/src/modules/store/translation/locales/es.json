@@ -622,6 +622,7 @@
         "create": "Crear"
       },
       "errors": {
+        "invalid_directory": "Esa ruta de carpeta no existe. Usa el botón de carpeta para elegir una ubicación existente para tu escena.",
         "path_exists_or_not_writable": "La ruta ya existe o no tienes permiso para crear archivos allí. Por favor, elige otra carpeta."
       }
     },

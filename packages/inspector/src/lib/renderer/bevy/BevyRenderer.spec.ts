@@ -77,11 +77,11 @@ describe('BevyRenderer editor camera', () => {
     renderer.dispose();
   });
 
-  it('should default to avatar mode (the editor camera)', () => {
-    // Avatar is the deliberate default: booting in free mode disabled the
-    // player's input before it became the active controller, which broke WASD
-    // walking (see the agent boot comment / the free-default WASD regression).
-    expect(renderer.editorCamera.getMode()).toBe('avatar');
+  it('should default to free mode (the editor camera)', () => {
+    // Free is the editor default (QA). The AGENT boots in avatar and is switched
+    // to free once ready (on editor-ready, post-boot) to avoid the free-on-boot
+    // input race; this default just reflects the intended mode in the toolbar.
+    expect(renderer.editorCamera.getMode()).toBe('free');
   });
 
   it('should post the mode to the agent and notify subscribers on change', () => {
@@ -90,16 +90,16 @@ describe('BevyRenderer editor camera', () => {
     const seen: string[] = [];
     renderer.editorCamera.onModeChange(mode => seen.push(mode));
 
-    renderer.editorCamera.setMode('free');
-    expect(renderer.editorCamera.getMode()).toBe('free');
-    expect(posted).toEqual(['free']);
-    expect(seen).toEqual(['free']);
+    renderer.editorCamera.setMode('avatar');
+    expect(renderer.editorCamera.getMode()).toBe('avatar');
+    expect(posted).toEqual(['avatar']);
+    expect(seen).toEqual(['avatar']);
   });
 
   it('should ignore a no-op set to the current mode', () => {
     const posted: string[] = [];
     renderer.setCameraModePoster(mode => posted.push(mode));
-    renderer.editorCamera.setMode('avatar'); // already avatar
+    renderer.editorCamera.setMode('free'); // already free
     expect(posted).toEqual([]);
   });
 

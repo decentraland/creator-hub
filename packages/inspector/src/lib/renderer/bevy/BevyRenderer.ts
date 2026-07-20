@@ -99,7 +99,11 @@ export class BevyRenderer implements IRenderer {
   // player activated and broke WASD walking). The toolbar toggle reflects this
   // without waiting on a round-trip from the agent; the user switches to the fly
   // camera when they want it.
-  #editorCameraMode: EditorCameraMode = 'avatar';
+  // Free is the editor default camera (QA). The AGENT still boots in avatar and is
+  // switched to free once it's ready (on `editor-ready`, after its boot sequence),
+  // avoiding the free-on-boot race that disabled avatar input / broke WASD. This
+  // just reflects the intended default in the toolbar from the start.
+  #editorCameraMode: EditorCameraMode = 'free';
   #postCameraMode: ((mode: EditorCameraMode) => void) | null = null;
   #cameraModeHandlers = new Set<(mode: EditorCameraMode) => void>();
   // Scene run/freeze. The editor default is FROZEN (static — the agent freezes

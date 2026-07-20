@@ -622,6 +622,7 @@
         "create": "Create"
       },
       "errors": {
+        "invalid_directory": "That folder path doesn’t exist. Use the folder button to pick an existing location for your scene.",
         "path_exists_or_not_writable": "Path already exists or can't save files there. Please choose a different folder."
       }
     },

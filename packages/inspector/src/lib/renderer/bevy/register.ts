@@ -217,6 +217,13 @@ export function registerBevyRenderer(): void {
           // dots) with fresh data.
           bevy.context.tick();
         },
+        // Default to the FREE editor camera (QA), FRAMED on the scene. The agent
+        // boots in avatar (avoids the free-on-boot input race); once it's ready we
+        // reset the camera — which engages free AND flies it to a default framing
+        // of the scene (scene-local center). A bare set-camera free would seed the
+        // fly pose from the avatar cam, which sits far from the scene's real parcel
+        // (the "camera really far from the scene" bug). Fires again after a reboot.
+        onReady: () => bevy.camera.reset(),
       });
       bevy.setCameraModePoster(mode => cameraBridge.setMode(mode));
       bevy.setFocusPoster(position => cameraBridge.focus(position));
@@ -267,7 +274,18 @@ export function registerBevyRenderer(): void {
       // re-assert freeze right after.
       bevy.setSceneResetter(async () => {
         sceneRunBridge.reset();
+        // Land paused (the editor default) + reflect it in the toolbar. The agent
+        // re-pins + re-freezes the reloaded scene itself (its pin is invalidated by
+        // the reload); this keeps the host's run-state in sync so play/pause and
+        // the button icon are correct afterwards.
         sceneRunBridge.setRunning(false);
+        // The reload re-CREATES the scene's engine entities, dropping every editor
+        // override (placeholder GLTFs, editor visibility, pointer-pickable mask,
+        // animation pause) — replay them so e.g. a Trigger Area's placeholder comes
+        // back and animations stay paused. reconcileAfterReload also marks the
+        // re-created entities instantiated so the replay doesn't `/new_entity` them
+        // (which would collide "id already live"). Give the scene a beat to respawn.
+        setTimeout(() => forwardBridge?.reconcileAfterReload(), 2500);
       });
 
       // Spawn-point handle: the controller shows/hides the move-handle via the
