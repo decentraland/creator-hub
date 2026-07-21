@@ -31,6 +31,10 @@ export async function rm(path: string, options?: { recursive?: boolean }) {
   await fs.rm(path, options);
 }
 
+export async function rename(oldPath: string, newPath: string) {
+  await fs.rename(oldPath, newPath);
+}
+
 export async function readdir(path: string) {
   return fs.readdir(path);
 }

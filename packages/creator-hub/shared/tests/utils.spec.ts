@@ -1,5 +1,70 @@
 import { vi, describe, it, expect, beforeEach } from 'vitest';
-import { debounce, debounceByKey } from '../utils';
+import { debounce, debounceByKey, isValidFolderName, getBaseName } from '../utils';
+
+describe('isValidFolderName', () => {
+  it('should accept a normal name', () => {
+    expect(isValidFolderName('My Scene')).toBe(true);
+  });
+
+  it('should reject an empty name', () => {
+    expect(isValidFolderName('')).toBe(false);
+  });
+
+  it('should reject a whitespace-only name', () => {
+    expect(isValidFolderName('   ')).toBe(false);
+  });
+
+  it('should reject "." and ".."', () => {
+    expect(isValidFolderName('.')).toBe(false);
+    expect(isValidFolderName('..')).toBe(false);
+  });
+
+  it('should reject names with illegal filesystem characters', () => {
+    expect(isValidFolderName('My/Scene')).toBe(false);
+    expect(isValidFolderName('My\\Scene')).toBe(false);
+    expect(isValidFolderName('My:Scene')).toBe(false);
+    expect(isValidFolderName('My*Scene')).toBe(false);
+    expect(isValidFolderName('My?Scene')).toBe(false);
+    expect(isValidFolderName('My"Scene')).toBe(false);
+    expect(isValidFolderName('My<Scene>')).toBe(false);
+    expect(isValidFolderName('My|Scene')).toBe(false);
+  });
+
+  it('should reject reserved Windows device names', () => {
+    expect(isValidFolderName('CON')).toBe(false);
+    expect(isValidFolderName('con')).toBe(false);
+    expect(isValidFolderName('COM1')).toBe(false);
+    expect(isValidFolderName('LPT9')).toBe(false);
+    expect(isValidFolderName('NUL')).toBe(false);
+  });
+
+  it('should reject names longer than 255 characters', () => {
+    expect(isValidFolderName('a'.repeat(256))).toBe(false);
+    expect(isValidFolderName('a'.repeat(255))).toBe(true);
+  });
+
+  it('should trim surrounding whitespace before validating', () => {
+    expect(isValidFolderName('  My Scene  ')).toBe(true);
+  });
+});
+
+describe('getBaseName', () => {
+  it('should return the last segment of a POSIX path', () => {
+    expect(getBaseName('/home/user/scenes/My Scene')).toBe('My Scene');
+  });
+
+  it('should return the last segment of a Windows path', () => {
+    expect(getBaseName('C:\\Users\\user\\scenes\\My Scene')).toBe('My Scene');
+  });
+
+  it('should ignore a trailing slash', () => {
+    expect(getBaseName('/home/user/scenes/My Scene/')).toBe('My Scene');
+  });
+
+  it('should return an empty string for an empty path', () => {
+    expect(getBaseName('')).toBe('');
+  });
+});
 
 describe('debounce', () => {
   beforeEach(() => {
