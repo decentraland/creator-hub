@@ -10,6 +10,12 @@ import { getMockServices } from './services';
 
 vi.mock('../../src/modules/scene');
 vi.mock('../../src/modules/settings');
+vi.mock('../../src/modules/analytics');
+vi.mock('/shared/types/storage', () => ({
+  FileSystemStorage: {
+    getOrCreate: vi.fn().mockResolvedValue({ getAll: vi.fn().mockResolvedValue({}) }),
+  },
+}));
 
 describe('initializeWorkspace', () => {
   const services = getMockServices();
@@ -189,6 +195,47 @@ describe('initializeWorkspace', () => {
       await expect(workspace.createProject()).rejects.toThrow(
         `Failed to create project "${NEW_SCENE_NAME}": ${errorMessage}`,
       );
+    });
+  });
+
+  describe('getProjects', () => {
+    const goodPath = '/projects/good';
+    const badPath = '/projects/bad';
+
+    beforeEach(() => {
+      services.fs.exists.mockResolvedValue(true);
+      services.pkg.hasDependency.mockResolvedValue(true);
+      services.fs.stat.mockResolvedValue({
+        birthtime: new Date(0),
+        mtime: new Date(0),
+        size: 1,
+      } as any);
+      services.fs.readFile.mockResolvedValue(Buffer.from('thumbnail'));
+      services.ipc.invoke.mockResolvedValue('/config/path' as any);
+      vi.mocked(getScene).mockImplementation(async _path => {
+        if (_path === badPath) {
+          // a corrupt scene.json: missing the "scene" section makes getProject throw
+          return {} as Scene;
+        }
+        return {
+          display: { title: 'Good scene' },
+          scene: { parcels: ['0,0'], base: '0,0' },
+        } as Scene;
+      });
+    });
+
+    describe('when one project fails to load', () => {
+      it('should return the healthy projects and skip the broken one', async () => {
+        const workspace = initializeWorkspace(services);
+        const [projects, missing] = await workspace.getProjects([goodPath, badPath], {
+          omitOutdatedPackages: true,
+        });
+
+        expect(projects).toHaveLength(1);
+        expect(projects[0].path).toBe(goodPath);
+        expect(projects[0].title).toBe('Good scene');
+        expect(missing).toEqual([]);
+      });
     });
   });
 

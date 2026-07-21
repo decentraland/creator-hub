@@ -49,6 +49,26 @@ const parseCoords = (coords: string) => {
   return { x: parseInt(x), y: parseInt(y) };
 };
 
+// A scene without parcels is invalid and breaks deployment: fall back to the base parcel,
+// and only to 0,0 when there is no other known set of coordinates
+const DEFAULT_PARCEL = '0,0';
+const PARCEL_REGEX = /^\s*-?\d+\s*,\s*-?\d+\s*$/;
+
+function isValidParcel(value: unknown): value is string {
+  return typeof value === 'string' && PARCEL_REGEX.test(value);
+}
+
+export function getValidParcels(scene: Scene['scene'] | undefined): {
+  parcels: string[];
+  base: string;
+} {
+  const rawParcels = Array.isArray(scene?.parcels) ? scene.parcels : [];
+  const parcels = rawParcels.filter(isValidParcel);
+  const base = isValidParcel(scene?.base) ? scene.base : (parcels[0] ?? DEFAULT_PARCEL);
+  if (parcels.length === 0) parcels.push(base);
+  return { parcels, base };
+}
+
 type SceneWithRating = Scene & {
   creator?: string;
   rating: SceneAgeRating;
@@ -75,8 +95,11 @@ export function fromSceneComponent(
       navmapThumbnail: value.thumbnail || '',
     },
     scene: {
-      parcels: value.layout.parcels.map($ => `${$.x},${$.y}`),
-      base: `${value.layout.base.x},${value.layout.base.y}`,
+      parcels:
+        value.layout.parcels.length > 0
+          ? value.layout.parcels.map($ => `${$.x},${$.y}`)
+          : [value.layout.base ? `${value.layout.base.x},${value.layout.base.y}` : DEFAULT_PARCEL],
+      base: value.layout.base ? `${value.layout.base.x},${value.layout.base.y}` : DEFAULT_PARCEL,
     },
     creator: value.creator || '',
     contact: {
@@ -131,6 +154,7 @@ export function fromSceneComponent(
 }
 
 export function toSceneComponent(value: Scene): EditorComponentsTypes['Scene'] {
+  const validParcels = getValidParcels(value.scene);
   const categories: SceneCategory[] = [];
   const tags: string[] = [];
 
@@ -148,8 +172,8 @@ export function toSceneComponent(value: Scene): EditorComponentsTypes['Scene'] {
     thumbnail: value.display?.navmapThumbnail || '',
     creator: (value as SceneWithRating).creator || '',
     layout: {
-      parcels: value.scene.parcels.map($ => parseCoords($)),
-      base: parseCoords(value.scene.base),
+      parcels: validParcels.parcels.map($ => parseCoords($)),
+      base: parseCoords(validParcels.base),
     },
     author: value.contact?.name || '',
     email: value.contact?.email || '',
