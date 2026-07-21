@@ -71,7 +71,7 @@ jobs:
       - name: build
         run: make build-creator-hub
         env:
-          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: '1'
           NODE_OPTIONS: "--max-old-space-size=8192"
           MODE: ${{ !inputs.dry-run && 'production' || 'development' }}
           VITE_SEGMENT_CREATORS_HUB_API_KEY: ${{ secrets.VITE_SEGMENT_CREATORS_HUB_API_KEY }}
@@ -104,7 +104,7 @@ jobs:
 
       - name: Compile creator-hub artifacts ${{ inputs.dry-run && ' ' || 'and upload them to github release' }}
         # I use this action because it is capable of retrying multiple times if there are any issues with the distribution server
-        uses: nick-fields/retry@ce71cc2ab81d554ebbe88c79ab5975992d79ba08 # v3
+        uses: nick-fields/retry@ad984534de44a9489a53aefd81eb77f87c70dc60 # v4.0.0
         with:
           timeout_minutes: 60
           max_attempts: 6

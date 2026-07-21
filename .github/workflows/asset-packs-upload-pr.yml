@@ -54,13 +54,16 @@ jobs:
           fetch-depth: 0
           filter: blob:none
 
+      # Manual /upload-assets flow on a checked-out PR branch: needs only asset-packs and
+      # runs rarely, so it stays on setup-node directly rather than the ./.github/actions/setup
+      # composite (whose node_modules cache is keyed on the base branch's lockfile).
       - uses: actions/setup-node@v6
         with:
           node-version: 24
           cache: 'npm'
 
       - name: install
-        run: npm i --silent && make install-asset-packs
+        run: npm ci --silent && make install-asset-packs
 
       - name: build
         run: make build-asset-packs

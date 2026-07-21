@@ -1,6 +1,9 @@
 name: Tests
 on: [ workflow_call ]
 
+permissions:
+  contents: read
+
 concurrency:
   group: tests-${{ github.ref }}
   cancel-in-progress: true
@@ -53,14 +56,6 @@ jobs:
 
       # Reuse the shared build; the inspector server below serves the prebuilt bundle.
       - uses: ./.github/actions/download-build
-
-      - name: cache Playwright browsers
-        uses: actions/cache@v6
-        with:
-          path: ${{ runner.os == 'Linux' && '~/.cache/ms-playwright' || runner.os == 'macOS' && '~/Library/Caches/ms-playwright' || '~\AppData\Local\ms-playwright' }}
-          key: ${{ runner.os }}-playwright-${{ hashFiles('package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-playwright-
 
       - name: install Playwright browsers
         run: npx playwright install

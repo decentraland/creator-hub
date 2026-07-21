@@ -1,6 +1,9 @@
 name: Build
 on: [ workflow_call ]
 
+permissions:
+  contents: read
+
 concurrency:
   group: build-${{ github.ref }}
   cancel-in-progress: true
@@ -57,6 +60,7 @@ jobs:
               'packages/inspector/scripts/**',
               'packages/inspector/tsconfig*.json',
               'packages/inspector/package.json',
+              'packages/inspector/public/index.html',
               'packages/creator-hub/main/**',
               'packages/creator-hub/preload/**',
               'packages/creator-hub/renderer/**',
@@ -94,7 +98,7 @@ jobs:
           name: proto-gen
           path: packages/inspector/src/lib/data-layer/proto/gen
           if-no-files-found: error
-          retention-days: 1
+          retention-days: 7
 
       - name: upload asset-packs-dist
         uses: actions/upload-artifact@v7
@@ -105,7 +109,7 @@ jobs:
             packages/asset-packs/bin
             packages/asset-packs/catalog.json
           if-no-files-found: error
-          retention-days: 1
+          retention-days: 7
 
       - name: upload inspector-dist
         uses: actions/upload-artifact@v7
@@ -115,7 +119,7 @@ jobs:
             packages/inspector/dist
             packages/inspector/public
           if-no-files-found: error
-          retention-days: 1
+          retention-days: 7
 
       - name: upload creator-hub-dist
         uses: actions/upload-artifact@v7
@@ -126,4 +130,4 @@ jobs:
             packages/creator-hub/preload/dist
             packages/creator-hub/renderer/dist
           if-no-files-found: error
-          retention-days: 1
+          retention-days: 7
