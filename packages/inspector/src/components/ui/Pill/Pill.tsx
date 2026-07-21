@@ -12,7 +12,12 @@ const Pill: React.FC<Props> = ({ className, content, onClick, onRemove }) => {
       className={cx('Pill', className)}
       onClick={onClick}
     >
-      <div className="Content">{content}</div>
+      <div
+        className="Content"
+        title={typeof content === 'string' ? content : undefined}
+      >
+        {content}
+      </div>
       {onRemove ? (
         <CloseIcon
           className="CloseIcon"

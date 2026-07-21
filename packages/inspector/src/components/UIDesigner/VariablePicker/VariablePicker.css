@@ -1,0 +1,96 @@
+.ui-designer-variable-picker {
+  min-width: 200px;
+  max-height: 240px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  background: var(--tree-bg-color);
+  border: 1px solid var(--ui-designer-control-border);
+  border-radius: 4px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  padding: 4px;
+  z-index: 1000;
+}
+
+.ui-designer-variable-picker-empty {
+  padding: 8px;
+  color: var(--inspector-text-muted, #888);
+  font-style: italic;
+}
+
+.ui-designer-variable-picker-row,
+.ui-designer-variable-picker-add {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: none;
+  padding: 6px 8px;
+  cursor: pointer;
+  color: inherit;
+}
+
+.ui-designer-variable-picker-row:hover,
+.ui-designer-variable-picker-add:hover {
+  background: var(--ui-designer-accent-12);
+}
+
+.ui-designer-variable-picker-row:focus-visible,
+.ui-designer-variable-picker-add:focus-visible {
+  outline: none;
+  background: var(--ui-designer-accent-12);
+  box-shadow: inset 0 0 0 1px var(--ui-designer-accent);
+}
+
+.ui-designer-variable-picker-add {
+  border-top: 1px solid var(--ui-designer-control-border);
+  margin-top: 4px;
+  font-style: italic;
+}
+
+.ui-designer-variable-picker-new {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  border-top: 1px solid var(--ui-designer-control-border);
+  margin-top: 4px;
+  padding: 6px 8px 4px;
+}
+
+.ui-designer-variable-picker-name {
+  flex: 1 1 auto;
+  min-width: 0;
+  background: transparent;
+  border: 1px solid var(--ui-designer-control-border);
+  border-radius: 4px;
+  padding: 4px 6px;
+  color: inherit;
+}
+
+.ui-designer-variable-picker-name:focus-visible {
+  outline: none;
+  border-color: var(--ui-designer-accent);
+}
+
+.ui-designer-variable-picker-confirm {
+  flex: 0 0 auto;
+  background: var(--ui-designer-accent-12);
+  border: 1px solid var(--ui-designer-control-border);
+  border-radius: 4px;
+  padding: 4px 8px;
+  cursor: pointer;
+  color: inherit;
+}
+
+.ui-designer-variable-picker-confirm:hover,
+.ui-designer-variable-picker-confirm:focus-visible {
+  outline: none;
+  background: var(--ui-designer-accent-12);
+  box-shadow: inset 0 0 0 1px var(--ui-designer-accent);
+}
+
+.ui-designer-variable-picker-error {
+  flex: 1 0 100%;
+  color: var(--error-color, #ff5f5f);
+  font-size: 11px;
+}

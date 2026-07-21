@@ -1,0 +1,477 @@
+/* Infinite canvas. The viewport is a plain positioned clip layer — the zoom pill
+   anchors to it, so its bottom-right position is independent of the stage. The
+   inner stagewrap centres the stage, which is moved by a CSS translate (see
+   Canvas.tsx `pan`) and never clipped by scroll bounds. No scrollbars — wheel /
+   two-finger / right-drag pan, ctrl-⌘ wheel zooms. */
+.ui-designer-canvas-viewport {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  background: #1e1f23;
+  overflow: hidden;
+}
+
+.ui-designer-canvas-stagewrap {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  place-content: center;
+  overflow: hidden;
+}
+
+.ui-designer-canvas-viewport.panning {
+  cursor: grabbing;
+}
+
+/* Reserves the canvas's *scaled* footprint (sized inline in Canvas.tsx). A grid
+   item under the viewport's `place-content: safe center` — centred when it fits,
+   top-left aligned (fully scrollable) when it overflows. The canvas keeps a
+   strict size and never shrinks to fit the screen. */
+.ui-designer-canvas-stage {
+  position: relative;
+}
+
+/* The logical canvas. Width/height/scale are set inline (per-UI size + editor
+   zoom) with transform-origin: top left so the scaled picture aligns to the
+   stage's box. Absolutely positioned so its un-scaled layout box never inflates
+   the stage's scroll size. */
+.ui-designer-canvas-root {
+  position: absolute;
+  top: 0;
+  left: 0;
+  background: #2a2c30;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.1);
+  display: flex;
+}
+
+/* Every node carries a faint dotted marker so ALL elements (not just
+   containers) stay locatable when empty or transparent. Outlines paint INSIDE
+   the scaled canvas-root (transform: scale(--uid-scale)), so a raw 1px renders
+   sub-pixel at the default 0.4 zoom; counter-scale by --uid-scale to hold a
+   ~1px hairline (and ~2px selection ring) on screen at any zoom. Hover /
+   selection override the colour. */
+.ui-designer-canvas-node {
+  outline: calc(1px / var(--uid-scale, 1)) dotted rgba(255, 255, 255, 0.28);
+  outline-offset: calc(-1px / var(--uid-scale, 1));
+  transition: outline-color 60ms linear;
+  touch-action: manipulation;
+}
+
+.ui-designer-canvas-node:hover {
+  outline-color: var(--ui-designer-accent-40);
+}
+
+.ui-designer-canvas-node.selected {
+  outline-style: solid;
+  outline-width: calc(2px / var(--uid-scale, 1));
+  outline-color: var(--ui-designer-accent);
+}
+
+.ui-designer-canvas-node.drop-over {
+  outline: 2px dashed var(--ui-designer-accent-80);
+  background: var(--ui-designer-accent-05);
+}
+
+/* Code that doesn't follow the UI Designer convention (loops, conditionals,
+   custom components, spread/dynamic props): a grayed, hatched, read-only block —
+   visible and selectable, but edited only in code. */
+.ui-designer-canvas-node.opaque {
+  display: inline-flex;
+  align-items: center;
+  min-width: 40px;
+  min-height: 24px;
+  padding: 4px 8px;
+  background: repeating-linear-gradient(
+    45deg,
+    rgba(255, 255, 255, 0.04),
+    rgba(255, 255, 255, 0.04) 6px,
+    rgba(255, 255, 255, 0.08) 6px,
+    rgba(255, 255, 255, 0.08) 12px
+  );
+  outline: 1px dashed rgba(255, 255, 255, 0.3);
+  color: rgba(255, 255, 255, 0.55);
+  cursor: default;
+}
+
+.ui-designer-canvas-opaque-badge {
+  font-size: 10px;
+  line-height: 1;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.ui-designer-canvas-node.component-ref {
+  overflow: hidden;
+  background: rgba(94, 129, 244, 0.08);
+  outline: 1px dashed rgba(94, 129, 244, 0.6);
+  color: rgba(180, 200, 255, 0.9);
+  /* Transparent to pointer events so clicks/drags fall through to the wrapper
+     UiEntity (the movable/resizable unit); the ref is selected via the tree. */
+  pointer-events: none;
+}
+
+.ui-designer-canvas-node.component-ref.selected {
+  outline-style: solid;
+  outline-color: var(--ui-designer-accent);
+}
+
+.ui-designer-canvas-readonly-node {
+  box-sizing: border-box;
+}
+
+.ui-designer-canvas-component-badge {
+  align-self: flex-start;
+  margin: 2px;
+  padding: 1px 5px;
+  border-radius: 3px;
+  background: rgba(94, 129, 244, 0.25);
+  font-size: 10px;
+  line-height: 1.4;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.ui-designer-canvas-node.movable {
+  cursor: move;
+}
+
+.ui-designer-canvas-node.dragging {
+  cursor: grabbing;
+  outline-color: var(--ui-designer-accent);
+  outline-style: dashed;
+  user-select: none;
+}
+
+.ui-designer-canvas-node.resizing {
+  outline-color: var(--ui-designer-accent);
+  outline-style: solid;
+  outline-width: calc(2px / var(--uid-scale, 1));
+}
+
+/* Resize handles — 8 small squares pinned around the selected node when the
+   Resize tool is active. Sized in logical px so they remain ~8 viewport px
+   at the canvas's 0.4 scale. */
+.ui-designer-resize-handle {
+  /* Counter-scaled by --uid-scale so a handle stays ~11px on screen at any zoom
+     (a fixed 20px logical handle renders 8px at 0.4 zoom but 40px at 2x). --o
+     centres each handle on its edge. */
+  --h: calc(11px / var(--uid-scale, 1));
+  --o: calc(var(--h) / -2);
+  position: absolute;
+  width: var(--h);
+  height: var(--h);
+  background: #fff;
+  border: calc(2px / var(--uid-scale, 1)) solid var(--ui-designer-accent);
+  border-radius: calc(2px / var(--uid-scale, 1));
+  z-index: 100;
+}
+
+.ui-designer-resize-handle.nw {
+  top: var(--o);
+  left: var(--o);
+  cursor: nwse-resize;
+}
+.ui-designer-resize-handle.n {
+  top: var(--o);
+  left: 50%;
+  transform: translateX(-50%);
+  cursor: ns-resize;
+}
+.ui-designer-resize-handle.ne {
+  top: var(--o);
+  right: var(--o);
+  cursor: nesw-resize;
+}
+.ui-designer-resize-handle.e {
+  top: 50%;
+  right: var(--o);
+  transform: translateY(-50%);
+  cursor: ew-resize;
+}
+.ui-designer-resize-handle.se {
+  bottom: var(--o);
+  right: var(--o);
+  cursor: nwse-resize;
+}
+.ui-designer-resize-handle.s {
+  bottom: var(--o);
+  left: 50%;
+  transform: translateX(-50%);
+  cursor: ns-resize;
+}
+.ui-designer-resize-handle.sw {
+  bottom: var(--o);
+  left: var(--o);
+  cursor: nesw-resize;
+}
+.ui-designer-resize-handle.w {
+  top: 50%;
+  left: var(--o);
+  transform: translateY(-50%);
+  cursor: ew-resize;
+}
+
+/* Floating action bar over the selected node. `bottom: 100%` floats it just
+   above the node; the counter-scale keeps it legible at any canvas zoom. */
+.ui-designer-node-actions {
+  position: absolute;
+  bottom: 100%;
+  right: 0;
+  margin-bottom: 4px;
+  display: flex;
+  gap: 2px;
+  padding: 3px;
+  background: rgba(0, 0, 0, 0.65);
+  border: 1px solid var(--ui-designer-control-border);
+  border-radius: 6px;
+  transform: scale(calc(1 / var(--uid-scale, 1)));
+  transform-origin: bottom right;
+  z-index: 50;
+}
+
+.ui-designer-node-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  color: rgba(255, 255, 255, 0.85);
+  cursor: pointer;
+}
+
+.ui-designer-node-action:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.ui-designer-node-action[aria-label="Delete node"]:hover {
+  background: rgba(255, 90, 90, 0.25);
+  color: rgb(255, 140, 140);
+}
+
+.ui-designer-node-action:focus-visible {
+  outline: 2px solid var(--ui-designer-accent);
+  outline-offset: 1px;
+}
+
+.ui-designer-node-action svg {
+  width: 15px;
+  height: 15px;
+}
+
+.ui-designer-canvas-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  color: #888;
+}
+
+/* Empty-GUI drop zone: a dashed target for the first element. */
+.ui-designer-canvas-emptyroot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--uid-space-2);
+  padding: var(--uid-space-6);
+  min-width: 320px;
+  min-height: 180px;
+  border: 2px dashed var(--ui-designer-control-border);
+  border-radius: 8px;
+  color: var(--sub-text);
+  text-align: center;
+  transition: border-color 120ms ease, background-color 120ms ease;
+}
+
+.ui-designer-canvas-emptyroot.over {
+  border-color: var(--ui-designer-accent);
+  background-color: var(--ui-designer-accent-08);
+}
+
+.ui-designer-canvas-emptyroot-title {
+  margin: 0;
+  color: var(--title);
+  font-weight: 600;
+}
+
+.ui-designer-canvas-emptyroot-hint {
+  margin: 0;
+  max-width: 260px;
+  font-size: 12px;
+}
+
+.ui-designer-canvas-emptyroot-add {
+  margin-top: var(--uid-space-2);
+  padding: 6px 12px;
+  background: var(--ui-designer-accent);
+  border: none;
+  border-radius: 6px;
+  color: var(--base-20);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.ui-designer-canvas-emptyroot-add:hover {
+  filter: brightness(1.08);
+}
+
+.ui-designer-canvas-emptyroot-add:focus-visible {
+  outline: 2px solid var(--border-focused);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ui-designer-canvas-emptyroot {
+    transition: none;
+  }
+}
+
+.ui-designer-canvas-input {
+  flex: 1 1 auto;
+  min-width: 40px;
+  padding: 2px 6px;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 4px;
+  color: rgba(255, 255, 255, 0.85);
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.ui-designer-canvas-dropdown {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1 1 auto;
+  min-width: 40px;
+  padding: 2px 6px;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 4px;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.ui-designer-canvas-dropdown-label {
+  flex: 1 1 auto;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.ui-designer-canvas-dropdown-chevron {
+  font-size: 9px;
+  opacity: 0.7;
+}
+
+/* Inline mixed-content editor (double-click a Label/Button). Wraps the shared
+   MixedContentField in place of the text: the editable inherits the node's
+   font/color so it reads as in-canvas, the accent outline marks the active edit
+   (counter-scaled to stay crisp at any zoom), and the insert-variable button is
+   always visible while editing. */
+.ui-designer-canvas-inline-edit {
+  display: inline-flex;
+  min-width: 60px;
+  max-width: 100%;
+  background: var(--ui-designer-accent-12);
+  outline: calc(1px / var(--uid-scale, 1)) solid var(--ui-designer-accent);
+}
+
+.ui-designer-canvas-inline-edit .ui-designer-mixed-editable {
+  font: inherit;
+  color: inherit;
+  min-height: 0;
+  border: none;
+}
+
+.ui-designer-canvas-inline-edit .ui-designer-mixed-link {
+  opacity: 1;
+}
+
+.ui-designer-canvas-zoom {
+  position: absolute;
+  bottom: 16px;
+  right: 12px;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px;
+  background: rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 6px;
+  z-index: 1000;
+}
+
+.ui-designer-canvas-zoom-btn,
+.ui-designer-canvas-zoom-level {
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.85);
+  cursor: pointer;
+  font-size: 13px;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.ui-designer-canvas-zoom-btn:hover,
+.ui-designer-canvas-zoom-level:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.ui-designer-canvas-zoom-btn:focus-visible,
+.ui-designer-canvas-zoom-level:focus-visible {
+  outline: 2px solid var(--border-focused);
+  outline-offset: 1px;
+}
+
+.ui-designer-canvas-zoom-level {
+  min-width: 44px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.ui-designer-reorder-indicator {
+  background: var(--ui-designer-accent);
+  border-radius: 1px;
+  z-index: 1000;
+}
+
+.ui-designer-canvas-node.reordering {
+  opacity: 0.75;
+}
+
+/* Thin divider between the zoom controls and the device-preview controls in
+   the floating canvas toolbar. */
+.ui-designer-canvas-zoom-sep {
+  width: 1px;
+  align-self: stretch;
+  margin: 2px 2px;
+  background: rgba(255, 255, 255, 0.15);
+}
+
+/* Active device-preview / safe-area toggle — reuse the selection accent so the
+   pressed state reads the same as elsewhere on the canvas. */
+.ui-designer-canvas-zoom-btn.active {
+  background: var(--ui-designer-accent);
+  color: #000;
+}
+
+/* Mobile device-preview frame. A grid item under the viewport's
+   `place-content: safe center` (same as .ui-designer-canvas-stage) so it
+   centres when it fits and scrolls when it overflows. Reserves the *scaled*
+   device footprint (sized inline in Canvas.tsx). */
+.ui-designer-device-frame {
+  position: relative;
+  background: #000;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+/* The device screen: the reference resolution, editor-zoom-scaled with
+   transform-origin: top left, matching the desktop canvas-root pattern. The
+   letterboxed UI + safe-area overlay are absolutely positioned inside it. */
+.ui-designer-device-screen {
+  position: relative;
+  overflow: hidden;
+}

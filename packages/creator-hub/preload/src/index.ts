@@ -17,3 +17,4 @@ export * as pkg from './services/pkg';
 export * as settings from './modules/settings';
 export * as scene from './modules/scene';
 export * as custom from './modules/custom';
+export * as oxc from './modules/oxc';

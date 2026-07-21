@@ -17,6 +17,8 @@ import {
 import { selectCanSave, selectInspectorPreferences } from '../../redux/app';
 import { useInspectorUIState } from '../../hooks/sdk/useInspectorUIState';
 import { useAppSelector, useAppDispatch } from '../../redux/hooks';
+import { getHiddenPanels } from '../../redux/ui';
+import { PanelName } from '../../redux/ui/types';
 import {
   REDO,
   REDO_2,
@@ -28,6 +30,7 @@ import {
   UNDO_ALT,
   useHotkey,
 } from '../../hooks/useHotkey';
+import { redoCode, undoCode, useCodeState } from '../UIDesigner/code/store';
 import { Gizmos } from './Gizmos';
 import { Preferences } from './Preferences';
 import { RendererPicker } from './RendererPicker';
@@ -39,14 +42,23 @@ const Toolbar = withSdk(({ sdk }) => {
   const canSave = useAppSelector(selectCanSave);
   const preferences = useAppSelector(selectInspectorPreferences);
   const isAutosaveEnabled = preferences?.autosaveEnabled ?? true;
-  const canUndo = useAppSelector(selectCanUndo);
-  const canRedo = useAppSelector(selectCanRedo);
+  const dataCanUndo = useAppSelector(selectCanUndo);
+  const dataCanRedo = useAppSelector(selectCanRedo);
+  const { canUndo: codeCanUndo, canRedo: codeCanRedo } = useCodeState();
   const sceneInfoContent = useAppSelector(selectSceneInfo).content;
+  const hiddenPanels = useAppSelector(getHiddenPanels);
   const dispatch = useAppDispatch();
   const [uiState, updateUIState] = useInspectorUIState();
 
   const showSceneInfoButton = !!sceneInfoContent;
   const isSceneInfoPanelOpen = !!uiState?.sceneInfoPanelVisible;
+  const isUIDesignerOpen = !hiddenPanels[PanelName.UI_DESIGNER];
+
+  // With the UI Designer open, undo/redo operate on the code store's splice
+  // history (the .tsx source snapshots); otherwise on the 3D scene's CRDT
+  // history. One owner per mode — buttons AND hotkeys route the same way.
+  const canUndo = isUIDesignerOpen ? codeCanUndo : dataCanUndo;
+  const canRedo = isUIDesignerOpen ? codeCanRedo : dataCanRedo;
 
   // TODO: Remove withSdk
   const handleInspector = useCallback(() => {
@@ -54,12 +66,17 @@ const Toolbar = withSdk(({ sdk }) => {
   }, [sdk]);
 
   const handleSaveClick = useCallback(() => dispatch(save()), []);
-  const handleUndo = useCallback(() => dispatch(undo()), []);
-  const handleRedo = useCallback(() => dispatch(redo()), []);
+  const handleUndo = useCallback(() => {
+    if (isUIDesignerOpen) void undoCode();
+    else dispatch(undo());
+  }, [isUIDesignerOpen]);
+  const handleRedo = useCallback(() => {
+    if (isUIDesignerOpen) void redoCode();
+    else dispatch(redo());
+  }, [isUIDesignerOpen]);
   const handleToggleSceneInfo = useCallback(() => {
     updateUIState({ sceneInfoPanelVisible: !isSceneInfoPanelOpen });
   }, [isSceneInfoPanelOpen, updateUIState]);
-
   useHotkey([SAVE, SAVE_ALT], handleSaveClick);
   useHotkey([UNDO, UNDO_ALT], handleUndo);
   useHotkey([REDO, REDO_2, REDO_ALT, REDO_ALT_2], handleRedo);
@@ -96,7 +113,11 @@ const Toolbar = withSdk(({ sdk }) => {
       >
         <BiRedo />
       </ToolbarButton>
-      <Gizmos />
+      {/* UI Designer uses direct-manipulation canvas editing (drag = move,
+          border handles = resize) — no move/resize mode toggle, so the tool
+          buttons are gone and only the 3D scene's Gizmos remain (hidden while
+          the designer is open). */}
+      {isUIDesignerOpen ? null : <Gizmos />}
       <Preferences />
       <RendererPicker />
       <ToolbarButton

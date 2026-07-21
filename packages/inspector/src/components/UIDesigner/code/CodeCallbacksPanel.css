@@ -1,0 +1,199 @@
+.ui-designer-callbacks {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px;
+  border-top: 1px solid var(--ui-designer-control-border);
+}
+
+.ui-designer-callbacks-title {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--sub-text);
+}
+
+.ui-designer-callbacks-empty {
+  font-size: 12px;
+  color: var(--sub-text);
+}
+
+.ui-designer-callback-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 6px;
+  border: 1px solid var(--ui-designer-control-border);
+  border-radius: 4px;
+}
+
+.ui-designer-callback-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ui-designer-callback-name {
+  flex: 1;
+  min-width: 0;
+  font-size: 12px;
+  font-family: var(--font-monospace);
+  color: var(--title);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ui-designer-callback-delete {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  line-height: 1;
+  padding: 2px 6px;
+  border-radius: 4px;
+  border: 1px solid var(--ui-designer-control-border);
+  background: transparent;
+  color: var(--sub-text);
+  cursor: pointer;
+}
+
+.ui-designer-callback-delete:hover {
+  background: var(--ui-designer-accent-12);
+  color: var(--title);
+}
+
+.ui-designer-callback-delete:focus-visible {
+  outline: 2px solid var(--border-focused);
+  outline-offset: 1px;
+}
+
+.ui-designer-callback-body {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.ui-designer-callback-textarea {
+  width: 100%;
+  box-sizing: border-box;
+  font-family: var(--font-monospace);
+  font-size: 12px;
+  line-height: 1.4;
+  padding: 4px 6px;
+  border: 1px solid var(--ui-designer-control-border);
+  border-radius: 4px;
+  background: var(--ui-designer-control-bg);
+  color: var(--title);
+  resize: vertical;
+  min-height: 40px;
+}
+
+.ui-designer-callback-textarea:focus-visible {
+  outline: 2px solid var(--border-focused);
+  outline-offset: -1px;
+  border-color: var(--border-focused);
+}
+
+.ui-designer-callback-textarea.is-invalid {
+  border-color: var(--error-main);
+  outline-color: var(--error-main);
+}
+
+.ui-designer-callback-invalid {
+  font-size: 10px;
+  color: var(--error-light);
+}
+
+.ui-designer-callback-invalid code {
+  opacity: 0.85;
+}
+
+/* Variable autocomplete popover. Dark surface + explicit light foreground — the
+   ramp is light→dark, so `--base-02`/`--base-06` here rendered near-white
+   (unreadable white-on-white). See docs/DESIGN.md. */
+.ui-designer-callback-autocomplete {
+  position: absolute;
+  z-index: 20;
+  top: 100%;
+  left: 0;
+  right: 0;
+  max-height: 160px;
+  overflow-y: auto;
+  background: var(--tree-bg-color);
+  border: 1px solid var(--ui-designer-control-border);
+  border-radius: 4px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+}
+
+.ui-designer-callback-autocomplete-row {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border: none;
+  background: transparent;
+  color: var(--title);
+  font-size: 12px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.ui-designer-callback-autocomplete-row:hover,
+.ui-designer-callback-autocomplete-row[aria-selected='true'] {
+  background: var(--ui-designer-accent-12);
+}
+
+.ui-designer-callback-autocomplete-row:focus-visible {
+  outline: 2px solid var(--border-focused);
+  outline-offset: -2px;
+}
+
+.ui-designer-callback-autocomplete-row em {
+  margin-left: auto;
+  color: var(--sub-text);
+  font-style: normal;
+}
+
+.ui-designer-callback-hint {
+  font-size: 10px;
+  color: var(--sub-text);
+}
+
+.ui-designer-callback-hint code {
+  opacity: 0.85;
+}
+
+.ui-designer-callbacks-add {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  margin-top: 4px;
+}
+
+.ui-designer-callbacks-add button {
+  font-size: 12px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  border: 1px solid var(--ui-designer-control-border);
+  background: transparent;
+  color: var(--title);
+  cursor: pointer;
+}
+
+.ui-designer-callbacks-add button:hover:not(:disabled) {
+  background: var(--ui-designer-accent-12);
+}
+
+.ui-designer-callbacks-add button:focus-visible {
+  outline: 2px solid var(--border-focused);
+  outline-offset: 1px;
+}
+
+.ui-designer-callbacks-add button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}

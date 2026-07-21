@@ -1,0 +1,108 @@
+.ui-designer-roots-list {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.ui-designer-roots-header {
+  padding: var(--uid-space-2);
+}
+
+.ui-designer-roots-tree {
+  flex: 1;
+  overflow: auto;
+}
+
+.ui-designer-code-root-row {
+  display: flex;
+  align-items: center;
+  gap: var(--uid-space-2);
+  padding: 3px var(--uid-space-2);
+  cursor: pointer;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.ui-designer-code-root-row svg {
+  color: rgba(255, 255, 255, 0.6);
+  flex-shrink: 0;
+}
+
+.ui-designer-code-root-row:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.ui-designer-code-root-row.is-active {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.ui-designer-code-root-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ui-designer-code-root-name-input {
+  flex: 1;
+  min-width: 0;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 3px;
+  color: #fff;
+  padding: 1px 4px;
+  font: inherit;
+}
+
+.ui-designer-code-root-remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px;
+  border: none;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.4);
+  cursor: pointer;
+  opacity: 0;
+}
+
+.ui-designer-code-root-row:hover .ui-designer-code-root-remove {
+  opacity: 1;
+}
+
+.ui-designer-code-root-remove:hover {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.ui-designer-code-root-toplevel {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.ui-designer-code-root-toplevel svg {
+  color: rgba(255, 255, 255, 0.65);
+}
+
+.ui-designer-code-root-toplevel:not(.is-on) svg {
+  color: var(--ui-designer-accent, #5e81f4);
+}
+
+.ui-designer-code-root-toplevel:hover svg {
+  color: rgba(255, 255, 255, 1);
+}
+
+.ui-designer-roots-error {
+  margin: 4px 8px;
+  padding: 6px 8px;
+  border-radius: 4px;
+  background: rgba(214, 77, 77, 0.15);
+  color: #e08585;
+  font-size: 11px;
+  line-height: 1.4;
+}

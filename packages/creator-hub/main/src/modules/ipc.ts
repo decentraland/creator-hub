@@ -9,6 +9,7 @@ import * as analytics from './analytics';
 import * as npm from './npm';
 import * as config from './config';
 import * as mobileDebug from './mobile-debug-server';
+import * as oxc from './oxc';
 
 interface InitIpcOptions {
   beforeQuitCleanup: () => Promise<void>;
@@ -100,4 +101,7 @@ export function initIpc({ beforeQuitCleanup }: InitIpcOptions) {
   handle('npm.install', (_event, path, packages) => npm.install(path, packages));
   handle('npm.getOutdatedDeps', (_event, path, packages) => npm.getOutdatedDeps(path, packages));
   handle('npm.getContextFiles', (_event, path) => npm.getContextFiles(path));
+
+  // oxc (code parser for the UI Designer code-mode)
+  handle('oxc.parse', (_event, filename, source) => oxc.parse(filename, source));
 }

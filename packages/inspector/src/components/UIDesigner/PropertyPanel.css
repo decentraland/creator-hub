@@ -1,0 +1,338 @@
+.ui-designer-property-panel {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  flex: 1 1 auto;
+}
+
+.ui-designer-property-panel-empty {
+  padding: 12px;
+  color: var(--sub-text);
+  font-size: 12px;
+  text-align: center;
+}
+
+/* --- Inline 2-column field layout (Phase F1) ---
+   Scoped to the panel so the SHARED Block (used by EntityInspector) is untouched.
+   Turn each Block from stacked (label over control) into a grid: label column +
+   a 1fr control column. Every row's control then aligns to the same width,
+   fixing the ragged/auto-sized rows. */
+.ui-designer-property-panel .Block {
+  display: grid;
+  /* Label column + a control column CAPPED at a compact width (Figma-style):
+     controls stay dense and left-aligned instead of stretching across a wide
+     panel. In a narrow rail the control simply fills the smaller space. */
+  grid-template-columns: minmax(72px, 92px) minmax(0, 260px);
+  column-gap: var(--uid-space-2);
+  align-items: center;
+  margin: 0;
+  padding: var(--uid-space-1) 0;
+}
+
+/* Label column: vertically centered, truncates instead of pushing the control
+   out of alignment (WIG long-content). */
+.ui-designer-property-panel .Block-label-row {
+  margin-bottom: 0;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.ui-designer-property-panel .Block-label-row .Label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Control column fills the cell — the single "control fills the column"
+   contract that replaces the old fill/intrinsic/fixed mix. Every direct child of
+   `.content` stretches; the bindable wrapper is made flex so a nested Field's own
+   flex-grow fills too. Intrinsic controls (color swatch, checkbox) keep their
+   size but sit at the column start, which is what aligns the rows. Fixed-width
+   exceptions (unit selectors) override below via higher specificity. */
+.ui-designer-property-panel .Block > .content {
+  min-width: 0;
+  align-items: center;
+}
+
+.ui-designer-property-panel .Block > .content > * {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.ui-designer-property-panel .ui-designer-bindable-content {
+  display: flex;
+  align-items: center;
+}
+
+/* Intrinsic widgets keep their natural size and sit at the column start instead
+   of being blown up by the fill rule above (the anchor grid is width:max-content
+   ~96px; without this it stretched to the full column — the "huge Anchor box"). */
+.ui-designer-property-panel .Block > .content > .ui-designer-anchor-grid {
+  flex: 0 0 auto;
+}
+
+/* Wide composite widgets (box-model / anchor grid / uv-region / nine-slice)
+   can't render usefully in the narrow control column — like Figma, they stack
+   full-width with the label above. Set on the row wrapper by PropertyPanel. */
+.ui-designer-property-panel .ui-designer-property-row.wide .Block {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.ui-designer-property-panel .ui-designer-property-row.wide .Block-label-row {
+  margin-bottom: var(--label-margin-bottom);
+}
+
+/* --- Row wrapper + remove (−) affordance (Phase F3) --- */
+.ui-designer-property-row {
+  position: relative;
+}
+
+/* Hover/focus-revealed remove button for an optional (non-core) property. */
+.ui-designer-prop-remove {
+  position: absolute;
+  top: var(--uid-space-1);
+  right: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: none;
+  border-radius: 3px;
+  background: transparent;
+  color: var(--sub-text);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 60ms linear;
+}
+
+.ui-designer-property-row:hover .ui-designer-prop-remove,
+.ui-designer-property-row:focus-within .ui-designer-prop-remove {
+  opacity: 1;
+}
+
+.ui-designer-prop-remove:hover {
+  background: var(--ui-designer-accent-12);
+  color: var(--title);
+}
+
+.ui-designer-prop-remove:focus-visible {
+  opacity: 1;
+  outline: 2px solid var(--border-focused);
+  outline-offset: 1px;
+}
+
+.ui-designer-prop-remove svg {
+  width: 13px;
+  height: 13px;
+}
+
+/* --- + Add property menu (Phase F3) — native <details> disclosure --- */
+.ui-designer-add-prop {
+  margin-top: var(--uid-space-1);
+}
+
+.ui-designer-add-prop-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 6px;
+  border-radius: 4px;
+  color: var(--ui-designer-accent);
+  font-size: 12px;
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
+}
+
+.ui-designer-add-prop-trigger::-webkit-details-marker {
+  display: none;
+}
+
+.ui-designer-add-prop-trigger:hover {
+  background: var(--ui-designer-accent-12);
+}
+
+.ui-designer-add-prop-trigger:focus-visible {
+  outline: 2px solid var(--border-focused);
+  outline-offset: 1px;
+}
+
+.ui-designer-add-prop-menu {
+  list-style: none;
+  margin: 4px 0 0;
+  padding: 4px;
+  border: 1px solid var(--ui-designer-control-border);
+  border-radius: 4px;
+  background: var(--tree-bg-color);
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  max-height: 240px;
+  overflow-y: auto;
+}
+
+.ui-designer-add-prop-menu button {
+  width: 100%;
+  text-align: left;
+  padding: 5px 8px;
+  border: none;
+  border-radius: 3px;
+  background: transparent;
+  color: var(--title);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.ui-designer-add-prop-menu button:hover {
+  background: var(--ui-designer-accent-12);
+}
+
+.ui-designer-add-prop-menu button:focus-visible {
+  outline: 2px solid var(--border-focused);
+  outline-offset: -1px;
+}
+
+/* Inline unit selector under a stacked `length-vec` group — short + trailing. */
+.ui-designer-unit-selector {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: var(--uid-space-2);
+}
+
+.ui-designer-unit-selector .Dropdown.Field {
+  flex: 0 0 56px;
+  width: 56px;
+}
+
+/* Compact reveal toggle for a length-vec facade (Position X/Y ⇄ T/R/B/L). */
+.ui-designer-vec-reveal {
+  flex: 0 0 auto;
+  padding: 2px 6px;
+  background: transparent;
+  border: 1px solid var(--ui-designer-control-border);
+  border-radius: 4px;
+  color: var(--sub-text);
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+}
+
+.ui-designer-vec-reveal:hover {
+  color: var(--title);
+  border-color: var(--ui-designer-accent);
+}
+
+.ui-designer-vec-reveal:focus-visible {
+  outline: 2px solid var(--border-focused);
+  outline-offset: 1px;
+}
+
+/* Aspect-ratio lock toggle for the Size vec. */
+.ui-designer-vec-lock {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3px;
+  background: transparent;
+  border: 1px solid var(--ui-designer-control-border);
+  border-radius: 4px;
+  color: var(--sub-text);
+  cursor: pointer;
+}
+
+.ui-designer-vec-lock:hover {
+  color: var(--title);
+  border-color: var(--ui-designer-accent);
+}
+
+.ui-designer-vec-lock.active {
+  color: var(--ui-designer-accent);
+  border-color: var(--ui-designer-accent);
+}
+
+.ui-designer-vec-lock:focus-visible {
+  outline: 2px solid var(--border-focused);
+  outline-offset: 1px;
+}
+
+.ui-designer-vec-lock svg {
+  width: 14px;
+  height: 14px;
+  display: block;
+}
+
+/* The shared TextArea defaults to `resize: both`; the narrow rail only tolerates
+   vertical growth. */
+.ui-designer-string-array textarea {
+  resize: vertical;
+  min-height: 64px;
+}
+
+/* Keep every control inside its panel — without border-box the padded
+   selects/inputs overran the right edge. */
+.ui-designer-property-panel * {
+  box-sizing: border-box;
+}
+
+/* Vec groups (Size / Min / Max / Position) render sub-fields in the control
+   column: a single flex-wrap row of inputs with the unit selector trailing. */
+.ui-designer-property-panel .Block > .content:has(> .ui-designer-bindable-subfield) {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--uid-space-1) var(--uid-space-2);
+}
+
+.ui-designer-property-panel .ui-designer-bindable-subfield {
+  flex: 1 1 56px;
+  min-width: 52px;
+}
+
+.ui-designer-property-panel
+  .Block
+  > .content:has(> .ui-designer-bindable-subfield)
+  > .ui-designer-unit-selector {
+  flex: 0 0 auto;
+}
+
+/* Single length value + unit on one line: input grows, unit stays intrinsic. */
+.ui-designer-length-row {
+  display: flex;
+  align-items: center;
+  gap: var(--uid-space-2);
+  width: 100%;
+}
+
+.ui-designer-length-row > :first-child {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.ui-designer-length-row > .Dropdown.Field {
+  flex: 0 0 56px;
+  width: 56px;
+}
+
+.ui-designer-callback-hint {
+  color: var(--sub-text);
+  font-style: italic;
+  font-size: 12px;
+}
+
+/* Numeric fields read as aligned columns (W/H, T/R/B/L, indices). */
+.ui-designer-property-panel input[type='number'] {
+  font-variant-numeric: tabular-nums;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ui-designer-prop-remove {
+    transition: none;
+  }
+}

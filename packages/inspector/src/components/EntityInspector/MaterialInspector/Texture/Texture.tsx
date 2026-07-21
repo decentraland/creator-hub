@@ -1,25 +1,23 @@
-import { useCallback, useMemo } from 'react';
-import { type Entity } from '@dcl/ecs';
+import { useCallback } from 'react';
 import { withSdk } from '../../../../hoc/withSdk';
-import { useEntitiesWith } from '../../../../hooks/sdk/useEntitiesWith';
+import { useVideoPlayerOptions } from '../../../../hooks/sdk/useVideoPlayerOptions';
 import { useAssetOptions } from '../../../../hooks/useAssetOptions';
 import { Block } from '../../../Block';
 import { Container } from '../../../Container';
 import { Dropdown, FileUploadField, TextField } from '../../../ui';
 import { ACCEPTED_FILE_TYPES } from '../../../ui/FileUploadField/types';
 import { isModel, isValidTexture } from './utils';
-import {
-  type Props,
-  Texture,
-  TEXTURE_TYPES,
-  WRAP_MODES,
-  FILTER_MODES,
-  type VideoTexture,
-} from './types';
+import { type Props, Texture, TEXTURE_TYPES, WRAP_MODES, FILTER_MODES } from './types';
 
-const TextureInspector = withSdk<Props>(({ sdk, label, texture, files, getInputProps }) => {
-  const { Name } = sdk.components;
-  const entitiesWithVideoPlayer: Entity[] = useEntitiesWith(components => components.VideoPlayer);
+// Kept separate from the UI Designer's `TextureField` on purpose, despite the
+// similar UX (Type dropdown + per-variant editor): this one edits an
+// engine-bound Material through `getInputProps` flattened string paths and
+// carries sampler fields (wrapMode/filterMode/offset/tiling, no Avatar); that
+// one is a controlled `TextureUnion` editor committing via source splices and
+// adds the Avatar variant. They share the leaf primitives (ui/Dropdown,
+// ui/FileUploadField, ui/TextField, useAssetOptions, useVideoPlayerOptions).
+const TextureInspector = withSdk<Props>(({ label, texture, files, getInputProps }) => {
+  const videoPlayerOptions = useVideoPlayerOptions();
 
   const getTextureProps = useCallback(
     (key: string) => {
@@ -48,17 +46,6 @@ const TextureInspector = withSdk<Props>(({ sdk, label, texture, files, getInputP
   );
 
   const type = getTextureProps('type');
-
-  const availableVideoPlayers: VideoTexture = useMemo(() => {
-    const videoPlayers = new Map() as VideoTexture;
-    for (const entityWithVideoPlayer of entitiesWithVideoPlayer) {
-      const name = Name.getOrNull(entityWithVideoPlayer);
-      if (name) {
-        videoPlayers.set(entityWithVideoPlayer, { name: name.value });
-      }
-    }
-    return videoPlayers;
-  }, [entitiesWithVideoPlayer]);
 
   return (
     <Container
@@ -94,16 +81,11 @@ const TextureInspector = withSdk<Props>(({ sdk, label, texture, files, getInputP
           {...getTextureProps('filterMode')}
         />
       </Block>
-      {type.value === Texture.TT_VIDEO_TEXTURE &&
-      availableVideoPlayers &&
-      availableVideoPlayers.size > 0 ? (
+      {type.value === Texture.TT_VIDEO_TEXTURE && videoPlayerOptions.length > 0 ? (
         <Dropdown
           label="Video Source Entity"
           placeholder="Select a Video Player Entity"
-          options={Array.from(availableVideoPlayers.entries()).map(([key, value]) => ({
-            label: value.name,
-            value: key,
-          }))}
+          options={videoPlayerOptions}
           value={getTextureProps('videoPlayerEntity').value}
           searchable
           onChange={getTextureProps('videoPlayerEntity').onChange}

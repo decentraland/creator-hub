@@ -48,8 +48,21 @@ type Props<T> = {
   onDuplicate: (value: T, preferredGizmo?: GizmoType) => void;
   getDragContext?: () => unknown;
   dndType?: string;
+  // Extra DnD buses this tree ACCEPTS on drop (beyond its own `dndType`) — e.g.
+  // the palette bus, so a new widget can be dropped into the tree. Items from
+  // these buses lack the tree's own `{ items }` shape and are routed to
+  // `onExternalDrop` instead of `onDrop`.
+  externalDndTypes?: string[];
+  onExternalDrop?: (item: unknown, target: T, dropType: DropType) => void;
+  // Enable the top-third `before` drop zone (see calculateDropType). Off by
+  // default — only trees needing precise insert-at-position turn it on.
+  allowBeforeDrop?: boolean;
   onLastSelectedChange?: (value: T) => void;
   isRoot?: (value: T) => boolean;
+  // Replaces the built-in engine-entity ActionArea (lock/hide via ECS
+  // components). Trees over non-entity values (e.g. the UI Designer's code
+  // nodes) supply their own affordances here.
+  renderActionArea?: (value: T) => React.ReactNode;
 };
 
 type EmptyString = '';
@@ -96,6 +109,9 @@ export function Tree<T>() {
         isRoot,
         getDragContext = () => ({}),
         dndType = 'tree',
+        externalDndTypes,
+        onExternalDrop,
+        allowBeforeDrop = false,
         onLastSelectedChange,
       } = props;
       const ref = useRef<HTMLDivElement>(null);
@@ -144,12 +160,19 @@ export function Tree<T>() {
 
       const [{ isHover }, drop] = useDrop(
         () => ({
-          accept: dndType,
-          drop: (item: { items: T[]; context: unknown }, monitor) => {
+          accept: externalDndTypes?.length ? [dndType, ...externalDndTypes] : dndType,
+          drop: (item: { items?: T[]; context?: unknown }, monitor) => {
             const dropTypeValue = dropType || dropTypeRef.current;
             if (monitor.didDrop() || !dropTypeValue) return;
 
-            const { items } = item;
+            // A foreign bus (e.g. the palette) has no `{ items }` — hand it to the
+            // consumer to insert a NEW node at this position.
+            if (!item.items) {
+              onExternalDrop?.(item, value, dropTypeValue);
+              return;
+            }
+
+            const items = item.items;
             const isMultipleDrag = items.length > 1;
 
             if (isMultipleDrag) {
@@ -161,27 +184,30 @@ export function Tree<T>() {
               onDrop(sourceItem, value, dropTypeValue);
             }
           },
-          hover: (item: { items: T[]; context: unknown }, monitor) => {
+          hover: (item: { items?: T[]; context?: unknown }, monitor) => {
             if (!ref.current) {
               dropTypeRef.current = '';
               return setDropType('');
             }
 
-            const { items } = item;
+            const items = item.items;
 
-            // check if hovering over one of the dragged items
-            if (items.some(sourceItem => getId(sourceItem) === getId(value))) {
+            // check if hovering over one of the dragged items (own-bus only)
+            if (items && items.some(sourceItem => getId(sourceItem) === getId(value))) {
               dropTypeRef.current = '';
               return setDropType('');
             }
 
             const coords = monitor.getClientOffset() as XYCoord;
             const rect = ref.current.getBoundingClientRect();
-            const dropType = calculateDropType(coords.y, rect);
+            const dropType = calculateDropType(coords.y, rect, allowBeforeDrop);
 
-            const enableReorder = canReorder
-              ? items.every(sourceItem => canReorder(sourceItem, value, dropType))
-              : true;
+            // canReorder gates own-bus reorders only; a foreign insert is gated by
+            // the consumer's onExternalDrop.
+            const enableReorder =
+              items && canReorder
+                ? items.every(sourceItem => canReorder(sourceItem, value, dropType))
+                : true;
 
             const newDropTypeValue = enableReorder ? dropType : '';
 
@@ -192,7 +218,19 @@ export function Tree<T>() {
             isHover: monitor.isOver({ shallow: true }),
           }),
         }),
-        [value, dropType, onDrop, canDrop, canDropMultiple, canReorder, getId],
+        [
+          value,
+          dropType,
+          onDrop,
+          onExternalDrop,
+          canDrop,
+          canDropMultiple,
+          canReorder,
+          getId,
+          dndType,
+          externalDndTypes,
+          allowBeforeDrop,
+        ],
       );
 
       const quitEditMode = () => setEditMode(false);
@@ -385,7 +423,9 @@ export function Tree<T>() {
               >
                 {props.getIcon && props.getIcon(value)}
                 <div>{label || id}</div>
-                {isEntity && <ActionArea entity={value as Entity} />}
+                {props.renderActionArea
+                  ? props.renderActionArea(value)
+                  : isEntity && <ActionArea entity={value as Entity} />}
                 {!isRoot?.(value as T) && isEntityOutOfBoundaries && (
                   <InfoTooltip
                     text="This entity is out of bounds and might not display correctly in-world."

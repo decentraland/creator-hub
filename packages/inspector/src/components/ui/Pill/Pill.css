@@ -4,6 +4,9 @@
   padding: 0px 4px;
   background: var(--base-02);
   border-radius: 20px;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
 }
 
 .Pill > .Content {
@@ -13,6 +16,8 @@
   line-height: normal;
   white-space: nowrap;
   overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
   color: var(--base-21);
   padding: 2px 0 2px 2px;
 }

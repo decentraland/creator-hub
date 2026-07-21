@@ -1,0 +1,69 @@
+.ui-designer-mixed-field {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  position: relative;
+}
+
+.ui-designer-mixed-editable {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 24px;
+  padding: 3px 6px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 4px;
+  background: transparent;
+  font-size: 13px;
+  line-height: 18px;
+  white-space: pre-wrap;
+  word-break: break-word;
+  outline: none;
+}
+
+.ui-designer-mixed-editable:empty::before {
+  content: attr(data-placeholder);
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.ui-designer-mixed-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 0 4px;
+  margin: 0 1px;
+  background: var(--base-02);
+  border-radius: 20px;
+  vertical-align: baseline;
+  user-select: none;
+}
+
+.ui-designer-mixed-chip-label {
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+  color: var(--base-21);
+  padding: 2px 0 2px 2px;
+}
+
+.ui-designer-mixed-chip-remove {
+  cursor: pointer;
+  padding: 0 2px;
+  color: var(--base-12);
+}
+
+.ui-designer-mixed-chip-remove:hover {
+  color: var(--base-16);
+}
+
+.ui-designer-mixed-link {
+  flex: 0 0 auto;
+  opacity: 0;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0 4px;
+  transition: opacity 80ms ease-out;
+}
+
+.ui-designer-mixed-field:hover .ui-designer-mixed-link {
+  opacity: 1;
+}

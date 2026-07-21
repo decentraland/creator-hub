@@ -1,0 +1,149 @@
+.ui-designer-code-variables {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px;
+}
+
+.ui-designer-code-props {
+  border-top: 1px solid var(--ui-designer-control-border);
+}
+
+.ui-designer-code-variables-title {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  opacity: 0.6;
+}
+
+.ui-designer-code-variables-hint {
+  font-size: 11px;
+  opacity: 0.6;
+  margin-bottom: 2px;
+}
+
+.ui-designer-code-variables-hint code {
+  opacity: 0.9;
+}
+
+.ui-designer-code-variables-empty {
+  font-size: 12px;
+  opacity: 0.5;
+  padding: 4px 0;
+}
+
+.ui-designer-code-variable-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ui-designer-code-variable-row.is-readonly {
+  opacity: 0.6;
+}
+
+.ui-designer-code-variable-name {
+  flex: 1;
+  min-width: 0;
+  font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ui-designer-code-variable-source {
+  font-size: 11px;
+  opacity: 0.7;
+  font-style: normal;
+}
+
+/* The shared Dropdown/TextField default to full-width (`flex: 1`); the dense
+   variable rows need them at fixed compact widths instead. */
+.ui-designer-code-variable-row .Dropdown.Field,
+.ui-designer-code-variables-add .Dropdown.Field {
+  flex: 0 0 92px;
+  width: 92px;
+}
+
+.ui-designer-code-variable-row .Checkbox.Field {
+  flex: 0 0 auto;
+}
+
+/* In the instance-props / component panel the 🔗 is a PRIMARY action (bind an
+   input to a state variable or an action). Keep it always visible: the
+   property-panel rows hover-reveal it via `.ui-designer-bindable-row`, which does
+   NOT wrap these rows, so without this the link stays opacity:0 forever. */
+.ui-designer-code-variable-row .ui-designer-bindable-link {
+  opacity: 1;
+  flex: 0 0 auto;
+}
+
+.Text.Field.ui-designer-code-variable-default {
+  flex: 0 0 72px;
+  width: 72px;
+  min-width: 0;
+}
+
+.ui-designer-code-variable-delete {
+  font-size: 12px;
+  line-height: 1;
+  padding: 2px 6px;
+  border-radius: 4px;
+  border: 1px solid var(--ui-designer-control-border);
+  background: transparent;
+  color: var(--title);
+  cursor: pointer;
+}
+
+.ui-designer-code-variables-add {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  margin-top: 6px;
+  padding-top: 8px;
+  border-top: 1px solid var(--ui-designer-control-border);
+}
+
+.ui-designer-code-variables-add button {
+  font-size: 12px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  border: 1px solid var(--ui-designer-control-border);
+  background: transparent;
+  color: var(--title);
+  cursor: pointer;
+}
+
+.ui-designer-code-variables-add button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.ui-designer-code-open-component {
+  margin-top: 8px;
+  font-size: 12px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  border: 1px solid var(--ui-designer-control-border);
+  background: transparent;
+  color: var(--title);
+  cursor: pointer;
+}
+
+.ui-designer-code-open-component:hover {
+  background: var(--ui-designer-accent-12);
+}
+
+/* Hover / keyboard-focus affordances for the row buttons (a11y sweep). */
+.ui-designer-code-variable-delete:hover,
+.ui-designer-code-variables-add button:hover:not(:disabled) {
+  background: var(--ui-designer-accent-12);
+}
+
+.ui-designer-code-variable-delete:focus-visible,
+.ui-designer-code-variables-add button:focus-visible,
+.ui-designer-code-open-component:focus-visible {
+  outline: 2px solid var(--border-focused);
+  outline-offset: 1px;
+}
