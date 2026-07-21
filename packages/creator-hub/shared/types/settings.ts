@@ -13,6 +13,7 @@ export type PreviewOptions = {
   openNewInstance: boolean;
   multiInstance: boolean;
   showWarnings: boolean;
+  optimizedAssets: boolean;
 };
 
 export type AppSettings = {

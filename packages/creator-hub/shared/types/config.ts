@@ -38,6 +38,7 @@ export const DEFAULT_CONFIG: Config = {
       openNewInstance: false,
       multiInstance: false,
       showWarnings: true,
+      optimizedAssets: false,
     },
   },
   editors: [],

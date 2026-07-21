@@ -21,8 +21,18 @@ import { install } from './npm';
 import { downloadGithubRepo } from './download-github-folder';
 import { startMobileDebugServer } from './mobile-debug-server';
 import { getLanIp } from './network';
+import { getAbgen, killAbgen, startAbgenForPreview, type AbgenInstance } from './abgen';
 
-export type Preview = { child: Child; url: string; opts: PreviewOptions };
+export type Preview = {
+  child: Child;
+  url: string;
+  opts: PreviewOptions;
+  abgen?: AbgenInstance | null;
+};
+
+// Explorer deeplink params for locally generated asset bundles (abgen)
+const LOCAL_AB_PARAM = 'local-ab';
+const OPTIMIZED_ASSETS_URL_PARAM = 'optimized-assets-url';
 
 const previewCache: Map<string, Preview> = new Map();
 export let deployServer: { stop: () => Promise<void> } | null = null;
@@ -63,6 +73,7 @@ export async function killPreview(path: string) {
   const preview = previewCache.get(path);
   const promise = preview?.child.kill().catch(() => {});
   previewCache.delete(path);
+  await killAbgen(path);
   await promise;
 }
 
@@ -73,7 +84,7 @@ export async function killAllPreviews() {
   previewCache.clear(); // just to be sure...
 }
 
-type PreviewArguments = Omit<PreviewOptions, 'debugger' | 'showWarnings'>;
+type PreviewArguments = Omit<PreviewOptions, 'debugger' | 'showWarnings' | 'optimizedAssets'>;
 
 const PREVIEW_OPTIONS_MAP: Record<keyof PreviewArguments, string> = {
   enableLandscapeTerrains: '--landscape-terrain-enabled',
@@ -200,7 +211,11 @@ export async function getMobilePreview(path: string): Promise<{ url: string; qr:
 
 // This fn is for already created deep-link. Just to add or remove values to a generated deep-link
 // decentraland://position=80,80&skip-auth-screen=true etc
-function updateDeepLinkWithOpts(params: string, newOpts: PreviewOptions): string {
+function updateDeepLinkWithOpts(
+  params: string,
+  newOpts: PreviewOptions,
+  abgenUrl?: string | null,
+): string {
   try {
     const urlParams = new URLSearchParams(params);
 
@@ -212,7 +227,7 @@ function updateDeepLinkWithOpts(params: string, newOpts: PreviewOptions): string
 
     const setOrDeleteParam = (key: string, value: any) => {
       if (value) {
-        urlParams.set(stripLeadingDashes(key), 'true');
+        urlParams.set(stripLeadingDashes(key), typeof value === 'string' ? value : 'true');
       } else {
         urlParams.delete(stripLeadingDashes(key));
       }
@@ -222,6 +237,11 @@ function updateDeepLinkWithOpts(params: string, newOpts: PreviewOptions): string
     setOrDeleteParam(PREVIEW_OPTIONS_MAP.skipAuthScreen, !newOpts.multiInstance);
     setOrDeleteParam(PREVIEW_OPTIONS_MAP.enableLandscapeTerrains, newOpts.enableLandscapeTerrains);
     setOrDeleteParam(PREVIEW_OPTIONS_MAP.multiInstance, newOpts.multiInstance);
+
+    // Locally generated asset bundles: only when the toggle is on AND abgen is running
+    const useLocalAb = !!(newOpts.optimizedAssets && abgenUrl);
+    setOrDeleteParam(LOCAL_AB_PARAM, useLocalAb);
+    setOrDeleteParam(OPTIMIZED_ASSETS_URL_PARAM, useLocalAb ? abgenUrl : false);
 
     // this param is different from what we recieved from the CLI that the one that the launcher uses.
     setOrDeleteParam('open-deeplink-in-new-instance', newOpts.openNewInstance);
@@ -278,8 +298,14 @@ export async function start(
 
   // If we have a preview running for this path open it
   if (isPreviewRunning(preview)) {
+    // Toggled on mid-session: start abgen against the already-running preview server
+    if (opts.optimizedAssets && !getAbgen(path)?.alive()) {
+      const serverUrl = getPreviewServerUrl(preview.url);
+      preview.abgen = serverUrl ? await startAbgenForPreview(path, serverUrl) : null;
+    }
+
     // Check if options have changed and update the URL accordingly
-    const updatedUrl = updateDeepLinkWithOpts(preview.url, opts);
+    const updatedUrl = updateDeepLinkWithOpts(preview.url, opts, getAbgen(path)?.url);
     await dclDeepLink(updatedUrl);
 
     return path;
@@ -288,8 +314,19 @@ export async function start(
   killPreview(path);
 
   try {
+    const extraArgs: string[] = [];
+    let abgen: AbgenInstance | null = null;
+    let previewPort: number | null = null;
+
+    if (opts.optimizedAssets) {
+      // Pre-pick the preview server port so abgen can point at it before sdk-commands boots
+      previewPort = await getAvailablePort();
+      extraArgs.push('--port', previewPort.toString());
+      abgen = await startAbgenForPreview(path, `http://127.0.0.1:${previewPort}`);
+    }
+
     const process = run('@dcl/sdk-commands', 'sdk-commands', {
-      args: ['start', '--explorer-alpha', '--hub', ...generatePreviewArguments(opts)],
+      args: ['start', '--explorer-alpha', '--hub', ...extraArgs, ...generatePreviewArguments(opts)],
       cwd: path,
       workspace: path,
       env: await getEnv(path),
@@ -305,8 +342,29 @@ export async function start(
 
     const url = resultLogs.match(dclLauncherURL)?.[1] ?? '';
 
-    const preview = { child: process, url, opts };
+    // If sdk-commands ended up on a different port (e.g. the pre-picked one raced),
+    // abgen points at a dead content server: kill it so the preview degrades to raw GLTFs.
+    if (abgen && previewPort !== null) {
+      const realmUrl = getPreviewServerUrl(url);
+      if (realmUrl && new URL(realmUrl).port !== previewPort.toString()) {
+        log.warn(
+          `[ABGen] Preview server bound to ${realmUrl} instead of port ${previewPort}; disabling local asset bundles`,
+        );
+        await killAbgen(path);
+        abgen = null;
+      }
+    }
+
+    const preview: Preview = { child: process, url, opts, abgen };
     previewCache.set(path, preview);
+
+    // sdk-commands already opened the client with its own deeplink (it knows nothing about
+    // abgen). Re-fire it augmented with the local asset-bundle params so the running client
+    // picks them up — same mechanism used when options change on a later Preview press.
+    if (abgen) {
+      await dclDeepLink(updateDeepLinkWithOpts(url, opts, abgen.url));
+    }
+
     return path;
   } catch (error) {
     killPreview(path);

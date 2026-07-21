@@ -24,6 +24,9 @@ export function PreviewOptions({
 }: PreviewOptionsProps) {
   const [terrainHiddenByScene, setTerrainHiddenByScene] = useState(false);
 
+  // abgen ships windows/mac asset bundles only
+  const supportsOptimizedAssets = navigator.platform.toLowerCase().includes('linux') === false;
+
   useEffect(() => {
     let cancelled = false;
     scene
@@ -92,6 +95,22 @@ export function PreviewOptions({
             }
             label={t('editor.header.actions.preview_options.multi_instance')}
           />
+        )}
+        {supportsOptimizedAssets && (
+          <Tooltip
+            title={t('editor.header.actions.preview_options.optimized_assets_tooltip')}
+            placement="left"
+          >
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={!!options.optimizedAssets}
+                  onChange={handleChange({ optimizedAssets: !options.optimizedAssets })}
+                />
+              }
+              label={t('editor.header.actions.preview_options.optimized_assets')}
+            />
+          </Tooltip>
         )}
       </FormGroup>
       <Divider />

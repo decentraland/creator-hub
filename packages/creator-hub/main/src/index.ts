@@ -16,6 +16,7 @@ import log from 'electron-log/main';
 
 import { restoreOrCreateMainWindow } from '/@/mainWindow';
 import { killAllUtilityProcesses } from '/@/modules/bin';
+import { killAllAbgen } from '/@/modules/abgen';
 import { initIpc } from '/@/modules/ipc';
 import { deployServer, killAllPreviews } from '/@/modules/cli';
 import { killInspectorServer } from '/@/modules/inspector';
@@ -152,7 +153,7 @@ export function setSkipBeforeQuitCleanup() {
 }
 
 export async function killAll() {
-  const promises: Promise<unknown>[] = [killAllPreviews()];
+  const promises: Promise<unknown>[] = [killAllPreviews(), killAllAbgen()];
   if (deployServer) {
     promises.push(deployServer.stop());
   }

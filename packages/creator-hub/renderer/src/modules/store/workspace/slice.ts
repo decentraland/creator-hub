@@ -25,6 +25,7 @@ const initialState: Async<Workspace> = {
       openNewInstance: false,
       multiInstance: false,
       showWarnings: true,
+      optimizedAssets: false,
     },
   },
   status: 'idle',
