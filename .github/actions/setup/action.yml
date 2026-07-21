@@ -11,7 +11,7 @@ inputs:
     required: false
     default: 'false'
   cache-playwright:
-    description: Cache Playwright browsers (~/.cache/ms-playwright)
+    description: Cache Playwright browsers
     required: false
     default: 'false'
   cache-electron:
@@ -61,8 +61,10 @@ runs:
       if: inputs.cache-playwright == 'true'
       uses: actions/cache@v6
       with:
-        path: ~/.cache/ms-playwright
+        path: ${{ runner.os == 'Linux' && '~/.cache/ms-playwright' || runner.os == 'macOS' && '~/Library/Caches/ms-playwright' || '~\AppData\Local\ms-playwright' }}
         key: ${{ runner.os }}-playwright-${{ hashFiles('package-lock.json') }}
+        restore-keys: |
+          ${{ runner.os }}-playwright-
 
     - name: Cache Electron
       if: inputs.cache-electron == 'true'
@@ -71,4 +73,4 @@ runs:
         path: |
           ~/.cache/electron
           ~/.cache/electron-builder
-        key: ${{ runner.os }}-electron-${{ hashFiles('packages/creator-hub/package-lock.json', 'packages/creator-hub/package.json') }}
+        key: ${{ runner.os }}-electron-${{ hashFiles('package-lock.json', 'packages/creator-hub/package.json') }}
