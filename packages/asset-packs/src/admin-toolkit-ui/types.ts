@@ -35,7 +35,6 @@ export type State = {
     selectedStream: 'live' | 'dcl-cast' | undefined;
     selectedTab: 'video-url' | 'live' | 'dcl-cast' | undefined;
     dclCast: DclCastResponse | undefined;
-    isMinimized: boolean;
     presentationState: PresentationState | undefined;
     participants: Participant[];
     showcase: {
@@ -63,7 +62,6 @@ export type State = {
       timestamp: number;
     }[];
     maxAnnouncements: number;
-    banner: 'sent' | 'cleared' | undefined;
   };
   moderationControl: {
     showModalAdminList: boolean;

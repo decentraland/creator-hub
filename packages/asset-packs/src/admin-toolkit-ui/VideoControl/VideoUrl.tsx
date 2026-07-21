@@ -1,18 +1,15 @@
-import { Color4 } from '@dcl/sdk/math';
 import type { DeepReadonlyObject, IEngine, PBVideoPlayer, Entity } from '@dcl/ecs';
-import ReactEcs, { UiEntity, Input, Label } from '@dcl/react-ecs';
+import ReactEcs, { UiEntity, Input } from '@dcl/react-ecs';
 import { openExternalUrl } from '~system/RestrictedActions';
-import { Button } from '../Button';
-import { Header } from '../Header';
 import { LIVEKIT_STREAM_SRC } from '../../definitions';
-import { getContentUrl } from '../constants';
-import { VideoControlVolume } from './VolumeControl';
+import { COLORS, RADIUS, SPACING, TYPE } from '../theme';
+import { SectionHeader, FieldLabel, Icon } from '../Primitives';
+import { PillButton } from '../Controls';
+import { VolumeSlider } from './VolumeSlider';
 import { createVideoPlayerControls, isVideoUrl } from './utils';
-import { COLORS, ICONS } from '.';
 
 const VIDEO_PLAYER_HELP_URL =
   'https://docs.decentraland.org/creator/scene-editor/interactivity/video-screen';
-export const getHelpIcon = () => `${getContentUrl()}/admin_toolkit/assets/icons/help.png`;
 
 export function VideoControlURL({
   engine,
@@ -29,213 +26,148 @@ export function VideoControlURL({
     setVideoURL(url ?? '');
   }, [entity]);
   const controls = createVideoPlayerControls(entity, engine);
-  const isActive = video && isVideoUrl(video.src);
+  const isActive = !!(video && isVideoUrl(video.src));
+  const changed = !!(video?.src && videoURL !== video.src && video.src !== LIVEKIT_STREAM_SRC);
+  const primaryLabel = isActive && !changed ? 'Deactivate' : changed ? 'Update' : 'Activate';
+
   return (
     <UiEntity uiTransform={{ flexDirection: 'column', width: '100%' }}>
-      <UiEntity uiTransform={{ width: '100%', justifyContent: 'space-between' }}>
-        <Header
-          iconSrc={ICONS.VIDEO_SOURCE}
-          title="Video URL"
-        />
-        <UiEntity
-          onMouseDown={() => openExternalUrl({ url: VIDEO_PLAYER_HELP_URL })}
+      <SectionHeader
+        title="Video URL"
+        right={
+          <UiEntity
+            uiTransform={{ width: 16, height: 16 }}
+            uiBackground={{ color: COLORS.transparent }}
+            onMouseDown={() => openExternalUrl({ url: VIDEO_PLAYER_HELP_URL })}
+          >
+            <Icon
+              name="help"
+              size={16}
+              color={COLORS.textSecondary}
+            />
+          </UiEntity>
+        }
+      />
+      <UiEntity
+        uiTransform={{ width: '100%', height: 20, margin: { top: SPACING.lg, bottom: SPACING.xl } }}
+        uiText={{
+          value: 'Paste an .m3u8 video URL to play it on this screen.',
+          fontSize: TYPE.label,
+          color: COLORS.textSecondary,
+          textAlign: 'top-left',
+          textWrap: 'wrap',
+        }}
+      />
+
+      <UiEntity uiTransform={{ flexDirection: 'row', alignItems: 'center', width: '100%' }}>
+        <Input
+          onChange={setVideoURL}
+          value={videoURL}
+          fontSize={TYPE.body}
+          textAlign="middle-left"
+          placeholder="Paste your video URL"
+          placeholderColor={COLORS.inputPlaceholder}
+          color={COLORS.inputText}
+          uiBackground={{ color: COLORS.inputBackground }}
           uiTransform={{
-            width: 25,
-            height: 25,
-            alignItems: 'center',
+            flexGrow: 1,
+            flexBasis: 0,
+            minWidth: 0,
+            height: 40,
+            borderRadius: RADIUS.md,
+            borderWidth: 1,
+            borderColor: COLORS.inputBorder,
+            margin: { right: SPACING.md },
           }}
-          uiBackground={{
-            textureMode: 'stretch',
-            color: Color4.White(),
-            texture: { src: getHelpIcon() },
-          }}
+        />
+        <PillButton
+          id="video_control_url_activate"
+          label={primaryLabel}
+          variant="filled"
+          disabled={primaryLabel !== 'Deactivate' && !isVideoUrl(videoURL)}
+          uiTransform={{ flexShrink: 0 }}
+          onClick={() => controls.setSource(primaryLabel === 'Deactivate' ? '' : videoURL)}
         />
       </UiEntity>
-      <Label
-        value="Play videos by pasting an .m3u8 video URL below."
-        color={Color4.fromHexString('#A09BA8')}
-        fontSize={16}
-      />
-      <Label
-        value="<b>Video URL<b>"
-        color={Color4.White()}
-        fontSize={16}
-        uiTransform={{
-          margin: { top: 16, bottom: 8 },
-        }}
-      />
-
-      <Input
-        onChange={setVideoURL}
-        value={videoURL}
-        fontSize={16}
-        textAlign="middle-left"
-        placeholder="Paste your video URL"
-        placeholderColor={Color4.create(160 / 255, 155 / 255, 168 / 255, 1)}
-        color={isActive ? Color4.Black() : Color4.fromHexString('#A09BA8')}
-        uiBackground={{ color: Color4.fromHexString('#FCFCFC') }}
-        uiTransform={{
-          borderRadius: 12,
-          borderColor: Color4.White(),
-          width: '100%',
-          height: 80,
-        }}
-      />
 
       <UiEntity
-        uiTransform={{
-          width: '100%',
-          height: 40,
-          flexDirection: 'row',
-          justifyContent: 'flex-end',
-          margin: { top: 10 },
-        }}
+        uiTransform={{ flexDirection: 'column', width: '100%', margin: { top: SPACING.xl } }}
       >
-        {video?.src && isVideoUrl(video.src) && (
-          <Button
-            id="video_control_share_screen_clear"
-            value="<b>Deactivate</b>"
-            variant="text"
-            fontSize={16}
-            color={Color4.White()}
+        <FieldLabel text="Playback" />
+        <UiEntity uiTransform={{ flexDirection: 'row', alignItems: 'center', width: '100%' }}>
+          <PillButton
+            id="video_control_play"
+            label="Play"
+            iconName="play"
+            variant="outlined"
+            disabled={!isActive}
             uiTransform={{
-              margin: { right: 8 },
-              padding: { left: 8, right: 8 },
+              flexGrow: 1,
+              flexBasis: 0,
+              height: 34,
+              padding: { left: 4, right: 4 },
+              margin: { right: SPACING.md },
             }}
-            onMouseDown={() => {
-              controls.setSource('');
-            }}
+            onClick={() => controls.play()}
           />
-        )}
-        {(!videoURL || videoURL !== video?.src) && (
-          <Button
-            disabled={!isVideoUrl(videoURL)}
-            id="video_control_share_screen_share"
-            value={
-              video?.src && videoURL !== video.src && video.src !== LIVEKIT_STREAM_SRC
-                ? '<b>Update</b>'
-                : '<b>Activate</b>'
-            }
-            labelTransform={{
-              margin: { left: 6, right: 6 },
+          <PillButton
+            id="video_control_pause"
+            label="Pause"
+            iconName="pause"
+            variant="outlined"
+            disabled={!isActive}
+            uiTransform={{
+              flexGrow: 1,
+              flexBasis: 0,
+              height: 34,
+              padding: { left: 4, right: 4 },
+              margin: { right: SPACING.md },
             }}
-            fontSize={16}
-            uiBackground={{
-              color: isVideoUrl(videoURL) ? COLORS.SUCCESS : Color4.fromHexString('#274431'),
-            }}
-            color={Color4.Black()}
-            onMouseDown={() => {
-              controls.setSource(videoURL);
-            }}
+            onClick={() => controls.pause()}
           />
-        )}
+          <PillButton
+            id="video_control_restart"
+            label="Restart"
+            iconName="refresh"
+            variant="outlined"
+            disabled={!isActive}
+            uiTransform={{
+              flexGrow: 1,
+              flexBasis: 0,
+              height: 34,
+              padding: { left: 4, right: 4 },
+              margin: { right: SPACING.md },
+            }}
+            onClick={() => controls.restart()}
+          />
+          <UiEntity
+            uiTransform={{
+              width: 36,
+              height: 34,
+              borderRadius: RADIUS.md,
+              borderWidth: 1,
+              borderColor: COLORS.outline,
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+            uiBackground={{ color: video?.loop ? COLORS.primary : COLORS.transparent }}
+            onMouseDown={() => isActive && controls.setLoop(!video?.loop)}
+          >
+            <Icon
+              name="loop"
+              size={15}
+              color={
+                !isActive ? COLORS.textDisabled : video?.loop ? COLORS.white : COLORS.textTertiary
+              }
+            />
+          </UiEntity>
+        </UiEntity>
       </UiEntity>
 
-      <Label
-        value="<b>Video Playback</b>"
-        fontSize={16}
-        color={Color4.White()}
-        uiTransform={{ margin: { bottom: 10 } }}
-      />
-
-      <UiEntity
-        uiTransform={{
-          flexDirection: 'row',
-          width: '100%',
-          margin: { bottom: 10 },
-        }}
-      >
-        <Button
-          disabled={!isActive}
-          id="video_control_play"
-          value="<b>Play</b>"
-          fontSize={18}
-          labelTransform={{ margin: { right: 10 } }}
-          uiTransform={{
-            margin: { top: 0, right: 16, bottom: 0, left: 0 },
-            height: 42,
-            minWidth: 69,
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: 0,
-          }}
-          icon={ICONS.PLAY_BUTTON}
-          iconTransform={{
-            width: 35,
-            height: 35,
-          }}
-          onMouseDown={() => {
-            controls.play();
-          }}
-        />
-        <Button
-          disabled={!isActive}
-          id="video_control_pause"
-          value="<b>Pause</b>"
-          fontSize={18}
-          labelTransform={{
-            margin: { left: 6, right: 6 },
-          }}
-          uiTransform={{
-            margin: { top: 0, right: 16, bottom: 0, left: 0 },
-            height: 42,
-            minWidth: 78,
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: 0,
-          }}
-          onMouseDown={() => {
-            controls.pause();
-          }}
-        />
-        <Button
-          disabled={!isActive}
-          id="video_control_restart"
-          value="<b>Restart</b>"
-          labelTransform={{
-            margin: { left: 6, right: 6 },
-          }}
-          fontSize={18}
-          uiTransform={{
-            margin: { top: 0, right: 16, bottom: 0, left: 0 },
-            height: 42,
-            minWidth: 88,
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: 0,
-          }}
-          onMouseDown={() => {
-            controls.restart();
-          }}
-        />
-        <Button
-          disabled={!isActive}
-          id="video_control_loop"
-          onlyIcon
-          variant={video?.loop ? 'primary' : 'secondary'}
-          uiTransform={{
-            height: 42,
-            width: 49,
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: 0,
-          }}
-          icon={ICONS.LOOP}
-          iconTransform={{ width: 25, height: 25 }}
-          iconBackground={{
-            color: !video?.loop ? Color4.White() : Color4.Black(),
-          }}
-          color={Color4.White()}
-          onMouseDown={() => {
-            controls.setLoop(!video?.loop);
-          }}
-        />
-      </UiEntity>
-      <VideoControlVolume
+      <VolumeSlider
         engine={engine}
         entity={entity}
         video={video}
-        label="<b>Video Volume</b>"
       />
     </UiEntity>
   );

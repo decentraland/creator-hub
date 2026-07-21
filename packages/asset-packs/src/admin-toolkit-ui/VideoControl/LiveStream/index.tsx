@@ -1,14 +1,13 @@
-import { Color4 } from '@dcl/sdk/math';
-import ReactEcs, { UiEntity, Label } from '@dcl/react-ecs';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- ReactEcs is the JSX factory
+import ReactEcs, { UiEntity } from '@dcl/react-ecs';
 import type { DeepReadonlyObject, Entity, IEngine, PBVideoPlayer } from '@dcl/ecs';
 import { openExternalUrl } from '~system/RestrictedActions';
 import { getComponents } from '../../../definitions';
-import { ICONS } from '..';
 import { state } from '../../store';
 import { getStreamKey } from '../api';
-import { Header } from '../../Header';
+import { COLORS, SPACING, TYPE } from '../../theme';
+import { SectionHeader, Icon } from '../../Primitives';
 import { LoadingDots } from '../../Loading';
-import { getHelpIcon } from '../VideoUrl';
 import { ShowStreamKey } from './ShowStreamKey';
 import { GenerateStreamKey } from './GenerateStreamKey';
 import { DeleteStreamKeyConfirmation } from './DeleteStreamKey';
@@ -55,45 +54,43 @@ export function LiveStream({
       <DeleteStreamKeyConfirmation
         engine={engine}
         onCancel={() => setResetStreamKey(false)}
-        onReset={() => {
-          setResetStreamKey(false);
-        }}
+        onReset={() => setResetStreamKey(false)}
       />
     );
   }
 
   return (
     <UiEntity uiTransform={{ flexDirection: 'column', width: '100%' }}>
-      <UiEntity uiTransform={{ width: '100%', justifyContent: 'space-between' }}>
-        <Header
-          iconSrc={ICONS.LIVE_SOURCE}
-          title="Stream"
-        />
-        <UiEntity
-          onMouseDown={() => openExternalUrl({ url: STREAMING_SUPPORT_URL })}
-          uiTransform={{
-            width: 25,
-            height: 25,
-            alignItems: 'center',
-          }}
-          uiBackground={{
-            textureMode: 'stretch',
-            color: Color4.White(),
-            texture: {
-              src: getHelpIcon(),
-            },
-          }}
-        />
-      </UiEntity>
-      <Label
-        textAlign="middle-left"
-        value="Use the RTMP server and stream key below in your broadcasting software to start streaming to this screen."
-        color={Color4.fromHexString('#A09BA8')}
-        fontSize={16}
+      <SectionHeader
+        title="Stream"
+        right={
+          <UiEntity
+            uiTransform={{ width: 16, height: 16 }}
+            uiBackground={{ color: COLORS.transparent }}
+            onMouseDown={() => openExternalUrl({ url: STREAMING_SUPPORT_URL })}
+          >
+            <Icon
+              name="help"
+              size={16}
+              color={COLORS.textSecondary}
+            />
+          </UiEntity>
+        }
+      />
+      <UiEntity
+        uiTransform={{ width: '100%', height: 36, margin: { top: SPACING.lg, bottom: SPACING.xl } }}
+        uiText={{
+          value:
+            'Use this RTMP server and stream key in your broadcasting software to stream to this screen.',
+          fontSize: TYPE.label,
+          color: COLORS.textSecondary,
+          textAlign: 'top-left',
+          textWrap: 'wrap',
+        }}
       />
       {loading ? (
         <LoadingDots
-          uiTransform={{ minHeight: 400 }}
+          uiTransform={{ minHeight: 200 }}
           engine={engine}
         />
       ) : hasStreamKey ? (
@@ -108,13 +105,6 @@ export function LiveStream({
         <GenerateStreamKey
           engine={engine}
           onGenerate={() => setHasStreamKey(true)}
-        />
-      )}
-      {!hasStreamKey && (
-        <Label
-          fontSize={14}
-          color={Color4.fromHexString('#FF2D55')}
-          value="Do not share your stream key with anyone, and be careful not to display it on screen while streaming."
         />
       )}
     </UiEntity>

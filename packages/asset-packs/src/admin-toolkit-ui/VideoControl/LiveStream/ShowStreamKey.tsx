@@ -1,34 +1,52 @@
-import { Color4 } from '@dcl/sdk/math';
 import type { DeepReadonlyObject, Entity, IEngine, PBVideoPlayer } from '@dcl/ecs';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- ReactEcs is the JSX factory
 import ReactEcs, { UiEntity, Label } from '@dcl/react-ecs';
-import { copyToClipboard } from '~system/RestrictedActions';
+import { copyToClipboard, openExternalUrl } from '~system/RestrictedActions';
 import { LIVEKIT_STREAM_SRC } from '../../../definitions';
-import { startTimeout, stopTimeout, startInterval, stopInterval } from '../../../timer';
-import { getContentUrl } from '../../constants';
-import { Button } from '../../Button';
-import { FeedbackButton } from '../../FeedbackButton';
-import { getErrorIcon } from '../../Error';
-import { LoadingDots } from '../../Loading';
-import { VideoControlVolume } from '../VolumeControl';
+import { startTimeout, stopTimeout } from '../../../timer';
 import { getStreamKey } from '../api';
 import { createVideoPlayerControls } from '../utils';
+import { COLORS, RADIUS, SPACING, TYPE } from '../../theme';
+import { FieldLabel, Icon, Divider } from '../../Primitives';
+import { CopyButton, ActionLink, PillButton } from '../../Controls';
+import { VolumeSlider } from '../VolumeSlider';
 import { state } from '../../store';
 import { setStream } from '../../actions';
-import { COLORS } from '..';
-
-const STREAM_ICONS = {
-  get eyeShow() {
-    return `${getContentUrl()}/admin_toolkit/assets/icons/eye.png`;
-  },
-  get eyeHide() {
-    return `${getContentUrl()}/admin_toolkit/assets/icons/eye-off.png`;
-  },
-};
+import { STREAMING_SUPPORT_URL } from '.';
 
 const AUTO_HIDE_DURATION_SECONDS = 30;
 const STREAM_KEY_TIMEOUT_ACTION = 'video_control_stream_key_timeout';
-const STREAM_KEY_INTERVAL_ACTION = 'video_control_stream_key_interval';
 const RTMP_SERVER_URL = 'rtmps://dcl.rtmp.livekit.cloud/x';
+
+// A read-only field (RTMP server / stream key) with an optional trailing slot.
+function ReadonlyField({ value, trailing }: { value: string; trailing?: ReactEcs.JSX.Element }) {
+  return (
+    <UiEntity
+      uiTransform={{
+        flexGrow: 1,
+        flexBasis: 0,
+        minWidth: 0,
+        height: 40,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        borderRadius: RADIUS.md,
+        borderWidth: 1,
+        borderColor: COLORS.inputBorder,
+        padding: { left: SPACING.xl, right: SPACING.xl },
+        margin: { right: SPACING.md },
+      }}
+      uiBackground={{ color: COLORS.inputBackground }}
+    >
+      <Label
+        value={value}
+        fontSize={TYPE.body}
+        color={COLORS.textPrimary}
+      />
+      {trailing ? trailing : <UiEntity uiTransform={{ width: 0, height: 0 }} />}
+    </UiEntity>
+  );
+}
 
 export function ShowStreamKey({
   engine,
@@ -45,15 +63,11 @@ export function ShowStreamKey({
 }) {
   const controls = createVideoPlayerControls(entity, engine);
   const [showStreamkey, setShowStreamkey] = ReactEcs.useState(false);
-  const [loading, setLoading] = ReactEcs.useState(false);
   const [streamKey, setStreamKey] = ReactEcs.useState<string | undefined>(undefined);
-  const [timeRemaining, setTimeRemaining] = ReactEcs.useState(AUTO_HIDE_DURATION_SECONDS);
+  const isLive = video?.src === LIVEKIT_STREAM_SRC && state.videoControl.selectedStream === 'live';
 
-  // auto-hide stream key after specified duration
   ReactEcs.useEffect(() => {
     if (streamKey) {
-      setTimeRemaining(AUTO_HIDE_DURATION_SECONDS);
-
       startTimeout(
         state.adminToolkitUiEntity,
         STREAM_KEY_TIMEOUT_ACTION,
@@ -61,318 +75,175 @@ export function ShowStreamKey({
         () => {
           setStreamKey(undefined);
           setShowStreamkey(false);
-          setTimeRemaining(0);
         },
       );
-
-      startInterval(state.adminToolkitUiEntity, STREAM_KEY_INTERVAL_ACTION, 0.1, () => {
-        setTimeRemaining(prev => Math.max(0, prev - 0.1));
-      });
-
       return () => {
         stopTimeout(state.adminToolkitUiEntity, STREAM_KEY_TIMEOUT_ACTION);
-        stopInterval(state.adminToolkitUiEntity, STREAM_KEY_INTERVAL_ACTION);
       };
-    } else {
-      setTimeRemaining(0);
     }
   }, [streamKey]);
 
+  const revealKey = async () => {
+    if (streamKey) {
+      setShowStreamkey(!showStreamkey);
+      return;
+    }
+    const [error, data] = await getStreamKey();
+    if (!error && data?.streamingKey) {
+      setStreamKey(data.streamingKey);
+      setShowStreamkey(true);
+    }
+  };
+
+  const copyKey = async () => {
+    if (streamKey) {
+      copyToClipboard({ text: streamKey });
+      return;
+    }
+    const [error, data] = await getStreamKey();
+    if (!error && data?.streamingKey) {
+      setStreamKey(data.streamingKey);
+      copyToClipboard({ text: data.streamingKey });
+    }
+  };
+
   return (
-    <UiEntity uiTransform={{ flexDirection: 'column' }}>
-      <Label
-        value="<b>RTMP Server</b>"
-        color={Color4.White()}
-        fontSize={16}
-        uiTransform={{
-          margin: { top: 16, bottom: 8 },
-        }}
-      />
-      <UiEntity
-        uiTransform={{
-          width: '100%',
-          margin: { bottom: 8, top: 8 },
-          height: 42,
-          borderRadius: 12,
-          flexDirection: 'row',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-        }}
-        uiBackground={{ color: Color4.White() }}
-      >
-        <Label
-          uiTransform={{ margin: { left: 16 } }}
-          fontSize={16}
-          value={`<b>${RTMP_SERVER_URL}</b>`}
-          color={Color4.fromHexString('#A09BA8')}
-        />
-        <FeedbackButton
-          id="video_control_copy_rtmp_server"
-          value="<b>Copy</b>"
-          variant="primary"
-          fontSize={16}
-          uiTransform={{
-            margin: { right: 8 },
-            padding: { left: 8, right: 8 },
-          }}
-          onMouseDown={async () => {
-            copyToClipboard({ text: RTMP_SERVER_URL });
-          }}
-        />
-      </UiEntity>
-      <Label
-        value="<b>Stream Key</b>"
-        color={Color4.White()}
-        fontSize={16}
-        uiTransform={{
-          margin: { top: 16, bottom: 8 },
-        }}
-      />
-      <UiEntity
-        uiTransform={{
-          width: '100%',
-          margin: { bottom: 8, top: 8 },
-          height: 42,
-          borderRadius: 12,
-          flexDirection: 'row',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-        }}
-        uiBackground={{ color: Color4.White() }}
-      >
-        <UiEntity
-          uiTransform={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            justifyContent: 'flex-start',
-          }}
-        >
-          {loading ? (
-            <UiEntity
-              uiTransform={{
-                margin: { left: 16 },
-              }}
-            >
-              <LoadingDots engine={engine} />
-            </UiEntity>
-          ) : (
-            <Label
-              uiTransform={{
-                margin: { left: 16 },
-                flexShrink: 1,
-              }}
-              fontSize={16}
-              value={`<b>${showStreamkey && streamKey ? streamKey : '************'}</b>`}
-              color={Color4.fromHexString('#A09BA8')}
-            />
-          )}
-        </UiEntity>
-
-        <UiEntity
-          uiTransform={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            flexShrink: 0,
-          }}
-        >
-          <UiEntity
-            uiTransform={{
-              width: 25,
-              height: 25,
-              margin: { right: 10 },
-            }}
-            uiBackground={{
-              textureMode: 'stretch',
-              texture: {
-                src: showStreamkey && streamKey ? STREAM_ICONS.eyeHide : STREAM_ICONS.eyeShow,
-              },
-              color: Color4.Black(),
-            }}
-            onMouseDown={async () => {
-              if (!streamKey) {
-                setLoading(true);
-                const [error, data] = await getStreamKey();
-                setLoading(false);
-                if (!error && data?.streamingKey) {
-                  setStreamKey(data.streamingKey);
-                  setShowStreamkey(true);
-                }
-              } else {
-                setShowStreamkey(!showStreamkey);
-              }
-            }}
+    <UiEntity uiTransform={{ flexDirection: 'column', width: '100%' }}>
+      <UiEntity uiTransform={{ flexDirection: 'column', width: '100%' }}>
+        <FieldLabel text="RTMP server" />
+        <UiEntity uiTransform={{ flexDirection: 'row', alignItems: 'center', width: '100%' }}>
+          <ReadonlyField value={RTMP_SERVER_URL} />
+          <CopyButton
+            id="video_control_copy_rtmp_server"
+            onCopy={() => copyToClipboard({ text: RTMP_SERVER_URL })}
           />
-          <FeedbackButton
+        </UiEntity>
+      </UiEntity>
+
+      <UiEntity
+        uiTransform={{ flexDirection: 'column', width: '100%', margin: { top: SPACING.xl } }}
+      >
+        <FieldLabel text="Stream key" />
+        <UiEntity uiTransform={{ flexDirection: 'row', alignItems: 'center', width: '100%' }}>
+          <ReadonlyField
+            value={showStreamkey && streamKey ? streamKey : '••••••••••••'}
+            trailing={
+              <UiEntity
+                uiTransform={{ width: 16, height: 16 }}
+                uiBackground={{ color: COLORS.transparent }}
+                onMouseDown={revealKey}
+              >
+                <Icon
+                  name={showStreamkey && streamKey ? 'eyeoff' : 'eye'}
+                  size={16}
+                  color={COLORS.textSecondary}
+                />
+              </UiEntity>
+            }
+          />
+          <CopyButton
             id="video_control_copy_stream_key"
-            value="<b>Copy</b>"
-            variant="primary"
-            fontSize={16}
-            uiTransform={{
-              margin: { right: 8 },
-              padding: { left: 8, right: 8 },
-              minWidth: 60,
-            }}
-            onMouseDown={async () => {
-              if (streamKey) {
-                copyToClipboard({ text: streamKey });
-              } else {
-                setLoading(true);
-                const [error, data] = await getStreamKey();
-                setLoading(false);
-                if (!error && data?.streamingKey) {
-                  setStreamKey(data.streamingKey);
-                  copyToClipboard({ text: data.streamingKey });
-                }
-              }
-            }}
+            onCopy={copyKey}
           />
         </UiEntity>
-      </UiEntity>
-
-      <UiEntity
-        uiTransform={{
-          width: '100%',
-          height: 4,
-          margin: { top: 8 },
-          display: streamKey && timeRemaining > 0 && showStreamkey ? 'flex' : 'none',
-        }}
-        uiBackground={{ color: Color4.fromHexString('#FFFFFF1A') }}
-      >
         <UiEntity
-          uiTransform={{
-            width: `${(timeRemaining / AUTO_HIDE_DURATION_SECONDS) * 100}%`,
-            height: '100%',
+          uiTransform={{ width: '100%', height: 44, margin: { top: SPACING.sm } }}
+          uiText={{
+            value:
+              'Do not share your stream key with anyone, and be careful not to display it on screen while streaming.',
+            fontSize: TYPE.label,
+            color: COLORS.danger,
+            textAlign: 'top-left',
+            textWrap: 'wrap',
           }}
-          uiBackground={{ color: Color4.fromHexString('#00D3FF') }}
         />
       </UiEntity>
 
       <UiEntity
         uiTransform={{
-          width: '100%',
-          height: 40,
           flexDirection: 'row',
+          alignItems: 'center',
           justifyContent: 'space-between',
-          margin: { top: 10, bottom: 16 },
+          width: '100%',
+          margin: { top: SPACING.xl },
         }}
       >
-        {endsAt > Date.now() ? (
-          <UiEntity uiTransform={{ flexDirection: 'column' }}>
-            <Label
-              value="Stream expires in:"
-              color={Color4.fromHexString('#FFFFFFB2')}
-              fontSize={14}
-            />
-            <Label
-              value={formatTimeRemaining(endsAt)}
-              color={Color4.fromHexString('#FFFFFFB2')}
-              fontSize={14}
-            />
-          </UiEntity>
-        ) : (
-          <UiEntity
-            uiTransform={{
-              flexDirection: 'row',
-              margin: { right: 10 },
-              borderWidth: 2,
-              borderColor: Color4.Green(),
-            }}
-          >
-            <UiEntity
-              uiTransform={{
-                width: 15,
-                height: 15,
-                margin: { right: 4, top: 4 },
-              }}
-              uiBackground={{
-                textureMode: 'stretch',
-                texture: {
-                  src: getErrorIcon(),
-                },
-              }}
-            />
-            <Label
-              fontSize={14}
-              textAlign="middle-left"
-              color={Color4.fromHexString('#FF0000')}
-              value="Stream timed out. Please restart stream in broadcasting software."
-            />
-          </UiEntity>
-        )}
-        {video?.src === LIVEKIT_STREAM_SRC && state.videoControl.selectedStream === 'live' ? (
-          <Button
-            id="video_control_share_screen_clear"
-            value="<b>Deactivate</b>"
-            variant="text"
-            fontSize={16}
-            color={Color4.White()}
-            uiTransform={{
-              minWidth: 120,
-              margin: { right: 8 },
-              padding: { left: 8, right: 8 },
-            }}
-            onMouseDown={() => {
+        <UiEntity uiTransform={{ flexDirection: 'row', alignItems: 'center' }}>
+          <Icon
+            name="clock"
+            size={14}
+            color={endsAt > Date.now() ? COLORS.textSecondary : COLORS.danger}
+            uiTransform={{ margin: { right: 5 } }}
+          />
+          <Label
+            value={
+              endsAt > Date.now()
+                ? `Stream expires in ${formatTimeRemaining(endsAt)}`
+                : 'Stream timed out — restart it in your software'
+            }
+            fontSize={TYPE.label}
+            color={endsAt > Date.now() ? COLORS.textSecondary : COLORS.danger}
+          />
+        </UiEntity>
+        <PillButton
+          id="video_control_stream_activate"
+          label={isLive ? 'Deactivate' : 'Activate'}
+          variant="filled"
+          onClick={() => {
+            if (isLive) {
               controls.setSource('');
               setStream(undefined);
-            }}
-          />
-        ) : (
-          <Button
-            id="video_control_share_screen_share"
-            value="<b>Activate</b>"
-            labelTransform={{
-              margin: { left: 20, right: 20 },
-            }}
-            uiTransform={{
-              minWidth: 120,
-            }}
-            fontSize={16}
-            uiBackground={{ color: COLORS.SUCCESS }}
-            color={Color4.Black()}
-            onMouseDown={() => {
+            } else {
               controls.setSource(LIVEKIT_STREAM_SRC);
               setStream('live');
-            }}
-          />
-        )}
+            }
+          }}
+        />
       </UiEntity>
-      <VideoControlVolume
+
+      <VolumeSlider
         engine={engine}
-        label="<b>Stream Volume</b>"
         entity={entity}
         video={video}
       />
-      <UiEntity>
-        <Button
-          id="video_control_reset_stream_key"
-          value="<b>Reset Stream Key</b>"
-          variant="text"
-          fontSize={16}
-          color={Color4.fromHexString('#FB3B3B')}
-          uiTransform={{
-            margin: { right: 8, top: 20 },
-            padding: { left: 8, right: 8 },
-          }}
-          onMouseDown={() => onReset()}
+
+      <Divider uiTransform={{ margin: { top: SPACING.xl } }} />
+      <UiEntity
+        uiTransform={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          width: '100%',
+          margin: { top: SPACING.xl },
+        }}
+      >
+        <ActionLink
+          label="Streaming help"
+          iconName="help"
+          color={COLORS.textSecondary}
+          onClick={() => openExternalUrl({ url: STREAMING_SUPPORT_URL })}
+        />
+        <ActionLink
+          label="Reset stream key"
+          iconName="refresh"
+          color={COLORS.danger}
+          onClick={() => onReset()}
         />
       </UiEntity>
     </UiEntity>
   );
 }
 
-// Helper function to format time remaining - shows days if > 1 day, otherwise shows hh:mm:ss
+// Show days if > 1 day, otherwise hh:mm:ss.
 function formatTimeRemaining(endsAt: number): string {
   const now = Date.now();
   const timeRemaining = Math.max(0, endsAt - now);
-
   const days = Math.floor(timeRemaining / (1000 * 60 * 60 * 24));
-
-  if (days >= 1) {
-    return `${days} ${days === 1 ? 'day' : 'days'}`;
-  } else {
-    const hours = Math.floor(timeRemaining / (1000 * 60 * 60));
-    const minutes = Math.floor((timeRemaining % (1000 * 60 * 60)) / (1000 * 60));
-    const seconds = Math.floor((timeRemaining % (1000 * 60)) / 1000);
-    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-  }
+  if (days >= 1) return `${days} ${days === 1 ? 'day' : 'days'}`;
+  const hours = Math.floor(timeRemaining / (1000 * 60 * 60));
+  const minutes = Math.floor((timeRemaining % (1000 * 60 * 60)) / (1000 * 60));
+  const seconds = Math.floor((timeRemaining % (1000 * 60)) / 1000);
+  return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds
+    .toString()
+    .padStart(2, '0')}`;
 }
