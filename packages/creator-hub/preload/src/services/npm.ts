@@ -1,4 +1,4 @@
-import type { Outdated } from '/shared/types/npm';
+import type { DistTags, Outdated } from '/shared/types/npm';
 
 import { invoke } from './ipc';
 
@@ -14,6 +14,10 @@ export async function install(path: string, packages: string[] = []): Promise<vo
 
 export async function getOutdatedDeps(path: string, packages: string[] = []): Promise<Outdated> {
   return invoke('npm.getOutdatedDeps', path, packages);
+}
+
+export async function getDistTags(path: string, pkg: string): Promise<DistTags> {
+  return invoke('npm.getDistTags', path, pkg);
 }
 
 export async function getContextFiles(path: string): Promise<void> {
