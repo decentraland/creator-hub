@@ -74,7 +74,12 @@ beforeAll(async () => {
   // Intercept all requests to the content URL and serve from local asset-packs
   await mockContentRequests(page, contentUrl);
 
-  await page.goto(`${serverUrl}?contentUrl=${encodeURIComponent(contentUrl)}`);
+  // 90s (Playwright defaults to 30s): the dev server serves a ~43MB unminified
+  // bundle, and on a heavily-loaded runner the first byte alone can take >10s.
+  // A genuinely dead server still fails fast via the fetch() check above.
+  await page.goto(`${serverUrl}?contentUrl=${encodeURIComponent(contentUrl)}`, {
+    timeout: 90_000,
+  });
 
   try {
     await page.waitForLoadState('domcontentloaded', { timeout: 5000 });

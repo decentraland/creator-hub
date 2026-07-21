@@ -1,7 +1,9 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { AiOutlineSearch as SearchIcon } from 'react-icons/ai';
+import { VscClose as ClearIcon } from 'react-icons/vsc';
 import type { Entity } from '@dcl/ecs';
 
-import { CAMERA, PLAYER, ROOT } from '../../lib/sdk/tree';
+import { CAMERA, PLAYER, ROOT, findParent } from '../../lib/sdk/tree';
 import { useEntitiesWith } from '../../hooks/sdk/useEntitiesWith';
 import { useTree } from '../../hooks/sdk/useTree';
 import { Tree } from '../Tree';
@@ -9,8 +11,10 @@ import { withSdk } from '../../hoc/withSdk';
 import './Hierarchy.css';
 import { useAppSelector } from '../../redux/hooks';
 import { selectCustomAssets } from '../../redux/app';
+import { TextField } from '../ui';
 import { ContextMenu } from './ContextMenu';
 import PlayerTree from './PlayerTree';
+import { filterEntityTree } from './utils';
 
 const HierarchyIcon = withSdk<{ value: Entity }>(({ sdk, value }) => {
   const customAssets = useAppSelector(selectCustomAssets);
@@ -68,6 +72,7 @@ const EntityTree = Tree<Entity>();
 const Hierarchy = withSdk(({ sdk }) => {
   const spawnPointManager = sdk.renderer.spawnPoints;
   const {
+    tree,
     addChild,
     setParent,
     remove,
@@ -91,6 +96,45 @@ const Hierarchy = withSdk(({ sdk }) => {
   } = useTree();
   const selectedEntities = useEntitiesWith(components => components.Selection);
   const [lastSelectedItem, setLastSelectedItem] = useState<Entity | undefined>(undefined);
+  const [search, setSearch] = useState('');
+  const [scrollTarget, setScrollTarget] = useState<Entity | null>(null);
+  const treeRef = useRef<HTMLDivElement>(null);
+
+  const searchTerm = search.trim().toLowerCase();
+
+  // Entities that match the search (or have a matching descendant), or null when not filtering
+  const visibleEntities = useMemo(
+    () => (searchTerm ? filterEntityTree([ROOT, CAMERA], getChildren, getLabel, searchTerm) : null),
+    [searchTerm, getChildren, getLabel],
+  );
+  const isFiltering = visibleEntities !== null;
+
+  const getFilteredChildren = useCallback(
+    (entity: Entity) => {
+      const children = getChildren(entity);
+      return visibleEntities ? children.filter(child => visibleEntities.has(child)) : children;
+    },
+    [getChildren, visibleEntities],
+  );
+
+  const isOpenInTree = useCallback(
+    (entity: Entity) => (visibleEntities ? true : isOpen(entity)),
+    [isOpen, visibleEntities],
+  );
+
+  const isHiddenInTree = useCallback(
+    (entity: Entity) => (visibleEntities ? !visibleEntities.has(entity) : isHidden(entity)),
+    [isHidden, visibleEntities],
+  );
+
+  const handleSetOpen = useCallback(
+    (entity: Entity, open: boolean) => {
+      // while filtering, matches are forced open; don't touch the persisted open state
+      if (isFiltering) return;
+      void setOpen(entity, open);
+    },
+    [isFiltering, setOpen],
+  );
 
   const isSelected = useCallback(
     (entity: Entity) => {
@@ -103,10 +147,10 @@ const Hierarchy = withSdk(({ sdk }) => {
     const entities: Entity[] = [];
 
     const traverse = (entity: Entity) => {
-      if (!isHidden(entity)) {
+      if (!isHiddenInTree(entity)) {
         entities.push(entity);
-        if (isOpen(entity)) {
-          getChildren(entity).forEach(child => traverse(child));
+        if (isOpenInTree(entity)) {
+          getFilteredChildren(entity).forEach(child => traverse(child));
         }
       }
     };
@@ -114,7 +158,7 @@ const Hierarchy = withSdk(({ sdk }) => {
     traverse(ROOT);
 
     return entities;
-  }, [getChildren, isOpen, isHidden]);
+  }, [getFilteredChildren, isOpenInTree, isHiddenInTree]);
 
   const handleRangeSelection = useCallback(
     (fromEntity: Entity, toEntity: Entity) => {
@@ -163,6 +207,95 @@ const Hierarchy = withSdk(({ sdk }) => {
     [select, spawnPointManager],
   );
 
+  /** Open every collapsed ancestor of an entity so its row is rendered in the tree. */
+  const revealInTree = useCallback(
+    async (entity: Entity) => {
+      const ancestors: Entity[] = [];
+      let current = entity;
+      while (current !== ROOT && current !== PLAYER && current !== CAMERA) {
+        const parent = findParent(tree, current);
+        if (parent === current || ancestors.includes(parent)) break;
+        ancestors.push(parent);
+        current = parent;
+      }
+      for (const ancestor of ancestors) {
+        if (!isOpen(ancestor)) {
+          await setOpen(ancestor, true);
+        }
+      }
+    },
+    [tree, isOpen, setOpen],
+  );
+
+  const handleSearchChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
+    setSearch(event.target.value);
+  }, []);
+
+  const handleClearSearch = useCallback(() => {
+    setSearch('');
+    // keep the current selection visible after the filter is removed
+    const selected = selectedEntities.find(entity => entity !== ROOT && entity !== PLAYER);
+    if (selected !== undefined) {
+      void revealInTree(selected);
+      setScrollTarget(selected);
+    }
+  }, [selectedEntities, revealInTree]);
+
+  const handleSearchKeyDown = useCallback(
+    (event: React.KeyboardEvent<HTMLInputElement>) => {
+      if (event.key === 'Escape') {
+        event.currentTarget.blur();
+        handleClearSearch();
+      }
+    },
+    [handleClearSearch],
+  );
+
+  /** Reveal an entity's row (outside of an active search) and queue a scroll to it. */
+  const revealAndScrollTo = useCallback(
+    (entity: Entity) => {
+      if (entity === ROOT || entity === PLAYER) return;
+      // while filtering every visible row is already revealed; don't touch persisted open state
+      if (!isFiltering) void revealInTree(entity);
+      setScrollTarget(entity);
+    },
+    [isFiltering, revealInTree],
+  );
+
+  // auto-scroll to a newly selected entity (e.g. picked in the 3D viewport) so the
+  // selection is always visible in the tree
+  const prevSelectedRef = useRef<Entity[]>([]);
+  useEffect(() => {
+    const prev = prevSelectedRef.current;
+    prevSelectedRef.current = selectedEntities;
+    const added = selectedEntities.filter(entity => entity !== ROOT && !prev.includes(entity));
+    if (added.length === 1) revealAndScrollTo(added[0]);
+  }, [selectedEntities, revealAndScrollTo]);
+
+  // scroll to the entity the camera focuses on (F key), even if it was already selected
+  useEffect(() => {
+    const handleFocusEntity = ({ entity }: { entity: Entity }) => revealAndScrollTo(entity);
+    sdk.events.on('focusEntity', handleFocusEntity);
+    return () => sdk.events.off('focusEntity', handleFocusEntity);
+  }, [sdk, revealAndScrollTo]);
+
+  // scroll to the pending target once its row exists — collapsed ancestors may need to be
+  // re-opened first, and a filtered-out row only appears after the search is cleared;
+  // rows already fully in view are left alone so tree clicks never cause jumps
+  useEffect(() => {
+    if (scrollTarget === null) return;
+    const container = treeRef.current;
+    const row = container?.querySelector(`.Tree[data-test-id="${scrollTarget}"] > .item`);
+    if (!container || !row) return;
+    const rowRect = row.getBoundingClientRect();
+    const containerRect = container.getBoundingClientRect();
+    const isInView = rowRect.top >= containerRect.top && rowRect.bottom <= containerRect.bottom;
+    if (!isInView) row.scrollIntoView({ block: 'center' });
+    setScrollTarget(null);
+  }, [scrollTarget, tree, visibleEntities]);
+
+  const showPlayer = !isFiltering || 'player'.includes(searchTerm);
+
   const props = {
     getExtraContextMenu: ContextMenu,
     onAddChild: addChild,
@@ -171,16 +304,16 @@ const Hierarchy = withSdk(({ sdk }) => {
     onRename: rename,
     onSelect: handleSelect,
     onDoubleSelect: centerViewOnEntity,
-    onSetOpen: setOpen,
+    onSetOpen: handleSetOpen,
     onDuplicate: duplicate,
     getId: getId,
-    getChildren: getChildren,
+    getChildren: getFilteredChildren,
     getLabel: getLabel,
     getSelectedItems: getSelectedItems,
     getIcon: (val: Entity) => <HierarchyIcon value={val} />,
-    isOpen: isOpen,
+    isOpen: isOpenInTree,
     isSelected: isSelected,
-    isHidden: isHidden,
+    isHidden: isHiddenInTree,
     canRename: canRename,
     canRemove: canRemove,
     canDuplicate: canDuplicate,
@@ -191,19 +324,44 @@ const Hierarchy = withSdk(({ sdk }) => {
   };
 
   return (
-    <div
-      className="Hierarchy"
-      onClick={handleBackgroundDeselect}
-    >
-      <PlayerTree onSelect={(entity, multiple) => void select(entity, !!multiple)} />
-      <EntityTree
-        value={CAMERA}
-        {...props}
-      />
-      <EntityTree
-        value={ROOT}
-        {...props}
-      />
+    <div className="Hierarchy">
+      <div
+        className="Hierarchy-search"
+        onContextMenu={e => e.stopPropagation()}
+      >
+        <TextField
+          placeholder="Search entities"
+          value={search}
+          onChange={handleSearchChange}
+          onKeyDown={handleSearchKeyDown}
+          leftIcon={<SearchIcon />}
+          rightIcon={
+            search ? (
+              <ClearIcon
+                className="ClearSearch"
+                onClick={handleClearSearch}
+              />
+            ) : undefined
+          }
+        />
+      </div>
+      <div
+        className="Hierarchy-tree"
+        ref={treeRef}
+        onClick={handleBackgroundDeselect}
+      >
+        {showPlayer && (
+          <PlayerTree onSelect={(entity, multiple) => void select(entity, !!multiple)} />
+        )}
+        <EntityTree
+          value={CAMERA}
+          {...props}
+        />
+        <EntityTree
+          value={ROOT}
+          {...props}
+        />
+      </div>
     </div>
   );
 });

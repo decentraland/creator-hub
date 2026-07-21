@@ -28,3 +28,5 @@ yarn-error.log*
 
 settings.local.json
 .serena/
+# Claude agent verification screenshots
+.claude/screenshots/
