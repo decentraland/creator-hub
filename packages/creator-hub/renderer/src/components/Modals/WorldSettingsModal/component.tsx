@@ -68,7 +68,8 @@ const WorldSettingsModal: React.FC<Props> = React.memo(
 
     // While parcel permissions are being fetched (for non-owners), keep the loading state
     // to avoid a brief flash from the restricted layout-only view to the full settings modal.
-    const isEffectivelyLoading = isLoading || (!isOwner && userParcelsPermissions?.status === 'loading');
+    const isEffectivelyLoading =
+      isLoading || (!isOwner && userParcelsPermissions?.status === 'loading');
 
     const handleUpdateSettings = useCallback((newSettings: Partial<WorldSettings>) => {
       setSettingsUpdates(prev => ({ ...prev, ...newSettings }));
