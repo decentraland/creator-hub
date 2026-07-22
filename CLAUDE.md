@@ -122,6 +122,17 @@ CI is orchestrated by `.github/workflows/ci.yml`, which calls reusable
   Cross-workflow ordering and artifact prerequisites are expressed at the
   `ci.yml` caller level (e.g. `tests: needs: [build]`), not inside `tests.yml`.
   Artifacts are run-scoped and shared across all called reusable workflows.
+- **`e2e` is decoupled from the publish chain — enforced by branch protection, not
+  `needs`.** `tests.yml` is unit-only; the Playwright suites live in `e2e.yml`
+  (`e2e-inspector` + `e2e-creator-hub`), wired as `e2e: needs: [build, tests]` in `ci.yml`.
+  It is a leaf job — nothing depends on it — so the publish chain
+  (`drop_pre_release → asset-packs → inspector → creator-hub`) starts after `unit`/`lint`/
+  `typechecking` instead of waiting ~12 min for e2e (that serialization was the pipeline's
+  long pole). **Do NOT add `e2e` to `drop_pre_release`'s `needs`.** Because the DAG no longer
+  gates on e2e, `e2e-inspector` and `e2e-creator-hub` MUST be **required status checks in
+  branch protection**, or they silently become optional. On `main` pushes (no branch
+  protection) the chain publishes in parallel with e2e — safe because the merged code already
+  passed e2e on the PR.
 - **Lint workflows with `actionlint`, not the JS toolchain.** `make format`/
   `make lint`/`make test` do NOT cover `.github/**` YAML (Prettier globs
   `js,ts,tsx,json` and `.prettierignore` excludes `.github`; ESLint is `js,cjs,ts`).

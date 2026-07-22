@@ -36,6 +36,9 @@ jobs:
   tests:
     needs: [ build ]
     uses: ./.github/workflows/tests.yml
+  e2e:
+    needs: [ build, tests ]
+    uses: ./.github/workflows/e2e.yml
   drop_pre_release:
     name: drop pre-release
     needs: [ lint, typechecking, tests ]
