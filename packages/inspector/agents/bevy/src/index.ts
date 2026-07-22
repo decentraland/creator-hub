@@ -11,6 +11,7 @@ import {
   setCameraSceneOffset,
   setVerticalInput,
   setupCamera,
+  zoomCamera,
 } from './camera';
 import {
   getGroundPointAtPointer,
@@ -98,6 +99,11 @@ export function main(): void {
       resetCamera(msg.position);
       return;
     }
+    // Dolly the editor fly-camera in/out (toolbar zoom buttons + scroll).
+    if (msg.kind === 'zoom-camera') {
+      zoomCamera(msg.delta);
+      return;
+    }
     // Show/hide the spawn-point move-handle at a scene-local position.
     if (msg.kind === 'set-spawn-gizmo') {
       setSpawnGizmo(msg.position);
@@ -165,6 +171,10 @@ async function boot(): Promise<void> {
   // toolbar toggle can unfreeze to run the scene live. Freeze does NOT block
   // avatar walking (bevy-editor walks the avatar while frozen too).
   await setSceneFrozen(true);
+  // Freeze the day/night clock at noon so the skybox doesn't drift into night
+  // while the scene sits open (the day/night clock advances with the wall clock
+  // even while the scene is frozen — freezing the SCENE doesn't freeze TIME).
+  await pinSkyboxTime();
 }
 
 /**
@@ -222,6 +232,27 @@ async function setSceneFrozen(frozen: boolean): Promise<void> {
       console.error(`[bevy-agent] ${command} attempt failed:`, e);
     }
     await new Promise<void>(resolve => setTimeout(() => resolve(), 500));
+  }
+}
+
+/**
+ * Pin the skybox to a fixed daytime and STOP the day/night clock. The engine's
+ * TimeKeeper advances the time of day with the wall clock, so a scene left open
+ * for a while drifts into dusk/night — distracting while editing. The `/time`
+ * console command sets the running clock (`time` in hours) and its `speed`
+ * (real-seconds → in-world advance); `speed 0` freezes it. Noon (12h) gives even,
+ * neutral lighting. This targets the shared global TimeKeeper, so it affects the
+ * whole editor view; a scene that pins its own SkyboxTime/SceneTime still wins
+ * (the engine's `has_scene_time` path), which is correct — the editor only fixes
+ * the DEFAULT drift. Best-effort: a failure just leaves the clock running.
+ */
+async function pinSkyboxTime(): Promise<void> {
+  const api = getBevyApi();
+  if (!api) return;
+  try {
+    await api.consoleCommand('time', ['12', '0']);
+  } catch (e) {
+    console.error('[bevy-agent] pin skybox time failed:', e);
   }
 }
 
