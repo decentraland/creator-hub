@@ -117,6 +117,8 @@ jobs:
           USE_HARD_LINKS: false
           # Fix C++ standard for native dependencies
           CXXFLAGS: "-std=gnu++17"
+          # On PRs, build only the unsigned .zip (skip the slow .dmg); see electron-builder.cjs
+          DRY_RUN: ${{ inputs.dry-run }}
           # Code Signing params
           # See https://www.electron.build/code-signing
           CSC_LINK: ${{ secrets.MACOS_CSC_LINK }}
@@ -148,7 +150,7 @@ jobs:
       - name: Move artifacts to upload folder
         if: ${{ github.event.pull_request.number }}
         working-directory: packages/creator-hub
-        run: sh -c 'mkdir dist/upload && cp dist/*.dmg dist/*.exe dist/upload 2> /dev/null || :'
+        run: sh -c 'mkdir dist/upload && cp dist/*.dmg dist/*.exe dist/*.zip dist/upload 2> /dev/null || :'
 
       - name: Upload to S3
         if: ${{ github.event.pull_request.number }}
@@ -176,8 +178,8 @@ jobs:
         id: macos-instructions
         run: |
           echo "list<<EOF" >> $GITHUB_ENV
-          echo "[mac-x64](${{ secrets.SDK_TEAM_S3_BASE_URL }}/creator-hub/branch/${{ github.head_ref }}/Decentraland%20Creator%20Hub-${{ steps.version.outputs.version }}-mac-x64.dmg)" >> $GITHUB_ENV
-          echo "[mac-arm64](${{ secrets.SDK_TEAM_S3_BASE_URL }}/creator-hub/branch/${{ github.head_ref }}/Decentraland%20Creator%20Hub-${{ steps.version.outputs.version }}-mac-arm64.dmg)" >> $GITHUB_ENV
+          echo "[mac-x64](${{ secrets.SDK_TEAM_S3_BASE_URL }}/creator-hub/branch/${{ github.head_ref }}/Decentraland%20Creator%20Hub-${{ steps.version.outputs.version }}-mac-x64.zip)" >> $GITHUB_ENV
+          echo "[mac-arm64](${{ secrets.SDK_TEAM_S3_BASE_URL }}/creator-hub/branch/${{ github.head_ref }}/Decentraland%20Creator%20Hub-${{ steps.version.outputs.version }}-mac-arm64.zip)" >> $GITHUB_ENV
           echo "EOF" >> $GITHUB_ENV
           content=$(cat ./.github/workflows/macos-instructions.md)
           echo "macos-instructions<<EOF" >> $GITHUB_ENV
