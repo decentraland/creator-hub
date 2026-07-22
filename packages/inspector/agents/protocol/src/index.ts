@@ -54,6 +54,15 @@ export interface SpawnArea {
   center: BusVec3;
   halfExtents: { x: number; z: number };
   isDefault: boolean;
+  // The avatar's Y rotation (radians) so it faces the camera target, matching the
+  // Babylon editor. Omitted/0 when there's no camera target.
+  facingY?: number;
+  // The spawn point's camera target (scene-local), drawn as its own marker nested
+  // under the spawn in the tree. Omitted when the spawn has no camera target.
+  cameraTarget?: BusVec3;
+  // The spawn point's index in the scene metadata — so a viewport click on this
+  // area's avatar/target markers can select the right spawn point / target.
+  index: number;
 }
 
 /**
@@ -106,6 +115,10 @@ export type AgentToPage =
   // A committed spawn-point handle drag (world position). The inspector routes it
   // to the active spawn point's onPositionChange (scene metadata, not a Transform).
   | { kind: 'spawn-gizmo-commit'; position: BusVec3 }
+  // A viewport click on a spawn point's avatar or camera-target marker (#2). The
+  // inspector selects that spawn point / target (spawn points are scene metadata,
+  // not entities, so this is separate from the entity `pick`).
+  | { kind: 'spawn-pick'; index: number; target: 'position' | 'cameraTarget' }
   // Reply to `query-animations`: the animation clip names of the entity's loaded
   // GLTF (empty if none / not loaded). The agent reads them from the engine's
   // `GltfContainerLoadingState.animationNames` — a field the inspector's older

@@ -29,6 +29,7 @@ interface SpawnPoint {
   name?: string;
   default?: boolean;
   position?: { x?: Coord; y?: Coord; z?: Coord };
+  cameraTarget?: { x: number; y: number; z: number };
 }
 interface SpawnSceneComponent {
   getOrNull(entity: Entity): { spawnPoints?: SpawnPoint[] } | null;
@@ -74,15 +75,24 @@ function coordHalfExtent(coord: Coord | undefined): number {
   return 0;
 }
 
-/** Map the Scene metadata's spawn points to drawable areas (scene-local). */
+/** Map the Scene metadata's spawn points to drawable areas (scene-local). Carries
+ * the camera target + the avatar's facing rotation (Y = atan2(dx,dz) toward the
+ * target, matching Babylon's rotateAvatarToFaceTarget) and the spawn index (so a
+ * viewport click can select the right point/target). */
 export function toSpawnAreas(spawnPoints: SpawnPoint[] | undefined): SpawnArea[] {
   if (!spawnPoints) return [];
-  return spawnPoints.map(sp => {
+  return spawnPoints.map((sp, index) => {
     const p = sp.position ?? {};
+    const center = { x: coordCenter(p.x), y: coordCenter(p.y), z: coordCenter(p.z) };
+    const ct = sp.cameraTarget;
+    const facingY = ct ? Math.atan2(ct.x - center.x, ct.z - center.z) : 0;
     return {
-      center: { x: coordCenter(p.x), y: coordCenter(p.y), z: coordCenter(p.z) },
+      center,
       halfExtents: { x: coordHalfExtent(p.x), z: coordHalfExtent(p.z) },
       isDefault: !!sp.default,
+      index,
+      facingY,
+      ...(ct ? { cameraTarget: { x: ct.x, y: ct.y, z: ct.z } } : {}),
     };
   });
 }

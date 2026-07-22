@@ -19,6 +19,9 @@ interface Channel {
 export interface SpawnGizmoBridgeOptions {
   /** Called with the dragged scene-local position when the agent commits a drag. */
   onCommit: (position: BusVec3) => void;
+  /** Called when a viewport click hits a spawn point's avatar / camera-target
+   * marker (#2), so the caller selects that spawn point / target. */
+  onPick?: (index: number, target: 'position' | 'cameraTarget') => void;
   /** Test seam: the channel to use. Defaults to a real BroadcastChannel. */
   channel?: Channel;
 }
@@ -39,6 +42,7 @@ export function createSpawnGizmoBridge(options: SpawnGizmoBridgeOptions): SpawnG
     if (env.to !== 'page' || !env.msg || typeof env.msg !== 'object') return;
     const msg = env.msg as AgentToPage;
     if (msg.kind === 'spawn-gizmo-commit') options.onCommit(msg.position);
+    else if (msg.kind === 'spawn-pick') options.onPick?.(msg.index, msg.target);
   };
 
   const show = (position: BusVec3 | null): void => {
