@@ -797,8 +797,18 @@ function hideGizmo(): void {
 function cameraDistanceScale(pos: Vector3): number {
   const camT = Transform.getOrNull(engine.CameraEntity);
   if (camT === null) return MIN_SCALE;
-  const d = Vector3.distance(camT.position, pos);
-  return Math.min(MAX_SCALE, Math.max(MIN_SCALE, d * SCALE_FACTOR));
+  // Size by VIEW-SPACE DEPTH (the distance along the camera's forward axis), not
+  // raw Euclidean distance to the pivot. Euclidean distance grows as you strafe
+  // sideways past the entity even though your viewing depth is unchanged — so the
+  // gizmo visibly resized on lateral camera moves ("the gizmo grows/shrinks when
+  // moving sideways to the entity"). Projecting onto the forward vector keeps the
+  // on-screen size stable under sideways/orbit motion and matches how the Babylon
+  // editor's utility-layer gizmos feel. `abs` so a pivot briefly behind the camera
+  // (during a fast fly-through) still yields a positive size rather than clamping.
+  const forward = Vector3.rotate(Vector3.Forward(), camT.rotation as Quaternion);
+  const toPivot = Vector3.subtract(pos, camT.position);
+  const depth = Math.abs(Vector3.dot(toPivot, forward));
+  return Math.min(MAX_SCALE, Math.max(MIN_SCALE, depth * SCALE_FACTOR));
 }
 
 function pointerRay(): { origin: Vector3; dir: Vector3 } | null {
