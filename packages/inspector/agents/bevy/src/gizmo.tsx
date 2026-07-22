@@ -120,6 +120,106 @@ function applyVisualMaterial(
   });
 }
 
+// --- Rotation-ring depth cue (which ring / arc is closer to the camera) --------
+// The SDK has no per-fragment shader, so we approximate Babylon's near/far ring
+// shading per SEGMENT: each frame, fade a segment by how much it faces the camera
+// (near arc solid, far arc dim), and brighten the ring whose plane most faces the
+// camera (the "front" ring) while dimming the edge-on ones. Cheap enough because
+// we quantize the per-segment brightness to a few buckets and only write a
+// segment's material when its bucket changes.
+
+// The depth cue rides ONLY on emissive brightness — the rings stay fully OPAQUE.
+// Brightness must stay LOW: pushing it up (2+) blew every ring to white AND lost
+// the gradient (once saturated, near and far look identical). The visible near/far
+// gradient needs headroom, so keep the whole range well under clipping — the far
+// arc dim, the near arc only moderately brighter. This matches the original look
+// (which showed the gradient best) while the geometry fix removes the "low-res"
+// dashing that was the actual complaint.
+const RING_DIM = 0.2;
+const RING_BRIGHT = 0.95;
+// Per-ring level multiplier: the ring whose plane most faces the camera (the
+// "front" ring) keeps full brightness; the edge-on side rings are pulled down a
+// little so the front ring stands out (but never so dark they vanish).
+const FRONT_RING_LEVEL = 1;
+const SIDE_RING_LEVEL = 0.7;
+// Quantize the emissive so we only re-write a material when it visibly changes
+// (avoids ~190 material writes every frame + shimmer). Enough steps for a smooth
+// gradient across the ring.
+const RING_CUE_BUCKETS = 10;
+// The last brightness bucket written per segment mesh, so we skip no-op writes.
+const ringSegBucket = new Map<Entity, number>();
+
+/** Write a ring segment's material at brightness `b` (0..1): the base axis colour,
+ * with emissive scaled between RING_DIM (far arc) and RING_BRIGHT (near arc). Kept
+ * dim so near vs far stay distinguishable (a bright glow saturates both to white
+ * and the gradient vanishes) and the axis hue reads. */
+function paintRingSegment(mesh: Entity, base: Color4, b: number): void {
+  const intensity = RING_DIM + (RING_BRIGHT - RING_DIM) * b;
+  Material.setPbrMaterial(mesh, {
+    albedoColor: Color4.create(base.r, base.g, base.b, 1),
+    emissiveColor: Color3.create(base.r, base.g, base.b),
+    emissiveIntensity: intensity,
+  });
+}
+
+/**
+ * Per-frame ring depth cue. For each visible rotation ring, brighten the arc
+ * facing the camera and dim the arc behind, and lift the ring whose plane most
+ * faces the camera. The hovered / dragged axis is left to setHover (gold, fully
+ * lit), so we skip it here. No-op outside rotate mode / when nothing's selected.
+ */
+function updateRingDepthCue(): void {
+  if (gizmoMode !== 'rotate' || gizmoRoot === null || selectedPos === null) return;
+  const camT = Transform.getOrNull(engine.CameraEntity);
+  if (camT === null) return;
+  const rootRot = Transform.get(gizmoRoot).rotation as Quaternion;
+  const activeAxis = drag !== null ? drag.axis : hoverKey;
+  // View dir from the ring centre (≈ selectedPos) to the camera — constant per
+  // frame, so compute once and reuse for both the front-ring pick and the arc fade.
+  const toCam = Vector3.normalize(Vector3.subtract(camT.position, selectedPos));
+
+  // The single ring whose plane most faces the camera (|dot(worldNormal, toCam)|,
+  // 0 edge-on → 1 face-on) — brightened as the "front" ring.
+  let frontAxis: Axis = 'x';
+  let frontFace = -1;
+  for (const axis of AXES) {
+    const q = Quaternion.multiply(rootRot, RING_TO_AXIS[axis]);
+    const normal = Vector3.rotate(RING_LOCAL_NORMAL, q);
+    const face = Math.abs(Vector3.dot(normal, toCam));
+    if (face > frontFace) {
+      frontFace = face;
+      frontAxis = axis;
+    }
+  }
+
+  for (const axis of AXES) {
+    const segs = ringSegmentsOf[axis];
+    if (!segs) continue;
+    // Whole-ring level: the front ring full, the others dimmed. This is the
+    // "which ring is closer" cue independent of the per-segment arc fade.
+    const ringLevel = axis === frontAxis ? FRONT_RING_LEVEL : SIDE_RING_LEVEL;
+    if (axis === activeAxis) {
+      // setHover owns the hovered/dragged ring — clear our buckets so when it
+      // stops being active we repaint it fresh next frame.
+      for (const s of segs) ringSegBucket.delete(s.mesh);
+      continue;
+    }
+    const q = Quaternion.multiply(rootRot, RING_TO_AXIS[axis]);
+    for (const s of segs) {
+      const dir = Vector3.rotate(s.localDir, q);
+      // facing 1 = this segment is on the near side, 0 = far side. `b` is the
+      // NORMALIZED brightness (0..1) that paintRingSegment maps onto the emissive
+      // range; the side (edge-on) rings scale it down so the front ring stands out.
+      const facing = (Vector3.dot(dir, toCam) + 1) * 0.5;
+      const b = facing * ringLevel;
+      const bucket = Math.round(b * RING_CUE_BUCKETS);
+      if (ringSegBucket.get(s.mesh) === bucket) continue; // unchanged → skip write
+      ringSegBucket.set(s.mesh, bucket);
+      paintRingSegment(s.mesh, AXIS_COLOR[axis], bucket / RING_CUE_BUCKETS);
+    }
+  }
+}
+
 /** Paint `key`'s visuals gold (or all back to base when `key` is null). Only the
  * changed handles are touched. */
 function setHover(key: DragAxis | null): void {
@@ -174,12 +274,37 @@ const translateGroupOf: Partial<Record<Axis, Entity>> = {};
 const rotateGroupOf: Partial<Record<Axis, Entity>> = {};
 const scaleGroupOf: Partial<Record<Axis, Entity>> = {};
 
+// Per rotation-ring segment: its entity + the segment centre's LOCAL direction
+// (unit, in the ring's own frame). Each frame `updateRingDepthCue` rotates that
+// direction into world space to learn if the segment faces the camera (near arc)
+// or away (far arc), and fades the far arc — the SDK has no per-fragment shader,
+// so this per-segment fade approximates Babylon's near/far ring shading (#front-cue).
+interface RingSegment {
+  mesh: Entity;
+  localDir: Vector3;
+}
+const ringSegmentsOf: Partial<Record<Axis, RingSegment[]>> = {};
+// The group rotation that maps the ring's build frame (+Y up) onto each axis.
+// Module-scope (shared by buildRotateRing + the depth-cue) so the per-frame cue
+// can compose it with the gizmo root rotation to get world segment/normal dirs.
+const RING_TO_AXIS: Record<Axis, Quaternion> = {
+  x: Quaternion.fromEulerDegrees(0, 0, 90), // +Y → +X
+  y: Quaternion.Identity(),
+  z: Quaternion.fromEulerDegrees(90, 0, 0), // +Y → +Z
+};
+// The ring plane's local normal (before the group rotation): the ring is built in
+// local XZ, so its normal is +Y. Rotated by RING_TO_AXIS × rootRot → world normal.
+const RING_LOCAL_NORMAL = Vector3.Up();
+
 // Rotation ring geometry: a ring of short cylinder segments (no torus mesh in
-// the SDK) in the plane perpendicular to its axis, radius RING_R at scale 1. More
-// segments + a thinner tube read as a smooth, fine ring rather than a chunky one.
+// the SDK) in the plane perpendicular to its axis, radius RING_R at scale 1. The
+// "low-res" look was the FACETING (32 straight chords with visible gaps), not the
+// thinness — so keep the tube thin (a thick tube read chunky + too bright) but
+// double the segment count and overlap them (segLen * 1.15) so the chords join
+// into a smooth circle with no dashing.
 const RING_R = 0.95;
-const RING_SEGMENTS = 32;
-const RING_SEG_R = 0.02;
+const RING_SEGMENTS = 64;
+const RING_SEG_R = 0.024;
 
 // Scale handle geometry: a short axis shaft capped with a cube (vs translate's
 // arrow), grabbed like the translate arm; drag distance → per-axis multiplier.
@@ -729,14 +854,10 @@ function buildRotateRing(root: Entity, axis: Axis): void {
   rotateGroupOf[axis] = group;
 
   // The ring lies in the plane whose normal is the axis. Build it in local XZ
-  // (normal = +Y) then rotate the group so +Y maps to the axis.
-  const toAxis: Record<Axis, Quaternion> = {
-    x: Quaternion.fromEulerDegrees(0, 0, 90), // +Y → +X
-    y: Quaternion.Identity(),
-    z: Quaternion.fromEulerDegrees(90, 0, 0), // +Y → +Z
-  };
-  Transform.getMutable(group).rotation = toAxis[axis];
+  // (normal = +Y) then rotate the group so +Y maps to the axis (RING_TO_AXIS).
+  Transform.getMutable(group).rotation = RING_TO_AXIS[axis];
 
+  const segments: RingSegment[] = [];
   for (let i = 0; i < RING_SEGMENTS; i++) {
     const a0 = (i / RING_SEGMENTS) * Math.PI * 2;
     const a1 = ((i + 1) / RING_SEGMENTS) * Math.PI * 2;
@@ -748,15 +869,21 @@ function buildRotateRing(root: Entity, axis: Axis): void {
     const chordDir = Vector3.normalize(seg);
     const cyl = engine.addEntity();
     // A cylinder is +Y-long; rotate its +Y axis onto the chord direction.
+    // Overrun the chord length a touch so consecutive segments overlap at the
+    // vertices — that hides the faceting gaps that made the ring look dashed.
     Transform.create(cyl, {
       position: mid,
       rotation: Quaternion.fromToRotation(Vector3.Up(), chordDir),
-      scale: Vector3.create(1, segLen, 1),
+      scale: Vector3.create(1, segLen * 1.15, 1),
       parent: group,
     });
     MeshRenderer.setCylinder(cyl, RING_SEG_R, RING_SEG_R);
     paintVisual(cyl, axis, AXIS_COLOR[axis]);
+    // The segment centre's LOCAL direction from the ring centre (in the ring build
+    // frame, pre-RING_TO_AXIS) — the depth cue rotates this to world each frame.
+    segments.push({ mesh: cyl, localDir: Vector3.normalize(mid) });
   }
+  ringSegmentsOf[axis] = segments;
 }
 
 /** Show the handle group for the active mode, hide the others. */
@@ -1104,6 +1231,12 @@ function gizmoSystemInner(): void {
   } else {
     setHover(null);
   }
+
+  // Depth cue on the rotation rings: fade the far arc + emphasise the front ring
+  // so it's clear which ring is nearest the camera (#front-cue). Runs after
+  // setHover so the hovered/dragged ring keeps its gold; cheap (quantized + skips
+  // unchanged segments).
+  updateRingDepthCue();
 
   const down = inputSystem.isTriggered(InputAction.IA_POINTER, PointerEventType.PET_DOWN);
   const up =
