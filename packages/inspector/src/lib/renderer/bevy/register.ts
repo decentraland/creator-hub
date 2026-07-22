@@ -228,6 +228,7 @@ export function registerBevyRenderer(): void {
       bevy.setCameraModePoster(mode => cameraBridge.setMode(mode));
       bevy.setFocusPoster(position => cameraBridge.focus(position));
       bevy.setResetPoster(position => cameraBridge.reset(position));
+      bevy.setZoomPoster(delta => cameraBridge.zoom(delta));
 
       // Scene run/freeze: the toolbar toggle posts the intent to the agent, which
       // runs /freeze_scene or /unfreeze_scene on the pinned scene. Default frozen

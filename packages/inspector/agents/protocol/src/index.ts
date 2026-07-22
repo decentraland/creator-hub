@@ -205,6 +205,12 @@ export type PageToScene =
   // The inspector sends the scene-local point to frame (its center); the agent
   // tweens the fly-camera to a fixed default standoff looking at it.
   | { kind: 'reset-camera'; position: BusVec3 }
+  // Dolly the editor fly-camera along its look direction (the toolbar zoom in/out
+  // buttons + scroll). `delta` > 0 zooms IN (move forward), < 0 zooms OUT; its
+  // magnitude is a step count. The agent moves a fixed distance per step along the
+  // camera forward vector. Only meaningful in free-camera mode (the native avatar
+  // camera owns its own zoom); the agent engages free mode so the buttons act.
+  | { kind: 'zoom-camera'; delta: number }
   // Show a position-only handle for a spawn point (or its camera target) at the
   // given scene-local position, or hide it (null). Dragging it reports back over
   // `spawn-gizmo-commit`. Spawn points are scene metadata, so this is a bare

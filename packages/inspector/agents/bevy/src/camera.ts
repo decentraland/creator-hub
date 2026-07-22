@@ -154,6 +154,26 @@ export function resetCamera(sceneLocalCenter: { x: number; y: number; z: number 
   startTween(from, Vector3.subtract(center, from));
 }
 
+/** Fixed dolly distance per zoom step (toolbar button / one scroll notch). */
+const ZOOM_STEP = 2; // metres
+
+/**
+ * Dolly the editor fly-camera along its look direction (toolbar zoom in/out).
+ * `delta` > 0 zooms IN (forward), < 0 zooms OUT; magnitude is a step count. Zoom
+ * only makes sense for the fly camera (the native avatar camera owns its own
+ * scroll-zoom), so — like focus/reset — we engage free mode first, so the buttons
+ * always do something visible. A running focus tween is cancelled so the dolly
+ * takes effect immediately.
+ */
+export function zoomCamera(delta: number): void {
+  if (camEntity === null || delta === 0) return;
+  if (mode !== 'free') setCameraMode('free');
+  tween = null;
+  const t = Transform.getMutable(camEntity);
+  const forward = Vector3.rotate(Vector3.Forward(), t.rotation as Quaternion);
+  t.position = Vector3.add(t.position, Vector3.scale(forward, ZOOM_STEP * delta));
+}
+
 /** Install the fly-camera system + VirtualCamera. Call once on boot. */
 export function setupCamera(): void {
   if (camEntity !== null) return;

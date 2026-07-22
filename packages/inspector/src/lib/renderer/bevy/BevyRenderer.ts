@@ -122,6 +122,9 @@ export class BevyRenderer implements IRenderer {
   // Posts a camera reset to the agent (default scene framing). Injected by
   // `register`; null in the conformance path (reset falls back to the in-memory pose).
   #postReset: ((position: Vector3) => void) | null = null;
+  // Posts a camera dolly (zoom in/out) to the agent. Injected by `register`; null
+  // in the conformance path (zoom is then a no-op).
+  #postZoom: ((delta: number) => void) | null = null;
   // Gizmo world-alignment (the toolbar's "align to world" checkbox). The gizmo
   // itself is drawn/dragged by the editor-agent scene; this renderer owns the
   // SETTING so the toolbar can bind to it, and the selection bridge forwards it
@@ -219,7 +222,13 @@ export class BevyRenderer implements IRenderer {
         this.#postFocus(pos);
       },
       setInvertRotation: () => {},
-      zoom: () => {},
+      zoom: (amount: number) => {
+        // Dolly the editor fly-camera in/out. The engine camera lives in the agent,
+        // so forward the step delta over the bus (the agent engages free mode + moves
+        // along its forward vector). No-op in the conformance path (no poster wired).
+        if (!this.#postZoom || amount === 0) return;
+        this.#postZoom(amount);
+      },
       getPose: () => ({
         position: DclVector3.create(
           this.#cameraPosition.x,
@@ -344,6 +353,11 @@ export class BevyRenderer implements IRenderer {
   /** Wire camera reset to the agent (default scene framing over the bus). */
   setResetPoster(post: (position: Vector3) => void): void {
     this.#postReset = post;
+  }
+
+  /** Wire camera zoom (dolly in/out) to the agent over the bus. */
+  setZoomPoster(post: (delta: number) => void): void {
+    this.#postZoom = post;
   }
 
   /** Wire the spawn-point handle poster (shows/hides the handle over the bus). */

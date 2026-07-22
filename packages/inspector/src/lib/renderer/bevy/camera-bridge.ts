@@ -42,6 +42,8 @@ export interface CameraBridge {
   focus(position: { x: number; y: number; z: number }): void;
   /** Reset the editor camera to a default framing of the given scene-local point. */
   reset(position: { x: number; y: number; z: number }): void;
+  /** Dolly the editor fly-camera in/out (delta > 0 = in, < 0 = out; magnitude = steps). */
+  zoom(delta: number): void;
   /**
    * Forward the vertical fly-camera held state (E = up, Q = down). Q has no SDK
    * InputAction, so the engine can't read it; the host captures E/Q and pushes the
@@ -76,6 +78,7 @@ export function createCameraBridge(options: CameraBridgeOptions = {}): CameraBri
     setMode: (mode: CameraMode) => post({ kind: 'set-camera', mode }),
     focus: position => post({ kind: 'focus-camera', position }),
     reset: position => post({ kind: 'reset-camera', position }),
+    zoom: (delta: number) => post({ kind: 'zoom-camera', delta }),
     setVertical: (up: boolean, down: boolean) => post({ kind: 'set-vertical-input', up, down }),
     disconnect: () => {
       channel.onmessage = null;
