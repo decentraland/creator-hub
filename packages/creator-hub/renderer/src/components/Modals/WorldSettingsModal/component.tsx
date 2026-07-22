@@ -58,6 +58,18 @@ const WorldSettingsModal: React.FC<Props> = React.memo(
       [settingsUpdates],
     );
 
+    // World-wide collaborators have deployment rights for the entire world (empty parcels array).
+    // They should have access to all settings tabs, just like owners.
+    const isWorldWideCollaborator =
+      !isOwner &&
+      userParcelsPermissions?.status === 'succeeded' &&
+      userParcelsPermissions.parcels.length === 0;
+    const canEditSettings = isOwner || isWorldWideCollaborator;
+
+    // While parcel permissions are being fetched (for non-owners), keep the loading state
+    // to avoid a brief flash from the restricted layout-only view to the full settings modal.
+    const isEffectivelyLoading = isLoading || (!isOwner && userParcelsPermissions?.status === 'loading');
+
     const handleUpdateSettings = useCallback((newSettings: Partial<WorldSettings>) => {
       setSettingsUpdates(prev => ({ ...prev, ...newSettings }));
     }, []);
@@ -88,12 +100,12 @@ const WorldSettingsModal: React.FC<Props> = React.memo(
         {...props}
         activeTab={activeTab}
         tabs={WORLD_SETTINGS_TABS}
-        showTabs={isOwner}
+        showTabs={canEditSettings}
         title={t('modal.world_settings.title', { worldName: worldName })}
-        className={cx('WorldSettingsModal', { Collaborator: !isOwner })}
+        className={cx('WorldSettingsModal', { Collaborator: !canEditSettings })}
         icon={<WorldSettingsIcon />}
       >
-        {isLoading && !hasChanges ? (
+        {isEffectivelyLoading && !hasChanges ? (
           <Loader size={40} />
         ) : (
           <>
