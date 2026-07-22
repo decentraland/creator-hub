@@ -293,6 +293,20 @@ export function registerBevyRenderer(): void {
       // controller → the active spawn point's form (onPositionChange).
       const spawnGizmo = createSpawnGizmoBridge({
         onCommit: position => bevy.handleSpawnGizmoCommit(position),
+        // A viewport click on a spawn point's avatar / camera-target marker selects
+        // that spawn point + target (#2). Mirror what the tree does: select it in
+        // the spawn controller AND set the ECS Selection to the Player entity — the
+        // spawn point is represented in the tree/selection by Player, so this keeps
+        // the two selection systems in sync (without it, the entity selection stays
+        // on the previously-selected entity and picking desyncs). dispatch() flushes
+        // the Selection write (also clears the prior entity's Selection, since it's
+        // a single-select updateSelectedEntity).
+        onPick: (index, target) => {
+          if (target === 'cameraTarget') bevy.spawnPoints.selectCameraTarget(index);
+          else bevy.spawnPoints.select(index);
+          bevy.context.operations.updateSelectedEntity(bevy.context.engine.PlayerEntity);
+          void bevy.context.operations.dispatch();
+        },
       });
       bevy.setSpawnGizmoPoster(position => spawnGizmo.show(position));
 

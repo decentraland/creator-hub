@@ -23,6 +23,7 @@ import type {
 } from '../types';
 import type { GizmoType } from '../../utils/gizmo';
 import type { SceneSpawnPointCoord } from '../../sdk/components';
+import { VERSIONS_REGISTRY } from '../../sdk/components/versioning/registry';
 import { BevySceneContext } from './BevySceneContext';
 import type { EngineWindow } from './console';
 import { createSpawnPointController } from './spawn-point-controller';
@@ -158,9 +159,17 @@ export class BevyRenderer implements IRenderer {
     // the gizmo-commit round-trip) writes the Scene component but never pushes a
     // position to the controller, so re-resolve + re-show the handle whenever the
     // Scene component changes. Mirrors Babylon's `updateFromSceneComponent`.
-    const sceneComponentId = this.context.editorComponents.Scene.componentId;
+    // Match ANY SceneMetadata version id, not just this inspector's latest: the
+    // data-layer may stream an older version (see scene-metadata-version.ts), so a
+    // single cached componentId would miss its changes and the handle/minimap would
+    // never refresh.
+    const sceneComponentIds = new Set(
+      (VERSIONS_REGISTRY['inspector::SceneMetadata'] ?? [])
+        .map(v => this.context.engine.getComponentOrNull(v.versionName)?.componentId)
+        .filter((id): id is number => id !== undefined),
+    );
     this.#offSceneChange = this.context.onChange((_entity, _op, component) => {
-      if (component?.componentId !== sceneComponentId) return;
+      if (component === undefined || !sceneComponentIds.has(component.componentId)) return;
       this.#spawnPointController.refreshHandle();
       // The Scene layout drives the minimap's ground planes; the layout can land
       // AFTER the minimap has mounted (the scene loads async), so notify metrics

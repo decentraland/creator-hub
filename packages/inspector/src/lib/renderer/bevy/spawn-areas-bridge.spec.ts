@@ -27,7 +27,13 @@ describe('toSpawnAreas', () => {
       },
     ]);
     expect(areas).toEqual([
-      { center: { x: 8, y: 0, z: 12 }, halfExtents: { x: 0, z: 0 }, isDefault: true },
+      {
+        center: { x: 8, y: 0, z: 12 },
+        halfExtents: { x: 0, z: 0 },
+        isDefault: true,
+        index: 0,
+        facingY: 0,
+      },
     ]);
   });
 
@@ -43,7 +49,13 @@ describe('toSpawnAreas', () => {
       },
     ]);
     expect(areas).toEqual([
-      { center: { x: 8, y: 0, z: 12 }, halfExtents: { x: 4, z: 2 }, isDefault: false },
+      {
+        center: { x: 8, y: 0, z: 12 },
+        halfExtents: { x: 4, z: 2 },
+        isDefault: false,
+        index: 0,
+        facingY: 0,
+      },
     ]);
   });
 
@@ -73,6 +85,8 @@ describe('toSpawnAreas', () => {
       center: { x: 8, y: 0, z: 8 },
       halfExtents: { x: 8, z: 8 },
       isDefault: false,
+      index: 1,
+      facingY: 0,
     });
   });
 
@@ -89,6 +103,39 @@ describe('toSpawnAreas', () => {
     ]);
     expect(areas[0].center).toEqual({ x: 5, y: 0, z: 7 });
     expect(areas[0].halfExtents).toEqual({ x: 0, z: 0 });
+  });
+
+  it('carries the camera target + a facing rotation toward it (#3/#4)', () => {
+    const areas = toSpawnAreas([
+      {
+        name: 'p',
+        default: true,
+        position: {
+          x: { $case: 'single', value: 4 },
+          y: { $case: 'single', value: 0 },
+          z: { $case: 'single', value: 4 },
+        },
+        cameraTarget: { x: 4, y: 1, z: 8 }, // due +Z from the spawn → facing 0
+      },
+    ]);
+    expect(areas[0].cameraTarget).toEqual({ x: 4, y: 1, z: 8 });
+    // atan2(dx=0, dz=4) = 0 (facing +Z).
+    expect(areas[0].facingY).toBeCloseTo(0);
+  });
+
+  it('faces +X when the camera target is due east', () => {
+    const areas = toSpawnAreas([
+      {
+        name: 'p',
+        position: {
+          x: { $case: 'single', value: 4 },
+          y: { $case: 'single', value: 0 },
+          z: { $case: 'single', value: 4 },
+        },
+        cameraTarget: { x: 8, y: 1, z: 4 }, // due +X → atan2(4, 0) = π/2
+      },
+    ]);
+    expect(areas[0].facingY).toBeCloseTo(Math.PI / 2);
   });
 });
 

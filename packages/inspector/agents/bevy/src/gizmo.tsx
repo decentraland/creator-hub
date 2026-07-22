@@ -27,6 +27,7 @@ import { Vector3, Quaternion, Color4, Color3 } from '@dcl/sdk/math';
 import type { GizmoMode } from '@dcl/inspector-bevy-protocol';
 
 import { bus } from './bus';
+import { getSpawnMarkerTarget } from './spawn-markers';
 
 /**
  * Minimal translate gizmo (prototype). Three axis handles attached to the
@@ -1109,11 +1110,12 @@ function gizmoSystemInner(): void {
       const grabbedAxis = pickHandleAtRay(ray);
       if (grabbedAxis !== null) {
         beginDrag(grabbedAxis);
-      } else if (!isSpawnSentinel()) {
+      } else {
         // Not a gizmo grab → raycast the scene for a pick (resolved next frame).
-        // Suppressed while a SPAWN point owns the selection: it has no scene
-        // entity, so a click that misses its gizmo must NOT re-pick an entity
-        // underneath — that would silently detach the spawn selection mid-edit.
+        // ALWAYS raycast, even while a spawn point owns the selection: clicking a
+        // different entity or another spawn marker must switch selection to it. Only
+        // a true MISS (empty space) is special-cased in emitPick to KEEP the spawn
+        // selected (a miss must not silently deselect the spawn mid-edit).
         Transform.createOrReplace(picker, { position: { ...ray.origin } });
         rayTs += 1;
         Raycast.createOrReplace(picker, {
@@ -1164,9 +1166,20 @@ function emitPick(
     if (id < 512) continue; // skip probe/gizmo/reserved
     // Skip our own gizmo handles (they're CL_POINTER hits but not scene entities).
     if (isGizmoHandle(id)) continue;
+    // A spawn-point marker (avatar / camera target) — select that spawn point,
+    // not a scene entity (#2). Spawn points are scene metadata, handled separately.
+    const spawn = getSpawnMarkerTarget(id);
+    if (spawn !== null) {
+      bus.postToPage({ kind: 'spawn-pick', index: spawn.index, target: spawn.target });
+      return;
+    }
     bus.postToPage({ kind: 'pick', entity: id, shift: mods.shift, ctrl: mods.ctrl });
     return;
   }
+  // Empty miss. While a spawn point owns the selection, a miss must NOT deselect it
+  // (matches the entity-gizmo behaviour and avoids losing the spawn mid-edit); only
+  // an explicit pick of something else switches away. Otherwise, a miss deselects.
+  if (isSpawnSentinel()) return;
   bus.postToPage({ kind: 'pick', entity: 0, shift: mods.shift, ctrl: mods.ctrl });
 }
 
