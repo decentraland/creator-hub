@@ -41,6 +41,24 @@ describe('createOperations', () => {
     expect(operations.hide).toBeDefined();
   });
 
+  it('should create all UI Designer operations', () => {
+    const operations = createOperations(engine);
+
+    expect(operations.addUINode).toBeDefined();
+    expect(operations.createUIRoot).toBeDefined();
+    expect(operations.repairUIRoot).toBeDefined();
+    expect(operations.reorderUISibling).toBeDefined();
+    expect(operations.setUIParent).toBeDefined();
+    expect(operations.duplicateUINode).toBeDefined();
+    expect(operations.removeUINode).toBeDefined();
+    expect(operations.declareVariable).toBeDefined();
+    expect(operations.renameVariable).toBeDefined();
+    expect(operations.deleteVariable).toBeDefined();
+    expect(operations.bindField).toBeDefined();
+    expect(operations.unbindField).toBeDefined();
+    expect(operations.setMixedContent).toBeDefined();
+  });
+
   describe('dispatch', () => {
     it('should update canSave and call engine.update', async () => {
       const operations = createOperations(engine);

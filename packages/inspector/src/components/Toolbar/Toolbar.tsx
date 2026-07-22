@@ -17,6 +17,8 @@ import {
 import { selectCanSave, selectInspectorPreferences } from '../../redux/app';
 import { useInspectorUIState } from '../../hooks/sdk/useInspectorUIState';
 import { useAppSelector, useAppDispatch } from '../../redux/hooks';
+import { getHiddenPanels } from '../../redux/ui';
+import { PanelName } from '../../redux/ui/types';
 import {
   REDO,
   REDO_2,
@@ -28,6 +30,7 @@ import {
   UNDO_ALT,
   useHotkey,
 } from '../../hooks/useHotkey';
+import { UIDesignerTools } from '../UIDesigner/UIDesignerTools';
 import { Gizmos } from './Gizmos';
 import { Preferences } from './Preferences';
 import { RendererPicker } from './RendererPicker';
@@ -42,11 +45,13 @@ const Toolbar = withSdk(({ sdk }) => {
   const canUndo = useAppSelector(selectCanUndo);
   const canRedo = useAppSelector(selectCanRedo);
   const sceneInfoContent = useAppSelector(selectSceneInfo).content;
+  const hiddenPanels = useAppSelector(getHiddenPanels);
   const dispatch = useAppDispatch();
   const [uiState, updateUIState] = useInspectorUIState();
 
   const showSceneInfoButton = !!sceneInfoContent;
   const isSceneInfoPanelOpen = !!uiState?.sceneInfoPanelVisible;
+  const isUIDesignerOpen = !hiddenPanels[PanelName.UI_DESIGNER];
 
   // TODO: Remove withSdk
   const handleInspector = useCallback(() => {
@@ -59,7 +64,6 @@ const Toolbar = withSdk(({ sdk }) => {
   const handleToggleSceneInfo = useCallback(() => {
     updateUIState({ sceneInfoPanelVisible: !isSceneInfoPanelOpen });
   }, [isSceneInfoPanelOpen, updateUIState]);
-
   useHotkey([SAVE, SAVE_ALT], handleSaveClick);
   useHotkey([UNDO, UNDO_ALT], handleUndo);
   useHotkey([REDO, REDO_2, REDO_ALT, REDO_ALT_2], handleRedo);
@@ -96,7 +100,7 @@ const Toolbar = withSdk(({ sdk }) => {
       >
         <BiRedo />
       </ToolbarButton>
-      <Gizmos />
+      {isUIDesignerOpen ? <UIDesignerTools /> : <Gizmos />}
       <Preferences />
       <RendererPicker />
       <ToolbarButton

@@ -18,6 +18,7 @@ import type {
   VideoScreen,
   Script,
   Placeholder,
+  UI,
 } from '@dcl/asset-packs';
 import { createComponents as createAssetPacksComponents } from '@dcl/asset-packs';
 import type { Layout } from '../../utils/layout';
@@ -117,6 +118,7 @@ export type EditorComponentsTypes = {
   InspectorUIState: InspectorUIStateType;
   Script: Script;
   Placeholder: Placeholder;
+  UI: UI;
 };
 
 export type EditorComponents = {
@@ -146,6 +148,7 @@ export type EditorComponents = {
   >;
   Script: LastWriteWinElementSetComponentDefinition<EditorComponentsTypes['Script']>;
   Placeholder: LastWriteWinElementSetComponentDefinition<EditorComponentsTypes['Placeholder']>;
+  UI: LastWriteWinElementSetComponentDefinition<EditorComponentsTypes['UI']>;
 };
 
 export type SdkComponents = {
@@ -167,6 +170,11 @@ export type SdkComponents = {
   Transform: ReturnType<typeof components.Transform>;
   Tween: ReturnType<typeof components.Tween>;
   TweenSequence: ReturnType<typeof components.TweenSequence>;
+  UiBackground: ReturnType<typeof components.UiBackground>;
+  UiDropdown: ReturnType<typeof components.UiDropdown>;
+  UiInput: ReturnType<typeof components.UiInput>;
+  UiText: ReturnType<typeof components.UiText>;
+  UiTransform: ReturnType<typeof components.UiTransform>;
   VirtualCamera: ReturnType<typeof components.VirtualCamera>;
   VideoPlayer: ReturnType<typeof components.VideoPlayer>;
   VisibilityComponent: ReturnType<typeof components.VisibilityComponent>;
@@ -195,6 +203,11 @@ export function createComponents(engine: IEngine): SdkComponents {
   const Transform = components.Transform(engine);
   const Tween = components.Tween(engine);
   const TweenSequence = components.TweenSequence(engine);
+  const UiBackground = components.UiBackground(engine);
+  const UiDropdown = components.UiDropdown(engine);
+  const UiInput = components.UiInput(engine);
+  const UiText = components.UiText(engine);
+  const UiTransform = components.UiTransform(engine);
   const VirtualCamera = components.VirtualCamera(engine);
   const VideoPlayer = components.VideoPlayer(engine);
   const VisibilityComponent = components.VisibilityComponent(engine);
@@ -226,6 +239,11 @@ export function createComponents(engine: IEngine): SdkComponents {
     Transform,
     Tween,
     TweenSequence,
+    UiBackground,
+    UiDropdown,
+    UiInput,
+    UiText,
+    UiTransform,
     VirtualCamera,
     VideoPlayer,
     VisibilityComponent,
@@ -252,6 +270,7 @@ export function createEditorComponents(engine: IEngine): EditorComponents {
     VideoScreen,
     Script,
     Placeholder,
+    UI,
   } = createAssetPacksComponents(engine as any);
 
   // legacy component
@@ -308,5 +327,6 @@ export function createEditorComponents(engine: IEngine): EditorComponents {
     Placeholder: Placeholder as unknown as LastWriteWinElementSetComponentDefinition<
       EditorComponentsTypes['Placeholder']
     >,
+    UI: UI as unknown as LastWriteWinElementSetComponentDefinition<EditorComponentsTypes['UI']>,
   };
 }

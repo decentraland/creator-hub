@@ -13,11 +13,16 @@ import { PanelName } from '../../redux/ui/types';
 
 import { EntityInspector } from '../EntityInspector';
 import { Hierarchy } from '../Hierarchy';
+import { ModeSwitcher } from '../ModeSwitcher';
 import { Renderer } from '../Renderer';
 import { Box } from '../Box';
 import { Toolbar } from '../Toolbar';
 import Assets from '../Assets';
 import { SceneInfoPanel } from '../SceneInfoPanel';
+import UIDesigner from '../UIDesigner/UIDesigner';
+import { UIDesignerLeftRail } from '../UIDesigner/UIDesignerLeftRail';
+import { UIDesignerRightRail } from '../UIDesigner/UIDesignerRightRail';
+import { Palette } from '../UIDesigner/Palette';
 
 import './App.css';
 
@@ -30,6 +35,7 @@ const App = () => {
   const sceneInfoContent = useAppSelector(selectSceneInfo).content;
   const disconnected = useAppSelector(selectDataLayerError);
   const [uiState] = useInspectorUIState();
+  const isUIDesigner = !hiddenPanels[PanelName.UI_DESIGNER];
 
   const [isAssetsPanelCollapsed, setIsAssetsPanelCollapsed] = useState(false);
 
@@ -64,7 +70,7 @@ const App = () => {
                   order={1}
                 >
                   <Box className="composite-inspector">
-                    <Hierarchy />
+                    {isUIDesigner ? <UIDesignerLeftRail /> : <Hierarchy />}
                   </Box>
                 </Panel>
                 <PanelResizeHandle className="horizontal-handle" />
@@ -83,8 +89,23 @@ const App = () => {
                     !!hiddenPanels[PanelName.COMPONENTS],
                 })}
               >
+                <ModeSwitcher />
                 {!hiddenPanels[PanelName.TOOLBAR] && <Toolbar />}
-                <Renderer />
+                {/*
+                  Keep <Renderer /> mounted across UI Designer toggles. Babylon's
+                  engine/canvas refs don't survive unmount/remount cleanly —
+                  unmounting kills the GL context. We hide it with CSS instead so
+                  the engine stays live.
+                */}
+                <div
+                  className="renderer-host"
+                  style={{
+                    display: !hiddenPanels[PanelName.UI_DESIGNER] ? 'none' : 'contents',
+                  }}
+                >
+                  <Renderer />
+                </div>
+                {!hiddenPanels[PanelName.UI_DESIGNER] && <UIDesigner />}
               </Box>
             </Panel>
             {uiState?.sceneInfoPanelVisible && !!sceneInfoContent && (
@@ -101,7 +122,7 @@ const App = () => {
                 </Panel>
               </>
             )}
-            {!hiddenPanels[PanelName.COMPONENTS] && selectedEntity !== null && (
+            {!hiddenPanels[PanelName.COMPONENTS] && (isUIDesigner || selectedEntity !== null) && (
               <>
                 <PanelResizeHandle className="horizontal-handle" />
                 <Panel
@@ -110,7 +131,7 @@ const App = () => {
                   order={4}
                 >
                   <Box className="entity-inspector">
-                    <EntityInspector />
+                    {isUIDesigner ? <UIDesignerRightRail /> : <EntityInspector />}
                   </Box>
                 </Panel>
               </>
@@ -122,7 +143,7 @@ const App = () => {
             <PanelResizeHandle className="vertical-handle" />
             <Panel
               id="assets"
-              defaultSize={30}
+              defaultSize={isUIDesigner ? 14 : 30}
               {...(height
                 ? { collapsible: true, collapsedSize: footerMin, minSize: collapseAt }
                 : {})}
@@ -130,7 +151,13 @@ const App = () => {
               onExpand={() => handleToggleAssetsPanel(false)}
             >
               <Box className="composite-renderer">
-                <Assets isAssetsPanelCollapsed={isAssetsPanelCollapsed} />
+                {isUIDesigner ? (
+                  <div className="ui-designer-bottom-bar">
+                    <Palette />
+                  </div>
+                ) : (
+                  <Assets isAssetsPanelCollapsed={isAssetsPanelCollapsed} />
+                )}
               </Box>
             </Panel>
           </>

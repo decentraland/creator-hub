@@ -1,0 +1,58 @@
+.ui-designer-bindable-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  position: relative;
+}
+
+.ui-designer-bindable-content {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.ui-designer-bindable-content:empty {
+  flex: 0 0 auto;
+}
+
+.ui-designer-bindable-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  padding: 2px 4px;
+  color: rgba(255, 255, 255, 0.55);
+  transition: opacity 80ms ease-out, color 80ms ease-out;
+}
+
+.ui-designer-bindable-link svg {
+  width: 15px;
+  height: 15px;
+}
+
+.ui-designer-bindable-link:hover {
+  color: var(--ui-designer-accent);
+}
+
+.ui-designer-bindable-link:focus-visible {
+  outline: 2px solid var(--ui-designer-accent);
+  outline-offset: 1px;
+}
+
+/* Reveal on hover AND keyboard focus so the affordance is reachable without a
+   mouse (the link is hidden by default to keep rows clean). */
+.ui-designer-bindable-row:hover .ui-designer-bindable-link,
+.ui-designer-bindable-row:focus-within .ui-designer-bindable-link,
+.ui-designer-bindable-link:focus-visible,
+.ui-designer-bindable-content:empty + .ui-designer-bindable-link {
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ui-designer-bindable-link {
+    transition: none;
+  }
+}

@@ -28,3 +28,8 @@ yarn-error.log*
 
 settings.local.json
 .serena/
+
+# Local dev artifacts (env files kept locally for restore, Playwright MCP logs)
+*.env*
+!.env.example
+.playwright-mcp/

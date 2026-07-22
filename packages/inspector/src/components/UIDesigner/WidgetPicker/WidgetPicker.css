@@ -1,0 +1,65 @@
+.ui-designer-widget-picker {
+  max-height: 320px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  background: var(--tree-bg-color);
+  border: 1px solid var(--ui-designer-control-border);
+  border-radius: 6px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
+  padding: var(--uid-space-1);
+  z-index: 1000;
+}
+
+.ui-designer-widget-picker-search {
+  padding: var(--uid-space-1) var(--uid-space-1) var(--uid-space-2);
+}
+
+.ui-designer-widget-picker-empty {
+  padding: var(--uid-space-2);
+  color: rgba(255, 255, 255, 0.5);
+  font-style: italic;
+  font-size: 12px;
+}
+
+.ui-designer-widget-picker-category {
+  padding: var(--uid-space-1) var(--uid-space-2);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.ui-designer-widget-picker-row {
+  display: flex;
+  align-items: center;
+  gap: var(--uid-space-2);
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  padding: 6px 8px;
+  cursor: pointer;
+  color: var(--white);
+  font-size: 12px;
+}
+
+.ui-designer-widget-picker-row:hover {
+  background: var(--ui-designer-accent-12);
+}
+
+.ui-designer-widget-picker-row:focus-visible {
+  outline: none;
+  background: var(--ui-designer-accent-12);
+  box-shadow: inset 0 0 0 1px var(--ui-designer-accent);
+}
+
+.ui-designer-widget-picker-icon {
+  display: inline-flex;
+  color: rgba(255, 255, 255, 0.65);
+}
+
+.ui-designer-widget-picker-icon svg {
+  width: 16px;
+  height: 16px;
+}

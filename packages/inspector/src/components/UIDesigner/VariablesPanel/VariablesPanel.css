@@ -1,0 +1,57 @@
+.ui-designer-variables-empty {
+  padding: 12px;
+  color: var(--text-muted, #888);
+  font-size: 12px;
+  text-align: center;
+}
+
+.ui-designer-variable-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.ui-designer-variable-row-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.ui-designer-variable-delete {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.7);
+  padding: 4px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 11px;
+}
+
+.ui-designer-variable-delete:hover {
+  border-color: rgba(255, 90, 90, 0.6);
+  color: rgba(255, 120, 120, 1);
+}
+
+.ui-designer-variables-add {
+  margin: 8px;
+  padding: 6px 10px;
+  background: transparent;
+  border: 1px dashed rgba(255, 255, 255, 0.18);
+  color: rgba(255, 255, 255, 0.75);
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  width: calc(100% - 16px);
+}
+
+.ui-designer-variables-add:hover {
+  border-color: var(--ui-designer-accent-40);
+  color: var(--ui-designer-accent);
+}
+
+.ui-designer-variables-add:focus-visible,
+.ui-designer-variable-delete:focus-visible {
+  outline: 2px solid var(--ui-designer-accent);
+  outline-offset: 1px;
+}

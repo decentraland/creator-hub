@@ -19,6 +19,11 @@ export enum CoreComponents {
   TRANSFORM = 'core::Transform',
   TWEEN = 'core::Tween',
   TWEEN_SEQUENCE = 'core::TweenSequence',
+  UI_BACKGROUND = 'core::UiBackground',
+  UI_DROPDOWN = 'core::UiDropdown',
+  UI_INPUT = 'core::UiInput',
+  UI_TEXT = 'core::UiText',
+  UI_TRANSFORM = 'core::UiTransform',
   VIDEO_PLAYER = 'core::VideoPlayer',
   VISIBILITY_COMPONENT = 'core::VisibilityComponent',
   LIGHT_SOURCE = 'core::LightSource',
@@ -50,6 +55,7 @@ export const EditorComponentNames = {
   InspectorUIState: getLatestVersionName('inspector::UIState'),
   Script: ComponentName.SCRIPT,
   Placeholder: ComponentName.PLACEHOLDER,
+  UI: ComponentName.UI,
 } as const;
 
 export type AllComponentsType =

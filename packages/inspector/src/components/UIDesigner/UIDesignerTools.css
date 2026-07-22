@@ -1,0 +1,24 @@
+.ui-designer-tools {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.ui-designer-tools .ui-designer-tool {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ui-designer-tools .ui-designer-tool svg {
+  width: 18px;
+  height: 18px;
+}
+
+.ui-designer-tools .ui-designer-tool.active {
+  background-color: var(--primary-main) !important;
+  color: #fff;
+}

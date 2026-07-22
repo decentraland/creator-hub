@@ -99,18 +99,28 @@ make protoc        # Regenerate TypeScript from .proto files
 - State management: Redux Toolkit + Redux-Saga.
 - Data layer communicates via Protocol Buffers (gRPC-like, using `@dcl/mini-rpc`).
 - Build: custom `build.js` using esbuild.
+- **Codegen safety (`engine-to-composite.ts`):** when emitting author-controlled strings (e.g. `core-schema::Name`) into generated TS source, escape BOTH positions — *values* via `JSON.stringify(...)` and *identifiers* (enum keys, interface/type/member names) via the `toSafeIdentifier` chokepoint (sanitize + reserved-word guard). Raw `"${name}"` interpolation is an injection / build-break vector.
+- **UI Designer entities (`core::UiTransform`-parented):** UI Designer nodes carry only `core::UiTransform` (parent index) — never `core::Transform` — and never appear in the editor `Nodes` tree. Generic Transform-based helpers silently no-op on them: `removeEntity` / `getComponentEntityTree(…, Transform)` yield nothing, so they delete/walk nothing. For any UI-node lifecycle op (delete/duplicate/reparent/reorder), use a dedicated `*-ui-*` operation that walks the UiTransform parent index via `collectDescendants` (`lib/sdk/operations/tree-walk.ts`).
+- **UI Designer canvas size is the runtime virtual resolution:** the `asset-packs::UI` marker's `canvasWidth`/`canvasHeight` (default 1920×1080) are both the editor design-canvas size AND the `virtualWidth`/`virtualHeight` passed to `addUiRenderer` (`packages/asset-packs/src/ui-renderer.tsx`); the runtime scales the UI by `min(screenW/vW, screenH/vH)` to fit the player's screen. It is **not** editor-only — persisting it on the marker is what delivers it to runtime (no codegen). The inspector `Canvas.tsx` reads it from the root `UINode` and renders a fixed-size "scaled stage" (`size·scale`, `transform-origin: top left`) so the canvas keeps a strict size and scrolls instead of shrinking with the panel.
+- **UI Designer render components are *derived* from `asset-packs::UIDesign` (Tween pattern), not persisted standalone:** on save the inspector folds each UI node's `core::UiTransform`/`UiText`/`UiInput`/`UiDropdown`/`UiBackground` into `UIDesign` (`engine-to-composite.ts`, gated by `UI_RENDER_COMPONENT_NAMES`), splits them back on load (`splitUIDesignToCore` in `ui-design-migration.ts`), and the runtime re-derives them every tick (`ui-runtime.ts` `materialize*`). A render component left OUT of this pipeline is never re-derived and silently drops on hot-reload (this was the `UiBackground` bug). Adding a new UI render component means touching all five: the `UIDesign` schema (`versioning/registry.ts`), `UI_RENDER_COMPONENT_NAMES`, the encode loop, `splitUIDesignToCore`, and a `materialize*`.
+- **Don't use `generateUniqueName` for UI node names:** it walks the editor `Nodes` tree (`getNodes`), which excludes UiTransform-only UI nodes, so it can't see existing UI names — and the codegen enum-dedup only makes enum *keys* unique (the `Name` *values* still collide, breaking `engine.getEntityByName` from scene code). Use `generateUniqueUiName` (`lib/sdk/operations/add-child.ts`), which scans the `core-schema::Name` component directly for global uniqueness (`Label`, `Label_1`, …).
+- **UI Designer canvas direct-manipulation commits are async.** A drag/resize handler writes the new `UiTransform` to the engine, which round-trips (data-layer → tree rebuild) several frames later. Clearing the live CSS offset / `isDragging` on mouseup *before* that lands snaps the node back to its old position for a frame, then jumps to the new one. Hold the dropped state optimistically (local state applied in render) until the committed `UiTransform` matches, then release it (`Canvas.tsx` `optimisticPos`).
+- **Testing the UI Designer in the Creator Hub app:** CH loads the inspector iframe from `packages/inspector/public` at *runtime* (`creator-hub/main/src/modules/inspector.ts`), so rebuilding the inspector's `public/` (e.g. `npm run start` watch in `packages/inspector`) is enough — no CH rebuild. The UI Designer panel is hidden by default (`inspector/src/redux/ui/index.ts` → `hiddenPanels: { [PanelName.UI_DESIGNER]: true }`) and CH ships no toggle, so exercising it requires temporarily flipping that default (revert before commit). Rendering authored UI in a scene at runtime requires the built `@dcl/asset-packs` (the `UIDesign` derive pipeline) — a fresh scene pulls a stale CDN version, so overlay the local `dist/`+`bin/`+`catalog.json` into the scene's `node_modules/@dcl/asset-packs`.
 
 ### Asset Packs
 
 - Runtime built with `@dcl/sdk-commands` (SDK7 scene).
 - TypeScript library (`dist/`) + catalog.json + binary assets (`bin/`).
 - Scripts for validating, uploading to S3, and downloading assets.
+- Public API is exported via `src/definitions.ts` (built to `dist/definitions.js`, the package `main`). Cross-package VALUE imports from `@dcl/asset-packs` in the inspector only resolve after rebuilding asset-packs (`make build-asset-packs`). This also affects the inspector's **vitest unit tests**, which import the built `@dcl/asset-packs` — a source edit in asset-packs won't be seen (in imports, typecheck, or tests) until rebuilt. `npm run build:lib` (in `packages/asset-packs`) is the minimal/fast rebuild to refresh `dist/`.
 
 ## Code Style
 
 - **ESLint**: `@typescript-eslint/consistent-type-imports` is enforced (use `import type` for type-only imports).
+- **Lint scope**: `make lint` / `npm run lint` runs `eslint . --ext js,cjs,ts` — it does **not** lint `.tsx` files. Don't rely on the lint gate to catch `.tsx` issues; a standalone `eslint <file>.tsx` may surface a pre-existing `consistent-type-imports` false-positive on the `@dcl/react-ecs` JSX-pragma default import (e.g. `ui-renderer.tsx`).
 - **Prettier**: single quotes, semicolons, trailing commas, 100 char print width, `arrowParens: "avoid"`.
 - **Import order**: ESLint enforced. React first, then `@dcl/*`, then `decentraland-*`, then MUI/internal, then relative.
+- **Component-directory barrels**: inspector component directories use a per-directory `index.ts` barrel (`export { X } from './X'`) — ~30/31 dirs follow this. Add one when creating a component; don't strip these barrels for file-count reduction — it breaks the established convention.
 - **Unused vars**: prefix with `_` (e.g., `_unused`).
 - **Module type**: ESM (`"type": "module"` in all package.json files).
 - **Node version**: 22.x or higher required.
@@ -135,6 +145,7 @@ Files matching `*.styled.ts` / `*.styled.tsx` must follow these rules:
 - Variables and mocks go in `beforeEach`, cleanup in `afterEach`.
 - React: use `@testing-library/react` with accessible queries (`getByRole`, `getByLabelText`).
 - E2E: Playwright for both Electron app and web inspector.
+- **asset-packs unit specs**: a `*.spec.ts` may live in `packages/asset-packs/src/`, but it MUST stay excluded in BOTH `tsconfig.lib.json` and the base `tsconfig.json` (both `include: ["src"]` with `types: ["@dcl/js-runtime"]`, and are typechecked by `npm run build:lib` and `sdk-commands build` respectively). Otherwise the spec's `import … from 'vitest'` drags vitest→vite→rollup→`@types/node` global types into the library build and breaks it with `console`/`Response`/`Worker` conflicts.
 
 ### Redux state freeze + in-place mutating helpers
 

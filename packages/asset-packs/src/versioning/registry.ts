@@ -1,6 +1,8 @@
 import { Schemas } from '@dcl/ecs';
 import { AdminPermissions, MediaSource } from '../constants';
 import { TriggerType, TriggerConditionType, TriggerConditionOperation } from '../trigger-enums';
+import { VariableType } from '../variable-enums';
+import { SegmentKind } from '../segment-enums';
 import { createComponentFramework, type VersionedComponents } from './framework';
 
 const COMPONENT_REGISTRY = {
@@ -193,6 +195,62 @@ const COMPONENT_REGISTRY = {
   'asset-packs::Placeholder': [
     {
       src: Schemas.String,
+    },
+  ],
+  'asset-packs::UI': [
+    {
+      name: Schemas.String,
+      visible: Schemas.Boolean,
+      // Design/virtual resolution (px) the UI is authored against. At runtime
+      // it is passed to addUiRenderer as virtualWidth/virtualHeight so the UI
+      // scales to fit the player's screen. 0 → fall back to 1920×1080.
+      canvasWidth: Schemas.Number,
+      canvasHeight: Schemas.Number,
+      variables: Schemas.Array(
+        Schemas.Map({
+          name: Schemas.String,
+          type: Schemas.EnumString<VariableType>(VariableType, VariableType.STRING),
+          defaultValue: Schemas.String,
+        }),
+      ),
+    },
+  ],
+  'asset-packs::UIBindings': [
+    {
+      value: Schemas.Array(
+        Schemas.Map({
+          field: Schemas.String,
+          variable: Schemas.String,
+          segments: Schemas.Optional(
+            Schemas.Array(
+              Schemas.Map({
+                kind: Schemas.EnumString<SegmentKind>(SegmentKind, SegmentKind.LITERAL),
+                value: Schemas.String,
+              }),
+            ),
+          ),
+        }),
+      ),
+    },
+  ],
+  'asset-packs::UIDesign': [
+    {
+      // Sibling-order + parent links of the node. Entity-typed so the composite
+      // loader remaps them into the scene's entity range on load; the runtime sets
+      // core::UiTransform.parent/rightOf from these (see Phase 2).
+      parent: Schemas.Entity,
+      rightOf: Schemas.Entity,
+      // The remaining core::UiTransform fields (everything EXCEPT parent/rightOf),
+      // JSON-encoded. Lossless + resilient to PBUiTransform additions; no entity refs.
+      transform: Schemas.String,
+      // JSON-encoded core::UiText / UiInput / UiDropdown / UiBackground design. Absent on
+      // nodes that don't carry the corresponding render component. Background is folded in
+      // here (not kept as a separate verbatim core::UiBackground) so the runtime re-derives
+      // it every tick like the other render components — see ui-runtime.ts:materializeBackground.
+      text: Schemas.Optional(Schemas.String),
+      input: Schemas.Optional(Schemas.String),
+      dropdown: Schemas.Optional(Schemas.String),
+      background: Schemas.Optional(Schemas.String),
     },
   ],
 } as const;
