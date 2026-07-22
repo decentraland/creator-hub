@@ -106,6 +106,52 @@ make protoc        # Regenerate TypeScript from .proto files
 - TypeScript library (`dist/`) + catalog.json + binary assets (`bin/`).
 - Scripts for validating, uploading to S3, and downloading assets.
 
+## CI / GitHub Actions
+
+CI is orchestrated by `.github/workflows/ci.yml`, which calls reusable
+(`on: [workflow_call]`) sub-workflows. Key conventions and gotchas:
+
+- **Build once, reuse.** `build.yml` builds the portable artifacts (proto gen,
+  asset-packs `dist/bin/catalog.json`, inspector `dist/public`) a single time per
+  run, gated by a combined source-hash `actions/cache`. QA jobs (`typechecking`,
+  `tests`) consume them via the `.github/actions/download-build` composite action
+  instead of rebuilding. Don't reintroduce per-job `make protoc` / `make build-*`
+  in the QA jobs. The publish chain (asset-packs → inspector → creator-hub) still
+  builds its own tarballs on purpose.
+- **A reusable workflow's `needs:` can only reference jobs in the same file.**
+  Cross-workflow ordering and artifact prerequisites are expressed at the
+  `ci.yml` caller level (e.g. `tests: needs: [build]`), not inside `tests.yml`.
+  Artifacts are run-scoped and shared across all called reusable workflows.
+- **`e2e` is decoupled from the publish chain — enforced by branch protection, not
+  `needs`.** `tests.yml` is unit-only; the Playwright suites live in `e2e.yml`
+  (`e2e-inspector` + `e2e-creator-hub`), wired as `e2e: needs: [build, tests]` in `ci.yml`.
+  It is a leaf job — nothing depends on it — so the publish chain
+  (`drop_pre_release → asset-packs → inspector → creator-hub`) starts after `unit`/`lint`/
+  `typechecking` instead of waiting ~12 min for e2e (that serialization was the pipeline's
+  long pole). **Do NOT add `e2e` to `drop_pre_release`'s `needs`.** Because the DAG no longer
+  gates on e2e, `e2e-inspector` and `e2e-creator-hub` MUST be **required status checks in
+  branch protection**, or they silently become optional. On `main` pushes (no branch
+  protection) the chain publishes in parallel with e2e — safe because the merged code already
+  passed e2e on the PR.
+- **Lint workflows with `actionlint`, not the JS toolchain.** `make format`/
+  `make lint`/`make test` do NOT cover `.github/**` YAML (Prettier globs
+  `js,ts,tsx,json` and `.prettierignore` excludes `.github`; ESLint is `js,cjs,ts`).
+- **`actionlint` mis-lints composite `action.yml` files** as workflows and reports
+  bogus "jobs/on section missing" errors. Validate `.github/actions/*/action.yml`
+  with a YAML parser instead; run `actionlint` on `.github/workflows/*.yml`.
+- **Cache whole output directories, not file lists.** The build cache once listed
+  inspector outputs individually and missed `bundle.css`; warm-cache runs then
+  served an unstyled app, and every e2e "flake" was really a cache hit (`build.yml`).
+- **Debugging `e2e-inspector` failures: read the `[e2e-diag]` log lines first**
+  (plus the `inspector-e2e-diagnostics` artifact). The suite dumps DOM boxes,
+  console/page errors, and a screenshot on readiness timeout — match those before
+  changing any config.
+- **Pin third-party actions to a full commit SHA** with a trailing `# vX.Y.Z`
+  comment (e.g. `nick-fields/retry@<sha> # v4.0.0`); leave first-party `actions/*`
+  as major tags. `upload-artifact` (max v7) and `download-artifact` (v8) are
+  independently versioned but artifact-format-compatible across v4+ — keep both
+  at v7 for consistency.
+
 ## Code Style
 
 - **ESLint**: `@typescript-eslint/consistent-type-imports` is enforced (use `import type` for type-only imports).

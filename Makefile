@@ -45,7 +45,12 @@ install-creator-hub:
 init-submodules:
 	git submodule update --init --recursive
 
-install-protoc:
+get-protobuf-version:
+	@echo $(PROTOBUF_VERSION)
+
+install-protoc: $(PROTOC)
+
+$(PROTOC):
 	mkdir -p node_modules/.bin/protobuf
 	@echo "Downloading protoc $(PROTOBUF_VERSION) for $(UNAME_S) $(UNAME_M)..."
 	@echo "Target file: $(PROTOBUF_ZIP)"
@@ -125,6 +130,14 @@ test-inspector-e2e:
 
 test-creator-hub-e2e:
 	cd $(CH_PATH); npm run test:e2e
+
+# CI variant: runs test:e2e:ci, which skips the `npm run build` that test:e2e runs.
+# Contract: the caller MUST ensure packages/creator-hub/{main,preload,renderer}/dist
+# already exist. CI provides them via the download-build action (built once by the
+# build job); locally, run `make build-creator-hub` first. Without a prior build the
+# Electron app won't launch and the suite fails.
+test-creator-hub-e2e-ci:
+	cd $(CH_PATH); npm run test:e2e:ci
 
 format:
 	npm run format

@@ -1,6 +1,9 @@
 name: Tests
 on: [ workflow_call ]
 
+permissions:
+  contents: read
+
 concurrency:
   group: tests-${{ github.ref }}
   cancel-in-progress: true
@@ -16,82 +19,19 @@ jobs:
       - uses: actions/checkout@v6
         with:
           submodules: true
-      - uses: actions/setup-node@v6
+      - uses: ./.github/actions/setup
+        id: setup
         with:
-          node-version: 24
-          cache: 'npm'
+          cache-protoc: 'true'
 
       - name: install
+        if: steps.setup.outputs.node-modules-cache-hit != 'true'
         run: make install
+        env:
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: '1'
 
-      - name: protoc
-        run: make protoc
-
-      - name: build asset-packs
-        run: make build-asset-packs
+      # Reuse the shared build instead of regenerating protoc / rebuilding asset-packs.
+      - uses: ./.github/actions/download-build
 
       - name: test
         run: make test
-
-      - name: upload protoc
-        uses: actions/upload-artifact@v4
-        with:
-          name: protoc
-          path: packages/inspector/src/lib/data-layer/proto/gen
-
-  E2E:
-    needs: unit
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [macos-latest] #[ macos-latest, windows-latest ]
-    runs-on: ${{ matrix.os }}
-    steps:
-      - uses: actions/checkout@v6
-        with:
-          submodules: true
-      - uses: actions/setup-node@v6
-        with:
-          node-version: 24
-          cache: 'npm'
-
-      - name: install
-        run: make install
-
-      - name: cache Playwright browsers
-        uses: actions/cache@v4
-        with:
-          path: ${{ runner.os == 'Linux' && '~/.cache/ms-playwright' || runner.os == 'macOS' && '~/Library/Caches/ms-playwright' || '~\AppData\Local\ms-playwright' }}
-          key: ${{ runner.os }}-playwright-${{ hashFiles('package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-playwright-
-
-      - name: install Playwright browsers
-        run: npx playwright install
-
-      - name: download protoc
-        uses: actions/download-artifact@v4
-        with:
-          name: protoc
-          path: packages/inspector/src/lib/data-layer/proto/gen
-
-      - name: build asset-packs
-        run: make build-asset-packs
-
-      - name: build inspector
-        run: make build-inspector
-        env:
-          NODE_OPTIONS: "--max-old-space-size=8192"
-
-      - name: start inspector server
-        shell: bash
-        run: |
-          cd packages/inspector
-          npx http-server public -p 8000 --cors -a localhost &
-          sleep 5
-
-      - name: e2e
-        run: make test-e2e
-        env:
-          NODE_OPTIONS: "--max-old-space-size=8192"
-          E2E_CONTENT_URL: https://builder-items.decentraland.zone

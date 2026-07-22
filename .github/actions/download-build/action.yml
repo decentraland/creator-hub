@@ -1,0 +1,42 @@
+name: Download build artifacts
+description: >-
+  Download the shared build outputs produced by the `build` workflow
+  (proto-gen, asset-packs-dist, inspector-dist) into their package
+  directories, so QA jobs consume them instead of rebuilding.
+
+inputs:
+  include-creator-hub:
+    description: >-
+      Also download the prebuilt creator-hub dist (main/preload/renderer).
+      Only the E2E job launches the built app, so it defaults off.
+    required: false
+    default: 'false'
+
+runs:
+  using: composite
+  steps:
+    # Paths mirror the upload roots in .github/workflows/build.yml.
+    - name: download proto-gen
+      uses: actions/download-artifact@v7
+      with:
+        name: proto-gen
+        path: packages/inspector/src/lib/data-layer/proto/gen
+
+    - name: download asset-packs-dist
+      uses: actions/download-artifact@v7
+      with:
+        name: asset-packs-dist
+        path: packages/asset-packs
+
+    - name: download inspector-dist
+      uses: actions/download-artifact@v7
+      with:
+        name: inspector-dist
+        path: packages/inspector
+
+    - name: download creator-hub-dist
+      if: inputs.include-creator-hub == 'true'
+      uses: actions/download-artifact@v7
+      with:
+        name: creator-hub-dist
+        path: packages/creator-hub

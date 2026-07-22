@@ -1,0 +1,133 @@
+name: Build
+on: [ workflow_call ]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: 'bash'
+
+# Builds the shared artifacts once per run; QA jobs download them instead of
+# rebuilding. A source-hash cache skips the build when inputs are unchanged.
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: true
+      - uses: ./.github/actions/setup
+        id: setup
+        with:
+          cache-protoc: 'true'
+
+      - name: install
+        if: steps.setup.outputs.node-modules-cache-hit != 'true'
+        run: make install
+        env:
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: '1'
+
+      # One combined key: inspector's bundle embeds asset-packs and the proto gen,
+      # so per-package caches could go stale. No restore-keys — a partial restore
+      # of compiled output would be silently wrong.
+      - name: Restore build cache
+        id: build-cache
+        uses: actions/cache@v6
+        with:
+          path: |
+            packages/asset-packs/dist
+            packages/asset-packs/bin
+            packages/asset-packs/catalog.json
+            packages/inspector/dist
+            packages/inspector/public
+            packages/inspector/src/lib/data-layer/proto/gen
+            packages/creator-hub/main/dist
+            packages/creator-hub/preload/dist
+            packages/creator-hub/renderer/dist
+          key: >-
+            ${{ runner.os }}-build-${{ hashFiles(
+              'packages/asset-packs/src/**',
+              'packages/asset-packs/scripts/**',
+              'packages/asset-packs/tsconfig*.json',
+              'packages/asset-packs/package.json',
+              'packages/inspector/src/**',
+              'packages/inspector/build.js',
+              'packages/inspector/scripts/**',
+              'packages/inspector/tsconfig*.json',
+              'packages/inspector/package.json',
+              'packages/inspector/public/index.html',
+              'packages/creator-hub/main/**',
+              'packages/creator-hub/preload/**',
+              'packages/creator-hub/renderer/**',
+              'packages/creator-hub/shared/**',
+              'packages/creator-hub/types/**',
+              'packages/creator-hub/package.json',
+              'package-lock.json',
+              'Makefile',
+              '.github/actions/setup/action.yml',
+              '.github/workflows/build.yml') }}
+
+      - name: protoc
+        if: steps.build-cache.outputs.cache-hit != 'true'
+        run: make protoc
+
+      - name: build asset-packs
+        if: steps.build-cache.outputs.cache-hit != 'true'
+        run: make build-asset-packs
+
+      - name: build inspector
+        if: steps.build-cache.outputs.cache-hit != 'true'
+        run: make build-inspector
+        env:
+          NODE_OPTIONS: "--max-old-space-size=8192"
+
+      - name: build creator-hub
+        if: steps.build-cache.outputs.cache-hit != 'true'
+        run: make build-creator-hub
+        env:
+          NODE_OPTIONS: "--max-old-space-size=8192"
+
+      - name: upload proto-gen
+        uses: actions/upload-artifact@v7
+        with:
+          name: proto-gen
+          path: packages/inspector/src/lib/data-layer/proto/gen
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: upload asset-packs-dist
+        uses: actions/upload-artifact@v7
+        with:
+          name: asset-packs-dist
+          path: |
+            packages/asset-packs/dist
+            packages/asset-packs/bin
+            packages/asset-packs/catalog.json
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: upload inspector-dist
+        uses: actions/upload-artifact@v7
+        with:
+          name: inspector-dist
+          path: |
+            packages/inspector/dist
+            packages/inspector/public
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: upload creator-hub-dist
+        uses: actions/upload-artifact@v7
+        with:
+          name: creator-hub-dist
+          path: |
+            packages/creator-hub/main/dist
+            packages/creator-hub/preload/dist
+            packages/creator-hub/renderer/dist
+          if-no-files-found: error
+          retention-days: 7

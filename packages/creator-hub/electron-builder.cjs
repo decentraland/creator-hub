@@ -1,6 +1,11 @@
 const { execSync } = require('child_process');
 const path = require('path');
 
+// On PRs (dry-run) skip the slow .dmg build and ship only the unsigned .zip; electron-builder
+// already skips code signing on PRs, so this keeps a downloadable per-PR build for a fraction
+// of the time. Release builds (not dry-run) still produce the signed, notarized dmg + zip.
+const isDryRun = process.env.DRY_RUN === 'true';
+
 const config = {
   appId: 'com.decentraland.creatorshub',
   directories: {
@@ -90,24 +95,17 @@ const config = {
     writeUpdateInfo: false,
   },
   mac: {
-    target: [
-      {
-        target: 'dmg',
-        arch: 'arm64',
-      },
-      {
-        target: 'dmg',
-        arch: 'x64',
-      },
-      {
-        target: 'zip',
-        arch: 'arm64',
-      },
-      {
-        target: 'zip',
-        arch: 'x64',
-      },
-    ],
+    target: isDryRun
+      ? [
+          { target: 'zip', arch: 'arm64' },
+          { target: 'zip', arch: 'x64' },
+        ]
+      : [
+          { target: 'dmg', arch: 'arm64' },
+          { target: 'dmg', arch: 'x64' },
+          { target: 'zip', arch: 'arm64' },
+          { target: 'zip', arch: 'x64' },
+        ],
   },
   publish: [
     {
