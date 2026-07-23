@@ -314,14 +314,14 @@ export async function start(
 
   // If we have a preview running for this path open it
   if (isPreviewRunning(preview)) {
-    // A newly enabled Optimized Assets toggle needs the sidecar, and that only boots at
-    // spawn time (--asset-bundles): restart the preview instead of reusing it.
-    const needsSidecarRestart =
-      opts.optimizedAssets &&
-      !new URLSearchParams(preview.url).has(OPTIMIZED_ASSETS_URL_PARAM) &&
-      (await supportsAssetBundles(path));
+    // The sidecar lives and dies with the preview process (--asset-bundles is a spawn-time
+    // flag), so whenever the Optimized Assets toggle disagrees with the running preview —
+    // needs a sidecar it doesn't have, or carries one it no longer should — restart the
+    // preview instead of reusing it.
+    const previewHasSidecar = new URLSearchParams(preview.url).has(OPTIMIZED_ASSETS_URL_PARAM);
+    const wantsSidecar = opts.optimizedAssets && (await supportsAssetBundles(path));
 
-    if (!needsSidecarRestart) {
+    if (wantsSidecar === previewHasSidecar) {
       // Check if options have changed and update the URL accordingly
       const updatedUrl = updateDeepLinkWithOpts(preview.url, opts);
       await dclDeepLink(updatedUrl);
