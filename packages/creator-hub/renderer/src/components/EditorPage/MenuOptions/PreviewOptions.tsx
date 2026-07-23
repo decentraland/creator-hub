@@ -110,8 +110,10 @@ export function PreviewOptions({
                 />
               }
               label={
-                options.optimizedAssets && previewProgress?.total
-                  ? `${t('editor.header.actions.preview_options.optimized_assets')} (${previewProgress.done ?? 0}/${previewProgress.total})`
+                options.optimizedAssets && previewProgress
+                  ? previewProgress.total
+                    ? `${t('editor.header.actions.preview_options.optimized_assets')} (${previewProgress.done ?? 0}/${previewProgress.total})`
+                    : `${t('editor.header.actions.preview_options.optimized_assets')} (${previewProgress.seconds ? `${previewProgress.seconds}s` : t('editor.header.actions.preview_options.optimized_assets_preparing')})`
                   : t('editor.header.actions.preview_options.optimized_assets')
               }
             />

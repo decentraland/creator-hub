@@ -330,6 +330,9 @@ const inflightStarts = new Map<string, Promise<string>>();
 export async function warmupOptimizedAssets(path: string, opts: PreviewOptions): Promise<void> {
   if (!opts.optimizedAssets || !(await supportsAssetBundles(path))) return;
   if (inflightStarts.has(path) || isPreviewRunning(previewCache.get(path))) return;
+  // immediate feedback: the first real progress line is many seconds away
+  // (bundling + sidecar boot), and a silent click reads as a broken toggle
+  sendPreviewProgress(path, { seconds: 0 });
   try {
     await start(path, { ...opts, warmupOnly: true });
     log.info('[CLI] optimized-assets warmup finished');
