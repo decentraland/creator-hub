@@ -57,6 +57,13 @@ export interface MountEngineOptions {
    * experience via the engine's `?systemScene=` param. Provides viewport picking.
    */
   systemScene?: string;
+  /**
+   * Launch the engine in PREVIEW mode (`is_preview=true`). In the editor we set
+   * this so out-of-bounds geometry stays visible (dithered) instead of being
+   * discarded (#1391) — the engine only applies its show-outside-bounds shader tag
+   * in preview. Off by default (the plain public-realm boot).
+   */
+  preview?: boolean;
   /** How long to wait for the engine console to appear before failing. */
   bootTimeoutMs?: number;
   /**
@@ -79,11 +86,13 @@ export function buildEngineUrl(
   realm?: string,
   position?: string,
   systemScene?: string,
+  preview?: boolean,
 ): string {
   const params = new URLSearchParams();
   if (realm) params.set('realm', realm);
   if (position) params.set('position', position);
   if (systemScene) params.set('systemScene', systemScene);
+  if (preview) params.set('preview', 'true');
   const query = params.toString();
   return query ? `${base}?${query}` : base;
 }
@@ -104,12 +113,13 @@ export function mountBevyEngine(options: MountEngineOptions): Promise<BevyEngine
     realm,
     position,
     systemScene,
+    preview,
     bootTimeoutMs = DEFAULT_BOOT_TIMEOUT_MS,
     createIframe = () => document.createElement('iframe'),
   } = options;
 
   const iframe = createIframe();
-  const src = buildEngineUrl(url, realm, position, systemScene);
+  const src = buildEngineUrl(url, realm, position, systemScene, preview);
   iframe.src = src;
   iframe.title = 'Bevy engine';
   iframe.style.border = 'none';

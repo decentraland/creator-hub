@@ -283,18 +283,26 @@ async function resetScene(): Promise<void> {
   }
   // Re-pin the reloaded scene (its ActiveInspectionScene Entity was invalidated by
   // the reload), retrying until the new instance resolves, then re-freeze it.
+  // Post `reset-complete` the moment the scene is pinned + frozen so the host can
+  // re-enable Play (#1420) and replay the editor overrides + animation pause
+  // (#1421) exactly when the scene is ready — not on a blind timeout.
   for (let attempt = 0; attempt < 10; attempt++) {
     await new Promise<void>(resolve => setTimeout(() => resolve(), 500));
     try {
       const reply = await api.consoleCommand('set_scene', [hash]);
       if (!/could not find|not found|no longer exists/i.test(reply)) {
         await setSceneFrozen(true);
+        bus.postToPage({ kind: 'reset-complete', ok: true });
         return;
       }
     } catch (e) {
       console.error('[bevy-agent] reset re-pin attempt failed:', e);
     }
   }
+  // Gave up re-pinning — still signal completion (ok:false) so the host doesn't
+  // block Play forever. Play may not work until the next reset, but a stuck
+  // disabled button is worse.
+  bus.postToPage({ kind: 'reset-complete', ok: false });
 }
 
 /** Resolve once the player entity has actually spawned, or false after `ms`. */

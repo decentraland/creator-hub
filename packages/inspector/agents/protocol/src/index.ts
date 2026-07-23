@@ -136,7 +136,14 @@ export type AgentToPage =
   // is lost if posted before the agent's message listener is up. The agent emits
   // this once its bus is wired so the host can (re)send that state. Also fires
   // after an engine reboot (#1369/#1376), which restarts the agent.
-  | { kind: 'editor-ready' };
+  | { kind: 'editor-ready' }
+  // A Stop/reset (`reset-scene`) finished: the reloaded scene has been re-pinned
+  // and re-frozen (or the agent gave up after its retries — `ok:false`). Until
+  // this arrives the reloaded scene isn't pinned, so unfreeze/play targets nothing
+  // (#1420 false-play) and the editor overrides / animation pause aren't replayed
+  // (#1421 anims run a few frames). The host waits for this to re-enable Play and
+  // to reconcile overrides, instead of guessing with a fixed timeout.
+  | { kind: 'reset-complete'; ok: boolean };
 
 /** One selected entity's world pose, supplied by the inspector (the agent can't
  * read the inspected scene's Transform from its own engine). */

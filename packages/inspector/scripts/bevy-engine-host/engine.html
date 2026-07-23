@@ -58,6 +58,11 @@
       const realm = params.get('realm') ?? undefined;
       const position = params.get('position') ?? undefined;
       const systemScene = params.get('systemScene') ?? undefined;
+      // `preview=true` makes the engine treat this session as a preview: notably it
+      // renders OUT-OF-BOUNDS geometry (dithered) instead of discarding it, so items
+      // the user drags outside the scene layout stay visible in the editor (#1391).
+      // The engine's show-outside-bounds mesh tag is gated on is_preview.
+      const preview = params.get('preview') === 'true';
       // Leave `portables` UNDEFINED so the engine loads its default
       // `basiccontroller.dcl.eth` portable — same as bevy-editor. Since the
       // react-web engine layout, that PX PROVIDES the player's movement controller,
@@ -81,7 +86,7 @@
       // eval). `PUBLIC_URL` is intentionally left UNSET so engine.js resolves its
       // `pkg/` wasm relative to its own module URL — i.e. the same-origin
       // `/bevy-engine/engine/` dir we serve — instead of a CDN.
-      window.__bevyBootConfig = { systemScene, portables };
+      window.__bevyBootConfig = { systemScene, portables, preview };
 
       // Load the engine's boot module as a runtime <script> (NOT an import): it
       // ships in the engine package under `/bevy-engine/engine/` and must load

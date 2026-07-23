@@ -5,6 +5,8 @@ import {
   BiSave,
   BiBadgeCheck,
   BiVideo,
+  BiWalk,
+  BiChevronDown,
   BiPlay,
   BiPause,
   BiStop,
@@ -12,6 +14,7 @@ import {
 import { RiListSettingsLine } from 'react-icons/ri';
 import { FaPencilAlt } from 'react-icons/fa';
 import { AiOutlineInfoCircle as InfoIcon } from 'react-icons/ai';
+import { IoCheckmark as CheckIcon } from 'react-icons/io5';
 import cx from 'classnames';
 
 import { withSdk } from '../../hoc/withSdk';
@@ -39,6 +42,7 @@ import {
   useHotkey,
 } from '../../hooks/useHotkey';
 import type { EditorCameraMode } from '../../lib/renderer/types';
+import { Dropdown } from '../ui';
 import { Gizmos } from './Gizmos';
 import { Preferences } from './Preferences';
 import { ToolbarButton } from './ToolbarButton';
@@ -81,6 +85,13 @@ const Toolbar = withSdk(({ sdk }) => {
     editorCamera.setMode(editorCamera.getMode() === 'free' ? 'avatar' : 'free');
   }, [editorCamera]);
   useHotkey([TOGGLE_FREE_CAMERA], handleToggleFreeCamera);
+  const handleSetCameraMode = useCallback(
+    (mode: EditorCameraMode) => {
+      if (!editorCamera || editorCamera.getMode() === mode) return;
+      editorCamera.setMode(mode);
+    },
+    [editorCamera],
+  );
 
   // Scene run/freeze toggle — only for renderers that execute the scene's SDK7
   // code (Bevy exposes `sceneRun`; Babylon omits it). The editor default is
@@ -145,13 +156,43 @@ const Toolbar = withSdk(({ sdk }) => {
       </ToolbarButton>
       <Gizmos />
       {editorCamera && (
-        <ToolbarButton
-          className={cx('free-camera', { active: cameraMode === 'free' })}
-          onClick={handleToggleFreeCamera}
-          title="Free camera (`)"
-        >
-          <BiVideo />
-        </ToolbarButton>
+        <div className="CameraModeWrap">
+          {/* CSS-only tooltip (a hover React-state tooltip would remount the
+              dropdown and eat its click). Matches the design's title + hint. */}
+          <div className="CameraModeTooltip">
+            <strong>Camera Toggle</strong>
+            <span>Select if you prefer to move the camera freely or through the player.</span>
+          </div>
+          <Dropdown
+            className="camera-mode"
+            value={cameraMode}
+            trigger={
+              <>
+                {cameraMode === 'free' ? <BiVideo /> : <BiWalk />}
+                <span className="CameraModeLabel">{cameraMode === 'free' ? 'Free' : 'Player'}</span>
+                <BiChevronDown className="CameraModeChevron" />
+              </>
+            }
+            options={[
+              {
+                value: 'free',
+                label: 'Free',
+                // A custom trigger suppresses the Dropdown's built-in selected
+                // checkmark, so surface it via leftIcon (a spacer keeps the labels
+                // aligned when the option isn't the active one).
+                leftIcon: cameraMode === 'free' ? <CheckIcon /> : <span className="CheckSpacer" />,
+                onClick: () => handleSetCameraMode('free'),
+              },
+              {
+                value: 'avatar',
+                label: 'Player',
+                leftIcon:
+                  cameraMode === 'avatar' ? <CheckIcon /> : <span className="CheckSpacer" />,
+                onClick: () => handleSetCameraMode('avatar'),
+              },
+            ]}
+          />
+        </div>
       )}
       {sceneRun && (
         <ToolbarButton

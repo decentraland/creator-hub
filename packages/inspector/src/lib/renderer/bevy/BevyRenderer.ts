@@ -113,6 +113,13 @@ export class BevyRenderer implements IRenderer {
   #sceneRunning = false;
   #postSceneRunning: ((running: boolean) => void) | null = null;
   #sceneRunHandlers = new Set<(running: boolean) => void>();
+  // True from a Stop/reset until the agent signals `reset-complete` (the reloaded
+  // scene is re-pinned + re-frozen). While resetting, Play is deferred: unfreezing
+  // an unpinned scene silently no-ops, which is the "hit Play right after Stop and
+  // nothing runs" bug (#1420). A Play requested during this window is remembered in
+  // `#pendingRun` and applied once the reset completes.
+  #resetting = false;
+  #pendingRun = false;
   // Resets the scene to its initial state (reboot the engine + re-freeze).
   // Injected by `register`; null in the conformance path (reset is then a no-op).
   #sceneResetter: (() => Promise<void>) | null = null;
@@ -413,6 +420,13 @@ export class BevyRenderer implements IRenderer {
     return {
       isRunning: () => this.#sceneRunning,
       setRunning: (running: boolean) => {
+        // While a reset is in flight the reloaded scene isn't pinned yet, so an
+        // unfreeze would no-op and leave Play in a false "running" state (#1420).
+        // Remember the request and apply it when `reset-complete` arrives.
+        if (this.#resetting) {
+          this.#pendingRun = running;
+          return;
+        }
         if (running === this.#sceneRunning) return;
         this.#sceneRunning = running;
         this.#postSceneRunning?.(running);
@@ -425,16 +439,34 @@ export class BevyRenderer implements IRenderer {
       reset: async (): Promise<void> => {
         // Reboot the engine to the scene's authored initial state, then land on
         // frozen (static) — the editor's default — regardless of the prior
-        // run/freeze state. `#sceneResetter` reboots and re-freezes; reflect the
-        // frozen state locally + notify listeners so the toolbar shows Play.
+        // run/freeze state. Block Play until the agent confirms the reloaded scene
+        // is re-pinned (`notifyResetComplete`), so a fast Stop→Play doesn't target
+        // an unpinned scene (#1420).
         if (!this.#sceneResetter) return;
-        await this.#sceneResetter();
+        this.#resetting = true;
+        this.#pendingRun = false;
+        // Land on frozen locally + reflect it in the toolbar right away (the button
+        // should read Play immediately on Stop, even while the reload settles).
         if (this.#sceneRunning) {
           this.#sceneRunning = false;
           for (const cb of this.#sceneRunHandlers) cb(false);
         }
+        await this.#sceneResetter();
       },
     };
+  }
+
+  /** Called by `register` when the agent posts `reset-complete`: the reloaded
+   * scene is re-pinned + re-frozen (or the agent gave up). Clears the reset guard
+   * and applies any Play the user requested while the reset was in flight (#1420). */
+  notifyResetComplete(): void {
+    if (!this.#resetting) return;
+    this.#resetting = false;
+    if (this.#pendingRun) {
+      this.#pendingRun = false;
+      // Apply the deferred Play now that the scene is pinned.
+      this.sceneRun.setRunning(true);
+    }
   }
 
   async getPointerWorldPoint(ndc?: { x: number; y: number }): Promise<Vector3 | null> {

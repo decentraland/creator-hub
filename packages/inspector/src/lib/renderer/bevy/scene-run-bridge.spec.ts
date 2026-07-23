@@ -52,4 +52,42 @@ describe('createSceneRunBridge', () => {
     bridge.disconnect();
     expect(closed).toBe(true);
   });
+
+  describe('when onResetComplete is provided', () => {
+    let onResetComplete: (ok: boolean) => void;
+    let calls: boolean[];
+    let channel: {
+      postMessage: (m: unknown) => void;
+      onmessage: ((ev: { data: unknown }) => void) | null;
+      close: () => void;
+    };
+
+    beforeEach(() => {
+      calls = [];
+      onResetComplete = ok => calls.push(ok);
+      channel = { postMessage: () => {}, onmessage: null, close: () => {} };
+      bridge = createSceneRunBridge({ channel, onResetComplete });
+    });
+
+    it('should invoke onResetComplete when the agent posts reset-complete', () => {
+      channel.onmessage?.({ data: { to: 'page', msg: { kind: 'reset-complete', ok: true } } });
+      channel.onmessage?.({ data: { to: 'page', msg: { kind: 'reset-complete', ok: false } } });
+      expect(calls).toEqual([true, false]);
+    });
+
+    it('should ignore messages that are not addressed to the page', () => {
+      channel.onmessage?.({ data: { to: 'scene', msg: { kind: 'reset-complete', ok: true } } });
+      expect(calls).toEqual([]);
+    });
+
+    it('should ignore agent messages of other kinds', () => {
+      channel.onmessage?.({ data: { to: 'page', msg: { kind: 'editor-ready' } } });
+      expect(calls).toEqual([]);
+    });
+
+    it('should detach the listener on disconnect', () => {
+      bridge.disconnect();
+      expect(channel.onmessage).toBeNull();
+    });
+  });
 });
