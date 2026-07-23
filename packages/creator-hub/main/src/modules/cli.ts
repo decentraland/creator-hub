@@ -24,7 +24,7 @@ import { downloadGithubRepo } from './download-github-folder';
 import { startMobileDebugServer } from './mobile-debug-server';
 import { getLanIp } from './network';
 
-export type Preview = { child: Child; url: string; opts: PreviewOptions };
+export type Preview = { child: Child; url: string; opts: PreviewOptions; warmup?: boolean };
 
 // Explorer deeplink params for locally generated asset bundles. sdk-commands owns the
 // abgen sidecar (--asset-bundles) and injects both params into the deeplink it fires;
@@ -315,15 +315,59 @@ async function supportsAssetBundles(path: string): Promise<boolean> {
   }
 }
 
-export async function start(
-  path: string,
-  opts: PreviewOptions & { retry?: boolean },
-): Promise<string> {
+type StartOptions = PreviewOptions & { retry?: boolean; warmupOnly?: boolean };
+
+// Serializes concurrent starts per path: pressing Preview while a toggle-triggered
+// warmup is still converting must wait for that spawn, not race a second one.
+const inflightStarts = new Map<string, Promise<string>>();
+
+/**
+ * Starts converting the scene to optimized assets in the background, without opening
+ * the client — the deeplink is held until Preview is actually pressed. No-op when the
+ * toggle is off, the installed sdk-commands lacks the sidecar, or a preview/warmup for
+ * the path already exists (the conversion cache makes re-runs cheap anyway).
+ */
+export async function warmupOptimizedAssets(path: string, opts: PreviewOptions): Promise<void> {
+  if (!opts.optimizedAssets || !(await supportsAssetBundles(path))) return;
+  if (inflightStarts.has(path) || isPreviewRunning(previewCache.get(path))) return;
+  try {
+    await start(path, { ...opts, warmupOnly: true });
+    log.info('[CLI] optimized-assets warmup finished');
+  } catch (error) {
+    log.warn('[CLI] optimized-assets warmup failed:', (error as Error).message);
+  }
+}
+
+/** Stops a background conversion; previews the user actually launched are left alone. */
+export async function cancelOptimizedAssetsWarmup(path: string): Promise<void> {
+  const preview = previewCache.get(path);
+  if (preview?.warmup) {
+    log.info('[CLI] optimized-assets warmup cancelled');
+    await killPreview(path);
+  }
+}
+
+async function launchOrKeepWarm(path: string, url: string, opts: StartOptions): Promise<string> {
+  if (opts.warmupOnly) return path;
+  const preview = previewCache.get(path);
+  if (preview) preview.warmup = false;
+  await dclDeepLink(updateDeepLinkWithOpts(url, opts));
+  return path;
+}
+
+export async function start(path: string, opts: StartOptions): Promise<string> {
   const { retry = true } = opts;
 
   // The scene-level landscapeTerrain opt-out overrides the preview preference
   if (!(await sceneHasLandscapeTerrain(path))) {
     opts = { ...opts, enableLandscapeTerrains: false };
+  }
+
+  // A spawn (usually a warmup mid-conversion) is already underway: wait for it
+  const pending = inflightStarts.get(path);
+  if (pending) {
+    const url = await pending.catch(() => null);
+    if (url !== null) return launchOrKeepWarm(path, url, opts);
   }
 
   const preview = previewCache.get(path);
@@ -338,11 +382,7 @@ export async function start(
     const wantsSidecar = opts.optimizedAssets && (await supportsAssetBundles(path));
 
     if (wantsSidecar === previewHasSidecar) {
-      // Check if options have changed and update the URL accordingly
-      const updatedUrl = updateDeepLinkWithOpts(preview.url, opts);
-      await dclDeepLink(updatedUrl);
-
-      return path;
+      return launchOrKeepWarm(path, preview.url, opts);
     }
   }
 
@@ -366,12 +406,20 @@ export async function start(
       }
     }
 
+    // a warmup converts in the background: never let sdk-commands open the client itself
+    if (opts.warmupOnly) {
+      extraArgs.push('--no-browser');
+    }
+
     const process = run('@dcl/sdk-commands', 'sdk-commands', {
       args: ['start', '--explorer-alpha', '--hub', ...extraArgs, ...generatePreviewArguments(opts)],
       cwd: path,
       workspace: path,
       env: await getEnv(path),
     });
+
+    // registered before the deeplink resolves so a warmup can be cancelled mid-conversion
+    previewCache.set(path, { child: process, url: '', opts, warmup: !!opts.warmupOnly });
 
     const conversionListener = process.on(
       /asset-bundles: (converting|still converting)|\[\d+\/\d+\] converting /,
@@ -400,27 +448,36 @@ export async function start(
     };
 
     const dclLauncherURL = /decentraland:\/\/([^\s\n]*)/i;
-    const resultLogs = await process.waitFor(dclLauncherURL, /CliError|error:/i);
+    const spawned = (async () => {
+      const resultLogs = await process.waitFor(dclLauncherURL, /CliError|error:/i);
 
-    // Check if the error indicates that Decentraland Desktop Client is not installed
-    if (resultLogs.includes(CLIENT_NOT_INSTALLED_ERROR)) {
-      throw new ClientError('CLIENT_NOT_INSTALLED', CLIENT_NOT_INSTALLED_ERROR);
-    }
+      // Check if the error indicates that Decentraland Desktop Client is not installed
+      if (resultLogs.includes(CLIENT_NOT_INSTALLED_ERROR)) {
+        throw new ClientError('CLIENT_NOT_INSTALLED', CLIENT_NOT_INSTALLED_ERROR);
+      }
 
-    const url = resultLogs.match(dclLauncherURL)?.[1] ?? '';
+      const url = resultLogs.match(dclLauncherURL)?.[1] ?? '';
+      const entry = previewCache.get(path);
+      if (entry?.child === process) entry.url = url;
+      return url;
+    })();
+    inflightStarts.set(path, spawned);
 
-    previewCache.set(path, { child: process, url, opts });
-    return path;
+    const url = await spawned;
+    return await launchOrKeepWarm(path, url, opts);
   } catch (error) {
     killPreview(path);
-    if (retry && !isClientNotInstalledError(error)) {
+    // warmups are opportunistic (and a cancelled one lands here): no reinstall-and-retry
+    if (retry && !opts.warmupOnly && !isClientNotInstalledError(error)) {
       log.info('[CLI] Something went wrong trying to start preview:', (error as Error).message);
+      inflightStarts.delete(path);
       await install(path);
       return await start(path, { ...opts, retry: false });
     } else {
       throw error;
     }
   } finally {
+    inflightStarts.delete(path);
     stopConversionProgress();
   }
 }

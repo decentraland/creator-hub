@@ -21,6 +21,7 @@ export function PreviewOptions({
   onShowMobileQR,
   supportsMultiInstance,
   projectPath,
+  previewProgress,
 }: PreviewOptionsProps) {
   const [terrainHiddenByScene, setTerrainHiddenByScene] = useState(false);
 
@@ -108,7 +109,11 @@ export function PreviewOptions({
                   onChange={handleChange({ optimizedAssets: !options.optimizedAssets })}
                 />
               }
-              label={t('editor.header.actions.preview_options.optimized_assets')}
+              label={
+                options.optimizedAssets && previewProgress?.total
+                  ? `${t('editor.header.actions.preview_options.optimized_assets')} (${previewProgress.done ?? 0}/${previewProgress.total})`
+                  : t('editor.header.actions.preview_options.optimized_assets')
+              }
             />
           </Tooltip>
         )}

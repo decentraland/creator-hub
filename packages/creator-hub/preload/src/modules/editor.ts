@@ -69,6 +69,20 @@ export function subscribePreviewProgress(
   return { cleanup: () => ipcRenderer.off('preview.progress', handler) };
 }
 
+export async function warmupOptimizedAssets({
+  path,
+  opts,
+}: {
+  path: string;
+  opts: PreviewOptions;
+}) {
+  return invoke('cli.warmupOptimizedAssets', path, opts);
+}
+
+export async function cancelOptimizedAssetsWarmup(path: string) {
+  return invoke('cli.cancelOptimizedAssetsWarmup', path);
+}
+
 export async function killPreviewScene(path: string) {
   const port = await invoke('cli.killPreview', path);
   return port;

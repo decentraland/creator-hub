@@ -28,6 +28,7 @@ import EditorPng from '/assets/images/editor.png';
 import { useDispatch, useSelector } from '#store';
 import { useFeatureFlags } from '/@/hooks/useFeatureFlags';
 import { actions as snackbarActions } from '/@/modules/store/snackbar';
+import { actions as editorActions } from '/@/modules/store/editor';
 import { createGenericNotification } from '/@/modules/store/snackbar/utils';
 import { Button } from '../Button';
 import { Header } from '../Header';
@@ -199,9 +200,18 @@ export function EditorPage() {
 
   const handleChangePreviewOptions = useCallback(
     (options: PreviewOptionsProps['options']) => {
+      // Flipping Optimize Assets starts converting right away (feedback shows next to the
+      // toggle); flipping it off stops a background conversion. Pressing Preview while a
+      // conversion runs waits for it instead of racing a second one.
+      const wasOptimizing = !!settings.previewOptions.optimizedAssets;
+      if (project && options.optimizedAssets && !wasOptimizing) {
+        void dispatch(editorActions.warmupOptimizedAssets({ path: project.path, ...options }));
+      } else if (project && !options.optimizedAssets && wasOptimizing) {
+        void dispatch(editorActions.cancelOptimizedAssetsWarmup(project.path));
+      }
       updateAppSettings({ ...settings, previewOptions: options });
     },
-    [settings, updateAppSettings],
+    [project, dispatch, settings, updateAppSettings],
   );
 
   const handleShowMobileQR = useCallback(async () => {
@@ -372,18 +382,11 @@ export function EditorPage() {
                     onShowMobileQR={handleShowMobileQR}
                     supportsMultiInstance={supportsMultiInstance}
                     projectPath={project.path}
+                    previewProgress={previewProgress}
                   />
                 }
               >
-                {loadingPreview && previewProgress
-                  ? previewProgress.total
-                    ? t('editor.header.actions.optimizing_progress', {
-                        percent: Math.round(
-                          ((previewProgress.done ?? 0) / previewProgress.total) * 100,
-                        ),
-                      })
-                    : t('editor.header.actions.optimizing', { seconds: previewProgress.seconds })
-                  : t('editor.header.actions.preview')}
+                {t('editor.header.actions.preview')}
               </ButtonGroup>
               {publishOptions.length > 0 ? (
                 <ButtonGroup

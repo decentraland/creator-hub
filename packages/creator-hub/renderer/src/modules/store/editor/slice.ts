@@ -21,9 +21,7 @@ export const setPreviewProgress = createAction<{
   seconds: number;
   done?: number;
   total?: number;
-} | null>(
-  'editor/setPreviewProgress',
-);
+} | null>('editor/setPreviewProgress');
 export const runScene = createAsyncThunk(
   'editor/runScene',
   async ({ path, ...opts }: PreviewOptions & { path: string }, { dispatch }) => {
@@ -39,6 +37,24 @@ export const runScene = createAsyncThunk(
       dispatch(setPreviewProgress(null));
     }
   },
+);
+export const warmupOptimizedAssets = createAsyncThunk(
+  'editor/warmupOptimizedAssets',
+  async ({ path, ...opts }: PreviewOptions & { path: string }, { dispatch }) => {
+    const subscription = editor.subscribePreviewProgress(path, progress =>
+      dispatch(setPreviewProgress(progress)),
+    );
+    try {
+      await editor.warmupOptimizedAssets({ path, opts });
+    } finally {
+      subscription.cleanup();
+      dispatch(setPreviewProgress(null));
+    }
+  },
+);
+export const cancelOptimizedAssetsWarmup = createAsyncThunk(
+  'editor/cancelOptimizedAssetsWarmup',
+  editor.cancelOptimizedAssetsWarmup,
 );
 export const publishScene = createAsyncThunk(
   'editor/publishScene',
@@ -273,6 +289,8 @@ export const slice = createSlice({
 export const actions = {
   ...slice.actions,
   setPreviewProgress,
+  warmupOptimizedAssets,
+  cancelOptimizedAssetsWarmup,
   fetchVersion,
   install,
   startInspector,
