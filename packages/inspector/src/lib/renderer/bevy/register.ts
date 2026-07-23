@@ -1,4 +1,5 @@
 import { getConfig } from '../../logic/config';
+import { getSceneClient } from '../../rpc/scene';
 import { snapManager } from '../../babylon/decentraland/snap-manager';
 import { connectReverseChannel } from '../reverse-channel';
 import { registerRenderer } from '../plugin';
@@ -55,6 +56,10 @@ export function registerBevyRenderer(): void {
       canvas.style.display = 'none';
 
       const bevy = new BevyRenderer();
+      // Clicking a code-created entity (present only while the scene runs, not in
+      // the authored tree) can't select/edit it — tell the user why, throttled so
+      // repeated clicks don't stack toasts (#1418).
+      let lastUnauthoredToast = 0;
       const disconnect = connectReverseChannel(
         {
           engine: bevy.context.engine,
@@ -63,11 +68,22 @@ export function registerBevyRenderer(): void {
           Transform: bevy.context.Transform,
           rendererEvents: bevy.events,
         },
-        // The Bevy agent lives in a separate engine and can't read the entity's
-        // base transform, so its gizmo commits are DELTAS (rotation = world-frame
-        // delta quaternion, scale = multiplier). Babylon emits absolute values and
-        // uses the default (absolute) mode.
-        { gizmoDeltas: true },
+        {
+          // The Bevy agent lives in a separate engine and can't read the entity's
+          // base transform, so its gizmo commits are DELTAS (rotation = world-frame
+          // delta quaternion, scale = multiplier). Babylon emits absolute values and
+          // uses the default (absolute) mode.
+          gizmoDeltas: true,
+          onPickUnauthored: () => {
+            const now = performance.now();
+            if (now - lastUnauthoredToast < 4000) return;
+            lastUnauthoredToast = now;
+            void getSceneClient()?.pushNotification({
+              severity: 'info',
+              message: "This item was created by the scene's code and can't be edited here.",
+            });
+          },
+        },
       );
 
       // Boot the engine iframe pointed at the configured realm. `mount` awaits it
@@ -79,6 +95,17 @@ export function registerBevyRenderer(): void {
         realm: config.bevyRealm ?? undefined,
         position: config.bevyPosition ?? undefined,
         systemScene: config.bevySystemScene ?? undefined,
+        // NOTE: we do NOT launch in preview mode. It would make out-of-bounds items
+        // visible (#1391), but in a `--data-layer` editor realm `is_preview=true`
+        // also opens a preview socket to the realm, and every edit (a gizmo move
+        // writes the CRDT → the data-layer rewrites the scene files) trips the
+        // sdk-commands file watcher → SCENE_UPDATE → the engine RELOADS the scene
+        // mid-edit. The engine only skips that reload for scenes flagged
+        // `ctx.inspected`, which is set by its `--inspect`/debug-UI path — NOT by
+        // the editor's `/set_scene` pin — so the guard never fires here and the
+        // scene reloads on every gizmo drag (freeze → gizmo detaches → auto-start →
+        // play/pause dead). #1391 must be fixed engine-side instead (gate the
+        // show-outside-bounds tag on the editor/inspection context, not is_preview).
       });
       bevy.attachEngine(engine.engineWindow);
 
@@ -233,7 +260,18 @@ export function registerBevyRenderer(): void {
       // Scene run/freeze: the toolbar toggle posts the intent to the agent, which
       // runs /freeze_scene or /unfreeze_scene on the pinned scene. Default frozen
       // (the agent freezes on boot); the toggle runs it live.
-      const sceneRunBridge = createSceneRunBridge();
+      const sceneRunBridge = createSceneRunBridge({
+        // The agent finished a Stop/reset: the reloaded scene is re-pinned +
+        // re-frozen. Now — and ONLY now, not on a blind timeout — replay the editor
+        // overrides + animation pause (#1421: without this the fresh GLTFs animate
+        // for a beat) and release the Play guard (#1420: a fast Stop→Play no longer
+        // lands on an unpinned scene). reconcileAfterReload re-freezes animations as
+        // part of re-applying overrides.
+        onResetComplete: () => {
+          forwardBridge?.reconcileAfterReload();
+          bevy.notifyResetComplete();
+        },
+      });
       bevy.setSceneRunPoster(running => {
         sceneRunBridge.setRunning(running);
         // #1382: freezing stops the SDK7 tick but not the engine's GLTF animation
@@ -274,19 +312,29 @@ export function registerBevyRenderer(): void {
       // reboot to re-read dimensions); a freshly reloaded scene starts running, so
       // re-assert freeze right after.
       bevy.setSceneResetter(async () => {
-        sceneRunBridge.reset();
-        // Land paused (the editor default) + reflect it in the toolbar. The agent
-        // re-pins + re-freezes the reloaded scene itself (its pin is invalidated by
-        // the reload); this keeps the host's run-state in sync so play/pause and
-        // the button icon are correct afterwards.
+        // Ask the agent to reload+re-pin+re-freeze the scene. BevyRenderer.reset
+        // already flipped the local run-state to frozen (so the button reads Play
+        // at once) and raised its reset guard (blocking Play until done). The reload
+        // re-CREATES the scene's engine entities, dropping every editor override
+        // (placeholder GLTFs, editor visibility, pointer-pickable mask, animation
+        // pause) — those, and the animation freeze that stops the fresh GLTFs from
+        // animating (#1421), are replayed in onResetComplete when the agent confirms
+        // the scene is ready — NOT on a blind timeout (which raced the reload and
+        // left animations running / Play in a false state, #1420/#1421).
+        //
+        // Mark the bridge frozen NOW (Stop lands paused regardless of the prior
+        // run state). This is load-bearing for #1421: if the scene was PLAYING
+        // before Stop, sceneRunBridge.isRunning() would still be true, so the
+        // forward bridge's isFrozen() would be false and reconcileAfterReload would
+        // SKIP re-freezing the reloaded GLTF animations — they'd keep playing after
+        // Stop. Setting it false here makes isFrozen() true, so the reconcile on
+        // reset-complete forwards Animator playing:false. It also posts
+        // set-scene-frozen so the agent freezes the SDK7 tick.
+        // (We don't forward the animation freeze right here — the scene is being
+        // reloaded and is momentarily unpinned, so the forward would fail; the
+        // reconcile at reset-complete does it once the scene is pinned again.)
         sceneRunBridge.setRunning(false);
-        // The reload re-CREATES the scene's engine entities, dropping every editor
-        // override (placeholder GLTFs, editor visibility, pointer-pickable mask,
-        // animation pause) — replay them so e.g. a Trigger Area's placeholder comes
-        // back and animations stay paused. reconcileAfterReload also marks the
-        // re-created entities instantiated so the replay doesn't `/new_entity` them
-        // (which would collide "id already live"). Give the scene a beat to respawn.
-        setTimeout(() => forwardBridge?.reconcileAfterReload(), 2500);
+        sceneRunBridge.reset();
       });
 
       // Spawn-point handle: the controller shows/hides the move-handle via the

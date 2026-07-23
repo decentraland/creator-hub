@@ -4,7 +4,7 @@ import { Quaternion, Vector3 } from '@dcl/ecs-math';
 
 import type { createOperations } from '../sdk/operations';
 import type { EditorComponents, SdkComponents } from '../sdk/components';
-import { getAncestors, isAncestor, mapNodes } from '../sdk/nodes';
+import { getAncestors, getNodes, isAncestor, mapNodes } from '../sdk/nodes';
 import {
   snapPositionValue,
   snapRotationValue,
@@ -69,6 +69,15 @@ export interface ReverseChannelOptions {
    * Position is ABSOLUTE in both modes (the anchor is known up front).
    */
   gizmoDeltas?: boolean;
+  /**
+   * Called when a viewport pick lands on an entity that ISN'T in the authored tree
+   * (`Nodes`) — i.e. an entity created by the running scene's code, which appears
+   * only on Play and can't be edited in the editor (#1418). The handler skips
+   * selecting it; the caller uses this to surface feedback (a toast). Absent → the
+   * pick is silently ignored (the previous behaviour: selecting a non-node entity
+   * did nothing useful).
+   */
+  onPickUnauthored?: (entity: number) => void;
 }
 
 export function connectReverseChannel(
@@ -81,6 +90,15 @@ export function connectReverseChannel(
   function applyPick(target: PickTarget, modifiers: { multi: boolean }) {
     switch (target.kind) {
       case 'entity': {
+        // Entities the running scene created in CODE (they appear only on Play)
+        // aren't in the authored tree (`Nodes`), so they have no inspector node to
+        // select or edit — clicking one did nothing. Surface that via
+        // onPickUnauthored (a toast) and don't touch selection (#1418).
+        const isAuthored = getNodes(engine).some(node => node.entity === target.entity);
+        if (!isAuthored) {
+          options.onPickUnauthored?.(target.entity);
+          break;
+        }
         // Locked or hidden entities can't be selected by clicking in the viewport
         // (a default ground is locked so it isn't moved by accident; a hidden entity
         // is invisible so a click can't land on it) — matching Babylon, which checks

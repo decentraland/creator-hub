@@ -329,6 +329,62 @@ describe('createForwardEditBridge', () => {
       // The AUTHORED value (walk still playing) is restored.
       expect(value.states[0].playing).toBe(true);
     });
+
+    it('should force an Animator PUT to playing:false while frozen (#1421)', async () => {
+      // The default bridge is frozen (isFrozen defaults to true). A reloaded GLTF
+      // re-PUTs its authored Animator (playing:true) — while frozen that must be
+      // forwarded paused, or the clip resumes for a few frames after Stop.
+      const Animator = components.Animator(ctx.engine);
+      const entity = ctx.engine.addEntity();
+      ctx.Name.create(entity, { value: 'Zombie' });
+      await ctx.engine.update(1);
+      await new Promise(r => setTimeout(r, 0));
+      sent.length = 0;
+
+      // The Animator arrives (as after a reload) with the clip playing.
+      Animator.create(entity, { states: [{ clip: 'walk', playing: true, loop: true }] });
+      await ctx.engine.update(1);
+      await new Promise(r => setTimeout(r, 0));
+      await new Promise(r => setTimeout(r, 0));
+
+      const write = sent.find(s => s.cmd === 'set_component' && s.args[1] === 'Animator');
+      expect(write).toBeDefined();
+      const value = JSON.parse(write!.args[2]);
+      expect(value.states.every((s: { playing: boolean }) => s.playing === false)).toBe(true);
+    });
+
+    it('should forward an Animator PUT as-is when NOT frozen', async () => {
+      // Replace the default (frozen) bridge with a running one so only its forwards
+      // land in `sent`.
+      bridge.disconnect();
+      const running = createForwardEditBridge({
+        context: ctx,
+        engineWindow,
+        shouldForward: () => true,
+        isFrozen: () => false,
+        send: async (cmd, args) => {
+          sent.push({ cmd, args });
+          return '';
+        },
+      });
+      const Animator = components.Animator(ctx.engine);
+      const entity = ctx.engine.addEntity();
+      ctx.Name.create(entity, { value: 'Zombie' });
+      await ctx.engine.update(1);
+      await new Promise(r => setTimeout(r, 0));
+      sent.length = 0;
+
+      Animator.create(entity, { states: [{ clip: 'walk', playing: true, loop: true }] });
+      await ctx.engine.update(1);
+      await new Promise(r => setTimeout(r, 0));
+      await new Promise(r => setTimeout(r, 0));
+
+      const write = sent.find(s => s.cmd === 'set_component' && s.args[1] === 'Animator');
+      expect(write).toBeDefined();
+      const value = JSON.parse(write!.args[2]);
+      expect(value.states[0].playing).toBe(true);
+      running.disconnect();
+    });
   });
 
   describe('when a console command fails', () => {

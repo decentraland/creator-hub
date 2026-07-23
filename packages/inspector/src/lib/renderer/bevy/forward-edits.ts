@@ -391,6 +391,16 @@ export function createForwardEditBridge(options: ForwardEditBridgeOptions): Forw
       const readable = component as { getOrNull?: (e: Entity) => unknown };
       const current = value ?? readable.getOrNull?.(entity);
       if (current == null) return;
+      // An Animator PUT that arrives WHILE THE SCENE IS FROZEN must be forced to
+      // playing:false, not forwarded as-is. After a Stop/reload the scene's GLTFs
+      // re-load and re-PUT their Animator with the authored playing:true — which
+      // would resume the animation a beat after the freeze (#1421: "animations run
+      // for a couple frames after stop"). Route it through forwardAnimatorFrozen so
+      // a frozen scene's clips stay paused; when unfrozen it forwards as-is.
+      if (engineName === 'Animator' && isFrozen()) {
+        forwardAnimatorFrozen(entity, current, true);
+        return;
+      }
       // Serialize the forward so a component arriving before its entity's Name PUT
       // still lands (the Name PUT's re-send will cover it if this one raced the
       // instantiation). Instantiate-if-needed keeps a lone engine edit on a new

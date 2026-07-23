@@ -39,6 +39,23 @@ describe('buildEngineUrl', () => {
     expect(query.get('systemScene')).toBe('http://localhost:8005');
   });
 
+  it('should append preview=true when preview is set (#1391 out-of-bounds visibility)', () => {
+    const url = buildEngineUrl(
+      '/bevy-engine/',
+      'http://localhost:8004',
+      '0,0',
+      'http://localhost:8005',
+      true,
+    );
+    const query = new URLSearchParams(url.split('?')[1]);
+    expect(query.get('preview')).toBe('true');
+  });
+
+  it('should omit preview when not set', () => {
+    const url = buildEngineUrl('/bevy-engine/', 'http://localhost:8004', '0,0');
+    expect(url).not.toContain('preview');
+  });
+
   it('should pass only realm/position/systemScene (portables + boot are the host page`s job)', () => {
     // buildEngineUrl targets our engine.html host page, which derives `portables`
     // and drives the boot contract itself — the URL no longer carries engine-boot

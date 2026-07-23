@@ -7,10 +7,19 @@ import { snapManager } from '../babylon/decentraland/snap-manager';
 import { connectReverseChannel } from './reverse-channel';
 import type { RendererEvents } from './types';
 
+// getNodes lists the AUTHORED entities; applyPick treats a pick on any entity not
+// in it as code-created (#1418). Default to the ids the entity-pick tests use (42
+// + root/player) so they read as authored; the unauthored test overrides it.
+const authoredNodes = vi.fn(() => [
+  { entity: 0, children: [] },
+  { entity: 5, children: [] },
+  { entity: 42, children: [] },
+]);
 vi.mock('../sdk/nodes', () => ({
   getAncestors: vi.fn(() => new Set<number>()),
   isAncestor: vi.fn(() => false),
   mapNodes: vi.fn(() => [{ entity: 0, children: [], open: false }]),
+  getNodes: (...args: unknown[]) => authoredNodes(...(args as [])),
 }));
 
 describe('connectReverseChannel', () => {
@@ -106,6 +115,20 @@ describe('connectReverseChannel', () => {
         target: { kind: 'entity', entity: 42 as never },
         modifiers: { multi: false },
       });
+      expect(operations.updateSelectedEntity).not.toHaveBeenCalled();
+      expect(operations.dispatch).not.toHaveBeenCalled();
+    });
+
+    it('should not select a code-created (non-authored) entity, and report it (#1418)', () => {
+      const onPickUnauthored = vi.fn();
+      disconnect();
+      disconnect = connectReverseChannel(context, { onPickUnauthored });
+      // 999 is not in the authored Nodes list → created by the scene's code.
+      events.emit('pick', {
+        target: { kind: 'entity', entity: 999 as never },
+        modifiers: { multi: false },
+      });
+      expect(onPickUnauthored).toHaveBeenCalledWith(999);
       expect(operations.updateSelectedEntity).not.toHaveBeenCalled();
       expect(operations.dispatch).not.toHaveBeenCalled();
     });
