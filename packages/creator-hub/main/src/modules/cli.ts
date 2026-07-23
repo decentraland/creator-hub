@@ -421,11 +421,13 @@ export async function start(path: string, opts: StartOptions): Promise<string> {
     // registered before the deeplink resolves so a warmup can be cancelled mid-conversion
     previewCache.set(path, { child: process, url: '', opts, warmup: !!opts.warmupOnly });
 
+    // \S* tolerates the ANSI reset between "[n/total]" and "converting": patterns are
+    // tested against the raw stream, while the handler receives sanitized text.
     const conversionListener = process.on(
-      /asset-bundles: (converting|still converting)|\[\d+\/\d+\] converting /,
+      /asset-bundles: (converting|still converting)|\[\d+\/\d+\]\S* converting /,
       data => {
         // per-asset counter when the sidecar reports progress, elapsed seconds otherwise
-        const counts = data?.match(/\[(\d+)\/(\d+)\] converting /);
+        const counts = data?.match(/\[(\d+)\/(\d+)\]\S* converting /);
         if (counts) {
           sendPreviewProgress(path, {
             seconds: 0,
