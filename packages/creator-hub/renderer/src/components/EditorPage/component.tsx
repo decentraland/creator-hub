@@ -376,7 +376,13 @@ export function EditorPage() {
                 }
               >
                 {loadingPreview && previewProgress
-                  ? t('editor.header.actions.optimizing', { seconds: previewProgress.seconds })
+                  ? previewProgress.total
+                    ? t('editor.header.actions.optimizing_progress', {
+                        percent: Math.round(
+                          ((previewProgress.done ?? 0) / previewProgress.total) * 100,
+                        ),
+                      })
+                    : t('editor.header.actions.optimizing', { seconds: previewProgress.seconds })
                   : t('editor.header.actions.preview')}
               </ButtonGroup>
               {publishOptions.length > 0 ? (

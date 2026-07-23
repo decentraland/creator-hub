@@ -57,11 +57,11 @@ export async function runScene({ path, opts }: { path: string; opts: PreviewOpti
 
 export function subscribePreviewProgress(
   path: string,
-  cb: (progress: { seconds: number } | null) => void,
+  cb: (progress: { seconds: number; done?: number; total?: number } | null) => void,
 ): { cleanup: () => void } {
   const handler = (
     _: IpcRendererEvent,
-    payload: { path: string; progress: { seconds: number } | null },
+    payload: { path: string; progress: { seconds: number; done?: number; total?: number } | null },
   ) => {
     if (payload.path === path) cb(payload.progress);
   };

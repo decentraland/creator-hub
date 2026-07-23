@@ -17,7 +17,11 @@ import { actions as workspaceActions } from '../workspace';
 export const fetchVersion = createAsyncThunk('editor/fetchVersion', editor.getVersion);
 export const install = createAsyncThunk('editor/install', editor.install);
 export const startInspector = createAsyncThunk('editor/startInspector', editor.startInspector);
-export const setPreviewProgress = createAction<{ seconds: number } | null>(
+export const setPreviewProgress = createAction<{
+  seconds: number;
+  done?: number;
+  total?: number;
+} | null>(
   'editor/setPreviewProgress',
 );
 export const runScene = createAsyncThunk(
@@ -80,7 +84,7 @@ export type EditorState = {
   publishError: string | null;
   loadingInspector: boolean;
   loadingPreview: boolean;
-  previewProgress: { seconds: number } | null;
+  previewProgress: { seconds: number; done?: number; total?: number } | null;
   isPreviewRunning: boolean;
   isInstalling: boolean;
   isInstalled: boolean;

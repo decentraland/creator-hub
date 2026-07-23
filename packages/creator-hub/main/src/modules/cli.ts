@@ -37,7 +37,9 @@ const OPTIMIZED_ASSETS_URL_PARAM = 'optimized-assets-url';
 // why it is still loading.
 export const PREVIEW_PROGRESS_EVENT = 'preview.progress';
 
-function sendPreviewProgress(path: string, progress: { seconds: number } | null) {
+export type PreviewProgress = { seconds: number; done?: number; total?: number };
+
+function sendPreviewProgress(path: string, progress: PreviewProgress | null) {
   const window = getWindow(MAIN_WINDOW_ID);
   if (window && !window.isDestroyed()) {
     window.webContents.send(PREVIEW_PROGRESS_EVENT, { path, progress });
@@ -371,10 +373,23 @@ export async function start(
       env: await getEnv(path),
     });
 
-    const conversionListener = process.on(/asset-bundles: (converting|still converting)/, data => {
-      const seconds = Number(data?.match(/still converting\.\.\. \((\d+)s\)/)?.[1] ?? 0);
-      sendPreviewProgress(path, { seconds });
-    });
+    const conversionListener = process.on(
+      /asset-bundles: (converting|still converting)|\[\d+\/\d+\] converting /,
+      data => {
+        // per-asset counter when the sidecar reports progress, elapsed seconds otherwise
+        const counts = data?.match(/\[(\d+)\/(\d+)\] converting /);
+        if (counts) {
+          sendPreviewProgress(path, {
+            seconds: 0,
+            done: Number(counts[1]),
+            total: Number(counts[2]),
+          });
+        } else {
+          const seconds = Number(data?.match(/still converting\.\.\. \((\d+)s\)/)?.[1] ?? 0);
+          sendPreviewProgress(path, { seconds });
+        }
+      },
+    );
     stopConversionProgress = () => {
       try {
         process.off(conversionListener);

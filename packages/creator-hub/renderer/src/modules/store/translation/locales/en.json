@@ -45,6 +45,7 @@
         "code": "Code",
         "preview": "Preview",
         "optimizing": "Optimizing Assets... {seconds}s",
+        "optimizing_progress": "Optimizing Assets... {percent}%",
         "publish": "Publish",
         "refresh": "Reload scene from disk",
         "preview_options": {
