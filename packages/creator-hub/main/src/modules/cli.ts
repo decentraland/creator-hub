@@ -229,12 +229,17 @@ function updateDeepLinkWithOpts(params: string, newOpts: PreviewOptions): string
     setOrDeleteParam(PREVIEW_OPTIONS_MAP.enableLandscapeTerrains, newOpts.enableLandscapeTerrains);
     setOrDeleteParam(PREVIEW_OPTIONS_MAP.multiInstance, newOpts.multiInstance);
 
-    // Locally generated asset bundles: toggling off strips both params (back to raw
-    // GLTFs immediately); toggling on sets local-ab and keeps whatever sidecar url the
-    // captured deeplink carries — if the preview was started without --asset-bundles
-    // there is no sidecar, the manifest fetch fails, and the scene stays raw until the
-    // preview is restarted with the toggle on.
-    setOrDeleteParam(LOCAL_AB_PARAM, newOpts.optimizedAssets);
+    // Locally generated asset bundles: local-ab is only valid alongside the sidecar url
+    // the captured deeplink carries. Setting it without one would make the explorer fall
+    // back to the default sidecar port with nothing listening there, re-basing all
+    // asset-bundle traffic — wearables and avatar included — onto a dead port.
+    const hasSidecarUrl = urlParams.has(OPTIMIZED_ASSETS_URL_PARAM);
+    if (newOpts.optimizedAssets && !hasSidecarUrl) {
+      log.warn(
+        '[CLI] Optimized assets requested but the preview carries no sidecar url; previewing with raw GLTFs',
+      );
+    }
+    setOrDeleteParam(LOCAL_AB_PARAM, newOpts.optimizedAssets && hasSidecarUrl);
     if (!newOpts.optimizedAssets) {
       setOrDeleteParam(OPTIMIZED_ASSETS_URL_PARAM, false);
     }
@@ -309,11 +314,20 @@ export async function start(
 
   // If we have a preview running for this path open it
   if (isPreviewRunning(preview)) {
-    // Check if options have changed and update the URL accordingly
-    const updatedUrl = updateDeepLinkWithOpts(preview.url, opts);
-    await dclDeepLink(updatedUrl);
+    // A newly enabled Optimized Assets toggle needs the sidecar, and that only boots at
+    // spawn time (--asset-bundles): restart the preview instead of reusing it.
+    const needsSidecarRestart =
+      opts.optimizedAssets &&
+      !new URLSearchParams(preview.url).has(OPTIMIZED_ASSETS_URL_PARAM) &&
+      (await supportsAssetBundles(path));
 
-    return path;
+    if (!needsSidecarRestart) {
+      // Check if options have changed and update the URL accordingly
+      const updatedUrl = updateDeepLinkWithOpts(preview.url, opts);
+      await dclDeepLink(updatedUrl);
+
+      return path;
+    }
   }
 
   killPreview(path);
