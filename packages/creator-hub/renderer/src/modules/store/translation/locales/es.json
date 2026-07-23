@@ -44,8 +44,6 @@
       "actions": {
         "code": "Código",
         "preview": "Previsualizar",
-        "optimizing": "Optimizando assets... {seconds}s",
-        "optimizing_progress": "Optimizando assets... {percent}%",
         "publish": "Publicar",
         "refresh": "Recargar escena desde disco",
         "preview_options": {

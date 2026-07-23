@@ -386,7 +386,9 @@ export function EditorPage() {
                   />
                 }
               >
-                {t('editor.header.actions.preview')}
+                {loadingPreview && previewProgress?.total
+                  ? `${Math.round(((previewProgress.done ?? 0) / previewProgress.total) * 100)}%`
+                  : t('editor.header.actions.preview')}
               </ButtonGroup>
               {publishOptions.length > 0 ? (
                 <ButtonGroup

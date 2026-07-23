@@ -44,8 +44,6 @@
       "actions": {
         "code": "代码",
         "preview": "预览",
-        "optimizing": "正在优化资源... {seconds}秒",
-        "optimizing_progress": "正在优化资源... {percent}%",
         "publish": "发布",
         "refresh": "从磁盘重新加载场景",
         "preview_options": {
