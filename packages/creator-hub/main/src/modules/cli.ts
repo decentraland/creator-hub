@@ -409,11 +409,8 @@ export async function start(path: string, opts: StartOptions): Promise<string> {
       }
     }
 
-    // a warmup converts in the background: never let sdk-commands open the client itself
-    if (opts.warmupOnly) {
-      extraArgs.push('--no-browser');
-    }
-
+    // sdk-commands never self-opens the client for --hub sessions: the deeplink below is
+    // only printed, and firing it (launchOrKeepWarm) is this module's exclusive call.
     const process = run('@dcl/sdk-commands', 'sdk-commands', {
       args: ['start', '--explorer-alpha', '--hub', ...extraArgs, ...generatePreviewArguments(opts)],
       cwd: path,
