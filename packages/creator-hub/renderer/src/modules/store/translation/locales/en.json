@@ -44,6 +44,7 @@
       "actions": {
         "code": "Code",
         "preview": "Preview",
+        "optimizing": "Optimizing Assets... {seconds}s",
         "publish": "Publish",
         "refresh": "Reload scene from disk",
         "preview_options": {

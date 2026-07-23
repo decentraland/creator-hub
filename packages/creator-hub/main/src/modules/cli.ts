@@ -14,8 +14,10 @@ import {
 import type { DeployOptions } from '/shared/types/deploy';
 import { dynamicImport } from '/shared/dynamic-import';
 
+import { MAIN_WINDOW_ID } from '../mainWindow';
 import { dclDeepLink, run, type Child } from './bin';
 import { getAvailablePort } from './port';
+import { getWindow } from './window';
 import { getProjectId, track } from './analytics';
 import { install } from './npm';
 import { downloadGithubRepo } from './download-github-folder';
@@ -29,6 +31,18 @@ export type Preview = { child: Child; url: string; opts: PreviewOptions };
 // the hub only flips them when preview options change mid-session.
 const LOCAL_AB_PARAM = 'local-ab';
 const OPTIMIZED_ASSETS_URL_PARAM = 'optimized-assets-url';
+
+// A large scene's first conversion can take minutes before the deeplink appears; the
+// sidecar's progress lines are streamed to the renderer so the preview button can say
+// why it is still loading.
+export const PREVIEW_PROGRESS_EVENT = 'preview.progress';
+
+function sendPreviewProgress(path: string, progress: { seconds: number } | null) {
+  const window = getWindow(MAIN_WINDOW_ID);
+  if (window && !window.isDestroyed()) {
+    window.webContents.send(PREVIEW_PROGRESS_EVENT, { path, progress });
+  }
+}
 
 const previewCache: Map<string, Preview> = new Map();
 export let deployServer: { stop: () => Promise<void> } | null = null;
@@ -332,6 +346,8 @@ export async function start(
 
   killPreview(path);
 
+  let stopConversionProgress = () => {};
+
   try {
     const extraArgs: string[] = [];
 
@@ -355,6 +371,19 @@ export async function start(
       env: await getEnv(path),
     });
 
+    const conversionListener = process.on(/asset-bundles: (converting|still converting)/, data => {
+      const seconds = Number(data?.match(/still converting\.\.\. \((\d+)s\)/)?.[1] ?? 0);
+      sendPreviewProgress(path, { seconds });
+    });
+    stopConversionProgress = () => {
+      try {
+        process.off(conversionListener);
+      } catch {
+        // the process may already be gone; only the renderer reset matters
+      }
+      sendPreviewProgress(path, null);
+    };
+
     const dclLauncherURL = /decentraland:\/\/([^\s\n]*)/i;
     const resultLogs = await process.waitFor(dclLauncherURL, /CliError|error:/i);
 
@@ -376,6 +405,8 @@ export async function start(
     } else {
       throw error;
     }
+  } finally {
+    stopConversionProgress();
   }
 }
 

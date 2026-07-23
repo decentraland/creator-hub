@@ -57,6 +57,7 @@ export function EditorPage() {
     openCode,
     updateScene,
     loadingPreview,
+    previewProgress,
     loadingPublish,
     isInstallingProject,
     killPreview,
@@ -374,7 +375,9 @@ export function EditorPage() {
                   />
                 }
               >
-                {t('editor.header.actions.preview')}
+                {loadingPreview && previewProgress
+                  ? t('editor.header.actions.optimizing', { seconds: previewProgress.seconds })
+                  : t('editor.header.actions.preview')}
               </ButtonGroup>
               {publishOptions.length > 0 ? (
                 <ButtonGroup

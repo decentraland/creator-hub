@@ -55,6 +55,20 @@ export async function runScene({ path, opts }: { path: string; opts: PreviewOpti
   return port;
 }
 
+export function subscribePreviewProgress(
+  path: string,
+  cb: (progress: { seconds: number } | null) => void,
+): { cleanup: () => void } {
+  const handler = (
+    _: IpcRendererEvent,
+    payload: { path: string; progress: { seconds: number } | null },
+  ) => {
+    if (payload.path === path) cb(payload.progress);
+  };
+  ipcRenderer.on('preview.progress', handler);
+  return { cleanup: () => ipcRenderer.off('preview.progress', handler) };
+}
+
 export async function killPreviewScene(path: string) {
   const port = await invoke('cli.killPreview', path);
   return port;

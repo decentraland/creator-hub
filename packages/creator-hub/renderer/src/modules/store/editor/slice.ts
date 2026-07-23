@@ -1,4 +1,4 @@
-import { createSlice, isRejectedWithValue } from '@reduxjs/toolkit';
+import { createAction, createSlice, isRejectedWithValue } from '@reduxjs/toolkit';
 import { captureException } from '@sentry/electron/renderer';
 import { createAsyncThunk } from '/@/modules/store/thunk';
 
@@ -17,10 +17,23 @@ import { actions as workspaceActions } from '../workspace';
 export const fetchVersion = createAsyncThunk('editor/fetchVersion', editor.getVersion);
 export const install = createAsyncThunk('editor/install', editor.install);
 export const startInspector = createAsyncThunk('editor/startInspector', editor.startInspector);
+export const setPreviewProgress = createAction<{ seconds: number } | null>(
+  'editor/setPreviewProgress',
+);
 export const runScene = createAsyncThunk(
   'editor/runScene',
-  async ({ path, ...opts }: PreviewOptions & { path: string }) => {
-    await editor.runScene({ path, opts });
+  async ({ path, ...opts }: PreviewOptions & { path: string }, { dispatch }) => {
+    // Surfaces the sidecar's asset-conversion progress (a large scene's first
+    // conversion can take minutes before the preview is ready)
+    const subscription = editor.subscribePreviewProgress(path, progress =>
+      dispatch(setPreviewProgress(progress)),
+    );
+    try {
+      await editor.runScene({ path, opts });
+    } finally {
+      subscription.cleanup();
+      dispatch(setPreviewProgress(null));
+    }
   },
 );
 export const publishScene = createAsyncThunk(
@@ -67,6 +80,7 @@ export type EditorState = {
   publishError: string | null;
   loadingInspector: boolean;
   loadingPreview: boolean;
+  previewProgress: { seconds: number } | null;
   isPreviewRunning: boolean;
   isInstalling: boolean;
   isInstalled: boolean;
@@ -85,6 +99,7 @@ const initialState: EditorState = {
   publishError: null,
   loadingInspector: false,
   loadingPreview: false,
+  previewProgress: null,
   isPreviewRunning: false,
   isInstalling: false,
   isInstallingProject: false,
@@ -100,6 +115,9 @@ export const slice = createSlice({
   initialState,
   reducers: {},
   extraReducers: builder => {
+    builder.addCase(setPreviewProgress, (state, action) => {
+      state.previewProgress = action.payload;
+    });
     builder.addCase(workspaceActions.runProject.pending, state => {
       state.project = undefined;
       state.supportsMultiInstance = false;
@@ -250,6 +268,7 @@ export const slice = createSlice({
 // exports
 export const actions = {
   ...slice.actions,
+  setPreviewProgress,
   fetchVersion,
   install,
   startInspector,
