@@ -53,6 +53,17 @@ interface SpawnVisual {
 
 let visuals: SpawnVisual[] = [];
 
+// The default spawn point's WORLD position (scene-local center + scene offset),
+// cached from the last set-spawn-areas. Stop/reset teleports the player here so a
+// scene reload can't leave the avatar fallen through the floor / stuck in terrain
+// (#1423). Null until spawn areas arrive; falls back to the first area, then null.
+let defaultSpawnWorld: Vector3 | null = null;
+
+/** The default spawn point's engine-world position, or null if none is known. */
+export function getDefaultSpawnWorld(): Vector3 | null {
+  return defaultSpawnWorld;
+}
+
 function clear(): void {
   for (const v of visuals) {
     engine.removeEntity(v.hitbox);
@@ -68,6 +79,12 @@ function clear(): void {
 export function setSpawnAreas(areas: SpawnArea[]): void {
   clear();
   const offset = getSceneOffset();
+  // Cache the default spawn's world position for Stop/reset teleport (#1423):
+  // the area flagged default, else the first area, else none.
+  const spawn = areas.find(a => a.isDefault) ?? areas[0];
+  defaultSpawnWorld = spawn
+    ? Vector3.add(Vector3.create(spawn.center.x, spawn.center.y, spawn.center.z), offset)
+    : null;
   for (const area of areas) {
     const worldCenter = Vector3.add(
       Vector3.create(area.center.x, area.center.y, area.center.z),

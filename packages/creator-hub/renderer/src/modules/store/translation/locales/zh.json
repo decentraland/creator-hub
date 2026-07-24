@@ -39,6 +39,7 @@
   "editor": {
     "loading": {
       "title": "正在准备场景...",
+      "installing": "正在安装依赖项……首次可能需要一些时间。",
       "failed": {
         "title": "加载失败",
         "timeout": "场景加载时间过长，可能其代码中存在错误。",
