@@ -31,17 +31,25 @@ function isValidParcel(value: unknown): value is string {
   return typeof value === 'string' && PARCEL_REGEX.test(value);
 }
 
+// Mirrors the fallback rule in @dcl/inspector's getValidParcels (data-layer/host/utils/component.ts):
+// valid parcels → valid base → 0,0. Kept as a local copy because the inspector package only
+// publishes its bundled dist, and its source graph can't be imported into the preload.
+function getValidParcels(
+  rawParcels: unknown,
+  rawBase?: unknown,
+): { parcels: string[]; base: string } {
+  const validParcels = Array.isArray(rawParcels) ? rawParcels.filter(isValidParcel) : [];
+  const base = isValidParcel(rawBase) ? rawBase : (validParcels[0] ?? DEFAULT_PARCEL);
+  const parcels = validParcels.length > 0 ? validParcels : [base];
+  return { parcels, base };
+}
+
 /**
  * Replaces invalid parcels/base values with defaults so a malformed scene.json
  * (e.g. numeric parcels like [0,0] instead of ["0,0"]) can't break project loading.
  */
 export function sanitizeScene(scene: Scene): Scene {
-  const rawParcels = Array.isArray(scene?.scene?.parcels) ? scene.scene.parcels : [];
-  const parcels = rawParcels.filter(isValidParcel);
-  const base = isValidParcel(scene?.scene?.base)
-    ? scene.scene.base
-    : (parcels[0] ?? DEFAULT_PARCEL);
-  if (parcels.length === 0) parcels.push(base);
+  const { parcels, base } = getValidParcels(scene?.scene?.parcels, scene?.scene?.base);
   return { ...scene, scene: { ...scene?.scene, parcels, base } };
 }
 

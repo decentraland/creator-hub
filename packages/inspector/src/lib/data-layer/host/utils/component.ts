@@ -58,14 +58,16 @@ function isValidParcel(value: unknown): value is string {
   return typeof value === 'string' && PARCEL_REGEX.test(value);
 }
 
-export function getValidParcels(scene: Scene['scene'] | undefined): {
+export function getValidParcels(
+  rawParcels: unknown,
+  rawBase?: unknown,
+): {
   parcels: string[];
   base: string;
 } {
-  const rawParcels = Array.isArray(scene?.parcels) ? scene.parcels : [];
-  const parcels = rawParcels.filter(isValidParcel);
-  const base = isValidParcel(scene?.base) ? scene.base : (parcels[0] ?? DEFAULT_PARCEL);
-  if (parcels.length === 0) parcels.push(base);
+  const validParcels = Array.isArray(rawParcels) ? rawParcels.filter(isValidParcel) : [];
+  const base = isValidParcel(rawBase) ? rawBase : (validParcels[0] ?? DEFAULT_PARCEL);
+  const parcels = validParcels.length > 0 ? validParcels : [base];
   return { parcels, base };
 }
 
@@ -88,6 +90,10 @@ export function fromSceneComponent(
     if (sanitizedTag && !tags.includes(sanitizedTag)) tags.push(sanitizedTag);
   }
   const config = getConfig();
+  const { parcels, base } = getValidParcels(
+    value.layout.parcels.map($ => `${$.x},${$.y}`),
+    value.layout.base ? `${value.layout.base.x},${value.layout.base.y}` : undefined,
+  );
   const scene: Partial<SceneWithRating> = {
     display: {
       title: value.name || '',
@@ -95,11 +101,8 @@ export function fromSceneComponent(
       navmapThumbnail: value.thumbnail || '',
     },
     scene: {
-      parcels:
-        value.layout.parcels.length > 0
-          ? value.layout.parcels.map($ => `${$.x},${$.y}`)
-          : [value.layout.base ? `${value.layout.base.x},${value.layout.base.y}` : DEFAULT_PARCEL],
-      base: value.layout.base ? `${value.layout.base.x},${value.layout.base.y}` : DEFAULT_PARCEL,
+      parcels,
+      base,
     },
     creator: value.creator || '',
     contact: {
@@ -154,7 +157,7 @@ export function fromSceneComponent(
 }
 
 export function toSceneComponent(value: Scene): EditorComponentsTypes['Scene'] {
-  const validParcels = getValidParcels(value.scene);
+  const { parcels, base } = getValidParcels(value.scene?.parcels, value.scene?.base);
   const categories: SceneCategory[] = [];
   const tags: string[] = [];
 
@@ -172,8 +175,8 @@ export function toSceneComponent(value: Scene): EditorComponentsTypes['Scene'] {
     thumbnail: value.display?.navmapThumbnail || '',
     creator: (value as SceneWithRating).creator || '',
     layout: {
-      parcels: validParcels.parcels.map($ => parseCoords($)),
-      base: parseCoords(validParcels.base),
+      parcels: parcels.map(parseCoords),
+      base: parseCoords(base),
     },
     author: value.contact?.name || '',
     email: value.contact?.email || '',

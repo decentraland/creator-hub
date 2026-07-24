@@ -51,7 +51,7 @@ export class SceneProvider implements StateProvider {
   private static augmentDefaults(scene: Scene): SceneWithDefaults {
     // a scene must always have at least one valid parcel: fall back to the base parcel,
     // and only to 0,0 when there is no other known set of coordinates
-    const { parcels, base } = getValidParcels(scene.scene);
+    const { parcels, base } = getValidParcels(scene.scene?.parcels, scene.scene?.base);
     return {
       ...scene,
       display: {

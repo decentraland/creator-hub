@@ -192,7 +192,7 @@ export function initializeWorkspace(services: Services) {
     // a project that fails to load shouldn't prevent the rest of the workspace from loading
     const safeGetProject = (projectPath: string): Promise<Project | null> =>
       getProject({ path: projectPath, opts }).catch((error: any) => {
-        console.warn(`[Preload] Skipping project in "${projectPath}":`, error?.message);
+        console.warn(`[Preload] Skipping project in "${projectPath}":`, error);
         return null;
       });
 
