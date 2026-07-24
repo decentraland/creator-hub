@@ -105,6 +105,21 @@ export function snapPosition(position: Vector3) {
   return snapManager.isEnabled() ? snapVector(position, snapManager.getPositionSnap()) : position;
 }
 
+/**
+ * Renderer-agnostic position snap: operates on plain `{x, y, z}` data (not a
+ * Babylon `Vector3`), so callers across the renderer boundary (e.g. asset-drop
+ * placement) don't need the Babylon module loaded. Mirrors {@link snapPosition}.
+ */
+export function snapPositionValue(position: { x: number; y: number; z: number }) {
+  if (!snapManager.isEnabled()) return position;
+  const snap = snapManager.getPositionSnap();
+  return {
+    x: snapValue(position.x, snap),
+    y: snapValue(position.y, snap),
+    z: snapValue(position.z, snap),
+  };
+}
+
 export function snapScale(scale: Vector3) {
   return snapManager.isEnabled() ? snapVector(scale, snapManager.getScaleSnap()) : scale;
 }

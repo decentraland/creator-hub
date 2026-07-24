@@ -1,31 +1,12 @@
 import { type IEngine } from '@dcl/ecs';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import ReactEcs, { Label, UiEntity, Input } from '@dcl/react-ecs';
-import { Color4 } from '@dcl/sdk/math';
 import { type GetPlayerDataRes } from '../types';
-import { Button } from './Button';
-import { getContentUrl } from './constants';
-import { Header } from './Header';
-import { Card } from './Card';
 import { type State } from './types';
+import { COLORS, RADIUS, SPACING, TYPE } from './theme';
+import { PillButton, ActionLink } from './Controls';
 import { getAdminMessageBus } from './admin-message-bus';
-
-const ICONS = {
-  get TEXT_ANNOUNCEMENT_CONTROL() {
-    return `${getContentUrl()}/admin_toolkit/assets/icons/text-announcement-control.png`;
-  },
-  get CHECK() {
-    return `${getContentUrl()}/admin_toolkit/assets/icons/text-announcement-check.png`;
-  },
-  get BTN_CLOSE_TEXT_ANNOUNCEMENT() {
-    return `${getContentUrl()}/admin_toolkit/assets/icons/text-announcement-close-button.png`;
-  },
-  get CHAT_MESSAGE_ICON() {
-    return `${getContentUrl()}/admin_toolkit/assets/icons/text-announcement-chat-message.png`;
-  },
-};
-
-let ANNOUNCEMENT_STATE: 'sent' | 'cleared';
+import { setAnnouncementText, clearAnnouncements } from './actions';
 
 export function TextAnnouncementsControl({
   engine,
@@ -36,148 +17,111 @@ export function TextAnnouncementsControl({
   state: State;
   player?: GetPlayerDataRes | null;
 }) {
+  // Bumping this key re-mounts the (uncontrolled) Input so it visibly empties
+  // when the draft is cleared.
+  const [clearNonce, setClearNonce] = ReactEcs.useState(0);
+  const length = state.textAnnouncementControl.text?.length ?? 0;
+
   return (
-    <Card>
+    <UiEntity uiTransform={{ flexDirection: 'column', width: '100%', padding: SPACING.xxl }}>
+      <Label
+        value="<b>Text announcements</b>"
+        fontSize={TYPE.title}
+        color={COLORS.textPrimary}
+        uiTransform={{ margin: { bottom: SPACING.xl } }}
+      />
+
       <UiEntity
         uiTransform={{
           width: '100%',
-          height: '100%',
-          flexDirection: 'column',
+          flexDirection: 'row',
+          justifyContent: 'space-between',
+          margin: { bottom: SPACING.sm },
         }}
       >
-        {/* Header */}
-        <Header
-          iconSrc={ICONS.TEXT_ANNOUNCEMENT_CONTROL}
-          title="TEXT ANNOUNCEMENTS"
+        <Label
+          value="Message"
+          fontSize={TYPE.label}
+          color={COLORS.textSecondary}
         />
-        <UiEntity uiTransform={{ flexDirection: 'column' }}>
-          <Label
-            value="<b>Message window</b>"
-            fontSize={16}
-            color={Color4.White()}
-            uiTransform={{ margin: { bottom: 16 } }}
-          />
-
-          <Input
-            onSubmit={value => {
-              handleSendTextAnnouncement(engine, state, value, player);
-            }}
-            onChange={value => {
-              state.textAnnouncementControl.text = value;
-            }}
-            fontSize={16}
-            placeholder={'Write your announcement here'}
-            placeholderColor={Color4.create(160 / 255, 155 / 255, 168 / 255, 1)}
-            color={Color4.Black()}
-            uiBackground={{ color: Color4.White() }}
-            uiTransform={{
-              width: '100%',
-              height: 80,
-              margin: { bottom: 16 },
-            }}
-          />
-
-          <UiEntity
-            uiTransform={{
-              width: '100%',
-              height: 40,
-              flexDirection: 'row',
-              margin: {
-                bottom: 10,
-                top: 0,
-                right: 0,
-                left: 0,
-              },
-            }}
-          >
-            <Label
-              value={`${state.textAnnouncementControl.text?.length ?? 0} / 90`}
-              fontSize={14}
-              color={Color4.create(187 / 255, 187 / 255, 187 / 255, 1)}
-              uiTransform={{ flexGrow: 1 }}
-              textAlign="top-left"
-            />
-            <Button
-              id="text_announcement_control_clear"
-              value="<b>Clear Announcements</b>"
-              variant="text"
-              fontSize={16}
-              color={Color4.White()}
-              uiTransform={{
-                height: 40,
-                margin: { right: 8 },
-              }}
-              onMouseDown={() => {
-                handleClearTextAnnouncement(engine, state);
-              }}
-            />
-            <Button
-              id="text_announcement_control_share"
-              value="<b>Share</b>"
-              variant="primary"
-              fontSize={16}
-              labelTransform={{
-                margin: { left: 20, right: 20 },
-              }}
-              uiTransform={{ height: 40 }}
-              onMouseDown={() => {
-                handleSendTextAnnouncement(
-                  engine,
-                  state,
-                  state.textAnnouncementControl.text,
-                  player,
-                );
-              }}
-            />
-          </UiEntity>
-        </UiEntity>
-
-        <UiEntity uiTransform={{ minHeight: 30 }}>
-          <UiEntity
-            uiTransform={{
-              display: ANNOUNCEMENT_STATE !== undefined ? 'flex' : 'none',
-              width: 30,
-              height: 30,
-            }}
-            uiBackground={{
-              texture: { src: ICONS.CHECK },
-              textureMode: 'stretch',
-            }}
-          />
-          <Label
-            uiTransform={{
-              display: ANNOUNCEMENT_STATE !== undefined ? 'flex' : 'none',
-            }}
-            value={`Message ${ANNOUNCEMENT_STATE === 'sent' ? 'sent' : 'cleared'}!`}
-            fontSize={14}
-            color={Color4.create(187 / 255, 187 / 255, 187 / 255, 1)}
-          />
-        </UiEntity>
+        <Label
+          value={`${length} / 90`}
+          fontSize={TYPE.label}
+          color={COLORS.textSecondary}
+        />
       </UiEntity>
-    </Card>
+
+      <Input
+        key={`announcement-input-${clearNonce}`}
+        onSubmit={value => {
+          if (!value) return;
+          handleSendTextAnnouncement(engine, state, value, player);
+          setClearNonce(n => n + 1);
+        }}
+        onChange={value => setAnnouncementText(value)}
+        fontSize={TYPE.body}
+        placeholder="Write your announcement…"
+        placeholderColor={COLORS.inputPlaceholder}
+        color={COLORS.inputText}
+        uiBackground={{ color: COLORS.inputBackground }}
+        uiTransform={{
+          width: '100%',
+          height: 110,
+          borderRadius: RADIUS.md,
+          borderWidth: 1,
+          borderColor: COLORS.inputBorder,
+          margin: { bottom: SPACING.xl },
+        }}
+      />
+
+      <UiEntity
+        uiTransform={{
+          width: '100%',
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+        }}
+      >
+        <ActionLink
+          label="Clear all"
+          iconName="trash"
+          color={COLORS.textSecondary}
+          onClick={() => {
+            handleClearTextAnnouncement(engine, state);
+            setAnnouncementText('');
+            setClearNonce(n => n + 1);
+          }}
+        />
+        <PillButton
+          id="text_announcement_control_share"
+          label="Share"
+          iconName="send"
+          variant="filled"
+          onClick={() => {
+            if (!state.textAnnouncementControl.text) return;
+            handleSendTextAnnouncement(engine, state, state.textAnnouncementControl.text, player);
+            setClearNonce(n => n + 1);
+          }}
+        />
+      </UiEntity>
+    </UiEntity>
   );
 }
 
-function handleClearTextAnnouncement(_engine: IEngine, state: State) {
+function handleClearTextAnnouncement(_engine: IEngine, _state: State) {
   getAdminMessageBus().emitClearAnnouncement();
-  state.textAnnouncementControl.announcements = [];
-  ANNOUNCEMENT_STATE = 'cleared';
+  clearAnnouncements();
 }
 
 function handleSendTextAnnouncement(
   _engine: IEngine,
-  state: State,
+  _state: State,
   text: string | undefined,
   player?: GetPlayerDataRes | null,
 ) {
-  if (!text) {
-    return;
-  }
-
+  if (!text) return;
   const author = player?.name;
   const timestamp = Date.now();
   getAdminMessageBus().emitSetAnnouncement(text.slice(0, 90), author, `${timestamp}-${author}`);
-
-  state.textAnnouncementControl.text = '';
-  ANNOUNCEMENT_STATE = 'sent';
+  setAnnouncementText('');
 }

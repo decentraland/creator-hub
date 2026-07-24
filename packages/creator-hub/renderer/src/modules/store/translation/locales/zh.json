@@ -52,6 +52,7 @@
           "skip_auth_screen": "跳过认证屏幕",
           "open_new_instance": "打开多个实例",
           "landscape_terrain_enabled": "启用景观地形",
+          "landscape_terrain_disabled_by_scene": "此场景的设置已隐藏景观地形",
           "multi_instance": "多实例预览",
           "mobile_preview": "显示移动端二维码"
         },

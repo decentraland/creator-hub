@@ -2,8 +2,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { useDrop } from 'react-dnd';
 import cx from 'classnames';
-import { Vector3 } from '@babylonjs/core';
-import type { Entity } from '@dcl/ecs';
+import type { Entity, Vector3Type } from '@dcl/ecs';
 
 import { DIRECTORY } from '../../lib/data-layer/host/fs-utils';
 import { useAppSelector } from '../../redux/hooks';
@@ -16,8 +15,7 @@ import type {
 import { getNode, DROP_TYPES, isDropType, DropTypesEnum } from '../../lib/sdk/drag-drop';
 import { useRenderer } from '../../hooks/sdk/useRenderer';
 import { useSdk } from '../../hooks/sdk/useSdk';
-import { getPointerCoords } from '../../lib/babylon/decentraland/mouse-utils';
-import { snapPosition } from '../../lib/babylon/decentraland/snap-manager';
+import { snapPositionValue } from '../../lib/babylon/decentraland/snap-manager';
 import { ROOT } from '../../lib/sdk/tree';
 import type { CustomAsset } from '../../lib/logic/catalog';
 import { isGround, isSmart, type Asset } from '../../lib/logic/catalog';
@@ -54,11 +52,9 @@ import { CameraSpeed } from './CameraSpeed';
 import { Shortcuts } from './Shortcuts';
 import { Metrics } from './Metrics';
 import { SceneMinimap } from './SceneMinimap';
-import { AxisHelper } from './AxisHelper';
 
 import './Renderer.css';
 
-const ZOOM_DELTA = new Vector3(0, 0, 1.1);
 const fixedNumber = (val: number) => Math.round(val * 1e2) / 1e2;
 
 const SINGLE_TILE_HINT_OFFSET = 30;
@@ -85,16 +81,13 @@ const Renderer: React.FC = () => {
 
   useEffect(() => {
     if (sdk) {
-      sdk.gizmos.setEnabled(!gizmosDisabled);
+      sdk.renderer.gizmos.setEnabled(!gizmosDisabled);
     }
   }, [sdk, gizmosDisabled]);
 
   useEffect(() => {
     if (sdk) {
-      const layout = sdk.scene.getNodeByName('layout');
-      if (layout) {
-        layout.setEnabled(!groundGridDisabled);
-      }
+      sdk.renderer.setGridVisible(!groundGridDisabled);
     }
   }, [sdk, groundGridDisabled]);
 
@@ -107,8 +100,7 @@ const Renderer: React.FC = () => {
 
   const duplicateSelectedEntities = useCallback(() => {
     if (!sdk) return;
-    const camera = sdk.scene.activeCamera!;
-    camera.detachControl();
+    sdk.renderer.camera.setControlEnabled(false);
     const selectedEntitites = sdk.operations.getSelectedEntities();
     const preferredGizmo =
       selectedEntitites.length > 0
@@ -123,7 +115,7 @@ const Renderer: React.FC = () => {
     });
     void sdk.operations.dispatch();
     setTimeout(() => {
-      camera.attachControl(canvasRef.current, true);
+      sdk.renderer.camera.setControlEnabled(true);
     }, 100);
   }, [sdk]);
 
@@ -151,32 +143,24 @@ const Renderer: React.FC = () => {
 
   const zoomIn = useCallback(() => {
     if (!sdk) return;
-    const camera = sdk.editorCamera.getCamera();
-    const dir = camera.getDirection(ZOOM_DELTA);
-    camera.position.addInPlace(dir);
+    sdk.renderer.camera.zoom(1);
   }, [sdk]);
 
   const zoomOut = useCallback(() => {
     if (!sdk) return;
-    const camera = sdk.editorCamera.getCamera();
-    const dir = camera.getDirection(ZOOM_DELTA).negate();
-    camera.position.addInPlace(dir);
+    sdk.renderer.camera.zoom(-1);
   }, [sdk]);
 
   const resetCamera = useCallback(() => {
     if (!sdk) return;
-    sdk.editorCamera.resetCamera();
+    sdk.renderer.camera.reset();
   }, [sdk]);
 
   const focusOnSelected = useCallback(() => {
     if (!sdk) return;
     const selectedEntities = sdk.operations.getSelectedEntities();
     if (selectedEntities.length > 0) {
-      const entityId = selectedEntities[0];
-      const node = sdk.sceneContext.getEntityOrNull(entityId);
-      if (node) {
-        sdk.editorCamera.centerViewOnEntity(node);
-      }
+      sdk.renderer.camera.focusOnEntity(selectedEntities[0]);
     }
   }, [sdk]);
 
@@ -221,13 +205,16 @@ const Renderer: React.FC = () => {
   }, [showSingleTileHint, setShowSingleTileHint]);
 
   const getDropPosition = async () => {
-    const pointerCoords = await getPointerCoords(sdk!.scene);
-    return snapPosition(new Vector3(fixedNumber(pointerCoords.x), 0, fixedNumber(pointerCoords.z)));
+    // Renderer-agnostic: ask the active renderer where the pointer hits the
+    // ground, then snap. Works for any renderer.
+    const point = (await sdk!.renderer.getPointerWorldPoint()) ?? { x: 0, y: 0, z: 0 };
+    // Plain {x,y,z} throughout — no Babylon Vector3, so this works for any renderer.
+    return snapPositionValue({ x: fixedNumber(point.x), y: 0, z: fixedNumber(point.z) });
   };
 
   const addAsset = async (
     asset: AssetNodeItem,
-    position: Vector3,
+    position: Vector3Type,
     basePath: string,
     isCustom: boolean,
   ) => {
@@ -378,7 +365,6 @@ const Renderer: React.FC = () => {
       {isLoading && <Loading />}
       <Warnings />
       <CameraSpeed />
-      <AxisHelper />
       {!hiddenPanels[PanelName.METRICS] && <Metrics />}
       <SceneMinimap />
       {!hiddenPanels[PanelName.SHORTCUTS] && (
