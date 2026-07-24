@@ -102,6 +102,7 @@
       "home": "Inicio",
       "scenes": "Escenas",
       "collections": "Colecciones",
+      "metrics": "Analíticas",
       "manage": "Gestionar",
       "learn": "Aprender",
       "more": "Más"
@@ -885,6 +886,122 @@
     },
     "unpublish_world_confirmation": {
       "title": "¿Despublicar <b>{worldName}</b>?"
+    }
+  },
+  "metrics": {
+    "header": {
+      "back": "Todas las escenas",
+      "title": "Analíticas"
+    },
+    "sign_in": {
+      "title": "Inicia sesión para ver las métricas de tus escenas",
+      "action": "Iniciar Sesión"
+    },
+    "empty": {
+      "title": "Aún no hay escenas publicadas",
+      "description": "Publica una escena para empezar a recopilar métricas."
+    },
+    "no_scene_data": {
+      "title": "Aún no hay analíticas para esta escena",
+      "description": "Publica tu escena y vuelve cuando haya jugadores. Los datos se actualizan a diario."
+    },
+    "portfolio": {
+      "count": "{count} {count, plural, one {escena} other {escenas}}",
+      "sort_by": "Ordenar por",
+      "sort": {
+        "recent": "Actualizadas recientemente",
+        "visitors": "Visitantes únicos",
+        "name": "Nombre"
+      },
+      "stat": {
+        "unique_visitors": "Visitantes Únicos"
+      }
+    },
+    "error": {
+      "title": "No se pudieron cargar las métricas",
+      "retry": "Reintentar"
+    },
+    "not_enough_data": "Datos insuficientes",
+    "not_available_short": "—",
+    "unit": {
+      "min": "{value} min"
+    },
+    "range": {
+      "last_7d": "Últimos 7 días",
+      "last_30d": "Últimos 30 días",
+      "last_90d": "Últimos 90 días"
+    },
+    "scene": {
+      "header": "Analíticas - {name}",
+      "export": "Exportar Analíticas",
+      "access": "Acceso",
+      "access_private": "Privado",
+      "access_public": "Público",
+      "published_in": "Publicado en",
+      "last_published_by": "Publicado por última vez por",
+      "last_update": "Última Actualización",
+      "create_event": "Crear Evento",
+      "edit_scene": "Editar Escena",
+      "edit_scene_unavailable": "El proyecto de esta escena no está en esta máquina",
+      "copy_url": "Copiar URL",
+      "jump_in": "Entrar",
+      "type_world": "Mundo",
+      "type_genesis": "Genesis"
+    },
+    "overview": {
+      "title": "Resumen",
+      "ranking": "Ranking de Lugares",
+      "view_leaderboard": "Ver Clasificación",
+      "tile": {
+        "total_visits": "Visitas Totales",
+        "unique_visits": "Visitas Únicas",
+        "concurrent_users": "Usuarios Concurrentes",
+        "revenue": "Ingresos",
+        "new_users": "Usuarios Nuevos",
+        "dau": "Usuarios Activos Diarios",
+        "d7": "Retención D7",
+        "avg_playtime": "Tiempo de Juego Prom.",
+        "afk_time": "Tiempo AFK",
+        "desktop": "Escritorio",
+        "mobile": "Móvil"
+      },
+      "tip": {
+        "total_visits": "Una visita es una presencia por sesión en tu escena; una nueva visita comienza tras 10 minutos de inactividad.",
+        "unique_visits": "Billeteras distintas que entraron a tu escena en los últimos 30 días (se excluyen bots).",
+        "concurrent_users": "El número máximo de billeteras en tu escena al mismo tiempo (en intervalos de 5 minutos).",
+        "revenue": "La monetización dentro de la escena aún no está disponible.",
+        "new_users": "Billeteras cuya primera visita a esta escena ocurre en este período.",
+        "dau": "Promedio de billeteras diarias distintas en el período (se excluyen bots).",
+        "d7": "De los nuevos visitantes que entraron por primera vez a tu escena, la proporción que regresó al menos una vez dentro de 7 días.",
+        "avg_playtime": "Tiempo mediano sin AFK entre las visitas con presencia medible.",
+        "afk_time": "Proporción del tiempo de permanencia inactivo (pausas de 2 a 10 minutos).",
+        "device": "Billeteras distintas por dispositivo; una billetera multiplataforma cuenta en ambos, por lo que la división no es aditiva."
+      }
+    },
+    "retention": {
+      "title": "Retención",
+      "date_range": "Rango de Fechas",
+      "day1": "Retención Día 1",
+      "day7": "Retención Día 7",
+      "day30": "Retención Día 30"
+    },
+    "engagement": {
+      "title": "Interacción",
+      "avg_playtime": "Tiempo de Juego Prom.",
+      "avg_session": "Sesión Prom.",
+      "afk_time": "Tiempo AFK",
+      "social": "Interacciones Sociales",
+      "messages": "Mensajes Enviados",
+      "emotes": "Emotes Usados",
+      "tip": {
+        "avg_session": "Media de segundos activos (sin AFK) por sesión de billetera."
+      }
+    },
+    "actions": {
+      "metrics": "Métricas",
+      "view_metrics": "Ver Métricas",
+      "analytics": "Analíticas",
+      "editor_tooltip": "Publica tu escena para ver las analíticas"
     }
   },
   "connection": {

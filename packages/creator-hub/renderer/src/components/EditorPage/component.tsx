@@ -36,6 +36,7 @@ import { ButtonGroup } from '../Button';
 import { ConnectionStatusIndicator } from '../ConnectionStatusIndicator';
 import { MobileQRCode } from '../Modals/MobileQRCode';
 import { DeployModal } from './DeployModal';
+import { MetricsAction } from './MetricsAction';
 import { PreviewOptions, PublishOptions } from './MenuOptions';
 import { getPublishButtonText, getPublishOptions } from './utils';
 
@@ -376,6 +377,7 @@ export function EditorPage() {
               >
                 {t('editor.header.actions.preview')}
               </ButtonGroup>
+              <MetricsAction project={project} />
               {publishOptions.length > 0 ? (
                 <ButtonGroup
                   color="primary"

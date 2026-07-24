@@ -122,4 +122,9 @@ export type Events = {
     method: 'deeplink';
   };
   'Sign Out Action': undefined;
+  'Metrics Viewed': {
+    source: 'manage-card' | 'publish-success' | 'editor' | 'direct';
+    scene_type?: string;
+    scene_id?: string;
+  };
 };
