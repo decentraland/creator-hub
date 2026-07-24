@@ -71,7 +71,7 @@ export interface Ipc {
 
   'cli.init': (path: string, repo: string) => Promise<void>;
   'cli.start': (path: string, opts: PreviewOptions) => Promise<string>;
-  'cli.warmupOptimizedAssets': (path: string, opts: PreviewOptions) => Promise<void>;
+  'cli.warmupOptimizedAssets': (path: string, opts: PreviewOptions) => Promise<boolean>;
   'cli.cancelOptimizedAssetsWarmup': (path: string) => Promise<void>;
   'cli.detachPreview': (path: string) => Promise<void>;
   'cli.supportsAssetBundles': (path: string) => Promise<boolean>;

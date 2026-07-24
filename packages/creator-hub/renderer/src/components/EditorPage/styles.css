@@ -88,6 +88,22 @@
   opacity: 0.5;
 }
 
+/* hide the dropdown arrow while optimizing and round the main button's now-exposed right
+   edge (the grouped button squares it off to butt against the dropdown) */
+.Editor .Header .actions .preview-control.optimizing .extra-button {
+  display: none;
+}
+
+.Editor
+  .Header
+  .actions
+  .preview-control.optimizing
+  .Button.MuiButton-root.MuiButtonGroup-grouped:not(.extra-button) {
+  border-top-right-radius: var(--mui-shape-borderRadius);
+  border-bottom-right-radius: var(--mui-shape-borderRadius);
+  border-right: none;
+}
+
 .Editor .Header .actions .optimizing-label {
   display: inline-flex;
   align-items: center;
@@ -160,6 +176,11 @@
 
 .PreviewOptions .optimized-assets-spinner {
   color: var(--clear-divider);
+}
+
+.PreviewOptions .optimized-assets-ready {
+  color: var(--success);
+  font-size: 18px;
 }
 
 .PublishOptions {

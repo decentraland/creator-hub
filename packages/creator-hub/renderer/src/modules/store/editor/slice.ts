@@ -45,7 +45,7 @@ export const warmupOptimizedAssets = createAsyncThunk(
       dispatch(setPreviewProgress(progress)),
     );
     try {
-      await editor.warmupOptimizedAssets({ path, opts });
+      return await editor.warmupOptimizedAssets({ path, opts });
     } finally {
       subscription.cleanup();
       dispatch(setPreviewProgress(null));
@@ -105,6 +105,8 @@ export type EditorState = {
   loadingPreview: boolean;
   previewProgress: { seconds: number; done?: number; total?: number } | null;
   previewDetached: boolean;
+  // the scene's assets finished optimizing (conversion reached 100%) — drives the ready tick
+  optimizedAssetsReady: boolean;
   isPreviewRunning: boolean;
   isInstalling: boolean;
   isInstalled: boolean;
@@ -125,6 +127,7 @@ const initialState: EditorState = {
   loadingPreview: false,
   previewProgress: null,
   previewDetached: false,
+  optimizedAssetsReady: false,
   isPreviewRunning: false,
   isInstalling: false,
   isInstallingProject: false,
@@ -141,11 +144,26 @@ export const slice = createSlice({
   reducers: {},
   extraReducers: builder => {
     builder.addCase(setPreviewProgress, (state, action) => {
-      state.previewProgress = action.payload;
+      const payload = action.payload;
+      state.previewProgress = payload;
+      // "ready" only once the conversion actually reaches 100% — a cancelled or half-done
+      // run (progress goes null before done === total) must not flip the tick on
+      if (payload?.total) {
+        state.optimizedAssetsReady = payload.done === payload.total;
+      }
+    });
+    builder.addCase(cancelOptimizedAssetsWarmup.pending, state => {
+      state.optimizedAssetsReady = false;
+    });
+    // covers the already-cached case: the conversion finishes instantly with no progress
+    // stream, so the warmup's boolean result is what flips the ready tick on
+    builder.addCase(warmupOptimizedAssets.fulfilled, (state, action) => {
+      if (action.payload) state.optimizedAssetsReady = true;
     });
     builder.addCase(workspaceActions.runProject.pending, state => {
       state.project = undefined;
       state.supportsMultiInstance = false;
+      state.optimizedAssetsReady = false;
       state.error = null;
     });
     builder.addCase(workspaceActions.fetchSdkCommandsVersion.fulfilled, (state, action) => {

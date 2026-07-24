@@ -60,6 +60,7 @@ export function EditorPage() {
     updateScene,
     loadingPreview,
     previewProgress,
+    optimizedAssetsReady,
     loadingPublish,
     isInstallingProject,
     killPreview,
@@ -400,6 +401,7 @@ export function EditorPage() {
                       supportsMultiInstance={supportsMultiInstance}
                       projectPath={project.path}
                       previewProgress={previewProgress}
+                      optimizedAssetsReady={optimizedAssetsReady}
                     />
                   }
                 >

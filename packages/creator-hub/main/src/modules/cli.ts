@@ -327,17 +327,27 @@ const inflightStarts = new Map<string, Promise<string>>();
  * toggle is off, the installed sdk-commands lacks the sidecar, or a preview/warmup for
  * the path already exists (the conversion cache makes re-runs cheap anyway).
  */
-export async function warmupOptimizedAssets(path: string, opts: PreviewOptions): Promise<void> {
-  if (!opts.optimizedAssets || !(await supportsAssetBundles(path))) return;
-  if (inflightStarts.has(path) || isPreviewRunning(previewCache.get(path))) return;
+// Resolves true once the scene's assets are optimized and ready (drives the menu's ready
+// tick). When the conversion is already cached it finishes instantly with no progress
+// stream, so the boolean — not the progress lines — is what tells the renderer it's done.
+export async function warmupOptimizedAssets(path: string, opts: PreviewOptions): Promise<boolean> {
+  if (!opts.optimizedAssets || !(await supportsAssetBundles(path))) return false;
+  const running = previewCache.get(path);
+  if (isPreviewRunning(running)) {
+    // a preview is already up: its assets are optimized iff it carries the sidecar
+    return new URLSearchParams(running.url).has(OPTIMIZED_ASSETS_URL_PARAM);
+  }
+  if (inflightStarts.has(path)) return false;
   // immediate feedback: the first real progress line is many seconds away
   // (bundling + sidecar boot), and a silent click reads as a broken toggle
   sendPreviewProgress(path, { seconds: 0 });
   try {
     await start(path, { ...opts, warmupOnly: true });
     log.info('[CLI] optimized-assets warmup finished');
+    return true;
   } catch (error) {
     log.warn('[CLI] optimized-assets warmup failed:', (error as Error).message);
+    return false;
   }
 }
 

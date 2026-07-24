@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import {
   Checkbox,
   CircularProgress,
@@ -23,6 +24,7 @@ export function PreviewOptions({
   supportsMultiInstance,
   projectPath,
   previewProgress,
+  optimizedAssetsReady,
 }: PreviewOptionsProps) {
   const [terrainHiddenByScene, setTerrainHiddenByScene] = useState(false);
 
@@ -149,6 +151,11 @@ export function PreviewOptions({
                         size={16}
                       />
                     )}
+                  </span>
+                ) : options.optimizedAssets && optimizedAssetsReady ? (
+                  <span className="optimized-assets-label">
+                    <span>{t('editor.header.actions.preview_options.optimized_assets')}</span>
+                    <CheckCircleIcon className="optimized-assets-ready" />
                   </span>
                 ) : (
                   t('editor.header.actions.preview_options.optimized_assets')
