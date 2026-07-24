@@ -83,6 +83,10 @@ export async function cancelOptimizedAssetsWarmup(path: string) {
   return invoke('cli.cancelOptimizedAssetsWarmup', path);
 }
 
+export async function supportsAssetBundles(path: string) {
+  return invoke('cli.supportsAssetBundles', path);
+}
+
 export async function killPreviewScene(path: string) {
   const port = await invoke('cli.killPreview', path);
   return port;

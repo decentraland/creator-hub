@@ -303,7 +303,7 @@ function selfBinPath(): string {
 // Feature-detect the opt-in sidecar flag in the scene's installed sdk-commands
 // (same pattern as shouldRunLegacyDeploy). The quote-delimited match avoids false
 // positives on the older opt-out flag --no-asset-bundles.
-async function supportsAssetBundles(path: string): Promise<boolean> {
+export async function supportsAssetBundles(path: string): Promise<boolean> {
   try {
     const file = await fs.readFile(
       join(path, 'node_modules', '@dcl/sdk-commands/dist/commands/start/index.js'),
