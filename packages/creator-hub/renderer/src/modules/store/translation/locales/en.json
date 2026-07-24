@@ -102,6 +102,7 @@
       "home": "Home",
       "scenes": "Scenes",
       "collections": "Collections",
+      "metrics": "Analytics",
       "manage": "Manage",
       "learn": "Learn",
       "more": "More"
@@ -885,6 +886,122 @@
     },
     "unpublish_world_confirmation": {
       "title": "Unpublish <b>{worldName}</b>?"
+    }
+  },
+  "metrics": {
+    "header": {
+      "back": "All scenes",
+      "title": "Analytics"
+    },
+    "sign_in": {
+      "title": "Sign in to view your scene metrics",
+      "action": "Sign In"
+    },
+    "empty": {
+      "title": "No published scenes yet",
+      "description": "Publish a scene to start collecting metrics."
+    },
+    "no_scene_data": {
+      "title": "No analytics for this scene yet",
+      "description": "Publish your scene and check back once players have visited. Data updates daily."
+    },
+    "portfolio": {
+      "count": "{count} {count, plural, one {scene} other {scenes}}",
+      "sort_by": "Sort by",
+      "sort": {
+        "recent": "Recently updated",
+        "visitors": "Unique visitors",
+        "name": "Name"
+      },
+      "stat": {
+        "unique_visitors": "Unique Visitors"
+      }
+    },
+    "error": {
+      "title": "Could not load metrics",
+      "retry": "Retry"
+    },
+    "not_enough_data": "Not enough data",
+    "not_available_short": "—",
+    "unit": {
+      "min": "{value} min"
+    },
+    "range": {
+      "last_7d": "Last 7 days",
+      "last_30d": "Last 30 days",
+      "last_90d": "Last 90 days"
+    },
+    "scene": {
+      "header": "Analytics - {name}",
+      "export": "Export Analytics",
+      "access": "Access",
+      "access_private": "Private",
+      "access_public": "Public",
+      "published_in": "Published in",
+      "last_published_by": "Last published by",
+      "last_update": "Last Update",
+      "create_event": "Create Event",
+      "edit_scene": "Edit Scene",
+      "edit_scene_unavailable": "This scene's project isn't on this machine",
+      "copy_url": "Copy URL",
+      "jump_in": "Jump In",
+      "type_world": "World",
+      "type_genesis": "Genesis"
+    },
+    "overview": {
+      "title": "Overview",
+      "ranking": "Places Ranking",
+      "view_leaderboard": "View Leaderboard",
+      "tile": {
+        "total_visits": "Total Visits",
+        "unique_visits": "Unique Visits",
+        "concurrent_users": "Concurrent Users",
+        "revenue": "Revenue",
+        "new_users": "New Users",
+        "dau": "Daily Active Users",
+        "d7": "D7 Retention",
+        "avg_playtime": "Avg. Playtime",
+        "afk_time": "AFK Time",
+        "desktop": "Desktop",
+        "mobile": "Mobile"
+      },
+      "tip": {
+        "total_visits": "A visit is a sessionized presence in your scene; a new visit starts after a 10-minute gap.",
+        "unique_visits": "Distinct wallets that entered your scene over the last 30 days (bots excluded).",
+        "concurrent_users": "The peak number of wallets in your scene at the same time (measured in 5-minute buckets).",
+        "revenue": "In-scene monetization isn't available yet.",
+        "new_users": "Wallets whose first-ever visit to this scene falls in this window.",
+        "dau": "Average distinct daily wallets over the window (bots excluded).",
+        "d7": "Of the new visitors who first entered your scene, the share who came back at least once within 7 days.",
+        "avg_playtime": "Median non-AFK time among visits with measurable presence.",
+        "afk_time": "Share of dwell time spent idle (gaps of 2 to 10 minutes).",
+        "device": "Distinct wallets by device; a cross-platform wallet counts in both, so the split isn't additive."
+      }
+    },
+    "retention": {
+      "title": "Retention",
+      "date_range": "Date Range",
+      "day1": "Day 1 Retention",
+      "day7": "Day 7 Retention",
+      "day30": "Day 30 Retention"
+    },
+    "engagement": {
+      "title": "Engagement",
+      "avg_playtime": "Avg. Playtime",
+      "avg_session": "Avg. Session",
+      "afk_time": "AFK Time",
+      "social": "Social Interactions",
+      "messages": "Messages Sent",
+      "emotes": "Emotes Played",
+      "tip": {
+        "avg_session": "Mean active (non-AFK) seconds per wallet session."
+      }
+    },
+    "actions": {
+      "metrics": "Metrics",
+      "view_metrics": "View Metrics",
+      "analytics": "Analytics",
+      "editor_tooltip": "Publish your scene to see analytics"
     }
   },
   "connection": {

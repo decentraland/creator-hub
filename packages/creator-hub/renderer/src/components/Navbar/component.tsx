@@ -10,6 +10,8 @@ import { misc } from '#preload';
 import logo from '/assets/images/logo-editor.png';
 import { REPORT_ISSUES_URL } from '/@/modules/utils';
 import { t } from '/@/modules/store/translation/utils';
+import { useFeatureFlags } from '/@/hooks/useFeatureFlags';
+import { isMetricsEnabled } from '/@/lib/metrics';
 import { actions } from '/@/modules/store/settings';
 import { AppSettings } from '../Modals/AppSettings';
 import { Header } from '../Header';
@@ -20,6 +22,7 @@ export enum NavbarItem {
   HOME = 'home',
   SCENES = 'scenes',
   COLLECTIONS = 'collections',
+  METRICS = 'metrics',
   LEARN = 'learn',
   MANAGE = 'manage',
   MORE = 'more',
@@ -38,6 +41,8 @@ function MenuItem(props: { item: NavbarItem; active: NavbarItem; disable?: boole
 
 export function Navbar(props: { active: NavbarItem }) {
   const openAppSettings = useSelector((state: AppState) => state.settings.openAppSettingsModal);
+  const { flags } = useFeatureFlags();
+  const metricsEnabled = isMetricsEnabled(flags);
   const dispatch = useDispatch();
 
   const handleClickReportIssue = useCallback(() => misc.openExternal(REPORT_ISSUES_URL), []);
@@ -74,6 +79,11 @@ export function Navbar(props: { active: NavbarItem }) {
             item={NavbarItem.COLLECTIONS}
             active={props.active}
             disable={true}
+          />
+          <MenuItem
+            item={NavbarItem.METRICS}
+            active={props.active}
+            disable={!metricsEnabled}
           />
           <MenuItem
             item={NavbarItem.MANAGE}

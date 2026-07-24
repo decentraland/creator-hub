@@ -2,6 +2,7 @@ import React, { useCallback, useMemo } from 'react';
 import { type ManagedProject, WorldSettingsTab } from '/shared/types/manage';
 import { ManagedProjectType } from '/shared/types/manage';
 import WorldSettingsIcon from '@mui/icons-material/SpaceDashboard';
+import MetricsIcon from '@mui/icons-material/Insights';
 import ParcelsIcon from '@mui/icons-material/Layers';
 import PermissionsIcon from '@mui/icons-material/Lock';
 import PersonIcon from '@mui/icons-material/Person';
@@ -40,10 +41,18 @@ export type Props = {
   onOpenPermissions: () => void;
   onViewScenes: () => void;
   onUnpublishWorld: () => void;
+  onViewMetrics?: () => void;
 };
 
 const PublishedProjectCard: React.FC<Props> = React.memo(
-  ({ project, onOpenSettings, onOpenPermissions, onViewScenes, onUnpublishWorld }) => {
+  ({
+    project,
+    onOpenSettings,
+    onOpenPermissions,
+    onViewScenes,
+    onUnpublishWorld,
+    onViewMetrics,
+  }) => {
     const { pushGeneric } = useSnackbar();
     const { id, displayName, type, role, deployment } = project;
     const roleLabel = isCollaboratorRole(role) ? COLLABORATOR_ROLES_LABELS[role] : null;
@@ -113,6 +122,15 @@ const PublishedProjectCard: React.FC<Props> = React.memo(
           active: type === ManagedProjectType.WORLD && role === WorldRoleType.OWNER,
         },
         {
+          text: t('metrics.actions.metrics'),
+          icon: <MetricsIcon />,
+          handler: () => onViewMetrics?.(),
+          active:
+            !!onViewMetrics &&
+            (type === ManagedProjectType.LAND ||
+              (type === ManagedProjectType.WORLD && !!deployment)),
+        },
+        {
           text: t('manage.cards.menu.view_storage'),
           icon: <OpenInNew />,
           handler: handleViewStorage,
@@ -137,6 +155,7 @@ const PublishedProjectCard: React.FC<Props> = React.memo(
       handleViewParcel,
       handleViewStorage,
       onOpenPermissions,
+      onViewMetrics,
     ]);
 
     return (

@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { Box, Button as DCLButton, Typography } from 'decentraland-ui2';
 import { useDispatch, useSelector } from '#store';
 import { useAuth } from '/@/hooks/useAuth';
+import { useFeatureFlags } from '/@/hooks/useFeatureFlags';
+import { isMetricsEnabled } from '/@/lib/metrics';
 import { WorldPermissionName, WorldRoleType } from '/@/lib/worlds';
 import {
   fetchWorldSettings,
@@ -13,7 +15,7 @@ import {
   fetchParcelsPermission,
 } from '/@/modules/store/management';
 import { t } from '/@/modules/store/translation/utils';
-import { WorldSettingsTab, type ManagedProject } from '/shared/types/manage';
+import { ManagedProjectType, WorldSettingsTab, type ManagedProject } from '/shared/types/manage';
 import { Button } from '../../Button';
 import { Loader } from '../../Loader';
 import { Modal } from '../../Modals';
@@ -48,6 +50,8 @@ type Props = {
 const ManagedProjectsList: React.FC<Props> = React.memo(props => {
   const { projects, total, isLoading, onLoadMore } = props;
   const { wallet } = useAuth();
+  const { flags } = useFeatureFlags();
+  const metricsEnabled = isMetricsEnabled(flags);
   const [settingsModal, setSettingsModal] = useState<SettingsModalState>({
     isOpen: false,
     activeTab: WorldSettingsTab.DETAILS,
@@ -124,6 +128,17 @@ const ManagedProjectsList: React.FC<Props> = React.memo(props => {
     navigate('/scenes');
   }, [navigate]);
 
+  const handleViewMetrics = useCallback(
+    (project: ManagedProject) => {
+      const state =
+        project.type === ManagedProjectType.LAND
+          ? { sceneType: 'genesis', sceneId: project.id.replace(',', '|'), source: 'manage-card' }
+          : { sceneType: 'world', sceneId: project.id.toLowerCase(), source: 'manage-card' };
+      navigate('/metrics', { state });
+    },
+    [navigate],
+  );
+
   return (
     <div className="ManagedProjectsList">
       {projects.map(project => (
@@ -136,6 +151,7 @@ const ManagedProjectsList: React.FC<Props> = React.memo(props => {
           onOpenPermissions={() => handleOpenPermissionsModal(project.id)}
           onUnpublishWorld={() => handleShowUnpublishWorldConfirmation(project.id)}
           onViewScenes={handleViewScenes}
+          onViewMetrics={metricsEnabled ? () => handleViewMetrics(project) : undefined}
         />
       ))}
       {projects.length < total && (

@@ -20,6 +20,7 @@ import * as settings from './settings';
 import * as defaultEditor from './defaultEditor';
 import * as featureFlags from './featureFlags';
 import * as management from './management';
+import * as metrics from './metrics';
 import * as profiles from './profiles';
 
 export function createRootReducer() {
@@ -36,6 +37,7 @@ export function createRootReducer() {
     defaultEditor: defaultEditor.reducer,
     featureFlags: featureFlags.reducer,
     management: management.reducer,
+    metrics: metrics.reducer,
     profiles: profiles.reducer,
   };
 }

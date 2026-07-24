@@ -102,6 +102,7 @@
       "home": "首页",
       "scenes": "场景",
       "collections": "收藏",
+      "metrics": "数据分析",
       "manage": "管理",
       "learn": "学习",
       "more": "更多"
@@ -885,6 +886,122 @@
     },
     "unpublish_world_confirmation": {
       "title": "取消发布 <b>{worldName}</b>？"
+    }
+  },
+  "metrics": {
+    "header": {
+      "back": "全部场景",
+      "title": "数据分析"
+    },
+    "sign_in": {
+      "title": "登录以查看你的场景数据",
+      "action": "登录"
+    },
+    "empty": {
+      "title": "还没有已发布的场景",
+      "description": "发布一个场景即可开始收集数据。"
+    },
+    "no_scene_data": {
+      "title": "该场景暂无数据分析",
+      "description": "发布你的场景，等有玩家到访后再来查看。数据每日更新。"
+    },
+    "portfolio": {
+      "count": "{count} {count, plural, one {个场景} other {个场景}}",
+      "sort_by": "排序方式",
+      "sort": {
+        "recent": "最近更新",
+        "visitors": "独立访客",
+        "name": "名称"
+      },
+      "stat": {
+        "unique_visitors": "独立访客"
+      }
+    },
+    "error": {
+      "title": "无法加载数据",
+      "retry": "重试"
+    },
+    "not_enough_data": "数据不足",
+    "not_available_short": "—",
+    "unit": {
+      "min": "{value} 分钟"
+    },
+    "range": {
+      "last_7d": "最近 7 天",
+      "last_30d": "最近 30 天",
+      "last_90d": "最近 90 天"
+    },
+    "scene": {
+      "header": "数据分析 - {name}",
+      "export": "导出分析",
+      "access": "访问权限",
+      "access_private": "私密",
+      "access_public": "公开",
+      "published_in": "发布于",
+      "last_published_by": "最近发布者",
+      "last_update": "最近更新",
+      "create_event": "创建活动",
+      "edit_scene": "编辑场景",
+      "edit_scene_unavailable": "此场景的项目不在这台电脑上",
+      "copy_url": "复制链接",
+      "jump_in": "进入",
+      "type_world": "世界",
+      "type_genesis": "创世地块"
+    },
+    "overview": {
+      "title": "概览",
+      "ranking": "地点排名",
+      "view_leaderboard": "查看排行榜",
+      "tile": {
+        "total_visits": "总访问次数",
+        "unique_visits": "独立访问",
+        "concurrent_users": "并发用户",
+        "revenue": "收入",
+        "new_users": "新用户",
+        "dau": "日活跃用户",
+        "d7": "D7 留存",
+        "avg_playtime": "平均游玩时长",
+        "afk_time": "挂机时间",
+        "desktop": "桌面端",
+        "mobile": "移动端"
+      },
+      "tip": {
+        "total_visits": "一次访问是指在你场景中的一段会话内停留；间隔超过 10 分钟即算作新的访问。",
+        "unique_visits": "最近 30 天内进入你场景的独立钱包数（已排除机器人）。",
+        "concurrent_users": "同一时间内你场景中的钱包数量峰值（按 5 分钟为单位统计）。",
+        "revenue": "场景内变现功能尚未推出。",
+        "new_users": "首次访问该场景发生在此时间段内的钱包。",
+        "dau": "该时间段内每日独立钱包的平均数（已排除机器人）。",
+        "d7": "在首次进入你场景的新访客中，7 天内至少回访一次的比例。",
+        "avg_playtime": "在有可测量停留的访问中，非挂机时间的中位数。",
+        "afk_time": "停留时间中处于闲置状态的比例（2 到 10 分钟的间隔）。",
+        "device": "按设备统计的独立钱包；跨平台钱包会同时计入两者，因此不可相加。"
+      }
+    },
+    "retention": {
+      "title": "留存",
+      "date_range": "日期范围",
+      "day1": "第 1 天留存",
+      "day7": "第 7 天留存",
+      "day30": "第 30 天留存"
+    },
+    "engagement": {
+      "title": "互动",
+      "avg_playtime": "平均游玩时长",
+      "avg_session": "平均会话时长",
+      "afk_time": "挂机时间",
+      "social": "社交互动",
+      "messages": "已发送消息",
+      "emotes": "已使用表情",
+      "tip": {
+        "avg_session": "每个钱包会话的平均活跃（非挂机）秒数。"
+      }
+    },
+    "actions": {
+      "metrics": "数据",
+      "view_metrics": "查看数据",
+      "analytics": "数据分析",
+      "editor_tooltip": "发布你的场景后即可查看数据分析"
     }
   },
   "connection": {
