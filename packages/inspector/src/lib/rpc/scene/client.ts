@@ -7,6 +7,7 @@ enum Method {
   OPEN_DIRECTORY = 'open_directory',
   PUSH_NOTIFICATION = 'push_notification',
   BROADCAST_MOBILE_DEBUG_COMMAND = 'broadcast_mobile_debug_command',
+  GET_FEATURE_FLAGS = 'get_feature_flags',
 }
 
 type Params = {
@@ -14,6 +15,7 @@ type Params = {
   [Method.OPEN_DIRECTORY]: { path: string; createIfNotExists?: boolean };
   [Method.PUSH_NOTIFICATION]: { notification: NotificationRequest };
   [Method.BROADCAST_MOBILE_DEBUG_COMMAND]: { cmd: string; args: Record<string, unknown> };
+  [Method.GET_FEATURE_FLAGS]: Record<string, never>;
 };
 
 type Result = {
@@ -24,6 +26,7 @@ type Result = {
     ok: boolean;
     results: { sessionId: number; ok: boolean; data: unknown }[];
   };
+  [Method.GET_FEATURE_FLAGS]: { flags: Record<string, boolean> };
 };
 
 export class SceneClient extends RPC<Method, Params, Result> {
@@ -45,5 +48,16 @@ export class SceneClient extends RPC<Method, Params, Result> {
 
   broadcastMobileDebugCommand = (cmd: string, args: Record<string, unknown> = {}) => {
     return this.request('broadcast_mobile_debug_command', { cmd, args });
+  };
+
+  /**
+   * Pull the host's current feature flags. The host also PUSHES flags via
+   * `set_feature_flags`, but that races a slow-to-boot inspector: building the
+   * renderer is async, so the scene server can come up after the host's initial
+   * push and the flags would be lost. Pulling on server-ready closes that race;
+   * the push still covers flags that change afterwards.
+   */
+  getFeatureFlags = () => {
+    return this.request('get_feature_flags', {});
   };
 }

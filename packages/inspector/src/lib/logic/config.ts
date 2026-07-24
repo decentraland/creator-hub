@@ -11,6 +11,29 @@ export type InspectorConfig = {
   segmentKey: string | null;
   projectId: string | null;
   catalystBaseUrl: string | null;
+  /**
+   * Realm the Bevy renderer loads its scene from — an HTTP URL to a running
+   * content server (e.g. a headless `sdk-commands start --no-browser
+   * --no-client`). The Bevy engine fetches /about + the scene bundle from here.
+   * Null → the engine loads its default realm (renders no project scene).
+   */
+  bevyRealm: string | null;
+  /** Parcel coords the Bevy engine spawns at, e.g. "0,0". */
+  bevyPosition: string | null;
+  /**
+   * Realm URL of the super-user editor-agent scene loaded into the Bevy engine
+   * as a portable experience (the engine's `?systemScene=` param). It does
+   * viewport picking and posts results to the inspector over a BroadcastChannel.
+   * Null → no agent, so no viewport-side selection (edits still work forward).
+   */
+  bevySystemScene: string | null;
+  /**
+   * Which renderer to mount (a registered plugin id, e.g. "babylon" | "bevy").
+   * When set, it overrides the localStorage preference — this lets a host app
+   * (creator-hub) drive the renderer deterministically per session. Null → fall
+   * back to the persisted/localStorage choice.
+   */
+  renderer: string | null;
 };
 
 export type GlobalWithConfig = typeof globalThis & {
@@ -42,5 +65,9 @@ export function getConfig(): InspectorConfig {
     segmentKey: params.get('segmentKey') || config?.segmentKey || null,
     projectId: params.get('projectId') || config?.projectId || null,
     catalystBaseUrl: params.get('catalystBaseUrl') || config?.catalystBaseUrl || CATALYST_BASE_URL,
+    bevyRealm: params.get('bevyRealm') || config?.bevyRealm || null,
+    bevyPosition: params.get('bevyPosition') || config?.bevyPosition || null,
+    bevySystemScene: params.get('bevySystemScene') || config?.bevySystemScene || null,
+    renderer: params.get('renderer') || config?.renderer || null,
   };
 }

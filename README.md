@@ -120,7 +120,36 @@ Before starting, ensure you have the following installed:
    - Download and install Protocol Buffers compiler
    - Initialize git submodules (devtools-frontend)
    - Generate TypeScript definitions from `.proto` files
-   - Build all packages
+   - Build all packages, including the Bevy renderer engine bundle and the
+     Bevy editor-agent scene (see below) — the first `make init` is a bit slower
+     because it also installs + builds `packages/inspector/agents/bevy`, which is
+     a separate SDK7 project with its own `node_modules`
+
+### Testing the Bevy renderer
+
+The inspector can render a scene with the **Bevy engine** as an alternative to
+the default Babylon renderer. It ships in the app after a normal `make init` /
+`make build` — no extra steps to set it up. To try it:
+
+1. Open a scene in the Creator Hub.
+2. Go to **Settings → Editor → Scene renderer** and choose **Bevy**.
+3. The editor reloads and renders the scene in the Bevy engine.
+
+Notes for reviewers:
+
+- Switching back to **Babylon** in the same setting restores the default renderer.
+- Bevy is wired end to end: the scene renders, inspector edits forward into the
+  engine, viewport pick works, the translate / rotate / scale gizmos work, and
+  drag-dropped assets place under the cursor, and a free-fly editor camera
+  (toggle in the toolbar / backtick) supports focus-on-entity (F / double-click)
+  and reset (Space). Known gaps (expected, not bugs — Bevy feature parity is in
+  progress): the scene-metrics panel and minimap, animator clip dropdowns, and
+  3D spawn-point handles. Pick may select a model's collider rather than its
+  visible mesh on scenes that split the two.
+- If you change any code under `packages/inspector` (including the Bevy agent),
+  rerun `make build-inspector` — the app serves a **prebuilt** inspector bundle,
+  so running the Creator Hub in watch mode (`cd packages/creator-hub && npm run
+  start`) does not hot-reload inspector changes.
 
 ## 📋 Makefile Commands
 

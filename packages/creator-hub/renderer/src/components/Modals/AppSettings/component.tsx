@@ -74,7 +74,10 @@ export function AppSettings({ open, onClose }: { open: boolean; onClose: () => v
 
   const validateScenesPathField = useCallback(
     debounce(async (path: string) => {
-      const isValid = await validateProjectPath(path);
+      // validateProjectPath now returns true | 'invalid-dir' | 'path-taken'; with
+      // no name it's true | 'invalid-dir'. Only `=== true` is valid (a truthy
+      // string must NOT read as valid).
+      const isValid = (await validateProjectPath(path)) === true;
       setError(!isValid ? t('modal.app_settings.fields.scenes_folder.errors.invalid_path') : null);
     }, 500),
     [validateProjectPath],

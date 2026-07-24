@@ -38,7 +38,13 @@
   },
   "editor": {
     "loading": {
-      "title": "Preparando tu escena..."
+      "title": "Preparando tu escena...",
+      "installing": "Instalando dependencias... Puede tardar un momento la primera vez.",
+      "failed": {
+        "title": "Error al cargar",
+        "timeout": "La escena está tardando demasiado en cargar. Puede tener un error en su código.",
+        "back": "Volver a escenas"
+      }
     },
     "header": {
       "actions": {
@@ -48,6 +54,11 @@
         "refresh": "Recargar escena desde disco",
         "preview_options": {
           "title": "Opciones de Previsualización",
+          "client": {
+            "label": "Previsualizar con",
+            "desktop": "Cliente de Escritorio",
+            "bevy_web": "Bevy (Web)"
+          },
           "debugger": "Abrir la ventana de la Consola durante la previsualización",
           "skip_auth_screen": "Omitir la pantalla de autenticación",
           "open_new_instance": "Abrir multiples clientes",
@@ -343,6 +354,11 @@
         "app_warnings": {
           "label": "Advertencias de la Aplicación",
           "show_warnings": "Mostrar un mensaje de advertencia cada vez que previsualizas o publicas una escena que contiene código personalizado"
+        },
+        "renderer": {
+          "label": "Motor de renderizado",
+          "babylon": "Babylon (predeterminado)",
+          "bevy": "Bevy (vista previa)"
         }
       },
       "actions": {
@@ -607,6 +623,7 @@
         "create": "Crear"
       },
       "errors": {
+        "invalid_directory": "Esa ruta de carpeta no existe. Usa el botón de carpeta para elegir una ubicación existente para tu escena.",
         "path_exists_or_not_writable": "La ruta ya existe o no tienes permiso para crear archivos allí. Por favor, elige otra carpeta."
       }
     },

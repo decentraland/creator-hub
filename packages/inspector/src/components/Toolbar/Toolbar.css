@@ -56,6 +56,83 @@
   background-color: var(--primary-main) !important;
 }
 
+.Toolbar .CameraModeWrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+/* CSS-only tooltip above the pill (matches the design). Hidden until the wrap is
+   hovered; pointer-events off so it never blocks the dropdown click. */
+.Toolbar .CameraModeTooltip {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  display: none;
+  flex-direction: column;
+  gap: 4px;
+  width: 240px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background-color: var(--base-19);
+  color: #fff;
+  font-size: 12px;
+  line-height: 1.35;
+  text-align: left;
+  box-shadow: 0 4px 12px rgb(0 0 0 / 40%);
+  pointer-events: none;
+  z-index: 10;
+}
+
+.Toolbar .CameraModeTooltip strong {
+  font-size: 13px;
+}
+
+.Toolbar .CameraModeWrap:hover .CameraModeTooltip {
+  display: flex;
+}
+
+.Toolbar .camera-mode {
+  margin: 0 8px;
+  width: auto;
+  height: 30px;
+  border: none;
+}
+
+.Toolbar .camera-mode:hover {
+  background-color: var(--base-19);
+}
+
+.Toolbar .camera-mode > svg:first-child {
+  width: 20px;
+  height: 20px;
+}
+
+.Toolbar .CameraModeLabel {
+  font-size: 13px;
+  line-height: 1;
+}
+
+.Toolbar .camera-mode .CameraModeChevron {
+  width: 16px;
+  height: 16px;
+  opacity: 0.7;
+}
+
+/* Two short options (Free / Player). The active one shows a checkmark leftIcon;
+   the other a same-width spacer so the labels line up. */
+.Toolbar .camera-mode .OptionList {
+  min-width: 140px;
+  padding-bottom: 8px;
+}
+
+.CheckSpacer {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+}
+
 .Toolbar .RightContent {
   display: flex;
   flex-grow: 1;

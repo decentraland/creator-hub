@@ -28,6 +28,7 @@ export const SAVE_ALT = `${COMMAND}+s`;
 export const DUPLICATE = `${CTRL}+d`;
 export const DUPLICATE_ALT = `${COMMAND}+d`;
 export const FOCUS_SELECTED = 'f';
+export const TOGGLE_FREE_CAMERA = '`';
 
 /**
  * Hook that listens for key presses and triggers a callback function when the specified keys are pressed.

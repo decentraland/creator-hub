@@ -22,6 +22,10 @@ PROTOC = node_modules/.bin/protobuf/bin/protoc
 INSPECTOR_PATH = packages/inspector
 CH_PATH = packages/creator-hub
 ASSET_PACKS_PATH = packages/asset-packs
+# The Bevy editor-agent scene: a separate SDK7 project (NOT a workspace) with its
+# own node_modules pinned to the engine's companion SDK. The inspector build
+# exports it into public/bevy-agent, so it must be installed + built first.
+BEVY_AGENT_PATH = packages/inspector/agents/bevy
 SYNC_PACK = node_modules/.bin/syncpack
 
 install:
@@ -36,7 +40,11 @@ install-asset-packs:
 
 install-inspector:
 	make install-protoc
+	make install-bevy-agent
 	cd $(INSPECTOR_PATH); npm i
+
+install-bevy-agent:
+	cd $(BEVY_AGENT_PATH); npm i
 
 install-creator-hub:
 	cd $(CH_PATH); npm i
@@ -77,7 +85,11 @@ build-asset-packs:
 	cd $(ASSET_PACKS_PATH); npm run build;
 
 build-inspector:
+	make build-bevy-agent
 	cd $(INSPECTOR_PATH); npm run build;
+
+build-bevy-agent:
+	cd $(BEVY_AGENT_PATH); npm run build;
 
 build-creator-hub:
 	cd $(CH_PATH); npm run build;

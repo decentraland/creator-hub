@@ -119,6 +119,43 @@ export type RendererEvents = {
    */
   gizmoCommitEnd: void;
 
+  /**
+   * A LIVE (mid-drag) gizmo update — the same DELTA shape as `gizmoCommit`, but
+   * emitted every frame the drag changes rather than once on release. The
+   * inspector merges it and re-emits {@link RendererEvents.previewTransforms} for
+   * the renderer to preview, WITHOUT touching the CRDT / undo history. A renderer
+   * that previews a drag by moving its own meshes (Babylon) never emits this.
+   */
+  gizmoDrag: {
+    transforms: Array<{
+      entity: Entity;
+      position?: Vector3;
+      rotation?: Quaternion;
+      scale?: Vector3;
+    }>;
+  };
+
+  /**
+   * LIVE (mid-drag) transforms, already merged into the entity's real Transform
+   * (same absolute values a commit would write), derived by the inspector from a
+   * {@link RendererEvents.gizmoDrag}. A renderer that edits an out-of-process
+   * engine subscribes to preview the move WITHOUT a CRDT write / undo entry per
+   * frame — the authoritative write is the drag-end `gizmoCommit`. Renderers that
+   * move their own meshes during a drag (Babylon) ignore this.
+   */
+  previewTransforms: {
+    transforms: Array<{
+      entity: Entity;
+      position: Vector3;
+      rotation: Quaternion;
+      scale: Vector3;
+      // The entity's parent (from its current Transform), so a renderer that
+      // REPLACES the whole component when previewing (Bevy's `set_component`)
+      // doesn't reset it. Undefined for a root-parented entity.
+      parent?: Entity;
+    }>;
+  };
+
   /** The camera moved (user-driven). Lets the inspector mirror framing/minimap state. */
   cameraChange: void;
 
@@ -276,6 +313,46 @@ export interface RendererDebug {
   toggle(): void;
 }
 
+/** The editor camera mode: the engine's native player camera, or an editor fly-camera. */
+export type EditorCameraMode = 'avatar' | 'free';
+
+/**
+ * Optional capability for renderers whose default camera is NOT already a free
+ * editor camera. Babylon's editor camera is always free-fly, so it omits this.
+ * The Bevy renderer's native camera is the player avatar, so it implements this
+ * to let the user toggle a dedicated editor fly-camera on/off.
+ */
+export interface RendererEditorCamera {
+  getMode(): EditorCameraMode;
+  setMode(mode: EditorCameraMode): void;
+  /** Notify on mode change (e.g. so a toolbar toggle reflects the current state). */
+  onModeChange(cb: (mode: EditorCameraMode) => void): Unsubscribe;
+}
+
+/**
+ * Optional capability for renderers that RUN the scene's SDK7 code live (its
+ * systems / timers / onUpdate tick). Such a renderer can freeze the scene to a
+ * static subject for editing. Babylon doesn't execute scene code (it renders the
+ * authored components only), so it omits this; the Bevy renderer runs the real
+ * scene in the engine, so it exposes a run/freeze toggle (default: frozen).
+ */
+export interface RendererSceneRun {
+  /** True when the scene is running live; false when frozen (static). */
+  isRunning(): boolean;
+  /** Run the scene live (true) or freeze it to a static subject (false). */
+  setRunning(running: boolean): void;
+  /** Notify on run/freeze change (so a toolbar toggle reflects the state). */
+  onRunChange(cb: (running: boolean) => void): Unsubscribe;
+  /**
+   * Stop: reset the scene to its initial state and freeze it. Play/Pause only
+   * run/halt the scene where it is — there's no way back to the start (e.g. a
+   * character that walked toward the player). Reset reboots the scene from the
+   * realm (its authored initial state) and leaves it frozen. Resolves once the
+   * reset completes.
+   */
+  reset(): Promise<void>;
+}
+
 /**
  * An animation clip exposed by a renderer (see `getEntityAnimations`). Only
  * `name` is consumed today; the object shape leaves room to add `duration`,
@@ -314,6 +391,18 @@ export interface IRenderer {
   readonly spawnPoints: SpawnPointController;
   /** Present only if the renderer ships native dev tooling. */
   readonly debug?: RendererDebug;
+  /**
+   * Present only if the renderer's default camera isn't already a free editor
+   * camera (Babylon's is, so it omits this; Bevy's native camera is the player
+   * avatar, so it exposes a toggle to an editor fly-camera).
+   */
+  readonly editorCamera?: RendererEditorCamera;
+  /**
+   * Present only if the renderer executes the scene's SDK7 code live (Bevy runs
+   * the real scene, so it exposes a run/freeze toggle — default frozen; Babylon
+   * only renders authored components, so it omits this).
+   */
+  readonly sceneRun?: RendererSceneRun;
 
   /** Set the editor selection by entity ID (the renderer draws it however it likes). */
   setSelection(entities: Entity[]): void;
@@ -321,10 +410,15 @@ export interface IRenderer {
   /**
    * Resolve the world-space point under the pointer on the next pointer tick.
    * This is the drop-placement primitive: the inspector asks "where is the
-   * pointer aiming in the scene right now?" without knowing screen coordinates.
-   * Returns null if nothing was hit.
+   * pointer aiming in the scene right now?" Returns null if nothing was hit.
+   *
+   * `ndc` optionally supplies the target in normalized device coords (x,y ∈
+   * [-1,1], y up) — used when the renderer's own pointer can't be trusted, e.g. an
+   * out-of-process (iframe) renderer during an HTML5 drag, where the host captures
+   * the cursor and the engine's pointer is stale. Renderers that read their live
+   * pointer directly (Babylon) may ignore it.
    */
-  getPointerWorldPoint(): Promise<Vector3 | null>;
+  getPointerWorldPoint(ndc?: { x: number; y: number }): Promise<Vector3 | null>;
 
   /**
    * Resolve the animation clips available on an entity's loaded GLTF. Used by

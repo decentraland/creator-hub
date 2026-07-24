@@ -1,8 +1,20 @@
-import { useCallback } from 'react';
-import { BiUndo, BiRedo, BiSave, BiBadgeCheck } from 'react-icons/bi';
+import { useCallback, useEffect, useState } from 'react';
+import {
+  BiUndo,
+  BiRedo,
+  BiSave,
+  BiBadgeCheck,
+  BiVideo,
+  BiWalk,
+  BiChevronDown,
+  BiPlay,
+  BiPause,
+  BiStop,
+} from 'react-icons/bi';
 import { RiListSettingsLine } from 'react-icons/ri';
 import { FaPencilAlt } from 'react-icons/fa';
 import { AiOutlineInfoCircle as InfoIcon } from 'react-icons/ai';
+import { IoCheckmark as CheckIcon } from 'react-icons/io5';
 import cx from 'classnames';
 
 import { withSdk } from '../../hoc/withSdk';
@@ -24,13 +36,15 @@ import {
   REDO_ALT_2,
   SAVE,
   SAVE_ALT,
+  TOGGLE_FREE_CAMERA,
   UNDO,
   UNDO_ALT,
   useHotkey,
 } from '../../hooks/useHotkey';
+import type { EditorCameraMode } from '../../lib/renderer/types';
+import { Dropdown } from '../ui';
 import { Gizmos } from './Gizmos';
 import { Preferences } from './Preferences';
-import { RendererPicker } from './RendererPicker';
 import { ToolbarButton } from './ToolbarButton';
 
 import './Toolbar.css';
@@ -52,6 +66,50 @@ const Toolbar = withSdk(({ sdk }) => {
   const handleInspector = useCallback(() => {
     sdk.renderer.debug?.toggle();
   }, [sdk]);
+
+  // Editor camera toggle — only for renderers whose native camera isn't already a
+  // free editor camera (Bevy exposes `editorCamera`; Babylon omits it). Tracks the
+  // mode so the button reflects on/off, and stays in sync if the mode changes
+  // elsewhere.
+  const editorCamera = sdk.renderer.editorCamera;
+  const [cameraMode, setCameraMode] = useState<EditorCameraMode>(
+    editorCamera?.getMode() ?? 'avatar',
+  );
+  useEffect(() => {
+    if (!editorCamera) return;
+    setCameraMode(editorCamera.getMode());
+    return editorCamera.onModeChange(setCameraMode);
+  }, [editorCamera]);
+  const handleToggleFreeCamera = useCallback(() => {
+    if (!editorCamera) return;
+    editorCamera.setMode(editorCamera.getMode() === 'free' ? 'avatar' : 'free');
+  }, [editorCamera]);
+  useHotkey([TOGGLE_FREE_CAMERA], handleToggleFreeCamera);
+  const handleSetCameraMode = useCallback(
+    (mode: EditorCameraMode) => {
+      if (!editorCamera || editorCamera.getMode() === mode) return;
+      editorCamera.setMode(mode);
+    },
+    [editorCamera],
+  );
+
+  // Scene run/freeze toggle — only for renderers that execute the scene's SDK7
+  // code (Bevy exposes `sceneRun`; Babylon omits it). The editor default is
+  // frozen (static); this runs it live so the user can test it.
+  const sceneRun = sdk.renderer.sceneRun;
+  const [sceneRunning, setSceneRunning] = useState<boolean>(sceneRun?.isRunning() ?? false);
+  useEffect(() => {
+    if (!sceneRun) return;
+    setSceneRunning(sceneRun.isRunning());
+    return sceneRun.onRunChange(setSceneRunning);
+  }, [sceneRun]);
+  const handleToggleSceneRun = useCallback(() => {
+    if (!sceneRun) return;
+    sceneRun.setRunning(!sceneRun.isRunning());
+  }, [sceneRun]);
+  const handleResetScene = useCallback(() => {
+    void sceneRun?.reset();
+  }, [sceneRun]);
 
   const handleSaveClick = useCallback(() => dispatch(save()), []);
   const handleUndo = useCallback(() => dispatch(undo()), []);
@@ -97,8 +155,64 @@ const Toolbar = withSdk(({ sdk }) => {
         <BiRedo />
       </ToolbarButton>
       <Gizmos />
+      {editorCamera && (
+        <div className="CameraModeWrap">
+          {/* CSS-only tooltip (a hover React-state tooltip would remount the
+              dropdown and eat its click). Matches the design's title + hint. */}
+          <div className="CameraModeTooltip">
+            <strong>Camera Toggle</strong>
+            <span>Select if you prefer to move the camera freely or through the player.</span>
+          </div>
+          <Dropdown
+            className="camera-mode"
+            value={cameraMode}
+            trigger={
+              <>
+                {cameraMode === 'free' ? <BiVideo /> : <BiWalk />}
+                <span className="CameraModeLabel">{cameraMode === 'free' ? 'Free' : 'Player'}</span>
+                <BiChevronDown className="CameraModeChevron" />
+              </>
+            }
+            options={[
+              {
+                value: 'free',
+                label: 'Free',
+                // A custom trigger suppresses the Dropdown's built-in selected
+                // checkmark, so surface it via leftIcon (a spacer keeps the labels
+                // aligned when the option isn't the active one).
+                leftIcon: cameraMode === 'free' ? <CheckIcon /> : <span className="CheckSpacer" />,
+                onClick: () => handleSetCameraMode('free'),
+              },
+              {
+                value: 'avatar',
+                label: 'Player',
+                leftIcon:
+                  cameraMode === 'avatar' ? <CheckIcon /> : <span className="CheckSpacer" />,
+                onClick: () => handleSetCameraMode('avatar'),
+              },
+            ]}
+          />
+        </div>
+      )}
+      {sceneRun && (
+        <ToolbarButton
+          className={cx('scene-run', { active: sceneRunning })}
+          onClick={handleToggleSceneRun}
+          title={sceneRunning ? 'Pause scene' : 'Run scene'}
+        >
+          {sceneRunning ? <BiPause /> : <BiPlay />}
+        </ToolbarButton>
+      )}
+      {sceneRun && (
+        <ToolbarButton
+          className="scene-reset"
+          onClick={handleResetScene}
+          title="Stop and reset scene to its initial state"
+        >
+          <BiStop />
+        </ToolbarButton>
+      )}
       <Preferences />
-      <RendererPicker />
       <ToolbarButton
         className="babylonjs-inspector"
         onClick={handleInspector}

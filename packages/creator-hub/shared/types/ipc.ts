@@ -59,6 +59,8 @@ export interface Ipc {
   'inspector.start': () => Promise<number>;
   'inspector.attachSceneDebugger': (path: string) => Promise<string>;
   'inspector.detachSceneDebugger': (path: string) => void;
+  'bevyRealm.start': (path: string) => Promise<{ url: string; wsUrl: string }>;
+  'bevyRealm.kill': (path: string) => Promise<void>;
   'config.getConfig': () => Promise<Config>;
   'config.writeConfig': (config: Config) => Promise<void>;
   'bin.install': () => Promise<void>;

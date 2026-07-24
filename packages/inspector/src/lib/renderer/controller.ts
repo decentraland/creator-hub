@@ -1,7 +1,9 @@
 import { getDataLayerInterface } from '../../redux/data-layer';
+import { getConfig } from '../logic/config';
 import type { AssetPack } from '../logic/catalog';
 import type { InspectorPreferences } from '../logic/preferences/types';
 import { registerBabylonRenderer } from './babylon/register';
+import { registerBevyRenderer } from './bevy/register';
 import { connectReverseChannel } from './reverse-channel';
 import { getRegisteredRenderers, getRendererPlugin } from './plugin';
 import type { MountedRenderer, RendererMountContext } from './plugin';
@@ -18,12 +20,22 @@ export function getAvailableRenderers(): { id: string; label: string }[] {
 }
 
 /**
- * Which renderer to mount. Persisted in localStorage and applied at init —
- * switching renderers reloads the inspector (the editor UI is wired to the
- * scene in places, so a clean reload is simpler and safer than a live swap).
- * Falls back to the default if the persisted id is no longer registered.
+ * Which renderer to mount. Resolution order:
+ *   1. the `renderer` config param (a host app like creator-hub driving it), then
+ *   2. the localStorage preference (the in-inspector picker), then
+ *   3. the default.
+ * The config param wins so the host can pin the renderer deterministically per
+ * session (and switch it by reloading the iframe with a new param), independent
+ * of the iframe origin's localStorage — whose key includes a port that changes
+ * each app launch. Falls back if the id is no longer a registered plugin.
  */
 export function getSelectedRenderer(): RendererId {
+  try {
+    const configured = getConfig().renderer;
+    if (configured && getRendererPlugin(configured)) return configured;
+  } catch {
+    // ignore (config unavailable)
+  }
   try {
     const value = globalThis.localStorage?.getItem(STORAGE_KEY);
     if (value && getRendererPlugin(value)) return value;
@@ -85,8 +97,9 @@ export async function buildRenderer(
 
 // --- Built-in renderer plugins ---------------------------------------------
 // Built-in renderers register through the same public API a third-party
-// renderer uses. The Babylon registration is Babylon-specific and lives in
-// `babylon/register.ts`, so this orchestration layer stays engine-agnostic.
+// renderer uses. Each registration is engine-specific and lives beside its
+// renderer (`babylon/register.ts`, `bevy/register.ts`), so this orchestration
+// layer stays engine-agnostic.
 
 let builtInsRegistered = false;
 
@@ -98,6 +111,11 @@ export function registerBuiltInRenderers(
   if (builtInsRegistered) return;
   builtInsRegistered = true;
   registerBabylonRenderer(catalog, preferences);
+  // Bevy is a preview: the plugin surface + conformance are in place, but the
+  // bevy-explorer wasm is not mounted yet, so selecting it renders nothing. It
+  // is registered so it shows in the picker and its boundary stays exercised;
+  // Babylon remains the default (see DEFAULT_RENDERER).
+  registerBevyRenderer();
 }
 
 export type { MountedRenderer };

@@ -1,0 +1,15 @@
+{
+  "ecs7": true,
+  "runtimeVersion": "7",
+  "display": {
+    "title": "Bevy Editor Agent",
+    "description": "Super-user pick + gizmo agent for the inspector's Bevy renderer"
+  },
+  "owner": "",
+  "contact": { "name": "", "email": "" },
+  "main": "bin/index.js",
+  "tags": [],
+  "scene": { "parcels": ["0,0"], "base": "0,0" },
+  "spawnPoints": [],
+  "featureToggles": { "portableExperiences": "enabled" }
+}

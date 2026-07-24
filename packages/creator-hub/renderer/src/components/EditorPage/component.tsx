@@ -9,6 +9,7 @@ import { CircularProgress as Loader, Tooltip } from 'decentraland-ui2';
 
 import { isClientNotInstalledError } from '/shared/types/client';
 import { isProjectError } from '/shared/types/projects';
+import { RENDERER } from '/shared/types/settings';
 import { isWorkspaceError } from '/shared/types/workspace';
 
 import { t } from '/@/modules/store/translation/utils';
@@ -64,6 +65,8 @@ export function EditorPage() {
     getMobileQR,
     supportsMultiInstance,
     isPreviewRunning,
+    startBevyRealm,
+    killBevyRealm,
   } = useEditor();
   const { settings, updateAppSettings } = useSettings();
   const { flags: featureFlags } = useFeatureFlags();
@@ -83,6 +86,17 @@ export function EditorPage() {
   const iframeRef = useRef<ReturnType<typeof initRpc>>();
   const [modalState, setModalState] = useState<ModalState>({ type: undefined });
   const [mobileQRData, setMobileQRData] = useState<{ url: string; qr: string } | null>(null);
+  // When the Bevy renderer is selected the engine loads from a headless
+  // sdk-commands realm, and the inspector shares its data-layer WS. We start it
+  // for the project and hold the URLs to thread into the iframe config below.
+  const useBevy = settings.renderer === RENDERER.BEVY;
+  const [bevyRealm, setBevyRealm] = useState<{ url: string; wsUrl: string } | null>(null);
+  // A broken scene (e.g. a TS error) makes the Bevy realm's `sdk-commands start`
+  // fail, or the scene never finishes loading — leaving the editor stuck on the
+  // loader with no way out. Capture the failure (or a load timeout) so the loading
+  // screen can offer Back + Open code + the error message (#1380).
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [loadTimedOut, setLoadTimedOut] = useState(false);
 
   const isOffline = status === ConnectionStatus.OFFLINE;
   const showDebugPanel = settings.previewOptions.debugger;
@@ -137,7 +151,63 @@ export function EditorPage() {
     };
   }, [error]);
 
-  const isReady = !!project && inspectorPort > 0;
+  // Start (or tear down) the Bevy realm as the renderer setting / project changes.
+  // The iframe render is gated on the realm being ready when Bevy is selected, so
+  // the inspector boots already pointed at the right data-layer + realm.
+  const projectPath = project?.path;
+  useEffect(() => {
+    if (!projectPath || !useBevy) {
+      setBevyRealm(null);
+      return;
+    }
+    // Wait for dependency install to finish before starting the realm. On a
+    // freshly created scene CH installs deps, then this effect fires — starting
+    // `sdk-commands start` while node_modules is still being written fails with
+    // "Could not find package.json for module @dcl/sdk-commands". Gating on
+    // isInstallingProject (in the deps below) re-runs this once install completes,
+    // and keeps the loader spinning (not the error screen) meanwhile.
+    if (isInstallingProject) {
+      setBevyRealm(null);
+      return;
+    }
+    let cancelled = false;
+    setLoadError(null);
+    setLoadTimedOut(false);
+    void startBevyRealm(projectPath)
+      .then(realm => {
+        if (!cancelled) setBevyRealm(realm ?? null);
+      })
+      .catch(error => {
+        console.error('[Bevy] Failed to start realm:', error);
+        if (!cancelled) {
+          setBevyRealm(null);
+          // Surface the failure so the loader shows Back + the error instead of
+          // spinning forever. `sdk-commands start` rejects with the build error
+          // line (see bevy-realm.ts waitFor) — show it.
+          setLoadError(error instanceof Error ? error.message : String(error));
+        }
+      });
+    return () => {
+      cancelled = true;
+      void killBevyRealm(projectPath);
+    };
+  }, [projectPath, useBevy, isInstallingProject, startBevyRealm, killBevyRealm]);
+
+  const isReady = !!project && inspectorPort > 0 && (!useBevy || bevyRealm !== null);
+
+  // A load timeout backstop: even if the realm "starts", a broken scene can leave
+  // the editor never becoming ready. After a grace period on the loader, offer the
+  // same escape hatch (Back + Open code) rather than an infinite spinner. Don't run
+  // the timer while deps are still installing — a fresh scene's npm install can
+  // exceed the grace period and isn't a load failure.
+  useEffect(() => {
+    if (isReady || loadError || isInstallingProject) {
+      setLoadTimedOut(false);
+      return;
+    }
+    const timer = setTimeout(() => setLoadTimedOut(true), 45_000);
+    return () => clearTimeout(timer);
+  }, [isReady, loadError, isInstallingProject, projectPath, useBevy]);
 
   const openModal = useCallback((type: ModalType, initialStep?: ModalState['initialStep']) => {
     setModalState({ type, initialStep });
@@ -177,10 +247,21 @@ export function EditorPage() {
 
   const handleBack = useCallback(async () => {
     const rpc = iframeRef.current;
-    if (rpc) await refreshProject(rpc);
+    // Refresh the project (saves + regenerates the thumbnail) on the way out, but
+    // never let it block navigation. The thumbnail is a Babylon-canvas screenshot
+    // over the scene RPC, which has no server under Bevy — skip it in that mode,
+    // and guard the Babylon path so a throw can't wedge Back. (`takeScreenshot`
+    // is also timeout-bounded, so even an unexpected stall can't hang here.)
+    if (rpc && !useBevy) {
+      try {
+        await refreshProject(rpc);
+      } catch (error) {
+        console.error('[Editor] refreshProject on back failed:', error);
+      }
+    }
     killPreview();
     navigate('/scenes');
-  }, [navigate, iframeRef.current]);
+  }, [navigate, useBevy, refreshProject, killPreview]);
 
   const handleOpenPublishModal = useCallback(async () => {
     await handleActionWithWarningCheck(() => openModal('publish'));
@@ -228,35 +309,41 @@ export function EditorPage() {
     await handleActionWithWarningCheck(handleOpenPreviewWithErrorHandling);
   }, [handleActionWithWarningCheck, handleOpenPreviewWithErrorHandling]);
 
-  const handlePublishScene = useCallback(async () => {
+  // The thumbnail comes from a Babylon-canvas screenshot over the scene RPC, which
+  // has no server under the Bevy renderer (the request would just time out and
+  // yield no thumbnail). Skip it in Bevy mode rather than fire a doomed request.
+  // (`takeScreenshot` is also timeout-guarded so this can never hang the flow.)
+  const saveThumbnailIfSupported = useCallback(() => {
     const rpc = iframeRef.current;
-    if (rpc) saveAndGetThumbnail(rpc);
+    if (rpc && !useBevy) saveAndGetThumbnail(rpc);
+  }, [useBevy, saveAndGetThumbnail]);
+
+  const handlePublishScene = useCallback(async () => {
+    saveThumbnailIfSupported();
     await handleOpenPublishModal();
-  }, [saveAndGetThumbnail, handleOpenPublishModal]);
+  }, [saveThumbnailIfSupported, handleOpenPublishModal]);
 
   const handleDeployWorld = useCallback(async () => {
     if (!project) return;
-    const rpc = iframeRef.current;
-    if (rpc) saveAndGetThumbnail(rpc);
+    saveThumbnailIfSupported();
     try {
       await publishScene({ targetContent: config.get('WORLDS_CONTENT_SERVER_URL') });
       executeDeployment(project.path);
     } catch {
       openModal('publish', 'deploy');
     }
-  }, [project, saveAndGetThumbnail, publishScene, executeDeployment, openModal]);
+  }, [project, saveThumbnailIfSupported, publishScene, executeDeployment, openModal]);
 
   const handleDeployLand = useCallback(async () => {
     if (!project) return;
-    const rpc = iframeRef.current;
-    if (rpc) saveAndGetThumbnail(rpc);
+    saveThumbnailIfSupported();
     try {
       await publishScene({ target: config.get('PEER_URL') });
       executeDeployment(project.path);
     } catch {
       openModal('publish', 'deploy');
     }
-  }, [project, saveAndGetThumbnail, publishScene, executeDeployment, openModal]);
+  }, [project, saveThumbnailIfSupported, publishScene, executeDeployment, openModal]);
 
   const publishOptions = useMemo(
     () =>
@@ -279,9 +366,42 @@ export function EditorPage() {
   // query params
   const params = new URLSearchParams();
 
-  // params.append('dataLayerRpcWsUrl', `ws://localhost:${previewPort}/data-layer`); // this connects the inspector to the data layer running on the preview server
+  // Always tell the inspector which renderer to use, so IT doesn't offer an
+  // independent (un-plumbed) choice via its own toolbar picker — the host owns
+  // renderer selection and supplies each renderer's config. Without this, picking
+  // Bevy inside the inspector mounts the engine with no realm and boots the wrong
+  // (default) world.
+  params.append('renderer', useBevy ? RENDERER.BEVY : RENDERER.BABYLON);
 
+  // The parent-window scene-RPC control channel (host↔inspector feature flags,
+  // notifications, file/dir open) is wired whenever this is set — for BOTH
+  // renderers. Babylon also uses it as its data-layer transport; Bevy instead
+  // uses the realm WS (set below, which takes precedence), but still needs this
+  // channel or the host's feature flags never reach it (e.g. SceneMinimap).
   params.append('dataLayerRpcParentUrl', window.location.origin);
+
+  if (useBevy && bevyRealm) {
+    // Bevy editor: the inspector shares the realm's data-layer WS so entity ids
+    // align with the engine (forward edits land on the right entities), and the
+    // engine loads the scene from the realm. `dataLayerRpcWsUrl` takes precedence
+    // over `dataLayerRpcParentUrl` in the inspector, so we set the WS instead of
+    // the parent-window data-layer here.
+    params.append('dataLayerRpcWsUrl', bevyRealm.wsUrl);
+    params.append('bevyRealm', bevyRealm.url);
+    if (project) {
+      // The engine loads the scene at its real parcel; the base coord is bevyPosition.
+      params.append('bevyPosition', project.scene.base);
+    }
+    // The super-user editor-agent portable experience (viewport pick + gizmo),
+    // shipped as a static realm at public/bevy-agent and served same-origin by the
+    // inspector http-server. The engine loads it as a realm (GETs
+    // `<systemScene>/about`); the export nests `<realmName>/about`, hence the
+    // doubled path segment. A dev server can override via VITE_BEVY_SYSTEM_SCENE.
+    params.append(
+      'bevySystemScene',
+      import.meta.env.VITE_BEVY_SYSTEM_SCENE || `${htmlUrl}/bevy-agent/bevy-agent`,
+    );
+  }
 
   if (import.meta.env.VITE_ASSET_PACKS_CONTENT_URL) {
     // this is for local development of the asset-packs repo, or to use a different environment like .zone
@@ -314,15 +434,51 @@ export function EditorPage() {
   // iframe src
   const iframeUrl = `${htmlUrl}?${params}`;
 
-  const renderLoading = () => (
-    <div className="loading">
-      <img src={EditorPng} />
-      <Row>
-        <Loader />
-        {t('editor.loading.title')}
-      </Row>
-    </div>
-  );
+  const renderLoading = () => {
+    // Recoverable stuck-load state (#1380): the realm failed to start (broken code)
+    // or the scene never finished loading. Offer Back + Open code + the error,
+    // instead of an infinite spinner with no way out.
+    const stuck = loadError !== null || loadTimedOut;
+    if (stuck) {
+      return (
+        <div className="loading loading-error">
+          <img src={EditorPng} />
+          <div className="loading-error-title">{t('editor.loading.failed.title')}</div>
+          <div className="loading-error-message">
+            {loadError ?? t('editor.loading.failed.timeout')}
+          </div>
+          <Row>
+            <Button
+              color="secondary"
+              startIcon={<ArrowBackIosIcon />}
+              onClick={handleBack}
+            >
+              {t('editor.loading.failed.back')}
+            </Button>
+            <Button
+              color="secondary"
+              startIcon={<CodeIcon />}
+              onClick={openCode}
+            >
+              {t('editor.header.actions.code')}
+            </Button>
+          </Row>
+        </div>
+      );
+    }
+    return (
+      <div className="loading">
+        <img src={EditorPng} />
+        <Row>
+          <Loader />
+          {/* Tell the user WHY the load is taking longer when we're installing a
+              scene's dependencies (e.g. opening a scene whose node_modules was
+              deleted, #1425) — otherwise a long npm install looks like a hang. */}
+          {isInstallingProject ? t('editor.loading.installing') : t('editor.loading.title')}
+        </Row>
+      </div>
+    );
+  };
 
   return (
     <main className="Editor">
@@ -413,6 +569,13 @@ export function EditorPage() {
             className="inspector"
             src={iframeUrl}
             onLoad={handleIframeRef}
+            // Grant cross-origin isolation to the inspector iframe so the Bevy
+            // engine (nested one level deeper) can use SharedArrayBuffer. The
+            // renderer document + inspector server carry COOP/COEP, but a
+            // cross-origin child frame only becomes crossOriginIsolated when the
+            // embedder explicitly delegates it via this Permissions-Policy. Inert
+            // for the Babylon renderer.
+            allow="cross-origin-isolated"
           ></iframe>
           <DeployModal
             type={modalState.type}

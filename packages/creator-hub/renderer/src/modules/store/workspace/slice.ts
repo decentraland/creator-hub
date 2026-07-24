@@ -2,7 +2,11 @@ import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
 
 import { supportsMultiInstance } from '/shared/flags';
 import { type Project, SortBy } from '/shared/types/projects';
-import { DEFAULT_DEPENDENCY_UPDATE_STRATEGY } from '/shared/types/settings';
+import {
+  DEFAULT_DEPENDENCY_UPDATE_STRATEGY,
+  DEFAULT_PREVIEW_CLIENT,
+  DEFAULT_RENDERER,
+} from '/shared/types/settings';
 import { type Workspace } from '/shared/types/workspace';
 
 import type { Async } from '/shared/types/async';
@@ -25,7 +29,9 @@ const initialState: Async<Workspace> = {
       openNewInstance: false,
       multiInstance: false,
       showWarnings: true,
+      client: DEFAULT_PREVIEW_CLIENT,
     },
+    renderer: DEFAULT_RENDERER,
   },
   status: 'idle',
   error: null,

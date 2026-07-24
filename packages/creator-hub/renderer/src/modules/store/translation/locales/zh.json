@@ -38,7 +38,13 @@
   },
   "editor": {
     "loading": {
-      "title": "正在准备场景..."
+      "title": "正在准备场景...",
+      "installing": "正在安装依赖项……首次可能需要一些时间。",
+      "failed": {
+        "title": "加载失败",
+        "timeout": "场景加载时间过长，可能其代码中存在错误。",
+        "back": "返回场景"
+      }
     },
     "header": {
       "actions": {
@@ -48,6 +54,11 @@
         "refresh": "从磁盘重新加载场景",
         "preview_options": {
           "title": "预览选项",
+          "client": {
+            "label": "预览方式",
+            "desktop": "桌面客户端",
+            "bevy_web": "Bevy（网页）"
+          },
           "debugger": "在预览期间打开控制台窗口",
           "skip_auth_screen": "跳过认证屏幕",
           "open_new_instance": "打开多个实例",
@@ -343,6 +354,11 @@
         "app_warnings": {
           "label": "应用警告",
           "show_warnings": "每次预览或发布包含自定义代码的场景时显示警告消息"
+        },
+        "renderer": {
+          "label": "场景渲染器",
+          "babylon": "Babylon（默认）",
+          "bevy": "Bevy（预览）"
         }
       },
       "actions": {
@@ -607,6 +623,7 @@
         "create": "創建"
       },
       "errors": {
+        "invalid_directory": "该文件夹路径不存在。请使用文件夹按钮为场景选择一个已存在的位置。",
         "path_exists_or_not_writable": "项目路径已存在或无法在其中保存文件。请选择其他文件夹。"
       }
     },
