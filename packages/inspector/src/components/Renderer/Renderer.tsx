@@ -161,6 +161,7 @@ const Renderer: React.FC = () => {
     const selectedEntities = sdk.operations.getSelectedEntities();
     if (selectedEntities.length > 0) {
       sdk.renderer.camera.focusOnEntity(selectedEntities[0]);
+      sdk.events.emit('focusEntity', { entity: selectedEntities[0] });
     }
   }, [sdk]);
 
