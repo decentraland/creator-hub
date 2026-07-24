@@ -385,6 +385,9 @@ export function EditorPage() {
                   color="secondary"
                   // Not natively disabled while optimizing (that would kill the inline ✕ too):
                   // the group is greyed and made inert via CSS, and only the ✕ stays clickable.
+                  // aria-disabled flags the CSS-inert state to assistive tech, which the visual
+                  // greying and pointer-events:none don't convey on their own.
+                  aria-disabled={isOptimizing || undefined}
                   disabled={
                     (loadingPreview && !isOptimizing) ||
                     isInstallingProject ||

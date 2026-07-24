@@ -489,7 +489,19 @@ export async function start(path: string, opts: StartOptions): Promise<string> {
 
     const dclLauncherURL = /decentraland:\/\/([^\s\n]*)/i;
     const spawned = (async () => {
-      const resultLogs = await process.waitFor(dclLauncherURL, /CliError|error:/i);
+      // waitFor resolves/rejects via `once` matchers that cleanup() disables the instant the
+      // process exits (a natural exit, or an explicit kill from cancelOptimizedAssetsWarmup).
+      // On its own it would then hang forever if the process dies before printing a deeplink,
+      // leaving inflightStarts[path] stuck and every later Preview press awaiting it. Race it
+      // against process death so a cancelled/failed warmup rejects here and the finally below
+      // clears inflightStarts. wait() stays pending while the preview server runs, so the
+      // deeplink normally wins; it only settles once the process is gone.
+      const resultLogs = await Promise.race([
+        process.waitFor(dclLauncherURL, /CliError|error:/i),
+        process.wait().then(() => {
+          throw new Error('Preview process exited before producing a deeplink');
+        }),
+      ]);
 
       // Check if the error indicates that Decentraland Desktop Client is not installed
       if (resultLogs.includes(CLIENT_NOT_INSTALLED_ERROR)) {
