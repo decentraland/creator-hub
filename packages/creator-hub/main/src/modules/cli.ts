@@ -14,15 +14,37 @@ import {
 import type { DeployOptions } from '/shared/types/deploy';
 import { dynamicImport } from '/shared/dynamic-import';
 
+import { MAIN_WINDOW_ID } from '../mainWindow';
 import { dclDeepLink, run, type Child } from './bin';
 import { getAvailablePort } from './port';
+import { getWindow } from './window';
 import { getProjectId, track } from './analytics';
 import { install } from './npm';
 import { downloadGithubRepo } from './download-github-folder';
 import { startMobileDebugServer } from './mobile-debug-server';
 import { getLanIp } from './network';
 
-export type Preview = { child: Child; url: string; opts: PreviewOptions };
+export type Preview = { child: Child; url: string; opts: PreviewOptions; warmup?: boolean };
+
+// Explorer deeplink params for locally generated asset bundles. sdk-commands owns the
+// abgen sidecar (--asset-bundles) and injects both params into the deeplink it fires;
+// the hub only flips them when preview options change mid-session.
+const LOCAL_AB_PARAM = 'local-ab';
+const OPTIMIZED_ASSETS_URL_PARAM = 'optimized-assets-url';
+
+// A large scene's first conversion can take minutes before the deeplink appears; the
+// sidecar's progress lines are streamed to the renderer so the preview button can say
+// why it is still loading.
+export const PREVIEW_PROGRESS_EVENT = 'preview.progress';
+
+export type PreviewProgress = { seconds: number; done?: number; total?: number };
+
+function sendPreviewProgress(path: string, progress: PreviewProgress | null) {
+  const window = getWindow(MAIN_WINDOW_ID);
+  if (window && !window.isDestroyed()) {
+    window.webContents.send(PREVIEW_PROGRESS_EVENT, { path, progress });
+  }
+}
 
 const previewCache: Map<string, Preview> = new Map();
 export let deployServer: { stop: () => Promise<void> } | null = null;
@@ -73,7 +95,7 @@ export async function killAllPreviews() {
   previewCache.clear(); // just to be sure...
 }
 
-type PreviewArguments = Omit<PreviewOptions, 'debugger' | 'showWarnings'>;
+type PreviewArguments = Omit<PreviewOptions, 'debugger' | 'showWarnings' | 'optimizedAssets'>;
 
 const PREVIEW_OPTIONS_MAP: Record<keyof PreviewArguments, string> = {
   enableLandscapeTerrains: '--landscape-terrain-enabled',
@@ -212,7 +234,7 @@ function updateDeepLinkWithOpts(params: string, newOpts: PreviewOptions): string
 
     const setOrDeleteParam = (key: string, value: any) => {
       if (value) {
-        urlParams.set(stripLeadingDashes(key), 'true');
+        urlParams.set(stripLeadingDashes(key), typeof value === 'string' ? value : 'true');
       } else {
         urlParams.delete(stripLeadingDashes(key));
       }
@@ -222,6 +244,21 @@ function updateDeepLinkWithOpts(params: string, newOpts: PreviewOptions): string
     setOrDeleteParam(PREVIEW_OPTIONS_MAP.skipAuthScreen, !newOpts.multiInstance);
     setOrDeleteParam(PREVIEW_OPTIONS_MAP.enableLandscapeTerrains, newOpts.enableLandscapeTerrains);
     setOrDeleteParam(PREVIEW_OPTIONS_MAP.multiInstance, newOpts.multiInstance);
+
+    // Locally generated asset bundles: local-ab is only valid alongside the sidecar url
+    // the captured deeplink carries. Setting it without one would make the explorer fall
+    // back to the default sidecar port with nothing listening there, re-basing all
+    // asset-bundle traffic — wearables and avatar included — onto a dead port.
+    const hasSidecarUrl = urlParams.has(OPTIMIZED_ASSETS_URL_PARAM);
+    if (newOpts.optimizedAssets && !hasSidecarUrl) {
+      log.warn(
+        '[CLI] Optimized assets requested but the preview carries no sidecar url; previewing with raw GLTFs',
+      );
+    }
+    setOrDeleteParam(LOCAL_AB_PARAM, newOpts.optimizedAssets && hasSidecarUrl);
+    if (!newOpts.optimizedAssets) {
+      setOrDeleteParam(OPTIMIZED_ASSETS_URL_PARAM, false);
+    }
 
     // this param is different from what we recieved from the CLI that the one that the launcher uses.
     setOrDeleteParam('open-deeplink-in-new-instance', newOpts.openNewInstance);
@@ -263,60 +300,237 @@ function selfBinPath(): string {
   }
 }
 
-export async function start(
-  path: string,
-  opts: PreviewOptions & { retry?: boolean },
-): Promise<string> {
+// Feature-detect the opt-in sidecar flag in the scene's installed sdk-commands
+// (same pattern as shouldRunLegacyDeploy). The quote-delimited match avoids false
+// positives on the older opt-out flag --no-asset-bundles.
+export async function supportsAssetBundles(path: string): Promise<boolean> {
+  try {
+    const file = await fs.readFile(
+      join(path, 'node_modules', '@dcl/sdk-commands/dist/commands/start/index.js'),
+      'utf-8',
+    );
+    return /["']--asset-bundles["']/.test(file);
+  } catch {
+    return false;
+  }
+}
+
+type StartOptions = PreviewOptions & { retry?: boolean; warmupOnly?: boolean };
+
+// Serializes concurrent starts per path: pressing Preview while a toggle-triggered
+// warmup is still converting must wait for that spawn, not race a second one.
+const inflightStarts = new Map<string, Promise<string>>();
+
+/**
+ * Starts converting the scene to optimized assets in the background, without opening
+ * the client — the deeplink is held until Preview is actually pressed. No-op when the
+ * toggle is off, the installed sdk-commands lacks the sidecar, or a preview/warmup for
+ * the path already exists (the conversion cache makes re-runs cheap anyway).
+ */
+// Resolves true once the scene's assets are optimized and ready (drives the menu's ready
+// tick). When the conversion is already cached it finishes instantly with no progress
+// stream, so the boolean — not the progress lines — is what tells the renderer it's done.
+export async function warmupOptimizedAssets(path: string, opts: PreviewOptions): Promise<boolean> {
+  if (!opts.optimizedAssets || !(await supportsAssetBundles(path))) return false;
+  const running = previewCache.get(path);
+  if (isPreviewRunning(running)) {
+    // a preview is already up: its assets are optimized iff it carries the sidecar
+    return new URLSearchParams(running.url).has(OPTIMIZED_ASSETS_URL_PARAM);
+  }
+  if (inflightStarts.has(path)) return false;
+  // immediate feedback: the first real progress line is many seconds away
+  // (bundling + sidecar boot), and a silent click reads as a broken toggle
+  sendPreviewProgress(path, { seconds: 0 });
+  try {
+    await start(path, { ...opts, warmupOnly: true });
+    log.info('[CLI] optimized-assets warmup finished');
+    return true;
+  } catch (error) {
+    log.warn('[CLI] optimized-assets warmup failed:', (error as Error).message);
+    return false;
+  }
+}
+
+/** Stops a background conversion; previews the user actually launched are left alone. */
+export async function cancelOptimizedAssetsWarmup(path: string): Promise<void> {
+  const preview = previewCache.get(path);
+  if (preview?.warmup) {
+    log.info('[CLI] optimized-assets warmup cancelled');
+    await killPreview(path);
+  }
+}
+
+/**
+ * Detaches the user from a preview that is still converting: the launch stops blocking (the
+ * renderer clears its loading state) while the conversion keeps running as a background
+ * warmup, so the next Preview press is warm. The client is never auto-opened for this spawn.
+ * No-op once the preview has actually opened — there is nothing left to detach from.
+ */
+export async function detachPreview(path: string): Promise<void> {
+  const preview = previewCache.get(path);
+  // still converting (no deeplink resolved yet): demote to a background warmup
+  if (preview?.child.alive() && !preview.url) {
+    preview.warmup = true;
+    log.info('[CLI] preview detached; conversion continues as a background warmup');
+  }
+}
+
+async function launchOrKeepWarm(path: string, url: string, opts: StartOptions): Promise<string> {
+  const preview = previewCache.get(path);
+  // Never auto-open the client for: a warmupOnly spawn, a spawn detached mid-conversion
+  // (warmup flag), or a preview that was cancelled/killed out from under us (no live cache
+  // entry — e.g. deselecting Optimize Assets kills the process while a launch was pending).
+  if (opts.warmupOnly || !preview || preview.warmup) return path;
+  await dclDeepLink(updateDeepLinkWithOpts(url, opts));
+  return path;
+}
+
+export async function start(path: string, opts: StartOptions): Promise<string> {
   const { retry = true } = opts;
+
+  // An explicit Preview press un-detaches this path at press time: a prior ✕ may have demoted
+  // the running spawn to a background warmup, but pressing Preview means the user now wants it
+  // to open when it's ready. Doing this here (not at completion) lets a detach that happens
+  // *after* the press re-set the flag and still win, so ✕ reliably keeps the client closed.
+  if (!opts.warmupOnly) {
+    const current = previewCache.get(path);
+    if (current) current.warmup = false;
+  }
 
   // The scene-level landscapeTerrain opt-out overrides the preview preference
   if (!(await sceneHasLandscapeTerrain(path))) {
     opts = { ...opts, enableLandscapeTerrains: false };
   }
 
+  // A spawn (usually a warmup mid-conversion) is already underway: wait for it
+  const pending = inflightStarts.get(path);
+  if (pending) {
+    const url = await pending.catch(() => null);
+    if (url !== null) return launchOrKeepWarm(path, url, opts);
+  }
+
   const preview = previewCache.get(path);
 
   // If we have a preview running for this path open it
   if (isPreviewRunning(preview)) {
-    // Check if options have changed and update the URL accordingly
-    const updatedUrl = updateDeepLinkWithOpts(preview.url, opts);
-    await dclDeepLink(updatedUrl);
+    // The sidecar lives and dies with the preview process (--asset-bundles is a spawn-time
+    // flag), so whenever the Optimized Assets toggle disagrees with the running preview —
+    // needs a sidecar it doesn't have, or carries one it no longer should — restart the
+    // preview instead of reusing it.
+    const previewHasSidecar = new URLSearchParams(preview.url).has(OPTIMIZED_ASSETS_URL_PARAM);
+    const wantsSidecar = opts.optimizedAssets && (await supportsAssetBundles(path));
 
-    return path;
+    if (wantsSidecar === previewHasSidecar) {
+      // reusing a warm/detached preview for an explicit press: the top-of-start un-detach
+      // already cleared the warmup flag, so this launches (and re-focuses) the client
+      return launchOrKeepWarm(path, preview.url, opts);
+    }
   }
 
   killPreview(path);
 
+  let stopConversionProgress = () => {};
+
   try {
+    const extraArgs: string[] = [];
+
+    // sdk-commands owns the asset-bundle sidecar: --asset-bundles boots it and injects
+    // local-ab + optimized-assets-url into the deeplink it fires. Missing binary or a
+    // sidecar that never comes up degrades to raw GLTFs inside sdk-commands itself.
+    if (opts.optimizedAssets) {
+      if (await supportsAssetBundles(path)) {
+        extraArgs.push('--asset-bundles');
+      } else {
+        log.warn(
+          '[CLI] Installed @dcl/sdk-commands does not support --asset-bundles; previewing with raw GLTFs',
+        );
+      }
+    }
+
+    // sdk-commands never self-opens the client for --hub sessions: the deeplink below is
+    // only printed, and firing it (launchOrKeepWarm) is this module's exclusive call.
     const process = run('@dcl/sdk-commands', 'sdk-commands', {
-      args: ['start', '--explorer-alpha', '--hub', ...generatePreviewArguments(opts)],
+      args: ['start', '--explorer-alpha', '--hub', ...extraArgs, ...generatePreviewArguments(opts)],
       cwd: path,
       workspace: path,
       env: await getEnv(path),
     });
 
+    // registered before the deeplink resolves so a warmup can be cancelled mid-conversion
+    previewCache.set(path, { child: process, url: '', opts, warmup: !!opts.warmupOnly });
+
+    // \S* tolerates the ANSI reset between "[n/total]" and "converting": patterns are
+    // tested against the raw stream, while the handler receives sanitized text.
+    const conversionListener = process.on(
+      /asset-bundles: (converting|still converting)|\[\d+\/\d+\]\S* converting /,
+      data => {
+        // per-asset counter when the sidecar reports progress, elapsed seconds otherwise
+        const counts = data?.match(/\[(\d+)\/(\d+)\]\S* converting /);
+        if (counts) {
+          sendPreviewProgress(path, {
+            seconds: 0,
+            done: Number(counts[1]),
+            total: Number(counts[2]),
+          });
+        } else {
+          const seconds = Number(data?.match(/still converting\.\.\. \((\d+)s\)/)?.[1] ?? 0);
+          sendPreviewProgress(path, { seconds });
+        }
+      },
+    );
+    stopConversionProgress = () => {
+      try {
+        process.off(conversionListener);
+      } catch {
+        // the process may already be gone; only the renderer reset matters
+      }
+      sendPreviewProgress(path, null);
+    };
+
     const dclLauncherURL = /decentraland:\/\/([^\s\n]*)/i;
-    const resultLogs = await process.waitFor(dclLauncherURL, /CliError|error:/i);
+    const spawned = (async () => {
+      // waitFor resolves/rejects via `once` matchers that cleanup() disables the instant the
+      // process exits (a natural exit, or an explicit kill from cancelOptimizedAssetsWarmup).
+      // On its own it would then hang forever if the process dies before printing a deeplink,
+      // leaving inflightStarts[path] stuck and every later Preview press awaiting it. Race it
+      // against process death so a cancelled/failed warmup rejects here and the finally below
+      // clears inflightStarts. wait() stays pending while the preview server runs, so the
+      // deeplink normally wins; it only settles once the process is gone.
+      const resultLogs = await Promise.race([
+        process.waitFor(dclLauncherURL, /CliError|error:/i),
+        process.wait().then(() => {
+          throw new Error('Preview process exited before producing a deeplink');
+        }),
+      ]);
 
-    // Check if the error indicates that Decentraland Desktop Client is not installed
-    if (resultLogs.includes(CLIENT_NOT_INSTALLED_ERROR)) {
-      throw new ClientError('CLIENT_NOT_INSTALLED', CLIENT_NOT_INSTALLED_ERROR);
-    }
+      // Check if the error indicates that Decentraland Desktop Client is not installed
+      if (resultLogs.includes(CLIENT_NOT_INSTALLED_ERROR)) {
+        throw new ClientError('CLIENT_NOT_INSTALLED', CLIENT_NOT_INSTALLED_ERROR);
+      }
 
-    const url = resultLogs.match(dclLauncherURL)?.[1] ?? '';
+      const url = resultLogs.match(dclLauncherURL)?.[1] ?? '';
+      const entry = previewCache.get(path);
+      if (entry?.child === process) entry.url = url;
+      return url;
+    })();
+    inflightStarts.set(path, spawned);
 
-    const preview = { child: process, url, opts };
-    previewCache.set(path, preview);
-    return path;
+    const url = await spawned;
+    return await launchOrKeepWarm(path, url, opts);
   } catch (error) {
     killPreview(path);
-    if (retry && !isClientNotInstalledError(error)) {
+    // warmups are opportunistic (and a cancelled one lands here): no reinstall-and-retry
+    if (retry && !opts.warmupOnly && !isClientNotInstalledError(error)) {
       log.info('[CLI] Something went wrong trying to start preview:', (error as Error).message);
+      inflightStarts.delete(path);
       await install(path);
       return await start(path, { ...opts, retry: false });
     } else {
       throw error;
     }
+  } finally {
+    inflightStarts.delete(path);
+    stopConversionProgress();
   }
 }
 

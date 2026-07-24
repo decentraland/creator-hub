@@ -44,6 +44,8 @@
       "actions": {
         "code": "Code",
         "preview": "Preview",
+        "optimizing": "Optimizing",
+        "cancel_optimizing": "Keep optimizing in the background",
         "publish": "Publish",
         "refresh": "Reload scene from disk",
         "preview_options": {
@@ -54,6 +56,8 @@
           "landscape_terrain_enabled": "Enable Landscape Terrains",
           "landscape_terrain_disabled_by_scene": "Landscape terrain is hidden by this scene's settings",
           "multi_instance": "Multi-Instance Preview",
+          "optimized_assets": "Optimize Assets",
+          "optimized_assets_tooltip": "Preview the scene with optimized assets, matching how it renders in production",
           "mobile_preview": "Show QR Code for Mobile"
         },
         "publish_options": {

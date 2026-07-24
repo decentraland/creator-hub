@@ -44,6 +44,8 @@
       "actions": {
         "code": "代码",
         "preview": "预览",
+        "optimizing": "优化中",
+        "cancel_optimizing": "在后台继续优化",
         "publish": "发布",
         "refresh": "从磁盘重新加载场景",
         "preview_options": {
@@ -54,6 +56,8 @@
           "landscape_terrain_enabled": "启用景观地形",
           "landscape_terrain_disabled_by_scene": "此场景的设置已隐藏景观地形",
           "multi_instance": "多实例预览",
+          "optimized_assets": "优化资源",
+          "optimized_assets_tooltip": "使用优化后的资源预览场景，与生产环境的渲染效果一致",
           "mobile_preview": "显示移动端二维码"
         },
         "publish_options": {

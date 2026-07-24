@@ -71,6 +71,10 @@ export interface Ipc {
 
   'cli.init': (path: string, repo: string) => Promise<void>;
   'cli.start': (path: string, opts: PreviewOptions) => Promise<string>;
+  'cli.warmupOptimizedAssets': (path: string, opts: PreviewOptions) => Promise<boolean>;
+  'cli.cancelOptimizedAssetsWarmup': (path: string) => Promise<void>;
+  'cli.detachPreview': (path: string) => Promise<void>;
+  'cli.supportsAssetBundles': (path: string) => Promise<boolean>;
   'cli.deploy': (opts: DeployOptions) => Promise<number>;
   'cli.killPreview': (path: string) => Promise<void>;
   'cli.getMobilePreview': (path: string) => Promise<{ url: string; qr: string } | null>;

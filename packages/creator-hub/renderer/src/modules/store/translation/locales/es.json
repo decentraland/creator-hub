@@ -44,6 +44,8 @@
       "actions": {
         "code": "Código",
         "preview": "Previsualizar",
+        "optimizing": "Optimizando",
+        "cancel_optimizing": "Seguir optimizando en segundo plano",
         "publish": "Publicar",
         "refresh": "Recargar escena desde disco",
         "preview_options": {
@@ -54,6 +56,8 @@
           "landscape_terrain_enabled": "Habilitar terrenos de vista panorámica",
           "landscape_terrain_disabled_by_scene": "El terreno panorámico está oculto por la configuración de esta escena",
           "multi_instance": "Vista previa multi-instancia",
+          "optimized_assets": "Optimizar assets",
+          "optimized_assets_tooltip": "Previsualiza la escena con assets optimizados, igual que se ve en producción",
           "mobile_preview": "Mostrar código QR para móvil"
         },
         "publish_options": {

@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import {
   Checkbox,
+  CircularProgress,
   Divider,
   FormControlLabel,
   FormGroup,
@@ -9,7 +11,7 @@ import {
   Tooltip,
 } from 'decentraland-ui2';
 
-import { scene } from '#preload';
+import { editor, scene } from '#preload';
 
 import { t } from '/@/modules/store/translation/utils';
 
@@ -21,8 +23,37 @@ export function PreviewOptions({
   onShowMobileQR,
   supportsMultiInstance,
   projectPath,
+  previewProgress,
+  optimizedAssetsReady,
 }: PreviewOptionsProps) {
   const [terrainHiddenByScene, setTerrainHiddenByScene] = useState(false);
+
+  // abgen ships windows/mac asset bundles only
+  const platformSupportsOptimizedAssets =
+    navigator.platform.toLowerCase().includes('linux') === false;
+  // ...and the scene's installed sdk-commands must carry the --asset-bundles sidecar flag,
+  // otherwise the toggle silently does nothing — so hide it entirely for unsupported scenes
+  const [sceneSupportsOptimizedAssets, setSceneSupportsOptimizedAssets] = useState(false);
+  const supportsOptimizedAssets = platformSupportsOptimizedAssets && sceneSupportsOptimizedAssets;
+
+  useEffect(() => {
+    if (!platformSupportsOptimizedAssets) {
+      setSceneSupportsOptimizedAssets(false);
+      return;
+    }
+    let cancelled = false;
+    editor
+      .supportsAssetBundles(projectPath)
+      .then(supported => {
+        if (!cancelled) setSceneSupportsOptimizedAssets(supported);
+      })
+      .catch(() => {
+        if (!cancelled) setSceneSupportsOptimizedAssets(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [projectPath, platformSupportsOptimizedAssets]);
 
   useEffect(() => {
     let cancelled = false;
@@ -92,6 +123,46 @@ export function PreviewOptions({
             }
             label={t('editor.header.actions.preview_options.multi_instance')}
           />
+        )}
+        {supportsOptimizedAssets && (
+          <Tooltip
+            title={t('editor.header.actions.preview_options.optimized_assets_tooltip')}
+            placement="left"
+          >
+            <FormControlLabel
+              className="optimized-assets-control"
+              control={
+                <Checkbox
+                  checked={!!options.optimizedAssets}
+                  onChange={handleChange({ optimizedAssets: !options.optimizedAssets })}
+                />
+              }
+              label={
+                options.optimizedAssets && previewProgress ? (
+                  <span className="optimized-assets-label">
+                    <span>{t('editor.header.actions.preview_options.optimized_assets')}</span>
+                    {previewProgress.total ? (
+                      <span className="optimized-assets-progress">
+                        {Math.round(((previewProgress.done ?? 0) / previewProgress.total) * 100)}%
+                      </span>
+                    ) : (
+                      <CircularProgress
+                        className="optimized-assets-spinner"
+                        size={16}
+                      />
+                    )}
+                  </span>
+                ) : options.optimizedAssets && optimizedAssetsReady ? (
+                  <span className="optimized-assets-label">
+                    <span>{t('editor.header.actions.preview_options.optimized_assets')}</span>
+                    <CheckCircleIcon className="optimized-assets-ready" />
+                  </span>
+                ) : (
+                  t('editor.header.actions.preview_options.optimized_assets')
+                )
+              }
+            />
+          </Tooltip>
         )}
       </FormGroup>
       <Divider />

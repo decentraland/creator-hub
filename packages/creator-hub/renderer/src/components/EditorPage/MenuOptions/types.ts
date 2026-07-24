@@ -6,6 +6,8 @@ export type PreviewOptionsProps = {
   onShowMobileQR: () => void;
   supportsMultiInstance: boolean;
   projectPath: string;
+  previewProgress?: { seconds: number; done?: number; total?: number } | null;
+  optimizedAssetsReady?: boolean;
 };
 
 export type PublishOptionId = 'publish-scene' | 'deploy-world' | 'deploy-land';
