@@ -1,14 +1,4 @@
 {
-  "permissions": {
-    "allow": [
-      "Bash(cat > *)",
-      "Bash(npm --workspace @dcl/inspector run typecheck)",
-      "Bash(npm --workspace @dcl/inspector run test)",
-      "Bash(npm --workspace @dcl/asset-packs run typecheck)",
-      "Bash(make typecheck *)"
-    ],
-    "additionalDirectories": ["/tmp"]
-  },
   "hooks": {
     "PostToolUse": [
       {
