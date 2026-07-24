@@ -350,16 +350,42 @@ export async function cancelOptimizedAssetsWarmup(path: string): Promise<void> {
   }
 }
 
-async function launchOrKeepWarm(path: string, url: string, opts: StartOptions): Promise<string> {
-  if (opts.warmupOnly) return path;
+/**
+ * Detaches the user from a preview that is still converting: the launch stops blocking (the
+ * renderer clears its loading state) while the conversion keeps running as a background
+ * warmup, so the next Preview press is warm. The client is never auto-opened for this spawn.
+ * No-op once the preview has actually opened — there is nothing left to detach from.
+ */
+export async function detachPreview(path: string): Promise<void> {
   const preview = previewCache.get(path);
-  if (preview) preview.warmup = false;
+  // still converting (no deeplink resolved yet): demote to a background warmup
+  if (preview?.child.alive() && !preview.url) {
+    preview.warmup = true;
+    log.info('[CLI] preview detached; conversion continues as a background warmup');
+  }
+}
+
+async function launchOrKeepWarm(path: string, url: string, opts: StartOptions): Promise<string> {
+  const preview = previewCache.get(path);
+  // Never auto-open the client for: a warmupOnly spawn, a spawn detached mid-conversion
+  // (warmup flag), or a preview that was cancelled/killed out from under us (no live cache
+  // entry — e.g. deselecting Optimize Assets kills the process while a launch was pending).
+  if (opts.warmupOnly || !preview || preview.warmup) return path;
   await dclDeepLink(updateDeepLinkWithOpts(url, opts));
   return path;
 }
 
 export async function start(path: string, opts: StartOptions): Promise<string> {
   const { retry = true } = opts;
+
+  // An explicit Preview press un-detaches this path at press time: a prior ✕ may have demoted
+  // the running spawn to a background warmup, but pressing Preview means the user now wants it
+  // to open when it's ready. Doing this here (not at completion) lets a detach that happens
+  // *after* the press re-set the flag and still win, so ✕ reliably keeps the client closed.
+  if (!opts.warmupOnly) {
+    const current = previewCache.get(path);
+    if (current) current.warmup = false;
+  }
 
   // The scene-level landscapeTerrain opt-out overrides the preview preference
   if (!(await sceneHasLandscapeTerrain(path))) {
@@ -385,6 +411,8 @@ export async function start(path: string, opts: StartOptions): Promise<string> {
     const wantsSidecar = opts.optimizedAssets && (await supportsAssetBundles(path));
 
     if (wantsSidecar === previewHasSidecar) {
+      // reusing a warm/detached preview for an explicit press: the top-of-start un-detach
+      // already cleared the warmup flag, so this launches (and re-focuses) the client
       return launchOrKeepWarm(path, preview.url, opts);
     }
   }

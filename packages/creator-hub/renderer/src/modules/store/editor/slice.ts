@@ -56,6 +56,9 @@ export const cancelOptimizedAssetsWarmup = createAsyncThunk(
   'editor/cancelOptimizedAssetsWarmup',
   editor.cancelOptimizedAssetsWarmup,
 );
+// Detaches from a preview that's still converting: the button stops blocking while the
+// conversion keeps running as a background warmup (menu progress keeps ticking).
+export const detachPreview = createAsyncThunk('editor/detachPreview', editor.detachPreview);
 export const publishScene = createAsyncThunk(
   'editor/publishScene',
   async (opts: DeployOptions, { dispatch, getState }) => {
@@ -101,6 +104,7 @@ export type EditorState = {
   loadingInspector: boolean;
   loadingPreview: boolean;
   previewProgress: { seconds: number; done?: number; total?: number } | null;
+  previewDetached: boolean;
   isPreviewRunning: boolean;
   isInstalling: boolean;
   isInstalled: boolean;
@@ -120,6 +124,7 @@ const initialState: EditorState = {
   loadingInspector: false,
   loadingPreview: false,
   previewProgress: null,
+  previewDetached: false,
   isPreviewRunning: false,
   isInstalling: false,
   isInstallingProject: false,
@@ -239,16 +244,25 @@ export const slice = createSlice({
     });
     builder.addCase(runScene.pending, state => {
       state.loadingPreview = true;
+      state.previewDetached = false;
     });
     builder.addCase(runScene.fulfilled, state => {
       state.loadingPreview = false;
-      state.isPreviewRunning = true;
+      // a detached run finishes as a background warmup — no client opened, so it isn't "running"
+      if (!state.previewDetached) state.isPreviewRunning = true;
+      state.previewDetached = false;
     });
     builder.addCase(runScene.rejected, (state, action) => {
       state.loadingPreview = false;
+      state.previewDetached = false;
       captureException(action.error, {
         tags: { source: 'editor-page', event: 'run-scene' },
       });
+    });
+    // detach clears the button's loading state right away; the run thunk keeps converting
+    builder.addCase(detachPreview.pending, state => {
+      state.loadingPreview = false;
+      state.previewDetached = true;
     });
     builder.addCase(killPreviewScene.fulfilled, state => {
       state.isPreviewRunning = false;
@@ -291,6 +305,7 @@ export const actions = {
   setPreviewProgress,
   warmupOptimizedAssets,
   cancelOptimizedAssetsWarmup,
+  detachPreview,
   fetchVersion,
   install,
   startInspector,

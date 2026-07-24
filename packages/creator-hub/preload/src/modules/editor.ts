@@ -83,6 +83,10 @@ export async function cancelOptimizedAssetsWarmup(path: string) {
   return invoke('cli.cancelOptimizedAssetsWarmup', path);
 }
 
+export async function detachPreview(path: string) {
+  return invoke('cli.detachPreview', path);
+}
+
 export async function supportsAssetBundles(path: string) {
   return invoke('cli.supportsAssetBundles', path);
 }

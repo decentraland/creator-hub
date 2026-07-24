@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import {
   Checkbox,
+  CircularProgress,
   Divider,
   FormControlLabel,
   FormGroup,
@@ -127,6 +128,7 @@ export function PreviewOptions({
             placement="left"
           >
             <FormControlLabel
+              className="optimized-assets-control"
               control={
                 <Checkbox
                   checked={!!options.optimizedAssets}
@@ -134,11 +136,23 @@ export function PreviewOptions({
                 />
               }
               label={
-                options.optimizedAssets && previewProgress
-                  ? previewProgress.total
-                    ? `${t('editor.header.actions.preview_options.optimized_assets')} (${previewProgress.done ?? 0}/${previewProgress.total})`
-                    : `${t('editor.header.actions.preview_options.optimized_assets')} (${previewProgress.seconds ? `${previewProgress.seconds}s` : t('editor.header.actions.preview_options.optimized_assets_preparing')})`
-                  : t('editor.header.actions.preview_options.optimized_assets')
+                options.optimizedAssets && previewProgress ? (
+                  <span className="optimized-assets-label">
+                    <span>{t('editor.header.actions.preview_options.optimized_assets')}</span>
+                    {previewProgress.total ? (
+                      <span className="optimized-assets-progress">
+                        {Math.round(((previewProgress.done ?? 0) / previewProgress.total) * 100)}%
+                      </span>
+                    ) : (
+                      <CircularProgress
+                        className="optimized-assets-spinner"
+                        size={16}
+                      />
+                    )}
+                  </span>
+                ) : (
+                  t('editor.header.actions.preview_options.optimized_assets')
+                )
               }
             />
           </Tooltip>

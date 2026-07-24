@@ -53,6 +53,7 @@ export function initIpc({ beforeQuitCleanup }: InitIpcOptions) {
   handle('cli.cancelOptimizedAssetsWarmup', (_event, path) =>
     cli.cancelOptimizedAssetsWarmup(path),
   );
+  handle('cli.detachPreview', (_event, path) => cli.detachPreview(path));
   handle('cli.supportsAssetBundles', (_event, path) => cli.supportsAssetBundles(path));
   handle('cli.getMobilePreview', (_event, path) => cli.getMobilePreview(path));
 

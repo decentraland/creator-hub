@@ -5,6 +5,7 @@ import PlayCircleIcon from '@mui/icons-material/PlayCircle';
 import CodeIcon from '@mui/icons-material/Code';
 import PublicIcon from '@mui/icons-material/Public';
 import RefreshIcon from '@mui/icons-material/Refresh';
+import CloseIcon from '@mui/icons-material/Close';
 import { CircularProgress as Loader, Tooltip } from 'decentraland-ui2';
 
 import { isClientNotInstalledError } from '/shared/types/client';
@@ -140,6 +141,8 @@ export function EditorPage() {
   }, [error]);
 
   const isReady = !!project && inspectorPort > 0;
+  // converting for an optimized preview: the button shows progress + an inline cancel (✕)
+  const isOptimizing = loadingPreview && !!previewProgress;
 
   const openModal = useCallback((type: ModalType, initialStep?: ModalState['initialStep']) => {
     setModalState({ type, initialStep });
@@ -213,6 +216,14 @@ export function EditorPage() {
     },
     [project, dispatch, settings, updateAppSettings],
   );
+
+  const handleCancelOptimizing = useCallback(() => {
+    if (project) {
+      // stop blocking on the launch, but keep converting in the background so the next
+      // Preview press is warm; the menu keeps showing the conversion progress meanwhile
+      void dispatch(editorActions.detachPreview(project.path));
+    }
+  }, [project, dispatch]);
 
   const handleShowMobileQR = useCallback(async () => {
     if (!project) return;
@@ -368,28 +379,52 @@ export function EditorPage() {
               >
                 {t('editor.header.actions.code')}
               </Button>
-              <ButtonGroup
-                color="secondary"
-                disabled={
-                  loadingPreview || isInstallingProject || isDetectingCustomCode || isOffline
-                }
-                onClick={handleOpenPreview}
-                startIcon={loadingPreview ? <Loader size={20} /> : <PlayCircleIcon />}
-                extra={
-                  <PreviewOptions
-                    options={settings.previewOptions}
-                    onChange={handleChangePreviewOptions}
-                    onShowMobileQR={handleShowMobileQR}
-                    supportsMultiInstance={supportsMultiInstance}
-                    projectPath={project.path}
-                    previewProgress={previewProgress}
-                  />
-                }
-              >
-                {loadingPreview && previewProgress?.total
-                  ? `${Math.round(((previewProgress.done ?? 0) / previewProgress.total) * 100)}%`
-                  : t('editor.header.actions.preview')}
-              </ButtonGroup>
+              <div className={isOptimizing ? 'preview-control optimizing' : 'preview-control'}>
+                <ButtonGroup
+                  color="secondary"
+                  // Not natively disabled while optimizing (that would kill the inline ✕ too):
+                  // the group is greyed and made inert via CSS, and only the ✕ stays clickable.
+                  disabled={
+                    (loadingPreview && !isOptimizing) ||
+                    isInstallingProject ||
+                    isDetectingCustomCode ||
+                    isOffline
+                  }
+                  onClick={isOptimizing ? undefined : handleOpenPreview}
+                  startIcon={loadingPreview ? <Loader size={20} /> : <PlayCircleIcon />}
+                  extra={
+                    <PreviewOptions
+                      options={settings.previewOptions}
+                      onChange={handleChangePreviewOptions}
+                      onShowMobileQR={handleShowMobileQR}
+                      supportsMultiInstance={supportsMultiInstance}
+                      projectPath={project.path}
+                      previewProgress={previewProgress}
+                    />
+                  }
+                >
+                  {isOptimizing ? (
+                    <span className="optimizing-label">
+                      {t('editor.header.actions.optimizing')}
+                      {previewProgress?.total
+                        ? ` ${Math.round(((previewProgress.done ?? 0) / previewProgress.total) * 100)}%`
+                        : ''}
+                      <Tooltip title={t('editor.header.actions.cancel_optimizing')}>
+                        <CloseIcon
+                          className="cancel-optimizing"
+                          fontSize="small"
+                          onClick={e => {
+                            e.stopPropagation();
+                            handleCancelOptimizing();
+                          }}
+                        />
+                      </Tooltip>
+                    </span>
+                  ) : (
+                    t('editor.header.actions.preview')
+                  )}
+                </ButtonGroup>
+              </div>
               {publishOptions.length > 0 ? (
                 <ButtonGroup
                   color="primary"
