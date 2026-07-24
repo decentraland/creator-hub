@@ -898,24 +898,25 @@
       "action": "Iniciar Sesión"
     },
     "empty": {
-      "title": "Aún no hay escenas publicadas",
-      "description": "Publica una escena para empezar a recopilar métricas."
+      "title": "Aún no hay Lugares para analizar",
+      "description": "Publica una escena para empezar a seguir su rendimiento. Una vez que esté activa, aquí encontrarás información clave y métricas sobre tu Lugar."
     },
     "no_scene_data": {
       "title": "Aún no hay analíticas para esta escena",
       "description": "Publica tu escena y vuelve cuando haya jugadores. Los datos se actualizan a diario."
     },
     "portfolio": {
-      "count": "{count} {count, plural, one {escena} other {escenas}}",
+      "count": "{count} {count, plural, one {lugar} other {lugares}}",
       "sort_by": "Ordenar por",
       "sort": {
         "recent": "Actualizadas recientemente",
         "visitors": "Visitantes únicos",
-        "name": "Nombre"
+        "name": "Nombre A-Z"
       },
-      "stat": {
-        "unique_visitors": "Visitantes Únicos"
-      }
+      "column": {
+        "place": "Lugar"
+      },
+      "search": "Buscar"
     },
     "error": {
       "title": "No se pudieron cargar las métricas",
@@ -924,7 +925,8 @@
     "not_enough_data": "Datos insuficientes",
     "not_available_short": "—",
     "unit": {
-      "min": "{value} min"
+      "min": "{value} min",
+      "min_only": "min"
     },
     "range": {
       "last_7d": "Últimos 7 días",
@@ -950,6 +952,7 @@
     },
     "overview": {
       "title": "Resumen",
+      "range": "({window} actualizado {date})",
       "ranking": "Ranking de Lugares",
       "view_leaderboard": "Ver Clasificación",
       "tile": {
@@ -967,15 +970,15 @@
       },
       "tip": {
         "total_visits": "Una visita es una presencia por sesión en tu escena; una nueva visita comienza tras 10 minutos de inactividad.",
-        "unique_visits": "Billeteras distintas que entraron a tu escena en los últimos 30 días (se excluyen bots).",
-        "concurrent_users": "El número máximo de billeteras en tu escena al mismo tiempo (en intervalos de 5 minutos).",
+        "unique_visits": "Cuentas distintas que entraron a tu escena en los últimos 30 días (se excluyen bots).",
+        "concurrent_users": "El número máximo de cuentas en tu escena al mismo tiempo (en intervalos de 5 minutos).",
         "revenue": "La monetización dentro de la escena aún no está disponible.",
-        "new_users": "Billeteras cuya primera visita a esta escena ocurre en este período.",
-        "dau": "Promedio de billeteras diarias distintas en el período (se excluyen bots).",
-        "d7": "De los nuevos visitantes que entraron por primera vez a tu escena, la proporción que regresó al menos una vez dentro de 7 días.",
+        "new_users": "Cuentas cuya primera visita a esta escena ocurre en este período.",
+        "dau": "Promedio de cuentas diarias distintas en el período (se excluyen bots).",
+        "d7": "De los nuevos visitantes que entraron por primera vez a tu escena, la proporción que regresó al menos una vez dentro de los 7 días posteriores a su primera visita (cualquier día de ese período, no solo el día 7).",
         "avg_playtime": "Tiempo mediano sin AFK entre las visitas con presencia medible.",
         "afk_time": "Proporción del tiempo de permanencia inactivo (pausas de 2 a 10 minutos).",
-        "device": "Billeteras distintas por dispositivo; una billetera multiplataforma cuenta en ambos, por lo que la división no es aditiva."
+        "device": "Cuentas distintas por dispositivo; una cuenta multiplataforma cuenta en ambos, por lo que la división no es aditiva."
       }
     },
     "retention": {
@@ -983,7 +986,12 @@
       "date_range": "Rango de Fechas",
       "day1": "Retención Día 1",
       "day7": "Retención Día 7",
-      "day30": "Retención Día 30"
+      "day30": "Retención Día 30",
+      "tip": {
+        "d1": "Proporción de nuevos visitantes que regresaron exactamente al día siguiente de su primera visita.",
+        "d7": "Proporción de nuevos visitantes que regresaron al menos una vez dentro de los 7 días posteriores a su primera visita (cualquier día de ese período, no solo el día 7).",
+        "d30": "Proporción de nuevos visitantes que regresaron al menos una vez dentro de los 30 días posteriores a su primera visita (cualquier día de ese período, no solo el día 30)."
+      }
     },
     "engagement": {
       "title": "Interacción",
@@ -994,7 +1002,7 @@
       "messages": "Mensajes Enviados",
       "emotes": "Emotes Usados",
       "tip": {
-        "avg_session": "Media de segundos activos (sin AFK) por sesión de billetera."
+        "avg_session": "Media de segundos activos (sin AFK) por sesión de cuenta."
       }
     },
     "actions": {

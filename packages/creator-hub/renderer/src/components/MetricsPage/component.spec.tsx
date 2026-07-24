@@ -41,6 +41,17 @@ vi.mock('/@/hooks/useWorkspace', () => ({
   useWorkspace: () => ({ projects: mockLocalProjects, runProject: mockRunProject }),
 }));
 
+// AvatarFace is a styled component that requires a themed emotion context; under
+// vitest two @emotion/react instances get loaded (ESM via decentraland-ui2, CJS via
+// MUI), so the theme never reaches it and it crashes. Stub it out.
+vi.mock('decentraland-ui2', async importOriginal => {
+  const actual = await importOriginal<typeof import('decentraland-ui2')>();
+  return {
+    ...actual,
+    AvatarFace: () => <div data-testid="avatar-face" />,
+  };
+});
+
 vi.mock('/@/components/Navbar', () => ({
   Navbar: () => <div data-testid="navbar" />,
   NavbarItem: {
@@ -136,7 +147,7 @@ describe('MetricsPage', () => {
         scenes: [],
       });
       renderPage();
-      expect(await screen.findByText('No published scenes yet')).toBeDefined();
+      expect(await screen.findByText('No Places to analyse yet')).toBeDefined();
     });
   });
 
@@ -156,8 +167,6 @@ describe('MetricsPage', () => {
       expect(screen.getByText('hidden-gem.dcl.eth')).toBeDefined();
       expect(screen.getByText('Plaza Corner')).toBeDefined();
       expect(screen.getByText('Quiet Parcel')).toBeDefined();
-      expect(screen.getAllByText('World').length).toBeGreaterThanOrEqual(2);
-      expect(screen.getAllByText('Genesis').length).toBeGreaterThanOrEqual(2);
       expect(screen.queryByText(/^Analytics - /)).toBeNull();
     });
 
@@ -223,7 +232,7 @@ describe('MetricsPage', () => {
       renderDrilldown({ sceneType: 'genesis', sceneId: '-3|-2' });
       await screen.findByText('Analytics - Plaza Corner');
       expect(screen.getByText('36%')).toBeDefined();
-      expect(screen.getByLabelText(/came back at least once within 7 days/)).toBeDefined();
+      expect(screen.getByLabelText(/came back at least once within the 7 days/)).toBeDefined();
     });
 
     it('should render revenue as honest-empty, never a number', async () => {

@@ -1,11 +1,16 @@
 .MetricsPage .Container {
   flex-flow: column;
-  gap: 24px;
-  padding-bottom: 32px;
+  gap: 30px;
+  margin: 0 98px;
+  padding-bottom: 100px;
 }
 
 .MetricsPage .Loader {
   height: 500px;
+}
+
+.MetricsPage .PageTitle {
+  color: #fcfcfc;
 }
 
 .MetricsPage .EmptyContainer {
@@ -16,6 +21,34 @@
   padding: 64px 0;
 }
 
+.MetricsPage .EmptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  height: 500px;
+  max-width: 550px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.MetricsPage .EmptyStateIcon {
+  width: 80px;
+  height: 80px;
+}
+
+.MetricsPage .EmptyStateTitle {
+  color: #fcfcfc;
+  font-size: 30px;
+  font-weight: 600;
+}
+
+.MetricsPage .EmptyStateDescription {
+  color: #cfcdd4;
+  font-size: 18px;
+}
+
 .MetricsPage .SignInCard {
   display: flex;
   flex-direction: column;
@@ -23,6 +56,7 @@
   gap: 16px;
   padding: 48px;
   background-color: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 16px;
 }
 
@@ -46,140 +80,281 @@
   padding: 4px;
   border: none;
   background: transparent;
-  color: var(--primary);
+  color: #fcfcfc;
   cursor: pointer;
 }
 
-.MetricsPage .ExportButton {
-  gap: 8px;
+.MetricsPage .ExportButton.MuiButton-root {
+  gap: 10px;
+  padding: 8px 16px;
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  border-radius: 12px;
+  color: #fcfcfc;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 22px;
+  text-transform: uppercase;
   white-space: nowrap;
 }
 
-.MetricsPage .PortfolioControls {
+.MetricsPage .ExportButton svg {
+  font-size: 24px;
+}
+
+.MetricsPage .PortfolioFilter {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: 16px;
+  height: 56px;
+  padding: 0 20px 0 32px;
+  border-radius: 999px;
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.MetricsPage .PortfolioFilter.Hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.MetricsPage .PortfolioFilterRight {
+  display: flex;
+  align-items: center;
+  gap: 30px;
+}
+
+.MetricsPage .PortfolioCount {
+  flex: 1;
+  color: var(--dcl-silver);
+  font-size: 18px;
 }
 
 .MetricsPage .PortfolioSort {
   display: flex;
   align-items: center;
-  gap: 12px;
+  height: 48px;
 }
 
-.MetricsPage .ScenePortfolioList {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
+.MetricsPage .PortfolioSort > p {
+  color: var(--dcl-silver);
+  font-size: 16px;
 }
 
-.MetricsPage .ScenePortfolioCard {
+/* Sort-by / date-range dropdown control (design: 14px regular Snow value, 24px chevron) */
+.MetricsPage .PortfolioSort .Select,
+.MetricsPage .DateRangeControl .Select {
+  padding: 10px 0 10px 10px;
+  border-radius: 6px;
+}
+
+.MetricsPage .PortfolioSort .Select .MuiInput-input,
+.MetricsPage .DateRangeControl .Select .MuiInput-input {
+  color: #fcfcfc;
+  font-size: 14px;
+  font-weight: 400;
+}
+
+.MetricsPage .PortfolioSort .Select svg,
+.MetricsPage .DateRangeControl .Select svg {
+  font-size: 24px;
+  right: 0;
+}
+
+.MetricsPage .PortfolioSearch {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 24px;
-  padding: 16px 24px;
-  border-radius: 10px;
-  background-color: var(--transparent-gray-dark);
+  gap: 10px;
+  width: 300px;
+  padding: 6px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 12px;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.MetricsPage .PortfolioSearch input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: var(--text);
+  font-size: 16px;
+  font-family: inherit;
+}
+
+.MetricsPage .PortfolioSearch input::placeholder {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.MetricsPage .PortfolioTable {
+  display: flex;
+  flex-direction: column;
+}
+
+.MetricsPage .PortfolioTableHead {
+  display: flex;
+  align-items: center;
+  height: 40px;
+  padding: 3px 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.MetricsPage .PortfolioTableHead p {
+  color: #cfcdd4;
+  font-size: 14px;
+  font-weight: 400;
+}
+
+.MetricsPage .PortfolioCols {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.MetricsPage .PortfolioCol {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  flex: 1 1 0;
+  min-width: 1px;
+  height: 24px;
+}
+
+.MetricsPage .PortfolioColPlace {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 28%;
+  min-width: 220px;
+  max-width: 490px;
+  flex-shrink: 0;
+}
+
+.MetricsPage .PortfolioRow {
+  position: relative;
+  display: flex;
+  align-items: center;
+  padding: 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
   cursor: pointer;
   transition: background-color 0.15s ease;
 }
 
-.MetricsPage .ScenePortfolioCard:hover,
-.MetricsPage .ScenePortfolioCard:focus-visible {
-  background-color: rgba(255, 255, 255, 0.08);
+.MetricsPage .PortfolioRow:hover,
+.MetricsPage .PortfolioRow:focus-visible {
+  background-color: rgba(255, 255, 255, 0.1);
   outline: none;
 }
 
-.MetricsPage .PortfolioIdentity {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  min-width: 0;
-  flex: 1 1 auto;
-}
-
-.MetricsPage .PortfolioTypeIcon {
-  color: var(--secondary-text);
+.MetricsPage .PortfolioThumb {
+  width: 50px;
+  height: 50px;
   flex-shrink: 0;
+  border-radius: 8px;
+  overflow: hidden;
+  background-color: #cfcdd4;
 }
 
-.MetricsPage .PortfolioNames {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
+.MetricsPage .PortfolioThumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .MetricsPage .PortfolioName {
+  max-width: 230px;
+  color: #fcfcfc;
+  font-size: 14px;
   font-weight: 600;
+  line-height: normal;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.MetricsPage .PortfolioCoords {
-  color: var(--secondary-text);
-  font-size: 12px;
-}
-
-.MetricsPage .PortfolioTypeChip {
-  flex-shrink: 0;
+.MetricsPage .PortfolioValue {
+  color: #fcfcfc;
+  font-size: 14px;
   font-weight: 600;
+  line-height: normal;
 }
 
-.MetricsPage .PortfolioStats {
-  display: flex;
-  gap: 32px;
-  flex-shrink: 0;
-}
-
-.MetricsPage .PortfolioStat {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 96px;
-}
-
-.MetricsPage .PortfolioStatLabel {
-  color: var(--secondary-text);
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-}
-
-.MetricsPage .PortfolioStatValue {
-  font-size: 18px;
-  font-weight: 600;
-  line-height: 1.2;
-}
-
-.MetricsPage .PortfolioStatValue.Positive {
+.MetricsPage .PortfolioValue.Positive {
   color: #34ce77;
 }
 
-.MetricsPage .PortfolioStatValue.Muted {
-  color: var(--secondary-text);
-  font-size: 13px;
-  font-weight: 500;
+.MetricsPage .PortfolioValue.Negative {
+  color: var(--primary);
 }
 
-@media (max-width: 1080px) {
-  .MetricsPage .ScenePortfolioCard {
-    flex-direction: column;
-    align-items: flex-start;
-  }
+.MetricsPage .PortfolioRowActions {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
 
-  .MetricsPage .PortfolioStats {
-    flex-wrap: wrap;
-    gap: 20px 32px;
-  }
+.MetricsPage .PortfolioRow:hover .PortfolioRowActions,
+.MetricsPage .PortfolioRowActions:focus-within {
+  opacity: 1;
+}
+
+.MetricsPage .PortfolioRowActions .MuiIconButton-root {
+  width: 40px;
+  height: 40px;
+  border-radius: 100px;
+  background-color: rgba(255, 255, 255, 0.1);
+  color: #fcfcfc;
+}
+
+.MetricsPage .PortfolioRowActions .MuiIconButton-root svg {
+  font-size: 24px;
+}
+
+/* Kebab menu overlay (portaled MUI Menu; scoped via the MetricsDropdown class) */
+.Dropdown.MetricsDropdown .MuiPaper-root {
+  width: 209px;
+  background-color: #35333b;
+  border-radius: 12px;
+  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.4);
+}
+
+.Dropdown.MetricsDropdown ul.MuiMenu-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+  padding: 10px;
+}
+
+.Dropdown.MetricsDropdown li.MuiMenuItem-root {
+  gap: 16px;
+  padding: 7px 10px;
+  border-radius: 8px;
+  color: #fcfcfc;
+  font-size: 14px;
+  font-weight: 400;
+}
+
+.Dropdown.MetricsDropdown li.MuiMenuItem-root:hover,
+.Dropdown.MetricsDropdown li.MuiMenuItem-root.Mui-selected {
+  background-color: #43404a;
+}
+
+.Dropdown.MetricsDropdown li.MuiMenuItem-root svg {
+  color: #fcfcfc;
+  opacity: 0.4;
+  font-size: 24px;
 }
 
 .MetricsPage .AnalyticsBody {
   display: flex;
   align-items: flex-start;
-  gap: 24px;
+  gap: 20px;
 }
 
 .MetricsPage .AnalyticsRail {
@@ -192,7 +367,7 @@
 .MetricsPage .AnalyticsColumns {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 20px;
   flex: 1 1 auto;
   min-width: 0;
 }
@@ -201,53 +376,78 @@
   display: flex;
   flex-direction: column;
   gap: 20px;
-  padding: 20px;
   background-color: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 16px;
+  overflow: hidden;
 }
 
 .MetricsPage .SceneThumb img,
 .MetricsPage .SceneThumbEmpty {
+  display: block;
   width: 100%;
-  aspect-ratio: 16 / 10;
+  aspect-ratio: 420 / 276;
   object-fit: cover;
-  border-radius: 12px;
   background-color: rgba(255, 255, 255, 0.06);
+}
+
+.MetricsPage .SceneBody {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 0 20px;
 }
 
 .MetricsPage .SceneName {
   margin: 0;
-}
-
-.MetricsPage .SceneLike {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin-top: -12px;
-  color: var(--secondary-text);
+  color: #fcfcfc;
+  font-weight: 600;
 }
 
 .MetricsPage .SceneMeta {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
 }
 
 .MetricsPage .SceneMetaLabel {
-  color: var(--secondary-text);
-  font-size: 12px;
+  color: var(--dcl-silver);
+  font-size: 16px;
 }
 
 .MetricsPage .SceneMetaValue {
   display: flex;
   align-items: center;
-  gap: 6px;
-  font-size: 14px;
+  gap: 4px;
+  color: #fcfcfc;
+  font-size: 16px;
+}
+
+.MetricsPage .SceneMetaValue svg {
+  font-size: 18px;
+}
+
+.MetricsPage .SceneMetaValue.SceneMetaAvatar {
+  gap: 10px;
+}
+
+.MetricsPage .SceneMetaValue .MuiAvatar-root {
+  width: 28px;
+  height: 28px;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+}
+
+.MetricsPage .SceneFooter {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 10px 20px 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .MetricsPage .SceneActions {
   display: flex;
-  gap: 8px;
+  gap: 20px;
 }
 
 .MetricsPage .SceneAction {
@@ -255,15 +455,20 @@
   flex: 1;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
-  padding: 8px 4px;
+  gap: 16px;
+  padding: 20px 0 10px;
   border: none;
   background: transparent;
-  color: var(--secondary-text);
-  font-size: 11px;
+  color: #fcfcfc;
+  font-size: 12px;
   text-transform: uppercase;
   letter-spacing: 0.03em;
   cursor: pointer;
+}
+
+.MetricsPage .SceneAction svg {
+  font-size: 24px;
+  color: #716b7c;
 }
 
 .MetricsPage .SceneAction:hover:not(:disabled) {
@@ -282,16 +487,36 @@
 
 .MetricsPage .JumpInButton {
   width: 100%;
-  gap: 8px;
+  height: 46px;
+  gap: 10px;
+  border-radius: 12px;
   background-color: var(--primary);
+  font-size: 16px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.MetricsPage .JumpInArrow {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: 1.5px solid rgba(252, 252, 252, 0.3);
+  border-radius: 8px;
+}
+
+.MetricsPage .JumpInArrow svg {
+  font-size: 14px;
 }
 
 .MetricsPage .SectionCard {
   display: flex;
   flex-direction: column;
   gap: 20px;
-  padding: 24px;
+  padding: 20px;
   background-color: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 16px;
 }
 
@@ -304,37 +529,27 @@
 
 .MetricsPage .SectionTitle {
   margin: 0;
+  color: #fcfcfc;
+  font-size: 22px;
+  font-weight: 600;
+}
+
+.MetricsPage .SectionSubtitle {
+  margin-left: 10px;
+  color: var(--dcl-silver, #a09ba8);
+  font-size: 14px;
+  font-weight: 400;
 }
 
 .MetricsPage .DateRangeControl {
   display: flex;
   align-items: center;
-  gap: 8px;
+  height: 48px;
 }
 
 .MetricsPage .DateRangeLabel {
-  color: var(--secondary-text);
-  font-size: 12px;
-}
-
-.MetricsPage .DateRangeChips {
-  display: flex;
-  gap: 4px;
-}
-
-.MetricsPage .DateRangeChip {
-  padding: 4px 10px;
-  border: 1px solid var(--divider);
-  border-radius: 6px;
-  background: transparent;
-  color: var(--secondary-text);
-  font-size: 12px;
-  cursor: pointer;
-}
-
-.MetricsPage .DateRangeChip.Active {
-  border-color: var(--primary);
-  color: var(--primary);
+  color: var(--dcl-silver);
+  font-size: 16px;
 }
 
 .MetricsPage .RankingSlot {
@@ -360,21 +575,49 @@
 }
 
 .MetricsPage .RankingLink {
-  color: var(--secondary-text);
+  color: var(--dcl-silver);
   font-size: 12px;
   text-transform: uppercase;
 }
 
-.MetricsPage .TileGrid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-  gap: 20px 24px;
+.MetricsPage .OverviewRow {
+  display: flex;
+  gap: 20px;
+}
+
+/* Shared inner-panel skin */
+.MetricsPage .MetricGroup,
+.MetricsPage .RetentionChart,
+.MetricsPage .EngagementTiles,
+.MetricsPage .SocialChart {
+  padding: 20px;
+  background-color: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+}
+
+.MetricsPage .MetricGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  flex: 1;
+  min-width: 0;
+}
+
+.MetricsPage .MetricGroupRow {
+  display: flex;
+  gap: 20px;
+}
+
+.MetricsPage .MetricGroupRow .MetricTile {
+  flex: 1;
+  min-width: 0;
 }
 
 .MetricsPage .MetricTile {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
 }
 
 .MetricsPage .TileHeader {
@@ -384,36 +627,61 @@
 }
 
 .MetricsPage .TileLabel {
-  color: var(--secondary-text);
-  font-size: 12px;
+  color: var(--dcl-silver);
+  font-size: 16px;
 }
 
 .MetricsPage .TileInfo {
-  color: var(--secondary-text);
-  font-size: 14px;
+  color: var(--dcl-silver);
+  font-size: 18px;
   cursor: help;
 }
 
 .MetricsPage .TileValue {
   display: flex;
   align-items: baseline;
-  gap: 8px;
-  font-size: 26px;
+  gap: 6px;
+  color: #fcfcfc;
+  font-size: 30px;
   font-weight: 600;
-  line-height: 1.2;
+  line-height: normal;
 }
 
 .MetricsPage .TileValue.Muted {
-  color: var(--secondary-text);
+  color: var(--dcl-silver);
 }
 
 .MetricsPage .TileValue.Positive {
   color: #34ce77;
 }
 
+.MetricsPage .TileUnit {
+  font-weight: 400;
+}
+
+.MetricsPage .EngagementTiles .TileUnit {
+  font-size: 18px;
+}
+
+/* Info tooltip for the tile info icons (portaled; metrics-specific class) */
+.MetricsTileTooltip.MuiTooltip-tooltip {
+  max-width: 280px;
+  padding: 16px 20px;
+  background-color: #35333b;
+  border-radius: 12px;
+  box-shadow: 0 2px 3px rgba(0, 0, 0, 0.25);
+  color: #fcfcfc;
+  font-size: 14px;
+  font-weight: 400;
+}
+
+.MetricsTileTooltip .MuiTooltip-arrow {
+  color: #35333b;
+}
+
 .MetricsPage .DeltaChip {
-  font-size: 13px;
-  font-weight: 600;
+  font-size: 16px;
+  font-weight: 400;
 }
 
 .MetricsPage .DeltaChip.Up {
@@ -427,17 +695,18 @@
 .MetricsPage .RetentionRow {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 24px;
+  gap: 20px;
 }
 
 .MetricsPage .RetentionChart {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 20px;
 }
 
 .MetricsPage .ChartTitle {
-  font-size: 14px;
+  color: #fcfcfc;
+  font-size: 18px;
   font-weight: 600;
 }
 
@@ -446,27 +715,84 @@
   align-items: center;
   justify-content: center;
   min-height: 151px;
-  color: var(--secondary-text);
+  color: var(--dcl-silver);
 }
 
 .MetricsPage .EngagementBody {
   display: flex;
-  gap: 24px;
+  gap: 20px;
 }
 
 .MetricsPage .EngagementTiles {
   display: flex;
   flex-direction: column;
   gap: 20px;
-  flex: 0 0 160px;
+  flex: 0 0 307px;
 }
 
 .MetricsPage .SocialChart {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 20px;
   flex: 1 1 auto;
   min-width: 0;
+}
+
+.MetricsPage .SocialChart .ChartTitle {
+  font-size: 22px;
+}
+
+/* Chart skin overrides (Chart component classes, scoped to this page) */
+.MetricsPage .MetricsChart .grid-line {
+  stroke: rgba(255, 255, 255, 0.2);
+}
+
+.MetricsPage .MetricsChart .axis-text {
+  fill: var(--dcl-silver);
+}
+
+.MetricsPage .MetricsChart .crosshair {
+  display: none;
+}
+
+.MetricsPage .MetricsChart .hover-dot {
+  stroke: none;
+  r: 5px;
+}
+
+.MetricsPage .MetricsChart .tooltip-box {
+  fill: #35333b;
+  rx: 12px;
+  opacity: 1;
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.4));
+}
+
+.MetricsPage .MetricsChart .tooltip-value {
+  fill: var(--dcl-silver);
+  font-weight: 400;
+}
+
+.MetricsPage .MetricsChart .tooltip-text {
+  fill: #fcfcfc;
+}
+
+.MetricsPage .MetricsChart .chart-legend {
+  gap: 20px;
+}
+
+.MetricsPage .MetricsChart .legend-chip {
+  gap: 10px;
+  color: #fcfcfc;
+  font-size: 16px;
+}
+
+.MetricsPage .MetricsChart .legend-swatch {
+  width: 16px;
+}
+
+/* Retention series line uses the pink gradient defined in RetentionSection */
+.MetricsPage .RetentionChart .series-line {
+  stroke: url(#metrics-retention-gradient) !important;
 }
 
 @media (max-width: 1080px) {
@@ -482,7 +808,8 @@
   }
 
   .MetricsPage .RetentionRow,
-  .MetricsPage .EngagementBody {
+  .MetricsPage .EngagementBody,
+  .MetricsPage .OverviewRow {
     grid-template-columns: 1fr;
     flex-direction: column;
   }

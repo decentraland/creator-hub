@@ -7,20 +7,30 @@ import FileDownloadIcon from '@mui/icons-material/FileDownloadOutlined';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import PublicOutlinedIcon from '@mui/icons-material/PublicOutlined';
 import PlaceOutlinedIcon from '@mui/icons-material/PlaceOutlined';
-import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorderOutlined';
 import CalendarIcon from '@mui/icons-material/CalendarMonthOutlined';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import LinkOutlinedIcon from '@mui/icons-material/LinkOutlined';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForwardOutlined';
-import { Box, Chip, MenuItem, Tooltip, Typography } from 'decentraland-ui2';
+import SearchIcon from '@mui/icons-material/Search';
+import {
+  AvatarFace,
+  type AvatarFaceProps,
+  Box,
+  MenuItem,
+  Tooltip,
+  Typography,
+} from 'decentraland-ui2';
 import { analytics, misc } from '#preload';
 import { useDispatch, useSelector } from '#store';
 import { useAuth } from '/@/hooks/useAuth';
+import { useProfile } from '/@/hooks/useProfile';
 import { useSnackbar } from '/@/hooks/useSnackbar';
 import { useWorkspace } from '/@/hooks/useWorkspace';
+import { addBase64ImagePrefix } from '/@/modules/image';
 import { t } from '/@/modules/store/translation/utils';
 import { useFeatureFlags } from '/@/hooks/useFeatureFlags';
 import { isRankingEnabled } from '/@/lib/metrics';
+import { Worlds, WorldPermissionType } from '/@/lib/worlds';
 import { actions as metricsActions } from '/@/modules/store/metrics';
 import {
   buildCsvRows,
@@ -37,9 +47,11 @@ import {
 import type { ChartSeries, RangeDays, RetentionKey } from '/@/modules/store/metrics';
 import type { ManagedProject } from '/shared/types/manage';
 import type { SceneStats, SceneType } from '/shared/types/metrics';
+import AnalyticsEmptySVG from '/assets/images/analytics-empty.svg';
 import { resolveSceneMetricsTarget } from '../EditorPage/utils';
 import { Navbar, NavbarItem } from '../Navbar';
 import { Container } from '../Container';
+import { Dropdown } from '../Dropdown';
 import { Loader } from '../Loader';
 import { Button } from '../Button';
 import { Select } from '../Select';
@@ -75,6 +87,12 @@ const PORTFOLIO_WINDOW = 'last_30d' as const;
 
 const NO_DATA = '—';
 
+const NO_DATA_ROW = '-';
+
+function rowValue(formatted: string): string {
+  return formatted === NO_DATA ? NO_DATA_ROW : formatted;
+}
+
 function formatNumber(value: number | null): string {
   return value === null ? NO_DATA : value.toLocaleString();
 }
@@ -89,13 +107,31 @@ function formatMinutes(seconds: number | null): string {
     : t('metrics.unit.min', { value: Math.round((seconds / 60) * 10) / 10 });
 }
 
+// Accepts a plain date ("2026-07-12", rendered as a UTC calendar date) or a
+// full ISO timestamp (rendered as a date in the viewer's timezone).
 function formatDate(date: string): string {
+  const isTimestamp = date.includes('T');
   return new Intl.DateTimeFormat(undefined, {
     year: 'numeric',
     month: 'short',
     day: 'numeric',
-    timeZone: 'UTC',
-  }).format(new Date(`${date}T00:00:00Z`));
+    ...(isTimestamp ? {} : { timeZone: 'UTC' }),
+  }).format(new Date(isTimestamp ? date : `${date}T00:00:00Z`));
+}
+
+function formatDateTime(value: string): string {
+  if (!value.includes('T')) return formatDate(value);
+  const date = new Date(value);
+  const day = new Intl.DateTimeFormat(undefined, {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(date);
+  const time = new Intl.DateTimeFormat(undefined, {
+    hour: 'numeric',
+    minute: '2-digit',
+  }).format(date);
+  return `${day} • ${time}`;
 }
 
 function truncateAddress(address: string): string {
@@ -131,11 +167,49 @@ function comparePortfolio(a: SceneStats, b: SceneStats, sort: PortfolioSort): nu
   return (lastActive(b) ?? '').localeCompare(lastActive(a) ?? '');
 }
 
-function ScenePortfolioCard({ scene, onOpen }: { scene: SceneStats; onOpen: () => void }) {
-  const isWorld = scene.sceneType === 'world';
+const D7_POSITIVE_THRESHOLD = 20;
+
+function downloadSceneCsv(scene: SceneStats, asOf: string) {
+  const csv = toCsv(buildCsvRows([scene], asOf, 90));
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  const scope = scene.sceneId.replace(/[^a-z0-9.-]/gi, '_');
+  link.download = `scene-metrics-${scope}-${asOf}.csv`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
+function ScenePortfolioRow({
+  scene,
+  project,
+  asOf,
+  onOpen,
+}: {
+  scene: SceneStats;
+  project?: ManagedProject;
+  asOf: string;
+  onOpen: () => void;
+}) {
   const w = scene.windows[PORTFOLIO_WINDOW];
   const d7 = scene.retention.d7;
-  const updated = lastActive(scene);
+  const { projects: localProjects } = useWorkspace();
+
+  const localProject = useMemo(
+    () =>
+      localProjects.find($ => {
+        const target = resolveSceneMetricsTarget($);
+        return target?.sceneType === scene.sceneType && target?.sceneId === scene.sceneId;
+      }),
+    [localProjects, scene.sceneType, scene.sceneId],
+  );
+
+  const thumbnail =
+    project?.deployment?.thumbnail ??
+    (localProject?.thumbnail ? addBase64ImagePrefix(localProject.thumbnail) : undefined);
 
   const handleKeyDown = useCallback(
     (event: React.KeyboardEvent) => {
@@ -149,60 +223,56 @@ function ScenePortfolioCard({ scene, onOpen }: { scene: SceneStats; onOpen: () =
 
   return (
     <div
-      className="ScenePortfolioCard"
+      className="PortfolioRow"
       role="button"
       tabIndex={0}
       onClick={onOpen}
       onKeyDown={handleKeyDown}
     >
-      <Box className="PortfolioIdentity">
-        {isWorld ? (
-          <PublicOutlinedIcon className="PortfolioTypeIcon" />
-        ) : (
-          <PlaceOutlinedIcon className="PortfolioTypeIcon" />
-        )}
-        <Box className="PortfolioNames">
-          <Typography className="PortfolioName">{sceneDisplayName(scene)}</Typography>
-          {!isWorld && scene.title && (
-            <Typography className="PortfolioCoords">{scene.sceneId}</Typography>
+      <Box className="PortfolioColPlace">
+        <Box className="PortfolioThumb">
+          {thumbnail && (
+            <img
+              src={thumbnail}
+              alt={sceneDisplayName(scene)}
+            />
           )}
         </Box>
-        <Chip
-          className="PortfolioTypeChip"
-          variant="outlined"
-          size="small"
-          label={isWorld ? t('metrics.scene.type_world') : t('metrics.scene.type_genesis')}
-        />
+        <Typography className="PortfolioName">{sceneDisplayName(scene)}</Typography>
       </Box>
-      <Box className="PortfolioStats">
-        <Box className="PortfolioStat">
-          <Typography className="PortfolioStatLabel">
-            {t('metrics.portfolio.stat.unique_visitors')}
-          </Typography>
-          <Typography className="PortfolioStatValue">{formatNumber(w.users)}</Typography>
-        </Box>
-        <Box className="PortfolioStat">
-          <Typography className="PortfolioStatLabel">
-            {t('metrics.overview.tile.total_visits')}
-          </Typography>
-          <Typography className="PortfolioStatValue">{formatNumber(w.visits)}</Typography>
-        </Box>
-        <Box className="PortfolioStat">
-          <Typography className="PortfolioStatLabel">{t('metrics.overview.tile.d7')}</Typography>
-          {d7 !== null ? (
-            <Typography className="PortfolioStatValue Positive">{`${Math.round(d7)}%`}</Typography>
-          ) : (
-            <Typography className="PortfolioStatValue Muted">
-              {t('metrics.not_enough_data')}
-            </Typography>
-          )}
-        </Box>
-        <Box className="PortfolioStat">
-          <Typography className="PortfolioStatLabel">{t('metrics.scene.last_update')}</Typography>
-          <Typography className="PortfolioStatValue">
-            {updated ? formatDate(updated) : NO_DATA}
-          </Typography>
-        </Box>
+      <Box className="PortfolioCols">
+        <Typography className="PortfolioCol PortfolioValue">
+          {rowValue(formatNumber(w.newUsers))}
+        </Typography>
+        <Typography className="PortfolioCol PortfolioValue">
+          {rowValue(formatNumber(w.dau))}
+        </Typography>
+        <Typography
+          className={cx('PortfolioCol', 'PortfolioValue', {
+            Positive: d7 !== null && d7 >= D7_POSITIVE_THRESHOLD,
+            Negative: d7 !== null && d7 < D7_POSITIVE_THRESHOLD,
+          })}
+        >
+          {rowValue(formatPercent(d7))}
+        </Typography>
+        <Typography className="PortfolioCol PortfolioValue">
+          {rowValue(formatMinutes(w.medianActiveTimeS))}
+        </Typography>
+      </Box>
+      <Box
+        className="PortfolioRowActions"
+        onClick={event => event.stopPropagation()}
+      >
+        <Dropdown
+          className="MetricsDropdown"
+          options={[
+            {
+              text: t('metrics.scene.export'),
+              icon: <FileDownloadIcon fontSize="small" />,
+              handler: () => downloadSceneCsv(scene, asOf),
+            },
+          ]}
+        />
       </Box>
     </div>
   );
@@ -210,46 +280,89 @@ function ScenePortfolioCard({ scene, onOpen }: { scene: SceneStats; onOpen: () =
 
 function ScenePortfolio({
   scenes,
+  projects,
+  asOf,
   onOpen,
 }: {
   scenes: SceneStats[];
+  projects: ManagedProject[];
+  asOf: string;
   onOpen: (scene: SceneStats) => void;
 }) {
   const [sort, setSort] = useState<PortfolioSort>('recent');
-  const sorted = useMemo(
-    () => [...scenes].sort((a, b) => comparePortfolio(a, b, sort)),
-    [scenes, sort],
-  );
+  const [query, setQuery] = useState('');
+  const visible = useMemo(() => {
+    const needle = query.trim().toLowerCase();
+    const filtered = needle
+      ? scenes.filter(scene => sceneDisplayName(scene).toLowerCase().includes(needle))
+      : scenes;
+    return [...filtered].sort((a, b) => comparePortfolio(a, b, sort));
+  }, [scenes, sort, query]);
 
   return (
     <>
-      <Typography variant="h3">{t('metrics.header.title')}</Typography>
-      <Box className="PortfolioControls">
-        <Typography variant="h6">
+      <Typography
+        variant="h3"
+        className="PageTitle"
+      >
+        {t('metrics.header.title')}
+      </Typography>
+      <Box className="PortfolioFilter">
+        <Typography className="PortfolioCount">
           {t('metrics.portfolio.count', { count: scenes.length })}
         </Typography>
-        <Box className="PortfolioSort">
-          <Typography>{t('metrics.portfolio.sort_by')}</Typography>
-          <Select
-            value={sort}
-            onChange={event => setSort(event.target.value as PortfolioSort)}
-          >
-            {PORTFOLIO_SORTS.map(option => (
-              <MenuItem
-                key={option}
-                value={option}
-              >
-                {t(`metrics.portfolio.sort.${option}`)}
-              </MenuItem>
-            ))}
-          </Select>
+        <Box className="PortfolioFilterRight">
+          <Box className="PortfolioSort">
+            <Typography>{t('metrics.portfolio.sort_by')}</Typography>
+            <Select
+              value={sort}
+              onChange={event => setSort(event.target.value as PortfolioSort)}
+            >
+              {PORTFOLIO_SORTS.map(option => (
+                <MenuItem
+                  key={option}
+                  value={option}
+                >
+                  {t(`metrics.portfolio.sort.${option}`)}
+                </MenuItem>
+              ))}
+            </Select>
+          </Box>
+          <Box className="PortfolioSearch">
+            <SearchIcon fontSize="medium" />
+            <input
+              type="text"
+              value={query}
+              placeholder={t('metrics.portfolio.search')}
+              onChange={event => setQuery(event.target.value)}
+            />
+          </Box>
         </Box>
       </Box>
-      <Box className="ScenePortfolioList">
-        {sorted.map(scene => (
-          <ScenePortfolioCard
+      <Box className="PortfolioTable">
+        <Box className="PortfolioTableHead">
+          <Typography className="PortfolioColPlace">
+            {t('metrics.portfolio.column.place')}
+          </Typography>
+          <Box className="PortfolioCols">
+            <Typography className="PortfolioCol">
+              {t('metrics.overview.tile.new_users')}
+            </Typography>
+            <Typography className="PortfolioCol">{t('metrics.overview.tile.dau')}</Typography>
+            <Typography className="PortfolioCol">{t('metrics.overview.tile.d7')}</Typography>
+            <Typography className="PortfolioCol">
+              {t('metrics.overview.tile.avg_playtime')}
+            </Typography>
+          </Box>
+        </Box>
+        {visible.map(scene => (
+          <ScenePortfolioRow
             key={sceneKey(scene)}
             scene={scene}
+            project={projects.find(
+              project => project.id === scene.sceneId || project.displayName === scene.title,
+            )}
+            asOf={asOf}
             onOpen={() => onOpen(scene)}
           />
         ))}
@@ -292,10 +405,11 @@ type TileProps = {
   label: string;
   tip?: string;
   valueClassName?: string;
+  extra?: React.ReactNode;
   children: React.ReactNode;
 };
 
-function MetricTile({ label, tip, valueClassName, children }: TileProps) {
+function MetricTile({ label, tip, valueClassName, extra, children }: TileProps) {
   return (
     <Box className="MetricTile">
       <Box className="TileHeader">
@@ -304,6 +418,7 @@ function MetricTile({ label, tip, valueClassName, children }: TileProps) {
           <Tooltip
             title={tip}
             arrow
+            classes={{ tooltip: 'MetricsTileTooltip' }}
           >
             <InfoOutlinedIcon
               className="TileInfo"
@@ -314,7 +429,18 @@ function MetricTile({ label, tip, valueClassName, children }: TileProps) {
         )}
       </Box>
       <Box className={cx('TileValue', valueClassName)}>{children}</Box>
+      {extra}
     </Box>
+  );
+}
+
+function MinutesValue({ seconds }: { seconds: number | null }) {
+  if (seconds === null) return <>{NO_DATA}</>;
+  return (
+    <>
+      {Math.round((seconds / 60) * 10) / 10}
+      <span className="TileUnit">{t('metrics.unit.min_only')}</span>
+    </>
   );
 }
 
@@ -328,28 +454,66 @@ function DateRangeControl({
   return (
     <Box className="DateRangeControl">
       <Typography className="DateRangeLabel">{t('metrics.retention.date_range')}</Typography>
-      <Box className="DateRangeChips">
+      <Select
+        value={String(range)}
+        onChange={event => onChange(Number(event.target.value) as RangeDays)}
+      >
         {RANGE_OPTIONS.map(option => (
-          <button
+          <MenuItem
             key={option}
-            type="button"
-            className={cx('DateRangeChip', { Active: option === range })}
-            onClick={() => onChange(option)}
+            value={String(option)}
           >
             {t(RANGE_LABEL_KEYS[option])}
-          </button>
+          </MenuItem>
         ))}
-      </Box>
+      </Select>
     </Box>
   );
 }
 
+const worldAccessCache = new Map<string, WorldPermissionType>();
+
+// null while loading, on failure, or when worldName is null (scene is not a world).
+function useWorldAccess(worldName: string | null): WorldPermissionType | null {
+  const [access, setAccess] = useState<WorldPermissionType | null>(() =>
+    worldName ? (worldAccessCache.get(worldName) ?? null) : null,
+  );
+
+  useEffect(() => {
+    if (!worldName) return;
+    const cached = worldAccessCache.get(worldName);
+    if (cached) {
+      setAccess(cached);
+      return;
+    }
+    let cancelled = false;
+    new Worlds()
+      .getPermissions(worldName)
+      .then(response => {
+        const type = response?.permissions?.access?.type;
+        if (!type) return;
+        worldAccessCache.set(worldName, type);
+        if (!cancelled) setAccess(type);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [worldName]);
+
+  return access;
+}
+
 function SceneCard({ scene, project }: { scene: SceneStats; project?: ManagedProject }) {
-  const thumbnail = project?.deployment?.thumbnail;
   const lastDeploy = getLastDeploy(scene);
   const isWorld = scene.sceneType === 'world';
   const { projects: localProjects, runProject } = useWorkspace();
   const { pushGeneric } = useSnackbar();
+  const { avatar } = useProfile(scene.deployerAddress ?? '');
+  // For worlds the sceneId is the world name; genesis scenes never fetch.
+  const worldAccess = useWorldAccess(isWorld ? scene.sceneId : null);
+  const accessKnown = !isWorld || worldAccess !== null;
+  const isPublic = !isWorld || worldAccess === WorldPermissionType.Unrestricted;
 
   const localProject = useMemo(
     () =>
@@ -359,6 +523,10 @@ function SceneCard({ scene, project }: { scene: SceneStats; project?: ManagedPro
       }),
     [localProjects, scene.sceneType, scene.sceneId],
   );
+
+  const thumbnail =
+    project?.deployment?.thumbnail ??
+    (localProject?.thumbnail ? addBase64ImagePrefix(localProject.thumbnail) : undefined);
 
   const handleCopyUrl = useCallback(() => {
     void misc.copyToClipboard(jumpInUrl(scene));
@@ -389,99 +557,122 @@ function SceneCard({ scene, project }: { scene: SceneStats; project?: ManagedPro
           <Box className="SceneThumbEmpty" />
         )}
       </Box>
-      <Typography
-        variant="h5"
-        className="SceneName"
-      >
-        {sceneDisplayName(scene)}
-      </Typography>
-      <Box className="SceneLike">
-        <FavoriteBorderIcon fontSize="inherit" />
-        <Typography className="SceneLikeValue">{t('metrics.not_available_short')}</Typography>
+      <Box className="SceneBody">
+        <Typography
+          variant="h5"
+          className="SceneName"
+        >
+          {sceneDisplayName(scene)}
+        </Typography>
+
+        <Box className="SceneMeta">
+          <Typography className="SceneMetaLabel">{t('metrics.scene.access')}</Typography>
+          <Box className="SceneMetaValue">
+            {accessKnown ? (
+              <>
+                {isPublic ? (
+                  <PublicOutlinedIcon fontSize="inherit" />
+                ) : (
+                  <LockOutlinedIcon fontSize="inherit" />
+                )}
+                <span>
+                  {isPublic ? t('metrics.scene.access_public') : t('metrics.scene.access_private')}
+                </span>
+              </>
+            ) : (
+              <span>
+                {isWorld ? t('metrics.scene.type_world') : t('metrics.scene.type_genesis')}
+              </span>
+            )}
+          </Box>
+        </Box>
+        <Box className="SceneMeta">
+          <Typography className="SceneMetaLabel">{t('metrics.scene.published_in')}</Typography>
+          <Box className="SceneMetaValue">
+            <PlaceOutlinedIcon fontSize="inherit" />
+            <span>{scene.sceneId}</span>
+          </Box>
+        </Box>
+        <Box className="SceneMeta">
+          <Typography className="SceneMetaLabel">
+            {t('metrics.scene.last_published_by')}
+          </Typography>
+          <Box className={cx('SceneMetaValue', { SceneMetaAvatar: !!scene.deployerAddress })}>
+            {scene.deployerAddress ? (
+              <>
+                <AvatarFace
+                  avatar={avatar as AvatarFaceProps['avatar']}
+                  size="tiny"
+                  inline
+                />
+                <span>{avatar?.name ?? truncateAddress(scene.deployerAddress)}</span>
+              </>
+            ) : (
+              <span>—</span>
+            )}
+          </Box>
+        </Box>
+        <Box className="SceneMeta">
+          <Typography className="SceneMetaLabel">{t('metrics.scene.last_update')}</Typography>
+          <Box className="SceneMetaValue">
+            <span>{lastDeploy ? formatDateTime(lastDeploy) : '—'}</span>
+          </Box>
+        </Box>
       </Box>
 
-      <Box className="SceneMeta">
-        <Typography className="SceneMetaLabel">{t('metrics.scene.access')}</Typography>
-        <Box className="SceneMetaValue">
-          {isWorld ? (
-            <LockOutlinedIcon fontSize="inherit" />
-          ) : (
-            <PublicOutlinedIcon fontSize="inherit" />
-          )}
-          <span>
-            {isWorld ? t('metrics.scene.access_private') : t('metrics.scene.access_public')}
+      <Box className="SceneFooter">
+        <Box className="SceneActions">
+          <button
+            type="button"
+            className="SceneAction"
+            onClick={handleCreateEvent}
+          >
+            <CalendarIcon fontSize="inherit" />
+            <span>{t('metrics.scene.create_event')}</span>
+          </button>
+          <Tooltip
+            title={localProject ? '' : t('metrics.scene.edit_scene_unavailable')}
+            placement="top"
+            arrow
+          >
+            <span className="SceneActionSlot">
+              <button
+                type="button"
+                className="SceneAction"
+                disabled={!localProject}
+                onClick={handleEditScene}
+              >
+                <EditOutlinedIcon fontSize="inherit" />
+                <span>{t('metrics.scene.edit_scene')}</span>
+              </button>
+            </span>
+          </Tooltip>
+          <button
+            type="button"
+            className="SceneAction"
+            onClick={handleCopyUrl}
+          >
+            <LinkOutlinedIcon fontSize="inherit" />
+            <span>{t('metrics.scene.copy_url')}</span>
+          </button>
+        </Box>
+
+        <Button
+          className="JumpInButton"
+          variant="contained"
+          onClick={handleJumpIn}
+        >
+          {t('metrics.scene.jump_in')}
+          <span className="JumpInArrow">
+            <ArrowForwardIcon fontSize="inherit" />
           </span>
-        </Box>
+        </Button>
       </Box>
-      <Box className="SceneMeta">
-        <Typography className="SceneMetaLabel">{t('metrics.scene.published_in')}</Typography>
-        <Box className="SceneMetaValue">
-          <PlaceOutlinedIcon fontSize="inherit" />
-          <span>{scene.sceneId}</span>
-        </Box>
-      </Box>
-      <Box className="SceneMeta">
-        <Typography className="SceneMetaLabel">{t('metrics.scene.last_published_by')}</Typography>
-        <Box className="SceneMetaValue">
-          <span>{scene.deployerAddress ? truncateAddress(scene.deployerAddress) : '—'}</span>
-        </Box>
-      </Box>
-      <Box className="SceneMeta">
-        <Typography className="SceneMetaLabel">{t('metrics.scene.last_update')}</Typography>
-        <Box className="SceneMetaValue">
-          <span>{lastDeploy ? formatDate(lastDeploy) : '—'}</span>
-        </Box>
-      </Box>
-
-      <Box className="SceneActions">
-        <button
-          type="button"
-          className="SceneAction"
-          onClick={handleCreateEvent}
-        >
-          <CalendarIcon fontSize="inherit" />
-          <span>{t('metrics.scene.create_event')}</span>
-        </button>
-        <Tooltip
-          title={localProject ? '' : t('metrics.scene.edit_scene_unavailable')}
-          placement="top"
-          arrow
-        >
-          <span className="SceneActionSlot">
-            <button
-              type="button"
-              className="SceneAction"
-              disabled={!localProject}
-              onClick={handleEditScene}
-            >
-              <EditOutlinedIcon fontSize="inherit" />
-              <span>{t('metrics.scene.edit_scene')}</span>
-            </button>
-          </span>
-        </Tooltip>
-        <button
-          type="button"
-          className="SceneAction"
-          onClick={handleCopyUrl}
-        >
-          <LinkOutlinedIcon fontSize="inherit" />
-          <span>{t('metrics.scene.copy_url')}</span>
-        </button>
-      </Box>
-
-      <Button
-        className="JumpInButton"
-        variant="contained"
-        onClick={handleJumpIn}
-      >
-        {t('metrics.scene.jump_in')}
-        <ArrowForwardIcon fontSize="inherit" />
-      </Button>
     </Box>
   );
 }
 
-function OverviewSection({ scene }: { scene: SceneStats }) {
+function OverviewSection({ scene, asOf }: { scene: SceneStats; asOf: string }) {
   const { flags } = useFeatureFlags();
   const rankingEnabled = isRankingEnabled(flags);
   const w = scene.windows[OVERVIEW_WINDOW];
@@ -497,6 +688,12 @@ function OverviewSection({ scene }: { scene: SceneStats }) {
         className="SectionTitle"
       >
         {t('metrics.overview.title')}
+        <span className="SectionSubtitle">
+          {t('metrics.overview.range', {
+            window: OVERVIEW_WINDOW.replace('last_', ''),
+            date: asOf,
+          })}
+        </span>
       </Typography>
 
       {rankingEnabled && (
@@ -507,75 +704,85 @@ function OverviewSection({ scene }: { scene: SceneStats }) {
         </Box>
       )}
 
-      <Box className="TileGrid">
-        <MetricTile
-          label={t('metrics.overview.tile.total_visits')}
-          tip={t('metrics.overview.tip.total_visits')}
-        >
-          {formatNumber(w.visits)}
-        </MetricTile>
-        <MetricTile
-          label={t('metrics.overview.tile.unique_visits')}
-          tip={t('metrics.overview.tip.unique_visits')}
-        >
-          {formatNumber(w.users)}
-        </MetricTile>
-        <MetricTile
-          label={t('metrics.overview.tile.concurrent_users')}
-          tip={t('metrics.overview.tip.concurrent_users')}
-        >
-          {formatNumber(w.peakConcurrentUsers)}
-        </MetricTile>
-        <MetricTile
-          label={t('metrics.overview.tile.revenue')}
-          tip={t('metrics.overview.tip.revenue')}
-          valueClassName="Muted"
-        >
-          —
-        </MetricTile>
-        <MetricTile
-          label={t('metrics.overview.tile.new_users')}
-          tip={t('metrics.overview.tip.new_users')}
-        >
-          {formatNumber(w.newUsers)}
-        </MetricTile>
-        <MetricTile
-          label={t('metrics.overview.tile.dau')}
-          tip={t('metrics.overview.tip.dau')}
-        >
-          {formatNumber(w.dau)}
-        </MetricTile>
-        <MetricTile
-          label={t('metrics.overview.tile.d7')}
-          tip={t('metrics.overview.tip.d7')}
-          valueClassName={d7 !== null ? 'Positive' : 'Muted'}
-        >
-          {d7 !== null ? `${Math.round(d7)}%` : t('metrics.not_enough_data')}
-        </MetricTile>
-        <MetricTile
-          label={t('metrics.overview.tile.avg_playtime')}
-          tip={t('metrics.overview.tip.avg_playtime')}
-        >
-          {formatMinutes(w.medianActiveTimeS)}
-        </MetricTile>
-        <MetricTile
-          label={t('metrics.overview.tile.afk_time')}
-          tip={t('metrics.overview.tip.afk_time')}
-        >
-          {formatPercent(w.afkTimePct)}
-        </MetricTile>
-        <MetricTile
-          label={t('metrics.overview.tile.desktop')}
-          tip={t('metrics.overview.tip.device')}
-        >
-          {formatNumber(w.desktopUsers)}
-        </MetricTile>
-        <MetricTile
-          label={t('metrics.overview.tile.mobile')}
-          tip={t('metrics.overview.tip.device')}
-        >
-          {formatNumber(w.mobileUsers)}
-        </MetricTile>
+      <Box className="OverviewRow">
+        <Box className="MetricGroup">
+          <MetricTile
+            label={t('metrics.overview.tile.total_visits')}
+            tip={t('metrics.overview.tip.total_visits')}
+          >
+            {formatNumber(w.visits)}
+          </MetricTile>
+          <Box className="MetricGroupRow">
+            <MetricTile
+              label={t('metrics.overview.tile.unique_visits')}
+              tip={t('metrics.overview.tip.unique_visits')}
+            >
+              {formatNumber(w.users)}
+            </MetricTile>
+            <MetricTile
+              label={t('metrics.overview.tile.new_users')}
+              tip={t('metrics.overview.tip.new_users')}
+            >
+              {formatNumber(w.newUsers)}
+            </MetricTile>
+          </Box>
+          <Box className="MetricGroupRow">
+            <MetricTile
+              label={t('metrics.overview.tile.concurrent_users')}
+              tip={t('metrics.overview.tip.concurrent_users')}
+            >
+              {formatNumber(w.peakConcurrentUsers)}
+            </MetricTile>
+            <MetricTile
+              label={t('metrics.overview.tile.dau')}
+              tip={t('metrics.overview.tip.dau')}
+            >
+              {formatNumber(w.dau)}
+            </MetricTile>
+          </Box>
+        </Box>
+        <Box className="MetricGroup">
+          <MetricTile
+            label={t('metrics.overview.tile.d7')}
+            tip={t('metrics.overview.tip.d7')}
+            valueClassName={d7 !== null ? 'Positive' : 'Muted'}
+          >
+            {d7 !== null ? `${Math.round(d7)}%` : t('metrics.not_enough_data')}
+          </MetricTile>
+          <MetricTile
+            label={t('metrics.overview.tile.avg_playtime')}
+            tip={t('metrics.overview.tip.avg_playtime')}
+          >
+            <MinutesValue seconds={w.medianActiveTimeS} />
+          </MetricTile>
+          <MetricTile
+            label={t('metrics.overview.tile.afk_time')}
+            tip={t('metrics.overview.tip.afk_time')}
+          >
+            {formatPercent(w.afkTimePct)}
+          </MetricTile>
+          <MetricTile
+            label={t('metrics.overview.tile.revenue')}
+            tip={t('metrics.overview.tip.revenue')}
+            valueClassName="Muted"
+          >
+            —
+          </MetricTile>
+          <Box className="MetricGroupRow">
+            <MetricTile
+              label={t('metrics.overview.tile.desktop')}
+              tip={t('metrics.overview.tip.device')}
+            >
+              {formatNumber(w.desktopUsers)}
+            </MetricTile>
+            <MetricTile
+              label={t('metrics.overview.tile.mobile')}
+              tip={t('metrics.overview.tip.device')}
+            >
+              {formatNumber(w.mobileUsers)}
+            </MetricTile>
+          </Box>
+        </Box>
       </Box>
     </Box>
   );
@@ -585,12 +792,14 @@ function RetentionChart({
   scene,
   metric,
   label,
+  tip,
   range,
   className,
 }: {
   scene: SceneStats;
   metric: RetentionKey;
   label: string;
+  tip?: string;
   range: RangeDays;
   className?: string;
 }) {
@@ -602,7 +811,22 @@ function RetentionChart({
 
   return (
     <Box className={cx('RetentionChart', className)}>
-      <Typography className="ChartTitle">{label}</Typography>
+      <Box className="TileHeader">
+        <Typography className="ChartTitle">{label}</Typography>
+        {tip && (
+          <Tooltip
+            title={tip}
+            arrow
+            classes={{ tooltip: 'MetricsTileTooltip' }}
+          >
+            <InfoOutlinedIcon
+              className="TileInfo"
+              fontSize="inherit"
+              aria-label={tip}
+            />
+          </Tooltip>
+        )}
+      </Box>
       {isSeriesEmpty(points) ? (
         <Box className="ChartEmpty">
           <Typography>{t('metrics.not_enough_data')}</Typography>
@@ -614,7 +838,6 @@ function RetentionChart({
           unit="%"
           yMax={80}
           yStep={20}
-          area
           showDelta
         />
       )}
@@ -630,6 +853,36 @@ function RetentionSection({ scene }: { scene: SceneStats }) {
       component="section"
       className="SectionCard RetentionSection"
     >
+      <svg
+        aria-hidden="true"
+        focusable="false"
+        width="0"
+        height="0"
+        style={{ position: 'absolute' }}
+      >
+        <defs>
+          {/* userSpaceOnUse spans the chart viewBox (0..720) so the gradient still
+              renders for flat series, whose zero-height bounding box would make an
+              objectBoundingBox gradient paint nothing. */}
+          <linearGradient
+            id="metrics-retention-gradient"
+            gradientUnits="userSpaceOnUse"
+            x1="0"
+            y1="0"
+            x2="720"
+            y2="0"
+          >
+            <stop
+              offset="0%"
+              stopColor="#C640CD"
+            />
+            <stop
+              offset="100%"
+              stopColor="#FF2D55"
+            />
+          </linearGradient>
+        </defs>
+      </svg>
       <Box className="SectionHeader">
         <Typography
           variant="h5"
@@ -647,12 +900,14 @@ function RetentionSection({ scene }: { scene: SceneStats }) {
           scene={scene}
           metric="d1"
           label={t('metrics.retention.day1')}
+          tip={t('metrics.retention.tip.d1')}
           range={range}
         />
         <RetentionChart
           scene={scene}
           metric="d7"
           label={t('metrics.retention.day7')}
+          tip={t('metrics.retention.tip.d7')}
           range={range}
         />
       </Box>
@@ -660,6 +915,7 @@ function RetentionSection({ scene }: { scene: SceneStats }) {
         scene={scene}
         metric="d30"
         label={t('metrics.retention.day30')}
+        tip={t('metrics.retention.tip.d30')}
         range={range}
         className="FullWidth"
       />
@@ -713,15 +969,15 @@ function EngagementSection({ scene, asOf }: { scene: SceneStats; asOf: string })
           <MetricTile
             label={t('metrics.engagement.avg_playtime')}
             tip={t('metrics.overview.tip.avg_playtime')}
+            extra={w ? <DeltaChip pct={playtimeDelta} /> : undefined}
           >
-            {w ? formatMinutes(w.medianActiveTimeS) : '—'}
-            {w && <DeltaChip pct={playtimeDelta} />}
+            {w ? <MinutesValue seconds={w.medianActiveTimeS} /> : '—'}
           </MetricTile>
           <MetricTile
             label={t('metrics.engagement.avg_session')}
             tip={t('metrics.engagement.tip.avg_session')}
           >
-            {w ? formatMinutes(w.avgSessionActiveTimeS) : '—'}
+            {w ? <MinutesValue seconds={w.avgSessionActiveTimeS} /> : '—'}
           </MetricTile>
           <MetricTile
             label={t('metrics.engagement.afk_time')}
@@ -762,7 +1018,12 @@ function NoSceneData({ onBack }: { onBack: () => void }) {
       <Box className="AnalyticsHeader">
         <Box className="AnalyticsTitle">
           <BackToList onBack={onBack} />
-          <Typography variant="h3">{t('metrics.header.title')}</Typography>
+          <Typography
+            variant="h3"
+            className="PageTitle"
+          >
+            {t('metrics.header.title')}
+          </Typography>
         </Box>
       </Box>
       <Box className="EmptyContainer">
@@ -791,7 +1052,10 @@ function SceneAnalytics({
       <Box className="AnalyticsHeader">
         <Box className="AnalyticsTitle">
           <BackToList onBack={onBack} />
-          <Typography variant="h3">
+          <Typography
+            variant="h3"
+            className="PageTitle"
+          >
             {t('metrics.scene.header', { name: sceneDisplayName(scene) })}
           </Typography>
         </Box>
@@ -813,7 +1077,10 @@ function SceneAnalytics({
           />
         </Box>
         <Box className="AnalyticsColumns">
-          <OverviewSection scene={scene} />
+          <OverviewSection
+            scene={scene}
+            asOf={asOf}
+          />
           <RetentionSection scene={scene} />
           <EngagementSection
             scene={scene}
@@ -882,17 +1149,7 @@ export function MetricsPage() {
 
   const handleExportCsv = useCallback(() => {
     if (!asOf || !activeScene) return;
-    const csv = toCsv(buildCsvRows([activeScene], asOf, 90));
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    const scope = activeScene.sceneId.replace(/[^a-z0-9.-]/gi, '_');
-    link.download = `scene-metrics-${scope}-${asOf}.csv`;
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    URL.revokeObjectURL(url);
+    downloadSceneCsv(activeScene, asOf);
   }, [activeScene, asOf]);
 
   const isLoading = status === 'idle' || status === 'loading';
@@ -933,16 +1190,37 @@ export function MetricsPage() {
 
     if (!scenes.length || !asOf) {
       return (
-        <Box className="EmptyContainer">
-          <Typography variant="h6">{t('metrics.empty.title')}</Typography>
-          <Typography variant="body1">{t('metrics.empty.description')}</Typography>
-        </Box>
+        <>
+          <Typography
+            variant="h3"
+            className="PageTitle"
+          >
+            {t('metrics.header.title')}
+          </Typography>
+          <Box
+            className="PortfolioFilter Hidden"
+            aria-hidden="true"
+          />
+          <Box className="EmptyState">
+            <img
+              className="EmptyStateIcon"
+              src={AnalyticsEmptySVG}
+              alt=""
+            />
+            <Typography className="EmptyStateTitle">{t('metrics.empty.title')}</Typography>
+            <Typography className="EmptyStateDescription">
+              {t('metrics.empty.description')}
+            </Typography>
+          </Box>
+        </>
       );
     }
 
     return (
       <ScenePortfolio
         scenes={scenes}
+        projects={projects}
+        asOf={asOf}
         onOpen={handleSelectScene}
       />
     );

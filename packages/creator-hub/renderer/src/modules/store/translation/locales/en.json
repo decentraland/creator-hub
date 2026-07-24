@@ -898,24 +898,25 @@
       "action": "Sign In"
     },
     "empty": {
-      "title": "No published scenes yet",
-      "description": "Publish a scene to start collecting metrics."
+      "title": "No Places to analyse yet",
+      "description": "Publish a scene to start tracking its performance. Once it's live, you'll find key insights and metrics about your Place here."
     },
     "no_scene_data": {
       "title": "No analytics for this scene yet",
       "description": "Publish your scene and check back once players have visited. Data updates daily."
     },
     "portfolio": {
-      "count": "{count} {count, plural, one {scene} other {scenes}}",
+      "count": "{count} {count, plural, one {Place} other {Places}}",
       "sort_by": "Sort by",
       "sort": {
         "recent": "Recently updated",
         "visitors": "Unique visitors",
-        "name": "Name"
+        "name": "Name A-Z"
       },
-      "stat": {
-        "unique_visitors": "Unique Visitors"
-      }
+      "column": {
+        "place": "Place"
+      },
+      "search": "Search"
     },
     "error": {
       "title": "Could not load metrics",
@@ -924,7 +925,8 @@
     "not_enough_data": "Not enough data",
     "not_available_short": "—",
     "unit": {
-      "min": "{value} min"
+      "min": "{value} min",
+      "min_only": "min"
     },
     "range": {
       "last_7d": "Last 7 days",
@@ -950,6 +952,7 @@
     },
     "overview": {
       "title": "Overview",
+      "range": "({window} updated {date})",
       "ranking": "Places Ranking",
       "view_leaderboard": "View Leaderboard",
       "tile": {
@@ -967,15 +970,15 @@
       },
       "tip": {
         "total_visits": "A visit is a sessionized presence in your scene; a new visit starts after a 10-minute gap.",
-        "unique_visits": "Distinct wallets that entered your scene over the last 30 days (bots excluded).",
-        "concurrent_users": "The peak number of wallets in your scene at the same time (measured in 5-minute buckets).",
+        "unique_visits": "Distinct accounts that entered your scene over the last 30 days (bots excluded).",
+        "concurrent_users": "The peak number of accounts in your scene at the same time (measured in 5-minute buckets).",
         "revenue": "In-scene monetization isn't available yet.",
-        "new_users": "Wallets whose first-ever visit to this scene falls in this window.",
-        "dau": "Average distinct daily wallets over the window (bots excluded).",
-        "d7": "Of the new visitors who first entered your scene, the share who came back at least once within 7 days.",
+        "new_users": "Accounts whose first-ever visit to this scene falls in this window.",
+        "dau": "Average distinct daily accounts over the window (bots excluded).",
+        "d7": "Of the new visitors who first entered your scene, the share who came back at least once within the 7 days after their first visit (any day in that window, not just day 7).",
         "avg_playtime": "Median non-AFK time among visits with measurable presence.",
         "afk_time": "Share of dwell time spent idle (gaps of 2 to 10 minutes).",
-        "device": "Distinct wallets by device; a cross-platform wallet counts in both, so the split isn't additive."
+        "device": "Distinct accounts by device; a cross-platform account counts in both, so the split isn't additive."
       }
     },
     "retention": {
@@ -983,7 +986,12 @@
       "date_range": "Date Range",
       "day1": "Day 1 Retention",
       "day7": "Day 7 Retention",
-      "day30": "Day 30 Retention"
+      "day30": "Day 30 Retention",
+      "tip": {
+        "d1": "Share of new visitors who returned exactly one day after their first visit.",
+        "d7": "Share of new visitors who returned at least once within the 7 days after their first visit (any day in that window, not just day 7).",
+        "d30": "Share of new visitors who returned at least once within the 30 days after their first visit (any day in that window, not just day 30)."
+      }
     },
     "engagement": {
       "title": "Engagement",
@@ -994,7 +1002,7 @@
       "messages": "Messages Sent",
       "emotes": "Emotes Played",
       "tip": {
-        "avg_session": "Mean active (non-AFK) seconds per wallet session."
+        "avg_session": "Mean active (non-AFK) seconds per account session."
       }
     },
     "actions": {

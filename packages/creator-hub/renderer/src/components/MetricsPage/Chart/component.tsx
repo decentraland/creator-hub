@@ -1,11 +1,10 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { ChartSeries } from '/@/modules/store/metrics';
 import './styles.css';
 
-const WIDTH = 720;
+const DEFAULT_WIDTH = 720;
 const HEIGHT = 260;
 const PADDING = { top: 20, right: 16, bottom: 30, left: 52 };
-const PLOT_WIDTH = WIDTH - PADDING.left - PADDING.right;
 const PLOT_HEIGHT = HEIGHT - PADDING.top - PADDING.bottom;
 
 export type Props = {
@@ -52,6 +51,24 @@ const Chart: React.FC<Props> = ({
   showDelta = false,
 }) => {
   const [hoverIndex, setHoverIndex] = useState<number | null>(null);
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  const [width, setWidth] = useState(DEFAULT_WIDTH);
+
+  useLayoutEffect(() => {
+    const wrapper = wrapperRef.current;
+    if (!wrapper) return;
+    const measure = () => {
+      const measured = Math.round(wrapper.getBoundingClientRect().width);
+      if (measured > 0) setWidth(current => (current === measured ? current : measured));
+    };
+    measure();
+    if (typeof ResizeObserver === 'undefined') return;
+    const observer = new ResizeObserver(measure);
+    observer.observe(wrapper);
+    return () => observer.disconnect();
+  }, []);
+
+  const plotWidth = Math.max(1, width - PADDING.left - PADDING.right);
 
   const refPoints = useMemo(
     () =>
@@ -86,8 +103,8 @@ const Chart: React.FC<Props> = ({
   const xAt = useCallback(
     (index: number) =>
       PADDING.left +
-      (refPoints.length > 1 ? (index * PLOT_WIDTH) / (refPoints.length - 1) : PLOT_WIDTH / 2),
-    [refPoints.length],
+      (refPoints.length > 1 ? (index * plotWidth) / (refPoints.length - 1) : plotWidth / 2),
+    [refPoints.length, plotWidth],
   );
   const yAt = useCallback(
     (value: number) => PADDING.top + PLOT_HEIGHT - (value / yMax) * PLOT_HEIGHT,
@@ -140,24 +157,25 @@ const Chart: React.FC<Props> = ({
 
   const xTickIndexes = useMemo(() => {
     if (refPoints.length === 0) return [];
-    const step = Math.max(1, Math.ceil((refPoints.length - 1) / 6));
+    const maxTicks = Math.max(2, Math.min(6, Math.floor(plotWidth / 80)));
+    const step = Math.max(1, Math.ceil((refPoints.length - 1) / maxTicks));
     const indexes = [];
     for (let i = 0; i < refPoints.length; i += step) indexes.push(i);
     if (indexes[indexes.length - 1] !== refPoints.length - 1) indexes.push(refPoints.length - 1);
     return indexes;
-  }, [refPoints.length]);
+  }, [refPoints.length, plotWidth]);
 
   const handlePointerMove = useCallback(
     (event: React.PointerEvent<SVGSVGElement>) => {
       if (refPoints.length === 0) return;
       const rect = event.currentTarget.getBoundingClientRect();
       if (!rect.width) return;
-      const x = ((event.clientX - rect.left) / rect.width) * WIDTH;
-      const ratio = (x - PADDING.left) / PLOT_WIDTH;
+      const x = ((event.clientX - rect.left) / rect.width) * width;
+      const ratio = (x - PADDING.left) / plotWidth;
       const index = Math.round(ratio * (refPoints.length - 1));
       setHoverIndex(Math.min(refPoints.length - 1, Math.max(0, index)));
     },
-    [refPoints.length],
+    [refPoints.length, width, plotWidth],
   );
 
   const handlePointerLeave = useCallback(() => setHoverIndex(null), []);
@@ -202,16 +220,20 @@ const Chart: React.FC<Props> = ({
       }
       lines.push(`${s.label} ${shown}${deltaStr}`);
     });
-    const width = Math.max(...lines.map(line => line.length)) * 6.5 + 16;
+    const boxWidth = Math.max(...lines.map(line => line.length)) * 6.5 + 16;
     const height = lines.length * 15 + 12;
     const pointX = xAt(hoverIndex);
-    const x = pointX + 12 + width > WIDTH - PADDING.right ? pointX - 12 - width : pointX + 12;
+    const x =
+      pointX + 12 + boxWidth > width - PADDING.right ? pointX - 12 - boxWidth : pointX + 12;
     const y = Math.max(PADDING.top, Math.min(PADDING.top + 8, PADDING.top + PLOT_HEIGHT - height));
-    return { lines, width, height, x, y };
-  }, [hoverIndex, refPoints, series, valueMaps, unit, showDelta, xAt]);
+    return { lines, width: boxWidth, height, x, y };
+  }, [hoverIndex, refPoints, series, valueMaps, unit, showDelta, xAt, width]);
 
   return (
-    <div className="MetricsChart">
+    <div
+      className="MetricsChart"
+      ref={wrapperRef}
+    >
       {legend && (
         <div className="chart-legend">
           {series.map(s => (
@@ -229,7 +251,7 @@ const Chart: React.FC<Props> = ({
         </div>
       )}
       <svg
-        viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
+        viewBox={`0 0 ${width} ${HEIGHT}`}
         role="img"
         aria-label={ariaLabel}
         tabIndex={0}
@@ -244,7 +266,7 @@ const Chart: React.FC<Props> = ({
               <line
                 className="grid-line"
                 x1={PADDING.left}
-                x2={WIDTH - PADDING.right}
+                x2={width - PADDING.right}
                 y1={y}
                 y2={y}
               />
