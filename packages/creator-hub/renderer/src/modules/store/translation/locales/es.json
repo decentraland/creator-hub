@@ -39,6 +39,7 @@
   "editor": {
     "loading": {
       "title": "Preparando tu escena...",
+      "installing": "Instalando dependencias... Puede tardar un momento la primera vez.",
       "failed": {
         "title": "Error al cargar",
         "timeout": "La escena está tardando demasiado en cargar. Puede tener un error en su código.",

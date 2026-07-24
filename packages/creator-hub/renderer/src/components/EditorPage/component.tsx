@@ -471,7 +471,10 @@ export function EditorPage() {
         <img src={EditorPng} />
         <Row>
           <Loader />
-          {t('editor.loading.title')}
+          {/* Tell the user WHY the load is taking longer when we're installing a
+              scene's dependencies (e.g. opening a scene whose node_modules was
+              deleted, #1425) — otherwise a long npm install looks like a hang. */}
+          {isInstallingProject ? t('editor.loading.installing') : t('editor.loading.title')}
         </Row>
       </div>
     );

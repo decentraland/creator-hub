@@ -39,6 +39,7 @@
   "editor": {
     "loading": {
       "title": "Loading...",
+      "installing": "Installing dependencies... This can take a moment the first time.",
       "failed": {
         "title": "Loading failed",
         "timeout": "The scene is taking too long to load. It may have an error in its code.",

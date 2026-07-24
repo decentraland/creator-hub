@@ -20,7 +20,7 @@ import {
   setSelectedEntity,
   setSceneOffset,
 } from './gizmo';
-import { setSpawnAreas } from './spawn-areas';
+import { getDefaultSpawnWorld, setSpawnAreas } from './spawn-areas';
 
 /**
  * Super-user editor agent for the inspector's Bevy renderer.
@@ -281,6 +281,12 @@ async function resetScene(): Promise<void> {
     console.error('[bevy-agent] reset (reload) failed:', e);
     return;
   }
+  // Return the player to the scene's spawn point (#1423). On a reload the ground/
+  // colliders briefly disappear, so the avatar can fall through the floor and end
+  // up stuck inside terrain — from which "play as player" is unusable. Teleport it
+  // back to the default spawn (world coords) so Stop always lands the player at a
+  // valid start. Best-effort: no spawn known / command fails → just skip.
+  await teleportPlayerToSpawn();
   // Re-pin the reloaded scene (its ActiveInspectionScene Entity was invalidated by
   // the reload), retrying until the new instance resolves, then re-freeze it.
   // Post `reset-complete` the moment the scene is pinned + frozen so the host can
@@ -305,6 +311,25 @@ async function resetScene(): Promise<void> {
   bus.postToPage({ kind: 'reset-complete', ok: false });
 }
 
+/**
+ * Teleport the player to the scene's default spawn point (#1423), so a Stop/reset
+ * never leaves the avatar fallen through the floor / stuck in terrain. Uses the
+ * engine's `/move_player_to <x> <y> <z>` (instant, DCL world-space) with the world
+ * position the spawn-areas bridge cached (scene-local spawn center + scene offset
+ * = DCL world — the same value the spawn marker is drawn at). No-op when no spawn
+ * is known (a scene with no spawn points) or the command fails.
+ */
+async function teleportPlayerToSpawn(): Promise<void> {
+  const api = getBevyApi();
+  const spawn = getDefaultSpawnWorld();
+  if (!api || !spawn) return;
+  try {
+    await api.consoleCommand('move_player_to', [String(spawn.x), String(spawn.y), String(spawn.z)]);
+  } catch (e) {
+    console.error('[bevy-agent] teleport to spawn failed:', e);
+  }
+}
+
 /** Resolve once the player entity has actually spawned, or false after `ms`. */
 async function playerWithin(ms: number): Promise<boolean> {
   const deadline = Date.now() + ms;
@@ -316,15 +341,25 @@ async function playerWithin(ms: number): Promise<boolean> {
 }
 
 /**
- * Log in AND wait for the player to actually spawn: reuse a previous profile if
- * present, else a guest session (retried). Mirrors bevy-editor's autoLogin.
+ * Log in as a fresh GUEST and wait for the player to actually spawn.
  *
- * The wait is load-bearing, not just anti-hang: the engine only takes the player
- * OUT of its `OutOfWorld` state (which disables avatar WALKING while leaving the
- * camera working) once the player exists AND settles into the loaded scene. If
- * boot proceeds (pin scene, freeze) before the player spawns, the player can stay
- * OutOfWorld and WASD does nothing. So block here until the player is present.
- * Bounded — worst case we continue anyway (the fly camera doesn't need the avatar).
+ * We deliberately do NOT reuse the previous login (the user's real wallet). The
+ * Unity/Bevy PREVIEW logs in with that same stored wallet, so if the editor did
+ * too, both clients would share one address — and comms treats same-address
+ * clients as a single player, so neither renders the other's avatar (#1424:
+ * "Bevy avatar not visible in preview"). A fresh guest gives the editor a
+ * DISTINCT address, so editor + preview see each other as separate players. The
+ * tradeoff is the editor avatar is a generic guest, not the user's real avatar —
+ * acceptable, since the editor mostly uses the fly camera and the win is that
+ * multiplayer testing across the two clients now works.
+ *
+ * The player-spawn wait is load-bearing, not just anti-hang: the engine only
+ * takes the player OUT of its `OutOfWorld` state (which disables avatar WALKING
+ * while leaving the camera working) once the player exists AND settles into the
+ * loaded scene. If boot proceeds (pin scene, freeze) before the player spawns,
+ * the player can stay OutOfWorld and WASD does nothing. So block here until the
+ * player is present. Bounded — worst case we continue anyway (the fly camera
+ * doesn't need the avatar).
  */
 async function autoLogin(): Promise<void> {
   const api = getBevyApi();
@@ -333,11 +368,6 @@ async function autoLogin(): Promise<void> {
     return;
   }
   try {
-    const previous = await api.getPreviousLogin().catch(() => null);
-    if (previous?.userId) {
-      const result = await api.loginPrevious().catch(e => ({ success: false, error: String(e) }));
-      if (result.success && (await playerWithin(10000))) return;
-    }
     for (let attempt = 0; attempt < 5; attempt++) {
       try {
         api.loginGuest();
