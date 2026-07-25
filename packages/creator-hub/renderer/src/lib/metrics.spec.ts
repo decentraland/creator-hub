@@ -30,7 +30,9 @@ describe('Metrics client', () => {
 
   it('pins both env configs at the creators-data mount', () => {
     expect(prd.METRICS_API_URL).toBe('https://decentraland.org/creators-data/api');
-    expect(dev.METRICS_API_URL).toBe('https://decentraland.zone/creators-data/api');
+    // dev runs against the local creators-data server (wrangler-style :8787),
+    // matching FEATURE_FLAGS_URL pointing at the local flag server.
+    expect(dev.METRICS_API_URL).toBe('http://localhost:8787/api');
   });
 
   it('signs a GET to <creators-data base>/creators/me/scenes/stats with no double /api', async () => {
