@@ -160,14 +160,14 @@ const ZOOM_STEP = 2; // metres
 /**
  * Dolly the editor fly-camera along its look direction (toolbar zoom in/out).
  * `delta` > 0 zooms IN (forward), < 0 zooms OUT; magnitude is a step count. Zoom
- * only makes sense for the fly camera (the native avatar camera owns its own
- * scroll-zoom), so — like focus/reset — we engage free mode first, so the buttons
- * always do something visible. A running focus tween is cancelled so the dolly
- * takes effect immediately.
+ * only makes sense for the fly camera; the native avatar camera owns its own
+ * scroll-zoom, and we must NOT hijack the mode out from under the user — in avatar
+ * mode a toolbar zoom is a no-op (silently flipping to free breaks the Player
+ * setting the user chose). A running focus tween is cancelled so the dolly takes
+ * effect immediately.
  */
 export function zoomCamera(delta: number): void {
-  if (camEntity === null || delta === 0) return;
-  if (mode !== 'free') setCameraMode('free');
+  if (camEntity === null || delta === 0 || mode !== 'free') return;
   tween = null;
   const t = Transform.getMutable(camEntity);
   const forward = Vector3.rotate(Vector3.Forward(), t.rotation as Quaternion);
