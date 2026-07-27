@@ -98,12 +98,21 @@ export function getFetchCalls(page: Page): Promise<RecordedFetch[]> {
  * Fires a sign-in deeplink at the running app through the real macOS entry
  * point (`open-url`), which the main process handles and forwards to the
  * renderer over IPC — exercising the full deeplink path.
+ *
+ * `authRequestId` mirrors the correlation id the auth dapp echoes back from the
+ * request page URL. Omitting it fires an uncorrelated link, which the app must
+ * reject.
  */
 export async function fireSignInDeeplink(
   electronApp: ElectronApplication,
   identityId: string,
+  authRequestId?: string,
 ): Promise<void> {
+  const params = new URLSearchParams({ signin: identityId });
+  if (authRequestId) {
+    params.set('authRequestId', authRequestId);
+  }
   await electronApp.evaluate(({ app }, url) => {
     app.emit('open-url', { preventDefault() {} }, url);
-  }, `dcl-creator-hub://open?signin=${identityId}`);
+  }, `dcl-creator-hub://open?${params.toString()}`);
 }
