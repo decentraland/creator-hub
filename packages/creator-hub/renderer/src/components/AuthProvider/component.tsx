@@ -126,7 +126,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       });
       deepLinkCleanupRef.current = cleanup;
 
-      const requestId = await AuthServerProvider.createSignInRequest();
+      const requestId = AuthServerProvider.createSignInRequestId();
       requestIdRef.current = requestId;
       navigate('/sign-in');
       AuthServerProvider.openAuthDapp(requestId, true);

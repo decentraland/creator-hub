@@ -10,8 +10,15 @@ import {
 } from './helpers/auth';
 import { Auth } from './pageObjects/Auth';
 
-const REQUEST_ID = 'e2e-request-id';
 const IDENTITY_ID = 'e2e-identity-id';
+
+/**
+ * The sign-in link id is generated locally, so it can only be asserted by shape.
+ * Mirrors the UUID v4 form the auth dapp requires of a deep-link request id
+ * (`isValidUuidV4`), which rejects a malformed one with an error view.
+ */
+const REQUESTS_PATH_WITH_UUID_V4 =
+  /\/requests\/[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\?/i;
 
 let electronApp: ElectronApplication;
 let cleanup: () => void;
@@ -24,16 +31,15 @@ let page: Page;
  * bridge, the main-process deeplink parsing/dispatch, identity persistence)
  * runs for real against the built app.
  *
- * The tests form a dependent chain (open → request → deeplink → signed in) and
- * share a single Electron instance, since cold-launching is the slow,
- * flaky step.
+ * The tests form a dependent chain (open → deeplink → signed in) and share a
+ * single Electron instance, since cold-launching is the slow, flaky step.
  */
 describe('sign in (happy path)', () => {
   beforeAll(async () => {
     ({ electronApp, cleanup } = await launchApp());
     page = await electronApp.firstWindow();
     await Auth.waitUntilReady(page);
-    await installAuthMocks(page, { requestId: REQUEST_ID, address: MOCK_ADDRESS });
+    await installAuthMocks(page, { address: MOCK_ADDRESS });
   }, 120_000);
 
   afterAll(async () => {
@@ -58,22 +64,17 @@ describe('sign in (happy path)', () => {
     const openCalls = await getOpenCalls(page);
     expect(openCalls, 'window.open was not called').toHaveLength(1);
     const url = openCalls[0];
-    expect(url).toContain(`/requests/${REQUEST_ID}`);
+    expect(url, 'request id is not a locally generated UUID v4').toMatch(
+      REQUESTS_PATH_WITH_UUID_V4,
+    );
     expect(url).toContain('targetConfigId=creator-hub');
     expect(url).toContain('flow=deeplink');
   });
 
-  test('creates the sign in request against the auth server', async () => {
+  test('does not create a server-side request for the sign in link', async () => {
     const fetchCalls = await getFetchCalls(page);
     const requestCall = fetchCalls.find(c => c.url.includes('/requests') && c.method === 'POST');
-    expect(requestCall, 'POST /requests was not made').toBeDefined();
-    expect(requestCall!.body, 'request body missing').toBeTruthy();
-    const parsed = JSON.parse(requestCall!.body as string);
-    expect(parsed.method).toBe('dcl_personal_sign');
-
-    // The requestId returned by the stub is the one used to open the dapp.
-    const openCalls = await getOpenCalls(page);
-    expect(openCalls[0]).toContain(`/requests/${REQUEST_ID}`);
+    expect(requestCall, 'POST /requests should no longer be made').toBeUndefined();
   });
 
   test('completes sign in when the deeplink arrives', async () => {
