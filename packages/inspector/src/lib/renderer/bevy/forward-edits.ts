@@ -125,8 +125,14 @@ export function createForwardEditBridge(options: ForwardEditBridgeOptions): Forw
   const { context, engineWindow } = options;
   // Default frozen — the editor boots static (see setAnimationsFrozen / #1382).
   const isFrozen = options.isFrozen ?? (() => true);
-  const send =
+  // Guard every send behind a disposed flag: once the bridge is disconnected (a
+  // Bevy iframe reboot swaps `engineWindow`, or the renderer unmounts), queued
+  // tasks that are still draining must NOT keep posting to the now-stale window.
+  let disposed = false;
+  const baseSend =
     options.send ?? ((cmd: string, args: string[]) => consoleCommand(engineWindow, cmd, args));
+  const send = (cmd: string, args: string[]): Promise<string> =>
+    disposed ? Promise.resolve('') : baseSend(cmd, args);
   const onError =
     options.onError ??
     ((ctx: string, error: unknown) => {
@@ -211,7 +217,13 @@ export function createForwardEditBridge(options: ForwardEditBridgeOptions): Forw
   const queues = new Map<Entity, Promise<unknown>>();
   const enqueue = (entity: Entity, task: () => Promise<void>) => {
     const prev = queues.get(entity) ?? Promise.resolve();
-    const next = prev.then(task).catch(() => {});
+    const next: Promise<unknown> = prev.then(task).catch(() => {});
+    // Prune the entry once this chain settles IF it's still the tail — otherwise
+    // `queues` grows one (resolved-Promise) entry per entity ever touched and is
+    // never reclaimed over a long editing session.
+    void next.then(() => {
+      if (queues.get(entity) === next) queues.delete(entity);
+    });
     queues.set(entity, next);
   };
 
@@ -485,8 +497,13 @@ export function createForwardEditBridge(options: ForwardEditBridgeOptions): Forw
 
   return {
     disconnect: () => {
+      disposed = true;
       if (armTimer !== null) clearTimeout(armTimer);
       off();
+      // Drop per-entity queues + the instantiated set: the guarded `send` already
+      // stops in-flight tasks from posting, and clearing releases their closures.
+      queues.clear();
+      instantiated.clear();
     },
     setAnimationsFrozen,
     reconcileAfterReload,

@@ -35,6 +35,10 @@ type Realm = {
 };
 
 const realms: Map<string, Realm> = new Map();
+// In-flight start() per path. Serializes concurrent starts (a rapid renderer
+// toggle) so a second caller reuses the first's pending server instead of
+// spawning a duplicate, and lets kill() cancel a start that hasn't resolved yet.
+const starting: Map<string, Promise<{ url: string; wsUrl: string }>> = new Map();
 
 function isRealmRunning(realm?: Realm): realm is Realm {
   return !!(realm?.child.alive() && realm.url);
@@ -57,12 +61,26 @@ async function getEnv(path: string) {
  * Start (or reuse) the Bevy realm server for a project. Resolves once the server
  * is serving, returning the realm + data-layer URLs the inspector needs.
  */
-export async function start(path: string): Promise<{ url: string; wsUrl: string }> {
+export function start(path: string): Promise<{ url: string; wsUrl: string }> {
   const existing = realms.get(path);
   if (isRealmRunning(existing)) {
-    return { url: existing.url, wsUrl: existing.wsUrl };
+    return Promise.resolve({ url: existing.url, wsUrl: existing.wsUrl });
   }
 
+  // Coalesce concurrent starts for the same path so we never spawn two servers
+  // for one project (the second toggle reuses the first's pending start).
+  const inFlight = starting.get(path);
+  if (inFlight) return inFlight;
+
+  const promise = startInternal(path).finally(() => {
+    // Only clear if still ours — kill() or a later start may have replaced it.
+    if (starting.get(path) === promise) starting.delete(path);
+  });
+  starting.set(path, promise);
+  return promise;
+}
+
+async function startInternal(path: string): Promise<{ url: string; wsUrl: string }> {
   await kill(path);
 
   const port = await getAvailablePort();
@@ -76,17 +94,34 @@ export async function start(path: string): Promise<{ url: string; wsUrl: string 
     env: await getEnv(path),
   });
 
+  // Track the child IMMEDIATELY (before waiting for it to serve) so a kill(path)
+  // during startup — the user switches renderer or closes the editor while the
+  // server is still coming up — can find and terminate it. Storing only after
+  // `waitFor` resolves leaves the pending process orphaned in that window.
+  realms.set(path, { child, url, wsUrl, port });
+
   // `--no-client` means no deep-link / browser open, so we wait for the
   // server-ready line sdk-commands prints once it's serving.
   const serverReady = /Preview server is now running/i;
-  await child.waitFor(serverReady, /CliError|error:/i);
+  try {
+    await child.waitFor(serverReady, /CliError|error:/i);
+  } catch (err) {
+    // Startup failed or the child was killed mid-boot — make sure it's gone and
+    // the entry doesn't linger as a half-alive realm. Guard the delete so a
+    // concurrent kill()/start() that already replaced our entry isn't clobbered.
+    await child.kill().catch(() => {});
+    if (realms.get(path)?.child === child) realms.delete(path);
+    throw err;
+  }
 
-  realms.set(path, { child, url, wsUrl, port });
   log.info(`[BevyRealm] Serving ${path} at ${url}`);
   return { url, wsUrl };
 }
 
 export async function kill(path: string): Promise<void> {
+  // Drop any in-flight start so a subsequent start() spawns fresh rather than
+  // joining the server we're about to kill.
+  starting.delete(path);
   const realm = realms.get(path);
   const promise = realm?.child.kill().catch(() => {});
   realms.delete(path);

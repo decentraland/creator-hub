@@ -249,5 +249,9 @@ export class BevySceneContext {
 
   dispose(): void {
     this.#frameHandlers.clear();
+    // Also drop change subscribers: any bridge that didn't unsubscribe before
+    // dispose (forward-edit, layout-reload, selection, scene-metadata) would
+    // otherwise keep its closure — and everything it captures — reachable.
+    this.#changeHandlers.clear();
   }
 }

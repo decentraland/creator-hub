@@ -89,25 +89,39 @@ export function registerBevyRenderer(): void {
 
       // Boot the engine iframe pointed at the configured realm. `mount` awaits it
       // so the inspector only proceeds once the engine console is live; a boot
-      // failure rejects here rather than leaving a half-mounted renderer.
+      // failure rejects here rather than leaving a half-mounted renderer. Because
+      // the canvas is already hidden and the reverse channel + BevyRenderer are
+      // already created above, a boot rejection must undo them here — otherwise
+      // `dispose()` is never returned to the caller and the viewport stays blank
+      // (canvas display:none) with the reverse-channel listeners still attached.
       const config = getConfig();
-      const engine = await mountBevyEngine({
-        container,
-        realm: config.bevyRealm ?? undefined,
-        position: config.bevyPosition ?? undefined,
-        systemScene: config.bevySystemScene ?? undefined,
-        // NOTE: we do NOT launch in preview mode. It would make out-of-bounds items
-        // visible (#1391), but in a `--data-layer` editor realm `is_preview=true`
-        // also opens a preview socket to the realm, and every edit (a gizmo move
-        // writes the CRDT → the data-layer rewrites the scene files) trips the
-        // sdk-commands file watcher → SCENE_UPDATE → the engine RELOADS the scene
-        // mid-edit. The engine only skips that reload for scenes flagged
-        // `ctx.inspected`, which is set by its `--inspect`/debug-UI path — NOT by
-        // the editor's `/set_scene` pin — so the guard never fires here and the
-        // scene reloads on every gizmo drag (freeze → gizmo detaches → auto-start →
-        // play/pause dead). #1391 must be fixed engine-side instead (gate the
-        // show-outside-bounds tag on the editor/inspection context, not is_preview).
-      });
+      let engine: Awaited<ReturnType<typeof mountBevyEngine>>;
+      try {
+        engine = await mountBevyEngine({
+          container,
+          realm: config.bevyRealm ?? undefined,
+          position: config.bevyPosition ?? undefined,
+          systemScene: config.bevySystemScene ?? undefined,
+          // NOTE: we do NOT launch in preview mode. It would make out-of-bounds items
+          // visible (#1391), but in a `--data-layer` editor realm `is_preview=true`
+          // also opens a preview socket to the realm, and every edit (a gizmo move
+          // writes the CRDT → the data-layer rewrites the scene files) trips the
+          // sdk-commands file watcher → SCENE_UPDATE → the engine RELOADS the scene
+          // mid-edit. The engine only skips that reload for scenes flagged
+          // `ctx.inspected`, which is set by its `--inspect`/debug-UI path — NOT by
+          // the editor's `/set_scene` pin — so the guard never fires here and the
+          // scene reloads on every gizmo drag (freeze → gizmo detaches → auto-start →
+          // play/pause dead). #1391 must be fixed engine-side instead (gate the
+          // show-outside-bounds tag on the editor/inspection context, not is_preview).
+        });
+      } catch (error) {
+        // Undo the pre-boot setup (canvas hidden, reverse channel, BevyRenderer)
+        // so a boot failure doesn't leave the viewport blank with live listeners.
+        disconnect();
+        bevy.dispose();
+        canvas.style.display = previousDisplay;
+        throw error;
+      }
       bevy.attachEngine(engine.engineWindow);
 
       // Bindings tied to the engine's WINDOW (its iframe contentWindow): the edit

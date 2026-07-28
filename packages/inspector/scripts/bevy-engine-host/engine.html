@@ -3,6 +3,36 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!--
+      Content-Security-Policy for the engine host frame (it runs same-origin with
+      the editor bridge, so a script-injection here is high-impact). Restrictions:
+        - script-src: only same-origin + the pinned+SRI'd jsDelivr media libs. NO
+          'unsafe-inline', so an injected inline <script> or event handler can't
+          run — the boot logic lives in the external host-boot.js for this reason.
+          'unsafe-eval' is REQUIRED: the engine bundle's engine.js builds its
+          `window.engine.<command>` wrappers with `new Function` at init (not our
+          code — can't avoid it); 'wasm-unsafe-eval' also allows the wasm compile.
+        - object-src 'none' + base-uri 'self': block plugins and <base> hijacking.
+        - worker-src self+blob: the engine spawns same-origin and blob: workers.
+      img/media/font/connect stay broad: the engine streams textures, video, and
+      comms/content from many realms/CDNs that can't be enumerated ahead of time.
+    -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="
+        default-src 'self';
+        script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' https://cdn.jsdelivr.net;
+        worker-src 'self' blob:;
+        child-src 'self' blob:;
+        style-src 'self' 'unsafe-inline';
+        img-src 'self' data: blob: https: http:;
+        media-src 'self' data: blob: https: http:;
+        font-src 'self' data: https:;
+        connect-src 'self' data: blob: https: http: ws: wss:;
+        object-src 'none';
+        base-uri 'self';
+      "
+    />
     <title>Bevy Engine</title>
     <style>
       html,
@@ -22,13 +52,23 @@
         display: block;
       }
     </style>
-    <!-- Media libs the engine wasm expects as window globals (LivekitClient, Hls);
-         same third-party CDNs the engine's own boot pages have always used. -->
+    <!-- Media libs the engine wasm expects as window globals (LivekitClient, Hls).
+         These run same-origin with the editor bridge, so pin EXACT versions with
+         Subresource Integrity: the browser refuses to execute a script whose bytes
+         don't match the hash, so a compromised/mutated CDN payload can't run. Bump
+         the version + regenerate the hash together (jsDelivr serves the pinned file
+         immutably). `crossorigin="anonymous"` is required for SRI on cross-origin
+         scripts. -->
     <script
-      src="https://cdn.jsdelivr.net/npm/livekit-client/dist/livekit-client.umd.min.js"
+      src="https://cdn.jsdelivr.net/npm/livekit-client@2.21.0/dist/livekit-client.umd.min.js"
+      integrity="sha384-/0L8HD1sXzBDqZAU0s9eTwBbWz4KHVXXXT/aIZRsdbLZRm2z8jkLs5VYHJgnHTqj"
       crossorigin="anonymous"
     ></script>
-    <script src="https://cdn.jsdelivr.net/npm/hls.js@1" crossorigin="anonymous"></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/hls.js@1.6.16/dist/hls.min.js"
+      integrity="sha384-5E8B0pTlZZJMabWpC0fyYf6OUpe15jJij34BqBAh4NXoHAlLNOjCPRrwtOXOQFAn"
+      crossorigin="anonymous"
+    ></script>
   </head>
   <body>
     <div id="canvas-parent">
@@ -52,79 +92,10 @@
       The inspector mounts this page in its viewport iframe with the realm /
       position / systemScene on the query string (see engine-iframe.ts); we read
       them here and drive the boot contract.
+
+      The boot logic lives in the external same-origin `host-boot.js` (not inline)
+      so the CSP above can forbid inline scripts.
     -->
-    <script type="module">
-      const params = new URLSearchParams(window.location.search);
-      const realm = params.get('realm') ?? undefined;
-      const position = params.get('position') ?? undefined;
-      const systemScene = params.get('systemScene') ?? undefined;
-      // `preview=true` makes the engine treat this session as a preview: notably it
-      // renders OUT-OF-BOUNDS geometry (dithered) instead of discarding it, so items
-      // the user drags outside the scene layout stay visible in the editor (#1391).
-      // The engine's show-outside-bounds mesh tag is gated on is_preview.
-      const preview = params.get('preview') === 'true';
-      // Leave `portables` UNDEFINED so the engine loads its default
-      // `basiccontroller.dcl.eth` portable — same as bevy-editor. Since the
-      // react-web engine layout, that PX PROVIDES the player's movement controller,
-      // so it's REQUIRED for avatar WASD walking. (We previously forced
-      // `portables=''` to skip its content-server fetch on the old engine, where
-      // movement was engine-built-in; on this engine that silently killed WASD
-      // walking while leaving camera/arrows working — a confusing footgun.)
-      const portables = undefined;
-
-      // The engine's asset processor reads/writes a cache the service worker
-      // manages; register it under `/bevy-engine/` (this page's dir → that scope).
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-          navigator.serviceWorker.register('service_worker.js').catch(e => {
-            console.warn('[bevy engine-host] service worker registration failed', e);
-          });
-        });
-      }
-
-      // Boot contract, set BEFORE injecting boot.js (it reads these at module
-      // eval). `PUBLIC_URL` is intentionally left UNSET so engine.js resolves its
-      // `pkg/` wasm relative to its own module URL — i.e. the same-origin
-      // `/bevy-engine/engine/` dir we serve — instead of a CDN.
-      window.__bevyBootConfig = { systemScene, portables, preview };
-
-      // Load the engine's boot module as a runtime <script> (NOT an import): it
-      // ships in the engine package under `/bevy-engine/engine/` and must load
-      // from there, same-origin, with a relative URL.
-      const boot = document.createElement('script');
-      boot.type = 'module';
-      boot.src = 'engine/boot.js';
-      boot.onerror = () => console.error('[bevy engine-host] failed to load engine/boot.js');
-      document.head.appendChild(boot);
-
-      // The engine fetches `<systemScene>/about` exactly once at launch to load the
-      // editor-agent PX; a refused connection silently drops the agent for the whole
-      // session. Boot is near-instant once the GPU/wasm caches are warm, so it can
-      // win the race against a still-starting realm server — hold the launch until
-      // the systemScene realm actually answers (bounded), then launch.
-      async function waitForServer(url, timeoutMs) {
-        const deadline = Date.now() + timeoutMs;
-        while (Date.now() < deadline) {
-          try {
-            const res = await fetch(url, { signal: AbortSignal.timeout(1500) });
-            if (res.ok) return;
-          } catch {
-            /* not up yet — retry */
-          }
-          await new Promise(r => setTimeout(r, 500));
-        }
-        console.warn(`[bevy engine-host] ${url} still not answering — launching anyway`);
-      }
-
-      async function launchWhenReady() {
-        if (systemScene) await waitForServer(`${systemScene}/about`, 120_000);
-        while (window.__bevyReadyToLaunch !== true) {
-          await new Promise(r => setTimeout(r, 100));
-        }
-        window.__bevyLaunch(realm, position);
-      }
-
-      void launchWhenReady();
-    </script>
+    <script type="module" src="host-boot.js"></script>
   </body>
 </html>
