@@ -1,7 +1,31 @@
 import type { UINode } from '../tree-model';
+import type { InteractionStateKey } from './interaction-convention';
 
 // Byte span [start, end) into the source text of the backing AST node.
 export type Span = [number, number];
+
+// One interaction layer's styles, in the same PB shape the panel and canvas read
+// off a node — so a layer can be previewed and edited with the existing field
+// editors rather than a parallel set.
+export interface InteractionStateStyles {
+  uiTransform?: Record<string, unknown>;
+  uiBackground?: Record<string, unknown>;
+  uiText?: Record<string, unknown>;
+}
+
+// A node whose styles are layered by interaction state (see
+// interaction-convention.ts). `base` is the resting style the node renders with;
+// the other layers override it while hovered / pressed / active.
+export interface CodeInteraction {
+  // Only layers actually present in source appear here.
+  states: Partial<Record<InteractionStateKey, InteractionStateStyles>>;
+  // Source text of the expression driving the `active` layer, when present
+  // (e.g. `state.selected`).
+  activeExpr?: string;
+  // Identifier the call is bound to (`const btn = useInteraction(…)`); absent
+  // when the call is spread inline.
+  name?: string;
+}
 
 // A UINode produced from parsed TSX (code-mode) rather than from live ECS
 // components. It is a regular UINode (so the existing Canvas renders it
@@ -25,6 +49,10 @@ export interface CodeUINode extends UINode {
   // variable/call reference). The node is still shown, but the editor does not
   // own those props — it must not clobber them on write.
   dynamicProps?: boolean;
+  // Set when this node's styles come from a recognized `useInteraction(…)` call
+  // spread onto it. The node's own uiTransform/uiBackground/uiText are hydrated
+  // from the `base` layer, so everything downstream renders it unchanged.
+  interaction?: CodeInteraction;
   children: CodeUINode[];
 }
 

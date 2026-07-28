@@ -33,30 +33,42 @@ export function flattenedToErgonomicKey(key: string): string | null {
   return base;
 }
 
-// Build the edits for a panel patch against the node's backing JSX element.
-// `currentPB` is the node's current flattened-PB uiTransform (parse-adapter
-// output) — merged with the patch so group re-folds (an edge object, a border
-// group) keep their untouched members.
-export function uiTransformPatchEdits(
-  el: AstElement,
+// The ergonomic `uiTransform` fields a panel patch resolves to — the sink-agnostic
+// half of uiTransformPatchEdits, shared with the interaction-layer write path (an
+// interaction state's `uiTransform` lives in an object literal, not a JSX
+// attribute). `currentPB` is the node's current flattened-PB uiTransform
+// (parse-adapter output), merged with the patch so group re-folds (an edge
+// object, a border group) keep their untouched members. A field resolving to
+// `undefined` means "remove it" to the setObjectFields family — exactly right
+// when a patched value becomes unset (switching back to in-flow clears the
+// position edges; positionType folds away when relative).
+export function uiTransformPatchFields(
   currentPB: Record<string, unknown>,
   patch: Record<string, unknown>,
-): Edit[] {
-  const merged: Record<string, unknown> = { ...currentPB, ...patch };
-  delete merged.parent;
-  const ergo = pbToErgonomicTransform(merged);
-
+): Record<string, unknown> {
   const touched = new Set<string>();
   for (const key of Object.keys(patch)) {
     const ergoKey = flattenedToErgonomicKey(key);
     if (ergoKey) touched.add(ergoKey);
   }
-  if (touched.size === 0) return [];
+  if (touched.size === 0) return {};
 
-  // `undefined` means "remove the field" to setObjectFields — exactly right
-  // when the patched value resolves to unset (e.g. switching back to in-flow
-  // clears position edges / positionType folds away when relative).
+  const merged: Record<string, unknown> = { ...currentPB, ...patch };
+  delete merged.parent;
+  const ergo = pbToErgonomicTransform(merged);
+
   const fields: Record<string, unknown> = {};
   for (const key of touched) fields[key] = ergo[key];
+  return fields;
+}
+
+// Build the edits for a panel patch against the node's backing JSX element.
+export function uiTransformPatchEdits(
+  el: AstElement,
+  currentPB: Record<string, unknown>,
+  patch: Record<string, unknown>,
+): Edit[] {
+  const fields = uiTransformPatchFields(currentPB, patch);
+  if (Object.keys(fields).length === 0) return [];
   return setObjectFields(el, 'uiTransform', fields);
 }

@@ -2,6 +2,7 @@ import { useSyncExternalStore } from 'react';
 import type { Entity } from '@dcl/ecs';
 
 import { getCodeParser } from '../../../lib/logic/code-parser/iframe';
+import { isValidIdentifier } from '../../../lib/sdk/operations/validators';
 import { getStorage } from '../../../lib/data-layer/client/iframe-data-layer';
 import { store as reduxStore } from '../../../redux/store';
 import {
@@ -11,7 +12,7 @@ import {
   selectNode,
 } from '../../../redux/ui-designer';
 import type { UINodeType } from '../tree-model';
-import { generateRootComponent, generateUiIndex } from './aggregator';
+import { generateInteractionHelper, generateRootComponent, generateUiIndex } from './aggregator';
 import {
   type CodeAction,
   migrateActionsToArgsObject,
@@ -68,11 +69,30 @@ import {
   setObjectField,
   setObjectFields,
   setReturnJsx,
+  toBlockBody,
 } from './emit-adapter';
-import { pbBackgroundFieldToErgo, pbToErgonomicText } from './ecs-shape';
+import {
+  addInteractionState,
+  findInteractionForSpread,
+  type InteractionAst,
+  type InteractionStateKey,
+  removeInteractionState,
+  setInteractionActive,
+  setInteractionFlat,
+  setInteractionNested,
+  soleSpreadArgument,
+  unwrapInteractionEdits,
+  wrapInInteractionEdits,
+} from './interaction-convention';
+import { pbBackgroundPatchToErgoFields, pbToErgonomicText } from './ecs-shape';
 import { formatUiSource } from './formatting';
-import { uiTransformPatchEdits } from './transform-patch';
-import { codeToUINodes, findComponentFn, findComponentIdSpan } from './parse-adapter';
+import { uiTransformPatchEdits, uiTransformPatchFields } from './transform-patch';
+import {
+  codeToUINodes,
+  findComponentFn,
+  findComponentIdSpan,
+  isLayerableProp,
+} from './parse-adapter';
 import { toComponentName, uniqueRootName } from './root-naming';
 import type { CodeUINode, ParsedUI } from './types';
 
@@ -189,6 +209,10 @@ export function useCodeState(): CodeState {
 // The scene files backing code-mode (file-per-root).
 export const UI_DIR = 'src/ui';
 export const UI_INDEX = 'src/ui/index.tsx';
+// The scaffolded interaction-state helper. Lowercase basename by design: it is a
+// helper module, not a UI root, and refreshRoots must never list it as a GUI.
+export const UI_INTERACTION = 'src/ui/interaction.tsx';
+const UI_INTERACTION_IMPORT = './interaction';
 const SCENE_ENTRY = 'src/index.ts';
 // The stock single-file template we replace with the src/ui/ directory (see
 // removeLegacySingleFile).
@@ -776,6 +800,10 @@ async function refreshRoots(): Promise<CodeRoot[]> {
   const roots: CodeRoot[] = [];
   for (const e of entries) {
     if (e.isDirectory || !e.name.endsWith(TSX) || e.name === 'index.tsx') continue;
+    // Generated helper modules are not roots. (The lowercase basename would also
+    // fail the toComponentName fixed-point check below, but be explicit — a
+    // helper surfacing as a broken "GUI" in the rail is a confusing failure.)
+    if (`${UI_DIR}/${e.name}` === UI_INTERACTION) continue;
     const name = e.name.slice(0, -TSX.length);
     // Reject files whose basename is not already a valid component identifier:
     // refreshRoots is a trust boundary (a scene may be shared/downloaded), and the
@@ -1173,26 +1201,8 @@ async function spliceComponentPatchUnlocked(
   } else if (componentId === 'core::UiBackground') {
     if (!guardElementWrite(entityId, 'spliceComponentPatch')) return;
     // Per-key surgical writes; PB shapes (TextureUnion, numeric enums) convert
-    // back to the ergonomic react-ecs form. A PB texture variant that react-ecs
-    // can't express (videoTexture) is skipped with a warning.
-    const fields: Record<string, unknown> = {};
-    for (const key of ['color', 'texture', 'textureMode', 'textureSlices', 'uvs']) {
-      if (!(key in patch)) continue;
-      const ergo = pbBackgroundFieldToErgo(key, patch[key]);
-      if (!ergo) {
-        console.warn(
-          `[code-mode] uiBackground.${key}: value not expressible in react-ecs — skipped`,
-        );
-        continue;
-      }
-      // Switching (or clearing) the texture kind must clear the other
-      // variant's ergonomic prop — react-ecs applies whichever is present.
-      if (ergo.key === 'texture' || ergo.key === 'avatarTexture') {
-        fields.texture = undefined;
-        fields.avatarTexture = undefined;
-      }
-      fields[ergo.key] = ergo.value;
-    }
+    // back to the ergonomic react-ecs form.
+    const fields = pbBackgroundPatchToErgoFields(patch);
     if (Object.keys(fields).length) edits.push(...setObjectFields(ast, 'uiBackground', fields));
   } else if (
     componentId === 'core::UiText' ||
@@ -1648,6 +1658,166 @@ async function setMixedContentAttributeUnlocked(
   await applySourceEdits(setAttributeSegments(ast, name, segments));
 }
 
+// ---------------------------------------------------------------------------
+// Interaction-state styling (hover / press / active). A node's styles move into
+// a recognized `useInteraction({ base, hover, … })` call spread onto it — see
+// code/interaction-convention.ts for why a recognized helper beats an inline
+// ternary (which would mark the node dynamicProps and freeze ALL panel edits).
+// ---------------------------------------------------------------------------
+
+// Write the scene-local helper module. Idempotent, and it never overwrites: an
+// author who tuned the merge/chaining keeps their version.
+async function ensureInteractionHelper(): Promise<void> {
+  if (await readFromDisk(UI_INTERACTION)) return;
+  await writeToDisk(UI_INTERACTION, generateInteractionHelper());
+}
+
+// The interaction call backing a node, or null when it has none.
+function interactionAstFor(entityId: number): InteractionAst | null {
+  const el = astNodeFor(entityId) as Parameters<typeof soleSpreadArgument>[0] | undefined;
+  if (!el || !state.program) return null;
+  const fn = findComponentFn(
+    state.program as Parameters<typeof findComponentFn>[0],
+    activeComponentName(),
+  );
+  return findInteractionForSpread(
+    soleSpreadArgument(el),
+    fn as Parameters<typeof findInteractionForSpread>[1],
+  );
+}
+
+// A collision-free local name for the interaction const. Scans the whole source
+// rather than just declarations — conservative, cheap, and it guarantees the
+// generated name can't shadow something the author references.
+function uniqueLocalName(base: string, source: string): string {
+  const safe = isValidIdentifier(base) ? base : 'interactionStyles';
+  let name = safe;
+  for (let i = 1; new RegExp(`\\b${name}\\b`).test(source); i++) name = `${safe}${i}`;
+  return name;
+}
+
+// Convert a plain element into an interactive one. The edit composition itself is
+// pure (interaction-convention.wrapInInteractionEdits); this op owns only the IO:
+// scaffolding the helper file, normalizing a concise-body arrow, and naming.
+async function addInteractionStatesUnlocked(entityId: number): Promise<void> {
+  const node = findCodeNode(state.parsed?.root, entityId);
+  if (!node || node.interaction) return;
+  if (!guardElementWrite(entityId, 'addInteractionStates')) return;
+  if (!state.program) return;
+
+  await ensureInteractionHelper();
+
+  // A concise-body arrow (`() => <jsx/>`) has no block to hold the const —
+  // convert it first, then work against the reparsed spans.
+  const componentName = activeComponentName();
+  const initialFn = findComponentFn(
+    state.program as Parameters<typeof findComponentFn>[0],
+    componentName,
+  );
+  if (!initialFn) return;
+  const block = toBlockBody(initialFn as Parameters<typeof toBlockBody>[0], state.source);
+  if (block.edits.length) await applySourceEdits(block.edits);
+
+  const el = astNodeFor(entityId) as Record<string, any> | undefined;
+  const fn = findComponentFn(state.program as Parameters<typeof findComponentFn>[0], componentName);
+  if (!el || !fn) return;
+
+  await applySourceEdits(
+    wrapInInteractionEdits({
+      program: state.program as Parameters<typeof wrapInInteractionEdits>[0]['program'],
+      fnNode: fn as Parameters<typeof wrapInInteractionEdits>[0]['fnNode'],
+      el: el as Parameters<typeof wrapInInteractionEdits>[0]['el'],
+      source: state.source,
+      name: uniqueLocalName(
+        `${node.type.charAt(0).toLowerCase()}${node.type.slice(1)}Styles`,
+        state.source,
+      ),
+      importFrom: UI_INTERACTION_IMPORT,
+      isLayerable: attrName => isLayerableProp(node.type, attrName),
+    }),
+  );
+}
+
+// Unwrap back to a plain element (see interaction-convention.unwrapInteractionEdits).
+async function removeInteractionStatesUnlocked(entityId: number): Promise<void> {
+  const ast = interactionAstFor(entityId);
+  const el = astNodeFor(entityId) as Parameters<typeof unwrapInteractionEdits>[1] | undefined;
+  if (!ast || !el) return;
+  const edits = unwrapInteractionEdits(ast, el, state.source);
+  if (edits.length) await applySourceEdits(edits);
+}
+
+// Route a PropertyPanel patch into ONE interaction layer instead of the element's
+// own attributes — the same conversions spliceComponentPatch uses, which is the
+// point: the panel reuses its existing field editors for every state.
+async function setInteractionFieldUnlocked(
+  entityId: number,
+  stateKey: InteractionStateKey,
+  componentId: string,
+  patch: Record<string, unknown>,
+): Promise<void> {
+  const ast = interactionAstFor(entityId);
+  const node = findCodeNode(state.parsed?.root, entityId);
+  if (!ast || !node) return;
+
+  let edits: Edit[] = [];
+  if (componentId === 'core::UiTransform') {
+    // Re-fold groups against THIS layer's own values, not the merged result — an
+    // override must not silently absorb the base layer's other edges.
+    const current = (node.interaction?.states[stateKey]?.uiTransform ?? {}) as Record<
+      string,
+      unknown
+    >;
+    const fields = uiTransformPatchFields(current, patch);
+    if (Object.keys(fields).length)
+      edits = setInteractionNested(ast, stateKey, 'uiTransform', fields);
+  } else if (componentId === 'core::UiBackground') {
+    const fields = pbBackgroundPatchToErgoFields(patch);
+    if (Object.keys(fields).length)
+      edits = setInteractionNested(ast, stateKey, 'uiBackground', fields);
+  } else if (
+    componentId === 'core::UiText' ||
+    componentId === 'core::UiInput' ||
+    componentId === 'core::UiDropdown'
+  ) {
+    edits = setInteractionFlat(ast, stateKey, pbToErgonomicText(patch));
+  }
+  if (edits.length) await applySourceEdits(edits);
+}
+
+// Add / drop a whole layer (the panel's per-state add and reset).
+async function addInteractionLayerUnlocked(
+  entityId: number,
+  stateKey: InteractionStateKey,
+): Promise<void> {
+  const ast = interactionAstFor(entityId);
+  if (!ast) return;
+  const edits = addInteractionState(ast, stateKey);
+  if (edits.length) await applySourceEdits(edits);
+}
+
+async function removeInteractionLayerUnlocked(
+  entityId: number,
+  stateKey: InteractionStateKey,
+): Promise<void> {
+  const ast = interactionAstFor(entityId);
+  if (!ast) return;
+  const edits = removeInteractionState(ast, stateKey);
+  if (edits.length) await applySourceEdits(edits);
+}
+
+// Bind (or clear) the boolean expression driving the `active` layer — how a
+// persistent selected/toggled style is wired, via the existing variable picker.
+async function setInteractionActiveBindingUnlocked(
+  entityId: number,
+  expr: string | undefined,
+): Promise<void> {
+  const ast = interactionAstFor(entityId);
+  if (!ast) return;
+  const edits = setInteractionActive(ast, expr);
+  if (edits.length) await applySourceEdits(edits);
+}
+
 // Ensure the typed `state` scaffold exists (`export interface State {}` +
 // `export const state: State = {}`), seeding it after the imports if absent.
 // `as any` matches the existing adapter style (cf. `result.comments as any`).
@@ -1822,3 +1992,9 @@ export const retypeStateVariable = exclusive(retypeStateVariableUnlocked);
 export const addBindProp = exclusive(addBindPropUnlocked);
 export const removeProp = exclusive(removePropUnlocked);
 export const retypeProp = exclusive(retypePropUnlocked);
+export const addInteractionStates = exclusive(addInteractionStatesUnlocked);
+export const removeInteractionStates = exclusive(removeInteractionStatesUnlocked);
+export const setInteractionField = exclusive(setInteractionFieldUnlocked);
+export const addInteractionLayer = exclusive(addInteractionLayerUnlocked);
+export const removeInteractionLayer = exclusive(removeInteractionLayerUnlocked);
+export const setInteractionActiveBinding = exclusive(setInteractionActiveBindingUnlocked);

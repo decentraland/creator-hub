@@ -14,7 +14,14 @@ import {
 const SEG_LITERAL = 'literal';
 const SEG_BINDING = 'binding';
 import { ergonomicToPBBackground, ergonomicToPBText, ergonomicToPBTransform } from './ecs-shape';
-import type { CodeUINode, ComponentRefProp, ParsedUI, Span } from './types';
+import {
+  findInteractionForSpread,
+  INTERACTION_STATES,
+  type InteractionAst,
+  type InteractionStateKey,
+  soleSpreadArgument,
+} from './interaction-convention';
+import type { CodeUINode, ComponentRefProp, InteractionStateStyles, ParsedUI, Span } from './types';
 
 // ---------------------------------------------------------------------------
 // Minimal OXC/ESTree node shapes we read. OXC emits an ESTree-conformant AST,
@@ -210,10 +217,9 @@ function bindingExpr(attr: AnyNode, source: string): string | null {
 // (`onMouseDown={onClick}`, e.g. hand-authored). Returns null for anything else
 // (an inline arrow with a body, a dynamic expression). The name is what the panel
 // shows as bound; re-binding always re-emits the thunk.
-function eventHandlerName(attr: AnyNode): string | null {
-  const v = attr.value as AnyNode | null;
-  if (v?.type !== 'JSXExpressionContainer') return null;
-  const e = unparen(v.expression as AnyNode);
+function handlerNameOfExpr(expr: AnyNode | undefined): string | null {
+  if (!expr) return null;
+  const e = unparen(expr);
   if (e.type === 'Identifier') return e.name as string;
   if (e.type === 'ArrowFunctionExpression') {
     const body = unparen(e.body as AnyNode);
@@ -222,6 +228,12 @@ function eventHandlerName(attr: AnyNode): string | null {
     }
   }
   return null;
+}
+
+function eventHandlerName(attr: AnyNode): string | null {
+  const v = attr.value as AnyNode | null;
+  if (v?.type !== 'JSXExpressionContainer') return null;
+  return handlerNameOfExpr(v.expression as AnyNode);
 }
 
 // A `value={`literal ${expr} …`}` template literal → ordered mixed-content
@@ -265,6 +277,69 @@ function eventFieldKey(type: UINodeType, attr: string): string | null {
   return null;
 }
 
+// Read one interaction layer's object literal into the PB-shaped bags the panel
+// and canvas consume — the object-literal counterpart of visitElement's
+// attribute reading. Unknown props are left alone (writes are surgical, so
+// hand-authored extras survive); a non-static uiTransform/uiBackground marks the
+// layer dynamic, matching the JSX-attribute path's safety rule.
+function readInteractionLayer(
+  obj: AnyNode,
+  type: UINodeType,
+): { styles: InteractionStateStyles; events: Map<string, string>; dynamic: boolean } {
+  const styles: InteractionStateStyles = {};
+  const events = new Map<string, string>();
+  const textValues: Record<string, unknown> = {};
+  const group = TYPED_PROP_GROUPS[type];
+  let dynamic = false;
+
+  for (const prop of (obj.properties ?? []) as AnyNode[]) {
+    if (prop.type !== 'Property' || prop.computed) {
+      dynamic = true;
+      continue;
+    }
+    const key = String(prop.key.type === 'Identifier' ? prop.key.name : prop.key.value);
+    const valueNode = prop.value as AnyNode;
+
+    if (key === 'uiTransform' || key === 'uiBackground') {
+      const v = evalExpr(valueNode);
+      if (!v.ok) {
+        dynamic = true;
+        continue;
+      }
+      if (v.dynamic) dynamic = true;
+      const bag = v.value as Record<string, unknown>;
+      styles[key] =
+        key === 'uiTransform' ? ergonomicToPBTransform(bag) : ergonomicToPBBackground(bag);
+      continue;
+    }
+
+    if (eventFieldKey(type, key)) {
+      const handler = handlerNameOfExpr(valueNode);
+      if (handler) events.set(key, handler);
+      continue;
+    }
+
+    if (group?.props.has(key)) {
+      const v = evalExpr(valueNode);
+      if (v.ok && !v.dynamic) textValues[key] = v.value;
+      else dynamic = true;
+    }
+  }
+
+  if (Object.keys(textValues).length > 0) styles.uiText = ergonomicToPBText(textValues);
+  return { styles, events, dynamic };
+}
+
+// Whether an attribute is one the editor models as a style or an event — and so
+// one that can MOVE into an interaction layer when a node gains interaction
+// states. Unmodeled attributes (`key`, anything hand-authored the editor doesn't
+// understand) stay on the element, where the layer spread can't clobber them.
+export function isLayerableProp(type: UINodeType, name: string): boolean {
+  if (name === 'uiTransform' || name === 'uiBackground') return true;
+  if (eventFieldKey(type, name)) return true;
+  return TYPED_PROP_GROUPS[type]?.props.has(name) ?? false;
+}
+
 export interface CodeToUINodesOptions {
   // Name of the exported component to read (defaults to the first exported
   // function declaration returning JSX).
@@ -286,6 +361,9 @@ export function codeToUINodes(
 ): ParsedUI | null {
   const rootJsx = findComponentReturnJsx(program, options.componentName);
   if (!rootJsx) return null;
+  // The component function, so a `{...btn}` spread can be resolved to the
+  // `const btn = useInteraction(…)` declared in its body.
+  const componentFn = findComponentFn(program, options.componentName);
 
   const spans = new Map<number, Span>();
   const astNodes = new Map<number, AnyNode>();
@@ -357,7 +435,14 @@ export function codeToUINodes(
     }
 
     const { attrs, hasSpread } = readAttributes(el);
-    if (hasSpread) return opaqueNode(el, 'spread-props', name);
+    // A spread is representable ONLY when it is a recognized interaction call
+    // (`{...btn}` where `const btn = useInteraction({…})`); the node then keeps
+    // its styles in that call's layers. Any other spread stays opaque.
+    let interaction: InteractionAst | null = null;
+    if (hasSpread) {
+      interaction = findInteractionForSpread(soleSpreadArgument(el), componentFn);
+      if (!interaction) return opaqueNode(el, 'spread-props', name);
+    }
 
     const id = nextId++ as unknown as Entity;
     const span: Span = [el.start, el.end];
@@ -370,6 +455,39 @@ export function codeToUINodes(
     // keyed by the panel's `componentId.field` so a bound attribute previews on
     // the canvas and shows as bound in the panel.
     const bindings: CanvasBindingRow[] = [];
+
+    // Interaction layers. The node renders its `base` layer, so hydrate the
+    // regular style fields from it — everything downstream (canvas, panel)
+    // then treats the node like any other. Hydration happens BEFORE the
+    // attribute reads below so a co-authored attribute still wins, mirroring
+    // JSX precedence for `<X {...btn} attr={…} />`.
+    if (interaction) {
+      const states: Partial<Record<InteractionStateKey, InteractionStateStyles>> = {};
+      for (const key of INTERACTION_STATES) {
+        const layer = interaction.states.get(key);
+        if (!layer) continue;
+        const { styles, events, dynamic } = readInteractionLayer(layer.object, type);
+        states[key] = styles;
+        if (dynamic) dynamicProps = true;
+        if (key !== 'base') continue;
+        if (styles.uiTransform) node.uiTransform = styles.uiTransform;
+        if (styles.uiBackground) node.uiBackground = styles.uiBackground;
+        if (styles.uiText) node.uiText = styles.uiText;
+        // Event handlers live in the base layer (the helper chains them), so
+        // they surface as bindings exactly like a JSX event attribute would.
+        for (const [attrName, handler] of events) {
+          const field = eventFieldKey(type, attrName);
+          if (field) bindings.push({ field, variable: handler });
+        }
+      }
+      node.interaction = {
+        states,
+        activeExpr: interaction.activeArg
+          ? source.slice(interaction.activeArg.start, interaction.activeArg.end)
+          : undefined,
+        name: interaction.name,
+      };
+    }
 
     const uiTransformAttr = attrs.get('uiTransform');
     if (uiTransformAttr) {

@@ -1,7 +1,7 @@
 import { parseSync } from 'oxc-parser';
 import { describe, expect, it } from 'vitest';
 
-import { generateRootComponent, generateUiIndex } from './aggregator';
+import { generateInteractionHelper, generateRootComponent, generateUiIndex } from './aggregator';
 import { codeToUINodes } from './parse-adapter';
 
 describe('when generating the file-per-root aggregator', () => {
@@ -44,5 +44,36 @@ describe('when generating the file-per-root aggregator', () => {
     expect(codeToUINodes(result.program as any, src)).toBeNull();
     // The State scaffold is present so the State/Logic panel has an anchor.
     expect(src).toContain('export const state: State = {}');
+  });
+});
+
+describe('when generating the interaction-state helper', () => {
+  const src = generateInteractionHelper();
+
+  it('should be valid, parseable TSX', () => {
+    expect(parseSync('interaction.tsx', src).errors).toHaveLength(0);
+  });
+
+  it('should read useState off the ReactEcs namespace', () => {
+    // `useState` is NOT a top-level export of '@dcl/sdk/react-ecs' — it lives on
+    // the ReactEcs namespace, so a bare `import { useState }` does not resolve.
+    expect(src).toContain('ReactEcs.useState');
+    expect(src).not.toMatch(/import \{[^}]*\buseState\b/);
+  });
+
+  it('should be generic in the base layer so required props survive', () => {
+    // A Label's `value` is REQUIRED by UiLabelProps. Once it lives in the base
+    // layer, only a return type shaped like that layer keeps
+    // `<Label {...styles} />` typechecking in a strict scene.
+    expect(src).toContain('export function useInteraction<T extends InteractionLayer');
+    expect(src).toContain('): T {');
+  });
+
+  it('should apply the layers in precedence order and chain handlers', () => {
+    expect(src.indexOf('layers.active')).toBeLessThan(src.indexOf('layers.hover'));
+    expect(src.indexOf('layers.hover')).toBeLessThan(src.indexOf('layers.press'));
+    // A handler declared in a layer must still fire after the state tracker.
+    expect(src).toContain('style.onMouseDown');
+    expect(src).toContain('style.onMouseUp');
   });
 });

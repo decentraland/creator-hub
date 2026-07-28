@@ -424,6 +424,32 @@ export function pbBackgroundFieldToErgo(
   return { key, value };
 }
 
+// The ergonomic `uiBackground` fields a PropertyPanel patch resolves to. Shared
+// by the element write path and the interaction-layer one so both convert
+// identically. A PB variant react-ecs cannot express (videoTexture) is skipped
+// with a warning rather than emitted as a broken prop. Switching or clearing the
+// texture kind clears BOTH ergonomic texture props — react-ecs applies whichever
+// one is present, so leaving the old variant behind would silently win.
+export function pbBackgroundPatchToErgoFields(
+  patch: Record<string, unknown>,
+): Record<string, unknown> {
+  const fields: Record<string, unknown> = {};
+  for (const key of ['color', 'texture', 'textureMode', 'textureSlices', 'uvs']) {
+    if (!(key in patch)) continue;
+    const ergo = pbBackgroundFieldToErgo(key, patch[key]);
+    if (!ergo) {
+      console.warn(`[code-mode] uiBackground.${key}: value not expressible in react-ecs — skipped`);
+      continue;
+    }
+    if (ergo.key === 'texture' || ergo.key === 'avatarTexture') {
+      fields.texture = undefined;
+      fields.avatarTexture = undefined;
+    }
+    fields[ergo.key] = ergo.value;
+  }
+  return fields;
+}
+
 // ---------------------------------------------------------------------------
 // Label text props. react-ecs's <Label> takes `textAlign` / `font` as ENUM
 // STRINGS ('middle-center', 'serif' — @dcl/react-ecs Label utils parseTextAlign

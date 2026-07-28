@@ -100,9 +100,7 @@ export function setObjectFields(
   attrName: string,
   fields: Record<string, unknown>,
 ): Edit[] {
-  const entries = Object.entries(fields);
-  const setEntries = entries.filter(([, v]) => v !== undefined);
-  const fieldText = (k: string, v: unknown) => `${k}: ${serializeValue(v)}`;
+  const setEntries = Object.entries(fields).filter(([, v]) => v !== undefined);
   const attr = findAttr(el, attrName);
 
   // Attribute absent → add `attrName={{ a: 1, b: 2 }}` after the tag name.
@@ -130,6 +128,17 @@ export function setObjectFields(
     ];
   }
 
+  return setFieldsInObject(obj, fields);
+}
+
+const fieldText = (k: string, v: unknown) => `${k}: ${serializeValue(v)}`;
+
+// Set fields directly inside an ObjectExpression. Shared core of
+// setObjectFields (JSX-attribute container) and setObjectProperty (nested
+// object-literal container) — the four container cases differ per caller, but
+// the property-level insert/replace/remove bookkeeping below is identical.
+export function setFieldsInObject(obj: AstNode, fields: Record<string, unknown>): Edit[] {
+  const entries = Object.entries(fields);
   const props = (obj.properties ?? []) as AstNode[];
   const propFor = (name: string): AstNode | undefined =>
     props.find(p => p.type === 'Property' && !p.computed && keyName(p.key) === name);
@@ -188,6 +197,54 @@ export function setObjectFields(
     }
   }
   return edits;
+}
+
+function propertyNamed(obj: AstNode, name: string): AstNode | undefined {
+  return ((obj.properties ?? []) as AstNode[]).find(
+    p => p.type === 'Property' && !p.computed && keyName(p.key) === name,
+  );
+}
+
+// Partially patch a NESTED object-literal property: `setObjectProperty(stateObj,
+// 'uiBackground', { color })` touches only `color`, leaving sibling fields
+// (`texture`, `textureMode`, …) byte-for-byte. The object-literal analog of
+// setObjectFields — used for prop bags that live inside an object (an
+// interaction state's styles) rather than on a JSX attribute.
+export function setObjectProperty(
+  obj: AstNode,
+  propName: string,
+  fields: Record<string, unknown>,
+): Edit[] {
+  const setEntries = Object.entries(fields).filter(([, v]) => v !== undefined);
+  const prop = propertyNamed(obj, propName);
+
+  // Property absent → insert it whole; serializeValue/emitObject recurse, so the
+  // nested bag serializes as `propName: { a: 1, b: { … } }`.
+  if (!prop) {
+    if (setEntries.length === 0) return [];
+    return setFieldsInObject(obj, { [propName]: Object.fromEntries(setEntries) });
+  }
+
+  const value = unparen(prop.value as AstNode);
+  if (value.type !== 'ObjectExpression') {
+    const body = setEntries.map(([k, v]) => fieldText(k, v)).join(', ');
+    return [{ start: value.start, end: value.end, text: `{ ${body} }` }];
+  }
+  return setFieldsInObject(value, fields);
+}
+
+// Remove one whole property from an object literal, absorbing an adjacent
+// delimiter so no dangling comma is left. Mirrors state-convention's
+// list-element removal. No-op when the property is absent.
+export function removeObjectProperty(obj: AstNode, propName: string): Edit[] {
+  const props = (obj.properties ?? []) as AstNode[];
+  const i = props.findIndex(
+    p => p.type === 'Property' && !p.computed && keyName(p.key) === propName,
+  );
+  if (i < 0) return [];
+  if (props.length === 1) return [{ start: obj.start + 1, end: obj.end - 1, text: '' }];
+  if (i > 0) return [{ start: props[i - 1].end, end: props[i].end, text: '' }];
+  return [{ start: props[i].start, end: props[i + 1].start, text: '' }];
 }
 
 // Emit a new JSX element from a code-mode node (used when adding a child).
@@ -270,6 +327,46 @@ export function setReturnJsx(fnNode: AstNode, source: string, childJsx: string):
   // No return statement — insert one just before the block's closing brace.
   const at = body.end - 1;
   return [{ start: at, end: at, text: `${indent}  return ${wrapped}\n${indent}` }];
+}
+
+// Insert a statement into a component's body, just before its `return`. Used to
+// place a `const x = useInteraction({…})` declaration where the returned JSX can
+// reference it. Concise-body arrows (`() => <jsx/>`) have no block to splice
+// into, so the caller must convert them first (see toBlockBody); this returns []
+// for them rather than emitting an unparseable edit.
+export function insertStatementBeforeReturn(
+  fnNode: AstNode,
+  source: string,
+  statement: string,
+): Edit[] {
+  const body = fnNode.body as AstNode | undefined;
+  if (!body || body.type !== 'BlockStatement') return [];
+  const stmts = (body.body ?? []) as AstNode[];
+  const ret = stmts.find(s => s.type === 'ReturnStatement');
+  const at = ret ? ret.start : body.end - 1;
+  const indent = lineIndent(source, at);
+  return [{ start: at, end: at, text: `${statement}\n${indent}` }];
+}
+
+// Convert a concise-body arrow (`() => <jsx/>` / `() => (<jsx/>)`) into a block
+// body (`() => { return <jsx/> }`) so statements can be inserted before the
+// return. No-op (empty edits) when the body is already a block. Returns the
+// edits plus the offset where a statement may then be inserted.
+export function toBlockBody(fnNode: AstNode, source: string): { edits: Edit[]; insertAt: number } {
+  const body = fnNode.body as AstNode | undefined;
+  if (!body || body.type === 'BlockStatement') return { edits: [], insertAt: -1 };
+  const indent = lineIndent(source, fnNode.start);
+  const raw = source.slice(body.start, body.end);
+  return {
+    edits: [
+      {
+        start: body.start,
+        end: body.end,
+        text: `{\n${indent}  return ${raw}\n${indent}}`,
+      },
+    ],
+    insertAt: body.start,
+  };
 }
 
 // A JSX plain attribute string (`value="…"`) does NOT process escape

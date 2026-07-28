@@ -167,6 +167,74 @@ export function MyScreen() {
     });
   });
 
+  describe('and an element spreads a recognized interaction call', () => {
+    const source = `export function S() {
+  const btn = useInteraction(
+    {
+      base: { uiTransform: { width: 100 }, uiBackground: { color: { r: 1, g: 1, b: 1, a: 1 } } },
+      hover: { uiBackground: { color: { r: 0, g: 0, b: 1, a: 1 } } },
+    },
+    state.selected,
+  )
+  return <UiEntity {...btn} />
+}`;
+
+    it('should keep the node first-class rather than opaque', () => {
+      const root = parse(source)!.root;
+      expect(root.opaque).toBeUndefined();
+      expect(root.dynamicProps).toBeUndefined();
+    });
+
+    it('should hydrate the node styles from the base layer', () => {
+      const root = parse(source)!.root;
+      expect(root.uiTransform).toEqual({ width: 100, widthUnit: YGU_POINT });
+      expect(root.uiBackground).toMatchObject({ color: { r: 1, g: 1, b: 1, a: 1 } });
+    });
+
+    it('should expose each layer and the active expression', () => {
+      const root = parse(source)!.root;
+      expect(Object.keys(root.interaction!.states)).toEqual(['base', 'hover']);
+      expect(root.interaction!.states.hover?.uiBackground).toMatchObject({
+        color: { r: 0, g: 0, b: 1, a: 1 },
+      });
+      expect(root.interaction!.activeExpr).toBe('state.selected');
+      expect(root.interaction!.name).toBe('btn');
+    });
+
+    it('should surface an event handler in the base layer as a binding', () => {
+      const root = parse(`export function S() {
+  const btn = useInteraction({ base: { onMouseDown: () => onClick({ state, props }) } })
+  return <UiEntity {...btn} />
+}`)!.root;
+      expect(root.bindings).toEqual([{ field: 'ui::events.onMouseDown', variable: 'onClick' }]);
+    });
+
+    it('should let a co-authored attribute override the base layer', () => {
+      const root = parse(`export function S() {
+  const btn = useInteraction({ base: { uiTransform: { width: 100 } } })
+  return <UiEntity {...btn} uiTransform={{ width: 250 }} />
+}`)!.root;
+      expect(root.uiTransform).toMatchObject({ width: 250 });
+    });
+
+    it('should flag dynamicProps when a layer value is not statically evaluable', () => {
+      const root = parse(`export function S() {
+  const btn = useInteraction({ hover: { uiBackground: { color: theme.accent } } })
+  return <UiEntity {...btn} />
+}`)!.root;
+      expect(root.dynamicProps).toBe(true);
+      expect(root.opaque).toBeUndefined();
+    });
+
+    it('should stay opaque when the spread is not an interaction call', () => {
+      const root = parse(`export function S() {
+  const btn = buildStyles()
+  return <UiEntity {...btn} />
+}`)!.root;
+      expect(root.opaque?.reason).toBe('spread-props');
+    });
+  });
+
   describe('and a prop value is a non-literal expression', () => {
     const source = `export function S() {
   return <UiEntity uiTransform={dynamicTransform} />
