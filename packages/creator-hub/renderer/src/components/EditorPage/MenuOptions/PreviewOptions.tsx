@@ -24,9 +24,10 @@ export function PreviewOptions({
 }: PreviewOptionsProps) {
   const [terrainHiddenByScene, setTerrainHiddenByScene] = useState(false);
 
-  // abgen ships windows/mac asset bundles only
-  const platformSupportsOptimizedAssets =
-    navigator.platform.toLowerCase().includes('linux') === false;
+  // No Unity desktop client ships for Linux, so an optimized preview has no client to
+  // open there — hide the toggle entirely. (abgen itself has Linux builds; the client
+  // is the missing piece.)
+  const platformSupportsOptimizedAssets = !navigator.userAgent.includes('Linux');
   // ...and the scene's installed sdk-commands must carry the --asset-bundles sidecar flag,
   // otherwise the toggle silently does nothing — so hide it entirely for unsupported scenes
   const [sceneSupportsOptimizedAssets, setSceneSupportsOptimizedAssets] = useState(false);

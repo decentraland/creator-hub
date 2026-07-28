@@ -20,6 +20,13 @@ export type IpcError = {
   };
 };
 
+// Asset-conversion progress pushed from main to the renderer while a preview spawn is
+// converting. Shared here because preload subscribes to the channel and cannot import
+// from main, so the event name and payload shape must have a single home.
+export const PREVIEW_PROGRESS_EVENT = 'preview.progress';
+
+export type PreviewProgress = { seconds: number; done?: number; total?: number };
+
 export interface MobileDebugSessionInfo {
   id: number;
   sessionId: string | null;

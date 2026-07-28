@@ -4,6 +4,7 @@ import { createAsyncThunk } from '/@/modules/store/thunk';
 
 import { supportsMultiInstance } from '/shared/flags';
 import type { DeployOptions } from '/shared/types/deploy';
+import type { PreviewProgress } from '/shared/types/ipc';
 import { isProjectError, ProjectError, type Project } from '/shared/types/projects';
 import { type PreviewOptions } from '/shared/types/settings';
 import { isWorkspaceError } from '/shared/types/workspace';
@@ -17,11 +18,7 @@ import { actions as workspaceActions } from '../workspace';
 export const fetchVersion = createAsyncThunk('editor/fetchVersion', editor.getVersion);
 export const install = createAsyncThunk('editor/install', editor.install);
 export const startInspector = createAsyncThunk('editor/startInspector', editor.startInspector);
-export const setPreviewProgress = createAction<{
-  seconds: number;
-  done?: number;
-  total?: number;
-} | null>('editor/setPreviewProgress');
+export const setPreviewProgress = createAction<PreviewProgress | null>('editor/setPreviewProgress');
 export const runScene = createAsyncThunk(
   'editor/runScene',
   async ({ path, ...opts }: PreviewOptions & { path: string }, { dispatch }) => {
@@ -85,7 +82,7 @@ export type EditorState = {
   publishError: string | null;
   loadingInspector: boolean;
   loadingPreview: boolean;
-  previewProgress: { seconds: number; done?: number; total?: number } | null;
+  previewProgress: PreviewProgress | null;
   previewCancelled: boolean;
   isPreviewRunning: boolean;
   isInstalling: boolean;

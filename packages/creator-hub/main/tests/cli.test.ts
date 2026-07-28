@@ -8,6 +8,7 @@ const mocks = vi.hoisted(() => ({
   dclDeepLink: vi.fn(),
   install: vi.fn(),
   readFile: vi.fn(),
+  stat: vi.fn(),
   send: vi.fn(),
 }));
 
@@ -15,7 +16,7 @@ vi.mock('electron', () => ({ app: { getPath: vi.fn(() => '/fake/exe') } }));
 vi.mock('electron-log/main', () => ({
   default: { info: vi.fn(), warn: vi.fn(), error: vi.fn() },
 }));
-vi.mock('fs/promises', () => ({ default: { readFile: mocks.readFile } }));
+vi.mock('fs/promises', () => ({ default: { readFile: mocks.readFile, stat: mocks.stat } }));
 vi.mock('../src/mainWindow', () => ({ MAIN_WINDOW_ID: 'main' }));
 vi.mock('../src/modules/bin', () => ({ run: mocks.run, dclDeepLink: mocks.dclDeepLink }));
 vi.mock('../src/modules/port', () => ({ getAvailablePort: vi.fn(async () => 4000) }));
@@ -31,7 +32,7 @@ vi.mock('../src/modules/download-github-folder', () => ({ downloadGithubRepo: vi
 vi.mock('../src/modules/mobile-debug-server', () => ({ startMobileDebugServer: vi.fn() }));
 vi.mock('../src/modules/network', () => ({ getLanIp: vi.fn(() => '192.168.0.10') }));
 
-import { cancelPreview, getPreview, start } from '../src/modules/cli';
+import { cancelPreview, getPreview, start, supportsAssetBundles } from '../src/modules/cli';
 
 const BASE_OPTS: PreviewOptions = {
   debugger: false,
@@ -88,7 +89,15 @@ function createFakeChild() {
   };
 }
 
+let fakeMtime = 0;
+
 function setSceneSupportsAssetBundles(supported: boolean) {
+  // a fresh mtime per stat keeps the support cache cold, so each call re-reads the file
+  // and per-test support changes take effect immediately
+  mocks.stat.mockImplementation(async (file: unknown) => {
+    if (String(file).includes('dist/commands/start/index.js')) return { mtimeMs: ++fakeMtime };
+    throw new Error('ENOENT');
+  });
   mocks.readFile.mockImplementation(async (file: unknown) => {
     if (String(file).includes('dist/commands/start/index.js')) {
       if (supported) return 'args spec with "--asset-bundles" flag';
@@ -327,6 +336,55 @@ describe('cli preview cancel', () => {
   describe('when there is nothing running for the path', () => {
     it('should be a no-op', async () => {
       await expect(cancelPreview(path)).resolves.toBeUndefined();
+    });
+  });
+});
+
+describe('supportsAssetBundles', () => {
+  let path: string;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    path = `/scenes/scene-${++sceneCount}`;
+  });
+
+  describe('when the sdk dist file has not changed', () => {
+    it('should read the file once and answer later checks from the mtime cache', async () => {
+      mocks.stat.mockResolvedValue({ mtimeMs: 1000 });
+      mocks.readFile.mockResolvedValue('args spec with "--asset-bundles" flag');
+
+      await expect(supportsAssetBundles(path)).resolves.toBe(true);
+      await expect(supportsAssetBundles(path)).resolves.toBe(true);
+
+      expect(mocks.readFile).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('when the sdk dist file changes (a reinstall or version bump)', () => {
+    it('should re-read the file and pick up the new answer', async () => {
+      mocks.stat.mockResolvedValue({ mtimeMs: 1000 });
+      mocks.readFile.mockResolvedValue('args spec with "--asset-bundles" flag');
+      await expect(supportsAssetBundles(path)).resolves.toBe(true);
+
+      // downgraded to an sdk without the sidecar: new mtime, new content
+      mocks.stat.mockResolvedValue({ mtimeMs: 2000 });
+      mocks.readFile.mockResolvedValue('args spec without the flag');
+      await expect(supportsAssetBundles(path)).resolves.toBe(false);
+
+      expect(mocks.readFile).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  describe('when the sdk is not installed', () => {
+    it('should answer false without caching', async () => {
+      mocks.stat.mockRejectedValue(new Error('ENOENT'));
+
+      await expect(supportsAssetBundles(path)).resolves.toBe(false);
+
+      // the sdk gets installed afterwards: the earlier miss must not stick
+      mocks.stat.mockResolvedValue({ mtimeMs: 1000 });
+      mocks.readFile.mockResolvedValue('args spec with "--asset-bundles" flag');
+      await expect(supportsAssetBundles(path)).resolves.toBe(true);
     });
   });
 });

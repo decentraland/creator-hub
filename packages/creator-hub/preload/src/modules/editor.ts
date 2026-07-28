@@ -1,6 +1,7 @@
 import { ipcRenderer, type IpcRendererEvent } from 'electron';
 
 import type { DeployOptions } from '/shared/types/deploy';
+import { PREVIEW_PROGRESS_EVENT, type PreviewProgress } from '/shared/types/ipc';
 import type { MobileDebugSessionInfo } from '/shared/types/ipc';
 
 import { invoke } from '../services/ipc';
@@ -57,16 +58,16 @@ export async function runScene({ path, opts }: { path: string; opts: PreviewOpti
 
 export function subscribePreviewProgress(
   path: string,
-  cb: (progress: { seconds: number; done?: number; total?: number } | null) => void,
+  cb: (progress: PreviewProgress | null) => void,
 ): { cleanup: () => void } {
   const handler = (
     _: IpcRendererEvent,
-    payload: { path: string; progress: { seconds: number; done?: number; total?: number } | null },
+    payload: { path: string; progress: PreviewProgress | null },
   ) => {
     if (payload.path === path) cb(payload.progress);
   };
-  ipcRenderer.on('preview.progress', handler);
-  return { cleanup: () => ipcRenderer.off('preview.progress', handler) };
+  ipcRenderer.on(PREVIEW_PROGRESS_EVENT, handler);
+  return { cleanup: () => ipcRenderer.off(PREVIEW_PROGRESS_EVENT, handler) };
 }
 
 export async function cancelPreview(path: string) {

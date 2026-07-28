@@ -110,10 +110,12 @@
   gap: 8px;
 }
 
+/* the cancel button must stay interactive (and keyboard-focusable) inside the
+   pointer-events:none optimizing group; compact padding keeps the button-group height */
 .Editor .Header .actions .optimizing-label .cancel-optimizing {
   pointer-events: auto;
-  font-size: 18px;
-  cursor: pointer;
+  padding: 2px;
+  color: inherit;
 }
 
 .Editor .inspector {

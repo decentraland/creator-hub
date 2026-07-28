@@ -6,6 +6,7 @@ import { app } from 'electron';
 import QRCode from 'qrcode';
 
 import type { PreviewOptions } from '/shared/types/settings';
+import { PREVIEW_PROGRESS_EVENT, type PreviewProgress } from '/shared/types/ipc';
 import {
   ClientError,
   CLIENT_NOT_INSTALLED_ERROR,
@@ -35,10 +36,6 @@ const OPTIMIZED_ASSETS_URL_PARAM = 'optimized-assets-url';
 // A large scene's first conversion can take minutes before the deeplink appears; the
 // sidecar's progress lines are streamed to the renderer so the preview button can say
 // why it is still loading.
-export const PREVIEW_PROGRESS_EVENT = 'preview.progress';
-
-export type PreviewProgress = { seconds: number; done?: number; total?: number };
-
 function sendPreviewProgress(path: string, progress: PreviewProgress | null) {
   const window = getWindow(MAIN_WINDOW_ID);
   if (window && !window.isDestroyed()) {
@@ -303,13 +300,20 @@ function selfBinPath(): string {
 // Feature-detect the opt-in sidecar flag in the scene's installed sdk-commands
 // (same pattern as shouldRunLegacyDeploy). The quote-delimited match avoids false
 // positives on the older opt-out flag --no-asset-bundles.
+// Cached by the dist file's mtime: the multi-MB bundle would otherwise be re-read on
+// every dropdown render and Preview press; an (re)install touches the file and busts it.
+const assetBundlesSupportCache = new Map<string, { mtimeMs: number; supported: boolean }>();
+
 export async function supportsAssetBundles(path: string): Promise<boolean> {
+  const file = join(path, 'node_modules', '@dcl/sdk-commands/dist/commands/start/index.js');
   try {
-    const file = await fs.readFile(
-      join(path, 'node_modules', '@dcl/sdk-commands/dist/commands/start/index.js'),
-      'utf-8',
-    );
-    return /["']--asset-bundles["']/.test(file);
+    const { mtimeMs } = await fs.stat(file);
+    const cached = assetBundlesSupportCache.get(file);
+    if (cached?.mtimeMs === mtimeMs) return cached.supported;
+    const content = await fs.readFile(file, 'utf-8');
+    const supported = /["']--asset-bundles["']/.test(content);
+    assetBundlesSupportCache.set(file, { mtimeMs, supported });
+    return supported;
   } catch {
     return false;
   }

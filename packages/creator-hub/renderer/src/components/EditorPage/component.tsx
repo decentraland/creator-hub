@@ -6,6 +6,7 @@ import CodeIcon from '@mui/icons-material/Code';
 import PublicIcon from '@mui/icons-material/Public';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import CloseIcon from '@mui/icons-material/Close';
+import { IconButton } from '@mui/material';
 import { CircularProgress as Loader, Tooltip } from 'decentraland-ui2';
 
 import { isClientNotInstalledError } from '/shared/types/client';
@@ -426,14 +427,19 @@ export function EditorPage() {
                         ? ` ${Math.round(((previewProgress.done ?? 0) / previewProgress.total) * 100)}%`
                         : ''}
                       <Tooltip title={t('editor.header.actions.cancel_optimizing')}>
-                        <CloseIcon
+                        {/* a real button so the only live control in the CSS-inert group
+                            stays reachable by keyboard and assistive tech */}
+                        <IconButton
                           className="cancel-optimizing"
-                          fontSize="small"
+                          size="small"
+                          aria-label={t('editor.header.actions.cancel_optimizing')}
                           onClick={e => {
                             e.stopPropagation();
                             handleCancelOptimizing();
                           }}
-                        />
+                        >
+                          <CloseIcon fontSize="small" />
+                        </IconButton>
                       </Tooltip>
                     </span>
                   ) : (
