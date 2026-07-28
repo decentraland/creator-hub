@@ -40,6 +40,7 @@ export const DEFAULT_CONFIG: Config = {
       showWarnings: true,
       optimizedAssets: false,
     },
+    optimizedAssetsByPath: {},
   },
   editors: [],
 };

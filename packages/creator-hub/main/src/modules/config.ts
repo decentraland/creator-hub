@@ -32,8 +32,10 @@ export async function getConfigStorage(): Promise<IFileSystemStorage<Config>> {
     // Deep merge with defaults if config exists but might be missing properties
     const mergedConfig = mergeConfig(existingConfig, defaultConfig);
 
-    // Session-only option: selecting it kicks off an asset conversion, so it must be a
-    // deliberate per-session choice rather than a persisted surprise on the next launch.
+    // `previewOptions.optimizedAssets` is the ephemeral value for the open project; the persisted
+    // per-project preference lives in `settings.optimizedAssetsByPath` and is hydrated on project
+    // open (inert — no conversion until Preview). Start the live flag off so no stale global value
+    // leaks in before a project hydrates it.
     if (mergedConfig.settings?.previewOptions) {
       mergedConfig.settings.previewOptions.optimizedAssets = false;
     }

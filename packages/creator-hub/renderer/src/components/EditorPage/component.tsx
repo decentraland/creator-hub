@@ -85,6 +85,7 @@ export function EditorPage() {
   const { detectCustomCode, isLoading: isDetectingCustomCode } = useSceneCustomCode(project);
   const { status } = useConnectionStatus();
   const iframeRef = useRef<ReturnType<typeof initRpc>>();
+  const hydratedOptimizedAssetsPathRef = useRef<string | null>(null);
   const [modalState, setModalState] = useState<ModalState>({ type: undefined });
   const [mobileQRData, setMobileQRData] = useState<{ url: string; qr: string } | null>(null);
 
@@ -202,6 +203,22 @@ export function EditorPage() {
     [modalState],
   );
 
+  // Restore the per-project Optimize Assets preference when a project opens. This only flips the
+  // toggle back on — it does NOT start a conversion (no warmup dispatch); the work happens when
+  // Preview is pressed. Runs once per project path so it never fights a live user toggle.
+  useEffect(() => {
+    if (!project) return;
+    if (hydratedOptimizedAssetsPathRef.current === project.path) return;
+    hydratedOptimizedAssetsPathRef.current = project.path;
+    const persisted = settings.optimizedAssetsByPath?.[project.path] ?? false;
+    if (persisted !== settings.previewOptions.optimizedAssets) {
+      updateAppSettings({
+        ...settings,
+        previewOptions: { ...settings.previewOptions, optimizedAssets: persisted },
+      });
+    }
+  }, [project?.path, settings, updateAppSettings]);
+
   const handleChangePreviewOptions = useCallback(
     (options: PreviewOptionsProps['options']) => {
       // Flipping Optimize Assets starts converting right away (feedback shows next to the
@@ -213,7 +230,13 @@ export function EditorPage() {
       } else if (project && !options.optimizedAssets && wasOptimizing) {
         void dispatch(editorActions.cancelOptimizedAssetsWarmup(project.path));
       }
-      updateAppSettings({ ...settings, previewOptions: options });
+      // Persist the choice per project so it comes back on next time this scene is opened
+      // (restored inert by the effect above). Kept separate from the global previewOptions so
+      // the preference never carries across projects.
+      const optimizedAssetsByPath = project
+        ? { ...settings.optimizedAssetsByPath, [project.path]: options.optimizedAssets }
+        : settings.optimizedAssetsByPath;
+      updateAppSettings({ ...settings, previewOptions: options, optimizedAssetsByPath });
     },
     [project, dispatch, settings, updateAppSettings],
   );

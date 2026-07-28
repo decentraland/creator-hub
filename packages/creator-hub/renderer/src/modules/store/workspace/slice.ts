@@ -27,6 +27,7 @@ const initialState: Async<Workspace> = {
       showWarnings: true,
       optimizedAssets: false,
     },
+    optimizedAssetsByPath: {},
   },
   status: 'idle',
   error: null,

@@ -20,6 +20,10 @@ export type AppSettings = {
   scenesPath: string;
   dependencyUpdateStrategy: DEPENDENCY_UPDATE_STRATEGY;
   previewOptions: PreviewOptions;
+  // Per-project Optimize Assets preference, keyed by project path. `previewOptions.optimizedAssets`
+  // is the ephemeral value for the open project; this map is the persisted per-project source of
+  // truth so the toggle comes back on for a project that had it on, without carrying across projects.
+  optimizedAssetsByPath?: Record<string, boolean>;
 };
 
 export interface ReleaseNotes {
