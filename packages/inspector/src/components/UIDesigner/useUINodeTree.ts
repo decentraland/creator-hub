@@ -1,12 +1,15 @@
 import { useEffect } from 'react';
 
-import type { UINode } from './tree-model';
 import { bootstrapCodeMode, useCodeState } from './code/store';
+import type { CodeUINode } from './code/types';
 
 // Code-mode only: the UI tree comes from the parsed .tsx buffer (the single
 // source of truth), not from live ECS components. Kept as a hook so Canvas /
 // NodeTree re-render when the store updates (useCodeState → useSyncExternalStore).
-export function useUINodeTree(): UINode | null {
+// Typed as CodeUINode (not the narrower UINode it used to widen away): the
+// code-mode extras — `span`, `opaque`, `interaction` — are exactly what the
+// canvas and tree need to render a node faithfully.
+export function useUINodeTree(): CodeUINode | null {
   const codeState = useCodeState();
 
   // Adopt the src/ui/ file-per-root layout for this scene once (seed a starter
@@ -15,5 +18,5 @@ export function useUINodeTree(): UINode | null {
     bootstrapCodeMode();
   }, []);
 
-  return (codeState.parsed?.root as UINode | undefined) ?? null;
+  return codeState.parsed?.root ?? null;
 }

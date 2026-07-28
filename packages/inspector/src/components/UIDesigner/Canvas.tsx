@@ -18,6 +18,7 @@ import { useAppDispatch, useAppSelector } from '../../redux/hooks';
 import {
   getAspectLockedNodes,
   getHiddenNodes,
+  getInteractionLayer,
   getLockedNodes,
   getSelectedNode,
   selectNode,
@@ -42,6 +43,7 @@ import {
   useCodeState,
 } from './code/store';
 import { buildResolveMap } from './code/bindings';
+import { previewLayers, resolveInteractionPreview } from './code/interaction-preview';
 import type { CodeUINode } from './code/types';
 import { MixedContentField } from './MixedContentField';
 import { seedSegments } from './MixedContentField/segments';
@@ -506,7 +508,7 @@ function reorderIndicatorStyle(ro: {
 // `hidden` = editor-only canvas hide (tree eye button): render with
 // `visibility: hidden` so the node keeps its layout box — siblings must NOT
 // reflow — but paints nothing and takes no pointer events.
-type CanvasNodeProps = { node: UINode; hidden?: boolean };
+type CanvasNodeProps = { node: CodeUINode; hidden?: boolean };
 
 const hiddenStyle = (style: React.CSSProperties, hidden?: boolean): React.CSSProperties =>
   hidden ? { ...style, visibility: 'hidden' } : style;
@@ -587,9 +589,32 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node, hidden }) => {
   useEffect(() => {
     aspectLockedRef.current = aspectLocked;
   }, [aspectLocked]);
-  const text = (node.uiText ?? {}) as { value?: string };
-  const input = (node.uiInput ?? {}) as { placeholder?: string; value?: string };
-  const dropdown = (node.uiDropdown ?? {}) as {
+
+  // Interaction-state preview. Two sources: pointing at the node on the canvas
+  // previews its Hover layer, and the layer the properties panel is editing is
+  // previewed on the SELECTED node (so opening "Pressed" shows the pressed look
+  // without needing to hold the mouse — which would collide with drag-to-move).
+  const [canvasHovered, setCanvasHovered] = useState(false);
+  const panelLayer = useAppSelector(getInteractionLayer);
+  // Only the STYLE is resolved through the preview — never the node the drag /
+  // resize math reads. Those write the `base` layer, so deriving their numbers
+  // from a previewed override (a narrower `press` width, say) would bake the
+  // override's geometry into Default on the next drag.
+  const previewNode = useMemo(
+    () =>
+      resolveInteractionPreview(
+        node,
+        previewLayers({
+          layer: isSelected ? panelLayer : undefined,
+          hovered: canvasHovered,
+        }),
+      ),
+    [node, isSelected, panelLayer, canvasHovered],
+  );
+
+  const text = (previewNode.uiText ?? {}) as { value?: string };
+  const input = (previewNode.uiInput ?? {}) as { placeholder?: string; value?: string };
+  const dropdown = (previewNode.uiDropdown ?? {}) as {
     options?: string[];
     selectedIndex?: number;
     emptyLabel?: string;
@@ -617,7 +642,7 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node, hidden }) => {
 
   // Only the FILE texture variant is previewable as a CSS background-image.
   // Avatar/video textures resolve to no preview (color/layout still renders).
-  const background = (node.uiBackground ?? {}) as {
+  const background = (previewNode.uiBackground ?? {}) as {
     texture?: { tex?: { $case: string; texture?: { src?: string } } };
     textureMode?: number;
     uvs?: number[];
@@ -1120,7 +1145,7 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node, hidden }) => {
 
   // Apply the live drag offset visually via CSS transform so we don't write
   // to the CRDT/data-layer until the user releases the mouse.
-  const baseStyle = nodeStyle(node);
+  const baseStyle = nodeStyle(previewNode);
   const liveOffset = isDragging || isReordering ? liveOffsetRef.current : null;
   let style: React.CSSProperties = liveOffset
     ? {
@@ -1201,6 +1226,12 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node, hidden }) => {
       onClick={handleClick}
       onDoubleClick={handleDoubleClick}
       onMouseDown={handleMouseDown}
+      // Preview the Hover layer while pointing at the node. Enter/leave don't
+      // collide with the canvas gestures (which are click / mousedown-drag), so
+      // this is safe where a mousedown-driven "pressed" preview would not be.
+      // Only nodes that actually declare a hover layer subscribe to the cost.
+      onMouseEnter={node.interaction?.states.hover ? () => setCanvasHovered(true) : undefined}
+      onMouseLeave={node.interaction?.states.hover ? () => setCanvasHovered(false) : undefined}
       data-type={node.type}
       data-entity={String(node.entity)}
     >
