@@ -334,9 +334,14 @@ export function initializeWorkspace(services: Services) {
    */
   async function unlistProjects(paths: string[]): Promise<void> {
     const pathSet = new Set(paths);
-    await config.setConfig(
-      ({ workspace }) => (workspace.paths = workspace.paths.filter($ => !pathSet.has($))),
-    );
+    await config.setConfig(({ workspace, settings }) => {
+      workspace.paths = workspace.paths.filter($ => !pathSet.has($));
+      // Drop the per-project Optimize Assets preference along with the project so the map
+      // doesn't accumulate entries for projects removed from the workspace.
+      for (const _path of paths) {
+        delete settings.optimizedAssetsByPath?.[_path];
+      }
+    });
   }
 
   /**
