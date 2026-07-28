@@ -60,7 +60,6 @@ export function EditorPage() {
     updateScene,
     loadingPreview,
     previewProgress,
-    optimizedAssetsReady,
     loadingPublish,
     isInstallingProject,
     killPreview,
@@ -203,9 +202,9 @@ export function EditorPage() {
     [modalState],
   );
 
-  // Restore the per-project Optimize Assets preference when a project opens. This only flips the
-  // toggle back on — it does NOT start a conversion (no warmup dispatch); the work happens when
-  // Preview is pressed. Runs once per project path so it never fights a live user toggle.
+  // Restore the per-project Optimize Assets preference when a project opens. Selecting the
+  // toggle is inert — conversion only happens when Preview is pressed. Runs once per project
+  // path so it never fights a live user toggle.
   useEffect(() => {
     if (!project) return;
     if (hydratedOptimizedAssetsPathRef.current === project.path) return;
@@ -221,31 +220,22 @@ export function EditorPage() {
 
   const handleChangePreviewOptions = useCallback(
     (options: PreviewOptionsProps['options']) => {
-      // Flipping Optimize Assets starts converting right away (feedback shows next to the
-      // toggle); flipping it off stops a background conversion. Pressing Preview while a
-      // conversion runs waits for it instead of racing a second one.
-      const wasOptimizing = !!settings.previewOptions.optimizedAssets;
-      if (project && options.optimizedAssets && !wasOptimizing) {
-        void dispatch(editorActions.warmupOptimizedAssets({ path: project.path, ...options }));
-      } else if (project && !options.optimizedAssets && wasOptimizing) {
-        void dispatch(editorActions.cancelOptimizedAssetsWarmup(project.path));
-      }
       // Persist the choice per project so it comes back on next time this scene is opened
-      // (restored inert by the effect above). Kept separate from the global previewOptions so
-      // the preference never carries across projects.
+      // (restored by the effect above). Kept separate from the global previewOptions so
+      // the preference never carries across projects. Selecting Optimize Assets is inert:
+      // the conversion runs when Preview is pressed, with feedback on the Preview button.
       const optimizedAssetsByPath = project
         ? { ...settings.optimizedAssetsByPath, [project.path]: options.optimizedAssets }
         : settings.optimizedAssetsByPath;
       updateAppSettings({ ...settings, previewOptions: options, optimizedAssetsByPath });
     },
-    [project, dispatch, settings, updateAppSettings],
+    [project, settings, updateAppSettings],
   );
 
   const handleCancelOptimizing = useCallback(() => {
     if (project) {
-      // stop blocking on the launch, but keep converting in the background so the next
-      // Preview press is warm; the menu keeps showing the conversion progress meanwhile
-      void dispatch(editorActions.detachPreview(project.path));
+      // kill the converting spawn; the pending runScene settles without opening the client
+      void dispatch(editorActions.cancelPreview(project.path));
     }
   }, [project, dispatch]);
 
@@ -426,8 +416,6 @@ export function EditorPage() {
                       onShowMobileQR={handleShowMobileQR}
                       supportsMultiInstance={supportsMultiInstance}
                       projectPath={project.path}
-                      previewProgress={previewProgress}
-                      optimizedAssetsReady={optimizedAssetsReady}
                     />
                   }
                 >

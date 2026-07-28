@@ -38,27 +38,9 @@ export const runScene = createAsyncThunk(
     }
   },
 );
-export const warmupOptimizedAssets = createAsyncThunk(
-  'editor/warmupOptimizedAssets',
-  async ({ path, ...opts }: PreviewOptions & { path: string }, { dispatch }) => {
-    const subscription = editor.subscribePreviewProgress(path, progress =>
-      dispatch(setPreviewProgress(progress)),
-    );
-    try {
-      return await editor.warmupOptimizedAssets({ path, opts });
-    } finally {
-      subscription.cleanup();
-      dispatch(setPreviewProgress(null));
-    }
-  },
-);
-export const cancelOptimizedAssetsWarmup = createAsyncThunk(
-  'editor/cancelOptimizedAssetsWarmup',
-  editor.cancelOptimizedAssetsWarmup,
-);
-// Detaches from a preview that's still converting: the button stops blocking while the
-// conversion keeps running as a background warmup (menu progress keeps ticking).
-export const detachPreview = createAsyncThunk('editor/detachPreview', editor.detachPreview);
+// Cancels a preview that's still converting: the spawn is killed and the pending
+// runScene settles without opening the client.
+export const cancelPreview = createAsyncThunk('editor/cancelPreview', editor.cancelPreview);
 export const publishScene = createAsyncThunk(
   'editor/publishScene',
   async (opts: DeployOptions, { dispatch, getState }) => {
@@ -104,9 +86,7 @@ export type EditorState = {
   loadingInspector: boolean;
   loadingPreview: boolean;
   previewProgress: { seconds: number; done?: number; total?: number } | null;
-  previewDetached: boolean;
-  // the scene's assets finished optimizing (conversion reached 100%) — drives the ready tick
-  optimizedAssetsReady: boolean;
+  previewCancelled: boolean;
   isPreviewRunning: boolean;
   isInstalling: boolean;
   isInstalled: boolean;
@@ -126,8 +106,7 @@ const initialState: EditorState = {
   loadingInspector: false,
   loadingPreview: false,
   previewProgress: null,
-  previewDetached: false,
-  optimizedAssetsReady: false,
+  previewCancelled: false,
   isPreviewRunning: false,
   isInstalling: false,
   isInstallingProject: false,
@@ -144,26 +123,11 @@ export const slice = createSlice({
   reducers: {},
   extraReducers: builder => {
     builder.addCase(setPreviewProgress, (state, action) => {
-      const payload = action.payload;
-      state.previewProgress = payload;
-      // "ready" only once the conversion actually reaches 100% — a cancelled or half-done
-      // run (progress goes null before done === total) must not flip the tick on
-      if (payload?.total) {
-        state.optimizedAssetsReady = payload.done === payload.total;
-      }
-    });
-    builder.addCase(cancelOptimizedAssetsWarmup.pending, state => {
-      state.optimizedAssetsReady = false;
-    });
-    // covers the already-cached case: the conversion finishes instantly with no progress
-    // stream, so the warmup's boolean result is what flips the ready tick on
-    builder.addCase(warmupOptimizedAssets.fulfilled, (state, action) => {
-      if (action.payload) state.optimizedAssetsReady = true;
+      state.previewProgress = action.payload;
     });
     builder.addCase(workspaceActions.runProject.pending, state => {
       state.project = undefined;
       state.supportsMultiInstance = false;
-      state.optimizedAssetsReady = false;
       state.error = null;
     });
     builder.addCase(workspaceActions.fetchSdkCommandsVersion.fulfilled, (state, action) => {
@@ -262,25 +226,25 @@ export const slice = createSlice({
     });
     builder.addCase(runScene.pending, state => {
       state.loadingPreview = true;
-      state.previewDetached = false;
+      state.previewCancelled = false;
     });
     builder.addCase(runScene.fulfilled, state => {
       state.loadingPreview = false;
-      // a detached run finishes as a background warmup — no client opened, so it isn't "running"
-      if (!state.previewDetached) state.isPreviewRunning = true;
-      state.previewDetached = false;
+      // a cancelled run settles quietly with no client opened, so it isn't "running"
+      if (!state.previewCancelled) state.isPreviewRunning = true;
+      state.previewCancelled = false;
     });
     builder.addCase(runScene.rejected, (state, action) => {
       state.loadingPreview = false;
-      state.previewDetached = false;
+      state.previewCancelled = false;
       captureException(action.error, {
         tags: { source: 'editor-page', event: 'run-scene' },
       });
     });
-    // detach clears the button's loading state right away; the run thunk keeps converting
-    builder.addCase(detachPreview.pending, state => {
+    // cancel clears the button's loading state right away; main kills the converting spawn
+    builder.addCase(cancelPreview.pending, state => {
       state.loadingPreview = false;
-      state.previewDetached = true;
+      state.previewCancelled = true;
     });
     builder.addCase(killPreviewScene.fulfilled, state => {
       state.isPreviewRunning = false;
@@ -321,9 +285,7 @@ export const slice = createSlice({
 export const actions = {
   ...slice.actions,
   setPreviewProgress,
-  warmupOptimizedAssets,
-  cancelOptimizedAssetsWarmup,
-  detachPreview,
+  cancelPreview,
   fetchVersion,
   install,
   startInspector,

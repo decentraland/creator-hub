@@ -1,8 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import {
   Checkbox,
-  CircularProgress,
   Divider,
   FormControlLabel,
   FormGroup,
@@ -23,8 +21,6 @@ export function PreviewOptions({
   onShowMobileQR,
   supportsMultiInstance,
   projectPath,
-  previewProgress,
-  optimizedAssetsReady,
 }: PreviewOptionsProps) {
   const [terrainHiddenByScene, setTerrainHiddenByScene] = useState(false);
 
@@ -130,37 +126,13 @@ export function PreviewOptions({
             placement="left"
           >
             <FormControlLabel
-              className="optimized-assets-control"
               control={
                 <Checkbox
                   checked={!!options.optimizedAssets}
                   onChange={handleChange({ optimizedAssets: !options.optimizedAssets })}
                 />
               }
-              label={
-                options.optimizedAssets && previewProgress ? (
-                  <span className="optimized-assets-label">
-                    <span>{t('editor.header.actions.preview_options.optimized_assets')}</span>
-                    {previewProgress.total ? (
-                      <span className="optimized-assets-progress">
-                        {Math.round(((previewProgress.done ?? 0) / previewProgress.total) * 100)}%
-                      </span>
-                    ) : (
-                      <CircularProgress
-                        className="optimized-assets-spinner"
-                        size={16}
-                      />
-                    )}
-                  </span>
-                ) : options.optimizedAssets && optimizedAssetsReady ? (
-                  <span className="optimized-assets-label">
-                    <span>{t('editor.header.actions.preview_options.optimized_assets')}</span>
-                    <CheckCircleIcon className="optimized-assets-ready" />
-                  </span>
-                ) : (
-                  t('editor.header.actions.preview_options.optimized_assets')
-                )
-              }
+              label={t('editor.header.actions.preview_options.optimized_assets')}
             />
           </Tooltip>
         )}

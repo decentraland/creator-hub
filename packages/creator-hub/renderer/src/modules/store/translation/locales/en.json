@@ -45,7 +45,7 @@
         "code": "Code",
         "preview": "Preview",
         "optimizing": "Optimizing",
-        "cancel_optimizing": "Keep optimizing in the background",
+        "cancel_optimizing": "Cancel optimization",
         "publish": "Publish",
         "refresh": "Reload scene from disk",
         "preview_options": {

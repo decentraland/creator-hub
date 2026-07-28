@@ -69,22 +69,8 @@ export function subscribePreviewProgress(
   return { cleanup: () => ipcRenderer.off('preview.progress', handler) };
 }
 
-export async function warmupOptimizedAssets({
-  path,
-  opts,
-}: {
-  path: string;
-  opts: PreviewOptions;
-}) {
-  return invoke('cli.warmupOptimizedAssets', path, opts);
-}
-
-export async function cancelOptimizedAssetsWarmup(path: string) {
-  return invoke('cli.cancelOptimizedAssetsWarmup', path);
-}
-
-export async function detachPreview(path: string) {
-  return invoke('cli.detachPreview', path);
+export async function cancelPreview(path: string) {
+  return invoke('cli.cancelPreview', path);
 }
 
 export async function supportsAssetBundles(path: string) {

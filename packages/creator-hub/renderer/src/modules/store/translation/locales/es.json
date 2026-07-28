@@ -45,7 +45,7 @@
         "code": "Código",
         "preview": "Previsualizar",
         "optimizing": "Optimizando",
-        "cancel_optimizing": "Seguir optimizando en segundo plano",
+        "cancel_optimizing": "Cancelar la optimización",
         "publish": "Publicar",
         "refresh": "Recargar escena desde disco",
         "preview_options": {
