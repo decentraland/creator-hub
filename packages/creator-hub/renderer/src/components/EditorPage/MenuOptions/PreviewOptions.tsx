@@ -93,6 +93,15 @@ export function PreviewOptions({
             label={t('editor.header.actions.preview_options.multi_instance')}
           />
         )}
+        <FormControlLabel
+          control={
+            <Checkbox
+              checked={!!options.mcp}
+              onChange={handleChange({ mcp: !options.mcp })}
+            />
+          }
+          label={t('editor.header.actions.preview_options.mcp')}
+        />
       </FormGroup>
       <Divider />
       <ListItemButton onClick={onShowMobileQR}>

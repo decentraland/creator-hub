@@ -80,6 +80,7 @@ const PREVIEW_OPTIONS_MAP: Record<keyof PreviewArguments, string> = {
   openNewInstance: '-n',
   skipAuthScreen: '--skip-auth-screen',
   multiInstance: '--multi-instance',
+  mcp: '--mcp',
 };
 
 function generatePreviewArguments(opts: PreviewOptions) {
@@ -222,6 +223,7 @@ function updateDeepLinkWithOpts(params: string, newOpts: PreviewOptions): string
     setOrDeleteParam(PREVIEW_OPTIONS_MAP.skipAuthScreen, !newOpts.multiInstance);
     setOrDeleteParam(PREVIEW_OPTIONS_MAP.enableLandscapeTerrains, newOpts.enableLandscapeTerrains);
     setOrDeleteParam(PREVIEW_OPTIONS_MAP.multiInstance, newOpts.multiInstance);
+    setOrDeleteParam(PREVIEW_OPTIONS_MAP.mcp, newOpts.mcp);
 
     // this param is different from what we recieved from the CLI that the one that the launcher uses.
     setOrDeleteParam('open-deeplink-in-new-instance', newOpts.openNewInstance);

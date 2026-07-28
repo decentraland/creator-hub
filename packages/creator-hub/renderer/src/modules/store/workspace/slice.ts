@@ -24,6 +24,7 @@ const initialState: Async<Workspace> = {
       enableLandscapeTerrains: true,
       openNewInstance: false,
       multiInstance: false,
+      mcp: false,
       showWarnings: true,
     },
   },
