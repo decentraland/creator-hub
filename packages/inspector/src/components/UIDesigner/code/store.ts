@@ -60,13 +60,14 @@ import {
   ensureNamedImport,
   insertChild,
   insertSibling,
+  raw,
   moveElement,
   removeAttribute,
   removeNode,
   setAttribute,
   setAttributeExpr,
   setAttributeSegments,
-  setObjectField,
+  segmentsFieldValue,
   setObjectFields,
   setReturnJsx,
   toBlockBody,
@@ -94,7 +95,7 @@ import {
   isLayerableProp,
 } from './parse-adapter';
 import { toComponentName, uniqueRootName } from './root-naming';
-import type { CodeUINode, ParsedUI } from './types';
+import type { CodeUINode, InteractionStateStyles, ParsedUI } from './types';
 
 // Code-mode store: the scene's real .tsx files on disk are the single source of
 // truth; the canvas is a view over them, and an external editor (VSCode / vim /
@@ -1144,6 +1145,47 @@ export function codeComponentValue(
   }
 }
 
+// The node field an SDK component id reads from — the one mapping shared by the
+// element value reader and the interaction-layer one, so a layer resolves
+// exactly like the element does.
+const COMPONENT_FIELD: Record<string, keyof InteractionStateStyles> = {
+  'core::UiTransform': 'uiTransform',
+  'core::UiBackground': 'uiBackground',
+  'core::UiText': 'uiText',
+  'core::UiInput': 'uiInput',
+  'core::UiDropdown': 'uiDropdown',
+};
+
+// The PB component value the panel should show while editing `layer`. A non-base
+// layer displays its own values OVER base, so a field the layer doesn't override
+// still shows what it inherits rather than reading as empty.
+export function codeComponentValueForLayer(
+  node: CodeUINode | undefined,
+  componentId: string,
+  layer: InteractionStateKey,
+): Record<string, unknown> | null {
+  if (!node?.interaction || layer === 'base') return codeComponentValue(node, componentId);
+  const field = COMPONENT_FIELD[componentId];
+  if (!field) return null;
+  const base = node.interaction.states.base?.[field] ?? {};
+  const own = node.interaction.states[layer]?.[field];
+  if (!own) return (base as Record<string, unknown>) ?? null;
+  return { ...base, ...own };
+}
+
+// A layer's OWN values for a component id — no base merge. The panel compares
+// against this to tell an overridden field from an inherited one (the displayed
+// value is merged, so it can't answer that on its own).
+export function interactionLayerValue(
+  node: CodeUINode | undefined,
+  componentId: string,
+  layer: InteractionStateKey,
+): Record<string, unknown> | null {
+  const field = COMPONENT_FIELD[componentId];
+  if (!node?.interaction || !field) return null;
+  return (node.interaction.states[layer]?.[field] as Record<string, unknown>) ?? null;
+}
+
 // ---------------------------------------------------------------------------
 // Write helpers (canvas / panel visual ops → source splices).
 // ---------------------------------------------------------------------------
@@ -1185,7 +1227,7 @@ async function spliceComponentPatchUnlocked(
   componentId: string,
   patch: Record<string, unknown>,
 ): Promise<void> {
-  const ast = astNodeFor(entityId) as Parameters<typeof setObjectField>[0] | undefined;
+  const ast = astNodeFor(entityId) as Parameters<typeof setObjectFields>[0] | undefined;
   if (!ast) return;
   const edits: Edit[] = [];
 
@@ -1225,18 +1267,34 @@ async function spliceComponentPatchUnlocked(
   if (edits.length) await applySourceEdits(edits);
 }
 
-// Splice a resize (width/height, top-level ergonomic uiTransform fields) into
-// the source and reparse. One setObjectFields call: both fields compose against
-// the same AST pass (two separate calls would emit a duplicate attribute when
-// uiTransform is absent, or a comma-less pair when it's `{{}}`).
+// Write ergonomic `uiTransform` fields for a node. For a node WITH interaction
+// states the target is its `base` layer, never a JSX attribute: an attribute
+// would shadow the layer, splitting one node's styles across two homes (and for
+// the pointer props it would replace the helper's own hover/press trackers
+// outright). One setObjectFields / setInteractionNested pass per call — separate
+// calls against the same stale AST would emit a duplicate attribute when
+// uiTransform is absent, or a comma-less pair when it's `{{}}`.
+async function writeUiTransformFields(
+  entityId: number,
+  opName: string,
+  fields: Record<string, unknown>,
+): Promise<void> {
+  const ast = astNodeFor(entityId) as Parameters<typeof setObjectFields>[0] | undefined;
+  if (!ast || !guardElementWrite(entityId, opName)) return;
+  const interaction = interactionAstFor(entityId);
+  const edits = interaction
+    ? setInteractionNested(interaction, 'base', 'uiTransform', fields)
+    : setObjectFields(ast, 'uiTransform', fields);
+  if (edits.length) await applySourceEdits(edits);
+}
+
+// Splice a resize (width/height, top-level ergonomic uiTransform fields).
 async function spliceUiTransformSizeUnlocked(
   entityId: number,
   width: number,
   height: number,
 ): Promise<void> {
-  const ast = astNodeFor(entityId) as Parameters<typeof setObjectField>[0] | undefined;
-  if (!ast || !guardElementWrite(entityId, 'spliceUiTransformSize')) return;
-  await applySourceEdits(setObjectFields(ast, 'uiTransform', { width, height }));
+  await writeUiTransformFields(entityId, 'spliceUiTransformSize', { width, height });
 }
 
 // Move an ABSOLUTE node: splice the ergonomic `position: { top, left }` edges.
@@ -1247,9 +1305,9 @@ async function spliceUiTransformPositionUnlocked(
   top: number,
   left: number,
 ): Promise<void> {
-  const ast = astNodeFor(entityId) as Parameters<typeof setObjectField>[0] | undefined;
-  if (!ast || !guardElementWrite(entityId, 'spliceUiTransformPosition')) return;
-  await applySourceEdits(setObjectField(ast, 'uiTransform', 'position', { top, left }));
+  await writeUiTransformFields(entityId, 'spliceUiTransformPosition', {
+    position: { top, left },
+  });
 }
 
 // Move an IN-FLOW node without leaving the flow: splice the ergonomic
@@ -1262,9 +1320,7 @@ async function spliceUiTransformMarginUnlocked(
   top: number,
   left: number,
 ): Promise<void> {
-  const ast = astNodeFor(entityId) as Parameters<typeof setObjectField>[0] | undefined;
-  if (!ast || !guardElementWrite(entityId, 'spliceUiTransformMargin')) return;
-  await applySourceEdits(setObjectField(ast, 'uiTransform', 'margin', { top, left }));
+  await writeUiTransformFields(entityId, 'spliceUiTransformMargin', { margin: { top, left } });
 }
 
 // Resize a node: write width/height AND its new top-left in ONE setObjectFields
@@ -1282,12 +1338,10 @@ async function spliceUiTransformResizeUnlocked(
     height: number;
   },
 ): Promise<void> {
-  const ast = astNodeFor(entityId) as Parameters<typeof setObjectField>[0] | undefined;
-  if (!ast || !guardElementWrite(entityId, 'spliceUiTransformResize')) return;
   const fields: Record<string, unknown> = { width: opts.width, height: opts.height };
   if (opts.position) fields.position = opts.position;
   if (opts.margin) fields.margin = opts.margin;
-  await applySourceEdits(setObjectFields(ast, 'uiTransform', fields));
+  await writeUiTransformFields(entityId, 'spliceUiTransformResize', fields);
 }
 
 // Seed JSX per widget type — each palette entry inserts its REAL react-ecs
@@ -1629,9 +1683,25 @@ async function spliceDuplicateUnlocked(entityId: number): Promise<number | null>
 
 // Bind a top-level attribute to a variable/handler expression — `value={score}`,
 // `onMouseDown={onStart}` — the @ui-bind / @ui-action write path.
+// The interaction layer an attribute write must be redirected into, or null when
+// the node has no interaction states (or the prop isn't one the layers own).
+// Binding an event handler is the case that MUST be redirected: as a JSX
+// attribute it would replace the helper's returned handler and silently kill the
+// node's hover/press tracking.
+function interactionTargetFor(entityId: number, attrName: string): InteractionAst | null {
+  const node = findCodeNode(state.parsed?.root, entityId);
+  if (!node?.interaction || !isLayerableProp(node.type, attrName)) return null;
+  return interactionAstFor(entityId);
+}
+
 async function bindAttributeUnlocked(entityId: number, name: string, expr: string): Promise<void> {
   const ast = astNodeFor(entityId) as Parameters<typeof setAttributeExpr>[0] | undefined;
   if (!ast) return;
+  const interaction = interactionTargetFor(entityId, name);
+  if (interaction) {
+    await applySourceEdits(setInteractionFlat(interaction, 'base', { [name]: raw(expr) }));
+    return;
+  }
   await applySourceEdits(setAttributeExpr(ast, name, expr));
 }
 
@@ -1641,6 +1711,11 @@ async function bindAttributeUnlocked(entityId: number, name: string, expr: strin
 async function unbindAttributeUnlocked(entityId: number, name: string): Promise<void> {
   const ast = astNodeFor(entityId) as Parameters<typeof removeAttribute>[0] | undefined;
   if (!ast) return;
+  const interaction = interactionTargetFor(entityId, name);
+  if (interaction) {
+    await applySourceEdits(setInteractionFlat(interaction, 'base', { [name]: undefined }));
+    return;
+  }
   await applySourceEdits(removeAttribute(ast, state.source, name));
 }
 
@@ -1655,6 +1730,13 @@ async function setMixedContentAttributeUnlocked(
 ): Promise<void> {
   const ast = astNodeFor(entityId) as Parameters<typeof setAttributeSegments>[0] | undefined;
   if (!ast) return;
+  const interaction = interactionTargetFor(entityId, name);
+  if (interaction) {
+    await applySourceEdits(
+      setInteractionFlat(interaction, 'base', { [name]: segmentsFieldValue(segments) }),
+    );
+    return;
+  }
   await applySourceEdits(setAttributeSegments(ast, name, segments));
 }
 

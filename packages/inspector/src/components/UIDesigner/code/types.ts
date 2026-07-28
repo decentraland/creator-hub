@@ -11,6 +11,8 @@ export interface InteractionStateStyles {
   uiTransform?: Record<string, unknown>;
   uiBackground?: Record<string, unknown>;
   uiText?: Record<string, unknown>;
+  uiInput?: Record<string, unknown>;
+  uiDropdown?: Record<string, unknown>;
 }
 
 // A node whose styles are layered by interaction state (see

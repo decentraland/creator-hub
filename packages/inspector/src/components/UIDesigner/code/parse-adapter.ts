@@ -326,7 +326,12 @@ function readInteractionLayer(
     }
   }
 
-  if (Object.keys(textValues).length > 0) styles.uiText = ergonomicToPBText(textValues);
+  // File the typed props under the SAME node field the JSX path uses
+  // (uiText / uiInput / uiDropdown), so the panel's componentId → field mapping
+  // resolves a layer's value exactly like it resolves the element's.
+  if (group && Object.keys(textValues).length > 0) {
+    styles[group.field] = ergonomicToPBText(textValues);
+  }
   return { styles, events, dynamic };
 }
 
@@ -473,6 +478,8 @@ export function codeToUINodes(
         if (styles.uiTransform) node.uiTransform = styles.uiTransform;
         if (styles.uiBackground) node.uiBackground = styles.uiBackground;
         if (styles.uiText) node.uiText = styles.uiText;
+        if (styles.uiInput) node.uiInput = styles.uiInput;
+        if (styles.uiDropdown) node.uiDropdown = styles.uiDropdown;
         // Event handlers live in the base layer (the helper chains them), so
         // they surface as bindings exactly like a JSX event attribute would.
         for (const [attrName, handler] of events) {

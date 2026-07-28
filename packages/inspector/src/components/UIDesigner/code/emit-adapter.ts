@@ -52,10 +52,21 @@ function findAttr(el: AstNode, name: string): AstNode | undefined {
   );
 }
 
+// A pre-serialized source fragment. serializeValue emits its text VERBATIM
+// instead of quoting it, so an object-literal field can hold a raw expression —
+// a variable binding (`state.score`), an event thunk, a template literal — the
+// same things a JSX attribute expresses with `attr={…}`.
+export class RawExpr {
+  constructor(readonly text: string) {}
+}
+
+export const raw = (text: string): RawExpr => new RawExpr(text);
+
 // Serialize a JS value to its TSX source form. Plain objects emit as react-ecs
 // style object literals (`{ top: 0, left: 0 }`, unquoted keys) rather than JSON
 // so spliced values match hand-authored code.
 function serializeValue(v: unknown): string {
+  if (v instanceof RawExpr) return v.text;
   if (typeof v === 'string') return JSON.stringify(v);
   if (typeof v === 'number' || typeof v === 'boolean') return String(v);
   if (v !== null && typeof v === 'object' && !Array.isArray(v)) {
@@ -68,7 +79,7 @@ function serializeValue(v: unknown): string {
 function emitObject(o: Record<string, unknown>): string {
   const parts = Object.entries(o).map(([k, v]) => {
     const val =
-      v !== null && typeof v === 'object' && !Array.isArray(v)
+      v !== null && typeof v === 'object' && !Array.isArray(v) && !(v instanceof RawExpr)
         ? emitObject(v as Record<string, unknown>)
         : serializeValue(v);
     return `${k}: ${val}`;
@@ -445,8 +456,12 @@ export function setAttributeSegments(
     // Single binding → bare expression.
     return setAttributeExpr(el, name, segments[0].value);
   }
-  // Build a template literal. Escape backtick / `${` / backslash in literal
-  // parts so author text can't break out of the template.
+  return setAttributeExpr(el, name, templateLiteralText(segments));
+}
+
+// A template literal built from mixed-content segments. Backtick / `${` /
+// backslash in literal parts are escaped so author text can't break out.
+function templateLiteralText(segments: { kind: string; value: string }[]): string {
   const body = segments
     .map(s =>
       s.kind === 'binding'
@@ -454,7 +469,16 @@ export function setAttributeSegments(
         : s.value.replace(/\\/g, '\\\\').replace(/`/g, '\\`').replace(/\$\{/g, '\\${'),
     )
     .join('');
-  return setAttributeExpr(el, name, `\`${body}\``);
+  return `\`${body}\``;
+}
+
+// Mixed content as an object-literal FIELD value (rather than a JSX attribute):
+// a quoted string when all-literal, a bare expression for a single binding, else
+// a template literal. Used when the target prop lives in an interaction layer.
+export function segmentsFieldValue(segments: { kind: string; value: string }[]): unknown {
+  if (!segments.some(s => s.kind === 'binding')) return segments.map(s => s.value).join('');
+  if (segments.length === 1) return raw(segments[0].value);
+  return raw(templateLiteralText(segments));
 }
 
 // Remove an element (or opaque node) by deleting its exact span.

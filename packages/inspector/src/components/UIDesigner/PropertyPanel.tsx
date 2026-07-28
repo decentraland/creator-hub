@@ -8,19 +8,36 @@ import { useAppDispatch, useAppSelector } from '../../redux/hooks';
 import {
   getAspectLockedNodes,
   getCollapsedGroups,
+  getInteractionLayer,
   getSelectedNode,
   setAspectLocked,
   setGroupCollapsed,
+  setInteractionLayer,
 } from '../../redux/ui-designer';
 import { Block } from '../Block';
 import { Container } from '../Container';
 import { CheckboxField, Dropdown, RgbaColorField, TextArea, TextField } from '../ui';
+import { Pill } from '../ui/Pill';
 import { measureParentBox, measureNodeOffset, axisForPath, convertLength } from './measure';
 import { type CanvasSegment, type UINodeType } from './tree-model';
-import { codeComponentValue, findCodeNode, spliceComponentPatch, useCodeState } from './code/store';
+import {
+  addInteractionLayer,
+  addInteractionStates,
+  codeComponentValueForLayer,
+  findCodeNode,
+  interactionLayerValue,
+  removeInteractionLayer,
+  removeInteractionStates,
+  setInteractionActiveBinding,
+  setInteractionField,
+  spliceComponentPatch,
+  useCodeState,
+} from './code/store';
+import { INTERACTION_STATES, type InteractionStateKey } from './code/interaction-convention';
 import { ComponentRefPanel } from './code/ComponentRefPanel';
 import type { CodeUINode } from './code/types';
 import { AnchorPresetField } from './AnchorPresetField';
+import { BindAffordance } from './BindAffordance';
 import { BindableField } from './BindableField';
 import { BoxModelField } from './BoxModelField';
 import { BindableSubField } from './BindableSubField';
@@ -209,10 +226,174 @@ const AddPropertyMenu: React.FC<{ fields: FieldConfig[]; onAdd: (f: FieldConfig)
   );
 };
 
+// Human labels for the interaction layers. "Default" reads better than "base"
+// in the UI; the code-side key stays `base`.
+const LAYER_LABELS: Record<InteractionStateKey, string> = {
+  base: 'Default',
+  hover: 'Hover',
+  press: 'Pressed',
+  active: 'Active',
+};
+
+const LAYER_HINTS: Record<InteractionStateKey, string> = {
+  base: 'The resting style.',
+  hover: 'While the pointer is over this node.',
+  press: 'While the pointer is held down on this node.',
+  active: 'While the bound condition below is true — a selected tab, a checked toggle.',
+};
+
+// The interaction-states bar: pick which layer the fields below edit, add a
+// layer, or drop interaction styling entirely. A node without interaction states
+// shows a single "Add interaction states" affordance instead.
+const StatesBar: React.FC<{
+  node: CodeUINode;
+  entity: Entity;
+  layer: InteractionStateKey;
+  onPick: (layer: InteractionStateKey) => void;
+}> = ({ node, entity, layer, onPick }) => {
+  const id = entity as unknown as number;
+  const interaction = node.interaction;
+
+  if (!interaction) {
+    return (
+      <div className="ui-designer-states-bar">
+        <button
+          type="button"
+          className="ui-designer-states-add"
+          title="Style this node differently on hover, press, or when active"
+          onClick={() => void addInteractionStates(id)}
+        >
+          <AiOutlinePlus aria-hidden /> Add interaction states
+        </button>
+      </div>
+    );
+  }
+
+  const present = interaction.states;
+  const missing = INTERACTION_STATES.filter(k => k !== 'base' && !present[k]);
+
+  return (
+    <div className="ui-designer-states-bar">
+      <div
+        className="ui-designer-states-tabs"
+        role="tablist"
+        aria-label="Interaction state"
+      >
+        {INTERACTION_STATES.filter(k => k === 'base' || present[k]).map(k => (
+          <button
+            key={k}
+            type="button"
+            role="tab"
+            aria-selected={k === layer}
+            className={`ui-designer-states-tab${k === layer ? ' selected' : ''}`}
+            title={LAYER_HINTS[k]}
+            onClick={() => onPick(k)}
+          >
+            {LAYER_LABELS[k]}
+          </button>
+        ))}
+        {missing.map(k => (
+          <button
+            key={k}
+            type="button"
+            className="ui-designer-states-tab add"
+            title={`Add a ${LAYER_LABELS[k]} state — ${LAYER_HINTS[k]}`}
+            onClick={() => {
+              void addInteractionLayer(id, k);
+              onPick(k);
+            }}
+          >
+            <AiOutlinePlus aria-hidden /> {LAYER_LABELS[k]}
+          </button>
+        ))}
+      </div>
+      <div className="ui-designer-states-actions">
+        {layer !== 'base' ? (
+          <button
+            type="button"
+            className="ui-designer-prop-remove"
+            aria-label={`Remove the ${LAYER_LABELS[layer]} state`}
+            title={`Remove the ${LAYER_LABELS[layer]} state`}
+            onClick={() => {
+              void removeInteractionLayer(id, layer);
+              onPick('base');
+            }}
+          >
+            <VscTrash aria-hidden />
+          </button>
+        ) : (
+          <button
+            type="button"
+            className="ui-designer-prop-remove"
+            aria-label="Remove interaction states"
+            title="Remove interaction states — keeps the Default style, drops the overrides"
+            onClick={() => void removeInteractionStates(id)}
+          >
+            <VscTrash aria-hidden />
+          </button>
+        )}
+      </div>
+      <p className="ui-designer-states-hint">{LAYER_HINTS[layer]}</p>
+    </div>
+  );
+};
+
+// The boolean driving the `active` layer. It binds through the same
+// VariablePicker as any other field (a `boolean` kind already lists the boolean
+// state variables), but it writes the helper call's SECOND ARGUMENT rather than a
+// JSX attribute — so it owns its picker state instead of reusing
+// useFieldBinding, whose onBind targets an attribute.
+const ACTIVE_FLAG_FIELD: FieldConfig = {
+  label: 'Active when',
+  componentId: 'ui::interaction',
+  path: 'active',
+  kind: 'boolean',
+  info: 'While this is true, the Active style applies. Bind it to a boolean variable — a selected tab, a checked toggle.',
+};
+
+const ActiveFlagRow: React.FC<{ entity: Entity; expr?: string }> = ({ entity, expr }) => {
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const anchorRef = useRef<HTMLButtonElement>(null);
+  const id = entity as unknown as number;
+
+  return (
+    <div className="ui-designer-property-row">
+      <Block
+        label={ACTIVE_FLAG_FIELD.label}
+        info={ACTIVE_FLAG_FIELD.info}
+      >
+        {expr ? (
+          <Pill
+            content={expr}
+            onRemove={() => void setInteractionActiveBinding(id, undefined)}
+          />
+        ) : (
+          <div className="ui-designer-bindable-row">
+            <div className="ui-designer-bindable-content">
+              <span className="ui-designer-states-unbound">Always off until bound</span>
+            </div>
+            <BindAffordance
+              field={ACTIVE_FLAG_FIELD}
+              anchorRef={anchorRef}
+              pickerOpen={pickerOpen}
+              setPickerOpen={setPickerOpen}
+              onBind={e => {
+                void setInteractionActiveBinding(id, e);
+                setPickerOpen(false);
+              }}
+            />
+          </div>
+        )}
+      </Block>
+    </div>
+  );
+};
+
 const PropertyPanelComponent: React.FC = () => {
   const dispatch = useAppDispatch();
   const selected = useAppSelector(getSelectedNode);
   const collapsed = useAppSelector(getCollapsedGroups);
+  const interactionLayer = useAppSelector(getInteractionLayer);
 
   // Code-mode: the selected node's data comes from the parsed .tsx tree (by its
   // synthetic id), not the ECS engine.
@@ -230,6 +411,17 @@ const PropertyPanelComponent: React.FC = () => {
 
   const type: UINodeType | null = useMemo(() => codeNode?.type ?? null, [codeNode]);
 
+  // The interaction layer the fields edit. The picked layer is global, so it can
+  // be stale for this node (that state may not exist here) — fall back to base.
+  const activeLayer: InteractionStateKey = useMemo(
+    () =>
+      codeNode?.interaction &&
+      (interactionLayer === 'base' || codeNode.interaction.states[interactionLayer])
+        ? interactionLayer
+        : 'base',
+    [codeNode, interactionLayer],
+  );
+
   // Bindings come from the parsed source (`node.bindings`, keyed by
   // `componentId.field`): a `value={state.x}` attribute is a single-variable
   // binding, a `value={`…${x}…`}` template is mixed content.
@@ -243,13 +435,23 @@ const PropertyPanelComponent: React.FC = () => {
     return { bindingsByField: byField, mixedByField: mixed };
   }, [codeNode]);
 
+  // A node with interaction states keeps ALL of its styles in the helper's
+  // layers (base included), so every patch routes there — which is what lets the
+  // existing field editors edit any prop in any state without duplicating them.
+  const hasInteraction = !!codeNode?.interaction;
   const writeAndDispatch = useCallback(
     (componentId: string, patch: Record<string, unknown>) => {
       if (selected === null) return;
-      // Route the patch to a .tsx source splice.
-      void spliceComponentPatch(selected as unknown as number, componentId, patch);
+      const id = selected as unknown as number;
+      if (hasInteraction) void setInteractionField(id, activeLayer, componentId, patch);
+      else void spliceComponentPatch(id, componentId, patch);
     },
-    [selected],
+    [selected, hasInteraction, activeLayer],
+  );
+
+  const readComponentValue = useCallback(
+    (componentId: string) => codeComponentValueForLayer(codeNode, componentId, activeLayer),
+    [codeNode, activeLayer],
   );
 
   if (selected === null || type === null) {
@@ -295,6 +497,20 @@ const PropertyPanelComponent: React.FC = () => {
           node={child}
         />
       ))}
+      {codeNode && !codeNode.opaque ? (
+        <StatesBar
+          node={codeNode}
+          entity={selected as Entity}
+          layer={activeLayer}
+          onPick={layer => dispatch(setInteractionLayer({ layer }))}
+        />
+      ) : null}
+      {activeLayer === 'active' && codeNode?.interaction ? (
+        <ActiveFlagRow
+          entity={selected as Entity}
+          expr={codeNode.interaction.activeExpr}
+        />
+      ) : null}
       {allGroups.map(group => {
         // Bucket each field: shown (core / set / always-on) → a row (with a `−`
         // when it's an optional set prop); togglable-and-unset → the group's
@@ -303,19 +519,31 @@ const PropertyPanelComponent: React.FC = () => {
         const addable: FieldConfig[] = [];
         // The group consts have narrow inferred field types; treat them uniformly.
         for (const field of group.fields as FieldConfig[]) {
-          const value = codeComponentValue(codeNode, field.componentId) as Record<
-            string,
-            unknown
-          > | null;
+          const value = readComponentValue(field.componentId) as Record<string, unknown> | null;
           if (field.hiddenWhen?.((value ?? {}) as Record<string, unknown>)) continue;
           const togglable = isTogglable(field);
           if (togglable && !isFieldSet(field, value)) {
             addable.push(field);
             continue;
           }
+          // In an override layer, distinguish a field this state actually sets
+          // from one merely inherited from Default — the displayed value is
+          // merged, so it can't convey that on its own. An inherited field reads
+          // dimmed; an overridden one gets a reset (−) back to inherited.
+          const overriding = activeLayer !== 'base';
+          const overridden =
+            overriding &&
+            isFieldSet(field, interactionLayerValue(codeNode, field.componentId, activeLayer));
+          const removable = overriding ? overridden : togglable;
           rows.push(
             <div
-              className={`ui-designer-property-row${WIDE_KINDS.has(field.kind) ? ' wide' : ''}`}
+              className={[
+                'ui-designer-property-row',
+                WIDE_KINDS.has(field.kind) ? 'wide' : '',
+                overriding ? (overridden ? 'overridden' : 'inherited') : '',
+              ]
+                .filter(Boolean)
+                .join(' ')}
               key={`${field.componentId}:${field.path}:${field.label}`}
             >
               <FieldRow
@@ -327,12 +555,20 @@ const PropertyPanelComponent: React.FC = () => {
                 mixed={mixedByField[`${field.componentId}.${field.path}`]}
                 write={writeAndDispatch}
               />
-              {togglable ? (
+              {removable ? (
                 <button
                   type="button"
                   className="ui-designer-prop-remove"
-                  aria-label={`Remove ${field.label ?? 'property'}`}
-                  title={`Remove ${field.label ?? 'property'}`}
+                  aria-label={
+                    overriding
+                      ? `Reset ${field.label ?? 'property'} to its Default value`
+                      : `Remove ${field.label ?? 'property'}`
+                  }
+                  title={
+                    overriding
+                      ? `Reset ${field.label ?? 'property'} to its Default value`
+                      : `Remove ${field.label ?? 'property'}`
+                  }
                   onClick={() => writeAndDispatch(field.componentId, buildRemovePatch(field))}
                 >
                   <VscTrash aria-hidden />

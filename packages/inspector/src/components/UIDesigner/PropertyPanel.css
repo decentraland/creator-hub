@@ -327,7 +327,7 @@
 }
 
 /* Numeric fields read as aligned columns (W/H, T/R/B/L, indices). */
-.ui-designer-property-panel input[type='number'] {
+.ui-designer-property-panel input[type="number"] {
   font-variant-numeric: tabular-nums;
 }
 
@@ -335,4 +335,135 @@
   .ui-designer-prop-remove {
     transition: none;
   }
+}
+
+/* --- Interaction states bar ---
+   Picks which interaction layer (Default / Hover / Pressed / Active) the fields
+   below edit. A tab that isn't authored yet appears as a `+ Hover`-style adder,
+   so the bar doubles as the create affordance and never shows an empty state. */
+.ui-designer-states-bar {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--uid-space-1);
+  padding: var(--uid-space-2) var(--uid-space-3);
+  border-bottom: 1px solid var(--ui-designer-hairline);
+}
+
+.ui-designer-states-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--uid-space-1);
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.ui-designer-states-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 3px 8px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--sub-text);
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.ui-designer-states-tab:hover {
+  background: var(--ui-designer-accent-08);
+  color: var(--title);
+}
+
+.ui-designer-states-tab.selected {
+  background: var(--ui-designer-accent-12);
+  border-color: var(--ui-designer-accent-40);
+  color: var(--ui-designer-accent);
+}
+
+.ui-designer-states-tab.add {
+  color: var(--ui-designer-accent-80);
+}
+
+.ui-designer-states-tab:focus-visible,
+.ui-designer-states-add:focus-visible {
+  outline: 2px solid var(--border-focused);
+  outline-offset: 1px;
+}
+
+.ui-designer-states-tab svg,
+.ui-designer-states-add svg {
+  width: 11px;
+  height: 11px;
+}
+
+.ui-designer-states-actions {
+  display: flex;
+  align-items: center;
+  flex: 0 0 auto;
+}
+
+/* The bar's own remove button sits inline, unlike the absolutely-positioned
+   per-row one it borrows its styling from. */
+.ui-designer-states-actions .ui-designer-prop-remove {
+  position: static;
+  opacity: 1;
+}
+
+.ui-designer-states-hint {
+  flex: 1 0 100%;
+  margin: 0;
+  color: var(--sub-text);
+  font-size: 10px;
+  line-height: 1.4;
+}
+
+.ui-designer-states-add {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 6px;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--ui-designer-accent);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.ui-designer-states-add:hover {
+  background: var(--ui-designer-accent-08);
+}
+
+.ui-designer-states-unbound {
+  color: var(--sub-text);
+  font-size: 11px;
+  font-style: italic;
+}
+
+/* In an override layer, a field merely inherited from Default reads dimmed; one
+   this state actually sets reads at full strength with a visible reset. */
+.ui-designer-property-row.inherited .Block-label-row,
+.ui-designer-property-row.inherited .content {
+  opacity: 0.55;
+}
+
+.ui-designer-property-row.inherited:focus-within .Block-label-row,
+.ui-designer-property-row.inherited:focus-within .content,
+.ui-designer-property-row.inherited:hover .Block-label-row,
+.ui-designer-property-row.inherited:hover .content {
+  opacity: 1;
+}
+
+.ui-designer-property-row.overridden .Block-label-row .Label::after {
+  content: "";
+  display: inline-block;
+  width: 4px;
+  height: 4px;
+  margin-left: 4px;
+  border-radius: 50%;
+  background: var(--ui-designer-accent);
+  vertical-align: middle;
 }
