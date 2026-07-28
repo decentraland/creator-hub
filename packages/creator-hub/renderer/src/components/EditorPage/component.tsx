@@ -63,6 +63,7 @@ export function EditorPage() {
     publishScene,
     getMobileQR,
     supportsMultiInstance,
+    supportsMcp,
     isPreviewRunning,
   } = useEditor();
   const { settings, updateAppSettings } = useSettings();
@@ -370,6 +371,7 @@ export function EditorPage() {
                     onChange={handleChangePreviewOptions}
                     onShowMobileQR={handleShowMobileQR}
                     supportsMultiInstance={supportsMultiInstance}
+                    supportsMcp={supportsMcp}
                     projectPath={project.path}
                   />
                 }

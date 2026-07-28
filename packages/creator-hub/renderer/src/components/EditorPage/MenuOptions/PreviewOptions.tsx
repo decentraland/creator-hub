@@ -20,6 +20,7 @@ export function PreviewOptions({
   options,
   onShowMobileQR,
   supportsMultiInstance,
+  supportsMcp,
   projectPath,
 }: PreviewOptionsProps) {
   const [terrainHiddenByScene, setTerrainHiddenByScene] = useState(false);
@@ -93,15 +94,17 @@ export function PreviewOptions({
             label={t('editor.header.actions.preview_options.multi_instance')}
           />
         )}
-        <FormControlLabel
-          control={
-            <Checkbox
-              checked={!!options.mcp}
-              onChange={handleChange({ mcp: !options.mcp })}
-            />
-          }
-          label={t('editor.header.actions.preview_options.mcp')}
-        />
+        {supportsMcp && (
+          <FormControlLabel
+            control={
+              <Checkbox
+                checked={!!options.mcp}
+                onChange={handleChange({ mcp: !options.mcp })}
+              />
+            }
+            label={t('editor.header.actions.preview_options.mcp')}
+          />
+        )}
       </FormGroup>
       <Divider />
       <ListItemButton onClick={onShowMobileQR}>
