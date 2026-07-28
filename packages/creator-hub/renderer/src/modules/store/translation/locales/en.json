@@ -200,12 +200,10 @@
         "title": "Publish to a different server",
         "list": "Alternate Servers",
         "options": {
-          "test_server": "Test Server",
           "custom_server": "Custom Server"
         },
         "custom_server_url": "Server URL",
         "action": {
-          "test_server": "Publish to Test Server",
           "custom_server": "Publish to Custom Server"
         },
         "errors": {

@@ -200,12 +200,10 @@
         "title": "Publicar en un Servidor Alternativo",
         "list": "Servidores Alternativos",
         "options": {
-          "test_server": "Servidor de Prueba",
           "custom_server": "Servidor Personalizado"
         },
         "custom_server_url": "URL del Servidor",
         "action": {
-          "test_server": "Publicar en el Servidor de Prueba",
           "custom_server": "Publicar en Servidor Personalizado"
         },
         "errors": {

@@ -29,7 +29,7 @@ export type Step =
   | 'deploy';
 
 export type InitialTarget = 'worlds' | 'land';
-export type AlternativeTarget = 'test' | 'custom';
+export type AlternativeTarget = 'custom';
 
 export type TargetType = InitialTarget | AlternativeTarget;
 
