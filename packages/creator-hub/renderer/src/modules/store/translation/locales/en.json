@@ -279,7 +279,7 @@
           }
         },
         "success": {
-          "message": "You scene is successfully published",
+          "message": "Your scene is successfully published",
           "url": "The URL to jump in your {target} is:",
           "world": "World",
           "land": "Land",
