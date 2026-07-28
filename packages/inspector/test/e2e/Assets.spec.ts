@@ -19,11 +19,10 @@ describe('Assets', () => {
     await expect(Hierarchy.getId('example.glb')).rejects.toThrow();
 
     await Assets.selectTab(AssetsTab.FileSystem);
-    await Assets.openFolder('scene');
-    await Assets.openFolder('scene/Models');
-    await Assets.openFolder('scene/Models/example');
+    await Assets.openFolder('Models');
+    await Assets.openFolder('Models/example');
 
-    await Assets.addFileSystemAsset('scene/Models/example/model.glb');
+    await Assets.addFileSystemAsset('Models/example/model.glb');
 
     // There should be an entity in the Hierarchy tree with the name model.glb
     await expect(Hierarchy.getId('model.glb')).resolves.toBeGreaterThanOrEqual(152);

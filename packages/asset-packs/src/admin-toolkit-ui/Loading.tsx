@@ -1,8 +1,8 @@
 import type { IEngine } from '@dcl/ecs';
-import { Color4 } from '@dcl/ecs-math';
 import type { UiTransformProps } from '@dcl/react-ecs';
 import ReactEcs, { UiEntity } from '@dcl/react-ecs';
 import { clearInterval, setInterval } from './utils';
+import { COLORS } from './theme';
 
 interface LoadingProps {
   engine: IEngine;
@@ -47,7 +47,7 @@ export function LoadingDots({ uiTransform, engine, width = 10, height = 10 }: Lo
             margin: { right: 8 },
           }}
           uiBackground={{
-            color: frame >= i ? Color4.fromHexString('#FF2D55') : Color4.fromHexString('#43404A'),
+            color: frame >= i ? COLORS.primary : COLORS.borderSubtle,
           }}
         />
       ))}
