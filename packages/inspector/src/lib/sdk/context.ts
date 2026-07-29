@@ -9,6 +9,7 @@ import {
 } from '../renderer/controller';
 import type { RendererId } from '../renderer/controller';
 import { asBabylonInternals } from '../renderer/babylon/register';
+import { asBevyInternals } from '../renderer/bevy/register';
 import type { IRenderer } from '../renderer/types';
 import type { InspectorPreferences } from '../logic/preferences/types';
 import { SceneMetricsServer } from '../../lib/rpc/scene-metrics/server';
@@ -99,7 +100,8 @@ export async function createSdkContext(
   if (config.dataLayerRpcParentUrl) {
     const transport = new MessageTransport(window, window.parent, config.dataLayerRpcParentUrl);
     const babylonInternals = asBabylonInternals(built.internals);
-    new SceneServer(transport, store, babylonInternals?.babylon);
+    const bevyInternals = asBevyInternals(built.internals);
+    new SceneServer(transport, store, babylonInternals?.babylon, bevyInternals?.takeScreenshot);
 
     // Ensure the scene-RPC CLIENT (host-bound) exists. It's normally set up by the
     // parent-window data-layer path, but a renderer whose data-layer is a WS (Bevy)
@@ -126,8 +128,9 @@ export async function createSdkContext(
     } else {
       // eslint-disable-next-line no-console
       console.warn(
-        '[renderer] Scene RPC screenshots/camera + metrics are only available with the Babylon ' +
-          `renderer; skipped for "${built.id}". Feature flags + host controls still work.`,
+        '[renderer] Scene RPC camera control + metrics are only available with the Babylon ' +
+          `renderer; skipped for "${built.id}". Screenshots (if the renderer provides one), ` +
+          'feature flags + host controls still work.',
       );
     }
   }

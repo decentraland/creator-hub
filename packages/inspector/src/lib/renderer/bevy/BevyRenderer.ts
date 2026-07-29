@@ -25,6 +25,7 @@ import type { GizmoType } from '../../utils/gizmo';
 import type { SceneSpawnPointCoord } from '../../sdk/components';
 import { VERSIONS_REGISTRY } from '../../sdk/components/versioning/registry';
 import { BevySceneContext } from './BevySceneContext';
+import { consoleCommand } from './console';
 import type { EngineWindow } from './console';
 import { createSpawnPointController } from './spawn-point-controller';
 import type { BevySpawnPointController } from './spawn-point-controller';
@@ -501,6 +502,27 @@ export class BevyRenderer implements IRenderer {
    * drives CRDT/gizmo/pick console commands through this). */
   get engineWindow(): EngineWindow | null {
     return this.#engineWindow;
+  }
+
+  /**
+   * Capture the current engine frame as a PNG data URL, for the scene thumbnail
+   * (parity with Babylon's screenshot). The Bevy engine renders in its own iframe
+   * and can't be read via `canvas.toDataURL` (wgpu), so the capture is done by the
+   * engine's `/screenshot` console command, which returns raw base64 PNG; wrap it
+   * as a data URL to match what the host's screenshot pipeline expects.
+   */
+  async takeScreenshot(): Promise<string> {
+    if (!this.#engineWindow) throw new Error('bevy engine not attached');
+    const reply = (await consoleCommand(this.#engineWindow, 'screenshot', [])).trim();
+    // Guard against an engine that doesn't implement `/screenshot` (retro-compat
+    // with an older published bundle): an unknown command replies with an error
+    // string, not base64. A base64 PNG always starts with the PNG signature
+    // (`\x89PNG…` → `iVBORw0KGgo`); reject anything else so the host treats it as
+    // "no thumbnail" instead of building a broken data URL.
+    if (!reply.startsWith('iVBORw0KGgo')) {
+      throw new Error('bevy screenshot unavailable (engine returned no PNG)');
+    }
+    return `data:image/png;base64,${reply}`;
   }
 
   dispose(): void {

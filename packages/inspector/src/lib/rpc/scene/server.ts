@@ -89,7 +89,17 @@ export class SceneServer extends RPC<Method, Params, Result> {
   // flag never arrives under Bevy and the minimap never shows. The Babylon-only
   // handlers are registered only when `renderer` is present; under Bevy a call to
   // one rejects (unhandled method) rather than silently doing nothing wrong.
-  constructor(transport: Transport, store: Store, renderer?: ReturnType<typeof initRenderer>) {
+  // `takeScreenshot` is an optional renderer-agnostic capture used when Babylon
+  // internals (`renderer`) aren't present — e.g. Bevy captures via its engine's
+  // `/screenshot` console command. When Babylon IS present its own handler below
+  // wins (it can frame an offscreen render); this only fills the gap for other
+  // renderers so the thumbnail pipeline works under them too.
+  constructor(
+    transport: Transport,
+    store: Store,
+    renderer?: ReturnType<typeof initRenderer>,
+    takeScreenshot?: (width: number, height: number, precision?: number) => Promise<string>,
+  ) {
     super('SceneRpcInbound', transport);
 
     this.handle('toggle_component', async ({ component, enabled }) => {
@@ -138,6 +148,12 @@ export class SceneServer extends RPC<Method, Params, Result> {
           height,
           precision,
         });
+      });
+    } else if (takeScreenshot) {
+      // Non-Babylon renderer (Bevy): no camera control, but it can still capture
+      // a frame for the scene thumbnail via its own screenshot path.
+      this.handle('take_screenshot', async ({ width, height, precision }) => {
+        return takeScreenshot(width, height, precision);
       });
     }
 

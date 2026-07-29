@@ -248,11 +248,11 @@ export function EditorPage() {
   const handleBack = useCallback(async () => {
     const rpc = iframeRef.current;
     // Refresh the project (saves + regenerates the thumbnail) on the way out, but
-    // never let it block navigation. The thumbnail is a Babylon-canvas screenshot
-    // over the scene RPC, which has no server under Bevy — skip it in that mode,
-    // and guard the Babylon path so a throw can't wedge Back. (`takeScreenshot`
-    // is also timeout-bounded, so even an unexpected stall can't hang here.)
-    if (rpc && !useBevy) {
+    // never let it block navigation. The thumbnail is a screenshot over the scene
+    // RPC — Babylon captures its canvas, Bevy captures via its engine's
+    // `/screenshot` command; both are timeout-bounded and non-fatal, so a throw
+    // or stall can't wedge Back.
+    if (rpc) {
       try {
         await refreshProject(rpc);
       } catch (error) {
@@ -261,7 +261,7 @@ export function EditorPage() {
     }
     killPreview();
     navigate('/scenes');
-  }, [navigate, useBevy, refreshProject, killPreview]);
+  }, [navigate, refreshProject, killPreview]);
 
   const handleOpenPublishModal = useCallback(async () => {
     await handleActionWithWarningCheck(() => openModal('publish'));
@@ -309,14 +309,13 @@ export function EditorPage() {
     await handleActionWithWarningCheck(handleOpenPreviewWithErrorHandling);
   }, [handleActionWithWarningCheck, handleOpenPreviewWithErrorHandling]);
 
-  // The thumbnail comes from a Babylon-canvas screenshot over the scene RPC, which
-  // has no server under the Bevy renderer (the request would just time out and
-  // yield no thumbnail). Skip it in Bevy mode rather than fire a doomed request.
-  // (`takeScreenshot` is also timeout-guarded so this can never hang the flow.)
+  // The thumbnail comes from a screenshot over the scene RPC — Babylon captures
+  // its canvas, Bevy captures via its engine's `/screenshot` command. Both are
+  // timeout-guarded and non-fatal, so this can never hang or wedge the flow.
   const saveThumbnailIfSupported = useCallback(() => {
     const rpc = iframeRef.current;
-    if (rpc && !useBevy) saveAndGetThumbnail(rpc);
-  }, [useBevy, saveAndGetThumbnail]);
+    if (rpc) saveAndGetThumbnail(rpc);
+  }, [saveAndGetThumbnail]);
 
   const handlePublishScene = useCallback(async () => {
     saveThumbnailIfSupported();

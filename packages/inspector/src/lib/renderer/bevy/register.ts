@@ -22,6 +22,24 @@ import { createSpawnAreasBridge } from './spawn-areas-bridge';
 import { createSpawnGizmoBridge } from './spawn-gizmo-bridge';
 
 /**
+ * Bevy-specific escape hatch exposed on {@link MountedRenderer.internals} — the
+ * counterpart to Babylon's. Lets the inspector's scene-RPC server capture a
+ * thumbnail without the renderer contract needing a screenshot method (the Bevy
+ * capture goes through the engine's `/screenshot` console command).
+ */
+export interface BevyInternals {
+  takeScreenshot: () => Promise<string>;
+}
+
+/** Type guard for narrowing `MountedRenderer.internals` back to Bevy's. */
+export function asBevyInternals(internals: unknown): BevyInternals | null {
+  if (internals && typeof internals === 'object' && 'takeScreenshot' in internals) {
+    return internals as BevyInternals;
+  }
+  return null;
+}
+
+/**
  * Bevy renderer registration. Lives here (not in the renderer-agnostic
  * `controller.ts`) so the orchestration layer keeps zero compile-time dependency
  * on Bevy — Bevy is just another plugin behind the public {@link registerRenderer}
@@ -430,9 +448,13 @@ export function registerBevyRenderer(): void {
         },
       });
 
+      const internals: BevyInternals = {
+        takeScreenshot: () => bevy.takeScreenshot(),
+      };
       return {
         renderer: bevy,
         engine: bevy.context.engine,
+        internals,
         dispose: () => {
           disconnectVertical();
           disconnectInputFocus();
