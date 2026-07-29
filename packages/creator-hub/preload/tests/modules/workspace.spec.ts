@@ -267,6 +267,32 @@ describe('initializeWorkspace', () => {
 
       expect(result.path).toBe(newPath);
     });
+
+    it('should allow a case-only rename even when the filesystem reports the target as existing', async () => {
+      // On case-insensitive filesystems (APFS, NTFS) the target path matches the project's own folder.
+      services.fs.exists.mockResolvedValue(true);
+      const newPath = `${mockAppHome}/my scene`;
+
+      const workspace = initializeWorkspace(services);
+      const result = await workspace.renameProject({ path: currentPath, newName: 'my scene' });
+
+      expect(services.fs.rename).toHaveBeenCalledWith(currentPath, newPath);
+      expect(result.path).toBe(newPath);
+    });
+
+    it('should undo the rename if updating the workspace config fails', async () => {
+      services.fs.exists.mockResolvedValue(false);
+      services.config.setConfig.mockRejectedValueOnce(new Error('disk write failed'));
+      const newPath = `${mockAppHome}/New Name`;
+
+      const workspace = initializeWorkspace(services);
+
+      await expect(
+        workspace.renameProject({ path: currentPath, newName: 'New Name' }),
+      ).rejects.toThrow(/disk write failed/);
+      expect(services.fs.rename).toHaveBeenNthCalledWith(1, currentPath, newPath);
+      expect(services.fs.rename).toHaveBeenNthCalledWith(2, newPath, currentPath);
+    });
   });
 
   describe('when getting the scene source file', () => {

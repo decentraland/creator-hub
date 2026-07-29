@@ -403,15 +403,25 @@ export function initializeWorkspace(services: Services) {
       return getProject({ path: _path });
     }
 
-    if (await fs.exists(newPath)) {
+    // On case-insensitive filesystems (APFS, NTFS) a case-only rename makes `fs.exists(newPath)`
+    // match the project's own folder, so the collision check must be skipped for it —
+    // `fs.rename` handles case-only renames fine on those filesystems.
+    const isCaseOnlyRename = newPath.toLowerCase() === _path.toLowerCase();
+    if (!isCaseOnlyRename && (await fs.exists(newPath))) {
       throw new Error(`A folder named "${trimmedName}" already exists`);
     }
 
     await fs.rename(_path, newPath);
 
-    await config.setConfig(config => {
-      config.workspace.paths = config.workspace.paths.map($ => ($ === _path ? newPath : $));
-    });
+    try {
+      await config.setConfig(draft => {
+        draft.workspace.paths = draft.workspace.paths.map($ => ($ === _path ? newPath : $));
+      });
+    } catch (error) {
+      // Keep disk and config consistent: undo the rename if the config write fails.
+      await fs.rename(newPath, _path);
+      throw error;
+    }
 
     return getProject({ path: newPath });
   }

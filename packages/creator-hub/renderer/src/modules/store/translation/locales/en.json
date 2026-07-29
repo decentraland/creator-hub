@@ -133,7 +133,8 @@
       "field_label": "Folder Name",
       "errors": {
         "invalid_name": "That name isn't valid. Avoid empty names and characters like / \\ : * ? \" < > |.",
-        "rename_failed": "Couldn't rename the folder. A folder with that name may already exist."
+        "name_taken": "A folder with that name already exists.",
+        "rename_failed": "Couldn't rename the folder. Please try again."
       }
     },
     "publish_project": {

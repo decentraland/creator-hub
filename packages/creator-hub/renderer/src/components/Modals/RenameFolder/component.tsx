@@ -32,21 +32,29 @@ export function RenameFolder({ open, project, onClose, onSubmit }: Props) {
   }, []);
 
   const trimmedName = name.trim();
+  const isEmpty = trimmedName.length === 0;
   const isUnchanged = trimmedName === currentName;
-  const isInvalid = trimmedName.length > 0 && !isValidFolderName(trimmedName);
+  const isInvalid = !isEmpty && !isValidFolderName(trimmedName);
 
   const handleSubmit = useCallback(async () => {
-    if (isUnchanged || isInvalid || loading) return;
+    if (isEmpty || isUnchanged || isInvalid || loading) return;
     setLoading(true);
     setError(null);
     try {
       await onSubmit(project, trimmedName);
       onClose();
-    } catch (_error) {
-      setError(t('modal.rename_folder.errors.rename_failed'));
+    } catch (error) {
+      // `unwrap()` rejects with a SerializedError (plain object), not an Error instance.
+      const message = (error as { message?: string } | null)?.message ?? '';
+      const isCollision = message.includes('already exists');
+      setError(
+        isCollision
+          ? t('modal.rename_folder.errors.name_taken')
+          : t('modal.rename_folder.errors.rename_failed'),
+      );
       setLoading(false);
     }
-  }, [onSubmit, onClose, project, trimmedName, isUnchanged, isInvalid, loading]);
+  }, [onSubmit, onClose, project, trimmedName, isEmpty, isUnchanged, isInvalid, loading]);
 
   return (
     <Modal
@@ -65,7 +73,7 @@ export function RenameFolder({ open, project, onClose, onSubmit }: Props) {
           </Button>
           <Button
             onClick={handleSubmit}
-            disabled={loading || isUnchanged || isInvalid}
+            disabled={loading || isEmpty || isUnchanged || isInvalid}
           >
             {loading ? <Loader size={20} /> : t('modal.confirm')}
           </Button>

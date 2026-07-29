@@ -22,12 +22,14 @@ const MAX_FOLDER_NAME_LENGTH = 255;
 /**
  * Returns whether or not the provided name is a valid, cross-platform-safe file/folder name.
  * Rejects empty/whitespace-only names, names containing illegal filesystem characters, reserved
- * Windows device names, and names that are too long.
+ * Windows device names, names ending with a dot (silently stripped by Windows, desyncing the
+ * stored path from the real folder), and names that are too long.
  */
 export function isValidFolderName(name: string): boolean {
   const trimmed = name.trim();
   if (!trimmed) return false;
   if (trimmed === '.' || trimmed === '..') return false;
+  if (trimmed.endsWith('.')) return false;
   if (trimmed.length > MAX_FOLDER_NAME_LENGTH) return false;
   if (ILLEGAL_FILENAME_CHARS.test(trimmed)) return false;
   if (RESERVED_WINDOWS_NAMES.test(trimmed)) return false;

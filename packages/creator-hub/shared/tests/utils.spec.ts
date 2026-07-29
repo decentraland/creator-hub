@@ -38,6 +38,12 @@ describe('isValidFolderName', () => {
     expect(isValidFolderName('NUL')).toBe(false);
   });
 
+  it('should reject names ending with a dot', () => {
+    expect(isValidFolderName('My Scene.')).toBe(false);
+    expect(isValidFolderName('My Scene...')).toBe(false);
+    expect(isValidFolderName('My Scene. ')).toBe(false);
+  });
+
   it('should reject names longer than 255 characters', () => {
     expect(isValidFolderName('a'.repeat(256))).toBe(false);
     expect(isValidFolderName('a'.repeat(255))).toBe(true);
