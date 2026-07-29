@@ -250,6 +250,54 @@ describe('cli preview start', () => {
       expect(mocks.run).toHaveBeenCalledTimes(1);
       expect(mocks.dclDeepLink).not.toHaveBeenCalled();
     });
+
+    it('should serialize two starts issued in the same tick (registration happens before any await)', async () => {
+      const fake = createFakeChild();
+      mocks.run.mockReturnValue(fake.child);
+
+      // no flush between them: both calls race the awaits inside start()
+      const first = start(path, BASE_OPTS);
+      const second = start(path, BASE_OPTS);
+
+      fake.printDeeplink('realm=http://127.0.0.1:8000&position=0,0');
+      await Promise.all([first, second]);
+
+      expect(mocks.run).toHaveBeenCalledTimes(1);
+      expect(mocks.dclDeepLink).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('when a second start arrives during the reinstall-retry', () => {
+    it('should ride the whole operation instead of racing the retry spawn', async () => {
+      const crashed = createFakeChild();
+      const retried = createFakeChild();
+      mocks.run
+        .mockImplementationOnce(() => crashed.child)
+        .mockImplementationOnce(() => retried.child);
+      let resolveInstall!: () => void;
+      mocks.install.mockImplementation(
+        () =>
+          new Promise<void>(resolve => {
+            resolveInstall = resolve;
+          }),
+      );
+
+      const first = start(path, BASE_OPTS);
+      await flush();
+      crashed.die();
+      await vi.waitFor(() => expect(mocks.install).toHaveBeenCalledTimes(1));
+
+      // lands while the reinstall is still underway (no spawn alive at this moment)
+      const second = start(path, BASE_OPTS);
+      resolveInstall();
+      await vi.waitFor(() => expect(mocks.run).toHaveBeenCalledTimes(2));
+      retried.printDeeplink('realm=http://127.0.0.1:8000&position=0,0');
+      await Promise.all([first, second]);
+
+      // crashed spawn + its retry only: the second start never spawned a third process
+      expect(mocks.run).toHaveBeenCalledTimes(2);
+      expect(getPreview(path)?.url).toContain('realm=http');
+    });
   });
 
   describe('when the spawn dies before producing a deeplink', () => {

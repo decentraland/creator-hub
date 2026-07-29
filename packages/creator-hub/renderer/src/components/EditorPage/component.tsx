@@ -6,8 +6,8 @@ import CodeIcon from '@mui/icons-material/Code';
 import PublicIcon from '@mui/icons-material/Public';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import CloseIcon from '@mui/icons-material/Close';
-import { IconButton } from '@mui/material';
 import { CircularProgress as Loader, Tooltip } from 'decentraland-ui2';
+import { IconButton } from '@mui/material';
 
 import { isClientNotInstalledError } from '/shared/types/client';
 import { isProjectError } from '/shared/types/projects';
@@ -60,6 +60,7 @@ export function EditorPage() {
     openCode,
     updateScene,
     loadingPreview,
+    previewCancelled,
     previewProgress,
     loadingPublish,
     isInstallingProject,
@@ -433,6 +434,8 @@ export function EditorPage() {
                           className="cancel-optimizing"
                           size="small"
                           aria-label={t('editor.header.actions.cancel_optimizing')}
+                          // a cancel is already in flight (main is killing the spawn)
+                          disabled={previewCancelled}
                           onClick={e => {
                             e.stopPropagation();
                             handleCancelOptimizing();

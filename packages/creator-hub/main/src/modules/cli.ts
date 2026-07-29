@@ -344,19 +344,35 @@ export async function cancelPreview(path: string): Promise<void> {
 }
 
 export async function start(path: string, opts: StartOptions): Promise<string> {
-  const { retry = true } = opts;
-
-  // The scene-level landscapeTerrain opt-out overrides the preview preference
-  if (!(await sceneHasLandscapeTerrain(path))) {
-    opts = { ...opts, enableLandscapeTerrains: false };
-  }
-
-  // A spawn is already underway (still converting/booting): ride it instead of racing a
+  // A start is already underway (still converting/booting): ride it instead of racing a
   // second one — the sdk self-opens the client when it's ready, so there is nothing to fire.
   const pending = inflightStarts.get(path);
   if (pending) {
     await pending.catch(() => {});
     return path;
+  }
+
+  // Registered synchronously — no await between the check above and this set — so
+  // concurrent same-tick starts (a Preview press racing a mobile-QR start) ride this
+  // entry instead of double-spawning a process previewCache would orphan. The entry
+  // spans the whole operation, reinstall-retry included, so a start landing mid-retry
+  // is serialized too.
+  const entry = doStart(path, opts);
+  inflightStarts.set(path, entry);
+  try {
+    return await entry;
+  } finally {
+    // guarded so a stale settle never clobbers an entry registered by a later start()
+    if (inflightStarts.get(path) === entry) inflightStarts.delete(path);
+  }
+}
+
+async function doStart(path: string, opts: StartOptions): Promise<string> {
+  const { retry = true } = opts;
+
+  // The scene-level landscapeTerrain opt-out overrides the preview preference
+  if (!(await sceneHasLandscapeTerrain(path))) {
+    opts = { ...opts, enableLandscapeTerrains: false };
   }
 
   const preview = previewCache.get(path);
@@ -472,7 +488,6 @@ export async function start(path: string, opts: StartOptions): Promise<string> {
       if (entry?.child === process) entry.url = url;
       return url;
     })();
-    inflightStarts.set(path, spawned);
 
     await spawned;
     // the sdk already opened the client with the deeplink it printed; nothing to fire here
@@ -486,14 +501,14 @@ export async function start(path: string, opts: StartOptions): Promise<string> {
     }
     if (retry && !isClientNotInstalledError(error)) {
       log.info('[CLI] Something went wrong trying to start preview:', (error as Error).message);
-      inflightStarts.delete(path);
       await install(path);
-      return await start(path, { ...opts, retry: false });
+      // recurse into doStart, not start(): the wrapper's inflight entry (this very call)
+      // is still registered, and start() would find it and ride itself forever
+      return await doStart(path, { ...opts, retry: false });
     } else {
       throw error;
     }
   } finally {
-    inflightStarts.delete(path);
     stopConversionProgress();
   }
 }

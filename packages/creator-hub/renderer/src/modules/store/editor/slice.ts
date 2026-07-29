@@ -238,10 +238,20 @@ export const slice = createSlice({
         tags: { source: 'editor-page', event: 'run-scene' },
       });
     });
-    // cancel clears the button's loading state right away; main kills the converting spawn
+    // The button stays blocked until the cancel completes: killPreview resolves only once
+    // the process is confirmed dead (up to the force-kill timeout), and unblocking earlier
+    // would let a Preview press ride the dying spawn and report success without starting
+    // anything — a running UI with nothing running.
     builder.addCase(cancelPreview.pending, state => {
-      state.loadingPreview = false;
       state.previewCancelled = true;
+    });
+    // guarded so a run started while the cancel was in flight (a mobile-QR start) keeps
+    // its own loading state: runScene.pending already cleared previewCancelled for it
+    builder.addCase(cancelPreview.fulfilled, state => {
+      if (state.previewCancelled) state.loadingPreview = false;
+    });
+    builder.addCase(cancelPreview.rejected, state => {
+      if (state.previewCancelled) state.loadingPreview = false;
     });
     builder.addCase(killPreviewScene.fulfilled, state => {
       state.isPreviewRunning = false;

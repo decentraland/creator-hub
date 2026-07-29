@@ -57,23 +57,69 @@ describe('editor slice preview state', () => {
       );
     });
 
-    it('should clear the loading state right away and never mark the preview as running', async () => {
+    it('should keep the button blocked until the cancel completes and never mark the preview as running', async () => {
       const promise = store.dispatch(runScene({ path: TEST_PATH, ...PREVIEW_OPTS }));
 
       expect(store.getState().editor.loadingPreview).toBe(true);
 
-      await store.dispatch(cancelPreview(TEST_PATH));
+      let resolveCancel!: () => void;
+      vi.mocked(editor.cancelPreview).mockImplementation(
+        () =>
+          new Promise<void>(resolve => {
+            resolveCancel = resolve;
+          }),
+      );
+      const cancelDispatch = store.dispatch(cancelPreview(TEST_PATH));
 
-      // the ✕ unblocks the button immediately, before the killed spawn settles
-      expect(store.getState().editor.loadingPreview).toBe(false);
+      // main is still killing the spawn: a press now would ride the dying spawn and
+      // report a preview that never opened, so the button must stay blocked
+      expect(store.getState().editor.loadingPreview).toBe(true);
       expect(store.getState().editor.previewCancelled).toBe(true);
 
-      // main kills the spawn and the held start() resolves quietly
+      resolveCancel();
+      await cancelDispatch;
+
+      // the process is confirmed dead: the button unblocks
+      expect(store.getState().editor.loadingPreview).toBe(false);
+
+      // the held start() resolves quietly
       resolveRun();
       await promise;
 
       expect(store.getState().editor.isPreviewRunning).toBe(false);
       expect(store.getState().editor.previewCancelled).toBe(false);
+    });
+
+    it('should keep the loading state of a run started while the cancel was still in flight', async () => {
+      const first = store.dispatch(runScene({ path: TEST_PATH, ...PREVIEW_OPTS }));
+
+      let resolveCancel!: () => void;
+      vi.mocked(editor.cancelPreview).mockImplementation(
+        () =>
+          new Promise<void>(resolve => {
+            resolveCancel = resolve;
+          }),
+      );
+      const cancelDispatch = store.dispatch(cancelPreview(TEST_PATH));
+
+      // the cancelled run settles quietly while the cancel round trip is still pending
+      resolveRun();
+      await first;
+
+      // a new run (e.g. a mobile-QR start) begins before the cancel completes
+      const second = store.dispatch(runScene({ path: TEST_PATH, ...PREVIEW_OPTS }));
+      expect(store.getState().editor.loadingPreview).toBe(true);
+
+      resolveCancel();
+      await cancelDispatch;
+
+      // the late cancel fulfillment must not unblock the new run's loading state
+      expect(store.getState().editor.loadingPreview).toBe(true);
+
+      resolveRun();
+      await second;
+
+      expect(store.getState().editor.isPreviewRunning).toBe(true);
     });
 
     it('should reset the cancelled flag when a new run starts', async () => {
