@@ -21,11 +21,25 @@ export function buildMockIdentity(address: string = MOCK_ADDRESS) {
   };
 }
 
+/**
+ * A stubbed HTTP reply. `body` is JSON-serialized; omit it for a bodiless response.
+ *
+ * The JS fetch stub is the only mechanism in this suite that can set a status — see the
+ * `installFetchStub` note on `route.fulfill()` — which is what makes the auth failure paths
+ * in `lib/auth.ts` (404 → not_found, 410 → expired, 403 → network, other !ok → unknown)
+ * testable at all.
+ */
+export type StubResponse = { status: number; body?: unknown };
+
 export type AuthMockOptions = {
-  /** The requestId the stubbed `POST /requests` returns. */
+  /** The requestId the stubbed `POST /requests` returns. Ignored if `requestsResponse` is set. */
   requestId?: string;
-  /** The address the stubbed identity resolves to. */
+  /** The address the stubbed identity resolves to. Ignored if `identityResponse` is set. */
   address?: string;
+  /** Override the whole `POST /requests` reply. Defaults to 200 `{ requestId }`. */
+  requestsResponse?: StubResponse;
+  /** Override the whole `GET /identities/:id` reply. Defaults to 200 `{ identity }`. */
+  identityResponse?: StubResponse;
 };
 
 export type RecordedFetch = { url: string; method: string; body: string | null };
@@ -53,17 +67,8 @@ export type AuthMockRecorder = {
  * normal 400, so cross-origin fetch itself is fine). Patching `fetch` in JS sidesteps
  * the network stack entirely and therefore controls the status.
  */
-function installFetchStub(
-  page: Page,
-  payload: { requestId: string; identity: ReturnType<typeof buildMockIdentity> },
-) {
-  const script = ({
-    requestId,
-    identity,
-  }: {
-    requestId: string;
-    identity: ReturnType<typeof buildMockIdentity>;
-  }) => {
+function installFetchStub(page: Page, payload: { requests: StubResponse; identity: StubResponse }) {
+  const script = ({ requests, identity }: { requests: StubResponse; identity: StubResponse }) => {
     const w = window as unknown as {
       __e2eFetchCalls?: { url: string; method: string; body: string | null }[];
       __e2eFetchPatched?: boolean;
@@ -74,9 +79,9 @@ function installFetchStub(
     w.__e2eFetchPatched = true;
 
     const realFetch = w.fetch.bind(w);
-    const json = (body: unknown) =>
-      new Response(JSON.stringify(body), {
-        status: 200,
+    const reply = ({ status, body }: { status: number; body?: unknown }) =>
+      new Response(body === undefined ? null : JSON.stringify(body), {
+        status,
         headers: { 'Content-Type': 'application/json' },
       });
 
@@ -86,11 +91,11 @@ function installFetchStub(
 
       if (url.includes('/requests') && method === 'POST') {
         w.__e2eFetchCalls!.push({ url, method, body: (init?.body as string) ?? null });
-        return json({ requestId });
+        return reply(requests);
       }
       if (url.includes('/identities/')) {
         w.__e2eFetchCalls!.push({ url, method, body: (init?.body as string) ?? null });
-        return json({ identity });
+        return reply(identity);
       }
       return realFetch(input, init);
     };
@@ -122,7 +127,10 @@ export async function installAuthMocks(
   const requestId = options.requestId ?? 'e2e-request-id';
   const identity = buildMockIdentity(options.address ?? MOCK_ADDRESS);
 
-  await installFetchStub(page, { requestId, identity });
+  await installFetchStub(page, {
+    requests: options.requestsResponse ?? { status: 200, body: { requestId } },
+    identity: options.identityResponse ?? { status: 200, body: { identity } },
+  });
 
   // Only the injected electron module is reachable inside `evaluate` — the main process is
   // bundled ESM, so `require` is not defined there.
@@ -167,4 +175,15 @@ export async function fireSignInDeeplink(
   await electronApp.evaluate(({ app }, url) => {
     app.emit('open-url', { preventDefault() {} }, url);
   }, `dcl-creator-hub://open?${params.toString()}`);
+}
+
+/**
+ * Reads the locally-generated request id out of an opened auth-dapp URL.
+ *
+ * @returns the UUID v4 the app minted for the attempt, or `undefined` if the URL carries none.
+ */
+export function requestIdFromAuthUrl(url: string): string | undefined {
+  return url.match(
+    /\/requests\/([0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})\?/i,
+  )?.[1];
 }
