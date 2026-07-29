@@ -1,5 +1,5 @@
 import { type ChangeEvent, useCallback, useState } from 'react';
-import { Button, MenuItem, Select } from 'decentraland-ui2';
+import { Button } from 'decentraland-ui2';
 
 import { misc } from '#preload';
 
@@ -53,14 +53,9 @@ export function AlternativeServers(props: Props) {
           <div className="selection">
             <div>
               <h3>{t('modal.publish_project.alternative_servers.list')}</h3>
-              <Select
-                variant="standard"
-                value="custom"
-              >
-                <MenuItem value="custom">
-                  {t('modal.publish_project.alternative_servers.options.custom_server')}
-                </MenuItem>
-              </Select>
+              <span className="server_name">
+                {t('modal.publish_project.alternative_servers.options.custom_server')}
+              </span>
               <div className="custom_input">
                 <span className="title">
                   {t('modal.publish_project.alternative_servers.custom_server_url')}
