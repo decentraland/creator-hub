@@ -30,6 +30,9 @@ export type SdkContextEvents = {
     component?: ComponentDefinition<any>;
     value?: any;
   };
+  focusEntity: {
+    entity: Entity;
+  };
   dispose: undefined;
 };
 

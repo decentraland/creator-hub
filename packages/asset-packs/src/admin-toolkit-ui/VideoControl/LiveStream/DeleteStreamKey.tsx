@@ -1,5 +1,4 @@
 import type { IEngine } from '@dcl/ecs';
-import { Color4 } from '@dcl/ecs-math';
 import ReactEcs, { UiEntity, Label } from '@dcl/react-ecs';
 
 import { Button } from '../../Button';
@@ -7,6 +6,7 @@ import { LoadingDots } from '../../Loading';
 import { Error } from '../../Error';
 import { resetStreamKey } from '../api';
 import { getComponents } from '../../../definitions';
+import { COLORS, TYPE } from '../../theme';
 import { state } from '../../store';
 
 export function DeleteStreamKeyConfirmation({
@@ -35,14 +35,14 @@ export function DeleteStreamKeyConfirmation({
     >
       <Label
         value="<b>Are you sure you want to reset your Stream Key?</b>"
-        fontSize={16}
-        color={Color4.fromHexString('#FCFCFC')}
+        fontSize={TYPE.subtitle}
+        color={COLORS.textPrimary}
       />
 
       <Label
         value="Active streams using this stream key will be disconnected."
-        fontSize={14}
-        color={Color4.fromHexString('#FFFFFFB2')}
+        fontSize={TYPE.body}
+        color={COLORS.textSecondary}
         uiTransform={{
           margin: { top: 6, bottom: 24 },
         }}
@@ -61,9 +61,9 @@ export function DeleteStreamKeyConfirmation({
           <Button
             id="stream_key_cancel_remove"
             value="<b>Cancel</b>"
-            variant="primary"
-            fontSize={18}
-            color={Color4.Black()}
+            variant="secondary"
+            fontSize={TYPE.button}
+            color={COLORS.textPrimary}
             uiTransform={{
               width: 90,
               height: 40,
@@ -80,15 +80,13 @@ export function DeleteStreamKeyConfirmation({
             id="stream_key_confirm_remove"
             value={'<b>Reset</b>'}
             variant="primary"
-            fontSize={18}
-            color={Color4.White()}
+            fontSize={TYPE.button}
             uiTransform={{
               padding: 8,
               height: 40,
               justifyContent: 'center',
               alignItems: 'center',
             }}
-            uiBackground={{ color: Color4.fromHexString('#FB3B3B') }}
             onMouseDown={async () => {
               setIsLoading(true);
               const [error, data] = await resetStreamKey();

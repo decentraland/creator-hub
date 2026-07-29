@@ -11,6 +11,7 @@ interface VideoPlayerControls {
   pause(): void;
   restart(): void;
   setVolume(volume: number): void;
+  setVolumeExact(volume: number): void;
   setSource(url: string): void;
   setLoop(loop: boolean): void;
 }
@@ -79,6 +80,11 @@ export function createVideoPlayerControls(entity: Entity, engine: IEngine): Vide
         newVolume = newSteps / 10;
       }
       getAdminMessageBus().emitSetVideo(entity, { volume: newVolume, position: undefined });
+    },
+    setVolumeExact: volume => {
+      if (videoControl?.disableVideoPlayersSound) return;
+      const clamped = Math.max(0, Math.min(1, volume));
+      getAdminMessageBus().emitSetVideo(entity, { volume: clamped, position: undefined });
     },
     setSource: url => {
       getAdminMessageBus().emitSetVideo(entity, { src: url, playing: true });
