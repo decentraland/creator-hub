@@ -25,6 +25,7 @@ import { useDispatch, useSelector } from '#store';
 import { config } from '/@/config';
 import { formatWorldSize, getBaseParcel, getWorldDimensions } from '/@/modules/world';
 import { t } from '/@/modules/store/translation/utils';
+import { fetchENSList } from '/@/modules/store/ens';
 import { ENSProvider } from '/@/modules/store/ens/types';
 import { getEnsProvider } from '/@/modules/store/ens/utils';
 import type { ParcelsPermission, WorldSettingsState } from '/@/modules/store/management';
@@ -77,7 +78,22 @@ export function PublishToWorld(props: Props) {
     managementSelectors.getParcelsStateForAddress(state, wallet || ''),
   );
   const [step, setStep] = useState<Step>(Step.SELECTION);
-  const emptyNames = Object.keys(names).length === 0;
+
+  /**
+   * The NAME list has four outcomes and they are not interchangeable. Deriving everything
+   * from `names` being empty made "still loading", "the subgraph failed" and "you own no
+   * NAMEs" render the same screen — so a slow load looked like an empty account, and a
+   * `.zone` subgraph outage looked like one too. `status` is what tells them apart.
+   */
+  const namesStatus = useSelector(state => state.ens.status);
+  const hasNames = Object.keys(names).length > 0;
+  const isLoadingNames = !hasNames && (namesStatus === 'idle' || namesStatus === 'loading');
+  const namesFailed = !hasNames && namesStatus === 'failed';
+  const emptyNames = !hasNames && namesStatus === 'succeeded';
+
+  const handleRetryNames = useCallback(() => {
+    if (wallet) dispatch(fetchENSList({ address: wallet }));
+  }, [dispatch, wallet]);
 
   const isOwner: boolean = useMemo(() => {
     if (!name || !wallet) return false;
@@ -173,7 +189,13 @@ export function PublishToWorld(props: Props) {
       {...props}
       onBack={handleBack}
     >
-      {!emptyNames && project ? (
+      {isLoadingNames ? (
+        <LoadingNames />
+      ) : namesFailed ? (
+        <NamesError onRetry={handleRetryNames} />
+      ) : emptyNames ? (
+        <EmptyNames />
+      ) : hasNames && project ? (
         <ProjectStepWrapper
           isWorld
           name={name}
@@ -212,9 +234,7 @@ export function PublishToWorld(props: Props) {
             />
           )}
         </ProjectStepWrapper>
-      ) : (
-        emptyNames && <EmptyNames />
-      )}
+      ) : null}
     </PublishModal>
   );
 }
@@ -828,6 +848,55 @@ function ConfirmOverwrite({
           {t('modal.publish_project.worlds.select_world.actions.confirm')}
         </Button>
       </div>
+    </div>
+  );
+}
+
+/** Shown while the NAME list is still being fetched, so a slow load is not mistaken for an
+ *  account that owns nothing. */
+function LoadingNames() {
+  return (
+    <div
+      className="LoadingNames"
+      data-testid="publish-modal-names-loading"
+    >
+      <Loader />
+      <Typography
+        variant="h6"
+        textAlign="center"
+      >
+        {t('modal.publish_project.worlds.loading_names.title')}
+      </Typography>
+    </div>
+  );
+}
+
+/** Shown when the NAME lookup failed (typically a subgraph outage). Without this the user
+ *  saw "you have no Worlds" and had no way to retry. */
+function NamesError({ onRetry }: { onRetry: () => void }) {
+  return (
+    <div
+      className="NamesError"
+      data-testid="publish-modal-names-error"
+    >
+      <Typography
+        variant="h6"
+        textAlign="center"
+      >
+        {t('modal.publish_project.worlds.names_error.title')}
+      </Typography>
+      <Typography
+        variant="body2"
+        textAlign="center"
+      >
+        {t('modal.publish_project.worlds.names_error.description')}
+      </Typography>
+      <Button
+        data-testid="publish-modal-names-error-retry"
+        onClick={onRetry}
+      >
+        {t('modal.publish_project.worlds.names_error.action')}
+      </Button>
     </div>
   );
 }
