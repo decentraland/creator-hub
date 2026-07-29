@@ -1,4 +1,4 @@
-import { DIRECTORY, withAssetDir } from '../../../lib/data-layer/host/fs-utils';
+import { withAssetDir } from '../../../lib/data-layer/host/fs-utils';
 import type { DataLayerRpcClient } from '../../../lib/data-layer/types';
 import type { AssetCatalogResponse } from '../../../tooling-entrypoint';
 import { determineAssetType } from '../../ImportAsset/utils';
@@ -39,7 +39,7 @@ export const isScriptNode = (node: TreeNode): node is AssetNodeItem =>
   isAssetNode(node) && isScriptFile(node.name);
 
 export function buildScriptPath(name: string): string {
-  const scriptsDir = withAssetDir(`${DIRECTORY.SCENE}/${determineAssetType('ts')}`);
+  const scriptsDir = withAssetDir(determineAssetType('ts'));
   if (name.startsWith(scriptsDir)) return name; // if it's already a built path, return the name parameter
   const scriptName = isScriptFile(name) ? name : `${name}.tsx`;
   const scriptPath = `${scriptsDir}/${scriptName}`;
