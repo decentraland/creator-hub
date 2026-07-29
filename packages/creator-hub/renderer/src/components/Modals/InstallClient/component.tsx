@@ -37,6 +37,7 @@ export function InstallClient({ open, onClose }: Props) {
   return (
     <Modal
       className="InstallClientModal"
+      data-testid="install-client-modal"
       open={open}
       size="tiny"
     >

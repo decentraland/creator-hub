@@ -93,7 +93,10 @@ export function PreviewOptions({
   );
 
   return (
-    <div className="PreviewOptions">
+    <div
+      className="PreviewOptions"
+      data-testid="editor-page-preview-options"
+    >
       <span className="title">{t('editor.header.actions.preview_options.title')}</span>
       <FormControl>
         <FormLabel>{t('editor.header.actions.preview_options.client.label')}</FormLabel>
@@ -118,6 +121,7 @@ export function PreviewOptions({
         <FormControlLabel
           control={
             <Checkbox
+              data-testid="editor-page-preview-options-debugger"
               checked={!!options.debugger}
               onChange={handleChange({ debugger: !options.debugger })}
             />
@@ -135,6 +139,7 @@ export function PreviewOptions({
           <FormControlLabel
             control={
               <Checkbox
+                data-testid="editor-page-preview-options-landscape-terrain-enabled"
                 checked={terrainHiddenByScene ? false : !!options.enableLandscapeTerrains}
                 disabled={terrainHiddenByScene}
                 onChange={handleChange({
@@ -149,6 +154,7 @@ export function PreviewOptions({
           <FormControlLabel
             control={
               <Checkbox
+                data-testid="editor-page-preview-options-open-new-instance"
                 checked={!!options.multiInstance}
                 onChange={handleChange({ multiInstance: !options.multiInstance })}
               />

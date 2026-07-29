@@ -21,7 +21,7 @@ export function Button({ children, className = '', onClick, ...props }: ButtonPr
   );
 }
 
-export function ButtonGroup({ extra, ...props }: GroupProps) {
+export function ButtonGroup({ extra, 'data-testid': dataTestId, ...props }: GroupProps) {
   const [open, setOpen] = useState(false);
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
   const handleToggle = useCallback((e: React.MouseEvent<HTMLElement>) => {
@@ -36,13 +36,20 @@ export function ButtonGroup({ extra, ...props }: GroupProps) {
 
   return (
     <>
-      <DclButtonGroup variant="contained">
-        <Button {...props} />
+      <DclButtonGroup
+        variant="contained"
+        data-testid={dataTestId}
+      >
+        <Button
+          {...props}
+          data-testid="button-group-button"
+        />
         <Button
           className="extra-button"
           color={props.color}
           size="small"
           disabled={props.disabled}
+          data-testid="button-group-extra-button"
           onClick={handleToggle}
         >
           <ArrowDropDownIcon />
@@ -53,6 +60,7 @@ export function ButtonGroup({ extra, ...props }: GroupProps) {
             onClose={handleClose}
             anchorEl={anchorEl}
             placement="bottom-end"
+            data-testid="button-group-popper"
           >
             {extra}
           </Popper>

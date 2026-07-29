@@ -191,6 +191,7 @@ export function Deploy(props: Props) {
         name: t('modal.publish_project.deploy.deploying.step.unpublishing'),
         description: getStepDescription(undeployStatus),
         state: undeployStatus,
+        testId: 'publish-modal-deploy-step-unpublishing',
       });
     }
 
@@ -202,12 +203,14 @@ export function Deploy(props: Props) {
       name: t('modal.publish_project.deploy.deploying.step.uploading'),
       description: getStepDescription(catalyst),
       state: catalyst,
+      testId: 'publish-modal-deploy-step-uploading',
     });
     stepsList.push({
       bulletText: stepNumber++,
       name: t('modal.publish_project.deploy.deploying.step.converting'),
       description: getStepDescription(assetBundle),
       state: assetBundle,
+      testId: 'publish-modal-deploy-step-converting',
     });
 
     return stepsList;
@@ -224,9 +227,15 @@ export function Deploy(props: Props) {
       onClose={handleClose}
       onBack={props.disableGoBack || deployment?.status === 'complete' ? undefined : onBack}
     >
-      <div className="Deploy">
+      <div
+        className="Deploy"
+        data-testid="publish-modal-deploy"
+      >
         {showWarning ? (
-          <div className="publish-warning">
+          <div
+            className="publish-warning"
+            data-testid="publish-modal-deploy-warning"
+          >
             <div className="content">
               <div className="Warning" />
               <div className="message">
@@ -255,6 +264,7 @@ export function Deploy(props: Props) {
                 </Button>
                 <Button
                   size="medium"
+                  data-testid="publish-modal-deploy-warning-continue-button"
                   onClick={handlePublish}
                 >
                   {t('modal.publish_project.deploy.warning.continue')}
@@ -340,7 +350,10 @@ function Idle({ files, error, onClick }: IdleProps) {
       : error?.message;
 
   return (
-    <div className="files">
+    <div
+      className="files"
+      data-testid="publish-modal-deploy-publish-button"
+    >
       <div className="filters">
         <div className="count">
           {t('modal.publish_project.deploy.files.count', { count: files.length })}
@@ -393,7 +406,10 @@ type DeployingProps = {
 
 function Deploying({ steps }: DeployingProps) {
   return (
-    <div className="Deploying">
+    <div
+      className="Deploying"
+      data-testid="publish-modal-deploy-deploying"
+    >
       <div className="header">
         <Loader />
         <Typography variant="h5">{t('modal.publish_project.deploy.deploying.publish')}</Typography>
@@ -445,7 +461,10 @@ function Error({
   );
 
   return (
-    <div className="Error">
+    <div
+      className="Error"
+      data-testid="publish-modal-deploy-error"
+    >
       <div className="header">
         <div className="Warning" />
         <Typography variant="h5">{t('modal.publish_project.deploy.deploying.failed')}</Typography>
@@ -486,7 +505,10 @@ type SuccessProps = {
 
 function Success({ info, url, onClick }: SuccessProps) {
   return (
-    <div className="Success">
+    <div
+      className="Success"
+      data-testid="publish-modal-deploy-success"
+    >
       <div className="content">
         <i className="success-icon" />
         <div className="message">{t('modal.publish_project.deploy.success.message')}</div>

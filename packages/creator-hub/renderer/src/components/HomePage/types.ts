@@ -15,6 +15,7 @@ export type HomeCardProps = {
   icon?: ReactNode;
   meta?: ReactNode;
   onClick?: () => void;
+  'data-testid'?: string;
 };
 
 export type NewProjectPayload = {

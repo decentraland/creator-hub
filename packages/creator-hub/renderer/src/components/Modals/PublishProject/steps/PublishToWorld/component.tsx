@@ -185,6 +185,7 @@ export function PublishToWorld(props: Props) {
   return (
     <PublishModal
       title={t('modal.publish_project.worlds.select_world.title')}
+      data-testid="publish-modal-publish-to-world"
       size="large"
       {...props}
       onBack={handleBack}
@@ -355,7 +356,10 @@ function SelectWorld({
   const projectIsReady = project.status !== 'loading';
 
   return (
-    <div className="SelectWorld">
+    <div
+      className="SelectWorld"
+      data-testid="publish-modal-publish-to-world-select-world"
+    >
       <div className="selection">
         <Typography
           variant="h6"
@@ -368,17 +372,24 @@ function SelectWorld({
             variant="outlined"
             color="secondary"
             className="SelectWorld-ENSProvider"
+            data-testid="publish-modal-publish-to-world-select-world-ens-provider"
             value={ensProvider}
             onChange={handleChangeSelectProvider}
           >
-            <MenuItem value={ENSProvider.DCL}>
+            <MenuItem
+              value={ENSProvider.DCL}
+              data-testid="publish-modal-publish-to-world-select-world-ens-provider-dcl"
+            >
               <img
                 className="SelectWorld-ENSProvider-Img"
                 src={LogoDCLSVG}
               />
               {t(`modal.publish_project.worlds.select_world.ens_providers.${ENSProvider.DCL}`)}
             </MenuItem>
-            <MenuItem value={ENSProvider.ENS}>
+            <MenuItem
+              value={ENSProvider.ENS}
+              data-testid="publish-modal-publish-to-world-select-world-ens-provider-ens"
+            >
               <img
                 className="SelectWorld-ENSProvider-Img"
                 src={LogoENSSVG}
@@ -390,6 +401,7 @@ function SelectWorld({
             variant="outlined"
             color="secondary"
             className="SelectWorld-WorldName"
+            data-testid="publish-modal-publish-to-world-select-world-select"
             displayEmpty
             value={name}
             onChange={handleChangeSelectName}
@@ -413,6 +425,7 @@ function SelectWorld({
               <MenuItem
                 key={_world}
                 value={_world}
+                data-testid={`publish-modal-publish-to-world-select-world-select-item-${_world.toLowerCase()}`}
               >
                 {_world}
               </MenuItem>
@@ -500,6 +513,7 @@ function SelectWorld({
       )}
       <div className="actions">
         <Button
+          data-testid="publish-modal-publish-to-world-select-world-action"
           onClick={handleNext}
           size="large"
           disabled={!projectIsReady || !name}
@@ -913,7 +927,10 @@ function EmptyNames() {
   }, []);
 
   return (
-    <div className="EmptyNames">
+    <div
+      className="EmptyNames"
+      data-testid="publish-modal-empty-names"
+    >
       <Typography
         variant="h6"
         textAlign="center"
