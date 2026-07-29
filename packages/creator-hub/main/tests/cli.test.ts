@@ -161,9 +161,7 @@ describe('cli preview start', () => {
         mocks.run.mockReturnValue(fake.child);
 
         const promise = start(path, { ...BASE_OPTS, optimizedAssets: true });
-        fake.printDeeplink(
-          'realm=http://127.0.0.1:8000&optimized-assets-url=http://127.0.0.1:9000',
-        );
+        fake.printDeeplink('realm=http://127.0.0.1:8000&local-ab=true');
         await promise;
 
         expect(spawnedArgs()).toContain('--asset-bundles');
@@ -222,15 +220,73 @@ describe('cli preview start', () => {
         mocks.run.mockReturnValue(restarted.child);
 
         const promise = start(path, { ...BASE_OPTS, optimizedAssets: true });
-        restarted.printDeeplink(
-          'realm=http://127.0.0.1:8001&optimized-assets-url=http://127.0.0.1:9000',
-        );
+        restarted.printDeeplink('realm=http://127.0.0.1:8001&local-ab=true');
         await promise;
 
         expect(fake.child.kill).toHaveBeenCalled();
         expect(mocks.run).toHaveBeenCalledTimes(1);
         expect(spawnedArgs()).toContain('--asset-bundles');
       });
+    });
+  });
+
+  describe('when a preview with the sidecar is already running', () => {
+    let fake: ReturnType<typeof createFakeChild>;
+
+    beforeEach(async () => {
+      setSceneSupportsAssetBundles(true);
+      fake = createFakeChild();
+      mocks.run.mockReturnValue(fake.child);
+      const promise = start(path, { ...BASE_OPTS, optimizedAssets: true });
+      fake.printDeeplink('realm=http://127.0.0.1:8000&local-ab=true');
+      await promise;
+      mocks.run.mockClear();
+    });
+
+    it('should re-focus keeping local-ab when the toggle stays on', async () => {
+      await start(path, { ...BASE_OPTS, optimizedAssets: true });
+
+      expect(mocks.run).not.toHaveBeenCalled();
+      expect(mocks.dclDeepLink).toHaveBeenCalledTimes(1);
+      const fired = mocks.dclDeepLink.mock.calls[0][0];
+      expect(new URLSearchParams(fired).get('local-ab')).toBe('true');
+    });
+
+    it('should kill the preview and respawn it without the sidecar when the toggle goes off', async () => {
+      const restarted = createFakeChild();
+      mocks.run.mockReturnValue(restarted.child);
+
+      const promise = start(path, BASE_OPTS);
+      restarted.printDeeplink('realm=http://127.0.0.1:8001&position=0,0');
+      await promise;
+
+      expect(fake.child.kill).toHaveBeenCalled();
+      expect(mocks.run).toHaveBeenCalledTimes(1);
+      expect(spawnedArgs()).not.toContain('--asset-bundles');
+    });
+  });
+
+  describe('when a preview from an older sdk carries the legacy sidecar url alongside local-ab', () => {
+    beforeEach(async () => {
+      setSceneSupportsAssetBundles(true);
+      const fake = createFakeChild();
+      mocks.run.mockReturnValue(fake.child);
+      const promise = start(path, { ...BASE_OPTS, optimizedAssets: true });
+      fake.printDeeplink(
+        'realm=http://127.0.0.1:8000&local-ab=true&optimized-assets-url=http://127.0.0.1:9000',
+      );
+      await promise;
+      mocks.run.mockClear();
+    });
+
+    it('should still detect the sidecar via local-ab and re-focus instead of respawning', async () => {
+      await start(path, { ...BASE_OPTS, optimizedAssets: true });
+
+      expect(mocks.run).not.toHaveBeenCalled();
+      expect(mocks.dclDeepLink).toHaveBeenCalledTimes(1);
+      const fired = new URLSearchParams(mocks.dclDeepLink.mock.calls[0][0]);
+      expect(fired.get('local-ab')).toBe('true');
+      expect(fired.get('optimized-assets-url')).toBe('http://127.0.0.1:9000');
     });
   });
 

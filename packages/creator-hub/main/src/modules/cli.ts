@@ -28,8 +28,11 @@ import { getLanIp } from './network';
 export type Preview = { child: Child; url: string; opts: PreviewOptions };
 
 // Explorer deeplink params for locally generated asset bundles. sdk-commands owns the
-// abgen sidecar (--asset-bundles) and injects both params into the deeplink it fires;
-// the hub only flips them when preview options change mid-session.
+// abgen sidecar (--asset-bundles) and injects local-ab into the deeplink it fires only
+// when the sidecar actually booted — its presence in the captured deeplink is the
+// source of truth for whether the running preview has one. Older sdk-commands versions
+// also emitted optimized-assets-url alongside it; the hub still strips that legacy
+// param when the toggle goes off.
 const LOCAL_AB_PARAM = 'local-ab';
 const OPTIMIZED_ASSETS_URL_PARAM = 'optimized-assets-url';
 
@@ -242,17 +245,16 @@ function updateDeepLinkWithOpts(params: string, newOpts: PreviewOptions): string
     setOrDeleteParam(PREVIEW_OPTIONS_MAP.enableLandscapeTerrains, newOpts.enableLandscapeTerrains);
     setOrDeleteParam(PREVIEW_OPTIONS_MAP.multiInstance, newOpts.multiInstance);
 
-    // Locally generated asset bundles: local-ab is only valid alongside the sidecar url
-    // the captured deeplink carries. Setting it without one would make the explorer fall
-    // back to the default sidecar port with nothing listening there, re-basing all
-    // asset-bundle traffic — wearables and avatar included — onto a dead port.
-    const hasSidecarUrl = urlParams.has(OPTIMIZED_ASSETS_URL_PARAM);
-    if (newOpts.optimizedAssets && !hasSidecarUrl) {
+    // Locally generated asset bundles: local-ab is only valid when the captured deeplink
+    // carried it, i.e. the preview was spawned with a sidecar. Setting it on a preview
+    // spawned without one would point the explorer at optimized assets nothing is serving.
+    const hasSidecar = urlParams.has(LOCAL_AB_PARAM);
+    if (newOpts.optimizedAssets && !hasSidecar) {
       log.warn(
-        '[CLI] Optimized assets requested but the preview carries no sidecar url; previewing with raw GLTFs',
+        '[CLI] Optimized assets requested but the preview was spawned without the sidecar; previewing with raw GLTFs',
       );
     }
-    setOrDeleteParam(LOCAL_AB_PARAM, newOpts.optimizedAssets && hasSidecarUrl);
+    setOrDeleteParam(LOCAL_AB_PARAM, newOpts.optimizedAssets && hasSidecar);
     if (!newOpts.optimizedAssets) {
       setOrDeleteParam(OPTIMIZED_ASSETS_URL_PARAM, false);
     }
@@ -383,7 +385,7 @@ async function doStart(path: string, opts: StartOptions): Promise<string> {
     // flag), so whenever the Optimized Assets toggle disagrees with the running preview —
     // needs a sidecar it doesn't have, or carries one it no longer should — restart the
     // preview instead of reusing it.
-    const previewHasSidecar = new URLSearchParams(preview.url).has(OPTIMIZED_ASSETS_URL_PARAM);
+    const previewHasSidecar = new URLSearchParams(preview.url).has(LOCAL_AB_PARAM);
     const wantsSidecar = opts.optimizedAssets && (await supportsAssetBundles(path));
 
     if (wantsSidecar === previewHasSidecar) {
@@ -405,8 +407,8 @@ async function doStart(path: string, opts: StartOptions): Promise<string> {
     let withSidecar = false;
 
     // sdk-commands owns the asset-bundle sidecar: --asset-bundles boots it and injects
-    // local-ab + optimized-assets-url into the deeplink it fires. Missing binary or a
-    // sidecar that never comes up degrades to raw GLTFs inside sdk-commands itself.
+    // local-ab into the deeplink it fires. Missing binary or a sidecar that never comes
+    // up degrades to raw GLTFs inside sdk-commands itself.
     if (opts.optimizedAssets) {
       if (await supportsAssetBundles(path)) {
         extraArgs.push('--asset-bundles');
