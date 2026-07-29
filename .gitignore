@@ -17,6 +17,10 @@ thumbs.db
 coverage/
 /build
 
+# Playwright E2E output
+test-results/
+playwright-report/
+
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
