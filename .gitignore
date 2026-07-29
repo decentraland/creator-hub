@@ -12,6 +12,7 @@ thumbs.db
 .vscode/settings.json
 
 .env
+.env.*
 
 coverage/
 /build
