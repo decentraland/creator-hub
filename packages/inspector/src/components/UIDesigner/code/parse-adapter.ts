@@ -685,8 +685,20 @@ function findComponentReturnJsx(program: AnyNode, componentName?: string): AnyNo
 
 // The component's function node (a FunctionDeclaration, or the arrow / function
 // expression assigned to a `const`) — the node whose `.body` we splice to place
-// the FIRST element into an empty root. Mirrors findComponentReturnJsx's forms.
+// the FIRST element into an empty root, and whose statements hold the
+// `const x = useInteraction(…)` a `{...x}` spread resolves against. Mirrors
+// findComponentReturnJsx's forms.
+//
+// Without a `componentName` it must agree with findComponentReturnJsx, which
+// SKIPS functions that return no JSX: otherwise a helper declared before the
+// component (a `/** @ui-action */` handler, which addBindAction inserts right
+// after the imports) is picked instead, and every lookup against the component's
+// scope silently fails — a spread then resolves to nothing and its node
+// collapses to opaque. A JSX-returning candidate therefore wins; the first
+// function is only the fallback, which keeps an EMPTY root (`return` with no
+// argument, no JSX anywhere) splice-able by spliceSetRootChild.
 export function findComponentFn(program: AnyNode, componentName?: string): AnyNode | null {
+  let fallback: AnyNode | null = null;
   for (const stmt of (program.body ?? []) as AnyNode[]) {
     const decl =
       stmt.type === 'ExportNamedDeclaration' && stmt.declaration
@@ -694,18 +706,26 @@ export function findComponentFn(program: AnyNode, componentName?: string): AnyNo
         : stmt;
     if (decl.type === 'FunctionDeclaration') {
       if (componentName && decl.id?.name !== componentName) continue;
-      return decl;
+      if (componentName) return decl;
+      if (fnBodyJsx(decl.body)) return decl;
+      fallback ??= decl;
     }
     if (decl.type === 'VariableDeclaration') {
       for (const d of (decl.declarations ?? []) as AnyNode[]) {
         if (componentName && d.id?.name !== componentName) continue;
         const init = d.init ? unparen(d.init as AnyNode) : undefined;
-        if (init && (init.type === 'ArrowFunctionExpression' || init.type === 'FunctionExpression'))
-          return init;
+        if (
+          !init ||
+          (init.type !== 'ArrowFunctionExpression' && init.type !== 'FunctionExpression')
+        )
+          continue;
+        if (componentName) return init;
+        if (fnBodyJsx(init.body as AnyNode | undefined)) return init;
+        fallback ??= init;
       }
     }
   }
-  return null;
+  return fallback;
 }
 
 // Source span of the exported component's *identifier* (for a rename splice).

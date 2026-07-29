@@ -1,7 +1,7 @@
 import { parseSync } from 'oxc-parser';
 import { describe, expect, it } from 'vitest';
 
-import { applyEdits } from './emit-adapter';
+import { applyEdits, toBlockBody } from './emit-adapter';
 import {
   addInteractionState,
   findInteractionForSpread,
@@ -259,6 +259,31 @@ export function Ui() {
 }`);
     expect(parseSync('Ui.tsx', next).errors).toHaveLength(0);
     expect(next).toContain('useInteraction({ base: {} })');
+  });
+
+  // The store converts a concise-body arrow to a block FIRST (toBlockBody), then
+  // wraps against the reparsed source — insertStatementBeforeReturn has no block
+  // to splice into otherwise, and a missing `const` would leave the spread
+  // referencing nothing, collapsing the node to opaque (i.e. invisible).
+  it('should wrap a concise-body arrow component after converting it to a block', () => {
+    const src = `/** @jsx ReactEcs.createElement */
+import ReactEcs, { UiEntity } from '@dcl/sdk/react-ecs'
+
+export const Hud = () => <UiEntity uiTransform={{ width: 10 }} />
+`;
+    const p0 = prog(src);
+    const fn0 = findComponentFn(p0) as any;
+    const block = toBlockBody(fn0, src);
+    expect(block.edits.length).toBeGreaterThan(0);
+    const blocked = applyEdits(src, block.edits);
+    expect(parseSync('Ui.tsx', blocked).errors).toHaveLength(0);
+
+    const next = wrap(blocked);
+    expect(parseSync('Ui.tsx', next).errors).toHaveLength(0);
+    expect(next).toContain('const entityStyles = useInteraction(');
+    const ast = resolve(next);
+    expect(ast?.name).toBe('entityStyles');
+    expect(ast?.states.get('base')).toBeTruthy();
   });
 
   it('should restore base props onto the element when unwrapped', () => {

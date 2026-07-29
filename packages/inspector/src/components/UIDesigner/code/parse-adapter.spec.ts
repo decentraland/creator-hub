@@ -233,6 +233,38 @@ export function MyScreen() {
 }`)!.root;
       expect(root.opaque?.reason).toBe('spread-props');
     });
+
+    // Regression: the store parses WITHOUT a componentName, so the spread is
+    // resolved against whichever function findComponentFn picks. It used to
+    // return the first function declaration outright — so a `@ui-action` handler
+    // (which addBindAction inserts right after the imports, i.e. BEFORE the
+    // component) was searched instead, the `const … = useInteraction(…)` was
+    // never found, and the node collapsed to opaque. An opaque node renders no
+    // children, so its whole subtree vanished from the canvas.
+    it('should resolve the interaction when a non-JSX function precedes the component', () => {
+      const root = parse(`/** @jsx ReactEcs.createElement */
+import ReactEcs, { UiEntity } from '@dcl/sdk/react-ecs'
+import { useInteraction } from './interaction'
+
+export interface State {}
+export const state: State = {}
+
+/** @ui-action */
+function onClick({ state, props }: UiAction) {}
+
+export function MainUI(props: {}) {
+  const entityStyles = useInteraction({ base: { uiTransform: { width: 200 } } })
+  return (
+    <UiEntity {...entityStyles}>
+      <Label value="inside" />
+    </UiEntity>
+  )
+}`)!.root;
+      expect(root.opaque).toBeUndefined();
+      expect(root.interaction?.states.base?.uiTransform).toMatchObject({ width: 200 });
+      // The subtree survives — an opaque root would have dropped it entirely.
+      expect(root.children).toHaveLength(1);
+    });
   });
 
   describe('and a prop value is a non-literal expression', () => {
