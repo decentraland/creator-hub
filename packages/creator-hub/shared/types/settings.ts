@@ -39,6 +39,11 @@ export type AppSettings = {
   scenesPath: string;
   dependencyUpdateStrategy: DEPENDENCY_UPDATE_STRATEGY;
   previewOptions: PreviewOptions;
+  // Opt-in to experimental features. Gates the renderer picker in settings — off
+  // means the stable default renderer (Babylon), no picker shown. Kept as its own
+  // persisted flag (not derived from `renderer`) so the picker stays visible when
+  // the user selects the default renderer from within experimental mode.
+  experimental: boolean;
   // Which engine the inspector uses to render the scene in the editor viewport.
   renderer: RENDERER;
 };

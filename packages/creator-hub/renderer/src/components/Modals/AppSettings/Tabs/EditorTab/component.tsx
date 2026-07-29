@@ -6,6 +6,7 @@ import {
   Checkbox,
   IconButton,
   FormControlLabel,
+  Switch,
   Typography,
   FormGroup,
   Select,
@@ -67,6 +68,19 @@ const EditorTab: React.FC<EditorTabProps> = ({
     [settings, updateSettings],
   );
 
+  const handleExperimentalChange = useCallback(
+    (checked: boolean) => {
+      // Turning experimental off returns to the stable default renderer so an
+      // experimental renderer can't stay active while the picker is hidden.
+      updateSettings({
+        ...settings,
+        experimental: checked,
+        renderer: checked ? settings.renderer : RENDERER.BABYLON,
+      });
+    },
+    [settings, updateSettings],
+  );
+
   return (
     <Box className="FormContainer">
       <FormGroup className="CodeEditorFormGroup">
@@ -117,19 +131,6 @@ const EditorTab: React.FC<EditorTabProps> = ({
           </Select>
         )}
       </FormGroup>
-      <FormGroup className="RendererFormGroup">
-        <Typography variant="body1">{t('modal.app_settings.fields.renderer.label')}</Typography>
-        <Select
-          fullWidth
-          value={settings.renderer}
-          onChange={event => handleRendererChange(event.target.value as RENDERER)}
-        >
-          <MenuItem value={RENDERER.BABYLON}>
-            {t('modal.app_settings.fields.renderer.babylon')}
-          </MenuItem>
-          <MenuItem value={RENDERER.BEVY}>{t('modal.app_settings.fields.renderer.bevy')}</MenuItem>
-        </Select>
-      </FormGroup>
       <FormGroup className="PreviewOptionsFormGroup">
         <Typography variant="body1">{t('editor.header.actions.preview_options.title')}</Typography>
         <FormControlLabel
@@ -168,6 +169,34 @@ const EditorTab: React.FC<EditorTabProps> = ({
           }
           label={t('modal.app_settings.fields.app_warnings.show_warnings')}
         />
+      </FormGroup>
+      <FormGroup className="ExperimentalFormGroup">
+        <FormControlLabel
+          control={
+            <Switch
+              checked={!!settings.experimental}
+              onChange={(_event, checked) => handleExperimentalChange(checked)}
+            />
+          }
+          label={t('modal.app_settings.fields.experimental.label')}
+        />
+        {settings.experimental && (
+          <Box className="RendererSubField">
+            <Typography variant="body1">{t('modal.app_settings.fields.renderer.label')}</Typography>
+            <Select
+              fullWidth
+              value={settings.renderer}
+              onChange={event => handleRendererChange(event.target.value as RENDERER)}
+            >
+              <MenuItem value={RENDERER.BABYLON}>
+                {t('modal.app_settings.fields.renderer.babylon')}
+              </MenuItem>
+              <MenuItem value={RENDERER.BEVY}>
+                {t('modal.app_settings.fields.renderer.bevy')}
+              </MenuItem>
+            </Select>
+          </Box>
+        )}
       </FormGroup>
     </Box>
   );

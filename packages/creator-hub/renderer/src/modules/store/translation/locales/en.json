@@ -367,6 +367,9 @@
           "label": "Scene renderer",
           "babylon": "Babylon (default)",
           "bevy": "Bevy (preview)"
+        },
+        "experimental": {
+          "label": "Experimental features"
         }
       },
       "actions": {

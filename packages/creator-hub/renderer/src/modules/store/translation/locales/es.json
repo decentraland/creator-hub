@@ -367,6 +367,9 @@
           "label": "Motor de renderizado",
           "babylon": "Babylon (predeterminado)",
           "bevy": "Bevy (vista previa)"
+        },
+        "experimental": {
+          "label": "Funciones experimentales"
         }
       },
       "actions": {

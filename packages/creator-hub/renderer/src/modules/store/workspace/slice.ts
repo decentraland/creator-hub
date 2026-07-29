@@ -31,6 +31,7 @@ const initialState: Async<Workspace> = {
       showWarnings: true,
       client: DEFAULT_PREVIEW_CLIENT,
     },
+    experimental: false,
     renderer: DEFAULT_RENDERER,
   },
   status: 'idle',
