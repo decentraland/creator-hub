@@ -42,7 +42,7 @@ interface AstNode {
   [k: string]: any;
 }
 
-export const INTERACTION_HELPER = 'useInteraction';
+const INTERACTION_HELPER = 'useInteraction';
 
 // Layer order is precedence order: later layers win. `base` is the node's normal
 // resting style (so a node with interaction states keeps ONE home for its
@@ -53,11 +53,11 @@ export type InteractionStateKey = (typeof INTERACTION_STATES)[number];
 
 const STATE_SET = new Set<string>(INTERACTION_STATES);
 
-export function isInteractionStateKey(k: string): k is InteractionStateKey {
+function isInteractionStateKey(k: string): k is InteractionStateKey {
   return STATE_SET.has(k);
 }
 
-export interface InteractionStateAst {
+interface InteractionStateAst {
   // The `hover: { … }` Property node in the layers map.
   prop: AstNode;
   // Its ObjectExpression value — the splice target for that layer's styles.
@@ -157,7 +157,7 @@ export function findInteractionForSpread(
 // The single `{...x}` spread ATTRIBUTE on an element, when it has exactly one and
 // no other spread. Multiple spreads stay unrepresentable (opaque). Callers that
 // unwrap the node need the attribute's own span, not just its argument.
-export function soleSpreadAttribute(el: AstNode): AstNode | undefined {
+function soleSpreadAttribute(el: AstNode): AstNode | undefined {
   const spreads = ((el.openingElement?.attributes ?? []) as AstNode[]).filter(
     a => a.type === 'JSXSpreadAttribute',
   );

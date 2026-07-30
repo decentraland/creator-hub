@@ -273,9 +273,9 @@ export const Hud = () => <UiEntity uiTransform={{ width: 10 }} />
 `;
     const p0 = prog(src);
     const fn0 = findComponentFn(p0) as any;
-    const block = toBlockBody(fn0, src);
-    expect(block.edits.length).toBeGreaterThan(0);
-    const blocked = applyEdits(src, block.edits);
+    const toBlock = toBlockBody(fn0, src);
+    expect(toBlock.length).toBeGreaterThan(0);
+    const blocked = applyEdits(src, toBlock);
     expect(parseSync('Ui.tsx', blocked).errors).toHaveLength(0);
 
     const next = wrap(blocked);

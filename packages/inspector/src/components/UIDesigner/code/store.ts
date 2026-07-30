@@ -212,7 +212,7 @@ export const UI_DIR = 'src/ui';
 export const UI_INDEX = 'src/ui/index.tsx';
 // The scaffolded interaction-state helper. Lowercase basename by design: it is a
 // helper module, not a UI root, and refreshRoots must never list it as a GUI.
-export const UI_INTERACTION = 'src/ui/interaction.tsx';
+const UI_INTERACTION = 'src/ui/interaction.tsx';
 const UI_INTERACTION_IMPORT = './interaction';
 const SCENE_ENTRY = 'src/index.ts';
 // The stock single-file template we replace with the src/ui/ directory (see
@@ -1124,30 +1124,9 @@ export function findCodeNode(
 
 // The PB-shaped component value the panel reads for a given SDK component id.
 // (uiTransform is already normalized to PB by the parse adapter.)
-export function codeComponentValue(
-  node: CodeUINode | undefined,
-  componentId: string,
-): Record<string, unknown> | null {
-  if (!node) return null;
-  switch (componentId) {
-    case 'core::UiTransform':
-      return (node.uiTransform as Record<string, unknown>) ?? null;
-    case 'core::UiBackground':
-      return (node.uiBackground as Record<string, unknown>) ?? null;
-    case 'core::UiText':
-      return (node.uiText as Record<string, unknown>) ?? null;
-    case 'core::UiInput':
-      return (node.uiInput as Record<string, unknown>) ?? null;
-    case 'core::UiDropdown':
-      return (node.uiDropdown as Record<string, unknown>) ?? null;
-    default:
-      return null;
-  }
-}
-
-// The node field an SDK component id reads from — the one mapping shared by the
-// element value reader and the interaction-layer one, so a layer resolves
-// exactly like the element does.
+// The node field an SDK component id reads from. One mapping, used by the element
+// value reader and both interaction-layer readers, so a layer resolves exactly
+// like the element does.
 const COMPONENT_FIELD: Record<string, keyof InteractionStateStyles> = {
   'core::UiTransform': 'uiTransform',
   'core::UiBackground': 'uiBackground',
@@ -1155,6 +1134,15 @@ const COMPONENT_FIELD: Record<string, keyof InteractionStateStyles> = {
   'core::UiInput': 'uiInput',
   'core::UiDropdown': 'uiDropdown',
 };
+
+export function codeComponentValue(
+  node: CodeUINode | undefined,
+  componentId: string,
+): Record<string, unknown> | null {
+  const field = COMPONENT_FIELD[componentId];
+  if (!node || !field) return null;
+  return (node[field] as Record<string, unknown>) ?? null;
+}
 
 // The PB component value the panel should show while editing `layer`. A non-base
 // layer displays its own values OVER base, so a field the layer doesn't override
@@ -1797,8 +1785,8 @@ async function addInteractionStatesUnlocked(entityId: number): Promise<void> {
     componentName,
   );
   if (!initialFn) return;
-  const block = toBlockBody(initialFn as Parameters<typeof toBlockBody>[0], state.source);
-  if (block.edits.length) await applySourceEdits(block.edits);
+  const toBlock = toBlockBody(initialFn as Parameters<typeof toBlockBody>[0], state.source);
+  if (toBlock.length) await applySourceEdits(toBlock);
 
   const el = astNodeFor(entityId) as Record<string, any> | undefined;
   const fn = findComponentFn(state.program as Parameters<typeof findComponentFn>[0], componentName);

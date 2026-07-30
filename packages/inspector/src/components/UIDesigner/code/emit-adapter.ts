@@ -361,23 +361,19 @@ export function insertStatementBeforeReturn(
 
 // Convert a concise-body arrow (`() => <jsx/>` / `() => (<jsx/>)`) into a block
 // body (`() => { return <jsx/> }`) so statements can be inserted before the
-// return. No-op (empty edits) when the body is already a block. Returns the
-// edits plus the offset where a statement may then be inserted.
-export function toBlockBody(fnNode: AstNode, source: string): { edits: Edit[]; insertAt: number } {
+// return. Empty when the body is already a block.
+export function toBlockBody(fnNode: AstNode, source: string): Edit[] {
   const body = fnNode.body as AstNode | undefined;
-  if (!body || body.type === 'BlockStatement') return { edits: [], insertAt: -1 };
+  if (!body || body.type === 'BlockStatement') return [];
   const indent = lineIndent(source, fnNode.start);
   const raw = source.slice(body.start, body.end);
-  return {
-    edits: [
-      {
-        start: body.start,
-        end: body.end,
-        text: `{\n${indent}  return ${raw}\n${indent}}`,
-      },
-    ],
-    insertAt: body.start,
-  };
+  return [
+    {
+      start: body.start,
+      end: body.end,
+      text: `{\n${indent}  return ${raw}\n${indent}}`,
+    },
+  ];
 }
 
 // A JSX plain attribute string (`value="…"`) does NOT process escape
