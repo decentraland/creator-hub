@@ -210,12 +210,10 @@
         "title": "发布到不同的服务器",
         "list": "备用服务器",
         "options": {
-          "test_server": "测试服务器",
           "custom_server": "定制服务器"
         },
         "custom_server_url": "服务器地址",
         "action": {
-          "test_server": "发布到测试服务器",
           "custom_server": "发布到自定义服务器"
         },
         "errors": {
