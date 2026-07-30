@@ -42,6 +42,12 @@
   cursor: grabbing;
 }
 
+.ui-designer-palette-card.disabled,
+.ui-designer-palette-card.disabled:active {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
 .ui-designer-palette-icon {
   display: inline-flex;
   align-items: center;
@@ -77,10 +83,12 @@
   width: 88px;
   height: 76px;
   background-color: rgba(255, 255, 255, 0.02);
-  transition: background-color 80ms linear, border-color 80ms linear;
+  transition:
+    background-color 80ms linear,
+    border-color 80ms linear;
 }
 
-.ui-designer-bottom-bar .ui-designer-palette-card:hover {
+.ui-designer-bottom-bar .ui-designer-palette-card:hover:not(.disabled) {
   background-color: var(--ui-designer-accent-08);
   border-color: var(--ui-designer-accent-40);
 }
@@ -93,8 +101,8 @@
 /* Honor reduced-motion across the whole UI Designer surface — the hover
    reveals, outline fades and palette transitions all collapse to instant. */
 @media (prefers-reduced-motion: reduce) {
-  [class*='ui-designer'],
-  [class*='ui-designer'] * {
+  [class*="ui-designer"],
+  [class*="ui-designer"] * {
     transition-duration: 0.01ms !important;
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;

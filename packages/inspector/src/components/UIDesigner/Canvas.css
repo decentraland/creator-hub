@@ -285,10 +285,12 @@
   border-radius: 8px;
   color: var(--sub-text);
   text-align: center;
-  transition: border-color 120ms ease, background-color 120ms ease;
+  transition:
+    border-color 120ms ease,
+    background-color 120ms ease;
 }
 
-.ui-designer-canvas-emptyroot.over {
+.ui-designer-canvas-empty.over .ui-designer-canvas-emptyroot {
   border-color: var(--ui-designer-accent);
   background-color: var(--ui-designer-accent-08);
 }

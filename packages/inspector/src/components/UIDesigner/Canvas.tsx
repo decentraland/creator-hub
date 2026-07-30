@@ -1533,11 +1533,13 @@ const EmptyRootDropZone: React.FC = () => {
     [],
   );
   return (
-    <div className="ui-designer-canvas-empty">
-      <div
-        ref={drop}
-        className={cx('ui-designer-canvas-emptyroot', { over: isOver })}
-      >
+    // The drop ref sits on the full-bleed wrapper — the whole empty canvas
+    // accepts the first element, not just the dashed box (#1399).
+    <div
+      ref={drop}
+      className={cx('ui-designer-canvas-empty', { over: isOver })}
+    >
+      <div className="ui-designer-canvas-emptyroot">
         <p className="ui-designer-canvas-emptyroot-title">This GUI is empty</p>
         <p className="ui-designer-canvas-emptyroot-hint">
           Drag a widget from the palette here to add your first element.
