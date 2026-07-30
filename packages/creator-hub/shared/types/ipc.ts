@@ -3,6 +3,7 @@ import type { OpenDialogOptions } from 'electron';
 import type { Outdated } from '/shared/types/npm';
 import type { Events } from '/shared/types/analytics';
 import type { DeployOptions } from '/shared/types/deploy';
+import type { OptimizeOptions, OptimizeResult } from '/shared/types/optimize';
 
 import type { PreviewOptions, ReleaseNotes } from './settings';
 import type { Config, EditorConfig } from './config';
@@ -72,6 +73,7 @@ export interface Ipc {
   'cli.init': (path: string, repo: string) => Promise<void>;
   'cli.start': (path: string, opts: PreviewOptions) => Promise<string>;
   'cli.deploy': (opts: DeployOptions) => Promise<number>;
+  'cli.optimize': (opts: OptimizeOptions) => Promise<OptimizeResult>;
   'cli.killPreview': (path: string) => Promise<void>;
   'cli.getMobilePreview': (path: string) => Promise<{ url: string; qr: string } | null>;
   'analytics.track': <T extends keyof Events>(event: T, data?: Events[T]) => void;

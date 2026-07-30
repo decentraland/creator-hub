@@ -37,6 +37,7 @@ import { useScanAssets } from '../../hooks/useScanAssets';
 import { useImportAssetToFilesystem } from '../../hooks/useImportAssetToFilesystem';
 import { FolderOpen } from '../Icons/Folder';
 import CleanupIcon from '../Icons/Cleanup';
+import OptimizeIcon from '../Icons/Optimize/Optimize';
 import { AssetsCatalog } from '../AssetsCatalog';
 import { CatalogAssetContextMenu } from '../AssetsCatalog/Asset/ContextMenu/CatalogAssetContextMenu';
 import { ProjectAssetExplorer } from '../ProjectAssetExplorer';
@@ -45,6 +46,7 @@ import { CustomAssets } from '../CustomAssets';
 import { RenameAsset } from '../RenameAsset';
 import { CreateCustomAsset } from '../CreateCustomAsset';
 import { CleanAssets } from '../CleanAssets';
+import { OptimizeAssets } from '../OptimizeAssets';
 import type { InputRef } from '../FileInput/FileInput';
 import { Button } from '../Button';
 import { InfoTooltip } from '../ui';
@@ -69,6 +71,7 @@ function Assets({ isAssetsPanelCollapsed }: { isAssetsPanelCollapsed: boolean })
   const mobileDebugSessionEnabled = useAppSelector(getMobileDebugSessionEnabled);
   const [showCleanAssetsModal, setShowCleanAssetsModal] = useState(false);
   const [selectedCleanAssets, setSelectedCleanAssets] = useState<Set<string>>(new Set());
+  const [showOptimizeModal, setShowOptimizeModal] = useState(false);
   const { pushNotification } = useSnackbar();
 
   const inputRef = useRef<InputRef>(null);
@@ -173,6 +176,14 @@ function Assets({ isAssetsPanelCollapsed }: { isAssetsPanelCollapsed: boolean })
     [cleanAssets],
   );
 
+  const handleOptimizeClick = useCallback(() => {
+    setShowOptimizeModal(true);
+  }, []);
+
+  const handleCloseOptimizeModal = useCallback(() => {
+    setShowOptimizeModal(false);
+  }, []);
+
   const handleOpenInExplorer = useCallback(async () => {
     try {
       const sceneClient = getSceneClient();
@@ -213,6 +224,7 @@ function Assets({ isAssetsPanelCollapsed }: { isAssetsPanelCollapsed: boolean })
   }, [removedAssets, dispatch, pushNotification]);
 
   const showCleanAssetsButton = useMemo(() => tab === AssetsTab.FileSystem, [tab]);
+  const showOptimizeButton = useMemo(() => tab === AssetsTab.FileSystem, [tab]);
   const showRecoverAssetsButton = useMemo(
     () => tab === AssetsTab.FileSystem && hasRecoverableFiles,
     [tab, hasRecoverableFiles],
@@ -275,6 +287,22 @@ function Assets({ isAssetsPanelCollapsed }: { isAssetsPanelCollapsed: boolean })
                     onClick={handleCleanAssetsClick}
                   >
                     <CleanupIcon />
+                  </button>
+                }
+                openOnTriggerMouseEnter={true}
+                closeOnTriggerClick={true}
+                position="top center"
+              />
+            )}
+            {showOptimizeButton && (
+              <InfoTooltip
+                text="Optimize assets"
+                trigger={
+                  <button
+                    className="icon-item"
+                    onClick={handleOptimizeClick}
+                  >
+                    <OptimizeIcon />
                   </button>
                 }
                 openOnTriggerMouseEnter={true}
@@ -405,6 +433,10 @@ function Assets({ isAssetsPanelCollapsed }: { isAssetsPanelCollapsed: boolean })
         onScan={handleScanAssets}
         onSelect={handleSelectCleanAsset}
         onSelectAll={handleSelectAllCleanAssets}
+      />
+      <OptimizeAssets
+        isOpen={showOptimizeModal}
+        onClose={handleCloseOptimizeModal}
       />
     </div>
   );

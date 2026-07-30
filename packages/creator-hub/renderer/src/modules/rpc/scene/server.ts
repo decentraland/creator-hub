@@ -1,5 +1,6 @@
 import type { Transport } from '@dcl/mini-rpc';
 import { RPC } from '@dcl/mini-rpc';
+import type { OptimizeAssetsSettings, OptimizeAssetsResult } from '@dcl/inspector/src/lib/rpc/scene/client';
 
 import { fs, editor } from '#preload';
 
@@ -20,6 +21,7 @@ export enum Method {
   OPEN_DIRECTORY = 'open_directory',
   PUSH_NOTIFICATION = 'push_notification',
   BROADCAST_MOBILE_DEBUG_COMMAND = 'broadcast_mobile_debug_command',
+  OPTIMIZE_ASSETS = 'optimize_assets',
 }
 
 export type Params = {
@@ -27,6 +29,7 @@ export type Params = {
   [Method.OPEN_DIRECTORY]: { path: string; createIfNotExists?: boolean };
   [Method.PUSH_NOTIFICATION]: { notification: NotificationRequest };
   [Method.BROADCAST_MOBILE_DEBUG_COMMAND]: { cmd: string; args: Record<string, unknown> };
+  [Method.OPTIMIZE_ASSETS]: { settings: OptimizeAssetsSettings };
 };
 
 export type Result = {
@@ -37,6 +40,7 @@ export type Result = {
     ok: boolean;
     results: { sessionId: number; ok: boolean; data: unknown }[];
   };
+  [Method.OPTIMIZE_ASSETS]: OptimizeAssetsResult;
 };
 
 export class SceneRpcServer extends RPC<Method, Params, Result> {
@@ -75,6 +79,13 @@ export class SceneRpcServer extends RPC<Method, Params, Result> {
 
     this.handle('broadcast_mobile_debug_command', async ({ cmd, args }) => {
       return editor.broadcastMobileDebugCommand(cmd, args);
+    });
+
+    this.handle('optimize_assets', async ({ settings }) => {
+      return editor.optimizeScene({
+        path: project.path,
+        ...settings,
+      });
     });
   }
 }

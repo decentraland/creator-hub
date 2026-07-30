@@ -46,6 +46,7 @@ export function initIpc({ beforeQuitCleanup }: InitIpcOptions) {
   handle('cli.init', (_event, path, repo) => cli.init(path, repo));
   handle('cli.start', (_event, path, opts) => cli.start(path, opts));
   handle('cli.deploy', (_event, opts) => cli.deploy(opts));
+  handle('cli.optimize', (_event, opts) => cli.optimize(opts));
   handle('cli.killPreview', (_event, path) => cli.killPreview(path));
   handle('cli.getMobilePreview', (_event, path) => cli.getMobilePreview(path));
 

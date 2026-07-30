@@ -1,0 +1,359 @@
+.OptimizeAssetsModal {
+  padding: 32px;
+}
+
+.OptimizeAssets {
+  height: 460px;
+  display: flex;
+  flex-flow: row nowrap;
+  gap: 32px;
+}
+
+/* Header */
+
+.OptimizeAssetsHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+
+.OptimizeAssetsHeader h2 {
+  margin: 0;
+  font-size: 30px;
+  font-weight: 600;
+}
+
+.OptimizeAssetsHeader .CloseButton {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  color: var(--base-01);
+  height: 32px;
+}
+
+/* Left Panel */
+
+.OptimizeAssets .LeftPanel {
+  width: 300px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding-right: 32px;
+  border-right: 1px solid var(--base-14);
+  overflow-y: auto;
+}
+
+.OptimizeAssets .LeftPanel > p {
+  color: var(--base-08);
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.4;
+  margin: 0;
+}
+
+/* Settings */
+
+.OptimizeAssets .SettingsSection {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.OptimizeAssets .SettingsTitle {
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  margin: 0;
+}
+
+.OptimizeAssets .SettingsGrid {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.OptimizeAssets .SettingsRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 4px 0;
+}
+
+.OptimizeAssets .SettingsRow span {
+  color: var(--base-08);
+  font-size: 13px;
+  font-weight: 400;
+}
+
+.OptimizeAssets .SettingsRow select {
+  background: var(--base-17);
+  color: var(--text);
+  border: 1px solid var(--base-14);
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.OptimizeAssets .QualityControl {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.OptimizeAssets .QualityControl input[type='range'] {
+  width: 100px;
+  cursor: pointer;
+}
+
+.OptimizeAssets .QualityValue {
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 600;
+  min-width: 28px;
+  text-align: right;
+}
+
+/* Results Summary */
+
+.OptimizeAssets .ResultsSummary {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.OptimizeAssets .ResultsTitle {
+  color: var(--text);
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.OptimizeAssets .ResultsStat {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--base-17);
+}
+
+.OptimizeAssets .ResultsStat.total {
+  border-bottom: none;
+  padding-top: 12px;
+}
+
+.OptimizeAssets .ResultsLabel {
+  color: var(--base-08);
+  font-size: 14px;
+}
+
+.OptimizeAssets .ResultsValue {
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.OptimizeAssets .ResultsStat.total .ResultsValue {
+  color: var(--success, #4caf50);
+  font-size: 16px;
+}
+
+/* Right Panel */
+
+.OptimizeAssets .RightPanel {
+  width: 600px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Scanning View */
+.OptimizeAssets .RightPanel .LoadingContainer {
+  height: 100%;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.OptimizeAssets .RightPanel .LoadingContainer .SpinnerContainer {
+  position: relative;
+  width: 40px;
+  height: 40px;
+}
+
+.OptimizeAssets .RightPanel .LoadingContainer p {
+  color: var(--base-08);
+  font-size: 20px;
+  font-weight: 500;
+}
+
+/* Stats */
+.OptimizeAssets .RightPanel .stats {
+  display: flex;
+  align-items: center;
+  padding: 10px 16px;
+  border-radius: 100px;
+  background: var(--base-17);
+}
+
+.OptimizeAssets .RightPanel .stats .checkbox {
+  flex-grow: 0;
+}
+
+.OptimizeAssets .RightPanel .stats p {
+  color: var(--base-08);
+  font-size: 14px;
+  font-weight: 400;
+  margin: 0;
+  margin-left: 24px;
+}
+
+.OptimizeAssets .RightPanel .stats .FilesCounter {
+  margin-left: 8px;
+  text-transform: uppercase;
+  font-size: 20px;
+  font-weight: 500;
+}
+
+.OptimizeAssets .RightPanel .stats .ReducedSize {
+  color: var(--text);
+  font-weight: 700;
+}
+
+/* File List */
+.OptimizeAssets .RightPanel .FileList {
+  flex: 1;
+  overflow: auto;
+  margin: 16px 0 32px;
+  padding-right: 10px;
+}
+
+.OptimizeAssets .RightPanel .FileList .EmptyFiles {
+  font-size: 24px;
+  font-weight: 500;
+  text-align: center;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.OptimizeAssets .RightPanel .FileList .FileItem {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 16px;
+  cursor: pointer;
+  background-color: transparent;
+  transition: background-color 0.2s;
+}
+
+.OptimizeAssets .RightPanel .FileList .FileItem:hover {
+  background-color: var(--base-18);
+}
+
+.OptimizeAssets .RightPanel .FileList .FileItem:not(:last-child) {
+  border-bottom: 0.5px solid var(--base-14);
+}
+
+.OptimizeAssets .RightPanel .FileList .FileItem span {
+  color: var(--base-11);
+  margin: 0;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  word-wrap: break-word;
+}
+
+.OptimizeAssets .RightPanel .FileList .FileItem.selected span {
+  color: var(--text);
+}
+
+.OptimizeAssets .RightPanel .FileList .FileItem .size {
+  margin-left: auto;
+  min-width: max-content;
+}
+
+.OptimizeAssets .RightPanel .FileList .FileItem .type-badge {
+  font-size: 10px;
+  text-transform: uppercase;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: var(--base-17);
+  color: var(--base-08);
+  min-width: max-content;
+  flex-shrink: 0;
+}
+
+.OptimizeAssets .RightPanel .FileList .FileItem.selected .type-badge {
+  color: var(--text);
+}
+
+.OptimizeAssets .RightPanel .FileList .FileItem .checkbox {
+  flex-grow: 0;
+}
+
+.OptimizeAssets .RightPanel .FileList .FileItem .checkbox input {
+  border: 1px solid var(--base-11);
+  background-color: transparent;
+}
+
+.OptimizeAssets .RightPanel .FileList .FileItem .checkbox input:checked {
+  border-color: var(--text);
+}
+
+/* Results file list items */
+.OptimizeAssets .RightPanel .FileList .FileItem .path {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.OptimizeAssets .RightPanel .FileList .FileItem .sizes {
+  margin-left: auto;
+  min-width: max-content;
+  font-size: 13px;
+}
+
+.OptimizeAssets .RightPanel .FileList .FileItem .sizes .optimized {
+  color: var(--success, #4caf50);
+  font-weight: 600;
+}
+
+.OptimizeAssets .RightPanel .FileList .FileItem .sizes .skipped-label {
+  color: var(--base-11);
+  font-style: italic;
+  margin-left: 8px;
+}
+
+.OptimizeAssets .RightPanel .FileList .FileItem.skipped {
+  opacity: 0.6;
+}
+
+/* Footer */
+.OptimizeAssets .RightPanel .footer {
+  width: 100%;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 16px;
+}
+
+.OptimizeAssets .RightPanel .footer button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  padding: 8px 22px;
+  height: 40px;
+}
+
+.OptimizeAssets .RightPanel .footer .ScanButton {
+  border: 1px solid var(--base-09);
+}
