@@ -22,8 +22,10 @@ import {
   getLockedNodes,
   getPlatform,
   getSelectedNode,
+  getSelectedNodes,
   selectNode,
   setPlatform,
+  toggleNodeSelection,
 } from '../../redux/ui-designer';
 import { Button } from '../Button';
 import {
@@ -570,12 +572,12 @@ const CanvasNodeActions: React.FC<{ entity: Entity }> = ({ entity }) => {
 
 const CanvasNode: React.FC<CanvasNodeProps> = ({ node, hidden }) => {
   const dispatch = useAppDispatch();
-  // Subscribe to a derived boolean rather than the raw selected-entity id: selecting
-  // a node is a Redux action that does NOT rebuild the node tree, so a raw
-  // `getSelectedNode` subscription would re-render every CanvasNode on each click.
-  // react-redux only re-renders when the selector OUTPUT changes, so this confines
-  // the re-render to the two nodes whose selection actually flips.
-  const isSelected = useAppSelector(state => getSelectedNode(state) === node.entity);
+  // Subscribe to a derived boolean rather than the raw selection: selecting a
+  // node is a Redux action that does NOT rebuild the node tree, so a raw
+  // selection subscription would re-render every CanvasNode on each click.
+  // react-redux only re-renders when the selector OUTPUT changes, so this
+  // confines the re-render to the nodes whose membership actually flips.
+  const isSelected = useAppSelector(state => getSelectedNodes(state).includes(node.entity));
   // Editor-only canvas lock (tree lock button): the node still renders but
   // takes no select/drag/resize. Derived boolean for the same re-render
   // reasons as isSelected.
@@ -790,7 +792,11 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node, hidden }) => {
     (e: React.MouseEvent) => {
       if (isLocked) return; // locked: clicks fall through, node not selectable
       e.stopPropagation();
-      dispatch(selectNode({ node: node.entity }));
+      // Modifier-click toggles membership in the multi-selection (#1400); the
+      // canvas has no row order, so shift behaves like ctrl here.
+      if (e.ctrlKey || e.metaKey || e.shiftKey)
+        dispatch(toggleNodeSelection({ node: node.entity }));
+      else dispatch(selectNode({ node: node.entity }));
     },
     [dispatch, node.entity, isLocked],
   );
@@ -827,6 +833,7 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node, hidden }) => {
   const handleMouseDown = useCallback(
     (e: React.MouseEvent) => {
       if (e.button !== 0) return; // left-drag moves; right/middle bubble to the canvas pan
+      if (e.ctrlKey || e.metaKey || e.shiftKey) return; // modifier-click = selection toggle, not a drag
       if (isLocked) return;
       if (!canDragMove) return;
       if (editingRef.current) return; // don't drag while editing text inline
@@ -1311,7 +1318,7 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node, hidden }) => {
 // carries none of the drag/resize/drop machinery — it is edited only in code.
 const CanvasOpaqueNode: React.FC<{ node: CodeUINode; hidden?: boolean }> = ({ node, hidden }) => {
   const dispatch = useAppDispatch();
-  const isSelected = useAppSelector(state => getSelectedNode(state) === node.entity);
+  const isSelected = useAppSelector(state => getSelectedNodes(state).includes(node.entity));
   const setRef = useCallback(
     (el: HTMLDivElement | null) => {
       if (el) registerNodeElement(node.entity, el);
@@ -1327,7 +1334,9 @@ const CanvasOpaqueNode: React.FC<{ node: CodeUINode; hidden?: boolean }> = ({ no
       style={hiddenStyle(nodeStyle(node), hidden)}
       onClick={e => {
         e.stopPropagation();
-        dispatch(selectNode({ node: node.entity }));
+        if (e.ctrlKey || e.metaKey || e.shiftKey)
+          dispatch(toggleNodeSelection({ node: node.entity }));
+        else dispatch(selectNode({ node: node.entity }));
       }}
       data-type={node.type}
       data-entity={String(node.entity)}
@@ -1433,7 +1442,7 @@ const CanvasComponentRefNode: React.FC<{ node: CodeUINode; hidden?: boolean }> =
   node,
   hidden,
 }) => {
-  const isSelected = useAppSelector(state => getSelectedNode(state) === node.entity);
+  const isSelected = useAppSelector(state => getSelectedNodes(state).includes(node.entity));
   const { componentTrees } = useCodeState();
   const setRef = useCallback(
     (el: HTMLDivElement | null) => {

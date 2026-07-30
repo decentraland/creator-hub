@@ -1,6 +1,42 @@
 import { describe, expect, it } from 'vitest';
 
-import { classifyNode, previewBoundText } from './tree-model';
+import { classifyNode, previewBoundText, visibleRange } from './tree-model';
+import type { UINode } from './tree-model';
+
+describe('visibleRange', () => {
+  const node = (entity: number, children: UINode[] = []): UINode =>
+    ({ entity, type: 'UiEntity', name: 'UiEntity', children }) as unknown as UINode;
+  // 1 ── 2 ── 3
+  //  │    └── 4
+  //  └── 5
+  const tree = node(1, [node(2, [node(3), node(4)]), node(5)]);
+  const children = (n: UINode) => n.children;
+  const allOpen = () => true;
+  const e = (n: number) => n as unknown as UINode['entity'];
+
+  it('selects the visible rows between anchor and target, target last', () => {
+    expect(visibleRange(tree, children, allOpen, e(2), e(5))).toEqual([2, 3, 4, 5]);
+  });
+
+  it('reverses the slice when the anchor sits below the target', () => {
+    expect(visibleRange(tree, children, allOpen, e(5), e(2))).toEqual([5, 4, 3, 2]);
+  });
+
+  it('skips rows hidden inside a collapsed subtree', () => {
+    const collapsed2 = (n: UINode) => n.entity !== e(2);
+    expect(visibleRange(tree, children, collapsed2, e(1), e(5))).toEqual([1, 2, 5]);
+  });
+
+  it('falls back to the target alone when the anchor is not visible', () => {
+    const collapsed2 = (n: UINode) => n.entity !== e(2);
+    expect(visibleRange(tree, children, collapsed2, e(3), e(5))).toEqual([5]);
+  });
+
+  it('returns empty when the target is not visible', () => {
+    const collapsed2 = (n: UINode) => n.entity !== e(2);
+    expect(visibleRange(tree, children, collapsed2, e(1), e(4))).toEqual([]);
+  });
+});
 
 describe('classifyNode', () => {
   it('classifies a UiEntity with a background texture as an Image', () => {

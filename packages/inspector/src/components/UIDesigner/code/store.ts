@@ -7,10 +7,11 @@ import { getStorage } from '../../../lib/data-layer/client/iframe-data-layer';
 import { store as reduxStore } from '../../../redux/store';
 import {
   getPlatform,
-  getSelectedNode,
+  getSelectedNodes,
   remapNodeIds,
   resetNodeState,
   selectNode,
+  selectNodes,
 } from '../../../redux/ui-designer';
 import type { DeviceKind } from '../safe-areas';
 import type { UINodeType } from '../tree-model';
@@ -71,6 +72,7 @@ import {
   moveElement,
   removeAttribute,
   removeNode,
+  removeNodes,
   removeReturnJsx,
   setAttribute,
   setAttributeExpr,
@@ -545,16 +547,25 @@ function reanchorNodeState(prev: ParsedUI | null, next: ParsedUI | null): void {
   walk(prev.root, []);
   reduxStore.dispatch(remapNodeIds({ mapping }));
 
-  const selected = getSelectedNode(reduxStore.getState() as never);
-  if (selected == null) return;
-  const id = selected as unknown as number;
-  if (!pathToNode(prev.root, id)) return; // selection wasn't in this tree
-  const mapped = mapping[id];
-  if (mapped === undefined) {
-    reduxStore.dispatch(selectNode({ node: null }));
-  } else if (mapped !== id) {
-    reduxStore.dispatch(selectNode({ node: mapped as unknown as Entity }));
+  const selected = getSelectedNodes(reduxStore.getState() as never);
+  if (selected.length === 0) return;
+  let changed = false;
+  const reanchored: Entity[] = [];
+  for (const entity of selected) {
+    const id = entity as unknown as number;
+    if (!pathToNode(prev.root, id)) {
+      reanchored.push(entity); // selection wasn't in this tree — leave it alone
+      continue;
+    }
+    const mapped = mapping[id];
+    if (mapped === undefined) {
+      changed = true; // node vanished — drop it from the selection
+      continue;
+    }
+    if (mapped !== id) changed = true;
+    reanchored.push(mapped as unknown as Entity);
   }
+  if (changed) reduxStore.dispatch(selectNodes({ nodes: reanchored }));
 }
 
 // Parse `source` (via the RPC bridge) and update the active tree. Keeps the
@@ -1039,6 +1050,34 @@ async function renameRootUnlocked(filename: string, desiredName: string): Promis
   await regenerateAggregator(roots);
   await ensureMainWired();
   await selectRootFile(newFilename);
+}
+
+// Duplicate a root: write a copy of its file under a fresh component name (the
+// exported identifier respliced the way rename does), regenerate the aggregator,
+// and select the copy. Referrers keep pointing at the original.
+async function duplicateRootUnlocked(filename: string): Promise<void> {
+  const root = state.roots.find(r => r.filename === filename);
+  if (!root) return;
+  const source = filename === state.filename ? state.source : await readFromDisk(filename);
+  if (!source) return;
+  const parser = getCodeParser();
+  if (!parser) return;
+  const { program } = await parser.parse(filename, source);
+  const idSpan = findComponentIdSpan(
+    program as Parameters<typeof findComponentIdSpan>[0],
+    root.name,
+  );
+  if (!idSpan) return; // non-conforming file — leave it alone
+  const newName = uniqueRootName(
+    toComponentName(root.name),
+    state.roots.map(r => r.name),
+  );
+  const copied = source.slice(0, idSpan.start) + newName + source.slice(idSpan.end);
+  const newFilename = `${UI_DIR}/${newName}${TSX}`;
+  await writeToDisk(newFilename, copied);
+  const roots = await refreshRoots();
+  await regenerateAggregator(roots);
+  await loadAndParse(newFilename, copied, { persist: false });
 }
 
 // ---------------------------------------------------------------------------
@@ -1606,6 +1645,31 @@ async function spliceRemoveNodeUnlocked(entityId: number): Promise<void> {
   await applySourceEdits(removeNode(ast));
 }
 
+// Delete several nodes in ONE splice — sequential removals would reassign the
+// positional ids mid-batch (removeNodes also drops descendants of removed
+// ancestors). The root subsumes everything, so a selection containing it strips
+// the whole return. Platform variants/branches need the unwrap op and are only
+// handled as a single selection — inside a larger batch they're skipped.
+async function spliceRemoveNodesUnlocked(entityIds: number[]): Promise<void> {
+  if (entityIds.length === 1) return spliceRemoveNodeUnlocked(entityIds[0]);
+  const root = state.parsed?.root;
+  if (!root) return;
+  if (entityIds.some(id => (root.entity as unknown as number) === id)) {
+    return spliceRemoveNodeUnlocked(root.entity as unknown as number);
+  }
+  const asts: Parameters<typeof removeNodes>[0] = [];
+  for (const id of entityIds) {
+    const node = findCodeNode(root, id);
+    if (node?.platformVariant || node?.platform) {
+      console.warn('[code-mode] platform variant in multi-delete skipped — delete it on its own');
+      continue;
+    }
+    const ast = astNodeFor(id) as Parameters<typeof removeNode>[0] | undefined;
+    if (ast) asts.push(ast);
+  }
+  if (asts.length > 0) await applySourceEdits(removeNodes(asts));
+}
+
 // Move a node's element to a new location — the code equivalent of
 // reorderUISibling / setUIParent. `after`/`before` reorder relative to a sibling
 // (works across parents too); `into` reparents as the last child of the target.
@@ -1693,6 +1757,13 @@ async function spliceMoveUnlocked(entityId: number, anchor: MoveAnchor): Promise
 // after the reparse the clone is the node whose span begins at that offset.
 async function spliceDuplicateUnlocked(entityId: number): Promise<number | null> {
   if (!guardPlatformBranch(entityId, 'spliceDuplicate')) return null;
+  // Duplicating the returned ROOT in place would leave two siblings inside one
+  // `return (...)` — a syntax error the reparse silently reverts. The meaningful
+  // duplicate of a root is its GUI: copy the file and select it.
+  if (state.parsed && findCodeNode(state.parsed.root, entityId) === state.parsed.root) {
+    if (state.filename) await duplicateRootUnlocked(state.filename);
+    return null;
+  }
   const el = astNodeFor(entityId) as Parameters<typeof removeNode>[0] | undefined;
   if (!el) return null;
   const raw = state.source.slice(el.start, el.end);
@@ -2239,7 +2310,7 @@ export const spliceSetRootChild = exclusive(spliceSetRootChildUnlocked);
 export const spliceInsertComponent = exclusive(spliceInsertComponentUnlocked);
 export const spliceInstanceProp = exclusive(spliceInstancePropUnlocked);
 export const unsetInstanceProp = exclusive(unsetInstancePropUnlocked);
-export const spliceRemoveNode = exclusive(spliceRemoveNodeUnlocked);
+export const spliceRemoveNodes = exclusive(spliceRemoveNodesUnlocked);
 export const spliceMove = exclusive(spliceMoveUnlocked);
 export const spliceDuplicate = exclusive(spliceDuplicateUnlocked);
 export const bindAttribute = exclusive(bindAttributeUnlocked);

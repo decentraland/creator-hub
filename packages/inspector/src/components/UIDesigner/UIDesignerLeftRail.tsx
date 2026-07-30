@@ -2,7 +2,7 @@ import React, { useRef, useState } from 'react';
 import { IoAddOutline } from 'react-icons/io5';
 
 import { useAppSelector } from '../../redux/hooks';
-import { getSelectedNode, getSelectedRoot } from '../../redux/ui-designer';
+import { getSelectedNode } from '../../redux/ui-designer';
 import { Box } from '../Box';
 import { NodeTree } from './NodeTree';
 import { WidgetPicker } from './WidgetPicker';
@@ -11,14 +11,12 @@ import { CodeRootsList } from './code/CodeRootsList';
 import './UIDesigner.css';
 
 const UIDesignerLeftRail: React.FC = () => {
-  const selectedNode = useAppSelector(getSelectedNode);
-  const selectedRoot = useAppSelector(getSelectedRoot);
   const [pickerOpen, setPickerOpen] = useState(false);
   const addBtnRef = useRef<HTMLButtonElement>(null);
 
-  // New nodes are added under the current node (or the root if only the root is
-  // selected). Disabled until there's a UI to add into.
-  const parent = selectedNode ?? selectedRoot;
+  // New nodes are added under the current node (selecting a GUI selects its
+  // root node). Disabled until there's a UI to add into.
+  const parent = useAppSelector(getSelectedNode);
 
   return (
     <Box className="ui-designer-left-rail">

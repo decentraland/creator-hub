@@ -2,25 +2,30 @@ import { useCallback } from 'react';
 import type { Entity } from '@dcl/ecs';
 
 import { useAppDispatch, useAppSelector } from '../../redux/hooks';
-import { getSelectedNode, selectNode } from '../../redux/ui-designer';
-import { spliceDuplicate, spliceRemoveNode } from './code/store';
+import { getSelectedNodes, selectNode } from '../../redux/ui-designer';
+import { spliceDuplicate, spliceRemoveNodes } from './code/store';
 
-// Shared remove / duplicate actions for a UI node, used by both the NodeTree
-// context menu and the canvas selection action bar so the selection-fallback
-// behaviour stays identical in both places.
+// Shared remove / duplicate actions for a UI node, used by the NodeTree
+// context menu, the canvas selection action bar and the hotkeys so the
+// selection-fallback behaviour stays identical everywhere.
 export function useUINodeActions(): {
   remove: (entity: Entity) => void;
   duplicate: (entity: Entity) => Promise<void>;
 } {
   const dispatch = useAppDispatch();
-  const selectedNode = useAppSelector(getSelectedNode);
+  const selectedNodes = useAppSelector(getSelectedNodes);
 
   const remove = useCallback(
     (entity: Entity) => {
-      void spliceRemoveNode(entity as unknown as number);
-      if (selectedNode === entity) dispatch(selectNode({ node: null }));
+      // Removing a node that is part of a multi-selection removes the whole
+      // selection, in ONE splice (sequential removals would corrupt the
+      // positional ids mid-batch).
+      const batch = selectedNodes.includes(entity) ? selectedNodes : [entity];
+      void spliceRemoveNodes(batch.map(e => e as unknown as number));
+      if (batch !== selectedNodes) return;
+      dispatch(selectNode({ node: null }));
     },
-    [selectedNode, dispatch],
+    [selectedNodes, dispatch],
   );
 
   const duplicate = useCallback(async (entity: Entity) => {

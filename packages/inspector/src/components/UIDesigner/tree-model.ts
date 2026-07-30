@@ -48,6 +48,32 @@ export function classifyNode(node: Pick<UINode, 'type' | 'uiBackground'>): Widge
   return texture ? 'Image' : 'Container';
 }
 
+// The entities of a shift-click range: the slice of the tree's VISIBLE row
+// order (pre-order, honoring the tree's own child/collapse view via
+// `getChildren`/`isOpen`) between the anchor and the clicked row. Ordered so
+// the clicked row lands LAST — it becomes the selection's panel target. When
+// the anchor is gone (collapsed away / removed), just the clicked row.
+export function visibleRange(
+  root: UINode,
+  getChildren: (n: UINode) => UINode[],
+  isOpen: (n: UINode) => boolean,
+  anchor: Entity,
+  target: Entity,
+): Entity[] {
+  const rows: Entity[] = [];
+  const walk = (n: UINode): void => {
+    rows.push(n.entity);
+    if (isOpen(n)) getChildren(n).forEach(walk);
+  };
+  walk(root);
+  const from = rows.indexOf(anchor);
+  const to = rows.indexOf(target);
+  if (to === -1) return [];
+  if (from === -1) return [target];
+  const slice = rows.slice(Math.min(from, to), Math.max(from, to) + 1);
+  return from <= to ? slice : slice.reverse();
+}
+
 // Compose the canvas preview for a (possibly bound) text field. `resolve` maps a
 // binding expression (`state.name`) to its default value; when it returns a value
 // the preview shows it (`Hello: John`), otherwise the binding falls back to a

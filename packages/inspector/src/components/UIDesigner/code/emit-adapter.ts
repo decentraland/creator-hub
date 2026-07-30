@@ -497,6 +497,24 @@ export function removeNode(el: AstNode): Edit[] {
   return [{ start: el.start, end: el.end, text: '' }];
 }
 
+// Remove several elements as ONE edit batch — multi-node removal must land in a
+// single applyEdits pass, since a reparse between removals reassigns every
+// positional id. JSX spans nest (never partially overlap), so a node lying
+// inside an already-kept span is a descendant of another removed node: deleting
+// the ancestor removes it, and keeping its edit would trip applyEdits'
+// overlapping-edits guard.
+export function removeNodes(els: AstNode[]): Edit[] {
+  const sorted = [...els].sort((a, b) => a.start - b.start || b.end - a.end);
+  const out: Edit[] = [];
+  let coveredEnd = -1;
+  for (const el of sorted) {
+    if (el.start < coveredEnd) continue;
+    out.push(...removeNode(el));
+    coveredEnd = el.end;
+  }
+  return out;
+}
+
 // Move an element's exact source to a new location: delete it from its current
 // span and re-insert it verbatim at `insertAt` (the code equivalent of a
 // sibling reorder). The two edits are non-overlapping as long as `insertAt` lies

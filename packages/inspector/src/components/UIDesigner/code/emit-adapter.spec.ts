@@ -8,6 +8,7 @@ import {
   insertChild,
   insertSibling,
   removeAttribute,
+  removeNodes,
   removeReturnJsx,
   setAttribute,
   setAttributeExpr,
@@ -428,6 +429,53 @@ describe('removeReturnJsx (delete the returned root, leaving an empty GUI)', () 
     it('should emit no edits', () => {
       const src = 'export const S = () => <UiEntity />';
       expect(removeReturnJsx(fnOf(src))).toEqual([]);
+    });
+  });
+});
+
+describe('removeNodes (multi-node removal in one edit batch)', () => {
+  const SRC = `export function S() {
+  return (
+    <UiEntity uiTransform={{ width: 400 }}>
+      <Label value="a" />
+      <UiEntity uiTransform={{ width: 100 }}>
+        <Label value="nested" />
+      </UiEntity>
+      <Button value="b" />
+    </UiEntity>
+  )
+}`;
+  const astsOf = (parsed: ReturnType<typeof parse>, nodes: CodeUINode[]) =>
+    nodes.map(n => parsed.astNodes.get(n.entity as unknown as number) as any);
+
+  describe('when removing two independent siblings', () => {
+    it('should delete both spans in one applyEdits pass', () => {
+      const parsed = parse(SRC);
+      const [labelA, , button] = parsed.root.children;
+      const next = applyEdits(SRC, removeNodes(astsOf(parsed, [labelA, button])));
+      expect(parseSync('S.tsx', next).errors).toHaveLength(0);
+      const reparsed = parse(next);
+      expect(reparsed.root.children).toHaveLength(1);
+      expect(reparsed.root.children[0].children[0].type).toBe('Label');
+    });
+  });
+
+  describe('when the selection contains a node and its own descendant', () => {
+    it('should drop the descendant edit and remove the ancestor once', () => {
+      const parsed = parse(SRC);
+      const container = parsed.root.children[1];
+      const nested = container.children[0];
+      const edits = removeNodes(astsOf(parsed, [nested, container]));
+      expect(edits).toHaveLength(1);
+      const next = applyEdits(SRC, edits);
+      expect(next).not.toContain('nested');
+      expect(parseSync('S.tsx', next).errors).toHaveLength(0);
+    });
+  });
+
+  describe('when the list is empty', () => {
+    it('should emit no edits', () => {
+      expect(removeNodes([])).toEqual([]);
     });
   });
 });

@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   IoEyeOutline as VisibleIcon,
   IoEyeOffOutline as InvisibleIcon,
@@ -20,11 +20,14 @@ import {
   getLockedNodes,
   getPlatform,
   getSelectedNode,
+  getSelectedNodes,
   selectNode,
+  selectNodes,
   setExpanded,
   setNodeHidden,
   setNodeLocked,
   setPlatform,
+  toggleNodeSelection,
 } from '../../redux/ui-designer';
 import { Tree } from '../Tree';
 import type { DropType } from '../Tree/utils';
@@ -41,7 +44,7 @@ import {
 } from './code/store';
 import { PLATFORMS } from './code/platform-convention';
 import type { CodeUINode } from './code/types';
-import { classifyNode, type UINode } from './tree-model';
+import { classifyNode, visibleRange, type UINode } from './tree-model';
 
 import './NodeTree.css';
 
@@ -100,6 +103,7 @@ const NodeTreeImpl: React.FC = () => {
   const activeFile = useCodeState().filename;
   const expanded = useAppSelector(getExpanded);
   const selectedNode = useAppSelector(getSelectedNode);
+  const selectedNodes = useAppSelector(getSelectedNodes);
   const hiddenNodes = useAppSelector(getHiddenNodes);
   const lockedNodes = useAppSelector(getLockedNodes);
   const platform = useAppSelector(getPlatform);
@@ -167,7 +171,7 @@ const NodeTreeImpl: React.FC = () => {
     (n: UINode) => expanded[n.entity as unknown as number] !== false,
     [expanded],
   );
-  const isSelected = useCallback((n: UINode) => n.entity === selectedNode, [selectedNode]);
+  const isSelected = useCallback((n: UINode) => selectedNodes.includes(n.entity), [selectedNodes]);
   const isHidden = useCallback(() => false, []);
   const canAddChild = useCallback(() => false, []);
   const canRename = useCallback((n: UINode) => !!tree && n.entity === tree.entity, [tree]);
@@ -177,15 +181,29 @@ const NodeTreeImpl: React.FC = () => {
     [dispatch],
   );
 
+  // The shift-range anchor: the last plain-clicked row (the Tree reports it via
+  // onLastSelectedChange, single clicks only — same convention as Hierarchy).
+  const [lastSelected, setLastSelected] = useState<Entity | null>(null);
+  const handleLastSelectedChange = useCallback((n: UINode) => setLastSelected(n.entity), []);
+
   // Picking a branch of the device that isn't active switches to that device —
   // which is what makes it the editable one, on the canvas and in the panel.
+  // Ctrl/Cmd-click toggles membership; shift-click selects the visible range
+  // from the anchor (#1400).
   const handleSelect = useCallback(
-    (n: UINode) => {
+    (n: UINode, clickType?: 'single' | 'ctrl' | 'shift') => {
       const branch = (n as CodeUINode).platform;
       if (branch && branch !== platform) dispatch(setPlatform({ platform: branch }));
-      dispatch(selectNode({ node: n.entity }));
+      if (clickType === 'ctrl') {
+        dispatch(toggleNodeSelection({ node: n.entity }));
+      } else if (clickType === 'shift' && lastSelected !== null && tree) {
+        const range = visibleRange(tree, getChildren, isOpen, lastSelected, n.entity);
+        if (range.length > 0) dispatch(selectNodes({ nodes: range }));
+      } else {
+        dispatch(selectNode({ node: n.entity }));
+      }
     },
-    [dispatch, platform],
+    [dispatch, platform, lastSelected, tree, getChildren, isOpen],
   );
 
   const handleDrop = useCallback((source: UINode, target: UINode, dropType: DropType) => {
@@ -341,6 +359,7 @@ const NodeTreeImpl: React.FC = () => {
         canRename={canRename}
         onSetOpen={handleSetOpen}
         onSelect={handleSelect}
+        onLastSelectedChange={handleLastSelectedChange}
         onDrop={handleDrop}
         onRename={handleRename}
         onAddChild={noop}

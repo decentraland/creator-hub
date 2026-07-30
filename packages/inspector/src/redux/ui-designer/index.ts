@@ -33,8 +33,9 @@ function persistCollapsedGroups(groups: Record<string, boolean>): void {
 }
 
 export interface UIDesignerState {
-  selectedRoot: Entity | null;
-  selectedNode: Entity | null;
+  // Multi-selection in click order; the property-panel / hotkey target is the
+  // LAST entry (getSelectedNode). Single-select is the length-1 case.
+  selectedNodes: Entity[];
   expanded: Record<number, boolean>;
   // Editor-only canvas affordances (never written to code): a hidden node
   // isn't rendered on the canvas; a locked node can't be selected/dragged/
@@ -55,8 +56,7 @@ export interface UIDesignerState {
 }
 
 export const initialState: UIDesignerState = {
-  selectedRoot: null,
-  selectedNode: null,
+  selectedNodes: [],
   expanded: {},
   hidden: {},
   locked: {},
@@ -70,13 +70,21 @@ export const uiDesignerSlice = createSlice({
   name: 'uiDesigner',
   initialState,
   reducers: {
-    selectRoot: (state, { payload }: PayloadAction<{ root: Entity | null }>) => {
-      state.selectedRoot = payload.root;
-      state.selectedNode = payload.root;
-      state.expanded = {};
-    },
+    // Single-select (replaces the whole selection). null clears it.
     selectNode: (state, { payload }: PayloadAction<{ node: Entity | null }>) => {
-      state.selectedNode = payload.node;
+      state.selectedNodes = payload.node === null ? [] : [payload.node];
+      state.interactionLayer = 'base';
+    },
+    // Ctrl/Cmd-click: add the node to the selection, or drop it if present.
+    toggleNodeSelection: (state, { payload }: PayloadAction<{ node: Entity }>) => {
+      const idx = state.selectedNodes.indexOf(payload.node);
+      if (idx >= 0) state.selectedNodes.splice(idx, 1);
+      else state.selectedNodes.push(payload.node);
+      state.interactionLayer = 'base';
+    },
+    // Replace the selection wholesale (shift-range, post-reparse re-anchor).
+    selectNodes: (state, { payload }: PayloadAction<{ nodes: Entity[] }>) => {
+      state.selectedNodes = payload.nodes;
       state.interactionLayer = 'base';
     },
     setInteractionLayer: (state, { payload }: PayloadAction<{ layer: InteractionStateKey }>) => {
@@ -142,8 +150,9 @@ export const uiDesignerSlice = createSlice({
 });
 
 export const {
-  selectRoot,
   selectNode,
+  toggleNodeSelection,
+  selectNodes,
   setExpanded,
   setNodeHidden,
   setNodeLocked,
@@ -156,8 +165,9 @@ export const {
   setPlatform,
 } = uiDesignerSlice.actions;
 
-export const getSelectedRoot = (state: RootState) => state.uiDesigner.selectedRoot;
-export const getSelectedNode = (state: RootState) => state.uiDesigner.selectedNode;
+export const getSelectedNodes = (state: RootState) => state.uiDesigner.selectedNodes;
+// The single-node consumers' view of the selection: its most recent entry.
+export const getSelectedNode = (state: RootState) => state.uiDesigner.selectedNodes.at(-1) ?? null;
 export const getExpanded = (state: RootState) => state.uiDesigner.expanded;
 export const getHiddenNodes = (state: RootState) => state.uiDesigner.hidden;
 export const getLockedNodes = (state: RootState) => state.uiDesigner.locked;
