@@ -1,5 +1,11 @@
 import React, { useCallback, useMemo, useRef, useState } from 'react';
-import { IoOptionsOutline, IoLockClosedOutline, IoLockOpenOutline } from 'react-icons/io5';
+import {
+  IoDesktopOutline,
+  IoOptionsOutline,
+  IoLockClosedOutline,
+  IoLockOpenOutline,
+  IoPhoneLandscapeOutline,
+} from 'react-icons/io5';
 import { VscTrash } from 'react-icons/vsc';
 import { AiOutlinePlus } from 'react-icons/ai';
 import type { Entity, TextureUnion } from '@dcl/ecs';
@@ -30,11 +36,13 @@ import { type CanvasSegment, type UINodeType } from './tree-model';
 import {
   addInteractionLayer,
   addInteractionStates,
+  addPlatformVariant,
   codeComponentValueForLayer,
   findCodeNode,
   interactionLayerValue,
   removeInteractionLayer,
   removeInteractionStates,
+  removePlatformVariant,
   setInteractionActiveBinding,
   setInteractionField,
   spliceComponentPatch,
@@ -337,6 +345,51 @@ const StatesBar: React.FC<{
   );
 };
 
+// Structural device variants (see code/platform-convention.ts). A plain node can
+// gain them; a branch shows which device it is and can drop the split, keeping the
+// other device's branch as the single unconditional node.
+const VariantsBar: React.FC<{ node: CodeUINode; entity: Entity }> = ({ node, entity }) => {
+  const id = entity as unknown as number;
+  if (!node.platform) {
+    return (
+      <div className="ui-designer-states-bar">
+        <button
+          type="button"
+          className="ui-designer-states-add"
+          title="Give this node a different subtree on mobile — the canvas device toggle picks which one you edit"
+          onClick={() => void addPlatformVariant(id)}
+        >
+          <AiOutlinePlus aria-hidden /> Add device variants
+        </button>
+      </div>
+    );
+  }
+  const label = node.platform === 'mobile' ? 'Mobile' : 'Desktop';
+  return (
+    <div className="ui-designer-states-bar">
+      <span className="ui-designer-variant-badge">
+        {node.platform === 'mobile' ? (
+          <IoPhoneLandscapeOutline aria-hidden />
+        ) : (
+          <IoDesktopOutline aria-hidden />
+        )}
+        {label} variant
+      </span>
+      <div className="ui-designer-states-actions">
+        <button
+          type="button"
+          className="ui-designer-prop-remove"
+          aria-label={`Remove the ${label} variant`}
+          title={`Remove the ${label} variant — the other device's branch becomes the only one`}
+          onClick={() => void removePlatformVariant(id)}
+        >
+          <VscTrash aria-hidden />
+        </button>
+      </div>
+    </div>
+  );
+};
+
 // The boolean driving the `active` layer. It binds through the same
 // VariablePicker as any other field (a `boolean` kind already lists the boolean
 // state variables), but it writes the helper call's SECOND ARGUMENT rather than a
@@ -469,6 +522,17 @@ const PropertyPanelComponent: React.FC = () => {
     return <ComponentRefPanel node={codeNode} />;
   }
 
+  // A platform variant is the conditional itself — it has no props of its own.
+  if (codeNode?.platformVariant) {
+    return (
+      <EmptyState
+        icon={<IoOptionsOutline />}
+        title="Device variants"
+        message="This node renders a different subtree per device. Pick the Desktop or Mobile branch in the tree — or flip the canvas device toggle — to edit one."
+      />
+    );
+  }
+
   // The canvas drop wraps `<Name />` in a positioning UiEntity, and canvas
   // clicks select that WRAPPER (the ref block is click-transparent so the
   // wrapper stays draggable) — so surface the nested instance's props here
@@ -497,12 +561,18 @@ const PropertyPanelComponent: React.FC = () => {
         />
       ))}
       {codeNode && !codeNode.opaque ? (
-        <StatesBar
-          node={codeNode}
-          entity={selected as Entity}
-          layer={activeLayer}
-          onPick={layer => dispatch(setInteractionLayer({ layer }))}
-        />
+        <>
+          <StatesBar
+            node={codeNode}
+            entity={selected as Entity}
+            layer={activeLayer}
+            onPick={layer => dispatch(setInteractionLayer({ layer }))}
+          />
+          <VariantsBar
+            node={codeNode}
+            entity={selected as Entity}
+          />
+        </>
       ) : null}
       {activeLayer === 'active' && codeNode?.interaction ? (
         <ActiveFlagRow

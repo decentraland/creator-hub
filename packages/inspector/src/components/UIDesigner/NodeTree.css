@@ -24,3 +24,10 @@
 .ui-designer-nodetree .selectable-area svg {
   color: rgba(255, 255, 255, 0.6);
 }
+
+/* A platform-variant branch for the device that isn't being edited: still listed
+   (clicking it switches device) but visibly not the live one. */
+.ui-designer-tree-branch.inactive {
+  color: var(--sub-text);
+  opacity: 0.55;
+}

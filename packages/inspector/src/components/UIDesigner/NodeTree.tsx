@@ -2,10 +2,15 @@ import React, { useCallback, useEffect, useMemo, useRef } from 'react';
 import {
   IoEyeOutline as VisibleIcon,
   IoEyeOffOutline as InvisibleIcon,
+  IoAddOutline,
+  IoDesktopOutline,
+  IoPhoneLandscapeOutline,
+  IoSwapHorizontalOutline,
   IoWarningOutline,
   IoCubeOutline,
 } from 'react-icons/io5';
 import { MdOutlineLock as LockIcon, MdOutlineLockOpen as UnlockIcon } from 'react-icons/md';
+import cx from 'classnames';
 import type { Entity } from '@dcl/ecs';
 
 import { useAppDispatch, useAppSelector } from '../../redux/hooks';
@@ -13,11 +18,13 @@ import {
   getExpanded,
   getHiddenNodes,
   getLockedNodes,
+  getPlatform,
   getSelectedNode,
   selectNode,
   setExpanded,
   setNodeHidden,
   setNodeLocked,
+  setPlatform,
 } from '../../redux/ui-designer';
 import { Tree } from '../Tree';
 import type { DropType } from '../Tree/utils';
@@ -25,7 +32,14 @@ import { UI_DESIGNER_DND_TYPE, type UIDesignerDragItem } from './Palette';
 import { useUINodeActions } from './useUINodeActions';
 import { useUINodeTree } from './useUINodeTree';
 import { WIDGET_ICONS } from './widget-catalog';
-import { renameRoot, spliceAddWidget, spliceMove, useCodeState } from './code/store';
+import {
+  addPlatformBranch,
+  renameRoot,
+  spliceAddWidget,
+  spliceMove,
+  useCodeState,
+} from './code/store';
+import { PLATFORMS } from './code/platform-convention';
 import type { CodeUINode } from './code/types';
 import type { UINode } from './tree-model';
 
@@ -55,6 +69,13 @@ function soleComponentRef(n: UINode): CodeUINode | null {
   return child.componentRef ? child : null;
 }
 
+const PLATFORM_ICONS = {
+  desktop: <IoDesktopOutline />,
+  mobile: <IoPhoneLandscapeOutline />,
+};
+
+const PLATFORM_LABELS = { desktop: 'Desktop', mobile: 'Mobile' };
+
 // Entities on the path from `root` down to (but excluding) `target`. Used to
 // auto-expand every ancestor so a selected node is always revealed in the tree.
 function collectAncestors(root: UINode, target: Entity): Entity[] {
@@ -81,6 +102,7 @@ const NodeTreeImpl: React.FC = () => {
   const selectedNode = useAppSelector(getSelectedNode);
   const hiddenNodes = useAppSelector(getHiddenNodes);
   const lockedNodes = useAppSelector(getLockedNodes);
+  const platform = useAppSelector(getPlatform);
 
   // Memoise the Tree<UINode> component once per mount — Tree<T>() returns a
   // memoised component factory; constructing it in render would defeat memo.
@@ -110,14 +132,30 @@ const NodeTreeImpl: React.FC = () => {
   const getId = useCallback((n: UINode) => String(n.entity), []);
   // Hide the sole component-ref child so the wrapper reads as one component node.
   const getChildren = useCallback((n: UINode) => (soleComponentRef(n) ? [] : n.children), []);
-  const getLabel = useCallback((n: UINode) => {
-    const ref = soleComponentRef(n);
-    if (ref) return ref.componentRef?.name ?? ref.name;
-    return n.name || `${n.type} ${String(n.entity)}`;
-  }, []);
+  const getLabel = useCallback(
+    (n: UINode) => {
+      const ref = soleComponentRef(n);
+      if (ref) return ref.componentRef?.name ?? ref.name;
+      const label = n.name || `${n.type} ${String(n.entity)}`;
+      // A platform branch reads dimmed while its device isn't the one being
+      // edited — the row stays visible (and clickable, which switches device).
+      const branch = (n as CodeUINode).platform;
+      if (!branch) return label;
+      return (
+        <span className={cx('ui-designer-tree-branch', { inactive: branch !== platform })}>
+          {label}
+        </span>
+      );
+    },
+    [platform],
+  );
+  // A branch's icon IS its device badge; the variant itself gets the switch icon.
   const getIcon = useCallback((n: UINode) => {
     if (soleComponentRef(n)) return <IoCubeOutline />;
-    return (n as CodeUINode).opaque ? <IoWarningOutline /> : WIDGET_ICONS[n.type];
+    const cn = n as CodeUINode;
+    if (cn.platformVariant) return <IoSwapHorizontalOutline />;
+    if (cn.platform) return PLATFORM_ICONS[cn.platform];
+    return cn.opaque ? <IoWarningOutline /> : WIDGET_ICONS[n.type];
   }, []);
   const isOpen = useCallback(
     (n: UINode) => expanded[n.entity as unknown as number] !== false,
@@ -133,9 +171,15 @@ const NodeTreeImpl: React.FC = () => {
     [dispatch],
   );
 
+  // Picking a branch of the device that isn't active switches to that device —
+  // which is what makes it the editable one, on the canvas and in the panel.
   const handleSelect = useCallback(
-    (n: UINode) => dispatch(selectNode({ node: n.entity })),
-    [dispatch],
+    (n: UINode) => {
+      const branch = (n as CodeUINode).platform;
+      if (branch && branch !== platform) dispatch(setPlatform({ platform: branch }));
+      dispatch(selectNode({ node: n.entity }));
+    },
+    [dispatch, platform],
   );
 
   const handleDrop = useCallback((source: UINode, target: UINode, dropType: DropType) => {
@@ -145,6 +189,11 @@ const NodeTreeImpl: React.FC = () => {
     // either; reorder relative to it instead.
     if ((target as CodeUINode).opaque && dropType === 'inside') return;
     if ((target as CodeUINode).componentRef && dropType === 'inside') return;
+    // A platform branch has no room for siblings (it's an operand of the
+    // conditional), and the variant node isn't an element to nest into. Dropping
+    // before/after the variant itself is fine — that targets its parent.
+    if ((target as CodeUINode).platform) return;
+    if ((target as CodeUINode).platformVariant && dropType === 'inside') return;
     // Reparent/reorder by moving the element's source (the code equivalent of
     // setUIParent + reorderUISibling). 'inside' → last child of target;
     // 'before'/'after' → relative to the target sibling.
@@ -165,9 +214,11 @@ const NodeTreeImpl: React.FC = () => {
       // The root has no parent, so before/after has nowhere to go — append inside.
       const dt: DropType =
         target.entity === tree?.entity && dropType !== 'inside' ? 'inside' : dropType;
-      // Can't nest INSIDE an opaque node or a component instance (no editable
-      // children); before/after still works (it inserts into their parent).
-      if (dt === 'inside' && (t.opaque || t.componentRef)) return;
+      // Can't nest INSIDE an opaque node, a component instance or a platform
+      // variant (no editable children); before/after still works (it inserts into
+      // their parent) — except beside a branch, which has no sibling slot.
+      if (dt === 'inside' && (t.opaque || t.componentRef || t.platformVariant)) return;
+      if (t.platform) return;
       void spliceAddWidget(target.entity as unknown as number, dt, drag.type, drag.preset);
     },
     [tree],
@@ -197,6 +248,34 @@ const NodeTreeImpl: React.FC = () => {
   const renderActionArea = useCallback(
     (n: UINode) => {
       const id = n.entity as unknown as number;
+      // A variant renders no box, so lock/hide mean nothing on it. Its affordance
+      // is filling in a device that has no branch yet (a hand-authored one-sided
+      // conditional — the editor always seeds both).
+      const cn = n as CodeUINode;
+      if (cn.platformVariant) {
+        const missing = PLATFORMS.filter(p => !cn.children.some(c => c.platform === p));
+        if (missing.length === 0) return null;
+        return (
+          <div className="action-area">
+            {missing.map(p => (
+              <div
+                key={p}
+                className="action-button"
+                role="button"
+                aria-label={`Add ${PLATFORM_LABELS[p]} variant`}
+                title={`Add a ${PLATFORM_LABELS[p]} variant`}
+                onClick={e => {
+                  e.stopPropagation();
+                  void addPlatformBranch(id, p);
+                }}
+              >
+                <IoAddOutline />
+                {PLATFORM_ICONS[p]}
+              </div>
+            ))}
+          </div>
+        );
+      }
       const isLocked = !!lockedNodes[id];
       const isNodeHidden = !!hiddenNodes[id];
       return (
@@ -233,8 +312,9 @@ const NodeTreeImpl: React.FC = () => {
     [hiddenNodes, lockedNodes, dispatch],
   );
 
+  // A branch can't leave its conditional, so it isn't draggable.
   const canDrag = useCallback(
-    (n: UINode) => !lockedNodes[n.entity as unknown as number],
+    (n: UINode) => !lockedNodes[n.entity as unknown as number] && !(n as CodeUINode).platform,
     [lockedNodes],
   );
 

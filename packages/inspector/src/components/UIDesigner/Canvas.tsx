@@ -20,8 +20,10 @@ import {
   getHiddenNodes,
   getInteractionLayer,
   getLockedNodes,
+  getPlatform,
   getSelectedNode,
   selectNode,
+  setPlatform,
 } from '../../redux/ui-designer';
 import { Button } from '../Button';
 import {
@@ -37,7 +39,7 @@ import { UI_DESIGNER_DND_TYPE, type UIDesignerDragItem } from './Palette';
 import { EmptyState } from './EmptyState';
 import { WidgetPicker } from './WidgetPicker';
 import { SafeAreaOverlay } from './SafeAreaOverlay';
-import { MOBILE_REFERENCE, type DeviceKind } from './safe-areas';
+import { MOBILE_REFERENCE } from './safe-areas';
 import { useUINodeActions } from './useUINodeActions';
 import { useUINodeTree } from './useUINodeTree';
 import {
@@ -1481,7 +1483,15 @@ const CanvasNodeView: React.FC<CanvasNodeProps> = ({ node }) => {
   const isNodeHidden = useAppSelector(
     state => !!getHiddenNodes(state)[node.entity as unknown as number],
   );
+  const platform = useAppSelector(getPlatform);
   const cn = node as CodeUINode;
+  // A platform variant contributes no box of its own — render the branch for the
+  // device being previewed. Nothing when that device has no branch, which is
+  // exactly what the scene renders there.
+  if (cn.platformVariant) {
+    const branch = cn.children.find(c => c.platform === platform);
+    return branch ? <CanvasNodeView node={branch} /> : null;
+  }
   if (cn.componentRef)
     return (
       <CanvasComponentRefNode
@@ -1565,7 +1575,11 @@ const CanvasComponent: React.FC = () => {
   const createRoot = useCallback(() => void createCodeRoot(), []);
   const selectedNode = useAppSelector(getSelectedNode);
   const [scale, setScale] = useState(getCanvasScale());
-  const [device, setDevice] = useState<DeviceKind>('desktop');
+  // The device toggle is the EDIT target, not just a preview: a platform-variant
+  // node renders (and routes edits to) the branch matching it, so it lives in the
+  // slice where the code store can read it too.
+  const dispatch = useAppDispatch();
+  const device = useAppSelector(getPlatform);
   const [showSafeAreas, setShowSafeAreas] = useState(false);
   const viewportRef = useRef<HTMLDivElement>(null);
   // Infinite-canvas pan (Figma-style): the viewport centres the stage and this
@@ -1609,10 +1623,13 @@ const CanvasComponent: React.FC = () => {
       : 1;
 
   // Keep the module-level scale (read by the drag/resize coordinate math and by
-  // measure.ts) in sync with the rendered zoom.
+  // measure.ts) in sync with the rendered zoom. In the device frame the UI carries
+  // a second scale-to-fit transform, so the EFFECTIVE scale is the product — that
+  // is what the px↔logical conversions must divide by for editing to track the
+  // pointer there.
   useEffect(() => {
-    setCanvasScale(scale);
-  }, [scale]);
+    setCanvasScale(scale * fitScale);
+  }, [scale, fitScale]);
 
   // Defensive: drop any stale entity→element entries when the canvas unmounts
   // (e.g. switching scenes). Individual node unmounts already unregister via
@@ -1731,9 +1748,12 @@ const CanvasComponent: React.FC = () => {
                       } as React.CSSProperties
                     }
                   >
-                    {/* UI scaled-to-fit + letterboxed, inspection-only (no editing). */}
+                    {/* UI scaled-to-fit + letterboxed inside the device screen.
+                        Editable: drag/resize math is delta-based over client rects
+                        divided by the effective scale, so the extra transform and
+                        the letterbox offset both cancel out. */}
                     <div
-                      className="ui-designer-canvas-root preview-only"
+                      className="ui-designer-canvas-root"
                       style={{
                         width: canvasWidth,
                         height: canvasHeight,
@@ -1742,7 +1762,6 @@ const CanvasComponent: React.FC = () => {
                         position: 'absolute',
                         left: (MOBILE_REFERENCE.width - canvasWidth * fitScale) / 2,
                         top: (MOBILE_REFERENCE.height - canvasHeight * fitScale) / 2,
-                        pointerEvents: 'none',
                       }}
                     >
                       <CanvasNodeView node={tree} />
@@ -1806,7 +1825,7 @@ const CanvasComponent: React.FC = () => {
             <button
               type="button"
               className={cx('ui-designer-canvas-zoom-btn', { active: device === 'desktop' })}
-              onClick={() => setDevice('desktop')}
+              onClick={() => dispatch(setPlatform({ platform: 'desktop' }))}
               title="Desktop preview"
               aria-label="Desktop preview"
               aria-pressed={device === 'desktop'}
@@ -1816,7 +1835,7 @@ const CanvasComponent: React.FC = () => {
             <button
               type="button"
               className={cx('ui-designer-canvas-zoom-btn', { active: device === 'mobile' })}
-              onClick={() => setDevice('mobile')}
+              onClick={() => dispatch(setPlatform({ platform: 'mobile' }))}
               title="Mobile preview"
               aria-label="Mobile preview"
               aria-pressed={device === 'mobile'}

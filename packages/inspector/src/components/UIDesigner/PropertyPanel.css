@@ -437,6 +437,20 @@
   background: var(--ui-designer-accent-08);
 }
 
+.ui-designer-variant-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex: 1 1 auto;
+  color: var(--ui-designer-accent);
+  font-size: 12px;
+}
+
+.ui-designer-variant-badge svg {
+  width: 12px;
+  height: 12px;
+}
+
 .ui-designer-states-unbound {
   color: var(--sub-text);
   font-size: 11px;
