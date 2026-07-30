@@ -41,7 +41,7 @@ import {
 } from './code/store';
 import { PLATFORMS } from './code/platform-convention';
 import type { CodeUINode } from './code/types';
-import type { UINode } from './tree-model';
+import { classifyNode, type UINode } from './tree-model';
 
 import './NodeTree.css';
 
@@ -136,10 +136,16 @@ const NodeTreeImpl: React.FC = () => {
     (n: UINode) => {
       const ref = soleComponentRef(n);
       if (ref) return ref.componentRef?.name ?? ref.name;
-      const label = n.name || `${n.type} ${String(n.entity)}`;
+      const cn = n as CodeUINode;
+      // Elements read as their widget kind (Container vs Image for UiEntity);
+      // opaque blocks and the platform variant keep their parse-side name.
+      const label =
+        cn.opaque || cn.platformVariant
+          ? n.name || `${n.type} ${String(n.entity)}`
+          : classifyNode(n);
       // A platform branch reads dimmed while its device isn't the one being
       // edited — the row stays visible (and clickable, which switches device).
-      const branch = (n as CodeUINode).platform;
+      const branch = cn.platform;
       if (!branch) return label;
       return (
         <span className={cx('ui-designer-tree-branch', { inactive: branch !== platform })}>
@@ -155,7 +161,7 @@ const NodeTreeImpl: React.FC = () => {
     const cn = n as CodeUINode;
     if (cn.platformVariant) return <IoSwapHorizontalOutline />;
     if (cn.platform) return PLATFORM_ICONS[cn.platform];
-    return cn.opaque ? <IoWarningOutline /> : WIDGET_ICONS[n.type];
+    return cn.opaque ? <IoWarningOutline /> : WIDGET_ICONS[classifyNode(n)];
   }, []);
   const isOpen = useCallback(
     (n: UINode) => expanded[n.entity as unknown as number] !== false,

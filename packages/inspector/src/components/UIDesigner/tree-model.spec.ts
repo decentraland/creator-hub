@@ -1,6 +1,30 @@
 import { describe, expect, it } from 'vitest';
 
-import { previewBoundText } from './tree-model';
+import { classifyNode, previewBoundText } from './tree-model';
+
+describe('classifyNode', () => {
+  it('classifies a UiEntity with a background texture as an Image', () => {
+    const uiBackground = { texture: { tex: { $case: 'texture', texture: { src: 'a.png' } } } };
+    expect(classifyNode({ type: 'UiEntity', uiBackground })).toBe('Image');
+  });
+
+  it('classifies a UiEntity with an avatar texture as an Image', () => {
+    const uiBackground = {
+      texture: { tex: { $case: 'avatarTexture', avatarTexture: { userId: 'u' } } },
+    };
+    expect(classifyNode({ type: 'UiEntity', uiBackground })).toBe('Image');
+  });
+
+  it('classifies a UiEntity without a texture as a Container', () => {
+    expect(classifyNode({ type: 'UiEntity' })).toBe('Container');
+    expect(classifyNode({ type: 'UiEntity', uiBackground: { color: { r: 1 } } })).toBe('Container');
+  });
+
+  it('classifies every other type as itself', () => {
+    expect(classifyNode({ type: 'Label' })).toBe('Label');
+    expect(classifyNode({ type: 'Dropdown' })).toBe('Dropdown');
+  });
+});
 
 describe('previewBoundText', () => {
   const KEY = 'core::UiText.value';

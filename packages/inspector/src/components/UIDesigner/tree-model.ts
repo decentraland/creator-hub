@@ -36,6 +36,18 @@ export interface UINode {
   children: UINode[];
 }
 
+// What a node reads as in the UI. `<UiEntity>` is one JSX tag for two widgets:
+// with a background texture it's an Image, otherwise a Container. Every other
+// type displays as itself. Callers handle opaque/component-ref/platform nodes
+// before classifying.
+export type WidgetKind = Exclude<UINodeType, 'UiEntity'> | 'Container' | 'Image';
+
+export function classifyNode(node: Pick<UINode, 'type' | 'uiBackground'>): WidgetKind {
+  if (node.type !== 'UiEntity') return node.type;
+  const texture = (node.uiBackground as { texture?: unknown } | undefined)?.texture;
+  return texture ? 'Image' : 'Container';
+}
+
 // Compose the canvas preview for a (possibly bound) text field. `resolve` maps a
 // binding expression (`state.name`) to its default value; when it returns a value
 // the preview shows it (`Hello: John`), otherwise the binding falls back to a

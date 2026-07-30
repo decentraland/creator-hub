@@ -8,7 +8,7 @@ import {
   IoTextOutline,
 } from 'react-icons/io5';
 
-import type { UINodeType } from './tree-model';
+import type { UINodeType, WidgetKind } from './tree-model';
 
 export interface WidgetDef {
   // Stable list key (distinct from `type`, since presets share a type).
@@ -94,10 +94,9 @@ export const WIDGET_CATALOG: WidgetCategory[] = [
 // Flat list + type→icon lookup derived from the catalog.
 export const WIDGET_LIST: WidgetDef[] = WIDGET_CATALOG.flatMap(c => c.items);
 
-// Keyed by `w.type`: the Image preset shares `'UiEntity'` with Container, so the
-// last entry wins. That's intentional — Image reloads as a plain container (no
-// marker), and the tree icon should match that classification.
-export const WIDGET_ICONS = Object.fromEntries(WIDGET_LIST.map(w => [w.type, w.icon])) as Record<
-  UINodeType,
+// Keyed by label, which coincides with the `classifyNode` WidgetKind — so the
+// two UiEntity-backed widgets (Container / Image) each keep their own icon.
+export const WIDGET_ICONS = Object.fromEntries(WIDGET_LIST.map(w => [w.label, w.icon])) as Record<
+  WidgetKind,
   JSX.Element
 >;
