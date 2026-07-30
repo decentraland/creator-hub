@@ -1,12 +1,8 @@
-// Canvas-side resolution of interaction-state styles. The generated runtime
-// helper (aggregator.generateInteractionHelper) deep-merges its layers in the
-// order base → active → hover → press; this reproduces that EXACT precedence so
-// the canvas preview matches what the scene renders. Keeping the rule in one
-// pure function beside the convention is what stops the two from drifting.
-//
-// Operates on the PB-shaped bags the node already carries (the parse adapter
-// normalized every layer), so the canvas renderer needs no new value handling —
-// it just receives a node whose bags are the resolved ones.
+// Canvas-side resolution of interaction-state styles: base → active → hover →
+// press. Deliberately duplicates the merge in aggregator.generateInteractionHelper
+// — that one is source text scaffolded into the scene and must stand alone, so no
+// module can span the two. The spec pins them together; upstreaming
+// `useInteraction` into @dcl/react-ecs would let this import it instead.
 
 import type { InteractionStateKey } from './interaction-convention';
 import type { CodeUINode, InteractionStateStyles } from './types';

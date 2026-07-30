@@ -1,7 +1,28 @@
 import { describe, expect, it } from 'vitest';
 
+import { generateInteractionHelper } from './aggregator';
 import { previewLayers, resolveInteractionPreview } from './interaction-preview';
 import type { CodeUINode } from './types';
+
+// Guards the preview against drifting from the generated runtime helper, which
+// lives in a runtime we can't import from.
+describe('when checking the preview against the generated runtime helper', () => {
+  it('should apply the layers in the same precedence order', () => {
+    const helper = generateInteractionHelper();
+    const order = (['active', 'hover', 'press'] as const).map(k => helper.indexOf(`layers.${k}`));
+    expect(order.every(i => i > 0)).toBe(true);
+    expect([...order].sort((a, b) => a - b)).toEqual(order);
+    expect(previewLayers({ layer: 'active', hovered: true, pressed: true })).toEqual([
+      'active',
+      'hover',
+      'press',
+    ]);
+  });
+
+  it('should still deep-merge, which the PB-side merge mirrors', () => {
+    expect(generateInteractionHelper()).toContain('merge(prev, next)');
+  });
+});
 
 // A node as the parse adapter produces it: its own bags ARE the base layer, and
 // `interaction.states` holds every layer (base included).
