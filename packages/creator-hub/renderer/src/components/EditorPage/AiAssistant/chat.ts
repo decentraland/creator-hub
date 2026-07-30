@@ -8,27 +8,34 @@ export type ChatItem =
   | { kind: 'retry'; attempt: number; maxAttempts: number }
   | { kind: 'compaction' }
   | { kind: 'exit'; code: number | null }
-  | { kind: 'error'; text: string };
+  | { kind: 'error'; text: string }
+  | { kind: 'scene_reloaded' };
 
 export type ChatState = {
   items: ChatItem[];
   busy: boolean;
   exited: boolean;
+  filesChanged: boolean;
 };
 
 export type ChatAction =
   | { type: 'prompt'; text: string }
   | { type: 'error'; text: string }
   | { type: 'reset' }
+  | { type: 'scene_reloaded' }
   | { type: 'event'; event: AgentEvent; projectPath: string };
 
 export const INITIAL_CHAT_STATE: ChatState = {
   items: [],
   busy: false,
   exited: false,
+  filesChanged: false,
 };
 
 const TOOL_PATH_ARGS = ['path', 'file_path', 'filePath', 'file'];
+
+// Tools that can modify files on disk (bash included: scripts can write anywhere)
+const MUTATING_TOOLS = new Set(['edit', 'write', 'bash']);
 
 /**
  * Builds a compact one-line label for a tool call, e.g. "edit src/index.ts".
@@ -151,7 +158,15 @@ function reduceAgentEvent(state: ChatState, event: AgentEvent, projectPath: stri
     }
     case 'tool_execution_end': {
       const id = typeof event.toolCallId === 'string' ? event.toolCallId : '';
-      return updateToolStatus(state, id, event.isError ? 'error' : 'done');
+      const next = updateToolStatus(state, id, event.isError ? 'error' : 'done');
+      if (
+        !event.isError &&
+        typeof event.toolName === 'string' &&
+        MUTATING_TOOLS.has(event.toolName)
+      ) {
+        return { ...next, filesChanged: true };
+      }
+      return next;
     }
     case 'response': {
       if (event.success === false) {
@@ -190,6 +205,8 @@ export function chatReducer(state: ChatState, action: ChatAction): ChatState {
       return appendItem({ ...state, busy: false }, { kind: 'error', text: action.text });
     case 'reset':
       return INITIAL_CHAT_STATE;
+    case 'scene_reloaded':
+      return appendItem({ ...state, filesChanged: false }, { kind: 'scene_reloaded' });
     case 'event':
       return reduceAgentEvent(state, action.event, action.projectPath);
     default:

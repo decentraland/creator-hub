@@ -59,6 +59,7 @@
       "starting": "Starting the AI agent... The first run may take a minute while the Decentraland SDK skills are installed.",
       "retrying": "Retrying ({attempt}/{maxAttempts})...",
       "compacting": "Compacting conversation...",
+      "scene_reloaded": "Scene reloaded to show the changes",
       "exited": "The AI agent stopped (exit code {code}). Reopen the panel to restart it.",
       "error": "Error: {error}"
     },

@@ -4,6 +4,7 @@ import CheckIcon from '@mui/icons-material/Check';
 import CloseIcon from '@mui/icons-material/Close';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import KeyIcon from '@mui/icons-material/Key';
+import RefreshIcon from '@mui/icons-material/Refresh';
 import SendIcon from '@mui/icons-material/Send';
 import StopCircleIcon from '@mui/icons-material/StopCircle';
 import {
@@ -40,6 +41,7 @@ import type { ChatItem } from './chat';
 type Props = {
   projectPath: string;
   onClose: () => void;
+  onSceneChanged?: () => void;
 };
 
 function getErrorMessage(error: unknown): string {
@@ -89,10 +91,17 @@ function renderChatItem(item: ChatItem, index: number) {
       return (
         <ErrorLine key={index}>{t('editor.ai_assistant.error', { error: item.text })}</ErrorLine>
       );
+    case 'scene_reloaded':
+      return (
+        <StatusLine key={index}>
+          <RefreshIcon fontSize="inherit" />
+          {t('editor.ai_assistant.scene_reloaded')}
+        </StatusLine>
+      );
   }
 }
 
-export function AiAssistant({ projectPath, onClose }: Props) {
+export function AiAssistant({ projectPath, onClose, onSceneChanged }: Props) {
   const dispatch = useDispatch();
   const { settings } = useSettings();
   const [view, setView] = useState<'loading' | 'setup' | 'chat'>('loading');
@@ -149,6 +158,15 @@ export function AiAssistant({ projectPath, onClose }: Props) {
       el.scrollTop = el.scrollHeight;
     }
   }, [state.items, state.busy]);
+
+  // Once the agent finishes a turn that modified files, reload the inspector so
+  // the changes become visible (the inspector only reads the scene from disk on boot)
+  useEffect(() => {
+    if (!state.busy && state.filesChanged && onSceneChanged) {
+      onSceneChanged();
+      dispatchChat({ type: 'scene_reloaded' });
+    }
+  }, [state.busy, state.filesChanged, onSceneChanged]);
 
   const handleSaveApiKey = useCallback(async () => {
     const key = apiKey.trim();

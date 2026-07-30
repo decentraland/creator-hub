@@ -429,6 +429,7 @@ export function EditorPage() {
               <AiAssistant
                 projectPath={project.path}
                 onClose={() => setIsAiAssistantOpen(false)}
+                onSceneChanged={handleRefresh}
               />
             )}
           </div>

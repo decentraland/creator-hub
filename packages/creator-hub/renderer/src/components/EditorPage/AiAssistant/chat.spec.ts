@@ -173,6 +173,48 @@ describe('chatReducer', () => {
     });
   });
 
+  describe('when a file-modifying tool completes successfully', () => {
+    it('should flag that files changed', () => {
+      const state = applyEvents(INITIAL_CHAT_STATE, [
+        { type: 'tool_execution_start', toolCallId: 'call_1', toolName: 'edit', args: {} },
+        { type: 'tool_execution_end', toolCallId: 'call_1', toolName: 'edit', isError: false },
+      ]);
+      expect(state.filesChanged).toBe(true);
+    });
+  });
+
+  describe('when a read-only tool completes successfully', () => {
+    it('should not flag that files changed', () => {
+      const state = applyEvents(INITIAL_CHAT_STATE, [
+        { type: 'tool_execution_start', toolCallId: 'call_1', toolName: 'read', args: {} },
+        { type: 'tool_execution_end', toolCallId: 'call_1', toolName: 'read', isError: false },
+      ]);
+      expect(state.filesChanged).toBe(false);
+    });
+  });
+
+  describe('when a file-modifying tool fails', () => {
+    it('should not flag that files changed', () => {
+      const state = applyEvents(INITIAL_CHAT_STATE, [
+        { type: 'tool_execution_start', toolCallId: 'call_1', toolName: 'write', args: {} },
+        { type: 'tool_execution_end', toolCallId: 'call_1', toolName: 'write', isError: true },
+      ]);
+      expect(state.filesChanged).toBe(false);
+    });
+  });
+
+  describe('when the scene reload is acknowledged', () => {
+    it('should clear the flag and append a scene reloaded item', () => {
+      const changed = applyEvents(INITIAL_CHAT_STATE, [
+        { type: 'tool_execution_start', toolCallId: 'call_1', toolName: 'edit', args: {} },
+        { type: 'tool_execution_end', toolCallId: 'call_1', toolName: 'edit', isError: false },
+      ]);
+      const state = chatReducer(changed, { type: 'scene_reloaded' });
+      expect(state.filesChanged).toBe(false);
+      expect(state.items[state.items.length - 1]).toEqual({ kind: 'scene_reloaded' });
+    });
+  });
+
   describe('when a notify extension UI request arrives', () => {
     it('should append a status line with the message', () => {
       const state = applyEvents(INITIAL_CHAT_STATE, [

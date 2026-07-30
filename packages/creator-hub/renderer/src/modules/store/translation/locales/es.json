@@ -59,6 +59,7 @@
       "starting": "Iniciando el agente de IA... La primera vez puede tardar un minuto mientras se instalan las skills del SDK de Decentraland.",
       "retrying": "Reintentando ({attempt}/{maxAttempts})...",
       "compacting": "Compactando la conversación...",
+      "scene_reloaded": "Escena recargada para mostrar los cambios",
       "exited": "El agente de IA se detuvo (código de salida {code}). Vuelve a abrir el panel para reiniciarlo.",
       "error": "Error: {error}"
     },
