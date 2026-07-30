@@ -43,25 +43,6 @@ export function measureNodeOffset(entity: Entity): { top: number; left: number }
   };
 }
 
-// Measure `child`'s rendered offset relative to ANOTHER entity's box (the
-// prospective new parent), in logical px. Lets a reparent keep an absolute
-// node at its on-screen position. Null when either element isn't mounted.
-export function measureReparentOffset(
-  child: Entity,
-  newParent: Entity,
-): { top: number; left: number } | null {
-  const childEl = getNodeElement(child);
-  const parentEl = getNodeElement(newParent);
-  if (!childEl || !parentEl) return null;
-  const c = childEl.getBoundingClientRect();
-  const p = parentEl.getBoundingClientRect();
-  const scale = getCanvasScale();
-  return {
-    top: Math.round((c.top - p.top) / scale),
-    left: Math.round((c.left - p.left) / scale),
-  };
-}
-
 // Which parent dimension a length path is a percentage of.
 // height/top/bottom paths are a percentage of height; the rest of width.
 export function axisForPath(path: string): 'width' | 'height' {

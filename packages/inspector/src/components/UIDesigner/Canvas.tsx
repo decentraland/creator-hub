@@ -77,7 +77,7 @@ import {
 // scale below is the EDITOR zoom (the user can zoom; see CanvasComponent).
 // `canvasScale` is the LIVE zoom, read by the drag/resize coordinate math and by
 // measure.ts so px↔% conversions stay correct at any zoom level.
-export const DEFAULT_CANVAS_SCALE = 0.4;
+const DEFAULT_CANVAS_SCALE = 0.4;
 const ZOOM_MIN = 0.1;
 const ZOOM_MAX = 2;
 const ZOOM_STEP = 0.1;
@@ -88,7 +88,7 @@ let canvasScale = DEFAULT_CANVAS_SCALE;
 export function getCanvasScale(): number {
   return canvasScale;
 }
-export function setCanvasScale(scale: number): void {
+function setCanvasScale(scale: number): void {
   canvasScale = scale;
 }
 

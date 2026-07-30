@@ -391,7 +391,7 @@ export function ergonomicToPBBackground(ergo: Record<string, unknown>): Record<s
 // Inverse: one PB background field value → its ergonomic react-ecs form, keyed
 // by the ergonomic prop it lands in. Returns null for a PB texture variant that
 // react-ecs cannot express (videoTexture) — the caller must skip the write.
-export function pbBackgroundFieldToErgo(
+function pbBackgroundFieldToErgo(
   key: string,
   value: unknown,
 ): { key: string; value: unknown } | null {

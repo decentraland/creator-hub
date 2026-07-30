@@ -208,8 +208,8 @@ export function useCodeState(): CodeState {
 }
 
 // The scene files backing code-mode (file-per-root).
-export const UI_DIR = 'src/ui';
-export const UI_INDEX = 'src/ui/index.tsx';
+const UI_DIR = 'src/ui';
+const UI_INDEX = 'src/ui/index.tsx';
 // The scaffolded interaction-state helper. Lowercase basename by design: it is a
 // helper module, not a UI root, and refreshRoots must never list it as a GUI.
 const UI_INTERACTION = 'src/ui/interaction.tsx';
@@ -741,7 +741,7 @@ async function redoCodeUnlocked(): Promise<boolean> {
 // match — formatting shifts every offset, and the reparse re-anchors ids via
 // the path mapping so the selection survives. No undo snapshot: the format is
 // part of the op, and undoing back to the pre-op source is what users expect.
-export async function formatActiveFile(): Promise<void> {
+async function formatActiveFile(): Promise<void> {
   const file = state.filename;
   if (!file || !state.source || state.error) return;
   const formatted = await formatUiSource(state.source);
@@ -753,10 +753,7 @@ export async function formatActiveFile(): Promise<void> {
 // reparse (+ persist to the scene folder). Pushes an undo snapshot of the
 // pre-edit source; a refused edit (splice produced a syntax error → not saved)
 // rolls the snapshot back off so undo never becomes a no-op entry.
-export async function applySourceEdits(
-  edits: Edit[],
-  opts: { format?: boolean } = {},
-): Promise<string> {
+async function applySourceEdits(edits: Edit[], opts: { format?: boolean } = {}): Promise<string> {
   const file = state.filename;
   if (!file) return state.source;
   const next = applyEdits(state.source, edits);
@@ -1135,7 +1132,7 @@ const COMPONENT_FIELD: Record<string, keyof InteractionStateStyles> = {
   'core::UiDropdown': 'uiDropdown',
 };
 
-export function codeComponentValue(
+function codeComponentValue(
   node: CodeUINode | undefined,
   componentId: string,
 ): Record<string, unknown> | null {
@@ -1274,15 +1271,6 @@ async function writeUiTransformFields(
     ? setInteractionNested(interaction, 'base', 'uiTransform', fields)
     : setObjectFields(ast, 'uiTransform', fields);
   if (edits.length) await applySourceEdits(edits);
-}
-
-// Splice a resize (width/height, top-level ergonomic uiTransform fields).
-async function spliceUiTransformSizeUnlocked(
-  entityId: number,
-  width: number,
-  height: number,
-): Promise<void> {
-  await writeUiTransformFields(entityId, 'spliceUiTransformSize', { width, height });
 }
 
 // Move an ABSOLUTE node: splice the ergonomic `position: { top, left }` edges.
@@ -1458,7 +1446,7 @@ async function buildReferenceGraph(): Promise<Map<string, string[]>> {
 
 // Whether nesting `childName` inside `parentRootName` is safe (no reference
 // cycle — react-ecs would infinite-recurse at runtime otherwise).
-export async function canNest(parentRootName: string, childName: string): Promise<boolean> {
+async function canNest(parentRootName: string, childName: string): Promise<boolean> {
   if (parentRootName === childName) return false;
   const refs = await buildReferenceGraph();
   return !wouldCycle(refs, parentRootName, childName);
@@ -2036,7 +2024,6 @@ export const removeRoot = exclusive(removeRootUnlocked);
 export const renameRoot = exclusive(renameRootUnlocked);
 export const toggleTopLevel = exclusive(toggleTopLevelUnlocked);
 export const spliceComponentPatch = exclusive(spliceComponentPatchUnlocked);
-export const spliceUiTransformSize = exclusive(spliceUiTransformSizeUnlocked);
 export const spliceUiTransformPosition = exclusive(spliceUiTransformPositionUnlocked);
 export const spliceUiTransformMargin = exclusive(spliceUiTransformMarginUnlocked);
 export const spliceUiTransformResize = exclusive(spliceUiTransformResizeUnlocked);
