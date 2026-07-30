@@ -1,9 +1,11 @@
-import React, { useCallback, useMemo } from 'react';
+import React, { useCallback } from 'react';
 import { IoEyeOutline as VisibleIcon, IoEyeOffOutline as InvisibleIcon } from 'react-icons/io5';
 import { MdOutlineLock as LockIcon, MdOutlineLockOpen as UnlockIcon } from 'react-icons/md';
-import { Entity } from '@dcl/ecs';
+import type { Entity } from '@dcl/ecs';
 
-import { WithSdkProps, withSdk } from '../../../hoc/withSdk';
+import type { WithSdkProps } from '../../../hoc/withSdk';
+import { withSdk } from '../../../hoc/withSdk';
+import { useHasComponent } from '../../../hooks/sdk/useHasComponent';
 import { CAMERA, PLAYER, ROOT } from '../../../lib/sdk/tree';
 import { InfoTooltip } from '../../ui';
 
@@ -20,13 +22,12 @@ const ActionArea: React.FC<WithSdkProps & Props> = ({ sdk, ...props }) => {
   } = sdk;
   const { entity } = props;
 
-  const isEntityLocked = useMemo(() => {
-    return Lock.getOrNull(entity) !== null;
-  }, [entity, sdk]);
-
-  const isEntityHidden = useMemo(() => {
-    return Hide.getOrNull(entity) !== null;
-  }, [entity, sdk]);
+  // Subscribe to the components so the icon + toggle closure recompute when the
+  // component is added/removed (a plain useMemo over getOrNull never re-fires —
+  // its deps [entity, sdk] don't change on a component write — so the button
+  // would freeze on its first state and look dead after one click).
+  const isEntityLocked = useHasComponent(entity, Lock);
+  const isEntityHidden = useHasComponent(entity, Hide);
 
   const lock = useCallback(
     (value: boolean) => {
