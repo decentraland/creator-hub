@@ -4,6 +4,13 @@ import { VscTrash } from 'react-icons/vsc';
 import { AiOutlinePlus } from 'react-icons/ai';
 import type { Entity, TextureUnion } from '@dcl/ecs';
 
+import {
+  YGPT_ABSOLUTE,
+  YGPT_RELATIVE,
+  YGU_PERCENT,
+  YGU_POINT,
+  YGU_UNDEFINED,
+} from '../../lib/sdk/ui-transform-constants';
 import { useAppDispatch, useAppSelector } from '../../redux/hooks';
 import {
   getAspectLockedNodes,
@@ -55,14 +62,6 @@ import {
 } from './field-configs';
 
 import './PropertyPanel.css';
-
-import {
-  YGU_UNDEFINED,
-  YGU_POINT,
-  YGU_PERCENT,
-  YGPT_RELATIVE,
-  YGPT_ABSOLUTE,
-} from '../../lib/sdk/ui-transform-constants';
 
 type Color4 = { r: number; g: number; b: number; a?: number };
 

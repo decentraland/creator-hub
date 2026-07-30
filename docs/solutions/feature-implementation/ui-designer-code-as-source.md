@@ -98,5 +98,5 @@ Every binding-surface entry (`BindVariable`, `bindings.ts:23`) carries both a `n
 ## Known residuals and future work
 
 - PropertyPanel add/remove-component + component-clipboard machinery stays ECS-shaped and is runtime-dead in code mode (synthetic ids never resolve to a real engine entity) — purging it reaches into `FieldRow`/`Container` and is out of scope.
-- No in-app editor is mounted (`CodeEditorPanel`/Monaco exists but isn't wired) — editing today is external editor + the 1s disk watcher.
+- No in-app editor: editing is an external editor + the 1s disk watcher. (An unwired `CodeEditorPanel`/Monaco prototype was removed along with the `monaco-editor` dependency — 98 MB of install weight for a panel that never rendered.)
 - No browser-only (standalone `:8000`) code mode — the parser is CH-main only.

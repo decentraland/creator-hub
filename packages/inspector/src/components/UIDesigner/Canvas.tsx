@@ -24,6 +24,15 @@ import {
   selectNode,
 } from '../../redux/ui-designer';
 import { Button } from '../Button';
+import {
+  YGU_UNDEFINED,
+  YGU_POINT,
+  YGU_PERCENT,
+  YGU_AUTO,
+  YGD_NONE,
+  YGPT_RELATIVE,
+  YGPT_ABSOLUTE,
+} from '../../lib/sdk/ui-transform-constants';
 import { UI_DESIGNER_DND_TYPE, type UIDesignerDragItem } from './Palette';
 import { EmptyState } from './EmptyState';
 import { WidgetPicker } from './WidgetPicker';
@@ -61,15 +70,6 @@ import {
   type UINode,
   type UINodeType,
 } from './tree-model';
-import {
-  YGU_UNDEFINED,
-  YGU_POINT,
-  YGU_PERCENT,
-  YGU_AUTO,
-  YGD_NONE,
-  YGPT_RELATIVE,
-  YGPT_ABSOLUTE,
-} from '../../lib/sdk/ui-transform-constants';
 
 // The canvas size (canvasWidth × canvasHeight on the parsed root node, default
 // 1920×1080) is the UI's design/virtual resolution, scaled to fit the player's
