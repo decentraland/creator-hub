@@ -2,10 +2,11 @@ import { join } from 'path';
 import fs from 'fs/promises';
 import { realpathSync } from 'fs';
 import log from 'electron-log/main';
-import { app } from 'electron';
+import { app, shell } from 'electron';
 import QRCode from 'qrcode';
 
 import type { PreviewOptions } from '/shared/types/settings';
+import { PREVIEW_CLIENT } from '/shared/types/settings';
 import {
   ClientError,
   CLIENT_NOT_INSTALLED_ERROR,
@@ -73,7 +74,9 @@ export async function killAllPreviews() {
   previewCache.clear(); // just to be sure...
 }
 
-type PreviewArguments = Omit<PreviewOptions, 'debugger' | 'showWarnings'>;
+// `client` selects the launch path (Unity vs Bevy) in `start()`, not a CLI flag;
+// `debugger`/`showWarnings` are renderer-only. Everything left maps to a flag.
+type PreviewArguments = Omit<PreviewOptions, 'debugger' | 'showWarnings' | 'client'>;
 
 const PREVIEW_OPTIONS_MAP: Record<keyof PreviewArguments, string> = {
   enableLandscapeTerrains: '--landscape-terrain-enabled',
@@ -276,24 +279,60 @@ export async function start(
 
   const preview = previewCache.get(path);
 
-  // If we have a preview running for this path open it
-  if (isPreviewRunning(preview)) {
-    // Check if options have changed and update the URL accordingly
+  // If we have a preview running for this path, reuse it — but only if it's the
+  // same client. Switching client (Unity <-> Bevy) means a different launch, so
+  // tear the old one down and start fresh below.
+  if (isPreviewRunning(preview) && preview.opts.client === opts.client) {
+    if (opts.client === PREVIEW_CLIENT.BEVY_WEB) {
+      // The Bevy web client runs in the browser; sdk-commands opened the tab on
+      // launch and there's no deep-link to re-issue. Re-open the stored URL so a
+      // second Preview click refocuses/reopens it. (`isPreviewRunning` already
+      // guarantees a non-empty url.)
+      await shell.openExternal(preview.url);
+      return path;
+    }
+    // Desktop (Unity): re-issue the deep-link with any updated options.
     const updatedUrl = updateDeepLinkWithOpts(preview.url, opts);
     await dclDeepLink(updatedUrl);
-
     return path;
   }
 
   killPreview(path);
 
+  const isBevyWeb = opts.client === PREVIEW_CLIENT.BEVY_WEB;
+
   try {
+    // Unity launches via a `decentraland://` deep-link; Bevy (`--bevy-web`) runs
+    // the content server and opens the hosted web client in the browser itself,
+    // so it emits no deep-link — we wait for the server-ready line instead.
+    const args = isBevyWeb
+      ? ['start', '--bevy-web', ...generatePreviewArguments(opts)]
+      : ['start', '--explorer-alpha', '--hub', ...generatePreviewArguments(opts)];
+
     const process = run('@dcl/sdk-commands', 'sdk-commands', {
-      args: ['start', '--explorer-alpha', '--hub', ...generatePreviewArguments(opts)],
+      args,
       cwd: path,
       workspace: path,
       env: await getEnv(path),
     });
+
+    if (isBevyWeb) {
+      // No deep-link on this path — sdk-commands prints this once the preview
+      // server is up and has already opened the Bevy client in the browser.
+      const serverReady = /Preview server is now running/i;
+      await process.waitFor(serverReady, /CliError|error:/i);
+
+      // Store the browser URL sdk-commands opened so a repeat Preview click can
+      // reopen it (see the reuse fast-path above). Fall back to empty string if
+      // the line isn't in the buffer; `isPreviewRunning` also checks `url`.
+      const bevyUrl =
+        process
+          .stdall()
+          .join('')
+          .match(/https?:\/\/\S*bevy-web\S*/i)?.[0] ?? '';
+      previewCache.set(path, { child: process, url: bevyUrl, opts });
+      return path;
+    }
 
     const dclLauncherURL = /decentraland:\/\/([^\s\n]*)/i;
     const resultLogs = await process.waitFor(dclLauncherURL, /CliError|error:/i);

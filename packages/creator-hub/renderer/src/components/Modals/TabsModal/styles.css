@@ -130,4 +130,5 @@
 
 .TabsModal .TabsModalContent > div:first-of-type {
   padding-bottom: 24px;
+  padding-left: 5px;
 }
