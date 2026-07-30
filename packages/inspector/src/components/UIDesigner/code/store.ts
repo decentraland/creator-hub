@@ -1362,9 +1362,9 @@ const CHILD_TEMPLATES: Record<UINodeType, string> = {
 };
 
 // The Image preset: a container seeded texture-ready (opaque white tint +
-// stretch) so picking a file in the panel's Texture field lights it up.
+// centred) so picking a file in the panel's Texture field lights it up.
 const IMAGE_TEMPLATE =
-  "<UiEntity uiTransform={{ width: 200, height: 200 }} uiBackground={{ color: { r: 1, g: 1, b: 1, a: 1 }, textureMode: 'stretch' }} />";
+  "<UiEntity uiTransform={{ width: 200, height: 200 }} uiBackground={{ color: { r: 1, g: 1, b: 1, a: 1 }, textureMode: 'center' }} />";
 
 // The JSX snippet for a widget type (or the image preset).
 function widgetJsx(type: UINodeType, preset?: 'image'): string {

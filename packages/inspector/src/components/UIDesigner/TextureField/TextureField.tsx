@@ -1,8 +1,7 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import type { TextureUnion } from '@dcl/ecs';
 import { validateAssetPath } from '@dcl/asset-packs';
 
-import { useVideoPlayerOptions } from '../../../hooks/sdk/useVideoPlayerOptions';
 import { useAssetOptions } from '../../../hooks/useAssetOptions';
 import { Dropdown, FileUploadField, TextField } from '../../ui';
 import { ACCEPTED_FILE_TYPES } from '../../ui/FileUploadField/types';
@@ -15,14 +14,14 @@ import './TextureField.css';
 // carries sampler fields (wrapMode/filterMode/offset/tiling, no Avatar); this
 // one is a controlled `TextureUnion` editor committing via source splices and
 // adds the Avatar variant. They share the leaf primitives (ui/Dropdown,
-// ui/FileUploadField, ui/TextField, useAssetOptions, useVideoPlayerOptions).
+// ui/FileUploadField, ui/TextField, useAssetOptions).
 
-type TexCase = 'texture' | 'avatarTexture' | 'videoTexture';
+type TexCase = 'texture' | 'avatarTexture';
 
+// No Video variant: react-ecs UiBackgroundProps cannot express one (#1434).
 const TYPE_OPTIONS: { value: TexCase; label: string }[] = [
   { value: 'texture', label: 'File' },
   { value: 'avatarTexture', label: 'Avatar' },
-  { value: 'videoTexture', label: 'Video' },
 ];
 
 interface TextureFieldProps {
@@ -31,34 +30,24 @@ interface TextureFieldProps {
 }
 
 const TextureFieldComponent: React.FC<TextureFieldProps> = ({ value, onChange }) => {
-  const imageOptions = useAssetOptions(ACCEPTED_FILE_TYPES.image);
-  const videoPlayerOptions = useVideoPlayerOptions();
+  const assetOptions = useAssetOptions(ACCEPTED_FILE_TYPES.image);
+  const imageOptions = useMemo(
+    () => [{ label: 'None', value: '' }, ...assetOptions],
+    [assetOptions],
+  );
 
   const [fileError, setFileError] = useState<string | undefined>(undefined);
 
   const tex = value?.tex;
-  const activeCase: TexCase = tex?.$case ?? 'texture';
+  const activeCase: TexCase = tex?.$case === 'avatarTexture' ? 'avatarTexture' : 'texture';
 
   const handleTypeChange = (next: TexCase) => {
     setFileError(undefined);
     if (next === activeCase) return;
-    switch (next) {
-      case 'avatarTexture':
-        onChange({ tex: { $case: 'avatarTexture', avatarTexture: { userId: '' } } });
-        return;
-      case 'videoTexture': {
-        const first = videoPlayerOptions[0];
-        onChange({
-          tex: {
-            $case: 'videoTexture',
-            videoTexture: { videoPlayerEntity: first ? Number(first.value) : 0 },
-          },
-        });
-        return;
-      }
-      case 'texture':
-      default:
-        onChange(undefined);
+    if (next === 'avatarTexture') {
+      onChange({ tex: { $case: 'avatarTexture', avatarTexture: { userId: '' } } });
+    } else {
+      onChange(undefined);
     }
   };
 
@@ -73,29 +62,6 @@ const TextureFieldComponent: React.FC<TextureFieldProps> = ({ value, onChange })
             onChange={e =>
               onChange({
                 tex: { $case: 'avatarTexture', avatarTexture: { userId: e.target.value } },
-              })
-            }
-          />
-        );
-      }
-      case 'videoTexture': {
-        const selected =
-          tex?.$case === 'videoTexture' ? String(tex.videoTexture.videoPlayerEntity) : '';
-        const hasOptions = videoPlayerOptions.length > 0;
-        return (
-          <Dropdown
-            label="Video player"
-            placeholder={hasOptions ? 'Select a video player' : 'No video players in scene'}
-            disabled={!hasOptions}
-            options={videoPlayerOptions}
-            value={selected}
-            searchable
-            onChange={e =>
-              onChange({
-                tex: {
-                  $case: 'videoTexture',
-                  videoTexture: { videoPlayerEntity: Number(e.target.value) },
-                },
               })
             }
           />

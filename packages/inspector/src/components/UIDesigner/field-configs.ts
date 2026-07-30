@@ -233,11 +233,12 @@ const TEXT_WRAP_OPTIONS: EnumOption[] = [
   { value: 1, label: 'No wrap' },
 ];
 
-// BackgroundTextureMode
+// BackgroundTextureMode, surfaced as "Scale type". Values must stay the PB
+// enum (0/1/2) — the texture-region/slices `hiddenWhen` predicates key on them.
 const TEXTURE_MODE_OPTIONS: EnumOption[] = [
-  { value: 0, label: 'Nine slices' },
-  { value: 1, label: 'Center' },
-  { value: 2, label: 'Stretch' },
+  { value: 1, label: 'Centred' },
+  { value: 0, label: 'Sliced' },
+  { value: 2, label: 'Stretched' },
 ];
 
 // --- Layout group building blocks ---
@@ -514,13 +515,15 @@ const BACKGROUND_GROUP = {
       info: "Fill color behind the node's content.",
     },
     {
-      label: 'Texture mode',
+      label: 'Scale type',
       componentId: BACKGROUND,
       path: 'textureMode',
       kind: 'enum' as const,
       options: TEXTURE_MODE_OPTIONS,
       bindable: false,
-      info: 'How the texture fills the box: nine-slice, center, or stretch.',
+      info: 'How the texture fills the box: centred, sliced, or stretched.',
+      // react-ecs getTextureMode defaults an unset textureMode to CENTER (1).
+      defaultValue: 1,
     },
     {
       label: 'Texture',
