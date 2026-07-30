@@ -100,6 +100,22 @@ export const slice = createSlice({
         state.status = 'failed';
         state.error = action.error.message || `Failed to duplicate project ${action.meta.arg}`;
       })
+      // Like duplicateProject, deliberately not 'loading': the full-page loader would unmount
+      // the rename modal mid-await, making its inline error handling unreachable.
+      .addCase(thunks.renameProject.pending, _state => {})
+      .addCase(thunks.renameProject.fulfilled, (state, action) => {
+        const oldPath = action.meta.arg.path;
+        return {
+          ...state,
+          projects: state.projects.map($ => ($.path === oldPath ? action.payload : $)),
+          status: 'succeeded',
+          error: null,
+        };
+      })
+      .addCase(thunks.renameProject.rejected, (state, action) => {
+        state.status = 'failed';
+        state.error = action.error.message || `Failed to rename project ${action.meta.arg.path}`;
+      })
       .addCase(thunks.importProject.pending, state => {
         state.status = 'loading';
       })

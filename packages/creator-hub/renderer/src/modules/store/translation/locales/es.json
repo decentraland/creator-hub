@@ -79,6 +79,7 @@
       "delete_project": "Borrar de Mis Escenas",
       "duplicate_project": "Duplicar",
       "open_folder": "Abrir Carpeta",
+      "rename_folder": "Renombrar Carpeta",
       "view_deployments": "Ver Despliegues"
     },
     "no_scenes": {
@@ -126,6 +127,15 @@
       "title": "Estas seguro que quieres eliminar {title} de 'Mis Escenas'?",
       "files_checkbox": "También eliminar los archivos de la escena de mi computadora",
       "files_warning": "Los archivos de la escena se eliminarán permanentemente de tu computadora, no podrás acceder a esta escena nuevamente."
+    },
+    "rename_folder": {
+      "title": "Renombrar Carpeta",
+      "field_label": "Nombre de la Carpeta",
+      "errors": {
+        "invalid_name": "Ese nombre no es válido. Evita nombres vacíos y caracteres como / \\ : * ? \" < > |.",
+        "name_taken": "Ya existe una carpeta con ese nombre.",
+        "rename_failed": "No se pudo renombrar la carpeta. Inténtalo de nuevo."
+      }
     },
     "publish_project": {
       "title": "Publicar escena \"{title}\"",
@@ -200,12 +210,10 @@
         "title": "Publicar en un Servidor Alternativo",
         "list": "Servidores Alternativos",
         "options": {
-          "test_server": "Servidor de Prueba",
           "custom_server": "Servidor Personalizado"
         },
         "custom_server_url": "URL del Servidor",
         "action": {
-          "test_server": "Publicar en el Servidor de Prueba",
           "custom_server": "Publicar en Servidor Personalizado"
         },
         "errors": {
