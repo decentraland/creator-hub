@@ -71,6 +71,7 @@ import {
   moveElement,
   removeAttribute,
   removeNode,
+  removeReturnJsx,
   setAttribute,
   setAttributeExpr,
   setAttributeSegments,
@@ -1581,11 +1582,23 @@ async function toggleTopLevelUnlocked(filename: string): Promise<void> {
 
 // Delete a node (or opaque block) by removing its source span. A platform variant
 // (or one of its branches) can't just have its span cut — that would leave the
-// conditional malformed — so it routes to the unwrap op instead.
+// conditional malformed — so it routes to the unwrap op instead. The RETURNED
+// ROOT can't either — that would leave `return ()`, a syntax error the reparse
+// silently reverts — so it strips the whole return argument, landing on the
+// bare-`return` empty-GUI shape.
 async function spliceRemoveNodeUnlocked(entityId: number): Promise<void> {
   const node = findCodeNode(state.parsed?.root, entityId);
   if (node?.platformVariant || node?.platform) {
     await removePlatformVariantUnlocked(entityId);
+    return;
+  }
+  if (node && node === state.parsed?.root) {
+    const activeName = state.roots.find(r => r.filename === state.filename)?.name;
+    const fn = activeName
+      ? findComponentFn(state.program as Parameters<typeof findComponentFn>[0], activeName)
+      : null;
+    if (!fn) return;
+    await applySourceEdits(removeReturnJsx(fn as Parameters<typeof removeReturnJsx>[0]));
     return;
   }
   const ast = astNodeFor(entityId) as Parameters<typeof removeNode>[0] | undefined;

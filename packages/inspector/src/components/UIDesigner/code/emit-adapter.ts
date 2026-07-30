@@ -340,6 +340,21 @@ export function setReturnJsx(fnNode: AstNode, source: string, childJsx: string):
   return [{ start: at, end: at, text: `${indent}  return ${wrapped}\n${indent}` }];
 }
 
+// Inverse of setReturnJsx: strip the returned argument so the component keeps a
+// bare `return` — the canonical empty-root shape (generateRootComponent), which
+// loadAndParse recognizes as a valid empty GUI. Deleting only the element's own
+// span (removeNode) would leave `return ()`, a syntax error, so the whole
+// return statement is replaced. Empty when nothing is returned, or when the
+// body isn't a block (a concise arrow has no `return` to keep).
+export function removeReturnJsx(fnNode: AstNode): Edit[] {
+  const body = fnNode.body as AstNode | undefined;
+  if (!body || body.type !== 'BlockStatement') return [];
+  const stmts = (body.body ?? []) as AstNode[];
+  const ret = stmts.find(s => s.type === 'ReturnStatement');
+  if (!ret || !ret.argument) return [];
+  return [{ start: ret.start, end: ret.end, text: 'return' }];
+}
+
 // Insert a statement into a component's body, just before its `return`. Used to
 // place a `const x = useInteraction({…})` declaration where the returned JSX can
 // reference it. Concise-body arrows (`() => <jsx/>`) have no block to splice

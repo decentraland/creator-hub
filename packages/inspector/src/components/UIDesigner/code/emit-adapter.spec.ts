@@ -8,6 +8,7 @@ import {
   insertChild,
   insertSibling,
   removeAttribute,
+  removeReturnJsx,
   setAttribute,
   setAttributeExpr,
   setAttributeSegments,
@@ -391,5 +392,42 @@ describe('setReturnJsx (place the first element into a component body)', () => {
     const next = applyEdits(src, setReturnJsx(fnOf(src), src, '<UiEntity />'));
     expect(parseSync('S.tsx', next).errors).toHaveLength(0);
     expect(parse(next).root.type).toBe('UiEntity');
+  });
+});
+
+describe('removeReturnJsx (delete the returned root, leaving an empty GUI)', () => {
+  const fnOf = (source: string) => {
+    const r = parseSync('S.tsx', source);
+    expect(r.errors).toHaveLength(0);
+    return findComponentFn(r.program as any, 'S') as any;
+  };
+
+  describe('when the body returns a wrapped element', () => {
+    const src =
+      'export const state = { n: 0 }\n' +
+      'export function S() {\n  return (\n    <UiEntity uiTransform={{ width: 100 }} />\n  )\n}';
+
+    it('should strip the argument down to a bare return and keep the rest of the file', () => {
+      const next = applyEdits(src, removeReturnJsx(fnOf(src)));
+      expect(parseSync('S.tsx', next).errors).toHaveLength(0);
+      expect(next).toContain('export const state = { n: 0 }');
+      expect(next).toMatch(/return\s*\n\s*}/);
+      // The destination state: no root JSX means codeToUINodes yields no tree.
+      expect(codeToUINodes(parseSync('S.tsx', next).program as any, next)).toBeNull();
+    });
+  });
+
+  describe('when the body already has a bare return', () => {
+    it('should emit no edits', () => {
+      const src = 'export function S() {\n  return\n}';
+      expect(removeReturnJsx(fnOf(src))).toEqual([]);
+    });
+  });
+
+  describe('when the component is a concise arrow with no block body', () => {
+    it('should emit no edits', () => {
+      const src = 'export const S = () => <UiEntity />';
+      expect(removeReturnJsx(fnOf(src))).toEqual([]);
+    });
   });
 });
