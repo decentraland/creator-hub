@@ -9,6 +9,7 @@ import * as analytics from './analytics';
 import * as npm from './npm';
 import * as config from './config';
 import * as mobileDebug from './mobile-debug-server';
+import * as ai from './ai';
 
 interface InitIpcOptions {
   beforeQuitCleanup: () => Promise<void>;
@@ -75,6 +76,13 @@ export function initIpc({ beforeQuitCleanup }: InitIpcOptions) {
   handle('mobileDebug.stopServer', async () => mobileDebug.stopMobileDebugServer());
   handle('mobileDebug.getServerStatus', async () => mobileDebug.getMobileDebugServerStatus());
   handle('mobileDebug.getStandaloneDeeplink', async () => mobileDebug.getStandaloneDeeplink());
+
+  // ai agent
+  handle('ai.start', (_event, path) => ai.start(path));
+  handle('ai.stop', (_event, path) => ai.stop(path));
+  handle('ai.prompt', (_event, path, message) => ai.prompt(path, message));
+  handle('ai.abort', (_event, path) => ai.abort(path));
+  handle('ai.getState', (_event, path) => ai.getState(path));
 
   // config
   handle('config.getConfig', () => config.getConfig());

@@ -6,6 +6,7 @@ const services = getServices();
 
 export const workspace = initializeWorkspace(services);
 
+export * as ai from './modules/ai';
 export * as auth from './modules/auth';
 export * as editor from './modules/editor';
 export * as misc from './modules/misc';

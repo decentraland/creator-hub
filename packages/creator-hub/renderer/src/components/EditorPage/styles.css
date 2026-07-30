@@ -77,8 +77,15 @@
   height: 34px;
 }
 
+.Editor .content {
+  display: flex;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
 .Editor .inspector {
-  flex: 1 0 auto;
+  flex: 1 1 auto;
+  min-width: 0;
   border: none;
 }
 

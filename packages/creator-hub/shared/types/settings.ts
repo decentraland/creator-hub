@@ -15,10 +15,15 @@ export type PreviewOptions = {
   showWarnings: boolean;
 };
 
+export type AiAgentSettings = {
+  anthropicApiKey?: string;
+};
+
 export type AppSettings = {
   scenesPath: string;
   dependencyUpdateStrategy: DEPENDENCY_UPDATE_STRATEGY;
   previewOptions: PreviewOptions;
+  aiAgent?: AiAgentSettings;
 };
 
 export interface ReleaseNotes {

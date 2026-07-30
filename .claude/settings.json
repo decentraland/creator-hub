@@ -1,4 +1,12 @@
 {
+  "permissions": {
+    "allow": [
+      "Bash(python3 /private/tmp/claude-502/-Users-Nico-Documents-github-creator-hub-creator-hub/837ba25b-432c-4a98-b581-0a122f45a26a/scratchpad/replay.py)",
+      "Bash(python3 -)",
+      "Bash(npm install *)",
+      "Bash(awk '{print $2, substr\\($0, index\\($0,$11\\), 140\\)}')"
+    ]
+  },
   "hooks": {
     "PostToolUse": [
       {

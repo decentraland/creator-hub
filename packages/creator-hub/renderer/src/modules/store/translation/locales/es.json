@@ -40,6 +40,28 @@
     "loading": {
       "title": "Preparando tu escena..."
     },
+    "ai_assistant": {
+      "title": "Asistente IA",
+      "toggle": "IA",
+      "close": "Cerrar el Asistente IA",
+      "change_api_key": "Cambiar la clave de API",
+      "setup": {
+        "description": "El Asistente IA edita los archivos de tu escena localmente usando el agente OpenDCL. Necesita tu propia clave de API de Anthropic para funcionar. La clave se guarda solo en este equipo.",
+        "api_key_label": "Clave de API de Anthropic",
+        "save": "Guardar e iniciar",
+        "cancel": "Cancelar"
+      },
+      "empty": "Pídele al asistente que modifique tu escena, p. ej. \"agrega una fuente en el medio de mi escena\".",
+      "input_placeholder": "Pídele a la IA que edite tu escena...",
+      "send": "Enviar",
+      "stop": "Detener",
+      "working": "Trabajando...",
+      "starting": "Iniciando el agente de IA... La primera vez puede tardar un minuto mientras se instalan las skills del SDK de Decentraland.",
+      "retrying": "Reintentando ({attempt}/{maxAttempts})...",
+      "compacting": "Compactando la conversación...",
+      "exited": "El agente de IA se detuvo (código de salida {code}). Vuelve a abrir el panel para reiniciarlo.",
+      "error": "Error: {error}"
+    },
     "header": {
       "actions": {
         "code": "Código",

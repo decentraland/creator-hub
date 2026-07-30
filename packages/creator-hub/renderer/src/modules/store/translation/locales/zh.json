@@ -40,6 +40,28 @@
     "loading": {
       "title": "正在准备场景..."
     },
+    "ai_assistant": {
+      "title": "AI 助手",
+      "toggle": "AI",
+      "close": "关闭 AI 助手",
+      "change_api_key": "更改 API 密钥",
+      "setup": {
+        "description": "AI 助手使用 OpenDCL 编码代理在本地编辑你的场景文件。它需要你自己的 Anthropic API 密钥才能工作。密钥仅保存在这台电脑上。",
+        "api_key_label": "Anthropic API 密钥",
+        "save": "保存并启动",
+        "cancel": "取消"
+      },
+      "empty": "让助手修改你的场景，例如“在我的场景中央添加一个喷泉”。",
+      "input_placeholder": "让 AI 编辑你的场景...",
+      "send": "发送",
+      "stop": "停止",
+      "working": "处理中...",
+      "starting": "正在启动 AI 代理... 首次启动可能需要一分钟来安装 Decentraland SDK 技能。",
+      "retrying": "正在重试（{attempt}/{maxAttempts}）...",
+      "compacting": "正在压缩对话...",
+      "exited": "AI 代理已停止（退出代码 {code}）。重新打开面板以重启。",
+      "error": "错误：{error}"
+    },
     "header": {
       "actions": {
         "code": "代码",

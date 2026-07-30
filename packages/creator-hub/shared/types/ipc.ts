@@ -35,6 +35,11 @@ export interface MobileDebugBroadcastResult {
   results: { sessionId: number; ok: boolean; data: unknown }[];
 }
 
+export interface AiAgentState {
+  running: boolean;
+  hasApiKey: boolean;
+}
+
 export interface Ipc {
   'electron.getEnvOverride': () => Env | null;
   'electron.getUserDataPath': () => string;
@@ -78,6 +83,11 @@ export interface Ipc {
   'analytics.identify': (userId: string, traits?: Record<string, any>) => void;
   'analytics.getAnonymousId': () => Promise<string>;
   'analytics.getProjectId': (path: string) => Promise<string>;
+  'ai.start': (path: string) => Promise<string>;
+  'ai.stop': (path: string) => Promise<void>;
+  'ai.prompt': (path: string, message: string) => Promise<void>;
+  'ai.abort': (path: string) => Promise<void>;
+  'ai.getState': (path: string) => Promise<AiAgentState>;
   'npm.install': (path: string, packages?: string[]) => Promise<void>;
   'npm.getOutdatedDeps': (path: string, packages?: string[]) => Promise<Outdated>;
   'npm.getContextFiles': (path: string) => Promise<void>;

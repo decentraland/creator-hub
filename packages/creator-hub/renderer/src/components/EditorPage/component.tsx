@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import ArrowBackIosIcon from '@mui/icons-material/ArrowBackIos';
+import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import PlayCircleIcon from '@mui/icons-material/PlayCircle';
 import CodeIcon from '@mui/icons-material/Code';
 import PublicIcon from '@mui/icons-material/Public';
@@ -35,6 +36,7 @@ import { Row } from '../Row';
 import { ButtonGroup } from '../Button';
 import { ConnectionStatusIndicator } from '../ConnectionStatusIndicator';
 import { MobileQRCode } from '../Modals/MobileQRCode';
+import { AiAssistant } from './AiAssistant';
 import { DeployModal } from './DeployModal';
 import { PreviewOptions, PublishOptions } from './MenuOptions';
 import { getPublishButtonText, getPublishOptions } from './utils';
@@ -83,6 +85,7 @@ export function EditorPage() {
   const iframeRef = useRef<ReturnType<typeof initRpc>>();
   const [modalState, setModalState] = useState<ModalState>({ type: undefined });
   const [mobileQRData, setMobileQRData] = useState<{ url: string; qr: string } | null>(null);
+  const [isAiAssistantOpen, setIsAiAssistantOpen] = useState(false);
 
   const isOffline = status === ConnectionStatus.OFFLINE;
   const showDebugPanel = settings.previewOptions.debugger;
@@ -352,6 +355,13 @@ export function EditorPage() {
             <div className="actions">
               <Button
                 color="secondary"
+                onClick={() => setIsAiAssistantOpen(open => !open)}
+                startIcon={<AutoAwesomeIcon />}
+              >
+                {t('editor.ai_assistant.toggle')}
+              </Button>
+              <Button
+                color="secondary"
                 onClick={openCode}
                 startIcon={<CodeIcon />}
               >
@@ -409,11 +419,19 @@ export function EditorPage() {
               <ConnectionStatusIndicator />
             </div>
           </Header>
-          <iframe
-            className="inspector"
-            src={iframeUrl}
-            onLoad={handleIframeRef}
-          ></iframe>
+          <div className="content">
+            <iframe
+              className="inspector"
+              src={iframeUrl}
+              onLoad={handleIframeRef}
+            ></iframe>
+            {isAiAssistantOpen && (
+              <AiAssistant
+                projectPath={project.path}
+                onClose={() => setIsAiAssistantOpen(false)}
+              />
+            )}
+          </div>
           <DeployModal
             type={modalState.type}
             project={project}

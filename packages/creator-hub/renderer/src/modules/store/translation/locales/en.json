@@ -40,6 +40,28 @@
     "loading": {
       "title": "Loading..."
     },
+    "ai_assistant": {
+      "title": "AI Assistant",
+      "toggle": "AI",
+      "close": "Close AI Assistant",
+      "change_api_key": "Change API key",
+      "setup": {
+        "description": "The AI Assistant edits your scene files locally using the OpenDCL coding agent. It needs your own Anthropic API key to work. The key is stored on this computer only.",
+        "api_key_label": "Anthropic API key",
+        "save": "Save and start",
+        "cancel": "Cancel"
+      },
+      "empty": "Ask the assistant to modify your scene, e.g. \"add a fountain in the middle of my scene\".",
+      "input_placeholder": "Ask the AI to edit your scene...",
+      "send": "Send",
+      "stop": "Stop",
+      "working": "Working...",
+      "starting": "Starting the AI agent... The first run may take a minute while the Decentraland SDK skills are installed.",
+      "retrying": "Retrying ({attempt}/{maxAttempts})...",
+      "compacting": "Compacting conversation...",
+      "exited": "The AI agent stopped (exit code {code}). Reopen the panel to restart it.",
+      "error": "Error: {error}"
+    },
     "header": {
       "actions": {
         "code": "Code",
