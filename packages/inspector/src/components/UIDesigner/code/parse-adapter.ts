@@ -21,6 +21,13 @@ import {
   type InteractionStateKey,
   soleSpreadArgument,
 } from './interaction-convention';
+import {
+  branchElement,
+  componentStatements,
+  parsePlatformConditional,
+  type PlatformVariantAst,
+  PLATFORMS,
+} from './platform-convention';
 import type { CodeUINode, ComponentRefProp, InteractionStateStyles, ParsedUI, Span } from './types';
 
 // ---------------------------------------------------------------------------
@@ -369,6 +376,9 @@ export function codeToUINodes(
   // The component function, so a `{...btn}` spread can be resolved to the
   // `const btn = useInteraction(…)` declared in its body.
   const componentFn = findComponentFn(program, options.componentName);
+  // Its statements, so a `platform === 'mobile' ? …` test can be resolved to the
+  // `const platform = usePlatform()` declared in the same scope.
+  const fnStatements = componentStatements(componentFn);
 
   const spans = new Map<number, Span>();
   const astNodes = new Map<number, AnyNode>();
@@ -423,6 +433,34 @@ export function codeToUINodes(
       span,
       opaque: { reason, raw: source.slice(node.start, node.end) },
       children: [],
+    };
+  };
+
+  // A recognized platform conditional → a pass-through node holding one child per
+  // authored branch. The branches are visited with the CONDITIONAL's parent, not
+  // the variant's id: the variant contributes no box of its own, so each branch
+  // must lay out exactly where the conditional sits (and a root-level variant's
+  // branches stay parentless, i.e. full-screen roots).
+  const platformVariantNode = (v: PlatformVariantAst, parentEntity?: number): CodeUINode => {
+    const id = nextId++ as unknown as Entity;
+    const span: Span = [v.outer.start, v.outer.end];
+    spans.set(id as unknown as number, span);
+    astNodes.set(id as unknown as number, v.outer);
+    const children: CodeUINode[] = [];
+    for (const platform of PLATFORMS) {
+      const el = branchElement(v[platform]);
+      if (!el) continue;
+      const child = visitElement(el, parentEntity);
+      child.platform = platform;
+      children.push(child);
+    }
+    return {
+      entity: id,
+      type: 'UiEntity',
+      name: 'Platform',
+      span,
+      platformVariant: true,
+      children,
     };
   };
 
@@ -608,6 +646,8 @@ export function codeToUINodes(
     if (child.type === 'JSXExpressionContainer') {
       const expr = unparen(child.expression as AnyNode);
       if (expr?.type === 'Literal' && parentType === 'Label') return null;
+      const variant = parsePlatformConditional(child, fnStatements);
+      if (variant) return platformVariantNode(variant, parentEntity);
       const reason = isMapCall(expr)
         ? 'loop'
         : expr?.type === 'ConditionalExpression' || expr?.type === 'LogicalExpression'
@@ -618,7 +658,10 @@ export function codeToUINodes(
     return null;
   };
 
-  const root = visitElement(rootJsx);
+  // The component may return a platform conditional instead of an element
+  // (findComponentReturnJsx accepts both).
+  const rootVariant = parsePlatformConditional(rootJsx, fnStatements);
+  const root = rootVariant ? platformVariantNode(rootVariant) : visitElement(rootJsx);
   // The design-canvas size isn't expressed in code yet (comes from the
   // renderer's virtual resolution / a manifest later). Default it so the canvas
   // has a fixed stage to render into. TODO(M5): read from the setUiRenderer call
@@ -755,21 +798,27 @@ export function findComponentIdSpan(
   return null;
 }
 
-// Extract a single returned JSXElement from a function/arrow body: either a
+// Extract the returned root expression from a function/arrow body: either a
 // concise arrow body (`=> <jsx/>` / `=> (<jsx/>)`, where the body IS the
-// expression) or a block body with a `return <jsx/>`. Fragments and non-JSX
-// returns aren't representable as a single root yet → null.
+// expression) or a block body with a `return <jsx/>`. A recognized platform
+// conditional counts too (`return platform === 'mobile' ? <A/> : <B/>`) — every
+// other conditional, fragments, and non-JSX returns aren't representable as a
+// single root → null.
 function fnBodyJsx(body: AnyNode | undefined): AnyNode | null {
   if (!body) return null;
   if (body.type !== 'BlockStatement') {
-    const arg = unparen(body);
-    return arg.type === 'JSXElement' ? arg : null;
+    return rootExpression(unparen(body), []);
   }
-  for (const stmt of (body.body ?? []) as AnyNode[]) {
+  const stmts = (body.body ?? []) as AnyNode[];
+  for (const stmt of stmts) {
     if (stmt.type === 'ReturnStatement' && stmt.argument) {
-      const arg = unparen(stmt.argument as AnyNode);
-      return arg.type === 'JSXElement' ? arg : null;
+      return rootExpression(unparen(stmt.argument as AnyNode), stmts);
     }
   }
   return null;
+}
+
+function rootExpression(arg: AnyNode, statements: AnyNode[]): AnyNode | null {
+  if (arg.type === 'JSXElement') return arg;
+  return parsePlatformConditional(arg, statements) ? arg : null;
 }

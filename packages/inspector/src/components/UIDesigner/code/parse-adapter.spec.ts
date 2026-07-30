@@ -267,6 +267,80 @@ export function MainUI(props: {}) {
     });
   });
 
+  describe('and the component uses a platform conditional', () => {
+    it('should model a conditional child as a variant with two editable branches', () => {
+      const root = parse(`/** @jsx ReactEcs.createElement */
+import ReactEcs, { UiEntity, Label } from '@dcl/sdk/react-ecs'
+import { usePlatform } from './platform'
+
+export function MyScreen() {
+  const platform = usePlatform()
+  return (
+    <UiEntity uiTransform={{ width: 400 }}>
+      {platform === 'mobile' ? <Label value="phone" /> : <Label value="desk" />}
+    </UiEntity>
+  )
+}`)!.root;
+      const variant = root.children[0];
+      expect(variant.platformVariant).toBe(true);
+      expect(variant.opaque).toBeUndefined();
+      // Desktop first regardless of which side the mobile test is on.
+      expect(variant.children.map(c => c.platform)).toEqual(['desktop', 'mobile']);
+      expect(variant.children.map(c => c.uiText?.value)).toEqual(['desk', 'phone']);
+    });
+
+    it('should lay each branch out under the variant PARENT, not the variant', () => {
+      const root = parse(`export function MyScreen() {
+  const platform = usePlatform()
+  return (
+    <UiEntity>
+      {platform === 'mobile' ? <Label value="a" /> : <Label value="b" />}
+    </UiEntity>
+  )
+}`)!.root;
+      const parent = root.entity as unknown as number;
+      for (const branch of root.children[0].children) {
+        expect(branch.uiTransform).toMatchObject({ parent });
+      }
+    });
+
+    it('should accept a conditional as the component return', () => {
+      const root = parse(`export function MyScreen() {
+  const platform = usePlatform()
+  return platform === 'mobile' ? <Label value="phone" /> : <UiEntity uiTransform={{ width: 9 }} />
+}`)!.root;
+      expect(root.platformVariant).toBe(true);
+      // A root-level variant's branches are roots too — no parent, so the canvas
+      // treats each as the full-screen root rather than a positioned child.
+      expect(root.children.map(c => c.uiTransform?.parent)).toEqual([undefined, undefined]);
+      expect(root.children[0].uiTransform).toMatchObject({ width: 9 });
+    });
+
+    it('should expose only the authored branch of a one-sided conditional', () => {
+      const root = parse(`export function MyScreen() {
+  const platform = usePlatform()
+  return (
+    <UiEntity>
+      {platform === 'mobile' ? <Label value="phone" /> : null}
+    </UiEntity>
+  )
+}`)!.root;
+      expect(root.children[0].children.map(c => c.platform)).toEqual(['mobile']);
+    });
+
+    it('should leave a non-platform conditional opaque', () => {
+      const root = parse(`export function MyScreen() {
+  return (
+    <UiEntity>
+      {state.open ? <Label value="a" /> : <Label value="b" />}
+    </UiEntity>
+  )
+}`)!.root;
+      expect(root.children[0].opaque?.reason).toBe('conditional');
+      expect(root.children[0].platformVariant).toBeUndefined();
+    });
+  });
+
   describe('and a prop value is a non-literal expression', () => {
     const source = `export function S() {
   return <UiEntity uiTransform={dynamicTransform} />

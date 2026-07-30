@@ -6,13 +6,20 @@ import { isValidIdentifier } from '../../../lib/sdk/operations/validators';
 import { getStorage } from '../../../lib/data-layer/client/iframe-data-layer';
 import { store as reduxStore } from '../../../redux/store';
 import {
+  getPlatform,
   getSelectedNode,
   remapNodeIds,
   resetNodeState,
   selectNode,
 } from '../../../redux/ui-designer';
+import type { DeviceKind } from '../safe-areas';
 import type { UINodeType } from '../tree-model';
-import { generateInteractionHelper, generateRootComponent, generateUiIndex } from './aggregator';
+import {
+  generateInteractionHelper,
+  generatePlatformHelper,
+  generateRootComponent,
+  generateUiIndex,
+} from './aggregator';
 import {
   type CodeAction,
   migrateActionsToArgsObject,
@@ -85,6 +92,16 @@ import {
   unwrapInteractionEdits,
   wrapInInteractionEdits,
 } from './interaction-convention';
+import {
+  addPlatformBranchEdits,
+  branchElement,
+  componentStatements,
+  findPlatformConst,
+  parsePlatformConditional,
+  type PlatformVariantAst,
+  unwrapPlatformEdits,
+  wrapInPlatformEdits,
+} from './platform-convention';
 import { pbBackgroundPatchToErgoFields, pbToErgonomicText } from './ecs-shape';
 import { formatUiSource } from './formatting';
 import { uiTransformPatchEdits, uiTransformPatchFields } from './transform-patch';
@@ -210,10 +227,13 @@ export function useCodeState(): CodeState {
 // The scene files backing code-mode (file-per-root).
 const UI_DIR = 'src/ui';
 const UI_INDEX = 'src/ui/index.tsx';
-// The scaffolded interaction-state helper. Lowercase basename by design: it is a
-// helper module, not a UI root, and refreshRoots must never list it as a GUI.
+// The scaffolded convention helpers. Lowercase basenames by design: they are
+// helper modules, not UI roots, and refreshRoots must never list them as GUIs.
 const UI_INTERACTION = 'src/ui/interaction.tsx';
 const UI_INTERACTION_IMPORT = './interaction';
+const UI_PLATFORM = 'src/ui/platform.tsx';
+const UI_PLATFORM_IMPORT = './platform';
+const UI_HELPERS = new Set([UI_INTERACTION, UI_PLATFORM]);
 const SCENE_ENTRY = 'src/index.ts';
 // The stock single-file template we replace with the src/ui/ directory (see
 // removeLegacySingleFile).
@@ -801,7 +821,7 @@ async function refreshRoots(): Promise<CodeRoot[]> {
     // Generated helper modules are not roots. (The lowercase basename would also
     // fail the toComponentName fixed-point check below, but be explicit — a
     // helper surfacing as a broken "GUI" in the rail is a confusing failure.)
-    if (`${UI_DIR}/${e.name}` === UI_INTERACTION) continue;
+    if (UI_HELPERS.has(`${UI_DIR}/${e.name}`)) continue;
     const name = e.name.slice(0, -TSX.length);
     // Reject files whose basename is not already a valid component identifier:
     // refreshRoots is a trust boundary (a scene may be shared/downloaded), and the
@@ -1195,6 +1215,12 @@ function guardElementWrite(entityId: number, opName: string): boolean {
     console.warn(`[code-mode] ${opName}: opaque node — edit it in code instead`);
     return false;
   }
+  // A platform variant is a conditional EXPRESSION, not an element — it takes no
+  // props. Edit the branch for the device you're previewing instead.
+  if (node?.platformVariant) {
+    console.warn(`[code-mode] ${opName}: platform variant — select one of its branches`);
+    return false;
+  }
   if (node?.dynamicProps) {
     console.warn(
       `[code-mode] ${opName}: node has dynamic props (bindings/spreads in uiTransform or uiBackground) — edit it in code instead`,
@@ -1553,8 +1579,15 @@ async function toggleTopLevelUnlocked(filename: string): Promise<void> {
   await regenerateAggregator(roots);
 }
 
-// Delete a node (or opaque block) by removing its source span.
+// Delete a node (or opaque block) by removing its source span. A platform variant
+// (or one of its branches) can't just have its span cut — that would leave the
+// conditional malformed — so it routes to the unwrap op instead.
 async function spliceRemoveNodeUnlocked(entityId: number): Promise<void> {
+  const node = findCodeNode(state.parsed?.root, entityId);
+  if (node?.platformVariant || node?.platform) {
+    await removePlatformVariantUnlocked(entityId);
+    return;
+  }
   const ast = astNodeFor(entityId) as Parameters<typeof removeNode>[0] | undefined;
   if (!ast) return;
   await applySourceEdits(removeNode(ast));
@@ -1575,12 +1608,22 @@ async function spliceMoveUnlocked(entityId: number, anchor: MoveAnchor): Promise
   if (!el || !target || anchor.targetId === entityId) return;
   // Never move an element into itself or one of its own descendants.
   if (target.start >= el.start && target.end <= el.end) return;
+  // A platform BRANCH is pinned inside its conditional: moving it out (or
+  // inserting a sibling beside it) would leave the conditional missing an
+  // operand. The variant node itself moves fine — its span is the whole
+  // conditional — but nothing can be nested INSIDE it (it's not an element).
+  if (!guardPlatformBranch(entityId, 'spliceMove')) return;
+  if (!guardPlatformBranch(anchor.targetId, 'spliceMove')) return;
   // Never move a node INTO a component instance — `<Name />` doesn't render
   // arbitrary children (store-level backstop; the tree also blocks the drop).
   if (anchor.kind === 'into') {
     const targetNode = findCodeNode(state.parsed?.root, anchor.targetId);
     if (targetNode?.componentRef) {
       console.warn('[code-mode] cannot nest children inside a component instance');
+      return;
+    }
+    if (targetNode?.platformVariant) {
+      console.warn('[code-mode] cannot nest children inside a platform variant');
       return;
     }
   }
@@ -1636,6 +1679,7 @@ async function spliceMoveUnlocked(entityId: number, anchor: MoveAnchor): Promise
 // the copy's JSX starts one char past the original (after the inserted '\n'), so
 // after the reparse the clone is the node whose span begins at that offset.
 async function spliceDuplicateUnlocked(entityId: number): Promise<number | null> {
+  if (!guardPlatformBranch(entityId, 'spliceDuplicate')) return null;
   const el = astNodeFor(entityId) as Parameters<typeof removeNode>[0] | undefined;
   if (!el) return null;
   const raw = state.source.slice(el.start, el.end);
@@ -1876,6 +1920,155 @@ async function setInteractionActiveBindingUnlocked(
   if (edits.length) await applySourceEdits(edits);
 }
 
+// ---------------------------------------------------------------------------
+// Platform (device) variants: a node gets two structurally different subtrees,
+// selected by `platform === 'mobile' ? … : …` — see code/platform-convention.ts
+// for why the construct is recognized rather than left opaque.
+// ---------------------------------------------------------------------------
+
+// Write the scene-local helper module. Idempotent, and it never overwrites — an
+// author who changed the platform mapping keeps their version.
+async function ensurePlatformHelper(): Promise<void> {
+  if (await readFromDisk(UI_PLATFORM)) return;
+  await writeToDisk(UI_PLATFORM, generatePlatformHelper());
+}
+
+// The device the canvas previews, which is also the branch edits land in.
+function activePlatform(): DeviceKind {
+  return getPlatform(reduxStore.getState() as never);
+}
+
+function platformStatements(): Parameters<typeof findPlatformConst>[0] {
+  if (!state.program) return [];
+  const fn = findComponentFn(
+    state.program as Parameters<typeof findComponentFn>[0],
+    activeComponentName(),
+  );
+  return componentStatements(fn as Parameters<typeof componentStatements>[0]);
+}
+
+// The platform conditional backing a variant node, or null when it isn't one.
+function platformAstFor(entityId: number): PlatformVariantAst | null {
+  const node = astNodeFor(entityId) as Parameters<typeof parsePlatformConditional>[0] | undefined;
+  if (!node) return null;
+  return parsePlatformConditional(node, platformStatements());
+}
+
+// The variant a node belongs to: the node itself when it IS the variant, else the
+// variant whose branch it is (`branch` set in that case).
+function platformVariantOf(entityId: number): { variant: CodeUINode; branch?: CodeUINode } | null {
+  const root = state.parsed?.root;
+  if (!root) return null;
+  const node = findCodeNode(root, entityId);
+  if (node?.platformVariant) return { variant: node };
+  if (!node?.platform) return null;
+  const search = (n: CodeUINode): CodeUINode | null => {
+    if (n.platformVariant && n.children.includes(node)) return n;
+    for (const child of n.children) {
+      const found = search(child);
+      if (found) return found;
+    }
+    return null;
+  };
+  const variant = search(root);
+  return variant ? { variant, branch: node } : null;
+}
+
+// Refuse a structural op (move / duplicate) on a variant BRANCH: its element is an
+// operand of the conditional, so removing it or inserting a sibling beside it
+// leaves the conditional malformed.
+function guardPlatformBranch(entityId: number, opName: string): boolean {
+  if (!findCodeNode(state.parsed?.root, entityId)?.platform) return true;
+  console.warn(`[code-mode] ${opName}: a platform branch can't be moved out of its variant`);
+  return false;
+}
+
+// Give a node two device variants: it becomes the DESKTOP branch and an empty
+// container seeds the mobile one. The edit composition is pure
+// (platform-convention.wrapInPlatformEdits); this op owns only the IO —
+// scaffolding the helper file, normalizing a concise-body arrow, and naming.
+async function addPlatformVariantUnlocked(entityId: number): Promise<void> {
+  const node = findCodeNode(state.parsed?.root, entityId);
+  // Variants don't nest: a branch already belongs to one, and the variant node
+  // itself is the conditional.
+  if (!node || node.platform || node.platformVariant) return;
+  if (!state.program) return;
+
+  await ensurePlatformHelper();
+
+  // A concise-body arrow (`() => <jsx/>`) has no block to hold the const —
+  // convert it first, then work against the reparsed spans.
+  const componentName = activeComponentName();
+  const initialFn = findComponentFn(
+    state.program as Parameters<typeof findComponentFn>[0],
+    componentName,
+  );
+  if (!initialFn) return;
+  const toBlock = toBlockBody(initialFn as Parameters<typeof toBlockBody>[0], state.source);
+  if (toBlock.length) await applySourceEdits(toBlock);
+
+  const el = astNodeFor(entityId) as Record<string, any> | undefined;
+  const fn = findComponentFn(state.program as Parameters<typeof findComponentFn>[0], componentName);
+  if (!el || !fn) return;
+  const existing = findPlatformConst(platformStatements());
+
+  await applySourceEdits([
+    ...wrapInPlatformEdits({
+      program: state.program as Parameters<typeof wrapInPlatformEdits>[0]['program'],
+      fnNode: fn as Parameters<typeof wrapInPlatformEdits>[0]['fnNode'],
+      el: el as Parameters<typeof wrapInPlatformEdits>[0]['el'],
+      source: state.source,
+      varName: existing?.name ?? uniqueLocalName('platform', state.source),
+      declare: !existing,
+      importFrom: UI_PLATFORM_IMPORT,
+      seedJsx: widgetJsx('UiEntity'),
+      // A `return` argument takes the bare conditional; a JSX child needs the
+      // `{…}` expression container around it.
+      braced: entityId !== (state.parsed?.root.entity as unknown as number),
+    }),
+    ...ensureNamedImport(state.program as any, 'UiEntity', '@dcl/sdk/react-ecs'),
+  ]);
+}
+
+// Fill in the branch a hand-authored one-sided conditional left as `null`
+// (`platform === 'mobile' ? <A /> : null`).
+async function addPlatformBranchUnlocked(entityId: number, platform: DeviceKind): Promise<void> {
+  const variant = platformVariantOf(entityId)?.variant;
+  if (!variant || !state.program) return;
+  const ast = platformAstFor(variant.entity as unknown as number);
+  if (!ast) return;
+  const edits = addPlatformBranchEdits(ast, platform, widgetJsx('UiEntity'));
+  if (!edits.length) return;
+  await applySourceEdits([
+    ...edits,
+    ...ensureNamedImport(state.program as any, 'UiEntity', '@dcl/sdk/react-ecs'),
+  ]);
+}
+
+// Collapse a variant back to a single node. Given a BRANCH, the OTHER branch
+// survives (that is what "remove this device's variant" means); given the variant
+// itself, the branch for the device being previewed survives.
+async function removePlatformVariantUnlocked(entityId: number): Promise<void> {
+  const found = platformVariantOf(entityId);
+  if (!found) return;
+  const ast = platformAstFor(found.variant.entity as unknown as number);
+  if (!ast) return;
+  const wanted: DeviceKind = found.branch
+    ? found.branch.platform === 'mobile'
+      ? 'desktop'
+      : 'mobile'
+    : activePlatform();
+  // Fall back to whichever branch actually exists, so removing the variant of a
+  // one-sided conditional isn't a silent no-op.
+  const keep = branchElement(ast[wanted])
+    ? wanted
+    : branchElement(ast.desktop)
+      ? 'desktop'
+      : 'mobile';
+  const edits = unwrapPlatformEdits(ast, keep, state.source);
+  if (edits.length) await applySourceEdits(edits);
+}
+
 // Ensure the typed `state` scaffold exists (`export interface State {}` +
 // `export const state: State = {}`), seeding it after the imports if absent.
 // `as any` matches the existing adapter style (cf. `result.comments as any`).
@@ -2055,3 +2248,6 @@ export const setInteractionField = exclusive(setInteractionFieldUnlocked);
 export const addInteractionLayer = exclusive(addInteractionLayerUnlocked);
 export const removeInteractionLayer = exclusive(removeInteractionLayerUnlocked);
 export const setInteractionActiveBinding = exclusive(setInteractionActiveBindingUnlocked);
+export const addPlatformVariant = exclusive(addPlatformVariantUnlocked);
+export const addPlatformBranch = exclusive(addPlatformBranchUnlocked);
+export const removePlatformVariant = exclusive(removePlatformVariantUnlocked);

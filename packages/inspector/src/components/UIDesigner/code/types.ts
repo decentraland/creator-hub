@@ -1,3 +1,4 @@
+import type { DeviceKind } from '../safe-areas';
 import type { UINode } from '../tree-model';
 import type { InteractionStateKey } from './interaction-convention';
 
@@ -55,6 +56,13 @@ export interface CodeUINode extends UINode {
   // spread onto it. The node's own uiTransform/uiBackground/uiText are hydrated
   // from the `base` layer, so everything downstream renders it unchanged.
   interaction?: CodeInteraction;
+  // Set on the pass-through node for a recognized platform conditional
+  // (`platform === 'mobile' ? <A /> : <B />`, see platform-convention.ts). Its
+  // children are the authored branches, each tagged with `platform`; the canvas
+  // renders only the active one. Not opaque — both branches stay editable.
+  platformVariant?: true;
+  // Set on a platform variant's branch: which platform renders this subtree.
+  platform?: DeviceKind;
   children: CodeUINode[];
 }
 

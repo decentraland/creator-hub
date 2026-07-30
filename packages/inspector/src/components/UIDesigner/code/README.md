@@ -42,6 +42,7 @@ A field binds by referencing it (`value={state.score}`). `state-convention.ts` r
 - **emit-adapter.ts** — `applyEdits` + `setObjectField` / `setAttribute` / `setAttributeExpr` / `insertChild` / `removeNode`: a visual edit → the minimal text splice, located by the backing AST node's byte span. Never reprints.
 - **ecs-shape.ts** — react-ecs ergonomic props (`positionType:'absolute'`, `position:{top}`, unitless numbers) ↔ flattened `PBUiTransform`.
 - **bindings.ts** — extracts the `@ui-bind` / `@ui-action` marker surface from the AST + comments (the fallback binding convention).
+- **platform-convention.ts** — the recognized structural desktop/mobile variant (`platform === 'mobile' ? <A /> : <B />` over a scaffolded `usePlatform()`), read + write. Without it a conditional child is opaque, and opaque nodes render no children — the whole subtree would vanish.
 - **state-convention.ts** — the typed `state` object reader/writer (the primary binding surface).
 - **root-naming.ts** — unique, valid filename / component-name derivation for new and renamed roots.
 - **aggregator.ts** — `generateUiIndex` / `generateRootComponent` for the file-per-root layout.
@@ -70,7 +71,8 @@ A field binds by referencing it (`value={state.score}`). `state-convention.ts` r
 - **undo/redo**: toolbar buttons + Ctrl/⌘+Z / Shift+Z (and Ctrl+Y) — the Toolbar routes both to the code store's per-file source-snapshot stacks while the UI Designer is open (`CodeState.canUndo/canRedo` drive the buttons); an external edit clears the file's history (the external editor owns its own undo).
 - **canvas-only lock/hide**: the node-tree rows' lock/eye buttons (a `renderActionArea` override of the generic Tree's engine-entity ActionArea) toggle editor-local state in the ui-designer slice — hide removes the node from the canvas render, lock blocks canvas select/drag/resize and tree drags. Neither touches the code; ids are re-anchored across reparses together with selection/expansion (`remapNodeIds`).
 - **callbacks**: handlers are `(state: State, value?: string | number)`; events bind through `(value) => onX(state, value)` so Input/Dropdown deliver the typed text / selected index.
-- **opaque nodes**: code the designer can't represent (loops, conditionals, custom components, spreads) renders as a grayed, read-only block on the canvas and a warning-icon, rename/add-child-disabled row in the node tree; drops into it are rejected. It is edited only in code.
+- **platform variants**: a node can carry two structurally different subtrees, one per device (`platform === 'mobile' ? <Phone /> : <Desk />`, backed by a scaffolded `src/ui/platform.tsx` `usePlatform()`). The variant is a pass-through node — it renders no box of its own, its branches lay out where the conditional sits, and each branch stays individually editable. The canvas device toggle picks which branch renders and which one edits land in. Per-property overrides are deliberately not modeled (runtime pixel-ratio scaling already handles proportional responsiveness).
+- **opaque nodes**: code the designer can't represent (loops, non-platform conditionals, custom components, spreads) renders as a grayed, read-only block on the canvas and a warning-icon, rename/add-child-disabled row in the node tree; drops into it are rejected. It is edited only in code.
 - **bidirectional loop**: edit on the canvas → the source file updates; edit the same file in an external editor → the 1s disk watcher reflects it on the canvas. The generated code is ordinary react-ecs — the scene preview renders it natively.
 
 ## Not yet

@@ -3,6 +3,7 @@ import { createSlice } from '@reduxjs/toolkit';
 import type { Entity } from '@dcl/ecs';
 
 import type { InteractionStateKey } from '../../components/UIDesigner/code/interaction-convention';
+import type { DeviceKind } from '../../components/UIDesigner/safe-areas';
 import type { RootState } from '../store';
 
 // Persist the property-panel group collapse state across reloads. There is no
@@ -48,6 +49,9 @@ export interface UIDesignerState {
   // canvas previews). Global rather than per-node — it is a view mode, and it
   // resets to 'base' on selection change so you never land in a hidden state.
   interactionLayer: InteractionStateKey;
+  // The device the canvas previews AND edits: a platform-variant node renders and
+  // routes edits to the branch matching this (see code/platform-convention.ts).
+  platform: DeviceKind;
 }
 
 export const initialState: UIDesignerState = {
@@ -59,6 +63,7 @@ export const initialState: UIDesignerState = {
   aspectLocked: {},
   collapsedGroups: loadCollapsedGroups(),
   interactionLayer: 'base',
+  platform: 'desktop',
 };
 
 export const uiDesignerSlice = createSlice({
@@ -76,6 +81,9 @@ export const uiDesignerSlice = createSlice({
     },
     setInteractionLayer: (state, { payload }: PayloadAction<{ layer: InteractionStateKey }>) => {
       state.interactionLayer = payload.layer;
+    },
+    setPlatform: (state, { payload }: PayloadAction<{ platform: DeviceKind }>) => {
+      state.platform = payload.platform;
     },
     setExpanded: (state, { payload }: PayloadAction<{ entity: Entity; expanded: boolean }>) => {
       state.expanded[payload.entity as unknown as number] = payload.expanded;
@@ -145,6 +153,7 @@ export const {
   resetExpanded,
   resetNodeState,
   setInteractionLayer,
+  setPlatform,
 } = uiDesignerSlice.actions;
 
 export const getSelectedRoot = (state: RootState) => state.uiDesigner.selectedRoot;
@@ -155,5 +164,6 @@ export const getLockedNodes = (state: RootState) => state.uiDesigner.locked;
 export const getAspectLockedNodes = (state: RootState) => state.uiDesigner.aspectLocked;
 export const getCollapsedGroups = (state: RootState) => state.uiDesigner.collapsedGroups;
 export const getInteractionLayer = (state: RootState) => state.uiDesigner.interactionLayer;
+export const getPlatform = (state: RootState) => state.uiDesigner.platform;
 
 export default uiDesignerSlice.reducer;
