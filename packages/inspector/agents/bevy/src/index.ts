@@ -47,6 +47,20 @@ import { getDefaultSpawnWorld, setSpawnAreas } from './spawn-areas';
  * the editor-agent portable. */
 let pinnedSceneHash: string | null = null;
 
+/**
+ * Whether the engine auto-freezes an editor scene after main() runs once
+ * (bevy-explorer #1015 — `refreeze_at_tick`). When true, the agent must NOT
+ * force-freeze on boot/reset: the engine owns freezing, and an agent freeze would
+ * race it (Stop lands on frame 0 instead of the deterministic "main ran once").
+ *
+ * FALSE until #1015 is merged, republished, and the pin is bumped in
+ * packages/inspector/package.json. On the current published engine there is NO
+ * auto-freeze, so the agent MUST force-freeze — otherwise the inspected scene
+ * just runs freely on load. Flip to `true` (or delete the gate) in the same
+ * change that bumps the engine pin.
+ */
+const ENGINE_AUTO_FREEZES_EDITOR_SCENE = false;
+
 export function main(): void {
   // Inspector → agent messages.
   bus.onSceneMessage(msg => {
@@ -166,13 +180,13 @@ async function boot(): Promise<void> {
   // toolbar "reset view" action once the user is in the fly camera.
   void sceneLocalCenter;
   // Editor default: the inspected scene is FROZEN (static — no SDK7 systems /
-  // timers / onUpdate run), so it's a stable subject to edit. The engine now
-  // auto-freezes an editor scene after main() has run once (deterministic initial
-  // state, #1435) — the agent must NOT force-freeze it here: doing so races that
-  // and can win, freezing before main() runs so the load and Stop/reset states
-  // disagree. Leave freezing to the engine; the toolbar toggle still unfreezes to
-  // run the scene live. The editor agent itself keeps ticking (it's a super scene,
-  // exempt). Freeze does NOT block avatar walking (bevy-editor walks while frozen).
+  // timers / onUpdate run), so it's a stable subject to edit. With the engine's
+  // editor auto-freeze (#1015) the engine owns this and the agent must stay out
+  // of its way; until that ships the agent force-freezes here, else the scene
+  // just runs on load. See ENGINE_AUTO_FREEZES_EDITOR_SCENE. The toolbar toggle
+  // still unfreezes to run live; the agent itself keeps ticking (super scene,
+  // exempt); freeze does NOT block avatar walking (bevy-editor walks while frozen).
+  if (!ENGINE_AUTO_FREEZES_EDITOR_SCENE) await setSceneFrozen(true);
   // Freeze the day/night clock at noon so the skybox doesn't drift into night
   // while the scene sits open (the day/night clock advances with the wall clock
   // even while the scene is frozen — freezing the SCENE doesn't freeze TIME).
@@ -290,18 +304,20 @@ async function resetScene(): Promise<void> {
   // valid start. Best-effort: no spawn known / command fails → just skip.
   await teleportPlayerToSpawn();
   // Re-pin the reloaded scene (its ActiveInspectionScene Entity was invalidated by
-  // the reload), retrying until the new instance resolves. Do NOT force-freeze it:
-  // the reloaded instance goes through the engine's editor auto-freeze (main() runs
-  // once, then frozen — #1435), the same path as initial load, so Stop lands on the
-  // identical deterministic state. Force-freezing here would win the race and land
-  // Stop on composite-only (frame 0), disagreeing with load. Post `reset-complete`
-  // once the scene is re-pinned so the host can re-enable Play (#1420) and replay
-  // the editor overrides + animation pause (#1421) — not on a blind timeout.
+  // the reload), retrying until the new instance resolves. With the engine's editor
+  // auto-freeze (#1015) the reloaded instance freezes itself the same way the initial
+  // load does, so the agent leaves it alone (force-freezing would win the race and
+  // land Stop on frame 0 instead of the deterministic "main ran once"). Until #1015
+  // ships the agent re-freezes here, else the reloaded scene runs free after Stop —
+  // see ENGINE_AUTO_FREEZES_EDITOR_SCENE. Post `reset-complete` once re-pinned so the
+  // host can re-enable Play (#1420) and replay the editor overrides + animation pause
+  // (#1421) — not on a blind timeout.
   for (let attempt = 0; attempt < 10; attempt++) {
     await new Promise<void>(resolve => setTimeout(() => resolve(), 500));
     try {
       const reply = await api.consoleCommand('set_scene', [hash]);
       if (!/could not find|not found|no longer exists/i.test(reply)) {
+        if (!ENGINE_AUTO_FREEZES_EDITOR_SCENE) await setSceneFrozen(true);
         bus.postToPage({ kind: 'reset-complete', ok: true });
         return;
       }
