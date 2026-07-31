@@ -93,7 +93,7 @@ build-inspector:
 	make build-bevy-agent
 	cd $(INSPECTOR_PATH); npm run build;
 
-build-bevy-agent:
+build-bevy-agent: install-bevy-agent
 	cd $(BEVY_AGENT_PATH); npm run build;
 
 build-creator-hub:
