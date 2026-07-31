@@ -35,6 +35,10 @@
   font-weight: 600;
 }
 
+.PlacesTable .MuiTableBody-root .MuiTableRow-root {
+  cursor: pointer;
+}
+
 .PlacesTable .MuiTableBody-root .MuiTableRow-root:hover {
   background-color: var(--card);
 }
@@ -51,17 +55,6 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.PlacesTable .RevenueCell {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-/* Matches how decentraland-ui2's own Mana component fills the icon. */
-.PlacesTable .RevenueCell svg path {
-  fill: currentColor;
 }
 
 .PlacesTable .Thumbnail {

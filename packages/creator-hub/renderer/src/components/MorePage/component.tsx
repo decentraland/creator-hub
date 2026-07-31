@@ -5,6 +5,7 @@ import { Box, Button, Card, CardContent, Container, Grid, Typography } from 'dec
 import { misc } from '#preload';
 
 import { t } from '/@/modules/store/translation/utils';
+import { SUBMIT_EVENT_URL } from '/@/modules/utils';
 
 import EditorPng from '/assets/images/editor.png';
 import CollectionsPng from '/assets/images/collections.png';
@@ -17,7 +18,6 @@ import { Navbar, NavbarItem } from '../Navbar';
 import './styles.css';
 
 const BUILDER_URL = 'https://decentraland.org/builder';
-const SUBMIT_EVENT_URL = 'https://decentraland.org/events/submit';
 
 const HorizontalCardWithImage: React.FC<{
   className?: string;

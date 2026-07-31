@@ -1,6 +1,10 @@
-import type { PlaceAnalyticsSummary } from '/shared/types/place-analytics';
+import type {
+  DateRange,
+  PlaceAnalyticsDetail,
+  PlaceAnalyticsSummary,
+} from '/shared/types/place-analytics';
 
-import { MOCK_PLACES } from './placeAnalytics.mock';
+import { MOCK_PLACES, getMockDetail } from './placeAnalytics.mock';
 
 /**
  * Which fixture the mocked API resolves. Swap for `MOCK_EMPTY_PLACES` to work on
@@ -20,5 +24,21 @@ export class PlaceAnalytics {
   public async fetchPlaces(_address: string): Promise<PlaceAnalyticsSummary[]> {
     // TODO: replace with a request to the analytics API once it exists.
     return MOCKED_PLACES;
+  }
+
+  /**
+   * Everything the detail page shows for one Place: its metadata and the
+   * metrics for the given date range. The mocked data ignores `dateRange`, so
+   * changing the range does not change the numbers yet.
+   */
+  public async fetchPlaceDetail(
+    _address: string,
+    placeId: string,
+    _dateRange: DateRange,
+  ): Promise<PlaceAnalyticsDetail> {
+    // TODO: replace with a request to the analytics API once it exists.
+    const detail = getMockDetail(placeId);
+    if (!detail) throw new Error(`No analytics found for place "${placeId}"`);
+    return detail;
   }
 }

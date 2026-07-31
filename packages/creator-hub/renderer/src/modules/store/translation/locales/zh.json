@@ -933,6 +933,89 @@
         "description": "没有符合搜索条件的 Place。请尝试其他名称。"
       }
     },
+    "actions": {
+      "export": "导出分析数据",
+      "export_unavailable": "分析数据上线后即可导出"
+    },
+    "detail": {
+      "title": "数据分析 - {name}",
+      "tabs": {
+        "overview": "概览",
+        "retention": "留存",
+        "visits": "访问",
+        "engagement": "互动"
+      },
+      "date_range": {
+        "title": "日期范围",
+        "last_7_days": "最近 7 天",
+        "last_30_days": "最近 30 天",
+        "last_60_days": "最近 60 天"
+      },
+      "place": {
+        "access": "访问权限",
+        "private": "私密",
+        "public": "公开",
+        "published_in": "发布于",
+        "last_published_by": "最后发布者",
+        "last_update": "最后更新"
+      },
+      "actions": {
+        "create_event": "创建活动",
+        "edit_scene": "编辑场景",
+        "edit_scene_unavailable": "暂时无法从此处打开场景",
+        "copy_url": "复制链接",
+        "jump_in": "进入"
+      },
+      "overview": {
+        "title": "概览",
+        "description": "你的 Place 在增长、互动和用户留存方面的概况。"
+      },
+      "error": {
+        "title": "无法加载该 Place 的分析数据"
+      }
+    },
+    "metrics": {
+      "total_visits": {
+        "label": "总访问量",
+        "tooltip": "对你的 Place 的所有访问，包括同一用户的重复访问。"
+      },
+      "unique_visits": {
+        "label": "独立访问量",
+        "tooltip": "访问过你的 Place 的不同用户数，每人只计一次。"
+      },
+      "new_users": {
+        "label": "新用户",
+        "tooltip": "首次访问你的 Place 的用户。"
+      },
+      "concurrent_users": {
+        "label": "同时在线用户",
+        "tooltip": "同一时间在你的 Place 中的最高用户数。"
+      },
+      "revenue": {
+        "label": "收入",
+        "tooltip": "在你的 Place 中获得的 MANA。"
+      },
+      "day_7_retention": {
+        "label": "7 日留存",
+        "tooltip": "首次访问 7 天后再次回到你的 Place 的新用户占比。"
+      },
+      "avg_playtime": {
+        "label": "平均游玩时长",
+        "tooltip": "每位用户单次访问在你的 Place 中停留的平均时间。"
+      },
+      "afk_time": {
+        "label": "挂机时长",
+        "tooltip": "用户在你的 Place 中未进行互动的平均时间。"
+      },
+      "desktop": {
+        "label": "桌面端",
+        "tooltip": "通过桌面客户端访问你的 Place 的用户。"
+      },
+      "mobile": {
+        "label": "移动端",
+        "tooltip": "通过移动客户端访问你的 Place 的用户。"
+      }
+    },
     "list": {
       "places": "{count} 个 Place",
       "search": "搜索",
@@ -954,8 +1037,7 @@
       },
       "actions": {
         "pin_to_watchlist": "固定到关注列表",
-        "unpin_from_watchlist": "从关注列表移除",
-        "export": "导出分析数据"
+        "unpin_from_watchlist": "从关注列表移除"
       }
     }
   },

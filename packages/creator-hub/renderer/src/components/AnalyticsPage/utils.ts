@@ -29,6 +29,24 @@ export function formatMinutes(value: number | null) {
   return value === null ? NO_VALUE : t('analytics.list.minutes', { value });
 }
 
+const dateFormat = new Intl.DateTimeFormat('en-US', {
+  day: '2-digit',
+  month: '2-digit',
+  year: 'numeric',
+});
+
+const timeFormat = new Intl.DateTimeFormat('en-US', {
+  hour: 'numeric',
+  minute: '2-digit',
+});
+
+/** Renders as "12/07/2026 • 5:26 PM". */
+export function formatDateTime(value: number | null) {
+  if (value === null) return NO_VALUE;
+  const date = new Date(value);
+  return `${dateFormat.format(date)} • ${timeFormat.format(date)}`;
+}
+
 /** Retention below the Day 7 benchmark is called out as negative. */
 export function getRetentionColor(value: number | null) {
   if (value === null) return undefined;

@@ -1,10 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { PlaceAnalyticsSummary } from '../../../../../shared/types/place-analytics';
-import { SortBy } from '../../../../../shared/types/place-analytics';
+import type {
+  PlaceAnalyticsDetail,
+  PlaceAnalyticsSummary,
+} from '../../../../../shared/types/place-analytics';
+import { DateRange, PlaceAccess, SortBy } from '../../../../../shared/types/place-analytics';
 import { AuthServerProvider } from '../../../lib/auth';
 import { createTestStore } from '../../../../tests/utils/testStore';
-import { actions, fetchPlaces, initialState, selectors } from './slice';
+import { actions, fetchPlaceDetail, fetchPlaces, initialState, selectors } from './slice';
 
 const TEST_ADDRESS = '0x123abc';
 
@@ -19,8 +22,34 @@ const PLACE: PlaceAnalyticsSummary = {
   avgPlaytime: 95,
 };
 
+const DETAIL: PlaceAnalyticsDetail = {
+  place: {
+    placeId: 'bananarama',
+    name: 'Bananarama',
+    thumbnail: 'bananarama-thumbnail.png',
+    likeRate: 87,
+    access: PlaceAccess.PRIVATE,
+    publishedIn: 'worldname',
+    lastPublishedBy: { name: 'UserName', avatar: null },
+    lastUpdatedAt: 1_796_000_000_000,
+  },
+  overview: {
+    totalVisits: 2000,
+    uniqueVisits: 324,
+    newUsers: 10,
+    concurrentUsers: 124,
+    revenue: 106.7,
+    day7Retention: 35,
+    avgPlaytime: 95,
+    afkTime: 12,
+    desktopUsers: 124,
+    mobileUsers: 14,
+  },
+};
+
 const mockPlaceAnalyticsAPI = {
   fetchPlaces: vi.fn(),
+  fetchPlaceDetail: vi.fn(),
 };
 
 vi.mock('/@/lib/placeAnalytics', () => ({
@@ -156,6 +185,79 @@ describe('placeAnalytics slice', () => {
         'Unmonday Club',
         'Bananarama',
       ]);
+    });
+  });
+
+  describe('when fetching the detail of a place', () => {
+    beforeEach(() => {
+      vi.mocked(AuthServerProvider.getAccount).mockReturnValue(TEST_ADDRESS);
+      mockPlaceAnalyticsAPI.fetchPlaceDetail.mockResolvedValue(DETAIL);
+    });
+
+    it('should request it for the connected account and selected date range', async () => {
+      store.dispatch(actions.setDateRange(DateRange.LAST_30_DAYS));
+      await store.dispatch(fetchPlaceDetail({ placeId: 'bananarama' }));
+
+      expect(mockPlaceAnalyticsAPI.fetchPlaceDetail).toHaveBeenCalledWith(
+        TEST_ADDRESS,
+        'bananarama',
+        DateRange.LAST_30_DAYS,
+      );
+    });
+
+    it('should store it against the place it belongs to', async () => {
+      await store.dispatch(fetchPlaceDetail({ placeId: 'bananarama' }));
+
+      expect(store.getState().placeAnalytics.detail).toEqual({
+        placeId: 'bananarama',
+        data: DETAIL,
+        status: 'succeeded',
+        error: null,
+      });
+    });
+
+    it('should fail without keeping stale data when the place has no analytics', async () => {
+      mockPlaceAnalyticsAPI.fetchPlaceDetail.mockRejectedValue(new Error('No analytics found'));
+      await store.dispatch(fetchPlaceDetail({ placeId: 'ghost' }));
+
+      expect(store.getState().placeAnalytics.detail).toEqual({
+        placeId: 'ghost',
+        data: null,
+        status: 'failed',
+        error: 'No analytics found',
+      });
+    });
+  });
+
+  describe('when opening a different place than the one already loaded', () => {
+    beforeEach(async () => {
+      vi.mocked(AuthServerProvider.getAccount).mockReturnValue(TEST_ADDRESS);
+      mockPlaceAnalyticsAPI.fetchPlaceDetail.mockResolvedValue(DETAIL);
+      await store.dispatch(fetchPlaceDetail({ placeId: 'bananarama' }));
+    });
+
+    it('should drop the previous place data while the new one loads', () => {
+      // Not awaited: the assertion is about the in-flight state.
+      void store.dispatch(fetchPlaceDetail({ placeId: 'unmonday-club' }));
+
+      const { detail } = store.getState().placeAnalytics;
+      expect(detail.placeId).toBe('unmonday-club');
+      expect(detail.data).toBeNull();
+      expect(detail.status).toBe('loading');
+    });
+
+    it('should keep showing the data while refetching the same place', () => {
+      void store.dispatch(fetchPlaceDetail({ placeId: 'bananarama' }));
+
+      const { detail } = store.getState().placeAnalytics;
+      expect(detail.data).toEqual(DETAIL);
+      expect(detail.status).toBe('loading');
+    });
+
+    it('should reset the detail when leaving the page', () => {
+      store.dispatch(actions.clearDetail());
+
+      expect(store.getState().placeAnalytics.detail).toEqual(initialState.detail);
     });
   });
 });

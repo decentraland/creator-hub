@@ -933,6 +933,89 @@
         "description": "No Place matches your search. Try a different name."
       }
     },
+    "actions": {
+      "export": "Export Analytics",
+      "export_unavailable": "Exporting will be available once analytics data is live"
+    },
+    "detail": {
+      "title": "Analytics - {name}",
+      "tabs": {
+        "overview": "Overview",
+        "retention": "Retention",
+        "visits": "Visits",
+        "engagement": "Engagement"
+      },
+      "date_range": {
+        "title": "Date Range",
+        "last_7_days": "Last 7 Days",
+        "last_30_days": "Last 30 Days",
+        "last_60_days": "Last 60 Days"
+      },
+      "place": {
+        "access": "Access",
+        "private": "Private",
+        "public": "Public",
+        "published_in": "Published in",
+        "last_published_by": "Last published by",
+        "last_update": "Last Update"
+      },
+      "actions": {
+        "create_event": "Create Event",
+        "edit_scene": "Edit Scene",
+        "edit_scene_unavailable": "Opening the scene from here is not available yet",
+        "copy_url": "Copy URL",
+        "jump_in": "Jump In"
+      },
+      "overview": {
+        "title": "Overview",
+        "description": "Snapshot of your place's growth, engagement, and user retention."
+      },
+      "error": {
+        "title": "We couldn't load this Place's analytics"
+      }
+    },
+    "metrics": {
+      "total_visits": {
+        "label": "Total Visits",
+        "tooltip": "Every visit to your place, including repeat visits by the same user."
+      },
+      "unique_visits": {
+        "label": "Unique Visits",
+        "tooltip": "Distinct users who visited your place, counted once each."
+      },
+      "new_users": {
+        "label": "New Users",
+        "tooltip": "Users who visited your place for the first time."
+      },
+      "concurrent_users": {
+        "label": "Concurrent Users",
+        "tooltip": "The highest number of users in your place at the same time."
+      },
+      "revenue": {
+        "label": "Revenue",
+        "tooltip": "MANA earned in your place."
+      },
+      "day_7_retention": {
+        "label": "Day 7 Retention",
+        "tooltip": "The percentage of new users who returned to your place 7 days after their first visit."
+      },
+      "avg_playtime": {
+        "label": "Avg. Playtime",
+        "tooltip": "Average time each user spends in your place on a single visit."
+      },
+      "afk_time": {
+        "label": "AFK Time",
+        "tooltip": "Average time users spend in your place without interacting."
+      },
+      "desktop": {
+        "label": "Desktop",
+        "tooltip": "Users who visited your place from a desktop client."
+      },
+      "mobile": {
+        "label": "Mobile",
+        "tooltip": "Users who visited your place from a mobile client."
+      }
+    },
     "list": {
       "places": "{count} {count, plural, one {Place} other {Places}}",
       "search": "Search",
@@ -954,8 +1037,7 @@
       },
       "actions": {
         "pin_to_watchlist": "Pin to Watchlist",
-        "unpin_from_watchlist": "Unpin from Watchlist",
-        "export": "Export Analytics"
+        "unpin_from_watchlist": "Unpin from Watchlist"
       }
     }
   },

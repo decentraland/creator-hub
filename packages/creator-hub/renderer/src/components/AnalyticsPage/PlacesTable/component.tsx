@@ -3,7 +3,6 @@ import PushPinIcon from '@mui/icons-material/PushPin';
 import DownloadIcon from '@mui/icons-material/FileDownloadOutlined';
 import {
   Box,
-  ManaMaticIcon,
   Table,
   TableBody,
   TableCell,
@@ -17,6 +16,7 @@ import type { PlaceAnalyticsSummary } from '/shared/types/place-analytics';
 import { t } from '/@/modules/store/translation/utils';
 
 import { Dropdown } from '../../Dropdown';
+import { ManaValue } from '../../ManaValue';
 import {
   formatCount,
   formatMinutes,
@@ -31,9 +31,10 @@ type Props = {
   places: PlaceAnalyticsSummary[];
   pinnedPlaceIds: string[];
   onTogglePin: (placeId: string) => void;
+  onSelectPlace: (placeId: string) => void;
 };
 
-export function PlacesTable({ places, pinnedPlaceIds, onTogglePin }: Props) {
+export function PlacesTable({ places, pinnedPlaceIds, onTogglePin, onSelectPlace }: Props) {
   const getDropdownOptions = useCallback(
     (place: PlaceAnalyticsSummary) => [
       {
@@ -44,7 +45,7 @@ export function PlacesTable({ places, pinnedPlaceIds, onTogglePin }: Props) {
         handler: () => onTogglePin(place.placeId),
       },
       {
-        text: t('analytics.list.actions.export'),
+        text: t('analytics.actions.export'),
         icon: <DownloadIcon />,
         // Enabled once there is an analytics API to export from.
         disabled: true,
@@ -69,7 +70,20 @@ export function PlacesTable({ places, pinnedPlaceIds, onTogglePin }: Props) {
       </TableHead>
       <TableBody>
         {places.map(place => (
-          <TableRow key={place.placeId}>
+          <TableRow
+            key={place.placeId}
+            hover
+            tabIndex={0}
+            role="button"
+            aria-label={place.name}
+            onClick={() => onSelectPlace(place.placeId)}
+            onKeyDown={e => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                onSelectPlace(place.placeId);
+              }
+            }}
+          >
             <TableCell>
               <Box className="PlaceCell">
                 <img
@@ -98,11 +112,7 @@ export function PlacesTable({ places, pinnedPlaceIds, onTogglePin }: Props) {
               </Typography>
             </TableCell>
             <TableCell>
-              {/* The `Mana` component renders a ButtonBase, so a read-only cell uses the bare icon. */}
-              <Box className="RevenueCell">
-                <ManaMaticIcon fontSize="small" />
-                {formatRevenue(place.revenue)}
-              </Box>
+              <ManaValue>{formatRevenue(place.revenue)}</ManaValue>
             </TableCell>
             <TableCell>{formatMinutes(place.avgPlaytime)}</TableCell>
             <TableCell className="ActionsCell">

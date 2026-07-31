@@ -933,6 +933,89 @@
         "description": "Ningún Place coincide con tu búsqueda. Probá con otro nombre."
       }
     },
+    "actions": {
+      "export": "Exportar Analíticas",
+      "export_unavailable": "Vas a poder exportar cuando los datos de analíticas estén disponibles"
+    },
+    "detail": {
+      "title": "Analíticas - {name}",
+      "tabs": {
+        "overview": "Resumen",
+        "retention": "Retención",
+        "visits": "Visitas",
+        "engagement": "Interacción"
+      },
+      "date_range": {
+        "title": "Rango de Fechas",
+        "last_7_days": "Últimos 7 Días",
+        "last_30_days": "Últimos 30 Días",
+        "last_60_days": "Últimos 60 Días"
+      },
+      "place": {
+        "access": "Acceso",
+        "private": "Privado",
+        "public": "Público",
+        "published_in": "Publicado en",
+        "last_published_by": "Última publicación por",
+        "last_update": "Última Actualización"
+      },
+      "actions": {
+        "create_event": "Crear Evento",
+        "edit_scene": "Editar Escena",
+        "edit_scene_unavailable": "Todavía no se puede abrir la escena desde acá",
+        "copy_url": "Copiar URL",
+        "jump_in": "Entrar"
+      },
+      "overview": {
+        "title": "Resumen",
+        "description": "Un panorama del crecimiento, la interacción y la retención de tu place."
+      },
+      "error": {
+        "title": "No pudimos cargar las analíticas de este Place"
+      }
+    },
+    "metrics": {
+      "total_visits": {
+        "label": "Visitas Totales",
+        "tooltip": "Todas las visitas a tu place, incluidas las repetidas del mismo usuario."
+      },
+      "unique_visits": {
+        "label": "Visitas Únicas",
+        "tooltip": "Usuarios distintos que visitaron tu place, contados una sola vez."
+      },
+      "new_users": {
+        "label": "Usuarios Nuevos",
+        "tooltip": "Usuarios que visitaron tu place por primera vez."
+      },
+      "concurrent_users": {
+        "label": "Usuarios Simultáneos",
+        "tooltip": "La mayor cantidad de usuarios en tu place al mismo tiempo."
+      },
+      "revenue": {
+        "label": "Ingresos",
+        "tooltip": "MANA ganado en tu place."
+      },
+      "day_7_retention": {
+        "label": "Retención Día 7",
+        "tooltip": "El porcentaje de usuarios nuevos que volvieron a tu place 7 días después de su primera visita."
+      },
+      "avg_playtime": {
+        "label": "Tiempo de Juego Prom.",
+        "tooltip": "Tiempo promedio que cada usuario pasa en tu place en una sola visita."
+      },
+      "afk_time": {
+        "label": "Tiempo AFK",
+        "tooltip": "Tiempo promedio que los usuarios pasan en tu place sin interactuar."
+      },
+      "desktop": {
+        "label": "Escritorio",
+        "tooltip": "Usuarios que visitaron tu place desde un cliente de escritorio."
+      },
+      "mobile": {
+        "label": "Móvil",
+        "tooltip": "Usuarios que visitaron tu place desde un cliente móvil."
+      }
+    },
     "list": {
       "places": "{count} {count, plural, one {Place} other {Places}}",
       "search": "Buscar",
@@ -954,8 +1037,7 @@
       },
       "actions": {
         "pin_to_watchlist": "Fijar a la Watchlist",
-        "unpin_from_watchlist": "Quitar de la Watchlist",
-        "export": "Exportar Analíticas"
+        "unpin_from_watchlist": "Quitar de la Watchlist"
       }
     }
   },

@@ -1,4 +1,5 @@
 import { useCallback, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Box, MenuItem, type SelectChangeEvent, Typography } from 'decentraland-ui2';
 
 import { SortBy } from '/shared/types/place-analytics';
@@ -34,6 +35,7 @@ export function AnalyticsPage() {
   );
   const visiblePlaces = useSelector(selectors.getVisiblePlaces);
   const dispatch = useDispatch();
+  const navigate = useNavigate();
 
   const isLoading = status === 'loading';
 
@@ -52,6 +54,11 @@ export function AnalyticsPage() {
   const handleTogglePin = useCallback((placeId: string) => {
     dispatch(placeAnalyticsActions.togglePinnedPlace(placeId));
   }, []);
+
+  const handleSelectPlace = useCallback(
+    (placeId: string) => navigate(`/analytics/${placeId}`),
+    [navigate],
+  );
 
   return (
     <main className="AnalyticsPage">
@@ -109,6 +116,7 @@ export function AnalyticsPage() {
                 places={visiblePlaces}
                 pinnedPlaceIds={pinnedPlaceIds}
                 onTogglePin={handleTogglePin}
+                onSelectPlace={handleSelectPlace}
               />
             )}
           </>
