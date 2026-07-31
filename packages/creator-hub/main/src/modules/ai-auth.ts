@@ -79,15 +79,18 @@ async function loadPiAi(): Promise<PiAiOAuth> {
 }
 
 /**
- * pi stores credentials in `<agent dir>/auth.json`. opendcl redirects pi's
- * agent dir to `~/.opendcl/agent` on startup (it sets PI_CODING_AGENT_DIR when
- * unset — see opendcl's dist/index.js), so that is where the spawned agent
- * reads (and refreshes) credentials from, NOT pi's own `~/.pi/agent`.
+ * pi's config dir (credentials, settings, sessions). We keep opendcl's
+ * historical `~/.opendcl/agent` location so existing sign-ins survive, and
+ * pass it to the spawned agent via PI_CODING_AGENT_DIR — the same env var pi
+ * itself honors. Both the OAuth writes here and the agent's reads/refreshes
+ * go through this one directory.
  */
+export function getPiAgentDir(): string {
+  return process.env.PI_CODING_AGENT_DIR || path.join(os.homedir(), '.opendcl', 'agent');
+}
+
 function getAuthJsonPath(): string {
-  const envDir = process.env.PI_CODING_AGENT_DIR;
-  const agentDir = envDir || path.join(os.homedir(), '.opendcl', 'agent');
-  return path.join(agentDir, 'auth.json');
+  return path.join(getPiAgentDir(), 'auth.json');
 }
 
 async function readAuthJson(): Promise<Record<string, StoredCredential>> {

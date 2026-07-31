@@ -9,7 +9,10 @@
       "Bash(python3 -c \"import json; print\\(json.dumps\\(json.load\\(open\\('node_modules/@mariozechner/pi-ai/package.json'\\)\\).get\\('exports'\\), indent=1\\)\\)\")",
       "Bash(node -e \"import\\('@mariozechner/pi-ai/oauth'\\).then\\(m => console.log\\(typeof m.getOAuthProvider, JSON.stringify\\(m.getOAuthProviders\\(\\).map\\(p => p.id\\)\\)\\)\\)\")",
       "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\(d.get\\('bin'\\), d.get\\('version'\\), d.get\\('description'\\)\\)\")",
-      "Bash(python3 -c ' *)"
+      "Bash(python3 -c ' *)",
+      "Bash(python3 -c \"import json; print\\(json.load\\(open\\('/Users/Nico/Documents/github/creator-hub/creator-hub/node_modules/@mariozechner/pi-coding-agent/package.json'\\)\\)['bin']\\)\")",
+      "Bash(sed 's|dcl-context.ts|does-not-exist.ts|' boot-test.mjs)",
+      "Bash(node boot-test-bad.mjs)"
     ]
   },
   "hooks": {

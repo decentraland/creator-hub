@@ -8,10 +8,10 @@ import type { AiAgentState, AiAuthProvider } from '/shared/types/ipc';
 
 import { MAIN_WINDOW_ID } from '../mainWindow';
 
-import { getLoggedInProviders } from './ai-auth';
+import { getLoggedInProviders, getPiAgentDir } from './ai-auth';
 import { getConfig } from './config';
 import { createJsonlSplitter, parseJsonlLine } from './jsonl';
-import { getBinPath } from './path';
+import { APP_UNPACKED_PATH, getBinPath } from './path';
 import { ensureSdkSkills } from './sdk-skills';
 import { getWindow } from './window';
 
@@ -70,6 +70,57 @@ async function resolveAuth(): Promise<{ model: string; apiKey?: string }> {
   );
 }
 
+/**
+ * The agent process is pi itself, spawned directly — opendcl's entry point
+ * only assembles pi CLI args, and assembling them ourselves lets us pick
+ * which of its extensions run. The opendcl package stays installed as the
+ * asset carrier: system prompt, context docs, extension files, fallback
+ * skills all still come from it.
+ */
+async function getOpendclDir(): Promise<string> {
+  const candidates = [
+    nodePath.join(APP_UNPACKED_PATH, 'node_modules', '@dcl-regenesislabs', 'opendcl'),
+    // Running the production bundles straight from the source tree (e.g. the
+    // Playwright e2e harness) has no app.asar.unpacked dir; fall back to the
+    // monorepo root node_modules.
+    nodePath.join(app.getAppPath(), '..', '..', 'node_modules', '@dcl-regenesislabs', 'opendcl'),
+  ];
+  for (const dir of candidates) {
+    try {
+      await fs.stat(nodePath.join(dir, 'package.json'));
+      return dir;
+    } catch {
+      // Try the next location.
+    }
+  }
+  throw new Error('Could not find the installed @dcl-regenesislabs/opendcl package');
+}
+
+function getPiEntryPath(opendclDir: string): string {
+  // pi is a dependency of opendcl, usually hoisted to the same node_modules
+  // root that contains opendcl itself.
+  const hoistRoot = nodePath.join(opendclDir, '..', '..', '..');
+  try {
+    return getBinPath('@mariozechner/pi-coding-agent', 'pi', hoistRoot);
+  } catch {
+    return getBinPath('@mariozechner/pi-coding-agent', 'pi', opendclDir);
+  }
+}
+
+/**
+ * Builds the system prompt the way opendcl's entry point does: strip the YAML
+ * frontmatter from prompts/system.md and resolve its `context/<file>.md`
+ * references to absolute paths so the agent can read them.
+ */
+async function buildSystemPrompt(opendclDir: string): Promise<string> {
+  const raw = await fs.readFile(nodePath.join(opendclDir, 'prompts', 'system.md'), 'utf8');
+  const contextDir = nodePath.join(opendclDir, 'context');
+  return raw
+    .replace(/^---\n[\s\S]*?\n---\n/, '')
+    .replace(/context\/([\w-]+\.md)/g, (_, filename) => nodePath.join(contextDir, filename))
+    .trim();
+}
+
 function handleEvent(path: string, event: Record<string, unknown>) {
   const agent = agents.get(path);
 
@@ -101,46 +152,55 @@ export async function start(path: string): Promise<string> {
 
   const { model, apiKey } = await resolveAuth();
 
-  let entryPath: string;
-  try {
-    entryPath = getBinPath('@dcl-regenesislabs/opendcl', 'opendcl');
-  } catch {
-    // Running the production bundles straight from the source tree (e.g. the
-    // Playwright e2e harness) has no app.asar.unpacked dir; fall back to the
-    // monorepo root node_modules.
-    const workspaceRoot = nodePath.join(app.getAppPath(), '..', '..');
-    entryPath = getBinPath('@dcl-regenesislabs/opendcl', 'opendcl', workspaceRoot);
-  }
+  const opendclDir = await getOpendclDir();
+  const entryPath = getPiEntryPath(opendclDir);
   const eventName = getAiChannel(path);
 
-  // Install/refresh the official Decentraland SDK skills in the project so
-  // they take precedence over opendcl's bundled (outdated) ones. Never
-  // throws: on failure the agent starts with whatever skills are available.
+  // Install/refresh the official Decentraland SDK skills in the project.
+  // Never throws: on failure the agent starts with the fallback skills below.
   await ensureSdkSkills(path);
 
   log.info(`[AI] Starting agent for ${path} with model ${model}`);
-  // The model is pinned explicitly: pi otherwise picks its own default (from
-  // local state or other provider keys), which may not match the credentials
-  // the user configured in the AI Assistant panel.
-  const args = [entryPath, '--mode', 'rpc', '--headless', '--model', model];
-  // Pass the project skills dir explicitly and BEFORE opendcl's own args:
-  // opendcl appends its bundled --skill dir after user args, and pi keeps the
-  // first skill found on a name collision, so ours must come first.
+  const args = [
+    entryPath,
+    '--mode',
+    'rpc',
+    // The model is pinned explicitly: pi otherwise picks its own default
+    // (from local state or other provider keys), which may not match the
+    // credentials the user configured in the AI Assistant panel.
+    '--model',
+    model,
+    '--system-prompt',
+    await buildSystemPrompt(opendclDir),
+    // Cherry-picked opendcl extensions: scene metadata injection into the
+    // prompt, and an automatic typecheck after every TypeScript write.
+    // dcl-asset-path is deliberately excluded — its case-sensitive path guard
+    // rejects the Creator Hub `assets/Models/` convention and tells the agent
+    // to download models to a root `models/` dir Creator Hub can't see.
+    '-e',
+    nodePath.join(opendclDir, 'extensions', 'dcl-context.ts'),
+    '-e',
+    nodePath.join(opendclDir, 'extensions', 'dcl-validate.ts'),
+  ];
   const projectSkillsPath = nodePath.join(path, '.agents', 'skills');
   try {
     const stat = await fs.stat(projectSkillsPath);
-    if (stat.isDirectory()) {
-      args.splice(1, 0, '--skill', projectSkillsPath);
-    }
+    if (!stat.isDirectory()) throw new Error('not a directory');
+    args.push('--skill', projectSkillsPath);
   } catch {
-    // No project skills installed (e.g. first run offline); opendcl falls
-    // back to its bundled skills.
+    // No project skills installed (e.g. first run offline): fall back to
+    // opendcl's bundled (older) skills rather than running with none.
+    args.push('--skill', nodePath.join(opendclDir, 'skills'));
   }
   const child = spawn(process.execPath, args, {
     cwd: path,
     env: {
       ...process.env,
       ELECTRON_RUN_AS_NODE: '1',
+      // pi's config dir — must match where ai-auth writes OAuth credentials.
+      // opendcl's entry point used to set this; spawning pi directly, we do.
+      PI_CODING_AGENT_DIR: getPiAgentDir(),
+      PI_SKIP_VERSION_CHECK: '1',
       // With OAuth sign-in there is no key to pass: pi reads (and refreshes)
       // the stored credentials from its own auth.json.
       ...(apiKey ? { ANTHROPIC_API_KEY: apiKey } : {}),
