@@ -4,6 +4,7 @@ import { IoAddOutline } from 'react-icons/io5';
 import { useAppSelector } from '../../redux/hooks';
 import { getSelectedNode } from '../../redux/ui-designer';
 import { Box } from '../Box';
+import Search from '../Search';
 import { NodeTree } from './NodeTree';
 import { WidgetPicker } from './WidgetPicker';
 import { CodeRootsList } from './code/CodeRootsList';
@@ -12,6 +13,7 @@ import './UIDesigner.css';
 
 const UIDesignerLeftRail: React.FC = () => {
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [search, setSearch] = useState('');
   const addBtnRef = useRef<HTMLButtonElement>(null);
 
   // New nodes are added under the current node (selecting a GUI selects its
@@ -39,7 +41,15 @@ const UIDesignerLeftRail: React.FC = () => {
             <IoAddOutline aria-hidden="true" />
           </button>
         </div>
-        <NodeTree />
+        <div className="ui-designer-rail-search">
+          <Search
+            value={search}
+            onChange={setSearch}
+            placeholder="Search nodes"
+            onCancel={() => setSearch('')}
+          />
+        </div>
+        <NodeTree filter={search} />
         {pickerOpen && parent !== null ? (
           <WidgetPicker
             parent={parent}

@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 
-import { classifyNode, previewBoundText, visibleRange } from './tree-model';
+import {
+  classifyNode,
+  matchesFilter,
+  nodeLabelText,
+  previewBoundText,
+  visibleRange,
+} from './tree-model';
 import type { UINode } from './tree-model';
 
 describe('visibleRange', () => {
@@ -118,5 +124,43 @@ describe('previewBoundText', () => {
     expect(previewBoundText([{ field: KEY, variable: 'score' }], KEY, 'Label', resolve)).toBe(
       '[score]',
     );
+  });
+});
+
+describe('when filtering the node tree by name', () => {
+  const node = (over: Partial<UINode> & { entity: number }): UINode =>
+    ({ type: 'UiEntity', name: 'UiEntity', children: [], ...over }) as unknown as UINode;
+
+  it('should match a node whose label contains the term', () => {
+    expect(matchesFilter(node({ entity: 1, type: 'Label', name: 'Label' }), 'lab')).toBe(true);
+  });
+
+  it('should keep an ancestor whose descendant matches, so the path stays navigable', () => {
+    const tree = node({
+      entity: 1,
+      children: [
+        node({ entity: 2, children: [node({ entity: 3, type: 'Button', name: 'Button' })] }),
+      ],
+    });
+    expect(matchesFilter(tree, 'button')).toBe(true);
+  });
+
+  it('should reject a subtree with no match anywhere', () => {
+    const tree = node({ entity: 1, children: [node({ entity: 2, type: 'Label', name: 'Label' })] });
+    expect(matchesFilter(tree, 'dropdown')).toBe(false);
+  });
+
+  it('should label a plain UiEntity by its classified widget kind', () => {
+    // The raw parse-side name is "UiEntity" for both Container and Image, so the
+    // filter has to see the classified label or neither would ever match.
+    expect(nodeLabelText(node({ entity: 1 }))).toBe('Container');
+  });
+
+  it('should label a component wrapper by the referenced component name', () => {
+    const wrapper = node({
+      entity: 1,
+      children: [{ ...node({ entity: 2 }), componentRef: { name: 'Card', props: [] } } as UINode],
+    });
+    expect(nodeLabelText(wrapper)).toBe('Card');
   });
 });

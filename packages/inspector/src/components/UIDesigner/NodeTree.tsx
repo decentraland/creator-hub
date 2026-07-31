@@ -44,7 +44,14 @@ import {
 } from './code/store';
 import { PLATFORMS } from './code/platform-convention';
 import type { CodeUINode } from './code/types';
-import { classifyNode, visibleRange, type UINode } from './tree-model';
+import {
+  classifyNode,
+  matchesFilter,
+  nodeLabelText,
+  soleComponentRef,
+  visibleRange,
+  type UINode,
+} from './tree-model';
 
 import './NodeTree.css';
 
@@ -58,19 +65,6 @@ const NODE_TREE_DND_TYPE = 'ui-designer-tree';
 // into the hierarchy at a precise position. Module-level so the array reference
 // stays stable across renders (avoids re-registering the drop target).
 const EXTERNAL_DND_TYPES = [UI_DESIGNER_DND_TYPE];
-
-// A UiEntity wrapping exactly one component-ref (and nothing else) is the
-// positioning wrapper `spliceInsertComponent` emits. The tree collapses it into
-// a single "component" row (item 8): the wrapper stays in source (it carries the
-// instance's layout), but the editor presents wrapper+ref as ONE node — select it
-// and the panel shows the wrapper's Layout/Background + the component Inputs
-// (PropertyPanel already renders the ref child's ComponentRefPanel below the
-// wrapper's groups). Anything with extra children renders normally.
-function soleComponentRef(n: UINode): CodeUINode | null {
-  if (n.children.length !== 1) return null;
-  const child = n.children[0] as CodeUINode;
-  return child.componentRef ? child : null;
-}
 
 const PLATFORM_ICONS = {
   desktop: <IoDesktopOutline />,
@@ -97,7 +91,8 @@ function collectAncestors(root: UINode, target: Entity): Entity[] {
   return path;
 }
 
-const NodeTreeImpl: React.FC = () => {
+const NodeTreeImpl: React.FC<{ filter?: string }> = ({ filter = '' }) => {
+  const term = filter.trim().toLowerCase();
   const dispatch = useAppDispatch();
   const tree = useUINodeTree();
   const activeFile = useCodeState().filename;
@@ -135,7 +130,13 @@ const NodeTreeImpl: React.FC = () => {
 
   const getId = useCallback((n: UINode) => String(n.entity), []);
   // Hide the sole component-ref child so the wrapper reads as one component node.
-  const getChildren = useCallback((n: UINode) => (soleComponentRef(n) ? [] : n.children), []);
+  const getChildren = useCallback(
+    (n: UINode) => {
+      if (soleComponentRef(n)) return [];
+      return term ? n.children.filter(c => matchesFilter(c, term)) : n.children;
+    },
+    [term],
+  );
   const getLabel = useCallback(
     (n: UINode) => {
       const ref = soleComponentRef(n);
@@ -143,10 +144,7 @@ const NodeTreeImpl: React.FC = () => {
       const cn = n as CodeUINode;
       // Elements read as their widget kind (Container vs Image for UiEntity);
       // opaque blocks and the platform variant keep their parse-side name.
-      const label =
-        cn.opaque || cn.platformVariant
-          ? n.name || `${n.type} ${String(n.entity)}`
-          : classifyNode(n);
+      const label = nodeLabelText(n);
       // A platform branch reads dimmed while its device isn't the one being
       // edited — the row stays visible (and clickable, which switches device).
       const branch = cn.platform;
@@ -168,8 +166,10 @@ const NodeTreeImpl: React.FC = () => {
     return cn.opaque ? <IoWarningOutline /> : WIDGET_ICONS[classifyNode(n)];
   }, []);
   const isOpen = useCallback(
-    (n: UINode) => expanded[n.entity as unknown as number] !== false,
-    [expanded],
+    // While filtering, force every surviving branch open so matches are visible
+    // without hunting for them; otherwise honour the user's expand state.
+    (n: UINode) => (term ? true : expanded[n.entity as unknown as number] !== false),
+    [expanded, term],
   );
   const isSelected = useCallback((n: UINode) => selectedNodes.includes(n.entity), [selectedNodes]);
   const isHidden = useCallback(() => false, []);
@@ -343,6 +343,9 @@ const NodeTreeImpl: React.FC = () => {
   );
 
   if (!tree) return null;
+  if (term && !matchesFilter(tree, term)) {
+    return <div className="ui-designer-nodetree-empty">No nodes match “{filter.trim()}”</div>;
+  }
 
   return (
     <div className="ui-designer-nodetree">

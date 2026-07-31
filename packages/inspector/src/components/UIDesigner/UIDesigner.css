@@ -270,3 +270,19 @@
 .ui-designer-right-rail-tabpanel::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.22);
 }
+
+/* Node-tree search — always visible, matching the 3D asset panels. */
+.ui-designer-rail-search {
+  padding: 0 var(--uid-space-2) var(--uid-space-2);
+}
+
+.ui-designer-rail-search .Search {
+  width: 100%;
+}
+
+.ui-designer-nodetree-empty {
+  padding: var(--uid-space-3);
+  color: var(--sub-text);
+  font-size: 11px;
+  text-align: center;
+}

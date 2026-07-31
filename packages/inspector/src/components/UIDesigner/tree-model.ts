@@ -1,5 +1,7 @@
 import type { Entity } from '@dcl/ecs';
 
+import type { CodeUINode } from './code/types';
+
 export type UINodeType = 'UiEntity' | 'Label' | 'Button' | 'Input' | 'Dropdown';
 
 // Discriminator for a mixed-content segment (literal text interleaved with
@@ -99,4 +101,34 @@ export function previewBoundText(
   }
   if (row.variable) return preview(row.variable);
   return staticValue;
+}
+
+// A UiEntity wrapping exactly one component-ref (and nothing else) is the
+// positioning wrapper `spliceInsertComponent` emits. The tree collapses it into a
+// single "component" row: the wrapper stays in source (it carries the instance's
+// layout), but the editor presents wrapper+ref as ONE node. Anything with extra
+// children renders normally.
+export function soleComponentRef(n: UINode): CodeUINode | null {
+  if (n.children.length !== 1) return null;
+  const child = n.children[0] as CodeUINode;
+  return child.componentRef ? child : null;
+}
+
+// Plain-text row label. The tree's getLabel may return a NODE (a dimmed platform
+// branch), so filtering needs the string form separately.
+export function nodeLabelText(n: UINode): string {
+  const ref = soleComponentRef(n);
+  if (ref) return ref.componentRef?.name ?? ref.name;
+  const cn = n as CodeUINode;
+  return cn.opaque || cn.platformVariant
+    ? n.name || `${n.type} ${String(n.entity)}`
+    : classifyNode(n);
+}
+
+// A node survives a tree filter when it matches OR any descendant does, so the
+// path down to a match stays navigable rather than the match appearing orphaned.
+// `term` must already be lower-cased and trimmed by the caller.
+export function matchesFilter(n: UINode, term: string): boolean {
+  if (nodeLabelText(n).toLowerCase().includes(term)) return true;
+  return n.children.some(c => matchesFilter(c, term));
 }
