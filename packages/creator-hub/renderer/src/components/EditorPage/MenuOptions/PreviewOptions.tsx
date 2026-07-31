@@ -2,15 +2,20 @@ import { useCallback, useEffect, useState } from 'react';
 import {
   Checkbox,
   Divider,
+  FormControl,
   FormControlLabel,
   FormGroup,
+  FormLabel,
   ListItemButton,
   ListItemText,
+  Radio,
+  RadioGroup,
   Tooltip,
 } from 'decentraland-ui2';
 
 import { scene } from '#preload';
 
+import { PREVIEW_CLIENT } from '/shared/types/settings';
 import { t } from '/@/modules/store/translation/utils';
 
 import type { PreviewOptionsProps } from './types';
@@ -20,6 +25,7 @@ export function PreviewOptions({
   options,
   onShowMobileQR,
   supportsMultiInstance,
+  supportsMcp,
   projectPath,
 }: PreviewOptionsProps) {
   const [terrainHiddenByScene, setTerrainHiddenByScene] = useState(false);
@@ -48,9 +54,35 @@ export function PreviewOptions({
     [onChange, options],
   );
 
+  const handleClientChange = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      onChange({ ...options, client: event.target.value as PREVIEW_CLIENT });
+    },
+    [onChange, options],
+  );
+
   return (
     <div className="PreviewOptions">
       <span className="title">{t('editor.header.actions.preview_options.title')}</span>
+      <FormControl>
+        <FormLabel>{t('editor.header.actions.preview_options.client.label')}</FormLabel>
+        <RadioGroup
+          value={options.client}
+          onChange={handleClientChange}
+        >
+          <FormControlLabel
+            value={PREVIEW_CLIENT.DESKTOP}
+            control={<Radio />}
+            label={t('editor.header.actions.preview_options.client.desktop')}
+          />
+          <FormControlLabel
+            value={PREVIEW_CLIENT.BEVY_WEB}
+            control={<Radio />}
+            label={t('editor.header.actions.preview_options.client.bevy_web')}
+          />
+        </RadioGroup>
+      </FormControl>
+      <Divider />
       <FormGroup>
         <FormControlLabel
           control={
@@ -91,6 +123,17 @@ export function PreviewOptions({
               />
             }
             label={t('editor.header.actions.preview_options.multi_instance')}
+          />
+        )}
+        {supportsMcp && (
+          <FormControlLabel
+            control={
+              <Checkbox
+                checked={!!options.mcp}
+                onChange={handleChange({ mcp: !options.mcp })}
+              />
+            }
+            label={t('editor.header.actions.preview_options.mcp')}
           />
         )}
       </FormGroup>

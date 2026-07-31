@@ -77,6 +77,8 @@ export async function takeScreenshot(iframe: HTMLIFrameElement, sceneRPC?: Scene
   // await Promise.all([camera.setPosition(x, y, z), camera.setTarget(x, y, z)]);
   const _sceneRPC =
     sceneRPC ?? new SceneRpcClient(new MessageTransport(window, iframe.contentWindow!));
+  // SceneRpcClient.request is timeout-bounded, so this rejects rather than hanging
+  // when no renderer answers (e.g. under Bevy). Callers treat that as "no thumbnail".
   const screenshot = await _sceneRPC.takeScreenshot(+iframe.width, +iframe.height);
   return screenshot;
 }

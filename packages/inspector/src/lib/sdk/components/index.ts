@@ -25,6 +25,7 @@ import type { GizmoType } from '../../utils/gizmo';
 import type { TransformConfig } from './TransformConfig';
 import type { TransitionMode } from './SceneMetadata';
 import { Coords, SceneAgeRating, SceneCategory } from './SceneMetadata';
+import { createActiveSceneComponentProxy } from './scene-metadata-version';
 import type { ConfigComponentType } from './Config';
 import type { InspectorUIStateType } from './InspectorUIState';
 import { EditorComponentNames as BaseEditorComponentNames } from './types';
@@ -265,7 +266,13 @@ export function createEditorComponents(engine: IEngine): EditorComponents {
 
   return {
     Selection: inspectorComponents['inspector::Selection'],
-    Scene: inspectorComponents['inspector::SceneMetadata'],
+    // Scene resolves to the SceneMetadata version the data-layer actually uses, so
+    // reads + writes round-trip even when the (Bevy) realm's pinned sdk-commands is
+    // a version behind this inspector. Transparent when versions match (the active
+    // version is then the latest). See scene-metadata-version.ts.
+    Scene: createActiveSceneComponentProxy(
+      engine,
+    ) as unknown as LastWriteWinElementSetComponentDefinition<EditorComponentsTypes['Scene']>,
     Nodes: inspectorComponents['inspector::Nodes'],
     TransformConfig: inspectorComponents['inspector::TransformConfig'],
     Hide: inspectorComponents['inspector::Hide'],

@@ -38,7 +38,13 @@
   },
   "editor": {
     "loading": {
-      "title": "Loading..."
+      "title": "Loading...",
+      "installing": "Installing dependencies... This can take a moment the first time.",
+      "failed": {
+        "title": "Loading failed",
+        "timeout": "The scene is taking too long to load. It may have an error in its code.",
+        "back": "Back to scenes"
+      }
     },
     "header": {
       "actions": {
@@ -48,12 +54,18 @@
         "refresh": "Reload scene from disk",
         "preview_options": {
           "title": "Preview Options",
+          "client": {
+            "label": "Preview with",
+            "desktop": "Desktop Client",
+            "bevy_web": "Bevy (Web)"
+          },
           "debugger": "Open Debug Console",
           "skip_auth_screen": "Skip Auth Screen",
           "open_new_instance": "Open multiple instances",
           "landscape_terrain_enabled": "Enable Landscape Terrains",
           "landscape_terrain_disabled_by_scene": "Landscape terrain is hidden by this scene's settings",
           "multi_instance": "Multi-Instance Preview",
+          "mcp": "Enable MCP Server",
           "mobile_preview": "Show QR Code for Mobile"
         },
         "publish_options": {
@@ -351,6 +363,14 @@
         "app_warnings": {
           "label": "App Warnings",
           "show_warnings": "Show a warning message each time you preview or publish a scene that contains custom code"
+        },
+        "renderer": {
+          "label": "Scene renderer",
+          "babylon": "Babylon (default)",
+          "bevy": "Bevy (preview)"
+        },
+        "experimental": {
+          "label": "Experimental features"
         }
       },
       "actions": {
@@ -615,6 +635,7 @@
         "create": "Create"
       },
       "errors": {
+        "invalid_directory": "That folder path doesn’t exist. Use the folder button to pick an existing location for your scene.",
         "path_exists_or_not_writable": "Path already exists or can't save files there. Please choose a different folder."
       }
     },
