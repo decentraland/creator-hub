@@ -8,6 +8,7 @@ import {
 } from 'react-icons/io5';
 import { VscTrash } from 'react-icons/vsc';
 import { AiOutlinePlus } from 'react-icons/ai';
+import cx from 'classnames';
 import type { Entity, TextureUnion } from '@dcl/ecs';
 
 import {
@@ -22,16 +23,19 @@ import {
   getAspectLockedNodes,
   getCollapsedGroups,
   getInteractionLayer,
+  getPlatform,
   getSelectedNode,
   setAspectLocked,
   setGroupCollapsed,
   setInteractionLayer,
+  setPlatform,
 } from '../../redux/ui-designer';
 import { Block } from '../Block';
 import { Container } from '../Container';
 import { CheckboxField, Dropdown, RgbaColorField, TextArea, TextField } from '../ui';
 import { Pill } from '../ui/Pill';
 import { measureParentBox, measureNodeOffset, axisForPath, convertLength } from './measure';
+import type { DeviceKind } from './safe-areas';
 import { type CanvasSegment, type UINodeType } from './tree-model';
 import {
   addInteractionLayer,
@@ -345,18 +349,36 @@ const StatesBar: React.FC<{
   );
 };
 
-// Structural device variants (see code/platform-convention.ts). A plain node can
-// gain them; a branch shows which device it is and can drop the split, keeping the
-// other device's branch as the single unconditional node.
-const VariantsBar: React.FC<{ node: CodeUINode; entity: Entity }> = ({ node, entity }) => {
+// Structural device variants (see code/platform-convention.ts) — a GUI-level
+// choice, not a per-node one: the two branches are alternative whole trees, so
+// this only renders for the root. Picking a device here switches the whole
+// canvas + tree (same state the canvas toggle drives), which is what makes the
+// other branch reachable at all.
+const PLATFORM_TABS: { key: DeviceKind; label: string; icon: React.ReactNode }[] = [
+  { key: 'desktop', label: 'Desktop', icon: <IoDesktopOutline aria-hidden /> },
+  { key: 'mobile', label: 'Mobile', icon: <IoPhoneLandscapeOutline aria-hidden /> },
+];
+
+const VariantsBar: React.FC<{
+  node: CodeUINode;
+  entity: Entity;
+  // The conditional node itself, when this GUI already has variants. Removal
+  // targets it rather than the branch: given a BRANCH id the store keeps the
+  // OTHER device's tree, which is the opposite of what "remove, keep what I'm
+  // looking at" should do.
+  variantEntity?: Entity;
+}> = ({ node, entity, variantEntity }) => {
+  const dispatch = useAppDispatch();
+  const platform = useAppSelector(getPlatform);
   const id = entity as unknown as number;
+
   if (!node.platform) {
     return (
       <div className="ui-designer-states-bar">
         <button
           type="button"
           className="ui-designer-states-add"
-          title="Give this node a different subtree on mobile — the canvas device toggle picks which one you edit"
+          title="Give this GUI a separate mobile layout — each device gets its own tree"
           onClick={() => void addPlatformVariant(id)}
         >
           <AiOutlinePlus aria-hidden /> Add device variants
@@ -364,28 +386,43 @@ const VariantsBar: React.FC<{ node: CodeUINode; entity: Entity }> = ({ node, ent
       </div>
     );
   }
-  const label = node.platform === 'mobile' ? 'Mobile' : 'Desktop';
+
   return (
     <div className="ui-designer-states-bar">
-      <span className="ui-designer-variant-badge">
-        {node.platform === 'mobile' ? (
-          <IoPhoneLandscapeOutline aria-hidden />
-        ) : (
-          <IoDesktopOutline aria-hidden />
-        )}
-        {label} variant
-      </span>
+      <div
+        className="ui-designer-states-tabs"
+        role="tablist"
+        aria-label="Device variant"
+      >
+        {PLATFORM_TABS.map(t => (
+          <button
+            key={t.key}
+            type="button"
+            role="tab"
+            aria-selected={t.key === platform}
+            className={cx('ui-designer-states-tab', { selected: t.key === platform })}
+            title={`Edit the ${t.label} layout`}
+            onClick={() => dispatch(setPlatform({ platform: t.key }))}
+          >
+            {t.icon} {t.label}
+          </button>
+        ))}
+      </div>
       <div className="ui-designer-states-actions">
         <button
           type="button"
           className="ui-designer-prop-remove"
-          aria-label={`Remove the ${label} variant`}
-          title={`Remove the ${label} variant — the other device's branch becomes the only one`}
-          onClick={() => void removePlatformVariant(id)}
+          aria-label="Remove device variants"
+          title="Remove device variants — the layout you're editing becomes the only one"
+          onClick={() => void removePlatformVariant((variantEntity ?? entity) as unknown as number)}
         >
           <VscTrash aria-hidden />
         </button>
       </div>
+      <p className="ui-designer-states-hint">
+        This GUI has a separate layout per device. Editing the{' '}
+        {platform === 'mobile' ? 'Mobile' : 'Desktop'} tree.
+      </p>
     </div>
   );
 };
@@ -462,6 +499,17 @@ const PropertyPanelComponent: React.FC = () => {
   );
 
   const type: UINodeType | null = useMemo(() => codeNode?.type ?? null, [codeNode]);
+
+  // Device variants are a GUI-level choice, so their affordance belongs to the
+  // root alone. `useUINodeTree` presents the active branch AS the root, so the
+  // node the user perceives as root is either the parsed root itself or one of
+  // its branches.
+  const isGuiRoot = useMemo(() => {
+    const parsedRoot = codeState.parsed?.root;
+    if (!parsedRoot || !codeNode) return false;
+    if (codeNode === parsedRoot) return true;
+    return !!parsedRoot.platformVariant && parsedRoot.children.includes(codeNode);
+  }, [codeState, codeNode]);
 
   // The interaction layer the fields edit. The picked layer is global, so it can
   // be stale for this node (that state may not exist here) — fall back to base.
@@ -568,10 +616,15 @@ const PropertyPanelComponent: React.FC = () => {
             layer={activeLayer}
             onPick={layer => dispatch(setInteractionLayer({ layer }))}
           />
-          <VariantsBar
-            node={codeNode}
-            entity={selected as Entity}
-          />
+          {isGuiRoot ? (
+            <VariantsBar
+              node={codeNode}
+              entity={selected as Entity}
+              variantEntity={
+                codeState.parsed?.root.platformVariant ? codeState.parsed.root.entity : undefined
+              }
+            />
+          ) : null}
         </>
       ) : null}
       {activeLayer === 'active' && codeNode?.interaction ? (
