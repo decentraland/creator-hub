@@ -201,6 +201,52 @@ describe('initializeWorkspace', () => {
     });
   });
 
+  describe('unlistProjects', () => {
+    let draftConfig: {
+      workspace: { paths: string[] };
+      settings: { optimizedAssetsByPath?: Record<string, boolean> };
+    };
+
+    beforeEach(() => {
+      draftConfig = {
+        workspace: { paths: ['/projects/a', '/projects/b'] },
+        settings: { optimizedAssetsByPath: { '/projects/a': true, '/projects/b': false } },
+      };
+      services.config.setConfig.mockImplementation(async drafter => {
+        drafter(draftConfig as any);
+      });
+    });
+
+    describe('when unlisting a project path', () => {
+      it('should remove the path from the workspace paths', async () => {
+        const workspace = initializeWorkspace(services);
+        await workspace.unlistProjects(['/projects/a']);
+
+        expect(draftConfig.workspace.paths).toEqual(['/projects/b']);
+      });
+
+      it('should drop its optimize-assets preference and keep the other entries', async () => {
+        const workspace = initializeWorkspace(services);
+        await workspace.unlistProjects(['/projects/a']);
+
+        expect(draftConfig.settings.optimizedAssetsByPath).toEqual({ '/projects/b': false });
+      });
+    });
+
+    describe('when the config has no optimize-assets map', () => {
+      beforeEach(() => {
+        delete draftConfig.settings.optimizedAssetsByPath;
+      });
+
+      it('should not throw and still remove the path from the workspace', async () => {
+        const workspace = initializeWorkspace(services);
+        await workspace.unlistProjects(['/projects/a']);
+
+        expect(draftConfig.workspace.paths).toEqual(['/projects/b']);
+      });
+    });
+  });
+
   describe('renameProject', () => {
     const currentPath = `${mockAppHome}/My Scene`;
 

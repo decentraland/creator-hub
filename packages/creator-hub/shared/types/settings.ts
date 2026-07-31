@@ -23,6 +23,7 @@ export type PreviewOptions = {
   multiInstance: boolean;
   mcp: boolean;
   showWarnings: boolean;
+  optimizedAssets: boolean;
   client: PREVIEW_CLIENT;
 };
 
@@ -40,6 +41,10 @@ export type AppSettings = {
   scenesPath: string;
   dependencyUpdateStrategy: DEPENDENCY_UPDATE_STRATEGY;
   previewOptions: PreviewOptions;
+  // Per-project Optimize Assets preference, keyed by project path. `previewOptions.optimizedAssets`
+  // is the ephemeral value for the open project; this map is the persisted per-project source of
+  // truth so the toggle comes back on for a project that had it on, without carrying across projects.
+  optimizedAssetsByPath?: Record<string, boolean>;
   // Opt-in to experimental features. Gates the renderer picker in settings — off
   // means the stable default renderer (Babylon), no picker shown. Kept as its own
   // persisted flag (not derived from `renderer`) so the picker stays visible when
