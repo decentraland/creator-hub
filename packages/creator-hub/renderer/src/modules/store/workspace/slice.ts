@@ -1,6 +1,6 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
 
-import { supportsMultiInstance } from '/shared/flags';
+import { supportsMcp, supportsMultiInstance } from '/shared/flags';
 import { type Project, SortBy } from '/shared/types/projects';
 import {
   DEFAULT_DEPENDENCY_UPDATE_STRATEGY,
@@ -28,6 +28,7 @@ const initialState: Async<Workspace> = {
       enableLandscapeTerrains: true,
       openNewInstance: false,
       multiInstance: false,
+      mcp: false,
       showWarnings: true,
       client: DEFAULT_PREVIEW_CLIENT,
     },
@@ -187,6 +188,9 @@ export const slice = createSlice({
       .addCase(thunks.fetchSdkCommandsVersion.fulfilled, (state, action) => {
         if (!supportsMultiInstance(action.payload)) {
           state.settings.previewOptions.multiInstance = false;
+        }
+        if (!supportsMcp(action.payload)) {
+          state.settings.previewOptions.mcp = false;
         }
       })
       .addCase(thunks.getProject.pending, (state, { meta }) => {

@@ -41,6 +41,7 @@ export const DEFAULT_CONFIG: Config = {
       enableLandscapeTerrains: true,
       openNewInstance: false,
       multiInstance: false,
+      mcp: false,
       showWarnings: true,
       client: DEFAULT_PREVIEW_CLIENT,
     },

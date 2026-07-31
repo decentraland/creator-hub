@@ -21,6 +21,7 @@ export type PreviewOptions = {
   enableLandscapeTerrains: boolean;
   openNewInstance: boolean;
   multiInstance: boolean;
+  mcp: boolean;
   showWarnings: boolean;
   client: PREVIEW_CLIENT;
 };
