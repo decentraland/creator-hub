@@ -178,6 +178,13 @@ const OVERFLOW: Record<number, React.CSSProperties['overflow']> = {
 // single 9-value enum; CSS text-align is horizontal only, so this covers the
 // horizontal axis of multi-line wrapping inside the text span. The box-level
 // anchoring (both axes) is done with flexbox via TEXT_ALIGN_FLEX below.
+// A Button carries `uiText` exactly like a Label — react-ecs's Button reuses
+// Label's getTextAlign/getFont/getFontSize and writes the result into uiText —
+// so every text path has to treat the two alike. Forgetting Button is what left
+// its label stuck top-left (no flex anchoring) and blank inside a nested
+// component (no text span at all).
+const rendersText = (type: UINodeType): boolean => type === 'Label' || type === 'Button';
+
 const TEXT_ALIGN_H: Record<number, React.CSSProperties['textAlign']> = {
   0: 'left', // TOP_LEFT
   1: 'center', // TOP_CENTER
@@ -387,13 +394,15 @@ function nodeStyle(node: UINode): React.CSSProperties {
   if (text?.fontSize !== undefined) {
     style.fontSize = `${text.fontSize}px`;
   }
-  // Label text: anchor the text span in its box exactly as react-ecs does. The
-  // textAlign enum drives BOTH axes via flexbox (justify = horizontal, align =
-  // vertical), overriding the generic container justify/align — a Label's only
-  // "child" is its text. An unset textAlign anchors middle-center (4): the
-  // in-world default per @dcl/ecs PBUiText ("alignment within the bounds
-  // (default: center)"), NOT the proto-3 zero (top-left).
-  if (node.type === 'Label') {
+  // Label/Button text: anchor the text span in its box exactly as react-ecs
+  // does. The textAlign enum drives BOTH axes via flexbox (justify = horizontal,
+  // align = vertical), overriding the generic container justify/align — the only
+  // "child" here is the text. CSS text-align alone cannot do this: the span is a
+  // flex ITEM, so its position comes from justify-content, not text-align. An
+  // unset textAlign anchors middle-center (4): the in-world default per @dcl/ecs
+  // PBUiText ("alignment within the bounds (default: center)"), NOT the proto-3
+  // zero (top-left).
+  if (rendersText(node.type)) {
     const ta = typeof text.textAlign === 'number' ? text.textAlign : 4;
     const flex = TEXT_ALIGN_FLEX[ta] ?? TEXT_ALIGN_FLEX[4];
     style.justifyContent = flex.justifyContent;
@@ -786,7 +795,7 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node, hidden }) => {
   const [editing, setEditing] = useState(false);
   const editingRef = useRef(false);
   editingRef.current = editing;
-  const isTextEditable = !isLocked && (node.type === 'Label' || node.type === 'Button');
+  const isTextEditable = !isLocked && rendersText(node.type);
 
   const handleClick = useCallback(
     (e: React.MouseEvent) => {
@@ -1256,7 +1265,7 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node, hidden }) => {
       {/* Label/Button text: a mixed-content editor while editing (double-click) —
           literal text + variable/prop chips — else the resolved preview text.
           Button had no text branch before, so it painted as an empty box. */}
-      {node.type === 'Label' || node.type === 'Button' ? (
+      {rendersText(node.type) ? (
         editing ? (
           <span
             className="ui-designer-canvas-inline-edit"
@@ -1386,10 +1395,9 @@ const CanvasReadonlyNode: React.FC<{
     selectedIndex?: number;
     emptyLabel?: string;
   };
-  const labelText =
-    node.type === 'Label'
-      ? previewBoundText(node.bindings, 'core::UiText.value', text.value ?? '', resolve)
-      : '';
+  const labelText = rendersText(node.type)
+    ? previewBoundText(node.bindings, 'core::UiText.value', text.value ?? '', resolve)
+    : '';
   const inputText =
     node.type === 'Input'
       ? previewBoundText(node.bindings, 'core::UiInput.value', input.value ?? '', resolve) ||
@@ -1419,7 +1427,7 @@ const CanvasReadonlyNode: React.FC<{
           <span className="ui-designer-canvas-dropdown-chevron">▼</span>
         </span>
       ) : null}
-      {node.type === 'Label' && labelText ? (
+      {rendersText(node.type) && labelText ? (
         <span className="ui-designer-canvas-text">{labelText}</span>
       ) : null}
       {node.children.map(child => (
