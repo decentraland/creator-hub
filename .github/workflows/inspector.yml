@@ -176,9 +176,12 @@ jobs:
           publish_dir: ./packages/inspector/public
           destination_dir: inspector/${{ steps.sanitize-branch.outputs.safe_branch }}
           keep_files: true
-          # Source maps are ~80MB of the payload and the preview doesn't need
-          # them; with keep_files they'd accumulate on gh-pages forever.
-          exclude_assets: '.github,*.map'
+          # Keep these out of the gh-pages preview (with keep_files they'd accumulate
+          # forever): source maps (~80MB, unused by the preview) and the Bevy engine
+          # wasm bundle + editor-agent realm (webgpu_build_bg.wasm is ~105MB, over
+          # GitHub's 100MB per-file push limit; both are runtime assets in the npm
+          # tarball / creator-hub, not needed to render the Babylon inspector).
+          exclude_assets: '.github,*.map,bevy-engine,bevy-engine/**,bevy-agent,bevy-agent/**'
 
       - name: set preview url
         id: set-preview-url

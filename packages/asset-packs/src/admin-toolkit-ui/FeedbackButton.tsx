@@ -1,7 +1,8 @@
 import ReactEcs, { UiEntity, Label } from '@dcl/react-ecs';
-import { Color4 } from '@dcl/sdk/math';
 import { startTimeout, stopTimeout } from '../timer';
-import { Button, type ButtonVariant, type CompositeButtonProps } from './Button';
+import type { ButtonVariant } from './Button';
+import { Button, type CompositeButtonProps } from './Button';
+import { COLORS } from './theme';
 import { state } from './store';
 
 const FEEDBACK_TIMEOUT_ACTION_PREFIX = 'feedback_button_';
@@ -14,20 +15,15 @@ interface FeedbackButtonProps extends CompositeButtonProps {
 const getUiBackgroundColor = (variant?: ButtonVariant) => {
   switch (variant) {
     case 'primary':
-      return Color4.fromHexString('#FFFFFF');
+      return COLORS.primary;
+    case 'success':
+      return COLORS.success;
     default:
-      return Color4.fromHexString('#43404A');
+      return COLORS.surfaceHover;
   }
 };
 
-const getLabelTextColor = (variant?: ButtonVariant) => {
-  switch (variant) {
-    case 'primary':
-      return Color4.Black();
-    default:
-      return Color4.White();
-  }
-};
+const getLabelTextColor = (_variant?: ButtonVariant) => COLORS.textOnPrimary;
 
 export const FeedbackButton = (props: FeedbackButtonProps) => {
   const {
@@ -42,18 +38,14 @@ export const FeedbackButton = (props: FeedbackButtonProps) => {
   const timeoutAction = `${FEEDBACK_TIMEOUT_ACTION_PREFIX}${id}`;
 
   const handleClick = () => {
-    // Stop any existing timeout
     stopTimeout(state.adminToolkitUiEntity, timeoutAction);
 
-    // Show feedback
     setShowFeedback(true);
 
-    // Start timeout to hide feedback
     startTimeout(state.adminToolkitUiEntity, timeoutAction, feedbackDurationSeconds, () => {
       setShowFeedback(false);
     });
 
-    // Call original onMouseDown handler
     if (onMouseDown) onMouseDown();
   };
 

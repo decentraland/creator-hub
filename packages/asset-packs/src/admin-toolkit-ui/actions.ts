@@ -66,20 +66,12 @@ export function setSmartItemVisibility(entity: Entity, visible: boolean): void {
   state.smartItemsControl = { ...state.smartItemsControl, smartItems: next };
 }
 
-// --- DCL Cast compact/full ---
-export function minimizeCast(): void {
-  state.videoControl.isMinimized = true;
-}
-
-export function expandCast(): void {
-  state.videoControl.isMinimized = false;
-}
-
 // --- Presentation lifecycle ---
 // Called on the detector's presentation-started edge. Deterministic regardless of
 // the current panel/tab/casting-screen because the sub-view is shared state, not a
 // mount-derived local. Pass the casting screen index (findActiveCastScreenIndex) if
-// one is live so the panel points at it; never auto-activates a screen.
+// one is live so the panel points at it; never auto-activates a screen. The full
+// DCL Cast panel renders the presentation controls inline, so no minimize step.
 export function showPresentation(castScreenIndex?: number): void {
   openPanel();
   // Force VIDEO_CONTROL open — not setActiveTab, which would toggle it closed if
@@ -90,14 +82,12 @@ export function showPresentation(castScreenIndex?: number): void {
     selectVideoPlayer(castScreenIndex);
   }
   setStream('dcl-cast');
-  minimizeCast();
 }
 
-// Called on presentation end (bot 'stopped' or track gone). Returns to the full
-// DCL Cast panel: clears slide state and un-minimizes; leaves panel/tab as-is.
+// Called on presentation end (bot 'stopped' or track gone). Clears the slide state;
+// leaves panel/tab as-is.
 export function dismissPresentation(): void {
   clearPresentationState();
-  expandCast();
 }
 
 // Detector-driven slide/video state (arrives over the 'presentation' comms topic).
@@ -166,14 +156,6 @@ export function setAnnouncementText(text: string): void {
 
 export function clearAnnouncements(): void {
   state.textAnnouncementControl.announcements = [];
-}
-
-export function showAnnouncementBanner(kind: 'sent' | 'cleared'): void {
-  state.textAnnouncementControl.banner = kind;
-}
-
-export function clearAnnouncementBanner(): void {
-  state.textAnnouncementControl.banner = undefined;
 }
 
 // --- Moderation modals ---

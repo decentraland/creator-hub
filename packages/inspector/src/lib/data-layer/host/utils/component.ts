@@ -53,6 +53,7 @@ type SceneWithRating = Scene & {
   creator?: string;
   rating: SceneAgeRating;
   skyboxConfig?: { fixedTime?: number; transitionMode?: TransitionMode };
+  landscapeTerrain?: boolean;
 };
 
 export function fromSceneComponent(
@@ -115,6 +116,7 @@ export function fromSceneComponent(
       fixedTime: value.skyboxConfig?.fixedTime,
       transitionMode: value.skyboxConfig?.transitionMode,
     },
+    landscapeTerrain: !value.hideLandscapeTerrain,
   };
 
   if (config.segmentAppId && config.projectId) {
@@ -156,6 +158,7 @@ export function toSceneComponent(value: Scene): EditorComponentsTypes['Scene'] {
     silenceVoiceChat: value.featureToggles?.voiceChat === 'disabled',
     disablePortableExperiences: value.featureToggles?.portableExperiences === 'disabled',
     disableNearbyVoiceChat: value.featureToggles?.nearbyVoiceChat === 'disabled',
+    hideLandscapeTerrain: (value as SceneWithRating).landscapeTerrain === false,
     ageRating: (value as SceneWithRating).rating,
     skyboxConfig: {
       fixedTime: (value as SceneWithRating).skyboxConfig?.fixedTime,

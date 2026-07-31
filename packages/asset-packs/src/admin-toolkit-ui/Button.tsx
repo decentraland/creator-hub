@@ -5,45 +5,79 @@ import ReactEcs, {
   type UiTransformProps,
   type UiBackgroundProps,
 } from '@dcl/react-ecs';
-import { Color4 } from '@dcl/sdk/math';
+import { type Color4 } from '@dcl/sdk/math';
+import { COLORS, RADIUS, TYPE } from './theme';
 
-export const BTN_BACKGROUND_COLOR = {
+export type ButtonVariant = 'primary' | 'secondary' | 'text' | 'danger' | 'success';
+
+type VariantStateColors = {
+  active: Color4;
+  hover: Color4;
+  disabled: Color4;
+};
+
+// Hover feedback is a white outline stroke around the button — the fill is
+// unchanged; only the border turns white on hover.
+export const BTN_BACKGROUND_COLOR: Record<ButtonVariant, VariantStateColors> = {
   primary: {
-    active: Color4.create(252 / 255, 252 / 255, 252 / 255, 1),
-    hover: Color4.create(207 / 255, 205 / 255, 212 / 255, 1),
-    disabled: Color4.create(74 / 255, 74 / 255, 74 / 255, 1),
+    active: COLORS.primary,
+    hover: COLORS.primary,
+    disabled: COLORS.disabledBackground,
   },
   secondary: {
-    active: Color4.create(252 / 255, 252 / 255, 252 / 255, 0),
-    hover: Color4.create(207 / 255, 205 / 255, 212 / 255, 0),
-    disabled: Color4.create(74 / 255, 74 / 255, 74 / 255, 0),
+    active: COLORS.transparent,
+    hover: COLORS.transparent,
+    disabled: COLORS.transparent,
   },
   text: {
-    active: Color4.create(0, 0, 0, 0),
-    hover: Color4.create(24 / 255, 24 / 255, 24 / 255, 1),
-    disabled: Color4.create(74 / 255, 74 / 255, 74 / 255, 1),
+    active: COLORS.transparent,
+    hover: COLORS.transparent,
+    disabled: COLORS.transparent,
+  },
+  danger: {
+    active: COLORS.danger,
+    hover: COLORS.danger,
+    disabled: COLORS.disabledBackground,
+  },
+  success: {
+    active: COLORS.success,
+    hover: COLORS.success,
+    disabled: COLORS.disabledBackground,
   },
 };
 
-export const BTN_BORDER_COLOR = {
+// The button's own border is unchanged on hover — the hover feedback is a
+// separate white ring floating just outside the button (see HoverRing below).
+export const BTN_BORDER_COLOR: Record<ButtonVariant, VariantStateColors> = {
   primary: {
-    active: Color4.Clear(),
-    hover: Color4.Clear(),
-    disabled: Color4.Clear(),
+    active: COLORS.transparent,
+    hover: COLORS.transparent,
+    disabled: COLORS.transparent,
   },
   secondary: {
-    active: Color4.White(),
-    hover: Color4.fromHexString('#A09BA8'),
-    disabled: Color4.fromHexString('#323232'),
+    active: COLORS.border,
+    hover: COLORS.border,
+    disabled: COLORS.borderSubtle,
   },
   text: {
-    active: Color4.Clear(),
-    hover: Color4.Clear(),
-    disabled: Color4.Clear(),
+    active: COLORS.transparent,
+    hover: COLORS.transparent,
+    disabled: COLORS.transparent,
+  },
+  danger: {
+    active: COLORS.transparent,
+    hover: COLORS.transparent,
+    disabled: COLORS.transparent,
+  },
+  success: {
+    active: COLORS.transparent,
+    hover: COLORS.transparent,
+    disabled: COLORS.transparent,
   },
 };
 
-export type ButtonVariant = 'primary' | 'secondary' | 'text';
+// Gap between the button edge and the hover ring.
+const HOVER_RING_GAP = 3;
 
 interface ButtonStateProps {
   getColor: (variant: ButtonVariant) => Color4;
@@ -94,8 +128,8 @@ export const Button = (props: CompositeButtonProps) => {
     iconBackground,
     iconRight,
     iconRightTransform,
-    fontSize = 14,
-    color = Color4.Black(),
+    fontSize = TYPE.button,
+    color = COLORS.textOnPrimary,
     disabled,
     uiBackground,
     uiTransform,
@@ -123,13 +157,16 @@ export const Button = (props: CompositeButtonProps) => {
   }
 
   const buttonState = buttonStates.get(buttonId)!;
+  const isHover = !disabled && buttonState === HOVER_STATE;
+  const buttonRadius =
+    typeof uiTransform?.borderRadius === 'number' ? uiTransform.borderRadius : RADIUS.sm;
 
   return (
     <UiEntity
       uiTransform={{
         borderColor: buttonState.borderColor(variant),
         borderWidth: 2,
-        borderRadius: 12,
+        borderRadius: RADIUS.sm,
         ...uiTransform,
       }}
       uiBackground={{
@@ -167,7 +204,7 @@ export const Button = (props: CompositeButtonProps) => {
       {!onlyIcon && !!value ? (
         <Label
           value={value}
-          color={color}
+          color={disabled ? COLORS.textDisabled : color}
           fontSize={fontSize}
           uiTransform={labelTransform}
         />
@@ -181,6 +218,24 @@ export const Button = (props: CompositeButtonProps) => {
             },
             textureMode: 'stretch',
             ...iconRightBackground,
+          }}
+        />
+      )}
+      {/* Hover feedback: a white ring floating just outside the button, with a
+          gap. Absolute + negative insets so it never shifts layout. */}
+      {isHover && (
+        <UiEntity
+          uiTransform={{
+            positionType: 'absolute',
+            position: {
+              top: -HOVER_RING_GAP,
+              left: -HOVER_RING_GAP,
+              right: -HOVER_RING_GAP,
+              bottom: -HOVER_RING_GAP,
+            },
+            borderColor: COLORS.white,
+            borderWidth: 2,
+            borderRadius: buttonRadius + HOVER_RING_GAP,
           }}
         />
       )}

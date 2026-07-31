@@ -23,6 +23,7 @@ export type SceneInput = {
   silenceVoiceChat: boolean;
   disablePortableExperiences: boolean;
   disableNearbyVoiceChat: boolean;
+  hideLandscapeTerrain: boolean;
   spawnPoints: SpawnPointInput[];
   layout: {
     base: string;

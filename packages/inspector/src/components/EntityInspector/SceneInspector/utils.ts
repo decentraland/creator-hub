@@ -34,6 +34,8 @@ export function fromScene(value: EditorComponentsTypes['Scene']): SceneInput {
         : false,
     disableNearbyVoiceChat:
       typeof value.disableNearbyVoiceChat === 'boolean' ? value.disableNearbyVoiceChat : false,
+    hideLandscapeTerrain:
+      typeof value.hideLandscapeTerrain === 'boolean' ? value.hideLandscapeTerrain : false,
     spawnPoints: Array.isArray(value.spawnPoints)
       ? value.spawnPoints.map(spawnPoint => fromSceneSpawnPoint(spawnPoint))
       : [],
@@ -63,6 +65,7 @@ export function toScene(inputs: SceneInput): EditorComponentsTypes['Scene'] {
     silenceVoiceChat: inputs.silenceVoiceChat,
     disablePortableExperiences: inputs.disablePortableExperiences,
     disableNearbyVoiceChat: inputs.disableNearbyVoiceChat,
+    hideLandscapeTerrain: inputs.hideLandscapeTerrain,
     spawnPoints: inputs.spawnPoints.map(spawnPoint => toSceneSpawnPoint(spawnPoint)),
     layout: {
       base: parseParcels(inputs.layout.base)[0],

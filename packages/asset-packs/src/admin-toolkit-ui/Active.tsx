@@ -1,9 +1,8 @@
 import type { IEngine } from '@dcl/ecs';
-import { Color4 } from '@dcl/ecs-math';
 import type { UiTransformProps } from '@dcl/react-ecs';
 import ReactEcs, { Label, UiEntity } from '@dcl/react-ecs';
 import { clearInterval, setInterval } from './utils';
-import { COLORS } from './VideoControl';
+import { COLORS, TYPE } from './theme';
 
 interface LoadingProps {
   engine: IEngine;
@@ -46,13 +45,13 @@ export function Active({ engine, width = 8, height = 8, uiTransform }: LoadingPr
           margin: { right: 8 },
         }}
         uiBackground={{
-          color: _frame === 1 ? COLORS.SUCCESS : Color4.fromHexString('#43404A'),
+          color: _frame === 1 ? COLORS.success : COLORS.borderSubtle,
         }}
       />
       <Label
         value="<b>Active</b>"
-        color={COLORS.SUCCESS}
-        fontSize={16}
+        color={COLORS.success}
+        fontSize={TYPE.label}
       />
     </UiEntity>
   );

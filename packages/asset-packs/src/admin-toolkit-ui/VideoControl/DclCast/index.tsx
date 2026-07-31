@@ -1,8 +1,6 @@
 import ReactEcs, { UiEntity } from '@dcl/react-ecs';
 import type { DeepReadonlyObject, Entity, IEngine, PBVideoPlayer } from '@dcl/ecs';
-import { Color4 } from '@dcl/sdk/math';
 import { getComponents } from '../../../definitions';
-import { getContentUrl } from '../../constants';
 import type { State } from '../../types';
 import { Button } from '../../Button';
 import { LoadingDots } from '../../Loading';
@@ -25,20 +23,11 @@ import {
   setStream,
   setParticipants,
   setDclCastInfo,
-  minimizeCast,
 } from '../../actions';
+import { COLORS, SPACING, TYPE } from '../../theme';
+import { SectionHeader, Icon } from '../../Primitives';
 import DclCastInfo from './DclCastInfo';
-import CompactDclCast from './CompactDclCast';
 import { getDclCastStyles, getDclCastColors } from './styles';
-
-const ICONS = {
-  get DCL_CAST_ICON() {
-    return `${getContentUrl()}/admin_toolkit/assets/icons/video-control-dcl-cast.png`;
-  },
-  get CHEVRON_UP() {
-    return `${getContentUrl()}/admin_toolkit/assets/icons/chevron-up.png`;
-  },
-};
 
 async function handleGetDclCastInfo() {
   const [error, data] = await getDclCastInfo();
@@ -143,74 +132,48 @@ const DclCast = ({
     }
   }, [videoSrc]);
 
-  const isMinimized = state.videoControl.isMinimized;
-
   return (
     <UiEntity uiTransform={styles.fullContainer}>
-      {/* Compact bar — always rendered, toggled via display */}
-      <UiEntity uiTransform={{ display: isMinimized ? 'flex' : 'none', width: '100%' }}>
-        <CompactDclCast
-          engine={engine}
-          state={state}
-          entity={entity}
-          video={video}
-          onShowShowcaseModal={onShowShowcaseModal}
-        />
-      </UiEntity>
-
-      {/* Full panel — always rendered, toggled via display */}
       <UiEntity
         uiTransform={{
-          display: isMinimized ? 'none' : 'flex',
           flexDirection: 'column',
           width: '100%',
         }}
       >
-        <UiEntity uiTransform={styles.rowCenterSpaceBetween}>
-          <UiEntity uiTransform={styles.rowCenter}>
-            <UiEntity
-              uiTransform={styles.headerIcon}
-              uiBackground={{
-                textureMode: 'stretch',
-                texture: { src: ICONS.DCL_CAST_ICON },
-              }}
-            />
-            <UiEntity
-              uiText={{
-                value: '<b>DCL Cast</b>',
-                fontSize: 24,
-                color: Color4.White(),
-                textAlign: 'middle-left',
-              }}
-              uiTransform={{ margin: { left: 10 } }}
-            />
-          </UiEntity>
-          <UiEntity
-            onMouseDown={() => minimizeCast()}
-            uiTransform={styles.chevronButton}
-            uiBackground={{
-              textureMode: 'stretch',
-              color: Color4.White(),
-              texture: {
-                src: ICONS.CHEVRON_UP,
-              },
-            }}
-          />
-        </UiEntity>
-        <UiEntity uiTransform={styles.fullWidthWithBottomMargin}>
-          <UiEntity
-            uiText={{
-              value:
-                'Use a browser-based DCL Cast room to easily stream camera and screen feed to a screen in your scene.',
-              fontSize: 16,
-              color: Color4.fromHexString('#A09BA8'),
-
-              textAlign: 'top-left',
-              textWrap: 'wrap',
-            }}
-            uiTransform={styles.marginBottomSmall}
-          />
-        </UiEntity>
+        <SectionHeader
+          title="DCL Cast room"
+          right={
+            <UiEntity uiTransform={{ flexDirection: 'row', alignItems: 'center' }}>
+              <Icon
+                name="clock"
+                size={13}
+                color={COLORS.textSecondary}
+                uiTransform={{ margin: { right: SPACING.xs } }}
+              />
+              <UiEntity
+                uiText={{
+                  value: `Expires in ${state.videoControl.dclCast?.expiresInDays ?? 0} days`,
+                  fontSize: TYPE.label,
+                  color: COLORS.textSecondary,
+                }}
+              />
+            </UiEntity>
+          }
+        />
+        <UiEntity
+          uiTransform={{
+            width: '100%',
+            height: 36,
+            margin: { top: SPACING.lg, bottom: SPACING.xl },
+          }}
+          uiText={{
+            value: 'Stream camera and screen from the browser to a screen in your scene.',
+            fontSize: TYPE.label,
+            color: COLORS.textSecondary,
+            textAlign: 'top-left',
+            textWrap: 'wrap',
+          }}
+        />
         {isLoading && (
           <LoadingDots
             uiTransform={styles.loadingContainer}
@@ -222,23 +185,23 @@ const DclCast = ({
             <UiEntity
               uiText={{
                 value: '<b>Failed to fetch DCL Cast info</b>',
-                fontSize: 16,
-                color: Color4.White(),
+                fontSize: TYPE.subtitle,
+                color: COLORS.textPrimary,
               }}
               uiTransform={styles.marginBottomSmall}
             />
             <UiEntity
               uiText={{
                 value: 'Please retry.',
-                fontSize: 16,
-                color: Color4.Gray(),
+                fontSize: TYPE.body,
+                color: COLORS.textSecondary,
               }}
             />
             <Button
               id="dcl_cast_retry"
               value="<b>Retry</b>"
               variant="secondary"
-              fontSize={16}
+              fontSize={TYPE.button}
               color={colors.white}
               onMouseDown={() => {
                 fetchDclCastInfo();
