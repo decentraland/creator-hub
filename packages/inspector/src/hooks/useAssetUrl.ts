@@ -22,7 +22,14 @@ export function useAssetUrl(src: string | undefined): string | undefined {
   );
 
   useEffect(() => {
-    if (!src) return;
+    // Clearing `src` must clear the resolved URL too. The previous run's cleanup
+    // revokes the object URL, but revoking does NOT un-paint an element that has
+    // already rendered it — returning early here leaves the old asset on screen
+    // indefinitely (setting a background texture back to "None" kept the image).
+    if (!src) {
+      setAssetUrl(undefined);
+      return;
+    }
     if (isExternalUrl(src)) {
       setAssetUrl(src);
       return;

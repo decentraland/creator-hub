@@ -18,7 +18,9 @@ import './TextureField.css';
 
 type TexCase = 'texture' | 'avatarTexture';
 
-// No Video variant: react-ecs UiBackgroundProps cannot express one (#1434).
+// No Video variant: react-ecs flattens PB's TextureUnion into `texture` +
+// `avatarTexture` props and drops the video case. PB and the renderer support
+// it; the authoring type doesn't (#1434).
 const TYPE_OPTIONS: { value: TexCase; label: string }[] = [
   { value: 'texture', label: 'File' },
   { value: 'avatarTexture', label: 'Avatar' },
