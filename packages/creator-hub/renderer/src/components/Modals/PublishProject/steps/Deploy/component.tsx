@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import cx from 'classnames';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import { Typography, Checkbox } from 'decentraland-ui2';
@@ -7,8 +8,10 @@ import { misc, env } from '#preload';
 import { useDispatch, useSelector } from '#store';
 
 import { type File, type Info, type Status } from '/@/lib/deploy';
+import { isMetricsEnabled } from '/@/lib/metrics';
 
 import { useAuth } from '/@/hooks/useAuth';
+import { useFeatureFlags } from '/@/hooks/useFeatureFlags';
 import { useWorkspace } from '/@/hooks/useWorkspace';
 import { useEditor } from '/@/hooks/useEditor';
 import { useSnackbar } from '/@/hooks/useSnackbar';
@@ -55,6 +58,8 @@ function getPath(filename: string) {
 export function Deploy(props: Props) {
   const { project, previousStep, onStep, onBack, deploymentMetadata } = props;
   const { signOut, wallet } = useAuth();
+  const { flags } = useFeatureFlags();
+  const navigate = useNavigate();
   const dispatch = useDispatch();
   const { updateProjectInfo } = useWorkspace();
   const { loadingPublish, publishError } = useEditor();
@@ -130,6 +135,23 @@ export function Deploy(props: Props) {
   const handleJumpIn = useCallback(() => {
     void misc.openExternal(jumpInUrl);
   }, [jumpInUrl]);
+
+  const handleViewMetrics = useCallback(() => {
+    const state =
+      isWorld && project.worldConfiguration?.name
+        ? {
+            sceneType: 'world',
+            sceneId: project.worldConfiguration.name.toLowerCase(),
+            source: 'publish-success',
+          }
+        : {
+            sceneType: 'genesis',
+            sceneId: project.scene.base.replace(',', '|'),
+            source: 'publish-success',
+          };
+    props.onClose();
+    navigate('/metrics', { state });
+  }, [isWorld, project, navigate, props.onClose]);
 
   const handleReportIssue = useCallback(() => {
     void misc.openExternal(REPORT_ISSUES_URL);
@@ -331,6 +353,7 @@ export function Deploy(props: Props) {
                     info={deployment.info}
                     url={jumpInUrl}
                     onClick={handleJumpIn}
+                    onViewMetrics={isMetricsEnabled(flags) ? handleViewMetrics : undefined}
                   />
                 )}
               </>
@@ -537,9 +560,10 @@ type SuccessProps = {
   info: Info;
   url: string;
   onClick: () => void;
+  onViewMetrics?: () => void;
 };
 
-function Success({ info, url, onClick }: SuccessProps) {
+function Success({ info, url, onClick, onViewMetrics }: SuccessProps) {
   return (
     <div className="Success">
       <div className="content">
@@ -551,6 +575,16 @@ function Success({ info, url, onClick }: SuccessProps) {
         />
       </div>
       <div className="actions">
+        {onViewMetrics && (
+          <Button
+            size="large"
+            variant="outlined"
+            color="secondary"
+            onClick={onViewMetrics}
+          >
+            {t('metrics.actions.view_metrics')}
+          </Button>
+        )}
         <Button
           size="large"
           onClick={onClick}

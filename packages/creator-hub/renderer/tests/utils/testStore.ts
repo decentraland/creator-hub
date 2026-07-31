@@ -8,6 +8,10 @@ import * as analytics from '../../src/modules/store/analytics';
 import * as ens from '../../src/modules/store/ens';
 import * as land from '../../src/modules/store/land';
 import * as management from '../../src/modules/store/management';
+import * as metrics from '../../src/modules/store/metrics';
+import * as profiles from '../../src/modules/store/profiles';
+import * as featureFlags from '../../src/modules/store/featureFlags';
+import * as settings from '../../src/modules/store/settings';
 
 export const createTestStore = () =>
   configureStore({
@@ -21,6 +25,10 @@ export const createTestStore = () =>
       ens: ens.reducer,
       land: land.reducer,
       management: management.reducer,
+      metrics: metrics.reducer,
+      profiles: profiles.reducer,
+      featureFlags: featureFlags.reducer,
+      settings: settings.reducer,
     },
     middleware: getDefaultMiddleware =>
       getDefaultMiddleware({

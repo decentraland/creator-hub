@@ -1,0 +1,94 @@
+.MetricsChart {
+  width: 100%;
+}
+
+.MetricsChart .chart-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 8px;
+}
+
+.MetricsChart .legend-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--secondary-text);
+  font-family: var(--font-family);
+  font-size: 12px;
+}
+
+.MetricsChart .legend-swatch {
+  width: 10px;
+  height: 3px;
+  border-radius: 2px;
+}
+
+.MetricsChart svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+.MetricsChart svg:focus {
+  outline: none;
+}
+
+.MetricsChart svg:focus-visible {
+  outline: 1px solid var(--dcl-silver);
+  outline-offset: 2px;
+}
+
+.MetricsChart .grid-line {
+  stroke: var(--divider);
+  stroke-width: 1;
+}
+
+.MetricsChart .axis-text {
+  fill: var(--secondary-text);
+  font-family: var(--font-family);
+  font-size: 11px;
+}
+
+.MetricsChart .series-line {
+  fill: none;
+  stroke: var(--primary);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2;
+}
+
+.MetricsChart .series-area {
+  fill: var(--primary);
+  opacity: 0.1;
+}
+
+.MetricsChart .crosshair {
+  stroke: var(--dcl-silver);
+  stroke-width: 1;
+}
+
+.MetricsChart .hover-dot {
+  fill: var(--primary);
+  stroke: var(--card);
+  stroke-width: 2;
+}
+
+.MetricsChart .tooltip-box {
+  fill: var(--toast);
+  opacity: 0.95;
+}
+
+.MetricsChart .tooltip-value {
+  fill: var(--toast-text);
+  font-family: var(--font-family);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.MetricsChart .tooltip-text {
+  fill: var(--dcl-silver);
+  font-family: var(--font-family);
+  font-size: 11px;
+}

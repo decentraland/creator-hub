@@ -23,6 +23,7 @@ import { ScenesPage } from '/@/components/ScenesPage';
 import { EditorPage } from '/@/components/EditorPage';
 import { CollectionsPage } from '/@/components/CollectionsPage';
 import { ManagePage } from '/@/components/ManagePage';
+import { MetricsPage } from '/@/components/MetricsPage';
 import { LearnPage } from '/@/components/LearnPage';
 import { SignInPage } from '/@/components/SignInPage';
 import { TemplatesPage } from '/@/components/TemplatesPage';
@@ -105,6 +106,10 @@ root.render(
                   <Route
                     path="/manage"
                     element={<ManagePage />}
+                  />
+                  <Route
+                    path="/metrics"
+                    element={<MetricsPage />}
                   />
                   <Route
                     path="/learn"

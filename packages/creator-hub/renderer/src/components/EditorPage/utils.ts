@@ -1,7 +1,24 @@
 import type { Project } from '/shared/types/projects';
+import type { SceneType } from '/shared/types/metrics';
 import type { Deployment } from '/@/modules/store/deployment/slice';
 import { t } from '/@/modules/store/translation/utils';
 import type { PublishOption } from './MenuOptions';
+
+export type SceneMetricsTarget = { sceneType: SceneType; sceneId: string };
+
+export const resolveSceneMetricsTarget = (
+  project?: Pick<Project, 'worldConfiguration' | 'scene'>,
+): SceneMetricsTarget | null => {
+  const worldName = project?.worldConfiguration?.name;
+  if (worldName) return { sceneType: 'world', sceneId: worldName.toLowerCase() };
+
+  const landBase = project?.scene?.base;
+  if (landBase && landBase !== '0,0') {
+    return { sceneType: 'genesis', sceneId: landBase.replace(',', '|') };
+  }
+
+  return null;
+};
 
 type GetPublishButtonTextParams = {
   loadingPublish: boolean;

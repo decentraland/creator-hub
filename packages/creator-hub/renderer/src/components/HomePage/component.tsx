@@ -159,7 +159,7 @@ const ScenesCard: React.FC = React.memo(() => {
           <div className="CardList">
             {projects.slice(0, 6).map(project => (
               <CardItem
-                key={project.id}
+                key={project.path}
                 title={project.title}
                 icon={<LayersOutlinedIcon />}
                 onClick={() => handleProjectClick(project)}
