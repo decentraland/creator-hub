@@ -13,6 +13,7 @@ import { PanelName } from '../../redux/ui/types';
 
 import { EntityInspector } from '../EntityInspector';
 import { Hierarchy } from '../Hierarchy';
+import { Loading } from '../Loading';
 import { ModeSwitcher } from '../ModeSwitcher';
 import { Renderer } from '../Renderer';
 import { Box } from '../Box';
@@ -37,6 +38,17 @@ const App = () => {
   const [uiState] = useInspectorUIState();
   const isUIDesigner = !hiddenPanels[PanelName.UI_DESIGNER];
 
+  // The scene's persisted 2D/3D mode arrives with `uiState`. Committing to either
+  // mode before then paints the wrong editor and visibly switches, so hold both
+  // behind a loader. <Renderer /> still mounts throughout — createSdkContext needs
+  // its canvas, so gating it away would deadlock sdk init — it is only covered.
+  const modeResolved = uiState !== null;
+
+  // Doubles as the e2e readiness gate (test/e2e/pageObjects/App.ts), so it has to
+  // include modeResolved — neither Hierarchy nor the UI Designer is mounted before
+  // then, and signalling ready earlier races every test that waits on it.
+  const isReady = !!sdkInitialized && modeResolved;
+
   const [isAssetsPanelCollapsed, setIsAssetsPanelCollapsed] = useState(false);
 
   const handleToggleAssetsPanel = useCallback((collapse: boolean) => {
@@ -50,7 +62,7 @@ const App = () => {
 
   return (
     <div
-      className={cx('App', { 'is-ready': !!sdkInitialized })}
+      className={cx('App', { 'is-ready': isReady })}
       style={{ pointerEvents: disconnected ? 'none' : 'auto' }}
     >
       <PanelGroup
@@ -70,7 +82,7 @@ const App = () => {
                   order={1}
                 >
                   <Box className="composite-inspector">
-                    {isUIDesigner ? <UIDesignerLeftRail /> : <Hierarchy />}
+                    {modeResolved ? isUIDesigner ? <UIDesignerLeftRail /> : <Hierarchy /> : null}
                   </Box>
                 </Panel>
                 <PanelResizeHandle className="horizontal-handle" />
@@ -105,7 +117,12 @@ const App = () => {
                 >
                   <Renderer />
                 </div>
-                {!hiddenPanels[PanelName.UI_DESIGNER] && <UIDesigner />}
+                {modeResolved && !hiddenPanels[PanelName.UI_DESIGNER] && <UIDesigner />}
+                {!modeResolved && (
+                  <div className="mode-pending">
+                    <Loading />
+                  </div>
+                )}
               </Box>
             </Panel>
             {uiState?.sceneInfoPanelVisible && !!sceneInfoContent && (

@@ -1,6 +1,7 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useLayoutEffect, useRef } from 'react';
 import cx from 'classnames';
 
+import { useInspectorUIState } from '../../hooks/sdk/useInspectorUIState';
 import { useAppDispatch, useAppSelector } from '../../redux/hooks';
 import { getHiddenPanels, togglePanel } from '../../redux/ui';
 import { PanelName } from '../../redux/ui/types';
@@ -11,18 +12,42 @@ const ModeSwitcherComponent: React.FC = () => {
   const dispatch = useAppDispatch();
   const hiddenPanels = useAppSelector(getHiddenPanels);
   const isUIDesigner = !hiddenPanels[PanelName.UI_DESIGNER];
+  const [uiState, updateUIState] = useInspectorUIState();
+
+  // Not localStorage: the iframe's origin port changes each app launch, so it
+  // starts empty every session (lib/renderer/controller.ts).
+  // The latch is load-bearing — `updateUIState` round-trips back into `uiState`,
+  // so without it this effect would re-fire and fight every user toggle.
+  // Layout, not passive: a passive effect commits the toggle after the browser has
+  // already painted the default (3D), which reads as a visible mode switch.
+  // Neither tab is active until the persisted mode lands, so the switch never
+  // advertises a selection the restore is about to move.
+  const resolved = uiState !== null;
+  const is2D = resolved && isUIDesigner;
+  const is3D = resolved && !isUIDesigner;
+
+  const restored = useRef(false);
+  useLayoutEffect(() => {
+    if (!uiState || restored.current) return;
+    restored.current = true;
+    const open = !!uiState.uiDesignerOpen;
+    if (open === isUIDesigner) return;
+    dispatch(togglePanel({ panel: PanelName.UI_DESIGNER, enabled: open }));
+  }, [uiState, isUIDesigner, dispatch]);
 
   const handleSelect2D = useCallback(() => {
     if (!isUIDesigner) {
       dispatch(togglePanel({ panel: PanelName.UI_DESIGNER, enabled: true }));
     }
-  }, [dispatch, isUIDesigner]);
+    updateUIState({ uiDesignerOpen: true });
+  }, [dispatch, isUIDesigner, updateUIState]);
 
   const handleSelect3D = useCallback(() => {
     if (isUIDesigner) {
       dispatch(togglePanel({ panel: PanelName.UI_DESIGNER, enabled: false }));
     }
-  }, [dispatch, isUIDesigner]);
+    updateUIState({ uiDesignerOpen: false });
+  }, [dispatch, isUIDesigner, updateUIState]);
 
   return (
     <div
@@ -33,8 +58,8 @@ const ModeSwitcherComponent: React.FC = () => {
       <button
         type="button"
         role="tab"
-        aria-selected={isUIDesigner}
-        className={cx('ModeSwitcher-tab', { active: isUIDesigner })}
+        aria-selected={is2D}
+        className={cx('ModeSwitcher-tab', { active: is2D })}
         onClick={handleSelect2D}
         title="Edit UI"
       >
@@ -43,8 +68,8 @@ const ModeSwitcherComponent: React.FC = () => {
       <button
         type="button"
         role="tab"
-        aria-selected={!isUIDesigner}
-        className={cx('ModeSwitcher-tab', { active: !isUIDesigner })}
+        aria-selected={is3D}
+        className={cx('ModeSwitcher-tab', { active: is3D })}
         onClick={handleSelect3D}
         title="Edit scene"
       >
