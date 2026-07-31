@@ -21,3 +21,15 @@ export type PlaceAnalyticsSummary = {
   /** Minutes. */
   avgPlaytime: number | null;
 };
+
+export enum SortBy {
+  NAME_ASC = 'name_asc',
+  NAME_DESC = 'name_desc',
+  MOST_VISITS = 'most_visits',
+}
+
+/**
+ * Day 7 retention the list considers healthy, from the "20% Day 7 KR" benchmark
+ * drawn on the Retention chart. At or above it the value reads as positive.
+ */
+export const DAY_7_RETENTION_BENCHMARK = 20;

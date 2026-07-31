@@ -1,12 +1,12 @@
 import type { PlaceAnalyticsSummary } from '/shared/types/place-analytics';
 
-import { MOCK_EMPTY_PLACES } from './placeAnalytics.mock';
+import { MOCK_PLACES } from './placeAnalytics.mock';
 
 /**
- * Which fixture the mocked API resolves. Swap for `MOCK_PLACES` to work on the
- * populated list while the real endpoint does not exist.
+ * Which fixture the mocked API resolves. Swap for `MOCK_EMPTY_PLACES` to work on
+ * the empty state while the real endpoint does not exist.
  */
-const MOCKED_PLACES: PlaceAnalyticsSummary[] = MOCK_EMPTY_PLACES;
+const MOCKED_PLACES: PlaceAnalyticsSummary[] = MOCK_PLACES;
 
 /**
  * Analytics data source for published Places.

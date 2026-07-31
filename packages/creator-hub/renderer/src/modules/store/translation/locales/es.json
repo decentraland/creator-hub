@@ -927,7 +927,36 @@
     },
     "empty_list": {
       "title": "Aún no hay Places para analizar",
-      "description": "Publica una escena para empezar a medir su rendimiento. Cuando esté en vivo, vas a encontrar acá las métricas y datos clave de tu Place."
+      "description": "Publica una escena para empezar a medir su rendimiento. Cuando esté en vivo, vas a encontrar acá las métricas y datos clave de tu Place.",
+      "search": {
+        "title": "No se encontraron Places",
+        "description": "Ningún Place coincide con tu búsqueda. Probá con otro nombre."
+      }
+    },
+    "list": {
+      "places": "{count} {count, plural, one {Place} other {Places}}",
+      "search": "Buscar",
+      "minutes": "{value} min",
+      "pinned": "Fijado a la Watchlist",
+      "sort": {
+        "title": "Ordenar por",
+        "name_asc": "Nombre A-Z",
+        "name_desc": "Nombre Z-A",
+        "most_visits": "Más Visitas"
+      },
+      "columns": {
+        "place": "Place",
+        "total_visits": "Visitas Totales",
+        "new_users": "Usuarios Nuevos",
+        "day_7_retention": "Retención D7",
+        "revenue": "Ingresos",
+        "avg_playtime": "Tiempo de Juego Prom."
+      },
+      "actions": {
+        "pin_to_watchlist": "Fijar a la Watchlist",
+        "unpin_from_watchlist": "Quitar de la Watchlist",
+        "export": "Exportar Analíticas"
+      }
     }
   },
   "connection": {

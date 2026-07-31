@@ -927,7 +927,36 @@
     },
     "empty_list": {
       "title": "暂无可分析的 Place",
-      "description": "发布一个场景即可开始追踪其表现。上线后，你可以在这里查看该 Place 的关键指标和数据洞察。"
+      "description": "发布一个场景即可开始追踪其表现。上线后，你可以在这里查看该 Place 的关键指标和数据洞察。",
+      "search": {
+        "title": "未找到 Place",
+        "description": "没有符合搜索条件的 Place。请尝试其他名称。"
+      }
+    },
+    "list": {
+      "places": "{count} 个 Place",
+      "search": "搜索",
+      "minutes": "{value} 分钟",
+      "pinned": "已固定到关注列表",
+      "sort": {
+        "title": "排序方式",
+        "name_asc": "名称 A-Z",
+        "name_desc": "名称 Z-A",
+        "most_visits": "访问量最高"
+      },
+      "columns": {
+        "place": "Place",
+        "total_visits": "总访问量",
+        "new_users": "新用户",
+        "day_7_retention": "7 日留存",
+        "revenue": "收入",
+        "avg_playtime": "平均游玩时长"
+      },
+      "actions": {
+        "pin_to_watchlist": "固定到关注列表",
+        "unpin_from_watchlist": "从关注列表移除",
+        "export": "导出分析数据"
+      }
     }
   },
   "connection": {

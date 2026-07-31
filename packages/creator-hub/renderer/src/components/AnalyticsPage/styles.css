@@ -4,6 +4,24 @@
   padding-bottom: 32px;
 }
 
+.AnalyticsPage .FiltersBar {
+  margin: 0;
+}
+
+/* The designs show "3 Places", not the bar's default uppercasing. */
+.AnalyticsPage .FiltersBar .left {
+  text-transform: none;
+}
+
+.AnalyticsPage .FiltersBar .right {
+  gap: 16px;
+}
+
+.AnalyticsPage .FiltersBar .right .MuiTypography-root {
+  color: var(--secondary-text);
+  white-space: nowrap;
+}
+
 .AnalyticsPage .EmptyContainer {
   display: flex;
   flex-direction: column;

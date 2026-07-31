@@ -927,7 +927,36 @@
     },
     "empty_list": {
       "title": "No Places to analyse yet",
-      "description": "Publish a scene to start tracking its performance. Once it's live, you'll find key insights and metrics about your Place here."
+      "description": "Publish a scene to start tracking its performance. Once it's live, you'll find key insights and metrics about your Place here.",
+      "search": {
+        "title": "No Places found",
+        "description": "No Place matches your search. Try a different name."
+      }
+    },
+    "list": {
+      "places": "{count} {count, plural, one {Place} other {Places}}",
+      "search": "Search",
+      "minutes": "{value} min",
+      "pinned": "Pinned to Watchlist",
+      "sort": {
+        "title": "Sort by",
+        "name_asc": "Name A-Z",
+        "name_desc": "Name Z-A",
+        "most_visits": "Most Visits"
+      },
+      "columns": {
+        "place": "Place",
+        "total_visits": "Total Visits",
+        "new_users": "New Users",
+        "day_7_retention": "D7 Retention",
+        "revenue": "Revenue",
+        "avg_playtime": "Avg. Playtime"
+      },
+      "actions": {
+        "pin_to_watchlist": "Pin to Watchlist",
+        "unpin_from_watchlist": "Unpin from Watchlist",
+        "export": "Export Analytics"
+      }
     }
   },
   "connection": {

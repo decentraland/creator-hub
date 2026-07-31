@@ -1,9 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { PlaceAnalyticsSummary } from '../../../../../shared/types/place-analytics';
+import { SortBy } from '../../../../../shared/types/place-analytics';
 import { AuthServerProvider } from '../../../lib/auth';
 import { createTestStore } from '../../../../tests/utils/testStore';
-import { fetchPlaces, initialState } from './slice';
+import { actions, fetchPlaces, initialState, selectors } from './slice';
 
 const TEST_ADDRESS = '0x123abc';
 
@@ -95,6 +96,66 @@ describe('placeAnalytics slice', () => {
       expect(places).toEqual([]);
       expect(status).toBe('failed');
       expect(error).toBe('No connected account found');
+    });
+  });
+
+  describe('when pinning a place to the watchlist', () => {
+    it('should add it to the pinned places', () => {
+      store.dispatch(actions.togglePinnedPlace('bananarama'));
+
+      expect(store.getState().placeAnalytics.pinnedPlaceIds).toEqual(['bananarama']);
+    });
+
+    it('should remove it when pinned again', () => {
+      store.dispatch(actions.togglePinnedPlace('bananarama'));
+      store.dispatch(actions.togglePinnedPlace('bananarama'));
+
+      expect(store.getState().placeAnalytics.pinnedPlaceIds).toEqual([]);
+    });
+
+    it('should keep the other pinned places', () => {
+      store.dispatch(actions.togglePinnedPlace('bananarama'));
+      store.dispatch(actions.togglePinnedPlace('unmonday-club'));
+      store.dispatch(actions.togglePinnedPlace('bananarama'));
+
+      expect(store.getState().placeAnalytics.pinnedPlaceIds).toEqual(['unmonday-club']);
+    });
+  });
+
+  describe('when reading the visible places', () => {
+    const OTHER_PLACE = { ...PLACE, placeId: 'unmonday-club', name: 'Unmonday Club' };
+
+    beforeEach(async () => {
+      vi.mocked(AuthServerProvider.getAccount).mockReturnValue(TEST_ADDRESS);
+      mockPlaceAnalyticsAPI.fetchPlaces.mockResolvedValue([OTHER_PLACE, PLACE]);
+      await store.dispatch(fetchPlaces());
+    });
+
+    it('should apply the selected sorting', () => {
+      store.dispatch(actions.setSortBy(SortBy.NAME_DESC));
+
+      expect(selectors.getVisiblePlaces(store.getState() as any).map($ => $.name)).toEqual([
+        'Unmonday Club',
+        'Bananarama',
+      ]);
+    });
+
+    it('should apply the search query', () => {
+      store.dispatch(actions.setSearchQuery('banana'));
+
+      expect(selectors.getVisiblePlaces(store.getState() as any).map($ => $.name)).toEqual([
+        'Bananarama',
+      ]);
+    });
+
+    it('should list pinned places first', () => {
+      store.dispatch(actions.setSortBy(SortBy.NAME_ASC));
+      store.dispatch(actions.togglePinnedPlace('unmonday-club'));
+
+      expect(selectors.getVisiblePlaces(store.getState() as any).map($ => $.name)).toEqual([
+        'Unmonday Club',
+        'Bananarama',
+      ]);
     });
   });
 });
