@@ -28,14 +28,11 @@ import { getLanIp } from './network';
 
 export type Preview = { child: Child; url: string; opts: PreviewOptions };
 
-// Explorer deeplink params for locally generated asset bundles. sdk-commands owns the
+// Explorer deeplink param for locally generated asset bundles. sdk-commands owns the
 // abgen sidecar (--asset-bundles) and injects local-ab into the deeplink it fires only
 // when the sidecar actually booted — its presence in the captured deeplink is the
-// source of truth for whether the running preview has one. Older sdk-commands versions
-// also emitted optimized-assets-url alongside it; the hub still strips that legacy
-// param when the toggle goes off.
+// source of truth for whether the running preview has one.
 const LOCAL_AB_PARAM = 'local-ab';
-const OPTIMIZED_ASSETS_URL_PARAM = 'optimized-assets-url';
 
 // A large scene's first conversion can take minutes before the deeplink appears; the
 // sidecar's progress lines are streamed to the renderer so the preview button can say
@@ -264,9 +261,6 @@ function updateDeepLinkWithOpts(params: string, newOpts: PreviewOptions): string
       );
     }
     setOrDeleteParam(LOCAL_AB_PARAM, newOpts.optimizedAssets && hasSidecar);
-    if (!newOpts.optimizedAssets) {
-      setOrDeleteParam(OPTIMIZED_ASSETS_URL_PARAM, false);
-    }
 
     // this param is different from what we recieved from the CLI that the one that the launcher uses.
     setOrDeleteParam('open-deeplink-in-new-instance', newOpts.openNewInstance);

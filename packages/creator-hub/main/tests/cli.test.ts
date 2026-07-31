@@ -266,30 +266,6 @@ describe('cli preview start', () => {
     });
   });
 
-  describe('when a preview from an older sdk carries the legacy sidecar url alongside local-ab', () => {
-    beforeEach(async () => {
-      setSceneSupportsAssetBundles(true);
-      const fake = createFakeChild();
-      mocks.run.mockReturnValue(fake.child);
-      const promise = start(path, { ...BASE_OPTS, optimizedAssets: true });
-      fake.printDeeplink(
-        'realm=http://127.0.0.1:8000&local-ab=true&optimized-assets-url=http://127.0.0.1:9000',
-      );
-      await promise;
-      mocks.run.mockClear();
-    });
-
-    it('should still detect the sidecar via local-ab and re-focus instead of respawning', async () => {
-      await start(path, { ...BASE_OPTS, optimizedAssets: true });
-
-      expect(mocks.run).not.toHaveBeenCalled();
-      expect(mocks.dclDeepLink).toHaveBeenCalledTimes(1);
-      const fired = new URLSearchParams(mocks.dclDeepLink.mock.calls[0][0]);
-      expect(fired.get('local-ab')).toBe('true');
-      expect(fired.get('optimized-assets-url')).toBe('http://127.0.0.1:9000');
-    });
-  });
-
   describe('when a second start arrives while a spawn is still converting', () => {
     it('should ride the in-flight spawn instead of racing a second one', async () => {
       const fake = createFakeChild();
