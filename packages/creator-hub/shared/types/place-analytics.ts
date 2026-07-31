@@ -73,16 +73,34 @@ export type TimeSeriesPoint = {
   value: number | null;
 };
 
-/** A metric compared across the platforms users play on. Percentages, 0-100. */
+/** A metric compared across the platforms users play on; the unit is the metric's. */
 export type PlatformBreakdown = {
   all: number | null;
   desktop: number | null;
   mobile: number | null;
 };
 
+/** How a week's active users split between first-timers, returners and win-backs. */
+export type WeeklyUsersFlowPoint = {
+  /** Epoch milliseconds of the start of the week. */
+  date: number;
+  newUsers: number | null;
+  returnedUsers: number | null;
+  reactivatedUsers: number | null;
+};
+
+/** The metrics behind the Visits tab. */
+export type PlaceVisitsMetrics = {
+  /** Unique visitors per platform over the last 60 days, deduplicated. */
+  uniqueVisits: PlatformBreakdown;
+  /** Unique active users in each week. */
+  weeklyActiveUsers: TimeSeriesPoint[];
+  weeklyUsersFlow: WeeklyUsersFlowPoint[];
+};
+
 /** The metrics behind the Retention tab. */
 export type PlaceRetentionMetrics = {
-  /** 60-day rolling average retention per platform. */
+  /** 60-day rolling average retention per platform, as percentages. */
   platforms: PlatformBreakdown;
   /** Percentage of each week's new users who came back on day 7. */
   day7ByCohortWeek: TimeSeriesPoint[];

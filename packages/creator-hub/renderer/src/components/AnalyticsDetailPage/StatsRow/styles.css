@@ -1,9 +1,15 @@
 .StatsRow {
   display: flex;
-  gap: 16px;
+  flex-direction: column;
+  gap: 12px;
   padding: 16px 24px;
   border-radius: 12px;
   background-color: var(--background);
+}
+
+.StatsRow .Stats {
+  display: flex;
+  gap: 16px;
 }
 
 .StatsRow .Stat {

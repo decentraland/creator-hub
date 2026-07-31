@@ -987,6 +987,30 @@
           "description": "Percentage of active users from the previous week who did not return this week."
         }
       },
+      "visits": {
+        "title": "Visits",
+        "description": "Understand how many users visited your place and how many were new or returning visitors.",
+        "unique": {
+          "title": "Unique Visits in the Last 60 Days",
+          "footnote": "Unique users, deduplicated across platforms. People who use both desktop and mobile are counted once in All Platforms and once in each platform's total."
+        },
+        "weekly_active": {
+          "title": "Weekly Active Users",
+          "description": "Unique active users during each week."
+        },
+        "flow": {
+          "title": "Weekly Users Flow",
+          "description": "Track how your weekly users move between new, returning, and reactivated.",
+          "returned": {
+            "label": "Returned Users",
+            "tooltip": "Users who visited last week and came back this week."
+          },
+          "reactivated": {
+            "label": "Reactivated Users",
+            "tooltip": "Users who had stopped visiting and returned this week."
+          }
+        }
+      },
       "platforms": {
         "all": "All Platforms",
         "desktop": "Desktop",

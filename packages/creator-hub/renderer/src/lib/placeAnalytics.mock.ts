@@ -2,7 +2,9 @@ import type {
   PlaceAnalyticsDetail,
   PlaceAnalyticsSummary,
   PlaceRetentionMetrics,
+  PlaceVisitsMetrics,
   TimeSeriesPoint,
+  WeeklyUsersFlowPoint,
 } from '/shared/types/place-analytics';
 import { PlaceAccess } from '/shared/types/place-analytics';
 
@@ -163,4 +165,66 @@ const MOCK_RETENTION: Record<string, PlaceRetentionMetrics> = {
 
 export function getMockRetention(placeId: string): PlaceRetentionMetrics | undefined {
   return MOCK_RETENTION[placeId];
+}
+
+function weeklyFlow(
+  rows: Array<[number | null, number | null, number | null]>,
+): WeeklyUsersFlowPoint[] {
+  return rows.map(([newUsers, returnedUsers, reactivatedUsers], index) => ({
+    date: FIRST_WEEK + index * ONE_WEEK,
+    newUsers,
+    returnedUsers,
+    reactivatedUsers,
+  }));
+}
+
+const MOCK_VISITS: Record<string, PlaceVisitsMetrics> = {
+  bananarama: {
+    uniqueVisits: { all: 127, desktop: 127, mobile: 125 },
+    weeklyActiveUsers: weekly([48, 74, 61, 96, 132, 118, 87, 154, 141, 109, 96, 128, 112]),
+    weeklyUsersFlow: weeklyFlow([
+      [38, 12, 8],
+      [57, 21, 24],
+      [36, 141, 32],
+      [8, 92, 172],
+      [59, 24, 15],
+      [6, 137, 96],
+      [46, 14, 8],
+      [12, 28, 22],
+      [58, 22, 18],
+      [50, 32, 48],
+      [12, 24, 14],
+      [38, 18, 6],
+      [40, 16, 8],
+    ]),
+  },
+  'halloween-nightmare': {
+    uniqueVisits: { all: 42, desktop: 31, mobile: 14 },
+    weeklyActiveUsers: weekly([12, 18, 9, 22, 14, 8, 16, 11, 19, 7, 13, 10, 15]),
+    weeklyUsersFlow: weeklyFlow([
+      [8, 3, 1],
+      [11, 5, 2],
+      [4, 4, 1],
+      [12, 7, 3],
+      [6, 6, 2],
+      [3, 4, 1],
+      [9, 5, 2],
+      [5, 4, 2],
+      [10, 6, 3],
+      [2, 4, 1],
+      [7, 4, 2],
+      [4, 5, 1],
+      [8, 5, 2],
+    ]),
+  },
+  /** Live, but nothing measured yet — the charts render their empty state. */
+  'unmonday-club': {
+    uniqueVisits: { all: null, desktop: null, mobile: null },
+    weeklyActiveUsers: [],
+    weeklyUsersFlow: [],
+  },
+};
+
+export function getMockVisits(placeId: string): PlaceVisitsMetrics | undefined {
+  return MOCK_VISITS[placeId];
 }

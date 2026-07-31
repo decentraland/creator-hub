@@ -11,6 +11,7 @@ import {
   actions,
   fetchPlaceDetail,
   fetchPlaceRetention,
+  fetchPlaceVisits,
   fetchPlaces,
   initialState,
   selectors,
@@ -60,10 +61,19 @@ const RETENTION = {
   weeklyChurnRate: [{ date: 1_773_000_000_000, value: 31.2 }],
 };
 
+const VISITS = {
+  uniqueVisits: { all: 127, desktop: 127, mobile: 125 },
+  weeklyActiveUsers: [{ date: 1_773_000_000_000, value: 48 }],
+  weeklyUsersFlow: [
+    { date: 1_773_000_000_000, newUsers: 38, returnedUsers: 12, reactivatedUsers: 8 },
+  ],
+};
+
 const mockPlaceAnalyticsAPI = {
   fetchPlaces: vi.fn(),
   fetchPlaceDetail: vi.fn(),
   fetchPlaceRetention: vi.fn(),
+  fetchPlaceVisits: vi.fn(),
 };
 
 vi.mock('/@/lib/placeAnalytics', () => ({
@@ -317,6 +327,52 @@ describe('placeAnalytics slice', () => {
       store.dispatch(actions.clearDetail());
 
       expect(store.getState().placeAnalytics.retention).toEqual(initialState.retention);
+    });
+  });
+
+  describe('when opening the visits tab', () => {
+    beforeEach(() => {
+      vi.mocked(AuthServerProvider.getAccount).mockReturnValue(TEST_ADDRESS);
+      mockPlaceAnalyticsAPI.fetchPlaceVisits.mockResolvedValue(VISITS);
+    });
+
+    it('should request it for the selected date range', async () => {
+      store.dispatch(actions.setDateRange(DateRange.LAST_30_DAYS));
+      await store.dispatch(fetchPlaceVisits({ placeId: 'bananarama' }));
+
+      expect(mockPlaceAnalyticsAPI.fetchPlaceVisits).toHaveBeenCalledWith(
+        TEST_ADDRESS,
+        'bananarama',
+        DateRange.LAST_30_DAYS,
+      );
+    });
+
+    it('should store it against the place it belongs to', async () => {
+      await store.dispatch(fetchPlaceVisits({ placeId: 'bananarama' }));
+
+      expect(store.getState().placeAnalytics.visits).toEqual({
+        placeId: 'bananarama',
+        data: VISITS,
+        status: 'succeeded',
+        error: null,
+      });
+    });
+
+    it('should not be affected by the retention tab of another place', async () => {
+      mockPlaceAnalyticsAPI.fetchPlaceRetention.mockResolvedValue(RETENTION);
+      await store.dispatch(fetchPlaceVisits({ placeId: 'bananarama' }));
+      await store.dispatch(fetchPlaceRetention({ placeId: 'bananarama' }));
+
+      const { visits, retention } = store.getState().placeAnalytics;
+      expect(visits.data).toEqual(VISITS);
+      expect(retention.data).toEqual(RETENTION);
+    });
+
+    it('should be reset along with the detail when leaving the page', async () => {
+      await store.dispatch(fetchPlaceVisits({ placeId: 'bananarama' }));
+      store.dispatch(actions.clearDetail());
+
+      expect(store.getState().placeAnalytics.visits).toEqual(initialState.visits);
     });
   });
 });

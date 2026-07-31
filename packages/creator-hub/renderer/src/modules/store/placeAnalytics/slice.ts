@@ -5,6 +5,7 @@ import type {
   PlaceAnalyticsDetail,
   PlaceAnalyticsSummary,
   PlaceRetentionMetrics,
+  PlaceVisitsMetrics,
 } from '/shared/types/place-analytics';
 import { DateRange, SortBy } from '/shared/types/place-analytics';
 
@@ -92,11 +93,25 @@ export const fetchPlaceRetention = createAsyncThunk(
   },
 );
 
+/** Visit metrics of a single Place, loaded when that tab is opened. */
+export const fetchPlaceVisits = createAsyncThunk(
+  'placeAnalytics/fetchPlaceVisits',
+  async ({ placeId }: { placeId: string }, { getState }) => {
+    const connectedAccount = AuthServerProvider.getAccount();
+    if (!connectedAccount) throw new Error('No connected account found');
+
+    const { dateRange } = getState().placeAnalytics;
+    const PlaceAnalyticsAPI = new PlaceAnalytics();
+    return PlaceAnalyticsAPI.fetchPlaceVisits(connectedAccount, placeId, dateRange);
+  },
+);
+
 // state
 export type PlaceAnalyticsState = {
   places: PlaceAnalyticsSummary[];
   detail: PlaceScopedState<PlaceAnalyticsDetail>;
   retention: PlaceScopedState<PlaceRetentionMetrics>;
+  visits: PlaceScopedState<PlaceVisitsMetrics>;
   dateRange: DateRange;
   sortBy: SortBy;
   searchQuery: string;
@@ -111,6 +126,7 @@ export const initialState: Async<PlaceAnalyticsState> = {
   places: [],
   detail: idle(),
   retention: idle(),
+  visits: idle(),
   dateRange: DateRange.LAST_7_DAYS,
   sortBy: SortBy.NAME_ASC,
   searchQuery: '',
@@ -136,6 +152,7 @@ const slice = createSlice({
     clearDetail: state => {
       state.detail = initialState.detail;
       state.retention = initialState.retention;
+      state.visits = initialState.visits;
     },
     togglePinnedPlace: (state, action: PayloadAction<string>) => {
       const placeId = action.payload;
@@ -183,6 +200,18 @@ const slice = createSlice({
           action.meta.arg.placeId,
           action.error.message || 'Failed to fetch place retention',
         );
+      })
+      .addCase(fetchPlaceVisits.pending, (state, action) => {
+        state.visits = loading(state.visits, action.meta.arg.placeId);
+      })
+      .addCase(fetchPlaceVisits.fulfilled, (state, action) => {
+        state.visits = loaded(action.meta.arg.placeId, action.payload);
+      })
+      .addCase(fetchPlaceVisits.rejected, (state, action) => {
+        state.visits = failed(
+          action.meta.arg.placeId,
+          action.error.message || 'Failed to fetch place visits',
+        );
       });
   },
 });
@@ -209,5 +238,6 @@ export const actions = {
   fetchPlaces,
   fetchPlaceDetail,
   fetchPlaceRetention,
+  fetchPlaceVisits,
 };
 export const reducer = slice.reducer;

@@ -16,6 +16,7 @@ import { DateRange } from '/shared/types/place-analytics';
 
 import { useDispatch, useSelector } from '#store';
 import { t } from '/@/modules/store/translation/utils';
+import type { PlaceScopedState } from '/@/modules/store/placeAnalytics';
 import { actions as placeAnalyticsActions } from '/@/modules/store/placeAnalytics';
 import { useAuth } from '/@/hooks/useAuth';
 
@@ -28,6 +29,7 @@ import { Title } from '../Title';
 import { OverviewTab } from './OverviewTab';
 import { PlaceCard } from './PlaceCard';
 import { RetentionTab } from './RetentionTab';
+import { VisitsTab } from './VisitsTab';
 
 import './styles.css';
 
@@ -37,20 +39,40 @@ const DATE_RANGE_OPTIONS: Array<{ label: string; value: DateRange }> = [
   { label: t('analytics.detail.date_range.last_60_days'), value: DateRange.LAST_60_DAYS },
 ];
 
-/** Visits and Engagement are not built yet, but are shown so the page reads honestly. */
+/** Engagement is not built yet, but is shown so the page reads honestly. */
 const TABS = [
   { value: 'overview', label: t('analytics.detail.tabs.overview'), enabled: true },
   { value: 'retention', label: t('analytics.detail.tabs.retention'), enabled: true },
-  { value: 'visits', label: t('analytics.detail.tabs.visits'), enabled: false },
+  { value: 'visits', label: t('analytics.detail.tabs.visits'), enabled: true },
   { value: 'engagement', label: t('analytics.detail.tabs.engagement'), enabled: false },
 ];
 
-type TabValue = 'overview' | 'retention';
+type TabValue = 'overview' | 'retention' | 'visits';
+
+/** Renders a tab's data once it has loaded, or its loading and error states. */
+function TabContent<T>({
+  state,
+  children,
+}: {
+  state: PlaceScopedState<T>;
+  children: (data: T) => JSX.Element;
+}) {
+  if (state.status === 'idle' || state.status === 'loading') return <Loader size={70} />;
+  if (state.status === 'failed' || !state.data) {
+    return (
+      <Box className="ErrorContainer">
+        <Typography variant="h5">{t('analytics.detail.error.title')}</Typography>
+        <Typography variant="body1">{state.error}</Typography>
+      </Box>
+    );
+  }
+  return children(state.data);
+}
 
 export function AnalyticsDetailPage() {
   const { placeId } = useParams<{ placeId: string }>();
   const { isSignedIn } = useAuth();
-  const { detail, retention, dateRange } = useSelector(state => state.placeAnalytics);
+  const { detail, retention, visits, dateRange } = useSelector(state => state.placeAnalytics);
   const [tab, setTab] = useState<TabValue>('overview');
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -65,9 +87,9 @@ export function AnalyticsDetailPage() {
 
   // Each tab's data is fetched the first time it is opened, and on range changes.
   useEffect(() => {
-    if (isSignedIn && placeId && tab === 'retention') {
-      dispatch(placeAnalyticsActions.fetchPlaceRetention({ placeId }));
-    }
+    if (!isSignedIn || !placeId) return;
+    if (tab === 'retention') dispatch(placeAnalyticsActions.fetchPlaceRetention({ placeId }));
+    if (tab === 'visits') dispatch(placeAnalyticsActions.fetchPlaceVisits({ placeId }));
   }, [isSignedIn, placeId, tab, dateRange]);
 
   useEffect(() => () => void dispatch(placeAnalyticsActions.clearDetail()), []);
@@ -151,17 +173,14 @@ export function AnalyticsDetailPage() {
                   </Select>
                 </Box>
               </Box>
-              {tab === 'overview' ? (
-                <OverviewTab overview={detail.data.overview} />
-              ) : retention.status === 'idle' || retention.status === 'loading' ? (
-                <Loader size={70} />
-              ) : retention.status === 'failed' || !retention.data ? (
-                <Box className="ErrorContainer">
-                  <Typography variant="h5">{t('analytics.detail.error.title')}</Typography>
-                  <Typography variant="body1">{retention.error}</Typography>
-                </Box>
-              ) : (
-                <RetentionTab retention={retention.data} />
+              {tab === 'overview' && <OverviewTab overview={detail.data.overview} />}
+              {tab === 'retention' && (
+                <TabContent state={retention}>
+                  {data => <RetentionTab retention={data} />}
+                </TabContent>
+              )}
+              {tab === 'visits' && (
+                <TabContent state={visits}>{data => <VisitsTab visits={data} />}</TabContent>
               )}
             </Box>
           </Box>

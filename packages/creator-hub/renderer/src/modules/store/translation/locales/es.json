@@ -987,6 +987,30 @@
           "description": "Porcentaje de usuarios activos de la semana anterior que no volvieron esta semana."
         }
       },
+      "visits": {
+        "title": "Visitas",
+        "description": "Entendé cuántos usuarios visitaron tu place y cuántos eran nuevos o recurrentes.",
+        "unique": {
+          "title": "Visitas Únicas en los Últimos 60 Días",
+          "footnote": "Usuarios únicos, sin duplicados entre plataformas. Quienes usan escritorio y móvil se cuentan una vez en Todas las Plataformas y una vez en el total de cada plataforma."
+        },
+        "weekly_active": {
+          "title": "Usuarios Activos Semanales",
+          "description": "Usuarios únicos activos durante cada semana."
+        },
+        "flow": {
+          "title": "Flujo Semanal de Usuarios",
+          "description": "Seguí cómo tus usuarios semanales se mueven entre nuevos, recurrentes y reactivados.",
+          "returned": {
+            "label": "Usuarios Recurrentes",
+            "tooltip": "Usuarios que visitaron la semana pasada y volvieron esta semana."
+          },
+          "reactivated": {
+            "label": "Usuarios Reactivados",
+            "tooltip": "Usuarios que habían dejado de visitar y volvieron esta semana."
+          }
+        }
+      },
       "platforms": {
         "all": "Todas las Plataformas",
         "desktop": "Escritorio",

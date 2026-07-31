@@ -14,6 +14,16 @@ export const SERIES_COLOR = '#ff2d55';
 /** Benchmark and threshold lines. Reads apart from the series under every CVD type. */
 export const REFERENCE_COLOR = '#7a7aff';
 
+/**
+ * Categorical hues for multi-series charts, in fixed order — a series keeps its
+ * color wherever it appears, and the order is never cycled for a new series.
+ * Validated all-pairs (worst CVD ΔE 9.6, normal vision 21.1):
+ *
+ *   node scripts/validate_palette.js "#6690f0,#17a06f,#c9761f" \
+ *     --mode dark --surface "#242129" --pairs all
+ */
+export const CATEGORICAL_COLORS = ['#6690f0', '#17a06f', '#c9761f'];
+
 /** Recessive chrome, one step off the surface. */
 export const GRID_COLOR = '#43404a';
 export const AXIS_TEXT_COLOR = '#9b97a3';
