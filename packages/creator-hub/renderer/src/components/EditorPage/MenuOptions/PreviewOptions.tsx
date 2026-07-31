@@ -38,6 +38,9 @@ export function PreviewOptions({
   // otherwise the toggle silently does nothing — so hide it entirely for unsupported scenes
   const [sceneSupportsOptimizedAssets, setSceneSupportsOptimizedAssets] = useState(false);
   const supportsOptimizedAssets = platformSupportsOptimizedAssets && sceneSupportsOptimizedAssets;
+  // The asset-bundle sidecar rides the Unity deep-link (local-ab param); the Bevy web
+  // client has no deep-link, so an optimized preview can't apply there.
+  const isBevyWebClient = options.client === PREVIEW_CLIENT.BEVY_WEB;
 
   useEffect(() => {
     if (!platformSupportsOptimizedAssets) {
@@ -164,7 +167,7 @@ export function PreviewOptions({
             label={t('editor.header.actions.preview_options.mcp')}
           />
         )}
-        {supportsOptimizedAssets && (
+        {supportsOptimizedAssets && !isBevyWebClient && (
           <Tooltip
             title={t('editor.header.actions.preview_options.optimized_assets_tooltip')}
             placement="left"
