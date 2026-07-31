@@ -109,6 +109,7 @@ const PREVIEW_OPTIONS_MAP: Record<keyof PreviewArguments, string> = {
   openNewInstance: '-n',
   skipAuthScreen: '--skip-auth-screen',
   multiInstance: '--multi-instance',
+  mcp: '--mcp',
 };
 
 function generatePreviewArguments(opts: PreviewOptions) {
@@ -251,6 +252,7 @@ function updateDeepLinkWithOpts(params: string, newOpts: PreviewOptions): string
     setOrDeleteParam(PREVIEW_OPTIONS_MAP.skipAuthScreen, !newOpts.multiInstance);
     setOrDeleteParam(PREVIEW_OPTIONS_MAP.enableLandscapeTerrains, newOpts.enableLandscapeTerrains);
     setOrDeleteParam(PREVIEW_OPTIONS_MAP.multiInstance, newOpts.multiInstance);
+    setOrDeleteParam(PREVIEW_OPTIONS_MAP.mcp, newOpts.mcp);
 
     // Locally generated asset bundles: local-ab is only valid when the captured deeplink
     // carried it, i.e. the preview was spawned with a sidecar. Setting it on a preview

@@ -69,6 +69,7 @@ export function EditorPage() {
     publishScene,
     getMobileQR,
     supportsMultiInstance,
+    supportsMcp,
     isPreviewRunning,
     startBevyRealm,
     killBevyRealm,
@@ -573,6 +574,7 @@ export function EditorPage() {
                       onChange={handleChangePreviewOptions}
                       onShowMobileQR={handleShowMobileQR}
                       supportsMultiInstance={supportsMultiInstance}
+                      supportsMcp={supportsMcp}
                       projectPath={project.path}
                     />
                   }
