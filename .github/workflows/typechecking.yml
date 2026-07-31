@@ -21,6 +21,7 @@ jobs:
         id: setup
         with:
           cache-protoc: 'true'
+          cache-asset-packs-build: 'true'
 
       - name: install
         if: steps.setup.outputs.node-modules-cache-hit != 'true'
@@ -29,8 +30,7 @@ jobs:
           PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: '1'
 
       - run: make protoc
-      - name: build asset-packs typecheck deps
-        run: |
-          npm run -w @dcl/asset-packs build:lib
-          npm run -w @dcl/asset-packs build:catalog
+      - name: build asset-packs
+        if: steps.setup.outputs.asset-packs-build-cache-hit != 'true'
+        run: make build-asset-packs
       - run: npm run typecheck --if-present
