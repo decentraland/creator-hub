@@ -151,6 +151,12 @@ CI is orchestrated by `.github/workflows/ci.yml`, which calls reusable
   as major tags. `upload-artifact` (max v7) and `download-artifact` (v8) are
   independently versioned but artifact-format-compatible across v4+ — keep both
   at v7 for consistency.
+- **Creator-hub PR builds are unsigned zip-only; releases build the full signed dmg.**
+  electron-builder auto-skips code signing on PRs ("Current build is a part of pull
+  request, code signing will be skipped"), so on PRs the two `.dmg` builds (~115 s) were
+  pure cost with no signed output. `mac.target` in `electron-builder.cjs` is `DRY_RUN`-gated:
+  zip-only (both arches) on PRs, full `dmg + zip` on `main` (`dry-run: false`). Don't re-add
+  dmg to the PR path or expect signing/notarization on PR builds.
 
 ## Code Style
 
