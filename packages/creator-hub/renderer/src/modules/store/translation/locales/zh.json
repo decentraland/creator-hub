@@ -45,6 +45,7 @@
       "toggle": "AI",
       "close": "关闭 AI 助手",
       "change_api_key": "管理 AI 登录",
+      "new_conversation": "新对话",
       "setup": {
         "description": "AI 助手使用 OpenDCL 编码代理在本地编辑你的场景文件。使用现有的 AI 订阅登录，或提供你自己的 Anthropic API 密钥。凭据仅保存在这台电脑上。",
         "sign_in_with": "使用 {provider} 登录",

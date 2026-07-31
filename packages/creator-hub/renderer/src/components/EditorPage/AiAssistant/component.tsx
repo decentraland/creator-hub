@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useReducer, useRef, useState } from 'react';
+import AddCommentIcon from '@mui/icons-material/AddComment';
 import BuildIcon from '@mui/icons-material/Build';
 import CheckIcon from '@mui/icons-material/Check';
 import CloseIcon from '@mui/icons-material/Close';
@@ -22,7 +23,7 @@ import { t } from '/@/modules/store/translation/utils';
 import { actions as workspaceActions } from '/@/modules/store/workspace';
 import { useSettings } from '/@/hooks/useSettings';
 
-import { chatReducer, INITIAL_CHAT_STATE } from './chat';
+import { chatReducer, INITIAL_CHAT_STATE, mapMessagesToChatItems } from './chat';
 import {
   AssistantText,
   AuthInstructions,
@@ -151,6 +152,13 @@ export function AiAssistant({ projectPath, onClose, onSceneChanged }: Props) {
       });
       cleanupRef.current = cleanup;
       setView('chat');
+      // The agent resumes the scene's previous session (--continue); rebuild
+      // the transcript from its message history so reopening the panel does
+      // not present an empty chat.
+      const messages = await ai.getAiMessages(projectPath);
+      if (messages.length > 0) {
+        dispatchChat({ type: 'restore', items: mapMessagesToChatItems(messages, projectPath) });
+      }
     } catch (error) {
       dispatchChat({ type: 'error', text: getErrorMessage(error) });
       setView('chat');
@@ -319,6 +327,16 @@ export function AiAssistant({ projectPath, onClose, onSceneChanged }: Props) {
     });
   }, [projectPath]);
 
+  const handleNewConversation = useCallback(async () => {
+    if (state.busy) return;
+    try {
+      await ai.newAiSession(projectPath);
+      dispatchChat({ type: 'reset' });
+    } catch (error) {
+      dispatchChat({ type: 'error', text: getErrorMessage(error) });
+    }
+  }, [projectPath, state.busy]);
+
   const handleInputKeyDown = useCallback(
     (event: React.KeyboardEvent) => {
       if (event.key === 'Enter' && !event.shiftKey) {
@@ -342,13 +360,23 @@ export function AiAssistant({ projectPath, onClose, onSceneChanged }: Props) {
       <PanelHeader>
         <Typography variant="subtitle1">{t('editor.ai_assistant.title')}</Typography>
         {view === 'chat' && (
-          <IconButton
-            size="small"
-            onClick={handleChangeApiKey}
-            aria-label={t('editor.ai_assistant.change_api_key')}
-          >
-            <KeyIcon fontSize="small" />
-          </IconButton>
+          <>
+            <IconButton
+              size="small"
+              onClick={() => void handleNewConversation()}
+              disabled={state.busy}
+              aria-label={t('editor.ai_assistant.new_conversation')}
+            >
+              <AddCommentIcon fontSize="small" />
+            </IconButton>
+            <IconButton
+              size="small"
+              onClick={handleChangeApiKey}
+              aria-label={t('editor.ai_assistant.change_api_key')}
+            >
+              <KeyIcon fontSize="small" />
+            </IconButton>
+          </>
         )}
         <IconButton
           size="small"

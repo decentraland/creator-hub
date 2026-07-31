@@ -45,6 +45,7 @@
       "toggle": "IA",
       "close": "Cerrar el Asistente IA",
       "change_api_key": "Gestionar el inicio de sesión de IA",
+      "new_conversation": "Nueva conversación",
       "setup": {
         "description": "El Asistente IA edita los archivos de tu escena localmente usando el agente OpenDCL. Inicia sesión con una suscripción de IA existente o proporciona tu propia clave de API de Anthropic. Las credenciales se guardan solo en este equipo.",
         "sign_in_with": "Iniciar sesión con {provider}",

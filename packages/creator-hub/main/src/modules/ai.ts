@@ -39,6 +39,52 @@ function writeCommand(child: ChildProcessWithoutNullStreams, command: Record<str
   child.stdin.write(`${JSON.stringify(command)}\n`);
 }
 
+const COMMAND_TIMEOUT_MS = 15_000;
+
+type PendingCommand = {
+  path: string;
+  resolve: (event: Record<string, unknown>) => void;
+  reject: (error: Error) => void;
+  timeout: NodeJS.Timeout;
+};
+
+let commandIdCounter = 0;
+const pendingCommands = new Map<string, PendingCommand>();
+
+/**
+ * Sends an RPC command with a correlation id and resolves with the agent's
+ * matching `response` event. Fire-and-forget commands (prompt, abort) don't
+ * need this; use it for request/response commands like `get_messages`.
+ */
+function sendCommand(
+  path: string,
+  command: Record<string, unknown>,
+): Promise<Record<string, unknown>> {
+  const agent = agents.get(path);
+  if (!agent) {
+    return Promise.reject(new Error(`No AI agent running for path: ${path}`));
+  }
+  const id = `creator-hub-${++commandIdCounter}`;
+  return new Promise((resolve, reject) => {
+    const timeout = setTimeout(() => {
+      pendingCommands.delete(id);
+      reject(new Error(`AI agent command "${command.type}" timed out`));
+    }, COMMAND_TIMEOUT_MS);
+    pendingCommands.set(id, { path, resolve, reject, timeout });
+    writeCommand(agent.child, { ...command, id });
+  });
+}
+
+function rejectPendingCommands(path: string, reason: string) {
+  for (const [id, pending] of pendingCommands) {
+    if (pending.path === path) {
+      pendingCommands.delete(id);
+      clearTimeout(pending.timeout);
+      pending.reject(new Error(reason));
+    }
+  }
+}
+
 async function getAnthropicApiKey(): Promise<string | undefined> {
   const config = await getConfig();
   return config.settings.aiAgent?.anthropicApiKey || undefined;
@@ -124,6 +170,23 @@ async function buildSystemPrompt(opendclDir: string): Promise<string> {
 function handleEvent(path: string, event: Record<string, unknown>) {
   const agent = agents.get(path);
 
+  // Responses to commands sent via sendCommand are consumed here and never
+  // forwarded to the renderer (the reducer would render them as noise).
+  if (event.type === 'response' && typeof event.id === 'string') {
+    const pending = pendingCommands.get(event.id);
+    if (pending) {
+      pendingCommands.delete(event.id);
+      clearTimeout(pending.timeout);
+      if (event.success === false) {
+        const message = typeof event.error === 'string' ? event.error : 'AI agent command failed';
+        pending.reject(new Error(message));
+      } else {
+        pending.resolve(event);
+      }
+      return;
+    }
+  }
+
   // Auto-cancel dialog UI requests so the agent never hangs waiting for a
   // response we can't provide in the POC (this includes `confirm`, which is
   // not safe to auto-approve).
@@ -165,6 +228,10 @@ export async function start(path: string): Promise<string> {
     entryPath,
     '--mode',
     'rpc',
+    // Resume the most recent session for this cwd (pi keys sessions by cwd,
+    // and we spawn with cwd = project path, so history is per scene). Starts
+    // a fresh session when none exists.
+    '--continue',
     // The model is pinned explicitly: pi otherwise picks its own default
     // (from local state or other provider keys), which may not match the
     // credentials the user configured in the AI Assistant panel.
@@ -227,12 +294,14 @@ export async function start(path: string): Promise<string> {
   child.on('error', error => {
     log.error(`[AI] Agent process error for ${path}:`, error);
     agents.delete(path);
+    rejectPendingCommands(path, `AI agent process error: ${error.message}`);
     sendToRenderer(eventName, { type: 'agent_exit', code: null, error: error.message });
   });
 
   child.on('exit', code => {
     log.info(`[AI] Agent for ${path} exited with code ${code}`);
     agents.delete(path);
+    rejectPendingCommands(path, `AI agent exited with code ${code}`);
     sendToRenderer(eventName, { type: 'agent_exit', code });
   });
 
@@ -266,6 +335,24 @@ export async function abort(path: string): Promise<void> {
   const agent = agents.get(path);
   if (!agent) return;
   writeCommand(agent.child, { type: 'abort' });
+}
+
+/**
+ * Returns the full message history of the agent's current session, so the
+ * renderer can rebuild the transcript when the panel is reopened.
+ */
+export async function getMessages(path: string): Promise<unknown[]> {
+  const response = await sendCommand(path, { type: 'get_messages' });
+  const data = response.data as { messages?: unknown[] } | undefined;
+  return data?.messages ?? [];
+}
+
+/**
+ * Starts a fresh session on the running agent, leaving the previous one on
+ * disk (pi's `--continue` will pick the new one up on the next spawn).
+ */
+export async function newSession(path: string): Promise<void> {
+  await sendCommand(path, { type: 'new_session' });
 }
 
 export async function getState(path: string): Promise<AiAgentState> {

@@ -102,6 +102,8 @@ export interface Ipc {
   'ai.cancelLogin': () => Promise<void>;
   'ai.logout': (provider: AiAuthProvider) => Promise<void>;
   'ai.respondLoginPrompt': (id: number, value: string | null) => Promise<void>;
+  'ai.getMessages': (path: string) => Promise<unknown[]>;
+  'ai.newSession': (path: string) => Promise<void>;
   'npm.install': (path: string, packages?: string[]) => Promise<void>;
   'npm.getOutdatedDeps': (path: string, packages?: string[]) => Promise<Outdated>;
   'npm.getContextFiles': (path: string) => Promise<void>;

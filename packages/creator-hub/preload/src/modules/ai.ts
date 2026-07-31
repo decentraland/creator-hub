@@ -35,6 +35,14 @@ export async function getAiAgentState(path: string): Promise<AiAgentState> {
   return invoke('ai.getState', path);
 }
 
+export async function getAiMessages(path: string): Promise<unknown[]> {
+  return invoke('ai.getMessages', path);
+}
+
+export async function newAiSession(path: string): Promise<void> {
+  await invoke('ai.newSession', path);
+}
+
 /**
  * Runs an OAuth sign-in flow for the given provider. Interim events (browser
  * URL, device-code instructions, progress, prompts) are delivered through

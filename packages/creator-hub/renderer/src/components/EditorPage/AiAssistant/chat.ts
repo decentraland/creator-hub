@@ -22,6 +22,7 @@ export type ChatAction =
   | { type: 'prompt'; text: string }
   | { type: 'error'; text: string }
   | { type: 'reset' }
+  | { type: 'restore'; items: ChatItem[] }
   | { type: 'scene_reloaded' }
   | { type: 'event'; event: AgentEvent; projectPath: string };
 
@@ -79,6 +80,58 @@ export function extractApiErrorMessage(raw: string): string {
     }
   }
   return raw;
+}
+
+/**
+ * Rebuilds the transcript from a pi session's message history (the shape
+ * returned by the `get_messages` RPC command): user text, assistant text,
+ * and completed tool calls. Thinking blocks are skipped, matching the live
+ * rendering.
+ */
+export function mapMessagesToChatItems(messages: unknown[], projectPath: string): ChatItem[] {
+  const items: ChatItem[] = [];
+  for (const raw of messages) {
+    if (!raw || typeof raw !== 'object') continue;
+    const message = raw as Record<string, unknown>;
+    const content = message.content;
+    if (message.role === 'user') {
+      let text = '';
+      if (typeof content === 'string') {
+        text = content;
+      } else if (Array.isArray(content)) {
+        text = content
+          .filter(part => part && typeof part === 'object' && part.type === 'text')
+          .map(part => String((part as Record<string, unknown>).text ?? ''))
+          .join('\n');
+      }
+      if (text.trim()) items.push({ kind: 'user', text });
+    } else if (message.role === 'assistant' && Array.isArray(content)) {
+      for (const part of content) {
+        if (!part || typeof part !== 'object') continue;
+        const record = part as Record<string, unknown>;
+        if (record.type === 'text' && typeof record.text === 'string' && record.text.trim()) {
+          items.push({ kind: 'assistant', text: record.text });
+        } else if (record.type === 'toolCall') {
+          items.push({
+            kind: 'tool',
+            id: String(record.id ?? ''),
+            label: getToolLabel(String(record.name ?? 'tool'), record.arguments, projectPath),
+            status: 'done',
+          });
+        }
+      }
+    } else if (message.role === 'toolResult' && message.isError === true) {
+      const toolCallId = String(message.toolCallId ?? '');
+      for (let i = items.length - 1; i >= 0; i--) {
+        const item = items[i];
+        if (item.kind === 'tool' && item.id === toolCallId) {
+          items[i] = { ...item, status: 'error' };
+          break;
+        }
+      }
+    }
+  }
+  return items;
 }
 
 function appendItem(state: ChatState, item: ChatItem): ChatState {
@@ -205,6 +258,10 @@ export function chatReducer(state: ChatState, action: ChatAction): ChatState {
       return appendItem({ ...state, busy: false }, { kind: 'error', text: action.text });
     case 'reset':
       return INITIAL_CHAT_STATE;
+    // Replaces the transcript but keeps busy/exited flags: a restore can race
+    // with a turn that is still streaming from before the panel was reopened.
+    case 'restore':
+      return { ...state, items: action.items };
     case 'scene_reloaded':
       return appendItem({ ...state, filesChanged: false }, { kind: 'scene_reloaded' });
     case 'event':

@@ -88,6 +88,8 @@ export function initIpc({ beforeQuitCleanup }: InitIpcOptions) {
   handle('ai.cancelLogin', () => aiAuth.cancelLogin());
   handle('ai.logout', (_event, provider) => aiAuth.logout(provider));
   handle('ai.respondLoginPrompt', (_event, id, value) => aiAuth.respondLoginPrompt(id, value));
+  handle('ai.getMessages', (_event, path) => ai.getMessages(path));
+  handle('ai.newSession', (_event, path) => ai.newSession(path));
 
   // config
   handle('config.getConfig', () => config.getConfig());
