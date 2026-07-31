@@ -79,7 +79,6 @@ const SKIP_ENTITIES = new Set([ROOT, PLAYER, CAMERA]);
 const SceneMinimap = withSdk<WithSdkProps>(({ sdk }) => {
   const enabled = useFeatureFlag(InspectorFeatureFlags.SceneMinimap);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const groundPlanesRef = useRef<GroundPlane[]>([]);
 
   useEffect(() => {
     if (!enabled) return;
@@ -97,13 +96,6 @@ const SceneMinimap = withSdk<WithSdkProps>(({ sdk }) => {
     canvas.height = MINIMAP_SIZE * dpr;
     ctx.scale(dpr, dpr);
 
-    const updateGroundPlanes = () => {
-      groundPlanesRef.current = viewport.getGroundPlanes();
-    };
-    updateGroundPlanes();
-
-    const unsubscribeMetrics = sdk.renderer.metrics.onChange(updateGroundPlanes);
-
     let lastRenderTime = 0;
 
     const renderMinimap = () => {
@@ -111,7 +103,11 @@ const SceneMinimap = withSdk<WithSdkProps>(({ sdk }) => {
       if (now - lastRenderTime < RENDER_INTERVAL_MS) return;
       lastRenderTime = now;
 
-      const planes = groundPlanesRef.current;
+      // Re-read the ground planes each render rather than caching at mount: a
+      // renderer whose scene loads asynchronously (Bevy) may not have the layout
+      // yet when this effect first runs, and its metrics.onChange may not fire.
+      // The read is a cheap map over the layout parcels.
+      const planes = viewport.getGroundPlanes();
       const bounds = computeBounds(planes);
 
       ctx.clearRect(0, 0, MINIMAP_SIZE, MINIMAP_SIZE);
@@ -227,7 +223,6 @@ const SceneMinimap = withSdk<WithSdkProps>(({ sdk }) => {
 
     return () => {
       unsubscribeFrame();
-      unsubscribeMetrics();
     };
   }, [enabled, sdk]);
 

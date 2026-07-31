@@ -29,10 +29,16 @@ export function CreateProject({ open, initialValue, onClose, onSubmit }: Props) 
 
   const validate = useCallback(async () => {
     setLoading(true);
-    const valid = await validateProjectPath(value.path, value.name);
-    if (!valid) setError(t('modal.create_project.errors.path_exists_or_not_writable'));
+    const result = await validateProjectPath(value.path, value.name);
+    if (result === 'invalid-dir') {
+      // The Path field expects an existing folder (via the picker) — a bare/typed
+      // name isn't a valid directory. Say so, instead of the misleading "exists".
+      setError(t('modal.create_project.errors.invalid_directory'));
+    } else if (result === 'path-taken') {
+      setError(t('modal.create_project.errors.path_exists_or_not_writable'));
+    }
     setLoading(false);
-    return valid;
+    return result === true;
   }, [value, validateProjectPath]);
 
   const handleChange = useCallback(

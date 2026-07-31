@@ -25,6 +25,19 @@ export async function startInspector() {
   return port;
 }
 
+/**
+ * Start the headless Bevy realm server for a project (the sdk-commands content +
+ * data-layer the embedded Bevy editor engine loads from). Returns the realm URL
+ * and its data-layer WS URL, which the inspector iframe is configured with.
+ */
+export async function startBevyRealm(path: string) {
+  return invoke('bevyRealm.start', path);
+}
+
+export async function killBevyRealm(path: string) {
+  return invoke('bevyRealm.kill', path);
+}
+
 const activeDebuggers = new Map<string, () => void>();
 
 export async function attachSceneDebugger(

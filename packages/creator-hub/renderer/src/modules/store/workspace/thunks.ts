@@ -32,6 +32,7 @@ export const duplicateProject = createAsyncThunk(
   'workspace/duplicateProject',
   workspace.duplicateProject,
 );
+export const renameProject = createAsyncThunk('workspace/renameProject', workspace.renameProject);
 export const importProject = createAsyncThunk(
   'workspace/importProject',
   async (_, { rejectWithValue }) => {

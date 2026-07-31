@@ -18,6 +18,7 @@ import { restoreOrCreateMainWindow } from '/@/mainWindow';
 import { killAllUtilityProcesses } from '/@/modules/bin';
 import { initIpc } from '/@/modules/ipc';
 import { deployServer, killAllPreviews } from '/@/modules/cli';
+import { killAllRealms } from '/@/modules/bevy-realm';
 import { killInspectorServer } from '/@/modules/inspector';
 import { runMigrations } from '/@/modules/migrations';
 import { getAnalytics, track, trackLifecycleEvent } from './modules/analytics';
@@ -152,7 +153,7 @@ export function setSkipBeforeQuitCleanup() {
 }
 
 export async function killAll() {
-  const promises: Promise<unknown>[] = [killAllPreviews()];
+  const promises: Promise<unknown>[] = [killAllPreviews(), killAllRealms()];
   if (deployServer) {
     promises.push(deployServer.stop());
   }
