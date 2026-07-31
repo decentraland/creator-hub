@@ -157,6 +157,15 @@ CI is orchestrated by `.github/workflows/ci.yml`, which calls reusable
   pure cost with no signed output. `mac.target` in `electron-builder.cjs` is `DRY_RUN`-gated:
   zip-only (both arches) on PRs, full `dmg + zip` on `main` (`dry-run: false`). Don't re-add
   dmg to the PR path or expect signing/notarization on PR builds.
+- **Build/tool targets must self-provision — the build job skips `make install` on a
+  node_modules cache hit.** `build.yml`'s install step is gated on the node_modules cache, so
+  any target that runs during a build cannot assume `make install` ran. Make each ensure its
+  own inputs: `protoc: $(PROTOC)` (self-download); `build-bevy-agent: install-bevy-agent` (the
+  Bevy agent's pinned `@dcl/sdk` must be installed locally or esbuild resolves root's wrong
+  version). The node_modules cache path must also cover every nested project's `node_modules`
+  (e.g. `packages/inspector/agents/bevy/node_modules`), or a cache hit serves an incomplete
+  tree. Symptoms of a gap: cold-cache failures like `protoc: not found` (Error 127) or
+  `No matching export … CameraLayer`.
 
 ## Code Style
 
