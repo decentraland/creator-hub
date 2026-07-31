@@ -4,7 +4,12 @@
       "Bash(python3 /private/tmp/claude-502/-Users-Nico-Documents-github-creator-hub-creator-hub/837ba25b-432c-4a98-b581-0a122f45a26a/scratchpad/replay.py)",
       "Bash(python3 -)",
       "Bash(npm install *)",
-      "Bash(awk '{print $2, substr\\($0, index\\($0,$11\\), 140\\)}')"
+      "Bash(awk '{print $2, substr\\($0, index\\($0,$11\\), 140\\)}')",
+      "Bash([ -d \"$PI\" ])",
+      "Bash(python3 -c \"import json; print\\(json.dumps\\(json.load\\(open\\('node_modules/@mariozechner/pi-ai/package.json'\\)\\).get\\('exports'\\), indent=1\\)\\)\")",
+      "Bash(node -e \"import\\('@mariozechner/pi-ai/oauth'\\).then\\(m => console.log\\(typeof m.getOAuthProvider, JSON.stringify\\(m.getOAuthProviders\\(\\).map\\(p => p.id\\)\\)\\)\\)\")",
+      "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\(d.get\\('bin'\\), d.get\\('version'\\), d.get\\('description'\\)\\)\")",
+      "Bash(python3 -c ' *)"
     ]
   },
   "hooks": {

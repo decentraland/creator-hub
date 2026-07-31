@@ -1,10 +1,15 @@
 import { ipcRenderer, type IpcRendererEvent } from 'electron';
 
-import type { AiAgentState } from '/shared/types/ipc';
+import {
+  AI_AUTH_EVENTS_CHANNEL,
+  type AiAgentState,
+  type AiAuthEvent,
+  type AiAuthProvider,
+} from '/shared/types/ipc';
 
 import { invoke } from '../services/ipc';
 
-export type { AiAgentState };
+export type { AiAgentState, AiAuthEvent, AiAuthProvider };
 
 export type AiAgentEvent = Record<string, unknown> & { type: string };
 
@@ -28,6 +33,36 @@ export async function abortAi(path: string): Promise<void> {
 
 export async function getAiAgentState(path: string): Promise<AiAgentState> {
   return invoke('ai.getState', path);
+}
+
+/**
+ * Runs an OAuth sign-in flow for the given provider. Interim events (browser
+ * URL, device-code instructions, progress, prompts) are delivered through
+ * `onEvent`; the returned promise settles when the flow completes or fails.
+ */
+export async function loginAiProvider(
+  provider: AiAuthProvider,
+  onEvent: (event: AiAuthEvent) => void,
+): Promise<void> {
+  const handler = (_: IpcRendererEvent, event: AiAuthEvent) => onEvent(event);
+  ipcRenderer.on(AI_AUTH_EVENTS_CHANNEL, handler);
+  try {
+    await invoke('ai.login', provider);
+  } finally {
+    ipcRenderer.off(AI_AUTH_EVENTS_CHANNEL, handler);
+  }
+}
+
+export async function cancelAiLogin(): Promise<void> {
+  await invoke('ai.cancelLogin');
+}
+
+export async function logoutAiProvider(provider: AiAuthProvider): Promise<void> {
+  await invoke('ai.logout', provider);
+}
+
+export async function respondAiLoginPrompt(id: number, value: string | null): Promise<void> {
+  await invoke('ai.respondLoginPrompt', id, value);
 }
 
 export async function subscribeAiEvents(

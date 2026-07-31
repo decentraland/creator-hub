@@ -1,5 +1,16 @@
 import { Box, styled } from 'decentraland-ui2';
 
+const AuthInstructions = styled('div')(({ theme }) => ({
+  ...theme.typography.body2,
+  padding: theme.spacing(1.5),
+  borderRadius: theme.spacing(1),
+  backgroundColor: theme.palette.action.hover,
+  color: theme.palette.text.primary,
+  whiteSpace: 'pre-wrap',
+  wordBreak: 'break-word',
+  userSelect: 'text',
+}));
+
 const AssistantText = styled('div')(({ theme }) => ({
   ...theme.typography.body2,
   alignSelf: 'stretch',
@@ -51,11 +62,31 @@ const PanelHeader = styled('header')(({ theme }) => ({
   borderBottom: `1px solid ${theme.palette.divider}`,
 }));
 
+const ProviderRow = styled('div')(({ theme }) => ({
+  display: 'flex',
+  alignItems: 'center',
+  gap: theme.spacing(1),
+}));
+
 const Setup = styled('div')(({ theme }) => ({
   display: 'flex',
   flexDirection: 'column',
   gap: theme.spacing(2),
   padding: theme.spacing(2),
+  overflowY: 'auto',
+}));
+
+const SetupDivider = styled('div')(({ theme }) => ({
+  ...theme.typography.caption,
+  display: 'flex',
+  alignItems: 'center',
+  gap: theme.spacing(1),
+  color: theme.palette.text.secondary,
+  '&::before, &::after': {
+    content: '""',
+    flex: 1,
+    borderTop: `1px solid ${theme.palette.divider}`,
+  },
 }));
 
 const StatusLine = styled('div')(({ theme }) => ({
@@ -90,12 +121,15 @@ const UserBubble = styled('div')(({ theme }) => ({
 
 export {
   AssistantText,
+  AuthInstructions,
   ErrorLine,
   InputArea,
   Messages,
   Panel,
   PanelHeader,
+  ProviderRow,
   Setup,
+  SetupDivider,
   StatusLine,
   ToolLine,
   UserBubble,

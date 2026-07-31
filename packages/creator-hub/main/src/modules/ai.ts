@@ -4,10 +4,11 @@ import nodePath from 'node:path';
 import { app } from 'electron';
 import log from 'electron-log';
 
-import type { AiAgentState } from '/shared/types/ipc';
+import type { AiAgentState, AiAuthProvider } from '/shared/types/ipc';
 
 import { MAIN_WINDOW_ID } from '../mainWindow';
 
+import { getLoggedInProviders } from './ai-auth';
 import { getConfig } from './config';
 import { createJsonlSplitter, parseJsonlLine } from './jsonl';
 import { getBinPath } from './path';
@@ -43,6 +44,32 @@ async function getAnthropicApiKey(): Promise<string | undefined> {
   return config.settings.aiAgent?.anthropicApiKey || undefined;
 }
 
+// The agent's skills and prompts are tuned against Claude, so providers that
+// serve Claude models take precedence when the user is signed in to several.
+const MODEL_BY_PROVIDER: Record<AiAuthProvider, string> = {
+  anthropic: 'anthropic/claude-sonnet-4-5',
+  'github-copilot': 'github-copilot/claude-sonnet-4.5',
+  'openai-codex': 'openai-codex/gpt-5.1-codex-max',
+};
+const PROVIDER_PRECEDENCE: AiAuthProvider[] = ['anthropic', 'github-copilot', 'openai-codex'];
+
+async function resolveAuth(): Promise<{ model: string; apiKey?: string }> {
+  const apiKey = await getAnthropicApiKey();
+  const oauthProviders = await getLoggedInProviders();
+  // An explicit API key and an Anthropic OAuth login both run the same model;
+  // pi prefers stored OAuth credentials over the env key when both exist.
+  if (apiKey || oauthProviders.includes('anthropic')) {
+    return { model: MODEL_BY_PROVIDER.anthropic, apiKey };
+  }
+  const provider = PROVIDER_PRECEDENCE.find(p => oauthProviders.includes(p));
+  if (provider) {
+    return { model: MODEL_BY_PROVIDER[provider] };
+  }
+  throw new Error(
+    'No AI credentials configured. Sign in or add an API key in the AI Assistant panel.',
+  );
+}
+
 function handleEvent(path: string, event: Record<string, unknown>) {
   const agent = agents.get(path);
 
@@ -72,10 +99,7 @@ export async function start(path: string): Promise<string> {
   }
   agents.delete(path);
 
-  const apiKey = await getAnthropicApiKey();
-  if (!apiKey) {
-    throw new Error('Missing Anthropic API key. Add it in the AI Assistant panel settings.');
-  }
+  const { model, apiKey } = await resolveAuth();
 
   let entryPath: string;
   try {
@@ -94,11 +118,11 @@ export async function start(path: string): Promise<string> {
   // throws: on failure the agent starts with whatever skills are available.
   await ensureSdkSkills(path);
 
-  log.info(`[AI] Starting agent for ${path}`);
+  log.info(`[AI] Starting agent for ${path} with model ${model}`);
   // The model is pinned explicitly: pi otherwise picks its own default (from
-  // local state or other provider keys), which may not be an Anthropic model
-  // even though the user configured an Anthropic API key.
-  const args = [entryPath, '--mode', 'rpc', '--headless', '--model', 'anthropic/claude-sonnet-4-5'];
+  // local state or other provider keys), which may not match the credentials
+  // the user configured in the AI Assistant panel.
+  const args = [entryPath, '--mode', 'rpc', '--headless', '--model', model];
   // Pass the project skills dir explicitly and BEFORE opendcl's own args:
   // opendcl appends its bundled --skill dir after user args, and pi keeps the
   // first skill found on a name collision, so ours must come first.
@@ -117,7 +141,9 @@ export async function start(path: string): Promise<string> {
     env: {
       ...process.env,
       ELECTRON_RUN_AS_NODE: '1',
-      ANTHROPIC_API_KEY: apiKey,
+      // With OAuth sign-in there is no key to pass: pi reads (and refreshes)
+      // the stored credentials from its own auth.json.
+      ...(apiKey ? { ANTHROPIC_API_KEY: apiKey } : {}),
     },
     stdio: ['pipe', 'pipe', 'pipe'],
   });
@@ -185,8 +211,10 @@ export async function abort(path: string): Promise<void> {
 export async function getState(path: string): Promise<AiAgentState> {
   const agent = agents.get(path);
   const apiKey = await getAnthropicApiKey();
+  const oauthProviders = await getLoggedInProviders();
   return {
     running: !!agent && agent.child.exitCode === null && !agent.child.killed,
     hasApiKey: !!apiKey,
+    oauthProviders,
   };
 }

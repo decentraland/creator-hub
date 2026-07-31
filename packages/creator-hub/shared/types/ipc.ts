@@ -35,10 +35,20 @@ export interface MobileDebugBroadcastResult {
   results: { sessionId: number; ok: boolean; data: unknown }[];
 }
 
+export type AiAuthProvider = 'anthropic' | 'openai-codex' | 'github-copilot';
+
 export interface AiAgentState {
   running: boolean;
   hasApiKey: boolean;
+  oauthProviders: AiAuthProvider[];
 }
+
+export const AI_AUTH_EVENTS_CHANNEL = 'ai-auth://login';
+
+export type AiAuthEvent =
+  | { type: 'auth'; url: string; instructions?: string }
+  | { type: 'progress'; message: string }
+  | { type: 'prompt'; id: number; message: string; placeholder?: string };
 
 export interface Ipc {
   'electron.getEnvOverride': () => Env | null;
@@ -88,6 +98,10 @@ export interface Ipc {
   'ai.prompt': (path: string, message: string) => Promise<void>;
   'ai.abort': (path: string) => Promise<void>;
   'ai.getState': (path: string) => Promise<AiAgentState>;
+  'ai.login': (provider: AiAuthProvider) => Promise<void>;
+  'ai.cancelLogin': () => Promise<void>;
+  'ai.logout': (provider: AiAuthProvider) => Promise<void>;
+  'ai.respondLoginPrompt': (id: number, value: string | null) => Promise<void>;
   'npm.install': (path: string, packages?: string[]) => Promise<void>;
   'npm.getOutdatedDeps': (path: string, packages?: string[]) => Promise<Outdated>;
   'npm.getContextFiles': (path: string) => Promise<void>;

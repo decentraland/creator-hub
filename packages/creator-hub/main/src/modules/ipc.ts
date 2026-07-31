@@ -10,6 +10,7 @@ import * as npm from './npm';
 import * as config from './config';
 import * as mobileDebug from './mobile-debug-server';
 import * as ai from './ai';
+import * as aiAuth from './ai-auth';
 
 interface InitIpcOptions {
   beforeQuitCleanup: () => Promise<void>;
@@ -83,6 +84,10 @@ export function initIpc({ beforeQuitCleanup }: InitIpcOptions) {
   handle('ai.prompt', (_event, path, message) => ai.prompt(path, message));
   handle('ai.abort', (_event, path) => ai.abort(path));
   handle('ai.getState', (_event, path) => ai.getState(path));
+  handle('ai.login', (_event, provider) => aiAuth.login(provider));
+  handle('ai.cancelLogin', () => aiAuth.cancelLogin());
+  handle('ai.logout', (_event, provider) => aiAuth.logout(provider));
+  handle('ai.respondLoginPrompt', (_event, id, value) => aiAuth.respondLoginPrompt(id, value));
 
   // config
   handle('config.getConfig', () => config.getConfig());

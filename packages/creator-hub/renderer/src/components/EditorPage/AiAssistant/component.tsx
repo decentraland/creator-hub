@@ -25,17 +25,21 @@ import { useSettings } from '/@/hooks/useSettings';
 import { chatReducer, INITIAL_CHAT_STATE } from './chat';
 import {
   AssistantText,
+  AuthInstructions,
   ErrorLine,
   InputArea,
   Messages,
   Panel,
   PanelHeader,
+  ProviderRow,
   Setup,
+  SetupDivider,
   StatusLine,
   ToolLine,
   UserBubble,
 } from './component.styled';
 
+import type { AiAuthProvider } from '/shared/types/ipc';
 import type { ChatItem } from './chat';
 
 type Props = {
@@ -43,6 +47,29 @@ type Props = {
   onClose: () => void;
   onSceneChanged?: () => void;
 };
+
+const AI_AUTH_PROVIDERS: AiAuthProvider[] = ['anthropic', 'openai-codex', 'github-copilot'];
+
+type LoginState = {
+  provider: AiAuthProvider | null;
+  message?: string;
+  url?: string;
+  instructions?: string;
+  prompt?: { id: number; message: string; placeholder?: string };
+};
+
+const IDLE_LOGIN_STATE: LoginState = { provider: null };
+
+function getProviderName(provider: AiAuthProvider): string {
+  switch (provider) {
+    case 'anthropic':
+      return t('editor.ai_assistant.setup.provider_anthropic');
+    case 'openai-codex':
+      return t('editor.ai_assistant.setup.provider_openai_codex');
+    case 'github-copilot':
+      return t('editor.ai_assistant.setup.provider_github_copilot');
+  }
+}
 
 function getErrorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
@@ -107,6 +134,10 @@ export function AiAssistant({ projectPath, onClose, onSceneChanged }: Props) {
   const [view, setView] = useState<'loading' | 'setup' | 'chat'>('loading');
   const [apiKey, setApiKey] = useState('');
   const [hasExistingKey, setHasExistingKey] = useState(false);
+  const [oauthProviders, setOauthProviders] = useState<AiAuthProvider[]>([]);
+  const [loginState, setLoginState] = useState<LoginState>(IDLE_LOGIN_STATE);
+  const [promptValue, setPromptValue] = useState('');
+  const [setupError, setSetupError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [input, setInput] = useState('');
   const [state, dispatchChat] = useReducer(chatReducer, INITIAL_CHAT_STATE);
@@ -132,8 +163,9 @@ export function AiAssistant({ projectPath, onClose, onSceneChanged }: Props) {
       .getAiAgentState(projectPath)
       .then(async agentState => {
         if (disposed) return;
-        if (agentState.hasApiKey) {
-          setHasExistingKey(true);
+        setHasExistingKey(agentState.hasApiKey);
+        setOauthProviders(agentState.oauthProviders);
+        if (agentState.hasApiKey || agentState.oauthProviders.length > 0) {
           await subscribe();
         } else {
           setView('setup');
@@ -195,12 +227,78 @@ export function AiAssistant({ projectPath, onClose, onSceneChanged }: Props) {
 
   const handleChangeApiKey = useCallback(() => {
     setApiKey('');
+    setSetupError(null);
     setView('setup');
   }, []);
 
   const handleCancelSetup = useCallback(() => {
     setApiKey('');
+    setSetupError(null);
     setView('chat');
+  }, []);
+
+  const handleLogin = useCallback(
+    async (provider: AiAuthProvider) => {
+      setSetupError(null);
+      setPromptValue('');
+      setLoginState({ provider });
+      try {
+        await ai.loginAiProvider(provider, event => {
+          setLoginState(current => {
+            if (current.provider !== provider) return current;
+            switch (event.type) {
+              case 'auth':
+                return { ...current, url: event.url, instructions: event.instructions };
+              case 'progress':
+                return { ...current, message: event.message };
+              case 'prompt':
+                return {
+                  ...current,
+                  prompt: { id: event.id, message: event.message, placeholder: event.placeholder },
+                };
+            }
+          });
+        });
+        setOauthProviders(current =>
+          current.includes(provider) ? current : [...current, provider],
+        );
+        // The agent process keeps the credentials it was spawned with — restart it
+        await ai.stopAiAgent(projectPath);
+        await subscribe();
+        dispatchChat({ type: 'reset' });
+      } catch (error) {
+        setSetupError(getErrorMessage(error));
+      } finally {
+        setLoginState(IDLE_LOGIN_STATE);
+        setPromptValue('');
+      }
+    },
+    [projectPath, subscribe],
+  );
+
+  const handleCancelLogin = useCallback(() => {
+    void ai.cancelAiLogin().catch(error => setSetupError(getErrorMessage(error)));
+  }, []);
+
+  const handlePromptSubmit = useCallback(() => {
+    const prompt = loginState.prompt;
+    const value = promptValue.trim();
+    if (!prompt || !value) return;
+    setPromptValue('');
+    setLoginState(current => ({ ...current, prompt: undefined }));
+    void ai.respondAiLoginPrompt(prompt.id, value).catch(error => {
+      setSetupError(getErrorMessage(error));
+    });
+  }, [loginState.prompt, promptValue]);
+
+  const handleLogout = useCallback(async (provider: AiAuthProvider) => {
+    setSetupError(null);
+    try {
+      await ai.logoutAiProvider(provider);
+      setOauthProviders(current => current.filter($ => $ !== provider));
+    } catch (error) {
+      setSetupError(getErrorMessage(error));
+    }
   }, []);
 
   const handleSend = useCallback(async () => {
@@ -269,30 +367,117 @@ export function AiAssistant({ projectPath, onClose, onSceneChanged }: Props) {
       {view === 'setup' && (
         <Setup>
           <Typography variant="body2">{t('editor.ai_assistant.setup.description')}</Typography>
-          <TextField
-            type="password"
-            size="small"
-            label={t('editor.ai_assistant.setup.api_key_label')}
-            value={apiKey}
-            onChange={event => setApiKey(event.target.value)}
-            fullWidth
-          />
-          <Button
-            variant="contained"
-            disabled={!apiKey.trim() || isSaving}
-            onClick={handleSaveApiKey}
-            startIcon={isSaving ? <Loader size={16} /> : undefined}
-          >
-            {t('editor.ai_assistant.setup.save')}
-          </Button>
-          {hasExistingKey && (
-            <Button
-              variant="text"
-              disabled={isSaving}
-              onClick={handleCancelSetup}
-            >
-              {t('editor.ai_assistant.setup.cancel')}
-            </Button>
+          {loginState.provider === null ? (
+            <>
+              {oauthProviders.map(provider => (
+                <ProviderRow key={provider}>
+                  <CheckIcon
+                    fontSize="small"
+                    color="success"
+                  />
+                  <Typography
+                    variant="body2"
+                    sx={{ flex: 1 }}
+                  >
+                    {t('editor.ai_assistant.setup.signed_in', {
+                      provider: getProviderName(provider),
+                    })}
+                  </Typography>
+                  <Button
+                    variant="text"
+                    size="small"
+                    onClick={() => void handleLogout(provider)}
+                  >
+                    {t('editor.ai_assistant.setup.sign_out')}
+                  </Button>
+                </ProviderRow>
+              ))}
+              {AI_AUTH_PROVIDERS.filter(provider => !oauthProviders.includes(provider)).map(
+                provider => (
+                  <Button
+                    key={provider}
+                    variant="outlined"
+                    onClick={() => void handleLogin(provider)}
+                  >
+                    {t('editor.ai_assistant.setup.sign_in_with', {
+                      provider: getProviderName(provider),
+                    })}
+                  </Button>
+                ),
+              )}
+              <SetupDivider>{t('editor.ai_assistant.setup.or_api_key')}</SetupDivider>
+              <TextField
+                type="password"
+                size="small"
+                label={t('editor.ai_assistant.setup.api_key_label')}
+                value={apiKey}
+                onChange={event => setApiKey(event.target.value)}
+                fullWidth
+              />
+              <Button
+                variant="contained"
+                disabled={!apiKey.trim() || isSaving}
+                onClick={handleSaveApiKey}
+                startIcon={isSaving ? <Loader size={16} /> : undefined}
+              >
+                {t('editor.ai_assistant.setup.save')}
+              </Button>
+              {(hasExistingKey || oauthProviders.length > 0) && (
+                <Button
+                  variant="text"
+                  disabled={isSaving}
+                  onClick={handleCancelSetup}
+                >
+                  {t('editor.ai_assistant.setup.cancel')}
+                </Button>
+              )}
+            </>
+          ) : (
+            <>
+              <StatusLine>
+                <Loader size={12} />
+                {loginState.message ?? t('editor.ai_assistant.setup.waiting')}
+              </StatusLine>
+              {(loginState.instructions || loginState.url) && (
+                <AuthInstructions>
+                  {[loginState.instructions, loginState.url].filter(Boolean).join('\n')}
+                </AuthInstructions>
+              )}
+              {loginState.prompt && (
+                <>
+                  <Typography variant="body2">{loginState.prompt.message}</Typography>
+                  <TextField
+                    size="small"
+                    fullWidth
+                    placeholder={loginState.prompt.placeholder}
+                    value={promptValue}
+                    onChange={event => setPromptValue(event.target.value)}
+                    onKeyDown={event => {
+                      if (event.key === 'Enter') {
+                        event.preventDefault();
+                        handlePromptSubmit();
+                      }
+                    }}
+                  />
+                  <Button
+                    variant="contained"
+                    disabled={!promptValue.trim()}
+                    onClick={handlePromptSubmit}
+                  >
+                    {t('editor.ai_assistant.setup.prompt_submit')}
+                  </Button>
+                </>
+              )}
+              <Button
+                variant="text"
+                onClick={handleCancelLogin}
+              >
+                {t('editor.ai_assistant.setup.cancel_sign_in')}
+              </Button>
+            </>
+          )}
+          {setupError && (
+            <ErrorLine>{t('editor.ai_assistant.error', { error: setupError })}</ErrorLine>
           )}
         </Setup>
       )}
