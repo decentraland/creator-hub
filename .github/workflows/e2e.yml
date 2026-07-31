@@ -19,8 +19,6 @@ jobs:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v6
-        with:
-          submodules: true
       - uses: ./.github/actions/setup
         id: setup
         with:
@@ -73,8 +71,6 @@ jobs:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v6
-        with:
-          submodules: true
       - uses: ./.github/actions/setup
         id: setup
 
