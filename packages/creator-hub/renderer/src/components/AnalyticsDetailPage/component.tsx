@@ -28,6 +28,7 @@ import { Title } from '../Title';
 
 import { OverviewTab } from './OverviewTab';
 import { PlaceCard } from './PlaceCard';
+import { EngagementTab } from './EngagementTab';
 import { RetentionTab } from './RetentionTab';
 import { VisitsTab } from './VisitsTab';
 
@@ -39,15 +40,14 @@ const DATE_RANGE_OPTIONS: Array<{ label: string; value: DateRange }> = [
   { label: t('analytics.detail.date_range.last_60_days'), value: DateRange.LAST_60_DAYS },
 ];
 
-/** Engagement is not built yet, but is shown so the page reads honestly. */
 const TABS = [
-  { value: 'overview', label: t('analytics.detail.tabs.overview'), enabled: true },
-  { value: 'retention', label: t('analytics.detail.tabs.retention'), enabled: true },
-  { value: 'visits', label: t('analytics.detail.tabs.visits'), enabled: true },
-  { value: 'engagement', label: t('analytics.detail.tabs.engagement'), enabled: false },
+  { value: 'overview', label: t('analytics.detail.tabs.overview') },
+  { value: 'retention', label: t('analytics.detail.tabs.retention') },
+  { value: 'visits', label: t('analytics.detail.tabs.visits') },
+  { value: 'engagement', label: t('analytics.detail.tabs.engagement') },
 ];
 
-type TabValue = 'overview' | 'retention' | 'visits';
+type TabValue = 'overview' | 'retention' | 'visits' | 'engagement';
 
 /** Renders a tab's data once it has loaded, or its loading and error states. */
 function TabContent<T>({
@@ -72,7 +72,9 @@ function TabContent<T>({
 export function AnalyticsDetailPage() {
   const { placeId } = useParams<{ placeId: string }>();
   const { isSignedIn } = useAuth();
-  const { detail, retention, visits, dateRange } = useSelector(state => state.placeAnalytics);
+  const { detail, retention, visits, engagement, dateRange } = useSelector(
+    state => state.placeAnalytics,
+  );
   const [tab, setTab] = useState<TabValue>('overview');
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -90,6 +92,7 @@ export function AnalyticsDetailPage() {
     if (!isSignedIn || !placeId) return;
     if (tab === 'retention') dispatch(placeAnalyticsActions.fetchPlaceRetention({ placeId }));
     if (tab === 'visits') dispatch(placeAnalyticsActions.fetchPlaceVisits({ placeId }));
+    if (tab === 'engagement') dispatch(placeAnalyticsActions.fetchPlaceEngagement({ placeId }));
   }, [isSignedIn, placeId, tab, dateRange]);
 
   useEffect(() => () => void dispatch(placeAnalyticsActions.clearDetail()), []);
@@ -152,7 +155,6 @@ export function AnalyticsDetailPage() {
                       key={option.value}
                       value={option.value}
                       label={option.label}
-                      disabled={!option.enabled}
                     />
                   ))}
                 </Tabs>
@@ -181,6 +183,11 @@ export function AnalyticsDetailPage() {
               )}
               {tab === 'visits' && (
                 <TabContent state={visits}>{data => <VisitsTab visits={data} />}</TabContent>
+              )}
+              {tab === 'engagement' && (
+                <TabContent state={engagement}>
+                  {data => <EngagementTab engagement={data} />}
+                </TabContent>
               )}
             </Box>
           </Box>

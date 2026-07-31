@@ -98,6 +98,35 @@ export type PlaceVisitsMetrics = {
   weeklyUsersFlow: WeeklyUsersFlowPoint[];
 };
 
+/** A playtime figure with how it moved against the previous period. */
+export type PlaytimeMetric = {
+  /** Minutes. */
+  minutes: number | null;
+  /** Change in minutes against the previous week; positive is more playtime. */
+  deltaMinutes: number | null;
+  /** The same metric week by week. */
+  weekly: TimeSeriesPoint[];
+};
+
+/** The three social interactions tracked per week. */
+export type SocialInteractionSeries = {
+  messagesSent: TimeSeriesPoint[];
+  emotesPlayed: TimeSeriesPoint[];
+  newFriendships: TimeSeriesPoint[];
+};
+
+/** The metrics behind the Engagement tab. */
+export type PlaceEngagementMetrics = {
+  avgDailyPlaytime: PlaytimeMetric;
+  avgWeeklyPlaytime: PlaytimeMetric;
+  socialInteractions: {
+    /** Counts per week. */
+    weeklyTotals: SocialInteractionSeries;
+    /** Share of that week's visitors who did each thing, as percentages. */
+    visitorRate: SocialInteractionSeries;
+  };
+};
+
 /** The metrics behind the Retention tab. */
 export type PlaceRetentionMetrics = {
   /** 60-day rolling average retention per platform, as percentages. */

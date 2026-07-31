@@ -1011,6 +1011,41 @@
           }
         }
       },
+      "engagement": {
+        "title": "Engagement",
+        "description": "Understand how users engage with your place.",
+        "minutes": "min",
+        "delta": "{value} min",
+        "vs_last_week": "{value} vs. last week",
+        "daily": {
+          "title": "Average Daily Playtime",
+          "description": "Average time each user spends in your place on a single visit.",
+          "chart_title": "Average Daily Playtime each week"
+        },
+        "weekly": {
+          "title": "Average Weekly Playtime",
+          "description": "Average time each user spends in your place per week.",
+          "chart_title": "Average Weekly Playtime per User"
+        },
+        "social": {
+          "title": "Social Interactions",
+          "description": "Interactions are counted per realm (one running copy of the place), so play spread across realms reads a little low.",
+          "totals_title": "Social Interactions Weekly Totals",
+          "rate_title": "Visitors Social Interactions Rate",
+          "messages": {
+            "label": "Messages Sent",
+            "tooltip": "Chat messages sent by visitors in your place."
+          },
+          "emotes": {
+            "label": "Emotes Played",
+            "tooltip": "Emotes played by visitors in your place."
+          },
+          "friendships": {
+            "label": "New Friendships",
+            "tooltip": "Friend requests accepted between visitors in your place."
+          }
+        }
+      },
       "platforms": {
         "all": "All Platforms",
         "desktop": "Desktop",

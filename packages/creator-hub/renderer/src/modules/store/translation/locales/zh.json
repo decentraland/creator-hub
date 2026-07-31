@@ -1011,6 +1011,41 @@
           }
         }
       },
+      "engagement": {
+        "title": "互动",
+        "description": "了解用户如何与你的 Place 互动。",
+        "minutes": "分钟",
+        "delta": "{value} 分钟",
+        "vs_last_week": "{value}（对比上周）",
+        "daily": {
+          "title": "平均每日游玩时长",
+          "description": "每位用户单次访问在你的 Place 中停留的平均时间。",
+          "chart_title": "每周的平均每日游玩时长"
+        },
+        "weekly": {
+          "title": "平均每周游玩时长",
+          "description": "每位用户每周在你的 Place 中停留的平均时间。",
+          "chart_title": "每位用户的平均每周游玩时长"
+        },
+        "social": {
+          "title": "社交互动",
+          "description": "互动按 realm（该 Place 的一个运行副本）统计，因此跨 realm 的游玩数据会略低。",
+          "totals_title": "每周社交互动总量",
+          "rate_title": "访客社交互动率",
+          "messages": {
+            "label": "发送消息数",
+            "tooltip": "访客在你的 Place 中发送的聊天消息。"
+          },
+          "emotes": {
+            "label": "播放表情数",
+            "tooltip": "访客在你的 Place 中播放的表情动作。"
+          },
+          "friendships": {
+            "label": "新增好友",
+            "tooltip": "访客之间在你的 Place 中接受的好友请求。"
+          }
+        }
+      },
       "platforms": {
         "all": "所有平台",
         "desktop": "桌面端",

@@ -7,7 +7,8 @@ export const NO_VALUE = '-';
 
 const compactNumber = new Intl.NumberFormat('en-US', {
   notation: 'compact',
-  maximumFractionDigits: 1,
+  // Two decimals so 1,470 reads 1.47K; whole thousands still read 2K.
+  maximumFractionDigits: 2,
 });
 
 const decimalNumber = new Intl.NumberFormat('en-US', { maximumFractionDigits: 2 });
@@ -45,6 +46,21 @@ export function formatDateTime(value: number | null) {
   if (value === null) return NO_VALUE;
   const date = new Date(value);
   return `${dateFormat.format(date)} • ${timeFormat.format(date)}`;
+}
+
+/**
+ * Which way a change points. Every metric that uses this — playtime so far —
+ * is one where more is better, so "up" is styled as positive.
+ */
+export function getDeltaDirection(value: number | null): 'up' | 'down' | 'flat' {
+  if (value === null || value === 0) return 'flat';
+  return value > 0 ? 'up' : 'down';
+}
+
+/** Renders as "6.6 min vs. last week", without the sign — the arrow carries it. */
+export function formatMinutesDelta(value: number | null) {
+  if (value === null) return NO_VALUE;
+  return t('analytics.detail.engagement.delta', { value: decimalNumber.format(Math.abs(value)) });
 }
 
 /** Retention below the Day 7 benchmark is called out as negative. */

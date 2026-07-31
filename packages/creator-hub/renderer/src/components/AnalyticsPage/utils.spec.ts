@@ -6,6 +6,7 @@ import {
   formatDateTime,
   formatPercentage,
   formatRevenue,
+  getDeltaDirection,
   getRetentionColor,
 } from './utils';
 
@@ -16,7 +17,7 @@ describe('formatCount', () => {
 
   it('should shorten large counts', () => {
     expect(formatCount(2000)).toBe('2K');
-    expect(formatCount(1470)).toBe('1.5K');
+    expect(formatCount(1470)).toBe('1.47K');
   });
 
   it('should render missing data as a dash', () => {
@@ -74,5 +75,20 @@ describe('getRetentionColor', () => {
 
   it('should not colour missing data', () => {
     expect(getRetentionColor(null)).toBeUndefined();
+  });
+});
+
+describe('getDeltaDirection', () => {
+  it('should read a rise as up', () => {
+    expect(getDeltaDirection(6.6)).toBe('up');
+  });
+
+  it('should read a fall as down', () => {
+    expect(getDeltaDirection(-3.4)).toBe('down');
+  });
+
+  it('should treat no change and missing data as flat, so no arrow is drawn', () => {
+    expect(getDeltaDirection(0)).toBe('flat');
+    expect(getDeltaDirection(null)).toBe('flat');
   });
 });

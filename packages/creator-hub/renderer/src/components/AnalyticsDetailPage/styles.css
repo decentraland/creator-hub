@@ -41,6 +41,14 @@
   min-height: 48px;
 }
 
+/*
+ * Uppercased in CSS rather than in the copy, so the accessible name and the
+ * locales that have no case (zh) are left alone.
+ */
+.AnalyticsDetailPage .TabsBar .MuiTab-root {
+  text-transform: uppercase;
+}
+
 .AnalyticsDetailPage .DateRange {
   display: flex;
   align-items: center;

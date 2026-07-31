@@ -1011,6 +1011,41 @@
           }
         }
       },
+      "engagement": {
+        "title": "Interacción",
+        "description": "Entendé cómo interactúan los usuarios con tu place.",
+        "minutes": "min",
+        "delta": "{value} min",
+        "vs_last_week": "{value} vs. la semana pasada",
+        "daily": {
+          "title": "Tiempo de Juego Diario Promedio",
+          "description": "Tiempo promedio que cada usuario pasa en tu place en una sola visita.",
+          "chart_title": "Tiempo de Juego Diario Promedio por semana"
+        },
+        "weekly": {
+          "title": "Tiempo de Juego Semanal Promedio",
+          "description": "Tiempo promedio que cada usuario pasa en tu place por semana.",
+          "chart_title": "Tiempo de Juego Semanal Promedio por Usuario"
+        },
+        "social": {
+          "title": "Interacciones Sociales",
+          "description": "Las interacciones se cuentan por realm (una copia en ejecución del place), así que el juego repartido entre realms se ve un poco más bajo.",
+          "totals_title": "Totales Semanales de Interacciones Sociales",
+          "rate_title": "Tasa de Interacción Social de Visitantes",
+          "messages": {
+            "label": "Mensajes Enviados",
+            "tooltip": "Mensajes de chat enviados por visitantes en tu place."
+          },
+          "emotes": {
+            "label": "Emotes Reproducidos",
+            "tooltip": "Emotes reproducidos por visitantes en tu place."
+          },
+          "friendships": {
+            "label": "Nuevas Amistades",
+            "tooltip": "Solicitudes de amistad aceptadas entre visitantes de tu place."
+          }
+        }
+      },
       "platforms": {
         "all": "Todas las Plataformas",
         "desktop": "Escritorio",

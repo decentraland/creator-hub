@@ -11,6 +11,7 @@ import {
   actions,
   fetchPlaceDetail,
   fetchPlaceRetention,
+  fetchPlaceEngagement,
   fetchPlaceVisits,
   fetchPlaces,
   initialState,
@@ -69,11 +70,21 @@ const VISITS = {
   ],
 };
 
+const ENGAGEMENT = {
+  avgDailyPlaytime: { minutes: 25, deltaMinutes: 6.6, weekly: [] },
+  avgWeeklyPlaytime: { minutes: 29, deltaMinutes: 2.9, weekly: [] },
+  socialInteractions: {
+    weeklyTotals: { messagesSent: [], emotesPlayed: [], newFriendships: [] },
+    visitorRate: { messagesSent: [], emotesPlayed: [], newFriendships: [] },
+  },
+};
+
 const mockPlaceAnalyticsAPI = {
   fetchPlaces: vi.fn(),
   fetchPlaceDetail: vi.fn(),
   fetchPlaceRetention: vi.fn(),
   fetchPlaceVisits: vi.fn(),
+  fetchPlaceEngagement: vi.fn(),
 };
 
 vi.mock('/@/lib/placeAnalytics', () => ({
@@ -373,6 +384,52 @@ describe('placeAnalytics slice', () => {
       store.dispatch(actions.clearDetail());
 
       expect(store.getState().placeAnalytics.visits).toEqual(initialState.visits);
+    });
+  });
+
+  describe('when opening the engagement tab', () => {
+    beforeEach(() => {
+      vi.mocked(AuthServerProvider.getAccount).mockReturnValue(TEST_ADDRESS);
+      mockPlaceAnalyticsAPI.fetchPlaceEngagement.mockResolvedValue(ENGAGEMENT);
+    });
+
+    it('should request it for the selected date range', async () => {
+      store.dispatch(actions.setDateRange(DateRange.LAST_60_DAYS));
+      await store.dispatch(fetchPlaceEngagement({ placeId: 'bananarama' }));
+
+      expect(mockPlaceAnalyticsAPI.fetchPlaceEngagement).toHaveBeenCalledWith(
+        TEST_ADDRESS,
+        'bananarama',
+        DateRange.LAST_60_DAYS,
+      );
+    });
+
+    it('should store it against the place it belongs to', async () => {
+      await store.dispatch(fetchPlaceEngagement({ placeId: 'bananarama' }));
+
+      expect(store.getState().placeAnalytics.engagement).toEqual({
+        placeId: 'bananarama',
+        data: ENGAGEMENT,
+        status: 'succeeded',
+        error: null,
+      });
+    });
+
+    it('should keep each tab of the same place independent', async () => {
+      mockPlaceAnalyticsAPI.fetchPlaceVisits.mockResolvedValue(VISITS);
+      await store.dispatch(fetchPlaceEngagement({ placeId: 'bananarama' }));
+      await store.dispatch(fetchPlaceVisits({ placeId: 'bananarama' }));
+
+      const { engagement, visits } = store.getState().placeAnalytics;
+      expect(engagement.data).toEqual(ENGAGEMENT);
+      expect(visits.data).toEqual(VISITS);
+    });
+
+    it('should be reset along with the detail when leaving the page', async () => {
+      await store.dispatch(fetchPlaceEngagement({ placeId: 'bananarama' }));
+      store.dispatch(actions.clearDetail());
+
+      expect(store.getState().placeAnalytics.engagement).toEqual(initialState.engagement);
     });
   });
 });

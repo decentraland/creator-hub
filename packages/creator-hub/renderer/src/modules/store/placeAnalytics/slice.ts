@@ -4,6 +4,7 @@ import type { Async, Status } from '/shared/types/async';
 import type {
   PlaceAnalyticsDetail,
   PlaceAnalyticsSummary,
+  PlaceEngagementMetrics,
   PlaceRetentionMetrics,
   PlaceVisitsMetrics,
 } from '/shared/types/place-analytics';
@@ -106,12 +107,26 @@ export const fetchPlaceVisits = createAsyncThunk(
   },
 );
 
+/** Engagement metrics of a single Place, loaded when that tab is opened. */
+export const fetchPlaceEngagement = createAsyncThunk(
+  'placeAnalytics/fetchPlaceEngagement',
+  async ({ placeId }: { placeId: string }, { getState }) => {
+    const connectedAccount = AuthServerProvider.getAccount();
+    if (!connectedAccount) throw new Error('No connected account found');
+
+    const { dateRange } = getState().placeAnalytics;
+    const PlaceAnalyticsAPI = new PlaceAnalytics();
+    return PlaceAnalyticsAPI.fetchPlaceEngagement(connectedAccount, placeId, dateRange);
+  },
+);
+
 // state
 export type PlaceAnalyticsState = {
   places: PlaceAnalyticsSummary[];
   detail: PlaceScopedState<PlaceAnalyticsDetail>;
   retention: PlaceScopedState<PlaceRetentionMetrics>;
   visits: PlaceScopedState<PlaceVisitsMetrics>;
+  engagement: PlaceScopedState<PlaceEngagementMetrics>;
   dateRange: DateRange;
   sortBy: SortBy;
   searchQuery: string;
@@ -127,6 +142,7 @@ export const initialState: Async<PlaceAnalyticsState> = {
   detail: idle(),
   retention: idle(),
   visits: idle(),
+  engagement: idle(),
   dateRange: DateRange.LAST_7_DAYS,
   sortBy: SortBy.NAME_ASC,
   searchQuery: '',
@@ -153,6 +169,7 @@ const slice = createSlice({
       state.detail = initialState.detail;
       state.retention = initialState.retention;
       state.visits = initialState.visits;
+      state.engagement = initialState.engagement;
     },
     togglePinnedPlace: (state, action: PayloadAction<string>) => {
       const placeId = action.payload;
@@ -212,6 +229,18 @@ const slice = createSlice({
           action.meta.arg.placeId,
           action.error.message || 'Failed to fetch place visits',
         );
+      })
+      .addCase(fetchPlaceEngagement.pending, (state, action) => {
+        state.engagement = loading(state.engagement, action.meta.arg.placeId);
+      })
+      .addCase(fetchPlaceEngagement.fulfilled, (state, action) => {
+        state.engagement = loaded(action.meta.arg.placeId, action.payload);
+      })
+      .addCase(fetchPlaceEngagement.rejected, (state, action) => {
+        state.engagement = failed(
+          action.meta.arg.placeId,
+          action.error.message || 'Failed to fetch place engagement',
+        );
       });
   },
 });
@@ -239,5 +268,6 @@ export const actions = {
   fetchPlaceDetail,
   fetchPlaceRetention,
   fetchPlaceVisits,
+  fetchPlaceEngagement,
 };
 export const reducer = slice.reducer;

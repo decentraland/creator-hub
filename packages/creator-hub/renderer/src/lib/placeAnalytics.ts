@@ -2,11 +2,18 @@ import type {
   DateRange,
   PlaceAnalyticsDetail,
   PlaceAnalyticsSummary,
+  PlaceEngagementMetrics,
   PlaceRetentionMetrics,
   PlaceVisitsMetrics,
 } from '/shared/types/place-analytics';
 
-import { MOCK_PLACES, getMockDetail, getMockRetention, getMockVisits } from './placeAnalytics.mock';
+import {
+  MOCK_PLACES,
+  getMockDetail,
+  getMockEngagement,
+  getMockRetention,
+  getMockVisits,
+} from './placeAnalytics.mock';
 
 /**
  * Which fixture the mocked API resolves. Swap for `MOCK_EMPTY_PLACES` to work on
@@ -66,5 +73,17 @@ export class PlaceAnalytics {
     const visits = getMockVisits(placeId);
     if (!visits) throw new Error(`No visits data found for place "${placeId}"`);
     return visits;
+  }
+
+  /** Engagement metrics for one Place over the given date range. */
+  public async fetchPlaceEngagement(
+    _address: string,
+    placeId: string,
+    _dateRange: DateRange,
+  ): Promise<PlaceEngagementMetrics> {
+    // TODO: replace with a request to the analytics API once it exists.
+    const engagement = getMockEngagement(placeId);
+    if (!engagement) throw new Error(`No engagement data found for place "${placeId}"`);
+    return engagement;
   }
 }

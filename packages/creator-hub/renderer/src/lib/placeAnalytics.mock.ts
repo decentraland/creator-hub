@@ -1,6 +1,7 @@
 import type {
   PlaceAnalyticsDetail,
   PlaceAnalyticsSummary,
+  PlaceEngagementMetrics,
   PlaceRetentionMetrics,
   PlaceVisitsMetrics,
   TimeSeriesPoint,
@@ -227,4 +228,68 @@ const MOCK_VISITS: Record<string, PlaceVisitsMetrics> = {
 
 export function getMockVisits(placeId: string): PlaceVisitsMetrics | undefined {
   return MOCK_VISITS[placeId];
+}
+
+const MOCK_ENGAGEMENT: Record<string, PlaceEngagementMetrics> = {
+  bananarama: {
+    avgDailyPlaytime: {
+      minutes: 25,
+      deltaMinutes: 6.6,
+      weekly: weekly([19, 20.5, 19.4, 30, 15.2, 28.4, 16.1, 22.3, 18.6, 13.1, 14.8, 17.2, 25]),
+    },
+    avgWeeklyPlaytime: {
+      minutes: 29,
+      deltaMinutes: 2.9,
+      weekly: weekly([20.4, 21.1, 20.6, 15.8, 21.3, 22.6, 14.2, 20.1, 21.8, 23.4, 22.1, 25.6, 29]),
+    },
+    socialInteractions: {
+      weeklyTotals: {
+        messagesSent: weekly([620, 540, 470, 610, 660, 980, 720, 500, 520, 400]),
+        emotesPlayed: weekly([1340, 1210, 1120, 1310, 1400, 1250, 1180, 1360, 1510, 1470]),
+        newFriendships: weekly([180, 240, 210, 190, 230, 170, 200, 240, 120, 50]),
+      },
+      visitorRate: {
+        messagesSent: weekly([48, 44, 41, 45, 47, 62, 51, 42, 38, 31]),
+        emotesPlayed: weekly([88, 84, 86, 79, 94, 82, 87, 89, 91, 95]),
+        newFriendships: weekly([26, 21, 18, 24, 19, 27, 20, 22, 24, 25]),
+      },
+    },
+  },
+  'halloween-nightmare': {
+    avgDailyPlaytime: {
+      minutes: 12,
+      deltaMinutes: -3.4,
+      weekly: weekly([18.2, 16.4, 15.1, 17.3, 14.8, 13.2, 15.6, 12.9, 14.1, 13.6, 12.4, 15.4, 12]),
+    },
+    avgWeeklyPlaytime: {
+      minutes: 16,
+      deltaMinutes: -1.2,
+      weekly: weekly([22.1, 20.4, 19.8, 21.2, 18.6, 17.9, 19.1, 16.8, 18.2, 17.2, 16.4, 17.2, 16]),
+    },
+    socialInteractions: {
+      weeklyTotals: {
+        messagesSent: weekly([84, 62, 71, 58, 66, 49, 55, 61, 48, 42]),
+        emotesPlayed: weekly([210, 184, 196, 172, 188, 164, 178, 158, 166, 148]),
+        newFriendships: weekly([18, 14, 21, 12, 16, 9, 13, 15, 8, 6]),
+      },
+      visitorRate: {
+        messagesSent: weekly([32, 28, 31, 26, 29, 22, 25, 27, 21, 19]),
+        emotesPlayed: weekly([64, 58, 61, 55, 59, 52, 56, 51, 54, 48]),
+        newFriendships: weekly([12, 9, 14, 8, 11, 6, 9, 10, 5, 4]),
+      },
+    },
+  },
+  /** Live, but nothing measured yet — the charts render their empty state. */
+  'unmonday-club': {
+    avgDailyPlaytime: { minutes: null, deltaMinutes: null, weekly: [] },
+    avgWeeklyPlaytime: { minutes: null, deltaMinutes: null, weekly: [] },
+    socialInteractions: {
+      weeklyTotals: { messagesSent: [], emotesPlayed: [], newFriendships: [] },
+      visitorRate: { messagesSent: [], emotesPlayed: [], newFriendships: [] },
+    },
+  },
+};
+
+export function getMockEngagement(placeId: string): PlaceEngagementMetrics | undefined {
+  return MOCK_ENGAGEMENT[placeId];
 }
