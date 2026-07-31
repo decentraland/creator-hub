@@ -22,6 +22,7 @@ import { HomePage } from '/@/components/HomePage';
 import { ScenesPage } from '/@/components/ScenesPage';
 import { EditorPage } from '/@/components/EditorPage';
 import { CollectionsPage } from '/@/components/CollectionsPage';
+import { AnalyticsPage } from '/@/components/AnalyticsPage';
 import { ManagePage } from '/@/components/ManagePage';
 import { LearnPage } from '/@/components/LearnPage';
 import { SignInPage } from '/@/components/SignInPage';
@@ -101,6 +102,10 @@ root.render(
                   <Route
                     path="/collections"
                     element={<CollectionsPage />}
+                  />
+                  <Route
+                    path="/analytics"
+                    element={<AnalyticsPage />}
                   />
                   <Route
                     path="/manage"

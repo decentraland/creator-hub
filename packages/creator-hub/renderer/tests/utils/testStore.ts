@@ -8,6 +8,7 @@ import * as analytics from '../../src/modules/store/analytics';
 import * as ens from '../../src/modules/store/ens';
 import * as land from '../../src/modules/store/land';
 import * as management from '../../src/modules/store/management';
+import * as placeAnalytics from '../../src/modules/store/placeAnalytics';
 
 export const createTestStore = () =>
   configureStore({
@@ -21,6 +22,7 @@ export const createTestStore = () =>
       ens: ens.reducer,
       land: land.reducer,
       management: management.reducer,
+      placeAnalytics: placeAnalytics.reducer,
     },
     middleware: getDefaultMiddleware =>
       getDefaultMiddleware({

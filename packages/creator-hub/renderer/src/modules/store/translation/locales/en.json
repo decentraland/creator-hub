@@ -119,6 +119,7 @@
       "home": "Home",
       "scenes": "Scenes",
       "collections": "Collections",
+      "analytics": "Analytics",
       "manage": "Manage",
       "learn": "Learn",
       "more": "More"
@@ -918,6 +919,15 @@
     },
     "unpublish_world_confirmation": {
       "title": "Unpublish <b>{worldName}</b>?"
+    }
+  },
+  "analytics": {
+    "header": {
+      "title": "Analytics"
+    },
+    "empty_list": {
+      "title": "No Places to analyse yet",
+      "description": "Publish a scene to start tracking its performance. Once it's live, you'll find key insights and metrics about your Place here."
     }
   },
   "connection": {

@@ -119,6 +119,7 @@
       "home": "首页",
       "scenes": "场景",
       "collections": "收藏",
+      "analytics": "数据分析",
       "manage": "管理",
       "learn": "学习",
       "more": "更多"
@@ -918,6 +919,15 @@
     },
     "unpublish_world_confirmation": {
       "title": "取消发布 <b>{worldName}</b>？"
+    }
+  },
+  "analytics": {
+    "header": {
+      "title": "数据分析"
+    },
+    "empty_list": {
+      "title": "暂无可分析的 Place",
+      "description": "发布一个场景即可开始追踪其表现。上线后，你可以在这里查看该 Place 的关键指标和数据洞察。"
     }
   },
   "connection": {

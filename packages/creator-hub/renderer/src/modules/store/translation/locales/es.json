@@ -119,6 +119,7 @@
       "home": "Inicio",
       "scenes": "Escenas",
       "collections": "Colecciones",
+      "analytics": "Analíticas",
       "manage": "Gestionar",
       "learn": "Aprender",
       "more": "Más"
@@ -918,6 +919,15 @@
     },
     "unpublish_world_confirmation": {
       "title": "¿Despublicar <b>{worldName}</b>?"
+    }
+  },
+  "analytics": {
+    "header": {
+      "title": "Analíticas"
+    },
+    "empty_list": {
+      "title": "Aún no hay Places para analizar",
+      "description": "Publica una escena para empezar a medir su rendimiento. Cuando esté en vivo, vas a encontrar acá las métricas y datos clave de tu Place."
     }
   },
   "connection": {

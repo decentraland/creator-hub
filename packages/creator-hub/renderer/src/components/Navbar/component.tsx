@@ -20,6 +20,7 @@ export enum NavbarItem {
   HOME = 'home',
   SCENES = 'scenes',
   COLLECTIONS = 'collections',
+  ANALYTICS = 'analytics',
   LEARN = 'learn',
   MANAGE = 'manage',
   MORE = 'more',
@@ -74,6 +75,10 @@ export function Navbar(props: { active: NavbarItem }) {
             item={NavbarItem.COLLECTIONS}
             active={props.active}
             disable={true}
+          />
+          <MenuItem
+            item={NavbarItem.ANALYTICS}
+            active={props.active}
           />
           <MenuItem
             item={NavbarItem.MANAGE}
