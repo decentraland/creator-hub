@@ -72,7 +72,7 @@ $(PROTOC):
 	rm $(PROTOBUF_ZIP)
 	chmod +x $(PROTOC)
 
-protoc:
+protoc: $(PROTOC)
 	mkdir -p $(INSPECTOR_PATH)/src/lib/data-layer/proto/gen
 	$(PROTOC) \
 		--plugin=node_modules/.bin/protoc-gen-dcl_ts_proto \
