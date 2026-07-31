@@ -970,6 +970,31 @@
         "title": "Resumen",
         "description": "Un panorama del crecimiento, la interacción y la retención de tu place."
       },
+      "retention": {
+        "title": "Retención",
+        "description": "Entendé qué porcentaje de usuarios vuelve después de su primera sesión.",
+        "platforms": {
+          "title": "Plataformas",
+          "description": "Tu promedio móvil de 60 días, comparado entre mobile y escritorio."
+        },
+        "day_7_cohort": {
+          "title": "Retención Día 7 por Semana de Cohorte",
+          "description": "Porcentaje de usuarios que volvieron 7 días después de su primera visita, agrupados por la semana en que entraron por primera vez a tu place.",
+          "benchmark": "{value}% Día 7 KR"
+        },
+        "churn": {
+          "title": "Tasa de Abandono Semanal",
+          "description": "Porcentaje de usuarios activos de la semana anterior que no volvieron esta semana."
+        }
+      },
+      "platforms": {
+        "all": "Todas las Plataformas",
+        "desktop": "Escritorio",
+        "mobile": "Móvil"
+      },
+      "charts": {
+        "no_data": "Todavía no hay datos para este período"
+      },
       "error": {
         "title": "No pudimos cargar las analíticas de este Place"
       }

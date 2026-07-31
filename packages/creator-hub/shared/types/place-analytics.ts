@@ -65,6 +65,31 @@ export type PlaceAnalyticsDetail = {
   overview: PlaceOverviewMetrics;
 };
 
+/** One point of a weekly series. */
+export type TimeSeriesPoint = {
+  /** Epoch milliseconds of the start of the week. */
+  date: number;
+  /** `null` for a week with no data, which the charts leave as a gap. */
+  value: number | null;
+};
+
+/** A metric compared across the platforms users play on. Percentages, 0-100. */
+export type PlatformBreakdown = {
+  all: number | null;
+  desktop: number | null;
+  mobile: number | null;
+};
+
+/** The metrics behind the Retention tab. */
+export type PlaceRetentionMetrics = {
+  /** 60-day rolling average retention per platform. */
+  platforms: PlatformBreakdown;
+  /** Percentage of each week's new users who came back on day 7. */
+  day7ByCohortWeek: TimeSeriesPoint[];
+  /** Percentage of last week's active users who did not return. */
+  weeklyChurnRate: TimeSeriesPoint[];
+};
+
 /** Window the detail page's metrics are computed over. */
 export enum DateRange {
   LAST_7_DAYS = 'last_7_days',

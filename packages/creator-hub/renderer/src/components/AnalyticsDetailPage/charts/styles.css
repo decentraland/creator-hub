@@ -1,0 +1,17 @@
+.EndOfLineLabelText {
+  fill: var(--text);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.MuiChartsTooltip-root .MuiChartsTooltip-valueCell {
+  font-weight: 600;
+}
+
+.ChartEmpty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 200px;
+  color: var(--secondary-text);
+}

@@ -2,9 +2,10 @@ import type {
   DateRange,
   PlaceAnalyticsDetail,
   PlaceAnalyticsSummary,
+  PlaceRetentionMetrics,
 } from '/shared/types/place-analytics';
 
-import { MOCK_PLACES, getMockDetail } from './placeAnalytics.mock';
+import { MOCK_PLACES, getMockDetail, getMockRetention } from './placeAnalytics.mock';
 
 /**
  * Which fixture the mocked API resolves. Swap for `MOCK_EMPTY_PLACES` to work on
@@ -40,5 +41,17 @@ export class PlaceAnalytics {
     const detail = getMockDetail(placeId);
     if (!detail) throw new Error(`No analytics found for place "${placeId}"`);
     return detail;
+  }
+
+  /** Retention metrics for one Place over the given date range. */
+  public async fetchPlaceRetention(
+    _address: string,
+    placeId: string,
+    _dateRange: DateRange,
+  ): Promise<PlaceRetentionMetrics> {
+    // TODO: replace with a request to the analytics API once it exists.
+    const retention = getMockRetention(placeId);
+    if (!retention) throw new Error(`No retention data found for place "${placeId}"`);
+    return retention;
   }
 }

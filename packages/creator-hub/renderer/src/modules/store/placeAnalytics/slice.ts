@@ -1,7 +1,11 @@
 import { createSelector, createSlice, type PayloadAction } from '@reduxjs/toolkit';
 
 import type { Async, Status } from '/shared/types/async';
-import type { PlaceAnalyticsDetail, PlaceAnalyticsSummary } from '/shared/types/place-analytics';
+import type {
+  PlaceAnalyticsDetail,
+  PlaceAnalyticsSummary,
+  PlaceRetentionMetrics,
+} from '/shared/types/place-analytics';
 import { DateRange, SortBy } from '/shared/types/place-analytics';
 
 import { AuthServerProvider } from '/@/lib/auth';
@@ -21,15 +25,46 @@ export const fetchPlaces = createAsyncThunk('placeAnalytics/fetchPlaces', async 
 });
 
 /**
- * Detail of the Place currently being looked at. Carries its own status because
- * it loads independently of the list.
+ * Data that belongs to one Place and loads independently of the list, so it
+ * carries both the Place it describes and its own status.
  */
-export type PlaceDetailState = {
+export type PlaceScopedState<T> = {
   placeId: string | null;
-  data: PlaceAnalyticsDetail | null;
+  data: T | null;
   status: Status;
   error: string | null;
 };
+
+const idle = <T>(): PlaceScopedState<T> => ({
+  placeId: null,
+  data: null,
+  status: 'idle',
+  error: null,
+});
+
+/**
+ * Keeps the current data only while the same Place reloads. Switching Places
+ * clears it, so one Place's numbers can never be read as another's.
+ */
+function loading<T>(state: PlaceScopedState<T>, placeId: string): PlaceScopedState<T> {
+  return state.placeId === placeId
+    ? { ...state, status: 'loading', error: null }
+    : { placeId, data: null, status: 'loading', error: null };
+}
+
+const loaded = <T>(placeId: string, data: T): PlaceScopedState<T> => ({
+  placeId,
+  data,
+  status: 'succeeded',
+  error: null,
+});
+
+const failed = <T>(placeId: string, error: string): PlaceScopedState<T> => ({
+  placeId,
+  data: null,
+  status: 'failed',
+  error,
+});
 
 /** Analytics of a single Place for the selected date range. */
 export const fetchPlaceDetail = createAsyncThunk(
@@ -44,10 +79,24 @@ export const fetchPlaceDetail = createAsyncThunk(
   },
 );
 
+/** Retention metrics of a single Place, loaded when that tab is opened. */
+export const fetchPlaceRetention = createAsyncThunk(
+  'placeAnalytics/fetchPlaceRetention',
+  async ({ placeId }: { placeId: string }, { getState }) => {
+    const connectedAccount = AuthServerProvider.getAccount();
+    if (!connectedAccount) throw new Error('No connected account found');
+
+    const { dateRange } = getState().placeAnalytics;
+    const PlaceAnalyticsAPI = new PlaceAnalytics();
+    return PlaceAnalyticsAPI.fetchPlaceRetention(connectedAccount, placeId, dateRange);
+  },
+);
+
 // state
 export type PlaceAnalyticsState = {
   places: PlaceAnalyticsSummary[];
-  detail: PlaceDetailState;
+  detail: PlaceScopedState<PlaceAnalyticsDetail>;
+  retention: PlaceScopedState<PlaceRetentionMetrics>;
   dateRange: DateRange;
   sortBy: SortBy;
   searchQuery: string;
@@ -60,7 +109,8 @@ export type PlaceAnalyticsState = {
 
 export const initialState: Async<PlaceAnalyticsState> = {
   places: [],
-  detail: { placeId: null, data: null, status: 'idle', error: null },
+  detail: idle(),
+  retention: idle(),
   dateRange: DateRange.LAST_7_DAYS,
   sortBy: SortBy.NAME_ASC,
   searchQuery: '',
@@ -85,6 +135,7 @@ const slice = createSlice({
     },
     clearDetail: state => {
       state.detail = initialState.detail;
+      state.retention = initialState.retention;
     },
     togglePinnedPlace: (state, action: PayloadAction<string>) => {
       const placeId = action.payload;
@@ -110,28 +161,28 @@ const slice = createSlice({
         state.error = action.error.message || 'Failed to fetch places analytics';
       })
       .addCase(fetchPlaceDetail.pending, (state, action) => {
-        // Drop the previous Place's data so its numbers can't be read as this one's.
-        const placeId = action.meta.arg.placeId;
-        state.detail =
-          state.detail.placeId === placeId
-            ? { ...state.detail, status: 'loading', error: null }
-            : { placeId, data: null, status: 'loading', error: null };
+        state.detail = loading(state.detail, action.meta.arg.placeId);
       })
       .addCase(fetchPlaceDetail.fulfilled, (state, action) => {
-        state.detail = {
-          placeId: action.meta.arg.placeId,
-          data: action.payload,
-          status: 'succeeded',
-          error: null,
-        };
+        state.detail = loaded(action.meta.arg.placeId, action.payload);
       })
       .addCase(fetchPlaceDetail.rejected, (state, action) => {
-        state.detail = {
-          placeId: action.meta.arg.placeId,
-          data: null,
-          status: 'failed',
-          error: action.error.message || 'Failed to fetch place analytics',
-        };
+        state.detail = failed(
+          action.meta.arg.placeId,
+          action.error.message || 'Failed to fetch place analytics',
+        );
+      })
+      .addCase(fetchPlaceRetention.pending, (state, action) => {
+        state.retention = loading(state.retention, action.meta.arg.placeId);
+      })
+      .addCase(fetchPlaceRetention.fulfilled, (state, action) => {
+        state.retention = loaded(action.meta.arg.placeId, action.payload);
+      })
+      .addCase(fetchPlaceRetention.rejected, (state, action) => {
+        state.retention = failed(
+          action.meta.arg.placeId,
+          action.error.message || 'Failed to fetch place retention',
+        );
       });
   },
 });
@@ -153,5 +204,10 @@ const getVisiblePlaces = createSelector(getPlaceAnalyticsState, placeAnalyticsSt
 );
 
 export const selectors = { getVisiblePlaces };
-export const actions = { ...slice.actions, fetchPlaces, fetchPlaceDetail };
+export const actions = {
+  ...slice.actions,
+  fetchPlaces,
+  fetchPlaceDetail,
+  fetchPlaceRetention,
+};
 export const reducer = slice.reducer;

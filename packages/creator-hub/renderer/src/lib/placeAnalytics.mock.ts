@@ -1,4 +1,9 @@
-import type { PlaceAnalyticsDetail, PlaceAnalyticsSummary } from '/shared/types/place-analytics';
+import type {
+  PlaceAnalyticsDetail,
+  PlaceAnalyticsSummary,
+  PlaceRetentionMetrics,
+  TimeSeriesPoint,
+} from '/shared/types/place-analytics';
 import { PlaceAccess } from '/shared/types/place-analytics';
 
 import THUMBNAIL from '/assets/images/scene-thumbnail-fallback.png';
@@ -121,4 +126,41 @@ const MOCK_DETAILS: Record<string, PlaceAnalyticsDetail> = {
 
 export function getMockDetail(placeId: string): PlaceAnalyticsDetail | undefined {
   return MOCK_DETAILS[placeId];
+}
+
+/** Weeks of the charts in the designs: Mar 16 2026 onwards, one point per week. */
+const FIRST_WEEK = new Date(2026, 2, 16).getTime();
+const ONE_WEEK = 7 * 24 * 60 * 60 * 1000;
+
+function weekly(values: Array<number | null>): TimeSeriesPoint[] {
+  return values.map((value, index) => ({ date: FIRST_WEEK + index * ONE_WEEK, value }));
+}
+
+const MOCK_RETENTION: Record<string, PlaceRetentionMetrics> = {
+  bananarama: {
+    platforms: { all: 10.2, desktop: 11.1, mobile: 9.1 },
+    day7ByCohortWeek: weekly([
+      12.8, 18.5, 15.1, 13.2, 10.9, 9.4, 10.6, 11.8, 25.1, 27, 29.2, 22.4, 14.5,
+    ]),
+    weeklyChurnRate: weekly([
+      31.2, 79.1, 54.3, 78.6, 41.2, 71.4, 49.1, 63.2, 41.4, 78.9, 68.2, 88.1, 72.3, 70.4,
+    ]),
+  },
+  'halloween-nightmare': {
+    platforms: { all: 4.8, desktop: 5.2, mobile: 3.9 },
+    day7ByCohortWeek: weekly([8.1, 6.4, 9.7, 5.2, 7.8, 4.9, 6.1, 5.5, 7.2, 6.8, 5.1, 4.4, 6.2]),
+    weeklyChurnRate: weekly([
+      62.1, 84.3, 71.2, 88.4, 76.5, 91.2, 80.1, 85.6, 74.3, 89.7, 82.4, 90.1, 86.2, 87.5,
+    ]),
+  },
+  /** Live, but nothing measured yet — the charts render their empty state. */
+  'unmonday-club': {
+    platforms: { all: null, desktop: null, mobile: null },
+    day7ByCohortWeek: [],
+    weeklyChurnRate: [],
+  },
+};
+
+export function getMockRetention(placeId: string): PlaceRetentionMetrics | undefined {
+  return MOCK_RETENTION[placeId];
 }

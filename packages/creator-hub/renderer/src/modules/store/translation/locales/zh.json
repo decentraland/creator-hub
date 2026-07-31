@@ -970,6 +970,31 @@
         "title": "概览",
         "description": "你的 Place 在增长、互动和用户留存方面的概况。"
       },
+      "retention": {
+        "title": "留存",
+        "description": "了解首次访问后再次回访的用户占比。",
+        "platforms": {
+          "title": "平台",
+          "description": "你的 60 天滚动平均值，按移动端和桌面端对比。"
+        },
+        "day_7_cohort": {
+          "title": "按首访周划分的 7 日留存",
+          "description": "首次访问 7 天后再次回访的用户占比，按首次进入你的 Place 的那一周分组。",
+          "benchmark": "{value}% 7 日留存目标"
+        },
+        "churn": {
+          "title": "每周流失率",
+          "description": "上周活跃但本周没有回访的用户占比。"
+        }
+      },
+      "platforms": {
+        "all": "所有平台",
+        "desktop": "桌面端",
+        "mobile": "移动端"
+      },
+      "charts": {
+        "no_data": "此期间暂无数据"
+      },
       "error": {
         "title": "无法加载该 Place 的分析数据"
       }

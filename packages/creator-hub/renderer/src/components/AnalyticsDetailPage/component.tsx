@@ -1,4 +1,4 @@
-import { useCallback, useEffect } from 'react';
+import { type SyntheticEvent, useCallback, useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import DownloadIcon from '@mui/icons-material/FileDownloadOutlined';
 import {
@@ -27,6 +27,7 @@ import { Title } from '../Title';
 
 import { OverviewTab } from './OverviewTab';
 import { PlaceCard } from './PlaceCard';
+import { RetentionTab } from './RetentionTab';
 
 import './styles.css';
 
@@ -36,18 +37,21 @@ const DATE_RANGE_OPTIONS: Array<{ label: string; value: DateRange }> = [
   { label: t('analytics.detail.date_range.last_60_days'), value: DateRange.LAST_60_DAYS },
 ];
 
-/** Only Overview is built; the rest are shown so the shape of the page is honest. */
+/** Visits and Engagement are not built yet, but are shown so the page reads honestly. */
 const TABS = [
   { value: 'overview', label: t('analytics.detail.tabs.overview'), enabled: true },
-  { value: 'retention', label: t('analytics.detail.tabs.retention'), enabled: false },
+  { value: 'retention', label: t('analytics.detail.tabs.retention'), enabled: true },
   { value: 'visits', label: t('analytics.detail.tabs.visits'), enabled: false },
   { value: 'engagement', label: t('analytics.detail.tabs.engagement'), enabled: false },
 ];
 
+type TabValue = 'overview' | 'retention';
+
 export function AnalyticsDetailPage() {
   const { placeId } = useParams<{ placeId: string }>();
   const { isSignedIn } = useAuth();
-  const { detail, dateRange } = useSelector(state => state.placeAnalytics);
+  const { detail, retention, dateRange } = useSelector(state => state.placeAnalytics);
+  const [tab, setTab] = useState<TabValue>('overview');
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
@@ -59,9 +63,20 @@ export function AnalyticsDetailPage() {
     }
   }, [isSignedIn, placeId, dateRange]);
 
+  // Each tab's data is fetched the first time it is opened, and on range changes.
+  useEffect(() => {
+    if (isSignedIn && placeId && tab === 'retention') {
+      dispatch(placeAnalyticsActions.fetchPlaceRetention({ placeId }));
+    }
+  }, [isSignedIn, placeId, tab, dateRange]);
+
   useEffect(() => () => void dispatch(placeAnalyticsActions.clearDetail()), []);
 
   const handleBack = useCallback(() => navigate('/analytics'), [navigate]);
+
+  const handleTabChange = useCallback((_e: SyntheticEvent, value: TabValue) => {
+    setTab(value);
+  }, []);
 
   const handleDateRangeChange = useCallback((e: SelectChangeEvent<DateRange>) => {
     dispatch(placeAnalyticsActions.setDateRange(e.target.value as DateRange));
@@ -106,13 +121,16 @@ export function AnalyticsDetailPage() {
             <PlaceCard place={detail.data.place} />
             <Box className="Metrics">
               <Box className="TabsBar">
-                <Tabs value="overview">
-                  {TABS.map(tab => (
+                <Tabs
+                  value={tab}
+                  onChange={handleTabChange}
+                >
+                  {TABS.map(option => (
                     <Tab
-                      key={tab.value}
-                      value={tab.value}
-                      label={tab.label}
-                      disabled={!tab.enabled}
+                      key={option.value}
+                      value={option.value}
+                      label={option.label}
+                      disabled={!option.enabled}
                     />
                   ))}
                 </Tabs>
@@ -133,7 +151,18 @@ export function AnalyticsDetailPage() {
                   </Select>
                 </Box>
               </Box>
-              <OverviewTab overview={detail.data.overview} />
+              {tab === 'overview' ? (
+                <OverviewTab overview={detail.data.overview} />
+              ) : retention.status === 'idle' || retention.status === 'loading' ? (
+                <Loader size={70} />
+              ) : retention.status === 'failed' || !retention.data ? (
+                <Box className="ErrorContainer">
+                  <Typography variant="h5">{t('analytics.detail.error.title')}</Typography>
+                  <Typography variant="body1">{retention.error}</Typography>
+                </Box>
+              ) : (
+                <RetentionTab retention={retention.data} />
+              )}
             </Box>
           </Box>
         )}

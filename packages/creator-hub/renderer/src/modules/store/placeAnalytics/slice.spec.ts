@@ -7,7 +7,14 @@ import type {
 import { DateRange, PlaceAccess, SortBy } from '../../../../../shared/types/place-analytics';
 import { AuthServerProvider } from '../../../lib/auth';
 import { createTestStore } from '../../../../tests/utils/testStore';
-import { actions, fetchPlaceDetail, fetchPlaces, initialState, selectors } from './slice';
+import {
+  actions,
+  fetchPlaceDetail,
+  fetchPlaceRetention,
+  fetchPlaces,
+  initialState,
+  selectors,
+} from './slice';
 
 const TEST_ADDRESS = '0x123abc';
 
@@ -47,9 +54,16 @@ const DETAIL: PlaceAnalyticsDetail = {
   },
 };
 
+const RETENTION = {
+  platforms: { all: 10.2, desktop: 11.1, mobile: 9.1 },
+  day7ByCohortWeek: [{ date: 1_773_000_000_000, value: 12.8 }],
+  weeklyChurnRate: [{ date: 1_773_000_000_000, value: 31.2 }],
+};
+
 const mockPlaceAnalyticsAPI = {
   fetchPlaces: vi.fn(),
   fetchPlaceDetail: vi.fn(),
+  fetchPlaceRetention: vi.fn(),
 };
 
 vi.mock('/@/lib/placeAnalytics', () => ({
@@ -258,6 +272,51 @@ describe('placeAnalytics slice', () => {
       store.dispatch(actions.clearDetail());
 
       expect(store.getState().placeAnalytics.detail).toEqual(initialState.detail);
+    });
+  });
+
+  describe('when opening the retention tab', () => {
+    beforeEach(() => {
+      vi.mocked(AuthServerProvider.getAccount).mockReturnValue(TEST_ADDRESS);
+      mockPlaceAnalyticsAPI.fetchPlaceRetention.mockResolvedValue(RETENTION);
+    });
+
+    it('should request it for the selected date range', async () => {
+      store.dispatch(actions.setDateRange(DateRange.LAST_60_DAYS));
+      await store.dispatch(fetchPlaceRetention({ placeId: 'bananarama' }));
+
+      expect(mockPlaceAnalyticsAPI.fetchPlaceRetention).toHaveBeenCalledWith(
+        TEST_ADDRESS,
+        'bananarama',
+        DateRange.LAST_60_DAYS,
+      );
+    });
+
+    it('should store it against the place it belongs to', async () => {
+      await store.dispatch(fetchPlaceRetention({ placeId: 'bananarama' }));
+
+      expect(store.getState().placeAnalytics.retention).toEqual({
+        placeId: 'bananarama',
+        data: RETENTION,
+        status: 'succeeded',
+        error: null,
+      });
+    });
+
+    it('should drop the previous place retention while another one loads', async () => {
+      await store.dispatch(fetchPlaceRetention({ placeId: 'bananarama' }));
+      void store.dispatch(fetchPlaceRetention({ placeId: 'unmonday-club' }));
+
+      const { retention } = store.getState().placeAnalytics;
+      expect(retention.placeId).toBe('unmonday-club');
+      expect(retention.data).toBeNull();
+    });
+
+    it('should be reset along with the detail when leaving the page', async () => {
+      await store.dispatch(fetchPlaceRetention({ placeId: 'bananarama' }));
+      store.dispatch(actions.clearDetail());
+
+      expect(store.getState().placeAnalytics.retention).toEqual(initialState.retention);
     });
   });
 });

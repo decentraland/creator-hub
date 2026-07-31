@@ -970,6 +970,31 @@
         "title": "Overview",
         "description": "Snapshot of your place's growth, engagement, and user retention."
       },
+      "retention": {
+        "title": "Retention",
+        "description": "Understand the percentage of users who return after their first session.",
+        "platforms": {
+          "title": "Platforms",
+          "description": "Your 60-day rolling average, compared across mobile and desktop."
+        },
+        "day_7_cohort": {
+          "title": "Day 7 Retention by Cohort Week",
+          "description": "Percentage of users who returned 7 days after their first visit, grouped by the week they first jumped into your place.",
+          "benchmark": "{value}% Day 7 KR"
+        },
+        "churn": {
+          "title": "Weekly Churn Rate",
+          "description": "Percentage of active users from the previous week who did not return this week."
+        }
+      },
+      "platforms": {
+        "all": "All Platforms",
+        "desktop": "Desktop",
+        "mobile": "Mobile"
+      },
+      "charts": {
+        "no_data": "No data for this period yet"
+      },
       "error": {
         "title": "We couldn't load this Place's analytics"
       }
