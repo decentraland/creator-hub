@@ -234,22 +234,34 @@ const Toolbar = withSdk(({ sdk }) => {
           <BiStop />
         </ToolbarButton>
       )}
-      <Preferences />
-      <ToolbarButton
-        className="babylonjs-inspector"
-        onClick={handleInspector}
-        title="Inspector"
-      >
-        <RiListSettingsLine />
-      </ToolbarButton>
+      {/* 3D-only chrome. Preferences offers camera-rotation (no scene camera in
+          2D) and autosave (code mode writes each splice straight to disk, so the
+          ECS save path never runs); the renderer debug inspector has no 2D
+          counterpart. Both are inert while the designer is open. */}
+      {!isUIDesignerOpen && (
+        <>
+          <Preferences />
+          <ToolbarButton
+            className="babylonjs-inspector"
+            onClick={handleInspector}
+            title="Inspector"
+          >
+            <RiListSettingsLine />
+          </ToolbarButton>
+        </>
+      )}
       <div className="RightContent">
-        <ToolbarButton
-          className="edit-scene"
-          onClick={handleEditScene}
-          title="Edit Scene"
-        >
-          <FaPencilAlt />
-        </ToolbarButton>
+        {/* Selects the scene ROOT entity so EntityInspector shows scene settings —
+            but the right rail is UIDesignerRightRail in 2D, so it does nothing. */}
+        {!isUIDesignerOpen && (
+          <ToolbarButton
+            className="edit-scene"
+            onClick={handleEditScene}
+            title="Edit Scene"
+          >
+            <FaPencilAlt />
+          </ToolbarButton>
+        )}
         {showSceneInfoButton && (
           <ToolbarButton
             className={cx('scene-info', { active: isSceneInfoPanelOpen })}
