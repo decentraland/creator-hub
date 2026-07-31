@@ -3,7 +3,6 @@ import * as BABYLON from '@babylonjs/core';
 import type { EcsEntity } from '../decentraland/EcsEntity';
 import { snapManager } from '../decentraland/snap-manager';
 import { keyState, Keys } from '../decentraland/keys';
-import { getAncestors, isAncestor, mapNodes } from '../../sdk/nodes';
 import { createSpawnPointManager } from '../decentraland/spawn-point-manager';
 
 let isSnapEnabled = snapManager.isEnabled();
@@ -108,6 +107,10 @@ export function interactWithScene(
 
   const mesh = pickingResult!.pickedMesh;
 
+  // The renderer only picks, classifies, and updates its own visual state
+  // (spawn-point selection, drag detection). It emits a semantic `pick` event;
+  // the inspector-side reverse-channel handler owns the ECS selection response.
+
   // Check if clicked on a spawn point mesh BEFORE checking for entities
   const spawnPointManager = createSpawnPointManager(scene);
   if (mesh && spawnPointManager.isMeshSpawnPoint(mesh)) {
@@ -116,29 +119,28 @@ export function interactWithScene(
     } else if (pointerEvent === 'pointerUp') {
       if (!isDragging) {
         const spawnPointIndex = spawnPointManager.findSpawnPointByMesh(mesh);
-        if (spawnPointIndex !== null) {
-          const context = getSceneContext(scene);
-          if (context) {
-            const isCameraTarget = spawnPointManager.isMeshCameraTarget(mesh);
-            const currentIndex = spawnPointManager.getSelectedIndex();
-            const currentTarget = spawnPointManager.getSelectedTarget();
-            const sameSelection =
-              currentIndex === spawnPointIndex &&
-              currentTarget === (isCameraTarget ? 'cameraTarget' : 'position');
+        const context = getSceneContext(scene);
+        if (spawnPointIndex !== null && context) {
+          const isCameraTarget = spawnPointManager.isMeshCameraTarget(mesh);
+          const currentIndex = spawnPointManager.getSelectedIndex();
+          const currentTarget = spawnPointManager.getSelectedTarget();
+          const sameSelection =
+            currentIndex === spawnPointIndex &&
+            currentTarget === (isCameraTarget ? 'cameraTarget' : 'position');
 
-            if (sameSelection) {
-              spawnPointManager.selectSpawnPoint(null);
-              context.operations.updateSelectedEntity(context.engine.RootEntity);
-            } else {
-              if (isCameraTarget) {
-                spawnPointManager.selectCameraTarget(spawnPointIndex);
-              } else {
-                spawnPointManager.selectSpawnPoint(spawnPointIndex);
-              }
-              context.operations.updateSelectedEntity(context.engine.PlayerEntity);
-            }
-            void context.operations.dispatch();
+          // Spawn-point selection is renderer visual state — mutate it here.
+          if (sameSelection) {
+            spawnPointManager.selectSpawnPoint(null);
+          } else if (isCameraTarget) {
+            spawnPointManager.selectCameraTarget(spawnPointIndex);
+          } else {
+            spawnPointManager.selectSpawnPoint(spawnPointIndex);
           }
+          // ...but the ECS selection mirror is the inspector's job.
+          context.rendererEvents.emit('pick', {
+            target: { kind: 'spawnPoint', selected: !sameSelection },
+            modifiers: { multi: false },
+          });
         }
       }
       resetDragDetection();
@@ -165,35 +167,30 @@ export function interactWithScene(
     pointerEvent === 'pointerUp' &&
     !isDragging &&
     !entity.isLocked() &&
-    !entity.isHidden()
+    !entity.isHidden() &&
+    context
   ) {
-    const { operations, engine, editorComponents } = entity.context.deref()!;
-    const ancestors = getAncestors(engine, entity.entityId);
-    const nodes = mapNodes(engine, node =>
-      isAncestor(ancestors, node.entity) ? { ...node, open: true } : node,
-    );
-    operations.updateValue(editorComponents.Nodes, engine.RootEntity, { value: nodes });
-    operations.updateSelectedEntity(
-      entity.entityId,
-      !!keyState[Keys.KEY_CTRL] || !!keyState[Keys.KEY_SHIFT],
-    );
-    // Deselect any spawn point when selecting an entity
+    // Deselect any spawn point when selecting an entity (renderer visual state).
     spawnPointManager.selectSpawnPoint(null);
-    void operations.dispatch();
+    context.rendererEvents.emit('pick', {
+      target: { kind: 'entity', entity: entity.entityId },
+      modifiers: { multi: !!keyState[Keys.KEY_CTRL] || !!keyState[Keys.KEY_SHIFT] },
+    });
   } else if (
     !entity &&
     pointerEvent === 'pointerUp' &&
     !isDragging &&
     // When a gizmo is attached to a spawn point, only suppress deselection if we actually
     // picked a mesh (likely a gizmo mesh). If no mesh was picked (sky), deselect normally.
-    !(gizmoAttachedToSpawn && mesh)
+    !(gizmoAttachedToSpawn && mesh) &&
+    context
   ) {
     // Clicked on sky or grid ground - un-select all previous entities
-    if (context) {
-      context.operations.updateSelectedEntity(context.engine.RootEntity);
-      spawnPointManager.selectSpawnPoint(null);
-      void context.operations.dispatch();
-    }
+    spawnPointManager.selectSpawnPoint(null);
+    context.rendererEvents.emit('pick', {
+      target: { kind: 'empty' },
+      modifiers: { multi: false },
+    });
   }
 
   // Clear drag state on every pointerUp

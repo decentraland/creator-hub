@@ -6,19 +6,30 @@
   margin-left: 128px;
 }
 
-.SignIn .MuiButton-root.back {
-  margin-bottom: 40px;
-}
-
-.SignIn .code {
+.SignIn .content-row {
   display: flex;
   align-items: center;
+  justify-content: space-between;
+  width: 100%;
 }
 
-.SignIn .code .verificationCode {
-  font-size: 6rem;
-  font-weight: "bold";
-  margin-right: 24px;
+.SignIn .illustration {
+  width: 360px;
+  height: auto;
+}
+
+.SignIn .text-column {
+  gap: 24px;
+}
+
+.SignIn .reopen {
+  color: var(--dcl-silver);
+}
+
+.SignIn .reopen .action-link {
+  color: inherit;
+  text-decoration: underline;
+  cursor: pointer;
 }
 
 .SignIn .background {

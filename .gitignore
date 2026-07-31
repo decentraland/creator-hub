@@ -22,6 +22,8 @@ yarn-error.log*
 
 **/public/bundle*
 **/public/bin
+**/public/bevy-engine
+**/public/bevy-agent
 **/gen
 **/tsconfig.tsbuildinfo
 **/tsconfig.check.tsbuildinfo
@@ -33,3 +35,6 @@ settings.local.json
 *.env*
 !.env.example
 .playwright-mcp/
+
+# Claude agent verification screenshots
+.claude/screenshots/

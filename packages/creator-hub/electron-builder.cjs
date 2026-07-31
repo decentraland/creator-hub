@@ -38,6 +38,12 @@ const config = {
   },
   productName: 'Decentraland Creator Hub',
   artifactName: '${productName}-${version}-${os}-${arch}.${ext}',
+  protocols: [
+    {
+      name: 'Decentraland Creator Hub',
+      schemes: ['dcl-creator-hub'],
+    },
+  ],
   win: {
     appId: 'Decentraland.CreatorsHub',
     icon: 'buildResources/icon.ico',

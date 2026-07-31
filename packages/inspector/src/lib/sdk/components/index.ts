@@ -25,10 +25,13 @@ import type { GizmoType } from '../../utils/gizmo';
 import type { TransformConfig } from './TransformConfig';
 import type { TransitionMode } from './SceneMetadata';
 import { Coords, SceneAgeRating, SceneCategory } from './SceneMetadata';
+import { createActiveSceneComponentProxy } from './scene-metadata-version';
 import type { ConfigComponentType } from './Config';
 import type { InspectorUIStateType } from './InspectorUIState';
 import { EditorComponentNames as BaseEditorComponentNames } from './types';
 import { defineAllComponents as defineAllInspectorComponents } from './versioning/registry';
+import { ParticleSystemSchema } from './ParticleSystem';
+import type { ParticleSystemComponentType } from './ParticleSystem';
 
 export { SceneAgeRating, SceneCategory };
 export { CoreComponents, AllComponentsType } from './types';
@@ -79,6 +82,7 @@ export type SceneComponent = {
   silenceVoiceChat?: boolean;
   disablePortableExperiences?: boolean;
   disableNearbyVoiceChat?: boolean;
+  hideLandscapeTerrain?: boolean;
   spawnPoints?: SceneSpawnPoint[];
 };
 
@@ -170,6 +174,7 @@ export type SdkComponents = {
   Tags: ReturnType<typeof components.Tags>;
   LightSource: ReturnType<typeof components.LightSource>;
   GltfNodeModifiers: ReturnType<typeof components.GltfNodeModifiers>;
+  ParticleSystem: LastWriteWinElementSetComponentDefinition<ParticleSystemComponentType>;
 };
 
 export function createComponents(engine: IEngine): SdkComponents {
@@ -197,6 +202,10 @@ export function createComponents(engine: IEngine): SdkComponents {
   const Tags = components.Tags(engine);
   const LightSource = components.LightSource(engine);
   const GltfNodeModifiers = components.GltfNodeModifiers(engine);
+  const ParticleSystem = engine.defineComponentFromSchema(
+    'core::ParticleSystem',
+    ParticleSystemSchema,
+  ) as unknown as LastWriteWinElementSetComponentDefinition<ParticleSystemComponentType>;
 
   return {
     Animator,
@@ -223,6 +232,7 @@ export function createComponents(engine: IEngine): SdkComponents {
     VisibilityComponent,
     LightSource,
     GltfNodeModifiers,
+    ParticleSystem,
   };
 }
 
@@ -256,7 +266,13 @@ export function createEditorComponents(engine: IEngine): EditorComponents {
 
   return {
     Selection: inspectorComponents['inspector::Selection'],
-    Scene: inspectorComponents['inspector::SceneMetadata'],
+    // Scene resolves to the SceneMetadata version the data-layer actually uses, so
+    // reads + writes round-trip even when the (Bevy) realm's pinned sdk-commands is
+    // a version behind this inspector. Transparent when versions match (the active
+    // version is then the latest). See scene-metadata-version.ts.
+    Scene: createActiveSceneComponentProxy(
+      engine,
+    ) as unknown as LastWriteWinElementSetComponentDefinition<EditorComponentsTypes['Scene']>,
     Nodes: inspectorComponents['inspector::Nodes'],
     TransformConfig: inspectorComponents['inspector::TransformConfig'],
     Hide: inspectorComponents['inspector::Hide'],

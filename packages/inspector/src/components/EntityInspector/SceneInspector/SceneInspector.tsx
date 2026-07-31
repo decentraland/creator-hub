@@ -17,6 +17,7 @@ import { Label, TextArea } from '../../ui';
 import { WalletField } from '../../ui/WalletField';
 import { Tabs } from '../Tabs';
 import { CheckboxField } from '../../ui/CheckboxField';
+import { InfoTooltip } from '../../ui/InfoTooltip';
 import RangeHourField from '../../ui/RangeHourField/RangeHourField';
 import { useComponentValue } from '../../../hooks/sdk/useComponentValue';
 import { useAppDispatch, useAppSelector } from '../../../redux/hooks';
@@ -109,6 +110,7 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
     'disableNearbyVoiceChat',
     e => e.target.checked,
   );
+  const hideLandscapeTerrainProps = getInputProps('hideLandscapeTerrain', e => e.target.checked);
 
   const [componentValue, setComponentValue] = useComponentValue<EditorComponentsTypes['Scene']>(
     entity,
@@ -343,6 +345,20 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
             label="Disable Nearby Voice Chat"
             checked={componentValue.disableNearbyVoiceChat}
             {...disableNearbyVoiceChatProps}
+          />
+          <Block
+            label="Terrain"
+            className="underlined"
+          ></Block>
+          <CheckboxField
+            label={
+              <>
+                Hide Landscape Terrain
+                <InfoTooltip text="Hides the auto-generated landscape (grassland, trees, and sea) around your scene, for example for scenes surrounded by open water or a void. Only applies to Worlds and local preview; Genesis City always shows terrain." />
+              </>
+            }
+            checked={componentValue.hideLandscapeTerrain}
+            {...hideLandscapeTerrainProps}
           />
           <Block
             label="Skybox"

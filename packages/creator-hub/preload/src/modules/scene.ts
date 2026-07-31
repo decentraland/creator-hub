@@ -76,27 +76,11 @@ export function getRowsAndCols(parcels: Coords[]): {
 } {
   if (!parcels.length) return { rows: 0, cols: 0 };
 
-  const limits: { min: Coords; max: Coords } = {
-    min: { x: Infinity, y: Infinity },
-    max: { x: -Infinity, y: -Infinity },
-  };
-
-  parcels.forEach(parcel => {
-    const { x, y } = parcel;
-
-    if (limits.min.y >= y) {
-      limits.min = { x: Math.min(limits.min.x, x), y };
-    }
-
-    if (y >= limits.max.y) {
-      limits.max = { x: Math.max(limits.max.x, x), y };
-    }
-
-    return { x, y };
-  });
+  const xs = parcels.map(({ x }) => x);
+  const ys = parcels.map(({ y }) => y);
 
   return {
-    rows: Math.abs(limits.max.x) - Math.abs(limits.min.x) + 1,
-    cols: Math.abs(limits.max.y) - Math.abs(limits.min.y) + 1,
+    rows: Math.max(...xs) - Math.min(...xs) + 1,
+    cols: Math.max(...ys) - Math.min(...ys) + 1,
   };
 }

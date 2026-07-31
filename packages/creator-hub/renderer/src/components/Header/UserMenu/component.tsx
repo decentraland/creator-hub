@@ -23,6 +23,7 @@ export function UserMenu({ avatar, isSignedIn, onClickSignOut, onClickSignIn }: 
       <Button
         id="AvatarButton"
         className="AvatarButton"
+        data-testid="user-menu-avatar-button"
         aria-controls={open ? 'UserMenu' : undefined}
         aria-haspopup="true"
         aria-expanded={open ? 'true' : undefined}
@@ -43,12 +44,18 @@ export function UserMenu({ avatar, isSignedIn, onClickSignOut, onClickSignIn }: 
           'aria-labelledby': 'AvatarButton',
         }}
       >
-        <MenuItem onClick={onClickSignOut}>{t('navbar.user_menu.sign_out')}</MenuItem>
+        <MenuItem
+          data-testid="user-menu-sign-out"
+          onClick={onClickSignOut}
+        >
+          {t('navbar.user_menu.sign_out')}
+        </MenuItem>
       </Menu>
     </>
   ) : (
     <Button
       className="SignInButton"
+      data-testid="user-menu-sign-in"
       onClick={onClickSignIn}
       variant="contained"
       disableRipple

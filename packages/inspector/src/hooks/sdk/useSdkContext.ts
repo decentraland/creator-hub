@@ -5,7 +5,6 @@ import { fetchLatestCatalog } from '../../lib/logic/catalog';
 import type { AssetPack } from '../../lib/logic/catalog';
 import { useAppDispatch, useAppSelector } from '../../redux/hooks';
 import { connect as connectDataLayer } from '../../redux/data-layer';
-import { addEngines } from '../../redux/sdk';
 import { selectInspectorPreferences } from '../../redux/app';
 
 /**
@@ -39,7 +38,8 @@ export const useSdkContext = () => {
     createSdkContext(canvas, catalog, preferences)
       .then(ctx => {
         setSdk(ctx);
-        dispatch(addEngines({ inspector: ctx.engine, babylon: ctx.sceneContext.engine }));
+        // engines (inspector + active renderer) are registered inside
+        // createSdkContext, which dispatches addEngines to wire the CRDT stream.
       })
       .catch(e => {
         console.error('createSdkContext failed: ', e);

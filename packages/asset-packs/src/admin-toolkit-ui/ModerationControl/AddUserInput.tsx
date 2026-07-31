@@ -1,14 +1,10 @@
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- ReactEcs is the JSX factory
 import ReactEcs, { UiEntity, Label, Input } from '@dcl/react-ecs';
-import { Button } from '../Button';
-import {
-  getAddUserInputStyles,
-  getAddUserInputColors,
-  getAddUserInputBackgrounds,
-} from './styles/AddUserInputStyles';
+import { COLORS, RADIUS, SPACING, TYPE } from '../theme';
+import { FieldLabel } from '../Primitives';
+import { PillButton } from '../Controls';
 import { handleAddAdmin, handleBanUser } from './utils';
-import { BanUserDescription } from './BanUserDescription';
-
-import { SceneAdmin } from '.';
+import type { SceneAdmin } from '.';
 
 export enum PermissionType {
   ADMIN = 'admin',
@@ -24,7 +20,7 @@ function isValidAddress(value: string) {
   return /^0x[a-fA-F0-9]{40}$/.test(value);
 }
 
-//Names can have 15 characters max, if the characters exceeded that, we assume is an address
+// Names can have 15 characters max; longer values are treated as addresses.
 function isAddress(value: string) {
   return value.length > 15;
 }
@@ -33,40 +29,32 @@ export function AddUserInput({ type, sceneAdmins }: Props) {
   const [error, setError] = ReactEcs.useState('');
   const [loading, setLoading] = ReactEcs.useState(false);
   const [inputValue, setInputValue] = ReactEcs.useState('');
-  const styles = getAddUserInputStyles();
-  const colors = getAddUserInputColors();
-  const backgrounds = getAddUserInputBackgrounds();
+  const isAdminType = type === PermissionType.ADMIN;
 
   const isAdmin = (user: string) =>
     sceneAdmins.some(admin => admin.address === user || admin.name === user);
 
   const handleSubmit = async () => {
     if (loading) return;
-
     const submitValue = inputValue.trim();
 
     if (!submitValue || submitValue.length <= 2) {
       setError('Provide a valid address or NAME');
       return;
     }
-
     if (isAddress(submitValue) && !isValidAddress(submitValue)) {
       setError('Provide a valid address format');
       return;
     }
 
-    const clearInput = () => {
-      setInputValue('');
-    };
+    const clearInput = () => setInputValue('');
 
-    if (type === PermissionType.ADMIN) {
+    if (isAdminType) {
       const adminData = isAddress(submitValue) ? { admin: submitValue } : { name: submitValue };
       await handleAddAdmin(adminData, setError, setLoading, clearInput);
     } else {
       if (isAdmin(submitValue)) {
-        setError(
-          'Admin users cannot be banned. Please remove this user from the Admin List and try again.',
-        );
+        setError('Admin users cannot be banned. Remove them from the Admin list first.');
         return;
       }
       const banData = isAddress(submitValue)
@@ -77,61 +65,47 @@ export function AddUserInput({ type, sceneAdmins }: Props) {
   };
 
   return (
-    <UiEntity uiTransform={styles.container}>
-      <Label
-        value={type === PermissionType.ADMIN ? '<b>Add an Admin</b>' : '<b>Ban User from Scene</b>'}
-        fontSize={18}
-        color={colors.white}
-        uiTransform={styles.title}
-      />
-      {type === PermissionType.BAN && <BanUserDescription />}
-      <UiEntity>
+    <UiEntity uiTransform={{ flexDirection: 'column', width: '100%' }}>
+      <FieldLabel text={isAdminType ? 'Add an admin' : 'Ban a user'} />
+      <UiEntity uiTransform={{ flexDirection: 'row', alignItems: 'center', width: '100%' }}>
         <Input
           onChange={value => {
             setError('');
             setInputValue(value);
           }}
           value={inputValue}
-          fontSize={14}
-          placeholder={'Enter a NAME or wallet address'}
-          uiBackground={backgrounds.input}
+          fontSize={TYPE.body}
+          placeholder="Name or wallet address"
+          placeholderColor={COLORS.inputPlaceholder}
+          color={COLORS.inputText}
+          uiBackground={{ color: COLORS.inputBackground }}
           uiTransform={{
-            ...styles.input,
-            borderColor: error ? colors.red : colors.white,
+            flexGrow: 1,
+            flexBasis: 0,
+            minWidth: 0,
+            height: 40,
+            borderRadius: RADIUS.md,
+            borderWidth: 1,
+            borderColor: error ? COLORS.danger : COLORS.inputBorder,
+            margin: { right: SPACING.md },
           }}
         />
-        <Button
-          id={
-            type === PermissionType.ADMIN
-              ? 'moderation_control_add_admin'
-              : 'moderation_control_ban_user'
-          }
-          value={type === PermissionType.ADMIN ? '<b>Add</b>' : '<b>Ban</b>'}
-          fontSize={18}
-          uiTransform={styles.button}
-          color={type === PermissionType.BAN ? colors.white : undefined}
-          onMouseDown={handleSubmit}
-          uiBackground={{
-            color: type === PermissionType.BAN ? colors.pink : undefined,
-          }}
+        <PillButton
+          id={isAdminType ? 'moderation_control_add_admin' : 'moderation_control_ban_user'}
+          label={isAdminType ? 'Add' : 'Ban'}
+          iconName={isAdminType ? 'plus' : 'ban'}
+          variant="filled"
+          uiTransform={{ flexShrink: 0 }}
+          onClick={handleSubmit}
         />
       </UiEntity>
-
       {error && (
-        <UiEntity uiTransform={styles.errorContainer}>
-          <UiEntity
-            uiTransform={styles.errorIcon}
-            uiBackground={backgrounds.errorIcon}
-          />
-          <UiEntity
-            uiText={{
-              value: error,
-              fontSize: 14,
-              color: colors.red,
-              textAlign: 'top-left',
-            }}
-          />
-        </UiEntity>
+        <Label
+          value={error}
+          fontSize={TYPE.small}
+          color={COLORS.danger}
+          uiTransform={{ margin: { top: SPACING.sm }, maxWidth: '100%' }}
+        />
       )}
     </UiEntity>
   );

@@ -3,6 +3,7 @@ import type { IEngine } from '@dcl/ecs';
 import ReactEcs, { Label, UiEntity } from '@dcl/react-ecs';
 import { getComponents } from '../definitions';
 import { getContentUrl } from './constants';
+import { COLORS, RADIUS, TYPE } from './theme';
 import type { State } from './types';
 
 const ICONS = {
@@ -51,8 +52,9 @@ export function TextAnnouncements({ engine, state }: { engine: IEngine; state: S
             left: 10,
             right: 10,
           },
+          borderRadius: RADIUS.md,
         }}
-        uiBackground={{ color: { r: 0.15, g: 0.15, b: 0.15, a: 0.95 } }}
+        uiBackground={{ color: COLORS.panel }}
       >
         <UiEntity
           uiTransform={{
@@ -74,7 +76,8 @@ export function TextAnnouncements({ engine, state }: { engine: IEngine; state: S
             alignItems: 'center',
             justifyContent: 'center',
           }}
-          fontSize={18}
+          fontSize={TYPE.subtitle}
+          color={COLORS.textPrimary}
           value={textAnnouncements.text}
         />
         {textAnnouncements.author ? (
@@ -83,8 +86,8 @@ export function TextAnnouncements({ engine, state }: { engine: IEngine; state: S
               alignItems: 'flex-end',
               justifyContent: 'flex-end',
             }}
-            fontSize={14}
-            color={{ r: 0.7, g: 0.7, b: 0.7, a: 1 }}
+            fontSize={TYPE.caption}
+            color={COLORS.textSecondary}
             value={`- ${textAnnouncements.author}`}
           />
         ) : null}

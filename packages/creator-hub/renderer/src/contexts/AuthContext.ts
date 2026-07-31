@@ -5,11 +5,12 @@ interface AuthContextProps {
   wallet: string | undefined;
   chainId: ChainId | undefined;
   avatar: Avatar | undefined;
-  verificationCode: string | undefined;
-  expirationTime: Date | undefined;
   isSignedIn: boolean;
   isSigningIn: boolean;
   signIn: () => Promise<void>;
+  cancelSignIn: () => void;
+  reopenSignInDapp: () => void;
+  copySignInUrl: () => Promise<void>;
   signOut: () => void;
   changeNetwork: (chainId: ChainId) => Promise<void>;
 }

@@ -46,6 +46,7 @@ import { TagsInspector } from './TagsInspector';
 import { VirtualCameraInspector } from './VirtualCameraInspector';
 import { PlaceholderInspector } from './PlaceholderInspector';
 import { PlayerInspector } from './PlayerInspector';
+import { ParticleSystemInspector } from './ParticleSystemInspector';
 
 import './EntityInspector.css';
 
@@ -84,6 +85,10 @@ const MultiEntityInspector = withSdk<{ entities: Entity[] }>(({ sdk, entities })
         component: VisibilityComponentInspector,
       },
       { name: sdk.components.LightSource.componentName, component: LightSourceInspector },
+      {
+        name: sdk.components.ParticleSystem.componentName,
+        component: ParticleSystemInspector,
+      },
     ],
     [sdk],
   );
@@ -214,6 +219,11 @@ const SingleEntityInspector = withSdk<{ entity: Entity | null }>(({ sdk, entity 
         component: GltfNodeModifiersInspector,
       },
       { name: sdk.components.Script.componentName, component: ScriptInspector },
+      {
+        name: sdk.components.ParticleSystem.componentName,
+        component: ParticleSystemInspector,
+        multiEntity: true,
+      },
     ],
     [sdk],
   );

@@ -46,9 +46,20 @@ export type ErrorName =
   | 'PROJECT_NOT_CREATED'
   | 'INVALID_PATH'
   | 'FAILED_TO_RUN_PROJECT'
-  | 'FAILED_TO_INSTALL_DEPENDENCIES';
+  | 'FAILED_TO_INSTALL_DEPENDENCIES'
+  | 'PROJECT_ALREADY_IMPORTED';
 
 export class ProjectError extends ErrorBase<ErrorName> {}
+
+/**
+ * Errors thrown from the preload layer can lose their class identity by the
+ * time they reach the renderer (they cross an RPC-style bridge), so callers
+ * cannot rely on `instanceof ProjectError`/`error.name` to detect them there.
+ * `.message` is the one property guaranteed to survive that trip, so preload
+ * prefixes messages for this case with this stable sentinel, and the
+ * renderer matches on it before constructing a fresh `ProjectError`.
+ */
+export const PROJECT_ALREADY_IMPORTED_ERROR_PREFIX = 'PROJECT_ALREADY_IMPORTED';
 
 export const isProjectError = (error: unknown, type?: ErrorName): error is ProjectError =>
   error instanceof ProjectError && (!type || error.name === type || error.message === type);

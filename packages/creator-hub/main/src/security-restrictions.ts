@@ -2,6 +2,8 @@ import { URL } from 'node:url';
 import { session, type Session } from 'electron';
 import { app, shell } from 'electron';
 
+import { STUDIOS_ADMIN_URL } from '/shared/urls';
+
 const IS_DEV = import.meta.env.DEV;
 
 /**
@@ -41,6 +43,7 @@ const ALLOWED_EXTERNAL_ORIGINS = new Set<AllowedOrigins<typeof IS_DEV>>([
   'https://decentraland.today',
   'https://decentraland.zone',
   'https://studios.decentraland.org',
+  STUDIOS_ADMIN_URL,
   'https://docs.decentraland.org',
   'https://youtube.com',
   'https://www.youtube.com',
@@ -50,7 +53,7 @@ const ALLOWED_EXTERNAL_ORIGINS = new Set<AllowedOrigins<typeof IS_DEV>>([
 
 app.on('ready', () => {
   const filter = {
-    urls: ['https://studios.decentraland.org/*'],
+    urls: ['https://studios.decentraland.org/*', `${STUDIOS_ADMIN_URL}/*`],
   };
 
   session.defaultSession.webRequest.onBeforeSendHeaders(filter, (details, callback) => {
@@ -58,11 +61,57 @@ app.on('ready', () => {
     callback({ requestHeaders: details.requestHeaders });
   });
 
-  session.defaultSession.webRequest.onHeadersReceived(filter, (details, callback) => {
+  // Cross-origin isolation for the Bevy engine's SharedArrayBuffer.
+  //
+  // `self.crossOriginIsolated` (which SharedArrayBuffer requires) is only true
+  // when the top-level document AND every ancestor frame are isolated via
+  // COOP: same-origin + COEP. The Bevy engine runs three frames deep:
+  //   creator-hub renderer (top)  ->  inspector iframe  ->  bevy-engine iframe
+  // The inspector + engine are served by our http-server, which already stamps
+  // these headers. But the TOP document — the renderer — loads from `file://` in
+  // production (mainWindow.ts `loadFile`), which carries no HTTP headers, so the
+  // whole chain stays un-isolated and the engine's asset-loader worker throws
+  // `SharedArrayBuffer transfer requires self.crossOriginIsolated`.
+  //
+  // Inject the headers onto the renderer document. Scope to the app's own
+  // documents (file:// renderer + localhost inspector) so external embeds
+  // (YouTube, docs, studios) are unaffected — a blanket COEP would block their
+  // cross-origin subresources. COEP is `credentialless` (not `require-corp`) so
+  // the inspector iframe's cross-origin subresources load without needing CORP on
+  // every one, matching what the inspector http-server and engine service worker
+  // already use.
+  const isolationFilter = { urls: ['file://*/*', 'http://localhost/*', 'http://localhost:*/*'] };
+
+  // Electron keeps only ONE onHeadersReceived listener per session (a second
+  // registration replaces the first), so the Studios/Admin CORS rewrite and the
+  // Bevy isolation headers MUST share one handler. Register it over the union of
+  // both filters and apply each rule to the URLs it matches. Header precedence is
+  // preserved per rule: CORS is a fallback the response can override (spread
+  // after), isolation is forced (spread last, wins over the response).
+  const combinedFilter = { urls: [...filter.urls, ...isolationFilter.urls] };
+  const matches = (url: string, patterns: string[]) =>
+    patterns.some(pattern => {
+      // Electron url patterns are `<scheme>://<host><path>` with `*` wildcards;
+      // translate to a RegExp (escape regex metachars, `*` → `.*`).
+      const re = new RegExp(
+        '^' + pattern.replace(/[.+?^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '.*') + '$',
+      );
+      return re.test(url);
+    });
+  session.defaultSession.webRequest.onHeadersReceived(combinedFilter, (details, callback) => {
+    const isStudioAdmin = matches(details.url, filter.urls);
+    const isIsolated = matches(details.url, isolationFilter.urls);
     callback({
       responseHeaders: {
-        'Access-Control-Allow-Origin': ['*'],
+        ...(isStudioAdmin ? { 'Access-Control-Allow-Origin': ['*'] } : {}),
         ...details.responseHeaders,
+        ...(isIsolated
+          ? {
+              'Cross-Origin-Opener-Policy': ['same-origin'],
+              'Cross-Origin-Embedder-Policy': ['credentialless'],
+              'Cross-Origin-Resource-Policy': ['cross-origin'],
+            }
+          : {}),
       },
     });
   });

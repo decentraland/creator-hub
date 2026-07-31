@@ -4,12 +4,20 @@ import type { Scene } from '@dcl/schemas';
 import { initializeWorkspace } from '../../src/modules/workspace';
 import { getScenesPath } from '../../src/modules/settings';
 import { getScene } from '../../src/modules/scene';
+import { getProjectId } from '../../src/modules/analytics';
 import { NEW_SCENE_NAME, EMPTY_SCENE_TEMPLATE_REPO } from '../../src/modules/constants';
 
 import { getMockServices } from './services';
 
 vi.mock('../../src/modules/scene');
 vi.mock('../../src/modules/settings');
+// `getProjectId` goes through the real `services/ipc.ts` (backed by electron's `ipcRenderer`)
+// instead of the injected `ipc` service, so it can't be exercised in this Node test environment.
+vi.mock('../../src/modules/analytics');
+// `getProject` (used by `renameProject`) reads/writes a per-project metadata file via
+// `FileSystemStorage`, which uses `node:fs/promises` directly instead of the mocked `fs` service.
+// Auto-mock it so those tests never touch the real filesystem.
+vi.mock('node:fs/promises');
 
 describe('initializeWorkspace', () => {
   const services = getMockServices();
@@ -27,6 +35,7 @@ describe('initializeWorkspace', () => {
 
     vi.mocked(getScenesPath).mockResolvedValue(mockAppHome);
     vi.mocked(getScene).mockResolvedValue({ ...mockScene } as Scene);
+    vi.mocked(getProjectId).mockResolvedValue('mock-id');
   });
 
   describe('getPath', () => {
@@ -189,6 +198,100 @@ describe('initializeWorkspace', () => {
       await expect(workspace.createProject()).rejects.toThrow(
         `Failed to create project "${NEW_SCENE_NAME}": ${errorMessage}`,
       );
+    });
+  });
+
+  describe('renameProject', () => {
+    const currentPath = `${mockAppHome}/My Scene`;
+
+    beforeEach(() => {
+      services.fs.stat.mockResolvedValue({
+        birthtime: new Date(0),
+        mtime: new Date(0),
+        size: 0,
+      } as any);
+      services.ipc.invoke.mockResolvedValue(undefined);
+      vi.mocked(getScene).mockResolvedValue({
+        ...mockScene,
+        scene: { parcels: [] },
+      } as unknown as Scene);
+    });
+
+    it('should reject an invalid folder name without touching the filesystem', async () => {
+      const workspace = initializeWorkspace(services);
+
+      await expect(
+        workspace.renameProject({ path: currentPath, newName: 'in/valid' }),
+      ).rejects.toThrow(/Invalid folder name/);
+      expect(services.fs.rename).not.toHaveBeenCalled();
+      expect(services.config.setConfig).not.toHaveBeenCalled();
+    });
+
+    it('should reject a name that collides with an existing folder', async () => {
+      services.fs.exists.mockResolvedValue(true);
+
+      const workspace = initializeWorkspace(services);
+
+      await expect(
+        workspace.renameProject({ path: currentPath, newName: 'New Name' }),
+      ).rejects.toThrow(/already exists/);
+      expect(services.fs.rename).not.toHaveBeenCalled();
+      expect(services.config.setConfig).not.toHaveBeenCalled();
+    });
+
+    it('should do nothing and return the current project if the name is unchanged', async () => {
+      services.fs.exists.mockResolvedValue(false);
+
+      const workspace = initializeWorkspace(services);
+      const result = await workspace.renameProject({ path: currentPath, newName: 'My Scene' });
+
+      expect(services.fs.rename).not.toHaveBeenCalled();
+      expect(services.config.setConfig).not.toHaveBeenCalled();
+      expect(result.path).toBe(currentPath);
+    });
+
+    it('should rename the folder and update the workspace config with the new path', async () => {
+      services.fs.exists.mockResolvedValue(false);
+      const newPath = `${mockAppHome}/New Name`;
+
+      const workspace = initializeWorkspace(services);
+      const result = await workspace.renameProject({ path: currentPath, newName: 'New Name' });
+
+      expect(services.fs.rename).toHaveBeenCalledWith(currentPath, newPath);
+      expect(services.config.setConfig).toHaveBeenCalled();
+
+      const drafter = services.config.setConfig.mock.calls[0][0];
+      const draftConfig = { workspace: { paths: [currentPath, '/other/project'] } };
+      drafter(draftConfig);
+      expect(draftConfig.workspace.paths).toEqual([newPath, '/other/project']);
+
+      expect(result.path).toBe(newPath);
+    });
+
+    it('should allow a case-only rename even when the filesystem reports the target as existing', async () => {
+      // On case-insensitive filesystems (APFS, NTFS) the target path matches the project's own folder.
+      services.fs.exists.mockResolvedValue(true);
+      const newPath = `${mockAppHome}/my scene`;
+
+      const workspace = initializeWorkspace(services);
+      const result = await workspace.renameProject({ path: currentPath, newName: 'my scene' });
+
+      expect(services.fs.rename).toHaveBeenCalledWith(currentPath, newPath);
+      expect(result.path).toBe(newPath);
+    });
+
+    it('should undo the rename if updating the workspace config fails', async () => {
+      services.fs.exists.mockResolvedValue(false);
+      services.config.setConfig.mockRejectedValueOnce(new Error('disk write failed'));
+      const newPath = `${mockAppHome}/New Name`;
+
+      const workspace = initializeWorkspace(services);
+
+      await expect(
+        workspace.renameProject({ path: currentPath, newName: 'New Name' }),
+      ).rejects.toThrow(/disk write failed/);
+      expect(services.fs.rename).toHaveBeenNthCalledWith(1, currentPath, newPath);
+      expect(services.fs.rename).toHaveBeenNthCalledWith(2, newPath, currentPath);
     });
   });
 

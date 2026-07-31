@@ -125,10 +125,14 @@ export const slice = createSlice({
         state.notifications = state.notifications.filter($ => $.id !== requestId);
       })
       .addCase(workspaceActions.importProject.rejected, (state, payload) => {
+        const isAlreadyImported = isProjectError(payload.payload, 'PROJECT_ALREADY_IMPORTED');
+        const translatedError = isAlreadyImported
+          ? t('snackbar.generic.import_scene_already_imported')
+          : t('snackbar.generic.import_scene_failed');
         const { requestId } = payload.meta;
         state.notifications = state.notifications.filter($ => $.id !== requestId);
         state.notifications.push(
-          createGenericNotification('error', t('snackbar.generic.import_scene_failed'), {
+          createGenericNotification('error', translatedError, {
             requestId,
           }),
         );

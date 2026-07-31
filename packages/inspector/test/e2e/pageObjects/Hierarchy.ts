@@ -264,6 +264,73 @@ class HierarchyPageObject {
     }
   }
 
+  getSearchInputSelector() {
+    return '.Hierarchy .Hierarchy-search input';
+  }
+
+  async search(term: string) {
+    await page.locator(this.getSearchInputSelector()).click();
+    await page.waitForFunction(
+      () =>
+        document.activeElement instanceof HTMLInputElement &&
+        !!document.activeElement.closest('.Hierarchy-search'),
+      undefined,
+      { timeout: 5_000 },
+    );
+    await page.keyboard.type(term);
+  }
+
+  async clearSearch() {
+    await page.locator('.Hierarchy .Hierarchy-search .ClearSearch').click();
+    await page.waitForFunction(
+      sel => (document.querySelector(sel) as HTMLInputElement | null)?.value === '',
+      this.getSearchInputSelector(),
+      { timeout: 5_000 },
+    );
+  }
+
+  // A row filtered out by the search is either detached (descendants) or
+  // display:none (top-level roots); both count as not visible.
+  async isRowVisible(entityId: number) {
+    return page.evaluate(sel => {
+      const el = document.querySelector(sel);
+      return !!el && getComputedStyle(el).display !== 'none';
+    }, this.getItemSelectorById(entityId));
+  }
+
+  async isRowInTreeViewport(entityId: number) {
+    return page.evaluate(sel => {
+      const el = document.querySelector(sel);
+      const container = document.querySelector('.Hierarchy-tree');
+      if (!el || !container) return false;
+      const rect = el.getBoundingClientRect();
+      const containerRect = container.getBoundingClientRect();
+      return rect.top >= containerRect.top && rect.bottom <= containerRect.bottom;
+    }, this.getItemSelectorById(entityId));
+  }
+
+  async waitForRowInTreeViewport(entityId: number, timeout = 5_000) {
+    await page.waitForFunction(
+      sel => {
+        const el = document.querySelector(sel);
+        const container = document.querySelector('.Hierarchy-tree');
+        if (!el || !container) return false;
+        const rect = el.getBoundingClientRect();
+        const containerRect = container.getBoundingClientRect();
+        return rect.top >= containerRect.top && rect.bottom <= containerRect.bottom;
+      },
+      this.getItemSelectorById(entityId),
+      { timeout },
+    );
+  }
+
+  async scrollTreeToTop() {
+    await page.evaluate(() => {
+      const container = document.querySelector('.Hierarchy-tree');
+      if (container) container.scrollTop = 0;
+    });
+  }
+
   async addComponent(entityId: number, componentName: string) {
     const item = await this.getItem(entityId, this.getItemSelectorById);
     await item.click({ button: 'right' });

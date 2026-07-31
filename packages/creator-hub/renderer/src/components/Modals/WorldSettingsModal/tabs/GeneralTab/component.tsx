@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
+import InfoIcon from '@mui/icons-material/InfoOutlined';
 import {
   Box,
   Checkbox,
@@ -12,6 +13,7 @@ import { MAX_COORDINATE, MIN_COORDINATE } from '/@/modules/world';
 import type { WorldSettings } from '/@/lib/worlds';
 import { coordsToId, idToCoords } from '/@/lib/land';
 import { Row } from '/@/components/Row';
+import { Column } from '/@/components/Column';
 import { RangeHourField, MIDDAY_SECONDS } from '/@/components/RangeHourField';
 import './styles.css';
 
@@ -109,15 +111,26 @@ const GeneralTab: React.FC<Props> = ({ worldSettings, onChangeSettings }) => {
       </FormGroup>
       <FormGroup>
         <TitleDivider title={t('modal.world_settings.general.general')} />
-        <FormControlLabel
-          control={
-            <Checkbox
-              checked={worldSettings.singlePlayer || false}
-              onChange={e => onChangeSettings({ singlePlayer: e.target.checked })}
-            />
-          }
-          label={t('modal.world_settings.general.single_player')}
-        />
+        <Column>
+          <FormControlLabel
+            control={
+              <Checkbox
+                checked={worldSettings.singlePlayer || false}
+                onChange={e => onChangeSettings({ singlePlayer: e.target.checked })}
+              />
+            }
+            label={t('modal.world_settings.general.single_player')}
+          />
+          {worldSettings.singlePlayer && (
+            <Typography
+              variant="body2"
+              className="SinglePlayerNote"
+            >
+              <InfoIcon className="InfoIcon" />
+              <span>{t('modal.world_settings.general.single_player_streaming_note')}</span>
+            </Typography>
+          )}
+        </Column>
         <FormControlLabel
           className="ShowInPlaces"
           control={

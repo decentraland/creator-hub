@@ -26,7 +26,7 @@ export const Gizmos = withSdk(({ sdk }) => {
 
   const entity = useSelectedEntity();
 
-  const spawnPointManager = sdk.sceneContext.spawnPoints;
+  const spawnPointManager = sdk.renderer.spawnPoints;
   const [isSpawnAreaSelected, setIsSpawnAreaSelected] = useState(
     () => spawnPointManager.getSelectedIndex() !== null,
   );
