@@ -59,6 +59,21 @@ class AuthPageObject {
     return page.locator(this.avatarButtonSelector).isVisible();
   }
 
+  /**
+   * Resolves true if the signed-in state appears within `timeout` ms, false if it
+   * does not. For asserting that something must *not* sign the user in: a dropped
+   * deeplink produces no event to wait for, so the assertion needs a window in
+   * which the state must stay unchanged.
+   */
+  async becomesSignedIn(page: Page, timeout: number) {
+    try {
+      await page.waitForSelector(this.avatarButtonSelector, { state: 'visible', timeout });
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
   /** Opens the user menu and clicks "Sign Out". */
   async signOut(page: Page) {
     await page.locator(this.avatarButtonSelector).click();

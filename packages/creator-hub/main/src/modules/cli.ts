@@ -2,10 +2,11 @@ import { join } from 'path';
 import fs from 'fs/promises';
 import { realpathSync } from 'fs';
 import log from 'electron-log/main';
-import { app } from 'electron';
+import { app, shell } from 'electron';
 import QRCode from 'qrcode';
 
 import type { PreviewOptions } from '/shared/types/settings';
+import { PREVIEW_CLIENT } from '/shared/types/settings';
 import { PREVIEW_PROGRESS_EVENT, type PreviewProgress } from '/shared/types/ipc';
 import {
   ClientError,
@@ -95,7 +96,13 @@ export async function killAllPreviews() {
   previewCache.clear(); // just to be sure...
 }
 
-type PreviewArguments = Omit<PreviewOptions, 'debugger' | 'showWarnings' | 'optimizedAssets'>;
+// `client` selects the launch path (Unity vs Bevy) in `start()`, not a CLI flag;
+// `optimizedAssets` maps to the spawn-time `--asset-bundles` sidecar flag handled in
+// `doStart()`; `debugger`/`showWarnings` are renderer-only. Everything left maps to a flag.
+type PreviewArguments = Omit<
+  PreviewOptions,
+  'debugger' | 'showWarnings' | 'optimizedAssets' | 'client'
+>;
 
 const PREVIEW_OPTIONS_MAP: Record<keyof PreviewArguments, string> = {
   enableLandscapeTerrains: '--landscape-terrain-enabled',
@@ -379,12 +386,23 @@ async function doStart(path: string, opts: StartOptions): Promise<string> {
 
   const preview = previewCache.get(path);
 
-  // If we have a preview running for this path open it
-  if (isPreviewRunning(preview)) {
-    // The sidecar lives and dies with the preview process (--asset-bundles is a spawn-time
-    // flag), so whenever the Optimized Assets toggle disagrees with the running preview —
-    // needs a sidecar it doesn't have, or carries one it no longer should — restart the
-    // preview instead of reusing it.
+  // If we have a preview running for this path, reuse it — but only if it's the
+  // same client. Switching client (Unity <-> Bevy) means a different launch, so
+  // tear the old one down and start fresh below.
+  if (isPreviewRunning(preview) && preview.opts.client === opts.client) {
+    if (opts.client === PREVIEW_CLIENT.BEVY_WEB) {
+      // The Bevy web client runs in the browser; sdk-commands opened the tab on
+      // launch and there's no deep-link to re-issue. Re-open the stored URL so a
+      // second Preview click refocuses/reopens it. (`isPreviewRunning` already
+      // guarantees a non-empty url.)
+      await shell.openExternal(preview.url);
+      return path;
+    }
+
+    // Desktop (Unity): the sidecar lives and dies with the preview process
+    // (--asset-bundles is a spawn-time flag), so whenever the Optimized Assets toggle
+    // disagrees with the running preview — needs a sidecar it doesn't have, or carries
+    // one it no longer should — restart the preview instead of reusing it.
     const previewHasSidecar = new URLSearchParams(preview.url).has(LOCAL_AB_PARAM);
     const wantsSidecar = opts.optimizedAssets && (await supportsAssetBundles(path));
 
@@ -402,14 +420,17 @@ async function doStart(path: string, opts: StartOptions): Promise<string> {
 
   let stopConversionProgress = () => {};
 
+  const isBevyWeb = opts.client === PREVIEW_CLIENT.BEVY_WEB;
+
   try {
     const extraArgs: string[] = [];
     let withSidecar = false;
 
     // sdk-commands owns the asset-bundle sidecar: --asset-bundles boots it and injects
     // local-ab into the deeplink it fires. Missing binary or a sidecar that never comes
-    // up degrades to raw GLTFs inside sdk-commands itself.
-    if (opts.optimizedAssets) {
+    // up degrades to raw GLTFs inside sdk-commands itself. The sidecar only applies to
+    // the Unity deep-link path — Bevy web has no deeplink to carry local-ab.
+    if (!isBevyWeb && opts.optimizedAssets) {
       if (await supportsAssetBundles(path)) {
         extraArgs.push('--asset-bundles');
         withSidecar = true;
@@ -420,10 +441,18 @@ async function doStart(path: string, opts: StartOptions): Promise<string> {
       }
     }
 
-    // sdk-commands self-opens the client with the deeplink it prints once the preview is
-    // ready; the capture below is only for the cache (re-focus, option flips, mobile QR).
+    // Unity launches via a `decentraland://` deep-link; Bevy (`--bevy-web`) runs
+    // the content server and opens the hosted web client in the browser itself,
+    // so it emits no deep-link — we wait for the server-ready line instead.
+    // On the Unity path, sdk-commands self-opens the client with the deeplink it prints
+    // once the preview is ready; the capture below is only for the cache (re-focus,
+    // option flips, mobile QR).
+    const args = isBevyWeb
+      ? ['start', '--bevy-web', ...generatePreviewArguments(opts)]
+      : ['start', '--explorer-alpha', '--hub', ...extraArgs, ...generatePreviewArguments(opts)];
+
     const process = run('@dcl/sdk-commands', 'sdk-commands', {
-      args: ['start', '--explorer-alpha', '--hub', ...extraArgs, ...generatePreviewArguments(opts)],
+      args,
       cwd: path,
       workspace: path,
       env: await getEnv(path),
@@ -431,6 +460,25 @@ async function doStart(path: string, opts: StartOptions): Promise<string> {
 
     // registered before the deeplink resolves so the spawn can be cancelled mid-conversion
     previewCache.set(path, { child: process, url: '', opts });
+
+    if (isBevyWeb) {
+      // No deep-link on this path — sdk-commands prints this once the preview
+      // server is up and has already opened the Bevy client in the browser.
+      const serverReady = /Preview server is now running/i;
+      await process.waitFor(serverReady, /CliError|error:/i);
+
+      // Store the browser URL sdk-commands opened so a repeat Preview click can
+      // reopen it (see the reuse fast-path above). Fall back to empty string if
+      // the line isn't in the buffer; `isPreviewRunning` also checks `url`.
+      const bevyUrl =
+        process
+          .stdall()
+          .join('')
+          .match(/https?:\/\/\S*bevy-web\S*/i)?.[0] ?? '';
+      const entry = previewCache.get(path);
+      if (entry?.child === process) entry.url = bevyUrl;
+      return path;
+    }
 
     // immediate feedback for an optimized preview: the first real progress line is many
     // seconds away (bundling + sidecar boot), and the ✕ only shows once progress exists

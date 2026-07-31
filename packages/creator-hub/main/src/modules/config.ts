@@ -6,6 +6,7 @@ import { FileSystemStorage, type IFileSystemStorage } from '/shared/types/storag
 import deepmerge from 'deepmerge';
 import { SETTINGS_DIRECTORY, CONFIG_FILE_NAME, getFullScenesPath } from '/shared/paths';
 import { DEFAULT_CONFIG, mergeConfig, type Config } from '/shared/types/config';
+import { DEFAULT_RENDERER } from '/shared/types/settings';
 
 import { getUserDataPath } from './electron';
 import { waitForMigrations } from './migrations';
@@ -29,6 +30,18 @@ export async function getConfigStorage(): Promise<IFileSystemStorage<Config>> {
     // Initialize with default values if empty or merge with defaults if partial
     const defaultConfig = getDefaultConfig();
     const existingConfig = await configStorage.getAll();
+
+    // One-time: the `experimental` flag was added after the `renderer` setting. A
+    // config that predates it must derive the toggle from its active renderer —
+    // otherwise the new `false` default would hide the picker while an existing
+    // non-default (Bevy) renderer keeps rendering. Only when the field is truly
+    // absent (a brand-new config has no `settings` yet → skip, default applies).
+    const storedSettings = existingConfig.settings as
+      | (Partial<Config['settings']> & { experimental?: boolean })
+      | undefined;
+    if (storedSettings && storedSettings.experimental === undefined && storedSettings.renderer) {
+      storedSettings.experimental = storedSettings.renderer !== DEFAULT_RENDERER;
+    }
 
     // Deep merge with defaults if config exists but might be missing properties
     const mergedConfig = mergeConfig(existingConfig, defaultConfig);

@@ -22,8 +22,6 @@ export function buildMockIdentity(address: string = MOCK_ADDRESS) {
 }
 
 export type AuthMockOptions = {
-  /** The requestId the stubbed `POST /requests` returns. */
-  requestId?: string;
   /** The address the stubbed identity resolves to. */
   address?: string;
 };
@@ -36,13 +34,16 @@ type RecordedFetch = { url: string; method: string; body: string | null };
  * (`window.open`) instead of opening anything. Recorded data is read back via
  * {@link getOpenCalls} and {@link getFetchCalls}. Mocks only the external
  * boundaries — all in-repo logic runs for real.
+ *
+ * Sign in no longer calls `POST /requests` — the link id is generated locally.
+ * The stub is kept so a regression back to a server-created request is recorded
+ * (and asserted against) instead of silently hitting the network.
  */
 export async function installAuthMocks(page: Page, options: AuthMockOptions = {}): Promise<void> {
-  const requestId = options.requestId ?? 'e2e-request-id';
   const identity = buildMockIdentity(options.address ?? MOCK_ADDRESS);
 
   await page.evaluate(
-    ({ requestId, identity }) => {
+    ({ identity }) => {
       const w = window as any;
       w.__e2eOpenCalls = [];
       w.__e2eFetchCalls = [];
@@ -62,7 +63,7 @@ export async function installAuthMocks(page: Page, options: AuthMockOptions = {}
 
         if (url.includes('/requests') && method === 'POST') {
           w.__e2eFetchCalls.push({ url, method, body });
-          return new Response(JSON.stringify({ requestId }), {
+          return new Response(JSON.stringify({ requestId: 'unexpected-server-request-id' }), {
             status: 200,
             headers: { 'Content-Type': 'application/json' },
           });
@@ -79,7 +80,7 @@ export async function installAuthMocks(page: Page, options: AuthMockOptions = {}
         return realFetch(input, init);
       };
     },
-    { requestId, identity },
+    { identity },
   );
 }
 
@@ -97,12 +98,21 @@ export function getFetchCalls(page: Page): Promise<RecordedFetch[]> {
  * Fires a sign-in deeplink at the running app through the real macOS entry
  * point (`open-url`), which the main process handles and forwards to the
  * renderer over IPC — exercising the full deeplink path.
+ *
+ * `authRequestId` mirrors the correlation id the auth dapp echoes back from the
+ * request page URL. Omitting it fires an uncorrelated link, which the app must
+ * reject.
  */
 export async function fireSignInDeeplink(
   electronApp: ElectronApplication,
   identityId: string,
+  authRequestId?: string,
 ): Promise<void> {
+  const params = new URLSearchParams({ signin: identityId });
+  if (authRequestId) {
+    params.set('authRequestId', authRequestId);
+  }
   await electronApp.evaluate(({ app }, url) => {
     app.emit('open-url', { preventDefault() {} }, url);
-  }, `dcl-creator-hub://open?signin=${identityId}`);
+  }, `dcl-creator-hub://open?${params.toString()}`);
 }

@@ -1,5 +1,5 @@
 import { type ChangeEvent, useCallback, useState } from 'react';
-import { Button, MenuItem, Select, type SelectChangeEvent } from 'decentraland-ui2';
+import { Button } from 'decentraland-ui2';
 
 import { misc } from '#preload';
 
@@ -11,36 +11,22 @@ import { useEditor } from '/@/hooks/useEditor';
 import GenesisPlazaPng from '/assets/images/genesis_plaza.webp';
 
 import { PublishModal } from '../../PublishModal';
-import type { AlternativeTarget, Props } from '../../types';
+import type { Props } from '../../types';
 
 import './styles.css';
 
 export function AlternativeServers(props: Props) {
   const { publishScene } = useEditor();
-  const [option, setOption] = useState<AlternativeTarget>('test');
   const [customUrl, setCustomUrl] = useState('');
   const [error, setError] = useState('');
 
   const handleClick = useCallback(() => {
-    if (option === 'custom' && !isUrl(customUrl)) {
+    if (!isUrl(customUrl)) {
       return setError(t('modal.publish_project.alternative_servers.errors.url'));
     }
-    if (option === 'test') {
-      void publishScene();
-    } else if (option === 'custom') {
-      if (!isUrl(customUrl)) {
-        return setError(t('modal.publish_project.alternative_servers.errors.url'));
-      }
-      void publishScene({ target: customUrl });
-    } else {
-      throw new Error('Invalid option');
-    }
+    void publishScene({ target: customUrl });
     props.onStep('deploy');
-  }, [option, customUrl, props.onStep, publishScene]);
-
-  const handleChangeSelect = useCallback((e: SelectChangeEvent<AlternativeTarget>) => {
-    setOption(e.target.value as AlternativeTarget);
-  }, []);
+  }, [customUrl, props.onStep, publishScene]);
 
   const handleChangeCustom = useCallback(
     (e: ChangeEvent<HTMLInputElement>) => {
@@ -51,15 +37,10 @@ export function AlternativeServers(props: Props) {
   );
 
   const handleClickLearnMore = useCallback(() => {
-    if (option === 'custom') {
-      return misc.openExternal(
-        'https://docs.decentraland.org/creator/scenes-sdk7/publishing/publishing#custom-servers',
-      );
-    }
     misc.openExternal(
-      'https://docs.decentraland.org/creator/scenes-sdk7/publishing/publishing#the-test-server',
+      'https://docs.decentraland.org/creator/scenes-sdk7/publishing/publishing#custom-servers',
     );
-  }, [option]);
+  }, []);
 
   return (
     <PublishModal
@@ -72,30 +53,19 @@ export function AlternativeServers(props: Props) {
           <div className="selection">
             <div>
               <h3>{t('modal.publish_project.alternative_servers.list')}</h3>
-              <Select
-                variant="standard"
-                value={option}
-                onChange={handleChangeSelect}
-              >
-                <MenuItem value="test">
-                  {t('modal.publish_project.alternative_servers.options.test_server')}
-                </MenuItem>
-                <MenuItem value="custom">
-                  {t('modal.publish_project.alternative_servers.options.custom_server')}
-                </MenuItem>
-              </Select>
-              {option === 'custom' && (
-                <div className="custom_input">
-                  <span className="title">
-                    {t('modal.publish_project.alternative_servers.custom_server_url')}
-                  </span>
-                  <input
-                    value={customUrl}
-                    onChange={handleChangeCustom}
-                  />
-                  <span className="error">{error}</span>
-                </div>
-              )}
+              <span className="server_name">
+                {t('modal.publish_project.alternative_servers.options.custom_server')}
+              </span>
+              <div className="custom_input">
+                <span className="title">
+                  {t('modal.publish_project.alternative_servers.custom_server_url')}
+                </span>
+                <input
+                  value={customUrl}
+                  onChange={handleChangeCustom}
+                />
+                <span className="error">{error}</span>
+              </div>
             </div>
             <img
               className="thumbnail"
@@ -110,7 +80,7 @@ export function AlternativeServers(props: Props) {
               {t('option_box.learn_more')}
             </span>
             <Button onClick={handleClick}>
-              {t(`modal.publish_project.alternative_servers.action.${option}_server`)}
+              {t('modal.publish_project.alternative_servers.action.custom_server')}
             </Button>
           </div>
         </div>

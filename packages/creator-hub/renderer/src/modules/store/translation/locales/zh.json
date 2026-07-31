@@ -38,7 +38,13 @@
   },
   "editor": {
     "loading": {
-      "title": "正在准备场景..."
+      "title": "正在准备场景...",
+      "installing": "正在安装依赖项……首次可能需要一些时间。",
+      "failed": {
+        "title": "加载失败",
+        "timeout": "场景加载时间过长，可能其代码中存在错误。",
+        "back": "返回场景"
+      }
     },
     "header": {
       "actions": {
@@ -50,6 +56,11 @@
         "refresh": "从磁盘重新加载场景",
         "preview_options": {
           "title": "预览选项",
+          "client": {
+            "label": "预览方式",
+            "desktop": "桌面客户端",
+            "bevy_web": "Bevy（网页）"
+          },
           "debugger": "在预览期间打开控制台窗口",
           "skip_auth_screen": "跳过认证屏幕",
           "open_new_instance": "打开多个实例",
@@ -83,6 +94,7 @@
       "delete_project": "删除场景",
       "duplicate_project": "复制场景",
       "open_folder": "打开文件夹",
+      "rename_folder": "重命名文件夹",
       "view_deployments": "查看部署"
     },
     "no_scenes": {
@@ -130,6 +142,15 @@
       "title": "您确定要从「我的场景」中删除 {title} 吗？",
       "files_checkbox": "也从我的电脑中删除场景文件",
       "files_warning": "您的场景文件将从您的电脑中永久删除，您将无法再次访问此场景。"
+    },
+    "rename_folder": {
+      "title": "重命名文件夹",
+      "field_label": "文件夹名称",
+      "errors": {
+        "invalid_name": "该名称无效。请避免空名称和 / \\ : * ? \" < > | 等字符。",
+        "name_taken": "已存在同名文件夹。",
+        "rename_failed": "无法重命名文件夹，请重试。"
+      }
     },
     "publish_project": {
       "title": "公共场所 \"{title}\"",
@@ -204,12 +225,10 @@
         "title": "发布到不同的服务器",
         "list": "备用服务器",
         "options": {
-          "test_server": "测试服务器",
           "custom_server": "定制服务器"
         },
         "custom_server_url": "服务器地址",
         "action": {
-          "test_server": "发布到测试服务器",
           "custom_server": "发布到自定义服务器"
         },
         "errors": {
@@ -347,6 +366,14 @@
         "app_warnings": {
           "label": "应用警告",
           "show_warnings": "每次预览或发布包含自定义代码的场景时显示警告消息"
+        },
+        "renderer": {
+          "label": "场景渲染器",
+          "babylon": "Babylon（默认）",
+          "bevy": "Bevy（预览）"
+        },
+        "experimental": {
+          "label": "实验性功能"
         }
       },
       "actions": {
@@ -611,6 +638,7 @@
         "create": "創建"
       },
       "errors": {
+        "invalid_directory": "该文件夹路径不存在。请使用文件夹按钮为场景选择一个已存在的位置。",
         "path_exists_or_not_writable": "项目路径已存在或无法在其中保存文件。请选择其他文件夹。"
       }
     },
