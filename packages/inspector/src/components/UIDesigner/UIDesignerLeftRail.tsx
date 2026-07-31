@@ -1,10 +1,12 @@
-import React, { useRef, useState } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
+import { AiOutlineSearch as SearchIcon } from 'react-icons/ai';
 import { IoAddOutline } from 'react-icons/io5';
+import { VscClose as ClearIcon } from 'react-icons/vsc';
 
 import { useAppSelector } from '../../redux/hooks';
 import { getSelectedNode } from '../../redux/ui-designer';
 import { Box } from '../Box';
-import Search from '../Search';
+import { TextField } from '../ui';
 import { NodeTree } from './NodeTree';
 import { WidgetPicker } from './WidgetPicker';
 import { CodeRootsList } from './code/CodeRootsList';
@@ -15,6 +17,13 @@ const UIDesignerLeftRail: React.FC = () => {
   const [pickerOpen, setPickerOpen] = useState(false);
   const [search, setSearch] = useState('');
   const addBtnRef = useRef<HTMLButtonElement>(null);
+
+  const handleSearchKeyDown = useCallback((event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === 'Escape') {
+      event.currentTarget.blur();
+      setSearch('');
+    }
+  }, []);
 
   // New nodes are added under the current node (selecting a GUI selects its
   // root node). Disabled until there's a UI to add into.
@@ -41,12 +50,24 @@ const UIDesignerLeftRail: React.FC = () => {
             <IoAddOutline aria-hidden="true" />
           </button>
         </div>
-        <div className="ui-designer-rail-search">
-          <Search
-            value={search}
-            onChange={setSearch}
+        <div
+          className="ui-designer-rail-search"
+          onContextMenu={e => e.stopPropagation()}
+        >
+          <TextField
             placeholder="Search nodes"
-            onCancel={() => setSearch('')}
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            onKeyDown={handleSearchKeyDown}
+            leftIcon={<SearchIcon />}
+            rightIcon={
+              search ? (
+                <ClearIcon
+                  className="ClearSearch"
+                  onClick={() => setSearch('')}
+                />
+              ) : undefined
+            }
           />
         </div>
         <NodeTree filter={search} />

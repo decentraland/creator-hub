@@ -273,11 +273,22 @@
 
 /* Node-tree search — always visible, matching the 3D asset panels. */
 .ui-designer-rail-search {
+  display: flex;
+  flex-shrink: 0;
   padding: 0 var(--uid-space-2) var(--uid-space-2);
 }
 
-.ui-designer-rail-search .Search {
-  width: 100%;
+.ui-designer-rail-search .LeftIcon {
+  color: var(--base-09);
+}
+
+.ui-designer-rail-search .ClearSearch {
+  cursor: pointer;
+  color: var(--base-09);
+}
+
+.ui-designer-rail-search .ClearSearch:hover {
+  color: var(--base-01);
 }
 
 .ui-designer-nodetree-empty {
