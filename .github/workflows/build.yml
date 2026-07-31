@@ -61,6 +61,8 @@ jobs:
               'packages/inspector/tsconfig*.json',
               'packages/inspector/package.json',
               'packages/inspector/public/index.html',
+              'packages/inspector/agents/bevy/src/**',
+              'packages/inspector/agents/bevy/package.json',
               'packages/creator-hub/main/**',
               'packages/creator-hub/preload/**',
               'packages/creator-hub/renderer/**',
