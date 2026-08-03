@@ -85,6 +85,7 @@
     "start": "npm run watch",
     "test": "npm run test:unit",
     "test:e2e": "npm run build && vitest run --config vitest.e2e.config.js --passWithNoTests",
+    "test:e2e:ci": "vitest run --config vitest.e2e.config.js --passWithNoTests",
     "test:main": "vitest run -r main --passWithNoTests",
     "test:preload": "vitest run -r preload --passWithNoTests",
     "test:renderer": "vitest run -r renderer --passWithNoTests",

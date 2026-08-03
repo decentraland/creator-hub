@@ -41,14 +41,18 @@ jobs:
           fetch-depth: 0
           fetch-tags: true
           submodules: true
+          filter: blob:none
 
-      - uses: actions/setup-node@v6
+      - uses: ./.github/actions/setup
+        id: setup
         with:
-          node-version: 24
-          cache: 'npm'
+          cache-electron: 'true'
 
       - name: install
+        if: steps.setup.outputs.node-modules-cache-hit != 'true'
         run: npm i --silent && make install-creator-hub
+        env:
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: '1'
 
       - name: install inspector
         working-directory: packages/creator-hub
@@ -67,7 +71,7 @@ jobs:
       - name: build
         run: make build-creator-hub
         env:
-          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: '1'
           NODE_OPTIONS: "--max-old-space-size=8192"
           MODE: ${{ !inputs.dry-run && 'production' || 'development' }}
           VITE_SEGMENT_CREATORS_HUB_API_KEY: ${{ secrets.VITE_SEGMENT_CREATORS_HUB_API_KEY }}
@@ -79,7 +83,7 @@ jobs:
 
       - name: Bump release version
         id: version
-        uses: paulhatch/semantic-version@v5.4.0
+        uses: paulhatch/semantic-version@502226b17e3e242e4befd0a45690fcbb27dd1373 # v6.0.3
         with:
           tag_prefix: ""
           version_format: ${major}.${minor}.${patch}
@@ -100,7 +104,7 @@ jobs:
 
       - name: Compile creator-hub artifacts ${{ inputs.dry-run && ' ' || 'and upload them to github release' }}
         # I use this action because it is capable of retrying multiple times if there are any issues with the distribution server
-        uses: nick-fields/retry@v3
+        uses: nick-fields/retry@ad984534de44a9489a53aefd81eb77f87c70dc60 # v4.0.0
         with:
           timeout_minutes: 60
           max_attempts: 6
@@ -113,6 +117,8 @@ jobs:
           USE_HARD_LINKS: false
           # Fix C++ standard for native dependencies
           CXXFLAGS: "-std=gnu++17"
+          # On PRs, build only the unsigned .zip (skip the slow .dmg); see electron-builder.cjs
+          DRY_RUN: ${{ inputs.dry-run }}
           # Code Signing params
           # See https://www.electron.build/code-signing
           CSC_LINK: ${{ secrets.MACOS_CSC_LINK }}
@@ -144,7 +150,7 @@ jobs:
       - name: Move artifacts to upload folder
         if: ${{ github.event.pull_request.number }}
         working-directory: packages/creator-hub
-        run: sh -c 'mkdir dist/upload && cp dist/*.dmg dist/*.exe dist/upload 2> /dev/null || :'
+        run: sh -c 'mkdir dist/upload && cp dist/*.dmg dist/*.exe dist/*.zip dist/upload 2> /dev/null || :'
 
       - name: Upload to S3
         if: ${{ github.event.pull_request.number }}
@@ -172,8 +178,8 @@ jobs:
         id: macos-instructions
         run: |
           echo "list<<EOF" >> $GITHUB_ENV
-          echo "[mac-x64](${{ secrets.SDK_TEAM_S3_BASE_URL }}/creator-hub/branch/${{ github.head_ref }}/Decentraland%20Creator%20Hub-${{ steps.version.outputs.version }}-mac-x64.dmg)" >> $GITHUB_ENV
-          echo "[mac-arm64](${{ secrets.SDK_TEAM_S3_BASE_URL }}/creator-hub/branch/${{ github.head_ref }}/Decentraland%20Creator%20Hub-${{ steps.version.outputs.version }}-mac-arm64.dmg)" >> $GITHUB_ENV
+          echo "[mac-x64](${{ secrets.SDK_TEAM_S3_BASE_URL }}/creator-hub/branch/${{ github.head_ref }}/Decentraland%20Creator%20Hub-${{ steps.version.outputs.version }}-mac-x64.zip)" >> $GITHUB_ENV
+          echo "[mac-arm64](${{ secrets.SDK_TEAM_S3_BASE_URL }}/creator-hub/branch/${{ github.head_ref }}/Decentraland%20Creator%20Hub-${{ steps.version.outputs.version }}-mac-arm64.zip)" >> $GITHUB_ENV
           echo "EOF" >> $GITHUB_ENV
           content=$(cat ./.github/workflows/macos-instructions.md)
           echo "macos-instructions<<EOF" >> $GITHUB_ENV
@@ -182,7 +188,7 @@ jobs:
 
       - name: Find Comment
         if: ${{ github.event.pull_request.number }}
-        uses: peter-evans/find-comment@v1
+        uses: peter-evans/find-comment@b30e6a3c0ed37e7c023ccd3f1db5c6c0b0c23aad # v4.0.0
         id: fc
         with:
           issue-number: ${{ github.event.pull_request.number }}
@@ -191,7 +197,7 @@ jobs:
 
       - name: Create or update comment
         if: ${{ github.event.pull_request.number }}
-        uses: peter-evans/create-or-update-comment@v1
+        uses: peter-evans/create-or-update-comment@e8674b075228eee787fea43ef493e45ece1004c9 # v5.0.0
         with:
           comment-id: ${{ steps.fc.outputs.comment-id }}
           issue-number: ${{ github.event.pull_request.number }}
