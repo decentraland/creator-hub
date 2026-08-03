@@ -26,13 +26,22 @@ import { downloadGithubRepo } from './download-github-folder';
 import { startMobileDebugServer } from './mobile-debug-server';
 import { getLanIp } from './network';
 
-export type Preview = { child: Child; url: string; opts: PreviewOptions };
+// `mobile` marks a preview that was started for the mobile-QR flow (`--mobile`): the
+// SDK runs the preview server but does NOT open the desktop client. It is tracked so a
+// later desktop Preview press restarts instead of reusing it (a reused mobile preview
+// would never open the client the user just asked for).
+export type Preview = { child: Child; url: string; opts: PreviewOptions; mobile: boolean };
 
 // Explorer deeplink param for locally generated asset bundles. sdk-commands owns the
 // abgen sidecar (--asset-bundles) and injects local-ab into the deeplink it fires only
 // when the sidecar actually booted — its presence in the captured deeplink is the
 // source of truth for whether the running preview has one.
 const LOCAL_AB_PARAM = 'local-ab';
+
+// Grace window for the mobile-QR deeplink to appear after the preview server reports
+// ready. sdk-commands prints it only with a LAN IP; if none is found it never comes, so
+// the mobile start settles (with no url) shortly after instead of hanging indefinitely.
+const MOBILE_DEEPLINK_GRACE_MS = 5000;
 
 // A large scene's first conversion can take minutes before the deeplink appears; the
 // sidecar's progress lines are streamed to the renderer so the preview button can say
@@ -143,10 +152,15 @@ function getDeepLinkParam(raw: string, key: string): string | null {
 
 function getPreviewServerUrl(deepLinkUrl: string): string | null {
   try {
-    const params = new URLSearchParams(deepLinkUrl);
-    const realm = params.get('realm');
-    if (realm) {
-      const url = new URL(realm);
+    // The desktop-client deeplink carries the server as `realm=<origin>`; the mobile
+    // deeplink (`open?preview=<lanUrl>&...`, from a `--mobile` start) carries it as
+    // `preview=<lanUrl>`. Slice off any leading path (e.g. `open?`) before parsing.
+    const queryIdx = deepLinkUrl.indexOf('?');
+    const query = queryIdx >= 0 ? deepLinkUrl.slice(queryIdx + 1) : deepLinkUrl;
+    const params = new URLSearchParams(query);
+    const server = params.get('realm') ?? params.get('preview');
+    if (server) {
+      const url = new URL(server);
       return `${url.protocol}//${url.host}`;
     }
     return null;
@@ -324,7 +338,7 @@ export async function supportsAssetBundles(path: string): Promise<boolean> {
   }
 }
 
-type StartOptions = PreviewOptions & { retry?: boolean };
+type StartOptions = PreviewOptions & { retry?: boolean; mobile?: boolean };
 
 // Serializes concurrent starts per path: a second Preview press (or a mobile-QR start)
 // while a spawn is still converting must ride that spawn, not race a second one.
@@ -384,8 +398,14 @@ async function doStart(path: string, opts: StartOptions): Promise<string> {
 
   // If we have a preview running for this path, reuse it — but only if it's the
   // same client. Switching client (Unity <-> Bevy) means a different launch, so
-  // tear the old one down and start fresh below.
-  if (isPreviewRunning(preview) && preview.opts.client === opts.client) {
+  // tear the old one down and start fresh below. A mode switch (mobile QR <-> desktop
+  // Preview) also can't be reused: a mobile-mode preview never opened the desktop client,
+  // so a desktop Preview press must restart to actually launch it.
+  if (
+    isPreviewRunning(preview) &&
+    preview.opts.client === opts.client &&
+    preview.mobile === !!opts.mobile
+  ) {
     if (opts.client === PREVIEW_CLIENT.BEVY_WEB) {
       // The Bevy web client runs in the browser; sdk-commands opened the tab on
       // launch and there's no deep-link to re-issue. Re-open the stored URL so a
@@ -417,6 +437,10 @@ async function doStart(path: string, opts: StartOptions): Promise<string> {
   let stopConversionProgress = () => {};
 
   const isBevyWeb = opts.client === PREVIEW_CLIENT.BEVY_WEB;
+  // Mobile-QR start: `--mobile` makes sdk-commands serve the scene and print a capturable
+  // mobile deeplink without opening the desktop client. Only meaningful on the Unity path
+  // (the mobile app opens `decentraland://`); Bevy is web-only, so it keeps its own launch.
+  const isMobile = !!opts.mobile && !isBevyWeb;
 
   try {
     const extraArgs: string[] = [];
@@ -445,7 +469,14 @@ async function doStart(path: string, opts: StartOptions): Promise<string> {
     // option flips, mobile QR).
     const args = isBevyWeb
       ? ['start', '--bevy-web', ...generatePreviewArguments(opts)]
-      : ['start', '--explorer-alpha', '--hub', ...extraArgs, ...generatePreviewArguments(opts)];
+      : [
+          'start',
+          '--explorer-alpha',
+          '--hub',
+          ...(isMobile ? ['--mobile'] : []),
+          ...extraArgs,
+          ...generatePreviewArguments(opts),
+        ];
 
     const process = run('@dcl/sdk-commands', 'sdk-commands', {
       args,
@@ -455,7 +486,7 @@ async function doStart(path: string, opts: StartOptions): Promise<string> {
     });
 
     // registered before the deeplink resolves so the spawn can be cancelled mid-conversion
-    previewCache.set(path, { child: process, url: '', opts });
+    previewCache.set(path, { child: process, url: '', opts, mobile: isMobile });
 
     if (isBevyWeb) {
       // No deep-link on this path — sdk-commands prints this once the preview
@@ -517,12 +548,28 @@ async function doStart(path: string, opts: StartOptions): Promise<string> {
       // process death so a cancelled/failed spawn rejects here and the finally below clears
       // inflightStarts. wait() stays pending while the preview server runs, so the deeplink
       // normally wins; it only settles once the process is gone.
-      const resultLogs = await Promise.race([
-        process.waitFor(dclLauncherURL, /CliError|error:/i),
-        process.wait().then(() => {
-          throw new Error('Preview process exited before producing a deeplink');
-        }),
-      ]);
+      // Registered before any await so it can't miss a deeplink flushed early.
+      const deeplink = process.waitFor(dclLauncherURL, /CliError|error:/i);
+      const death = process.wait().then(() => {
+        throw new Error('Preview process exited before producing a deeplink');
+      });
+      // On the mobile path the desktop client never opens, so the only deeplink is the LAN
+      // QR one — which sdk-commands prints only when a LAN IP exists. Without one it never
+      // comes, so add a fallback that settles a beat after the server is up (an empty url
+      // getMobilePreview then surfaces as a failure) rather than hanging forever. A deeplink
+      // that does arrive still wins this race first, even minutes into a large conversion.
+      const racers = [deeplink, death];
+      if (isMobile) {
+        racers.push(
+          process
+            .waitFor(/Preview server is now running/i, /CliError|error:/i)
+            .then(
+              () => new Promise<string>(resolve => setTimeout(resolve, MOBILE_DEEPLINK_GRACE_MS)),
+            )
+            .then(() => ''),
+        );
+      }
+      const resultLogs = await Promise.race(racers);
 
       // Check if the error indicates that Decentraland Desktop Client is not installed
       if (resultLogs.includes(CLIENT_NOT_INSTALLED_ERROR)) {
