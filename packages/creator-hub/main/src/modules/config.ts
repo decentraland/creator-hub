@@ -81,14 +81,11 @@ export async function getConfig(): Promise<Config> {
 }
 
 /**
- * Writes the provided configuration object to the configuration file.
+ * Writes `workspace` and `settings` from the provided configuration object.
  *
- * `editors` is carried over from what is already stored rather than taken from `_config`.
- * This is the renderer's read-modify-write channel for app settings, and `editors[].path`
- * is the executable `code.open` launches — it is written only by `addEditor` /
- * `setDefaultEditor` / `removeEditor` in main, so that the validation lives with the
- * privilege. Preserving it here also stops a stale renderer copy from clobbering a change
- * made while its modal was open.
+ * Only those two: the stored config is the base and the submitted one overlays it, so any
+ * other field — `editors`, `userId`, `installedAt`, `lastVersion`, `version`, and anything
+ * added later — keeps whatever main last wrote through `configStorage`.
  *
  * @param {Config} _config - The configuration object to write to the file.
  * @returns {Promise<void>} A promise that resolves when the write operation is complete.
@@ -97,7 +94,11 @@ export async function writeConfig(_config: Config): Promise<void> {
   try {
     const config = await getConfigStorage();
     const stored = await config.getAll();
-    await config.setAll({ ..._config, editors: stored.editors });
+    await config.setAll({
+      ...stored,
+      workspace: _config.workspace,
+      settings: _config.settings,
+    });
   } catch (e) {
     console.error('[Preload] Failed writing to config file', e);
     throw e;

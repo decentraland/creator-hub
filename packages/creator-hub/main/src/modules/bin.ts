@@ -329,9 +329,6 @@ export async function dclDeepLink(deepLink: string) {
       await exec('reg query "HKEY_CLASSES_ROOT\\decentraland"');
     }
 
-    // `deepLink` is assembled from renderer-supplied preview options. `openExternal` hands
-    // the URL straight to the OS protocol handler with no shell in between, which is why
-    // this must not go back to being an `exec` string.
     await shell.openExternal(`decentraland://${deepLink}`);
   } catch (e) {
     throw new ClientError('CLIENT_NOT_INSTALLED', CLIENT_NOT_INSTALLED_ERROR);

@@ -348,21 +348,20 @@ export async function addEditorsPathsToConfig() {
   }
 }
 
+/**
+ * Opens `_path` in the configured editor, revealing it in the file manager if that is not
+ * possible. Never rejects — callers treat it as fire-and-forget.
+ */
 export async function open(_path: string) {
   const normalizedPath = path.normalize(_path);
-  // getEditors() drops entries whose executable has gone away. The list itself can only be
-  // written by addEditor/setDefaultEditor/removeEditor, and `writeConfig` preserves the
-  // stored value, so `defaultEditor.path` is never renderer-supplied.
-  const editors = await getEditors();
-  const defaultEditor = editors.find(editor => editor.isDefault);
-
-  log.info('Default editor:', defaultEditor);
 
   try {
+    const editors = await getEditors();
+    const defaultEditor = editors.find(editor => editor.isDefault);
+    log.info('Default editor:', defaultEditor);
+
     if (defaultEditor) {
       log.info('Opening with default editor:', defaultEditor.name, 'at path:', defaultEditor.path);
-      // `_path` reaches this function from the Inspector iframe over the scene RPC, so it
-      // is passed as an argv element. It must never be concatenated into a command string.
       await execFile(defaultEditor.path, [normalizedPath], {
         env: { ...process.env, PATH: getPath() },
       });
@@ -374,9 +373,5 @@ export async function open(_path: string) {
     log.info('Failed to open with the configured editor, revealing it instead. Error:', error);
   }
 
-  // Reveal, never `shell.openPath`: that hands the path to whichever handler the OS has
-  // registered for its type, and some types run on open. `showItemInFolder` only selects
-  // the item, which is all this fallback needs to do for a path that came from the
-  // Inspector rather than from a file dialog.
   shell.showItemInFolder(normalizedPath);
 }

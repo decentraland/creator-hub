@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import type { EditorConfig } from '/shared/types/config';
+
 import { open } from '../src/modules/code';
 
 // `vi.hoisted` is required here: code.ts imports `child_process` and `electron` at its
@@ -33,7 +35,7 @@ vi.mock('electron-log/main', () => ({
 
 vi.mock('../src/modules/analytics', () => ({ track: vi.fn() }));
 
-let editors: { name: string; path: string; isDefault?: boolean }[] = [];
+let editors: EditorConfig[] = [];
 
 const configStorage = {
   get: vi.fn(async () => editors),
@@ -62,8 +64,6 @@ describe('code.open', () => {
   });
 
   describe('when the path contains shell metacharacters', () => {
-    // Paths reach code.open from the Inspector iframe over the scene RPC, so they are not
-    // this module's to shape. They have to travel as one argv element.
     const pathWithShellCharacters = '/projects/scene/a$(x)b`y`;z&w|v';
 
     it('should pass the whole path as a single argv element', async () => {
@@ -87,8 +87,28 @@ describe('code.open', () => {
     });
   });
 
-  // `shell.openPath` invokes the OS handler registered for the path's type, and some types
-  // run on open. Revealing is the degradation every fallback below must take instead.
+  describe('when the editor launches successfully', () => {
+    it('should not also reveal the path in the file manager', async () => {
+      await open('/projects/scene/main.ts');
+
+      expect(execFileSpy).toHaveBeenCalledTimes(1);
+      expect(showItemInFolderSpy).not.toHaveBeenCalled();
+      expect(openPathSpy).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('when reading the editor list fails', () => {
+    beforeEach(() => {
+      configStorage.get.mockRejectedValueOnce(new Error('config unreadable'));
+    });
+
+    it('should reveal the path instead of rejecting', async () => {
+      await expect(open('/projects/scene/main.ts')).resolves.toBeUndefined();
+
+      expect(showItemInFolderSpy).toHaveBeenCalledWith('/projects/scene/main.ts');
+    });
+  });
+
   describe('when the editor process fails', () => {
     beforeEach(() => {
       execFileSpy.mockImplementationOnce((...args: unknown[]) => {

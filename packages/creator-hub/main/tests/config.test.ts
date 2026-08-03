@@ -138,10 +138,6 @@ describe('writeConfig', () => {
     vi.mocked(existsSync).mockReturnValue(true);
   });
 
-  // `editors[].path` is the executable `code.open` hands to `execFile`, and the list is
-  // written only by editor discovery and the add/remove/set-default paths in main.
-  // `writeConfig` is the renderer's read-modify-write channel for settings, so it reads
-  // back what is stored rather than accepting the field.
   describe('when the submitted config carries a different editor list', () => {
     it('should keep the stored editors and ignore the submitted ones', async () => {
       const { getConfig, writeConfig } = await load();
@@ -174,18 +170,45 @@ describe('writeConfig', () => {
     });
   });
 
-  describe('when the submitted config changes ordinary settings', () => {
-    it('should persist them', async () => {
+  describe('when the submitted config carries fields main owns', () => {
+    it('should keep the stored values for all of them', async () => {
+      const { getConfig, writeConfig } = await load();
+      Object.assign(storedConfig, {
+        editors: [DISCOVERED_EDITOR],
+        userId: 'stored-user',
+        installedAt: '2026-01-01T00:00:00.000Z',
+        lastVersion: '1.2.3',
+      });
+
+      const stored = await getConfig();
+      await writeConfig({
+        ...stored,
+        userId: 'submitted-user',
+        installedAt: '2020-01-01T00:00:00.000Z',
+        lastVersion: '9.9.9',
+      });
+
+      const written = await getConfig();
+      expect(written.userId).toBe('stored-user');
+      expect(written.installedAt).toBe('2026-01-01T00:00:00.000Z');
+      expect(written.lastVersion).toBe('1.2.3');
+    });
+  });
+
+  describe('when the submitted config changes workspace and settings', () => {
+    it('should persist both', async () => {
       const { getConfig, writeConfig } = await load();
       storedConfig.editors = [DISCOVERED_EDITOR];
 
       const stored = await getConfig();
       await writeConfig({
         ...stored,
+        workspace: { paths: ['/projects/added'] },
         settings: { ...stored.settings, scenesPath: '/somewhere/else' },
       });
 
       const written = await getConfig();
+      expect(written.workspace.paths).toEqual(['/projects/added']);
       expect(written.settings.scenesPath).toBe('/somewhere/else');
       expect(written.editors).toEqual([DISCOVERED_EDITOR]);
     });
