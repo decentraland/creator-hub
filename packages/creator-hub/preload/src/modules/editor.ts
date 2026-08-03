@@ -64,8 +64,16 @@ export async function attachSceneDebugger(
   return { cleanup };
 }
 
-export async function runScene({ path, opts }: { path: string; opts: PreviewOptions }) {
-  const port = await invoke('cli.start', path, opts);
+export async function runScene({
+  path,
+  opts,
+  mobile,
+}: {
+  path: string;
+  opts: PreviewOptions;
+  mobile?: boolean;
+}) {
+  const port = await invoke('cli.start', path, opts, mobile);
   return port;
 }
 
