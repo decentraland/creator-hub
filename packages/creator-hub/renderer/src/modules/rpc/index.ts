@@ -22,16 +22,23 @@ export interface Callbacks {
   ) => Promise<Result[Method.WRITE_FILE]>;
 }
 
+/**
+ * Resolves an Inspector-supplied path against one of the two roots the iframe may address:
+ * the open project, or the shared custom-assets directory.
+ *
+ * Every path-taking storage and scene RPC handler routes through here, so this is the single
+ * place the two roots are enforced. Rejects rather than clamping, which the Inspector already
+ * handles — a refused path surfaces there as an ordinary failed filesystem call.
+ */
 export const getPath = async (filePath: string, project: Project) => {
-  let basePath = project.path;
   const normalizedPath = filePath.replace(/\\/g, '/');
+
   if (normalizedPath === 'custom' || normalizedPath.startsWith('custom/')) {
-    basePath = await custom.getPath();
-    filePath =
-      normalizedPath === 'custom' ? '' : normalizedPath.substring(normalizedPath.indexOf('/') + 1);
+    const customPath = normalizedPath === 'custom' ? '' : normalizedPath.slice('custom/'.length);
+    return fs.resolveWithin(await custom.getPath(), customPath);
   }
-  const resolvedPath = await fs.resolve(basePath, filePath);
-  return resolvedPath;
+
+  return fs.resolveWithin(project.path, normalizedPath);
 };
 
 export function initRpc(iframe: HTMLIFrameElement, project: Project, cbs: Partial<Callbacks> = {}) {
