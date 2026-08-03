@@ -81,7 +81,11 @@ export async function getConfig(): Promise<Config> {
 }
 
 /**
- * Writes the provided configuration object to the configuration file.
+ * Writes `workspace` and `settings` from the provided configuration object.
+ *
+ * Only those two: the stored config is the base and the submitted one overlays it, so any
+ * other field — `editors`, `userId`, `installedAt`, `lastVersion`, `version`, and anything
+ * added later — keeps whatever main last wrote through `configStorage`.
  *
  * @param {Config} _config - The configuration object to write to the file.
  * @returns {Promise<void>} A promise that resolves when the write operation is complete.
@@ -89,7 +93,12 @@ export async function getConfig(): Promise<Config> {
 export async function writeConfig(_config: Config): Promise<void> {
   try {
     const config = await getConfigStorage();
-    config.setAll(_config);
+    const stored = await config.getAll();
+    await config.setAll({
+      ...stored,
+      workspace: _config.workspace,
+      settings: _config.settings,
+    });
   } catch (e) {
     console.error('[Preload] Failed writing to config file', e);
     throw e;
