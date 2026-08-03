@@ -1,4 +1,5 @@
 import type {
+  DateRange,
   PlaceAnalyticsDetail,
   PlaceAnalyticsSummary,
   PlaceEngagementMetrics,
@@ -59,7 +60,7 @@ const MOCK_DETAILS: Record<string, PlaceAnalyticsDetail> = {
       thumbnail: THUMBNAIL,
       likeRate: 87,
       access: PlaceAccess.PRIVATE,
-      publishedIn: 'worldname',
+      publishedIn: 'bananarama.dcl.eth',
       lastPublishedBy: { name: 'UserName', avatar: null },
       lastUpdatedAt: LAST_UPDATED_AT,
     },
@@ -292,4 +293,22 @@ const MOCK_ENGAGEMENT: Record<string, PlaceEngagementMetrics> = {
 
 export function getMockEngagement(placeId: string): PlaceEngagementMetrics | undefined {
   return MOCK_ENGAGEMENT[placeId];
+}
+
+/**
+ * How many trailing weeks each range keeps, for the mocked weekly series.
+ *
+ * A real API would also change the bucketing (daily buckets for a 7-day range,
+ * say); these fixtures are weekly throughout, so the shortest range keeps two
+ * points rather than collapsing a line chart to a single dot.
+ */
+const WEEKS_IN_RANGE: Record<DateRange, number> = {
+  last_7_days: 2,
+  last_30_days: 5,
+  last_60_days: 9,
+};
+
+/** Keeps the trailing part of a weekly series that the range covers. */
+export function sliceToRange<T>(points: T[], dateRange: DateRange): T[] {
+  return points.slice(-WEEKS_IN_RANGE[dateRange]);
 }

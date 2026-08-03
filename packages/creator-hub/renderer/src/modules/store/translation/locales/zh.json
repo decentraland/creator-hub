@@ -979,7 +979,7 @@
         },
         "day_7_cohort": {
           "title": "按首访周划分的 7 日留存",
-          "description": "首次访问 7 天后再次回访的用户占比，按首次进入你的 Place 的那一周分组。",
+          "description": "首次访问后的 7 天内至少回访过一次的用户占比，按首次进入你的 Place 的那一周分组。",
           "benchmark": "{value}% 7 日留存目标"
         },
         "churn": {
@@ -1081,7 +1081,7 @@
       },
       "day_7_retention": {
         "label": "7 日留存",
-        "tooltip": "首次访问 7 天后再次回到你的 Place 的新用户占比。"
+        "tooltip": "首次访问后的 7 天内至少回访过一次的新用户占比。"
       },
       "avg_playtime": {
         "label": "平均游玩时长",

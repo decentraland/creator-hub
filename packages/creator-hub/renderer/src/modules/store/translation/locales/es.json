@@ -979,7 +979,7 @@
         },
         "day_7_cohort": {
           "title": "Retención Día 7 por Semana de Cohorte",
-          "description": "Porcentaje de usuarios que volvieron 7 días después de su primera visita, agrupados por la semana en que entraron por primera vez a tu place.",
+          "description": "Porcentaje de usuarios que volvieron al menos una vez durante los 7 días posteriores a su primera visita, agrupados por la semana en que entraron por primera vez a tu place.",
           "benchmark": "{value}% Día 7 KR"
         },
         "churn": {
@@ -1081,7 +1081,7 @@
       },
       "day_7_retention": {
         "label": "Retención Día 7",
-        "tooltip": "El porcentaje de usuarios nuevos que volvieron a tu place 7 días después de su primera visita."
+        "tooltip": "El porcentaje de usuarios nuevos que volvieron a tu place al menos una vez durante los 7 días posteriores a su primera visita."
       },
       "avg_playtime": {
         "label": "Tiempo de Juego Prom.",

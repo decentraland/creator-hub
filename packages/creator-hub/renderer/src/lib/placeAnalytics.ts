@@ -5,6 +5,7 @@ import type {
   PlaceEngagementMetrics,
   PlaceRetentionMetrics,
   PlaceVisitsMetrics,
+  SocialInteractionSeries,
 } from '/shared/types/place-analytics';
 
 import {
@@ -13,6 +14,7 @@ import {
   getMockEngagement,
   getMockRetention,
   getMockVisits,
+  sliceToRange,
 } from './placeAnalytics.mock';
 
 /**
@@ -55,35 +57,63 @@ export class PlaceAnalytics {
   public async fetchPlaceRetention(
     _address: string,
     placeId: string,
-    _dateRange: DateRange,
+    dateRange: DateRange,
   ): Promise<PlaceRetentionMetrics> {
     // TODO: replace with a request to the analytics API once it exists.
     const retention = getMockRetention(placeId);
     if (!retention) throw new Error(`No retention data found for place "${placeId}"`);
-    return retention;
+    return {
+      // Platform averages are defined as 60-day, so the range does not narrow them.
+      platforms: retention.platforms,
+      day7ByCohortWeek: sliceToRange(retention.day7ByCohortWeek, dateRange),
+      weeklyChurnRate: sliceToRange(retention.weeklyChurnRate, dateRange),
+    };
   }
 
   /** Visit metrics for one Place over the given date range. */
   public async fetchPlaceVisits(
     _address: string,
     placeId: string,
-    _dateRange: DateRange,
+    dateRange: DateRange,
   ): Promise<PlaceVisitsMetrics> {
     // TODO: replace with a request to the analytics API once it exists.
     const visits = getMockVisits(placeId);
     if (!visits) throw new Error(`No visits data found for place "${placeId}"`);
-    return visits;
+    return {
+      // "Unique Visits in the Last 60 Days" is a fixed window by definition.
+      uniqueVisits: visits.uniqueVisits,
+      weeklyActiveUsers: sliceToRange(visits.weeklyActiveUsers, dateRange),
+      weeklyUsersFlow: sliceToRange(visits.weeklyUsersFlow, dateRange),
+    };
   }
 
   /** Engagement metrics for one Place over the given date range. */
   public async fetchPlaceEngagement(
     _address: string,
     placeId: string,
-    _dateRange: DateRange,
+    dateRange: DateRange,
   ): Promise<PlaceEngagementMetrics> {
     // TODO: replace with a request to the analytics API once it exists.
     const engagement = getMockEngagement(placeId);
     if (!engagement) throw new Error(`No engagement data found for place "${placeId}"`);
-    return engagement;
+    const social = (series: SocialInteractionSeries): SocialInteractionSeries => ({
+      messagesSent: sliceToRange(series.messagesSent, dateRange),
+      emotesPlayed: sliceToRange(series.emotesPlayed, dateRange),
+      newFriendships: sliceToRange(series.newFriendships, dateRange),
+    });
+    return {
+      avgDailyPlaytime: {
+        ...engagement.avgDailyPlaytime,
+        weekly: sliceToRange(engagement.avgDailyPlaytime.weekly, dateRange),
+      },
+      avgWeeklyPlaytime: {
+        ...engagement.avgWeeklyPlaytime,
+        weekly: sliceToRange(engagement.avgWeeklyPlaytime.weekly, dateRange),
+      },
+      socialInteractions: {
+        weeklyTotals: social(engagement.socialInteractions.weeklyTotals),
+        visitorRate: social(engagement.socialInteractions.visitorRate),
+      },
+    };
   }
 }

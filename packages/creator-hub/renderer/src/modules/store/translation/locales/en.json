@@ -979,7 +979,7 @@
         },
         "day_7_cohort": {
           "title": "Day 7 Retention by Cohort Week",
-          "description": "Percentage of users who returned 7 days after their first visit, grouped by the week they first jumped into your place.",
+          "description": "Percentage of users who returned at least once over the 7 days after their first visit, grouped by the week they first jumped into your place.",
           "benchmark": "{value}% Day 7 KR"
         },
         "churn": {
@@ -1081,7 +1081,7 @@
       },
       "day_7_retention": {
         "label": "Day 7 Retention",
-        "tooltip": "The percentage of new users who returned to your place 7 days after their first visit."
+        "tooltip": "The percentage of new users who returned to your place at least once over the 7 days after their first visit."
       },
       "avg_playtime": {
         "label": "Avg. Playtime",
