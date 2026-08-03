@@ -180,9 +180,10 @@ jobs:
 
       - name: set preview url
         id: set-preview-url
+        env:
+          SAFE_BRANCH: ${{ steps.sanitize-branch.outputs.safe_branch }}
         run: |
-          safe_branch=${{ steps.sanitize-branch.outputs.safe_branch }}
-          echo "preview_url=https://decentraland.github.io/creator-hub/inspector/$safe_branch" >> $GITHUB_OUTPUT
+          echo "preview_url=https://decentraland.github.io/creator-hub/inspector/${SAFE_BRANCH}" >> $GITHUB_OUTPUT
 
       - name: publish to npm registry
         if: ${{ github.ref == 'refs/heads/main' }}
