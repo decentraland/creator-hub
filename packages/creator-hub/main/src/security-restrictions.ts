@@ -82,13 +82,32 @@ app.on('ready', () => {
   // already use.
   const isolationFilter = { urls: ['file://*/*', 'http://localhost/*', 'http://localhost:*/*'] };
 
+  // Iframes the app embeds that have to keep working now that their embedder is isolated.
+  //
+  // A document with COEP set may only embed a cross-origin *frame* whose own response also
+  // carries COEP; `credentialless` relaxes that for subresources, not for frames. The
+  // wearable-preview used for GLB/emote previews sends CORP but no COEP, so once the
+  // inspector document above became isolated the preview frame stopped loading — and the
+  // import dialog waits on its `onLoad`, so the spinner never resolved. Stamping COEP onto
+  // its response makes it embeddable. All three environments are listed because
+  // decentraland-ui picks the origin from its own env config.
+  const embedFilter = {
+    urls: [
+      'https://wearable-preview.decentraland.org/*',
+      'https://wearable-preview.decentraland.today/*',
+      'https://wearable-preview.decentraland.zone/*',
+    ],
+  };
+
   // Electron keeps only ONE onHeadersReceived listener per session (a second
   // registration replaces the first), so the Studios/Admin CORS rewrite and the
   // Bevy isolation headers MUST share one handler. Register it over the union of
   // both filters and apply each rule to the URLs it matches. Header precedence is
   // preserved per rule: CORS is a fallback the response can override (spread
   // after), isolation is forced (spread last, wins over the response).
-  const combinedFilter = { urls: [...filter.urls, ...isolationFilter.urls] };
+  const combinedFilter = {
+    urls: [...filter.urls, ...isolationFilter.urls, ...embedFilter.urls],
+  };
   const matches = (url: string, patterns: string[]) =>
     patterns.some(pattern => {
       // Electron url patterns are `<scheme>://<host><path>` with `*` wildcards;
@@ -101,6 +120,7 @@ app.on('ready', () => {
   session.defaultSession.webRequest.onHeadersReceived(combinedFilter, (details, callback) => {
     const isStudioAdmin = matches(details.url, filter.urls);
     const isIsolated = matches(details.url, isolationFilter.urls);
+    const isEmbeddedFrame = matches(details.url, embedFilter.urls);
     callback({
       responseHeaders: {
         ...(isStudioAdmin ? { 'Access-Control-Allow-Origin': ['*'] } : {}),
@@ -112,6 +132,7 @@ app.on('ready', () => {
               'Cross-Origin-Resource-Policy': ['cross-origin'],
             }
           : {}),
+        ...(isEmbeddedFrame ? { 'Cross-Origin-Embedder-Policy': ['credentialless'] } : {}),
       },
     });
   });
