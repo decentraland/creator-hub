@@ -21,14 +21,17 @@ export const startInspector = createAsyncThunk('editor/startInspector', editor.s
 export const setPreviewProgress = createAction<PreviewProgress | null>('editor/setPreviewProgress');
 export const runScene = createAsyncThunk(
   'editor/runScene',
-  async ({ path, ...opts }: PreviewOptions & { path: string }, { dispatch }) => {
+  async (
+    { path, mobile, ...opts }: PreviewOptions & { path: string; mobile?: boolean },
+    { dispatch },
+  ) => {
     // Surfaces the sidecar's asset-conversion progress (a large scene's first
     // conversion can take minutes before the preview is ready)
     const subscription = editor.subscribePreviewProgress(path, progress =>
       dispatch(setPreviewProgress(progress)),
     );
     try {
-      await editor.runScene({ path, opts });
+      await editor.runScene({ path, opts, mobile });
     } finally {
       subscription.cleanup();
       dispatch(setPreviewProgress(null));
@@ -60,9 +63,10 @@ export const getMobileQR = createAsyncThunk(
   async ({ path, opts }: { path: string; opts: PreviewOptions }, { dispatch, getState }) => {
     const { editor: editorState } = getState();
 
-    // Start preview if not running
+    // Start preview if not running. `mobile: true` runs the preview server without
+    // opening the desktop client — the QR only needs the server for the phone to reach.
     if (!editorState.isPreviewRunning) {
-      await dispatch(runScene({ path, ...opts })).unwrap();
+      await dispatch(runScene({ path, ...opts, mobile: true })).unwrap();
     }
 
     // Fetch mobile QR data

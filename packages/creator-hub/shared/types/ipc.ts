@@ -79,7 +79,7 @@ export interface Ipc {
   'code.removeEditor': (path: string) => Promise<EditorConfig[]>;
 
   'cli.init': (path: string, repo: string) => Promise<void>;
-  'cli.start': (path: string, opts: PreviewOptions) => Promise<string>;
+  'cli.start': (path: string, opts: PreviewOptions, mobile?: boolean) => Promise<string>;
   'cli.cancelPreview': (path: string) => Promise<void>;
   'cli.supportsAssetBundles': (path: string) => Promise<boolean>;
   'cli.deploy': (opts: DeployOptions) => Promise<number>;

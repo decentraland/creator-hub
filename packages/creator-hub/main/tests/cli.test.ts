@@ -191,6 +191,51 @@ describe('cli preview start', () => {
     });
   });
 
+  describe('when starting a mobile-QR preview', () => {
+    it('should pass --mobile so sdk-commands serves the scene without opening the desktop client', async () => {
+      const fake = createFakeChild();
+      mocks.run.mockReturnValue(fake.child);
+
+      const promise = start(path, { ...BASE_OPTS, mobile: true });
+      fake.printDeeplink('open?preview=http://192.168.0.10:8000&position=0,0');
+      await promise;
+
+      expect(spawnedArgs()).toContain('--mobile');
+    });
+
+    it('should not pass --mobile for a regular desktop preview', async () => {
+      const fake = createFakeChild();
+      mocks.run.mockReturnValue(fake.child);
+
+      const promise = start(path, BASE_OPTS);
+      fake.printDeeplink('realm=http://127.0.0.1:8000&position=0,0');
+      await promise;
+
+      expect(spawnedArgs()).not.toContain('--mobile');
+    });
+  });
+
+  describe('when a mobile-QR preview is already running and a desktop Preview is requested', () => {
+    it('should restart instead of reusing so the desktop client actually opens', async () => {
+      const fake = createFakeChild();
+      mocks.run.mockReturnValue(fake.child);
+      const first = start(path, { ...BASE_OPTS, mobile: true });
+      fake.printDeeplink('open?preview=http://192.168.0.10:8000&position=0,0');
+      await first;
+      mocks.run.mockClear();
+
+      const restarted = createFakeChild();
+      mocks.run.mockReturnValue(restarted.child);
+      const second = start(path, BASE_OPTS);
+      restarted.printDeeplink('realm=http://127.0.0.1:8000&position=0,0');
+      await second;
+
+      expect(fake.child.kill).toHaveBeenCalled();
+      expect(mocks.run).toHaveBeenCalledTimes(1);
+      expect(spawnedArgs()).not.toContain('--mobile');
+    });
+  });
+
   describe('when a preview is already running', () => {
     let fake: ReturnType<typeof createFakeChild>;
 
