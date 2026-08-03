@@ -1,7 +1,7 @@
 import path from 'path';
 import fs from 'fs/promises';
 import { promisify } from 'util';
-import { exec as execCallback } from 'child_process';
+import { exec as execCallback, execFile as execFileCallback } from 'child_process';
 import log from 'electron-log/main';
 import { shell } from 'electron';
 
@@ -11,6 +11,7 @@ import { track } from './analytics';
 import { getConfigStorage } from './config';
 
 const exec = promisify(execCallback);
+const execFile = promisify(execFileCallback);
 
 function getPath() {
   return process.env.PATH || '';
@@ -349,8 +350,10 @@ export async function addEditorsPathsToConfig() {
 
 export async function open(_path: string) {
   const normalizedPath = path.normalize(_path);
-  const config = await getConfigStorage();
-  const editors = (await config.get('editors')) || [];
+  // getEditors() drops entries whose executable has gone away. The list itself can only be
+  // written by addEditor/setDefaultEditor/removeEditor, and `writeConfig` preserves the
+  // stored value, so `defaultEditor.path` is never renderer-supplied.
+  const editors = await getEditors();
   const defaultEditor = editors.find(editor => editor.isDefault);
 
   log.info('Default editor:', defaultEditor);
@@ -358,20 +361,22 @@ export async function open(_path: string) {
   try {
     if (defaultEditor) {
       log.info('Opening with default editor:', defaultEditor.name, 'at path:', defaultEditor.path);
-      const command = `"${defaultEditor.path}" "${normalizedPath}"`;
-      await exec(command, {
+      // `_path` reaches this function from the Inspector iframe over the scene RPC, so it
+      // is passed as an argv element. It must never be concatenated into a command string.
+      await execFile(defaultEditor.path, [normalizedPath], {
         env: { ...process.env, PATH: getPath() },
       });
       await track('Open Code', undefined);
-    } else {
-      log.info('No default editor found, falling back to system default');
-      await shell.openPath(normalizedPath);
+      return;
     }
+    log.info('No default editor configured, revealing in the file manager instead');
   } catch (error) {
-    log.info(
-      'Failed to open with configured editor, falling back to system default. Error:',
-      error,
-    );
-    await shell.openPath(normalizedPath);
+    log.info('Failed to open with the configured editor, revealing it instead. Error:', error);
   }
+
+  // Reveal, never `shell.openPath`: that hands the path to whichever handler the OS has
+  // registered for its type, and some types run on open. `showItemInFolder` only selects
+  // the item, which is all this fallback needs to do for a path that came from the
+  // Inspector rather than from a file dialog.
+  shell.showItemInFolder(normalizedPath);
 }

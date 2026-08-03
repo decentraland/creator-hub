@@ -1,7 +1,7 @@
 import { promisify } from 'util';
 import { exec as execSync } from 'child_process';
 import log from 'electron-log/main';
-import { utilityProcess } from 'electron';
+import { shell, utilityProcess } from 'electron';
 import treeKill from 'tree-kill';
 import { future } from 'fp-future';
 import isRunning from 'is-running';
@@ -329,8 +329,10 @@ export async function dclDeepLink(deepLink: string) {
       await exec('reg query "HKEY_CLASSES_ROOT\\decentraland"');
     }
 
-    const command = process.platform === 'win32' ? 'start' : 'open';
-    await exec(`${command} decentraland://"${deepLink}"`);
+    // `deepLink` is assembled from renderer-supplied preview options. `openExternal` hands
+    // the URL straight to the OS protocol handler with no shell in between, which is why
+    // this must not go back to being an `exec` string.
+    await shell.openExternal(`decentraland://${deepLink}`);
   } catch (e) {
     throw new ClientError('CLIENT_NOT_INSTALLED', CLIENT_NOT_INSTALLED_ERROR);
   }

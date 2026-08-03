@@ -2,19 +2,24 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { existsSync } from 'node:fs';
 
 import { DEFAULT_DEPENDENCY_UPDATE_STRATEGY } from '/shared/types/settings';
-import type { Config } from '/shared/types/config';
+import type { Config, EditorConfig } from '/shared/types/config';
 
 vi.mock('node:fs', () => ({ existsSync: vi.fn() }));
-vi.mock('electron-log/main', () => ({ default: { info: vi.fn(), error: vi.fn() } }));
+vi.mock('electron-log/main', () => ({ default: { info: vi.fn(), warn: vi.fn(), error: vi.fn() } }));
 vi.mock('../src/modules/electron', () => ({ getUserDataPath: vi.fn(() => '/user/data') }));
 vi.mock('../src/modules/migrations', () => ({ waitForMigrations: vi.fn(async () => undefined) }));
 
 let storedConfig: Partial<Config>;
 const storage = {
+  get: vi.fn(async (key: keyof Config) => storedConfig[key]),
   getAll: vi.fn(async () => storedConfig),
+  set: vi.fn(async (key: string, value: unknown) => {
+    (storedConfig as Record<string, unknown>)[key] = value;
+  }),
   setAll: vi.fn(async (config: Config) => {
     storedConfig = config;
   }),
+  has: vi.fn(async (key: string) => key in storedConfig),
 };
 
 vi.mock('/shared/types/storage', () => ({
@@ -103,6 +108,86 @@ describe('getConfig', () => {
       const config = await getConfig();
 
       expect(config.settings.optimizedAssetsByPath).toEqual({ '/projects/alive': true });
+    });
+  });
+});
+
+describe('writeConfig', () => {
+  const DISCOVERED_EDITOR: EditorConfig = {
+    name: 'VSCode',
+    // What editor discovery actually stores on macOS: the inner Mach-O, not the `.app`.
+    path: '/Applications/Visual Studio Code.app/Contents/MacOS/Electron',
+    isDefault: true,
+    hidden: false,
+  };
+
+  /**
+   * Loads a fresh module and lets it merge defaults into the store, so a test can seed
+   * `storedConfig` afterwards and still be reading the shape the app would have.
+   */
+  async function load() {
+    const module = await import('../src/modules/config');
+    await module.getConfig();
+    return module;
+  }
+
+  beforeEach(() => {
+    vi.resetModules();
+    vi.clearAllMocks();
+    storedConfig = {};
+    vi.mocked(existsSync).mockReturnValue(true);
+  });
+
+  // `editors[].path` is the executable `code.open` hands to `execFile`, and the list is
+  // written only by editor discovery and the add/remove/set-default paths in main.
+  // `writeConfig` is the renderer's read-modify-write channel for settings, so it reads
+  // back what is stored rather than accepting the field.
+  describe('when the submitted config carries a different editor list', () => {
+    it('should keep the stored editors and ignore the submitted ones', async () => {
+      const { getConfig, writeConfig } = await load();
+      storedConfig.editors = [DISCOVERED_EDITOR];
+
+      const stored = await getConfig();
+      await writeConfig({
+        ...stored,
+        editors: [
+          {
+            name: 'Submitted',
+            path: '/usr/local/bin/other-editor',
+            isDefault: true,
+            hidden: false,
+          },
+        ],
+      } as Config);
+
+      expect((await getConfig()).editors).toEqual([DISCOVERED_EDITOR]);
+    });
+
+    it('should not let the editor list be cleared', async () => {
+      const { getConfig, writeConfig } = await load();
+      storedConfig.editors = [DISCOVERED_EDITOR];
+
+      const stored = await getConfig();
+      await writeConfig({ ...stored, editors: [] } as Config);
+
+      expect((await getConfig()).editors).toEqual([DISCOVERED_EDITOR]);
+    });
+  });
+
+  describe('when the submitted config changes ordinary settings', () => {
+    it('should persist them', async () => {
+      const { getConfig, writeConfig } = await load();
+      storedConfig.editors = [DISCOVERED_EDITOR];
+
+      const stored = await getConfig();
+      await writeConfig({
+        ...stored,
+        settings: { ...stored.settings, scenesPath: '/somewhere/else' },
+      });
+
+      const written = await getConfig();
+      expect(written.settings.scenesPath).toBe('/somewhere/else');
+      expect(written.editors).toEqual([DISCOVERED_EDITOR]);
     });
   });
 });
