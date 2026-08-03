@@ -65,7 +65,7 @@ export class SceneRpcServer extends RPC<Method, Params, Result> {
         }
       }
 
-      await fs.openPath(resolvedPath);
+      await fs.showItemInFolder(resolvedPath);
     });
 
     this.handle('push_notification', async ({ notification }) => {
