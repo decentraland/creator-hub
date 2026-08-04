@@ -1,5 +1,3 @@
-import { MessageTransport } from '@dcl/mini-rpc';
-
 import { type Project } from '/shared/types/projects';
 import { hasCustomCode } from '/shared/scene-parser';
 
@@ -8,6 +6,7 @@ import { fs, custom, workspace } from '#preload';
 import { SceneRpcClient } from './scene/client';
 import { SceneRpcServer } from './scene/server';
 import { type Method, type Params, type Result, StorageRPC } from './storage';
+import { AuthenticatedMessageTransport, getIframeOrigin } from './transport';
 
 export type RPCInfo = {
   iframe: HTMLIFrameElement;
@@ -42,7 +41,10 @@ export const getPath = async (filePath: string, project: Project) => {
 };
 
 export function initRpc(iframe: HTMLIFrameElement, project: Project, cbs: Partial<Callbacks> = {}) {
-  const transport = new MessageTransport(window, iframe.contentWindow!);
+  const transport = new AuthenticatedMessageTransport(
+    iframe.contentWindow!,
+    getIframeOrigin(iframe),
+  );
   const sceneClient = new SceneRpcClient(transport);
   const sceneServer = new SceneRpcServer(transport, project);
   const params = { iframe, project, scene: sceneClient };
@@ -69,6 +71,9 @@ export function initRpc(iframe: HTMLIFrameElement, project: Project, cbs: Partia
       storage.dispose();
       sceneServer.dispose();
       sceneClient.dispose();
+      // The iframe is recreated on every scene open, so a transport left listening on
+      // `window` outlives the frame it was bound to and accumulates one per load.
+      transport.dispose();
     },
   };
 }
@@ -82,10 +87,23 @@ export async function takeScreenshot(iframe: HTMLIFrameElement, sceneRPC?: Scene
   //
   // leaving the next line just for reference:
   // await Promise.all([camera.setPosition(x, y, z), camera.setTarget(x, y, z)]);
-  const _sceneRPC =
-    sceneRPC ?? new SceneRpcClient(new MessageTransport(window, iframe.contentWindow!));
-  // SceneRpcClient.request is timeout-bounded, so this rejects rather than hanging
-  // when no renderer answers (e.g. under Bevy). Callers treat that as "no thumbnail".
-  const screenshot = await _sceneRPC.takeScreenshot(+iframe.width, +iframe.height);
-  return screenshot;
+  if (sceneRPC) {
+    // SceneRpcClient.request is timeout-bounded, so this rejects rather than hanging
+    // when no renderer answers (e.g. under Bevy). Callers treat that as "no thumbnail".
+    return sceneRPC.takeScreenshot(+iframe.width, +iframe.height);
+  }
+
+  // Owned here, so it has to be closed here: every thumbnail regenerated without a caller
+  // supplied client would otherwise leave another `message` listener on `window`.
+  const transport = new AuthenticatedMessageTransport(
+    iframe.contentWindow!,
+    getIframeOrigin(iframe),
+  );
+  const client = new SceneRpcClient(transport);
+  try {
+    return await client.takeScreenshot(+iframe.width, +iframe.height);
+  } finally {
+    client.dispose();
+    transport.dispose();
+  }
 }
