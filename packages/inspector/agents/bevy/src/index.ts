@@ -19,6 +19,7 @@ import {
   setupGizmo,
   setSelectedEntity,
   setSceneOffset,
+  setEditingEnabled,
 } from './gizmo';
 import { getDefaultSpawnWorld, setSpawnAreas } from './spawn-areas';
 
@@ -143,6 +144,12 @@ export function main(): void {
     // engine window and sends the held state here.
     if (msg.kind === 'set-vertical-input') {
       setVerticalInput(msg.up, msg.down);
+      return;
+    }
+    // Enable/disable viewport editing (click-to-pick + gizmo grab). Disabled lets
+    // clicks reach the running scene so the user can test mechanics (#1458).
+    if (msg.kind === 'set-editing-enabled') {
+      setEditingEnabled(msg.enabled);
       return;
     }
   });

@@ -186,6 +186,8 @@ export function registerBevyRenderer(): void {
         disconnectInputFocus = createInputFocusBridge({
           engineWindow: engineWindow as unknown as Window,
           iframe: engine.iframe,
+          // In Interact mode, let bare editor-shortcut keys reach the scene (#1458).
+          isEditingEnabled: () => bevy.interaction.isEditingEnabled(),
         });
 
         // E/Q vertical fly movement: no SDK InputAction is bound to Q, so the
@@ -194,6 +196,8 @@ export function registerBevyRenderer(): void {
         disconnectVertical = createVerticalInputBridge({
           engineWindow: engineWindow as unknown as Window,
           onChange: (up, down) => cameraBridge.setVertical(up, down),
+          // In Interact mode, don't capture E/Q — the scene reads them (#1458).
+          isEditingEnabled: () => bevy.interaction.isEditingEnabled(),
         });
       };
 
@@ -289,6 +293,9 @@ export function registerBevyRenderer(): void {
       bevy.setFocusPoster(position => cameraBridge.focus(position));
       bevy.setResetPoster(position => cameraBridge.reset(position));
       bevy.setZoomPoster(delta => cameraBridge.zoom(delta));
+      // "Interact" toggle (#1458): forward editing-enabled to the agent so it stops
+      // intercepting viewport clicks for pick/gizmo — clicks reach the running scene.
+      bevy.setEditingEnabledPoster(enabled => cameraBridge.setEditingEnabled(enabled));
 
       // Scene run/freeze: the toolbar toggle posts the intent to the agent, which
       // runs /freeze_scene or /unfreeze_scene on the pinned scene. Default frozen

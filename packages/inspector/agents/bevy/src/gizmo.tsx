@@ -396,6 +396,15 @@ let drag: DragState | null = null;
 // A pointer-down sets this; the next raycast result decides drag-vs-pick.
 let grabPending = false;
 let pendingModifiers = { shift: false, ctrl: false };
+// Viewport EDITING: when false, a pointer-down does NOT pick or grab, so the click
+// reaches the running scene instead (test a mechanic, e.g. a button — #1458). The
+// inspector's "Interact" toggle drives this via set-editing-enabled.
+let editingEnabled = true;
+
+/** Enable/disable viewport editing (click-to-pick + gizmo grab). See #1458. */
+export function setEditingEnabled(enabled: boolean): void {
+  editingEnabled = enabled;
+}
 // The entity's live position during a drag (committed on release).
 let dragPos: Vector3 | null = null;
 
@@ -1246,8 +1255,9 @@ function gizmoSystemInner(): void {
   // On pointer-down: FIRST try to grab a gizmo axis analytically (ray-vs-axis-
   // segment) — the engine's collider raycast is unreliable for these tiny,
   // screen-scaled handles (it lands offset, camera-dependently). If no axis is
-  // grabbed, fall through to an engine raycast for entity picking.
-  if (drag === null && !grabPending && down) {
+  // grabbed, fall through to an engine raycast for entity picking. Skipped entirely
+  // when editing is disabled (#1458) so the click reaches the running scene.
+  if (editingEnabled && drag === null && !grabPending && down) {
     const ray = pointerRay();
     if (ray !== null && picker !== null) {
       const grabbedAxis = pickHandleAtRay(ray);

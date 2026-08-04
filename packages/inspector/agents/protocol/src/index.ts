@@ -255,7 +255,14 @@ export type PageToScene =
   // here; the agent's fly camera adds it to its per-frame move. `up`/`down` are the
   // current held state of each key (keydown → true, keyup → false); both may be
   // true (net zero) or false (no vertical). Ignored outside free-camera mode.
-  | { kind: 'set-vertical-input'; up: boolean; down: boolean };
+  | { kind: 'set-vertical-input'; up: boolean; down: boolean }
+  // Enable (`true`, default) or disable (`false`) viewport EDITING — the agent's
+  // click-to-pick + gizmo grab. Disabled lets a viewport click reach the running
+  // scene instead (so a button opens its door, etc.) rather than selecting/moving
+  // the entity (#1458). The inspector's "Interact" toolbar toggle sends this; scene
+  // pointer events are delivered by the engine regardless, so this only turns the
+  // agent's editing interception off.
+  | { kind: 'set-editing-enabled'; enabled: boolean };
 
 /** Every message is wrapped so a peer ignores its own posts / the wrong direction. */
 export interface BusEnvelope {
