@@ -77,6 +77,47 @@
   height: 34px;
 }
 
+.Editor .Header .actions .preview-control {
+  display: inline-flex;
+}
+
+/* while optimizing, the Preview button and its dropdown look disabled (same opacity:0.5 the
+   app uses for .Mui-disabled) and are inert; only the inline cancel (✕) stays clickable */
+.Editor .Header .actions .preview-control.optimizing .MuiButton-root {
+  pointer-events: none;
+  opacity: 0.5;
+}
+
+/* hide the dropdown arrow while optimizing and round the main button's now-exposed right
+   edge (the grouped button squares it off to butt against the dropdown) */
+.Editor .Header .actions .preview-control.optimizing .extra-button {
+  display: none;
+}
+
+.Editor
+  .Header
+  .actions
+  .preview-control.optimizing
+  .Button.MuiButton-root.MuiButtonGroup-grouped:not(.extra-button) {
+  border-top-right-radius: var(--mui-shape-borderRadius);
+  border-bottom-right-radius: var(--mui-shape-borderRadius);
+  border-right: none;
+}
+
+.Editor .Header .actions .optimizing-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* the cancel button must stay interactive (and keyboard-focusable) inside the
+   pointer-events:none optimizing group; compact padding keeps the button-group height */
+.Editor .Header .actions .optimizing-label .cancel-optimizing {
+  pointer-events: auto;
+  padding: 2px;
+  color: inherit;
+}
+
 .Editor .inspector {
   flex: 1 0 auto;
   border: none;
@@ -99,6 +140,31 @@
 
 .Editor .loading span {
   margin-right: 15px;
+}
+
+.Editor .loading-error-title {
+  font-size: 24px;
+  margin-bottom: 12px;
+}
+
+.Editor .loading-error-message {
+  font-size: 14px;
+  max-width: 640px;
+  max-height: 220px;
+  overflow: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+  text-align: left;
+  font-family: monospace;
+  color: var(--dcl-error, #ff6b6b);
+  background: rgba(0, 0, 0, 0.25);
+  border-radius: 6px;
+  padding: 12px 16px;
+  margin-bottom: 20px;
+}
+
+.Editor .loading-error .Row {
+  gap: 12px;
 }
 
 .PreviewOptions {

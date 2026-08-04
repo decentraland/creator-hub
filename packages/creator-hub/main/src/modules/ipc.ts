@@ -2,6 +2,7 @@ import { handle, handleSync } from './handle';
 import * as electron from './electron';
 import * as updater from './updater';
 import * as inspector from './inspector';
+import * as bevyRealm from './bevy-realm';
 import * as cli from './cli';
 import * as bin from './bin';
 import * as code from './code';
@@ -42,11 +43,17 @@ export function initIpc({ beforeQuitCleanup }: InitIpcOptions) {
   handle('inspector.attachSceneDebugger', (_event, path) => inspector.attachSceneDebugger(path));
   handle('inspector.detachSceneDebugger', (_event, path) => inspector.detachSceneDebugger(path));
 
+  // bevy realm (headless sdk-commands server feeding the embedded Bevy editor engine)
+  handle('bevyRealm.start', (_event, path) => bevyRealm.start(path));
+  handle('bevyRealm.kill', (_event, path) => bevyRealm.kill(path));
+
   // cli
   handle('cli.init', (_event, path, repo) => cli.init(path, repo));
-  handle('cli.start', (_event, path, opts) => cli.start(path, opts));
+  handle('cli.start', (_event, path, opts, mobile) => cli.start(path, { ...opts, mobile }));
   handle('cli.deploy', (_event, opts) => cli.deploy(opts));
   handle('cli.killPreview', (_event, path) => cli.killPreview(path));
+  handle('cli.cancelPreview', (_event, path) => cli.cancelPreview(path));
+  handle('cli.supportsAssetBundles', (_event, path) => cli.supportsAssetBundles(path));
   handle('cli.getMobilePreview', (_event, path) => cli.getMobilePreview(path));
 
   // mobile debug session

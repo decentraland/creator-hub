@@ -39,6 +39,7 @@ import type { IPlayersHelper } from '../types';
 import { isPreview } from './fetch-utils';
 import type { SceneAdmin } from './ModerationControl';
 import { getVideoPlayers } from './VideoControl/utils';
+import { clearInterval, setInterval } from './utils';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -102,6 +103,9 @@ export function initAdminMessageBus(
   const authoritativeVideo = new Map<Entity, VideoState>();
   let authoritativeAnnouncement: AnnouncementState | null = null;
   let adminHasActed = false;
+  // True once we've applied authoritative state from a *remote* admin. Gates the
+  // late-joiner REQUEST_STATE retry below (see the retry block for why).
+  let receivedRemoteState = false;
 
   function isAdminWallet(sender: string): boolean {
     if (isPreview()) return true;
@@ -246,7 +250,12 @@ export function initAdminMessageBus(
     emitMessage(MSG.SYNC_STATE, { video, announcement });
   }
 
-  onAdminMessage(MSG.SYNC_STATE, (payload: SyncStatePayload, _sender) => {
+  onAdminMessage(MSG.SYNC_STATE, (payload: SyncStatePayload, sender) => {
+    // Only a reply that carries video state stops the late-joiner retry (below).
+    // An announcement-only SYNC_STATE (video: []) is a valid reply but doesn't
+    // deliver the video src the revert system would otherwise clobber, so it must
+    // not cancel the retry — same reasoning as not keying on adminHasActed.
+    if (sender !== 'self' && payload.video.length > 0) receivedRemoteState = true;
     for (const vs of payload.video) {
       const entity = vs.entity as Entity;
       authoritativeVideo.set(entity, {
@@ -289,8 +298,37 @@ export function initAdminMessageBus(
     onRefetchAdmins?.();
   });
 
-  // Request state from any existing participant that has admin state
+  // Request state from any existing participant that has admin state.
+  //
+  // REQUEST_STATE and its SYNC_STATE reply are best-effort comms and can be
+  // dropped. A lost handshake is NOT benign: the revert system below pins every
+  // screen to defaultURL, so a late joiner that misses the reply stays stuck on
+  // the default video even though the real cast src arrives over CRDT (it gets
+  // reverted every frame). So retry until a remote SYNC_STATE reply lands, bounded
+  // by MAX_REQUEST_ATTEMPTS. This only recovers state that predates the join —
+  // live changes after joining arrive via SET_VIDEO regardless. The stop signal is
+  // receivedRemoteState specifically (a SYNC_STATE from another participant that
+  // carries video state), not adminHasActed and not an announcement-only reply:
+  // either would stop the retry without ever delivering the video state we're
+  // still missing.
+  const REQUEST_RETRY_INTERVAL_MS = 1000;
+  const MAX_REQUEST_ATTEMPTS = 10;
+  let requestAttempts = 1;
+
   emitMessage(MSG.REQUEST_STATE, {});
+
+  const requestStateRetry = setInterval(
+    engine,
+    () => {
+      if (receivedRemoteState || requestAttempts >= MAX_REQUEST_ATTEMPTS) {
+        clearInterval(engine, requestStateRetry);
+        return;
+      }
+      requestAttempts += 1;
+      emitMessage(MSG.REQUEST_STATE, {});
+    },
+    REQUEST_RETRY_INTERVAL_MS,
+  );
 
   // ── 5. Revert system ───────────────────────────────────────────────────────
   //

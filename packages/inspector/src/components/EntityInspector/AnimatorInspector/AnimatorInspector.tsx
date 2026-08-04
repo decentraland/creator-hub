@@ -18,7 +18,7 @@ import {
   isValidSpeed,
   isValidWeight,
   initializeAnimatorComponent,
-  mapAnimationGroupsToStates,
+  mapAnimationsToStates,
 } from './utils';
 import type { Props } from './types';
 
@@ -27,7 +27,6 @@ type ChangeEvt = React.ChangeEvent<HTMLInputElement>;
 export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) => {
   const { Animator, GltfContainer } = sdk.components;
 
-  const entity = sdk.sceneContext.getEntityOrNull(entityId);
   const hasAnimator = useHasComponent(entityId, Animator);
   const [componentValue, setComponentValue, isComponentEqual] = useComponentValue<PBAnimator>(
     entityId,
@@ -40,15 +39,15 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
   );
 
   useEffect(() => {
-    if (!entity || !gltfValue || hasAnimator) return;
+    if (!gltfValue || hasAnimator) return;
 
     const checkAndInitializeAnimator = async () => {
       try {
-        const { animationGroups } = await entity.onGltfContainerLoaded();
+        const animations = await sdk.renderer.getEntityAnimations(entityId);
 
         // only add Animator component if there are actual animations
-        if (animationGroups.length > 0) {
-          await initializeAnimatorComponent(sdk, entityId, animationGroups);
+        if (animations.length > 0) {
+          await initializeAnimatorComponent(sdk, entityId, animations);
         }
       } catch (error) {
         // eslint-disable-next-line no-console
@@ -57,20 +56,16 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
     };
 
     void checkAndInitializeAnimator();
-  }, [entity, gltfValue, hasAnimator]);
+  }, [sdk, entityId, gltfValue, hasAnimator]);
 
   useEffect(() => {
-    if (!entity || !gltfValue || !hasAnimator) return;
+    if (!gltfValue || !hasAnimator) return;
 
     const loadAnimations = async () => {
       try {
-        const { animationGroups } = await entity.onGltfContainerLoaded();
-        if (
-          animationGroups.length &&
-          (!states.length || states[0].clip !== animationGroups[0].name)
-        ) {
-          const newStates = mapAnimationGroupsToStates(animationGroups);
-          setStates(newStates);
+        const animations = await sdk.renderer.getEntityAnimations(entityId);
+        if (animations.length && (!states.length || states[0].clip !== animations[0].name)) {
+          setStates(mapAnimationsToStates(animations));
         }
       } catch (error) {
         // eslint-disable-next-line no-console
@@ -79,7 +74,7 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
     };
 
     void loadAnimations();
-  }, [entity, gltfValue, hasAnimator, states]);
+  }, [sdk, entityId, gltfValue, hasAnimator, states]);
 
   useEffect(() => {
     if (isComponentEqual({ states })) {

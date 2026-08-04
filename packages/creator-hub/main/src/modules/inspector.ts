@@ -1,3 +1,4 @@
+import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { app } from 'electron';
 import { createServer } from 'http-server';
@@ -52,12 +53,60 @@ export async function start() {
     inspectorPath = resolve(app.getAppPath(), 'node_modules', '@dcl', 'inspector', 'public');
   }
 
-  inspectorServer = createServer({ root: inspectorPath });
+  const origin = `localhost:${port}`;
+
+  inspectorServer = createServer({
+    root: inspectorPath,
+    // Cross-origin isolation headers. The Bevy engine (served same-origin from the
+    // inspector's public/bevy-engine) needs SharedArrayBuffer, which browsers only
+    // grant to a cross-origin-isolated context. These mirror what the inspector's
+    // dev build proxy sets (build.js) and what the engine's own service worker
+    // targets — COEP is `credentialless` (NOT `require-corp`) so the engine's own
+    // subresource loads aren't blocked. Harmless for the Babylon renderer, which
+    // doesn't rely on them.
+    headers: {
+      'Cross-Origin-Opener-Policy': 'same-origin',
+      'Cross-Origin-Embedder-Policy': 'credentialless',
+      'Cross-Origin-Resource-Policy': 'cross-origin',
+    },
+    before: [serveBevyAgentAbout(inspectorPath, origin)],
+  });
   inspectorServer.listen(port, () => {
     log.info(`Inspector running at http://localhost:${port}`);
   });
 
   return port;
+}
+
+// The Bevy editor-agent scene ships as a static realm at public/bevy-agent
+// (exported by the inspector build's copy-bevy-agent). Its realm manifest
+// (`bevy-agent/about`) bakes a `__ORIGIN__` placeholder into the scene's baseUrl,
+// because the server's port is only known at launch. Rewrite that one file's
+// placeholder to this server's origin on the fly; every other file is
+// content-addressed and served as-is. The agent realm is reached at
+// `/bevy-agent/bevy-agent/about` (the export nests `<realmName>/about` under the
+// served `/bevy-agent/` dir).
+const AGENT_ABOUT_PATH = '/bevy-agent/bevy-agent/about';
+
+function serveBevyAgentAbout(inspectorPath: string, origin: string) {
+  const aboutFile = resolve(inspectorPath, 'bevy-agent', 'bevy-agent', 'about');
+  return (req: any, res: any) => {
+    const url = (req.url || '').split('?')[0];
+    if (url !== AGENT_ABOUT_PATH) {
+      res.emit('next');
+      return;
+    }
+    readFile(aboutFile, 'utf8')
+      .then(contents => {
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(contents.replaceAll('__ORIGIN__', origin));
+      })
+      .catch(() => {
+        // Not exported (e.g. Bevy never built) — fall through to the static handler,
+        // which will 404 like any missing file.
+        res.emit('next');
+      });
+  };
 }
 
 function getDebuggerChannel(path: string) {

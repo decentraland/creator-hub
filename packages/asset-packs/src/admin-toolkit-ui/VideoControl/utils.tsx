@@ -2,7 +2,7 @@ import type { DeepReadonlyObject, Entity, IEngine, PBVideoPlayer } from '@dcl/ec
 import type { AdminTools } from '../../definitions';
 import { getComponents, LIVEKIT_STREAM_SRC, VIDEO_URL_TYPE } from '../../definitions';
 import { getExplorerComponents } from '../../components';
-import { state } from '../index';
+import { state } from '../store';
 import { getAdminMessageBus } from '../admin-message-bus';
 import { DEFAULT_VOLUME } from '.';
 
@@ -11,6 +11,7 @@ interface VideoPlayerControls {
   pause(): void;
   restart(): void;
   setVolume(volume: number): void;
+  setVolumeExact(volume: number): void;
   setSource(url: string): void;
   setLoop(loop: boolean): void;
 }
@@ -80,6 +81,11 @@ export function createVideoPlayerControls(entity: Entity, engine: IEngine): Vide
       }
       getAdminMessageBus().emitSetVideo(entity, { volume: newVolume, position: undefined });
     },
+    setVolumeExact: volume => {
+      if (videoControl?.disableVideoPlayersSound) return;
+      const clamped = Math.max(0, Math.min(1, volume));
+      getAdminMessageBus().emitSetVideo(entity, { volume: clamped, position: undefined });
+    },
     setSource: url => {
       getAdminMessageBus().emitSetVideo(entity, { src: url, playing: true });
     },
@@ -105,8 +111,24 @@ export function useSelectedVideoPlayer(
   return videoPlayer ? [entity, videoPlayer] : null;
 }
 
+export const CAST_SRC_PREFIX = 'livekit-video://';
+
+// Index of the first video player currently showing the DCL Cast stream, or
+// undefined if none. Used to point the panel at the screen that is actually
+// casting when auto-opening on a presentation start.
+export function findActiveCastScreenIndex(engine: IEngine): number | undefined {
+  const { VideoPlayer } = getExplorerComponents(engine);
+  const videoPlayers = getVideoPlayers(engine);
+  for (let i = 0; i < videoPlayers.length; i++) {
+    const entity = videoPlayers[i].entity as Entity;
+    const video = VideoPlayer.getOrNull(entity);
+    if (video?.src?.startsWith(CAST_SRC_PREFIX)) return i;
+  }
+  return undefined;
+}
+
 export function isDclCast(url: string) {
-  return url.startsWith('livekit-video://') && state.videoControl.selectedStream === 'dcl-cast';
+  return url.startsWith(CAST_SRC_PREFIX) && state.videoControl.selectedStream === 'dcl-cast';
 }
 
 export function isLiveStream(url: string): boolean {

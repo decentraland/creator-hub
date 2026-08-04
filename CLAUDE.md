@@ -173,6 +173,16 @@ post-`Composite.instance` in `add-child.ts` (`remapSyncComponentIds`, beside the
 `{self}` id/trigger remap). When adding a placeholder-bearing field — or debugging
 a `Cannot convert … to a BigInt` serialize crash — ensure both paths resolve it.
 
+### `~system/CommsApi` `consumeMessages` returns a bare array
+
+`consumeMessages({ topic })` resolves to a **bare array** of `{ sender, data }`, not
+the `{ messages: [...] }` wrapper its TypeScript type implies (the explorer's
+`CommsApiWrap.ConsumeMessages` serializes a raw JSON array). Destructuring
+`const { messages } = await consumeMessages(...)` yields `undefined` and throws on
+`.length` — and inside a `try/catch` that silently drops every message with no error.
+Read it as an array, tolerating both shapes:
+`Array.isArray(res) ? res : (res?.messages ?? [])`.
+
 ## Skills
 
 Skills live in `.ai/skills/*/SKILL.md`. Read the relevant `SKILL.md` when a task matches a skill's domain.

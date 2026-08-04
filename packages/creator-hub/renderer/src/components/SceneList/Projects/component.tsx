@@ -13,6 +13,7 @@ import type { Option } from '/@/components/Dropdown/types';
 
 import { DeleteProject } from '../../Modals/DeleteProject';
 import { DeploymentHistory } from '../../Modals/DeploymentHistory';
+import { RenameFolder } from '../../Modals/RenameFolder';
 import { ProjectCard } from '../../ProjectCard';
 
 import type { Props } from './types';
@@ -40,9 +41,10 @@ export function Projects({ projects }: Props) {
 
 function Project({ project }: { project: Project }) {
   const { getDeployment, getDeploymentHistory } = useDeploy();
-  const { runProject, duplicateProject, deleteProject, openFolder } = useWorkspace();
+  const { runProject, duplicateProject, deleteProject, openFolder, renameProject } = useWorkspace();
   const [openDeleteModal, setOpenDeleteModal] = useState(false);
   const [openHistoryModal, setOpenHistoryModal] = useState(false);
+  const [openRenameModal, setOpenRenameModal] = useState(false);
 
   const deployment = getDeployment(project.path);
   const history = getDeploymentHistory(project.path);
@@ -60,6 +62,19 @@ function Project({ project }: { project: Project }) {
   const handleOpenFolder = useCallback(() => {
     openFolder(project.path);
   }, [project, openFolder]);
+
+  const handleOpenRenameModal = useCallback(() => {
+    setOpenRenameModal(true);
+  }, []);
+
+  const handleCloseRenameModal = useCallback(() => {
+    setOpenRenameModal(false);
+  }, []);
+
+  const handleRenameProject = useCallback(
+    (_p: Project, newName: string) => renameProject(project, newName),
+    [project, renameProject],
+  );
 
   const handleOpenDeleteModal = useCallback(() => {
     setOpenDeleteModal(true);
@@ -95,6 +110,10 @@ function Project({ project }: { project: Project }) {
         text: t('scene_list.project_actions.open_folder'),
         handler: handleOpenFolder,
       },
+      {
+        text: t('scene_list.project_actions.rename_folder'),
+        handler: handleOpenRenameModal,
+      },
     ];
 
     options.push({
@@ -113,6 +132,7 @@ function Project({ project }: { project: Project }) {
     hasDeployments,
     handleDuplicateProject,
     handleOpenFolder,
+    handleOpenRenameModal,
     handleOpenHistoryModal,
     handleOpenDeleteModal,
   ]);
@@ -150,6 +170,12 @@ function Project({ project }: { project: Project }) {
         open={openHistoryModal}
         projectPath={project.path}
         onClose={handleCloseHistoryModal}
+      />
+      <RenameFolder
+        open={openRenameModal}
+        project={project}
+        onClose={handleCloseRenameModal}
+        onSubmit={handleRenameProject}
       />
     </>
   );

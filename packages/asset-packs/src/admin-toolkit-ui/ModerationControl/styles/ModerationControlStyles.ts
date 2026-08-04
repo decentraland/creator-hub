@@ -1,5 +1,5 @@
-import { Color4 } from '@dcl/ecs-math';
 import type { UiTransformProps } from '@dcl/react-ecs';
+import { COLORS } from '../../theme';
 
 export const getModerationControlStyles = (): Record<string, UiTransformProps> => ({
   container: {
@@ -24,10 +24,10 @@ export const getModerationControlStyles = (): Record<string, UiTransformProps> =
     width: '100%',
     height: 1,
     borderWidth: 1,
-    borderColor: Color4.fromHexString('#43404A'),
+    borderColor: COLORS.divider,
   },
 });
 
 export const getModerationControlColors = () => ({
-  white: Color4.White(),
+  white: COLORS.textPrimary,
 });
