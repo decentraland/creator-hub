@@ -22,6 +22,7 @@ import {
   setEditingEnabled,
 } from './gizmo';
 import { getDefaultSpawnWorld, setSpawnAreas } from './spawn-areas';
+import { setBrokenAssets } from './broken-assets';
 
 /**
  * Super-user editor agent for the inspector's Bevy renderer.
@@ -127,6 +128,10 @@ export function main(): void {
     // Draw the scene's spawn areas (translucent boxes; #1374).
     if (msg.kind === 'set-spawn-areas') {
       setSpawnAreas(msg.areas);
+      return;
+    }
+    if (msg.kind === 'set-broken-assets') {
+      setBrokenAssets(msg.assets);
       return;
     }
     // Freeze (static) or run the inspected scene (the toolbar's run/freeze toggle).

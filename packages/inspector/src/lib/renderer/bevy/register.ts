@@ -1,5 +1,7 @@
 import { getConfig } from '../../logic/config';
 import { getSceneClient } from '../../rpc/scene';
+import { store } from '../../../redux/store';
+import { selectAssetCatalog } from '../../../redux/app';
 import { snapManager } from '../../babylon/decentraland/snap-manager';
 import { connectReverseChannel } from '../reverse-channel';
 import { registerRenderer } from '../plugin';
@@ -20,6 +22,7 @@ import { createSceneRunBridge } from './scene-run-bridge';
 import { createSelectionBridge } from './selection-bridge';
 import { createSpawnAreasBridge } from './spawn-areas-bridge';
 import { createSpawnGizmoBridge } from './spawn-gizmo-bridge';
+import { createBrokenAssetsBridge } from './broken-assets-bridge';
 
 /**
  * Bevy-specific escape hatch exposed on {@link MountedRenderer.internals} — the
@@ -479,6 +482,31 @@ export function registerBevyRenderer(): void {
         },
       });
 
+      // Broken-asset markers (#1465): draw a placeholder for each entity whose
+      // GltfContainer src is invalid (the engine renders nothing, so a deselected
+      // broken asset is otherwise invisible). Validity mirrors the Inspector's Path
+      // "Invalid" flag (the asset catalog in redux); re-post when the catalog changes
+      // so a restored/removed file updates the markers live.
+      const disconnectBrokenAssets = createBrokenAssetsBridge({
+        context: bevy.context,
+        assets: {
+          isValidSrc: src => {
+            const catalog = selectAssetCatalog(store.getState());
+            return !!catalog?.assets.some(asset => asset.path === src);
+          },
+          onChange: cb => {
+            let prev = selectAssetCatalog(store.getState());
+            return store.subscribe(() => {
+              const next = selectAssetCatalog(store.getState());
+              if (next !== prev) {
+                prev = next;
+                cb();
+              }
+            });
+          },
+        },
+      });
+
       const internals: BevyInternals = {
         takeScreenshot: () => bevy.takeScreenshot(),
       };
@@ -493,6 +521,7 @@ export function registerBevyRenderer(): void {
           disconnectPreview();
           spawnGizmo.disconnect();
           disconnectSpawnAreas();
+          disconnectBrokenAssets();
           sceneRunBridge.disconnect();
           cameraBridge.disconnect();
           dropPoint.disconnect();

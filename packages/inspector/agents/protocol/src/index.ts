@@ -66,6 +66,21 @@ export interface SpawnArea {
 }
 
 /**
+ * An entity whose GltfContainer references a missing/invalid asset (#1465). The
+ * inspector flags the src as "Invalid" but the engine renders nothing, leaving no
+ * viewport indication when the entity is deselected — so the agent draws a
+ * placeholder marker at `position` (scene-local, like SpawnArea) instead.
+ */
+export interface BrokenAsset {
+  // The inspector entity id (for dedupe/tracking; the marker is a separate agent
+  // entity).
+  entity: number;
+  // The broken entity's world position, scene-local (the agent adds the scene
+  // offset), matching how SpawnArea centers are sent.
+  position: BusVec3;
+}
+
+/**
  * agent → inspector (`to: 'page'`). Viewport interaction results:
  *  - `pick`: entity under the click (entity 0 = clean miss / deselect).
  *  - `gizmoCommit`: the committed transform(s) of a gizmo drag (position only
@@ -240,6 +255,12 @@ export type PageToScene =
   // multiple points). The inspector recomputes + resends the full set whenever the
   // scene's spawnPoints metadata changes; an empty array clears them.
   | { kind: 'set-spawn-areas'; areas: SpawnArea[] }
+  // Draw a placeholder marker for each entity whose GltfContainer asset is
+  // missing/invalid (#1465), so a broken asset is visible in the viewport even
+  // when deselected. The inspector recomputes + resends the full set whenever a
+  // GltfContainer, its transform, or the asset catalog changes; an empty array
+  // clears the markers.
+  | { kind: 'set-broken-assets'; assets: BrokenAsset[] }
   // Freeze (`frozen: true`) or run (`false`) the inspected scene. Frozen = the
   // scene stops ticking (no SDK7 systems / timers / onUpdate) so it's a static
   // subject to edit; the editor agent keeps running regardless. Editor default is
