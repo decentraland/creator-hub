@@ -34,8 +34,29 @@ describe('parseAnsi', () => {
 
     it('should combine styles from a multi-parameter sequence', () => {
       expect(parseAnsi(`${ESC}[1;4;32mok`)).toEqual([
-        { text: 'ok', bold: true, underline: true, color: '#0dbc79' },
+        { text: 'ok', fontWeight: 'bold', textDecoration: 'underline', color: '#0dbc79' },
       ]);
+    });
+
+    // These are spread into a `style` prop, so they have to be CSS property names — a
+    // `bold: true` would be dropped by the browser without any error.
+    it.each([
+      ['1', 'fontWeight', 'bold'],
+      ['3', 'fontStyle', 'italic'],
+      ['4', 'textDecoration', 'underline'],
+    ])('should map code %s to the CSS property %s', (code, property, value) => {
+      expect(parseAnsi(`${ESC}[${code}mx`)).toEqual([{ text: 'x', [property]: value }]);
+    });
+
+    it.each([
+      ['1', '22', 'fontWeight'],
+      ['3', '23', 'fontStyle'],
+      ['4', '24', 'textDecoration'],
+    ])('should let code %s be turned off by %s', (on, off, property) => {
+      const segments = parseAnsi(`${ESC}[${on}mon${ESC}[${off}moff`);
+
+      expect(segments[1]).toEqual({ text: 'off' });
+      expect(segments[1]).not.toHaveProperty(property);
     });
 
     it('should reset styles on an empty parameter list', () => {
@@ -54,7 +75,17 @@ describe('parseAnsi', () => {
     });
 
     it('should drop a truncated extended-colour sequence rather than emit an invalid colour', () => {
-      expect(parseAnsi(`${ESC}[38;2;18mx`)).toEqual([{ text: 'x', color: undefined }]);
+      const segments = parseAnsi(`${ESC}[38;2;18mx`);
+
+      expect(segments).toEqual([{ text: 'x' }]);
+      expect(segments[0]).not.toHaveProperty('color');
+    });
+
+    it('should leave a colour already in effect alone when a later sequence is truncated', () => {
+      expect(parseAnsi(`${RED}a${ESC}[38;2;18mb`)).toEqual([
+        { text: 'a', color: '#cd3131' },
+        { text: 'b', color: '#cd3131' },
+      ]);
     });
   });
 

@@ -1,3 +1,5 @@
+import type { CSSProperties } from 'react';
+
 /**
  * Minimal ANSI SGR parser for the debug console.
  *
@@ -9,16 +11,19 @@
  * is the harmless direction: an unrecognised code costs colour, nothing more.
  */
 
-export type AnsiSegment = {
-  text: string;
-  color?: string;
-  backgroundColor?: string;
-  bold?: boolean;
-  italic?: boolean;
-  underline?: boolean;
-};
+/**
+ * Derived from React's `CSSProperties` on purpose: a segment's style is spread straight into
+ * a `style` prop, and picking from the real CSS type makes a non-CSS key (`bold`) impossible
+ * to introduce — the spread is a rest object, so excess-property checking would not catch it.
+ */
+export type AnsiStyle = Pick<
+  CSSProperties,
+  'color' | 'backgroundColor' | 'fontWeight' | 'fontStyle' | 'textDecoration'
+>;
 
-type Style = Omit<AnsiSegment, 'text'>;
+export type AnsiSegment = { text: string } & AnsiStyle;
+
+type Style = AnsiStyle;
 
 // xterm's first 16 colours. Indices 0-7 are codes 30-37/40-47, 8-15 the bright 90-97/100-107.
 const BASE_COLORS = [
@@ -72,6 +77,14 @@ function rgb(r: number, g: number, b: number) {
 }
 
 /**
+ * Sets a colour only when one could be resolved, so a truncated sequence leaves the colour
+ * in effect rather than adding a key with no value.
+ */
+function assign(style: Style, key: 'color' | 'backgroundColor', value: string | undefined) {
+  if (value !== undefined) style[key] = value;
+}
+
+/**
  * Applies one SGR parameter list to `style`, mutating it.
  *
  * Returns nothing: extended forms (`38;5;n`, `38;2;r;g;b`) consume following parameters,
@@ -86,10 +99,10 @@ function applyCodes(codes: number[], style: Style) {
       const key = code === 38 ? 'color' : 'backgroundColor';
       const selector = codes[i + 1];
       if (selector === 5) {
-        style[key] = color256(codes[i + 2]);
+        assign(style, key, color256(codes[i + 2]));
         i += 2;
       } else if (selector === 2) {
-        style[key] = rgb(codes[i + 2], codes[i + 3], codes[i + 4]);
+        assign(style, key, rgb(codes[i + 2], codes[i + 3], codes[i + 4]));
         i += 4;
       }
       continue;
@@ -98,15 +111,15 @@ function applyCodes(codes: number[], style: Style) {
     if (code === 0) {
       delete style.color;
       delete style.backgroundColor;
-      delete style.bold;
-      delete style.italic;
-      delete style.underline;
-    } else if (code === 1) style.bold = true;
-    else if (code === 3) style.italic = true;
-    else if (code === 4) style.underline = true;
-    else if (code === 22) delete style.bold;
-    else if (code === 23) delete style.italic;
-    else if (code === 24) delete style.underline;
+      delete style.fontWeight;
+      delete style.fontStyle;
+      delete style.textDecoration;
+    } else if (code === 1) style.fontWeight = 'bold';
+    else if (code === 3) style.fontStyle = 'italic';
+    else if (code === 4) style.textDecoration = 'underline';
+    else if (code === 22) delete style.fontWeight;
+    else if (code === 23) delete style.fontStyle;
+    else if (code === 24) delete style.textDecoration;
     else if (code >= 30 && code <= 37) style.color = BASE_COLORS[code - 30];
     else if (code === 39) delete style.color;
     else if (code >= 40 && code <= 47) style.backgroundColor = BASE_COLORS[code - 40];
