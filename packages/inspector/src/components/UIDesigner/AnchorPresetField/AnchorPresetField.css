@@ -25,12 +25,12 @@
 }
 
 .ui-designer-anchor-cell:hover {
-  background: var(--ui-designer-accent-12);
+  background: var(--ui-designer-control-accent-21);
 }
 
 .ui-designer-anchor-cell:focus-visible {
   outline: none;
-  box-shadow: inset 0 0 0 1px var(--ui-designer-accent);
+  box-shadow: inset 0 0 0 1px var(--ui-designer-control-accent);
 }
 
 .ui-designer-anchor-dot {
@@ -41,11 +41,11 @@
 }
 
 .ui-designer-anchor-cell:hover .ui-designer-anchor-dot {
-  background: var(--ui-designer-accent);
+  background: var(--ui-designer-control-accent);
 }
 
 .ui-designer-anchor-cell.active {
-  background: var(--ui-designer-accent);
+  background: var(--ui-designer-control-accent);
 }
 
 .ui-designer-anchor-cell.active .ui-designer-anchor-dot {

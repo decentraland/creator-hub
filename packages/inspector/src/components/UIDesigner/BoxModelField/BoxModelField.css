@@ -60,8 +60,8 @@
 
 .ui-designer-bm-edge:focus-visible {
   outline: none;
-  border-color: var(--ui-designer-accent);
-  box-shadow: 0 0 0 1px var(--ui-designer-accent);
+  border-color: var(--ui-designer-control-accent);
+  box-shadow: 0 0 0 1px var(--ui-designer-control-accent);
 }
 
 .ui-designer-bm-edge:disabled {

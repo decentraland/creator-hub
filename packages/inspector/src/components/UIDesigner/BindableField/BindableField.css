@@ -34,11 +34,11 @@
 }
 
 .ui-designer-bindable-link:hover {
-  color: var(--ui-designer-accent);
+  color: var(--ui-designer-control-accent);
 }
 
 .ui-designer-bindable-link:focus-visible {
-  outline: 2px solid var(--ui-designer-accent);
+  outline: 2px solid var(--ui-designer-control-accent);
   outline-offset: 1px;
 }
 

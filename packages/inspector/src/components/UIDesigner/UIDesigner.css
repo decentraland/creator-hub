@@ -89,12 +89,12 @@
 }
 
 .ui-designer-bottom-bar .ui-designer-palette-card:hover:not(.disabled) {
-  background-color: var(--ui-designer-accent-08);
-  border-color: var(--ui-designer-accent-40);
+  background-color: var(--ui-designer-control-accent-15);
+  border-color: var(--ui-designer-control-accent-62);
 }
 
 .ui-designer-bottom-bar .ui-designer-palette-card:focus-visible {
-  outline: 2px solid var(--ui-designer-accent);
+  outline: 2px solid var(--ui-designer-control-accent);
   outline-offset: 1px;
 }
 
@@ -192,12 +192,12 @@
 }
 
 .ui-designer-rail-add:hover:not(:disabled) {
-  border-color: var(--ui-designer-accent-40);
-  color: var(--ui-designer-accent);
+  border-color: var(--ui-designer-control-accent-62);
+  color: var(--ui-designer-control-accent);
 }
 
 .ui-designer-rail-add:focus-visible {
-  outline: 2px solid var(--ui-designer-accent);
+  outline: 2px solid var(--ui-designer-control-accent);
   outline-offset: 1px;
 }
 
@@ -238,11 +238,11 @@
 
 .ui-designer-right-rail-tab.active {
   color: var(--white);
-  border-bottom-color: var(--ui-designer-accent);
+  border-bottom-color: var(--ui-designer-control-accent);
 }
 
 .ui-designer-right-rail-tab:focus-visible {
-  outline: 2px solid var(--ui-designer-accent);
+  outline: 2px solid var(--ui-designer-control-accent);
   outline-offset: -2px;
 }
 

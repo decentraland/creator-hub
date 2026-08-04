@@ -45,13 +45,13 @@
 }
 
 .ui-designer-widget-picker-row:hover {
-  background: var(--ui-designer-accent-12);
+  background: var(--ui-designer-control-accent-21);
 }
 
 .ui-designer-widget-picker-row:focus-visible {
   outline: none;
-  background: var(--ui-designer-accent-12);
-  box-shadow: inset 0 0 0 1px var(--ui-designer-accent);
+  background: var(--ui-designer-control-accent-21);
+  box-shadow: inset 0 0 0 1px var(--ui-designer-control-accent);
 }
 
 .ui-designer-widget-picker-icon {

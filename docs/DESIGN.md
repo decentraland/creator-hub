@@ -2,7 +2,7 @@
 
 The visual language for the **`@dcl/inspector`** web UI (the Babylon.js scene inspector and its panels, including the UI Designer). It is the reference for every color, spacing, focus, and motion decision in inspector `.css`/`.tsx`.
 
-**Scope.** This documents the *inspector*. The creator-hub Electron shell renders the inspector inside an `<iframe>` and uses `decentraland-ui2` (MUI) for its *own* chrome — a separate system with its own theme that cannot cross the iframe boundary. Do not import ui2 tokens here, and do not apply this file to creator-hub renderer code.
+**Scope.** This documents the _inspector_. The creator-hub Electron shell renders the inspector inside an `<iframe>` and uses `decentraland-ui2` (MUI) for its _own_ chrome — a separate system with its own theme that cannot cross the iframe boundary. Do not import ui2 tokens here, and do not apply this file to creator-hub renderer code.
 
 **Not our brand kit.** Anthropic brand assets (Poppins/Lora, orange `#d97757`, etc.) and the `brand-guidelines` skill do **not** apply to this codebase. The inspector's brand is Decentraland: pink `--primary-main #ff2d55`, the cyan UI-Designer accent, and Inter.
 
@@ -19,8 +19,9 @@ All tokens are CSS custom properties on `:root` in **`packages/inspector/src/the
 ## Palette by role
 
 ### Surfaces (backgrounds)
+
 | Token | Value | Use |
-|---|---|---|
+| --- | --- | --- |
 | `--main-bg-color` | `--vscode-editor-background` → `--background` | App/editor background |
 | `--tree-bg-color` | `--base-20` `#161518` | Panels, trees, **dropdown/popover surfaces** |
 | `--modal-content-bg-color` | `--tree-bg-color` | Modals |
@@ -28,26 +29,49 @@ All tokens are CSS custom properties on `:root` in **`packages/inspector/src/the
 | `--disabled-bg-color` | `#323036` | Disabled control fill |
 
 ### Foreground (text)
-| Token | Value | Use |
-|---|---|---|
-| `--title` | `#eeeeef` | Primary text **on dark surfaces** |
-| `--sub-text` | `#ffffffcf` | Secondary text on dark |
-| `--text-primary` | `#000000de` | Text **on light surfaces** |
+
+| Token            | Value       | Use                               |
+| ---------------- | ----------- | --------------------------------- |
+| `--title`        | `#eeeeef`   | Primary text **on dark surfaces** |
+| `--sub-text`     | `#ffffffcf` | Secondary text on dark            |
+| `--text-primary` | `#000000de` | Text **on light surfaces**        |
 
 There is no single `--text` token — pick the foreground that matches the surface. **Never rely on `color: inherit` for a control on a themed surface** (that is exactly how the white-on-white callback autocomplete happened); set an explicit foreground.
 
 ### Borders, focus & accent
+
 | Token | Value | Use |
-|---|---|---|
+| --- | --- | --- |
 | `--ui-designer-control-border` | `rgba(255,255,255,.12)` | Control borders |
 | `--ui-designer-hairline` | `rgba(255,255,255,.07)` | Subtle dividers |
 | `--border-focused` | `#127fd4` | Focus ring (VS Code blue) |
-| `--ui-designer-accent` | `rgb(80,200,255)` | UI-Designer selection/canvas cyan |
-| `--ui-designer-accent-80/-40/-12/-08/-05` | cyan @ .8/.4/.12/.08/.05 | Hover/selection fills, drop targets |
+| `--ui-designer-accent` | `rgb(80,200,255)` | **Canvas** selection cyan |
+| `--ui-designer-accent-80/-40/-12/-08/-05` | cyan @ .8/.4/.12/.08/.05 | Canvas hover/selection fills, drop targets |
+| `--ui-designer-control-accent` | `--primary-main` `#ff2d55` | **Panel** selected/active/focus |
+| `--ui-designer-control-accent-62/-21/-15` | pink @ .62/.21/.15 | Panel hover borders and fills |
+
+#### ⚠️ Two accents, and which one you want depends on what it sits on
+
+The UI Designer has **two** accent families. Picking the wrong one is a real bug, not a style preference:
+
+- **Canvas → cyan.** The canvas renders the _author's own UI_ in arbitrary colours. A selection ring in a brand colour disappears the moment they use that colour themselves — and `#ff2d55` is precisely what the palette encourages. Because the backdrop is unknowable, WCAG 1.4.11's ≥3:1 cannot be verified against it; a hue authors are unlikely to pick is the mitigation. Use for node selection/hover, resize handles, drop targets, reorder indicators.
+- **Panel → pink.** Panel chrome always sits on `--base-20` (`#161518`), a surface we control, so contrast is fixed and testable. Use for selected cells, focus rings, active tab underlines, hover borders/fills, bind affordances.
+
+**Do not copy alpha steps between the two families.** Pink's relative luminance is `0.238` against cyan's `0.502`, so the same alpha composites to a far dimmer result. Reusing cyan's `.4` for a pink hover border yielded `1.70:1` over a `1.41:1` resting border — technically a state change, visually almost none. The pink steps are therefore solved to match what each cyan step _achieved_ on this surface, and named for their true alpha (`-62`, not `-40`) so nothing lies:
+
+| Step  | Contrast on `#161518`                               | Role                         |
+| ----- | --------------------------------------------------- | ---------------------------- |
+| base  | **4.99:1** — clears ≥3:1 non-text _and_ ≥4.5:1 text | Rings, active borders, icons |
+| `-62` | 2.56:1 (vs 1.41:1 resting border)                   | Hover / selected borders     |
+| `-21` | 1.25:1 · `--title` on it 12.6:1                     | Selected row fill            |
+| `-15` | 1.15:1                                              | Hover fill                   |
+
+Adding a step means solving for its contrast, not guessing an alpha.
 
 ### DCL brand & status
+
 | Token | Value | Use |
-|---|---|---|
+| --- | --- | --- |
 | `--primary-main` / `--primary-dark` | `#ff2d55` / `#f70038` | Brand pink — the "armed/active tool" signal. Distinct from the cyan accent; don't use it for field errors. |
 | `--secondary-main` | `#ff7439` | Brand orange |
 | `--success-main` / `--error-main` / `--warning-main` | `#4caf50` / `#f44336` / `#ffc95b` | Status |
@@ -71,21 +95,23 @@ There is no single `--text` token — pick the foreground that matches the surfa
 **Low indices are LIGHT.** This is the #1 source of "dark fallback that renders light" bugs: a rule like `background: var(--base-02, #1e1e22)` looks dark (the `#1e1e22` fallback is a decoy) but actually renders near-white, because `--base-02` resolves to `#f0f0f0`. Read the token's real value, not the fallback.
 
 ### Correct dark-surface pairing (dropdowns, popovers, suggestion lists)
+
 ```css
 .some-dark-surface {
-  background: var(--tree-bg-color);          /* --base-20, dark */
+  background: var(--tree-bg-color); /* --base-20, dark */
   border: 1px solid var(--ui-designer-control-border);
-  color: var(--title);                        /* explicit light fg, NOT inherit */
+  color: var(--title); /* explicit light fg, NOT inherit */
 }
 .some-dark-surface .row:hover,
 .some-dark-surface .row[aria-selected='true'] {
-  background: var(--ui-designer-accent-12);
+  background: var(--ui-designer-control-accent-21); /* panel surface → pink */
 }
 .some-dark-surface :focus-visible {
   outline: 2px solid var(--border-focused);
   outline-offset: -1px;
 }
 ```
+
 `VariablePicker.css` is the canonical example.
 
 ---
@@ -108,7 +134,7 @@ Give interactive controls a consistent height (define a local `--uid-control-hei
 
 Derived from the Vercel Web Interface Guidelines (`web-design-guidelines` skill) and applied throughout the inspector:
 
-- **Focus:** every interactive element has a visible `:focus-visible` ring (`--border-focused` or `--ui-designer-accent`). Prefer `:focus-visible` over `:focus`. **Never** `outline: none` without a replacement ring.
+- **Focus:** every interactive element has a visible `:focus-visible` ring — `--border-focused` or `--ui-designer-control-accent` in panels, `--ui-designer-accent` on the canvas. Prefer `:focus-visible` over `:focus`. **Never** `outline: none` without a replacement ring.
 - **Contrast (WCAG AA):** text ≥ **4.5:1**, non-text/UI (borders, focus rings, canvas markers, icons) ≥ **3:1** against their background.
 - **ARIA/semantics:** icon-only buttons need `aria-label`; use `<button>` for actions and `<a>`/`<Link>` for navigation (never `<div onClick>`); tie every input to a `<label>` or `aria-label`; async updates use `aria-live="polite"`.
 - **Motion:** honor `prefers-reduced-motion` (reduced/none variant); animate only `transform`/`opacity`; **never** `transition: all` — list properties.

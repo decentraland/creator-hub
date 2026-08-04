@@ -60,7 +60,7 @@
 }
 
 .ui-designer-callback-delete:hover {
-  background: var(--ui-designer-accent-12);
+  background: var(--ui-designer-control-accent-21);
   color: var(--title);
 }
 
@@ -144,7 +144,7 @@
 
 .ui-designer-callback-autocomplete-row:hover,
 .ui-designer-callback-autocomplete-row[aria-selected='true'] {
-  background: var(--ui-designer-accent-12);
+  background: var(--ui-designer-control-accent-21);
 }
 
 .ui-designer-callback-autocomplete-row:focus-visible {
@@ -185,7 +185,7 @@
 }
 
 .ui-designer-callbacks-add button:hover:not(:disabled) {
-  background: var(--ui-designer-accent-12);
+  background: var(--ui-designer-control-accent-21);
 }
 
 .ui-designer-callbacks-add button:focus-visible {

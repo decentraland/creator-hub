@@ -17,8 +17,8 @@
   --text-primary: #000000de;
   --sub-text: #ffffffcf;
   --border-focused: #127fd4;
-  --selected-item: #731F30;
-  --header-hover-bg-color: #38222D;
+  --selected-item: #731f30;
+  --header-hover-bg-color: #38222d;
   --disabled-bg-color: #323036;
 
   /* DCL Colors */
@@ -45,7 +45,6 @@
   --violet: #a524b3;
   --purple: #691fa9;
   --gray-0: #43404a;
-
 
   /* Neutrals Colors */
   --base-01: #ffffff;
@@ -119,17 +118,41 @@
   --modal-content-border-color: var(--tree-border-color);
   --modal-overlay-bg-color: rgba(0, 0, 0, 0.6);
 
-  /* UI Designer
-     Accent is the canvas/selection cyan, promoted from the ~12 hardcoded
-     rgba(80,200,255,…) literals to a single named token with the alpha steps
-     the components actually use. Value preserved so the token swap is visually
-     identical. Distinct from the pink --primary-main "armed tool" signal. */
+  /* UI Designer — TWO accents, split by what they sit on.
+
+     CANVAS accent (cyan). Deliberately OUTSIDE the Decentraland palette. The
+     canvas renders the author's own UI in arbitrary colours, so a selection ring
+     in a brand colour would vanish the moment they use that colour themselves —
+     and #ff2d55 is exactly the colour the palette encourages. Since the backdrop
+     here is unknowable, WCAG's ≥3:1 for non-text UI cannot be verified against
+     it; picking a hue authors are unlikely to choose is the mitigation. Use for
+     node selection/hover, resize handles, drop targets, reorder indicators. */
   --ui-designer-accent: rgb(80, 200, 255);
   --ui-designer-accent-80: rgba(80, 200, 255, 0.8);
   --ui-designer-accent-40: rgba(80, 200, 255, 0.4);
   --ui-designer-accent-12: rgba(80, 200, 255, 0.12);
   --ui-designer-accent-08: rgba(80, 200, 255, 0.08);
   --ui-designer-accent-05: rgba(80, 200, 255, 0.05);
+
+  /* CONTROL accent (brand pink) — panel chrome: selected cells, focus rings,
+     hover borders/fills, bind affordances. These always sit on --base-20
+     (#161518), a surface we control, so contrast is fixed and verifiable.
+     Tracks --primary-main; the steps repeat its rgb triple because CSS cannot
+     derive rgba() from a hex token.
+
+     The alphas are NOT copied from the cyan ramp above. Pink's relative
+     luminance is 0.238 against cyan's 0.502, so at the same alpha it composites
+     to a far dimmer result — reusing .4 collapsed the hover border to 1.70:1
+     against a 1.41:1 resting border, i.e. almost invisible. These values are
+     solved to match what each cyan step actually achieved on this surface, and
+     are named for their real alpha so the numbers do not lie:
+       base 4.99:1 · -62 2.56:1 · -21 1.25:1 · -15 1.15:1
+     Base clears WCAG 1.4.11 (>=3:1 non-text) and 1.4.3 (>=4.5:1 text); --title
+     on the -21 fill is 12.6:1. */
+  --ui-designer-control-accent: var(--primary-main);
+  --ui-designer-control-accent-62: rgba(255, 45, 85, 0.62);
+  --ui-designer-control-accent-21: rgba(255, 45, 85, 0.21);
+  --ui-designer-control-accent-15: rgba(255, 45, 85, 0.15);
   /* Control chrome — matches the inspector's .InputContainer so selects,
      textareas and inputs read as one family. */
   --ui-designer-control-bg: var(--gray-0);

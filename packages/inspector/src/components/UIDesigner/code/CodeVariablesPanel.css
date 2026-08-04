@@ -132,13 +132,13 @@
 }
 
 .ui-designer-code-open-component:hover {
-  background: var(--ui-designer-accent-12);
+  background: var(--ui-designer-control-accent-21);
 }
 
 /* Hover / keyboard-focus affordances for the row buttons (a11y sweep). */
 .ui-designer-code-variable-delete:hover,
 .ui-designer-code-variables-add button:hover:not(:disabled) {
-  background: var(--ui-designer-accent-12);
+  background: var(--ui-designer-control-accent-21);
 }
 
 .ui-designer-code-variable-delete:focus-visible,

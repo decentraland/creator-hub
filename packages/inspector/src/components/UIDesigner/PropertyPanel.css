@@ -115,7 +115,7 @@
 }
 
 .ui-designer-prop-remove:hover {
-  background: var(--ui-designer-accent-12);
+  background: var(--ui-designer-control-accent-21);
   color: var(--title);
 }
 
@@ -141,7 +141,7 @@
   gap: 4px;
   padding: 4px 6px;
   border-radius: 4px;
-  color: var(--ui-designer-accent);
+  color: var(--ui-designer-control-accent);
   font-size: 12px;
   cursor: pointer;
   list-style: none;
@@ -153,7 +153,7 @@
 }
 
 .ui-designer-add-prop-trigger:hover {
-  background: var(--ui-designer-accent-12);
+  background: var(--ui-designer-control-accent-21);
 }
 
 .ui-designer-add-prop-trigger:focus-visible {
@@ -188,7 +188,7 @@
 }
 
 .ui-designer-add-prop-menu button:hover {
-  background: var(--ui-designer-accent-12);
+  background: var(--ui-designer-control-accent-21);
 }
 
 .ui-designer-add-prop-menu button:focus-visible {
@@ -225,7 +225,7 @@
 
 .ui-designer-vec-reveal:hover {
   color: var(--title);
-  border-color: var(--ui-designer-accent);
+  border-color: var(--ui-designer-control-accent);
 }
 
 .ui-designer-vec-reveal:focus-visible {
@@ -249,12 +249,12 @@
 
 .ui-designer-vec-lock:hover {
   color: var(--title);
-  border-color: var(--ui-designer-accent);
+  border-color: var(--ui-designer-control-accent);
 }
 
 .ui-designer-vec-lock.active {
-  color: var(--ui-designer-accent);
-  border-color: var(--ui-designer-accent);
+  color: var(--ui-designer-control-accent);
+  border-color: var(--ui-designer-control-accent);
 }
 
 .ui-designer-vec-lock:focus-visible {
@@ -373,18 +373,18 @@
 }
 
 .ui-designer-states-tab:hover {
-  background: var(--ui-designer-accent-08);
+  background: var(--ui-designer-control-accent-15);
   color: var(--title);
 }
 
 .ui-designer-states-tab.selected {
-  background: var(--ui-designer-accent-12);
-  border-color: var(--ui-designer-accent-40);
-  color: var(--ui-designer-accent);
+  background: var(--ui-designer-control-accent-21);
+  border-color: var(--ui-designer-control-accent-62);
+  color: var(--ui-designer-control-accent);
 }
 
 .ui-designer-states-tab.add {
-  color: var(--ui-designer-accent-80);
+  color: var(--ui-designer-control-accent);
 }
 
 .ui-designer-states-tab:focus-visible,
@@ -428,13 +428,13 @@
   border: none;
   border-radius: 4px;
   background: transparent;
-  color: var(--ui-designer-accent);
+  color: var(--ui-designer-control-accent);
   font-size: 12px;
   cursor: pointer;
 }
 
 .ui-designer-states-add:hover {
-  background: var(--ui-designer-accent-08);
+  background: var(--ui-designer-control-accent-15);
 }
 
 .ui-designer-variant-badge {
@@ -442,7 +442,7 @@
   align-items: center;
   gap: 4px;
   flex: 1 1 auto;
-  color: var(--ui-designer-accent);
+  color: var(--ui-designer-control-accent);
   font-size: 12px;
 }
 
@@ -478,6 +478,6 @@
   height: 4px;
   margin-left: 4px;
   border-radius: 50%;
-  background: var(--ui-designer-accent);
+  background: var(--ui-designer-control-accent);
   vertical-align: middle;
 }
