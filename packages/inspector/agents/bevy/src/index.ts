@@ -1,4 +1,4 @@
-import { GltfContainerLoadingState } from '@dcl/sdk/ecs';
+import { engine, GltfContainerLoadingState } from '@dcl/sdk/ecs';
 import type { Entity } from '@dcl/sdk/ecs';
 import { getPlayer } from '@dcl/sdk/players';
 
@@ -158,8 +158,73 @@ export function main(): void {
   setupGizmo();
   // setupCamera installs the (initially inactive) editor fly-camera.
   setupCamera();
+  // Watch the inspected scene's logs for a runtime error (#1448). The SDK wraps
+  // main() (and each system) in a try/catch that `console.error(e)`s the throw, so
+  // an uncaught scene error surfaces as a SceneError log entry (prefixed "ERROR ")
+  // — NOT a SystemError, which the engine only records for its own runtime failures.
+  // Report each new error so the host can notify + stop the scene. Throttled — the
+  // agent (a super scene) keeps ticking even while the inspected scene is frozen.
+  setupSceneErrorWatch();
 
   void boot();
+}
+
+// --- Scene runtime-error watch (#1448) ---
+
+/** Log-line signatures already reported, so a persisted error isn't re-toasted
+ * every poll. Cleared on Stop/reset (the reloaded scene starts a fresh log). */
+const reportedErrors = new Set<string>();
+let sinceErrorCheck = 0;
+const ERROR_CHECK_INTERVAL = 1.5; // seconds
+
+/** Poll `/scene_logs` for NEW error entries and report them to the host. */
+async function reportSceneErrors(): Promise<void> {
+  const api = getBevyApi();
+  if (!api) return;
+  let reply: string;
+  try {
+    reply = await api.consoleCommand('scene_logs', ['100']);
+  } catch {
+    return; // no pinned scene yet / command failed — nothing to report
+  }
+  // Each entry is `[<ts>] <Level>: <message>`. SceneError = a scene-side throw the
+  // SDK caught and console.error'd (prefixed "ERROR "); SystemError = an engine-level
+  // failure. Report either — both mean the scene is broken.
+  for (const line of reply.split('\n')) {
+    const match = line.match(/^\[[\d.]+\]\s+(SceneError|SystemError):\s*(.*)$/);
+    if (!match) continue;
+    if (reportedErrors.has(line)) continue;
+    reportedErrors.add(line);
+    bus.postToPage({ kind: 'scene-error', message: cleanErrorMessage(match[2]) });
+  }
+}
+
+/** Turn a raw log message into a short, single-line summary for the toast, or '' if
+ * the engine gave us nothing usable (the host then shows a generic detail). */
+function cleanErrorMessage(raw: string): string {
+  // `console.error(...)` prefixes every entry with "ERROR " (the engine's console
+  // shim) — drop it. The value may inline a stack as escaped or real `\n`; keep the
+  // first line only, and cap the length.
+  const withoutPrefix = raw.replace(/^ERROR\s+/, '');
+  let firstLine = withoutPrefix.split('\\n')[0].split('\n')[0].trim();
+  // The web engine serializes objects with JSON.stringify, so a thrown Error (no
+  // enumerable keys) collapses to "{}" — useless as a message. Treat contentless
+  // blobs as empty so the host falls back to a generic detail.
+  if (/^(\{\s*\}|\[\s*\]|null|""|'')$/.test(firstLine)) return '';
+  // JSON.stringify also wraps a plain string arg in quotes — unwrap for readability.
+  const quoted = firstLine.match(/^"(.*)"$/);
+  if (quoted) firstLine = quoted[1];
+  return firstLine.length > 200 ? `${firstLine.slice(0, 197)}...` : firstLine;
+}
+
+/** Install the throttled scene-error poll. */
+function setupSceneErrorWatch(): void {
+  engine.addSystem((dt: number) => {
+    sinceErrorCheck += dt;
+    if (sinceErrorCheck < ERROR_CHECK_INTERVAL) return;
+    sinceErrorCheck = 0;
+    void reportSceneErrors();
+  });
 }
 
 async function boot(): Promise<void> {
@@ -298,6 +363,9 @@ async function resetScene(): Promise<void> {
   const api = getBevyApi();
   if (!api || !pinnedSceneHash) return;
   const hash = pinnedSceneHash;
+  // The reload starts a fresh scene instance with a fresh log — drop the reported
+  // signatures so a re-thrown error surfaces again (#1448).
+  reportedErrors.clear();
   try {
     await api.consoleCommand('reload', [hash]);
   } catch (e) {

@@ -79,6 +79,8 @@ export function registerBevyRenderer(): void {
       // the authored tree) can't select/edit it — tell the user why, throttled so
       // repeated clicks don't stack toasts (#1418).
       let lastUnauthoredToast = 0;
+      // Throttle runtime-error toasts (#1448): a per-tick throw shouldn't spam.
+      let lastSceneErrorToast = 0;
       const disconnect = connectReverseChannel(
         {
           engine: bevy.context.engine,
@@ -310,6 +312,28 @@ export function registerBevyRenderer(): void {
         onResetComplete: () => {
           forwardBridge?.reconcileAfterReload();
           bevy.notifyResetComplete();
+        },
+        // The inspected scene threw at runtime (#1448) — main() on load, or a
+        // system while running. Notify the user and stop the scene: freeze it (Play
+        // reads as stopped) rather than reset/reload, which would re-run main() and
+        // re-throw in a loop. Throttled so a per-tick throw doesn't spam toasts.
+        onSceneError: (message: string) => {
+          const now = performance.now();
+          if (now - lastSceneErrorToast > 3000) {
+            lastSceneErrorToast = now;
+            // Persistent + closeable (duration 0), with the engine's error as the
+            // detail — mirrors the host's own "preview scene failed" toast. The web
+            // engine can't always serialize a thrown Error (it becomes "{}"), so the
+            // agent sends '' in that case and we show a generic hint instead.
+            void getSceneClient()?.pushNotification({
+              severity: 'error',
+              message: "The scene has a runtime error and can't run",
+              description: message || 'Check your scene code for the error that stopped it.',
+              duration: 0,
+            });
+          }
+          // Land in the stopped/frozen state (button reads Play), without a reload.
+          if (bevy.sceneRun.isRunning()) bevy.sceneRun.setRunning(false);
         },
       });
       bevy.setSceneRunPoster(running => {

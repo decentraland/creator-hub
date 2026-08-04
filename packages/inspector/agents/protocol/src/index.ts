@@ -143,7 +143,12 @@ export type AgentToPage =
   // (#1420 false-play) and the editor overrides / animation pause aren't replayed
   // (#1421 anims run a few frames). The host waits for this to re-enable Play and
   // to reconcile overrides, instead of guessing with a fixed timeout.
-  | { kind: 'reset-complete'; ok: boolean };
+  | { kind: 'reset-complete'; ok: boolean }
+  // The inspected scene logged a runtime error (a throw in main()/a system — the
+  // engine records it as a SceneError). The agent polls the scene logs and reports
+  // each NEW error so the host can notify the user and stop the scene (#1448).
+  // `message` is the error's first log line.
+  | { kind: 'scene-error'; message: string };
 
 /** One selected entity's world pose, supplied by the inspector (the agent can't
  * read the inspected scene's Transform from its own engine). */
