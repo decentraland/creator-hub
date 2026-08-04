@@ -8,12 +8,10 @@ import type { UINodeType } from './tree-model';
 // `length` writes the flat pair (value: number, valueUnit: YGUnit) — sibling
 // fields on PBUiTransform — NOT a discriminated union `{ type, value }`.
 // `length-vec` packs N length sub-fields into one dense row with leftLabels
-// (TransformInspector style). `quad-pixels` is the same but assumes px units
-// and skips the unit dropdown — used for padding/margin where px is the norm.
+// (TransformInspector style).
 export type FieldKind =
   | 'length'
   | 'length-vec'
-  | 'quad-pixels'
   | 'number'
   | 'string'
   | 'color'
@@ -54,12 +52,12 @@ export interface FieldConfig {
   componentId: string;
   // For `length`: the *base* field name (without `Unit` suffix). e.g. 'width'
   // writes to both `width` and `widthUnit`.
-  // For `length-vec` / `quad-pixels`: ignored; see `subFields`.
+  // For `length-vec`: ignored; see `subFields`.
   // For all other kinds: the top-level key of the component value.
   path: string;
   kind: FieldKind;
   options?: EnumOption[];
-  // For `length-vec` / `quad-pixels`: side-by-side sub-fields inside one Block.
+  // For `length-vec`: side-by-side sub-fields inside one Block.
   subFields?: VecSubField[];
   /**
    * For a `length-vec` with a compact projection (e.g. Position shown as X/Y):
@@ -77,7 +75,7 @@ export interface FieldConfig {
   aspectLockable?: boolean;
   /**
    * Whether this field can be bound to a declared UI variable. Defaults to true.
-   * Composite kinds (`length`, `length-vec`, `quad-pixels`) and enum/index
+   * Composite kinds (`length`, `length-vec`) and enum/index
    * kinds set this to false in V1 — they have no scalar variable-type counterpart.
    */
   bindable?: boolean;
@@ -241,28 +239,81 @@ const TEXTURE_MODE_OPTIONS: EnumOption[] = [
   { value: 2, label: 'Stretched' },
 ];
 
-// --- Layout group building blocks ---
+// --- Position group ---
 //
-// Order requirements (per content team feedback):
-//   Visible (roots only) → Display → Flex direction → Justify → Align items
-//   → Size → Position type → Position → Padding → Margin
-//
-// Display/Flex/Justify/Align are CONTAINER-only — they only meaningfully
-// affect a node that *contains* children, so they're hidden on leaves
-// (Label / Button / Input / Dropdown). The PropertyPanel composes the
-// final Layout group from these pieces per node type.
+// `positionType` leads the group because it GATES the rest of it: Anchor and
+// Position only apply to an Absolute node, so the switch belongs above the two
+// fields it enables.
+export const POSITION_GROUP = {
+  title: 'Position',
+  fields: [
+    {
+      label: 'Positioning',
+      componentId: TRANSFORM,
+      path: 'positionType',
+      kind: 'position-mode' as const,
+      options: POSITION_TYPE_OPTIONS,
+      bindable: false,
+      core: true,
+      info: 'In flow: laid out by the parent (order, gaps, alignment). Absolute: pinned at Top/Left offsets. Switching keeps the node where it is on screen.',
+    },
+    {
+      label: 'Anchor',
+      componentId: TRANSFORM,
+      path: '',
+      kind: 'align-preset' as const,
+      bindable: false,
+      disabledWhen: (v: Record<string, unknown>) =>
+        ((v.positionType as number | undefined) ?? 0) !== 1,
+      info: 'Pin the node to a point of its parent. Available when Positioning is Absolute.',
+    },
+    {
+      label: 'Position',
+      componentId: TRANSFORM,
+      path: '',
+      kind: 'length-vec' as const,
+      subFields: [
+        { path: 'positionTop', leftLabel: 'T' },
+        { path: 'positionRight', leftLabel: 'R' },
+        { path: 'positionBottom', leftLabel: 'B' },
+        { path: 'positionLeft', leftLabel: 'L' },
+      ],
+      // Shown as X (left) / Y (top) by default; the reveal toggle expands to the
+      // full T/R/B/L for anchored nodes. Storage stays the four named edges.
+      collapsedSubFields: [
+        { path: 'positionLeft', leftLabel: 'X' },
+        { path: 'positionTop', leftLabel: 'Y' },
+      ],
+      bindable: false,
+      // Always shown (never routed to the "+ Add property" menu), but greyed when
+      // the node is In flow — Yoga only honours position offsets when Absolute.
+      core: true,
+      disabledWhen: (v: Record<string, unknown>) =>
+        ((v.positionType as number | undefined) ?? 0) !== 1,
+      info: 'X (left) / Y (top) offset from the parent; reveal shows all four edges. Applied when Positioning is Absolute.',
+    },
+    {
+      label: 'Z-index',
+      componentId: TRANSFORM,
+      path: 'zIndex',
+      kind: 'number' as const,
+      info: 'Stacking order; higher values render in front of siblings.',
+    },
+  ],
+};
 
-const LAYOUT_FLEX_FIELDS: FieldConfig[] = [
-  {
-    label: 'Display',
-    componentId: TRANSFORM,
-    path: 'display',
-    kind: 'enum' as const,
-    options: DISPLAY_OPTIONS,
-    bindable: false,
-    core: true,
-    info: 'Flex lays out the node and its children; None removes it from layout entirely.',
-  },
+// --- Layout group ---
+//
+// One ordered list. `container: true` marks a prop that arranges MY CHILDREN —
+// meaningless on a leaf, so it is filtered out for non-UiEntity nodes.
+// Everything else is an ITEM prop describing how I size and behave inside MY
+// PARENT; every react-ecs element accepts the full uiTransform, so those apply
+// to every node type.
+//
+// Getting that split wrong is why a Label or Button could not be told to
+// flex-grow: `flexGrow`/`flexShrink` are item props but were gated as container
+// props, unlike their sibling `alignSelf`.
+const LAYOUT_FIELDS: (FieldConfig & { container?: true })[] = [
   {
     label: 'Flex direction',
     componentId: TRANSFORM,
@@ -270,34 +321,8 @@ const LAYOUT_FLEX_FIELDS: FieldConfig[] = [
     kind: 'enum' as const,
     options: FLEX_DIRECTION_OPTIONS,
     bindable: false,
+    container: true,
     info: 'Main axis children flow along: row (horizontal) or column (vertical).',
-  },
-  {
-    label: 'Justify content',
-    componentId: TRANSFORM,
-    path: 'justifyContent',
-    kind: 'enum' as const,
-    options: JUSTIFY_CONTENT_OPTIONS,
-    bindable: false,
-    info: 'Distributes children along the main axis, including the space between them.',
-  },
-  {
-    label: 'Align items',
-    componentId: TRANSFORM,
-    path: 'alignItems',
-    kind: 'enum' as const,
-    options: ALIGN_OPTIONS,
-    bindable: false,
-    info: 'Aligns children on the cross axis (perpendicular to the flex direction).',
-  },
-  {
-    label: 'Align content',
-    componentId: TRANSFORM,
-    path: 'alignContent',
-    kind: 'enum' as const,
-    options: ALIGN_OPTIONS,
-    bindable: false,
-    info: 'Aligns wrapped lines on the cross axis. Applies only when Flex wrap is on.',
   },
   {
     label: 'Flex wrap',
@@ -306,34 +331,18 @@ const LAYOUT_FLEX_FIELDS: FieldConfig[] = [
     kind: 'enum' as const,
     options: FLEX_WRAP_OPTIONS,
     bindable: false,
+    container: true,
     info: 'Lets children flow onto multiple lines when they do not fit on one.',
   },
   {
-    label: 'Flex grow',
+    label: 'Display',
     componentId: TRANSFORM,
-    path: 'flexGrow',
-    kind: 'number' as const,
-    info: 'Share of free space this item takes along the main axis.',
-  },
-  {
-    label: 'Flex shrink',
-    componentId: TRANSFORM,
-    path: 'flexShrink',
-    kind: 'number' as const,
-    info: 'How much this item shrinks when space is tight (0 = never shrink).',
-  },
-  {
-    label: 'Overflow',
-    componentId: TRANSFORM,
-    path: 'overflow',
+    path: 'display',
     kind: 'enum' as const,
-    options: OVERFLOW_OPTIONS,
+    options: DISPLAY_OPTIONS,
     bindable: false,
-    info: 'How content larger than the box is handled: visible, hidden, or scroll.',
+    info: 'Flex lays out the node and its children; None removes it from layout entirely.',
   },
-];
-
-const LAYOUT_BOX_FIELDS: FieldConfig[] = [
   {
     label: 'Size',
     componentId: TRANSFORM,
@@ -373,6 +382,36 @@ const LAYOUT_BOX_FIELDS: FieldConfig[] = [
     info: 'Upper bound on size; the node never renders larger. Supports px or %.',
   },
   {
+    label: 'Justify content',
+    componentId: TRANSFORM,
+    path: 'justifyContent',
+    kind: 'enum' as const,
+    options: JUSTIFY_CONTENT_OPTIONS,
+    bindable: false,
+    container: true,
+    info: 'Distributes children along the main axis, including the space between them.',
+  },
+  {
+    label: 'Align items',
+    componentId: TRANSFORM,
+    path: 'alignItems',
+    kind: 'enum' as const,
+    options: ALIGN_OPTIONS,
+    bindable: false,
+    container: true,
+    info: 'Aligns children on the cross axis (perpendicular to the flex direction).',
+  },
+  {
+    label: 'Align content',
+    componentId: TRANSFORM,
+    path: 'alignContent',
+    kind: 'enum' as const,
+    options: ALIGN_OPTIONS,
+    bindable: false,
+    container: true,
+    info: 'Aligns wrapped lines on the cross axis. Applies only when Flex wrap is on.',
+  },
+  {
     label: 'Align self',
     componentId: TRANSFORM,
     path: 'alignSelf',
@@ -382,71 +421,60 @@ const LAYOUT_BOX_FIELDS: FieldConfig[] = [
     info: "Overrides the parent's Align items for this node only.",
   },
   {
-    label: 'Positioning',
+    label: 'Flex grow',
     componentId: TRANSFORM,
-    path: 'positionType',
-    kind: 'position-mode' as const,
-    options: POSITION_TYPE_OPTIONS,
-    bindable: false,
-    core: true,
-    info: 'In flow: laid out by the parent (order, gaps, alignment). Absolute: pinned at Top/Left offsets. Switching keeps the node where it is on screen.',
+    path: 'flexGrow',
+    kind: 'number' as const,
+    info: 'Share of free space this item takes along the main axis.',
   },
   {
-    label: 'Anchor',
+    label: 'Flex shrink',
     componentId: TRANSFORM,
-    path: '',
-    kind: 'align-preset' as const,
-    bindable: false,
-    disabledWhen: v => ((v.positionType as number | undefined) ?? 0) !== 1,
-    info: 'Pin the node to a point of its parent. Available when Positioning is Absolute.',
+    path: 'flexShrink',
+    kind: 'number' as const,
+    info: 'How much this item shrinks when space is tight (0 = never shrink).',
   },
   {
-    label: 'Position',
-    componentId: TRANSFORM,
-    path: '',
-    kind: 'length-vec' as const,
-    subFields: [
-      { path: 'positionTop', leftLabel: 'T' },
-      { path: 'positionRight', leftLabel: 'R' },
-      { path: 'positionBottom', leftLabel: 'B' },
-      { path: 'positionLeft', leftLabel: 'L' },
-    ],
-    // Shown as X (left) / Y (top) by default; the reveal toggle expands to the
-    // full T/R/B/L for anchored nodes. Storage stays the four named edges.
-    collapsedSubFields: [
-      { path: 'positionLeft', leftLabel: 'X' },
-      { path: 'positionTop', leftLabel: 'Y' },
-    ],
-    bindable: false,
-    // Always shown (never routed to the "+ Add property" menu), but greyed when
-    // the node is In flow — Yoga only honours position offsets when Absolute.
-    core: true,
-    disabledWhen: v => ((v.positionType as number | undefined) ?? 0) !== 1,
-    info: 'X (left) / Y (top) offset from the parent; reveal shows all four edges. Applied when Positioning is Absolute.',
-  },
-  {
-    label: 'Spacing',
+    // NOT "Spacing" — that name is reserved for flex gap, which react-ecs cannot
+    // express yet (no gap/rowGap/columnGap in UiTransformProps).
+    label: 'Padding & margin',
     componentId: TRANSFORM,
     path: '',
     kind: 'box-model' as const,
     bindable: false,
     info: 'Margin (outer) wraps padding (inner). Margin is ignored when Position type is Absolute.',
   },
+  {
+    label: 'Overflow',
+    componentId: TRANSFORM,
+    path: 'overflow',
+    kind: 'enum' as const,
+    options: OVERFLOW_OPTIONS,
+    bindable: false,
+    container: true,
+    info: 'How content larger than the box is handled: visible, hidden, or scroll.',
+  },
 ];
 
 /**
  * Compose the Layout group for a given node type.
- * @param isContainer include the flex-layout fields (only UiEntity nodes).
+ * @param isContainer keep the container fields (only UiEntity nodes have children).
  */
 export function buildLayoutGroup(isContainer: boolean) {
-  const fields: FieldConfig[] = [];
-  if (isContainer) fields.push(...LAYOUT_FLEX_FIELDS);
-  fields.push(...LAYOUT_BOX_FIELDS);
-  return { title: 'Layout', fields };
+  return {
+    title: 'Layout',
+    fields: isContainer ? LAYOUT_FIELDS : LAYOUT_FIELDS.filter(f => !f.container),
+  };
 }
 
-export const EFFECTS_GROUP = {
-  title: 'Effects',
+// --- Style group ---
+//
+// Everything about how the node LOOKS, in one place. This replaces the former
+// Background + Effects + Border trio: Effects held only opacity and z-index
+// (z-index is a stacking property, not an effect) and Border held only three
+// fields, so both read as junk drawers rather than categories.
+const STYLE_GROUP = {
+  title: 'Style',
   fields: [
     {
       label: 'Opacity',
@@ -455,19 +483,6 @@ export const EFFECTS_GROUP = {
       kind: 'number' as const,
       info: '0 = fully transparent, 1 = fully opaque.',
     },
-    {
-      label: 'Z-index',
-      componentId: TRANSFORM,
-      path: 'zIndex',
-      kind: 'number' as const,
-      info: 'Stacking order; higher values render in front of siblings.',
-    },
-  ],
-};
-
-export const BORDER_GROUP = {
-  title: 'Border',
-  fields: [
     {
       label: 'Corner radius',
       componentId: TRANSFORM,
@@ -483,13 +498,15 @@ export const BORDER_GROUP = {
       ],
     },
     {
-      label: 'Border width',
-      componentId: TRANSFORM,
-      path: 'borderTopWidth',
-      kind: 'length' as const,
-      bindable: false,
-      info: 'Thickness of all four borders. Supports px or %.',
-      writeAll: ['borderTopWidth', 'borderRightWidth', 'borderBottomWidth', 'borderLeftWidth'],
+      // "Background color", not "Color": a Label/Button also has a TEXT color in
+      // its own group, and the old group names (Background vs Text) were the only
+      // thing telling them apart.
+      label: 'Background color',
+      componentId: BACKGROUND,
+      path: 'color',
+      kind: 'color' as const,
+      core: true,
+      info: "Fill color behind the node's content.",
     },
     {
       label: 'Border color',
@@ -500,19 +517,25 @@ export const BORDER_GROUP = {
       info: 'Color applied to all four borders.',
       writeAll: ['borderTopColor', 'borderRightColor', 'borderBottomColor', 'borderLeftColor'],
     },
-  ],
-};
-
-const BACKGROUND_GROUP = {
-  title: 'Background',
-  fields: [
     {
-      label: 'Color',
+      label: 'Border width',
+      componentId: TRANSFORM,
+      path: 'borderTopWidth',
+      kind: 'length' as const,
+      bindable: false,
+      info: 'Thickness of all four borders. Supports px or %.',
+      writeAll: ['borderTopWidth', 'borderRightWidth', 'borderBottomWidth', 'borderLeftWidth'],
+    },
+    {
+      label: 'Texture',
       componentId: BACKGROUND,
-      path: 'color',
-      kind: 'color' as const,
-      core: true,
-      info: "Fill color behind the node's content.",
+      path: 'texture',
+      kind: 'texture' as const,
+      bindable: false,
+      // Kept available on every UiEntity, not just one that already has a
+      // texture: setting one is what turns a Container INTO an Image (the kind
+      // is derived from this field — see tree-model.classifyNode).
+      info: 'Pick an image asset from your scene.',
     },
     {
       label: 'Scale type',
@@ -524,14 +547,6 @@ const BACKGROUND_GROUP = {
       info: 'How the texture fills the box: centred, sliced, or stretched.',
       // react-ecs getTextureMode defaults an unset textureMode to CENTER (1).
       defaultValue: 1,
-    },
-    {
-      label: 'Texture',
-      componentId: BACKGROUND,
-      path: 'texture',
-      kind: 'texture' as const,
-      bindable: false,
-      info: 'Pick an image asset from your scene.',
     },
     {
       label: 'Texture region',
@@ -758,19 +773,46 @@ const DROPDOWN_EVENTS_GROUP = {
   ],
 };
 
-// Per-node-type extra groups. The Layout group is composed dynamically by
-// `buildLayoutGroup` in PropertyPanel and is NOT listed here — that keeps
-// the field-order and root/container variants in one place.
+// Per-node-type groups. Position and Layout are added by the PropertyPanel
+// (Layout is composed per type by `buildLayoutGroup`), so they are NOT listed
+// here; the panel renders
+//   Position → Layout → [type groups] → [event groups]
+// which puts a type's own content above its appearance, and events last.
+//
 // EVERY react-ecs element accepts the full EntityPropTypes (uiTransform,
 // uiBackground, mouse events — see @dcl/react-ecs components/types.ts), so
-// every type lists BACKGROUND_GROUP + MOUSE_EVENTS_GROUP alongside its own
-// props (and gets Layout/Effects/Border from the panel).
+// every type lists STYLE_GROUP + MOUSE_EVENTS_GROUP alongside its own props.
+//
+// Keyed by the ELEMENT type, not by the user-facing WidgetKind: Container and
+// Image are both `UiEntity` with an identical prop surface (Image just has a
+// background texture — see tree-model.classifyNode), so they take the same
+// fields by construction. Only their tree/header label and icon differ.
 export const NODE_FIELD_CONFIGS: Record<UINodeType, NodeFieldConfig> = {
-  UiEntity: { groups: [BACKGROUND_GROUP, MOUSE_EVENTS_GROUP] },
-  Label: { groups: [TEXT_GROUP, BACKGROUND_GROUP, MOUSE_EVENTS_GROUP] },
-  Button: { groups: [TEXT_GROUP, BACKGROUND_GROUP, MOUSE_EVENTS_GROUP] },
-  Input: { groups: [INPUT_GROUP, BACKGROUND_GROUP, INPUT_EVENTS_GROUP, MOUSE_EVENTS_GROUP] },
+  UiEntity: { groups: [STYLE_GROUP, MOUSE_EVENTS_GROUP] },
+  Label: { groups: [TEXT_GROUP, STYLE_GROUP, MOUSE_EVENTS_GROUP] },
+  Button: { groups: [TEXT_GROUP, STYLE_GROUP, MOUSE_EVENTS_GROUP] },
+  Input: { groups: [INPUT_GROUP, STYLE_GROUP, INPUT_EVENTS_GROUP, MOUSE_EVENTS_GROUP] },
   Dropdown: {
-    groups: [DROPDOWN_GROUP, BACKGROUND_GROUP, DROPDOWN_EVENTS_GROUP, MOUSE_EVENTS_GROUP],
+    groups: [DROPDOWN_GROUP, STYLE_GROUP, DROPDOWN_EVENTS_GROUP, MOUSE_EVENTS_GROUP],
   },
 };
+
+// Event groups render LAST, after content. Matched on the title, so a new group
+// title must not accidentally contain "event".
+const isEventGroup = (title: string) => /event/i.test(title);
+
+/**
+ * The panel's complete group list for a node type, in render order:
+ *   Position → Layout → [type content groups] → [type event groups]
+ * i.e. where the node sits, then how it is laid out, then its own content and
+ * appearance, with events last.
+ */
+export function buildGroups(type: UINodeType): { title: string; fields: FieldConfig[] }[] {
+  const { groups } = NODE_FIELD_CONFIGS[type];
+  return [
+    POSITION_GROUP,
+    buildLayoutGroup(type === 'UiEntity'),
+    ...groups.filter(g => !isEventGroup(g.title)),
+    ...groups.filter(g => isEventGroup(g.title)),
+  ];
+}

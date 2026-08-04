@@ -65,13 +65,7 @@ import { MixedContentField } from './MixedContentField';
 import { seedSegments } from './MixedContentField/segments';
 import { TextureField } from './TextureField';
 import { regionToUvs, uvsToRegion } from './uv-region';
-import {
-  buildLayoutGroup,
-  BORDER_GROUP,
-  EFFECTS_GROUP,
-  NODE_FIELD_CONFIGS,
-  type FieldConfig,
-} from './field-configs';
+import { buildGroups, type FieldConfig } from './field-configs';
 
 import './PropertyPanel.css';
 
@@ -587,15 +581,7 @@ const PropertyPanelComponent: React.FC = () => {
   // too, below the wrapper's own fields.
   const refChildren = (codeNode?.children ?? []).filter(c => c.componentRef);
 
-  const config = NODE_FIELD_CONFIGS[type];
-  // Build the Layout group dynamically:
-  //   - Display / Flex direction / Justify / Align items are
-  //     CONTAINER-only fields (UiEntity); leaves don't need them.
-  //   - Size / Position type / Position / Padding / Margin always show.
-  const layoutGroup = buildLayoutGroup(type === 'UiEntity');
-  const eventGroups = config.groups.filter(g => /event/i.test(g.title));
-  const contentGroups = config.groups.filter(g => !/event/i.test(g.title));
-  const allGroups = [layoutGroup, ...contentGroups, EFFECTS_GROUP, BORDER_GROUP, ...eventGroups];
+  const allGroups = buildGroups(type);
 
   return (
     <div className="ui-designer-property-panel">
@@ -1032,49 +1018,6 @@ const FieldRow = React.memo(function FieldRow({
           fieldDisabled={fieldDisabled}
           onPatch={onPatch}
         />
-      );
-    }
-    case 'quad-pixels': {
-      // 4-axis pixel-only group (T/R/B/L) for padding & margin. Stacked
-      // vertically like the rest of the inspector; no unit selector — always
-      // written as YGU_POINT.
-      const subs = field.subFields ?? [];
-      return (
-        <BindableField
-          field={field}
-          entity={entity}
-          bound={boundProp}
-        >
-          {subs.map(sub => {
-            const v = (componentValue?.[sub.path] as number | undefined) ?? 0;
-            const subBound = bindings?.[`${field.componentId}.${sub.path}`];
-            return (
-              <BindableSubField
-                key={sub.path}
-                field={{
-                  componentId: field.componentId,
-                  path: sub.path,
-                  kind: 'length',
-                }}
-                entity={entity}
-                bound={subBound}
-              >
-                <TextField
-                  type="number"
-                  leftLabel={sub.leftLabel}
-                  value={String(v)}
-                  disabled={fieldDisabled}
-                  onChange={e =>
-                    onPatch({
-                      [sub.path]: clampNumber(e.target.value),
-                      [`${sub.path}Unit`]: YGU_POINT,
-                    })
-                  }
-                />
-              </BindableSubField>
-            );
-          })}
-        </BindableField>
       );
     }
     case 'color': {
