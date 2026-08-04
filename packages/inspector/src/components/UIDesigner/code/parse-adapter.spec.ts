@@ -2,13 +2,44 @@ import { parseSync } from 'oxc-parser';
 import { describe, expect, it } from 'vitest';
 
 import { YGU_POINT } from '../../../lib/sdk/ui-transform-constants';
-import { codeToUINodes, findComponentIdSpan } from './parse-adapter';
+import type { UINodeType } from '../tree-model';
+import { applyEdits } from './emit-adapter';
+import { wrapInInteractionEdits } from './interaction-convention';
+import {
+  codeToUINodes,
+  findComponentFn,
+  findComponentIdSpan,
+  isLayerableProp,
+} from './parse-adapter';
 import type { CodeUINode } from './types';
 
 function parse(source: string) {
   const result = parseSync('MyScreen.tsx', source);
   expect(result.errors).toHaveLength(0);
   return codeToUINodes(result.program as any, source);
+}
+
+// Run the REAL "Add interaction states" splice — the store's own isLayerableProp
+// and wrap builder — so these tests exercise the production path end to end
+// rather than a hand-authored approximation of its output.
+function addInteractionStates(source: string, type: UINodeType) {
+  const program = parseSync('MyScreen.tsx', source).program as any;
+  const fn = findComponentFn(program) as any;
+  const ret = (fn?.body?.body ?? []).find((s: any) => s.type === 'ReturnStatement');
+  let el = ret?.argument;
+  while (el?.type === 'ParenthesizedExpression') el = el.expression;
+  return applyEdits(
+    source,
+    wrapInInteractionEdits({
+      program,
+      fnNode: fn,
+      el,
+      source,
+      name: 'widgetStyles',
+      importFrom: './interaction',
+      isLayerable: attr => isLayerableProp(type, attr),
+    }),
+  );
 }
 
 describe('when mapping parsed TSX to UI nodes', () => {
@@ -207,6 +238,105 @@ export function MyScreen() {
   return <UiEntity {...btn} />
 }`)!.root;
       expect(root.bindings).toEqual([{ field: 'ui::events.onMouseDown', variable: 'onClick' }]);
+    });
+
+    // Regression: "Add interaction states" sweeps a Label/Button's `value` into
+    // the base layer. A BOUND value is not statically evaluable, so the layer
+    // reader used to drop it and flag the layer dynamic — the canvas resolves
+    // text through previewBoundText(bindings, …) with uiText as the fallback, so
+    // with neither present it rendered empty, and dynamicProps silently froze
+    // every subsequent panel edit. The JSX-attribute path always handled this.
+    it('should surface a bound text value in the base layer as a binding', () => {
+      const root = parse(`export function S() {
+  const buttonStyles = useInteraction({ base: { value: state.label } })
+  return <Button {...buttonStyles} />
+}`)!.root;
+      expect(root.bindings).toEqual([{ field: 'core::UiText.value', variable: 'state.label' }]);
+      expect(root.dynamicProps).toBeUndefined();
+    });
+
+    it('should surface an interpolated text template in the base layer as segments', () => {
+      const root = parse(`export function S() {
+  const buttonStyles = useInteraction({ base: { value: \`Hi \${state.name}!\` } })
+  return <Button {...buttonStyles} />
+}`)!.root;
+      expect(root.bindings).toEqual([
+        {
+          field: 'core::UiText.value',
+          variable: '',
+          segments: [
+            { kind: 'literal', value: 'Hi ' },
+            { kind: 'binding', value: 'state.name' },
+            { kind: 'literal', value: '!' },
+          ],
+        },
+      ]);
+      expect(root.dynamicProps).toBeUndefined();
+    });
+
+    it('should hydrate a literal text value from the base layer', () => {
+      const root = parse(`export function S() {
+  const buttonStyles = useInteraction({ base: { value: 'Hello' } })
+  return <Button {...buttonStyles} />
+}`)!.root;
+      expect(root.uiText).toMatchObject({ value: 'Hello' });
+      expect(root.dynamicProps).toBeUndefined();
+    });
+
+    // End-to-end through the real splice: these are the shapes the palette
+    // actually creates, wrapped by the real wrapInInteractionEdits +
+    // isLayerableProp. The hand-authored cases above pin the reader; these pin
+    // the reader AGAINST the writer, which is where "the text vanished after
+    // adding states" would actually surface.
+    describe('and the states are added by the real splice', () => {
+      const BUTTON = `export function S() {
+  return <Button value="Button" fontSize={18} uiTransform={{ width: 160, height: 44 }} />
+}`;
+
+      it('should keep a literal text value from the palette template', () => {
+        const next = addInteractionStates(BUTTON, 'Button');
+        expect(parseSync('MyScreen.tsx', next).errors).toHaveLength(0);
+        const root = parse(next)!.root;
+        expect(root.uiText).toMatchObject({ value: 'Button', fontSize: 18 });
+        expect(root.dynamicProps).toBeUndefined();
+      });
+
+      it('should keep a bound text value as a binding', () => {
+        const next = addInteractionStates(
+          `export function S() {
+  return <Button value={state.label} fontSize={18} />
+}`,
+          'Button',
+        );
+        expect(parseSync('MyScreen.tsx', next).errors).toHaveLength(0);
+        const root = parse(next)!.root;
+        expect(root.bindings).toEqual([{ field: 'core::UiText.value', variable: 'state.label' }]);
+        expect(root.dynamicProps).toBeUndefined();
+      });
+
+      it('should keep a Label value and leave a Button variant on the element', () => {
+        const label = parse(
+          addInteractionStates(
+            `export function S() {
+  return <Label value="Hi" />
+}`,
+            'Label',
+          ),
+        )!.root;
+        expect(label.uiText).toMatchObject({ value: 'Hi' });
+
+        // `variant` is not in UI_TEXT_PROPS, so it is not layerable and must stay
+        // an attribute — the spread goes in first, so a leftover attribute still
+        // overrides the layer.
+        const withVariant = addInteractionStates(
+          `export function S() {
+  return <Button value="Go" variant="secondary" />
+}`,
+          'Button',
+        );
+        expect(withVariant).toMatch(/<Button[\s\S]*variant="secondary"/);
+        expect(parse(withVariant)!.root.uiText).toMatchObject({ value: 'Go' });
+      });
     });
 
     it('should let a co-authored attribute override the base layer', () => {

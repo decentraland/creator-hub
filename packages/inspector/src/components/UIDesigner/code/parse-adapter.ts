@@ -204,19 +204,26 @@ function attrValue(attr: AnyNode): { ok: true; value: unknown; dynamic?: boolean
   return { ok: false };
 }
 
-// If a JSX attribute is bound to a simple variable expression — `attr={ident}`
-// or `attr={obj.prop}` (the code-as-source binding form, e.g.
-// `value={state.score}`) — return that expression's verbatim source text; else
-// null. This is what lets the panel show the field as bound (and re-bind it)
-// rather than collapsing the whole node to opaque dynamic content.
-function bindingExpr(attr: AnyNode, source: string): string | null {
-  const v = attr.value as AnyNode | null;
-  if (v?.type !== 'JSXExpressionContainer') return null;
-  const e = unparen(v.expression as AnyNode);
+// If an expression is a simple variable reference — `ident` or `obj.prop` (the
+// code-as-source binding form, e.g. `state.score`) — return its verbatim source
+// text; else null. This is what lets the panel show the field as bound (and
+// re-bind it) rather than collapsing the whole node to opaque dynamic content.
+// Expression-level so both the JSX-attribute path and the interaction-layer
+// path (where a bound prop is an object-property value, with no
+// JSXExpressionContainer to unwrap) can share it.
+function bindingExprOf(expr: AnyNode | undefined, source: string): string | null {
+  if (!expr) return null;
+  const e = unparen(expr);
   if (e && (e.type === 'Identifier' || e.type === 'MemberExpression')) {
     return source.slice(e.start, e.end);
   }
   return null;
+}
+
+function bindingExpr(attr: AnyNode, source: string): string | null {
+  const v = attr.value as AnyNode | null;
+  if (v?.type !== 'JSXExpressionContainer') return null;
+  return bindingExprOf(v.expression as AnyNode, source);
 }
 
 // Extract the handler NAME an event attr is bound to, from either the thunk form
@@ -243,14 +250,14 @@ function eventHandlerName(attr: AnyNode): string | null {
   return handlerNameOfExpr(v.expression as AnyNode);
 }
 
-// A `value={`literal ${expr} …`}` template literal → ordered mixed-content
-// segments (literal quasis + `${expr}` bindings), so the mixed editor round-trips
-// a code-authored interpolated string. Returns null for anything that isn't a
-// template literal or that interpolates a non-simple expression.
-function templateSegments(attr: AnyNode, source: string): CanvasSegment[] | null {
-  const v = attr.value as AnyNode | null;
-  if (v?.type !== 'JSXExpressionContainer') return null;
-  const e = unparen(v.expression as AnyNode);
+// A `` `literal ${expr} …` `` template literal → ordered mixed-content segments
+// (literal quasis + `${expr}` bindings), so the mixed editor round-trips a
+// code-authored interpolated string. Returns null for anything that isn't a
+// template literal or that interpolates a non-simple expression. Expression-level
+// for the same reason as bindingExprOf.
+function templateSegmentsOf(input: AnyNode | undefined, source: string): CanvasSegment[] | null {
+  if (!input) return null;
+  const e = unparen(input);
   if (!e || e.type !== 'TemplateLiteral') return null;
   const quasis = (e.quasis ?? []) as AnyNode[];
   const exprs = (e.expressions ?? []) as AnyNode[];
@@ -265,6 +272,12 @@ function templateSegments(attr: AnyNode, source: string): CanvasSegment[] | null
     }
   }
   return segs;
+}
+
+function templateSegments(attr: AnyNode, source: string): CanvasSegment[] | null {
+  const v = attr.value as AnyNode | null;
+  if (v?.type !== 'JSXExpressionContainer') return null;
+  return templateSegmentsOf(v.expression as AnyNode, source);
 }
 
 // Event-handler attrs → the field-config componentId the panel keys their
@@ -292,9 +305,16 @@ function eventFieldKey(type: UINodeType, attr: string): string | null {
 function readInteractionLayer(
   obj: AnyNode,
   type: UINodeType,
-): { styles: InteractionStateStyles; events: Map<string, string>; dynamic: boolean } {
+  source: string,
+): {
+  styles: InteractionStateStyles;
+  events: Map<string, string>;
+  bound: CanvasBindingRow[];
+  dynamic: boolean;
+} {
   const styles: InteractionStateStyles = {};
   const events = new Map<string, string>();
+  const bound: CanvasBindingRow[] = [];
   const textValues: Record<string, unknown> = {};
   const group = TYPED_PROP_GROUPS[type];
   let dynamic = false;
@@ -328,7 +348,21 @@ function readInteractionLayer(
 
     if (group?.props.has(key)) {
       const v = evalExpr(valueNode);
-      if (v.ok && !v.dynamic) textValues[key] = v.value;
+      if (v.ok && !v.dynamic) {
+        textValues[key] = v.value;
+        continue;
+      }
+      // A prop bound to a variable or an interpolated template is a RECOGNIZED
+      // construct, not unevaluable content — record it as a binding row exactly
+      // as the JSX-attribute path does. Marking the layer dynamic here instead
+      // would drop the value from the canvas AND freeze every panel edit on the
+      // node, so wrapping a bound element in interaction states silently
+      // downgraded it.
+      const field = `${group.componentId}.${key}`;
+      const segments = templateSegmentsOf(valueNode, source);
+      const expr = bindingExprOf(valueNode, source);
+      if (segments) bound.push({ field, variable: '', segments });
+      else if (expr) bound.push({ field, variable: expr });
       else dynamic = true;
     }
   }
@@ -339,7 +373,7 @@ function readInteractionLayer(
   if (group && Object.keys(textValues).length > 0) {
     styles[group.field] = ergonomicToPBText(textValues);
   }
-  return { styles, events, dynamic };
+  return { styles, events, bound, dynamic };
 }
 
 // Whether an attribute is one the editor models as a style or an event — and so
@@ -509,10 +543,14 @@ export function codeToUINodes(
       for (const key of INTERACTION_STATES) {
         const layer = interaction.states.get(key);
         if (!layer) continue;
-        const { styles, events, dynamic } = readInteractionLayer(layer.object, type);
+        const { styles, events, bound, dynamic } = readInteractionLayer(layer.object, type, source);
         states[key] = styles;
         if (dynamic) dynamicProps = true;
         if (key !== 'base') continue;
+        // Bound typed props surface as bindings, like the JSX path — the canvas
+        // reads them through previewBoundText, so without this a bound `value`
+        // renders as empty text.
+        bindings.push(...bound);
         if (styles.uiTransform) node.uiTransform = styles.uiTransform;
         if (styles.uiBackground) node.uiBackground = styles.uiBackground;
         if (styles.uiText) node.uiText = styles.uiText;
