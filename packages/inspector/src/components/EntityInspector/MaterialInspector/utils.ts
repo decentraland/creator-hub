@@ -1,16 +1,26 @@
 import type { PBMaterial } from '@dcl/ecs';
 import { MaterialTransparencyMode } from '@dcl/ecs';
 
-import {
-  toColor3OrUndefined,
-  toColor4OrUndefined,
-  toHexOrUndefined,
-} from '../../ui/ColorField/utils';
+import { toColor3OrUndefined, toColor4, toHexOrUndefined } from '../../ui/ColorField/utils';
 import { mapSelectFieldOptions } from '../../ui/Dropdown/utils';
 import { toString } from '../utils';
-import { fromTexture, toTexture } from './Texture/utils';
+import { fromTexture, toTexture, toNumberOrDefault } from './Texture/utils';
 import type { MaterialInput } from './types';
 import { MaterialType } from './types';
+
+// the hex color picker is RGB-only, so the alpha channel is carried through the
+// input separately and reapplied here (same approach as TextShapeInspector)
+const toColor4WithAlphaOrUndefined = (
+  hex?: string,
+  alpha?: string,
+): ReturnType<typeof toColor4> | undefined => {
+  if (!hex) return undefined;
+  const color = toColor4(hex);
+  // an 8-digit hex (#RRGGBBAA) already carries its own alpha
+  if (hex.length > 7) return color;
+  const parsedAlpha = alpha === undefined || alpha === '' ? NaN : Number(alpha);
+  return { ...color, a: isNaN(parsedAlpha) ? color.a : parsedAlpha };
+};
 
 export const fromMaterial = (value: PBMaterial): MaterialInput => {
   switch (value.material?.$case) {
@@ -20,6 +30,7 @@ export const fromMaterial = (value: PBMaterial): MaterialInput => {
         alphaTest: String(value.material.unlit.alphaTest ?? 0.5),
         castShadows: !!(value.material.unlit.castShadows ?? true),
         diffuseColor: toHexOrUndefined(value.material.unlit.diffuseColor),
+        diffuseColorAlpha: toString(value.material.unlit.diffuseColor?.a ?? 1),
         texture: fromTexture(value.material.unlit.texture ?? {}),
         alphaTexture: fromTexture(value.material.unlit.alphaTexture ?? {}),
       };
@@ -39,6 +50,7 @@ export const fromMaterial = (value: PBMaterial): MaterialInput => {
         emissiveIntensity: toString(value.material?.pbr.emissiveIntensity ?? 0),
         directIntensity: toString(value.material?.pbr.directIntensity ?? 1),
         albedoColor: toHexOrUndefined(value.material?.pbr.albedoColor),
+        albedoColorAlpha: toString(value.material?.pbr.albedoColor?.a ?? 1),
         emissiveColor: toHexOrUndefined(value.material?.pbr.emissiveColor),
         reflectivityColor: toHexOrUndefined(value.material?.pbr.reflectivityColor),
         texture: fromTexture(value.material?.pbr.texture ?? {}),
@@ -56,9 +68,9 @@ export const toMaterial = (value: MaterialInput): PBMaterial => {
         material: {
           $case: 'unlit',
           unlit: {
-            alphaTest: Number(value.alphaTest ?? 0.5),
+            alphaTest: toNumberOrDefault(value.alphaTest, 0.5),
             castShadows: !!(value.castShadows ?? true),
-            diffuseColor: toColor4OrUndefined(value.diffuseColor),
+            diffuseColor: toColor4WithAlphaOrUndefined(value.diffuseColor, value.diffuseColorAlpha),
             texture: toTexture(value.texture),
             alphaTexture: toTexture(value.alphaTexture),
           },
@@ -70,15 +82,18 @@ export const toMaterial = (value: MaterialInput): PBMaterial => {
         material: {
           $case: 'pbr',
           pbr: {
-            alphaTest: Number(value.alphaTest ?? 0.5),
+            alphaTest: toNumberOrDefault(value.alphaTest, 0.5),
             castShadows: !!(value.castShadows ?? true),
-            transparencyMode: Number(value.transparencyMode || MaterialTransparencyMode.MTM_AUTO),
-            metallic: Number(value.metallic || 0.5),
-            roughness: Number(value.roughness || 0.5),
-            specularIntensity: Number(value.specularIntensity || 1),
-            emissiveIntensity: Number(value.emissiveIntensity || 0),
-            directIntensity: Number(value.directIntensity || 1),
-            albedoColor: toColor4OrUndefined(value.albedoColor),
+            transparencyMode: toNumberOrDefault(
+              value.transparencyMode,
+              MaterialTransparencyMode.MTM_AUTO,
+            ),
+            metallic: toNumberOrDefault(value.metallic, 0.5),
+            roughness: toNumberOrDefault(value.roughness, 0.5),
+            specularIntensity: toNumberOrDefault(value.specularIntensity, 1),
+            emissiveIntensity: toNumberOrDefault(value.emissiveIntensity, 0),
+            directIntensity: toNumberOrDefault(value.directIntensity, 1),
+            albedoColor: toColor4WithAlphaOrUndefined(value.albedoColor, value.albedoColorAlpha),
             emissiveColor: toColor3OrUndefined(value.emissiveColor),
             reflectivityColor: toColor3OrUndefined(value.reflectivityColor),
             texture: toTexture(value.texture),

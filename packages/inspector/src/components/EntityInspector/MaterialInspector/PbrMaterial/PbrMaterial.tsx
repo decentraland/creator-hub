@@ -14,6 +14,7 @@ function PbrMaterial({
   metallic,
   roughness,
   albedoColor,
+  albedoColorAlpha,
   reflectivityColor,
   specularIntensity,
   directIntensity,
@@ -56,6 +57,16 @@ function PbrMaterial({
           {...albedoColor}
         />
       </Block>
+      {albedoColorAlpha && (
+        <Block>
+          <RangeField
+            label="Color Alpha"
+            max={1}
+            step={0.01}
+            {...albedoColorAlpha}
+          />
+        </Block>
+      )}
       <Block>
         <ColorField
           label="Reflectivity color"

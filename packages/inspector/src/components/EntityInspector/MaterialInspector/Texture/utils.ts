@@ -11,21 +11,34 @@ import { isValidHttpsUrl } from '../../../../lib/utils/url';
 import { Texture } from './types';
 import type { TextureInput } from './types';
 
+// engine defaults for unset texture modes (see @dcl/ecs texture.gen:
+// "default = TextureWrapMode.Clamp" / "default = FilterMode.Bilinear")
+export const DEFAULT_WRAP_MODE = TextureWrapMode.TWM_CLAMP;
+export const DEFAULT_FILTER_MODE = TextureFilterMode.TFM_BILINEAR;
+
+// like toNumber, but also falls back to the default on undefined/empty input,
+// so an explicit "0" survives while a missing value doesn't become 0
+export const toNumberOrDefault = (value: string | undefined, def: number): number => {
+  if (value === undefined || value === '') return def;
+  const num = Number(value);
+  return isNaN(num) ? def : num;
+};
+
 export const fromTexture = (value: TextureUnion): TextureInput => {
   switch (value.tex?.$case) {
     case 'avatarTexture':
       return {
         type: Texture.TT_AVATAR_TEXTURE,
         userId: toString(value.tex.avatarTexture.userId),
-        wrapMode: toString(value.tex.avatarTexture.wrapMode),
-        filterMode: toString(value.tex.avatarTexture.filterMode),
+        wrapMode: toString(value.tex.avatarTexture.wrapMode, DEFAULT_WRAP_MODE),
+        filterMode: toString(value.tex.avatarTexture.filterMode, DEFAULT_FILTER_MODE),
       };
     case 'videoTexture':
       return {
         type: Texture.TT_VIDEO_TEXTURE,
         videoPlayerEntity: toString(value.tex.videoTexture.videoPlayerEntity),
-        wrapMode: toString(value.tex.videoTexture.wrapMode),
-        filterMode: toString(value.tex.videoTexture.filterMode),
+        wrapMode: toString(value.tex.videoTexture.wrapMode, DEFAULT_WRAP_MODE),
+        filterMode: toString(value.tex.videoTexture.filterMode, DEFAULT_FILTER_MODE),
       };
     case 'texture':
     default: {
@@ -33,8 +46,8 @@ export const fromTexture = (value: TextureUnion): TextureInput => {
       return {
         src,
         type: Texture.TT_TEXTURE,
-        wrapMode: toString(value?.tex?.texture.wrapMode),
-        filterMode: toString(value?.tex?.texture.filterMode),
+        wrapMode: toString(value?.tex?.texture.wrapMode, DEFAULT_WRAP_MODE),
+        filterMode: toString(value?.tex?.texture.filterMode, DEFAULT_FILTER_MODE),
         offset: {
           x: value?.tex?.texture.offset?.x?.toFixed(2) ?? '0',
           y: value?.tex?.texture.offset?.y?.toFixed(2) ?? '0',
@@ -56,8 +69,8 @@ export const toTexture = (value?: TextureInput): TextureUnion => {
           $case: 'avatarTexture',
           avatarTexture: {
             userId: toString(value.userId),
-            wrapMode: toNumber(value.wrapMode, TextureWrapMode.TWM_REPEAT),
-            filterMode: toNumber(value.filterMode, TextureFilterMode.TFM_POINT),
+            wrapMode: toNumberOrDefault(value.wrapMode, DEFAULT_WRAP_MODE),
+            filterMode: toNumberOrDefault(value.filterMode, DEFAULT_FILTER_MODE),
           },
         },
       };
@@ -67,8 +80,8 @@ export const toTexture = (value?: TextureInput): TextureUnion => {
           $case: 'videoTexture',
           videoTexture: {
             videoPlayerEntity: toNumber(value.videoPlayerEntity ?? '')!,
-            wrapMode: toNumber(value.wrapMode, TextureWrapMode.TWM_REPEAT),
-            filterMode: toNumber(value.filterMode, TextureFilterMode.TFM_POINT),
+            wrapMode: toNumberOrDefault(value.wrapMode, DEFAULT_WRAP_MODE),
+            filterMode: toNumberOrDefault(value.filterMode, DEFAULT_FILTER_MODE),
           },
         },
       };
@@ -79,8 +92,8 @@ export const toTexture = (value?: TextureInput): TextureUnion => {
           $case: 'texture',
           texture: {
             src,
-            wrapMode: toNumber(value?.wrapMode ?? '0', TextureWrapMode.TWM_REPEAT),
-            filterMode: toNumber(value?.filterMode ?? '0', TextureFilterMode.TFM_POINT),
+            wrapMode: toNumberOrDefault(value?.wrapMode, DEFAULT_WRAP_MODE),
+            filterMode: toNumberOrDefault(value?.filterMode, DEFAULT_FILTER_MODE),
             offset: {
               x: toNumber(value?.offset?.x ?? '0'),
               y: toNumber(value?.offset?.y ?? '0'),

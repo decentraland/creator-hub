@@ -23,6 +23,7 @@ export type MaterialInput = {
   alphaTest?: string;
   castShadows?: boolean;
   diffuseColor?: string;
+  diffuseColorAlpha?: string;
   texture?: TextureInput;
   alphaTexture?: TextureInput;
   emissiveTexture?: TextureInput;
@@ -34,6 +35,7 @@ export type MaterialInput = {
   emissiveIntensity?: string;
   directIntensity?: string;
   albedoColor?: string;
+  albedoColorAlpha?: string;
   emissiveColor?: string;
   reflectivityColor?: string;
 };
