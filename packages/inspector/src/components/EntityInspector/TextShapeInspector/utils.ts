@@ -11,6 +11,16 @@ const toNumber = (value: string, min?: number) => {
   return min ? Math.min(num, min) : num;
 };
 
+// the hex color picker is RGB-only, so the alpha channel is carried through the
+// input separately (see TextShapeInput.textColorAlpha) and reapplied here
+const toColor4WithAlpha = (hex: string, alpha: string): NonNullable<PBTextShape['textColor']> => {
+  const color = toColor4(hex);
+  // an 8-digit hex (#RRGGBBAA) already carries its own alpha
+  if (hex && hex.length > 7) return color;
+  const parsedAlpha = alpha === '' ? NaN : Number(alpha);
+  return { ...color, a: isNaN(parsedAlpha) ? color.a : parsedAlpha };
+};
+
 export const toBabylonGUIAlignment = (value: TextAlignMode): [number, number] => {
   switch (value) {
     case TextAlignMode.TAM_TOP_LEFT:
@@ -74,6 +84,8 @@ export const fromTextShape = (value: PBTextShape): TextShapeInput => {
     fontSize: toString(value.fontSize, 10),
     fontAutoSize: !!value.fontAutoSize,
     textAlign: toString(value.textAlign, TextAlignMode.TAM_MIDDLE_CENTER),
+    width: toString(value.width, 1),
+    height: toString(value.height, 1),
     paddingTop: toString(value.paddingTop, 0),
     paddingRight: toString(value.paddingRight, 0),
     paddingBottom: toString(value.paddingBottom, 0),
@@ -81,8 +93,14 @@ export const fromTextShape = (value: PBTextShape): TextShapeInput => {
     outlineWidth: toString((value.outlineWidth ?? 0) * 5),
     lineSpacing: toString((value.lineSpacing ?? 0) / 100, 0),
     lineCount: toString(value.lineCount, ''),
+    textWrapping: !!value.textWrapping,
+    shadowBlur: toString(value.shadowBlur, 0),
+    shadowOffsetX: toString(value.shadowOffsetX, 0),
+    shadowOffsetY: toString(value.shadowOffsetY, 0),
+    shadowColor: toHex(value.shadowColor),
     outlineColor: toHex(value.outlineColor),
     textColor: toHex(value.textColor),
+    textColorAlpha: toString(value.textColor?.a, 1),
   };
 };
 
@@ -93,14 +111,21 @@ export const toTextShape = (value: TextShapeInput): PBTextShape => {
     fontSize: toNumber(value.fontSize, 0),
     fontAutoSize: !!value.fontAutoSize,
     textAlign: value.textAlign ? toNumber(value.textAlign) : undefined,
+    width: toNumber(value.width, 0),
+    height: toNumber(value.height, 0),
     paddingTop: toNumber(value.paddingTop, 0),
     paddingRight: toNumber(value.paddingRight, 0),
     paddingBottom: toNumber(value.paddingBottom, 0),
     paddingLeft: toNumber(value.paddingLeft, 0),
     outlineWidth: toNumber(value.outlineWidth, 0) / 5,
     lineSpacing: toNumber(value.lineSpacing, 0) * 100,
+    textWrapping: !!value.textWrapping,
+    shadowBlur: toNumber(value.shadowBlur, 0),
+    shadowOffsetX: toNumber(value.shadowOffsetX, 0),
+    shadowOffsetY: toNumber(value.shadowOffsetY, 0),
+    shadowColor: toColor3(value.shadowColor),
     outlineColor: toColor3(value.outlineColor),
-    textColor: toColor4(value.textColor),
+    textColor: toColor4WithAlpha(value.textColor, value.textColorAlpha),
     lineCount: value.lineCount.length > 0 ? toNumber(value.lineCount, 0) : undefined,
   };
 };
