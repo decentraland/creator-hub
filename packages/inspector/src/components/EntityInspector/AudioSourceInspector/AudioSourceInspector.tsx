@@ -123,7 +123,15 @@ export default withSdk<Props>(({ sdk, entities, initialOpen = true }) => {
         <TextField
           {...pitch}
           type="number"
-          label="Pitch"
+          label={
+            <>
+              Pitch{' '}
+              <InfoTooltip
+                text="Playback speed multiplier that shifts the sound's pitch: 1 plays the original sound, 2 plays twice as fast (one octave higher), 0.5 plays half as fast (one octave lower)."
+                type="help"
+              />
+            </>
+          }
           error={!isMixedValue(pitch.value) && !isValidPitch(String(pitch.value ?? ''))}
           autoSelect
         />

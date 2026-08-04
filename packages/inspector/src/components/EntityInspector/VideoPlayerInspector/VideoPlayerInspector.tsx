@@ -170,14 +170,30 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
       </Block>
       <Block label="Spatial Audio">
         <CheckboxField
-          label="Spatial"
+          label={
+            <>
+              Spatial{' '}
+              <InfoTooltip
+                text="Makes the video's audio positional: the volume fades as the player moves away from this entity. When off, the audio plays at the same volume everywhere in the scene."
+                type="help"
+              />
+            </>
+          }
           checked={!!spatial.value}
           {...spatial}
         />
       </Block>
       <Block label="Spatial Distance">
         <TextField
-          leftLabel="Min"
+          leftLabel={
+            <>
+              Min{' '}
+              <InfoTooltip
+                text="Distance in meters from the entity within which the audio plays at full volume. Beyond it, the volume starts to fade."
+                type="help"
+              />
+            </>
+          }
           autoSelect
           type="number"
           placeholder="0"
@@ -185,7 +201,15 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
           error={!isValidSpatialDistance(spatialMinDistance.value as string)}
         />
         <TextField
-          leftLabel="Max"
+          leftLabel={
+            <>
+              Max{' '}
+              <InfoTooltip
+                text="Distance in meters from the entity at which the audio becomes inaudible."
+                type="help"
+              />
+            </>
+          }
           autoSelect
           type="number"
           placeholder="60"
