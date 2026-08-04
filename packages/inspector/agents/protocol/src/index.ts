@@ -169,10 +169,17 @@ export interface SelectionEntity {
 export type PageToScene =
   | {
       kind: 'set-selection';
-      // Every selected entity's world pose. The gizmo anchors to their centroid;
-      // each entity's offset from the centroid is cached at drag start and the
-      // drag transforms them about that pivot. Empty = nothing selected.
+      // Every GIZMO-able selected entity's world pose. The gizmo anchors to their
+      // centroid; each entity's offset from the centroid is cached at drag start
+      // and the drag transforms them about that pivot. Empty = no gizmo. Excludes
+      // locked + hidden entities (they must not be movable in the viewport).
       entities: SelectionEntity[];
+      // Entity ids to OUTLINE (render-only selection highlight). Broader than
+      // `entities`: it includes LOCKED entities — they can't be moved (no gizmo)
+      // but should still show they're selected when picked from the tree (#1444).
+      // Hidden entities are excluded (nothing to outline). Omitted by old callers →
+      // the agent falls back to `entities`.
+      highlight?: number[];
       // The toolbar's "align to world" checkbox: true = translate/rotate handles
       // on the WORLD axes, false = on the entity's local axes. Scale ignores it
       // (always local). Local alignment applies to single selection only.

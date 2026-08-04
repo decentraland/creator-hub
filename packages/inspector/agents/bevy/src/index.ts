@@ -69,10 +69,10 @@ export function main(): void {
     if (msg.kind === 'set-selection') {
       setSelectedEntity(msg.entities, msg.mode, msg.alignToWorld, msg.snap);
       // Outline the selected entities in the viewport (render-only, never saved —
-      // see the engine's /highlight). Empty selection clears it. These are the
-      // inspected scene's entity ids, which /highlight resolves on the pinned
-      // scene — the same ids the gizmo/pick use.
-      highlightEntities(msg.entities.map(e => e.entity));
+      // see the engine's /highlight). Empty selection clears it. Use the dedicated
+      // `highlight` list (includes LOCKED entities, which have no gizmo but still
+      // outline — #1444); fall back to the gizmo `entities` for older callers.
+      highlightEntities(msg.highlight ?? msg.entities.map(e => e.entity));
       return;
     }
     // Drag-drop placement: raycast the ground under the pointer and reply with
