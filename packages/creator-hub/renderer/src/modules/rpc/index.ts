@@ -6,7 +6,7 @@ import { fs, custom, workspace } from '#preload';
 import { SceneRpcClient } from './scene/client';
 import { SceneRpcServer } from './scene/server';
 import { type Method, type Params, type Result, StorageRPC } from './storage';
-import { AuthenticatedMessageTransport, getIframeOrigin } from './transport';
+import { AuthenticatedMessageTransport } from './transport';
 
 export type RPCInfo = {
   iframe: HTMLIFrameElement;
@@ -41,10 +41,7 @@ export const getPath = async (filePath: string, project: Project) => {
 };
 
 export function initRpc(iframe: HTMLIFrameElement, project: Project, cbs: Partial<Callbacks> = {}) {
-  const transport = new AuthenticatedMessageTransport(
-    iframe.contentWindow!,
-    getIframeOrigin(iframe),
-  );
+  const transport = new AuthenticatedMessageTransport(iframe);
   const sceneClient = new SceneRpcClient(transport);
   const sceneServer = new SceneRpcServer(transport, project);
   const params = { iframe, project, scene: sceneClient };
@@ -95,10 +92,7 @@ export async function takeScreenshot(iframe: HTMLIFrameElement, sceneRPC?: Scene
 
   // Owned here, so it has to be closed here: every thumbnail regenerated without a caller
   // supplied client would otherwise leave another `message` listener on `window`.
-  const transport = new AuthenticatedMessageTransport(
-    iframe.contentWindow!,
-    getIframeOrigin(iframe),
-  );
+  const transport = new AuthenticatedMessageTransport(iframe);
   const client = new SceneRpcClient(transport);
   try {
     return await client.takeScreenshot(+iframe.width, +iframe.height);
