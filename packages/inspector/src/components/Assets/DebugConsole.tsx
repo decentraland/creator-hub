@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useRef, useSyncExternalStore } from 'react';
 
+import { parseAnsi } from '../../lib/logic/ansi';
 import { subscribe, getSnapshot, clear, type DebugLogEntry } from '../../lib/logic/debug-log-store';
 import { useAppSelector } from '../../redux/hooks';
 import { getDebugConsoleEnabled } from '../../redux/ui';
@@ -77,10 +78,17 @@ function DebugConsole() {
       >
         {logs.length > 0 ? (
           logs.map((entry: DebugLogEntry) => (
-            <span
-              key={entry.id}
-              dangerouslySetInnerHTML={{ __html: entry.html }}
-            />
+            // One span per entry, because `.DebugConsole-logs > span` makes each a block.
+            <span key={entry.id}>
+              {parseAnsi(entry.text).map(({ text, ...style }, index) => (
+                <span
+                  key={index}
+                  style={style}
+                >
+                  {text}
+                </span>
+              ))}
+            </span>
           ))
         ) : (
           <div className="DebugConsole-placeholder">Run a scene to see debug output</div>
