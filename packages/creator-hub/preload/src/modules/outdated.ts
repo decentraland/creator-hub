@@ -1,79 +1,39 @@
 import semver from 'semver';
 
-import type { DistTags, Outdated } from '/shared/types/npm';
-
-export const AUTH_SERVER_TAG = 'auth-server';
+import type { Outdated } from '/shared/types/npm';
 
 type OutdatedInfo = Outdated[string];
 
 /**
- * Returns the "major.minor.patch" core of a version, ignoring any prerelease or
- * build-metadata suffix, or null when the value can't be parsed as a semver.
- */
-function getBaseVersion(version: string): string | null {
-  const parsed = semver.parse(version, { loose: true });
-  return parsed ? `${parsed.major}.${parsed.minor}.${parsed.patch}` : null;
-}
-
-/**
- * Decides whether (and how) an outdated package reported by `npm outdated` should
- * surface an update prompt, accounting for non-official builds.
+ * Decides whether an outdated package reported by `npm outdated` should surface
+ * an update prompt.
  *
  * `npm outdated` only knows about the `latest` dist-tag, so it flags any installed
- * version that differs from it — including experimental/auth-server commit builds
- * such as `7.24.3-28199504206.commit-1a6c780`, even when "updating" to `latest`
- * would actually be a downgrade. This narrows that down to:
- *
- *  - A prerelease/commit build of the official `latest` line (e.g.
- *    `7.24.3-<run>.commit-<hash>` while latest is `7.24.3`) is NOT outdated.
- *  - A build whose base version is *ahead* of `latest` and not on the auth-server
- *    line (e.g. a `next`/`canary`/`experimental` commit build) is NOT outdated —
- *    "updating" to `latest` would be a downgrade.
- *  - A build on the `auth-server` line is never pushed to the official latest:
- *    if it's the current auth-server build it's up to date; if it's an older
- *    build on that line, the update target is rewritten to the auth-server build.
+ * version that differs from it — including auth-server/experimental commit builds
+ * such as `7.24.3-28199504206.commit-1a6c780`, where "updating" to `latest` would
+ * pull the scene off the line it was deliberately pinned to (and may even be a
+ * downgrade). A version string alone can't tell which dist-tag such a build came
+ * from, so instead of guessing we only prompt when the installed version is a
+ * clean official release (`7.23.0`, `7.11.2`, ...) that is behind `latest`.
+ * Anything with a prerelease or build suffix — or that isn't a valid semver at
+ * all (git/file specifiers) — never prompts.
  *
  * @param info - The `{ current, latest }` entry reported by `npm outdated`.
- * @param distTags - The package's dist-tags (`npm view <pkg> dist-tags`).
- * @returns The (possibly rewritten) outdated info, or `null` to suppress it.
+ * @returns The outdated info when an update should be offered, or `null` to suppress it.
  */
-export function resolveOutdated(info: OutdatedInfo, distTags: DistTags): OutdatedInfo | null {
+export function resolveOutdated(info: OutdatedInfo): OutdatedInfo | null {
   const { current, latest } = info;
 
-  // Leave anything we can't reason about (git/file specifiers, etc.) untouched.
-  if (!semver.valid(current, { loose: true })) return info;
-
-  const currentBase = getBaseVersion(current);
-  const latestBase = getBaseVersion(latest);
-
-  // Same release as the official latest, just a prerelease/commit build of it.
-  if (currentBase && latestBase && currentBase === latestBase && current !== latest) {
+  const parsed = semver.parse(current, { loose: true });
+  if (!parsed || parsed.prerelease.length > 0 || parsed.build.length > 0) {
     return null;
   }
 
-  const authServer = distTags[AUTH_SERVER_TAG];
-  if (authServer && semver.valid(authServer, { loose: true })) {
-    // Already on the current auth-server build: nothing to update.
-    if (current === authServer) return null;
-
-    // On the same release line as the auth-server build.
-    if (currentBase && currentBase === getBaseVersion(authServer)) {
-      // Older build on that line -> offer the next auth-server build, never official latest.
-      if (semver.lt(current, authServer, { loose: true })) {
-        return { current, latest: authServer };
-      }
-      // Same line but not behind the auth-server build -> nothing to offer.
-      return null;
-    }
-  }
-
-  // Installed build is ahead of the official latest and not on the auth-server line
-  // (e.g. a `next`/`canary`/`experimental` commit build). `npm outdated` still flags
-  // it because it only knows `latest`, but "updating" would be a downgrade -> suppress.
-  if (currentBase && latestBase && semver.gt(currentBase, latestBase)) {
+  // A clean release can still be at or ahead of `latest` (e.g. a not-yet-published
+  // version); prompting there would offer a no-op or a downgrade.
+  if (!semver.valid(latest, { loose: true }) || !semver.lt(current, latest, { loose: true })) {
     return null;
   }
 
-  // Genuinely behind the official latest.
   return info;
 }

@@ -3,94 +3,69 @@ import { describe, it, expect } from 'vitest';
 import { resolveOutdated } from '../../src/modules/outdated';
 
 describe('resolveOutdated', () => {
-  const AUTH_SERVER = '7.24.3-28199504206.commit-1a6c780';
-  const distTags = {
-    latest: '7.24.2',
-    next: '7.24.3-28263300619.commit-182d37c',
-    'auth-server': AUTH_SERVER,
-  };
-
-  describe('when the installed version is a prerelease build of the official latest', () => {
-    it('should suppress it (same major.minor.patch as latest)', () => {
-      expect(
-        resolveOutdated(
-          { current: '7.24.3-28199504206.commit-1a6c780', latest: '7.24.3' },
-          { latest: '7.24.3' },
-        ),
-      ).toBeNull();
-    });
-
-    it('should suppress a plain prerelease of latest (e.g. rc)', () => {
-      expect(resolveOutdated({ current: '7.24.3-rc.1', latest: '7.24.3' }, {})).toBeNull();
-    });
-  });
-
-  describe('when the installed version is on the auth-server line', () => {
-    it('should suppress when it is exactly the current auth-server build', () => {
-      expect(resolveOutdated({ current: AUTH_SERVER, latest: '7.24.2' }, distTags)).toBeNull();
-    });
-
-    it('should offer the auth-server build when on an older build of that line', () => {
-      const current = '7.24.3-28000000000.commit-aaaaaaa';
-      expect(resolveOutdated({ current, latest: '7.24.2' }, distTags)).toEqual({
-        current,
-        latest: AUTH_SERVER,
-      });
-    });
-
-    it('should suppress when on the same line but ahead of the auth-server build', () => {
-      // e.g. a `next` build with a higher run id than the auth-server tag
-      expect(resolveOutdated({ current: distTags.next, latest: '7.24.2' }, distTags)).toBeNull();
-    });
-  });
-
-  describe('when the installed version is ahead of latest and not on the auth-server line', () => {
-    it('should suppress a build whose base is newer than latest (e.g. next/canary)', () => {
-      // current=19.3.0-canary, latest=19.2.7, auth-server on a different line -> downgrade prompt avoided
-      expect(
-        resolveOutdated({ current: '19.3.0-canary-d5736f09-20260507', latest: '19.2.7' }, distTags),
-      ).toBeNull();
-    });
-
-    it('should suppress even when there is no auth-server dist-tag', () => {
-      expect(
-        resolveOutdated(
-          { current: '19.3.0-canary-d5736f09-20260507', latest: '19.2.7' },
-          { latest: '19.2.7' },
-        ),
-      ).toBeNull();
-    });
-
-    it('should suppress a build one patch ahead of latest', () => {
-      expect(
-        resolveOutdated({ current: '7.24.3-28000000000.commit-aaaaaaa', latest: '7.24.2' }, {}),
-      ).toBeNull();
-    });
-  });
-
-  describe('when the installed version is genuinely behind the official latest', () => {
-    it('should keep a normal release that is behind latest', () => {
+  describe('when the installed version is a clean release behind latest', () => {
+    it('should keep the update prompt', () => {
       const info = { current: '7.20.0', latest: '7.24.2' };
-      expect(resolveOutdated(info, distTags)).toEqual(info);
+      expect(resolveOutdated(info)).toEqual(info);
     });
 
-    it('should keep an unrelated old prerelease (different base, not auth-server)', () => {
-      const info = { current: '7.20.0-21000000000.commit-bbbbbbb', latest: '7.24.2' };
-      expect(resolveOutdated(info, distTags)).toEqual(info);
+    it('should keep the prompt for a patch-level update', () => {
+      const info = { current: '7.11.2', latest: '7.11.3' };
+      expect(resolveOutdated(info)).toEqual(info);
+    });
+  });
+
+  describe('when the installed version has a prerelease or build suffix', () => {
+    it('should suppress an auth-server commit build behind latest', () => {
+      expect(
+        resolveOutdated({ current: '7.24.3-28199504206.commit-1a6c780', latest: '7.25.0' }),
+      ).toBeNull();
+    });
+
+    it('should suppress a commit build of the same line as latest', () => {
+      expect(resolveOutdated({ current: '7.25.0-1234.commit-abc', latest: '7.25.0' })).toBeNull();
+    });
+
+    it('should suppress a commit build ahead of latest (e.g. next/experimental)', () => {
+      expect(resolveOutdated({ current: '7.26.0-x.commit-y', latest: '7.25.0' })).toBeNull();
+    });
+
+    it('should suppress a plain prerelease (e.g. rc)', () => {
+      expect(resolveOutdated({ current: '7.24.3-rc.1', latest: '7.25.0' })).toBeNull();
+    });
+
+    it('should suppress a canary build', () => {
+      expect(
+        resolveOutdated({ current: '19.3.0-canary-d5736f09-20260507', latest: '19.2.7' }),
+      ).toBeNull();
+    });
+
+    it('should suppress a version with build metadata', () => {
+      expect(resolveOutdated({ current: '7.24.3+build.5', latest: '7.25.0' })).toBeNull();
+    });
+  });
+
+  describe('when the installed version is a clean release not behind latest', () => {
+    it('should suppress a version equal to latest', () => {
+      expect(resolveOutdated({ current: '7.25.0', latest: '7.25.0' })).toBeNull();
+    });
+
+    it('should suppress a version ahead of latest', () => {
+      expect(resolveOutdated({ current: '7.26.0', latest: '7.25.0' })).toBeNull();
     });
   });
 
   describe('when the installed version is not a valid semver', () => {
-    it('should leave it untouched (e.g. git/file specifiers)', () => {
-      const info = { current: 'github:decentraland/js-sdk-toolchain', latest: '7.24.2' };
-      expect(resolveOutdated(info, distTags)).toEqual(info);
+    it('should suppress git/file specifiers', () => {
+      expect(
+        resolveOutdated({ current: 'github:decentraland/js-sdk-toolchain', latest: '7.24.2' }),
+      ).toBeNull();
     });
   });
 
-  describe('when there is no auth-server dist-tag', () => {
-    it('should keep a version that is genuinely behind latest', () => {
-      const info = { current: '7.20.0', latest: '7.24.2' };
-      expect(resolveOutdated(info, { latest: '7.24.2' })).toEqual(info);
+  describe('when latest is not a valid semver', () => {
+    it('should suppress the prompt', () => {
+      expect(resolveOutdated({ current: '7.20.0', latest: 'unknown' })).toBeNull();
     });
   });
 });
