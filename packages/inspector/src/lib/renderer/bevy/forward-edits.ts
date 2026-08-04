@@ -435,16 +435,12 @@ export function createForwardEditBridge(options: ForwardEditBridgeOptions): Forw
       // bit 1; OR it into visibleMeshesCollisionMask. Editor-only — the CRDT keeps
       // the authored mask, so preview/live collision is unchanged.
       const CL_POINTER = 1;
-      const g = (current ?? {}) as { visibleMeshesCollisionMask?: number };
+      const g = (current ?? {}) as { visibleMeshesCollisionMask?: number; src?: string };
       payload = {
         ...g,
         visibleMeshesCollisionMask: (g.visibleMeshesCollisionMask ?? 0) | CL_POINTER,
       };
-      try {
-        await send('scene_content', []);
-      } catch (error) {
-        onError(`scene_content (before ${entity} GltfContainer)`, error);
-      }
+      await refreshContentForGltf(entity, g.src);
     }
     const setArgs = [String(entity), engineName, JSON.stringify(payload)];
     try {
@@ -452,6 +448,49 @@ export function createForwardEditBridge(options: ForwardEditBridgeOptions): Forw
     } catch (error) {
       onError(`set_component ${entity} ${engineName}`, error);
     }
+  }
+
+  /**
+   * Refresh the engine's content map before a GltfContainer set — and, if the src
+   * file isn't in it yet, retry until it appears (#1459). `/scene_content` re-fetches
+   * the dev server's content map (which globs the whole project), so a freshly
+   * dropped asset's file lands there once its write propagates. On Windows that
+   * write lags the CRDT edit, so the first refresh misses it, the engine can't
+   * resolve the src, and the model never renders until a preview forces a full
+   * reload. Waiting for the src to appear closes that race; on a fast FS (Mac) it's
+   * already present on the first pass, so this returns immediately. Bounded — a src
+   * that's genuinely absent (or unparseable reply) falls through and sets anyway.
+   */
+  async function refreshContentForGltf(entity: Entity, src?: string): Promise<void> {
+    const target = src?.toLowerCase();
+    const MAX_ATTEMPTS = 8;
+    const RETRY_DELAY_MS = 120;
+    for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
+      let reply: string;
+      try {
+        reply = await send('scene_content', []);
+      } catch (error) {
+        onError(`scene_content (before ${entity} GltfContainer)`, error);
+        return;
+      }
+      // No src to resolve, or the reply isn't the expected file-list JSON → the
+      // refresh alone is all we can do; proceed to set_component.
+      if (!target) return;
+      let files: unknown;
+      try {
+        files = JSON.parse(reply);
+      } catch {
+        return;
+      }
+      if (!Array.isArray(files)) return;
+      // `/scene_content` returns content-map keys already lowercased.
+      if (files.some(f => typeof f === 'string' && f.toLowerCase() === target)) return;
+      if (attempt < MAX_ATTEMPTS - 1) {
+        await new Promise(resolve => setTimeout(resolve, RETRY_DELAY_MS));
+        if (disposed) return;
+      }
+    }
+    // Timed out waiting for the file — set anyway; a later refresh/preview picks it up.
   }
 
   // #1382: pause/resume GLTF animation playback with the scene freeze. Freezing

@@ -226,6 +226,48 @@ describe('createForwardEditBridge', () => {
     });
   });
 
+  describe('when a dropped asset file lags the content map (#1459)', () => {
+    it('should retry scene_content until the src appears, then set GltfContainer', async () => {
+      const raceSent: Array<{ cmd: string; args: string[] }> = [];
+      const raceCtx = new BevySceneContext();
+      // The dev server's content map is empty on the first refresh (the asset file
+      // hasn't propagated yet — the Windows race) and includes it from the 2nd.
+      let refreshes = 0;
+      const bridge2 = createForwardEditBridge({
+        context: raceCtx,
+        engineWindow,
+        shouldForward: () => true,
+        send: async (cmd, args) => {
+          raceSent.push({ cmd, args });
+          if (cmd === 'scene_content') {
+            refreshes += 1;
+            return refreshes < 2 ? JSON.stringify([]) : JSON.stringify(['assets/late.glb']);
+          }
+          return '';
+        },
+      });
+
+      const GltfContainer = components.GltfContainer(raceCtx.engine);
+      const entity = raceCtx.engine.addEntity();
+      GltfContainer.create(entity, { src: 'assets/late.glb', visibleMeshesCollisionMask: 3 });
+      await raceCtx.engine.update(1);
+      // Allow the bounded retry (one ~120ms delay) to elapse before asserting.
+      await new Promise(r => setTimeout(r, 300));
+
+      // It refreshed more than once (waited for the file), then set the model.
+      expect(refreshes).toBeGreaterThanOrEqual(2);
+      const refreshIdx = raceSent.findIndex(s => s.cmd === 'scene_content');
+      const setIdx = raceSent.findIndex(
+        s => s.cmd === 'set_component' && s.args[1] === 'GltfContainer',
+      );
+      expect(setIdx).toBeGreaterThanOrEqual(0);
+      expect(refreshIdx).toBeLessThan(setIdx);
+
+      bridge2.disconnect();
+      raceCtx.dispose();
+    });
+  });
+
   describe('when an editor Placeholder is written (#1372)', () => {
     it('should forward it as a GltfContainer pointed at the placeholder src', async () => {
       const entity = ctx.engine.addEntity();
