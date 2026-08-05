@@ -22,11 +22,11 @@ const hex2 = (n: number) =>
     .toString(16)
     .padStart(2, '0');
 
-// '#rrggbb' (a===1) or '#rrggbbaa'.
-export function color4ToHex(c: Color4): string {
-  const { r, g, b, a } = color4ToRgba(c);
-  const base = `#${hex2(r)}${hex2(g)}${hex2(b)}`;
-  return a >= 1 ? base : `${base}${hex2(a * 255)}`;
+// '#rrggbb' — the RGB triplet only. Alpha is edited as its own 0–100 field, so
+// appending it here would show the same value twice.
+export function color4ToRgbHex(c: Color4): string {
+  const { r, g, b } = color4ToRgba(c);
+  return `#${hex2(r)}${hex2(g)}${hex2(b)}`;
 }
 
 // Delegates to the shared strict hex codec in @dcl/asset-packs so the inspector

@@ -1,3 +1,5 @@
+import { alignmentIsRepresentable } from './alignment-presets';
+import { directionIsRepresentable, wrapIsRepresentable, YGW_WRAP_REVERSE } from './flow';
 import type { UINodeType } from './tree-model';
 
 // PB enum values are `const enum`s; importing them at runtime is risky across
@@ -24,11 +26,17 @@ export type FieldKind =
   // Unity-style 3×3 anchor grid → writes positionType + edge insets / auto
   // margins onto the UiTransform (path '', reads the whole component).
   | 'align-preset'
-  // Positioning mode switch (in flow ⟷ absolute). Renders like `enum` but the
+  // Positioning mode switch (in flow ⟷ absolute), drawn as one checkbox. The
   // write is mode-preserving: → Absolute bakes the current on-screen offset as
   // Top/Left px; → In flow clears all position offsets (Yoga applies position*
   // to RELATIVE nodes too, so stale values would shift the node in flow).
   | 'position-mode'
+  // One 5-way exclusive selector over positionType + flexDirection, plus a wrap
+  // toggle (path '', reads the whole component). See flow.ts.
+  | 'flow'
+  // One 9-way vertical × horizontal picker over justifyContent + alignItems
+  // (path '', reads the whole component). See alignment-presets.ts.
+  | 'alignment'
   // Nested margin→padding→content box (CSS-devtools style) → writes the 8
   // margin*/padding* px fields on the UiTransform (path '').
   | 'box-model'
@@ -74,6 +82,20 @@ export interface FieldConfig {
    */
   aspectLockable?: boolean;
   /**
+   * Offer `auto` (YGU_AUTO) in this length field's unit selector — the design's
+   * "Hug" mode, where Yoga sizes the box from its content. Opt-in per field
+   * because it is only meaningful for a dimension: `auto` on a corner radius or
+   * a border width has no defined behaviour.
+   */
+  autoUnit?: boolean;
+  /**
+   * Render this row at half width so it pairs with the adjacent half-width row
+   * (the design draws Transparency·Corner radius and Border colour·Weight as two
+   * columns). Purely presentational — the panel's row grid does the packing, so
+   * a half row whose neighbour is hidden simply keeps its own line.
+   */
+  half?: boolean;
+  /**
    * Whether this field can be bound to a declared UI variable. Defaults to true.
    * Composite kinds (`length`, `length-vec`) and enum/index
    * kinds set this to false in V1 — they have no scalar variable-type counterpart.
@@ -98,9 +120,25 @@ export interface FieldConfig {
    */
   disabledWhen?: (componentValue: Record<string, unknown>) => boolean;
   /**
-   * When this returns true (given the field's component value), the field is
-   * not rendered at all (vs. `disabledWhen` which greys it). Used to show the
-   * texture-region editor only in Stretch mode and slices only in nine-slices.
+   * Describes how the node sits in its PARENT, so it has no meaning on a UI root —
+   * a root's parent is the screen itself. Node identity is not available to
+   * `hiddenWhen` (which only sees the component value), so the panel checks this
+   * flag separately, where it knows which node is selected.
+   *
+   * The panel keeps these fields on a root that is ALREADY absolute: canvas-dragging
+   * a root switches it, and they are then the only controls over the offsets sitting
+   * in source. See PropertyPanel.
+   */
+  hideOnRoot?: boolean;
+  /**
+   * When this returns true (given the field's component value), the field's ROW is
+   * not rendered (vs. `disabledWhen` which greys it). Two uses:
+   *  - context-gating — the texture-region editor only in Stretch mode, slices
+   *    only in nine-slices;
+   *  - suppressing a single-prop row while a composite control already represents
+   *    its value, so no value is ever driven by two live controls.
+   * It does NOT remove the field from `+ Add property`; an unset optional prop
+   * stays addable so a value the composite has no cell for still has a way in.
    */
   hiddenWhen?: (componentValue: Record<string, unknown>) => boolean;
   /**
@@ -129,8 +167,9 @@ export interface FieldConfig {
    * the dropdown shows when the component leaves the prop unset. e.g. UiText
    * `textAlign` defaults to `center` (4) in the runtime (@dcl/ecs PBUiText:
    * "alignment within the bounds (default: center)"), not the proto-3 zero
-   * (top-left). Reads only — leaving the prop unset still renders the default;
-   * the value is written only if the user picks an option.
+   * (top-left). Leaving the prop unset still renders the in-world default; the
+   * value reaches source only when the user picks an option — or when they add the
+   * field from `+ Add property`, which seeds this (PropertyPanel `buildAddPatch`).
    */
   defaultValue?: number;
 }
@@ -177,12 +216,6 @@ const ALIGN_OPTIONS: EnumOption[] = [
   { value: 5, label: 'Baseline' },
   { value: 6, label: 'Space between' },
   { value: 7, label: 'Space around' },
-];
-
-// YGPositionType
-const POSITION_TYPE_OPTIONS: EnumOption[] = [
-  { value: 0, label: 'In flow' },
-  { value: 1, label: 'Absolute' },
 ];
 
 // YGDisplay
@@ -248,14 +281,18 @@ export const POSITION_GROUP = {
   title: 'Position',
   fields: [
     {
-      label: 'Positioning',
+      // The same `positionType` value the Layout group's Flow selector writes.
+      // Both are drawn deliberately: a master switch reads better directly above
+      // the two fields it gates, and Flow — being in Layout, below them — is a
+      // second entry point rather than a replacement.
+      label: 'Ignore layout flow',
       componentId: TRANSFORM,
       path: 'positionType',
       kind: 'position-mode' as const,
-      options: POSITION_TYPE_OPTIONS,
       bindable: false,
       core: true,
-      info: 'In flow: laid out by the parent (order, gaps, alignment). Absolute: pinned at Top/Left offsets. Switching keeps the node where it is on screen.',
+      hideOnRoot: true,
+      info: 'Off: laid out by the parent (order, gaps, alignment). On: pinned at Top/Left offsets. Switching keeps the node where it is on screen.',
     },
     {
       label: 'Anchor',
@@ -263,9 +300,10 @@ export const POSITION_GROUP = {
       path: '',
       kind: 'align-preset' as const,
       bindable: false,
+      hideOnRoot: true,
       disabledWhen: (v: Record<string, unknown>) =>
         ((v.positionType as number | undefined) ?? 0) !== 1,
-      info: 'Pin the node to a point of its parent. Available when Positioning is Absolute.',
+      info: 'Pin the node to a point of its parent. Available when the node ignores layout flow.',
     },
     {
       label: 'Position',
@@ -288,9 +326,10 @@ export const POSITION_GROUP = {
       // Always shown (never routed to the "+ Add property" menu), but greyed when
       // the node is In flow — Yoga only honours position offsets when Absolute.
       core: true,
+      hideOnRoot: true,
       disabledWhen: (v: Record<string, unknown>) =>
         ((v.positionType as number | undefined) ?? 0) !== 1,
-      info: 'X (left) / Y (top) offset from the parent; reveal shows all four edges. Applied when Positioning is Absolute.',
+      info: 'X (left) / Y (top) offset from the parent; reveal shows all four edges. Applied when the node ignores layout flow.',
     },
     {
       label: 'Z-index',
@@ -313,35 +352,26 @@ export const POSITION_GROUP = {
 // Getting that split wrong is why a Label or Button could not be told to
 // flex-grow: `flexGrow`/`flexShrink` are item props but were gated as container
 // props, unlike their sibling `alignSelf`.
+// Order follows the design: the composite controls people reach for daily first
+// (Flow, Resize, Min/Max, Alignment, Padding), then the single-prop fields they
+// decompose into.
+//
+// A prop a composite control writes must never be driven by TWO live rows at
+// once — editing one would silently move the other. So each such field carries a
+// `hiddenWhen` that reads "the composite represents this value right now", and its
+// raw row surfaces only in the states the composite cannot show. One rule, not a
+// per-field exception list; the predicates live beside the maths that defines
+// them (`flow.ts`, `alignment-presets.ts`) so they cannot drift from it.
 const LAYOUT_FIELDS: (FieldConfig & { container?: true })[] = [
   {
-    label: 'Flex direction',
+    label: 'Flow',
     componentId: TRANSFORM,
-    path: 'flexDirection',
-    kind: 'enum' as const,
-    options: FLEX_DIRECTION_OPTIONS,
+    path: '',
+    kind: 'flow' as const,
     bindable: false,
     container: true,
-    info: 'Main axis children flow along: row (horizontal) or column (vertical).',
-  },
-  {
-    label: 'Flex wrap',
-    componentId: TRANSFORM,
-    path: 'flexWrap',
-    kind: 'enum' as const,
-    options: FLEX_WRAP_OPTIONS,
-    bindable: false,
-    container: true,
-    info: 'Lets children flow onto multiple lines when they do not fit on one.',
-  },
-  {
-    label: 'Display',
-    componentId: TRANSFORM,
-    path: 'display',
-    kind: 'enum' as const,
-    options: DISPLAY_OPTIONS,
-    bindable: false,
-    info: 'Flex lays out the node and its children; None removes it from layout entirely.',
+    core: true,
+    info: 'How this node lays its children out — or Absolute, which lifts the node out of its own parent’s flow. Wrap lets children spill onto more than one line.',
   },
   {
     label: 'Size',
@@ -355,7 +385,8 @@ const LAYOUT_FIELDS: (FieldConfig & { container?: true })[] = [
     bindable: false,
     core: true,
     aspectLockable: true,
-    info: 'Width and height. Each supports px or % of the parent. Lock keeps their ratio on resize.',
+    autoUnit: true,
+    info: 'Width and height, in px, % of the parent, or auto (sized from the content). Lock keeps their ratio on resize.',
   },
   {
     label: 'Min size',
@@ -382,6 +413,65 @@ const LAYOUT_FIELDS: (FieldConfig & { container?: true })[] = [
     info: 'Upper bound on size; the node never renders larger. Supports px or %.',
   },
   {
+    label: 'Alignment',
+    componentId: TRANSFORM,
+    path: '',
+    kind: 'alignment' as const,
+    bindable: false,
+    container: true,
+    core: true,
+    info: 'Where the children sit inside this node. Writes Justify content and Align items together, resolved against the current Flow direction.',
+  },
+  {
+    // NOT "Spacing" — that name is reserved for flex gap, which react-ecs cannot
+    // express yet (no gap/rowGap/columnGap in UiTransformProps).
+    label: 'Padding & margin',
+    componentId: TRANSFORM,
+    path: '',
+    kind: 'box-model' as const,
+    bindable: false,
+    info: 'Padding is space inside the box, margin space outside it. Margin is ignored while the node ignores layout flow.',
+  },
+  {
+    label: 'Overflow',
+    componentId: TRANSFORM,
+    path: 'overflow',
+    kind: 'enum' as const,
+    options: OVERFLOW_OPTIONS,
+    bindable: false,
+    container: true,
+    info: 'How content larger than the box is handled: visible, hidden, or scroll.',
+  },
+  {
+    label: 'Flex direction',
+    componentId: TRANSFORM,
+    path: 'flexDirection',
+    kind: 'enum' as const,
+    options: FLEX_DIRECTION_OPTIONS,
+    bindable: false,
+    container: true,
+    // Flow shows one cell, so while the node is absolute the direction is live in
+    // source but off screen. That is the only state this row is not a duplicate.
+    hiddenWhen: directionIsRepresentable,
+    info: 'Main axis children flow along. Shown while the node ignores layout flow, where the Flow control cannot display it.',
+  },
+  {
+    label: 'Flex wrap',
+    componentId: TRANSFORM,
+    path: 'flexWrap',
+    kind: 'enum' as const,
+    options: FLEX_WRAP_OPTIONS,
+    bindable: false,
+    container: true,
+    // Flow's toggle is binary; only wrap-reverse falls outside it.
+    hiddenWhen: wrapIsRepresentable,
+    // Seeding the ONE value Flow cannot express is what keeps this row addable:
+    // seeded at nowrap it would be representable, so `hiddenWhen` would hide it
+    // again the instant it was added and the menu entry would look like a no-op.
+    defaultValue: YGW_WRAP_REVERSE,
+    info: 'Lets children flow onto multiple lines. Adding it selects wrap-reverse, the one value the Flow wrap toggle cannot express.',
+  },
+  {
     label: 'Justify content',
     componentId: TRANSFORM,
     path: 'justifyContent',
@@ -389,7 +479,8 @@ const LAYOUT_FIELDS: (FieldConfig & { container?: true })[] = [
     options: JUSTIFY_CONTENT_OPTIONS,
     bindable: false,
     container: true,
-    info: 'Distributes children along the main axis, including the space between them.',
+    hiddenWhen: alignmentIsRepresentable,
+    info: 'Distributes children along the main axis. Shown when the spacing is one the Alignment picker has no cell for.',
   },
   {
     label: 'Align items',
@@ -399,7 +490,8 @@ const LAYOUT_FIELDS: (FieldConfig & { container?: true })[] = [
     options: ALIGN_OPTIONS,
     bindable: false,
     container: true,
-    info: 'Aligns children on the cross axis (perpendicular to the flex direction).',
+    hiddenWhen: alignmentIsRepresentable,
+    info: 'Aligns children on the cross axis. Shown when the alignment is one the Alignment picker has no cell for.',
   },
   {
     label: 'Align content',
@@ -435,24 +527,13 @@ const LAYOUT_FIELDS: (FieldConfig & { container?: true })[] = [
     info: 'How much this item shrinks when space is tight (0 = never shrink).',
   },
   {
-    // NOT "Spacing" — that name is reserved for flex gap, which react-ecs cannot
-    // express yet (no gap/rowGap/columnGap in UiTransformProps).
-    label: 'Padding & margin',
+    label: 'Display',
     componentId: TRANSFORM,
-    path: '',
-    kind: 'box-model' as const,
-    bindable: false,
-    info: 'Margin (outer) wraps padding (inner). Margin is ignored when Position type is Absolute.',
-  },
-  {
-    label: 'Overflow',
-    componentId: TRANSFORM,
-    path: 'overflow',
+    path: 'display',
     kind: 'enum' as const,
-    options: OVERFLOW_OPTIONS,
+    options: DISPLAY_OPTIONS,
     bindable: false,
-    container: true,
-    info: 'How content larger than the box is handled: visible, hidden, or scroll.',
+    info: 'Flex lays out the node and its children; None removes it from layout entirely.',
   },
 ];
 
@@ -481,6 +562,7 @@ const STYLE_GROUP = {
       componentId: TRANSFORM,
       path: 'opacity',
       kind: 'number' as const,
+      half: true,
       info: '0 = fully transparent, 1 = fully opaque.',
     },
     {
@@ -489,6 +571,7 @@ const STYLE_GROUP = {
       path: 'borderTopLeftRadius',
       kind: 'length' as const,
       bindable: false,
+      half: true,
       info: 'Rounds all four corners. Supports px or %.',
       writeAll: [
         'borderTopLeftRadius',
@@ -514,6 +597,8 @@ const STYLE_GROUP = {
       path: 'borderTopColor',
       kind: 'color' as const,
       bindable: false,
+      // NOT `half`, though the design pairs it with Border width: a colour row is
+      // swatch + hex + alpha, and a 140px half-track leaves the hex input ~44px.
       info: 'Color applied to all four borders.',
       writeAll: ['borderTopColor', 'borderRightColor', 'borderBottomColor', 'borderLeftColor'],
     },
@@ -582,8 +667,15 @@ const TEXT_GROUP = {
       kind: 'string' as const,
       mixable: true,
       core: true,
+      info: 'The text to show. Mix literal text with variables to build it at runtime.',
     },
-    { label: 'Color', componentId: TEXT, path: 'color', kind: 'color' as const },
+    {
+      label: 'Color',
+      componentId: TEXT,
+      path: 'color',
+      kind: 'color' as const,
+      info: 'Color of the text itself, independent of the background behind it.',
+    },
     {
       label: 'Font size',
       componentId: TEXT,
@@ -634,6 +726,7 @@ const INPUT_GROUP = {
       kind: 'string' as const,
       mixable: true,
       core: true,
+      info: 'Hint text shown while the field is empty.',
     },
     {
       label: 'Value',
@@ -642,14 +735,28 @@ const INPUT_GROUP = {
       kind: 'string' as const,
       mixable: true,
       core: true,
+      info: 'The field’s starting text. Bind it to a variable to control the field from your scene.',
     },
-    { label: 'Disabled', componentId: INPUT, path: 'disabled', kind: 'boolean' as const },
-    { label: 'Color', componentId: INPUT, path: 'color', kind: 'color' as const },
+    {
+      label: 'Disabled',
+      componentId: INPUT,
+      path: 'disabled',
+      kind: 'boolean' as const,
+      info: 'Greys the field out and stops it accepting input.',
+    },
+    {
+      label: 'Color',
+      componentId: INPUT,
+      path: 'color',
+      kind: 'color' as const,
+      info: 'Color of the text the player types.',
+    },
     {
       label: 'Placeholder color',
       componentId: INPUT,
       path: 'placeholderColor',
       kind: 'color' as const,
+      info: 'Color of the hint text shown while the field is empty.',
     },
     {
       label: 'Text align',
@@ -660,6 +767,7 @@ const INPUT_GROUP = {
       bindable: false,
       // UiText.textAlign defaults to center (4) in-world, not the zero option.
       defaultValue: 4,
+      info: 'Anchors the text within the field. Defaults to middle center.',
     },
     {
       label: 'Font',
@@ -668,8 +776,15 @@ const INPUT_GROUP = {
       kind: 'enum' as const,
       options: FONT_OPTIONS,
       bindable: false,
+      info: 'Typeface: sans serif, serif, or monospace.',
     },
-    { label: 'Font size', componentId: INPUT, path: 'fontSize', kind: 'number' as const },
+    {
+      label: 'Font size',
+      componentId: INPUT,
+      path: 'fontSize',
+      kind: 'number' as const,
+      info: 'Text size in pixels.',
+    },
   ],
 };
 
@@ -682,12 +797,14 @@ const DROPDOWN_GROUP = {
       path: 'options',
       kind: 'string-array' as const,
       core: true,
+      info: 'The selectable entries, one per line.',
     },
     {
       label: 'Selected index',
       componentId: DROPDOWN,
       path: 'selectedIndex',
       kind: 'index' as const,
+      info: 'Which option starts selected, counting from 0.',
     },
     {
       label: 'Accept empty',
@@ -704,8 +821,20 @@ const DROPDOWN_GROUP = {
       kind: 'string' as const,
       info: 'Text shown when no option is selected.',
     },
-    { label: 'Disabled', componentId: DROPDOWN, path: 'disabled', kind: 'boolean' as const },
-    { label: 'Color', componentId: DROPDOWN, path: 'color', kind: 'color' as const },
+    {
+      label: 'Disabled',
+      componentId: DROPDOWN,
+      path: 'disabled',
+      kind: 'boolean' as const,
+      info: 'Greys the dropdown out and stops it opening.',
+    },
+    {
+      label: 'Color',
+      componentId: DROPDOWN,
+      path: 'color',
+      kind: 'color' as const,
+      info: 'Color of the selected option’s text.',
+    },
     {
       label: 'Text align',
       componentId: DROPDOWN,
@@ -715,6 +844,7 @@ const DROPDOWN_GROUP = {
       bindable: false,
       // UiText.textAlign defaults to center (4) in-world, not the zero option.
       defaultValue: 4,
+      info: 'Anchors the selected option’s text within the box. Defaults to middle center.',
     },
     {
       label: 'Font',
@@ -723,8 +853,15 @@ const DROPDOWN_GROUP = {
       kind: 'enum' as const,
       options: FONT_OPTIONS,
       bindable: false,
+      info: 'Typeface: sans serif, serif, or monospace.',
     },
-    { label: 'Font size', componentId: DROPDOWN, path: 'fontSize', kind: 'number' as const },
+    {
+      label: 'Font size',
+      componentId: DROPDOWN,
+      path: 'fontSize',
+      kind: 'number' as const,
+      info: 'Text size in pixels.',
+    },
   ],
 };
 
@@ -736,24 +873,28 @@ const MOUSE_EVENTS_GROUP = {
       componentId: UI_EVENTS,
       path: 'onMouseDown',
       kind: 'callback' as const,
+      info: 'Runs the moment the pointer is pressed on this node.',
     },
     {
       label: 'On mouse up',
       componentId: UI_EVENTS,
       path: 'onMouseUp',
       kind: 'callback' as const,
+      info: 'Runs when the pointer is released over this node — the usual "clicked" handler.',
     },
     {
       label: 'On mouse enter',
       componentId: UI_EVENTS,
       path: 'onMouseEnter',
       kind: 'callback' as const,
+      info: 'Runs when the pointer moves onto this node. For hover styling, use the Hover state instead.',
     },
     {
       label: 'On mouse leave',
       componentId: UI_EVENTS,
       path: 'onMouseLeave',
       kind: 'callback' as const,
+      info: 'Runs when the pointer moves off this node.',
     },
   ],
 };
@@ -761,15 +902,33 @@ const MOUSE_EVENTS_GROUP = {
 const INPUT_EVENTS_GROUP = {
   title: 'Input events',
   fields: [
-    { label: 'On change', componentId: INPUT, path: 'onChange', kind: 'callback' as const },
-    { label: 'On submit', componentId: INPUT, path: 'onSubmit', kind: 'callback' as const },
+    {
+      label: 'On change',
+      componentId: INPUT,
+      path: 'onChange',
+      kind: 'callback' as const,
+      info: 'Runs on every keystroke, with the field’s current text.',
+    },
+    {
+      label: 'On submit',
+      componentId: INPUT,
+      path: 'onSubmit',
+      kind: 'callback' as const,
+      info: 'Runs when the player confirms the field (Enter), with its final text.',
+    },
   ],
 };
 
 const DROPDOWN_EVENTS_GROUP = {
   title: 'Dropdown events',
   fields: [
-    { label: 'On change', componentId: DROPDOWN, path: 'onChange', kind: 'callback' as const },
+    {
+      label: 'On change',
+      componentId: DROPDOWN,
+      path: 'onChange',
+      kind: 'callback' as const,
+      info: 'Runs when the player picks an option, with its index.',
+    },
   ],
 };
 

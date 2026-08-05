@@ -14,6 +14,7 @@ import type { Entity, TextureUnion } from '@dcl/ecs';
 import {
   YGPT_ABSOLUTE,
   YGPT_RELATIVE,
+  YGU_AUTO,
   YGU_PERCENT,
   YGU_POINT,
   YGU_UNDEFINED,
@@ -55,12 +56,21 @@ import {
 import { INTERACTION_STATES, type InteractionStateKey } from './code/interaction-convention';
 import { ComponentRefPanel } from './code/ComponentRefPanel';
 import type { CodeUINode } from './code/types';
+import {
+  type Alignment,
+  ALIGNMENTS,
+  alignmentToPatch,
+  clearAlignmentPatch,
+  patchToAlignment,
+} from './alignment-presets';
+import { absolutePatch, inFlowPatch } from './flow';
 import { AnchorPresetField } from './AnchorPresetField';
 import { BindAffordance } from './BindAffordance';
 import { BindableField } from './BindableField';
 import { BoxModelField } from './BoxModelField';
 import { BindableSubField } from './BindableSubField';
 import { EmptyState } from './EmptyState';
+import { FlowField } from './FlowField';
 import { MixedContentField } from './MixedContentField';
 import { seedSegments } from './MixedContentField/segments';
 import { TextureField } from './TextureField';
@@ -96,6 +106,24 @@ const UNIT_OPTIONS = [
   { value: YGU_PERCENT, label: '%' },
 ];
 
+// `auto` is the design's "Hug": Yoga derives the box from its content, so the
+// numeric value is ignored (and the inputs go disabled). Offered per field —
+// `auto` has no defined meaning on a corner radius or a border width.
+const UNIT_OPTIONS_WITH_AUTO = [...UNIT_OPTIONS, { value: YGU_AUTO, label: 'auto' }];
+
+const unitOptionsFor = (field: FieldConfig) =>
+  field.autoUnit ? UNIT_OPTIONS_WITH_AUTO : UNIT_OPTIONS;
+
+// The 9 cells plus a reset. "Default" clears both props, which is the only way
+// back to Yoga's own defaults (stretch on the cross axis) once they are authored.
+const ALIGNMENT_OPTIONS: { value: string; label: string }[] = [
+  { value: '', label: 'Default' },
+  ...ALIGNMENTS.map(a => {
+    const [v, h] = a.split('-');
+    return { value: a, label: `${v[0].toUpperCase()}${v.slice(1)} ${h}` };
+  }),
+];
+
 // --- Figma-style add/remove property model (Phase F) ---
 // A field is one of three buckets:
 //   • core        → always shown (structural props; see field-configs `core`).
@@ -118,8 +146,13 @@ const TOGGLABLE_KINDS = new Set([
   'position-mode',
 ]);
 
+// `hiddenWhen` is deliberately NOT consulted here: a row can be suppressed
+// because a composite control currently speaks for its value and still need to be
+// addable, which is the only way into a value that composite cannot express.
+// The context-gated composites (uv-region, border-rect) stay non-togglable via
+// TOGGLABLE_KINDS, which is what actually excluded them.
 function isTogglable(field: FieldConfig): boolean {
-  return !field.core && !field.hiddenWhen && TOGGLABLE_KINDS.has(field.kind);
+  return !field.core && TOGGLABLE_KINDS.has(field.kind);
 }
 
 // Composite widgets that render full-width (stacked) rather than in the inline
@@ -627,12 +660,27 @@ const PropertyPanelComponent: React.FC = () => {
         // The group consts have narrow inferred field types; treat them uniformly.
         for (const field of group.fields as FieldConfig[]) {
           const value = readComponentValue(field.componentId) as Record<string, unknown> | null;
-          if (field.hiddenWhen?.((value ?? {}) as Record<string, unknown>)) continue;
+          // "How I sit in my parent" has no meaning on a UI root — its parent is the
+          // screen. Kept on a root that is ALREADY absolute, though: dragging a root
+          // on the canvas switches it, and these are then the only controls over the
+          // offsets now sitting in source (unchecking the box puts it back in flow,
+          // after which all three drop away).
+          if (
+            field.hideOnRoot &&
+            isGuiRoot &&
+            ((value?.positionType as number | undefined) ?? YGPT_RELATIVE) !== YGPT_ABSOLUTE
+          ) {
+            continue;
+          }
           const togglable = isTogglable(field);
+          // The menu comes FIRST: an unset optional prop belongs in `+ Add property`
+          // even while its row is suppressed, or a value the composite control has
+          // no cell for (space-between, stretch) would have no way in at all.
           if (togglable && !isFieldSet(field, value)) {
             addable.push(field);
             continue;
           }
+          if (field.hiddenWhen?.((value ?? {}) as Record<string, unknown>)) continue;
           // In an override layer, distinguish a field this state actually sets
           // from one merely inherited from Default — the displayed value is
           // merged, so it can't convey that on its own. An inherited field reads
@@ -644,12 +692,11 @@ const PropertyPanelComponent: React.FC = () => {
           const removable = overriding ? overridden : togglable;
           rows.push(
             <div
-              className={[
-                'ui-designer-property-row',
-                overriding ? (overridden ? 'overridden' : 'inherited') : '',
-              ]
-                .filter(Boolean)
-                .join(' ')}
+              className={cx('ui-designer-property-row', {
+                half: field.half,
+                overridden: overriding && overridden,
+                inherited: overriding && !overridden,
+              })}
               key={`${field.componentId}:${field.path}:${field.label}`}
             >
               <FieldRow
@@ -691,7 +738,7 @@ const PropertyPanelComponent: React.FC = () => {
             initialOpen={!collapsed[group.title]}
             onToggle={open => dispatch(setGroupCollapsed({ title: group.title, collapsed: !open }))}
           >
-            {rows}
+            <div className="ui-designer-property-rows">{rows}</div>
             {addable.length > 0 ? (
               <AddPropertyMenu
                 fields={addable}
@@ -748,6 +795,8 @@ const LengthVecField = React.memo(function LengthVecField({
   const firstUnitKey = subs[0] ? `${subs[0].path}Unit` : '';
   const firstUnitRaw = (componentValue?.[firstUnitKey] as number | undefined) ?? YGU_UNDEFINED;
   const unit = firstUnitRaw === YGU_UNDEFINED ? YGU_POINT : firstUnitRaw;
+  // `auto` sizes from the content, so the numbers stop meaning anything.
+  const numbersDisabled = fieldDisabled || unit === YGU_AUTO;
 
   return (
     <BindableField
@@ -769,7 +818,7 @@ const LengthVecField = React.memo(function LengthVecField({
               type="number"
               leftLabel={sub.leftLabel}
               value={String(v)}
-              disabled={fieldDisabled}
+              disabled={numbersDisabled}
               onChange={e => {
                 const next = clampNumber(e.target.value);
                 const patch: Record<string, unknown> = {
@@ -819,7 +868,7 @@ const LengthVecField = React.memo(function LengthVecField({
           </button>
         ) : null}
         <Dropdown
-          options={UNIT_OPTIONS}
+          options={unitOptionsFor(field)}
           value={unit}
           aria-label="Unit"
           disabled={fieldDisabled}
@@ -977,6 +1026,7 @@ const FieldRow = React.memo(function FieldRow({
             <TextField
               type="number"
               value={String(numeric)}
+              disabled={unit === YGU_AUTO}
               onChange={e =>
                 onPatch(
                   field.writeAll
@@ -986,7 +1036,7 @@ const FieldRow = React.memo(function FieldRow({
               }
             />
             <Dropdown
-              options={UNIT_OPTIONS}
+              options={unitOptionsFor(field)}
               value={unit}
               aria-label="Unit"
               onChange={e => {
@@ -1112,52 +1162,60 @@ const FieldRow = React.memo(function FieldRow({
       );
     }
     case 'position-mode': {
-      const v = (raw as number | undefined) ?? YGPT_RELATIVE;
-      const onModeChange = (next: number) => {
-        if (next === v) return;
-        if (next === YGPT_ABSOLUTE) {
-          // Bake the current on-screen offset so switching modes never moves the node.
-          const offset = measureNodeOffset(entity);
-          onPatch({
-            positionType: YGPT_ABSOLUTE,
-            positionTop: offset?.top ?? 0,
-            positionTopUnit: YGU_POINT,
-            positionLeft: offset?.left ?? 0,
-            positionLeftUnit: YGU_POINT,
-            positionRight: 0,
-            positionRightUnit: YGU_UNDEFINED,
-            positionBottom: 0,
-            positionBottomUnit: YGU_UNDEFINED,
-          });
-        } else {
-          // Back into flow: clear baked offsets — Yoga applies position* to
-          // RELATIVE nodes too, so stale values would shift the node in flow.
-          onPatch({
-            positionType: YGPT_RELATIVE,
-            positionTop: 0,
-            positionTopUnit: YGU_UNDEFINED,
-            positionRight: 0,
-            positionRightUnit: YGU_UNDEFINED,
-            positionBottom: 0,
-            positionBottomUnit: YGU_UNDEFINED,
-            positionLeft: 0,
-            positionLeftUnit: YGU_UNDEFINED,
-          });
-        }
-      };
+      // Checked = Absolute. Both transitions are mode-preserving: → Absolute bakes
+      // the node's on-screen offset so it does not jump, → In flow clears the
+      // baked offsets. Shared with the Flow selector's `absolute` cell (flow.ts).
+      const absolute = ((raw as number | undefined) ?? YGPT_RELATIVE) === YGPT_ABSOLUTE;
       return (
         <BindableField
           field={field}
           entity={entity}
           bound={boundProp}
         >
-          <Dropdown
-            options={field.options ?? []}
-            value={v}
+          <CheckboxField
+            checked={absolute}
             aria-label={field.label}
-            onChange={e => onModeChange(Number(e.target.value))}
+            onChange={e =>
+              onPatch(e.target.checked ? absolutePatch(measureNodeOffset(entity)) : inFlowPatch())
+            }
           />
         </BindableField>
+      );
+    }
+    case 'flow': {
+      return (
+        <Block
+          label={field.label}
+          info={field.info}
+        >
+          <FlowField
+            value={componentValue}
+            entity={entity}
+            onPatch={onPatch}
+          />
+        </Block>
+      );
+    }
+    case 'alignment': {
+      // Which prop owns which screen axis depends on the flex direction, so the
+      // control reads and writes against the node's CURRENT direction.
+      const direction = (componentValue?.flexDirection as number | undefined) ?? 0;
+      const current = patchToAlignment(componentValue, direction);
+      return (
+        <Block
+          label={field.label}
+          info={field.info}
+        >
+          <Dropdown
+            options={ALIGNMENT_OPTIONS}
+            value={current ?? ''}
+            aria-label={field.label}
+            onChange={e => {
+              const next = (e.target as HTMLSelectElement).value as Alignment | '';
+              onPatch(next ? alignmentToPatch(next, direction) : clearAlignmentPatch());
+            }}
+          />
+        </Block>
       );
     }
     case 'align-preset': {

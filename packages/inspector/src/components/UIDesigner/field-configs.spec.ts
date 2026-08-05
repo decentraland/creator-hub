@@ -19,6 +19,8 @@ const allLabels = (type: UINodeType) => buildGroups(type).flatMap(g => labelsIn(
 
 // Props that arrange MY CHILDREN — only a UiEntity has children.
 const CONTAINER_ONLY = [
+  'Flow',
+  'Alignment',
   'Flex direction',
   'Flex wrap',
   'Justify content',
@@ -38,6 +40,30 @@ const ITEM_PROPS = [
   'Flex grow',
   'Flex shrink',
 ];
+
+// The single-prop rows a composite control (Flow, Alignment) also writes. Each
+// must stay out of the panel while its composite represents the value, so no
+// value is ever driven by two live controls at once.
+const RAW_ROWS = ['Flex direction', 'Flex wrap', 'Justify content', 'Align items'];
+
+// Which Layout rows a given UiTransform actually renders. `hiddenWhen` is the row
+// gate; the togglable/`+ Add property` split is a separate concern (see
+// PropertyPanel `isTogglable`), so this asserts row visibility only.
+function visibleRawRows(transform: Record<string, unknown>): string[] {
+  return fieldsIn('UiEntity', 'Layout')
+    .filter(f => RAW_ROWS.includes(f.label as string) && !f.hiddenWhen?.(transform))
+    .map(f => f.label as string);
+}
+
+// YGJustify / YGAlign / YGWrap / YGPositionType values used by the row-gate cases.
+const JUSTIFY_START = 0;
+const JUSTIFY_SPACE_BETWEEN = 3;
+const ALIGN_START = 1;
+const ALIGN_STRETCH = 4;
+const WRAP_NO = 0;
+const WRAP_YES = 1;
+const WRAP_REVERSE = 2;
+const ABSOLUTE = 1;
 
 describe('buildGroups', () => {
   describe('when composing the panel for each node type', () => {
@@ -134,6 +160,46 @@ describe('buildGroups', () => {
       }
     });
 
+    // The design leads Layout with the composite controls, then the single-prop
+    // fields they decompose into. Those trailing rows are the escape hatches for
+    // what a composite cannot express, so they must stay present AND non-core
+    // (hidden until authored) — a core duplicate would show two controls for the
+    // same prop on every fresh node.
+    it('should lead Layout with the composite controls, in the design’s order', () => {
+      expect(labelsIn('UiEntity', 'Layout').slice(0, 6)).toEqual([
+        'Flow',
+        'Size',
+        'Min size',
+        'Max size',
+        'Alignment',
+        'Padding & margin',
+      ]);
+    });
+
+    it('should keep the props a composite control writes reachable as their own rows', () => {
+      const layout = fieldsIn('UiEntity', 'Layout');
+      for (const label of RAW_ROWS) {
+        const field = layout.find(f => f.label === label);
+        expect(field, `${label} is missing`).toBeDefined();
+        expect(field?.core, `${label} must stay hidden until authored`).toBeUndefined();
+      }
+    });
+
+    it('should offer `auto` only on the Size vec', () => {
+      const withAuto = buildLayoutGroup(true)
+        .fields.filter(f => f.autoUnit)
+        .map(f => f.label);
+      expect(withAuto).toEqual(['Size']);
+    });
+
+    it('should not offer `auto` on the length fields where it has no meaning', () => {
+      for (const label of ['Corner radius', 'Border width']) {
+        expect(
+          fieldsIn('UiEntity', 'Style').find(f => f.label === label)?.autoUnit,
+        ).toBeUndefined();
+      }
+    });
+
     it('should not reserve the name "Spacing" for the padding/margin control', () => {
       // "Spacing" means flex gap in the design, which react-ecs cannot express
       // (no gap/rowGap/columnGap). Keeping the name free avoids a collision.
@@ -183,6 +249,141 @@ describe('buildGroups', () => {
         expect(f.disabledWhen?.({})).toBe(true);
       }
     });
+
+    // Drawn as a checkbox above the fields it gates, and deliberately the SAME
+    // `positionType` the Layout group's Flow selector writes — the two mirror each
+    // other, so neither may drift onto a different path.
+    it('should drive positionType from the flow checkbox above Anchor and Position', () => {
+      const position = fieldsIn('UiEntity', 'Position');
+      const checkbox = position.find(f => f.label === 'Ignore layout flow');
+      expect(checkbox?.kind).toBe('position-mode');
+      expect(checkbox?.path).toBe('positionType');
+      expect(checkbox?.core).toBe(true);
+      // It leads the group: a master switch belongs above what it enables.
+      expect(position[0]).toBe(checkbox);
+
+      const flow = fieldsIn('UiEntity', 'Layout').find(f => f.label === 'Flow');
+      expect(flow?.kind).toBe('flow');
+      expect(flow?.componentId).toBe(checkbox?.componentId);
+    });
+  });
+
+  // One rule, not four exceptions: a single-prop row surfaces only in the states
+  // its composite control cannot represent. Otherwise editing Alignment would
+  // silently move the Justify content row two lines below it, and vice versa.
+  describe('and a composite control already represents a value', () => {
+    const inCell = {
+      justifyContent: JUSTIFY_START,
+      alignItems: ALIGN_START,
+    };
+
+    it('should show no raw rows for an in-flow container whose alignment is in-cell', () => {
+      expect(visibleRawRows(inCell)).toEqual([]);
+    });
+
+    it('should show no raw rows for a fresh container', () => {
+      // Nothing authored: Flow reads `row`, Alignment reads Default. Both faithful.
+      expect(visibleRawRows({})).toEqual([]);
+    });
+
+    it('should reveal Flex direction only while the node ignores layout flow', () => {
+      expect(visibleRawRows({ ...inCell, positionType: ABSOLUTE })).toEqual(['Flex direction']);
+      // …and the direction it is hiding survives in source either way.
+      expect(visibleRawRows({ ...inCell, flexDirection: 1 })).toEqual([]);
+    });
+
+    it('should reveal both alignment rows for a distributing justifyContent', () => {
+      expect(
+        visibleRawRows({ justifyContent: JUSTIFY_SPACE_BETWEEN, alignItems: ALIGN_START }),
+      ).toEqual(['Justify content', 'Align items']);
+    });
+
+    it('should reveal both alignment rows for a stretch alignItems', () => {
+      expect(visibleRawRows({ justifyContent: JUSTIFY_START, alignItems: ALIGN_STRETCH })).toEqual([
+        'Justify content',
+        'Align items',
+      ]);
+    });
+
+    // The asymmetric state is what makes the values above reachable: adding
+    // `Justify content` from `+ Add property` seeds it while alignItems is still
+    // unset, which has no cell — so the row appears and can then be set to
+    // Space between.
+    it('should reveal both alignment rows when only one of the pair is authored', () => {
+      expect(visibleRawRows({ justifyContent: JUSTIFY_START })).toEqual([
+        'Justify content',
+        'Align items',
+      ]);
+    });
+
+    it('should reveal Flex wrap only for wrap-reverse', () => {
+      for (const flexWrap of [WRAP_NO, WRAP_YES]) {
+        expect(visibleRawRows({ ...inCell, flexWrap })).toEqual([]);
+      }
+      expect(visibleRawRows({ ...inCell, flexWrap: WRAP_REVERSE })).toEqual(['Flex wrap']);
+    });
+
+    // Adding it has to leave a VISIBLE row. Seeded at nowrap the row would hide
+    // again instantly and the menu entry would read as a no-op while still writing
+    // `flexWrap: 0` to source, so the seed is the one value Flow cannot express.
+    it('should seed Flex wrap at the value that keeps its row on screen', () => {
+      const flexWrap = fieldsIn('UiEntity', 'Layout').find(f => f.label === 'Flex wrap');
+      expect(flexWrap?.defaultValue).toBe(WRAP_REVERSE);
+      expect(visibleRawRows({ ...inCell, flexWrap: flexWrap?.defaultValue })).toEqual([
+        'Flex wrap',
+      ]);
+    });
+
+    it('should resolve the alignment cell against the flex direction, not a fixed axis', () => {
+      // flex-end × flex-start is top-right in a row and bottom-left in a column —
+      // both in-cell, so neither shows a raw row.
+      const pair = { justifyContent: 2, alignItems: ALIGN_START };
+      expect(visibleRawRows({ ...pair, flexDirection: 0 })).toEqual([]);
+      expect(visibleRawRows({ ...pair, flexDirection: 1 })).toEqual([]);
+    });
+  });
+
+  // A UI root's parent is the screen, so the three fields describing how a node
+  // sits in its parent have nothing to describe there. `hiddenWhen` only sees the
+  // component value, never node identity, so this is a separate flag the panel
+  // resolves (see PropertyPanel) — these assertions pin which fields carry it.
+  describe('and the selected node is a UI root', () => {
+    it('should mark exactly the parent-relationship fields', () => {
+      const hidden = fieldsIn('UiEntity', 'Position')
+        .filter(f => f.hideOnRoot)
+        .map(f => f.label);
+      expect(hidden).toEqual(['Ignore layout flow', 'Anchor', 'Position']);
+    });
+
+    it('should keep Z-index on a root, where stacking between roots is still real', () => {
+      const zIndex = fieldsIn('UiEntity', 'Position').find(f => f.label === 'Z-index');
+      expect(zIndex?.hideOnRoot).toBeUndefined();
+    });
+
+    it('should not mark anything outside the Position group', () => {
+      for (const type of ALL_TYPES) {
+        const marked = buildGroups(type)
+          .filter(g => g.title !== 'Position')
+          .flatMap(g => g.fields)
+          .filter(f => f.hideOnRoot);
+        expect(marked).toEqual([]);
+      }
+    });
+  });
+
+  describe('and a row is paired into two columns', () => {
+    // The design pairs Transparency·Corner radius. It does NOT pair the border
+    // row here: a colour control is swatch + hex + alpha, and a ~140px half-track
+    // leaves the hex input around 44px.
+    it('should mark exactly the fields the design pairs', () => {
+      for (const type of ALL_TYPES) {
+        const half = buildGroups(type)
+          .flatMap(g => g.fields)
+          .filter(f => f.half)
+          .map(f => f.label);
+        expect(half).toEqual(['Opacity', 'Corner radius']);
+      }
+    });
   });
 
   describe('and every field is well-formed', () => {
@@ -202,6 +403,18 @@ describe('buildGroups', () => {
       for (const type of ALL_TYPES) {
         const seen = allLabels(type);
         expect(new Set(seen).size, `${type} exposes a field twice`).toBe(seen.length);
+      }
+    });
+
+    // The design puts an ⓘ on every label, so a missing `info` is visible as a
+    // gap in the row rather than merely absent help.
+    it('should give every field an info tooltip', () => {
+      for (const type of ALL_TYPES) {
+        for (const group of buildGroups(type)) {
+          for (const f of group.fields) {
+            expect(f.info?.trim(), `${type}/${group.title}/${f.label} has no info`).toBeTruthy();
+          }
+        }
       }
     });
   });

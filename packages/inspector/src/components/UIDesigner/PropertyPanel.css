@@ -26,10 +26,13 @@
   padding: var(--uid-space-1) 0 var(--uid-space-2);
 }
 
-/* Truncate rather than wrap: a two-line label would desynchronise row rhythm. */
+/* Truncate rather than wrap: a two-line label would desynchronise row rhythm.
+   The right padding reserves the lane the row's trash button sits in, so a long
+   label ellipsises instead of running underneath it. */
 .ui-designer-property-panel .Block-label-row {
   min-width: 0;
   overflow: hidden;
+  padding-right: 22px;
 }
 
 .ui-designer-property-panel .Block-label-row .Label {
@@ -76,6 +79,39 @@
 /* --- Row wrapper + remove (−) affordance (Phase F3) --- */
 .ui-designer-property-row {
   position: relative;
+}
+
+/* Two-column pairing (Figma draws Transparency·Corner radius and Border
+   colour·Weight side by side). A 2-track grid where a row spans BOTH tracks by
+   default, so only rows opting into `half` share a line — and two of them pack
+   automatically, without the panel having to work out which fields end up
+   adjacent after the show/hide filtering. A half row whose partner is hidden
+   simply keeps the left track.
+   This lives on its own wrapper rather than on `.Container > .content`: the
+   shared Container.css already claims that element with a `:has()` rule whose
+   specificity a panel-scoped override cannot beat without absurd class
+   repetition. */
+.ui-designer-property-rows {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  column-gap: var(--uid-space-2);
+  row-gap: var(--uid-space-2);
+  align-items: start;
+}
+
+.ui-designer-property-rows > * {
+  grid-column: span 2;
+  min-width: 0;
+}
+
+.ui-designer-property-rows > .ui-designer-property-row.half {
+  grid-column: span 1;
+}
+
+/* A half row has half the width for its label, so the trash lane would eat most
+   of it — these fields are narrow enough that the button can overlap instead. */
+.ui-designer-property-panel .ui-designer-property-row.half .Block-label-row {
+  padding-right: 0;
 }
 
 /* Hover/focus-revealed remove button for an optional (non-core) property. */

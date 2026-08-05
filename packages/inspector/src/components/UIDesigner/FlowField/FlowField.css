@@ -1,0 +1,66 @@
+.ui-designer-flow {
+  display: flex;
+  align-items: center;
+  gap: var(--uid-space-2);
+  width: 100%;
+}
+
+/* The 5 exclusive cells read as one segmented control; the wrap toggle sits
+   outside it because it writes a different prop. */
+.ui-designer-flow-group {
+  display: flex;
+  flex: 1 1 auto;
+  min-width: 0;
+  border: 1px solid var(--ui-designer-control-border);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.ui-designer-flow-cell {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1 1 0;
+  min-width: 0;
+  height: 26px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--sub-text);
+  cursor: pointer;
+}
+
+.ui-designer-flow-group .ui-designer-flow-cell + .ui-designer-flow-cell {
+  border-left: 1px solid var(--ui-designer-hairline);
+}
+
+.ui-designer-flow-cell.wrap {
+  flex: 0 0 32px;
+  border: 1px solid var(--ui-designer-control-border);
+  border-radius: 4px;
+}
+
+.ui-designer-flow-cell:hover {
+  background: var(--ui-designer-control-accent-15);
+  color: var(--title);
+}
+
+.ui-designer-flow-cell.selected {
+  background: var(--ui-designer-control-accent-21);
+  color: var(--ui-designer-control-accent);
+}
+
+.ui-designer-flow-cell.wrap.selected {
+  border-color: var(--ui-designer-control-accent-62);
+}
+
+.ui-designer-flow-cell:focus-visible {
+  outline: 2px solid var(--border-focused);
+  outline-offset: -2px;
+}
+
+.ui-designer-flow-cell svg {
+  width: 15px;
+  height: 15px;
+  display: block;
+}
