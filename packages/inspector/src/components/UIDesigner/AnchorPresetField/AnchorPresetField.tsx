@@ -37,31 +37,36 @@ export const AnchorPresetField: React.FC<AnchorPresetFieldProps> = ({
   };
 
   return (
-    <div
-      className={`ui-designer-anchor-grid${disabled ? ' disabled' : ''}`}
-      role="group"
-      aria-label="Anchor preset"
-    >
-      {ANCHOR_PRESETS.map(preset => {
-        const label = `Anchor ${preset.replace('-', ' ')}`;
-        return (
-          <button
-            key={preset}
-            type="button"
-            className={`ui-designer-anchor-cell${preset === active ? ' active' : ''}`}
-            aria-label={label}
-            aria-pressed={preset === active}
-            title={disabled ? 'Switch Positioning to Absolute to anchor' : label}
-            disabled={disabled}
-            onClick={() => apply(preset)}
-          >
-            <span
-              className="ui-designer-anchor-dot"
-              aria-hidden="true"
-            />
-          </button>
-        );
-      })}
+    <div className="ui-designer-anchor">
+      <div
+        className={`ui-designer-anchor-grid${disabled ? ' disabled' : ''}`}
+        role="group"
+        aria-label="Anchor preset"
+      >
+        {ANCHOR_PRESETS.map(preset => {
+          const label = `Anchor ${preset.replace('-', ' ')}`;
+          return (
+            <button
+              key={preset}
+              type="button"
+              className={`ui-designer-anchor-cell${preset === active ? ' active' : ''}`}
+              aria-label={label}
+              aria-pressed={preset === active}
+              title={disabled ? 'Switch Positioning to Absolute to anchor' : label}
+              disabled={disabled}
+              onClick={() => apply(preset)}
+            >
+              <span
+                className="ui-designer-anchor-dot"
+                aria-hidden="true"
+              />
+            </button>
+          );
+        })}
+      </div>
+      {/* Sibling of the grid, not a child: the grid is `width: max-content`
+          (~102px), so a hint inside it wrapped to three lines and made this the
+          tallest row in the panel. Outside, it gets the full field width. */}
       {disabled ? (
         <span className="ui-designer-anchor-hint">Switch Positioning to Absolute to anchor</span>
       ) : null}

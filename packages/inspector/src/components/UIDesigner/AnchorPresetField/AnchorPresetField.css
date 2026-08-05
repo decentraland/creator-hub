@@ -1,3 +1,10 @@
+.ui-designer-anchor {
+  display: flex;
+  flex-direction: column;
+  gap: var(--uid-space-1);
+  min-width: 0;
+}
+
 .ui-designer-anchor-grid {
   display: grid;
   grid-template-columns: repeat(3, 30px);
@@ -58,7 +65,7 @@
 }
 
 .ui-designer-anchor-hint {
-  grid-column: 1 / -1;
   font-size: 11px;
+  color: var(--sub-text);
   opacity: 0.6;
 }
