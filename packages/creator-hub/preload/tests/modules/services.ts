@@ -21,12 +21,14 @@ export const getMockServices = (): DeepMock<Services> => ({
     exists: vi.fn(),
     writeFile: vi.fn(),
     resolve: vi.fn(),
+    resolveWithin: vi.fn(),
     readFile: vi.fn(),
     rm: vi.fn(),
     readdir: vi.fn(),
     isDirectory: vi.fn(),
     cp: vi.fn(),
     rename: vi.fn(),
+    showItemInFolder: vi.fn(),
   },
   ipc: {
     invoke: vi.fn(),
@@ -38,6 +40,7 @@ export const getMockServices = (): DeepMock<Services> => ({
   npm: {
     install: vi.fn(),
     getOutdatedDeps: vi.fn(),
+    getContextFiles: vi.fn(),
   },
   pkg: {
     getPackageJson: vi.fn(),

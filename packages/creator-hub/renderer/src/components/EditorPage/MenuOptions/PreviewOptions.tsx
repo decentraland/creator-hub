@@ -13,7 +13,7 @@ import {
   Tooltip,
 } from 'decentraland-ui2';
 
-import { scene } from '#preload';
+import { editor, scene } from '#preload';
 
 import { PREVIEW_CLIENT } from '/shared/types/settings';
 import { t } from '/@/modules/store/translation/utils';
@@ -29,6 +29,37 @@ export function PreviewOptions({
   projectPath,
 }: PreviewOptionsProps) {
   const [terrainHiddenByScene, setTerrainHiddenByScene] = useState(false);
+
+  // No Unity desktop client ships for Linux, so an optimized preview has no client to
+  // open there — hide the toggle entirely. (abgen itself has Linux builds; the client
+  // is the missing piece.)
+  const platformSupportsOptimizedAssets = !navigator.userAgent.includes('Linux');
+  // ...and the scene's installed sdk-commands must carry the --asset-bundles sidecar flag,
+  // otherwise the toggle silently does nothing — so hide it entirely for unsupported scenes
+  const [sceneSupportsOptimizedAssets, setSceneSupportsOptimizedAssets] = useState(false);
+  const supportsOptimizedAssets = platformSupportsOptimizedAssets && sceneSupportsOptimizedAssets;
+  // The asset-bundle sidecar rides the Unity deep-link (local-ab param); the Bevy web
+  // client has no deep-link, so an optimized preview can't apply there.
+  const isBevyWebClient = options.client === PREVIEW_CLIENT.BEVY_WEB;
+
+  useEffect(() => {
+    if (!platformSupportsOptimizedAssets) {
+      setSceneSupportsOptimizedAssets(false);
+      return;
+    }
+    let cancelled = false;
+    editor
+      .supportsAssetBundles(projectPath)
+      .then(supported => {
+        if (!cancelled) setSceneSupportsOptimizedAssets(supported);
+      })
+      .catch(() => {
+        if (!cancelled) setSceneSupportsOptimizedAssets(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [projectPath, platformSupportsOptimizedAssets]);
 
   useEffect(() => {
     let cancelled = false;
@@ -135,6 +166,22 @@ export function PreviewOptions({
             }
             label={t('editor.header.actions.preview_options.mcp')}
           />
+        )}
+        {supportsOptimizedAssets && !isBevyWebClient && (
+          <Tooltip
+            title={t('editor.header.actions.preview_options.optimized_assets_tooltip')}
+            placement="left"
+          >
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={!!options.optimizedAssets}
+                  onChange={handleChange({ optimizedAssets: !options.optimizedAssets })}
+                />
+              }
+              label={t('editor.header.actions.preview_options.optimized_assets')}
+            />
+          </Tooltip>
         )}
       </FormGroup>
       <Divider />
