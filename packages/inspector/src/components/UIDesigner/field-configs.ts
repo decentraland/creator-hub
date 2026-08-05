@@ -178,7 +178,7 @@ export interface NodeFieldConfig {
   groups: { title: string; fields: FieldConfig[] }[];
 }
 
-const TRANSFORM = 'core::UiTransform';
+export const TRANSFORM = 'core::UiTransform';
 const BACKGROUND = 'core::UiBackground';
 const TEXT = 'core::UiText';
 const INPUT = 'core::UiInput';
@@ -272,28 +272,30 @@ const TEXTURE_MODE_OPTIONS: EnumOption[] = [
   { value: 2, label: 'Stretched' },
 ];
 
-// --- Position group ---
+// The one field that belongs to no group: the design draws it as a standalone
+// checkbox above the first group, because it GATES more than one of them (the
+// Position group's Anchor/Position, and the Layout group's margin). The panel
+// renders it directly (see PropertyPanel), so it is deliberately absent from
+// `buildGroups`.
 //
-// `positionType` leads the group because it GATES the rest of it: Anchor and
-// Position only apply to an Absolute node, so the switch belongs above the two
-// fields it enables.
+// It writes the same `positionType` value the Layout group's Flow selector does.
+// Both are drawn deliberately: a master switch reads better above the fields it
+// gates, and Flow is a second entry point rather than a replacement.
+export const POSITION_MODE_FIELD: FieldConfig = {
+  label: 'Ignore Layout Flow',
+  componentId: TRANSFORM,
+  path: 'positionType',
+  kind: 'position-mode',
+  bindable: false,
+  core: true,
+  hideOnRoot: true,
+  info: 'Off: laid out by the parent (order, gaps, alignment). On: pinned at Top/Left offsets. Switching keeps the node where it is on screen.',
+};
+
+// --- Position group ---
 export const POSITION_GROUP = {
   title: 'Position',
   fields: [
-    {
-      // The same `positionType` value the Layout group's Flow selector writes.
-      // Both are drawn deliberately: a master switch reads better directly above
-      // the two fields it gates, and Flow — being in Layout, below them — is a
-      // second entry point rather than a replacement.
-      label: 'Ignore layout flow',
-      componentId: TRANSFORM,
-      path: 'positionType',
-      kind: 'position-mode' as const,
-      bindable: false,
-      core: true,
-      hideOnRoot: true,
-      info: 'Off: laid out by the parent (order, gaps, alignment). On: pinned at Top/Left offsets. Switching keeps the node where it is on screen.',
-    },
     {
       label: 'Anchor',
       componentId: TRANSFORM,
@@ -332,10 +334,13 @@ export const POSITION_GROUP = {
       info: 'X (left) / Y (top) offset from the parent; reveal shows all four edges. Applied when the node ignores layout flow.',
     },
     {
-      label: 'Z-index',
+      label: 'Z-Index',
       componentId: TRANSFORM,
       path: 'zIndex',
       kind: 'number' as const,
+      // The design pairs it with Rotation, which the SDK has no prop for — a half
+      // row simply keeps its own column until there is something to pair with.
+      half: true,
       info: 'Stacking order; higher values render in front of siblings.',
     },
   ],
@@ -533,7 +538,14 @@ const LAYOUT_FIELDS: (FieldConfig & { container?: true })[] = [
     kind: 'enum' as const,
     options: DISPLAY_OPTIONS,
     bindable: false,
-    info: 'Flex lays out the node and its children; None removes it from layout entirely.',
+    // The panel header's eye is the primary control for this prop, and being
+    // binary it can express BOTH values — so the row would only ever duplicate it.
+    // `core` keeps it out of `+ Add property` (the eye is the way in) while
+    // `hiddenWhen` keeps the row for source that already authors the prop, so a
+    // hand-authored `display` stays visible where its siblings are.
+    core: true,
+    hiddenWhen: (v: Record<string, unknown>) => !('display' in v),
+    info: 'Flex lays out the node and its children; None removes it from layout entirely. The eye in the panel header toggles this.',
   },
 ];
 

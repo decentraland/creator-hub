@@ -76,7 +76,7 @@ export const AnchorPresetField: React.FC<AnchorPresetFieldProps> = ({
         </div>
       </div>
       {disabled ? (
-        <span className="ui-designer-anchor-hint">Turn on "Ignore layout flow" to anchor</span>
+        <span className="ui-designer-anchor-hint">Turn on "Ignore Layout Flow" to anchor</span>
       ) : null}
     </div>
   );

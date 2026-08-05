@@ -76,9 +76,92 @@
   margin-bottom: var(--uid-space-2);
 }
 
+/* --- Panel header ---
+   The selected node's kind, plus the eye: the only control in the panel that is
+   not a property row. */
+.ui-designer-panel-header {
+  display: flex;
+  align-items: center;
+  gap: var(--uid-space-2);
+  padding: var(--uid-space-2) var(--uid-space-3);
+  border-bottom: 1px solid var(--ui-designer-hairline);
+}
+
+.ui-designer-panel-header-icon {
+  display: inline-flex;
+  flex: 0 0 auto;
+  color: var(--sub-text);
+}
+
+.ui-designer-panel-header-icon svg {
+  display: block;
+  width: 14px;
+  height: 14px;
+}
+
+.ui-designer-panel-header-name {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--title);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* A hidden node reads dimmed, so its state is legible from the header as a whole
+   rather than only from the eye glyph. */
+.ui-designer-panel-header.hidden .ui-designer-panel-header-icon,
+.ui-designer-panel-header.hidden .ui-designer-panel-header-name {
+  opacity: 0.55;
+}
+
+.ui-designer-panel-header-eye {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--sub-text);
+  cursor: pointer;
+}
+
+.ui-designer-panel-header-eye:hover {
+  background: var(--ui-designer-control-accent-15);
+  color: var(--title);
+}
+
+.ui-designer-panel-header-eye[aria-pressed="true"] {
+  color: var(--ui-designer-control-accent);
+}
+
+.ui-designer-panel-header-eye:focus-visible {
+  outline: 2px solid var(--border-focused);
+  outline-offset: 1px;
+}
+
+.ui-designer-panel-header-eye svg {
+  display: block;
+  width: 14px;
+  height: 14px;
+}
+
 /* --- Row wrapper + remove (−) affordance (Phase F3) --- */
 .ui-designer-property-row {
   position: relative;
+}
+
+/* A row that belongs to no group (Ignore Layout Flow, Active when) sits outside a
+   Container, so it has to reproduce that container's content inset to line up
+   with the grouped rows. */
+.ui-designer-property-panel > .ui-designer-property-row {
+  padding: 0 var(--uid-space-3);
 }
 
 /* Two-column pairing (Figma draws Transparency·Corner radius and Border

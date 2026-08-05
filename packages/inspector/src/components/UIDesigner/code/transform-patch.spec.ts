@@ -127,6 +127,35 @@ describe('when patching a uiTransform field from the panel', () => {
     });
   });
 
+  // The panel header's eye. Hiding writes the enum; showing REMOVES the prop
+  // rather than writing 'flex', so toggling twice must leave the source as it was.
+  describe('and toggling the header eye (display patch)', () => {
+    const SOURCE = `export function S() {
+  return <UiEntity uiTransform={{ width: 100 }} />
+}`;
+
+    // Quote style is the emitter's (the store re-formats with Prettier after the
+    // splice), so the assertion is on the parsed value, not on the spelling.
+    it('should write display none and read it back', () => {
+      const hidden = patchRoot(SOURCE, { display: 1 });
+      expect(hidden).toMatch(/display: ['"]none['"]/);
+      expect(parse(hidden).root.uiTransform).toMatchObject({ display: 1 });
+    });
+
+    it('should leave the source byte-identical after hiding and showing again', () => {
+      const hidden = patchRoot(SOURCE, { display: 1 });
+      expect(patchRoot(hidden, { display: undefined })).toBe(SOURCE);
+    });
+
+    it('should clear a hand-authored display: flex when shown', () => {
+      const authored = `export function S() {
+  return <UiEntity uiTransform={{ width: 100, display: 'flex' }} />
+}`;
+      expect(parse(authored).root.uiTransform).toMatchObject({ display: 0 });
+      expect(patchRoot(authored, { display: undefined })).not.toContain('display');
+    });
+  });
+
   describe('and the node has a partially-dynamic uiTransform', () => {
     it('should flag dynamicProps so write paths refuse the edit', () => {
       const SOURCE = `export function S() {

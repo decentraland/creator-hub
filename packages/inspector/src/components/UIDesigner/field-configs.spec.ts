@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
-import { buildGroups, buildLayoutGroup, type FieldConfig } from './field-configs';
+import {
+  buildGroups,
+  buildLayoutGroup,
+  POSITION_MODE_FIELD,
+  type FieldConfig,
+} from './field-configs';
 import type { UINodeType } from './tree-model';
 
 const ALL_TYPES: UINodeType[] = ['UiEntity', 'Label', 'Button', 'Input', 'Dropdown'];
@@ -232,8 +237,8 @@ describe('buildGroups', () => {
       }
     });
 
-    it('should move Z-index into Position and Opacity into Style', () => {
-      expect(labelsIn('UiEntity', 'Position')).toContain('Z-index');
+    it('should move Z-Index into Position and Opacity into Style', () => {
+      expect(labelsIn('UiEntity', 'Position')).toContain('Z-Index');
       expect(labelsIn('UiEntity', 'Style')).toContain('Opacity');
     });
 
@@ -250,21 +255,39 @@ describe('buildGroups', () => {
       }
     });
 
-    // Drawn as a checkbox above the fields it gates, and deliberately the SAME
+    // Drawn as a standalone checkbox above every group, and deliberately the SAME
     // `positionType` the Layout group's Flow selector writes — the two mirror each
     // other, so neither may drift onto a different path.
-    it('should drive positionType from the flow checkbox above Anchor and Position', () => {
-      const position = fieldsIn('UiEntity', 'Position');
-      const checkbox = position.find(f => f.label === 'Ignore layout flow');
-      expect(checkbox?.kind).toBe('position-mode');
-      expect(checkbox?.path).toBe('positionType');
-      expect(checkbox?.core).toBe(true);
-      // It leads the group: a master switch belongs above what it enables.
-      expect(position[0]).toBe(checkbox);
+    it('should drive positionType from a standalone checkbox, not a Position row', () => {
+      expect(POSITION_MODE_FIELD.label).toBe('Ignore Layout Flow');
+      expect(POSITION_MODE_FIELD.kind).toBe('position-mode');
+      expect(POSITION_MODE_FIELD.path).toBe('positionType');
+      expect(POSITION_MODE_FIELD.core).toBe(true);
 
       const flow = fieldsIn('UiEntity', 'Layout').find(f => f.label === 'Flow');
       expect(flow?.kind).toBe('flow');
-      expect(flow?.componentId).toBe(checkbox?.componentId);
+      expect(flow?.componentId).toBe(POSITION_MODE_FIELD.componentId);
+    });
+
+    // It gates fields in TWO groups (Position's Anchor/Position, Layout's margin),
+    // so it belongs to neither — the panel renders it above them all.
+    it('should keep the positionType checkbox out of every group', () => {
+      for (const type of ALL_TYPES) {
+        expect(allLabels(type)).not.toContain(POSITION_MODE_FIELD.label);
+      }
+      expect(fieldsIn('UiEntity', 'Position')[0]?.label).toBe('Anchor');
+    });
+
+    // The header's eye writes `display`, and being binary it can express BOTH of
+    // that prop's values — so a row for it would only ever duplicate the eye. `core`
+    // is what keeps it out of `+ Add property` (PropertyPanel `isTogglable`), and
+    // `hiddenWhen` is what still shows it for source that already authors it.
+    it('should leave Display to the header eye unless source authors it', () => {
+      const display = fieldsIn('UiEntity', 'Layout').find(f => f.label === 'Display');
+      expect(display?.core).toBe(true);
+      expect(display?.hiddenWhen?.({})).toBe(true);
+      expect(display?.hiddenWhen?.({ display: 0 })).toBe(false);
+      expect(display?.hiddenWhen?.({ display: 1 })).toBe(false);
     });
   });
 
@@ -352,11 +375,13 @@ describe('buildGroups', () => {
       const hidden = fieldsIn('UiEntity', 'Position')
         .filter(f => f.hideOnRoot)
         .map(f => f.label);
-      expect(hidden).toEqual(['Ignore layout flow', 'Anchor', 'Position']);
+      expect(hidden).toEqual(['Anchor', 'Position']);
+      // The third one lives outside the groups but is gated identically.
+      expect(POSITION_MODE_FIELD.hideOnRoot).toBe(true);
     });
 
-    it('should keep Z-index on a root, where stacking between roots is still real', () => {
-      const zIndex = fieldsIn('UiEntity', 'Position').find(f => f.label === 'Z-index');
+    it('should keep Z-Index on a root, where stacking between roots is still real', () => {
+      const zIndex = fieldsIn('UiEntity', 'Position').find(f => f.label === 'Z-Index');
       expect(zIndex?.hideOnRoot).toBeUndefined();
     });
 
@@ -372,16 +397,18 @@ describe('buildGroups', () => {
   });
 
   describe('and a row is paired into two columns', () => {
-    // The design pairs Transparency·Corner radius. It does NOT pair the border
-    // row here: a colour control is swatch + hex + alpha, and a ~140px half-track
-    // leaves the hex input around 44px.
+    // The design pairs Rotation·Z-Index and Transparency·Corner radius. Rotation
+    // has no SDK prop, so Z-Index is half with nothing beside it — the row grid
+    // packs whatever half rows survive filtering, so it simply keeps one column.
+    // The border row is deliberately NOT paired: a colour control is swatch + hex
+    // + alpha, and a ~140px half-track leaves the hex input around 44px.
     it('should mark exactly the fields the design pairs', () => {
       for (const type of ALL_TYPES) {
         const half = buildGroups(type)
           .flatMap(g => g.fields)
           .filter(f => f.half)
           .map(f => f.label);
-        expect(half).toEqual(['Opacity', 'Corner radius']);
+        expect(half).toEqual(['Z-Index', 'Opacity', 'Corner radius']);
       }
     });
   });
@@ -416,6 +443,7 @@ describe('buildGroups', () => {
           }
         }
       }
+      expect(POSITION_MODE_FIELD.info?.trim()).toBeTruthy();
     });
   });
 });

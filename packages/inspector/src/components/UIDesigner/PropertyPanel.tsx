@@ -1,10 +1,13 @@
 import React, { useCallback, useMemo, useRef, useState } from 'react';
 import {
   IoDesktopOutline,
+  IoEyeOffOutline,
+  IoEyeOutline,
   IoOptionsOutline,
   IoLockClosedOutline,
   IoLockOpenOutline,
   IoPhoneLandscapeOutline,
+  IoWarningOutline,
 } from 'react-icons/io5';
 import { VscTrash } from 'react-icons/vsc';
 import { AiOutlinePlus } from 'react-icons/ai';
@@ -12,6 +15,8 @@ import cx from 'classnames';
 import type { Entity, TextureUnion } from '@dcl/ecs';
 
 import {
+  YGD_FLEX,
+  YGD_NONE,
   YGPT_ABSOLUTE,
   YGPT_RELATIVE,
   YGU_AUTO,
@@ -37,7 +42,8 @@ import { CheckboxField, Dropdown, RgbaColorField, TextArea, TextField } from '..
 import { Pill } from '../ui/Pill';
 import { measureParentBox, measureNodeOffset, axisForPath, convertLength } from './measure';
 import type { DeviceKind } from './safe-areas';
-import { type CanvasSegment, type UINodeType } from './tree-model';
+import { classifyNode, type CanvasSegment, type UINodeType } from './tree-model';
+import { WIDGET_ICONS } from './widget-catalog';
 import {
   addInteractionLayer,
   addInteractionStates,
@@ -75,7 +81,7 @@ import { MixedContentField } from './MixedContentField';
 import { seedSegments } from './MixedContentField/segments';
 import { TextureField } from './TextureField';
 import { regionToUvs, uvsToRegion } from './uv-region';
-import { buildGroups, type FieldConfig } from './field-configs';
+import { buildGroups, POSITION_MODE_FIELD, TRANSFORM, type FieldConfig } from './field-configs';
 
 import './PropertyPanel.css';
 
@@ -172,6 +178,20 @@ function fieldSetPaths(field: FieldConfig): string[] {
 function isFieldSet(field: FieldConfig, value: Record<string, unknown> | null): boolean {
   if (!value) return false;
   return fieldSetPaths(field).some(p => p in value);
+}
+
+// "How I sit in my parent" has no meaning on a UI root — its parent is the
+// screen. Kept on a root that is ALREADY absolute, though: dragging a root on the
+// canvas switches it, and these are then the only controls over the offsets now
+// sitting in source (unchecking Ignore Layout Flow puts it back in flow, after
+// which they all drop away).
+function hiddenOnRoot(
+  field: FieldConfig,
+  isGuiRoot: boolean,
+  value: Record<string, unknown> | null,
+): boolean {
+  if (!field.hideOnRoot || !isGuiRoot) return false;
+  return ((value?.positionType as number | undefined) ?? YGPT_RELATIVE) !== YGPT_ABSOLUTE;
 }
 
 // Seed patch written when the user ADDS an optional prop — a sensible default so
@@ -504,6 +524,46 @@ const ActiveFlagRow: React.FC<{ entity: Entity; expr?: string }> = ({ entity, ex
   );
 };
 
+// Panel header: which KIND of node is selected, plus the eye — the only control
+// here that is not a property row. Labelled by kind rather than by a per-node
+// name, which the editor has nowhere to store yet.
+//
+// The eye writes `display`, a real prop: a hidden node also stops rendering in
+// the shipped scene, and it can only be reached again from the tree.
+const PanelHeader: React.FC<{ node: CodeUINode; hidden: boolean; onToggle: () => void }> = ({
+  node,
+  hidden,
+  onToggle,
+}) => (
+  <div className={cx('ui-designer-panel-header', { hidden })}>
+    <span
+      className="ui-designer-panel-header-icon"
+      aria-hidden
+    >
+      {node.opaque ? <IoWarningOutline /> : WIDGET_ICONS[classifyNode(node)]}
+    </span>
+    <span className="ui-designer-panel-header-name">
+      {node.opaque ? node.name : classifyNode(node)}
+    </span>
+    {node.opaque ? null : (
+      <button
+        type="button"
+        className="ui-designer-panel-header-eye"
+        aria-pressed={hidden}
+        aria-label={hidden ? 'Show this node' : 'Hide this node'}
+        title={
+          hidden
+            ? 'Show this node'
+            : 'Hide this node — it stops rendering in the scene too, not just on the canvas'
+        }
+        onClick={onToggle}
+      >
+        {hidden ? <IoEyeOffOutline /> : <IoEyeOutline />}
+      </button>
+    )}
+  </div>
+);
+
 const PropertyPanelComponent: React.FC = () => {
   const dispatch = useAppDispatch();
   const selected = useAppSelector(getSelectedNode);
@@ -614,9 +674,76 @@ const PropertyPanelComponent: React.FC = () => {
   const refChildren = (codeNode?.children ?? []).filter(c => c.componentRef);
 
   const allGroups = buildGroups(type);
+  const transform = readComponentValue(TRANSFORM) as Record<string, unknown> | null;
+  const nodeHidden = (transform?.display as number | undefined) === YGD_NONE;
+  // Unhiding REMOVES the prop, since react-ecs already defaults to flex. Not in an
+  // override layer though: there an absent key means "inherit from Default", so the
+  // node would stay hidden and the eye would read as a no-op.
+  const unhideValue = activeLayer === 'base' ? undefined : YGD_FLEX;
+
+  // One row, wherever it renders: inside a group or standalone above them.
+  // In an override layer, distinguish a field this state actually sets from one
+  // merely inherited from Default — the displayed value is merged, so it can't
+  // convey that on its own. An inherited field reads dimmed; an overridden one
+  // gets a reset (−) back to inherited.
+  const renderRow = (field: FieldConfig, value: Record<string, unknown> | null) => {
+    const overriding = activeLayer !== 'base';
+    const overridden =
+      overriding &&
+      isFieldSet(field, interactionLayerValue(codeNode, field.componentId, activeLayer));
+    const removable = overriding ? overridden : isTogglable(field);
+    return (
+      <div
+        className={cx('ui-designer-property-row', {
+          half: field.half,
+          overridden: overriding && overridden,
+          inherited: overriding && !overridden,
+        })}
+        key={`${field.componentId}:${field.path}:${field.label}`}
+      >
+        <FieldRow
+          field={field}
+          componentValue={value}
+          entity={selected as Entity}
+          bound={bindingsByField[`${field.componentId}.${field.path}`]}
+          bindings={bindingsByField}
+          mixed={mixedByField[`${field.componentId}.${field.path}`]}
+          write={writeAndDispatch}
+        />
+        {removable ? (
+          <button
+            type="button"
+            className="ui-designer-prop-remove"
+            aria-label={
+              overriding
+                ? `Reset ${field.label ?? 'property'} to its Default value`
+                : `Remove ${field.label ?? 'property'}`
+            }
+            title={
+              overriding
+                ? `Reset ${field.label ?? 'property'} to its Default value`
+                : `Remove ${field.label ?? 'property'}`
+            }
+            onClick={() => writeAndDispatch(field.componentId, buildRemovePatch(field))}
+          >
+            <VscTrash aria-hidden />
+          </button>
+        ) : null}
+      </div>
+    );
+  };
 
   return (
     <div className="ui-designer-property-panel">
+      {codeNode ? (
+        <PanelHeader
+          node={codeNode}
+          hidden={nodeHidden}
+          onToggle={() =>
+            writeAndDispatch(TRANSFORM, { display: nodeHidden ? unhideValue : YGD_NONE })
+          }
+        />
+      ) : null}
       {/* A nested component's Inputs are the primary thing to edit on an instance,
           so surface them at the TOP — above the wrapper's Layout/Background groups
           (which only position the instance). */}
@@ -651,6 +778,11 @@ const PropertyPanelComponent: React.FC = () => {
           expr={codeNode.interaction.activeExpr}
         />
       ) : null}
+      {/* The design draws Ignore Layout Flow above the first group, not inside one:
+          it gates fields in both Position (Anchor/Position) and Layout (margin). */}
+      {hiddenOnRoot(POSITION_MODE_FIELD, isGuiRoot, transform)
+        ? null
+        : renderRow(POSITION_MODE_FIELD, transform)}
       {allGroups.map(group => {
         // Bucket each field: shown (core / set / always-on) → a row (with a `−`
         // when it's an optional set prop); togglable-and-unset → the group's
@@ -660,18 +792,7 @@ const PropertyPanelComponent: React.FC = () => {
         // The group consts have narrow inferred field types; treat them uniformly.
         for (const field of group.fields as FieldConfig[]) {
           const value = readComponentValue(field.componentId) as Record<string, unknown> | null;
-          // "How I sit in my parent" has no meaning on a UI root — its parent is the
-          // screen. Kept on a root that is ALREADY absolute, though: dragging a root
-          // on the canvas switches it, and these are then the only controls over the
-          // offsets now sitting in source (unchecking the box puts it back in flow,
-          // after which all three drop away).
-          if (
-            field.hideOnRoot &&
-            isGuiRoot &&
-            ((value?.positionType as number | undefined) ?? YGPT_RELATIVE) !== YGPT_ABSOLUTE
-          ) {
-            continue;
-          }
+          if (hiddenOnRoot(field, isGuiRoot, value)) continue;
           const togglable = isTogglable(field);
           // The menu comes FIRST: an unset optional prop belongs in `+ Add property`
           // even while its row is suppressed, or a value the composite control has
@@ -681,54 +802,7 @@ const PropertyPanelComponent: React.FC = () => {
             continue;
           }
           if (field.hiddenWhen?.((value ?? {}) as Record<string, unknown>)) continue;
-          // In an override layer, distinguish a field this state actually sets
-          // from one merely inherited from Default — the displayed value is
-          // merged, so it can't convey that on its own. An inherited field reads
-          // dimmed; an overridden one gets a reset (−) back to inherited.
-          const overriding = activeLayer !== 'base';
-          const overridden =
-            overriding &&
-            isFieldSet(field, interactionLayerValue(codeNode, field.componentId, activeLayer));
-          const removable = overriding ? overridden : togglable;
-          rows.push(
-            <div
-              className={cx('ui-designer-property-row', {
-                half: field.half,
-                overridden: overriding && overridden,
-                inherited: overriding && !overridden,
-              })}
-              key={`${field.componentId}:${field.path}:${field.label}`}
-            >
-              <FieldRow
-                field={field}
-                componentValue={value}
-                entity={selected as Entity}
-                bound={bindingsByField[`${field.componentId}.${field.path}`]}
-                bindings={bindingsByField}
-                mixed={mixedByField[`${field.componentId}.${field.path}`]}
-                write={writeAndDispatch}
-              />
-              {removable ? (
-                <button
-                  type="button"
-                  className="ui-designer-prop-remove"
-                  aria-label={
-                    overriding
-                      ? `Reset ${field.label ?? 'property'} to its Default value`
-                      : `Remove ${field.label ?? 'property'}`
-                  }
-                  title={
-                    overriding
-                      ? `Reset ${field.label ?? 'property'} to its Default value`
-                      : `Remove ${field.label ?? 'property'}`
-                  }
-                  onClick={() => writeAndDispatch(field.componentId, buildRemovePatch(field))}
-                >
-                  <VscTrash aria-hidden />
-                </button>
-              ) : null}
-            </div>,
-          );
+          rows.push(renderRow(field, value));
         }
         if (rows.length === 0 && addable.length === 0) return null;
         return (
