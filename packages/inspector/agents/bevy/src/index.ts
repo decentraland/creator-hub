@@ -200,6 +200,13 @@ async function reportSceneErrors(): Promise<void> {
     if (!match) continue;
     if (reportedErrors.has(line)) continue;
     reportedErrors.add(line);
+    // Skip benign DEV WARNINGS: React (and react-ecs) log warnings via console.error,
+    // so they arrive as SceneError entries (e.g. "ERROR Warning: Each child in a list
+    // should have a unique key prop"). These aren't fatal — the scene keeps running —
+    // so they must NOT trigger the "runtime error, can't run" toast + stop the scene.
+    // A real error never carries the framework's "Warning:" tag.
+    const stripped = match[2].replace(/^ERROR\s+/, '').trim();
+    if (/^Warning:/i.test(stripped)) continue;
     bus.postToPage({ kind: 'scene-error', message: cleanErrorMessage(match[2]) });
   }
 }
