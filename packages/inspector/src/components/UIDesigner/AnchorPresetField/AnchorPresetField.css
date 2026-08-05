@@ -105,22 +105,25 @@
   min-width: 0;
 }
 
-/* The Figma ConstraintsIcons axis glyphs: a horizontal / vertical I-beam. */
+/* The Figma ConstraintsIcons axis glyphs: a horizontal / vertical I-beam. Masked
+   rather than drawn, so every panel glyph takes its colour from one token instead
+   of baking one per file. */
 .ui-designer-anchor-axis::before {
   content: "";
   flex: 0 0 auto;
   width: 16px;
   height: 16px;
-  background-position: center;
-  background-repeat: no-repeat;
+  background-color: var(--sub-text);
+  mask-position: center;
+  mask-repeat: no-repeat;
 }
 
 .ui-designer-anchor-axis.horizontal::before {
-  background-image: url("./icons/anchor-h.svg");
+  mask-image: url("./icons/anchor-h.svg");
 }
 
 .ui-designer-anchor-axis.vertical::before {
-  background-image: url("./icons/anchor-v.svg");
+  mask-image: url("./icons/anchor-v.svg");
 }
 
 .ui-designer-anchor-axis > .Dropdown.Field {

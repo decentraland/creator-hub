@@ -59,8 +59,38 @@
   outline-offset: -2px;
 }
 
-.ui-designer-flow-cell svg {
-  width: 15px;
-  height: 15px;
-  display: block;
+/* The Figma Direction / WrapVertical glyphs, as masks rather than <img>: the mask
+   paints `currentColor`, so the hover and selected rules above recolour the glyph
+   with no second copy of each file per state. */
+.ui-designer-flow-cell::before {
+  content: "";
+  width: 16px;
+  height: 16px;
+  background-color: currentColor;
+  mask-position: center;
+  mask-repeat: no-repeat;
+}
+
+.ui-designer-flow-cell[data-flow="absolute"]::before {
+  mask-image: url("./icons/absolute.svg");
+}
+
+.ui-designer-flow-cell[data-flow="column"]::before {
+  mask-image: url("./icons/column.svg");
+}
+
+.ui-designer-flow-cell[data-flow="column-reverse"]::before {
+  mask-image: url("./icons/column-reverse.svg");
+}
+
+.ui-designer-flow-cell[data-flow="row"]::before {
+  mask-image: url("./icons/row.svg");
+}
+
+.ui-designer-flow-cell[data-flow="row-reverse"]::before {
+  mask-image: url("./icons/row-reverse.svg");
+}
+
+.ui-designer-flow-cell[data-flow="wrap"]::before {
+  mask-image: url("./icons/wrap.svg");
 }

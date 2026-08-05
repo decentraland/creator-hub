@@ -4,8 +4,6 @@ import {
   IoEyeOffOutline,
   IoEyeOutline,
   IoOptionsOutline,
-  IoLockClosedOutline,
-  IoLockOpenOutline,
   IoPhoneLandscapeOutline,
   IoWarningOutline,
 } from 'react-icons/io5';
@@ -1014,9 +1012,7 @@ const LengthVecField = React.memo(function LengthVecField({
             aria-label={aspectLocked ? 'Unlock aspect ratio' : 'Lock aspect ratio'}
             title={aspectLocked ? 'Unlock aspect ratio' : 'Lock aspect ratio'}
             onClick={() => dispatch(setAspectLocked({ entity, locked: !aspectLocked }))}
-          >
-            {aspectLocked ? <IoLockClosedOutline aria-hidden /> : <IoLockOpenOutline aria-hidden />}
-          </button>
+          />
         ) : null}
         {hasFacade ? (
           <button

@@ -4,8 +4,7 @@
   gap: 8px;
 }
 
-/* Texture type as icon segments (None / File / Avatar), the design's mode row.
-   Placeholder glyphs — Phase 2 swaps in the extracted Figma SVGs. */
+/* Texture type as icon segments (None / File / Avatar), the design's mode row. */
 .ui-designer-texture-modes {
   display: flex;
   gap: 2px;
@@ -40,8 +39,26 @@
   outline-offset: 1px;
 }
 
-.ui-designer-texture-mode svg {
-  width: 14px;
-  height: 14px;
-  display: block;
+/* The Figma's own mode glyphs, masked so the segment's resting / hover / selected
+   colours above drive them. The design also draws a `sliced` segment; react-ecs
+   offers no sliced texture SOURCE, so that glyph is deliberately unused. */
+.ui-designer-texture-mode::before {
+  content: "";
+  width: 16px;
+  height: 16px;
+  background-color: currentColor;
+  mask-position: center;
+  mask-repeat: no-repeat;
+}
+
+.ui-designer-texture-mode[data-mode="none"]::before {
+  mask-image: url("./icons/none.svg");
+}
+
+.ui-designer-texture-mode[data-mode="file"]::before {
+  mask-image: url("./icons/image.svg");
+}
+
+.ui-designer-texture-mode[data-mode="avatar"]::before {
+  mask-image: url("./icons/avatar.svg");
 }

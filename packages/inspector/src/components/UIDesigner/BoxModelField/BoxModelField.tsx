@@ -8,20 +8,15 @@ import './BoxModelField.css';
 interface Edge {
   path: string;
   label: string;
-  mark: string;
+  glyph: string;
 }
 
-// T/R/B/L rather than the design's edge icons. `MdBorderTop`/`Right`/`Bottom`/
-// `Left` differ only in which single edge of a dotted square is solid, which at
-// this size is genuinely unreadable — and the panel already names edges this way
-// in the Position vec and the nine-slice control, so the letters are the
-// established vocabulary rather than a new one.
-const edges = (prefix: 'padding' | 'margin'): Edge[] => [
-  { path: `${prefix}Top`, label: `${prefix} top`, mark: 'T' },
-  { path: `${prefix}Right`, label: `${prefix} right`, mark: 'R' },
-  { path: `${prefix}Bottom`, label: `${prefix} bottom`, mark: 'B' },
-  { path: `${prefix}Left`, label: `${prefix} left`, mark: 'L' },
-];
+const edges = (prefix: 'padding' | 'margin'): Edge[] =>
+  (['top', 'right', 'bottom', 'left'] as const).map(side => ({
+    path: `${prefix}${side[0].toUpperCase()}${side.slice(1)}`,
+    label: `${prefix} ${side}`,
+    glyph: `${prefix}-${side}`,
+  }));
 
 const PADDING = edges('padding');
 const MARGIN = edges('margin');
@@ -52,7 +47,13 @@ export const BoxModelField: React.FC<BoxModelFieldProps> = ({ value, onPatch }) 
           <TextField
             key={e.path}
             type="number"
-            leftLabel={e.mark}
+            leftIcon={
+              <span
+                className="ui-designer-bm-icon"
+                data-edge={e.glyph}
+                title={e.label}
+              />
+            }
             aria-label={e.label}
             title={e.label}
             value={String((v[e.path] as number | undefined) ?? 0)}

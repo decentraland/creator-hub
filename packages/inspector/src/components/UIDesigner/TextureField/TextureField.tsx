@@ -1,5 +1,4 @@
 import React, { useMemo, useState } from 'react';
-import { IoBanOutline, IoImageOutline, IoPersonOutline } from 'react-icons/io5';
 import type { TextureUnion } from '@dcl/ecs';
 import { validateAssetPath } from '@dcl/asset-packs';
 
@@ -23,23 +22,21 @@ import './TextureField.css';
 // (#1434).
 type TexMode = 'none' | 'file' | 'avatar';
 
-const MODES: { value: TexMode; label: string; icon: React.ReactNode; hint: string }[] = [
+// The glyph per segment is a CSS mask keyed off `data-mode` — see TextureField.css.
+const MODES: { value: TexMode; label: string; hint: string }[] = [
   {
     value: 'none',
     label: 'No texture',
-    icon: <IoBanOutline aria-hidden />,
     hint: 'No texture — the background is the solid colour alone',
   },
   {
     value: 'file',
     label: 'Image file',
-    icon: <IoImageOutline aria-hidden />,
     hint: 'An image asset from your scene',
   },
   {
     value: 'avatar',
     label: 'Avatar',
-    icon: <IoPersonOutline aria-hidden />,
     hint: 'A player’s avatar snapshot, by user ID',
   },
 ];
@@ -145,10 +142,9 @@ const TextureFieldComponent: React.FC<TextureFieldProps> = ({ value, onChange })
             aria-label={m.label}
             className={`ui-designer-texture-mode${m.value === mode ? ' selected' : ''}`}
             title={m.hint}
+            data-mode={m.value}
             onClick={() => handleModeChange(m.value)}
-          >
-            {m.icon}
-          </button>
+          />
         ))}
       </div>
       {renderVariant()}

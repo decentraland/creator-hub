@@ -28,7 +28,48 @@
   min-width: 0;
 }
 
-.ui-designer-bm-grid .InputLabel {
-  color: var(--sub-text);
-  font-variant-numeric: tabular-nums;
+/* The Figma PaddingIcons / MarginsIcons glyphs, in the in-input prefix slot where
+   the T/R/B/L letters used to sit. Masked so the glyph takes the prefix colour
+   instead of baking one, and so the disabled section dims it with everything
+   else. Each `title` still names its edge, since which edge a tick marks is
+   readable but not instant at 16px. */
+.ui-designer-bm-icon {
+  display: block;
+  width: 16px;
+  height: 16px;
+  background-color: var(--sub-text);
+  mask-position: center;
+  mask-repeat: no-repeat;
+}
+
+.ui-designer-bm-icon[data-edge="padding-top"] {
+  mask-image: url("./icons/padding-top.svg");
+}
+
+.ui-designer-bm-icon[data-edge="padding-right"] {
+  mask-image: url("./icons/padding-right.svg");
+}
+
+.ui-designer-bm-icon[data-edge="padding-bottom"] {
+  mask-image: url("./icons/padding-bottom.svg");
+}
+
+.ui-designer-bm-icon[data-edge="padding-left"] {
+  mask-image: url("./icons/padding-left.svg");
+}
+
+.ui-designer-bm-icon[data-edge="margin-top"] {
+  mask-image: url("./icons/margin-top.svg");
+}
+
+.ui-designer-bm-icon[data-edge="margin-right"] {
+  mask-image: url("./icons/margin-right.svg");
+}
+
+.ui-designer-bm-icon[data-edge="margin-bottom"] {
+  mask-image: url("./icons/margin-bottom.svg");
+}
+
+.ui-designer-bm-icon[data-edge="margin-left"] {
+  mask-image: url("./icons/margin-left.svg");
 }

@@ -1,5 +1,4 @@
 import React from 'react';
-import { IoLockClosedOutline, IoLockOpenOutline } from 'react-icons/io5';
 import type { Entity } from '@dcl/ecs';
 
 import { useAppDispatch, useAppSelector } from '../../../redux/hooks';
@@ -137,9 +136,7 @@ export const ResizeField: React.FC<ResizeFieldProps> = ({
           aria-label={aspectLocked ? 'Unlock aspect ratio' : 'Lock aspect ratio'}
           title={aspectLocked ? 'Unlock aspect ratio' : 'Lock aspect ratio'}
           onClick={() => dispatch(setAspectLocked({ entity, locked: !aspectLocked }))}
-        >
-          {aspectLocked ? <IoLockClosedOutline aria-hidden /> : <IoLockOpenOutline aria-hidden />}
-        </button>
+        />
       ) : null}
     </div>
   );

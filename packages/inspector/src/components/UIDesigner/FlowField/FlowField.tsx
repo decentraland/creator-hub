@@ -1,12 +1,4 @@
 import React from 'react';
-import {
-  MdArrowBack,
-  MdArrowDownward,
-  MdArrowForward,
-  MdArrowUpward,
-  MdOpenWith,
-  MdWrapText,
-} from 'react-icons/md';
 import type { Entity } from '@dcl/ecs';
 
 import { type FlowValue, flowPatch, flowValue, isWrapping, wrapPatch } from '../flow';
@@ -21,35 +13,32 @@ interface FlowFieldProps {
   onPatch: (patch: Record<string, unknown>) => void;
 }
 
-const CELLS: { value: FlowValue; label: string; icon: React.ReactNode; hint: string }[] = [
+// The glyph per cell is a CSS mask keyed off `data-flow`, so a cell renders no
+// child of its own — see FlowField.css.
+const CELLS: { value: FlowValue; label: string; hint: string }[] = [
   {
     value: 'absolute',
     label: 'Absolute',
-    icon: <MdOpenWith aria-hidden />,
     hint: 'Absolute — pinned at its own Top/Left offsets, outside the parent’s layout',
   },
   {
     value: 'column',
     label: 'Column',
-    icon: <MdArrowDownward aria-hidden />,
     hint: 'Column — stack children top to bottom',
   },
   {
     value: 'column-reverse',
     label: 'Column reverse',
-    icon: <MdArrowUpward aria-hidden />,
     hint: 'Column reverse — stack children bottom to top',
   },
   {
     value: 'row',
     label: 'Row',
-    icon: <MdArrowForward aria-hidden />,
     hint: 'Row — lay children out left to right',
   },
   {
     value: 'row-reverse',
     label: 'Row reverse',
-    icon: <MdArrowBack aria-hidden />,
     hint: 'Row reverse — lay children out right to left',
   },
 ];
@@ -82,10 +71,9 @@ export const FlowField: React.FC<FlowFieldProps> = ({ value, entity, onPatch }) 
             aria-label={cell.label}
             className={`ui-designer-flow-cell${cell.value === current ? ' selected' : ''}`}
             title={cell.hint}
+            data-flow={cell.value}
             onClick={() => pick(cell.value)}
-          >
-            {cell.icon}
-          </button>
+          />
         ))}
       </div>
       <button
@@ -94,10 +82,9 @@ export const FlowField: React.FC<FlowFieldProps> = ({ value, entity, onPatch }) 
         aria-label="Wrap children"
         className={`ui-designer-flow-cell wrap${wrapping ? ' selected' : ''}`}
         title="Wrap — let children flow onto multiple lines when they do not fit on one"
+        data-flow="wrap"
         onClick={() => onPatch(wrapPatch(!wrapping))}
-      >
-        <MdWrapText aria-hidden />
-      </button>
+      />
     </div>
   );
 };

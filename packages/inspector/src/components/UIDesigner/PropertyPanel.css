@@ -386,7 +386,12 @@
   outline-offset: 1px;
 }
 
-/* Aspect-ratio lock toggle for the Size vec. */
+/* Aspect-ratio lock toggle for the Size vec. The Figma AspectRatio glyph is two
+   opposite corner brackets; the locked state adds the diagonal tying the two axes
+   together. That diagonal is drawn solid, not dashed as the Figma has it — at the
+   16px it renders at, a 1.5px dash pattern washes out into nothing and the two
+   states become distinguishable by colour alone. Masked so `color` below drives
+   it and the button needs no child of its own. */
 .ui-designer-vec-lock {
   flex: 0 0 auto;
   display: inline-flex;
@@ -398,6 +403,20 @@
   border-radius: 4px;
   color: var(--sub-text);
   cursor: pointer;
+}
+
+.ui-designer-vec-lock::before {
+  content: "";
+  width: 16px;
+  height: 16px;
+  background-color: currentColor;
+  mask-image: url("./icons/aspect-unlinked.svg");
+  mask-position: center;
+  mask-repeat: no-repeat;
+}
+
+.ui-designer-vec-lock.active::before {
+  mask-image: url("./icons/aspect-linked.svg");
 }
 
 .ui-designer-vec-lock:hover {
@@ -415,12 +434,6 @@
   outline-offset: 1px;
 }
 
-.ui-designer-vec-lock svg {
-  width: 14px;
-  height: 14px;
-  display: block;
-}
-
 /* The shared TextArea defaults to `resize: both`; the narrow rail only tolerates
    vertical growth. */
 .ui-designer-string-array textarea {
@@ -432,6 +445,60 @@
    selects/inputs overran the right edge. */
 .ui-designer-property-panel * {
   box-sizing: border-box;
+}
+
+/* --- Control skins ---
+   The shared inputs and dropdowns draw their resting border in their own
+   background colour, so a field reads as a floating fill with no edge. The Figma
+   gives every field a visible hairline, which is also what this panel's own
+   composites (flow cells, anchor preview) already do — so borrow their token and
+   the whole control family reads as one. Panel-scoped: the 3D EntityInspector
+   keeps the borderless look.
+
+   Resting state only, spelled out: the shared hover/focus/error/disabled borders
+   carry the same specificity as this override, so without excluding them the
+   winner would come down to which stylesheet the bundle happens to emit last. */
+.ui-designer-property-panel
+  .Text.Field
+  .InputContainer:not(.hovered):not(.focused):not(.error):not(.disabled),
+.ui-designer-property-panel
+  .Dropdown.Field
+  .DropdownContainer:not(:hover):not(.focused):not(.error):not(.disabled) {
+  border-color: var(--ui-designer-control-border);
+}
+
+/* A menu is the same surface lifted off the panel, so it needs the edge too. */
+.ui-designer-property-panel .OptionList {
+  border: 1px solid var(--ui-designer-control-border);
+}
+
+/* Checkboxes: the panel's accent marks the checked state, rather than a tick on
+   an unchanged grey box. Size stays 18px — the shared tick glyph is positioned
+   against it. */
+.ui-designer-property-panel .Checkbox.Field .InputContainer input[type="checkbox"] {
+  border-radius: 4px;
+  border-color: var(--ui-designer-control-border);
+}
+
+.ui-designer-property-panel .Checkbox.Field .InputContainer input[type="checkbox"]:checked,
+.ui-designer-property-panel .Checkbox.Field .InputContainer input[type="checkbox"]:indeterminate {
+  background-color: var(--ui-designer-control-accent);
+  border-color: var(--ui-designer-control-accent);
+}
+
+.ui-designer-property-panel .Checkbox.Field .InputContainer input[type="checkbox"]:focus-visible {
+  outline: 2px solid var(--border-focused);
+  outline-offset: 1px;
+}
+
+/* A disabled checkbox must not read as accented-and-on (Clip Content while Scroll
+   Overflow forces it), so the disabled fill wins over the checked one. */
+.ui-designer-property-panel
+  .Checkbox.Field
+  .InputContainer.disabled
+  input[type="checkbox"]:checked {
+  background-color: var(--base-12);
+  border-color: var(--base-12);
 }
 
 /* Vec groups (Size / Min / Max / Position) render sub-fields in the control
