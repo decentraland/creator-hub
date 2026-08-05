@@ -24,6 +24,7 @@ import {
   YGU_POINT,
   YGU_UNDEFINED,
 } from '../../lib/sdk/ui-transform-constants';
+import { isValidIdentifier } from '../../lib/sdk/operations/validators';
 import { useAppDispatch, useAppSelector } from '../../redux/hooks';
 import {
   getAspectLockedNodes,
@@ -45,10 +46,12 @@ import type { DeviceKind } from './safe-areas';
 import { classifyNode, type CanvasSegment, type UINodeType } from './tree-model';
 import { WIDGET_ICONS } from './widget-catalog';
 import {
+  addBindAction,
   addInteractionLayer,
   addInteractionStates,
   addPlatformVariant,
   codeComponentValueForLayer,
+  findCodeLayoutParent,
   findCodeNode,
   interactionLayerValue,
   removeInteractionLayer,
@@ -70,6 +73,8 @@ import {
   patchToAlignment,
 } from './alignment-presets';
 import { absolutePatch, inFlowPatch } from './flow';
+import { type OverflowFlag, overflowFlags, overflowPatch } from './overflow-flags';
+import { fillOwnsProp } from './resize-modes';
 import { AnchorPresetField } from './AnchorPresetField';
 import { BindAffordance } from './BindAffordance';
 import { BindableField } from './BindableField';
@@ -79,9 +84,16 @@ import { EmptyState } from './EmptyState';
 import { FlowField } from './FlowField';
 import { MixedContentField } from './MixedContentField';
 import { seedSegments } from './MixedContentField/segments';
+import { ResizeField } from './ResizeField';
 import { TextureField } from './TextureField';
 import { regionToUvs, uvsToRegion } from './uv-region';
-import { buildGroups, POSITION_MODE_FIELD, TRANSFORM, type FieldConfig } from './field-configs';
+import {
+  buildGroups,
+  isEventGroup,
+  POSITION_MODE_FIELD,
+  TRANSFORM,
+  type FieldConfig,
+} from './field-configs';
 
 import './PropertyPanel.css';
 
@@ -107,18 +119,13 @@ function expandWriteAll(
   return patch;
 }
 
+// `auto` is deliberately absent: it is the Resize control's "Hug" mode, and on a
+// corner radius or a border width it has no defined behaviour. Hand-authored
+// `auto` still reads back (the inputs go disabled — see `numbersDisabled`).
 const UNIT_OPTIONS = [
   { value: YGU_POINT, label: 'px' },
   { value: YGU_PERCENT, label: '%' },
 ];
-
-// `auto` is the design's "Hug": Yoga derives the box from its content, so the
-// numeric value is ignored (and the inputs go disabled). Offered per field —
-// `auto` has no defined meaning on a corner radius or a border width.
-const UNIT_OPTIONS_WITH_AUTO = [...UNIT_OPTIONS, { value: YGU_AUTO, label: 'auto' }];
-
-const unitOptionsFor = (field: FieldConfig) =>
-  field.autoUnit ? UNIT_OPTIONS_WITH_AUTO : UNIT_OPTIONS;
 
 // The 9 cells plus a reset. "Default" clears both props, which is the only way
 // back to Yoga's own defaults (stretch on the cross axis) once they are authored.
@@ -200,7 +207,7 @@ function hiddenOnRoot(
 function buildAddPatch(field: FieldConfig): Record<string, unknown> {
   switch (field.kind) {
     case 'number':
-      return { [field.path]: field.path === 'opacity' ? 1 : 0 };
+      return { [field.path]: field.defaultValue ?? 0 };
     case 'index':
       return { [field.path]: 0 };
     case 'boolean':
@@ -279,6 +286,65 @@ const AddPropertyMenu: React.FC<{ fields: FieldConfig[]; onAdd: (f: FieldConfig)
           </li>
         ))}
       </ul>
+    </details>
+  );
+};
+
+// The design's `+ Add New Action` at the foot of an events group: declare a
+// handler without having to pick an event to hang it off first. It reaches source
+// through the same `addBindAction` the per-field 🔗 picker uses, so the new
+// handler appears in every event's picker on every node of this UI — which is
+// what "then it appears in the dropdowns" means.
+//
+// Same native <details> disclosure as `+ Add property` (keyboard-accessible, no
+// popover math). The design labels the input "Description"; what it produces is
+// the handler's NAME, so it has to be a valid identifier — the button stays
+// disabled until it is, because the name is spliced into source as code and
+// interpolating it raw would be an injection / build-break vector.
+const AddActionMenu: React.FC = () => {
+  const { bindingSurface } = useCodeState();
+  const ref = useRef<HTMLDetailsElement>(null);
+  const [name, setName] = useState('');
+
+  const trimmed = name.trim();
+  const taken = bindingSurface.actions.some(a => a.name === trimmed);
+  const canAdd = isValidIdentifier(trimmed) && !taken;
+
+  const add = () => {
+    if (!canAdd) return;
+    void addBindAction(trimmed);
+    setName('');
+    if (ref.current) ref.current.open = false;
+  };
+
+  return (
+    <details
+      className="ui-designer-add-prop"
+      ref={ref}
+    >
+      <summary className="ui-designer-add-prop-trigger">
+        <AiOutlinePlus aria-hidden />
+        Add New Action
+      </summary>
+      <div className="ui-designer-add-action">
+        <TextField
+          aria-label="Description"
+          placeholder="Description"
+          value={name}
+          error={taken ? 'Name already in use' : undefined}
+          onChange={e => setName(e.target.value)}
+          onKeyDown={e => {
+            if (e.key === 'Enter') add();
+          }}
+        />
+        <button
+          type="button"
+          disabled={!canAdd}
+          onClick={add}
+        >
+          ADD
+        </button>
+      </div>
     </details>
   );
 };
@@ -597,6 +663,21 @@ const PropertyPanelComponent: React.FC = () => {
     return !!parsedRoot.platformVariant && parsedRoot.children.includes(codeNode);
   }, [codeState, codeNode]);
 
+  // Fill grows along the PARENT's main axis, so the Resize control and the row
+  // gate below both need the parent's direction — which the selected node's own
+  // component value cannot answer. Read here for the same reason `hideOnRoot` is:
+  // the panel is where the tree is in scope. The base layer is the right one to
+  // read: an interaction state overriding a parent's direction would be exotic,
+  // and the axes would then flip as the pointer moved.
+  const parentFlexDirection = useMemo(() => {
+    const parent = findCodeLayoutParent(
+      codeState.parsed?.root as CodeUINode | undefined,
+      selected as unknown as number,
+    );
+    const t = codeComponentValueForLayer(parent, TRANSFORM, 'base');
+    return (t?.flexDirection as number | undefined) ?? 0;
+  }, [codeState, selected]);
+
   // The interaction layer the fields edit. The picked layer is global, so it can
   // be stale for this node (that state may not exist here) — fall back to base.
   const activeLayer: InteractionStateKey = useMemo(
@@ -708,6 +789,7 @@ const PropertyPanelComponent: React.FC = () => {
           bound={bindingsByField[`${field.componentId}.${field.path}`]}
           bindings={bindingsByField}
           mixed={mixedByField[`${field.componentId}.${field.path}`]}
+          parentFlexDirection={parentFlexDirection}
           write={writeAndDispatch}
         />
         {removable ? (
@@ -802,6 +884,15 @@ const PropertyPanelComponent: React.FC = () => {
             continue;
           }
           if (field.hiddenWhen?.((value ?? {}) as Record<string, unknown>)) continue;
+          // The same rule as `hiddenWhen`, for the two props Resize's Fill mode
+          // borrows: their rows stay out of the way exactly while it speaks for
+          // them. It lives here because it needs the PARENT's direction to know
+          // which prop belongs to which axis.
+          if (
+            field.componentId === TRANSFORM &&
+            fillOwnsProp(field.path, value, parentFlexDirection)
+          )
+            continue;
           rows.push(renderRow(field, value));
         }
         if (rows.length === 0 && addable.length === 0) return null;
@@ -819,6 +910,7 @@ const PropertyPanelComponent: React.FC = () => {
                 onAdd={f => writeAndDispatch(f.componentId, buildAddPatch(f))}
               />
             ) : null}
+            {isEventGroup(group.title) ? <AddActionMenu /> : null}
           </Container>
         );
       })}
@@ -942,7 +1034,7 @@ const LengthVecField = React.memo(function LengthVecField({
           </button>
         ) : null}
         <Dropdown
-          options={unitOptionsFor(field)}
+          options={UNIT_OPTIONS}
           value={unit}
           aria-label="Unit"
           disabled={fieldDisabled}
@@ -971,6 +1063,8 @@ interface FieldRowProps {
   bound?: string;
   bindings?: Record<string, string>;
   mixed?: CanvasSegment[];
+  // The PARENT's flexDirection — which axis the Resize control's Fill grows along.
+  parentFlexDirection: number;
   // The stable component writer; FieldRow binds it to its own field.componentId.
   // Passing the writer (not a per-field arrow) keeps the prop stable so the
   // memoized row only re-renders when its value/bindings actually change.
@@ -984,6 +1078,7 @@ const FieldRow = React.memo(function FieldRow({
   bound,
   bindings,
   mixed,
+  parentFlexDirection,
   write,
 }: FieldRowProps) {
   const onPatch = useCallback(
@@ -1030,7 +1125,11 @@ const FieldRow = React.memo(function FieldRow({
       );
     }
     case 'number': {
-      const v = (raw as number | undefined) ?? 0;
+      // `toDisplay`/`fromDisplay` let a field's UI unit differ from the SDK prop's
+      // (Transparency is the inverse of `opacity`) without the inversion leaking
+      // past this control — source, bindings and the canvas all keep the SDK's own
+      // meaning.
+      const v = (raw as number | undefined) ?? field.defaultValue ?? 0;
       return (
         <BindableField
           field={field}
@@ -1039,8 +1138,11 @@ const FieldRow = React.memo(function FieldRow({
         >
           <TextField
             type="number"
-            value={String(v)}
-            onChange={e => onPatch({ [field.path]: clampNumber(e.target.value) })}
+            value={String(field.toDisplay ? field.toDisplay(v) : v)}
+            onChange={e => {
+              const next = clampNumber(e.target.value);
+              onPatch({ [field.path]: field.fromDisplay ? field.fromDisplay(next) : next });
+            }}
           />
         </BindableField>
       );
@@ -1110,7 +1212,7 @@ const FieldRow = React.memo(function FieldRow({
               }
             />
             <Dropdown
-              options={unitOptionsFor(field)}
+              options={UNIT_OPTIONS}
               value={unit}
               aria-label="Unit"
               onChange={e => {
@@ -1127,6 +1229,50 @@ const FieldRow = React.memo(function FieldRow({
             />
           </div>
         </BindableField>
+      );
+    }
+    case 'resize': {
+      // The design titles this row "Resize" for a node in flow — where the Fill
+      // modes live — and "Size" for an absolute one, which really is just a size.
+      // Derived here because the value that decides it (the node's own
+      // positionType) is already in this row's hands; field-configs stays static.
+      const absolute =
+        ((componentValue?.positionType as number | undefined) ?? YGPT_RELATIVE) === YGPT_ABSOLUTE;
+      return (
+        <Block
+          label={absolute ? field.label : 'Resize'}
+          info={field.info}
+        >
+          <ResizeField
+            field={field}
+            value={componentValue}
+            entity={entity}
+            bindings={bindings}
+            parentFlexDirection={parentFlexDirection}
+            onPatch={onPatch}
+          />
+        </Block>
+      );
+    }
+    case 'overflow-scroll':
+    case 'overflow-clip': {
+      // Two checkboxes over the one `overflow` enum. Clipping is implied by
+      // scrolling, so its box shows checked and goes read-only rather than
+      // pretending to be an independent bit (see overflow-flags.ts).
+      const flag: OverflowFlag = field.kind === 'overflow-scroll' ? 'scroll' : 'clip';
+      const flags = overflowFlags(componentValue);
+      return (
+        <Block
+          label={field.label}
+          info={field.info}
+        >
+          <CheckboxField
+            checked={flags[flag]}
+            disabled={fieldDisabled || (flag === 'clip' && flags.clipLocked)}
+            aria-label={field.label}
+            onChange={e => onPatch(overflowPatch(flag, e.target.checked, componentValue))}
+          />
+        </Block>
       );
     }
     case 'length-vec': {

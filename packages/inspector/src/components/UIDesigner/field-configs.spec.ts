@@ -26,12 +26,13 @@ const allLabels = (type: UINodeType) => buildGroups(type).flatMap(g => labelsIn(
 const CONTAINER_ONLY = [
   'Flow',
   'Alignment',
-  'Flex direction',
-  'Flex wrap',
-  'Justify content',
-  'Align items',
-  'Align content',
-  'Overflow',
+  'Flex Direction',
+  'Flex Wrap',
+  'Justify Content',
+  'Align Items',
+  'Align Content',
+  'Scroll Overflow',
+  'Clip Content',
 ];
 
 // Props describing how I size and behave inside MY PARENT. Every react-ecs
@@ -39,17 +40,17 @@ const CONTAINER_ONLY = [
 const ITEM_PROPS = [
   'Display',
   'Size',
-  'Min size',
-  'Max size',
-  'Align self',
-  'Flex grow',
-  'Flex shrink',
+  'Min Size',
+  'Max Size',
+  'Align Self',
+  'Flex Grow',
+  'Flex Shrink',
 ];
 
 // The single-prop rows a composite control (Flow, Alignment) also writes. Each
 // must stay out of the panel while its composite represents the value, so no
 // value is ever driven by two live controls at once.
-const RAW_ROWS = ['Flex direction', 'Flex wrap', 'Justify content', 'Align items'];
+const RAW_ROWS = ['Flex Direction', 'Flex Wrap', 'Justify Content', 'Align Items'];
 
 // Which Layout rows a given UiTransform actually renders. `hiddenWhen` is the row
 // gate; the togglable/`+ Add property` split is a separate concern (see
@@ -98,24 +99,24 @@ describe('buildGroups', () => {
     });
 
     it('should compose the exact group order per type', () => {
-      expect(titles('UiEntity')).toEqual(['Position', 'Layout', 'Style', 'Mouse events']);
-      expect(titles('Label')).toEqual(['Position', 'Layout', 'Text', 'Style', 'Mouse events']);
-      expect(titles('Button')).toEqual(['Position', 'Layout', 'Text', 'Style', 'Mouse events']);
+      expect(titles('UiEntity')).toEqual(['Position', 'Layout', 'Style', 'Mouse Events']);
+      expect(titles('Label')).toEqual(['Position', 'Layout', 'Text', 'Style', 'Mouse Events']);
+      expect(titles('Button')).toEqual(['Position', 'Layout', 'Text', 'Style', 'Mouse Events']);
       expect(titles('Input')).toEqual([
         'Position',
         'Layout',
         'Input',
         'Style',
-        'Input events',
-        'Mouse events',
+        'Input Events',
+        'Mouse Events',
       ]);
       expect(titles('Dropdown')).toEqual([
         'Position',
         'Layout',
         'Dropdown',
         'Style',
-        'Dropdown events',
-        'Mouse events',
+        'Dropdown Events',
+        'Mouse Events',
       ]);
     });
 
@@ -134,7 +135,7 @@ describe('buildGroups', () => {
     it('should not name a content group anything matching /event/i', () => {
       for (const type of ALL_TYPES) {
         const contentTitles = titles(type).filter(
-          t => !['Mouse events', 'Input events', 'Dropdown events'].includes(t),
+          t => !['Mouse Events', 'Input Events', 'Dropdown Events'].includes(t),
         );
         expect(contentTitles.filter(t => /event/i.test(t))).toEqual([]);
       }
@@ -174,10 +175,10 @@ describe('buildGroups', () => {
       expect(labelsIn('UiEntity', 'Layout').slice(0, 6)).toEqual([
         'Flow',
         'Size',
-        'Min size',
-        'Max size',
+        'Min Size',
+        'Max Size',
         'Alignment',
-        'Padding & margin',
+        'Padding & Margin',
       ]);
     });
 
@@ -190,25 +191,22 @@ describe('buildGroups', () => {
       }
     });
 
-    it('should offer `auto` only on the Size vec', () => {
-      const withAuto = buildLayoutGroup(true)
-        .fields.filter(f => f.autoUnit)
-        .map(f => f.label);
-      expect(withAuto).toEqual(['Size']);
-    });
-
-    it('should not offer `auto` on the length fields where it has no meaning', () => {
-      for (const label of ['Corner radius', 'Border width']) {
-        expect(
-          fieldsIn('UiEntity', 'Style').find(f => f.label === label)?.autoUnit,
-        ).toBeUndefined();
-      }
+    // Hug (Yoga's `auto`) moved from a unit option into the Resize control's
+    // per-axis mode selector, so the Size row is the only place it can appear:
+    // every other length field renders the plain px/% unit dropdown.
+    it('should make Size the per-axis resize control', () => {
+      const size = fieldsIn('UiEntity', 'Layout').find(f => f.label === 'Size');
+      expect(size?.kind).toBe('resize');
+      const otherKinds = buildLayoutGroup(true)
+        .fields.filter(f => f.label !== 'Size')
+        .map(f => f.kind);
+      expect(otherKinds).not.toContain('resize');
     });
 
     it('should not reserve the name "Spacing" for the padding/margin control', () => {
       // "Spacing" means flex gap in the design, which react-ecs cannot express
       // (no gap/rowGap/columnGap). Keeping the name free avoids a collision.
-      expect(labelsIn('UiEntity', 'Layout')).toContain('Padding & margin');
+      expect(labelsIn('UiEntity', 'Layout')).toContain('Padding & Margin');
       expect(labelsIn('UiEntity', 'Layout')).not.toContain('Spacing');
     });
 
@@ -237,9 +235,9 @@ describe('buildGroups', () => {
       }
     });
 
-    it('should move Z-Index into Position and Opacity into Style', () => {
+    it('should move Z-Index into Position and Transparency into Style', () => {
       expect(labelsIn('UiEntity', 'Position')).toContain('Z-Index');
-      expect(labelsIn('UiEntity', 'Style')).toContain('Opacity');
+      expect(labelsIn('UiEntity', 'Style')).toContain('Transparency');
     });
 
     it('should gate Anchor and Position on Absolute positioning', () => {
@@ -310,7 +308,7 @@ describe('buildGroups', () => {
     });
 
     it('should reveal Flex direction only while the node ignores layout flow', () => {
-      expect(visibleRawRows({ ...inCell, positionType: ABSOLUTE })).toEqual(['Flex direction']);
+      expect(visibleRawRows({ ...inCell, positionType: ABSOLUTE })).toEqual(['Flex Direction']);
       // …and the direction it is hiding survives in source either way.
       expect(visibleRawRows({ ...inCell, flexDirection: 1 })).toEqual([]);
     });
@@ -318,13 +316,13 @@ describe('buildGroups', () => {
     it('should reveal both alignment rows for a distributing justifyContent', () => {
       expect(
         visibleRawRows({ justifyContent: JUSTIFY_SPACE_BETWEEN, alignItems: ALIGN_START }),
-      ).toEqual(['Justify content', 'Align items']);
+      ).toEqual(['Justify Content', 'Align Items']);
     });
 
     it('should reveal both alignment rows for a stretch alignItems', () => {
       expect(visibleRawRows({ justifyContent: JUSTIFY_START, alignItems: ALIGN_STRETCH })).toEqual([
-        'Justify content',
-        'Align items',
+        'Justify Content',
+        'Align Items',
       ]);
     });
 
@@ -334,8 +332,8 @@ describe('buildGroups', () => {
     // Space between.
     it('should reveal both alignment rows when only one of the pair is authored', () => {
       expect(visibleRawRows({ justifyContent: JUSTIFY_START })).toEqual([
-        'Justify content',
-        'Align items',
+        'Justify Content',
+        'Align Items',
       ]);
     });
 
@@ -343,17 +341,17 @@ describe('buildGroups', () => {
       for (const flexWrap of [WRAP_NO, WRAP_YES]) {
         expect(visibleRawRows({ ...inCell, flexWrap })).toEqual([]);
       }
-      expect(visibleRawRows({ ...inCell, flexWrap: WRAP_REVERSE })).toEqual(['Flex wrap']);
+      expect(visibleRawRows({ ...inCell, flexWrap: WRAP_REVERSE })).toEqual(['Flex Wrap']);
     });
 
     // Adding it has to leave a VISIBLE row. Seeded at nowrap the row would hide
     // again instantly and the menu entry would read as a no-op while still writing
     // `flexWrap: 0` to source, so the seed is the one value Flow cannot express.
     it('should seed Flex wrap at the value that keeps its row on screen', () => {
-      const flexWrap = fieldsIn('UiEntity', 'Layout').find(f => f.label === 'Flex wrap');
+      const flexWrap = fieldsIn('UiEntity', 'Layout').find(f => f.label === 'Flex Wrap');
       expect(flexWrap?.defaultValue).toBe(WRAP_REVERSE);
       expect(visibleRawRows({ ...inCell, flexWrap: flexWrap?.defaultValue })).toEqual([
-        'Flex wrap',
+        'Flex Wrap',
       ]);
     });
 
@@ -408,7 +406,50 @@ describe('buildGroups', () => {
           .flatMap(g => g.fields)
           .filter(f => f.half)
           .map(f => f.label);
-        expect(half).toEqual(['Z-Index', 'Opacity', 'Corner radius']);
+        expect(half).toEqual(['Z-Index', 'Transparency', 'Corner Radius']);
+      }
+    });
+  });
+
+  describe('and Transparency displays the inverse of the stored opacity', () => {
+    const transparency = () => fieldsIn('UiEntity', 'Style').find(f => f.label === 'Transparency');
+
+    // The pair must be exact inverses or a value would drift on every focus/blur
+    // cycle that rewrites what it reads.
+    it('should round-trip the extremes and a mid value exactly', () => {
+      const f = transparency();
+      for (const display of [0, 33, 50, 100]) {
+        expect(f?.toDisplay?.(f.fromDisplay!(display))).toBe(display);
+      }
+      for (const opacity of [0, 0.25, 1]) {
+        expect(f?.fromDisplay?.(f.toDisplay!(opacity))).toBe(opacity);
+      }
+    });
+
+    it('should read unset opacity as fully opaque, i.e. 0% transparent', () => {
+      const f = transparency();
+      expect(f?.toDisplay?.(f?.defaultValue as number)).toBe(0);
+    });
+  });
+
+  describe('and overflow renders as the two derived checkboxes', () => {
+    it('should draw both boxes on every container, always, over the one enum prop', () => {
+      const layout = fieldsIn('UiEntity', 'Layout');
+      const scroll = layout.find(f => f.label === 'Scroll Overflow');
+      const clip = layout.find(f => f.label === 'Clip Content');
+      expect(scroll?.kind).toBe('overflow-scroll');
+      expect(clip?.kind).toBe('overflow-clip');
+      for (const f of [scroll, clip]) {
+        expect(f?.core).toBe(true);
+        expect(f?.path).toBe('overflow');
+      }
+    });
+
+    // The pair is total over the enum's three values (overflow-flags.spec), so
+    // no raw enum row survives as an escape hatch.
+    it('should not keep a raw Overflow enum row', () => {
+      for (const type of ALL_TYPES) {
+        expect(allLabels(type)).not.toContain('Overflow');
       }
     });
   });

@@ -21,3 +21,9 @@ export const YGPT_ABSOLUTE = 1; // YGPositionType.YGPT_ABSOLUTE
 
 export const YGD_FLEX = 0; // YGDisplay.YGD_FLEX
 export const YGD_NONE = 1; // YGDisplay.YGD_NONE
+
+export const YGA_STRETCH = 4; // YGAlign.YGA_STRETCH
+
+export const YGO_VISIBLE = 0; // YGOverflow.YGO_VISIBLE
+export const YGO_HIDDEN = 1; // YGOverflow.YGO_HIDDEN
+export const YGO_SCROLL = 2; // YGOverflow.YGO_SCROLL

@@ -156,6 +156,57 @@ describe('when patching a uiTransform field from the panel', () => {
     });
   });
 
+  // The Resize control's Fill mode is a multi-key patch: it sets the borrowed
+  // prop AND removes the axis size in the same splice (resize-modes.resizePatch).
+  describe('and switching a Resize axis to Fill and back', () => {
+    const SOURCE = `export function S() {
+  return <UiEntity uiTransform={{ width: 100, height: 50 }} />
+}`;
+
+    it('should write flexGrow and drop the axis size in one patch', () => {
+      const filled = patchRoot(SOURCE, { width: undefined, widthUnit: undefined, flexGrow: 1 });
+      const t = parse(filled).root.uiTransform as Record<string, unknown>;
+      expect(t.flexGrow).toBe(1);
+      expect(t.widthUnit).toBeUndefined();
+      expect(t).toMatchObject({ height: 50 });
+    });
+
+    // Not byte-identical: the axis key is REMOVED and re-added, so it moves to
+    // the object's tail. Same parsed transform is the honest invariant.
+    it('should restore the same transform after Fill and Fixed again', () => {
+      const filled = patchRoot(SOURCE, { width: undefined, widthUnit: undefined, flexGrow: 1 });
+      const back = patchRoot(filled, { flexGrow: undefined, width: 100, widthUnit: YGU_POINT });
+      expect(parse(back).root.uiTransform).toEqual(parse(SOURCE).root.uiTransform);
+    });
+
+    it('should write alignSelf stretch for a cross-axis Fill and read it back', () => {
+      const filled = patchRoot(SOURCE, { height: undefined, heightUnit: undefined, alignSelf: 4 });
+      const t = parse(filled).root.uiTransform as Record<string, unknown>;
+      expect(t.alignSelf).toBe(4);
+      expect(t.heightUnit).toBeUndefined();
+    });
+  });
+
+  // The two derived checkboxes always write the enum explicitly (an absent key
+  // means "inherit" inside an override layer — see overflow-flags.overflowPatch).
+  describe('and toggling the overflow checkboxes', () => {
+    const SOURCE = `export function S() {
+  return <UiEntity uiTransform={{ width: 100 }} />
+}`;
+
+    it('should round-trip each overflow value through source', () => {
+      for (const [value, name] of [
+        [2, 'scroll'],
+        [1, 'hidden'],
+        [0, 'visible'],
+      ] as const) {
+        const next = patchRoot(SOURCE, { overflow: value });
+        expect(next).toMatch(new RegExp(`overflow: ['"]${name}['"]`));
+        expect(parse(next).root.uiTransform).toMatchObject({ overflow: value });
+      }
+    });
+  });
+
   describe('and the node has a partially-dynamic uiTransform', () => {
     it('should flag dynamicProps so write paths refuse the edit', () => {
       const SOURCE = `export function S() {

@@ -1,0 +1,38 @@
+/* One line per axis (value + its own mode), with the aspect lock trailing.
+   Stacked rather than side by side: at a 312px rail a value + mode dropdown pair
+   leaves the two dropdowns too narrow to read their own labels. */
+.ui-designer-resize {
+  display: flex;
+  flex-direction: column;
+  gap: var(--uid-space-1);
+  width: 100%;
+}
+
+/* The panel's vec rule stretches a bindable sub-field to share one wrapping row;
+   here each one owns a full line instead. */
+.ui-designer-property-panel .ui-designer-resize .ui-designer-bindable-subfield {
+  flex: 0 0 auto;
+  width: 100%;
+  min-width: 0;
+}
+
+.ui-designer-resize-axis {
+  display: flex;
+  align-items: center;
+  gap: var(--uid-space-2);
+  width: 100%;
+}
+
+.ui-designer-resize-axis > :first-child {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.ui-designer-resize-axis > .Dropdown.Field {
+  flex: 0 0 84px;
+  width: 84px;
+}
+
+.ui-designer-resize > .ui-designer-vec-lock {
+  align-self: flex-end;
+}

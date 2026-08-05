@@ -1,9 +1,10 @@
 import React, { useMemo, useState } from 'react';
+import { IoBanOutline, IoImageOutline, IoPersonOutline } from 'react-icons/io5';
 import type { TextureUnion } from '@dcl/ecs';
 import { validateAssetPath } from '@dcl/asset-packs';
 
 import { useAssetOptions } from '../../../hooks/useAssetOptions';
-import { Dropdown, FileUploadField, TextField } from '../../ui';
+import { FileUploadField, TextField } from '../../ui';
 import { ACCEPTED_FILE_TYPES } from '../../ui/FileUploadField/types';
 
 import './TextureField.css';
@@ -16,14 +17,31 @@ import './TextureField.css';
 // adds the Avatar variant. They share the leaf primitives (ui/Dropdown,
 // ui/FileUploadField, ui/TextField, useAssetOptions).
 
-type TexCase = 'texture' | 'avatarTexture';
+// The design's mode row: None / File / Avatar as icon segments. No Video mode —
+// react-ecs flattens PB's TextureUnion into `texture` + `avatarTexture` props and
+// drops the video case. PB and the renderer support it; the authoring type doesn't
+// (#1434).
+type TexMode = 'none' | 'file' | 'avatar';
 
-// No Video variant: react-ecs flattens PB's TextureUnion into `texture` +
-// `avatarTexture` props and drops the video case. PB and the renderer support
-// it; the authoring type doesn't (#1434).
-const TYPE_OPTIONS: { value: TexCase; label: string }[] = [
-  { value: 'texture', label: 'File' },
-  { value: 'avatarTexture', label: 'Avatar' },
+const MODES: { value: TexMode; label: string; icon: React.ReactNode; hint: string }[] = [
+  {
+    value: 'none',
+    label: 'No texture',
+    icon: <IoBanOutline aria-hidden />,
+    hint: 'No texture — the background is the solid colour alone',
+  },
+  {
+    value: 'file',
+    label: 'Image file',
+    icon: <IoImageOutline aria-hidden />,
+    hint: 'An image asset from your scene',
+  },
+  {
+    value: 'avatar',
+    label: 'Avatar',
+    icon: <IoPersonOutline aria-hidden />,
+    hint: 'A player’s avatar snapshot, by user ID',
+  },
 ];
 
 interface TextureFieldProps {
@@ -39,14 +57,21 @@ const TextureFieldComponent: React.FC<TextureFieldProps> = ({ value, onChange })
   );
 
   const [fileError, setFileError] = useState<string | undefined>(undefined);
+  // With nothing set, "None" and "File" are the SAME source state — a path is the
+  // only thing that tells them apart. So an explicit File pick is remembered here
+  // until one lands, which is what keeps its segment selected (and the picker on
+  // screen) in between.
+  const [wantsFile, setWantsFile] = useState(false);
 
   const tex = value?.tex;
-  const activeCase: TexCase = tex?.$case === 'avatarTexture' ? 'avatarTexture' : 'texture';
+  const mode: TexMode =
+    tex?.$case === 'avatarTexture' ? 'avatar' : tex ? 'file' : wantsFile ? 'file' : 'none';
 
-  const handleTypeChange = (next: TexCase) => {
+  const handleModeChange = (next: TexMode) => {
     setFileError(undefined);
-    if (next === activeCase) return;
-    if (next === 'avatarTexture') {
+    setWantsFile(next === 'file');
+    if (next === mode) return;
+    if (next === 'avatar') {
       onChange({ tex: { $case: 'avatarTexture', avatarTexture: { userId: '' } } });
     } else {
       onChange(undefined);
@@ -54,8 +79,10 @@ const TextureFieldComponent: React.FC<TextureFieldProps> = ({ value, onChange })
   };
 
   const renderVariant = () => {
-    switch (activeCase) {
-      case 'avatarTexture': {
+    switch (mode) {
+      case 'none':
+        return null;
+      case 'avatar': {
         const userId = tex?.$case === 'avatarTexture' ? tex.avatarTexture.userId : '';
         return (
           <TextField
@@ -69,7 +96,7 @@ const TextureFieldComponent: React.FC<TextureFieldProps> = ({ value, onChange })
           />
         );
       }
-      case 'texture':
+      case 'file':
       default: {
         const existing = tex?.$case === 'texture' ? tex.texture : undefined;
         const src = existing?.src ?? '';
@@ -104,12 +131,26 @@ const TextureFieldComponent: React.FC<TextureFieldProps> = ({ value, onChange })
 
   return (
     <div className="ui-designer-texture-field">
-      <Dropdown
-        label="Type"
-        options={TYPE_OPTIONS}
-        value={activeCase}
-        onChange={e => handleTypeChange(e.target.value as TexCase)}
-      />
+      <div
+        className="ui-designer-texture-modes"
+        role="radiogroup"
+        aria-label="Texture type"
+      >
+        {MODES.map(m => (
+          <button
+            key={m.value}
+            type="button"
+            role="radio"
+            aria-checked={m.value === mode}
+            aria-label={m.label}
+            className={`ui-designer-texture-mode${m.value === mode ? ' selected' : ''}`}
+            title={m.hint}
+            onClick={() => handleModeChange(m.value)}
+          >
+            {m.icon}
+          </button>
+        ))}
+      </div>
       {renderVariant()}
     </div>
   );

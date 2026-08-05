@@ -299,6 +299,51 @@
   background: var(--ui-designer-control-accent-21);
 }
 
+/* + Add New Action reuses the same disclosure, holding a name input + ADD
+   rather than a list of properties. */
+.ui-designer-add-action {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--uid-space-2);
+  margin-top: 4px;
+  padding: var(--uid-space-2);
+  border: 1px solid var(--ui-designer-control-border);
+  border-radius: 4px;
+  background: var(--tree-bg-color);
+}
+
+.ui-designer-add-action > .Text.Field {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.ui-designer-add-action > button {
+  flex: 0 0 auto;
+  padding: 5px 10px;
+  border: 1px solid var(--ui-designer-control-accent);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--ui-designer-control-accent);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+}
+
+.ui-designer-add-action > button:hover:not(:disabled) {
+  background: var(--ui-designer-control-accent-21);
+}
+
+.ui-designer-add-action > button:disabled {
+  border-color: var(--ui-designer-control-border);
+  color: var(--sub-text);
+  cursor: default;
+}
+
+.ui-designer-add-action > button:focus-visible {
+  outline: 2px solid var(--border-focused);
+  outline-offset: 1px;
+}
+
 .ui-designer-add-prop-menu button:focus-visible {
   outline: 2px solid var(--border-focused);
   outline-offset: -1px;

@@ -3,3 +3,45 @@
   flex-direction: column;
   gap: 8px;
 }
+
+/* Texture type as icon segments (None / File / Avatar), the design's mode row.
+   Placeholder glyphs — Phase 2 swaps in the extracted Figma SVGs. */
+.ui-designer-texture-modes {
+  display: flex;
+  gap: 2px;
+  align-self: flex-start;
+}
+
+.ui-designer-texture-mode {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  background: transparent;
+  border: 1px solid var(--ui-designer-control-border);
+  border-radius: 4px;
+  color: var(--sub-text);
+  cursor: pointer;
+}
+
+.ui-designer-texture-mode:hover {
+  color: var(--title);
+  border-color: var(--ui-designer-control-accent);
+}
+
+.ui-designer-texture-mode.selected {
+  color: var(--ui-designer-control-accent);
+  border-color: var(--ui-designer-control-accent);
+  background: var(--ui-designer-control-accent-21);
+}
+
+.ui-designer-texture-mode:focus-visible {
+  outline: 2px solid var(--border-focused);
+  outline-offset: 1px;
+}
+
+.ui-designer-texture-mode svg {
+  width: 14px;
+  height: 14px;
+  display: block;
+}

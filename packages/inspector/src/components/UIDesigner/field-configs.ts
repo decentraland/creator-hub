@@ -37,6 +37,14 @@ export type FieldKind =
   // One 9-way vertical × horizontal picker over justifyContent + alignItems
   // (path '', reads the whole component). See alignment-presets.ts.
   | 'alignment'
+  // Width + height, each with its own mode selector (Fixed px / Percent / Hug /
+  // Fill). Fill borrows flexGrow or alignSelf depending on the PARENT's flex
+  // direction, so the panel supplies that. See resize-modes.ts.
+  | 'resize'
+  // The two derived checkboxes over the single `overflow` enum. See
+  // overflow-flags.ts.
+  | 'overflow-scroll'
+  | 'overflow-clip'
   // Nested margin→padding→content box (CSS-devtools style) → writes the 8
   // margin*/padding* px fields on the UiTransform (path '').
   | 'box-model'
@@ -82,15 +90,17 @@ export interface FieldConfig {
    */
   aspectLockable?: boolean;
   /**
-   * Offer `auto` (YGU_AUTO) in this length field's unit selector — the design's
-   * "Hug" mode, where Yoga sizes the box from its content. Opt-in per field
-   * because it is only meaningful for a dimension: `auto` on a corner radius or
-   * a border width has no defined behaviour.
+   * For a `number` field whose UI unit is not the SDK prop's: the pair converting
+   * between them. Transparency is the case — it reads as the INVERSE of `opacity`
+   * on a 0–100 scale, so only the display boundary flips and source keeps the
+   * SDK's own semantics. Must be exact inverses of each other, at the extremes as
+   * well as in the middle (asserted in field-configs.spec).
    */
-  autoUnit?: boolean;
+  toDisplay?: (sourceValue: number) => number;
+  fromDisplay?: (displayValue: number) => number;
   /**
    * Render this row at half width so it pairs with the adjacent half-width row
-   * (the design draws Transparency·Corner radius and Border colour·Weight as two
+   * (the design draws Transparency·Corner Radius and Border Colour·Weight as two
    * columns). Purely presentational — the panel's row grid does the packing, so
    * a half row whose neighbour is hidden simply keeps its own line.
    */
@@ -163,8 +173,8 @@ export interface FieldConfig {
    */
   core?: boolean;
   /**
-   * For `enum` fields whose in-world default is not the zero option: the value
-   * the dropdown shows when the component leaves the prop unset. e.g. UiText
+   * For `enum` and `number` fields whose in-world default is not the zero value:
+   * the value the control shows when the component leaves the prop unset. e.g. UiText
    * `textAlign` defaults to `center` (4) in the runtime (@dcl/ecs PBUiText:
    * "alignment within the bounds (default: center)"), not the proto-3 zero
    * (top-left). Leaving the prop unset still renders the in-world default; the
@@ -244,13 +254,6 @@ const FLEX_WRAP_OPTIONS: EnumOption[] = [
   { value: 2, label: 'Wrap reverse' },
 ];
 
-// YGOverflow
-const OVERFLOW_OPTIONS: EnumOption[] = [
-  { value: 0, label: 'Visible' },
-  { value: 1, label: 'Hidden' },
-  { value: 2, label: 'Scroll' },
-];
-
 // Font
 const FONT_OPTIONS: EnumOption[] = [
   { value: 0, label: 'Sans serif' },
@@ -264,10 +267,12 @@ const TEXT_WRAP_OPTIONS: EnumOption[] = [
   { value: 1, label: 'No wrap' },
 ];
 
-// BackgroundTextureMode, surfaced as "Scale type". Values must stay the PB
+// BackgroundTextureMode, surfaced as "Scale Type". Values must stay the PB
 // enum (0/1/2) — the texture-region/slices `hiddenWhen` predicates key on them.
+// The design names mode 1 "Crop", which is what it visibly does: the texture
+// keeps its own aspect and the box shows the middle of it.
 const TEXTURE_MODE_OPTIONS: EnumOption[] = [
-  { value: 1, label: 'Centred' },
+  { value: 1, label: 'Crop' },
   { value: 0, label: 'Sliced' },
   { value: 2, label: 'Stretched' },
 ];
@@ -379,10 +384,14 @@ const LAYOUT_FIELDS: (FieldConfig & { container?: true })[] = [
     info: 'How this node lays its children out — or Absolute, which lifts the node out of its own parent’s flow. Wrap lets children spill onto more than one line.',
   },
   {
+    // The design titles this row "Resize" for a node in flow and "Size" for an
+    // absolute one — where the two Fill modes drop away and it really is just a
+    // size. The static label is the absolute one; the panel derives the other at
+    // render time from the node's own positionType (see PropertyPanel).
     label: 'Size',
     componentId: TRANSFORM,
     path: '',
-    kind: 'length-vec' as const,
+    kind: 'resize' as const,
     subFields: [
       { path: 'width', leftLabel: 'W' },
       { path: 'height', leftLabel: 'H' },
@@ -390,11 +399,10 @@ const LAYOUT_FIELDS: (FieldConfig & { container?: true })[] = [
     bindable: false,
     core: true,
     aspectLockable: true,
-    autoUnit: true,
-    info: 'Width and height, in px, % of the parent, or auto (sized from the content). Lock keeps their ratio on resize.',
+    info: 'Width and height. Each axis picks its own mode: a fixed px value, a % of the parent, Hug (sized from the content) or Fill (takes the free space). Lock keeps their ratio on resize.',
   },
   {
-    label: 'Min size',
+    label: 'Min Size',
     componentId: TRANSFORM,
     path: '',
     kind: 'length-vec' as const,
@@ -406,7 +414,7 @@ const LAYOUT_FIELDS: (FieldConfig & { container?: true })[] = [
     info: 'Lower bound on size; the node never renders smaller. Supports px or %.',
   },
   {
-    label: 'Max size',
+    label: 'Max Size',
     componentId: TRANSFORM,
     path: '',
     kind: 'length-vec' as const,
@@ -430,25 +438,40 @@ const LAYOUT_FIELDS: (FieldConfig & { container?: true })[] = [
   {
     // NOT "Spacing" — that name is reserved for flex gap, which react-ecs cannot
     // express yet (no gap/rowGap/columnGap in UiTransformProps).
-    label: 'Padding & margin',
+    label: 'Padding & Margin',
     componentId: TRANSFORM,
     path: '',
     kind: 'box-model' as const,
     bindable: false,
     info: 'Padding is space inside the box, margin space outside it. Margin is ignored while the node ignores layout flow.',
   },
+  // The one `overflow` enum, drawn as the design's two checkboxes. They are total
+  // over its three values (see overflow-flags.ts), so — unlike Flow or Alignment —
+  // there is no state left for a raw enum row to show and it is gone rather than
+  // merely hidden. Both are `core`: the design always draws them, and an unset
+  // prop is a real value (visible) that the boxes display correctly.
   {
-    label: 'Overflow',
+    label: 'Scroll Overflow',
     componentId: TRANSFORM,
     path: 'overflow',
-    kind: 'enum' as const,
-    options: OVERFLOW_OPTIONS,
+    kind: 'overflow-scroll' as const,
     bindable: false,
     container: true,
-    info: 'How content larger than the box is handled: visible, hidden, or scroll.',
+    core: true,
+    info: 'Lets the player scroll content taller or wider than this box. Scrolling requires clipping, so Clip Content follows it.',
   },
   {
-    label: 'Flex direction',
+    label: 'Clip Content',
+    componentId: TRANSFORM,
+    path: 'overflow',
+    kind: 'overflow-clip' as const,
+    bindable: false,
+    container: true,
+    core: true,
+    info: 'Hides anything that overflows this box instead of letting it spill out. Forced on while Scroll Overflow is on.',
+  },
+  {
+    label: 'Flex Direction',
     componentId: TRANSFORM,
     path: 'flexDirection',
     kind: 'enum' as const,
@@ -461,7 +484,7 @@ const LAYOUT_FIELDS: (FieldConfig & { container?: true })[] = [
     info: 'Main axis children flow along. Shown while the node ignores layout flow, where the Flow control cannot display it.',
   },
   {
-    label: 'Flex wrap',
+    label: 'Flex Wrap',
     componentId: TRANSFORM,
     path: 'flexWrap',
     kind: 'enum' as const,
@@ -477,7 +500,7 @@ const LAYOUT_FIELDS: (FieldConfig & { container?: true })[] = [
     info: 'Lets children flow onto multiple lines. Adding it selects wrap-reverse, the one value the Flow wrap toggle cannot express.',
   },
   {
-    label: 'Justify content',
+    label: 'Justify Content',
     componentId: TRANSFORM,
     path: 'justifyContent',
     kind: 'enum' as const,
@@ -488,7 +511,7 @@ const LAYOUT_FIELDS: (FieldConfig & { container?: true })[] = [
     info: 'Distributes children along the main axis. Shown when the spacing is one the Alignment picker has no cell for.',
   },
   {
-    label: 'Align items',
+    label: 'Align Items',
     componentId: TRANSFORM,
     path: 'alignItems',
     kind: 'enum' as const,
@@ -499,7 +522,7 @@ const LAYOUT_FIELDS: (FieldConfig & { container?: true })[] = [
     info: 'Aligns children on the cross axis. Shown when the alignment is one the Alignment picker has no cell for.',
   },
   {
-    label: 'Align content',
+    label: 'Align Content',
     componentId: TRANSFORM,
     path: 'alignContent',
     kind: 'enum' as const,
@@ -508,24 +531,29 @@ const LAYOUT_FIELDS: (FieldConfig & { container?: true })[] = [
     container: true,
     info: 'Aligns wrapped lines on the cross axis. Applies only when Flex wrap is on.',
   },
+  // Fill borrows one of these two per axis, so each stays out of the panel while
+  // Resize is showing Fill for it — the same one-value-one-control rule as the
+  // Flow and Alignment rows, except the gate needs the PARENT's direction to know
+  // which prop is which. `hiddenWhen` cannot see that, so the panel resolves it
+  // (see PropertyPanel `hiddenByResize`, `resize-modes.fillOwnsProp`).
   {
-    label: 'Align self',
+    label: 'Align Self',
     componentId: TRANSFORM,
     path: 'alignSelf',
     kind: 'enum' as const,
     options: ALIGN_OPTIONS,
     bindable: false,
-    info: "Overrides the parent's Align items for this node only.",
+    info: "Overrides the parent's Align items for this node only. Shown when it is set to something the Resize control's cross-axis Fill cannot express.",
   },
   {
-    label: 'Flex grow',
+    label: 'Flex Grow',
     componentId: TRANSFORM,
     path: 'flexGrow',
     kind: 'number' as const,
-    info: 'Share of free space this item takes along the main axis.',
+    info: 'Share of free space this item takes along the main axis. Shown when it is a share other than the plain Fill the Resize control writes.',
   },
   {
-    label: 'Flex shrink',
+    label: 'Flex Shrink',
     componentId: TRANSFORM,
     path: 'flexShrink',
     kind: 'number' as const,
@@ -560,6 +588,10 @@ export function buildLayoutGroup(isContainer: boolean) {
   };
 }
 
+// Two decimals: enough for a percentage input, and short of the float noise a
+// bare inversion leaves behind (100 − 0.67·100 is 32.99999999999999).
+const round2 = (n: number) => Math.round(n * 100) / 100;
+
 // --- Style group ---
 //
 // Everything about how the node LOOKS, in one place. This replaces the former
@@ -570,15 +602,24 @@ const STYLE_GROUP = {
   title: 'Style',
   fields: [
     {
-      label: 'Opacity',
+      // The design measures this the other way up from the SDK: 100% means
+      // FULLY TRANSPARENT. Only the display flips (`toDisplay`/`fromDisplay`) —
+      // source keeps writing `opacity`, so a hand-authored file and a bound
+      // variable both keep the SDK's own meaning. Colour alpha stays straight
+      // alpha; this is the only inverted field in the panel.
+      label: 'Transparency',
       componentId: TRANSFORM,
       path: 'opacity',
       kind: 'number' as const,
       half: true,
-      info: '0 = fully transparent, 1 = fully opaque.',
+      // Unset opacity renders fully opaque, i.e. no transparency at all.
+      defaultValue: 1,
+      toDisplay: (opacity: number) => round2(100 - opacity * 100),
+      fromDisplay: (transparency: number) => round2((100 - transparency) / 100),
+      info: '100% is fully transparent, 0% fully opaque. Stored as the SDK’s `opacity`, which runs the other way.',
     },
     {
-      label: 'Corner radius',
+      label: 'Corner Radius',
       componentId: TRANSFORM,
       path: 'borderTopLeftRadius',
       kind: 'length' as const,
@@ -593,10 +634,10 @@ const STYLE_GROUP = {
       ],
     },
     {
-      // "Background color", not "Color": a Label/Button also has a TEXT color in
+      // "Background Colour", not "Colour": a Label/Button also has a TEXT colour in
       // its own group, and the old group names (Background vs Text) were the only
       // thing telling them apart.
-      label: 'Background color',
+      label: 'Background Colour',
       componentId: BACKGROUND,
       path: 'color',
       kind: 'color' as const,
@@ -604,7 +645,7 @@ const STYLE_GROUP = {
       info: "Fill color behind the node's content.",
     },
     {
-      label: 'Border color',
+      label: 'Border Colour',
       componentId: TRANSFORM,
       path: 'borderTopColor',
       kind: 'color' as const,
@@ -615,7 +656,8 @@ const STYLE_GROUP = {
       writeAll: ['borderTopColor', 'borderRightColor', 'borderBottomColor', 'borderLeftColor'],
     },
     {
-      label: 'Border width',
+      // The design's name for border width, paired with Border Colour above it.
+      label: 'Weight',
       componentId: TRANSFORM,
       path: 'borderTopWidth',
       kind: 'length' as const,
@@ -635,18 +677,18 @@ const STYLE_GROUP = {
       info: 'Pick an image asset from your scene.',
     },
     {
-      label: 'Scale type',
+      label: 'Scale Type',
       componentId: BACKGROUND,
       path: 'textureMode',
       kind: 'enum' as const,
       options: TEXTURE_MODE_OPTIONS,
       bindable: false,
-      info: 'How the texture fills the box: centred, sliced, or stretched.',
+      info: 'How the texture fills the box: cropped to the middle, sliced, or stretched.',
       // react-ecs getTextureMode defaults an unset textureMode to CENTER (1).
       defaultValue: 1,
     },
     {
-      label: 'Texture region',
+      label: 'Texture Region',
       componentId: BACKGROUND,
       path: '',
       kind: 'uv-region' as const,
@@ -657,7 +699,7 @@ const STYLE_GROUP = {
         (v.textureMode as number | undefined) !== 2 || !v.texture,
     },
     {
-      label: 'Texture slices',
+      label: 'Texture Slices',
       componentId: BACKGROUND,
       path: 'textureSlices',
       kind: 'border-rect' as const,
@@ -682,14 +724,14 @@ const TEXT_GROUP = {
       info: 'The text to show. Mix literal text with variables to build it at runtime.',
     },
     {
-      label: 'Color',
+      label: 'Colour',
       componentId: TEXT,
       path: 'color',
       kind: 'color' as const,
       info: 'Color of the text itself, independent of the background behind it.',
     },
     {
-      label: 'Font size',
+      label: 'Font Size',
       componentId: TEXT,
       path: 'fontSize',
       kind: 'number' as const,
@@ -697,7 +739,7 @@ const TEXT_GROUP = {
       info: 'Text size in pixels.',
     },
     {
-      label: 'Text align',
+      label: 'Text Align',
       componentId: TEXT,
       path: 'textAlign',
       kind: 'enum' as const,
@@ -717,7 +759,7 @@ const TEXT_GROUP = {
       info: 'Typeface: sans serif, serif, or monospace.',
     },
     {
-      label: 'Text wrap',
+      label: 'Text Wrap',
       componentId: TEXT,
       path: 'textWrap',
       kind: 'enum' as const,
@@ -757,21 +799,21 @@ const INPUT_GROUP = {
       info: 'Greys the field out and stops it accepting input.',
     },
     {
-      label: 'Color',
+      label: 'Colour',
       componentId: INPUT,
       path: 'color',
       kind: 'color' as const,
       info: 'Color of the text the player types.',
     },
     {
-      label: 'Placeholder color',
+      label: 'Placeholder Colour',
       componentId: INPUT,
       path: 'placeholderColor',
       kind: 'color' as const,
       info: 'Color of the hint text shown while the field is empty.',
     },
     {
-      label: 'Text align',
+      label: 'Text Align',
       componentId: INPUT,
       path: 'textAlign',
       kind: 'enum' as const,
@@ -791,7 +833,7 @@ const INPUT_GROUP = {
       info: 'Typeface: sans serif, serif, or monospace.',
     },
     {
-      label: 'Font size',
+      label: 'Font Size',
       componentId: INPUT,
       path: 'fontSize',
       kind: 'number' as const,
@@ -812,14 +854,14 @@ const DROPDOWN_GROUP = {
       info: 'The selectable entries, one per line.',
     },
     {
-      label: 'Selected index',
+      label: 'Selected Index',
       componentId: DROPDOWN,
       path: 'selectedIndex',
       kind: 'index' as const,
       info: 'Which option starts selected, counting from 0.',
     },
     {
-      label: 'Accept empty',
+      label: 'Accept Empty',
       componentId: DROPDOWN,
       path: 'acceptEmpty',
       kind: 'boolean' as const,
@@ -827,7 +869,7 @@ const DROPDOWN_GROUP = {
       info: 'Allows the dropdown to have no option selected.',
     },
     {
-      label: 'Empty label',
+      label: 'Empty Label',
       componentId: DROPDOWN,
       path: 'emptyLabel',
       kind: 'string' as const,
@@ -841,14 +883,14 @@ const DROPDOWN_GROUP = {
       info: 'Greys the dropdown out and stops it opening.',
     },
     {
-      label: 'Color',
+      label: 'Colour',
       componentId: DROPDOWN,
       path: 'color',
       kind: 'color' as const,
       info: 'Color of the selected option’s text.',
     },
     {
-      label: 'Text align',
+      label: 'Text Align',
       componentId: DROPDOWN,
       path: 'textAlign',
       kind: 'enum' as const,
@@ -868,7 +910,7 @@ const DROPDOWN_GROUP = {
       info: 'Typeface: sans serif, serif, or monospace.',
     },
     {
-      label: 'Font size',
+      label: 'Font Size',
       componentId: DROPDOWN,
       path: 'fontSize',
       kind: 'number' as const,
@@ -878,31 +920,31 @@ const DROPDOWN_GROUP = {
 };
 
 const MOUSE_EVENTS_GROUP = {
-  title: 'Mouse events',
+  title: 'Mouse Events',
   fields: [
     {
-      label: 'On mouse down',
+      label: 'Mouse Down',
       componentId: UI_EVENTS,
       path: 'onMouseDown',
       kind: 'callback' as const,
       info: 'Runs the moment the pointer is pressed on this node.',
     },
     {
-      label: 'On mouse up',
+      label: 'Mouse Up',
       componentId: UI_EVENTS,
       path: 'onMouseUp',
       kind: 'callback' as const,
       info: 'Runs when the pointer is released over this node — the usual "clicked" handler.',
     },
     {
-      label: 'On mouse enter',
+      label: 'Mouse Enter',
       componentId: UI_EVENTS,
       path: 'onMouseEnter',
       kind: 'callback' as const,
       info: 'Runs when the pointer moves onto this node. For hover styling, use the Hover state instead.',
     },
     {
-      label: 'On mouse leave',
+      label: 'Mouse Leave',
       componentId: UI_EVENTS,
       path: 'onMouseLeave',
       kind: 'callback' as const,
@@ -912,17 +954,17 @@ const MOUSE_EVENTS_GROUP = {
 };
 
 const INPUT_EVENTS_GROUP = {
-  title: 'Input events',
+  title: 'Input Events',
   fields: [
     {
-      label: 'On change',
+      label: 'Change',
       componentId: INPUT,
       path: 'onChange',
       kind: 'callback' as const,
       info: 'Runs on every keystroke, with the field’s current text.',
     },
     {
-      label: 'On submit',
+      label: 'Submit',
       componentId: INPUT,
       path: 'onSubmit',
       kind: 'callback' as const,
@@ -932,10 +974,10 @@ const INPUT_EVENTS_GROUP = {
 };
 
 const DROPDOWN_EVENTS_GROUP = {
-  title: 'Dropdown events',
+  title: 'Dropdown Events',
   fields: [
     {
-      label: 'On change',
+      label: 'Change',
       componentId: DROPDOWN,
       path: 'onChange',
       kind: 'callback' as const,
@@ -969,8 +1011,9 @@ export const NODE_FIELD_CONFIGS: Record<UINodeType, NodeFieldConfig> = {
 };
 
 // Event groups render LAST, after content. Matched on the title, so a new group
-// title must not accidentally contain "event".
-const isEventGroup = (title: string) => /event/i.test(title);
+// title must not accidentally contain "event". Also what tells the panel which
+// groups get the `+ Add New Action` affordance.
+export const isEventGroup = (title: string) => /event/i.test(title);
 
 /**
  * The panel's complete group list for a node type, in render order:

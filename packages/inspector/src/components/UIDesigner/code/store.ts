@@ -1179,6 +1179,26 @@ export function findCodeNode(
   return undefined;
 }
 
+// The node a child is laid out BY — what the panel needs to resolve anything
+// direction-dependent (the Resize control's Fill borrows flexGrow along the
+// parent's main axis, alignSelf across it). A platform variant is a pass-through
+// conditional with no layout of its own, so it is skipped: a branch is laid out
+// by whatever contains the conditional.
+export function findCodeLayoutParent(
+  root: CodeUINode | undefined,
+  entityId: number,
+  inheritedParent?: CodeUINode,
+): CodeUINode | undefined {
+  if (!root) return undefined;
+  const asParent = root.platformVariant ? inheritedParent : root;
+  for (const child of root.children) {
+    if ((child.entity as unknown as number) === entityId) return asParent;
+    const found = findCodeLayoutParent(child, entityId, asParent);
+    if (found) return found;
+  }
+  return undefined;
+}
+
 // The PB-shaped component value the panel reads for a given SDK component id.
 // (uiTransform is already normalized to PB by the parse adapter.)
 // The node field an SDK component id reads from. One mapping, used by the element
