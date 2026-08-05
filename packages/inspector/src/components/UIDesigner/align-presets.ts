@@ -1,9 +1,8 @@
-// Anchor presets, kept deliberately simple: clicking a preset places the node at
-// a concrete ABSOLUTE pixel position computed from the node + parent size. No
-// percent insets, no auto margins, no persistent "anchor" state — so a centered
-// node is *truly* centered and dragging afterwards behaves like any other
-// absolute node (plain Top/Left px). The active cell is derived by comparing the
-// current Top/Left against the 9 computed positions.
+// Anchoring writes a concrete ABSOLUTE pixel position computed from the node +
+// parent size — no percent insets, no auto margins, no persistent "anchor" state.
+// So a centered node is *truly* centered, and dragging afterwards behaves like any
+// other absolute node. The cost is that the active preset has to be recovered by
+// comparing the current Top/Left against the 9 computed positions.
 
 import {
   YGU_UNDEFINED,
@@ -23,10 +22,6 @@ export interface Size {
   height: number;
 }
 
-// Grid order (row-major: top row, middle row, bottom row).
-// Internal to `patchToPreset`, which scans them to recover the active preset from
-// a UiTransform. The panel composes a preset from its two axis selects instead of
-// picking one from this list, so it is no longer part of the module's surface.
 const ANCHOR_PRESETS: AnchorPreset[] = [
   'top-left',
   'top-center',
@@ -39,7 +34,6 @@ const ANCHOR_PRESETS: AnchorPreset[] = [
   'bottom-right',
 ];
 
-// Target Top/Left (logical px) for a preset given the node + parent box.
 function targetTopLeft(
   preset: AnchorPreset,
   elem: Size,
@@ -57,9 +51,8 @@ function targetTopLeft(
   return { top, left };
 }
 
-// Build the UiTransform patch that places the node at `preset`. Switches it to
-// Absolute and writes concrete Top/Left px, clearing Right/Bottom + any margins
-// so nothing stale survives a preset switch.
+// Clears every edge inset and margin, not just the two it sets, so nothing stale
+// survives a preset switch.
 export function presetToPatch(
   preset: AnchorPreset,
   elem: Size,
@@ -80,9 +73,8 @@ export function presetToPatch(
   return patch;
 }
 
-// Highlight the preset whose computed position matches the node's current Top/Left
-// (within a rounding tolerance), or null when it doesn't sit on a preset (e.g.
-// after a freehand drag) or isn't absolutely positioned.
+// Null when the node doesn't sit on a preset — e.g. after a freehand drag — or
+// isn't absolutely positioned.
 export function patchToPreset(
   t: Record<string, unknown>,
   elem: Size,

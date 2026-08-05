@@ -27,15 +27,6 @@ const V_OPTIONS: { value: AnchorV; label: string }[] = [
   { value: 'bottom', label: 'Bottom' },
 ];
 
-// Anchoring snaps the node to an absolute pixel position (true corner / edge /
-// center placement) computed from the node + parent size, so it is absolute-only
-// — disabled with a hint while the node is in flow.
-//
-// Two axis selects rather than a 3×3 preset grid: `AnchorPreset` is literally
-// `${AnchorV}-${AnchorH}`, so the axes are already independent in the model, and
-// naming each one ("Left", "Top") reads better than nine unlabelled cells. The
-// preview box shows where that lands inside the parent, which is the part words
-// cannot convey.
 export const AnchorPresetField: React.FC<AnchorPresetFieldProps> = ({
   value,
   entity,
@@ -46,8 +37,6 @@ export const AnchorPresetField: React.FC<AnchorPresetFieldProps> = ({
   const parent = measureParentBox(entity);
   const active = !disabled && value && elem && parent ? patchToPreset(value, elem, parent) : null;
 
-  // Default the selects to top-left when nothing is anchored yet, matching the
-  // preset the first pick would produce.
   const [v, h] = (active ?? 'top-left').split('-') as [AnchorV, AnchorH];
 
   const apply = (nextV: AnchorV, nextH: AnchorH) => {
@@ -87,7 +76,7 @@ export const AnchorPresetField: React.FC<AnchorPresetFieldProps> = ({
         </div>
       </div>
       {disabled ? (
-        <span className="ui-designer-anchor-hint">Switch Positioning to Absolute to anchor</span>
+        <span className="ui-designer-anchor-hint">Turn on "Ignore layout flow" to anchor</span>
       ) : null}
     </div>
   );

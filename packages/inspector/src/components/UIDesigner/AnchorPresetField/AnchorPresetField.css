@@ -16,9 +16,6 @@
   opacity: 0.4;
 }
 
-/* Square preview of the parent box. The marker sits at the anchored corner /
-   edge / centre, so the two selects below read as a position rather than as two
-   unrelated words. */
 .ui-designer-anchor-preview {
   position: relative;
   flex: 0 0 auto;
@@ -29,8 +26,7 @@
   border-radius: 5px;
 }
 
-/* Nothing anchored yet — no data-v/data-h, so the marker stays hidden and the
-   box reads as an empty target. */
+/* No data-v/data-h means nothing is anchored yet. */
 .ui-designer-anchor-preview:not([data-v]) .ui-designer-anchor-marker {
   display: none;
 }

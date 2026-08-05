@@ -204,13 +204,11 @@ function attrValue(attr: AnyNode): { ok: true; value: unknown; dynamic?: boolean
   return { ok: false };
 }
 
-// If an expression is a simple variable reference — `ident` or `obj.prop` (the
-// code-as-source binding form, e.g. `state.score`) — return its verbatim source
-// text; else null. This is what lets the panel show the field as bound (and
-// re-bind it) rather than collapsing the whole node to opaque dynamic content.
-// Expression-level so both the JSX-attribute path and the interaction-layer
-// path (where a bound prop is an object-property value, with no
-// JSXExpressionContainer to unwrap) can share it.
+// Recognizing `ident` / `obj.prop` (the binding form, e.g. `state.score`) is what
+// lets the panel show a field as bound and re-bind it, rather than collapsing the
+// whole node to opaque dynamic content. Expression-level so both the JSX-attribute
+// path and the interaction-layer path — where a bound prop is an object-property
+// value with no JSXExpressionContainer to unwrap — can share it.
 function bindingExprOf(expr: AnyNode | undefined, source: string): string | null {
   if (!expr) return null;
   const e = unparen(expr);
@@ -250,11 +248,10 @@ function eventHandlerName(attr: AnyNode): string | null {
   return handlerNameOfExpr(v.expression as AnyNode);
 }
 
-// A `` `literal ${expr} …` `` template literal → ordered mixed-content segments
-// (literal quasis + `${expr}` bindings), so the mixed editor round-trips a
-// code-authored interpolated string. Returns null for anything that isn't a
-// template literal or that interpolates a non-simple expression. Expression-level
-// for the same reason as bindingExprOf.
+// Ordered mixed-content segments let the mixed editor round-trip a code-authored
+// interpolated string. Null for anything that isn't a template literal or that
+// interpolates a non-simple expression. Expression-level for the same reason as
+// bindingExprOf.
 function templateSegmentsOf(input: AnyNode | undefined, source: string): CanvasSegment[] | null {
   if (!input) return null;
   const e = unparen(input);
@@ -352,12 +349,10 @@ function readInteractionLayer(
         textValues[key] = v.value;
         continue;
       }
-      // A prop bound to a variable or an interpolated template is a RECOGNIZED
-      // construct, not unevaluable content — record it as a binding row exactly
-      // as the JSX-attribute path does. Marking the layer dynamic here instead
-      // would drop the value from the canvas AND freeze every panel edit on the
-      // node, so wrapping a bound element in interaction states silently
-      // downgraded it.
+      // A bound or interpolated prop is a recognized construct, not unevaluable
+      // content. Marking the layer dynamic instead would drop the value from the
+      // canvas AND freeze every panel edit on the node — i.e. adding interaction
+      // states to a bound element would silently downgrade it.
       const field = `${group.componentId}.${key}`;
       const segments = templateSegmentsOf(valueNode, source);
       const expr = bindingExprOf(valueNode, source);
