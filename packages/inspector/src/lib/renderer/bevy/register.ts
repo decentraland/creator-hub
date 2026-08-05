@@ -2,9 +2,15 @@ import { getConfig } from '../../logic/config';
 import { getSceneClient } from '../../rpc/scene';
 import { store } from '../../../redux/store';
 import { selectAssetCatalog } from '../../../redux/app';
+import {
+  setEntityIdFloor,
+  resetEntityIdFloor,
+  parseMaxLiveEntityId,
+} from '../../sdk/entity-id-floor';
 import { snapManager } from '../../babylon/decentraland/snap-manager';
 import { connectReverseChannel } from '../reverse-channel';
 import { registerRenderer } from '../plugin';
+import { consoleCommand } from './console';
 import { BevyRenderer } from './BevyRenderer';
 import { mountBevyEngine } from './engine-iframe';
 import { createCameraBridge } from './camera-bridge';
@@ -157,11 +163,34 @@ export function registerBevyRenderer(): void {
       let disconnectInputFocus = () => {};
       let disconnectVertical = () => {};
 
+      // #1468: publish the running engine's highest live entity id (authored + the
+      // scene's own CODE entities) so the inspector allocates NEW authored entities
+      // above it — otherwise a new entity can be handed the id a code entity already
+      // holds and the forward bridge overwrites it. Re-queried on boot/reboot and
+      // polled (a running scene can create more code entities). Tracks the live engine
+      // window across reboots.
+      let liveEngineWindow = engine.engineWindow;
+      const updateEntityIdFloor = async () => {
+        let reply: string;
+        try {
+          reply = await consoleCommand(liveEngineWindow, 'scene_entities', []);
+        } catch {
+          return; // no scene pinned yet / query failed — keep the current floor
+        }
+        const max = parseMaxLiveEntityId(reply);
+        if (max > 0) setEntityIdFloor(max + 1);
+      };
+
       const rewireEngineBindings = (engineWindow: typeof engine.engineWindow) => {
         forwardBridge?.disconnect();
         disconnectPreview();
         disconnectInputFocus();
         disconnectVertical();
+
+        liveEngineWindow = engineWindow;
+        // Refresh the entity-id floor for this (re)load: the scene's code entities
+        // are (re)created here (#1468).
+        void updateEntityIdFloor();
 
         bevy.attachEngine(engineWindow);
         modifiers.retarget(engineWindow as unknown as Window);
@@ -391,6 +420,11 @@ export function registerBevyRenderer(): void {
       // Wire the engine-window bindings for the initial boot. Re-run on reboot.
       rewireEngineBindings(engine.engineWindow);
 
+      // Keep the entity-id floor fresh while the editor is open: a RUNNING scene can
+      // create more code entities after load, so re-query periodically (cheap console
+      // snapshot) on top of the boot/reboot query above (#1468).
+      const entityFloorTimer = setInterval(() => void updateEntityIdFloor(), 2000);
+
       // Reboot the engine iframe from scratch: re-navigates it (re-fetching the
       // realm's /about + scene bundle = the scene's authored INITIAL state) and
       // re-wires the engine-window bindings against the new window. Shared by the
@@ -532,6 +566,10 @@ export function registerBevyRenderer(): void {
           disconnectHotReload();
           offLocalEdit();
           if (hotReloadTimer !== null) clearTimeout(hotReloadTimer);
+          clearInterval(entityFloorTimer);
+          // Clear the entity-id floor so a subsequent Babylon scene (or a smaller
+          // scene) isn't held above this scene's ids (#1468).
+          resetEntityIdFloor();
           forwardBridge?.disconnect();
           disconnect();
           engine.dispose();
