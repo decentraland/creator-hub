@@ -62,7 +62,7 @@ export const FlowField: React.FC<FlowFieldProps> = ({ value, entity, onPatch }) 
   const wrapping = isWrapping(value);
 
   const pick = (next: FlowValue) => {
-    const patch = flowPatch(next, current, measureNodeOffset(entity));
+    const patch = flowPatch(next, current, measureNodeOffset(entity), value);
     if (patch) onPatch(patch);
   };
 

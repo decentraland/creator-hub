@@ -127,6 +127,51 @@ describe('when patching a uiTransform field from the panel', () => {
     });
   });
 
+  // The Anchor control's live pins: a percent edge with a negative counter-margin
+  // (centered) and a trailing edge (right/bottom-pinned). Both are shapes the
+  // ergonomic emitter and the parser have to agree on, or the dropdowns read back
+  // a different pin than the one that was picked.
+  describe('and anchoring the node with a live pin', () => {
+    const SOURCE = `export function S() {
+  return <UiEntity uiTransform={{ width: 80, positionType: 'absolute', position: { top: 10, left: 20 } }} />
+}`;
+
+    it('should round-trip a centered pin as a 50% edge plus a negative margin', () => {
+      const next = patchRoot(SOURCE, {
+        positionLeft: 50,
+        positionLeftUnit: 2,
+        positionRight: 0,
+        positionRightUnit: undefined,
+        marginLeft: -40,
+        marginLeftUnit: YGU_POINT,
+        marginRight: 0,
+        marginRightUnit: undefined,
+      });
+      expect(next).toMatch(/left: ['"]50%['"]/);
+      expect(next).toContain('left: -40');
+      expect(parse(next).root.uiTransform).toMatchObject({
+        positionLeft: 50,
+        positionLeftUnit: 2,
+        marginLeft: -40,
+        marginLeftUnit: YGU_POINT,
+      });
+    });
+
+    it('should round-trip a bottom pin and drop the leading edge from source', () => {
+      const next = patchRoot(SOURCE, {
+        positionBottom: 0,
+        positionBottomUnit: YGU_POINT,
+        positionTop: 0,
+        positionTopUnit: undefined,
+      });
+      expect(next).toContain('bottom: 0');
+      expect(next).not.toContain('top:');
+      const t = parse(next).root.uiTransform as Record<string, unknown>;
+      expect(t).toMatchObject({ positionBottom: 0, positionBottomUnit: YGU_POINT });
+      expect(t.positionTopUnit).toBeUndefined();
+    });
+  });
+
   // The panel header's eye. Hiding writes the enum; showing REMOVES the prop
   // rather than writing 'flex', so toggling twice must leave the source as it was.
   describe('and toggling the header eye (display patch)', () => {

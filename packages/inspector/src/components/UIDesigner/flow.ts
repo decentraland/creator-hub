@@ -19,6 +19,7 @@ import {
   YGU_POINT,
   YGU_UNDEFINED,
 } from '../../lib/sdk/ui-transform-constants';
+import { clearedCenterMargins } from './align-presets';
 
 // YGFlexDirection, keyed by the react-ecs value name.
 export const FLOW_DIRECTIONS = {
@@ -69,7 +70,9 @@ export function absolutePatch(offset: { top: number; left: number } | null) {
 
 /**
  * → In flow. Clears the baked offsets: Yoga applies `position*` to RELATIVE
- * nodes too, so leaving them behind would shift the node inside the flow.
+ * nodes too, so leaving them behind would shift the node inside the flow. A
+ * centered anchor's counter-margin shifts it the same way, but only exists on
+ * some nodes — callers merge in `clearedCenterMargins` for that.
  */
 export function inFlowPatch() {
   return {
@@ -96,11 +99,14 @@ export function flowPatch(
   next: FlowValue,
   current: FlowValue,
   offset: { top: number; left: number } | null,
+  transform: Record<string, unknown> | null = null,
 ): Record<string, unknown> | null {
   if (next === current) return null;
   if (next === 'absolute') return absolutePatch(offset);
   const patch: Record<string, unknown> = { flexDirection: FLOW_DIRECTIONS[next] };
-  if (current === 'absolute') Object.assign(patch, inFlowPatch());
+  if (current === 'absolute') {
+    Object.assign(patch, inFlowPatch(), clearedCenterMargins(transform));
+  }
   return patch;
 }
 

@@ -904,13 +904,19 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node, hidden }) => {
       // Nodes tree.
       const isAbsolute = t?.positionType === YGPT_ABSOLUTE;
 
+      // Anchor the snap grid where the node is RENDERED, not at its authored
+      // top/left: an anchored node may have no px leading edge at all (a centered
+      // pin is 50% + a counter-margin, a right/bottom pin has only the far edge).
+      // Same measurement the resize handles take; the drop then rewrites the node
+      // as a plain top-left pin, so it lands exactly where it was released.
+      const rect = divRef.current?.getBoundingClientRect();
+      const parentRect = divRef.current?.parentElement?.getBoundingClientRect();
+      const scale = getCanvasScale();
       dragOriginRef.current = {
         mouseX: e.clientX,
         mouseY: e.clientY,
-        // Anchor the snap grid at the node's authored position (absolute only —
-        // a reorder drag follows the cursor 1:1, there is no grid to snap to).
-        startTop: (t?.positionTop ?? 0) as number,
-        startLeft: (t?.positionLeft ?? 0) as number,
+        startTop: rect && parentRect ? (rect.top - parentRect.top) / scale : 0,
+        startLeft: rect && parentRect ? (rect.left - parentRect.left) / scale : 0,
       };
       liveOffsetRef.current = { dx: 0, dy: 0 };
       setOptimisticPos(null);
@@ -1225,6 +1231,14 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node, hidden }) => {
       style.position = 'absolute';
       style.top = `${optimisticPos.top}px`;
       style.left = `${optimisticPos.left}px`;
+      // The commit degrades the node to a top-left pin, so drop the pin it had:
+      // held next to the new top/left, a stale right/bottom would stretch the box
+      // and a centering counter-margin would offset it for the frames until the
+      // splice round-trips.
+      style.right = undefined;
+      style.bottom = undefined;
+      style.marginTop = 0;
+      style.marginLeft = 0;
     }
     if (optimisticPos.width !== undefined) style.width = `${optimisticPos.width}px`;
     if (optimisticPos.height !== undefined) style.height = `${optimisticPos.height}px`;

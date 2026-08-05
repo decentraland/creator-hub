@@ -1,8 +1,14 @@
 import React from 'react';
 import type { Entity } from '@dcl/ecs';
 
-import { type AnchorH, type AnchorV, patchToPreset, presetToPatch } from '../align-presets';
-import { measureNodeBox, measureParentBox } from '../measure';
+import {
+  type AnchorH,
+  type AnchorPin,
+  type AnchorV,
+  anchorPatch,
+  readAnchor,
+} from '../align-presets';
+import { measureNodeBox } from '../measure';
 import { Dropdown } from '../../ui';
 
 import './AnchorPresetField.css';
@@ -33,18 +39,14 @@ export const AnchorPresetField: React.FC<AnchorPresetFieldProps> = ({
   disabled,
   onPatch,
 }) => {
-  const elem = measureNodeBox(entity);
-  const parent = measureParentBox(entity);
-  const active = !disabled && value && elem && parent ? patchToPreset(value, elem, parent) : null;
+  const { h, v } = readAnchor(value);
 
-  const [v, h] = (active ?? 'top-left').split('-') as [AnchorV, AnchorH];
-
-  const apply = (nextV: AnchorV, nextH: AnchorH) => {
+  const apply = (pin: AnchorPin) => {
     if (disabled) return;
-    const e = measureNodeBox(entity);
-    const p = measureParentBox(entity);
-    if (!e || !p) return;
-    onPatch(presetToPatch(`${nextV}-${nextH}`, e, p));
+    // The centered pin's counter-margin is half the node's own rendered size.
+    const box = measureNodeBox(entity);
+    if (!box) return;
+    onPatch(anchorPatch(pin, box));
   };
 
   return (
@@ -52,27 +54,31 @@ export const AnchorPresetField: React.FC<AnchorPresetFieldProps> = ({
       <div className={`ui-designer-anchor-control${disabled ? ' disabled' : ''}`}>
         <div
           className="ui-designer-anchor-preview"
-          data-v={active ? v : undefined}
-          data-h={active ? h : undefined}
+          data-h={h ?? undefined}
+          data-v={v ?? undefined}
           aria-hidden="true"
         >
           <span className="ui-designer-anchor-marker" />
         </div>
         <div className="ui-designer-anchor-axes">
-          <Dropdown
-            options={H_OPTIONS}
-            value={h}
-            disabled={disabled}
-            aria-label="Horizontal anchor"
-            onChange={e => apply(v, (e.target as HTMLSelectElement).value as AnchorH)}
-          />
-          <Dropdown
-            options={V_OPTIONS}
-            value={v}
-            disabled={disabled}
-            aria-label="Vertical anchor"
-            onChange={e => apply((e.target as HTMLSelectElement).value as AnchorV, h)}
-          />
+          <div className="ui-designer-anchor-axis horizontal">
+            <Dropdown
+              options={H_OPTIONS}
+              value={h ?? 'left'}
+              disabled={disabled}
+              aria-label="Horizontal anchor"
+              onChange={e => apply((e.target as HTMLSelectElement).value as AnchorH)}
+            />
+          </div>
+          <div className="ui-designer-anchor-axis vertical">
+            <Dropdown
+              options={V_OPTIONS}
+              value={v ?? 'top'}
+              disabled={disabled}
+              aria-label="Vertical anchor"
+              onChange={e => apply((e.target as HTMLSelectElement).value as AnchorV)}
+            />
+          </div>
         </div>
       </div>
       {disabled ? (

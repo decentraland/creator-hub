@@ -16,8 +16,13 @@
   opacity: 0.4;
 }
 
+/* The parent box, as a 3x3 grid of anchor cells: the node marker sits in the cell
+   the two pins select, so its own placement needs no offset maths. */
 .ui-designer-anchor-preview {
-  position: relative;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+  place-items: center;
   flex: 0 0 auto;
   width: 62px;
   height: 62px;
@@ -26,43 +31,62 @@
   border-radius: 5px;
 }
 
-/* No data-v/data-h means nothing is anchored yet. */
+/* An axis with no pinned edge has no cell to point at. */
+.ui-designer-anchor-preview:not([data-h]) .ui-designer-anchor-marker,
 .ui-designer-anchor-preview:not([data-v]) .ui-designer-anchor-marker {
   display: none;
 }
 
 .ui-designer-anchor-marker {
-  position: absolute;
-  width: 10px;
-  height: 10px;
+  position: relative;
+  width: 18px;
+  height: 18px;
+  border: 1px solid var(--ui-designer-control-accent);
   border-radius: 2px;
+}
+
+.ui-designer-anchor-marker::before,
+.ui-designer-anchor-marker::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
   background: var(--ui-designer-control-accent);
-  /* Centred on its anchor point, so the offsets below are the point itself. */
   transform: translate(-50%, -50%);
 }
 
+.ui-designer-anchor-marker::before {
+  width: 9px;
+  height: 1px;
+}
+
+.ui-designer-anchor-marker::after {
+  width: 1px;
+  height: 9px;
+}
+
 .ui-designer-anchor-preview[data-h="left"] .ui-designer-anchor-marker {
-  left: 10px;
+  grid-column: 1;
 }
 
 .ui-designer-anchor-preview[data-h="center"] .ui-designer-anchor-marker {
-  left: 50%;
+  grid-column: 2;
 }
 
 .ui-designer-anchor-preview[data-h="right"] .ui-designer-anchor-marker {
-  left: calc(100% - 10px);
+  grid-column: 3;
 }
 
 .ui-designer-anchor-preview[data-v="top"] .ui-designer-anchor-marker {
-  top: 10px;
+  grid-row: 1;
 }
 
 .ui-designer-anchor-preview[data-v="middle"] .ui-designer-anchor-marker {
-  top: 50%;
+  grid-row: 2;
 }
 
 .ui-designer-anchor-preview[data-v="bottom"] .ui-designer-anchor-marker {
-  top: calc(100% - 10px);
+  grid-row: 3;
 }
 
 .ui-designer-anchor-axes {
@@ -71,6 +95,36 @@
   flex-direction: column;
   justify-content: space-between;
   gap: var(--uid-space-1);
+  min-width: 0;
+}
+
+.ui-designer-anchor-axis {
+  display: flex;
+  align-items: center;
+  gap: var(--uid-space-1);
+  min-width: 0;
+}
+
+/* The Figma ConstraintsIcons axis glyphs: a horizontal / vertical I-beam. */
+.ui-designer-anchor-axis::before {
+  content: "";
+  flex: 0 0 auto;
+  width: 16px;
+  height: 16px;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+.ui-designer-anchor-axis.horizontal::before {
+  background-image: url("./icons/anchor-h.svg");
+}
+
+.ui-designer-anchor-axis.vertical::before {
+  background-image: url("./icons/anchor-v.svg");
+}
+
+.ui-designer-anchor-axis > .Dropdown.Field {
+  flex: 1 1 auto;
   min-width: 0;
 }
 

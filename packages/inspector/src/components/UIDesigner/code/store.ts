@@ -13,6 +13,7 @@ import {
   selectNode,
   selectNodes,
 } from '../../../redux/ui-designer';
+import { dragPinPatch } from '../align-presets';
 import type { DeviceKind } from '../safe-areas';
 import type { UINodeType } from '../tree-model';
 import {
@@ -1359,6 +1360,18 @@ async function writeUiTransformFields(
   if (edits.length) await applySourceEdits(edits);
 }
 
+// The ergonomic fields that pin a node to the top-left px offset it was dropped
+// at. The canvas measures the drop on screen, so whatever pinned the node before
+// has to go with it: `dragPinPatch` clears the trailing edges and the margins
+// that shift them (an anchor's centering counter-margin lives there). Routed
+// through the panel's surgical patch path, so the rest of the object — sizes,
+// padding, props the editor doesn't model — is left alone.
+function dropPinFields(entityId: number, top: number, left: number): Record<string, unknown> {
+  const node = findCodeNode(state.parsed?.root, entityId);
+  const current = (node?.uiTransform as Record<string, unknown>) ?? {};
+  return uiTransformPatchFields(current, dragPinPatch(top, left));
+}
+
 // Move an ABSOLUTE node: splice the ergonomic `position: { top, left }` edges.
 // Absolute-only by design — dragging an in-flow node reorders it among its
 // siblings instead (see Canvas's reorder drag), so there is no in-flow move that
@@ -1368,9 +1381,11 @@ async function spliceUiTransformPositionUnlocked(
   top: number,
   left: number,
 ): Promise<void> {
-  await writeUiTransformFields(entityId, 'spliceUiTransformPosition', {
-    position: { top, left },
-  });
+  await writeUiTransformFields(
+    entityId,
+    'spliceUiTransformPosition',
+    dropPinFields(entityId, top, left),
+  );
 }
 
 // Resize a node: write width/height AND its new top-left in ONE setObjectFields
@@ -1389,7 +1404,9 @@ async function spliceUiTransformResizeUnlocked(
   },
 ): Promise<void> {
   const fields: Record<string, unknown> = { width: opts.width, height: opts.height };
-  if (opts.position) fields.position = opts.position;
+  if (opts.position) {
+    Object.assign(fields, dropPinFields(entityId, opts.position.top, opts.position.left));
+  }
   if (opts.margin) fields.margin = opts.margin;
   await writeUiTransformFields(entityId, 'spliceUiTransformResize', fields);
 }

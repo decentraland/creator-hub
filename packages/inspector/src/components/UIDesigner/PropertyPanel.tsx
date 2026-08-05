@@ -72,6 +72,7 @@ import {
   clearAlignmentPatch,
   patchToAlignment,
 } from './alignment-presets';
+import { clearedCenterMargins } from './align-presets';
 import { absolutePatch, inFlowPatch } from './flow';
 import { type OverflowFlag, overflowFlags, overflowPatch } from './overflow-flags';
 import { fillOwnsProp } from './resize-modes';
@@ -167,11 +168,6 @@ const TOGGLABLE_KINDS = new Set([
 function isTogglable(field: FieldConfig): boolean {
   return !field.core && TOGGLABLE_KINDS.has(field.kind);
 }
-
-// Composite widgets that render full-width (stacked) rather than in the inline
-// control column — the nested box-model and the 4-input texture editors need the
-// width (Figma stacks these too). The 3×3 anchor grid is compact (~96px) and
-// stays inline in the control column.
 
 // The concrete PB paths whose presence means "this field is authored in source".
 function fieldSetPaths(field: FieldConfig): string[] {
@@ -1384,7 +1380,8 @@ const FieldRow = React.memo(function FieldRow({
     case 'position-mode': {
       // Checked = Absolute. Both transitions are mode-preserving: → Absolute bakes
       // the node's on-screen offset so it does not jump, → In flow clears the
-      // baked offsets. Shared with the Flow selector's `absolute` cell (flow.ts).
+      // baked offsets and whatever counter-margin an anchor left behind. Shared
+      // with the Flow selector's `absolute` cell (flow.ts).
       const absolute = ((raw as number | undefined) ?? YGPT_RELATIVE) === YGPT_ABSOLUTE;
       return (
         <BindableField
@@ -1396,7 +1393,11 @@ const FieldRow = React.memo(function FieldRow({
             checked={absolute}
             aria-label={field.label}
             onChange={e =>
-              onPatch(e.target.checked ? absolutePatch(measureNodeOffset(entity)) : inFlowPatch())
+              onPatch(
+                e.target.checked
+                  ? absolutePatch(measureNodeOffset(entity))
+                  : { ...inFlowPatch(), ...clearedCenterMargins(componentValue) },
+              )
             }
           />
         </BindableField>

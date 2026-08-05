@@ -1,7 +1,12 @@
 import { parseSync } from 'oxc-parser';
 import { describe, expect, it } from 'vitest';
 
-import { YGPT_ABSOLUTE, YGPT_RELATIVE, YGU_POINT } from '../../lib/sdk/ui-transform-constants';
+import {
+  YGPT_ABSOLUTE,
+  YGPT_RELATIVE,
+  YGU_POINT,
+  YGU_UNDEFINED,
+} from '../../lib/sdk/ui-transform-constants';
 import { applyEdits } from './code/emit-adapter';
 import { codeToUINodes } from './code/parse-adapter';
 import { uiTransformPatchEdits } from './code/transform-patch';
@@ -127,6 +132,25 @@ describe('the Flow control', () => {
       expect(gatedField('Position').disabledWhen?.(after)).toBe(false);
       // …and the "Ignore Layout Flow" checkbox mirrors the same value.
       expect(after.positionType).toBe(YGPT_ABSOLUTE);
+    });
+
+    // A centered anchor's counter-margin is half the node's own width, which in
+    // flow reads as an unexplained overlap with its siblings.
+    it('should clear a centered anchor counter-margin when leaving absolute', () => {
+      const centered = {
+        positionType: YGPT_ABSOLUTE,
+        positionLeft: 50,
+        positionLeftUnit: 2,
+        marginLeft: -40,
+        marginLeftUnit: YGU_POINT,
+      };
+      const patch = flowPatch('row', 'absolute', null, centered)!;
+      expect(patch.marginLeft).toBe(0);
+      expect(patch.marginLeftUnit).toBe(YGU_UNDEFINED);
+      // A node pinned by px edges has no counter-margin to clear.
+      expect(
+        flowPatch('row', 'absolute', null, { positionType: YGPT_ABSOLUTE })!,
+      ).not.toHaveProperty('marginLeft');
     });
 
     it('should restore the hidden direction when switched back in flow', () => {
