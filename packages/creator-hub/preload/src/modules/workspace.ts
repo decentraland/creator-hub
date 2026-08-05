@@ -19,6 +19,7 @@ import { STUDIOS_ADMIN_URL } from '/shared/urls';
 import type { Services } from '../services';
 
 import { getScene, getRowsAndCols, parseCoords, updateSceneThumbnail } from './scene';
+import { resolveOutdated } from './outdated';
 import { getDefaultScenesPath, getScenesPath } from './settings';
 
 import { DEFAULT_THUMBNAIL, NEW_SCENE_NAME, EMPTY_SCENE_TEMPLATE_REPO } from './constants';
@@ -107,7 +108,19 @@ export function initializeWorkspace(services: Services) {
       });
 
       const outdated = await Promise.race([outdatedPromise, timeoutPromise]);
-      return outdated as DependencyState;
+
+      // `npm outdated` flags any installed version that differs from `latest`,
+      // including auth-server/experimental commit builds where "updating" would
+      // pull the scene off its pinned line. `resolveOutdated` keeps prompts only
+      // for clean official releases that are genuinely behind.
+      const result: DependencyState = {};
+      for (const [name, info] of Object.entries(outdated)) {
+        const resolved = resolveOutdated(info);
+        if (resolved) {
+          result[name as keyof DependencyState] = resolved;
+        }
+      }
+      return result;
     } catch (error: any) {
       console.warn('Failed to get outdated packages:', error?.message);
       return {} as DependencyState;
