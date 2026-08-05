@@ -42,6 +42,8 @@ import { EmptyState } from './EmptyState';
 import { WidgetPicker } from './WidgetPicker';
 import { SafeAreaOverlay } from './SafeAreaOverlay';
 import { MOBILE_REFERENCE } from './safe-areas';
+import { flowFrom, insertionSlot } from './reorder';
+import type { Box, Flow, InsertionSlot } from './reorder';
 import { useUINodeActions } from './useUINodeActions';
 import { useUINodeTree } from './useUINodeTree';
 import {
@@ -50,11 +52,11 @@ import {
   spliceInsertComponent,
   spliceMove,
   spliceSetRootChild,
-  spliceUiTransformMargin,
   spliceUiTransformPosition,
   spliceUiTransformResize,
   useCodeState,
 } from './code/store';
+import type { MoveAnchor } from './code/store';
 import { buildResolveMap } from './code/bindings';
 import { previewLayers, resolveInteractionPreview } from './code/interaction-preview';
 import type { CodeUINode } from './code/types';
@@ -152,6 +154,14 @@ const JUSTIFY_CONTENT: Record<number, React.CSSProperties['justifyContent']> = {
   3: 'space-between',
   4: 'space-around',
   5: 'space-evenly',
+};
+
+// YGWrap. Yoga and CSS agree on `nowrap` as the default, so an unset value needs
+// no explicit write (unlike flexShrink below).
+const FLEX_WRAP: Record<number, React.CSSProperties['flexWrap']> = {
+  0: 'nowrap',
+  1: 'wrap',
+  2: 'wrap-reverse',
 };
 
 // YGAlign — used for alignItems / alignSelf / alignContent. CSS doesn't have
@@ -289,6 +299,9 @@ function nodeStyle(node: UINode): React.CSSProperties {
   }
   if (t.justifyContent !== undefined && JUSTIFY_CONTENT[t.justifyContent]) {
     style.justifyContent = JUSTIFY_CONTENT[t.justifyContent];
+  }
+  if (t.flexWrap !== undefined && FLEX_WRAP[t.flexWrap]) {
+    style.flexWrap = FLEX_WRAP[t.flexWrap];
   }
   if (t.alignItems !== undefined && ALIGN[t.alignItems]) {
     style.alignItems = ALIGN[t.alignItems] as React.CSSProperties['alignItems'];
@@ -471,51 +484,87 @@ function textureStyle(
   return { ...base, backgroundSize: '100% 100%' };
 }
 
-// Compute the insertion-indicator line for a reorder drag, in the parent's
-// local (logical) px — the portal target is the parent node, which lives inside
-// the scaled canvas root, so logical px are correct as-is.
-function reorderIndicatorStyle(ro: {
+// A canvas drag of an IN-FLOW node, captured on mousedown: it reorders the node
+// among its siblings rather than offsetting it. Boxes are viewport px read once —
+// nothing reflows during the drag (the node moves by CSS transform), so re-reading
+// them per mousemove would measure the same layout.
+type ReorderDrag = {
   parentEl: HTMLElement;
-  axis: 'x' | 'y';
-  reversed: boolean;
-  siblings: { entity: Entity; el: HTMLElement }[];
-  index: number;
-}): React.CSSProperties {
-  const parentRect = ro.parentEl.getBoundingClientRect();
-  const scale = getCanvasScale();
-  const before = ro.index > 0 ? ro.siblings[ro.index - 1].el.getBoundingClientRect() : null;
-  const after =
-    ro.index < ro.siblings.length ? ro.siblings[ro.index].el.getBoundingClientRect() : null;
-  if (ro.axis === 'x') {
-    const prevEdge = ro.reversed
-      ? (before?.left ?? parentRect.right)
-      : (before?.right ?? parentRect.left);
-    const nextEdge = ro.reversed
-      ? (after?.right ?? parentRect.left)
-      : (after?.left ?? parentRect.right);
-    return {
-      position: 'absolute',
-      left: ((prevEdge + nextEdge) / 2 - parentRect.left) / scale - 1,
-      top: 0,
-      width: 2,
-      height: parentRect.height / scale,
-      pointerEvents: 'none',
-    };
+  parentBox: Box;
+  flow: Flow;
+  // In-flow siblings excluding the dragged node, in DOM order (= source order).
+  siblings: { entity: Entity; box: Box }[];
+  // Center of the dragged node's own box — the point hit-tested against the
+  // siblings, offset by the live drag delta. Grabbing a node near its edge must
+  // not decide the drop.
+  center: { x: number; y: number };
+  // Slot equal to a no-op drop, and the live slot under the drag.
+  selfIndex: number;
+  slot: InsertionSlot;
+};
+
+const toBox = (r: DOMRect): Box => ({
+  left: r.left,
+  top: r.top,
+  right: r.right,
+  bottom: r.bottom,
+});
+
+// Snapshot the reorder context for `el` from the rendered DOM: the parent's flow
+// comes from its computed style (the canvas renders UiTransform as real CSS, so
+// the browser's layout IS what the user drops onto). Absolute siblings are out of
+// flow, and zero-area ones (display: none) carry no box to hit-test against.
+function captureReorderDrag(el: HTMLElement): ReorderDrag | null {
+  const parentEl = el.parentElement;
+  if (!parentEl) return null;
+  const parentStyle = getComputedStyle(parentEl);
+  const siblings: { entity: Entity; box: Box }[] = [];
+  let selfIndex = 0;
+  for (const child of Array.from(parentEl.children)) {
+    if (child === el) {
+      selfIndex = siblings.length;
+      continue;
+    }
+    if (!(child instanceof HTMLElement) || !child.dataset.entity) continue;
+    if (getComputedStyle(child).position === 'absolute') continue;
+    const rect = child.getBoundingClientRect();
+    if (!rect.width && !rect.height) continue;
+    siblings.push({ entity: Number(child.dataset.entity) as unknown as Entity, box: toBox(rect) });
   }
-  const prevEdge = ro.reversed
-    ? (before?.top ?? parentRect.bottom)
-    : (before?.bottom ?? parentRect.top);
-  const nextEdge = ro.reversed
-    ? (after?.bottom ?? parentRect.top)
-    : (after?.top ?? parentRect.bottom);
+  const self = el.getBoundingClientRect();
+  const center = { x: self.left + self.width / 2, y: self.top + self.height / 2 };
+  const parentBox = toBox(parentEl.getBoundingClientRect());
+  const flow = flowFrom(parentStyle.flexDirection, parentStyle.flexWrap);
   return {
-    position: 'absolute',
-    top: ((prevEdge + nextEdge) / 2 - parentRect.top) / scale - 1,
-    left: 0,
-    height: 2,
-    width: parentRect.width / scale,
-    pointerEvents: 'none',
+    parentEl,
+    parentBox,
+    flow,
+    siblings,
+    center,
+    selfIndex,
+    slot: insertionSlot(
+      siblings.map(s => s.box),
+      center,
+      flow,
+      parentBox,
+    ),
   };
+}
+
+// Place the insertion-indicator line for a reorder drag. The slot is computed in
+// viewport px against the same captured boxes, so it converts to the parent's
+// local (logical) px — the portal target is the parent node, which lives inside
+// the scaled canvas root.
+function reorderIndicatorStyle(ro: ReorderDrag): React.CSSProperties {
+  const scale = getCanvasScale();
+  const { slot, parentBox, flow } = ro;
+  const main = (slot.main - (flow.axis === 'x' ? parentBox.left : parentBox.top)) / scale - 1;
+  const crossOrigin = flow.axis === 'x' ? parentBox.top : parentBox.left;
+  const cross = (slot.crossStart - crossOrigin) / scale;
+  const crossLength = (slot.crossEnd - slot.crossStart) / scale;
+  return flow.axis === 'x'
+    ? { position: 'absolute', left: main, top: cross, width: 2, height: crossLength }
+    : { position: 'absolute', top: main, left: cross, height: 2, width: crossLength };
 }
 
 // `hidden` = editor-only canvas hide (tree eye button): render with
@@ -751,22 +800,15 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node, hidden }) => {
   } | null>(null);
 
   // --- Reorder-drag state (in-flow nodes) ---
-  // NOTE: currently UNUSED — canvas drag MOVES (in-flow via margin; see
-  // handleMouseDown / the drag handleUp), and node reordering lives in the Nodes
-  // tree. This scaffolding (insertion indicator + spliceMove) is kept for a
-  // possible future opt-in; nothing sets `isReordering` today.
-  const reorderRef = useRef<{
-    parentEl: HTMLElement;
-    axis: 'x' | 'y';
-    reversed: boolean;
-    // In-flow siblings excluding self, in DOM order (= flow order).
-    siblings: { entity: Entity; el: HTMLElement }[];
-    // Insertion index (into the `siblings` gaps, 0..siblings.length) that
-    // equals a no-op drop, and the live index under the cursor.
-    selfIndex: number;
-    index: number;
-  } | null>(null);
+  const reorderRef = useRef<ReorderDrag | null>(null);
   const [isReordering, setIsReordering] = useState(false);
+  // A reorder changes the node's PATH, not its offsets, so optimisticPos can't
+  // express the dropped state. Hold the drag translate instead: the node stays
+  // under the cursor until the spliced source round-trips and the rebuilt tree
+  // reflows it into its new slot — releasing on mouseup would snap it back to the
+  // old slot for a frame. Released by the reparse (below) or by the splice
+  // settling, which covers a drop the store rejects (no reparse follows one).
+  const [heldOffset, setHeldOffset] = useState<{ dx: number; dy: number } | null>(null);
 
   // --- Resize-tool state ---
   const resizeOriginRef = useRef<{
@@ -854,37 +896,33 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node, hidden }) => {
       e.stopPropagation();
       e.preventDefault();
 
-      // Canvas drag = MOVE. The move adapts to the node's layout mode on drop
-      // (see the drag handleUp): absolute → position, in-flow → margin. No
-      // positionType conversion. (Reorder/reparent live in the Nodes tree.)
+      // The gesture adapts to the node's layout mode, with no positionType
+      // conversion: an absolute node MOVES (drop writes `position`), an in-flow
+      // node REORDERS among its siblings (drop splices the source order), taking
+      // advantage of the flow instead of fighting it with a margin offset.
+      // Margins stay editable in the properties panel; reparenting stays in the
+      // Nodes tree.
       const isAbsolute = t?.positionType === YGPT_ABSOLUTE;
-
-      // Anchor the drag at the node's current rendered position (relative to its
-      // parent) for the live snap grid; in-flow nodes read it from the DOM.
-      let startTop = (t?.positionTop ?? 0) as number;
-      let startLeft = (t?.positionLeft ?? 0) as number;
-      if (!isAbsolute) {
-        const el = divRef.current;
-        const parentEl = el?.parentElement;
-        if (el && parentEl) {
-          const elRect = el.getBoundingClientRect();
-          const parentRect = parentEl.getBoundingClientRect();
-          startLeft = Math.round((elRect.left - parentRect.left) / getCanvasScale());
-          startTop = Math.round((elRect.top - parentRect.top) / getCanvasScale());
-        }
-      }
 
       dragOriginRef.current = {
         mouseX: e.clientX,
         mouseY: e.clientY,
-        startTop,
-        startLeft,
+        // Anchor the snap grid at the node's authored position (absolute only —
+        // a reorder drag follows the cursor 1:1, there is no grid to snap to).
+        startTop: (t?.positionTop ?? 0) as number,
+        startLeft: (t?.positionLeft ?? 0) as number,
       };
       liveOffsetRef.current = { dx: 0, dy: 0 };
       setOptimisticPos(null);
-      setIsDragging(true);
+      setHeldOffset(null);
       // Selection follows the drag — feels natural in every editor.
       dispatch(selectNode({ node: node.entity }));
+      if (isAbsolute) {
+        setIsDragging(true);
+        return;
+      }
+      reorderRef.current = divRef.current ? captureReorderDrag(divRef.current) : null;
+      if (reorderRef.current) setIsReordering(true);
     },
     [canDragMove, t, dispatch, node.entity, isLocked],
   );
@@ -920,22 +958,10 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node, hidden }) => {
 
       if (!origin) return;
       if (offset.dx === 0 && offset.dy === 0) return;
-      const isAbs = t?.positionType === YGPT_ABSOLUTE;
       const top = Math.round(origin.startTop + offset.dy);
       const left = Math.round(origin.startLeft + offset.dx);
-
-      // MOVE by splicing the source: absolute nodes get a new `position`; in-flow
-      // nodes get a new `margin` (current margin + drag delta), staying responsive.
-      const id = node.entity as unknown as number;
-      if (isAbs) {
-        setOptimisticPos({ top, left });
-        void spliceUiTransformPosition(id, top, left);
-      } else {
-        const marginTop = Math.round(((t?.marginTop as number) ?? 0) + offset.dy);
-        const marginLeft = Math.round(((t?.marginLeft as number) ?? 0) + offset.dx);
-        setOptimisticPos({ marginTop, marginLeft });
-        void spliceUiTransformMargin(id, marginTop, marginLeft);
-      }
+      setOptimisticPos({ top, left });
+      void spliceUiTransformPosition(node.entity as unknown as number, top, left);
     };
 
     window.addEventListener('mousemove', handleMove);
@@ -953,20 +979,18 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node, hidden }) => {
       const origin = dragOriginRef.current;
       const ro = reorderRef.current;
       if (!origin || !ro) return;
-      liveOffsetRef.current = {
-        dx: (e.clientX - origin.mouseX) / getCanvasScale(),
-        dy: (e.clientY - origin.mouseY) / getCanvasScale(),
-      };
-      // Insertion index = number of sibling midpoints the cursor has passed
-      // along the flow axis (comparison flips for *-reverse directions).
-      const cursor = ro.axis === 'x' ? e.clientX : e.clientY;
-      let index = 0;
-      for (const s of ro.siblings) {
-        const r = s.el.getBoundingClientRect();
-        const mid = ro.axis === 'x' ? r.left + r.width / 2 : r.top + r.height / 2;
-        if (ro.reversed ? cursor < mid : cursor > mid) index += 1;
-      }
-      ro.index = index;
+      const scale = getCanvasScale();
+      const dx = e.clientX - origin.mouseX;
+      const dy = e.clientY - origin.mouseY;
+      liveOffsetRef.current = { dx: dx / scale, dy: dy / scale };
+      // Hit-test the dragged box's live center against the captured sibling boxes
+      // — all still in viewport px, so the raw (unscaled) delta is what moves it.
+      ro.slot = insertionSlot(
+        ro.siblings.map(s => s.box),
+        { x: ro.center.x + dx, y: ro.center.y + dy },
+        ro.flow,
+        ro.parentBox,
+      );
       setRenderTick(tick => tick + 1);
     };
 
@@ -978,21 +1002,20 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node, hidden }) => {
       liveOffsetRef.current = { dx: 0, dy: 0 };
       setIsReordering(false);
       if (!ro) return;
-      // No-op drops: no movement, or released over the slot it already holds.
-      if ((offset.dx === 0 && offset.dy === 0) || ro.index === ro.selfIndex) return;
-      const leftSibling = ro.index > 0 ? ro.siblings[ro.index - 1].entity : undefined;
-
-      // Reorder by moving the element's source after the left sibling (or before
-      // the first sibling when dropped at the head). The reparse reflows the node.
-      const id = node.entity as unknown as number;
-      if (leftSibling !== undefined) {
-        void spliceMove(id, { kind: 'after', targetId: leftSibling as unknown as number });
-      } else if (ro.siblings.length > 0) {
-        void spliceMove(id, {
-          kind: 'before',
-          targetId: ro.siblings[0].entity as unknown as number,
-        });
-      }
+      // Nothing to write when the node was released over the slot it already
+      // holds. The movement check is not redundant: siblings can overlap (negative
+      // margins), so a node's resting center can already sit past a sibling's
+      // midpoint and a plain click must never reorder.
+      if ((offset.dx === 0 && offset.dy === 0) || ro.slot.index === ro.selfIndex) return;
+      // Reorder by moving the element's source after the preceding sibling, or
+      // before the first one when dropped at the head. The reparse reflows the
+      // node into its new slot; the drop offset is held until it lands.
+      const anchor: MoveAnchor =
+        ro.slot.index > 0
+          ? { kind: 'after', targetId: Number(ro.siblings[ro.slot.index - 1].entity) }
+          : { kind: 'before', targetId: Number(ro.siblings[0].entity) };
+      setHeldOffset(offset);
+      void spliceMove(node.entity as unknown as number, anchor).finally(() => setHeldOffset(null));
     };
 
     window.addEventListener('mousemove', handleMove);
@@ -1002,6 +1025,15 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node, hidden }) => {
       window.removeEventListener('mouseup', handleUp);
     };
   }, [isReordering, node.entity]);
+
+  // Release the reorder hold on the first reparse after the drop: the rebuilt tree
+  // is what reflows the node into its new slot, and it arrives in the same React
+  // batch, so no frame shows the node both reordered and offset. (Synthetic ids
+  // are positional, so the moved node usually remounts under a new id and this
+  // never runs — it covers the case where the id survives the move.)
+  useEffect(() => {
+    setHeldOffset(held => (held ? null : held));
+  }, [node]);
 
   // Clear the optimistic hold once the committed transform matches the dropped
   // position (so external edits / the property panel drive rendering again).
@@ -1164,7 +1196,7 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node, hidden }) => {
   // Apply the live drag offset visually via CSS transform so we don't write
   // to the CRDT/data-layer until the user releases the mouse.
   const baseStyle = nodeStyle(previewNode);
-  const liveOffset = isDragging || isReordering ? liveOffsetRef.current : null;
+  const liveOffset = isDragging || isReordering ? liveOffsetRef.current : heldOffset;
   let style: React.CSSProperties = liveOffset
     ? {
         ...baseStyle,
@@ -1235,7 +1267,7 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node, hidden }) => {
       className={cx('ui-designer-canvas-node', {
         selected: isSelected,
         'drop-over': isOver,
-        dragging: isDragging,
+        dragging: isDragging || isReordering,
         reordering: isReordering,
         resizing: isResizing,
         movable: canDragMove,
@@ -1308,6 +1340,8 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node, hidden }) => {
           ))
         : null}
       {isSelected && !isRoot ? <CanvasNodeActions entity={node.entity} /> : null}
+      {/* Portaled into the PARENT so the line spans the slot it marks, not this
+          node's box. It is absolutely positioned, so it adds no flex item. */}
       {isReordering && reorderRef.current && reorderRef.current.siblings.length > 0
         ? createPortal(
             <div

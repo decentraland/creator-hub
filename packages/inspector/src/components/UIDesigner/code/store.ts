@@ -1340,8 +1340,9 @@ async function writeUiTransformFields(
 }
 
 // Move an ABSOLUTE node: splice the ergonomic `position: { top, left }` edges.
-// (Only used for nodes already positionType:'absolute' — the canvas moves in-flow
-// nodes via margin instead, see spliceUiTransformMargin.)
+// Absolute-only by design — dragging an in-flow node reorders it among its
+// siblings instead (see Canvas's reorder drag), so there is no in-flow move that
+// writes offsets.
 async function spliceUiTransformPositionUnlocked(
   entityId: number,
   top: number,
@@ -1350,19 +1351,6 @@ async function spliceUiTransformPositionUnlocked(
   await writeUiTransformFields(entityId, 'spliceUiTransformPosition', {
     position: { top, left },
   });
-}
-
-// Move an IN-FLOW node without leaving the flow: splice the ergonomic
-// `margin: { top, left }` (the caller passes current margin + drag delta). Keeps
-// the node responsive (laid out by the parent) rather than converting it to
-// absolute. Note: margin offsets the node from its flow origin, so elements
-// after it in the flow shift accordingly.
-async function spliceUiTransformMarginUnlocked(
-  entityId: number,
-  top: number,
-  left: number,
-): Promise<void> {
-  await writeUiTransformFields(entityId, 'spliceUiTransformMargin', { margin: { top, left } });
 }
 
 // Resize a node: write width/height AND its new top-left in ONE setObjectFields
@@ -2302,7 +2290,6 @@ export const renameRoot = exclusive(renameRootUnlocked);
 export const toggleTopLevel = exclusive(toggleTopLevelUnlocked);
 export const spliceComponentPatch = exclusive(spliceComponentPatchUnlocked);
 export const spliceUiTransformPosition = exclusive(spliceUiTransformPositionUnlocked);
-export const spliceUiTransformMargin = exclusive(spliceUiTransformMarginUnlocked);
 export const spliceUiTransformResize = exclusive(spliceUiTransformResizeUnlocked);
 export const spliceAddChild = exclusive(spliceAddChildUnlocked);
 export const spliceAddWidget = exclusive(spliceAddWidgetUnlocked);

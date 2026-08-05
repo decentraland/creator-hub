@@ -437,6 +437,7 @@
   background: var(--ui-designer-accent);
   border-radius: 1px;
   z-index: 1000;
+  pointer-events: none;
 }
 
 .ui-designer-canvas-node.reordering {
