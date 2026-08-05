@@ -54,7 +54,12 @@ const ENGINE_COMPONENT_NAMES: Record<string, string> = {
   'core::TextShape': 'TextShape',
   'core::Animator': 'Animator',
   'core::VideoPlayer': 'VideoPlayer',
+  'core::ParticleSystem': 'ParticleSystem',
 };
+
+// PBParticleSystem.PlaybackState: PS_PLAYING=0, PS_PAUSED=1 ("simulation frozen; no
+// new particles emitted"), PS_STOPPED=2. Used to freeze emission on scene pause.
+const PARTICLE_PLAYBACK_PAUSED = 1;
 
 // Pointer-collision layer bit (ColliderLayer.CL_POINTER). The editor forces it on so
 // every visible mesh is clickable in the viewport (matching Babylon).
@@ -487,6 +492,12 @@ export function createForwardEditBridge(options: ForwardEditBridgeOptions): Forw
         forwardVideoFrozen(entity, current, true);
         return;
       }
+      // A ParticleSystem PUT while frozen (adding one, or editing it) must not start
+      // emitting in a paused editor (#1467) — force PS_PAUSED.
+      if (engineName === 'ParticleSystem' && isFrozen()) {
+        forwardParticlesFrozen(entity, current, true);
+        return;
+      }
       // Serialize the forward so a component arriving before its entity's Name PUT
       // still lands (the Name PUT's re-send will cover it if this one raced the
       // instantiation). Instantiate-if-needed keeps a lone engine edit on a new
@@ -607,9 +618,24 @@ export function createForwardEditBridge(options: ForwardEditBridgeOptions): Forw
     });
   };
 
-  // Freeze/resume all time-based playback (GLTF animation clips #1382, video #1469)
-  // with the scene run state. Called on arm (boot frozen) and by the run/freeze
-  // toggle.
+  // #1467: same idea for a ParticleSystem. The engine keeps emitting/simulating
+  // particles when the SDK7 tick is frozen, so while FROZEN forward
+  // playbackState = PS_PAUSED (emission + simulation frozen); on UNFREEZE re-forward
+  // the AUTHORED value so it resumes as authored. Editor-only — the CRDT keeps the
+  // authored value.
+  const forwardParticlesFrozen = (entity: Entity, particles: unknown, frozen: boolean) => {
+    const p = particles as Record<string, unknown> | null | undefined;
+    if (p == null) return;
+    const value = frozen ? { ...p, playbackState: PARTICLE_PLAYBACK_PAUSED } : p;
+    enqueue(entity, async () => {
+      await ensureInstantiated(entity);
+      await forwardSet(entity, 'ParticleSystem', value);
+    });
+  };
+
+  // Freeze/resume all time-based playback (GLTF animation clips #1382, video #1469,
+  // particle systems #1467) with the scene run state. Called on arm (boot frozen)
+  // and by the run/freeze toggle.
   const setAnimationsFrozen = (frozen: boolean) => {
     const Animator = context.getForwardableComponent('core::Animator');
     if (Animator) {
@@ -621,6 +647,12 @@ export function createForwardEditBridge(options: ForwardEditBridgeOptions): Forw
     if (VideoPlayer) {
       for (const [entity, video] of context.engine.getEntitiesWith(VideoPlayer)) {
         forwardVideoFrozen(entity, video, frozen);
+      }
+    }
+    const ParticleSystem = context.getForwardableComponent('core::ParticleSystem');
+    if (ParticleSystem) {
+      for (const [entity, particles] of context.engine.getEntitiesWith(ParticleSystem)) {
+        forwardParticlesFrozen(entity, particles, frozen);
       }
     }
   };

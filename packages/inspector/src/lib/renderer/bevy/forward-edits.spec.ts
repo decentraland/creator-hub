@@ -561,6 +561,70 @@ describe('createForwardEditBridge', () => {
     });
   });
 
+  describe('ParticleSystem (#1467)', () => {
+    const getPS = () => ctx.getForwardableComponent('core::ParticleSystem') as never;
+
+    it('should forward a ParticleSystem live, collapsing the shape oneof', async () => {
+      // Running (not frozen) bridge so the authored value is forwarded as-is.
+      bridge.disconnect();
+      const running = createForwardEditBridge({
+        context: ctx,
+        engineWindow,
+        shouldForward: () => true,
+        isFrozen: () => false,
+        send: async (cmd, args) => {
+          sent.push({ cmd, args });
+          return '';
+        },
+      });
+      const PS = getPS() as { create: (e: unknown, v: unknown) => void };
+      const entity = ctx.engine.addEntity();
+      ctx.Name.create(entity, { value: 'Sparks' });
+      PS.create(entity, { rate: 20, shape: { $case: 'sphere', sphere: { radius: 2 } } });
+      await ctx.engine.update(1);
+      await new Promise(r => setTimeout(r, 0));
+      await new Promise(r => setTimeout(r, 0));
+
+      const write = sent.find(s => s.cmd === 'set_component' && s.args[1] === 'ParticleSystem');
+      expect(write).toBeDefined();
+      const value = JSON.parse(write!.args[2]);
+      expect(value.shape).toEqual({ sphere: { radius: 2 } }); // $case collapsed for serde
+      running.disconnect();
+    });
+
+    it('should force playbackState PS_PAUSED (1) while frozen', async () => {
+      const PS = getPS() as { create: (e: unknown, v: unknown) => void };
+      const entity = ctx.engine.addEntity();
+      ctx.Name.create(entity, { value: 'Sparks' });
+      PS.create(entity, { rate: 20, playbackState: 0 }); // authored PS_PLAYING
+      await ctx.engine.update(1);
+      await new Promise(r => setTimeout(r, 0));
+      await new Promise(r => setTimeout(r, 0));
+
+      const write = sent.find(s => s.cmd === 'set_component' && s.args[1] === 'ParticleSystem');
+      expect(write).toBeDefined();
+      expect(JSON.parse(write!.args[2]).playbackState).toBe(1); // paused in a frozen editor
+    });
+
+    it('should restore the authored playbackState on unfreeze', async () => {
+      const PS = getPS() as { create: (e: unknown, v: unknown) => void };
+      const entity = ctx.engine.addEntity();
+      ctx.Name.create(entity, { value: 'Sparks' });
+      PS.create(entity, { rate: 20, playbackState: 0 });
+      await ctx.engine.update(1);
+      await new Promise(r => setTimeout(r, 0));
+      sent.length = 0;
+
+      bridge.setAnimationsFrozen(false);
+      await new Promise(r => setTimeout(r, 0));
+      await new Promise(r => setTimeout(r, 0));
+
+      const write = sent.find(s => s.cmd === 'set_component' && s.args[1] === 'ParticleSystem');
+      expect(write).toBeDefined();
+      expect(JSON.parse(write!.args[2]).playbackState).toBe(0); // resumes as authored
+    });
+  });
+
   describe('when a console command fails', () => {
     it('should report via onError and not throw into the change loop', async () => {
       const errors: string[] = [];

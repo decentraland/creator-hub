@@ -7,6 +7,7 @@ import type { Quaternion, Vector3 } from '@dcl/ecs-math';
 
 import { createOperations } from '../../sdk/operations';
 import { createEditorComponents } from '../../sdk/components';
+import { ParticleSystemSchema } from '../../sdk/components/ParticleSystem';
 import { PARCEL_SIZE } from '../../utils/scene';
 
 const ROOT = 0 as Entity;
@@ -75,6 +76,12 @@ export class BevySceneContext {
     // the forward bridge sends playing:false while frozen and restores the authored
     // value on unfreeze.
     components.VideoPlayer(this.engine),
+    // ParticleSystem (#1467): the engine renders it natively (proto id 1217), but
+    // the inspector's @dcl/ecs lacks the native proto, so it's a schema component.
+    // Define it here (same name/schema as the inspector's engine) so its CRDT stream
+    // decodes and the forward bridge can send it live (otherwise a newly added
+    // particle system isn't visible until a reload loads it from the composite).
+    this.engine.defineComponentFromSchema('core::ParticleSystem', ParticleSystemSchema),
   ];
 
   /**
