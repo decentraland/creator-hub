@@ -140,8 +140,21 @@ const COMPONENT_REGISTRY = {
     },
   ],
   'inspector::UIState': [
+    // V0 — SHIPPED in @dcl/inspector 7.34.x. Do not add members here.
+    //
+    // An object schema is a `Schemas.Map`, which serializes its members
+    // POSITIONALLY — no names on the wire, no per-member length. So a reader with
+    // one extra member runs off the end of a buffer written by an older engine
+    // ("Outside of the bounds of writen data"), and vice versa. Adding a field to
+    // a shipped version is a wire break even when the field is Optional.
     {
       sceneInfoPanelVisible: Schemas.Optional(Schemas.Boolean),
+    },
+    // V1 — per-scene 2D/3D mode memory. A new version is a new component NAME
+    // (`inspector::UIState-v1`) and therefore a new CRC id, so a 7.34.x data layer
+    // streaming V0 stays readable while this build reads/writes V1. `migrateAll`
+    // carries existing V0 values forward.
+    {
       uiDesignerOpen: Schemas.Optional(Schemas.Boolean),
     },
   ],
