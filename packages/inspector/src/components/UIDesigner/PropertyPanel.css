@@ -12,27 +12,22 @@
   text-align: center;
 }
 
-/* --- Inline 2-column field layout (Phase F1) ---
-   Scoped to the panel so the SHARED Block (used by EntityInspector) is untouched.
-   Turn each Block from stacked (label over control) into a grid: label column +
-   a 1fr control column. Every row's control then aligns to the same width,
-   fixing the ragged/auto-sized rows. */
+/* --- Stacked field layout (Figma PropertiesFull, node 1492:1939) ---
+   Label on its own line, control full-width beneath it. This is what the shared
+   `Block` already does natively, so the panel only sets spacing and truncation.
+   It replaced a 2-column grid (label column + a control column capped at 260px):
+   in a 312px rail that halved every control, which is why the fields read as
+   cramped next to the design. Stacking also removed the need for a `.wide`
+   escape hatch — box-model / uv-region / nine-slice widgets no longer have a
+   narrow column to break out of. */
 .ui-designer-property-panel .Block {
-  display: grid;
-  /* Label column + a control column CAPPED at a compact width (Figma-style):
-     controls stay dense and left-aligned instead of stretching across a wide
-     panel. In a narrow rail the control simply fills the smaller space. */
-  grid-template-columns: minmax(72px, 92px) minmax(0, 260px);
-  column-gap: var(--uid-space-2);
-  align-items: center;
+  align-items: stretch;
   margin: 0;
-  padding: var(--uid-space-1) 0;
+  padding: var(--uid-space-1) 0 var(--uid-space-2);
 }
 
-/* Label column: vertically centered, truncates instead of pushing the control
-   out of alignment (WIG long-content). */
+/* Truncate rather than wrap: a two-line label would desynchronise row rhythm. */
 .ui-designer-property-panel .Block-label-row {
-  margin-bottom: 0;
   min-width: 0;
   overflow: hidden;
 }
@@ -43,19 +38,15 @@
   white-space: nowrap;
 }
 
-/* Control column fills the cell — the single "control fills the column"
-   contract that replaces the old fill/intrinsic/fixed mix. Every direct child of
-   `.content` stretches; the bindable wrapper is made flex so a nested Field's own
-   flex-grow fills too. Intrinsic controls (color swatch, checkbox) keep their
-   size but sit at the column start, which is what aligns the rows. Fixed-width
-   exceptions (unit selectors) override below via higher specificity. */
+/* Controls fill the row. Paired controls (X|Y, W|H) sit side by side as equal
+   halves via the `.content` flex row they already live in. */
 .ui-designer-property-panel .Block > .content {
   min-width: 0;
   align-items: center;
 }
 
 .ui-designer-property-panel .Block > .content > * {
-  flex: 1 1 auto;
+  flex: 1 1 0;
   min-width: 0;
 }
 
@@ -64,24 +55,22 @@
   align-items: center;
 }
 
-/* Intrinsic widgets keep their natural size and sit at the column start instead
-   of being blown up by the fill rule above (the anchor grid is width:max-content
-   ~96px; without this it stretched to the full column — the "huge Anchor box"). */
-.ui-designer-property-panel .Block > .content > .ui-designer-anchor-grid {
-  flex: 0 0 auto;
+/* Group headers, per the Figma: bold sentence case with a hairline under the
+   header, not the shared Container's wide-tracked uppercase. Scoped to this
+   panel — Container.css is shared with the 3D EntityInspector, which keeps its
+   own heading style. */
+.ui-designer-property-panel .Container > .title span {
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--title);
 }
 
-/* Wide composite widgets (box-model / anchor grid / uv-region / nine-slice)
-   can't render usefully in the narrow control column — like Figma, they stack
-   full-width with the label above. Set on the row wrapper by PropertyPanel. */
-.ui-designer-property-panel .ui-designer-property-row.wide .Block {
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-}
-
-.ui-designer-property-panel .ui-designer-property-row.wide .Block-label-row {
-  margin-bottom: var(--label-margin-bottom);
+.ui-designer-property-panel .Container > .title {
+  padding-bottom: var(--uid-space-2);
+  border-bottom: 1px solid var(--ui-designer-hairline);
+  margin-bottom: var(--uid-space-2);
 }
 
 /* --- Row wrapper + remove (−) affordance (Phase F3) --- */

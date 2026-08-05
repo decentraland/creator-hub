@@ -126,7 +126,6 @@ function isTogglable(field: FieldConfig): boolean {
 // control column — the nested box-model and the 4-input texture editors need the
 // width (Figma stacks these too). The 3×3 anchor grid is compact (~96px) and
 // stays inline in the control column.
-const WIDE_KINDS = new Set(['box-model', 'uv-region', 'border-rect']);
 
 // The concrete PB paths whose presence means "this field is authored in source".
 function fieldSetPaths(field: FieldConfig): string[] {
@@ -647,7 +646,6 @@ const PropertyPanelComponent: React.FC = () => {
             <div
               className={[
                 'ui-designer-property-row',
-                WIDE_KINDS.has(field.kind) ? 'wide' : '',
                 overriding ? (overridden ? 'overridden' : 'inherited') : '',
               ]
                 .filter(Boolean)
