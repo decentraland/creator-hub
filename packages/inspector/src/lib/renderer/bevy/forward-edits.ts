@@ -56,6 +56,35 @@ const ENGINE_COMPONENT_NAMES: Record<string, string> = {
   'core::VideoPlayer': 'VideoPlayer',
 };
 
+// Pointer-collision layer bit (ColliderLayer.CL_POINTER). The editor forces it on so
+// every visible mesh is clickable in the viewport (matching Babylon).
+const CL_POINTER = 1;
+
+/**
+ * Convert an `@dcl/ecs` component value to the JSON shape the engine's
+ * `set_component` accepts (#1466). The engine parses the value as serde-proto,
+ * where a protobuf `oneof` is an externally-tagged enum — the variant name is the
+ * single key, e.g. `{ mesh: { box: {...} } }`. `@dcl/ecs` (ts-proto) instead
+ * tags oneofs with a `$case` discriminator: `{ mesh: { $case: 'box', box: {...} } }`.
+ * serde rejects that extra key, so a MeshRenderer/Material/MeshCollider edit never
+ * applied live (only after a reload, which loads from the composite, not
+ * set_component). Recursively collapse each `{$case, [case]}` to `{ [case]: ... }`;
+ * a value with no oneof passes through unchanged.
+ */
+function toEngineJson(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(toEngineJson);
+  if (value && typeof value === 'object') {
+    const obj = value as Record<string, unknown>;
+    if (typeof obj.$case === 'string') {
+      return { [obj.$case]: toEngineJson(obj[obj.$case]) };
+    }
+    const out: Record<string, unknown> = {};
+    for (const [key, v] of Object.entries(obj)) out[key] = toEngineJson(v);
+    return out;
+  }
+  return value;
+}
+
 export interface ForwardEditBridgeOptions {
   /**
    * The renderer's scene context — the source of ECS changes to forward, plus the
@@ -186,6 +215,19 @@ export function createForwardEditBridge(options: ForwardEditBridgeOptions): Forw
         });
       }
     }
+    // Re-forward each MeshRenderer primitive + its editor pointer collider so it
+    // stays clickable after a reload (the load burst that would carry it was
+    // suppressed) — the MeshRenderer counterpart of the GltfContainer replay above.
+    const meshRenderer = context.getForwardableComponent('core::MeshRenderer');
+    if (meshRenderer) {
+      for (const [entity, current] of context.engine.getEntitiesWith(meshRenderer)) {
+        enqueue(entity, async () => {
+          await ensureInstantiated(entity);
+          await forwardSet(entity, 'MeshRenderer', current);
+        });
+        forwardMeshPickCollider(entity, current);
+      }
+    }
     // #1382: the editor boots frozen, but a scene loads with its Animator clips
     // playing — pause them to match the frozen state (setAnimationsFrozen forwards
     // playing:false; the toolbar toggle later resumes/re-pauses).
@@ -288,6 +330,31 @@ export function createForwardEditBridge(options: ForwardEditBridgeOptions): Forw
           'GltfContainer',
         ]);
       }
+    });
+  };
+
+  const MESH_COLLIDER = 'core::MeshCollider';
+  // Make a MeshRenderer PRIMITIVE pointer-pickable in the editor. Unlike a GLTF
+  // (whose visibleMeshesCollisionMask carries pointer collision, #1373), a bare
+  // MeshRenderer has no collider, so a viewport click can't hit it — it's only
+  // selectable from the tree. Forward an editor-only MeshCollider of the SAME shape
+  // with CL_POINTER so it's clickable, matching Babylon (every visible mesh is
+  // pickable). Skip when the entity has its OWN MeshCollider — forwardSet already
+  // ORs CL_POINTER into that. Editor-only: the CRDT keeps just the MeshRenderer, so
+  // preview/live collision is unchanged. The MeshCollider mesh oneof mirrors the
+  // renderer's (extra fields like `uvs` are ignored by the collider schema).
+  const forwardMeshPickCollider = (entity: Entity, renderer: unknown) => {
+    const authored = (
+      context.getForwardableComponent(MESH_COLLIDER) as {
+        getOrNull?: (e: Entity) => unknown;
+      } | null
+    )?.getOrNull?.(entity);
+    if (authored != null) return;
+    const mesh = (renderer as { mesh?: unknown } | null | undefined)?.mesh;
+    if (mesh == null) return;
+    enqueue(entity, async () => {
+      await ensureInstantiated(entity);
+      await forwardSet(entity, 'MeshCollider', { collisionMask: CL_POINTER, mesh });
     });
   };
 
@@ -428,6 +495,10 @@ export function createForwardEditBridge(options: ForwardEditBridgeOptions): Forw
         await ensureInstantiated(entity);
         await forwardSet(entity, engineName, current);
       });
+      // A MeshRenderer primitive has no collider — add an editor-only pointer one so
+      // it's selectable in the viewport, not just the tree. Re-derived on every
+      // MeshRenderer PUT so a shape change updates the collider too.
+      if (engineName === 'MeshRenderer') forwardMeshPickCollider(entity, current);
     },
   );
 
@@ -441,15 +512,20 @@ export function createForwardEditBridge(options: ForwardEditBridgeOptions): Forw
       // it (matching Babylon, where every visible mesh is pickable). CL_POINTER is
       // bit 1; OR it into visibleMeshesCollisionMask. Editor-only — the CRDT keeps
       // the authored mask, so preview/live collision is unchanged.
-      const CL_POINTER = 1;
       const g = (current ?? {}) as { visibleMeshesCollisionMask?: number; src?: string };
       payload = {
         ...g,
         visibleMeshesCollisionMask: (g.visibleMeshesCollisionMask ?? 0) | CL_POINTER,
       };
       await refreshContentForGltf(entity, g.src);
+    } else if (engineName === 'MeshCollider') {
+      // Same idea for an authored MeshCollider: OR CL_POINTER into its mask so the
+      // primitive is clickable in the editor even if it was authored without pointer
+      // collision. Editor-only — the CRDT keeps the authored mask.
+      const m = (current ?? {}) as { collisionMask?: number };
+      payload = { ...m, collisionMask: (m.collisionMask ?? 0) | CL_POINTER };
     }
-    const setArgs = [String(entity), engineName, JSON.stringify(payload)];
+    const setArgs = [String(entity), engineName, JSON.stringify(toEngineJson(payload))];
     try {
       await send('set_component', setArgs);
     } catch (error) {

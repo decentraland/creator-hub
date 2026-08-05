@@ -487,6 +487,80 @@ describe('createForwardEditBridge', () => {
     });
   });
 
+  describe('MeshRenderer oneof JSON shape (#1466)', () => {
+    it('should forward the engine serde shape (mesh.box), not the $case discriminator', async () => {
+      const MeshRenderer = components.MeshRenderer(ctx.engine);
+      const entity = ctx.engine.addEntity();
+      MeshRenderer.create(entity, { mesh: { $case: 'box', box: { uvs: [] } } });
+      await ctx.engine.update(1);
+      await new Promise(r => setTimeout(r, 0));
+
+      const write = sent.find(s => s.cmd === 'set_component' && s.args[1] === 'MeshRenderer');
+      expect(write).toBeDefined();
+      const value = JSON.parse(write!.args[2]);
+      // Engine (serde externally-tagged oneof, camelCase): { mesh: { box: {...} } }.
+      expect(value.mesh).toEqual({ box: { uvs: [] } });
+      expect(value.mesh.$case).toBeUndefined();
+    });
+
+    it('should carry the variant name for a shape change (box → sphere)', async () => {
+      const MeshRenderer = components.MeshRenderer(ctx.engine);
+      const entity = ctx.engine.addEntity();
+      MeshRenderer.create(entity, { mesh: { $case: 'box', box: { uvs: [] } } });
+      await ctx.engine.update(1);
+      await new Promise(r => setTimeout(r, 0));
+      sent.length = 0;
+
+      // The user switches the shape to a sphere in the inspector.
+      MeshRenderer.createOrReplace(entity, { mesh: { $case: 'sphere', sphere: { uvs: [] } } });
+      await ctx.engine.update(1);
+      await new Promise(r => setTimeout(r, 0));
+
+      const write = sent.find(s => s.cmd === 'set_component' && s.args[1] === 'MeshRenderer');
+      expect(write).toBeDefined();
+      const value = JSON.parse(write!.args[2]);
+      expect(value.mesh).toEqual({ sphere: { uvs: [] } });
+    });
+  });
+
+  describe('MeshRenderer viewport pickability (editor pointer collider)', () => {
+    it('should forward an editor pointer MeshCollider matching the shape when none is authored', async () => {
+      const MeshRenderer = components.MeshRenderer(ctx.engine);
+      const entity = ctx.engine.addEntity();
+      ctx.Name.create(entity, { value: 'Cube' });
+      MeshRenderer.create(entity, { mesh: { $case: 'box', box: { uvs: [] } } });
+      await ctx.engine.update(1);
+      await new Promise(r => setTimeout(r, 0));
+      await new Promise(r => setTimeout(r, 0));
+
+      const write = sent.find(s => s.cmd === 'set_component' && s.args[1] === 'MeshCollider');
+      expect(write).toBeDefined();
+      const value = JSON.parse(write!.args[2]);
+      expect(value.mesh).toEqual({ box: { uvs: [] } });
+      expect(value.collisionMask & 1).toBe(1); // CL_POINTER → clickable
+    });
+
+    it('should OR CL_POINTER into an authored MeshCollider (preserving its bits)', async () => {
+      const MeshRenderer = components.MeshRenderer(ctx.engine);
+      const MeshCollider = components.MeshCollider(ctx.engine);
+      const entity = ctx.engine.addEntity();
+      ctx.Name.create(entity, { value: 'Cube' });
+      MeshRenderer.create(entity, { mesh: { $case: 'box', box: { uvs: [] } } });
+      MeshCollider.create(entity, { mesh: { $case: 'box', box: {} }, collisionMask: 2 }); // physics
+      await ctx.engine.update(1);
+      await new Promise(r => setTimeout(r, 0));
+      await new Promise(r => setTimeout(r, 0));
+
+      const colliders = sent.filter(s => s.cmd === 'set_component' && s.args[1] === 'MeshCollider');
+      expect(colliders.length).toBeGreaterThanOrEqual(1);
+      for (const w of colliders) {
+        const v = JSON.parse(w.args[2]);
+        expect(v.collisionMask & 1).toBe(1); // pointer added
+        expect(v.collisionMask & 2).toBe(2); // physics preserved
+      }
+    });
+  });
+
   describe('when a console command fails', () => {
     it('should report via onError and not throw into the change loop', async () => {
       const errors: string[] = [];
