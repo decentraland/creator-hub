@@ -1,0 +1,31 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "asset-packs::Placeholder",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/avatar_modifier_area.glb"
+          }
+        }
+      }
+    },
+    {
+      "name": "core::AvatarModifierArea",
+      "data": {
+        "0": {
+          "json": {
+            "area": {
+              "x": 1,
+              "y": 1,
+              "z": 1
+            },
+            "modifiers": [0],
+            "excludeIds": []
+          }
+        }
+      }
+    }
+  ]
+}
