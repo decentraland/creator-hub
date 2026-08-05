@@ -53,6 +53,7 @@ const ENGINE_COMPONENT_NAMES: Record<string, string> = {
   'core::Billboard': 'Billboard',
   'core::TextShape': 'TextShape',
   'core::Animator': 'Animator',
+  'core::VideoPlayer': 'VideoPlayer',
 };
 
 export interface ForwardEditBridgeOptions {
@@ -413,6 +414,12 @@ export function createForwardEditBridge(options: ForwardEditBridgeOptions): Forw
         forwardAnimatorFrozen(entity, current, true);
         return;
       }
+      // Likewise a VideoPlayer PUT while frozen (a fresh load, or an edit) must not
+      // start the video playing in a paused editor (#1469).
+      if (engineName === 'VideoPlayer' && isFrozen()) {
+        forwardVideoFrozen(entity, current, true);
+        return;
+      }
       // Serialize the forward so a component arriving before its entity's Name PUT
       // still lands (the Name PUT's re-send will cover it if this one raced the
       // instantiation). Instantiate-if-needed keeps a lone engine edit on a new
@@ -510,11 +517,35 @@ export function createForwardEditBridge(options: ForwardEditBridgeOptions): Forw
     });
   };
 
+  // #1469: same idea for VideoPlayer. Freezing stops the SDK7 tick but the engine
+  // keeps playing a loaded video, so while FROZEN forward `playing:false` (engine
+  // pauses it); on UNFREEZE re-forward the AUTHORED value so it resumes as authored.
+  // The CRDT keeps the authored value — this only changes what the engine plays.
+  const forwardVideoFrozen = (entity: Entity, video: unknown, frozen: boolean) => {
+    const v = video as Record<string, unknown> | null | undefined;
+    if (v == null) return;
+    const value = frozen ? { ...v, playing: false } : v;
+    enqueue(entity, async () => {
+      await ensureInstantiated(entity);
+      await forwardSet(entity, 'VideoPlayer', value);
+    });
+  };
+
+  // Freeze/resume all time-based playback (GLTF animation clips #1382, video #1469)
+  // with the scene run state. Called on arm (boot frozen) and by the run/freeze
+  // toggle.
   const setAnimationsFrozen = (frozen: boolean) => {
     const Animator = context.getForwardableComponent('core::Animator');
-    if (!Animator) return;
-    for (const [entity, animator] of context.engine.getEntitiesWith(Animator)) {
-      forwardAnimatorFrozen(entity, animator, frozen);
+    if (Animator) {
+      for (const [entity, animator] of context.engine.getEntitiesWith(Animator)) {
+        forwardAnimatorFrozen(entity, animator, frozen);
+      }
+    }
+    const VideoPlayer = context.getForwardableComponent('core::VideoPlayer');
+    if (VideoPlayer) {
+      for (const [entity, video] of context.engine.getEntitiesWith(VideoPlayer)) {
+        forwardVideoFrozen(entity, video, frozen);
+      }
     }
   };
 

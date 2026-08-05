@@ -429,6 +429,64 @@ describe('createForwardEditBridge', () => {
     });
   });
 
+  describe('VideoPlayer freeze (#1469)', () => {
+    it('should forward VideoPlayer with playing:false when frozen', async () => {
+      const VideoPlayer = components.VideoPlayer(ctx.engine);
+      const entity = ctx.engine.addEntity();
+      ctx.Name.create(entity, { value: 'Screen' });
+      VideoPlayer.create(entity, { src: 'video.mp4', playing: true });
+      await ctx.engine.update(1);
+      await new Promise(r => setTimeout(r, 0));
+      sent.length = 0;
+
+      bridge.setAnimationsFrozen(true);
+      await new Promise(r => setTimeout(r, 0));
+      await new Promise(r => setTimeout(r, 0));
+
+      const write = sent.find(s => s.cmd === 'set_component' && s.args[1] === 'VideoPlayer');
+      expect(write).toBeDefined();
+      expect(JSON.parse(write!.args[2]).playing).toBe(false);
+    });
+
+    it('should restore the authored VideoPlayer (playing) when unfrozen', async () => {
+      const VideoPlayer = components.VideoPlayer(ctx.engine);
+      const entity = ctx.engine.addEntity();
+      ctx.Name.create(entity, { value: 'Screen' });
+      VideoPlayer.create(entity, { src: 'video.mp4', playing: true });
+      await ctx.engine.update(1);
+      await new Promise(r => setTimeout(r, 0));
+      sent.length = 0;
+
+      bridge.setAnimationsFrozen(false);
+      await new Promise(r => setTimeout(r, 0));
+      await new Promise(r => setTimeout(r, 0));
+
+      const write = sent.find(s => s.cmd === 'set_component' && s.args[1] === 'VideoPlayer');
+      expect(write).toBeDefined();
+      expect(JSON.parse(write!.args[2]).playing).toBe(true);
+    });
+
+    it('should force a VideoPlayer PUT to playing:false while frozen', async () => {
+      // The default bridge is frozen. A video added/loaded while paused must not
+      // start playing in the editor (#1469).
+      const VideoPlayer = components.VideoPlayer(ctx.engine);
+      const entity = ctx.engine.addEntity();
+      ctx.Name.create(entity, { value: 'Screen' });
+      await ctx.engine.update(1);
+      await new Promise(r => setTimeout(r, 0));
+      sent.length = 0;
+
+      VideoPlayer.create(entity, { src: 'video.mp4', playing: true });
+      await ctx.engine.update(1);
+      await new Promise(r => setTimeout(r, 0));
+      await new Promise(r => setTimeout(r, 0));
+
+      const write = sent.find(s => s.cmd === 'set_component' && s.args[1] === 'VideoPlayer');
+      expect(write).toBeDefined();
+      expect(JSON.parse(write!.args[2]).playing).toBe(false);
+    });
+  });
+
   describe('when a console command fails', () => {
     it('should report via onError and not throw into the change loop', async () => {
       const errors: string[] = [];
