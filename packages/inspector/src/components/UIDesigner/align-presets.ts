@@ -24,7 +24,10 @@ export interface Size {
 }
 
 // Grid order (row-major: top row, middle row, bottom row).
-export const ANCHOR_PRESETS: AnchorPreset[] = [
+// Internal to `patchToPreset`, which scans them to recover the active preset from
+// a UiTransform. The panel composes a preset from its two axis selects instead of
+// picking one from this list, so it is no longer part of the module's surface.
+const ANCHOR_PRESETS: AnchorPreset[] = [
   'top-left',
   'top-center',
   'top-right',
