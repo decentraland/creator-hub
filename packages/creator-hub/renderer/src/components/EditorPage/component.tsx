@@ -19,6 +19,7 @@ import { initRpc } from '/@/modules/rpc';
 import { config } from '/@/config';
 import { useEditor } from '/@/hooks/useEditor';
 import { useSettings } from '/@/hooks/useSettings';
+import { useWorkspace } from '/@/hooks/useWorkspace';
 import { useSceneCustomCode } from '/@/hooks/useSceneCustomCode';
 import { useDeploy } from '/@/hooks/useDeploy';
 import { useConnectionStatus } from '/@/hooks/useConnectionStatus';
@@ -48,6 +49,21 @@ import type { PreviewOptionsProps } from './MenuOptions';
 
 import './styles.css';
 
+// The Bevy realm launches `sdk-commands start --no-client --data-layer`; an old
+// scene's local `@dcl/sdk-commands` predates those flags and fails with a raw CLI
+// usage dump (e.g. "unknown or unexpected option: --no-client"). Detect that so we
+// can show a clear "update dependencies" message instead of the dump (#1457).
+// Require BOTH the option-rejection phrasing AND one of our flags — matching a bare
+// "--data-layer"/"--no-client" mention would misfire on an unrelated build error that
+// merely prints the flag as text.
+function isOutdatedDepsError(message: string): boolean {
+  const rejectsOption = /(?:unknown|unexpected|unrecognized|invalid)[^\n]{0,40}option/i.test(
+    message,
+  );
+  const namesBevyFlag = /--(?:no-client|data-layer)/i.test(message);
+  return rejectsOption && namesBevyFlag;
+}
+
 export function EditorPage() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -75,6 +91,7 @@ export function EditorPage() {
     killBevyRealm,
   } = useEditor();
   const { settings, updateAppSettings } = useSettings();
+  const { updatePackages } = useWorkspace();
   const { flags: featureFlags } = useFeatureFlags();
   const { executeDeployment, getDeployment } = useDeploy();
   const deployment = project ? getDeployment(project.path) : undefined;
@@ -272,6 +289,16 @@ export function EditorPage() {
     killPreview();
     navigate('/scenes');
   }, [navigate, refreshProject, killPreview]);
+
+  // Recover from the outdated-deps load error (#1457): update the scene's packages.
+  // installProject toggles isInstallingProject, which re-runs the realm-start effect
+  // once the install finishes — so the editor retries automatically with fresh deps.
+  // Clear the error now so the loader shows the spinner instead of the error screen.
+  const handleUpdateDependencies = useCallback(() => {
+    if (!project) return;
+    setLoadError(null);
+    updatePackages(project);
+  }, [project, updatePackages]);
 
   const handleOpenPublishModal = useCallback(async () => {
     await handleActionWithWarningCheck(() => openModal('publish'));
@@ -479,12 +506,17 @@ export function EditorPage() {
     // instead of an infinite spinner with no way out.
     const stuck = loadError !== null || loadTimedOut;
     if (stuck) {
+      // An outdated-deps failure has a clear fix (Update dependencies), so show a
+      // friendly message + an update action instead of the raw CLI dump (#1457).
+      const outdatedDeps = loadError !== null && isOutdatedDepsError(loadError);
       return (
         <div className="loading loading-error">
           <img src={EditorPng} />
           <div className="loading-error-title">{t('editor.loading.failed.title')}</div>
           <div className="loading-error-message">
-            {loadError ?? t('editor.loading.failed.timeout')}
+            {outdatedDeps
+              ? t('editor.loading.failed.outdated_deps')
+              : (loadError ?? t('editor.loading.failed.timeout'))}
           </div>
           <Row>
             <Button
@@ -494,13 +526,23 @@ export function EditorPage() {
             >
               {t('editor.loading.failed.back')}
             </Button>
-            <Button
-              color="secondary"
-              startIcon={<CodeIcon />}
-              onClick={openCode}
-            >
-              {t('editor.header.actions.code')}
-            </Button>
+            {outdatedDeps ? (
+              <Button
+                color="primary"
+                startIcon={<RefreshIcon />}
+                onClick={handleUpdateDependencies}
+              >
+                {t('editor.loading.failed.update_deps')}
+              </Button>
+            ) : (
+              <Button
+                color="secondary"
+                startIcon={<CodeIcon />}
+                onClick={openCode}
+              >
+                {t('editor.header.actions.code')}
+              </Button>
+            )}
           </Row>
         </div>
       );

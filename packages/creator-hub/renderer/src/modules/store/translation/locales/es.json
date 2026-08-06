@@ -43,7 +43,9 @@
       "failed": {
         "title": "Error al cargar",
         "timeout": "La escena está tardando demasiado en cargar. Puede tener un error en su código.",
-        "back": "Volver a escenas"
+        "back": "Volver a escenas",
+        "outdated_deps": "Las dependencias de esta escena están desactualizadas y no son compatibles con el renderizador Bevy. Actualízalas para continuar.",
+        "update_deps": "Actualizar dependencias"
       }
     },
     "header": {

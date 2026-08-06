@@ -43,7 +43,9 @@
       "failed": {
         "title": "Loading failed",
         "timeout": "The scene is taking too long to load. It may have an error in its code.",
-        "back": "Back to scenes"
+        "back": "Back to scenes",
+        "outdated_deps": "This scene's dependencies are out of date and don't support the Bevy renderer. Update them to continue.",
+        "update_deps": "Update dependencies"
       }
     },
     "header": {

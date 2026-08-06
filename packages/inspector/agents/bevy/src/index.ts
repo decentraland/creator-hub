@@ -1,4 +1,4 @@
-import { GltfContainerLoadingState } from '@dcl/sdk/ecs';
+import { engine, GltfContainerLoadingState } from '@dcl/sdk/ecs';
 import type { Entity } from '@dcl/sdk/ecs';
 import { getPlayer } from '@dcl/sdk/players';
 
@@ -19,8 +19,10 @@ import {
   setupGizmo,
   setSelectedEntity,
   setSceneOffset,
+  setEditingEnabled,
 } from './gizmo';
 import { getDefaultSpawnWorld, setSpawnAreas } from './spawn-areas';
+import { setBrokenAssets } from './broken-assets';
 
 /**
  * Super-user editor agent for the inspector's Bevy renderer.
@@ -69,10 +71,10 @@ export function main(): void {
     if (msg.kind === 'set-selection') {
       setSelectedEntity(msg.entities, msg.mode, msg.alignToWorld, msg.snap);
       // Outline the selected entities in the viewport (render-only, never saved —
-      // see the engine's /highlight). Empty selection clears it. These are the
-      // inspected scene's entity ids, which /highlight resolves on the pinned
-      // scene — the same ids the gizmo/pick use.
-      highlightEntities(msg.entities.map(e => e.entity));
+      // see the engine's /highlight). Empty selection clears it. Use the dedicated
+      // `highlight` list (includes LOCKED entities, which have no gizmo but still
+      // outline — #1444); fall back to the gizmo `entities` for older callers.
+      highlightEntities(msg.highlight ?? msg.entities.map(e => e.entity));
       return;
     }
     // Drag-drop placement: raycast the ground under the pointer and reply with
@@ -128,6 +130,10 @@ export function main(): void {
       setSpawnAreas(msg.areas);
       return;
     }
+    if (msg.kind === 'set-broken-assets') {
+      setBrokenAssets(msg.assets);
+      return;
+    }
     // Freeze (static) or run the inspected scene (the toolbar's run/freeze toggle).
     if (msg.kind === 'set-scene-frozen') {
       void setSceneFrozen(msg.frozen);
@@ -145,14 +151,92 @@ export function main(): void {
       setVerticalInput(msg.up, msg.down);
       return;
     }
+    // Enable/disable viewport editing (click-to-pick + gizmo grab). Disabled lets
+    // clicks reach the running scene so the user can test mechanics (#1458).
+    if (msg.kind === 'set-editing-enabled') {
+      setEditingEnabled(msg.enabled);
+      return;
+    }
   });
 
   // setupGizmo installs the pointer-down handler (grab-or-pick) + drag system.
   setupGizmo();
   // setupCamera installs the (initially inactive) editor fly-camera.
   setupCamera();
+  // Watch the inspected scene's logs for a runtime error (#1448). The SDK wraps
+  // main() (and each system) in a try/catch that `console.error(e)`s the throw, so
+  // an uncaught scene error surfaces as a SceneError log entry (prefixed "ERROR ")
+  // — NOT a SystemError, which the engine only records for its own runtime failures.
+  // Report each new error so the host can notify + stop the scene. Throttled — the
+  // agent (a super scene) keeps ticking even while the inspected scene is frozen.
+  setupSceneErrorWatch();
 
   void boot();
+}
+
+// --- Scene runtime-error watch (#1448) ---
+
+/** Log-line signatures already reported, so a persisted error isn't re-toasted
+ * every poll. Cleared on Stop/reset (the reloaded scene starts a fresh log). */
+const reportedErrors = new Set<string>();
+let sinceErrorCheck = 0;
+const ERROR_CHECK_INTERVAL = 1.5; // seconds
+
+/** Poll `/scene_logs` for NEW error entries and report them to the host. */
+async function reportSceneErrors(): Promise<void> {
+  const api = getBevyApi();
+  if (!api) return;
+  let reply: string;
+  try {
+    reply = await api.consoleCommand('scene_logs', ['100']);
+  } catch {
+    return; // no pinned scene yet / command failed — nothing to report
+  }
+  // Each entry is `[<ts>] <Level>: <message>`. SceneError = a scene-side throw the
+  // SDK caught and console.error'd (prefixed "ERROR "); SystemError = an engine-level
+  // failure. Report either — both mean the scene is broken.
+  for (const line of reply.split('\n')) {
+    const match = line.match(/^\[[\d.]+\]\s+(SceneError|SystemError):\s*(.*)$/);
+    if (!match) continue;
+    if (reportedErrors.has(line)) continue;
+    reportedErrors.add(line);
+    // Skip benign DEV WARNINGS: React (and react-ecs) log warnings via console.error,
+    // so they arrive as SceneError entries (e.g. "ERROR Warning: Each child in a list
+    // should have a unique key prop"). These aren't fatal — the scene keeps running —
+    // so they must NOT trigger the "runtime error, can't run" toast + stop the scene.
+    // A real error never carries the framework's "Warning:" tag.
+    const stripped = match[2].replace(/^ERROR\s+/, '').trim();
+    if (/^Warning:/i.test(stripped)) continue;
+    bus.postToPage({ kind: 'scene-error', message: cleanErrorMessage(match[2]) });
+  }
+}
+
+/** Turn a raw log message into a short, single-line summary for the toast, or '' if
+ * the engine gave us nothing usable (the host then shows a generic detail). */
+function cleanErrorMessage(raw: string): string {
+  // `console.error(...)` prefixes every entry with "ERROR " (the engine's console
+  // shim) — drop it. The value may inline a stack as escaped or real `\n`; keep the
+  // first line only, and cap the length.
+  const withoutPrefix = raw.replace(/^ERROR\s+/, '');
+  let firstLine = withoutPrefix.split('\\n')[0].split('\n')[0].trim();
+  // The web engine serializes objects with JSON.stringify, so a thrown Error (no
+  // enumerable keys) collapses to "{}" — useless as a message. Treat contentless
+  // blobs as empty so the host falls back to a generic detail.
+  if (/^(\{\s*\}|\[\s*\]|null|""|'')$/.test(firstLine)) return '';
+  // JSON.stringify also wraps a plain string arg in quotes — unwrap for readability.
+  const quoted = firstLine.match(/^"(.*)"$/);
+  if (quoted) firstLine = quoted[1];
+  return firstLine.length > 200 ? `${firstLine.slice(0, 197)}...` : firstLine;
+}
+
+/** Install the throttled scene-error poll. */
+function setupSceneErrorWatch(): void {
+  engine.addSystem((dt: number) => {
+    sinceErrorCheck += dt;
+    if (sinceErrorCheck < ERROR_CHECK_INTERVAL) return;
+    sinceErrorCheck = 0;
+    void reportSceneErrors();
+  });
 }
 
 async function boot(): Promise<void> {
@@ -291,6 +375,9 @@ async function resetScene(): Promise<void> {
   const api = getBevyApi();
   if (!api || !pinnedSceneHash) return;
   const hash = pinnedSceneHash;
+  // The reload starts a fresh scene instance with a fresh log — drop the reported
+  // signatures so a re-thrown error surfaces again (#1448).
+  reportedErrors.clear();
   try {
     await api.consoleCommand('reload', [hash]);
   } catch (e) {
