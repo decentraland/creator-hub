@@ -53,8 +53,15 @@ import './styles.css';
 // scene's local `@dcl/sdk-commands` predates those flags and fails with a raw CLI
 // usage dump (e.g. "unknown or unexpected option: --no-client"). Detect that so we
 // can show a clear "update dependencies" message instead of the dump (#1457).
+// Require BOTH the option-rejection phrasing AND one of our flags — matching a bare
+// "--data-layer"/"--no-client" mention would misfire on an unrelated build error that
+// merely prints the flag as text.
 function isOutdatedDepsError(message: string): boolean {
-  return /--no-client|--data-layer|unknown or unexpected option/i.test(message);
+  const rejectsOption = /(?:unknown|unexpected|unrecognized|invalid)[^\n]{0,40}option/i.test(
+    message,
+  );
+  const namesBevyFlag = /--(?:no-client|data-layer)/i.test(message);
+  return rejectsOption && namesBevyFlag;
 }
 
 export function EditorPage() {

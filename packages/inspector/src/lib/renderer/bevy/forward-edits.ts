@@ -76,16 +76,29 @@ const CL_POINTER = 1;
  * set_component). Recursively collapse each `{$case, [case]}` to `{ [case]: ... }`;
  * a value with no oneof passes through unchanged.
  */
-function toEngineJson(value: unknown): unknown {
-  if (Array.isArray(value)) return value.map(toEngineJson);
+function toEngineJson(value: unknown, seen: WeakSet<object> = new WeakSet()): unknown {
   if (value && typeof value === 'object') {
-    const obj = value as Record<string, unknown>;
-    if (typeof obj.$case === 'string') {
-      return { [obj.$case]: toEngineJson(obj[obj.$case]) };
+    // Cycle guard: schema-decoded component values are trees today, but a back-
+    // reference would otherwise recurse forever. Track the current path (add on
+    // descent, remove on unwind) so a repeated sibling in a DAG isn't mistaken for a
+    // cycle; drop a true back-reference rather than loop.
+    if (seen.has(value)) return undefined;
+    seen.add(value);
+    let result: unknown;
+    if (Array.isArray(value)) {
+      result = value.map(v => toEngineJson(v, seen));
+    } else {
+      const obj = value as Record<string, unknown>;
+      if (typeof obj.$case === 'string') {
+        result = { [obj.$case]: toEngineJson(obj[obj.$case], seen) };
+      } else {
+        const out: Record<string, unknown> = {};
+        for (const [key, v] of Object.entries(obj)) out[key] = toEngineJson(v, seen);
+        result = out;
+      }
     }
-    const out: Record<string, unknown> = {};
-    for (const [key, v] of Object.entries(obj)) out[key] = toEngineJson(v);
-    return out;
+    seen.delete(value);
+    return result;
   }
   return value;
 }
@@ -476,26 +489,15 @@ export function createForwardEditBridge(options: ForwardEditBridgeOptions): Forw
       const readable = component as { getOrNull?: (e: Entity) => unknown };
       const current = value ?? readable.getOrNull?.(entity);
       if (current == null) return;
-      // An Animator PUT that arrives WHILE THE SCENE IS FROZEN must be forced to
-      // playing:false, not forwarded as-is. After a Stop/reload the scene's GLTFs
-      // re-load and re-PUT their Animator with the authored playing:true — which
-      // would resume the animation a beat after the freeze (#1421: "animations run
-      // for a couple frames after stop"). Route it through forwardAnimatorFrozen so
-      // a frozen scene's clips stay paused; when unfrozen it forwards as-is.
-      if (engineName === 'Animator' && isFrozen()) {
-        forwardAnimatorFrozen(entity, current, true);
-        return;
-      }
-      // Likewise a VideoPlayer PUT while frozen (a fresh load, or an edit) must not
-      // start the video playing in a paused editor (#1469).
-      if (engineName === 'VideoPlayer' && isFrozen()) {
-        forwardVideoFrozen(entity, current, true);
-        return;
-      }
-      // A ParticleSystem PUT while frozen (adding one, or editing it) must not start
-      // emitting in a paused editor (#1467) — force PS_PAUSED.
-      if (engineName === 'ParticleSystem' && isFrozen()) {
-        forwardParticlesFrozen(entity, current, true);
+      // A time-based component PUT that arrives WHILE THE SCENE IS FROZEN must be
+      // forced to its paused override, not forwarded as-is. After a Stop/reload the
+      // scene's GLTFs re-load and re-PUT their authored Animator (playing:true) —
+      // which would resume playback a beat after the freeze (#1421: "animations run
+      // for a couple frames after stop"); likewise a VideoPlayer (#1469) or
+      // ParticleSystem (#1467) added/loaded while paused must not start playing.
+      // Route it through forwardFrozenOverride so a frozen scene stays paused.
+      if (isFrozen() && FROZEN_OVERRIDES.has(engineName)) {
+        forwardFrozenOverride(entity, engineName, current, true);
         return;
       }
       // Serialize the forward so a component arriving before its entity's Name PUT
@@ -587,49 +589,52 @@ export function createForwardEditBridge(options: ForwardEditBridgeOptions): Forw
     // Timed out waiting for the file — set anyway; a later refresh/preview picks it up.
   }
 
-  // #1382: pause/resume GLTF animation playback with the scene freeze. Freezing
-  // stops the SDK7 tick but the engine's AnimationPlayers keep advancing GLTF
-  // clips (update_animations sets each clip's speed from Animator.states[].playing
-  // — playing:false → speed 0). So while FROZEN, forward every animated entity's
-  // Animator with all states playing:false (engine pauses the clips); on UNFREEZE,
-  // re-forward the AUTHORED Animator so it resumes as the scene intends. The CRDT
-  // keeps the authored value — this only changes what the engine plays.
-  const forwardAnimatorFrozen = (entity: Entity, animator: unknown, frozen: boolean) => {
-    const a = animator as { states?: Array<Record<string, unknown>> } | null | undefined;
-    const value = frozen ? { states: (a?.states ?? []).map(s => ({ ...s, playing: false })) } : a;
+  // Freeze/resume time-based playback with the scene freeze. Freezing stops the SDK7
+  // tick but the engine keeps advancing each of these on its own, so while FROZEN we
+  // forward a paused override; on UNFREEZE we forward the AUTHORED value so it resumes
+  // as the scene intends. The CRDT always keeps the authored value — this only changes
+  // what the engine plays. Each entry maps the engine component to its paused override
+  // (returns null to skip a missing value):
+  //  - Animator (#1382/#1421): AnimationPlayers advance clips from states[].playing —
+  //    force every state playing:false (a null Animator still pauses as {states:[]}).
+  //  - VideoPlayer (#1469): a loaded video keeps playing — force playing:false.
+  //  - ParticleSystem (#1467): emission/simulation keeps running — force PS_PAUSED.
+  const FROZEN_OVERRIDES = new Map<string, (raw: unknown) => unknown>([
+    [
+      'Animator',
+      raw => {
+        const a = raw as { states?: Array<Record<string, unknown>> } | null | undefined;
+        return { states: (a?.states ?? []).map(s => ({ ...s, playing: false })) };
+      },
+    ],
+    [
+      'VideoPlayer',
+      raw => (raw == null ? null : { ...(raw as Record<string, unknown>), playing: false }),
+    ],
+    [
+      'ParticleSystem',
+      raw =>
+        raw == null
+          ? null
+          : { ...(raw as Record<string, unknown>), playbackState: PARTICLE_PLAYBACK_PAUSED },
+    ],
+  ]);
+
+  // Forward one time-based component honoring the freeze state: paused override while
+  // FROZEN, authored value while running. A null value (missing, or an override that
+  // opted out) is skipped.
+  const forwardFrozenOverride = (
+    entity: Entity,
+    engineName: string,
+    raw: unknown,
+    frozen: boolean,
+  ) => {
+    const override = FROZEN_OVERRIDES.get(engineName);
+    const value = frozen && override ? override(raw) : raw;
     if (value == null) return;
     enqueue(entity, async () => {
       await ensureInstantiated(entity);
-      await forwardSet(entity, 'Animator', value);
-    });
-  };
-
-  // #1469: same idea for VideoPlayer. Freezing stops the SDK7 tick but the engine
-  // keeps playing a loaded video, so while FROZEN forward `playing:false` (engine
-  // pauses it); on UNFREEZE re-forward the AUTHORED value so it resumes as authored.
-  // The CRDT keeps the authored value — this only changes what the engine plays.
-  const forwardVideoFrozen = (entity: Entity, video: unknown, frozen: boolean) => {
-    const v = video as Record<string, unknown> | null | undefined;
-    if (v == null) return;
-    const value = frozen ? { ...v, playing: false } : v;
-    enqueue(entity, async () => {
-      await ensureInstantiated(entity);
-      await forwardSet(entity, 'VideoPlayer', value);
-    });
-  };
-
-  // #1467: same idea for a ParticleSystem. The engine keeps emitting/simulating
-  // particles when the SDK7 tick is frozen, so while FROZEN forward
-  // playbackState = PS_PAUSED (emission + simulation frozen); on UNFREEZE re-forward
-  // the AUTHORED value so it resumes as authored. Editor-only — the CRDT keeps the
-  // authored value.
-  const forwardParticlesFrozen = (entity: Entity, particles: unknown, frozen: boolean) => {
-    const p = particles as Record<string, unknown> | null | undefined;
-    if (p == null) return;
-    const value = frozen ? { ...p, playbackState: PARTICLE_PLAYBACK_PAUSED } : p;
-    enqueue(entity, async () => {
-      await ensureInstantiated(entity);
-      await forwardSet(entity, 'ParticleSystem', value);
+      await forwardSet(entity, engineName, value);
     });
   };
 
@@ -637,22 +642,11 @@ export function createForwardEditBridge(options: ForwardEditBridgeOptions): Forw
   // particle systems #1467) with the scene run state. Called on arm (boot frozen)
   // and by the run/freeze toggle.
   const setAnimationsFrozen = (frozen: boolean) => {
-    const Animator = context.getForwardableComponent('core::Animator');
-    if (Animator) {
-      for (const [entity, animator] of context.engine.getEntitiesWith(Animator)) {
-        forwardAnimatorFrozen(entity, animator, frozen);
-      }
-    }
-    const VideoPlayer = context.getForwardableComponent('core::VideoPlayer');
-    if (VideoPlayer) {
-      for (const [entity, video] of context.engine.getEntitiesWith(VideoPlayer)) {
-        forwardVideoFrozen(entity, video, frozen);
-      }
-    }
-    const ParticleSystem = context.getForwardableComponent('core::ParticleSystem');
-    if (ParticleSystem) {
-      for (const [entity, particles] of context.engine.getEntitiesWith(ParticleSystem)) {
-        forwardParticlesFrozen(entity, particles, frozen);
+    for (const engineName of FROZEN_OVERRIDES.keys()) {
+      const component = context.getForwardableComponent(`core::${engineName}`);
+      if (!component) continue;
+      for (const [entity, value] of context.engine.getEntitiesWith(component)) {
+        forwardFrozenOverride(entity, engineName, value, frozen);
       }
     }
   };

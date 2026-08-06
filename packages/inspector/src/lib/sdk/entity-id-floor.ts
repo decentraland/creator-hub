@@ -33,6 +33,11 @@ const ENTITY_NUMBER_MASK = 0xffff;
 // we refuse it rather than brick the editor's entity allocator.
 const MAX_FLOOR = ENTITY_NUMBER_MASK - 1;
 
+// Module-level, single floor. This assumes ONE editor session at a time (single-
+// instance Electron app): the active Bevy renderer publishes here and the inspector
+// engine reads here, with resetEntityIdFloor() on dispose returning to a clean slate.
+// If the editor ever hosts concurrent renderer/scene instances, this shared global
+// would need to become per-instance (the two engines would otherwise fight over it).
 let floor = 0;
 
 /** The current floor: new editor entities are allocated with a number > this. */
