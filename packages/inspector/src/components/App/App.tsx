@@ -69,7 +69,12 @@ const App = () => {
         direction="vertical"
         autoSaveId="vertical"
       >
-        <Panel defaultSize={70}>
+        {/*
+          No defaultSize: it takes whatever the bottom panel leaves. Pinning it
+          to 70 would not add up to 100% once the bottom panel asks for 14 in 2D,
+          and the library rescales a layout that does not sum to 100.
+        */}
+        <Panel>
           <PanelGroup
             direction="horizontal"
             autoSaveId="horizontal"
@@ -158,8 +163,17 @@ const App = () => {
         {!hiddenPanels[PanelName.ASSETS] && (
           <>
             <PanelResizeHandle className="vertical-handle" />
+            {/*
+              Palette (2D) and asset catalog (3D) share this slot but want very
+              different heights. react-resizable-panels keys its saved layout by
+              Panel `id` and only re-reads it when a panel (un)registers, so a
+              single id makes each mode inherit — and then overwrite — the
+              other's split, which is what left dead space under the palette.
+              Switching the id is both the per-mode key and the re-read trigger;
+              changing `defaultSize` alone does neither.
+            */}
             <Panel
-              id="assets"
+              id={isUIDesigner ? 'palette' : 'assets'}
               defaultSize={isUIDesigner ? 14 : 30}
               {...(height
                 ? { collapsible: true, collapsedSize: footerMin, minSize: collapseAt }
