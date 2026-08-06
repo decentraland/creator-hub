@@ -55,6 +55,21 @@ describe('when the Anchor field shows an authored pin', () => {
     expect(preview.getAttribute('data-v')).toBeNull();
   });
 
+  // Displaying `Top` for an axis with no pinned edge would claim a pin the node
+  // does not have — and the preview, which shows no marker for it, would disagree.
+  it('should read None on an axis with no pinned edge', () => {
+    renderField({ positionType: YGPT_ABSOLUTE, positionLeft: 12, positionLeftUnit: YGU_POINT });
+
+    expect(screen.getByText('None')).toBeTruthy();
+    expect(screen.queryByText('Top')).toBeNull();
+  });
+
+  it('should offer None only while the axis is unpinned', () => {
+    renderField(CENTERED_BOTTOM);
+
+    expect(screen.queryByText('None')).toBeNull();
+  });
+
   it('should show no marker cell at all for a node that is still in flow', () => {
     const { preview } = renderField({ positionLeft: 12, positionLeftUnit: YGU_POINT });
 

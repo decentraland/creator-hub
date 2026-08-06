@@ -50,6 +50,22 @@ export interface BindingSurface {
 
 const EMPTY: BindingSurface = { variables: [], actions: [] };
 
+// The names the generated handler signature occupies: adding an action splices a
+// top-level `function <name>({ state, props, value }: UiAction) {}`.
+const RESERVED_ACTION_NAMES = ['state', 'props', 'value', 'UiAction'];
+
+// Whether a new @ui-action may NOT be called `name`. That function is spliced at
+// top level, so it shares a scope with every other action, with the surface's
+// variables and props, and with its own signature's names — and a collision is a
+// scene that stops compiling, with nothing in the editor to say why.
+export function isActionNameTaken(surface: BindingSurface, name: string): boolean {
+  return (
+    RESERVED_ACTION_NAMES.includes(name) ||
+    surface.actions.some(a => a.name === name) ||
+    surface.variables.some(v => v.name === name)
+  );
+}
+
 // Build a default-value lookup (binding expr → value string) from a surface's
 // variables, for previewing bound text on the canvas (`state.score` → "0"). Only
 // vars carrying a known default (state vars / literal markers) are included;

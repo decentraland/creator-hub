@@ -415,14 +415,15 @@ describe('buildGroups', () => {
     const transparency = () => fieldsIn('UiEntity', 'Style').find(f => f.label === 'Transparency');
 
     // The pair must be exact inverses or a value would drift on every focus/blur
-    // cycle that rewrites what it reads.
+    // cycle that rewrites what it reads. Fractional percents included: the display
+    // keeps two decimals, so the opacity side has to keep four to match.
     it('should round-trip the extremes and a mid value exactly', () => {
       const f = transparency();
-      for (const display of [0, 33, 50, 100]) {
-        expect(f?.toDisplay?.(f.fromDisplay!(display))).toBe(display);
+      for (const display of [0, 33, 33.5, 50, 66.67, 100]) {
+        expect(f?.toDisplay?.(f.fromDisplay!(display)), String(display)).toBe(display);
       }
-      for (const opacity of [0, 0.25, 1]) {
-        expect(f?.fromDisplay?.(f.toDisplay!(opacity))).toBe(opacity);
+      for (const opacity of [0, 0.25, 0.665, 1]) {
+        expect(f?.fromDisplay?.(f.toDisplay!(opacity)), String(opacity)).toBe(opacity);
       }
     });
 

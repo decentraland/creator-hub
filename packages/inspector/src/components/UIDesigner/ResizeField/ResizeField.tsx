@@ -30,6 +30,9 @@ interface ResizeFieldProps {
   // The PARENT's flexDirection — which axis Fill grows along. Read by the panel,
   // since a node's own component cannot answer it.
   parentFlexDirection: number;
+  // Editing a non-base interaction layer, where Fill cannot be entered or left
+  // (see resizeModesFor).
+  overriding?: boolean;
   onPatch: (patch: Record<string, unknown>) => void;
 }
 
@@ -49,13 +52,13 @@ export const ResizeField: React.FC<ResizeFieldProps> = ({
   entity,
   bindings,
   parentFlexDirection,
+  overriding,
   onPatch,
 }) => {
   const dispatch = useAppDispatch();
   const aspectLockedMap = useAppSelector(getAspectLockedNodes);
   const aspectLocked = !!field.aspectLockable && !!aspectLockedMap[entity as unknown as number];
   const mainAxis = mainAxisFor(parentFlexDirection);
-  const modes = resizeModesFor(value);
 
   const patchValue = (axis: ResizeAxis, mode: ResizeMode, next: number) => {
     const patch = resizeValuePatch(axis, mode, next);
@@ -79,6 +82,7 @@ export const ResizeField: React.FC<ResizeFieldProps> = ({
       {(field.subFields ?? []).map(sub => {
         const axis = sub.path as ResizeAxis;
         const mode = resizeMode(value, axis, mainAxis);
+        const modes = resizeModesFor(value, { overriding, current: mode });
         const numeric = (value?.[axis] as number | undefined) ?? 0;
         return (
           <BindableSubField

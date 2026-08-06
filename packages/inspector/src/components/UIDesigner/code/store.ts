@@ -1362,14 +1362,14 @@ async function writeUiTransformFields(
 
 // The ergonomic fields that pin a node to the top-left px offset it was dropped
 // at. The canvas measures the drop on screen, so whatever pinned the node before
-// has to go with it: `dragPinPatch` clears the trailing edges and the margins
-// that shift them (an anchor's centering counter-margin lives there). Routed
-// through the panel's surgical patch path, so the rest of the object — sizes,
-// padding, props the editor doesn't model — is left alone.
+// has to go with it: `dragPinPatch` clears the trailing edges and the centering
+// counter-margin an anchor leaves behind. Routed through the panel's surgical
+// patch path, so the rest of the object — sizes, padding, props the editor
+// doesn't model — is left alone.
 function dropPinFields(entityId: number, top: number, left: number): Record<string, unknown> {
   const node = findCodeNode(state.parsed?.root, entityId);
   const current = (node?.uiTransform as Record<string, unknown>) ?? {};
-  return uiTransformPatchFields(current, dragPinPatch(top, left));
+  return uiTransformPatchFields(current, dragPinPatch(top, left, current));
 }
 
 // Move an ABSOLUTE node: splice the ergonomic `position: { top, left }` edges.

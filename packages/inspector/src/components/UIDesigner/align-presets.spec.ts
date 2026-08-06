@@ -68,6 +68,14 @@ describe('the Anchor control', () => {
       expect(anchorPatch('center', { width: 81, height: 0 })).toMatchObject({ marginLeft: -41 });
     });
 
+    // A zero-extent axis centers with a counter-margin of -0, which serializes as
+    // 0 — the read has to accept that as the idiom or the pin never comes back.
+    it('should read a zero-extent axis back as centered', () => {
+      expect(readAnchor(anchorPatch('middle', { width: 81, height: 0 }))).toMatchObject({
+        v: 'middle',
+      });
+    });
+
     // Each dropdown owns one axis: picking Center horizontally must not disturb a
     // vertical pin that is already there.
     it('should touch only its own axis', () => {
@@ -100,7 +108,7 @@ describe('the Anchor control', () => {
     // Deliberate: a dragged absolute node genuinely IS pinned to its top-left, so
     // the dropdowns read Left/Top for it instead of showing nothing.
     it('should read a freehand-dragged node as top-left', () => {
-      expect(readAnchor(dragPinPatch(123, 456))).toEqual({ h: 'left', v: 'top' });
+      expect(readAnchor(dragPinPatch(123, 456, null))).toEqual({ h: 'left', v: 'top' });
     });
 
     it('should let the leading edge win when both edges are authored', () => {
@@ -129,8 +137,8 @@ describe('the Anchor control', () => {
   });
 
   describe('when a drag commits the dropped position', () => {
-    it('should write top-left px and clear the trailing edges and counter-margins', () => {
-      expect(dragPinPatch(30, 40)).toEqual({
+    it('should write top-left px and clear the trailing edges', () => {
+      expect(dragPinPatch(30, 40, pinned('left', 'top'))).toEqual({
         positionType: YGPT_ABSOLUTE,
         positionTop: 30,
         positionTopUnit: YGU_POINT,
@@ -140,19 +148,34 @@ describe('the Anchor control', () => {
         positionRightUnit: YGU_UNDEFINED,
         positionBottom: 0,
         positionBottomUnit: YGU_UNDEFINED,
-        marginTop: 0,
-        marginTopUnit: YGU_UNDEFINED,
-        marginLeft: 0,
-        marginLeftUnit: YGU_UNDEFINED,
-        marginRight: 0,
-        marginRightUnit: YGU_UNDEFINED,
-        marginBottom: 0,
-        marginBottomUnit: YGU_UNDEFINED,
       });
     });
 
+    it('should clear a leading margin only where it was a centering counter-margin', () => {
+      const patch = dragPinPatch(30, 40, pinned('center', 'top'));
+      expect(patch).toMatchObject({ marginLeft: 0, marginLeftUnit: YGU_UNDEFINED });
+      expect(Object.keys(patch).filter(k => /^marginTop/.test(k))).toEqual([]);
+    });
+
+    // Every patch key reaches source, and an emptied margin group deletes the
+    // authored `margin` outright — so a blanket clear here would make any 1px drag
+    // silently drop a hand-set margin.
+    it('should leave a hand-authored margin alone', () => {
+      const authored = {
+        ...pinned('left', 'top'),
+        marginTop: 10,
+        marginTopUnit: YGU_POINT,
+        marginRight: 4,
+        marginRightUnit: YGU_POINT,
+      };
+      expect(Object.keys(dragPinPatch(30, 40, authored)).filter(k => /^margin/.test(k))).toEqual(
+        [],
+      );
+    });
+
     it('should undo a centered pin, not stack a second one on top of it', () => {
-      expect(readAnchor({ ...pinned('center', 'middle'), ...dragPinPatch(5, 6) })).toEqual({
+      const centered = pinned('center', 'middle');
+      expect(readAnchor({ ...centered, ...dragPinPatch(5, 6, centered) })).toEqual({
         h: 'left',
         v: 'top',
       });

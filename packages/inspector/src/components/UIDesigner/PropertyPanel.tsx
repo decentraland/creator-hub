@@ -60,6 +60,7 @@ import {
   spliceComponentPatch,
   useCodeState,
 } from './code/store';
+import { isActionNameTaken } from './code/bindings';
 import { INTERACTION_STATES, type InteractionStateKey } from './code/interaction-convention';
 import { ComponentRefPanel } from './code/ComponentRefPanel';
 import type { CodeUINode } from './code/types';
@@ -294,14 +295,16 @@ const AddPropertyMenu: React.FC<{ fields: FieldConfig[]; onAdd: (f: FieldConfig)
 // popover math). The design labels the input "Description"; what it produces is
 // the handler's NAME, so it has to be a valid identifier — the button stays
 // disabled until it is, because the name is spliced into source as code and
-// interpolating it raw would be an injection / build-break vector.
+// interpolating it raw would be an injection / build-break vector — and, for the
+// same reason, until the name is free of everything else in that scope
+// (`isActionNameTaken`).
 const AddActionMenu: React.FC = () => {
   const { bindingSurface } = useCodeState();
   const ref = useRef<HTMLDetailsElement>(null);
   const [name, setName] = useState('');
 
   const trimmed = name.trim();
-  const taken = bindingSurface.actions.some(a => a.name === trimmed);
+  const taken = isActionNameTaken(bindingSurface, trimmed);
   const canAdd = isValidIdentifier(trimmed) && !taken;
 
   const add = () => {
@@ -784,6 +787,7 @@ const PropertyPanelComponent: React.FC = () => {
           bindings={bindingsByField}
           mixed={mixedByField[`${field.componentId}.${field.path}`]}
           parentFlexDirection={parentFlexDirection}
+          overriding={overriding}
           write={writeAndDispatch}
         />
         {removable ? (
@@ -1057,6 +1061,9 @@ interface FieldRowProps {
   mixed?: CanvasSegment[];
   // The PARENT's flexDirection — which axis the Resize control's Fill grows along.
   parentFlexDirection: number;
+  // Editing a non-base interaction layer, where a patch that removes a key means
+  // "inherit from Default" — which is why Resize withholds Fill there.
+  overriding: boolean;
   // The stable component writer; FieldRow binds it to its own field.componentId.
   // Passing the writer (not a per-field arrow) keeps the prop stable so the
   // memoized row only re-renders when its value/bindings actually change.
@@ -1071,6 +1078,7 @@ const FieldRow = React.memo(function FieldRow({
   bindings,
   mixed,
   parentFlexDirection,
+  overriding,
   write,
 }: FieldRowProps) {
   const onPatch = useCallback(
@@ -1241,6 +1249,7 @@ const FieldRow = React.memo(function FieldRow({
             entity={entity}
             bindings={bindings}
             parentFlexDirection={parentFlexDirection}
+            overriding={overriding}
             onPatch={onPatch}
           />
         </Block>

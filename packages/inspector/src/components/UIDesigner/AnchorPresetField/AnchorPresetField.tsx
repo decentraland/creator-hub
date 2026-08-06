@@ -33,6 +33,12 @@ const V_OPTIONS: { value: AnchorV; label: string }[] = [
   { value: 'bottom', label: 'Bottom' },
 ];
 
+// An axis with no pinned edge gets its own option rather than displaying Left/Top:
+// the preview shows no marker for it, so a dropdown reading `Left` would be
+// claiming a pin the node does not have. Offered only while the axis reads null —
+// once pinned, there is no patch that unpins one axis alone.
+const UNPINNED = { value: '', label: 'None' };
+
 export const AnchorPresetField: React.FC<AnchorPresetFieldProps> = ({
   value,
   entity,
@@ -63,20 +69,26 @@ export const AnchorPresetField: React.FC<AnchorPresetFieldProps> = ({
         <div className="ui-designer-anchor-axes">
           <div className="ui-designer-anchor-axis horizontal">
             <Dropdown
-              options={H_OPTIONS}
-              value={h ?? 'left'}
+              options={h ? H_OPTIONS : [UNPINNED, ...H_OPTIONS]}
+              value={h ?? ''}
               disabled={disabled}
               aria-label="Horizontal anchor"
-              onChange={e => apply((e.target as HTMLSelectElement).value as AnchorH)}
+              onChange={e => {
+                const pin = (e.target as HTMLSelectElement).value as AnchorH | '';
+                if (pin) apply(pin);
+              }}
             />
           </div>
           <div className="ui-designer-anchor-axis vertical">
             <Dropdown
-              options={V_OPTIONS}
-              value={v ?? 'top'}
+              options={v ? V_OPTIONS : [UNPINNED, ...V_OPTIONS]}
+              value={v ?? ''}
               disabled={disabled}
               aria-label="Vertical anchor"
-              onChange={e => apply((e.target as HTMLSelectElement).value as AnchorV)}
+              onChange={e => {
+                const pin = (e.target as HTMLSelectElement).value as AnchorV | '';
+                if (pin) apply(pin);
+              }}
             />
           </div>
         </div>

@@ -92,15 +92,25 @@ export function anchorPatch(pin: AnchorPin, elem: Size): Record<string, unknown>
 }
 
 // A canvas drag/resize commits where the node was DROPPED (measured on screen), so
-// it lands as a plain top-left px pin: the trailing edges and any centering
-// counter-margin have to go, or the node ends up doubly pinned — Yoga adds the
-// leading margin to the leading position, and a surviving right/bottom edge
-// fights the new left/top.
-export function dragPinPatch(top: number, left: number): Record<string, unknown> {
-  return {
-    ...axisPatch(H_AXIS, 'left', left),
-    ...axisPatch(V_AXIS, 'top', top),
-  };
+// it lands as a plain top-left px pin: the trailing edges have to go, or a
+// surviving right/bottom edge fights the new left/top. Of the margins, only a
+// centering counter-margin does (Yoga adds the leading margin to the leading
+// position, so it would offset the node past where it was dropped) — clearing
+// them all would make any drag delete a hand-authored `margin`.
+export function dragPinPatch(
+  top: number,
+  left: number,
+  transform: Record<string, unknown> | null,
+): Record<string, unknown> {
+  const patch: Record<string, unknown> = { positionType: POSITION_ABSOLUTE };
+  for (const [axis, offset] of [
+    [H_AXIS, left],
+    [V_AXIS, top],
+  ] as const) {
+    len(patch, `position${axis.lead}`, offset, YGU_POINT);
+    clear(patch, `position${axis.trail}`);
+  }
+  return { ...patch, ...clearedCenterMargins(transform) };
 }
 
 function readAxis<Pin extends AnchorPin>(t: Record<string, unknown>, axis: Axis<Pin>): Pin | null {
@@ -110,7 +120,10 @@ function readAxis<Pin extends AnchorPin>(t: Record<string, unknown>, axis: Axis<
     unit(lead) === YGU_PERCENT &&
     t[lead] === CENTER_PERCENT &&
     unit(`margin${axis.lead}`) === YGU_POINT &&
-    ((t[`margin${axis.lead}`] as number | undefined) ?? 0) < 0
+    // `<=`, not `<`: a zero-extent axis centers with a counter-margin of -0, which
+    // serializes as 0. Safe because the branch already requires a 50% leading edge,
+    // which no plain pin ever writes.
+    ((t[`margin${axis.lead}`] as number | undefined) ?? 0) <= 0
   ) {
     return axis.pins.center;
   }

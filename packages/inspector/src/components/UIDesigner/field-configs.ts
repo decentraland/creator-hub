@@ -592,6 +592,11 @@ export function buildLayoutGroup(isContainer: boolean) {
 // bare inversion leaves behind (100 − 0.67·100 is 32.99999999999999).
 const round2 = (n: number) => Math.round(n * 100) / 100;
 
+// The same grid seen from the opacity side of the flip: two decimals of PERCENT
+// are four of opacity. Rounding the inverse any coarser would swallow a
+// fractional percent — 33.5 stored as 0.67 redisplays as 33.
+const round4 = (n: number) => Math.round(n * 10000) / 10000;
+
 // --- Style group ---
 //
 // Everything about how the node LOOKS, in one place. This replaces the former
@@ -615,7 +620,7 @@ const STYLE_GROUP = {
       // Unset opacity renders fully opaque, i.e. no transparency at all.
       defaultValue: 1,
       toDisplay: (opacity: number) => round2(100 - opacity * 100),
-      fromDisplay: (transparency: number) => round2((100 - transparency) / 100),
+      fromDisplay: (transparency: number) => round4((100 - transparency) / 100),
       info: '100% is fully transparent, 0% fully opaque. Stored as the SDK’s `opacity`, which runs the other way.',
     },
     {

@@ -101,11 +101,21 @@ export function resizeMode(
  * Which modes to offer. Fill is flex-fill, which Yoga applies only to a node in
  * flow; an absolute node keeps Fixed / Percent / Hug (`auto` IS honoured on an
  * absolute node — it sizes from the content there too).
+ *
+ * `overriding` — editing a non-base interaction layer — withholds it too. Entering
+ * Fill means REMOVING the axis size, and in an override layer a removed key means
+ * "inherit from Default", not "unset": Default's size would keep winning, the
+ * classifier would still read Fixed, and the dropdown would snap back leaving an
+ * inert `flexGrow` behind. Passing `current` keeps a node that already reads Fill
+ * from Default showing it, so the mode on screen is never absent from its own list.
  */
-export function resizeModesFor(transform: Record<string, unknown> | null): ResizeMode[] {
-  return flowValue(transform ?? {}) === 'absolute'
-    ? ALL_MODES.filter(m => m !== 'fill')
-    : ALL_MODES;
+export function resizeModesFor(
+  transform: Record<string, unknown> | null,
+  opts: { overriding?: boolean; current?: ResizeMode } = {},
+): ResizeMode[] {
+  const offerFill =
+    flowValue(transform ?? {}) !== 'absolute' && (!opts.overriding || opts.current === 'fill');
+  return offerFill ? ALL_MODES : ALL_MODES.filter(m => m !== 'fill');
 }
 
 const UNIT_FOR_MODE: Partial<Record<ResizeMode, number>> = {

@@ -4,7 +4,7 @@ import { createPortal } from 'react-dom';
 import { isValidIdentifier } from '../../../lib/sdk/operations/validators';
 import { usePopoverPosition } from '../../ui/usePopoverPosition';
 import type { FieldConfig, FieldKind } from '../field-configs';
-import type { BindVariable } from '../code/bindings';
+import { type BindVariable, isActionNameTaken } from '../code/bindings';
 import { addBindAction, addBindVariable, useCodeState } from '../code/store';
 
 import './VariablePicker.css';
@@ -117,7 +117,7 @@ export const VariablePicker: React.FC<VariablePickerProps> = ({
       return;
     }
     const taken = isCallback
-      ? bindingSurface.actions.some(a => a.name === trimmed)
+      ? isActionNameTaken(bindingSurface, trimmed)
       : bindingSurface.variables.some(v => v.name === trimmed);
     if (taken) {
       setError('Name already in use');

@@ -137,6 +137,28 @@ describe('resizeModesFor', () => {
   it('should withhold Fill from an absolute node but keep Hug', () => {
     expect(resizeModesFor({ positionType: ABSOLUTE })).toEqual(['fixed', 'percent', 'hug']);
   });
+
+  // In an override layer a removed key means "inherit from Default", not "unset".
+  // Entering Fill removes the axis size — Default's size would keep winning, the
+  // classifier would still read Fixed, and the pick would snap back leaving an
+  // inert flexGrow in the layer.
+  describe('when editing a non-base interaction layer', () => {
+    it('should withhold Fill, which needs to REMOVE the size it cannot remove', () => {
+      expect(resizeModesFor({}, { overriding: true, current: 'fixed' })).toEqual([
+        'fixed',
+        'percent',
+        'hug',
+      ]);
+    });
+
+    // Read is unchanged, so an axis filling in Default still reads Fill here — the
+    // mode on screen must be in its own dropdown or the control renders blank.
+    it('should keep offering Fill to an axis that already reads as filling', () => {
+      expect(resizeModesFor({ flexGrow: 1 }, { overriding: true, current: 'fill' })).toContain(
+        'fill',
+      );
+    });
+  });
 });
 
 describe('resizePatch', () => {
