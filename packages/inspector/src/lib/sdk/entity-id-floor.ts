@@ -23,6 +23,16 @@ import { createEntityContainer } from '@dcl/ecs/dist/engine/entity';
  * is a transparent pass-through there.
  */
 
+// An entity id packs a 16-bit NUMBER (low) and a 16-bit VERSION (high):
+// `id = (number & 0xffff) | (version << 16)`. The floor is a NUMBER floor — a code
+// entity and an editor entity collide by number regardless of version — so anything
+// derived from a raw entity id must be masked to the low 16 bits first, and the floor
+// itself can never be >= the number space or allocation would starve (#1468).
+const ENTITY_NUMBER_MASK = 0xffff;
+// One below the max entity number: a floor at/above this leaves no allocatable id, so
+// we refuse it rather than brick the editor's entity allocator.
+const MAX_FLOOR = ENTITY_NUMBER_MASK - 1;
+
 let floor = 0;
 
 /** The current floor: new editor entities are allocated with a number > this. */
@@ -30,11 +40,13 @@ export function getEntityIdFloor(): number {
   return floor;
 }
 
-/** Raise the floor to the running renderer's max live entity id (monotonic within a
+/** Raise the floor to the running renderer's max live entity NUMBER (monotonic within a
  * scene session). Never lowers it — a transient smaller reading can't reintroduce a
- * collision. */
-export function setEntityIdFloor(maxLiveEntityId: number): void {
-  if (maxLiveEntityId > floor) floor = maxLiveEntityId;
+ * collision — and never raises it to an unsatisfiable value (a bad/huge reading would
+ * otherwise make every id get skipped until the 16-bit number space is exhausted). */
+export function setEntityIdFloor(maxLiveEntityNumber: number): void {
+  const next = maxLiveEntityNumber & ENTITY_NUMBER_MASK;
+  if (next > floor && next <= MAX_FLOOR) floor = next;
 }
 
 /** Clear the floor when the renderer is torn down (scene close / switch), so the next
@@ -44,24 +56,24 @@ export function resetEntityIdFloor(): void {
 }
 
 /**
- * Parse the engine's `/scene_entities` reply into the highest live entity id. The
- * reply is one entity per line — numeric ids plus non-numeric aliases (root, player,
- * camera) or `(no entities)`; take the max of the numeric lines (0 if none). The
- * renderer feeds this to {@link setEntityIdFloor}.
+ * Parse the engine's `/scene_entities` reply into the highest live entity NUMBER. The
+ * reply is one entity per line — decimal entity ids plus non-numeric aliases (root,
+ * player, camera) or `(no entities)`. Each id is the PACKED value `number | version<<16`,
+ * so mask off the version (low 16 bits) before comparing — otherwise a reloaded scene's
+ * version-bumped ids read as values far above the 16-bit number space and the floor
+ * becomes unsatisfiable. Take the max masked number (0 if none). The renderer feeds this
+ * to {@link setEntityIdFloor}.
  */
 export function parseMaxLiveEntityId(sceneEntitiesReply: string): number {
   let max = 0;
   for (const line of sceneEntitiesReply.split('\n')) {
     const n = Number(line.trim());
-    if (Number.isFinite(n) && n > max) max = n;
+    if (!Number.isFinite(n)) continue;
+    const number = n & ENTITY_NUMBER_MASK;
+    if (number > max) max = number;
   }
   return max;
 }
-
-// An entity id packs a 16-bit number (low) and a 16-bit version (high); the FLOOR is
-// compared against the number, since a code entity and an editor entity collide by
-// number regardless of version.
-const ENTITY_NUMBER_MASK = 0xffff;
 
 /**
  * Wrap `@dcl/ecs`'s entity container so freshly generated entities are pushed past
