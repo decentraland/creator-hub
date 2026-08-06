@@ -39,6 +39,7 @@ export const BindableField: React.FC<BindableFieldProps> = ({ field, entity, bou
       >
         <Pill
           content={bound.variable}
+          removeLabel={`Unbind ${bound.variable} from ${field.label ?? field.path}`}
           onRemove={onUnbind}
         />
       </Block>

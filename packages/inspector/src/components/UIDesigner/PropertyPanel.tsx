@@ -563,6 +563,7 @@ const ActiveFlagRow: React.FC<{ entity: Entity; expr?: string }> = ({ entity, ex
         {expr ? (
           <Pill
             content={expr}
+            removeLabel={`Unbind ${expr} from ${ACTIVE_FLAG_FIELD.label}`}
             onRemove={() => void setInteractionActiveBinding(id, undefined)}
           />
         ) : (

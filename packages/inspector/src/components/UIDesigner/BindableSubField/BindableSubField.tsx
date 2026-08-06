@@ -28,6 +28,7 @@ export const BindableSubField: React.FC<BindableSubFieldProps> = ({
       <div className="ui-designer-bindable-subfield">
         <Pill
           content={bound}
+          removeLabel={`Unbind ${bound} from ${field.path}`}
           onRemove={onUnbind}
         />
       </div>
