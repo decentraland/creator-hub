@@ -477,9 +477,21 @@
   border-radius: var(--ui-designer-radius-field);
 }
 
-.ui-designer-property-panel .Text.Field .InputContainer .input,
+/* Split by state, like the border override above: the shared TextField's disabled
+   colour carries the same specificity as one flat override here, so the winner
+   would come down to bundle order.
+
+   Disabled gets the panel's muted value (4.8:1 on the disabled fill), the way
+   every other disabled panel control dims rather than changes hue. Deferring to
+   the shared --gray-0 is not an option: on that fill it is 1.3:1 — not dimmed,
+   gone. */
+.ui-designer-property-panel .Text.Field .InputContainer:not(.disabled) .input,
 .ui-designer-property-panel .TextArea.Field textarea {
   color: var(--ui-designer-text-value);
+}
+
+.ui-designer-property-panel .Text.Field .InputContainer.disabled .input {
+  color: var(--ui-designer-text-muted);
 }
 
 /* A menu is the same surface lifted off the panel, so it needs the edge too. */

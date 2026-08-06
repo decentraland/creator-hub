@@ -3,6 +3,7 @@ import type { Entity } from '@dcl/ecs';
 
 import { type FlowValue, flowPatch, flowValue, isWrapping, wrapPatch } from '../flow';
 import { measureNodeOffset } from '../measure';
+import { radioGroupKeyDown, radioTabIndex } from '../radio-group';
 
 import './FlowField.css';
 
@@ -43,6 +44,8 @@ const CELLS: { value: FlowValue; label: string; hint: string }[] = [
   },
 ];
 
+const CELL_VALUES = CELLS.map(cell => cell.value);
+
 // One exclusive selector over `positionType` + `flexDirection`, plus a separate
 // wrap toggle. See flow.ts for why the two props share a control and why
 // `absolute` never clears the direction.
@@ -61,14 +64,16 @@ export const FlowField: React.FC<FlowFieldProps> = ({ value, entity, onPatch }) 
         className="ui-designer-flow-group"
         role="radiogroup"
         aria-label="Flow"
+        onKeyDown={radioGroupKeyDown(CELL_VALUES, current, pick)}
       >
-        {CELLS.map(cell => (
+        {CELLS.map((cell, index) => (
           <button
             key={cell.value}
             type="button"
             role="radio"
             aria-checked={cell.value === current}
             aria-label={cell.label}
+            tabIndex={radioTabIndex(CELL_VALUES, current, index)}
             className={`ui-designer-flow-cell${cell.value === current ? ' selected' : ''}`}
             title={cell.hint}
             data-flow={cell.value}

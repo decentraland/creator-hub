@@ -5,6 +5,7 @@ import { validateAssetPath } from '@dcl/asset-packs';
 import { useAssetOptions } from '../../../hooks/useAssetOptions';
 import { FileUploadField, TextField } from '../../ui';
 import { ACCEPTED_FILE_TYPES } from '../../ui/FileUploadField/types';
+import { radioGroupKeyDown, radioTabIndex } from '../radio-group';
 
 import './TextureField.css';
 
@@ -40,6 +41,8 @@ const MODES: { value: TexMode; label: string; hint: string }[] = [
     hint: 'A player’s avatar snapshot, by user ID',
   },
 ];
+
+const MODE_VALUES = MODES.map(m => m.value);
 
 interface TextureFieldProps {
   value: TextureUnion | undefined;
@@ -132,14 +135,16 @@ const TextureFieldComponent: React.FC<TextureFieldProps> = ({ value, onChange })
         className="ui-designer-texture-modes"
         role="radiogroup"
         aria-label="Texture type"
+        onKeyDown={radioGroupKeyDown(MODE_VALUES, mode, handleModeChange)}
       >
-        {MODES.map(m => (
+        {MODES.map((m, index) => (
           <button
             key={m.value}
             type="button"
             role="radio"
             aria-checked={m.value === mode}
             aria-label={m.label}
+            tabIndex={radioTabIndex(MODE_VALUES, mode, index)}
             className={`ui-designer-texture-mode${m.value === mode ? ' selected' : ''}`}
             title={m.hint}
             data-mode={m.value}
