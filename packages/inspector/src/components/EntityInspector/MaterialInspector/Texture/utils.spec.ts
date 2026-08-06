@@ -138,6 +138,76 @@ describe('fromTexture', () => {
     expect(result.offset).toEqual({ x: '0.10', y: '0.30' });
     expect(result.tiling).toEqual({ x: '2.50', y: '3.00' });
   });
+
+  describe('when the wrap and filter modes are unset', () => {
+    it('should default a texture to the engine defaults (clamp and bilinear)', () => {
+      const value: TextureUnion = {
+        tex: {
+          $case: 'texture',
+          texture: {
+            src: 'image.png',
+          },
+        },
+      };
+
+      const result = fromTexture(value);
+
+      expect(result.wrapMode).toBe(String(TextureWrapMode.TWM_CLAMP));
+      expect(result.filterMode).toBe(String(TextureFilterMode.TFM_BILINEAR));
+    });
+
+    it('should default an avatarTexture to the engine defaults (clamp and bilinear)', () => {
+      const value: TextureUnion = {
+        tex: {
+          $case: 'avatarTexture',
+          avatarTexture: {
+            userId: 'user123',
+          },
+        },
+      };
+
+      const result = fromTexture(value);
+
+      expect(result.wrapMode).toBe(String(TextureWrapMode.TWM_CLAMP));
+      expect(result.filterMode).toBe(String(TextureFilterMode.TFM_BILINEAR));
+    });
+
+    it('should default a videoTexture to the engine defaults (clamp and bilinear)', () => {
+      const value: TextureUnion = {
+        tex: {
+          $case: 'videoTexture',
+          videoTexture: {
+            videoPlayerEntity: 123,
+          },
+        },
+      };
+
+      const result = fromTexture(value);
+
+      expect(result.wrapMode).toBe(String(TextureWrapMode.TWM_CLAMP));
+      expect(result.filterMode).toBe(String(TextureFilterMode.TFM_BILINEAR));
+    });
+  });
+
+  describe('when the wrap and filter modes are explicitly zero (repeat and point)', () => {
+    it('should keep the explicit values', () => {
+      const value: TextureUnion = {
+        tex: {
+          $case: 'texture',
+          texture: {
+            src: 'image.png',
+            wrapMode: TextureWrapMode.TWM_REPEAT,
+            filterMode: TextureFilterMode.TFM_POINT,
+          },
+        },
+      };
+
+      const result = fromTexture(value);
+
+      expect(result.wrapMode).toBe(String(TextureWrapMode.TWM_REPEAT));
+      expect(result.filterMode).toBe(String(TextureFilterMode.TFM_POINT));
+    });
+  });
 });
 
 describe('toTexture', () => {
@@ -233,6 +303,47 @@ describe('toTexture', () => {
     expect(result.tex.texture.filterMode).toBe(TextureFilterMode.TFM_POINT);
     expect(result.tex.texture.offset).toEqual({ x: 0.1, y: 0.3 });
     expect(result.tex.texture.tiling).toEqual({ x: 2.5, y: 3.0 });
+  });
+
+  describe('when the wrap and filter modes are empty', () => {
+    it('should write the engine defaults (clamp and bilinear)', () => {
+      const value: TextureInput = {
+        type: Texture.TT_TEXTURE,
+        src: 'image.png',
+        wrapMode: '',
+        filterMode: '',
+      };
+
+      const result = toTexture(value) as { tex: { $case: 'texture'; texture: EcsTexture } };
+
+      expect(result.tex.texture.wrapMode).toBe(TextureWrapMode.TWM_CLAMP);
+      expect(result.tex.texture.filterMode).toBe(TextureFilterMode.TFM_BILINEAR);
+    });
+  });
+
+  describe('when the input is undefined', () => {
+    it('should write the engine defaults (clamp and bilinear)', () => {
+      const result = toTexture(undefined) as { tex: { $case: 'texture'; texture: EcsTexture } };
+
+      expect(result.tex.texture.wrapMode).toBe(TextureWrapMode.TWM_CLAMP);
+      expect(result.tex.texture.filterMode).toBe(TextureFilterMode.TFM_BILINEAR);
+    });
+  });
+
+  describe('when the wrap and filter modes are explicitly zero (repeat and point)', () => {
+    it('should keep the explicit values', () => {
+      const value: TextureInput = {
+        type: Texture.TT_TEXTURE,
+        src: 'image.png',
+        wrapMode: String(TextureWrapMode.TWM_REPEAT),
+        filterMode: String(TextureFilterMode.TFM_POINT),
+      };
+
+      const result = toTexture(value) as { tex: { $case: 'texture'; texture: EcsTexture } };
+
+      expect(result.tex.texture.wrapMode).toBe(TextureWrapMode.TWM_REPEAT);
+      expect(result.tex.texture.filterMode).toBe(TextureFilterMode.TFM_POINT);
+    });
   });
 });
 

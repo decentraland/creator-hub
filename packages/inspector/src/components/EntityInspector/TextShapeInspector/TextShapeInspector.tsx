@@ -37,6 +37,7 @@ export default withSdk<Props>(({ sdk, entities, initialOpen = true }) => {
   if (!allEntitiesHaveTextShape) return null;
 
   const fontAutoSize = getInputProps('fontAutoSize', e => e.target.checked);
+  const textWrapping = getInputProps('textWrapping', e => e.target.checked);
 
   return (
     <Container
@@ -122,6 +123,27 @@ export default withSdk<Props>(({ sdk, entities, initialOpen = true }) => {
           leftLabel="Spacing"
           type="number"
           {...getInputProps('lineSpacing')}
+        />
+      </Block>
+      <Block>
+        <CheckboxField
+          label="Text Wrapping"
+          {...textWrapping}
+          checked={!!textWrapping.value}
+        />
+      </Block>
+      <Block label="Size">
+        <TextField
+          autoSelect
+          leftLabel="W"
+          type="number"
+          {...getInputProps('width')}
+        />
+        <TextField
+          autoSelect
+          leftLabel="H"
+          type="number"
+          {...getInputProps('height')}
         />
       </Block>
       <Block>

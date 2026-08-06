@@ -1,4 +1,5 @@
 import type { Entity } from '@dcl/ecs';
+import { TextureFilterMode, TextureWrapMode } from '@dcl/ecs';
 
 export enum ShapeType {
   POINT = 'point',
@@ -48,6 +49,33 @@ export const SIMULATION_SPACE_OPTIONS = [
   { label: 'World', value: String(SimulationSpace.PSS_WORLD) },
 ];
 
+export const WRAP_MODE_OPTIONS = [
+  { label: 'Repeat', value: String(TextureWrapMode.TWM_REPEAT) },
+  { label: 'Clamp', value: String(TextureWrapMode.TWM_CLAMP) },
+  { label: 'Mirror', value: String(TextureWrapMode.TWM_MIRROR) },
+];
+
+export const FILTER_MODE_OPTIONS = [
+  { label: 'Point', value: String(TextureFilterMode.TFM_POINT) },
+  { label: 'Bilinear', value: String(TextureFilterMode.TFM_BILINEAR) },
+  { label: 'Trilinear', value: String(TextureFilterMode.TFM_TRILINEAR) },
+];
+
+// Engine defaults for unset texture modes (used for display only; unset values stay unset).
+export const DEFAULT_WRAP_MODE = String(TextureWrapMode.TWM_CLAMP);
+export const DEFAULT_FILTER_MODE = String(TextureFilterMode.TFM_BILINEAR);
+
+export type EulerInput = { x: string; y: string; z: string };
+
+export type TextureInput = {
+  src: string;
+  // Empty string means "unset" (engine default); the value only gets written when the user sets it.
+  wrapMode: string;
+  filterMode: string;
+  offset: { x: string; y: string };
+  tiling: { x: string; y: string };
+};
+
 export type BurstInput = {
   time: string;
   count: string;
@@ -65,12 +93,14 @@ export type ParticleSystemInput = {
   additionalForce: { x: string; y: string; z: string };
   initialSize: { start: string; end: string };
   sizeOverTime: { start: string; end: string };
+  initialRotation: EulerInput;
+  rotationOverTime: EulerInput;
   faceTravelDirection: boolean;
   initialColor: { startColor: string; startAlpha: string; endColor: string; endAlpha: string };
   colorOverTime: { startColor: string; startAlpha: string; endColor: string; endAlpha: string };
   initialVelocitySpeed: { start: string; end: string };
   textureEnabled: boolean;
-  texture: { src: string };
+  texture: TextureInput;
   blendMode: string;
   billboard: boolean;
   spriteSheetEnabled: boolean;

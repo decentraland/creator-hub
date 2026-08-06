@@ -13,9 +13,17 @@ import { useAppSelector } from '../../../redux/hooks';
 import { selectAssetCatalog } from '../../../redux/app';
 import { Block } from '../../Block';
 import { Container } from '../../Container';
-import { CheckboxField, RangeField, FileUploadField, InfoTooltip } from '../../ui';
+import { CheckboxField, RangeField, FileUploadField, InfoTooltip, TextField } from '../../ui';
 import { ACCEPTED_FILE_TYPES } from '../../ui/FileUploadField/types';
-import { fromAudioSource, toAudioSource, isValidInput, isAudio, isValidVolume } from './utils';
+import { isMixedValue } from '../../ui/utils';
+import {
+  fromAudioSource,
+  toAudioSource,
+  isValidInput,
+  isAudio,
+  isValidVolume,
+  isValidPitch,
+} from './utils';
 import type { Props } from './types';
 
 export default withSdk<Props>(({ sdk, entities, initialOpen = true }) => {
@@ -59,6 +67,7 @@ export default withSdk<Props>(({ sdk, entities, initialOpen = true }) => {
   const loop = getInputProps('loop', e => e.target.checked);
   const global = getInputProps('global', e => e.target.checked);
   const volume = getInputProps('volume', e => e.target.value);
+  const pitch = getInputProps('pitch', e => e.target.value);
 
   return (
     <Container
@@ -108,6 +117,23 @@ export default withSdk<Props>(({ sdk, entities, initialOpen = true }) => {
           {...volume}
           label="Volume"
           isValidValue={isValidVolume}
+        />
+      </Block>
+      <Block className="pitch">
+        <TextField
+          {...pitch}
+          type="number"
+          label={
+            <>
+              Pitch{' '}
+              <InfoTooltip
+                text="Playback speed multiplier that shifts the sound's pitch: 1 plays the original sound, 2 plays twice as fast (one octave higher), 0.5 plays half as fast (one octave lower)."
+                type="help"
+              />
+            </>
+          }
+          error={!isMixedValue(pitch.value) && !isValidPitch(String(pitch.value ?? ''))}
+          autoSelect
         />
       </Block>
     </Container>
