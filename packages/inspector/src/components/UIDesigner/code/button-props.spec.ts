@@ -58,6 +58,22 @@ describe("when reading a Button's own props", () => {
     expect(root.dynamicProps).toBeUndefined();
   });
 
+  // `variant={cond ? … : …}` is the idiomatic way to author a Button, and marking the
+  // node dynamic over it would freeze every uiTransform/uiBackground write on it
+  // (guardElementWrite) — protecting nothing, since the ui::button write path patches
+  // one attribute at a time.
+  it('should leave a Button with a computed variant editable', () => {
+    const source = `export function S() {
+  return <Button value="Go" variant={active ? 'primary' : 'secondary'} />
+}`;
+    const root = parse(source).root;
+    expect(root.dynamicProps).toBeUndefined();
+    expect(root.uiButton).toBeUndefined();
+    expect(patchRoot(source, { disabled: true })).toContain(
+      "variant={active ? 'primary' : 'secondary'}",
+    );
+  });
+
   it('should record a bound disabled as a binding rather than freezing the node', () => {
     const root = parse(`export function S() {
   return <Button value="Go" disabled={state.locked} />

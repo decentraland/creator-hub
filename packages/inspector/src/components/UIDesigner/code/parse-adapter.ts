@@ -642,7 +642,17 @@ export function codeToUINodes(
     // variable (`value={state.x}`) or interpolated (`value={`Hi ${name}`}`) as a
     // binding row instead — previewed on the canvas via previewBoundText and shown
     // as bound in the panel — rather than collapsing the node to opaque content.
-    const readProps = (props: Set<string>, componentId: string): Record<string, unknown> => {
+    //
+    // A value that is neither static nor a binding (`variant={a ? 'x' : 'y'}`) marks
+    // the node dynamic, which freezes EVERY write on it (guardElementWrite). Callers
+    // whose write path patches one attribute at a time — it can never clobber a prop
+    // it isn't patching — pass `freezeOnUnread: false` and simply leave that one prop
+    // unread instead.
+    const readProps = (
+      props: Set<string>,
+      componentId: string,
+      freezeOnUnread = true,
+    ): Record<string, unknown> => {
       const values: Record<string, unknown> = {};
       for (const key of props) {
         const attr = attrs.get(key);
@@ -657,7 +667,7 @@ export function codeToUINodes(
         const expr = bindingExpr(attr, source);
         if (segments) bindings.push({ field, variable: '', segments });
         else if (expr) bindings.push({ field, variable: expr });
-        else dynamicProps = true;
+        else if (freezeOnUnread) dynamicProps = true;
       }
       return values;
     };
@@ -676,7 +686,7 @@ export function codeToUINodes(
     // NOT part of a typed prop group, which is exactly what keeps them out of an
     // interaction layer (see isLayerableProp / isLayerableComponent).
     if (type === 'Button') {
-      const values = ergonomicToPBButton(readProps(UI_BUTTON_PROPS, UI_BUTTON));
+      const values = ergonomicToPBButton(readProps(UI_BUTTON_PROPS, UI_BUTTON, false));
       if (Object.keys(values).length > 0) node.uiButton = values;
     }
 

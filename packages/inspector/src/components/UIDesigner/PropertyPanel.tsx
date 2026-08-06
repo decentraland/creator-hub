@@ -183,6 +183,21 @@ function isFieldSet(field: FieldConfig, value: Record<string, unknown> | null): 
   return fieldSetPaths(field).some(p => p in value);
 }
 
+// A BOUND prop is authored too — the parser files `disabled={state.locked}` under
+// the node's bindings, never under the component value — so `isFieldSet` alone
+// would offer it as addable, and adding it splices a literal over the binding.
+export function isAddableField(
+  field: FieldConfig,
+  value: Record<string, unknown> | null,
+  boundFields: ReadonlySet<string>,
+): boolean {
+  return (
+    isTogglable(field) &&
+    !isFieldSet(field, value) &&
+    !boundFields.has(`${field.componentId}.${field.path}`)
+  );
+}
+
 // "How I sit in my parent" has no meaning on a UI root — its parent is the
 // screen. Kept on a root that is ALREADY absolute, though: dragging a root on the
 // canvas switches it, and these are then the only controls over the offsets now
@@ -691,14 +706,18 @@ const PropertyPanelComponent: React.FC = () => {
   // Bindings come from the parsed source (`node.bindings`, keyed by
   // `componentId.field`): a `value={state.x}` attribute is a single-variable
   // binding, a `value={`…${x}…`}` template is mixed content.
-  const { bindingsByField, mixedByField } = useMemo(() => {
+  const { bindingsByField, mixedByField, boundFields } = useMemo(() => {
     const byField: Record<string, string> = {};
     const mixed: Record<string, CanvasSegment[]> = {};
     for (const row of codeNode?.bindings ?? []) {
       if (row.segments && row.segments.length > 0) mixed[row.field] = row.segments;
       else byField[row.field] = row.variable;
     }
-    return { bindingsByField: byField, mixedByField: mixed };
+    return {
+      bindingsByField: byField,
+      mixedByField: mixed,
+      boundFields: new Set([...Object.keys(byField), ...Object.keys(mixed)]),
+    };
   }, [codeNode]);
 
   // A node with interaction states keeps ALL of its styles in the helper's
@@ -883,11 +902,10 @@ const PropertyPanelComponent: React.FC = () => {
         for (const field of group.fields as FieldConfig[]) {
           const value = readComponentValue(field.componentId) as Record<string, unknown> | null;
           if (hiddenOnRoot(field, isGuiRoot, value)) continue;
-          const togglable = isTogglable(field);
           // The menu comes FIRST: an unset optional prop belongs in `+ Add property`
           // even while its row is suppressed, or a value the composite control has
           // no cell for (space-between, stretch) would have no way in at all.
-          if (togglable && !isFieldSet(field, value)) {
+          if (isAddableField(field, value, boundFields)) {
             addable.push(field);
             continue;
           }
