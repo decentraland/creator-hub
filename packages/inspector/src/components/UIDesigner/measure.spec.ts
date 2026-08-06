@@ -2,13 +2,21 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { Entity } from '@dcl/ecs';
 
+import { YGU_PERCENT, YGU_POINT } from '../../lib/sdk/ui-transform-constants';
+
 const elements = new Map<number, HTMLElement>();
 
 vi.mock('./node-registry', () => ({
   getNodeElement: (entity: unknown) => elements.get(Number(entity)),
 }));
 
-import { measureNodeOffset, measureParentBox, setCanvasScale } from './measure';
+import {
+  axisForPath,
+  convertLength,
+  measureNodeOffset,
+  measureParentBox,
+  setCanvasScale,
+} from './measure';
 
 const NODE = 1 as unknown as Entity;
 
@@ -136,6 +144,58 @@ describe('measuring the canvas DOM', () => {
       setCanvasScale(0.5);
       tree(PARENT);
       expect(measureParentBox(NODE)).toEqual({ width: 400, height: 200 });
+    });
+  });
+
+  describe('when picking the parent dimension a percentage resolves against', () => {
+    it('should resolve a size against its own axis', () => {
+      expect(axisForPath('width')).toBe('width');
+      expect(axisForPath('height')).toBe('height');
+      expect(axisForPath('minHeight')).toBe('height');
+      expect(axisForPath('maxWidth')).toBe('width');
+    });
+
+    // Yoga's computeFlexStartPosition takes the axis's own size, and CSS resolves
+    // top/bottom against the containing block height.
+    it('should resolve a position inset against its own axis', () => {
+      expect(axisForPath('positionTop')).toBe('height');
+      expect(axisForPath('positionBottom')).toBe('height');
+      expect(axisForPath('positionLeft')).toBe('width');
+      expect(axisForPath('positionRight')).toBe('width');
+    });
+
+    // ...but computeFlexStartMargin/Padding take a widthSize on EVERY axis, so a
+    // vertical margin of 50% inside a 200x100 parent is 100px, not 50px.
+    it('should resolve every margin and padding edge against width', () => {
+      for (const path of [
+        'marginTop',
+        'marginRight',
+        'marginBottom',
+        'marginLeft',
+        'paddingTop',
+        'paddingRight',
+        'paddingBottom',
+        'paddingLeft',
+      ]) {
+        expect(axisForPath(path)).toBe('width');
+      }
+    });
+
+    // End to end through a NON-SQUARE parent, the only shape in which the two
+    // dimensions can be told apart: 50% of a 200x100 box is 100px as a margin and
+    // 50px as a top inset.
+    it('should convert a vertical margin and a top inset differently', () => {
+      tree({
+        parent: { top: 0, left: 0, width: 200, height: 100 },
+        child: { top: 0, left: 0, width: 10, height: 10 },
+      });
+      const parent = measureParentBox(NODE)!;
+      const toPx = (path: string) =>
+        convertLength(50, YGU_PERCENT, YGU_POINT, parent[axisForPath(path)]);
+      expect(toPx('marginTop')).toBe(100);
+      expect(toPx('paddingBottom')).toBe(100);
+      expect(toPx('positionTop')).toBe(50);
+      expect(toPx('height')).toBe(50);
     });
   });
 });

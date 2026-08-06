@@ -97,8 +97,13 @@ export function measureNodeOffset(entity: Entity): { top: number; left: number }
 }
 
 // Which parent dimension a length path is a percentage of.
-// height/top/bottom paths are a percentage of height; the rest of width.
+// A margin or padding is a percentage of the containing block's WIDTH on BOTH
+// axes — CSS says so, and Yoga follows it in its signatures: `computeFlexStartMargin`
+// and `computeFlexStartPadding` take a `widthSize` whatever the axis, while an
+// inset's `computeFlexStartPosition` takes that axis's own size. So only
+// height/top/bottom paths that are NOT box-model edges resolve against height.
 export function axisForPath(path: string): 'width' | 'height' {
+  if (/^(margin|padding)/.test(path)) return 'width';
   return /height|top|bottom/i.test(path) ? 'height' : 'width';
 }
 
