@@ -1,3 +1,18 @@
+/* The designer's three panels are siblings in the app layout, with no shared
+   ancestor to scope this on. Repointing the shared tokens here — rather than
+   overriding each component's selectors — gives every shared input, dropdown,
+   checkbox and option list inside the designer the design's surface and
+   foreground, hover/focus/disabled variants included, with no specificity fight
+   against the components' own stylesheets (which the 3D inspector keeps using
+   unchanged). */
+.ui-designer,
+.ui-designer-left-rail,
+.ui-designer-right-rail {
+  --gray-0: var(--ui-designer-control-bg);
+  --title: var(--ui-designer-text);
+  --sub-text: var(--ui-designer-text-muted);
+}
+
 .ui-designer {
   width: 100%;
   height: 100%;
@@ -23,7 +38,7 @@
   flex-direction: column;
   gap: 4px;
   padding: 8px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  border-bottom: 1px solid var(--ui-designer-hairline);
 }
 
 .ui-designer-palette-card {
@@ -31,7 +46,7 @@
   align-items: center;
   gap: 8px;
   padding: 6px 8px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--ui-designer-control-border);
   border-radius: 4px;
   cursor: grab;
   user-select: none;
@@ -131,7 +146,10 @@
 
 /* The shared <Box> wrapper inserts an extra <div class="content"> between
    the rail and our flex children. Make it transparent to the flex layout
-   so palette/tree/properties partition the rail height correctly. */
+   so palette/tree/properties partition the rail height correctly.
+
+   The panel surface goes HERE, not on the rail: Box.css paints `--main-bg-color`
+   on this same element, so a background on the rail itself is covered by it. */
 .ui-designer-left-rail > .content,
 .ui-designer-right-rail > .content {
   display: flex;
@@ -139,13 +157,14 @@
   flex: 1 1 auto;
   min-height: 0;
   width: 100%;
+  background: var(--ui-designer-panel-bg);
 }
 
 .ui-designer-rail-section {
   display: flex;
   flex-direction: column;
   min-height: 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  border-bottom: 1px solid var(--ui-designer-hairline);
 }
 
 /* The fixed (non-grow) sections — currently the UI Roots list — cap at a
@@ -214,13 +233,17 @@
 .ui-designer-right-rail-tabs {
   display: flex;
   flex: 0 0 auto;
+  background: var(--tree-bg-color);
   border-bottom: 1px solid var(--ui-designer-hairline);
 }
 
-/* The Figma's tab bar is a 36px band with the active tab underlined edge to edge
-   and its label brighter + heavier than the resting one. The underline is the
-   tab's own bottom border, so it spans exactly the tab it belongs to at any rail
-   width. */
+/* The Figma's tab bar is a 36px band on Neutrals/Shadow (= --base-20) with the
+   active tab underlined edge to edge and its label brighter + heavier than the
+   resting one. The underline is the tab's own bottom border, so it spans exactly
+   the tab it belongs to at any rail width.
+
+   The resting label holds at 50% white rather than the design's White 40: at 40%
+   over this band it composites to 3.75:1, under the 4.5:1 a tab label needs. */
 .ui-designer-right-rail-tab {
   flex: 1 1 0;
   box-sizing: border-box;
@@ -244,8 +267,8 @@
 }
 
 .ui-designer-right-rail-tab.active {
-  color: var(--white);
-  border-bottom-color: var(--ui-designer-control-accent);
+  color: var(--ui-designer-text);
+  border-bottom-color: var(--ui-designer-text);
   font-weight: 600;
 }
 

@@ -18,8 +18,8 @@
   padding: 4px;
   background: transparent;
   border: 1px solid var(--ui-designer-control-border);
-  border-radius: 4px;
-  color: var(--sub-text);
+  border-radius: var(--ui-designer-radius-field);
+  color: var(--ui-designer-glyph);
   cursor: pointer;
 }
 

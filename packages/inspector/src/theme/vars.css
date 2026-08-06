@@ -148,11 +148,30 @@
   --ui-designer-control-accent-62: rgba(255, 45, 85, 0.62);
   --ui-designer-control-accent-21: rgba(255, 45, 85, 0.21);
   --ui-designer-control-accent-15: rgba(255, 45, 85, 0.15);
-  /* Control chrome — matches the inspector's .InputContainer so selects,
-     textareas and inputs read as one family. */
-  --ui-designer-control-bg: var(--gray-0);
-  --ui-designer-control-border: rgba(255, 255, 255, 0.12);
+  /* Panel surfaces, foreground and glyphs — the Figma's own Neutrals ramp
+     (PropertiesFull 1492:1939). The panel frame reuses --base-19 rather than
+     declaring the design's #25212a: the two differ by 1/255, and the group cards
+     (Container.css) already paint --base-19, so borrowing it keeps frame and card
+     identical instead of near-miss different. */
+  --ui-designer-panel-bg: var(--base-19);
+  --ui-designer-control-bg: #35333b; /* Neutrals/Charcoal */
+  --ui-designer-text: #fcfcfc; /* Neutrals/Snow — labels, group titles */
+  --ui-designer-text-value: #cfcdd4; /* Neutrals/Gray — value inside a field */
+  --ui-designer-text-muted: #a09ba8; /* Neutrals/Silver — hints, secondary */
+  --ui-designer-control-border: rgba(255, 255, 255, 0.1); /* Transparencies/White 10 */
   --ui-designer-hairline: rgba(255, 255, 255, 0.07);
+
+  /* Glyph stroke. The design paints every panel glyph Neutrals/Cloudy Sky, which
+     clears the 3:1 non-text minimum on the panel frame (3.08:1) but not on a field
+     fill (2.43:1) — and the box-model edge ticks are in-input prefixes whose whole
+     job is to say WHICH edge. Those lift to Silver (4.6:1 on the fill); everything
+     sitting on the frame keeps the design's value. */
+  --ui-designer-glyph: #716b7c; /* Neutrals/Cloudy Sky */
+  --ui-designer-glyph-on-control: var(--ui-designer-text-muted);
+
+  /* Field and menu corners, per the Figma's Input (rx 6) and Menu (rx 12). */
+  --ui-designer-radius-field: 6px;
+  --ui-designer-radius-menu: 12px;
   /* 4px spacing scale */
   --uid-space-1: 4px;
   --uid-space-2: 8px;

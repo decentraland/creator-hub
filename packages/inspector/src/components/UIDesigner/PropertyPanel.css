@@ -39,6 +39,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  color: var(--ui-designer-text);
 }
 
 /* Controls fill the row. Paired controls (X|Y, W|H) sit side by side as equal
@@ -274,8 +275,8 @@
   margin: 4px 0 0;
   padding: 4px;
   border: 1px solid var(--ui-designer-control-border);
-  border-radius: 4px;
-  background: var(--tree-bg-color);
+  border-radius: var(--ui-designer-radius-menu);
+  background: var(--ui-designer-control-bg);
   display: flex;
   flex-direction: column;
   gap: 1px;
@@ -308,8 +309,8 @@
   margin-top: 4px;
   padding: var(--uid-space-2);
   border: 1px solid var(--ui-designer-control-border);
-  border-radius: 4px;
-  background: var(--tree-bg-color);
+  border-radius: var(--ui-designer-radius-menu);
+  background: var(--ui-designer-control-bg);
 }
 
 .ui-designer-add-action > .Text.Field {
@@ -368,7 +369,7 @@
   padding: 2px 6px;
   background: transparent;
   border: 1px solid var(--ui-designer-control-border);
-  border-radius: 4px;
+  border-radius: var(--ui-designer-radius-field);
   color: var(--sub-text);
   font-size: 10px;
   letter-spacing: 0.04em;
@@ -400,8 +401,8 @@
   padding: 3px;
   background: transparent;
   border: 1px solid var(--ui-designer-control-border);
-  border-radius: 4px;
-  color: var(--sub-text);
+  border-radius: var(--ui-designer-radius-field);
+  color: var(--ui-designer-glyph);
   cursor: pointer;
 }
 
@@ -467,9 +468,24 @@
   border-color: var(--ui-designer-control-border);
 }
 
+/* Corners and value colour per the Figma's Input: rx 6 with the value a step
+   below the label. The shared components hardcode both, so this is a panel-scoped
+   override rather than a token they read. */
+.ui-designer-property-panel .Text.Field .InputContainer,
+.ui-designer-property-panel .Dropdown.Field .DropdownContainer,
+.ui-designer-property-panel .TextArea.Field textarea {
+  border-radius: var(--ui-designer-radius-field);
+}
+
+.ui-designer-property-panel .Text.Field .InputContainer .input,
+.ui-designer-property-panel .TextArea.Field textarea {
+  color: var(--ui-designer-text-value);
+}
+
 /* A menu is the same surface lifted off the panel, so it needs the edge too. */
 .ui-designer-property-panel .OptionList {
   border: 1px solid var(--ui-designer-control-border);
+  border-radius: var(--ui-designer-radius-menu);
 }
 
 /* Checkboxes: the panel's accent marks the checked state, rather than a tick on

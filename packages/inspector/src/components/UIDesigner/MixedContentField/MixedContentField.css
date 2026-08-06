@@ -10,9 +10,10 @@
   min-width: 0;
   min-height: 24px;
   padding: 3px 6px;
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  border-radius: 4px;
-  background: transparent;
+  border: 1px solid var(--ui-designer-control-border);
+  border-radius: var(--ui-designer-radius-field);
+  background: var(--ui-designer-control-bg);
+  color: var(--ui-designer-text-value);
   font-size: 13px;
   line-height: 18px;
   white-space: pre-wrap;
@@ -22,7 +23,7 @@
 
 .ui-designer-mixed-editable:empty::before {
   content: attr(data-placeholder);
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--ui-designer-text-muted);
 }
 
 .ui-designer-mixed-chip {

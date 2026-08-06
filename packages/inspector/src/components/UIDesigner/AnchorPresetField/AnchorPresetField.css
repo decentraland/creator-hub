@@ -28,7 +28,7 @@
   height: 62px;
   background: var(--ui-designer-control-bg);
   border: 1px solid var(--ui-designer-control-border);
-  border-radius: 5px;
+  border-radius: var(--ui-designer-radius-field);
 }
 
 /* An axis with no pinned edge has no cell to point at. */
@@ -113,7 +113,7 @@
   flex: 0 0 auto;
   width: 16px;
   height: 16px;
-  background-color: var(--sub-text);
+  background-color: var(--ui-designer-glyph);
   mask-position: center;
   mask-repeat: no-repeat;
 }

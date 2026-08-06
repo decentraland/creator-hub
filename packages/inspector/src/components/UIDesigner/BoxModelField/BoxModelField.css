@@ -29,15 +29,16 @@
 }
 
 /* The Figma PaddingIcons / MarginsIcons glyphs, in the in-input prefix slot where
-   the T/R/B/L letters used to sit. Masked so the glyph takes the prefix colour
-   instead of baking one, and so the disabled section dims it with everything
-   else. Each `title` still names its edge, since which edge a tick marks is
-   readable but not instant at 16px. */
+   the T/R/B/L letters used to sit. Masked so all eight take one token — the
+   on-control glyph tint, since these are the only panel glyphs that sit on a field
+   fill rather than the frame — and so the disabled section dims them with
+   everything else. Each `title` still names its edge, since which edge a tick
+   marks is readable but not instant at 16px. */
 .ui-designer-bm-icon {
   display: block;
   width: 16px;
   height: 16px;
-  background-color: var(--sub-text);
+  background-color: var(--ui-designer-glyph-on-control);
   mask-position: center;
   mask-repeat: no-repeat;
 }

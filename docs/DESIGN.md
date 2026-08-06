@@ -25,7 +25,8 @@ All tokens are CSS custom properties on `:root` in **`packages/inspector/src/the
 | `--main-bg-color` | `--vscode-editor-background` → `--background` | App/editor background |
 | `--tree-bg-color` | `--base-20` `#161518` | Panels, trees, **dropdown/popover surfaces** |
 | `--modal-content-bg-color` | `--tree-bg-color` | Modals |
-| `--ui-designer-control-bg` | `--gray-0` `#43404a` | Inputs/selects/textarea chrome |
+| `--ui-designer-panel-bg` | `--base-19` `#242129` | UI Designer panel frame (Figma `#25212a`, within 1/255) |
+| `--ui-designer-control-bg` | `#35333b` | Inputs/selects/textarea chrome, and UI Designer menus |
 | `--disabled-bg-color` | `#323036` | Disabled control fill |
 
 ### Foreground (text)
@@ -36,13 +37,17 @@ All tokens are CSS custom properties on `:root` in **`packages/inspector/src/the
 | `--sub-text`     | `#ffffffcf` | Secondary text on dark            |
 | `--text-primary` | `#000000de` | Text **on light surfaces**        |
 
+The UI Designer names its own three steps, from the Figma's Neutrals ramp: `--ui-designer-text` `#fcfcfc` (labels, group titles), `--ui-designer-text-value` `#cfcdd4` (the value inside a field), `--ui-designer-text-muted` `#a09ba8` (hints, secondary). Glyphs take `--ui-designer-glyph` `#716b7c`, or `--ui-designer-glyph-on-control` when they sit on a field fill instead of the frame — see the contrast note in `vars.css`.
+
+`UIDesigner.css` repoints `--gray-0`, `--title` and `--sub-text` to those tokens **inside** `.ui-designer` / the two rails, so every shared control in the designer takes the design's surface and foreground without per-selector overrides. The 3D EntityInspector keeps the global values.
+
 There is no single `--text` token — pick the foreground that matches the surface. **Never rely on `color: inherit` for a control on a themed surface** (that is exactly how the white-on-white callback autocomplete happened); set an explicit foreground.
 
 ### Borders, focus & accent
 
 | Token | Value | Use |
 | --- | --- | --- |
-| `--ui-designer-control-border` | `rgba(255,255,255,.12)` | Control borders |
+| `--ui-designer-control-border` | `rgba(255,255,255,.1)` | Control borders (Figma White 10) |
 | `--ui-designer-hairline` | `rgba(255,255,255,.07)` | Subtle dividers |
 | `--border-focused` | `#127fd4` | Focus ring (VS Code blue) |
 | `--ui-designer-accent` | `rgb(80,200,255)` | **Canvas** selection cyan |
@@ -124,6 +129,8 @@ Adding a step means solving for its contrast, not guessing an alpha.
 
 Give interactive controls a consistent height (define a local `--uid-control-height`, ~28px, per panel) so rows align. Interactive hit targets should be ≥24px.
 
+Corners in the UI Designer come from two tokens, `--ui-designer-radius-field` (6px — inputs, dropdowns, segmented cells, the anchor preview) and `--ui-designer-radius-menu` (12px — option lists and popovers). The shared components hardcode 4px, so a panel-scoped override applies them.
+
 ## Fonts
 
 `--font-family` → **Inter** (system-ui fallbacks). `--font-monospace` → **Inconsolata** (code/callback editors). Use `font-variant-numeric: tabular-nums` for numeric readouts (zoom %, counters).
@@ -141,6 +148,7 @@ Derived from the Vercel Web Interface Guidelines (`web-design-guidelines` skill)
 - **During drag:** `user-select: none` + `touch-action: manipulation`.
 - **Content:** truncate/clamp long text (flex children need `min-width: 0`); handle empty states; placeholders end with `…`.
 - **Color:** tokens only — no new hardcoded hex.
+- **A background on a `<Box>` root does nothing.** `Box.css` paints `--main-bg-color` on the `.content` div it wraps children in, which covers the root. Put panel surfaces on `<yourClass> > .content`.
 
 Reviewing UI against these? Run the `web-design-guidelines` skill over the changed files.
 
