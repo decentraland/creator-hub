@@ -1,8 +1,10 @@
+import { createRequire } from 'module';
+import { readFileSync } from 'fs';
 import { resolve } from 'path';
 import { parseSync as wasmParse } from '@oxc-parser/wasm/node/oxc_parser_wasm.js';
 import { build } from 'esbuild';
 import { parseSync as nativeParse } from 'oxc-parser';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import {
   generateRootComponent,
@@ -91,6 +93,48 @@ describe('when parsing the same source with the native and wasm oxc parsers', ()
     });
     const unicode = spans.find(s => AUTHORED.slice(s.start, s.end).includes('ünïcode ✓'));
     expect(unicode).toBeDefined();
+  });
+});
+
+const REAL_WASM = readFileSync(
+  createRequire(import.meta.url).resolve('@oxc-parser/wasm/web/oxc_parser_wasm_bg.wasm'),
+);
+let wasmBytes: Uint8Array = REAL_WASM;
+
+// The build inlines the .wasm as bytes (esbuild's binary loader); vite hands the
+// spec a URL there, which the web `init` would try to fetch. Reading through a
+// getter also lets a case feed `init` bytes that cannot instantiate.
+vi.mock('@oxc-parser/wasm/web/oxc_parser_wasm_bg.wasm', () => ({
+  get default() {
+    return wasmBytes;
+  },
+}));
+
+// Each case needs its own module instance: `ready` is module state.
+async function freshParser() {
+  vi.resetModules();
+  return (await import('./wasm')).wasmCodeParser;
+}
+
+describe('when parsing through the dev parser', () => {
+  it('should return an AST that outlives the freed wasm result', async () => {
+    const parser = await freshParser();
+    const { program, comments, errors } = await parser.parse('src/ui/MyScreen.tsx', AUTHORED);
+    const native = nativeParse('src/ui/MyScreen.tsx', AUTHORED);
+    expect(errors).toHaveLength(0);
+    expect(JSON.stringify(program)).toEqual(JSON.stringify(native.program));
+    expect(comments).toEqual(native.comments);
+  });
+
+  // A cached rejection would disable code mode for the lifetime of the tab.
+  it('should retry a failed init on the next parse', async () => {
+    const parser = await freshParser();
+    wasmBytes = new Uint8Array([0, 0, 0, 0]);
+    await expect(parser.parse('a.tsx', 'const a = 1')).rejects.toThrow();
+
+    wasmBytes = REAL_WASM;
+    const { errors } = await parser.parse('a.tsx', 'const a = 1');
+    expect(errors).toHaveLength(0);
   });
 });
 
