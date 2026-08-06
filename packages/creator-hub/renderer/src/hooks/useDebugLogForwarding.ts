@@ -1,11 +1,9 @@
 import { useEffect, useRef, type MutableRefObject } from 'react';
-import Convert from 'ansi-to-html';
 
 import { editor } from '#preload';
 
 import type { RPCInfo } from '/@/modules/rpc';
 
-const convert = new Convert({ escapeXML: true });
 const LOG_BATCH_INTERVAL = 100;
 
 export function useDebugLogForwarding(
@@ -43,7 +41,7 @@ export function useDebugLogForwarding(
         const lines = Array.isArray(data) ? data : data.split('\n');
         for (const line of lines) {
           if (line.trim() !== '') {
-            logBatchRef.current.push(convert.toHtml(line));
+            logBatchRef.current.push(line);
           }
         }
       })

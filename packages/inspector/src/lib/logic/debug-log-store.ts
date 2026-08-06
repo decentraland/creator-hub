@@ -1,4 +1,4 @@
-export type DebugLogEntry = { id: number; html: string };
+export type DebugLogEntry = { id: number; text: string };
 
 const MAX_ENTRIES = 1000;
 
@@ -14,7 +14,7 @@ function notify() {
 
 export function push(lines: string[]) {
   if (lines.length === 0) return;
-  const newEntries = lines.map(html => ({ id: nextId++, html }));
+  const newEntries = lines.map(text => ({ id: nextId++, text }));
   entries = entries.concat(newEntries);
   if (entries.length > MAX_ENTRIES) {
     entries = entries.slice(-MAX_ENTRIES);
