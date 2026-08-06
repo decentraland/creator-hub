@@ -11,6 +11,9 @@ import { AuthServerProvider } from './auth';
 
 const METRICS_API_URL = config.get('METRICS_API_URL');
 
+/** Re-exported so callers don't have to reach into the shared transport types. */
+export type MetricsResponseOf<T> = MetricsResponse<T>;
+
 const signedHeaders = signedHeaderFactory();
 
 /** What the service knows about the signed-in wallet, including its worlds. */
@@ -22,10 +25,10 @@ export type MetricsMe = {
 
 /** One row of the metrics bag: a value for a metric, optionally per series and period. */
 export type MetricRow = {
-  /** Empty for metrics that have a single series. */
-  series: string;
-  /** ISO date of the day or week bucket; empty for whole-window metrics. */
-  period: string;
+  /** `null` for metrics that have a single series. */
+  series: string | null;
+  /** ISO date (`2026-07-27`) of the day or week bucket; `null` for whole-window metrics. */
+  period: string | null;
   value: number;
 };
 
@@ -56,7 +59,18 @@ function buildSignedHeaders(path: string): Record<string, string> {
   return Object.fromEntries(headers.entries());
 }
 
+/**
+ * A service on localhost is the fixture server (`npm run demo` in
+ * creators-data): no login, and `demo=1` answers the whole roster. That lets
+ * the app run against realistic data without a wallet on the roster.
+ */
+const IS_LOCAL_SERVICE = /^https?:\/\/(localhost|127\.0\.0\.1)([:/]|$)/.test(METRICS_API_URL);
+
 function get<T>(path: string): Promise<MetricsResponse<T>> {
+  if (IS_LOCAL_SERVICE) {
+    const separator = path.includes('?') ? '&' : '?';
+    return metrics.request<T>({ baseUrl: METRICS_API_URL, path: `${path}${separator}demo=1` });
+  }
   return metrics.request<T>({ baseUrl: METRICS_API_URL, path, headers: buildSignedHeaders(path) });
 }
 

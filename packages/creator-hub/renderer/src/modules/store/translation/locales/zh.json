@@ -933,6 +933,9 @@
         "description": "没有符合搜索条件的 Place。请尝试其他名称。"
       }
     },
+    "error": {
+      "title": "无法加载你的 Place"
+    },
     "actions": {
       "export": "导出分析数据",
       "export_unavailable": "分析数据上线后即可导出"
@@ -1113,7 +1116,7 @@
       },
       "columns": {
         "place": "Place",
-        "total_visits": "总访问量",
+        "total_visits": "独立访问量",
         "new_users": "新用户",
         "day_7_retention": "7 日留存",
         "revenue": "收入",

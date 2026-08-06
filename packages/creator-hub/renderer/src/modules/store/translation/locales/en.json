@@ -933,6 +933,9 @@
         "description": "No Place matches your search. Try a different name."
       }
     },
+    "error": {
+      "title": "We couldn't load your Places"
+    },
     "actions": {
       "export": "Export Analytics",
       "export_unavailable": "Exporting will be available once analytics data is live"
@@ -1113,7 +1116,7 @@
       },
       "columns": {
         "place": "Place",
-        "total_visits": "Total Visits",
+        "total_visits": "Unique Visits",
         "new_users": "New Users",
         "day_7_retention": "D7 Retention",
         "revenue": "Revenue",

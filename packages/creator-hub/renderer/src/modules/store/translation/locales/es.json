@@ -933,6 +933,9 @@
         "description": "Ningún Place coincide con tu búsqueda. Probá con otro nombre."
       }
     },
+    "error": {
+      "title": "No pudimos cargar tus Places"
+    },
     "actions": {
       "export": "Exportar Analíticas",
       "export_unavailable": "Vas a poder exportar cuando los datos de analíticas estén disponibles"
@@ -1113,7 +1116,7 @@
       },
       "columns": {
         "place": "Place",
-        "total_visits": "Visitas Totales",
+        "total_visits": "Visitas Únicas",
         "new_users": "Usuarios Nuevos",
         "day_7_retention": "Retención D7",
         "revenue": "Ingresos",

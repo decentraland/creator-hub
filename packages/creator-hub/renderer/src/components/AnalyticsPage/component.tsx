@@ -30,7 +30,7 @@ const SORT_OPTIONS: Array<{ label: string; value: SortBy }> = [
 
 export function AnalyticsPage() {
   const { isSignedIn } = useAuth();
-  const { places, pinnedPlaceIds, sortBy, searchQuery, status } = useSelector(
+  const { places, pinnedPlaceIds, sortBy, searchQuery, status, error } = useSelector(
     state => state.placeAnalytics,
   );
   const visiblePlaces = useSelector(selectors.getVisiblePlaces);
@@ -67,6 +67,12 @@ export function AnalyticsPage() {
         <Typography variant="h3">{t('analytics.header.title')}</Typography>
         {isLoading ? (
           <Loader size={70} />
+        ) : status === 'failed' ? (
+          /* Without this a failed request reads as "you have no Places yet". */
+          <Box className="EmptyContainer">
+            <Typography variant="h5">{t('analytics.error.title')}</Typography>
+            <Typography variant="body1">{error}</Typography>
+          </Box>
         ) : places.length === 0 ? (
           <Box className="EmptyContainer">
             <img
