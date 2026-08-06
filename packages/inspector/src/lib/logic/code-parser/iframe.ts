@@ -1,23 +1,12 @@
 import type { Transport } from '@dcl/mini-rpc';
 import { RPC, MessageTransport } from '@dcl/mini-rpc';
 
+import type { OxcParseResult } from './types';
+
 // Inspector-side client for the CodeParser channel. The native oxc-parser
 // cannot run in this browser iframe, so parsing is delegated to the Creator
 // Hub main process over RPC (iframe → renderer → preload → main). Mirrors the
 // IframeStorage client pattern.
-
-export interface OxcComment {
-  type: string;
-  value: string;
-  start: number;
-  end: number;
-}
-
-export interface OxcParseResult {
-  program: unknown;
-  comments: OxcComment[];
-  errors: unknown[];
-}
 
 export enum Method {
   PARSE = 'parse',
@@ -56,8 +45,8 @@ export function createIframeCodeParser(origin: string): Client {
   return instance;
 }
 
-// Access the parser client, or undefined when running standalone (no Creator
-// Hub parent / main process) — code-mode is Electron-only for now.
-export function getCodeParser(): Client | undefined {
+// The parser client, or undefined when running standalone (no Creator Hub
+// parent / main process). See `getCodeParser` for the dev-build fallback.
+export function getIframeCodeParser(): Client | undefined {
   return instance;
 }

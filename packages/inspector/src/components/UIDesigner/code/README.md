@@ -4,7 +4,7 @@ The UI Designer's **single source of truth** is the scene's real `@dcl/react-ecs
 
 This is the only mode — there is no flag or `localStorage` toggle to enable it.
 
-Code-mode is **Electron-only**: the parser (`oxc-parser`, native) runs in the Creator Hub main process and is reached over an RPC bridge (see below). The standalone inspector (`:8000`) has no parser and cannot run code-mode.
+In the shipped app the parser (`oxc-parser`, native) runs in the Creator Hub main process and is reached over an RPC bridge (see below). **Dev builds** of the standalone inspector fall back to `@oxc-parser/wasm` running in the tab, over the scene fixture's in-memory storage, so code-mode is developable without Electron (`lib/logic/code-parser/index.ts`). A production build with no bridge has no parser: the wasm one is behind the `INSPECTOR_DEV_PARSER` build flag so it never ships.
 
 ## File-per-root layout
 

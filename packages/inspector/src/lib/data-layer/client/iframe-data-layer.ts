@@ -2,23 +2,17 @@ import { createFileSystemInterface } from '../../logic/file-system-interface';
 import { createIframeStorage } from '../../logic/storage';
 import { createDataLayerHost } from '../host';
 import type { DataLayerRpcClient } from '../types';
-import type { Storage } from '../../logic/storage/types';
 import { createIframeScene } from '../../rpc/scene';
-import { createIframeCodeParser } from '../../logic/code-parser/iframe';
-
-let storageInstance: Storage | undefined;
-
-export function getStorage(): Storage | undefined {
-  return storageInstance;
-}
+import { createIframeCodeParser } from '../../logic/code-parser';
+import { setStorage } from './storage';
 
 export async function createIframeDataLayerRpcClient(origin: string): Promise<DataLayerRpcClient> {
   const storage = createIframeStorage(origin);
-  storageInstance = storage;
+  setStorage(storage);
 
   createIframeScene(origin);
-  // Code-mode parser bridge (native oxc-parser lives in CH main). No-op when
-  // running standalone (no parent origin) — code-mode is Electron-only.
+  // Code-mode parser bridge (native oxc-parser lives in CH main). Standalone
+  // dev builds fall back to a wasm parser in the tab instead.
   createIframeCodeParser(origin);
 
   const fs = createFileSystemInterface(storage);

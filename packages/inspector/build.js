@@ -32,6 +32,10 @@ async function main() {
       '.woff2': 'dataurl',
       '.ttf': 'dataurl',
       '.glb': 'dataurl',
+      // Only the dev-only code parser imports a .wasm; inlining it as bytes
+      // keeps it out of `public/` (nothing extra to serve or publish), and out
+      // of production bundles entirely (the importing module is dead code).
+      '.wasm': 'binary',
     },
     banner: {
       // prepend hot-reload script to the bundle when in development mode
@@ -39,7 +43,7 @@ async function main() {
         ? ''
         : `;(() => {${fs.readFileSync(path.resolve(__dirname, './hot-reload.js'), 'utf-8')}})();`,
     },
-    define: { ...getEnvVars() },
+    define: { ...getEnvVars(), INSPECTOR_DEV_PARSER: JSON.stringify(!PRODUCTION) },
   });
 
   if (WATCH_MODE) {

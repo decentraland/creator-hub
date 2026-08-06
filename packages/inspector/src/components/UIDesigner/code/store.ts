@@ -1,9 +1,9 @@
 import { useSyncExternalStore } from 'react';
 import type { Entity } from '@dcl/ecs';
 
-import { getCodeParser } from '../../../lib/logic/code-parser/iframe';
+import { getCodeParser } from '../../../lib/logic/code-parser';
 import { isValidIdentifier } from '../../../lib/sdk/operations/validators';
-import { getStorage } from '../../../lib/data-layer/client/iframe-data-layer';
+import { getStorage } from '../../../lib/data-layer/client/storage';
 import { store as reduxStore } from '../../../redux/store';
 import {
   getPlatform,
