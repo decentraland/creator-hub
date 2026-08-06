@@ -119,6 +119,7 @@
       "home": "Home",
       "scenes": "Scenes",
       "collections": "Collections",
+      "analytics": "Analytics",
       "manage": "Manage",
       "learn": "Learn",
       "more": "More"
@@ -918,6 +919,213 @@
     },
     "unpublish_world_confirmation": {
       "title": "Unpublish <b>{worldName}</b>?"
+    }
+  },
+  "analytics": {
+    "header": {
+      "title": "Analytics"
+    },
+    "empty_list": {
+      "title": "No Places to analyse yet",
+      "description": "Publish a scene to start tracking its performance. Once it's live, you'll find key insights and metrics about your Place here.",
+      "search": {
+        "title": "No Places found",
+        "description": "No Place matches your search. Try a different name."
+      }
+    },
+    "error": {
+      "title": "We couldn't load your Places"
+    },
+    "actions": {
+      "export": "Export Analytics",
+      "export_unavailable": "Exporting will be available once analytics data is live"
+    },
+    "detail": {
+      "title": "Analytics - {name}",
+      "tabs": {
+        "overview": "Overview",
+        "retention": "Retention",
+        "visits": "Visits",
+        "engagement": "Engagement"
+      },
+      "date_range": {
+        "title": "Date Range",
+        "last_7_days": "Last 7 Days",
+        "last_30_days": "Last 30 Days",
+        "last_60_days": "Last 60 Days"
+      },
+      "place": {
+        "access": "Access",
+        "private": "Private",
+        "public": "Public",
+        "published_in": "Published in",
+        "last_published_by": "Last published by",
+        "last_update": "Last Update"
+      },
+      "actions": {
+        "create_event": "Create Event",
+        "edit_scene": "Edit Scene",
+        "edit_scene_unavailable": "Opening the scene from here is not available yet",
+        "copy_url": "Copy URL",
+        "jump_in": "Jump In"
+      },
+      "overview": {
+        "title": "Overview",
+        "description": "Snapshot of your place's growth, engagement, and user retention."
+      },
+      "retention": {
+        "title": "Retention",
+        "description": "Understand the percentage of users who return after their first session.",
+        "platforms": {
+          "title": "Platforms",
+          "description": "Your 60-day rolling average, compared across mobile and desktop."
+        },
+        "day_7_cohort": {
+          "title": "Day 7 Retention by Cohort Week",
+          "description": "Percentage of users who returned at least once over the 7 days after their first visit, grouped by the week they first jumped into your place.",
+          "benchmark": "{value}% Day 7 KR"
+        },
+        "churn": {
+          "title": "Weekly Churn Rate",
+          "description": "Percentage of active users from the previous week who did not return this week."
+        }
+      },
+      "visits": {
+        "title": "Visits",
+        "description": "Understand how many users visited your place and how many were new or returning visitors.",
+        "unique": {
+          "title": "Unique Visits in the Last 60 Days",
+          "footnote": "Unique users, deduplicated across platforms. People who use both desktop and mobile are counted once in All Platforms and once in each platform's total."
+        },
+        "weekly_active": {
+          "title": "Weekly Active Users",
+          "description": "Unique active users during each week."
+        },
+        "flow": {
+          "title": "Weekly Users Flow",
+          "description": "Track how your weekly users move between new, returning, and reactivated.",
+          "returned": {
+            "label": "Returned Users",
+            "tooltip": "Users who visited last week and came back this week."
+          },
+          "reactivated": {
+            "label": "Reactivated Users",
+            "tooltip": "Users who had stopped visiting and returned this week."
+          }
+        }
+      },
+      "engagement": {
+        "title": "Engagement",
+        "description": "Understand how users engage with your place.",
+        "minutes": "min",
+        "delta": "{value} min",
+        "vs_last_week": "{value} vs. last week",
+        "daily": {
+          "title": "Average Daily Playtime",
+          "description": "Average time each user spends in your place on a single visit.",
+          "chart_title": "Average Daily Playtime each week"
+        },
+        "weekly": {
+          "title": "Average Weekly Playtime",
+          "description": "Average time each user spends in your place per week.",
+          "chart_title": "Average Weekly Playtime per User"
+        },
+        "social": {
+          "title": "Social Interactions",
+          "description": "Interactions are counted per realm (one running copy of the place), so play spread across realms reads a little low.",
+          "totals_title": "Social Interactions Weekly Totals",
+          "rate_title": "Visitors Social Interactions Rate",
+          "messages": {
+            "label": "Messages Sent",
+            "tooltip": "Chat messages sent by visitors in your place."
+          },
+          "emotes": {
+            "label": "Emotes Played",
+            "tooltip": "Emotes played by visitors in your place."
+          },
+          "friendships": {
+            "label": "New Friendships",
+            "tooltip": "Friend requests accepted between visitors in your place."
+          }
+        }
+      },
+      "platforms": {
+        "all": "All Platforms",
+        "desktop": "Desktop",
+        "mobile": "Mobile"
+      },
+      "charts": {
+        "no_data": "No data for this period yet"
+      },
+      "error": {
+        "title": "We couldn't load this Place's analytics"
+      }
+    },
+    "metrics": {
+      "total_visits": {
+        "label": "Total Visits",
+        "tooltip": "Every visit to your place, including repeat visits by the same user."
+      },
+      "unique_visits": {
+        "label": "Unique Visits",
+        "tooltip": "Distinct users who visited your place, counted once each."
+      },
+      "new_users": {
+        "label": "New Users",
+        "tooltip": "Users who visited your place for the first time."
+      },
+      "concurrent_users": {
+        "label": "Concurrent Users",
+        "tooltip": "The highest number of users in your place at the same time."
+      },
+      "revenue": {
+        "label": "Revenue",
+        "tooltip": "MANA earned in your place."
+      },
+      "day_7_retention": {
+        "label": "Day 7 Retention",
+        "tooltip": "The percentage of new users who returned to your place at least once over the 7 days after their first visit."
+      },
+      "avg_playtime": {
+        "label": "Avg. Playtime",
+        "tooltip": "Average time each user spends in your place on a single visit."
+      },
+      "afk_time": {
+        "label": "AFK Time",
+        "tooltip": "Average time users spend in your place without interacting."
+      },
+      "desktop": {
+        "label": "Desktop",
+        "tooltip": "Users who visited your place from a desktop client."
+      },
+      "mobile": {
+        "label": "Mobile",
+        "tooltip": "Users who visited your place from a mobile client."
+      }
+    },
+    "list": {
+      "places": "{count} {count, plural, one {Place} other {Places}}",
+      "search": "Search",
+      "minutes": "{value} min",
+      "pinned": "Pinned to Watchlist",
+      "sort": {
+        "title": "Sort by",
+        "name_asc": "Name A-Z",
+        "name_desc": "Name Z-A",
+        "most_visits": "Most Visits"
+      },
+      "columns": {
+        "place": "Place",
+        "total_visits": "Unique Visits",
+        "new_users": "New Users",
+        "day_7_retention": "D7 Retention",
+        "revenue": "Revenue",
+        "avg_playtime": "Avg. Playtime"
+      },
+      "actions": {
+        "pin_to_watchlist": "Pin to Watchlist",
+        "unpin_from_watchlist": "Unpin from Watchlist"
+      }
     }
   },
   "connection": {

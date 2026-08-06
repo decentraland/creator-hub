@@ -10,6 +10,7 @@ import * as analytics from './analytics';
 import * as npm from './npm';
 import * as config from './config';
 import * as mobileDebug from './mobile-debug-server';
+import * as metrics from './metrics';
 
 interface InitIpcOptions {
   beforeQuitCleanup: () => Promise<void>;
@@ -26,6 +27,9 @@ export function initIpc({ beforeQuitCleanup }: InitIpcOptions) {
   handle('electron.showOpenDialog', (_event, opts) => electron.showOpenDialog(opts));
   handle('electron.openExternal', (_event, url) => electron.openExternal(url));
   handle('electron.copyToClipboard', (_event, text) => electron.copyToClipboard(text));
+
+  // analytics API (fetched here because the renderer's `Origin: null` fails CORS)
+  handle('metrics.request', (_event, request) => metrics.request(request));
 
   // updater
   handle('updater.checkForUpdates', (_event, config) => updater.checkForUpdates(config));

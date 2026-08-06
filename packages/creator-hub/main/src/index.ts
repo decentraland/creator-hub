@@ -23,7 +23,12 @@ import { killInspectorServer } from '/@/modules/inspector';
 import { runMigrations } from '/@/modules/migrations';
 import { getAnalytics, track, trackLifecycleEvent } from './modules/analytics';
 import { handleAppArguments } from './modules/app-args-handle';
-import { DEEPLINK_PROTOCOL, flushPendingDeeplink, handleDeeplink } from './modules/deeplink';
+import {
+  DEEPLINK_PROTOCOL,
+  flushPendingDeeplink,
+  handleDeeplink,
+  shouldRegisterProtocolClient,
+} from './modules/deeplink';
 import { addEditorsPathsToConfig } from './modules/code';
 
 import '/@/security-restrictions';
@@ -73,14 +78,16 @@ app.on('second-instance', async (_e: unknown, argv: string[]) => {
  * In development the executable is Electron itself, so the path to the app entry
  * point must be passed explicitly for the registration to resolve correctly.
  */
-if (process.defaultApp) {
-  if (process.argv.length >= 2) {
-    app.setAsDefaultProtocolClient(DEEPLINK_PROTOCOL, process.execPath, [
-      path.resolve(process.argv[1]),
-    ]);
+if (shouldRegisterProtocolClient(!!process.defaultApp, platform)) {
+  if (process.defaultApp) {
+    if (process.argv.length >= 2) {
+      app.setAsDefaultProtocolClient(DEEPLINK_PROTOCOL, process.execPath, [
+        path.resolve(process.argv[1]),
+      ]);
+    }
+  } else {
+    app.setAsDefaultProtocolClient(DEEPLINK_PROTOCOL);
   }
-} else {
-  app.setAsDefaultProtocolClient(DEEPLINK_PROTOCOL);
 }
 
 /**

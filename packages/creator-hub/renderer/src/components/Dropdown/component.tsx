@@ -30,7 +30,11 @@ function Dropdown(props: Props) {
 
   return (
     <>
-      <IconButton onClick={handleClick}>
+      <IconButton
+        onClick={handleClick}
+        aria-haspopup="true"
+        aria-expanded={open}
+      >
         <ThreeDots />
       </IconButton>
       <Menu
