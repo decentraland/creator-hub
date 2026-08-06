@@ -2,25 +2,6 @@
   "version": 1,
   "components": [
     {
-      "name": "core::Animator",
-      "data": {
-        "0": {
-          "json": {
-            "states": [
-              {
-                "clip": "Keyboard",
-                "playing": false,
-                "weight": 1,
-                "speed": 1,
-                "loop": false,
-                "shouldReset": false
-              }
-            ]
-          }
-        }
-      }
-    },
-    {
       "name": "core::GltfContainer",
       "data": {
         "0": {
@@ -43,74 +24,17 @@
       }
     },
     {
-      "name": "asset-packs::Actions",
-      "data": {
-        "0": {
-          "json": {
-            "id": "{self}",
-            "value": [
-              {
-                "type": "play_sound",
-                "name": "Play sound",
-                "jsonPayload": "{\"src\":\"{assetPath}/keyboard.mp3\"}"
-              },
-              {
-                "type": "play_animation",
-                "name": "Play animation",
-                "jsonPayload": "{\"animation\":\"Keyboard\"}"
-              }
-            ]
-          }
-        }
-      }
-    },
-    {
-      "name": "asset-packs::Triggers",
+      "name": "asset-packs::Script",
       "data": {
         "0": {
           "json": {
             "value": [
               {
-                "type": "on_input_action",
-                "actions": [
-                  {
-                    "id": "{self:asset-packs::Actions}",
-                    "name": "Play sound"
-                  },
-                  {
-                    "id": "{self:asset-packs::Actions}",
-                    "name": "Play animation"
-                  }
-                ],
-                "basicViewId": "trigger-when-clicked"
+                "path": "{assetPath}/Button.ts",
+                "priority": 0,
+                "layout": "{\"params\":{\"hoverText\":{\"type\":\"string\",\"optional\":true,\"value\":\"Press\",\"tooltip\":\"Text shown when the player points at the button.\"},\"onClick\":{\"type\":\"action\",\"optional\":true,\"value\":{\"entity\":0,\"action\":\"\"},\"tooltip\":\"Action triggered every time the button is pressed.\"},\"inputButton\":{\"type\":\"number\",\"optional\":true,\"value\":1,\"tooltip\":\"Input that presses the button: 0 = mouse click, 1 = E key, 2 = F key.\"},\"sound\":{\"type\":\"string\",\"optional\":true,\"value\":\"keyboard.mp3\",\"tooltip\":\"Name of an audio file inside this smart item's folder (e.g. sound.mp3), played whenever the button is pressed. Leave empty for no sound.\"},\"animation\":{\"type\":\"string\",\"optional\":true,\"value\":\"Keyboard\",\"tooltip\":\"Name of the animation clip in the button's model that plays when the button is pressed. Leave empty for no animation.\"}},\"actions\":[{\"methodName\":\"press\",\"description\":\"Presses the button, playing its animation and sound and triggering its On Click action\",\"params\":{}}]}"
               }
             ]
-          }
-        }
-      }
-    },
-    {
-      "name": "inspector::Config",
-      "data": {
-        "0": {
-          "json": {
-            "isBasicViewEnabled": true,
-            "componentName": "Button",
-            "fields": [
-              {
-                "name": "Hover Text",
-                "type": "core::PointerEvents"
-              },
-              {
-                "name": "When Clicked",
-                "type": "asset-packs::Triggers",
-                "basicViewId": "trigger-when-clicked"
-              }
-            ],
-            "helpTooltip": {
-              "text": "Configure the button's hover text and actions. Set what happens when the button is clicked by configuring triggers and actions."
-            },
-            "version": 1
           }
         }
       }
