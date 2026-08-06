@@ -5,6 +5,8 @@ import QuestionMarkIcon from '@mui/icons-material/QuestionMark';
 import SettingsIcon from '@mui/icons-material/Settings';
 import { Box, Button, IconButton } from 'decentraland-ui2';
 import { useDispatch, useSelector } from '#store';
+import { useFeatureFlags } from '/@/hooks/useFeatureFlags';
+import { FeatureFlag } from '/@/modules/store/featureFlags';
 import type { AppState } from '#store';
 import { misc } from '#preload';
 import logo from '/assets/images/logo-editor.png';
@@ -39,6 +41,7 @@ function MenuItem(props: { item: NavbarItem; active: NavbarItem; disable?: boole
 
 export function Navbar(props: { active: NavbarItem }) {
   const openAppSettings = useSelector((state: AppState) => state.settings.openAppSettingsModal);
+  const { isEnabled } = useFeatureFlags();
   const dispatch = useDispatch();
 
   const handleClickReportIssue = useCallback(() => misc.openExternal(REPORT_ISSUES_URL), []);
@@ -76,9 +79,12 @@ export function Navbar(props: { active: NavbarItem }) {
             active={props.active}
             disable={true}
           />
+          {/* The only way into Analytics: the router is in-memory, so hiding
+              this entry hides the section. */}
           <MenuItem
             item={NavbarItem.ANALYTICS}
             active={props.active}
+            disable={!isEnabled(FeatureFlag.ANALYTICS)}
           />
           <MenuItem
             item={NavbarItem.MANAGE}
