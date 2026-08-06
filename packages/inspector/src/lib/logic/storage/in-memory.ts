@@ -36,10 +36,14 @@ export function createInMemoryStorage(initialFs: Record<string, Buffer> = {}): S
     },
     async list(path: string) {
       const files: { name: string; isDirectory: boolean }[] = [];
+      // Directories are virtual (path prefixes), so a directory path must end in
+      // a separator to split entry names off it. The fs-backed storages accept
+      // either form, and callers write the natural one ('src/ui').
+      const prefix = path === '' || path.endsWith('/') ? path : `${path}/`;
       for (const _path of Array.from(storage.keys())) {
-        if (!_path.startsWith(path)) continue;
+        if (!_path.startsWith(prefix)) continue;
 
-        const fileName = _path.substring(path.length);
+        const fileName = _path.substring(prefix.length);
         const slashPosition = fileName.indexOf('/');
         if (slashPosition !== -1) {
           const directoryName = fileName.substring(0, slashPosition);
