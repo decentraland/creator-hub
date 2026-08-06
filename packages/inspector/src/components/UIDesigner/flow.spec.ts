@@ -11,7 +11,14 @@ import { applyEdits } from './code/emit-adapter';
 import { codeToUINodes } from './code/parse-adapter';
 import { uiTransformPatchEdits } from './code/transform-patch';
 import { POSITION_GROUP } from './field-configs';
-import { FLOW_DIRECTIONS, flowPatch, flowValue, isWrapping, wrapPatch } from './flow';
+import {
+  absolutePatch,
+  FLOW_DIRECTIONS,
+  flowPatch,
+  flowValue,
+  isWrapping,
+  wrapPatch,
+} from './flow';
 
 function parseRoot(source: string) {
   const r = parseSync('S.tsx', source);
@@ -72,6 +79,34 @@ describe('the Flow control', () => {
       expect(patch.positionType).toBe(YGPT_ABSOLUTE);
       expect(patch.positionTop).toBe(10);
       expect(patch.positionLeft).toBe(20);
+    });
+
+    // The measured offset is where the node's MARGIN put it, and Yoga adds the
+    // leading margin to an absolute node's leading inset — so keeping the margins
+    // would move the node by its own margin, which is what baking the offset is
+    // meant to prevent.
+    it('should clear the margins when baking the offset', () => {
+      expect(absolutePatch({ top: 32, left: 8 })).toMatchObject({
+        positionTop: 32,
+        positionLeft: 8,
+        marginTop: 0,
+        marginTopUnit: YGU_UNDEFINED,
+        marginRight: 0,
+        marginRightUnit: YGU_UNDEFINED,
+        marginBottom: 0,
+        marginBottomUnit: YGU_UNDEFINED,
+        marginLeft: 0,
+        marginLeftUnit: YGU_UNDEFINED,
+      });
+    });
+
+    // The selector's absolute cell and the "Ignore Layout Flow" checkbox (the
+    // panel's position-mode field) share this one builder, so the margin fix
+    // covers both paths.
+    it('should build the absolute cell from the shared patch', () => {
+      expect(flowPatch('absolute', 'column', { top: 32, left: 8 })).toEqual(
+        absolutePatch({ top: 32, left: 8 }),
+      );
     });
 
     it('should reset the baked offsets only when leaving absolute', () => {
@@ -163,6 +198,27 @@ describe('the Flow control', () => {
       expect(after.positionTop).toBeUndefined();
       expect(after.positionLeft).toBeUndefined();
       expect(backInFlow).not.toContain('position:');
+    });
+  });
+
+  describe('when a node with margins is switched to absolute in source', () => {
+    const SOURCE = `export function S() {
+  return <UiEntity uiTransform={{ width: 100, height: 50, margin: { top: 32, left: 8 } }} />
+}`;
+
+    it('should drop the margins so the node stays where it was measured', () => {
+      expect(transformOf(SOURCE).marginTop).toBe(32);
+
+      // 32/8 is the offset the margin itself produced; Yoga would add it a second
+      // time on top of an absolute inset, landing the node at 64/16.
+      const next = patchRoot(SOURCE, flowPatch('absolute', 'row', { top: 32, left: 8 })!);
+      expect(next).not.toContain('margin');
+
+      const after = transformOf(next);
+      expect(after.positionTop).toBe(32);
+      expect(after.positionLeft).toBe(8);
+      expect(after.marginTop).toBeUndefined();
+      expect(after.marginLeft).toBeUndefined();
     });
   });
 });

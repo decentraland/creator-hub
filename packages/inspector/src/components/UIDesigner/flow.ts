@@ -53,6 +53,14 @@ export function flowValue(transform: Record<string, unknown> | null): FlowValue 
  * → Absolute. Bakes the node's current on-screen offset as Top/Left px so
  * switching modes never moves it, and clears the opposite edges so nothing stale
  * survives. `offset` comes from measuring the canvas (see measure.ts).
+ *
+ * The margins go with it. The measured offset is where the node's MARGIN put it,
+ * and Yoga adds the leading margin on top of the leading inset of an absolute
+ * node, so keeping them would move the node by its own margin — the one thing
+ * this patch promises not to do. All four go, not just the leading pair, so that
+ * `Position` keeps meaning the node's visible offset: every later position edit
+ * and canvas drag reads it that way. Authored margins are not recoverable —
+ * `inFlowPatch` has nowhere to restore them from.
  */
 export function absolutePatch(offset: { top: number; left: number } | null) {
   return {
@@ -65,6 +73,14 @@ export function absolutePatch(offset: { top: number; left: number } | null) {
     positionRightUnit: YGU_UNDEFINED,
     positionBottom: 0,
     positionBottomUnit: YGU_UNDEFINED,
+    marginTop: 0,
+    marginTopUnit: YGU_UNDEFINED,
+    marginRight: 0,
+    marginRightUnit: YGU_UNDEFINED,
+    marginBottom: 0,
+    marginBottomUnit: YGU_UNDEFINED,
+    marginLeft: 0,
+    marginLeftUnit: YGU_UNDEFINED,
   };
 }
 
