@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
+import { BUTTON_VARIANT_ENUM } from './code/ecs-shape';
+import { isLayerableComponent, UI_BUTTON } from './code/parse-adapter';
 import {
   buildGroups,
   buildLayoutGroup,
@@ -101,7 +103,14 @@ describe('buildGroups', () => {
     it('should compose the exact group order per type', () => {
       expect(titles('UiEntity')).toEqual(['Position', 'Layout', 'Style', 'Mouse Events']);
       expect(titles('Label')).toEqual(['Position', 'Layout', 'Text', 'Style', 'Mouse Events']);
-      expect(titles('Button')).toEqual(['Position', 'Layout', 'Text', 'Style', 'Mouse Events']);
+      expect(titles('Button')).toEqual([
+        'Position',
+        'Layout',
+        'Button',
+        'Text',
+        'Style',
+        'Mouse Events',
+      ]);
       expect(titles('Input')).toEqual([
         'Position',
         'Layout',
@@ -451,6 +460,50 @@ describe('buildGroups', () => {
     it('should not keep a raw Overflow enum row', () => {
       for (const type of ALL_TYPES) {
         expect(allLabels(type)).not.toContain('Overflow');
+      }
+    });
+  });
+
+  describe('and the node is a Button', () => {
+    it('should expose exactly Variant and Disabled as its own props', () => {
+      expect(labelsIn('Button', 'Button')).toEqual(['Variant', 'Disabled']);
+      for (const f of fieldsIn('Button', 'Button')) expect(f.componentId).toBe(UI_BUTTON);
+    });
+
+    // Variant is `core` so the group always has a row (a group whose only rows are
+    // hidden-until-set would render as a bare "+ Add property"), and because an
+    // unset variant still renders as Primary in-world.
+    it('should always show Variant and hide Disabled until it is set', () => {
+      const [variant, disabled] = fieldsIn('Button', 'Button');
+      expect(variant.core).toBe(true);
+      expect(disabled.core).toBeUndefined();
+    });
+
+    // The panel draws Variant with the same numeric `enum` control as every other
+    // enum, but react-ecs takes the STRINGS — so these options must stay exactly
+    // the map the emit path converts through.
+    it('should offer the variants ecs-shape can convert back to source', () => {
+      const [variant] = fieldsIn('Button', 'Button');
+      expect(variant.options).toEqual([
+        { value: 0, label: 'Primary' },
+        { value: 1, label: 'Secondary' },
+      ]);
+      for (const o of variant.options ?? []) {
+        expect(BUTTON_VARIANT_ENUM[o.value]).toBe(o.label.toLowerCase());
+      }
+      expect(Object.keys(BUTTON_VARIANT_ENUM)).toHaveLength(variant.options!.length);
+    });
+
+    // Both props must keep writing a plain JSX attribute whatever interaction state
+    // the panel is editing — this is what routes them past setInteractionField.
+    it('should keep its own props out of the interaction layers', () => {
+      for (const f of fieldsIn('Button', 'Button')) {
+        expect(isLayerableComponent(f.componentId)).toBe(false);
+      }
+      for (const group of ['Text', 'Style']) {
+        for (const f of fieldsIn('Button', group)) {
+          expect(isLayerableComponent(f.componentId)).toBe(true);
+        }
       }
     });
   });

@@ -448,6 +448,23 @@ export function removeAttribute(el: AstNode, source: string, name: string): Edit
   return [{ start, end: attr.end, text: '' }];
 }
 
+// A whole patch of top-level attributes in one pass: an `undefined` value removes
+// its attribute (a panel Remove / −), anything else writes or replaces it. One
+// call per patch — separate passes against the same stale element would compute
+// their insertion points from pre-edit offsets.
+export function setAttributes(
+  el: AstNode,
+  source: string,
+  fields: Record<string, unknown>,
+): Edit[] {
+  const edits: Edit[] = [];
+  for (const [name, value] of Object.entries(fields)) {
+    if (value === undefined) edits.push(...removeAttribute(el, source, name));
+    else edits.push(...setAttribute(el, name, value));
+  }
+  return edits;
+}
+
 // Set a top-level attribute to a mixed-content template literal built from
 // ordered segments (literal text + variable expressions), e.g.
 // `value={`Score: ${state.score}`}`. An all-literal list collapses to a plain

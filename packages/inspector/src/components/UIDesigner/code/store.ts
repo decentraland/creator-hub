@@ -77,6 +77,7 @@ import {
   removeReturnJsx,
   setAttribute,
   setAttributeExpr,
+  setAttributes,
   setAttributeSegments,
   segmentsFieldValue,
   setObjectFields,
@@ -106,14 +107,16 @@ import {
   unwrapPlatformEdits,
   wrapInPlatformEdits,
 } from './platform-convention';
-import { pbBackgroundPatchToErgoFields, pbToErgonomicText } from './ecs-shape';
+import { pbBackgroundPatchToErgoFields, pbToErgonomicButton, pbToErgonomicText } from './ecs-shape';
 import { formatUiSource } from './formatting';
 import { uiTransformPatchEdits, uiTransformPatchFields } from './transform-patch';
 import {
   codeToUINodes,
   findComponentFn,
   findComponentIdSpan,
+  isLayerableComponent,
   isLayerableProp,
+  UI_BUTTON,
 } from './parse-adapter';
 import { toComponentName, uniqueRootName } from './root-naming';
 import type { CodeUINode, InteractionStateStyles, ParsedUI } from './types';
@@ -1217,8 +1220,10 @@ function codeComponentValue(
   node: CodeUINode | undefined,
   componentId: string,
 ): Record<string, unknown> | null {
+  if (!node) return null;
+  if (componentId === UI_BUTTON) return node.uiButton ?? null;
   const field = COMPONENT_FIELD[componentId];
-  if (!node || !field) return null;
+  if (!field) return null;
   return (node[field] as Record<string, unknown>) ?? null;
 }
 
@@ -1230,7 +1235,11 @@ export function codeComponentValueForLayer(
   componentId: string,
   layer: InteractionStateKey,
 ): Record<string, unknown> | null {
-  if (!node?.interaction || layer === 'base') return codeComponentValue(node, componentId);
+  // A non-layerable component (ui::button) reads off the element in EVERY layer —
+  // it has no per-state home to merge over.
+  if (!node?.interaction || layer === 'base' || !isLayerableComponent(componentId)) {
+    return codeComponentValue(node, componentId);
+  }
   const field = COMPONENT_FIELD[componentId];
   if (!field) return null;
   const base = node.interaction.states.base?.[field] ?? {};
@@ -1321,19 +1330,16 @@ async function spliceComponentPatchUnlocked(
   } else if (
     componentId === 'core::UiText' ||
     componentId === 'core::UiInput' ||
-    componentId === 'core::UiDropdown'
+    componentId === 'core::UiDropdown' ||
+    componentId === UI_BUTTON
   ) {
-    // Text / Input / Dropdown props are top-level JSX attributes, not a nested
-    // object. The panel patches the PB numeric enums for textAlign/font;
+    // Text / Input / Dropdown props — and a Button's own variant/disabled — are
+    // top-level JSX attributes, not a nested object. The panel patches the PB
+    // numeric enums for textAlign/font (and for variant, the editor-local one);
     // convert them back to the ergonomic strings react-ecs expects before
     // emitting (every other prop is the same shape on both sides).
-    const ergo = pbToErgonomicText(patch);
-    for (const key of Object.keys(ergo)) {
-      // An undefined value means "unset this prop" (a panel Remove/−) → delete
-      // the JSX attribute; any other value writes/replaces it.
-      if (ergo[key] === undefined) edits.push(...removeAttribute(ast, state.source, key));
-      else edits.push(...setAttribute(ast, key, ergo[key]));
-    }
+    const ergo = componentId === UI_BUTTON ? pbToErgonomicButton(patch) : pbToErgonomicText(patch);
+    edits.push(...setAttributes(ast, state.source, ergo));
   }
 
   if (edits.length) await applySourceEdits(edits);

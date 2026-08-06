@@ -13,7 +13,12 @@ import {
 // constants so this pure parser has no value imports beyond types.
 const SEG_LITERAL = 'literal';
 const SEG_BINDING = 'binding';
-import { ergonomicToPBBackground, ergonomicToPBText, ergonomicToPBTransform } from './ecs-shape';
+import {
+  ergonomicToPBBackground,
+  ergonomicToPBButton,
+  ergonomicToPBText,
+  ergonomicToPBTransform,
+} from './ecs-shape';
 import {
   findInteractionForSpread,
   INTERACTION_STATES,
@@ -83,6 +88,14 @@ const UI_DROPDOWN_PROPS = new Set([
   'font',
   'fontSize',
 ]);
+
+// Editor-internal component id for the two props react-ecs's <Button> adds on top
+// of UiLabelProps (UiButtonProps: `variant` / `disabled`). They have no PB
+// component to fold into — unlike an Input's `disabled`, which is a PBUiInput
+// field — so they are filed under their own id instead of a `core::` one.
+export const UI_BUTTON = 'ui::button';
+
+const UI_BUTTON_PROPS = new Set(['variant', 'disabled']);
 
 // Which prop set folds into which node field, per element type.
 const TYPED_PROP_GROUPS: Partial<
@@ -381,6 +394,23 @@ export function isLayerableProp(type: UINodeType, name: string): boolean {
   return TYPED_PROP_GROUPS[type]?.props.has(name) ?? false;
 }
 
+// The same question keyed by COMPONENT ID, for the panel: whose fields can be
+// edited per interaction state. A layer is a bag of STYLES, so `ui::button`'s are
+// not among them — `variant` and `disabled` aren't styles (a button doesn't stop
+// being disabled while hovered), and a layer value would lose to the JSX attribute
+// anyway, since the spread is emitted before the attributes.
+const LAYERABLE_COMPONENTS = new Set([
+  'core::UiTransform',
+  'core::UiBackground',
+  'core::UiText',
+  'core::UiInput',
+  'core::UiDropdown',
+]);
+
+export function isLayerableComponent(componentId: string): boolean {
+  return LAYERABLE_COMPONENTS.has(componentId);
+}
+
 export interface CodeToUINodesOptions {
   // Name of the exported component to read (defaults to the first exported
   // function declaration returning JSX).
@@ -608,16 +638,13 @@ export function codeToUINodes(
       }
     }
 
-    // Typed element props fold into their node field (Label/Button → uiText,
-    // Input → uiInput, Dropdown → uiDropdown); a prop bound to a variable
-    // (`value={state.x}`) or an interpolated template (`value={`Hi ${name}`}`)
-    // is recorded as a binding row instead — previewed on the canvas via
-    // previewBoundText and shown as bound in the panel — rather than collapsing
-    // the node to opaque dynamic content.
-    const group = TYPED_PROP_GROUPS[type];
-    if (group) {
+    // Read a set of element props into static values, recording each one bound to a
+    // variable (`value={state.x}`) or interpolated (`value={`Hi ${name}`}`) as a
+    // binding row instead — previewed on the canvas via previewBoundText and shown
+    // as bound in the panel — rather than collapsing the node to opaque content.
+    const readProps = (props: Set<string>, componentId: string): Record<string, unknown> => {
       const values: Record<string, unknown> = {};
-      for (const key of group.props) {
+      for (const key of props) {
         const attr = attrs.get(key);
         if (!attr) continue;
         const v = attrValue(attr);
@@ -625,16 +652,32 @@ export function codeToUINodes(
           values[key] = v.value;
           continue;
         }
-        const field = `${group.componentId}.${key}`;
+        const field = `${componentId}.${key}`;
         const segments = templateSegments(attr, source);
         const expr = bindingExpr(attr, source);
         if (segments) bindings.push({ field, variable: '', segments });
         else if (expr) bindings.push({ field, variable: expr });
         else dynamicProps = true;
       }
+      return values;
+    };
+
+    // Typed element props fold into their node field (Label/Button → uiText,
+    // Input → uiInput, Dropdown → uiDropdown).
+    const group = TYPED_PROP_GROUPS[type];
+    if (group) {
+      const values = readProps(group.props, group.componentId);
       // Normalize react-ecs's ergonomic text enums (textAlign/font strings) to
       // the flattened numeric enums the canvas + PropertyPanel read.
       if (Object.keys(values).length > 0) node[group.field] = ergonomicToPBText(values);
+    }
+
+    // Button's own two props, read the same way but filed on their own — they are
+    // NOT part of a typed prop group, which is exactly what keeps them out of an
+    // interaction layer (see isLayerableProp / isLayerableComponent).
+    if (type === 'Button') {
+      const values = ergonomicToPBButton(readProps(UI_BUTTON_PROPS, UI_BUTTON));
+      if (Object.keys(values).length > 0) node.uiButton = values;
     }
 
     // Event-handler bindings — the thunk `onMouseDown={() => onClick(state)}` the

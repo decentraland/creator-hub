@@ -48,6 +48,10 @@ export interface CodeUINode extends UINode {
   // its JSX attributes); the referenced root's parsed tree (for the read-only
   // inline preview) is resolved separately into the store's `componentTrees`.
   componentRef?: { name: string; props: ComponentRefProp[] };
+  // <Button>'s own two props (`variant` / `disabled`, keyed under `ui::button`).
+  // Deliberately NOT part of InteractionStateStyles: they are plain JSX attributes
+  // in every state (see parse-adapter's isLayerableComponent).
+  uiButton?: Record<string, unknown>;
   // Set when some prop value could not be statically evaluated (e.g. a
   // variable/call reference). The node is still shown, but the editor does not
   // own those props — it must not clobber them on write.

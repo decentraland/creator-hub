@@ -1,4 +1,5 @@
 import { alignmentIsRepresentable } from './alignment-presets';
+import { UI_BUTTON } from './code/parse-adapter';
 import { directionIsRepresentable, wrapIsRepresentable, YGW_WRAP_REVERSE } from './flow';
 import type { UINodeType } from './tree-model';
 
@@ -265,6 +266,14 @@ const FONT_OPTIONS: EnumOption[] = [
 const TEXT_WRAP_OPTIONS: EnumOption[] = [
   { value: 0, label: 'Wrap' },
   { value: 1, label: 'No wrap' },
+];
+
+// Button variant. Editor-local numbers (react-ecs takes the STRINGS) — the map
+// lives in ecs-shape's BUTTON_VARIANT_ENUM, which field-configs.spec pins these
+// options to.
+const BUTTON_VARIANT_OPTIONS: EnumOption[] = [
+  { value: 0, label: 'Primary' },
+  { value: 1, label: 'Secondary' },
 ];
 
 // BackgroundTextureMode, surfaced as "Scale Type". Values must stay the PB
@@ -775,6 +784,34 @@ const TEXT_GROUP = {
   ],
 };
 
+// The two props react-ecs's <Button> adds on top of a Label's (UiButtonProps).
+// The design doesn't draw them, so this group's own title mirrors Input's and
+// Dropdown's: the widget-named group holds what only that widget has, and it
+// renders FIRST — `variant` decides the button's background AND text colour
+// (react-ecs getButtonProps), so it reads above the Text group it overrides.
+const BUTTON_GROUP = {
+  title: 'Button',
+  fields: [
+    {
+      label: 'Variant',
+      componentId: UI_BUTTON,
+      path: 'variant',
+      kind: 'enum' as const,
+      options: BUTTON_VARIANT_OPTIONS,
+      bindable: false,
+      core: true,
+      info: 'Built-in button style: Primary is filled, Secondary inverted (light background, coloured text). Sets both the background and the text colour.',
+    },
+    {
+      label: 'Disabled',
+      componentId: UI_BUTTON,
+      path: 'disabled',
+      kind: 'boolean' as const,
+      info: 'Fades the button out and stops it responding to Mouse Down and Mouse Up.',
+    },
+  ],
+};
+
 const INPUT_GROUP = {
   title: 'Input',
   fields: [
@@ -1008,7 +1045,7 @@ const DROPDOWN_EVENTS_GROUP = {
 export const NODE_FIELD_CONFIGS: Record<UINodeType, NodeFieldConfig> = {
   UiEntity: { groups: [STYLE_GROUP, MOUSE_EVENTS_GROUP] },
   Label: { groups: [TEXT_GROUP, STYLE_GROUP, MOUSE_EVENTS_GROUP] },
-  Button: { groups: [TEXT_GROUP, STYLE_GROUP, MOUSE_EVENTS_GROUP] },
+  Button: { groups: [BUTTON_GROUP, TEXT_GROUP, STYLE_GROUP, MOUSE_EVENTS_GROUP] },
   Input: { groups: [INPUT_GROUP, STYLE_GROUP, INPUT_EVENTS_GROUP, MOUSE_EVENTS_GROUP] },
   Dropdown: {
     groups: [DROPDOWN_GROUP, STYLE_GROUP, DROPDOWN_EVENTS_GROUP, MOUSE_EVENTS_GROUP],

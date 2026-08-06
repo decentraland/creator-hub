@@ -62,6 +62,7 @@ import {
 } from './code/store';
 import { isActionNameTaken } from './code/bindings';
 import { INTERACTION_STATES, type InteractionStateKey } from './code/interaction-convention';
+import { isLayerableComponent } from './code/parse-adapter';
 import { ComponentRefPanel } from './code/ComponentRefPanel';
 import type { CodeUINode } from './code/types';
 import {
@@ -703,13 +704,18 @@ const PropertyPanelComponent: React.FC = () => {
   // A node with interaction states keeps ALL of its styles in the helper's
   // layers (base included), so every patch routes there — which is what lets the
   // existing field editors edit any prop in any state without duplicating them.
+  // ...except a component the layers cannot own (ui::button — see
+  // isLayerableComponent), which stays a plain JSX attribute in every state.
   const hasInteraction = !!codeNode?.interaction;
   const writeAndDispatch = useCallback(
     (componentId: string, patch: Record<string, unknown>) => {
       if (selected === null) return;
       const id = selected as unknown as number;
-      if (hasInteraction) void setInteractionField(id, activeLayer, componentId, patch);
-      else void spliceComponentPatch(id, componentId, patch);
+      if (hasInteraction && isLayerableComponent(componentId)) {
+        void setInteractionField(id, activeLayer, componentId, patch);
+      } else {
+        void spliceComponentPatch(id, componentId, patch);
+      }
     },
     [selected, hasInteraction, activeLayer],
   );
@@ -765,8 +771,11 @@ const PropertyPanelComponent: React.FC = () => {
   // merely inherited from Default — the displayed value is merged, so it can't
   // convey that on its own. An inherited field reads dimmed; an overridden one
   // gets a reset (−) back to inherited.
+  // A field the layers cannot own is never "inherited from Default": it reads and
+  // writes the element itself whatever layer is picked, so it keeps its normal
+  // chrome (and its Remove) instead of the dimmed inherited look.
   const renderRow = (field: FieldConfig, value: Record<string, unknown> | null) => {
-    const overriding = activeLayer !== 'base';
+    const overriding = activeLayer !== 'base' && isLayerableComponent(field.componentId);
     const overridden =
       overriding &&
       isFieldSet(field, interactionLayerValue(codeNode, field.componentId, activeLayer));

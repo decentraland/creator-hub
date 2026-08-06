@@ -514,3 +514,35 @@ export function pbToErgonomicText(pb: Record<string, unknown>): Record<string, u
   }
   return ergo;
 }
+
+// ---------------------------------------------------------------------------
+// Button-only props. <Button> adds `variant` ('primary' | 'secondary') and
+// `disabled` on top of UiLabelProps, neither of which has a PB component to live
+// in. `variant` still gets the enum treatment the text enums get, so the panel can
+// draw it with the same numeric `enum` control every other enum uses; the numbers
+// are ours, not a wire format (field-configs' Variant options mirror this map, and
+// field-configs.spec pins them to it). `disabled` is a boolean on both sides.
+// ---------------------------------------------------------------------------
+export const BUTTON_VARIANT_ENUM: Record<number, string> = { 0: 'primary', 1: 'secondary' };
+
+const BUTTON_VARIANT_STR = invert(BUTTON_VARIANT_ENUM);
+
+export function ergonomicToPBButton(ergo: Record<string, unknown>): Record<string, unknown> {
+  const pb: Record<string, unknown> = { ...ergo };
+  if (typeof ergo.variant === 'string') {
+    const n = BUTTON_VARIANT_STR[ergo.variant];
+    if (n !== undefined) pb.variant = n;
+    else delete pb.variant;
+  }
+  return pb;
+}
+
+export function pbToErgonomicButton(pb: Record<string, unknown>): Record<string, unknown> {
+  const ergo: Record<string, unknown> = { ...pb };
+  if (typeof pb.variant === 'number') {
+    const s = BUTTON_VARIANT_ENUM[pb.variant];
+    if (s !== undefined) ergo.variant = s;
+    else delete ergo.variant;
+  }
+  return ergo;
+}
