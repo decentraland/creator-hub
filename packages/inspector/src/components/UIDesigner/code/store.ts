@@ -265,9 +265,20 @@ function decodeUtf8(bytes: unknown): string {
 // src/ui/ automatically. Writes are immediate (no debounce): canvas ops are
 // discrete (mouseup), and immediate writes keep disk == state.source so the disk
 // watcher never mistakes our own write for an external edit.
+// A code parser without a storage bridge — today the WS data-layer path (a dev
+// inspector against a scene server, see redux/data-layer/sagas/connect) — makes code
+// mode look live while every read and write is dropped. Name the condition so that
+// is diagnosable from the console instead of presenting as edits that never land.
+function warnNoStorage(op: string, path: string): void {
+  console.warn(`[code-mode] cannot ${op} ${path}: no scene storage on this data layer`);
+}
+
 async function writeToDisk(path: string, source: string): Promise<void> {
   const storage = getStorage();
-  if (!storage) return;
+  if (!storage) {
+    warnNoStorage('write', path);
+    return;
+  }
   try {
     await storage.writeFile(path, new TextEncoder().encode(source) as unknown as Buffer);
   } catch (e) {
@@ -277,7 +288,10 @@ async function writeToDisk(path: string, source: string): Promise<void> {
 
 async function readFromDisk(path: string): Promise<string> {
   const storage = getStorage();
-  if (!storage) return '';
+  if (!storage) {
+    warnNoStorage('read', path);
+    return '';
+  }
   try {
     return decodeUtf8(await storage.readFile(path));
   } catch {
