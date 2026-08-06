@@ -94,23 +94,59 @@ export function anchorPatch(pin: AnchorPin, elem: Size): Record<string, unknown>
 // A canvas drag/resize commits where the node was DROPPED (measured on screen), so
 // it lands as a plain top-left px pin: the trailing edges have to go, or a
 // surviving right/bottom edge fights the new left/top. Of the margins, only a
-// centering counter-margin does (Yoga adds the leading margin to the leading
-// position, so it would offset the node past where it was dropped) — clearing
-// them all would make any drag delete a hand-authored `margin`.
+// centering counter-margin does — clearing them all would make any drag delete a
+// hand-authored `margin`.
+//
+// Yoga renders an absolute node's leading edge at `parent border + inset + own
+// leading margin`, so a margin that SURVIVES this patch is subtracted from the
+// committed inset: the authored value is kept AND inset + margin still adds up to
+// the measured drop point. A counter-margin the patch clears is not subtracted —
+// it won't be there to re-add.
 export function dragPinPatch(
   top: number,
   left: number,
   transform: Record<string, unknown> | null,
 ): Record<string, unknown> {
+  const cleared = clearedCenterMargins(transform);
   const patch: Record<string, unknown> = { positionType: POSITION_ABSOLUTE };
   for (const [axis, offset] of [
     [H_AXIS, left],
     [V_AXIS, top],
   ] as const) {
-    len(patch, `position${axis.lead}`, offset, YGU_POINT);
+    const margin = `margin${axis.lead}`;
+    const surviving = margin in cleared ? 0 : pointLength(transform, margin);
+    len(patch, `position${axis.lead}`, Math.round(offset - surviving), YGU_POINT);
     clear(patch, `position${axis.trail}`);
   }
-  return { ...patch, ...clearedCenterMargins(transform) };
+  return { ...patch, ...cleared };
+}
+
+// A length in px, or 0 when it is anything else. A PERCENT margin resolves against
+// the parent, which this patch has no measurement of — so a percent leading margin
+// still offsets the drop by its own size (its px value is measurable in the canvas
+// DOM, which is where closing that would have to start).
+function pointLength(t: Record<string, unknown> | null, key: string): number {
+  if (!t || t[`${key}Unit`] !== YGU_POINT) return 0;
+  return (t[key] as number | undefined) ?? 0;
+}
+
+// What the CANVAS renders while the splice round-trips: the inset the patch
+// commits, plus 0 for each counter-margin it clears (a margin it leaves alone is
+// absent from the hold, so the authored value keeps rendering — and the held inset
+// already compensates for it). Derived from the patch itself, so the held frame
+// and the reparsed frame cannot drift apart.
+export function dragPinHold(
+  top: number,
+  left: number,
+  transform: Record<string, unknown> | null,
+): { top: number; left: number; marginTop?: number; marginLeft?: number } {
+  const patch = dragPinPatch(top, left, transform);
+  return {
+    top: patch.positionTop as number,
+    left: patch.positionLeft as number,
+    marginTop: 'marginTop' in patch ? 0 : undefined,
+    marginLeft: 'marginLeft' in patch ? 0 : undefined,
+  };
 }
 
 function readAxis<Pin extends AnchorPin>(t: Record<string, unknown>, axis: Axis<Pin>): Pin | null {

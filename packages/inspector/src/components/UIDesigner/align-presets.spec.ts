@@ -7,7 +7,13 @@ import {
   YGU_POINT,
   YGU_UNDEFINED,
 } from '../../lib/sdk/ui-transform-constants';
-import { anchorPatch, clearedCenterMargins, dragPinPatch, readAnchor } from './align-presets';
+import {
+  anchorPatch,
+  clearedCenterMargins,
+  dragPinHold,
+  dragPinPatch,
+  readAnchor,
+} from './align-presets';
 
 const BOX = { width: 80, height: 40 };
 
@@ -15,6 +21,23 @@ const BOX = { width: 80, height: 40 };
 const pinned = (h: Parameters<typeof anchorPatch>[0], v: Parameters<typeof anchorPatch>[0]) => ({
   ...anchorPatch(h, BOX),
   ...anchorPatch(v, BOX),
+});
+
+// A hand-authored absolute node with leading margins on both axes.
+const WITH_MARGINS = {
+  positionType: YGPT_ABSOLUTE,
+  marginTop: 10,
+  marginTopUnit: YGU_POINT,
+  marginLeft: 8,
+  marginLeftUnit: YGU_POINT,
+};
+
+// Where Yoga renders an absolute node's leading edges, relative to its parent's
+// padding box: the authored inset plus the node's own leading margin.
+const renderedOffset = (t: Record<string, unknown>) => ({
+  top: (t.positionTop as number) + (t.marginTopUnit === YGU_POINT ? (t.marginTop as number) : 0),
+  left:
+    (t.positionLeft as number) + (t.marginLeftUnit === YGU_POINT ? (t.marginLeft as number) : 0),
 });
 
 describe('the Anchor control', () => {
@@ -155,6 +178,29 @@ describe('the Anchor control', () => {
       const patch = dragPinPatch(30, 40, pinned('center', 'top'));
       expect(patch).toMatchObject({ marginLeft: 0, marginLeftUnit: YGU_UNDEFINED });
       expect(Object.keys(patch).filter(k => /^marginTop/.test(k))).toEqual([]);
+      // The counter-margin is going, so it must NOT also be compensated for: the
+      // dropped offset is the whole inset once nothing is left to re-add.
+      expect(patch.positionLeft).toBe(40);
+    });
+
+    it('should compensate for the leading margins it leaves authored', () => {
+      const patch = dragPinPatch(30, 40, { ...WITH_MARGINS });
+      expect(patch).toMatchObject({ positionTop: 20, positionLeft: 32 });
+      expect(Object.keys(patch).filter(k => /^margin/.test(k))).toEqual([]);
+    });
+
+    // The invariant the drag exists for: after the splice round-trips, the node
+    // renders exactly where it was released.
+    it('should land the reparsed node on the pixel it was dropped at', () => {
+      const patch = dragPinPatch(30, 40, WITH_MARGINS);
+      expect(renderedOffset({ ...WITH_MARGINS, ...patch })).toEqual({ top: 30, left: 40 });
+    });
+
+    // Known ceiling: a percent margin resolves against the parent, which the patch
+    // cannot measure, so it is left alone rather than subtracted as pixels.
+    it('should not treat a percent leading margin as pixels', () => {
+      const percent = { ...pinned('left', 'top'), marginLeft: 10, marginLeftUnit: YGU_PERCENT };
+      expect(dragPinPatch(30, 40, percent)).toMatchObject({ positionLeft: 40 });
     });
 
     // Every patch key reaches source, and an emptied margin group deletes the
@@ -178,6 +224,27 @@ describe('the Anchor control', () => {
       expect(readAnchor({ ...centered, ...dragPinPatch(5, 6, centered) })).toEqual({
         h: 'left',
         v: 'top',
+      });
+    });
+  });
+
+  describe('when holding the dropped frame until the splice lands', () => {
+    // The held frame and the reparsed frame have to be the same pixel, or releasing
+    // the hold shows a one-frame jump — the only reason the hold exists.
+    it('should hold the committed inset and let a surviving margin keep rendering', () => {
+      const hold = dragPinHold(30, 40, WITH_MARGINS);
+      expect(hold).toEqual({ top: 20, left: 32, marginTop: undefined, marginLeft: undefined });
+      expect(
+        renderedOffset({ ...WITH_MARGINS, positionTop: hold.top, positionLeft: hold.left }),
+      ).toEqual({ top: 30, left: 40 });
+    });
+
+    it('should zero the counter-margins the commit clears', () => {
+      expect(dragPinHold(5, 6, pinned('center', 'middle'))).toEqual({
+        top: 5,
+        left: 6,
+        marginTop: 0,
+        marginLeft: 0,
       });
     });
   });

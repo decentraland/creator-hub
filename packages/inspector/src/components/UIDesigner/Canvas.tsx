@@ -42,6 +42,7 @@ import { EmptyState } from './EmptyState';
 import { WidgetPicker } from './WidgetPicker';
 import { SafeAreaOverlay } from './SafeAreaOverlay';
 import { MOBILE_REFERENCE } from './safe-areas';
+import { dragPinHold } from './align-presets';
 import { flowFrom, insertionSlot } from './reorder';
 import type { Box, Flow, InsertionSlot } from './reorder';
 import { useUINodeActions } from './useUINodeActions';
@@ -966,7 +967,7 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node, hidden }) => {
       if (offset.dx === 0 && offset.dy === 0) return;
       const top = Math.round(origin.startTop + offset.dy);
       const left = Math.round(origin.startLeft + offset.dx);
-      setOptimisticPos({ top, left });
+      setOptimisticPos(dragPinHold(top, left, t as Record<string, unknown> | null));
       void spliceUiTransformPosition(node.entity as unknown as number, top, left);
     };
 
@@ -1051,9 +1052,15 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node, hidden }) => {
     if (optimisticPos.left !== undefined && num(t?.positionLeft) !== optimisticPos.left) return;
     if (optimisticPos.width !== undefined && num(t?.width) !== optimisticPos.width) return;
     if (optimisticPos.height !== undefined && num(t?.height) !== optimisticPos.height) return;
-    if (optimisticPos.marginTop !== undefined && num(t?.marginTop) !== optimisticPos.marginTop)
+    // A margin the commit CLEARS comes back absent, not 0 — so an absent margin
+    // has to read as the 0 it means in Yoga, or the hold never releases.
+    const margin = (v: unknown) => Math.round((v as number | undefined) ?? 0);
+    if (optimisticPos.marginTop !== undefined && margin(t?.marginTop) !== optimisticPos.marginTop)
       return;
-    if (optimisticPos.marginLeft !== undefined && num(t?.marginLeft) !== optimisticPos.marginLeft)
+    if (
+      optimisticPos.marginLeft !== undefined &&
+      margin(t?.marginLeft) !== optimisticPos.marginLeft
+    )
       return;
     setOptimisticPos(null);
   }, [node, optimisticPos]);
@@ -1171,7 +1178,11 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node, hidden }) => {
         // Absolute → reposition via `position: { top, left }`.
         const top = Math.round(origin.startTop + live.dy);
         const left = Math.round(origin.startLeft + live.dx);
-        setOptimisticPos(hasMove ? { top, left, width, height } : { width, height });
+        setOptimisticPos(
+          hasMove
+            ? { ...dragPinHold(top, left, t as Record<string, unknown> | null), width, height }
+            : { width, height },
+        );
         void spliceUiTransformResize(id, {
           width,
           height,
@@ -1231,18 +1242,16 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node, hidden }) => {
       style.position = 'absolute';
       style.top = `${optimisticPos.top}px`;
       style.left = `${optimisticPos.left}px`;
-      // The commit degrades the node to a top-left pin, so drop the pin it had:
-      // held next to the new top/left, a stale right/bottom would stretch the box
-      // and a centering counter-margin would offset it for the frames until the
-      // splice round-trips.
+      // The commit degrades the node to a top-left pin, so drop the pin it had: a
+      // stale right/bottom held next to the new top/left would stretch the box.
       style.right = undefined;
       style.bottom = undefined;
-      style.marginTop = 0;
-      style.marginLeft = 0;
     }
     if (optimisticPos.width !== undefined) style.width = `${optimisticPos.width}px`;
     if (optimisticPos.height !== undefined) style.height = `${optimisticPos.height}px`;
-    // In-flow move hold: keep the node at its new margin (no positionType change).
+    // The margins the commit rewrites: 0 for a counter-margin a drop clears, the
+    // shifted value for an in-flow resize. A margin the commit leaves authored is
+    // absent here, and the held inset already compensates for it.
     if (optimisticPos.marginTop !== undefined) style.marginTop = `${optimisticPos.marginTop}px`;
     if (optimisticPos.marginLeft !== undefined) style.marginLeft = `${optimisticPos.marginLeft}px`;
   }
