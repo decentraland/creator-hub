@@ -43,6 +43,7 @@ import { WidgetPicker } from './WidgetPicker';
 import { SafeAreaOverlay } from './SafeAreaOverlay';
 import { MOBILE_REFERENCE } from './safe-areas';
 import { dragPinHold } from './align-presets';
+import { DEFAULT_CANVAS_SCALE, getCanvasScale, offsetInParent, setCanvasScale } from './measure';
 import { flowFrom, insertionSlot } from './reorder';
 import type { Box, Flow, InsertionSlot } from './reorder';
 import { useUINodeActions } from './useUINodeActions';
@@ -80,24 +81,13 @@ import {
 
 // The canvas size (canvasWidth × canvasHeight on the parsed root node, default
 // 1920×1080) is the UI's design/virtual resolution, scaled to fit the player's
-// screen at runtime. The default visual
-// scale below is the EDITOR zoom (the user can zoom; see CanvasComponent).
-// `canvasScale` is the LIVE zoom, read by the drag/resize coordinate math and by
-// measure.ts so px↔% conversions stay correct at any zoom level.
-const DEFAULT_CANVAS_SCALE = 0.4;
+// screen at runtime. On top of that sits the EDITOR zoom (the user can zoom; see
+// CanvasComponent), which measure.ts owns as the live viewport↔logical px factor.
 const ZOOM_MIN = 0.1;
 const ZOOM_MAX = 2;
 const ZOOM_STEP = 0.1;
 const clampZoom = (s: number): number =>
   Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, Math.round(s * 100) / 100));
-
-let canvasScale = DEFAULT_CANVAS_SCALE;
-export function getCanvasScale(): number {
-  return canvasScale;
-}
-function setCanvasScale(scale: number): void {
-  canvasScale = scale;
-}
 
 // Snap grid for drag-to-move when Shift is NOT held. Held → free movement.
 // 10 logical px = 4 viewport px at the current scale — fine enough for
@@ -908,16 +898,15 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node, hidden }) => {
       // Anchor the snap grid where the node is RENDERED, not at its authored
       // top/left: an anchored node may have no px leading edge at all (a centered
       // pin is 50% + a counter-margin, a right/bottom pin has only the far edge).
-      // Same measurement the resize handles take; the drop then rewrites the node
-      // as a plain top-left pin, so it lands exactly where it was released.
-      const rect = divRef.current?.getBoundingClientRect();
-      const parentRect = divRef.current?.parentElement?.getBoundingClientRect();
-      const scale = getCanvasScale();
+      // Measured in inset space (see offsetInParent), the same space the drop
+      // commits in, so the node lands exactly where it was released.
+      const el = divRef.current;
+      const start = el?.parentElement ? offsetInParent(el, el.parentElement) : { top: 0, left: 0 };
       dragOriginRef.current = {
         mouseX: e.clientX,
         mouseY: e.clientY,
-        startTop: rect && parentRect ? (rect.top - parentRect.top) / scale : 0,
-        startLeft: rect && parentRect ? (rect.left - parentRect.left) / scale : 0,
+        startTop: start.top,
+        startLeft: start.left,
       };
       liveOffsetRef.current = { dx: 0, dy: 0 };
       setOptimisticPos(null);
@@ -1078,12 +1067,12 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node, hidden }) => {
       // works regardless of unit (%, px, auto) since getBoundingClientRect
       // returns post-layout viewport pixels which we convert with CANVAS_SCALE.
       const elRect = el.getBoundingClientRect();
-      const parentRect = parentEl.getBoundingClientRect();
+      const start = offsetInParent(el, parentEl);
       resizeOriginRef.current = {
         mouseX: e.clientX,
         mouseY: e.clientY,
-        startTop: (elRect.top - parentRect.top) / getCanvasScale(),
-        startLeft: (elRect.left - parentRect.left) / getCanvasScale(),
+        startTop: start.top,
+        startLeft: start.left,
         startW: elRect.width / getCanvasScale(),
         startH: elRect.height / getCanvasScale(),
         dir,
