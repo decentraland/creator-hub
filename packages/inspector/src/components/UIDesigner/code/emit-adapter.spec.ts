@@ -1,6 +1,7 @@
 import { parseSync } from 'oxc-parser';
 import { describe, expect, it } from 'vitest';
 
+import { generateRootComponent } from './aggregator';
 import {
   applyEdits,
   emitElement,
@@ -257,6 +258,69 @@ describe('ensureNamedImport', () => {
     const next = applyEdits(src, ensureNamedImport(prog(src), 'B', './lib'));
     expect(next).toContain("import { A, B } from './lib'");
     expect(parseSync('S.tsx', next).errors).toHaveLength(0);
+  });
+
+  // A generated root opens with a DEFAULT-only import of the very module the
+  // widget imports come from, so the module is spread over several statements.
+  // Judging it by the first statement alone made every add emit a fresh line,
+  // duplicating the binding (TS2300) as soon as a second node of a kind landed.
+  describe('when the module is already imported by a default-only statement', () => {
+    const ECS = '@dcl/sdk/react-ecs';
+
+    function addNames(source: string, names: string[]) {
+      return names.reduce(
+        (src, name) => applyEdits(src, ensureNamedImport(prog(src), name, ECS)),
+        source,
+      );
+    }
+
+    it('imports each name exactly once no matter how often it is added', () => {
+      // The real generator output, so this fixture cannot drift from it.
+      const src = generateRootComponent('MainUI');
+      expect(src).toContain(`import ReactEcs from '${ECS}'`);
+
+      const next = addNames(src, ['UiEntity', 'Label', 'UiEntity', 'Label', 'Button']);
+
+      for (const name of ['UiEntity', 'Label', 'Button']) {
+        expect(
+          next.match(new RegExp(`\\b${name}\\b(?=[^\\n]*from '@dcl/sdk/react-ecs')`, 'g')),
+        ).toHaveLength(1);
+      }
+      expect(parseSync('S.tsx', next).errors).toHaveLength(0);
+    });
+
+    it('leaves the default import statement untouched', () => {
+      const src = generateRootComponent('MainUI');
+      const next = addNames(src, ['UiEntity', 'UiEntity']);
+      expect(next).toContain(`import ReactEcs from '${ECS}'`);
+      expect(next.match(/import ReactEcs from/g)).toHaveLength(1);
+    });
+
+    // The shape the file is in after the FIRST add: the default statement no
+    // longer holds the only clue about what the module already provides.
+    describe('and a later statement carries the named group', () => {
+      const src = [
+        `import ReactEcs from '${ECS}'`,
+        `import { UiEntity } from '${ECS}'`,
+        'export function S() { return <UiEntity /> }',
+      ].join('\n');
+
+      it('is a no-op for a name that later statement already imports', () => {
+        expect(ensureNamedImport(prog(src), 'UiEntity', ECS)).toEqual([]);
+      });
+
+      it('appends a new name to that group instead of opening another line', () => {
+        const next = applyEdits(src, ensureNamedImport(prog(src), 'Label', ECS));
+        expect(next).toContain(`import { UiEntity, Label } from '${ECS}'`);
+        expect(next.match(new RegExp(`from '${ECS}'`, 'g'))).toHaveLength(2);
+        expect(parseSync('S.tsx', next).errors).toHaveLength(0);
+      });
+    });
+
+    it('is a no-op for a name the mixed default+named form already imports', () => {
+      const src = `import ReactEcs, { UiEntity } from '${ECS}'\nexport function S() { return <UiEntity /> }`;
+      expect(ensureNamedImport(prog(src), 'UiEntity', ECS)).toEqual([]);
+    });
   });
 });
 

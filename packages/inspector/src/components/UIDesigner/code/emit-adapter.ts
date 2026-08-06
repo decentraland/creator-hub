@@ -563,27 +563,33 @@ export function afterImports(program: { body?: AstNode[] }): number {
 // imported → no-op; a named import from `<from>` exists → append `name` to it;
 // otherwise → add a fresh import line after the existing imports. Used when
 // nesting a component so the referenced root is in scope.
+//
+// A module can be imported by SEVERAL statements, so every one of them has to be
+// considered: a generated root opens with a default-only
+// `import ReactEcs from '@dcl/sdk/react-ecs'`, and judging that module by its
+// first statement alone reports "no named group" forever — re-adding a name that
+// is already in scope and emitting a duplicate binding (TS2300) on the second
+// widget of a kind.
 export function ensureNamedImport(
   program: { body?: AstNode[] },
   name: string,
   from: string,
 ): Edit[] {
-  const imports = (program.body ?? []).filter(s => s.type === 'ImportDeclaration');
-  const fromImport = imports.find(s => (s as AstNode).source?.value === from) as
-    | AstNode
-    | undefined;
-  if (fromImport) {
-    const specs = ((fromImport.specifiers ?? []) as AstNode[]).filter(
-      s => s.type === 'ImportSpecifier',
-    );
-    if (specs.some(s => (s.imported?.name ?? s.local?.name) === name)) return [];
-    if (specs.length > 0) {
-      const last = specs[specs.length - 1];
-      return [{ start: last.end, end: last.end, text: `, ${name}` }];
-    }
-    // Import exists but has no named group (default/namespace only) → fall through
-    // and add a separate named import line.
+  const namedGroups = ((program.body ?? []) as AstNode[])
+    .filter(s => s.type === 'ImportDeclaration' && s.source?.value === from)
+    .map(d => ((d.specifiers ?? []) as AstNode[]).filter(s => s.type === 'ImportSpecifier'));
+
+  const isImported = namedGroups.some(specs =>
+    specs.some(s => (s.imported?.name ?? s.local?.name) === name),
+  );
+  if (isImported) return [];
+
+  const group = namedGroups.find(specs => specs.length > 0);
+  if (group) {
+    const last = group[group.length - 1];
+    return [{ start: last.end, end: last.end, text: `, ${name}` }];
   }
+
   const at = afterImports(program);
   const line = `import { ${name} } from '${from}'`;
   return [{ start: at, end: at, text: at === 0 ? `${line}\n` : `\n${line}` }];
