@@ -7,6 +7,7 @@ import type { DeployOptions } from '/shared/types/deploy';
 import type { PreviewOptions, ReleaseNotes } from './settings';
 import type { Config, EditorConfig } from './config';
 import type { Env } from './env';
+import type { OxcParseResult } from './oxc';
 
 export type IpcResult<T> = {
   success: true;
@@ -63,6 +64,7 @@ export interface Ipc {
   'electron.showOpenDialog': (opts: Partial<OpenDialogOptions>) => Promise<string[]>;
   'electron.openExternal': (url: string) => Promise<void>;
   'electron.copyToClipboard': (text: string) => Promise<void>;
+  'oxc.parse': (filename: string, source: string) => Promise<OxcParseResult>;
   'inspector.start': () => Promise<number>;
   'inspector.attachSceneDebugger': (path: string) => Promise<string>;
   'inspector.detachSceneDebugger': (path: string) => void;

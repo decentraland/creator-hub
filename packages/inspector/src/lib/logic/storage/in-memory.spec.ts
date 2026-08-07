@@ -330,18 +330,13 @@ describe('createInMemoryStorage', () => {
       expect(files).toEqual([]);
     });
 
-    it('should handle paths without trailing slash (treats leading slash as empty directory)', async () => {
+    it('should list a directory given without a trailing slash', async () => {
       const storage = createInMemoryStorage({
         'dir/file1.txt': Buffer.from('content1'),
         'dir/file2.txt': Buffer.from('content2'),
       });
 
-      // When path doesn't end with '/', the leading '/' in the fileName
-      // is treated as an empty directory name, and files are not directly listed
-      const files = await storage.list('dir');
-      // The empty string directory is created from the leading '/'
-      expect(files).toHaveLength(1);
-      expect(files[0]).toEqual({ name: '', isDirectory: true });
+      expect(await storage.list('dir')).toEqual(await storage.list('dir/'));
     });
   });
 

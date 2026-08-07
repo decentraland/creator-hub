@@ -1,0 +1,232 @@
+// File-per-root codegen: each UI root is its own component file
+// (src/ui/<Name>.tsx) with a typed `state` binding surface, and a generated
+// src/ui/index.tsx composes them into setupUi(). Consumed by code/store.ts.
+
+import { DEFAULT_CANVAS_HEIGHT, DEFAULT_CANVAS_WIDTH } from '../tree-model';
+
+export interface UiRoot {
+  // Exported component name, e.g. "MyScreen".
+  component: string;
+  // Import specifier relative to ui/index.tsx, e.g. "./MyScreen".
+  from: string;
+}
+
+export interface VirtualSize {
+  width: number;
+  height: number;
+}
+
+const DEFAULT_VIRTUAL_SIZE: VirtualSize = {
+  width: DEFAULT_CANVAS_WIDTH,
+  height: DEFAULT_CANVAS_HEIGHT,
+};
+
+// Recover a hand-edited virtual size from an existing ui/index.tsx so
+// regenerating the aggregator (which rewrites the whole file on every root
+// add/rename/remove) does not silently revert it. Deliberately a scan and not a
+// parse: the only thing worth preserving from a generated file is this one pair
+// of numbers, and a malformed/absent call must fall back rather than throw.
+export function readVirtualSize(source: string): VirtualSize {
+  const width = /\bvirtualWidth\s*:\s*(\d+(?:\.\d+)?)/.exec(source);
+  const height = /\bvirtualHeight\s*:\s*(\d+(?:\.\d+)?)/.exec(source);
+  const w = width ? Number(width[1]) : NaN;
+  const h = height ? Number(height[1]) : NaN;
+  return {
+    width: w > 0 ? w : DEFAULT_VIRTUAL_SIZE.width,
+    height: h > 0 ? h : DEFAULT_VIRTUAL_SIZE.height,
+  };
+}
+
+// Generate the ui/index.tsx aggregator source that composes every root under a
+// full-screen container and wires it to the SDK UI renderer.
+//
+// The virtual size is what makes the editor canvas and the in-world UI agree:
+// react-ecs derives a global scale factor from it
+// (min(canvas.width / virtualWidth, canvas.height / virtualHeight)) and
+// multiplies every px length and fontSize by it, so a px value means the same
+// fraction of the screen at any window size — which is exactly what the fixed
+// DEFAULT_CANVAS_* stage draws. Without it the scale factor stays 1 and px are
+// literal screen px, so the same tree lays out differently in-world.
+// Percentages are relative and intentionally left unscaled; vw/vh bypass the
+// scale factor entirely (react-ecs calcOnViewport), so the designer emits px/%.
+export function generateUiIndex(
+  roots: UiRoot[],
+  virtual: VirtualSize = DEFAULT_VIRTUAL_SIZE,
+): string {
+  // Emit-sink backstop: the component name is spliced verbatim into `import`/JSX,
+  // so reject any non-identifier here even if a caller bypasses the refreshRoots
+  // trust boundary (mirrors engine-to-composite's toSafeIdentifier chokepoint).
+  // Filter (not throw) so one bad root can't break the whole aggregator.
+  const VALID = /^[A-Za-z_][A-Za-z0-9_]*$/;
+  const safeRoots = roots.filter(r => {
+    if (VALID.test(r.component)) return true;
+    console.warn('[code-mode] skipping root with non-identifier component name', r.component);
+    return false;
+  });
+  const imports = safeRoots.map(r => `import { ${r.component} } from '${r.from}'`).join('\n');
+  const children = safeRoots.map(r => `        <${r.component} />`).join('\n');
+  // Same emit-sink reasoning as the component names: these numbers are spliced
+  // into source, so anything not a finite positive number falls back.
+  const px = (value: number, fallback: number): number =>
+    Number.isFinite(value) && value > 0 ? value : fallback;
+  const virtualWidth = px(virtual.width, DEFAULT_VIRTUAL_SIZE.width);
+  const virtualHeight = px(virtual.height, DEFAULT_VIRTUAL_SIZE.height);
+  return `/** @jsx ReactEcs.createElement */
+import ReactEcs, { UiEntity, ReactEcsRenderer } from '@dcl/sdk/react-ecs'
+${imports}
+
+export function setupUi() {
+  // The design resolution this UI was laid out against. The explorer scales it
+  // to fit the player's screen, so px sizes keep their proportions on any
+  // window. Edit these to re-target the design; the editor keeps your value.
+  ReactEcsRenderer.setUiRenderer(
+    () => (
+      <UiEntity uiTransform={{ width: '100%', height: '100%' }}>
+${children}
+      </UiEntity>
+    ),
+    { virtualWidth: ${virtualWidth}, virtualHeight: ${virtualHeight} },
+  )
+}
+`;
+}
+
+// The scene-local `useInteraction` helper — the runtime half of the
+// interaction-state styling convention (see interaction-convention.ts). Written
+// once into src/ui/interaction.tsx the first time a node gains interaction
+// states, then imported by the roots that use it.
+//
+// `useState` is exported on the ReactEcs NAMESPACE, not as a top-level named
+// export of '@dcl/sdk/react-ecs' — hence `ReactEcs.useState` (a bare
+// `import { useState }` does not resolve). The file has no JSX, so it needs no
+// pragma; `ReactEcs` is imported purely for the hook.
+//
+// The layer precedence below is mirrored by code/interaction-preview.ts for the
+// canvas; interaction-preview.spec pins the two together.
+export function generateInteractionHelper(): string {
+  return `// Generated by the Creator Hub UI editor — interaction-state styling.
+//
+// react-ecs has no native hover/press styling, so this helper layers style
+// objects and tracks the pointer state that selects them:
+//   base -> active -> hover -> press   (later layers win)
+// Layers are deep-merged, so a layer may override a single nested field (just
+// uiBackground.color) without dropping its siblings. Event handlers declared in
+// a layer still fire — they are chained after the state trackers, not replaced.
+//
+// This is plain react-ecs and safe to hand-edit; the editor reads this shape
+// back out of your UI files.
+import ReactEcs from '@dcl/sdk/react-ecs'
+import type { EntityPropTypes, UiLabelProps } from '@dcl/sdk/react-ecs'
+
+// The known props are typed for autocomplete; the open index signature keeps
+// element-specific props (an Input's placeholder, a Dropdown's options) from
+// erroring in a strict scene tsconfig without intersecting three prop types
+// whose onChange signatures conflict.
+export type InteractionLayer = EntityPropTypes & Partial<UiLabelProps> & Record<string, unknown>
+
+export interface InteractionLayers<T extends InteractionLayer = InteractionLayer> {
+  // Generic in the BASE layer so the return type keeps its required props: a
+  // Label's \`value\` is required by UiLabelProps, and once it lives in the base
+  // layer only a \`T\`-shaped return satisfies \`<Label {...styles} />\`. The
+  // override layers stay loosely typed — they are partial by nature.
+  base?: T
+  hover?: InteractionLayer
+  press?: InteractionLayer
+  active?: InteractionLayer
+}
+
+type Bag = Record<string, unknown>
+
+function isPlainObject(value: unknown): value is Bag {
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
+}
+
+function merge(base: Bag, over: Bag | undefined): Bag {
+  if (!over) return base
+  const out: Bag = { ...base }
+  for (const key in over) {
+    const next = over[key]
+    const prev = out[key]
+    out[key] = isPlainObject(next) && isPlainObject(prev) ? merge(prev, next) : next
+  }
+  return out
+}
+
+const chain =
+  (track: () => void, own: (() => void) | undefined) =>
+  () => {
+    track()
+    own?.()
+  }
+
+export function useInteraction<T extends InteractionLayer = InteractionLayer>(
+  layers: InteractionLayers<T>,
+  active?: boolean,
+): T {
+  const [hovered, setHovered] = ReactEcs.useState(false)
+  const [pressed, setPressed] = ReactEcs.useState(false)
+
+  let bag: Bag = (layers.base ?? {}) as Bag
+  if (active) bag = merge(bag, layers.active as Bag | undefined)
+  if (hovered) bag = merge(bag, layers.hover as Bag | undefined)
+  if (pressed) bag = merge(bag, layers.press as Bag | undefined)
+
+  const style = bag as InteractionLayer
+  // The merge is dynamic, so the T-shaped result is asserted: every key of the
+  // base layer survives it (overrides only replace values, never delete keys).
+  return {
+    ...style,
+    onMouseEnter: chain(() => setHovered(true), style.onMouseEnter),
+    onMouseLeave: chain(() => {
+      setHovered(false)
+      setPressed(false)
+    }, style.onMouseLeave),
+    onMouseDown: chain(() => setPressed(true), style.onMouseDown),
+    onMouseUp: chain(() => setPressed(false), style.onMouseUp),
+  } as T
+}
+`;
+}
+
+// The scene-local `usePlatform` helper — the runtime half of the platform-variant
+// convention (see platform-convention.ts). Written once into src/ui/platform.tsx
+// the first time a node gains device variants, then imported by the roots using it.
+export function generatePlatformHelper(): string {
+  return `// Generated by the Creator Hub UI editor — platform (device) variants.
+//
+// The explorer reports the platform asynchronously, so this reads 'desktop' for
+// the first few frames; react-ecs re-renders every tick, so the UI switches as
+// soon as it resolves. 'web' counts as desktop.
+//
+// This is plain SDK code and safe to hand-edit; the editor reads this shape back
+// out of your UI files.
+import { isMobile } from '@dcl/sdk/platform'
+
+export type UiPlatform = 'desktop' | 'mobile'
+
+export function usePlatform(): UiPlatform {
+  return isMobile() ? 'mobile' : 'desktop'
+}
+`;
+}
+
+// A starter root component file for a newly created root — an EMPTY component
+// (a plain `return`, no elements). The editor treats this as a valid empty GUI
+// and shows a "drop your first element" canvas; the first widget added splices
+// the `return (<…/>)` (see store.spliceSetRootChild). Starting empty makes it
+// easy to build reusable components, not just full screens. `ReactEcs` stays
+// imported (the JSX pragma references it); element imports are added on demand.
+// The `props: {}` param is always present so the `UiAction` args type can refer
+// to `Parameters<typeof ${component}>[0]` (see the callbacks contract).
+export function generateRootComponent(component: string): string {
+  return `/** @jsx ReactEcs.createElement */
+import ReactEcs from '@dcl/sdk/react-ecs'
+
+export interface State {}
+export const state: State = {}
+
+export function ${component}(props: {}) {
+  return
+}
+`;
+}

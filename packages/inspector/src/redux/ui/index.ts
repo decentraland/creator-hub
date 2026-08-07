@@ -1,7 +1,7 @@
 import type { PayloadAction } from '@reduxjs/toolkit';
 import { createSlice } from '@reduxjs/toolkit';
 import type { RootState } from '../store';
-import type { PanelName } from './types';
+import { PanelName } from './types';
 import { AssetsTab, SceneInspectorTab } from './types';
 
 export interface UiState {
@@ -18,7 +18,7 @@ export interface UiState {
 
 export const initialState: UiState = {
   hiddenComponents: {},
-  hiddenPanels: {},
+  hiddenPanels: { [PanelName.UI_DESIGNER]: true },
   disableGizmos: false,
   disableGroundGrid: false,
   selectedAssetsTab: AssetsTab.AssetsPack,

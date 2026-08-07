@@ -1,0 +1,36 @@
+.ui-designer-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--uid-space-2);
+  padding: var(--uid-space-5) var(--uid-space-4);
+  text-align: center;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.ui-designer-empty-state-icon {
+  display: inline-flex;
+  font-size: 30px;
+  color: rgba(255, 255, 255, 0.22);
+}
+
+.ui-designer-empty-state-title {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.78);
+  text-wrap: balance;
+}
+
+.ui-designer-empty-state-message {
+  margin: 0;
+  max-width: 240px;
+  font-size: 12px;
+  line-height: 1.5;
+  text-wrap: balance;
+}
+
+.ui-designer-empty-state-action {
+  margin-top: var(--uid-space-1);
+}

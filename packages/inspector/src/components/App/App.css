@@ -47,6 +47,13 @@ code {
   flex: 1 1 auto;
   flex-direction: column;
   width: 100%;
+  position: relative;
+}
+
+.composite-renderer > .content > .mode-pending {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
 }
 
 /* Inspector settings */

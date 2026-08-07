@@ -1,0 +1,731 @@
+.ui-designer-property-panel {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  flex: 1 1 auto;
+}
+
+.ui-designer-property-panel-empty {
+  padding: 12px;
+  color: var(--sub-text);
+  font-size: 12px;
+  text-align: center;
+}
+
+/* --- Stacked field layout (Figma PropertiesFull, node 1492:1939) ---
+   Label on its own line, control full-width beneath it. This is what the shared
+   `Block` already does natively, so the panel only sets spacing and truncation.
+   It replaced a 2-column grid (label column + a control column capped at 260px):
+   in a 312px rail that halved every control, which is why the fields read as
+   cramped next to the design. Stacking also removed the need for a `.wide`
+   escape hatch — box-model / uv-region / nine-slice widgets no longer have a
+   narrow column to break out of. */
+.ui-designer-property-panel .Block {
+  align-items: stretch;
+  margin: 0;
+  padding: var(--uid-space-1) 0 var(--uid-space-2);
+}
+
+/* Truncate rather than wrap: a two-line label would desynchronise row rhythm.
+   The right padding reserves the lane the row's trash button sits in, so a long
+   label ellipsises instead of running underneath it. */
+.ui-designer-property-panel .Block-label-row {
+  min-width: 0;
+  overflow: hidden;
+  padding-right: 22px;
+}
+
+.ui-designer-property-panel .Block-label-row .Label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--ui-designer-text);
+}
+
+/* Controls fill the row. Paired controls (X|Y, W|H) sit side by side as equal
+   halves via the `.content` flex row they already live in. */
+.ui-designer-property-panel .Block > .content {
+  min-width: 0;
+  align-items: center;
+}
+
+.ui-designer-property-panel .Block > .content > * {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.ui-designer-property-panel .ui-designer-bindable-content {
+  display: flex;
+  align-items: center;
+}
+
+/* Group headers, per the Figma: bold sentence case with a hairline under the
+   header, not the shared Container's wide-tracked uppercase. Scoped to this
+   panel — Container.css is shared with the 3D EntityInspector, which keeps its
+   own heading style. */
+.ui-designer-property-panel .Container > .title span {
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--title);
+}
+
+.ui-designer-property-panel .Container > .title {
+  padding-bottom: var(--uid-space-2);
+  border-bottom: 1px solid var(--ui-designer-hairline);
+  margin-bottom: var(--uid-space-2);
+}
+
+/* --- Panel header ---
+   The selected node's kind, plus the eye: the only control in the panel that is
+   not a property row. */
+.ui-designer-panel-header {
+  display: flex;
+  align-items: center;
+  gap: var(--uid-space-2);
+  padding: var(--uid-space-2) var(--uid-space-3);
+  border-bottom: 1px solid var(--ui-designer-hairline);
+}
+
+.ui-designer-panel-header-icon {
+  display: inline-flex;
+  flex: 0 0 auto;
+  color: var(--sub-text);
+}
+
+.ui-designer-panel-header-icon svg {
+  display: block;
+  width: 14px;
+  height: 14px;
+}
+
+.ui-designer-panel-header-name {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--title);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* A hidden node reads dimmed, so its state is legible from the header as a whole
+   rather than only from the eye glyph. */
+.ui-designer-panel-header.hidden .ui-designer-panel-header-icon,
+.ui-designer-panel-header.hidden .ui-designer-panel-header-name {
+  opacity: 0.55;
+}
+
+.ui-designer-panel-header-eye {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--sub-text);
+  cursor: pointer;
+}
+
+.ui-designer-panel-header-eye:hover {
+  background: var(--ui-designer-control-accent-15);
+  color: var(--title);
+}
+
+.ui-designer-panel-header-eye[aria-pressed="true"] {
+  color: var(--ui-designer-control-accent);
+}
+
+.ui-designer-panel-header-eye:focus-visible {
+  outline: 2px solid var(--border-focused);
+  outline-offset: 1px;
+}
+
+.ui-designer-panel-header-eye svg {
+  display: block;
+  width: 14px;
+  height: 14px;
+}
+
+/* --- Row wrapper + remove (−) affordance (Phase F3) --- */
+.ui-designer-property-row {
+  position: relative;
+}
+
+/* A row that belongs to no group (Ignore Layout Flow, Active when) sits outside a
+   Container, so it has to reproduce that container's content inset to line up
+   with the grouped rows. */
+.ui-designer-property-panel > .ui-designer-property-row {
+  padding: 0 var(--uid-space-3);
+}
+
+/* Two-column pairing (Figma draws Transparency·Corner radius and Border
+   colour·Weight side by side). A 2-track grid where a row spans BOTH tracks by
+   default, so only rows opting into `half` share a line — and two of them pack
+   automatically, without the panel having to work out which fields end up
+   adjacent after the show/hide filtering. A half row whose partner is hidden
+   simply keeps the left track.
+   This lives on its own wrapper rather than on `.Container > .content`: the
+   shared Container.css already claims that element with a `:has()` rule whose
+   specificity a panel-scoped override cannot beat without absurd class
+   repetition. */
+.ui-designer-property-rows {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  column-gap: var(--uid-space-2);
+  row-gap: var(--uid-space-2);
+  align-items: start;
+}
+
+.ui-designer-property-rows > * {
+  grid-column: span 2;
+  min-width: 0;
+}
+
+.ui-designer-property-rows > .ui-designer-property-row.half {
+  grid-column: span 1;
+}
+
+/* A half row has half the width for its label, so the trash lane would eat most
+   of it — these fields are narrow enough that the button can overlap instead. */
+.ui-designer-property-panel .ui-designer-property-row.half .Block-label-row {
+  padding-right: 0;
+}
+
+/* Hover/focus-revealed remove button for an optional (non-core) property. */
+.ui-designer-prop-remove {
+  position: absolute;
+  top: var(--uid-space-1);
+  right: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: none;
+  border-radius: 3px;
+  background: transparent;
+  color: var(--sub-text);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 60ms linear;
+}
+
+.ui-designer-property-row:hover .ui-designer-prop-remove,
+.ui-designer-property-row:focus-within .ui-designer-prop-remove {
+  opacity: 1;
+}
+
+.ui-designer-prop-remove:hover {
+  background: var(--ui-designer-control-accent-21);
+  color: var(--title);
+}
+
+.ui-designer-prop-remove:focus-visible {
+  opacity: 1;
+  outline: 2px solid var(--border-focused);
+  outline-offset: 1px;
+}
+
+.ui-designer-prop-remove svg {
+  width: 13px;
+  height: 13px;
+}
+
+/* --- + Add property menu (Phase F3) — native <details> disclosure --- */
+.ui-designer-add-prop {
+  margin-top: var(--uid-space-1);
+}
+
+.ui-designer-add-prop-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 6px;
+  border-radius: 4px;
+  color: var(--ui-designer-control-accent);
+  font-size: 12px;
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
+}
+
+.ui-designer-add-prop-trigger::-webkit-details-marker {
+  display: none;
+}
+
+.ui-designer-add-prop-trigger:hover {
+  background: var(--ui-designer-control-accent-21);
+}
+
+.ui-designer-add-prop-trigger:focus-visible {
+  outline: 2px solid var(--border-focused);
+  outline-offset: 1px;
+}
+
+.ui-designer-add-prop-menu {
+  list-style: none;
+  margin: 4px 0 0;
+  padding: 4px;
+  border: 1px solid var(--ui-designer-control-border);
+  border-radius: var(--ui-designer-radius-menu);
+  background: var(--ui-designer-control-bg);
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  max-height: 240px;
+  overflow-y: auto;
+}
+
+.ui-designer-add-prop-menu button {
+  width: 100%;
+  text-align: left;
+  padding: 5px 8px;
+  border: none;
+  border-radius: 3px;
+  background: transparent;
+  color: var(--title);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.ui-designer-add-prop-menu button:hover {
+  background: var(--ui-designer-control-accent-21);
+}
+
+/* + Add New Action reuses the same disclosure, holding a name input + ADD
+   rather than a list of properties. */
+.ui-designer-add-action {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--uid-space-2);
+  margin-top: 4px;
+  padding: var(--uid-space-2);
+  border: 1px solid var(--ui-designer-control-border);
+  border-radius: var(--ui-designer-radius-menu);
+  background: var(--ui-designer-control-bg);
+}
+
+.ui-designer-add-action > .Text.Field {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.ui-designer-add-action > button {
+  flex: 0 0 auto;
+  padding: 5px 10px;
+  border: 1px solid var(--ui-designer-control-accent);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--ui-designer-control-accent);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+}
+
+.ui-designer-add-action > button:hover:not(:disabled) {
+  background: var(--ui-designer-control-accent-21);
+}
+
+.ui-designer-add-action > button:disabled {
+  border-color: var(--ui-designer-control-border);
+  color: var(--sub-text);
+  cursor: default;
+}
+
+.ui-designer-add-action > button:focus-visible {
+  outline: 2px solid var(--border-focused);
+  outline-offset: 1px;
+}
+
+.ui-designer-add-prop-menu button:focus-visible {
+  outline: 2px solid var(--border-focused);
+  outline-offset: -1px;
+}
+
+/* Inline unit selector under a stacked `length-vec` group — short + trailing. */
+.ui-designer-unit-selector {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: var(--uid-space-2);
+}
+
+.ui-designer-unit-selector .Dropdown.Field {
+  flex: 0 0 56px;
+  width: 56px;
+}
+
+/* Compact reveal toggle for a length-vec facade (Position X/Y ⇄ T/R/B/L). */
+.ui-designer-vec-reveal {
+  flex: 0 0 auto;
+  padding: 2px 6px;
+  background: transparent;
+  border: 1px solid var(--ui-designer-control-border);
+  border-radius: var(--ui-designer-radius-field);
+  color: var(--sub-text);
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+}
+
+.ui-designer-vec-reveal:hover {
+  color: var(--title);
+  border-color: var(--ui-designer-control-accent);
+}
+
+.ui-designer-vec-reveal:focus-visible {
+  outline: 2px solid var(--border-focused);
+  outline-offset: 1px;
+}
+
+/* Aspect-ratio lock toggle for the Size vec. The Figma AspectRatio glyph is two
+   opposite corner brackets; the locked state adds the diagonal tying the two axes
+   together. That diagonal is drawn solid, not dashed as the Figma has it — at the
+   16px it renders at, a 1.5px dash pattern washes out into nothing and the two
+   states become distinguishable by colour alone. Masked so `color` below drives
+   it and the button needs no child of its own. */
+.ui-designer-vec-lock {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3px;
+  background: transparent;
+  border: 1px solid var(--ui-designer-control-border);
+  border-radius: var(--ui-designer-radius-field);
+  color: var(--ui-designer-glyph);
+  cursor: pointer;
+}
+
+.ui-designer-vec-lock::before {
+  content: "";
+  width: 16px;
+  height: 16px;
+  background-color: currentColor;
+  mask-image: url("./icons/aspect-unlinked.svg");
+  mask-position: center;
+  mask-repeat: no-repeat;
+}
+
+.ui-designer-vec-lock.active::before {
+  mask-image: url("./icons/aspect-linked.svg");
+}
+
+.ui-designer-vec-lock:hover {
+  color: var(--title);
+  border-color: var(--ui-designer-control-accent);
+}
+
+.ui-designer-vec-lock.active {
+  color: var(--ui-designer-control-accent);
+  border-color: var(--ui-designer-control-accent);
+}
+
+.ui-designer-vec-lock:focus-visible {
+  outline: 2px solid var(--border-focused);
+  outline-offset: 1px;
+}
+
+/* The shared TextArea defaults to `resize: both`; the narrow rail only tolerates
+   vertical growth. */
+.ui-designer-string-array textarea {
+  resize: vertical;
+  min-height: 64px;
+}
+
+/* Keep every control inside its panel — without border-box the padded
+   selects/inputs overran the right edge. */
+.ui-designer-property-panel * {
+  box-sizing: border-box;
+}
+
+/* --- Control skins ---
+   The shared inputs and dropdowns draw their resting border in their own
+   background colour, so a field reads as a floating fill with no edge. The Figma
+   gives every field a visible hairline, which is also what this panel's own
+   composites (flow cells, anchor preview) already do — so borrow their token and
+   the whole control family reads as one. Panel-scoped: the 3D EntityInspector
+   keeps the borderless look.
+
+   Resting state only, spelled out: the shared hover/focus/error/disabled borders
+   carry the same specificity as this override, so without excluding them the
+   winner would come down to which stylesheet the bundle happens to emit last. */
+.ui-designer-property-panel
+  .Text.Field
+  .InputContainer:not(.hovered):not(.focused):not(.error):not(.disabled),
+.ui-designer-property-panel
+  .Dropdown.Field
+  .DropdownContainer:not(:hover):not(.focused):not(.error):not(.disabled) {
+  border-color: var(--ui-designer-control-border);
+}
+
+/* Corners and value colour per the Figma's Input: rx 6 with the value a step
+   below the label. The shared components hardcode both, so this is a panel-scoped
+   override rather than a token they read. */
+.ui-designer-property-panel .Text.Field .InputContainer,
+.ui-designer-property-panel .Dropdown.Field .DropdownContainer,
+.ui-designer-property-panel .TextArea.Field textarea {
+  border-radius: var(--ui-designer-radius-field);
+}
+
+/* Split by state, like the border override above: the shared TextField's disabled
+   colour carries the same specificity as one flat override here, so the winner
+   would come down to bundle order.
+
+   Disabled gets the panel's muted value (4.8:1 on the disabled fill), the way
+   every other disabled panel control dims rather than changes hue. Deferring to
+   the shared --gray-0 is not an option: on that fill it is 1.3:1 — not dimmed,
+   gone. */
+.ui-designer-property-panel .Text.Field .InputContainer:not(.disabled) .input,
+.ui-designer-property-panel .TextArea.Field textarea {
+  color: var(--ui-designer-text-value);
+}
+
+.ui-designer-property-panel .Text.Field .InputContainer.disabled .input {
+  color: var(--ui-designer-text-muted);
+}
+
+/* A menu is the same surface lifted off the panel, so it needs the edge too. */
+.ui-designer-property-panel .OptionList {
+  border: 1px solid var(--ui-designer-control-border);
+  border-radius: var(--ui-designer-radius-menu);
+}
+
+/* Checkboxes: the panel's accent marks the checked state, rather than a tick on
+   an unchanged grey box. Size stays 18px — the shared tick glyph is positioned
+   against it. */
+.ui-designer-property-panel .Checkbox.Field .InputContainer input[type="checkbox"] {
+  border-radius: 4px;
+  border-color: var(--ui-designer-control-border);
+}
+
+.ui-designer-property-panel .Checkbox.Field .InputContainer input[type="checkbox"]:checked,
+.ui-designer-property-panel .Checkbox.Field .InputContainer input[type="checkbox"]:indeterminate {
+  background-color: var(--ui-designer-control-accent);
+  border-color: var(--ui-designer-control-accent);
+}
+
+.ui-designer-property-panel .Checkbox.Field .InputContainer input[type="checkbox"]:focus-visible {
+  outline: 2px solid var(--border-focused);
+  outline-offset: 1px;
+}
+
+/* A disabled checkbox must not read as accented-and-on (Clip Content while Scroll
+   Overflow forces it), so the disabled fill wins over the checked one. */
+.ui-designer-property-panel
+  .Checkbox.Field
+  .InputContainer.disabled
+  input[type="checkbox"]:checked {
+  background-color: var(--base-12);
+  border-color: var(--base-12);
+}
+
+/* Vec groups (Size / Min / Max / Position) render sub-fields in the control
+   column: a single flex-wrap row of inputs with the unit selector trailing. */
+.ui-designer-property-panel .Block > .content:has(> .ui-designer-bindable-subfield) {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--uid-space-1) var(--uid-space-2);
+}
+
+.ui-designer-property-panel .ui-designer-bindable-subfield {
+  flex: 1 1 56px;
+  min-width: 52px;
+}
+
+.ui-designer-property-panel
+  .Block
+  > .content:has(> .ui-designer-bindable-subfield)
+  > .ui-designer-unit-selector {
+  flex: 0 0 auto;
+}
+
+/* Single length value + unit on one line: input grows, unit stays intrinsic. */
+.ui-designer-length-row {
+  display: flex;
+  align-items: center;
+  gap: var(--uid-space-2);
+  width: 100%;
+}
+
+.ui-designer-length-row > :first-child {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.ui-designer-length-row > .Dropdown.Field {
+  flex: 0 0 56px;
+  width: 56px;
+}
+
+.ui-designer-callback-hint {
+  color: var(--sub-text);
+  font-style: italic;
+  font-size: 12px;
+}
+
+/* Numeric fields read as aligned columns (W/H, T/R/B/L, indices). */
+.ui-designer-property-panel input[type="number"] {
+  font-variant-numeric: tabular-nums;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ui-designer-prop-remove {
+    transition: none;
+  }
+}
+
+/* --- Interaction states bar ---
+   Picks which interaction layer (Default / Hover / Pressed / Active) the fields
+   below edit. A tab that isn't authored yet appears as a `+ Hover`-style adder,
+   so the bar doubles as the create affordance and never shows an empty state. */
+.ui-designer-states-bar {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--uid-space-1);
+  padding: var(--uid-space-2) var(--uid-space-3);
+  border-bottom: 1px solid var(--ui-designer-hairline);
+}
+
+.ui-designer-states-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--uid-space-1);
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.ui-designer-states-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 3px 8px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--sub-text);
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.ui-designer-states-tab:hover {
+  background: var(--ui-designer-control-accent-15);
+  color: var(--title);
+}
+
+.ui-designer-states-tab.selected {
+  background: var(--ui-designer-control-accent-21);
+  border-color: var(--ui-designer-control-accent-62);
+  color: var(--ui-designer-control-accent);
+}
+
+.ui-designer-states-tab.add {
+  color: var(--ui-designer-control-accent);
+}
+
+.ui-designer-states-tab:focus-visible,
+.ui-designer-states-add:focus-visible {
+  outline: 2px solid var(--border-focused);
+  outline-offset: 1px;
+}
+
+.ui-designer-states-tab svg,
+.ui-designer-states-add svg {
+  width: 11px;
+  height: 11px;
+}
+
+.ui-designer-states-actions {
+  display: flex;
+  align-items: center;
+  flex: 0 0 auto;
+}
+
+/* The bar's own remove button sits inline, unlike the absolutely-positioned
+   per-row one it borrows its styling from. */
+.ui-designer-states-actions .ui-designer-prop-remove {
+  position: static;
+  opacity: 1;
+}
+
+.ui-designer-states-hint {
+  flex: 1 0 100%;
+  margin: 0;
+  color: var(--sub-text);
+  font-size: 10px;
+  line-height: 1.4;
+}
+
+.ui-designer-states-add {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 6px;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--ui-designer-control-accent);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.ui-designer-states-add:hover {
+  background: var(--ui-designer-control-accent-15);
+}
+
+.ui-designer-variant-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex: 1 1 auto;
+  color: var(--ui-designer-control-accent);
+  font-size: 12px;
+}
+
+.ui-designer-variant-badge svg {
+  width: 12px;
+  height: 12px;
+}
+
+.ui-designer-states-unbound {
+  color: var(--sub-text);
+  font-size: 11px;
+  font-style: italic;
+}
+
+/* In an override layer, a field merely inherited from Default reads dimmed; one
+   this state actually sets reads at full strength with a visible reset. */
+.ui-designer-property-row.inherited .Block-label-row,
+.ui-designer-property-row.inherited .content {
+  opacity: 0.55;
+}
+
+.ui-designer-property-row.inherited:focus-within .Block-label-row,
+.ui-designer-property-row.inherited:focus-within .content,
+.ui-designer-property-row.inherited:hover .Block-label-row,
+.ui-designer-property-row.inherited:hover .content {
+  opacity: 1;
+}
+
+.ui-designer-property-row.overridden .Block-label-row .Label::after {
+  content: "";
+  display: inline-block;
+  width: 4px;
+  height: 4px;
+  margin-left: 4px;
+  border-radius: 50%;
+  background: var(--ui-designer-control-accent);
+  vertical-align: middle;
+}

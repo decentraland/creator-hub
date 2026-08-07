@@ -1,0 +1,64 @@
+.ui-designer-texture-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Texture type as icon segments (None / File / Avatar), the design's mode row. */
+.ui-designer-texture-modes {
+  display: flex;
+  gap: 2px;
+  align-self: flex-start;
+}
+
+.ui-designer-texture-mode {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  background: transparent;
+  border: 1px solid var(--ui-designer-control-border);
+  border-radius: var(--ui-designer-radius-field);
+  color: var(--ui-designer-glyph);
+  cursor: pointer;
+}
+
+.ui-designer-texture-mode:hover {
+  color: var(--title);
+  border-color: var(--ui-designer-control-accent);
+}
+
+.ui-designer-texture-mode.selected {
+  color: var(--ui-designer-control-accent);
+  border-color: var(--ui-designer-control-accent);
+  background: var(--ui-designer-control-accent-21);
+}
+
+.ui-designer-texture-mode:focus-visible {
+  outline: 2px solid var(--border-focused);
+  outline-offset: 1px;
+}
+
+/* The Figma's own mode glyphs, masked so the segment's resting / hover / selected
+   colours above drive them. The design also draws a `sliced` segment; react-ecs
+   offers no sliced texture SOURCE, so that glyph is deliberately unused. */
+.ui-designer-texture-mode::before {
+  content: "";
+  width: 16px;
+  height: 16px;
+  background-color: currentColor;
+  mask-position: center;
+  mask-repeat: no-repeat;
+}
+
+.ui-designer-texture-mode[data-mode="none"]::before {
+  mask-image: url("./icons/none.svg");
+}
+
+.ui-designer-texture-mode[data-mode="file"]::before {
+  mask-image: url("./icons/image.svg");
+}
+
+.ui-designer-texture-mode[data-mode="avatar"]::before {
+  mask-image: url("./icons/avatar.svg");
+}

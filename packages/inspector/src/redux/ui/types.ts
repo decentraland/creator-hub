@@ -16,6 +16,7 @@ export enum PanelName {
   SHORTCUTS = 'shortcuts',
   METRICS = 'metrics',
   SCENE_INFO = 'scene_info',
+  UI_DESIGNER = 'ui_designer',
 }
 
 export enum SceneInspectorTab {

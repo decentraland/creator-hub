@@ -1,0 +1,27 @@
+.ui-designer-safe-area {
+  position: absolute;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  z-index: 900;
+}
+
+.ui-designer-safe-band {
+  position: absolute;
+  background: rgba(0, 0, 0, 0.35);
+}
+
+.ui-designer-safe-zone {
+  position: absolute;
+  border: 1px dashed rgba(120, 200, 255, 0.9);
+  box-sizing: border-box;
+}
+
+.ui-designer-safe-label {
+  position: absolute;
+  transform: translateY(-100%);
+  padding: 2px 4px;
+  font-size: 11px;
+  color: rgba(120, 200, 255, 0.95);
+  white-space: nowrap;
+}
