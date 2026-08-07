@@ -159,6 +159,9 @@
   --ui-designer-text-value: #cfcdd4; /* Neutrals/Gray — value inside a field */
   --ui-designer-text-muted: #a09ba8; /* Neutrals/Silver — hints, secondary */
   --ui-designer-control-border: rgba(255, 255, 255, 0.1); /* Transparencies/White 10 */
+  /* One step up, for a border that has to out-weigh another White 10 stroke
+     inside the same control (the Anchor preview's box vs its crosshair). */
+  --ui-designer-control-border-strong: rgba(255, 255, 255, 0.2); /* Transparencies/White 20 */
   --ui-designer-hairline: rgba(255, 255, 255, 0.07);
 
   /* Glyph stroke. The design paints every panel glyph Neutrals/Cloudy Sky, which

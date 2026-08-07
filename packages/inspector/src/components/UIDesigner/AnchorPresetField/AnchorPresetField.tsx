@@ -34,7 +34,7 @@ const V_OPTIONS: { value: AnchorV; label: string }[] = [
 ];
 
 // An axis with no pinned edge gets its own option rather than displaying Left/Top:
-// the preview shows no marker for it, so a dropdown reading `Left` would be
+// the preview accents no edge for it, so a dropdown reading `Left` would be
 // claiming a pin the node does not have. Offered only while the axis reads null —
 // once pinned, there is no patch that unpins one axis alone.
 const UNPINNED = { value: '', label: 'None' };

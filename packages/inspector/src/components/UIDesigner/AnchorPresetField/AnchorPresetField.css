@@ -16,77 +16,62 @@
   opacity: 0.4;
 }
 
-/* The parent box, as a 3x3 grid of anchor cells: the node marker sits in the cell
-   the two pins select, so its own placement needs no offset maths. */
+/* The parent box: an accented EDGE names each pinned edge, so the marker inside is
+   the node itself and stays neutral and centred. */
 .ui-designer-anchor-preview {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  grid-template-rows: repeat(3, 1fr);
-  place-items: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
   flex: 0 0 auto;
   width: 62px;
   height: 62px;
-  background: var(--ui-designer-control-bg);
-  border: 1px solid var(--ui-designer-control-border);
+  border: 2px solid var(--ui-designer-control-border-strong);
   border-radius: var(--ui-designer-radius-field);
 }
 
-/* An axis with no pinned edge has no cell to point at. */
-.ui-designer-anchor-preview:not([data-h]) .ui-designer-anchor-marker,
-.ui-designer-anchor-preview:not([data-v]) .ui-designer-anchor-marker {
-  display: none;
+/* An axis pinned to the centre holds no edge, so it accents none. */
+.ui-designer-anchor-preview[data-h="left"] {
+  border-left-color: var(--ui-designer-control-accent);
+}
+
+.ui-designer-anchor-preview[data-h="right"] {
+  border-right-color: var(--ui-designer-control-accent);
+}
+
+.ui-designer-anchor-preview[data-v="top"] {
+  border-top-color: var(--ui-designer-control-accent);
+}
+
+.ui-designer-anchor-preview[data-v="bottom"] {
+  border-bottom-color: var(--ui-designer-control-accent);
 }
 
 .ui-designer-anchor-marker {
   position: relative;
-  width: 18px;
-  height: 18px;
-  border: 1px solid var(--ui-designer-control-accent);
-  border-radius: 2px;
+  box-sizing: border-box;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--ui-designer-glyph);
 }
 
-.ui-designer-anchor-marker::before,
-.ui-designer-anchor-marker::after {
+/* One masked element, not a bar per axis: two translucent bars would composite twice
+   where they cross and leave a brighter pip at the centre. */
+.ui-designer-anchor-marker::before {
   content: "";
   position: absolute;
   top: 50%;
   left: 50%;
-  background: var(--ui-designer-control-accent);
+  width: 15px;
+  height: 15px;
+  background: var(--ui-designer-control-border);
+  mask-image: linear-gradient(#000, #000), linear-gradient(#000, #000);
+  mask-position: center;
+  mask-repeat: no-repeat;
+  mask-size:
+    15px 2px,
+    2px 15px;
   transform: translate(-50%, -50%);
-}
-
-.ui-designer-anchor-marker::before {
-  width: 9px;
-  height: 1px;
-}
-
-.ui-designer-anchor-marker::after {
-  width: 1px;
-  height: 9px;
-}
-
-.ui-designer-anchor-preview[data-h="left"] .ui-designer-anchor-marker {
-  grid-column: 1;
-}
-
-.ui-designer-anchor-preview[data-h="center"] .ui-designer-anchor-marker {
-  grid-column: 2;
-}
-
-.ui-designer-anchor-preview[data-h="right"] .ui-designer-anchor-marker {
-  grid-column: 3;
-}
-
-.ui-designer-anchor-preview[data-v="top"] .ui-designer-anchor-marker {
-  grid-row: 1;
-}
-
-.ui-designer-anchor-preview[data-v="middle"] .ui-designer-anchor-marker {
-  grid-row: 2;
-}
-
-.ui-designer-anchor-preview[data-v="bottom"] .ui-designer-anchor-marker {
-  grid-row: 3;
 }
 
 .ui-designer-anchor-axes {

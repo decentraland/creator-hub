@@ -34,7 +34,7 @@ const CENTERED_BOTTOM = {
 };
 
 describe('when the Anchor field shows an authored pin', () => {
-  it('should select each axis pin in its own dropdown and mark the cell', () => {
+  it('should select each axis pin in its own dropdown and accent its edge', () => {
     const { preview } = renderField(CENTERED_BOTTOM);
 
     expect(screen.getByText('Center')).toBeTruthy();
@@ -43,8 +43,8 @@ describe('when the Anchor field shows an authored pin', () => {
     expect(preview.getAttribute('data-v')).toBe('bottom');
   });
 
-  // The marker needs both axes to have a cell; CSS hides it when either is absent.
-  it('should leave the unpinned axis without a marker cell', () => {
+  // CSS accents one outer edge per pinned axis; an axis with no pin accents neither.
+  it('should leave the unpinned axis without an accented edge', () => {
     const { preview } = renderField({
       positionType: YGPT_ABSOLUTE,
       positionLeft: 12,
@@ -56,7 +56,7 @@ describe('when the Anchor field shows an authored pin', () => {
   });
 
   // Displaying `Top` for an axis with no pinned edge would claim a pin the node
-  // does not have — and the preview, which shows no marker for it, would disagree.
+  // does not have — and the preview, which accents no edge for it, would disagree.
   it('should read None on an axis with no pinned edge', () => {
     renderField({ positionType: YGPT_ABSOLUTE, positionLeft: 12, positionLeftUnit: YGU_POINT });
 
@@ -70,7 +70,7 @@ describe('when the Anchor field shows an authored pin', () => {
     expect(screen.queryByText('None')).toBeNull();
   });
 
-  it('should show no marker cell at all for a node that is still in flow', () => {
+  it('should show no accented edge at all for a node that is still in flow', () => {
     const { preview } = renderField({ positionLeft: 12, positionLeftUnit: YGU_POINT });
 
     expect(preview.getAttribute('data-h')).toBeNull();
