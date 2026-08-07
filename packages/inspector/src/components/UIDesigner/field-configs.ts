@@ -268,14 +268,6 @@ const TEXT_WRAP_OPTIONS: EnumOption[] = [
   { value: 1, label: 'No wrap' },
 ];
 
-// Button variant. Editor-local numbers (react-ecs takes the STRINGS) — the map
-// lives in ecs-shape's BUTTON_VARIANT_ENUM, which field-configs.spec pins these
-// options to.
-const BUTTON_VARIANT_OPTIONS: EnumOption[] = [
-  { value: 0, label: 'Primary' },
-  { value: 1, label: 'Secondary' },
-];
-
 // BackgroundTextureMode, surfaced as "Scale Type". Values must stay the PB
 // enum (0/1/2) — the texture-region/slices `hiddenWhen` predicates key on them.
 // The design names mode 1 "Crop", which is what it visibly does: the texture
@@ -785,23 +777,15 @@ const TEXT_GROUP = {
 };
 
 // The two props react-ecs's <Button> adds on top of a Label's (UiButtonProps).
-// The design doesn't draw them, so this group's own title mirrors Input's and
-// Dropdown's: the widget-named group holds what only that widget has, and it
-// renders FIRST — `variant` decides the button's background AND text colour
-// (react-ecs getButtonProps), so it reads above the Text group it overrides.
+// The design doesn't draw it, so this group's title mirrors Input's and
+// Dropdown's: the widget-named group holds what only that widget has. `variant`
+// was DELIBERATELY removed from the panel (user decision 2026-08-06) — the
+// canvas cannot render its effect (react-ecs getButtonProps styling, task #30),
+// so the row read as a no-op. The parser still round-trips a hand-authored
+// variant untouched; restoring the row is a config push once #30 lands.
 const BUTTON_GROUP = {
   title: 'Button',
   fields: [
-    {
-      label: 'Variant',
-      componentId: UI_BUTTON,
-      path: 'variant',
-      kind: 'enum' as const,
-      options: BUTTON_VARIANT_OPTIONS,
-      bindable: false,
-      core: true,
-      info: 'Built-in button style: Primary is filled, Secondary inverted (light background, coloured text). Sets both the background and the text colour.',
-    },
     {
       label: 'Disabled',
       componentId: UI_BUTTON,

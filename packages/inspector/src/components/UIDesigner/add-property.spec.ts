@@ -25,7 +25,7 @@ describe('when bucketing a field into `+ Add property`', () => {
   });
 
   it('should never offer a core prop, which always has its own row', () => {
-    expect(isAddableField(field('Button', 'Variant'), null, NONE)).toBe(false);
+    expect(isAddableField(field('UiEntity', 'Size'), null, NONE)).toBe(false);
   });
 
   // Adding a bound prop would splice `disabled={true}` over `disabled={state.locked}`,
