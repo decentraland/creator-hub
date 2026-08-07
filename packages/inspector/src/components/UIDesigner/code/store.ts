@@ -21,6 +21,7 @@ import {
   generatePlatformHelper,
   generateRootComponent,
   generateUiIndex,
+  readVirtualSize,
 } from './aggregator';
 import {
   type CodeAction,
@@ -872,9 +873,15 @@ async function refreshRoots(): Promise<CodeRoot[]> {
 
 // (Re)generate the src/ui/index.tsx aggregator from the TOP-LEVEL roots only —
 // components (marker present) render where they're nested, not standalone.
+// The whole file is rewritten, so the one hand-editable value in it (the virtual
+// size) is carried over from the previous contents.
 async function regenerateAggregator(roots: CodeRoot[]): Promise<void> {
   const top = roots.filter(r => r.topLevel);
-  const src = generateUiIndex(top.map(r => ({ component: r.name, from: `./${r.name}` })));
+  const virtual = readVirtualSize(await readFromDisk(UI_INDEX));
+  const src = generateUiIndex(
+    top.map(r => ({ component: r.name, from: `./${r.name}` })),
+    virtual,
+  );
   await writeToDisk(UI_INDEX, src);
 }
 

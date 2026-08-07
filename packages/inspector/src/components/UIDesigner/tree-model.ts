@@ -12,9 +12,12 @@ export enum SegmentKind {
   BINDING = 'binding',
 }
 
-// Default design/virtual resolution for a UI — the editor canvas stage size.
-// Code-mode does not persist a per-UI canvas size yet (TODO(M5): read it from
-// the setUiRenderer call or a manifest), so every root uses this fallback.
+// The design/virtual resolution of a UI — the editor canvas stage size, and the
+// `{ virtualWidth, virtualHeight }` the generated ui/index.tsx hands to
+// setUiRenderer so in-world px scale to the same proportions (see
+// code/aggregator.ts). The read path is one-way: a hand-edited virtual size
+// survives regeneration but the stage still frames these defaults, so editing it
+// makes the two disagree. TODO(M5): feed the parsed value back into the stage.
 export const DEFAULT_CANVAS_WIDTH = 1920;
 export const DEFAULT_CANVAS_HEIGHT = 1080;
 

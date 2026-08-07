@@ -1,7 +1,13 @@
 import { parseSync } from 'oxc-parser';
 import { describe, expect, it } from 'vitest';
 
-import { generateInteractionHelper, generateRootComponent, generateUiIndex } from './aggregator';
+import { DEFAULT_CANVAS_HEIGHT, DEFAULT_CANVAS_WIDTH } from '../tree-model';
+import {
+  generateInteractionHelper,
+  generateRootComponent,
+  generateUiIndex,
+  readVirtualSize,
+} from './aggregator';
 import { codeToUINodes } from './parse-adapter';
 
 describe('when generating the file-per-root aggregator', () => {
@@ -44,6 +50,74 @@ describe('when generating the file-per-root aggregator', () => {
     expect(codeToUINodes(result.program as any, src)).toBeNull();
     // The State scaffold is present so the State/Logic panel has an anchor.
     expect(src).toContain('export const state: State = {}');
+  });
+
+  describe('and no virtual size is given', () => {
+    it('should emit the editor stage size so canvas and in-world px agree', () => {
+      const src = generateUiIndex([{ component: 'MyScreen', from: './MyScreen' }]);
+      expect(src).toContain(
+        `{ virtualWidth: ${DEFAULT_CANVAS_WIDTH}, virtualHeight: ${DEFAULT_CANVAS_HEIGHT} }`,
+      );
+      expect(parseSync('index.tsx', src).errors).toHaveLength(0);
+    });
+  });
+
+  describe('and a virtual size is given', () => {
+    it('should emit it and stay valid TSX', () => {
+      const src = generateUiIndex([{ component: 'Hud', from: './Hud' }], {
+        width: 1280,
+        height: 720,
+      });
+      expect(src).toContain('{ virtualWidth: 1280, virtualHeight: 720 }');
+      expect(parseSync('index.tsx', src).errors).toHaveLength(0);
+    });
+
+    it('should fall back for a non-positive or non-finite size', () => {
+      const src = generateUiIndex([{ component: 'Hud', from: './Hud' }], {
+        width: 0,
+        height: Number.NaN,
+      });
+      expect(src).toContain(
+        `{ virtualWidth: ${DEFAULT_CANVAS_WIDTH}, virtualHeight: ${DEFAULT_CANVAS_HEIGHT} }`,
+      );
+    });
+  });
+});
+
+describe('when reading back the virtual size of an existing aggregator', () => {
+  it('should round-trip what it generated', () => {
+    const src = generateUiIndex([{ component: 'Hud', from: './Hud' }], {
+      width: 1280,
+      height: 720,
+    });
+    expect(readVirtualSize(src)).toEqual({ width: 1280, height: 720 });
+  });
+
+  it('should preserve a hand-edited size across regeneration', () => {
+    const edited = generateUiIndex([{ component: 'Hud', from: './Hud' }]).replace(
+      '{ virtualWidth: 1920, virtualHeight: 1080 }',
+      '{ virtualWidth: 2560, virtualHeight: 1440 }',
+    );
+    const regenerated = generateUiIndex(
+      [
+        { component: 'Hud', from: './Hud' },
+        { component: 'MyScreen', from: './MyScreen' },
+      ],
+      readVirtualSize(edited),
+    );
+    expect(regenerated).toContain('{ virtualWidth: 2560, virtualHeight: 1440 }');
+    expect(regenerated).toContain('<MyScreen />');
+  });
+
+  it('should fall back to the stage size when the call has no options', () => {
+    expect(readVirtualSize('ReactEcsRenderer.setUiRenderer(uiMenu)')).toEqual({
+      width: DEFAULT_CANVAS_WIDTH,
+      height: DEFAULT_CANVAS_HEIGHT,
+    });
+    expect(readVirtualSize('')).toEqual({
+      width: DEFAULT_CANVAS_WIDTH,
+      height: DEFAULT_CANVAS_HEIGHT,
+    });
   });
 });
 
