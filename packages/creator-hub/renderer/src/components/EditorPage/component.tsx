@@ -5,7 +5,9 @@ import PlayCircleIcon from '@mui/icons-material/PlayCircle';
 import CodeIcon from '@mui/icons-material/Code';
 import PublicIcon from '@mui/icons-material/Public';
 import RefreshIcon from '@mui/icons-material/Refresh';
+import CloseIcon from '@mui/icons-material/Close';
 import { CircularProgress as Loader, Tooltip } from 'decentraland-ui2';
+import { IconButton } from '@mui/material';
 
 import { isClientNotInstalledError } from '/shared/types/client';
 import { isProjectError } from '/shared/types/projects';
@@ -29,6 +31,7 @@ import EditorPng from '/assets/images/editor.png';
 import { useDispatch, useSelector } from '#store';
 import { useFeatureFlags } from '/@/hooks/useFeatureFlags';
 import { actions as snackbarActions } from '/@/modules/store/snackbar';
+import { actions as editorActions } from '/@/modules/store/editor';
 import { createGenericNotification } from '/@/modules/store/snackbar/utils';
 import { Button } from '../Button';
 import { Header } from '../Header';
@@ -58,12 +61,15 @@ export function EditorPage() {
     openCode,
     updateScene,
     loadingPreview,
+    previewCancelled,
+    previewProgress,
     loadingPublish,
     isInstallingProject,
     killPreview,
     publishScene,
     getMobileQR,
     supportsMultiInstance,
+    supportsMcp,
     isPreviewRunning,
     startBevyRealm,
     killBevyRealm,
@@ -84,6 +90,7 @@ export function EditorPage() {
   const { detectCustomCode, isLoading: isDetectingCustomCode } = useSceneCustomCode(project);
   const { status } = useConnectionStatus();
   const iframeRef = useRef<ReturnType<typeof initRpc>>();
+  const hydratedOptimizedAssetsPathRef = useRef<string | null>(null);
   const [modalState, setModalState] = useState<ModalState>({ type: undefined });
   const [mobileQRData, setMobileQRData] = useState<{ url: string; qr: string } | null>(null);
   // When the Bevy renderer is selected the engine loads from a headless
@@ -150,6 +157,9 @@ export function EditorPage() {
       }
     };
   }, [error]);
+
+  // converting for an optimized preview: the button shows progress + an inline cancel (✕)
+  const isOptimizing = loadingPreview && !!previewProgress;
 
   // Start (or tear down) the Bevy realm as the renderer setting / project changes.
   // The iframe render is gated on the realm being ready when Bevy is selected, so
@@ -277,12 +287,42 @@ export function EditorPage() {
     [modalState],
   );
 
+  // Restore the per-project Optimize Assets preference when a project opens. Selecting the
+  // toggle is inert — conversion only happens when Preview is pressed. Runs once per project
+  // path so it never fights a live user toggle.
+  useEffect(() => {
+    if (!project) return;
+    if (hydratedOptimizedAssetsPathRef.current === project.path) return;
+    hydratedOptimizedAssetsPathRef.current = project.path;
+    const persisted = settings.optimizedAssetsByPath?.[project.path] ?? false;
+    if (persisted !== settings.previewOptions.optimizedAssets) {
+      updateAppSettings({
+        ...settings,
+        previewOptions: { ...settings.previewOptions, optimizedAssets: persisted },
+      });
+    }
+  }, [project?.path, settings, updateAppSettings]);
+
   const handleChangePreviewOptions = useCallback(
     (options: PreviewOptionsProps['options']) => {
-      updateAppSettings({ ...settings, previewOptions: options });
+      // Persist the choice per project so it comes back on next time this scene is opened
+      // (restored by the effect above). Kept separate from the global previewOptions so
+      // the preference never carries across projects. Selecting Optimize Assets is inert:
+      // the conversion runs when Preview is pressed, with feedback on the Preview button.
+      const optimizedAssetsByPath = project
+        ? { ...settings.optimizedAssetsByPath, [project.path]: options.optimizedAssets }
+        : settings.optimizedAssetsByPath;
+      updateAppSettings({ ...settings, previewOptions: options, optimizedAssetsByPath });
     },
-    [settings, updateAppSettings],
+    [project, settings, updateAppSettings],
   );
+
+  const handleCancelOptimizing = useCallback(() => {
+    if (project) {
+      // kill the converting spawn; the pending runScene settles without opening the client
+      void dispatch(editorActions.cancelPreview(project.path));
+    }
+  }, [project, dispatch]);
 
   const handleShowMobileQR = useCallback(async () => {
     if (!project) return;
@@ -512,25 +552,62 @@ export function EditorPage() {
               >
                 {t('editor.header.actions.code')}
               </Button>
-              <ButtonGroup
-                color="secondary"
-                disabled={
-                  loadingPreview || isInstallingProject || isDetectingCustomCode || isOffline
-                }
-                onClick={handleOpenPreview}
-                startIcon={loadingPreview ? <Loader size={20} /> : <PlayCircleIcon />}
-                extra={
-                  <PreviewOptions
-                    options={settings.previewOptions}
-                    onChange={handleChangePreviewOptions}
-                    onShowMobileQR={handleShowMobileQR}
-                    supportsMultiInstance={supportsMultiInstance}
-                    projectPath={project.path}
-                  />
-                }
-              >
-                {t('editor.header.actions.preview')}
-              </ButtonGroup>
+              <div className={isOptimizing ? 'preview-control optimizing' : 'preview-control'}>
+                <ButtonGroup
+                  color="secondary"
+                  // Not natively disabled while optimizing (that would kill the inline ✕ too):
+                  // the group is greyed and made inert via CSS, and only the ✕ stays clickable.
+                  // aria-disabled flags the CSS-inert state to assistive tech, which the visual
+                  // greying and pointer-events:none don't convey on their own.
+                  aria-disabled={isOptimizing || undefined}
+                  disabled={
+                    (loadingPreview && !isOptimizing) ||
+                    isInstallingProject ||
+                    isDetectingCustomCode ||
+                    isOffline
+                  }
+                  onClick={isOptimizing ? undefined : handleOpenPreview}
+                  startIcon={loadingPreview ? <Loader size={20} /> : <PlayCircleIcon />}
+                  extra={
+                    <PreviewOptions
+                      options={settings.previewOptions}
+                      onChange={handleChangePreviewOptions}
+                      onShowMobileQR={handleShowMobileQR}
+                      supportsMultiInstance={supportsMultiInstance}
+                      supportsMcp={supportsMcp}
+                      projectPath={project.path}
+                    />
+                  }
+                >
+                  {isOptimizing ? (
+                    <span className="optimizing-label">
+                      {t('editor.header.actions.optimizing')}
+                      {previewProgress?.total
+                        ? ` ${Math.round(((previewProgress.done ?? 0) / previewProgress.total) * 100)}%`
+                        : ''}
+                      <Tooltip title={t('editor.header.actions.cancel_optimizing')}>
+                        {/* a real button so the only live control in the CSS-inert group
+                            stays reachable by keyboard and assistive tech */}
+                        <IconButton
+                          className="cancel-optimizing"
+                          size="small"
+                          aria-label={t('editor.header.actions.cancel_optimizing')}
+                          // a cancel is already in flight (main is killing the spawn)
+                          disabled={previewCancelled}
+                          onClick={e => {
+                            e.stopPropagation();
+                            handleCancelOptimizing();
+                          }}
+                        >
+                          <CloseIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                    </span>
+                  ) : (
+                    t('editor.header.actions.preview')
+                  )}
+                </ButtonGroup>
+              </div>
               {publishOptions.length > 0 ? (
                 <ButtonGroup
                   color="primary"

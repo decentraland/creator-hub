@@ -19,6 +19,7 @@ import { STUDIOS_ADMIN_URL } from '/shared/urls';
 import type { Services } from '../services';
 
 import { getScene, getRowsAndCols, parseCoords, updateSceneThumbnail } from './scene';
+import { resolveOutdated } from './outdated';
 import { getDefaultScenesPath, getScenesPath } from './settings';
 
 import { DEFAULT_THUMBNAIL, NEW_SCENE_NAME, EMPTY_SCENE_TEMPLATE_REPO } from './constants';
@@ -107,7 +108,19 @@ export function initializeWorkspace(services: Services) {
       });
 
       const outdated = await Promise.race([outdatedPromise, timeoutPromise]);
-      return outdated as DependencyState;
+
+      // `npm outdated` flags any installed version that differs from `latest`,
+      // including auth-server/experimental commit builds where "updating" would
+      // pull the scene off its pinned line. `resolveOutdated` keeps prompts only
+      // for clean official releases that are genuinely behind.
+      const result: DependencyState = {};
+      for (const [name, info] of Object.entries(outdated)) {
+        const resolved = resolveOutdated(info);
+        if (resolved) {
+          result[name as keyof DependencyState] = resolved;
+        }
+      }
+      return result;
     } catch (error: any) {
       console.warn('Failed to get outdated packages:', error?.message);
       return {} as DependencyState;
@@ -187,8 +200,15 @@ export function initializeWorkspace(services: Services) {
     paths = Array.isArray(paths) ? paths : [paths];
     if (!paths.length) return [[], []];
 
-    const promises: Promise<Project>[] = [];
+    const promises: Promise<Project | null>[] = [];
     const missing: string[] = [];
+
+    // a project that fails to load shouldn't prevent the rest of the workspace from loading
+    const safeGetProject = (projectPath: string): Promise<Project | null> =>
+      getProject({ path: projectPath, opts }).catch((error: any) => {
+        console.warn(`[Preload] Skipping project in "${projectPath}":`, error);
+        return null;
+      });
 
     for (const _path of paths) {
       try {
@@ -197,7 +217,7 @@ export function initializeWorkspace(services: Services) {
           missing.push(_path);
         } else if (await isDCL(_path)) {
           // _path is a project
-          promises.push(getProject({ path: _path, opts }));
+          promises.push(safeGetProject(_path));
         } else {
           // _path is a directory with projects
           const files = await fs.readdir(_path);
@@ -205,7 +225,7 @@ export function initializeWorkspace(services: Services) {
             try {
               const projectDir = path.join(_path, dir);
               if (await isDCL(projectDir)) {
-                promises.push(getProject({ path: projectDir, opts }));
+                promises.push(safeGetProject(projectDir));
               }
               // eslint-disable-next-line no-empty
             } catch (_) {}
@@ -216,7 +236,9 @@ export function initializeWorkspace(services: Services) {
       }
     }
 
-    const projects = await Promise.all(promises);
+    const projects = (await Promise.all(promises)).filter(
+      (project): project is Project => project !== null,
+    );
     return [projects, missing];
   }
 
@@ -335,9 +357,14 @@ export function initializeWorkspace(services: Services) {
    */
   async function unlistProjects(paths: string[]): Promise<void> {
     const pathSet = new Set(paths);
-    await config.setConfig(
-      ({ workspace }) => (workspace.paths = workspace.paths.filter($ => !pathSet.has($))),
-    );
+    await config.setConfig(({ workspace, settings }) => {
+      workspace.paths = workspace.paths.filter($ => !pathSet.has($));
+      // Drop the per-project Optimize Assets preference along with the project so the map
+      // doesn't accumulate entries for projects removed from the workspace.
+      for (const _path of paths) {
+        delete settings.optimizedAssetsByPath?.[_path];
+      }
+    });
   }
 
   /**

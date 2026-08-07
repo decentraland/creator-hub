@@ -50,9 +50,11 @@ export function initIpc({ beforeQuitCleanup }: InitIpcOptions) {
 
   // cli
   handle('cli.init', (_event, path, repo) => cli.init(path, repo));
-  handle('cli.start', (_event, path, opts) => cli.start(path, opts));
+  handle('cli.start', (_event, path, opts, mobile) => cli.start(path, { ...opts, mobile }));
   handle('cli.deploy', (_event, opts) => cli.deploy(opts));
   handle('cli.killPreview', (_event, path) => cli.killPreview(path));
+  handle('cli.cancelPreview', (_event, path) => cli.cancelPreview(path));
+  handle('cli.supportsAssetBundles', (_event, path) => cli.supportsAssetBundles(path));
   handle('cli.getMobilePreview', (_event, path) => cli.getMobilePreview(path));
 
   // mobile debug session
