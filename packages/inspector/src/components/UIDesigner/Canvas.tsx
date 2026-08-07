@@ -276,12 +276,22 @@ function nodeStyle(node: UINode): React.CSSProperties {
   //   - flexDirection: react-ecs defaults to ROW (its UiEntity overrides Yoga's
   //     COLUMN default; @dcl/react-ecs uiTransform defaultUiTransform). This also
   //     matches CSS flexbox's row default.
-  //   - flexShrink:    Yoga/react-ecs default 0; CSS defaults 1 — set explicitly.
+  //   - flexShrink:    the PROTOCOL default is 1 (ui_transform.proto documents
+  //     the absent-value default; react-ecs never writes the field), which is
+  //     also CSS's default — so no explicit value. Yoga's library default of 0
+  //     is NOT what an unauthored node gets in-world; forcing 0 here was why
+  //     canvas labels held full width while in-world ones shrank and wrapped
+  //     per character.
+  //   - alignContent:  left at CSS's stretch DELIBERATELY. The proto documents
+  //     the absent-value default as flex-start, but the explorer empirically
+  //     STRETCHES wrapped lines (verified in-world 2026-08-06: a full-height
+  //     wrapping container's second line starts at the vertical midpoint).
+  //     The renderer is the de-facto contract; the proto comment is upstream's
+  //     to reconcile.
   const style: React.CSSProperties = {
     display: t.display === YGD_NONE ? 'none' : 'flex',
     position: t.positionType === YGPT_ABSOLUTE ? 'absolute' : 'relative',
     flexDirection: 'row',
-    flexShrink: 0,
     boxSizing: 'border-box',
   };
 
