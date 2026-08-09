@@ -247,6 +247,7 @@ const AssetContainer: React.FC<AssetContainerProps> = ({ value, onAddToFilesyste
         onOpen={handleInfoTooltipOpen}
         onClose={handleInfoTooltipClose}
         trigger={assetElement}
+        context={assetRef}
         hideOnScroll={false}
         position="top center"
         hoverable={false}
