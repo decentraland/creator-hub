@@ -1,8 +1,6 @@
 import React from 'react';
-import type { Entity } from '@dcl/ecs';
 
 import { type FlowValue, flowPatch, flowValue, isWrapping, wrapPatch } from '../flow';
-import { measureNodeOffset } from '../measure';
 import { radioGroupKeyDown, radioTabIndex } from '../radio-group';
 
 import './FlowField.css';
@@ -10,7 +8,6 @@ import './FlowField.css';
 interface FlowFieldProps {
   // The whole UiTransform value (the field uses path '').
   value: Record<string, unknown> | null;
-  entity: Entity;
   onPatch: (patch: Record<string, unknown>) => void;
 }
 
@@ -49,12 +46,12 @@ const CELL_VALUES = CELLS.map(cell => cell.value);
 // One exclusive selector over `positionType` + `flexDirection`, plus a separate
 // wrap toggle. See flow.ts for why the two props share a control and why
 // `absolute` never clears the direction.
-export const FlowField: React.FC<FlowFieldProps> = ({ value, entity, onPatch }) => {
+export const FlowField: React.FC<FlowFieldProps> = ({ value, onPatch }) => {
   const current = flowValue(value);
   const wrapping = isWrapping(value);
 
   const pick = (next: FlowValue) => {
-    const patch = flowPatch(next, current, measureNodeOffset(entity), value);
+    const patch = flowPatch(next, current, value);
     if (patch) onPatch(patch);
   };
 

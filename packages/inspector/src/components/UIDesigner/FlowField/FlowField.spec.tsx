@@ -1,18 +1,11 @@
 import { describe, expect, it, vi } from 'vitest';
 import { fireEvent, render } from '@testing-library/react';
 
-import type { Entity } from '@dcl/ecs';
-
 import { FLOW_DIRECTIONS } from '../flow';
 import { FlowField } from './FlowField';
 
-// measure.ts reaches into the canvas DOM for the node's rendered offset; the
-// keyboard pattern does not care where the node sits.
-vi.mock('../measure', () => ({ measureNodeOffset: () => null }));
-
-const ENTITY = 512 as Entity;
-
 // CELLS order: absolute, column, column-reverse, row, row-reverse.
+const ABSOLUTE_CELL = 0;
 const ROW_CELL = 3;
 
 function renderField(value: Record<string, unknown> | null) {
@@ -20,7 +13,6 @@ function renderField(value: Record<string, unknown> | null) {
   const { container } = render(
     <FlowField
       value={value}
-      entity={ENTITY}
       onPatch={onPatch}
     />,
   );
@@ -42,5 +34,20 @@ describe('when the Flow selector has focus', () => {
 
     expect(onPatch).toHaveBeenCalledWith({ flexDirection: FLOW_DIRECTIONS['row-reverse'] });
     expect(document.activeElement).toBe(group.children[ROW_CELL + 1]);
+  });
+});
+
+describe('when picking the absolute cell', () => {
+  // Baking the measured offset let the Anchor row read `Left`/`Top` (any POINT-unit
+  // leading edge reads as a pin) while the node sat hundreds of px off that edge —
+  // the panel claimed an anchor the canvas was not honouring.
+  it('should anchor the node to the leading edges, not bake its measured offset', () => {
+    const { group, onPatch } = renderField({});
+
+    fireEvent.click(group.children[ABSOLUTE_CELL]);
+
+    expect(onPatch).toHaveBeenCalledWith(
+      expect.objectContaining({ positionTop: 0, positionLeft: 0 }),
+    );
   });
 });

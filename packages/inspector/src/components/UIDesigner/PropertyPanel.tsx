@@ -39,7 +39,7 @@ import { Block } from '../Block';
 import { Container } from '../Container';
 import { CheckboxField, Dropdown, RgbaColorField, TextArea, TextField } from '../ui';
 import { Pill } from '../ui/Pill';
-import { measureParentBox, measureNodeOffset, axisForPath, convertLength } from './measure';
+import { measureParentBox, axisForPath, convertLength } from './measure';
 import type { DeviceKind } from './safe-areas';
 import { classifyNode, type CanvasSegment, type UINodeType } from './tree-model';
 import { WIDGET_ICONS } from './widget-catalog';
@@ -1411,10 +1411,11 @@ const FieldRow = React.memo(function FieldRow({
       );
     }
     case 'position-mode': {
-      // Checked = Absolute. Both transitions are mode-preserving: → Absolute bakes
-      // the node's on-screen offset so it does not jump, → In flow clears the
-      // baked offsets and whatever counter-margin an anchor left behind. Shared
-      // with the Flow selector's `absolute` cell (flow.ts).
+      // Checked = Absolute, which ANCHORS the node to its parent's top-left rather
+      // than baking where it sat — so the Anchor row's Left/Top is true the moment
+      // the box is ticked. → In flow clears the pinned offsets and whatever
+      // counter-margin an anchor left behind. Shared with the Flow selector's
+      // `absolute` cell (flow.ts).
       const absolute = ((raw as number | undefined) ?? YGPT_RELATIVE) === YGPT_ABSOLUTE;
       return (
         <BindableField
@@ -1428,7 +1429,7 @@ const FieldRow = React.memo(function FieldRow({
             onChange={e =>
               onPatch(
                 e.target.checked
-                  ? absolutePatch(measureNodeOffset(entity))
+                  ? absolutePatch()
                   : { ...inFlowPatch(), ...clearedCenterMargins(componentValue) },
               )
             }
@@ -1444,7 +1445,6 @@ const FieldRow = React.memo(function FieldRow({
         >
           <FlowField
             value={componentValue}
-            entity={entity}
             onPatch={onPatch}
           />
         </Block>

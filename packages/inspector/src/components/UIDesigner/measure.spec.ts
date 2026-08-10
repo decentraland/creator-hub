@@ -13,8 +13,8 @@ vi.mock('./node-registry', () => ({
 import {
   axisForPath,
   convertLength,
-  measureNodeOffset,
   measureParentBox,
+  offsetInParent,
   setCanvasScale,
 } from './measure';
 
@@ -50,7 +50,7 @@ function tree(opts: {
   border?: number;
   padding?: number;
   absolute?: boolean;
-}): void {
+}): { parent: HTMLElement; child: HTMLElement } {
   const parent = box(document.createElement('div'), opts.parent);
   if (opts.border) {
     for (const side of ['Top', 'Right', 'Bottom', 'Left']) {
@@ -64,6 +64,15 @@ function tree(opts: {
   parent.appendChild(child);
   document.body.appendChild(parent);
   elements.set(1, child);
+  return { parent, child };
+}
+
+// The rounding measureNodeOffset used to own, kept here so the arithmetic below
+// reads as whole px. offsetInParent itself is deliberately unrounded — the canvas
+// drag rounds only at the point it writes a position edit.
+function offsetOf(t: { parent: HTMLElement; child: HTMLElement }) {
+  const { top, left } = offsetInParent(t.child, t.parent);
+  return { top: Math.round(top), left: Math.round(left) };
 }
 
 describe('measuring the canvas DOM', () => {
@@ -75,50 +84,46 @@ describe('measuring the canvas DOM', () => {
 
   describe("when measuring a node's offset in its parent", () => {
     it('should measure from the parent box when the parent has no edges', () => {
-      tree({
+      const t = tree({
         parent: { top: 100, left: 100, width: 400, height: 300 },
         child: { top: 120, left: 140, width: 50, height: 20 },
       });
-      expect(measureNodeOffset(NODE)).toEqual({ top: 20, left: 40 });
+      expect(offsetOf(t)).toEqual({ top: 20, left: 40 });
     });
 
     // An absolute inset is measured from the parent's PADDING box, so the parent's
     // border is not part of the offset: leaving it in moved a node by that border
     // every time it was converted to absolute or dragged.
     it("should measure from inside the parent's border", () => {
-      tree({
+      const t = tree({
         parent: { top: 100, left: 100, width: 400, height: 300 },
         child: { top: 120, left: 140, width: 50, height: 20 },
         border: 4,
       });
-      expect(measureNodeOffset(NODE)).toEqual({ top: 16, left: 36 });
+      expect(offsetOf(t)).toEqual({ top: 16, left: 36 });
     });
 
     // ...and the padding IS part of it: an inset does not skip the padding, so the
     // distance the padding put the node there has to be written into the inset.
     it("should keep the parent's padding in the offset", () => {
-      tree({
+      const t = tree({
         parent: { top: 100, left: 100, width: 400, height: 300 },
         child: { top: 120, left: 140, width: 50, height: 20 },
         padding: 20,
       });
-      expect(measureNodeOffset(NODE)).toEqual({ top: 20, left: 40 });
+      expect(offsetOf(t)).toEqual({ top: 20, left: 40 });
     });
 
     // Rects are viewport px and scale with the zoom; a declared border is a logical
     // length and does not. Descaling both would shrink the correction at zoom.
     it('should descale the rect but not the declared border', () => {
       setCanvasScale(2);
-      tree({
+      const t = tree({
         parent: { top: 0, left: 0, width: 800, height: 600 },
         child: { top: 68, left: 108, width: 100, height: 40 },
         border: 4,
       });
-      expect(measureNodeOffset(NODE)).toEqual({ top: 30, left: 50 });
-    });
-
-    it('should report no offset for a node that is not in the canvas DOM', () => {
-      expect(measureNodeOffset(NODE)).toBeNull();
+      expect(offsetOf(t)).toEqual({ top: 30, left: 50 });
     });
   });
 

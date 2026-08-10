@@ -295,7 +295,7 @@ export const POSITION_MODE_FIELD: FieldConfig = {
   bindable: false,
   core: true,
   hideOnRoot: true,
-  info: 'Off: laid out by the parent (order, gaps, alignment). On: pinned at Top/Left offsets. Switching keeps the node where it is on screen.',
+  info: 'Off: laid out by the parent (order, gaps, alignment). On: pinned at Top/Left offsets. Turning it on anchors the node to the parent’s top-left — set Anchor and Position to place it.',
 };
 
 // --- Position group ---

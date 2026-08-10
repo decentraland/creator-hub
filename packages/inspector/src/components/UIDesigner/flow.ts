@@ -50,24 +50,28 @@ export function flowValue(transform: Record<string, unknown> | null): FlowValue 
 }
 
 /**
- * → Absolute. Bakes the node's current on-screen offset as Top/Left px so
- * switching modes never moves it, and clears the opposite edges so nothing stale
- * survives. `offset` comes from measuring the canvas (see measure.ts).
+ * → Absolute. ANCHORS the node to its parent's leading edges (Top/Left 0) and
+ * clears the opposite edges so nothing stale survives.
  *
- * The margins go with it. The measured offset is where the node's MARGIN put it,
- * and Yoga adds the leading margin on top of the leading inset of an absolute
- * node, so keeping them would move the node by its own margin — the one thing
- * this patch promises not to do. All four go, not just the leading pair, so that
- * `Position` keeps meaning the node's visible offset: every later position edit
- * and canvas drag reads it that way. Authored margins are not recoverable —
- * `inFlowPatch` has nowhere to restore them from.
+ * It deliberately does NOT bake the node's measured offset. The Anchor row reads
+ * any POINT-unit leading edge as a Left/Top pin whatever its value, so baking
+ * `left: 950` left the panel claiming an anchor the canvas plainly was not
+ * honouring — the pin only became real once the author picked one by hand. Going
+ * absolute therefore moves the node, and the Anchor row is immediately true.
+ *
+ * The margins go with it: Yoga adds the leading margin on top of an absolute
+ * node's leading inset, so a surviving margin holds the node off the very edge it
+ * is now pinned to. All four go, not just the leading pair, so that `Position`
+ * keeps meaning the node's visible offset: every later position edit and canvas
+ * drag reads it that way. Authored margins are not recoverable — `inFlowPatch`
+ * has nowhere to restore them from.
  */
-export function absolutePatch(offset: { top: number; left: number } | null) {
+export function absolutePatch() {
   return {
     positionType: YGPT_ABSOLUTE,
-    positionTop: offset?.top ?? 0,
+    positionTop: 0,
     positionTopUnit: YGU_POINT,
-    positionLeft: offset?.left ?? 0,
+    positionLeft: 0,
     positionLeftUnit: YGU_POINT,
     positionRight: 0,
     positionRightUnit: YGU_UNDEFINED,
@@ -114,11 +118,10 @@ export function inFlowPatch() {
 export function flowPatch(
   next: FlowValue,
   current: FlowValue,
-  offset: { top: number; left: number } | null,
   transform: Record<string, unknown> | null = null,
 ): Record<string, unknown> | null {
   if (next === current) return null;
-  if (next === 'absolute') return absolutePatch(offset);
+  if (next === 'absolute') return absolutePatch();
   const patch: Record<string, unknown> = { flexDirection: FLOW_DIRECTIONS[next] };
   if (current === 'absolute') {
     Object.assign(patch, inFlowPatch(), clearedCenterMargins(transform));

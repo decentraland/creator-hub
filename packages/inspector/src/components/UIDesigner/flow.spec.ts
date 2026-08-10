@@ -67,28 +67,35 @@ describe('the Flow control', () => {
 
   describe('when picking a cell', () => {
     it('should do nothing when the cell is already selected', () => {
-      expect(flowPatch('row', 'row', null)).toBeNull();
-      expect(flowPatch('absolute', 'absolute', null)).toBeNull();
+      expect(flowPatch('row', 'row')).toBeNull();
+      expect(flowPatch('absolute', 'absolute')).toBeNull();
     });
 
     // The regression this control was flagged for: positionType and flexDirection
     // are orthogonal, so going absolute must hide the direction, not destroy it.
     it('should NOT write flexDirection when picking absolute', () => {
-      const patch = flowPatch('absolute', 'column', { top: 10, left: 20 })!;
+      const patch = flowPatch('absolute', 'column')!;
       expect(patch).not.toHaveProperty('flexDirection');
       expect(patch.positionType).toBe(YGPT_ABSOLUTE);
-      expect(patch.positionTop).toBe(10);
-      expect(patch.positionLeft).toBe(20);
     });
 
-    // The measured offset is where the node's MARGIN put it, and Yoga adds the
-    // leading margin to an absolute node's leading inset — so keeping the margins
-    // would move the node by its own margin, which is what baking the offset is
-    // meant to prevent.
-    it('should clear the margins when baking the offset', () => {
-      expect(absolutePatch({ top: 32, left: 8 })).toMatchObject({
-        positionTop: 32,
-        positionLeft: 8,
+    // Going absolute ANCHORS the node to the leading edges rather than baking where
+    // it happened to sit: the Anchor row reads a POINT-unit leading edge as a
+    // Left/Top pin whatever its value, so a baked `left: 950` made the panel claim
+    // an anchor the canvas plainly was not honouring.
+    it('should anchor to the leading edges rather than bake an offset', () => {
+      expect(absolutePatch()).toMatchObject({
+        positionTop: 0,
+        positionTopUnit: YGU_POINT,
+        positionLeft: 0,
+        positionLeftUnit: YGU_POINT,
+      });
+    });
+
+    // Yoga adds the leading margin to an absolute node's leading inset, so a
+    // surviving margin would hold the node off the very edge it is now pinned to.
+    it('should clear the margins so the pin sits flush', () => {
+      expect(absolutePatch()).toMatchObject({
         marginTop: 0,
         marginTopUnit: YGU_UNDEFINED,
         marginRight: 0,
@@ -101,22 +108,19 @@ describe('the Flow control', () => {
     });
 
     // The selector's absolute cell and the "Ignore Layout Flow" checkbox (the
-    // panel's position-mode field) share this one builder, so the margin fix
-    // covers both paths.
+    // panel's position-mode field) share this one builder, so both anchor alike.
     it('should build the absolute cell from the shared patch', () => {
-      expect(flowPatch('absolute', 'column', { top: 32, left: 8 })).toEqual(
-        absolutePatch({ top: 32, left: 8 }),
-      );
+      expect(flowPatch('absolute', 'column')).toEqual(absolutePatch());
     });
 
-    it('should reset the baked offsets only when leaving absolute', () => {
-      const leaving = flowPatch('row', 'absolute', null)!;
+    it('should reset the pinned offsets only when leaving absolute', () => {
+      const leaving = flowPatch('row', 'absolute')!;
       expect(leaving.positionType).toBe(YGPT_RELATIVE);
       expect(leaving.flexDirection).toBe(FLOW_DIRECTIONS.row);
 
       // Already in flow: a direction pick must not touch position offsets a hand
       // author may have written.
-      const staying = flowPatch('column', 'row', null)!;
+      const staying = flowPatch('column', 'row')!;
       expect(staying).toEqual({ flexDirection: FLOW_DIRECTIONS.column });
     });
   });
@@ -147,19 +151,19 @@ describe('the Flow control', () => {
       const before = transformOf(SOURCE);
       expect(flowValue(before)).toBe('column');
 
-      const next = patchRoot(SOURCE, flowPatch('absolute', 'column', { top: 12, left: 34 })!);
+      const next = patchRoot(SOURCE, flowPatch('absolute', 'column')!);
       expect(next).toContain("flexDirection: 'column'");
 
       const after = transformOf(next);
       expect(after.flexDirection).toBe(FLOW_DIRECTIONS.column);
       expect(after.positionType).toBe(YGPT_ABSOLUTE);
-      expect(after.positionTop).toBe(12);
+      expect(after.positionTop).toBe(0);
       expect(after.positionTopUnit).toBe(YGU_POINT);
-      expect(after.positionLeft).toBe(34);
+      expect(after.positionLeft).toBe(0);
     });
 
     it('should show absolute selected, enable Anchor/Position, and check the flow checkbox', () => {
-      const after = transformOf(patchRoot(SOURCE, flowPatch('absolute', 'column', null)!));
+      const after = transformOf(patchRoot(SOURCE, flowPatch('absolute', 'column')!));
 
       expect(flowValue(after)).toBe('absolute');
       // Both gated Position fields become live…
@@ -179,18 +183,18 @@ describe('the Flow control', () => {
         marginLeft: -40,
         marginLeftUnit: YGU_POINT,
       };
-      const patch = flowPatch('row', 'absolute', null, centered)!;
+      const patch = flowPatch('row', 'absolute', centered)!;
       expect(patch.marginLeft).toBe(0);
       expect(patch.marginLeftUnit).toBe(YGU_UNDEFINED);
       // A node pinned by px edges has no counter-margin to clear.
-      expect(
-        flowPatch('row', 'absolute', null, { positionType: YGPT_ABSOLUTE })!,
-      ).not.toHaveProperty('marginLeft');
+      expect(flowPatch('row', 'absolute', { positionType: YGPT_ABSOLUTE })!).not.toHaveProperty(
+        'marginLeft',
+      );
     });
 
     it('should restore the hidden direction when switched back in flow', () => {
-      const absolute = patchRoot(SOURCE, flowPatch('absolute', 'column', { top: 12, left: 34 })!);
-      const backInFlow = patchRoot(absolute, flowPatch('column', 'absolute', null)!);
+      const absolute = patchRoot(SOURCE, flowPatch('absolute', 'column')!);
+      const backInFlow = patchRoot(absolute, flowPatch('column', 'absolute')!);
 
       const after = transformOf(backInFlow);
       expect(flowValue(after)).toBe('column');
@@ -206,17 +210,18 @@ describe('the Flow control', () => {
   return <UiEntity uiTransform={{ width: 100, height: 50, margin: { top: 32, left: 8 } }} />
 }`;
 
-    it('should drop the margins so the node stays where it was measured', () => {
+    it('should drop the margins so the pin sits flush against the parent', () => {
       expect(transformOf(SOURCE).marginTop).toBe(32);
 
-      // 32/8 is the offset the margin itself produced; Yoga would add it a second
-      // time on top of an absolute inset, landing the node at 64/16.
-      const next = patchRoot(SOURCE, flowPatch('absolute', 'row', { top: 32, left: 8 })!);
+      // Yoga adds the leading margin on top of an absolute node's leading inset, so
+      // a surviving 32/8 would leave the node 32/8 short of the edge it now claims
+      // to be pinned to.
+      const next = patchRoot(SOURCE, flowPatch('absolute', 'row')!);
       expect(next).not.toContain('margin');
 
       const after = transformOf(next);
-      expect(after.positionTop).toBe(32);
-      expect(after.positionLeft).toBe(8);
+      expect(after.positionTop).toBe(0);
+      expect(after.positionLeft).toBe(0);
       expect(after.marginTop).toBeUndefined();
       expect(after.marginLeft).toBeUndefined();
     });

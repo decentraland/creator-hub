@@ -86,16 +86,6 @@ export function offsetInParent(
   };
 }
 
-// The same offset for a node addressed by entity, rounded to the whole px a
-// position edit writes. Null when the node isn't in the canvas DOM.
-export function measureNodeOffset(entity: Entity): { top: number; left: number } | null {
-  const el = getNodeElement(entity);
-  const parent = el?.parentElement;
-  if (!el || !parent) return null;
-  const offset = offsetInParent(el, parent);
-  return { top: Math.round(offset.top), left: Math.round(offset.left) };
-}
-
 // Which parent dimension a length path is a percentage of.
 // A margin or padding is a percentage of the containing block's WIDTH on BOTH
 // axes — CSS says so, and Yoga follows it in its signatures: `computeFlexStartMargin`
