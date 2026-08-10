@@ -50,6 +50,9 @@ export interface CameraBridge {
    * held state to the agent's fly camera.
    */
   setVertical(up: boolean, down: boolean): void;
+  /** Enable/disable viewport editing (pick + gizmo grab) in the agent — the
+   * "Interact" toggle. Disabled lets clicks reach the running scene (#1458). */
+  setEditingEnabled(enabled: boolean): void;
   disconnect(): void;
 }
 
@@ -80,6 +83,7 @@ export function createCameraBridge(options: CameraBridgeOptions = {}): CameraBri
     reset: position => post({ kind: 'reset-camera', position }),
     zoom: (delta: number) => post({ kind: 'zoom-camera', delta }),
     setVertical: (up: boolean, down: boolean) => post({ kind: 'set-vertical-input', up, down }),
+    setEditingEnabled: (enabled: boolean) => post({ kind: 'set-editing-enabled', enabled }),
     disconnect: () => {
       channel.onmessage = null;
       channel.close();
