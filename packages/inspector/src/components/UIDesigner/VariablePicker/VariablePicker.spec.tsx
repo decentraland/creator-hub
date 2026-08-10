@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 
-import { VariablePicker, thunkExprFor } from './VariablePicker';
+import { VariablePicker } from './VariablePicker';
 
 // The picker lists the parsed binding surface (typed `state` vars +
 // @ui-bind markers).
@@ -50,40 +50,5 @@ describe('VariablePicker type restriction (code mode)', () => {
   it('offers no variables for a color field (no compatible code type)', () => {
     renderPicker('color');
     expect(screen.getByText('No compatible variables.')).toBeTruthy();
-  });
-
-  it('lists event handlers (not variables) for a callback field', () => {
-    renderPicker('callback');
-    expect(screen.getByText('onClick()')).toBeTruthy();
-    expect(screen.getByText('onHover()')).toBeTruthy();
-    // Variables are not offered on a callback field.
-    expect(screen.queryByText('label')).toBeNull();
-    expect(screen.getByText('+ Add new action…')).toBeTruthy();
-  });
-});
-
-describe('thunkExprFor', () => {
-  const field = (componentId: string, path: string) =>
-    ({ label: path, componentId, path, kind: 'callback' }) as never;
-
-  it('emits a zero-arg thunk passing the args object for mouse events', () => {
-    expect(thunkExprFor(field('ui::events', 'onMouseDown'), 'onClick')).toBe(
-      '() => onClick({ state, props })',
-    );
-  });
-
-  it('emits an unknown-typed value-bearing thunk for Input/Dropdown events', () => {
-    expect(thunkExprFor(field('core::UiInput', 'onChange'), 'onType')).toBe(
-      '(value: unknown) => onType({ state, props, value })',
-    );
-    expect(thunkExprFor(field('core::UiDropdown', 'onChange'), 'onPick')).toBe(
-      '(value: unknown) => onPick({ state, props, value })',
-    );
-  });
-
-  it('emits an optional-param thunk for callback props (declared `(value?: unknown) => void`)', () => {
-    expect(thunkExprFor(field('ui::props', 'onSave'), 'onSave')).toBe(
-      '(value?: unknown) => onSave({ state, props, value })',
-    );
   });
 });

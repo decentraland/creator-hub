@@ -265,6 +265,53 @@ describe('buildGroups', () => {
       }
     });
 
+    // Position shows two cells, not four. Which two is not fixed: they follow the
+    // pin the Anchor row reports, so a bottom-right-anchored node edits the edges
+    // Yoga is actually resolving against instead of an unset left/top pair.
+    describe('and Position projects its four edges onto X/Y', () => {
+      const facadeOf = (v: Record<string, unknown>) =>
+        fieldsIn('UiEntity', 'Position').find(f => f.label === 'Position')!.facadeSubFields!(v).map(
+          s => `${s.leftLabel}:${s.path}`,
+        );
+
+      const pinned = (edges: Record<string, unknown>) => ({ positionType: 1, ...edges });
+
+      it('should show the leading edges for a node anchored top-left', () => {
+        expect(facadeOf(pinned({ positionLeftUnit: 1, positionTopUnit: 1 }))).toEqual([
+          'X:positionLeft',
+          'Y:positionTop',
+        ]);
+      });
+
+      it('should show the trailing edges for a node anchored bottom-right', () => {
+        expect(facadeOf(pinned({ positionRightUnit: 1, positionBottomUnit: 1 }))).toEqual([
+          'X:positionRight',
+          'Y:positionBottom',
+        ]);
+      });
+
+      it('should mix the axes independently', () => {
+        expect(facadeOf(pinned({ positionRightUnit: 1, positionTopUnit: 1 }))).toEqual([
+          'X:positionRight',
+          'Y:positionTop',
+        ]);
+      });
+
+      // A centred pin holds its value on the LEADING edge (50% plus a
+      // counter-margin), so that is the cell to expose.
+      it('should show the leading edge for a centred pin', () => {
+        expect(
+          facadeOf(
+            pinned({ positionLeftUnit: 2, positionLeft: 50, marginLeftUnit: 1, marginLeft: -20 }),
+          ),
+        ).toEqual(['X:positionLeft', 'Y:positionTop']);
+      });
+
+      it('should fall back to the leading edges for an unpinned node', () => {
+        expect(facadeOf({})).toEqual(['X:positionLeft', 'Y:positionTop']);
+      });
+    });
+
     // Drawn as a standalone checkbox above every group, and deliberately the SAME
     // `positionType` the Layout group's Flow selector writes — the two mirror each
     // other, so neither may drift onto a different path.
@@ -407,9 +454,10 @@ describe('buildGroups', () => {
   });
 
   describe('and a row is paired into two columns', () => {
-    // The design pairs Rotation·Z-Index and Transparency·Corner radius. Rotation
-    // has no SDK prop, so Z-Index is half with nothing beside it — the row grid
-    // packs whatever half rows survive filtering, so it simply keeps one column.
+    // Only Transparency·Corner Radius survives as a pair. The design also pairs
+    // Rotation·Z-Index, but Rotation has no SDK prop, so marking Z-Index half left
+    // a permanently unpaired row: a half-width input with its remove and bind
+    // buttons stranded mid-panel and the other track blank.
     // The border row is deliberately NOT paired: a colour control is swatch + hex
     // + alpha, and a ~140px half-track leaves the hex input around 44px.
     it('should mark exactly the fields the design pairs', () => {
@@ -418,7 +466,18 @@ describe('buildGroups', () => {
           .flatMap(g => g.fields)
           .filter(f => f.half)
           .map(f => f.label);
-        expect(half).toEqual(['Z-Index', 'Transparency', 'Corner Radius']);
+        expect(half).toEqual(['Transparency', 'Corner Radius']);
+      }
+    });
+
+    // A half row only earns its column when something can sit beside it, so every
+    // marked field must have another half row in the SAME group.
+    it('should never leave a half row without a partner in its group', () => {
+      for (const type of ALL_TYPES) {
+        for (const group of buildGroups(type)) {
+          const half = group.fields.filter(f => f.half);
+          expect(half.length === 0 || half.length % 2 === 0, `${type} → ${group.title}`).toBe(true);
+        }
       }
     });
   });

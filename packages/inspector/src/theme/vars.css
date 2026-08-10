@@ -134,10 +134,12 @@
   --ui-designer-accent-08: rgba(80, 200, 255, 0.08);
   --ui-designer-accent-05: rgba(80, 200, 255, 0.05);
 
-  /* CONTROL accent (brand pink) — panel chrome: selected cells, focus rings, hover
-     borders/fills, bind affordances. Always composited on --base-20, so contrast is
-     fixed and verifiable. Tracks --primary-main; the steps repeat its rgb triple
-     because CSS cannot derive rgba() from a hex token.
+  /* CONTROL accent (brand pink) — the Anchor pin's accented edge and leash, focus
+     rings, and the bind affordance. NOT the selected/active state of a segmented
+     control or a checkbox: the design paints those neutral, see the trio below.
+     Always composited on --base-20, so contrast is fixed and verifiable. Tracks
+     --primary-main; the steps repeat its rgb triple because CSS cannot derive
+     rgba() from a hex token.
 
      Do NOT reuse the cyan alphas above: pink's relative luminance is 0.238 against
      cyan's 0.502, so at .4 the hover border collapsed to 1.70:1 over a 1.41:1
@@ -148,6 +150,22 @@
   --ui-designer-control-accent-62: rgba(255, 45, 85, 0.62);
   --ui-designer-control-accent-21: rgba(255, 45, 85, 0.21);
   --ui-designer-control-accent-15: rgba(255, 45, 85, 0.15);
+
+  /* Selected / active controls, per the Figma Layout frame. Two treatments, not
+     one: a cell INSIDE a segmented group lifts subtly and turns its glyph white,
+     while a STANDALONE toggle (the wrap button, the aspect lock, a checkbox)
+     inverts to a near-white fill with a dark glyph.
+
+     The group cell's fill is only 1.36:1 against its unselected neighbours, which
+     is fine because the fill is not what carries the state: the glyph goes from
+     --ui-designer-glyph (3.09:1 on the card) to Snow (11.4:1 on the lifted fill),
+     so selection reads as a luminance jump and never as hue alone. Keep that
+     pairing if either value moves. The inverted toggle measures 12.13:1 for its
+     glyph and 15.45:1 against the card. */
+  --ui-designer-control-hover-bg: rgba(255, 255, 255, 0.06);
+  --ui-designer-control-selected-bg: rgba(255, 255, 255, 0.1); /* Transparencies/White 10 */
+  --ui-designer-control-active-bg: #fcfcfc; /* Neutrals/Snow */
+  --ui-designer-control-active-fg: #35333b; /* Neutrals/Charcoal */
   /* Panel surfaces, foreground and glyphs — the Figma's own Neutrals ramp
      (PropertiesFull 1492:1939). The panel frame reuses --base-19 rather than
      declaring the design's #25212a: the two differ by 1/255, and the group cards

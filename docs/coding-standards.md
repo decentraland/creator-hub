@@ -56,6 +56,13 @@ setSearch('');
 
 Applied in `Hierarchy.tsx` (3D) and `UIDesignerLeftRail.tsx` (2D). A ✕ button happens to survive without this only because mousedown blurs before click fires.
 
+### `TextField` debounces its `onChange` — don't read it synchronously
+
+`TextField` pipes `onChange` through `debounce(onChange, debounceTime ?? 0)`, so the handler fires on a timer even at the default 0ms. Two consequences:
+
+- **A transient inline editor** (type a name, click a confirm button) can commit the _previous_ value, because the click lands before the debounced change. Use a raw `<input>` instead — `VariablePicker` and `CallbackField`'s "Add new action" both do, for exactly this reason.
+- **In tests**, `fireEvent.change` does not synchronously reach the parent; wrap the assertion in `waitFor` (see `BoxModelField.spec.tsx`).
+
 ### Don't build a memoized component inside render
 
 A factory function that returns `React.memo(...)` (or any HOC-wrapped component) on every call gives the result a fresh component identity per call. Using it as JSX inside render makes React read it as a different component type each render and remount the entire subtree:

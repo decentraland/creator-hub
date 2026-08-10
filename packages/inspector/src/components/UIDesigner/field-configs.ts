@@ -1,4 +1,5 @@
 import { alignmentIsRepresentable } from './alignment-presets';
+import { readAnchor } from './align-presets';
 import { UI_BUTTON } from './code/parse-adapter';
 import { directionIsRepresentable, wrapIsRepresentable, YGW_WRAP_REVERSE } from './flow';
 import type { UINodeType } from './tree-model';
@@ -77,13 +78,12 @@ export interface FieldConfig {
   // For `length-vec`: side-by-side sub-fields inside one Block.
   subFields?: VecSubField[];
   /**
-   * For a `length-vec` with a compact projection (e.g. Position shown as X/Y):
-   * the sub-fields shown by default, with a reveal toggle that expands to the
-   * full `subFields`. Absent → all `subFields` are always shown. The toggle
-   * starts expanded when a sub-field outside this compact set is already
-   * authored (so a right/bottom-anchored node still shows its real edges).
+   * For a `length-vec` that shows fewer cells than it stores (Position: four
+   * edges, two cells): which sub-fields to render for a given component value.
+   * Absent → all `subFields`, always. A function rather than a fixed list because
+   * Position's pair depends on where the node is pinned — see the Position config.
    */
-  collapsedSubFields?: VecSubField[];
+  facadeSubFields?: (componentValue: Record<string, unknown> | null) => VecSubField[];
   /**
    * For the Size `length-vec`: render an aspect-ratio lock toggle that constrains
    * width/height to their current ratio on edit (panel edits + canvas resize).
@@ -99,6 +99,11 @@ export interface FieldConfig {
    */
   toDisplay?: (sourceValue: number) => number;
   fromDisplay?: (displayValue: number) => number;
+  /**
+   * A fixed unit glyph inside the input, right-aligned. For a field whose unit can
+   * never vary, which is why it is a label and not the `length` kinds' selector.
+   */
+  suffix?: string;
   /**
    * Render this row at half width so it pairs with the adjacent half-width row
    * (the design draws Transparency·Corner Radius and Border Colour·Weight as two
@@ -324,12 +329,18 @@ export const POSITION_GROUP = {
         { path: 'positionBottom', leftLabel: 'B' },
         { path: 'positionLeft', leftLabel: 'L' },
       ],
-      // Shown as X (left) / Y (top) by default; the reveal toggle expands to the
-      // full T/R/B/L for anchored nodes. Storage stays the four named edges.
-      collapsedSubFields: [
-        { path: 'positionLeft', leftLabel: 'X' },
-        { path: 'positionTop', leftLabel: 'Y' },
-      ],
+      // Two cells, X and Y, over four stored edges. Which two follow the pin the
+      // Anchor row reports, so a bottom-right-anchored node edits right/bottom —
+      // the edges Yoga is resolving against — rather than an unset left/top pair.
+      // A centred pin carries its value on the leading edge (50% + counter-margin),
+      // so it takes the same cell as `left`/`top`.
+      facadeSubFields: (v: Record<string, unknown> | null) => {
+        const { h, v: vertical } = readAnchor(v);
+        return [
+          { path: h === 'right' ? 'positionRight' : 'positionLeft', leftLabel: 'X' },
+          { path: vertical === 'bottom' ? 'positionBottom' : 'positionTop', leftLabel: 'Y' },
+        ];
+      },
       bindable: false,
       // Always shown (never routed to the "+ Add property" menu), but greyed when
       // the node is In flow — Yoga only honours position offsets when Absolute.
@@ -337,16 +348,18 @@ export const POSITION_GROUP = {
       hideOnRoot: true,
       disabledWhen: (v: Record<string, unknown>) =>
         ((v.positionType as number | undefined) ?? 0) !== 1,
-      info: 'X (left) / Y (top) offset from the parent; reveal shows all four edges. Applied when the node ignores layout flow.',
+      info: 'X / Y offset from the parent, on the edges the Anchor pins. Applied when the node ignores layout flow.',
     },
     {
       label: 'Z-Index',
       componentId: TRANSFORM,
       path: 'zIndex',
       kind: 'number' as const,
-      // The design pairs it with Rotation, which the SDK has no prop for — a half
-      // row simply keeps its own column until there is something to pair with.
-      half: true,
+      // NOT `half`, though the design pairs it with Rotation: the SDK has no
+      // rotation prop, so nothing can ever occupy the other track. A permanently
+      // unpaired half row left a short input with its remove and bind buttons
+      // stranded mid-panel and the right-hand track blank. Restore `half` if and
+      // when Rotation exists to sit beside it.
       info: 'Stacking order; higher values render in front of siblings.',
     },
   ],
@@ -444,7 +457,7 @@ const LAYOUT_FIELDS: (FieldConfig & { container?: true })[] = [
     path: '',
     kind: 'box-model' as const,
     bindable: false,
-    info: 'Padding is space inside the box, margin space outside it. Margin is ignored while the node ignores layout flow.',
+    info: 'Padding is space inside the box, margin space outside it, both in px. Margin is ignored while the node ignores layout flow.',
   },
   // The one `overflow` enum, drawn as the design's two checkboxes. They are total
   // over its three values (see overflow-flags.ts), so — unlike Flow or Alignment —
@@ -618,6 +631,7 @@ const STYLE_GROUP = {
       path: 'opacity',
       kind: 'number' as const,
       half: true,
+      suffix: '%',
       // Unset opacity renders fully opaque, i.e. no transparency at all.
       defaultValue: 1,
       toDisplay: (opacity: number) => round2(100 - opacity * 100),
@@ -1037,8 +1051,7 @@ export const NODE_FIELD_CONFIGS: Record<UINodeType, NodeFieldConfig> = {
 };
 
 // Event groups render LAST, after content. Matched on the title, so a new group
-// title must not accidentally contain "event". Also what tells the panel which
-// groups get the `+ Add New Action` affordance.
+// title must not accidentally contain "event".
 export const isEventGroup = (title: string) => /event/i.test(title);
 
 /**

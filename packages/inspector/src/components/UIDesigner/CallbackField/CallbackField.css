@@ -1,0 +1,212 @@
+.ui-designer-callback-row {
+  display: flex;
+  align-items: center;
+  gap: var(--uid-space-2);
+  width: 100%;
+}
+
+/* Shaped as the panel's other value controls (Input rx 6) rather than as a real
+   Dropdown: the menu it opens is not an OptionList, so borrowing the class would
+   inherit chrome this control does not use. */
+.ui-designer-callback-trigger {
+  display: flex;
+  flex: 1 1 auto;
+  min-width: 0;
+  align-items: center;
+  height: 28px;
+  padding: 0 var(--uid-space-2);
+  background: var(--ui-designer-control-bg);
+  border: 1px solid var(--ui-designer-control-border);
+  border-radius: var(--ui-designer-radius-field);
+  color: var(--ui-designer-text-value);
+  cursor: pointer;
+}
+
+.ui-designer-callback-trigger::after {
+  content: "";
+  flex: 0 0 auto;
+  margin-left: auto;
+  width: 0;
+  height: 0;
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  border-top: 4px solid var(--ui-designer-glyph-on-control);
+}
+
+/* An unbound row is a placeholder, not a value — the design dims both the fill
+   and the text so a bound row reads as the exception on the group. */
+.ui-designer-callback-trigger.empty {
+  background: var(--ui-designer-panel-bg);
+  color: var(--ui-designer-text-muted);
+}
+
+.ui-designer-callback-trigger:focus-visible {
+  outline: 2px solid var(--border-focused);
+  outline-offset: 1px;
+}
+
+.ui-designer-callback-value {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Held open whether or not the row is bound, so every trigger ends at the same x
+   down the group. 18px button + the row gap. */
+.ui-designer-callback-clear-lane {
+  flex: 0 0 18px;
+  display: inline-flex;
+  justify-content: center;
+}
+
+.ui-designer-callback-clear {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: none;
+  border-radius: 3px;
+  background: transparent;
+  color: var(--sub-text);
+  cursor: pointer;
+}
+
+.ui-designer-callback-clear:hover {
+  background: var(--ui-designer-control-accent-21);
+  color: var(--title);
+}
+
+.ui-designer-callback-clear:focus-visible {
+  outline: 2px solid var(--border-focused);
+  outline-offset: 1px;
+}
+
+.ui-designer-callback-clear svg {
+  width: 13px;
+  height: 13px;
+}
+
+.ui-designer-callback-menu {
+  max-height: 260px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: var(--uid-space-2) 0;
+  background: var(--tree-bg-color);
+  border: 1px solid var(--ui-designer-control-border);
+  border-radius: var(--ui-designer-radius-menu);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  z-index: 1000;
+}
+
+.ui-designer-callback-option,
+.ui-designer-callback-add-trigger {
+  display: flex;
+  align-items: center;
+  gap: var(--uid-space-1);
+  width: 100%;
+  padding: 6px var(--uid-space-2) 6px 26px;
+  text-align: left;
+  background: transparent;
+  border: none;
+  color: var(--ui-designer-text);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.ui-designer-callback-option:hover,
+.ui-designer-callback-add-trigger:hover {
+  background: var(--ui-designer-control-selected-bg);
+}
+
+.ui-designer-callback-option:focus-visible,
+.ui-designer-callback-add-trigger:focus-visible {
+  outline: none;
+  background: var(--ui-designer-control-selected-bg);
+  box-shadow: inset 0 0 0 1px var(--border-focused);
+}
+
+/* The checkmark column the design puts left of every row. Drawn on the option
+   itself rather than as an element so the label's left edge does not shift
+   between the marked and unmarked states. */
+.ui-designer-callback-option.selected {
+  position: relative;
+}
+
+.ui-designer-callback-option.selected::before {
+  content: "";
+  position: absolute;
+  left: var(--uid-space-2);
+  width: 10px;
+  height: 6px;
+  border-left: 2px solid var(--ui-designer-text);
+  border-bottom: 2px solid var(--ui-designer-text);
+  transform: rotate(-45deg) translateY(-2px);
+}
+
+.ui-designer-callback-menu-divider {
+  height: 1px;
+  margin: var(--uid-space-1) 0;
+  background: var(--ui-designer-control-border);
+}
+
+.ui-designer-callback-add-trigger {
+  padding-left: var(--uid-space-2);
+}
+
+.ui-designer-callback-add {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--uid-space-1);
+  padding: var(--uid-space-1) var(--uid-space-2) 0;
+}
+
+.ui-designer-callback-add-field {
+  display: flex;
+  flex: 1 1 100%;
+  flex-direction: column;
+  gap: var(--uid-space-1);
+  min-width: 0;
+  color: var(--ui-designer-text-muted);
+  font-size: 11px;
+}
+
+.ui-designer-callback-add-name {
+  width: 100%;
+  min-width: 0;
+  padding: 5px var(--uid-space-2);
+  background: var(--ui-designer-control-bg);
+  border: 1px solid var(--ui-designer-control-border);
+  border-radius: var(--ui-designer-radius-field);
+  color: var(--ui-designer-text);
+  font-size: 12px;
+}
+
+.ui-designer-callback-add-name:focus-visible {
+  outline: none;
+  border-color: var(--border-focused);
+}
+
+.ui-designer-callback-add-error {
+  flex: 1 0 100%;
+  color: var(--error-color, #ff5f5f);
+  font-size: 11px;
+}
+
+.ui-designer-callback-add-confirm {
+  flex: 1 1 100%;
+  padding: 5px 10px;
+  border: none;
+  border-radius: 4px;
+  background: var(--primary-dark);
+  color: var(--ui-designer-text);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+}
+
+.ui-designer-callback-add-confirm:focus-visible {
+  outline: 2px solid var(--border-focused);
+  outline-offset: 1px;
+}

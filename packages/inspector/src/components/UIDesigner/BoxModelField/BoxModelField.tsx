@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { YGU_POINT } from '../../../lib/sdk/ui-transform-constants';
+import { YGU_PERCENT, YGU_POINT } from '../../../lib/sdk/ui-transform-constants';
 import { TextField } from '../../ui';
 
 import './BoxModelField.css';
@@ -29,14 +29,23 @@ interface BoxModelFieldProps {
 
 // Padding and margin as two icon-labelled 2×2 grids, per the design. Margin is
 // greyed out for absolutely-positioned nodes — Yoga ignores it there. Writes the
-// flat `<edge>` + `<edge>Unit` px pair.
+// flat `<edge>` + `<edge>Unit` pair.
+//
+// There is no unit selector: everything authored here is px, and the in-input
+// glyph says so. A PERCENT edge can therefore only be hand-authored — but it
+// parses like any other, so it is read back and carried through an edit rather
+// than silently reinterpreted as px.
 export const BoxModelField: React.FC<BoxModelFieldProps> = ({ value, onPatch }) => {
   const v = value ?? {};
   const marginDisabled = (v.positionType as number | undefined) === 1;
+  const isPercent = (path: string) => v[`${path}Unit`] === YGU_PERCENT;
 
   const write = (path: string, raw: string) => {
     const n = Number(raw);
-    onPatch({ [path]: Number.isFinite(n) ? n : 0, [`${path}Unit`]: YGU_POINT });
+    onPatch({
+      [path]: Number.isFinite(n) ? n : 0,
+      [`${path}Unit`]: isPercent(path) ? YGU_PERCENT : YGU_POINT,
+    });
   };
 
   const grid = (label: string, group: Edge[], disabled: boolean) => (
@@ -54,6 +63,7 @@ export const BoxModelField: React.FC<BoxModelFieldProps> = ({ value, onPatch }) 
                 title={e.label}
               />
             }
+            rightLabel={isPercent(e.path) ? '%' : 'px'}
             aria-label={e.label}
             title={e.label}
             value={String((v[e.path] as number | undefined) ?? 0)}

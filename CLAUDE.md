@@ -150,7 +150,7 @@ Files matching `*.styled.ts` / `*.styled.tsx` must follow these rules:
 - Structure tests with `describe("when ...", () => { ... })` for context, `it("should ...", () => { ... })` for behavior.
 - Scope mocks and test data to the specific `describe` block that needs them (not globally).
 - Variables and mocks go in `beforeEach`, cleanup in `afterEach`.
-- React: use `@testing-library/react` with accessible queries (`getByRole`, `getByLabelText`).
+- React: use `@testing-library/react`, querying by label (`getByLabelText`). **`getByRole` does not work inside the shared `Block` wrapper** — under happy-dom the whole subtree reports "There are no accessible roles", and `hidden: true` does not rescue it. Every panel field renders in a `Block`, so query those by label or with `querySelector('[role="…"]')` (see `FlowField.spec.tsx`, `CallbackField.spec.tsx`). `getByRole` is fine on a bare control (`Pill.spec.tsx`).
 - E2E: Playwright for both Electron app and web inspector.
 - **asset-packs unit specs**: a `*.spec.ts` may live in `packages/asset-packs/src/`, but it MUST stay excluded in BOTH `tsconfig.lib.json` and the base `tsconfig.json` (both `include: ["src"]` with `types: ["@dcl/js-runtime"]`, and are typechecked by `npm run build:lib` and `sdk-commands build` respectively). Otherwise the spec's `import … from 'vitest'` drags vitest→vite→rollup→`@types/node` global types into the library build and breaks it with `console`/`Response`/`Worker` conflicts.
 

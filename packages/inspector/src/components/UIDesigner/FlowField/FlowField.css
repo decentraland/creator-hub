@@ -41,17 +41,23 @@
 }
 
 .ui-designer-flow-cell:hover {
-  background: var(--ui-designer-control-accent-15);
+  background: var(--ui-designer-control-hover-bg);
   color: var(--title);
 }
 
 .ui-designer-flow-cell.selected {
-  background: var(--ui-designer-control-accent-21);
-  color: var(--ui-designer-control-accent);
+  background: var(--ui-designer-control-selected-bg);
+  color: var(--ui-designer-text);
 }
 
+/* The wrap toggle is not part of the segmented group, so it takes the inverted
+   standalone treatment instead of the in-group lift. Both classes are on the
+   element; this rule is the more specific one, and overrides every property the
+   in-group rule sets. */
 .ui-designer-flow-cell.wrap.selected {
-  border-color: var(--ui-designer-control-accent-62);
+  background: var(--ui-designer-control-active-bg);
+  border-color: var(--ui-designer-control-active-bg);
+  color: var(--ui-designer-control-active-fg);
 }
 
 .ui-designer-flow-cell:focus-visible {

@@ -300,56 +300,6 @@
   background: var(--ui-designer-control-accent-21);
 }
 
-/* + Add New Action reuses the same disclosure, holding a name input + ADD
-   rather than a list of properties. */
-.ui-designer-add-action {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--uid-space-2);
-  margin-top: 4px;
-  padding: var(--uid-space-2);
-  border: 1px solid var(--ui-designer-control-border);
-  border-radius: var(--ui-designer-radius-menu);
-  background: var(--ui-designer-control-bg);
-}
-
-.ui-designer-add-action > .Text.Field {
-  flex: 1 1 auto;
-  min-width: 0;
-}
-
-.ui-designer-add-action > button {
-  flex: 0 0 auto;
-  padding: 5px 10px;
-  border: 1px solid var(--ui-designer-control-accent);
-  border-radius: 4px;
-  background: transparent;
-  color: var(--ui-designer-control-accent);
-  font-size: 11px;
-  letter-spacing: 0.06em;
-  cursor: pointer;
-}
-
-.ui-designer-add-action > button:hover:not(:disabled) {
-  background: var(--ui-designer-control-accent-21);
-}
-
-.ui-designer-add-action > button:disabled {
-  border-color: var(--ui-designer-control-border);
-  color: var(--sub-text);
-  cursor: default;
-}
-
-.ui-designer-add-action > button:focus-visible {
-  outline: 2px solid var(--border-focused);
-  outline-offset: 1px;
-}
-
-.ui-designer-add-prop-menu button:focus-visible {
-  outline: 2px solid var(--border-focused);
-  outline-offset: -1px;
-}
-
 /* Inline unit selector under a stacked `length-vec` group — short + trailing. */
 .ui-designer-unit-selector {
   display: flex;
@@ -361,30 +311,6 @@
 .ui-designer-unit-selector .Dropdown.Field {
   flex: 0 0 56px;
   width: 56px;
-}
-
-/* Compact reveal toggle for a length-vec facade (Position X/Y ⇄ T/R/B/L). */
-.ui-designer-vec-reveal {
-  flex: 0 0 auto;
-  padding: 2px 6px;
-  background: transparent;
-  border: 1px solid var(--ui-designer-control-border);
-  border-radius: var(--ui-designer-radius-field);
-  color: var(--sub-text);
-  font-size: 10px;
-  letter-spacing: 0.04em;
-  font-variant-numeric: tabular-nums;
-  cursor: pointer;
-}
-
-.ui-designer-vec-reveal:hover {
-  color: var(--title);
-  border-color: var(--ui-designer-control-accent);
-}
-
-.ui-designer-vec-reveal:focus-visible {
-  outline: 2px solid var(--border-focused);
-  outline-offset: 1px;
 }
 
 /* Aspect-ratio lock toggle for the Size vec. The Figma AspectRatio glyph is two
@@ -422,12 +348,15 @@
 
 .ui-designer-vec-lock:hover {
   color: var(--title);
-  border-color: var(--ui-designer-control-accent);
+  border-color: var(--ui-designer-control-border-strong);
 }
 
+/* A standalone toggle, so it inverts rather than lifting — same treatment as the
+   Flow wrap button. */
 .ui-designer-vec-lock.active {
-  color: var(--ui-designer-control-accent);
-  border-color: var(--ui-designer-control-accent);
+  background: var(--ui-designer-control-active-bg);
+  border-color: var(--ui-designer-control-active-bg);
+  color: var(--ui-designer-control-active-fg);
 }
 
 .ui-designer-vec-lock:focus-visible {
@@ -500,9 +429,9 @@
   border-radius: var(--ui-designer-radius-menu);
 }
 
-/* Checkboxes: the panel's accent marks the checked state, rather than a tick on
-   an unchanged grey box. Size stays 18px — the shared tick glyph is positioned
-   against it. */
+/* Checkboxes: a checked box inverts to the near-white fill, per the design — the
+   same standalone-toggle treatment as the Flow wrap button and the aspect lock.
+   Size stays 18px, since the shared tick glyph is positioned against it. */
 .ui-designer-property-panel .Checkbox.Field .InputContainer input[type="checkbox"] {
   border-radius: 4px;
   border-color: var(--ui-designer-control-border);
@@ -510,8 +439,30 @@
 
 .ui-designer-property-panel .Checkbox.Field .InputContainer input[type="checkbox"]:checked,
 .ui-designer-property-panel .Checkbox.Field .InputContainer input[type="checkbox"]:indeterminate {
-  background-color: var(--ui-designer-control-accent);
-  border-color: var(--ui-designer-control-accent);
+  background-color: var(--ui-designer-control-active-bg);
+  border-color: var(--ui-designer-control-active-bg);
+}
+
+/* The shared tick and dash are painted white INSIDE the asset (a data-URI SVG and
+   a solid block), so neither follows `color` — a near-white box would swallow
+   both. Re-declare them dark, the way the shared disabled state already does.
+   `#` must stay percent-encoded inside the data URI.
+
+   `:not(.disabled)` is load-bearing: without it this ties the shared disabled
+   rule on specificity (both 0,6,2) and the winner would come down to stylesheet
+   order, which would put a charcoal tick on the grey disabled fill. */
+.ui-designer-property-panel
+  .Checkbox.Field
+  .InputContainer:not(.disabled)
+  input[type="checkbox"]:checked::before {
+  content: url('data:image/svg+xml;utf8,<svg width="12" height="10" viewBox="0 0 12 10" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M11.6467 0.893333L4.22667 9.66667L3.52667 9.62L0.586667 5.46667L1.28667 4.95333L3.9 8.64L10.9467 0.333333L11.6467 0.893333Z" fill="%2335333b"/></svg>');
+}
+
+.ui-designer-property-panel
+  .Checkbox.Field
+  .InputContainer:not(.disabled)
+  input[type="checkbox"]:indeterminate::before {
+  background-color: var(--ui-designer-control-active-fg);
 }
 
 .ui-designer-property-panel .Checkbox.Field .InputContainer input[type="checkbox"]:focus-visible {
@@ -566,12 +517,6 @@
 .ui-designer-length-row > .Dropdown.Field {
   flex: 0 0 56px;
   width: 56px;
-}
-
-.ui-designer-callback-hint {
-  color: var(--sub-text);
-  font-style: italic;
-  font-size: 12px;
 }
 
 /* Numeric fields read as aligned columns (W/H, T/R/B/L, indices). */

@@ -22,7 +22,6 @@ import {
   YGU_POINT,
   YGU_UNDEFINED,
 } from '../../lib/sdk/ui-transform-constants';
-import { isValidIdentifier } from '../../lib/sdk/operations/validators';
 import { useAppDispatch, useAppSelector } from '../../redux/hooks';
 import {
   getAspectLockedNodes,
@@ -44,7 +43,6 @@ import type { DeviceKind } from './safe-areas';
 import { classifyNode, type CanvasSegment, type UINodeType } from './tree-model';
 import { WIDGET_ICONS } from './widget-catalog';
 import {
-  addBindAction,
   addInteractionLayer,
   addInteractionStates,
   addPlatformVariant,
@@ -60,7 +58,6 @@ import {
   spliceComponentPatch,
   useCodeState,
 } from './code/store';
-import { isActionNameTaken } from './code/bindings';
 import { INTERACTION_STATES, type InteractionStateKey } from './code/interaction-convention';
 import { isLayerableComponent } from './code/parse-adapter';
 import { ComponentRefPanel } from './code/ComponentRefPanel';
@@ -85,16 +82,11 @@ import { EmptyState } from './EmptyState';
 import { FlowField } from './FlowField';
 import { MixedContentField } from './MixedContentField';
 import { seedSegments } from './MixedContentField/segments';
+import { CallbackField } from './CallbackField';
 import { ResizeField } from './ResizeField';
 import { TextureField } from './TextureField';
 import { regionToUvs, uvsToRegion } from './uv-region';
-import {
-  buildGroups,
-  isEventGroup,
-  POSITION_MODE_FIELD,
-  TRANSFORM,
-  type FieldConfig,
-} from './field-configs';
+import { buildGroups, POSITION_MODE_FIELD, TRANSFORM, type FieldConfig } from './field-configs';
 
 import './PropertyPanel.css';
 
@@ -297,67 +289,6 @@ const AddPropertyMenu: React.FC<{ fields: FieldConfig[]; onAdd: (f: FieldConfig)
           </li>
         ))}
       </ul>
-    </details>
-  );
-};
-
-// The design's `+ Add New Action` at the foot of an events group: declare a
-// handler without having to pick an event to hang it off first. It reaches source
-// through the same `addBindAction` the per-field 🔗 picker uses, so the new
-// handler appears in every event's picker on every node of this UI — which is
-// what "then it appears in the dropdowns" means.
-//
-// Same native <details> disclosure as `+ Add property` (keyboard-accessible, no
-// popover math). The design labels the input "Description"; what it produces is
-// the handler's NAME, so it has to be a valid identifier — the button stays
-// disabled until it is, because the name is spliced into source as code and
-// interpolating it raw would be an injection / build-break vector — and, for the
-// same reason, until the name is free of everything else in that scope
-// (`isActionNameTaken`).
-const AddActionMenu: React.FC = () => {
-  const { bindingSurface } = useCodeState();
-  const ref = useRef<HTMLDetailsElement>(null);
-  const [name, setName] = useState('');
-
-  const trimmed = name.trim();
-  const taken = isActionNameTaken(bindingSurface, trimmed);
-  const canAdd = isValidIdentifier(trimmed) && !taken;
-
-  const add = () => {
-    if (!canAdd) return;
-    void addBindAction(trimmed);
-    setName('');
-    if (ref.current) ref.current.open = false;
-  };
-
-  return (
-    <details
-      className="ui-designer-add-prop"
-      ref={ref}
-    >
-      <summary className="ui-designer-add-prop-trigger">
-        <AiOutlinePlus aria-hidden />
-        Add New Action
-      </summary>
-      <div className="ui-designer-add-action">
-        <TextField
-          aria-label="Description"
-          placeholder="Description"
-          value={name}
-          error={taken ? 'Name already in use' : undefined}
-          onChange={e => setName(e.target.value)}
-          onKeyDown={e => {
-            if (e.key === 'Enter') add();
-          }}
-        />
-        <button
-          type="button"
-          disabled={!canAdd}
-          onClick={add}
-        >
-          ADD
-        </button>
-      </div>
     </details>
   );
 };
@@ -936,7 +867,6 @@ const PropertyPanelComponent: React.FC = () => {
                 onAdd={f => writeAndDispatch(f.componentId, buildAddPatch(f))}
               />
             ) : null}
-            {isEventGroup(group.title) ? <AddActionMenu /> : null}
           </Container>
         );
       })}
@@ -955,11 +885,9 @@ interface LengthVecFieldProps {
 }
 
 // A `length-vec` group (Size / Min / Max / Position). Sub-fields stack in the
-// control column with a shared unit selector. When the field declares
-// `collapsedSubFields`, it renders that compact projection (Position → X/Y) with
-// a reveal toggle to the full edge set (T/R/B/L). The toggle seeds expanded when
-// an edge outside the compact set is already authored — a right/bottom-anchored
-// node then shows its real values without a manual reveal.
+// control column with a shared unit selector. A field declaring `facadeSubFields`
+// shows fewer cells than it stores — Position renders X/Y over its four edges,
+// picking the pair its anchor actually pins (see the Position config).
 const LengthVecField = React.memo(function LengthVecField({
   field,
   componentValue,
@@ -972,17 +900,7 @@ const LengthVecField = React.memo(function LengthVecField({
   const dispatch = useAppDispatch();
   const aspectLockedMap = useAppSelector(getAspectLockedNodes);
   const aspectLocked = !!field.aspectLockable && !!aspectLockedMap[entity as unknown as number];
-  const fullSubs = field.subFields ?? [];
-  const compactSubs = field.collapsedSubFields;
-  const hasFacade = !!compactSubs && compactSubs.length > 0;
-  const extraPaths = hasFacade
-    ? fullSubs.filter(s => !compactSubs!.some(c => c.path === s.path)).map(s => s.path)
-    : [];
-  const autoExpand = !!componentValue && extraPaths.some(p => p in componentValue);
-  // null = follow the data (autoExpand); a boolean = the user's explicit choice.
-  const [userExpanded, setUserExpanded] = useState<boolean | null>(null);
-  const expanded = userExpanded ?? autoExpand;
-  const subs = hasFacade && !expanded ? compactSubs! : fullSubs;
+  const subs = field.facadeSubFields?.(componentValue) ?? field.subFields ?? [];
 
   const firstUnitKey = subs[0] ? `${subs[0].path}Unit` : '';
   const firstUnitRaw = (componentValue?.[firstUnitKey] as number | undefined) ?? YGU_UNDEFINED;
@@ -1045,17 +963,6 @@ const LengthVecField = React.memo(function LengthVecField({
             title={aspectLocked ? 'Unlock aspect ratio' : 'Lock aspect ratio'}
             onClick={() => dispatch(setAspectLocked({ entity, locked: !aspectLocked }))}
           />
-        ) : null}
-        {hasFacade ? (
-          <button
-            type="button"
-            className="ui-designer-vec-reveal"
-            aria-expanded={expanded}
-            aria-label={expanded ? 'Show X and Y only' : 'Show all edges'}
-            onClick={() => setUserExpanded(!expanded)}
-          >
-            {expanded ? 'X / Y' : 'T R B L'}
-          </button>
         ) : null}
         <Dropdown
           options={UNIT_OPTIONS}
@@ -1166,6 +1073,7 @@ const FieldRow = React.memo(function FieldRow({
         >
           <TextField
             type="number"
+            rightLabel={field.suffix}
             value={String(field.toDisplay ? field.toDisplay(v) : v)}
             onChange={e => {
               const next = clampNumber(e.target.value);
@@ -1400,14 +1308,15 @@ const FieldRow = React.memo(function FieldRow({
       );
     }
     case 'callback': {
+      // Its own control, not a BindableField: an event picks a handler from a
+      // dropdown that always shows what is bound, rather than a 🔗 that has to be
+      // hovered to be found. See CallbackField.
       return (
-        <BindableField
+        <CallbackField
           field={field}
           entity={entity}
-          bound={boundProp}
-        >
-          <span className="ui-designer-callback-hint">Bind an event handler…</span>
-        </BindableField>
+          bound={bound}
+        />
       );
     }
     case 'position-mode': {

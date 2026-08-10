@@ -25,13 +25,13 @@
 
 .ui-designer-texture-mode:hover {
   color: var(--title);
-  border-color: var(--ui-designer-control-accent);
+  border-color: var(--ui-designer-control-border-strong);
 }
 
 .ui-designer-texture-mode.selected {
-  color: var(--ui-designer-control-accent);
-  border-color: var(--ui-designer-control-accent);
-  background: var(--ui-designer-control-accent-21);
+  color: var(--ui-designer-text);
+  border-color: var(--ui-designer-control-border-strong);
+  background: var(--ui-designer-control-selected-bg);
 }
 
 .ui-designer-texture-mode:focus-visible {

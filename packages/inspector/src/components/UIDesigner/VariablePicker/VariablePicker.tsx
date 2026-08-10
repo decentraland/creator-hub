@@ -4,15 +4,14 @@ import { createPortal } from 'react-dom';
 import { isValidIdentifier } from '../../../lib/sdk/operations/validators';
 import { usePopoverPosition } from '../../ui/usePopoverPosition';
 import type { FieldConfig, FieldKind } from '../field-configs';
-import { type BindVariable, isActionNameTaken } from '../code/bindings';
-import { addBindAction, addBindVariable, useCodeState } from '../code/store';
+import type { BindVariable } from '../code/bindings';
+import { addBindVariable, useCodeState } from '../code/store';
 
 import './VariablePicker.css';
 
 // Which code-mode variable types a field kind can bind to. A string field takes
 // any (it coerces to text at render); numeric fields take numbers; booleans take
-// booleans. `callback` is handled separately (it lists event handlers, not
-// variables). Fields with no compatible code type (color / arrays) offer none.
+// booleans. Fields with no compatible code type (color / arrays) offer none.
 const KIND_TO_CODE_TYPES: Partial<Record<FieldKind, string[]>> = {
   string: ['string', 'number', 'boolean'],
   number: ['number'],
@@ -20,31 +19,6 @@ const KIND_TO_CODE_TYPES: Partial<Record<FieldKind, string[]>> = {
   index: ['number'],
   boolean: ['boolean'],
 };
-
-// Event fields that DELIVER a value to their callback (react-ecs calls them
-// with the typed text / selected index). Everything else — the four mouse
-// events — is a zero-arg `Callback`, where a value-taking arrow would not
-// typecheck ("Target signature provides too few arguments").
-const VALUE_EVENT_FIELDS = new Set([
-  'core::UiInput.onChange',
-  'core::UiInput.onSubmit',
-  'core::UiDropdown.onChange',
-]);
-
-// The thunk spliced into an event attribute / callback prop for handler `name`.
-// The handler takes the args OBJECT `{ state, props, value }`, so the thunk passes
-// `{ state, props }` (both are in scope inside the component render), adding
-// `value` for events that deliver one. The `value` param is annotated (scene
-// tsconfigs are strict — a bare `(value)` is an implicit any) and typed `unknown`
-// (its value-linking design is deferred); its optionality mirrors the target — a
-// callback PROP is `(value?: unknown) => void`, so the arrow's param is optional.
-export function thunkExprFor(field: FieldConfig, name: string): string {
-  const key = `${field.componentId}.${field.path}`;
-  if (VALUE_EVENT_FIELDS.has(key)) return `(value: unknown) => ${name}({ state, props, value })`;
-  if (field.componentId === 'ui::props')
-    return `(value?: unknown) => ${name}({ state, props, value })`;
-  return `() => ${name}({ state, props })`;
-}
 
 // On a string-kind field every non-string variable is shown (it coerces to a
 // string at render time). Make that explicit in the row label, e.g.
@@ -82,25 +56,15 @@ export const VariablePicker: React.FC<VariablePickerProps> = ({
   // Mounted only while open (the parent gates with `pickerOpen`), so `open` is true.
   const pos = usePopoverPosition({ anchorRef, popoverRef, open: true, onDismiss, width: 200 });
 
-  const isCallback = field.kind === 'callback';
-  const suggested =
-    field.path.replace(/[^A-Za-z0-9_$]/g, '_') || (isCallback ? 'onEvent' : 'variable');
+  const suggested = field.path.replace(/[^A-Za-z0-9_$]/g, '_') || 'variable';
   const [adding, setAdding] = useState(false);
   const [name, setName] = useState(suggested);
   const [error, setError] = useState<string | undefined>(undefined);
 
-  // Callback fields list event handlers (@ui-action markers); everything else
-  // lists the typed-state / marker variables compatible with the field kind.
+  // Events are NOT listed here — they pick a handler through CallbackField's own
+  // dropdown. This is variables only: the typed-state / marker values compatible
+  // with the field kind.
   const items = useMemo<PickItem[]>(() => {
-    if (isCallback) {
-      // Events bind through a thunk that passes `state` (plus the event's
-      // value where the event delivers one) to the handler — see thunkExprFor.
-      return bindingSurface.actions.map(a => ({
-        key: a.name,
-        label: `${a.name}()`,
-        expr: thunkExprFor(field, a.name),
-      }));
-    }
     // `strictTypes` (e.g. a typed component prop) lists exact-type matches
     // only — the render-time string coercion that makes any variable valid on
     // a text FIELD does not apply to a TS-typed prop.
@@ -108,7 +72,7 @@ export const VariablePicker: React.FC<VariablePickerProps> = ({
     return bindingSurface.variables
       .filter(v => allowed.includes(v.type))
       .map(v => ({ key: v.name, label: coercionLabel(field, v), expr: v.expr }));
-  }, [bindingSurface, field, isCallback]);
+  }, [bindingSurface, field]);
 
   const commitNew = useCallback(async () => {
     const trimmed = name.trim();
@@ -116,24 +80,16 @@ export const VariablePicker: React.FC<VariablePickerProps> = ({
       setError('Not a valid name (letters, digits, _ ; no leading digit)');
       return;
     }
-    const taken = isCallback
-      ? isActionNameTaken(bindingSurface, trimmed)
-      : bindingSurface.variables.some(v => v.name === trimmed);
-    if (taken) {
+    if (bindingSurface.variables.some(v => v.name === trimmed)) {
       setError('Name already in use');
       return;
     }
     // MUST await: the add splices + reparses (shifting byte offsets); binding
     // before that lands would splice with stale AST spans and corrupt the file.
-    if (isCallback) {
-      await addBindAction(trimmed);
-      onPick(thunkExprFor(field, trimmed));
-    } else {
-      const type = (KIND_TO_CODE_TYPES[field.kind] ?? ['string'])[0];
-      await addBindVariable(trimmed, type);
-      onPick(`state.${trimmed}`); // a new variable is seeded into the typed `state` object
-    }
-  }, [bindingSurface, field, isCallback, name, onPick]);
+    const type = (KIND_TO_CODE_TYPES[field.kind] ?? ['string'])[0];
+    await addBindVariable(trimmed, type);
+    onPick(`state.${trimmed}`); // a new variable is seeded into the typed `state` object
+  }, [bindingSurface, field, name, onPick]);
 
   return createPortal(
     <div
@@ -142,9 +98,7 @@ export const VariablePicker: React.FC<VariablePickerProps> = ({
       style={{ position: 'fixed', top: pos.top, left: pos.left }}
     >
       {items.length === 0 ? (
-        <div className="ui-designer-variable-picker-empty">
-          {isCallback ? 'No actions yet.' : 'No compatible variables.'}
-        </div>
+        <div className="ui-designer-variable-picker-empty">No compatible variables.</div>
       ) : null}
       {items.map(item => (
         <button
@@ -168,7 +122,7 @@ export const VariablePicker: React.FC<VariablePickerProps> = ({
             autoCorrect="off"
             autoCapitalize="off"
             value={name}
-            placeholder={isCallback ? 'Action name' : 'Variable name'}
+            placeholder="Variable name"
             onChange={e => {
               setName(e.target.value);
               setError(undefined);
@@ -197,7 +151,7 @@ export const VariablePicker: React.FC<VariablePickerProps> = ({
             setAdding(true);
           }}
         >
-          {isCallback ? '+ Add new action…' : '+ Add new variable…'}
+          + Add new variable…
         </button>
       )}
     </div>,
