@@ -10,8 +10,9 @@
   gap: 8px;
 }
 
-.Navbar .logo img {
-  width: 64px;
+.Navbar .logo {
+  display: flex;
+  align-items: center;
 }
 
 .Navbar .menu .menu-item {

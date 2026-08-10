@@ -1,19 +1,17 @@
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import { Link } from 'react-router-dom';
 import cx from 'classnames';
-import QuestionMarkIcon from '@mui/icons-material/QuestionMark';
-import SettingsIcon from '@mui/icons-material/Settings';
-import { Box, Button, IconButton } from 'decentraland-ui2';
+import { Box } from 'decentraland-ui2';
 import { useDispatch, useSelector } from '#store';
 import type { AppState } from '#store';
-import { misc } from '#preload';
-import logo from '/assets/images/logo-editor.png';
-import { REPORT_ISSUES_URL } from '/@/modules/utils';
+import { useEditor } from '/@/hooks/useEditor';
 import { t } from '/@/modules/store/translation/utils';
 import { actions } from '/@/modules/store/settings';
 import { AppSettings } from '../Modals/AppSettings';
+import { About } from '../Modals/About';
+import { CreateButton } from '../CreateButton';
 import { Header } from '../Header';
-import { ConnectionStatusIndicator } from '../ConnectionStatusIndicator';
+import { LogoMenu } from './LogoMenu';
 import './styles.css';
 
 export enum NavbarItem {
@@ -39,26 +37,17 @@ function MenuItem(props: { item: NavbarItem; active: NavbarItem; disable?: boole
 export function Navbar(props: { active: NavbarItem }) {
   const openAppSettings = useSelector((state: AppState) => state.settings.openAppSettingsModal);
   const dispatch = useDispatch();
+  const { version } = useEditor();
+  const [openAbout, setOpenAbout] = useState(false);
 
-  const handleClickReportIssue = useCallback(() => misc.openExternal(REPORT_ISSUES_URL), []);
-
-  const handleClickHelp = useCallback(
-    () => misc.openExternal('https://decentraland.org/help/'),
-    [],
-  );
-
-  const handleClickSettings = useCallback(() => {
-    dispatch(actions.setOpenAppSettingsModal(true));
-  }, []);
+  const handleOpenAbout = useCallback(() => setOpenAbout(true), []);
+  const handleCloseAbout = useCallback(() => setOpenAbout(false), []);
 
   return (
     <Header classNames={cx('Navbar')}>
       <>
         <div className="logo">
-          <img
-            src={logo}
-            alt="Decentraland Creator Hub"
-          />
+          <LogoMenu onClickAbout={handleOpenAbout} />
         </div>
         <div className="menu">
           <MenuItem
@@ -91,31 +80,16 @@ export function Navbar(props: { active: NavbarItem }) {
       </>
       <>
         <Box className="actions">
-          <ConnectionStatusIndicator />
-          <Button
-            variant="outlined"
-            color="secondary"
-            size="small"
-            onClick={handleClickReportIssue}
-          >
-            {t('navbar.report_an_issue')}
-          </Button>
-          <IconButton
-            aria-label="help"
-            onClick={handleClickHelp}
-          >
-            <QuestionMarkIcon />
-          </IconButton>
-          <IconButton
-            aria-label="settings"
-            onClick={handleClickSettings}
-          >
-            <SettingsIcon />
-          </IconButton>
+          <CreateButton />
         </Box>
         <AppSettings
           open={openAppSettings}
           onClose={() => dispatch(actions.setOpenAppSettingsModal(false))}
+        />
+        <About
+          open={openAbout}
+          version={version}
+          onClose={handleCloseAbout}
         />
       </>
     </Header>
