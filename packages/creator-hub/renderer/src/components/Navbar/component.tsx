@@ -7,7 +7,7 @@ import type { AppState } from '#store';
 import { useEditor } from '/@/hooks/useEditor';
 import { t } from '/@/modules/store/translation/utils';
 import { actions } from '/@/modules/store/settings';
-import { AppSettings } from '../Modals/AppSettings';
+import { AppSettings, SettingsTab } from '../Modals/AppSettings';
 import { About } from '../Modals/About';
 import { CreateButton } from '../CreateButton';
 import { Header } from '../Header';
@@ -39,15 +39,40 @@ export function Navbar(props: { active: NavbarItem }) {
   const dispatch = useDispatch();
   const { version } = useEditor();
   const [openAbout, setOpenAbout] = useState(false);
+  const [settingsTab, setSettingsTab] = useState(SettingsTab.SCENES);
+  const [autoCheckForUpdates, setAutoCheckForUpdates] = useState(false);
 
   const handleOpenAbout = useCallback(() => setOpenAbout(true), []);
   const handleCloseAbout = useCallback(() => setOpenAbout(false), []);
+
+  const handleOpenSettings = useCallback(() => {
+    setSettingsTab(SettingsTab.SCENES);
+    setAutoCheckForUpdates(false);
+    dispatch(actions.setOpenAppSettingsModal(true));
+  }, [dispatch]);
+
+  // "Check for Updates" has no surface of its own — it opens App Settings on the
+  // About tab and kicks off the check there.
+  const handleCheckForUpdates = useCallback(() => {
+    setSettingsTab(SettingsTab.ABOUT);
+    setAutoCheckForUpdates(true);
+    dispatch(actions.setOpenAppSettingsModal(true));
+  }, [dispatch]);
+
+  const handleCloseSettings = useCallback(() => {
+    setAutoCheckForUpdates(false);
+    dispatch(actions.setOpenAppSettingsModal(false));
+  }, [dispatch]);
 
   return (
     <Header classNames={cx('Navbar')}>
       <>
         <div className="logo">
-          <LogoMenu onClickAbout={handleOpenAbout} />
+          <LogoMenu
+            onClickAbout={handleOpenAbout}
+            onClickSettings={handleOpenSettings}
+            onClickCheckForUpdates={handleCheckForUpdates}
+          />
         </div>
         <div className="menu">
           <MenuItem
@@ -84,7 +109,9 @@ export function Navbar(props: { active: NavbarItem }) {
         </Box>
         <AppSettings
           open={openAppSettings}
-          onClose={() => dispatch(actions.setOpenAppSettingsModal(false))}
+          initialTab={settingsTab}
+          autoCheckForUpdates={autoCheckForUpdates}
+          onClose={handleCloseSettings}
         />
         <About
           open={openAbout}

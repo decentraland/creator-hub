@@ -50,8 +50,8 @@ export const DOCS: LearnDoc[] = [
     description: 'Start creating in Decentraland.',
   },
   {
-    url: 'https://docs.decentraland.org/creator/scene-editor/get-started/about-editor',
-    title: 'Scene Editor',
+    url: 'https://docs.decentraland.org/creator/scenes-sdk7/getting-started/sdk-101',
+    title: 'SDK Quickstart',
     description: 'Learn the fundamentals.',
   },
   {
@@ -60,8 +60,8 @@ export const DOCS: LearnDoc[] = [
     description: 'Development best practices.',
   },
   {
-    url: 'https://docs.decentraland.org/creator/scenes-sdk7/getting-started/entities-components',
-    title: 'Entities & Components',
-    description: 'Core building blocks.',
+    url: 'https://docs.decentraland.org/creator/scene-editor/get-started/about-editor',
+    title: 'Scene Editor',
+    description: 'Build scenes without code.',
   },
 ];

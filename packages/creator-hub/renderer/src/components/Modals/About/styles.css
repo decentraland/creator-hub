@@ -1,21 +1,9 @@
 .AboutModal {
   display: flex;
   flex-direction: column;
-  min-width: 320px;
-}
-
-.AboutModal .AboutModalHeader {
-  display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-}
-
-.AboutModal .AboutModalBody {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 16px 24px 8px 24px;
+  min-width: 280px;
+  padding: 8px 8px 0 8px;
   gap: 4px;
 }
 

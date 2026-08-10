@@ -23,7 +23,7 @@ import { ScenesTab, EditorTab, AboutTab } from './Tabs';
 
 import './styles.css';
 
-enum SettingsTab {
+export enum SettingsTab {
   SCENES = 'scenes',
   EDITOR = 'editor',
   ABOUT = 'about',
@@ -44,17 +44,33 @@ const SETTINGS_TABS: Array<{ label: string; value: SettingsTab }> = [
   },
 ];
 
-export function AppSettings({ open, onClose }: { open: boolean; onClose: () => void }) {
+export function AppSettings({
+  open,
+  onClose,
+  initialTab = SettingsTab.SCENES,
+  autoCheckForUpdates = false,
+}: {
+  open: boolean;
+  onClose: () => void;
+  initialTab?: SettingsTab;
+  autoCheckForUpdates?: boolean;
+}) {
   const dispatch = useDispatch();
   const { settings: _settings, updateAppSettings } = useSettings();
   const { validateProjectPath } = useWorkspace();
   const { version } = useEditor();
   const [settings, setSettings] = useState(_settings);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<SettingsTab>(SettingsTab.SCENES);
+  const [activeTab, setActiveTab] = useState<SettingsTab>(initialTab);
   const [isCustomScenesPath, setIsCustomScenesPath] = useState(false);
   const { loading } = useSelector(state => state.defaultEditor);
   const editors = useSelector(getEditors);
+
+  // Each opening starts on the tab the caller asked for, so "Settings" lands on
+  // Scenes while "Check for Updates" lands on About.
+  useEffect(() => {
+    if (open) setActiveTab(initialTab);
+  }, [open, initialTab]);
 
   useEffect(() => {
     if (open) {
@@ -170,6 +186,7 @@ export function AppSettings({ open, onClose }: { open: boolean; onClose: () => v
           <AboutTab
             version={version}
             onViewChangelog={handleViewChangelog}
+            autoCheckForUpdates={autoCheckForUpdates}
           />
         );
       default:

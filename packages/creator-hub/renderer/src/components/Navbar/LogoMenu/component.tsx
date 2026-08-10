@@ -3,11 +3,8 @@ import ArrowRightIcon from '@mui/icons-material/ArrowRight';
 import { Menu, MenuItem } from 'decentraland-ui2';
 
 import { misc } from '#preload';
-import { useDispatch } from '#store';
 import logo from '/assets/images/logo-editor.png';
 import { t } from '/@/modules/store/translation/utils';
-import { actions } from '/@/modules/store/settings';
-import { checkForUpdates } from '/@/modules/store/settings/slice';
 import {
   CONTACT_SUPPORT_URL,
   DISCORD_URL,
@@ -19,8 +16,7 @@ import type { Props } from './types';
 
 import './styles.css';
 
-export function LogoMenu({ onClickAbout }: Props) {
-  const dispatch = useDispatch();
+export function LogoMenu({ onClickAbout, onClickSettings, onClickCheckForUpdates }: Props) {
   const logoRef = useRef<HTMLButtonElement>(null);
   const helpRef = useRef<HTMLLIElement>(null);
   const [open, setOpen] = useState(false);
@@ -38,13 +34,13 @@ export function LogoMenu({ onClickAbout }: Props) {
 
   const handleClickCheckForUpdates = useCallback(() => {
     close();
-    dispatch(checkForUpdates({ autoDownload: false }));
-  }, [close, dispatch]);
+    onClickCheckForUpdates();
+  }, [close, onClickCheckForUpdates]);
 
   const handleClickSettings = useCallback(() => {
     close();
-    dispatch(actions.setOpenAppSettingsModal(true));
-  }, [close, dispatch]);
+    onClickSettings();
+  }, [close, onClickSettings]);
 
   const handleClickExternal = useCallback(
     (url: string) => () => {
