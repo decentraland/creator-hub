@@ -19,6 +19,7 @@
 /* The parent box: an accented EDGE names each pinned edge, so the marker inside is
    the node itself and stays neutral and centred. */
 .ui-designer-anchor-preview {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -28,6 +29,53 @@
   height: 62px;
   border: 2px solid var(--ui-designer-control-border-strong);
   border-radius: var(--ui-designer-radius-field);
+}
+
+/* A leash from the node to the edge it is glued to, per axis (Figma's constraints
+   idiom). The accented border alone was two pixels of colour on a 62px box — it
+   named the edge but did not read as "pinned". 13px is the gap it has to span:
+   58px inner box (62 less the 2px borders, which an absolutely positioned child
+   sits inside) less the 32px marker, halved. */
+.ui-designer-anchor-preview::before,
+.ui-designer-anchor-preview::after {
+  content: "";
+  position: absolute;
+  display: none;
+  background: var(--ui-designer-control-accent);
+}
+
+.ui-designer-anchor-preview::before {
+  top: 50%;
+  width: 13px;
+  height: 2px;
+  transform: translateY(-50%);
+}
+
+.ui-designer-anchor-preview::after {
+  left: 50%;
+  width: 2px;
+  height: 13px;
+  transform: translateX(-50%);
+}
+
+.ui-designer-anchor-preview[data-h="left"]::before {
+  left: 0;
+  display: block;
+}
+
+.ui-designer-anchor-preview[data-h="right"]::before {
+  right: 0;
+  display: block;
+}
+
+.ui-designer-anchor-preview[data-v="top"]::after {
+  top: 0;
+  display: block;
+}
+
+.ui-designer-anchor-preview[data-v="bottom"]::after {
+  bottom: 0;
+  display: block;
 }
 
 /* An axis pinned to the centre holds no edge, so it accents none. */
