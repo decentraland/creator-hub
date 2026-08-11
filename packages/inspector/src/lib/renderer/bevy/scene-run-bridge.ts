@@ -39,6 +39,12 @@ export interface SceneRunBridgeOptions {
    * animation pause (#1421) exactly when the scene is ready.
    */
   onResetComplete?: (ok: boolean) => void;
+  /**
+   * Called when the agent reports a runtime error in the inspected scene
+   * (`scene-error`): a throw in main() or a system (#1448). The host notifies the
+   * user and stops the scene.
+   */
+  onSceneError?: (message: string) => void;
   /** Test seam: the channel to post on. Defaults to a real BroadcastChannel. */
   channel?: Channel;
 }
@@ -50,13 +56,14 @@ export function createSceneRunBridge(options: SceneRunBridgeOptions = {}): Scene
   // it can be re-asserted after a scene reload.
   let running = false;
 
-  if (options.onResetComplete) {
+  if (options.onResetComplete || options.onSceneError) {
     channel.onmessage = ({ data }: { data: unknown }) => {
       if (!data || typeof data !== 'object') return;
       const env = data as Partial<BusEnvelope>;
       if (env.to !== 'page' || !env.msg || typeof env.msg !== 'object') return;
       const msg = env.msg as AgentToPage;
       if (msg.kind === 'reset-complete') options.onResetComplete?.(msg.ok);
+      else if (msg.kind === 'scene-error') options.onSceneError?.(msg.message);
     };
   }
 

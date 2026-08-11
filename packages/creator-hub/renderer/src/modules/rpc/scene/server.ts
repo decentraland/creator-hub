@@ -13,6 +13,10 @@ import { createGenericNotification } from '../../store/snackbar/utils';
 type NotificationRequest = {
   severity: Severity;
   message: string;
+  // 0 = persistent + closeable; omit for the default auto-hide.
+  duration?: number;
+  // Secondary detail; a notification with a description renders closeable.
+  description?: string;
 };
 
 export enum Method {
@@ -71,7 +75,10 @@ export class SceneRpcServer extends RPC<Method, Params, Result> {
     this.handle('push_notification', async ({ notification }) => {
       store.dispatch(
         snackbarActions.pushSnackbar(
-          createGenericNotification(notification.severity, notification.message),
+          createGenericNotification(notification.severity, notification.message, {
+            duration: notification.duration,
+            description: notification.description,
+          }),
         ),
       );
     });

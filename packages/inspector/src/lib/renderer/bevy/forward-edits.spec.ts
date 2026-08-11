@@ -226,6 +226,48 @@ describe('createForwardEditBridge', () => {
     });
   });
 
+  describe('when a dropped asset file lags the content map (#1459)', () => {
+    it('should retry scene_content until the src appears, then set GltfContainer', async () => {
+      const raceSent: Array<{ cmd: string; args: string[] }> = [];
+      const raceCtx = new BevySceneContext();
+      // The dev server's content map is empty on the first refresh (the asset file
+      // hasn't propagated yet — the Windows race) and includes it from the 2nd.
+      let refreshes = 0;
+      const bridge2 = createForwardEditBridge({
+        context: raceCtx,
+        engineWindow,
+        shouldForward: () => true,
+        send: async (cmd, args) => {
+          raceSent.push({ cmd, args });
+          if (cmd === 'scene_content') {
+            refreshes += 1;
+            return refreshes < 2 ? JSON.stringify([]) : JSON.stringify(['assets/late.glb']);
+          }
+          return '';
+        },
+      });
+
+      const GltfContainer = components.GltfContainer(raceCtx.engine);
+      const entity = raceCtx.engine.addEntity();
+      GltfContainer.create(entity, { src: 'assets/late.glb', visibleMeshesCollisionMask: 3 });
+      await raceCtx.engine.update(1);
+      // Allow the bounded retry (one ~120ms delay) to elapse before asserting.
+      await new Promise(r => setTimeout(r, 300));
+
+      // It refreshed more than once (waited for the file), then set the model.
+      expect(refreshes).toBeGreaterThanOrEqual(2);
+      const refreshIdx = raceSent.findIndex(s => s.cmd === 'scene_content');
+      const setIdx = raceSent.findIndex(
+        s => s.cmd === 'set_component' && s.args[1] === 'GltfContainer',
+      );
+      expect(setIdx).toBeGreaterThanOrEqual(0);
+      expect(refreshIdx).toBeLessThan(setIdx);
+
+      bridge2.disconnect();
+      raceCtx.dispose();
+    });
+  });
+
   describe('when an editor Placeholder is written (#1372)', () => {
     it('should forward it as a GltfContainer pointed at the placeholder src', async () => {
       const entity = ctx.engine.addEntity();
@@ -384,6 +426,202 @@ describe('createForwardEditBridge', () => {
       const value = JSON.parse(write!.args[2]);
       expect(value.states[0].playing).toBe(true);
       running.disconnect();
+    });
+  });
+
+  describe('VideoPlayer freeze (#1469)', () => {
+    it('should forward VideoPlayer with playing:false when frozen', async () => {
+      const VideoPlayer = components.VideoPlayer(ctx.engine);
+      const entity = ctx.engine.addEntity();
+      ctx.Name.create(entity, { value: 'Screen' });
+      VideoPlayer.create(entity, { src: 'video.mp4', playing: true });
+      await ctx.engine.update(1);
+      await new Promise(r => setTimeout(r, 0));
+      sent.length = 0;
+
+      bridge.setAnimationsFrozen(true);
+      await new Promise(r => setTimeout(r, 0));
+      await new Promise(r => setTimeout(r, 0));
+
+      const write = sent.find(s => s.cmd === 'set_component' && s.args[1] === 'VideoPlayer');
+      expect(write).toBeDefined();
+      expect(JSON.parse(write!.args[2]).playing).toBe(false);
+    });
+
+    it('should restore the authored VideoPlayer (playing) when unfrozen', async () => {
+      const VideoPlayer = components.VideoPlayer(ctx.engine);
+      const entity = ctx.engine.addEntity();
+      ctx.Name.create(entity, { value: 'Screen' });
+      VideoPlayer.create(entity, { src: 'video.mp4', playing: true });
+      await ctx.engine.update(1);
+      await new Promise(r => setTimeout(r, 0));
+      sent.length = 0;
+
+      bridge.setAnimationsFrozen(false);
+      await new Promise(r => setTimeout(r, 0));
+      await new Promise(r => setTimeout(r, 0));
+
+      const write = sent.find(s => s.cmd === 'set_component' && s.args[1] === 'VideoPlayer');
+      expect(write).toBeDefined();
+      expect(JSON.parse(write!.args[2]).playing).toBe(true);
+    });
+
+    it('should force a VideoPlayer PUT to playing:false while frozen', async () => {
+      // The default bridge is frozen. A video added/loaded while paused must not
+      // start playing in the editor (#1469).
+      const VideoPlayer = components.VideoPlayer(ctx.engine);
+      const entity = ctx.engine.addEntity();
+      ctx.Name.create(entity, { value: 'Screen' });
+      await ctx.engine.update(1);
+      await new Promise(r => setTimeout(r, 0));
+      sent.length = 0;
+
+      VideoPlayer.create(entity, { src: 'video.mp4', playing: true });
+      await ctx.engine.update(1);
+      await new Promise(r => setTimeout(r, 0));
+      await new Promise(r => setTimeout(r, 0));
+
+      const write = sent.find(s => s.cmd === 'set_component' && s.args[1] === 'VideoPlayer');
+      expect(write).toBeDefined();
+      expect(JSON.parse(write!.args[2]).playing).toBe(false);
+    });
+  });
+
+  describe('MeshRenderer oneof JSON shape (#1466)', () => {
+    it('should forward the engine serde shape (mesh.box), not the $case discriminator', async () => {
+      const MeshRenderer = components.MeshRenderer(ctx.engine);
+      const entity = ctx.engine.addEntity();
+      MeshRenderer.create(entity, { mesh: { $case: 'box', box: { uvs: [] } } });
+      await ctx.engine.update(1);
+      await new Promise(r => setTimeout(r, 0));
+
+      const write = sent.find(s => s.cmd === 'set_component' && s.args[1] === 'MeshRenderer');
+      expect(write).toBeDefined();
+      const value = JSON.parse(write!.args[2]);
+      // Engine (serde externally-tagged oneof, camelCase): { mesh: { box: {...} } }.
+      expect(value.mesh).toEqual({ box: { uvs: [] } });
+      expect(value.mesh.$case).toBeUndefined();
+    });
+
+    it('should carry the variant name for a shape change (box → sphere)', async () => {
+      const MeshRenderer = components.MeshRenderer(ctx.engine);
+      const entity = ctx.engine.addEntity();
+      MeshRenderer.create(entity, { mesh: { $case: 'box', box: { uvs: [] } } });
+      await ctx.engine.update(1);
+      await new Promise(r => setTimeout(r, 0));
+      sent.length = 0;
+
+      // The user switches the shape to a sphere in the inspector.
+      MeshRenderer.createOrReplace(entity, { mesh: { $case: 'sphere', sphere: { uvs: [] } } });
+      await ctx.engine.update(1);
+      await new Promise(r => setTimeout(r, 0));
+
+      const write = sent.find(s => s.cmd === 'set_component' && s.args[1] === 'MeshRenderer');
+      expect(write).toBeDefined();
+      const value = JSON.parse(write!.args[2]);
+      expect(value.mesh).toEqual({ sphere: { uvs: [] } });
+    });
+  });
+
+  describe('MeshRenderer viewport pickability (editor pointer collider)', () => {
+    it('should forward an editor pointer MeshCollider matching the shape when none is authored', async () => {
+      const MeshRenderer = components.MeshRenderer(ctx.engine);
+      const entity = ctx.engine.addEntity();
+      ctx.Name.create(entity, { value: 'Cube' });
+      MeshRenderer.create(entity, { mesh: { $case: 'box', box: { uvs: [] } } });
+      await ctx.engine.update(1);
+      await new Promise(r => setTimeout(r, 0));
+      await new Promise(r => setTimeout(r, 0));
+
+      const write = sent.find(s => s.cmd === 'set_component' && s.args[1] === 'MeshCollider');
+      expect(write).toBeDefined();
+      const value = JSON.parse(write!.args[2]);
+      expect(value.mesh).toEqual({ box: { uvs: [] } });
+      expect(value.collisionMask & 1).toBe(1); // CL_POINTER → clickable
+    });
+
+    it('should OR CL_POINTER into an authored MeshCollider (preserving its bits)', async () => {
+      const MeshRenderer = components.MeshRenderer(ctx.engine);
+      const MeshCollider = components.MeshCollider(ctx.engine);
+      const entity = ctx.engine.addEntity();
+      ctx.Name.create(entity, { value: 'Cube' });
+      MeshRenderer.create(entity, { mesh: { $case: 'box', box: { uvs: [] } } });
+      MeshCollider.create(entity, { mesh: { $case: 'box', box: {} }, collisionMask: 2 }); // physics
+      await ctx.engine.update(1);
+      await new Promise(r => setTimeout(r, 0));
+      await new Promise(r => setTimeout(r, 0));
+
+      const colliders = sent.filter(s => s.cmd === 'set_component' && s.args[1] === 'MeshCollider');
+      expect(colliders.length).toBeGreaterThanOrEqual(1);
+      for (const w of colliders) {
+        const v = JSON.parse(w.args[2]);
+        expect(v.collisionMask & 1).toBe(1); // pointer added
+        expect(v.collisionMask & 2).toBe(2); // physics preserved
+      }
+    });
+  });
+
+  describe('ParticleSystem (#1467)', () => {
+    const getPS = () => ctx.getForwardableComponent('core::ParticleSystem') as never;
+
+    it('should forward a ParticleSystem live, collapsing the shape oneof', async () => {
+      // Running (not frozen) bridge so the authored value is forwarded as-is.
+      bridge.disconnect();
+      const running = createForwardEditBridge({
+        context: ctx,
+        engineWindow,
+        shouldForward: () => true,
+        isFrozen: () => false,
+        send: async (cmd, args) => {
+          sent.push({ cmd, args });
+          return '';
+        },
+      });
+      const PS = getPS() as { create: (e: unknown, v: unknown) => void };
+      const entity = ctx.engine.addEntity();
+      ctx.Name.create(entity, { value: 'Sparks' });
+      PS.create(entity, { rate: 20, shape: { $case: 'sphere', sphere: { radius: 2 } } });
+      await ctx.engine.update(1);
+      await new Promise(r => setTimeout(r, 0));
+      await new Promise(r => setTimeout(r, 0));
+
+      const write = sent.find(s => s.cmd === 'set_component' && s.args[1] === 'ParticleSystem');
+      expect(write).toBeDefined();
+      const value = JSON.parse(write!.args[2]);
+      expect(value.shape).toEqual({ sphere: { radius: 2 } }); // $case collapsed for serde
+      running.disconnect();
+    });
+
+    it('should force playbackState PS_PAUSED (1) while frozen', async () => {
+      const PS = getPS() as { create: (e: unknown, v: unknown) => void };
+      const entity = ctx.engine.addEntity();
+      ctx.Name.create(entity, { value: 'Sparks' });
+      PS.create(entity, { rate: 20, playbackState: 0 }); // authored PS_PLAYING
+      await ctx.engine.update(1);
+      await new Promise(r => setTimeout(r, 0));
+      await new Promise(r => setTimeout(r, 0));
+
+      const write = sent.find(s => s.cmd === 'set_component' && s.args[1] === 'ParticleSystem');
+      expect(write).toBeDefined();
+      expect(JSON.parse(write!.args[2]).playbackState).toBe(1); // paused in a frozen editor
+    });
+
+    it('should restore the authored playbackState on unfreeze', async () => {
+      const PS = getPS() as { create: (e: unknown, v: unknown) => void };
+      const entity = ctx.engine.addEntity();
+      ctx.Name.create(entity, { value: 'Sparks' });
+      PS.create(entity, { rate: 20, playbackState: 0 });
+      await ctx.engine.update(1);
+      await new Promise(r => setTimeout(r, 0));
+      sent.length = 0;
+
+      bridge.setAnimationsFrozen(false);
+      await new Promise(r => setTimeout(r, 0));
+      await new Promise(r => setTimeout(r, 0));
+
+      const write = sent.find(s => s.cmd === 'set_component' && s.args[1] === 'ParticleSystem');
+      expect(write).toBeDefined();
+      expect(JSON.parse(write!.args[2]).playbackState).toBe(0); // resumes as authored
     });
   });
 

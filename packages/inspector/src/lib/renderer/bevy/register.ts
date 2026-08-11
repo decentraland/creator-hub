@@ -1,8 +1,16 @@
 import { getConfig } from '../../logic/config';
 import { getSceneClient } from '../../rpc/scene';
+import { store } from '../../../redux/store';
+import { selectAssetCatalog } from '../../../redux/app';
+import {
+  setEntityIdFloor,
+  resetEntityIdFloor,
+  parseMaxLiveEntityId,
+} from '../../sdk/entity-id-floor';
 import { snapManager } from '../../babylon/decentraland/snap-manager';
 import { connectReverseChannel } from '../reverse-channel';
 import { registerRenderer } from '../plugin';
+import { consoleCommand } from './console';
 import { BevyRenderer } from './BevyRenderer';
 import { mountBevyEngine } from './engine-iframe';
 import { createCameraBridge } from './camera-bridge';
@@ -20,6 +28,7 @@ import { createSceneRunBridge } from './scene-run-bridge';
 import { createSelectionBridge } from './selection-bridge';
 import { createSpawnAreasBridge } from './spawn-areas-bridge';
 import { createSpawnGizmoBridge } from './spawn-gizmo-bridge';
+import { createBrokenAssetsBridge } from './broken-assets-bridge';
 
 /**
  * Bevy-specific escape hatch exposed on {@link MountedRenderer.internals} — the
@@ -79,6 +88,8 @@ export function registerBevyRenderer(): void {
       // the authored tree) can't select/edit it — tell the user why, throttled so
       // repeated clicks don't stack toasts (#1418).
       let lastUnauthoredToast = 0;
+      // Throttle runtime-error toasts (#1448): a per-tick throw shouldn't spam.
+      let lastSceneErrorToast = 0;
       const disconnect = connectReverseChannel(
         {
           engine: bevy.context.engine,
@@ -152,11 +163,34 @@ export function registerBevyRenderer(): void {
       let disconnectInputFocus = () => {};
       let disconnectVertical = () => {};
 
+      // #1468: publish the running engine's highest live entity id (authored + the
+      // scene's own CODE entities) so the inspector allocates NEW authored entities
+      // above it — otherwise a new entity can be handed the id a code entity already
+      // holds and the forward bridge overwrites it. Re-queried on boot/reboot and
+      // polled (a running scene can create more code entities). Tracks the live engine
+      // window across reboots.
+      let liveEngineWindow = engine.engineWindow;
+      const updateEntityIdFloor = async () => {
+        let reply: string;
+        try {
+          reply = await consoleCommand(liveEngineWindow, 'scene_entities', []);
+        } catch {
+          return; // no scene pinned yet / query failed — keep the current floor
+        }
+        const max = parseMaxLiveEntityId(reply);
+        if (max > 0) setEntityIdFloor(max + 1);
+      };
+
       const rewireEngineBindings = (engineWindow: typeof engine.engineWindow) => {
         forwardBridge?.disconnect();
         disconnectPreview();
         disconnectInputFocus();
         disconnectVertical();
+
+        liveEngineWindow = engineWindow;
+        // Refresh the entity-id floor for this (re)load: the scene's code entities
+        // are (re)created here (#1468).
+        void updateEntityIdFloor();
 
         bevy.attachEngine(engineWindow);
         modifiers.retarget(engineWindow as unknown as Window);
@@ -186,6 +220,8 @@ export function registerBevyRenderer(): void {
         disconnectInputFocus = createInputFocusBridge({
           engineWindow: engineWindow as unknown as Window,
           iframe: engine.iframe,
+          // In Interact mode, let bare editor-shortcut keys reach the scene (#1458).
+          isEditingEnabled: () => bevy.interaction.isEditingEnabled(),
         });
 
         // E/Q vertical fly movement: no SDK InputAction is bound to Q, so the
@@ -194,6 +230,8 @@ export function registerBevyRenderer(): void {
         disconnectVertical = createVerticalInputBridge({
           engineWindow: engineWindow as unknown as Window,
           onChange: (up, down) => cameraBridge.setVertical(up, down),
+          // In Interact mode, don't capture E/Q — the scene reads them (#1458).
+          isEditingEnabled: () => bevy.interaction.isEditingEnabled(),
         });
       };
 
@@ -289,6 +327,9 @@ export function registerBevyRenderer(): void {
       bevy.setFocusPoster(position => cameraBridge.focus(position));
       bevy.setResetPoster(position => cameraBridge.reset(position));
       bevy.setZoomPoster(delta => cameraBridge.zoom(delta));
+      // "Interact" toggle (#1458): forward editing-enabled to the agent so it stops
+      // intercepting viewport clicks for pick/gizmo — clicks reach the running scene.
+      bevy.setEditingEnabledPoster(enabled => cameraBridge.setEditingEnabled(enabled));
 
       // Scene run/freeze: the toolbar toggle posts the intent to the agent, which
       // runs /freeze_scene or /unfreeze_scene on the pinned scene. Default frozen
@@ -303,6 +344,28 @@ export function registerBevyRenderer(): void {
         onResetComplete: () => {
           forwardBridge?.reconcileAfterReload();
           bevy.notifyResetComplete();
+        },
+        // The inspected scene threw at runtime (#1448) — main() on load, or a
+        // system while running. Notify the user and stop the scene: freeze it (Play
+        // reads as stopped) rather than reset/reload, which would re-run main() and
+        // re-throw in a loop. Throttled so a per-tick throw doesn't spam toasts.
+        onSceneError: (message: string) => {
+          const now = performance.now();
+          if (now - lastSceneErrorToast > 3000) {
+            lastSceneErrorToast = now;
+            // Persistent + closeable (duration 0), with the engine's error as the
+            // detail — mirrors the host's own "preview scene failed" toast. The web
+            // engine can't always serialize a thrown Error (it becomes "{}"), so the
+            // agent sends '' in that case and we show a generic hint instead.
+            void getSceneClient()?.pushNotification({
+              severity: 'error',
+              message: "The scene has a runtime error and can't run",
+              description: message || 'Check your scene code for the error that stopped it.',
+              duration: 0,
+            });
+          }
+          // Land in the stopped/frozen state (button reads Play), without a reload.
+          if (bevy.sceneRun.isRunning()) bevy.sceneRun.setRunning(false);
         },
       });
       bevy.setSceneRunPoster(running => {
@@ -356,6 +419,11 @@ export function registerBevyRenderer(): void {
 
       // Wire the engine-window bindings for the initial boot. Re-run on reboot.
       rewireEngineBindings(engine.engineWindow);
+
+      // Keep the entity-id floor fresh while the editor is open: a RUNNING scene can
+      // create more code entities after load, so re-query periodically (cheap console
+      // snapshot) on top of the boot/reboot query above (#1468).
+      const entityFloorTimer = setInterval(() => void updateEntityIdFloor(), 2000);
 
       // Reboot the engine iframe from scratch: re-navigates it (re-fetching the
       // realm's /about + scene bundle = the scene's authored INITIAL state) and
@@ -448,6 +516,31 @@ export function registerBevyRenderer(): void {
         },
       });
 
+      // Broken-asset markers (#1465): draw a placeholder for each entity whose
+      // GltfContainer src is invalid (the engine renders nothing, so a deselected
+      // broken asset is otherwise invisible). Validity mirrors the Inspector's Path
+      // "Invalid" flag (the asset catalog in redux); re-post when the catalog changes
+      // so a restored/removed file updates the markers live.
+      const disconnectBrokenAssets = createBrokenAssetsBridge({
+        context: bevy.context,
+        assets: {
+          isValidSrc: src => {
+            const catalog = selectAssetCatalog(store.getState());
+            return !!catalog?.assets.some(asset => asset.path === src);
+          },
+          onChange: cb => {
+            let prev = selectAssetCatalog(store.getState());
+            return store.subscribe(() => {
+              const next = selectAssetCatalog(store.getState());
+              if (next !== prev) {
+                prev = next;
+                cb();
+              }
+            });
+          },
+        },
+      });
+
       const internals: BevyInternals = {
         takeScreenshot: () => bevy.takeScreenshot(),
       };
@@ -462,6 +555,7 @@ export function registerBevyRenderer(): void {
           disconnectPreview();
           spawnGizmo.disconnect();
           disconnectSpawnAreas();
+          disconnectBrokenAssets();
           sceneRunBridge.disconnect();
           cameraBridge.disconnect();
           dropPoint.disconnect();
@@ -472,6 +566,10 @@ export function registerBevyRenderer(): void {
           disconnectHotReload();
           offLocalEdit();
           if (hotReloadTimer !== null) clearTimeout(hotReloadTimer);
+          clearInterval(entityFloorTimer);
+          // Clear the entity-id floor so a subsequent Babylon scene (or a smaller
+          // scene) isn't held above this scene's ids (#1468).
+          resetEntityIdFloor();
           forwardBridge?.disconnect();
           disconnect();
           engine.dispose();
