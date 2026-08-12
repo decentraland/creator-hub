@@ -18,16 +18,23 @@ export function formatCount(value: number | null) {
   return value === null ? NO_VALUE : compactNumber.format(value);
 }
 
-export function formatRevenue(value: number | null) {
+/** Concurrent users are fractional averages, so they keep their decimals. */
+export function formatDecimal(value: number | null) {
   return value === null ? NO_VALUE : decimalNumber.format(value);
 }
+
+// formatRevenue: awaiting a revenue metric. `formatDecimal` covers the same shape.
 
 export function formatPercentage(value: number | null) {
   return value === null ? NO_VALUE : `${decimalNumber.format(value)}%`;
 }
 
+/**
+ * Minutes are derived from a seconds metric, so the raw value carries full float
+ * precision — "4.022482166666666 min" without rounding it here.
+ */
 export function formatMinutes(value: number | null) {
-  return value === null ? NO_VALUE : t('analytics.list.minutes', { value });
+  return value === null ? NO_VALUE : t('analytics.list.minutes', { value: formatDecimal(value) });
 }
 
 const dateFormat = new Intl.DateTimeFormat('en-US', {
@@ -46,6 +53,12 @@ export function formatDateTime(value: number | null) {
   if (value === null) return NO_VALUE;
   const date = new Date(value);
   return `${dateFormat.format(date)} • ${timeFormat.format(date)}`;
+}
+
+/** The export stamp, as a plain date — the time of day it ran is not meaningful. */
+export function formatExportDate(exportedAt: string) {
+  const date = new Date(exportedAt);
+  return Number.isNaN(date.getTime()) ? NO_VALUE : dateFormat.format(date);
 }
 
 /**

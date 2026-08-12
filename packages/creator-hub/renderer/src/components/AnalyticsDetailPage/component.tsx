@@ -1,4 +1,4 @@
-import { type SyntheticEvent, useCallback, useEffect, useState } from 'react';
+import { type SyntheticEvent, useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import DownloadIcon from '@mui/icons-material/FileDownloadOutlined';
 import {
@@ -12,12 +12,18 @@ import {
   Typography,
 } from 'decentraland-ui2';
 
-import { DateRange } from '/shared/types/place-analytics';
+import { MetricsWindow, PlaceAccess } from '/shared/types/place-analytics';
 
 import { useDispatch, useSelector } from '#store';
 import { t } from '/@/modules/store/translation/utils';
-import type { PlaceScopedState } from '/@/modules/store/placeAnalytics';
-import { actions as placeAnalyticsActions } from '/@/modules/store/placeAnalytics';
+import { actions as placeAnalyticsActions, selectors } from '/@/modules/store/placeAnalytics';
+import {
+  hasNoData,
+  toEngagement,
+  toOverview,
+  toRetention,
+  toVisits,
+} from '/@/lib/placeAnalytics.adapter';
 import { useAuth } from '/@/hooks/useAuth';
 
 import { Container } from '../Container';
@@ -25,6 +31,7 @@ import { Loader } from '../Loader';
 import { Navbar, NavbarItem } from '../Navbar';
 import { Select } from '../Select';
 import { Title } from '../Title';
+import { formatExportDate } from '../AnalyticsPage/utils';
 
 import { OverviewTab } from './OverviewTab';
 import { PlaceCard } from './PlaceCard';
@@ -34,10 +41,9 @@ import { VisitsTab } from './VisitsTab';
 
 import './styles.css';
 
-const DATE_RANGE_OPTIONS: Array<{ label: string; value: DateRange }> = [
-  { label: t('analytics.detail.date_range.last_7_days'), value: DateRange.LAST_7_DAYS },
-  { label: t('analytics.detail.date_range.last_30_days'), value: DateRange.LAST_30_DAYS },
-  { label: t('analytics.detail.date_range.last_60_days'), value: DateRange.LAST_60_DAYS },
+const WINDOW_OPTIONS: Array<{ label: string; value: MetricsWindow }> = [
+  { label: t('analytics.detail.window.last_30_days'), value: MetricsWindow.LAST_30_DAYS },
+  { label: t('analytics.detail.window.last_60_days'), value: MetricsWindow.LAST_60_DAYS },
 ];
 
 const TABS = [
@@ -49,53 +55,28 @@ const TABS = [
 
 type TabValue = 'overview' | 'retention' | 'visits' | 'engagement';
 
-/** Renders a tab's data once it has loaded, or its loading and error states. */
-function TabContent<T>({
-  state,
-  children,
-}: {
-  state: PlaceScopedState<T>;
-  children: (data: T) => JSX.Element;
-}) {
-  if (state.status === 'idle' || state.status === 'loading') return <Loader size={70} />;
-  if (state.status === 'failed' || !state.data) {
-    return (
-      <Box className="ErrorContainer">
-        <Typography variant="h5">{t('analytics.detail.error.title')}</Typography>
-        <Typography variant="body1">{state.error}</Typography>
-      </Box>
-    );
-  }
-  return children(state.data);
-}
-
 export function AnalyticsDetailPage() {
-  const { placeId } = useParams<{ placeId: string }>();
+  const { placeId = '' } = useParams<{ placeId: string }>();
   const { isSignedIn } = useAuth();
-  const { detail, retention, visits, engagement, dateRange } = useSelector(
-    state => state.placeAnalytics,
-  );
+  const {
+    window: metricsWindow,
+    exportedAt,
+    status,
+    error,
+  } = useSelector(state => state.placeAnalytics);
+  const place = useSelector(state => selectors.getPlace(state, placeId));
+  const metrics = useSelector(state => selectors.getPlaceMetrics(state, placeId));
   const [tab, setTab] = useState<TabValue>('overview');
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
-  const isLoading = detail.status === 'idle' || detail.status === 'loading';
+  const isLoading = status === 'idle' || status === 'loading';
 
+  // One batched request answers every tab, so a deep link only has to make sure
+  // the snapshot is loaded.
   useEffect(() => {
-    if (isSignedIn && placeId) {
-      dispatch(placeAnalyticsActions.fetchPlaceDetail({ placeId }));
-    }
-  }, [isSignedIn, placeId, dateRange]);
-
-  // Each tab's data is fetched the first time it is opened, and on range changes.
-  useEffect(() => {
-    if (!isSignedIn || !placeId) return;
-    if (tab === 'retention') dispatch(placeAnalyticsActions.fetchPlaceRetention({ placeId }));
-    if (tab === 'visits') dispatch(placeAnalyticsActions.fetchPlaceVisits({ placeId }));
-    if (tab === 'engagement') dispatch(placeAnalyticsActions.fetchPlaceEngagement({ placeId }));
-  }, [isSignedIn, placeId, tab, dateRange]);
-
-  useEffect(() => () => void dispatch(placeAnalyticsActions.clearDetail()), []);
+    if (isSignedIn && status === 'idle') dispatch(placeAnalyticsActions.fetchAnalytics());
+  }, [isSignedIn, status]);
 
   const handleBack = useCallback(() => navigate('/analytics'), [navigate]);
 
@@ -103,12 +84,26 @@ export function AnalyticsDetailPage() {
     setTab(value);
   }, []);
 
-  const handleDateRangeChange = useCallback((e: SelectChangeEvent<DateRange>) => {
-    dispatch(placeAnalyticsActions.setDateRange(e.target.value as DateRange));
+  const handleWindowChange = useCallback((e: SelectChangeEvent<MetricsWindow>) => {
+    dispatch(placeAnalyticsActions.setWindow(e.target.value as MetricsWindow));
   }, []);
 
-  const title = detail.data
-    ? t('analytics.detail.title', { name: detail.data.place.name })
+  const projections = useMemo(
+    () =>
+      metrics
+        ? {
+            overview: toOverview(metrics, metricsWindow),
+            retention: toRetention(metrics, metricsWindow),
+            visits: toVisits(metrics, metricsWindow),
+            engagement: toEngagement(metrics, metricsWindow),
+            isEmpty: hasNoData(metrics),
+          }
+        : null,
+    [metrics, metricsWindow],
+  );
+
+  const title = place
+    ? t('analytics.detail.title', { name: place.name })
     : t('analytics.header.title');
 
   return (
@@ -136,14 +131,31 @@ export function AnalyticsDetailPage() {
         </Box>
         {isLoading ? (
           <Loader size={70} />
-        ) : detail.status === 'failed' || !detail.data ? (
+        ) : status === 'failed' ? (
           <Box className="ErrorContainer">
             <Typography variant="h5">{t('analytics.detail.error.title')}</Typography>
-            <Typography variant="body1">{detail.error}</Typography>
+            <Typography variant="body1">{error}</Typography>
+          </Box>
+        ) : !place || !projections ? (
+          <Box className="ErrorContainer">
+            <Typography variant="h5">{t('analytics.detail.not_found.title')}</Typography>
+            <Typography variant="body1">{t('analytics.detail.not_found.description')}</Typography>
           </Box>
         ) : (
           <Box className="Content">
-            <PlaceCard place={detail.data.place} />
+            <PlaceCard
+              place={{
+                placeId,
+                name: place.name,
+                thumbnail: place.thumbnail,
+                likeRate: null,
+                access: PlaceAccess.PUBLIC,
+                publishedIn: place.publishedIn,
+                location: place.location,
+                lastPublishedBy: null,
+                lastUpdatedAt: place.lastUpdatedAt,
+              }}
+            />
             <Box className="Metrics">
               <Box className="TabsBar">
                 <Tabs
@@ -159,12 +171,12 @@ export function AnalyticsDetailPage() {
                   ))}
                 </Tabs>
                 <Box className="DateRange">
-                  <Typography variant="body1">{t('analytics.detail.date_range.title')}</Typography>
+                  <Typography variant="body1">{t('analytics.detail.window.title')}</Typography>
                   <Select
-                    value={dateRange}
-                    onChange={handleDateRangeChange}
+                    value={metricsWindow}
+                    onChange={handleWindowChange}
                   >
-                    {DATE_RANGE_OPTIONS.map(option => (
+                    {WINDOW_OPTIONS.map(option => (
                       <MenuItem
                         key={option.value}
                         value={option.value}
@@ -175,19 +187,31 @@ export function AnalyticsDetailPage() {
                   </Select>
                 </Box>
               </Box>
-              {tab === 'overview' && <OverviewTab overview={detail.data.overview} />}
-              {tab === 'retention' && (
-                <TabContent state={retention}>
-                  {data => <RetentionTab retention={data} />}
-                </TabContent>
+              {/*
+               * An empty bag means either "no rows in today's export" or "this
+               * wallet may not read it" — deliberately indistinguishable, and
+               * never an error.
+               */}
+              {projections.isEmpty ? (
+                <Box className="EmptyContainer">
+                  <Typography variant="h5">{t('analytics.no_data_yet')}</Typography>
+                  <Typography variant="body1">{t('analytics.no_data_yet_description')}</Typography>
+                </Box>
+              ) : (
+                <>
+                  {tab === 'overview' && <OverviewTab overview={projections.overview} />}
+                  {tab === 'retention' && <RetentionTab retention={projections.retention} />}
+                  {tab === 'visits' && <VisitsTab visits={projections.visits} />}
+                  {tab === 'engagement' && <EngagementTab engagement={projections.engagement} />}
+                </>
               )}
-              {tab === 'visits' && (
-                <TabContent state={visits}>{data => <VisitsTab visits={data} />}</TabContent>
-              )}
-              {tab === 'engagement' && (
-                <TabContent state={engagement}>
-                  {data => <EngagementTab engagement={data} />}
-                </TabContent>
+              {exportedAt && (
+                <Typography
+                  variant="body2"
+                  className="ExportedAt"
+                >
+                  {t('analytics.exported_at', { date: formatExportDate(exportedAt) })}
+                </Typography>
               )}
             </Box>
           </Box>

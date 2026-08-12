@@ -1,16 +1,33 @@
 import fromUnixTime from 'date-fns/fromUnixTime';
 import { config } from '/@/config';
 import { fetch } from '/shared/fetch';
+import { chunk } from '/shared/utils';
 import type { WorldDeployment } from './worlds';
 
 // TheGraph has a limit of a maximum of 1000 results per entity per query
 const MAX_RESULTS = 1000;
+
+/** A large estate can hold hundreds of parcels; the content server takes them in batches. */
+const MAX_POINTERS_PER_REQUEST = 100;
 
 const SEPARATOR = ',';
 
 export type Coords = [number, number];
 
 export const coordsToId = (x: string | number, y: string | number) => `${x}${SEPARATOR}${y}`;
+
+/**
+ * Strict counterpart to `idToCoords`, for input that may not be a coordinate at
+ * all — a scene's `base` from a deployment, or an id from a URL.
+ *
+ * `idToCoords` maps anything unparseable to an empty string, which reads back as
+ * `0,0` once coerced to a number. That silently points at a real parcel someone
+ * else owns, so anything not exactly `<int>,<int>` is rejected here instead.
+ */
+export const parseCoords = (id: string): { x: number; y: number } | null => {
+  const match = /^(-?\d+),(-?\d+)$/.exec(id.trim());
+  return match ? { x: Number(match[1]), y: Number(match[2]) } : null;
+};
 export const idToCoords = (id: string): [string | number, string | number] => {
   const [x = '', y = ''] = id
     ?.split(SEPARATOR)
@@ -472,24 +489,36 @@ export class Lands {
     }
   };
 
-  public async fetchLandPublishedScene(x: number, y: number): Promise<LandDeployment | null> {
-    try {
-      const pointer = coordsToId(x, y);
-      const result = await fetch(`${this.PEER_URL}/content/entities/active`, {
-        method: 'POST',
-        body: JSON.stringify({
-          pointers: [pointer],
-        }),
-      });
+  /**
+   * The scenes deployed on any of the given parcels, one entry per scene.
+   *
+   * `/content/entities/active` resolves many pointers at once and answers each
+   * scene once, however many parcels it covers — so a 100-parcel estate holding
+   * one scene costs one request and yields one entity, not a hundred.
+   */
+  public async fetchLandPublishedScenes(coords: Coords[]): Promise<LandDeployment[]> {
+    const byEntityId = new Map<string, LandDeployment>();
 
-      if (result.ok) {
-        const json = await result.json();
-        return json[0] as LandDeployment;
+    for (const group of chunk(coords, MAX_POINTERS_PER_REQUEST)) {
+      try {
+        const result = await fetch(`${this.PEER_URL}/content/entities/active`, {
+          method: 'POST',
+          body: JSON.stringify({
+            pointers: group.map(([x, y]) => coordsToId(x, y)),
+          }),
+        });
+
+        if (result.ok) {
+          for (const scene of (await result.json()) as LandDeployment[]) {
+            byEntityId.set(scene.id, scene);
+          }
+        }
+      } catch (error) {
+        // Silent fail - these parcels may not have a scene deployed
       }
-    } catch (error) {
-      // Silent fail - land may not have a scene deployed
     }
-    return null;
+
+    return [...byEntityId.values()];
   }
 }
 

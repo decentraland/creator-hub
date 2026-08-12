@@ -950,19 +950,14 @@
         "visits": "Visits",
         "engagement": "Engagement"
       },
-      "date_range": {
-        "title": "Date Range",
-        "last_7_days": "Last 7 Days",
-        "last_30_days": "Last 30 Days",
-        "last_60_days": "Last 60 Days"
-      },
       "place": {
         "access": "Access",
         "private": "Private",
         "public": "Public",
         "published_in": "Published in",
         "last_published_by": "Last published by",
-        "last_update": "Last Update"
+        "last_update": "Last Update",
+        "genesis_city": "Genesis City"
       },
       "actions": {
         "create_event": "Create Event",
@@ -1034,7 +1029,7 @@
         },
         "social": {
           "title": "Social Interactions",
-          "description": "Interactions are counted per realm (one running copy of the place), so play spread across realms reads a little low.",
+          "description": "Share of each week’s visitors who chatted or emoted at least once.",
           "totals_title": "Social Interactions Weekly Totals",
           "rate_title": "Visitors Social Interactions Rate",
           "messages": {
@@ -1048,7 +1043,19 @@
           "friendships": {
             "label": "New Friendships",
             "tooltip": "Friend requests accepted between visitors in your place."
+          },
+          "engaged": {
+            "label": "Socially Engaged Visitors",
+            "tooltip": "Share of each week’s visitors who chatted or emoted at least once."
           }
+        },
+        "playtime": {
+          "title": "Average Playtime",
+          "description": "Average time each user spends in your place on a single visit."
+        },
+        "afk": {
+          "title": "Average AFK Time",
+          "description": "Average time each user spends in your place without interacting."
         }
       },
       "platforms": {
@@ -1061,6 +1068,15 @@
       },
       "error": {
         "title": "We couldn't load this Place's analytics"
+      },
+      "window": {
+        "title": "Window",
+        "last_30_days": "Last 30 Days",
+        "last_60_days": "Last 60 Days"
+      },
+      "not_found": {
+        "title": "Scene not found",
+        "description": "This scene is not among the ones published by your account."
       }
     },
     "metrics": {
@@ -1078,7 +1094,7 @@
       },
       "concurrent_users": {
         "label": "Concurrent Users",
-        "tooltip": "The highest number of users in your place at the same time."
+        "tooltip": "Average number of users in your place at the same time."
       },
       "revenue": {
         "label": "Revenue",
@@ -1103,6 +1119,10 @@
       "mobile": {
         "label": "Mobile",
         "tooltip": "Users who visited your place from a mobile client."
+      },
+      "peak_concurrent_users": {
+        "label": "Peak Concurrent Users",
+        "tooltip": "The highest number of users in your place at the same time."
       }
     },
     "list": {
@@ -1118,17 +1138,22 @@
       },
       "columns": {
         "place": "Place",
-        "total_visits": "Unique Visits",
+        "total_visits": "Total Visits",
         "new_users": "New Users",
         "day_7_retention": "D7 Retention",
         "revenue": "Revenue",
-        "avg_playtime": "Avg. Playtime"
+        "avg_playtime": "Avg. Playtime",
+        "concurrent_users": "Concurrent Users"
       },
       "actions": {
         "pin_to_watchlist": "Pin to Watchlist",
         "unpin_from_watchlist": "Unpin from Watchlist"
-      }
-    }
+      },
+      "genesis_city": "Genesis City ({coords})"
+    },
+    "no_data_yet": "No data yet",
+    "no_data_yet_description": "This scene has no numbers in the latest export. If it was published recently, check back after the next one.",
+    "exported_at": "Data as of {date}"
   },
   "connection": {
     "offline": {

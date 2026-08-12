@@ -4,12 +4,11 @@ import type { PlaceOverviewMetrics } from '/shared/types/place-analytics';
 
 import { t } from '/@/modules/store/translation/utils';
 
-import { ManaValue } from '../../ManaValue';
 import {
   formatCount,
+  formatDecimal,
   formatMinutes,
   formatPercentage,
-  formatRevenue,
   getRetentionColor,
 } from '../../AnalyticsPage/utils';
 import { MetricsCard } from '../MetricsCard';
@@ -44,20 +43,27 @@ export function OverviewTab({ overview }: Props) {
               value: formatCount(overview.uniqueVisits),
             },
             {
+              label: t('analytics.metrics.concurrent_users.label'),
+              tooltip: t('analytics.metrics.concurrent_users.tooltip'),
+              value: formatDecimal(overview.concurrentUsers),
+            },
+            {
+              label: t('analytics.metrics.peak_concurrent_users.label'),
+              tooltip: t('analytics.metrics.peak_concurrent_users.tooltip'),
+              value: formatCount(overview.peakConcurrentUsers),
+            },
+            /* new_users: awaiting a first-time-visitor metric.
+            {
               label: t('analytics.metrics.new_users.label'),
               tooltip: t('analytics.metrics.new_users.tooltip'),
               value: formatCount(overview.newUsers),
-            },
-            {
-              label: t('analytics.metrics.concurrent_users.label'),
-              tooltip: t('analytics.metrics.concurrent_users.tooltip'),
-              value: formatCount(overview.concurrentUsers),
-            },
+            }, */
+            /* revenue: awaiting a revenue metric.
             {
               label: t('analytics.metrics.revenue.label'),
               tooltip: t('analytics.metrics.revenue.tooltip'),
               value: <ManaValue>{formatRevenue(overview.revenue)}</ManaValue>,
-            },
+            }, */
           ]}
         />
         <MetricsCard

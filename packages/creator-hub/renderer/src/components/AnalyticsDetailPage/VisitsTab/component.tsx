@@ -7,7 +7,7 @@ import { t } from '/@/modules/store/translation/utils';
 import { formatCount } from '../../AnalyticsPage/utils';
 import { ChartCard } from '../ChartCard';
 import { StatsRow } from '../StatsRow';
-import { CATEGORICAL_COLORS, ChartLegend, StackedBarChart, TimeSeriesChart } from '../charts';
+import { TimeSeriesChart } from '../charts';
 
 import './styles.css';
 
@@ -16,8 +16,6 @@ type Props = {
 };
 
 export function VisitsTab({ visits }: Props) {
-  const flow = visits.weeklyUsersFlow;
-
   return (
     <Box className="VisitsTab">
       <Typography variant="h5">{t('analytics.detail.visits.title')}</Typography>
@@ -57,6 +55,11 @@ export function VisitsTab({ visits }: Props) {
             formatValue={formatCount}
           />
         </ChartCard>
+        {/*
+          Weekly users flow: awaiting a new/returning/reactivated breakdown.
+          `unique_visitors_weekly` is a single figure per week, which the chart
+          above already draws — there is nothing to stack.
+
         <ChartCard
           title={t('analytics.detail.visits.flow.title')}
           description={t('analytics.detail.visits.flow.description')}
@@ -102,6 +105,7 @@ export function VisitsTab({ visits }: Props) {
             ]}
           />
         </ChartCard>
+        */}
       </Box>
     </Box>
   );

@@ -1,105 +1,73 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type {
-  PlaceAnalyticsDetail,
-  PlaceAnalyticsSummary,
-} from '../../../../../shared/types/place-analytics';
-import { DateRange, PlaceAccess, SortBy } from '../../../../../shared/types/place-analytics';
+import { MetricsWindow, SortBy } from '../../../../../shared/types/place-analytics';
 import { AuthServerProvider } from '../../../lib/auth';
+import type { AnalyticsPlace } from '../../../lib/analyticsLocations';
+import type { LocationMetrics } from '../../../lib/metricsApi';
+import { fetchAnalytics as fetchAnalyticsSnapshot } from '../../../lib/placeAnalytics';
 import { createTestStore } from '../../../../tests/utils/testStore';
-import {
-  actions,
-  fetchPlaceDetail,
-  fetchPlaceRetention,
-  fetchPlaceEngagement,
-  fetchPlaceVisits,
-  fetchPlaces,
-  initialState,
-  selectors,
-} from './slice';
+import { actions, fetchAnalytics, initialState, selectors } from './slice';
 
 const TEST_ADDRESS = '0x123abc';
+const EXPORTED_AT = '2026-08-12T00:17:01.099Z';
 
-const PLACE: PlaceAnalyticsSummary = {
-  placeId: 'bananarama',
-  name: 'Bananarama',
-  thumbnail: 'bananarama-thumbnail.png',
-  totalVisits: 2000,
-  newUsers: 10,
-  day7Retention: 35,
-  revenue: 106.7,
-  avgPlaytime: 95,
-};
+const place = (placeId: string, name: string): AnalyticsPlace => ({
+  placeId,
+  name,
+  thumbnail: 'thumb.png',
+  location: { world: name, x: 0, y: 0 },
+});
 
-const DETAIL: PlaceAnalyticsDetail = {
-  place: {
-    placeId: 'bananarama',
-    name: 'Bananarama',
-    thumbnail: 'bananarama-thumbnail.png',
-    likeRate: 87,
-    access: PlaceAccess.PRIVATE,
-    publishedIn: 'worldname',
-    lastPublishedBy: { name: 'UserName', avatar: null },
-    lastUpdatedAt: 1_796_000_000_000,
-  },
-  overview: {
-    totalVisits: 2000,
-    uniqueVisits: 324,
-    newUsers: 10,
-    concurrentUsers: 124,
-    revenue: 106.7,
-    day7Retention: 35,
-    avgPlaytime: 95,
-    afkTime: 12,
-    desktopUsers: 124,
-    mobileUsers: 14,
-  },
-};
+const withVisits = (visits: number): LocationMetrics =>
+  ({
+    location_key: 'unused',
+    x: 0,
+    y: 0,
+    builder_project_id: null,
+    metrics: { unique_visits_60d: [{ series: 'all', period: null, value: visits }] },
+  }) as LocationMetrics;
 
-const RETENTION = {
-  platforms: { all: 10.2, desktop: 11.1, mobile: 9.1 },
-  day7ByCohortWeek: [{ date: 1_773_000_000_000, value: 12.8 }],
-  weeklyChurnRate: [{ date: 1_773_000_000_000, value: 31.2 }],
-};
+const EMPTY_METRICS: LocationMetrics = {
+  location_key: 'unused',
+  x: 0,
+  y: 0,
+  builder_project_id: null,
+  metrics: {},
+} as LocationMetrics;
 
-const VISITS = {
-  uniqueVisits: { all: 127, desktop: 127, mobile: 125 },
-  weeklyActiveUsers: [{ date: 1_773_000_000_000, value: 48 }],
-  weeklyUsersFlow: [
-    { date: 1_773_000_000_000, newUsers: 38, returnedUsers: 12, reactivatedUsers: 8 },
-  ],
-};
+const BANANARAMA = place('world:bananarama.dcl.eth@0,0', 'bananarama.dcl.eth');
+const NIGHTMARE = place('world:nightmare.dcl.eth@0,0', 'nightmare.dcl.eth');
 
-const ENGAGEMENT = {
-  avgDailyPlaytime: { minutes: 25, deltaMinutes: 6.6, weekly: [] },
-  avgWeeklyPlaytime: { minutes: 29, deltaMinutes: 2.9, weekly: [] },
-  socialInteractions: {
-    weeklyTotals: { messagesSent: [], emotesPlayed: [], newFriendships: [] },
-    visitorRate: { messagesSent: [], emotesPlayed: [], newFriendships: [] },
+const SNAPSHOT = {
+  exportedAt: EXPORTED_AT,
+  places: [BANANARAMA, NIGHTMARE],
+  metricsByPlaceId: {
+    [BANANARAMA.placeId]: withVisits(2000),
+    [NIGHTMARE.placeId]: withVisits(500),
   },
 };
 
-const mockPlaceAnalyticsAPI = {
-  fetchPlaces: vi.fn(),
-  fetchPlaceDetail: vi.fn(),
-  fetchPlaceRetention: vi.fn(),
-  fetchPlaceVisits: vi.fn(),
-  fetchPlaceEngagement: vi.fn(),
-};
+vi.mock('../../../lib/placeAnalytics', () => ({ fetchAnalytics: vi.fn() }));
 
-vi.mock('/@/lib/placeAnalytics', () => ({
-  PlaceAnalytics: class {
-    constructor() {
-      return mockPlaceAnalyticsAPI;
-    }
-  },
+vi.mock('../../../lib/auth', () => ({
+  AuthServerProvider: { getAccount: vi.fn() },
 }));
 
-vi.mock('/@/lib/auth', () => ({
-  AuthServerProvider: {
-    getAccount: vi.fn(),
-  },
-}));
+vi.mock('/@/modules/store/management', async () => {
+  const actual = await import('../management');
+  return {
+    ...actual,
+    // Dispatching an RTK thunk returns a promise carrying `unwrap`, which is
+    // what the slice awaits. Defined inline: vi.mock factories are hoisted.
+    fetchAllManagedProjectsData: vi.fn(() => () => {
+      const dispatched = Promise.resolve([]) as Promise<unknown[]> & {
+        unwrap: () => Promise<unknown[]>;
+      };
+      dispatched.unwrap = () => Promise.resolve([]);
+      return dispatched;
+    }),
+  };
+});
 
 describe('placeAnalytics slice', () => {
   let store: ReturnType<typeof createTestStore>;
@@ -109,37 +77,43 @@ describe('placeAnalytics slice', () => {
     store = createTestStore();
   });
 
-  describe('when fetching places analytics with a connected account', () => {
+  describe('when fetching analytics with a connected account', () => {
     beforeEach(() => {
       vi.mocked(AuthServerProvider.getAccount).mockReturnValue(TEST_ADDRESS);
-      mockPlaceAnalyticsAPI.fetchPlaces.mockResolvedValue([PLACE]);
+      vi.mocked(fetchAnalyticsSnapshot).mockResolvedValue(SNAPSHOT);
     });
 
-    it('should request the analytics of the connected account', async () => {
-      await store.dispatch(fetchPlaces());
-
-      expect(mockPlaceAnalyticsAPI.fetchPlaces).toHaveBeenCalledWith(TEST_ADDRESS);
-    });
-
-    it('should store the places and mark the request as succeeded', async () => {
-      await store.dispatch(fetchPlaces());
+    it('should store the snapshot and mark the request as succeeded', async () => {
+      await store.dispatch(fetchAnalytics());
 
       expect(store.getState().placeAnalytics).toEqual({
         ...initialState,
-        places: [PLACE],
+        exportedAt: EXPORTED_AT,
+        places: SNAPSHOT.places,
+        metricsByPlaceId: SNAPSHOT.metricsByPlaceId,
         status: 'succeeded',
       });
     });
+
+    it('should ask for every scene in one call rather than one call per tab', async () => {
+      await store.dispatch(fetchAnalytics());
+
+      expect(fetchAnalyticsSnapshot).toHaveBeenCalledTimes(1);
+    });
   });
 
-  describe('when the creator has no places with analytics', () => {
+  describe('when the creator has no scenes', () => {
     beforeEach(() => {
       vi.mocked(AuthServerProvider.getAccount).mockReturnValue(TEST_ADDRESS);
-      mockPlaceAnalyticsAPI.fetchPlaces.mockResolvedValue([]);
+      vi.mocked(fetchAnalyticsSnapshot).mockResolvedValue({
+        exportedAt: '',
+        places: [],
+        metricsByPlaceId: {},
+      });
     });
 
-    it('should succeed with an empty list', async () => {
-      await store.dispatch(fetchPlaces());
+    it('should succeed with an empty list rather than failing', async () => {
+      await store.dispatch(fetchAnalytics());
 
       const { places, status } = store.getState().placeAnalytics;
       expect(places).toEqual([]);
@@ -147,289 +121,143 @@ describe('placeAnalytics slice', () => {
     });
   });
 
-  describe('when fetching places analytics without a connected account', () => {
+  describe('when fetching analytics without a connected account', () => {
     beforeEach(() => {
-      vi.mocked(AuthServerProvider.getAccount).mockReturnValue(null);
+      vi.mocked(AuthServerProvider.getAccount).mockReturnValue(undefined as any);
     });
 
-    it('should fail without requesting any analytics', async () => {
-      await store.dispatch(fetchPlaces());
+    it('should fail without requesting anything', async () => {
+      await store.dispatch(fetchAnalytics());
 
-      const { places, status, error } = store.getState().placeAnalytics;
-      expect(mockPlaceAnalyticsAPI.fetchPlaces).not.toHaveBeenCalled();
-      expect(places).toEqual([]);
-      expect(status).toBe('failed');
-      expect(error).toBe('No connected account found');
+      expect(fetchAnalyticsSnapshot).not.toHaveBeenCalled();
+      expect(store.getState().placeAnalytics.status).toBe('failed');
     });
   });
 
-  describe('when pinning a place to the watchlist', () => {
-    it('should add it to the pinned places', () => {
-      store.dispatch(actions.togglePinnedPlace('bananarama'));
-
-      expect(store.getState().placeAnalytics.pinnedPlaceIds).toEqual(['bananarama']);
+  describe('when the request fails', () => {
+    beforeEach(() => {
+      vi.mocked(AuthServerProvider.getAccount).mockReturnValue(TEST_ADDRESS);
+      vi.mocked(fetchAnalyticsSnapshot).mockRejectedValue(
+        new Error('locations[3]: "Not A Name" is not a valid ENS name'),
+      );
     });
 
-    it('should remove it when pinned again', () => {
-      store.dispatch(actions.togglePinnedPlace('bananarama'));
-      store.dispatch(actions.togglePinnedPlace('bananarama'));
+    it('should keep the message the service gave, so the page can show it', async () => {
+      await store.dispatch(fetchAnalytics());
 
-      expect(store.getState().placeAnalytics.pinnedPlaceIds).toEqual([]);
-    });
-
-    it('should keep the other pinned places', () => {
-      store.dispatch(actions.togglePinnedPlace('bananarama'));
-      store.dispatch(actions.togglePinnedPlace('unmonday-club'));
-      store.dispatch(actions.togglePinnedPlace('bananarama'));
-
-      expect(store.getState().placeAnalytics.pinnedPlaceIds).toEqual(['unmonday-club']);
+      const { status, error } = store.getState().placeAnalytics;
+      expect(status).toBe('failed');
+      expect(error).toMatch(/is not a valid ENS name/);
     });
   });
 
   describe('when reading the visible places', () => {
-    const OTHER_PLACE = { ...PLACE, placeId: 'unmonday-club', name: 'Unmonday Club' };
-
     beforeEach(async () => {
       vi.mocked(AuthServerProvider.getAccount).mockReturnValue(TEST_ADDRESS);
-      mockPlaceAnalyticsAPI.fetchPlaces.mockResolvedValue([OTHER_PLACE, PLACE]);
-      await store.dispatch(fetchPlaces());
+      vi.mocked(fetchAnalyticsSnapshot).mockResolvedValue(SNAPSHOT);
+      await store.dispatch(fetchAnalytics());
+    });
+
+    it('should project each scene into a summary row', () => {
+      const [first] = selectors.getVisiblePlaces(store.getState());
+
+      expect(first).toMatchObject({ placeId: BANANARAMA.placeId, name: BANANARAMA.name });
     });
 
     it('should apply the selected sorting', () => {
       store.dispatch(actions.setSortBy(SortBy.NAME_DESC));
 
-      expect(selectors.getVisiblePlaces(store.getState() as any).map($ => $.name)).toEqual([
-        'Unmonday Club',
-        'Bananarama',
+      expect(selectors.getVisiblePlaces(store.getState()).map(p => p.name)).toEqual([
+        NIGHTMARE.name,
+        BANANARAMA.name,
+      ]);
+    });
+
+    it('should sort on visits, which come from the visits metric', () => {
+      store.dispatch(actions.setSortBy(SortBy.MOST_VISITS));
+
+      expect(selectors.getVisiblePlaces(store.getState()).map(p => p.totalVisits)).toEqual([
+        2000, 500,
       ]);
     });
 
     it('should apply the search query', () => {
-      store.dispatch(actions.setSearchQuery('banana'));
+      store.dispatch(actions.setSearchQuery('night'));
 
-      expect(selectors.getVisiblePlaces(store.getState() as any).map($ => $.name)).toEqual([
-        'Bananarama',
+      expect(selectors.getVisiblePlaces(store.getState()).map(p => p.name)).toEqual([
+        NIGHTMARE.name,
       ]);
     });
 
     it('should list pinned places first', () => {
-      store.dispatch(actions.setSortBy(SortBy.NAME_ASC));
-      store.dispatch(actions.togglePinnedPlace('unmonday-club'));
+      store.dispatch(actions.togglePinnedPlace(NIGHTMARE.placeId));
 
-      expect(selectors.getVisiblePlaces(store.getState() as any).map($ => $.name)).toEqual([
-        'Unmonday Club',
-        'Bananarama',
-      ]);
+      expect(selectors.getVisiblePlaces(store.getState())[0].name).toBe(NIGHTMARE.name);
     });
   });
 
-  describe('when fetching the detail of a place', () => {
-    beforeEach(() => {
-      vi.mocked(AuthServerProvider.getAccount).mockReturnValue(TEST_ADDRESS);
-      mockPlaceAnalyticsAPI.fetchPlaceDetail.mockResolvedValue(DETAIL);
-    });
-
-    it('should request it for the connected account and selected date range', async () => {
-      store.dispatch(actions.setDateRange(DateRange.LAST_30_DAYS));
-      await store.dispatch(fetchPlaceDetail({ placeId: 'bananarama' }));
-
-      expect(mockPlaceAnalyticsAPI.fetchPlaceDetail).toHaveBeenCalledWith(
-        TEST_ADDRESS,
-        'bananarama',
-        DateRange.LAST_30_DAYS,
-      );
-    });
-
-    it('should store it against the place it belongs to', async () => {
-      await store.dispatch(fetchPlaceDetail({ placeId: 'bananarama' }));
-
-      expect(store.getState().placeAnalytics.detail).toEqual({
-        placeId: 'bananarama',
-        data: DETAIL,
-        status: 'succeeded',
-        error: null,
-      });
-    });
-
-    it('should fail without keeping stale data when the place has no analytics', async () => {
-      mockPlaceAnalyticsAPI.fetchPlaceDetail.mockRejectedValue(new Error('No analytics found'));
-      await store.dispatch(fetchPlaceDetail({ placeId: 'ghost' }));
-
-      expect(store.getState().placeAnalytics.detail).toEqual({
-        placeId: 'ghost',
-        data: null,
-        status: 'failed',
-        error: 'No analytics found',
-      });
-    });
-  });
-
-  describe('when opening a different place than the one already loaded', () => {
+  describe('when the window changes', () => {
     beforeEach(async () => {
       vi.mocked(AuthServerProvider.getAccount).mockReturnValue(TEST_ADDRESS);
-      mockPlaceAnalyticsAPI.fetchPlaceDetail.mockResolvedValue(DETAIL);
-      await store.dispatch(fetchPlaceDetail({ placeId: 'bananarama' }));
+      vi.mocked(fetchAnalyticsSnapshot).mockResolvedValue(SNAPSHOT);
+      await store.dispatch(fetchAnalytics());
     });
 
-    it('should drop the previous place data while the new one loads', () => {
-      // Not awaited: the assertion is about the in-flight state.
-      void store.dispatch(fetchPlaceDetail({ placeId: 'unmonday-club' }));
+    it('should re-read the same snapshot rather than fetching again', () => {
+      store.dispatch(actions.setWindow(MetricsWindow.LAST_30_DAYS));
 
-      const { detail } = store.getState().placeAnalytics;
-      expect(detail.placeId).toBe('unmonday-club');
-      expect(detail.data).toBeNull();
-      expect(detail.status).toBe('loading');
+      expect(store.getState().placeAnalytics.window).toBe(MetricsWindow.LAST_30_DAYS);
+      expect(fetchAnalyticsSnapshot).toHaveBeenCalledTimes(1);
     });
 
-    it('should keep showing the data while refetching the same place', () => {
-      void store.dispatch(fetchPlaceDetail({ placeId: 'bananarama' }));
+    it('should leave a scalar empty when the other window is the one that has it', () => {
+      store.dispatch(actions.setWindow(MetricsWindow.LAST_30_DAYS));
 
-      const { detail } = store.getState().placeAnalytics;
-      expect(detail.data).toEqual(DETAIL);
-      expect(detail.status).toBe('loading');
-    });
-
-    it('should reset the detail when leaving the page', () => {
-      store.dispatch(actions.clearDetail());
-
-      expect(store.getState().placeAnalytics.detail).toEqual(initialState.detail);
+      // The fixture only carries the 60-day metric, so the 30-day read is null.
+      expect(selectors.getVisiblePlaces(store.getState())[0].totalVisits).toBeNull();
     });
   });
 
-  describe('when opening the retention tab', () => {
-    beforeEach(() => {
+  describe('when a scene has no metrics at all', () => {
+    beforeEach(async () => {
       vi.mocked(AuthServerProvider.getAccount).mockReturnValue(TEST_ADDRESS);
-      mockPlaceAnalyticsAPI.fetchPlaceRetention.mockResolvedValue(RETENTION);
-    });
-
-    it('should request it for the selected date range', async () => {
-      store.dispatch(actions.setDateRange(DateRange.LAST_60_DAYS));
-      await store.dispatch(fetchPlaceRetention({ placeId: 'bananarama' }));
-
-      expect(mockPlaceAnalyticsAPI.fetchPlaceRetention).toHaveBeenCalledWith(
-        TEST_ADDRESS,
-        'bananarama',
-        DateRange.LAST_60_DAYS,
-      );
-    });
-
-    it('should store it against the place it belongs to', async () => {
-      await store.dispatch(fetchPlaceRetention({ placeId: 'bananarama' }));
-
-      expect(store.getState().placeAnalytics.retention).toEqual({
-        placeId: 'bananarama',
-        data: RETENTION,
-        status: 'succeeded',
-        error: null,
+      vi.mocked(fetchAnalyticsSnapshot).mockResolvedValue({
+        exportedAt: EXPORTED_AT,
+        places: [BANANARAMA],
+        metricsByPlaceId: { [BANANARAMA.placeId]: EMPTY_METRICS },
       });
+      await store.dispatch(fetchAnalytics());
     });
 
-    it('should drop the previous place retention while another one loads', async () => {
-      await store.dispatch(fetchPlaceRetention({ placeId: 'bananarama' }));
-      void store.dispatch(fetchPlaceRetention({ placeId: 'unmonday-club' }));
+    it('should keep it in the list, flagged rather than dropped or failed', () => {
+      const [row] = selectors.getVisiblePlaces(store.getState());
 
-      const { retention } = store.getState().placeAnalytics;
-      expect(retention.placeId).toBe('unmonday-club');
-      expect(retention.data).toBeNull();
+      expect(row.hasNoData).toBe(true);
+      expect(store.getState().placeAnalytics.status).toBe('succeeded');
     });
 
-    it('should be reset along with the detail when leaving the page', async () => {
-      await store.dispatch(fetchPlaceRetention({ placeId: 'bananarama' }));
-      store.dispatch(actions.clearDetail());
-
-      expect(store.getState().placeAnalytics.retention).toEqual(initialState.retention);
+    it('should still surface the export stamp', () => {
+      expect(store.getState().placeAnalytics.exportedAt).toBe(EXPORTED_AT);
     });
   });
 
-  describe('when opening the visits tab', () => {
-    beforeEach(() => {
+  describe('when reading one scene', () => {
+    beforeEach(async () => {
       vi.mocked(AuthServerProvider.getAccount).mockReturnValue(TEST_ADDRESS);
-      mockPlaceAnalyticsAPI.fetchPlaceVisits.mockResolvedValue(VISITS);
+      vi.mocked(fetchAnalyticsSnapshot).mockResolvedValue(SNAPSHOT);
+      await store.dispatch(fetchAnalytics());
     });
 
-    it('should request it for the selected date range', async () => {
-      store.dispatch(actions.setDateRange(DateRange.LAST_30_DAYS));
-      await store.dispatch(fetchPlaceVisits({ placeId: 'bananarama' }));
-
-      expect(mockPlaceAnalyticsAPI.fetchPlaceVisits).toHaveBeenCalledWith(
-        TEST_ADDRESS,
-        'bananarama',
-        DateRange.LAST_30_DAYS,
+    it('should find it by our own id', () => {
+      expect(selectors.getPlace(store.getState(), BANANARAMA.placeId)).toEqual(BANANARAMA);
+      expect(selectors.getPlaceMetrics(store.getState(), BANANARAMA.placeId)).toEqual(
+        SNAPSHOT.metricsByPlaceId[BANANARAMA.placeId],
       );
     });
 
-    it('should store it against the place it belongs to', async () => {
-      await store.dispatch(fetchPlaceVisits({ placeId: 'bananarama' }));
-
-      expect(store.getState().placeAnalytics.visits).toEqual({
-        placeId: 'bananarama',
-        data: VISITS,
-        status: 'succeeded',
-        error: null,
-      });
-    });
-
-    it('should not be affected by the retention tab of another place', async () => {
-      mockPlaceAnalyticsAPI.fetchPlaceRetention.mockResolvedValue(RETENTION);
-      await store.dispatch(fetchPlaceVisits({ placeId: 'bananarama' }));
-      await store.dispatch(fetchPlaceRetention({ placeId: 'bananarama' }));
-
-      const { visits, retention } = store.getState().placeAnalytics;
-      expect(visits.data).toEqual(VISITS);
-      expect(retention.data).toEqual(RETENTION);
-    });
-
-    it('should be reset along with the detail when leaving the page', async () => {
-      await store.dispatch(fetchPlaceVisits({ placeId: 'bananarama' }));
-      store.dispatch(actions.clearDetail());
-
-      expect(store.getState().placeAnalytics.visits).toEqual(initialState.visits);
-    });
-  });
-
-  describe('when opening the engagement tab', () => {
-    beforeEach(() => {
-      vi.mocked(AuthServerProvider.getAccount).mockReturnValue(TEST_ADDRESS);
-      mockPlaceAnalyticsAPI.fetchPlaceEngagement.mockResolvedValue(ENGAGEMENT);
-    });
-
-    it('should request it for the selected date range', async () => {
-      store.dispatch(actions.setDateRange(DateRange.LAST_60_DAYS));
-      await store.dispatch(fetchPlaceEngagement({ placeId: 'bananarama' }));
-
-      expect(mockPlaceAnalyticsAPI.fetchPlaceEngagement).toHaveBeenCalledWith(
-        TEST_ADDRESS,
-        'bananarama',
-        DateRange.LAST_60_DAYS,
-      );
-    });
-
-    it('should store it against the place it belongs to', async () => {
-      await store.dispatch(fetchPlaceEngagement({ placeId: 'bananarama' }));
-
-      expect(store.getState().placeAnalytics.engagement).toEqual({
-        placeId: 'bananarama',
-        data: ENGAGEMENT,
-        status: 'succeeded',
-        error: null,
-      });
-    });
-
-    it('should keep each tab of the same place independent', async () => {
-      mockPlaceAnalyticsAPI.fetchPlaceVisits.mockResolvedValue(VISITS);
-      await store.dispatch(fetchPlaceEngagement({ placeId: 'bananarama' }));
-      await store.dispatch(fetchPlaceVisits({ placeId: 'bananarama' }));
-
-      const { engagement, visits } = store.getState().placeAnalytics;
-      expect(engagement.data).toEqual(ENGAGEMENT);
-      expect(visits.data).toEqual(VISITS);
-    });
-
-    it('should be reset along with the detail when leaving the page', async () => {
-      await store.dispatch(fetchPlaceEngagement({ placeId: 'bananarama' }));
-      store.dispatch(actions.clearDetail());
-
-      expect(store.getState().placeAnalytics.engagement).toEqual(initialState.engagement);
+    it('should return nothing for a scene that is not in the snapshot', () => {
+      expect(selectors.getPlace(store.getState(), 'land:99,99')).toBeUndefined();
+      expect(selectors.getPlaceMetrics(store.getState(), 'land:99,99')).toBeUndefined();
     });
   });
 });

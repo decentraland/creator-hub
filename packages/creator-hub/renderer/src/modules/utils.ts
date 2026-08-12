@@ -29,3 +29,22 @@ export const getJumpInUrl = (world: string) => {
     ? `https://decentraland.zone/play/?realm=${config.get('WORLDS_CONTENT_SERVER_URL')}/world/${world}&NETWORK=sepolia`
     : `https://decentraland.org/play/world/${world}`;
 };
+
+/**
+ * Shareable web link for a scene, wherever it lives.
+ *
+ * A Genesis City scene has no world to use as a realm — it is reached by
+ * position, so a world link would point at a realm that does not exist.
+ */
+export const getSceneJumpInUrl = (location: { world?: string; x: number; y: number }) => {
+  if (location.world) return getJumpInUrl(location.world);
+  const base = import.meta.env.DEV ? 'https://decentraland.zone' : 'https://decentraland.org';
+  return `${base}/play/?position=${location.x},${location.y}`;
+};
+
+export const getSceneJumpInDeeplink = (location: { world?: string; x: number; y: number }) => {
+  const dclEnv = env.getEnv() === 'dev' ? 'zone' : 'org';
+  return location.world
+    ? getJumpInDeeplink(location.world)
+    : `decentraland://?position=${location.x},${location.y}&dclenv=${dclEnv}`;
+};

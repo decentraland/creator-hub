@@ -1,11 +1,20 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+
+// These formatters read their unit suffix from the catalogue; the interpolated
+// value is what is under test here.
+vi.mock('/@/modules/store/translation/utils', () => ({
+  t: (key: string, values?: Record<string, unknown>) =>
+    key === 'analytics.list.minutes' ? `${values?.value} min` : key,
+}));
 
 import {
   NO_VALUE,
   formatCount,
   formatDateTime,
+  formatDecimal,
+  formatExportDate,
+  formatMinutes,
   formatPercentage,
-  formatRevenue,
   getDeltaDirection,
   getRetentionColor,
 } from './utils';
@@ -29,14 +38,45 @@ describe('formatCount', () => {
   });
 });
 
-describe('formatRevenue', () => {
+describe('formatDecimal', () => {
   it('should keep up to two decimals', () => {
-    expect(formatRevenue(106.7)).toBe('106.7');
-    expect(formatRevenue(56)).toBe('56');
+    expect(formatDecimal(106.7)).toBe('106.7');
+    expect(formatDecimal(56)).toBe('56');
+  });
+
+  it('should keep a fractional concurrent-user average readable', () => {
+    expect(formatDecimal(1.330414)).toBe('1.33');
   });
 
   it('should render missing data as a dash', () => {
-    expect(formatRevenue(null)).toBe(NO_VALUE);
+    expect(formatDecimal(null)).toBe(NO_VALUE);
+  });
+});
+
+describe('formatMinutes', () => {
+  it('should round, since minutes are converted from seconds and carry full float precision', () => {
+    // 241.34893 seconds / 60
+    expect(formatMinutes(4.022482166666666)).toBe('4.02 min');
+    expect(formatMinutes(18.65641928333333)).toBe('18.66 min');
+  });
+
+  it('should keep a whole number whole', () => {
+    expect(formatMinutes(5)).toBe('5 min');
+  });
+
+  it('should render missing data as a dash', () => {
+    expect(formatMinutes(null)).toBe(NO_VALUE);
+  });
+});
+
+describe('formatExportDate', () => {
+  it('should render the export stamp as a plain date', () => {
+    expect(formatExportDate('2026-08-12T00:17:01.099Z')).toMatch(/^\d{2}\/\d{2}\/\d{4}$/);
+  });
+
+  it('should render an unusable stamp as a dash rather than "Invalid Date"', () => {
+    expect(formatExportDate('')).toBe(NO_VALUE);
+    expect(formatExportDate('not-a-date')).toBe(NO_VALUE);
   });
 });
 

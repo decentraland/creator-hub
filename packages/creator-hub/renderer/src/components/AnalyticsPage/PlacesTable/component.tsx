@@ -16,12 +16,11 @@ import type { PlaceAnalyticsSummary } from '/shared/types/place-analytics';
 import { t } from '/@/modules/store/translation/utils';
 
 import { Dropdown } from '../../Dropdown';
-import { ManaValue } from '../../ManaValue';
 import {
   formatCount,
+  formatDecimal,
   formatMinutes,
   formatPercentage,
-  formatRevenue,
   getRetentionColor,
 } from '../utils';
 
@@ -61,10 +60,13 @@ export function PlacesTable({ places, pinnedPlaceIds, onTogglePin, onSelectPlace
         <TableRow>
           <TableCell>{t('analytics.list.columns.place')}</TableCell>
           <TableCell>{t('analytics.list.columns.total_visits')}</TableCell>
-          <TableCell>{t('analytics.list.columns.new_users')}</TableCell>
+          {/* new_users: awaiting a first-time-visitor metric.
+          <TableCell>{t('analytics.list.columns.new_users')}</TableCell> */}
           <TableCell>{t('analytics.list.columns.day_7_retention')}</TableCell>
-          <TableCell>{t('analytics.list.columns.revenue')}</TableCell>
+          {/* revenue: awaiting a revenue metric.
+          <TableCell>{t('analytics.list.columns.revenue')}</TableCell> */}
           <TableCell>{t('analytics.list.columns.avg_playtime')}</TableCell>
+          <TableCell>{t('analytics.list.columns.concurrent_users')}</TableCell>
           <TableCell className="ActionsCell" />
         </TableRow>
       </TableHead>
@@ -101,20 +103,39 @@ export function PlacesTable({ places, pinnedPlaceIds, onTogglePin, onSelectPlace
                 )}
               </Box>
             </TableCell>
-            <TableCell>{formatCount(place.totalVisits)}</TableCell>
-            <TableCell>{formatCount(place.newUsers)}</TableCell>
-            <TableCell>
-              <Typography
-                variant="body2"
-                color={getRetentionColor(place.day7Retention)}
+            {place.hasNoData ? (
+              /*
+               * The API returned nothing for this scene — either it holds no rows
+               * in today's export or this wallet may not read it, deliberately
+               * indistinguishable. Neither is an error.
+               */
+              <TableCell
+                colSpan={4}
+                className="NoDataCell"
               >
-                {formatPercentage(place.day7Retention)}
-              </Typography>
-            </TableCell>
-            <TableCell>
-              <ManaValue>{formatRevenue(place.revenue)}</ManaValue>
-            </TableCell>
-            <TableCell>{formatMinutes(place.avgPlaytime)}</TableCell>
+                <Typography variant="body2">{t('analytics.no_data_yet')}</Typography>
+              </TableCell>
+            ) : (
+              <>
+                <TableCell>{formatCount(place.totalVisits)}</TableCell>
+                {/* new_users: awaiting a first-time-visitor metric.
+                <TableCell>{formatCount(place.newUsers)}</TableCell> */}
+                <TableCell>
+                  <Typography
+                    variant="body2"
+                    color={getRetentionColor(place.day7Retention)}
+                  >
+                    {formatPercentage(place.day7Retention)}
+                  </Typography>
+                </TableCell>
+                {/* revenue: awaiting a revenue metric.
+                <TableCell>
+                  <ManaValue>{formatRevenue(place.revenue)}</ManaValue>
+                </TableCell> */}
+                <TableCell>{formatMinutes(place.avgPlaytime)}</TableCell>
+                <TableCell>{formatDecimal(place.concurrentUsers)}</TableCell>
+              </>
+            )}
             <TableCell className="ActionsCell">
               <Dropdown options={getDropdownOptions(place)} />
             </TableCell>

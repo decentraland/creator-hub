@@ -15,7 +15,7 @@ import { PlaceAccess } from '/shared/types/place-analytics';
 import { misc } from '#preload';
 import { useSnackbar } from '/@/hooks/useSnackbar';
 import { t } from '/@/modules/store/translation/utils';
-import { CREATE_EVENT_URL, getJumpInDeeplink, getJumpInUrl } from '/@/modules/utils';
+import { CREATE_EVENT_URL, getSceneJumpInDeeplink, getSceneJumpInUrl } from '/@/modules/utils';
 
 import { formatDateTime, formatPercentage } from '../../AnalyticsPage/utils';
 
@@ -27,7 +27,7 @@ type Props = {
 
 export function PlaceCard({ place }: Props) {
   const { pushGeneric } = useSnackbar();
-  const jumpInUrl = getJumpInUrl(place.publishedIn);
+  const jumpInUrl = getSceneJumpInUrl(place.location);
 
   const handleCreateEvent = useCallback(() => {
     void misc.openExternal(CREATE_EVENT_URL);
@@ -40,8 +40,8 @@ export function PlaceCard({ place }: Props) {
 
   /** Opens the desktop client itself; Copy URL keeps the shareable web link. */
   const handleJumpIn = useCallback(() => {
-    void misc.openExternal(getJumpInDeeplink(place.publishedIn));
-  }, [place.publishedIn]);
+    void misc.openExternal(getSceneJumpInDeeplink(place.location));
+  }, [place.location]);
 
   return (
     <Box className="PlaceCard">

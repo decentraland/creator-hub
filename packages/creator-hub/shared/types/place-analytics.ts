@@ -1,25 +1,30 @@
 /**
- * Analytics for a published Place.
+ * Analytics for a published scene, as projected from the creators-data API.
  *
- * There is no analytics API yet, so these types describe the contract the UI is
- * written against and are currently satisfied by mocked data (see
- * `renderer/src/lib/placeAnalytics.ts`).
+ * The API answers a flat bag of `{ series, period, value }` rows per location;
+ * these are the shapes the tabs render. See `renderer/src/lib/placeAnalytics.adapter.ts`.
+ *
+ * Several fields the UI once showed have no metric behind them any more. They are
+ * commented out rather than deleted, next to the metric they are waiting on, so
+ * restoring one is uncommenting it here, in the adapter and in the tab.
  */
 
-/** Headline numbers for a Place, as shown in a row of the Analytics list. */
+/** Headline numbers for a scene, as shown in a row of the Analytics list. */
 export type PlaceAnalyticsSummary = {
   placeId: string;
   name: string;
   thumbnail: string;
-  /** `null` when the Place has no data yet (rendered as "-"). */
+  /** `null` when the scene has no data for this metric (rendered as "-"). */
   totalVisits: number | null;
-  newUsers: number | null;
   /** Percentage, 0-100. */
   day7Retention: number | null;
-  /** MANA. */
-  revenue: number | null;
   /** Minutes. */
   avgPlaytime: number | null;
+  concurrentUsers: number | null;
+  /** True when the API returned no metrics at all for this scene. */
+  hasNoData: boolean;
+  // newUsers: awaiting a first-time-visitor metric.
+  // revenue: awaiting a revenue metric (MANA).
 };
 
 export enum PlaceAccess {
@@ -27,7 +32,7 @@ export enum PlaceAccess {
   PRIVATE = 'private',
 }
 
-/** Place metadata shown beside the metrics on the detail page. */
+/** Scene metadata shown beside the metrics on the detail page. */
 export type PlaceDetails = {
   placeId: string;
   name: string;
@@ -35,21 +40,23 @@ export type PlaceDetails = {
   /** Share of positive ratings, 0-100. */
   likeRate: number | null;
   access: PlaceAccess;
-  /** Name of the world the scene is published in. */
+  /** Where the scene is published: the world's name, or "Genesis City". */
   publishedIn: string;
+  /** Where to jump in — a Genesis City scene is reached by position, not realm. */
+  location: { world?: string; x: number; y: number };
   lastPublishedBy: { name: string; avatar: string | null } | null;
-  /** Epoch milliseconds. */
+  /** Epoch milliseconds of the last deploy. */
   lastUpdatedAt: number | null;
 };
 
 /** The metrics behind the two cards of the Overview tab. */
 export type PlaceOverviewMetrics = {
+  /** Visits, not visitors — `unique_visits_*`. */
   totalVisits: number | null;
+  /** Distinct wallets — `unique_visitors_*`. */
   uniqueVisits: number | null;
-  newUsers: number | null;
   concurrentUsers: number | null;
-  /** MANA. */
-  revenue: number | null;
+  peakConcurrentUsers: number | null;
   /** Percentage, 0-100. */
   day7Retention: number | null;
   /** Minutes. */
@@ -58,6 +65,8 @@ export type PlaceOverviewMetrics = {
   afkTime: number | null;
   desktopUsers: number | null;
   mobileUsers: number | null;
+  // newUsers: awaiting a first-time-visitor metric.
+  // revenue: awaiting a revenue metric (MANA).
 };
 
 export type PlaceAnalyticsDetail = {
@@ -80,68 +89,50 @@ export type PlatformBreakdown = {
   mobile: number | null;
 };
 
-/** How a week's active users split between first-timers, returners and win-backs. */
-export type WeeklyUsersFlowPoint = {
-  /** Epoch milliseconds of the start of the week. */
-  date: number;
-  newUsers: number | null;
-  returnedUsers: number | null;
-  reactivatedUsers: number | null;
-};
-
 /** The metrics behind the Visits tab. */
 export type PlaceVisitsMetrics = {
-  /** Unique visitors per platform over the last 60 days, deduplicated. */
+  /** Visits per platform over the selected window. */
   uniqueVisits: PlatformBreakdown;
-  /** Unique active users in each week. */
+  /** Distinct wallets in each week — `unique_visitors_weekly`. */
   weeklyActiveUsers: TimeSeriesPoint[];
-  weeklyUsersFlow: WeeklyUsersFlowPoint[];
-};
-
-/** A playtime figure with how it moved against the previous period. */
-export type PlaytimeMetric = {
-  /** Minutes. */
-  minutes: number | null;
-  /** Change in minutes against the previous week; positive is more playtime. */
-  deltaMinutes: number | null;
-  /** The same metric week by week. */
-  weekly: TimeSeriesPoint[];
-};
-
-/** The three social interactions tracked per week. */
-export type SocialInteractionSeries = {
-  messagesSent: TimeSeriesPoint[];
-  emotesPlayed: TimeSeriesPoint[];
-  newFriendships: TimeSeriesPoint[];
-};
-
-/** The metrics behind the Engagement tab. */
-export type PlaceEngagementMetrics = {
-  avgDailyPlaytime: PlaytimeMetric;
-  avgWeeklyPlaytime: PlaytimeMetric;
-  socialInteractions: {
-    /** Counts per week. */
-    weeklyTotals: SocialInteractionSeries;
-    /** Share of that week's visitors who did each thing, as percentages. */
-    visitorRate: SocialInteractionSeries;
-  };
+  // weeklyUsersFlow: awaiting a new/returning/reactivated breakdown.
 };
 
 /** The metrics behind the Retention tab. */
 export type PlaceRetentionMetrics = {
-  /** 60-day rolling average retention per platform, as percentages. */
+  /** Day-7 retention per platform over the selected window, as percentages. */
   platforms: PlatformBreakdown;
-  /** Percentage of each week's new users who came back on day 7. */
+  /** Day-7 retention of each week's cohort, as percentages. */
   day7ByCohortWeek: TimeSeriesPoint[];
-  /** Percentage of last week's active users who did not return. */
-  weeklyChurnRate: TimeSeriesPoint[];
+  // weeklyChurnRate: awaiting a churn metric. 1 - d7 retention is not churn.
 };
 
-/** Window the detail page's metrics are computed over. */
-export enum DateRange {
-  LAST_7_DAYS = 'last_7_days',
-  LAST_30_DAYS = 'last_30_days',
-  LAST_60_DAYS = 'last_60_days',
+/** The metrics behind the Engagement tab. */
+export type PlaceEngagementMetrics = {
+  /** Minutes, over the selected window. */
+  avgPlaytime: number | null;
+  /** Minutes per user, over the selected window. */
+  afkTime: number | null;
+  /** Share of each week's visitors who engaged socially, as percentages. */
+  sociallyEngaged: TimeSeriesPoint[];
+  // avgDailyPlaytime / avgWeeklyPlaytime: awaiting a weekly playtime metric.
+  //   Only trailing-window scalars exist, so neither a series nor a
+  //   week-over-week delta can be computed.
+  // socialInteractions: awaiting per-action metrics (messages, emotes,
+  //   friendships). `socially_engaged_ratio_weekly` is one ratio with no
+  //   breakdown, and is projected onto `sociallyEngaged` above.
+};
+
+/**
+ * Trailing window the scalar metrics are read over.
+ *
+ * The value is the metric-name suffix, so a projection composes the name
+ * directly (`unique_visitors_${window}`). It is not a date filter: 30d and 60d
+ * are separate metrics, and the weekly series always carry their full ~8 weeks.
+ */
+export enum MetricsWindow {
+  LAST_30_DAYS = '30d',
+  LAST_60_DAYS = '60d',
 }
 
 export enum SortBy {

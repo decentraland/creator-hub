@@ -152,6 +152,7 @@ vi.mock('../../../lib/auth', () => ({
 }));
 
 vi.mock('./utils', () => ({
+  fetchWorldSceneCoords: vi.fn(async () => [{ x: 0, y: 0 }]),
   getThumbnailUrlFromDeployment: vi.fn((deployment, getContentUrl) => {
     if (deployment?.metadata?.display?.favicon) {
       return getContentUrl(deployment.metadata.display.favicon);

@@ -40,19 +40,31 @@ export async function request(req: MetricsRequest): Promise<MetricsResponse> {
 
   try {
     const response = await fetch(url, {
-      method: 'GET',
-      headers: { accept: 'application/json', ...(req.headers ?? {}) },
+      method: 'POST',
+      headers: {
+        accept: 'application/json',
+        'content-type': 'application/json',
+        ...(req.headers ?? {}),
+      },
+      body: JSON.stringify(req.body),
       signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
     });
 
     const body = await response.text();
     if (!response.ok) {
-      // The service answers JSON errors like { "error": "not authorized ..." }.
-      let message = `Request failed with status ${response.status}`;
+      /*
+       * The service answers `{ error, message }` where `error` is the generic
+       * status ("Bad request") and `message` carries the only useful detail
+       * ("locations[0]: \"Not A Name\" is not a valid ENS name"), so `message`
+       * wins. A non-JSON body is kept verbatim rather than replaced with a bare
+       * status.
+       */
+      let message = body || `Request failed with status ${response.status}`;
       try {
-        message = JSON.parse(body).error ?? message;
+        const parsed = JSON.parse(body);
+        message = parsed.message ?? parsed.error ?? message;
       } catch {
-        // Not JSON — keep the status message.
+        // Not JSON — the raw body is the message.
       }
       log.warn(`[metrics] ${url.pathname} status=${response.status} error=${message}`);
       return { ok: false, status: response.status, error: message };

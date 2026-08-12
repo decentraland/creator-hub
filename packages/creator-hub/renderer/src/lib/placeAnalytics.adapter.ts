@@ -4,24 +4,77 @@ import type {
   PlaceOverviewMetrics,
   PlaceRetentionMetrics,
   PlaceVisitsMetrics,
+  PlatformBreakdown,
   TimeSeriesPoint,
-  WeeklyUsersFlowPoint,
 } from '/shared/types/place-analytics';
+import type { MetricsWindow } from '/shared/types/place-analytics';
 
-import type { MetricRow, WorldMetrics } from './metricsApi';
+import type { LocationMetrics, MetricRow } from './metricsApi';
 
 /**
  * Projects the analytics API's flat metric bag onto the shapes the tabs render.
  *
- * The API answers one payload per world: `metrics[name]` is a list of
- * `{ series, period, value }` rows, where `series` splits a metric (desktop vs
- * mobile) and `period` is the day or week bucket. Anything the API does not
- * carry stays `null`, which the UI already renders as "-".
+ * `metrics[name]` is a list of `{ series, period, value }` rows. Twelve metrics
+ * split three ways by platform; five carry no series at all. Reading a split
+ * metric without picking a series returns three rows and silently yields the
+ * wrong number, so the two readers below are deliberately separate: a call site
+ * has to say which kind it is reading.
+ *
+ * Anything the API does not carry stays `null` or empty, which the UI renders as
+ * "-" or "no data yet". Partial bags are the norm — most locations carry only
+ * some of the 17 — so every field falls back on its own.
  */
 
-/** Rates arrive as fractions (`0.7026`); every percentage in the UI is 0-100. */
-function toPercentage(value: number | null): number | null {
-  return value === null ? null : value * 100;
+/** Every metric the service exports. */
+export const METRIC_NAMES = [
+  'avg_afk_seconds_per_user_30d',
+  'avg_afk_seconds_per_user_60d',
+  'avg_playtime_seconds_30d',
+  'avg_playtime_seconds_60d',
+  'concurrent_users_avg_30d',
+  'concurrent_users_avg_60d',
+  'concurrent_users_peak_30d',
+  'concurrent_users_peak_60d',
+  'd7_retention_rate_30d',
+  'd7_retention_rate_60d',
+  'd7_retention_rate_weekly',
+  'socially_engaged_ratio_weekly',
+  'unique_visitors_30d',
+  'unique_visitors_60d',
+  'unique_visitors_weekly',
+  'unique_visits_30d',
+  'unique_visits_60d',
+] as const;
+
+export type MetricName = (typeof METRIC_NAMES)[number];
+
+/** The metrics whose rows carry `series: null`. Every other one splits three ways. */
+export const SINGLE_SERIES_METRICS = [
+  'concurrent_users_avg_30d',
+  'concurrent_users_avg_60d',
+  'concurrent_users_peak_30d',
+  'concurrent_users_peak_60d',
+  'socially_engaged_ratio_weekly',
+] as const;
+
+type SingleSeriesMetric = (typeof SINGLE_SERIES_METRICS)[number];
+type SplitMetric = Exclude<MetricName, SingleSeriesMetric>;
+type Platform = 'all' | 'desktop' | 'mobile';
+
+type Bag = LocationMetrics['metrics'];
+
+const SECONDS_PER_MINUTE = 60;
+
+const rowsOf = (bag: Bag, name: MetricName): MetricRow[] => bag[name] ?? [];
+
+/** A platform-split metric with no period: one value for the whole window. */
+function platformValue(bag: Bag, name: SplitMetric, series: Platform): number | null {
+  return rowsOf(bag, name).find(row => row.series === series)?.value ?? null;
+}
+
+/** A metric that has no series: its single value for the whole window. */
+function singleValue(bag: Bag, name: SingleSeriesMetric): number | null {
+  return rowsOf(bag, name)[0]?.value ?? null;
 }
 
 /**
@@ -35,177 +88,118 @@ function parsePeriod(period: string): number {
   return new Date(year, month - 1, day).getTime();
 }
 
-function rowsOf(metrics: WorldMetrics['metrics'], name: string, series?: string): MetricRow[] {
-  const rows = metrics[name] ?? [];
-  return series === undefined ? rows : rows.filter(row => row.series === series);
-}
-
-/** A metric with no period: one value for the whole window. */
-function valueOf(metrics: WorldMetrics['metrics'], name: string, series?: string): number | null {
-  const [row] = rowsOf(metrics, name, series);
-  return row?.value ?? null;
-}
-
-/** A metric bucketed by period, oldest first. */
-function seriesOf(
-  metrics: WorldMetrics['metrics'],
-  name: string,
-  series?: string,
+/**
+ * A metric bucketed by week, oldest first.
+ *
+ * The export is a rolling 60-day product rebuilt daily, so this is always about
+ * 8 weeks and never grows — next month's response holds 8 later weeks.
+ */
+function weeklySeries(
+  bag: Bag,
+  name: MetricName,
+  series: Platform | null,
   transform: (value: number) => number = value => value,
 ): TimeSeriesPoint[] {
-  return rowsOf(metrics, name, series)
-    .filter(row => row.period !== null)
+  return rowsOf(bag, name)
+    .filter(row => row.period !== null && row.series === series)
     .map(row => ({ date: parsePeriod(row.period as string), value: transform(row.value) }))
     .sort((a, b) => a.date - b.date);
 }
 
-const lastValue = (points: TimeSeriesPoint[]): number | null =>
-  points.length ? points[points.length - 1].value : null;
+/** Rates arrive as fractions (`0.1216`); every percentage in the UI is 0-100. */
+const toPercentage = (value: number | null): number | null => (value === null ? null : value * 100);
 
-/** Change against the week before the latest one. */
-function weekOverWeek(points: TimeSeriesPoint[]): number | null {
-  if (points.length < 2) return null;
-  const [previous, latest] = points.slice(-2);
-  if (previous.value === null || latest.value === null) return null;
-  return latest.value - previous.value;
+/** Playtime and AFK are exported in seconds; the UI reads minutes throughout. */
+const toMinutes = (value: number | null): number | null =>
+  value === null ? null : value / SECONDS_PER_MINUTE;
+
+function platforms(bag: Bag, name: SplitMetric, transform = (value: number | null) => value) {
+  return {
+    all: transform(platformValue(bag, name, 'all')),
+    desktop: transform(platformValue(bag, name, 'desktop')),
+    mobile: transform(platformValue(bag, name, 'mobile')),
+  } satisfies PlatformBreakdown;
 }
 
 /**
- * Weeks covered by the API's 60-day metrics, so figures shown next to them
- * cover the same window. Summing every bucket instead produced more new users
- * than unique visitors, which reads as nonsense side by side.
+ * Whether the API returned nothing for this location — either because the wallet
+ * may not read it or because today's export holds no rows. The two are
+ * deliberately indistinguishable, so both render as "no data yet", never as an
+ * error.
  */
-const WEEKS_IN_60_DAYS = 9;
+export const hasNoData = (location: LocationMetrics): boolean =>
+  Object.keys(location.metrics).length === 0;
 
-const sumRecent = (points: TimeSeriesPoint[], weeks: number): number | null =>
-  points.length
-    ? points.slice(-weeks).reduce((total, point) => total + (point.value ?? 0), 0)
-    : null;
-
-export function toOverview({ metrics }: WorldMetrics): PlaceOverviewMetrics {
+export function toOverview(
+  { metrics }: LocationMetrics,
+  window: MetricsWindow,
+): PlaceOverviewMetrics {
   return {
-    // The API counts unique visitors only — it has no repeat-visit total.
-    totalVisits: null,
-    uniqueVisits: valueOf(metrics, 'unique_visitors_60d'),
-    newUsers: sumRecent(seriesOf(metrics, 'visitor_flow_weekly', 'new'), WEEKS_IN_60_DAYS),
-    concurrentUsers: null,
-    revenue: null,
-    day7Retention: toPercentage(valueOf(metrics, 'd7_cohort_60d', 'blended')),
-    avgPlaytime: lastValue(seriesOf(metrics, 'avg_session_minutes_weekly')),
-    afkTime: null,
-    desktopUsers: valueOf(metrics, 'visitors_by_platform_60d', 'desktop'),
-    mobileUsers: valueOf(metrics, 'visitors_by_platform_60d', 'mobile'),
+    totalVisits: platformValue(metrics, `unique_visits_${window}`, 'all'),
+    uniqueVisits: platformValue(metrics, `unique_visitors_${window}`, 'all'),
+    concurrentUsers: singleValue(metrics, `concurrent_users_avg_${window}`),
+    peakConcurrentUsers: singleValue(metrics, `concurrent_users_peak_${window}`),
+    day7Retention: toPercentage(platformValue(metrics, `d7_retention_rate_${window}`, 'all')),
+    avgPlaytime: toMinutes(platformValue(metrics, `avg_playtime_seconds_${window}`, 'all')),
+    afkTime: toMinutes(platformValue(metrics, `avg_afk_seconds_per_user_${window}`, 'all')),
+    desktopUsers: platformValue(metrics, `unique_visitors_${window}`, 'desktop'),
+    mobileUsers: platformValue(metrics, `unique_visitors_${window}`, 'mobile'),
   };
 }
 
-export function toRetention({ metrics }: WorldMetrics): PlaceRetentionMetrics {
+export function toVisits({ metrics }: LocationMetrics, window: MetricsWindow): PlaceVisitsMetrics {
   return {
-    platforms: {
-      all: toPercentage(valueOf(metrics, 'd7_cohort_60d', 'blended')),
-      desktop: toPercentage(valueOf(metrics, 'd7_cohort_60d', 'desktop')),
-      mobile: toPercentage(valueOf(metrics, 'd7_cohort_60d', 'mobile')),
-    },
-    day7ByCohortWeek: seriesOf(metrics, 'retention_by_cohort_week', 'd7', value => value * 100),
-    weeklyChurnRate: seriesOf(metrics, 'churn_rate_weekly', undefined, value => value * 100),
+    uniqueVisits: platforms(metrics, `unique_visits_${window}`),
+    weeklyActiveUsers: weeklySeries(metrics, 'unique_visitors_weekly', 'all'),
   };
 }
 
-export function toVisits({ metrics }: WorldMetrics): PlaceVisitsMetrics {
-  const byWeek = new Map<number, WeeklyUsersFlowPoint>();
-  const collect = (series: string, field: keyof Omit<WeeklyUsersFlowPoint, 'date'>) => {
-    for (const point of seriesOf(metrics, 'visitor_flow_weekly', series)) {
-      const week = byWeek.get(point.date) ?? {
-        date: point.date,
-        newUsers: null,
-        returnedUsers: null,
-        reactivatedUsers: null,
-      };
-      week[field] = point.value;
-      byWeek.set(point.date, week);
-    }
-  };
-  collect('new', 'newUsers');
-  collect('retained', 'returnedUsers');
-  collect('reactivated', 'reactivatedUsers');
-
+export function toRetention(
+  { metrics }: LocationMetrics,
+  window: MetricsWindow,
+): PlaceRetentionMetrics {
   return {
-    uniqueVisits: {
-      all: valueOf(metrics, 'unique_visitors_60d'),
-      desktop: valueOf(metrics, 'visitors_by_platform_60d', 'desktop'),
-      mobile: valueOf(metrics, 'visitors_by_platform_60d', 'mobile'),
-    },
-    weeklyActiveUsers: seriesOf(metrics, 'wau_weekly'),
-    weeklyUsersFlow: [...byWeek.values()].sort((a, b) => a.date - b.date),
+    platforms: platforms(metrics, `d7_retention_rate_${window}`, toPercentage),
+    day7ByCohortWeek: weeklySeries(
+      metrics,
+      'd7_retention_rate_weekly',
+      'all',
+      value => value * 100,
+    ),
   };
 }
 
-/**
- * Share of each week's active users who did something, from
- * `engagement_breadth_weekly` — `active` is the denominator for the rest.
- */
-function breadthRate(metrics: WorldMetrics['metrics'], series: string): TimeSeriesPoint[] {
-  const active = new Map(
-    seriesOf(metrics, 'engagement_breadth_weekly', 'active').map(point => [
-      point.date,
-      point.value,
-    ]),
-  );
-  return seriesOf(metrics, 'engagement_breadth_weekly', series).map(point => {
-    const total = active.get(point.date);
-    return {
-      date: point.date,
-      value: total && point.value !== null ? (point.value / total) * 100 : null,
-    };
-  });
-}
-
-export function toEngagement({ metrics }: WorldMetrics): PlaceEngagementMetrics {
-  const daily = seriesOf(metrics, 'avg_session_minutes_weekly');
-  const weekly = seriesOf(metrics, 'avg_active_minutes_weekly');
-
+export function toEngagement(
+  { metrics }: LocationMetrics,
+  window: MetricsWindow,
+): PlaceEngagementMetrics {
   return {
-    // Per visit vs per week: the API's session average and active-minutes average.
-    avgDailyPlaytime: {
-      minutes: lastValue(daily),
-      deltaMinutes: weekOverWeek(daily),
-      weekly: daily,
-    },
-    avgWeeklyPlaytime: {
-      minutes: lastValue(weekly),
-      deltaMinutes: weekOverWeek(weekly),
-      weekly,
-    },
-    socialInteractions: {
-      weeklyTotals: {
-        messagesSent: seriesOf(metrics, 'chat_messages_weekly'),
-        emotesPlayed: seriesOf(metrics, 'emotes_weekly'),
-        // No friendship metric in the API yet.
-        newFriendships: [],
-      },
-      visitorRate: {
-        messagesSent: breadthRate(metrics, 'chatting'),
-        emotesPlayed: breadthRate(metrics, 'emoting'),
-        newFriendships: [],
-      },
-    },
+    avgPlaytime: toMinutes(platformValue(metrics, `avg_playtime_seconds_${window}`, 'all')),
+    afkTime: toMinutes(platformValue(metrics, `avg_afk_seconds_per_user_${window}`, 'all')),
+    sociallyEngaged: weeklySeries(
+      metrics,
+      'socially_engaged_ratio_weekly',
+      null,
+      value => value * 100,
+    ),
   };
 }
 
 /** The headline figures one row of the Places list shows. */
 export function toSummary(
-  worldMetrics: WorldMetrics,
-  { name, thumbnail }: { name: string; thumbnail: string },
+  location: LocationMetrics,
+  window: MetricsWindow,
+  { placeId, name, thumbnail }: { placeId: string; name: string; thumbnail: string },
 ): PlaceAnalyticsSummary {
-  const overview = toOverview(worldMetrics);
+  const overview = toOverview(location, window);
   return {
-    placeId: worldMetrics.world,
+    placeId,
     name,
     thumbnail,
-    // Unique visitors, not total visits — see the column label.
-    totalVisits: overview.uniqueVisits,
-    newUsers: overview.newUsers,
+    totalVisits: overview.totalVisits,
     day7Retention: overview.day7Retention,
-    revenue: overview.revenue,
     avgPlaytime: overview.avgPlaytime,
+    concurrentUsers: overview.concurrentUsers,
+    hasNoData: hasNoData(location),
   };
 }

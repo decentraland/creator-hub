@@ -64,6 +64,11 @@ export function RetentionTab({ retention }: Props) {
             }}
           />
         </ChartCard>
+        {/*
+          Weekly churn: awaiting a churn metric. `d7_retention_rate_weekly` is
+          day-7 cohort retention, and 1 - d7 is not churn — showing it here would
+          render a plausible wrong number.
+
         <ChartCard
           title={t('analytics.detail.retention.churn.title')}
           description={t('analytics.detail.retention.churn.description')}
@@ -75,6 +80,7 @@ export function RetentionTab({ retention }: Props) {
             maxValue={100}
           />
         </ChartCard>
+        */}
       </Box>
     </Box>
   );

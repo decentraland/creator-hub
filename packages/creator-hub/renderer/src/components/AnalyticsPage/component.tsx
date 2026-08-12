@@ -19,6 +19,7 @@ import { Search } from '../Search';
 import { Select } from '../Select';
 
 import { PlacesTable } from './PlacesTable';
+import { formatExportDate } from './utils';
 
 import './styles.css';
 
@@ -30,17 +31,17 @@ const SORT_OPTIONS: Array<{ label: string; value: SortBy }> = [
 
 export function AnalyticsPage() {
   const { isSignedIn } = useAuth();
-  const { places, pinnedPlaceIds, sortBy, searchQuery, status, error } = useSelector(
+  const { places, pinnedPlaceIds, sortBy, searchQuery, exportedAt, status, error } = useSelector(
     state => state.placeAnalytics,
   );
   const visiblePlaces = useSelector(selectors.getVisiblePlaces);
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
-  const isLoading = status === 'loading';
+  const isLoading = status === 'loading' || status === 'idle';
 
   useEffect(() => {
-    if (isSignedIn) dispatch(placeAnalyticsActions.fetchPlaces());
+    if (isSignedIn) dispatch(placeAnalyticsActions.fetchAnalytics());
   }, [isSignedIn]);
 
   const handleSortChange = useCallback((e: SelectChangeEvent<SortBy>) => {
@@ -89,6 +90,15 @@ export function AnalyticsPage() {
                 {t('analytics.list.places', { count: visiblePlaces.length })}
               </Typography>
               <>
+                {/* The export's own stamp: an "as of" date is a different answer from silence. */}
+                {exportedAt && (
+                  <Typography
+                    variant="body2"
+                    className="ExportedAt"
+                  >
+                    {t('analytics.exported_at', { date: formatExportDate(exportedAt) })}
+                  </Typography>
+                )}
                 <Typography variant="body1">{t('analytics.list.sort.title')}</Typography>
                 <Select
                   value={sortBy}
