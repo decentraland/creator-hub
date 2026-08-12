@@ -140,5 +140,6 @@
   align-items: center;
 }
 
-/* (Mode switcher moved to its own component above the toolbar — see
-   `components/ModeSwitcher`. It used to live here as `.mode-switch`. */
+/* (Mode switcher moved out — it is now the tab band at the top of the LEFT
+   panel, see `components/ModeSwitcher`. It used to live here as `.mode-switch`,
+   then briefly as a centred strip above this toolbar.) */

@@ -1,12 +1,6 @@
 import type { Entity } from '@dcl/ecs';
 
-import {
-  type CanvasBindingRow,
-  type CanvasSegment,
-  DEFAULT_CANVAS_HEIGHT,
-  DEFAULT_CANVAS_WIDTH,
-  type UINodeType,
-} from '../tree-model';
+import { type CanvasBindingRow, type CanvasSegment, type UINodeType } from '../tree-model';
 
 // Segment-kind string values ('literal' / 'binding') — the values
 // previewBoundText compares against (tree-model's SegmentKind). Kept as local
@@ -748,12 +742,9 @@ export function codeToUINodes(
   // (findComponentReturnJsx accepts both).
   const rootVariant = parsePlatformConditional(rootJsx, fnStatements);
   const root = rootVariant ? platformVariantNode(rootVariant) : visitElement(rootJsx);
-  // The design-canvas size isn't expressed in code yet (comes from the
-  // renderer's virtual resolution / a manifest later). Default it so the canvas
-  // has a fixed stage to render into. TODO(M5): read from the setUiRenderer call
-  // or the .dcl-ui.json manifest.
-  root.canvasWidth = DEFAULT_CANVAS_WIDTH;
-  root.canvasHeight = DEFAULT_CANVAS_HEIGHT;
+  // The design-canvas size is NOT here: it lives in src/ui/index.tsx's
+  // setUiRenderer call, one per scene, and this parses a single root file. The
+  // code store reads it (syncVirtualSize) and the canvas frames that.
   return { root, spans, astNodes, hasOpaque };
 }
 

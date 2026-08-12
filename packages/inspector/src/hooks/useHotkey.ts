@@ -30,43 +30,56 @@ export const DUPLICATE_ALT = `${COMMAND}+d`;
 export const FOCUS_SELECTED = 'f';
 export const TOGGLE_FREE_CAMERA = '`';
 
+interface UseHotkeyOptions {
+  /**
+   * Skip registration entirely while false (default true).
+   *
+   * Not "register but ignore": the wrapper below calls preventDefault() before
+   * dispatching, so an inert binding would still swallow the key from whoever
+   * owns the screen instead. The 3D camera keys use this while the UI Designer
+   * is open — otherwise space / f / +- steer an invisible camera AND go missing
+   * from the designer.
+   */
+  enabled?: boolean;
+}
+
 /**
  * Hook that listens for key presses and triggers a callback function when the specified keys are pressed.
  *
  * @param keys - An array of strings representing the keys to listen for.
  * @param callback - The callback function to be executed when the specified keys are pressed.
  * @param node - The target DOM node to attach the event listener to. If not provided, the listener will be attached to the entire document.
+ * @param options - See {@link UseHotkeyOptions}.
  */
 export const useHotkey = (
   keys: string | string[],
   callback: KeyHandler | (() => void),
   node: any = undefined,
+  options: UseHotkeyOptions = {},
 ) => {
+  const { enabled = true } = options;
   const callbackRef = useRef(callback);
   useLayoutEffect(() => {
     callbackRef.current = callback;
   });
 
+  const formattedKeys = Array.isArray(keys) ? keys.join(',') : keys;
+
   useEffect(() => {
     // Uses document when the node is undefined
     const targetDocument = node !== undefined ? node : document;
-    const formattedKeys = Array.isArray(keys) ? keys.join(',') : keys;
-    if (targetDocument) {
-      hotkeys(
-        formattedKeys,
-        {
-          element: targetDocument,
-        },
-        (event, handler) => {
-          event.preventDefault();
-          callbackRef.current(event, handler);
-        },
-      );
-    }
-    return () => {
-      if (targetDocument) {
-        hotkeys.unbind(formattedKeys);
-      }
+    if (!targetDocument || !enabled) return;
+    const handler: KeyHandler = (event, hotkeysEvent) => {
+      event.preventDefault();
+      callbackRef.current(event, hotkeysEvent);
     };
-  }, [node]);
+    hotkeys(formattedKeys, { element: targetDocument }, handler);
+    return () => {
+      // Unbind THIS handler, not the key: the bare `hotkeys.unbind(key)` drops
+      // every handler registered for it anywhere. Two components sharing a key
+      // is normal here (Gizmos and the Renderer both take `f`), so the unscoped
+      // form let one unmount silently kill the other's binding for good.
+      hotkeys.unbind(formattedKeys, handler);
+    };
+  }, [node, formattedKeys, enabled]);
 };

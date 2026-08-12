@@ -243,8 +243,10 @@ class HierarchyPageObject {
   }
 
   async selectMultiple(entityIds: number[]) {
-    // Close any open context menus first by clicking outside
-    await page.click('body', { position: { x: 0, y: 0 } });
+    // Close any open context menu. Escape only — this used to also click body at
+    // viewport (0,0) as a "click outside", but that corner is the 2D|3D tab band
+    // at the top of this very panel, so the click switched the editor to 2D and
+    // unmounted the tree it was about to query.
     await page.keyboard.press('Escape');
 
     try {

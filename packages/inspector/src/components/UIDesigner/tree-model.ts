@@ -12,12 +12,9 @@ export enum SegmentKind {
   BINDING = 'binding',
 }
 
-// The design/virtual resolution of a UI — the editor canvas stage size, and the
-// `{ virtualWidth, virtualHeight }` the generated ui/index.tsx hands to
-// setUiRenderer so in-world px scale to the same proportions (see
-// code/aggregator.ts). The read path is one-way: a hand-edited virtual size
-// survives regeneration but the stage still frames these defaults, so editing it
-// makes the two disagree. TODO(M5): feed the parsed value back into the stage.
+// Fallback design/virtual resolution, used until src/ui/index.tsx's
+// `{ virtualWidth, virtualHeight }` is read (code/aggregator.ts `readVirtualSize`
+// → the code store's `virtualSize`, which is what the canvas stage frames).
 export const DEFAULT_CANVAS_WIDTH = 1920;
 export const DEFAULT_CANVAS_HEIGHT = 1080;
 
@@ -34,10 +31,6 @@ export interface UINode {
   uiInput?: unknown;
   uiDropdown?: unknown;
   bindings?: CanvasBindingRow[];
-  // Only set on the root node — the per-UI design canvas size (px), sanitized
-  // to a positive value with the DEFAULT_CANVAS_* fallback applied.
-  canvasWidth?: number;
-  canvasHeight?: number;
   children: UINode[];
 }
 

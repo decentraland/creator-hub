@@ -37,6 +37,20 @@ code {
   background: var(--main-bg-color);
 }
 
+/* The left panel stacks the 2D|3D tab band over the active mode's tree, so the
+   Box content has to be a column and the tree has to take the remainder — the
+   trees size themselves at height: 100%, which would otherwise overflow by the
+   band's height. */
+.composite-inspector > .content {
+  display: flex;
+  flex-direction: column;
+}
+
+.composite-inspector > .content > *:not(.ModeSwitcher) {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
 .composite-renderer {
   flex: 1 1 auto;
   height: 100%;

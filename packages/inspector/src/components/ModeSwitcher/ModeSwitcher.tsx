@@ -1,4 +1,4 @@
-import React, { useCallback, useLayoutEffect, useRef } from 'react';
+import React, { useCallback } from 'react';
 import cx from 'classnames';
 
 import { useInspectorUIState } from '../../hooks/sdk/useInspectorUIState';
@@ -14,26 +14,12 @@ const ModeSwitcherComponent: React.FC = () => {
   const isUIDesigner = !hiddenPanels[PanelName.UI_DESIGNER];
   const [uiState, updateUIState] = useInspectorUIState();
 
-  // Not localStorage: the iframe's origin port changes each app launch, so it
-  // starts empty every session (lib/renderer/controller.ts).
-  // The latch is load-bearing — `updateUIState` round-trips back into `uiState`,
-  // so without it this effect would re-fire and fight every user toggle.
-  // Layout, not passive: a passive effect commits the toggle after the browser has
-  // already painted the default (3D), which reads as a visible mode switch.
-  // Neither tab is active until the persisted mode lands, so the switch never
-  // advertises a selection the restore is about to move.
+  // Neither tab is active until the persisted mode lands (useRestorePersistedMode
+  // in App applies it), so the switch never advertises a selection the restore is
+  // about to move.
   const resolved = uiState !== null;
   const is2D = resolved && isUIDesigner;
   const is3D = resolved && !isUIDesigner;
-
-  const restored = useRef(false);
-  useLayoutEffect(() => {
-    if (!uiState || restored.current) return;
-    restored.current = true;
-    const open = !!uiState.uiDesignerOpen;
-    if (open === isUIDesigner) return;
-    dispatch(togglePanel({ panel: PanelName.UI_DESIGNER, enabled: open }));
-  }, [uiState, isUIDesigner, dispatch]);
 
   const handleSelect2D = useCallback(() => {
     if (!isUIDesigner) {

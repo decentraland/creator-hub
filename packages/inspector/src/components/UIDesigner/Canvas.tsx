@@ -8,6 +8,7 @@ import {
   IoLayersOutline,
   IoPhoneLandscapeOutline,
   IoScanOutline,
+  IoSyncOutline,
   IoTrashOutline,
 } from 'react-icons/io5';
 import cx from 'classnames';
@@ -21,10 +22,12 @@ import {
   getInteractionLayer,
   getLockedNodes,
   getPlatform,
+  getScreens,
   getSelectedNode,
   getSelectedNodes,
   selectNode,
   setPlatform,
+  setScreen,
   toggleNodeSelection,
 } from '../../redux/ui-designer';
 import { Button } from '../Button';
@@ -41,7 +44,8 @@ import { UI_DESIGNER_DND_TYPE, type UIDesignerDragItem } from './Palette';
 import { EmptyState } from './EmptyState';
 import { WidgetPicker } from './WidgetPicker';
 import { SafeAreaOverlay } from './SafeAreaOverlay';
-import { MOBILE_REFERENCE } from './safe-areas';
+import { SCREEN_PRESETS } from './safe-areas';
+import { renderTextMarkup } from './text-markup';
 import { dragPinHold } from './align-presets';
 import { DEFAULT_CANVAS_SCALE, getCanvasScale, offsetInParent, setCanvasScale } from './measure';
 import { flowFrom, insertionSlot } from './reorder';
@@ -71,17 +75,11 @@ import {
   registerNodeElement,
   unregisterNodeElement,
 } from './node-registry';
-import {
-  DEFAULT_CANVAS_HEIGHT,
-  DEFAULT_CANVAS_WIDTH,
-  previewBoundText,
-  type UINode,
-  type UINodeType,
-} from './tree-model';
+import { previewBoundText, type UINode, type UINodeType } from './tree-model';
 
-// The canvas size (canvasWidth × canvasHeight on the parsed root node, default
-// 1920×1080) is the UI's design/virtual resolution, scaled to fit the player's
-// screen at runtime. On top of that sits the EDITOR zoom (the user can zoom; see
+// Three scales stack here. The DESIGN resolution (the code store's virtualSize,
+// from src/ui/index.tsx) is fitted into the previewed SCREEN, exactly as the
+// runtime fits it to the player's — and on top of both sits the EDITOR zoom (see
 // CanvasComponent), which measure.ts owns as the live viewport↔logical px factor.
 const ZOOM_MIN = 0.1;
 const ZOOM_MAX = 2;
@@ -1318,7 +1316,9 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node, hidden }) => {
       ) : null}
       {/* Label/Button text: a mixed-content editor while editing (double-click) —
           literal text + variable/prop chips — else the resolved preview text.
-          Button had no text branch before, so it painted as an empty box. */}
+          Button had no text branch before, so it painted as an empty box.
+          Markup (<b>/<i>) renders only on the non-editing branch: the editor has
+          to show the raw tags, since typing them is the only way to edit them. */}
       {rendersText(node.type) ? (
         editing ? (
           <span
@@ -1340,7 +1340,7 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node, hidden }) => {
             />
           </span>
         ) : labelText ? (
-          <span className="ui-designer-canvas-text">{labelText}</span>
+          <span className="ui-designer-canvas-text">{renderTextMarkup(labelText)}</span>
         ) : null
       ) : null}
       {node.children.map(child => (
@@ -1484,7 +1484,7 @@ const CanvasReadonlyNode: React.FC<{
         </span>
       ) : null}
       {rendersText(node.type) && labelText ? (
-        <span className="ui-designer-canvas-text">{labelText}</span>
+        <span className="ui-designer-canvas-text">{renderTextMarkup(labelText)}</span>
       ) : null}
       {node.children.map(child => (
         <CanvasReadonlyNode
@@ -1641,7 +1641,7 @@ const CanvasComponent: React.FC = () => {
   const tree = useUINodeTree();
   // Resolve `state.<var>` → its default value for the text preview (built once
   // here; every CanvasNode reads it via VarPreviewContext).
-  const { bindingSurface, emptyRoot } = useCodeState();
+  const { bindingSurface, emptyRoot, virtualSize } = useCodeState();
   const resolveVar = useMemo(() => {
     const map = buildResolveMap(bindingSurface.variables);
     return (expr: string) => map[expr];
@@ -1655,6 +1655,7 @@ const CanvasComponent: React.FC = () => {
   // slice where the code store can read it too.
   const dispatch = useAppDispatch();
   const device = useAppSelector(getPlatform);
+  const screen = useAppSelector(getScreens)[device];
   const [showSafeAreas, setShowSafeAreas] = useState(false);
   const viewportRef = useRef<HTMLDivElement>(null);
   // Infinite-canvas pan (Figma-style): the viewport centres the stage and this
@@ -1685,23 +1686,34 @@ const CanvasComponent: React.FC = () => {
     });
   }, [selectedNode]);
 
-  // Per-UI design canvas size. The stage reserves the *scaled* footprint so the
-  // canvas holds a strict size and the viewport scrolls when it overflows.
-  const canvasWidth = tree?.canvasWidth ?? DEFAULT_CANVAS_WIDTH;
-  const canvasHeight = tree?.canvasHeight ?? DEFAULT_CANVAS_HEIGHT;
+  // The DESIGN resolution the UI is authored at — src/ui/index.tsx's
+  // virtualWidth/Height, which is what the explorer scales px against.
+  const canvasWidth = virtualSize.width;
+  const canvasHeight = virtualSize.height;
 
-  // Mobile preview: the UI is scaled to fit a reference device screen (mirrors
-  // the runtime materializeRoot formula), letterboxed inside the device frame.
-  const fitScale =
-    device === 'mobile'
-      ? Math.min(MOBILE_REFERENCE.width / canvasWidth, MOBILE_REFERENCE.height / canvasHeight)
-      : 1;
+  // …fitted into the SCREEN being previewed (mirrors the runtime materializeRoot
+  // formula) and letterboxed inside it. Falls out as 1 whenever the screen preset
+  // matches the design size, which is the common desktop case.
+  const fitScale = Math.min(screen.width / canvasWidth, screen.height / canvasHeight);
+
+  // A transposed preset is not in the list, so surface the live size as its own
+  // option — otherwise flipping orientation would leave the select showing
+  // whichever entry happened to sort first.
+  const screenOptions = useMemo(() => {
+    const presets = SCREEN_PRESETS[device].map(p => ({
+      value: `${p.width}x${p.height}`,
+      label: p.label,
+    }));
+    const current = `${screen.width}x${screen.height}`;
+    if (presets.some(p => p.value === current)) return presets;
+    return [...presets, { value: current, label: `${screen.width} × ${screen.height}` }];
+  }, [device, screen.width, screen.height]);
 
   // Keep the module-level scale (read by the drag/resize coordinate math and by
-  // measure.ts) in sync with the rendered zoom. In the device frame the UI carries
-  // a second scale-to-fit transform, so the EFFECTIVE scale is the product — that
-  // is what the px↔logical conversions must divide by for editing to track the
-  // pointer there.
+  // measure.ts) in sync with the rendered zoom. The UI also carries the
+  // design→screen fit transform, so the EFFECTIVE scale is the product — that is
+  // what the px↔logical conversions must divide by for editing to track the
+  // pointer.
   useEffect(() => {
     setCanvasScale(scale * fitScale);
   }, [scale, fitScale]);
@@ -1769,88 +1781,67 @@ const CanvasComponent: React.FC = () => {
         <div className="ui-designer-canvas-stagewrap">
           {tree ? (
             <>
-              {device === 'desktop' ? (
+              {/* One shape for both devices: a screen of the previewed size, with
+                  the design-resolution UI scaled to fit and letterboxed inside it.
+                  Desktop used to be its own branch with the root AS the screen —
+                  that is just this with fitScale === 1. The frame chrome (black,
+                  rounded) is the only thing still device-specific.
+                  The stage reserves the *scaled* footprint so the canvas holds a
+                  strict size and the viewport scrolls when it overflows. */}
+              <div
+                className={cx('ui-designer-canvas-stage', {
+                  'ui-designer-device-frame': device === 'mobile',
+                })}
+                style={{
+                  width: screen.width * scale,
+                  height: screen.height * scale,
+                  transform: `translate(${pan.x}px, ${pan.y}px)`,
+                }}
+              >
                 <div
-                  className="ui-designer-canvas-stage"
-                  style={{
-                    width: canvasWidth * scale,
-                    height: canvasHeight * scale,
-                    transform: `translate(${pan.x}px, ${pan.y}px)`,
-                  }}
+                  className="ui-designer-canvas-screen"
+                  style={
+                    {
+                      width: screen.width,
+                      height: screen.height,
+                      transform: `scale(${scale})`,
+                      transformOrigin: 'top left',
+                      // Exposed so selection chrome can counter-scale and stay
+                      // legible at any zoom without re-rendering each node. Two
+                      // vars because there are two frames: chrome INSIDE the canvas
+                      // root also carries the fit transform, chrome alongside it
+                      // (the safe-area overlay) carries only the zoom.
+                      '--uid-scale': scale * fitScale,
+                      '--uid-screen-scale': scale,
+                    } as React.CSSProperties
+                  }
                 >
+                  {/* Editable through both transforms: drag/resize math is
+                      delta-based over client rects divided by the effective scale,
+                      so the fit transform and the letterbox offset cancel out. */}
                   <div
                     className="ui-designer-canvas-root"
-                    style={
-                      {
-                        width: canvasWidth,
-                        height: canvasHeight,
-                        transform: `scale(${scale})`,
-                        transformOrigin: 'top left',
-                        // Exposed so selection chrome (action bar) can counter-scale to
-                        // stay legible at any zoom without re-rendering each node.
-                        '--uid-scale': scale,
-                      } as React.CSSProperties
-                    }
+                    style={{
+                      width: canvasWidth,
+                      height: canvasHeight,
+                      transform: `scale(${fitScale})`,
+                      transformOrigin: 'top left',
+                      position: 'absolute',
+                      left: (screen.width - canvasWidth * fitScale) / 2,
+                      top: (screen.height - canvasHeight * fitScale) / 2,
+                    }}
                   >
                     <CanvasNodeView node={tree} />
-                    {showSafeAreas ? (
-                      <SafeAreaOverlay
-                        width={canvasWidth}
-                        height={canvasHeight}
-                        device="desktop"
-                      />
-                    ) : null}
                   </div>
+                  {showSafeAreas ? (
+                    <SafeAreaOverlay
+                      width={screen.width}
+                      height={screen.height}
+                      device={device}
+                    />
+                  ) : null}
                 </div>
-              ) : (
-                <div
-                  className="ui-designer-device-frame"
-                  style={{
-                    width: MOBILE_REFERENCE.width * scale,
-                    height: MOBILE_REFERENCE.height * scale,
-                    transform: `translate(${pan.x}px, ${pan.y}px)`,
-                  }}
-                >
-                  <div
-                    className="ui-designer-device-screen"
-                    style={
-                      {
-                        width: MOBILE_REFERENCE.width,
-                        height: MOBILE_REFERENCE.height,
-                        transform: `scale(${scale})`,
-                        transformOrigin: 'top left',
-                        '--uid-scale': scale * fitScale,
-                      } as React.CSSProperties
-                    }
-                  >
-                    {/* UI scaled-to-fit + letterboxed inside the device screen.
-                        Editable: drag/resize math is delta-based over client rects
-                        divided by the effective scale, so the extra transform and
-                        the letterbox offset both cancel out. */}
-                    <div
-                      className="ui-designer-canvas-root"
-                      style={{
-                        width: canvasWidth,
-                        height: canvasHeight,
-                        transform: `scale(${fitScale})`,
-                        transformOrigin: 'top left',
-                        position: 'absolute',
-                        left: (MOBILE_REFERENCE.width - canvasWidth * fitScale) / 2,
-                        top: (MOBILE_REFERENCE.height - canvasHeight * fitScale) / 2,
-                      }}
-                    >
-                      <CanvasNodeView node={tree} />
-                    </div>
-                    {showSafeAreas ? (
-                      <SafeAreaOverlay
-                        width={MOBILE_REFERENCE.width}
-                        height={MOBILE_REFERENCE.height}
-                        device="mobile"
-                      />
-                    ) : null}
-                  </div>
-                </div>
-              )}
+              </div>
             </>
           ) : emptyRoot ? (
             <EmptyRootDropZone />
@@ -1916,6 +1907,38 @@ const CanvasComponent: React.FC = () => {
               aria-pressed={device === 'mobile'}
             >
               <IoPhoneLandscapeOutline />
+            </button>
+            <select
+              className="ui-designer-canvas-screen-select"
+              aria-label="Preview screen"
+              title="Preview screen"
+              value={`${screen.width}x${screen.height}`}
+              onChange={e => {
+                const [width, height] = e.target.value.split('x').map(Number);
+                dispatch(setScreen({ device, screen: { width, height } }));
+              }}
+            >
+              {screenOptions.map(option => (
+                <option
+                  key={option.value}
+                  value={option.value}
+                >
+                  {option.label}
+                </option>
+              ))}
+            </select>
+            <button
+              type="button"
+              className="ui-designer-canvas-zoom-btn"
+              onClick={() =>
+                dispatch(
+                  setScreen({ device, screen: { width: screen.height, height: screen.width } }),
+                )
+              }
+              title="Swap orientation"
+              aria-label="Swap orientation"
+            >
+              <IoSyncOutline />
             </button>
             <button
               type="button"

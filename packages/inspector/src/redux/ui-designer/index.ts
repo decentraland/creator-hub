@@ -3,30 +3,30 @@ import { createSlice } from '@reduxjs/toolkit';
 import type { Entity } from '@dcl/ecs';
 
 import type { InteractionStateKey } from '../../components/UIDesigner/code/interaction-convention';
-import type { DeviceKind } from '../../components/UIDesigner/safe-areas';
+import type { DeviceKind, ScreenSize } from '../../components/UIDesigner/safe-areas';
+import { DEFAULT_SCREENS } from '../../components/UIDesigner/safe-areas';
 import type { RootState } from '../store';
 
 // Persist the property-panel group collapse state across reloads. There is no
 // persistence middleware in this app, so we read/write localStorage directly
 // (guarded for non-browser/test environments).
 const COLLAPSED_GROUPS_KEY = 'ui-designer:collapsed-groups';
+const SCREENS_KEY = 'ui-designer:screens';
 
-function loadCollapsedGroups(): Record<string, boolean> {
-  if (typeof localStorage === 'undefined') return {};
+function loadPersisted<T>(key: string, fallback: T): T {
+  if (typeof localStorage === 'undefined') return fallback;
   try {
-    return JSON.parse(localStorage.getItem(COLLAPSED_GROUPS_KEY) ?? '{}') as Record<
-      string,
-      boolean
-    >;
+    const raw = localStorage.getItem(key);
+    return raw ? (JSON.parse(raw) as T) : fallback;
   } catch {
-    return {};
+    return fallback;
   }
 }
 
-function persistCollapsedGroups(groups: Record<string, boolean>): void {
+function persist(key: string, value: unknown): void {
   if (typeof localStorage === 'undefined') return;
   try {
-    localStorage.setItem(COLLAPSED_GROUPS_KEY, JSON.stringify(groups));
+    localStorage.setItem(key, JSON.stringify(value));
   } catch {
     // ignore quota / disabled-storage errors
   }
@@ -53,6 +53,12 @@ export interface UIDesignerState {
   // The device the canvas previews AND edits: a platform-variant node renders and
   // routes edits to the branch matching this (see code/platform-convention.ts).
   platform: DeviceKind;
+  // The SCREEN the canvas frames per device — a preview preference, not scene
+  // data, so it is persisted per user and never reaches the composite. Held as
+  // resolved dimensions rather than a preset id so the orientation swap is just
+  // a transpose. (Distinct from the design resolution, which lives in the code
+  // store and comes from src/ui/index.tsx.)
+  screens: Record<DeviceKind, ScreenSize>;
 }
 
 export const initialState: UIDesignerState = {
@@ -61,7 +67,8 @@ export const initialState: UIDesignerState = {
   hidden: {},
   locked: {},
   aspectLocked: {},
-  collapsedGroups: loadCollapsedGroups(),
+  collapsedGroups: loadPersisted<Record<string, boolean>>(COLLAPSED_GROUPS_KEY, {}),
+  screens: loadPersisted<Record<DeviceKind, ScreenSize>>(SCREENS_KEY, DEFAULT_SCREENS),
   interactionLayer: 'base',
   platform: 'desktop',
 };
@@ -92,6 +99,10 @@ export const uiDesignerSlice = createSlice({
     },
     setPlatform: (state, { payload }: PayloadAction<{ platform: DeviceKind }>) => {
       state.platform = payload.platform;
+    },
+    setScreen: (state, { payload }: PayloadAction<{ device: DeviceKind; screen: ScreenSize }>) => {
+      state.screens[payload.device] = payload.screen;
+      persist(SCREENS_KEY, state.screens);
     },
     setExpanded: (state, { payload }: PayloadAction<{ entity: Entity; expanded: boolean }>) => {
       state.expanded[payload.entity as unknown as number] = payload.expanded;
@@ -133,7 +144,7 @@ export const uiDesignerSlice = createSlice({
       { payload }: PayloadAction<{ title: string; collapsed: boolean }>,
     ) => {
       state.collapsedGroups[payload.title] = payload.collapsed;
-      persistCollapsedGroups(state.collapsedGroups);
+      persist(COLLAPSED_GROUPS_KEY, state.collapsedGroups);
     },
     resetExpanded: state => {
       state.expanded = {};
@@ -163,6 +174,7 @@ export const {
   resetNodeState,
   setInteractionLayer,
   setPlatform,
+  setScreen,
 } = uiDesignerSlice.actions;
 
 export const getSelectedNodes = (state: RootState) => state.uiDesigner.selectedNodes;
@@ -175,5 +187,6 @@ export const getAspectLockedNodes = (state: RootState) => state.uiDesigner.aspec
 export const getCollapsedGroups = (state: RootState) => state.uiDesigner.collapsedGroups;
 export const getInteractionLayer = (state: RootState) => state.uiDesigner.interactionLayer;
 export const getPlatform = (state: RootState) => state.uiDesigner.platform;
+export const getScreens = (state: RootState) => state.uiDesigner.screens;
 
 export default uiDesignerSlice.reducer;

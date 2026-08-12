@@ -96,7 +96,11 @@ const Toolbar = withSdk(({ sdk }) => {
     if (!editorCamera) return;
     editorCamera.setMode(editorCamera.getMode() === 'free' ? 'avatar' : 'free');
   }, [editorCamera]);
-  useHotkey([TOGGLE_FREE_CAMERA], handleToggleFreeCamera);
+  // Same reasoning as the Renderer's camera keys: bare backtick, and there is no
+  // scene camera to steer in 2D (the button itself is already hidden below).
+  useHotkey([TOGGLE_FREE_CAMERA], handleToggleFreeCamera, undefined, {
+    enabled: !isUIDesignerOpen,
+  });
   const handleSetCameraMode = useCallback(
     (mode: EditorCameraMode) => {
       if (!editorCamera || editorCamera.getMode() === mode) return;
@@ -216,23 +220,26 @@ const Toolbar = withSdk(({ sdk }) => {
           />
         </div>
       )}
-      {sceneRun && (
-        <ToolbarButton
-          className={cx('scene-run', { active: sceneRunning })}
-          onClick={handleToggleSceneRun}
-          title={sceneRunning ? 'Pause scene' : 'Run scene'}
-        >
-          {sceneRunning ? <BiPause /> : <BiPlay />}
-        </ToolbarButton>
-      )}
-      {sceneRun && (
-        <ToolbarButton
-          className="scene-reset"
-          onClick={handleResetScene}
-          title="Stop and reset scene to its initial state"
-        >
-          <BiStop />
-        </ToolbarButton>
+      {/* Run / Stop drive the 3D scene's SDK7 execution, which 2D has nothing to
+          say about — the designer edits .tsx on disk. 3D-only for the same reason
+          as the rest of the chrome below. */}
+      {sceneRun && !isUIDesignerOpen && (
+        <>
+          <ToolbarButton
+            className={cx('scene-run', { active: sceneRunning })}
+            onClick={handleToggleSceneRun}
+            title={sceneRunning ? 'Pause scene' : 'Run scene'}
+          >
+            {sceneRunning ? <BiPause /> : <BiPlay />}
+          </ToolbarButton>
+          <ToolbarButton
+            className="scene-reset"
+            onClick={handleResetScene}
+            title="Stop and reset scene to its initial state"
+          >
+            <BiStop />
+          </ToolbarButton>
+        </>
       )}
       {/* 3D-only chrome. Preferences offers camera-rotation (no scene camera in
           2D) and autosave (code mode writes each splice straight to disk, so the

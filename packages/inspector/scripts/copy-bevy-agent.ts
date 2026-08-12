@@ -2,6 +2,8 @@ import { execFileSync } from 'child_process';
 import fs from 'fs';
 import { resolve } from 'path';
 
+import { AGENT_BASE_URL, REALM_NAME, SERVED_DIR } from '../bevy-agent-realm';
+
 // Export the super-user editor-agent scene (agents/bevy) as a STATIC realm into
 // the inspector's served `public/bevy-agent/` dir. The Bevy engine loads the
 // agent via `?systemScene=<realm url>`, and it consumes a realm the Catalyst way
@@ -11,22 +13,18 @@ import { resolve } from 'path';
 // so a plain static host (our http-server) can serve it — no second sdk-commands
 // process at runtime.
 //
-// The one runtime-dynamic bit is the origin: the inspector http-server's port is
-// chosen per app launch, so we bake a `__ORIGIN__` placeholder into the baseUrl
-// here and the host rewrites `about` to the real origin when it serves the app
-// (creator-hub main/inspector.ts). Everything else is content-addressed and
-// immutable.
+// The one runtime-dynamic bit is the origin: the serving port is chosen per
+// launch, so the baseUrl carries a placeholder that the server swaps out per
+// request — the Creator Hub's inspector server in the app, the dev proxy in
+// build.js when running against a watch build. Everything else is
+// content-addressed and immutable. See ../bevy-agent-realm.js for the contract.
 //
 // The agent is a SEPARATE SDK7 project with its own node_modules (NOT a
 // workspace) pinned to the engine's companion SDK — so we run ITS sdk-commands,
 // not the inspector's. Its `bin/index.js` must already be built.
 
 const AGENT_DIR = resolve(__dirname, '../agents/bevy');
-const DEST = resolve(__dirname, '../public/bevy-agent');
-const REALM_NAME = 'bevy-agent';
-// Served at `<origin>/bevy-agent/`; the placeholder is swapped for the real
-// origin at serve time. Trailing slash is required by export-static.
-const BASE_URL = 'http://__ORIGIN__/bevy-agent/';
+const DEST = resolve(__dirname, '..', 'public', SERVED_DIR);
 
 const agentBin = resolve(AGENT_DIR, 'bin/index.js');
 if (!fs.existsSync(agentBin)) {
@@ -59,7 +57,7 @@ execFileSync(
     '--realmName',
     REALM_NAME,
     '--baseUrl',
-    BASE_URL,
+    AGENT_BASE_URL,
   ],
   { cwd: AGENT_DIR, stdio: 'inherit' },
 );

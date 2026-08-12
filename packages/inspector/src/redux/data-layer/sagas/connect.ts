@@ -13,6 +13,7 @@ import { createLocalDataLayerRpcClient } from '../../../lib/data-layer/client/lo
 import { DataServiceDefinition } from '../../../lib/data-layer/proto/gen/data-layer.gen';
 import type { DataLayerRpcClient } from '../../../lib/data-layer/types';
 import { createIframeDataLayerRpcClient } from '../../../lib/data-layer/client/iframe-data-layer';
+import { wireParentBridges } from '../../../lib/data-layer/client/parent-bridges';
 import type { InspectorConfig } from '../../../lib/logic/config';
 import { getConfig } from '../../../lib/logic/config';
 
@@ -59,6 +60,14 @@ export function* connectSaga() {
     );
     yield put(connected({ dataLayer }));
     return;
+  }
+  // The ws data layer (the Bevy renderer's, shared with the realm so entity ids
+  // line up with the engine) does not carry the scene's FILES. Code mode reads
+  // and writes src/ui/*.tsx through the parent-window storage bridge, so wire it
+  // here too whenever the host gave us one — otherwise the UI Designer looks live
+  // while every read returns '' and every write is dropped.
+  if (config.dataLayerRpcParentUrl) {
+    yield call(wireParentBridges, config.dataLayerRpcParentUrl);
   }
   const ws: WebSocket = yield call(createWebSocketConnection, config.dataLayerRpcWsUrl);
   const socketChannel: EventChannel<WsActions> = yield call(createSocketChannel, ws);

@@ -2,6 +2,7 @@ import { useSyncExternalStore } from 'react';
 import type { Entity } from '@dcl/ecs';
 
 import { getCodeParser } from '../../../lib/logic/code-parser';
+import { markLocalEdit } from '../../../lib/logic/local-edit';
 import { isValidIdentifier } from '../../../lib/sdk/operations/validators';
 import { getStorage } from '../../../lib/data-layer/client/storage';
 import { store as reduxStore } from '../../../redux/store';
@@ -15,7 +16,8 @@ import {
 } from '../../../redux/ui-designer';
 import { dragPinPatch } from '../align-presets';
 import type { DeviceKind } from '../safe-areas';
-import type { UINodeType } from '../tree-model';
+import { DEFAULT_CANVAS_HEIGHT, DEFAULT_CANVAS_WIDTH, type UINodeType } from '../tree-model';
+import type { VirtualSize } from './aggregator';
 import {
   generateInteractionHelper,
   generatePlatformHelper,
@@ -190,6 +192,11 @@ export interface CodeState {
   // toolbar buttons; the stacks themselves are module-private).
   canUndo: boolean;
   canRedo: boolean;
+  // The design resolution from src/ui/index.tsx's setUiRenderer call — what the
+  // explorer scales px against, and therefore what the canvas stage must frame.
+  // Lives here and not on the parsed root: it is per-SCENE (one aggregator), not
+  // per-root, and parse-adapter only ever sees one root file.
+  virtualSize: VirtualSize;
 }
 
 let state: CodeState = {
@@ -206,6 +213,7 @@ let state: CodeState = {
   parsing: false,
   canUndo: false,
   canRedo: false,
+  virtualSize: { width: DEFAULT_CANVAS_WIDTH, height: DEFAULT_CANVAS_HEIGHT },
 };
 
 const listeners = new Set<() => void>();
@@ -280,6 +288,9 @@ async function writeToDisk(path: string, source: string): Promise<void> {
     warnNoStorage('write', path);
     return;
   }
+  // Claim the write before it lands: a renderer watching the scene folder for
+  // external saves (Bevy's hot reload) must not mistake our own splice for one.
+  markLocalEdit();
   try {
     await storage.writeFile(path, new TextEncoder().encode(source) as unknown as Buffer);
   } catch (e) {
@@ -871,13 +882,24 @@ async function refreshRoots(): Promise<CodeRoot[]> {
   return roots;
 }
 
+// Adopt the aggregator's design resolution into state, so the canvas frames what
+// the scene actually ships. It is hand-editable (generateUiIndex says as much in
+// the file it writes), so this is re-read on the disk poll too, not just on the
+// regen that carries it forward.
+async function syncVirtualSize(): Promise<VirtualSize> {
+  const virtual = readVirtualSize(await readFromDisk(UI_INDEX));
+  const { width, height } = state.virtualSize;
+  if (virtual.width !== width || virtual.height !== height) set({ virtualSize: virtual });
+  return virtual;
+}
+
 // (Re)generate the src/ui/index.tsx aggregator from the TOP-LEVEL roots only —
 // components (marker present) render where they're nested, not standalone.
 // The whole file is rewritten, so the one hand-editable value in it (the virtual
 // size) is carried over from the previous contents.
 async function regenerateAggregator(roots: CodeRoot[]): Promise<void> {
   const top = roots.filter(r => r.topLevel);
-  const virtual = readVirtualSize(await readFromDisk(UI_INDEX));
+  const virtual = await syncVirtualSize();
   const src = generateUiIndex(
     top.map(r => ({ component: r.name, from: `./${r.name}` })),
     virtual,
@@ -1142,6 +1164,9 @@ async function pollDisk(): Promise<void> {
     const prev = rootsKey(state.roots);
     const roots = await refreshRoots();
     if (rootsKey(roots) !== prev) await regenerateAggregator(roots);
+    // 2b. …and an external edit to the aggregator's design resolution, which
+    //     regenerateAggregator only picks up when the root SET changes.
+    else await syncVirtualSize();
     // 3. Nested-component previews: re-resolve so an external edit to a referenced
     //    root reflects live inside the block. Cheap when unchanged (cached parse +
     //    a no-op set skip); only re-renders when a referenced file actually moved.
