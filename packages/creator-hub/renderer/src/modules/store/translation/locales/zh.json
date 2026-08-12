@@ -43,7 +43,9 @@
       "failed": {
         "title": "加载失败",
         "timeout": "场景加载时间过长，可能其代码中存在错误。",
-        "back": "返回场景"
+        "back": "返回场景",
+        "outdated_deps": "此场景的依赖项已过时，不支持 Bevy 渲染器。请更新它们以继续。",
+        "update_deps": "更新依赖项"
       }
     },
     "header": {

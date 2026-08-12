@@ -43,6 +43,7 @@ describe('createSelectionBridge', () => {
       | {
           kind: string;
           entities: { entity: number; position: unknown; rotation: unknown }[];
+          highlight: number[];
           alignToWorld: boolean;
           snap: unknown;
           mode: string;
@@ -72,6 +73,7 @@ describe('createSelectionBridge', () => {
             rotation: { x: 0.5, y: 0.5, z: 0.5, w: 0.5 },
           },
         ],
+        highlight: [entity as number],
         alignToWorld: true,
         snap: null,
         mode: 'translate',
@@ -162,6 +164,7 @@ describe('createSelectionBridge', () => {
             rotation: { x: 0, y: 0.5, z: 0, w: 0.5 },
           },
         ],
+        highlight: [entity as number],
         alignToWorld: true,
         snap: null,
         mode: 'scale',
@@ -265,6 +268,7 @@ describe('createSelectionBridge', () => {
       expect(lastSelection()).toEqual({
         kind: 'set-selection',
         entities: [],
+        highlight: [],
         alignToWorld: true,
         snap: null,
         mode: 'free',

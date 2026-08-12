@@ -66,6 +66,21 @@ export interface SpawnArea {
 }
 
 /**
+ * An entity whose GltfContainer references a missing/invalid asset (#1465). The
+ * inspector flags the src as "Invalid" but the engine renders nothing, leaving no
+ * viewport indication when the entity is deselected — so the agent draws a
+ * placeholder marker at `position` (scene-local, like SpawnArea) instead.
+ */
+export interface BrokenAsset {
+  // The inspector entity id (for dedupe/tracking; the marker is a separate agent
+  // entity).
+  entity: number;
+  // The broken entity's world position, scene-local (the agent adds the scene
+  // offset), matching how SpawnArea centers are sent.
+  position: BusVec3;
+}
+
+/**
  * agent → inspector (`to: 'page'`). Viewport interaction results:
  *  - `pick`: entity under the click (entity 0 = clean miss / deselect).
  *  - `gizmoCommit`: the committed transform(s) of a gizmo drag (position only
@@ -143,7 +158,12 @@ export type AgentToPage =
   // (#1420 false-play) and the editor overrides / animation pause aren't replayed
   // (#1421 anims run a few frames). The host waits for this to re-enable Play and
   // to reconcile overrides, instead of guessing with a fixed timeout.
-  | { kind: 'reset-complete'; ok: boolean };
+  | { kind: 'reset-complete'; ok: boolean }
+  // The inspected scene logged a runtime error (a throw in main()/a system — the
+  // engine records it as a SceneError). The agent polls the scene logs and reports
+  // each NEW error so the host can notify the user and stop the scene (#1448).
+  // `message` is the error's first log line.
+  | { kind: 'scene-error'; message: string };
 
 /** One selected entity's world pose, supplied by the inspector (the agent can't
  * read the inspected scene's Transform from its own engine). */
@@ -169,10 +189,17 @@ export interface SelectionEntity {
 export type PageToScene =
   | {
       kind: 'set-selection';
-      // Every selected entity's world pose. The gizmo anchors to their centroid;
-      // each entity's offset from the centroid is cached at drag start and the
-      // drag transforms them about that pivot. Empty = nothing selected.
+      // Every GIZMO-able selected entity's world pose. The gizmo anchors to their
+      // centroid; each entity's offset from the centroid is cached at drag start
+      // and the drag transforms them about that pivot. Empty = no gizmo. Excludes
+      // locked + hidden entities (they must not be movable in the viewport).
       entities: SelectionEntity[];
+      // Entity ids to OUTLINE (render-only selection highlight). Broader than
+      // `entities`: it includes LOCKED entities — they can't be moved (no gizmo)
+      // but should still show they're selected when picked from the tree (#1444).
+      // Hidden entities are excluded (nothing to outline). Omitted by old callers →
+      // the agent falls back to `entities`.
+      highlight?: number[];
       // The toolbar's "align to world" checkbox: true = translate/rotate handles
       // on the WORLD axes, false = on the entity's local axes. Scale ignores it
       // (always local). Local alignment applies to single selection only.
@@ -228,6 +255,12 @@ export type PageToScene =
   // multiple points). The inspector recomputes + resends the full set whenever the
   // scene's spawnPoints metadata changes; an empty array clears them.
   | { kind: 'set-spawn-areas'; areas: SpawnArea[] }
+  // Draw a placeholder marker for each entity whose GltfContainer asset is
+  // missing/invalid (#1465), so a broken asset is visible in the viewport even
+  // when deselected. The inspector recomputes + resends the full set whenever a
+  // GltfContainer, its transform, or the asset catalog changes; an empty array
+  // clears the markers.
+  | { kind: 'set-broken-assets'; assets: BrokenAsset[] }
   // Freeze (`frozen: true`) or run (`false`) the inspected scene. Frozen = the
   // scene stops ticking (no SDK7 systems / timers / onUpdate) so it's a static
   // subject to edit; the editor agent keeps running regardless. Editor default is
@@ -248,7 +281,14 @@ export type PageToScene =
   // here; the agent's fly camera adds it to its per-frame move. `up`/`down` are the
   // current held state of each key (keydown → true, keyup → false); both may be
   // true (net zero) or false (no vertical). Ignored outside free-camera mode.
-  | { kind: 'set-vertical-input'; up: boolean; down: boolean };
+  | { kind: 'set-vertical-input'; up: boolean; down: boolean }
+  // Enable (`true`, default) or disable (`false`) viewport EDITING — the agent's
+  // click-to-pick + gizmo grab. Disabled lets a viewport click reach the running
+  // scene instead (so a button opens its door, etc.) rather than selecting/moving
+  // the entity (#1458). The inspector's "Interact" toolbar toggle sends this; scene
+  // pointer events are delivered by the engine regardless, so this only turns the
+  // agent's editing interception off.
+  | { kind: 'set-editing-enabled'; enabled: boolean };
 
 /** Every message is wrapped so a peer ignores its own posts / the wrong direction. */
 export interface BusEnvelope {
