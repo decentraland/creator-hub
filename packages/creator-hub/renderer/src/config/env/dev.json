@@ -23,5 +23,5 @@
   "FEEDBACK_URL": "https://decentraland.typeform.com/creatorhub",
   "FEATURE_FLAGS_URL": "https://feature-flags.decentraland.org",
   "WORLDS_STORAGE_SERVICE_URL": "https://decentraland.zone/storage",
-  "METRICS_API_URL": "http://localhost:8787/v1"
+  "METRICS_API_URL": "https://creators-data.decentraland.org/v2"
 }
