@@ -948,6 +948,9 @@
     "header": {
       "title": "Analytics"
     },
+    "sign_in": {
+      "title": "Sign in to see your Places analytics"
+    },
     "empty_list": {
       "title": "No Places to analyse yet",
       "description": "Publish a scene to start tracking its performance. Once it's live, you'll find key insights and metrics about your Place here.",
