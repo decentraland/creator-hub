@@ -7,7 +7,7 @@ const config = {
     output: 'dist',
     buildResources: 'buildResources',
   },
-  beforePack: path.join(__dirname, 'scripts', 'copy-npm-for-asar.js'),
+  beforePack: path.join(__dirname, 'scripts', 'before-pack.js'),
   // npm must be under app dir for asarUnpack to match (26.4.1+). beforePack runs before file copy.
   files: [
     'package.json',
@@ -30,6 +30,14 @@ const config = {
     {
       from: 'devtools-frontend',
       to: 'devtools-frontend',
+      filter: ['**/*'],
+    },
+    // Real Node.js binary, fetched by the beforePack hook. Scene tooling is spawned on this
+    // instead of Electron so the multiplayer server gets a runtime whose ABI matches the
+    // native builds it depends on. TEMPORARY: remove with the Bevy migration.
+    {
+      from: 'node-bin',
+      to: 'node-bin',
       filter: ['**/*'],
     },
   ],
