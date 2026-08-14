@@ -33,3 +33,5 @@ settings.local.json
 .serena/
 # Claude agent verification screenshots
 .claude/screenshots/
+# Playwright MCP session output
+.playwright-mcp/
