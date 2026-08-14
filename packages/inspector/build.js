@@ -44,13 +44,6 @@ async function main() {
 
   if (WATCH_MODE) {
     await context.watch();
-    // esbuild serves the bundle + public/ on an internal port; a thin proxy in
-    // front stamps COOP/COEP on every response. The bevy-explorer engine wasm
-    // (served under public/bevy-engine) uses SharedArrayBuffer threads, which
-    // the browser only enables for cross-origin-isolated documents — i.e. ones
-    // served with `Cross-Origin-Opener-Policy: same-origin` +
-    // `Cross-Origin-Embedder-Policy: require-corp`. esbuild's serve() can't set
-    // response headers, so we can't add them there directly.
     const internal = await context.serve({ servedir: 'public' });
     const publicPort = await serveWithCrossOriginIsolation(internal.host, internal.port);
     console.log(`> Serving on http://localhost:${publicPort}`);
@@ -77,6 +70,21 @@ async function main() {
 // crossOriginIsolated (so SharedArrayBuffer works) while fetching cross-origin
 // no-cors subresources without credentials. This matches what the engine's own
 // service worker sets (see bevy-engine/service_worker.js + its issue #807 note).
+/**
+ * Merges `overrides` over `upstream`, dropping every casing of each overridden name.
+ *
+ * Node lowercases the header names it receives, so spreading capitalized overrides on top of
+ * them emits BOTH spellings as two header lines rather than replacing anything. The browser
+ * joins those into `credentialless, credentialless`, fails to parse it as a structured field and
+ * falls back to `unsafe-none` — isolation silently off, with headers that read as if it were on.
+ * esbuild does not currently send these, so this only matters the day something upstream does.
+ */
+function withIsolationHeaders(upstream, overrides) {
+  const overridden = new Set(Object.keys(overrides).map(name => name.toLowerCase()));
+  const kept = Object.entries(upstream).filter(([name]) => !overridden.has(name.toLowerCase()));
+  return { ...Object.fromEntries(kept), ...overrides };
+}
+
 function serveWithCrossOriginIsolation(upstreamHost, upstreamPort) {
   const server = http.createServer((req, res) => {
     const proxyReq = http.request(
@@ -88,13 +96,15 @@ function serveWithCrossOriginIsolation(upstreamHost, upstreamPort) {
         headers: req.headers,
       },
       proxyRes => {
-        res.writeHead(proxyRes.statusCode ?? 502, {
-          ...proxyRes.headers,
-          'Cross-Origin-Opener-Policy': 'same-origin',
-          'Cross-Origin-Embedder-Policy': 'credentialless',
-          // Lets the isolated top document embed the engine's own subresources.
-          'Cross-Origin-Resource-Policy': 'cross-origin',
-        });
+        res.writeHead(
+          proxyRes.statusCode ?? 502,
+          withIsolationHeaders(proxyRes.headers, {
+            'Cross-Origin-Opener-Policy': 'same-origin',
+            'Cross-Origin-Embedder-Policy': 'credentialless',
+            // Lets the isolated top document embed the engine's own subresources.
+            'Cross-Origin-Resource-Policy': 'cross-origin',
+          }),
+        );
         proxyRes.pipe(res);
       },
     );
