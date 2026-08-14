@@ -8,6 +8,9 @@ export function isDev(chainId: ChainId): boolean {
 
 export const REPORT_ISSUES_URL = config.get('REPORT_ISSUES_URL');
 export const FEEDBACK_URL = config.get('FEEDBACK_URL');
+export const HELP_FAQ_URL = config.get('HELP_FAQ_URL');
+export const CONTACT_SUPPORT_URL = config.get('CONTACT_SUPPORT_URL');
+export const DISCORD_URL = config.get('DISCORD_URL');
 export const SUBMIT_EVENT_URL = 'https://decentraland.org/events/submit';
 
 /** Where "Create Event" sends a Place owner. */

@@ -7,7 +7,7 @@ import logo from '/assets/images/logo-editor.png';
 
 import './styles.css';
 
-const AboutTab: React.FC<AboutTabProps> = ({ version, onViewChangelog }) => {
+const AboutTab: React.FC<AboutTabProps> = ({ version, onViewChangelog, autoCheckForUpdates }) => {
   return (
     <Box className="AboutTabContainer">
       <Box className="AboutHeader">
@@ -38,7 +38,10 @@ const AboutTab: React.FC<AboutTabProps> = ({ version, onViewChangelog }) => {
         </Box>
       </Box>
       <Box className="AboutUpdateSection">
-        <UpdateSettings className="AboutUpdateSettings" />
+        <UpdateSettings
+          className="AboutUpdateSettings"
+          autoCheck={autoCheckForUpdates}
+        />
       </Box>
     </Box>
   );

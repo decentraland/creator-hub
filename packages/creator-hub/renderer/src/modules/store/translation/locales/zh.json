@@ -17,22 +17,21 @@
       "sign_in": {
         "title": "登入以發布您的現場",
         "action": "登录"
+      }
+    },
+    "rows": {
+      "my_scenes": {
+        "title": "我的场景"
       },
-      "scenes": {
-        "title": "場景",
-        "empty_scenes": {
-          "description": "創建您的第一個場景",
-          "action": "開始建造"
-        },
-        "action": "看全部"
+      "templates": {
+        "title": "模板",
+        "description": "使用现成的体验节省时间，其中包含可重复使用的机制、预制件以及可供探索和聚会的空间。"
       },
       "learn": {
-        "title": "學習",
-        "action": "看全部"
-      },
-      "feedback": {
-        "title": "塑造創作者中心的未來",
-        "action": "提交回饋"
+        "title": "学习",
+        "description": "通过指南、教程和实践示例掌握创作者工具，帮助你自信地进行创作。",
+        "videos": "视频",
+        "documentation": "文档"
       }
     }
   },
@@ -131,6 +130,23 @@
     "user_menu": {
       "sign_in": "登录",
       "sign_out": "登出"
+    },
+    "create": {
+      "label": "创建",
+      "new_scene": "新建场景",
+      "import_scene": "导入场景"
+    },
+    "logo_menu": {
+      "about": "关于 Creator Hub",
+      "check_for_updates": "检查更新",
+      "settings": "设置",
+      "report_bug": "报告错误",
+      "help": {
+        "label": "帮助与支持",
+        "faq": "常见问题",
+        "contact_support": "联系支持",
+        "discord": "Discord"
+      }
     }
   },
   "modal": {
@@ -664,6 +680,11 @@
       "title": "连接 Mobile Debug Session",
       "description": "使用移动设备扫描此二维码预览场景",
       "disclaimer": "您的电脑和移动设备必须在同一网络中"
+    },
+    "about": {
+      "title": "关于",
+      "app_name": "Decentraland Creator Hub",
+      "action": "确定"
     }
   },
   "popup": {

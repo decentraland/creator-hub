@@ -13,26 +13,25 @@
     "header": {
       "title": "Welcome to Creator Hub"
     },
+    "rows": {
+      "my_scenes": {
+        "title": "My Scenes"
+      },
+      "templates": {
+        "title": "Templates",
+        "description": "Save time with ready-made experiences featuring reusable mechanics, prefabs, and spaces to explore and hang out."
+      },
+      "learn": {
+        "title": "Learn",
+        "description": "Master the Creator tools with guides, tutorials, and hands-on examples designed to help you build with confidence.",
+        "videos": "Videos",
+        "documentation": "Documentation"
+      }
+    },
     "cards": {
       "sign_in": {
         "title": "Sign In to publish your scenes",
         "action": "Sign In"
-      },
-      "scenes": {
-        "title": "Scenes",
-        "empty_scenes": {
-          "description": "Create your first scene",
-          "action": "Start Building"
-        },
-        "action": "See All"
-      },
-      "learn": {
-        "title": "Learn",
-        "action": "See All"
-      },
-      "feedback": {
-        "title": "Shape the future of Creator Hub",
-        "action": "Submit Feedback"
       }
     }
   },
@@ -131,6 +130,23 @@
     "user_menu": {
       "sign_in": "Sign In",
       "sign_out": "Sign Out"
+    },
+    "create": {
+      "label": "Create",
+      "new_scene": "New Scene",
+      "import_scene": "Import Scene"
+    },
+    "logo_menu": {
+      "about": "About Creator Hub",
+      "check_for_updates": "Check for Updates",
+      "settings": "Settings",
+      "report_bug": "Report Bug",
+      "help": {
+        "label": "Help & Support",
+        "faq": "FAQ",
+        "contact_support": "Contact Support",
+        "discord": "Discord"
+      }
     }
   },
   "modal": {
@@ -664,6 +680,11 @@
       "title": "Connect Mobile Debug Session",
       "description": "Scan this QR code with your mobile device to preview the scene",
       "disclaimer": "Both your computer and mobile device must be on the same network"
+    },
+    "about": {
+      "title": "About",
+      "app_name": "Decentraland Creator Hub",
+      "action": "OK"
     }
   },
   "popup": {

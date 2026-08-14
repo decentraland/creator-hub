@@ -1,0 +1,46 @@
+.LogoButton {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  border-radius: 50%;
+}
+
+.LogoButton img {
+  width: 64px;
+  display: block;
+}
+
+.LogoButton:focus-visible {
+  outline: 2px solid var(--dcl);
+  outline-offset: 2px;
+}
+
+.LogoMenu .MuiPaper-root {
+  background-color: var(--card);
+  background-image: none;
+  border-radius: 8px;
+  min-width: 200px;
+  margin-top: 4px;
+}
+
+.LogoMenu .MuiMenuItem-root {
+  font-size: 14px;
+  padding: 8px 16px;
+  gap: 8px;
+}
+
+.LogoMenu .LogoMenuSubmenuItem {
+  justify-content: space-between;
+}
+
+.LogoSubmenu {
+  pointer-events: none;
+}
+
+.LogoSubmenu .MuiPaper-root {
+  pointer-events: auto;
+  margin-left: 4px;
+}

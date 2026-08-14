@@ -1,7 +1,18 @@
 .Header.Navbar > .user > .SignInButton {
-  background-color: var(--white) !important;
-  color: var(--black) !important;
+  background-color: transparent !important;
+  color: var(--text) !important;
+  border: 1px solid var(--transparent-gray-light);
+  box-shadow: none;
   font-weight: 600;
+  font-size: 13px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  padding: 7px 16px;
+}
+
+.Header.Navbar > .user > .SignInButton:hover {
+  background-color: var(--transparent-gray-dark) !important;
+  border-color: var(--text);
 }
 
 .Header.Navbar > .user > .AvatarButton:hover {
