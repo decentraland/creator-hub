@@ -82,6 +82,12 @@ export const throttle = <T, K extends any[]>(
 
 export const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
+/** Splits into consecutive groups of at most `size`. An empty input yields no groups. */
+export const chunk = <T>(items: T[], size: number): T[][] =>
+  Array.from({ length: Math.ceil(items.length / size) }, (_, index) =>
+    items.slice(index * size, index * size + size),
+  );
+
 export function debounce<F extends (...args: any[]) => void>(func: F, delay: number) {
   let timer: ReturnType<typeof setTimeout>;
   return function (...args: Parameters<F>) {

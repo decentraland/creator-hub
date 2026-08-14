@@ -121,6 +121,7 @@
       "home": "Inicio",
       "scenes": "Escenas",
       "collections": "Colecciones",
+      "analytics": "Analíticas",
       "manage": "Gestionar",
       "learn": "Aprender",
       "more": "Más"
@@ -920,6 +921,213 @@
     },
     "unpublish_world_confirmation": {
       "title": "¿Despublicar <b>{worldName}</b>?"
+    }
+  },
+  "analytics": {
+    "header": {
+      "title": "Analíticas"
+    },
+    "empty_list": {
+      "title": "Aún no hay Places para analizar",
+      "description": "Publica una escena para empezar a medir su rendimiento. Cuando esté en vivo, vas a encontrar acá las métricas y datos clave de tu Place.",
+      "search": {
+        "title": "No se encontraron Places",
+        "description": "Ningún Place coincide con tu búsqueda. Probá con otro nombre."
+      }
+    },
+    "error": {
+      "title": "No pudimos cargar tus Places"
+    },
+    "actions": {
+      "export": "Exportar Analíticas",
+      "export_unavailable": "Vas a poder exportar cuando los datos de analíticas estén disponibles"
+    },
+    "detail": {
+      "title": "Analíticas - {name}",
+      "tabs": {
+        "overview": "Resumen",
+        "retention": "Retención",
+        "visits": "Visitas",
+        "engagement": "Interacción"
+      },
+      "date_range": {
+        "title": "Rango de Fechas",
+        "last_7_days": "Últimos 7 Días",
+        "last_30_days": "Últimos 30 Días",
+        "last_60_days": "Últimos 60 Días"
+      },
+      "place": {
+        "access": "Acceso",
+        "private": "Privado",
+        "public": "Público",
+        "published_in": "Publicado en",
+        "last_published_by": "Última publicación por",
+        "last_update": "Última Actualización"
+      },
+      "actions": {
+        "create_event": "Crear Evento",
+        "edit_scene": "Editar Escena",
+        "edit_scene_unavailable": "Todavía no se puede abrir la escena desde acá",
+        "copy_url": "Copiar URL",
+        "jump_in": "Entrar"
+      },
+      "overview": {
+        "title": "Resumen",
+        "description": "Un panorama del crecimiento, la interacción y la retención de tu place."
+      },
+      "retention": {
+        "title": "Retención",
+        "description": "Entendé qué porcentaje de usuarios vuelve después de su primera sesión.",
+        "platforms": {
+          "title": "Plataformas",
+          "description": "Tu promedio móvil de 60 días, comparado entre mobile y escritorio."
+        },
+        "day_7_cohort": {
+          "title": "Retención Día 7 por Semana de Cohorte",
+          "description": "Porcentaje de usuarios que volvieron al menos una vez durante los 7 días posteriores a su primera visita, agrupados por la semana en que entraron por primera vez a tu place.",
+          "benchmark": "{value}% Día 7 KR"
+        },
+        "churn": {
+          "title": "Tasa de Abandono Semanal",
+          "description": "Porcentaje de usuarios activos de la semana anterior que no volvieron esta semana."
+        }
+      },
+      "visits": {
+        "title": "Visitas",
+        "description": "Entendé cuántos usuarios visitaron tu place y cuántos eran nuevos o recurrentes.",
+        "unique": {
+          "title": "Visitas Únicas en los Últimos 60 Días",
+          "footnote": "Usuarios únicos, sin duplicados entre plataformas. Quienes usan escritorio y móvil se cuentan una vez en Todas las Plataformas y una vez en el total de cada plataforma."
+        },
+        "weekly_active": {
+          "title": "Usuarios Activos Semanales",
+          "description": "Usuarios únicos activos durante cada semana."
+        },
+        "flow": {
+          "title": "Flujo Semanal de Usuarios",
+          "description": "Seguí cómo tus usuarios semanales se mueven entre nuevos, recurrentes y reactivados.",
+          "returned": {
+            "label": "Usuarios Recurrentes",
+            "tooltip": "Usuarios que visitaron la semana pasada y volvieron esta semana."
+          },
+          "reactivated": {
+            "label": "Usuarios Reactivados",
+            "tooltip": "Usuarios que habían dejado de visitar y volvieron esta semana."
+          }
+        }
+      },
+      "engagement": {
+        "title": "Interacción",
+        "description": "Entendé cómo interactúan los usuarios con tu place.",
+        "minutes": "min",
+        "delta": "{value} min",
+        "vs_last_week": "{value} vs. la semana pasada",
+        "daily": {
+          "title": "Tiempo de Juego Diario Promedio",
+          "description": "Tiempo promedio que cada usuario pasa en tu place en una sola visita.",
+          "chart_title": "Tiempo de Juego Diario Promedio por semana"
+        },
+        "weekly": {
+          "title": "Tiempo de Juego Semanal Promedio",
+          "description": "Tiempo promedio que cada usuario pasa en tu place por semana.",
+          "chart_title": "Tiempo de Juego Semanal Promedio por Usuario"
+        },
+        "social": {
+          "title": "Interacciones Sociales",
+          "description": "Las interacciones se cuentan por realm (una copia en ejecución del place), así que el juego repartido entre realms se ve un poco más bajo.",
+          "totals_title": "Totales Semanales de Interacciones Sociales",
+          "rate_title": "Tasa de Interacción Social de Visitantes",
+          "messages": {
+            "label": "Mensajes Enviados",
+            "tooltip": "Mensajes de chat enviados por visitantes en tu place."
+          },
+          "emotes": {
+            "label": "Emotes Reproducidos",
+            "tooltip": "Emotes reproducidos por visitantes en tu place."
+          },
+          "friendships": {
+            "label": "Nuevas Amistades",
+            "tooltip": "Solicitudes de amistad aceptadas entre visitantes de tu place."
+          }
+        }
+      },
+      "platforms": {
+        "all": "Todas las Plataformas",
+        "desktop": "Escritorio",
+        "mobile": "Móvil"
+      },
+      "charts": {
+        "no_data": "Todavía no hay datos para este período"
+      },
+      "error": {
+        "title": "No pudimos cargar las analíticas de este Place"
+      }
+    },
+    "metrics": {
+      "total_visits": {
+        "label": "Visitas Totales",
+        "tooltip": "Todas las visitas a tu place, incluidas las repetidas del mismo usuario."
+      },
+      "unique_visits": {
+        "label": "Visitas Únicas",
+        "tooltip": "Usuarios distintos que visitaron tu place, contados una sola vez."
+      },
+      "new_users": {
+        "label": "Usuarios Nuevos",
+        "tooltip": "Usuarios que visitaron tu place por primera vez."
+      },
+      "concurrent_users": {
+        "label": "Usuarios Simultáneos",
+        "tooltip": "La mayor cantidad de usuarios en tu place al mismo tiempo."
+      },
+      "revenue": {
+        "label": "Ingresos",
+        "tooltip": "MANA ganado en tu place."
+      },
+      "day_7_retention": {
+        "label": "Retención Día 7",
+        "tooltip": "El porcentaje de usuarios nuevos que volvieron a tu place al menos una vez durante los 7 días posteriores a su primera visita."
+      },
+      "avg_playtime": {
+        "label": "Tiempo de Juego Prom.",
+        "tooltip": "Tiempo promedio que cada usuario pasa en tu place en una sola visita."
+      },
+      "afk_time": {
+        "label": "Tiempo AFK",
+        "tooltip": "Tiempo promedio que los usuarios pasan en tu place sin interactuar."
+      },
+      "desktop": {
+        "label": "Escritorio",
+        "tooltip": "Usuarios que visitaron tu place desde un cliente de escritorio."
+      },
+      "mobile": {
+        "label": "Móvil",
+        "tooltip": "Usuarios que visitaron tu place desde un cliente móvil."
+      }
+    },
+    "list": {
+      "places": "{count} {count, plural, one {Place} other {Places}}",
+      "search": "Buscar",
+      "minutes": "{value} min",
+      "pinned": "Fijado a la Watchlist",
+      "sort": {
+        "title": "Ordenar por",
+        "name_asc": "Nombre A-Z",
+        "name_desc": "Nombre Z-A",
+        "most_visits": "Más Visitas"
+      },
+      "columns": {
+        "place": "Place",
+        "total_visits": "Visitas Únicas",
+        "new_users": "Usuarios Nuevos",
+        "day_7_retention": "Retención D7",
+        "revenue": "Ingresos",
+        "avg_playtime": "Tiempo de Juego Prom."
+      },
+      "actions": {
+        "pin_to_watchlist": "Fijar a la Watchlist",
+        "unpin_from_watchlist": "Quitar de la Watchlist"
+      }
     }
   },
   "connection": {

@@ -1,0 +1,1103 @@
+{
+  "exported_at": "2026-08-12T00:17:01.099Z",
+  "source": "dcl_next.exports.export_creators_hub_scene_metrics",
+  "locations": [
+    {
+      "location_key": "cozyfarm.dcl.eth|0|0",
+      "world": "cozyfarm.dcl.eth",
+      "x": 0,
+      "y": 0,
+      "builder_project_id": "b3e99e7c-f492-4f20-8a2d-53164ce8b11b",
+      "metrics": {
+        "avg_afk_seconds_per_user_30d": [
+          {
+            "series": "all",
+            "period": null,
+            "value": 59.759969
+          },
+          {
+            "series": "desktop",
+            "period": null,
+            "value": 0.0
+          },
+          {
+            "series": "mobile",
+            "period": null,
+            "value": 60.699961
+          }
+        ],
+        "avg_afk_seconds_per_user_60d": [
+          {
+            "series": "all",
+            "period": null,
+            "value": 60.219336
+          },
+          {
+            "series": "desktop",
+            "period": null,
+            "value": 0.0
+          },
+          {
+            "series": "mobile",
+            "period": null,
+            "value": 61.078668
+          }
+        ],
+        "avg_playtime_seconds_30d": [
+          {
+            "series": "all",
+            "period": null,
+            "value": 220.047144
+          },
+          {
+            "series": "desktop",
+            "period": null,
+            "value": 671.816327
+          },
+          {
+            "series": "mobile",
+            "period": null,
+            "value": 205.590531
+          }
+        ],
+        "avg_playtime_seconds_60d": [
+          {
+            "series": "all",
+            "period": null,
+            "value": 241.34893
+          },
+          {
+            "series": "desktop",
+            "period": null,
+            "value": 659.293532
+          },
+          {
+            "series": "mobile",
+            "period": null,
+            "value": 229.088733
+          }
+        ],
+        "concurrent_users_avg_30d": [
+          {
+            "series": null,
+            "period": null,
+            "value": 1.39248
+          }
+        ],
+        "concurrent_users_avg_60d": [
+          {
+            "series": null,
+            "period": null,
+            "value": 1.330414
+          }
+        ],
+        "concurrent_users_peak_30d": [
+          {
+            "series": null,
+            "period": null,
+            "value": 12.0
+          }
+        ],
+        "concurrent_users_peak_60d": [
+          {
+            "series": null,
+            "period": null,
+            "value": 12.0
+          }
+        ],
+        "d7_retention_rate_30d": [
+          {
+            "series": "all",
+            "period": null,
+            "value": 0.083816
+          },
+          {
+            "series": "desktop",
+            "period": null,
+            "value": 0.518519
+          },
+          {
+            "series": "mobile",
+            "period": null,
+            "value": 0.071264
+          }
+        ],
+        "d7_retention_rate_60d": [
+          {
+            "series": "all",
+            "period": null,
+            "value": 0.121622
+          },
+          {
+            "series": "desktop",
+            "period": null,
+            "value": 0.5
+          },
+          {
+            "series": "mobile",
+            "period": null,
+            "value": 0.111244
+          }
+        ],
+        "d7_retention_rate_weekly": [
+          {
+            "series": "all",
+            "period": "2026-06-15",
+            "value": 0.333333
+          },
+          {
+            "series": "desktop",
+            "period": "2026-06-15",
+            "value": 0.0
+          },
+          {
+            "series": "mobile",
+            "period": "2026-06-15",
+            "value": 0.347826
+          },
+          {
+            "series": "all",
+            "period": "2026-06-22",
+            "value": 0.333333
+          },
+          {
+            "series": "mobile",
+            "period": "2026-06-22",
+            "value": 0.333333
+          },
+          {
+            "series": "all",
+            "period": "2026-06-29",
+            "value": 0.408602
+          },
+          {
+            "series": "desktop",
+            "period": "2026-06-29",
+            "value": 0.0
+          },
+          {
+            "series": "mobile",
+            "period": "2026-06-29",
+            "value": 0.406593
+          },
+          {
+            "series": "all",
+            "period": "2026-07-06",
+            "value": 0.382022
+          },
+          {
+            "series": "mobile",
+            "period": "2026-07-06",
+            "value": 0.382022
+          },
+          {
+            "series": "all",
+            "period": "2026-07-13",
+            "value": 0.118367
+          },
+          {
+            "series": "desktop",
+            "period": "2026-07-13",
+            "value": 0.48
+          },
+          {
+            "series": "mobile",
+            "period": "2026-07-13",
+            "value": 0.10828
+          },
+          {
+            "series": "all",
+            "period": "2026-07-20",
+            "value": 0.050736
+          },
+          {
+            "series": "desktop",
+            "period": "2026-07-20",
+            "value": 0.5
+          },
+          {
+            "series": "mobile",
+            "period": "2026-07-20",
+            "value": 0.047069
+          },
+          {
+            "series": "all",
+            "period": "2026-07-27",
+            "value": 0.241026
+          },
+          {
+            "series": "desktop",
+            "period": "2026-07-27",
+            "value": 0.722222
+          },
+          {
+            "series": "mobile",
+            "period": "2026-07-27",
+            "value": 0.189944
+          },
+          {
+            "series": "all",
+            "period": "2026-08-03",
+            "value": 0.078431
+          },
+          {
+            "series": "desktop",
+            "period": "2026-08-03",
+            "value": 0.44
+          },
+          {
+            "series": "mobile",
+            "period": "2026-08-03",
+            "value": 0.056886
+          }
+        ],
+        "socially_engaged_ratio_weekly": [
+          {
+            "series": null,
+            "period": "2026-06-15",
+            "value": 0.461538
+          },
+          {
+            "series": null,
+            "period": "2026-06-22",
+            "value": 0.26087
+          },
+          {
+            "series": null,
+            "period": "2026-06-29",
+            "value": 0.333333
+          },
+          {
+            "series": null,
+            "period": "2026-07-06",
+            "value": 0.40625
+          },
+          {
+            "series": null,
+            "period": "2026-07-13",
+            "value": 0.293333
+          },
+          {
+            "series": null,
+            "period": "2026-07-20",
+            "value": 0.280851
+          },
+          {
+            "series": null,
+            "period": "2026-07-27",
+            "value": 0.33125
+          },
+          {
+            "series": null,
+            "period": "2026-08-03",
+            "value": 0.315657
+          }
+        ],
+        "unique_visitors_30d": [
+          {
+            "series": "all",
+            "period": null,
+            "value": 2583.0
+          },
+          {
+            "series": "desktop",
+            "period": null,
+            "value": 48.0
+          },
+          {
+            "series": "mobile",
+            "period": null,
+            "value": 2543.0
+          }
+        ],
+        "unique_visitors_60d": [
+          {
+            "series": "all",
+            "period": null,
+            "value": 2772.0
+          },
+          {
+            "series": "desktop",
+            "period": null,
+            "value": 50.0
+          },
+          {
+            "series": "mobile",
+            "period": null,
+            "value": 2733.0
+          }
+        ],
+        "unique_visitors_weekly": [
+          {
+            "series": "all",
+            "period": "2026-06-15",
+            "value": 39.0
+          },
+          {
+            "series": "desktop",
+            "period": "2026-06-15",
+            "value": 2.0
+          },
+          {
+            "series": "mobile",
+            "period": "2026-06-15",
+            "value": 37.0
+          },
+          {
+            "series": "all",
+            "period": "2026-06-22",
+            "value": 69.0
+          },
+          {
+            "series": "desktop",
+            "period": "2026-06-22",
+            "value": 0.0
+          },
+          {
+            "series": "mobile",
+            "period": "2026-06-22",
+            "value": 69.0
+          },
+          {
+            "series": "all",
+            "period": "2026-06-29",
+            "value": 63.0
+          },
+          {
+            "series": "desktop",
+            "period": "2026-06-29",
+            "value": 2.0
+          },
+          {
+            "series": "mobile",
+            "period": "2026-06-29",
+            "value": 62.0
+          },
+          {
+            "series": "all",
+            "period": "2026-07-06",
+            "value": 64.0
+          },
+          {
+            "series": "desktop",
+            "period": "2026-07-06",
+            "value": 0.0
+          },
+          {
+            "series": "mobile",
+            "period": "2026-07-06",
+            "value": 64.0
+          },
+          {
+            "series": "all",
+            "period": "2026-07-13",
+            "value": 450.0
+          },
+          {
+            "series": "desktop",
+            "period": "2026-07-13",
+            "value": 16.0
+          },
+          {
+            "series": "mobile",
+            "period": "2026-07-13",
+            "value": 436.0
+          },
+          {
+            "series": "all",
+            "period": "2026-07-20",
+            "value": 1175.0
+          },
+          {
+            "series": "desktop",
+            "period": "2026-07-20",
+            "value": 8.0
+          },
+          {
+            "series": "mobile",
+            "period": "2026-07-20",
+            "value": 1169.0
+          },
+          {
+            "series": "all",
+            "period": "2026-07-27",
+            "value": 160.0
+          },
+          {
+            "series": "desktop",
+            "period": "2026-07-27",
+            "value": 10.0
+          },
+          {
+            "series": "mobile",
+            "period": "2026-07-27",
+            "value": 153.0
+          },
+          {
+            "series": "all",
+            "period": "2026-08-03",
+            "value": 792.0
+          },
+          {
+            "series": "desktop",
+            "period": "2026-08-03",
+            "value": 25.0
+          },
+          {
+            "series": "mobile",
+            "period": "2026-08-03",
+            "value": 771.0
+          }
+        ],
+        "unique_visits_30d": [
+          {
+            "series": "all",
+            "period": null,
+            "value": 6321.0
+          },
+          {
+            "series": "desktop",
+            "period": null,
+            "value": 196.0
+          },
+          {
+            "series": "mobile",
+            "period": null,
+            "value": 6125.0
+          }
+        ],
+        "unique_visits_60d": [
+          {
+            "series": "all",
+            "period": null,
+            "value": 7053.0
+          },
+          {
+            "series": "desktop",
+            "period": null,
+            "value": 201.0
+          },
+          {
+            "series": "mobile",
+            "period": null,
+            "value": 6852.0
+          }
+        ]
+      }
+    },
+    {
+      "location_key": "dafu.dcl.eth|-4|0",
+      "world": "dafu.dcl.eth",
+      "x": -4,
+      "y": 0,
+      "builder_project_id": "d8181960-c55c-4d8e-a8e6-e9c6286d0f09",
+      "metrics": {
+        "avg_afk_seconds_per_user_30d": [
+          {
+            "series": "all",
+            "period": null,
+            "value": 0.0
+          },
+          {
+            "series": "desktop",
+            "period": null,
+            "value": 0.0
+          }
+        ],
+        "avg_afk_seconds_per_user_60d": [
+          {
+            "series": "all",
+            "period": null,
+            "value": 0.0
+          },
+          {
+            "series": "desktop",
+            "period": null,
+            "value": 0.0
+          }
+        ],
+        "avg_playtime_seconds_30d": [
+          {
+            "series": "all",
+            "period": null,
+            "value": 1.0
+          },
+          {
+            "series": "desktop",
+            "period": null,
+            "value": 1.0
+          }
+        ],
+        "avg_playtime_seconds_60d": [
+          {
+            "series": "all",
+            "period": null,
+            "value": 1.0
+          },
+          {
+            "series": "desktop",
+            "period": null,
+            "value": 1.0
+          }
+        ],
+        "unique_visitors_30d": [
+          {
+            "series": "all",
+            "period": null,
+            "value": 1.0
+          },
+          {
+            "series": "desktop",
+            "period": null,
+            "value": 1.0
+          },
+          {
+            "series": "mobile",
+            "period": null,
+            "value": 0.0
+          }
+        ],
+        "unique_visitors_60d": [
+          {
+            "series": "all",
+            "period": null,
+            "value": 1.0
+          },
+          {
+            "series": "desktop",
+            "period": null,
+            "value": 1.0
+          },
+          {
+            "series": "mobile",
+            "period": null,
+            "value": 0.0
+          }
+        ],
+        "unique_visits_30d": [
+          {
+            "series": "all",
+            "period": null,
+            "value": 1.0
+          },
+          {
+            "series": "desktop",
+            "period": null,
+            "value": 1.0
+          }
+        ],
+        "unique_visits_60d": [
+          {
+            "series": "all",
+            "period": null,
+            "value": 1.0
+          },
+          {
+            "series": "desktop",
+            "period": null,
+            "value": 1.0
+          }
+        ]
+      }
+    },
+    {
+      "location_key": "-3|-2",
+      "x": -3,
+      "y": -2,
+      "builder_project_id": "47cd1ab3-dd97-4057-a3ef-0ead9ff3ae1d",
+      "metrics": {
+        "avg_afk_seconds_per_user_30d": [
+          {
+            "series": "all",
+            "period": null,
+            "value": 79.854067
+          },
+          {
+            "series": "desktop",
+            "period": null,
+            "value": 0.0
+          },
+          {
+            "series": "mobile",
+            "period": null,
+            "value": 116.548338
+          }
+        ],
+        "avg_afk_seconds_per_user_60d": [
+          {
+            "series": "all",
+            "period": null,
+            "value": 77.733119
+          },
+          {
+            "series": "desktop",
+            "period": null,
+            "value": 0.0
+          },
+          {
+            "series": "mobile",
+            "period": null,
+            "value": 118.960771
+          }
+        ],
+        "avg_playtime_seconds_30d": [
+          {
+            "series": "all",
+            "period": null,
+            "value": 1097.634571
+          },
+          {
+            "series": "desktop",
+            "period": null,
+            "value": 1493.361162
+          },
+          {
+            "series": "mobile",
+            "period": null,
+            "value": 216.853739
+          }
+        ],
+        "avg_playtime_seconds_60d": [
+          {
+            "series": "all",
+            "period": null,
+            "value": 1119.385157
+          },
+          {
+            "series": "desktop",
+            "period": null,
+            "value": 1427.154093
+          },
+          {
+            "series": "mobile",
+            "period": null,
+            "value": 200.692504
+          }
+        ],
+        "concurrent_users_avg_30d": [
+          {
+            "series": null,
+            "period": null,
+            "value": 7.979036
+          }
+        ],
+        "concurrent_users_avg_60d": [
+          {
+            "series": null,
+            "period": null,
+            "value": 7.214266
+          }
+        ],
+        "concurrent_users_peak_30d": [
+          {
+            "series": null,
+            "period": null,
+            "value": 38.0
+          }
+        ],
+        "concurrent_users_peak_60d": [
+          {
+            "series": null,
+            "period": null,
+            "value": 42.0
+          }
+        ],
+        "d7_retention_rate_30d": [
+          {
+            "series": "all",
+            "period": null,
+            "value": 0.608926
+          },
+          {
+            "series": "desktop",
+            "period": null,
+            "value": 0.775123
+          },
+          {
+            "series": "mobile",
+            "period": null,
+            "value": 0.21461
+          }
+        ],
+        "d7_retention_rate_60d": [
+          {
+            "series": "all",
+            "period": null,
+            "value": 0.666561
+          },
+          {
+            "series": "desktop",
+            "period": null,
+            "value": 0.800267
+          },
+          {
+            "series": "mobile",
+            "period": null,
+            "value": 0.235399
+          }
+        ],
+        "d7_retention_rate_weekly": [
+          {
+            "series": "all",
+            "period": "2026-06-15",
+            "value": 0.732536
+          },
+          {
+            "series": "desktop",
+            "period": "2026-06-15",
+            "value": 0.832646
+          },
+          {
+            "series": "mobile",
+            "period": "2026-06-15",
+            "value": 0.307329
+          },
+          {
+            "series": "all",
+            "period": "2026-06-22",
+            "value": 0.712077
+          },
+          {
+            "series": "desktop",
+            "period": "2026-06-22",
+            "value": 0.807151
+          },
+          {
+            "series": "mobile",
+            "period": "2026-06-22",
+            "value": 0.256345
+          },
+          {
+            "series": "all",
+            "period": "2026-06-29",
+            "value": 0.724065
+          },
+          {
+            "series": "desktop",
+            "period": "2026-06-29",
+            "value": 0.831059
+          },
+          {
+            "series": "mobile",
+            "period": "2026-06-29",
+            "value": 0.242021
+          },
+          {
+            "series": "all",
+            "period": "2026-07-06",
+            "value": 0.694459
+          },
+          {
+            "series": "desktop",
+            "period": "2026-07-06",
+            "value": 0.806369
+          },
+          {
+            "series": "mobile",
+            "period": "2026-07-06",
+            "value": 0.232227
+          },
+          {
+            "series": "all",
+            "period": "2026-07-13",
+            "value": 0.658801
+          },
+          {
+            "series": "desktop",
+            "period": "2026-07-13",
+            "value": 0.781896
+          },
+          {
+            "series": "mobile",
+            "period": "2026-07-13",
+            "value": 0.231076
+          },
+          {
+            "series": "all",
+            "period": "2026-07-20",
+            "value": 0.61916
+          },
+          {
+            "series": "desktop",
+            "period": "2026-07-20",
+            "value": 0.78229
+          },
+          {
+            "series": "mobile",
+            "period": "2026-07-20",
+            "value": 0.227343
+          },
+          {
+            "series": "all",
+            "period": "2026-07-27",
+            "value": 0.596693
+          },
+          {
+            "series": "desktop",
+            "period": "2026-07-27",
+            "value": 0.785812
+          },
+          {
+            "series": "mobile",
+            "period": "2026-07-27",
+            "value": 0.208163
+          },
+          {
+            "series": "all",
+            "period": "2026-08-03",
+            "value": 0.533708
+          },
+          {
+            "series": "desktop",
+            "period": "2026-08-03",
+            "value": 0.735931
+          },
+          {
+            "series": "mobile",
+            "period": "2026-08-03",
+            "value": 0.183206
+          }
+        ],
+        "socially_engaged_ratio_weekly": [
+          {
+            "series": null,
+            "period": "2026-06-15",
+            "value": 0.563053
+          },
+          {
+            "series": null,
+            "period": "2026-06-22",
+            "value": 0.595469
+          },
+          {
+            "series": null,
+            "period": "2026-06-29",
+            "value": 0.495283
+          },
+          {
+            "series": null,
+            "period": "2026-07-06",
+            "value": 0.506893
+          },
+          {
+            "series": null,
+            "period": "2026-07-13",
+            "value": 0.485082
+          },
+          {
+            "series": null,
+            "period": "2026-07-20",
+            "value": 0.433127
+          },
+          {
+            "series": null,
+            "period": "2026-07-27",
+            "value": 0.398018
+          },
+          {
+            "series": null,
+            "period": "2026-08-03",
+            "value": 0.317809
+          }
+        ],
+        "unique_visitors_30d": [
+          {
+            "series": "all",
+            "period": null,
+            "value": 4831.0
+          },
+          {
+            "series": "desktop",
+            "period": null,
+            "value": 1595.0
+          },
+          {
+            "series": "mobile",
+            "period": null,
+            "value": 3310.0
+          }
+        ],
+        "unique_visitors_60d": [
+          {
+            "series": "all",
+            "period": null,
+            "value": 6827.0
+          },
+          {
+            "series": "desktop",
+            "period": null,
+            "value": 2503.0
+          },
+          {
+            "series": "mobile",
+            "period": null,
+            "value": 4461.0
+          }
+        ],
+        "unique_visitors_weekly": [
+          {
+            "series": "all",
+            "period": "2026-06-15",
+            "value": 904.0
+          },
+          {
+            "series": "desktop",
+            "period": "2026-06-15",
+            "value": 597.0
+          },
+          {
+            "series": "mobile",
+            "period": "2026-06-15",
+            "value": 333.0
+          },
+          {
+            "series": "all",
+            "period": "2026-06-22",
+            "value": 927.0
+          },
+          {
+            "series": "desktop",
+            "period": "2026-06-22",
+            "value": 635.0
+          },
+          {
+            "series": "mobile",
+            "period": "2026-06-22",
+            "value": 319.0
+          },
+          {
+            "series": "all",
+            "period": "2026-06-29",
+            "value": 848.0
+          },
+          {
+            "series": "desktop",
+            "period": "2026-06-29",
+            "value": 556.0
+          },
+          {
+            "series": "mobile",
+            "period": "2026-06-29",
+            "value": 314.0
+          },
+          {
+            "series": "all",
+            "period": "2026-07-06",
+            "value": 943.0
+          },
+          {
+            "series": "desktop",
+            "period": "2026-07-06",
+            "value": 611.0
+          },
+          {
+            "series": "mobile",
+            "period": "2026-07-06",
+            "value": 360.0
+          },
+          {
+            "series": "all",
+            "period": "2026-07-13",
+            "value": 1039.0
+          },
+          {
+            "series": "desktop",
+            "period": "2026-07-13",
+            "value": 641.0
+          },
+          {
+            "series": "mobile",
+            "period": "2026-07-13",
+            "value": 423.0
+          },
+          {
+            "series": "all",
+            "period": "2026-07-20",
+            "value": 1129.0
+          },
+          {
+            "series": "desktop",
+            "period": "2026-07-20",
+            "value": 612.0
+          },
+          {
+            "series": "mobile",
+            "period": "2026-07-20",
+            "value": 544.0
+          },
+          {
+            "series": "all",
+            "period": "2026-07-27",
+            "value": 1211.0
+          },
+          {
+            "series": "desktop",
+            "period": "2026-07-27",
+            "value": 590.0
+          },
+          {
+            "series": "mobile",
+            "period": "2026-07-27",
+            "value": 643.0
+          },
+          {
+            "series": "all",
+            "period": "2026-08-03",
+            "value": 2319.0
+          },
+          {
+            "series": "desktop",
+            "period": "2026-08-03",
+            "value": 623.0
+          },
+          {
+            "series": "mobile",
+            "period": "2026-08-03",
+            "value": 1716.0
+          }
+        ],
+        "unique_visits_30d": [
+          {
+            "series": "all",
+            "period": null,
+            "value": 27480.0
+          },
+          {
+            "series": "desktop",
+            "period": null,
+            "value": 18961.0
+          },
+          {
+            "series": "mobile",
+            "period": null,
+            "value": 8519.0
+          }
+        ],
+        "unique_visits_60d": [
+          {
+            "series": "all",
+            "period": null,
+            "value": 51566.0
+          },
+          {
+            "series": "desktop",
+            "period": null,
+            "value": 38626.0
+          },
+          {
+            "series": "mobile",
+            "period": null,
+            "value": 12940.0
+          }
+        ]
+      }
+    },
+    {
+      "location_key": "999|999",
+      "x": 999,
+      "y": 999,
+      "builder_project_id": null,
+      "metrics": {}
+    }
+  ]
+}

@@ -13,6 +13,7 @@
     "@dcl/mini-rpc": "^1.0.7",
     "@dcl/schemas": "26.5.0",
     "@dcl/single-sign-on-client": "0.1.0",
+    "@mui/x-charts": "^7.29.1",
     "@segment/analytics-node": "2.1.2",
     "@sentry/electron": "7.8.0",
     "@sentry/react": "10.39.0",
