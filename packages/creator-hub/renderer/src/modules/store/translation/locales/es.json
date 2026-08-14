@@ -791,10 +791,6 @@
           "title": "Enviar Evento",
           "description": "Organiza tu propio evento en Decentraland."
         },
-        "legacy_web_editor": {
-          "title": "Editor Web Clásico",
-          "description": "Accede al editor web antiguo para continuar trabajando en tus escenas."
-        },
         "collections": {
           "title": "Colecciones",
           "description": "Crea, revisa y publica tus colecciones de Vestimentas y Animaciones."

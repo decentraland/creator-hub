@@ -32,10 +32,6 @@
   object-fit: contain;
 }
 
-.MorePage .HorizontalCardWithImage.FlipImage .CardImage img {
-  transform: scaleX(-1);
-}
-
 .MorePage .HorizontalCardWithImage .CardContent {
   display: flex;
   flex-direction: column;
