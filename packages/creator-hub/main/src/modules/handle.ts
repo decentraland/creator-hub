@@ -5,6 +5,24 @@ import type { Ipc, IpcError, IpcResult } from '/shared/types/ipc';
 import { captureException } from '@sentry/electron/main';
 import { StreamError } from './bin';
 
+const SENSITIVE_KEY = /auth-chain|authorization|password|token|secret/i;
+
+/**
+ * Renders IPC arguments for the log. Credential-shaped values are masked because
+ * these lines land in the electron log on disk — `metrics.request` alone carries
+ * a signed ADR-44 auth chain on every call.
+ */
+export function formatArgs(args: unknown[]): string {
+  return args
+    .map(
+      (arg, idx) =>
+        `args[${idx}]=${JSON.stringify(arg, (key, value) =>
+          SENSITIVE_KEY.test(key) ? '[redacted]' : value,
+        )}`,
+    )
+    .join(' ');
+}
+
 // wrapper for ipcMain.handle with types
 export async function handle<T extends keyof Ipc>(
   channel: T,
@@ -12,9 +30,7 @@ export async function handle<T extends keyof Ipc>(
 ) {
   ipcMain.handle(channel, async (event, ...args) => {
     try {
-      log.info(
-        `[IPC] channel=${channel} ${args.map((arg, idx) => `args[${idx}]=${JSON.stringify(arg)}`).join(' ')}`.trim(),
-      );
+      log.info(`[IPC] channel=${channel} ${formatArgs(args)}`.trim());
       const value = await handler(event, ...(args as Parameters<Ipc[T]>));
       const result: IpcResult<typeof value> = {
         success: true,
@@ -49,9 +65,7 @@ export function handleSync<T extends keyof Ipc>(
 ) {
   ipcMain.on(channel, (event, ...args) => {
     try {
-      log.info(
-        `[IPC-SYNC] channel=${channel} ${args.map((arg, idx) => `args[${idx}]=${JSON.stringify(arg)}`).join(' ')}`.trim(),
-      );
+      log.info(`[IPC-SYNC] channel=${channel} ${formatArgs(args)}`.trim());
       const result = handler(event, ...(args as Parameters<Ipc[T]>));
       event.returnValue = result;
       return result;
