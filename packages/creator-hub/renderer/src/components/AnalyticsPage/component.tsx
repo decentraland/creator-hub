@@ -17,6 +17,7 @@ import { Loader } from '../Loader';
 import { Navbar, NavbarItem } from '../Navbar';
 import { Search } from '../Search';
 import { Select } from '../Select';
+import { SignInCard } from '../SignInCard';
 
 import { PlacesTable } from './PlacesTable';
 import { formatExportDate } from './utils';
@@ -30,7 +31,7 @@ const SORT_OPTIONS: Array<{ label: string; value: SortBy }> = [
 ];
 
 export function AnalyticsPage() {
-  const { isSignedIn } = useAuth();
+  const { isSignedIn, isSigningIn, signIn } = useAuth();
   const { places, pinnedPlaceIds, sortBy, searchQuery, exportedAt, status, error } = useSelector(
     state => state.placeAnalytics,
   );
@@ -40,21 +41,32 @@ export function AnalyticsPage() {
 
   const isLoading = status === 'loading' || status === 'idle';
 
+  // One batched request answers the whole page, so revisiting it re-reads the
+  // snapshot already in the store rather than asking again.
   useEffect(() => {
-    if (isSignedIn) dispatch(placeAnalyticsActions.fetchAnalytics());
-  }, [isSignedIn]);
+    if (isSignedIn && status === 'idle') dispatch(placeAnalyticsActions.fetchAnalytics());
+  }, [isSignedIn, status, dispatch]);
 
-  const handleSortChange = useCallback((e: SelectChangeEvent<SortBy>) => {
-    dispatch(placeAnalyticsActions.setSortBy(e.target.value as SortBy));
-  }, []);
+  const handleSortChange = useCallback(
+    (e: SelectChangeEvent<SortBy>) => {
+      dispatch(placeAnalyticsActions.setSortBy(e.target.value as SortBy));
+    },
+    [dispatch],
+  );
 
-  const handleSearch = useCallback((value: string) => {
-    dispatch(placeAnalyticsActions.setSearchQuery(value));
-  }, []);
+  const handleSearch = useCallback(
+    (value: string) => {
+      dispatch(placeAnalyticsActions.setSearchQuery(value));
+    },
+    [dispatch],
+  );
 
-  const handleTogglePin = useCallback((placeId: string) => {
-    dispatch(placeAnalyticsActions.togglePinnedPlace(placeId));
-  }, []);
+  const handleTogglePin = useCallback(
+    (placeId: string) => {
+      dispatch(placeAnalyticsActions.togglePinnedPlace(placeId));
+    },
+    [dispatch],
+  );
 
   const handleSelectPlace = useCallback(
     (placeId: string) => navigate(`/analytics/${placeId}`),
@@ -66,7 +78,13 @@ export function AnalyticsPage() {
       <Navbar active={NavbarItem.ANALYTICS} />
       <Container>
         <Typography variant="h3">{t('analytics.header.title')}</Typography>
-        {isLoading ? (
+        {/* Before the loading branch: with nothing in flight, `idle` is not a wait. */}
+        {!isSignedIn && !isSigningIn ? (
+          <SignInCard
+            onClickSignIn={signIn}
+            title={t('analytics.sign_in.title')}
+          />
+        ) : isLoading ? (
           <Loader size={70} />
         ) : status === 'failed' ? (
           /* Without this a failed request reads as "you have no Places yet". */

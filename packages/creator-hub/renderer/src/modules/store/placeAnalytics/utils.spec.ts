@@ -13,10 +13,10 @@ function buildPlace(
     name,
     thumbnail: 'thumbnail.png',
     totalVisits: 0,
-    newUsers: 0,
     day7Retention: 0,
-    revenue: 0,
     avgPlaytime: 0,
+    concurrentUsers: 0,
+    hasNoData: false,
     ...overrides,
   };
 }

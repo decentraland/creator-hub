@@ -5,6 +5,7 @@ import { AuthServerProvider } from '../../../lib/auth';
 import type { AnalyticsPlace } from '../../../lib/analyticsLocations';
 import type { LocationMetrics } from '../../../lib/metricsApi';
 import { fetchAnalytics as fetchAnalyticsSnapshot } from '../../../lib/placeAnalytics';
+import { actions as managementActions, fetchAllManagedProjectsData } from '../management';
 import { createTestStore } from '../../../../tests/utils/testStore';
 import { actions, fetchAnalytics, initialState, selectors } from './slice';
 
@@ -16,6 +17,8 @@ const place = (placeId: string, name: string): AnalyticsPlace => ({
   name,
   thumbnail: 'thumb.png',
   location: { world: name, x: 0, y: 0 },
+  publishedIn: name,
+  lastUpdatedAt: null,
 });
 
 const withVisits = (visits: number): LocationMetrics =>
@@ -55,25 +58,27 @@ vi.mock('../../../lib/auth', () => ({
 
 vi.mock('/@/modules/store/management', async () => {
   const actual = await import('../management');
-  return {
-    ...actual,
-    // Dispatching an RTK thunk returns a promise carrying `unwrap`, which is
-    // what the slice awaits. Defined inline: vi.mock factories are hoisted.
-    fetchAllManagedProjectsData: vi.fn(() => () => {
-      const dispatched = Promise.resolve([]) as Promise<unknown[]> & {
-        unwrap: () => Promise<unknown[]>;
-      };
-      dispatched.unwrap = () => Promise.resolve([]);
-      return dispatched;
-    }),
-  };
+  return { ...actual, fetchAllManagedProjectsData: vi.fn() };
 });
+
+/**
+ * Stands in for dispatching the management thunk: RTK hands back a promise
+ * carrying `unwrap`, which is what the slice awaits.
+ */
+const managedProjects = (outcome: Promise<unknown[]>) => () => {
+  const dispatched = outcome as Promise<unknown[]> & { unwrap: () => Promise<unknown[]> };
+  dispatched.unwrap = () => outcome;
+  return dispatched;
+};
 
 describe('placeAnalytics slice', () => {
   let store: ReturnType<typeof createTestStore>;
 
   beforeEach(() => {
     vi.clearAllMocks();
+    // Re-applied per test: `clearAllMocks` resets calls, not implementations.
+    vi.mocked(fetchAllManagedProjectsData).mockImplementation((() =>
+      managedProjects(Promise.resolve([]))) as any);
     store = createTestStore();
   });
 
@@ -148,6 +153,71 @@ describe('placeAnalytics slice', () => {
       const { status, error } = store.getState().placeAnalytics;
       expect(status).toBe('failed');
       expect(error).toMatch(/is not a valid ENS name/);
+    });
+  });
+
+  describe('when management data is already in some other state', () => {
+    beforeEach(() => {
+      vi.mocked(AuthServerProvider.getAccount).mockReturnValue(TEST_ADDRESS);
+      vi.mocked(fetchAnalyticsSnapshot).mockResolvedValue(SNAPSHOT);
+    });
+
+    /*
+     * `management.status` is written by two thunks, one nested in the other, and
+     * `fetchManagedProjectsFiltered` sets it while honouring pagination. So no
+     * value of it proves the project list is complete, and analytics has to load
+     * the list itself rather than trust the flag.
+     */
+    it.each([
+      ['loading', 'pending'],
+      ['succeeded', 'fulfilled'],
+      ['failed', 'rejected'],
+    ])('should still load the project list when management is %s', async (_status, lifecycle) => {
+      store.dispatch({
+        type: `management/fetchAllManagedProjectsData/${lifecycle}`,
+        payload: [],
+        error: { message: 'whatever management did' },
+      });
+
+      await store.dispatch(fetchAnalytics());
+
+      expect(fetchAllManagedProjectsData).toHaveBeenCalledWith({ address: TEST_ADDRESS });
+    });
+  });
+
+  describe('when loading the project list fails', () => {
+    beforeEach(() => {
+      vi.mocked(AuthServerProvider.getAccount).mockReturnValue(TEST_ADDRESS);
+      const failed = Promise.reject<unknown[]>(new Error('could not load your scenes'));
+      failed.catch(() => {}); // the slice awaits `unwrap`, not this promise
+      vi.mocked(fetchAllManagedProjectsData).mockImplementation((() =>
+        managedProjects(failed)) as any);
+    });
+
+    it('should fail rather than report an empty list of places', async () => {
+      await store.dispatch(fetchAnalytics());
+
+      const { status, places, error } = store.getState().placeAnalytics;
+      expect(status).toBe('failed');
+      expect(places).toEqual([]);
+      expect(error).toMatch(/could not load your scenes/);
+      expect(fetchAnalyticsSnapshot).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('when the account is disconnected', () => {
+    beforeEach(async () => {
+      vi.mocked(AuthServerProvider.getAccount).mockReturnValue(TEST_ADDRESS);
+      vi.mocked(fetchAnalyticsSnapshot).mockResolvedValue(SNAPSHOT);
+      await store.dispatch(fetchAnalytics());
+    });
+
+    it('should drop the previous account analytics', async () => {
+      expect(store.getState().placeAnalytics.places).not.toEqual([]);
+
+      store.dispatch(managementActions.clearState());
+
+      expect(store.getState().placeAnalytics).toEqual(initialState);
     });
   });
 
