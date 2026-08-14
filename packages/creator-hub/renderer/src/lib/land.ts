@@ -524,7 +524,6 @@ export class Lands {
       ),
     );
 
-    // One scene covers however many of the owned parcels pointed at it.
     const byEntityId = new Map(groups.flat().map(scene => [scene.id, scene]));
     return [...byEntityId.values()];
   }

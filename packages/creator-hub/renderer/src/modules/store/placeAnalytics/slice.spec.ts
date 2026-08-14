@@ -69,17 +69,14 @@ vi.mock('../management/utils', async importOriginal => ({
 
 vi.mock('/@/modules/store/land', async () => {
   const actual = await import('../land');
+
+  /** What `dispatch(thunk())` resolves to: a promise that also carries `unwrap`. */
+  const asDispatchedThunk = <T>(value: T) =>
+    Object.assign(Promise.resolve(value), { unwrap: () => Promise.resolve(value) });
+
   return {
     ...actual,
-    // Dispatching an RTK thunk returns a promise carrying `unwrap`, which is
-    // what the slice awaits. Defined inline: vi.mock factories are hoisted.
-    fetchLandList: vi.fn(() => () => {
-      const dispatched = Promise.resolve({ land: [] }) as Promise<{ land: unknown[] }> & {
-        unwrap: () => Promise<{ land: unknown[] }>;
-      };
-      dispatched.unwrap = () => Promise.resolve({ land: [] });
-      return dispatched;
-    }),
+    fetchLandList: vi.fn(() => () => asDispatchedThunk({ land: [] as unknown[] })),
   };
 });
 

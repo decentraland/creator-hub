@@ -130,6 +130,10 @@ async function landPlaces(lands: Land[], fallbackThumbnail: string): Promise<Ana
  * The analytics service enumerates nothing, so the list is assembled here from
  * the wallet's worlds and its LAND. Both are fetched for this list rather than
  * read off the Manage page, whose own list is narrowed by its search and page.
+ *
+ * Deduplicated by location, because that is what analytics answers by: two
+ * scenes sharing a coordinate are one row, and keeping both would key them to
+ * the same metrics and lose one anyway.
  */
 export async function collectAnalyticsPlaces(
   projects: ManagedProject[],
@@ -139,7 +143,5 @@ export async function collectAnalyticsPlaces(
   const genesisCity = await landPlaces(lands, fallbackThumbnail);
   const places = [...worldPlaces(projects, fallbackThumbnail), ...genesisCity];
 
-  // Analytics answers per location, so two scenes sharing a coordinate are one
-  // row. Keeping both would key them to the same metrics and lose one anyway.
   return [...new Map(places.map(place => [place.placeId, place])).values()];
 }

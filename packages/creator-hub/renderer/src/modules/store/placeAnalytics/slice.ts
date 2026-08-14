@@ -27,6 +27,9 @@ import { sortPlaces } from './utils';
  * management slice: that slice holds the Manage page's own list, narrowed by its
  * search box, filter and page, so borrowing it makes this list silently inherit
  * a view the creator set somewhere else.
+ *
+ * Skipped while one is already running: a second run would rebuild the list from
+ * whatever the store held when it started, and the slower one wins.
  */
 export const fetchAnalytics = createAsyncThunk(
   'placeAnalytics/fetchAnalytics',
@@ -42,8 +45,6 @@ export const fetchAnalytics = createAsyncThunk(
     return fetchAnalyticsSnapshot(projects, land);
   },
   {
-    // A second run would rebuild the list from whatever the store held when it
-    // started, and the slower one wins.
     condition: (_: void, { getState }) =>
       (getState() as AppState).placeAnalytics.status !== 'loading',
   },

@@ -85,12 +85,19 @@ export async function fetchWorldSceneCoords(
   }
 }
 
-/** A world as the app models it, with the coordinates of everything deployed in it. */
+/**
+ * A world as the app models it, with the coordinates of everything deployed in it.
+ *
+ * `scenes` is left undefined when the lookup failed, keeping "we could not ask"
+ * distinguishable from "there are none".
+ */
 export async function toManagedProject(
   worldsApi: Worlds,
   world: WorldData,
   address: string,
 ): Promise<ManagedProject> {
+  const hasEverBeenDeployed = Boolean(world.owner);
+
   return {
     id: world.name,
     displayName: world.name,
@@ -99,8 +106,7 @@ export async function toManagedProject(
       world.owner?.toLowerCase() === address.toLowerCase()
         ? WorldRoleType.OWNER
         : WorldRoleType.COLLABORATOR,
-    // If a world has never been deployed the backend nulls the owner and every other field.
-    deployment: world.owner
+    deployment: hasEverBeenDeployed
       ? {
           title: world.title || world.name,
           description: world.description || '',
@@ -109,8 +115,6 @@ export async function toManagedProject(
           scenesCount: world.deployedScenes || 0,
         }
       : undefined,
-    // Left undefined when the lookup failed, so "we could not ask" stays
-    // distinguishable from "there are none".
     scenes: world.deployedScenes
       ? ((await fetchWorldSceneCoords(worldsApi, world.name)) ?? undefined)
       : [],
@@ -123,6 +127,10 @@ export async function toManagedProject(
  *
  * The Manage page's own list is narrowed by its search box, sort and page, so
  * anything that needs the whole set has to ask for it separately.
+ *
+ * Throws rather than answering short: a world whose scenes could not be listed
+ * contributes none, which reads downstream as a creator who owns fewer than
+ * they do.
  */
 export async function fetchAllDeployedWorlds(
   worldsApi: Worlds,
@@ -144,8 +152,6 @@ export async function fetchAllDeployedWorlds(
     worlds.map(world => toManagedProject(worldsApi, world, address)),
   );
 
-  // A world we could not list contributes no scenes, which reads downstream as a
-  // creator who owns fewer than they do. Better to say so than to answer short.
   const unreadable = projects.filter(project => !project.scenes).map(project => project.id);
   if (unreadable.length > 0) {
     throw new Error(`Failed to list the scenes deployed in ${unreadable.join(', ')}`);
