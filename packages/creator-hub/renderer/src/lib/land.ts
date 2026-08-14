@@ -1,7 +1,7 @@
 import fromUnixTime from 'date-fns/fromUnixTime';
 import { config } from '/@/config';
 import { fetch } from '/shared/fetch';
-import { chunk } from '/shared/utils';
+import { chunk, retry } from '/shared/utils';
 import type { WorldDeployment } from './worlds';
 
 // TheGraph has a limit of a maximum of 1000 results per entity per query
@@ -9,6 +9,12 @@ const MAX_RESULTS = 1000;
 
 /** A large estate can hold hundreds of parcels; the content server takes them in batches. */
 const MAX_POINTERS_PER_REQUEST = 100;
+
+/**
+ * Resolving a batch of pointers answers with every scene's full entity record, so
+ * it runs to hundreds of kilobytes and outlasts the default timeout on a cold cache.
+ */
+const ENTITIES_TIMEOUT_MS = 30_000;
 
 const SEPARATOR = ',';
 
@@ -497,27 +503,29 @@ export class Lands {
    * one scene costs one request and yields one entity, not a hundred.
    */
   public async fetchLandPublishedScenes(coords: Coords[]): Promise<LandDeployment[]> {
-    const byEntityId = new Map<string, LandDeployment>();
+    const groups = await Promise.all(
+      chunk(coords, MAX_POINTERS_PER_REQUEST).map(group =>
+        retry(async () => {
+          const result = await fetch(
+            `${this.PEER_URL}/content/entities/active`,
+            {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ pointers: group.map(([x, y]) => coordsToId(x, y)) }),
+            },
+            ENTITIES_TIMEOUT_MS,
+          );
 
-    for (const group of chunk(coords, MAX_POINTERS_PER_REQUEST)) {
-      try {
-        const result = await fetch(`${this.PEER_URL}/content/entities/active`, {
-          method: 'POST',
-          body: JSON.stringify({
-            pointers: group.map(([x, y]) => coordsToId(x, y)),
-          }),
-        });
-
-        if (result.ok) {
-          for (const scene of (await result.json()) as LandDeployment[]) {
-            byEntityId.set(scene.id, scene);
+          if (!result.ok) {
+            throw new Error(`Failed to resolve ${group.length} parcels: ${result.status}`);
           }
-        }
-      } catch (error) {
-        // Silent fail - these parcels may not have a scene deployed
-      }
-    }
+          return (await result.json()) as LandDeployment[];
+        }),
+      ),
+    );
 
+    // One scene covers however many of the owned parcels pointed at it.
+    const byEntityId = new Map(groups.flat().map(scene => [scene.id, scene]));
     return [...byEntityId.values()];
   }
 }

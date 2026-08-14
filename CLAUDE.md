@@ -158,6 +158,16 @@ same source tree. In `asset-packs` source files and tests, import these
 constants from the leaf module directly (`from './id'`, `from './types'`,
 etc.) rather than via the `definitions.ts` barrel.
 
+### Vitest fake timers leak across `describe` blocks
+
+`vi.useFakeTimers()` in one `describe` stays in effect for every later
+`describe` in the same file — vitest does not reset it between blocks. A later
+test that awaits a real `setTimeout` (a retry/backoff helper, a debounced
+promise) then hangs to the 5s test timeout with no indication why.
+`packages/creator-hub/shared/tests/utils.spec.ts` is the live case: the
+`debounce` and `debounceByKey` suites enable them and never restore, so anything
+added below needs its own `beforeEach(() => vi.useRealTimers())`.
+
 ### Asset-pack composite placeholders must resolve before the engine serializes
 
 Asset-pack `composite.json` files encode references as portable placeholders:
