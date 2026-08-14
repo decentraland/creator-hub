@@ -9,6 +9,9 @@ const LOCAL_HOSTS = ['localhost', '127.0.0.1'];
 
 const REQUEST_TIMEOUT_MS = 15_000;
 
+/** The only headers the renderer gets to set: its ADR-44 signature. */
+const FORWARDED_HEADER = /^x-identity-auth-chain-/i;
+
 /**
  * Main is not a general-purpose fetch proxy for the renderer: it only reaches
  * Decentraland hosts, plus localhost so the service can be run locally.
@@ -42,11 +45,16 @@ export async function request(req: MetricsRequest): Promise<MetricsResponse> {
     const response = await fetch(url, {
       method: 'POST',
       headers: {
+        ...Object.fromEntries(
+          Object.entries(req.headers ?? {}).filter(([name]) => FORWARDED_HEADER.test(name)),
+        ),
         accept: 'application/json',
         'content-type': 'application/json',
-        ...(req.headers ?? {}),
       },
       body: JSON.stringify(req.body),
+      // The allowlist only sees the first URL, so a 3xx to an internal address
+      // would otherwise be followed unchecked.
+      redirect: 'error',
       signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
     });
 
