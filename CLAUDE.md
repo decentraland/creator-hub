@@ -183,6 +183,23 @@ the `{ messages: [...] }` wrapper its TypeScript type implies (the explorer's
 Read it as an array, tolerating both shapes:
 `Array.isArray(res) ? res : (res?.messages ?? [])`.
 
+### Electron response headers must be overridden case-insensitively
+
+`session.webRequest.onHeadersReceived` rebuilds the whole response header block from
+the object the handler returns, writing one line per key with **no case-insensitive
+de-duplication** — and it keys `details.responseHeaders` by the *wire* casing, which
+is lowercase over HTTP/2 (what every CDN in front of `decentraland.org` speaks). So
+`{ ...details.responseHeaders, 'Cross-Origin-Embedder-Policy': [...] }` does not
+replace the response's own header, it **appends a second one**. Chromium joins
+duplicates (`credentialless, credentialless`), fails to parse the structured field
+and falls back to `unsafe-none` — an injection that reads correctly while having no
+effect at all. A duplicated `Access-Control-Allow-Origin` is rejected outright.
+Drop every casing of a name before setting it (`setHeader` in
+`main/src/security-restrictions.ts`), and assert header counts **case-insensitively**
+in tests — a same-case lookup cannot see the duplicate, which is why the #1456 suite
+passed while the bug shipped. Symptom when missed: #1485, the GLB import spinner
+never resolving with no error in the UI or Sentry.
+
 ## Skills
 
 Skills live in `.ai/skills/*/SKILL.md`. Read the relevant `SKILL.md` when a task matches a skill's domain.
