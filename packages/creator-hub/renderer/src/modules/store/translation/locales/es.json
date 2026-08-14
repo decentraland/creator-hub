@@ -971,19 +971,14 @@
         "visits": "Visitas",
         "engagement": "Interacción"
       },
-      "date_range": {
-        "title": "Rango de Fechas",
-        "last_7_days": "Últimos 7 Días",
-        "last_30_days": "Últimos 30 Días",
-        "last_60_days": "Últimos 60 Días"
-      },
       "place": {
         "access": "Acceso",
         "private": "Privado",
         "public": "Público",
         "published_in": "Publicado en",
         "last_published_by": "Última publicación por",
-        "last_update": "Última Actualización"
+        "last_update": "Última Actualización",
+        "genesis_city": "Genesis City"
       },
       "actions": {
         "create_event": "Crear Evento",
@@ -1055,7 +1050,7 @@
         },
         "social": {
           "title": "Interacciones Sociales",
-          "description": "Las interacciones se cuentan por realm (una copia en ejecución del place), así que el juego repartido entre realms se ve un poco más bajo.",
+          "description": "Porcentaje de los visitantes de cada semana que chatearon o usaron emotes al menos una vez.",
           "totals_title": "Totales Semanales de Interacciones Sociales",
           "rate_title": "Tasa de Interacción Social de Visitantes",
           "messages": {
@@ -1069,7 +1064,19 @@
           "friendships": {
             "label": "Nuevas Amistades",
             "tooltip": "Solicitudes de amistad aceptadas entre visitantes de tu place."
+          },
+          "engaged": {
+            "label": "Visitantes Socialmente Activos",
+            "tooltip": "Porcentaje de los visitantes de cada semana que chatearon o usaron emotes al menos una vez."
           }
+        },
+        "playtime": {
+          "title": "Tiempo de Juego Promedio",
+          "description": "Tiempo promedio que cada usuario pasa en tu place en una sola visita."
+        },
+        "afk": {
+          "title": "Tiempo AFK Promedio",
+          "description": "Tiempo promedio que cada usuario pasa en tu place sin interactuar."
         }
       },
       "platforms": {
@@ -1082,6 +1089,15 @@
       },
       "error": {
         "title": "No pudimos cargar las analíticas de este Place"
+      },
+      "window": {
+        "title": "Período",
+        "last_30_days": "Últimos 30 Días",
+        "last_60_days": "Últimos 60 Días"
+      },
+      "not_found": {
+        "title": "Escena no encontrada",
+        "description": "Esta escena no está entre las publicadas por tu cuenta."
       }
     },
     "metrics": {
@@ -1099,7 +1115,7 @@
       },
       "concurrent_users": {
         "label": "Usuarios Simultáneos",
-        "tooltip": "La mayor cantidad de usuarios en tu place al mismo tiempo."
+        "tooltip": "Número promedio de usuarios en tu place al mismo tiempo."
       },
       "revenue": {
         "label": "Ingresos",
@@ -1124,6 +1140,10 @@
       "mobile": {
         "label": "Móvil",
         "tooltip": "Usuarios que visitaron tu place desde un cliente móvil."
+      },
+      "peak_concurrent_users": {
+        "label": "Pico de Usuarios Simultáneos",
+        "tooltip": "La mayor cantidad de usuarios en tu place al mismo tiempo."
       }
     },
     "list": {
@@ -1139,17 +1159,25 @@
       },
       "columns": {
         "place": "Place",
-        "total_visits": "Visitas Únicas",
+        "total_visits": "Visitas Totales",
         "new_users": "Usuarios Nuevos",
         "day_7_retention": "Retención D7",
         "revenue": "Ingresos",
-        "avg_playtime": "Tiempo de Juego Prom."
+        "avg_playtime": "Tiempo de Juego Prom.",
+        "concurrent_users": "Usuarios Simultáneos"
       },
       "actions": {
         "pin_to_watchlist": "Fijar a la Watchlist",
         "unpin_from_watchlist": "Quitar de la Watchlist"
-      }
-    }
+      },
+      "genesis_city": "Genesis City ({coords})"
+    },
+    "sign_in": {
+      "title": "Inicia sesión para ver las analíticas de tus Places"
+    },
+    "no_data_yet": "Aún no hay datos",
+    "no_data_yet_description": "Esta escena no tiene datos en la última exportación. Si se publicó hace poco, vuelve a revisar después de la próxima.",
+    "exported_at": "Datos al {date}"
   },
   "connection": {
     "offline": {

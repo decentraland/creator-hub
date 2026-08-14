@@ -30,6 +30,7 @@ import { Container } from '../Container';
 import { Loader } from '../Loader';
 import { Navbar, NavbarItem } from '../Navbar';
 import { Select } from '../Select';
+import { SignInCard } from '../SignInCard';
 import { Title } from '../Title';
 import { formatExportDate } from '../AnalyticsPage/utils';
 
@@ -57,7 +58,7 @@ type TabValue = 'overview' | 'retention' | 'visits' | 'engagement';
 
 export function AnalyticsDetailPage() {
   const { placeId = '' } = useParams<{ placeId: string }>();
-  const { isSignedIn } = useAuth();
+  const { isSignedIn, isSigningIn, signIn } = useAuth();
   const {
     window: metricsWindow,
     exportedAt,
@@ -76,17 +77,23 @@ export function AnalyticsDetailPage() {
   // the snapshot is loaded.
   useEffect(() => {
     if (isSignedIn && status === 'idle') dispatch(placeAnalyticsActions.fetchAnalytics());
-  }, [isSignedIn, status]);
+  }, [isSignedIn, status, dispatch]);
 
   const handleBack = useCallback(() => navigate('/analytics'), [navigate]);
 
-  const handleTabChange = useCallback((_e: SyntheticEvent, value: TabValue) => {
-    setTab(value);
-  }, []);
+  const handleTabChange = useCallback(
+    (_e: SyntheticEvent, value: TabValue) => {
+      setTab(value);
+    },
+    [setTab],
+  );
 
-  const handleWindowChange = useCallback((e: SelectChangeEvent<MetricsWindow>) => {
-    dispatch(placeAnalyticsActions.setWindow(e.target.value as MetricsWindow));
-  }, []);
+  const handleWindowChange = useCallback(
+    (e: SelectChangeEvent<MetricsWindow>) => {
+      dispatch(placeAnalyticsActions.setWindow(e.target.value as MetricsWindow));
+    },
+    [dispatch],
+  );
 
   const projections = useMemo(
     () =>
@@ -129,7 +136,13 @@ export function AnalyticsDetailPage() {
             </span>
           </Tooltip>
         </Box>
-        {isLoading ? (
+        {/* Before the loading branch: with nothing in flight, `idle` is not a wait. */}
+        {!isSignedIn && !isSigningIn ? (
+          <SignInCard
+            onClickSignIn={signIn}
+            title={t('analytics.sign_in.title')}
+          />
+        ) : isLoading ? (
           <Loader size={70} />
         ) : status === 'failed' ? (
           <Box className="ErrorContainer">

@@ -5,9 +5,11 @@ import './styles.css';
 
 type Props = {
   onClickSignIn: () => void;
+  /** Why this page needs an account, in its own words. */
+  title: string;
 };
 
-const SignInCard: React.FC<Props> = ({ onClickSignIn }) => {
+const SignInCard: React.FC<Props> = ({ onClickSignIn, title }) => {
   return (
     <Card className="Card SignInCard">
       <CardContent className="CardContent CenteredContent">
@@ -15,7 +17,7 @@ const SignInCard: React.FC<Props> = ({ onClickSignIn }) => {
           className="CardTitle"
           variant="h6"
         >
-          {t('manage.sign_in.title')}
+          {title}
         </Typography>
         <Button
           className="SignInButton"

@@ -9,7 +9,10 @@ import type { LocationMetrics } from '/@/lib/metricsApi';
 import { toSummary } from '/@/lib/placeAnalytics.adapter';
 import { fetchAnalytics as fetchAnalyticsSnapshot } from '/@/lib/placeAnalytics';
 import type { AppState } from '/@/modules/store';
-import { fetchAllManagedProjectsData } from '/@/modules/store/management';
+import {
+  actions as managementActions,
+  fetchAllManagedProjectsData,
+} from '/@/modules/store/management';
 import { createAsyncThunk } from '/@/modules/store/thunk';
 
 import { sortPlaces } from './utils';
@@ -27,11 +30,16 @@ export const fetchAnalytics = createAsyncThunk(
     const connectedAccount = AuthServerProvider.getAccount();
     if (!connectedAccount) throw new Error('No connected account found');
 
-    // The scenes to ask about come from the app's own knowledge of what this
-    // wallet holds, which the managed-projects page loads.
-    if (getState().management.status === 'idle') {
-      await dispatch(fetchAllManagedProjectsData({ address: connectedAccount })).unwrap();
-    }
+    /*
+     * The scenes to ask about come from the app's own knowledge of what this
+     * wallet holds. Loaded unconditionally rather than behind a
+     * `management.status` check: that flag is written by two thunks — one nested
+     * inside the other — and `fetchManagedProjectsFiltered` sets it while
+     * honouring the page's filters and pagination. So no value of it proves the
+     * project list is complete, and trusting it silently analyses the wrong set
+     * of scenes, or none at all.
+     */
+    await dispatch(fetchAllManagedProjectsData({ address: connectedAccount })).unwrap();
 
     const { management, land } = getState();
     return fetchAnalyticsSnapshot(management.projects, land.data);
@@ -91,6 +99,12 @@ const slice = createSlice({
   },
   extraReducers: builder => {
     builder
+      /*
+       * Analytics is per wallet, so it goes when the wallet does. Reacting to
+       * management's own reset rather than dispatching from `clearUserManagedProjects`:
+       * this slice already depends on management, and the reverse would be a cycle.
+       */
+      .addCase(managementActions.clearState, () => initialState)
       .addCase(fetchAnalytics.pending, state => {
         state.status = 'loading';
         state.error = null;

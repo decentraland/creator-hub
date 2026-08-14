@@ -109,7 +109,7 @@
       "size": "尺寸"
     },
     "results": "{count}结果",
-    "parcel_count": "{parcels} {包裹, plural, one {包裹} other {包裹}}",
+    "parcel_count": "{parcels} 个{parcels, plural, one {地块} other {地块}}",
     "saving": "保存...",
     "badges": {
       "published": "已发布"
@@ -224,7 +224,7 @@
         },
         "empty_names": {
           "title": "您沒有任何可用的世界",
-          "description": "<b>當您擁有一個NAME 時，您將獲得一個免費的世界</b>。你想要多少就可以有多少。",
+          "description": "<b>當您擁有一個NAME 時，您將獲得一個免費的世界</b>。<br></br>你想要多少就可以有多少。",
           "action": "索取新名字"
         }
       },
@@ -971,19 +971,14 @@
         "visits": "访问",
         "engagement": "互动"
       },
-      "date_range": {
-        "title": "日期范围",
-        "last_7_days": "最近 7 天",
-        "last_30_days": "最近 30 天",
-        "last_60_days": "最近 60 天"
-      },
       "place": {
         "access": "访问权限",
         "private": "私密",
         "public": "公开",
         "published_in": "发布于",
         "last_published_by": "最后发布者",
-        "last_update": "最后更新"
+        "last_update": "最后更新",
+        "genesis_city": "创世城"
       },
       "actions": {
         "create_event": "创建活动",
@@ -1055,7 +1050,7 @@
         },
         "social": {
           "title": "社交互动",
-          "description": "互动按 realm（该 Place 的一个运行副本）统计，因此跨 realm 的游玩数据会略低。",
+          "description": "每周访客中至少聊天或使用过一次表情的用户占比。",
           "totals_title": "每周社交互动总量",
           "rate_title": "访客社交互动率",
           "messages": {
@@ -1069,7 +1064,19 @@
           "friendships": {
             "label": "新增好友",
             "tooltip": "访客之间在你的 Place 中接受的好友请求。"
+          },
+          "engaged": {
+            "label": "社交互动访客",
+            "tooltip": "每周访客中至少聊天或使用过一次表情的用户占比。"
           }
+        },
+        "playtime": {
+          "title": "平均游玩时长",
+          "description": "每位用户单次访问在你的 Place 中停留的平均时间。"
+        },
+        "afk": {
+          "title": "平均挂机时长",
+          "description": "每位用户在你的 Place 中没有互动的平均时间。"
         }
       },
       "platforms": {
@@ -1082,6 +1089,15 @@
       },
       "error": {
         "title": "无法加载该 Place 的分析数据"
+      },
+      "window": {
+        "title": "时间范围",
+        "last_30_days": "最近 30 天",
+        "last_60_days": "最近 60 天"
+      },
+      "not_found": {
+        "title": "未找到场景",
+        "description": "该场景不在你的账户已发布的场景中。"
       }
     },
     "metrics": {
@@ -1099,7 +1115,7 @@
       },
       "concurrent_users": {
         "label": "同时在线用户",
-        "tooltip": "同一时间在你的 Place 中的最高用户数。"
+        "tooltip": "同一时间在你的 Place 中的平均用户数。"
       },
       "revenue": {
         "label": "收入",
@@ -1124,6 +1140,10 @@
       "mobile": {
         "label": "移动端",
         "tooltip": "通过移动客户端访问你的 Place 的用户。"
+      },
+      "peak_concurrent_users": {
+        "label": "峰值同时在线用户",
+        "tooltip": "同一时间在你的 Place 中的最高用户数。"
       }
     },
     "list": {
@@ -1139,17 +1159,25 @@
       },
       "columns": {
         "place": "Place",
-        "total_visits": "独立访问量",
+        "total_visits": "总访问量",
         "new_users": "新用户",
         "day_7_retention": "7 日留存",
         "revenue": "收入",
-        "avg_playtime": "平均游玩时长"
+        "avg_playtime": "平均游玩时长",
+        "concurrent_users": "同时在线用户"
       },
       "actions": {
         "pin_to_watchlist": "固定到关注列表",
         "unpin_from_watchlist": "从关注列表移除"
-      }
-    }
+      },
+      "genesis_city": "创世城 ({coords})"
+    },
+    "sign_in": {
+      "title": "登录以查看你的 Place 数据分析"
+    },
+    "no_data_yet": "暂无数据",
+    "no_data_yet_description": "该场景在最新导出的数据中没有数值。如果是最近发布的，请在下次导出后再查看。",
+    "exported_at": "截至 {date} 的数据"
   },
   "connection": {
     "offline": {

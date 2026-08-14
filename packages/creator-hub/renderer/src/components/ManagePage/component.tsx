@@ -19,9 +19,9 @@ import { Search } from '../Search';
 import { Button } from '../Button';
 import { Row } from '../Row';
 import { Column } from '../Column';
+import { SignInCard } from '../SignInCard';
 import { ManagedProjectsList } from './ManagedProjectsList';
 import { StorageUsed } from './StorageUsed';
-import { SignInCard } from './SignInCard';
 import './styles.css';
 
 const CLAIM_NAME_URL = 'https://decentraland.org/marketplace/names/claim';
@@ -128,7 +128,10 @@ export function ManagePage() {
           )}
         </Typography>
         {!isSignedIn && !isSigningIn ? (
-          <SignInCard onClickSignIn={signIn} />
+          <SignInCard
+            onClickSignIn={signIn}
+            title={t('manage.sign_in.title')}
+          />
         ) : (
           <Row>
             <Column className="ContentColumn">

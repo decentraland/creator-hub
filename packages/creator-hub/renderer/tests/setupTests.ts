@@ -1,3 +1,4 @@
+import { cleanup } from '@testing-library/react';
 import { afterEach, vi } from 'vitest';
 
 // Mock preload modules
@@ -26,4 +27,7 @@ vi.mock('#preload', async () => {
 
 afterEach(() => {
   vi.clearAllMocks();
+  // Vitest runs without globals, so testing-library never registers its own
+  // auto-cleanup and rendered trees would pile up across tests.
+  cleanup();
 });
