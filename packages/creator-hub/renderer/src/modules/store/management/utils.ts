@@ -45,9 +45,12 @@ async function readAllPages<T>(
   while (items.length < total) {
     const result = await retry(async () => {
       const answer = await page(items.length);
-      if (!answer) throw new Error('Page not available');
+      if (!answer) throw new Error(`No answer for the page at offset ${items.length}`);
       return answer;
-    }).catch(() => null);
+    }).catch(error => {
+      console.warn('[paged-read] gave up on a page after retries', error);
+      return null;
+    });
 
     if (!result) return null;
     if (result.items.length === 0) break;
@@ -152,7 +155,9 @@ export async function fetchAllDeployedWorlds(
     worlds.map(world => toManagedProject(worldsApi, world, address)),
   );
 
-  const unreadable = projects.filter(project => !project.scenes).map(project => project.id);
+  const unreadable = projects
+    .filter(project => project.scenes === undefined)
+    .map(project => project.id);
   if (unreadable.length > 0) {
     throw new Error(`Failed to list the scenes deployed in ${unreadable.join(', ')}`);
   }
