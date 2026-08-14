@@ -50,6 +50,45 @@ vi.mock('./utils', async importOriginal => ({
 Note that `importOriginal` does **not** intercept same-module calls: a function
 kept real still calls its real neighbours, not their mocked versions.
 
+A module mocked this way also loses its **default** export unless the factory
+provides one. `lib/worlds` does `import fetch from 'decentraland-crypto-fetch'`,
+so a factory without a `default` leaves every worlds request calling `undefined`
+— surfacing as `Failed to fetch worlds` with zero fetch calls recorded, and
+nothing naming the mock:
+
+```ts
+vi.mock('decentraland-crypto-fetch', () => ({
+  default: (input: RequestInfo | URL, init?: RequestInit) => globalThis.fetch(input, init),
+  signedHeaderFactory: () => () => new Map(),
+}));
+```
+
+`importOriginal<T>()` takes a namespace type import
+(`import type * as Utils from './utils'`), but only for modules that declare
+their own exports. A barrel that re-exports with `export *` (`../Navbar`,
+`modules/store/land`) fails `TS2709: Cannot use namespace as a type`; there,
+drop the generic and spread `(await importOriginal()) as object`.
+
+### Rendering a page component needs a theme, and no navbar
+
+`decentraland-ui2` components read theme tokens through emotion, so a bare
+`render()` throws before the page under test appears. Wrap in
+`ThemeProvider theme={dark}` from `decentraland-ui2/dist/theme`, plus
+`MemoryRouter` for anything calling `useNavigate`.
+
+That is still not enough for a page carrying the navbar: `AvatarFace` reads a
+palette slice this environment does not populate and throws
+`Cannot read properties of undefined (reading 'secondary')` from
+`AvatarFace.styled.ts` — a stack that names neither your test nor your page.
+Stub the component and keep the enum:
+
+```ts
+vi.mock('../Navbar', async importOriginal => ({
+  ...((await importOriginal()) as object),
+  Navbar: () => null,
+}));
+```
+
 ### Type `importOriginal` with a namespace import, not `typeof import()`
 
 `@typescript-eslint/consistent-type-imports` rejects inline `import()` type
