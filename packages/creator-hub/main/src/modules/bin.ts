@@ -307,11 +307,14 @@ export function run(pkg: string, bin: string, options: RunOptions = {}): Child {
       }, 100);
 
       // timeout to stop checking if child still running, kill it with fire
+      // On Windows, tree-kill already issues taskkill /F /T so a long graceful wait just delays
+      // NSIS-triggered update installs; 500 ms is sufficient for the process tree to collapse.
+      const forceKillTimeout = process.platform === 'win32' ? 500 : 5000;
       const timeout = setTimeout(() => {
         if (alive) {
           die(true);
         }
-      }, 5000);
+      }, forceKillTimeout);
 
       // return promise
       return killPromise;
