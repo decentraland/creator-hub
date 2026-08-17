@@ -615,7 +615,7 @@ export async function legacyDeploy({
 
   process.waitFor(/close the terminal/gi).then(() => process.kill());
 
-  process.wait().catch(); // handle rejection of main promise to avoid warnings in console
+  process.wait().catch(() => {}); // handle rejection of main promise to avoid warnings in console
 
   deployServer = { stop: () => process.kill() };
 
