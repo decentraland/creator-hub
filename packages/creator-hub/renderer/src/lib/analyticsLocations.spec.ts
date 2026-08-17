@@ -112,6 +112,24 @@ describe('collectAnalyticsPlaces', () => {
     });
   });
 
+  describe('when two scenes resolve to the same coordinate', () => {
+    it('should produce one place, since the metrics are keyed by location', async () => {
+      const places = await collectAnalyticsPlaces(
+        [
+          world('twin.dcl.eth', [
+            { x: 0, y: 0 },
+            { x: 0, y: 0 },
+          ]),
+        ],
+        [],
+        THUMBNAIL,
+      );
+
+      expect(places).toHaveLength(1);
+      expect(new Set(places.map(place => place.placeId)).size).toBe(places.length);
+    });
+  });
+
   describe('when a world holds one scene', () => {
     it('should name the row with the world alone', async () => {
       const [place] = await collectAnalyticsPlaces(
