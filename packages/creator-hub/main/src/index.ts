@@ -175,7 +175,9 @@ app.on('before-quit', async event => {
   }
   event.preventDefault();
   try {
-    await killAll();
+    // On Windows, NSIS has a fixed window to close the app; cap cleanup so app.exit() fires
+    // before that window expires and the "cannot be closed" dialog appears.
+    await Promise.race([killAll(), new Promise<void>(resolve => setTimeout(resolve, 2000))]);
   } catch (error) {
     captureException(error, { tags: { source: 'before-quit' } });
     log.error('[App] Failed to kill all servers:', error);
