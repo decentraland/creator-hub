@@ -1,5 +1,5 @@
 import { vi, describe, it, expect, beforeEach } from 'vitest';
-import { debounce, debounceByKey, isValidFolderName, getBaseName } from '../utils';
+import { debounce, debounceByKey, isValidFolderName, getBaseName, retry } from '../utils';
 
 describe('isValidFolderName', () => {
   it('should accept a normal name', () => {
@@ -181,5 +181,41 @@ describe('debounceByKey', () => {
     // Should have executed only the last call
     expect(mockFn).toHaveBeenCalledTimes(1);
     expect(mockFn).toHaveBeenLastCalledWith('a');
+  });
+});
+
+describe('retry', () => {
+  beforeEach(() => {
+    vi.useRealTimers();
+  });
+
+  describe('when the first attempt fails', () => {
+    it('should answer with the next one, since a timeout says nothing about it', async () => {
+      const attempt = vi
+        .fn()
+        .mockRejectedValueOnce(new Error('REQUEST_TIMEOUT'))
+        .mockResolvedValue('ok');
+
+      expect(await retry(attempt, 2, 0)).toBe('ok');
+      expect(attempt).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  describe('when every attempt fails', () => {
+    it('should let the last failure through rather than swallowing it', async () => {
+      const attempt = vi.fn().mockRejectedValue(new Error('gone'));
+
+      await expect(retry(attempt, 3, 0)).rejects.toThrow('gone');
+      expect(attempt).toHaveBeenCalledTimes(3);
+    });
+  });
+
+  describe('when the first attempt succeeds', () => {
+    it('should not try again', async () => {
+      const attempt = vi.fn().mockResolvedValue('ok');
+
+      expect(await retry(attempt, 3, 0)).toBe('ok');
+      expect(attempt).toHaveBeenCalledTimes(1);
+    });
   });
 });

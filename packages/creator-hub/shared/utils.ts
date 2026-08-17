@@ -88,6 +88,23 @@ export const chunk = <T>(items: T[], size: number): T[][] =>
     items.slice(index * size, index * size + size),
   );
 
+/**
+ * Runs `attempt` again after a pause if it throws, and lets the last failure through.
+ *
+ * For reads across the internet, where a timeout or a 5xx says nothing about
+ * whether the next call will work.
+ */
+export async function retry<T>(attempt: () => Promise<T>, attempts = 2, pauseMs = 500): Promise<T> {
+  for (let remaining = attempts - 1; ; remaining--) {
+    try {
+      return await attempt();
+    } catch (error) {
+      if (remaining <= 0) throw error;
+      await delay(pauseMs);
+    }
+  }
+}
+
 export function debounce<F extends (...args: any[]) => void>(func: F, delay: number) {
   let timer: ReturnType<typeof setTimeout>;
   return function (...args: Parameters<F>) {
