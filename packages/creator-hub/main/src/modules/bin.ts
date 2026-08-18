@@ -4,7 +4,7 @@ import { exec as execSync, spawn } from 'child_process';
 import log from 'electron-log/main';
 import { shell, utilityProcess } from 'electron';
 import treeKill from 'tree-kill';
-import { future } from 'fp-future';
+import { future, type IFuture } from 'fp-future';
 import isRunning from 'is-running';
 import { ErrorBase } from '/shared/types/error';
 import { createCircularBuffer } from '/shared/circular-buffer';
@@ -26,6 +26,12 @@ function getPath() {
 const exec = promisify(execSync);
 
 const MAX_BUFFER_SIZE = 2048;
+
+// Window for a child to exit gracefully before the kill escalates.
+// On Windows, tree-kill already issues taskkill /F /T so a long graceful wait just delays
+// NSIS-triggered update installs; 500 ms is sufficient for the process tree to collapse.
+// The quit budget in index.ts is derived from this value and must stay above it.
+export const FORCE_KILL_TIMEOUT_MS = process.platform === 'win32' ? 500 : 5000;
 
 type Error = 'COMMAND_FAILED';
 
@@ -107,6 +113,7 @@ type RunOptions = {
 export function run(pkg: string, bin: string, options: RunOptions = {}): Child {
   let isKilling = false;
   let alive = true;
+  let killPromise: IFuture<void> | null = null;
 
   const promise = future<Awaited<ReturnType<Child['wait']>>>();
   const matchers: Matcher[] = [];
@@ -145,9 +152,37 @@ export function run(pkg: string, bin: string, options: RunOptions = {}): Child {
     delete childEnv.ELECTRON_RUN_AS_NODE;
   }
 
+  const ready = future<void>();
+
   const forked: ChildProcessLike = nodePath
     ? spawn(nodePath, [binPath, ...args], { cwd, stdio: 'pipe', env: childEnv })
     : utilityProcess.fork(binPath, [...args], { cwd, stdio: 'pipe', env: childEnv });
+
+  // A plain child process reports a failed launch through 'error', and no 'exit' follows
+  // it; settle everything here so wait() and kill() never block on a process that never
+  // ran. Electron utility processes only emit 'spawn'/'exit'.
+  if (nodePath) {
+    (forked as ReturnType<typeof spawn>).on('error', error => {
+      if (!alive) return;
+      alive = false;
+      log.error(`[UtilityProcess] Process "${name}" failed to start:`, error);
+      if (isKilling) {
+        promise.resolve(Buffer.concat(stdout.getAll()));
+      } else {
+        promise.reject(
+          new StreamError(
+            'COMMAND_FAILED',
+            `Error: process "${name}" failed to start: ${error.message}`,
+            Buffer.concat(stdout.getAll()),
+            Buffer.concat(stderr.getAll()),
+          ),
+        );
+      }
+      cleanup();
+      ready.resolve();
+      killPromise?.resolve();
+    });
+  }
 
   const cleanup = () => {
     for (const matcher of matchers) {
@@ -172,8 +207,6 @@ export function run(pkg: string, bin: string, options: RunOptions = {}): Child {
     stderr.push(Uint8Array.from(data));
     stdall.push(Uint8Array.from(data));
   });
-
-  const ready = future<void>();
 
   const name = `${bin} ${args.join(' ')}`.trim();
   let spawnedPid: number | undefined;
@@ -212,6 +245,11 @@ export function run(pkg: string, bin: string, options: RunOptions = {}): Child {
       promise.resolve(stdoutBuf);
     }
     cleanup();
+    // a spawn that never happened still needs kill() unblocked, and an exit landing
+    // mid-kill() must settle the kill instead of leaving it to the pid poll, which
+    // can stay truthy forever on Windows pid reuse
+    ready.resolve();
+    killPromise?.resolve();
   });
 
   const child: Child = {
@@ -269,52 +307,69 @@ export function run(pkg: string, bin: string, options: RunOptions = {}): Child {
         }
       }),
     kill: async () => {
-      await ready;
-      const pid = forked.pid!;
+      // a repeat caller shares the in-flight kill instead of getting an instantly
+      // resolved undefined that would let shutdown truncate the first one's cleanup
+      if (killPromise) return killPromise;
+      if (!alive) return;
 
-      // if child is being killed or already killed then return
-      if (isKilling || !alive) return;
-
+      const pending = (killPromise = future<void>());
       isKilling = true;
-      log.info(`[UtilityProcess] Killing process "${name}" with pid=${pid}...`);
 
-      // create promise to kill child
-      const killPromise = future<void>();
+      await ready;
+
+      const pid = spawnedPid;
+      if (!alive || !pid) {
+        pending.resolve();
+        return pending;
+      }
+
+      log.info(`[UtilityProcess] Killing process "${name}" with pid=${pid}...`);
 
       // kill child gracefully
       treeKill(pid);
 
-      // child successfully killed
-      const die = (force: boolean = false) => {
+      let forced = false;
+
+      // child confirmed dead: settle wait() too — 'exit' early-returns once alive is
+      // false, and may never fire at all after a forced tree kill
+      const die = () => {
+        if (!pending.isPending) return;
         alive = false;
+        processes.delete(pid);
+        log.info(
+          `[UtilityProcess] Process "${name}" with pid=${pid} ${
+            forced ? 'forcefully' : 'gracefully'
+          } killed`,
+        );
+        promise.resolve(Buffer.concat(stdout.getAll()));
         cleanup();
-        clearInterval(interval);
-        clearTimeout(timeout);
-        if (force) {
-          log.info(`[UtilityProcess] Process "${name}" with pid=${pid} forcefully killed`);
-          treeKill(pid, 'SIGKILL');
-        } else {
-          log.info(`[UtilityProcess] Process "${name}" with pid=${pid} gracefully killed`);
-        }
-        killPromise.resolve();
+        pending.resolve();
       };
 
       // interval to check if child still running and flag it as dead when is not running anymore
       const interval = setInterval(() => {
-        if (!pid || !isRunning(pid)) {
+        if (!isRunning(pid)) {
           die();
         }
       }, 100);
 
-      // timeout to stop checking if child still running, kill it with fire
+      // timeout to stop waiting for a graceful exit, kill it with fire. The poll keeps
+      // running afterwards: resolving right here would declare success while the tree
+      // can still be alive holding the very files an NSIS update needs to replace.
       const timeout = setTimeout(() => {
         if (alive) {
-          die(true);
+          forced = true;
+          treeKill(pid, 'SIGKILL');
         }
-      }, 5000);
+      }, FORCE_KILL_TIMEOUT_MS);
 
-      // return promise
-      return killPromise;
+      // whether death is confirmed by the poll or by the 'exit' event, stop the timers
+      void pending.then(() => {
+        clearInterval(interval);
+        clearTimeout(timeout);
+      });
+
+      return pending;
     },
     alive: () => alive,
   };

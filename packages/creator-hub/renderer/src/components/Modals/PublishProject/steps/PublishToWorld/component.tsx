@@ -327,8 +327,12 @@ function SelectWorld({
     }
   }, [project, name, isMultiSceneEnabled, worldSettings.scenes, onPublish, onSelectLocation]);
 
-  // TODO: handle failed state...
-  const projectIsReady = project.status === 'succeeded';
+  // Only an in-flight thumbnail save blocks publishing (so the deploy doesn't
+  // race the file write). `status` stays undefined when no thumbnail was ever
+  // captured — the Bevy renderer's screenshot is best-effort and may never
+  // dispatch the save — and a failed save is likewise no reason to block:
+  // the thumbnail is decorative, the deploy works without it.
+  const projectIsReady = project.status !== 'loading';
 
   return (
     <div className="SelectWorld">
