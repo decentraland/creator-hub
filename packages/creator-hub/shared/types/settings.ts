@@ -11,6 +11,8 @@ export enum PREVIEW_CLIENT {
   DESKTOP = 'desktop',
   // The Bevy web client, opened in the browser via `sdk-commands start --bevy-web`.
   BEVY_WEB = 'bevy_web',
+  // Same preview server as Bevy (Web); Hub opens customClientUrl as typed.
+  CUSTOM = 'custom',
 }
 
 export const DEFAULT_PREVIEW_CLIENT = PREVIEW_CLIENT.DESKTOP;
@@ -25,6 +27,7 @@ export type PreviewOptions = {
   showWarnings: boolean;
   optimizedAssets: boolean;
   client: PREVIEW_CLIENT;
+  customClientUrl?: string;
 };
 
 export enum RENDERER {
