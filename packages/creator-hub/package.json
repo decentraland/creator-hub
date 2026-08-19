@@ -13,6 +13,7 @@
     "@dcl/mini-rpc": "^1.0.7",
     "@dcl/schemas": "26.5.0",
     "@dcl/single-sign-on-client": "0.1.0",
+    "@modelcontextprotocol/sdk": "^1.30.0",
     "@mui/x-charts": "^7.29.1",
     "@segment/analytics-node": "2.1.2",
     "@sentry/electron": "7.8.0",
@@ -34,7 +35,8 @@
     "socket.io-client": "4.8.3",
     "tree-kill": "1.2.2",
     "viem": "^2.46.2",
-    "ws": "^8.18.0"
+    "ws": "^8.18.0",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@dcl/hooks": "0.0.2",

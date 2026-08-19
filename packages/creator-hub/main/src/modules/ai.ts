@@ -18,6 +18,8 @@ import type { ChildProcess } from 'child_process';
 import log from 'electron-log/main';
 import type { AiEvent, AiProvider, AiProviderInfo, AiSendParams } from '/shared/types/ai';
 import { DCL_SYSTEM_PROMPT } from './ai-prompt';
+import { ensureSceneMcpServer, setSceneMcpProject, writeSceneMcpConfigFile } from './scene-mcp';
+import { ensureSkillsLinked } from './skills';
 
 // GUI-launched Electron gets a sparse PATH (no shell profile), so the CLIs — and their
 // own node/child lookups — won't be found by name alone. Search these in addition to
@@ -189,6 +191,7 @@ interface TurnCtx {
   projectDir: string;
   resume?: string;
   images: string[]; // temp-file paths of attached images (already written to disk)
+  mcpConfigPath?: string; // CH MCP server config file (scene read tools), when available
 }
 
 // A provider = how to find its binary + how to turn a turn into an argv + how to read
@@ -270,6 +273,10 @@ export const PROVIDERS: Record<AiProvider, ProviderDef> = {
       ];
       if (ctx.model !== undefined && ctx.model !== 'default') args.push('--model', ctx.model);
       if (ctx.resume !== undefined) args.push('--resume', ctx.resume);
+      // The CH MCP server (read-only scene tools). Merged with the user's own MCP
+      // config, not strict — their servers stay available too. bypassPermissions
+      // auto-allows the tool calls.
+      if (ctx.mcpConfigPath !== undefined) args.push('--mcp-config', ctx.mcpConfigPath);
       // images travel as paths inside the prompt — claude's Read tool renders image
       // files natively, no dedicated flag exists (or is needed)
       return args;
@@ -473,17 +480,41 @@ function writeAttachments(images: AiSendParams['images']): string[] {
 // Spawn one turn and stream its events through `emit`. Returns as soon as the child is
 // running (with the turn id) — the conversation streams asynchronously; it does NOT
 // wait for the turn to finish.
-export function aiSend(
+export async function aiSend(
   params: AiSendParams,
   projectDir: string | null,
   emit: (e: AiEvent) => void,
-): { turnId: string } {
+): Promise<{ turnId: string }> {
   if (projectDir === null || projectDir === '')
     throw new Error('Open a scene before using the assistant.');
   const def = PROVIDERS[params.provider];
   if (def === undefined) throw new Error(`Unknown assistant "${params.provider}".`);
   const bin = findExecutable(def.binNames);
   if (bin === null) throw new Error(`${def.label} CLI not found — install it and sign in.`);
+
+  // Link the Decentraland SDK7 skills into the project so the CLI finds them in its
+  // cwd (both providers). Best-effort — a missing/failed cache just means no skills
+  // this turn. The first turn after launch may wait briefly for the initial download.
+  try {
+    await ensureSkillsLinked(projectDir);
+  } catch (e) {
+    log.warn('[AI] could not link SDK skills:', e);
+  }
+
+  // Point the CH MCP server at this project and hand its config to the CLI. If the
+  // server can't start, degrade gracefully — the turn still runs, just without the
+  // scene read tools (the CLI can still read files directly). Claude only for now;
+  // Codex MCP wiring is a later phase.
+  let mcpConfigPath: string | undefined;
+  if (params.provider === 'claude') {
+    try {
+      const mcp = await ensureSceneMcpServer();
+      setSceneMcpProject(projectDir);
+      mcpConfigPath = writeSceneMcpConfigFile(mcp);
+    } catch (e) {
+      log.warn('[AI] MCP server unavailable, continuing without scene tools:', e);
+    }
+  }
 
   aiStop(); // supersede any in-flight turn
   const turnId = `t${++turnSeq}`;
@@ -505,6 +536,7 @@ export function aiSend(
     projectDir,
     resume: sessions[params.provider],
     images,
+    mcpConfigPath,
   });
 
   let child: ChildProcess;

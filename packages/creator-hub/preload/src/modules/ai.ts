@@ -1,11 +1,15 @@
 import { ipcRenderer, type IpcRendererEvent } from 'electron';
 
-import { AI_STREAM_EVENT } from '/shared/types/ipc';
+import {
+  AI_SCREENSHOT_REQUEST,
+  AI_STREAM_EVENT,
+  type AiScreenshotRequest,
+} from '/shared/types/ipc';
 import type { AiEvent, AiProviderInfo, AiSendParams } from '/shared/types/ai';
 
 import { invoke } from '../services/ipc';
 
-export type { AiEvent, AiProviderInfo, AiSendParams };
+export type { AiEvent, AiProviderInfo, AiSendParams, AiScreenshotRequest };
 
 export async function detectProviders(): Promise<AiProviderInfo[]> {
   return invoke('ai.detectProviders');
@@ -35,4 +39,18 @@ export function subscribeAiStream(cb: (event: AiEvent) => void): { cleanup: () =
   const handler = (_: IpcRendererEvent, event: AiEvent) => cb(event);
   ipcRenderer.on(AI_STREAM_EVENT, handler);
   return { cleanup: () => ipcRenderer.off(AI_STREAM_EVENT, handler) };
+}
+
+// The `editor_screenshot` MCP tool asks (via main) for a viewport capture; the editor
+// page answers with `screenshotResult`. Only the renderer can reach the inspector iframe.
+export function onScreenshotRequest(cb: (req: AiScreenshotRequest) => void): {
+  cleanup: () => void;
+} {
+  const handler = (_: IpcRendererEvent, req: AiScreenshotRequest) => cb(req);
+  ipcRenderer.on(AI_SCREENSHOT_REQUEST, handler);
+  return { cleanup: () => ipcRenderer.off(AI_SCREENSHOT_REQUEST, handler) };
+}
+
+export function screenshotResult(id: string, dataUrl: string | null): void {
+  void invoke('ai.screenshotResult', id, dataUrl);
 }

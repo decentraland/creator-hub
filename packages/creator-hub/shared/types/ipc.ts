@@ -35,6 +35,13 @@ export type PreviewProgress = { seconds: number; done?: number; total?: number }
 // need a single home.
 export const AI_STREAM_EVENT = 'ai.stream';
 
+// The `editor_screenshot` MCP tool lives in main, but only the renderer can capture the
+// inspector iframe (via SceneRpcClient). Main pushes a request over this channel; the
+// renderer answers by invoking `ai.screenshotResult`, correlated by `id`.
+export const AI_SCREENSHOT_REQUEST = 'ai.screenshotRequest';
+
+export type AiScreenshotRequest = { id: string; width: number; height: number };
+
 export interface MobileDebugSessionInfo {
   id: number;
   sessionId: string | null;
@@ -109,6 +116,9 @@ export interface Ipc {
   'ai.stop': () => Promise<void>;
   'ai.reset': () => Promise<void>;
   'ai.isBusy': () => Promise<boolean>;
+  // Renderer's answer to an AI_SCREENSHOT_REQUEST: the captured image as a data URL, or
+  // null if the capture failed (e.g. the Bevy renderer, which has no screenshot RPC).
+  'ai.screenshotResult': (id: string, dataUrl: string | null) => void;
   'mobileDebug.getSessions': () => Promise<MobileDebugSessionInfo[]>;
   'mobileDebug.subscribeEntries': () => Promise<void>;
   'mobileDebug.unsubscribeEntries': () => Promise<void>;

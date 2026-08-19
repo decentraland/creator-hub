@@ -30,6 +30,7 @@ import { ConnectionStatus } from '/@/lib/connection';
 
 import EditorPng from '/assets/images/editor.png';
 
+import { ai } from '#preload';
 import { useDispatch, useSelector } from '#store';
 import { useFeatureFlags } from '/@/hooks/useFeatureFlags';
 import { FeatureFlag } from '/@/modules/store/featureFlags';
@@ -165,6 +166,24 @@ export function EditorPage() {
       void rpc.scene.setFeatureFlags(featureFlags).catch(console.error);
     }
   }, [featureFlags]);
+
+  // Answer the AI assistant's `editor_screenshot` tool: main asks the renderer to
+  // capture the inspector iframe (only the renderer can reach it). Returns null under
+  // the Bevy renderer, which has no screenshot RPC — the tool reports that to the agent.
+  useEffect(() => {
+    if (!aiChatEnabled) return;
+    const { cleanup } = ai.onScreenshotRequest(async req => {
+      let dataUrl: string | null = null;
+      try {
+        const rpc = iframeRef.current;
+        if (rpc) dataUrl = await rpc.scene.takeScreenshot(req.width, req.height);
+      } catch {
+        dataUrl = null;
+      }
+      ai.screenshotResult(req.id, dataUrl);
+    });
+    return cleanup;
+  }, [aiChatEnabled]);
 
   useEffect(() => {
     if (isWorkspaceError(error, 'PROJECT_NOT_FOUND') || isProjectError(error)) {

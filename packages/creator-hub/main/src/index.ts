@@ -23,6 +23,7 @@ import { deployServer, killAllPreviews } from '/@/modules/cli';
 import { killAllRealms } from '/@/modules/bevy-realm';
 import { killInspectorServer } from '/@/modules/inspector';
 import { aiStop } from '/@/modules/ai';
+import { stopSceneMcpServer } from '/@/modules/scene-mcp';
 import { runMigrations } from '/@/modules/migrations';
 import { getAnalytics, track, trackLifecycleEvent } from './modules/analytics';
 import { handleAppArguments } from './modules/app-args-handle';
@@ -181,6 +182,7 @@ export async function killAll() {
   }
   killInspectorServer();
   aiStop(); // reap any in-flight AI CLI turn (synchronous kill of its process group)
+  stopSceneMcpServer(); // close the localhost MCP server
   promises.push(killAllUtilityProcesses());
 
   // Cap cleanup here so every quit path inherits the bound — before-quit,
