@@ -192,12 +192,6 @@ export function ensureSceneMcpServer(): Promise<SceneMcpInfo> {
   if (starting !== null) return starting;
 
   starting = (async () => {
-    const mcp = new McpServer({ name: 'creator-hub', version: '1.0.0' });
-    registerTools(mcp);
-    // One long-lived stateful transport for the single local client (the CLI).
-    const transport = new StreamableHTTPServerTransport({ sessionIdGenerator: () => randomUUID() });
-    await mcp.connect(transport);
-
     httpServer = http.createServer((req, res) => {
       void (async () => {
         // Only /mcp, and only with our bearer token — this port is localhost but a token
@@ -212,14 +206,26 @@ export function ensureSceneMcpServer(): Promise<SceneMcpInfo> {
           res.writeHead(404).end('Not found');
           return;
         }
+        // Stateless: a fresh McpServer + transport per POST. A single shared stateful
+        // transport rejects any second `initialize` ("Server already initialized"),
+        // which breaks the CLI client — so every request stands on its own. We serve
+        // request/response only (no SSE session), which is all the read tools need.
+        if (req.method !== 'POST') {
+          res.writeHead(405).end('Method not allowed');
+          return;
+        }
         try {
-          if (req.method === 'POST') {
-            const raw = await readBody(req);
-            const parsed = raw === '' ? undefined : JSON.parse(raw);
-            await transport.handleRequest(req, res, parsed);
-          } else {
-            await transport.handleRequest(req, res);
-          }
+          const raw = await readBody(req);
+          const parsed = raw === '' ? undefined : JSON.parse(raw);
+          const server = new McpServer({ name: 'creator-hub', version: '1.0.0' });
+          registerTools(server);
+          const transport = new StreamableHTTPServerTransport({ sessionIdGenerator: undefined });
+          res.on('close', () => {
+            void transport.close();
+            void server.close();
+          });
+          await server.connect(transport);
+          await transport.handleRequest(req, res, parsed);
         } catch (e) {
           log.error('[MCP] request failed:', e);
           if (!res.headersSent) res.writeHead(500).end('Internal error');
