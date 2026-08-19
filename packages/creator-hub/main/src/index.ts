@@ -22,6 +22,7 @@ import { initIpc } from '/@/modules/ipc';
 import { deployServer, killAllPreviews } from '/@/modules/cli';
 import { killAllRealms } from '/@/modules/bevy-realm';
 import { killInspectorServer } from '/@/modules/inspector';
+import { aiStop } from '/@/modules/ai';
 import { runMigrations } from '/@/modules/migrations';
 import { getAnalytics, track, trackLifecycleEvent } from './modules/analytics';
 import { handleAppArguments } from './modules/app-args-handle';
@@ -179,6 +180,7 @@ export async function killAll() {
     promises.push(deployServer.stop());
   }
   killInspectorServer();
+  aiStop(); // reap any in-flight AI CLI turn (synchronous kill of its process group)
   promises.push(killAllUtilityProcesses());
 
   // Cap cleanup here so every quit path inherits the bound — before-quit,

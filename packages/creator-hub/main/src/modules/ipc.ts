@@ -1,3 +1,4 @@
+import { AI_STREAM_EVENT } from '/shared/types/ipc';
 import { handle, handleSync } from './handle';
 import * as electron from './electron';
 import * as updater from './updater';
@@ -11,6 +12,7 @@ import * as npm from './npm';
 import * as config from './config';
 import * as mobileDebug from './mobile-debug-server';
 import * as metrics from './metrics';
+import * as ai from './ai';
 
 interface InitIpcOptions {
   beforeQuitCleanup: () => Promise<void>;
@@ -111,4 +113,17 @@ export function initIpc({ beforeQuitCleanup }: InitIpcOptions) {
   handle('npm.install', (_event, path, packages) => npm.install(path, packages));
   handle('npm.getOutdatedDeps', (_event, path, packages) => npm.getOutdatedDeps(path, packages));
   handle('npm.getContextFiles', (_event, path) => npm.getContextFiles(path));
+
+  // ai assistant — `ai.send` streams AiEvents back to the calling WebContents over
+  // AI_STREAM_EVENT; the returned turnId lets the renderer correlate the stream.
+  handle('ai.detectProviders', () => ai.detectProviders());
+  handle('ai.send', async (event, path, params) => {
+    const sender = event.sender;
+    return ai.aiSend(params, path, e => {
+      if (!sender.isDestroyed()) sender.send(AI_STREAM_EVENT, e);
+    });
+  });
+  handle('ai.stop', async () => ai.aiStop());
+  handle('ai.reset', async () => ai.aiReset());
+  handle('ai.isBusy', async () => ai.aiBusy());
 }

@@ -6,6 +6,7 @@ import CodeIcon from '@mui/icons-material/Code';
 import PublicIcon from '@mui/icons-material/Public';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import CloseIcon from '@mui/icons-material/Close';
+import SmartToyIcon from '@mui/icons-material/SmartToy';
 import { CircularProgress as Loader, Tooltip } from 'decentraland-ui2';
 import { IconButton } from '@mui/material';
 
@@ -31,6 +32,7 @@ import EditorPng from '/assets/images/editor.png';
 
 import { useDispatch, useSelector } from '#store';
 import { useFeatureFlags } from '/@/hooks/useFeatureFlags';
+import { FeatureFlag } from '/@/modules/store/featureFlags';
 import { actions as snackbarActions } from '/@/modules/store/snackbar';
 import { actions as editorActions } from '/@/modules/store/editor';
 import { createGenericNotification } from '/@/modules/store/snackbar/utils';
@@ -40,6 +42,7 @@ import { Row } from '../Row';
 import { ButtonGroup } from '../Button';
 import { ConnectionStatusIndicator } from '../ConnectionStatusIndicator';
 import { MobileQRCode } from '../Modals/MobileQRCode';
+import { AiChatPanel } from '../AiChatPanel';
 import { DeployModal } from './DeployModal';
 import { PreviewOptions, PublishOptions } from './MenuOptions';
 import { getPublishButtonText, getPublishOptions } from './utils';
@@ -92,7 +95,8 @@ export function EditorPage() {
   } = useEditor();
   const { settings, updateAppSettings } = useSettings();
   const { updatePackages } = useWorkspace();
-  const { flags: featureFlags } = useFeatureFlags();
+  const { flags: featureFlags, isEnabled } = useFeatureFlags();
+  const aiChatEnabled = isEnabled(FeatureFlag.AI_CHAT);
   const { executeDeployment, getDeployment } = useDeploy();
   const deployment = project ? getDeployment(project.path) : undefined;
 
@@ -109,6 +113,7 @@ export function EditorPage() {
   const iframeRef = useRef<ReturnType<typeof initRpc>>();
   const hydratedOptimizedAssetsPathRef = useRef<string | null>(null);
   const [modalState, setModalState] = useState<ModalState>({ type: undefined });
+  const [aiOpen, setAiOpen] = useState(false);
   const [mobileQRData, setMobileQRData] = useState<{ url: string; qr: string } | null>(null);
   // When the Bevy renderer is selected the engine loads from a headless
   // sdk-commands realm, and the inspector shares its data-layer WS. We start it
@@ -680,21 +685,35 @@ export function EditorPage() {
                   {publishButtonText}
                 </Button>
               )}
+              {aiChatEnabled && (
+                <Tooltip title={t('editor.ai.toggle')}>
+                  <IconButton
+                    aria-label={t('editor.ai.toggle')}
+                    color={aiOpen ? 'primary' : 'default'}
+                    onClick={() => setAiOpen(open => !open)}
+                  >
+                    <SmartToyIcon />
+                  </IconButton>
+                </Tooltip>
+              )}
               <ConnectionStatusIndicator />
             </div>
           </Header>
-          <iframe
-            className="inspector"
-            src={iframeUrl}
-            onLoad={handleIframeRef}
-            // Grant cross-origin isolation to the inspector iframe so the Bevy
-            // engine (nested one level deeper) can use SharedArrayBuffer. The
-            // renderer document + inspector server carry COOP/COEP, but a
-            // cross-origin child frame only becomes crossOriginIsolated when the
-            // embedder explicitly delegates it via this Permissions-Policy. Inert
-            // for the Babylon renderer.
-            allow="cross-origin-isolated"
-          ></iframe>
+          <div className="EditorBody">
+            <iframe
+              className="inspector"
+              src={iframeUrl}
+              onLoad={handleIframeRef}
+              // Grant cross-origin isolation to the inspector iframe so the Bevy
+              // engine (nested one level deeper) can use SharedArrayBuffer. The
+              // renderer document + inspector server carry COOP/COEP, but a
+              // cross-origin child frame only becomes crossOriginIsolated when the
+              // embedder explicitly delegates it via this Permissions-Policy. Inert
+              // for the Babylon renderer.
+              allow="cross-origin-isolated"
+            ></iframe>
+            {aiChatEnabled && aiOpen && <AiChatPanel onClose={() => setAiOpen(false)} />}
+          </div>
           <DeployModal
             type={modalState.type}
             project={project}

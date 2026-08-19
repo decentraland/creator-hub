@@ -85,6 +85,26 @@
           "failed": "Failed"
         }
       }
+    },
+    "ai": {
+      "title": "AI Assistant",
+      "toggle": "Toggle AI assistant",
+      "new_chat": "New chat",
+      "placeholder": "Ask about your scene, or describe a change…",
+      "send": "Send",
+      "stop": "Stop",
+      "thinking": "Thinking…",
+      "empty": "Ask a question about your scene, or tell me what to build. I can read the scene and write SDK7 code under src/.",
+      "retry": "Retry",
+      "provider": "Assistant",
+      "setup": {
+        "title": "Set up an AI assistant",
+        "description": "The assistant runs a coding CLI you install and sign into. It uses your own subscription — no API key needed.",
+        "install": "Install it:",
+        "signin": "Sign in:",
+        "recheck": "Recheck",
+        "ready": "Ready"
+      }
     }
   },
   "scene_list": {

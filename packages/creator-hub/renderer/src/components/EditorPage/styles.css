@@ -118,9 +118,21 @@
   color: inherit;
 }
 
+/* Horizontal row holding the inspector iframe and (when open) the AI chat panel. */
+.Editor .EditorBody {
+  display: flex;
+  flex: 1 0 auto;
+  min-height: 0;
+}
+
 .Editor .inspector {
   flex: 1 0 auto;
   border: none;
+}
+
+/* Let the iframe shrink so the fixed-width chat panel fits beside it. */
+.Editor .EditorBody .inspector {
+  min-width: 0;
 }
 
 .Editor .loading {

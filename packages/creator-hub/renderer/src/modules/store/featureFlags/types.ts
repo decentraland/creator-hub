@@ -6,4 +6,6 @@
 export enum FeatureFlag {
   /** The Analytics section. Off until the analytics API is deployed. */
   ANALYTICS = 'creatorhub-analytics',
+  /** The in-editor AI scene assistant chat panel. Dark until turned on. */
+  AI_CHAT = 'creatorhub-ai-chat',
 }

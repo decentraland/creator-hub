@@ -85,6 +85,26 @@
           "failed": "Falló"
         }
       }
+    },
+    "ai": {
+      "title": "Asistente IA",
+      "toggle": "Mostrar/ocultar el asistente IA",
+      "new_chat": "Nueva conversación",
+      "placeholder": "Pregunta sobre tu escena o describe un cambio…",
+      "send": "Enviar",
+      "stop": "Detener",
+      "thinking": "Pensando…",
+      "empty": "Pregunta sobre tu escena o dime qué construir. Puedo leer la escena y escribir código SDK7 en src/.",
+      "retry": "Reintentar",
+      "provider": "Asistente",
+      "setup": {
+        "title": "Configura un asistente IA",
+        "description": "El asistente ejecuta una CLI de programación que instalas e inicias sesión. Usa tu propia suscripción, sin clave de API.",
+        "install": "Instálalo:",
+        "signin": "Inicia sesión:",
+        "recheck": "Volver a comprobar",
+        "ready": "Listo"
+      }
     }
   },
   "scene_list": {

@@ -8,6 +8,7 @@ import type { PreviewOptions, ReleaseNotes } from './settings';
 import type { Config, EditorConfig } from './config';
 import type { Env } from './env';
 import type { MetricsRequest, MetricsResponse } from './metrics';
+import type { AiProviderInfo, AiSendParams } from './ai';
 
 export type IpcResult<T> = {
   success: true;
@@ -27,6 +28,12 @@ export type IpcError = {
 export const PREVIEW_PROGRESS_EVENT = 'preview.progress';
 
 export type PreviewProgress = { seconds: number; done?: number; total?: number };
+
+// AI assistant turn events pushed from main to the renderer chat panel while a turn
+// runs. Shared here for the same reason as PREVIEW_PROGRESS_EVENT: preload subscribes
+// to the channel and cannot import from main, so the event name and payload shape
+// need a single home.
+export const AI_STREAM_EVENT = 'ai.stream';
 
 export interface MobileDebugSessionInfo {
   id: number;
@@ -94,6 +101,14 @@ export interface Ipc {
   'npm.install': (path: string, packages?: string[]) => Promise<void>;
   'npm.getOutdatedDeps': (path: string, packages?: string[]) => Promise<Outdated>;
   'npm.getContextFiles': (path: string) => Promise<void>;
+
+  // AI scene assistant. `ai.send` streams its result over AI_STREAM_EVENT (payload
+  // AiEvent) to the calling WebContents; the returned turnId correlates the stream.
+  'ai.detectProviders': () => Promise<AiProviderInfo[]>;
+  'ai.send': (path: string, params: AiSendParams) => Promise<{ turnId: string }>;
+  'ai.stop': () => Promise<void>;
+  'ai.reset': () => Promise<void>;
+  'ai.isBusy': () => Promise<boolean>;
   'mobileDebug.getSessions': () => Promise<MobileDebugSessionInfo[]>;
   'mobileDebug.subscribeEntries': () => Promise<void>;
   'mobileDebug.unsubscribeEntries': () => Promise<void>;

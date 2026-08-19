@@ -85,6 +85,26 @@
           "failed": "失败"
         }
       }
+    },
+    "ai": {
+      "title": "AI 助手",
+      "toggle": "切换 AI 助手",
+      "new_chat": "新对话",
+      "placeholder": "询问你的场景，或描述一个改动…",
+      "send": "发送",
+      "stop": "停止",
+      "thinking": "思考中…",
+      "empty": "询问你的场景，或告诉我要构建什么。我可以读取场景并在 src/ 下编写 SDK7 代码。",
+      "retry": "重试",
+      "provider": "助手",
+      "setup": {
+        "title": "设置 AI 助手",
+        "description": "助手会运行你安装并登录的编程 CLI。它使用你自己的订阅，无需 API 密钥。",
+        "install": "安装：",
+        "signin": "登录：",
+        "recheck": "重新检查",
+        "ready": "就绪"
+      }
     }
   },
   "scene_list": {

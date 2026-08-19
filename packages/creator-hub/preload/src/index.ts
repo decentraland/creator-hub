@@ -34,6 +34,7 @@ export const fs = {
   writeFile: fsService.writeFile,
 };
 
+export * as ai from './modules/ai';
 export * as auth from './modules/auth';
 export * as editor from './modules/editor';
 export * as metrics from './modules/metrics';
