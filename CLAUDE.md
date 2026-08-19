@@ -54,6 +54,8 @@ cd packages/inspector && npm run test:e2e          # Inspector E2E tests
 
 **Note:** run vitest from inside the package (`cd packages/<pkg> && npx vitest run`). Invoking `npx vitest run` from the repo root sweeps up every workspace's specs without their per-package configs/setup and reports mass failures that are pure cwd artifacts.
 
+**Note:** the inspector's Playwright e2e needs the browser binaries installed once (`npx playwright install chromium`) and a dev server already running at `E2E_URL` (default `http://localhost:8000`) — `npm run start` in `packages/inspector` with `VITE_INSPECTOR_PORT` set serves one. Without the binary the suite fails at launch with `browserType.launch: Executable doesn't exist`, which reads like a code failure.
+
 ### Code Quality
 
 ```bash
@@ -128,7 +130,7 @@ make protoc        # Regenerate TypeScript from .proto files
 - **Import order**: ESLint enforced. React first, then `@dcl/*`, then `decentraland-*`, then MUI/internal, then relative.
 - **Component-directory barrels**: inspector component directories use a per-directory `index.ts` barrel (`export { X } from './X'`) — ~30/31 dirs follow this. Add one when creating a component; don't strip these barrels for file-count reduction — it breaks the established convention.
 - **Unused vars**: prefix with `_` (e.g., `_unused`).
-- **Comments**: code must be self-explanatory (clear names, small functions). Do NOT write comments that only restate what the next line does — delete them. Keep only comments that add value the code can't convey: the non-obvious *why* (rationale, trade-off, gotcha, bug/constraint reference), invariants, or warnings.
+- **Comments**: code must be self-explanatory (clear names, small functions). Do NOT write comments that only restate what the next line does — delete them. Keep only comments that add value the code can't convey: the non-obvious _why_ (rationale, trade-off, gotcha, bug/constraint reference), invariants, or warnings.
 - **Module type**: ESM (`"type": "module"` in all package.json files).
 - **Node version**: 22.x or higher required.
 
@@ -168,13 +170,7 @@ Asset-pack `composite.json` files encode references as portable placeholders: pa
 
 ### `~system/CommsApi` `consumeMessages` returns a bare array
 
-`consumeMessages({ topic })` resolves to a **bare array** of `{ sender, data }`, not
-the `{ messages: [...] }` wrapper its TypeScript type implies (the explorer's
-`CommsApiWrap.ConsumeMessages` serializes a raw JSON array). Destructuring
-`const { messages } = await consumeMessages(...)` yields `undefined` and throws on
-`.length` — and inside a `try/catch` that silently drops every message with no error.
-Read it as an array, tolerating both shapes:
-`Array.isArray(res) ? res : (res?.messages ?? [])`.
+`consumeMessages({ topic })` resolves to a **bare array** of `{ sender, data }`, not the `{ messages: [...] }` wrapper its TypeScript type implies (the explorer's `CommsApiWrap.ConsumeMessages` serializes a raw JSON array). Destructuring `const { messages } = await consumeMessages(...)` yields `undefined` and throws on `.length` — and inside a `try/catch` that silently drops every message with no error. Read it as an array, tolerating both shapes: `Array.isArray(res) ? res : (res?.messages ?? [])`.
 
 ## Skills
 

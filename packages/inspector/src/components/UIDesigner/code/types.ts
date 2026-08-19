@@ -41,6 +41,11 @@ export interface CodeInteraction {
 //    their verbatim source is preserved.
 export interface CodeUINode extends UINode {
   span: Span;
+  /**
+   * The node's user-facing name, from its `@ui-name` marker (see name-marker.ts).
+   * Distinct from `name`, which is the JSX tag. Absent until the node is named.
+   */
+  uiName?: string;
   opaque?: { reason: string; raw: string };
   // Set when this node is a reference to ANOTHER editor root used as a component
   // (`<OtroNOmbre />`). Unlike an opaque node it is first-class (selectable,

@@ -45,6 +45,26 @@ describe('formatUiSource', () => {
     expect(out).toContain('const a = 1\n');
   });
 
+  it('keeps a @ui-name marker inside its opening tag, which is the span it is read from, even when the tag wraps', async () => {
+    const src = `export function MainUI() {
+  return (
+    <UiEntity /* @ui-name Sidebar */ uiTransform={{ width: 200, height: 100, position: { top: 10, left: 20 }, margin: { top: 4 } }} uiBackground={{ color: { r: 1, g: 1, b: 1, a: 0.1 } }}>
+      <Label /* @ui-name Title */ value="x" />
+    </UiEntity>
+  )
+}
+`;
+    const out = await formatUiSource(src);
+    expect(out, 'the wide tag must wrap, or this asserts nothing').toContain('<UiEntity\n');
+    for (const [tag, name] of [
+      ['UiEntity', 'Sidebar'],
+      ['Label', 'Title'],
+    ]) {
+      const open = out.slice(out.indexOf(`<${tag}`));
+      expect(open.slice(0, open.indexOf('>'))).toContain(`/* @ui-name ${name} */`);
+    }
+  });
+
   it('is idempotent', async () => {
     const once = await formatUiSource(MESSY);
     expect(await formatUiSource(once)).toBe(once);

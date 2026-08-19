@@ -16,7 +16,13 @@ import {
 } from '../../../redux/ui-designer';
 import { dragPinPatch } from '../align-presets';
 import type { DeviceKind } from '../safe-areas';
-import { DEFAULT_CANVAS_HEIGHT, DEFAULT_CANVAS_WIDTH, type UINodeType } from '../tree-model';
+import {
+  DEFAULT_CANVAS_HEIGHT,
+  DEFAULT_CANVAS_WIDTH,
+  nodeLabelText,
+  type UINodeType,
+  type WidgetKind,
+} from '../tree-model';
 import type { VirtualSize } from './aggregator';
 import {
   generateInteractionHelper,
@@ -41,6 +47,7 @@ import {
   extractBindingSurface,
 } from './bindings';
 import { collectNamedImports, resolveModuleCandidates } from './imports';
+import { nodeNameEdit, renumberNodeNames, sanitizeNodeName, withNodeName } from './name-marker';
 import {
   addStateProperty,
   findStateNodes,
@@ -121,7 +128,7 @@ import {
   isLayerableProp,
   UI_BUTTON,
 } from './parse-adapter';
-import { toComponentName, uniqueRootName } from './root-naming';
+import { toComponentName, uniqueName } from './root-naming';
 import type { CodeUINode, InteractionStateStyles, ParsedUI } from './types';
 
 // Code-mode store: the scene's real .tsx files on disk are the single source of
@@ -954,7 +961,7 @@ async function removeLegacySingleFile(): Promise<void> {
 // Create a new root: write src/ui/<Name>.tsx, refresh + regenerate the
 // aggregator, wire main(), then select it. Returns the resolved name.
 async function createRootUnlocked(desiredName?: string): Promise<string> {
-  const name = uniqueRootName(
+  const name = uniqueName(
     toComponentName(desiredName ?? 'MainUI'),
     state.roots.map(r => r.name),
   );
@@ -1035,6 +1042,7 @@ async function removeRootUnlocked(filename: string): Promise<string[] | null> {
         parsed: null,
         program: undefined,
         error: null,
+        emptyRoot: false,
         bindingSurface: { variables: [], actions: [] },
         componentTrees: {},
       });
@@ -1051,7 +1059,7 @@ async function removeRootUnlocked(filename: string): Promise<string[] | null> {
 async function renameRootUnlocked(filename: string, desiredName: string): Promise<void> {
   const root = state.roots.find(r => r.filename === filename);
   if (!root) return;
-  const newName = uniqueRootName(
+  const newName = uniqueName(
     toComponentName(desiredName),
     state.roots.filter(r => r.filename !== filename).map(r => r.name),
   );
@@ -1115,7 +1123,7 @@ async function duplicateRootUnlocked(filename: string): Promise<void> {
     root.name,
   );
   if (!idSpan) return; // non-conforming file — leave it alone
-  const newName = uniqueRootName(
+  const newName = uniqueName(
     toComponentName(root.name),
     state.roots.map(r => r.name),
   );
@@ -1185,18 +1193,18 @@ function startWatching(): void {
 
 let bootstrapped = false;
 
-// Bootstrap code-mode for the current scene: adopt the src/ui/ directory layout.
-// If it's empty, seed one starter root; otherwise sync the aggregator/wiring and
-// open the first root. Then start the disk watcher. Runs once.
+// Bootstrap code-mode for the current scene: adopt the src/ui/ directory layout,
+// sync the aggregator/wiring and open the first root. A scene with no roots is
+// left that way — the canvas's first-run empty state is what tells a new user how
+// to start, and seeding one silently would drop them into a GUI they never asked
+// for. Then start the disk watcher. Runs once.
 export function bootstrapCodeMode(): void {
   if (bootstrapped) return;
   bootstrapped = true;
   void (async () => {
     const roots = await refreshRoots();
     await removeLegacySingleFile();
-    if (roots.length === 0) {
-      await createRoot('MainUI');
-    } else {
+    if (roots.length > 0) {
       await regenerateAggregator(roots);
       await ensureMainWired();
       await selectRootFile(roots[0].filename);
@@ -1212,6 +1220,21 @@ export function bootstrapCodeMode(): void {
 // Look up the backing AST node for a code-mode UINode (by its synthetic id).
 function astNodeFor(entityId: number): unknown | undefined {
   return state.parsed?.astNodes.get(entityId);
+}
+
+// Every label shown in the active file's tree, so a create/rename can pick one
+// that is free ON SCREEN. Deliberately the displayed label rather than just the
+// @ui-name: an unnamed node (the root, or hand-authored code) still reads as its
+// widget kind, and a new widget of that kind must number past it or the tree
+// shows two identical rows. Labels only have to be unique per FILE.
+function collectNodeLabels(root: CodeUINode | undefined, exceptId?: number): string[] {
+  const out: string[] = [];
+  const walk = (n: CodeUINode): void => {
+    if ((n.entity as unknown as number) !== exceptId) out.push(nodeLabelText(n));
+    n.children.forEach(walk);
+  };
+  if (root) walk(root);
+  return out;
 }
 
 // Find a node in the parsed tree by its synthetic id (for PropertyPanel, which
@@ -1483,9 +1506,16 @@ const CHILD_TEMPLATES: Record<UINodeType, string> = {
 const IMAGE_TEMPLATE =
   "<UiEntity uiTransform={{ width: 200, height: 200 }} uiBackground={{ color: { r: 1, g: 1, b: 1, a: 1 }, textureMode: 'center' }} />";
 
-// The JSX snippet for a widget type (or the image preset).
-function widgetJsx(type: UINodeType, preset?: 'image'): string {
-  return preset === 'image' ? IMAGE_TEMPLATE : (CHILD_TEMPLATES[type] ?? CHILD_TEMPLATES.UiEntity);
+// The JSX snippet for a widget type (or the image preset), seeded with a free
+// @ui-name. Naming happens HERE so every insertion path (add child, tree drop,
+// first element, platform-branch seed) gets it without repeating itself; the
+// default is the widget kind the user picked, numbered on collision.
+function widgetJsx(type: UINodeType, preset?: 'image', named = true): string {
+  const jsx =
+    preset === 'image' ? IMAGE_TEMPLATE : (CHILD_TEMPLATES[type] ?? CHILD_TEMPLATES.UiEntity);
+  if (!named) return jsx;
+  const kind: WidgetKind = preset === 'image' ? 'Image' : type === 'UiEntity' ? 'Container' : type;
+  return withNodeName(jsx, uniqueName(kind, collectNodeLabels(state.parsed?.root)));
 }
 
 // Insert a new child element of the given type (or creation preset) into a
@@ -1547,7 +1577,7 @@ async function spliceSetRootChildUnlocked(type: UINodeType, preset?: 'image'): P
   if (!activeName) return;
   const fn = findComponentFn(state.program as Parameters<typeof findComponentFn>[0], activeName);
   if (!fn) return;
-  const jsx = widgetJsx(type, preset);
+  const jsx = widgetJsx(type, preset, false);
   const edits = [
     ...setReturnJsx(fn as Parameters<typeof setReturnJsx>[0], state.source, jsx),
     ...ensureNamedImport(state.program as any, type, '@dcl/sdk/react-ecs'),
@@ -1832,6 +1862,10 @@ async function spliceMoveUnlocked(entityId: number, anchor: MoveAnchor): Promise
 // new clone's synthetic id (or null). Parse ids are assigned in source order and
 // the copy's JSX starts one char past the original (after the inserted '\n'), so
 // after the reparse the clone is the node whose span begins at that offset.
+//
+// The copy's @ui-names are renumbered BEFORE the splice: it is inserted whole, so
+// its length may change but `cloneStart` does not — and a verbatim copy would
+// otherwise duplicate every name in the subtree.
 async function spliceDuplicateUnlocked(entityId: number): Promise<number | null> {
   if (!guardPlatformBranch(entityId, 'spliceDuplicate')) return null;
   // Duplicating the returned ROOT in place would leave two siblings inside one
@@ -1843,7 +1877,10 @@ async function spliceDuplicateUnlocked(entityId: number): Promise<number | null>
   }
   const el = astNodeFor(entityId) as Parameters<typeof removeNode>[0] | undefined;
   if (!el) return null;
-  const raw = state.source.slice(el.start, el.end);
+  const raw = renumberNodeNames(
+    state.source.slice(el.start, el.end),
+    collectNodeLabels(state.parsed?.root),
+  );
   const cloneStart = el.end + 1; // just after the inserted leading '\n'
   // Splice UNFORMATTED so the clone's expected offset stays valid for the
   // span-match below; format afterwards (the reparse re-anchors the id).
@@ -1860,6 +1897,20 @@ async function spliceDuplicateUnlocked(entityId: number): Promise<number | null>
   if (cloneId !== null) reduxStore.dispatch(selectNode({ node: cloneId as unknown as Entity }));
   await formatActiveFile();
   return cloneId;
+}
+
+// Rename a node: write (or clear) its @ui-name marker. Not guardElementWrite —
+// that refuses a node with dynamic props, which is irrelevant to a comment. The
+// nodes that genuinely have no name to set are the ones excluded here.
+async function spliceRenameNodeUnlocked(entityId: number, desired: string): Promise<void> {
+  const node = findCodeNode(state.parsed?.root, entityId);
+  if (!node || node.opaque || node.componentRef || node.platformVariant || node.platform) return;
+  const el = astNodeFor(entityId) as Parameters<typeof nodeNameEdit>[0] | undefined;
+  if (!el) return;
+  const clean = sanitizeNodeName(desired);
+  const name = clean ? uniqueName(clean, collectNodeLabels(state.parsed?.root, entityId)) : '';
+  const edits = nodeNameEdit(el, state.source, name);
+  if (edits.length) await applySourceEdits(edits);
 }
 
 // Bind a top-level attribute to a variable/handler expression — `value={score}`,
@@ -2389,6 +2440,7 @@ export const unsetInstanceProp = exclusive(unsetInstancePropUnlocked);
 export const spliceRemoveNodes = exclusive(spliceRemoveNodesUnlocked);
 export const spliceMove = exclusive(spliceMoveUnlocked);
 export const spliceDuplicate = exclusive(spliceDuplicateUnlocked);
+export const spliceRenameNode = exclusive(spliceRenameNodeUnlocked);
 export const bindAttribute = exclusive(bindAttributeUnlocked);
 export const unbindAttribute = exclusive(unbindAttributeUnlocked);
 export const setMixedContentAttribute = exclusive(setMixedContentAttributeUnlocked);

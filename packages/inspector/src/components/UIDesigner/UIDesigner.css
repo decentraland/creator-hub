@@ -11,6 +11,7 @@
   --gray-0: var(--ui-designer-control-bg);
   --title: var(--ui-designer-text);
   --sub-text: var(--ui-designer-text-muted);
+  --selected-item: var(--ui-designer-control-accent-21);
 }
 
 .ui-designer {
@@ -169,16 +170,18 @@
 
 /* The fixed (non-grow) sections — currently the UI Roots list — cap at a
    third of the rail so a long list scrolls internally instead of eating the
-   Nodes section's space. */
+   Nodes section's space. Scrolling belongs to the list inside, not here: a
+   scroll container clips on BOTH axes (a `visible` axis computes to `auto`
+   alongside a scrolling one), which would cut the "+" wave off. */
 .ui-designer-rail-section:not(.ui-designer-rail-section-grow) {
   flex: 0 1 auto;
   max-height: 33%;
-  overflow-y: auto;
 }
 
-.ui-designer-rail-section-grow {
+.ui-designer-rail-section-grow,
+.ui-designer-rail-section:last-child {
   flex: 1 1 auto;
-  overflow: auto;
+  max-height: none;
 }
 
 .ui-designer-rail-header {
@@ -196,6 +199,7 @@
 }
 
 .ui-designer-rail-add {
+  position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -225,7 +229,46 @@
   cursor: default;
 }
 
+/* Press feedback on the two "+" buttons: one ripple per click, expanding out of
+   the button and fading. Purely a confirmation that the click landed — the GUI or
+   node it creates is the real feedback — so it never loops.
+
+   Scale is capped at 2: the ripple is 22px (the 20px button plus `inset: -1px`)
+   and the button sits 12px from the rail's edge, which `overflow: hidden` clips.
+   (22*2 - 20)/2 = 12px is exactly as far as it can travel without being cut.
+   Only transform/opacity animate. */
+.ui-designer-rail-add-ripple {
+  position: absolute;
+  inset: -1px;
+  border-radius: 50%;
+  background: var(--ui-designer-control-accent-21);
+  pointer-events: none;
+  animation: ui-designer-add-ripple 0.5s ease-out forwards;
+}
+
+@keyframes ui-designer-add-ripple {
+  from {
+    transform: scale(1);
+    opacity: 1;
+  }
+
+  to {
+    transform: scale(2);
+    opacity: 0;
+  }
+}
+
+/* Decorative only: the created GUI/node is the feedback that matters, so under
+   reduced motion the ripple simply doesn't play. */
+@media (prefers-reduced-motion: reduce) {
+  .ui-designer-rail-add-ripple {
+    display: none;
+  }
+}
+}
+
 .ui-designer-rail-add svg {
+  position: relative;
   width: 14px;
   height: 14px;
 }
@@ -303,10 +346,13 @@
 }
 
 /* Node-tree search — always visible, matching the 3D asset panels. */
+/* The rail's one search box, above both sections — it filters GUIs and Nodes
+   together, so it belongs to the rail rather than to either list. */
 .ui-designer-rail-search {
   display: flex;
   flex-shrink: 0;
-  padding: 0 var(--uid-space-2) var(--uid-space-2);
+  padding: var(--uid-space-2);
+  border-bottom: 1px solid var(--ui-designer-hairline);
 }
 
 .ui-designer-rail-search .LeftIcon {
@@ -320,11 +366,4 @@
 
 .ui-designer-rail-search .ClearSearch:hover {
   color: var(--base-01);
-}
-
-.ui-designer-nodetree-empty {
-  padding: var(--uid-space-3);
-  color: var(--sub-text);
-  font-size: 11px;
-  text-align: center;
 }

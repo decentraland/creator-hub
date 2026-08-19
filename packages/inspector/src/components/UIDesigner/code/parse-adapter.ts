@@ -20,6 +20,7 @@ import {
   type InteractionStateKey,
   soleSpreadArgument,
 } from './interaction-convention';
+import { readNodeName } from './name-marker';
 import {
   branchElement,
   componentStatements,
@@ -547,6 +548,8 @@ export function codeToUINodes(
 
     let dynamicProps = false;
     const node: CodeUINode = { entity: id, type, name, span, children: [] };
+    const uiName = readNodeName(source, el);
+    if (uiName) node.uiName = uiName;
     // Simple-expression bindings on this element (text props + event handlers),
     // keyed by the panel's `componentId.field` so a bound attribute previews on
     // the canvas and shows as bound in the panel.

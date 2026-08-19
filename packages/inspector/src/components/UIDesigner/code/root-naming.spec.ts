@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { toComponentName, uniqueRootName } from './root-naming';
+import { toComponentName, uniqueName } from './root-naming';
 
 describe('when deriving a UI-root component name', () => {
   it('should PascalCase words and strip non-identifier characters', () => {
@@ -22,16 +22,22 @@ describe('when deriving a UI-root component name', () => {
   });
 });
 
-describe('when ensuring a unique root name', () => {
+describe('when ensuring a unique name', () => {
   it('should return the base name when unused', () => {
-    expect(uniqueRootName('MainUI', [])).toBe('MainUI');
-    expect(uniqueRootName('MainUI', ['Hud', 'Menu'])).toBe('MainUI');
+    expect(uniqueName('MainUI', [])).toBe('MainUI');
+    expect(uniqueName('MainUI', ['Hud', 'Menu'])).toBe('MainUI');
   });
 
   it('should append the smallest free numeric suffix on collision', () => {
-    expect(uniqueRootName('MainUI', ['MainUI'])).toBe('MainUI1');
-    expect(uniqueRootName('MainUI', ['MainUI', 'MainUI1', 'MainUI2'])).toBe('MainUI3');
+    expect(uniqueName('MainUI', ['MainUI'])).toBe('MainUI1');
+    expect(uniqueName('MainUI', ['MainUI', 'MainUI1', 'MainUI2'])).toBe('MainUI3');
     // Gaps are filled by the smallest missing suffix.
-    expect(uniqueRootName('MainUI', ['MainUI', 'MainUI2'])).toBe('MainUI1');
+    expect(uniqueName('MainUI', ['MainUI', 'MainUI2'])).toBe('MainUI1');
+  });
+
+  it('should number per-node names the same way', () => {
+    expect(uniqueName('Container', ['Container'])).toBe('Container1');
+    expect(uniqueName('Container', ['Container', 'Container1'])).toBe('Container2');
+    expect(uniqueName('Label', ['Container', 'Container1'])).toBe('Label');
   });
 });

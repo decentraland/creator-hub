@@ -156,6 +156,21 @@ describe('when filtering the node tree by name', () => {
     expect(nodeLabelText(node({ entity: 1 }))).toBe('Container');
   });
 
+  it('should prefer a @ui-name over the classified widget kind', () => {
+    expect(nodeLabelText(node({ entity: 1, uiName: 'Sidebar' } as Partial<UINode>))).toBe(
+      'Sidebar',
+    );
+  });
+
+  it('should filter on a @ui-name, not just the widget kind', () => {
+    const tree = node({
+      entity: 1,
+      children: [node({ entity: 2, uiName: 'Sidebar' } as Partial<UINode>)],
+    });
+    expect(matchesFilter(tree, 'sideb')).toBe(true);
+    expect(matchesFilter(tree, 'label')).toBe(false);
+  });
+
   it('should label a component wrapper by the referenced component name', () => {
     const wrapper = node({
       entity: 1,

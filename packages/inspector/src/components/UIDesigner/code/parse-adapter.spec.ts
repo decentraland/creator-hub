@@ -532,6 +532,36 @@ export const uiMenu = () => (
   });
 });
 
+describe('when an element carries a @ui-name marker', () => {
+  it('should read it onto the node, per element', () => {
+    const parsed = parse(`export function MyScreen() {
+  return (
+    <UiEntity /* @ui-name Sidebar */ uiTransform={{ width: 100 }}>
+      <Label /* @ui-name Title */ value="x" />
+      <Label value="unnamed" />
+    </UiEntity>
+  )
+}
+`);
+    const root = parsed!.root as CodeUINode;
+    expect(root.uiName).toBe('Sidebar');
+    expect(root.children[0].uiName).toBe('Title');
+    expect(root.children[1].uiName).toBeUndefined();
+  });
+
+  it('should leave an unnamed parent unnamed when only its child is named', () => {
+    const parsed = parse(`export function MyScreen() {
+  return (
+    <UiEntity uiTransform={{ width: 100 }}>
+      <Label /* @ui-name Title */ value="x" />
+    </UiEntity>
+  )
+}
+`);
+    expect((parsed!.root as CodeUINode).uiName).toBeUndefined();
+  });
+});
+
 describe('when locating the exported component identifier (for rename)', () => {
   const prog = (src: string) => parseSync('MyScreen.tsx', src).program as any;
 

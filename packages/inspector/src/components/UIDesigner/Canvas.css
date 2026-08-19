@@ -503,3 +503,44 @@
   position: relative;
   overflow: hidden;
 }
+
+/* The canvas empty state is the editor's first-run hero, not a panel hint: the
+   Figma sizes its title well above the body and gives the glyph real presence.
+   Scoped here so the shared EmptyState stays panel-sized everywhere else. */
+.ui-designer-canvas-empty .ui-designer-empty-state {
+  gap: var(--uid-space-3);
+}
+
+.ui-designer-canvas-empty .ui-designer-empty-state-icon svg {
+  width: 80px;
+  height: 50px;
+}
+
+.ui-designer-canvas-empty .ui-designer-empty-state-title {
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.ui-designer-canvas-empty .ui-designer-empty-state-message {
+  font-size: 13px;
+  max-width: 440px;
+}
+
+.ui-designer-canvas-empty .ui-designer-empty-state-action button {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--uid-space-2);
+  height: 44px;
+  padding: 0 18px;
+  border-radius: 10px;
+  color: var(--ui-designer-text);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.ui-designer-canvas-empty .ui-designer-empty-state-action button svg {
+  width: 18px;
+  height: 18px;
+}

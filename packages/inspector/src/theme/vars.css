@@ -134,22 +134,26 @@
   --ui-designer-accent-08: rgba(80, 200, 255, 0.08);
   --ui-designer-accent-05: rgba(80, 200, 255, 0.05);
 
-  /* CONTROL accent (brand pink) — the Anchor pin's accented edge and leash, focus
-     rings, and the bind affordance. NOT the selected/active state of a segmented
-     control or a checkbox: the design paints those neutral, see the trio below.
-     Always composited on --base-20, so contrast is fixed and verifiable. Tracks
-     --primary-main; the steps repeat its rgb triple because CSS cannot derive
-     rgba() from a hex token.
+  /* CONTROL accent — the Anchor pin's accented edge and leash, focus rings, the
+     bind affordance, and selected rows. NOT the selected/active state of a
+     segmented control or a checkbox: the design paints those neutral, see the
+     trio below. Always composited on --base-20, so contrast is fixed and
+     verifiable. The steps repeat the rgb triple because CSS cannot derive rgba()
+     from a hex token.
 
-     Do NOT reuse the cyan alphas above: pink's relative luminance is 0.238 against
-     cyan's 0.502, so at .4 the hover border collapsed to 1.70:1 over a 1.41:1
-     resting border. These are solved for this surface and named for their real
-     alpha — base 4.99:1 · -62 2.56:1 · -21 1.25:1 · -15 1.15:1, with --title on
-     the -21 fill at 12.6:1. */
-  --ui-designer-control-accent: var(--primary-main);
-  --ui-designer-control-accent-62: rgba(255, 45, 85, 0.62);
-  --ui-designer-control-accent-21: rgba(255, 45, 85, 0.21);
-  --ui-designer-control-accent-15: rgba(255, 45, 85, 0.15);
+     Deliberately NOT --primary-main: pink/red is reserved for CTAs and main
+     buttons (.Button.danger, the callback confirm), so a panel control painted
+     with it competes with the one thing on screen that should read as the action.
+
+     Do NOT reuse the cyan alphas above — they are solved for a different
+     luminance (cyan 0.502 vs this blue 0.419). Named for their real alpha:
+     base 8.13:1 · -62 3.87:1 · -21 1.47:1 · -15 1.30:1, with Snow on the -21
+     fill at 12.03:1. Every step is brighter than the pink it replaced, and -62
+     now clears the 3:1 non-text minimum (pink managed only 2.55:1). */
+  --ui-designer-control-accent: #63b4f6;
+  --ui-designer-control-accent-62: rgba(99, 180, 246, 0.62);
+  --ui-designer-control-accent-21: rgba(99, 180, 246, 0.21);
+  --ui-designer-control-accent-15: rgba(99, 180, 246, 0.15);
 
   /* Selected / active controls, per the Figma Layout frame. Two treatments, not
      one: a cell INSIDE a segmented group lifts subtly and turns its glyph white,

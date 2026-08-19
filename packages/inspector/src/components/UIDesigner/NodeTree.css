@@ -31,3 +31,22 @@
   color: var(--sub-text);
   opacity: 0.55;
 }
+
+/* A hidden node reads grayed. The signal is the class on the action area rather
+   than which eye icon rendered, so the row styling doesn't depend on an icon's
+   class name. Scoped high enough to beat the .selectable-area svg rule above. */
+.ui-designer-nodetree .selectable-area:has(.action-area.is-hidden) {
+  color: var(--ui-designer-text-muted);
+}
+
+.ui-designer-nodetree .selectable-area:has(.action-area.is-hidden) svg {
+  color: var(--ui-designer-glyph);
+}
+
+.ui-designer-nodetree .action-area .action-button .remove-icon {
+  color: var(--ui-designer-glyph);
+}
+
+.ui-designer-nodetree .action-area .action-button:hover .remove-icon {
+  color: var(--ui-designer-control-accent);
+}

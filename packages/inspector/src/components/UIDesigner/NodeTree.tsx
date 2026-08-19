@@ -8,6 +8,7 @@ import {
   IoSwapHorizontalOutline,
   IoWarningOutline,
   IoCubeOutline,
+  IoTrashOutline as RemoveIcon,
 } from 'react-icons/io5';
 import { MdOutlineLock as LockIcon, MdOutlineLockOpen as UnlockIcon } from 'react-icons/md';
 import cx from 'classnames';
@@ -35,13 +36,7 @@ import { UI_DESIGNER_DND_TYPE, type UIDesignerDragItem } from './Palette';
 import { useUINodeActions } from './useUINodeActions';
 import { useUINodeTree } from './useUINodeTree';
 import { WIDGET_ICONS } from './widget-catalog';
-import {
-  addPlatformBranch,
-  renameRoot,
-  spliceAddWidget,
-  spliceMove,
-  useCodeState,
-} from './code/store';
+import { addPlatformBranch, spliceAddWidget, spliceMove, spliceRenameNode } from './code/store';
 import { PLATFORMS } from './code/platform-convention';
 import type { CodeUINode } from './code/types';
 import {
@@ -91,11 +86,25 @@ function collectAncestors(root: UINode, target: Entity): Entity[] {
   return path;
 }
 
+/**
+ * Whether a row renames ITSELF, by writing its `@ui-name` marker. False for every
+ * kind that has no name of its own to set: the root is 1:1 with the GUI, which
+ * carries the name (renamed in the GUIs list) and reads here as its widget kind;
+ * an opaque node isn't editable at all; a component row is named by the component
+ * it references; and a platform variant or branch is labelled by its device.
+ */
+function isRenameableNode(n: UINode, root: UINode | null | undefined): boolean {
+  if (root && n.entity === root.entity) return false;
+  const cn = n as CodeUINode;
+  return (
+    !cn.opaque && !cn.componentRef && !cn.platformVariant && !cn.platform && !soleComponentRef(n)
+  );
+}
+
 const NodeTreeImpl: React.FC<{ filter?: string }> = ({ filter = '' }) => {
   const term = filter.trim().toLowerCase();
   const dispatch = useAppDispatch();
   const tree = useUINodeTree();
-  const activeFile = useCodeState().filename;
   const expanded = useAppSelector(getExpanded);
   const selectedNode = useAppSelector(getSelectedNode);
   const selectedNodes = useAppSelector(getSelectedNodes);
@@ -174,7 +183,7 @@ const NodeTreeImpl: React.FC<{ filter?: string }> = ({ filter = '' }) => {
   const isSelected = useCallback((n: UINode) => selectedNodes.includes(n.entity), [selectedNodes]);
   const isHidden = useCallback(() => false, []);
   const canAddChild = useCallback(() => false, []);
-  const canRename = useCallback((n: UINode) => !!tree && n.entity === tree.entity, [tree]);
+  const canRename = useCallback((n: UINode) => isRenameableNode(n, tree), [tree]);
 
   const handleSetOpen = useCallback(
     (n: UINode, open: boolean) => dispatch(setExpanded({ entity: n.entity, expanded: open })),
@@ -254,14 +263,10 @@ const NodeTreeImpl: React.FC<{ filter?: string }> = ({ filter = '' }) => {
   const handleRemove = useCallback((node: UINode) => remove(node.entity), [remove]);
   const handleDuplicate = useCallback((node: UINode) => duplicate(node.entity), [duplicate]);
 
-  const handleRename = useCallback(
-    (node: UINode, label: string) => {
-      const next = label.trim();
-      if (!next || !tree || node.entity !== tree.entity || !activeFile) return;
-      void renameRoot(activeFile, next);
-    },
-    [tree, activeFile],
-  );
+  const handleRename = useCallback((node: UINode, label: string) => {
+    const next = label.trim();
+    if (next) void spliceRenameNode(node.entity as unknown as number, next);
+  }, []);
 
   const noop = useCallback(() => undefined, []);
 
@@ -303,7 +308,7 @@ const NodeTreeImpl: React.FC<{ filter?: string }> = ({ filter = '' }) => {
       const isLocked = !!lockedNodes[id];
       const isNodeHidden = !!hiddenNodes[id];
       return (
-        <div className="action-area">
+        <div className={cx('action-area', { 'is-hidden': isNodeHidden })}>
           <div
             className="action-button"
             role="button"
@@ -330,10 +335,21 @@ const NodeTreeImpl: React.FC<{ filter?: string }> = ({ filter = '' }) => {
               <VisibleIcon className="visible-icon" />
             )}
           </div>
+          <div
+            className="action-button"
+            role="button"
+            aria-label={`Delete ${nodeLabelText(n)}`}
+            onClick={e => {
+              e.stopPropagation();
+              handleRemove(n);
+            }}
+          >
+            <RemoveIcon className="remove-icon" />
+          </div>
         </div>
       );
     },
-    [hiddenNodes, lockedNodes, dispatch],
+    [hiddenNodes, lockedNodes, dispatch, handleRemove],
   );
 
   // A branch can't leave its conditional, so it isn't draggable.
@@ -343,9 +359,6 @@ const NodeTreeImpl: React.FC<{ filter?: string }> = ({ filter = '' }) => {
   );
 
   if (!tree) return null;
-  if (term && !matchesFilter(tree, term)) {
-    return <div className="ui-designer-nodetree-empty">No nodes match “{filter.trim()}”</div>;
-  }
 
   return (
     <div className="ui-designer-nodetree">

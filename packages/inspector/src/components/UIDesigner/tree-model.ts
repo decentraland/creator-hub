@@ -116,6 +116,7 @@ export function nodeLabelText(n: UINode): string {
   const ref = soleComponentRef(n);
   if (ref) return ref.componentRef?.name ?? ref.name;
   const cn = n as CodeUINode;
+  if (cn.uiName) return cn.uiName;
   return cn.opaque || cn.platformVariant
     ? n.name || `${n.type} ${String(n.entity)}`
     : classifyNode(n);

@@ -5,7 +5,6 @@ import {
   IoAddOutline,
   IoCopyOutline,
   IoDesktopOutline,
-  IoLayersOutline,
   IoPhoneLandscapeOutline,
   IoScanOutline,
   IoSyncOutline,
@@ -41,7 +40,7 @@ import {
   YGPT_ABSOLUTE,
 } from '../../lib/sdk/ui-transform-constants';
 import { UI_DESIGNER_DND_TYPE, type UIDesignerDragItem } from './Palette';
-import { EmptyState } from './EmptyState';
+import { EmptyState, EmptyStateChip, GuiIcon } from './EmptyState';
 import { WidgetPicker } from './WidgetPicker';
 import { SafeAreaOverlay } from './SafeAreaOverlay';
 import { SCREEN_PRESETS } from './safe-areas';
@@ -1848,10 +1847,23 @@ const CanvasComponent: React.FC = () => {
           ) : (
             <div className="ui-designer-canvas-empty">
               <EmptyState
-                icon={<IoLayersOutline />}
-                title="No GUI yet"
-                message="Create a GUI to start designing your scene's interface, then drag widgets from the palette below."
-                action={<Button onClick={createRoot}>+ New GUI</Button>}
+                icon={<GuiIcon />}
+                title="Start building your UI"
+                message={
+                  <>
+                    Click the <EmptyStateChip>GUIs +</EmptyStateChip> button in the left panel to
+                    add UI elements. Then, select elements such as{' '}
+                    <strong>text, buttons, and images</strong> from the{' '}
+                    <EmptyStateChip>Nodes</EmptyStateChip> section to design what players will see
+                    in your scene.
+                  </>
+                }
+                action={
+                  <Button onClick={createRoot}>
+                    <IoAddOutline aria-hidden="true" />
+                    New GUI
+                  </Button>
+                }
               />
             </div>
           )}

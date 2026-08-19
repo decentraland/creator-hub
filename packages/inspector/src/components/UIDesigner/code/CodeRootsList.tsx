@@ -1,14 +1,13 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useDrag } from 'react-dnd';
-import { IoClose, IoEyeOffOutline, IoEyeOutline, IoLayersOutline } from 'react-icons/io5';
+import { IoEyeOffOutline, IoEyeOutline, IoLayersOutline, IoTrashOutline } from 'react-icons/io5';
+import cx from 'classnames';
 
 import { useAppDispatch } from '../../../redux/hooks';
 import { selectNode } from '../../../redux/ui-designer';
-import { Button } from '../../Button';
 import { UI_DESIGNER_DND_TYPE, type UIDesignerDragItem } from '../Palette';
 import {
   type CodeRoot,
-  createRoot,
   removeRoot,
   renameRoot,
   selectRootFile,
@@ -18,9 +17,17 @@ import {
 
 import './CodeRootsList.css';
 
-// One row in the roots list: selects on click, renames on double-click, and is a
-// DnD source so it can be dragged onto a canvas node to nest it as a component.
-// The eye toggle flips top-level (aggregated screen) vs component (nested-only).
+/**
+ * One row in the roots list: selects on click, renames on double-click, and is a
+ * DnD source so it can be dragged onto a canvas node to nest it as a component.
+ * The eye toggle flips top-level (aggregated screen) vs component (nested-only);
+ * a nested-only root reads grayed, since it renders nowhere on its own.
+ *
+ * The drag ref is withheld while renaming, because the input owns the pointer.
+ * That rename editor is a raw <input> rather than ui/TextField on purpose: it is
+ * transient (autoFocus + Enter/Escape/blur lifecycle) and TextField's chrome
+ * (InputContainer, Message slot) only adds noise.
+ */
 const RootRow: React.FC<{
   root: CodeRoot;
   active: boolean;
@@ -55,18 +62,25 @@ const RootRow: React.FC<{
 
   return (
     <div
-      // Not draggable while renaming (the input owns the pointer).
       ref={editing ? undefined : (drag as unknown as React.Ref<HTMLDivElement>)}
-      className={`ui-designer-code-root-row ${active ? 'is-active' : ''}`}
+      className={cx('ui-designer-code-root-row', {
+        'is-active': active,
+        'is-hidden': !root.topLevel,
+      })}
       style={{ opacity: isDragging ? 0.4 : 1 }}
+      role="button"
+      tabIndex={0}
+      aria-current={active}
       onClick={onSelect}
+      onKeyDown={e => {
+        if (e.key !== 'Enter' && e.key !== ' ') return;
+        e.preventDefault();
+        onSelect();
+      }}
       title={`Drag onto the canvas to nest ${root.name} as a component`}
     >
       <IoLayersOutline aria-hidden="true" />
       {editing ? (
-        // Deliberately a raw <input>, not ui/TextField: a transient inline
-        // rename editor (autoFocus + Enter/Escape/blur lifecycle) where
-        // TextField's chrome (InputContainer, Message slot) adds noise.
         <input
           className="ui-designer-code-root-name-input"
           value={draft}
@@ -74,9 +88,11 @@ const RootRow: React.FC<{
           spellCheck={false}
           autoCorrect="off"
           autoCapitalize="off"
+          aria-label={`Rename ${root.name}`}
           onClick={e => e.stopPropagation()}
           onChange={e => onDraft(e.target.value)}
           onKeyDown={e => {
+            e.stopPropagation();
             if (e.key === 'Enter') onCommit();
             else if (e.key === 'Escape') onCancel();
           }}
@@ -93,45 +109,56 @@ const RootRow: React.FC<{
           {root.name}
         </span>
       )}
-      <button
-        type="button"
-        className={`ui-designer-code-root-toplevel ${root.topLevel ? 'is-on' : ''}`}
-        title={
-          root.topLevel
-            ? 'Top-level: rendered on its own. Click to make it a nested-only component.'
-            : 'Component: only rendered where it is nested. Click to make it top-level.'
-        }
-        aria-label={`Toggle top-level for ${root.name}`}
-        aria-pressed={root.topLevel}
-        onClick={e => {
-          e.stopPropagation();
-          void toggleTopLevel(root.filename);
-        }}
-      >
-        {root.topLevel ? (
-          <IoEyeOutline aria-hidden="true" />
-        ) : (
-          <IoEyeOffOutline aria-hidden="true" />
-        )}
-      </button>
-      <button
-        type="button"
-        className="ui-designer-code-root-remove"
-        title={`Delete ${root.name}`}
-        aria-label={`Delete ${root.name}`}
-        onClick={onRemove}
-      >
-        <IoClose aria-hidden="true" />
-      </button>
+      <div className="ui-designer-code-root-actions">
+        <button
+          type="button"
+          className={cx('ui-designer-code-root-toplevel', { 'is-on': root.topLevel })}
+          title={
+            root.topLevel
+              ? 'Top-level: rendered on its own. Click to make it a nested-only component.'
+              : 'Component: only rendered where it is nested. Click to make it top-level.'
+          }
+          aria-label={`Toggle top-level for ${root.name}`}
+          aria-pressed={root.topLevel}
+          onClick={e => {
+            e.stopPropagation();
+            void toggleTopLevel(root.filename);
+          }}
+        >
+          {root.topLevel ? (
+            <IoEyeOutline aria-hidden="true" />
+          ) : (
+            <IoEyeOffOutline
+              className="is-off"
+              aria-hidden="true"
+            />
+          )}
+        </button>
+        <button
+          type="button"
+          className="ui-designer-code-root-remove"
+          title={`Delete ${root.name}`}
+          aria-label={`Delete ${root.name}`}
+          onClick={onRemove}
+        >
+          <IoTrashOutline aria-hidden="true" />
+        </button>
+      </div>
     </div>
   );
 };
 
-// Code-mode roots list. Roots are files under src/ui/ (one component per file),
-// not ECS marker entities — so this is backed by the code store rather than the
-// engine. "+ New GUI" generates src/ui/<Name>.tsx and regenerates the aggregator;
-// selecting a root loads its file as the active source the canvas edits.
-export const CodeRootsList: React.FC = () => {
+/**
+ * Code-mode roots list. Roots are files under src/ui/ (one component per file),
+ * not ECS marker entities — so this is backed by the code store rather than the
+ * engine. Creation lives in the rail's section header; selecting a root loads its
+ * file as the active source the canvas edits.
+ *
+ * Switching root selects that root's node, so the canvas / "Add widget" /
+ * PropertyPanel target it. A ref on the filename keeps that to root SWITCHES
+ * only — firing on every reparse would fight canvas node selection mid-edit.
+ */
+export const CodeRootsList: React.FC<{ filter?: string }> = ({ filter = '' }) => {
   const { roots, filename, parsed, error } = useCodeState();
   const dispatch = useAppDispatch();
 
@@ -152,10 +179,6 @@ export const CodeRootsList: React.FC = () => {
     [draft],
   );
 
-  // When the active root file changes (and its tree has parsed), select the root
-  // node so the canvas / "Add widget" / PropertyPanel target it. Guarded by a ref
-  // on the filename so it fires on root *switches* only — not on every reparse
-  // (which would fight canvas node selection during editing).
   const prevFile = useRef<string | null>(null);
   useEffect(() => {
     if (filename && filename !== prevFile.current && parsed?.root) {
@@ -163,8 +186,6 @@ export const CodeRootsList: React.FC = () => {
       dispatch(selectNode({ node: parsed.root.entity }));
     }
   }, [filename, parsed, dispatch]);
-
-  const handleCreate = useCallback(() => void createRoot(), []);
 
   const handleSelect = useCallback(
     (root: CodeRoot) => {
@@ -178,11 +199,11 @@ export const CodeRootsList: React.FC = () => {
     void removeRoot(root.filename);
   }, []);
 
+  const term = filter.trim().toLowerCase();
+  const shown = term ? roots.filter(root => root.name.toLowerCase().includes(term)) : roots;
+
   return (
     <div className="ui-designer-roots-list">
-      <div className="ui-designer-roots-header">
-        <Button onClick={handleCreate}>+ New GUI</Button>
-      </div>
       {error ? (
         <div
           className="ui-designer-roots-error"
@@ -192,7 +213,7 @@ export const CodeRootsList: React.FC = () => {
         </div>
       ) : null}
       <div className="ui-designer-roots-tree">
-        {roots.map(root => (
+        {shown.map(root => (
           <RootRow
             key={root.filename}
             root={root}

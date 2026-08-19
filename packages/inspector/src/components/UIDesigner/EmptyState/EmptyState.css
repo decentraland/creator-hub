@@ -25,7 +25,7 @@
 
 .ui-designer-empty-state-message {
   margin: 0;
-  max-width: 240px;
+  max-width: 380px;
   font-size: 12px;
   line-height: 1.5;
   text-wrap: balance;
@@ -33,4 +33,16 @@
 
 .ui-designer-empty-state-action {
   margin-top: var(--uid-space-1);
+}
+
+/* Names a control inside the copy — a resting field-fill pill, so it reads as a
+   reference to something in the UI rather than as emphasis. */
+.ui-designer-empty-state-chip {
+  display: inline-block;
+  padding: 0 5px;
+  border: 1px solid var(--ui-designer-control-border);
+  border-radius: 3px;
+  background: var(--ui-designer-control-bg);
+  color: var(--ui-designer-text);
+  white-space: nowrap;
 }

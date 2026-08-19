@@ -1,4 +1,4 @@
-import React, { useCallback, useRef, useState } from 'react';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { AiOutlineSearch as SearchIcon } from 'react-icons/ai';
 import { IoAddOutline } from 'react-icons/io5';
 import { VscClose as ClearIcon } from 'react-icons/vsc';
@@ -10,13 +10,44 @@ import { TextField } from '../ui';
 import { NodeTree } from './NodeTree';
 import { WidgetPicker } from './WidgetPicker';
 import { CodeRootsList } from './code/CodeRootsList';
+import { createRoot, spliceSetRootChild, useCodeState } from './code/store';
+import { matchesFilter } from './tree-model';
+import { useUINodeTree } from './useUINodeTree';
 
 import './UIDesigner.css';
 
+/**
+ * A one-shot ripple for a button press. The element is REMOUNTED on each click
+ * (a fresh key) rather than toggled through a class, because re-applying a class
+ * does not restart a CSS animation that is already running — a second click
+ * during the first ripple would do nothing.
+ */
+function useClickRipple(): [React.ReactNode, () => void] {
+  const [click, setClick] = useState(0);
+  const fire = useCallback(() => setClick(n => n + 1), []);
+  const ripple = click ? (
+    <span
+      key={click}
+      className="ui-designer-rail-add-ripple"
+    />
+  ) : null;
+  return [ripple, fire];
+}
+
+/**
+ * The 2D-mode left rail: one search box above both sections, the GUIs list, and the
+ * Nodes tree for the selected GUI.
+ *
+ * The search covers both sections, and a section with no match is hidden outright
+ * rather than shown empty, so a search reads as its own result list. A selected
+ * GUI always lists its Nodes — an empty one shows just the header, whose "+" adds
+ * the first element (routed to spliceSetRootChild, since there is no node to add
+ * under yet). Only a search with nothing to match hides that section.
+ */
 const UIDesignerLeftRail: React.FC = () => {
   const [pickerOpen, setPickerOpen] = useState(false);
   const [search, setSearch] = useState('');
-  const addBtnRef = useRef<HTMLButtonElement>(null);
+  const addNodeRef = useRef<HTMLButtonElement>(null);
 
   const handleSearchKeyDown = useCallback((event: React.KeyboardEvent<HTMLInputElement>) => {
     if (event.key === 'Escape') {
@@ -25,60 +56,96 @@ const UIDesignerLeftRail: React.FC = () => {
     }
   }, []);
 
-  // New nodes are added under the current node (selecting a GUI selects its
-  // root node). Disabled until there's a UI to add into.
   const parent = useAppSelector(getSelectedNode);
+  const { roots, filename, emptyRoot } = useCodeState();
+  const tree = useUINodeTree();
+
+  const term = search.trim().toLowerCase();
+  const showGuis = useMemo(
+    () => !term || roots.some(root => root.name.toLowerCase().includes(term)),
+    [term, roots],
+  );
+  const showNodes = !!filename && (!term || (!!tree && matchesFilter(tree, term)));
+
+  const [guiRipple, rippleGui] = useClickRipple();
+  const [nodeRipple, rippleNode] = useClickRipple();
 
   return (
     <Box className="ui-designer-left-rail">
-      <div className="ui-designer-rail-section">
-        <div className="ui-designer-rail-header">GUIs</div>
-        <CodeRootsList />
+      <div
+        className="ui-designer-rail-search"
+        onContextMenu={e => e.stopPropagation()}
+      >
+        <TextField
+          placeholder="Search"
+          aria-label="Search GUIs and nodes"
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          onKeyDown={handleSearchKeyDown}
+          leftIcon={<SearchIcon />}
+          rightIcon={
+            search ? (
+              <ClearIcon
+                className="ClearSearch"
+                onClick={() => setSearch('')}
+              />
+            ) : undefined
+          }
+        />
       </div>
-      <div className="ui-designer-rail-section ui-designer-rail-section-grow">
-        <div className="ui-designer-rail-header ui-designer-rail-header-row">
-          <span>Nodes</span>
-          <button
-            ref={addBtnRef}
-            type="button"
-            className="ui-designer-rail-add"
-            onClick={() => setPickerOpen(true)}
-            disabled={parent === null}
-            aria-label="Add widget"
-            title="Add widget"
-          >
-            <IoAddOutline aria-hidden="true" />
-          </button>
+      {showGuis ? (
+        <div className="ui-designer-rail-section">
+          <div className="ui-designer-rail-header ui-designer-rail-header-row">
+            <span>GUIs</span>
+            <button
+              type="button"
+              className="ui-designer-rail-add"
+              onClick={() => {
+                rippleGui();
+                void createRoot();
+              }}
+              aria-label="New GUI"
+              title="New GUI"
+            >
+              {guiRipple}
+              <IoAddOutline aria-hidden="true" />
+            </button>
+          </div>
+          <CodeRootsList filter={search} />
         </div>
-        <div
-          className="ui-designer-rail-search"
-          onContextMenu={e => e.stopPropagation()}
-        >
-          <TextField
-            placeholder="Search nodes"
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            onKeyDown={handleSearchKeyDown}
-            leftIcon={<SearchIcon />}
-            rightIcon={
-              search ? (
-                <ClearIcon
-                  className="ClearSearch"
-                  onClick={() => setSearch('')}
-                />
-              ) : undefined
-            }
-          />
+      ) : null}
+      {showNodes ? (
+        <div className="ui-designer-rail-section ui-designer-rail-section-grow">
+          <div className="ui-designer-rail-header ui-designer-rail-header-row">
+            <span>Nodes</span>
+            <button
+              ref={addNodeRef}
+              type="button"
+              className="ui-designer-rail-add"
+              onClick={() => {
+                rippleNode();
+                setPickerOpen(true);
+              }}
+              disabled={parent === null && !emptyRoot}
+              aria-label="Add widget"
+              title="Add widget"
+            >
+              {nodeRipple}
+              <IoAddOutline aria-hidden="true" />
+            </button>
+          </div>
+          <NodeTree filter={search} />
+          {pickerOpen ? (
+            <WidgetPicker
+              anchorRef={addNodeRef}
+              onDismiss={() => setPickerOpen(false)}
+              {...(parent === null
+                ? { onAdd: (type, preset) => void spliceSetRootChild(type, preset) }
+                : { parent })}
+            />
+          ) : null}
         </div>
-        <NodeTree filter={search} />
-        {pickerOpen && parent !== null ? (
-          <WidgetPicker
-            parent={parent}
-            anchorRef={addBtnRef}
-            onDismiss={() => setPickerOpen(false)}
-          />
-        ) : null}
-      </div>
+      ) : null}
     </Box>
   );
 };

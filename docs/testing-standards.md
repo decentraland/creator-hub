@@ -39,6 +39,22 @@ await page.waitForFunction(
 await page.keyboard.type(value);
 ```
 
+### `ui/TextField` reports through a debounce
+
+`TextField` routes `onChange` through `debounce(onChange, debounceTime ?? 0)`. A 0ms debounce is still a `setTimeout`, so the value lands on the NEXT tick: a `fireEvent.change(...)` followed by a synchronous assertion reads the stale value.
+
+Drive it with a controlled clock rather than `waitFor` — for an "expect absent" assertion `waitFor` can pass before the update lands at all:
+
+```ts
+vi.useFakeTimers();
+fireEvent.change(input, { target: { value: term } });
+act(() => {
+  vi.advanceTimersByTime(1);
+});
+```
+
+See `UIDesignerLeftRail.spec.tsx`.
+
 ### Wait for the outcome, not a fixed delay
 
 After a mutation, wait for the _result_ selector (new row attached, deleted row detached, label rendered) rather than `sleep(N)`. Fixed sleeps make slow machines pass and fast machines miss races; outcome-waits scale with the machine and self-document what the test is gating on.

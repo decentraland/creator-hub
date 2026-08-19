@@ -52,8 +52,8 @@ There is no single `--text` token — pick the foreground that matches the surfa
 | `--border-focused` | `#127fd4` | Focus ring (VS Code blue) |
 | `--ui-designer-accent` | `rgb(80,200,255)` | **Canvas** selection cyan |
 | `--ui-designer-accent-80/-40/-12/-08/-05` | cyan @ .8/.4/.12/.08/.05 | Canvas hover/selection fills, drop targets |
-| `--ui-designer-control-accent` | `--primary-main` `#ff2d55` | **Panel** focus rings, the Anchor pin, bind affordances |
-| `--ui-designer-control-accent-62/-21/-15` | pink @ .62/.21/.15 | Panel hover borders and fills |
+| `--ui-designer-control-accent` | `#63b4f6` | **Panel** focus rings, the Anchor pin, bind affordances, selected rows |
+| `--ui-designer-control-accent-62/-21/-15` | blue @ .62/.21/.15 | Panel hover borders and fills |
 | `--ui-designer-control-hover-bg` | `rgba(255,255,255,.06)` | Hover fill on a segmented cell |
 | `--ui-designer-control-selected-bg` | `rgba(255,255,255,.1)` | Selected cell **inside** a segmented group |
 | `--ui-designer-control-active-bg` | `#fcfcfc` Snow | Fill of an inverted **standalone** toggle |
@@ -66,14 +66,14 @@ The design paints state changes with luminance, not hue, and in two distinct tre
 - **A cell inside a segmented group** (Flow direction, Texture type) lifts to `--ui-designer-control-selected-bg` and turns its glyph `--ui-designer-text`.
 - **A standalone toggle** (Flow wrap, the aspect lock, a checkbox) inverts: `--ui-designer-control-active-bg` fill with a `--ui-designer-control-active-fg` glyph.
 
-| Pairing | Contrast |
-| --- | --- |
-| Snow glyph on the lifted cell fill | **11.4:1** |
-| Lifted fill vs. its unselected neighbours | 1.36:1 — *deliberately* low |
-| Charcoal glyph on the inverted toggle | **12.13:1** |
-| Inverted toggle vs. the card (`#242129`) | **15.45:1** |
+| Pairing                                   | Contrast                    |
+| ----------------------------------------- | --------------------------- |
+| Snow glyph on the lifted cell fill        | **11.4:1**                  |
+| Lifted fill vs. its unselected neighbours | 1.36:1 — _deliberately_ low |
+| Charcoal glyph on the inverted toggle     | **12.13:1**                 |
+| Inverted toggle vs. the card (`#242129`)  | **15.45:1**                 |
 
-The lifted fill alone is nearly invisible, and that is fine **only because the glyph moves with it** — `--ui-designer-glyph` reads 3.09:1 on the card, Snow reads 11.4:1 on the fill. Selection is therefore a luminance jump on the *glyph*, never a fill-only or hue-only cue. If you change either value, keep that pairing.
+The lifted fill alone is nearly invisible, and that is fine **only because the glyph moves with it** — `--ui-designer-glyph` reads 3.09:1 on the card, Snow reads 11.4:1 on the fill. Selection is therefore a luminance jump on the _glyph_, never a fill-only or hue-only cue. If you change either value, keep that pairing.
 
 Two assets ignore `color` because their white is baked in: the checkbox tick (a data-URI SVG with `fill="white"`) and the indeterminate dash (a solid block). Both are re-declared dark in `PropertyPanel.css`, scoped `:not(.disabled)` so the shared disabled styling still wins the specificity tie.
 
@@ -82,16 +82,18 @@ Two assets ignore `color` because their white is baked in: the checkbox tick (a 
 The UI Designer has **two** accent families. Picking the wrong one is a real bug, not a style preference:
 
 - **Canvas → cyan.** The canvas renders the _author's own UI_ in arbitrary colours. A selection ring in a brand colour disappears the moment they use that colour themselves — and `#ff2d55` is precisely what the palette encourages. Because the backdrop is unknowable, WCAG 1.4.11's ≥3:1 cannot be verified against it; a hue authors are unlikely to pick is the mitigation. Use for node selection/hover, resize handles, drop targets, reorder indicators.
-- **Panel → pink.** Panel chrome always sits on `--base-20` (`#161518`), a surface we control, so contrast is fixed and testable. Use for focus rings, active tab underlines, hover borders/fills, bind affordances, and the Anchor row's pinned edge. **Not** for selected/active controls — those are the neutral trio above.
+- **Panel → blue `#63b4f6`.** Panel chrome always sits on `--base-20` (`#161518`), a surface we control, so contrast is fixed and testable. Use for focus rings, active tab underlines, hover borders/fills, bind affordances, selected rows, and the Anchor row's pinned edge. **Not** for selected/active _controls_ — those are the neutral trio above.
 
-**Do not copy alpha steps between the two families.** Pink's relative luminance is `0.238` against cyan's `0.502`, so the same alpha composites to a far dimmer result. Reusing cyan's `.4` for a pink hover border yielded `1.70:1` over a `1.41:1` resting border — technically a state change, visually almost none. The pink steps are therefore solved to match what each cyan step _achieved_ on this surface, and named for their true alpha (`-62`, not `-40`) so nothing lies:
+  **Panel chrome is deliberately not pink.** `--primary-main` is reserved for CTAs and main buttons (`.Button.danger`, the callback confirm). A panel control painted with it competes with the one thing on screen that should read as the action.
+
+**Do not copy alpha steps between the two families.** The panel blue's relative luminance is `0.419` against cyan's `0.502`, so the same alpha composites differently. The steps are solved for this surface and named for their true alpha (`-62`, not `-40`) so nothing lies:
 
 | Step  | Contrast on `#161518`                               | Role                         |
 | ----- | --------------------------------------------------- | ---------------------------- |
-| base  | **4.99:1** — clears ≥3:1 non-text _and_ ≥4.5:1 text | Rings, active borders, icons |
-| `-62` | 2.56:1 (vs 1.41:1 resting border)                   | Hover / selected borders     |
-| `-21` | 1.25:1 · `--title` on it 12.6:1                     | Menu row fill                |
-| `-15` | 1.15:1                                              | Hover fill                   |
+| base  | **8.13:1** — clears ≥3:1 non-text _and_ ≥4.5:1 text | Rings, active borders, icons |
+| `-62` | 3.87:1 (vs 1.41:1 resting border) — clears ≥3:1     | Hover / selected borders     |
+| `-21` | 1.47:1 · Snow on it 12.03:1                         | Menu / selected row fill     |
+| `-15` | 1.30:1                                              | Hover fill                   |
 
 Adding a step means solving for its contrast, not guessing an alpha.
 
@@ -99,7 +101,7 @@ Adding a step means solving for its contrast, not guessing an alpha.
 
 | Token | Value | Use |
 | --- | --- | --- |
-| `--primary-main` / `--primary-dark` | `#ff2d55` / `#f70038` | Brand pink — the "armed/active tool" signal. Distinct from the cyan accent; don't use it for field errors. |
+| `--primary-main` / `--primary-dark` | `#ff2d55` / `#f70038` | Brand pink — **CTAs and main buttons only**, plus the "armed/active tool" signal. Not for panel chrome (that's `--ui-designer-control-accent`); don't use it for field errors. |
 | `--secondary-main` | `#ff7439` | Brand orange |
 | `--success-main` / `--error-main` / `--warning-main` | `#4caf50` / `#f44336` / `#ffc95b` | Status |
 
@@ -131,7 +133,7 @@ Adding a step means solving for its contrast, not guessing an alpha.
 }
 .some-dark-surface .row:hover,
 .some-dark-surface .row[aria-selected='true'] {
-  background: var(--ui-designer-control-accent-21); /* panel surface → pink */
+  background: var(--ui-designer-control-accent-21); /* panel surface → blue */
 }
 .some-dark-surface :focus-visible {
   outline: 2px solid var(--border-focused);

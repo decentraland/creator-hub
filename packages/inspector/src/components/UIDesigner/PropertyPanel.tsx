@@ -40,7 +40,7 @@ import { CheckboxField, Dropdown, RgbaColorField, TextArea, TextField } from '..
 import { Pill } from '../ui/Pill';
 import { measureParentBox, axisForPath, convertLength } from './measure';
 import type { DeviceKind } from './safe-areas';
-import { classifyNode, type CanvasSegment, type UINodeType } from './tree-model';
+import { classifyNode, nodeLabelText, type CanvasSegment, type UINodeType } from './tree-model';
 import { WIDGET_ICONS } from './widget-catalog';
 import {
   addInteractionLayer,
@@ -535,9 +535,10 @@ const ActiveFlagRow: React.FC<{ entity: Entity; expr?: string }> = ({ entity, ex
   );
 };
 
-// Panel header: which KIND of node is selected, plus the eye — the only control
-// here that is not a property row. Labelled by kind rather than by a per-node
-// name, which the editor has nowhere to store yet.
+// Panel header: which node is selected, plus the eye — the only control here that
+// is not a property row. Shares the tree's label (its @ui-name, falling back to
+// the widget kind) so both panels name the node the same way; rename lives in the
+// tree.
 //
 // The eye writes `display`, a real prop: a hidden node also stops rendering in
 // the shipped scene, and it can only be reached again from the tree.
@@ -553,9 +554,7 @@ const PanelHeader: React.FC<{ node: CodeUINode; hidden: boolean; onToggle: () =>
     >
       {node.opaque ? <IoWarningOutline /> : WIDGET_ICONS[classifyNode(node)]}
     </span>
-    <span className="ui-designer-panel-header-name">
-      {node.opaque ? node.name : classifyNode(node)}
-    </span>
+    <span className="ui-designer-panel-header-name">{nodeLabelText(node)}</span>
     {node.opaque ? null : (
       <button
         type="button"
@@ -680,7 +679,11 @@ const PropertyPanelComponent: React.FC = () => {
       <EmptyState
         icon={<IoOptionsOutline />}
         title="No node selected"
-        message="Select a node on the canvas or in the tree to edit its properties."
+        message={
+          <>
+            Select a <strong>node</strong> to start editing its properties.
+          </>
+        }
       />
     );
   }
