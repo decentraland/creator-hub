@@ -3,7 +3,7 @@ import React from 'react';
 import { Box } from '../Box';
 import { Canvas } from './Canvas';
 import { useCodeState } from './code/store';
-import { useUINodeHotkeys } from './useUINodeHotkeys';
+import { useUINodeHotkeys } from './shared/useUINodeHotkeys';
 
 import './UIDesigner.css';
 

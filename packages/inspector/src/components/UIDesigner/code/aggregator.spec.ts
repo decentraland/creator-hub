@@ -1,7 +1,7 @@
 import { parseSync } from 'oxc-parser';
 import { describe, expect, it } from 'vitest';
 
-import { DEFAULT_CANVAS_HEIGHT, DEFAULT_CANVAS_WIDTH } from '../tree-model';
+import { DEFAULT_CANVAS_HEIGHT, DEFAULT_CANVAS_WIDTH } from '../shared/tree-model';
 import {
   generateInteractionHelper,
   generateRootComponent,

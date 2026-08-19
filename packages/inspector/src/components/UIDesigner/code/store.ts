@@ -14,15 +14,15 @@ import {
   selectNode,
   selectNodes,
 } from '../../../redux/ui-designer';
-import { dragPinPatch } from '../align-presets';
-import type { DeviceKind } from '../safe-areas';
+import { dragPinPatch } from '../shared/align-presets';
+import type { DeviceKind } from '../shared/safe-areas';
 import {
   DEFAULT_CANVAS_HEIGHT,
   DEFAULT_CANVAS_WIDTH,
   nodeLabelText,
   type UINodeType,
   type WidgetKind,
-} from '../tree-model';
+} from '../shared/tree-model';
 import type { VirtualSize } from './aggregator';
 import {
   generateInteractionHelper,

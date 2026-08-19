@@ -1,6 +1,6 @@
 import type { Entity } from '@dcl/ecs';
 
-import { type CanvasBindingRow, type CanvasSegment, type UINodeType } from '../tree-model';
+import { type CanvasBindingRow, type CanvasSegment, type UINodeType } from '../shared/tree-model';
 
 // Segment-kind string values ('literal' / 'binding') — the values
 // previewBoundText compares against (tree-model's SegmentKind). Kept as local

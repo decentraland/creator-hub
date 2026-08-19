@@ -2,7 +2,7 @@ import { parseSync } from 'oxc-parser';
 import { describe, expect, it } from 'vitest';
 
 import { YGU_POINT } from '../../../lib/sdk/ui-transform-constants';
-import type { UINodeType } from '../tree-model';
+import type { UINodeType } from '../shared/tree-model';
 import { applyEdits } from './emit-adapter';
 import { wrapInInteractionEdits } from './interaction-convention';
 import {

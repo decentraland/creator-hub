@@ -21,7 +21,7 @@
 // branches are ordinary elements parse-adapter already reads). Dependency-free
 // apart from the emit-adapter Edit builders, so it unit-tests in isolation.
 
-import type { DeviceKind } from '../safe-areas';
+import type { DeviceKind } from '../shared/safe-areas';
 import { type Edit, ensureNamedImport, insertStatementBeforeReturn } from './emit-adapter';
 
 interface AstNode {

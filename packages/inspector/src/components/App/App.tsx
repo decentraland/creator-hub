@@ -4,6 +4,7 @@ import cx from 'classnames';
 
 import { useSelectedEntity } from '../../hooks/sdk/useSelectedEntity';
 import { useInspectorUIState } from '../../hooks/sdk/useInspectorUIState';
+import { usePauseSceneWhileDesigning } from '../../hooks/usePauseSceneWhileDesigning';
 import { useRestorePersistedMode } from '../../hooks/useRestorePersistedMode';
 import { useWindowSize } from '../../hooks/useWindowSize';
 import { useAppSelector } from '../../redux/hooks';
@@ -22,8 +23,8 @@ import { Toolbar } from '../Toolbar';
 import Assets from '../Assets';
 import { SceneInfoPanel } from '../SceneInfoPanel';
 import UIDesigner from '../UIDesigner/UIDesigner';
-import { UIDesignerLeftRail } from '../UIDesigner/UIDesignerLeftRail';
-import { UIDesignerRightRail } from '../UIDesigner/UIDesignerRightRail';
+import { LeftPanel } from '../UIDesigner/LeftPanel';
+import { RightPanel } from '../UIDesigner/RightPanel';
 import { Palette } from '../UIDesigner/Palette';
 
 import './App.css';
@@ -42,6 +43,8 @@ const App = () => {
   // Replays the scene's persisted 2D/3D mode. Here rather than in ModeSwitcher
   // because that now renders inside the left panel, which the host can hide.
   useRestorePersistedMode();
+
+  usePauseSceneWhileDesigning();
 
   // The scene's persisted 2D/3D mode arrives with `uiState`. Committing to either
   // mode before then paints the wrong editor and visibly switches, so hold both
@@ -96,7 +99,7 @@ const App = () => {
                         control and read as unselected until it lands, so hiding
                         them would make the panel jump on load. */}
                     <ModeSwitcher />
-                    {modeResolved ? isUIDesigner ? <UIDesignerLeftRail /> : <Hierarchy /> : null}
+                    {modeResolved ? isUIDesigner ? <LeftPanel /> : <Hierarchy /> : null}
                   </Box>
                 </Panel>
                 <PanelResizeHandle className="horizontal-handle" />
@@ -161,7 +164,7 @@ const App = () => {
                   order={4}
                 >
                   <Box className="entity-inspector">
-                    {isUIDesigner ? <UIDesignerRightRail /> : <EntityInspector />}
+                    {isUIDesigner ? <RightPanel /> : <EntityInspector />}
                   </Box>
                 </Panel>
               </>

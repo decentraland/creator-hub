@@ -2,7 +2,7 @@
 // (src/ui/<Name>.tsx) with a typed `state` binding surface, and a generated
 // src/ui/index.tsx composes them into setupUi(). Consumed by code/store.ts.
 
-import { DEFAULT_CANVAS_HEIGHT, DEFAULT_CANVAS_WIDTH } from '../tree-model';
+import { DEFAULT_CANVAS_HEIGHT, DEFAULT_CANVAS_WIDTH } from '../shared/tree-model';
 
 export interface UiRoot {
   // Exported component name, e.g. "MyScreen".

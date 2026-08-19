@@ -1,5 +1,5 @@
-import type { DeviceKind } from '../safe-areas';
-import type { UINode } from '../tree-model';
+import type { DeviceKind } from '../shared/safe-areas';
+import type { UINode } from '../shared/tree-model';
 import type { InteractionStateKey } from './interaction-convention';
 
 // Byte span [start, end) into the source text of the backing AST node.

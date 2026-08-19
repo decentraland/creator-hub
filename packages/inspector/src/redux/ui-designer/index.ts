@@ -3,8 +3,8 @@ import { createSlice } from '@reduxjs/toolkit';
 import type { Entity } from '@dcl/ecs';
 
 import type { InteractionStateKey } from '../../components/UIDesigner/code/interaction-convention';
-import type { DeviceKind, ScreenSize } from '../../components/UIDesigner/safe-areas';
-import { DEFAULT_SCREENS } from '../../components/UIDesigner/safe-areas';
+import type { DeviceKind, ScreenSize } from '../../components/UIDesigner/shared/safe-areas';
+import { DEFAULT_SCREENS } from '../../components/UIDesigner/shared/safe-areas';
 import type { RootState } from '../store';
 
 // Persist the property-panel group collapse state across reloads. There is no
