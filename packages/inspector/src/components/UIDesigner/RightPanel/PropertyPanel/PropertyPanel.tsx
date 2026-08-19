@@ -26,12 +26,14 @@ import { useAppDispatch, useAppSelector } from '../../../../redux/hooks';
 import {
   getAspectLockedNodes,
   getCollapsedGroups,
+  getHiddenNodes,
   getInteractionLayer,
   getPlatform,
   getSelectedNode,
   setAspectLocked,
   setGroupCollapsed,
   setInteractionLayer,
+  setNodeHidden,
   setPlatform,
 } from '../../../../redux/ui-designer';
 import { Block } from '../../../Block';
@@ -68,7 +70,6 @@ import { isLayerableComponent } from '../../code/parse-adapter';
 import type { CodeUINode } from '../../code/types';
 import { clearedCenterMargins } from '../../shared/align-presets';
 import { EmptyState } from '../../EmptyState';
-import { ComponentRefPanel } from './ComponentRefPanel';
 import {
   type Alignment,
   ALIGNMENTS,
@@ -89,13 +90,17 @@ import { MixedContentField } from './MixedContentField';
 import { seedSegments } from './MixedContentField/segments';
 import { CallbackField } from './CallbackField';
 import { ResizeField } from './ResizeField';
-import { TextureField } from './TextureField';
+import { FillField } from './FillField';
+import { TextAlignField } from './TextAlignField';
 import { regionToUvs, uvsToRegion } from './uv-region';
 import { buildGroups, POSITION_MODE_FIELD, TRANSFORM, type FieldConfig } from './field-configs';
 
 import './PropertyPanel.css';
 
 type Color4 = { r: number; g: number; b: number; a?: number };
+
+const TW_WRAP = 0;
+const TW_NO_WRAP = 1;
 
 function clampNumber(raw: string): number {
   const n = Number(raw);
@@ -166,6 +171,14 @@ function isTogglable(field: FieldConfig): boolean {
   return !field.core && TOGGLABLE_KINDS.has(field.kind);
 }
 
+const CHECKBOX_KINDS = new Set([
+  'boolean',
+  'position-mode',
+  'overflow-scroll',
+  'overflow-clip',
+  'text-wrap',
+]);
+
 // The concrete PB paths whose presence means "this field is authored in source".
 function fieldSetPaths(field: FieldConfig): string[] {
   if (field.writeAll) return field.writeAll;
@@ -180,9 +193,16 @@ function isFieldSet(field: FieldConfig, value: Record<string, unknown> | null): 
   return fieldSetPaths(field).some(p => p in value);
 }
 
-// A BOUND prop is authored too — the parser files `disabled={state.locked}` under
-// the node's bindings, never under the component value — so `isFieldSet` alone
-// would offer it as addable, and adding it splices a literal over the binding.
+/**
+ * Whether a field belongs in its group's `+ Add property` menu.
+ *
+ * A BOUND prop is authored too — the parser files `disabled={state.locked}` under
+ * the node's bindings, never under the component value — so `isFieldSet` alone
+ * would offer it as addable, and adding it splices a literal over the binding.
+ *
+ * An `inlineAdd` field is excluded because it carries its own standing `+` row;
+ * listing it in the menu as well would offer the same prop in two places.
+ */
 export function isAddableField(
   field: FieldConfig,
   value: Record<string, unknown> | null,
@@ -190,9 +210,19 @@ export function isAddableField(
 ): boolean {
   return (
     isTogglable(field) &&
+    !field.inlineAdd &&
     !isFieldSet(field, value) &&
     !boundFields.has(`${field.componentId}.${field.path}`)
   );
+}
+
+/**
+ * Whether an inline-addable field shows its `+` stub rather than its control.
+ * The design keeps Min Size, Max Size and Border permanently in view instead of
+ * behind the group menu, so an unauthored one renders as a label plus a `+`.
+ */
+export function isInlineStub(field: FieldConfig, value: Record<string, unknown> | null): boolean {
+  return !!field.inlineAdd && !isFieldSet(field, value);
 }
 
 // "How I sit in my parent" has no meaning on a UI root — its parent is the
@@ -200,19 +230,44 @@ export function isAddableField(
 // canvas switches it, and these are then the only controls over the offsets now
 // sitting in source (unchecking Ignore Layout Flow puts it back in flow, after
 // which they all drop away).
+const isAbsolute = (value: Record<string, unknown> | null | undefined): boolean =>
+  ((value?.positionType as number | undefined) ?? YGPT_RELATIVE) === YGPT_ABSOLUTE;
+
 function hiddenOnRoot(
   field: FieldConfig,
   isGuiRoot: boolean,
   value: Record<string, unknown> | null,
 ): boolean {
   if (!field.hideOnRoot || !isGuiRoot) return false;
-  return ((value?.positionType as number | undefined) ?? YGPT_RELATIVE) !== YGPT_ABSOLUTE;
+  return !isAbsolute(value);
 }
 
-// Seed patch written when the user ADDS an optional prop — a sensible default so
-// the newly-shown row isn't empty/degenerate (border width 1 so it's visible,
-// opacity 1, enums at their default option, lengths in px).
-function buildAddPatch(field: FieldConfig): Record<string, unknown> {
+/**
+ * Whether to drop "Ignore Layout Flow" because the node's PARENT is itself
+ * absolutely positioned, so there is no flow for the node to be lifted out of.
+ *
+ * Kept on a node that is ALREADY absolute, for the same reason `hideOnRoot` is:
+ * the checkbox is the only way back into flow, and hiding it would strand the
+ * node — and its Anchor/Position rows — out of reach.
+ */
+export function hiddenUnderAbsoluteParent(
+  parentInFlow: boolean,
+  value: Record<string, unknown> | null,
+): boolean {
+  return !parentInFlow && !isAbsolute(value);
+}
+
+/**
+ * Seed patch written when the user ADDS an optional prop — a sensible default so
+ * the newly-shown row isn't empty or degenerate (opacity 1, enums at their
+ * default option, lengths in px), plus whatever `addAlso` declares for a field
+ * whose own seed would leave the row inert.
+ */
+export function buildAddPatch(field: FieldConfig): Record<string, unknown> {
+  return { ...seedPatch(field), ...field.addAlso };
+}
+
+function seedPatch(field: FieldConfig): Record<string, unknown> {
   switch (field.kind) {
     case 'number':
       return { [field.path]: field.defaultValue ?? 0 };
@@ -260,6 +315,7 @@ function buildRemovePatch(field: FieldConfig): Record<string, unknown> {
     patch[p] = undefined;
     patch[`${p}Unit`] = undefined;
   }
+  for (const p of Object.keys(field.addAlso ?? {})) patch[p] = undefined;
   return patch;
 }
 
@@ -298,13 +354,11 @@ const AddPropertyMenu: React.FC<{ fields: FieldConfig[]; onAdd: (f: FieldConfig)
   );
 };
 
-// Human labels for the interaction layers. "Default" reads better than "base"
-// in the UI; the code-side key stays `base`.
 const LAYER_LABELS: Record<InteractionStateKey, string> = {
   base: 'Default',
   hover: 'Hover',
   press: 'Pressed',
-  active: 'Active',
+  active: 'Selected',
 };
 
 const LAYER_HINTS: Record<InteractionStateKey, string> = {
@@ -314,9 +368,18 @@ const LAYER_HINTS: Record<InteractionStateKey, string> = {
   active: 'While the bound condition below is true — a selected tab, a checked toggle.',
 };
 
-// The interaction-states bar: pick which layer the fields below edit, add a
-// layer, or drop interaction styling entirely. A node without interaction states
-// shows a single "Add interaction states" affordance instead.
+const STATES_INFO =
+  'Style this node differently while the pointer is over it, while it is held down, or while a bound condition is true.';
+
+/**
+ * The interaction-states bar: pick which layer the fields below edit, add one, or
+ * drop interaction styling entirely.
+ *
+ * A node with no states at all shows only the `+` — there is nothing to select
+ * between yet. Once it has them the full strip is drawn, with the states this
+ * node does not author greyed rather than absent, so adding one is a click on the
+ * tab itself instead of a hunt for a separate affordance.
+ */
 const StatesBar: React.FC<{
   node: CodeUINode;
   entity: Entity;
@@ -326,69 +389,39 @@ const StatesBar: React.FC<{
   const id = entity as unknown as number;
   const interaction = node.interaction;
 
-  if (!interaction) {
-    return (
-      <div className="ui-designer-states-bar">
-        <button
-          type="button"
-          className="ui-designer-states-add"
-          title="Style this node differently on hover, press, or when active"
-          onClick={() => void addInteractionStates(id)}
-        >
-          <AiOutlinePlus aria-hidden /> Add interaction states
-        </button>
-      </div>
-    );
-  }
-
-  const present = interaction.states;
-  const missing = INTERACTION_STATES.filter(k => k !== 'base' && !present[k]);
+  const addLayer = (key: InteractionStateKey) => {
+    void addInteractionLayer(id, key);
+    onPick(key);
+  };
 
   return (
     <div className="ui-designer-states-bar">
-      <div
-        className="ui-designer-states-tabs"
-        role="tablist"
-        aria-label="Interaction state"
+      <Block
+        label="Interaction States"
+        info={STATES_INFO}
+        className="ui-designer-section-header"
       >
-        {INTERACTION_STATES.filter(k => k === 'base' || present[k]).map(k => (
-          <button
-            key={k}
-            type="button"
-            role="tab"
-            aria-selected={k === layer}
-            className={`ui-designer-states-tab${k === layer ? ' selected' : ''}`}
-            title={LAYER_HINTS[k]}
-            onClick={() => onPick(k)}
-          >
-            {LAYER_LABELS[k]}
-          </button>
-        ))}
-        {missing.map(k => (
-          <button
-            key={k}
-            type="button"
-            className="ui-designer-states-tab add"
-            title={`Add a ${LAYER_LABELS[k]} state — ${LAYER_HINTS[k]}`}
-            onClick={() => {
-              void addInteractionLayer(id, k);
-              onPick(k);
-            }}
-          >
-            <AiOutlinePlus aria-hidden /> {LAYER_LABELS[k]}
-          </button>
-        ))}
-      </div>
-      <div className="ui-designer-states-actions">
-        {layer !== 'base' ? (
+        {interaction ? (
           <button
             type="button"
             className="ui-designer-prop-remove"
-            aria-label={`Remove the ${LAYER_LABELS[layer]} state`}
-            title={`Remove the ${LAYER_LABELS[layer]} state`}
+            aria-label={
+              layer === 'base'
+                ? 'Remove interaction states'
+                : `Remove the ${LAYER_LABELS[layer]} state`
+            }
+            title={
+              layer === 'base'
+                ? 'Remove interaction states — keeps the Default style, drops the overrides'
+                : `Remove the ${LAYER_LABELS[layer]} state`
+            }
             onClick={() => {
-              void removeInteractionLayer(id, layer);
-              onPick('base');
+              if (layer === 'base') {
+                void removeInteractionStates(id);
+              } else {
+                void removeInteractionLayer(id, layer);
+                onPick('base');
+              }
             }}
           >
             <VscTrash aria-hidden />
@@ -396,16 +429,50 @@ const StatesBar: React.FC<{
         ) : (
           <button
             type="button"
-            className="ui-designer-prop-remove"
-            aria-label="Remove interaction states"
-            title="Remove interaction states — keeps the Default style, drops the overrides"
-            onClick={() => void removeInteractionStates(id)}
+            className="ui-designer-prop-add"
+            aria-label="Add interaction states"
+            title={STATES_INFO}
+            onClick={() => void addInteractionStates(id)}
           >
-            <VscTrash aria-hidden />
+            <AiOutlinePlus aria-hidden />
           </button>
         )}
-      </div>
-      <p className="ui-designer-states-hint">{LAYER_HINTS[layer]}</p>
+      </Block>
+      {interaction ? (
+        <>
+          <div
+            className="ui-designer-states-tabs"
+            role="tablist"
+            aria-label="Interaction state"
+          >
+            {INTERACTION_STATES.map(key => {
+              const present = key === 'base' || !!interaction.states[key];
+              return (
+                <button
+                  key={key}
+                  type="button"
+                  role="tab"
+                  aria-selected={present && key === layer}
+                  aria-disabled={!present}
+                  className={cx('ui-designer-states-tab', {
+                    selected: present && key === layer,
+                    absent: !present,
+                  })}
+                  title={
+                    present
+                      ? LAYER_HINTS[key]
+                      : `Add a ${LAYER_LABELS[key]} state — ${LAYER_HINTS[key]}`
+                  }
+                  onClick={() => (present ? onPick(key) : addLayer(key))}
+                >
+                  {LAYER_LABELS[key]}
+                </button>
+              );
+            })}
+          </div>
+          <p className="ui-designer-states-hint">{LAYER_HINTS[layer]}</p>
+        </>
+      ) : null}
     </div>
   );
 };
@@ -420,6 +487,9 @@ const PLATFORM_TABS: { key: DeviceKind; label: string; icon: React.ReactNode }[]
   { key: 'mobile', label: 'Mobile', icon: <IoPhoneLandscapeOutline aria-hidden /> },
 ];
 
+const VARIANTS_INFO =
+  'Give this GUI a separate mobile layout — each device gets its own tree, and the scene picks one at runtime.';
+
 const VariantsBar: React.FC<{
   node: CodeUINode;
   entity: Entity;
@@ -433,57 +503,64 @@ const VariantsBar: React.FC<{
   const platform = useAppSelector(getPlatform);
   const id = entity as unknown as number;
 
-  if (!node.platform) {
-    return (
-      <div className="ui-designer-states-bar">
-        <button
-          type="button"
-          className="ui-designer-states-add"
-          title="Give this GUI a separate mobile layout — each device gets its own tree"
-          onClick={() => void addPlatformVariant(id)}
-        >
-          <AiOutlinePlus aria-hidden /> Add device variants
-        </button>
-      </div>
-    );
-  }
-
   return (
     <div className="ui-designer-states-bar">
-      <div
-        className="ui-designer-states-tabs"
-        role="tablist"
-        aria-label="Device variant"
+      <Block
+        label="Device Variants"
+        info={VARIANTS_INFO}
+        className="ui-designer-section-header"
       >
-        {PLATFORM_TABS.map(t => (
+        {node.platform ? (
           <button
-            key={t.key}
             type="button"
-            role="tab"
-            aria-selected={t.key === platform}
-            className={cx('ui-designer-states-tab', { selected: t.key === platform })}
-            title={`Edit the ${t.label} layout`}
-            onClick={() => dispatch(setPlatform({ platform: t.key }))}
+            className="ui-designer-prop-remove"
+            aria-label="Remove device variants"
+            title="Remove device variants — the layout you're editing becomes the only one"
+            onClick={() =>
+              void removePlatformVariant((variantEntity ?? entity) as unknown as number)
+            }
           >
-            {t.icon} {t.label}
+            <VscTrash aria-hidden />
           </button>
-        ))}
-      </div>
-      <div className="ui-designer-states-actions">
-        <button
-          type="button"
-          className="ui-designer-prop-remove"
-          aria-label="Remove device variants"
-          title="Remove device variants — the layout you're editing becomes the only one"
-          onClick={() => void removePlatformVariant((variantEntity ?? entity) as unknown as number)}
-        >
-          <VscTrash aria-hidden />
-        </button>
-      </div>
-      <p className="ui-designer-states-hint">
-        This GUI has a separate layout per device. Editing the{' '}
-        {platform === 'mobile' ? 'Mobile' : 'Desktop'} tree.
-      </p>
+        ) : (
+          <button
+            type="button"
+            className="ui-designer-prop-add"
+            aria-label="Add device variants"
+            title={VARIANTS_INFO}
+            onClick={() => void addPlatformVariant(id)}
+          >
+            <AiOutlinePlus aria-hidden />
+          </button>
+        )}
+      </Block>
+      {node.platform ? (
+        <>
+          <div
+            className="ui-designer-states-tabs"
+            role="tablist"
+            aria-label="Device variant"
+          >
+            {PLATFORM_TABS.map(t => (
+              <button
+                key={t.key}
+                type="button"
+                role="tab"
+                aria-selected={t.key === platform}
+                className={cx('ui-designer-states-tab', { selected: t.key === platform })}
+                title={`Edit the ${t.label} layout`}
+                onClick={() => dispatch(setPlatform({ platform: t.key }))}
+              >
+                {t.icon} {t.label}
+              </button>
+            ))}
+          </div>
+          <p className="ui-designer-states-hint">
+            This GUI has a separate layout per device. Editing the{' '}
+            {platform === 'mobile' ? 'Mobile' : 'Desktop'} tree.
+          </p>
+        </>
+      ) : null}
     </div>
   );
 };
@@ -494,11 +571,11 @@ const VariantsBar: React.FC<{
 // JSX attribute — so it owns its picker state instead of reusing
 // useFieldBinding, whose onBind targets an attribute.
 const ACTIVE_FLAG_FIELD: FieldConfig = {
-  label: 'Active when',
+  label: 'Selected when',
   componentId: 'ui::interaction',
   path: 'active',
   kind: 'boolean',
-  info: 'While this is true, the Active style applies. Bind it to a boolean variable — a selected tab, a checked toggle.',
+  info: 'While this is true, the Selected style applies. Bind it to a boolean variable — a selected tab, a checked toggle.',
 };
 
 const ActiveFlagRow: React.FC<{ entity: Entity; expr?: string }> = ({ entity, expr }) => {
@@ -540,13 +617,16 @@ const ActiveFlagRow: React.FC<{ entity: Entity; expr?: string }> = ({ entity, ex
   );
 };
 
-// Panel header: which node is selected, plus the eye — the only control here that
-// is not a property row. Shares the tree's label (its @ui-name, falling back to
-// the widget kind) so both panels name the node the same way; rename lives in the
-// tree.
-//
-// The eye writes `display`, a real prop: a hidden node also stops rendering in
-// the shipped scene, and it can only be reached again from the tree.
+/**
+ * Panel header: which node is selected, plus the eye. Shares the tree's label
+ * (its `@ui-name`, falling back to the widget kind) so both panels name the node
+ * the same way; rename lives in the tree.
+ *
+ * The eye is a CANVAS-ONLY preview toggle, the same editor-only state the
+ * LeftPanel's eye drives — it never reaches source. The real `display` prop is
+ * the Visible is Active row below it, so a node hidden from the canvas here still
+ * renders in the shipped scene.
+ */
 const PanelHeader: React.FC<{ node: CodeUINode; hidden: boolean; onToggle: () => void }> = ({
   node,
   hidden,
@@ -565,11 +645,11 @@ const PanelHeader: React.FC<{ node: CodeUINode; hidden: boolean; onToggle: () =>
         type="button"
         className="ui-designer-panel-header-eye"
         aria-pressed={hidden}
-        aria-label={hidden ? 'Show this node' : 'Hide this node'}
+        aria-label={hidden ? 'Show this node on the canvas' : 'Hide this node on the canvas'}
         title={
           hidden
-            ? 'Show this node'
-            : 'Hide this node — it stops rendering in the scene too, not just on the canvas'
+            ? 'Show this node on the canvas'
+            : 'Hide this node on the canvas — it still renders in the scene. Use Visible is Active to remove it from the scene.'
         }
         onClick={onToggle}
       >
@@ -579,10 +659,47 @@ const PanelHeader: React.FC<{ node: CodeUINode; hidden: boolean; onToggle: () =>
   </div>
 );
 
+/**
+ * The `display` value meaning "visible" for the layer being edited.
+ *
+ * At base, REMOVING the prop is right — react-ecs already defaults to flex. In an
+ * override layer an absent key means "inherit from Default" instead of "unset", so
+ * the node would stay hidden and the checkbox would read as a no-op; there it has
+ * to write flex explicitly.
+ */
+export function visibleDisplayValue(layer: InteractionStateKey): number | undefined {
+  return layer === 'base' ? undefined : YGD_FLEX;
+}
+
+/**
+ * The real `display` prop, drawn as the design's checkbox under the header.
+ * Deliberately unbindable: `display` is an enum, so a bound value would have to
+ * splice an inline ternary, and the parser reads that as a dynamic prop — which
+ * freezes every other panel edit on the node.
+ */
+const VisibleRow: React.FC<{ visible: boolean; onToggle: (visible: boolean) => void }> = ({
+  visible,
+  onToggle,
+}) => (
+  <div className="ui-designer-property-row checkbox">
+    <Block
+      label="Visible is Active"
+      info="Off removes the node from the scene entirely — it stops rendering and stops taking up layout space. The eye above only hides it on the canvas."
+    >
+      <CheckboxField
+        checked={visible}
+        aria-label="Visible is Active"
+        onChange={e => onToggle(e.target.checked)}
+      />
+    </Block>
+  </div>
+);
+
 const PropertyPanelComponent: React.FC = () => {
   const dispatch = useAppDispatch();
   const selected = useAppSelector(getSelectedNode);
   const collapsed = useAppSelector(getCollapsedGroups);
+  const hiddenNodes = useAppSelector(getHiddenNodes);
   const interactionLayer = useAppSelector(getInteractionLayer);
 
   // Code-mode: the selected node's data comes from the parsed .tsx tree (by its
@@ -618,14 +735,16 @@ const PropertyPanelComponent: React.FC = () => {
   // the panel is where the tree is in scope. The base layer is the right one to
   // read: an interaction state overriding a parent's direction would be exotic,
   // and the axes would then flip as the pointer moved.
-  const parentFlexDirection = useMemo(() => {
+  const parentTransform = useMemo(() => {
     const parent = findCodeLayoutParent(
       codeState.parsed?.root as CodeUINode | undefined,
       selected as unknown as number,
     );
-    const t = codeComponentValueForLayer(parent, TRANSFORM, 'base');
-    return (t?.flexDirection as number | undefined) ?? 0;
+    return codeComponentValueForLayer(parent, TRANSFORM, 'base');
   }, [codeState, selected]);
+
+  const parentFlexDirection = (parentTransform?.flexDirection as number | undefined) ?? 0;
+  const parentInFlow = !isAbsolute(parentTransform);
 
   // The interaction layer the fields edit. The picked layer is global, so it can
   // be stale for this node (that state may not exist here) — fall back to base.
@@ -693,10 +812,18 @@ const PropertyPanelComponent: React.FC = () => {
     );
   }
 
-  // A nested component reference edits the values passed to the instance (its
-  // props), not the generic UiEntity fields.
   if (codeNode?.componentRef) {
-    return <ComponentRefPanel node={codeNode} />;
+    return (
+      <EmptyState
+        icon={<IoOptionsOutline />}
+        title={codeNode.componentRef.name ?? 'Component'}
+        message={
+          <>
+            This is a nested component. Edit the values passed to it under <strong>Logic</strong>.
+          </>
+        }
+      />
+    );
   }
 
   // A platform variant is the conditional itself — it has no props of its own.
@@ -710,19 +837,10 @@ const PropertyPanelComponent: React.FC = () => {
     );
   }
 
-  // The canvas drop wraps `<Name />` in a positioning UiEntity, and canvas
-  // clicks select that WRAPPER (the ref block is click-transparent so the
-  // wrapper stays draggable) — so surface the nested instance's props here
-  // too, below the wrapper's own fields.
-  const refChildren = (codeNode?.children ?? []).filter(c => c.componentRef);
-
   const allGroups = buildGroups(type);
   const transform = readComponentValue(TRANSFORM) as Record<string, unknown> | null;
-  const nodeHidden = (transform?.display as number | undefined) === YGD_NONE;
-  // Unhiding REMOVES the prop, since react-ecs already defaults to flex. Not in an
-  // override layer though: there an absent key means "inherit from Default", so the
-  // node would stay hidden and the eye would read as a no-op.
-  const unhideValue = activeLayer === 'base' ? undefined : YGD_FLEX;
+  const displayNone = (transform?.display as number | undefined) === YGD_NONE;
+  const canvasHidden = !!hiddenNodes[selected as unknown as number];
 
   // One row, wherever it renders: inside a group or standalone above them.
   // In an override layer, distinguish a field this state actually sets from one
@@ -742,6 +860,7 @@ const PropertyPanelComponent: React.FC = () => {
       <div
         className={cx('ui-designer-property-row', {
           half: field.half,
+          checkbox: CHECKBOX_KINDS.has(field.kind),
           overridden: overriding && overridden,
           inherited: overriding && !overridden,
         })}
@@ -781,26 +900,52 @@ const PropertyPanelComponent: React.FC = () => {
     );
   };
 
+  const renderStub = (field: FieldConfig) => (
+    <div
+      className="ui-designer-property-row stub"
+      key={`${field.componentId}:${field.path}:${field.label}`}
+    >
+      <Block
+        label={field.label}
+        info={field.info}
+        className="ui-designer-prop-stub"
+      >
+        <button
+          type="button"
+          className="ui-designer-prop-add"
+          aria-label={`Add ${field.label ?? 'property'}`}
+          title={`Add ${field.label ?? 'property'}`}
+          onClick={() => writeAndDispatch(field.componentId, buildAddPatch(field))}
+        >
+          <AiOutlinePlus aria-hidden />
+        </button>
+      </Block>
+    </div>
+  );
+
   return (
     <div className="ui-designer-property-panel">
       {codeNode ? (
-        <PanelHeader
-          node={codeNode}
-          hidden={nodeHidden}
-          onToggle={() =>
-            writeAndDispatch(TRANSFORM, { display: nodeHidden ? unhideValue : YGD_NONE })
-          }
-        />
+        <>
+          <PanelHeader
+            node={codeNode}
+            hidden={canvasHidden}
+            onToggle={() =>
+              dispatch(setNodeHidden({ entity: selected as Entity, hidden: !canvasHidden }))
+            }
+          />
+          {codeNode.opaque ? null : (
+            <VisibleRow
+              visible={!displayNone}
+              onToggle={visible =>
+                writeAndDispatch(TRANSFORM, {
+                  display: visible ? visibleDisplayValue(activeLayer) : YGD_NONE,
+                })
+              }
+            />
+          )}
+        </>
       ) : null}
-      {/* A nested component's Inputs are the primary thing to edit on an instance,
-          so surface them at the TOP — above the wrapper's Layout/Background groups
-          (which only position the instance). */}
-      {refChildren.map(child => (
-        <ComponentRefPanel
-          key={child.entity as unknown as number}
-          node={child}
-        />
-      ))}
       {codeNode && !codeNode.opaque ? (
         <>
           <StatesBar
@@ -828,7 +973,8 @@ const PropertyPanelComponent: React.FC = () => {
       ) : null}
       {/* The design draws Ignore Layout Flow above the first group, not inside one:
           it gates fields in both Position (Anchor/Position) and Layout (margin). */}
-      {hiddenOnRoot(POSITION_MODE_FIELD, isGuiRoot, transform)
+      {hiddenOnRoot(POSITION_MODE_FIELD, isGuiRoot, transform) ||
+      hiddenUnderAbsoluteParent(parentInFlow, transform)
         ? null
         : renderRow(POSITION_MODE_FIELD, transform)}
       {allGroups.map(group => {
@@ -846,6 +992,10 @@ const PropertyPanelComponent: React.FC = () => {
           // no cell for (space-between, stretch) would have no way in at all.
           if (isAddableField(field, value, boundFields)) {
             addable.push(field);
+            continue;
+          }
+          if (isInlineStub(field, value)) {
+            rows.push(renderStub(field));
             continue;
           }
           if (field.hiddenWhen?.((value ?? {}) as Record<string, unknown>)) continue;
@@ -1257,27 +1407,44 @@ const FieldRow = React.memo(function FieldRow({
         </BindableField>
       );
     }
-    case 'texture': {
-      // The PBUiBackground `texture` key is a discriminated `TextureUnion`
-      // (file / avatar / video variants). `TextureField` owns variant
-      // selection, per-variant editing, and file-path validation.
+    case 'fill': {
+      return (
+        <BindableField
+          field={field}
+          entity={entity}
+          bound={boundProp}
+        >
+          <FillField
+            color={componentValue?.color as Color4 | undefined}
+            texture={componentValue?.texture as TextureUnion | undefined}
+            onPatch={onPatch}
+          />
+        </BindableField>
+      );
+    }
+    case 'text-align': {
       return (
         <Block
           label={field.label}
           info={field.info}
         >
-          <TextureField
-            value={componentValue?.texture as TextureUnion | undefined}
-            onChange={next => {
-              const color = componentValue?.color as
-                | { r: number; g: number; b: number; a?: number }
-                | undefined;
-              const transparent = !color || (color.a ?? 1) === 0;
-              // A textured background almost always wants full-opacity display;
-              // a transparent tint is only meaningful for a solid color fill.
-              const tint = next && transparent ? { color: { r: 1, g: 1, b: 1, a: 1 } } : {};
-              onPatch({ texture: next, ...tint });
-            }}
+          <TextAlignField
+            value={raw as number | undefined}
+            onChange={mode => onPatch({ [field.path]: mode })}
+          />
+        </Block>
+      );
+    }
+    case 'text-wrap': {
+      return (
+        <Block
+          label={field.label}
+          info={field.info}
+        >
+          <CheckboxField
+            checked={((raw as number | undefined) ?? TW_WRAP) === TW_WRAP}
+            aria-label={field.label}
+            onChange={e => onPatch({ [field.path]: e.target.checked ? TW_WRAP : TW_NO_WRAP })}
           />
         </Block>
       );

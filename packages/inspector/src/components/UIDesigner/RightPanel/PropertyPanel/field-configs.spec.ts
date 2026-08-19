@@ -230,11 +230,8 @@ describe('buildGroups', () => {
   });
 
   describe('and a field must stay reachable', () => {
-    // Image is DERIVED from having a background texture (tree-model.classifyNode),
-    // so Texture is the only way to turn a Container into an Image. Hiding it on a
-    // container would make an Image uncreatable.
-    it('should offer Texture on a UiEntity regardless of whether one is set', () => {
-      expect(labelsIn('UiEntity', 'Style')).toContain('Texture');
+    it('should always offer Fill on a UiEntity, since setting its texture is what makes an Image', () => {
+      expect(labelsIn('UiEntity', 'Style')).toContain('Fill');
     });
 
     // UiLabelProps.value is REQUIRED by the SDK. `core` fields get no remove
@@ -242,7 +239,7 @@ describe('buildGroups', () => {
     // the panel offering to unset a prop the scene cannot compile without.
     it('should keep a Label/Button text value core and therefore un-removable', () => {
       for (const type of ['Label', 'Button'] as UINodeType[]) {
-        const value = fieldsIn(type, 'Text').find(f => f.label === 'Value');
+        const value = fieldsIn(type, 'Text').find(f => f.label === 'Text Input');
         expect(value?.core).toBe(true);
       }
     });
@@ -254,7 +251,7 @@ describe('buildGroups', () => {
 
     it('should gate Anchor and Position on Absolute positioning', () => {
       const gated = fieldsIn('UiEntity', 'Position').filter(f =>
-        ['Anchor', 'Position'].includes(f.label as string),
+        ['Constraints', 'Position'].includes(f.label as string),
       );
       expect(gated).toHaveLength(2);
       for (const f of gated) {
@@ -332,7 +329,7 @@ describe('buildGroups', () => {
       for (const type of ALL_TYPES) {
         expect(allLabels(type)).not.toContain(POSITION_MODE_FIELD.label);
       }
-      expect(fieldsIn('UiEntity', 'Position')[0]?.label).toBe('Anchor');
+      expect(fieldsIn('UiEntity', 'Position')[0]?.label).toBe('Constraints');
     });
 
     // The header's eye writes `display`, and being binary it can express BOTH of
@@ -432,7 +429,7 @@ describe('buildGroups', () => {
       const hidden = fieldsIn('UiEntity', 'Position')
         .filter(f => f.hideOnRoot)
         .map(f => f.label);
-      expect(hidden).toEqual(['Anchor', 'Position']);
+      expect(hidden).toEqual(['Constraints', 'Position']);
       // The third one lives outside the groups but is gated identically.
       expect(POSITION_MODE_FIELD.hideOnRoot).toBe(true);
     });
@@ -453,20 +450,38 @@ describe('buildGroups', () => {
     });
   });
 
+  describe('and the node is a Dropdown', () => {
+    const emptyLabel = () => fieldsIn('Dropdown', 'Dropdown').find(f => f.label === 'Empty Label');
+
+    it('should show Empty Label only while the dropdown accepts an empty selection', () => {
+      expect(emptyLabel()?.hiddenWhen?.({ acceptEmpty: true })).toBe(false);
+      expect(emptyLabel()?.hiddenWhen?.({ acceptEmpty: false })).toBe(true);
+    });
+
+    it('should hide Empty Label when acceptEmpty is unauthored, its non-optional false', () => {
+      expect(emptyLabel()?.hiddenWhen?.({})).toBe(true);
+    });
+  });
+
   describe('and a row is paired into two columns', () => {
-    // Only Transparency·Corner Radius survives as a pair. The design also pairs
-    // Rotation·Z-Index, but Rotation has no SDK prop, so marking Z-Index half left
-    // a permanently unpaired row: a half-width input with its remove and bind
-    // buttons stranded mid-panel and the other track blank.
     // The border row is deliberately NOT paired: a colour control is swatch + hex
     // + alpha, and a ~140px half-track leaves the hex input around 44px.
     it('should mark exactly the fields the design pairs', () => {
+      const TEXT_PAIR = ['Typography', 'Size'];
+      const STYLE_PAIR = ['Transparency', 'Corner Radius'];
+      const expected: Record<string, string[]> = {
+        UiEntity: STYLE_PAIR,
+        Label: [...TEXT_PAIR, ...STYLE_PAIR],
+        Button: [...TEXT_PAIR, ...STYLE_PAIR],
+        Input: [...TEXT_PAIR, ...STYLE_PAIR],
+        Dropdown: [...TEXT_PAIR, ...STYLE_PAIR],
+      };
       for (const type of ALL_TYPES) {
         const half = buildGroups(type)
           .flatMap(g => g.fields)
           .filter(f => f.half)
           .map(f => f.label);
-        expect(half).toEqual(['Transparency', 'Corner Radius']);
+        expect(half, type).toEqual(expected[type]);
       }
     });
 
@@ -535,7 +550,7 @@ describe('buildGroups', () => {
       expect(labelsIn('Button', 'Button')).toEqual(['Disabled']);
       for (const f of fieldsIn('Button', 'Button')) expect(f.componentId).toBe(UI_BUTTON);
       const disabled = fieldsIn('Button', 'Button')[0];
-      expect(disabled.core).toBeUndefined();
+      expect(disabled.core).toBe(true);
     });
 
     // Both props must keep writing a plain JSX attribute whatever interaction state
@@ -565,9 +580,15 @@ describe('buildGroups', () => {
       }
     });
 
-    it('should not expose the same field in two groups', () => {
+    it('should never drive one prop from two rows, even where two groups share a label', () => {
+      const identity = (f: FieldConfig) =>
+        [
+          f.componentId,
+          (f.writeAll ?? f.subFields?.map(s => s.path) ?? [f.path]).join(','),
+          f.kind,
+        ].join(':');
       for (const type of ALL_TYPES) {
-        const seen = allLabels(type);
+        const seen = buildGroups(type).flatMap(g => (g.fields as FieldConfig[]).map(identity));
         expect(new Set(seen).size, `${type} exposes a field twice`).toBe(seen.length);
       }
     });

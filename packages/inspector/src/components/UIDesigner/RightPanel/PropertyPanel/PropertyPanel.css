@@ -576,31 +576,19 @@
   color: var(--ui-designer-control-accent);
 }
 
-.ui-designer-states-tab.add {
-  color: var(--ui-designer-control-accent);
-}
-
-.ui-designer-states-tab:focus-visible,
-.ui-designer-states-add:focus-visible {
+.ui-designer-states-tab:focus-visible {
   outline: 2px solid var(--border-focused);
   outline-offset: 1px;
 }
 
-.ui-designer-states-tab svg,
-.ui-designer-states-add svg {
+.ui-designer-states-tab svg {
   width: 11px;
   height: 11px;
 }
 
-.ui-designer-states-actions {
-  display: flex;
-  align-items: center;
-  flex: 0 0 auto;
-}
-
 /* The bar's own remove button sits inline, unlike the absolutely-positioned
    per-row one it borrows its styling from. */
-.ui-designer-states-actions .ui-designer-prop-remove {
+.ui-designer-section-header .ui-designer-prop-remove {
   position: static;
   opacity: 1;
 }
@@ -611,23 +599,6 @@
   color: var(--sub-text);
   font-size: 10px;
   line-height: 1.4;
-}
-
-.ui-designer-states-add {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 4px 6px;
-  border: none;
-  border-radius: 4px;
-  background: transparent;
-  color: var(--ui-designer-control-accent);
-  font-size: 12px;
-  cursor: pointer;
-}
-
-.ui-designer-states-add:hover {
-  background: var(--ui-designer-control-accent-15);
 }
 
 .ui-designer-variant-badge {
@@ -673,4 +644,88 @@
   border-radius: 50%;
   background: var(--ui-designer-control-accent);
   vertical-align: middle;
+}
+
+/* --- Standing rows: a section header, or an inline-addable property --- */
+
+/* Both put their single affordance on the label's line rather than under it,
+   which is what distinguishes them from an ordinary label-over-control row. */
+.ui-designer-section-header,
+.ui-designer-prop-stub {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--uid-space-2);
+}
+
+.ui-designer-section-header {
+  flex: 1 1 100%;
+}
+
+.ui-designer-section-header > .content,
+.ui-designer-prop-stub > .content {
+  flex: 0 0 auto;
+}
+
+/* Unlike the remove button it mirrors, the `+` never hides on hover: it is the
+   only way into the property, so revealing it on hover would hide the very
+   affordance the row exists for. */
+.ui-designer-prop-add {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: none;
+  border-radius: 3px;
+  background: transparent;
+  color: var(--ui-designer-control-accent);
+  cursor: pointer;
+}
+
+.ui-designer-prop-add:hover {
+  background: var(--ui-designer-control-accent-21);
+}
+
+.ui-designer-prop-add:focus-visible {
+  outline: 2px solid var(--border-focused);
+  outline-offset: 1px;
+}
+
+.ui-designer-prop-add svg {
+  width: 13px;
+  height: 13px;
+}
+
+/* The design draws every boolean as `☑ Label`, so the control leads and the
+   label follows — the reverse of every other row. */
+.ui-designer-property-row.checkbox .Block {
+  flex-direction: row-reverse;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--uid-space-2);
+}
+
+.ui-designer-property-row.checkbox .Block > .content {
+  flex: 0 0 auto;
+}
+
+/* A state this node does not author yet. Drawn rather than omitted so it can be
+   added from the strip itself, dimmed so it does not read as already applied. */
+.ui-designer-states-tab.absent {
+  color: var(--ui-designer-glyph);
+}
+
+.ui-designer-states-tab.absent:hover {
+  color: var(--ui-designer-control-accent);
+}
+
+/* Block stacks label over control and spaces them with a bottom margin on the
+   label row. Every row variant above lays them out side by side instead, where
+   that margin reads as a vertical misalignment. */
+.ui-designer-section-header > .Block-label-row,
+.ui-designer-prop-stub > .Block-label-row,
+.ui-designer-property-row.checkbox .Block > .Block-label-row {
+  margin-bottom: 0;
 }

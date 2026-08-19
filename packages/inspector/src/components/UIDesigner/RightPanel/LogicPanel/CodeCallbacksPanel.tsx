@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 
+import { Container } from '../../../Container';
 import { isValidIdentifier } from '../../../../lib/sdk/operations/validators';
 import { TextField } from '../../../ui';
 import { type CodeAction, isValidTemplate } from '../../code/actions';
@@ -196,42 +197,45 @@ const CodeCallbacksPanelComponent: React.FC = () => {
   };
 
   return (
-    <div className="ui-designer-callbacks">
-      <div className="ui-designer-callbacks-title">Actions</div>
+    <Container
+      label="Events"
+      initialOpen
+    >
+      <div className="ui-designer-callbacks">
+        {actions.length === 0 ? (
+          <div className="ui-designer-callbacks-empty">No actions yet.</div>
+        ) : null}
 
-      {actions.length === 0 ? (
-        <div className="ui-designer-callbacks-empty">No actions yet.</div>
-      ) : null}
+        {actions.map(a => (
+          <CallbackCard
+            key={a.name}
+            action={a}
+            // Handlers take the args object `{ state, props, value }`, so both state
+            // variables and props are referenceable in the `{{ }}` body.
+            vars={bindingSurface.variables}
+          />
+        ))}
 
-      {actions.map(a => (
-        <CallbackCard
-          key={a.name}
-          action={a}
-          // Handlers take the args object `{ state, props, value }`, so both state
-          // variables and props are referenceable in the `{{ }}` body.
-          vars={bindingSurface.variables}
-        />
-      ))}
-
-      <div className="ui-designer-callbacks-add">
-        <TextField
-          aria-label="New action name"
-          value={name}
-          placeholder="new action"
-          onChange={e => setName(e.target.value)}
-          onKeyDown={e => {
-            if (e.key === 'Enter') add();
-          }}
-        />
-        <button
-          type="button"
-          disabled={!canAdd}
-          onClick={add}
-        >
-          + Add
-        </button>
+        <div className="ui-designer-callbacks-add">
+          <TextField
+            aria-label="New action name"
+            value={name}
+            placeholder="new action"
+            onChange={e => setName(e.target.value)}
+            onKeyDown={e => {
+              if (e.key === 'Enter') add();
+            }}
+          />
+          <button
+            type="button"
+            disabled={!canAdd}
+            onClick={add}
+          >
+            + Add
+          </button>
+        </div>
       </div>
-    </div>
+    </Container>
   );
 };
 

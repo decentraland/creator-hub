@@ -1,3 +1,4 @@
+import { YGU_POINT } from '../../../../lib/sdk/ui-transform-constants';
 import { readAnchor } from '../../shared/align-presets';
 import { UI_BUTTON } from '../../code/parse-adapter';
 import type { UINodeType } from '../../shared/tree-model';
@@ -24,7 +25,9 @@ export type FieldKind =
   | 'string-array'
   | 'index'
   | 'callback'
-  | 'texture'
+  | 'fill'
+  | 'text-align'
+  | 'text-wrap'
   // Unity-style 3×3 anchor grid → writes positionType + edge insets / auto
   // margins onto the UiTransform (path '', reads the whole component).
   | 'align-preset'
@@ -179,6 +182,20 @@ export interface FieldConfig {
    */
   core?: boolean;
   /**
+   * Draw an unset optional prop as a label plus a `+` on its own line, instead of
+   * hiding it inside the group's `+ Add property` menu. For the composites the
+   * design keeps permanently in view (Min Size, Max Size, Border): the menu makes
+   * them look absent, and they are common enough to deserve the standing row.
+   * Adding and removing still go through `buildAddPatch` / `buildRemovePatch`.
+   */
+  inlineAdd?: boolean;
+  /**
+   * Extra props seeded alongside this one when it is added, for a field whose
+   * kind-based seed alone would leave the new rows inert — Border's colour
+   * without a width renders as nothing at all.
+   */
+  addAlso?: Record<string, unknown>;
+  /**
    * For `enum` and `number` fields whose in-world default is not the zero value:
    * the value the control shows when the component leaves the prop unset. e.g. UiText
    * `textAlign` defaults to `center` (4) in the runtime (@dcl/ecs PBUiText:
@@ -240,19 +257,6 @@ const DISPLAY_OPTIONS: EnumOption[] = [
   { value: 1, label: 'None' },
 ];
 
-// TextAlignMode — 9-value combined vertical+horizontal.
-const TEXT_ALIGN_OPTIONS: EnumOption[] = [
-  { value: 0, label: 'Top left' },
-  { value: 1, label: 'Top center' },
-  { value: 2, label: 'Top right' },
-  { value: 3, label: 'Middle left' },
-  { value: 4, label: 'Middle center' },
-  { value: 5, label: 'Middle right' },
-  { value: 6, label: 'Bottom left' },
-  { value: 7, label: 'Bottom center' },
-  { value: 8, label: 'Bottom right' },
-];
-
 // YGWrap
 const FLEX_WRAP_OPTIONS: EnumOption[] = [
   { value: 0, label: 'No wrap' },
@@ -265,12 +269,6 @@ const FONT_OPTIONS: EnumOption[] = [
   { value: 0, label: 'Sans serif' },
   { value: 1, label: 'Serif' },
   { value: 2, label: 'Monospace' },
-];
-
-// TextWrap
-const TEXT_WRAP_OPTIONS: EnumOption[] = [
-  { value: 0, label: 'Wrap' },
-  { value: 1, label: 'No wrap' },
 ];
 
 // BackgroundTextureMode, surfaced as "Scale Type". Values must stay the PB
@@ -308,7 +306,7 @@ export const POSITION_GROUP = {
   title: 'Position',
   fields: [
     {
-      label: 'Anchor',
+      label: 'Constraints',
       componentId: TRANSFORM,
       path: '',
       kind: 'align-preset' as const,
@@ -355,6 +353,7 @@ export const POSITION_GROUP = {
       componentId: TRANSFORM,
       path: 'zIndex',
       kind: 'number' as const,
+      core: true,
       // NOT `half`, though the design pairs it with Rotation: the SDK has no
       // rotation prop, so nothing can ever occupy the other track. A permanently
       // unpaired half row left a short input with its remove and bind buttons
@@ -425,6 +424,7 @@ const LAYOUT_FIELDS: (FieldConfig & { container?: true })[] = [
       { path: 'minHeight', leftLabel: 'H' },
     ],
     bindable: false,
+    inlineAdd: true,
     info: 'Lower bound on size; the node never renders smaller. Supports px or %.',
   },
   {
@@ -437,6 +437,7 @@ const LAYOUT_FIELDS: (FieldConfig & { container?: true })[] = [
       { path: 'maxHeight', leftLabel: 'H' },
     ],
     bindable: false,
+    inlineAdd: true,
     info: 'Upper bound on size; the node never renders larger. Supports px or %.',
   },
   {
@@ -580,14 +581,9 @@ const LAYOUT_FIELDS: (FieldConfig & { container?: true })[] = [
     kind: 'enum' as const,
     options: DISPLAY_OPTIONS,
     bindable: false,
-    // The panel header's eye is the primary control for this prop, and being
-    // binary it can express BOTH values — so the row would only ever duplicate it.
-    // `core` keeps it out of `+ Add property` (the eye is the way in) while
-    // `hiddenWhen` keeps the row for source that already authors the prop, so a
-    // hand-authored `display` stays visible where its siblings are.
     core: true,
     hiddenWhen: (v: Record<string, unknown>) => !('display' in v),
-    info: 'Flex lays out the node and its children; None removes it from layout entirely. The eye in the panel header toggles this.',
+    info: 'Flex lays out the node and its children; None removes it from layout entirely. The Visible is Active checkbox toggles this.',
   },
 ];
 
@@ -617,6 +613,27 @@ const round4 = (n: number) => Math.round(n * 10000) / 10000;
 // Background + Effects + Border trio: Effects held only opacity and z-index
 // (z-index is a stacking property, not an effect) and Border held only three
 // fields, so both read as junk drawers rather than categories.
+const BORDER_COLOUR_PATHS = [
+  'borderTopColor',
+  'borderRightColor',
+  'borderBottomColor',
+  'borderLeftColor',
+];
+
+const BORDER_WIDTH_PATHS = [
+  'borderTopWidth',
+  'borderRightWidth',
+  'borderBottomWidth',
+  'borderLeftWidth',
+];
+
+const VISIBLE_BORDER_WIDTH: Record<string, unknown> = Object.fromEntries(
+  BORDER_WIDTH_PATHS.flatMap(path => [
+    [path, 1],
+    [`${path}Unit`, YGU_POINT],
+  ]),
+);
+
 const STYLE_GROUP = {
   title: 'Style',
   fields: [
@@ -630,6 +647,7 @@ const STYLE_GROUP = {
       componentId: TRANSFORM,
       path: 'opacity',
       kind: 'number' as const,
+      core: true,
       half: true,
       suffix: '%',
       // Unset opacity renders fully opaque, i.e. no transparency at all.
@@ -643,6 +661,7 @@ const STYLE_GROUP = {
       componentId: TRANSFORM,
       path: 'borderTopLeftRadius',
       kind: 'length' as const,
+      core: true,
       bindable: false,
       half: true,
       info: 'Rounds all four corners. Supports px or %.',
@@ -654,55 +673,22 @@ const STYLE_GROUP = {
       ],
     },
     {
-      // "Background Colour", not "Colour": a Label/Button also has a TEXT colour in
-      // its own group, and the old group names (Background vs Text) were the only
-      // thing telling them apart.
-      label: 'Background Colour',
+      label: 'Fill',
       componentId: BACKGROUND,
       path: 'color',
-      kind: 'color' as const,
+      kind: 'fill' as const,
       core: true,
-      info: "Fill color behind the node's content.",
-    },
-    {
-      label: 'Border Colour',
-      componentId: TRANSFORM,
-      path: 'borderTopColor',
-      kind: 'color' as const,
-      bindable: false,
-      // NOT `half`, though the design pairs it with Border width: a colour row is
-      // swatch + hex + alpha, and a 140px half-track leaves the hex input ~44px.
-      info: 'Color applied to all four borders.',
-      writeAll: ['borderTopColor', 'borderRightColor', 'borderBottomColor', 'borderLeftColor'],
-    },
-    {
-      // The design's name for border width, paired with Border Colour above it.
-      label: 'Weight',
-      componentId: TRANSFORM,
-      path: 'borderTopWidth',
-      kind: 'length' as const,
-      bindable: false,
-      info: 'Thickness of all four borders. Supports px or %.',
-      writeAll: ['borderTopWidth', 'borderRightWidth', 'borderBottomWidth', 'borderLeftWidth'],
-    },
-    {
-      label: 'Texture',
-      componentId: BACKGROUND,
-      path: 'texture',
-      kind: 'texture' as const,
-      bindable: false,
-      // Kept available on every UiEntity, not just one that already has a
-      // texture: setting one is what turns a Container INTO an Image (the kind
-      // is derived from this field — see tree-model.classifyNode).
-      info: 'Pick an image asset from your scene.',
+      info: 'What fills the node: a solid colour, an image from your scene, or a player’s avatar. Setting an image is what turns a Container into an Image.',
     },
     {
       label: 'Scale Type',
       componentId: BACKGROUND,
       path: 'textureMode',
       kind: 'enum' as const,
+      core: true,
       options: TEXTURE_MODE_OPTIONS,
       bindable: false,
+      hiddenWhen: (v: Record<string, unknown>) => !v.texture,
       info: 'How the texture fills the box: cropped to the middle, sliced, or stretched.',
       // react-ecs getTextureMode defaults an unset textureMode to CENTER (1).
       defaultValue: 1,
@@ -728,6 +714,28 @@ const STYLE_GROUP = {
       hiddenWhen: (v: Record<string, unknown>) =>
         (v.textureMode as number | undefined) !== 0 || !v.texture,
     },
+    {
+      label: 'Border',
+      componentId: TRANSFORM,
+      path: 'borderTopColor',
+      kind: 'color' as const,
+      bindable: false,
+      inlineAdd: true,
+      addAlso: VISIBLE_BORDER_WIDTH,
+      info: 'Colour applied to all four borders. Adding it also sets a 1px weight, without which the border renders as nothing at all.',
+      writeAll: BORDER_COLOUR_PATHS,
+    },
+    {
+      label: 'Weight',
+      componentId: TRANSFORM,
+      path: 'borderTopWidth',
+      kind: 'length' as const,
+      bindable: false,
+      core: true,
+      hiddenWhen: (v: Record<string, unknown>) => !(BORDER_COLOUR_PATHS[0] in v),
+      info: 'Thickness of all four borders. Supports px or %.',
+      writeAll: BORDER_WIDTH_PATHS,
+    },
   ],
 };
 
@@ -735,7 +743,7 @@ const TEXT_GROUP = {
   title: 'Text',
   fields: [
     {
-      label: 'Value',
+      label: 'Text Input',
       componentId: TEXT,
       path: 'value',
       kind: 'string' as const,
@@ -744,48 +752,48 @@ const TEXT_GROUP = {
       info: 'The text to show. Mix literal text with variables to build it at runtime.',
     },
     {
-      label: 'Colour',
-      componentId: TEXT,
-      path: 'color',
-      kind: 'color' as const,
-      info: 'Color of the text itself, independent of the background behind it.',
-    },
-    {
-      label: 'Font Size',
-      componentId: TEXT,
-      path: 'fontSize',
-      kind: 'number' as const,
-      core: true,
-      info: 'Text size in pixels.',
-    },
-    {
-      label: 'Text Align',
-      componentId: TEXT,
-      path: 'textAlign',
-      kind: 'enum' as const,
-      options: TEXT_ALIGN_OPTIONS,
-      bindable: false,
-      // UiText.textAlign defaults to center (4) in-world, not the zero option.
-      defaultValue: 4,
-      info: 'Anchors the text within its box. Defaults to middle center.',
-    },
-    {
-      label: 'Font',
+      label: 'Typography',
       componentId: TEXT,
       path: 'font',
       kind: 'enum' as const,
+      half: true,
+      core: true,
       options: FONT_OPTIONS,
       bindable: false,
       info: 'Typeface: sans serif, serif, or monospace.',
     },
     {
-      label: 'Text Wrap',
+      label: 'Size',
+      componentId: TEXT,
+      path: 'fontSize',
+      kind: 'number' as const,
+      half: true,
+      core: true,
+      info: 'Text size in pixels.',
+    },
+    {
+      label: 'Colour',
+      componentId: TEXT,
+      path: 'color',
+      kind: 'color' as const,
+      core: true,
+      info: 'Color of the text itself, independent of the background behind it.',
+    },
+    {
+      label: 'Alignment',
+      componentId: TEXT,
+      path: 'textAlign',
+      kind: 'text-align' as const,
+      bindable: false,
+      info: 'Anchors the text within its box. Defaults to middle center.',
+    },
+    {
+      label: 'Wrap',
       componentId: TEXT,
       path: 'textWrap',
-      kind: 'enum' as const,
-      options: TEXT_WRAP_OPTIONS,
+      kind: 'text-wrap' as const,
       bindable: false,
-      info: 'Wrap long text onto multiple lines, or keep it on one line.',
+      info: 'Wrap long text onto multiple lines instead of keeping it on a single line.',
     },
   ],
 };
@@ -805,6 +813,7 @@ const BUTTON_GROUP = {
       componentId: UI_BUTTON,
       path: 'disabled',
       kind: 'boolean' as const,
+      core: true,
       info: 'Fades the button out and stops it responding to Mouse Down and Mouse Up.',
     },
   ],
@@ -823,7 +832,7 @@ const INPUT_GROUP = {
       info: 'Hint text shown while the field is empty.',
     },
     {
-      label: 'Value',
+      label: 'Text Input',
       componentId: INPUT,
       path: 'value',
       kind: 'string' as const,
@@ -832,17 +841,31 @@ const INPUT_GROUP = {
       info: 'The field’s starting text. Bind it to a variable to control the field from your scene.',
     },
     {
-      label: 'Disabled',
+      label: 'Typography',
       componentId: INPUT,
-      path: 'disabled',
-      kind: 'boolean' as const,
-      info: 'Greys the field out and stops it accepting input.',
+      path: 'font',
+      kind: 'enum' as const,
+      half: true,
+      core: true,
+      options: FONT_OPTIONS,
+      bindable: false,
+      info: 'Typeface: sans serif, serif, or monospace.',
+    },
+    {
+      label: 'Size',
+      componentId: INPUT,
+      path: 'fontSize',
+      kind: 'number' as const,
+      half: true,
+      core: true,
+      info: 'Text size in pixels.',
     },
     {
       label: 'Colour',
       componentId: INPUT,
       path: 'color',
       kind: 'color' as const,
+      core: true,
       info: 'Color of the text the player types.',
     },
     {
@@ -853,31 +876,20 @@ const INPUT_GROUP = {
       info: 'Color of the hint text shown while the field is empty.',
     },
     {
-      label: 'Text Align',
+      label: 'Alignment',
       componentId: INPUT,
       path: 'textAlign',
-      kind: 'enum' as const,
-      options: TEXT_ALIGN_OPTIONS,
+      kind: 'text-align' as const,
       bindable: false,
-      // UiText.textAlign defaults to center (4) in-world, not the zero option.
-      defaultValue: 4,
       info: 'Anchors the text within the field. Defaults to middle center.',
     },
     {
-      label: 'Font',
+      label: 'Disabled',
       componentId: INPUT,
-      path: 'font',
-      kind: 'enum' as const,
-      options: FONT_OPTIONS,
-      bindable: false,
-      info: 'Typeface: sans serif, serif, or monospace.',
-    },
-    {
-      label: 'Font Size',
-      componentId: INPUT,
-      path: 'fontSize',
-      kind: 'number' as const,
-      info: 'Text size in pixels.',
+      path: 'disabled',
+      kind: 'boolean' as const,
+      core: true,
+      info: 'Greys the field out and stops it accepting input.',
     },
   ],
 };
@@ -898,6 +910,7 @@ const DROPDOWN_GROUP = {
       componentId: DROPDOWN,
       path: 'selectedIndex',
       kind: 'index' as const,
+      core: true,
       info: 'Which option starts selected, counting from 0.',
     },
     {
@@ -905,6 +918,7 @@ const DROPDOWN_GROUP = {
       componentId: DROPDOWN,
       path: 'acceptEmpty',
       kind: 'boolean' as const,
+      core: true,
       bindable: false,
       info: 'Allows the dropdown to have no option selected.',
     },
@@ -913,48 +927,53 @@ const DROPDOWN_GROUP = {
       componentId: DROPDOWN,
       path: 'emptyLabel',
       kind: 'string' as const,
-      info: 'Text shown when no option is selected.',
+      core: true,
+      hiddenWhen: (v: Record<string, unknown>) => !v.acceptEmpty,
+      info: 'Text shown when no option is selected. Available while Accept Empty is on.',
     },
     {
-      label: 'Disabled',
+      label: 'Typography',
       componentId: DROPDOWN,
-      path: 'disabled',
-      kind: 'boolean' as const,
-      info: 'Greys the dropdown out and stops it opening.',
+      path: 'font',
+      kind: 'enum' as const,
+      half: true,
+      core: true,
+      options: FONT_OPTIONS,
+      bindable: false,
+      info: 'Typeface: sans serif, serif, or monospace.',
+    },
+    {
+      label: 'Size',
+      componentId: DROPDOWN,
+      path: 'fontSize',
+      kind: 'number' as const,
+      half: true,
+      core: true,
+      info: 'Text size in pixels.',
     },
     {
       label: 'Colour',
       componentId: DROPDOWN,
       path: 'color',
       kind: 'color' as const,
+      core: true,
       info: 'Color of the selected option’s text.',
     },
     {
-      label: 'Text Align',
+      label: 'Alignment',
       componentId: DROPDOWN,
       path: 'textAlign',
-      kind: 'enum' as const,
-      options: TEXT_ALIGN_OPTIONS,
+      kind: 'text-align' as const,
       bindable: false,
-      // UiText.textAlign defaults to center (4) in-world, not the zero option.
-      defaultValue: 4,
       info: 'Anchors the selected option’s text within the box. Defaults to middle center.',
     },
     {
-      label: 'Font',
+      label: 'Disabled',
       componentId: DROPDOWN,
-      path: 'font',
-      kind: 'enum' as const,
-      options: FONT_OPTIONS,
-      bindable: false,
-      info: 'Typeface: sans serif, serif, or monospace.',
-    },
-    {
-      label: 'Font Size',
-      componentId: DROPDOWN,
-      path: 'fontSize',
-      kind: 'number' as const,
-      info: 'Text size in pixels.',
+      path: 'disabled',
+      kind: 'boolean' as const,
+      core: true,
+      info: 'Greys the dropdown out and stops it opening.',
     },
   ],
 };

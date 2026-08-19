@@ -1,21 +1,56 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 
+import { useAppSelector } from '../../../redux/hooks';
+import { getSelectedNode } from '../../../redux/ui-designer';
 import { Box } from '../../Box';
+import { findCodeNode, useCodeState } from '../code/store';
+import type { CodeUINode } from '../code/types';
 import { PropertyPanel } from './PropertyPanel';
 import { CodeVariablesPanel } from './LogicPanel/CodeVariablesPanel';
 import { CodePropsPanel } from './LogicPanel/CodePropsPanel';
 import { CodeCallbacksPanel } from './LogicPanel/CodeCallbacksPanel';
+import { ComponentRefPanel } from './LogicPanel/ComponentRefPanel';
 
 import '../UIDesigner.css';
 
 type RightTab = 'properties' | 'logic';
 
-// Right rail as tabs: Properties (per-node) and Logic (per-root). The Logic tab
-// is the code-mode manager for the active root's logic surface — its typed
-// `state` object (State section), the inputs it exposes when nested (Inputs
-// section), and its /** @ui-action */ event handlers (Actions section).
+/**
+ * Right rail as tabs: Properties (per-node) and Logic (per-root).
+ *
+ * The Logic tab is the code-mode manager for the active root's logic surface —
+ * its typed `state` object (Variables), the inputs it exposes when nested
+ * (Inputs), and its `@ui-action` handlers (Events).
+ *
+ * Selecting a nested component instance switches it to that instance: the values
+ * it passes in are the only thing there is to edit, so the root's own Variables
+ * and Events render disabled rather than vanishing — they still describe the file
+ * on screen, they just do not belong to the selection. A canvas drop wraps
+ * `<Name />` in a positioning UiEntity and clicks select that WRAPPER, so an
+ * instance is reachable either as the selection itself or as a child of it.
+ */
 const RightPanel: React.FC = () => {
   const [tab, setTab] = useState<RightTab>('properties');
+  const selected = useAppSelector(getSelectedNode);
+  const codeState = useCodeState();
+
+  const codeNode = useMemo(
+    () =>
+      selected !== null
+        ? findCodeNode(
+            codeState.parsed?.root as CodeUINode | undefined,
+            selected as unknown as number,
+          )
+        : undefined,
+    [codeState, selected],
+  );
+
+  const instances = useMemo(() => {
+    if (!codeNode) return [];
+    if (codeNode.componentRef) return [codeNode];
+    return (codeNode.children ?? []).filter(child => child.componentRef);
+  }, [codeNode]);
+
   return (
     <Box className="ui-designer-right-rail">
       <div
@@ -44,6 +79,26 @@ const RightPanel: React.FC = () => {
       <div className="ui-designer-right-rail-tabpanel">
         {tab === 'properties' ? (
           <PropertyPanel />
+        ) : instances.length > 0 ? (
+          <>
+            {instances.map(instance => (
+              <ComponentRefPanel
+                key={instance.entity as unknown as number}
+                node={instance}
+              />
+            ))}
+            <fieldset
+              className="ui-designer-logic-locked"
+              disabled
+            >
+              <p className="ui-designer-logic-locked-hint">
+                Variables and Events belong to this GUI file, not to the component you have
+                selected. Open the component to edit its own.
+              </p>
+              <CodeVariablesPanel />
+              <CodeCallbacksPanel />
+            </fieldset>
+          </>
         ) : (
           <>
             <CodeVariablesPanel />

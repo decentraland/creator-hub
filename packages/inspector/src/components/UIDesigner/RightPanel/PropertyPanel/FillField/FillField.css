@@ -1,17 +1,17 @@
-.ui-designer-texture-field {
+.ui-designer-fill-field {
   display: flex;
   flex-direction: column;
   gap: 8px;
 }
 
 /* Texture type as icon segments (None / File / Avatar), the design's mode row. */
-.ui-designer-texture-modes {
+.ui-designer-fill-modes {
   display: flex;
   gap: 2px;
   align-self: flex-start;
 }
 
-.ui-designer-texture-mode {
+.ui-designer-fill-mode {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -23,26 +23,29 @@
   cursor: pointer;
 }
 
-.ui-designer-texture-mode:hover {
+.ui-designer-fill-mode:hover {
   color: var(--title);
   border-color: var(--ui-designer-control-border-strong);
 }
 
-.ui-designer-texture-mode.selected {
+.ui-designer-fill-mode.selected {
   color: var(--ui-designer-text);
   border-color: var(--ui-designer-control-border-strong);
   background: var(--ui-designer-control-selected-bg);
 }
 
-.ui-designer-texture-mode:focus-visible {
+.ui-designer-fill-mode:focus-visible {
   outline: 2px solid var(--border-focused);
   outline-offset: 1px;
 }
 
 /* The Figma's own mode glyphs, masked so the segment's resting / hover / selected
-   colours above drive them. The design also draws a `sliced` segment; react-ecs
-   offers no sliced texture SOURCE, so that glyph is deliberately unused. */
-.ui-designer-texture-mode::before {
+   colours above drive them. Scoped to the three modes that have an asset — an
+   unmasked ::before would paint a solid 16px block, so Colour renders an icon
+   child instead and is deliberately absent from this list. */
+.ui-designer-fill-mode[data-mode="none"]::before,
+.ui-designer-fill-mode[data-mode="file"]::before,
+.ui-designer-fill-mode[data-mode="avatar"]::before {
   content: "";
   width: 16px;
   height: 16px;
@@ -51,14 +54,19 @@
   mask-repeat: no-repeat;
 }
 
-.ui-designer-texture-mode[data-mode="none"]::before {
+.ui-designer-fill-mode[data-mode="none"]::before {
   mask-image: url("./icons/none.svg");
 }
 
-.ui-designer-texture-mode[data-mode="file"]::before {
+.ui-designer-fill-mode[data-mode="file"]::before {
   mask-image: url("./icons/image.svg");
 }
 
-.ui-designer-texture-mode[data-mode="avatar"]::before {
+.ui-designer-fill-mode[data-mode="avatar"]::before {
   mask-image: url("./icons/avatar.svg");
+}
+
+.ui-designer-fill-mode svg {
+  width: 16px;
+  height: 16px;
 }

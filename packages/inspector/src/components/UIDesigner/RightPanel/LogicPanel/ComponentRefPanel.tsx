@@ -10,11 +10,11 @@ import {
   useCodeState,
 } from '../../code/store';
 import type { CodeUINode, ComponentRefProp } from '../../code/types';
-import { BindAffordance } from './BindAffordance';
-import type { FieldConfig, FieldKind } from './field-configs';
-import { useFieldBinding } from './useFieldBinding';
+import { BindAffordance } from '../PropertyPanel/BindAffordance';
+import type { FieldConfig, FieldKind } from '../PropertyPanel/field-configs';
+import { useFieldBinding } from '../PropertyPanel/useFieldBinding';
 
-import '../LogicPanel/CodeVariablesPanel.css';
+import './CodeVariablesPanel.css';
 
 // Declared prop type → the field kind the VariablePicker filters by. A
 // 'callback' prop lists @ui-action handlers; primitives list matching-type

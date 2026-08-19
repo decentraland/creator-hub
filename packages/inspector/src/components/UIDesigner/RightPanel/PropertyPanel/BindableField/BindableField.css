@@ -24,15 +24,21 @@
   border-radius: 4px;
   cursor: pointer;
   padding: 2px 4px;
-  color: rgba(255, 255, 255, 0.55);
+  color: var(--ui-designer-glyph);
   transition:
     opacity 80ms ease-out,
     color 80ms ease-out;
 }
 
-.ui-designer-bindable-link svg {
-  width: 15px;
-  height: 15px;
+.ui-designer-bindable-link::before {
+  content: "";
+  display: block;
+  width: 11px;
+  height: 11px;
+  background-color: currentColor;
+  mask-image: url("../icons/bind.svg");
+  mask-position: center;
+  mask-repeat: no-repeat;
 }
 
 .ui-designer-bindable-link:hover {

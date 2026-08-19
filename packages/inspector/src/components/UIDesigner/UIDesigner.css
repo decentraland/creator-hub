@@ -366,3 +366,23 @@
 .ui-designer-rail-search .ClearSearch:hover {
   color: var(--base-01);
 }
+
+/* The root's Variables and Events while a nested component instance is selected:
+   still shown, because they describe the file on screen, but not editable from
+   here. `disabled` on the fieldset does the disabling natively — the reset is
+   only to undo the element's default chrome. */
+.ui-designer-logic-locked {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+  opacity: 0.55;
+}
+
+.ui-designer-logic-locked-hint {
+  margin: 0;
+  padding: var(--uid-space-2) var(--uid-space-3);
+  color: var(--sub-text);
+  font-size: 10px;
+  line-height: 1.4;
+}

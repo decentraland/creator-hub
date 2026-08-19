@@ -1,5 +1,4 @@
 import React from 'react';
-import { IoLinkOutline } from 'react-icons/io5';
 
 import { VariablePicker } from '../LogicPanel/VariablePicker';
 import type { FieldConfig } from './field-configs';
@@ -12,10 +11,15 @@ interface BindAffordanceProps {
   onBind: (expr: string) => void;
 }
 
-// The 🔗 affordance shared by BindableField and BindableSubField: a link button
-// that opens a VariablePicker anchored to it. Binding state is owned by the
-// caller's `useFieldBinding`, passed in here, so each parent keeps a single hook
-// instance and the two wrappers (Block vs div) stay distinct.
+/**
+ * The bind affordance shared by BindableField and BindableSubField: a button that
+ * opens a VariablePicker anchored to it. Binding state is owned by the caller's
+ * `useFieldBinding`, passed in here, so each parent keeps a single hook instance
+ * and the two wrappers (Block vs div) stay distinct.
+ *
+ * The glyph is a CSS mask rather than an <img> or an icon component, so the
+ * button's own resting / hover / focus colours paint it — see BindableField.css.
+ */
 export const BindAffordance: React.FC<BindAffordanceProps> = ({
   field,
   anchorRef,
@@ -30,9 +34,8 @@ export const BindAffordance: React.FC<BindAffordanceProps> = ({
       className="ui-designer-bindable-link"
       onClick={() => setPickerOpen(true)}
       aria-label="Bind to variable"
-    >
-      <IoLinkOutline aria-hidden="true" />
-    </button>
+      title="Bind this field to a variable"
+    />
     {pickerOpen && (
       <VariablePicker
         field={field}

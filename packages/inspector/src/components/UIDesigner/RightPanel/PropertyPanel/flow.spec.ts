@@ -167,7 +167,7 @@ describe('the Flow control', () => {
 
       expect(flowValue(after)).toBe('absolute');
       // Both gated Position fields become live…
-      expect(gatedField('Anchor').disabledWhen?.(after)).toBe(false);
+      expect(gatedField('Constraints').disabledWhen?.(after)).toBe(false);
       expect(gatedField('Position').disabledWhen?.(after)).toBe(false);
       // …and the "Ignore Layout Flow" checkbox mirrors the same value.
       expect(after.positionType).toBe(YGPT_ABSOLUTE);

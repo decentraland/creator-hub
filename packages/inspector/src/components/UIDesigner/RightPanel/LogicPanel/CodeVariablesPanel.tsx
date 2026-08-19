@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { IoListOutline } from 'react-icons/io5';
 
+import { Container } from '../../../Container';
 import { isValidIdentifier } from '../../../../lib/sdk/operations/validators';
 import { CheckboxField, Dropdown, TextField } from '../../../ui';
 import { EmptyState } from '../../EmptyState';
@@ -126,82 +127,86 @@ const CodeVariablesPanelComponent: React.FC = () => {
   };
 
   return (
-    <div className="ui-designer-code-variables">
-      <div className="ui-designer-code-variables-title">State</div>
-      <div className="ui-designer-code-variables-hint">
-        This GUI's own data · <code>{filename.split('/').pop()}</code>
-      </div>
-
-      {stateVars.length === 0 && markerVars.length === 0 && importedVars.length === 0 ? (
-        <div className="ui-designer-code-variables-empty">No state variables yet.</div>
-      ) : null}
-
-      {stateVars.map(v => (
-        <CodeVariableRow
-          key={v.name}
-          v={v}
-        />
-      ))}
-
-      {markerVars.map(v => (
-        <div
-          key={v.name}
-          className="ui-designer-code-variable-row is-readonly"
-          title="Declared with a /** @ui-bind */ marker — edit in code"
-        >
-          <span className="ui-designer-code-variable-name">{v.name}</span>
-          <em className="ui-designer-code-variable-source">{v.type} · @ui-bind</em>
+    <Container
+      label="Variables"
+      initialOpen
+    >
+      <div className="ui-designer-code-variables">
+        <div className="ui-designer-code-variables-hint">
+          This GUI's own data · <code>{filename.split('/').pop()}</code>
         </div>
-      ))}
 
-      {importedVars.map(v => (
-        <div
-          key={`import:${v.name}`}
-          className="ui-designer-code-variable-row is-readonly"
-          title={`Imported from ${v.imported} — edit it there`}
-        >
-          <span className="ui-designer-code-variable-name">{v.name}</span>
-          <em className="ui-designer-code-variable-source">
-            {v.type} · from {v.imported?.split('/').pop()}
-          </em>
+        {stateVars.length === 0 && markerVars.length === 0 && importedVars.length === 0 ? (
+          <div className="ui-designer-code-variables-empty">No state variables yet.</div>
+        ) : null}
+
+        {stateVars.map(v => (
+          <CodeVariableRow
+            key={v.name}
+            v={v}
+          />
+        ))}
+
+        {markerVars.map(v => (
+          <div
+            key={v.name}
+            className="ui-designer-code-variable-row is-readonly"
+            title="Declared with a /** @ui-bind */ marker — edit in code"
+          >
+            <span className="ui-designer-code-variable-name">{v.name}</span>
+            <em className="ui-designer-code-variable-source">{v.type} · @ui-bind</em>
+          </div>
+        ))}
+
+        {importedVars.map(v => (
+          <div
+            key={`import:${v.name}`}
+            className="ui-designer-code-variable-row is-readonly"
+            title={`Imported from ${v.imported} — edit it there`}
+          >
+            <span className="ui-designer-code-variable-name">{v.name}</span>
+            <em className="ui-designer-code-variable-source">
+              {v.type} · from {v.imported?.split('/').pop()}
+            </em>
+          </div>
+        ))}
+
+        <div className="ui-designer-code-variables-add">
+          <TextField
+            aria-label="New variable name"
+            value={name}
+            placeholder="new variable"
+            onChange={e => setName(e.target.value)}
+            onKeyDown={e => {
+              if (e.key === 'Enter') add();
+            }}
+          />
+          <Dropdown
+            aria-label="New variable type"
+            options={TYPE_OPTIONS}
+            value={type}
+            onChange={e => setType(String(e.target.value))}
+          />
+          <TextField
+            className="ui-designer-code-variable-default"
+            aria-label="New variable default"
+            value={def}
+            placeholder="default"
+            onChange={e => setDef(e.target.value)}
+            onKeyDown={e => {
+              if (e.key === 'Enter') add();
+            }}
+          />
+          <button
+            type="button"
+            disabled={!canAdd}
+            onClick={add}
+          >
+            + Add
+          </button>
         </div>
-      ))}
-
-      <div className="ui-designer-code-variables-add">
-        <TextField
-          aria-label="New variable name"
-          value={name}
-          placeholder="new variable"
-          onChange={e => setName(e.target.value)}
-          onKeyDown={e => {
-            if (e.key === 'Enter') add();
-          }}
-        />
-        <Dropdown
-          aria-label="New variable type"
-          options={TYPE_OPTIONS}
-          value={type}
-          onChange={e => setType(String(e.target.value))}
-        />
-        <TextField
-          className="ui-designer-code-variable-default"
-          aria-label="New variable default"
-          value={def}
-          placeholder="default"
-          onChange={e => setDef(e.target.value)}
-          onKeyDown={e => {
-            if (e.key === 'Enter') add();
-          }}
-        />
-        <button
-          type="button"
-          disabled={!canAdd}
-          onClick={add}
-        >
-          + Add
-        </button>
       </div>
-    </div>
+    </Container>
   );
 };
 
