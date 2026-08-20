@@ -1,8 +1,10 @@
 import { FreeCamera, NullEngine, Scene, Vector3, ScreenshotTools } from '@babylonjs/core';
+import { Name as NameEngine } from '@dcl/ecs';
 import { InMemoryTransport, RPC } from '@dcl/mini-rpc';
 import type { Store } from '../../../redux/store';
 import { fetchLatestCatalog, getAssetById } from '../../logic/catalog';
 import { getDataLayerInterface } from '../../../redux/data-layer';
+import { EditorComponentNames } from '../../sdk/components';
 import { SceneClient } from './client';
 import { SceneServer } from './server';
 
@@ -507,5 +509,50 @@ describe('SceneServer RPC catalog + script + smart item', () => {
     const res = await host.request('undo', {});
     expect(undo).toHaveBeenCalled();
     expect(res).toEqual({ ok: true });
+  });
+});
+
+// get_selection reads the editor's Selection ECS component off the live engine and resolves
+// names via the Name component — the "[Editor context]" the composer chip + send context use.
+describe('SceneServer RPC get_selection', () => {
+  let parent: InMemoryTransport;
+  let iframe: InMemoryTransport;
+  let host: RPC<string, any, any>;
+
+  beforeEach(() => {
+    parent = new InMemoryTransport();
+    iframe = new InMemoryTransport();
+    parent.connect(iframe);
+    iframe.connect(parent);
+
+    const store = { dispatch: vi.fn(), getState: vi.fn(), subscribe: vi.fn() } as any as Store;
+    const selectionComp = { __selection: true };
+    const nameComp = { getOrNull: (e: number) => (e === 512 ? { value: 'Front Door' } : null) };
+    const engine = {
+      RootEntity: 0,
+      getComponent: (n: string) => {
+        if (n === EditorComponentNames.Selection) return selectionComp;
+        if (n === NameEngine.componentName) return nameComp;
+        throw new Error(`unexpected getComponent(${n})`);
+      },
+      // Two entities selected: 512 (named) and 513 (unnamed → empty string).
+      getEntitiesWith: (c: unknown) =>
+        (c === selectionComp ? [[512], [513]] : [])[Symbol.iterator](),
+    } as any;
+
+    new SceneServer(iframe, store, undefined, undefined, { dispatch: vi.fn() } as any, engine);
+    host = new RPC('SceneRpcInbound', parent);
+  });
+
+  afterEach(() => vi.resetAllMocks());
+
+  it('returns the selected entities with their names (blank when unnamed)', async () => {
+    const res = await host.request('get_selection', {});
+    expect(res).toEqual({
+      selected: [
+        { id: 512, name: 'Front Door' },
+        { id: 513, name: '' },
+      ],
+    });
   });
 });

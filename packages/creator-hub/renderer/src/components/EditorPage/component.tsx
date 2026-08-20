@@ -17,6 +17,7 @@ import { isWorkspaceError } from '/shared/types/workspace';
 
 import { t } from '/@/modules/store/translation/utils';
 import { initRpc } from '/@/modules/rpc';
+import { actions as aiActions } from '/@/modules/store/ai';
 import { config } from '/@/config';
 import { useEditor } from '/@/hooks/useEditor';
 import { useSettings } from '/@/hooks/useSettings';
@@ -99,6 +100,7 @@ const SCENE_OP_HANDLERS: Record<
     ),
   undo: scene => scene.undo(),
   get_scene_metrics: scene => scene.getSceneMetrics(),
+  get_selection: scene => scene.getSelection(),
 };
 
 export function EditorPage() {
@@ -237,6 +239,34 @@ export function EditorPage() {
     });
     return cleanup;
   }, [aiChatEnabled]);
+
+  // While the AI panel is open, keep the assistant aware of the editor selection: poll the
+  // inspector for the selected entities and mirror them into the ai store (shown as a composer
+  // chip, attached as context on send). Cheap read; only runs while the panel is visible.
+  // Rejects harmlessly under the Bevy renderer (no selection RPC) — selection just stays empty.
+  useEffect(() => {
+    if (!aiOpen) {
+      dispatch(aiActions.setSelection([]));
+      return;
+    }
+    let cancelled = false;
+    const poll = async () => {
+      const rpc = iframeRef.current;
+      if (!rpc) return;
+      try {
+        const { selected } = await rpc.scene.getSelection();
+        if (!cancelled) dispatch(aiActions.setSelection(selected));
+      } catch {
+        /* Bevy renderer, or a transient miss — leave the last known selection */
+      }
+    };
+    void poll();
+    const timer = setInterval(poll, 2000);
+    return () => {
+      cancelled = true;
+      clearInterval(timer);
+    };
+  }, [aiOpen, dispatch]);
 
   useEffect(() => {
     if (isWorkspaceError(error, 'PROJECT_NOT_FOUND') || isProjectError(error)) {

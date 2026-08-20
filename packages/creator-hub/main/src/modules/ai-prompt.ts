@@ -33,6 +33,7 @@ You have MCP tools for the scene graph — prefer them over parsing files by han
 - get_project_info — scene name, parcels, base, spawn points, SDK version and dependencies.
 - scene_state — the roster of authored entities (id, name, kind, world transform, components, GLTF source, Smart-Item flag).
 - entity_detail — every component value for one entity, by id or Name.
+- get_selection — the entities the user currently has selected in the editor. Call this to resolve "this", "the selected entity", or "the one I'm looking at" before acting.
 - get_scene_metrics — the editor's live scene budget (triangles, entities, bodies, materials, textures) vs the per-scene limits, plus entities out of bounds. Check it to keep the scene within Decentraland's limits.
 - create_entity — add a new entity (optionally named and parented by id). Read scene_state first to choose a parent and avoid duplicate names.
 - remove_entity — delete an entity and its children, by id.

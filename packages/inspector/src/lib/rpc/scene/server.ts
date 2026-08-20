@@ -1,5 +1,6 @@
 import { ScreenshotTools, Vector3 } from '@babylonjs/core';
 import type { Entity, IEngine } from '@dcl/ecs';
+import { Name as NameEngine } from '@dcl/ecs';
 import type { Transport } from '@dcl/mini-rpc';
 import { RPC } from '@dcl/mini-rpc';
 
@@ -14,7 +15,7 @@ import * as debugLogStore from '../../logic/debug-log-store';
 import * as mobileDebugStore from '../../logic/mobile-debug-store';
 import { setFeatureFlags } from '../../../redux/feature-flags';
 import { type EnumEntity } from '../../sdk/enum-entity';
-import { EditorComponentNames } from '../../sdk/components';
+import { EditorComponentNames, type EditorComponents } from '../../sdk/components';
 import { fetchLatestCatalog, getAssetById } from '../../logic/catalog';
 import { getDataLayerInterface, refreshUndoRedoState } from '../../../redux/data-layer';
 import { getConfig } from '../../logic/config';
@@ -51,6 +52,7 @@ enum Method {
   PLACE_SMART_ITEM = 'place_smart_item',
   UNDO = 'undo',
   GET_SCENE_METRICS = 'get_scene_metrics',
+  GET_SELECTION = 'get_selection',
 }
 
 // A row in the Smart Items catalog, as returned by search_catalog.
@@ -97,6 +99,7 @@ type Params = {
   };
   [Method.UNDO]: Record<string, never>;
   [Method.GET_SCENE_METRICS]: Record<string, never>;
+  [Method.GET_SELECTION]: Record<string, never>;
 };
 
 type Result = {
@@ -131,6 +134,7 @@ type Result = {
     limits: SceneMetrics;
     entitiesOutOfBoundaries: number[];
   };
+  [Method.GET_SELECTION]: { selected: { id: number; name: string }[] };
 };
 
 // Resolve a component by its full registered name ("core::Transform"), its short name
@@ -433,6 +437,21 @@ export class SceneServer extends RPC<Method, Params, Result> {
         await getDataLayerInterface()?.undo({});
         store.dispatch(refreshUndoRedoState());
         return { ok: true as const };
+      });
+
+      // The entities the user currently has selected in the editor, so the AI assistant can
+      // resolve "this" / "the selected entity". Selection is an editor ECS component; read the
+      // live engine (not disk) so it's always current. Names come from the ECS Name component.
+      this.handle('get_selection', async () => {
+        const Selection = engine.getComponent(
+          EditorComponentNames.Selection,
+        ) as EditorComponents['Selection'];
+        const Name = engine.getComponent(NameEngine.componentName) as typeof NameEngine;
+        const selected: { id: number; name: string }[] = [];
+        for (const [entity] of engine.getEntitiesWith(Selection)) {
+          selected.push({ id: entity as number, name: Name.getOrNull(entity)?.value ?? '' });
+        }
+        return { selected };
       });
     }
   }

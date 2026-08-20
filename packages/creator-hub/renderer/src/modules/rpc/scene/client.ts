@@ -50,6 +50,7 @@ export enum Method {
   PLACE_SMART_ITEM = 'place_smart_item',
   UNDO = 'undo',
   GET_SCENE_METRICS = 'get_scene_metrics',
+  GET_SELECTION = 'get_selection',
 }
 
 type CatalogHit = { id: string; name: string; category: string; tags: string[] };
@@ -103,6 +104,7 @@ export type Params = {
   };
   [Method.UNDO]: Record<string, never>;
   [Method.GET_SCENE_METRICS]: Record<string, never>;
+  [Method.GET_SELECTION]: Record<string, never>;
 };
 
 export type Result = {
@@ -137,6 +139,7 @@ export type Result = {
     limits: SceneMetrics;
     entitiesOutOfBoundaries: number[];
   };
+  [Method.GET_SELECTION]: { selected: { id: number; name: string }[] };
 };
 
 // @dcl/mini-rpc's request() never settles if no server answers (it just parks a
@@ -286,5 +289,9 @@ export class SceneRpcClient extends RPC<Method, Params, Result> {
 
   getSceneMetrics = () => {
     return this.request('get_scene_metrics', {} as Record<string, never>);
+  };
+
+  getSelection = () => {
+    return this.request('get_selection', {} as Record<string, never>);
   };
 }

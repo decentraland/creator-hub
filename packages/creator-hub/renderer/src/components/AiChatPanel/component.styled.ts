@@ -168,6 +168,19 @@ const ProviderRow = styled(Box)(({ theme }) => ({
   borderBottom: `1px solid ${theme.palette.divider}`,
 }));
 
+const SelectionBar = styled(Box)(({ theme }) => ({
+  display: 'flex',
+  alignItems: 'center',
+  gap: theme.spacing(0.75),
+  padding: theme.spacing(0.75, 1.5),
+  borderTop: `1px solid ${theme.palette.divider}`,
+  color: theme.palette.text.secondary,
+  fontSize: theme.typography.caption.fontSize,
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
+  whiteSpace: 'nowrap',
+}));
+
 export {
   AssistantBubble,
   AssistantText,
@@ -180,6 +193,7 @@ export {
   Panel,
   PanelHeader,
   ProviderRow,
+  SelectionBar,
   SetupBox,
   SetupStep,
   ThinkingRow,

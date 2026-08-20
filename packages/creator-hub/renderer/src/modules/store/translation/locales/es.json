@@ -97,6 +97,7 @@
       "empty": "Pregunta sobre tu escena o dime qué construir. Puedo leer la escena y escribir código SDK7 en src/.",
       "retry": "Reintentar",
       "revert": "Deshacer los cambios de la IA",
+      "selection": "Selección: {names}",
       "provider": "Asistente",
       "setup": {
         "title": "Configura un asistente IA",

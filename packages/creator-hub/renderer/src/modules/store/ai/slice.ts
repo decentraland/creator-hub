@@ -13,6 +13,7 @@ const initialState: AiState = {
   messages: [],
   busy: false,
   detecting: false,
+  selection: [],
 };
 
 // Ask main which CLIs are installed/runnable. Cheap scan first, login-shell probe only
@@ -30,15 +31,26 @@ export const send = createAsyncThunk<void, string>(
     const path = state.editor.project?.path;
     if (path === undefined || path === '')
       throw new Error('Open a scene before using the assistant.');
-    const { provider, model, busy } = state.ai;
+    const { provider, model, busy, selection } = state.ai;
     if (busy) return; // one turn at a time
     const trimmed = text.trim();
     if (trimmed === '') return;
     dispatch(actions.pushUserMessage(trimmed));
     dispatch(actions.setBusy(true)); // optimistic; the `started` event confirms
-    await ai.send(path, { provider, model, text: trimmed });
+    // Attach the current editor selection as context so the assistant can resolve "this"
+    // without the user spelling out ids. Not shown in the chat bubble (main prepends it).
+    const context = selectionContext(selection);
+    await ai.send(path, { provider, model, text: trimmed, context });
   },
 );
+
+// One line naming what the user has selected, or undefined when nothing is. Kept terse —
+// the assistant can call get_selection / scene_state for the full picture. Exported for tests.
+export function selectionContext(selection: AiState['selection']): string | undefined {
+  if (selection.length === 0) return undefined;
+  const names = selection.map(s => `${s.name || 'Entity'} (id ${s.id})`).join(', ');
+  return `[Editor context] The user currently has selected: ${names}. If they say "this" or "the selected entity", they mean ${selection.length === 1 ? 'that entity' : 'those entities'}.`;
+}
 
 // Kill the in-flight turn. Main suppresses the `done` event on an intentional stop, so
 // the reducer finalizes the current bubble itself.
@@ -79,6 +91,9 @@ const slice = createSlice({
     },
     setBusy: (state, { payload }: PayloadAction<boolean>) => {
       state.busy = payload;
+    },
+    setSelection: (state, { payload }: PayloadAction<{ id: number; name: string }[]>) => {
+      state.selection = payload;
     },
     pushUserMessage: (state, { payload }: PayloadAction<string>) => {
       const msg: AiMessage = {

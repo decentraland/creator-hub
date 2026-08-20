@@ -34,4 +34,8 @@ export interface AiState {
   busy: boolean;
   // A provider detection pass is in flight.
   detecting: boolean;
+  // The entities the user currently has selected in the editor (polled from the inspector
+  // while the panel is open). Shown as a composer chip and prepended to the turn as context
+  // so the assistant can resolve "this" / "the selected entity".
+  selection: { id: number; name: string }[];
 }

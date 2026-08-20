@@ -111,6 +111,7 @@ describe('scene-mcp server', () => {
         'explorer_call',
         'get_project_info',
         'get_scene_metrics',
+        'get_selection',
         'launch_preview',
         'place_smart_item',
         'preview_status',

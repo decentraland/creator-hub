@@ -233,6 +233,21 @@ function registerTools(server: McpServer): void {
   );
 
   server.registerTool(
+    'get_selection',
+    {
+      title: 'Get current selection',
+      description:
+        'The entities the user currently has selected in the editor (id + name). Use this to resolve what the user means by "this", "the selected entity", or "the one I have open" before acting. Returns an empty list if nothing is selected.',
+      inputSchema: {},
+    },
+    async () => {
+      const res = await requestSceneOp('get_selection', {});
+      if (!res.ok) return fail(String(res.payload));
+      return ok(res.payload);
+    },
+  );
+
+  server.registerTool(
     'entity_detail',
     {
       title: 'Entity detail',

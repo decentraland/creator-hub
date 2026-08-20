@@ -97,6 +97,7 @@
       "empty": "Ask a question about your scene, or tell me what to build. I can read the scene and write SDK7 code under src/.",
       "retry": "Retry",
       "revert": "Undo AI changes",
+      "selection": "Selection: {names}",
       "provider": "Assistant",
       "setup": {
         "title": "Set up an AI assistant",

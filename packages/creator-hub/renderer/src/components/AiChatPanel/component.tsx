@@ -6,6 +6,7 @@ import AddCommentIcon from '@mui/icons-material/AddComment';
 import CloseIcon from '@mui/icons-material/Close';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import UndoIcon from '@mui/icons-material/Undo';
+import HighlightAltIcon from '@mui/icons-material/HighlightAlt';
 import {
   Button,
   CircularProgress,
@@ -36,6 +37,7 @@ import {
   Panel,
   PanelHeader,
   ProviderRow,
+  SelectionBar,
   SetupBox,
   SetupStep,
   ThinkingRow,
@@ -73,7 +75,9 @@ interface Props {
 
 export function AiChatPanel({ onClose }: Props) {
   const dispatch = useDispatch();
-  const { providers, provider, messages, busy, detecting } = useSelector(state => state.ai);
+  const { providers, provider, messages, busy, detecting, selection } = useSelector(
+    state => state.ai,
+  );
   const [input, setInput] = useState('');
   const transcriptRef = useRef<HTMLDivElement>(null);
 
@@ -268,6 +272,15 @@ export function AiChatPanel({ onClose }: Props) {
       )}
 
       <Transcript ref={transcriptRef}>{available ? renderTranscript() : renderSetup()}</Transcript>
+
+      {available && selection.length > 0 && (
+        <SelectionBar>
+          <HighlightAltIcon fontSize="small" />
+          {t('editor.ai.selection', {
+            names: selection.map(s => (s.name !== '' ? s.name : `#${s.id}`)).join(', '),
+          })}
+        </SelectionBar>
+      )}
 
       <Composer>
         <TextField
