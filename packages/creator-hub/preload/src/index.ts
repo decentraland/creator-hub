@@ -36,6 +36,7 @@ export const fs = {
 
 export * as auth from './modules/auth';
 export * as editor from './modules/editor';
+export * as metrics from './modules/metrics';
 export * as misc from './modules/misc';
 export * as env from './modules/env';
 export * as analytics from './modules/analytics';

@@ -17,6 +17,7 @@ import { dynamicImport } from '/shared/dynamic-import';
 
 import { MAIN_WINDOW_ID } from '../mainWindow';
 import { dclDeepLink, run, type Child } from './bin';
+import { getBundledNodePath } from './path';
 import { getAvailablePort } from './port';
 import { getWindow } from './window';
 import { getProjectId, track } from './analytics';
@@ -450,11 +451,17 @@ async function doStart(path: string, opts: StartOptions): Promise<string> {
           ...generatePreviewArguments(opts),
         ];
 
+    // Preview runs on the bundled Node binary rather than an Electron utility process. The
+    // multiplayer server sdk-commands spawns inherits this runtime, and its `isolated-vm`
+    // dependency has no build for Electron's module ABI. Falls back to the utility process when
+    // no real Node is around, which just leaves the multiplayer server unavailable as before.
+    // TEMPORARY: remove with the Bevy migration.
     const process = run('@dcl/sdk-commands', 'sdk-commands', {
       args,
       cwd: path,
       workspace: path,
       env: await getEnv(path),
+      nodePath: getBundledNodePath(),
     });
 
     // registered before the deeplink resolves so the spawn can be cancelled mid-conversion
@@ -608,7 +615,7 @@ export async function legacyDeploy({
 
   process.waitFor(/close the terminal/gi).then(() => process.kill());
 
-  process.wait().catch(); // handle rejection of main promise to avoid warnings in console
+  process.wait().catch(() => {}); // handle rejection of main promise to avoid warnings in console
 
   deployServer = { stop: () => process.kill() };
 

@@ -13,26 +13,25 @@
     "header": {
       "title": "Welcome to Creator Hub"
     },
+    "rows": {
+      "my_scenes": {
+        "title": "My Scenes"
+      },
+      "templates": {
+        "title": "Templates",
+        "description": "Save time with ready-made experiences featuring reusable mechanics, prefabs, and spaces to explore and hang out."
+      },
+      "learn": {
+        "title": "Learn",
+        "description": "Master the Creator tools with guides, tutorials, and hands-on examples designed to help you build with confidence.",
+        "videos": "Videos",
+        "documentation": "Documentation"
+      }
+    },
     "cards": {
       "sign_in": {
         "title": "Sign In to publish your scenes",
         "action": "Sign In"
-      },
-      "scenes": {
-        "title": "Scenes",
-        "empty_scenes": {
-          "description": "Create your first scene",
-          "action": "Start Building"
-        },
-        "action": "See All"
-      },
-      "learn": {
-        "title": "Learn",
-        "action": "See All"
-      },
-      "feedback": {
-        "title": "Shape the future of Creator Hub",
-        "action": "Submit Feedback"
       }
     }
   },
@@ -43,7 +42,9 @@
       "failed": {
         "title": "Loading failed",
         "timeout": "The scene is taking too long to load. It may have an error in its code.",
-        "back": "Back to scenes"
+        "back": "Back to scenes",
+        "outdated_deps": "This scene's dependencies are out of date and don't support the Bevy renderer. Update them to continue.",
+        "update_deps": "Update dependencies"
       }
     },
     "header": {
@@ -119,6 +120,7 @@
       "home": "Home",
       "scenes": "Scenes",
       "collections": "Collections",
+      "analytics": "Analytics",
       "manage": "Manage",
       "learn": "Learn",
       "more": "More"
@@ -128,6 +130,23 @@
     "user_menu": {
       "sign_in": "Sign In",
       "sign_out": "Sign Out"
+    },
+    "create": {
+      "label": "Create",
+      "new_scene": "New Scene",
+      "import_scene": "Import Scene"
+    },
+    "logo_menu": {
+      "about": "About Creator Hub",
+      "check_for_updates": "Check for Updates",
+      "settings": "Settings",
+      "report_bug": "Report Bug",
+      "help": {
+        "label": "Help & Support",
+        "faq": "FAQ",
+        "contact_support": "Contact Support",
+        "discord": "Discord"
+      }
     }
   },
   "modal": {
@@ -661,6 +680,11 @@
       "title": "Connect Mobile Debug Session",
       "description": "Scan this QR code with your mobile device to preview the scene",
       "disclaimer": "Both your computer and mobile device must be on the same network"
+    },
+    "about": {
+      "title": "About",
+      "app_name": "Decentraland Creator Hub",
+      "action": "OK"
     }
   },
   "popup": {
@@ -766,10 +790,6 @@
         "submit_event": {
           "title": "Submit Event",
           "description": "Host your own event on Decentraland."
-        },
-        "legacy_web_editor": {
-          "title": "Legacy Web Editor",
-          "description": "Access the old web editor to continue working on your scenes."
         },
         "collections": {
           "title": "Collections",
@@ -919,6 +939,238 @@
     "unpublish_world_confirmation": {
       "title": "Unpublish <b>{worldName}</b>?"
     }
+  },
+  "analytics": {
+    "header": {
+      "title": "Analytics"
+    },
+    "empty_list": {
+      "title": "No Places to analyse yet",
+      "description": "Publish a scene to start tracking its performance. Once it's live, you'll find key insights and metrics about your Place here.",
+      "search": {
+        "title": "No Places found",
+        "description": "No Place matches your search. Try a different name."
+      }
+    },
+    "error": {
+      "title": "We couldn't load your Places"
+    },
+    "actions": {
+      "export": "Export Analytics",
+      "export_unavailable": "Exporting will be available once analytics data is live"
+    },
+    "detail": {
+      "title": "Analytics - {name}",
+      "tabs": {
+        "overview": "Overview",
+        "retention": "Retention",
+        "visits": "Visits",
+        "engagement": "Engagement"
+      },
+      "place": {
+        "access": "Access",
+        "private": "Private",
+        "public": "Public",
+        "published_in": "Published in",
+        "last_published_by": "Last published by",
+        "last_update": "Last Update",
+        "genesis_city": "Genesis City"
+      },
+      "actions": {
+        "create_event": "Create Event",
+        "edit_scene": "Edit Scene",
+        "edit_scene_unavailable": "Opening the scene from here is not available yet",
+        "copy_url": "Copy URL",
+        "jump_in": "Jump In"
+      },
+      "overview": {
+        "title": "Overview",
+        "description": "Snapshot of your place's growth, engagement, and user retention."
+      },
+      "retention": {
+        "title": "Retention",
+        "description": "Understand the percentage of users who return after their first session.",
+        "platforms": {
+          "title": "Platforms",
+          "description": "Your 60-day rolling average, compared across mobile and desktop."
+        },
+        "day_7_cohort": {
+          "title": "Day 7 Retention by Cohort Week",
+          "description": "Percentage of users who returned at least once over the 7 days after their first visit, grouped by the week they first jumped into your place.",
+          "benchmark": "{value}% Day 7 KR"
+        },
+        "churn": {
+          "title": "Weekly Churn Rate",
+          "description": "Percentage of active users from the previous week who did not return this week."
+        }
+      },
+      "visits": {
+        "title": "Visits",
+        "description": "Understand how many users visited your place and how many were new or returning visitors.",
+        "unique": {
+          "title": "Unique Visits in the Last 60 Days",
+          "footnote": "Unique users, deduplicated across platforms. People who use both desktop and mobile are counted once in All Platforms and once in each platform's total."
+        },
+        "weekly_active": {
+          "title": "Weekly Active Users",
+          "description": "Unique active users during each week."
+        },
+        "flow": {
+          "title": "Weekly Users Flow",
+          "description": "Track how your weekly users move between new, returning, and reactivated.",
+          "returned": {
+            "label": "Returned Users",
+            "tooltip": "Users who visited last week and came back this week."
+          },
+          "reactivated": {
+            "label": "Reactivated Users",
+            "tooltip": "Users who had stopped visiting and returned this week."
+          }
+        }
+      },
+      "engagement": {
+        "title": "Engagement",
+        "description": "Understand how users engage with your place.",
+        "minutes": "min",
+        "delta": "{value} min",
+        "vs_last_week": "{value} vs. last week",
+        "daily": {
+          "title": "Average Daily Playtime",
+          "description": "Average time each user spends in your place on a single visit.",
+          "chart_title": "Average Daily Playtime each week"
+        },
+        "weekly": {
+          "title": "Average Weekly Playtime",
+          "description": "Average time each user spends in your place per week.",
+          "chart_title": "Average Weekly Playtime per User"
+        },
+        "social": {
+          "title": "Social Interactions",
+          "description": "Share of each week’s visitors who chatted or emoted at least once.",
+          "totals_title": "Social Interactions Weekly Totals",
+          "rate_title": "Visitors Social Interactions Rate",
+          "messages": {
+            "label": "Messages Sent",
+            "tooltip": "Chat messages sent by visitors in your place."
+          },
+          "emotes": {
+            "label": "Emotes Played",
+            "tooltip": "Emotes played by visitors in your place."
+          },
+          "friendships": {
+            "label": "New Friendships",
+            "tooltip": "Friend requests accepted between visitors in your place."
+          },
+          "engaged": {
+            "label": "Socially Engaged Visitors",
+            "tooltip": "Share of each week’s visitors who chatted or emoted at least once."
+          }
+        },
+        "playtime": {
+          "title": "Average Playtime",
+          "description": "Average time each user spends in your place on a single visit."
+        },
+        "afk": {
+          "title": "Average AFK Time",
+          "description": "Average time each user spends in your place without interacting."
+        }
+      },
+      "platforms": {
+        "all": "All Platforms",
+        "desktop": "Desktop",
+        "mobile": "Mobile"
+      },
+      "charts": {
+        "no_data": "No data for this period yet"
+      },
+      "error": {
+        "title": "We couldn't load this Place's analytics"
+      },
+      "window": {
+        "title": "Window",
+        "last_30_days": "Last 30 Days",
+        "last_60_days": "Last 60 Days"
+      },
+      "not_found": {
+        "title": "Scene not found",
+        "description": "This scene is not among the ones published by your account."
+      }
+    },
+    "metrics": {
+      "total_visits": {
+        "label": "Total Visits",
+        "tooltip": "Every visit to your place, including repeat visits by the same user."
+      },
+      "unique_visits": {
+        "label": "Unique Visits",
+        "tooltip": "Distinct users who visited your place, counted once each."
+      },
+      "new_users": {
+        "label": "New Users",
+        "tooltip": "Users who visited your place for the first time."
+      },
+      "concurrent_users": {
+        "label": "Concurrent Users",
+        "tooltip": "Average number of users in your place at the same time."
+      },
+      "revenue": {
+        "label": "Revenue",
+        "tooltip": "MANA earned in your place."
+      },
+      "day_7_retention": {
+        "label": "Day 7 Retention",
+        "tooltip": "The percentage of new users who returned to your place at least once over the 7 days after their first visit."
+      },
+      "avg_playtime": {
+        "label": "Avg. Playtime",
+        "tooltip": "Average time each user spends in your place on a single visit."
+      },
+      "afk_time": {
+        "label": "AFK Time",
+        "tooltip": "Average time users spend in your place without interacting."
+      },
+      "desktop": {
+        "label": "Desktop",
+        "tooltip": "Users who visited your place from a desktop client."
+      },
+      "mobile": {
+        "label": "Mobile",
+        "tooltip": "Users who visited your place from a mobile client."
+      },
+      "peak_concurrent_users": {
+        "label": "Peak Concurrent Users",
+        "tooltip": "The highest number of users in your place at the same time."
+      }
+    },
+    "list": {
+      "places": "{count} {count, plural, one {Place} other {Places}}",
+      "search": "Search",
+      "minutes": "{value} min",
+      "pinned": "Pinned to Watchlist",
+      "sort": {
+        "title": "Sort by",
+        "name_asc": "Name A-Z",
+        "name_desc": "Name Z-A",
+        "most_visits": "Most Visits"
+      },
+      "columns": {
+        "place": "Place",
+        "total_visits": "Total Visits",
+        "new_users": "New Users",
+        "day_7_retention": "D7 Retention",
+        "revenue": "Revenue",
+        "avg_playtime": "Avg. Playtime",
+        "concurrent_users": "Concurrent Users"
+      },
+      "actions": {
+        "pin_to_watchlist": "Pin to Watchlist",
+        "unpin_from_watchlist": "Unpin from Watchlist"
+      },
+      "genesis_city": "Genesis City ({coords})"
+    },
+    "no_data_yet": "No data yet",
+    "no_data_yet_description": "This scene has no numbers in the latest export. If it was published recently, check back after the next one.",
+    "exported_at": "Data as of {date}"
   },
   "connection": {
     "offline": {

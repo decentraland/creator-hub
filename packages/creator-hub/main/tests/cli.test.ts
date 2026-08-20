@@ -10,6 +10,7 @@ const mocks = vi.hoisted(() => ({
   readFile: vi.fn(),
   stat: vi.fn(),
   send: vi.fn(),
+  getBundledNodePath: vi.fn(() => '/fake/node-bin/node'),
 }));
 
 vi.mock('electron', () => ({ app: { getPath: vi.fn(() => '/fake/exe') } }));
@@ -19,6 +20,7 @@ vi.mock('electron-log/main', () => ({
 vi.mock('fs/promises', () => ({ default: { readFile: mocks.readFile, stat: mocks.stat } }));
 vi.mock('../src/mainWindow', () => ({ MAIN_WINDOW_ID: 'main' }));
 vi.mock('../src/modules/bin', () => ({ run: mocks.run, dclDeepLink: mocks.dclDeepLink }));
+vi.mock('../src/modules/path', () => ({ getBundledNodePath: mocks.getBundledNodePath }));
 vi.mock('../src/modules/port', () => ({ getAvailablePort: vi.fn(async () => 4000) }));
 vi.mock('../src/modules/window', () => ({
   getWindow: vi.fn(() => ({ isDestroyed: () => false, webContents: { send: mocks.send } })),

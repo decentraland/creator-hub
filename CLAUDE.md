@@ -147,23 +147,14 @@ Files matching `*.styled.ts` / `*.styled.tsx` must follow these rules:
 - No comments, no `!important`, no inline styles in styled component files.
 - Keep styled components in separate `Component.styled.ts` files alongside `Component.tsx`.
 
-## Testing Conventions
+## Gotchas
 
-- Test framework: **Vitest** (not Jest, though patterns are similar). Tests use `describe`/`it`/`beforeEach`.
-- Structure tests with `describe("when ...", () => { ... })` for context, `it("should ...", () => { ... })` for behavior.
-- Scope mocks and test data to the specific `describe` block that needs them (not globally).
-- Variables and mocks go in `beforeEach`, cleanup in `afterEach`.
-- React: use `@testing-library/react`, querying by label (`getByLabelText`). **`getByRole` does not work inside the shared `Block` wrapper** — under happy-dom the whole subtree reports "There are no accessible roles", and `hidden: true` does not rescue it. Every panel field renders in a `Block`, so query those by label or with `querySelector('[role="…"]')` (see `FlowField.spec.tsx`, `CallbackField.spec.tsx`). `getByRole` is fine on a bare control (`Pill.spec.tsx`).
-- E2E: Playwright for both Electron app and web inspector.
-- **asset-packs unit specs**: a `*.spec.ts` may live in `packages/asset-packs/src/`, but it MUST stay excluded in BOTH `tsconfig.lib.json` and the base `tsconfig.json` (both `include: ["src"]` with `types: ["@dcl/js-runtime"]`, and are typechecked by `npm run build:lib` and `sdk-commands build` respectively). Otherwise the spec's `import … from 'vitest'` drags vitest→vite→rollup→`@types/node` global types into the library build and breaks it with `console`/`Response`/`Worker` conflicts.
+Hard-won traps that reading the code does not reveal. Testing-specific ones live
+in [`docs/testing-standards.md`](docs/testing-standards.md).
 
 ### Redux state freeze + in-place mutating helpers
 
 Redux Toolkit auto-freezes state via Immer (the `createSlice` default). Helpers that mutate objects in place (e.g. asset-packs' `deepReplaceAssetPath` / `substituteAssetPathInComposite`) throw `TypeError: Cannot assign to read only property` — or fail silently — when passed payloads read from Redux. Deep-clone (`structuredClone(x)`) at the boundary before passing Redux-sourced data to any mutating helper. Symptoms when missed: writes silently no-op, original placeholder tokens (e.g. `{assetPath}/...`) survive into the engine.
-
-### Asset-packs circular imports & vitest
-
-`packages/asset-packs/src/definitions.ts` re-exports every internal module via `export * from './...'`. Production bundlers hoist these bindings, but the Vitest loader resolves the re-export _before_ the leaf module finishes evaluating — so importing constants like `COMPONENTS_WITH_ID` or `getNextId` through `definitions.ts` will see them as `undefined` at call time inside the same source tree. In `asset-packs` source files and tests, import these constants from the leaf module directly (`from './id'`, `from './types'`, etc.) rather than via the `definitions.ts` barrel.
 
 ### Asset-pack composite placeholders must resolve before the engine serializes
 
@@ -177,6 +168,23 @@ Asset-pack `composite.json` files encode references as portable placeholders: pa
 
 Design specs live in Figma ("📗️ Design System | Creator Hub"). The Figma MCP tools are capped on a View seat and then return `reached the Figma MCP tool call limit` for **every** call, `get_metadata` included — the cap is account-wide, not per-tool. When that happens, read the frame with the Claude-in-Chrome browser tools instead: open the `?node-id=` URL, select a variant in the Layers panel, `shift+2` to zoom to selection, then `computer`→`zoom` over viewport regions to read labels. A component's variants are enumerated in the Layers panel, which is the fastest way to learn every state a panel must cover.
 
+### Electron response headers must be overridden case-insensitively
+
+`session.webRequest.onHeadersReceived` rebuilds the whole response header block from
+the object the handler returns, writing one line per key with **no case-insensitive
+de-duplication** — and it keys `details.responseHeaders` by the *wire* casing, which
+is lowercase over HTTP/2 (what every CDN in front of `decentraland.org` speaks). So
+`{ ...details.responseHeaders, 'Cross-Origin-Embedder-Policy': [...] }` does not
+replace the response's own header, it **appends a second one**. Chromium joins
+duplicates (`credentialless, credentialless`), fails to parse the structured field
+and falls back to `unsafe-none` — an injection that reads correctly while having no
+effect at all. A duplicated `Access-Control-Allow-Origin` is rejected outright.
+Drop every casing of a name before setting it (`setHeader` in
+`main/src/security-restrictions.ts`), and assert header counts **case-insensitively**
+in tests — a same-case lookup cannot see the duplicate, which is why the #1456 suite
+passed while the bug shipped. Symptom when missed: #1485, the GLB import spinner
+never resolving with no error in the UI or Sentry.
+
 ## Skills
 
 Skills live in `.ai/skills/*/SKILL.md`. Read the relevant `SKILL.md` when a task matches a skill's domain.
@@ -186,5 +194,5 @@ Skills live in `.ai/skills/*/SKILL.md`. Read the relevant `SKILL.md` when a task
 Read the relevant standards doc when the task touches its domain:
 
 - [`docs/coding-standards.md`](docs/coding-standards.md) — React patterns and antipatterns (controlled-input prop-sync, memoized components built in render). Read when touching `TextField`, the tree `<Input>`, or building any component with a buffered value.
-- [`docs/testing-standards.md`](docs/testing-standards.md) — E2E patterns (real keyboard input vs `fill()`, locators vs `ElementHandle`s, focus-actually-on-element gates, outcome waits vs fixed sleeps). Read when writing or debugging Playwright tests.
+- [`docs/testing-standards.md`](docs/testing-standards.md) — how to write a test here, plus every testing gotcha: Vitest conventions and mocking traps (`vi.mock` factories replacing whole modules, fake timers leaking across `describe`s), and E2E patterns (real keyboard input vs `fill()`, locators vs `ElementHandle`s, focus-actually-on-element gates, outcome waits vs fixed sleeps). Read before writing or debugging any test.
 - [`docs/DESIGN.md`](docs/DESIGN.md) — the inspector design system: `theme/vars.css` palette by role, the light→dark `--base-*` ramp gotcha + correct dark-surface pairing, spacing/fonts, and focus/contrast/motion/ARIA conventions. Read when writing or reviewing inspector CSS/`.tsx` styling (colors, focus states, accessibility). Note: `brand-guidelines` (Anthropic) does NOT apply here.

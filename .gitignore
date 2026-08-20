@@ -24,6 +24,7 @@ yarn-error.log*
 **/public/bin
 **/public/bevy-engine
 **/public/bevy-agent
+packages/creator-hub/node-bin
 **/gen
 **/tsconfig.tsbuildinfo
 **/tsconfig.check.tsbuildinfo

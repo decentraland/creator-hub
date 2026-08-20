@@ -8,6 +8,7 @@ import type { PreviewOptions, ReleaseNotes } from './settings';
 import type { Config, EditorConfig } from './config';
 import type { Env } from './env';
 import type { OxcParseResult } from './oxc';
+import type { MetricsRequest, MetricsResponse } from './metrics';
 
 export type IpcResult<T> = {
   success: true;
@@ -65,6 +66,7 @@ export interface Ipc {
   'electron.openExternal': (url: string) => Promise<void>;
   'electron.copyToClipboard': (text: string) => Promise<void>;
   'oxc.parse': (filename: string, source: string) => Promise<OxcParseResult>;
+  'metrics.request': (request: MetricsRequest) => Promise<MetricsResponse>;
   'inspector.start': () => Promise<number>;
   'inspector.attachSceneDebugger': (path: string) => Promise<string>;
   'inspector.detachSceneDebugger': (path: string) => void;

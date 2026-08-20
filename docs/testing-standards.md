@@ -2,6 +2,134 @@
 
 Project-specific patterns for tests in this repo. See also: [coding-standards.md](./coding-standards.md).
 
+## Writing a test
+
+- Test framework: **Vitest** (not Jest, though patterns are similar). Tests use `describe`/`it`/`beforeEach`.
+- Structure tests with `describe("when ...", () => { ... })` for context, `it("should ...", () => { ... })` for behavior.
+- Scope mocks and test data to the specific `describe` block that needs them (not globally).
+- Variables and mocks go in `beforeEach`, cleanup in `afterEach`.
+- React: use `@testing-library/react` with accessible queries (`getByRole`, `getByLabelText`).
+- E2E: Playwright for both Electron app and web inspector.
+
+Write the failing test first. When a test had to be written after the fact,
+prove it can still fail by stashing the implementation and re-running it —
+a test that has never been red is not evidence of anything:
+
+```bash
+git stash push -- packages/creator-hub/renderer/src/lib/land.ts
+npm run test:renderer -- src/lib/land.spec.ts   # must fail here
+git stash pop
+```
+
+## Unit tests (Vitest)
+
+### `vi.mock` with a factory replaces the whole module
+
+A `vi.mock(path, () => ({ ... }))` factory is the *entire* module from then on;
+anything the real module exports but the factory omits becomes `undefined`. That
+turns adding an export to a source file into a failure in a spec that never
+mentioned it. Sometimes vitest names the problem:
+
+```
+Error: [vitest] No "getWorldSettingsInitialState" export is defined on the "../management/utils" mock.
+```
+
+but when the missing export is only *called* rather than read at import time, it
+fails as a plain `TypeError` deep inside whatever awaited it — a rejected thunk
+surfacing as `expected [] to have a length of 1`, with nothing pointing at the
+mock. Prefer a partial mock, which keeps the real module and overrides only what
+the test needs:
+
+```ts
+vi.mock('./utils', async importOriginal => ({
+  ...(await importOriginal<ManagementUtils>()),
+  fetchWorldSceneCoords: vi.fn(async () => [{ x: 0, y: 0 }]),
+}));
+```
+
+Note that `importOriginal` does **not** intercept same-module calls: a function
+kept real still calls its real neighbours, not their mocked versions.
+
+A module mocked this way also loses its **default** export unless the factory
+provides one. `lib/worlds` does `import fetch from 'decentraland-crypto-fetch'`,
+so a factory without a `default` leaves every worlds request calling `undefined`
+— surfacing as `Failed to fetch worlds` with zero fetch calls recorded, and
+nothing naming the mock:
+
+```ts
+vi.mock('decentraland-crypto-fetch', () => ({
+  default: (input: RequestInfo | URL, init?: RequestInit) => globalThis.fetch(input, init),
+  signedHeaderFactory: () => () => new Map(),
+}));
+```
+
+`importOriginal<T>()` takes a namespace type import
+(`import type * as Utils from './utils'`), but only for modules that declare
+their own exports. A barrel that re-exports with `export *` (`../Navbar`,
+`modules/store/land`) fails `TS2709: Cannot use namespace as a type`; there,
+drop the generic and spread `(await importOriginal()) as object`.
+
+### Rendering a page component needs a theme, and no navbar
+
+`decentraland-ui2` components read theme tokens through emotion, so a bare
+`render()` throws before the page under test appears. Wrap in
+`ThemeProvider theme={dark}` from `decentraland-ui2/dist/theme`, plus
+`MemoryRouter` for anything calling `useNavigate`.
+
+That is still not enough for a page carrying the navbar: `AvatarFace` reads a
+palette slice this environment does not populate and throws
+`Cannot read properties of undefined (reading 'secondary')` from
+`AvatarFace.styled.ts` — a stack that names neither your test nor your page.
+Stub the component and keep the enum:
+
+```ts
+vi.mock('../Navbar', async importOriginal => ({
+  ...((await importOriginal()) as object),
+  Navbar: () => null,
+}));
+```
+
+### Type `importOriginal` with a namespace import, not `typeof import()`
+
+`@typescript-eslint/consistent-type-imports` rejects inline `import()` type
+annotations, so the obvious `importOriginal<typeof import('./utils')>()` fails
+lint with ``  `import()` type annotations are forbidden``. Import the namespace as
+a type instead — it is erased at runtime, so it is safe inside a hoisted
+`vi.mock` factory:
+
+```ts
+import type * as ManagementUtils from './utils';
+```
+
+### Vitest fake timers leak across `describe` blocks
+
+`vi.useFakeTimers()` in one `describe` stays in effect for every later
+`describe` in the same file — vitest does not reset it between blocks. A later
+test that awaits a real `setTimeout` (a retry/backoff helper, a debounced
+promise) then hangs to the 5s test timeout with no indication why.
+`packages/creator-hub/shared/tests/utils.spec.ts` is the live case: the
+`debounce` and `debounceByKey` suites enable them and never restore, so anything
+added below needs its own `beforeEach(() => vi.useRealTimers())`.
+
+### `getByRole` does not work inside the shared `Block` wrapper
+
+Under happy-dom the whole subtree reports "There are no accessible roles", and
+`hidden: true` does not rescue it. Every UI Designer panel field renders inside a
+`Block`, so query those by label (`getByLabelText`) or with
+`querySelector('[role="…"]')` — see `FlowField.spec.tsx`, `CallbackField.spec.tsx`.
+`getByRole` is fine on a bare control (`Pill.spec.tsx`).
+
+### Asset-packs circular imports & vitest
+
+`packages/asset-packs/src/definitions.ts` re-exports every internal module via
+`export * from './...'`. Production bundlers hoist these bindings, but the
+Vitest loader resolves the re-export *before* the leaf module finishes
+evaluating — so importing constants like `COMPONENTS_WITH_ID` or `getNextId`
+through `definitions.ts` will see them as `undefined` at call time inside the
+same source tree. In `asset-packs` source files and tests, import these
+constants from the leaf module directly (`from './id'`, `from './types'`,
+etc.) rather than via the `definitions.ts` barrel.
+
 ## E2E (Playwright)
 
 ### Type with real keyboard events, not `locator.fill()`

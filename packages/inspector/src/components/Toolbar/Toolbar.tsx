@@ -10,6 +10,7 @@ import {
   BiPlay,
   BiPause,
   BiStop,
+  BiJoystick,
 } from 'react-icons/bi';
 import { RiListSettingsLine } from 'react-icons/ri';
 import { FaPencilAlt } from 'react-icons/fa';
@@ -126,6 +127,24 @@ const Toolbar = withSdk(({ sdk }) => {
   const handleResetScene = useCallback(() => {
     void sceneRun?.reset();
   }, [sceneRun]);
+
+  // "Interact" toggle — only for renderers whose viewport editing is a scene-side
+  // interception that can be turned off (Bevy exposes `interaction`; Babylon omits
+  // it). OFF (default) = clicks edit (select/move); ON = clicks reach the running
+  // scene so mechanics can be tested (#1458).
+  const interaction = sdk.renderer.interaction;
+  const [editingEnabled, setEditingEnabled] = useState<boolean>(
+    interaction?.isEditingEnabled() ?? true,
+  );
+  useEffect(() => {
+    if (!interaction) return;
+    setEditingEnabled(interaction.isEditingEnabled());
+    return interaction.onEditingChange(setEditingEnabled);
+  }, [interaction]);
+  const handleToggleInteract = useCallback(() => {
+    if (!interaction) return;
+    interaction.setEditingEnabled(!interaction.isEditingEnabled());
+  }, [interaction]);
 
   const handleSaveClick = useCallback(() => dispatch(save()), []);
   const handleUndo = useCallback(() => {
@@ -247,6 +266,19 @@ const Toolbar = withSdk(({ sdk }) => {
           counterpart. Both are inert while the designer is open. */}
       {!isUIDesignerOpen && (
         <>
+          {interaction && (
+            <ToolbarButton
+              className={cx('interact', { active: !editingEnabled })}
+              onClick={handleToggleInteract}
+              title={
+                editingEnabled
+                  ? 'Interact with the scene — turn off editing so clicks reach the running scene'
+                  : 'Interacting with the scene — click to re-enable editing'
+              }
+            >
+              <BiJoystick />
+            </ToolbarButton>
+          )}
           <Preferences />
           <ToolbarButton
             className="babylonjs-inspector"
