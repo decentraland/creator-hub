@@ -423,6 +423,10 @@
           "copy": "复制配置",
           "copied": "已复制",
           "note": "仅限本地主机。每次 Creator Hub 重启时 URL 和令牌都会更改，因此你需要在此处粘贴最新的内容。"
+        },
+        "ai_api_key": {
+          "label": "为 AI 助手使用我的 API 密钥",
+          "help": "使用你环境中的 API 密钥（ANTHROPIC_API_KEY / OPENAI_API_KEY）为助手计费，而不是使用已登录的 CLI 订阅。Creator Hub 从不存储该密钥。默认关闭。"
         }
       },
       "actions": {

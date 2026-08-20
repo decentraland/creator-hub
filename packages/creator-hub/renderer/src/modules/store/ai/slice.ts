@@ -41,7 +41,8 @@ export const send = createAsyncThunk<void, string>(
     // Attach the current editor selection as context so the assistant can resolve "this"
     // without the user spelling out ids. Not shown in the chat bubble (main prepends it).
     const context = selectionContext(selection);
-    await ai.send(path, { provider, model, text: trimmed, context });
+    const apiKeyFromEnv = state.workspace.settings?.useApiKeyFromEnv ?? false;
+    await ai.send(path, { provider, model, text: trimmed, context, apiKeyFromEnv });
   },
 );
 

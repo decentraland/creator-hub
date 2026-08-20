@@ -113,6 +113,13 @@ const EditorTab: React.FC<EditorTabProps> = ({
     [settings, updateSettings],
   );
 
+  const handleUseApiKeyFromEnvChange = useCallback(
+    (checked: boolean) => {
+      updateSettings({ ...settings, useApiKeyFromEnv: checked });
+    },
+    [settings, updateSettings],
+  );
+
   const mcpConfigSnippet =
     mcpInfo &&
     JSON.stringify(
@@ -297,6 +304,18 @@ const EditorTab: React.FC<EditorTabProps> = ({
             )}
           </Box>
         )}
+      </FormGroup>
+      <FormGroup className="ApiKeyFormGroup">
+        <FormControlLabel
+          control={
+            <Switch
+              checked={!!settings.useApiKeyFromEnv}
+              onChange={(_event, checked) => handleUseApiKeyFromEnvChange(checked)}
+            />
+          }
+          label={t('modal.app_settings.fields.ai_api_key.label')}
+        />
+        <Typography variant="caption">{t('modal.app_settings.fields.ai_api_key.help')}</Typography>
       </FormGroup>
     </Box>
   );

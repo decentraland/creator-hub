@@ -20,7 +20,7 @@ vi.mock('../src/modules/explorer-gateway', () => ({
   stopPreview: vi.fn(),
 }));
 
-import { PROVIDERS, nvmBinDirs, parseShellPath } from '../src/modules/ai';
+import { PROVIDERS, filterEnvForChild, nvmBinDirs, parseShellPath } from '../src/modules/ai';
 
 const PROJECT = '/home/user/scene';
 
@@ -173,6 +173,52 @@ describe('parseShellPath', () => {
 describe('nvmBinDirs', () => {
   it('returns an empty list for a missing nvm root', () => {
     expect(nvmBinDirs('/definitely/not/a/real/nvm/root')).toEqual([]);
+  });
+});
+
+// The env filter is the security boundary: force subscription billing by default, allow
+// API-key billing when opted in, but ALWAYS drop endpoint/session overrides. (Fake values.)
+describe('filterEnvForChild', () => {
+  const base = {
+    HOME: '/home/u',
+    ANTHROPIC_API_KEY: 'sk-ant-example',
+    ANTHROPIC_AUTH_TOKEN: 'tok-example',
+    OPENAI_API_KEY: 'sk-openai-example',
+    CODEX_API_KEY: 'cx-example',
+    ANTHROPIC_BASE_URL: 'http://example.invalid',
+    OPENAI_BASE_URL: 'http://example.invalid',
+    CLAUDECODE: '1',
+    CLAUDE_CODE_ENTRYPOINT: 'x',
+  };
+
+  it('default (subscription billing): strips API keys and endpoint/session overrides', () => {
+    const env = filterEnvForChild(base, false);
+    expect(env.HOME).toBe('/home/u');
+    for (const k of [
+      'ANTHROPIC_API_KEY',
+      'ANTHROPIC_AUTH_TOKEN',
+      'OPENAI_API_KEY',
+      'CODEX_API_KEY',
+      'ANTHROPIC_BASE_URL',
+      'OPENAI_BASE_URL',
+      'CLAUDECODE',
+      'CLAUDE_CODE_ENTRYPOINT',
+    ]) {
+      expect(env[k]).toBeUndefined();
+    }
+  });
+
+  it('API-key billing: keeps the API keys but STILL strips endpoint/session overrides', () => {
+    const env = filterEnvForChild(base, true);
+    expect(env.ANTHROPIC_API_KEY).toBe('sk-ant-example');
+    expect(env.OPENAI_API_KEY).toBe('sk-openai-example');
+    expect(env.ANTHROPIC_AUTH_TOKEN).toBe('tok-example');
+    // security-critical: an inherited endpoint override could redirect the token, so it is
+    // dropped regardless of billing mode.
+    expect(env.ANTHROPIC_BASE_URL).toBeUndefined();
+    expect(env.OPENAI_BASE_URL).toBeUndefined();
+    expect(env.CLAUDECODE).toBeUndefined();
+    expect(env.CLAUDE_CODE_ENTRYPOINT).toBeUndefined();
   });
 });
 

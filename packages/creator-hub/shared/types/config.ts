@@ -50,6 +50,7 @@ export const DEFAULT_CONFIG: Config = {
     experimental: false,
     renderer: DEFAULT_RENDERER,
     exposeMcpServer: false,
+    useApiKeyFromEnv: false,
   },
   editors: [],
 };

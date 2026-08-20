@@ -423,6 +423,10 @@
           "copy": "Copy configuration",
           "copied": "Copied",
           "note": "Localhost only. The URL and token change each time Creator Hub restarts, so you'll need to paste the latest here."
+        },
+        "ai_api_key": {
+          "label": "Use my API key for the AI assistant",
+          "help": "Bill the assistant against the API key in your environment (ANTHROPIC_API_KEY / OPENAI_API_KEY) instead of your signed-in CLI subscription. Creator Hub never stores the key. Off by default."
         }
       },
       "actions": {

@@ -43,6 +43,9 @@ export interface AiSendParams {
   text: string;
   context?: string;
   images?: AiImageAttachment[];
+  // When true, the assistant keeps the API key in its environment (bill via API key) instead
+  // of stripping it to force subscription billing. From the `useApiKeyFromEnv` setting.
+  apiKeyFromEnv?: boolean;
 }
 
 // Streamed over the AI_STREAM_EVENT channel while a turn runs. `turnId` correlates

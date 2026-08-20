@@ -88,10 +88,17 @@ async function runShellProbe(): Promise<void> {
     try {
       // detached: the profile may spawn its own children (a version manager resolving a
       // default), and killing only the shell would orphan them.
-      child = spawn(shell, ['-ilc', 'printf "<<<%s>>>" "$PATH"'], {
-        stdio: ['ignore', 'pipe', 'ignore'],
-        detached: true,
-      });
+      // Capture $PATH plus the two API keys (for API-key billing on a GUI launch whose env
+      // lacks them). The PATH marker keeps its shape so parseShellPath is unchanged; the key
+      // markers are parsed separately. This output is NEVER logged.
+      child = spawn(
+        shell,
+        [
+          '-ilc',
+          'printf "<<<%s>>>@@A=%s@@@@O=%s@@" "$PATH" "$ANTHROPIC_API_KEY" "$OPENAI_API_KEY"',
+        ],
+        { stdio: ['ignore', 'pipe', 'ignore'], detached: true },
+      );
     } catch {
       resolve('');
       return;
@@ -115,6 +122,9 @@ async function runShellProbe(): Promise<void> {
       resolve(buf);
     });
   });
+  // Capture the shell's API keys for API-key billing (in memory only; never logged).
+  shellApiKeys.ANTHROPIC_API_KEY = /@@A=(.*?)@@/s.exec(out)?.[1] || undefined;
+  shellApiKeys.OPENAI_API_KEY = /@@O=(.*?)@@/s.exec(out)?.[1] || undefined;
   const dirs = parseShellPath(out);
   if (dirs.length > 0) {
     shellDirs = dirs; // no marker: keep what we had, the static list still applies
@@ -163,30 +173,57 @@ function findExecutable(names: string[]): string | null {
   return null;
 }
 
-// Env vars dropped from the child. Metered API keys → force subscription/OAuth auth
-// (the whole point). CLAUDE_CODE_* / CLAUDECODE → don't let the spawned CLI think it's
-// nested in another Claude Code session. *BASE_URL / *CUSTOM_HEADERS → pin the endpoint
-// so an inherited override can't redirect the OAuth token to a third party.
-const STRIP_ENV = new Set([
+// ALWAYS dropped from the child: CLAUDE_CODE_* / CLAUDECODE (don't let the spawned CLI think
+// it's nested in another session) and *BASE_URL / *CUSTOM_HEADERS (pin the endpoint so an
+// inherited override can't redirect the OAuth token to a third party). Stripped even in
+// API-key mode — a redirected endpoint is a security risk regardless of billing.
+const ALWAYS_STRIP = new Set([
   'CLAUDECODE',
-  'ANTHROPIC_API_KEY',
-  'ANTHROPIC_AUTH_TOKEN',
   'ANTHROPIC_BASE_URL',
   'ANTHROPIC_CUSTOM_HEADERS',
   'ANTHROPIC_BEDROCK_BASE_URL',
   'ANTHROPIC_VERTEX_BASE_URL',
-  'OPENAI_API_KEY',
-  'CODEX_API_KEY',
   'OPENAI_BASE_URL',
   'OPENAI_API_BASE',
 ]);
 
-// The child env: strip the vars above, keep everything else (HOME, keychain access),
-// and widen PATH so the CLI finds its own `env node` shebang under a version manager.
-function childEnv(): NodeJS.ProcessEnv {
-  const env: NodeJS.ProcessEnv = { ...process.env };
+// Metered API keys: stripped by default to force subscription/OAuth billing (the whole
+// point), but KEPT when the user opts into API-key-from-environment billing.
+const API_KEY_ENV = new Set([
+  'ANTHROPIC_API_KEY',
+  'ANTHROPIC_AUTH_TOKEN',
+  'OPENAI_API_KEY',
+  'CODEX_API_KEY',
+]);
+
+// API keys read from the user's login shell, so a GUI launch (sparse env) can still bill
+// against a shell-configured key in API-key mode. Populated by the shell probe; only ever
+// held in memory, never logged or persisted.
+const shellApiKeys: { ANTHROPIC_API_KEY?: string; OPENAI_API_KEY?: string } = {};
+
+// Filter an inherited env for a spawned CLI: always drop base-URL/session overrides; drop the
+// metered API keys unless the user chose API-key billing. Exported for tests.
+export function filterEnvForChild(
+  source: NodeJS.ProcessEnv,
+  apiKeyFromEnv: boolean,
+): NodeJS.ProcessEnv {
+  const env: NodeJS.ProcessEnv = { ...source };
   for (const k of Object.keys(env)) {
-    if (k.startsWith('CLAUDE_CODE') || STRIP_ENV.has(k)) delete env[k];
+    if (k.startsWith('CLAUDE_CODE') || ALWAYS_STRIP.has(k)) delete env[k];
+    else if (!apiKeyFromEnv && API_KEY_ENV.has(k)) delete env[k];
+  }
+  return env;
+}
+
+// The child env: filter per the billing mode, keep everything else (HOME, keychain access),
+// and widen PATH so the CLI finds its own `env node` shebang under a version manager. In
+// API-key mode, fill any key the GUI env lacks from the login-shell probe.
+function childEnv(apiKeyFromEnv: boolean): NodeJS.ProcessEnv {
+  const env = filterEnvForChild(process.env, apiKeyFromEnv);
+  if (apiKeyFromEnv) {
+    for (const [k, v] of Object.entries(shellApiKeys)) {
+      if (v !== undefined && v !== '' && env[k] === undefined) env[k] = v;
+    }
   }
   env.PATH = [...(env.PATH ?? '').split(path.delimiter), ...searchDirs()]
     .filter(Boolean)
@@ -593,7 +630,7 @@ export async function aiSend(
     mcp,
   });
 
-  const env = childEnv();
+  const env = childEnv(params.apiKeyFromEnv ?? false);
   // Codex reads the MCP bearer token from this env var (see CODEX_MCP_TOKEN_ENV); keeping it
   // out of argv. Claude gets the token via its --mcp-config file instead, so it needs nothing here.
   if (params.provider === 'codex' && mcp !== undefined) env[CODEX_MCP_TOKEN_ENV] = mcp.token;
