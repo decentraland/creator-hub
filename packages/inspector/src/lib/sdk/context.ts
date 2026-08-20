@@ -68,9 +68,12 @@ export async function createSdkContext(
   // create inspector engine context and components
   const { engine, components, events, dispose: disposeEngine } = createInspectorEngine();
 
-  // The operations layer, created up front so the embedded scene-RPC server can drive
-  // scene-graph mutations (AI assistant) through the same code path the UI uses.
+  // The operations layer + network-id allocator, created up front so the embedded
+  // scene-RPC server can drive scene-graph mutations (AI assistant) through the same code
+  // path the UI uses. `enumEntity` is needed by addAsset for Smart Items with sync
+  // components.
   const operations = createOperations(engine);
+  const enumEntity = createEnumEntityId(engine);
 
   // Build the renderer chosen for this session through the open plugin registry.
   // The choice comes from the `renderer` config param (a host app like creator-hub
@@ -112,6 +115,7 @@ export async function createSdkContext(
       bevyInternals?.takeScreenshot,
       operations,
       engine,
+      enumEntity,
     );
 
     // Ensure the scene-RPC CLIENT (host-bound) exists. It's normally set up by the
@@ -152,7 +156,7 @@ export async function createSdkContext(
     events,
     dispose,
     operations,
-    enumEntity: createEnumEntityId(engine),
+    enumEntity,
     renderer: built.renderer,
     currentRendererId: built.id,
   };

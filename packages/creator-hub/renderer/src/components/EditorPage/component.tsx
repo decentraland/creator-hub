@@ -78,6 +78,25 @@ const SCENE_OP_HANDLERS: Record<
 > = {
   create_entity: (scene, p) =>
     scene.createEntity(p.name as string | undefined, p.parent as number | undefined),
+  remove_entity: (scene, p) => scene.removeEntity(p.entity as number),
+  set_parent: (scene, p) => scene.setParent(p.entity as number, p.parent as number),
+  set_component: (scene, p) =>
+    scene.setComponent(
+      p.entity as number,
+      p.component as string,
+      p.value as Record<string, unknown>,
+    ),
+  remove_component: (scene, p) => scene.removeComponent(p.entity as number, p.component as string),
+  attach_script: (scene, p) =>
+    scene.attachScript(p.entity as number, p.path as string, p.priority as number | undefined),
+  search_catalog: (scene, p) =>
+    scene.searchCatalog(p.query as string | undefined, p.limit as number | undefined),
+  place_smart_item: (scene, p) =>
+    scene.placeSmartItem(
+      p.assetId as string,
+      p.name as string | undefined,
+      p.position as { x: number; y: number; z: number } | undefined,
+    ),
 };
 
 export function EditorPage() {

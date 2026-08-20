@@ -1,8 +1,19 @@
 import { FreeCamera, NullEngine, Scene, Vector3, ScreenshotTools } from '@babylonjs/core';
 import { InMemoryTransport, RPC } from '@dcl/mini-rpc';
 import type { Store } from '../../../redux/store';
+import { fetchLatestCatalog, getAssetById } from '../../logic/catalog';
+import { getDataLayerInterface } from '../../../redux/data-layer';
 import { SceneClient } from './client';
 import { SceneServer } from './server';
+
+// Mock the catalog / data-layer / config modules the smart-item + catalog handlers use.
+// (vi.mock is hoisted above the imports by vitest regardless of position here.)
+vi.mock('../../logic/catalog', () => ({ fetchLatestCatalog: vi.fn(), getAssetById: vi.fn() }));
+vi.mock('../../../redux/data-layer', () => ({ getDataLayerInterface: vi.fn() }));
+vi.mock('../../logic/config', async orig => ({
+  ...(await (orig as () => Promise<Record<string, unknown>>)()),
+  getConfig: () => ({ contentUrl: 'https://content.test' }),
+}));
 
 describe('SceneClient RPC', () => {
   let parent: InMemoryTransport;
@@ -228,13 +239,15 @@ describe('SceneServer RPC without a renderer (non-Babylon path)', () => {
 // operations layer + flushes via dispatch. operations.addChild itself is covered by
 // add-child.spec.ts; here we verify the SceneServer wiring: registered only when
 // operations are provided, correct args, dispatch called, entity id returned.
-describe('SceneServer RPC scene mutations (create_entity)', () => {
+describe('SceneServer RPC scene mutations', () => {
   let parent: InMemoryTransport;
   let iframe: InMemoryTransport;
   let host: RPC<string, any, any>;
   let store: Store;
-  let addChild: ReturnType<typeof vi.fn>;
-  let dispatch: ReturnType<typeof vi.fn>;
+  let ops: Record<string, ReturnType<typeof vi.fn>>;
+  // A fake component registry: Transform exists on the entity, GltfContainer does not.
+  const transform = { componentId: 1, componentName: 'core::Transform', has: () => true };
+  const gltf = { componentId: 2, componentName: 'core::GltfContainer', has: () => false };
 
   beforeEach(() => {
     parent = new InMemoryTransport();
@@ -249,41 +262,229 @@ describe('SceneServer RPC scene mutations (create_entity)', () => {
       replaceReducer: vi.fn(),
     } as any as Store;
 
-    addChild = vi.fn((_parent: number, _name: string) => 512);
-    dispatch = vi.fn().mockResolvedValue(undefined);
-    const operations = { addChild, dispatch } as any;
-    const engine = { RootEntity: 0 } as any;
+    ops = {
+      addChild: vi.fn((_parent: number, _name: string) => 512),
+      removeEntity: vi.fn(),
+      setParent: vi.fn(),
+      updateValue: vi.fn(),
+      addComponent: vi.fn(),
+      removeComponent: vi.fn(),
+      dispatch: vi.fn().mockResolvedValue(undefined),
+    };
+    const engine = {
+      RootEntity: 0,
+      getComponent: (nameOrId: string | number) => {
+        if (nameOrId === 'core::Transform' || nameOrId === 1) return transform;
+        if (nameOrId === 'core::GltfContainer' || nameOrId === 2) return gltf;
+        throw new Error('Component not found');
+      },
+      componentsIter: () => [transform, gltf][Symbol.iterator](),
+    } as any;
 
-    new SceneServer(iframe, store, undefined, undefined, operations, engine);
+    new SceneServer(iframe, store, undefined, undefined, ops as any, engine);
     host = new RPC('SceneRpcInbound', parent);
   });
 
   afterEach(() => vi.resetAllMocks());
 
-  it('creates an entity at the root by default and returns its id', async () => {
+  it('create_entity: adds at the root by default and returns its id', async () => {
     const result = await host.request('create_entity', { name: 'AICube' });
-    expect(addChild).toHaveBeenCalledWith(0, 'AICube');
-    expect(dispatch).toHaveBeenCalled();
+    expect(ops.addChild).toHaveBeenCalledWith(0, 'AICube');
+    expect(ops.dispatch).toHaveBeenCalled();
     expect(result).toEqual({ entity: 512 });
   });
 
-  it('parents to the given entity id when provided', async () => {
+  it('create_entity: parents to the given id, and defaults the name', async () => {
     await host.request('create_entity', { name: 'Child', parent: 511 });
-    expect(addChild).toHaveBeenCalledWith(511, 'Child');
-  });
-
-  it('defaults the name when omitted', async () => {
+    expect(ops.addChild).toHaveBeenCalledWith(511, 'Child');
     await host.request('create_entity', {});
-    expect(addChild).toHaveBeenCalledWith(0, 'Entity');
+    expect(ops.addChild).toHaveBeenCalledWith(0, 'Entity');
   });
 
-  it('does NOT register create_entity when operations are absent', async () => {
+  it('remove_entity: removes by id and dispatches', async () => {
+    const result = await host.request('remove_entity', { entity: 512 });
+    expect(ops.removeEntity).toHaveBeenCalledWith(512);
+    expect(ops.dispatch).toHaveBeenCalled();
+    expect(result).toEqual({ entity: 512 });
+  });
+
+  it('set_parent: reparents entity under parent', async () => {
+    const result = await host.request('set_parent', { entity: 512, parent: 511 });
+    expect(ops.setParent).toHaveBeenCalledWith(512, 511);
+    expect(result).toEqual({ entity: 512, parent: 511 });
+  });
+
+  it('set_component: UPDATES an existing component (resolves short name)', async () => {
+    const value = { position: { x: 1, y: 2, z: 3 } };
+    const result = await host.request('set_component', {
+      entity: 512,
+      component: 'Transform',
+      value,
+    });
+    expect(ops.updateValue).toHaveBeenCalledWith(transform, 512, value);
+    expect(ops.addComponent).not.toHaveBeenCalled();
+    expect(result).toEqual({ entity: 512, component: 'core::Transform' });
+  });
+
+  it('set_component: ADDS a component the entity lacks, by componentId', async () => {
+    const value = { src: 'models/door.glb' };
+    await host.request('set_component', { entity: 512, component: 'core::GltfContainer', value });
+    expect(ops.addComponent).toHaveBeenCalledWith(512, 2, value);
+    expect(ops.updateValue).not.toHaveBeenCalled();
+  });
+
+  it('set_component: rejects an unknown component', async () => {
+    await expect(
+      host.request('set_component', { entity: 512, component: 'Nope', value: {} }),
+    ).rejects.toThrow('Unknown component');
+  });
+
+  it('remove_component: removes the resolved component', async () => {
+    const result = await host.request('remove_component', { entity: 512, component: 'Transform' });
+    expect(ops.removeComponent).toHaveBeenCalledWith(512, transform);
+    expect(result).toEqual({ entity: 512, component: 'core::Transform' });
+  });
+
+  it('does NOT register mutations when operations are absent', async () => {
     const p2 = new InMemoryTransport();
     const i2 = new InMemoryTransport();
     p2.connect(i2);
     i2.connect(p2);
-    new SceneServer(i2, store); // no operations → mutation method not registered
+    new SceneServer(i2, store); // no operations → mutation methods not registered
     const host2 = new RPC<string, any, any>('SceneRpcInbound', p2);
     await expect(host2.request('create_entity', { name: 'X' })).rejects.toThrow('not implemented');
+    await expect(host2.request('remove_entity', { entity: 1 })).rejects.toThrow('not implemented');
+  });
+});
+
+// Catalog + script + Smart Item tools. These reach beyond the operations layer (catalog
+// lookup, file import, addAsset), so we verify the SceneServer wiring with the catalog /
+// data-layer / config modules mocked.
+describe('SceneServer RPC catalog + script + smart item', () => {
+  let parent: InMemoryTransport;
+  let iframe: InMemoryTransport;
+  let host: RPC<string, any, any>;
+  let store: Store;
+  let ops: Record<string, ReturnType<typeof vi.fn>>;
+  let scriptCreateOrReplace: ReturnType<typeof vi.fn>;
+  let scriptValue: Array<{ path: string; priority: number; layout?: string }>;
+  const enumEntity = { getNextEnumEntityId: vi.fn(() => 1) } as any;
+
+  beforeEach(() => {
+    parent = new InMemoryTransport();
+    iframe = new InMemoryTransport();
+    parent.connect(iframe);
+    iframe.connect(parent);
+    store = {
+      dispatch: vi.fn(),
+      getState: vi.fn(),
+      subscribe: vi.fn(),
+      replaceReducer: vi.fn(),
+    } as any;
+
+    scriptValue = [];
+    scriptCreateOrReplace = vi.fn((_e: number, v: { value: typeof scriptValue }) => {
+      scriptValue = v.value;
+    });
+    const scriptComp = {
+      componentId: 9,
+      componentName: 'asset-packs::Script',
+      getOrNull: () => (scriptValue.length ? { value: scriptValue } : null),
+      createOrReplace: scriptCreateOrReplace,
+    };
+    const engine = {
+      RootEntity: 0,
+      getComponent: (nameOrId: string | number) => {
+        if (nameOrId === 'asset-packs::Script') return scriptComp;
+        throw new Error('Component not found');
+      },
+      componentsIter: () => [scriptComp][Symbol.iterator](),
+    } as any;
+    ops = {
+      addAsset: vi.fn(() => 600),
+      dispatch: vi.fn().mockResolvedValue(undefined),
+    };
+    new SceneServer(iframe, store, undefined, undefined, ops as any, engine, enumEntity);
+    host = new RPC('SceneRpcInbound', parent);
+  });
+
+  afterEach(() => vi.resetAllMocks());
+
+  it('attach_script: appends a Script entry and dispatches', async () => {
+    const result = await host.request('attach_script', {
+      entity: 512,
+      path: 'assets/Scripts/Door.tsx',
+    });
+    expect(scriptCreateOrReplace).toHaveBeenCalledWith(512, {
+      value: [{ path: 'assets/Scripts/Door.tsx', priority: 0, layout: '{"params":{}}' }],
+    });
+    expect(ops.dispatch).toHaveBeenCalled();
+    expect(result).toEqual({ entity: 512, path: 'assets/Scripts/Door.tsx' });
+  });
+
+  it('search_catalog: filters by query', async () => {
+    vi.mocked(fetchLatestCatalog).mockResolvedValue([
+      {
+        id: 'p1',
+        name: 'Pack',
+        thumbnail: '',
+        assets: [
+          { id: 'door', name: 'Wooden Door', category: 'decorations', tags: ['interactive'] },
+          { id: 'rock', name: 'Rock', category: 'nature', tags: [] },
+        ],
+      },
+    ] as any);
+    const res = (await host.request('search_catalog', { query: 'door' })) as {
+      total: number;
+      results: { id: string }[];
+    };
+    expect(res.total).toBe(1);
+    expect(res.results[0].id).toBe('door');
+  });
+
+  it('place_smart_item: imports files and calls addAsset with the resolved base', async () => {
+    vi.mocked(getAssetById).mockReturnValue({
+      id: 'door',
+      name: 'Wooden Door',
+      category: 'decorations',
+      tags: [],
+      contents: { 'model.glb': 'hash1' },
+      composite: { version: 1, components: [] },
+    } as any);
+    const importAsset = vi.fn().mockResolvedValue(undefined);
+    vi.mocked(getDataLayerInterface).mockReturnValue({ importAsset } as any);
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => ({ ok: true, arrayBuffer: async () => new ArrayBuffer(4) })),
+    );
+
+    const result = (await host.request('place_smart_item', {
+      assetId: 'door',
+      name: 'My Door',
+      position: { x: 1, y: 0, z: 2 },
+    })) as { entity: number; name: string };
+
+    expect(importAsset).toHaveBeenCalled();
+    expect(ops.addAsset).toHaveBeenCalledWith(
+      0,
+      'model.glb',
+      'My Door',
+      { x: 1, y: 0, z: 2 },
+      expect.stringContaining('asset-packs/wooden_door'),
+      enumEntity,
+      { version: 1, components: [] },
+      'door',
+      false,
+    );
+    expect(result).toEqual({ entity: 600, name: 'My Door' });
+    vi.unstubAllGlobals();
+  });
+
+  it('place_smart_item: rejects an unknown asset id', async () => {
+    vi.mocked(getAssetById).mockReturnValue(null);
+    vi.mocked(fetchLatestCatalog).mockResolvedValue([]);
+    await expect(host.request('place_smart_item', { assetId: 'nope' })).rejects.toThrow(
+      'No catalog asset',
+    );
   });
 });

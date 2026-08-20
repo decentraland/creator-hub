@@ -235,6 +235,140 @@ function registerTools(server: McpServer): void {
       return ok(res.payload);
     },
   );
+
+  server.registerTool(
+    'remove_entity',
+    {
+      title: 'Remove entity',
+      description:
+        'Delete an entity (and all its children) from the scene graph, by id. Live in the editor, autosaves, undoable. Use scene_state to find the id first.',
+      inputSchema: { entity: z.number().describe('The entity id to remove') },
+    },
+    async ({ entity }) => {
+      const res = await requestSceneOp('remove_entity', { entity });
+      if (!res.ok) return fail(String(res.payload));
+      return ok(res.payload);
+    },
+  );
+
+  server.registerTool(
+    'set_parent',
+    {
+      title: 'Set parent',
+      description:
+        'Reparent an entity under another (its world position is preserved). Use parent id 0 for the scene root. Live + undoable.',
+      inputSchema: {
+        entity: z.number().describe('The entity to reparent'),
+        parent: z.number().describe('The new parent entity id (0 = scene root)'),
+      },
+    },
+    async ({ entity, parent }) => {
+      const res = await requestSceneOp('set_parent', { entity, parent });
+      if (!res.ok) return fail(String(res.payload));
+      return ok(res.payload);
+    },
+  );
+
+  server.registerTool(
+    'set_component',
+    {
+      title: 'Set component',
+      description:
+        'Create or update a component on an entity. `component` is a name like "Transform", "core::GltfContainer", "MeshRenderer", or "VisibilityComponent". `value` is the component value; for an UPDATE the keys you pass are merged. IMPORTANT: the value must match the component schema — call entity_detail on an entity that already has the component to see the exact shape (e.g. Transform is {position:{x,y,z},rotation:{x,y,z,w},scale:{x,y,z}}). Live + undoable.',
+      inputSchema: {
+        entity: z.number().describe('The entity id'),
+        component: z.string().describe('Component name, e.g. "Transform" or "core::GltfContainer"'),
+        value: z
+          .record(z.string(), z.unknown())
+          .describe('Component value (JSON object matching its schema)'),
+      },
+    },
+    async ({ entity, component, value }) => {
+      const res = await requestSceneOp('set_component', { entity, component, value });
+      if (!res.ok) return fail(String(res.payload));
+      return ok(res.payload);
+    },
+  );
+
+  server.registerTool(
+    'remove_component',
+    {
+      title: 'Remove component',
+      description:
+        'Remove a component from an entity, by component name (e.g. "MeshRenderer"). Live + undoable.',
+      inputSchema: {
+        entity: z.number().describe('The entity id'),
+        component: z.string().describe('Component name to remove'),
+      },
+    },
+    async ({ entity, component }) => {
+      const res = await requestSceneOp('remove_component', { entity, component });
+      if (!res.ok) return fail(String(res.payload));
+      return ok(res.payload);
+    },
+  );
+
+  server.registerTool(
+    'search_catalog',
+    {
+      title: 'Search Smart Items catalog',
+      description:
+        'Search the Smart Items catalog (doors, buttons, platforms, NPCs, etc.) — pre-built items that carry their own behaviour. Returns matches with id, name, category, tags. Use before place_smart_item to get an assetId. Omit the query to list everything.',
+      inputSchema: {
+        query: z.string().optional().describe('Substring to match against name/category/tags/id'),
+        limit: z.number().optional().describe('Max results (default 30)'),
+      },
+    },
+    async ({ query, limit }) => {
+      const res = await requestSceneOp('search_catalog', { query, limit });
+      if (!res.ok) return fail(String(res.payload));
+      return ok(res.payload);
+    },
+  );
+
+  server.registerTool(
+    'place_smart_item',
+    {
+      title: 'Place Smart Item',
+      description:
+        'Place a Smart Item from the catalog into the open scene. `assetId` comes from search_catalog. Optional `position` is world metres (defaults to 8,0,8). The item brings its own behaviour (e.g. a door that opens when clicked) — this is how you add interactive objects. Applies live, autosaves, undoable.',
+      inputSchema: {
+        assetId: z.string().describe('Catalog asset id (from search_catalog)'),
+        name: z
+          .string()
+          .optional()
+          .describe('Name for the placed entity (defaults to the asset name)'),
+        position: z
+          .object({ x: z.number(), y: z.number(), z: z.number() })
+          .optional()
+          .describe('World position in metres (default { x: 8, y: 0, z: 8 })'),
+      },
+    },
+    async ({ assetId, name, position }) => {
+      const res = await requestSceneOp('place_smart_item', { assetId, name, position });
+      if (!res.ok) return fail(String(res.payload));
+      return ok(res.payload);
+    },
+  );
+
+  server.registerTool(
+    'attach_script',
+    {
+      title: 'Attach script',
+      description:
+        'Attach a script to an entity by adding an asset-packs::Script component pointing at a source file. WRITE THE SCRIPT FILE FIRST with your own file tools (put it under assets/Scripts/, e.g. assets/Scripts/Door.tsx), then call this with that path. Applies live, autosaves, undoable.',
+      inputSchema: {
+        entity: z.number().describe('The entity id to attach the script to'),
+        path: z.string().describe('Path to the script file, e.g. "assets/Scripts/Door.tsx"'),
+        priority: z.number().optional().describe('Execution priority (default 0)'),
+      },
+    },
+    async ({ entity, path, priority }) => {
+      const res = await requestSceneOp('attach_script', { entity, path, priority });
+      if (!res.ok) return fail(String(res.payload));
+      return ok(res.payload);
+    },
+  );
 }
 
 let starting: Promise<SceneMcpInfo> | null = null;

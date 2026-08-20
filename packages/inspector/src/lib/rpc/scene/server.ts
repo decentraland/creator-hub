@@ -12,6 +12,12 @@ import { setDebugConsoleEnabled, setMobileDebugSessionEnabled } from '../../../r
 import * as debugLogStore from '../../logic/debug-log-store';
 import * as mobileDebugStore from '../../logic/mobile-debug-store';
 import { setFeatureFlags } from '../../../redux/feature-flags';
+import { type EnumEntity } from '../../sdk/enum-entity';
+import { EditorComponentNames } from '../../sdk/components';
+import { fetchLatestCatalog, getAssetById } from '../../logic/catalog';
+import { getDataLayerInterface } from '../../../redux/data-layer';
+import { getConfig } from '../../logic/config';
+import { withAssetDir } from '../../data-layer/host/fs-utils';
 
 enum Method {
   TOGGLE_COMPONENT = 'toggle_component',
@@ -35,7 +41,17 @@ enum Method {
   // provided (always, when embedded). They run the inspector's real operations layer on
   // the live engine, so the viewport updates and undo/redo + autosave come for free.
   CREATE_ENTITY = 'create_entity',
+  REMOVE_ENTITY = 'remove_entity',
+  SET_PARENT = 'set_parent',
+  SET_COMPONENT = 'set_component',
+  REMOVE_COMPONENT = 'remove_component',
+  ATTACH_SCRIPT = 'attach_script',
+  SEARCH_CATALOG = 'search_catalog',
+  PLACE_SMART_ITEM = 'place_smart_item',
 }
+
+// A row in the Smart Items catalog, as returned by search_catalog.
+type CatalogHit = { id: string; name: string; category: string; tags: string[] };
 
 type Params = {
   [Method.TOGGLE_COMPONENT]: { component: string; enabled: boolean };
@@ -65,6 +81,17 @@ type Params = {
     }[];
   };
   [Method.CREATE_ENTITY]: { name?: string; parent?: number };
+  [Method.REMOVE_ENTITY]: { entity: number };
+  [Method.SET_PARENT]: { entity: number; parent: number };
+  [Method.SET_COMPONENT]: { entity: number; component: string; value: Record<string, unknown> };
+  [Method.REMOVE_COMPONENT]: { entity: number; component: string };
+  [Method.ATTACH_SCRIPT]: { entity: number; path: string; priority?: number };
+  [Method.SEARCH_CATALOG]: { query?: string; limit?: number };
+  [Method.PLACE_SMART_ITEM]: {
+    assetId: string;
+    name?: string;
+    position?: { x: number; y: number; z: number };
+  };
 };
 
 type Result = {
@@ -86,7 +113,39 @@ type Result = {
   [Method.PUSH_MOBILE_DEBUG_ENTRIES]: void;
   [Method.SET_MOBILE_DEBUG_SESSION_ENABLED]: void;
   [Method.CREATE_ENTITY]: { entity: number };
+  [Method.REMOVE_ENTITY]: { entity: number };
+  [Method.SET_PARENT]: { entity: number; parent: number };
+  [Method.SET_COMPONENT]: { entity: number; component: string };
+  [Method.REMOVE_COMPONENT]: { entity: number; component: string };
+  [Method.ATTACH_SCRIPT]: { entity: number; path: string };
+  [Method.SEARCH_CATALOG]: { total: number; results: CatalogHit[] };
+  [Method.PLACE_SMART_ITEM]: { entity: number; name: string };
 };
+
+// Resolve a component by its full registered name ("core::Transform"), its short name
+// ("Transform", as scene_state reports), or a numeric id string. Returns null if not
+// registered — the handler turns that into a readable error for the assistant.
+function resolveComponent(engine: IEngine, nameOrId: string) {
+  try {
+    return engine.getComponent(nameOrId);
+  } catch {
+    /* not an exact registered name — fall through */
+  }
+  const asNum = Number(nameOrId);
+  if (Number.isFinite(asNum)) {
+    try {
+      return engine.getComponent(asNum);
+    } catch {
+      /* not a valid id */
+    }
+  }
+  for (const comp of engine.componentsIter()) {
+    if (comp.componentName === nameOrId || comp.componentName.split('::').pop() === nameOrId) {
+      return comp;
+    }
+  }
+  return null;
+}
 
 export class SceneServer extends RPC<Method, Params, Result> {
   // `renderer` (the Babylon internals) is OPTIONAL: only the camera + screenshot
@@ -111,6 +170,8 @@ export class SceneServer extends RPC<Method, Params, Result> {
     // AI assistant. Optional so the server still runs in test/standalone setups without them.
     operations?: ReturnType<typeof createOperations>,
     engine?: IEngine,
+    // Network-id allocator, needed by addAsset for Smart Items with sync components.
+    enumEntity?: EnumEntity,
   ) {
     super('SceneRpcInbound', transport);
 
@@ -209,6 +270,136 @@ export class SceneServer extends RPC<Method, Params, Result> {
         const entity = operations.addChild(parentEntity, name ?? 'Entity');
         await operations.dispatch();
         return { entity: entity as number };
+      });
+
+      this.handle('remove_entity', async ({ entity }) => {
+        operations.removeEntity(entity as Entity);
+        await operations.dispatch();
+        return { entity };
+      });
+
+      this.handle('set_parent', async ({ entity, parent }) => {
+        operations.setParent(entity as Entity, parent as Entity);
+        await operations.dispatch();
+        return { entity, parent };
+      });
+
+      this.handle('set_component', async ({ entity, component, value }) => {
+        const comp = resolveComponent(engine, component);
+        if (comp === null) throw new Error(`Unknown component "${component}".`);
+        if (comp.has(entity as Entity)) {
+          operations.updateValue(comp as never, entity as Entity, value);
+        } else {
+          operations.addComponent(entity as Entity, comp.componentId, value);
+        }
+        await operations.dispatch();
+        return { entity, component: comp.componentName };
+      });
+
+      this.handle('remove_component', async ({ entity, component }) => {
+        const comp = resolveComponent(engine, component);
+        if (comp === null) throw new Error(`Unknown component "${component}".`);
+        operations.removeComponent(entity as Entity, comp as never);
+        await operations.dispatch();
+        return { entity, component: comp.componentName };
+      });
+
+      // Attach a Script component pointing at a source file the assistant already wrote
+      // (with its own file tools). Appends to any existing scripts; a duplicate path is a
+      // no-op. Does not write the file itself.
+      this.handle('attach_script', async ({ entity, path, priority }) => {
+        type ScriptEntry = { path: string; priority: number; layout?: string };
+        const Script = engine.getComponent(EditorComponentNames.Script) as unknown as {
+          getOrNull: (e: Entity) => { value: ScriptEntry[] } | null;
+          createOrReplace: (e: Entity, v: { value: ScriptEntry[] }) => void;
+        };
+        const current: ScriptEntry[] = Script.getOrNull(entity as Entity)?.value ?? [];
+        if (!current.some(s => s.path === path)) {
+          Script.createOrReplace(entity as Entity, {
+            value: [...current, { path, priority: priority ?? 0, layout: '{"params":{}}' }],
+          });
+          await operations.dispatch();
+        }
+        return { entity, path };
+      });
+
+      // Read-only search over the Smart Items catalog (asset-packs). Lives in a module,
+      // not redux, so we read it directly here.
+      this.handle('search_catalog', async ({ query, limit }) => {
+        const packs = await fetchLatestCatalog();
+        const all: CatalogHit[] = packs.flatMap(p =>
+          p.assets.map(a => ({
+            id: a.id,
+            name: a.name,
+            category: a.category,
+            tags: a.tags ?? [],
+          })),
+        );
+        const q = (query ?? '').trim().toLowerCase();
+        const matched =
+          q === ''
+            ? all
+            : all.filter(
+                a =>
+                  a.name.toLowerCase().includes(q) ||
+                  a.id.toLowerCase().includes(q) ||
+                  a.category.toLowerCase().includes(q) ||
+                  a.tags.some(t => t.toLowerCase().includes(q)),
+              );
+        return { total: matched.length, results: matched.slice(0, limit ?? 30) };
+      });
+
+      // Place a Smart Item from the catalog: import its model files into the project, then
+      // spawn it through the real addAsset (which owns id allocation + {assetPath}/{self}/
+      // sync-component/trigger placeholder resolution — see repo CLAUDE.md).
+      this.handle('place_smart_item', async ({ assetId, name, position }) => {
+        if (enumEntity === undefined) {
+          throw new Error('Smart items are unavailable in this session.');
+        }
+        let found = getAssetById(assetId);
+        if (!found) {
+          await fetchLatestCatalog(); // catalog may not be warmed yet
+          found = getAssetById(assetId);
+        }
+        if (!found) {
+          throw new Error(`No catalog asset with id "${assetId}". Use search_catalog first.`);
+        }
+        const asset = found;
+        const dataLayer = getDataLayerInterface();
+        if (dataLayer === undefined) throw new Error('The data layer is not connected.');
+
+        // Fetch the asset's files from the content server and import them under
+        // assets/asset-packs/<pkg>/… (the same layout the drag-and-drop path uses).
+        const pkg = asset.name.trim().replaceAll(' ', '_').toLowerCase();
+        const contentBase = getConfig().contentUrl;
+        const content = new Map<string, Uint8Array>();
+        for (const [rel, hash] of Object.entries(asset.contents)) {
+          const res = await fetch(`${contentBase}/contents/${hash}`);
+          if (!res.ok) throw new Error(`Failed to fetch "${rel}" (HTTP ${res.status}).`);
+          content.set(rel, new Uint8Array(await res.arrayBuffer()));
+        }
+        await dataLayer.importAsset({
+          content,
+          basePath: withAssetDir('asset-packs'),
+          assetPackageName: pkg,
+        });
+
+        const base = `${withAssetDir('asset-packs')}/${pkg}`;
+        const src = Object.keys(asset.contents).find(k => /\.(glb|gltf)$/i.test(k)) ?? '';
+        const pos = position ?? { x: 8, y: 0, z: 8 };
+        const entity = operations.addAsset(
+          engine.RootEntity,
+          src,
+          name ?? asset.name,
+          pos,
+          base,
+          enumEntity,
+          asset.composite,
+          asset.id,
+          false,
+        );
+        await operations.dispatch();
+        return { entity: entity as number, name: name ?? asset.name };
       });
     }
   }
