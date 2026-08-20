@@ -34,7 +34,6 @@ import EditorPng from '/assets/images/editor.png';
 import { ai } from '#preload';
 import { useDispatch, useSelector } from '#store';
 import { useFeatureFlags } from '/@/hooks/useFeatureFlags';
-import { FeatureFlag } from '/@/modules/store/featureFlags';
 import { actions as snackbarActions } from '/@/modules/store/snackbar';
 import { actions as editorActions } from '/@/modules/store/editor';
 import { createGenericNotification } from '/@/modules/store/snackbar/utils';
@@ -131,8 +130,10 @@ export function EditorPage() {
   } = useEditor();
   const { settings, updateAppSettings } = useSettings();
   const { updatePackages } = useWorkspace();
-  const { flags: featureFlags, isEnabled } = useFeatureFlags();
-  const aiChatEnabled = isEnabled(FeatureFlag.AI_CHAT);
+  const { flags: featureFlags } = useFeatureFlags();
+  // The AI assistant is an experimental opt-in (Settings → Experimental), like the Bevy
+  // renderer — not a remote feature flag.
+  const aiChatEnabled = settings.aiAssistant;
   const { executeDeployment, getDeployment } = useDeploy();
   const deployment = project ? getDeployment(project.path) : undefined;
 

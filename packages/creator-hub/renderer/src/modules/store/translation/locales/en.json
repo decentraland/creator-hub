@@ -417,6 +417,9 @@
         "experimental": {
           "label": "Experimental features"
         },
+        "ai_assistant": {
+          "label": "AI scene assistant"
+        },
         "mcp_server": {
           "label": "Expose AI assistant MCP server",
           "help": "Let an AI agent running outside Creator Hub control the open scene. Paste this into the agent's MCP configuration.",

@@ -417,6 +417,9 @@
         "experimental": {
           "label": "实验性功能"
         },
+        "ai_assistant": {
+          "label": "AI 场景助手"
+        },
         "mcp_server": {
           "label": "公开 AI 助手 MCP 服务器",
           "help": "让 Creator Hub 之外运行的 AI 代理控制打开的场景。将此内容粘贴到该代理的 MCP 配置中。",

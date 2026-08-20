@@ -74,13 +74,21 @@ const EditorTab: React.FC<EditorTabProps> = ({
 
   const handleExperimentalChange = useCallback(
     (checked: boolean) => {
-      // Turning experimental off returns to the stable default renderer so an
-      // experimental renderer can't stay active while the picker is hidden.
+      // Turning experimental off returns to the stable defaults so no experimental feature
+      // stays active while its controls are hidden (renderer back to Babylon, AI off).
       updateSettings({
         ...settings,
         experimental: checked,
         renderer: checked ? settings.renderer : RENDERER.BABYLON,
+        aiAssistant: checked ? settings.aiAssistant : false,
       });
+    },
+    [settings, updateSettings],
+  );
+
+  const handleAiAssistantChange = useCallback(
+    (checked: boolean) => {
+      updateSettings({ ...settings, aiAssistant: checked });
     },
     [settings, updateSettings],
   );
@@ -258,6 +266,17 @@ const EditorTab: React.FC<EditorTabProps> = ({
                 {t('modal.app_settings.fields.renderer.bevy')}
               </MenuItem>
             </Select>
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={!!settings.aiAssistant}
+                  onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
+                    handleAiAssistantChange(event.target.checked)
+                  }
+                />
+              }
+              label={t('modal.app_settings.fields.ai_assistant.label')}
+            />
           </Box>
         )}
       </FormGroup>

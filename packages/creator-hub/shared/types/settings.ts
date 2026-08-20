@@ -52,6 +52,9 @@ export type AppSettings = {
   experimental: boolean;
   // Which engine the inspector uses to render the scene in the editor viewport.
   renderer: RENDERER;
+  // Experimental: the in-editor AI scene assistant chat panel. Opt-in under Experimental
+  // features (like the renderer picker); off by default and reset when experimental is off.
+  aiAssistant: boolean;
   // Opt-in: expose the Creator Hub MCP server's URL + token in settings so an AI agent
   // running OUTSIDE the app (e.g. a studio agent) can register it and drive the open scene.
   // The in-app assistant uses that server regardless; this only reveals its connection

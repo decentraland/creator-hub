@@ -417,6 +417,9 @@
         "experimental": {
           "label": "Funciones experimentales"
         },
+        "ai_assistant": {
+          "label": "Asistente de escena con IA"
+        },
         "mcp_server": {
           "label": "Exponer el servidor MCP del asistente de IA",
           "help": "Permite que un agente de IA externo a Creator Hub controle la escena abierta. Pega esto en la configuración MCP del agente.",

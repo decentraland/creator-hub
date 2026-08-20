@@ -36,6 +36,7 @@ const initialState: Async<Workspace> = {
     optimizedAssetsByPath: {},
     experimental: false,
     renderer: DEFAULT_RENDERER,
+    aiAssistant: false,
     exposeMcpServer: false,
     useApiKeyFromEnv: false,
   },
