@@ -1,15 +1,17 @@
 import { ipcRenderer, type IpcRendererEvent } from 'electron';
 
 import {
+  AI_SCENE_OP_REQUEST,
   AI_SCREENSHOT_REQUEST,
   AI_STREAM_EVENT,
+  type AiSceneOpRequest,
   type AiScreenshotRequest,
 } from '/shared/types/ipc';
 import type { AiEvent, AiProviderInfo, AiSendParams } from '/shared/types/ai';
 
 import { invoke } from '../services/ipc';
 
-export type { AiEvent, AiProviderInfo, AiSendParams, AiScreenshotRequest };
+export type { AiEvent, AiProviderInfo, AiSendParams, AiScreenshotRequest, AiSceneOpRequest };
 
 export async function detectProviders(): Promise<AiProviderInfo[]> {
   return invoke('ai.detectProviders');
@@ -53,4 +55,16 @@ export function onScreenshotRequest(cb: (req: AiScreenshotRequest) => void): {
 
 export function screenshotResult(id: string, dataUrl: string | null): void {
   void invoke('ai.screenshotResult', id, dataUrl);
+}
+
+// Scene-graph mutation ops (Phase 2): main asks the renderer to run an inspector SceneRpc
+// mutation; the renderer answers with `sceneOpResult`. Only the renderer can reach the iframe.
+export function onSceneOpRequest(cb: (req: AiSceneOpRequest) => void): { cleanup: () => void } {
+  const handler = (_: IpcRendererEvent, req: AiSceneOpRequest) => cb(req);
+  ipcRenderer.on(AI_SCENE_OP_REQUEST, handler);
+  return { cleanup: () => ipcRenderer.off(AI_SCENE_OP_REQUEST, handler) };
+}
+
+export function sceneOpResult(id: string, ok: boolean, payload: unknown): void {
+  void invoke('ai.sceneOpResult', id, ok, payload);
 }

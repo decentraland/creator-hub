@@ -1,8 +1,10 @@
 import { ScreenshotTools, Vector3 } from '@babylonjs/core';
+import type { Entity, IEngine } from '@dcl/ecs';
 import type { Transport } from '@dcl/mini-rpc';
 import { RPC } from '@dcl/mini-rpc';
 
 import { type Store } from '../../../redux/store';
+import { type createOperations } from '../../sdk/operations';
 import { type initRenderer } from '../../babylon/setup/init';
 import type { AssetsTab, PanelName, SceneInspectorTab } from '../../../redux/ui/types';
 import { setHasCustomCode } from '../../../redux/scene-metrics';
@@ -29,6 +31,10 @@ enum Method {
   SET_FEATURE_FLAGS = 'set_feature_flags',
   PUSH_MOBILE_DEBUG_ENTRIES = 'push_mobile_debug_entries',
   SET_MOBILE_DEBUG_SESSION_ENABLED = 'set_mobile_debug_session_enabled',
+  // Scene-graph mutations for the AI assistant. Registered only when `operations` is
+  // provided (always, when embedded). They run the inspector's real operations layer on
+  // the live engine, so the viewport updates and undo/redo + autosave come for free.
+  CREATE_ENTITY = 'create_entity',
 }
 
 type Params = {
@@ -58,6 +64,7 @@ type Params = {
       messageCount: number;
     }[];
   };
+  [Method.CREATE_ENTITY]: { name?: string; parent?: number };
 };
 
 type Result = {
@@ -78,6 +85,7 @@ type Result = {
   [Method.SET_FEATURE_FLAGS]: void;
   [Method.PUSH_MOBILE_DEBUG_ENTRIES]: void;
   [Method.SET_MOBILE_DEBUG_SESSION_ENABLED]: void;
+  [Method.CREATE_ENTITY]: { entity: number };
 };
 
 export class SceneServer extends RPC<Method, Params, Result> {
@@ -99,6 +107,10 @@ export class SceneServer extends RPC<Method, Params, Result> {
     store: Store,
     renderer?: ReturnType<typeof initRenderer>,
     takeScreenshot?: (width: number, height: number, precision?: number) => Promise<string>,
+    // The inspector's operations layer + engine, for scene-graph mutations driven by the
+    // AI assistant. Optional so the server still runs in test/standalone setups without them.
+    operations?: ReturnType<typeof createOperations>,
+    engine?: IEngine,
   ) {
     super('SceneRpcInbound', transport);
 
@@ -185,5 +197,19 @@ export class SceneServer extends RPC<Method, Params, Result> {
       store.dispatch(setMobileDebugSessionEnabled({ enabled }));
       mobileDebugStore.updateSessions(sessions);
     });
+
+    // Scene-graph mutations (AI assistant). Only wired when the operations layer + engine
+    // are provided (i.e. embedded in a host). Each mutation runs the inspector's real
+    // operations and then `operations.dispatch()` — which flushes the CRDT (engine.update)
+    // and refreshes undo/redo — so the change lands in the live engine exactly as a manual
+    // edit would: viewport updates, autosave persists, and it's on the undo stack.
+    if (operations && engine) {
+      this.handle('create_entity', async ({ name, parent }) => {
+        const parentEntity = parent === undefined ? engine.RootEntity : (parent as Entity);
+        const entity = operations.addChild(parentEntity, name ?? 'Entity');
+        await operations.dispatch();
+        return { entity: entity as number };
+      });
+    }
   }
 }

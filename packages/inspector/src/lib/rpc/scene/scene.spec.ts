@@ -223,3 +223,67 @@ describe('SceneServer RPC without a renderer (non-Babylon path)', () => {
     );
   });
 });
+
+// Scene-graph mutations (AI assistant). The handler routes the RPC to the inspector's
+// operations layer + flushes via dispatch. operations.addChild itself is covered by
+// add-child.spec.ts; here we verify the SceneServer wiring: registered only when
+// operations are provided, correct args, dispatch called, entity id returned.
+describe('SceneServer RPC scene mutations (create_entity)', () => {
+  let parent: InMemoryTransport;
+  let iframe: InMemoryTransport;
+  let host: RPC<string, any, any>;
+  let store: Store;
+  let addChild: ReturnType<typeof vi.fn>;
+  let dispatch: ReturnType<typeof vi.fn>;
+
+  beforeEach(() => {
+    parent = new InMemoryTransport();
+    iframe = new InMemoryTransport();
+    parent.connect(iframe);
+    iframe.connect(parent);
+
+    store = {
+      dispatch: vi.fn(),
+      getState: vi.fn(),
+      subscribe: vi.fn(),
+      replaceReducer: vi.fn(),
+    } as any as Store;
+
+    addChild = vi.fn((_parent: number, _name: string) => 512);
+    dispatch = vi.fn().mockResolvedValue(undefined);
+    const operations = { addChild, dispatch } as any;
+    const engine = { RootEntity: 0 } as any;
+
+    new SceneServer(iframe, store, undefined, undefined, operations, engine);
+    host = new RPC('SceneRpcInbound', parent);
+  });
+
+  afterEach(() => vi.resetAllMocks());
+
+  it('creates an entity at the root by default and returns its id', async () => {
+    const result = await host.request('create_entity', { name: 'AICube' });
+    expect(addChild).toHaveBeenCalledWith(0, 'AICube');
+    expect(dispatch).toHaveBeenCalled();
+    expect(result).toEqual({ entity: 512 });
+  });
+
+  it('parents to the given entity id when provided', async () => {
+    await host.request('create_entity', { name: 'Child', parent: 511 });
+    expect(addChild).toHaveBeenCalledWith(511, 'Child');
+  });
+
+  it('defaults the name when omitted', async () => {
+    await host.request('create_entity', {});
+    expect(addChild).toHaveBeenCalledWith(0, 'Entity');
+  });
+
+  it('does NOT register create_entity when operations are absent', async () => {
+    const p2 = new InMemoryTransport();
+    const i2 = new InMemoryTransport();
+    p2.connect(i2);
+    i2.connect(p2);
+    new SceneServer(i2, store); // no operations → mutation method not registered
+    const host2 = new RPC<string, any, any>('SceneRpcInbound', p2);
+    await expect(host2.request('create_entity', { name: 'X' })).rejects.toThrow('not implemented');
+  });
+});

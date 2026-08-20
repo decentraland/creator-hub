@@ -72,7 +72,13 @@ describe('scene-mcp server', () => {
     const client = await open(info.token);
     const { tools } = await client.listTools();
     expect(tools.map(t => t.name).sort()).toEqual(
-      ['editor_screenshot', 'entity_detail', 'get_project_info', 'scene_state'].sort(),
+      [
+        'create_entity',
+        'editor_screenshot',
+        'entity_detail',
+        'get_project_info',
+        'scene_state',
+      ].sort(),
     );
     await client.close();
   });

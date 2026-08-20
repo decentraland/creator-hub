@@ -16,7 +16,7 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import { z } from 'zod';
 
-import { AI_SCREENSHOT_REQUEST } from '/shared/types/ipc';
+import { AI_SCENE_OP_REQUEST, AI_SCREENSHOT_REQUEST } from '/shared/types/ipc';
 import { MAIN_WINDOW_ID } from '../mainWindow';
 import { getWindow } from './window';
 import { buildRoster, entityDetail, projectInfo, readComposite } from './scene-composite';
@@ -64,6 +64,50 @@ export function resolveEditorScreenshot(id: string, dataUrl: string | null): voi
   clearTimeout(pending.timer);
   pendingScreenshots.delete(id);
   pending.resolve(dataUrl);
+}
+
+// Scene-mutation bridge: main → renderer → inspector-iframe SceneRpc. The renderer runs
+// the real inspector operations on the live engine (so the viewport updates and undo +
+// autosave come free), then answers via `ai.sceneOpResult`.
+const SCENE_OP_TIMEOUT_MS = 15_000;
+type SceneOpOutcome = { ok: boolean; payload: unknown };
+const pendingSceneOps = new Map<
+  string,
+  { resolve: (v: SceneOpOutcome) => void; timer: NodeJS.Timeout }
+>();
+// Mutations must be serialized: the inspector host's StateManager throws on re-entrant
+// transactions. Chain every op so only one is ever in flight.
+let sceneOpChain: Promise<unknown> = Promise.resolve();
+
+function requestSceneOpRaw(op: string, params: Record<string, unknown>): Promise<SceneOpOutcome> {
+  const win = getWindow(MAIN_WINDOW_ID);
+  if (win === undefined || win.isDestroyed()) {
+    return Promise.resolve({ ok: false, payload: 'No editor window is open.' });
+  }
+  const id = randomUUID();
+  return new Promise<SceneOpOutcome>(resolve => {
+    const timer = setTimeout(() => {
+      pendingSceneOps.delete(id);
+      resolve({ ok: false, payload: `Scene op "${op}" timed out (no editor response).` });
+    }, SCENE_OP_TIMEOUT_MS);
+    pendingSceneOps.set(id, { resolve, timer });
+    win.webContents.send(AI_SCENE_OP_REQUEST, { id, op, params });
+  });
+}
+
+function requestSceneOp(op: string, params: Record<string, unknown>): Promise<SceneOpOutcome> {
+  const run = sceneOpChain.then(() => requestSceneOpRaw(op, params));
+  sceneOpChain = run.catch(() => undefined); // keep the chain alive past a rejection
+  return run;
+}
+
+// Called from the `ai.sceneOpResult` IPC handler when the renderer answers.
+export function resolveSceneOp(id: string, ok: boolean, payload: unknown): void {
+  const pending = pendingSceneOps.get(id);
+  if (pending === undefined) return;
+  clearTimeout(pending.timer);
+  pendingSceneOps.delete(id);
+  pending.resolve({ ok, payload });
 }
 
 // A tool result is either a JSON payload (rendered as text) or an error the model can
@@ -167,6 +211,28 @@ function registerTools(server: McpServer): void {
       const mimeType = m !== null ? m[1] : 'image/png';
       const data = m !== null ? m[2] : dataUrl; // tolerate a raw base64 string too
       return { content: [{ type: 'image' as const, data, mimeType }] };
+    },
+  );
+
+  // ---- Scene-graph mutations (Phase 2) ----
+  server.registerTool(
+    'create_entity',
+    {
+      title: 'Create entity',
+      description:
+        'Add a new entity to the scene graph, optionally named and/or parented to another entity by id. Returns the new entity id. The change appears live in the editor, autosaves, and is undoable. Use scene_state first to see existing entities and pick a parent.',
+      inputSchema: {
+        name: z
+          .string()
+          .optional()
+          .describe('Human-readable Name shown in the hierarchy (e.g. "Front Door")'),
+        parent: z.number().optional().describe('Parent entity id; omit to place at the scene root'),
+      },
+    },
+    async ({ name, parent }) => {
+      const res = await requestSceneOp('create_entity', { name, parent });
+      if (!res.ok) return fail(String(res.payload));
+      return ok(res.payload);
     },
   );
 }

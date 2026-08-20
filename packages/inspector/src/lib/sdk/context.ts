@@ -68,6 +68,10 @@ export async function createSdkContext(
   // create inspector engine context and components
   const { engine, components, events, dispose: disposeEngine } = createInspectorEngine();
 
+  // The operations layer, created up front so the embedded scene-RPC server can drive
+  // scene-graph mutations (AI assistant) through the same code path the UI uses.
+  const operations = createOperations(engine);
+
   // Build the renderer chosen for this session through the open plugin registry.
   // The choice comes from the `renderer` config param (a host app like creator-hub
   // drives it), falling back to localStorage then the default — see
@@ -101,7 +105,14 @@ export async function createSdkContext(
     const transport = new MessageTransport(window, window.parent, config.dataLayerRpcParentUrl);
     const babylonInternals = asBabylonInternals(built.internals);
     const bevyInternals = asBevyInternals(built.internals);
-    new SceneServer(transport, store, babylonInternals?.babylon, bevyInternals?.takeScreenshot);
+    new SceneServer(
+      transport,
+      store,
+      babylonInternals?.babylon,
+      bevyInternals?.takeScreenshot,
+      operations,
+      engine,
+    );
 
     // Ensure the scene-RPC CLIENT (host-bound) exists. It's normally set up by the
     // parent-window data-layer path, but a renderer whose data-layer is a WS (Bevy)
@@ -140,7 +151,7 @@ export async function createSdkContext(
     components,
     events,
     dispose,
-    operations: createOperations(engine),
+    operations,
     enumEntity: createEnumEntityId(engine),
     renderer: built.renderer,
     currentRendererId: built.id,

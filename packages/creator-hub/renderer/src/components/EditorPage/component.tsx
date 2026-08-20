@@ -68,6 +68,18 @@ function isOutdatedDepsError(message: string): boolean {
   return rejectsOption && namesBevyFlag;
 }
 
+// Routes an AI scene-mutation op (from main) to the inspector SceneRpc client. One entry
+// per SceneRpc mutation method; add a line here + the matching client method + MCP tool as
+// Phase 2 grows (set_component, remove_entity, place_smart_item, …).
+type SceneClient = ReturnType<typeof initRpc>['scene'];
+const SCENE_OP_HANDLERS: Record<
+  string,
+  (scene: SceneClient, params: Record<string, unknown>) => Promise<unknown>
+> = {
+  create_entity: (scene, p) =>
+    scene.createEntity(p.name as string | undefined, p.parent as number | undefined),
+};
+
 export function EditorPage() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -181,6 +193,26 @@ export function EditorPage() {
         dataUrl = null;
       }
       ai.screenshotResult(req.id, dataUrl);
+    });
+    return cleanup;
+  }, [aiChatEnabled]);
+
+  // Answer the AI assistant's scene-mutation ops (Phase 2): main asks the renderer to run
+  // an inspector SceneRpc mutation on the live engine, and we reply with the result. Only
+  // the renderer holds the iframe RPC handle. Ops are serialized on the main side.
+  useEffect(() => {
+    if (!aiChatEnabled) return;
+    const { cleanup } = ai.onSceneOpRequest(async req => {
+      const rpc = iframeRef.current;
+      const handler = SCENE_OP_HANDLERS[req.op];
+      if (!rpc) return ai.sceneOpResult(req.id, false, 'No scene is open.');
+      if (!handler) return ai.sceneOpResult(req.id, false, `Unknown scene op "${req.op}".`);
+      try {
+        const value = await handler(rpc.scene, req.params);
+        ai.sceneOpResult(req.id, true, value);
+      } catch (e) {
+        ai.sceneOpResult(req.id, false, e instanceof Error ? e.message : String(e));
+      }
     });
     return cleanup;
   }, [aiChatEnabled]);

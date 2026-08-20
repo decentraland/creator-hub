@@ -40,6 +40,7 @@ export enum Method {
   SET_FEATURE_FLAGS = 'set_feature_flags',
   PUSH_MOBILE_DEBUG_ENTRIES = 'push_mobile_debug_entries',
   SET_MOBILE_DEBUG_SESSION_ENABLED = 'set_mobile_debug_session_enabled',
+  CREATE_ENTITY = 'create_entity',
 }
 
 export type Params = {
@@ -69,6 +70,7 @@ export type Params = {
       messageCount: number;
     }[];
   };
+  [Method.CREATE_ENTITY]: { name?: string; parent?: number };
 };
 
 export type Result = {
@@ -89,6 +91,7 @@ export type Result = {
   [Method.SET_FEATURE_FLAGS]: void;
   [Method.PUSH_MOBILE_DEBUG_ENTRIES]: void;
   [Method.SET_MOBILE_DEBUG_SESSION_ENABLED]: void;
+  [Method.CREATE_ENTITY]: { entity: number };
 };
 
 // @dcl/mini-rpc's request() never settles if no server answers (it just parks a
@@ -194,5 +197,9 @@ export class SceneRpcClient extends RPC<Method, Params, Result> {
     }[] = [],
   ) => {
     return this.request('set_mobile_debug_session_enabled', { enabled, sessions });
+  };
+
+  createEntity = (name?: string, parent?: number) => {
+    return this.request('create_entity', { name, parent });
   };
 }

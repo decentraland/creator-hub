@@ -42,6 +42,14 @@ export const AI_SCREENSHOT_REQUEST = 'ai.screenshotRequest';
 
 export type AiScreenshotRequest = { id: string; width: number; height: number };
 
+// Scene-graph mutation ops (AI assistant, Phase 2) run in the inspector iframe via its
+// SceneRpc. Main pushes an op request over this channel; the renderer routes it to the
+// SceneRpcClient and answers with `ai.sceneOpResult`, correlated by `id`. `op` is the
+// SceneRpc mutation name (e.g. 'create_entity'); `params` its arguments.
+export const AI_SCENE_OP_REQUEST = 'ai.sceneOpRequest';
+
+export type AiSceneOpRequest = { id: string; op: string; params: Record<string, unknown> };
+
 export interface MobileDebugSessionInfo {
   id: number;
   sessionId: string | null;
@@ -119,6 +127,9 @@ export interface Ipc {
   // Renderer's answer to an AI_SCREENSHOT_REQUEST: the captured image as a data URL, or
   // null if the capture failed (e.g. the Bevy renderer, which has no screenshot RPC).
   'ai.screenshotResult': (id: string, dataUrl: string | null) => void;
+  // Renderer's answer to an AI_SCENE_OP_REQUEST: ok + the op's result value, or the error
+  // message when the mutation failed (or no scene is loaded).
+  'ai.sceneOpResult': (id: string, ok: boolean, payload: unknown) => void;
   'mobileDebug.getSessions': () => Promise<MobileDebugSessionInfo[]>;
   'mobileDebug.subscribeEntries': () => Promise<void>;
   'mobileDebug.unsubscribeEntries': () => Promise<void>;
