@@ -3,6 +3,12 @@ import { describe, expect, it, vi } from 'vitest';
 // ai.ts → scene-mcp → explorer-gateway → cli → path.ts calls electron `app.getAppPath()` at
 // import. This suite only tests pure parseLine/PATH helpers, so stub the gateway to keep the
 // module graph node-loadable without an Electron app.
+// analytics pulls @sentry/electron/main → electron (named `app` import) which won't load in
+// the node test env. This suite tests pure parser/PATH/buildArgs helpers, so stub it out.
+vi.mock('../src/modules/analytics', () => ({
+  track: vi.fn(),
+  getProjectId: vi.fn(async () => 'test-project-id'),
+}));
 vi.mock('../src/modules/explorer-gateway', () => ({
   callExplorerTool: vi.fn(),
   explorerTools: () => [],

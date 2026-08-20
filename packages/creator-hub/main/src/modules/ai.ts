@@ -19,6 +19,7 @@ import log from 'electron-log/main';
 import type { AiEvent, AiProvider, AiProviderInfo, AiSendParams } from '/shared/types/ai';
 import { DCL_SYSTEM_PROMPT } from './ai-prompt';
 import { getUserDataPath } from './electron';
+import { getProjectId, track } from './analytics';
 import {
   ensureSceneMcpServer,
   getTurnMutations,
@@ -613,12 +614,37 @@ export async function aiSend(
   current = turn;
   emit({ kind: 'started', turnId });
 
+  // Usage analytics (fire-and-forget, never blocks the turn; no prompt/scene content, only
+  // the anonymous project id + provider/model + turn outcome). Resolve the project id once
+  // and reuse it for both the start and completion events.
+  const startedAt = Date.now();
+  let toolCount = 0;
+  const projectIdPromise = getProjectId(projectDir).catch((): string => '');
+  void projectIdPromise.then(project_id =>
+    track('AI Turn Started', {
+      project_id,
+      provider: params.provider,
+      model: params.model ?? 'default',
+    }),
+  );
+
   const finish = (ok: boolean, message?: string): void => {
     if (turn.done) return;
     turn.done = true;
     if (message !== undefined) emit({ kind: 'error', turnId, message });
     emit({ kind: 'done', turnId, ok, mutations: getTurnMutations() });
     if (current === turn) current = null;
+    void projectIdPromise.then(project_id =>
+      track('AI Turn Completed', {
+        project_id,
+        provider: params.provider,
+        model: params.model ?? 'default',
+        ok,
+        duration_ms: Date.now() - startedAt,
+        tool_count: toolCount,
+        mutations: getTurnMutations(),
+      }),
+    );
   };
 
   let stderr = '';
@@ -632,7 +658,10 @@ export async function aiSend(
     if (line === '') return;
     const session = def.parseLine(line, projectDir, (text, tool) => {
       if (text !== '') emit({ kind: 'text', turnId, text });
-      if (tool !== undefined) emit({ kind: 'tool', turnId, tool: tool[0], detail: tool[1] });
+      if (tool !== undefined) {
+        toolCount++;
+        emit({ kind: 'tool', turnId, tool: tool[0], detail: tool[1] });
+      }
     });
     if (session !== undefined) {
       const store = getSessions();
