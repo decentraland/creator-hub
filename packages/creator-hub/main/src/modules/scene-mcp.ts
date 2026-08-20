@@ -214,6 +214,21 @@ function registerTools(server: McpServer): void {
   );
 
   server.registerTool(
+    'get_scene_metrics',
+    {
+      title: 'Scene metrics',
+      description:
+        "The editor's live scene budget: triangles, entities, bodies, materials and textures currently in the scene, each against its per-scene limit, plus the count of entities out of the scene's bounds. Use this to check the scene fits Decentraland's limits before/after adding content. Measured by the editor viewport (needs no preview); for a running scene's frame rate and per-model breakdown, launch_preview and use explorer_call get_performance_stats / get_scene_content_stats.",
+      inputSchema: {},
+    },
+    async () => {
+      const res = await requestSceneOp('get_scene_metrics', {});
+      if (!res.ok) return fail(String(res.payload));
+      return ok(res.payload);
+    },
+  );
+
+  server.registerTool(
     'entity_detail',
     {
       title: 'Entity detail',

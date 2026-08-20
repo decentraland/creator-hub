@@ -415,6 +415,13 @@
         },
         "experimental": {
           "label": "Funciones experimentales"
+        },
+        "mcp_server": {
+          "label": "Exponer el servidor MCP del asistente de IA",
+          "help": "Permite que un agente de IA externo a Creator Hub controle la escena abierta. Pega esto en la configuración MCP del agente.",
+          "copy": "Copiar configuración",
+          "copied": "Copiado",
+          "note": "Solo localhost. La URL y el token cambian cada vez que Creator Hub se reinicia, así que tendrás que pegar los últimos aquí."
         }
       },
       "actions": {

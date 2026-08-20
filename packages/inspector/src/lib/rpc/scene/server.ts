@@ -8,6 +8,7 @@ import { type createOperations } from '../../sdk/operations';
 import { type initRenderer } from '../../babylon/setup/init';
 import type { AssetsTab, PanelName, SceneInspectorTab } from '../../../redux/ui/types';
 import { setHasCustomCode } from '../../../redux/scene-metrics';
+import { type SceneMetrics } from '../../../redux/scene-metrics/types';
 import { setDebugConsoleEnabled, setMobileDebugSessionEnabled } from '../../../redux/ui';
 import * as debugLogStore from '../../logic/debug-log-store';
 import * as mobileDebugStore from '../../logic/mobile-debug-store';
@@ -49,6 +50,7 @@ enum Method {
   SEARCH_CATALOG = 'search_catalog',
   PLACE_SMART_ITEM = 'place_smart_item',
   UNDO = 'undo',
+  GET_SCENE_METRICS = 'get_scene_metrics',
 }
 
 // A row in the Smart Items catalog, as returned by search_catalog.
@@ -94,6 +96,7 @@ type Params = {
     position?: { x: number; y: number; z: number };
   };
   [Method.UNDO]: Record<string, never>;
+  [Method.GET_SCENE_METRICS]: Record<string, never>;
 };
 
 type Result = {
@@ -123,6 +126,11 @@ type Result = {
   [Method.SEARCH_CATALOG]: { total: number; results: CatalogHit[] };
   [Method.PLACE_SMART_ITEM]: { entity: number; name: string };
   [Method.UNDO]: { ok: true };
+  [Method.GET_SCENE_METRICS]: {
+    metrics: SceneMetrics;
+    limits: SceneMetrics;
+    entitiesOutOfBoundaries: number[];
+  };
 };
 
 // Resolve a component by its full registered name ("core::Transform"), its short name
@@ -204,6 +212,19 @@ export class SceneServer extends RPC<Method, Params, Result> {
 
     this.handle('toggle_ground_grid', async ({ enabled }) => {
       store.dispatch({ type: 'ui/toggleGroundGrid', payload: { enabled } });
+    });
+
+    // Scene metrics for the AI assistant: the editor's live budget — triangles, entities,
+    // bodies, materials, textures — against the per-scene limits, plus any entities out of
+    // bounds. Read-only and renderer-agnostic (pure redux read); the Babylon renderer is what
+    // populates these, so under Bevy they read as zeros until that renderer reports metrics.
+    this.handle('get_scene_metrics', async () => {
+      const sm = store.getState().sceneMetrics;
+      return {
+        metrics: sm.metrics,
+        limits: sm.limits,
+        entitiesOutOfBoundaries: sm.entitiesOutOfBoundaries,
+      };
     });
 
     // Camera + screenshot need the Babylon internals; only wired when present.

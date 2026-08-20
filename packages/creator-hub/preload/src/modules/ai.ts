@@ -41,6 +41,10 @@ export async function revertTurn(count: number): Promise<void> {
   return invoke('ai.revertTurn', count);
 }
 
+export async function getMcpServerInfo(): Promise<{ url: string; token: string }> {
+  return invoke('ai.getMcpServerInfo');
+}
+
 // Subscribe to the AI turn event stream. There is one active turn at a time and one
 // editor window, so a single fixed channel is enough; the panel filters by turnId.
 export function subscribeAiStream(cb: (event: AiEvent) => void): { cleanup: () => void } {

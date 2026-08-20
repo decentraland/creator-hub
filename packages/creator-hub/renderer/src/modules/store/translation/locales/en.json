@@ -415,6 +415,13 @@
         },
         "experimental": {
           "label": "Experimental features"
+        },
+        "mcp_server": {
+          "label": "Expose AI assistant MCP server",
+          "help": "Let an AI agent running outside Creator Hub control the open scene. Paste this into the agent's MCP configuration.",
+          "copy": "Copy configuration",
+          "copied": "Copied",
+          "note": "Localhost only. The URL and token change each time Creator Hub restarts, so you'll need to paste the latest here."
         }
       },
       "actions": {

@@ -13,7 +13,12 @@ import * as config from './config';
 import * as mobileDebug from './mobile-debug-server';
 import * as metrics from './metrics';
 import * as ai from './ai';
-import { resolveEditorScreenshot, resolveSceneOp, revertTurn } from './scene-mcp';
+import {
+  ensureSceneMcpServer,
+  resolveEditorScreenshot,
+  resolveSceneOp,
+  revertTurn,
+} from './scene-mcp';
 
 interface InitIpcOptions {
   beforeQuitCleanup: () => Promise<void>;
@@ -130,4 +135,10 @@ export function initIpc({ beforeQuitCleanup }: InitIpcOptions) {
   handle('ai.screenshotResult', (_event, id, dataUrl) => resolveEditorScreenshot(id, dataUrl));
   handle('ai.sceneOpResult', (_event, id, ok, payload) => resolveSceneOp(id, ok, payload));
   handle('ai.revertTurn', (_event, count) => revertTurn(count));
+  // Reveal the CH MCP server's URL + token so an external agent can register it (gated in
+  // the UI behind the exposeMcpServer setting). Starts the server if it isn't up yet.
+  handle('ai.getMcpServerInfo', async () => {
+    const { url, token } = await ensureSceneMcpServer();
+    return { url, token };
+  });
 }

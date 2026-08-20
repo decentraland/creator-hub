@@ -236,6 +236,16 @@ describe('SceneServer RPC without a renderer (non-Babylon path)', () => {
       expect.objectContaining({ type: 'ui/toggleGroundGrid', payload: { enabled: false } }),
     );
   });
+
+  it('get_scene_metrics: returns the scene budget, limits and out-of-bounds from the store', async () => {
+    const metrics = { triangles: 1200, entities: 5, bodies: 6, materials: 3, textures: 2 };
+    const limits = { triangles: 10000, entities: 200, bodies: 300, materials: 20, textures: 10 };
+    vi.mocked(store.getState).mockReturnValue({
+      sceneMetrics: { metrics, limits, entitiesOutOfBoundaries: [513] },
+    } as any);
+    const res = await host.request('get_scene_metrics', {});
+    expect(res).toEqual({ metrics, limits, entitiesOutOfBoundaries: [513] });
+  });
 });
 
 // Scene-graph mutations (AI assistant). The handler routes the RPC to the inspector's

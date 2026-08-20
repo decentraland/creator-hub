@@ -415,6 +415,13 @@
         },
         "experimental": {
           "label": "实验性功能"
+        },
+        "mcp_server": {
+          "label": "公开 AI 助手 MCP 服务器",
+          "help": "让 Creator Hub 之外运行的 AI 代理控制打开的场景。将此内容粘贴到该代理的 MCP 配置中。",
+          "copy": "复制配置",
+          "copied": "已复制",
+          "note": "仅限本地主机。每次 Creator Hub 重启时 URL 和令牌都会更改，因此你需要在此处粘贴最新的内容。"
         }
       },
       "actions": {

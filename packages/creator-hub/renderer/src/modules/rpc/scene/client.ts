@@ -49,9 +49,18 @@ export enum Method {
   SEARCH_CATALOG = 'search_catalog',
   PLACE_SMART_ITEM = 'place_smart_item',
   UNDO = 'undo',
+  GET_SCENE_METRICS = 'get_scene_metrics',
 }
 
 type CatalogHit = { id: string; name: string; category: string; tags: string[] };
+// The editor's scene budget counters (mirrors the inspector's SceneMetrics).
+type SceneMetrics = {
+  triangles: number;
+  entities: number;
+  bodies: number;
+  materials: number;
+  textures: number;
+};
 
 export type Params = {
   [Method.TOGGLE_COMPONENT]: { component: string; enabled: boolean };
@@ -93,6 +102,7 @@ export type Params = {
     position?: { x: number; y: number; z: number };
   };
   [Method.UNDO]: Record<string, never>;
+  [Method.GET_SCENE_METRICS]: Record<string, never>;
 };
 
 export type Result = {
@@ -122,6 +132,11 @@ export type Result = {
   [Method.SEARCH_CATALOG]: { total: number; results: CatalogHit[] };
   [Method.PLACE_SMART_ITEM]: { entity: number; name: string };
   [Method.UNDO]: { ok: true };
+  [Method.GET_SCENE_METRICS]: {
+    metrics: SceneMetrics;
+    limits: SceneMetrics;
+    entitiesOutOfBoundaries: number[];
+  };
 };
 
 // @dcl/mini-rpc's request() never settles if no server answers (it just parks a
@@ -267,5 +282,9 @@ export class SceneRpcClient extends RPC<Method, Params, Result> {
 
   undo = () => {
     return this.request('undo', {} as Record<string, never>);
+  };
+
+  getSceneMetrics = () => {
+    return this.request('get_scene_metrics', {} as Record<string, never>);
   };
 }

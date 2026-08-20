@@ -98,6 +98,7 @@ const SCENE_OP_HANDLERS: Record<
       p.position as { x: number; y: number; z: number } | undefined,
     ),
   undo: scene => scene.undo(),
+  get_scene_metrics: scene => scene.getSceneMetrics(),
 };
 
 export function EditorPage() {

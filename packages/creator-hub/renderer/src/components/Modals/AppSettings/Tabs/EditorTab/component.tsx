@@ -1,12 +1,15 @@
-import { useCallback } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import CheckIcon from '@mui/icons-material/Check';
 import DeleteIcon from '@mui/icons-material/Delete';
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import {
   Box,
+  Button,
   Checkbox,
   IconButton,
   FormControlLabel,
   Switch,
+  TextField,
   Typography,
   FormGroup,
   Select,
@@ -16,6 +19,7 @@ import {
 
 import type { EditorConfig } from '/shared/types/config';
 import { RENDERER } from '/shared/types/settings';
+import { ai } from '#preload';
 import { t } from '/@/modules/store/translation/utils';
 import type { EditorTabProps } from '../../types';
 
@@ -80,6 +84,58 @@ const EditorTab: React.FC<EditorTabProps> = ({
     },
     [settings, updateSettings],
   );
+
+  // MCP server connection details, fetched only while the toggle is on. Not persisted:
+  // the URL/token are runtime values (a fresh port + token per app launch), so they're
+  // read on demand rather than stored in settings.
+  const [mcpInfo, setMcpInfo] = useState<{ url: string; token: string } | null>(null);
+  const [mcpCopied, setMcpCopied] = useState(false);
+
+  useEffect(() => {
+    if (!settings.exposeMcpServer) {
+      setMcpInfo(null);
+      return;
+    }
+    let cancelled = false;
+    void ai.getMcpServerInfo().then(
+      info => !cancelled && setMcpInfo(info),
+      () => !cancelled && setMcpInfo(null),
+    );
+    return () => {
+      cancelled = true;
+    };
+  }, [settings.exposeMcpServer]);
+
+  const handleExposeMcpChange = useCallback(
+    (checked: boolean) => {
+      updateSettings({ ...settings, exposeMcpServer: checked });
+    },
+    [settings, updateSettings],
+  );
+
+  const mcpConfigSnippet =
+    mcpInfo &&
+    JSON.stringify(
+      {
+        mcpServers: {
+          'creator-hub': {
+            type: 'http',
+            url: mcpInfo.url,
+            headers: { Authorization: `Bearer ${mcpInfo.token}` },
+          },
+        },
+      },
+      null,
+      2,
+    );
+
+  const handleCopyMcpConfig = useCallback(() => {
+    if (mcpConfigSnippet === null || mcpConfigSnippet === undefined) return;
+    void navigator.clipboard.writeText(mcpConfigSnippet).then(() => {
+      setMcpCopied(true);
+      setTimeout(() => setMcpCopied(false), 2000);
+    });
+  }, [mcpConfigSnippet]);
 
   return (
     <Box className="FormContainer">
@@ -195,6 +251,50 @@ const EditorTab: React.FC<EditorTabProps> = ({
                 {t('modal.app_settings.fields.renderer.bevy')}
               </MenuItem>
             </Select>
+          </Box>
+        )}
+      </FormGroup>
+      <FormGroup className="McpServerFormGroup">
+        <FormControlLabel
+          control={
+            <Switch
+              checked={!!settings.exposeMcpServer}
+              onChange={(_event, checked) => handleExposeMcpChange(checked)}
+            />
+          }
+          label={t('modal.app_settings.fields.mcp_server.label')}
+        />
+        {settings.exposeMcpServer && (
+          <Box className="McpServerSubField">
+            <Typography variant="body2">
+              {t('modal.app_settings.fields.mcp_server.help')}
+            </Typography>
+            {mcpConfigSnippet !== null && mcpConfigSnippet !== undefined ? (
+              <>
+                <TextField
+                  value={mcpConfigSnippet}
+                  multiline
+                  fullWidth
+                  minRows={7}
+                  InputProps={{ readOnly: true }}
+                />
+                <Button
+                  color="secondary"
+                  size="small"
+                  startIcon={<ContentCopyIcon fontSize="small" />}
+                  onClick={handleCopyMcpConfig}
+                >
+                  {mcpCopied
+                    ? t('modal.app_settings.fields.mcp_server.copied')
+                    : t('modal.app_settings.fields.mcp_server.copy')}
+                </Button>
+                <Typography variant="caption">
+                  {t('modal.app_settings.fields.mcp_server.note')}
+                </Typography>
+              </>
+            ) : (
+              <CircularProgress size={20} />
+            )}
           </Box>
         )}
       </FormGroup>

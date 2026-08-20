@@ -52,6 +52,11 @@ export type AppSettings = {
   experimental: boolean;
   // Which engine the inspector uses to render the scene in the editor viewport.
   renderer: RENDERER;
+  // Opt-in: expose the Creator Hub MCP server's URL + token in settings so an AI agent
+  // running OUTSIDE the app (e.g. a studio agent) can register it and drive the open scene.
+  // The in-app assistant uses that server regardless; this only reveals its connection
+  // details for external registration. Off by default.
+  exposeMcpServer: boolean;
 };
 
 export interface ReleaseNotes {
