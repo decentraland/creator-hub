@@ -168,8 +168,11 @@ Notes for reviewers:
   `VITE_INSPECTOR_PORT` unset and the port is random, which is why it has to be
   pinned to be usable as an iframe target.
 
-  The Bevy **agent** is still a separate build: after changing `agents/bevy`, run
-  `make build-bevy-agent` (a watch rebuild of the inspector does not cover it).
+  The Bevy **agent** is a separate SDK7 project, but you don't have to remember
+  that: the inspector's `copy-bevy-agent` step (part of both `start` and `build`)
+  rebuilds `agents/bevy` whenever its sources are newer than its bundle. Note a
+  running watch server does NOT re-run it — restart `npm run start` (or run `make
+  build-bevy-agent`) after an agent change.
 
 ## 📋 Makefile Commands
 

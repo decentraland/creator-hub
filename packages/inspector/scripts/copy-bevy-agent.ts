@@ -21,17 +21,11 @@ import { AGENT_BASE_URL, REALM_NAME, SERVED_DIR } from '../bevy-agent-realm';
 //
 // The agent is a SEPARATE SDK7 project with its own node_modules (NOT a
 // workspace) pinned to the engine's companion SDK — so we run ITS sdk-commands,
-// not the inspector's. Its `bin/index.js` must already be built.
+// not the inspector's, both to build it and to export it.
 
 const AGENT_DIR = resolve(__dirname, '../agents/bevy');
 const DEST = resolve(__dirname, '..', 'public', SERVED_DIR);
-
-const agentBin = resolve(AGENT_DIR, 'bin/index.js');
-if (!fs.existsSync(agentBin)) {
-  throw new Error(
-    `Agent scene is not built: ${agentBin} is missing. Run \`npm install && npm run build\` in agents/bevy first.`,
-  );
-}
+const AGENT_SOURCES = [resolve(AGENT_DIR, 'src'), resolve(__dirname, '../agents/protocol/src')];
 
 const sdkCommands = resolve(AGENT_DIR, 'node_modules/.bin/sdk-commands');
 if (!fs.existsSync(sdkCommands)) {
@@ -39,6 +33,31 @@ if (!fs.existsSync(sdkCommands)) {
     `Agent has no sdk-commands: ${sdkCommands} is missing. Run \`npm install\` in agents/bevy first.`,
   );
 }
+
+/** Newest mtime under `dir`, recursively (directory entries included — harmless for a max). */
+function newestMtime(dir: string): number {
+  return fs
+    .readdirSync(dir, { recursive: true, encoding: 'utf8' })
+    .reduce((newest, entry) => Math.max(newest, fs.statSync(resolve(dir, entry)).mtimeMs), 0);
+}
+
+/**
+ * Build the agent when its sources are newer than its bundle (or it has none).
+ *
+ * Without this the export ships a STALE agent: the inspector's own build/watch
+ * only COPIES `bin/index.js`, so an agent source change stays invisible at
+ * runtime — the engine keeps loading the old bundle — until someone remembers
+ * `make build-bevy-agent`.
+ */
+function buildAgentIfStale(): void {
+  const agentBin = resolve(AGENT_DIR, 'bin/index.js');
+  const binMtime = fs.existsSync(agentBin) ? fs.statSync(agentBin).mtimeMs : 0;
+  if (!AGENT_SOURCES.some(dir => newestMtime(dir) > binMtime)) return;
+  console.log('Agent sources changed → building agents/bevy...');
+  execFileSync(sdkCommands, ['build'], { cwd: AGENT_DIR, stdio: 'inherit' });
+}
+
+buildAgentIfStale();
 
 console.log('Exporting agent scene → static realm at "public/bevy-agent"...');
 
