@@ -24,6 +24,7 @@ import { killAllRealms } from '/@/modules/bevy-realm';
 import { killInspectorServer } from '/@/modules/inspector';
 import { aiStop } from '/@/modules/ai';
 import { stopSceneMcpServer } from '/@/modules/scene-mcp';
+import { stopExplorerGateway } from '/@/modules/explorer-gateway';
 import { runMigrations } from '/@/modules/migrations';
 import { getAnalytics, track, trackLifecycleEvent } from './modules/analytics';
 import { handleAppArguments } from './modules/app-args-handle';
@@ -176,7 +177,11 @@ const TELEMETRY_FLUSH_TIMEOUT_MS = 1000;
 const SKIP_CLEANUP_REARM_MS = 5000;
 
 export async function killAll() {
-  const promises: Promise<unknown>[] = [killAllPreviews(), killAllRealms()];
+  const promises: Promise<unknown>[] = [
+    stopExplorerGateway(), // disconnect the AI's Explorer MCP client, then kill its preview
+    killAllPreviews(),
+    killAllRealms(),
+  ];
   if (deployServer) {
     promises.push(deployServer.stop());
   }

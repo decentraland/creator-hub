@@ -1,4 +1,16 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+
+// ai.ts → scene-mcp → explorer-gateway → cli → path.ts calls electron `app.getAppPath()` at
+// import. This suite only tests pure parseLine/PATH helpers, so stub the gateway to keep the
+// module graph node-loadable without an Electron app.
+vi.mock('../src/modules/explorer-gateway', () => ({
+  callExplorerTool: vi.fn(),
+  gatewayProject: () => null,
+  launchPreview: vi.fn(),
+  previewStatus: vi.fn(),
+  stopExplorerGateway: vi.fn(),
+  stopPreview: vi.fn(),
+}));
 
 import { PROVIDERS, nvmBinDirs, parseShellPath } from '../src/modules/ai';
 

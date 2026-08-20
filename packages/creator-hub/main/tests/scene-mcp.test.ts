@@ -11,6 +11,17 @@ import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/
 vi.mock('electron-log/main', () => ({ default: { info: vi.fn(), warn: vi.fn(), error: vi.fn() } }));
 vi.mock('../src/modules/window', () => ({ getWindow: () => undefined }));
 vi.mock('../src/mainWindow', () => ({ MAIN_WINDOW_ID: 'main' }));
+// The Explorer gateway pulls in cli → bin/path (electron `app` at import); the read/mutation
+// tools under test don't touch it, so stub it out. gatewayProject() must return null so
+// setSceneMcpProject doesn't try to tear a gateway down.
+vi.mock('../src/modules/explorer-gateway', () => ({
+  callExplorerTool: vi.fn(),
+  gatewayProject: () => null,
+  launchPreview: vi.fn(),
+  previewStatus: vi.fn(),
+  stopExplorerGateway: vi.fn(),
+  stopPreview: vi.fn(),
+}));
 
 import {
   ensureSceneMcpServer,
@@ -77,14 +88,18 @@ describe('scene-mcp server', () => {
         'create_entity',
         'editor_screenshot',
         'entity_detail',
+        'explorer_call',
         'get_project_info',
+        'launch_preview',
         'place_smart_item',
+        'preview_status',
         'remove_component',
         'remove_entity',
         'scene_state',
         'search_catalog',
         'set_component',
         'set_parent',
+        'stop_preview',
       ].sort(),
     );
     await client.close();

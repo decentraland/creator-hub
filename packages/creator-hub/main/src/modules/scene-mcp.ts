@@ -20,6 +20,14 @@ import { AI_SCENE_OP_REQUEST, AI_SCREENSHOT_REQUEST } from '/shared/types/ipc';
 import { MAIN_WINDOW_ID } from '../mainWindow';
 import { getWindow } from './window';
 import { buildRoster, entityDetail, projectInfo, readComposite } from './scene-composite';
+import {
+  callExplorerTool,
+  gatewayProject,
+  launchPreview,
+  previewStatus,
+  stopExplorerGateway,
+  stopPreview,
+} from './explorer-gateway';
 
 export interface SceneMcpInfo {
   url: string;
@@ -30,6 +38,10 @@ export interface SceneMcpInfo {
 // editor window means a single open project at a time.
 let currentProjectDir: string | null = null;
 export function setSceneMcpProject(projectDir: string | null): void {
+  // A running Explorer preview belongs to one scene; if the open project changed, tear the
+  // gateway down so a later launch_preview starts fresh against the new scene.
+  const running = gatewayProject();
+  if (running !== null && running !== projectDir) void stopExplorerGateway();
   currentProjectDir = projectDir;
 }
 
@@ -404,6 +416,88 @@ function registerTools(server: McpServer): void {
       const res = await requestSceneOp('attach_script', { entity, path, priority });
       if (!res.ok) return fail(String(res.payload));
       return ok(res.payload);
+    },
+  );
+
+  // ---- Explorer gateway (Phase 3): drive a running preview ----
+  server.registerTool(
+    'launch_preview',
+    {
+      title: 'Launch preview',
+      description:
+        'Launch the scene in the Decentraland preview (Explorer) with its runtime tools enabled, and connect to it. Use this to VERIFY your work in the running scene — see it, walk it, click things, read logs and performance. Returns whether the scene is ready and the catalog of runtime tools you can then call with explorer_call. The Explorer takes a while to boot and may need the user signed in; if it comes back not ready, wait and call preview_status (or explorer_call get_scene_state) again. When you are done verifying, leave the camera in third_person (explorer_call set_camera_mode) and call stop_preview if you launched it just to check.',
+      inputSchema: {},
+    },
+    async () => {
+      if (currentProjectDir === null) return fail('No scene is open.');
+      try {
+        return ok(await launchPreview(currentProjectDir));
+      } catch (e) {
+        return fail(`Failed to launch preview: ${String(e instanceof Error ? e.message : e)}`);
+      }
+    },
+  );
+
+  server.registerTool(
+    'preview_status',
+    {
+      title: 'Preview status',
+      description:
+        'Check whether a preview is running and whether its scene has finished loading, plus the runtime tool catalog — without launching anything. Use this to poll for readiness after launch_preview.',
+      inputSchema: {},
+    },
+    async () => {
+      try {
+        return ok(await previewStatus());
+      } catch (e) {
+        return fail(String(e instanceof Error ? e.message : e));
+      }
+    },
+  );
+
+  server.registerTool(
+    'stop_preview',
+    {
+      title: 'Stop preview',
+      description: 'Stop the running preview and disconnect from it. Call when done verifying.',
+      inputSchema: {},
+    },
+    async () => {
+      try {
+        await stopPreview();
+        return ok({ ok: true });
+      } catch (e) {
+        return fail(String(e instanceof Error ? e.message : e));
+      }
+    },
+  );
+
+  server.registerTool(
+    'explorer_call',
+    {
+      title: 'Call an Explorer runtime tool',
+      description:
+        'Run one runtime tool inside the launched preview (screenshot, walk, move_to, look_at, set_camera_mode, click_entity, get_scene_state, get_scene_logs, get_player_state, list_scene_entities, get_entity_details, send_chat, trigger_emote, reload_scene, get_scene_content_stats, get_performance_stats, …). `tool` is the tool name and `arguments` its parameters — both come from the catalog returned by launch_preview. Requires a running preview (launch_preview first). Tips: poll get_scene_state until isReady before acting; read get_scene_logs with sinceSeq to page new logs; end verification with set_camera_mode third_person; screenshots are large, take them sparingly.',
+      inputSchema: {
+        tool: z.string().describe('The Explorer runtime tool name (from launch_preview catalog)'),
+        arguments: z
+          .record(z.string(), z.unknown())
+          .optional()
+          .describe('Arguments object for that tool (its schema is in the catalog)'),
+      },
+    },
+    async ({ tool, arguments: args }) => {
+      try {
+        const res = await callExplorerTool(tool, args ?? {});
+        const content = Array.isArray(res.content) ? res.content : [];
+        if (content.length === 0) {
+          return { content: [{ type: 'text' as const, text: '(no content returned)' }] };
+        }
+        // Pass the Explorer's own content blocks straight through (text + images).
+        return { content: content as never, isError: res.isError };
+      } catch (e) {
+        return fail(String(e instanceof Error ? e.message : e));
+      }
     },
   );
 }
