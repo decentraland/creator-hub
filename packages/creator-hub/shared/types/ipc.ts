@@ -122,7 +122,7 @@ export interface Ipc {
   'ai.detectProviders': () => Promise<AiProviderInfo[]>;
   'ai.send': (path: string, params: AiSendParams) => Promise<{ turnId: string }>;
   'ai.stop': () => Promise<void>;
-  'ai.reset': () => Promise<void>;
+  'ai.reset': (path?: string) => Promise<void>;
   'ai.isBusy': () => Promise<boolean>;
   // Revert the scene-graph changes an AI turn made, by undoing `count` steps (the value
   // the `done` event reported as `mutations`).

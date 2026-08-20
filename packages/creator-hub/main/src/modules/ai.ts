@@ -18,6 +18,7 @@ import type { ChildProcess } from 'child_process';
 import log from 'electron-log/main';
 import type { AiEvent, AiProvider, AiProviderInfo, AiSendParams } from '/shared/types/ai';
 import { DCL_SYSTEM_PROMPT } from './ai-prompt';
+import { getUserDataPath } from './electron';
 import {
   ensureSceneMcpServer,
   getTurnMutations,
@@ -425,11 +426,41 @@ export async function detectProviders(): Promise<AiProviderInfo[]> {
   return scan();
 }
 
-// One turn at a time. `sessions` holds each provider's resume id so consecutive turns
-// chain into a single conversation until aiReset().
+// One turn at a time.
 let current: { child: ChildProcess; turnId: string; done: boolean } | null = null;
-const sessions: Partial<Record<AiProvider, string>> = {};
 let turnSeq = 0;
+
+// Each provider's resume id, per project, so consecutive turns chain into one conversation
+// AND the conversation survives an app restart (persisted to userData). Keyed by project dir
+// because claude/codex validate --resume against the working directory — a session id from
+// another project's cwd is rejected. Loaded lazily (never at module init) so importing this
+// module doesn't require an Electron app (keeps the unit tests electron-free).
+type ProjectSessions = Partial<Record<AiProvider, string>>;
+let sessionsCache: Record<string, ProjectSessions> | null = null;
+
+function sessionsFile(): string {
+  return path.join(getUserDataPath(), 'ai-sessions.json');
+}
+function getSessions(): Record<string, ProjectSessions> {
+  if (sessionsCache === null) {
+    try {
+      sessionsCache = JSON.parse(fs.readFileSync(sessionsFile(), 'utf8')) as Record<
+        string,
+        ProjectSessions
+      >;
+    } catch {
+      sessionsCache = {}; // no file yet, or unreadable — start fresh
+    }
+  }
+  return sessionsCache;
+}
+function saveSessions(): void {
+  try {
+    fs.writeFileSync(sessionsFile(), JSON.stringify(getSessions()));
+  } catch (e) {
+    log.warn('[AI] could not persist AI sessions:', e);
+  }
+}
 
 function killTree(child: ChildProcess): void {
   child.stdout?.removeAllListeners('data');
@@ -463,10 +494,14 @@ export function aiStop(): void {
   }
 }
 
-export function aiReset(): void {
+// Drop the resume ids so the next turn starts a fresh conversation. Scoped to one project
+// when given (the usual "New chat"); clears everything when not (e.g. a full teardown).
+export function aiReset(projectDir?: string): void {
   aiStop();
-  delete sessions.claude;
-  delete sessions.codex;
+  const store = getSessions();
+  if (projectDir !== undefined) delete store[projectDir];
+  else for (const key of Object.keys(store)) delete store[key];
+  saveSessions();
 }
 
 // Attached images, written to one temp dir per turn. Kept for the whole app session
@@ -552,7 +587,7 @@ export async function aiSend(
     text: prompt,
     model: params.model,
     projectDir,
-    resume: sessions[params.provider],
+    resume: getSessions()[projectDir]?.[params.provider],
     images,
     mcp,
   });
@@ -599,7 +634,11 @@ export async function aiSend(
       if (text !== '') emit({ kind: 'text', turnId, text });
       if (tool !== undefined) emit({ kind: 'tool', turnId, tool: tool[0], detail: tool[1] });
     });
-    if (session !== undefined) sessions[params.provider] = session;
+    if (session !== undefined) {
+      const store = getSessions();
+      (store[projectDir] ??= {})[params.provider] = session;
+      saveSessions(); // persist so the conversation resumes after an app restart
+    }
   };
 
   child.stdout?.on('data', (d: Buffer) => {

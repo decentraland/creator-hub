@@ -4,6 +4,7 @@ import { ai } from '#preload';
 import type { AiEvent, AiProvider } from '/shared/types/ai';
 
 import { createAsyncThunk } from '/@/modules/store/thunk';
+import { clearStoredConversation, readConversation, writeConversation } from './persistence';
 import type { AiMessage, AiState } from './types';
 
 const initialState: AiState = {
@@ -59,11 +60,34 @@ export const stop = createAsyncThunk('ai/stop', async (_: void, { dispatch }) =>
   dispatch(actions.stopped());
 });
 
-// Start a fresh conversation: drop the resume ids in main and clear the transcript.
-export const newChat = createAsyncThunk('ai/newChat', async (_: void, { dispatch }) => {
-  await ai.reset();
+// Start a fresh conversation: drop the resume ids in main, the saved transcript on disk, and
+// the in-memory transcript — all scoped to the open project.
+export const newChat = createAsyncThunk('ai/newChat', async (_: void, { getState, dispatch }) => {
+  const path = getState().editor.project?.path;
+  await ai.reset(path);
+  if (path !== undefined && path !== '') clearStoredConversation(path);
   dispatch(actions.clearConversation());
 });
+
+// Load a project's saved transcript into the panel (called when the panel opens / the project
+// changes). Skips while a turn is running so it can't clobber an in-flight conversation.
+export const loadConversation = createAsyncThunk<void, string>(
+  'ai/loadConversation',
+  (path, { getState, dispatch }) => {
+    if (getState().ai.busy) return;
+    dispatch(actions.hydrate(readConversation(path)));
+  },
+);
+
+// Save the open project's transcript (called when a turn completes) so it survives a restart.
+export const persistConversation = createAsyncThunk(
+  'ai/persistConversation',
+  (_: void, { getState }) => {
+    const { ai: aiState, editor } = getState();
+    const path = editor.project?.path;
+    if (path !== undefined && path !== '') writeConversation(path, aiState.messages);
+  },
+);
 
 // Revert the scene-graph changes an assistant turn made (undo its `mutations` steps).
 export const revertTurn = createAsyncThunk<void, { id: string; count: number }>(
@@ -163,6 +187,11 @@ const slice = createSlice({
       state.messages = [];
       state.busy = false;
     },
+    // Replace the transcript with a project's saved one (on open). Selection isn't restored —
+    // it's re-polled live from the editor.
+    hydrate: (state, { payload }: PayloadAction<AiMessage[]>) => {
+      state.messages = payload;
+    },
     markReverted: (state, { payload }: PayloadAction<string>) => {
       const msg = state.messages.find(m => m.id === payload);
       if (msg !== undefined) msg.reverted = true;
@@ -203,5 +232,14 @@ const slice = createSlice({
   },
 });
 
-export const actions = { ...slice.actions, fetchProviders, send, stop, newChat, revertTurn };
+export const actions = {
+  ...slice.actions,
+  fetchProviders,
+  send,
+  stop,
+  newChat,
+  revertTurn,
+  loadConversation,
+  persistConversation,
+};
 export const reducer = slice.reducer;

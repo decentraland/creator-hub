@@ -130,7 +130,7 @@ export function initIpc({ beforeQuitCleanup }: InitIpcOptions) {
     });
   });
   handle('ai.stop', async () => ai.aiStop());
-  handle('ai.reset', async () => ai.aiReset());
+  handle('ai.reset', async (_event, path) => ai.aiReset(path));
   handle('ai.isBusy', async () => ai.aiBusy());
   handle('ai.screenshotResult', (_event, id, dataUrl) => resolveEditorScreenshot(id, dataUrl));
   handle('ai.sceneOpResult', (_event, id, ok, payload) => resolveSceneOp(id, ok, payload));

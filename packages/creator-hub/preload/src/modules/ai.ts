@@ -27,8 +27,8 @@ export async function stop(): Promise<void> {
   return invoke('ai.stop');
 }
 
-export async function reset(): Promise<void> {
-  return invoke('ai.reset');
+export async function reset(path?: string): Promise<void> {
+  return invoke('ai.reset', path);
 }
 
 export async function isBusy(): Promise<boolean> {

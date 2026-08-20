@@ -78,18 +78,28 @@ export function AiChatPanel({ onClose }: Props) {
   const { providers, provider, messages, busy, detecting, selection } = useSelector(
     state => state.ai,
   );
+  const projectPath = useSelector(state => state.editor.project?.path);
   const [input, setInput] = useState('');
   const transcriptRef = useRef<HTMLDivElement>(null);
 
   // Detect installed CLIs on mount, and subscribe to the turn event stream for the
-  // panel's lifetime — folding each event into the transcript.
+  // panel's lifetime — folding each event into the transcript and saving the transcript
+  // when a turn completes so it survives an app restart.
   useEffect(() => {
     dispatch(aiActions.fetchProviders());
     const { cleanup } = aiPreload.subscribeAiStream(event => {
       dispatch(aiActions.applyEvent(event));
+      if (event.kind === 'done') dispatch(aiActions.persistConversation());
     });
     return cleanup;
   }, [dispatch]);
+
+  // Restore the open project's saved conversation when the panel opens / the project changes.
+  useEffect(() => {
+    if (projectPath !== undefined && projectPath !== '') {
+      dispatch(aiActions.loadConversation(projectPath));
+    }
+  }, [projectPath, dispatch]);
 
   // Keep the newest message in view as text streams in.
   useEffect(() => {
