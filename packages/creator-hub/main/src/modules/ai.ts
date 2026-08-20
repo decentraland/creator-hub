@@ -22,6 +22,7 @@ import {
   ensureSceneMcpServer,
   getTurnMutations,
   resetTurnMutations,
+  type SceneMcpInfo,
   setSceneMcpProject,
   writeSceneMcpConfigFile,
 } from './scene-mcp';
@@ -197,7 +198,7 @@ interface TurnCtx {
   projectDir: string;
   resume?: string;
   images: string[]; // temp-file paths of attached images (already written to disk)
-  mcpConfigPath?: string; // CH MCP server config file (scene read tools), when available
+  mcp?: SceneMcpInfo; // CH MCP server (scene + gateway tools); each provider wires it its own way
 }
 
 // A provider = how to find its binary + how to turn a turn into an argv + how to read
@@ -250,6 +251,11 @@ function toolDetail(tool: string, inp: Record<string, unknown>, projectDir: stri
   return '';
 }
 
+// Codex reads the CH MCP server's bearer token from this env var (via the server config's
+// `bearer_token_env_var`) rather than from argv — argv is visible to `ps` on the machine,
+// and the token gates local scene control. aiSend sets it in the codex child's env.
+const CODEX_MCP_TOKEN_ENV = 'CREATOR_HUB_MCP_TOKEN';
+
 // Exported for the parser tests: parseLine tracks two external CLIs' output formats, so
 // a format change has to be caught by something.
 export const PROVIDERS: Record<AiProvider, ProviderDef> = {
@@ -279,10 +285,10 @@ export const PROVIDERS: Record<AiProvider, ProviderDef> = {
       ];
       if (ctx.model !== undefined && ctx.model !== 'default') args.push('--model', ctx.model);
       if (ctx.resume !== undefined) args.push('--resume', ctx.resume);
-      // The CH MCP server (read-only scene tools). Merged with the user's own MCP
-      // config, not strict — their servers stay available too. bypassPermissions
+      // The CH MCP server (scene + Explorer-gateway tools). Merged with the user's own
+      // MCP config, not strict — their servers stay available too. bypassPermissions
       // auto-allows the tool calls.
-      if (ctx.mcpConfigPath !== undefined) args.push('--mcp-config', ctx.mcpConfigPath);
+      if (ctx.mcp !== undefined) args.push('--mcp-config', writeSceneMcpConfigFile(ctx.mcp));
       // images travel as paths inside the prompt — claude's Read tool renders image
       // files natively, no dedicated flag exists (or is needed)
       return args;
@@ -348,6 +354,14 @@ export const PROVIDERS: Record<AiProvider, ProviderDef> = {
         'approval_policy="never"',
         '--skip-git-repo-check',
       ];
+      // The CH MCP server (scene + Explorer-gateway tools), as a streamable-HTTP MCP server
+      // defined via `-c` overrides (codex ≥0.148 supports HTTP natively; no flag). The `-c`
+      // value after `=` is parsed as TOML, so the strings carry their own quotes. The bearer
+      // token comes from an env var (set on the child in aiSend), not argv.
+      if (ctx.mcp !== undefined) {
+        args.push('-c', `mcp_servers.creator-hub.url="${ctx.mcp.url}"`);
+        args.push('-c', `mcp_servers.creator-hub.bearer_token_env_var="${CODEX_MCP_TOKEN_ENV}"`);
+      }
       if (ctx.model !== undefined && ctx.model !== 'default') args.push('--model', ctx.model);
       for (const img of ctx.images) args.push('-i', img); // codex's native image flag
       // `codex exec` has no system-prompt flag, so the rules ride in front of the prompt
@@ -507,19 +521,16 @@ export async function aiSend(
     log.warn('[AI] could not link SDK skills:', e);
   }
 
-  // Point the CH MCP server at this project and hand its config to the CLI. If the
-  // server can't start, degrade gracefully — the turn still runs, just without the
-  // scene read tools (the CLI can still read files directly). Claude only for now;
-  // Codex MCP wiring is a later phase.
-  let mcpConfigPath: string | undefined;
-  if (params.provider === 'claude') {
-    try {
-      const mcp = await ensureSceneMcpServer();
-      setSceneMcpProject(projectDir);
-      mcpConfigPath = writeSceneMcpConfigFile(mcp);
-    } catch (e) {
-      log.warn('[AI] MCP server unavailable, continuing without scene tools:', e);
-    }
+  // Point the CH MCP server at this project and hand it to the CLI (both providers get the
+  // scene + Explorer-gateway tools; each wires the server its own way in buildArgs). If the
+  // server can't start, degrade gracefully — the turn still runs without the tools (the CLI
+  // can still read files directly).
+  let mcp: SceneMcpInfo | undefined;
+  try {
+    mcp = await ensureSceneMcpServer();
+    setSceneMcpProject(projectDir);
+  } catch (e) {
+    log.warn('[AI] MCP server unavailable, continuing without scene tools:', e);
   }
 
   aiStop(); // supersede any in-flight turn
@@ -543,14 +554,19 @@ export async function aiSend(
     projectDir,
     resume: sessions[params.provider],
     images,
-    mcpConfigPath,
+    mcp,
   });
+
+  const env = childEnv();
+  // Codex reads the MCP bearer token from this env var (see CODEX_MCP_TOKEN_ENV); keeping it
+  // out of argv. Claude gets the token via its --mcp-config file instead, so it needs nothing here.
+  if (params.provider === 'codex' && mcp !== undefined) env[CODEX_MCP_TOKEN_ENV] = mcp.token;
 
   let child: ChildProcess;
   try {
     child = spawn(bin, args, {
       cwd: projectDir,
-      env: childEnv(),
+      env,
       stdio: ['ignore', 'pipe', 'pipe'],
       detached: process.platform !== 'win32', // own process group so killTree reaps children
     });

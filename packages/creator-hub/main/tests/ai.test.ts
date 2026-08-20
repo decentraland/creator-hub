@@ -169,3 +169,33 @@ describe('nvmBinDirs', () => {
     expect(nvmBinDirs('/definitely/not/a/real/nvm/root')).toEqual([]);
   });
 });
+
+// Both providers must receive the CH MCP server (scene + Explorer-gateway tools) — the
+// point of Codex parity — each in its own format, and never leak the token via argv.
+describe('buildArgs MCP wiring', () => {
+  const MCP = { url: 'http://127.0.0.1:65000/mcp', token: 'secret-token-xyz' };
+  const base = { text: 'hi', projectDir: PROJECT, images: [] as string[] };
+
+  it('claude: passes --mcp-config a file path (token rides in the file, not argv)', () => {
+    const args = PROVIDERS.claude.buildArgs({ ...base, mcp: MCP });
+    const i = args.indexOf('--mcp-config');
+    expect(i).toBeGreaterThan(-1);
+    expect(typeof args[i + 1]).toBe('string');
+    expect(args.join(' ')).not.toContain(MCP.token); // token is in the file, never on the command line
+  });
+
+  it('claude: no --mcp-config when the server is unavailable', () => {
+    expect(PROVIDERS.claude.buildArgs({ ...base }).join(' ')).not.toContain('--mcp-config');
+  });
+
+  it('codex: defines the HTTP MCP server via -c overrides, token via env var not argv', () => {
+    const args = PROVIDERS.codex.buildArgs({ ...base, mcp: MCP });
+    expect(args).toContain(`mcp_servers.creator-hub.url="${MCP.url}"`);
+    expect(args).toContain('mcp_servers.creator-hub.bearer_token_env_var="CREATOR_HUB_MCP_TOKEN"');
+    expect(args.join(' ')).not.toContain(MCP.token); // token comes from the child env, never argv
+  });
+
+  it('codex: no mcp_servers override when the server is unavailable', () => {
+    expect(PROVIDERS.codex.buildArgs({ ...base }).join(' ')).not.toContain('mcp_servers');
+  });
+});
