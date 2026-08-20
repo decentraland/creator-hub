@@ -12,9 +12,10 @@ import fs from 'fs';
 import path from 'path';
 import { randomBytes, randomUUID } from 'crypto';
 import log from 'electron-log/main';
-import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { McpServer, type RegisteredTool } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
-import { z } from 'zod';
+import { isInitializeRequest } from '@modelcontextprotocol/sdk/types.js';
+import { z, type ZodRawShape, type ZodTypeAny } from 'zod';
 
 import { AI_SCENE_OP_REQUEST, AI_SCREENSHOT_REQUEST } from '/shared/types/ipc';
 import { MAIN_WINDOW_ID } from '../mainWindow';
@@ -22,8 +23,11 @@ import { getWindow } from './window';
 import { buildRoster, entityDetail, projectInfo, readComposite } from './scene-composite';
 import {
   callExplorerTool,
+  type ExplorerTool,
+  explorerTools,
   gatewayProject,
   launchPreview,
+  onExplorerToolsChanged,
   previewStatus,
   stopExplorerGateway,
   stopPreview,
@@ -517,10 +521,124 @@ function registerTools(server: McpServer): void {
   );
 }
 
+// ---- Dynamic explorer_* tools ----
+// While a preview is running the gateway exposes the Explorer's runtime tools; we register
+// one first-class `explorer_<name>` tool per entry so the assistant gets typed, discoverable
+// tools (not just the explorer_call passthrough, which stays as a fallback). They appear and
+// disappear live via tools/list_changed as previews start and stop — which is why this server
+// is stateful (a session to push the notification over).
+
+// Minimal JSON-Schema → Zod raw-shape conversion for the Explorer's tool input schemas, which
+// are flat objects of primitives. Unknown/unsupported shapes degrade to z.unknown() so the
+// tool is still callable; the Explorer does the real validation.
+function jsonSchemaToZodShape(schema: unknown): ZodRawShape {
+  const shape: Record<string, ZodTypeAny> = {};
+  if (typeof schema !== 'object' || schema === null) return shape;
+  const s = schema as {
+    properties?: Record<string, { type?: string; description?: string }>;
+    required?: string[];
+  };
+  const required = new Set(s.required ?? []);
+  for (const [key, prop] of Object.entries(s.properties ?? {})) {
+    let zt: ZodTypeAny;
+    switch (prop?.type) {
+      case 'string':
+        zt = z.string();
+        break;
+      case 'number':
+      case 'integer':
+        zt = z.number();
+        break;
+      case 'boolean':
+        zt = z.boolean();
+        break;
+      case 'array':
+        zt = z.array(z.unknown());
+        break;
+      case 'object':
+        zt = z.record(z.string(), z.unknown());
+        break;
+      default:
+        zt = z.unknown();
+    }
+    if (typeof prop?.description === 'string' && prop.description !== '') {
+      zt = zt.describe(prop.description);
+    }
+    shape[key] = required.has(key) ? zt : zt.optional();
+  }
+  return shape;
+}
+
+function registerOneExplorerTool(server: McpServer, tool: ExplorerTool): RegisteredTool {
+  return server.registerTool(
+    `explorer_${tool.name}`,
+    {
+      title: tool.name,
+      description: `${tool.description ?? `Explorer runtime tool "${tool.name}".`} (Runs in the launched preview; requires launch_preview.)`,
+      inputSchema: jsonSchemaToZodShape(tool.inputSchema),
+    },
+    async (args: Record<string, unknown>) => {
+      try {
+        const res = await callExplorerTool(tool.name, args ?? {});
+        const content = Array.isArray(res.content) ? res.content : [];
+        if (content.length === 0) {
+          return { content: [{ type: 'text' as const, text: '(no content returned)' }] };
+        }
+        return { content: content as never, isError: res.isError };
+      } catch (e) {
+        return fail(String(e instanceof Error ? e.message : e));
+      }
+    },
+  );
+}
+
+// A live MCP session: its server, transport, and the explorer_* tool handles registered on
+// it (so we can add/remove them and let McpServer push tools/list_changed).
+interface Session {
+  server: McpServer;
+  transport: StreamableHTTPServerTransport;
+  explorerHandles: Map<string, RegisteredTool>;
+}
+const sessions = new Map<string, Session>();
+
+// Reconcile one session's explorer_* tools against the gateway's current tool set. Registering
+// or removing a tool on a connected McpServer makes it emit tools/list_changed automatically.
+function syncSessionExplorerTools(session: Session): void {
+  const desired = new Map(explorerTools().map(t => [t.name, t]));
+  for (const [name, handle] of session.explorerHandles) {
+    if (!desired.has(name)) {
+      handle.remove();
+      session.explorerHandles.delete(name);
+    }
+  }
+  for (const [name, tool] of desired) {
+    if (!session.explorerHandles.has(name)) {
+      session.explorerHandles.set(name, registerOneExplorerTool(session.server, tool));
+    }
+  }
+}
+
+function syncAllSessionsExplorerTools(): void {
+  for (const session of sessions.values()) syncSessionExplorerTools(session);
+}
+
 let starting: Promise<SceneMcpInfo> | null = null;
 let httpServer: http.Server | null = null;
 let info: SceneMcpInfo | null = null;
+let unsubscribeGatewayTools: (() => void) | null = null;
 const AUTH_TOKEN = randomBytes(24).toString('hex');
+
+// Build a fresh MCP server for a new session: the static tools plus whatever explorer_* tools
+// the running preview currently exposes.
+function buildSessionServer(): { server: McpServer; explorerHandles: Map<string, RegisteredTool> } {
+  const server = new McpServer({ name: 'creator-hub', version: '1.0.0' });
+  registerTools(server);
+  const explorerHandles = new Map<string, RegisteredTool>();
+  for (const tool of explorerTools()) {
+    explorerHandles.set(tool.name, registerOneExplorerTool(server, tool));
+  }
+  return { server, explorerHandles };
+}
 
 function readBody(req: http.IncomingMessage): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -538,6 +656,10 @@ export function ensureSceneMcpServer(): Promise<SceneMcpInfo> {
   if (starting !== null) return starting;
 
   starting = (async () => {
+    // Keep every live session's explorer_* tools in sync as previews start/stop; each
+    // McpServer emits tools/list_changed to its own client when its tool set changes.
+    unsubscribeGatewayTools = onExplorerToolsChanged(() => syncAllSessionsExplorerTools());
+
     httpServer = http.createServer((req, res) => {
       void (async () => {
         // Only /mcp, and only with our bearer token — this port is localhost but a token
@@ -552,26 +674,61 @@ export function ensureSceneMcpServer(): Promise<SceneMcpInfo> {
           res.writeHead(404).end('Not found');
           return;
         }
-        // Stateless: a fresh McpServer + transport per POST. A single shared stateful
-        // transport rejects any second `initialize` ("Server already initialized"),
-        // which breaks the CLI client — so every request stands on its own. We serve
-        // request/response only (no SSE session), which is all the read tools need.
-        if (req.method !== 'POST') {
-          res.writeHead(405).end('Method not allowed');
-          return;
-        }
+        // Stateful streamable HTTP with one transport per session, routed by the
+        // `Mcp-Session-Id` header. (The earlier "already initialized" failure was from
+        // sharing ONE transport across requests — the correct fix is one per session, which
+        // is also what lets the server push tools/list_changed so explorer_* tools can appear
+        // and disappear live as previews start/stop.)
+        const sessionId = req.headers['mcp-session-id'] as string | undefined;
         try {
-          const raw = await readBody(req);
-          const parsed = raw === '' ? undefined : JSON.parse(raw);
-          const server = new McpServer({ name: 'creator-hub', version: '1.0.0' });
-          registerTools(server);
-          const transport = new StreamableHTTPServerTransport({ sessionIdGenerator: undefined });
-          res.on('close', () => {
-            void transport.close();
-            void server.close();
-          });
-          await server.connect(transport);
-          await transport.handleRequest(req, res, parsed);
+          if (req.method === 'POST') {
+            const raw = await readBody(req);
+            const parsed = raw === '' ? undefined : JSON.parse(raw);
+            const existing = sessionId ? sessions.get(sessionId) : undefined;
+            if (existing !== undefined) {
+              await existing.transport.handleRequest(req, res, parsed);
+              return;
+            }
+            if (sessionId === undefined && isInitializeRequest(parsed)) {
+              const { server, explorerHandles } = buildSessionServer();
+              const transport = new StreamableHTTPServerTransport({
+                sessionIdGenerator: () => randomUUID(),
+                onsessioninitialized: sid => {
+                  const session = { server, transport, explorerHandles };
+                  sessions.set(sid, session);
+                  // Reconcile against the latest tool set in case a preview started during init.
+                  syncSessionExplorerTools(session);
+                },
+              });
+              transport.onclose = () => {
+                if (transport.sessionId !== undefined) sessions.delete(transport.sessionId);
+                void server.close();
+              };
+              await server.connect(transport);
+              await transport.handleRequest(req, res, parsed);
+              return;
+            }
+            res.writeHead(400, { 'Content-Type': 'application/json' }).end(
+              JSON.stringify({
+                jsonrpc: '2.0',
+                error: { code: -32000, message: 'No valid session id, and not an initialize' },
+                id: null,
+              }),
+            );
+            return;
+          }
+          // GET opens the server→client SSE stream (used for tools/list_changed); DELETE ends
+          // a session. Both must carry a known session id.
+          if (req.method === 'GET' || req.method === 'DELETE') {
+            const existing = sessionId ? sessions.get(sessionId) : undefined;
+            if (existing === undefined) {
+              res.writeHead(400).end('Missing or unknown session id');
+              return;
+            }
+            await existing.transport.handleRequest(req, res);
+            return;
+          }
+          res.writeHead(405).end('Method not allowed');
         } catch (e) {
           log.error('[MCP] request failed:', e);
           if (!res.headersSent) res.writeHead(500).end('Internal error');
@@ -594,6 +751,13 @@ export function ensureSceneMcpServer(): Promise<SceneMcpInfo> {
 }
 
 export function stopSceneMcpServer(): void {
+  unsubscribeGatewayTools?.();
+  unsubscribeGatewayTools = null;
+  for (const session of sessions.values()) {
+    void session.transport.close();
+    void session.server.close();
+  }
+  sessions.clear();
   httpServer?.close();
   httpServer = null;
   info = null;

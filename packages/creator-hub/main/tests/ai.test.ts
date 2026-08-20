@@ -5,6 +5,8 @@ import { describe, expect, it, vi } from 'vitest';
 // module graph node-loadable without an Electron app.
 vi.mock('../src/modules/explorer-gateway', () => ({
   callExplorerTool: vi.fn(),
+  explorerTools: () => [],
+  onExplorerToolsChanged: () => () => {},
   gatewayProject: () => null,
   launchPreview: vi.fn(),
   previewStatus: vi.fn(),

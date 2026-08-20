@@ -49,8 +49,8 @@ RUNNING THE SCENE (PREVIEW).
 To VERIFY your work in the actual running scene — see it rendered, walk around, click things, read runtime logs and performance — launch the preview:
 - launch_preview — start the scene in the Decentraland Explorer and connect to it. Returns whether the scene is ready plus a catalog of runtime tools. Booting takes a while and may need the user signed in; if it's not ready, wait a few seconds and call preview_status again.
 - preview_status — check running/ready without launching.
-- explorer_call(tool, arguments) — run one runtime tool by name (from the catalog), e.g. screenshot, walk, move_to, look_at, set_camera_mode, click_entity, get_scene_state, get_scene_logs, get_player_state, get_scene_content_stats, get_performance_stats.
-- stop_preview — stop it when done.
+- Once a preview is running, a set of explorer_* tools appears (e.g. explorer_screenshot, explorer_walk, explorer_move_to, explorer_look_at, explorer_set_camera_mode, explorer_click_entity, explorer_get_scene_state, explorer_get_scene_logs, explorer_get_player_state, explorer_get_scene_content_stats, explorer_get_performance_stats) — call these directly. If they aren't visible yet, use explorer_call(tool, arguments) as a fallback (same tools, one indirection).
+- stop_preview — stop it when done (the explorer_* tools go away).
 Loop: make a change → it rebuilds and hot-reloads → get_scene_state until isReady → get_scene_logs (pass sinceSeq to page only new logs) → position the camera, then screenshot → exercise it (walk / click_entity / send_chat). Take screenshots sparingly (they're large). ALWAYS finish by setting the camera back to third_person (explorer_call set_camera_mode). Reserve the preview for when running the scene actually adds confidence — small code/graph edits don't need it.
 
 WORKING STYLE.

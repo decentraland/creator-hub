@@ -234,6 +234,7 @@ async function doLaunch(projectDir: string): Promise<PreviewStatus> {
   }
 
   gateway = { projectDir, port, client, transport, tools };
+  notifyExplorerToolsChanged(); // the explorer_* tools are now available to register
   const ready = await pollReady(client);
   return status(ready);
 }
@@ -263,6 +264,29 @@ function status(ready: boolean): PreviewStatus {
   };
 }
 
+// The Explorer tools currently available to proxy (empty when no preview is connected).
+// The MCP server registers one `explorer_<name>` tool per entry and re-syncs on change.
+export function explorerTools(): ExplorerTool[] {
+  return gateway?.tools ?? [];
+}
+
+// Listeners notified whenever the proxied tool set changes (a preview connected or stopped),
+// so the MCP server can add/remove its `explorer_*` tools and push tools/list_changed.
+const toolsChangedListeners = new Set<() => void>();
+export function onExplorerToolsChanged(cb: () => void): () => void {
+  toolsChangedListeners.add(cb);
+  return () => toolsChangedListeners.delete(cb);
+}
+function notifyExplorerToolsChanged(): void {
+  for (const cb of toolsChangedListeners) {
+    try {
+      cb();
+    } catch (e) {
+      log.warn('[Gateway] tools-changed listener threw:', e);
+    }
+  }
+}
+
 // Launch (or reuse) a preview for the scene with its MCP server, connect to it, and report
 // readiness + the proxied tool catalog. Serialized so concurrent calls ride one boot.
 export function launchPreview(projectDir: string): Promise<PreviewStatus> {
@@ -277,6 +301,7 @@ export async function stopPreview(): Promise<void> {
   if (gateway === null) return;
   const g = gateway;
   gateway = null;
+  notifyExplorerToolsChanged(); // the explorer_* tools are gone now
   await teardown(g);
 }
 

@@ -4,6 +4,7 @@ import path from 'path';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
+import { ToolListChangedNotificationSchema } from '@modelcontextprotocol/sdk/types.js';
 
 // scene-mcp pulls electron transitively (window + mainWindow, used only by the screenshot
 // tool). Mock those so the module imports in the node test env; the read tools don't need
@@ -13,9 +14,28 @@ vi.mock('../src/modules/window', () => ({ getWindow: () => undefined }));
 vi.mock('../src/mainWindow', () => ({ MAIN_WINDOW_ID: 'main' }));
 // The Explorer gateway pulls in cli → bin/path (electron `app` at import); the read/mutation
 // tools under test don't touch it, so stub it out. gatewayProject() must return null so
-// setSceneMcpProject doesn't try to tear a gateway down.
+// setSceneMcpProject doesn't try to tear a gateway down. `explorerTools`/`onExplorerToolsChanged`
+// are made controllable so a test can drive the dynamic explorer_* registration + list_changed.
+const gatewayMock = vi.hoisted(() => {
+  let tools: Array<{ name: string; description?: string; inputSchema?: unknown }> = [];
+  const listeners = new Set<() => void>();
+  return {
+    setTools(next: typeof tools) {
+      tools = next;
+      for (const cb of listeners) cb();
+    },
+    explorerTools: () => tools,
+    onExplorerToolsChanged: (cb: () => void) => {
+      listeners.add(cb);
+      return () => listeners.delete(cb);
+    },
+    callExplorerTool: vi.fn(async () => ({ content: [{ type: 'text', text: 'ok' }] })),
+  };
+});
 vi.mock('../src/modules/explorer-gateway', () => ({
-  callExplorerTool: vi.fn(),
+  callExplorerTool: gatewayMock.callExplorerTool,
+  explorerTools: gatewayMock.explorerTools,
+  onExplorerToolsChanged: gatewayMock.onExplorerToolsChanged,
   gatewayProject: () => null,
   launchPreview: vi.fn(),
   previewStatus: vi.fn(),
@@ -133,9 +153,10 @@ describe('scene-mcp server', () => {
     await client.close();
   });
 
-  // The regression guard for the stateless fix: a second independent client must be able
-  // to `initialize` too. A single shared stateful transport would reject it with
-  // "Server already initialized".
+  // Regression guard for the session-routing fix: a second independent client must be able
+  // to `initialize` too. The original bug shared ONE transport across requests, so the
+  // second initialize was rejected with "Server already initialized"; per-session transports
+  // fix it (and are what lets the server push tools/list_changed).
   it('accepts a second, independent client connection', async () => {
     const a = await open(info.token);
     const b = await open(info.token);
@@ -146,5 +167,43 @@ describe('scene-mcp server', () => {
 
   it('rejects a wrong bearer token', async () => {
     await expect(open('not-the-token')).rejects.toBeTruthy();
+  });
+
+  // Dynamic explorer_* tools: when a preview connects/disconnects, the gateway's tool set
+  // changes and each live session must gain/lose the matching explorer_<name> tools and be
+  // told via tools/list_changed.
+  it('registers and removes explorer_* tools live and notifies the client', async () => {
+    gatewayMock.setTools([]); // start with no preview
+    const client = await open(info.token);
+    let changed = 0;
+    client.setNotificationHandler(ToolListChangedNotificationSchema, () => {
+      changed++;
+    });
+
+    const before = (await client.listTools()).tools.map(t => t.name);
+    expect(before).not.toContain('explorer_walk');
+
+    // a preview connects, exposing a `walk` tool
+    gatewayMock.setTools([
+      {
+        name: 'walk',
+        description: 'Walk the avatar',
+        inputSchema: { type: 'object', properties: { seconds: { type: 'number' } } },
+      },
+    ]);
+    await vi.waitFor(async () => {
+      const names = (await client.listTools()).tools.map(t => t.name);
+      expect(names).toContain('explorer_walk');
+    });
+
+    // the preview stops
+    gatewayMock.setTools([]);
+    await vi.waitFor(async () => {
+      const names = (await client.listTools()).tools.map(t => t.name);
+      expect(names).not.toContain('explorer_walk');
+    });
+
+    await vi.waitFor(() => expect(changed).toBeGreaterThan(0)); // list_changed was pushed
+    await client.close();
   });
 });
