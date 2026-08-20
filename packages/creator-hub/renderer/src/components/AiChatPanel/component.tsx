@@ -25,6 +25,7 @@ import { useDispatch, useSelector } from '#store';
 import { actions as aiActions } from '/@/modules/store/ai';
 import { t } from '/@/modules/store/translation/utils';
 
+import { toolChipLabel } from './labels';
 import {
   AssistantBubble,
   AssistantText,
@@ -46,21 +47,6 @@ import {
   Transcript,
   UserBubble,
 } from './component.styled';
-
-// Verb shown for a tool chip, keyed by the CLI's tool name. Reads collapse to a plain
-// verb; unknown tools fall back to the raw name.
-const TOOL_VERBS: Record<string, string> = {
-  Read: 'Read',
-  Edit: 'Edited',
-  Write: 'Created',
-  Bash: 'Ran',
-  Run: 'Ran',
-  Grep: 'Searched',
-  Glob: 'Searched',
-  WebSearch: 'Searched',
-  WebFetch: 'Fetched',
-  Task: 'Task',
-};
 
 // Install + sign-in commands per provider, shown on the setup card when the CLI isn't
 // found. Obviously-safe public package names.
@@ -177,7 +163,7 @@ export function AiChatPanel({ onClose }: Props) {
         <AssistantBubble key={msg.id}>
           {msg.tools.map((chip, i) => (
             <ToolChip key={i}>
-              <span>{TOOL_VERBS[chip.tool] ?? chip.tool}</span>
+              <span>{toolChipLabel(chip.tool)}</span>
               {chip.detail !== '' && <ToolDetail>{chip.detail}</ToolDetail>}
             </ToolChip>
           ))}

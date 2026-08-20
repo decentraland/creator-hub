@@ -417,6 +417,9 @@ export const PROVIDERS: Record<AiProvider, ProviderDef> = {
           text?: string;
           command?: string;
           changes?: Array<{ path?: string }>;
+          server?: string; // mcp_tool_call: the MCP server name (e.g. "creator-hub")
+          tool?: string; // mcp_tool_call: the tool name
+          query?: string; // web_search
         };
       };
       try {
@@ -434,6 +437,11 @@ export const PROVIDERS: Record<AiProvider, ProviderDef> = {
           for (const ch of item.changes ?? []) emit('', ['Edit', rel(projectDir, ch.path ?? '')]);
         else if (item.type === 'command_execution' && item.command !== undefined)
           emit('', ['Run', item.command]);
+        // Scene/Explorer MCP tool calls → the same `mcp__<server>__<tool>` chip claude emits,
+        // so the panel renders a readable tool name (create entity, screenshot, …).
+        else if (item.type === 'mcp_tool_call' && item.tool !== undefined)
+          emit('', [`mcp__${item.server ?? 'mcp'}__${item.tool}`, '']);
+        else if (item.type === 'web_search') emit('', ['WebSearch', item.query ?? '']);
       }
       return undefined;
     },

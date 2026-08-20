@@ -147,6 +147,34 @@ describe('codex parseLine', () => {
     expect(tools).toEqual([['Run', 'ls -la']]);
   });
 
+  it('emits an MCP tool-call chip in the same mcp__server__tool format claude uses', () => {
+    const { tools } = run(
+      'codex',
+      JSON.stringify({
+        type: 'item.completed',
+        item: {
+          id: 'x',
+          type: 'mcp_tool_call',
+          server: 'creator-hub',
+          tool: 'create_entity',
+          status: 'completed',
+        },
+      }),
+    );
+    expect(tools).toEqual([['mcp__creator-hub__create_entity', '']]);
+  });
+
+  it('emits a WebSearch chip for a web_search item', () => {
+    const { tools } = run(
+      'codex',
+      JSON.stringify({
+        type: 'item.completed',
+        item: { id: 'x', type: 'web_search', query: 'decentraland sdk docs' },
+      }),
+    );
+    expect(tools).toEqual([['WebSearch', 'decentraland sdk docs']]);
+  });
+
   it('ignores partial (non-completed) items', () => {
     const { texts, tools } = run(
       'codex',
