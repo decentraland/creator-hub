@@ -124,6 +124,9 @@ export interface Ipc {
   'ai.stop': () => Promise<void>;
   'ai.reset': () => Promise<void>;
   'ai.isBusy': () => Promise<boolean>;
+  // Revert the scene-graph changes an AI turn made, by undoing `count` steps (the value
+  // the `done` event reported as `mutations`).
+  'ai.revertTurn': (count: number) => Promise<void>;
   // Renderer's answer to an AI_SCREENSHOT_REQUEST: the captured image as a data URL, or
   // null if the capture failed (e.g. the Bevy renderer, which has no screenshot RPC).
   'ai.screenshotResult': (id: string, dataUrl: string | null) => void;

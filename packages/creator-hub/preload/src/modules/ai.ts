@@ -35,6 +35,12 @@ export async function isBusy(): Promise<boolean> {
   return invoke('ai.isBusy');
 }
 
+// Revert the scene-graph changes an AI turn made (undo `count` steps — the value the
+// turn's `done` event reported as `mutations`).
+export async function revertTurn(count: number): Promise<void> {
+  return invoke('ai.revertTurn', count);
+}
+
 // Subscribe to the AI turn event stream. There is one active turn at a time and one
 // editor window, so a single fixed channel is enough; the panel filters by turnId.
 export function subscribeAiStream(cb: (event: AiEvent) => void): { cleanup: () => void } {

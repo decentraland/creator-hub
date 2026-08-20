@@ -54,4 +54,6 @@ export type AiEvent =
   | { kind: 'text'; turnId: string; text: string }
   | { kind: 'tool'; turnId: string; tool: string; detail: string }
   | { kind: 'error'; turnId: string; message: string }
-  | { kind: 'done'; turnId: string; ok: boolean };
+  // `mutations` is how many undo entries this turn applied to the scene graph — the panel
+  // uses it to offer a one-click "Undo AI changes" (revert the turn).
+  | { kind: 'done'; turnId: string; ok: boolean; mutations?: number };

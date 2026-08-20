@@ -18,7 +18,13 @@ import type { ChildProcess } from 'child_process';
 import log from 'electron-log/main';
 import type { AiEvent, AiProvider, AiProviderInfo, AiSendParams } from '/shared/types/ai';
 import { DCL_SYSTEM_PROMPT } from './ai-prompt';
-import { ensureSceneMcpServer, setSceneMcpProject, writeSceneMcpConfigFile } from './scene-mcp';
+import {
+  ensureSceneMcpServer,
+  getTurnMutations,
+  resetTurnMutations,
+  setSceneMcpProject,
+  writeSceneMcpConfigFile,
+} from './scene-mcp';
 import { ensureSkillsLinked } from './skills';
 
 // GUI-launched Electron gets a sparse PATH (no shell profile), so the CLIs — and their
@@ -517,6 +523,7 @@ export async function aiSend(
   }
 
   aiStop(); // supersede any in-flight turn
+  resetTurnMutations(); // start counting this turn's scene-graph changes for "revert turn"
   const turnId = `t${++turnSeq}`;
   // Prepend editor context (when present) to the prompt so the assistant sees editor
   // state without the user retyping it. Not shown in the chat bubble.
@@ -559,7 +566,7 @@ export async function aiSend(
     if (turn.done) return;
     turn.done = true;
     if (message !== undefined) emit({ kind: 'error', turnId, message });
-    emit({ kind: 'done', turnId, ok });
+    emit({ kind: 'done', turnId, ok, mutations: getTurnMutations() });
     if (current === turn) current = null;
   };
 

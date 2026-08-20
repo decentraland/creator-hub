@@ -95,10 +95,47 @@ function requestSceneOpRaw(op: string, params: Record<string, unknown>): Promise
   });
 }
 
+// How many undo entries each mutating op adds to the shared history — used to size a
+// per-turn "revert". Reads (scene_state, search_catalog, entity_detail) aren't here.
+// place_smart_item is 2 (one file-import undo + one composite-spawn undo — catalog items
+// always ship model files); everything else is a single dispatch = 1 entry.
+const MUTATION_UNDO_COST: Record<string, number> = {
+  create_entity: 1,
+  remove_entity: 1,
+  set_parent: 1,
+  set_component: 1,
+  remove_component: 1,
+  attach_script: 1,
+  place_smart_item: 2,
+};
+
+// Count of undo entries the current AI turn has applied to the scene graph. Reset when a
+// turn starts (ai.ts), read into the `done` event, and used to size a revert.
+let turnMutations = 0;
+export function resetTurnMutations(): void {
+  turnMutations = 0;
+}
+export function getTurnMutations(): number {
+  return turnMutations;
+}
+
 function requestSceneOp(op: string, params: Record<string, unknown>): Promise<SceneOpOutcome> {
-  const run = sceneOpChain.then(() => requestSceneOpRaw(op, params));
+  const run = sceneOpChain
+    .then(() => requestSceneOpRaw(op, params))
+    .then(res => {
+      if (res.ok && MUTATION_UNDO_COST[op] !== undefined) turnMutations += MUTATION_UNDO_COST[op];
+      return res;
+    });
   sceneOpChain = run.catch(() => undefined); // keep the chain alive past a rejection
   return run;
+}
+
+// Revert an AI turn's scene-graph changes by undoing `count` steps (serialized like any op).
+export async function revertTurn(count: number): Promise<void> {
+  for (let i = 0; i < count; i++) {
+    const res = await requestSceneOp('undo', {});
+    if (!res.ok) break; // nothing left to undo, or the editor went away
+  }
 }
 
 // Called from the `ai.sceneOpResult` IPC handler when the renderer answers.

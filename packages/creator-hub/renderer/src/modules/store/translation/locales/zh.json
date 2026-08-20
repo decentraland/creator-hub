@@ -96,6 +96,7 @@
       "thinking": "思考中…",
       "empty": "询问你的场景，或告诉我要构建什么。我可以读取场景并在 src/ 下编写 SDK7 代码。",
       "retry": "重试",
+      "revert": "撤销 AI 的更改",
       "provider": "助手",
       "setup": {
         "title": "设置 AI 助手",

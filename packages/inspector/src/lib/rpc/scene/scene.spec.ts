@@ -9,7 +9,10 @@ import { SceneServer } from './server';
 // Mock the catalog / data-layer / config modules the smart-item + catalog handlers use.
 // (vi.mock is hoisted above the imports by vitest regardless of position here.)
 vi.mock('../../logic/catalog', () => ({ fetchLatestCatalog: vi.fn(), getAssetById: vi.fn() }));
-vi.mock('../../../redux/data-layer', () => ({ getDataLayerInterface: vi.fn() }));
+vi.mock('../../../redux/data-layer', () => ({
+  getDataLayerInterface: vi.fn(),
+  refreshUndoRedoState: vi.fn(() => ({ type: 'data-layer/refreshUndoRedoState' })),
+}));
 vi.mock('../../logic/config', async orig => ({
   ...(await (orig as () => Promise<Record<string, unknown>>)()),
   getConfig: () => ({ contentUrl: 'https://content.test' }),
@@ -486,5 +489,13 @@ describe('SceneServer RPC catalog + script + smart item', () => {
     await expect(host.request('place_smart_item', { assetId: 'nope' })).rejects.toThrow(
       'No catalog asset',
     );
+  });
+
+  it('undo: calls the data-layer undo (used by "revert AI turn")', async () => {
+    const undo = vi.fn().mockResolvedValue(undefined);
+    vi.mocked(getDataLayerInterface).mockReturnValue({ undo } as any);
+    const res = await host.request('undo', {});
+    expect(undo).toHaveBeenCalled();
+    expect(res).toEqual({ ok: true });
   });
 });

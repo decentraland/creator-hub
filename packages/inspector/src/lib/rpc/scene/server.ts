@@ -15,7 +15,7 @@ import { setFeatureFlags } from '../../../redux/feature-flags';
 import { type EnumEntity } from '../../sdk/enum-entity';
 import { EditorComponentNames } from '../../sdk/components';
 import { fetchLatestCatalog, getAssetById } from '../../logic/catalog';
-import { getDataLayerInterface } from '../../../redux/data-layer';
+import { getDataLayerInterface, refreshUndoRedoState } from '../../../redux/data-layer';
 import { getConfig } from '../../logic/config';
 import { withAssetDir } from '../../data-layer/host/fs-utils';
 
@@ -48,6 +48,7 @@ enum Method {
   ATTACH_SCRIPT = 'attach_script',
   SEARCH_CATALOG = 'search_catalog',
   PLACE_SMART_ITEM = 'place_smart_item',
+  UNDO = 'undo',
 }
 
 // A row in the Smart Items catalog, as returned by search_catalog.
@@ -92,6 +93,7 @@ type Params = {
     name?: string;
     position?: { x: number; y: number; z: number };
   };
+  [Method.UNDO]: Record<string, never>;
 };
 
 type Result = {
@@ -120,6 +122,7 @@ type Result = {
   [Method.ATTACH_SCRIPT]: { entity: number; path: string };
   [Method.SEARCH_CATALOG]: { total: number; results: CatalogHit[] };
   [Method.PLACE_SMART_ITEM]: { entity: number; name: string };
+  [Method.UNDO]: { ok: true };
 };
 
 // Resolve a component by its full registered name ("core::Transform"), its short name
@@ -400,6 +403,15 @@ export class SceneServer extends RPC<Method, Params, Result> {
         );
         await operations.dispatch();
         return { entity: entity as number, name: name ?? asset.name };
+      });
+
+      // Undo one step on the shared history. Used by the panel's "Undo AI changes"
+      // (called N times for the N undo entries a turn produced). Awaits the host so the
+      // caller can serialize repeated undos.
+      this.handle('undo', async () => {
+        await getDataLayerInterface()?.undo({});
+        store.dispatch(refreshUndoRedoState());
+        return { ok: true as const };
       });
     }
   }

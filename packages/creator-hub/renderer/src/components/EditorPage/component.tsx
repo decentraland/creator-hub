@@ -97,6 +97,7 @@ const SCENE_OP_HANDLERS: Record<
       p.name as string | undefined,
       p.position as { x: number; y: number; z: number } | undefined,
     ),
+  undo: scene => scene.undo(),
 };
 
 export function EditorPage() {

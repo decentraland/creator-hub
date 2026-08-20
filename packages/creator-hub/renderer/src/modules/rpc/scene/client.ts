@@ -48,6 +48,7 @@ export enum Method {
   ATTACH_SCRIPT = 'attach_script',
   SEARCH_CATALOG = 'search_catalog',
   PLACE_SMART_ITEM = 'place_smart_item',
+  UNDO = 'undo',
 }
 
 type CatalogHit = { id: string; name: string; category: string; tags: string[] };
@@ -91,6 +92,7 @@ export type Params = {
     name?: string;
     position?: { x: number; y: number; z: number };
   };
+  [Method.UNDO]: Record<string, never>;
 };
 
 export type Result = {
@@ -119,6 +121,7 @@ export type Result = {
   [Method.ATTACH_SCRIPT]: { entity: number; path: string };
   [Method.SEARCH_CATALOG]: { total: number; results: CatalogHit[] };
   [Method.PLACE_SMART_ITEM]: { entity: number; name: string };
+  [Method.UNDO]: { ok: true };
 };
 
 // @dcl/mini-rpc's request() never settles if no server answers (it just parks a
@@ -260,5 +263,9 @@ export class SceneRpcClient extends RPC<Method, Params, Result> {
     position?: { x: number; y: number; z: number },
   ) => {
     return this.request('place_smart_item', { assetId, name, position });
+  };
+
+  undo = () => {
+    return this.request('undo', {} as Record<string, never>);
   };
 }

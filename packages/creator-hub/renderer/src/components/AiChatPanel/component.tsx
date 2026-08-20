@@ -5,6 +5,7 @@ import StopIcon from '@mui/icons-material/Stop';
 import AddCommentIcon from '@mui/icons-material/AddComment';
 import CloseIcon from '@mui/icons-material/Close';
 import RefreshIcon from '@mui/icons-material/Refresh';
+import UndoIcon from '@mui/icons-material/Undo';
 import {
   Button,
   CircularProgress,
@@ -152,6 +153,9 @@ export function AiChatPanel({ onClose }: Props) {
     if (messages.length === 0) {
       return <EmptyState>{t('editor.ai.empty')}</EmptyState>;
     }
+    // "Undo AI changes" is offered only on the latest turn: undo is a shared stack, so an
+    // older turn's entries aren't on top and can't be cleanly reverted in isolation.
+    const lastId = messages[messages.length - 1]?.id;
     return messages.map(msg =>
       msg.role === 'user' ? (
         <UserBubble key={msg.id}>{msg.text}</UserBubble>
@@ -187,6 +191,22 @@ export function AiChatPanel({ onClose }: Props) {
               </div>
             </ErrorRow>
           )}
+          {msg.id === lastId &&
+            msg.done &&
+            msg.error === undefined &&
+            (msg.mutations ?? 0) > 0 &&
+            !msg.reverted && (
+              <Button
+                color="secondary"
+                size="small"
+                startIcon={<UndoIcon fontSize="small" />}
+                onClick={() =>
+                  dispatch(aiActions.revertTurn({ id: msg.id, count: msg.mutations ?? 0 }))
+                }
+              >
+                {t('editor.ai.revert')}
+              </Button>
+            )}
         </AssistantBubble>
       ),
     );

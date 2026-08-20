@@ -53,6 +53,15 @@ export const newChat = createAsyncThunk('ai/newChat', async (_: void, { dispatch
   dispatch(actions.clearConversation());
 });
 
+// Revert the scene-graph changes an assistant turn made (undo its `mutations` steps).
+export const revertTurn = createAsyncThunk<void, { id: string; count: number }>(
+  'ai/revertTurn',
+  async ({ id, count }, { dispatch }) => {
+    await ai.revertTurn(count);
+    dispatch(actions.markReverted(id));
+  },
+);
+
 let userSeq = 0;
 
 const slice = createSlice({
@@ -115,7 +124,10 @@ const slice = createSlice({
         }
         case 'done': {
           const msg = find();
-          if (msg !== undefined) msg.done = true;
+          if (msg !== undefined) {
+            msg.done = true;
+            msg.mutations = payload.mutations;
+          }
           state.busy = false;
           break;
         }
@@ -135,6 +147,10 @@ const slice = createSlice({
     clearConversation: state => {
       state.messages = [];
       state.busy = false;
+    },
+    markReverted: (state, { payload }: PayloadAction<string>) => {
+      const msg = state.messages.find(m => m.id === payload);
+      if (msg !== undefined) msg.reverted = true;
     },
   },
   extraReducers: builder => {
@@ -172,5 +188,5 @@ const slice = createSlice({
   },
 });
 
-export const actions = { ...slice.actions, fetchProviders, send, stop, newChat };
+export const actions = { ...slice.actions, fetchProviders, send, stop, newChat, revertTurn };
 export const reducer = slice.reducer;

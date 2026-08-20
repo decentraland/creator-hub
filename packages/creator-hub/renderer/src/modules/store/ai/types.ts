@@ -16,6 +16,11 @@ export interface AiMessage {
   tools: AiToolChip[];
   done: boolean;
   error?: string;
+  // How many undo steps this turn applied to the scene graph (from the `done` event).
+  // Drives the one-click "Undo AI changes" affordance.
+  mutations?: number;
+  // Set once the user reverts this turn's scene changes, so the button hides.
+  reverted?: boolean;
 }
 
 export interface AiState {

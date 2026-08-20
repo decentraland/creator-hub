@@ -13,7 +13,7 @@ import * as config from './config';
 import * as mobileDebug from './mobile-debug-server';
 import * as metrics from './metrics';
 import * as ai from './ai';
-import { resolveEditorScreenshot, resolveSceneOp } from './scene-mcp';
+import { resolveEditorScreenshot, resolveSceneOp, revertTurn } from './scene-mcp';
 
 interface InitIpcOptions {
   beforeQuitCleanup: () => Promise<void>;
@@ -129,4 +129,5 @@ export function initIpc({ beforeQuitCleanup }: InitIpcOptions) {
   handle('ai.isBusy', async () => ai.aiBusy());
   handle('ai.screenshotResult', (_event, id, dataUrl) => resolveEditorScreenshot(id, dataUrl));
   handle('ai.sceneOpResult', (_event, id, ok, payload) => resolveSceneOp(id, ok, payload));
+  handle('ai.revertTurn', (_event, count) => revertTurn(count));
 }
