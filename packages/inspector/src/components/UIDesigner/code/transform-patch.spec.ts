@@ -3,7 +3,12 @@ import { describe, expect, it } from 'vitest';
 
 import { applyEdits } from './emit-adapter';
 import { codeToUINodes } from './parse-adapter';
-import { flattenedToErgonomicKey, uiTransformPatchEdits } from './transform-patch';
+import {
+  boundTransformKeys,
+  flattenedToErgonomicKey,
+  flattenedToErgonomicPath,
+  uiTransformPatchEdits,
+} from './transform-patch';
 
 function parse(source: string) {
   const r = parseSync('S.tsx', source);
@@ -20,7 +25,12 @@ function rootAst(parsed: ReturnType<typeof parse>) {
 function patchRoot(source: string, patch: Record<string, unknown>): string {
   const parsed = parse(source);
   const current = (parsed.root.uiTransform as Record<string, unknown>) ?? {};
-  const edits = uiTransformPatchEdits(rootAst(parsed), current, patch);
+  const edits = uiTransformPatchEdits(
+    rootAst(parsed),
+    current,
+    patch,
+    boundTransformKeys(parsed.root.bindings),
+  );
   return applyEdits(source, edits);
 }
 
@@ -40,6 +50,39 @@ describe('flattenedToErgonomicKey', () => {
     expect(flattenedToErgonomicKey('borderBottomColor')).toBe('borderColor');
     expect(flattenedToErgonomicKey('opacity')).toBe('opacity');
     expect(flattenedToErgonomicKey('parent')).toBeNull();
+  });
+});
+
+describe('flattenedToErgonomicPath', () => {
+  it('should name the group AND the member for a nested group key', () => {
+    expect(flattenedToErgonomicPath('paddingTop')).toEqual({ group: 'padding', member: 'top' });
+    expect(flattenedToErgonomicPath('marginLeftUnit')).toEqual({ group: 'margin', member: 'left' });
+    expect(flattenedToErgonomicPath('positionBottom')).toEqual({
+      group: 'position',
+      member: 'bottom',
+    });
+    expect(flattenedToErgonomicPath('borderTopLeftRadius')).toEqual({
+      group: 'borderRadius',
+      member: 'topLeft',
+    });
+    expect(flattenedToErgonomicPath('borderRightWidth')).toEqual({
+      group: 'borderWidth',
+      member: 'right',
+    });
+    expect(flattenedToErgonomicPath('borderBottomColor')).toEqual({
+      group: 'borderColor',
+      member: 'bottom',
+    });
+  });
+
+  it('should name only the group for a key that is a react-ecs key on its own', () => {
+    expect(flattenedToErgonomicPath('width')).toEqual({ group: 'width' });
+    expect(flattenedToErgonomicPath('zIndex')).toEqual({ group: 'zIndex' });
+    expect(flattenedToErgonomicPath('positionType')).toEqual({ group: 'positionType' });
+  });
+
+  it('should return null for a key that never reaches source', () => {
+    expect(flattenedToErgonomicPath('parent')).toBeNull();
   });
 });
 
@@ -252,14 +295,63 @@ describe('when patching a uiTransform field from the panel', () => {
     });
   });
 
+  describe('and a member of a nested group is bound', () => {
+    const SOURCE = `export function S() {
+  return <UiEntity uiTransform={{ padding: { top: state.pad, left: 8 } }} />
+}`;
+
+    it('should read the bound member as a binding on its flattened path', () => {
+      const parsed = parse(SOURCE);
+      expect(parsed.root.dynamicProps).toBeUndefined();
+      expect(parsed.root.bindings).toEqual([
+        { field: 'core::UiTransform.paddingTop', variable: 'state.pad' },
+      ]);
+      expect(parsed.root.uiTransform).toMatchObject({ paddingLeft: 8 });
+    });
+
+    it('should keep a sibling literal when the bound member is UNBOUND', () => {
+      const parsed = parse(SOURCE);
+      const current = (parsed.root.uiTransform as Record<string, unknown>) ?? {};
+      const edits = uiTransformPatchEdits(
+        rootAst(parsed),
+        current,
+        { paddingTop: undefined, paddingTopUnit: undefined },
+        {},
+      );
+      const next = applyEdits(SOURCE, edits);
+      expect(next).toContain('left: 8');
+      expect(next).not.toContain('state.pad');
+    });
+
+    it('should preserve the binding when a SIBLING member is patched', () => {
+      const next = patchRoot(SOURCE, { paddingLeft: 16, paddingLeftUnit: YGU_POINT });
+      expect(next).toContain('top: state.pad');
+      expect(next).toContain('left: 16');
+      expect(parse(next).root.bindings).toEqual([
+        { field: 'core::UiTransform.paddingTop', variable: 'state.pad' },
+      ]);
+    });
+  });
+
   describe('and the node has a partially-dynamic uiTransform', () => {
-    it('should flag dynamicProps so write paths refuse the edit', () => {
+    it('should read a key bound to a reference as a binding, leaving the node editable', () => {
       const SOURCE = `export function S() {
   return <UiEntity uiTransform={{ width: state.w, height: 100 }} />
 }`;
       const parsed = parse(SOURCE);
+      expect(parsed.root.dynamicProps).toBeUndefined();
+      expect(parsed.root.bindings).toEqual([
+        { field: 'core::UiTransform.width', variable: 'state.w' },
+      ]);
+      expect(parsed.root.uiTransform).toMatchObject({ height: 100 });
+    });
+
+    it('should still flag dynamicProps for a key that is not a plain reference', () => {
+      const SOURCE = `export function S() {
+  return <UiEntity uiTransform={{ width: measure(), height: 100 }} />
+}`;
+      const parsed = parse(SOURCE);
       expect(parsed.root.dynamicProps).toBe(true);
-      // The static field still parses for display.
       expect(parsed.root.uiTransform).toMatchObject({ height: 100 });
     });
 
@@ -271,9 +363,21 @@ describe('when patching a uiTransform field from the panel', () => {
       expect(parsed.root.dynamicProps).toBe(true);
     });
 
-    it('should flag dynamicProps for a NESTED dynamic value', () => {
+    it('should read a NESTED member bound to a reference as a binding', () => {
       const SOURCE = `export function S() {
   return <UiEntity uiTransform={{ position: { top: state.y }, width: 100 }} />
+}`;
+      const parsed = parse(SOURCE);
+      expect(parsed.root.dynamicProps).toBeUndefined();
+      expect(parsed.root.bindings).toEqual([
+        { field: 'core::UiTransform.positionTop', variable: 'state.y' },
+      ]);
+      expect(parsed.root.uiTransform).toMatchObject({ width: 100 });
+    });
+
+    it('should still flag dynamicProps for a NESTED value that is not a plain reference', () => {
+      const SOURCE = `export function S() {
+  return <UiEntity uiTransform={{ position: { top: offset() }, width: 100 }} />
 }`;
       const parsed = parse(SOURCE);
       expect(parsed.root.dynamicProps).toBe(true);

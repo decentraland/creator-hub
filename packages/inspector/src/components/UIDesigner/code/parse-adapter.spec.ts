@@ -347,9 +347,17 @@ export function MyScreen() {
       expect(root.uiTransform).toMatchObject({ width: 250 });
     });
 
-    it('should flag dynamicProps when a layer value is not statically evaluable', () => {
+    it('should read a layer style key bound to a reference as a binding, not as dynamic', () => {
       const root = parse(`export function S() {
   const btn = useInteraction({ hover: { uiBackground: { color: theme.accent } } })
+  return <UiEntity {...btn} />
+}`)!.root;
+      expect(root.dynamicProps).toBeUndefined();
+    });
+
+    it('should flag dynamicProps when a layer value is not statically evaluable', () => {
+      const root = parse(`export function S() {
+  const btn = useInteraction({ hover: { uiBackground: { color: pick(theme) } } })
   return <UiEntity {...btn} />
 }`)!.root;
       expect(root.dynamicProps).toBe(true);
@@ -481,6 +489,80 @@ export function MyScreen() {
       expect(root.opaque).toBeUndefined();
       expect(root.dynamicProps).toBe(true);
       expect(root.uiTransform).toBeUndefined();
+    });
+  });
+
+  describe('and a uiTransform KEY is bound to a variable', () => {
+    it('should record it as a binding rather than freezing the node', () => {
+      const root = parse(`export function S() {
+  return <UiEntity uiTransform={{ width: 100, zIndex: state.depth }} />
+}`)!.root;
+
+      expect(root.dynamicProps).toBeUndefined();
+      expect(root.bindings).toEqual([
+        { field: 'core::UiTransform.zIndex', variable: 'state.depth' },
+      ]);
+    });
+
+    it('should keep the statically readable siblings', () => {
+      const root = parse(`export function S() {
+  return <UiEntity uiTransform={{ width: 100, zIndex: state.depth }} />
+}`)!.root;
+
+      expect(root.uiTransform?.width).toBe(100);
+    });
+
+    it('should still freeze on a value that is neither literal nor a plain reference', () => {
+      const root = parse(`export function S() {
+  return <UiEntity uiTransform={{ zIndex: wide ? 1 : 2 }} />
+}`)!.root;
+
+      expect(root.dynamicProps).toBe(true);
+    });
+  });
+
+  describe('and a uiBackground TEXTURE member is bound', () => {
+    it('should record an image src binding under its dotted path', () => {
+      const root = parse(`export function S() {
+  return <UiEntity uiBackground={{ texture: { src: state.icon } }} />
+}`)!.root;
+
+      expect(root.dynamicProps).toBeUndefined();
+      expect(root.bindings).toEqual([
+        { field: 'core::UiBackground.texture.src', variable: 'state.icon' },
+      ]);
+    });
+
+    it('should keep the node in image mode so the editor still shows it', () => {
+      const root = parse(`export function S() {
+  return <UiEntity uiBackground={{ texture: { src: state.icon } }} />
+}`)!.root;
+
+      expect((root.uiBackground as any)?.texture?.tex?.$case).toBe('texture');
+    });
+
+    it('should record an avatar userId binding under its dotted path', () => {
+      const root = parse(`export function S() {
+  return <UiEntity uiBackground={{ avatarTexture: { userId: state.who } }} />
+}`)!.root;
+
+      expect(root.dynamicProps).toBeUndefined();
+      expect(root.bindings).toEqual([
+        { field: 'core::UiBackground.avatarTexture.userId', variable: 'state.who' },
+      ]);
+    });
+  });
+
+  describe('and a uiBackground KEY is bound to a variable', () => {
+    it('should record it as a binding rather than freezing the node', () => {
+      const root = parse(`export function S() {
+  return <UiEntity uiBackground={{ color: state.tint }} />
+}`)!.root;
+
+      expect(root.dynamicProps).toBeUndefined();
+      expect(root.bindings).toEqual([
+        { field: 'core::UiBackground.color', variable: 'state.tint' },
+      ]);
     });
   });
 

@@ -3,22 +3,11 @@ import { createPortal } from 'react-dom';
 
 import { isValidIdentifier } from '../../../../../lib/sdk/operations/validators';
 import { usePopoverPosition } from '../../../../ui/usePopoverPosition';
-import type { FieldConfig, FieldKind } from '../../PropertyPanel/field-configs';
+import { KIND_TO_CODE_TYPES, type FieldConfig } from '../../PropertyPanel/field-configs';
 import type { BindVariable } from '../../../code/bindings';
 import { addBindVariable, useCodeState } from '../../../code/store';
 
 import './VariablePicker.css';
-
-// Which code-mode variable types a field kind can bind to. A string field takes
-// any (it coerces to text at render); numeric fields take numbers; booleans take
-// booleans. Fields with no compatible code type (color / arrays) offer none.
-const KIND_TO_CODE_TYPES: Partial<Record<FieldKind, string[]>> = {
-  string: ['string', 'number', 'boolean'],
-  number: ['number'],
-  length: ['number'],
-  index: ['number'],
-  boolean: ['boolean'],
-};
 
 // On a string-kind field every non-string variable is shown (it coerces to a
 // string at render time). Make that explicit in the row label, e.g.

@@ -55,16 +55,15 @@
   color: var(--base-16);
 }
 
+/* Layout and reveal only — the glyph itself comes from `ui-designer-bindable-link`,
+   which this button also carries. It used to render a literal chain EMOJI, which is
+   font-drawn: a different shape and size from every other bind affordance in the
+   panel, and immune to `currentColor`. */
 .ui-designer-mixed-link {
   flex: 0 0 auto;
-  opacity: 0;
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  padding: 0 4px;
-  transition: opacity 80ms ease-out;
 }
 
-.ui-designer-mixed-field:hover .ui-designer-mixed-link {
+.ui-designer-mixed-field:hover .ui-designer-mixed-link,
+.ui-designer-mixed-field:focus-within .ui-designer-mixed-link {
   opacity: 1;
 }

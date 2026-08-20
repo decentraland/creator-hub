@@ -60,6 +60,42 @@ describe('when writing a new state property', () => {
   });
 });
 
+describe('when the variable holds an object value', () => {
+  const SOURCE = `interface State {
+  score: number
+}
+
+export const state: State = {
+  score: 0,
+}`;
+
+  it('should annotate a Color4 structurally, so the file needs no import', () => {
+    const next = applyEdits(SOURCE, addStateProperty(prog(SOURCE), 'tint', 'Color4'));
+
+    expect(next).toContain('tint: { r: number; g: number; b: number; a: number }');
+    expect(next).toContain('tint: { r: 1, g: 1, b: 1, a: 1 }');
+    expect(next).not.toContain('import');
+  });
+
+  it('should read that annotation back as Color4', () => {
+    const next = applyEdits(SOURCE, addStateProperty(prog(SOURCE), 'tint', 'Color4'));
+
+    expect(readStateVariables(prog(next))).toEqual(
+      expect.arrayContaining([expect.objectContaining({ name: 'tint', type: 'Color4' })]),
+    );
+  });
+
+  it('should round-trip a string array', () => {
+    const next = applyEdits(SOURCE, addStateProperty(prog(SOURCE), 'items', 'string[]'));
+
+    expect(next).toContain('items: string[]');
+    expect(next).toContain('items: []');
+    expect(readStateVariables(prog(next))).toEqual(
+      expect.arrayContaining([expect.objectContaining({ name: 'items', type: 'string[]' })]),
+    );
+  });
+});
+
 describe('when removing a state property', () => {
   it('should remove one of several variables from the object and interface', () => {
     const src =

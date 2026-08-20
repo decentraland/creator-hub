@@ -1,6 +1,7 @@
 import { YGU_POINT } from '../../../../lib/sdk/ui-transform-constants';
 import { readAnchor } from '../../shared/align-presets';
 import { UI_BUTTON } from '../../code/parse-adapter';
+import { flattenedToErgonomicPath } from '../../code/transform-patch';
 import type { UINodeType } from '../../shared/tree-model';
 import { directionIsRepresentable, wrapIsRepresentable, YGW_WRAP_REVERSE } from './flow';
 import { alignmentIsRepresentable } from './alignment-presets';
@@ -211,8 +212,100 @@ export interface NodeFieldConfig {
   groups: { title: string; fields: FieldConfig[] }[];
 }
 
+/**
+ * `bindable` values that say WHY a field offers no bind affordance, so the reason
+ * travels with the flag instead of a comment beside it.
+ *
+ * - OWN_CONTROL: the control itself owns a mode-aware affordance (FillField picks
+ *   `color` / `texture.src` / `avatarTexture.userId` from the current mode).
+ * - PRIMARY_ROW_ONLY: two panel rows render one prop, so only the primary row
+ *   offers the bind — a second affordance would show two pills for one binding.
+ */
+const BINDS_VIA_OWN_CONTROL = false;
+const BINDS_VIA_PRIMARY_ROW_ONLY = false;
+
 export const TRANSFORM = 'core::UiTransform';
 const BACKGROUND = 'core::UiBackground';
+
+/**
+ * The uiBackground props that can hold a binding: keys of their own, plus the
+ * texture variants' single meaningful member, addressed by a dotted path.
+ */
+const BACKGROUND_BINDABLE_PATHS = new Set([
+  'color',
+  'textureMode',
+  'texture.src',
+  'avatarTexture.userId',
+]);
+
+/**
+ * Which code-mode variable types a field kind can bind to. A string field takes
+ * any (it coerces to text at render); numeric fields take numbers; booleans take
+ * booleans. An ENUM-shaped field takes a string: react-ecs spells those props as
+ * ergonomic strings (`positionType: 'absolute'`, `textAlign: 'top-left'`), so a
+ * bound variable holds that string rather than the panel's PB number.
+ *
+ * A kind ABSENT here has no variable type that can hold its value, and is not
+ * bindable at all (see isBindableProp) — offering one would seed a `string` and
+ * break the scene's own typecheck. `Color4` and `string[]` are object-shaped state
+ * variables (see state-convention's TYPE_ANNOTATION).
+ */
+export const KIND_TO_CODE_TYPES: Partial<Record<FieldKind, string[]>> = {
+  string: ['string', 'number', 'boolean'],
+  number: ['number'],
+  length: ['number'],
+  index: ['number'],
+  boolean: ['boolean'],
+  enum: ['string'],
+  'position-mode': ['string'],
+  'overflow-scroll': ['string'],
+  'overflow-clip': ['string'],
+  'text-align': ['string'],
+  'text-wrap': ['string'],
+  color: ['Color4'],
+  fill: ['Color4'],
+  'string-array': ['string[]'],
+};
+
+/**
+ * The prop path a field's binding is written to and read back from.
+ *
+ * A `writeAll` field drives a whole ergonomic group uniformly (Corner Radius sets
+ * all four corners), and react-ecs takes a scalar shorthand for those
+ * (`borderRadius: 8`), so the binding targets the GROUP rather than the one member
+ * `path` happens to name. Everything else binds its own path.
+ */
+export function bindPathFor(field: { path: string; writeAll?: string[] }): string {
+  if (!field.writeAll) return field.path;
+  return flattenedToErgonomicPath(field.path)?.group ?? field.path;
+}
+
+/**
+ * Whether a prop can carry a binding that round-trips to source and back.
+ *
+ * Two independent questions. WHERE it lives: a uiTransform prop is spliced by its
+ * ergonomic location — a key of its own (`zIndex`) or a member of a per-edge group
+ * (`padding: { top }`) — so any path the shape can place works, while `parent` is
+ * structural and never reaches source; uiBackground allows its own keys plus a
+ * texture variant's member; every other component's props are top-level JSX
+ * attributes. And WHAT could hold it: a kind with no compatible variable type
+ * cannot be bound at all.
+ */
+export function isBindableProp(field: {
+  componentId: string;
+  path: string;
+  kind: FieldKind;
+  strictTypes?: string[];
+  writeAll?: string[];
+}): boolean {
+  if (!field.strictTypes && !KIND_TO_CODE_TYPES[field.kind]) return false;
+  const path = bindPathFor(field);
+  if (field.componentId === TRANSFORM) {
+    return !!path && flattenedToErgonomicPath(path) !== null;
+  }
+  if (field.componentId === BACKGROUND) return BACKGROUND_BINDABLE_PATHS.has(path);
+  return true;
+}
 const TEXT = 'core::UiText';
 const INPUT = 'core::UiInput';
 const DROPDOWN = 'core::UiDropdown';
@@ -295,7 +388,6 @@ export const POSITION_MODE_FIELD: FieldConfig = {
   componentId: TRANSFORM,
   path: 'positionType',
   kind: 'position-mode',
-  bindable: false,
   core: true,
   hideOnRoot: true,
   info: 'Off: laid out by the parent (order, gaps, alignment). On: pinned at Top/Left offsets. Turning it on anchors the node to the parent’s top-left — set Anchor and Position to place it.',
@@ -470,7 +562,6 @@ const LAYOUT_FIELDS: (FieldConfig & { container?: true })[] = [
     componentId: TRANSFORM,
     path: 'overflow',
     kind: 'overflow-scroll' as const,
-    bindable: false,
     container: true,
     core: true,
     info: 'Lets the player scroll content taller or wider than this box. Scrolling requires clipping, so Clip Content follows it.',
@@ -480,7 +571,7 @@ const LAYOUT_FIELDS: (FieldConfig & { container?: true })[] = [
     componentId: TRANSFORM,
     path: 'overflow',
     kind: 'overflow-clip' as const,
-    bindable: false,
+    bindable: BINDS_VIA_PRIMARY_ROW_ONLY,
     container: true,
     core: true,
     info: 'Hides anything that overflows this box instead of letting it spill out. Forced on while Scroll Overflow is on.',
@@ -491,7 +582,6 @@ const LAYOUT_FIELDS: (FieldConfig & { container?: true })[] = [
     path: 'flexDirection',
     kind: 'enum' as const,
     options: FLEX_DIRECTION_OPTIONS,
-    bindable: false,
     container: true,
     // Flow shows one cell, so while the node is absolute the direction is live in
     // source but off screen. That is the only state this row is not a duplicate.
@@ -504,7 +594,6 @@ const LAYOUT_FIELDS: (FieldConfig & { container?: true })[] = [
     path: 'flexWrap',
     kind: 'enum' as const,
     options: FLEX_WRAP_OPTIONS,
-    bindable: false,
     container: true,
     // Flow's toggle is binary; only wrap-reverse falls outside it.
     hiddenWhen: wrapIsRepresentable,
@@ -520,7 +609,6 @@ const LAYOUT_FIELDS: (FieldConfig & { container?: true })[] = [
     path: 'justifyContent',
     kind: 'enum' as const,
     options: JUSTIFY_CONTENT_OPTIONS,
-    bindable: false,
     container: true,
     hiddenWhen: alignmentIsRepresentable,
     info: 'Distributes children along the main axis. Shown when the spacing is one the Alignment picker has no cell for.',
@@ -531,7 +619,6 @@ const LAYOUT_FIELDS: (FieldConfig & { container?: true })[] = [
     path: 'alignItems',
     kind: 'enum' as const,
     options: ALIGN_OPTIONS,
-    bindable: false,
     container: true,
     hiddenWhen: alignmentIsRepresentable,
     info: 'Aligns children on the cross axis. Shown when the alignment is one the Alignment picker has no cell for.',
@@ -542,7 +629,6 @@ const LAYOUT_FIELDS: (FieldConfig & { container?: true })[] = [
     path: 'alignContent',
     kind: 'enum' as const,
     options: ALIGN_OPTIONS,
-    bindable: false,
     container: true,
     info: 'Aligns wrapped lines on the cross axis. Applies only when Flex wrap is on.',
   },
@@ -557,7 +643,6 @@ const LAYOUT_FIELDS: (FieldConfig & { container?: true })[] = [
     path: 'alignSelf',
     kind: 'enum' as const,
     options: ALIGN_OPTIONS,
-    bindable: false,
     info: "Overrides the parent's Align items for this node only. Shown when it is set to something the Resize control's cross-axis Fill cannot express.",
   },
   {
@@ -580,10 +665,9 @@ const LAYOUT_FIELDS: (FieldConfig & { container?: true })[] = [
     path: 'display',
     kind: 'enum' as const,
     options: DISPLAY_OPTIONS,
-    bindable: false,
     core: true,
     hiddenWhen: (v: Record<string, unknown>) => !('display' in v),
-    info: 'Flex lays out the node and its children; None removes it from layout entirely. The Visible is Active checkbox toggles this.',
+    info: 'Flex lays out the node and its children; None removes it from layout entirely. The Visibility is Active checkbox toggles this.',
   },
 ];
 
@@ -662,7 +746,6 @@ const STYLE_GROUP = {
       path: 'borderTopLeftRadius',
       kind: 'length' as const,
       core: true,
-      bindable: false,
       half: true,
       info: 'Rounds all four corners. Supports px or %.',
       writeAll: [
@@ -677,6 +760,7 @@ const STYLE_GROUP = {
       componentId: BACKGROUND,
       path: 'color',
       kind: 'fill' as const,
+      bindable: BINDS_VIA_OWN_CONTROL,
       core: true,
       info: 'What fills the node: a solid colour, an image from your scene, or a player’s avatar. Setting an image is what turns a Container into an Image.',
     },
@@ -687,7 +771,6 @@ const STYLE_GROUP = {
       kind: 'enum' as const,
       core: true,
       options: TEXTURE_MODE_OPTIONS,
-      bindable: false,
       hiddenWhen: (v: Record<string, unknown>) => !v.texture,
       info: 'How the texture fills the box: cropped to the middle, sliced, or stretched.',
       // react-ecs getTextureMode defaults an unset textureMode to CENTER (1).
@@ -719,7 +802,6 @@ const STYLE_GROUP = {
       componentId: TRANSFORM,
       path: 'borderTopColor',
       kind: 'color' as const,
-      bindable: false,
       inlineAdd: true,
       addAlso: VISIBLE_BORDER_WIDTH,
       info: 'Colour applied to all four borders. Adding it also sets a 1px weight, without which the border renders as nothing at all.',
@@ -730,7 +812,6 @@ const STYLE_GROUP = {
       componentId: TRANSFORM,
       path: 'borderTopWidth',
       kind: 'length' as const,
-      bindable: false,
       core: true,
       hiddenWhen: (v: Record<string, unknown>) => !(BORDER_COLOUR_PATHS[0] in v),
       info: 'Thickness of all four borders. Supports px or %.',
@@ -759,7 +840,6 @@ const TEXT_GROUP = {
       half: true,
       core: true,
       options: FONT_OPTIONS,
-      bindable: false,
       info: 'Typeface: sans serif, serif, or monospace.',
     },
     {
@@ -784,7 +864,6 @@ const TEXT_GROUP = {
       componentId: TEXT,
       path: 'textAlign',
       kind: 'text-align' as const,
-      bindable: false,
       info: 'Anchors the text within its box. Defaults to middle center.',
     },
     {
@@ -792,7 +871,6 @@ const TEXT_GROUP = {
       componentId: TEXT,
       path: 'textWrap',
       kind: 'text-wrap' as const,
-      bindable: false,
       info: 'Wrap long text onto multiple lines instead of keeping it on a single line.',
     },
   ],
@@ -848,7 +926,6 @@ const INPUT_GROUP = {
       half: true,
       core: true,
       options: FONT_OPTIONS,
-      bindable: false,
       info: 'Typeface: sans serif, serif, or monospace.',
     },
     {
@@ -880,7 +957,6 @@ const INPUT_GROUP = {
       componentId: INPUT,
       path: 'textAlign',
       kind: 'text-align' as const,
-      bindable: false,
       info: 'Anchors the text within the field. Defaults to middle center.',
     },
     {
@@ -919,7 +995,6 @@ const DROPDOWN_GROUP = {
       path: 'acceptEmpty',
       kind: 'boolean' as const,
       core: true,
-      bindable: false,
       info: 'Allows the dropdown to have no option selected.',
     },
     {
@@ -939,7 +1014,6 @@ const DROPDOWN_GROUP = {
       half: true,
       core: true,
       options: FONT_OPTIONS,
-      bindable: false,
       info: 'Typeface: sans serif, serif, or monospace.',
     },
     {
@@ -964,7 +1038,6 @@ const DROPDOWN_GROUP = {
       componentId: DROPDOWN,
       path: 'textAlign',
       kind: 'text-align' as const,
-      bindable: false,
       info: 'Anchors the selected option’s text within the box. Defaults to middle center.',
     },
     {

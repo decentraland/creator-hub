@@ -41,6 +41,92 @@
   mask-repeat: no-repeat;
 }
 
+/* The glyph sits INSIDE the field's right edge, and the field RESERVES the slot
+   rather than having the glyph float over whatever is already there. That is the
+   Figma Input's own model: `padding: 6px 26px 6px 8px`, where the asymmetric 26px
+   is the glyph's lane. Reserving is what lets a trailing `px` / `%` coexist with
+   the glyph instead of one hiding the other. */
+.ui-designer-bindable-content:has(> .Text.Field, > .TextArea.Field) + .ui-designer-bindable-link,
+.ui-designer-bindable-subfield-content:has(> .Text.Field, > .TextArea.Field)
+  + .ui-designer-bindable-link,
+.ui-designer-mixed-field > .ui-designer-bindable-link {
+  position: absolute;
+  top: 50%;
+  right: 5px;
+  transform: translateY(-50%);
+}
+
+/* The lane itself. Panel-scoped so it out-weighs the shared
+   `.Text.Field .InputContainer:has(.RightContent)` padding shorthand, which would
+   otherwise reset this depending on stylesheet order. */
+.ui-designer-property-panel .ui-designer-bindable-content:has(> .Text.Field) .InputContainer,
+.ui-designer-property-panel
+  .ui-designer-bindable-subfield-content:has(> .Text.Field)
+  .InputContainer {
+  padding-right: 26px;
+}
+
+.ui-designer-property-panel .ui-designer-bindable-content:has(> .TextArea.Field) textarea,
+.ui-designer-property-panel .ui-designer-mixed-editable {
+  padding-right: 26px;
+}
+
+/* A field carrying its own sub-label is taller than its input, so centring on the
+   field lands the glyph on the label/input seam (Fill's avatar `User ID`). Anchor
+   it to the input row instead. `Label` renders nothing when the text is empty, so
+   this matches only the fields that actually have one. */
+.ui-designer-bindable-content:has(> .Text.Field > .Label) + .ui-designer-bindable-link,
+.ui-designer-bindable-subfield-content:has(> .Text.Field > .Label) + .ui-designer-bindable-link {
+  top: auto;
+  bottom: 4.5px;
+  transform: none;
+}
+
+/* Fill's image and avatar editors are multi-row, and only the last row holds the
+   value being bound, so the glyph tracks the bottom rather than the midpoint. */
+.ui-designer-fill-field > .ui-designer-bindable-subfield {
+  align-items: flex-end;
+}
+
+/* The nudge is for the STATIC glyph only: an overlaid one is already bottom-anchored
+   above, and a margin would shift it off the input it sits in. */
+.ui-designer-fill-field
+  > .ui-designer-bindable-subfield:not(:has(> .ui-designer-bindable-subfield-content > .Text.Field))
+  > .ui-designer-bindable-link {
+  margin-bottom: 4px;
+}
+
+/* The widget has to FILL its content box. Panel-scoped `.ui-designer-bindable-content`
+   is a flex container, so a composite child shrink-wraps instead — leaving the
+   wrapper (which is the hover trigger) reaching ~76px past the control, with the
+   glyph floating in that margin and lighting up from blank panel space. Stretching
+   the widget is what makes "hovering the field" and "hovering the trigger" the
+   same gesture. */
+.ui-designer-property-panel .ui-designer-bindable-content > .ui-designer-fill-field {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+/* A checkbox row puts the glyph at the ROW's right edge: its content box shrink-
+   wraps a 14px box, so anchoring to the wrapper would land the glyph on the
+   checkbox — the `☐ ⊕ Label` wedge. Dropping the wrapper's positioning hands the
+   job to `.ui-designer-property-row`, which is already relative. */
+.ui-designer-property-row.checkbox .ui-designer-bindable-row {
+  position: static;
+}
+
+.ui-designer-property-row.checkbox .ui-designer-bindable-link {
+  position: absolute;
+  top: 50%;
+  right: 5px;
+  transform: translateY(-50%);
+}
+
+/* Both affordances reveal on the same hover, so they cannot share the lane. */
+.ui-designer-property-row.checkbox:has(.ui-designer-prop-remove) .ui-designer-bindable-link {
+  right: 24px;
+}
+
 .ui-designer-bindable-link:hover {
   color: var(--ui-designer-control-accent);
 }
@@ -50,12 +136,22 @@
   outline-offset: 1px;
 }
 
-/* Reveal on hover AND keyboard focus so the affordance is reachable without a
-   mouse (the link is hidden by default to keep rows clean). */
+/* Reveal on hovering the FIELD (the wrapper is the control's own box), plus
+   keyboard focus so the affordance is reachable without a mouse. Hovering the
+   row's label does not count — the label row is a sibling of `.content`. */
 .ui-designer-bindable-row:hover .ui-designer-bindable-link,
 .ui-designer-bindable-row:focus-within .ui-designer-bindable-link,
 .ui-designer-bindable-link:focus-visible,
 .ui-designer-bindable-content:empty + .ui-designer-bindable-link {
+  opacity: 1;
+}
+
+/* A checkbox row is the exception, and it has to be: its glyph sits at the row's
+   far right while the wrapper is a 14px box, so a wrapper-scoped trigger lit the
+   glyph ~300px from the pointer and killed it again the moment you moved toward
+   it — visible but unclickable. The row is the smallest box containing both. */
+.ui-designer-property-row.checkbox:hover .ui-designer-bindable-link,
+.ui-designer-property-row.checkbox:focus-within .ui-designer-bindable-link {
   opacity: 1;
 }
 

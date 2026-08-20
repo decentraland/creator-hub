@@ -119,7 +119,11 @@ import {
 } from './platform-convention';
 import { pbBackgroundPatchToErgoFields, pbToErgonomicButton, pbToErgonomicText } from './ecs-shape';
 import { formatUiSource } from './formatting';
-import { uiTransformPatchEdits, uiTransformPatchFields } from './transform-patch';
+import {
+  boundTransformKeys,
+  uiTransformPatchEdits,
+  uiTransformPatchFields,
+} from './transform-patch';
 import {
   codeToUINodes,
   findComponentFn,
@@ -1389,7 +1393,7 @@ async function spliceComponentPatchUnlocked(
     if (!guardElementWrite(entityId, 'spliceComponentPatch')) return;
     const node = findCodeNode(state.parsed?.root, entityId);
     const current = (node?.uiTransform as Record<string, unknown>) ?? {};
-    edits.push(...uiTransformPatchEdits(ast, current, patch));
+    edits.push(...uiTransformPatchEdits(ast, current, patch, boundTransformKeys(node?.bindings)));
   } else if (componentId === 'core::UiBackground') {
     if (!guardElementWrite(entityId, 'spliceComponentPatch')) return;
     // Per-key surgical writes; PB shapes (TextureUnion, numeric enums) convert
@@ -1444,7 +1448,11 @@ async function writeUiTransformFields(
 function dropPinFields(entityId: number, top: number, left: number): Record<string, unknown> {
   const node = findCodeNode(state.parsed?.root, entityId);
   const current = (node?.uiTransform as Record<string, unknown>) ?? {};
-  return uiTransformPatchFields(current, dragPinPatch(top, left, current));
+  return uiTransformPatchFields(
+    current,
+    dragPinPatch(top, left, current),
+    boundTransformKeys(node?.bindings),
+  );
 }
 
 // Move an ABSOLUTE node: splice the ergonomic `position: { top, left }` edges.
@@ -1926,7 +1934,113 @@ function interactionTargetFor(entityId: number, attrName: string): InteractionAs
   return interactionAstFor(entityId);
 }
 
-async function bindAttributeUnlocked(entityId: number, name: string, expr: string): Promise<void> {
+/**
+ * Which style object a component's props live inside, or null for the components
+ * whose props are top-level JSX attributes. `zIndex` and friends are keys of
+ * `uiTransform`, not props of the element — react-ecs EntityPropTypes carries only
+ * uiTransform/uiBackground/key plus listeners — so binding one as an attribute
+ * would emit a prop the renderer ignores and the scene's own tsc rejects.
+ */
+function styleObjectFor(componentId: string | undefined): 'uiTransform' | 'uiBackground' | null {
+  if (componentId === 'core::UiTransform') return 'uiTransform';
+  if (componentId === 'core::UiBackground') return 'uiBackground';
+  return null;
+}
+
+/**
+ * Write (or clear, with `undefined`) one key inside a node's style object. Routes
+ * to the `base` interaction layer for the same reason writeUiTransformFields does:
+ * a JSX attribute would shadow the layer.
+ */
+async function writeStyleKey(
+  entityId: number,
+  opName: string,
+  objectName: 'uiTransform' | 'uiBackground',
+  fields: Record<string, unknown>,
+): Promise<void> {
+  const ast = astNodeFor(entityId) as Parameters<typeof setObjectFields>[0] | undefined;
+  if (!ast || !guardElementWrite(entityId, opName)) return;
+  const interaction = interactionAstFor(entityId);
+  const edits = interaction
+    ? setInteractionNested(interaction, 'base', objectName, fields)
+    : setObjectFields(ast, objectName, fields);
+  if (edits.length) await applySourceEdits(edits);
+}
+
+/**
+ * Bind (or unbind, with `expr: undefined`) one flattened uiTransform key. Goes
+ * through the panel's own patch path rather than writing the key directly: a
+ * nested group (`padding`) is addressed by member, and the re-fold plus the bound
+ * overlay is what keeps the group's other members — literal or bound — intact.
+ */
+async function writeTransformBinding(
+  entityId: number,
+  opName: string,
+  pbKey: string,
+  expr: string | undefined,
+): Promise<void> {
+  const node = findCodeNode(state.parsed?.root, entityId);
+  const current = (node?.uiTransform as Record<string, unknown>) ?? {};
+  const bound = boundTransformKeys(node?.bindings);
+  if (expr === undefined) delete bound[pbKey];
+  else bound[pbKey] = expr;
+  const fields = uiTransformPatchFields(
+    current,
+    { [pbKey]: undefined, [`${pbKey}Unit`]: undefined },
+    bound,
+  );
+  await writeStyleKey(entityId, opName, 'uiTransform', fields);
+}
+
+/**
+ * Bind (or unbind) one uiBackground key. A texture member is addressed by a dotted
+ * path (`texture.src`), so the whole ergonomic texture object is rebuilt from the
+ * node's current PB and the bound member overridden — that keeps the variant's
+ * other members (wrapMode / filterMode) and clears the exclusive sibling variant.
+ */
+async function writeBackgroundBinding(
+  entityId: number,
+  opName: string,
+  path: string,
+  expr: string | undefined,
+): Promise<void> {
+  const dot = path.indexOf('.');
+  if (dot < 0) {
+    await writeStyleKey(entityId, opName, 'uiBackground', {
+      [path]: expr === undefined ? undefined : raw(expr),
+    });
+    return;
+  }
+  const group = path.slice(0, dot);
+  const member = path.slice(dot + 1);
+  const node = findCodeNode(state.parsed?.root, entityId);
+  const bg = (node?.uiBackground as Record<string, unknown>) ?? {};
+  const fields = bg.texture ? pbBackgroundPatchToErgoFields({ texture: bg.texture }) : {};
+  const existing = fields[group];
+  const obj =
+    existing && typeof existing === 'object' && !Array.isArray(existing)
+      ? { ...(existing as Record<string, unknown>) }
+      : {};
+  if (expr === undefined) delete obj[member];
+  else obj[member] = raw(expr);
+  await writeStyleKey(entityId, opName, 'uiBackground', { ...fields, [group]: obj });
+}
+
+async function bindAttributeUnlocked(
+  entityId: number,
+  name: string,
+  expr: string,
+  componentId?: string,
+): Promise<void> {
+  const objectName = styleObjectFor(componentId);
+  if (objectName === 'uiTransform') {
+    await writeTransformBinding(entityId, 'bindAttribute', name, expr);
+    return;
+  }
+  if (objectName) {
+    await writeBackgroundBinding(entityId, 'bindAttribute', name, expr);
+    return;
+  }
   const ast = astNodeFor(entityId) as Parameters<typeof setAttributeExpr>[0] | undefined;
   if (!ast) return;
   const interaction = interactionTargetFor(entityId, name);
@@ -1940,7 +2054,20 @@ async function bindAttributeUnlocked(entityId: number, name: string, expr: strin
 // Unbind a top-level attribute: remove it entirely so the field reverts to
 // unset (the author can then type a literal). The code equivalent of the classic
 // unbindField op.
-async function unbindAttributeUnlocked(entityId: number, name: string): Promise<void> {
+async function unbindAttributeUnlocked(
+  entityId: number,
+  name: string,
+  componentId?: string,
+): Promise<void> {
+  const objectName = styleObjectFor(componentId);
+  if (objectName === 'uiTransform') {
+    await writeTransformBinding(entityId, 'unbindAttribute', name, undefined);
+    return;
+  }
+  if (objectName) {
+    await writeBackgroundBinding(entityId, 'unbindAttribute', name, undefined);
+    return;
+  }
   const ast = astNodeFor(entityId) as Parameters<typeof removeAttribute>[0] | undefined;
   if (!ast) return;
   const interaction = interactionTargetFor(entityId, name);
@@ -2082,7 +2209,7 @@ async function setInteractionFieldUnlocked(
       string,
       unknown
     >;
-    const fields = uiTransformPatchFields(current, patch);
+    const fields = uiTransformPatchFields(current, patch, boundTransformKeys(node.bindings));
     if (Object.keys(fields).length)
       edits = setInteractionNested(ast, stateKey, 'uiTransform', fields);
   } else if (componentId === 'core::UiBackground') {

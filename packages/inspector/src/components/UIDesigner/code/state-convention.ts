@@ -40,10 +40,26 @@ function declOf(stmt: AstNode): AstNode | undefined {
   return stmt.type === 'ExportNamedDeclaration' ? (stmt.declaration as AstNode) : stmt;
 }
 
-function tsKeywordToType(t: string | undefined): string | null {
+const COLOR_KEYS = ['r', 'g', 'b'];
+
+/**
+ * The type an interface member's annotation names. Object and array annotations
+ * are matched structurally, mirroring how they are written (see TYPE_ANNOTATION).
+ */
+function tsAnnotationToType(ann: AstNode | undefined): string | null {
+  const t = ann?.type;
   if (t === 'TSNumberKeyword') return 'number';
   if (t === 'TSStringKeyword') return 'string';
   if (t === 'TSBooleanKeyword') return 'boolean';
+  if (t === 'TSArrayType' && (ann?.elementType as AstNode)?.type === 'TSStringKeyword') {
+    return 'string[]';
+  }
+  if (t === 'TSTypeLiteral') {
+    const names = ((ann?.members ?? []) as AstNode[])
+      .filter(m => m.type === 'TSPropertySignature' && m.key?.type === 'Identifier')
+      .map(m => m.key.name as string);
+    if (COLOR_KEYS.every(k => names.includes(k))) return 'Color4';
+  }
   return null;
 }
 
@@ -51,6 +67,13 @@ function inferType(init: AstNode | undefined): string {
   if (init?.type === 'Literal') {
     if (typeof init.value === 'number') return 'number';
     if (typeof init.value === 'boolean') return 'boolean';
+  }
+  if (init?.type === 'ArrayExpression') return 'string[]';
+  if (init?.type === 'ObjectExpression') {
+    const names = ((init.properties ?? []) as AstNode[])
+      .filter(pr => pr.type === 'Property' && pr.key?.type === 'Identifier')
+      .map(pr => pr.key.name as string);
+    if (COLOR_KEYS.every(k => names.includes(k))) return 'Color4';
   }
   // A negative/positive numeric literal parses as a UnaryExpression (`-3`).
   if (
@@ -131,7 +154,7 @@ export function readStateVariables(program: AstNode): StateVar[] {
   const typeByName = new Map<string, string>();
   for (const m of (interfaceBody?.body ?? []) as AstNode[]) {
     if (m.type === 'TSPropertySignature' && m.key?.type === 'Identifier') {
-      const t = tsKeywordToType(m.typeAnnotation?.typeAnnotation?.type);
+      const t = tsAnnotationToType(m.typeAnnotation?.typeAnnotation as AstNode);
       if (t) typeByName.set(m.key.name as string, t);
     }
   }
@@ -152,7 +175,24 @@ export function readStateVariables(program: AstNode): StateVar[] {
 }
 
 // Literal default per bindable type, used when seeding a new state property.
-const STATE_DEFAULT: Record<string, string> = { number: '0', string: "''", boolean: 'false' };
+const STATE_DEFAULT: Record<string, string> = {
+  number: '0',
+  string: "''",
+  boolean: 'false',
+  Color4: '{ r: 1, g: 1, b: 1, a: 1 }',
+  'string[]': '[]',
+};
+
+/**
+ * The TS text a type is ANNOTATED with, where that differs from its name. A colour
+ * is written structurally so a generated `state` needs no import to be valid —
+ * the shape is assignable to @dcl/sdk/math's Color4 either way.
+ */
+const TYPE_ANNOTATION: Record<string, string> = {
+  Color4: '{ r: number; g: number; b: number; a: number }',
+};
+
+const annotationFor = (type: string): string => TYPE_ANNOTATION[type] ?? type;
 
 // Produce the edits that add `name` to the `state` object (and, when an
 // interface types it, to that interface). `rawDefault` (optional) is the
@@ -184,7 +224,7 @@ export function addStateProperty(
     const members = (interfaceBody.body ?? []) as AstNode[];
     if (members.length > 0) {
       const last = members[members.length - 1];
-      edits.push({ start: last.end, end: last.end, text: `\n  ${name}: ${type}` });
+      edits.push({ start: last.end, end: last.end, text: `\n  ${name}: ${annotationFor(type)}` });
     } else {
       edits.push({
         start: interfaceBody.start + 1,

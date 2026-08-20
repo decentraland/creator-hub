@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import type { Entity } from '@dcl/ecs';
 
 import { YGU_PERCENT, YGU_POINT } from '../../../../../lib/sdk/ui-transform-constants';
 import { BoxModelField } from './BoxModelField';
@@ -9,6 +10,8 @@ function renderField(value: Record<string, unknown>) {
   render(
     <BoxModelField
       value={value}
+      componentId="core::UiTransform"
+      entity={1 as unknown as Entity}
       onPatch={onPatch}
     />,
   );

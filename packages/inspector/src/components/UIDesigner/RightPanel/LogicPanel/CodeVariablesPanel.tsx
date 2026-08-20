@@ -16,7 +16,12 @@ import {
 
 import './CodeVariablesPanel.css';
 
-const TYPES = ['string', 'number', 'boolean'];
+/**
+ * `Color4` and `string[]` are object-shaped state variables (see state-convention's
+ * TYPE_ANNOTATION). They are listed so a variable seeded by binding a colour or an
+ * options list shows its real type here instead of a blank dropdown.
+ */
+const TYPES = ['string', 'number', 'boolean', 'Color4', 'string[]'];
 const TYPE_OPTIONS = TYPES.map(t => ({ value: t, label: t }));
 
 // One editable row for a typed-state variable: type (retype), default value

@@ -242,16 +242,14 @@ export const MixedContentField: React.FC<MixedContentFieldProps> = ({
       <button
         ref={anchorRef}
         type="button"
-        className="ui-designer-mixed-link"
+        className="ui-designer-bindable-link ui-designer-mixed-link"
         onMouseDown={e => {
           e.preventDefault(); // keep the editor's caret/selection for insertion
           saveSelection();
         }}
         onClick={() => setPickerOpen(true)}
         aria-label="Insert variable"
-      >
-        {'\u{1F517}'}
-      </button>
+      />
       {pickerOpen ? (
         <VariablePicker
           field={field}

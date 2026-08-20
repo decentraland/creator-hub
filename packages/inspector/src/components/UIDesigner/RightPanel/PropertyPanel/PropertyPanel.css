@@ -35,11 +35,17 @@
   padding-right: 22px;
 }
 
+/* One label style for the whole panel — the design draws every field label and
+   section header as the same Subtitle (Inter 12px, Neutrals/Gray), not the base
+   `.Label`'s 11px Snow. Only the collapsible group titles sit heavier, and those
+   are styled separately above. Scoped to this selector rather than redefining
+   --ui-designer-text, which the canvas and left panel also read. */
 .ui-designer-property-panel .Block-label-row .Label {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  color: var(--ui-designer-text);
+  font-size: 12px;
+  color: var(--ui-designer-text-value);
 }
 
 /* Controls fill the row. Paired controls (X|Y, W|H) sit side by side as equal
@@ -78,14 +84,43 @@
 }
 
 /* --- Panel header ---
-   The selected node's kind, plus the eye: the only control in the panel that is
-   not a property row. */
+   The selected node's kind and the eye, plus the two node-wide checkboxes. The
+   Figma Header frame owns all three, so the hairline closes the block rather than
+   sitting under the name row. */
+.ui-designer-panel-header-block {
+  display: flex;
+  flex-direction: column;
+  gap: var(--uid-space-2);
+  padding-bottom: var(--uid-space-2);
+  border-bottom: 1px solid var(--ui-designer-hairline);
+}
+
 .ui-designer-panel-header {
   display: flex;
   align-items: center;
   gap: var(--uid-space-2);
-  padding: var(--uid-space-2) var(--uid-space-3);
-  border-bottom: 1px solid var(--ui-designer-hairline);
+  padding: var(--uid-space-2) var(--uid-space-3) 0;
+}
+
+/* Visibility is Active and Ignore Layout Flow, stacked. They sit outside a
+   Container, so the wrapper reproduces its content inset — the panel's own
+   `> .ui-designer-property-row` rule no longer reaches them from here. Zeroing
+   the Block padding is scoped to this wrapper on purpose: the other `.checkbox`
+   rows (Scroll Overflow, Clip Content, Text Wrap) live in groups and need it for
+   grid rhythm. */
+.ui-designer-panel-header-checks {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 0 var(--uid-space-3);
+}
+
+.ui-designer-property-panel .ui-designer-panel-header-checks .Block {
+  padding: 0;
+}
+
+.ui-designer-panel-header-checks .Checkbox.Field .InputContainer {
+  min-height: 0;
 }
 
 .ui-designer-panel-header-icon {
@@ -158,9 +193,9 @@
   position: relative;
 }
 
-/* A row that belongs to no group (Ignore Layout Flow, Active when) sits outside a
-   Container, so it has to reproduce that container's content inset to line up
-   with the grouped rows. */
+/* A row that belongs to no group (Active when) sits outside a Container, so it
+   has to reproduce that container's content inset to line up with the grouped
+   rows. The header block's checkboxes do the same from their own wrapper. */
 .ui-designer-property-panel > .ui-designer-property-row {
   padding: 0 var(--uid-space-3);
 }
@@ -429,40 +464,67 @@
   border-radius: var(--ui-designer-radius-menu);
 }
 
-/* Checkboxes: a checked box inverts to the near-white fill, per the design — the
-   same standalone-toggle treatment as the Flow wrap button and the aspect lock.
-   Size stays 18px, since the shared tick glyph is positioned against it. */
+/* Checkboxes keep a transparent fill in BOTH states, per the Figma Checkbox
+   component — they are not the inverting standalone-toggle treatment the Flow
+   wrap button and the aspect lock use. State reads off the tick alone, so the
+   border has to carry the box on its own; see the token comment on
+   --ui-designer-checkbox-border for the contrast that buys.
+
+   border-box is load-bearing: the shared rule is content-box, so a bare 14px
+   would render 16px, and the tick offsets below are measured against the
+   resulting 12x12 padding box. */
 .ui-designer-property-panel .Checkbox.Field .InputContainer input[type="checkbox"] {
+  box-sizing: border-box;
+  width: 14px;
+  height: 14px;
+  margin-right: 0;
   border-radius: 4px;
-  border-color: var(--ui-designer-control-border);
+  background-color: transparent;
+  border-color: var(--ui-designer-checkbox-border);
 }
 
-.ui-designer-property-panel .Checkbox.Field .InputContainer input[type="checkbox"]:checked,
-.ui-designer-property-panel .Checkbox.Field .InputContainer input[type="checkbox"]:indeterminate {
-  background-color: var(--ui-designer-control-active-bg);
-  border-color: var(--ui-designer-control-active-bg);
-}
-
-/* The shared tick and dash are painted white INSIDE the asset (a data-URI SVG and
-   a solid block), so neither follows `color` — a near-white box would swallow
-   both. Re-declare them dark, the way the shared disabled state already does.
-   `#` must stay percent-encoded inside the data URI.
-
-   `:not(.disabled)` is load-bearing: without it this ties the shared disabled
-   rule on specificity (both 0,6,2) and the winner would come down to stylesheet
-   order, which would put a charcoal tick on the grey disabled fill. */
 .ui-designer-property-panel
   .Checkbox.Field
-  .InputContainer:not(.disabled)
+  .InputContainer:not(.error):not(.disabled)
+  input[type="checkbox"]:hover:not(:focus) {
+  border-color: var(--ui-designer-text-value);
+}
+
+/* The tick becomes a centred background on the input, and the shared glyph is
+   dropped. `content: url()` makes a pseudo-element REPLACED, and a replaced box
+   ignores the asset's own height in favour of the inline strut — the shared rule
+   only looks right because its `left: 1.5px; top: -1px` were eyeballed around a
+   12x16 glyph. `background-position: center` needs no such offsets, so the tick
+   stays centred whatever the box measures. `#` must stay percent-encoded.
+
+   Both the enabled and disabled shared glyphs have to be suppressed, each one
+   out-specified: the plain rule is (0,5,2) and the disabled one (0,6,2). */
+.ui-designer-property-panel .Checkbox.Field .InputContainer input[type="checkbox"]::before,
+.ui-designer-property-panel
+  .Checkbox.Field
+  .InputContainer.disabled
   input[type="checkbox"]:checked::before {
-  content: url('data:image/svg+xml;utf8,<svg width="12" height="10" viewBox="0 0 12 10" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M11.6467 0.893333L4.22667 9.66667L3.52667 9.62L0.586667 5.46667L1.28667 4.95333L3.9 8.64L10.9467 0.333333L11.6467 0.893333Z" fill="%2335333b"/></svg>');
+  content: none;
 }
 
+.ui-designer-property-panel .Checkbox.Field .InputContainer input[type="checkbox"]:checked {
+  background-image: url('data:image/svg+xml;utf8,<svg width="12" height="10" viewBox="0 0 12 10" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M11.6467 0.893333L4.22667 9.66667L3.52667 9.62L0.586667 5.46667L1.28667 4.95333L3.9 8.64L10.9467 0.333333L11.6467 0.893333Z" fill="%23cfcdd4"/></svg>');
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 8.4px 7px;
+}
+
+/* The dash is a solid block rather than an asset, so it keeps the pseudo-element
+   — recentred for the 12x12 padding box. */
 .ui-designer-property-panel
   .Checkbox.Field
-  .InputContainer:not(.disabled)
+  .InputContainer
   input[type="checkbox"]:indeterminate::before {
-  background-color: var(--ui-designer-control-active-fg);
+  content: "";
+  width: 8px;
+  left: 2px;
+  top: 5px;
+  background-color: var(--ui-designer-text-value);
 }
 
 .ui-designer-property-panel .Checkbox.Field .InputContainer input[type="checkbox"]:focus-visible {
@@ -471,11 +533,13 @@
 }
 
 /* A disabled checkbox must not read as accented-and-on (Clip Content while Scroll
-   Overflow forces it), so the disabled fill wins over the checked one. */
+   Overflow forces it), so it takes the grey fill and a grey tick. `background-color`
+   rather than the `background` shorthand, which would wipe the tick image. */
 .ui-designer-property-panel
   .Checkbox.Field
   .InputContainer.disabled
   input[type="checkbox"]:checked {
+  background-image: url('data:image/svg+xml;utf8,<svg width="12" height="10" viewBox="0 0 12 10" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M11.6467 0.893333L4.22667 9.66667L3.52667 9.62L0.586667 5.46667L1.28667 4.95333L3.9 8.64L10.9467 0.333333L11.6467 0.893333Z" fill="gray"/></svg>');
   background-color: var(--base-12);
   border-color: var(--base-12);
 }
@@ -699,12 +763,15 @@
 }
 
 /* The design draws every boolean as `☑ Label`, so the control leads and the
-   label follows — the reverse of every other row. */
+   label follows — the reverse of every other row. This gap is the whole box-to-
+   label distance now that the shared input's own margin-right is zeroed; under
+   row-reverse that margin stayed on the physical edge facing the label and added
+   to it. */
 .ui-designer-property-row.checkbox .Block {
   flex-direction: row-reverse;
   align-items: center;
   justify-content: flex-end;
-  gap: var(--uid-space-2);
+  gap: 10px;
 }
 
 .ui-designer-property-row.checkbox .Block > .content {

@@ -16,8 +16,8 @@
   opacity: 0.4;
 }
 
-/* The parent box: an accented EDGE names each pinned edge, so the marker inside is
-   the node itself and stays neutral and centred. */
+/* The parent box: an accented LINE names each pinned position, so the marker inside
+   is the node itself and stays neutral and centred. */
 .ui-designer-anchor-preview {
   position: relative;
   display: flex;
@@ -31,11 +31,16 @@
   border-radius: var(--ui-designer-radius-field);
 }
 
-/* A leash from the node to the edge it is glued to, per axis (Figma's constraints
-   idiom). The accented border alone was two pixels of colour on a 62px box — it
-   named the edge but did not read as "pinned". 13px is the gap it has to span:
-   58px inner box (62 less the 2px borders, which an absolutely positioned child
-   sits inside) less the 32px marker, halved. */
+/* An accented line spanning the box at the position the axis is glued to — the
+   Figma ConstraintsIcons idiom (a full-length System/Blue line down the pinned
+   edge, with the box border itself left neutral).
+
+   This replaced a short leash from the marker to the edge plus an accented border:
+   a leash has to point AT something, so a centre pin had nowhere to draw and
+   Centre/Middle rendered identically to unpinned.
+
+   Note the axes are crossed, as they are in the design: the HORIZONTAL axis is a
+   VERTICAL line (left | centre | right), the vertical axis a horizontal one. */
 .ui-designer-anchor-preview::before,
 .ui-designer-anchor-preview::after {
   content: "";
@@ -45,54 +50,48 @@
 }
 
 .ui-designer-anchor-preview::before {
-  top: 50%;
-  width: 13px;
-  height: 2px;
-  transform: translateY(-50%);
+  top: 0;
+  bottom: 0;
+  width: 2px;
 }
 
 .ui-designer-anchor-preview::after {
-  left: 50%;
-  width: 2px;
-  height: 13px;
-  transform: translateX(-50%);
+  left: 0;
+  right: 0;
+  height: 2px;
+}
+
+/* Presence of the attribute IS the pin: the component omits it for an unpinned
+   axis (`data-h={h ?? undefined}`), so there is no empty-string state to exclude. */
+.ui-designer-anchor-preview[data-h]::before,
+.ui-designer-anchor-preview[data-v]::after {
+  display: block;
 }
 
 .ui-designer-anchor-preview[data-h="left"]::before {
   left: 0;
-  display: block;
+}
+
+.ui-designer-anchor-preview[data-h="center"]::before {
+  left: 50%;
+  transform: translateX(-50%);
 }
 
 .ui-designer-anchor-preview[data-h="right"]::before {
   right: 0;
-  display: block;
 }
 
 .ui-designer-anchor-preview[data-v="top"]::after {
   top: 0;
-  display: block;
+}
+
+.ui-designer-anchor-preview[data-v="middle"]::after {
+  top: 50%;
+  transform: translateY(-50%);
 }
 
 .ui-designer-anchor-preview[data-v="bottom"]::after {
   bottom: 0;
-  display: block;
-}
-
-/* An axis pinned to the centre holds no edge, so it accents none. */
-.ui-designer-anchor-preview[data-h="left"] {
-  border-left-color: var(--ui-designer-control-accent);
-}
-
-.ui-designer-anchor-preview[data-h="right"] {
-  border-right-color: var(--ui-designer-control-accent);
-}
-
-.ui-designer-anchor-preview[data-v="top"] {
-  border-top-color: var(--ui-designer-control-accent);
-}
-
-.ui-designer-anchor-preview[data-v="bottom"] {
-  border-bottom-color: var(--ui-designer-control-accent);
 }
 
 .ui-designer-anchor-marker {

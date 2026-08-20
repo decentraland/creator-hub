@@ -2,7 +2,7 @@ import React from 'react';
 import type { Entity } from '@dcl/ecs';
 
 import { Pill } from '../../../../ui/Pill';
-import type { FieldConfig } from '../field-configs';
+import { isBindableProp, type FieldConfig } from '../field-configs';
 import { BindAffordance } from '../BindAffordance';
 import { useFieldBinding } from '../useFieldBinding';
 
@@ -33,6 +33,10 @@ export const BindableSubField: React.FC<BindableSubFieldProps> = ({
         />
       </div>
     );
+  }
+
+  if (!isBindableProp(field)) {
+    return <div className="ui-designer-bindable-subfield">{children}</div>;
   }
 
   return (

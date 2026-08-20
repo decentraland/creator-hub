@@ -157,8 +157,9 @@
 
   /* Selected / active controls, per the Figma Layout frame. Two treatments, not
      one: a cell INSIDE a segmented group lifts subtly and turns its glyph white,
-     while a STANDALONE toggle (the wrap button, the aspect lock, a checkbox)
-     inverts to a near-white fill with a dark glyph.
+     while a STANDALONE toggle (the wrap button, the aspect lock) inverts to a
+     near-white fill with a dark glyph. A checkbox is NEITHER — see
+     --ui-designer-checkbox-border.
 
      The group cell's fill is only 1.36:1 against its unselected neighbours, which
      is fine because the fill is not what carries the state: the glyph goes from
@@ -184,6 +185,14 @@
   /* One step up, for a border that has to out-weigh another White 10 stroke
      inside the same control (the Anchor preview's box vs its crosshair). */
   --ui-designer-control-border-strong: rgba(255, 255, 255, 0.2); /* Transparencies/White 20 */
+  /* A checkbox stays transparent in both states and carries its state on the tick
+     alone (Neutrals/Gray, 10.07:1 on the panel), so the border is all that draws
+     the empty box — which is why it sits four steps above the control border
+     rather than reusing it. Compositing White 40 over the panel gives ~#7c7a80 at
+     3.73:1, clearing the 3:1 non-text minimum. Dropping the old --gray-0 fill was
+     therefore a contrast GAIN, not a loss: that fill was doing the work a 1.39:1
+     White 10 border could not. */
+  --ui-designer-checkbox-border: rgba(255, 255, 255, 0.4); /* Transparencies/White 40 */
   --ui-designer-hairline: rgba(255, 255, 255, 0.07);
 
   /* Glyph stroke. The design paints every panel glyph Neutrals/Cloudy Sky, which

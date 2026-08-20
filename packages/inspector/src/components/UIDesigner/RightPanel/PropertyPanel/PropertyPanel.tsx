@@ -93,7 +93,13 @@ import { ResizeField } from './ResizeField';
 import { FillField } from './FillField';
 import { TextAlignField } from './TextAlignField';
 import { regionToUvs, uvsToRegion } from './uv-region';
-import { buildGroups, POSITION_MODE_FIELD, TRANSFORM, type FieldConfig } from './field-configs';
+import {
+  bindPathFor,
+  buildGroups,
+  POSITION_MODE_FIELD,
+  TRANSFORM,
+  type FieldConfig,
+} from './field-configs';
 
 import './PropertyPanel.css';
 
@@ -624,7 +630,7 @@ const ActiveFlagRow: React.FC<{ entity: Entity; expr?: string }> = ({ entity, ex
  *
  * The eye is a CANVAS-ONLY preview toggle, the same editor-only state the
  * LeftPanel's eye drives — it never reaches source. The real `display` prop is
- * the Visible is Active row below it, so a node hidden from the canvas here still
+ * the Visibility is Active row below it, so a node hidden from the canvas here still
  * renders in the shipped scene.
  */
 const PanelHeader: React.FC<{ node: CodeUINode; hidden: boolean; onToggle: () => void }> = ({
@@ -649,7 +655,7 @@ const PanelHeader: React.FC<{ node: CodeUINode; hidden: boolean; onToggle: () =>
         title={
           hidden
             ? 'Show this node on the canvas'
-            : 'Hide this node on the canvas — it still renders in the scene. Use Visible is Active to remove it from the scene.'
+            : 'Hide this node on the canvas — it still renders in the scene. Use Visibility is Active to remove it from the scene.'
         }
         onClick={onToggle}
       >
@@ -683,12 +689,12 @@ const VisibleRow: React.FC<{ visible: boolean; onToggle: (visible: boolean) => v
 }) => (
   <div className="ui-designer-property-row checkbox">
     <Block
-      label="Visible is Active"
+      label="Visibility is Active"
       info="Off removes the node from the scene entirely — it stops rendering and stops taking up layout space. The eye above only hides it on the canvas."
     >
       <CheckboxField
         checked={visible}
-        aria-label="Visible is Active"
+        aria-label="Visibility is Active"
         onChange={e => onToggle(e.target.checked)}
       />
     </Block>
@@ -870,7 +876,7 @@ const PropertyPanelComponent: React.FC = () => {
           field={field}
           componentValue={value}
           entity={selected as Entity}
-          bound={bindingsByField[`${field.componentId}.${field.path}`]}
+          bound={bindingsByField[`${field.componentId}.${bindPathFor(field)}`]}
           bindings={bindingsByField}
           mixed={mixedByField[`${field.componentId}.${field.path}`]}
           parentFlexDirection={parentFlexDirection}
@@ -926,7 +932,7 @@ const PropertyPanelComponent: React.FC = () => {
   return (
     <div className="ui-designer-property-panel">
       {codeNode ? (
-        <>
+        <div className="ui-designer-panel-header-block">
           <PanelHeader
             node={codeNode}
             hidden={canvasHidden}
@@ -935,16 +941,22 @@ const PropertyPanelComponent: React.FC = () => {
             }
           />
           {codeNode.opaque ? null : (
-            <VisibleRow
-              visible={!displayNone}
-              onToggle={visible =>
-                writeAndDispatch(TRANSFORM, {
-                  display: visible ? visibleDisplayValue(activeLayer) : YGD_NONE,
-                })
-              }
-            />
+            <div className="ui-designer-panel-header-checks">
+              <VisibleRow
+                visible={!displayNone}
+                onToggle={visible =>
+                  writeAndDispatch(TRANSFORM, {
+                    display: visible ? visibleDisplayValue(activeLayer) : YGD_NONE,
+                  })
+                }
+              />
+              {hiddenOnRoot(POSITION_MODE_FIELD, isGuiRoot, transform) ||
+              hiddenUnderAbsoluteParent(parentInFlow, transform)
+                ? null
+                : renderRow(POSITION_MODE_FIELD, transform)}
+            </div>
           )}
-        </>
+        </div>
       ) : null}
       {codeNode && !codeNode.opaque ? (
         <>
@@ -971,12 +983,6 @@ const PropertyPanelComponent: React.FC = () => {
           expr={codeNode.interaction.activeExpr}
         />
       ) : null}
-      {/* The design draws Ignore Layout Flow above the first group, not inside one:
-          it gates fields in both Position (Anchor/Position) and Layout (margin). */}
-      {hiddenOnRoot(POSITION_MODE_FIELD, isGuiRoot, transform) ||
-      hiddenUnderAbsoluteParent(parentInFlow, transform)
-        ? null
-        : renderRow(POSITION_MODE_FIELD, transform)}
       {allGroups.map(group => {
         // Bucket each field: shown (core / set / always-on) → a row (with a `−`
         // when it's an optional set prop); togglable-and-unset → the group's
@@ -1357,9 +1363,10 @@ const FieldRow = React.memo(function FieldRow({
       const flag: OverflowFlag = field.kind === 'overflow-scroll' ? 'scroll' : 'clip';
       const flags = overflowFlags(componentValue);
       return (
-        <Block
-          label={field.label}
-          info={field.info}
+        <BindableField
+          field={field}
+          entity={entity}
+          bound={boundProp}
         >
           <CheckboxField
             checked={flags[flag]}
@@ -1367,7 +1374,7 @@ const FieldRow = React.memo(function FieldRow({
             aria-label={field.label}
             onChange={e => onPatch(overflowPatch(flag, e.target.checked, componentValue))}
           />
-        </Block>
+        </BindableField>
       );
     }
     case 'length-vec': {
@@ -1415,8 +1422,11 @@ const FieldRow = React.memo(function FieldRow({
           bound={boundProp}
         >
           <FillField
+            key={entity}
             color={componentValue?.color as Color4 | undefined}
             texture={componentValue?.texture as TextureUnion | undefined}
+            entity={entity}
+            bindings={bindings}
             onPatch={onPatch}
           />
         </BindableField>
@@ -1424,29 +1434,31 @@ const FieldRow = React.memo(function FieldRow({
     }
     case 'text-align': {
       return (
-        <Block
-          label={field.label}
-          info={field.info}
+        <BindableField
+          field={field}
+          entity={entity}
+          bound={boundProp}
         >
           <TextAlignField
             value={raw as number | undefined}
             onChange={mode => onPatch({ [field.path]: mode })}
           />
-        </Block>
+        </BindableField>
       );
     }
     case 'text-wrap': {
       return (
-        <Block
-          label={field.label}
-          info={field.info}
+        <BindableField
+          field={field}
+          entity={entity}
+          bound={boundProp}
         >
           <CheckboxField
             checked={((raw as number | undefined) ?? TW_WRAP) === TW_WRAP}
             aria-label={field.label}
             onChange={e => onPatch({ [field.path]: e.target.checked ? TW_WRAP : TW_NO_WRAP })}
           />
-        </Block>
+        </BindableField>
       );
     }
     case 'string-array': {
@@ -1579,6 +1591,9 @@ const FieldRow = React.memo(function FieldRow({
         >
           <BoxModelField
             value={componentValue}
+            componentId={field.componentId}
+            entity={entity}
+            bindings={bindings}
             onPatch={onPatch}
           />
         </Block>

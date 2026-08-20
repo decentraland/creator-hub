@@ -7,6 +7,7 @@ import { type CanvasBindingRow, type CanvasSegment, type UINodeType } from '../s
 // constants so this pure parser has no value imports beyond types.
 const SEG_LITERAL = 'literal';
 const SEG_BINDING = 'binding';
+import { ergonomicToFlattenedKey, NESTED_TRANSFORM_GROUPS } from './transform-patch';
 import {
   ergonomicToPBBackground,
   ergonomicToPBButton,
@@ -91,6 +92,16 @@ const UI_DROPDOWN_PROPS = new Set([
 export const UI_BUTTON = 'ui::button';
 
 const UI_BUTTON_PROPS = new Set(['variant', 'disabled']);
+
+const UI_TRANSFORM = 'core::UiTransform';
+const UI_BACKGROUND = 'core::UiBackground';
+
+/**
+ * uiBackground keys that hold a nested object whose members can bind on their own.
+ * Their members are addressed by a DOTTED path (`texture.src`) — unlike
+ * uiTransform's groups, whose members have a flattened PB name.
+ */
+const NESTED_BACKGROUND_GROUPS = new Set(['texture', 'avatarTexture']);
 
 // Which prop set folds into which node field, per element type.
 const TYPED_PROP_GROUPS: Partial<
@@ -232,6 +243,95 @@ function bindingExpr(attr: AnyNode, source: string): string | null {
   return bindingExprOf(v.expression as AnyNode, source);
 }
 
+/**
+ * Read one `uiTransform` / `uiBackground` object literal, splitting its fields
+ * three ways: statically evaluable ones fold into `value`, a field whose value is
+ * a plain reference (`state.depth`) becomes a binding row, and anything else
+ * (ternary, call, spread, computed key) sets `dynamic`.
+ *
+ * Recognizing the bound case is what keeps a bound style key off the
+ * `dynamicProps` path, which would otherwise freeze every panel write on the node.
+ * Binding rows are keyed by the FLATTENED PB path the panel addresses, so a member
+ * of a nested group reports as `paddingTop` rather than `padding.top`. Recursion is
+ * one level deep — exactly the depth react-ecs's per-edge objects have.
+ *
+ * A recursed group is assigned even when every member of it bound, leaving the bag
+ * empty: for a texture that empty bag is what keeps the node in image / avatar mode.
+ */
+function readStyleObject(
+  obj: AnyNode,
+  componentId: string,
+  source: string,
+  group?: string,
+): { value: Record<string, unknown>; bound: CanvasBindingRow[]; dynamic: boolean } {
+  const value: Record<string, unknown> = {};
+  const bound: CanvasBindingRow[] = [];
+  let dynamic = false;
+  for (const prop of (obj.properties ?? []) as AnyNode[]) {
+    if (prop.type !== 'Property' || prop.computed) {
+      dynamic = true;
+      continue;
+    }
+    const key = String(prop.key.type === 'Identifier' ? prop.key.name : prop.key.value);
+    const valueNode = prop.value as AnyNode;
+
+    const nested = unparen(valueNode);
+    const isGroup =
+      componentId === UI_TRANSFORM
+        ? NESTED_TRANSFORM_GROUPS.has(key)
+        : NESTED_BACKGROUND_GROUPS.has(key);
+    if (!group && isGroup && nested.type === 'ObjectExpression') {
+      const r = readStyleObject(nested, componentId, source, key);
+      value[key] = r.value;
+      bound.push(...r.bound);
+      if (r.dynamic) dynamic = true;
+      continue;
+    }
+
+    const v = evalExpr(valueNode);
+    if (v.ok && !v.dynamic) {
+      value[key] = v.value;
+      continue;
+    }
+    const expr = bindingExprOf(valueNode, source);
+    const flat = !group
+      ? key
+      : componentId === UI_TRANSFORM
+        ? ergonomicToFlattenedKey(group, key)
+        : `${group}.${key}`;
+    if (expr && flat) {
+      bound.push({ field: `${componentId}.${flat}`, variable: expr });
+      continue;
+    }
+    if (v.ok) value[key] = v.value;
+    dynamic = true;
+  }
+  return { value, bound, dynamic };
+}
+
+/** The object literal a style attribute holds, or null when it is any other expression. */
+function styleObjectOf(attr: AnyNode): AnyNode | null {
+  const v = attr.value as AnyNode | null;
+  if (v?.type !== 'JSXExpressionContainer') return null;
+  const e = unparen(v.expression as AnyNode);
+  return e?.type === 'ObjectExpression' ? e : null;
+}
+
+/** `readStyleObject` for a JSX attribute, falling back to a whole-value eval. */
+function readStyleAttr(
+  attr: AnyNode,
+  componentId: string,
+  source: string,
+): { value: Record<string, unknown> | undefined; bound: CanvasBindingRow[]; dynamic: boolean } {
+  const obj = styleObjectOf(attr);
+  if (obj) return readStyleObject(obj, componentId, source);
+  const v = attrValue(attr);
+  if (v.ok) {
+    return { value: v.value as Record<string, unknown>, bound: [], dynamic: !!v.dynamic };
+  }
+  return { value: undefined, bound: [], dynamic: true };
+}
+
 // Extract the handler NAME an event attr is bound to, from either the thunk form
 // the editor writes (`onMouseDown={() => onClick(state)}`) or a bare reference
 // (`onMouseDown={onClick}`, e.g. hand-authored). Returns null for anything else
@@ -333,6 +433,18 @@ function readInteractionLayer(
     const valueNode = prop.value as AnyNode;
 
     if (key === 'uiTransform' || key === 'uiBackground') {
+      const componentId = key === 'uiTransform' ? UI_TRANSFORM : UI_BACKGROUND;
+      const obj = unparen(valueNode);
+      const r = obj.type === 'ObjectExpression' ? readStyleObject(obj, componentId, source) : null;
+      if (r) {
+        bound.push(...r.bound);
+        if (r.dynamic) dynamic = true;
+        styles[key] =
+          key === 'uiTransform'
+            ? ergonomicToPBTransform(r.value)
+            : ergonomicToPBBackground(r.value);
+        continue;
+      }
       const v = evalExpr(valueNode);
       if (!v.ok) {
         dynamic = true;
@@ -596,18 +708,17 @@ export function codeToUINodes(
 
     const uiTransformAttr = attrs.get('uiTransform');
     if (uiTransformAttr) {
-      const v = attrValue(uiTransformAttr);
       // Normalize react-ecs's ergonomic shape → flattened PBUiTransform so the
-      // canvas renders it identically to the ECS-backed path. A PARTIALLY
-      // static object (e.g. `{ width: state.w, height: 100 }`) still renders
-      // from its static fields but marks the node dynamic so no write path
-      // re-emits the lossy value over the source.
-      if (v.ok) {
-        node.uiTransform = ergonomicToPBTransform(v.value as Record<string, unknown>);
-        if (v.dynamic) dynamicProps = true;
-      } else {
-        dynamicProps = true;
-      }
+      /**
+       * canvas renders it identically to the ECS-backed path. A field bound to a
+       * plain reference is a binding, not lossy content; anything else
+       * unevaluable still marks the node dynamic so no write path re-emits the
+       * partial value over the source.
+       */
+      const r = readStyleAttr(uiTransformAttr, UI_TRANSFORM, source);
+      if (r.value) node.uiTransform = ergonomicToPBTransform(r.value);
+      bindings.push(...r.bound);
+      if (r.dynamic) dynamicProps = true;
     }
 
     // Record the structural parent (from JSX nesting) as PBUiTransform.parent so
@@ -624,15 +735,14 @@ export function codeToUINodes(
 
     const uiBackgroundAttr = attrs.get('uiBackground');
     if (uiBackgroundAttr) {
-      const v = attrValue(uiBackgroundAttr);
-      if (v.ok) {
-        // Normalize react-ecs's ergonomic background (string enums, bare
-        // texture object) → the flattened-PB shape the panel reads.
-        node.uiBackground = ergonomicToPBBackground(v.value as Record<string, unknown>);
-        if (v.dynamic) dynamicProps = true;
-      } else {
-        dynamicProps = true;
-      }
+      /**
+       * Normalize react-ecs's ergonomic background (string enums, bare texture
+       * object) → the flattened-PB shape the panel reads.
+       */
+      const r = readStyleAttr(uiBackgroundAttr, UI_BACKGROUND, source);
+      if (r.value) node.uiBackground = ergonomicToPBBackground(r.value);
+      bindings.push(...r.bound);
+      if (r.dynamic) dynamicProps = true;
     }
 
     // Read a set of element props into static values, recording each one bound to a

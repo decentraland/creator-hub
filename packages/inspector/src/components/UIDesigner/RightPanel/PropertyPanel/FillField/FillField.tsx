@@ -1,11 +1,13 @@
 import React, { useMemo, useState } from 'react';
 import { IoColorFillOutline } from 'react-icons/io5';
-import type { TextureUnion } from '@dcl/ecs';
+import type { Entity, TextureUnion } from '@dcl/ecs';
 import { validateAssetPath } from '@dcl/asset-packs';
 
 import { useAssetOptions } from '../../../../../hooks/useAssetOptions';
 import { FileUploadField, RgbaColorField, TextField } from '../../../../ui';
 import { ACCEPTED_FILE_TYPES } from '../../../../ui/FileUploadField/types';
+import type { FieldKind } from '../field-configs';
+import { BindableSubField } from '../BindableSubField';
 import { radioGroupKeyDown, radioTabIndex } from '../radio-group';
 
 import './FillField.css';
@@ -59,9 +61,24 @@ const MODES: { value: FillMode; label: string; hint: string }[] = [
 
 const MODE_VALUES = MODES.map(m => m.value);
 
+const BACKGROUND = 'core::UiBackground';
+
+/**
+ * Which uiBackground prop a bind targets per mode — the key that mode's editor
+ * actually writes. `none` has no value to bind, so it offers no affordance.
+ */
+const BIND_TARGET: Record<FillMode, { path: string; kind: FieldKind } | null> = {
+  colour: { path: 'color', kind: 'color' },
+  file: { path: 'texture.src', kind: 'string' },
+  avatar: { path: 'avatarTexture.userId', kind: 'string' },
+  none: null,
+};
+
 interface FillFieldProps {
   color: Color4 | undefined;
   texture: TextureUnion | undefined;
+  entity: Entity;
+  bindings?: Record<string, string>;
   onPatch: (patch: Record<string, unknown>) => void;
 }
 
@@ -69,9 +86,24 @@ interface FillFieldProps {
  * With nothing authored, several modes are the SAME source state — a path, a
  * userId or a colour is the only thing telling them apart. `picked` remembers an
  * explicit choice until a value lands, which is what keeps that segment selected
- * and its editor on screen in between; anything already in source wins over it.
+ * and its editor on screen in between.
+ *
+ * Only an UNAMBIGUOUS source state outranks `picked`. A colour does not qualify:
+ * an image fill carries one too (OPAQUE_TINT, so the texture is not multiplied
+ * away), so `color` alone cannot tell Solid colour from an image awaiting a path.
+ * Ranking it above `picked` is what made Image unselectable — picking it cleared
+ * the texture, the leftover colour then read as Solid, and the segment snapped
+ * straight back.
+ *
+ * `picked` is per-node state, so the caller keys this component by entity.
  */
-const FillFieldComponent: React.FC<FillFieldProps> = ({ color, texture, onPatch }) => {
+const FillFieldComponent: React.FC<FillFieldProps> = ({
+  color,
+  texture,
+  entity,
+  bindings,
+  onPatch,
+}) => {
   const assetOptions = useAssetOptions(ACCEPTED_FILE_TYPES.image);
   const imageOptions = useMemo(
     () => [{ label: 'None', value: '' }, ...assetOptions],
@@ -83,8 +115,8 @@ const FillFieldComponent: React.FC<FillFieldProps> = ({ color, texture, onPatch 
 
   const tex = texture?.tex;
   const authored: FillMode | undefined =
-    tex?.$case === 'avatarTexture' ? 'avatar' : tex ? 'file' : color ? 'colour' : undefined;
-  const mode: FillMode = authored ?? picked ?? 'none';
+    tex?.$case === 'avatarTexture' ? 'avatar' : tex ? 'file' : undefined;
+  const mode: FillMode = authored ?? picked ?? (color ? 'colour' : 'none');
 
   const handleModeChange = (next: FillMode) => {
     setFileError(undefined);
@@ -172,6 +204,21 @@ const FillFieldComponent: React.FC<FillFieldProps> = ({ color, texture, onPatch 
     }
   };
 
+  const target = BIND_TARGET[mode];
+  const variant = renderVariant();
+  const bindable =
+    target && variant ? (
+      <BindableSubField
+        field={{ componentId: BACKGROUND, path: target.path, kind: target.kind }}
+        entity={entity}
+        bound={bindings?.[`${BACKGROUND}.${target.path}`]}
+      >
+        {variant}
+      </BindableSubField>
+    ) : (
+      variant
+    );
+
   return (
     <div className="ui-designer-fill-field">
       <div
@@ -197,7 +244,7 @@ const FillFieldComponent: React.FC<FillFieldProps> = ({ color, texture, onPatch 
           </button>
         ))}
       </div>
-      {renderVariant()}
+      {bindable}
     </div>
   );
 };
