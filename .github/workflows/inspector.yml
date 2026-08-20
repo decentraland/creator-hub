@@ -170,7 +170,7 @@ jobs:
           echo "safe_branch=$safe_branch" >> $GITHUB_OUTPUT
 
       - name: deploy to gh-pages
-        uses: peaceiris/actions-gh-pages@v4
+        uses: peaceiris/actions-gh-pages@84c30a85c19949d7eee79c4ff27748b70285e453 # v4.1.0
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./packages/inspector/public
