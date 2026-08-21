@@ -277,6 +277,11 @@ const EditorTab: React.FC<EditorTabProps> = ({
               }
               label={t('modal.app_settings.fields.ai_assistant.label')}
             />
+            {settings.aiAssistant && (
+              <Typography variant="caption">
+                {t('modal.app_settings.fields.ai_assistant.help')}
+              </Typography>
+            )}
           </Box>
         )}
       </FormGroup>

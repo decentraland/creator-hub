@@ -418,7 +418,8 @@
           "label": "实验性功能"
         },
         "ai_assistant": {
-          "label": "AI 场景助手"
+          "label": "AI 场景助手",
+          "help": "运行你安装的 Claude 或 Codex CLI，对你的电脑拥有完全访问权限，与在终端中的权限相同。请仅在你信任所要求的操作时启用。"
         },
         "mcp_server": {
           "label": "公开 AI 助手 MCP 服务器",

@@ -1,5 +1,5 @@
 import { FreeCamera, NullEngine, Scene, Vector3, ScreenshotTools } from '@babylonjs/core';
-import { Name as NameEngine } from '@dcl/ecs';
+import { EntityState, Name as NameEngine } from '@dcl/ecs';
 import { InMemoryTransport, RPC } from '@dcl/mini-rpc';
 import type { Store } from '../../../redux/store';
 import { fetchLatestCatalog, getAssetById } from '../../logic/catalog';
@@ -288,6 +288,8 @@ describe('SceneServer RPC scene mutations', () => {
     };
     const engine = {
       RootEntity: 0,
+      // Any non-root entity the tests reference "exists"; entity 999 is used for the invalid case.
+      getEntityState: (e: number) => (e === 999 ? EntityState.Unknown : EntityState.UsedEntity),
       getComponent: (nameOrId: string | number) => {
         if (nameOrId === 'core::Transform' || nameOrId === 1) return transform;
         if (nameOrId === 'core::GltfContainer' || nameOrId === 2) return gltf;
@@ -327,6 +329,13 @@ describe('SceneServer RPC scene mutations', () => {
     const result = await host.request('set_parent', { entity: 512, parent: 511 });
     expect(ops.setParent).toHaveBeenCalledWith(512, 511);
     expect(result).toEqual({ entity: 512, parent: 511 });
+  });
+
+  it('rejects a mutation on a hallucinated entity id (not in the engine)', async () => {
+    await expect(host.request('remove_entity', { entity: 999 })).rejects.toThrow(
+      'No entity with id 999',
+    );
+    expect(ops.removeEntity).not.toHaveBeenCalled();
   });
 
   it('set_component: UPDATES an existing component (resolves short name)', async () => {
@@ -409,6 +418,7 @@ describe('SceneServer RPC catalog + script + smart item', () => {
     };
     const engine = {
       RootEntity: 0,
+      getEntityState: () => EntityState.UsedEntity,
       getComponent: (nameOrId: string | number) => {
         if (nameOrId === 'asset-packs::Script') return scriptComp;
         throw new Error('Component not found');

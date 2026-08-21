@@ -14,7 +14,7 @@ import { randomBytes, randomUUID } from 'crypto';
 import log from 'electron-log/main';
 import { McpServer, type RegisteredTool } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
-import { isInitializeRequest } from '@modelcontextprotocol/sdk/types.js';
+import { type CallToolResult, isInitializeRequest } from '@modelcontextprotocol/sdk/types.js';
 import { z, type ZodRawShape, type ZodTypeAny } from 'zod';
 
 import { AI_SCENE_OP_REQUEST, AI_SCREENSHOT_REQUEST } from '/shared/types/ipc';
@@ -51,6 +51,10 @@ export function setSceneMcpProject(projectDir: string | null): void {
 
 const MAX_ROSTER_ROWS = 200;
 const SCREENSHOT_TIMEOUT_MS = 12_000;
+// Cap the request body so a buggy/compromised MCP client can't OOM the main process, and cap
+// live sessions so a client that opens without closing (or crashes) can't leak them forever.
+const MAX_BODY_BYTES = 4 * 1024 * 1024;
+const MAX_SESSIONS = 32;
 
 // `editor_screenshot` bridge: the renderer owns the inspector iframe, so main asks it to
 // capture and waits for the answer, correlated by request id.
@@ -135,11 +139,20 @@ export function getTurnMutations(): number {
   return turnMutations;
 }
 
+// The inspector autosaves the composite to disk ~100ms after an engine change (debounced).
+// The read tools (scene_state/entity_detail) read that file, so after a mutation we wait a
+// beat before resolving — otherwise an AI that mutates then immediately reads sees stale data.
+const AUTOSAVE_SETTLE_MS = 300;
+
 function requestSceneOp(op: string, params: Record<string, unknown>): Promise<SceneOpOutcome> {
   const run = sceneOpChain
     .then(() => requestSceneOpRaw(op, params))
-    .then(res => {
-      if (res.ok && MUTATION_UNDO_COST[op] !== undefined) turnMutations += MUTATION_UNDO_COST[op];
+    .then(async res => {
+      if (res.ok && MUTATION_UNDO_COST[op] !== undefined) {
+        turnMutations += MUTATION_UNDO_COST[op];
+        // let the disk autosave catch up so a subsequent scene_state read is fresh
+        await new Promise(r => setTimeout(r, AUTOSAVE_SETTLE_MS));
+      }
       return res;
     });
   sceneOpChain = run.catch(() => undefined); // keep the chain alive past a rejection
@@ -170,6 +183,17 @@ function ok(payload: unknown) {
 }
 function fail(message: string) {
   return { content: [{ type: 'text' as const, text: message }], isError: true };
+}
+
+// Pass an Explorer tool's own MCP content blocks straight back to the assistant (text +
+// images). They come from a compliant MCP server so they already match the content-block
+// shape; assert to the SDK's content type (not `never`) so a shape change surfaces here.
+function formatExplorerResult(res: { content?: unknown[]; isError?: boolean }) {
+  const content = Array.isArray(res.content) ? res.content : [];
+  if (content.length === 0) {
+    return { content: [{ type: 'text' as const, text: '(no content returned)' }] };
+  }
+  return { content: content as CallToolResult['content'], isError: res.isError };
 }
 
 function registerTools(server: McpServer): void {
@@ -522,13 +546,7 @@ function registerTools(server: McpServer): void {
     },
     async ({ tool, arguments: args }) => {
       try {
-        const res = await callExplorerTool(tool, args ?? {});
-        const content = Array.isArray(res.content) ? res.content : [];
-        if (content.length === 0) {
-          return { content: [{ type: 'text' as const, text: '(no content returned)' }] };
-        }
-        // Pass the Explorer's own content blocks straight through (text + images).
-        return { content: content as never, isError: res.isError };
+        return formatExplorerResult(await callExplorerTool(tool, args ?? {}));
       } catch (e) {
         return fail(String(e instanceof Error ? e.message : e));
       }
@@ -594,12 +612,7 @@ function registerOneExplorerTool(server: McpServer, tool: ExplorerTool): Registe
     },
     async (args: Record<string, unknown>) => {
       try {
-        const res = await callExplorerTool(tool.name, args ?? {});
-        const content = Array.isArray(res.content) ? res.content : [];
-        if (content.length === 0) {
-          return { content: [{ type: 'text' as const, text: '(no content returned)' }] };
-        }
-        return { content: content as never, isError: res.isError };
+        return formatExplorerResult(await callExplorerTool(tool.name, args ?? {}));
       } catch (e) {
         return fail(String(e instanceof Error ? e.message : e));
       }
@@ -655,12 +668,31 @@ function buildSessionServer(): { server: McpServer; explorerHandles: Map<string,
   return { server, explorerHandles };
 }
 
+// Thrown when a request body exceeds MAX_BODY_BYTES; the handler turns it into a 413.
+class BodyTooLargeError extends Error {}
+
 function readBody(req: http.IncomingMessage): Promise<string> {
   return new Promise((resolve, reject) => {
-    let body = '';
-    req.on('data', chunk => (body += chunk));
-    req.on('end', () => resolve(body));
-    req.on('error', reject);
+    const chunks: Buffer[] = [];
+    let size = 0;
+    let done = false;
+    req.on('data', chunk => {
+      if (done) return;
+      size += chunk.length;
+      if (size > MAX_BODY_BYTES) {
+        done = true;
+        reject(new BodyTooLargeError());
+        req.destroy();
+        return;
+      }
+      chunks.push(Buffer.from(chunk));
+    });
+    req.on('end', () => {
+      if (!done) resolve(Buffer.concat(chunks).toString('utf8'));
+    });
+    req.on('error', err => {
+      if (!done) reject(err);
+    });
   });
 }
 
@@ -709,6 +741,15 @@ export function ensureSceneMcpServer(): Promise<SceneMcpInfo> {
               const transport = new StreamableHTTPServerTransport({
                 sessionIdGenerator: () => randomUUID(),
                 onsessioninitialized: sid => {
+                  // Evict the oldest session if we're at the cap (Map preserves insertion
+                  // order), so a client that never closes can't leak sessions forever.
+                  if (sessions.size >= MAX_SESSIONS) {
+                    const oldest = sessions.keys().next().value;
+                    const stale = oldest !== undefined ? sessions.get(oldest) : undefined;
+                    if (oldest !== undefined) sessions.delete(oldest);
+                    void stale?.transport.close();
+                    void stale?.server.close();
+                  }
                   const session = { server, transport, explorerHandles };
                   sessions.set(sid, session);
                   // Reconcile against the latest tool set in case a preview started during init.
@@ -737,7 +778,13 @@ export function ensureSceneMcpServer(): Promise<SceneMcpInfo> {
           if (req.method === 'GET' || req.method === 'DELETE') {
             const existing = sessionId ? sessions.get(sessionId) : undefined;
             if (existing === undefined) {
-              res.writeHead(400).end('Missing or unknown session id');
+              res.writeHead(400, { 'Content-Type': 'application/json' }).end(
+                JSON.stringify({
+                  jsonrpc: '2.0',
+                  error: { code: -32000, message: 'Missing or unknown session id' },
+                  id: null,
+                }),
+              );
               return;
             }
             await existing.transport.handleRequest(req, res);
@@ -745,6 +792,10 @@ export function ensureSceneMcpServer(): Promise<SceneMcpInfo> {
           }
           res.writeHead(405).end('Method not allowed');
         } catch (e) {
+          if (e instanceof BodyTooLargeError) {
+            if (!res.headersSent) res.writeHead(413).end('Request body too large');
+            return;
+          }
           log.error('[MCP] request failed:', e);
           if (!res.headersSent) res.writeHead(500).end('Internal error');
         }
@@ -777,6 +828,12 @@ export function stopSceneMcpServer(): void {
   httpServer = null;
   info = null;
   starting = null;
+  // Remove the token-bearing config file (and its temp dir) so it doesn't linger in tmpdir,
+  // and clear the path so a later start writes a fresh one.
+  if (configPath !== null) {
+    fs.rmSync(path.dirname(configPath), { recursive: true, force: true });
+    configPath = null;
+  }
 }
 
 // Write the `--mcp-config` file the CLI reads: our server under the name `creator-hub`,
@@ -786,6 +843,8 @@ export function writeSceneMcpConfigFile(mcp: SceneMcpInfo): string {
   if (configPath !== null) return configPath;
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'creator-hub-mcp-'));
   const file = path.join(dir, 'mcp-config.json');
+  // The file holds the bearer token; write it owner-read/write only (the mkdtemp dir is
+  // already 0700, but 0600 on the file is defense-in-depth on shared systems).
   fs.writeFileSync(
     file,
     JSON.stringify({
@@ -797,6 +856,7 @@ export function writeSceneMcpConfigFile(mcp: SceneMcpInfo): string {
         },
       },
     }),
+    { mode: 0o600 },
   );
   configPath = file;
   return file;

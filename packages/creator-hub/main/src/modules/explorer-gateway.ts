@@ -46,8 +46,10 @@ export interface PreviewStatus {
 }
 
 let gateway: Gateway | null = null;
-// Serialize launches so two launch_preview tool calls in one turn ride a single boot.
+// Serialize launches so two launch_preview calls ride one boot — but only when they're for the
+// SAME project (a different project must wait its turn, not get the other project's result).
 let launching: Promise<PreviewStatus> | null = null;
+let launchingProject: string | null = null;
 
 // Preview options the gateway launches with: the desktop (Unity) client, MCP on, and
 // auth-screen skipped (uses a cached identity when there is one — a first-ever launch may
@@ -234,6 +236,15 @@ async function doLaunch(projectDir: string): Promise<PreviewStatus> {
   }
 
   gateway = { projectDir, port, client, transport, tools };
+  // If the Explorer crashes or is closed, the transport closes — drop the dead gateway so
+  // callExplorerTool stops failing forever and a later launch_preview starts fresh.
+  transport.onclose = () => {
+    if (gateway?.transport === transport) {
+      log.info('[Gateway] Explorer MCP connection closed; clearing gateway');
+      gateway = null;
+      notifyExplorerToolsChanged();
+    }
+  };
   notifyExplorerToolsChanged(); // the explorer_* tools are now available to register
   const ready = await pollReady(client);
   return status(ready);
@@ -290,11 +301,20 @@ function notifyExplorerToolsChanged(): void {
 // Launch (or reuse) a preview for the scene with its MCP server, connect to it, and report
 // readiness + the proxied tool catalog. Serialized so concurrent calls ride one boot.
 export function launchPreview(projectDir: string): Promise<PreviewStatus> {
-  if (launching !== null) return launching;
-  launching = doLaunch(projectDir).finally(() => {
-    launching = null;
+  // Ride an in-flight launch only if it's for the same project; a different project chains
+  // after it (one preview at a time) rather than silently receiving the other's status.
+  if (launching !== null && launchingProject === projectDir) return launching;
+  const prior = launching ?? Promise.resolve();
+  launchingProject = projectDir;
+  const run: Promise<PreviewStatus> = prior.catch(() => undefined).then(() => doLaunch(projectDir));
+  launching = run;
+  void run.finally(() => {
+    if (launching === run) {
+      launching = null;
+      launchingProject = null;
+    }
   });
-  return launching;
+  return run;
 }
 
 export async function stopPreview(): Promise<void> {

@@ -68,6 +68,9 @@ export function nvmBinDirs(nvmRoot: string): string[] {
 // .zshrc/.bashrc, not the profile. Marker-delimited because an interactive shell may
 // print banners of its own.
 const SHELL_PATH_TIMEOUT_MS = 5_000;
+// Keep only the tail of a child's stderr — enough to surface a real error, bounded so a chatty
+// process can't grow the buffer without limit.
+const MAX_STDERR_BYTES = 8_000;
 let shellDirs: string[] = [];
 let probing: Promise<void> | null = null;
 
@@ -203,6 +206,14 @@ const shellApiKeys: { ANTHROPIC_API_KEY?: string; OPENAI_API_KEY?: string } = {}
 
 // Filter an inherited env for a spawned CLI: always drop base-URL/session overrides; drop the
 // metered API keys unless the user chose API-key billing. Exported for tests.
+//
+// FULL-CAPABILITY CAVEAT: beyond these vars, the child inherits the user's entire environment
+// (AWS_*, GH_TOKEN, NPM_TOKEN, SSH agent, …) and runs under bypassPermissions/danger-full-access.
+// That is by design — the assistant is the user's own CLI with the same reach it has in their
+// terminal — and the guardrails are (a) it's an explicit Experimental opt-in the user turns on,
+// and (b) the engine-owned-file denials in the system prompt. It is NOT resistant to prompt
+// injection; treat that as the accepted trade-off of running a local coding agent. The
+// Experimental settings copy tells the user the assistant runs with full system access.
 export function filterEnvForChild(
   source: NodeJS.ProcessEnv,
   apiKeyFromEnv: boolean,
@@ -490,10 +501,13 @@ function sessionsFile(): string {
 function getSessions(): Record<string, ProjectSessions> {
   if (sessionsCache === null) {
     try {
-      sessionsCache = JSON.parse(fs.readFileSync(sessionsFile(), 'utf8')) as Record<
-        string,
-        ProjectSessions
-      >;
+      const parsed: unknown = JSON.parse(fs.readFileSync(sessionsFile(), 'utf8'));
+      // Shape-guard: only accept a plain object-of-objects, so a corrupt/hand-edited file can't
+      // spread arrays/primitives into the session map.
+      sessionsCache =
+        typeof parsed === 'object' && parsed !== null && !Array.isArray(parsed)
+          ? (parsed as Record<string, ProjectSessions>)
+          : {};
     } catch {
       sessionsCache = {}; // no file yet, or unreadable — start fresh
     }
@@ -725,13 +739,17 @@ export async function aiSend(
   });
   child.stderr?.on('data', (d: Buffer) => {
     stderr += errDec.write(d);
-    if (stderr.length > 8000) stderr = stderr.slice(-8000);
+    if (stderr.length > MAX_STDERR_BYTES) stderr = stderr.slice(-MAX_STDERR_BYTES);
   });
   child.on('error', e => finish(false, `assistant failed to start: ${e.message}`));
-  child.on('exit', code => {
+  child.on('exit', (code, signal) => {
     buf += outDec.end();
     if (buf.trim() !== '') onLine(buf.trim()); // flush a trailing partial line
-    if (code === 0 || code === null) finish(true);
+    if (code === 0) finish(true);
+    // code === null means a signal killed the child. An intentional `aiStop()` already marked
+    // the turn done (so finish() no-ops there); reaching here means an UNsolicited kill (OOM,
+    // external SIGKILL) — report it as an interruption, never as a successful turn.
+    else if (code === null) finish(false, `assistant was interrupted (${signal ?? 'signal'})`);
     else finish(false, (stderr + errDec.end()).trim() || `assistant exited with code ${code}`);
   });
 

@@ -1,6 +1,6 @@
 import { ScreenshotTools, Vector3 } from '@babylonjs/core';
 import type { Entity, IEngine } from '@dcl/ecs';
-import { Name as NameEngine } from '@dcl/ecs';
+import { EntityState, Name as NameEngine } from '@dcl/ecs';
 import type { Transport } from '@dcl/mini-rpc';
 import { RPC } from '@dcl/mini-rpc';
 
@@ -140,6 +140,16 @@ type Result = {
 // Resolve a component by its full registered name ("core::Transform"), its short name
 // ("Transform", as scene_state reports), or a numeric id string. Returns null if not
 // registered — the handler turns that into a readable error for the assistant.
+// Validate an AI-supplied entity id before branding it as an Entity. The id comes from the
+// model, so a hallucinated number would otherwise corrupt the CRDT or throw deep in the ECS;
+// this turns it into a readable tool error instead. RootEntity (0) is always valid.
+function requireEntity(engine: IEngine, id: number): Entity {
+  const entity = id as Entity;
+  if (entity === engine.RootEntity) return entity;
+  if (engine.getEntityState(entity) === EntityState.UsedEntity) return entity;
+  throw new Error(`No entity with id ${id} exists in the scene.`);
+}
+
 function resolveComponent(engine: IEngine, nameOrId: string) {
   try {
     return engine.getComponent(nameOrId);
@@ -294,40 +304,43 @@ export class SceneServer extends RPC<Method, Params, Result> {
     // edit would: viewport updates, autosave persists, and it's on the undo stack.
     if (operations && engine) {
       this.handle('create_entity', async ({ name, parent }) => {
-        const parentEntity = parent === undefined ? engine.RootEntity : (parent as Entity);
+        const parentEntity =
+          parent === undefined ? engine.RootEntity : requireEntity(engine, parent);
         const entity = operations.addChild(parentEntity, name ?? 'Entity');
         await operations.dispatch();
         return { entity: entity as number };
       });
 
       this.handle('remove_entity', async ({ entity }) => {
-        operations.removeEntity(entity as Entity);
+        operations.removeEntity(requireEntity(engine, entity));
         await operations.dispatch();
         return { entity };
       });
 
       this.handle('set_parent', async ({ entity, parent }) => {
-        operations.setParent(entity as Entity, parent as Entity);
+        operations.setParent(requireEntity(engine, entity), requireEntity(engine, parent));
         await operations.dispatch();
         return { entity, parent };
       });
 
       this.handle('set_component', async ({ entity, component, value }) => {
+        const target = requireEntity(engine, entity);
         const comp = resolveComponent(engine, component);
         if (comp === null) throw new Error(`Unknown component "${component}".`);
-        if (comp.has(entity as Entity)) {
-          operations.updateValue(comp as never, entity as Entity, value);
+        if (comp.has(target)) {
+          operations.updateValue(comp as never, target, value);
         } else {
-          operations.addComponent(entity as Entity, comp.componentId, value);
+          operations.addComponent(target, comp.componentId, value);
         }
         await operations.dispatch();
         return { entity, component: comp.componentName };
       });
 
       this.handle('remove_component', async ({ entity, component }) => {
+        const target = requireEntity(engine, entity);
         const comp = resolveComponent(engine, component);
         if (comp === null) throw new Error(`Unknown component "${component}".`);
-        operations.removeComponent(entity as Entity, comp as never);
+        operations.removeComponent(target, comp as never);
         await operations.dispatch();
         return { entity, component: comp.componentName };
       });
@@ -341,9 +354,10 @@ export class SceneServer extends RPC<Method, Params, Result> {
           getOrNull: (e: Entity) => { value: ScriptEntry[] } | null;
           createOrReplace: (e: Entity, v: { value: ScriptEntry[] }) => void;
         };
-        const current: ScriptEntry[] = Script.getOrNull(entity as Entity)?.value ?? [];
+        const target = requireEntity(engine, entity);
+        const current: ScriptEntry[] = Script.getOrNull(target)?.value ?? [];
         if (!current.some(s => s.path === path)) {
-          Script.createOrReplace(entity as Entity, {
+          Script.createOrReplace(target, {
             value: [...current, { path, priority: priority ?? 0, layout: '{"params":{}}' }],
           });
           await operations.dispatch();

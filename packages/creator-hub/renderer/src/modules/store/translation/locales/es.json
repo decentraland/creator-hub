@@ -418,7 +418,8 @@
           "label": "Funciones experimentales"
         },
         "ai_assistant": {
-          "label": "Asistente de escena con IA"
+          "label": "Asistente de escena con IA",
+          "help": "Ejecuta tu CLI de Claude o Codex con acceso completo a tu equipo, el mismo alcance que tiene en tu terminal. Actívalo solo si confías en lo que le pides."
         },
         "mcp_server": {
           "label": "Exponer el servidor MCP del asistente de IA",
