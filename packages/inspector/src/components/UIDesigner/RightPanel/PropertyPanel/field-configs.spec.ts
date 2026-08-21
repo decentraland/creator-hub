@@ -180,13 +180,14 @@ describe('buildGroups', () => {
     // (hidden until authored) — a core duplicate would show two controls for the
     // same prop on every fresh node.
     it('should lead Layout with the composite controls, in the design’s order', () => {
-      expect(labelsIn('UiEntity', 'Layout').slice(0, 6)).toEqual([
+      expect(labelsIn('UiEntity', 'Layout').slice(0, 7)).toEqual([
         'Flow',
         'Size',
         'Min Size',
         'Max Size',
         'Alignment',
-        'Padding & Margin',
+        'Padding',
+        'Margin',
       ]);
     });
 
@@ -218,7 +219,8 @@ describe('buildGroups', () => {
       // row was removed rather than shipped as a canvas-only illusion. The full
       // implementation is archived (gap-feature-full-batch.patch, job tmp);
       // re-adding it is a revert once an explorer build renders gap.
-      expect(labelsIn('UiEntity', 'Layout')).toContain('Padding & Margin');
+      expect(labelsIn('UiEntity', 'Layout')).toContain('Padding');
+      expect(labelsIn('UiEntity', 'Layout')).toContain('Margin');
       expect(labelsIn('UiEntity', 'Layout')).not.toContain('Spacing');
     });
 
@@ -586,6 +588,7 @@ describe('buildGroups', () => {
           f.componentId,
           (f.writeAll ?? f.subFields?.map(s => s.path) ?? [f.path]).join(','),
           f.kind,
+          f.box ?? '',
         ].join(':');
       for (const type of ALL_TYPES) {
         const seen = buildGroups(type).flatMap(g => (g.fields as FieldConfig[]).map(identity));

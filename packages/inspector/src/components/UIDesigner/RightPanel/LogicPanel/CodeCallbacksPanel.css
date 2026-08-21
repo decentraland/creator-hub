@@ -47,21 +47,27 @@
 
 .ui-designer-callback-delete {
   display: inline-flex;
+  flex: 0 0 auto;
   align-items: center;
   justify-content: center;
-  font-size: 12px;
-  line-height: 1;
-  padding: 2px 6px;
-  border-radius: 4px;
-  border: 1px solid var(--ui-designer-control-border);
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: none;
+  border-radius: var(--ui-designer-radius-field);
   background: transparent;
-  color: var(--sub-text);
+  color: var(--ui-designer-text-muted);
   cursor: pointer;
+}
+
+.ui-designer-callback-delete svg {
+  width: 13px;
+  height: 13px;
 }
 
 .ui-designer-callback-delete:hover {
   background: var(--ui-designer-control-accent-21);
-  color: var(--title);
+  color: var(--ui-designer-text);
 }
 
 .ui-designer-callback-delete:focus-visible {
@@ -169,31 +175,7 @@
 
 .ui-designer-callbacks-add {
   display: flex;
-  gap: 6px;
+  gap: var(--uid-space-1);
   align-items: center;
-  margin-top: 4px;
-}
-
-.ui-designer-callbacks-add button {
-  font-size: 12px;
-  padding: 2px 8px;
-  border-radius: 4px;
-  border: 1px solid var(--ui-designer-control-border);
-  background: transparent;
-  color: var(--title);
-  cursor: pointer;
-}
-
-.ui-designer-callbacks-add button:hover:not(:disabled) {
-  background: var(--ui-designer-control-accent-21);
-}
-
-.ui-designer-callbacks-add button:focus-visible {
-  outline: 2px solid var(--border-focused);
-  outline-offset: 1px;
-}
-
-.ui-designer-callbacks-add button:disabled {
-  opacity: 0.4;
-  cursor: default;
+  margin-top: var(--uid-space-1);
 }

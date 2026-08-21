@@ -51,10 +51,10 @@ beforeEach(() => {
 });
 
 describe('when nothing is bound to the event', () => {
-  it('should read None and offer no clear button', () => {
+  it('should read the placeholder and offer no clear button', () => {
     const { trigger } = renderField();
 
-    expect(trigger.textContent).toBe('None');
+    expect(trigger.textContent).toBe('Bind an event handler');
     expect(screen.queryByLabelText('Clear Mouse Down')).toBeNull();
   });
 });
@@ -129,7 +129,7 @@ describe('when adding an action from inside the menu', () => {
   const openAdd = () => {
     const { trigger } = renderField();
     fireEvent.click(trigger);
-    fireEvent.click(screen.getByText('Add New Action'));
+    fireEvent.click(screen.getByText('Add New Event'));
     return screen.getByLabelText('Description');
   };
 

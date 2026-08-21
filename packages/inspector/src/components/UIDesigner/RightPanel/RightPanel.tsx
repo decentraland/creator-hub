@@ -23,11 +23,11 @@ type RightTab = 'properties' | 'logic';
  * (Inputs), and its `@ui-action` handlers (Events).
  *
  * Selecting a nested component instance switches it to that instance: the values
- * it passes in are the only thing there is to edit, so the root's own Variables
- * and Events render disabled rather than vanishing — they still describe the file
- * on screen, they just do not belong to the selection. A canvas drop wraps
- * `<Name />` in a positioning UiEntity and clicks select that WRAPPER, so an
- * instance is reachable either as the selection itself or as a child of it.
+ * it passes in (its inputs) are the only thing there is to edit, so the root's own
+ * Variables and Events are hidden and a note points to the component — they belong
+ * to the component's own file, not this instance. A canvas drop wraps `<Name />`
+ * in a positioning UiEntity and clicks select that WRAPPER, so an instance is
+ * reachable either as the selection itself or as a child of it.
  */
 const RightPanel: React.FC = () => {
   const [tab, setTab] = useState<RightTab>('properties');
@@ -87,17 +87,10 @@ const RightPanel: React.FC = () => {
                 node={instance}
               />
             ))}
-            <fieldset
-              className="ui-designer-logic-locked"
-              disabled
-            >
-              <p className="ui-designer-logic-locked-hint">
-                Variables and Events belong to this GUI file, not to the component you have
-                selected. Open the component to edit its own.
-              </p>
-              <CodeVariablesPanel />
-              <CodeCallbacksPanel />
-            </fieldset>
+            <p className="ui-designer-logic-note">
+              You're setting the inputs this instance passes to its component. Variables and Events
+              belong to the GUI, not this component — open it to edit those.
+            </p>
           </>
         ) : (
           <>

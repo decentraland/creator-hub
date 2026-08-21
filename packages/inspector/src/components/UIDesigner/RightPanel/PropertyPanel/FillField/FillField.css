@@ -29,9 +29,9 @@
 }
 
 .ui-designer-fill-mode.selected {
-  color: var(--ui-designer-text);
-  border-color: var(--ui-designer-control-border-strong);
-  background: var(--ui-designer-control-selected-bg);
+  color: var(--ui-designer-control-active-fg);
+  border-color: var(--ui-designer-control-active-bg);
+  background: var(--ui-designer-control-active-bg);
 }
 
 .ui-designer-fill-mode:focus-visible {

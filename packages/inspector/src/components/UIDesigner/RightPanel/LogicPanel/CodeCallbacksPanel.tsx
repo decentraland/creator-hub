@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { VscTrash } from 'react-icons/vsc';
 
 import { Container } from '../../../Container';
 import { isValidIdentifier } from '../../../../lib/sdk/operations/validators';
@@ -148,7 +149,7 @@ const CallbackBodyEditor: React.FC<{ name: string; template: string; vars: BindV
         </div>
       ) : (
         <div className="ui-designer-callback-hint">
-          Use <code>{'{{ variable }}'}</code> to reference a variable · type <code>{'{{'}</code> for
+          Use <code>{'{{ variable }}'}</code> to reference a variable. Type <code>{'{{'}</code> for
           suggestions
         </div>
       )}
@@ -167,7 +168,7 @@ const CallbackCard: React.FC<{ action: CodeAction; vars: BindVariable[] }> = ({ 
         aria-label={`Delete ${action.name}`}
         onClick={() => void removeAction(action.name)}
       >
-        ✕
+        <VscTrash aria-hidden />
       </button>
     </div>
     <CallbackBodyEditor
@@ -203,7 +204,7 @@ const CodeCallbacksPanelComponent: React.FC = () => {
     >
       <div className="ui-designer-callbacks">
         {actions.length === 0 ? (
-          <div className="ui-designer-callbacks-empty">No actions yet.</div>
+          <div className="ui-designer-callbacks-empty">No events yet.</div>
         ) : null}
 
         {actions.map(a => (
@@ -220,7 +221,7 @@ const CodeCallbacksPanelComponent: React.FC = () => {
           <TextField
             aria-label="New action name"
             value={name}
-            placeholder="new action"
+            placeholder="Name"
             onChange={e => setName(e.target.value)}
             onKeyDown={e => {
               if (e.key === 'Enter') add();
@@ -228,10 +229,12 @@ const CodeCallbacksPanelComponent: React.FC = () => {
           />
           <button
             type="button"
+            className="ui-designer-code-add"
+            aria-label="Add event"
             disabled={!canAdd}
             onClick={add}
           >
-            + Add
+            +
           </button>
         </div>
       </div>

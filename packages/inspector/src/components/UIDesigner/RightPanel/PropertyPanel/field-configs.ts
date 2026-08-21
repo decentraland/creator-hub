@@ -174,6 +174,8 @@ export interface FieldConfig {
   strictTypes?: string[];
   /** One-line help shown as a hover tooltip beside the field label. */
   info?: string;
+  /** For `box-model`: which edge box the row renders — `padding` or `margin`. */
+  box?: 'padding' | 'margin';
   /**
    * Always shown in the panel — the curated baseline for its group. Optional
    * scalar-ish fields WITHOUT this flag are hidden until set (or added via the
@@ -543,14 +545,22 @@ const LAYOUT_FIELDS: (FieldConfig & { container?: true })[] = [
     info: 'Where the children sit inside this node. Writes Justify content and Align items together, resolved against the current Flow direction.',
   },
   {
-    // NOT "Spacing" — that name is reserved for flex gap, which react-ecs cannot
-    // express yet (no gap/rowGap/columnGap in UiTransformProps).
-    label: 'Padding & Margin',
+    label: 'Padding',
     componentId: TRANSFORM,
     path: '',
     kind: 'box-model' as const,
+    box: 'padding',
     bindable: false,
-    info: 'Padding is space inside the box, margin space outside it, both in px. Margin is ignored while the node ignores layout flow.',
+    info: 'Space inside the box, per edge, in px.',
+  },
+  {
+    label: 'Margin',
+    componentId: TRANSFORM,
+    path: '',
+    kind: 'box-model' as const,
+    box: 'margin',
+    bindable: false,
+    info: 'Space outside the box, per edge, in px. Ignored while the node ignores layout flow. Not "Spacing": react-ecs has no flex gap (no gap/rowGap/columnGap in UiTransformProps).',
   },
   // The one `overflow` enum, drawn as the design's two checkboxes. They are total
   // over its three values (see overflow-flags.ts), so — unlike Flow or Alignment —

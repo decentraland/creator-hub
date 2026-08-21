@@ -3,17 +3,18 @@
   max-height: 240px;
   overflow-y: auto;
   overscroll-behavior: contain;
-  background: var(--tree-bg-color);
+  background: var(--ui-designer-control-bg);
   border: 1px solid var(--ui-designer-control-border);
-  border-radius: 4px;
+  border-radius: var(--ui-designer-radius-menu);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
-  padding: 4px;
+  padding: var(--uid-space-1) 0;
+  color: var(--ui-designer-text);
   z-index: 1000;
 }
 
 .ui-designer-variable-picker-empty {
   padding: 8px;
-  color: var(--inspector-text-muted, #888);
+  color: var(--ui-designer-text-muted);
   font-style: italic;
 }
 
@@ -42,9 +43,17 @@
 }
 
 .ui-designer-variable-picker-add {
+  display: flex;
+  align-items: center;
+  gap: var(--uid-space-2);
   border-top: 1px solid var(--ui-designer-control-border);
   margin-top: 4px;
-  font-style: italic;
+  color: var(--ui-designer-text-muted);
+}
+
+.ui-designer-variable-picker-add svg {
+  width: 16px;
+  height: 16px;
 }
 
 .ui-designer-variable-picker-new {
@@ -60,11 +69,11 @@
 .ui-designer-variable-picker-name {
   flex: 1 1 auto;
   min-width: 0;
-  background: transparent;
+  background: var(--ui-designer-panel-bg);
   border: 1px solid var(--ui-designer-control-border);
-  border-radius: 4px;
-  padding: 4px 6px;
-  color: inherit;
+  border-radius: var(--ui-designer-radius-field);
+  padding: 6px 8px;
+  color: var(--ui-designer-text);
 }
 
 .ui-designer-variable-picker-name:focus-visible {
@@ -74,19 +83,22 @@
 
 .ui-designer-variable-picker-confirm {
   flex: 0 0 auto;
-  background: var(--ui-designer-control-accent-21);
-  border: 1px solid var(--ui-designer-control-border);
-  border-radius: 4px;
-  padding: 4px 8px;
+  background: var(--primary-main);
+  border: none;
+  border-radius: var(--ui-designer-radius-field);
+  padding: 5px 16px;
   cursor: pointer;
-  color: inherit;
+  color: var(--ui-designer-text);
+  letter-spacing: 0.06em;
 }
 
-.ui-designer-variable-picker-confirm:hover,
+.ui-designer-variable-picker-confirm:not(.is-ready) {
+  opacity: 0.4;
+}
+
 .ui-designer-variable-picker-confirm:focus-visible {
-  outline: none;
-  background: var(--ui-designer-control-accent-21);
-  box-shadow: inset 0 0 0 1px var(--ui-designer-control-accent);
+  outline: 2px solid var(--border-focused);
+  outline-offset: 1px;
 }
 
 .ui-designer-variable-picker-error {

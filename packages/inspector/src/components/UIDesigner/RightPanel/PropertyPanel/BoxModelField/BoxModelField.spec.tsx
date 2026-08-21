@@ -8,12 +8,22 @@ import { BoxModelField } from './BoxModelField';
 function renderField(value: Record<string, unknown>) {
   const onPatch = vi.fn();
   render(
-    <BoxModelField
-      value={value}
-      componentId="core::UiTransform"
-      entity={1 as unknown as Entity}
-      onPatch={onPatch}
-    />,
+    <>
+      <BoxModelField
+        value={value}
+        componentId="core::UiTransform"
+        entity={1 as unknown as Entity}
+        box="padding"
+        onPatch={onPatch}
+      />
+      <BoxModelField
+        value={value}
+        componentId="core::UiTransform"
+        entity={1 as unknown as Entity}
+        box="margin"
+        onPatch={onPatch}
+      />
+    </>,
   );
   return { onPatch };
 }

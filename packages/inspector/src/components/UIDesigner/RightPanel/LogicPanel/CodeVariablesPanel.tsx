@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { IoListOutline } from 'react-icons/io5';
+import { VscTrash } from 'react-icons/vsc';
 
 import { Container } from '../../../Container';
 import { isValidIdentifier } from '../../../../lib/sdk/operations/validators';
@@ -44,7 +45,12 @@ const CodeVariableRow: React.FC<{ v: BindVariable }> = ({ v }) => {
 
   return (
     <div className="ui-designer-code-variable-row">
-      <span className="ui-designer-code-variable-name">{v.name}</span>
+      <span
+        className="ui-designer-code-variable-name"
+        title={v.name}
+      >
+        {v.name}
+      </span>
       <Dropdown
         aria-label={`Type of ${v.name}`}
         options={TYPE_OPTIONS}
@@ -65,7 +71,7 @@ const CodeVariableRow: React.FC<{ v: BindVariable }> = ({ v }) => {
           aria-label={`Default of ${v.name}`}
           type={v.type === 'number' ? 'number' : 'text'}
           value={local}
-          placeholder="default"
+          placeholder="Value"
           onChange={e => setLocal(e.target.value)}
           onFocus={() => setFocused(true)}
           onBlur={() => {
@@ -81,7 +87,7 @@ const CodeVariableRow: React.FC<{ v: BindVariable }> = ({ v }) => {
         aria-label={`Delete ${v.name}`}
         onClick={() => void removeStateVariable(v.name)}
       >
-        ✕
+        <VscTrash aria-hidden />
       </button>
     </div>
   );
@@ -103,7 +109,7 @@ const CodeVariablesPanelComponent: React.FC = () => {
       <EmptyState
         icon={<IoListOutline />}
         title="No GUI selected"
-        message="Create or select a GUI to declare state variables you can bind fields to."
+        message="Create or select a GUI to declare variables you can bind fields to."
       />
     );
   }
@@ -138,11 +144,11 @@ const CodeVariablesPanelComponent: React.FC = () => {
     >
       <div className="ui-designer-code-variables">
         <div className="ui-designer-code-variables-hint">
-          This GUI's own data · <code>{filename.split('/').pop()}</code>
+          GUI's data · <code>{filename.split('/').pop()}</code>
         </div>
 
         {stateVars.length === 0 && markerVars.length === 0 && importedVars.length === 0 ? (
-          <div className="ui-designer-code-variables-empty">No state variables yet.</div>
+          <div className="ui-designer-code-variables-empty">No variables yet.</div>
         ) : null}
 
         {stateVars.map(v => (
@@ -180,7 +186,7 @@ const CodeVariablesPanelComponent: React.FC = () => {
           <TextField
             aria-label="New variable name"
             value={name}
-            placeholder="new variable"
+            placeholder="Name"
             onChange={e => setName(e.target.value)}
             onKeyDown={e => {
               if (e.key === 'Enter') add();
@@ -196,7 +202,7 @@ const CodeVariablesPanelComponent: React.FC = () => {
             className="ui-designer-code-variable-default"
             aria-label="New variable default"
             value={def}
-            placeholder="default"
+            placeholder="Value"
             onChange={e => setDef(e.target.value)}
             onKeyDown={e => {
               if (e.key === 'Enter') add();
@@ -204,10 +210,12 @@ const CodeVariablesPanelComponent: React.FC = () => {
           />
           <button
             type="button"
+            className="ui-designer-code-add"
+            aria-label="Add variable"
             disabled={!canAdd}
             onClick={add}
           >
-            + Add
+            +
           </button>
         </div>
       </div>

@@ -1,21 +1,5 @@
-.ui-designer-bm {
-  display: flex;
-  flex-direction: column;
-  gap: var(--uid-space-2);
-  width: 100%;
-}
-
 .ui-designer-bm-section.disabled {
   opacity: 0.55;
-}
-
-.ui-designer-bm-tag {
-  display: block;
-  margin-bottom: var(--uid-space-1);
-  font-size: 10px;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--sub-text);
 }
 
 .ui-designer-bm-grid {

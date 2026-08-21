@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from 'react';
+import { VscTrash } from 'react-icons/vsc';
 import type { Entity } from '@dcl/ecs';
 
 import { CheckboxField, TextField } from '../../../ui';
+import { BindIcon } from '../BindIcon';
 import type { PropVar } from '../../code/props-convention';
 import {
   selectRootFile,
@@ -69,7 +71,12 @@ const InstancePropRow: React.FC<{
 
   return (
     <div className="ui-designer-code-variable-row">
-      <span className="ui-designer-code-variable-name">{prop.name}</span>
+      <span
+        className="ui-designer-code-variable-name"
+        title={prop.name}
+      >
+        {prop.name}
+      </span>
       {bound ? (
         <em
           className="ui-designer-code-variable-source"
@@ -138,7 +145,7 @@ const InstancePropRow: React.FC<{
           aria-label={`Clear ${prop.name}`}
           onClick={() => void unsetInstanceProp(entity, prop.name)}
         >
-          ✕
+          <VscTrash aria-hidden />
         </button>
       ) : null}
     </div>
@@ -161,7 +168,8 @@ export const ComponentRefPanel: React.FC<{ node: CodeUINode }> = ({ node }) => {
     <div className="ui-designer-code-variables">
       <div className="ui-designer-code-variables-title">Component · {name}</div>
       <div className="ui-designer-code-variables-hint">
-        Values passed to this instance. Type a literal or 🔗 a state variable/action from this file.
+        Values passed to this instance. Type a literal or <BindIcon /> a variable or event from this
+        file.
       </div>
 
       {declared.length === 0 ? (

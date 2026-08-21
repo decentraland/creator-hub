@@ -24,37 +24,26 @@ const PADDING = edges('padding');
 const MARGIN = edges('margin');
 
 interface BoxModelFieldProps {
-  // The whole UiTransform value (field uses path '').
   value: Record<string, unknown> | null;
   componentId: string;
   entity: Entity;
+  box: 'padding' | 'margin';
   bindings?: Record<string, string>;
   onPatch: (patch: Record<string, unknown>) => void;
 }
 
-// Padding and margin as two icon-labelled 2×2 grids, per the design. Margin is
-// greyed out for absolutely-positioned nodes — Yoga ignores it there. Writes the
-// flat `<edge>` + `<edge>Unit` pair.
-//
-// There is no unit selector: everything authored here is px, and the in-input
-// glyph says so. A PERCENT edge can therefore only be hand-authored — but it
-// parses like any other, so it is read back and carried through an edit rather
-// than silently reinterpreted as px.
-/**
- *
- * Each edge binds on its own, like a length-vec's axes: the composite itself has
- * no single JSX attribute to bind (its field carries `path: ''` over eight of
- * them), but every edge is one attribute, which is what `BindableSubField` needs.
- */
+/** A 2×2 px edge grid for one `box` (padding or margin) of the UiTransform. */
 export const BoxModelField: React.FC<BoxModelFieldProps> = ({
   value,
   componentId,
   entity,
+  box,
   bindings,
   onPatch,
 }) => {
   const v = value ?? {};
-  const marginDisabled = (v.positionType as number | undefined) === 1;
+  const group = box === 'padding' ? PADDING : MARGIN;
+  const disabled = box === 'margin' && (v.positionType as number | undefined) === 1;
   const isPercent = (path: string) => v[`${path}Unit`] === YGU_PERCENT;
 
   const write = (path: string, raw: string) => {
@@ -65,9 +54,8 @@ export const BoxModelField: React.FC<BoxModelFieldProps> = ({
     });
   };
 
-  const grid = (label: string, group: Edge[], disabled: boolean) => (
+  return (
     <div className={`ui-designer-bm-section${disabled ? ' disabled' : ''}`}>
-      <span className="ui-designer-bm-tag">{label}</span>
       <div className="ui-designer-bm-grid">
         {group.map(e => (
           <BindableSubField
@@ -95,13 +83,6 @@ export const BoxModelField: React.FC<BoxModelFieldProps> = ({
           </BindableSubField>
         ))}
       </div>
-    </div>
-  );
-
-  return (
-    <div className="ui-designer-bm">
-      {grid('Padding', PADDING, false)}
-      {grid('Margin', MARGIN, marginDisabled)}
     </div>
   );
 };

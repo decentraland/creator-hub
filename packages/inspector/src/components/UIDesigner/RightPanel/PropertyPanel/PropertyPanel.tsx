@@ -1593,6 +1593,7 @@ const FieldRow = React.memo(function FieldRow({
             value={componentValue}
             componentId={field.componentId}
             entity={entity}
+            box={field.box ?? 'padding'}
             bindings={bindings}
             onPatch={onPatch}
           />

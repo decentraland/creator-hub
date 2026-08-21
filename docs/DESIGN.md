@@ -55,25 +55,23 @@ There is no single `--text` token — pick the foreground that matches the surfa
 | `--ui-designer-control-accent` | `#63b4f6` | **Panel** focus rings, the Anchor pin, bind affordances, selected rows |
 | `--ui-designer-control-accent-62/-21/-15` | blue @ .62/.21/.15 | Panel hover borders and fills |
 | `--ui-designer-control-hover-bg` | `rgba(255,255,255,.06)` | Hover fill on a segmented cell |
-| `--ui-designer-control-selected-bg` | `rgba(255,255,255,.1)` | Selected cell **inside** a segmented group |
-| `--ui-designer-control-active-bg` | `#fcfcfc` Snow | Fill of an inverted **standalone** toggle |
-| `--ui-designer-control-active-fg` | `#35333b` Charcoal | Glyph/tick sitting on that fill |
+| `--ui-designer-control-selected-bg` | `rgba(255,255,255,.1)` | Hover/selected fill on a menu **row** |
+| `--ui-designer-control-active-bg` | `#63b4f6` (→ accent) | Fill of a selected/active **toggle** |
+| `--ui-designer-control-active-fg` | `#35333b` Charcoal | Glyph sitting on that accent fill |
 
-#### Selected and active are neutral, not pink
+#### Selected and active toggles are accent-blue
 
-The design paints state changes with luminance, not hue, and in two distinct treatments. Getting the pair wrong is the bug to avoid:
+Per the 08/26 Figma states matrix, a selected or active toggle takes a solid accent-blue fill with a dark Charcoal glyph — one treatment for both the segmented cells (Flow direction, Text alignment, Fill mode) and the standalone toggles (Flow wrap, the aspect lock). A checkbox is separate and carries its state on the tick alone (see `--ui-designer-checkbox-border`).
 
-- **A cell inside a segmented group** (Flow direction, Texture type) lifts to `--ui-designer-control-selected-bg` and turns its glyph `--ui-designer-text`.
-- **A standalone toggle** (Flow wrap, the aspect lock, a checkbox) inverts: `--ui-designer-control-active-bg` fill with a `--ui-designer-control-active-fg` glyph.
+- **Selected/active toggle:** `--ui-designer-control-active-bg` (accent-blue) fill with a `--ui-designer-control-active-fg` (Charcoal) glyph.
+- **Hover:** a faint `--ui-designer-control-hover-bg` white tint, never the accent.
 
-| Pairing                                   | Contrast                    |
-| ----------------------------------------- | --------------------------- |
-| Snow glyph on the lifted cell fill        | **11.4:1**                  |
-| Lifted fill vs. its unselected neighbours | 1.36:1 — _deliberately_ low |
-| Charcoal glyph on the inverted toggle     | **12.13:1**                 |
-| Inverted toggle vs. the card (`#242129`)  | **15.45:1**                 |
+| Pairing                              | Contrast  |
+| ------------------------------------ | --------- |
+| Charcoal glyph on the accent fill    | **5.6:1** |
+| Accent fill vs. the card (`#242129`) | **7.1:1** |
 
-The lifted fill alone is nearly invisible, and that is fine **only because the glyph moves with it** — `--ui-designer-glyph` reads 3.09:1 on the card, Snow reads 11.4:1 on the fill. Selection is therefore a luminance jump on the _glyph_, never a fill-only or hue-only cue. If you change either value, keep that pairing.
+A white glyph is deliberately **not** used on the accent fill — it lands ~2.2:1, below the 3:1 non-text minimum — so the glyph is Charcoal. Selection reads as a hue-and-luminance jump, never hue alone. Keep the Charcoal glyph if the fill value moves.
 
 Two assets ignore `color` because their white is baked in: the checkbox tick (a data-URI SVG with `fill="white"`) and the indeterminate dash (a solid block). Both are re-declared dark in `PropertyPanel.css`, scoped `:not(.disabled)` so the shared disabled styling still wins the specificity tie.
 
@@ -82,9 +80,9 @@ Two assets ignore `color` because their white is baked in: the checkbox tick (a 
 The UI Designer has **two** accent families. Picking the wrong one is a real bug, not a style preference:
 
 - **Canvas → cyan.** The canvas renders the _author's own UI_ in arbitrary colours. A selection ring in a brand colour disappears the moment they use that colour themselves — and `#ff2d55` is precisely what the palette encourages. Because the backdrop is unknowable, WCAG 1.4.11's ≥3:1 cannot be verified against it; a hue authors are unlikely to pick is the mitigation. Use for node selection/hover, resize handles, drop targets, reorder indicators.
-- **Panel → blue `#63b4f6`.** Panel chrome always sits on `--base-20` (`#161518`), a surface we control, so contrast is fixed and testable. Use for focus rings, active tab underlines, hover borders/fills, bind affordances, selected rows, and the Anchor row's pinned edge. **Not** for selected/active _controls_ — those are the neutral trio above.
+- **Panel → blue `#63b4f6`.** Panel chrome always sits on `--base-20` (`#161518`), a surface we control, so contrast is fixed and testable. Use for focus rings, active tab underlines, hover borders/fills, bind affordances, selected rows, selected/active toggle fills (with a Charcoal glyph — see above), and the Anchor row's pinned edge.
 
-  **Panel chrome is deliberately not pink.** `--primary-main` is reserved for CTAs and main buttons (`.Button.danger`, the callback confirm). A panel control painted with it competes with the one thing on screen that should read as the action.
+  **Panel chrome is deliberately not pink.** `--primary-main` is reserved for CTAs and main buttons (`.Button.danger`, the event/variable menu `ADD` confirm). A panel control painted with it competes with the one thing on screen that should read as the action.
 
 **Do not copy alpha steps between the two families.** The panel blue's relative luminance is `0.419` against cyan's `0.502`, so the same alpha composites differently. The steps are solved for this surface and named for their true alpha (`-62`, not `-40`) so nothing lies:
 
@@ -127,9 +125,9 @@ Adding a step means solving for its contrast, not guessing an alpha.
 
 ```css
 .some-dark-surface {
-  background: var(--tree-bg-color); /* --base-20, dark */
+  background: var(--ui-designer-control-bg); /* the raised UI Designer menu surface */
   border: 1px solid var(--ui-designer-control-border);
-  color: var(--title); /* explicit light fg, NOT inherit */
+  color: var(--ui-designer-text); /* explicit light fg, NOT inherit */
 }
 .some-dark-surface .row:hover,
 .some-dark-surface .row[aria-selected='true'] {
@@ -173,6 +171,7 @@ Derived from the Vercel Web Interface Guidelines (`web-design-guidelines` skill)
 - **Content:** truncate/clamp long text (flex children need `min-width: 0`); handle empty states; placeholders end with `…`.
 - **Color:** tokens only — no new hardcoded hex.
 - **A background on a `<Box>` root does nothing.** `Box.css` paints `--main-bg-color` on the `.content` div it wraps children in, which covers the root. Put panel surfaces on `<yourClass> > .content`.
+- **Pickers and bound values.** Popover pickers (event, variable) are a raised `--ui-designer-control-bg` card at the 12px menu radius: rows highlight on `--ui-designer-control-accent-21`, the selected row carries a leading checkmark, and a diamond-plus `Add New …` row reveals a `Description` field and an auto-width `--primary-main` `ADD` confirm (dimmed to 40% until the name is valid). Event fields are horizontal — a left label and a full-width rounded pill: `--ui-designer-control-bg` when a handler is bound (with the name and an inline clear) and a fainter fill reading `Bind an event handler` in `--ui-designer-text-muted` when empty. The pill is neutral, not accent — an event is not a bound-variable field.
 
 Reviewing UI against these? Run the `web-design-guidelines` skill over the changed files.
 

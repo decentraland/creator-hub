@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { VscTrash } from 'react-icons/vsc';
 
 import { Container } from '../../../Container';
 import { isValidIdentifier } from '../../../../lib/sdk/operations/validators';
@@ -55,7 +56,12 @@ const CodePropsPanelComponent: React.FC = () => {
             key={v.name}
             className="ui-designer-code-variable-row"
           >
-            <span className="ui-designer-code-variable-name">{v.name}</span>
+            <span
+              className="ui-designer-code-variable-name"
+              title={v.name}
+            >
+              {v.name}
+            </span>
             <Dropdown
               aria-label={`Type of ${v.name}`}
               options={
@@ -74,7 +80,7 @@ const CodePropsPanelComponent: React.FC = () => {
               aria-label={`Delete ${v.name}`}
               onClick={() => void removeProp(v.name)}
             >
-              ✕
+              <VscTrash aria-hidden />
             </button>
           </div>
         ))}
@@ -83,7 +89,7 @@ const CodePropsPanelComponent: React.FC = () => {
           <TextField
             aria-label="New input name"
             value={name}
-            placeholder="new input"
+            placeholder="Name"
             onChange={e => setName(e.target.value)}
             onKeyDown={e => {
               if (e.key === 'Enter') add();
@@ -97,10 +103,12 @@ const CodePropsPanelComponent: React.FC = () => {
           />
           <button
             type="button"
+            className="ui-designer-code-add"
+            aria-label="Add input"
             disabled={!canAdd}
             onClick={add}
           >
-            + Add
+            +
           </button>
         </div>
       </div>

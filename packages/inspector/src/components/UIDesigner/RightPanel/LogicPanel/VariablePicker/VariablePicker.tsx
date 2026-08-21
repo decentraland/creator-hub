@@ -2,6 +2,7 @@ import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
 import { isValidIdentifier } from '../../../../../lib/sdk/operations/validators';
+import { DiamondPlus } from '../../DiamondPlus';
 import { usePopoverPosition } from '../../../../ui/usePopoverPosition';
 import { KIND_TO_CODE_TYPES, type FieldConfig } from '../../PropertyPanel/field-configs';
 import type { BindVariable } from '../../../code/bindings';
@@ -123,10 +124,15 @@ export const VariablePicker: React.FC<VariablePickerProps> = ({
           />
           <button
             type="button"
-            className="ui-designer-variable-picker-confirm"
+            className={`ui-designer-variable-picker-confirm${
+              isValidIdentifier(name.trim()) &&
+              !bindingSurface.variables.some(v => v.name === name.trim())
+                ? ' is-ready'
+                : ''
+            }`}
             onClick={() => void commitNew()}
           >
-            Add
+            ADD
           </button>
           {error ? <div className="ui-designer-variable-picker-error">{error}</div> : null}
         </div>
@@ -140,7 +146,8 @@ export const VariablePicker: React.FC<VariablePickerProps> = ({
             setAdding(true);
           }}
         >
-          + Add new variable…
+          <DiamondPlus />
+          Add new variable
         </button>
       )}
     </div>,

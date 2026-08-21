@@ -43,8 +43,8 @@
 }
 
 .ui-designer-text-align-cell.selected {
-  background: var(--ui-designer-control-selected-bg);
-  color: var(--ui-designer-text);
+  background: var(--ui-designer-control-active-bg);
+  color: var(--ui-designer-control-active-fg);
 }
 
 .ui-designer-text-align-cell:focus-visible {

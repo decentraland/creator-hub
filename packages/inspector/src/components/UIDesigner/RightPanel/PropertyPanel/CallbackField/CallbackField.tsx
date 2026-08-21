@@ -1,11 +1,11 @@
 import React, { useCallback, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { AiOutlinePlus } from 'react-icons/ai';
 import { VscTrash } from 'react-icons/vsc';
 import type { Entity } from '@dcl/ecs';
 
 import { isValidIdentifier } from '../../../../../lib/sdk/operations/validators';
 import { Block } from '../../../../Block';
+import { DiamondPlus } from '../../DiamondPlus';
 import { usePopoverPosition } from '../../../../ui/usePopoverPosition';
 import type { FieldConfig } from '../field-configs';
 import { isActionNameTaken } from '../../../code/bindings';
@@ -77,9 +77,9 @@ export const CallbackField: React.FC<CallbackFieldProps> = ({ field, entity, bou
   return (
     <Block
       label={field.label}
-      info={field.info}
+      className="ui-designer-callback-block"
     >
-      <div className="ui-designer-callback-row">
+      <div className={`ui-designer-callback-row${bound ? ' bound' : ''}`}>
         <button
           ref={anchorRef}
           type="button"
@@ -90,23 +90,19 @@ export const CallbackField: React.FC<CallbackFieldProps> = ({ field, entity, bou
           className={`ui-designer-callback-trigger${bound ? '' : ' empty'}`}
           onClick={() => setOpen(o => !o)}
         >
-          <span className="ui-designer-callback-value">{bound ?? 'None'}</span>
+          <span className="ui-designer-callback-value">{bound ?? 'Bind an event handler'}</span>
         </button>
-        {/* The lane is always present, so every field ends at the same x whether
-            or not its row carries a clear button. */}
-        <span className="ui-designer-callback-clear-lane">
-          {bound ? (
-            <button
-              type="button"
-              className="ui-designer-callback-clear"
-              aria-label={`Clear ${label}`}
-              title={`Clear ${label}`}
-              onClick={() => void unbindAttribute(id, field.path)}
-            >
-              <VscTrash aria-hidden />
-            </button>
-          ) : null}
-        </span>
+        {bound ? (
+          <button
+            type="button"
+            className="ui-designer-callback-clear"
+            aria-label={`Clear ${label}`}
+            title={`Clear ${label}`}
+            onClick={() => void unbindAttribute(id, field.path)}
+          >
+            <VscTrash aria-hidden />
+          </button>
+        ) : null}
       </div>
       {open ? (
         <CallbackMenu
@@ -223,7 +219,11 @@ const CallbackMenu: React.FC<CallbackMenuProps> = ({
           </label>
           <button
             type="button"
-            className="ui-designer-callback-add-confirm"
+            className={`ui-designer-callback-add-confirm${
+              isValidIdentifier(name.trim()) && !isActionNameTaken(bindingSurface, name.trim())
+                ? ' is-ready'
+                : ''
+            }`}
             onClick={() => void commitNew()}
           >
             ADD
@@ -240,8 +240,8 @@ const CallbackMenu: React.FC<CallbackMenuProps> = ({
             setAdding(true);
           }}
         >
-          <AiOutlinePlus aria-hidden />
-          Add New Action
+          <DiamondPlus />
+          Add New Event
         </button>
       )}
     </div>,

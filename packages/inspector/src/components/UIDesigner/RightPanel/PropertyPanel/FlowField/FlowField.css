@@ -46,14 +46,13 @@
 }
 
 .ui-designer-flow-cell.selected {
-  background: var(--ui-designer-control-selected-bg);
-  color: var(--ui-designer-text);
+  background: var(--ui-designer-control-active-bg);
+  color: var(--ui-designer-control-active-fg);
 }
 
-/* The wrap toggle is not part of the segmented group, so it takes the inverted
-   standalone treatment instead of the in-group lift. Both classes are on the
-   element; this rule is the more specific one, and overrides every property the
-   in-group rule sets. */
+/* The wrap toggle carries its own border, so it also repaints that border to the
+   accent fill. Both classes are on the element; this rule is the more specific
+   one and overrides the in-group rule. */
 .ui-designer-flow-cell.wrap.selected {
   background: var(--ui-designer-control-active-bg);
   border-color: var(--ui-designer-control-active-bg);
