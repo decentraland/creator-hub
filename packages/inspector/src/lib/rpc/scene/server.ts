@@ -137,9 +137,6 @@ type Result = {
   [Method.GET_SELECTION]: { selected: { id: number; name: string }[] };
 };
 
-// Resolve a component by its full registered name ("core::Transform"), its short name
-// ("Transform", as scene_state reports), or a numeric id string. Returns null if not
-// registered — the handler turns that into a readable error for the assistant.
 // Validate an AI-supplied entity id before branding it as an Entity. The id comes from the
 // model, so a hallucinated number would otherwise corrupt the CRDT or throw deep in the ECS;
 // this turns it into a readable tool error instead. RootEntity (0) is always valid.
@@ -150,6 +147,9 @@ function requireEntity(engine: IEngine, id: number): Entity {
   throw new Error(`No entity with id ${id} exists in the scene.`);
 }
 
+// Resolve a component by its full registered name ("core::Transform"), its short name
+// ("Transform", as scene_state reports), or a numeric id string. Returns null if not
+// registered — the handler turns that into a readable error for the assistant.
 function resolveComponent(engine: IEngine, nameOrId: string) {
   try {
     return engine.getComponent(nameOrId);

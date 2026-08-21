@@ -10,7 +10,7 @@
 // Every component keys its data by entity id (a numeric string); authored entities
 // start at 512 (0 = scene root, 1/2 are reserved). Component names are namespaced
 // (`core::Transform`, `core-schema::Name`, `inspector::…`, `asset-packs::…`).
-import fs from 'fs';
+import fs from 'fs/promises';
 import path from 'path';
 
 export interface Vec3 {
@@ -60,12 +60,13 @@ export function compositePath(projectDir: string): string {
 }
 
 // Parse the scene composite from disk. Throws a readable error if it's missing or not
-// valid JSON — the tool layer turns that into an MCP error result.
-export function readComposite(projectDir: string): Composite {
+// valid JSON — the tool layer turns that into an MCP error result. Async so the read doesn't
+// block the Electron main process on a large scene.
+export async function readComposite(projectDir: string): Promise<Composite> {
   const file = compositePath(projectDir);
   let raw: string;
   try {
-    raw = fs.readFileSync(file, 'utf8');
+    raw = await fs.readFile(file, 'utf8');
   } catch {
     throw new Error(`No scene composite found at ${COMPOSITE_REL}. Is a scene open?`);
   }
@@ -205,10 +206,10 @@ export function entityDetail(
 // Project-level metadata for the assistant: scene name/parcels/spawn from scene.json,
 // plus the SDK version and dependencies from package.json. Best-effort — a missing or
 // malformed file just omits its fields rather than failing the whole tool.
-export function projectInfo(projectDir: string): Record<string, unknown> {
+export async function projectInfo(projectDir: string): Promise<Record<string, unknown>> {
   const info: Record<string, unknown> = { path: projectDir };
   try {
-    const scene = JSON.parse(fs.readFileSync(path.join(projectDir, 'scene.json'), 'utf8'));
+    const scene = JSON.parse(await fs.readFile(path.join(projectDir, 'scene.json'), 'utf8'));
     info.scene = {
       name: scene.display?.title ?? scene.name,
       description: scene.display?.description,
@@ -222,7 +223,7 @@ export function projectInfo(projectDir: string): Record<string, unknown> {
     /* no/invalid scene.json */
   }
   try {
-    const pkg = JSON.parse(fs.readFileSync(path.join(projectDir, 'package.json'), 'utf8'));
+    const pkg = JSON.parse(await fs.readFile(path.join(projectDir, 'package.json'), 'utf8'));
     const deps = { ...pkg.dependencies, ...pkg.devDependencies } as Record<string, string>;
     info.projectName = pkg.name;
     info.sdkVersion = deps['@dcl/sdk'];

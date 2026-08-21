@@ -99,8 +99,6 @@ export const revertTurn = createAsyncThunk<void, { id: string; count: number }>(
   },
 );
 
-let userSeq = 0;
-
 const slice = createSlice({
   name: 'ai',
   initialState,
@@ -122,7 +120,9 @@ const slice = createSlice({
     },
     pushUserMessage: (state, { payload }: PayloadAction<string>) => {
       const msg: AiMessage = {
-        id: `u${++userSeq}`,
+        // A UUID (not a module-level counter) so ids can't collide with the persisted
+        // transcript after an HMR reload resets module state but the store survives.
+        id: `u-${crypto.randomUUID()}`,
         role: 'user',
         text: payload,
         tools: [],

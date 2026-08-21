@@ -184,6 +184,24 @@ function ok(payload: unknown) {
 function fail(message: string) {
   return { content: [{ type: 'text' as const, text: message }], isError: true };
 }
+// One consistent way to stringify a thrown value for a tool error.
+function errMsg(e: unknown): string {
+  return e instanceof Error ? e.message : String(e);
+}
+
+// Register a tool whose whole job is to run one scene-op over the renderer→inspector bridge and
+// return its result (or the error). The tool name IS the op name and its args ARE the op params,
+// so every such tool is a one-liner instead of the repeated request/check/ok/fail boilerplate.
+function registerSceneOpTool(
+  server: McpServer,
+  name: string,
+  config: { title: string; description: string; inputSchema: ZodRawShape },
+): void {
+  server.registerTool(name, config, async (args: Record<string, unknown>) => {
+    const res = await requestSceneOp(name, args);
+    return res.ok ? ok(res.payload) : fail(String(res.payload));
+  });
+}
 
 // Pass an Explorer tool's own MCP content blocks straight back to the assistant (text +
 // images). They come from a compliant MCP server so they already match the content-block
@@ -208,9 +226,9 @@ function registerTools(server: McpServer): void {
     async () => {
       if (currentProjectDir === null) return fail('No scene is open.');
       try {
-        return ok(projectInfo(currentProjectDir));
+        return ok(await projectInfo(currentProjectDir));
       } catch (e) {
-        return fail(`Failed to read project info: ${String(e)}`);
+        return fail(`Failed to read project info: ${errMsg(e)}`);
       }
     },
   );
@@ -226,7 +244,7 @@ function registerTools(server: McpServer): void {
     async () => {
       if (currentProjectDir === null) return fail('No scene is open.');
       try {
-        const { entities, total } = buildRoster(readComposite(currentProjectDir));
+        const { entities, total } = buildRoster(await readComposite(currentProjectDir));
         const shown = entities.slice(0, MAX_ROSTER_ROWS);
         return ok({
           total,
@@ -236,40 +254,24 @@ function registerTools(server: McpServer): void {
           entities: shown,
         });
       } catch (e) {
-        return fail(String(e instanceof Error ? e.message : e));
+        return fail(errMsg(e));
       }
     },
   );
 
-  server.registerTool(
-    'get_scene_metrics',
-    {
-      title: 'Scene metrics',
-      description:
-        "The editor's live scene budget: triangles, entities, bodies, materials and textures currently in the scene, each against its per-scene limit, plus the count of entities out of the scene's bounds. Use this to check the scene fits Decentraland's limits before/after adding content. Measured by the editor viewport (needs no preview); for a running scene's frame rate and per-model breakdown, launch_preview and use explorer_call get_performance_stats / get_scene_content_stats.",
-      inputSchema: {},
-    },
-    async () => {
-      const res = await requestSceneOp('get_scene_metrics', {});
-      if (!res.ok) return fail(String(res.payload));
-      return ok(res.payload);
-    },
-  );
+  registerSceneOpTool(server, 'get_scene_metrics', {
+    title: 'Scene metrics',
+    description:
+      "The editor's live scene budget: triangles, entities, bodies, materials and textures currently in the scene, each against its per-scene limit, plus the count of entities out of the scene's bounds. Use this to check the scene fits Decentraland's limits before/after adding content. Measured by the editor viewport (needs no preview); for a running scene's frame rate and per-model breakdown, launch_preview and use explorer_call get_performance_stats / get_scene_content_stats.",
+    inputSchema: {},
+  });
 
-  server.registerTool(
-    'get_selection',
-    {
-      title: 'Get current selection',
-      description:
-        'The entities the user currently has selected in the editor (id + name). Use this to resolve what the user means by "this", "the selected entity", or "the one I have open" before acting. Returns an empty list if nothing is selected.',
-      inputSchema: {},
-    },
-    async () => {
-      const res = await requestSceneOp('get_selection', {});
-      if (!res.ok) return fail(String(res.payload));
-      return ok(res.payload);
-    },
-  );
+  registerSceneOpTool(server, 'get_selection', {
+    title: 'Get current selection',
+    description:
+      'The entities the user currently has selected in the editor (id + name). Use this to resolve what the user means by "this", "the selected entity", or "the one I have open" before acting. Returns an empty list if nothing is selected.',
+    inputSchema: {},
+  });
 
   server.registerTool(
     'entity_detail',
@@ -284,11 +286,11 @@ function registerTools(server: McpServer): void {
     async ({ entity }) => {
       if (currentProjectDir === null) return fail('No scene is open.');
       try {
-        const detail = entityDetail(readComposite(currentProjectDir), entity);
+        const detail = entityDetail(await readComposite(currentProjectDir), entity);
         if (detail === null) return fail(`No entity found matching "${entity}".`);
         return ok(detail);
       } catch (e) {
-        return fail(String(e instanceof Error ? e.message : e));
+        return fail(errMsg(e));
       }
     },
   );
@@ -322,160 +324,96 @@ function registerTools(server: McpServer): void {
   );
 
   // ---- Scene-graph mutations (Phase 2) ----
-  server.registerTool(
-    'create_entity',
-    {
-      title: 'Create entity',
-      description:
-        'Add a new entity to the scene graph, optionally named and/or parented to another entity by id. Returns the new entity id. The change appears live in the editor, autosaves, and is undoable. Use scene_state first to see existing entities and pick a parent.',
-      inputSchema: {
-        name: z
-          .string()
-          .optional()
-          .describe('Human-readable Name shown in the hierarchy (e.g. "Front Door")'),
-        parent: z.number().optional().describe('Parent entity id; omit to place at the scene root'),
-      },
+  registerSceneOpTool(server, 'create_entity', {
+    title: 'Create entity',
+    description:
+      'Add a new entity to the scene graph, optionally named and/or parented to another entity by id. Returns the new entity id. The change appears live in the editor, autosaves, and is undoable. Use scene_state first to see existing entities and pick a parent.',
+    inputSchema: {
+      name: z
+        .string()
+        .optional()
+        .describe('Human-readable Name shown in the hierarchy (e.g. "Front Door")'),
+      parent: z.number().optional().describe('Parent entity id; omit to place at the scene root'),
     },
-    async ({ name, parent }) => {
-      const res = await requestSceneOp('create_entity', { name, parent });
-      if (!res.ok) return fail(String(res.payload));
-      return ok(res.payload);
-    },
-  );
+  });
 
-  server.registerTool(
-    'remove_entity',
-    {
-      title: 'Remove entity',
-      description:
-        'Delete an entity (and all its children) from the scene graph, by id. Live in the editor, autosaves, undoable. Use scene_state to find the id first.',
-      inputSchema: { entity: z.number().describe('The entity id to remove') },
-    },
-    async ({ entity }) => {
-      const res = await requestSceneOp('remove_entity', { entity });
-      if (!res.ok) return fail(String(res.payload));
-      return ok(res.payload);
-    },
-  );
+  registerSceneOpTool(server, 'remove_entity', {
+    title: 'Remove entity',
+    description:
+      'Delete an entity (and all its children) from the scene graph, by id. Live in the editor, autosaves, undoable. Use scene_state to find the id first.',
+    inputSchema: { entity: z.number().describe('The entity id to remove') },
+  });
 
-  server.registerTool(
-    'set_parent',
-    {
-      title: 'Set parent',
-      description:
-        'Reparent an entity under another (its world position is preserved). Use parent id 0 for the scene root. Live + undoable.',
-      inputSchema: {
-        entity: z.number().describe('The entity to reparent'),
-        parent: z.number().describe('The new parent entity id (0 = scene root)'),
-      },
+  registerSceneOpTool(server, 'set_parent', {
+    title: 'Set parent',
+    description:
+      'Reparent an entity under another (its world position is preserved). Use parent id 0 for the scene root. Live + undoable.',
+    inputSchema: {
+      entity: z.number().describe('The entity to reparent'),
+      parent: z.number().describe('The new parent entity id (0 = scene root)'),
     },
-    async ({ entity, parent }) => {
-      const res = await requestSceneOp('set_parent', { entity, parent });
-      if (!res.ok) return fail(String(res.payload));
-      return ok(res.payload);
-    },
-  );
+  });
 
-  server.registerTool(
-    'set_component',
-    {
-      title: 'Set component',
-      description:
-        'Create or update a component on an entity. `component` is a name like "Transform", "core::GltfContainer", "MeshRenderer", or "VisibilityComponent". `value` is the component value; for an UPDATE the keys you pass are merged. IMPORTANT: the value must match the component schema — call entity_detail on an entity that already has the component to see the exact shape (e.g. Transform is {position:{x,y,z},rotation:{x,y,z,w},scale:{x,y,z}}). Live + undoable.',
-      inputSchema: {
-        entity: z.number().describe('The entity id'),
-        component: z.string().describe('Component name, e.g. "Transform" or "core::GltfContainer"'),
-        value: z
-          .record(z.string(), z.unknown())
-          .describe('Component value (JSON object matching its schema)'),
-      },
+  registerSceneOpTool(server, 'set_component', {
+    title: 'Set component',
+    description:
+      'Create or update a component on an entity. `component` is a name like "Transform", "core::GltfContainer", "MeshRenderer", or "VisibilityComponent". `value` is the component value; for an UPDATE the keys you pass are merged. IMPORTANT: the value must match the component schema — call entity_detail on an entity that already has the component to see the exact shape (e.g. Transform is {position:{x,y,z},rotation:{x,y,z,w},scale:{x,y,z}}). Live + undoable.',
+    inputSchema: {
+      entity: z.number().describe('The entity id'),
+      component: z.string().describe('Component name, e.g. "Transform" or "core::GltfContainer"'),
+      value: z
+        .record(z.string(), z.unknown())
+        .describe('Component value (JSON object matching its schema)'),
     },
-    async ({ entity, component, value }) => {
-      const res = await requestSceneOp('set_component', { entity, component, value });
-      if (!res.ok) return fail(String(res.payload));
-      return ok(res.payload);
-    },
-  );
+  });
 
-  server.registerTool(
-    'remove_component',
-    {
-      title: 'Remove component',
-      description:
-        'Remove a component from an entity, by component name (e.g. "MeshRenderer"). Live + undoable.',
-      inputSchema: {
-        entity: z.number().describe('The entity id'),
-        component: z.string().describe('Component name to remove'),
-      },
+  registerSceneOpTool(server, 'remove_component', {
+    title: 'Remove component',
+    description:
+      'Remove a component from an entity, by component name (e.g. "MeshRenderer"). Live + undoable.',
+    inputSchema: {
+      entity: z.number().describe('The entity id'),
+      component: z.string().describe('Component name to remove'),
     },
-    async ({ entity, component }) => {
-      const res = await requestSceneOp('remove_component', { entity, component });
-      if (!res.ok) return fail(String(res.payload));
-      return ok(res.payload);
-    },
-  );
+  });
 
-  server.registerTool(
-    'search_catalog',
-    {
-      title: 'Search Smart Items catalog',
-      description:
-        'Search the Smart Items catalog (doors, buttons, platforms, NPCs, etc.) — pre-built items that carry their own behaviour. Returns matches with id, name, category, tags. Use before place_smart_item to get an assetId. Omit the query to list everything.',
-      inputSchema: {
-        query: z.string().optional().describe('Substring to match against name/category/tags/id'),
-        limit: z.number().optional().describe('Max results (default 30)'),
-      },
+  registerSceneOpTool(server, 'search_catalog', {
+    title: 'Search Smart Items catalog',
+    description:
+      'Search the Smart Items catalog (doors, buttons, platforms, NPCs, etc.) — pre-built items that carry their own behaviour. Returns matches with id, name, category, tags. Use before place_smart_item to get an assetId. Omit the query to list everything.',
+    inputSchema: {
+      query: z.string().optional().describe('Substring to match against name/category/tags/id'),
+      limit: z.number().optional().describe('Max results (default 30)'),
     },
-    async ({ query, limit }) => {
-      const res = await requestSceneOp('search_catalog', { query, limit });
-      if (!res.ok) return fail(String(res.payload));
-      return ok(res.payload);
-    },
-  );
+  });
 
-  server.registerTool(
-    'place_smart_item',
-    {
-      title: 'Place Smart Item',
-      description:
-        'Place a Smart Item from the catalog into the open scene. `assetId` comes from search_catalog. Optional `position` is world metres (defaults to 8,0,8). The item brings its own behaviour (e.g. a door that opens when clicked) — this is how you add interactive objects. Applies live, autosaves, undoable.',
-      inputSchema: {
-        assetId: z.string().describe('Catalog asset id (from search_catalog)'),
-        name: z
-          .string()
-          .optional()
-          .describe('Name for the placed entity (defaults to the asset name)'),
-        position: z
-          .object({ x: z.number(), y: z.number(), z: z.number() })
-          .optional()
-          .describe('World position in metres (default { x: 8, y: 0, z: 8 })'),
-      },
+  registerSceneOpTool(server, 'place_smart_item', {
+    title: 'Place Smart Item',
+    description:
+      'Place a Smart Item from the catalog into the open scene. `assetId` comes from search_catalog. Optional `position` is world metres (defaults to 8,0,8). The item brings its own behaviour (e.g. a door that opens when clicked) — this is how you add interactive objects. Applies live, autosaves, undoable.',
+    inputSchema: {
+      assetId: z.string().describe('Catalog asset id (from search_catalog)'),
+      name: z
+        .string()
+        .optional()
+        .describe('Name for the placed entity (defaults to the asset name)'),
+      position: z
+        .object({ x: z.number(), y: z.number(), z: z.number() })
+        .optional()
+        .describe('World position in metres (default { x: 8, y: 0, z: 8 })'),
     },
-    async ({ assetId, name, position }) => {
-      const res = await requestSceneOp('place_smart_item', { assetId, name, position });
-      if (!res.ok) return fail(String(res.payload));
-      return ok(res.payload);
-    },
-  );
+  });
 
-  server.registerTool(
-    'attach_script',
-    {
-      title: 'Attach script',
-      description:
-        'Attach a script to an entity by adding an asset-packs::Script component pointing at a source file. WRITE THE SCRIPT FILE FIRST with your own file tools (put it under assets/Scripts/, e.g. assets/Scripts/Door.tsx), then call this with that path. Applies live, autosaves, undoable.',
-      inputSchema: {
-        entity: z.number().describe('The entity id to attach the script to'),
-        path: z.string().describe('Path to the script file, e.g. "assets/Scripts/Door.tsx"'),
-        priority: z.number().optional().describe('Execution priority (default 0)'),
-      },
+  registerSceneOpTool(server, 'attach_script', {
+    title: 'Attach script',
+    description:
+      'Attach a script to an entity by adding an asset-packs::Script component pointing at a source file. WRITE THE SCRIPT FILE FIRST with your own file tools (put it under assets/Scripts/, e.g. assets/Scripts/Door.tsx), then call this with that path. Applies live, autosaves, undoable.',
+    inputSchema: {
+      entity: z.number().describe('The entity id to attach the script to'),
+      path: z.string().describe('Path to the script file, e.g. "assets/Scripts/Door.tsx"'),
+      priority: z.number().optional().describe('Execution priority (default 0)'),
     },
-    async ({ entity, path, priority }) => {
-      const res = await requestSceneOp('attach_script', { entity, path, priority });
-      if (!res.ok) return fail(String(res.payload));
-      return ok(res.payload);
-    },
-  );
+  });
 
   // ---- Explorer gateway (Phase 3): drive a running preview ----
   server.registerTool(
@@ -491,7 +429,7 @@ function registerTools(server: McpServer): void {
       try {
         return ok(await launchPreview(currentProjectDir));
       } catch (e) {
-        return fail(`Failed to launch preview: ${String(e instanceof Error ? e.message : e)}`);
+        return fail(`Failed to launch preview: ${errMsg(e)}`);
       }
     },
   );
@@ -508,7 +446,7 @@ function registerTools(server: McpServer): void {
       try {
         return ok(await previewStatus());
       } catch (e) {
-        return fail(String(e instanceof Error ? e.message : e));
+        return fail(errMsg(e));
       }
     },
   );
@@ -525,7 +463,7 @@ function registerTools(server: McpServer): void {
         await stopPreview();
         return ok({ ok: true });
       } catch (e) {
-        return fail(String(e instanceof Error ? e.message : e));
+        return fail(errMsg(e));
       }
     },
   );
@@ -548,7 +486,7 @@ function registerTools(server: McpServer): void {
       try {
         return formatExplorerResult(await callExplorerTool(tool, args ?? {}));
       } catch (e) {
-        return fail(String(e instanceof Error ? e.message : e));
+        return fail(errMsg(e));
       }
     },
   );
@@ -564,39 +502,48 @@ function registerTools(server: McpServer): void {
 // Minimal JSON-Schema → Zod raw-shape conversion for the Explorer's tool input schemas, which
 // are flat objects of primitives. Unknown/unsupported shapes degrade to z.unknown() so the
 // tool is still callable; the Explorer does the real validation.
+// Convert one JSON-schema node to a Zod type, recursing into nested objects and array items so
+// the advertised schema matches the Explorer's real shape (an object with `properties` becomes a
+// nested z.object, not an opaque record). The Explorer still re-validates, so unknown shapes
+// safely degrade to z.unknown().
+function jsonSchemaToZod(node: unknown): ZodTypeAny {
+  if (typeof node !== 'object' || node === null) return z.unknown();
+  const n = node as { type?: string; description?: string; properties?: unknown; items?: unknown };
+  let zt: ZodTypeAny;
+  switch (n.type) {
+    case 'string':
+      zt = z.string();
+      break;
+    case 'number':
+    case 'integer':
+      zt = z.number();
+      break;
+    case 'boolean':
+      zt = z.boolean();
+      break;
+    case 'array':
+      zt = z.array(n.items !== undefined ? jsonSchemaToZod(n.items) : z.unknown());
+      break;
+    case 'object':
+      zt =
+        n.properties !== undefined
+          ? z.object(jsonSchemaToZodShape(n))
+          : z.record(z.string(), z.unknown());
+      break;
+    default:
+      zt = z.unknown();
+  }
+  if (typeof n.description === 'string' && n.description !== '') zt = zt.describe(n.description);
+  return zt;
+}
+
 function jsonSchemaToZodShape(schema: unknown): ZodRawShape {
   const shape: Record<string, ZodTypeAny> = {};
   if (typeof schema !== 'object' || schema === null) return shape;
-  const s = schema as {
-    properties?: Record<string, { type?: string; description?: string }>;
-    required?: string[];
-  };
+  const s = schema as { properties?: Record<string, unknown>; required?: string[] };
   const required = new Set(s.required ?? []);
   for (const [key, prop] of Object.entries(s.properties ?? {})) {
-    let zt: ZodTypeAny;
-    switch (prop?.type) {
-      case 'string':
-        zt = z.string();
-        break;
-      case 'number':
-      case 'integer':
-        zt = z.number();
-        break;
-      case 'boolean':
-        zt = z.boolean();
-        break;
-      case 'array':
-        zt = z.array(z.unknown());
-        break;
-      case 'object':
-        zt = z.record(z.string(), z.unknown());
-        break;
-      default:
-        zt = z.unknown();
-    }
-    if (typeof prop?.description === 'string' && prop.description !== '') {
-      zt = zt.describe(prop.description);
-    }
+    const zt = jsonSchemaToZod(prop);
     shape[key] = required.has(key) ? zt : zt.optional();
   }
   return shape;
@@ -614,7 +561,7 @@ function registerOneExplorerTool(server: McpServer, tool: ExplorerTool): Registe
       try {
         return formatExplorerResult(await callExplorerTool(tool.name, args ?? {}));
       } catch (e) {
-        return fail(String(e instanceof Error ? e.message : e));
+        return fail(errMsg(e));
       }
     },
   );

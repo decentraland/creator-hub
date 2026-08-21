@@ -121,20 +121,20 @@ describe('readComposite + projectInfo (fs)', () => {
     for (const d of dirs.splice(0)) fs.rmSync(d, { recursive: true, force: true });
   });
 
-  it('reads and parses the composite from disk', () => {
+  it('reads and parses the composite from disk', async () => {
     const dir = makeProject();
-    expect(buildRoster(readComposite(dir)).total).toBe(3);
+    expect(buildRoster(await readComposite(dir)).total).toBe(3);
   });
 
-  it('throws a readable error when the composite is missing', () => {
+  it('throws a readable error when the composite is missing', async () => {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'ch-empty-'));
     dirs.push(dir);
-    expect(() => readComposite(dir)).toThrow(/No scene composite/);
+    await expect(readComposite(dir)).rejects.toThrow(/No scene composite/);
   });
 
-  it('reports scene name, parcels and SDK version', () => {
+  it('reports scene name, parcels and SDK version', async () => {
     const dir = makeProject();
-    const info = projectInfo(dir) as {
+    const info = (await projectInfo(dir)) as {
       scene: { name: string; parcels: string[] };
       sdkVersion: string;
       projectName: string;
