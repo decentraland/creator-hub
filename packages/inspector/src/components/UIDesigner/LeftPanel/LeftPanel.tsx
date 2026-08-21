@@ -1,4 +1,5 @@
 import React, { useCallback, useMemo, useRef, useState } from 'react';
+import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
 import { AiOutlineSearch as SearchIcon } from 'react-icons/ai';
 import { IoAddOutline } from 'react-icons/io5';
 import { VscClose as ClearIcon } from 'react-icons/vsc';
@@ -35,8 +36,9 @@ function useClickRipple(): [React.ReactNode, () => void] {
 }
 
 /**
- * The 2D-mode left rail: one search box above both sections, the GUIs list, and the
- * Nodes tree for the selected GUI.
+ * The 2D-mode left rail: one search box above a vertical resizable split of the
+ * GUIs list and the Nodes tree for the selected GUI. Each list scrolls inside its
+ * own pane, and the divider rebalances them.
  *
  * The search covers both sections, and a section with no match is hidden outright
  * rather than shown empty, so a search reads as its own result list. A selected
@@ -93,58 +95,81 @@ const LeftPanel: React.FC = () => {
           }
         />
       </div>
-      {showGuis ? (
-        <div className="ui-designer-rail-section">
-          <div className="ui-designer-rail-header ui-designer-rail-header-row">
-            <span>GUIs</span>
-            <button
-              type="button"
-              className="ui-designer-rail-add"
-              onClick={() => {
-                rippleGui();
-                void createRoot();
-              }}
-              aria-label="New GUI"
-              title="New GUI"
+      {showGuis || showNodes ? (
+        <PanelGroup
+          direction="vertical"
+          autoSaveId="ui-designer-rail"
+          className="ui-designer-rail-panels"
+        >
+          {showGuis ? (
+            <Panel
+              id="guis"
+              order={1}
+              defaultSize={33}
+              minSize={15}
             >
-              {guiRipple}
-              <IoAddOutline aria-hidden="true" />
-            </button>
-          </div>
-          <CodeRootsList filter={search} />
-        </div>
-      ) : null}
-      {showNodes ? (
-        <div className="ui-designer-rail-section ui-designer-rail-section-grow">
-          <div className="ui-designer-rail-header ui-designer-rail-header-row">
-            <span>Nodes</span>
-            <button
-              ref={addNodeRef}
-              type="button"
-              className="ui-designer-rail-add"
-              onClick={() => {
-                rippleNode();
-                setPickerOpen(true);
-              }}
-              disabled={parent === null && !emptyRoot}
-              aria-label="Add widget"
-              title="Add widget"
-            >
-              {nodeRipple}
-              <IoAddOutline aria-hidden="true" />
-            </button>
-          </div>
-          <NodeTree filter={search} />
-          {pickerOpen ? (
-            <WidgetPicker
-              anchorRef={addNodeRef}
-              onDismiss={() => setPickerOpen(false)}
-              {...(parent === null
-                ? { onAdd: (type, preset) => void spliceSetRootChild(type, preset) }
-                : { parent })}
-            />
+              <div className="ui-designer-rail-section">
+                <div className="ui-designer-rail-header ui-designer-rail-header-row">
+                  <span>GUIs</span>
+                  <button
+                    type="button"
+                    className="ui-designer-rail-add"
+                    onClick={() => {
+                      rippleGui();
+                      void createRoot();
+                    }}
+                    aria-label="New GUI"
+                    title="New GUI"
+                  >
+                    {guiRipple}
+                    <IoAddOutline aria-hidden="true" />
+                  </button>
+                </div>
+                <CodeRootsList filter={search} />
+              </div>
+            </Panel>
           ) : null}
-        </div>
+          {showGuis && showNodes ? <PanelResizeHandle className="ui-designer-rail-handle" /> : null}
+          {showNodes ? (
+            <Panel
+              id="nodes"
+              order={2}
+              defaultSize={67}
+              minSize={25}
+            >
+              <div className="ui-designer-rail-section">
+                <div className="ui-designer-rail-header ui-designer-rail-header-row">
+                  <span>Nodes</span>
+                  <button
+                    ref={addNodeRef}
+                    type="button"
+                    className="ui-designer-rail-add"
+                    onClick={() => {
+                      rippleNode();
+                      setPickerOpen(true);
+                    }}
+                    disabled={parent === null && !emptyRoot}
+                    aria-label="Add widget"
+                    title="Add widget"
+                  >
+                    {nodeRipple}
+                    <IoAddOutline aria-hidden="true" />
+                  </button>
+                </div>
+                <NodeTree filter={search} />
+                {pickerOpen ? (
+                  <WidgetPicker
+                    anchorRef={addNodeRef}
+                    onDismiss={() => setPickerOpen(false)}
+                    {...(parent === null
+                      ? { onAdd: (type, preset) => void spliceSetRootChild(type, preset) }
+                      : { parent })}
+                  />
+                ) : null}
+              </div>
+            </Panel>
+          ) : null}
+        </PanelGroup>
       ) : null}
     </Box>
   );

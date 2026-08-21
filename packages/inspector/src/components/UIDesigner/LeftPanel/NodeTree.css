@@ -1,8 +1,8 @@
 .ui-designer-nodetree {
   border-top: 1px solid var(--ui-designer-hairline);
-  border-bottom: 1px solid var(--ui-designer-hairline);
   padding: var(--uid-space-1) 0;
-  max-height: 240px;
+  flex: 1 1 auto;
+  min-height: 0;
   overflow-y: auto;
   font-size: 12px;
 }

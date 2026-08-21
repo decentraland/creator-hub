@@ -164,32 +164,39 @@
 .ui-designer-rail-section {
   display: flex;
   flex-direction: column;
+  height: 100%;
   min-height: 0;
-  border-bottom: 1px solid var(--ui-designer-hairline);
 }
 
-/* The fixed (non-grow) sections — currently the UI Roots list — cap at a
-   third of the rail so a long list scrolls internally instead of eating the
-   Nodes section's space. Scrolling belongs to the list inside, not here: a
-   scroll container clips on BOTH axes (a `visible` axis computes to `auto`
-   alongside a scrolling one), which would cut the "+" wave off. */
-.ui-designer-rail-section:not(.ui-designer-rail-section-grow) {
-  flex: 0 1 auto;
-  max-height: 33%;
-}
-
-.ui-designer-rail-section-grow,
-.ui-designer-rail-section:last-child {
+/* The two sections are sized by a vertical react-resizable-panels group (the
+   draggable divider); each fills its Panel and scrolls internally. Scrolling
+   belongs to the list inside, not the section: a scroll container clips on BOTH
+   axes (a `visible` axis computes to `auto` alongside a scrolling one), which
+   would cut the "+" wave off. */
+.ui-designer-rail-panels {
   flex: 1 1 auto;
-  max-height: none;
+  min-height: 0;
 }
 
 .ui-designer-rail-header {
+  flex-shrink: 0;
   font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: rgba(255, 255, 255, 0.5);
   padding: 8px 12px 4px;
+}
+
+.ui-designer-rail-handle {
+  flex-shrink: 0;
+  height: 3px;
+  background-color: var(--ui-designer-hairline);
+  transition: background-color 0.2s ease;
+}
+
+.ui-designer-rail-handle:hover,
+.ui-designer-rail-handle[data-resize-handle-active] {
+  background-color: var(--ui-designer-control-border-strong);
 }
 
 .ui-designer-rail-header-row {
