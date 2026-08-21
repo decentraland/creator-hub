@@ -72,6 +72,6 @@ runs:
       uses: actions/cache@v6
       with:
         path: |
-          ~/.cache/electron
-          ~/.cache/electron-builder
+          ${{ runner.os == 'Linux' && '~/.cache/electron' || runner.os == 'macOS' && '~/Library/Caches/electron' || '~\AppData\Local\electron\Cache' }}
+          ${{ runner.os == 'Linux' && '~/.cache/electron-builder' || runner.os == 'macOS' && '~/Library/Caches/electron-builder' || '~\AppData\Local\electron-builder\Cache' }}
         key: ${{ runner.os }}-electron-${{ hashFiles('package-lock.json', 'packages/creator-hub/package.json') }}
