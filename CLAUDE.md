@@ -166,6 +166,16 @@ CI is orchestrated by `.github/workflows/ci.yml`, which calls reusable
   (e.g. `packages/inspector/agents/bevy/node_modules`), or a cache hit serves an incomplete
   tree. Symptoms of a gap: cold-cache failures like `protoc: not found` (Error 127) or
   `No matching export … CameraLayer`.
+- **Every job that can run `make install` MUST checkout with `submodules: true`.** The
+  install chain calls `init-submodules` (`git submodule update --init`), which clones the
+  `devtools-frontend` submodule over its `.gitmodules` SSH URL; `checkout` only rewrites that
+  to a token-authenticated HTTPS URL when `submodules: true` is set, so a cache-miss install
+  otherwise dies with `Permission denied (publickey)`. This is **orthogonal to the build
+  cache** — a green build-artifact download does NOT skip install; `node_modules` is a
+  separate cache keyed on `package-lock.json`, so any lockfile bump (or fresh branch) makes
+  install run and hit the submodule. Invisible on warm-cache PR runs, which is why it slipped
+  past `build.yml` and both `e2e.yml` jobs one at a time. Adding a new install-running job?
+  Add `submodules: true`.
 
 ## Code Style
 
