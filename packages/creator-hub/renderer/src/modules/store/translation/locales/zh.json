@@ -85,6 +85,9 @@
           "failed": "失败"
         }
       }
+    },
+    "publish": {
+      "save_failed": "发布前无法保存你的场景，已停止发布以免部署旧内容。{reason}"
     }
   },
   "scene_list": {

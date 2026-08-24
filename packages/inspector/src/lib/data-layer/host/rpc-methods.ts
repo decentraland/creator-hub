@@ -272,8 +272,17 @@ export async function initRpcMethods(
       });
     },
 
+    /**
+     * Flushes every editor-owned file to disk and rejects if any of them could not be
+     * written. Callers that read the project back off disk — the publish flow above all —
+     * must await this, otherwise they package whatever scene.json happened to be there.
+     */
     async save() {
       await compositeProvider.saveComposite(true);
+      // Picks up Scene-component edits the engine holds but no transaction has merged yet,
+      // then guarantees they reached scene.json.
+      await sceneProvider.syncFromEngine(engine);
+      await sceneProvider.flush();
       return {};
     },
 

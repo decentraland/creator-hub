@@ -85,6 +85,9 @@
           "failed": "Failed"
         }
       }
+    },
+    "publish": {
+      "save_failed": "Couldn't save your scene before publishing, so publishing was stopped to avoid deploying older content. {reason}"
     }
   },
   "scene_list": {

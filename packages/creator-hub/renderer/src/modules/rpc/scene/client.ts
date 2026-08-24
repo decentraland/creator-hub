@@ -40,6 +40,7 @@ export enum Method {
   SET_FEATURE_FLAGS = 'set_feature_flags',
   PUSH_MOBILE_DEBUG_ENTRIES = 'push_mobile_debug_entries',
   SET_MOBILE_DEBUG_SESSION_ENABLED = 'set_mobile_debug_session_enabled',
+  SAVE_SCENE = 'save_scene',
 }
 
 export type Params = {
@@ -69,6 +70,7 @@ export type Params = {
       messageCount: number;
     }[];
   };
+  [Method.SAVE_SCENE]: Record<string, never>;
 };
 
 export type Result = {
@@ -89,6 +91,7 @@ export type Result = {
   [Method.SET_FEATURE_FLAGS]: void;
   [Method.PUSH_MOBILE_DEBUG_ENTRIES]: void;
   [Method.SET_MOBILE_DEBUG_SESSION_ENABLED]: void;
+  [Method.SAVE_SCENE]: void;
 };
 
 // @dcl/mini-rpc's request() never settles if no server answers (it just parks a
@@ -101,6 +104,11 @@ export type Result = {
 // against any transport stall) rather than leaking.
 const REQUEST_TIMEOUT_MS = 5000;
 
+// Flushing writes the whole composite plus scene.json; on a large scene that dump takes
+// longer than an interactive call, and timing it out would abort a publish over a save
+// that was about to succeed.
+const SAVE_SCENE_TIMEOUT_MS = 60_000;
+
 export class SceneRpcClient extends RPC<Method, Params, Result> {
   constructor(transport: Transport) {
     super('SceneRpcInbound', transport);
@@ -108,10 +116,11 @@ export class SceneRpcClient extends RPC<Method, Params, Result> {
 
   override request<T extends Method>(method: `${T}`, params: Params[T]): Promise<Result[T]> {
     let timer: ReturnType<typeof setTimeout> | undefined;
+    const timeoutMs = method === Method.SAVE_SCENE ? SAVE_SCENE_TIMEOUT_MS : REQUEST_TIMEOUT_MS;
     const timeout = new Promise<never>((_resolve, reject) => {
       timer = setTimeout(
         () => reject(new Error(`Scene RPC "${method}" timed out (no renderer response)`)),
-        REQUEST_TIMEOUT_MS,
+        timeoutMs,
       );
     });
     return Promise.race([super.request(method, params), timeout]).finally(() =>
@@ -149,6 +158,14 @@ export class SceneRpcClient extends RPC<Method, Params, Result> {
 
   takeScreenshot = (width: number, height: number, precision?: number) => {
     return this.request('take_screenshot', { width, height, precision });
+  };
+
+  /**
+   * Flushes the Inspector's pending writes (composite + scene.json) to disk. Rejects when
+   * the flush failed, which means the project on disk is NOT what the editor is showing.
+   */
+  saveScene = () => {
+    return this.request('save_scene', {});
   };
 
   setTarget = (x: number, y: number, z: number) => {

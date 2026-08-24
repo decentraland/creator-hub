@@ -85,6 +85,9 @@
           "failed": "Falló"
         }
       }
+    },
+    "publish": {
+      "save_failed": "No se pudo guardar tu escena antes de publicar, así que se detuvo la publicación para no desplegar contenido anterior. {reason}"
     }
   },
   "scene_list": {
