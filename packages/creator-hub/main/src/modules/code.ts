@@ -9,12 +9,43 @@ import { type EditorConfig } from '/shared/types/config';
 import { EditorType } from '/shared/types/code';
 import { track } from './analytics';
 import { getConfigStorage } from './config';
+import { getBundledNodePath, joinEnvPaths } from './path';
+import { getInjectedPathEntries } from './setup-node';
 
 const exec = promisify(execCallback);
 const execFile = promisify(execFileCallback);
 
-function getPath() {
-  return process.env.PATH || '';
+/**
+ * PATH for a process handed to the user, with Creator Hub's own shims taken back out and the
+ * bundled Node put in their place.
+ *
+ * The Hub prepends a `node` that links to the Electron executable, plus the npm scripts that
+ * resolve `node` through PATH. Handed to an editor, those reach every terminal opened inside
+ * it, where `node -v` or `npm install` re-launches Creator Hub — and the single-instance lock
+ * turns that into "the Hub took focus", with no output and no error to explain it.
+ *
+ * The real bundled Node's directory goes in front instead, so `node` and `npm` still resolve
+ * to something that works rather than simply disappearing.
+ */
+function getEditorPath() {
+  const separator = process.platform === 'win32' ? ';' : ':';
+  const injected = new Set(getInjectedPathEntries().map(entry => path.resolve(entry)));
+  const inherited = (process.env.PATH || '')
+    .split(separator)
+    .filter(entry => entry && !injected.has(path.resolve(entry)));
+
+  const bundledNode = getBundledNodePath();
+  return joinEnvPaths(bundledNode ? path.dirname(bundledNode) : undefined, ...inherited);
+}
+
+/**
+ * Environment for a process handed to the user. `ELECTRON_RUN_AS_NODE` is dropped along with
+ * the shims: inherited by an editor, it changes how any Electron-based tool the user starts
+ * from there behaves.
+ */
+function getEditorEnv(): NodeJS.ProcessEnv {
+  const { ELECTRON_RUN_AS_NODE: _electronRunAsNode, ...env } = process.env;
+  return { ...env, PATH: getEditorPath() };
 }
 
 interface MacAppInfo {
@@ -362,9 +393,7 @@ export async function open(_path: string) {
 
     if (defaultEditor) {
       log.info('Opening with default editor:', defaultEditor.name, 'at path:', defaultEditor.path);
-      await execFile(defaultEditor.path, [normalizedPath], {
-        env: { ...process.env, PATH: getPath() },
-      });
+      await execFile(defaultEditor.path, [normalizedPath], { env: getEditorEnv() });
       await track('Open Code', undefined);
       return;
     }
