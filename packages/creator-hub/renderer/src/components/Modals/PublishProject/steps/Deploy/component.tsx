@@ -549,6 +549,9 @@ function Success({ info, url, onClick }: SuccessProps) {
           info={info}
           url={url}
         />
+        <div className="indexing-note">
+          {t('modal.publish_project.deploy.success.indexing_note')}
+        </div>
       </div>
       <div className="actions">
         <Button

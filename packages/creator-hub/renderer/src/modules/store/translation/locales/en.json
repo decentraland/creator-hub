@@ -326,7 +326,8 @@
           "world": "World",
           "land": "Land",
           "jump_in": "Jump In",
-          "in_progress": "You can now access your scene even while it's still processing."
+          "in_progress": "You can now access your scene even while it's still processing.",
+          "indexing_note": "The scene itself is live now. Its card in the explorer — title, description and thumbnail — is indexed separately and can take a few minutes to catch up."
         }
       }
     },
