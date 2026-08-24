@@ -405,7 +405,13 @@ export const fetchParcelsPermission = createAsyncThunk(
       { limit: LIMIT, offset: 0 },
     );
 
-    if (!firstPage || firstPage.total <= LIMIT) {
+    // A null first page means the request failed, not that the user has zero parcels.
+    // Fulfilling here would be indistinguishable from world-wide permission (empty parcels array).
+    if (!firstPage) {
+      throw new Error(`Failed to fetch parcels permission for world "${worldName}"`);
+    }
+
+    if (firstPage.total <= LIMIT) {
       return { walletAddress, parcels: firstPage };
     }
 

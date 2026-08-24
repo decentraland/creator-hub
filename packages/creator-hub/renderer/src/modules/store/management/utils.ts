@@ -1,4 +1,8 @@
-import type { WorldPermissionsState, WorldSettingsState } from './slice';
+import type { ParcelsPermission, WorldPermissionsState, WorldSettingsState } from './slice';
+
+// World-wide permission is represented by a successfully fetched, empty parcels array.
+export const hasWorldWidePermission = (parcelsPermission?: ParcelsPermission): boolean =>
+  parcelsPermission?.status === 'succeeded' && parcelsPermission.parcels.length === 0;
 
 export const getThumbnailUrlFromDeployment = (
   deployment:

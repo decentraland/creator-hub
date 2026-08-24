@@ -30,6 +30,7 @@ import { getEnsProvider } from '/@/modules/store/ens/utils';
 import type { ParcelsPermission, WorldSettingsState } from '/@/modules/store/management';
 import {
   actions as managementActions,
+  hasWorldWidePermission,
   selectors as managementSelectors,
 } from '/@/modules/store/management';
 import { addBase64ImagePrefix } from '/@/modules/image';
@@ -85,9 +86,7 @@ export function PublishToWorld(props: Props) {
   }, [names, name, wallet]);
 
   const hasWorldWidePermissions: boolean = useMemo(() => {
-    return (
-      isOwner || (worldPermissions?.status === 'succeeded' && !worldPermissions?.parcels.length)
-    );
+    return isOwner || hasWorldWidePermission(worldPermissions);
   }, [isOwner, worldPermissions]);
 
   const handleBack = useCallback(() => {

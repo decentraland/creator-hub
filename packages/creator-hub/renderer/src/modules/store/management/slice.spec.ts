@@ -707,11 +707,11 @@ describe('management slice', () => {
       });
     });
 
-    describe('when API returns null', () => {
-      it('should handle null response gracefully', async () => {
+    describe('when the first page request fails', () => {
+      it('should reject and set status to failed instead of succeeding with empty parcels', async () => {
         mockWorldsAPI.fetchParcelsPermission.mockResolvedValue(null);
 
-        await store.dispatch(
+        const result = await store.dispatch(
           fetchParcelsPermission({
             worldName: TEST_WORLD_NAME,
             permissionName: 'deployment',
@@ -719,9 +719,9 @@ describe('management slice', () => {
           }),
         );
 
+        expect(result.type).toBe('management/fetchParcelsPermission/rejected');
         const state = store.getState().management;
-        expect(state.worldPermissions.parcels[TEST_WALLET_ADDRESS]?.parcels).toEqual([]);
-        expect(state.worldPermissions.parcels[TEST_WALLET_ADDRESS]?.status).toBe('succeeded');
+        expect(state.worldPermissions.parcels[TEST_WALLET_ADDRESS]?.status).toBe('failed');
       });
     });
 
