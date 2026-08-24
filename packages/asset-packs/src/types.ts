@@ -202,3 +202,22 @@ export type ActionRef = {
  * ```
  */
 export type ActionCallback = () => void;
+
+/**
+ * A number that is edited with a slider in the editor UI.
+ * The type parameters set the slider's minimum, maximum and step (step defaults to 1).
+ * At runtime the value is a plain number.
+ *
+ * @example
+ * ```typescript
+ * export class Spinner {
+ *   constructor(
+ *     public src: string,
+ *     public entity: Entity,
+ *     public speed: Slider<0, 10, 0.5> = 1
+ *   ) {}
+ * }
+ * ```
+ */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export type Slider<Min extends number, Max extends number, Step extends number = 1> = number;

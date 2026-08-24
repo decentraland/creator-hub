@@ -2,6 +2,7 @@ import { parse } from '@babel/parser';
 import type {
   Identifier,
   TSTypeAnnotation,
+  TSType,
   Expression,
   FunctionParameter,
   ClassMethod,
@@ -11,10 +12,18 @@ import { engine } from '@dcl/ecs';
 
 import type { ScriptParamUnion, ScriptAction } from './types';
 
+const SLIDER_DEFAULT_STEP = 1;
+
 function getValueAndTypeFromExpression(expression: Expression): ScriptParamUnion {
   switch (expression.type) {
     case 'NumericLiteral':
       return { type: 'number', value: expression.value };
+    case 'UnaryExpression':
+      // negative default values (e.g. "= -50") are unary expressions
+      if (expression.operator === '-' && expression.argument.type === 'NumericLiteral') {
+        return { type: 'number', value: -expression.argument.value };
+      }
+      break;
     case 'BooleanLiteral':
       return { type: 'boolean', value: expression.value };
     case 'StringLiteral':
@@ -22,6 +31,38 @@ function getValueAndTypeFromExpression(expression: Expression): ScriptParamUnion
   }
 
   return { type: 'string', value: '' };
+}
+
+// resolves numeric literal types, including negative ones (e.g. -90 is a unary expression)
+function getNumericLiteral(type: TSType): number | undefined {
+  if (type.type !== 'TSLiteralType') return undefined;
+  const literal = type.literal;
+  if (literal.type === 'NumericLiteral') return literal.value;
+  if (
+    literal.type === 'UnaryExpression' &&
+    literal.operator === '-' &&
+    literal.argument.type === 'NumericLiteral'
+  ) {
+    return -literal.argument.value;
+  }
+  return undefined;
+}
+
+function getSliderParam(
+  typeAnnotation: TSTypeAnnotation['typeAnnotation'],
+): ScriptParamUnion | undefined {
+  if (typeAnnotation.type !== 'TSTypeReference') return undefined;
+  const typeArgs = typeAnnotation.typeParameters?.params ?? [];
+  const min = typeArgs.length > 0 ? getNumericLiteral(typeArgs[0]) : undefined;
+  const max = typeArgs.length > 1 ? getNumericLiteral(typeArgs[1]) : undefined;
+  const step = typeArgs.length > 2 ? getNumericLiteral(typeArgs[2]) : SLIDER_DEFAULT_STEP;
+
+  // a slider without valid literal bounds degrades to a plain number field
+  if (min === undefined || max === undefined || step === undefined || min >= max || step <= 0) {
+    return undefined;
+  }
+
+  return { type: 'slider', value: min, min, max, step };
 }
 
 function getValueAndTypeFromType(
@@ -39,6 +80,9 @@ function getValueAndTypeFromType(
         }
         if (typeAnnotation.typeName.name === 'ActionCallback') {
           return { type: 'action', value: { entity: engine.RootEntity, action: '' } };
+        }
+        if (typeAnnotation.typeName.name === 'Slider') {
+          return getSliderParam(typeAnnotation) ?? { type: 'number', value: 0 };
         }
       }
       break;
@@ -149,6 +193,22 @@ function mergeTooltips(
   }
 }
 
+// merges a param's declared type info with its default value expression,
+// keeping type-specific fields (e.g. slider min/max/step) intact
+function withDefaultValue(
+  typeInfo: ScriptParamUnion,
+  valueInfo: ScriptParamUnion,
+): ScriptParamUnion {
+  return { ...typeInfo, value: valueInfo.value } as ScriptParamUnion;
+}
+
+// keeps slider values inside the declared range even if the script's default is out of bounds
+function clampSliderValue(param: ScriptParamUnion): ScriptParamUnion {
+  if (param.type !== 'slider') return param;
+  const value = typeof param.value === 'number' && !isNaN(param.value) ? param.value : param.min;
+  return { ...param, value: Math.min(Math.max(value, param.min), param.max) };
+}
+
 function extractParamsFromFunctionParams(
   params: (FunctionParameter | TSParameterProperty)[],
 ): Record<string, ScriptParamUnion> {
@@ -157,8 +217,7 @@ function extractParamsFromFunctionParams(
   params.forEach(param => {
     let identifier: Identifier | undefined = undefined;
     let optional = false;
-    let type: ScriptParamUnion['type'] = 'string';
-    let value: ScriptParamUnion['value'] = '';
+    let info: ScriptParamUnion = { type: 'string', value: '' };
 
     // handle TSParameterProperty (e.g., "public param: Type")
     if (param.type === 'TSParameterProperty') {
@@ -167,7 +226,7 @@ function extractParamsFromFunctionParams(
         identifier = parameter;
         optional = !!identifier.optional;
         if (identifier.typeAnnotation?.type === 'TSTypeAnnotation') {
-          ({ type, value } = getValueAndTypeFromType(identifier.typeAnnotation.typeAnnotation));
+          info = getValueAndTypeFromType(identifier.typeAnnotation.typeAnnotation);
         }
       } else if (parameter.type === 'AssignmentPattern' && parameter.left.type === 'Identifier') {
         identifier = parameter.left;
@@ -178,10 +237,9 @@ function extractParamsFromFunctionParams(
         if (typeAnnotation?.type === 'TSTypeAnnotation') {
           const typeInfo = getValueAndTypeFromType(typeAnnotation.typeAnnotation);
           const valueInfo = getValueAndTypeFromExpression(parameter.right);
-          type = typeInfo.type;
-          value = valueInfo.value;
+          info = withDefaultValue(typeInfo, valueInfo);
         } else {
-          ({ type, value } = getValueAndTypeFromExpression(parameter.right));
+          info = getValueAndTypeFromExpression(parameter.right);
         }
       }
     }
@@ -196,24 +254,23 @@ function extractParamsFromFunctionParams(
       if (typeAnnotation?.type === 'TSTypeAnnotation') {
         const typeInfo = getValueAndTypeFromType(typeAnnotation.typeAnnotation);
         const valueInfo = getValueAndTypeFromExpression(param.right);
-        type = typeInfo.type;
-        value = valueInfo.value;
+        info = withDefaultValue(typeInfo, valueInfo);
       } else {
         // no type annotation, infer both type and value from expression
-        ({ type, value } = getValueAndTypeFromExpression(param.right));
+        info = getValueAndTypeFromExpression(param.right);
       }
     } else if (param.type === 'Identifier') {
       identifier = param;
       optional = !!identifier.optional;
       if (identifier.typeAnnotation?.type === 'TSTypeAnnotation') {
-        ({ type, value } = getValueAndTypeFromType(identifier.typeAnnotation.typeAnnotation));
+        info = getValueAndTypeFromType(identifier.typeAnnotation.typeAnnotation);
       }
     }
 
     if (!identifier) return;
 
     const name = identifier.name;
-    result[name] = { type, optional, value } as ScriptParamUnion;
+    result[name] = { ...clampSliderValue(info), optional };
   });
 
   return result;
