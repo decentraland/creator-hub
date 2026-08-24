@@ -331,7 +331,7 @@ export function initAdminMessageBus(
       // seeking unconditionally would stutter the whole audience each time
       // someone joins.
       if (sender === 'self') continue;
-      if (vs.elapsed === undefined) {
+      if (vs.elapsed === undefined || !Number.isFinite(vs.elapsed)) {
         if (isNewSource) syncClocks.delete(entity);
         continue;
       }
