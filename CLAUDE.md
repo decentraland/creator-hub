@@ -112,7 +112,7 @@ make protoc        # Regenerate TypeScript from .proto files
 - **Platform/device does NOT come from `UiCanvasInformation`.** `PBUiCanvasInformation` carries only `devicePixelRatio`/`width`/`height`/`interactableArea`/`screenInsetArea`, so anything derived from it is a screen-size heuristic. Use `@dcl/sdk/platform` — `getPlatform(): Platform | null` / `isMobile()` — which returns null until the explorer replies (so a scene renders the desktop branch for the first few frames, then self-corrects on the next tick).
 - **Canvas CSS defaults mirror the PROTOCOL's absent-value default, not Yoga's library default — and where the explorer disagrees with the proto, the explorer wins.** react-ecs leaves most `uiTransform` fields unwritten, so what an unauthored node gets in-world is `ui_transform.proto`'s documented default, which is not always Yoga's (`flexShrink`: proto 1, Yoga 0 — forcing 0 made canvas labels hold full width while in-world ones wrapped per character). And the proto is not always right either: it documents `alignContent`'s default as flex-start, but the explorer empirically stretches wrapped lines. Verify in-world before encoding a default in `Canvas.tsx` `nodeStyle`, and comment which source you followed.
 - **Never store editor metadata in a react-ecs `key`.** react-ecs uses stock `react-reconciler`, so React's key diffing runs above the host config: a changed key unmounts the fiber → `removeChildEntity` → `engine.removeEntity` RECURSIVELY over the whole subtree, then recreates it (`reconciler/index.ts:207-213`). Anything editable — a display name, say — would destroy and rebuild the entity tree on every edit.
-- **Multi-node ops must batch their splices.** Synthetic ids are positional per parse, so the FIRST op's reparse invalidates every id after it. `Tree` delivers a multi-item drop by calling `onDrop` once per item, so a naive loop of store ops corrupts the source. Build one `Edit[]` and apply it in a single `applySourceEdits` (see `removeNodes` in `emit-adapter.ts`); this is why multi-node MOVE is still unwired.
+- **Multi-node ops must batch their splices.** Synthetic ids are positional per parse, so the FIRST op's reparse invalidates every id after it. `Tree` delivers a multi-item drop by calling `onDrop` once per item, so a naive loop of store ops corrupts the source. Build one `Edit[]` and apply it in a single `applySourceEdits` (see `removeNodes` in `emit-adapter.ts`). Multi-node MOVE uses this — `spliceUiTransformPositions` (`code/store.ts`) commits every dragged node in one batch; see [`docs/UIDesigner.md`](docs/UIDesigner.md).
 - **Interaction-state styling is a "recognized construct"** — a `useInteraction({ base, hover, press, active })` call spread onto an element (`code/interaction-convention.ts`). The parser special-cases that spread instead of opacifying it, so the node stays first-class and splice-editable. Reuse this pattern for other constructs (e.g. platform variants): an inline ternary inside `uiTransform`/`uiBackground` instead sets `dynamicProps`, a hard write barrier that freezes EVERY panel edit on the node. Two consequences worth knowing: an opaque node renders `children: []`, so a mis-resolved construct makes the whole subtree vanish from the canvas; and for a node with interaction states, every modeled prop must live in the layers — a JSX attribute would shadow the spread and, for the pointer props, replace the helper's own hover/press trackers.
 
 ### Asset Packs
@@ -149,8 +149,7 @@ Files matching `*.styled.ts` / `*.styled.tsx` must follow these rules:
 
 ## Gotchas
 
-Hard-won traps that reading the code does not reveal. Testing-specific ones live
-in [`docs/testing-standards.md`](docs/testing-standards.md).
+Hard-won traps that reading the code does not reveal. Testing-specific ones live in [`docs/testing-standards.md`](docs/testing-standards.md).
 
 ### Redux state freeze + in-place mutating helpers
 
@@ -170,20 +169,7 @@ Design specs live in Figma ("📗️ Design System | Creator Hub"). The Figma MC
 
 ### Electron response headers must be overridden case-insensitively
 
-`session.webRequest.onHeadersReceived` rebuilds the whole response header block from
-the object the handler returns, writing one line per key with **no case-insensitive
-de-duplication** — and it keys `details.responseHeaders` by the *wire* casing, which
-is lowercase over HTTP/2 (what every CDN in front of `decentraland.org` speaks). So
-`{ ...details.responseHeaders, 'Cross-Origin-Embedder-Policy': [...] }` does not
-replace the response's own header, it **appends a second one**. Chromium joins
-duplicates (`credentialless, credentialless`), fails to parse the structured field
-and falls back to `unsafe-none` — an injection that reads correctly while having no
-effect at all. A duplicated `Access-Control-Allow-Origin` is rejected outright.
-Drop every casing of a name before setting it (`setHeader` in
-`main/src/security-restrictions.ts`), and assert header counts **case-insensitively**
-in tests — a same-case lookup cannot see the duplicate, which is why the #1456 suite
-passed while the bug shipped. Symptom when missed: #1485, the GLB import spinner
-never resolving with no error in the UI or Sentry.
+`session.webRequest.onHeadersReceived` rebuilds the whole response header block from the object the handler returns, writing one line per key with **no case-insensitive de-duplication** — and it keys `details.responseHeaders` by the _wire_ casing, which is lowercase over HTTP/2 (what every CDN in front of `decentraland.org` speaks). So `{ ...details.responseHeaders, 'Cross-Origin-Embedder-Policy': [...] }` does not replace the response's own header, it **appends a second one**. Chromium joins duplicates (`credentialless, credentialless`), fails to parse the structured field and falls back to `unsafe-none` — an injection that reads correctly while having no effect at all. A duplicated `Access-Control-Allow-Origin` is rejected outright. Drop every casing of a name before setting it (`setHeader` in `main/src/security-restrictions.ts`), and assert header counts **case-insensitively** in tests — a same-case lookup cannot see the duplicate, which is why the #1456 suite passed while the bug shipped. Symptom when missed: #1485, the GLB import spinner never resolving with no error in the UI or Sentry.
 
 ## Skills
 
@@ -196,3 +182,4 @@ Read the relevant standards doc when the task touches its domain:
 - [`docs/coding-standards.md`](docs/coding-standards.md) — React patterns and antipatterns (controlled-input prop-sync, memoized components built in render). Read when touching `TextField`, the tree `<Input>`, or building any component with a buffered value.
 - [`docs/testing-standards.md`](docs/testing-standards.md) — how to write a test here, plus every testing gotcha: Vitest conventions and mocking traps (`vi.mock` factories replacing whole modules, fake timers leaking across `describe`s), and E2E patterns (real keyboard input vs `fill()`, locators vs `ElementHandle`s, focus-actually-on-element gates, outcome waits vs fixed sleeps). Read before writing or debugging any test.
 - [`docs/DESIGN.md`](docs/DESIGN.md) — the inspector design system: `theme/vars.css` palette by role, the light→dark `--base-*` ramp gotcha + correct dark-surface pairing, spacing/fonts, and focus/contrast/motion/ARIA conventions. Read when writing or reviewing inspector CSS/`.tsx` styling (colors, focus states, accessibility). Note: `brand-guidelines` (Anthropic) does NOT apply here.
+- [`docs/UIDesigner.md`](docs/UIDesigner.md) — the UI Designer (2D) mode: how to test it (standalone-vs-Creator-Hub limits, browser-automation traps), and the 2D toolbar, tool modes, scene-run intent, multi-node move, and mode-persistence architecture. Read when touching the 2D toolbar, the canvas direct-manipulation, or the 2D/3D switch.

@@ -24,3 +24,9 @@ export enum SceneInspectorTab {
   LAYOUT = 'layout',
   SETTINGS = 'settings',
 }
+
+export enum UIDesignerTool {
+  FREE = 'free',
+  MOVE = 'move',
+  RESIZE = 'resize',
+}

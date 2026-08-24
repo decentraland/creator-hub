@@ -1471,6 +1471,25 @@ async function spliceUiTransformPositionUnlocked(
   );
 }
 
+/** Move several nodes at once (a multi-selection drag), batched into one reparse. */
+async function spliceUiTransformPositionsUnlocked(
+  moves: { entityId: number; top: number; left: number }[],
+): Promise<void> {
+  const edits: Edit[] = [];
+  for (const { entityId, top, left } of moves) {
+    const ast = astNodeFor(entityId) as Parameters<typeof setObjectFields>[0] | undefined;
+    if (!ast || !guardElementWrite(entityId, 'spliceUiTransformPositions')) continue;
+    const interaction = interactionAstFor(entityId);
+    const fields = dropPinFields(entityId, top, left);
+    edits.push(
+      ...(interaction
+        ? setInteractionNested(interaction, 'base', 'uiTransform', fields)
+        : setObjectFields(ast, 'uiTransform', fields)),
+    );
+  }
+  if (edits.length) await applySourceEdits(edits);
+}
+
 // Resize a node: write width/height AND its new top-left in ONE setObjectFields
 // pass (one AST pass — two calls would corrupt an absent/`{{}}` uiTransform, see
 // spliceUiTransformSize). Absolute nodes reposition via `position: { top, left }`;
@@ -2557,6 +2576,7 @@ export const renameRoot = exclusive(renameRootUnlocked);
 export const toggleTopLevel = exclusive(toggleTopLevelUnlocked);
 export const spliceComponentPatch = exclusive(spliceComponentPatchUnlocked);
 export const spliceUiTransformPosition = exclusive(spliceUiTransformPositionUnlocked);
+export const spliceUiTransformPositions = exclusive(spliceUiTransformPositionsUnlocked);
 export const spliceUiTransformResize = exclusive(spliceUiTransformResizeUnlocked);
 export const spliceAddChild = exclusive(spliceAddChildUnlocked);
 export const spliceAddWidget = exclusive(spliceAddWidgetUnlocked);

@@ -19,6 +19,19 @@
   height: 100%;
 }
 
+/* The designer is a manipulation surface, not a document: text selection is
+   never wanted and a Shift-click would otherwise range-select across the whole
+   editor. Inputs and the inline text editor opt back in. */
+[class*="ui-designer"] {
+  user-select: none;
+}
+
+[class*="ui-designer"] input,
+[class*="ui-designer"] textarea,
+[class*="ui-designer"] [contenteditable="true"] {
+  user-select: text;
+}
+
 .ui-designer-roots {
   height: 100%;
   overflow: auto;

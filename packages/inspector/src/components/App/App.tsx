@@ -4,7 +4,7 @@ import cx from 'classnames';
 
 import { useSelectedEntity } from '../../hooks/sdk/useSelectedEntity';
 import { useInspectorUIState } from '../../hooks/sdk/useInspectorUIState';
-import { usePauseSceneWhileDesigning } from '../../hooks/usePauseSceneWhileDesigning';
+import { useSyncSceneRunWithMode } from '../../hooks/useSyncSceneRunWithMode';
 import { useRestorePersistedMode } from '../../hooks/useRestorePersistedMode';
 import { useWindowSize } from '../../hooks/useWindowSize';
 import { useAppSelector } from '../../redux/hooks';
@@ -26,6 +26,7 @@ import UIDesigner from '../UIDesigner/UIDesigner';
 import { LeftPanel } from '../UIDesigner/LeftPanel';
 import { RightPanel } from '../UIDesigner/RightPanel';
 import { Palette } from '../UIDesigner/Palette';
+import { UIDesignerToolbar } from '../UIDesigner/Toolbar';
 
 import './App.css';
 
@@ -44,7 +45,7 @@ const App = () => {
   // because that now renders inside the left panel, which the host can hide.
   useRestorePersistedMode();
 
-  usePauseSceneWhileDesigning();
+  useSyncSceneRunWithMode();
 
   // The scene's persisted 2D/3D mode arrives with `uiState`. Committing to either
   // mode before then paints the wrong editor and visibly switches, so hold both
@@ -118,7 +119,8 @@ const App = () => {
                     !!hiddenPanels[PanelName.COMPONENTS],
                 })}
               >
-                {!hiddenPanels[PanelName.TOOLBAR] && <Toolbar />}
+                {!hiddenPanels[PanelName.TOOLBAR] &&
+                  (isUIDesigner ? <UIDesignerToolbar /> : <Toolbar />)}
                 {/*
                   Keep <Renderer /> mounted across UI Designer toggles. Babylon's
                   engine/canvas refs don't survive unmount/remount cleanly —

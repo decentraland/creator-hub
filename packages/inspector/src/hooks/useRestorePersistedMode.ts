@@ -15,6 +15,13 @@ import { useInspectorUIState } from './sdk/useInspectorUIState';
  * The latch is load-bearing — `updateUIState` round-trips back into `uiState`,
  * so without it this would re-fire and fight every user toggle.
  *
+ * Gated on a DEFINED `uiDesignerOpen`, not merely a non-null `uiState`:
+ * `useInspectorUIState` surfaces its default (with `uiDesignerOpen` undefined) the
+ * instant the sdk exists, before the CRDT stream hydrates the RootEntity.
+ * Latching on that would lock in the 3D default and ignore a persisted 2D. A
+ * defined value is the signal the real component arrived; a scene that never
+ * chose a mode keeps it undefined and correctly stays in the 3D default.
+ *
  * Layout, not passive: a passive effect commits the toggle after the browser has
  * already painted the default (3D), which reads as a visible mode switch.
  *
@@ -31,9 +38,10 @@ export function useRestorePersistedMode(): void {
 
   const restored = useRef(false);
   useLayoutEffect(() => {
-    if (!uiState || restored.current) return;
+    if (restored.current) return;
+    if (!uiState || uiState.uiDesignerOpen === undefined) return;
     restored.current = true;
-    const open = !!uiState.uiDesignerOpen;
+    const open = uiState.uiDesignerOpen;
     if (open === isUIDesigner) return;
     dispatch(togglePanel({ panel: PanelName.UI_DESIGNER, enabled: open }));
   }, [uiState, isUIDesigner, dispatch]);

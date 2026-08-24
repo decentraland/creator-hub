@@ -2,10 +2,11 @@ import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { renderHook } from '@testing-library/react';
 
 import { PanelName } from '../redux/ui/types';
-import { usePauseSceneWhileDesigning } from './usePauseSceneWhileDesigning';
+import { useSyncSceneRunWithMode } from './useSyncSceneRunWithMode';
 
 const mocks = vi.hoisted(() => ({
   hiddenPanels: {} as Record<string, boolean>,
+  runIntent: false,
   sceneRun: null as { isRunning: () => boolean; setRunning: (running: boolean) => void } | null,
   setRunning: vi.fn(),
   running: false,
@@ -13,7 +14,7 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock('../redux/hooks', () => ({
   useAppSelector: (selector: (s: unknown) => unknown) =>
-    selector({ ui: { hiddenPanels: mocks.hiddenPanels } }),
+    selector({ ui: { hiddenPanels: mocks.hiddenPanels, sceneRunIntent: mocks.runIntent } }),
 }));
 
 vi.mock('./sdk/useSdk', () => ({
@@ -23,6 +24,7 @@ vi.mock('./sdk/useSdk', () => ({
 beforeEach(() => {
   mocks.setRunning.mockClear();
   mocks.running = false;
+  mocks.runIntent = false;
   mocks.sceneRun = {
     isRunning: () => mocks.running,
     setRunning: mocks.setRunning,
@@ -31,19 +33,19 @@ beforeEach(() => {
 });
 
 describe('when the UI Designer opens', () => {
-  it('should pause a running scene', () => {
+  it('should freeze a running scene', () => {
     mocks.running = true;
     mocks.hiddenPanels = { [PanelName.UI_DESIGNER]: false };
 
-    renderHook(() => usePauseSceneWhileDesigning());
+    renderHook(() => useSyncSceneRunWithMode());
 
     expect(mocks.setRunning).toHaveBeenCalledWith(false);
   });
 
-  it('should leave an already paused scene alone', () => {
+  it('should leave an already frozen scene alone', () => {
     mocks.hiddenPanels = { [PanelName.UI_DESIGNER]: false };
 
-    renderHook(() => usePauseSceneWhileDesigning());
+    renderHook(() => useSyncSceneRunWithMode());
 
     expect(mocks.setRunning).not.toHaveBeenCalled();
   });
@@ -52,29 +54,31 @@ describe('when the UI Designer opens', () => {
     mocks.sceneRun = null;
     mocks.hiddenPanels = { [PanelName.UI_DESIGNER]: false };
 
-    expect(() => renderHook(() => usePauseSceneWhileDesigning())).not.toThrow();
+    expect(() => renderHook(() => useSyncSceneRunWithMode())).not.toThrow();
   });
 });
 
 describe('when the 3D viewport is showing', () => {
-  it('should not touch the run state', () => {
-    mocks.running = true;
+  it('should resume the scene when the run intent was set', () => {
+    mocks.runIntent = true;
 
-    renderHook(() => usePauseSceneWhileDesigning());
+    renderHook(() => useSyncSceneRunWithMode());
+
+    expect(mocks.setRunning).toHaveBeenCalledWith(true);
+  });
+
+  it('should not resume when there is no run intent', () => {
+    renderHook(() => useSyncSceneRunWithMode());
 
     expect(mocks.setRunning).not.toHaveBeenCalled();
   });
 
-  it('should not resume the scene it paused on the way in', () => {
+  it('should not re-post a resume when the scene is already running', () => {
+    mocks.runIntent = true;
     mocks.running = true;
-    mocks.hiddenPanels = { [PanelName.UI_DESIGNER]: false };
-    const { rerender } = renderHook(() => usePauseSceneWhileDesigning());
-    mocks.running = false;
-    mocks.hiddenPanels = { [PanelName.UI_DESIGNER]: true };
 
-    rerender();
+    renderHook(() => useSyncSceneRunWithMode());
 
-    expect(mocks.setRunning).toHaveBeenCalledTimes(1);
-    expect(mocks.setRunning).toHaveBeenCalledWith(false);
+    expect(mocks.setRunning).not.toHaveBeenCalled();
   });
 });

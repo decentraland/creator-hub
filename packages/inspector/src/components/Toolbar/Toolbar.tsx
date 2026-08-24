@@ -28,10 +28,9 @@ import {
   selectSceneInfo,
 } from '../../redux/data-layer';
 import { selectCanSave, selectInspectorPreferences } from '../../redux/app';
+import { setSceneRunIntent } from '../../redux/ui';
 import { useInspectorUIState } from '../../hooks/sdk/useInspectorUIState';
 import { useAppSelector, useAppDispatch } from '../../redux/hooks';
-import { getHiddenPanels } from '../../redux/ui';
-import { PanelName } from '../../redux/ui/types';
 import {
   REDO,
   REDO_2,
@@ -46,7 +45,6 @@ import {
 } from '../../hooks/useHotkey';
 import type { EditorCameraMode } from '../../lib/renderer/types';
 import { Dropdown } from '../ui';
-import { redoCode, undoCode, useCodeState } from '../UIDesigner/code/store';
 import { Gizmos } from './Gizmos';
 import { Preferences } from './Preferences';
 import { ToolbarButton } from './ToolbarButton';
@@ -57,23 +55,14 @@ const Toolbar = withSdk(({ sdk }) => {
   const canSave = useAppSelector(selectCanSave);
   const preferences = useAppSelector(selectInspectorPreferences);
   const isAutosaveEnabled = preferences?.autosaveEnabled ?? true;
-  const dataCanUndo = useAppSelector(selectCanUndo);
-  const dataCanRedo = useAppSelector(selectCanRedo);
-  const { canUndo: codeCanUndo, canRedo: codeCanRedo } = useCodeState();
+  const canUndo = useAppSelector(selectCanUndo);
+  const canRedo = useAppSelector(selectCanRedo);
   const sceneInfoContent = useAppSelector(selectSceneInfo).content;
-  const hiddenPanels = useAppSelector(getHiddenPanels);
   const dispatch = useAppDispatch();
   const [uiState, updateUIState] = useInspectorUIState();
 
   const showSceneInfoButton = !!sceneInfoContent;
   const isSceneInfoPanelOpen = !!uiState?.sceneInfoPanelVisible;
-  const isUIDesignerOpen = !hiddenPanels[PanelName.UI_DESIGNER];
-
-  // With the UI Designer open, undo/redo operate on the code store's splice
-  // history (the .tsx source snapshots); otherwise on the 3D scene's CRDT
-  // history. One owner per mode — buttons AND hotkeys route the same way.
-  const canUndo = isUIDesignerOpen ? codeCanUndo : dataCanUndo;
-  const canRedo = isUIDesignerOpen ? codeCanRedo : dataCanRedo;
 
   // TODO: Remove withSdk
   const handleInspector = useCallback(() => {
@@ -97,11 +86,7 @@ const Toolbar = withSdk(({ sdk }) => {
     if (!editorCamera) return;
     editorCamera.setMode(editorCamera.getMode() === 'free' ? 'avatar' : 'free');
   }, [editorCamera]);
-  // Same reasoning as the Renderer's camera keys: bare backtick, and there is no
-  // scene camera to steer in 2D (the button itself is already hidden below).
-  useHotkey([TOGGLE_FREE_CAMERA], handleToggleFreeCamera, undefined, {
-    enabled: !isUIDesignerOpen,
-  });
+  useHotkey([TOGGLE_FREE_CAMERA], handleToggleFreeCamera);
   const handleSetCameraMode = useCallback(
     (mode: EditorCameraMode) => {
       if (!editorCamera || editorCamera.getMode() === mode) return;
@@ -122,11 +107,14 @@ const Toolbar = withSdk(({ sdk }) => {
   }, [sceneRun]);
   const handleToggleSceneRun = useCallback(() => {
     if (!sceneRun) return;
-    sceneRun.setRunning(!sceneRun.isRunning());
-  }, [sceneRun]);
+    const next = !sceneRun.isRunning();
+    dispatch(setSceneRunIntent({ running: next }));
+    sceneRun.setRunning(next);
+  }, [dispatch, sceneRun]);
   const handleResetScene = useCallback(() => {
+    dispatch(setSceneRunIntent({ running: false }));
     void sceneRun?.reset();
-  }, [sceneRun]);
+  }, [dispatch, sceneRun]);
 
   // "Interact" toggle — only for renderers whose viewport editing is a scene-side
   // interception that can be turned off (Bevy exposes `interaction`; Babylon omits
@@ -147,14 +135,8 @@ const Toolbar = withSdk(({ sdk }) => {
   }, [interaction]);
 
   const handleSaveClick = useCallback(() => dispatch(save()), []);
-  const handleUndo = useCallback(() => {
-    if (isUIDesignerOpen) void undoCode();
-    else dispatch(undo());
-  }, [isUIDesignerOpen]);
-  const handleRedo = useCallback(() => {
-    if (isUIDesignerOpen) void redoCode();
-    else dispatch(redo());
-  }, [isUIDesignerOpen]);
+  const handleUndo = useCallback(() => dispatch(undo()), [dispatch]);
+  const handleRedo = useCallback(() => dispatch(redo()), [dispatch]);
   const handleToggleSceneInfo = useCallback(() => {
     updateUIState({ sceneInfoPanelVisible: !isSceneInfoPanelOpen });
   }, [isSceneInfoPanelOpen, updateUIState]);
@@ -194,13 +176,8 @@ const Toolbar = withSdk(({ sdk }) => {
       >
         <BiRedo />
       </ToolbarButton>
-      {/* UI Designer uses direct-manipulation canvas editing (drag = move,
-          border handles = resize) — no move/resize mode toggle, so the tool
-          buttons are gone and only the 3D scene's Gizmos remain (hidden while
-          the designer is open). The camera-mode toggle is 3D-only for the same
-          reason: there is no scene camera to steer in 2D. */}
-      {isUIDesignerOpen ? null : <Gizmos />}
-      {editorCamera && !isUIDesignerOpen && (
+      <Gizmos />
+      {editorCamera && (
         <div className="CameraModeWrap">
           {/* CSS-only tooltip (a hover React-state tooltip would remount the
               dropdown and eat its click). Matches the design's title + hint. */}
@@ -239,10 +216,7 @@ const Toolbar = withSdk(({ sdk }) => {
           />
         </div>
       )}
-      {/* Run / Stop drive the 3D scene's SDK7 execution, which 2D has nothing to
-          say about — the designer edits .tsx on disk. 3D-only for the same reason
-          as the rest of the chrome below. */}
-      {sceneRun && !isUIDesignerOpen && (
+      {sceneRun && (
         <>
           <ToolbarButton
             className={cx('scene-run', { active: sceneRunning })}
@@ -260,47 +234,35 @@ const Toolbar = withSdk(({ sdk }) => {
           </ToolbarButton>
         </>
       )}
-      {/* 3D-only chrome. Preferences offers camera-rotation (no scene camera in
-          2D) and autosave (code mode writes each splice straight to disk, so the
-          ECS save path never runs); the renderer debug inspector has no 2D
-          counterpart. Both are inert while the designer is open. */}
-      {!isUIDesignerOpen && (
-        <>
-          {interaction && (
-            <ToolbarButton
-              className={cx('interact', { active: !editingEnabled })}
-              onClick={handleToggleInteract}
-              title={
-                editingEnabled
-                  ? 'Interact with the scene — turn off editing so clicks reach the running scene'
-                  : 'Interacting with the scene — click to re-enable editing'
-              }
-            >
-              <BiJoystick />
-            </ToolbarButton>
-          )}
-          <Preferences />
-          <ToolbarButton
-            className="babylonjs-inspector"
-            onClick={handleInspector}
-            title="Inspector"
-          >
-            <RiListSettingsLine />
-          </ToolbarButton>
-        </>
+      {interaction && (
+        <ToolbarButton
+          className={cx('interact', { active: !editingEnabled })}
+          onClick={handleToggleInteract}
+          title={
+            editingEnabled
+              ? 'Interact with the scene — turn off editing so clicks reach the running scene'
+              : 'Interacting with the scene — click to re-enable editing'
+          }
+        >
+          <BiJoystick />
+        </ToolbarButton>
       )}
+      <Preferences />
+      <ToolbarButton
+        className="babylonjs-inspector"
+        onClick={handleInspector}
+        title="Inspector"
+      >
+        <RiListSettingsLine />
+      </ToolbarButton>
       <div className="RightContent">
-        {/* Selects the scene ROOT entity so EntityInspector shows scene settings —
-            but the right rail is UIDesignerRightRail in 2D, so it does nothing. */}
-        {!isUIDesignerOpen && (
-          <ToolbarButton
-            className="edit-scene"
-            onClick={handleEditScene}
-            title="Edit Scene"
-          >
-            <FaPencilAlt />
-          </ToolbarButton>
-        )}
+        <ToolbarButton
+          className="edit-scene"
+          onClick={handleEditScene}
+          title="Edit Scene"
+        >
+          <FaPencilAlt />
+        </ToolbarButton>
         {showSceneInfoButton && (
           <ToolbarButton
             className={cx('scene-info', { active: isSceneInfoPanelOpen })}

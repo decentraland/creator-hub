@@ -1,0 +1,73 @@
+# UI Designer (2D)
+
+The UI Designer is the inspector's 2D mode for authoring a scene's `@dcl/react-ecs` UI as code-as-source. This document covers how to test it and the non-obvious architecture behind its toolbar, tool modes, scene-run controls, multi-node move, and mode persistence. For the parse/splice foundation see [`solutions/feature-implementation/ui-designer-code-as-source.md`](solutions/feature-implementation/ui-designer-code-as-source.md).
+
+Read this when working on the 2D toolbar, the canvas direct-manipulation, or the 2D/3D mode switch.
+
+## Testing the UI Designer
+
+Two environments run the UI Designer, and they differ in ways that decide what a given change can be verified in.
+
+- **Standalone dev inspector** (`npm run start` in `packages/inspector`, open the printed port). Fastest loop, but limited:
+  - It runs the **Babylon** renderer, so `sdk.renderer.sceneRun`, `editorCamera`, and `interaction` are absent. The toolbar's Play/Pause/Stop, camera dropdown, and interact toggle only render under **Bevy**, so they can't be exercised here.
+  - Its scene is the in-memory `feeded-local-fs` fixture, which re-seeds on every reload. Anything that must survive a reload — notably 2D/3D mode persistence (`inspector::UIState.uiDesignerOpen`) — can't be verified here.
+- **Creator Hub app.** Loads the inspector iframe from `packages/inspector/public` at runtime, so rebuilding the inspector's `public/` (the `npm run start` watch) is enough — no Creator Hub rebuild. Use it to test the Bevy scene-run controls and mode persistence.
+
+### Browser automation traps
+
+Beyond the input-commit and hover gotchas in the root `CLAUDE.md`, two traps bite when driving the panel through Chrome automation:
+
+- **Click coordinates are screenshot pixels, not CSS pixels.** They differ by the device-pixel-ratio scale. Multiply a `getBoundingClientRect` value by `screenshotWidth / window.innerWidth` before clicking, or read the target's position straight off a screenshot (screenshots are the ground truth).
+- **A JS-dispatched click does not reach React's handlers.** `el.dispatchEvent(new MouseEvent('click'))` leaves React's `onClick` untouched here. Drive UI with real clicks, and use JavaScript only to read state.
+
+## The 2D toolbar
+
+The 2D toolbar is a dedicated component, not the shared 3D one. `App` swaps it in by mode: `isUIDesigner ? <UIDesignerToolbar/> : <Toolbar/>`. This mirrors how the left, right, and bottom panels already swap per mode, and keeps 2D-specific wiring out of the shared `Toolbar`.
+
+- `UIDesignerToolbar` reuses `ToolbarButton` and the shared `.Toolbar` CSS for visual parity, and the tool group (`Tools.tsx`) reuses `Gizmos.css` and the gizmo SVG icons so it matches the 3D gizmo bar exactly.
+- **No manual save.** The code store writes every splice to disk immediately (`code/store.ts`, "writes are immediate"), so there is no dirty buffer to flush. The toolbar shows a non-interactive "All changes saved" badge, never a floppy or a `save()` dispatch.
+
+### Tool modes
+
+The Free / Move / Resize tools are a session-only Redux value, `uiDesignerTool` (`redux/ui`). The canvas reads it to gate direct manipulation in `Canvas.tsx`:
+
+- `canDragMove` is true for `FREE` or `MOVE`.
+- `showResizeHandles` is true for `FREE` or `RESIZE`.
+
+`FREE` (the default) is the union — drag to move and edge handles to resize, both available — so it reproduces the original mode-less behavior. `MOVE` and `RESIZE` are subtractive locks. Rotation has no meaning for flex/Yoga UI, so its button is present but disabled; scale and resize are the same operation, so there is no separate scale tool.
+
+### Grid snap
+
+Canvas drag and resize snap to `DRAG_SNAP_GRID` (10 logical px). The toolbar's Snap dropdown toggles `uiDesignerSnapEnabled` (`redux/ui`); the canvas gates the snap on `snapEnabledRef.current && !e.shiftKey`, so holding **Shift** is still a per-gesture override for free movement.
+
+## Scene-run controls and mode sync
+
+The 2D toolbar mirrors the 3D scene controls — a Play/Pause toggle plus an always-visible Stop — and they exist only under Bevy (`sdk.renderer.sceneRun`).
+
+The subtlety is **run intent**. `sceneRun` exposes only a boolean `isRunning()`, which can't distinguish "paused for editing but was running" from "stopped." So a separate `sceneRunIntent` (`redux/ui`) records what the user wants:
+
+- Both toolbars set `sceneRunIntent` on Play, Pause, and Stop.
+- `useSyncSceneRunWithMode` freezes the scene when 2D opens (editing needs a static viewport, because the renderer is only CSS-hidden in 2D) and resumes it when 3D returns, but only if the intent was to run.
+- The 2D toolbar displays the intent, so switching to 2D while a scene runs shows **Pause** (it's still your running scene, just frozen), not Play as if it never ran.
+
+## Multi-node move
+
+Dragging a multi-selection moves every selected absolute node together and commits in one batch.
+
+- `Canvas/group-drag.ts` is a small shared store. During a drag it holds the live offset, cached per entity so `useSyncExternalStore` re-renders only the participating nodes. On release it hands each node its dropped position for the optimistic hold.
+- `spliceUiTransformPositions` (`code/store.ts`) commits all nodes' positions in a single `applySourceEdits`. This batching is mandatory: synthetic node ids are positional per parse, so a per-node splice would reparse between ops and invalidate the ids after the first.
+
+<!-- prettier-ignore -->
+> [!IMPORTANT]
+> The post-drag click lands on the dragged child at its new position. Its
+> `handleClick` recognizes the drag and returns early, but it must also call
+> `stopPropagation` — otherwise the click bubbles to the root node, whose
+> `handleClick` selects the root and wipes out the multi-selection. The
+> suppression flag is module-level in `group-drag.ts` so whichever node receives
+> the bubbled click can honor it.
+
+## Mode persistence
+
+The 2D/3D mode rides `inspector::UIState.uiDesignerOpen` on the scene root and is serialized into the composite, so it survives a reload in the Creator Hub app. `useRestorePersistedMode` replays it into Redux on load.
+
+The restore must wait for a **defined** `uiDesignerOpen`, not merely a non-null `uiState`. `useInspectorUIState` surfaces a default (with `uiDesignerOpen` undefined) the instant the sdk exists, before the CRDT stream hydrates the component. Latching on that premature default locks in 3D and ignores a persisted 2D. A scene that never chose a mode keeps `uiDesignerOpen` undefined and correctly stays in the 3D default.

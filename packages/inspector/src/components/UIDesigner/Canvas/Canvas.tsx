@@ -1,6 +1,15 @@
-import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import React, {
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from 'react';
 import { createPortal } from 'react-dom';
 import { useDrop } from 'react-dnd';
+import { useStore } from 'react-redux';
 import {
   IoAddOutline,
   IoCopyOutline,
@@ -15,6 +24,7 @@ import type { Entity, PBUiTransform } from '@dcl/ecs';
 
 import { useAssetUrl } from '../../../hooks/useAssetUrl';
 import { useAppDispatch, useAppSelector } from '../../../redux/hooks';
+import type { RootState } from '../../../redux/store';
 import {
   getAspectLockedNodes,
   getHiddenNodes,
@@ -29,6 +39,8 @@ import {
   setScreen,
   toggleNodeSelection,
 } from '../../../redux/ui-designer';
+import { getUIDesignerSnapEnabled, getUIDesignerTool } from '../../../redux/ui';
+import { UIDesignerTool } from '../../../redux/ui/types';
 import { Button } from '../../Button';
 import {
   YGU_UNDEFINED,
@@ -59,6 +71,7 @@ import {
   spliceMove,
   spliceSetRootChild,
   spliceUiTransformPosition,
+  spliceUiTransformPositions,
   spliceUiTransformResize,
   useCodeState,
 } from '../code/store';
@@ -76,6 +89,18 @@ import {
   registerNodeElement,
   unregisterNodeElement,
 } from './node-registry';
+import {
+  armGroupClickSuppression,
+  clearGroupDrag,
+  commitGroupDrag,
+  consumeGroupClickSuppression,
+  groupCommitFor,
+  groupLiveOffsetFor,
+  moveGroupDrag,
+  resetGroupClickSuppression,
+  startGroupDrag,
+  subscribeGroupDrag,
+} from './group-drag';
 import type { Box, Flow, InsertionSlot } from './reorder';
 import { flowFrom, insertionSlot } from './reorder';
 import { renderTextMarkup } from './text-markup';
@@ -645,6 +670,10 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node, hidden }) => {
   const isLocked = useAppSelector(
     state => !!getLockedNodes(state)[node.entity as unknown as number],
   );
+  const reduxStore = useStore<RootState>();
+  const groupLive = useSyncExternalStore(subscribeGroupDrag, () =>
+    groupLiveOffsetFor(node.entity as unknown as number),
+  );
   // Aspect-ratio lock (Size row toggle). Held in a ref too, so the window resize
   // handler reads the latest value without re-subscribing its effect.
   const aspectLocked = useAppSelector(
@@ -654,6 +683,11 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node, hidden }) => {
   useEffect(() => {
     aspectLockedRef.current = aspectLocked;
   }, [aspectLocked]);
+  const snapEnabled = useAppSelector(getUIDesignerSnapEnabled);
+  const snapEnabledRef = useRef(snapEnabled);
+  useEffect(() => {
+    snapEnabledRef.current = snapEnabled;
+  }, [snapEnabled]);
 
   // Interaction-state preview. Two sources: pointing at the node on the canvas
   // previews its Hover layer, and the layer the properties panel is editing is
@@ -771,12 +805,18 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node, hidden }) => {
   // to absolute on the first drag and pin it at the position it was rendered
   // at — same as Unreal's Canvas Panel behaviour.
   const isRoot = !t?.parent;
-  // Direct manipulation (Figma-style, no mode toggle): any non-root node is
-  // draggable to move (unless locked), and its 8 resize handles appear whenever
-  // it's selected. handleResizeStart stopPropagation keeps a border-handle drag
-  // from also starting a body move.
-  const canDragMove = !isRoot && !isLocked;
-  const showResizeHandles = !isRoot && isSelected && !isLocked;
+  const tool = useAppSelector(getUIDesignerTool);
+  const canDragMove =
+    !isRoot && !isLocked && (tool === UIDesignerTool.FREE || tool === UIDesignerTool.MOVE);
+  const showResizeHandles =
+    !isRoot &&
+    isSelected &&
+    !isLocked &&
+    (tool === UIDesignerTool.FREE || tool === UIDesignerTool.RESIZE);
+
+  const [isGroupDragging, setIsGroupDragging] = useState(false);
+  const groupOriginsRef = useRef<Map<number, { top: number; left: number }> | null>(null);
+  const groupDeltaRef = useRef<{ dx: number; dy: number }>({ dx: 0, dy: 0 });
 
   const dragOriginRef = useRef<{
     mouseX: number;
@@ -844,7 +884,11 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node, hidden }) => {
 
   const handleClick = useCallback(
     (e: React.MouseEvent) => {
-      if (isLocked) return; // locked: clicks fall through, node not selectable
+      if (consumeGroupClickSuppression()) {
+        e.stopPropagation();
+        return;
+      }
+      if (isLocked) return;
       e.stopPropagation();
       // Modifier-click toggles membership in the multi-selection (#1400); the
       // canvas has no row order, so shift behaves like ctrl here.
@@ -886,8 +930,9 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node, hidden }) => {
 
   const handleMouseDown = useCallback(
     (e: React.MouseEvent) => {
-      if (e.button !== 0) return; // left-drag moves; right/middle bubble to the canvas pan
-      if (e.ctrlKey || e.metaKey || e.shiftKey) return; // modifier-click = selection toggle, not a drag
+      if (e.button !== 0) return;
+      resetGroupClickSuppression();
+      if (e.ctrlKey || e.metaKey || e.shiftKey) return;
       if (isLocked) return;
       if (!canDragMove) return;
       if (editingRef.current) return; // don't drag while editing text inline
@@ -907,11 +952,41 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node, hidden }) => {
       // Nodes tree.
       const isAbsolute = t?.positionType === YGPT_ABSOLUTE;
 
-      // Anchor the snap grid where the node is RENDERED, not at its authored
-      // top/left: an anchored node may have no px leading edge at all (a centered
-      // pin is 50% + a counter-margin, a right/bottom pin has only the far edge).
-      // Measured in inset space (see offsetInParent), the same space the drop
-      // commits in, so the node lands exactly where it was released.
+      if (isAbsolute) {
+        const st = reduxStore.getState();
+        const selected = getSelectedNodes(st).map(Number);
+        if (selected.length > 1 && selected.includes(Number(node.entity))) {
+          const locked = getLockedNodes(st);
+          const participants = selected.filter(id => {
+            if (locked[id]) return false;
+            const pel = getNodeElement(id as unknown as Entity);
+            return !!pel && getComputedStyle(pel).position === 'absolute';
+          });
+          if (participants.length > 1) {
+            const origins = new Map<number, { top: number; left: number }>();
+            for (const id of participants) {
+              const pel = getNodeElement(id as unknown as Entity);
+              const parent = pel?.parentElement;
+              origins.set(id, pel && parent ? offsetInParent(pel, parent) : { top: 0, left: 0 });
+            }
+            const self = origins.get(Number(node.entity)) ?? { top: 0, left: 0 };
+            dragOriginRef.current = {
+              mouseX: e.clientX,
+              mouseY: e.clientY,
+              startTop: self.top,
+              startLeft: self.left,
+            };
+            groupOriginsRef.current = origins;
+            groupDeltaRef.current = { dx: 0, dy: 0 };
+            setOptimisticPos(null);
+            setHeldOffset(null);
+            startGroupDrag(participants);
+            setIsGroupDragging(true);
+            return;
+          }
+        }
+      }
+
       const el = divRef.current;
       const start = el?.parentElement ? offsetInParent(el, el.parentElement) : { top: 0, left: 0 };
       dragOriginRef.current = {
@@ -932,7 +1007,7 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node, hidden }) => {
       reorderRef.current = divRef.current ? captureReorderDrag(divRef.current) : null;
       if (reorderRef.current) setIsReordering(true);
     },
-    [canDragMove, t, dispatch, node.entity, isLocked],
+    [canDragMove, t, dispatch, node.entity, isLocked, reduxStore],
   );
 
   useEffect(() => {
@@ -943,7 +1018,7 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node, hidden }) => {
       if (!origin) return;
       let dxLogical = (e.clientX - origin.mouseX) / getCanvasScale();
       let dyLogical = (e.clientY - origin.mouseY) / getCanvasScale();
-      if (!e.shiftKey) {
+      if (snapEnabledRef.current && !e.shiftKey) {
         // Snap to grid by quantising the FINAL position, not the delta,
         // so the snapped grid is anchored to absolute logical coords.
         const snappedLeft =
@@ -979,6 +1054,64 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node, hidden }) => {
       window.removeEventListener('mouseup', handleUp);
     };
   }, [isDragging, node.entity]);
+
+  useEffect(
+    () =>
+      subscribeGroupDrag(() => {
+        const c = groupCommitFor(node.entity as unknown as number);
+        if (c) setOptimisticPos({ top: c.top, left: c.left });
+      }),
+    [node.entity],
+  );
+
+  useEffect(() => {
+    if (!isGroupDragging) return;
+
+    const handleMove = (e: MouseEvent) => {
+      const origin = dragOriginRef.current;
+      if (!origin) return;
+      armGroupClickSuppression();
+      let dx = (e.clientX - origin.mouseX) / getCanvasScale();
+      let dy = (e.clientY - origin.mouseY) / getCanvasScale();
+      if (snapEnabledRef.current && !e.shiftKey) {
+        const snappedLeft = Math.round((origin.startLeft + dx) / DRAG_SNAP_GRID) * DRAG_SNAP_GRID;
+        const snappedTop = Math.round((origin.startTop + dy) / DRAG_SNAP_GRID) * DRAG_SNAP_GRID;
+        dx = snappedLeft - origin.startLeft;
+        dy = snappedTop - origin.startTop;
+      }
+      groupDeltaRef.current = { dx, dy };
+      moveGroupDrag(dx, dy);
+    };
+
+    const handleUp = () => {
+      const origins = groupOriginsRef.current;
+      const { dx, dy } = groupDeltaRef.current;
+      dragOriginRef.current = null;
+      groupOriginsRef.current = null;
+      setIsGroupDragging(false);
+      if (!origins || (dx === 0 && dy === 0)) {
+        clearGroupDrag();
+        return;
+      }
+      const moves: { entityId: number; top: number; left: number }[] = [];
+      const commit = new Map<number, { top: number; left: number }>();
+      for (const [entityId, o] of origins) {
+        const top = Math.round(o.top + dy);
+        const left = Math.round(o.left + dx);
+        moves.push({ entityId, top, left });
+        commit.set(entityId, { top, left });
+      }
+      commitGroupDrag(commit);
+      void spliceUiTransformPositions(moves).finally(() => clearGroupDrag());
+    };
+
+    window.addEventListener('mousemove', handleMove);
+    window.addEventListener('mouseup', handleUp);
+    return () => {
+      window.removeEventListener('mousemove', handleMove);
+      window.removeEventListener('mouseup', handleUp);
+    };
+  }, [isGroupDragging]);
 
   useEffect(() => {
     if (!isReordering) return;
@@ -1116,7 +1249,7 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node, hidden }) => {
       // Snap the FINAL position/size, not the delta, so the grid is anchored
       // to absolute logical coords (consistent with move).
       const snap = (v: number) => Math.round(v / DRAG_SNAP_GRID) * DRAG_SNAP_GRID;
-      const doSnap = !e.shiftKey;
+      const doSnap = snapEnabledRef.current && !e.shiftKey;
 
       let nextW = origin.startW + dxRaw * axes.dw;
       let nextH = origin.startH + dyRaw * axes.dh;
@@ -1214,7 +1347,7 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node, hidden }) => {
   // Apply the live drag offset visually via CSS transform so we don't write
   // to the CRDT/data-layer until the user releases the mouse.
   const baseStyle = nodeStyle(previewNode);
-  const liveOffset = isDragging || isReordering ? liveOffsetRef.current : heldOffset;
+  const liveOffset = isDragging || isReordering ? liveOffsetRef.current : (groupLive ?? heldOffset);
   let style: React.CSSProperties = liveOffset
     ? {
         ...baseStyle,
@@ -1237,7 +1370,7 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node, hidden }) => {
 
   // Hold the just-dropped position until the committed transform catches up,
   // preventing the snap-back-then-jump flicker on release.
-  if (optimisticPos && !isDragging && !isResizing) {
+  if (optimisticPos && !isDragging && !isResizing && !groupLive) {
     style = { ...style };
     if (optimisticPos.top !== undefined && optimisticPos.left !== undefined) {
       style.position = 'absolute';
