@@ -1,0 +1,95 @@
+name: E2E
+on: [ workflow_call ]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: e2e-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: 'bash'
+
+jobs:
+  # Playwright + Chromium against the served bundle (no Electron). Kept separate
+  # from the Electron suite so the two heavy suites get memory-isolated runners.
+  e2e-inspector:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: true
+      - uses: ./.github/actions/setup
+        id: setup
+        with:
+          cache-playwright: 'true'
+
+      - name: install
+        if: steps.setup.outputs.node-modules-cache-hit != 'true'
+        run: make install
+
+      # Reuse the shared build; the inspector server below serves the prebuilt bundle.
+      - uses: ./.github/actions/download-build
+
+      - name: install Playwright browsers
+        run: npx playwright install
+
+      - name: start inspector server
+        shell: bash
+        run: |
+          cd packages/inspector
+          npx http-server public -p 8000 --cors -a localhost &
+          sleep 5
+
+      # Machine-level backstop: a re-run is clean (fresh forks + browser per spec
+      # file, in-page data layer) and a real regression fails both attempts.
+      - name: e2e
+        uses: nick-fields/retry@ad984534de44a9489a53aefd81eb77f87c70dc60 # v4.0.0
+        with:
+          timeout_minutes: 20
+          max_attempts: 2
+          retry_on: error
+          shell: 'bash'
+          command: make test-inspector-e2e
+        env:
+          NODE_OPTIONS: "--max-old-space-size=8192"
+          E2E_CONTENT_URL: https://builder-items.decentraland.zone
+
+      # Diagnostics for the flaky "app never becomes visible" failure.
+      - name: upload e2e diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: inspector-e2e-diagnostics
+          path: packages/inspector/test-results
+          if-no-files-found: ignore
+          retention-days: 3
+
+  # Cold-launches the real Electron app via Playwright _electron (drives the
+  # app's own Chromium — no browser download); runs the prebuilt dist.
+  e2e-creator-hub:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: true
+      - uses: ./.github/actions/setup
+        id: setup
+
+      - name: install
+        if: steps.setup.outputs.node-modules-cache-hit != 'true'
+        run: make install
+        env:
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: '1'
+
+      - uses: ./.github/actions/download-build
+        with:
+          include-creator-hub: 'true'
+
+      - name: e2e
+        run: make test-creator-hub-e2e-ci
+        env:
+          NODE_OPTIONS: "--max-old-space-size=8192"
+          E2E_CONTENT_URL: https://builder-items.decentraland.zone

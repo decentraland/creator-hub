@@ -1,13 +1,18 @@
 const { execSync } = require('child_process');
 const path = require('path');
 
+// On PRs (dry-run) skip the slow .dmg build and ship only the unsigned .zip; electron-builder
+// already skips code signing on PRs, so this keeps a downloadable per-PR build for a fraction
+// of the time. Release builds (not dry-run) still produce the signed, notarized dmg + zip.
+const isDryRun = process.env.DRY_RUN === 'true';
+
 const config = {
   appId: 'com.decentraland.creatorshub',
   directories: {
     output: 'dist',
     buildResources: 'buildResources',
   },
-  beforePack: path.join(__dirname, 'scripts', 'copy-npm-for-asar.js'),
+  beforePack: path.join(__dirname, 'scripts', 'before-pack.js'),
   // npm must be under app dir for asarUnpack to match (26.4.1+). beforePack runs before file copy.
   files: [
     'package.json',
@@ -30,6 +35,14 @@ const config = {
     {
       from: 'devtools-frontend',
       to: 'devtools-frontend',
+      filter: ['**/*'],
+    },
+    // Real Node.js binary, fetched by the beforePack hook. Scene tooling is spawned on this
+    // instead of Electron so the multiplayer server gets a runtime whose ABI matches the
+    // native builds it depends on. TEMPORARY: remove with the Bevy migration.
+    {
+      from: 'node-bin',
+      to: 'node-bin',
       filter: ['**/*'],
     },
   ],
@@ -90,24 +103,17 @@ const config = {
     writeUpdateInfo: false,
   },
   mac: {
-    target: [
-      {
-        target: 'dmg',
-        arch: 'arm64',
-      },
-      {
-        target: 'dmg',
-        arch: 'x64',
-      },
-      {
-        target: 'zip',
-        arch: 'arm64',
-      },
-      {
-        target: 'zip',
-        arch: 'x64',
-      },
-    ],
+    target: isDryRun
+      ? [
+          { target: 'zip', arch: 'arm64' },
+          { target: 'zip', arch: 'x64' },
+        ]
+      : [
+          { target: 'dmg', arch: 'arm64' },
+          { target: 'dmg', arch: 'x64' },
+          { target: 'zip', arch: 'arm64' },
+          { target: 'zip', arch: 'x64' },
+        ],
   },
   publish: [
     {

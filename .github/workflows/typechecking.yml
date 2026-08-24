@@ -1,6 +1,9 @@
 name: Typechecking
 on: [ workflow_call ]
 
+permissions:
+  contents: read
+
 concurrency:
   group: typechecking-${{ github.ref }}
   cancel-in-progress: true
@@ -17,9 +20,18 @@ jobs:
       - uses: actions/checkout@v6
         with:
           submodules: true
-      - uses: actions/setup-node@v6
+      - uses: ./.github/actions/setup
+        id: setup
         with:
-          cache: 'npm'
+          cache-protoc: 'true'
 
-      - run: make init
+      - name: install
+        if: steps.setup.outputs.node-modules-cache-hit != 'true'
+        run: make install
+        env:
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: '1'
+
+      # Reuse the shared build instead of regenerating protoc / rebuilding asset-packs.
+      - uses: ./.github/actions/download-build
+
       - run: npm run typecheck --if-present

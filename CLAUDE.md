@@ -106,6 +106,77 @@ make protoc        # Regenerate TypeScript from .proto files
 - TypeScript library (`dist/`) + catalog.json + binary assets (`bin/`).
 - Scripts for validating, uploading to S3, and downloading assets.
 
+## CI / GitHub Actions
+
+CI is orchestrated by `.github/workflows/ci.yml`, which calls reusable
+(`on: [workflow_call]`) sub-workflows. Key conventions and gotchas:
+
+- **Build once, reuse.** `build.yml` builds the portable artifacts (proto gen,
+  asset-packs `dist/bin/catalog.json`, inspector `dist/public`) a single time per
+  run, gated by a combined source-hash `actions/cache`. QA jobs (`typechecking`,
+  `tests`) consume them via the `.github/actions/download-build` composite action
+  instead of rebuilding. Don't reintroduce per-job `make protoc` / `make build-*`
+  in the QA jobs. The publish chain (asset-packs → inspector → creator-hub) still
+  builds its own tarballs on purpose.
+- **A reusable workflow's `needs:` can only reference jobs in the same file.**
+  Cross-workflow ordering and artifact prerequisites are expressed at the
+  `ci.yml` caller level (e.g. `tests: needs: [build]`), not inside `tests.yml`.
+  Artifacts are run-scoped and shared across all called reusable workflows.
+- **`e2e` is decoupled from the publish chain — enforced by branch protection, not
+  `needs`.** `tests.yml` is unit-only; the Playwright suites live in `e2e.yml`
+  (`e2e-inspector` + `e2e-creator-hub`), wired as `e2e: needs: [build, tests]` in `ci.yml`.
+  It is a leaf job — nothing depends on it — so the publish chain
+  (`drop_pre_release → asset-packs → inspector → creator-hub`) starts after `unit`/`lint`/
+  `typechecking` instead of waiting ~12 min for e2e (that serialization was the pipeline's
+  long pole). **Do NOT add `e2e` to `drop_pre_release`'s `needs`.** Because the DAG no longer
+  gates on e2e, `e2e-inspector` and `e2e-creator-hub` MUST be **required status checks in
+  branch protection**, or they silently become optional. On `main` pushes (no branch
+  protection) the chain publishes in parallel with e2e — safe because the merged code already
+  passed e2e on the PR.
+- **Lint workflows with `actionlint`, not the JS toolchain.** `make format`/
+  `make lint`/`make test` do NOT cover `.github/**` YAML (Prettier globs
+  `js,ts,tsx,json` and `.prettierignore` excludes `.github`; ESLint is `js,cjs,ts`).
+- **`actionlint` mis-lints composite `action.yml` files** as workflows and reports
+  bogus "jobs/on section missing" errors. Validate `.github/actions/*/action.yml`
+  with a YAML parser instead; run `actionlint` on `.github/workflows/*.yml`.
+- **Cache whole output directories, not file lists.** The build cache once listed
+  inspector outputs individually and missed `bundle.css`; warm-cache runs then
+  served an unstyled app, and every e2e "flake" was really a cache hit (`build.yml`).
+- **Debugging `e2e-inspector` failures: read the `[e2e-diag]` log lines first**
+  (plus the `inspector-e2e-diagnostics` artifact). The suite dumps DOM boxes,
+  console/page errors, and a screenshot on readiness timeout — match those before
+  changing any config.
+- **Pin third-party actions to a full commit SHA** with a trailing `# vX.Y.Z`
+  comment (e.g. `nick-fields/retry@<sha> # v4.0.0`); leave first-party `actions/*`
+  as major tags. `upload-artifact` (max v7) and `download-artifact` (v8) are
+  independently versioned but artifact-format-compatible across v4+ — keep both
+  at v7 for consistency.
+- **Creator-hub PR builds are unsigned zip-only; releases build the full signed dmg.**
+  electron-builder auto-skips code signing on PRs ("Current build is a part of pull
+  request, code signing will be skipped"), so on PRs the two `.dmg` builds (~115 s) were
+  pure cost with no signed output. `mac.target` in `electron-builder.cjs` is `DRY_RUN`-gated:
+  zip-only (both arches) on PRs, full `dmg + zip` on `main` (`dry-run: false`). Don't re-add
+  dmg to the PR path or expect signing/notarization on PR builds.
+- **Build/tool targets must self-provision — the build job skips `make install` on a
+  node_modules cache hit.** `build.yml`'s install step is gated on the node_modules cache, so
+  any target that runs during a build cannot assume `make install` ran. Make each ensure its
+  own inputs: `protoc: $(PROTOC)` (self-download); `build-bevy-agent: install-bevy-agent` (the
+  Bevy agent's pinned `@dcl/sdk` must be installed locally or esbuild resolves root's wrong
+  version). The node_modules cache path must also cover every nested project's `node_modules`
+  (e.g. `packages/inspector/agents/bevy/node_modules`), or a cache hit serves an incomplete
+  tree. Symptoms of a gap: cold-cache failures like `protoc: not found` (Error 127) or
+  `No matching export … CameraLayer`.
+- **Every job that can run `make install` MUST checkout with `submodules: true`.** The
+  install chain calls `init-submodules` (`git submodule update --init`), which clones the
+  `devtools-frontend` submodule over its `.gitmodules` SSH URL; `checkout` only rewrites that
+  to a token-authenticated HTTPS URL when `submodules: true` is set, so a cache-miss install
+  otherwise dies with `Permission denied (publickey)`. This is **orthogonal to the build
+  cache** — a green build-artifact download does NOT skip install; `node_modules` is a
+  separate cache keyed on `package-lock.json`, so any lockfile bump (or fresh branch) makes
+  install run and hit the submodule. Invisible on warm-cache PR runs, which is why it slipped
+  past `build.yml` and both `e2e.yml` jobs one at a time. Adding a new install-running job?
+  Add `submodules: true`.
+
 ## Code Style
 
 - **ESLint**: `@typescript-eslint/consistent-type-imports` is enforced (use `import type` for type-only imports).
@@ -127,14 +198,10 @@ Files matching `*.styled.ts` / `*.styled.tsx` must follow these rules:
 - No comments, no `!important`, no inline styles in styled component files.
 - Keep styled components in separate `Component.styled.ts` files alongside `Component.tsx`.
 
-## Testing Conventions
+## Gotchas
 
-- Test framework: **Vitest** (not Jest, though patterns are similar). Tests use `describe`/`it`/`beforeEach`.
-- Structure tests with `describe("when ...", () => { ... })` for context, `it("should ...", () => { ... })` for behavior.
-- Scope mocks and test data to the specific `describe` block that needs them (not globally).
-- Variables and mocks go in `beforeEach`, cleanup in `afterEach`.
-- React: use `@testing-library/react` with accessible queries (`getByRole`, `getByLabelText`).
-- E2E: Playwright for both Electron app and web inspector.
+Hard-won traps that reading the code does not reveal. Testing-specific ones live
+in [`docs/testing-standards.md`](docs/testing-standards.md).
 
 ### Redux state freeze + in-place mutating helpers
 
@@ -146,17 +213,6 @@ passed payloads read from Redux. Deep-clone (`structuredClone(x)`) at the
 boundary before passing Redux-sourced data to any mutating helper. Symptoms
 when missed: writes silently no-op, original placeholder tokens (e.g.
 `{assetPath}/...`) survive into the engine.
-
-### Asset-packs circular imports & vitest
-
-`packages/asset-packs/src/definitions.ts` re-exports every internal module via
-`export * from './...'`. Production bundlers hoist these bindings, but the
-Vitest loader resolves the re-export *before* the leaf module finishes
-evaluating — so importing constants like `COMPONENTS_WITH_ID` or `getNextId`
-through `definitions.ts` will see them as `undefined` at call time inside the
-same source tree. In `asset-packs` source files and tests, import these
-constants from the leaf module directly (`from './id'`, `from './types'`,
-etc.) rather than via the `definitions.ts` barrel.
 
 ### Asset-pack composite placeholders must resolve before the engine serializes
 
@@ -183,6 +239,23 @@ the `{ messages: [...] }` wrapper its TypeScript type implies (the explorer's
 Read it as an array, tolerating both shapes:
 `Array.isArray(res) ? res : (res?.messages ?? [])`.
 
+### Electron response headers must be overridden case-insensitively
+
+`session.webRequest.onHeadersReceived` rebuilds the whole response header block from
+the object the handler returns, writing one line per key with **no case-insensitive
+de-duplication** — and it keys `details.responseHeaders` by the *wire* casing, which
+is lowercase over HTTP/2 (what every CDN in front of `decentraland.org` speaks). So
+`{ ...details.responseHeaders, 'Cross-Origin-Embedder-Policy': [...] }` does not
+replace the response's own header, it **appends a second one**. Chromium joins
+duplicates (`credentialless, credentialless`), fails to parse the structured field
+and falls back to `unsafe-none` — an injection that reads correctly while having no
+effect at all. A duplicated `Access-Control-Allow-Origin` is rejected outright.
+Drop every casing of a name before setting it (`setHeader` in
+`main/src/security-restrictions.ts`), and assert header counts **case-insensitively**
+in tests — a same-case lookup cannot see the duplicate, which is why the #1456 suite
+passed while the bug shipped. Symptom when missed: #1485, the GLB import spinner
+never resolving with no error in the UI or Sentry.
+
 ## Skills
 
 Skills live in `.ai/skills/*/SKILL.md`. Read the relevant `SKILL.md` when a task matches a skill's domain.
@@ -192,4 +265,4 @@ Skills live in `.ai/skills/*/SKILL.md`. Read the relevant `SKILL.md` when a task
 Read the relevant standards doc when the task touches its domain:
 
 - [`docs/coding-standards.md`](docs/coding-standards.md) — React patterns and antipatterns (controlled-input prop-sync, memoized components built in render). Read when touching `TextField`, the tree `<Input>`, or building any component with a buffered value.
-- [`docs/testing-standards.md`](docs/testing-standards.md) — E2E patterns (real keyboard input vs `fill()`, locators vs `ElementHandle`s, focus-actually-on-element gates, outcome waits vs fixed sleeps). Read when writing or debugging Playwright tests.
+- [`docs/testing-standards.md`](docs/testing-standards.md) — how to write a test here, plus every testing gotcha: Vitest conventions and mocking traps (`vi.mock` factories replacing whole modules, fake timers leaking across `describe`s), and E2E patterns (real keyboard input vs `fill()`, locators vs `ElementHandle`s, focus-actually-on-element gates, outcome waits vs fixed sleeps). Read before writing or debugging any test.

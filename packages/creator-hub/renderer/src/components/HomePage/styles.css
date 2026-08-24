@@ -1,159 +1,170 @@
-.HomePage {
-  flex: 1;
-}
-
-.HomePage .Card {
-  position: relative;
-  height: 100%;
-  background: #ffffff0d;
-  padding: 0px;
-  gap: 16px;
-  box-shadow: none;
-}
-
-.HomePage .Card .CardContent.CenteredContent {
+.HomePage .HomeContent {
+  padding: 0 52px 64px 52px;
   display: flex;
   flex-direction: column;
-  justify-content: center;
+}
+
+.HomePage .HomeTitle {
+  margin-bottom: 40px;
+  font-weight: 700;
+}
+
+/* Rows ------------------------------------------------------------------ */
+
+.HomePage .HomeRow {
+  margin-bottom: 48px;
+}
+
+.HomePage .HomeRowHeader {
+  display: inline-flex;
   align-items: center;
-  gap: 32px;
+  gap: 4px;
 }
 
-.HomePage .Card .CardContent .Title {
-  text-align: center;
-  text-wrap: pretty;
-  text-transform: uppercase;
-}
-
-.HomePage .Card .CardBanner {
-  position: relative;
-  height: 100px;
-  display: flex;
-  justify-content: flex-end;
-  background: linear-gradient(180deg, #c640cd 0%, #691fa9 100%);
-  border-radius: var(--mui-shape-borderRadius);
-  overflow: hidden;
-  z-index: 1;
-  flex: none;
-}
-
-.HomePage .Card .CardBanner .CardBannerImage {
-  position: absolute;
-  top: -12px;
-  left: 0;
-  height: 128px;
-  width: 128px;
-  object-fit: cover;
-  z-index: 0;
-}
-
-.HomePage .Card .CardBanner.Clickable {
+.HomePage .HomeRowHeader.Clickable {
   cursor: pointer;
 }
 
-.HomePage .Card .CardBanner.Clickable:hover {
-  outline: 2px solid var(--white);
-  outline-offset: -2px;
+.HomePage .HomeRowTitle {
+  font-weight: 700;
 }
 
-.HomePage .Card:has(.CardBanner + .CardContent) {
+.HomePage .HomeRowChevron {
+  color: var(--dcl);
+  transition: transform 0.15s ease;
+}
+
+.HomePage .HomeRowHeader.Clickable:hover .HomeRowChevron {
+  transform: translateX(3px);
+}
+
+.HomePage .HomeRowDescription {
+  margin: 4px 0 0 0;
+  color: var(--text-on-secondary);
+  font-size: 14px;
+}
+
+/* Cards ----------------------------------------------------------------- */
+
+.HomePage .HomeCardList {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 20px;
+  margin-top: 16px;
+}
+
+.HomePage .HomeCard {
+  background-color: var(--card);
+  border-radius: 12px;
+  overflow: hidden;
+  cursor: pointer;
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  background: none;
+  transition:
+    transform 0.15s ease,
+    background-color 0.15s ease;
 }
 
-.HomePage .Card:has(.CardBanner) .CardContent.EmptyProjects {
-  border-radius: var(--mui-shape-borderRadius);
-  background: #ffffff0d;
+.HomePage .HomeCard:hover {
+  transform: translateY(-2px);
+  background-color: var(--secondary-hover);
 }
 
-.HomePage .Card:has(.CardBanner) .CardContent {
-  padding: 0;
-  flex: 1 0 auto;
-}
-
-.HomePage .Card .CardBanner .CardBannerContent {
-  align-self: flex-end;
-  margin-right: 24px;
-  margin-bottom: 16px;
-  color: var(--white);
-  font-weight: 700;
-  font-size: 24px;
-  text-transform: uppercase;
-}
-
-.HomePage .Card .CardContent .CardList .CardItem {
-  box-sizing: border-box;
-  justify-content: flex-start;
-  padding: 16px;
-  text-align: left;
-  text-transform: none;
-  color: var(--white) !important;
-  border-radius: 8px;
-  margin-left: 0;
-}
-
-.HomePage .Card .CardActions {
-  position: relative;
-  bottom: 0;
+.HomePage .HomeCardThumbnail {
   width: 100%;
-  padding: 0;
-  flex: none;
+  aspect-ratio: 16 / 9;
+  background-color: var(--darker-gray);
+  background-size: cover;
+  background-position: center;
+  object-fit: cover;
+  display: block;
 }
 
-.HomePage .Card.SignInCard .CardContent,
-.HomePage .Card.FeedbackCard .CardContent {
-  height: 100%;
-  box-sizing: border-box;
+.HomePage .HomeCardIcon {
+  display: flex;
+  align-items: center;
+  padding: 24px 20px 4px 20px;
+  color: var(--dcl);
 }
 
-.HomePage .Card.ScenesCard .CardBanner .CardBannerImage {
-  transform: scaleX(-1);
+.HomePage .HomeCardIcon .MuiSvgIcon-root {
+  font-size: 28px;
 }
 
-.HomePage .Card.ScenesCard .CardContent.CenteredContent {
-  height: calc(100% - 100px);
-  box-sizing: border-box;
+.HomePage .HomeCardInfo {
+  padding: 12px 16px 16px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
 }
 
-.HomePage .Card.ScenesCard .CardContent.EmptyProjects h6 {
-  color: #a09ba8;
+.HomePage .HomeCardTitle {
+  font-weight: 600;
+  line-height: 1.3;
 }
 
-.HomePage .Card .CardActions > .SeeAllButton {
-  background-color: #ffffff0d;
-  padding: 8px 22px;
-  flex: none;
+.HomePage .HomeCardDescription {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--text-on-secondary);
+  /* Keep every card in the row the same height regardless of copy length. */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
-.HomePage .Card .CardActions > .SeeAllButton:hover {
-  background: var(--secondary-light, #cfcdd4);
+.HomePage .HomeCardMeta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-on-secondary);
 }
 
-.HomePage .Card.FeedbackCard {
-  background: linear-gradient(180deg, #c640cd 0%, #691fa9 100%);
+.HomePage .ParcelIcon {
+  width: 12px;
+  height: 12px;
+  display: inline-block;
+  background-color: currentColor;
+  mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path d='M3 3h8v8H3zM13 3h8v8h-8zM3 13h8v8H3zM13 13h8v8h-8z'/></svg>")
+    no-repeat center / contain;
 }
 
-.HomePage .Card.FeedbackCard img {
-  height: 180px;
-  width: 180px;
-  object-fit: contain;
+/* Learn tabs ------------------------------------------------------------ */
+
+.HomePage .LearnTabs {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
 }
 
-.HomePage .Card.SignInCard .CardContent > .SignInButton.MuiButton-root,
-.HomePage .Card.FeedbackCard .CardContent > .FeedbackButton.MuiButton-root {
-  /* TODO: Fix buttons color mapping in ui2 library */
-  background-color: var(--white) !important;
-  color: var(--black);
+.HomePage .LearnTab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 20px;
+  border: 1px solid var(--transparent-gray-light);
+  background: transparent;
+  color: var(--text-on-secondary);
+  font-family: var(--font-family);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  cursor: pointer;
 }
 
-.HomePage .Card.SignInCard .CardContent > .SignInButton.MuiButton-root:hover,
-.HomePage .Card.FeedbackCard .CardContent > .FeedbackButton.MuiButton-root:hover {
-  background: var(--secondary-light, #cfcdd4);
+.HomePage .LearnTab:hover {
+  background-color: var(--transparent-gray-dark);
+  color: var(--text);
 }
 
-.HomePage .Card.SignInCard .SignInButton:hover,
-.HomePage .Card.FeedbackCard .FeedbackButton:hover {
-  color: var(--black) !important;
+.HomePage .LearnTab.active {
+  background-color: var(--card);
+  border-color: transparent;
+  color: var(--text);
 }
