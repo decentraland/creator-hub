@@ -24,22 +24,22 @@ export const VIDEOS: LearnVideo[] = [
     description: 'Introducing the Decentraland Creator Hub, the go to place for creating scenes.',
   },
   {
-    id: '52LiG-4VI9c',
-    list: 'PLAcRraQmr_GP_K8WN7csnKnImK4R2TgMA',
-    title: 'Item Positioning',
-    description: "Let's learn how to position items with the Creator Hub.",
+    id: 'tK5-fyBVnK0',
+    list: 'PLZnx2g41Pk_s',
+    title: 'Buildathon Workshop: Creator Hub',
+    description: 'Friendzone Buildathon Workshop #1: building scenes with the Creator Hub.',
+  },
+  {
+    id: 'FBr2gye3qh8',
+    list: 'PLZnx2g41Pk_s',
+    title: 'Buildathon Workshop: Building for Mobile',
+    description: 'Friendzone Buildathon Workshop #2: making your scenes shine on mobile.',
   },
   {
     id: 'J_EO1LZkaiA',
     list: 'PLAcRraQmr_GP_K8WN7csnKnImK4R2TgMA',
     title: 'Using Custom 3D Art',
     description: "Today let's learn about using your own 3D assets in Decentraland.",
-  },
-  {
-    id: '-iWslh4uQIk',
-    list: 'PLAcRraQmr_GN8LcnnQk2BByo9L2Orvp9c',
-    title: 'Smart Items - Basics',
-    description: "Let's discuss smart items and learn some basic functionality.",
   },
 ];
 
