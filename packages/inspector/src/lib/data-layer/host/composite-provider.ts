@@ -48,6 +48,7 @@ export class CompositeProvider implements StateProvider {
   private savePromise: Promise<void> | null = null;
   private lastSaveTime = 0;
   private readonly minSaveInterval = 100;
+  private trailingSaveTimeout: ReturnType<typeof setTimeout> | null = null;
 
   constructor(
     fs: FileSystemInterface,
@@ -190,58 +191,84 @@ export class CompositeProvider implements StateProvider {
     if (this.dirtyState === DirtyState.DirtyAndNeedsDump) {
       const preferences = this.getInspectorPreferences();
       const shouldAutosave = preferences.autosaveEnabled;
-      const now = Date.now();
+      if (!shouldAutosave) return;
 
-      if (shouldAutosave && now - this.lastSaveTime >= this.minSaveInterval) {
+      const now = Date.now();
+      if (now - this.lastSaveTime >= this.minSaveInterval) {
         this.lastSaveTime = now;
         await this.saveComposite(true);
+      } else {
+        // Throttled. Without a trailing save the final edit of a rapid burst stays dirty
+        // until some later transaction happens to arrive — and if none does, it never
+        // reaches disk at all.
+        this.scheduleTrailingSave(this.minSaveInterval - (now - this.lastSaveTime));
       }
     }
   }
 
+  private scheduleTrailingSave(delay: number): void {
+    if (this.trailingSaveTimeout) return;
+
+    this.trailingSaveTimeout = setTimeout(() => {
+      this.trailingSaveTimeout = null;
+      if (this.dirtyState !== DirtyState.DirtyAndNeedsDump) return;
+      if (!this.getInspectorPreferences().autosaveEnabled) return;
+
+      this.lastSaveTime = Date.now();
+      // Fire-and-forget by necessity (no caller to await a timer), but the rejection is
+      // handled here so it cannot go unobserved; the dirty state survives for the flush
+      // that runs before publishing.
+      this.saveComposite(true).catch(error =>
+        console.error('Failed saving composite (trailing save):', error),
+      );
+    }, delay);
+  }
+
   async saveComposite(dump = true): Promise<CompositeDefinition | null> {
     if (this.savePromise) {
-      await this.savePromise;
+      // Never rethrows a previous save's failure: each caller only owns its own attempt.
+      await this.savePromise.catch(() => {});
     }
 
-    this.savePromise = this.performSave(dump).then(() => {});
-    await this.savePromise;
-    this.savePromise = null;
+    const save = this.performSave(dump).then(() => {});
+    this.savePromise = save;
+    try {
+      await save;
+    } finally {
+      // Without the `finally` a rejected save leaves `savePromise` set forever, and every
+      // later call rethrows that same stale error while never writing anything.
+      if (this.savePromise === save) this.savePromise = null;
+    }
 
     return this.composite;
   }
 
   private async performSave(dump: boolean): Promise<CompositeDefinition | null> {
-    try {
-      this.composite = dumpEngineToComposite(this.engine, 'json');
+    this.composite = dumpEngineToComposite(this.engine, 'json');
 
-      if (!dump) {
-        this.dirtyState = DirtyState.Clean;
-        return this.composite;
-      }
-
-      if (!this.compositeManager) {
-        throw new Error('Composite manager not initialized');
-      }
-
-      await this.compositeManager.save(
-        { src: this.compositePath, composite: this.composite! },
-        'json',
-      );
-
-      await generateEntityNamesType(
-        this.engine,
-        withAssetDir(DIRECTORY.SCENE + '/' + ENTITY_NAMES_PATH),
-        'EntityNames',
-        this.fs,
-      );
-
+    if (!dump) {
       this.dirtyState = DirtyState.Clean;
       return this.composite;
-    } catch (error) {
-      console.error('Failed saving composite:', error);
-      return null;
     }
+
+    if (!this.compositeManager) {
+      throw new Error('Composite manager not initialized');
+    }
+
+    await this.compositeManager.save(
+      { src: this.compositePath, composite: this.composite! },
+      'json',
+    );
+
+    await generateEntityNamesType(
+      this.engine,
+      withAssetDir(DIRECTORY.SCENE + '/' + ENTITY_NAMES_PATH),
+      'EntityNames',
+      this.fs,
+    );
+
+    this.dirtyState = DirtyState.Clean;
+    return this.composite;
   }
 
   getComposite(): CompositeDefinition | null {
@@ -261,8 +288,13 @@ export class CompositeProvider implements StateProvider {
   }
 
   async dispose(): Promise<void> {
+    if (this.trailingSaveTimeout) {
+      clearTimeout(this.trailingSaveTimeout);
+      this.trailingSaveTimeout = null;
+    }
+
     if (this.savePromise) {
-      await this.savePromise;
+      await this.savePromise.catch(() => {});
     }
 
     this.pendingOperations.clear();
