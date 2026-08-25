@@ -45,7 +45,11 @@ describe('when signing a request with metadata', () => {
     // The world access password: the flow that broke. The dialog never normalizes its case.
     const metadata = { type: 'shared-secret', secret: 'MyPassWord123' };
 
-    const payload = await signedPayloadFor('POST', '/world/foo.dcl.eth/permissions/access', metadata);
+    const payload = await signedPayloadFor(
+      'POST',
+      '/world/foo.dcl.eth/permissions/access',
+      metadata,
+    );
 
     expect(payload.endsWith(JSON.stringify(metadata))).toBe(true);
   });
@@ -61,8 +65,14 @@ describe('when signing a request with metadata', () => {
     // an otherwise valid signature.
     const path = '/world/foo.dcl.eth/permissions/access';
 
-    const lower = await signedPayloadFor('POST', path, { type: 'shared-secret', secret: 'mypassword123' });
-    const mixed = await signedPayloadFor('POST', path, { type: 'shared-secret', secret: 'MyPassWord123' });
+    const lower = await signedPayloadFor('POST', path, {
+      type: 'shared-secret',
+      secret: 'mypassword123',
+    });
+    const mixed = await signedPayloadFor('POST', path, {
+      type: 'shared-secret',
+      secret: 'MyPassWord123',
+    });
 
     const metadataOf = (payload: string) => payload.split(':').slice(3).join(':');
 
