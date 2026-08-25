@@ -346,6 +346,9 @@
         "editor": {
           "label": "EDITOR"
         },
+        "experimental": {
+          "label": "EXPERIMENTAL"
+        },
         "about": {
           "label": "ACERCA DE"
         }
@@ -394,6 +397,10 @@
         },
         "experimental": {
           "label": "Funciones experimentales"
+        },
+        "gui_editor": {
+          "toggle": "Editor de UI",
+          "hint": "Habilitar esta función te permitirá combinar objetos de interfaz, propiedades y scripting para crear UI en el editor."
         }
       },
       "actions": {

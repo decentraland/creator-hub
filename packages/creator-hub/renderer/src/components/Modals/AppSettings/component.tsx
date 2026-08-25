@@ -19,13 +19,14 @@ import { useEditor } from '/@/hooks/useEditor';
 import { useDispatch, useSelector } from '#store';
 import { settings as settingsPreload, misc } from '#preload';
 import { TabsModal } from '../TabsModal';
-import { ScenesTab, EditorTab, AboutTab } from './Tabs';
+import { ScenesTab, EditorTab, ExperimentalTab, AboutTab } from './Tabs';
 
 import './styles.css';
 
 export enum SettingsTab {
   SCENES = 'scenes',
   EDITOR = 'editor',
+  EXPERIMENTAL = 'experimental',
   ABOUT = 'about',
 }
 
@@ -37,6 +38,10 @@ const SETTINGS_TABS: Array<{ label: string; value: SettingsTab }> = [
   {
     label: t('modal.app_settings.tabs.editor.label'),
     value: SettingsTab.EDITOR,
+  },
+  {
+    label: t('modal.app_settings.tabs.experimental.label'),
+    value: SettingsTab.EXPERIMENTAL,
   },
   {
     label: t('modal.app_settings.tabs.about.label'),
@@ -179,6 +184,13 @@ export function AppSettings({
             onAddEditor={handleAddEditor}
             onRemoveEditor={handleRemoveEditor}
             onSelectEditorPath={handleSelectEditorPath}
+          />
+        );
+      case SettingsTab.EXPERIMENTAL:
+        return (
+          <ExperimentalTab
+            settings={settings}
+            updateSettings={handleUpdateSettings}
           />
         );
       case SettingsTab.ABOUT:

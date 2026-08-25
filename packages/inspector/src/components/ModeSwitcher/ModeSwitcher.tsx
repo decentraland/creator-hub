@@ -1,7 +1,8 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import cx from 'classnames';
 
 import { useInspectorUIState } from '../../hooks/sdk/useInspectorUIState';
+import { getConfig } from '../../lib/logic/config';
 import { useAppDispatch, useAppSelector } from '../../redux/hooks';
 import { getHiddenPanels, togglePanel } from '../../redux/ui';
 import { PanelName } from '../../redux/ui/types';
@@ -12,6 +13,7 @@ const ModeSwitcherComponent: React.FC = () => {
   const dispatch = useAppDispatch();
   const hiddenPanels = useAppSelector(getHiddenPanels);
   const isUIDesigner = !hiddenPanels[PanelName.UI_DESIGNER];
+  const uiEditorEnabled = useMemo(() => getConfig().uiEditorEnabled, []);
   const [uiState, updateUIState] = useInspectorUIState();
 
   // Neither tab is active until the persisted mode lands (useRestorePersistedMode
@@ -34,6 +36,8 @@ const ModeSwitcherComponent: React.FC = () => {
     }
     updateUIState({ uiDesignerOpen: false });
   }, [dispatch, isUIDesigner, updateUIState]);
+
+  if (!uiEditorEnabled) return null;
 
   return (
     <div

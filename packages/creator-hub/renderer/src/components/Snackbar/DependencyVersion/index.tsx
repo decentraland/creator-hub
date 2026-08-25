@@ -8,15 +8,16 @@ import { useEditor } from '/@/hooks/useEditor';
 import { useWorkspace } from '/@/hooks/useWorkspace';
 
 export function NewDependencyVersion({ onClose }: { onClose: () => void }) {
-  const { project } = useEditor();
+  const { project, isInstallingProject } = useEditor();
   const { updatePackages } = useWorkspace();
 
   const handleClickUpdate = useCallback(() => {
+    if (isInstallingProject) return;
     if (project) {
       updatePackages(project);
     }
     onClose();
-  }, [project]);
+  }, [project, isInstallingProject]);
 
   const renderActions = useCallback(
     () => (
@@ -24,6 +25,7 @@ export function NewDependencyVersion({ onClose }: { onClose: () => void }) {
         <Button
           variant="text"
           onClick={handleClickUpdate}
+          disabled={isInstallingProject}
         >
           {t('snackbar.new_dependency_version.actions.update')}
         </Button>
@@ -32,7 +34,7 @@ export function NewDependencyVersion({ onClose }: { onClose: () => void }) {
         </IconButton>
       </>
     ),
-    [project],
+    [project, isInstallingProject, handleClickUpdate],
   );
 
   return (

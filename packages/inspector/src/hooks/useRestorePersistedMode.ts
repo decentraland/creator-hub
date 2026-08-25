@@ -1,5 +1,6 @@
 import { useLayoutEffect, useRef } from 'react';
 
+import { getConfig } from '../lib/logic/config';
 import { useAppDispatch, useAppSelector } from '../redux/hooks';
 import { getHiddenPanels, togglePanel } from '../redux/ui';
 import { PanelName } from '../redux/ui/types';
@@ -41,7 +42,7 @@ export function useRestorePersistedMode(): void {
     if (restored.current) return;
     if (!uiState || uiState.uiDesignerOpen === undefined) return;
     restored.current = true;
-    const open = uiState.uiDesignerOpen;
+    const open = uiState.uiDesignerOpen && getConfig().uiEditorEnabled;
     if (open === isUIDesigner) return;
     dispatch(togglePanel({ panel: PanelName.UI_DESIGNER, enabled: open }));
   }, [uiState, isUIDesigner, dispatch]);

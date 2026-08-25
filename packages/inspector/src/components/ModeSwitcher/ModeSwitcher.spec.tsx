@@ -9,10 +9,15 @@ const mocks = vi.hoisted(() => ({
   updateUIState: vi.fn(),
   uiState: null as { uiDesignerOpen?: boolean } | null,
   hiddenPanels: {} as Record<string, boolean>,
+  uiEditorEnabled: true,
 }));
 
 vi.mock('../../hooks/sdk/useInspectorUIState', () => ({
   useInspectorUIState: () => [mocks.uiState, mocks.updateUIState],
+}));
+
+vi.mock('../../lib/logic/config', () => ({
+  getConfig: () => ({ uiEditorEnabled: mocks.uiEditorEnabled }),
 }));
 
 vi.mock('../../redux/hooks', () => ({
@@ -26,6 +31,7 @@ beforeEach(() => {
   mocks.updateUIState.mockClear();
   mocks.uiState = { uiDesignerOpen: false };
   mocks.hiddenPanels = { [PanelName.UI_DESIGNER]: true };
+  mocks.uiEditorEnabled = true;
 });
 
 afterEach(() => {
@@ -48,6 +54,16 @@ describe('when the persisted mode has not arrived yet', () => {
     const { twoD, threeD } = tabs();
     expect(twoD.getAttribute('aria-selected')).toBe('false');
     expect(threeD.getAttribute('aria-selected')).toBe('false');
+  });
+});
+
+describe('when the GUI Editor feature is disabled', () => {
+  it('should render nothing', () => {
+    mocks.uiEditorEnabled = false;
+    const { container } = render(<ModeSwitcher />);
+
+    expect(container.firstChild).toBeNull();
+    expect(screen.queryByRole('tab', { name: '2D' })).toBeNull();
   });
 });
 

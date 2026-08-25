@@ -346,6 +346,9 @@
         "editor": {
           "label": "EDITOR"
         },
+        "experimental": {
+          "label": "EXPERIMENTAL"
+        },
         "about": {
           "label": "ABOUT"
         }
@@ -394,6 +397,10 @@
         },
         "experimental": {
           "label": "Experimental features"
+        },
+        "gui_editor": {
+          "toggle": "UI Editor",
+          "hint": "Enabling this feature will allow you to combine GUI objects, properties and scripting to build UI in the editor."
         }
       },
       "actions": {

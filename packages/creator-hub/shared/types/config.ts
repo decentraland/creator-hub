@@ -49,6 +49,7 @@ export const DEFAULT_CONFIG: Config = {
     optimizedAssetsByPath: {},
     experimental: false,
     renderer: DEFAULT_RENDERER,
+    guiEditor: false,
   },
   editors: [],
 };

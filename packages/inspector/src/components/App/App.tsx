@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { PanelGroup, Panel, PanelResizeHandle } from 'react-resizable-panels';
 import cx from 'classnames';
 
@@ -7,6 +7,7 @@ import { useInspectorUIState } from '../../hooks/sdk/useInspectorUIState';
 import { useSyncSceneRunWithMode } from '../../hooks/useSyncSceneRunWithMode';
 import { useRestorePersistedMode } from '../../hooks/useRestorePersistedMode';
 import { useWindowSize } from '../../hooks/useWindowSize';
+import { getConfig } from '../../lib/logic/config';
 import { useAppSelector } from '../../redux/hooks';
 import { selectDataLayerError, selectSceneInfo } from '../../redux/data-layer';
 import { selectEngines } from '../../redux/sdk';
@@ -23,6 +24,7 @@ import { Toolbar } from '../Toolbar';
 import Assets from '../Assets';
 import { SceneInfoPanel } from '../SceneInfoPanel';
 import UIDesigner from '../UIDesigner/UIDesigner';
+import { SdkUpgradeNotice } from '../UIDesigner/SdkUpgradeNotice';
 import { LeftPanel } from '../UIDesigner/LeftPanel';
 import { RightPanel } from '../UIDesigner/RightPanel';
 import { Palette } from '../UIDesigner/Palette';
@@ -40,6 +42,7 @@ const App = () => {
   const disconnected = useAppSelector(selectDataLayerError);
   const [uiState] = useInspectorUIState();
   const isUIDesigner = !hiddenPanels[PanelName.UI_DESIGNER];
+  const uiEditorSupported = useMemo(() => getConfig().uiEditorSupported, []);
 
   // Replays the scene's persisted 2D/3D mode. Here rather than in ModeSwitcher
   // because that now renders inside the left panel, which the host can hide.
@@ -207,6 +210,7 @@ const App = () => {
           </>
         )}
       </PanelGroup>
+      {isUIDesigner && modeResolved && !uiEditorSupported && <SdkUpgradeNotice />}
     </div>
   );
 };

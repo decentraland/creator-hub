@@ -346,6 +346,9 @@
         "editor": {
           "label": "編輯器"
         },
+        "experimental": {
+          "label": "實驗性功能"
+        },
         "about": {
           "label": "關於"
         }
@@ -394,6 +397,10 @@
         },
         "experimental": {
           "label": "实验性功能"
+        },
+        "gui_editor": {
+          "toggle": "UI 编辑器",
+          "hint": "启用此功能后，你可以在编辑器中组合 GUI 对象、属性和脚本来构建 UI。"
         }
       },
       "actions": {
