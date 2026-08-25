@@ -106,6 +106,13 @@ describe('when converting Label text enum props', () => {
     });
   });
 
+  it('should map textWrap between its PB number and the react-ecs string', () => {
+    expect(ergonomicToPBText({ textWrap: 'nowrap' })).toEqual({ textWrap: 1 });
+    expect(ergonomicToPBText({ textWrap: 'wrap' })).toEqual({ textWrap: 0 });
+    expect(pbToErgonomicText({ textWrap: 1 })).toEqual({ textWrap: 'nowrap' });
+    expect(pbToErgonomicText({ textWrap: 0 })).toEqual({ textWrap: 'wrap' });
+  });
+
   it('should pass value / fontSize / color through unchanged', () => {
     const ergo = { value: 'Hi', fontSize: 24, color: { r: 1, g: 0, b: 0 } };
     expect(ergonomicToPBText(ergo)).toEqual(ergo);

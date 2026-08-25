@@ -14,6 +14,14 @@
   --selected-item: var(--ui-designer-control-accent-21);
 }
 
+.ui-designer-toolbar {
+  --selected-item: #244b7d;
+}
+
+.ui-designer-toolbar.Toolbar .scene-info.active {
+  background-color: #244b7d !important;
+}
+
 .ui-designer {
   width: 100%;
   height: 100%;
@@ -364,6 +372,16 @@
   background: rgba(255, 255, 255, 0.22);
 }
 
+/* Right-rail section headers follow the design system: title case, not the
+   shared Container's global uppercase. Scoped so 3D panels are unaffected. */
+.ui-designer-right-rail .Container > .title span {
+  text-transform: none;
+  letter-spacing: normal;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ui-designer-text);
+}
+
 /* Node-tree search — always visible, matching the 3D asset panels. */
 /* The rail's one search box, above both sections — it filters GUIs and Nodes
    together, so it belongs to the rail rather than to either list. */
@@ -396,4 +414,70 @@
   color: var(--ui-designer-text-muted);
   font-size: 11px;
   line-height: 1.4;
+}
+
+.ui-designer-variant-remove-modal.Modal {
+  min-width: 0;
+  min-height: 0;
+  max-width: 420px;
+  padding: 0;
+  border: 1px solid var(--ui-designer-control-border);
+  border-radius: var(--ui-designer-radius-menu);
+  background: var(--ui-designer-panel-bg);
+  color: var(--ui-designer-text);
+}
+
+.ui-designer-variant-remove-modal .content {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 20px 20px 12px;
+}
+
+.ui-designer-variant-remove-modal .title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--ui-designer-text);
+}
+
+.ui-designer-variant-remove-modal .description {
+  color: var(--ui-designer-text-muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.ui-designer-variant-remove-modal .actions {
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 4px 20px 20px;
+}
+
+.ui-designer-modal-btn {
+  padding: 10px 16px;
+  border: 1px solid var(--ui-designer-control-border);
+  border-radius: var(--ui-designer-radius-field);
+  background: var(--ui-designer-control-bg);
+  color: var(--ui-designer-text);
+  font-size: 13px;
+  cursor: pointer;
+  transition:
+    background 0.12s,
+    border-color 0.12s;
+}
+
+.ui-designer-modal-btn:hover {
+  background: var(--ui-designer-control-hover-bg);
+}
+
+.ui-designer-modal-btn.danger:hover {
+  background: #731f30;
+  border-color: #731f30;
+}
+
+.ui-designer-modal-btn:focus-visible {
+  outline: 2px solid var(--ui-designer-control-accent);
+  outline-offset: 1px;
 }

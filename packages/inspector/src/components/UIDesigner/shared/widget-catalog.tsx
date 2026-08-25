@@ -1,14 +1,8 @@
 import React from 'react';
-import {
-  IoCaretDownOutline,
-  IoCreateOutline,
-  IoEllipseOutline,
-  IoImageOutline,
-  IoSquareOutline,
-  IoTextOutline,
-} from 'react-icons/io5';
+import { IoEllipseOutline, IoImageOutline, IoSquareOutline } from 'react-icons/io5';
 
 import type { UINodeType, WidgetKind } from './tree-model';
+import { DropdownFieldIcon, InputFieldIcon, LabelFieldIcon } from './widget-icons';
 
 export interface WidgetDef {
   // Stable list key (distinct from `type`, since presets share a type).
@@ -58,7 +52,7 @@ export const WIDGET_CATALOG: WidgetCategory[] = [
         id: 'Label',
         type: 'Label',
         label: 'Label',
-        icon: <IoTextOutline />,
+        icon: <LabelFieldIcon />,
         keywords: ['text', 'caption', 'title'],
       },
       {
@@ -77,14 +71,14 @@ export const WIDGET_CATALOG: WidgetCategory[] = [
         id: 'Input',
         type: 'Input',
         label: 'Input',
-        icon: <IoCreateOutline />,
+        icon: <InputFieldIcon />,
         keywords: ['text field', 'form', 'entry'],
       },
       {
         id: 'Dropdown',
         type: 'Dropdown',
         label: 'Dropdown',
-        icon: <IoCaretDownOutline />,
+        icon: <DropdownFieldIcon />,
         keywords: ['select', 'combo', 'options'],
       },
     ],

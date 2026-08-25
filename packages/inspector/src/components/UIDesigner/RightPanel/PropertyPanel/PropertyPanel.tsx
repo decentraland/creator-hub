@@ -1,5 +1,6 @@
 import React, { useCallback, useMemo, useRef, useState } from 'react';
 import {
+  IoCubeOutline,
   IoDesktopOutline,
   IoEyeOffOutline,
   IoEyeOutline,
@@ -38,6 +39,7 @@ import {
 } from '../../../../redux/ui-designer';
 import { Block } from '../../../Block';
 import { Container } from '../../../Container';
+import { Modal } from '../../../Modal';
 import { CheckboxField, Dropdown, RgbaColorField, TextArea, TextField } from '../../../ui';
 import { Pill } from '../../../ui/Pill';
 import { measureParentBox, axisForPath, convertLength } from '../../shared/measure';
@@ -45,6 +47,7 @@ import type { DeviceKind } from '../../shared/safe-areas';
 import {
   classifyNode,
   nodeLabelText,
+  soleComponentRef,
   type CanvasSegment,
   type UINodeType,
 } from '../../shared/tree-model';
@@ -59,12 +62,15 @@ import {
   interactionLayerValue,
   removeInteractionLayer,
   removeInteractionStates,
+  platformBranchesWithContent,
   removePlatformVariant,
   setInteractionActiveBinding,
   setInteractionField,
+  setRootScreenInset,
   spliceComponentPatch,
   useCodeState,
 } from '../../code/store';
+import type { UiScreenInset } from '../../code/aggregator';
 import { INTERACTION_STATES, type InteractionStateKey } from '../../code/interaction-convention';
 import { isLayerableComponent } from '../../code/parse-adapter';
 import type { CodeUINode } from '../../code/types';
@@ -507,7 +513,21 @@ const VariantsBar: React.FC<{
 }> = ({ node, entity, variantEntity }) => {
   const dispatch = useAppDispatch();
   const platform = useAppSelector(getPlatform);
+  const other: DeviceKind = platform === 'mobile' ? 'desktop' : 'mobile';
   const id = entity as unknown as number;
+  const removeTarget = (variantEntity ?? entity) as unknown as number;
+  const [confirmOpen, setConfirmOpen] = useState(false);
+
+  const handleRemove = () => {
+    const branches = platformBranchesWithContent(removeTarget);
+    if (branches[platform]) setConfirmOpen(true);
+    else void removePlatformVariant(removeTarget, other);
+  };
+
+  const confirmDelete = () => {
+    setConfirmOpen(false);
+    void removePlatformVariant(removeTarget, other);
+  };
 
   return (
     <div className="ui-designer-states-bar">
@@ -522,9 +542,7 @@ const VariantsBar: React.FC<{
             className="ui-designer-prop-remove"
             aria-label="Remove device variants"
             title="Remove device variants — the layout you're editing becomes the only one"
-            onClick={() =>
-              void removePlatformVariant((variantEntity ?? entity) as unknown as number)
-            }
+            onClick={handleRemove}
           >
             <VscTrash aria-hidden />
           </button>
@@ -567,6 +585,36 @@ const VariantsBar: React.FC<{
           </p>
         </>
       ) : null}
+      <Modal
+        isOpen={confirmOpen}
+        onRequestClose={() => setConfirmOpen(false)}
+        className="ui-designer-variant-remove-modal"
+      >
+        <div className="content">
+          <h2 className="title">Delete {platform === 'mobile' ? 'Mobile' : 'Desktop'} Variant</h2>
+          <div className="description">
+            Deleting the {platform === 'mobile' ? 'Mobile' : 'Desktop'} layout will delete its
+            device specific settings. Your {other === 'mobile' ? 'Mobile' : 'Desktop'} layout will
+            remain unchanged.
+          </div>
+        </div>
+        <div className="actions">
+          <button
+            type="button"
+            className="ui-designer-modal-btn"
+            onClick={() => setConfirmOpen(false)}
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            className="ui-designer-modal-btn danger"
+            onClick={confirmDelete}
+          >
+            Delete {platform === 'mobile' ? 'Mobile' : 'Desktop'}
+          </button>
+        </div>
+      </Modal>
     </div>
   );
 };
@@ -643,7 +691,13 @@ const PanelHeader: React.FC<{ node: CodeUINode; hidden: boolean; onToggle: () =>
       className="ui-designer-panel-header-icon"
       aria-hidden
     >
-      {node.opaque ? <IoWarningOutline /> : WIDGET_ICONS[classifyNode(node)]}
+      {node.opaque ? (
+        <IoWarningOutline />
+      ) : node.componentRef || soleComponentRef(node) ? (
+        <IoCubeOutline />
+      ) : (
+        WIDGET_ICONS[classifyNode(node)]
+      )}
     </span>
     <span className="ui-designer-panel-header-name">{nodeLabelText(node)}</span>
     {node.opaque ? null : (
@@ -701,6 +755,41 @@ const VisibleRow: React.FC<{ visible: boolean; onToggle: (visible: boolean) => v
   </div>
 );
 
+const SCENE_INSET_OPTIONS: { value: UiScreenInset; label: string }[] = [
+  { value: 'device', label: 'Device Safe Area' },
+  { value: 'interactable', label: 'Gameplay Safe Area' },
+  { value: 'none', label: 'Full Screen' },
+];
+
+const SCENE_INSET_INFO =
+  'Which screen area this GUI is placed in. Full Screen uses the entire renderable screen. Gameplay Safe Area excludes game-native UI such as chat, minimap and HUD indicators. Device Safe Area (mobile only) excludes physical constraints such as the notch, Dynamic Island and system bars. Requires @dcl/react-ecs 7.26.0+ in your scene.';
+
+/** Screen area the whole GUI is placed in — a root-only, per-scene-root choice. */
+const SceneInsetRow: React.FC<{
+  value: UiScreenInset;
+  onChange: (value: UiScreenInset) => void;
+}> = ({ value, onChange }) => {
+  const device = useAppSelector(getPlatform);
+  const options = SCENE_INSET_OPTIONS.filter(
+    o => o.value !== 'device' || device === 'mobile' || value === 'device',
+  );
+  return (
+    <div className="ui-designer-property-row">
+      <Block
+        label="Scene Inset"
+        info={SCENE_INSET_INFO}
+      >
+        <Dropdown
+          options={options}
+          value={value}
+          aria-label="Scene Inset"
+          onChange={e => onChange(e.target.value as UiScreenInset)}
+        />
+      </Block>
+    </div>
+  );
+};
+
 const PropertyPanelComponent: React.FC = () => {
   const dispatch = useAppDispatch();
   const selected = useAppSelector(getSelectedNode);
@@ -734,6 +823,11 @@ const PropertyPanelComponent: React.FC = () => {
     if (codeNode === parsedRoot) return true;
     return !!parsedRoot.platformVariant && parsedRoot.children.includes(codeNode);
   }, [codeState, codeNode]);
+
+  const activeRoot = useMemo(
+    () => codeState.roots.find(r => r.filename === codeState.filename),
+    [codeState.roots, codeState.filename],
+  );
 
   // Fill grows along the PARENT's main axis, so the Resize control and the row
   // gate below both need the parent's direction — which the selected node's own
@@ -821,13 +915,8 @@ const PropertyPanelComponent: React.FC = () => {
   if (codeNode?.componentRef) {
     return (
       <EmptyState
-        icon={<IoOptionsOutline />}
+        icon={<IoCubeOutline />}
         title={codeNode.componentRef.name ?? 'Component'}
-        message={
-          <>
-            This is a nested component. Edit the values passed to it under <strong>Logic</strong>.
-          </>
-        }
       />
     );
   }
@@ -950,6 +1039,12 @@ const PropertyPanelComponent: React.FC = () => {
                   })
                 }
               />
+              {isGuiRoot && activeRoot?.topLevel && codeState.filename ? (
+                <SceneInsetRow
+                  value={activeRoot.screenInset}
+                  onChange={inset => setRootScreenInset(codeState.filename as string, inset)}
+                />
+              ) : null}
               {hiddenOnRoot(POSITION_MODE_FIELD, isGuiRoot, transform) ||
               hiddenUnderAbsoluteParent(parentInFlow, transform)
                 ? null

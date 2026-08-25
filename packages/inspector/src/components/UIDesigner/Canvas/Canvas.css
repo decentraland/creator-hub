@@ -16,7 +16,7 @@
   height: 100%;
   display: grid;
   place-content: center;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .ui-designer-canvas-viewport.panning {
@@ -433,34 +433,6 @@
   font-variant-numeric: tabular-nums;
 }
 
-.ui-designer-canvas-screen-select {
-  max-width: 170px;
-  padding: 2px 4px;
-  background: transparent;
-  border: none;
-  border-radius: 4px;
-  color: rgba(255, 255, 255, 0.85);
-  font-family: var(--font-family);
-  font-size: 12px;
-  cursor: pointer;
-}
-
-.ui-designer-canvas-screen-select:hover {
-  background: rgba(255, 255, 255, 0.1);
-}
-
-.ui-designer-canvas-screen-select:focus-visible {
-  outline: 2px solid var(--border-focused);
-  outline-offset: 1px;
-}
-
-/* The native popup paints on the page's own surface, not this translucent bar,
-   so its colours have to be set explicitly or it inherits the light default. */
-.ui-designer-canvas-screen-select option {
-  background: var(--ui-designer-panel-bg);
-  color: var(--ui-designer-text);
-}
-
 .ui-designer-reorder-indicator {
   background: var(--ui-designer-accent);
   border-radius: 1px;
@@ -488,6 +460,11 @@
   color: #000;
 }
 
+.ui-designer-canvas-zoom-btn.locked {
+  cursor: default;
+  opacity: 1;
+}
+
 /* Mobile device-preview chrome, layered onto the stage. Desktop previews the
    same screen box without the bezel. */
 .ui-designer-device-frame {
@@ -501,7 +478,7 @@
    are absolutely positioned inside it. */
 .ui-designer-canvas-screen {
   position: relative;
-  overflow: hidden;
+  overflow: visible;
 }
 
 /* The canvas empty state is the editor's first-run hero, not a panel hint: the

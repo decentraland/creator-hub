@@ -16,7 +16,6 @@ import {
   IoDesktopOutline,
   IoPhoneLandscapeOutline,
   IoScanOutline,
-  IoSyncOutline,
   IoTrashOutline,
 } from 'react-icons/io5';
 import cx from 'classnames';
@@ -36,7 +35,6 @@ import {
   getSelectedNodes,
   selectNode,
   setPlatform,
-  setScreen,
   toggleNodeSelection,
 } from '../../../redux/ui-designer';
 import { getUIDesignerSnapEnabled, getUIDesignerTool } from '../../../redux/ui';
@@ -54,7 +52,7 @@ import {
 import { UI_DESIGNER_DND_TYPE, type UIDesignerDragItem } from '../shared/dnd';
 import { EmptyState, EmptyStateChip, GuiIcon } from '../EmptyState';
 import { WidgetPicker } from '../LeftPanel/WidgetPicker';
-import { SCREEN_PRESETS } from '../shared/safe-areas';
+import type { UiScreenInset } from '../code/aggregator';
 import { dragPinHold } from '../shared/align-presets';
 import {
   DEFAULT_CANVAS_SCALE,
@@ -62,6 +60,7 @@ import {
   offsetInParent,
   setCanvasScale,
 } from '../shared/measure';
+import { insetRect } from '../shared/safe-areas';
 import { useUINodeActions } from '../shared/useUINodeActions';
 import { useUINodeTree } from '../shared/useUINodeTree';
 import {
@@ -1778,7 +1777,7 @@ const CanvasComponent: React.FC = () => {
   const tree = useUINodeTree();
   // Resolve `state.<var>` → its default value for the text preview (built once
   // here; every CanvasNode reads it via VarPreviewContext).
-  const { bindingSurface, emptyRoot, virtualSize } = useCodeState();
+  const { bindingSurface, emptyRoot, virtualSize, roots, filename } = useCodeState();
   const resolveVar = useMemo(() => {
     const map = buildResolveMap(bindingSurface.variables);
     return (expr: string) => map[expr];
@@ -1793,6 +1792,8 @@ const CanvasComponent: React.FC = () => {
   const dispatch = useAppDispatch();
   const device = useAppSelector(getPlatform);
   const screen = useAppSelector(getScreens)[device];
+  const activeRoot = roots.find(r => r.filename === filename);
+  const activeInset: UiScreenInset = activeRoot?.topLevel ? activeRoot.screenInset : 'none';
   const [showSafeAreas, setShowSafeAreas] = useState(false);
   const viewportRef = useRef<HTMLDivElement>(null);
   // Infinite-canvas pan (Figma-style): the viewport centres the stage and this
@@ -1823,34 +1824,46 @@ const CanvasComponent: React.FC = () => {
     });
   }, [selectedNode]);
 
-  // The DESIGN resolution the UI is authored at — src/ui/index.tsx's
-  // virtualWidth/Height, which is what the explorer scales px against.
-  const canvasWidth = virtualSize.width;
-  const canvasHeight = virtualSize.height;
+  const rootT = (tree?.uiTransform ?? {}) as Record<string, number | undefined>;
+  const rootFixedW = rootT.widthUnit === YGU_POINT ? rootT.width : undefined;
+  const rootFixedH = rootT.heightUnit === YGU_POINT ? rootT.height : undefined;
+  const fixedRoot = rootFixedW !== undefined && rootFixedH !== undefined;
 
-  // …fitted into the SCREEN being previewed (mirrors the runtime materializeRoot
-  // formula) and letterboxed inside it. Falls out as 1 whenever the screen preset
-  // matches the design size, which is the common desktop case.
-  const fitScale = Math.min(screen.width / canvasWidth, screen.height / canvasHeight);
+  const canvasWidth = fixedRoot ? (rootFixedW as number) : virtualSize.width;
+  const canvasHeight = fixedRoot ? (rootFixedH as number) : virtualSize.height;
 
-  // A transposed preset is not in the list, so surface the live size as its own
-  // option — otherwise flipping orientation would leave the select showing
-  // whichever entry happened to sort first.
-  const screenOptions = useMemo(() => {
-    const presets = SCREEN_PRESETS[device].map(p => ({
-      value: `${p.width}x${p.height}`,
-      label: p.label,
-    }));
-    const current = `${screen.width}x${screen.height}`;
-    if (presets.some(p => p.value === current)) return presets;
-    return [...presets, { value: current, label: `${screen.width} × ${screen.height}` }];
-  }, [device, screen.width, screen.height]);
+  const frameWidth = fixedRoot ? canvasWidth : screen.width;
+  const frameHeight = fixedRoot ? canvasHeight : screen.height;
 
-  // Keep the module-level scale (read by the drag/resize coordinate math and by
-  // measure.ts) in sync with the rendered zoom. The UI also carries the
-  // design→screen fit transform, so the EFFECTIVE scale is the product — that is
-  // what the px↔logical conversions must divide by for editing to track the
-  // pointer.
+  const fitScale = fixedRoot ? 1 : Math.min(frameWidth / canvasWidth, frameHeight / canvasHeight);
+
+  const insetLocked = activeInset !== 'none' && !fixedRoot;
+  const safeAreasVisible = insetLocked || showSafeAreas;
+  const overlayVariant = activeInset === 'device' ? 'device' : 'hud';
+
+  const insetR = insetLocked ? insetRect(device, activeInset) : null;
+  const fsLeft = (frameWidth - canvasWidth * fitScale) / 2;
+  const fsTop = (frameHeight - canvasHeight * fitScale) / 2;
+  const fsRight = fsLeft + canvasWidth * fitScale;
+  const fsBottom = fsTop + canvasHeight * fitScale;
+  const rootClip = insetR
+    ? {
+        left: Math.max(fsLeft, insetR.x[0] * frameWidth),
+        top: Math.max(fsTop, insetR.y[0] * frameHeight),
+        right: Math.min(fsRight, insetR.x[1] * frameWidth),
+        bottom: Math.min(fsBottom, insetR.y[1] * frameHeight),
+      }
+    : { left: fsLeft, top: fsTop, right: fsRight, bottom: fsBottom };
+  const rootStyle: React.CSSProperties = {
+    width: (rootClip.right - rootClip.left) / fitScale,
+    height: (rootClip.bottom - rootClip.top) / fitScale,
+    transform: `scale(${fitScale})`,
+    transformOrigin: 'top left',
+    position: 'absolute',
+    left: rootClip.left,
+    top: rootClip.top,
+  };
+
   useEffect(() => {
     setCanvasScale(scale * fitScale);
   }, [scale, fitScale]);
@@ -1930,8 +1943,8 @@ const CanvasComponent: React.FC = () => {
                   'ui-designer-device-frame': device === 'mobile',
                 })}
                 style={{
-                  width: screen.width * scale,
-                  height: screen.height * scale,
+                  width: frameWidth * scale,
+                  height: frameHeight * scale,
                   transform: `translate(${pan.x}px, ${pan.y}px)`,
                 }}
               >
@@ -1939,8 +1952,8 @@ const CanvasComponent: React.FC = () => {
                   className="ui-designer-canvas-screen"
                   style={
                     {
-                      width: screen.width,
-                      height: screen.height,
+                      width: frameWidth,
+                      height: frameHeight,
                       transform: `scale(${scale})`,
                       transformOrigin: 'top left',
                       // Exposed so selection chrome can counter-scale and stay
@@ -1958,23 +1971,16 @@ const CanvasComponent: React.FC = () => {
                       so the fit transform and the letterbox offset cancel out. */}
                   <div
                     className="ui-designer-canvas-root"
-                    style={{
-                      width: canvasWidth,
-                      height: canvasHeight,
-                      transform: `scale(${fitScale})`,
-                      transformOrigin: 'top left',
-                      position: 'absolute',
-                      left: (screen.width - canvasWidth * fitScale) / 2,
-                      top: (screen.height - canvasHeight * fitScale) / 2,
-                    }}
+                    style={rootStyle}
                   >
                     <CanvasNodeView node={tree} />
                   </div>
-                  {showSafeAreas ? (
+                  {safeAreasVisible && !fixedRoot ? (
                     <SafeAreaOverlay
                       width={screen.width}
                       height={screen.height}
                       device={device}
+                      variant={overlayVariant}
                     />
                   ) : null}
                 </div>
@@ -2058,45 +2064,23 @@ const CanvasComponent: React.FC = () => {
             >
               <IoPhoneLandscapeOutline />
             </button>
-            <select
-              className="ui-designer-canvas-screen-select"
-              aria-label="Preview screen"
-              title="Preview screen"
-              value={`${screen.width}x${screen.height}`}
-              onChange={e => {
-                const [width, height] = e.target.value.split('x').map(Number);
-                dispatch(setScreen({ device, screen: { width, height } }));
+            <button
+              type="button"
+              className={cx('ui-designer-canvas-zoom-btn', {
+                active: safeAreasVisible,
+                locked: insetLocked,
+              })}
+              onClick={() => {
+                if (!insetLocked) setShowSafeAreas(s => !s);
               }}
-            >
-              {screenOptions.map(option => (
-                <option
-                  key={option.value}
-                  value={option.value}
-                >
-                  {option.label}
-                </option>
-              ))}
-            </select>
-            <button
-              type="button"
-              className="ui-designer-canvas-zoom-btn"
-              onClick={() =>
-                dispatch(
-                  setScreen({ device, screen: { width: screen.height, height: screen.width } }),
-                )
+              disabled={insetLocked}
+              title={
+                insetLocked
+                  ? 'Safe-area guides follow the Scene Inset — change it to unlock'
+                  : 'Toggle safe-area guides'
               }
-              title="Swap orientation"
-              aria-label="Swap orientation"
-            >
-              <IoSyncOutline />
-            </button>
-            <button
-              type="button"
-              className={cx('ui-designer-canvas-zoom-btn', { active: showSafeAreas })}
-              onClick={() => setShowSafeAreas(s => !s)}
-              title="Toggle safe-area guides"
               aria-label="Toggle safe-area guides"
-              aria-pressed={showSafeAreas}
+              aria-pressed={safeAreasVisible}
             >
               <IoScanOutline />
             </button>

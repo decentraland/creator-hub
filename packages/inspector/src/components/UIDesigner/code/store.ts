@@ -25,11 +25,14 @@ import {
 } from '../shared/tree-model';
 import type { VirtualSize } from './aggregator';
 import {
+  DEFAULT_SCREEN_INSET,
   generateInteractionHelper,
   generatePlatformHelper,
   generateRootComponent,
   generateUiIndex,
+  readRootInsets,
   readVirtualSize,
+  type UiScreenInset,
 } from './aggregator';
 import {
   type CodeAction,
@@ -148,16 +151,12 @@ import type { CodeUINode, InteractionStateStyles, ParsedUI } from './types';
 // is the *active* root file (the one the canvas edits); the aggregator is
 // generated-only and never loaded as active.
 
-// One UI root = one component file under src/ui/.
+/** One UI root = one component file under src/ui/. */
 export interface CodeRoot {
-  // Exported component name, e.g. "MainUI".
   name: string;
-  // Full path, e.g. "src/ui/MainUI.tsx".
   filename: string;
-  // Whether this root is a top-level SCREEN (rendered by the aggregator) vs a
-  // reusable COMPONENT (only rendered where another root nests it). Driven by
-  // the `/** @ui-component */` marker (absent = top-level). Default: promoted.
   topLevel: boolean;
+  screenInset: UiScreenInset;
 }
 
 // A referenced component's parsed tree (+ its default-value map) for the inline
@@ -848,7 +847,7 @@ async function applySourceEdits(edits: Edit[], opts: { format?: boolean } = {}):
 // Key includes topLevel so a promote/demote (not just an add/remove) is seen as
 // a change by the poll and triggers an aggregator regen.
 const rootsKey = (rs: readonly CodeRoot[]): string =>
-  rs.map(r => `${r.filename}:${r.topLevel ? 1 : 0}`).join('|');
+  rs.map(r => `${r.filename}:${r.topLevel ? 1 : 0}:${r.screenInset}`).join('|');
 
 // Re-list src/ui/ and update `roots` (only when the set actually changed, so the
 // 1s watcher poll doesn't re-render the tree every tick). Excludes the generated
@@ -868,6 +867,7 @@ async function refreshRoots(): Promise<CodeRoot[]> {
     entries = []; // dir doesn't exist yet
   }
   const prev = new Map(state.roots.map(r => [r.filename, r]));
+  let aggregatorInsets: Record<string, UiScreenInset> | undefined;
   const roots: CodeRoot[] = [];
   for (const e of entries) {
     if (e.isDirectory || !e.name.endsWith(TSX) || e.name === 'index.tsx') continue;
@@ -886,7 +886,11 @@ async function refreshRoots(): Promise<CodeRoot[]> {
     const topLevel = existing
       ? existing.topLevel
       : !hasComponentMarker(await readFromDisk(filename));
-    roots.push({ name, filename, topLevel });
+    const screenInset =
+      existing?.screenInset ??
+      (aggregatorInsets ??= readRootInsets(await readFromDisk(UI_INDEX)))[name] ??
+      DEFAULT_SCREEN_INSET;
+    roots.push({ name, filename, topLevel, screenInset });
   }
   roots.sort((a, b) => a.name.localeCompare(b.name));
   if (rootsKey(roots) !== rootsKey(state.roots)) set({ roots });
@@ -912,7 +916,7 @@ async function regenerateAggregator(roots: CodeRoot[]): Promise<void> {
   const top = roots.filter(r => r.topLevel);
   const virtual = await syncVirtualSize();
   const src = generateUiIndex(
-    top.map(r => ({ component: r.name, from: `./${r.name}` })),
+    top.map(r => ({ component: r.name, from: `./${r.name}`, screenInset: r.screenInset })),
     virtual,
   );
   await writeToDisk(UI_INDEX, src);
@@ -1753,6 +1757,15 @@ async function toggleTopLevelUnlocked(filename: string): Promise<void> {
   await regenerateAggregator(roots);
 }
 
+/** Set a top-level root's screen inset and regenerate the aggregator wrapper. */
+async function setRootScreenInsetUnlocked(filename: string, inset: UiScreenInset): Promise<void> {
+  const root = state.roots.find(r => r.filename === filename);
+  if (!root || root.screenInset === inset) return;
+  const roots = state.roots.map(r => (r.filename === filename ? { ...r, screenInset: inset } : r));
+  set({ roots });
+  await regenerateAggregator(roots);
+}
+
 // Delete a node (or opaque block) by removing its source span. A platform variant
 // (or one of its branches) can't just have its span cut — that would leave the
 // conditional malformed — so it routes to the unwrap op instead. The RETURNED
@@ -2406,16 +2419,17 @@ async function addPlatformBranchUnlocked(entityId: number, platform: DeviceKind)
 // Collapse a variant back to a single node. Given a BRANCH, the OTHER branch
 // survives (that is what "remove this device's variant" means); given the variant
 // itself, the branch for the device being previewed survives.
-async function removePlatformVariantUnlocked(entityId: number): Promise<void> {
+async function removePlatformVariantUnlocked(
+  entityId: number,
+  keepDevice?: DeviceKind,
+): Promise<void> {
   const found = platformVariantOf(entityId);
   if (!found) return;
   const ast = platformAstFor(found.variant.entity as unknown as number);
   if (!ast) return;
-  const wanted: DeviceKind = found.branch
-    ? found.branch.platform === 'mobile'
-      ? 'desktop'
-      : 'mobile'
-    : activePlatform();
+  const wanted: DeviceKind =
+    keepDevice ??
+    (found.branch ? (found.branch.platform === 'mobile' ? 'desktop' : 'mobile') : activePlatform());
   // Fall back to whichever branch actually exists, so removing the variant of a
   // one-sided conditional isn't a silent no-op.
   const keep = branchElement(ast[wanted])
@@ -2427,9 +2441,19 @@ async function removePlatformVariantUnlocked(entityId: number): Promise<void> {
   if (edits.length) await applySourceEdits(edits);
 }
 
-// Ensure the typed `state` scaffold exists (`export interface State {}` +
-// `export const state: State = {}`), seeding it after the imports if absent.
-// `as any` matches the existing adapter style (cf. `result.comments as any`).
+/** Whether each device branch of a platform variant currently holds an element. */
+export function platformBranchesWithContent(entityId: number): {
+  desktop: boolean;
+  mobile: boolean;
+} {
+  const found = platformVariantOf(entityId);
+  if (!found) return { desktop: false, mobile: false };
+  const ast = platformAstFor(found.variant.entity as unknown as number);
+  if (!ast) return { desktop: false, mobile: false };
+  return { desktop: !!branchElement(ast.desktop), mobile: !!branchElement(ast.mobile) };
+}
+
+/** Seed the typed `state` scaffold (`interface State` + `const state`) after the imports if absent. */
 async function ensureStateScaffold(): Promise<void> {
   if (!state.program) return;
   if (findStateNodes(state.program as any).object) return;
@@ -2574,6 +2598,7 @@ export const createRoot = exclusive(createRootUnlocked);
 export const removeRoot = exclusive(removeRootUnlocked);
 export const renameRoot = exclusive(renameRootUnlocked);
 export const toggleTopLevel = exclusive(toggleTopLevelUnlocked);
+export const setRootScreenInset = exclusive(setRootScreenInsetUnlocked);
 export const spliceComponentPatch = exclusive(spliceComponentPatchUnlocked);
 export const spliceUiTransformPosition = exclusive(spliceUiTransformPositionUnlocked);
 export const spliceUiTransformPositions = exclusive(spliceUiTransformPositionsUnlocked);

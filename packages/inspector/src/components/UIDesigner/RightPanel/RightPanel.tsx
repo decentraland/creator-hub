@@ -5,6 +5,7 @@ import { getSelectedNode } from '../../../redux/ui-designer';
 import { Box } from '../../Box';
 import { findCodeNode, useCodeState } from '../code/store';
 import type { CodeUINode } from '../code/types';
+import { GuiGridIcon } from '../shared/widget-icons';
 import { PropertyPanel } from './PropertyPanel';
 import { CodeVariablesPanel } from './LogicPanel/CodeVariablesPanel';
 import { CodePropsPanel } from './LogicPanel/CodePropsPanel';
@@ -94,6 +95,17 @@ const RightPanel: React.FC = () => {
           </>
         ) : (
           <>
+            {codeState.filename ? (
+              <div className="ui-designer-code-gui-header">
+                <GuiGridIcon />
+                <span className="ui-designer-code-gui-name">
+                  {codeState.filename
+                    .split('/')
+                    .pop()
+                    ?.replace(/\.tsx$/, '')}
+                </span>
+              </div>
+            ) : null}
             <CodeVariablesPanel />
             <CodePropsPanel />
             <CodeCallbacksPanel />

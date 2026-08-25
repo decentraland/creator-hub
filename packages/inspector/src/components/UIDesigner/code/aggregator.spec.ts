@@ -6,6 +6,7 @@ import {
   generateInteractionHelper,
   generateRootComponent,
   generateUiIndex,
+  readRootInsets,
   readVirtualSize,
 } from './aggregator';
 import { codeToUINodes } from './parse-adapter';
@@ -118,6 +119,69 @@ describe('when reading back the virtual size of an existing aggregator', () => {
       width: DEFAULT_CANVAS_WIDTH,
       height: DEFAULT_CANVAS_HEIGHT,
     });
+  });
+});
+
+describe('when placing roots in screen inset areas', () => {
+  it('should default an unspecified root to the device safe area wrapper', () => {
+    const src = generateUiIndex([{ component: 'MyScreen', from: './MyScreen' }]);
+    expect(src).toContain('<ScreenInsetArea>');
+    expect(src).toContain('<MyScreen />');
+    expect(src).toContain('import ReactEcs, { UiEntity, ReactEcsRenderer, ScreenInsetArea }');
+    expect(parseSync('index.tsx', src).errors).toHaveLength(0);
+  });
+
+  it('should wrap each root in the container for its inset and import only those used', () => {
+    const src = generateUiIndex([
+      { component: 'Safe', from: './Safe', screenInset: 'device' },
+      { component: 'Hud', from: './Hud', screenInset: 'interactable' },
+      { component: 'Full', from: './Full', screenInset: 'none' },
+    ]);
+    expect(src).toMatch(/<ScreenInsetArea>\s*<Safe \/>\s*<\/ScreenInsetArea>/);
+    expect(src).toMatch(/<InteractableArea>\s*<Hud \/>\s*<\/InteractableArea>/);
+    expect(src).toMatch(/<Full \/>/);
+    expect(src).not.toMatch(/<\w+Area>\s*<Full/);
+    expect(src).toContain(
+      'import ReactEcs, { UiEntity, ReactEcsRenderer, ScreenInsetArea, InteractableArea }',
+    );
+    expect(parseSync('index.tsx', src).errors).toHaveLength(0);
+  });
+
+  it('should not import an inset container when no root uses it', () => {
+    const src = generateUiIndex([{ component: 'Full', from: './Full', screenInset: 'none' }]);
+    expect(src).toContain(
+      "import ReactEcs, { UiEntity, ReactEcsRenderer } from '@dcl/sdk/react-ecs'",
+    );
+    expect(src).not.toContain('ScreenInsetArea');
+    expect(src).not.toContain('InteractableArea');
+  });
+});
+
+describe('when reading back root insets from an existing aggregator', () => {
+  it('should round-trip every inset it generated', () => {
+    const src = generateUiIndex([
+      { component: 'Safe', from: './Safe', screenInset: 'device' },
+      { component: 'Hud', from: './Hud', screenInset: 'interactable' },
+      { component: 'Full', from: './Full', screenInset: 'none' },
+    ]);
+    expect(readRootInsets(src)).toEqual({ Safe: 'device', Hud: 'interactable', Full: 'none' });
+  });
+
+  it('should preserve per-root insets across regeneration', () => {
+    const first = generateUiIndex([
+      { component: 'Hud', from: './Hud', screenInset: 'interactable' },
+    ]);
+    const insets = readRootInsets(first);
+    const regenerated = generateUiIndex([
+      { component: 'Hud', from: './Hud', screenInset: insets.Hud },
+      { component: 'MyScreen', from: './MyScreen' },
+    ]);
+    expect(regenerated).toMatch(/<InteractableArea>\s*<Hud \/>\s*<\/InteractableArea>/);
+    expect(regenerated).toContain('<MyScreen />');
+  });
+
+  it('should omit bare roots from a pre-inset aggregator so they fall back to the default', () => {
+    expect(readRootInsets('<MyScreen />\n<Hud />')).toEqual({});
   });
 });
 

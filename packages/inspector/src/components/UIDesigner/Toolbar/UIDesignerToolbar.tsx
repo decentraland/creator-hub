@@ -64,7 +64,7 @@ const UIDesignerToolbar = withSdk(({ sdk }) => {
   }, [isSceneInfoPanelOpen, updateUIState]);
 
   return (
-    <div className="Toolbar">
+    <div className="Toolbar ui-designer-toolbar">
       <ToolbarButton
         className="save"
         disabled

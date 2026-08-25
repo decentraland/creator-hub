@@ -4,11 +4,21 @@
 
 import { DEFAULT_CANVAS_HEIGHT, DEFAULT_CANVAS_WIDTH } from '../shared/tree-model';
 
+/** Screen area a top-level root is placed in (react-ecs `UiScreenInset`). */
+export type UiScreenInset = 'device' | 'interactable' | 'none';
+
+export const DEFAULT_SCREEN_INSET: UiScreenInset = 'device';
+
+const INSET_WRAPPER: Record<UiScreenInset, string | null> = {
+  device: 'ScreenInsetArea',
+  interactable: 'InteractableArea',
+  none: null,
+};
+
 export interface UiRoot {
-  // Exported component name, e.g. "MyScreen".
   component: string;
-  // Import specifier relative to ui/index.tsx, e.g. "./MyScreen".
   from: string;
+  screenInset?: UiScreenInset;
 }
 
 export interface VirtualSize {
@@ -35,6 +45,22 @@ export function readVirtualSize(source: string): VirtualSize {
     width: w > 0 ? w : DEFAULT_VIRTUAL_SIZE.width,
     height: h > 0 ? h : DEFAULT_VIRTUAL_SIZE.height,
   };
+}
+
+/** Recover each root's screen inset from an existing aggregator, keyed by component name. */
+export function readRootInsets(source: string): Record<string, UiScreenInset> {
+  const insets: Record<string, UiScreenInset> = {};
+  const wrapped = /<(ScreenInsetArea|InteractableArea)>\s*<([A-Za-z_]\w*)\s*\/>\s*<\/\1>/g;
+  for (const m of source.matchAll(wrapped)) {
+    insets[m[2]] = m[1] === 'ScreenInsetArea' ? 'device' : 'interactable';
+  }
+  const insetAware = source.includes('ScreenInsetArea') || source.includes('InteractableArea');
+  if (insetAware) {
+    for (const m of source.matchAll(/<([A-Za-z_]\w*)\s*\/>/g)) {
+      if (!(m[1] in insets)) insets[m[1]] = 'none';
+    }
+  }
+  return insets;
 }
 
 // Generate the ui/index.tsx aggregator source that composes every root under a
@@ -64,7 +90,19 @@ export function generateUiIndex(
     return false;
   });
   const imports = safeRoots.map(r => `import { ${r.component} } from '${r.from}'`).join('\n');
-  const children = safeRoots.map(r => `        <${r.component} />`).join('\n');
+  const insetOf = (r: UiRoot): UiScreenInset => r.screenInset ?? DEFAULT_SCREEN_INSET;
+  const children = safeRoots
+    .map(r => {
+      const tag = INSET_WRAPPER[insetOf(r)];
+      return tag
+        ? `        <${tag}>\n          <${r.component} />\n        </${tag}>`
+        : `        <${r.component} />`;
+    })
+    .join('\n');
+  const insetImports = (['ScreenInsetArea', 'InteractableArea'] as const).filter(tag =>
+    safeRoots.some(r => INSET_WRAPPER[insetOf(r)] === tag),
+  );
+  const namedImports = ['UiEntity', 'ReactEcsRenderer', ...insetImports].join(', ');
   // Same emit-sink reasoning as the component names: these numbers are spliced
   // into source, so anything not a finite positive number falls back.
   const px = (value: number, fallback: number): number =>
@@ -72,7 +110,7 @@ export function generateUiIndex(
   const virtualWidth = px(virtual.width, DEFAULT_VIRTUAL_SIZE.width);
   const virtualHeight = px(virtual.height, DEFAULT_VIRTUAL_SIZE.height);
   return `/** @jsx ReactEcs.createElement */
-import ReactEcs, { UiEntity, ReactEcsRenderer } from '@dcl/sdk/react-ecs'
+import ReactEcs, { ${namedImports} } from '@dcl/sdk/react-ecs'
 ${imports}
 
 export function setupUi() {

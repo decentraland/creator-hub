@@ -6,16 +6,22 @@ import { type DeviceKind, type SafeRect, SAFE_AREAS } from '../../shared/safe-ar
 import './SafeAreaOverlay.css';
 
 interface SafeAreaOverlayProps {
-  // Logical (unscaled) size of the screen rect this overlays.
   width: number;
   height: number;
   device: DeviceKind;
+  /** `hud` shades HUD regions + safe zone (Gameplay Safe Area); `device` shades only hardware insets. */
+  variant?: 'hud' | 'device';
 }
 
-// Shades the reserved HUD regions and outlines the center safe zone. Purely
-// visual — pointer-events: none so it never intercepts canvas interactions.
-export const SafeAreaOverlay: React.FC<SafeAreaOverlayProps> = ({ width, height, device }) => {
-  const { regions, safeZone, label } = SAFE_AREAS[device];
+/** Shades a device's reserved regions on the canvas. Visual only (pointer-events: none). */
+export const SafeAreaOverlay: React.FC<SafeAreaOverlayProps> = ({
+  width,
+  height,
+  device,
+  variant = 'hud',
+}) => {
+  const { regions, safeZone } = SAFE_AREAS[device];
+  const shown = variant === 'device' ? regions.filter(r => r.hardware) : regions;
   const box = (rect: SafeRect) => ({
     left: rect.x[0] * width,
     top: rect.y[0] * height,
@@ -28,7 +34,7 @@ export const SafeAreaOverlay: React.FC<SafeAreaOverlayProps> = ({ width, height,
       style={{ width, height }}
       aria-hidden="true"
     >
-      {regions.map(region => (
+      {shown.map(region => (
         <div
           key={`${region.label}-${region.x[0]}-${region.y[0]}`}
           className={cx('ui-designer-safe-band', region.severity)}
@@ -37,16 +43,12 @@ export const SafeAreaOverlay: React.FC<SafeAreaOverlayProps> = ({ width, height,
           <span className="ui-designer-safe-band-label">{region.label}</span>
         </div>
       ))}
-      <div
-        className="ui-designer-safe-zone"
-        style={box(safeZone)}
-      />
-      <span
-        className="ui-designer-safe-label"
-        style={{ left: safeZone.x[0] * width, top: safeZone.y[0] * height }}
-      >
-        {label}
-      </span>
+      {variant === 'hud' ? (
+        <div
+          className="ui-designer-safe-zone"
+          style={box(safeZone)}
+        />
+      ) : null}
     </div>
   );
 };

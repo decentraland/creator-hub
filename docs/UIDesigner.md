@@ -20,6 +20,10 @@ Beyond the input-commit and hover gotchas in the root `CLAUDE.md`, two traps bit
 - **Click coordinates are screenshot pixels, not CSS pixels.** They differ by the device-pixel-ratio scale. Multiply a `getBoundingClientRect` value by `screenshotWidth / window.innerWidth` before clicking, or read the target's position straight off a screenshot (screenshots are the ground truth).
 - **A JS-dispatched click does not reach React's handlers.** `el.dispatchEvent(new MouseEvent('click'))` leaves React's `onClick` untouched here. Drive UI with real clicks, and use JavaScript only to read state.
 
+### Widget/node icons must be paths-only
+
+Icons shown in a labeled row — the widget palette, the add-widget picker, and the node tree (`shared/widget-icons.tsx` → `WIDGET_ICONS`) — must draw their glyph with `<path>`/`<rect>`/`<circle>`, never an SVG `<text>` element. SVG `<text>` content leaks into the element's DOM `textContent`, so a Label icon with `<text>Aa</text>` makes the row read as "AaLabel". That breaks exact-label matching: the e2e `UIDesignerPanel.spec.ts` `addWidget` uses `pickerRow` with `hasText: /^Label$/`, and root/node rows are addressed by their displayed name. Draw letterforms as strokes.
+
 ## The 2D toolbar
 
 The 2D toolbar is a dedicated component, not the shared 3D one. `App` swaps it in by mode: `isUIDesigner ? <UIDesignerToolbar/> : <Toolbar/>`. This mirrors how the left, right, and bottom panels already swap per mode, and keeps 2D-specific wiring out of the shared `Toolbar`.
@@ -71,3 +75,19 @@ Dragging a multi-selection moves every selected absolute node together and commi
 The 2D/3D mode rides `inspector::UIState.uiDesignerOpen` on the scene root and is serialized into the composite, so it survives a reload in the Creator Hub app. `useRestorePersistedMode` replays it into Redux on load.
 
 The restore must wait for a **defined** `uiDesignerOpen`, not merely a non-null `uiState`. `useInspectorUIState` surfaces a default (with `uiDesignerOpen` undefined) the instant the sdk exists, before the CRDT stream hydrates the component. Latching on that premature default locks in 3D and ignores a persisted 2D. A scene that never chose a mode keeps `uiDesignerOpen` undefined and correctly stays in the 3D default.
+
+## Scene Inset (screenInset)
+
+Each top-level root is placed in a screen area via react-ecs' `UiScreenInset` (`'device'` | `'interactable'` | `'none'`), chosen with the **Scene Inset** dropdown in the property panel. The control shows only for top-level roots (`isGuiRoot && activeRoot.topLevel`) — that is "only for Parents". Default: `'device'`.
+
+`screenInset` is **not** a `uiTransform` prop. It is applied by WRAPPING the root in the aggregator (`code/aggregator.ts` `generateUiIndex`): `'device'` → `<ScreenInsetArea>`, `'interactable'` → `<InteractableArea>`, `'none'` → unwrapped. The wrapper is emitted only around top-level roots, never inside a component file: `ScreenInsetArea`/`InteractableArea` render `positionType: 'absolute'` with the inset margins, which resolve against the PARENT box, so they land correctly only as a direct child of the full-screen container. A prefab imparted into another component is emitted bare `<Component />`, so the editor can never generate a nested `ScreenInsetArea` (which would double-inset and mis-anchor). Consequence: a root's inset applies only when it renders as a top-level GUI; nested as a prefab, its inset is ignored and the parent positions it.
+
+Persistence mirrors `virtualWidth/Height` — the value lives only in the aggregator source. `readRootInsets` recovers each root's wrapper by component name so a regenerate (root add/rename/remove) preserves it; `refreshRoots` carries it forward for known files (like `topLevel`) and reads it from the aggregator for a newly-appeared file. A bare root reads back as `'none'` **only** when the file already uses wrappers — a pre-inset aggregator has none, so its bare roots fall through to the `'device'` default (the migration we want). The one lossy corner: an all-`'none'` scene (zero wrappers) can't be told from a pre-inset one and reloads as `'device'`. The edit path is `setRootScreenInset` (`code/store.ts`), which updates the in-memory root and calls `regenerateAggregator` — the first editor-driven mutation of aggregator options (there is still no editor write path for `virtualWidth/Height`).
+
+Canvas: the active root's inset is drawn as a dashed guide (`Canvas.tsx`, reusing the `.ui-designer-safe-zone` overlay styling) from `insetRect(device, inset)` (`shared/safe-areas.ts`, where `deviceSafeArea` is desktop = full screen, mobile = inside the system bars). The guide shows only for a top-level root, mirroring the aggregator, and is hidden for a fixed-artboard root (see Canvas framing).
+
+## Canvas framing (artboard vs screen) and overflow
+
+The canvas frames the root two ways (`Canvas.tsx`, `fixedRoot`): a root whose width AND height are fixed px (`widthUnit/heightUnit === YGU_POINT`) is an **artboard** — the frame is the root's own box, drawn at true size (`fitScale = 1`, no device-screen letterbox), and the screen-relative overlays (safe-area, inset guide) are hidden. A **full-screen** root (%, auto or unset) keeps the previous behaviour: the design resolution (`virtualWidth/Height`) is letterboxed into the previewed device screen. Feeding a fixed 400×400 root into the old `min(screen/virtual)` fit blew it up to fill 1080px — the "canvas not resized to the root" symptom.
+
+Overflow is shown, not clipped: the clip lived on `.ui-designer-canvas-screen` (`overflow: hidden`), which cut nodes at the frame edge. It is now `visible`, and `.ui-designer-canvas-stagewrap` too, so a child larger than the frame renders past it; the outer `.ui-designer-canvas-viewport` still clips at the panel boundary. The mobile `.ui-designer-device-frame` keeps its bezel clip.

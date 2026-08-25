@@ -473,11 +473,16 @@ const TEXT_ALIGN_ENUM: Record<number, string> = {
 
 const FONT_ENUM: Record<number, string> = { 0: 'sans-serif', 1: 'serif', 2: 'monospace' };
 
+const TEXT_WRAP_ENUM: Record<number, string> = { 0: 'wrap', 1: 'nowrap' };
+
 const TEXT_ALIGN_STR: Record<string, number> = Object.fromEntries(
   Object.entries(TEXT_ALIGN_ENUM).map(([n, s]) => [s, Number(n)]),
 );
 const FONT_STR: Record<string, number> = Object.fromEntries(
   Object.entries(FONT_ENUM).map(([n, s]) => [s, Number(n)]),
+);
+const TEXT_WRAP_STR: Record<string, number> = Object.fromEntries(
+  Object.entries(TEXT_WRAP_ENUM).map(([n, s]) => [s, Number(n)]),
 );
 
 // react-ecs uiText prop object → flattened PBUiText (textAlign/font string →
@@ -493,6 +498,11 @@ export function ergonomicToPBText(ergo: Record<string, unknown>): Record<string,
     const n = FONT_STR[ergo.font];
     if (n !== undefined) pb.font = n;
     else delete pb.font;
+  }
+  if (typeof ergo.textWrap === 'string') {
+    const n = TEXT_WRAP_STR[ergo.textWrap];
+    if (n !== undefined) pb.textWrap = n;
+    else delete pb.textWrap;
   }
   return pb;
 }
@@ -511,6 +521,11 @@ export function pbToErgonomicText(pb: Record<string, unknown>): Record<string, u
     const s = FONT_ENUM[pb.font];
     if (s !== undefined) ergo.font = s;
     else delete ergo.font;
+  }
+  if (typeof pb.textWrap === 'number') {
+    const s = TEXT_WRAP_ENUM[pb.textWrap];
+    if (s !== undefined) ergo.textWrap = s;
+    else delete ergo.textWrap;
   }
   return ergo;
 }

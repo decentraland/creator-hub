@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from 'react';
+import { IoCubeOutline } from 'react-icons/io5';
 import { VscTrash } from 'react-icons/vsc';
 import type { Entity } from '@dcl/ecs';
 
+import { Container } from '../../../Container';
 import { CheckboxField, TextField } from '../../../ui';
 import { BindIcon } from '../BindIcon';
 import type { PropVar } from '../../code/props-convention';
@@ -165,38 +167,48 @@ export const ComponentRefPanel: React.FC<{ node: CodeUINode }> = ({ node }) => {
   const target = roots.find(r => r.name === name);
 
   return (
-    <div className="ui-designer-code-variables">
-      <div className="ui-designer-code-variables-title">Component · {name}</div>
-      <div className="ui-designer-code-variables-hint">
-        Values passed to this instance. Type a literal or <BindIcon /> a variable or event from this
-        file.
+    <>
+      <div className="ui-designer-code-gui-header">
+        <IoCubeOutline aria-hidden="true" />
+        <span className="ui-designer-code-gui-name">{name}</span>
       </div>
+      <Container
+        label="Inputs"
+        initialOpen
+      >
+        <div className="ui-designer-code-variables">
+          <div className="ui-designer-code-variables-hint">
+            Values passed to this instance. Type a literal or <BindIcon /> a variable or event from
+            this file.
+          </div>
 
-      {declared.length === 0 ? (
-        <div className="ui-designer-code-variables-empty">
-          No inputs declared. Open {name} and add inputs (Logic tab) to configure it here.
+          {declared.length === 0 ? (
+            <div className="ui-designer-code-variables-empty">
+              No inputs declared. Open {name} and add inputs (Logic tab) to configure it here.
+            </div>
+          ) : (
+            declared.map(p => (
+              <InstancePropRow
+                key={p.name}
+                entity={entity}
+                prop={p}
+                current={current.get(p.name)}
+              />
+            ))
+          )}
+
+          {target ? (
+            <button
+              type="button"
+              className="ui-designer-code-open-component"
+              onClick={() => void selectRootFile(target.filename)}
+            >
+              Open {name}
+            </button>
+          ) : null}
         </div>
-      ) : (
-        declared.map(p => (
-          <InstancePropRow
-            key={p.name}
-            entity={entity}
-            prop={p}
-            current={current.get(p.name)}
-          />
-        ))
-      )}
-
-      {target ? (
-        <button
-          type="button"
-          className="ui-designer-code-open-component"
-          onClick={() => void selectRootFile(target.filename)}
-        >
-          Open {name} ↗
-        </button>
-      ) : null}
-    </div>
+      </Container>
+    </>
   );
 };
 

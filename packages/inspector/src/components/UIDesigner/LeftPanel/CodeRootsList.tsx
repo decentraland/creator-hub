@@ -1,11 +1,12 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useDrag } from 'react-dnd';
-import { IoEyeOffOutline, IoEyeOutline, IoLayersOutline, IoTrashOutline } from 'react-icons/io5';
+import { IoEyeOffOutline, IoEyeOutline, IoTrashOutline } from 'react-icons/io5';
 import cx from 'classnames';
 
 import { useAppDispatch } from '../../../redux/hooks';
 import { selectNode } from '../../../redux/ui-designer';
 import { UI_DESIGNER_DND_TYPE, type UIDesignerDragItem } from '../shared/dnd';
+import { GuiGridIcon } from '../shared/widget-icons';
 import {
   type CodeRoot,
   removeRoot,
@@ -79,7 +80,7 @@ const RootRow: React.FC<{
       }}
       title={`Drag onto the canvas to nest ${root.name} as a component`}
     >
-      <IoLayersOutline aria-hidden="true" />
+      <GuiGridIcon />
       {editing ? (
         <input
           className="ui-designer-code-root-name-input"

@@ -12,6 +12,8 @@ export interface SafeRegion extends SafeRect {
   label: string;
   /** `reserved` — keep UI out. `limited` — usable, but with a documented caveat. */
   severity: 'reserved' | 'limited';
+  /** A hardware inset (notch, island, system bar) — the `screenInset: 'device'` area. */
+  hardware?: boolean;
 }
 
 export interface SafeAreaSpec {
@@ -19,6 +21,8 @@ export interface SafeAreaSpec {
   /** Non-overlapping: the bands are translucent, so overlap reads as a region. */
   regions: SafeRegion[];
   safeZone: SafeRect;
+  /** Screen minus hardware insets (react-ecs `screenInset: 'device'`). */
+  deviceSafeArea: SafeRect;
 }
 
 // Mobile — OFFICIAL values (docs.decentraland.org build-for-mobile/develop/
@@ -29,14 +33,15 @@ export interface SafeAreaSpec {
 const MOBILE_SAFE_AREA: SafeAreaSpec = {
   label: 'Mobile safe area',
   regions: [
-    { label: 'System bar', severity: 'reserved', x: [0, 1], y: [0, 0.08] },
-    { label: 'System bar', severity: 'reserved', x: [0, 1], y: [0.92, 1] },
+    { label: 'System bar', severity: 'reserved', x: [0, 1], y: [0, 0.08], hardware: true },
+    { label: 'System bar', severity: 'reserved', x: [0, 1], y: [0.92, 1], hardware: true },
     { label: 'Chat, joystick, emotes', severity: 'reserved', x: [0, 0.3], y: [0.08, 0.92] },
     { label: 'Profile, camera', severity: 'reserved', x: [0.75, 1], y: [0.08, 0.22] },
     { label: 'Icons only — max 48×48', severity: 'limited', x: [0.75, 1], y: [0.22, 0.5] },
     { label: 'Interaction button', severity: 'reserved', x: [0.75, 1], y: [0.5, 0.92] },
   ],
   safeZone: { x: [0.3, 0.75], y: [0.08, 0.92] },
+  deviceSafeArea: { x: [0, 1], y: [0.08, 0.92] },
 };
 
 // Desktop — OFFICIAL value (docs.decentraland.org designing-the-experience/
@@ -48,6 +53,7 @@ const DESKTOP_SAFE_AREA: SafeAreaSpec = {
   label: 'Desktop safe area',
   regions: [{ label: 'Sidebar, minimap, chat', severity: 'reserved', x: [0, 0.25], y: [0, 1] }],
   safeZone: { x: [0.25, 1], y: [0, 1] },
+  deviceSafeArea: { x: [0, 1], y: [0, 1] },
 };
 
 export const SAFE_AREAS: Record<DeviceKind, SafeAreaSpec> = {
@@ -91,3 +97,9 @@ export const DEFAULT_SCREENS: Record<DeviceKind, ScreenSize> = {
   desktop: { width: 1920, height: 1080 },
   mobile: { width: 1600, height: 720 },
 };
+
+/** The screen rect a react-ecs `screenInset` value maps to, in normalized coords. */
+export function insetRect(device: DeviceKind, inset: 'device' | 'interactable' | 'none'): SafeRect {
+  if (inset === 'none') return { x: [0, 1], y: [0, 1] };
+  return inset === 'interactable' ? SAFE_AREAS[device].safeZone : SAFE_AREAS[device].deviceSafeArea;
+}
