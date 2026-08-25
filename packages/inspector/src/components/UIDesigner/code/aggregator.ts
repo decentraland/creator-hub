@@ -23,11 +23,6 @@ export interface UiRoot {
   screenInset?: UiScreenInset;
 }
 
-export interface VirtualSize {
-  width: number;
-  height: number;
-}
-
 /** Recover each root's screen inset from an existing aggregator, keyed by component name. */
 export function readRootInsets(source: string): Record<string, UiScreenInset> {
   const insets: Record<string, UiScreenInset> = {};

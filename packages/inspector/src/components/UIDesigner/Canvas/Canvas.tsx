@@ -81,7 +81,13 @@ import type { CodeUINode } from '../code/types';
 import { MixedContentField } from '../RightPanel/PropertyPanel/MixedContentField';
 import { seedSegments } from '../RightPanel/PropertyPanel/MixedContentField/segments';
 import type { FieldConfig } from '../RightPanel/PropertyPanel/field-configs';
-import { previewBoundText, type UINode, type UINodeType } from '../shared/tree-model';
+import {
+  DEFAULT_CANVAS_HEIGHT,
+  DEFAULT_CANVAS_WIDTH,
+  previewBoundText,
+  type UINode,
+  type UINodeType,
+} from '../shared/tree-model';
 import {
   clearNodeRegistry,
   getNodeElement,
@@ -105,10 +111,6 @@ import { flowFrom, insertionSlot } from './reorder';
 import { renderTextMarkup } from './text-markup';
 import { SafeAreaOverlay } from './SafeAreaOverlay';
 
-// Three scales stack here. The DESIGN resolution (the code store's virtualSize,
-// from src/ui/index.tsx) is fitted into the previewed SCREEN, exactly as the
-// runtime fits it to the player's — and on top of both sits the EDITOR zoom (see
-// CanvasComponent), which measure.ts owns as the live viewport↔logical px factor.
 const ZOOM_MIN = 0.1;
 const ZOOM_MAX = 2;
 const ZOOM_STEP = 0.1;
@@ -1777,7 +1779,7 @@ const CanvasComponent: React.FC = () => {
   const tree = useUINodeTree();
   // Resolve `state.<var>` → its default value for the text preview (built once
   // here; every CanvasNode reads it via VarPreviewContext).
-  const { bindingSurface, emptyRoot, virtualSize, roots, filename } = useCodeState();
+  const { bindingSurface, emptyRoot, roots, filename } = useCodeState();
   const resolveVar = useMemo(() => {
     const map = buildResolveMap(bindingSurface.variables);
     return (expr: string) => map[expr];
@@ -1829,8 +1831,8 @@ const CanvasComponent: React.FC = () => {
   const rootFixedH = rootT.heightUnit === YGU_POINT ? rootT.height : undefined;
   const fixedRoot = rootFixedW !== undefined && rootFixedH !== undefined;
 
-  const canvasWidth = fixedRoot ? (rootFixedW as number) : virtualSize.width;
-  const canvasHeight = fixedRoot ? (rootFixedH as number) : virtualSize.height;
+  const canvasWidth = fixedRoot ? (rootFixedW as number) : DEFAULT_CANVAS_WIDTH;
+  const canvasHeight = fixedRoot ? (rootFixedH as number) : DEFAULT_CANVAS_HEIGHT;
 
   const frameWidth = fixedRoot ? canvasWidth : screen.width;
   const frameHeight = fixedRoot ? canvasHeight : screen.height;

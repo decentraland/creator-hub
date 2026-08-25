@@ -16,14 +16,7 @@ import {
 } from '../../../redux/ui-designer';
 import { dragPinPatch } from '../shared/align-presets';
 import type { DeviceKind } from '../shared/safe-areas';
-import {
-  DEFAULT_CANVAS_HEIGHT,
-  DEFAULT_CANVAS_WIDTH,
-  nodeLabelText,
-  type UINodeType,
-  type WidgetKind,
-} from '../shared/tree-model';
-import type { VirtualSize } from './aggregator';
+import { nodeLabelText, type UINodeType, type WidgetKind } from '../shared/tree-model';
 import {
   DEFAULT_SCREEN_INSET,
   generateInteractionHelper,
@@ -201,11 +194,6 @@ export interface CodeState {
   // toolbar buttons; the stacks themselves are module-private).
   canUndo: boolean;
   canRedo: boolean;
-  // The design resolution from src/ui/index.tsx's setUiRenderer call — what the
-  // explorer scales px against, and therefore what the canvas stage must frame.
-  // Lives here and not on the parsed root: it is per-SCENE (one aggregator), not
-  // per-root, and parse-adapter only ever sees one root file.
-  virtualSize: VirtualSize;
 }
 
 let state: CodeState = {
@@ -222,7 +210,6 @@ let state: CodeState = {
   parsing: false,
   canUndo: false,
   canRedo: false,
-  virtualSize: { width: DEFAULT_CANVAS_WIDTH, height: DEFAULT_CANVAS_HEIGHT },
 };
 
 const listeners = new Set<() => void>();
