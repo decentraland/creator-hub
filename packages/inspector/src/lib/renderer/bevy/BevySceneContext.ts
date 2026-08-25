@@ -71,6 +71,11 @@ export class BevySceneContext {
     // forward bridge sets all Animator states to playing:false while frozen (engine
     // update_animations → speed 0) and restores the authored value on unfreeze.
     components.Animator(this.engine),
+    // Area components: registered so their state decodes on this engine and the
+    // reverse-channel gizmo commits (operations.updateValue on Transform) can
+    // mirror scale changes into their `area` field.
+    components.AvatarModifierArea(this.engine),
+    components.CameraModeArea(this.engine),
     // VideoPlayer: forwarded so the freeze can pause video playback (#1469) — a
     // frozen scene stops ticking but the engine keeps playing a loaded video, so
     // the forward bridge sends playing:false while frozen and restores the authored
