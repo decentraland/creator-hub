@@ -1,5 +1,6 @@
 import React, { useCallback, useMemo, useRef, useState } from 'react';
 import {
+  IoClose,
   IoCubeOutline,
   IoDesktopOutline,
   IoEyeOffOutline,
@@ -590,6 +591,14 @@ const VariantsBar: React.FC<{
         onRequestClose={() => setConfirmOpen(false)}
         className="ui-designer-variant-remove-modal"
       >
+        <button
+          type="button"
+          className="close"
+          aria-label="Close"
+          onClick={() => setConfirmOpen(false)}
+        >
+          <IoClose />
+        </button>
         <div className="content">
           <h2 className="title">Delete {platform === 'mobile' ? 'Mobile' : 'Desktop'} Variant</h2>
           <div className="description">
@@ -769,10 +778,12 @@ const SceneInsetRow: React.FC<{
   value: UiScreenInset;
   onChange: (value: UiScreenInset) => void;
 }> = ({ value, onChange }) => {
-  const device = useAppSelector(getPlatform);
-  const options = SCENE_INSET_OPTIONS.filter(
-    o => o.value !== 'device' || device === 'mobile' || value === 'device',
-  );
+  const isMobile = useAppSelector(getPlatform) === 'mobile';
+  const options = isMobile
+    ? SCENE_INSET_OPTIONS
+    : SCENE_INSET_OPTIONS.filter(o => o.value !== 'device');
+  const deviceEqualsFullScreen = !isMobile && value === 'device';
+  const displayValue = deviceEqualsFullScreen ? 'none' : value;
   return (
     <div className="ui-designer-property-row">
       <Block
@@ -781,7 +792,7 @@ const SceneInsetRow: React.FC<{
       >
         <Dropdown
           options={options}
-          value={value}
+          value={displayValue}
           aria-label="Scene Inset"
           onChange={e => onChange(e.target.value as UiScreenInset)}
         />

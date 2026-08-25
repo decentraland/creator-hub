@@ -12,9 +12,7 @@ export enum SegmentKind {
   BINDING = 'binding',
 }
 
-// Fallback design/virtual resolution, used until src/ui/index.tsx's
-// `{ virtualWidth, virtualHeight }` is read (code/aggregator.ts `readVirtualSize`
-// → the code store's `virtualSize`, which is what the canvas stage frames).
+/** The design resolution the editor canvas frames against; react-ecs defaults the in-world value per device. */
 export const DEFAULT_CANVAS_WIDTH = 1920;
 export const DEFAULT_CANVAS_HEIGHT = 1080;
 

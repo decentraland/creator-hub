@@ -417,64 +417,118 @@
 }
 
 .ui-designer-variant-remove-modal.Modal {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 50px;
   min-width: 0;
-  min-height: 0;
-  max-width: 420px;
+  width: 700px;
+  max-width: calc(100vw - 48px);
+  min-height: 420px;
+  max-height: calc(100vh - 48px);
+  padding: 100px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 24px;
+  background: #181225;
+  color: #fcfcfc;
+}
+
+.ui-designer-variant-remove-modal.Modal::before {
+  content: "";
+  position: absolute;
+  z-index: 0;
+  width: 1037px;
+  height: 513px;
+  left: calc(50% - 1037px / 2 - 0.5px);
+  top: calc(50% - 513px / 2 + 436.5px);
+  background: #ff4bed;
+  opacity: 0.3;
+  filter: blur(250px);
+  pointer-events: none;
+}
+
+.ui-designer-variant-remove-modal .close {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
   padding: 0;
-  border: 1px solid var(--ui-designer-control-border);
-  border-radius: var(--ui-designer-radius-menu);
-  background: var(--ui-designer-panel-bg);
-  color: var(--ui-designer-text);
+  border: none;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  color: #fcfcfc;
+  font-size: 20px;
+  cursor: pointer;
+  transition: background 0.12s;
+}
+
+.ui-designer-variant-remove-modal .close:hover {
+  background: rgba(255, 255, 255, 0.18);
 }
 
 .ui-designer-variant-remove-modal .content {
+  position: relative;
+  z-index: 1;
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  padding: 20px 20px 12px;
+  gap: 50px;
 }
 
 .ui-designer-variant-remove-modal .title {
   margin: 0;
-  font-size: 16px;
+  font-size: 30px;
   font-weight: 600;
-  color: var(--ui-designer-text);
+  color: #fcfcfc;
 }
 
 .ui-designer-variant-remove-modal .description {
-  color: var(--ui-designer-text-muted);
-  font-size: 13px;
+  margin: 0;
+  color: #cfcdd4;
+  font-size: 16px;
   line-height: 1.5;
 }
 
 .ui-designer-variant-remove-modal .actions {
+  position: relative;
+  z-index: 1;
   display: flex;
   flex-direction: row;
-  justify-content: flex-end;
-  gap: 8px;
-  padding: 4px 20px 20px;
+  gap: 20px;
 }
 
 .ui-designer-modal-btn {
-  padding: 10px 16px;
-  border: 1px solid var(--ui-designer-control-border);
-  border-radius: var(--ui-designer-radius-field);
-  background: var(--ui-designer-control-bg);
-  color: var(--ui-designer-text);
-  font-size: 13px;
+  flex: 1;
+  height: 46px;
+  padding: 0 16px;
+  border: none;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.1);
+  color: #fcfcfc;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
   cursor: pointer;
-  transition:
-    background 0.12s,
-    border-color 0.12s;
+  transition: background 0.12s;
 }
 
 .ui-designer-modal-btn:hover {
-  background: var(--ui-designer-control-hover-bg);
+  background: rgba(255, 255, 255, 0.16);
+}
+
+.ui-designer-modal-btn.danger {
+  background: #ff2d55;
+  color: #ffffff;
 }
 
 .ui-designer-modal-btn.danger:hover {
-  background: #731f30;
-  border-color: #731f30;
+  background: #e51f45;
 }
 
 .ui-designer-modal-btn:focus-visible {

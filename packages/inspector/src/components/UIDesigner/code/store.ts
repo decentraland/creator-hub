@@ -31,7 +31,6 @@ import {
   generateRootComponent,
   generateUiIndex,
   readRootInsets,
-  readVirtualSize,
   type UiScreenInset,
 } from './aggregator';
 import {
@@ -897,27 +896,11 @@ async function refreshRoots(): Promise<CodeRoot[]> {
   return roots;
 }
 
-// Adopt the aggregator's design resolution into state, so the canvas frames what
-// the scene actually ships. It is hand-editable (generateUiIndex says as much in
-// the file it writes), so this is re-read on the disk poll too, not just on the
-// regen that carries it forward.
-async function syncVirtualSize(): Promise<VirtualSize> {
-  const virtual = readVirtualSize(await readFromDisk(UI_INDEX));
-  const { width, height } = state.virtualSize;
-  if (virtual.width !== width || virtual.height !== height) set({ virtualSize: virtual });
-  return virtual;
-}
-
-// (Re)generate the src/ui/index.tsx aggregator from the TOP-LEVEL roots only —
-// components (marker present) render where they're nested, not standalone.
-// The whole file is rewritten, so the one hand-editable value in it (the virtual
-// size) is carried over from the previous contents.
+/** (Re)generate src/ui/index.tsx from the top-level roots only; nested components render where imported. */
 async function regenerateAggregator(roots: CodeRoot[]): Promise<void> {
   const top = roots.filter(r => r.topLevel);
-  const virtual = await syncVirtualSize();
   const src = generateUiIndex(
     top.map(r => ({ component: r.name, from: `./${r.name}`, screenInset: r.screenInset })),
-    virtual,
   );
   await writeToDisk(UI_INDEX, src);
 }
@@ -1180,9 +1163,6 @@ async function pollDisk(): Promise<void> {
     const prev = rootsKey(state.roots);
     const roots = await refreshRoots();
     if (rootsKey(roots) !== prev) await regenerateAggregator(roots);
-    // 2b. …and an external edit to the aggregator's design resolution, which
-    //     regenerateAggregator only picks up when the root SET changes.
-    else await syncVirtualSize();
     // 3. Nested-component previews: re-resolve so an external edit to a referenced
     //    root reflects live inside the block. Cheap when unchanged (cached parse +
     //    a no-op set skip); only re-renders when a referenced file actually moved.

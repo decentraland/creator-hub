@@ -1,8 +1,10 @@
-// File-per-root codegen: each UI root is its own component file
-// (src/ui/<Name>.tsx) with a typed `state` binding surface, and a generated
-// src/ui/index.tsx composes them into setupUi(). Consumed by code/store.ts.
-
-import { DEFAULT_CANVAS_HEIGHT, DEFAULT_CANVAS_WIDTH } from '../shared/tree-model';
+/**
+ * File-per-root codegen: each UI root is its own component file
+ * (src/ui/<Name>.tsx) with a typed `state` binding surface, and a generated
+ * src/ui/index.tsx composes them into setupUi(). Consumed by code/store.ts.
+ *
+ * @module
+ */
 
 /** Screen area a top-level root is placed in (react-ecs `UiScreenInset`). */
 export type UiScreenInset = 'device' | 'interactable' | 'none';
@@ -26,27 +28,6 @@ export interface VirtualSize {
   height: number;
 }
 
-const DEFAULT_VIRTUAL_SIZE: VirtualSize = {
-  width: DEFAULT_CANVAS_WIDTH,
-  height: DEFAULT_CANVAS_HEIGHT,
-};
-
-// Recover a hand-edited virtual size from an existing ui/index.tsx so
-// regenerating the aggregator (which rewrites the whole file on every root
-// add/rename/remove) does not silently revert it. Deliberately a scan and not a
-// parse: the only thing worth preserving from a generated file is this one pair
-// of numbers, and a malformed/absent call must fall back rather than throw.
-export function readVirtualSize(source: string): VirtualSize {
-  const width = /\bvirtualWidth\s*:\s*(\d+(?:\.\d+)?)/.exec(source);
-  const height = /\bvirtualHeight\s*:\s*(\d+(?:\.\d+)?)/.exec(source);
-  const w = width ? Number(width[1]) : NaN;
-  const h = height ? Number(height[1]) : NaN;
-  return {
-    width: w > 0 ? w : DEFAULT_VIRTUAL_SIZE.width,
-    height: h > 0 ? h : DEFAULT_VIRTUAL_SIZE.height,
-  };
-}
-
 /** Recover each root's screen inset from an existing aggregator, keyed by component name. */
 export function readRootInsets(source: string): Record<string, UiScreenInset> {
   const insets: Record<string, UiScreenInset> = {};
@@ -63,22 +44,8 @@ export function readRootInsets(source: string): Record<string, UiScreenInset> {
   return insets;
 }
 
-// Generate the ui/index.tsx aggregator source that composes every root under a
-// full-screen container and wires it to the SDK UI renderer.
-//
-// The virtual size is what makes the editor canvas and the in-world UI agree:
-// react-ecs derives a global scale factor from it
-// (min(canvas.width / virtualWidth, canvas.height / virtualHeight)) and
-// multiplies every px length and fontSize by it, so a px value means the same
-// fraction of the screen at any window size — which is exactly what the fixed
-// DEFAULT_CANVAS_* stage draws. Without it the scale factor stays 1 and px are
-// literal screen px, so the same tree lays out differently in-world.
-// Percentages are relative and intentionally left unscaled; vw/vh bypass the
-// scale factor entirely (react-ecs calcOnViewport), so the designer emits px/%.
-export function generateUiIndex(
-  roots: UiRoot[],
-  virtual: VirtualSize = DEFAULT_VIRTUAL_SIZE,
-): string {
+/** Generate the ui/index.tsx aggregator wiring every top-level root (in its inset wrapper) to setUiRenderer. */
+export function generateUiIndex(roots: UiRoot[]): string {
   // Emit-sink backstop: the component name is spliced verbatim into `import`/JSX,
   // so reject any non-identifier here even if a caller bypasses the refreshRoots
   // trust boundary (mirrors engine-to-composite's toSafeIdentifier chokepoint).
@@ -95,36 +62,24 @@ export function generateUiIndex(
     .map(r => {
       const tag = INSET_WRAPPER[insetOf(r)];
       return tag
-        ? `        <${tag}>\n          <${r.component} />\n        </${tag}>`
-        : `        <${r.component} />`;
+        ? `      <${tag}>\n        <${r.component} />\n      </${tag}>`
+        : `      <${r.component} />`;
     })
     .join('\n');
   const insetImports = (['ScreenInsetArea', 'InteractableArea'] as const).filter(tag =>
     safeRoots.some(r => INSET_WRAPPER[insetOf(r)] === tag),
   );
   const namedImports = ['UiEntity', 'ReactEcsRenderer', ...insetImports].join(', ');
-  // Same emit-sink reasoning as the component names: these numbers are spliced
-  // into source, so anything not a finite positive number falls back.
-  const px = (value: number, fallback: number): number =>
-    Number.isFinite(value) && value > 0 ? value : fallback;
-  const virtualWidth = px(virtual.width, DEFAULT_VIRTUAL_SIZE.width);
-  const virtualHeight = px(virtual.height, DEFAULT_VIRTUAL_SIZE.height);
   return `/** @jsx ReactEcs.createElement */
 import ReactEcs, { ${namedImports} } from '@dcl/sdk/react-ecs'
 ${imports}
 
 export function setupUi() {
-  // The design resolution this UI was laid out against. The explorer scales it
-  // to fit the player's screen, so px sizes keep their proportions on any
-  // window. Edit these to re-target the design; the editor keeps your value.
-  ReactEcsRenderer.setUiRenderer(
-    () => (
-      <UiEntity uiTransform={{ width: '100%', height: '100%' }}>
+  ReactEcsRenderer.setUiRenderer(() => (
+    <UiEntity uiTransform={{ width: '100%', height: '100%' }}>
 ${children}
-      </UiEntity>
-    ),
-    { virtualWidth: ${virtualWidth}, virtualHeight: ${virtualHeight} },
-  )
+    </UiEntity>
+  ))
 }
 `;
 }
