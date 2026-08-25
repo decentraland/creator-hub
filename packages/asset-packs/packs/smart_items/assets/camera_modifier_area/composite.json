@@ -1,0 +1,30 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "asset-packs::Placeholder",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/camera_modifier_area.glb"
+          }
+        }
+      }
+    },
+    {
+      "name": "core::CameraModeArea",
+      "data": {
+        "0": {
+          "json": {
+            "area": {
+              "x": 1,
+              "y": 1,
+              "z": 1
+            },
+            "mode": 0
+          }
+        }
+      }
+    }
+  ]
+}
