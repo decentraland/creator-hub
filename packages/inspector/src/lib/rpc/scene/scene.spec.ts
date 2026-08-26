@@ -565,4 +565,41 @@ describe('SceneServer RPC get_selection', () => {
       ],
     });
   });
+
+  // #1507 / #1511: the reserved entities (Scene root / Player / Camera) carry no Name, so the
+  // chip used to show a bare "#id". Label them exactly as the entity tree does.
+  it('labels the reserved Scene / Player / Camera entities like the tree', async () => {
+    const p = new InMemoryTransport();
+    const i = new InMemoryTransport();
+    p.connect(i);
+    i.connect(p);
+
+    const store = { dispatch: vi.fn(), getState: vi.fn(), subscribe: vi.fn() } as any as Store;
+    const selectionComp = { __selection: true };
+    const nameComp = { getOrNull: () => null }; // none of the reserved entities are named
+    const engine = {
+      RootEntity: 0,
+      PlayerEntity: 1,
+      CameraEntity: 2,
+      getComponent: (n: string) => {
+        if (n === EditorComponentNames.Selection) return selectionComp;
+        if (n === NameEngine.componentName) return nameComp;
+        throw new Error(`unexpected getComponent(${n})`);
+      },
+      getEntitiesWith: (c: unknown) =>
+        (c === selectionComp ? [[0], [1], [2]] : [])[Symbol.iterator](),
+    } as any;
+
+    new SceneServer(i, store, undefined, undefined, { dispatch: vi.fn() } as any, engine);
+    const localHost = new RPC('SceneRpcInbound', p);
+
+    const res = await localHost.request('get_selection', {});
+    expect(res).toEqual({
+      selected: [
+        { id: 0, name: 'Scene' },
+        { id: 1, name: 'Player' },
+        { id: 2, name: 'Camera' },
+      ],
+    });
+  });
 });

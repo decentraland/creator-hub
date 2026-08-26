@@ -455,15 +455,24 @@ export class SceneServer extends RPC<Method, Params, Result> {
 
       // The entities the user currently has selected in the editor, so the AI assistant can
       // resolve "this" / "the selected entity". Selection is an editor ECS component; read the
-      // live engine (not disk) so it's always current. Names come from the ECS Name component.
+      // live engine (not disk) so it's always current. Names come from the ECS Name component,
+      // except the reserved entities (Scene root / Player / Camera) which carry no Name — label
+      // them exactly as the entity tree does, or the chip shows a bare "#id" (#1507, #1511).
+      // Selecting a spawn point selects the Player entity, so it resolves to "Player" too.
       this.handle('get_selection', async () => {
         const Selection = engine.getComponent(
           EditorComponentNames.Selection,
         ) as EditorComponents['Selection'];
         const Name = engine.getComponent(NameEngine.componentName) as typeof NameEngine;
+        const label = (entity: Entity): string => {
+          if (entity === engine.RootEntity) return 'Scene';
+          if (entity === engine.PlayerEntity) return 'Player';
+          if (entity === engine.CameraEntity) return 'Camera';
+          return Name.getOrNull(entity)?.value ?? '';
+        };
         const selected: { id: number; name: string }[] = [];
         for (const [entity] of engine.getEntitiesWith(Selection)) {
-          selected.push({ id: entity as number, name: Name.getOrNull(entity)?.value ?? '' });
+          selected.push({ id: entity as number, name: label(entity) });
         }
         return { selected };
       });
