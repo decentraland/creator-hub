@@ -113,6 +113,5 @@ export function initIpc({ beforeQuitCleanup }: InitIpcOptions) {
   handle('npm.getOutdatedDeps', (_event, path, packages) => npm.getOutdatedDeps(path, packages));
   handle('npm.getContextFiles', (_event, path) => npm.getContextFiles(path));
 
-  // oxc (code parser for the UI Designer code-mode)
   handle('oxc.parse', (_event, filename, source) => oxc.parse(filename, source));
 }

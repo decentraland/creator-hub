@@ -16,10 +16,7 @@ export type Result = {
   [Method.PARSE]: OxcParseResult;
 };
 
-// Renderer-side server for the CodeParser channel. Answers the inspector
-// iframe's parse requests by delegating to the main-process oxc-parser via
-// the preload bridge. Shares StorageRPC's AuthenticatedMessageTransport, so
-// parse requests are sender/origin-checked on the same terms.
+/** Renderer-side CodeParser RPC server; delegates parse to the main-process oxc-parser via the preload bridge. */
 export class CodeParserRPC extends RPC<Method, Params, Result> {
   constructor(transport: Transport) {
     super('CodeParser', transport);

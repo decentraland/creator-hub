@@ -86,12 +86,6 @@ export async function start() {
 // content-addressed and served as-is. The agent realm is reached at
 // `/bevy-agent/bevy-agent/about` (the export nests `<realmName>/about` under the
 // served `/bevy-agent/` dir).
-//
-// The path and the placeholder are defined in the inspector's
-// `bevy-agent-realm.js`, which its exporter and dev proxy share. We can't import
-// it — the published package is dist/ + public/ only — so this is a deliberate
-// second copy. A mismatch is silent: the manifest goes out with `__ORIGIN__`
-// intact and the agent simply never loads.
 const AGENT_ABOUT_PATH = '/bevy-agent/bevy-agent/about';
 
 function serveBevyAgentAbout(inspectorPath: string, origin: string) {
