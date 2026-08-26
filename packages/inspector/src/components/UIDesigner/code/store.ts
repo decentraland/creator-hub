@@ -127,6 +127,7 @@ import {
   isLayerableProp,
   UI_BUTTON,
 } from './parse-adapter';
+import { coalesceRequiredAttr } from './required-attrs';
 import { toComponentName, uniqueName } from './root-naming';
 import type { CodeUINode, InteractionStateStyles, ParsedUI } from './types';
 
@@ -1539,12 +1540,14 @@ async function bindAttributeUnlocked(
   }
   const ast = astNodeFor(entityId) as Parameters<typeof setAttributeExpr>[0] | undefined;
   if (!ast) return;
+  const node = findCodeNode(state.parsed?.root, entityId);
+  const boundExpr = node ? coalesceRequiredAttr(node.type, name, expr) : expr;
   const interaction = interactionTargetFor(entityId, name);
   if (interaction) {
-    await applySourceEdits(setInteractionFlat(interaction, 'base', { [name]: raw(expr) }));
+    await applySourceEdits(setInteractionFlat(interaction, 'base', { [name]: raw(boundExpr) }));
     return;
   }
-  await applySourceEdits(setAttributeExpr(ast, name, expr));
+  await applySourceEdits(setAttributeExpr(ast, name, boundExpr));
 }
 
 async function unbindAttributeUnlocked(
