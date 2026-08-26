@@ -40,8 +40,13 @@ const HeaderActions = styled(Box)(({ theme }) => ({
 
 const Transcript = styled(Box)(({ theme }) => ({
   flex: '1 1 auto',
+  // minHeight:0 lets this flex child shrink below its content so it scrolls internally
+  // instead of stretching the panel; overscrollBehavior:contain stops a scroll that hits
+  // the top/bottom from chaining out to the editor behind it (#1501).
+  minHeight: 0,
   overflowY: 'auto',
   overflowX: 'hidden',
+  overscrollBehavior: 'contain',
   padding: theme.spacing(2),
   display: 'flex',
   flexDirection: 'column',
