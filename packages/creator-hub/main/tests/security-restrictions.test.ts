@@ -1,3 +1,6 @@
+import { readFileSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // `security-restrictions` registers its handlers as a side effect of being imported, so the
@@ -148,9 +151,42 @@ describe('response header rules', () => {
     });
   });
 
-  describe('when the request is for an unrelated external origin', () => {
+  /**
+   * The origins the inspector will put in a markdown `<iframe>`, read from its own allowlist
+   * rather than repeated here — a copy would agree with itself while drifting from the source.
+   */
+  function markdownIframeOrigins() {
+    const source = readFileSync(
+      resolve(
+        dirname(fileURLToPath(import.meta.url)),
+        '../../../inspector/src/components/SceneInfoPanel/MarkdownRenderer/utils.ts',
+      ),
+      'utf8',
+    );
+    const allowlist = source.match(/ALLOWED_EXTERNAL_IFRAME_ORIGINS[^[]*\[([^\]]*)\]/s);
+    return [...(allowlist?.[1] ?? '').matchAll(/'(https:\/\/[^']+)'/g)].map(match => match[1]);
+  }
+
+  describe('when the request is for an origin the inspector embeds in a markdown iframe', () => {
+    const origins = markdownIframeOrigins();
+
+    it('should have found the allowlist, or every assertion below passes vacuously', () => {
+      expect(origins.length).toBeGreaterThan(0);
+    });
+
+    it('should get an embedder policy, since an isolated document cannot embed a frame without one', () => {
+      for (const origin of origins) {
+        expect(
+          subject.valuesFor(`${origin}/embed/abc`, 'Cross-Origin-Embedder-Policy'),
+          `${origin} is embedded by the isolated inspector document but gets no embedder policy, so the frame is blocked with ERR_BLOCKED_BY_RESPONSE`,
+        ).toEqual(['credentialless']);
+      }
+    });
+  });
+
+  describe('when the request is for an external origin the app links to but never embeds', () => {
     it('should add no cross-origin headers', () => {
-      const url = 'https://www.youtube.com/embed/abc';
+      const url = 'https://docs.decentraland.org/introduction';
 
       expect(subject.valuesFor(url, 'Cross-Origin-Embedder-Policy')).toEqual([]);
       expect(subject.valuesFor(url, 'Cross-Origin-Opener-Policy')).toEqual([]);
