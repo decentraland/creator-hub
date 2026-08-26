@@ -134,6 +134,8 @@ export interface Ipc {
   'ai.send': (path: string, params: AiSendParams) => Promise<{ turnId: string }>;
   'ai.stop': () => Promise<void>;
   'ai.reset': (path?: string) => Promise<void>;
+  // Drop one saved session's provider resume ids (deleting it from the scene's history).
+  'ai.deleteSession': (path: string, sessionId: string) => Promise<void>;
   'ai.isBusy': () => Promise<boolean>;
   // Revert the scene-graph changes an AI turn made, by undoing `count` steps (the value
   // the `done` event reported as `mutations`).

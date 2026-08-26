@@ -46,6 +46,9 @@ export interface AiSendParams {
   // When true, the assistant keeps the API key in its environment (bill via API key) instead
   // of stripping it to force subscription billing. From the `useApiKeyFromEnv` setting.
   apiKeyFromEnv?: boolean;
+  // Which local session this turn belongs to. Main keys the provider resume id by
+  // (projectDir, sessionId), so each saved conversation resumes its own CLI thread.
+  sessionId?: string;
 }
 
 // Streamed over the AI_STREAM_EVENT channel while a turn runs. `turnId` correlates
@@ -99,6 +102,8 @@ export interface AiMirrorState {
   detecting: boolean;
   selection: { id: number; name: string }[];
   billingDismissed: boolean;
+  sessions: { id: string; title: string; updatedAt: number }[];
+  currentSessionId: string;
   // The open project's title, for the detached window's header (it has no editor of its own).
   projectTitle?: string;
 }
@@ -113,4 +118,6 @@ export type AiRemoteCommand =
   | { type: 'revertTurn'; id: string; count: number }
   | { type: 'fetchProviders' }
   | { type: 'dismissBilling' }
+  | { type: 'switchSession'; id: string }
+  | { type: 'deleteSession'; id: string }
   | { type: 'sync' };

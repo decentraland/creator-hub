@@ -180,6 +180,32 @@ const Composer = styled(Box)(({ theme }) => ({
   borderTop: `1px solid ${theme.palette.divider}`,
 }));
 
+const SessionRow = styled(Box)(({ theme }) => ({
+  display: 'flex',
+  alignItems: 'center',
+  gap: theme.spacing(1),
+  width: '100%',
+  minWidth: theme.spacing(28),
+}));
+
+const SessionText = styled(Box)({
+  display: 'flex',
+  flexDirection: 'column',
+  flex: 1,
+  minWidth: 0,
+});
+
+const SessionTitle = styled('span')({
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
+  whiteSpace: 'nowrap',
+});
+
+const SessionWhen = styled('span')(({ theme }) => ({
+  color: theme.palette.text.secondary,
+  fontSize: theme.typography.caption.fontSize,
+}));
+
 const SetupBox = styled(Box)(({ theme }) => ({
   margin: 'auto',
   maxWidth: theme.spacing(38),
@@ -276,6 +302,10 @@ export {
   PanelHeader,
   ProviderRow,
   SelectionBar,
+  SessionRow,
+  SessionText,
+  SessionTitle,
+  SessionWhen,
   SetupAlt,
   SetupBox,
   SetupDivider,

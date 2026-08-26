@@ -5,13 +5,15 @@ import type { AiEvent, AiProvider } from '/shared/types/ai';
 
 import { createAsyncThunk } from '/@/modules/store/thunk';
 import {
-  clearStoredConversation,
+  deleteSessionStorage,
   readBillingDismissed,
-  readConversation,
+  readSessionIndex,
+  readSessionMessages,
   writeBillingDismissed,
-  writeConversation,
+  writeSessionIndex,
+  writeSessionMessages,
 } from './persistence';
-import type { AiMessage, AiState } from './types';
+import type { AiMessage, AiSessionMeta, AiState } from './types';
 
 const initialState: AiState = {
   providers: [],
@@ -22,7 +24,24 @@ const initialState: AiState = {
   detecting: false,
   selection: [],
   billingDismissed: false,
+  sessions: [],
+  currentSessionId: '',
 };
+
+// A session's title is its first user prompt (trimmed/clipped); empty until it has one, so
+// a brand-new session renders as "New chat". Exported for tests.
+export function sessionTitle(messages: AiMessage[]): string {
+  const firstUser = messages.find(m => m.role === 'user');
+  if (firstUser === undefined) return '';
+  const t = firstUser.text.trim().replace(/\s+/g, ' ');
+  return t.length > 48 ? `${t.slice(0, 48)}…` : t;
+}
+
+// The saved (non-empty) sessions from an in-memory list: everything but the current
+// not-yet-used session (the only one with an empty title). Newest first is preserved.
+function savedSessions(sessions: AiSessionMeta[]): AiSessionMeta[] {
+  return sessions.filter(s => s.title !== '');
+}
 
 // Ask main which CLIs are installed/runnable. Cheap scan first, login-shell probe only
 // if something's missing — that cost lives in main.
@@ -43,13 +62,26 @@ export const send = createAsyncThunk<void, string>(
     if (busy) return; // one turn at a time
     const trimmed = text.trim();
     if (trimmed === '') return;
+    // Every turn belongs to a session (its transcript + the CLI resume id are keyed by it).
+    // One should already exist from loadConversation; create one defensively if not.
+    let sessionId = state.ai.currentSessionId;
+    if (sessionId === '') {
+      sessionId = crypto.randomUUID();
+      dispatch(
+        actions.setSessionState({
+          sessions: [{ id: sessionId, title: '', updatedAt: Date.now() }],
+          currentSessionId: sessionId,
+          messages: [],
+        }),
+      );
+    }
     dispatch(actions.pushUserMessage(trimmed));
     dispatch(actions.setBusy(true)); // optimistic; the `started` event confirms
     // Attach the current editor selection as context so the assistant can resolve "this"
     // without the user spelling out ids. Not shown in the chat bubble (main prepends it).
     const context = selectionContext(selection);
     const apiKeyFromEnv = state.workspace.settings?.useApiKeyFromEnv ?? false;
-    await ai.send(path, { provider, model, text: trimmed, context, apiKeyFromEnv });
+    await ai.send(path, { provider, model, text: trimmed, context, apiKeyFromEnv, sessionId });
   },
 );
 
@@ -68,23 +100,100 @@ export const stop = createAsyncThunk('ai/stop', async (_: void, { dispatch }) =>
   dispatch(actions.stopped());
 });
 
-// Start a fresh conversation: drop the resume ids in main, the saved transcript on disk, and
-// the in-memory transcript — all scoped to the open project.
-export const newChat = createAsyncThunk('ai/newChat', async (_: void, { getState, dispatch }) => {
-  const path = getState().editor.project?.path;
-  await ai.reset(path);
-  if (path !== undefined && path !== '') clearStoredConversation(path);
-  dispatch(actions.clearConversation());
+// Start a fresh conversation, keeping the scene's past sessions in the history. Just a new
+// in-memory session with an empty transcript — a fresh sessionId has no resume id in main,
+// so the next turn starts a new CLI conversation on its own (no reset needed). The previous
+// session stays saved; a not-yet-used one is dropped (only one empty session at a time).
+export const newChat = createAsyncThunk('ai/newChat', (_: void, { getState, dispatch }) => {
+  const id = crypto.randomUUID();
+  const kept = savedSessions(getState().ai.sessions);
+  dispatch(
+    actions.setSessionState({
+      sessions: [{ id, title: '', updatedAt: Date.now() }, ...kept],
+      currentSessionId: id,
+      messages: [],
+    }),
+  );
 });
 
-// Load a project's saved transcript into the panel (called when the panel opens / the project
-// changes). Skips while a turn is running so it can't clobber an in-flight conversation.
+// Load a scene's saved sessions into the panel (called when the panel opens / the project
+// changes). Restores the last-active session's transcript, or starts a fresh session if the
+// scene has none. Skips while a turn is running so it can't clobber an in-flight conversation.
 export const loadConversation = createAsyncThunk<void, string>(
   'ai/loadConversation',
   (path, { getState, dispatch }) => {
     if (getState().ai.busy) return;
-    dispatch(actions.hydrate(readConversation(path)));
+    const { current, sessions } = readSessionIndex(path);
+    if (sessions.length === 0) {
+      const id = crypto.randomUUID();
+      dispatch(
+        actions.setSessionState({
+          sessions: [{ id, title: '', updatedAt: Date.now() }],
+          currentSessionId: id,
+          messages: [],
+        }),
+      );
+    } else {
+      const activeId = sessions.some(s => s.id === current) ? current : sessions[0].id;
+      dispatch(
+        actions.setSessionState({
+          sessions,
+          currentSessionId: activeId,
+          messages: readSessionMessages(path, activeId),
+        }),
+      );
+    }
     dispatch(actions.setBillingDismissed(readBillingDismissed(path)));
+  },
+);
+
+// Open a past session from the history: load its transcript and make the next turn resume
+// its CLI thread. Drops the not-yet-used session (if any) — only one empty session at a time.
+export const switchSession = createAsyncThunk<void, string>(
+  'ai/switchSession',
+  (id, { getState, dispatch }) => {
+    const { ai: aiState, editor } = getState();
+    if (aiState.busy || id === aiState.currentSessionId) return;
+    const path = editor.project?.path;
+    dispatch(
+      actions.setSessionState({
+        sessions: savedSessions(aiState.sessions),
+        currentSessionId: id,
+        messages: path !== undefined && path !== '' ? readSessionMessages(path, id) : [],
+      }),
+    );
+  },
+);
+
+// Delete a session from the scene's history: its transcript, its meta, and its resume ids in
+// main. If it was the active one, fall back to the newest remaining session (or a fresh one).
+export const deleteSession = createAsyncThunk<void, string>(
+  'ai/deleteSession',
+  async (id, { getState, dispatch }) => {
+    const { ai: aiState, editor } = getState();
+    const path = editor.project?.path;
+    if (path !== undefined && path !== '') {
+      deleteSessionStorage(path, id);
+      await ai.deleteSession(path, id);
+    }
+    let sessions = savedSessions(aiState.sessions).filter(s => s.id !== id);
+    let currentSessionId = aiState.currentSessionId;
+    let messages = aiState.messages;
+    if (currentSessionId === id) {
+      if (sessions.length > 0) {
+        currentSessionId = sessions[0].id;
+        messages =
+          path !== undefined && path !== '' ? readSessionMessages(path, currentSessionId) : [];
+      } else {
+        currentSessionId = crypto.randomUUID();
+        sessions = [{ id: currentSessionId, title: '', updatedAt: Date.now() }];
+        messages = [];
+      }
+    }
+    dispatch(actions.setSessionState({ sessions, currentSessionId, messages }));
+    if (path !== undefined && path !== '') {
+      writeSessionIndex(path, { current: currentSessionId, sessions: savedSessions(sessions) });
+    }
   },
 );
 
@@ -99,13 +208,25 @@ export const dismissBilling = createAsyncThunk(
   },
 );
 
-// Save the open project's transcript (called when a turn completes) so it survives a restart.
+// Save the active session's transcript (called when a turn completes) so it survives a
+// restart, and update the scene's index: title from the first prompt, moved to the front,
+// capped history. Reflects the new title/order back into the store for the history picker.
 export const persistConversation = createAsyncThunk(
   'ai/persistConversation',
-  (_: void, { getState }) => {
+  (_: void, { getState, dispatch }) => {
     const { ai: aiState, editor } = getState();
     const path = editor.project?.path;
-    if (path !== undefined && path !== '') writeConversation(path, aiState.messages);
+    const current = aiState.currentSessionId;
+    if (path === undefined || path === '' || current === '') return;
+    writeSessionMessages(path, current, aiState.messages);
+    const meta: AiSessionMeta = {
+      id: current,
+      title: sessionTitle(aiState.messages),
+      updatedAt: Date.now(),
+    };
+    const sessions = [meta, ...savedSessions(aiState.sessions).filter(s => s.id !== current)];
+    writeSessionIndex(path, { current, sessions });
+    dispatch(actions.setSessions({ sessions, currentSessionId: current }));
   },
 );
 
@@ -211,14 +332,32 @@ const slice = createSlice({
         }
       }
     },
-    clearConversation: state => {
-      state.messages = [];
+    // Replace the whole session view: the scene's session list, the active id and its
+    // transcript (on load / new chat / switch / delete). Selection isn't restored — it's
+    // re-polled live from the editor.
+    setSessionState: (
+      state,
+      {
+        payload,
+      }: PayloadAction<{
+        sessions: AiSessionMeta[];
+        currentSessionId: string;
+        messages: AiMessage[];
+      }>,
+    ) => {
+      state.sessions = payload.sessions;
+      state.currentSessionId = payload.currentSessionId;
+      state.messages = payload.messages;
       state.busy = false;
     },
-    // Replace the transcript with a project's saved one (on open). Selection isn't restored —
-    // it's re-polled live from the editor.
-    hydrate: (state, { payload }: PayloadAction<AiMessage[]>) => {
-      state.messages = payload;
+    // Update just the session list + active id (after a turn persists new title/order),
+    // leaving the live transcript untouched.
+    setSessions: (
+      state,
+      { payload }: PayloadAction<{ sessions: AiSessionMeta[]; currentSessionId: string }>,
+    ) => {
+      state.sessions = payload.sessions;
+      state.currentSessionId = payload.currentSessionId;
     },
     markReverted: (state, { payload }: PayloadAction<string>) => {
       const msg = state.messages.find(m => m.id === payload);
@@ -270,5 +409,7 @@ export const actions = {
   loadConversation,
   persistConversation,
   dismissBilling,
+  switchSession,
+  deleteSession,
 };
 export const reducer = slice.reducer;

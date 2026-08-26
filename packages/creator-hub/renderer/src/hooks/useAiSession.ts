@@ -76,6 +76,12 @@ export function useAiSession(enabled: boolean, projectPath: string | undefined) 
         case 'dismissBilling':
           dispatch(aiActions.dismissBilling());
           break;
+        case 'switchSession':
+          dispatch(aiActions.switchSession(command.id));
+          break;
+        case 'deleteSession':
+          dispatch(aiActions.deleteSession(command.id));
+          break;
         case 'sync':
           aiPreload.pushAiMirrorState({
             ...latest.current.aiState,

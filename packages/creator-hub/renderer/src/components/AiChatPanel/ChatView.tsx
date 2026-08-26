@@ -10,11 +10,14 @@ import HighlightAltIcon from '@mui/icons-material/HighlightAlt';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
+import HistoryIcon from '@mui/icons-material/History';
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import Markdown, { type MarkdownToJSX } from 'markdown-to-jsx';
 import {
   Button,
   CircularProgress,
   IconButton,
+  Menu,
   MenuItem,
   Select,
   type SelectChangeEvent,
@@ -27,7 +30,7 @@ import type { AiProvider } from '/shared/types/ai';
 import { ai as aiPreload } from '#preload';
 import { t } from '/@/modules/store/translation/utils';
 
-import type { AiMessage } from '/@/modules/store/ai/types';
+import type { AiMessage, AiSessionMeta } from '/@/modules/store/ai/types';
 import { toolChipLabel } from './labels';
 import {
   AssistantBubble,
@@ -45,6 +48,10 @@ import {
   PanelHeader,
   ProviderRow,
   SelectionBar,
+  SessionRow,
+  SessionText,
+  SessionTitle,
+  SessionWhen,
   SetupAlt,
   SetupBox,
   SetupDivider,
@@ -63,6 +70,18 @@ const MARKDOWN_OPTIONS: MarkdownToJSX.Options = {
   disableParsingRawHTML: true,
   overrides: { a: { props: { target: '_blank', rel: 'noopener noreferrer' } } },
 };
+
+// Compact "last used" label for a session in the history menu.
+function formatWhen(ts: number): string {
+  const min = Math.floor((Date.now() - ts) / 60_000);
+  if (min < 1) return t('editor.ai.history.now');
+  if (min < 60) return t('editor.ai.history.minutes', { n: min });
+  const hr = Math.floor(min / 60);
+  if (hr < 24) return t('editor.ai.history.hours', { n: hr });
+  const day = Math.floor(hr / 24);
+  if (day < 7) return t('editor.ai.history.days', { n: day });
+  return new Date(ts).toLocaleDateString();
+}
 
 // Install + sign-in commands per provider, shown on the setup card when the CLI isn't
 // found. Obviously-safe public package names.
@@ -83,6 +102,9 @@ export interface ChatViewProps {
   selection: { id: number; name: string }[];
   // The user dismissed the billing hint for this scene (#1505) — hide it.
   billingDismissed: boolean;
+  // The scene's saved conversations (newest first) and which one is active, for the history menu.
+  sessions: AiSessionMeta[];
+  currentSessionId: string;
   // Shown after the title in the header (the open project) — the detached window uses it.
   title?: string;
   // True when rendered as the detached window: fills the window and shows a "dock" affordance
@@ -96,6 +118,9 @@ export interface ChatViewProps {
   onRecheck: () => void;
   // Dismiss the billing hint for this scene (persisted per-project).
   onDismissBilling: () => void;
+  // Open a past session from the history / delete one.
+  onSwitchSession: (id: string) => void;
+  onDeleteSession: (id: string) => void;
   // Open the detached window (inline only — omitted/no-op in the detached window).
   onPopOut?: () => void;
   // Inline: hide the panel. Detached: dock the chat back inline (close the window).
@@ -111,6 +136,8 @@ export function ChatView(props: ChatViewProps) {
     detecting,
     selection,
     billingDismissed,
+    sessions,
+    currentSessionId,
     title,
     detached = false,
     onSend,
@@ -120,6 +147,8 @@ export function ChatView(props: ChatViewProps) {
     onRevertTurn,
     onRecheck,
     onDismissBilling,
+    onSwitchSession,
+    onDeleteSession,
     onPopOut,
     onClose,
   } = props;
@@ -128,6 +157,10 @@ export function ChatView(props: ChatViewProps) {
   const transcriptRef = useRef<HTMLDivElement>(null);
   const [mcpInfo, setMcpInfo] = useState<{ url: string; token: string } | null>(null);
   const [mcpCopied, setMcpCopied] = useState(false);
+  const [historyAnchor, setHistoryAnchor] = useState<HTMLElement | null>(null);
+
+  // Saved conversations for the history menu (the current not-yet-used session isn't listed).
+  const savedSessions = useMemo(() => sessions.filter(s => s.title !== ''), [sessions]);
 
   const currentProvider = useMemo(
     () => providers.find(p => p.id === provider),
@@ -353,6 +386,17 @@ export function ChatView(props: ChatViewProps) {
               </IconButton>
             </span>
           </Tooltip>
+          {savedSessions.length > 0 && (
+            <Tooltip title={t('editor.ai.history.title')}>
+              <IconButton
+                size="small"
+                aria-label={t('editor.ai.history.title')}
+                onClick={e => setHistoryAnchor(e.currentTarget)}
+              >
+                <HistoryIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          )}
           {!detached && onPopOut !== undefined && (
             <Tooltip title={t('editor.ai.pop_out')}>
               <IconButton
@@ -375,6 +419,40 @@ export function ChatView(props: ChatViewProps) {
           </Tooltip>
         </HeaderActions>
       </PanelHeader>
+
+      <Menu
+        anchorEl={historyAnchor}
+        open={historyAnchor !== null}
+        onClose={() => setHistoryAnchor(null)}
+      >
+        {savedSessions.map(s => (
+          <MenuItem
+            key={s.id}
+            selected={s.id === currentSessionId}
+            onClick={() => {
+              setHistoryAnchor(null);
+              onSwitchSession(s.id);
+            }}
+          >
+            <SessionRow>
+              <SessionText>
+                <SessionTitle>{s.title}</SessionTitle>
+                <SessionWhen>{formatWhen(s.updatedAt)}</SessionWhen>
+              </SessionText>
+              <IconButton
+                size="small"
+                aria-label={t('editor.ai.history.delete')}
+                onClick={e => {
+                  e.stopPropagation();
+                  onDeleteSession(s.id);
+                }}
+              >
+                <DeleteOutlineIcon fontSize="small" />
+              </IconButton>
+            </SessionRow>
+          </MenuItem>
+        ))}
+      </Menu>
 
       {providers.length > 1 && (
         <ProviderRow>

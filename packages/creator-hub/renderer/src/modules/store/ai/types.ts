@@ -26,6 +26,14 @@ export interface AiMessage {
   images?: string[];
 }
 
+// One saved conversation for a scene, shown in the history picker. `title` is the first
+// user prompt (empty for a brand-new, not-yet-used session — rendered as "New chat").
+export interface AiSessionMeta {
+  id: string;
+  title: string;
+  updatedAt: number; // epoch ms; the list is sorted newest first
+}
+
 export interface AiState {
   // Backends reported by main (Claude/Codex), with availability + reason.
   providers: AiProviderInfo[];
@@ -40,6 +48,10 @@ export interface AiState {
   // The user dismissed the "runs on your own account" billing hint for the open scene
   // (#1505). Persisted per-project; loaded with the conversation.
   billingDismissed: boolean;
+  // The scene's saved conversations (newest first) and which one is active. `messages`
+  // above is the active session's transcript.
+  sessions: AiSessionMeta[];
+  currentSessionId: string;
   // The entities the user currently has selected in the editor (polled from the inspector
   // while the panel is open). Shown as a composer chip and prepended to the turn as context
   // so the assistant can resolve "this" / "the selected entity".

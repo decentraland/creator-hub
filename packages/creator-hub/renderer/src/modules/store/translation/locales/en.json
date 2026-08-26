@@ -102,6 +102,14 @@
       "billing": "Runs on your own {provider} account — messages count against your plan's usage, not a free Creator Hub allowance.",
       "billing_dismiss": "Don't show again",
       "screenshot_alt": "Screenshot from the assistant",
+      "history": {
+        "title": "Chat history",
+        "delete": "Delete chat",
+        "now": "just now",
+        "minutes": "{n}m ago",
+        "hours": "{n}h ago",
+        "days": "{n}d ago"
+      },
       "retry": "Retry",
       "revert": "Undo AI changes",
       "selection": "Selection: {names}",

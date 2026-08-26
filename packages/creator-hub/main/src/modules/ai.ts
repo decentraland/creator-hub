@@ -524,12 +524,15 @@ export async function detectProviders(): Promise<AiProviderInfo[]> {
 let current: { child: ChildProcess; turnId: string; done: boolean } | null = null;
 let turnSeq = 0;
 
-// Each provider's resume id, per project, so consecutive turns chain into one conversation
-// AND the conversation survives an app restart (persisted to userData). Keyed by project dir
-// because claude/codex validate --resume against the working directory — a session id from
-// another project's cwd is rejected. Loaded lazily (never at module init) so importing this
-// module doesn't require an Electron app (keeps the unit tests electron-free).
-type ProjectSessions = Partial<Record<AiProvider, string>>;
+// Each provider's resume id, per project AND per local session, so consecutive turns chain
+// into one conversation, each saved session resumes its own CLI thread, and it all survives
+// an app restart (persisted to userData). Keyed by project dir because claude/codex validate
+// --resume against the working directory — a session id from another project's cwd is
+// rejected — then by the renderer's local session id (the scene's history entry). Loaded
+// lazily (never at module init) so importing this module doesn't require an Electron app
+// (keeps the unit tests electron-free).
+type SessionResumeIds = Partial<Record<AiProvider, string>>;
+type ProjectSessions = Record<string, SessionResumeIds>; // local sessionId → provider resume ids
 let sessionsCache: Record<string, ProjectSessions> | null = null;
 
 function sessionsFile(): string {
@@ -592,13 +595,24 @@ export function aiStop(): void {
 }
 
 // Drop the resume ids so the next turn starts a fresh conversation. Scoped to one project
-// when given (the usual "New chat"); clears everything when not (e.g. a full teardown).
+// when given; clears everything when not (e.g. a full teardown). Stops the in-flight turn.
 export function aiReset(projectDir?: string): void {
   aiStop();
   const store = getSessions();
   if (projectDir !== undefined) delete store[projectDir];
   else for (const key of Object.keys(store)) delete store[key];
   saveSessions();
+}
+
+// Drop one saved session's resume ids (when the user deletes it from the scene's history).
+// Unlike aiReset it does NOT stop the current turn — a background session can be deleted
+// while another is streaming.
+export function aiDeleteSession(projectDir: string, sessionId: string): void {
+  const proj = getSessions()[projectDir];
+  if (proj !== undefined && sessionId in proj) {
+    delete proj[sessionId];
+    saveSessions();
+  }
 }
 
 // Attached images, written to one temp dir per turn. Kept for the whole app session
@@ -680,11 +694,13 @@ export async function aiSend(
       images.length === 1 ? 'an image' : `${images.length} images`
     } to this message — view ${images.length === 1 ? 'it' : 'them'} before answering:\n${images.join('\n')}]`;
   }
+  // Resume the CLI thread saved for THIS session (empty id = a default single bucket).
+  const sessionId = params.sessionId ?? '';
   const args = def.buildArgs({
     text: prompt,
     model: params.model,
     projectDir,
-    resume: getSessions()[projectDir]?.[params.provider],
+    resume: getSessions()[projectDir]?.[sessionId]?.[params.provider],
     images,
     mcp,
   });
@@ -762,7 +778,8 @@ export async function aiSend(
     });
     if (session !== undefined) {
       const store = getSessions();
-      (store[projectDir] ??= {})[params.provider] = session;
+      const proj = (store[projectDir] ??= {});
+      (proj[sessionId] ??= {})[params.provider] = session;
       saveSessions(); // persist so the conversation resumes after an app restart
     }
   };

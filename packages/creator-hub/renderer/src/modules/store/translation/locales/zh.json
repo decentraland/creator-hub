@@ -102,6 +102,14 @@
       "billing": "使用你自己的 {provider} 账户运行——消息会计入你自己套餐的用量，而不是 Creator Hub 提供的免费额度。",
       "billing_dismiss": "不再显示",
       "screenshot_alt": "助手的截图",
+      "history": {
+        "title": "聊天记录",
+        "delete": "删除聊天",
+        "now": "刚刚",
+        "minutes": "{n} 分钟前",
+        "hours": "{n} 小时前",
+        "days": "{n} 天前"
+      },
       "retry": "重试",
       "revert": "撤销 AI 的更改",
       "selection": "选择：{names}",

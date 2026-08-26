@@ -132,6 +132,9 @@ export function initIpc({ beforeQuitCleanup }: InitIpcOptions) {
   });
   handle('ai.stop', async () => ai.aiStop());
   handle('ai.reset', async (_event, path) => ai.aiReset(path));
+  handle('ai.deleteSession', async (_event, path, sessionId) =>
+    ai.aiDeleteSession(path, sessionId),
+  );
   handle('ai.isBusy', async () => ai.aiBusy());
   handle('ai.screenshotResult', (_event, id, dataUrl) => resolveEditorScreenshot(id, dataUrl));
   handle('ai.sceneOpResult', (_event, id, ok, payload) => resolveSceneOp(id, ok, payload));

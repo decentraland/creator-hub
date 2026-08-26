@@ -102,6 +102,14 @@
       "billing": "Se ejecuta con tu propia cuenta de {provider}: los mensajes consumen el uso de tu plan, no una asignación gratuita de Creator Hub.",
       "billing_dismiss": "No mostrar de nuevo",
       "screenshot_alt": "Captura de pantalla del asistente",
+      "history": {
+        "title": "Historial de chats",
+        "delete": "Eliminar chat",
+        "now": "ahora mismo",
+        "minutes": "hace {n} min",
+        "hours": "hace {n} h",
+        "days": "hace {n} d"
+      },
       "retry": "Reintentar",
       "revert": "Deshacer los cambios de la IA",
       "selection": "Selección: {names}",

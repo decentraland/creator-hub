@@ -57,6 +57,14 @@ export function AiChatWindow() {
     () => aiPreload.sendAiRemoteCommand({ type: 'dismissBilling' }),
     [],
   );
+  const onSwitchSession = useCallback(
+    (id: string) => aiPreload.sendAiRemoteCommand({ type: 'switchSession', id }),
+    [],
+  );
+  const onDeleteSession = useCallback(
+    (id: string) => aiPreload.sendAiRemoteCommand({ type: 'deleteSession', id }),
+    [],
+  );
   // Closing the detached window docks the chat back inline.
   const onClose = useCallback(() => void aiPreload.closeAiWindow(), []);
 
@@ -80,6 +88,8 @@ export function AiChatWindow() {
       detecting={mirror.detecting}
       selection={mirror.selection}
       billingDismissed={mirror.billingDismissed}
+      sessions={mirror.sessions}
+      currentSessionId={mirror.currentSessionId}
       title={mirror.projectTitle}
       onSend={onSend}
       onStop={onStop}
@@ -88,6 +98,8 @@ export function AiChatWindow() {
       onRevertTurn={onRevertTurn}
       onRecheck={onRecheck}
       onDismissBilling={onDismissBilling}
+      onSwitchSession={onSwitchSession}
+      onDeleteSession={onDeleteSession}
       onClose={onClose}
     />
   );

@@ -42,6 +42,11 @@ export async function reset(path?: string): Promise<void> {
   return invoke('ai.reset', path);
 }
 
+// Delete one saved session's provider resume ids (removing it from the scene's history).
+export async function deleteSession(path: string, sessionId: string): Promise<void> {
+  return invoke('ai.deleteSession', path, sessionId);
+}
+
 export async function isBusy(): Promise<boolean> {
   return invoke('ai.isBusy');
 }
