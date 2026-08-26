@@ -153,6 +153,19 @@ const SetupStep = styled(Box)(({ theme }) => ({
   gap: theme.spacing(0.5),
 }));
 
+const SetupAlt = styled(Box)(({ theme }) => ({
+  display: 'flex',
+  flexDirection: 'column',
+  gap: theme.spacing(1),
+}));
+
+const SetupDivider = styled('hr')(({ theme }) => ({
+  width: '100%',
+  border: 'none',
+  borderTop: `1px solid ${theme.palette.divider}`,
+  margin: theme.spacing(0.5, 0),
+}));
+
 const CommandLine = styled('pre')(({ theme }) => ({
   margin: 0,
   padding: theme.spacing(1, 1.5),
@@ -199,7 +212,9 @@ export {
   PanelHeader,
   ProviderRow,
   SelectionBar,
+  SetupAlt,
   SetupBox,
+  SetupDivider,
   SetupStep,
   ThinkingRow,
   ToolChip,

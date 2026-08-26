@@ -7,6 +7,7 @@ import CloseIcon from '@mui/icons-material/Close';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import UndoIcon from '@mui/icons-material/Undo';
 import HighlightAltIcon from '@mui/icons-material/HighlightAlt';
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import {
   Button,
   CircularProgress,
@@ -39,7 +40,9 @@ import {
   PanelHeader,
   ProviderRow,
   SelectionBar,
+  SetupAlt,
   SetupBox,
+  SetupDivider,
   SetupStep,
   ThinkingRow,
   ToolChip,
@@ -67,6 +70,8 @@ export function AiChatPanel({ onClose }: Props) {
   const projectPath = useSelector(state => state.editor.project?.path);
   const [input, setInput] = useState('');
   const transcriptRef = useRef<HTMLDivElement>(null);
+  const [mcpInfo, setMcpInfo] = useState<{ url: string; token: string } | null>(null);
+  const [mcpCopied, setMcpCopied] = useState(false);
 
   // Detect installed CLIs on mount, and subscribe to the turn event stream for the
   // panel's lifetime — folding each event into the transcript and saving the transcript
@@ -98,6 +103,53 @@ export function AiChatPanel({ onClose }: Props) {
     [providers, provider],
   );
   const available = currentProvider?.available ?? false;
+
+  // No CLI installed? Offer the no-CLI path: reveal the scene's MCP server so a tool the
+  // user already has (Claude Desktop, the VS Code extension, …) can connect to this scene
+  // instead (#1502). Fetch it only once detection has concluded the CLI is missing —
+  // asking for the info starts the server, which we shouldn't do when the CLI path works.
+  useEffect(() => {
+    if (detecting || available) {
+      setMcpInfo(null);
+      return;
+    }
+    let cancelled = false;
+    void aiPreload.getMcpServerInfo().then(
+      info => !cancelled && setMcpInfo(info),
+      () => !cancelled && setMcpInfo(null),
+    );
+    return () => {
+      cancelled = true;
+    };
+  }, [detecting, available]);
+
+  const mcpConfigSnippet = useMemo(
+    () =>
+      mcpInfo === null
+        ? null
+        : JSON.stringify(
+            {
+              mcpServers: {
+                'creator-hub': {
+                  type: 'http',
+                  url: mcpInfo.url,
+                  headers: { Authorization: `Bearer ${mcpInfo.token}` },
+                },
+              },
+            },
+            null,
+            2,
+          ),
+    [mcpInfo],
+  );
+
+  const handleCopyMcpConfig = useCallback(() => {
+    if (mcpConfigSnippet === null) return;
+    void navigator.clipboard.writeText(mcpConfigSnippet).then(() => {
+      setMcpCopied(true);
+      setTimeout(() => setMcpCopied(false), 2000);
+    });
+  }, [mcpConfigSnippet]);
 
   const handleSend = useCallback(() => {
     if (busy || input.trim() === '') return;
@@ -145,6 +197,27 @@ export function AiChatPanel({ onClose }: Props) {
         >
           {t('editor.ai.setup.recheck')}
         </Button>
+        <SetupDivider />
+        <SetupAlt>
+          <strong>{t('editor.ai.setup.alt_title')}</strong>
+          <span>{t('editor.ai.setup.alt_description')}</span>
+          {mcpConfigSnippet === null ? (
+            <CircularProgress size={16} />
+          ) : (
+            <>
+              <CommandLine>{mcpConfigSnippet}</CommandLine>
+              <Button
+                color="secondary"
+                size="small"
+                startIcon={<ContentCopyIcon fontSize="small" />}
+                onClick={handleCopyMcpConfig}
+              >
+                {mcpCopied ? t('editor.ai.setup.alt_copied') : t('editor.ai.setup.alt_copy')}
+              </Button>
+              <span>{t('editor.ai.setup.alt_note')}</span>
+            </>
+          )}
+        </SetupAlt>
       </SetupBox>
     );
   };

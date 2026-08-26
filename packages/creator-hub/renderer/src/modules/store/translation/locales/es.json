@@ -105,7 +105,12 @@
         "install": "Instálalo:",
         "signin": "Inicia sesión:",
         "recheck": "Volver a comprobar",
-        "ready": "Listo"
+        "ready": "Listo",
+        "alt_title": "¿Sin CLI? Conecta una herramienta que ya usas",
+        "alt_description": "¿Ya iniciaste sesión en Claude Desktop, la extensión de VS Code u otra herramienta compatible con MCP? Apúntala a esta escena, sin necesidad de CLI. Agrega esto a su configuración MCP:",
+        "alt_copy": "Copiar configuración",
+        "alt_copied": "Copiado",
+        "alt_note": "Solo localhost. La URL y el token cambian cada vez que Creator Hub se reinicia."
       }
     }
   },

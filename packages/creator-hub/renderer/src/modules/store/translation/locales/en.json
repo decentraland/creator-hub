@@ -105,7 +105,12 @@
         "install": "Install it:",
         "signin": "Sign in:",
         "recheck": "Recheck",
-        "ready": "Ready"
+        "ready": "Ready",
+        "alt_title": "No CLI? Connect a tool you already use",
+        "alt_description": "Already signed into Claude Desktop, the VS Code extension, or another MCP-capable tool? Point it at this scene instead — no CLI needed. Add this to its MCP configuration:",
+        "alt_copy": "Copy configuration",
+        "alt_copied": "Copied",
+        "alt_note": "Localhost only. The URL and token change each time Creator Hub restarts."
       }
     }
   },
