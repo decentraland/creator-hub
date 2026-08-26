@@ -60,8 +60,7 @@ const CodePropsPanelComponent: React.FC = () => {
               options={
                 TYPES.includes(v.type)
                   ? TYPE_OPTIONS
-                  :
-                    [...TYPE_OPTIONS, { value: v.type, label: v.type, disabled: true }]
+                  : [...TYPE_OPTIONS, { value: v.type, label: v.type, disabled: true }]
               }
               value={v.type}
               onChange={e => void retypeProp(v.name, String(e.target.value))}

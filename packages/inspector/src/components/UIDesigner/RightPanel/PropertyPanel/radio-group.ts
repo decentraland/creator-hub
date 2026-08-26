@@ -1,4 +1,3 @@
-
 import type React from 'react';
 
 const STEPS: Record<string, number> = {
