@@ -1,13 +1,8 @@
-// Shared value-parsing / validation helpers used by both the runtime and the
-// inspector, kept here so every consumer parses identically (single source of
-// truth for the accepted formats and error messages).
+/** Shared value-parsing and validation helpers used by both the runtime and the inspector. */
 
 type Rgba = { r: number; g: number; b: number; a: number };
 
-// Strict hex -> Color4-shaped { r, g, b, a } in [0..1]. Stored as '#RRGGBB' or
-// '#RRGGBBAA'. Rejects any length other than 6/8 hex digits (returns opaque
-// black) and falls each channel back to its default (0 for r/g/b, 1 for a) when
-// the byte pair is not a valid 2-hex sequence — prevents NaN reaching PB floats.
+/** Parse a `#RRGGBB`/`#RRGGBBAA` hex string into Color4-shaped `{ r, g, b, a }` in `[0..1]`; invalid input yields opaque black. */
 export function parseHexColor(raw: string): Rgba {
   const hex = raw.startsWith('#') ? raw.slice(1) : raw;
   if (hex.length !== 6 && hex.length !== 8) {
@@ -24,10 +19,7 @@ export function parseHexColor(raw: string): Rgba {
   return { r, g, b, a };
 }
 
-// Defense-in-depth for asset paths: reject path traversal, backslashes, the
-// encoded dot ('%2e'/'%2E'), and absolute paths. Empty string is "unset" (valid).
-// Returns an error message or null — the single source of the 'Invalid asset
-// path' message.
+/** Reject path traversal, backslashes, encoded dots, and absolute paths; returns an error message or null (empty path is unset/valid). */
 export function validateAssetPath(path: string): string | null {
   if (path === '') return null;
   if (path.includes('..')) return 'Invalid asset path';
