@@ -56,6 +56,7 @@ export const MixedContentField: React.FC<MixedContentFieldProps> = ({
   const savedRange = useRef<Range | null>(null);
   const seededKeyRef = useRef<string>('');
   const lastCommittedRef = useRef<string>('');
+  const bindModeRef = useRef(false);
   const [pickerOpen, setPickerOpen] = useState(false);
 
   const seedKey = `${entity}:${field.componentId}.${field.path}`;
@@ -110,6 +111,13 @@ export const MixedContentField: React.FC<MixedContentFieldProps> = ({
       const editor = editorRef.current;
       if (!editor) return;
       const chip = createChip(variable);
+      if (bindModeRef.current) {
+        bindModeRef.current = false;
+        editor.replaceChildren(chip);
+        setPickerOpen(false);
+        commit();
+        return;
+      }
       const range = savedRange.current;
       if (range && editor.contains(range.startContainer)) {
         range.deleteContents();
@@ -194,6 +202,7 @@ export const MixedContentField: React.FC<MixedContentFieldProps> = ({
           sel?.removeAllRanges();
           sel?.addRange(range);
           saveSelection();
+          bindModeRef.current = false;
           setPickerOpen(true);
         }
       }
@@ -230,15 +239,21 @@ export const MixedContentField: React.FC<MixedContentFieldProps> = ({
           e.preventDefault();
           saveSelection();
         }}
-        onClick={() => setPickerOpen(true)}
-        aria-label="Insert variable"
+        onClick={() => {
+          bindModeRef.current = true;
+          setPickerOpen(true);
+        }}
+        aria-label="Bind to variable"
       />
       {pickerOpen ? (
         <VariablePicker
           field={field}
           anchorRef={anchorRef}
           onPick={onPick}
-          onDismiss={() => setPickerOpen(false)}
+          onDismiss={() => {
+            bindModeRef.current = false;
+            setPickerOpen(false);
+          }}
         />
       ) : null}
     </div>
