@@ -2,7 +2,7 @@
  * The explorer's system API (`~system/BevyExplorerApi`), available to super-user
  * scenes only. Minimal surface used by this agent: login (identity, else boot
  * hangs), liveSceneInfo (to pin the inspected scene), and consoleCommand
- * (set_scene, set_component for the gizmo's live drag preview).
+ * (set_scene, show_ui, set_component for the gizmo's live drag preview).
  */
 
 interface LiveSceneInfo {

@@ -111,6 +111,14 @@ promise) then hangs to the 5s test timeout with no indication why.
 `debounce` and `debounceByKey` suites enable them and never restore, so anything
 added below needs its own `beforeEach(() => vi.useRealTimers())`.
 
+### `getByRole` does not work inside the shared `Block` wrapper
+
+Under happy-dom the whole subtree reports "There are no accessible roles", and
+`hidden: true` does not rescue it. Every UI Designer panel field renders inside a
+`Block`, so query those by label (`getByLabelText`) or with
+`querySelector('[role="…"]')` — see `FlowField.spec.tsx`, `CallbackField.spec.tsx`.
+`getByRole` is fine on a bare control (`Pill.spec.tsx`).
+
 ### Asset-packs circular imports & vitest
 
 `packages/asset-packs/src/definitions.ts` re-exports every internal module via
@@ -126,21 +134,13 @@ etc.) rather than via the `definitions.ts` barrel.
 
 ### Type with real keyboard events, not `locator.fill()`
 
-Prefer `page.keyboard.type` / `page.keyboard.press` over `locator.fill()`.
-Real users send per-character `keydown`/`input`/`keyup` events; `.fill()`
-sets the value with a single synthetic event and bypasses any per-keystroke
-state management. If a test only passes with `.fill()`, the underlying React
-component has a bug — fix the component, not the test.
+Prefer `page.keyboard.type` / `page.keyboard.press` over `locator.fill()`. Real users send per-character `keydown`/`input`/`keyup` events; `.fill()` sets the value with a single synthetic event and bypasses any per-keystroke state management. If a test only passes with `.fill()`, the underlying React component has a bug — fix the component, not the test.
 
-(See `coding-standards.md` → "Don't mirror props into local state via
-`useEffect`" for the most common offender.)
+(See `coding-standards.md` → "Don't mirror props into local state via `useEffect`" for the most common offender.)
 
 ### Use locators for actions that follow another mutation
 
-A pre-fetched `ElementHandle` references a specific DOM node. If a re-render
-replaces that node between the fetch and the action, the handle goes stale
-and `.click()` fails with "Element is not attached to the DOM". Locators
-re-resolve the selector at action time and pick up the live element:
+A pre-fetched `ElementHandle` references a specific DOM node. If a re-render replaces that node between the fetch and the action, the handle goes stale and `.click()` fails with "Element is not attached to the DOM". Locators re-resolve the selector at action time and pick up the live element:
 
 ```ts
 // FRAGILE — handle captured before the action runs
@@ -151,18 +151,11 @@ await item!.click({ button: 'right' });
 await page.locator(itemSelector).first().click({ button: 'right' });
 ```
 
-This matters especially for any action that immediately follows a mutation
-(addChild, rename, delete) — the engine's CRDT propagation can still be
-re-rendering the surrounding tree.
+This matters especially for any action that immediately follows a mutation (addChild, rename, delete) — the engine's CRDT propagation can still be re-rendering the surrounding tree.
 
 ### Wait for `document.activeElement`, not just element-visible
 
-For inputs that autofocus inside a `useEffect`, "visible" isn't enough. Mount
-→ effect commit → `.focus()` is one more microtask hop after the element
-appears in the DOM. If the test types before focus actually lands on the
-input, the keystrokes hit `body`, and any `onBlur` handler on the input
-(e.g. one that unmounts itself via `quitInsertMode`) will fire and remove
-the field mid-test.
+For inputs that autofocus inside a `useEffect`, "visible" isn't enough. Mount → effect commit → `.focus()` is one more microtask hop after the element appears in the DOM. If the test types before focus actually lands on the input, the keystrokes hit `body`, and any `onBlur` handler on the input (e.g. one that unmounts itself via `quitInsertMode`) will fire and remove the field mid-test.
 
 ```ts
 await page.locator('input.Input').first().waitFor({ state: 'visible' });
@@ -174,25 +167,36 @@ await page.waitForFunction(
 await page.keyboard.type(value);
 ```
 
+### `ui/TextField` reports through a debounce
+
+`TextField` routes `onChange` through `debounce(onChange, debounceTime ?? 0)`. A 0ms debounce is still a `setTimeout`, so the value lands on the NEXT tick: a `fireEvent.change(...)` followed by a synchronous assertion reads the stale value.
+
+Drive it with a controlled clock rather than `waitFor` — for an "expect absent" assertion `waitFor` can pass before the update lands at all:
+
+```ts
+vi.useFakeTimers();
+fireEvent.change(input, { target: { value: term } });
+act(() => {
+  vi.advanceTimersByTime(1);
+});
+```
+
+See `UIDesignerLeftRail.spec.tsx`.
+
 ### Wait for the outcome, not a fixed delay
 
-After a mutation, wait for the *result* selector (new row attached, deleted
-row detached, label rendered) rather than `sleep(N)`. Fixed sleeps make slow
-machines pass and fast machines miss races; outcome-waits scale with the
-machine and self-document what the test is gating on.
+After a mutation, wait for the _result_ selector (new row attached, deleted row detached, label rendered) rather than `sleep(N)`. Fixed sleeps make slow machines pass and fast machines miss races; outcome-waits scale with the machine and self-document what the test is gating on.
 
-Examples in `packages/inspector/test/e2e/pageObjects/Hierarchy.ts`:
-`waitForLabel`, the post-`duplicate` count-change wait, the post-`remove`
-detach wait.
+Examples in `packages/inspector/test/e2e/pageObjects/Hierarchy.ts`: `waitForLabel`, the post-`duplicate` count-change wait, the post-`remove` detach wait.
+
+### `.App.is-ready` is the readiness contract
+
+`App.tsx` puts `is-ready` on the root element, and every spec gates on it via `App.waitUntilReady()` (`waitForSelector('.App.is-ready')`). Specs then act immediately — `Hierarchy.spec.ts` calls `addChild(ROOT, …)` in the very next statement.
+
+So anything that delays the **first mount** of a panel a spec touches must be folded into that flag. When the UI Designer gained a persisted 2D/3D mode, neither `Hierarchy` nor the designer mounted until the mode arrived from the scene composite; leaving `is-ready` on sdk-init alone would have raced every hierarchy spec.
+
+The class carries no styling — it exists purely as this signal, which makes it look safe to ignore.
 
 ### Run each E2E spec file in its own forked process
 
-`vitest.e2e.config.js` uses `pool: 'forks'` with `singleFork: false` **and**
-`fileParallelism: false`: each spec file runs in a fresh forked process, one at
-a time. Do not set `singleFork: true` — sharing one long-lived worker across all
-files accumulates Chromium/Babylon native memory until the CI runner kills the
-process. The signature is `Error: Worker exited unexpectedly` at a *moving*
-spec-file boundary (every test that ran passed; no V8 heap-OOM message) — it
-reads like flakiness but is memory exhaustion, so raising `--max-old-space-size`
-won't help. A fresh process per file reclaims memory; sequential execution keeps
-only one headless Chromium alive at a time.
+`vitest.e2e.config.js` uses `pool: 'forks'` with `singleFork: false` **and** `fileParallelism: false`: each spec file runs in a fresh forked process, one at a time. Do not set `singleFork: true` — sharing one long-lived worker across all files accumulates Chromium/Babylon native memory until the CI runner kills the process. The signature is `Error: Worker exited unexpectedly` at a _moving_ spec-file boundary (every test that ran passed; no V8 heap-OOM message) — it reads like flakiness but is memory exhaustion, so raising `--max-old-space-size` won't help. A fresh process per file reclaims memory; sequential execution keeps only one headless Chromium alive at a time.
