@@ -100,9 +100,6 @@ const Renderer: React.FC = () => {
     }
   }, [sdk, groundGridDisabled]);
 
-  // The Renderer stays MOUNTED (CSS-hidden) while the UI Designer is open, so
-  // its document-level entity hotkeys would fire alongside the UI Designer's
-  // own Delete/Cmd+D/copy-paste and silently mutate the 3D scene (#1401).
   const isUIDesignerOpen = !hiddenPanels[PanelName.UI_DESIGNER];
 
   const deleteSelectedEntities = useCallback(() => {
@@ -183,10 +180,6 @@ const Renderer: React.FC = () => {
   useHotkey([COPY, COPY_ALT], copySelectedEntities, document.body);
   useHotkey([PASTE, PASTE_ALT], pasteSelectedEntities, document.body);
   useHotkey([DUPLICATE, DUPLICATE_ALT], duplicateSelectedEntities, document.body);
-  // The camera keys are BARE (space, f, +, -), so unlike the modifier combos
-  // above a callback-level guard isn't enough — useHotkey preventDefaults before
-  // it dispatches, which would swallow them from the designer. Don't bind at all
-  // while it's open.
   const cameraKeys = { enabled: !isUIDesignerOpen };
   useHotkey([ZOOM_IN, ZOOM_IN_ALT], zoomIn, document.body, cameraKeys);
   useHotkey([ZOOM_OUT, ZOOM_OUT_ALT], zoomOut, document.body, cameraKeys);

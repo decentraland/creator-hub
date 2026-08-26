@@ -8,11 +8,6 @@ const ROOT_ROW = '.ui-designer-code-root-row';
 
 const exactly = (text: string) => new RegExp(`^${text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`);
 
-/**
- * The UI Designer (2D mode) left rail + canvas. Rows expose the same
- * `data-test-label` contract as the Hierarchy tree, so nodes are addressed by
- * their displayed name.
- */
 class UIDesignerPageObject {
   readonly railSelector = RAIL;
   readonly treeSelector = TREE;
@@ -57,10 +52,6 @@ class UIDesignerPageObject {
     return (await page.locator(`${RAIL} .ui-designer-rail-header`, { hasText: title }).count()) > 0;
   }
 
-  /**
-   * Real keypresses, not fill(): the search box reports through a debounce, and
-   * the clear button only renders once the value is non-empty.
-   */
   async search(term: string) {
     const input = page.locator(`${RAIL} input`).first();
     await input.click();
@@ -130,11 +121,6 @@ class UIDesignerPageObject {
     return items.map(t => t.trim());
   }
 
-  /**
-   * Renames through the row context menu. The inline editor autofocuses in an
-   * effect, so this waits for focus to actually land: typing earlier sends the
-   * keys to <body> and the input's onBlur tears the editor down mid-test.
-   */
   async renameNode(label: string, next: string) {
     await page
       .locator(`${this.nodeRowSelector(label)} .selectable-area`)

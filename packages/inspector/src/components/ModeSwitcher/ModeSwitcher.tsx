@@ -16,9 +16,6 @@ const ModeSwitcherComponent: React.FC = () => {
   const uiEditorEnabled = useMemo(() => getConfig().uiEditorEnabled, []);
   const [uiState, updateUIState] = useInspectorUIState();
 
-  // Neither tab is active until the persisted mode lands (useRestorePersistedMode
-  // in App applies it), so the switch never advertises a selection the restore is
-  // about to move.
   const resolved = uiState !== null;
   const is2D = resolved && isUIDesigner;
   const is3D = resolved && !isUIDesigner;
