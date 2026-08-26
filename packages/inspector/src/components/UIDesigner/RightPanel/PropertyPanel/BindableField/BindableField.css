@@ -1,0 +1,128 @@
+.ui-designer-bindable-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  position: relative;
+}
+
+.ui-designer-bindable-content {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.ui-designer-bindable-content:empty {
+  flex: 0 0 auto;
+}
+
+.ui-designer-bindable-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  padding: 2px 4px;
+  color: var(--ui-designer-glyph);
+  transition:
+    opacity 80ms ease-out,
+    color 80ms ease-out;
+}
+
+.ui-designer-bindable-link::before {
+  content: "";
+  display: block;
+  width: 11px;
+  height: 11px;
+  background-color: currentColor;
+  mask-image: url("../icons/bind.svg");
+  mask-position: center;
+  mask-repeat: no-repeat;
+}
+
+.ui-designer-bindable-content:has(> .Text.Field, > .TextArea.Field) + .ui-designer-bindable-link,
+.ui-designer-bindable-subfield-content:has(> .Text.Field, > .TextArea.Field)
+  + .ui-designer-bindable-link,
+.ui-designer-mixed-field > .ui-designer-bindable-link {
+  position: absolute;
+  top: 50%;
+  right: 5px;
+  transform: translateY(-50%);
+}
+
+.ui-designer-property-panel .ui-designer-bindable-content:has(> .Text.Field) .InputContainer,
+.ui-designer-property-panel
+  .ui-designer-bindable-subfield-content:has(> .Text.Field)
+  .InputContainer {
+  padding-right: 26px;
+}
+
+.ui-designer-property-panel .ui-designer-bindable-content:has(> .TextArea.Field) textarea,
+.ui-designer-property-panel .ui-designer-mixed-editable {
+  padding-right: 26px;
+}
+
+.ui-designer-bindable-content:has(> .Text.Field > .Label) + .ui-designer-bindable-link,
+.ui-designer-bindable-subfield-content:has(> .Text.Field > .Label) + .ui-designer-bindable-link {
+  top: auto;
+  bottom: 4.5px;
+  transform: none;
+}
+
+.ui-designer-fill-field > .ui-designer-bindable-subfield {
+  align-items: flex-end;
+}
+
+.ui-designer-fill-field
+  > .ui-designer-bindable-subfield:not(:has(> .ui-designer-bindable-subfield-content > .Text.Field))
+  > .ui-designer-bindable-link {
+  margin-bottom: 4px;
+}
+
+.ui-designer-property-panel .ui-designer-bindable-content > .ui-designer-fill-field {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.ui-designer-property-row.checkbox .ui-designer-bindable-row {
+  position: static;
+}
+
+.ui-designer-property-row.checkbox .ui-designer-bindable-link {
+  position: absolute;
+  top: 50%;
+  right: 5px;
+  transform: translateY(-50%);
+}
+
+.ui-designer-property-row.checkbox:has(.ui-designer-prop-remove) .ui-designer-bindable-link {
+  right: 24px;
+}
+
+.ui-designer-bindable-link:hover {
+  color: var(--ui-designer-control-accent);
+}
+
+.ui-designer-bindable-link:focus-visible {
+  outline: 2px solid var(--ui-designer-control-accent);
+  outline-offset: 1px;
+}
+
+.ui-designer-bindable-row:hover .ui-designer-bindable-link,
+.ui-designer-bindable-row:focus-within .ui-designer-bindable-link,
+.ui-designer-bindable-link:focus-visible,
+.ui-designer-bindable-content:empty + .ui-designer-bindable-link {
+  opacity: 1;
+}
+
+.ui-designer-property-row.checkbox:hover .ui-designer-bindable-link,
+.ui-designer-property-row.checkbox:focus-within .ui-designer-bindable-link {
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ui-designer-bindable-link {
+    transition: none;
+  }
+}
