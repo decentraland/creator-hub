@@ -9,6 +9,7 @@ import UndoIcon from '@mui/icons-material/Undo';
 import HighlightAltIcon from '@mui/icons-material/HighlightAlt';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import Markdown, { type MarkdownToJSX } from 'markdown-to-jsx';
 import {
   Button,
@@ -31,6 +32,8 @@ import { toolChipLabel } from './labels';
 import {
   AssistantBubble,
   AssistantText,
+  BillingDismiss,
+  BillingHint,
   CommandLine,
   Composer,
   EmptyState,
@@ -77,6 +80,8 @@ export interface ChatViewProps {
   busy: boolean;
   detecting: boolean;
   selection: { id: number; name: string }[];
+  // The user dismissed the billing hint for this scene (#1505) — hide it.
+  billingDismissed: boolean;
   // Shown after the title in the header (the open project) — the detached window uses it.
   title?: string;
   // True when rendered as the detached window: fills the window and shows a "dock" affordance
@@ -88,6 +93,8 @@ export interface ChatViewProps {
   onProviderChange: (provider: AiProvider) => void;
   onRevertTurn: (id: string, count: number) => void;
   onRecheck: () => void;
+  // Dismiss the billing hint for this scene (persisted per-project).
+  onDismissBilling: () => void;
   // Open the detached window (inline only — omitted/no-op in the detached window).
   onPopOut?: () => void;
   // Inline: hide the panel. Detached: dock the chat back inline (close the window).
@@ -102,6 +109,7 @@ export function ChatView(props: ChatViewProps) {
     busy,
     detecting,
     selection,
+    billingDismissed,
     title,
     detached = false,
     onSend,
@@ -110,6 +118,7 @@ export function ChatView(props: ChatViewProps) {
     onProviderChange,
     onRevertTurn,
     onRecheck,
+    onDismissBilling,
     onPopOut,
     onClose,
   } = props;
@@ -391,6 +400,28 @@ export function ChatView(props: ChatViewProps) {
             names: selection.map(s => (s.name !== '' ? s.name : `#${s.id}`)).join(', '),
           })}
         </SelectionBar>
+      )}
+
+      {available && !billingDismissed && (
+        <BillingHint>
+          <InfoOutlinedIcon fontSize="inherit" />
+          <span>
+            {t('editor.ai.billing', { provider: currentProvider?.label ?? 'AI' })}{' '}
+            <BillingDismiss
+              role="button"
+              tabIndex={0}
+              onClick={onDismissBilling}
+              onKeyDown={e => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  onDismissBilling();
+                }
+              }}
+            >
+              {t('editor.ai.billing_dismiss')}
+            </BillingDismiss>
+          </span>
+        </BillingHint>
       )}
 
       <Composer>

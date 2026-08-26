@@ -34,6 +34,9 @@ export interface AiState {
   busy: boolean;
   // A provider detection pass is in flight.
   detecting: boolean;
+  // The user dismissed the "runs on your own account" billing hint for the open scene
+  // (#1505). Persisted per-project; loaded with the conversation.
+  billingDismissed: boolean;
   // The entities the user currently has selected in the editor (polled from the inspector
   // while the panel is open). Shown as a composer chip and prepended to the turn as context
   // so the assistant can resolve "this" / "the selected entity".

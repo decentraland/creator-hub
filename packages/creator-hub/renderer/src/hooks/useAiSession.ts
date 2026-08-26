@@ -73,6 +73,9 @@ export function useAiSession(enabled: boolean, projectPath: string | undefined) 
         case 'fetchProviders':
           dispatch(aiActions.fetchProviders());
           break;
+        case 'dismissBilling':
+          dispatch(aiActions.dismissBilling());
+          break;
         case 'sync':
           aiPreload.pushAiMirrorState({
             ...latest.current.aiState,

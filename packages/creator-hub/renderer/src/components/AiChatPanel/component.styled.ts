@@ -223,6 +223,23 @@ const ProviderRow = styled(Box)(({ theme }) => ({
   borderBottom: `1px solid ${theme.palette.divider}`,
 }));
 
+const BillingHint = styled(Box)(({ theme }) => ({
+  display: 'flex',
+  alignItems: 'center',
+  gap: theme.spacing(0.5),
+  padding: theme.spacing(0.5, 1.5),
+  borderTop: `1px solid ${theme.palette.divider}`,
+  color: theme.palette.text.primary,
+  fontSize: theme.typography.pxToRem(11),
+  lineHeight: 1.35,
+}));
+
+const BillingDismiss = styled('span')({
+  textDecoration: 'underline',
+  cursor: 'pointer',
+  color: 'var(--dcl)',
+});
+
 const SelectionBar = styled(Box)(({ theme }) => ({
   display: 'flex',
   alignItems: 'center',
@@ -239,6 +256,8 @@ const SelectionBar = styled(Box)(({ theme }) => ({
 export {
   AssistantBubble,
   AssistantText,
+  BillingDismiss,
+  BillingHint,
   CommandLine,
   Composer,
   EmptyState,

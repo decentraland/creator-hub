@@ -4,7 +4,13 @@ import { ai } from '#preload';
 import type { AiEvent, AiProvider } from '/shared/types/ai';
 
 import { createAsyncThunk } from '/@/modules/store/thunk';
-import { clearStoredConversation, readConversation, writeConversation } from './persistence';
+import {
+  clearStoredConversation,
+  readBillingDismissed,
+  readConversation,
+  writeBillingDismissed,
+  writeConversation,
+} from './persistence';
 import type { AiMessage, AiState } from './types';
 
 const initialState: AiState = {
@@ -15,6 +21,7 @@ const initialState: AiState = {
   busy: false,
   detecting: false,
   selection: [],
+  billingDismissed: false,
 };
 
 // Ask main which CLIs are installed/runnable. Cheap scan first, login-shell probe only
@@ -77,6 +84,18 @@ export const loadConversation = createAsyncThunk<void, string>(
   (path, { getState, dispatch }) => {
     if (getState().ai.busy) return;
     dispatch(actions.hydrate(readConversation(path)));
+    dispatch(actions.setBillingDismissed(readBillingDismissed(path)));
+  },
+);
+
+// Dismiss the "runs on your own account" billing hint for the open scene (#1505), and
+// remember it per-project so it stays gone across restarts.
+export const dismissBilling = createAsyncThunk(
+  'ai/dismissBilling',
+  (_: void, { getState, dispatch }) => {
+    const path = getState().editor.project?.path;
+    if (path !== undefined && path !== '') writeBillingDismissed(path, true);
+    dispatch(actions.setBillingDismissed(true));
   },
 );
 
@@ -117,6 +136,9 @@ const slice = createSlice({
     },
     setSelection: (state, { payload }: PayloadAction<{ id: number; name: string }[]>) => {
       state.selection = payload;
+    },
+    setBillingDismissed: (state, { payload }: PayloadAction<boolean>) => {
+      state.billingDismissed = payload;
     },
     pushUserMessage: (state, { payload }: PayloadAction<string>) => {
       const msg: AiMessage = {
@@ -242,5 +264,6 @@ export const actions = {
   revertTurn,
   loadConversation,
   persistConversation,
+  dismissBilling,
 };
 export const reducer = slice.reducer;

@@ -94,6 +94,7 @@ export interface AiMirrorState {
   busy: boolean;
   detecting: boolean;
   selection: { id: number; name: string }[];
+  billingDismissed: boolean;
   // The open project's title, for the detached window's header (it has no editor of its own).
   projectTitle?: string;
 }
@@ -107,4 +108,5 @@ export type AiRemoteCommand =
   | { type: 'setProvider'; provider: AiProvider }
   | { type: 'revertTurn'; id: string; count: number }
   | { type: 'fetchProviders' }
+  | { type: 'dismissBilling' }
   | { type: 'sync' };

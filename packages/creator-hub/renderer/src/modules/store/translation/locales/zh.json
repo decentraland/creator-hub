@@ -99,6 +99,8 @@
       "stop": "停止",
       "thinking": "思考中…",
       "empty": "询问你的场景，或告诉我要构建什么。我可以读取场景并在 src/ 下编写 SDK7 代码。",
+      "billing": "使用你自己的 {provider} 账户运行——消息会计入你自己套餐的用量，而不是 Creator Hub 提供的免费额度。",
+      "billing_dismiss": "不再显示",
       "retry": "重试",
       "revert": "撤销 AI 的更改",
       "selection": "选择：{names}",
@@ -428,7 +430,7 @@
         },
         "ai_assistant": {
           "label": "AI 场景助手",
-          "help": "运行你安装的 Claude 或 Codex CLI，对你的电脑拥有完全访问权限，与在终端中的权限相同。请仅在你信任所要求的操作时启用。"
+          "help": "运行你安装的 Claude 或 Codex CLI，对你的电脑拥有完全访问权限，与在终端中的权限相同。它使用你已在终端登录的账户，因此每条消息都会计入你自己套餐的用量，而不是 Creator Hub 提供的免费额度。请仅在你信任所要求的操作时启用。"
         },
         "mcp_server": {
           "label": "公开 AI 助手 MCP 服务器",

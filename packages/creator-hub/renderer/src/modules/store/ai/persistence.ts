@@ -8,6 +8,9 @@
 import type { AiMessage } from './types';
 
 const KEY_PREFIX = 'creator-hub:ai-conversation:';
+// Per-project dismissal of the "uses your own account" billing hint (#1505). Kept apart
+// from the transcript so clearing the chat doesn't bring the hint back.
+const BILLING_DISMISSED_PREFIX = 'creator-hub:ai-billing-dismissed:';
 // localStorage is ~5MB per origin; keep one conversation well under that. A transcript
 // larger than this just isn't persisted (the live one still works) rather than throwing.
 const MAX_BYTES = 1_000_000;
@@ -56,5 +59,29 @@ export function clearStoredConversation(
     storage.removeItem(key(path));
   } catch {
     /* ignore */
+  }
+}
+
+export function readBillingDismissed(
+  path: string,
+  storage: Pick<Storage, 'getItem'> = localStorage,
+): boolean {
+  try {
+    return storage.getItem(`${BILLING_DISMISSED_PREFIX}${path}`) === 'true';
+  } catch {
+    return false;
+  }
+}
+
+export function writeBillingDismissed(
+  path: string,
+  dismissed: boolean,
+  storage: Pick<Storage, 'setItem' | 'removeItem'> = localStorage,
+): void {
+  try {
+    if (dismissed) storage.setItem(`${BILLING_DISMISSED_PREFIX}${path}`, 'true');
+    else storage.removeItem(`${BILLING_DISMISSED_PREFIX}${path}`);
+  } catch {
+    /* storage unavailable — non-fatal */
   }
 }

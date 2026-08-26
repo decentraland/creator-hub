@@ -53,6 +53,10 @@ export function AiChatWindow() {
     () => aiPreload.sendAiRemoteCommand({ type: 'fetchProviders' }),
     [],
   );
+  const onDismissBilling = useCallback(
+    () => aiPreload.sendAiRemoteCommand({ type: 'dismissBilling' }),
+    [],
+  );
   // Closing the detached window docks the chat back inline.
   const onClose = useCallback(() => void aiPreload.closeAiWindow(), []);
 
@@ -75,6 +79,7 @@ export function AiChatWindow() {
       busy={mirror.busy}
       detecting={mirror.detecting}
       selection={mirror.selection}
+      billingDismissed={mirror.billingDismissed}
       title={mirror.projectTitle}
       onSend={onSend}
       onStop={onStop}
@@ -82,6 +87,7 @@ export function AiChatWindow() {
       onProviderChange={onProviderChange}
       onRevertTurn={onRevertTurn}
       onRecheck={onRecheck}
+      onDismissBilling={onDismissBilling}
       onClose={onClose}
     />
   );

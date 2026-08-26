@@ -99,6 +99,8 @@
       "stop": "Detener",
       "thinking": "Pensando…",
       "empty": "Pregunta sobre tu escena o dime qué construir. Puedo leer la escena y escribir código SDK7 en src/.",
+      "billing": "Se ejecuta con tu propia cuenta de {provider}: los mensajes consumen el uso de tu plan, no una asignación gratuita de Creator Hub.",
+      "billing_dismiss": "No mostrar de nuevo",
       "retry": "Reintentar",
       "revert": "Deshacer los cambios de la IA",
       "selection": "Selección: {names}",
@@ -428,7 +430,7 @@
         },
         "ai_assistant": {
           "label": "Asistente de escena con IA",
-          "help": "Ejecuta tu CLI de Claude o Codex con acceso completo a tu equipo, el mismo alcance que tiene en tu terminal. Actívalo solo si confías en lo que le pides."
+          "help": "Ejecuta tu CLI de Claude o Codex con acceso completo a tu equipo, el mismo alcance que tiene en tu terminal. Usa la cuenta con la que ya iniciaste sesión allí, así que cada mensaje consume el uso de tu propio plan, no una asignación gratuita de Creator Hub. Actívalo solo si confías en lo que le pides."
         },
         "mcp_server": {
           "label": "Exponer el servidor MCP del asistente de IA",

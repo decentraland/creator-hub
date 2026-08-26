@@ -19,9 +19,8 @@ interface Props {
 // in useAiSession (mounted in the editor), so this is purely a view over the store.
 export function AiChatPanel({ onClose, onPopOut }: Props) {
   const dispatch = useDispatch();
-  const { providers, provider, messages, busy, detecting, selection } = useSelector(
-    state => state.ai,
-  );
+  const { providers, provider, messages, busy, detecting, selection, billingDismissed } =
+    useSelector(state => state.ai);
 
   const onSend = useCallback((text: string) => dispatch(aiActions.send(text)), [dispatch]);
   const onStop = useCallback(() => dispatch(aiActions.stop()), [dispatch]);
@@ -35,6 +34,7 @@ export function AiChatPanel({ onClose, onPopOut }: Props) {
     [dispatch],
   );
   const onRecheck = useCallback(() => dispatch(aiActions.fetchProviders()), [dispatch]);
+  const onDismissBilling = useCallback(() => dispatch(aiActions.dismissBilling()), [dispatch]);
 
   return (
     <ChatView
@@ -44,12 +44,14 @@ export function AiChatPanel({ onClose, onPopOut }: Props) {
       busy={busy}
       detecting={detecting}
       selection={selection}
+      billingDismissed={billingDismissed}
       onSend={onSend}
       onStop={onStop}
       onNewChat={onNewChat}
       onProviderChange={onProviderChange}
       onRevertTurn={onRevertTurn}
       onRecheck={onRecheck}
+      onDismissBilling={onDismissBilling}
       onPopOut={onPopOut}
       onClose={onClose}
     />
