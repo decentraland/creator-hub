@@ -1,4 +1,3 @@
-
 import {
   YGA_STRETCH,
   YGU_AUTO,
@@ -33,14 +32,7 @@ function axisSized(transform: Record<string, unknown>, axis: ResizeAxis): boolea
   return unit === YGU_POINT || unit === YGU_PERCENT || unit === YGU_AUTO;
 }
 
-/**
- * Whether `axis` is currently filling. Requires the axis to have NO size of its
- * own: in Yoga an explicit size wins over both `flexGrow` and `stretch`, so a
- * node with both is Fixed carrying an inert grow, not Fill. Also requires the
- * node to be in flow — Yoga ignores `flexGrow` and `alignSelf` on an absolutely
- * positioned node, so reading those as Fill there would show a mode that does
- * nothing.
- */
+/** Whether `axis` is currently filling. Requires the axis to have no size of its own and the node to be in flow. */
 export function fillsAxis(
   transform: Record<string, unknown> | null,
   axis: ResizeAxis,
@@ -52,12 +44,7 @@ export function fillsAxis(
   return axis === mainAxis ? t.flexGrow === FILL_GROW : t.alignSelf === YGA_STRETCH;
 }
 
-/**
- * The mode an axis reads as. An axis with nothing authored reads as Fixed,
- * matching how every other length field surfaces an unset value (px, 0) — Hug
- * would be closer to Yoga's own default but would make a fresh node's size
- * uneditable until the mode was changed first.
- */
+/** The mode an axis reads as. An axis with nothing authored reads as Fixed. */
 export function resizeMode(
   transform: Record<string, unknown> | null,
   axis: ResizeAxis,
@@ -71,18 +58,7 @@ export function resizeMode(
   return 'fixed';
 }
 
-/**
- * Which modes to offer. Fill is flex-fill, which Yoga applies only to a node in
- * flow; an absolute node keeps Fixed / Percent / Hug (`auto` IS honoured on an
- * absolute node — it sizes from the content there too).
- *
- * `overriding` — editing a non-base interaction layer — withholds it too. Entering
- * Fill means REMOVING the axis size, and in an override layer a removed key means
- * "inherit from Default", not "unset": Default's size would keep winning, the
- * classifier would still read Fixed, and the dropdown would snap back leaving an
- * inert `flexGrow` behind. Passing `current` keeps a node that already reads Fill
- * from Default showing it, so the mode on screen is never absent from its own list.
- */
+/** Which modes to offer. Fill is offered only for an in-flow node (or one already reading Fill from Default while overriding). */
 export function resizeModesFor(
   transform: Record<string, unknown> | null,
   opts: { overriding?: boolean; current?: ResizeMode } = {},
@@ -107,14 +83,7 @@ export function resizeValuePatch(
   return { [axis]: value, [`${axis}Unit`]: UNIT_FOR_MODE[mode] ?? YGU_POINT };
 }
 
-/**
- * The patch for picking `next` on `axis`. `value` is the number to carry into the
- * two numeric modes (the caller converts it against the measured parent box).
- *
- * Leaving Fill clears exactly the prop THAT axis borrowed and nothing else —
- * clearing both unconditionally would destroy a hand-authored `alignSelf:
- * 'center'` on an axis that never filled.
- */
+/** The patch for picking `next` on `axis`; leaving Fill clears exactly the prop that axis borrowed and nothing else. */
 export function resizePatch(args: {
   next: ResizeMode;
   current: ResizeMode;
@@ -135,13 +104,7 @@ export function resizePatch(args: {
   return { ...patch, ...resizeValuePatch(axis, next, value) };
 }
 
-/**
- * Whether the Resize control's Fill mode is currently speaking for a raw prop's
- * row, which is the one state that row must stay out of. A thin read over the
- * same `fillsAxis` the dropdown uses, so the row gate cannot drift from the mode
- * it is hiding behind. Resolved by the panel rather than a `hiddenWhen` because
- * it needs the PARENT's direction.
- */
+/** Whether the Resize control's Fill mode is currently speaking for a raw prop's row. */
 export function fillOwnsProp(
   path: string,
   transform: Record<string, unknown> | null,

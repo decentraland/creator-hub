@@ -1,4 +1,3 @@
-
 type Pos = 'start' | 'center' | 'end';
 
 export type AlignmentV = 'top' | 'middle' | 'bottom';
@@ -72,14 +71,7 @@ export function clearAlignmentPatch(): Record<string, unknown> {
   return { justifyContent: undefined, alignItems: undefined };
 }
 
-/**
- * Whether the 9-way picker faithfully represents the node's current alignment, and
- * so whether the raw `Justify content` / `Align items` rows should stay out of the
- * way. Representable = one of the 9 cells, or neither prop authored (which the
- * picker shows as "Default"). Everything else — one prop set without the other, a
- * distributing `justifyContent`, an `auto`/`stretch`/`baseline` `alignItems` — has
- * no cell, so the raw rows are the only honest way to show it.
- */
+/** Whether the 9-way picker faithfully represents the node's current alignment (one of the 9 cells, or neither prop authored). */
 export function alignmentIsRepresentable(transform: Record<string, unknown> | null): boolean {
   const t = transform ?? {};
   if (t.justifyContent === undefined && t.alignItems === undefined) return true;

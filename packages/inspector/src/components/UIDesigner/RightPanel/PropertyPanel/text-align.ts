@@ -1,12 +1,4 @@
-/**
- * The Text group's "Alignment" pair: two 3-cell selectors over the single
- * `textAlign` enum.
- *
- * `TextAlignMode` packs both axes into one 9-value enum ordered vertical-major
- * (top-left … bottom-right), so the two selectors are just its two digits in
- * base 3. Every value stays reachable from the pair, which is why the raw enum
- * row is gone rather than merely hidden.
- */
+/** The Text group's "Alignment" pair: two 3-cell selectors over the single `textAlign` enum. */
 
 export const TEXT_ALIGN_MODES = {
   vertical: ['top', 'middle', 'bottom'],
@@ -24,11 +16,7 @@ export interface TextAlignPair {
 /** TAM_MIDDLE_CENTER — what UiText/UiInput/UiDropdown render with the prop unset. */
 export const DEFAULT_TEXT_ALIGN = 4;
 
-/**
- * How the two selectors read a `textAlign` value. An unset prop — or one a
- * hand-authored file put outside the enum's range — reads as the in-world
- * default, so the selectors always have exactly one cell lit.
- */
+/** How the two selectors read a `textAlign` value; an unset or out-of-range value reads as the in-world default. */
 export function splitTextAlign(mode: number | undefined): TextAlignPair {
   const value = Number.isInteger(mode) && mode! >= 0 && mode! <= 8 ? mode! : DEFAULT_TEXT_ALIGN;
   return {

@@ -1,4 +1,3 @@
-
 import { YGO_HIDDEN, YGO_SCROLL, YGO_VISIBLE } from '../../../../lib/sdk/ui-transform-constants';
 
 export type OverflowFlag = 'scroll' | 'clip';
@@ -16,17 +15,7 @@ export function overflowFlags(transform: Record<string, unknown> | null): Overfl
   return { scroll, clip: scroll || value === YGO_HIDDEN, clipLocked: scroll };
 }
 
-/**
- * The patch for toggling one box. Unticking Scroll leaves Clip ticked (hidden,
- * not visible): the enum holds one value, so there is nowhere to remember what
- * clipping was before scrolling started, and the state the boxes were SHOWING is
- * the only honest thing to step down to. Its box is right there to untick.
- *
- * The value is always written explicitly, never removed as "back to the default":
- * an interaction override layer reads an absent key as "inherit from Default", so
- * a removal there would keep the inherited overflow while the boxes showed it
- * cleared.
- */
+/** The patch for toggling one box. Unticking Scroll leaves Clip ticked; the value is always written explicitly, never removed. */
 export function overflowPatch(
   flag: OverflowFlag,
   on: boolean,

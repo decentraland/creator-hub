@@ -16,20 +16,7 @@ import '../UIDesigner.css';
 
 type RightTab = 'properties' | 'logic';
 
-/**
- * Right rail as tabs: Properties (per-node) and Logic (per-root).
- *
- * The Logic tab is the code-mode manager for the active root's logic surface —
- * its typed `state` object (Variables), the inputs it exposes when nested
- * (Inputs), and its `@ui-action` handlers (Events).
- *
- * Selecting a nested component instance switches it to that instance: the values
- * it passes in (its inputs) are the only thing there is to edit, so the root's own
- * Variables and Events are hidden and a note points to the component — they belong
- * to the component's own file, not this instance. A canvas drop wraps `<Name />`
- * in a positioning UiEntity and clicks select that WRAPPER, so an instance is
- * reachable either as the selection itself or as a child of it.
- */
+/** Right rail as tabs: Properties (per-node) and Logic (per-root). */
 const RightPanel: React.FC = () => {
   const [tab, setTab] = useState<RightTab>('properties');
   const selected = useAppSelector(getSelectedNode);

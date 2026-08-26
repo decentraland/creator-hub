@@ -4,12 +4,7 @@ import type { Entity } from '@dcl/ecs';
 import { bindAttribute, unbindAttribute } from '../../code/store';
 import { bindPathFor, type FieldConfig } from './field-configs';
 
-/**
- * `field.path` names the prop; `field.componentId` says WHERE it lives, which is
- * what lets the store splice a top-level attribute (`value={score}`) for a
- * Label/Input/Dropdown prop and an object key (`uiTransform={{ zIndex: depth }}`)
- * for a style prop.
- */
+/** `field.path` names the prop; `field.componentId` says where it lives, letting the store splice a top-level attribute or an object key. */
 export function useFieldBinding(field: FieldConfig, entity: Entity) {
   const [pickerOpen, setPickerOpen] = useState(false);
   const anchorRef = useRef<HTMLButtonElement>(null);

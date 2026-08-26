@@ -33,19 +33,7 @@ interface CallbackFieldProps {
   bound?: string;
 }
 
-/**
- * An event row: a dropdown over the declared `@ui-action` handlers, per the
- * design's `MouseEventsMenu`.
- *
- * Deliberately NOT the 🔗 `BindableField` every other bindable row uses. An event
- * has one job — run a handler — so the design gives it a value control that
- * always shows its current state, rather than an affordance that has to be
- * hovered to be found. Variables keep the 🔗.
- *
- * The list is never filtered by what is already bound: one handler driving both
- * Mouse Down and Mouse Up is legitimate, and hiding it would make a hand-authored
- * reuse absent from its own dropdown.
- */
+/** An event row: a dropdown over the declared @ui-action handlers. */
 export const CallbackField: React.FC<CallbackFieldProps> = ({ field, entity, bound }) => {
   const [open, setOpen] = useState(false);
   const anchorRef = useRef<HTMLButtonElement>(null);

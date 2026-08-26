@@ -182,16 +182,7 @@ function isFieldSet(field: FieldConfig, value: Record<string, unknown> | null): 
   return fieldSetPaths(field).some(p => p in value);
 }
 
-/**
- * Whether a field belongs in its group's `+ Add property` menu.
- *
- * A BOUND prop is authored too — the parser files `disabled={state.locked}` under
- * the node's bindings, never under the component value — so `isFieldSet` alone
- * would offer it as addable, and adding it splices a literal over the binding.
- *
- * An `inlineAdd` field is excluded because it carries its own standing `+` row;
- * listing it in the menu as well would offer the same prop in two places.
- */
+/** Whether a field belongs in its group's `+ Add property` menu. */
 export function isAddableField(
   field: FieldConfig,
   value: Record<string, unknown> | null,
@@ -205,11 +196,7 @@ export function isAddableField(
   );
 }
 
-/**
- * Whether an inline-addable field shows its `+` stub rather than its control.
- * The design keeps Min Size, Max Size and Border permanently in view instead of
- * behind the group menu, so an unauthored one renders as a label plus a `+`.
- */
+/** Whether an inline-addable field shows its `+` stub rather than its control. */
 export function isInlineStub(field: FieldConfig, value: Record<string, unknown> | null): boolean {
   return !!field.inlineAdd && !isFieldSet(field, value);
 }
@@ -226,14 +213,7 @@ function hiddenOnRoot(
   return !isAbsolute(value);
 }
 
-/**
- * Whether to drop "Ignore Layout Flow" because the node's PARENT is itself
- * absolutely positioned, so there is no flow for the node to be lifted out of.
- *
- * Kept on a node that is ALREADY absolute, for the same reason `hideOnRoot` is:
- * the checkbox is the only way back into flow, and hiding it would strand the
- * node — and its Anchor/Position rows — out of reach.
- */
+/** Whether to drop "Ignore Layout Flow" because the node's PARENT is itself absolutely positioned. */
 export function hiddenUnderAbsoluteParent(
   parentInFlow: boolean,
   value: Record<string, unknown> | null,
@@ -241,12 +221,7 @@ export function hiddenUnderAbsoluteParent(
   return !parentInFlow && !isAbsolute(value);
 }
 
-/**
- * Seed patch written when the user ADDS an optional prop — a sensible default so
- * the newly-shown row isn't empty or degenerate (opacity 1, enums at their
- * default option, lengths in px), plus whatever `addAlso` declares for a field
- * whose own seed would leave the row inert.
- */
+/** Seed patch written when the user ADDS an optional prop — a sensible default plus whatever `addAlso` declares. */
 export function buildAddPatch(field: FieldConfig): Record<string, unknown> {
   return { ...seedPatch(field), ...field.addAlso };
 }
@@ -349,15 +324,6 @@ const LAYER_HINTS: Record<InteractionStateKey, string> = {
 const STATES_INFO =
   'Style this node differently while the pointer is over it, while it is held down, or while a bound condition is true.';
 
-/**
- * The interaction-states bar: pick which layer the fields below edit, add one, or
- * drop interaction styling entirely.
- *
- * A node with no states at all shows only the `+` — there is nothing to select
- * between yet. Once it has them the full strip is drawn, with the states this
- * node does not author greyed rather than absent, so adding one is a click on the
- * tab itself instead of a hunt for a separate affordance.
- */
 const StatesBar: React.FC<{
   node: CodeUINode;
   entity: Entity;
@@ -631,16 +597,6 @@ const ActiveFlagRow: React.FC<{ entity: Entity; expr?: string }> = ({ entity, ex
   );
 };
 
-/**
- * Panel header: which node is selected, plus the eye. Shares the tree's label
- * (its `@ui-name`, falling back to the widget kind) so both panels name the node
- * the same way; rename lives in the tree.
- *
- * The eye is a CANVAS-ONLY preview toggle, the same editor-only state the
- * LeftPanel's eye drives — it never reaches source. The real `display` prop is
- * the Visibility is Active row below it, so a node hidden from the canvas here still
- * renders in the shipped scene.
- */
 const PanelHeader: React.FC<{ node: CodeUINode; hidden: boolean; onToggle: () => void }> = ({
   node,
   hidden,
@@ -679,24 +635,11 @@ const PanelHeader: React.FC<{ node: CodeUINode; hidden: boolean; onToggle: () =>
   </div>
 );
 
-/**
- * The `display` value meaning "visible" for the layer being edited.
- *
- * At base, REMOVING the prop is right — react-ecs already defaults to flex. In an
- * override layer an absent key means "inherit from Default" instead of "unset", so
- * the node would stay hidden and the checkbox would read as a no-op; there it has
- * to write flex explicitly.
- */
+/** The `display` value meaning "visible" for the layer being edited. */
 export function visibleDisplayValue(layer: InteractionStateKey): number | undefined {
   return layer === 'base' ? undefined : YGD_FLEX;
 }
 
-/**
- * The real `display` prop, drawn as the design's checkbox under the header.
- * Deliberately unbindable: `display` is an enum, so a bound value would have to
- * splice an inline ternary, and the parser reads that as a dynamic prop — which
- * freezes every other panel edit on the node.
- */
 const VisibleRow: React.FC<{ visible: boolean; onToggle: (visible: boolean) => void }> = ({
   visible,
   onToggle,

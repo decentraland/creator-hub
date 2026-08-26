@@ -6,7 +6,6 @@ import type { UINodeType } from '../../shared/tree-model';
 import { directionIsRepresentable, wrapIsRepresentable, YGW_WRAP_REVERSE } from './flow';
 import { alignmentIsRepresentable } from './alignment-presets';
 
-
 export type FieldKind =
   | 'length'
   | 'length-vec'
@@ -49,132 +48,44 @@ export interface FieldConfig {
   kind: FieldKind;
   options?: EnumOption[];
   subFields?: VecSubField[];
-  /**
-   * For a `length-vec` that shows fewer cells than it stores (Position: four
-   * edges, two cells): which sub-fields to render for a given component value.
-   * Absent → all `subFields`, always. A function rather than a fixed list because
-   * Position's pair depends on where the node is pinned — see the Position config.
-   */
+  /** For a `length-vec` that shows fewer cells than it stores: which sub-fields to render for a given component value. */
   facadeSubFields?: (componentValue: Record<string, unknown> | null) => VecSubField[];
-  /**
-   * For the Size `length-vec`: render an aspect-ratio lock toggle that constrains
-   * width/height to their current ratio on edit (panel edits + canvas resize).
-   * Editor-only — the lock lives in redux (getAspectLockedNodes), never in source.
-   */
+  /** For the Size `length-vec`: render an aspect-ratio lock toggle constraining width/height to their current ratio on edit. */
   aspectLockable?: boolean;
-  /**
-   * For a `number` field whose UI unit is not the SDK prop's: the pair converting
-   * between them. Transparency is the case — it reads as the INVERSE of `opacity`
-   * on a 0–100 scale, so only the display boundary flips and source keeps the
-   * SDK's own semantics. Must be exact inverses of each other, at the extremes as
-   * well as in the middle (asserted in field-configs.spec).
-   */
+  /** For a `number` field whose UI unit is not the SDK prop's: the pair converting between them (must be exact inverses). */
   toDisplay?: (sourceValue: number) => number;
   fromDisplay?: (displayValue: number) => number;
-  /**
-   * A fixed unit glyph inside the input, right-aligned. For a field whose unit can
-   * never vary, which is why it is a label and not the `length` kinds' selector.
-   */
+  /** A fixed unit glyph inside the input, right-aligned, for a field whose unit can never vary. */
   suffix?: string;
-  /**
-   * Render this row at half width so it pairs with the adjacent half-width row
-   * (the design draws Transparency·Corner Radius and Border Colour·Weight as two
-   * columns). Purely presentational — the panel's row grid does the packing, so
-   * a half row whose neighbour is hidden simply keeps its own line.
-   */
+  /** Render this row at half width so it pairs with the adjacent half-width row. */
   half?: boolean;
-  /**
-   * Whether this field can be bound to a declared UI variable. Defaults to true.
-   * Composite kinds (`length`, `length-vec`) and enum/index
-   * kinds set this to false in V1 — they have no scalar variable-type counterpart.
-   */
+  /** Whether this field can be bound to a declared UI variable. Defaults to true. */
   bindable?: boolean;
-  /**
-   * Whether this string field uses the inline mixed-content editor (literal
-   * text interleaved with variable chips). Only meaningful for `kind: 'string'`
-   * renderable text fields (UiText.value, UiInput.value, UiInput.placeholder).
-   */
+  /** Whether this string field uses the inline mixed-content editor (literal text interleaved with variable chips). */
   mixable?: boolean;
-  /**
-   * When set, this single control writes its value to EVERY listed path (and,
-   * for `length`/`number`, the matching `${path}Unit`). Reads from `path`.
-   * Used for "one corner radius → all 4 corners", border width/color, etc.
-   */
+  /** When set, this single control writes its value to EVERY listed path (and the matching `${path}Unit`); reads from `path`. */
   writeAll?: string[];
-  /**
-   * When this returns true (given the field's component value), the control is
-   * rendered disabled/greyed. Pure read of the same component, e.g. margin is
-   * disabled when positionType === Absolute (Yoga ignores it).
-   */
+  /** When this returns true for the field's component value, the control is rendered disabled/greyed. */
   disabledWhen?: (componentValue: Record<string, unknown>) => boolean;
-  /**
-   * Describes how the node sits in its PARENT, so it has no meaning on a UI root —
-   * a root's parent is the screen itself. Node identity is not available to
-   * `hiddenWhen` (which only sees the component value), so the panel checks this
-   * flag separately, where it knows which node is selected.
-   *
-   * The panel keeps these fields on a root that is ALREADY absolute: canvas-dragging
-   * a root switches it, and they are then the only controls over the offsets sitting
-   * in source. See PropertyPanel.
-   */
+  /** Describes how the node sits in its PARENT, so it has no meaning on a UI root; the panel checks this flag where it knows the selected node. */
   hideOnRoot?: boolean;
-  /**
-   * When this returns true (given the field's component value), the field's ROW is
-   * not rendered (vs. `disabledWhen` which greys it). Two uses:
-   *  - context-gating — the texture-region editor only in Stretch mode, slices
-   *    only in nine-slices;
-   *  - suppressing a single-prop row while a composite control already represents
-   *    its value, so no value is ever driven by two live controls.
-   * It does NOT remove the field from `+ Add property`; an unset optional prop
-   * stays addable so a value the composite has no cell for still has a way in.
-   */
+  /** When this returns true for the field's component value, the field's ROW is not rendered (vs `disabledWhen` which greys it). */
   hiddenWhen?: (componentValue: Record<string, unknown>) => boolean;
-  /**
-   * When set, the raw input value is passed through this function before being
-   * written. Only consulted for `kind: 'string'` fields.
-   */
+  /** When set, the raw input value is passed through this before being written. Only consulted for `kind: 'string'`. */
   sanitize?: (value: string) => string;
-  /**
-   * Exact variable types the VariablePicker may offer for this field,
-   * overriding the kind-based coercion table. Used by TS-typed component
-   * props, where render-time string coercion doesn't apply.
-   */
+  /** Exact variable types the VariablePicker may offer for this field, overriding the kind-based coercion table. */
   strictTypes?: string[];
   /** One-line help shown as a hover tooltip beside the field label. */
   info?: string;
   /** For `box-model`: which edge box the row renders — `padding` or `margin`. */
   box?: 'padding' | 'margin';
-  /**
-   * Always shown in the panel — the curated baseline for its group. Optional
-   * scalar-ish fields WITHOUT this flag are hidden until set (or added via the
-   * group's `+ Add property` menu) and carry a `−` to unset them. Composite /
-   * context-gated fields (texture, box-model, anchor, uv-region, callbacks) are
-   * always shown regardless. See PropertyPanel `isTogglable`.
-   */
+  /** Always shown in the panel — the curated baseline for its group; optional fields without it are hidden until set. */
   core?: boolean;
-  /**
-   * Draw an unset optional prop as a label plus a `+` on its own line, instead of
-   * hiding it inside the group's `+ Add property` menu. For the composites the
-   * design keeps permanently in view (Min Size, Max Size, Border): the menu makes
-   * them look absent, and they are common enough to deserve the standing row.
-   * Adding and removing still go through `buildAddPatch` / `buildRemovePatch`.
-   */
+  /** Draw an unset optional prop as a label plus a `+` on its own line, instead of hiding it inside the group's `+ Add property` menu. */
   inlineAdd?: boolean;
-  /**
-   * Extra props seeded alongside this one when it is added, for a field whose
-   * kind-based seed alone would leave the new rows inert — Border's colour
-   * without a width renders as nothing at all.
-   */
+  /** Extra props seeded alongside this one when it is added, for a field whose kind-based seed alone would leave the new rows inert. */
   addAlso?: Record<string, unknown>;
-  /**
-   * For `enum` and `number` fields whose in-world default is not the zero value:
-   * the value the control shows when the component leaves the prop unset. e.g. UiText
-   * `textAlign` defaults to `center` (4) in the runtime (@dcl/ecs PBUiText:
-   * "alignment within the bounds (default: center)"), not the proto-3 zero
-   * (top-left). Leaving the prop unset still renders the in-world default; the
-   * value reaches source only when the user picks an option — or when they add the
-   * field from `+ Add property`, which seeds this (PropertyPanel `buildAddPatch`).
-   */
+  /** For `enum`/`number` fields whose in-world default is not the zero value: the value the control shows when the prop is unset. */
   defaultValue?: number;
 }
 
@@ -182,25 +93,12 @@ export interface NodeFieldConfig {
   groups: { title: string; fields: FieldConfig[] }[];
 }
 
-/**
- * `bindable` values that say WHY a field offers no bind affordance, so the reason
- * travels with the flag instead of a comment beside it.
- *
- * - OWN_CONTROL: the control itself owns a mode-aware affordance (FillField picks
- *   `color` / `texture.src` / `avatarTexture.userId` from the current mode).
- * - PRIMARY_ROW_ONLY: two panel rows render one prop, so only the primary row
- *   offers the bind — a second affordance would show two pills for one binding.
- */
 const BINDS_VIA_OWN_CONTROL = false;
 const BINDS_VIA_PRIMARY_ROW_ONLY = false;
 
 export const TRANSFORM = 'core::UiTransform';
 const BACKGROUND = 'core::UiBackground';
 
-/**
- * The uiBackground props that can hold a binding: keys of their own, plus the
- * texture variants' single meaningful member, addressed by a dotted path.
- */
 const BACKGROUND_BINDABLE_PATHS = new Set([
   'color',
   'textureMode',
@@ -208,18 +106,7 @@ const BACKGROUND_BINDABLE_PATHS = new Set([
   'avatarTexture.userId',
 ]);
 
-/**
- * Which code-mode variable types a field kind can bind to. A string field takes
- * any (it coerces to text at render); numeric fields take numbers; booleans take
- * booleans. An ENUM-shaped field takes a string: react-ecs spells those props as
- * ergonomic strings (`positionType: 'absolute'`, `textAlign: 'top-left'`), so a
- * bound variable holds that string rather than the panel's PB number.
- *
- * A kind ABSENT here has no variable type that can hold its value, and is not
- * bindable at all (see isBindableProp) — offering one would seed a `string` and
- * break the scene's own typecheck. `Color4` and `string[]` are object-shaped state
- * variables (see state-convention's TYPE_ANNOTATION).
- */
+/** Which code-mode variable types a field kind can bind to; a kind absent here is not bindable at all. */
 export const KIND_TO_CODE_TYPES: Partial<Record<FieldKind, string[]>> = {
   string: ['string', 'number', 'boolean'],
   number: ['number'],
@@ -237,30 +124,13 @@ export const KIND_TO_CODE_TYPES: Partial<Record<FieldKind, string[]>> = {
   'string-array': ['string[]'],
 };
 
-/**
- * The prop path a field's binding is written to and read back from.
- *
- * A `writeAll` field drives a whole ergonomic group uniformly (Corner Radius sets
- * all four corners), and react-ecs takes a scalar shorthand for those
- * (`borderRadius: 8`), so the binding targets the GROUP rather than the one member
- * `path` happens to name. Everything else binds its own path.
- */
+/** The prop path a field's binding is written to and read back from. */
 export function bindPathFor(field: { path: string; writeAll?: string[] }): string {
   if (!field.writeAll) return field.path;
   return flattenedToErgonomicPath(field.path)?.group ?? field.path;
 }
 
-/**
- * Whether a prop can carry a binding that round-trips to source and back.
- *
- * Two independent questions. WHERE it lives: a uiTransform prop is spliced by its
- * ergonomic location — a key of its own (`zIndex`) or a member of a per-edge group
- * (`padding: { top }`) — so any path the shape can place works, while `parent` is
- * structural and never reaches source; uiBackground allows its own keys plus a
- * texture variant's member; every other component's props are top-level JSX
- * attributes. And WHAT could hold it: a kind with no compatible variable type
- * cannot be bound at all.
- */
+/** Whether a prop can carry a binding that round-trips to source and back. */
 export function isBindableProp(field: {
   componentId: string;
   path: string;
@@ -1006,12 +876,7 @@ export const NODE_FIELD_CONFIGS: Record<UINodeType, NodeFieldConfig> = {
 
 export const isEventGroup = (title: string) => /event/i.test(title);
 
-/**
- * The panel's complete group list for a node type, in render order:
- *   Position → Layout → [type content groups] → [type event groups]
- * i.e. where the node sits, then how it is laid out, then its own content and
- * appearance, with events last.
- */
+/** The panel's complete group list for a node type, in render order: Position → Layout → content groups → event groups. */
 export function buildGroups(type: UINodeType): { title: string; fields: FieldConfig[] }[] {
   const { groups } = NODE_FIELD_CONFIGS[type];
   return [

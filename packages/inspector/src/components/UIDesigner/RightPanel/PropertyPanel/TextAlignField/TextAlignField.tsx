@@ -67,13 +67,7 @@ function AxisGroup<T extends string>({
   );
 }
 
-/**
- * The design's Alignment control: a horizontal and a vertical 3-cell selector
- * over the single packed `textAlign` enum (see text-align.ts).
- *
- * Two ARIA radio groups rather than one 9-cell grid, because the axes are chosen
- * independently — picking a new horizontal cell must leave the vertical one alone.
- */
+/** The design's Alignment control: horizontal and vertical 3-cell selectors over the packed `textAlign` enum. */
 export const TextAlignField: React.FC<TextAlignFieldProps> = ({ value, onChange }) => {
   const current = splitTextAlign(value);
   return (

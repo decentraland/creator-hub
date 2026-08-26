@@ -11,15 +11,7 @@ interface BindAffordanceProps {
   onBind: (expr: string) => void;
 }
 
-/**
- * The bind affordance shared by BindableField and BindableSubField: a button that
- * opens a VariablePicker anchored to it. Binding state is owned by the caller's
- * `useFieldBinding`, passed in here, so each parent keeps a single hook instance
- * and the two wrappers (Block vs div) stay distinct.
- *
- * The glyph is a CSS mask rather than an <img> or an icon component, so the
- * button's own resting / hover / focus colours paint it — see BindableField.css.
- */
+/** The bind affordance shared by BindableField and BindableSubField: a button opening a VariablePicker. */
 export const BindAffordance: React.FC<BindAffordanceProps> = ({
   field,
   anchorRef,

@@ -12,21 +12,7 @@ import { radioGroupKeyDown, radioTabIndex } from '../radio-group';
 
 import './FillField.css';
 
-/**
- * The Style group's "Fill" control: one mode selector over uiBackground's `color`
- * and `texture`, which it owns together.
- *
- * There is no Video mode. react-ecs flattens PB's `TextureUnion` into `texture` +
- * `avatarTexture` props and drops the video case, so the ceiling is the authoring
- * type rather than the protocol or the renderer (#1434).
- *
- * Kept separate from `EntityInspector/MaterialInspector/Texture` on purpose,
- * despite the similar UX: that one edits an engine-bound Material through
- * `getInputProps` flattened string paths and carries sampler fields
- * (wrapMode/filterMode/offset/tiling, no Avatar); this one is a controlled editor
- * committing via source splices. They share the leaf primitives
- * (ui/RgbaColorField, ui/FileUploadField, ui/TextField, useAssetOptions).
- */
+/** The Style group's "Fill" control: one mode selector over uiBackground's `color` and `texture`. */
 
 type FillMode = 'colour' | 'file' | 'avatar' | 'none';
 
@@ -63,10 +49,7 @@ const MODE_VALUES = MODES.map(m => m.value);
 
 const BACKGROUND = 'core::UiBackground';
 
-/**
- * Which uiBackground prop a bind targets per mode — the key that mode's editor
- * actually writes. `none` has no value to bind, so it offers no affordance.
- */
+/** Which uiBackground prop a bind targets per mode; `none` has no value to bind. */
 const BIND_TARGET: Record<FillMode, { path: string; kind: FieldKind } | null> = {
   colour: { path: 'color', kind: 'color' },
   file: { path: 'texture.src', kind: 'string' },
@@ -82,21 +65,6 @@ interface FillFieldProps {
   onPatch: (patch: Record<string, unknown>) => void;
 }
 
-/**
- * With nothing authored, several modes are the SAME source state — a path, a
- * userId or a colour is the only thing telling them apart. `picked` remembers an
- * explicit choice until a value lands, which is what keeps that segment selected
- * and its editor on screen in between.
- *
- * Only an UNAMBIGUOUS source state outranks `picked`. A colour does not qualify:
- * an image fill carries one too (OPAQUE_TINT, so the texture is not multiplied
- * away), so `color` alone cannot tell Solid colour from an image awaiting a path.
- * Ranking it above `picked` is what made Image unselectable — picking it cleared
- * the texture, the leftover colour then read as Solid, and the segment snapped
- * straight back.
- *
- * `picked` is per-node state, so the caller keys this component by entity.
- */
 const FillFieldComponent: React.FC<FillFieldProps> = ({
   color,
   texture,

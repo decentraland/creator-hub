@@ -15,8 +15,6 @@ interface MixedContentFieldProps {
   field: FieldConfig;
   entity: Entity;
   segments: CanvasSegment[];
-  // Focus the editor (caret at end) on mount — used by the canvas inline editor,
-  // which mounts this on a double-click.
   autoFocus?: boolean;
 }
 
@@ -67,22 +65,17 @@ export const MixedContentField: React.FC<MixedContentFieldProps> = ({
     if (!editor) return;
     const normalized = normalizeSegments(serializeNodes(editor));
     const signature = JSON.stringify(normalized);
-    if (signature === lastCommittedRef.current) return; // nothing changed
+    if (signature === lastCommittedRef.current) return;
     lastCommittedRef.current = signature;
-    // Splice the attribute as a template literal / plain string / bare
-    // expression (setAttributeSegments collapses the three cases).
     void setMixedContentAttribute(entity as unknown as number, field.path, normalized);
   }, [entity, field.path]);
 
-  // Stable debounced wrapper that always invokes the latest `commit`.
   const commitRef = useRef(commit);
   useEffect(() => {
     commitRef.current = commit;
   }, [commit]);
   const debouncedCommit = useMemo(() => debounce(() => commitRef.current(), 400), []);
 
-  // Seed the editor DOM only when the selected entity/field changes — never on
-  // every external engine tick, which would reset the caret while typing.
   useLayoutEffect(() => {
     const editor = editorRef.current;
     if (!editor) return;
@@ -153,9 +146,6 @@ export const MixedContentField: React.FC<MixedContentFieldProps> = ({
       e.preventDefault();
       const text = e.clipboardData.getData('text/plain');
       if (!text) return;
-      // Insert plain text at the caret via Range (not the deprecated
-      // execCommand('insertText'), which is a no-op in Firefox / some Electron
-      // isolation contexts → silent paste loss). Mirrors the chip-insert path.
       const sel = document.getSelection();
       if (!sel || sel.rangeCount === 0 || !editorRef.current?.contains(sel.anchorNode)) return;
       const range = sel.getRangeAt(0);
@@ -166,16 +156,11 @@ export const MixedContentField: React.FC<MixedContentFieldProps> = ({
       range.collapse(true);
       sel.removeAllRanges();
       sel.addRange(range);
-      // Range mutations don't reliably fire `input`, so commit explicitly.
       debouncedCommit();
     },
     [debouncedCommit],
   );
 
-  // Drag-and-drop can insert rich HTML (foreign elements carrying a
-  // data-variable the user never picked). The chip editor has no drop gesture,
-  // so reject both dragover and drop outright — pairs with onPaste as the
-  // contentEditable trust boundary. See security-review.md Medium #1.
   const onDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
   }, []);
@@ -187,12 +172,10 @@ export const MixedContentField: React.FC<MixedContentFieldProps> = ({
   const onKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
       if (e.key === 'Enter') {
-        // Single-line field: prevent <br>/<div> insertion.
         e.preventDefault();
         editorRef.current?.blur();
         return;
       }
-      // Typing `{{` opens the variable/prop picker, consuming the first `{`.
       if (e.key === '{') {
         const sel = document.getSelection();
         const anchor = sel?.anchorNode;
@@ -244,7 +227,7 @@ export const MixedContentField: React.FC<MixedContentFieldProps> = ({
         type="button"
         className="ui-designer-bindable-link ui-designer-mixed-link"
         onMouseDown={e => {
-          e.preventDefault(); // keep the editor's caret/selection for insertion
+          e.preventDefault();
           saveSelection();
         }}
         onClick={() => setPickerOpen(true)}
