@@ -39,24 +39,16 @@
   gap: 12px;
 }
 
-.RendererSubField {
+.ExperimentalSubField {
   display: flex;
   flex-direction: column;
   gap: 8px;
   margin-left: 32px;
 }
 
-.McpServerFormGroup {
-  gap: 12px;
-}
-
-.McpServerSubField {
+.ExperimentalNestedField {
   display: flex;
   flex-direction: column;
   gap: 8px;
   margin-left: 32px;
-}
-
-.ApiKeyFormGroup {
-  gap: 8px;
 }

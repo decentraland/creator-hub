@@ -75,12 +75,15 @@ const EditorTab: React.FC<EditorTabProps> = ({
   const handleExperimentalChange = useCallback(
     (checked: boolean) => {
       // Turning experimental off returns to the stable defaults so no experimental feature
-      // stays active while its controls are hidden (renderer back to Babylon, AI off).
+      // stays active while its controls are hidden (renderer back to Babylon, every AI
+      // toggle off — otherwise the MCP server could stay exposed with no visible control).
       updateSettings({
         ...settings,
         experimental: checked,
         renderer: checked ? settings.renderer : RENDERER.BABYLON,
         aiAssistant: checked ? settings.aiAssistant : false,
+        exposeMcpServer: checked ? settings.exposeMcpServer : false,
+        useApiKeyFromEnv: checked ? settings.useApiKeyFromEnv : false,
       });
     },
     [settings, updateSettings],
@@ -88,7 +91,12 @@ const EditorTab: React.FC<EditorTabProps> = ({
 
   const handleAiAssistantChange = useCallback(
     (checked: boolean) => {
-      updateSettings({ ...settings, aiAssistant: checked });
+      // The API-key option only affects the in-app assistant, so it follows it off.
+      updateSettings({
+        ...settings,
+        aiAssistant: checked,
+        useApiKeyFromEnv: checked ? settings.useApiKeyFromEnv : false,
+      });
     },
     [settings, updateSettings],
   );
@@ -252,94 +260,108 @@ const EditorTab: React.FC<EditorTabProps> = ({
           label={t('modal.app_settings.fields.experimental.label')}
         />
         {settings.experimental && (
-          <Box className="RendererSubField">
-            <Typography variant="body1">{t('modal.app_settings.fields.renderer.label')}</Typography>
-            <Select
-              fullWidth
-              value={settings.renderer}
-              onChange={event => handleRendererChange(event.target.value as RENDERER)}
-            >
-              <MenuItem value={RENDERER.BABYLON}>
-                {t('modal.app_settings.fields.renderer.babylon')}
-              </MenuItem>
-              <MenuItem value={RENDERER.BEVY}>
-                {t('modal.app_settings.fields.renderer.bevy')}
-              </MenuItem>
-            </Select>
-            <FormControlLabel
-              control={
-                <Checkbox
-                  checked={!!settings.aiAssistant}
-                  onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
-                    handleAiAssistantChange(event.target.checked)
-                  }
-                />
-              }
-              label={t('modal.app_settings.fields.ai_assistant.label')}
-            />
-            {settings.aiAssistant && (
-              <Typography variant="caption">
-                {t('modal.app_settings.fields.ai_assistant.help')}
+          <>
+            <Box className="ExperimentalSubField">
+              <Typography variant="body1">
+                {t('modal.app_settings.fields.renderer.label')}
               </Typography>
-            )}
-          </Box>
+              <Select
+                fullWidth
+                value={settings.renderer}
+                onChange={event => handleRendererChange(event.target.value as RENDERER)}
+              >
+                <MenuItem value={RENDERER.BABYLON}>
+                  {t('modal.app_settings.fields.renderer.babylon')}
+                </MenuItem>
+                <MenuItem value={RENDERER.BEVY}>
+                  {t('modal.app_settings.fields.renderer.bevy')}
+                </MenuItem>
+              </Select>
+            </Box>
+            <Box className="ExperimentalSubField">
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={!!settings.aiAssistant}
+                    onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
+                      handleAiAssistantChange(event.target.checked)
+                    }
+                  />
+                }
+                label={t('modal.app_settings.fields.ai_assistant.label')}
+              />
+              {settings.aiAssistant && (
+                <Box className="ExperimentalNestedField">
+                  <Typography variant="caption">
+                    {t('modal.app_settings.fields.ai_assistant.help')}
+                  </Typography>
+                  <FormControlLabel
+                    control={
+                      <Checkbox
+                        checked={!!settings.useApiKeyFromEnv}
+                        onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
+                          handleUseApiKeyFromEnvChange(event.target.checked)
+                        }
+                      />
+                    }
+                    label={t('modal.app_settings.fields.ai_api_key.label')}
+                  />
+                  {settings.useApiKeyFromEnv && (
+                    <Typography variant="caption">
+                      {t('modal.app_settings.fields.ai_api_key.help')}
+                    </Typography>
+                  )}
+                </Box>
+              )}
+            </Box>
+            <Box className="ExperimentalSubField">
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={!!settings.exposeMcpServer}
+                    onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
+                      handleExposeMcpChange(event.target.checked)
+                    }
+                  />
+                }
+                label={t('modal.app_settings.fields.mcp_server.label')}
+              />
+              {settings.exposeMcpServer && (
+                <Box className="ExperimentalNestedField">
+                  <Typography variant="caption">
+                    {t('modal.app_settings.fields.mcp_server.help')}
+                  </Typography>
+                  {mcpConfigSnippet !== null && mcpConfigSnippet !== undefined ? (
+                    <>
+                      <TextField
+                        value={mcpConfigSnippet}
+                        multiline
+                        fullWidth
+                        minRows={7}
+                        InputProps={{ readOnly: true }}
+                      />
+                      <Button
+                        color="secondary"
+                        size="small"
+                        startIcon={<ContentCopyIcon fontSize="small" />}
+                        onClick={handleCopyMcpConfig}
+                      >
+                        {mcpCopied
+                          ? t('modal.app_settings.fields.mcp_server.copied')
+                          : t('modal.app_settings.fields.mcp_server.copy')}
+                      </Button>
+                      <Typography variant="caption">
+                        {t('modal.app_settings.fields.mcp_server.note')}
+                      </Typography>
+                    </>
+                  ) : (
+                    <CircularProgress size={20} />
+                  )}
+                </Box>
+              )}
+            </Box>
+          </>
         )}
-      </FormGroup>
-      <FormGroup className="McpServerFormGroup">
-        <FormControlLabel
-          control={
-            <Switch
-              checked={!!settings.exposeMcpServer}
-              onChange={(_event, checked) => handleExposeMcpChange(checked)}
-            />
-          }
-          label={t('modal.app_settings.fields.mcp_server.label')}
-        />
-        {settings.exposeMcpServer && (
-          <Box className="McpServerSubField">
-            <Typography variant="body2">
-              {t('modal.app_settings.fields.mcp_server.help')}
-            </Typography>
-            {mcpConfigSnippet !== null && mcpConfigSnippet !== undefined ? (
-              <>
-                <TextField
-                  value={mcpConfigSnippet}
-                  multiline
-                  fullWidth
-                  minRows={7}
-                  InputProps={{ readOnly: true }}
-                />
-                <Button
-                  color="secondary"
-                  size="small"
-                  startIcon={<ContentCopyIcon fontSize="small" />}
-                  onClick={handleCopyMcpConfig}
-                >
-                  {mcpCopied
-                    ? t('modal.app_settings.fields.mcp_server.copied')
-                    : t('modal.app_settings.fields.mcp_server.copy')}
-                </Button>
-                <Typography variant="caption">
-                  {t('modal.app_settings.fields.mcp_server.note')}
-                </Typography>
-              </>
-            ) : (
-              <CircularProgress size={20} />
-            )}
-          </Box>
-        )}
-      </FormGroup>
-      <FormGroup className="ApiKeyFormGroup">
-        <FormControlLabel
-          control={
-            <Switch
-              checked={!!settings.useApiKeyFromEnv}
-              onChange={(_event, checked) => handleUseApiKeyFromEnvChange(checked)}
-            />
-          }
-          label={t('modal.app_settings.fields.ai_api_key.label')}
-        />
-        <Typography variant="caption">{t('modal.app_settings.fields.ai_api_key.help')}</Typography>
       </FormGroup>
     </Box>
   );
