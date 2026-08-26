@@ -140,14 +140,9 @@ const COMPONENT_REGISTRY = {
     },
   ],
   'inspector::UIState': [
-    // V0 — shipped in @dcl/inspector 7.34.x. Never add a member to a released
-    // version: an object schema is a positional `Schemas.Map`, so one extra member
-    // overruns buffers written by an older engine ("Outside of the bounds of writen
-    // data") even when Optional. Append a new diff below instead.
     {
       sceneInfoPanelVisible: Schemas.Optional(Schemas.Boolean),
     },
-    // V1 — per-scene 2D/3D mode memory.
     {
       uiDesignerOpen: Schemas.Optional(Schemas.Boolean),
     },

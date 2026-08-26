@@ -6,11 +6,7 @@ export * from './types';
 
 let fallback: CodeParser | undefined;
 
-// The parser code-mode should use: the Creator Hub bridge when there is one,
-// otherwise — in dev builds only — a wasm parser running in this tab, so the
-// standalone inspector at :8000 can run code-mode too. A production build with
-// no bridge has no parser at all (`INSPECTOR_DEV_PARSER` is false, so the
-// dynamic import below is dead code esbuild drops along with the wasm).
+/** The parser for code-mode: the Creator Hub bridge, else a dev-only wasm fallback, else undefined. */
 export function getCodeParser(): CodeParser | undefined {
   const bridge = getIframeCodeParser();
   if (bridge) return bridge;

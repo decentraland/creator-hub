@@ -376,20 +376,6 @@ export function registerBevyRenderer(): void {
         forwardBridge?.setAnimationsFrozen(!running);
       });
 
-      // Hot-reload on scene-code change (#1419). `sdk-commands start` watches the
-      // project and broadcasts SCENE_UPDATE over the realm-root WS on any file
-      // change; on a code edit we reload the editor scene via the same Stop/reset
-      // path (reload + re-pin + reconcile). The catch: in --data-layer mode that
-      // message carries no filename and ALSO fires when the data-layer rewrites
-      // main.crdt for the inspector's OWN edits — so reloading on every one would
-      // reload on every gizmo drag (the #1391 regression). Suppress a SCENE_UPDATE
-      // that lands within a short quiet window after any local edit; only an update
-      // with no recent one (an external code save) reloads.
-      // "Local edit" comes from the shared beacon rather than a timestamp stamped
-      // here, because there are two writers: CRDT edits (below) and code mode,
-      // which writes src/ui/*.tsx through the storage bridge and never touches the
-      // CRDT. Stamping only on context.onChange made every UI Designer edit look
-      // external, and reloaded the whole scene for each one.
       const LOCAL_EDIT_QUIET_MS = 1500;
       const HOT_RELOAD_DEBOUNCE_MS = 400;
       const offLocalEdit = bevy.context.onChange(markLocalEdit);

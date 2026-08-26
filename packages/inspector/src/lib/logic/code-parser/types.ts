@@ -11,9 +11,7 @@ export interface OxcParseResult {
   errors: unknown[];
 }
 
-// What code-mode needs from a parser: an ESTree program whose node spans are
-// offsets into `source` (the splice engine edits by byte span). Implemented by
-// the CH-main RPC bridge (production) and by the dev-only wasm parser.
+/** A parser producing an ESTree program whose node spans are byte offsets into `source`, for splice editing. */
 export interface CodeParser {
   parse(filename: string, source: string): Promise<OxcParseResult>;
 }
