@@ -1,3 +1,4 @@
+import { keyName, unparen } from './ast-utils';
 import type { CodeUINode } from './types';
 
 interface AstNode {
@@ -24,16 +25,6 @@ export function applyEdits(source: string, edits: Edit[]): string {
     prevStart = e.start;
   }
   return out;
-}
-
-function unparen(node: AstNode): AstNode {
-  let n = node;
-  while (n && n.type === 'ParenthesizedExpression') n = n.expression;
-  return n;
-}
-
-function keyName(key: AstNode): string {
-  return key.type === 'Identifier' ? key.name : String(key.value);
 }
 
 function findAttr(el: AstNode, name: string): AstNode | undefined {
