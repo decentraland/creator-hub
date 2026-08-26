@@ -64,10 +64,6 @@ const getDisplayName = (componentName: string): string => {
   return (match && match[0]) || componentName;
 };
 
-// Copy/paste of a transform must not carry tree-structure pointers: for
-// `core::Transform` that's `parent`; for `core::UiTransform` it's `parent` AND
-// `rightOf` (the UI sibling-order link). Pasting either would silently reparent
-// / reorder the target — see CLAUDE.md on UiTransform parent/rightOf.
 const stripTreePointers = (componentName: string, value: unknown): unknown => {
   if (!value || typeof value !== 'object') return value;
   if (componentName === TRANSFORM_COMPONENT_NAME) {
@@ -81,20 +77,9 @@ const stripTreePointers = (componentName: string, value: unknown): unknown => {
   return value;
 };
 
-// The clipboard is fully attacker-controllable — any app or web page can place
-// JSON on the OS clipboard, and `onPasteValues` only checks the `__dclComponent`
-// tag before writing the value into an ECS component. A field with the wrong
-// runtime type (e.g. a string where an Int64 is expected) survives into the
-// CRDT and crashes the protobuf serializer on every tick — the documented
-// "Cannot convert … to a BigInt" failure class (see CLAUDE.md). Validate the
-// pasted value's shape against a fresh schema default (`schema.create()`, all
-// fields present with their correct types) before writing: every key the
-// payload sets must be runtime-type-compatible with the schema. Keys absent
-// from the default (unknown, or optional-and-undefined) carry no type signal
-// and are skipped — the serializer ignores unknown keys anyway.
 const isTypeCompatible = (got: unknown, want: unknown): boolean => {
-  if (want === null || want === undefined) return true; // no type signal — permit
-  if (got === null || got === undefined) return true; // absent/cleared — serializer tolerates
+  if (want === null || want === undefined) return true;
+  if (got === null || got === undefined) return true;
   if (Array.isArray(want)) return Array.isArray(got);
   const wantType = typeof want;
   if (wantType === 'number') return typeof got === 'number' && Number.isFinite(got);
@@ -104,7 +89,7 @@ const isTypeCompatible = (got: unknown, want: unknown): boolean => {
     const gotMap = got as Record<string, unknown>;
     return Object.keys(gotMap).every(key => isTypeCompatible(gotMap[key], wantMap[key]));
   }
-  return typeof got === wantType; // string / boolean
+  return typeof got === wantType;
 };
 
 export const matchesSchemaShape = (value: unknown, defaults: unknown): boolean => {
@@ -183,9 +168,6 @@ export const useComponentClipboard = <T>(
 
     const value = stripTreePointers(component.componentName, parsed.value) as T;
 
-    // Reject payloads whose field types don't match the component schema before
-    // they reach the CRDT, so a crafted clipboard value can't wedge the runtime
-    // serializer (see `matchesSchemaShape`).
     if (!matchesSchemaShape(value, component.schema.create())) {
       await pushNotification('error', `Cannot paste malformed ${targetName} values`);
       return;

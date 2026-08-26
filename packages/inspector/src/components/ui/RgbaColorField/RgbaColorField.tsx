@@ -8,20 +8,11 @@ import { type Color4, color4ToRgba, color4ToRgbHex, hexToColor4, rgbaToColor4 } 
 
 import './RgbaColorField.css';
 
-// One of three color controls in this library, each with a distinct value
-// model — do not consolidate them:
-// - `ColorField` edits hex strings (preset dropdown + custom hex input).
-// - `ColorPicker` wraps the native `<input type="color">`, hex strings.
-// - `RgbaColorField` (this one) edits `Color4` float rgba (the ECS PB color
-//   shape) and is the only one with an alpha channel.
 interface RgbaColorFieldProps {
   value: Color4;
   onChange: (c: Color4) => void;
 }
 
-// 6 digits (rgb) or 8 (rgba), '#' optional. Anything shorter is mid-typing:
-// `parseHexColor` answers black for an unparseable string, which would wipe the
-// colour on the way to a valid one.
 const HEX = /^#?([0-9a-f]{6}|[0-9a-f]{8})$/i;
 
 export const RgbaColorField: React.FC<RgbaColorFieldProps> = ({ value, onChange }) => {
@@ -44,7 +35,6 @@ export const RgbaColorField: React.FC<RgbaColorFieldProps> = ({ value, onChange 
     const hex = raw.trim();
     if (!HEX.test(hex)) return;
     const parsed = hexToColor4(hex);
-    // A 6-digit hex says nothing about alpha, so keep the current one.
     const digits = hex.replace('#', '').length;
     onChange(digits === 8 ? parsed : { ...parsed, a: value.a ?? 1 });
   };

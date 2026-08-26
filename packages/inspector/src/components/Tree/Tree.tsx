@@ -1,21 +1,23 @@
 import React, { useCallback, useMemo, useRef, useState } from 'react';
-import { XYCoord, useDrag, useDrop } from 'react-dnd';
+import type { XYCoord } from 'react-dnd';
+import { useDrag, useDrop } from 'react-dnd';
 import { IoIosArrowDown, IoIosArrowForward } from 'react-icons/io';
-import cx from 'classnames';
-import { Entity } from '@dcl/ecs';
 import { FiAlertTriangle as WarningIcon } from 'react-icons/fi';
+import cx from 'classnames';
+import type { Entity } from '@dcl/ecs';
 
 import { withContextMenu } from '../../hoc/withContextMenu';
 import { Input } from '../Input';
+import { useSdk } from '../../hooks/sdk/useSdk';
+import { useAppSelector } from '../../redux/hooks';
+import type { GizmoType } from '../../lib/utils/gizmo';
+import { getEntitiesOutOfBoundaries } from '../../redux/scene-metrics';
+import { InfoTooltip } from '../ui';
 import { ContextMenu } from './ContextMenu';
 import { ActionArea } from './ActionArea';
 import { Edit as EditInput } from './Edit';
-import { DropType, calculateDropType } from './utils';
-import { useSdk } from '../../hooks/sdk/useSdk';
-import { useAppSelector } from '../../redux/hooks';
-import { GizmoType } from '../../lib/utils/gizmo';
-import { getEntitiesOutOfBoundaries } from '../../redux/scene-metrics';
-import { InfoTooltip } from '../ui';
+import type { DropType } from './utils';
+import { calculateDropType } from './utils';
 
 import './Tree.css';
 
@@ -48,20 +50,11 @@ type Props<T> = {
   onDuplicate: (value: T, preferredGizmo?: GizmoType) => void;
   getDragContext?: () => unknown;
   dndType?: string;
-  // Extra DnD buses this tree ACCEPTS on drop (beyond its own `dndType`) — e.g.
-  // the palette bus, so a new widget can be dropped into the tree. Items from
-  // these buses lack the tree's own `{ items }` shape and are routed to
-  // `onExternalDrop` instead of `onDrop`.
   externalDndTypes?: string[];
   onExternalDrop?: (item: unknown, target: T, dropType: DropType) => void;
-  // Enable the top-third `before` drop zone (see calculateDropType). Off by
-  // default — only trees needing precise insert-at-position turn it on.
   allowBeforeDrop?: boolean;
   onLastSelectedChange?: (value: T) => void;
   isRoot?: (value: T) => boolean;
-  // Replaces the built-in engine-entity ActionArea (lock/hide via ECS
-  // components). Trees over non-entity values (e.g. the UI Designer's code
-  // nodes) supply their own affordances here.
   renderActionArea?: (value: T) => React.ReactNode;
 };
 
@@ -165,8 +158,6 @@ export function Tree<T>() {
             const dropTypeValue = dropType || dropTypeRef.current;
             if (monitor.didDrop() || !dropTypeValue) return;
 
-            // A foreign bus (e.g. the palette) has no `{ items }` — hand it to the
-            // consumer to insert a NEW node at this position.
             if (!item.items) {
               onExternalDrop?.(item, value, dropTypeValue);
               return;
@@ -192,7 +183,6 @@ export function Tree<T>() {
 
             const items = item.items;
 
-            // check if hovering over one of the dragged items (own-bus only)
             if (items && items.some(sourceItem => getId(sourceItem) === getId(value))) {
               dropTypeRef.current = '';
               return setDropType('');
@@ -202,8 +192,6 @@ export function Tree<T>() {
             const rect = ref.current.getBoundingClientRect();
             const dropType = calculateDropType(coords.y, rect, allowBeforeDrop);
 
-            // canReorder gates own-bus reorders only; a foreign insert is gated by
-            // the consumer's onExternalDrop.
             const enableReorder =
               items && canReorder
                 ? items.every(sourceItem => canReorder(sourceItem, value, dropType))

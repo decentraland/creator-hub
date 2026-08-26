@@ -31,15 +31,7 @@ export const FOCUS_SELECTED = 'f';
 export const TOGGLE_FREE_CAMERA = '`';
 
 interface UseHotkeyOptions {
-  /**
-   * Skip registration entirely while false (default true).
-   *
-   * Not "register but ignore": the wrapper below calls preventDefault() before
-   * dispatching, so an inert binding would still swallow the key from whoever
-   * owns the screen instead. The 3D camera keys use this while the UI Designer
-   * is open — otherwise space / f / +- steer an invisible camera AND go missing
-   * from the designer.
-   */
+  /** Skip registration entirely while false (default true). */
   enabled?: boolean;
 }
 
@@ -75,10 +67,6 @@ export const useHotkey = (
     };
     hotkeys(formattedKeys, { element: targetDocument }, handler);
     return () => {
-      // Unbind THIS handler, not the key: the bare `hotkeys.unbind(key)` drops
-      // every handler registered for it anywhere. Two components sharing a key
-      // is normal here (Gizmos and the Renderer both take `f`), so the unscoped
-      // form let one unmount silently kill the other's binding for good.
       hotkeys.unbind(formattedKeys, handler);
     };
   }, [node, formattedKeys, enabled]);

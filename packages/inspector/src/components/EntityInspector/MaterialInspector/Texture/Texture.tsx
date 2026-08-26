@@ -9,13 +9,6 @@ import { ACCEPTED_FILE_TYPES } from '../../../ui/FileUploadField/types';
 import { isModel, isValidTexture } from './utils';
 import { type Props, Texture, TEXTURE_TYPES, WRAP_MODES, FILTER_MODES } from './types';
 
-// Kept separate from the UI Designer's `TextureField` on purpose, despite the
-// similar UX (Type dropdown + per-variant editor): this one edits an
-// engine-bound Material through `getInputProps` flattened string paths and
-// carries sampler fields (wrapMode/filterMode/offset/tiling, no Avatar); that
-// one is a controlled `TextureUnion` editor committing via source splices and
-// adds the Avatar variant. They share the leaf primitives (ui/Dropdown,
-// ui/FileUploadField, ui/TextField, useAssetOptions, useVideoPlayerOptions).
 const TextureInspector = withSdk<Props>(({ label, texture, files, getInputProps }) => {
   const videoPlayerOptions = useVideoPlayerOptions();
 

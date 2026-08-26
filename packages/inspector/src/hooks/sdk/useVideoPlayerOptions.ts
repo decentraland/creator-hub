@@ -5,12 +5,7 @@ import { useSdk } from './useSdk';
 
 export type VideoPlayerOption = { value: string; label: string };
 
-/**
- * Every VideoPlayer entity in the scene as `{ value, label }` dropdown
- * options, labeled by the entity's Name (falling back to `Entity <id>` so
- * unnamed players stay selectable). Shared by the UI Designer's TextureField
- * and the MaterialInspector's Texture section.
- */
+/** Every VideoPlayer entity in the scene as `{ value, label }` dropdown options, labeled by the entity's Name (falling back to `Entity <id>`). */
 export const useVideoPlayerOptions = (): VideoPlayerOption[] => {
   const sdk = useSdk();
   const entitiesWithVideoPlayer = useEntitiesWith(components => components.VideoPlayer);
