@@ -10,6 +10,8 @@ import { setDebugConsoleEnabled, setMobileDebugSessionEnabled } from '../../../r
 import * as debugLogStore from '../../logic/debug-log-store';
 import * as mobileDebugStore from '../../logic/mobile-debug-store';
 import { setFeatureFlags } from '../../../redux/feature-flags';
+import { getDataLayerInterface } from '../../../redux/data-layer';
+import { updateCanSave } from '../../../redux/app';
 
 enum Method {
   TOGGLE_COMPONENT = 'toggle_component',
@@ -29,6 +31,7 @@ enum Method {
   SET_FEATURE_FLAGS = 'set_feature_flags',
   PUSH_MOBILE_DEBUG_ENTRIES = 'push_mobile_debug_entries',
   SET_MOBILE_DEBUG_SESSION_ENABLED = 'set_mobile_debug_session_enabled',
+  SAVE_SCENE = 'save_scene',
 }
 
 type Params = {
@@ -58,6 +61,7 @@ type Params = {
       messageCount: number;
     }[];
   };
+  [Method.SAVE_SCENE]: Record<string, never>;
 };
 
 type Result = {
@@ -78,6 +82,7 @@ type Result = {
   [Method.SET_FEATURE_FLAGS]: void;
   [Method.PUSH_MOBILE_DEBUG_ENTRIES]: void;
   [Method.SET_MOBILE_DEBUG_SESSION_ENABLED]: void;
+  [Method.SAVE_SCENE]: void;
 };
 
 export class SceneServer extends RPC<Method, Params, Result> {
@@ -184,6 +189,16 @@ export class SceneServer extends RPC<Method, Params, Result> {
     this.handle('set_mobile_debug_session_enabled', async ({ enabled, sessions }) => {
       store.dispatch(setMobileDebugSessionEnabled({ enabled }));
       mobileDebugStore.updateSessions(sessions);
+    });
+
+    // Renderer-agnostic on purpose: the host calls this before publishing, and publishing
+    // must not ship a stale scene.json under Bevy either. Rejects when the flush fails, so
+    // the host can stop rather than deploy the previous content.
+    this.handle('save_scene', async () => {
+      const dataLayer = getDataLayerInterface();
+      if (!dataLayer) throw new Error('Data layer is not connected');
+      await dataLayer.save({});
+      store.dispatch(updateCanSave({ dirty: false }));
     });
   }
 }

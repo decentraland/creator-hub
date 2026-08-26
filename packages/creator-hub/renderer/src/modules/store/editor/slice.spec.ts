@@ -1,11 +1,14 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { PreviewOptions } from '/shared/types/settings';
 
 import { editor } from '#preload';
 
+import { setActiveSceneClient } from '/@/modules/rpc/active-scene';
+import type { SceneRpcClient } from '/@/modules/rpc/scene/client';
+
 import { createTestStore } from '../../../../tests/utils/testStore';
-import { cancelPreview, runScene, setPreviewProgress } from './slice';
+import { cancelPreview, publishScene, runScene, setPreviewProgress } from './slice';
 
 const TEST_PATH = '/test/scene';
 const PREVIEW_OPTS: PreviewOptions = {
@@ -163,6 +166,80 @@ describe('editor slice preview state', () => {
       store.dispatch(setPreviewProgress(null));
 
       expect(store.getState().editor.previewProgress).toBeNull();
+    });
+  });
+});
+
+describe('editor slice publish', () => {
+  let store: ReturnType<typeof createTestStore>;
+  const saveScene = vi.fn();
+
+  const PUBLISH_OPTS = {
+    path: TEST_PATH,
+    chainId: 1 as never,
+    wallet: '0xwallet',
+    target: 'https://peer.decentraland.org',
+  };
+
+  beforeEach(() => {
+    store = createTestStore();
+    saveScene.mockReset();
+    setActiveSceneClient({ saveScene } as unknown as SceneRpcClient);
+    vi.mocked(editor.publishScene).mockResolvedValue(3000 as never);
+  });
+
+  afterEach(() => {
+    setActiveSceneClient(null);
+  });
+
+  describe('when the editor still has unsaved work', () => {
+    it('should flush it to disk before the deploy reads the project', async () => {
+      const order: string[] = [];
+      saveScene.mockImplementation(async () => {
+        order.push('save');
+      });
+      vi.mocked(editor.publishScene).mockImplementation(async () => {
+        order.push('publish');
+        return 3000 as never;
+      });
+
+      await store.dispatch(publishScene(PUBLISH_OPTS));
+
+      expect(order).toEqual(['save', 'publish']);
+    });
+  });
+
+  describe('when the flush fails', () => {
+    beforeEach(() => {
+      saveScene.mockRejectedValue(new Error('EBUSY: resource busy or locked'));
+    });
+
+    // Deploying here would publish the previous scene.json under a success message, leaving
+    // the creator with no signal that their changes did not go live.
+    it('should not start the deploy', async () => {
+      await store.dispatch(publishScene(PUBLISH_OPTS));
+
+      expect(editor.publishScene).not.toHaveBeenCalled();
+    });
+
+    it('should surface the reason instead of failing silently', async () => {
+      await store.dispatch(publishScene(PUBLISH_OPTS));
+
+      expect(store.getState().editor.loadingPublish).toBe(false);
+      expect(store.getState().editor.publishError).toContain('EBUSY');
+    });
+  });
+
+  describe('when no editor is open', () => {
+    beforeEach(() => {
+      setActiveSceneClient(null);
+    });
+
+    it('should publish without a flush rather than block', async () => {
+      await store.dispatch(publishScene(PUBLISH_OPTS));
+
+      expect(saveScene).not.toHaveBeenCalled();
+      expect(editor.publishScene).toHaveBeenCalled();
     });
   });
 });

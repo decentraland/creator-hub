@@ -136,6 +136,13 @@
   text-transform: uppercase;
 }
 
+.Deploy .scene .Success .content .indexing-note {
+  color: var(--light-gray);
+  font-size: 13px;
+  line-height: 18px;
+  max-width: 480px;
+}
+
 .Deploy .scene .jump-in-url {
   margin-bottom: 20px;
 }

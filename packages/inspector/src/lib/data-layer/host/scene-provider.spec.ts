@@ -41,6 +41,28 @@ function serializationRoundTrip<T>(
   return component.schema.deserialize(buffer) as T;
 }
 
+/** Makes writes to one path fail until `stop()` is called. */
+function breakWritesTo(
+  fs: Awaited<ReturnType<typeof feededFileSystem>>,
+  path: string,
+  message: string,
+) {
+  const original = fs.writeFile;
+  let broken = true;
+
+  fs.writeFile = async (target: string, content: Buffer) => {
+    if (broken && target === path) throw new Error(message);
+    return original(target, content);
+  };
+
+  return {
+    stop() {
+      broken = false;
+      fs.writeFile = original;
+    },
+  };
+}
+
 describe('SceneProvider', () => {
   const originalError = console.error;
   const originalFetch = globalThis.fetch;
@@ -86,6 +108,38 @@ describe('SceneProvider', () => {
 
       const sceneJsonAfter = await readSceneJson(mocked.fs);
       expect(sceneJsonAfter.landscapeTerrain).toBe(true);
+    });
+  });
+
+  describe('when scene.json cannot be written', () => {
+    it('should reject save() rather than report success over stale content on disk', async () => {
+      const mocked = await mockedRpcInit();
+      const rpc = await initRpcMethods(mocked.fs, mocked.engine, mocked.addEngineListener);
+      const locked = breakWritesTo(mocked.fs, 'scene.json', 'EBUSY: resource busy or locked');
+
+      const Scene = mocked.engine.getComponent(
+        EditorComponentNames.Scene,
+      ) as LastWriteWinElementSetComponentDefinition<EditorComponentsTypes['Scene']>;
+
+      const current = Scene.get(mocked.engine.RootEntity);
+      Scene.createOrReplace(
+        mocked.engine.RootEntity,
+        serializationRoundTrip(Scene, { ...current, name: 'Renamed before publishing' }),
+      );
+      await mocked.engine.update(1);
+      await new Promise(resolve => setTimeout(resolve, 50));
+
+      // The autosave failed, so the title the creator typed is not on disk. save() has to
+      // say so: a save() that resolves here lets a publish package the previous scene.json.
+      expect((await readSceneJson(mocked.fs)).display.title).not.toBe('Renamed before publishing');
+      await expect(rpc.save({}, {} as any)).rejects.toThrow(/EBUSY/);
+
+      locked.stop();
+
+      // The edit is still pending, so the retry inside save() writes it — no further engine
+      // change needed to unstick it.
+      await rpc.save({}, {} as any);
+      expect((await readSceneJson(mocked.fs)).display.title).toBe('Renamed before publishing');
     });
   });
 });

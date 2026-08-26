@@ -11,6 +11,9 @@ import { isWorkspaceError } from '/shared/types/workspace';
 
 import { editor } from '#preload';
 
+import { getActiveSceneClient } from '/@/modules/rpc/active-scene';
+import { t } from '/@/modules/store/translation/utils';
+
 import { actions as deploymentActions } from '../deployment';
 import { actions as workspaceActions } from '../workspace';
 
@@ -41,10 +44,36 @@ export const runScene = createAsyncThunk(
 // Cancels a preview that's still converting: the spawn is killed and the pending
 // runScene settles without opening the client.
 export const cancelPreview = createAsyncThunk('editor/cancelPreview', editor.cancelPreview);
+/**
+ * Pushes the open editor's queued writes to disk before a deploy reads the project back.
+ *
+ * The Inspector saves asynchronously, so an edit made moments before hitting Publish can
+ * still be in flight — or have failed — while `sdk-commands deploy` packages whatever
+ * scene.json is on disk. Failing here is deliberate: publishing content the creator cannot
+ * see is worse than not publishing at all.
+ *
+ * A closed editor (no iframe mounted) has nothing to flush and is not an error.
+ */
+async function flushEditorToDisk() {
+  const scene = getActiveSceneClient();
+  if (!scene) return;
+
+  try {
+    await scene.saveScene();
+  } catch (error) {
+    throw new Error(
+      t('editor.publish.save_failed', {
+        reason: error instanceof Error ? error.message : String(error),
+      }),
+    );
+  }
+}
+
 export const publishScene = createAsyncThunk(
   'editor/publishScene',
   async (opts: DeployOptions, { dispatch, getState }) => {
     const { translation } = getState();
+    await flushEditorToDisk();
     const port = await editor.publishScene({ ...opts, language: translation.locale });
     const deployment = { path: opts.path, port, chainId: opts.chainId, wallet: opts.wallet };
     await dispatch(deploymentActions.initializeDeployment(deployment)).unwrap();

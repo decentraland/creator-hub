@@ -85,6 +85,9 @@
           "failed": "Falló"
         }
       }
+    },
+    "publish": {
+      "save_failed": "No se pudo guardar tu escena antes de publicar, así que se detuvo la publicación para no desplegar contenido anterior. {reason}"
     }
   },
   "scene_list": {
@@ -323,7 +326,8 @@
           "world": "Mundo",
           "land": "Tierra",
           "jump_in": "Entrar",
-          "in_progress": "Ahora puedes acceder a tu escena incluso mientras aún se está procesando."
+          "in_progress": "Ahora puedes acceder a tu escena incluso mientras aún se está procesando.",
+          "indexing_note": "La escena ya está publicada. Su tarjeta en el explorador (título, descripción y miniatura) se indexa por separado y puede tardar unos minutos en actualizarse."
         }
       }
     },

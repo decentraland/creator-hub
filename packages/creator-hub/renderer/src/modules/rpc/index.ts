@@ -4,6 +4,7 @@ import { hasCustomCode } from '/shared/scene-parser';
 import { fs, custom, workspace } from '#preload';
 
 import { SceneRpcClient } from './scene/client';
+import { clearActiveSceneClient, setActiveSceneClient } from './active-scene';
 import { SceneRpcServer } from './scene/server';
 import { type Method, type Params, type Result, StorageRPC } from './storage';
 import { AuthenticatedMessageTransport } from './transport';
@@ -46,6 +47,7 @@ export function initRpc(iframe: HTMLIFrameElement, project: Project, cbs: Partia
   const sceneServer = new SceneRpcServer(transport, project);
   const params = { iframe, project, scene: sceneClient };
   const storage = new StorageRPC(transport, cbs, params);
+  setActiveSceneClient(sceneClient);
 
   void Promise.all([
     sceneClient.selectAssetsTab('AssetsPack'),
@@ -65,6 +67,7 @@ export function initRpc(iframe: HTMLIFrameElement, project: Project, cbs: Partia
   return {
     ...params,
     dispose: () => {
+      clearActiveSceneClient(sceneClient);
       storage.dispose();
       sceneServer.dispose();
       sceneClient.dispose();
