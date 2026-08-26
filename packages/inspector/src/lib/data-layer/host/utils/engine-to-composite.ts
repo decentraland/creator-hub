@@ -74,7 +74,7 @@ export function dumpEngineToComposite(
   }
 
   const ignoreComponentNames = [
-    'inspector:Selection',
+    'inspector::Selection',
     'editor::Toggle',
     CompositeRoot.componentName,
   ];

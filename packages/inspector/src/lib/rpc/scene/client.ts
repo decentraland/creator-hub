@@ -8,6 +8,7 @@ enum Method {
   PUSH_NOTIFICATION = 'push_notification',
   BROADCAST_MOBILE_DEBUG_COMMAND = 'broadcast_mobile_debug_command',
   GET_FEATURE_FLAGS = 'get_feature_flags',
+  UPDATE_SDK = 'update_sdk',
 }
 
 type Params = {
@@ -16,6 +17,7 @@ type Params = {
   [Method.PUSH_NOTIFICATION]: { notification: NotificationRequest };
   [Method.BROADCAST_MOBILE_DEBUG_COMMAND]: { cmd: string; args: Record<string, unknown> };
   [Method.GET_FEATURE_FLAGS]: Record<string, never>;
+  [Method.UPDATE_SDK]: Record<string, never>;
 };
 
 type Result = {
@@ -27,6 +29,7 @@ type Result = {
     results: { sessionId: number; ok: boolean; data: unknown }[];
   };
   [Method.GET_FEATURE_FLAGS]: { flags: Record<string, boolean> };
+  [Method.UPDATE_SDK]: { ok: boolean };
 };
 
 export class SceneClient extends RPC<Method, Params, Result> {
@@ -59,5 +62,9 @@ export class SceneClient extends RPC<Method, Params, Result> {
    */
   getFeatureFlags = () => {
     return this.request('get_feature_flags', {});
+  };
+
+  updateSdk = () => {
+    return this.request('update_sdk', {});
   };
 }

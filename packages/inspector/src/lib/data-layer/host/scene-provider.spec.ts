@@ -8,7 +8,7 @@ import { createEngineContext } from './utils/engine';
 
 async function mockedRpcInit() {
   const callbackFunctions: OnChangeFunction[] = [];
-  const fs = await feededFileSystem();
+  const { fs } = await feededFileSystem();
   const engineContext = createEngineContext({
     onChangeFunction: (entity, operation, component, componentValue) => {
       callbackFunctions.forEach(func => func(entity, operation, component, componentValue));
@@ -23,7 +23,7 @@ async function mockedRpcInit() {
   return { fs, engine, addEngineListener };
 }
 
-async function readSceneJson(fs: Awaited<ReturnType<typeof feededFileSystem>>) {
+async function readSceneJson(fs: Awaited<ReturnType<typeof feededFileSystem>>['fs']) {
   const buffer = await fs.readFile('scene.json');
   return JSON.parse(new TextDecoder().decode(buffer));
 }
