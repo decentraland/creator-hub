@@ -231,11 +231,16 @@ export const persistConversation = createAsyncThunk(
 );
 
 // Revert the scene-graph changes an assistant turn made (undo its `mutations` steps).
+// Mark reverted BEFORE awaiting: the detached window's mirror lags a hop, so a fast
+// double-click can fire two reverts — the second would undo the user's own edits off the
+// shared stack. Marking synchronously makes the second dispatch a no-op.
 export const revertTurn = createAsyncThunk<void, { id: string; count: number }>(
   'ai/revertTurn',
-  async ({ id, count }, { dispatch }) => {
-    await ai.revertTurn(count);
+  async ({ id, count }, { getState, dispatch }) => {
+    const msg = getState().ai.messages.find(m => m.id === id);
+    if (msg === undefined || msg.reverted) return;
     dispatch(actions.markReverted(id));
+    await ai.revertTurn(count);
   },
 );
 
@@ -319,6 +324,11 @@ const slice = createSlice({
           state.busy = false;
           break;
         }
+        default: {
+          // Compile error if a new AiEvent kind is added without a case here.
+          const _exhaustive: never = payload;
+          return _exhaustive;
+        }
       }
     },
     // Finalize on an intentional stop (no `done` event follows a kill).
@@ -385,8 +395,10 @@ const slice = createSlice({
       .addCase(fetchProviders.rejected, state => {
         state.detecting = false;
       })
-      // A send that main rejected (e.g. CLI vanished mid-session): drop the optimistic
-      // busy flag and surface the error on the last assistant bubble, or a new one.
+      // A send that main rejected (e.g. CLI vanished mid-session, or no scene open): drop
+      // the optimistic busy flag and surface the error. If there's an in-progress assistant
+      // bubble, attach it there; otherwise (rejected before/without one — last is a user
+      // bubble, or none) push a bubble to carry it, so the error is never silently dropped.
       .addCase(send.rejected, (state, action) => {
         state.busy = false;
         const message = action.error.message ?? 'The assistant failed to start.';
@@ -394,6 +406,15 @@ const slice = createSlice({
         if (last !== undefined && last.role === 'assistant' && !last.done) {
           last.error = message;
           last.done = true;
+        } else {
+          state.messages.push({
+            id: `err-${crypto.randomUUID()}`,
+            role: 'assistant',
+            text: '',
+            tools: [],
+            done: true,
+            error: message,
+          });
         }
       });
   },

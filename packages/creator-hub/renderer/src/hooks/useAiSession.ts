@@ -4,6 +4,9 @@ import { ai as aiPreload } from '#preload';
 import { useDispatch, useSelector } from '#store';
 import { actions as aiActions } from '/@/modules/store/ai';
 
+// Coalesce mirror pushes to the detached window to at most one per this interval (P2-1).
+const MIRROR_THROTTLE_MS = 60;
+
 // The AI session engine, mounted once in the editor (main window) whenever the assistant
 // is enabled — independent of whether the chat is shown inline or popped out (#1504). It
 // owns provider detection, the turn event stream, transcript persistence and conversation
@@ -24,12 +27,30 @@ export function useAiSession(enabled: boolean, projectPath: string | undefined) 
   // Provider detection + the turn event stream (fold events into the store, persist on done).
   useEffect(() => {
     if (!enabled) return;
+    // If the editor was left mid-turn and the CLI child has since exited, its `done` event
+    // was dropped and the store is stuck busy:true (which also blocks loadConversation).
+    // Reconcile with main's real state so the UI doesn't hang on a spinner.
+    void aiPreload.isBusy().then(mainBusy => {
+      if (!mainBusy) dispatch(aiActions.stopped());
+    });
     dispatch(aiActions.fetchProviders());
     const { cleanup } = aiPreload.subscribeAiStream(event => {
       dispatch(aiActions.applyEvent(event));
       if (event.kind === 'done') dispatch(aiActions.persistConversation());
     });
     return cleanup;
+  }, [enabled, dispatch]);
+
+  // Killing the CLI child when the assistant is turned OFF mid-turn (not on navigate-away —
+  // that leaves the turn to finish and reconciles on return, above). A running child edits
+  // files with bypassPermissions, so a disable must stop it, not just hide the UI.
+  const prevEnabled = useRef(enabled);
+  useEffect(() => {
+    if (prevEnabled.current && !enabled) {
+      void aiPreload.stop();
+      dispatch(aiActions.stopped());
+    }
+    prevEnabled.current = enabled;
   }, [enabled, dispatch]);
 
   // Restore the open project's saved conversation when the project changes.
@@ -88,16 +109,48 @@ export function useAiSession(enabled: boolean, projectPath: string | undefined) 
             projectTitle: latest.current.projectTitle,
           });
           break;
+        default: {
+          // Compile error if a new AiRemoteCommand variant is added without a case here.
+          const _exhaustive: never = command;
+          return _exhaustive;
+        }
       }
     });
     return cleanup;
   }, [enabled, dispatch]);
 
-  // Mirror the store's `ai` slice to the detached window while it's open.
+  // Mirror the store's `ai` slice to the detached window while it's open — throttled, since
+  // this fires on every streamed token and the payload is the whole transcript (P2-1). A
+  // leading + trailing throttle keeps the detached window responsive without a push per token.
+  const mirrorTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastMirror = useRef(0);
   useEffect(() => {
     if (!enabled || !detachedOpen) return;
-    aiPreload.pushAiMirrorState({ ...aiState, projectTitle });
+    const push = () => {
+      lastMirror.current = Date.now();
+      aiPreload.pushAiMirrorState({
+        ...latest.current.aiState,
+        projectTitle: latest.current.projectTitle,
+      });
+    };
+    const elapsed = Date.now() - lastMirror.current;
+    if (elapsed >= MIRROR_THROTTLE_MS) {
+      push();
+    } else if (mirrorTimer.current === null) {
+      mirrorTimer.current = setTimeout(() => {
+        mirrorTimer.current = null;
+        push();
+      }, MIRROR_THROTTLE_MS - elapsed);
+    }
   }, [enabled, detachedOpen, aiState, projectTitle]);
+
+  // Cancel a pending mirror push on unmount.
+  useEffect(
+    () => () => {
+      if (mirrorTimer.current !== null) clearTimeout(mirrorTimer.current);
+    },
+    [],
+  );
 
   // The detached window relies on this hook (the main window's engine) for its state and
   // to run its commands. Close it when the editor unmounts (navigating away) or the

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { selectionContext } from './slice';
+import { reducer, selectionContext, send } from './slice';
 
 // The "[Editor context]" line attached to a turn from the current editor selection, so the
 // assistant can resolve "this" / "the selected entity" without the user spelling out ids.
@@ -27,5 +27,33 @@ describe('selectionContext', () => {
 
   it('falls back to "Entity" for an unnamed selection', () => {
     expect(selectionContext([{ id: 700, name: '' }])).toContain('Entity (id 700)');
+  });
+});
+
+// A rejected send must always surface its error, even when there's no in-progress assistant
+// bubble to attach it to (rejected before pushUserMessage, or after — last is a user bubble).
+describe('send.rejected', () => {
+  it('creates an assistant error bubble when there is none in progress', () => {
+    const state = reducer(undefined, {
+      type: send.rejected.type,
+      error: { message: 'Open a scene before using the assistant.' },
+    });
+    expect(state.busy).toBe(false);
+    expect(state.messages).toHaveLength(1);
+    expect(state.messages[0]).toMatchObject({
+      role: 'assistant',
+      done: true,
+      error: 'Open a scene before using the assistant.',
+    });
+  });
+
+  it('attaches the error to an in-progress assistant bubble instead of adding one', () => {
+    const started = reducer(undefined, {
+      type: 'ai/applyEvent',
+      payload: { kind: 'started', turnId: 't1' },
+    });
+    const state = reducer(started, { type: send.rejected.type, error: { message: 'boom' } });
+    expect(state.messages).toHaveLength(1);
+    expect(state.messages[0]).toMatchObject({ id: 't1', error: 'boom', done: true });
   });
 });

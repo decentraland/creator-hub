@@ -6,6 +6,7 @@ import type { AiMirrorState, AiProvider } from '/shared/types/ai';
 import { ai as aiPreload } from '#preload';
 import { useDispatch } from '#store';
 import { actions as translationActions } from '/@/modules/store/translation';
+import { locales } from '/@/modules/store/translation/utils';
 import type { Locale } from '/shared/types/translation';
 
 import type { AiMessage } from '/@/modules/store/ai/types';
@@ -21,10 +22,10 @@ export function AiChatWindow() {
 
   // Match the app's locale (passed on the window URL) so the chrome isn't stuck on English.
   useEffect(() => {
-    const locale = new URLSearchParams(window.location.search).get('locale');
-    if (locale === 'en' || locale === 'es' || locale === 'zh') {
-      const next: Locale = locale;
-      dispatch(translationActions.changeLocale(next));
+    const raw = new URLSearchParams(window.location.search).get('locale');
+    // Runtime-checked against the actual locale list, so a new locale needs no change here.
+    if (raw !== null && (locales as string[]).includes(raw)) {
+      dispatch(translationActions.changeLocale(raw as Locale));
     }
   }, [dispatch]);
 
