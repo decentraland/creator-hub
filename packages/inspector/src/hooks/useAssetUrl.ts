@@ -1,7 +1,11 @@
 import { useEffect, useState } from 'react';
-import { getDataLayerInterface } from '../../../redux/data-layer';
-import type { GetFileResponse } from '../../../lib/data-layer/remote-data-layer';
-import { getMimeType, isExternalUrl, normalizePath } from './utils';
+import { getDataLayerInterface } from '../redux/data-layer';
+import type { GetFileResponse } from '../lib/data-layer/remote-data-layer';
+import {
+  getMimeType,
+  isExternalUrl,
+  normalizePath,
+} from '../components/SceneInfoPanel/MarkdownRenderer/utils';
 
 /**
  * Hook that loads an asset from either an external URL or the scene filesystem
@@ -18,13 +22,24 @@ export function useAssetUrl(src: string | undefined): string | undefined {
   );
 
   useEffect(() => {
-    if (!src) return;
+    // Clearing `src` must clear the resolved URL too. The previous run's cleanup
+    // revokes the object URL, but revoking does NOT un-paint an element that has
+    // already rendered it — returning early here leaves the old asset on screen
+    // indefinitely (setting a background texture back to "None" kept the image).
+    if (!src) {
+      setAssetUrl(undefined);
+      return;
+    }
     if (isExternalUrl(src)) {
       setAssetUrl(src);
       return;
     }
 
     let objectUrl: string | null = null;
+    // Guards against the race where `src` changes (or the component unmounts)
+    // while a load is in flight: without it, the resolved blob URL would be set
+    // after cleanup (stale texture) and never revoked (leak).
+    let cancelled = false;
 
     const loadAsset = async () => {
       try {
@@ -37,6 +52,7 @@ export function useAssetUrl(src: string | undefined): string | undefined {
 
         // Fetch the file from the data layer
         const response: GetFileResponse = await dataLayer.getFile({ path });
+        if (cancelled) return;
 
         // Convert Uint8Array to Blob with MIME type
         const type = getMimeType(path);
@@ -44,16 +60,22 @@ export function useAssetUrl(src: string | undefined): string | undefined {
 
         // Create object URL
         objectUrl = URL.createObjectURL(blob);
+        if (cancelled) {
+          URL.revokeObjectURL(objectUrl);
+          objectUrl = null;
+          return;
+        }
         setAssetUrl(objectUrl);
       } catch (err) {
-        console.error(`Failed to load asset on Scene Info: ${src}`, err);
+        console.error(`Failed to load asset URL for path: ${src}`, err);
       }
     };
 
     void loadAsset();
 
-    // Cleanup object URL on unmount
+    // Cancel any in-flight load and revoke the object URL on unmount / src change.
     return () => {
+      cancelled = true;
       if (objectUrl) URL.revokeObjectURL(objectUrl);
     };
   }, [src]);
