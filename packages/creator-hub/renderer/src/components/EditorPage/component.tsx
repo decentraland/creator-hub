@@ -34,6 +34,7 @@ import EditorPng from '/assets/images/editor.png';
 import { ai } from '#preload';
 import { useDispatch, useSelector } from '#store';
 import { useFeatureFlags } from '/@/hooks/useFeatureFlags';
+import { useAiSession } from '/@/hooks/useAiSession';
 import { actions as snackbarActions } from '/@/modules/store/snackbar';
 import { actions as editorActions } from '/@/modules/store/editor';
 import { createGenericNotification } from '/@/modules/store/snackbar/utils';
@@ -44,6 +45,7 @@ import { ButtonGroup } from '../Button';
 import { ConnectionStatusIndicator } from '../ConnectionStatusIndicator';
 import { MobileQRCode } from '../Modals/MobileQRCode';
 import { AiChatPanel } from '../AiChatPanel';
+import { DetachedPlaceholder } from '../AiChatPanel/DetachedPlaceholder';
 import { DeployModal } from './DeployModal';
 import { PreviewOptions, PublishOptions } from './MenuOptions';
 import { getPublishButtonText, getPublishOptions } from './utils';
@@ -134,6 +136,13 @@ export function EditorPage() {
   // The AI assistant is an experimental opt-in (Settings → Experimental), like the Bevy
   // renderer — not a remote feature flag.
   const aiChatEnabled = settings.aiAssistant;
+  // The AI session engine + detached-window bridge (#1504). Runs whenever the assistant is
+  // on, independent of whether the chat is shown inline or popped out.
+  const {
+    detachedOpen: aiDetached,
+    openDetached: openAiWindow,
+    closeDetached: closeAiWindow,
+  } = useAiSession(aiChatEnabled, project?.path);
   const { executeDeployment, getDeployment } = useDeploy();
   const deployment = project ? getDeployment(project.path) : undefined;
 
@@ -246,7 +255,8 @@ export function EditorPage() {
   // chip, attached as context on send). Cheap read; only runs while the panel is visible.
   // Rejects harmlessly under the Bevy renderer (no selection RPC) — selection just stays empty.
   useEffect(() => {
-    if (!aiOpen) {
+    // Poll while the chat is visible anywhere — inline or in the detached window (#1504).
+    if (!aiOpen && !aiDetached) {
       dispatch(aiActions.setSelection([]));
       return;
     }
@@ -267,7 +277,7 @@ export function EditorPage() {
       cancelled = true;
       clearInterval(timer);
     };
-  }, [aiOpen, dispatch]);
+  }, [aiOpen, aiDetached, dispatch]);
 
   useEffect(() => {
     if (isWorkspaceError(error, 'PROJECT_NOT_FOUND') || isProjectError(error)) {
@@ -815,7 +825,16 @@ export function EditorPage() {
               // for the Babylon renderer.
               allow="cross-origin-isolated"
             ></iframe>
-            {aiChatEnabled && aiOpen && <AiChatPanel onClose={() => setAiOpen(false)} />}
+            {aiChatEnabled &&
+              aiOpen &&
+              (aiDetached ? (
+                <DetachedPlaceholder onDock={closeAiWindow} />
+              ) : (
+                <AiChatPanel
+                  onClose={() => setAiOpen(false)}
+                  onPopOut={openAiWindow}
+                />
+              ))}
           </div>
           <DeployModal
             type={modalState.type}

@@ -89,6 +89,10 @@
     "ai": {
       "title": "AI Assistant",
       "toggle": "Toggle AI assistant",
+      "pop_out": "Open in a separate window",
+      "dock": "Dock back in the editor",
+      "detached_message": "The assistant is open in a separate window.",
+      "detached_dock": "Bring it back here",
       "new_chat": "New chat",
       "placeholder": "Ask about your scene, or describe a change…",
       "send": "Send",

@@ -1,17 +1,28 @@
 import { ipcRenderer, type IpcRendererEvent } from 'electron';
 
 import {
+  AI_MIRROR_STATE,
+  AI_REMOTE_COMMAND,
   AI_SCENE_OP_REQUEST,
   AI_SCREENSHOT_REQUEST,
   AI_STREAM_EVENT,
+  AI_WINDOW_STATE,
   type AiSceneOpRequest,
   type AiScreenshotRequest,
+  type AiWindowState,
 } from '/shared/types/ipc';
-import type { AiEvent, AiProviderInfo, AiSendParams } from '/shared/types/ai';
+import type {
+  AiEvent,
+  AiMirrorState,
+  AiProviderInfo,
+  AiRemoteCommand,
+  AiSendParams,
+} from '/shared/types/ai';
 
 import { invoke } from '../services/ipc';
 
 export type { AiEvent, AiProviderInfo, AiSendParams, AiScreenshotRequest, AiSceneOpRequest };
+export type { AiMirrorState, AiRemoteCommand, AiWindowState };
 
 export async function detectProviders(): Promise<AiProviderInfo[]> {
   return invoke('ai.detectProviders');
@@ -77,4 +88,51 @@ export function onSceneOpRequest(cb: (req: AiSceneOpRequest) => void): { cleanup
 
 export function sceneOpResult(id: string, ok: boolean, payload: unknown): void {
   void invoke('ai.sceneOpResult', id, ok, payload);
+}
+
+// --- Detached AI window (#1504) -------------------------------------------------------
+
+// Open (or focus) the detached chat window, seeded with the app locale for its i18n.
+export async function openAiWindow(locale?: string): Promise<void> {
+  return invoke('ai.openWindow', locale);
+}
+
+// Close the detached window (dock the chat back inline).
+export async function closeAiWindow(): Promise<void> {
+  return invoke('ai.closeWindow');
+}
+
+export async function isAiWindowOpen(): Promise<boolean> {
+  return invoke('ai.isWindowOpen');
+}
+
+// Main window → detached: push the current chat state to mirror.
+export function pushAiMirrorState(state: AiMirrorState): void {
+  void invoke('ai.mirrorPush', state);
+}
+
+// Detached: receive the mirrored chat state.
+export function onAiMirrorState(cb: (state: AiMirrorState) => void): { cleanup: () => void } {
+  const handler = (_: IpcRendererEvent, state: AiMirrorState) => cb(state);
+  ipcRenderer.on(AI_MIRROR_STATE, handler);
+  return { cleanup: () => ipcRenderer.off(AI_MIRROR_STATE, handler) };
+}
+
+// Detached → main window: forward a user action to run against the single store.
+export function sendAiRemoteCommand(command: AiRemoteCommand): void {
+  void invoke('ai.remoteCommand', command);
+}
+
+// Main window: receive the detached window's actions.
+export function onAiRemoteCommand(cb: (command: AiRemoteCommand) => void): { cleanup: () => void } {
+  const handler = (_: IpcRendererEvent, command: AiRemoteCommand) => cb(command);
+  ipcRenderer.on(AI_REMOTE_COMMAND, handler);
+  return { cleanup: () => ipcRenderer.off(AI_REMOTE_COMMAND, handler) };
+}
+
+// Main window: learn when the detached window opens/closes (show inline panel vs placeholder).
+export function onAiWindowState(cb: (state: AiWindowState) => void): { cleanup: () => void } {
+  const handler = (_: IpcRendererEvent, state: AiWindowState) => cb(state);
+  ipcRenderer.on(AI_WINDOW_STATE, handler);
+  return { cleanup: () => ipcRenderer.off(AI_WINDOW_STATE, handler) };
 }

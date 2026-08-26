@@ -89,6 +89,10 @@
     "ai": {
       "title": "Asistente IA",
       "toggle": "Mostrar/ocultar el asistente IA",
+      "pop_out": "Abrir en una ventana separada",
+      "dock": "Volver a acoplar en el editor",
+      "detached_message": "El asistente está abierto en una ventana separada.",
+      "detached_dock": "Traerlo de vuelta aquí",
       "new_chat": "Nueva conversación",
       "placeholder": "Pregunta sobre tu escena o describe un cambio…",
       "send": "Enviar",

@@ -60,3 +60,51 @@ export type AiEvent =
   // `mutations` is how many undo entries this turn applied to the scene graph — the panel
   // uses it to offer a one-click "Undo AI changes" (revert the turn).
   | { kind: 'done'; turnId: string; ok: boolean; mutations?: number };
+
+// --- Detached AI window (#1504) -------------------------------------------------------
+//
+// The chat can be popped out into a separate OS window. To avoid a second, forked copy
+// of the chat state, the detached window keeps NO store of its own: the main window
+// stays the single source of truth and mirrors its `ai` slice to the detached window
+// (AiMirrorState), which renders it and sends user actions back (AiRemoteCommand). Both
+// hops are relayed through the main process, since two renderers can't talk directly.
+// These payloads must stay plain-serializable for IPC.
+
+export interface AiMirrorToolChip {
+  tool: string;
+  detail: string;
+}
+
+export interface AiMirrorMessage {
+  id: string;
+  role: 'user' | 'assistant';
+  text: string;
+  tools: AiMirrorToolChip[];
+  done: boolean;
+  error?: string;
+  mutations?: number;
+  reverted?: boolean;
+}
+
+export interface AiMirrorState {
+  providers: AiProviderInfo[];
+  provider: AiProvider;
+  model: string;
+  messages: AiMirrorMessage[];
+  busy: boolean;
+  detecting: boolean;
+  selection: { id: number; name: string }[];
+  // The open project's title, for the detached window's header (it has no editor of its own).
+  projectTitle?: string;
+}
+
+// A user action taken in the detached window, forwarded to the main window to run against
+// the single store. `sync` asks the main window to push the current state (on mount).
+export type AiRemoteCommand =
+  | { type: 'send'; text: string }
+  | { type: 'stop' }
+  | { type: 'newChat' }
+  | { type: 'setProvider'; provider: AiProvider }
+  | { type: 'revertTurn'; id: string; count: number }
+  | { type: 'fetchProviders' }
+  | { type: 'sync' };

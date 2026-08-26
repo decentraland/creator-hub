@@ -1,15 +1,17 @@
 import { Box, styled } from 'decentraland-ui2';
 
-const Panel = styled(Box)(({ theme }) => ({
-  display: 'flex',
-  flexDirection: 'column',
-  width: theme.spacing(45),
-  flex: '0 0 auto',
-  height: '100%',
-  borderLeft: `1px solid ${theme.palette.divider}`,
-  backgroundColor: theme.palette.background.paper,
-  overflow: 'hidden',
-}));
+const Panel = styled(Box, { shouldForwardProp: prop => prop !== 'fill' })<{ fill?: boolean }>(
+  ({ theme, fill }) => ({
+    display: 'flex',
+    flexDirection: 'column',
+    width: fill ? '100%' : theme.spacing(45),
+    flex: fill ? '1 1 auto' : '0 0 auto',
+    height: '100%',
+    borderLeft: fill ? 'none' : `1px solid ${theme.palette.divider}`,
+    backgroundColor: theme.palette.background.paper,
+    overflow: 'hidden',
+  }),
+);
 
 const PanelHeader = styled(Box)(({ theme }) => ({
   display: 'flex',

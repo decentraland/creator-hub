@@ -89,6 +89,10 @@
     "ai": {
       "title": "AI 助手",
       "toggle": "切换 AI 助手",
+      "pop_out": "在单独的窗口中打开",
+      "dock": "停靠回编辑器",
+      "detached_message": "助手已在单独的窗口中打开。",
+      "detached_dock": "带回此处",
       "new_chat": "新对话",
       "placeholder": "询问你的场景，或描述一个改动…",
       "send": "发送",

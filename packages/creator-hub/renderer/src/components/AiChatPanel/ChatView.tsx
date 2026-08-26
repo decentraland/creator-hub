@@ -1,0 +1,435 @@
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import SmartToyIcon from '@mui/icons-material/SmartToy';
+import SendIcon from '@mui/icons-material/Send';
+import StopIcon from '@mui/icons-material/Stop';
+import AddCommentIcon from '@mui/icons-material/AddComment';
+import CloseIcon from '@mui/icons-material/Close';
+import RefreshIcon from '@mui/icons-material/Refresh';
+import UndoIcon from '@mui/icons-material/Undo';
+import HighlightAltIcon from '@mui/icons-material/HighlightAlt';
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
+import OpenInNewIcon from '@mui/icons-material/OpenInNew';
+import Markdown, { type MarkdownToJSX } from 'markdown-to-jsx';
+import {
+  Button,
+  CircularProgress,
+  IconButton,
+  MenuItem,
+  Select,
+  type SelectChangeEvent,
+  TextField,
+  Tooltip,
+} from 'decentraland-ui2';
+
+import type { AiProvider } from '/shared/types/ai';
+
+import { ai as aiPreload } from '#preload';
+import { t } from '/@/modules/store/translation/utils';
+
+import type { AiMessage } from '/@/modules/store/ai/types';
+import { toolChipLabel } from './labels';
+import {
+  AssistantBubble,
+  AssistantText,
+  CommandLine,
+  Composer,
+  EmptyState,
+  ErrorRow,
+  HeaderActions,
+  HeaderTitle,
+  Panel,
+  PanelHeader,
+  ProviderRow,
+  SelectionBar,
+  SetupAlt,
+  SetupBox,
+  SetupDivider,
+  SetupStep,
+  ThinkingRow,
+  ToolChip,
+  ToolDetail,
+  Transcript,
+  UserBubble,
+} from './component.styled';
+
+// Render assistant replies as markdown. Raw HTML is disabled so nothing the model emits
+// can inject markup, and links open in the default browser (the Electron security layer
+// only lets allowlisted origins through, blocking the rest — no navigation of the app).
+const MARKDOWN_OPTIONS: MarkdownToJSX.Options = {
+  disableParsingRawHTML: true,
+  overrides: { a: { props: { target: '_blank', rel: 'noopener noreferrer' } } },
+};
+
+// Install + sign-in commands per provider, shown on the setup card when the CLI isn't
+// found. Obviously-safe public package names.
+const SETUP_COMMANDS: Record<AiProvider, { install: string; signin: string }> = {
+  claude: { install: 'npm i -g @anthropic-ai/claude-code', signin: 'claude' },
+  codex: { install: 'npm i -g @openai/codex', signin: 'codex login' },
+};
+
+// The pure chat surface, driven entirely by props. Both the inline panel (redux-backed)
+// and the detached window (mirror-backed) render this — neither reaches into a store from
+// here, so the same view works whichever owns the state (#1504).
+export interface ChatViewProps {
+  providers: { id: AiProvider; label: string; available: boolean; reason?: string }[];
+  provider: AiProvider;
+  messages: AiMessage[];
+  busy: boolean;
+  detecting: boolean;
+  selection: { id: number; name: string }[];
+  // Shown after the title in the header (the open project) — the detached window uses it.
+  title?: string;
+  // True when rendered as the detached window: fills the window and shows a "dock" affordance
+  // instead of "pop out".
+  detached?: boolean;
+  onSend: (text: string) => void;
+  onStop: () => void;
+  onNewChat: () => void;
+  onProviderChange: (provider: AiProvider) => void;
+  onRevertTurn: (id: string, count: number) => void;
+  onRecheck: () => void;
+  // Open the detached window (inline only — omitted/no-op in the detached window).
+  onPopOut?: () => void;
+  // Inline: hide the panel. Detached: dock the chat back inline (close the window).
+  onClose: () => void;
+}
+
+export function ChatView(props: ChatViewProps) {
+  const {
+    providers,
+    provider,
+    messages,
+    busy,
+    detecting,
+    selection,
+    title,
+    detached = false,
+    onSend,
+    onStop,
+    onNewChat,
+    onProviderChange,
+    onRevertTurn,
+    onRecheck,
+    onPopOut,
+    onClose,
+  } = props;
+
+  const [input, setInput] = useState('');
+  const transcriptRef = useRef<HTMLDivElement>(null);
+  const [mcpInfo, setMcpInfo] = useState<{ url: string; token: string } | null>(null);
+  const [mcpCopied, setMcpCopied] = useState(false);
+
+  const currentProvider = useMemo(
+    () => providers.find(p => p.id === provider),
+    [providers, provider],
+  );
+  const available = currentProvider?.available ?? false;
+
+  // Keep the newest message in view as text streams in.
+  useEffect(() => {
+    const el = transcriptRef.current;
+    if (el !== null) el.scrollTop = el.scrollHeight;
+  }, [messages]);
+
+  // No CLI installed? Reveal the scene's MCP server so a tool the user already has (Claude
+  // Desktop, the VS Code extension, …) can connect to this scene instead (#1502). Fetch it
+  // only once detection has concluded the CLI is missing — asking for the info starts the
+  // server, which we shouldn't do when the CLI path works.
+  useEffect(() => {
+    if (detecting || available) {
+      setMcpInfo(null);
+      return;
+    }
+    let cancelled = false;
+    void aiPreload.getMcpServerInfo().then(
+      info => !cancelled && setMcpInfo(info),
+      () => !cancelled && setMcpInfo(null),
+    );
+    return () => {
+      cancelled = true;
+    };
+  }, [detecting, available]);
+
+  const mcpConfigSnippet = useMemo(
+    () =>
+      mcpInfo === null
+        ? null
+        : JSON.stringify(
+            {
+              mcpServers: {
+                'creator-hub': {
+                  type: 'http',
+                  url: mcpInfo.url,
+                  headers: { Authorization: `Bearer ${mcpInfo.token}` },
+                },
+              },
+            },
+            null,
+            2,
+          ),
+    [mcpInfo],
+  );
+
+  const handleCopyMcpConfig = useCallback(() => {
+    if (mcpConfigSnippet === null) return;
+    void navigator.clipboard.writeText(mcpConfigSnippet).then(() => {
+      setMcpCopied(true);
+      setTimeout(() => setMcpCopied(false), 2000);
+    });
+  }, [mcpConfigSnippet]);
+
+  const handleSend = useCallback(() => {
+    if (busy || input.trim() === '') return;
+    onSend(input.trim());
+    setInput('');
+  }, [busy, input, onSend]);
+
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        handleSend();
+      }
+    },
+    [handleSend],
+  );
+
+  const handleProviderChange = useCallback(
+    (e: SelectChangeEvent) => onProviderChange(e.target.value as AiProvider),
+    [onProviderChange],
+  );
+
+  const renderSetup = () => {
+    const cmds = SETUP_COMMANDS[provider];
+    return (
+      <SetupBox>
+        <strong>{t('editor.ai.setup.title')}</strong>
+        <span>{t('editor.ai.setup.description')}</span>
+        <SetupStep>
+          <span>{t('editor.ai.setup.install')}</span>
+          <CommandLine>{cmds.install}</CommandLine>
+        </SetupStep>
+        <SetupStep>
+          <span>{t('editor.ai.setup.signin')}</span>
+          <CommandLine>{cmds.signin}</CommandLine>
+        </SetupStep>
+        <Button
+          color="secondary"
+          size="small"
+          startIcon={detecting ? <CircularProgress size={16} /> : <RefreshIcon />}
+          disabled={detecting}
+          onClick={onRecheck}
+        >
+          {t('editor.ai.setup.recheck')}
+        </Button>
+        <SetupDivider />
+        <SetupAlt>
+          <strong>{t('editor.ai.setup.alt_title')}</strong>
+          <span>{t('editor.ai.setup.alt_description')}</span>
+          {mcpConfigSnippet === null ? (
+            <CircularProgress size={16} />
+          ) : (
+            <>
+              <CommandLine>{mcpConfigSnippet}</CommandLine>
+              <Button
+                color="secondary"
+                size="small"
+                startIcon={<ContentCopyIcon fontSize="small" />}
+                onClick={handleCopyMcpConfig}
+              >
+                {mcpCopied ? t('editor.ai.setup.alt_copied') : t('editor.ai.setup.alt_copy')}
+              </Button>
+              <span>{t('editor.ai.setup.alt_note')}</span>
+            </>
+          )}
+        </SetupAlt>
+      </SetupBox>
+    );
+  };
+
+  const renderTranscript = () => {
+    if (messages.length === 0) {
+      return <EmptyState>{t('editor.ai.empty')}</EmptyState>;
+    }
+    // "Undo AI changes" is offered only on the latest turn: undo is a shared stack, so an
+    // older turn's entries aren't on top and can't be cleanly reverted in isolation.
+    const lastId = messages[messages.length - 1]?.id;
+    return messages.map(msg =>
+      msg.role === 'user' ? (
+        <UserBubble key={msg.id}>{msg.text}</UserBubble>
+      ) : (
+        <AssistantBubble key={msg.id}>
+          {msg.tools.map((chip, i) => (
+            <ToolChip key={i}>
+              <span>{toolChipLabel(chip.tool)}</span>
+              {chip.detail !== '' && <ToolDetail>{chip.detail}</ToolDetail>}
+            </ToolChip>
+          ))}
+          {msg.text !== '' && (
+            <AssistantText>
+              <Markdown options={MARKDOWN_OPTIONS}>{msg.text}</Markdown>
+            </AssistantText>
+          )}
+          {!msg.done && msg.text === '' && msg.error === undefined && (
+            <ThinkingRow>
+              <CircularProgress size={12} />
+              {t('editor.ai.thinking')}
+            </ThinkingRow>
+          )}
+          {msg.error !== undefined && (
+            <ErrorRow>
+              {msg.error}
+              <div>
+                <Button
+                  color="secondary"
+                  size="small"
+                  onClick={() => {
+                    const lastUser = [...messages].reverse().find(m => m.role === 'user');
+                    if (lastUser !== undefined) onSend(lastUser.text);
+                  }}
+                >
+                  {t('editor.ai.retry')}
+                </Button>
+              </div>
+            </ErrorRow>
+          )}
+          {msg.id === lastId &&
+            msg.done &&
+            msg.error === undefined &&
+            (msg.mutations ?? 0) > 0 &&
+            !msg.reverted && (
+              <Button
+                color="secondary"
+                size="small"
+                startIcon={<UndoIcon fontSize="small" />}
+                onClick={() => onRevertTurn(msg.id, msg.mutations ?? 0)}
+              >
+                {t('editor.ai.revert')}
+              </Button>
+            )}
+        </AssistantBubble>
+      ),
+    );
+  };
+
+  return (
+    <Panel
+      fill={detached}
+      aria-label="ai-chat-panel"
+    >
+      <PanelHeader>
+        <HeaderTitle>
+          <SmartToyIcon fontSize="small" />
+          {t('editor.ai.title')}
+          {title !== undefined && title !== '' ? ` — ${title}` : ''}
+        </HeaderTitle>
+        <HeaderActions>
+          <Tooltip title={t('editor.ai.new_chat')}>
+            <span>
+              <IconButton
+                size="small"
+                aria-label={t('editor.ai.new_chat')}
+                disabled={busy || messages.length === 0}
+                onClick={onNewChat}
+              >
+                <AddCommentIcon fontSize="small" />
+              </IconButton>
+            </span>
+          </Tooltip>
+          {!detached && onPopOut !== undefined && (
+            <Tooltip title={t('editor.ai.pop_out')}>
+              <IconButton
+                size="small"
+                aria-label={t('editor.ai.pop_out')}
+                onClick={onPopOut}
+              >
+                <OpenInNewIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          )}
+          <Tooltip title={detached ? t('editor.ai.dock') : t('editor.ai.toggle')}>
+            <IconButton
+              size="small"
+              aria-label={detached ? t('editor.ai.dock') : t('editor.ai.toggle')}
+              onClick={onClose}
+            >
+              <CloseIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+        </HeaderActions>
+      </PanelHeader>
+
+      {providers.length > 1 && (
+        <ProviderRow>
+          <Select
+            size="small"
+            fullWidth
+            value={provider}
+            onChange={handleProviderChange}
+            disabled={busy}
+          >
+            {providers.map(p => (
+              <MenuItem
+                key={p.id}
+                value={p.id}
+                disabled={!p.available}
+              >
+                {p.label}
+                {!p.available ? ` — ${p.reason ?? 'not installed'}` : ''}
+              </MenuItem>
+            ))}
+          </Select>
+        </ProviderRow>
+      )}
+
+      <Transcript ref={transcriptRef}>{available ? renderTranscript() : renderSetup()}</Transcript>
+
+      {available && selection.length > 0 && (
+        <SelectionBar>
+          <HighlightAltIcon fontSize="small" />
+          {t('editor.ai.selection', {
+            names: selection.map(s => (s.name !== '' ? s.name : `#${s.id}`)).join(', '),
+          })}
+        </SelectionBar>
+      )}
+
+      <Composer>
+        <TextField
+          fullWidth
+          multiline
+          maxRows={6}
+          size="small"
+          placeholder={t('editor.ai.placeholder')}
+          value={input}
+          disabled={!available}
+          onChange={e => setInput(e.target.value)}
+          onKeyDown={handleKeyDown}
+        />
+        {busy ? (
+          <Tooltip title={t('editor.ai.stop')}>
+            <IconButton
+              color="error"
+              aria-label={t('editor.ai.stop')}
+              onClick={onStop}
+            >
+              <StopIcon />
+            </IconButton>
+          </Tooltip>
+        ) : (
+          <Tooltip title={t('editor.ai.send')}>
+            <span>
+              <IconButton
+                color="primary"
+                aria-label={t('editor.ai.send')}
+                disabled={!available || input.trim() === ''}
+                onClick={handleSend}
+              >
+                <SendIcon />
+              </IconButton>
+            </span>
+          </Tooltip>
+        )}
+      </Composer>
+    </Panel>
+  );
+}

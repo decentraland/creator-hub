@@ -8,7 +8,7 @@ import type { PreviewOptions, ReleaseNotes } from './settings';
 import type { Config, EditorConfig } from './config';
 import type { Env } from './env';
 import type { MetricsRequest, MetricsResponse } from './metrics';
-import type { AiProviderInfo, AiSendParams } from './ai';
+import type { AiMirrorState, AiProviderInfo, AiRemoteCommand, AiSendParams } from './ai';
 
 export type IpcResult<T> = {
   success: true;
@@ -49,6 +49,17 @@ export type AiScreenshotRequest = { id: string; width: number; height: number };
 export const AI_SCENE_OP_REQUEST = 'ai.sceneOpRequest';
 
 export type AiSceneOpRequest = { id: string; op: string; params: Record<string, unknown> };
+
+// Detached AI window (#1504). The main window mirrors its `ai` slice to the detached
+// window over AI_MIRROR_STATE; the detached window's actions come back over
+// AI_REMOTE_COMMAND (main relays them to the main window). AI_WINDOW_STATE tells the
+// main window whether the detached window is currently open, so it can show the inline
+// panel or a "opened in a separate window" placeholder. All are relayed via main.
+export const AI_MIRROR_STATE = 'ai.mirrorState';
+export const AI_REMOTE_COMMAND = 'ai.remoteCommand';
+export const AI_WINDOW_STATE = 'ai.windowState';
+
+export type AiWindowState = { open: boolean };
 
 export interface MobileDebugSessionInfo {
   id: number;
@@ -134,6 +145,14 @@ export interface Ipc {
   // Renderer's answer to an AI_SCENE_OP_REQUEST: ok + the op's result value, or the error
   // message when the mutation failed (or no scene is loaded).
   'ai.sceneOpResult': (id: string, ok: boolean, payload: unknown) => void;
+  // Detached AI window (#1504). openWindow/closeWindow manage the separate OS window;
+  // `locale` seeds its i18n. mirrorPush (main window → main → detached) and remoteCommand
+  // (detached → main → main window) carry the mirrored state and the user's actions.
+  'ai.openWindow': (locale?: string) => Promise<void>;
+  'ai.closeWindow': () => Promise<void>;
+  'ai.isWindowOpen': () => Promise<boolean>;
+  'ai.mirrorPush': (state: AiMirrorState) => void;
+  'ai.remoteCommand': (command: AiRemoteCommand) => void;
   'mobileDebug.getSessions': () => Promise<MobileDebugSessionInfo[]>;
   'mobileDebug.subscribeEntries': () => Promise<void>;
   'mobileDebug.unsubscribeEntries': () => Promise<void>;

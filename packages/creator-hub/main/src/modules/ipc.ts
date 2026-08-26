@@ -13,6 +13,7 @@ import * as config from './config';
 import * as mobileDebug from './mobile-debug-server';
 import * as metrics from './metrics';
 import * as ai from './ai';
+import * as aiWindow from './ai-window';
 import {
   ensureSceneMcpServer,
   resolveEditorScreenshot,
@@ -141,4 +142,11 @@ export function initIpc({ beforeQuitCleanup }: InitIpcOptions) {
     const { url, token } = await ensureSceneMcpServer();
     return { url, token };
   });
+  // Detached AI window (#1504): lifecycle + the mirror/command relay between the two
+  // renderer windows (see ai-window.ts).
+  handle('ai.openWindow', (_event, locale) => aiWindow.openAiWindow(locale));
+  handle('ai.closeWindow', async () => aiWindow.closeAiWindow());
+  handle('ai.isWindowOpen', async () => aiWindow.isAiWindowOpen());
+  handle('ai.mirrorPush', (_event, state) => aiWindow.pushMirrorState(state));
+  handle('ai.remoteCommand', (_event, command) => aiWindow.forwardRemoteCommand(command));
 }
