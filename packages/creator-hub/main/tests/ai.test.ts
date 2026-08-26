@@ -29,11 +29,13 @@ const PROJECT = '/home/user/scene';
 function run(provider: 'claude' | 'codex', line: string) {
   const texts: string[] = [];
   const tools: Array<[string, string]> = [];
-  const session = PROVIDERS[provider].parseLine(line, PROJECT, (text, tool) => {
+  const images: string[] = [];
+  const session = PROVIDERS[provider].parseLine(line, PROJECT, (text, tool, image) => {
     if (text !== '') texts.push(text);
     if (tool !== undefined) tools.push(tool);
+    if (image !== undefined) images.push(image);
   });
-  return { session, texts, tools };
+  return { session, texts, tools, images };
 }
 
 describe('claude parseLine', () => {
@@ -95,6 +97,31 @@ describe('claude parseLine', () => {
   it('returns the session id from the result line', () => {
     const { session } = run('claude', JSON.stringify({ type: 'result', session_id: 'sess-2' }));
     expect(session).toBe('sess-2');
+  });
+
+  it('surfaces an MCP screenshot image from a tool_result', () => {
+    const { images } = run(
+      'claude',
+      JSON.stringify({
+        type: 'user',
+        message: {
+          content: [
+            {
+              type: 'tool_result',
+              tool_use_id: 'toolu_1',
+              content: [
+                { type: 'text', text: 'captured' },
+                {
+                  type: 'image',
+                  source: { type: 'base64', media_type: 'image/png', data: 'AAAA' },
+                },
+              ],
+            },
+          ],
+        },
+      }),
+    );
+    expect(images).toEqual(['data:image/png;base64,AAAA']);
   });
 
   it('ignores non-JSON chatter', () => {
@@ -162,6 +189,22 @@ describe('codex parseLine', () => {
       }),
     );
     expect(tools).toEqual([['mcp__creator-hub__create_entity', '']]);
+  });
+
+  it('surfaces an MCP screenshot image from a tool-call result', () => {
+    const { images } = run(
+      'codex',
+      JSON.stringify({
+        type: 'item.completed',
+        item: {
+          type: 'mcp_tool_call',
+          server: 'creator-hub',
+          tool: 'explorer_call',
+          result: { content: [{ type: 'image', data: 'BBBB', mimeType: 'image/jpeg' }] },
+        },
+      }),
+    );
+    expect(images).toEqual(['data:image/jpeg;base64,BBBB']);
   });
 
   it('emits a WebSearch chip for a web_search item', () => {

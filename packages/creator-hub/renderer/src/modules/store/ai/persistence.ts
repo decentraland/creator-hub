@@ -43,7 +43,11 @@ export function writeConversation(
       storage.removeItem(key(path));
       return;
     }
-    const raw = JSON.stringify({ messages });
+    // Drop inline screenshot images (#1506): a few base64 PNGs would blow the size budget
+    // and evict the whole transcript. They're ephemeral — the text/tool history is what's
+    // worth keeping across restarts.
+    const slim = messages.map(m => (m.images === undefined ? m : { ...m, images: undefined }));
+    const raw = JSON.stringify({ messages: slim });
     if (raw.length > MAX_BYTES) return; // too big to persist; skip rather than throw
     storage.setItem(key(path), raw);
   } catch {

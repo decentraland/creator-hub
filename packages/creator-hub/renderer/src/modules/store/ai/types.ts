@@ -21,6 +21,9 @@ export interface AiMessage {
   mutations?: number;
   // Set once the user reverts this turn's scene changes, so the button hides.
   reverted?: boolean;
+  // Images an MCP tool returned this turn (Explorer/editor screenshots), as data URLs,
+  // shown inline in the bubble (#1506). Not persisted — they're large and ephemeral.
+  images?: string[];
 }
 
 export interface AiState {

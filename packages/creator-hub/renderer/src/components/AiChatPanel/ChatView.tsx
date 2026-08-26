@@ -31,6 +31,7 @@ import type { AiMessage } from '/@/modules/store/ai/types';
 import { toolChipLabel } from './labels';
 import {
   AssistantBubble,
+  AssistantImage,
   AssistantText,
   BillingDismiss,
   BillingHint,
@@ -273,6 +274,13 @@ export function ChatView(props: ChatViewProps) {
               <span>{toolChipLabel(chip.tool)}</span>
               {chip.detail !== '' && <ToolDetail>{chip.detail}</ToolDetail>}
             </ToolChip>
+          ))}
+          {msg.images?.map((src, i) => (
+            <AssistantImage
+              key={`img-${i}`}
+              src={src}
+              alt={t('editor.ai.screenshot_alt')}
+            />
           ))}
           {msg.text !== '' && (
             <AssistantText>

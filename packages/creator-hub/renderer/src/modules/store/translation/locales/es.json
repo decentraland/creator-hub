@@ -101,6 +101,7 @@
       "empty": "Pregunta sobre tu escena o dime qué construir. Puedo leer la escena y escribir código SDK7 en src/.",
       "billing": "Se ejecuta con tu propia cuenta de {provider}: los mensajes consumen el uso de tu plan, no una asignación gratuita de Creator Hub.",
       "billing_dismiss": "No mostrar de nuevo",
+      "screenshot_alt": "Captura de pantalla del asistente",
       "retry": "Reintentar",
       "revert": "Deshacer los cambios de la IA",
       "selection": "Selección: {names}",

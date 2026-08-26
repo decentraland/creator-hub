@@ -56,6 +56,9 @@ export type AiEvent =
   | { kind: 'started'; turnId: string }
   | { kind: 'text'; turnId: string; text: string }
   | { kind: 'tool'; turnId: string; tool: string; detail: string }
+  // An image an MCP tool returned (Explorer/editor screenshot), as a data URL — shown
+  // inline in the transcript (#1506).
+  | { kind: 'image'; turnId: string; dataUrl: string }
   | { kind: 'error'; turnId: string; message: string }
   // `mutations` is how many undo entries this turn applied to the scene graph — the panel
   // uses it to offer a one-click "Undo AI changes" (revert the turn).
@@ -84,6 +87,7 @@ export interface AiMirrorMessage {
   error?: string;
   mutations?: number;
   reverted?: boolean;
+  images?: string[];
 }
 
 export interface AiMirrorState {

@@ -179,6 +179,11 @@ const slice = createSlice({
           if (msg !== undefined) msg.tools.push({ tool: payload.tool, detail: payload.detail });
           break;
         }
+        case 'image': {
+          const msg = find();
+          if (msg !== undefined) (msg.images ??= []).push(payload.dataUrl);
+          break;
+        }
         case 'error': {
           const msg = find();
           if (msg !== undefined) msg.error = payload.message;

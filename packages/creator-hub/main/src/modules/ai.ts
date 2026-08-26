@@ -261,12 +261,36 @@ interface ProviderDef {
   defaultModel: string;
   buildArgs: (ctx: TurnCtx) => string[];
   // Parse one NDJSON stdout line. Emit chat events; return a session id to remember
-  // (for --resume) when the line carries one, else undefined.
+  // (for --resume) when the line carries one, else undefined. `image` is a data-URL an
+  // MCP tool returned (e.g. an Explorer/editor screenshot), rendered inline in the chat.
   parseLine: (
     line: string,
     projectDir: string,
-    emit: (text: string, tool?: [string, string]) => void,
+    emit: (text: string, tool?: [string, string], image?: string) => void,
   ) => string | undefined;
+}
+
+// Pull data-URL images out of a tool result's content blocks, for inline display in the
+// chat (#1506). Claude relays an MCP image result as an Anthropic image block
+// ({ type:'image', source:{ type:'base64', media_type, data } }); raw MCP content uses
+// ({ type:'image', data, mimeType }). Handle both shapes.
+function extractImages(content: unknown): string[] {
+  if (!Array.isArray(content)) return [];
+  const out: string[] = [];
+  for (const block of content) {
+    if (block === null || typeof block !== 'object') continue;
+    const b = block as Record<string, unknown>;
+    if (b.type !== 'image') continue;
+    const src = b.source as Record<string, unknown> | undefined;
+    if (src !== undefined && src.type === 'base64' && typeof src.data === 'string') {
+      const media = typeof src.media_type === 'string' ? src.media_type : 'image/png';
+      out.push(`data:${media};base64,${src.data}`);
+    } else if (typeof b.data === 'string') {
+      const media = typeof b.mimeType === 'string' ? b.mimeType : 'image/png';
+      out.push(`data:${media};base64,${b.data}`);
+    }
+  }
+  return out;
 }
 
 // A short, scene-relative label for a tool's target path. The CLIs report absolute,
@@ -355,6 +379,7 @@ export const PROVIDERS: Record<AiProvider, ProviderDef> = {
             text?: string;
             name?: string;
             input?: Record<string, unknown>;
+            content?: unknown; // tool_result payload (may hold image blocks)
           }>;
         };
       };
@@ -370,6 +395,15 @@ export const PROVIDERS: Record<AiProvider, ProviderDef> = {
             emit(block.text);
           else if (block.type === 'tool_use' && block.name !== undefined) {
             emit('', [block.name, toolDetail(block.name, block.input ?? {}, projectDir)]);
+          }
+        }
+      }
+      // Tool results come back as a `user` turn; an MCP screenshot arrives as image blocks
+      // inside the tool_result — surface them so the chat shows what the assistant saw (#1506).
+      if (obj.type === 'user' && obj.message?.content !== undefined) {
+        for (const block of obj.message.content) {
+          if (block.type === 'tool_result') {
+            for (const url of extractImages(block.content)) emit('', undefined, url);
           }
         }
       }
@@ -431,6 +465,7 @@ export const PROVIDERS: Record<AiProvider, ProviderDef> = {
           server?: string; // mcp_tool_call: the MCP server name (e.g. "creator-hub")
           tool?: string; // mcp_tool_call: the tool name
           query?: string; // web_search
+          result?: { content?: unknown }; // mcp_tool_call: the returned content (may hold images)
         };
       };
       try {
@@ -449,10 +484,12 @@ export const PROVIDERS: Record<AiProvider, ProviderDef> = {
         else if (item.type === 'command_execution' && item.command !== undefined)
           emit('', ['Run', item.command]);
         // Scene/Explorer MCP tool calls → the same `mcp__<server>__<tool>` chip claude emits,
-        // so the panel renders a readable tool name (create entity, screenshot, …).
-        else if (item.type === 'mcp_tool_call' && item.tool !== undefined)
+        // so the panel renders a readable tool name (create entity, screenshot, …). If the
+        // result carried an image (an Explorer screenshot), surface it inline too (#1506).
+        else if (item.type === 'mcp_tool_call' && item.tool !== undefined) {
           emit('', [`mcp__${item.server ?? 'mcp'}__${item.tool}`, '']);
-        else if (item.type === 'web_search') emit('', ['WebSearch', item.query ?? '']);
+          for (const url of extractImages(item.result?.content)) emit('', undefined, url);
+        } else if (item.type === 'web_search') emit('', ['WebSearch', item.query ?? '']);
       }
       return undefined;
     },
@@ -715,12 +752,13 @@ export async function aiSend(
   const errDec = new StringDecoder('utf8');
   const onLine = (line: string): void => {
     if (line === '') return;
-    const session = def.parseLine(line, projectDir, (text, tool) => {
+    const session = def.parseLine(line, projectDir, (text, tool, image) => {
       if (text !== '') emit({ kind: 'text', turnId, text });
       if (tool !== undefined) {
         toolCount++;
         emit({ kind: 'tool', turnId, tool: tool[0], detail: tool[1] });
       }
+      if (image !== undefined) emit({ kind: 'image', turnId, dataUrl: image });
     });
     if (session !== undefined) {
       const store = getSessions();

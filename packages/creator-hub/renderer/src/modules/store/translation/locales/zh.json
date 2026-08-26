@@ -101,6 +101,7 @@
       "empty": "询问你的场景，或告诉我要构建什么。我可以读取场景并在 src/ 下编写 SDK7 代码。",
       "billing": "使用你自己的 {provider} 账户运行——消息会计入你自己套餐的用量，而不是 Creator Hub 提供的免费额度。",
       "billing_dismiss": "不再显示",
+      "screenshot_alt": "助手的截图",
       "retry": "重试",
       "revert": "撤销 AI 的更改",
       "selection": "选择：{names}",

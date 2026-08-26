@@ -127,6 +127,13 @@ const AssistantText = styled(Box)(({ theme }) => ({
   },
 }));
 
+const AssistantImage = styled('img')(({ theme }) => ({
+  maxWidth: '100%',
+  borderRadius: theme.spacing(1),
+  border: `1px solid ${theme.palette.divider}`,
+  alignSelf: 'flex-start',
+}));
+
 const ToolChip = styled(Box)(({ theme }) => ({
   display: 'inline-flex',
   alignItems: 'center',
@@ -255,6 +262,7 @@ const SelectionBar = styled(Box)(({ theme }) => ({
 
 export {
   AssistantBubble,
+  AssistantImage,
   AssistantText,
   BillingDismiss,
   BillingHint,
