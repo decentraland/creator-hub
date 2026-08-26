@@ -50,15 +50,8 @@ import {
 
 import './NodeTree.css';
 
-// Distinct from `UI_DESIGNER_DND_TYPE` (the palette + canvas DnD bus). The generic
-// Tree<T> dispatches `{ items: T[], context }` payloads which are not compatible
-// with `UIDesignerDragItem`, so the tree keeps its own DnD bus separate from the
-// palette/canvas one.
 const NODE_TREE_DND_TYPE = 'ui-designer-tree';
 
-// The tree also ACCEPTS the palette bus so a new widget can be dropped straight
-// into the hierarchy at a precise position. Module-level so the array reference
-// stays stable across renders (avoids re-registering the drop target).
 const EXTERNAL_DND_TYPES = [UI_DESIGNER_DND_TYPE];
 
 const PLATFORM_ICONS = {
@@ -68,8 +61,6 @@ const PLATFORM_ICONS = {
 
 const PLATFORM_LABELS = { desktop: 'Desktop', mobile: 'Mobile' };
 
-// Entities on the path from `root` down to (but excluding) `target`. Used to
-// auto-expand every ancestor so a selected node is always revealed in the tree.
 function collectAncestors(root: UINode, target: Entity): Entity[] {
   const path: Entity[] = [];
   const walk = (node: UINode): boolean => {
@@ -86,13 +77,6 @@ function collectAncestors(root: UINode, target: Entity): Entity[] {
   return path;
 }
 
-/**
- * Whether a row renames ITSELF, by writing its `@ui-name` marker. False for every
- * kind that has no name of its own to set: the root is 1:1 with the GUI, which
- * carries the name (renamed in the GUIs list) and reads here as its widget kind;
- * an opaque node isn't editable at all; a component row is named by the component
- * it references; and a platform variant or branch is labelled by its device.
- */
 function isRenameableNode(n: UINode, root: UINode | null | undefined): boolean {
   if (root && n.entity === root.entity) return false;
   const cn = n as CodeUINode;
@@ -112,14 +96,8 @@ const NodeTreeImpl: React.FC<{ filter?: string }> = ({ filter = '' }) => {
   const lockedNodes = useAppSelector(getLockedNodes);
   const platform = useAppSelector(getPlatform);
 
-  // Memoise the Tree<UINode> component once per mount — Tree<T>() returns a
-  // memoised component factory; constructing it in render would defeat memo.
   const NodeTreeComponent = useMemo(() => Tree<UINode>(), []);
 
-  // Reveal the selected node in the tree: expand any collapsed ancestors and
-  // scroll its row into view. Guarded by a ref so it only fires when the
-  // selection itself changes — not when the user manually collapses a branch
-  // (which would otherwise immediately re-expand under them).
   const lastRevealed = useRef<Entity | null>(null);
   useEffect(() => {
     if (!tree || selectedNode === null) return;
@@ -138,7 +116,6 @@ const NodeTreeImpl: React.FC<{ filter?: string }> = ({ filter = '' }) => {
   }, [tree, selectedNode, expanded, dispatch]);
 
   const getId = useCallback((n: UINode) => String(n.entity), []);
-  // Hide the sole component-ref child so the wrapper reads as one component node.
   const getChildren = useCallback(
     (n: UINode) => {
       if (soleComponentRef(n)) return [];
@@ -151,11 +128,7 @@ const NodeTreeImpl: React.FC<{ filter?: string }> = ({ filter = '' }) => {
       const ref = soleComponentRef(n);
       if (ref) return ref.componentRef?.name ?? ref.name;
       const cn = n as CodeUINode;
-      // Elements read as their widget kind (Container vs Image for UiEntity);
-      // opaque blocks and the platform variant keep their parse-side name.
       const label = nodeLabelText(n);
-      // A platform branch reads dimmed while its device isn't the one being
-      // edited — the row stays visible (and clickable, which switches device).
       const branch = cn.platform;
       if (!branch) return label;
       return (
@@ -166,7 +139,6 @@ const NodeTreeImpl: React.FC<{ filter?: string }> = ({ filter = '' }) => {
     },
     [platform],
   );
-  // A branch's icon IS its device badge; the variant itself gets the switch icon.
   const getIcon = useCallback((n: UINode) => {
     if (soleComponentRef(n)) return <IoCubeOutline />;
     const cn = n as CodeUINode;
@@ -175,8 +147,6 @@ const NodeTreeImpl: React.FC<{ filter?: string }> = ({ filter = '' }) => {
     return cn.opaque ? <IoWarningOutline /> : WIDGET_ICONS[classifyNode(n)];
   }, []);
   const isOpen = useCallback(
-    // While filtering, force every surviving branch open so matches are visible
-    // without hunting for them; otherwise honour the user's expand state.
     (n: UINode) => (term ? true : expanded[n.entity as unknown as number] !== false),
     [expanded, term],
   );
@@ -190,15 +160,9 @@ const NodeTreeImpl: React.FC<{ filter?: string }> = ({ filter = '' }) => {
     [dispatch],
   );
 
-  // The shift-range anchor: the last plain-clicked row (the Tree reports it via
-  // onLastSelectedChange, single clicks only — same convention as Hierarchy).
   const [lastSelected, setLastSelected] = useState<Entity | null>(null);
   const handleLastSelectedChange = useCallback((n: UINode) => setLastSelected(n.entity), []);
 
-  // Picking a branch of the device that isn't active switches to that device —
-  // which is what makes it the editable one, on the canvas and in the panel.
-  // Ctrl/Cmd-click toggles membership; shift-click selects the visible range
-  // from the anchor (#1400).
   const handleSelect = useCallback(
     (n: UINode, clickType?: 'single' | 'ctrl' | 'shift') => {
       const branch = (n as CodeUINode).platform;
@@ -217,39 +181,23 @@ const NodeTreeImpl: React.FC<{ filter?: string }> = ({ filter = '' }) => {
 
   const handleDrop = useCallback((source: UINode, target: UINode, dropType: DropType) => {
     if (source.entity === target.entity) return;
-    // Opaque nodes are read-only internally — never insert a child into one.
-    // A component instance (`<Name />`) doesn't render arbitrary children
-    // either; reorder relative to it instead.
     if ((target as CodeUINode).opaque && dropType === 'inside') return;
     if ((target as CodeUINode).componentRef && dropType === 'inside') return;
-    // A platform branch has no room for siblings (it's an operand of the
-    // conditional), and the variant node isn't an element to nest into. Dropping
-    // before/after the variant itself is fine — that targets its parent.
     if ((target as CodeUINode).platform) return;
     if ((target as CodeUINode).platformVariant && dropType === 'inside') return;
-    // Reparent/reorder by moving the element's source (the code equivalent of
-    // setUIParent + reorderUISibling). 'inside' → last child of target;
-    // 'before'/'after' → relative to the target sibling.
     void spliceMove(source.entity as unknown as number, {
       kind: dropType === 'inside' ? 'into' : dropType,
       targetId: target.entity as unknown as number,
     });
   }, []);
 
-  // A palette widget dropped onto the tree ADDS a new node at that exact spot —
-  // `inside` appends it as the target's last child, `before`/`after` insert it as
-  // a sibling. (Reordering existing nodes stays in handleDrop above.)
   const handleExternalDrop = useCallback(
     (item: unknown, target: UINode, dropType: DropType) => {
       const drag = item as UIDesignerDragItem;
-      if (drag.source !== 'palette') return; // only palette widgets add a node here
+      if (drag.source !== 'palette') return;
       const t = target as CodeUINode;
-      // The root has no parent, so before/after has nowhere to go — append inside.
       const dt: DropType =
         target.entity === tree?.entity && dropType !== 'inside' ? 'inside' : dropType;
-      // Can't nest INSIDE an opaque node, a component instance or a platform
-      // variant (no editable children); before/after still works (it inserts into
-      // their parent) — except beside a branch, which has no sibling slot.
       if (dt === 'inside' && (t.opaque || t.componentRef || t.platformVariant)) return;
       if (t.platform) return;
       void spliceAddWidget(target.entity as unknown as number, dt, drag.type, drag.preset);
@@ -257,8 +205,6 @@ const NodeTreeImpl: React.FC<{ filter?: string }> = ({ filter = '' }) => {
     [tree],
   );
 
-  // Remove / duplicate share the canvas action bar's logic (selection fallback
-  // included) via the useUINodeActions hook.
   const { remove, duplicate } = useUINodeActions();
   const handleRemove = useCallback((node: UINode) => remove(node.entity), [remove]);
   const handleDuplicate = useCallback((node: UINode) => duplicate(node.entity), [duplicate]);
@@ -270,16 +216,9 @@ const NodeTreeImpl: React.FC<{ filter?: string }> = ({ filter = '' }) => {
 
   const noop = useCallback(() => undefined, []);
 
-  // Editor-only lock/eye per row (replaces the generic Tree's engine-entity
-  // ActionArea, which writes ECS Lock/Hide components — meaningless for code
-  // nodes). Hide removes the node from the CANVAS render; lock blocks canvas
-  // select/drag/resize and tree drags. Neither touches the code.
   const renderActionArea = useCallback(
     (n: UINode) => {
       const id = n.entity as unknown as number;
-      // A variant renders no box, so lock/hide mean nothing on it. Its affordance
-      // is filling in a device that has no branch yet (a hand-authored one-sided
-      // conditional — the editor always seeds both).
       const cn = n as CodeUINode;
       if (cn.platformVariant) {
         const missing = PLATFORMS.filter(p => !cn.children.some(c => c.platform === p));
@@ -352,7 +291,6 @@ const NodeTreeImpl: React.FC<{ filter?: string }> = ({ filter = '' }) => {
     [hiddenNodes, lockedNodes, dispatch, handleRemove],
   );
 
-  // A branch can't leave its conditional, so it isn't draggable.
   const canDrag = useCallback(
     (n: UINode) => !lockedNodes[n.entity as unknown as number] && !(n as CodeUINode).platform,
     [lockedNodes],

@@ -13,19 +13,12 @@ import './WidgetPicker.css';
 const WIDTH = 240;
 
 interface WidgetPickerProps {
-  // Entity the new node is added under (when `onAdd` is not supplied).
   parent?: Entity;
-  // Override where the picked widget goes — e.g. the empty-root drop zone routes
-  // it to spliceSetRootChild (place the FIRST element) instead of spliceAddChild.
   onAdd?: (type: UINodeType, preset?: 'image') => void;
   anchorRef: React.RefObject<HTMLElement>;
   onDismiss: () => void;
 }
 
-// Godot "Create Node" / UMG palette style picker: a searchable, categorized list
-// of widgets. Picking one splices a new flow child under `parent` into the active
-// .tsx (the same code path as the palette drag-drop; no ECS entity, no absolute
-// positioning) — or routes to `onAdd` when supplied.
 export const WidgetPicker: React.FC<WidgetPickerProps> = ({
   parent,
   onAdd,

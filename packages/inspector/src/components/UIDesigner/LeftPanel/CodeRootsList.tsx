@@ -18,17 +18,6 @@ import {
 
 import './CodeRootsList.css';
 
-/**
- * One row in the roots list: selects on click, renames on double-click, and is a
- * DnD source so it can be dragged onto a canvas node to nest it as a component.
- * The eye toggle flips top-level (aggregated screen) vs component (nested-only);
- * a nested-only root reads grayed, since it renders nowhere on its own.
- *
- * The drag ref is withheld while renaming, because the input owns the pointer.
- * That rename editor is a raw <input> rather than ui/TextField on purpose: it is
- * transient (autoFocus + Enter/Escape/blur lifecycle) and TextField's chrome
- * (InputContainer, Message slot) only adds noise.
- */
 const RootRow: React.FC<{
   root: CodeRoot;
   active: boolean;
@@ -149,16 +138,7 @@ const RootRow: React.FC<{
   );
 };
 
-/**
- * Code-mode roots list. Roots are files under src/ui/ (one component per file),
- * not ECS marker entities — so this is backed by the code store rather than the
- * engine. Creation lives in the rail's section header; selecting a root loads its
- * file as the active source the canvas edits.
- *
- * Switching root selects that root's node, so the canvas / "Add widget" /
- * PropertyPanel target it. A ref on the filename keeps that to root SWITCHES
- * only — firing on every reparse would fight canvas node selection mid-edit.
- */
+/** Code-mode roots list: files under src/ui/ backed by the code store; selecting a root loads its file as the active source the canvas edits. */
 export const CodeRootsList: React.FC<{ filter?: string }> = ({ filter = '' }) => {
   const { roots, filename, parsed, error } = useCodeState();
   const dispatch = useAppDispatch();

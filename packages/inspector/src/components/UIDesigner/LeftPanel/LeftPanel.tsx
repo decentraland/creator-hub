@@ -17,12 +17,6 @@ import { CodeRootsList } from './CodeRootsList';
 
 import '../UIDesigner.css';
 
-/**
- * A one-shot ripple for a button press. The element is REMOUNTED on each click
- * (a fresh key) rather than toggled through a class, because re-applying a class
- * does not restart a CSS animation that is already running — a second click
- * during the first ripple would do nothing.
- */
 function useClickRipple(): [React.ReactNode, () => void] {
   const [click, setClick] = useState(0);
   const fire = useCallback(() => setClick(n => n + 1), []);
@@ -35,17 +29,6 @@ function useClickRipple(): [React.ReactNode, () => void] {
   return [ripple, fire];
 }
 
-/**
- * The 2D-mode left rail: one search box above a vertical resizable split of the
- * GUIs list and the Nodes tree for the selected GUI. Each list scrolls inside its
- * own pane, and the divider rebalances them.
- *
- * The search covers both sections, and a section with no match is hidden outright
- * rather than shown empty, so a search reads as its own result list. A selected
- * GUI always lists its Nodes — an empty one shows just the header, whose "+" adds
- * the first element (routed to spliceSetRootChild, since there is no node to add
- * under yet). Only a search with nothing to match hides that section.
- */
 const LeftPanel: React.FC = () => {
   const [pickerOpen, setPickerOpen] = useState(false);
   const [search, setSearch] = useState('');
