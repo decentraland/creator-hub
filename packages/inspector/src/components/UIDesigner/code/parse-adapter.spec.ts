@@ -93,6 +93,18 @@ export function MyScreen() {
       expect(label.bindings).toEqual([{ field: 'core::UiText.value', variable: 'state.score' }]);
     });
 
+    it('should read through a `?? default` coalesce to the clean binding expression', () => {
+      const src = `/** @jsx ReactEcs.createElement */
+import ReactEcs, { UiEntity, Label } from '@dcl/sdk/react-ecs'
+export function MyScreen(props: { name?: string }) {
+  return <UiEntity><Label value={props.name ?? ''} /></UiEntity>
+}
+`;
+      const label = parse(src)!.root.children.find(c => c.type === 'Label') as CodeUINode;
+      expect(label.dynamicProps).toBeUndefined();
+      expect(label.bindings).toEqual([{ field: 'core::UiText.value', variable: 'props.name' }]);
+    });
+
     it('should record an interpolated template value as mixed-content segments', () => {
       const src = `/** @jsx ReactEcs.createElement */
 import ReactEcs, { UiEntity, Label } from '@dcl/sdk/react-ecs'

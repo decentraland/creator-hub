@@ -214,6 +214,14 @@ export async function setMixedContentAttributeUnlocked(
     );
     return;
   }
+  if (segments.length === 1 && segments[0].kind === 'binding') {
+    const node = findCodeNode(state.parsed?.root, entityId);
+    const expr = node
+      ? coalesceRequiredAttr(node.type, name, segments[0].value)
+      : segments[0].value;
+    await applySourceEdits(setAttributeExpr(ast, name, expr));
+    return;
+  }
   await applySourceEdits(setAttributeSegments(ast, name, segments));
 }
 

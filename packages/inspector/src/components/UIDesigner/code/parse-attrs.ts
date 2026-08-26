@@ -38,6 +38,9 @@ function attrValue(attr: AnyNode): { ok: true; value: unknown; dynamic?: boolean
 function bindingExprOf(expr: AnyNode | undefined, source: string): string | null {
   if (!expr) return null;
   const e = unparen(expr);
+  if (e && e.type === 'LogicalExpression' && (e as { operator?: string }).operator === '??') {
+    return bindingExprOf((e as { left?: AnyNode }).left, source);
+  }
   if (e && (e.type === 'Identifier' || e.type === 'MemberExpression')) {
     return source.slice(e.start, e.end);
   }
