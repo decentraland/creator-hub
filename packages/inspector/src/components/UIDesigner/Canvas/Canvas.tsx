@@ -117,13 +117,8 @@ const ZOOM_STEP = 0.1;
 const clampZoom = (s: number): number =>
   Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, Math.round(s * 100) / 100));
 
-// Snap grid for drag-to-move when Shift is NOT held. Held → free movement.
-// 10 logical px = 4 viewport px at the current scale — fine enough for
-// fluid drags, coarse enough to keep things aligned.
 const DRAG_SNAP_GRID = 10;
 
-// 8 directional resize handles. The axis vector for each handle controls
-// which of {position-x, position-y, width, height} the delta affects.
 type HandleDir = 'n' | 'ne' | 'e' | 'se' | 's' | 'sw' | 'w' | 'nw';
 const HANDLE_AXES: Record<
   HandleDir,
@@ -142,21 +137,10 @@ const HANDLE_DIRS: HandleDir[] = ['nw', 'n', 'ne', 'e', 'se', 's', 'sw', 'w'];
 
 import './Canvas.css';
 
-// Resolves a binding expression (`state.name`) to its default value for the
-// canvas text preview (so `value={state.name}` with default 'John' renders
-// "John", not "[state.name]"). Built once at the Canvas root from the binding
-// surface and read by each CanvasNode; default returns undefined (→ placeholder).
 const VarPreviewContext = React.createContext<(expr: string) => string | undefined>(
   () => undefined,
 );
 
-// BackgroundTextureMode (PB) — NINE_SLICES=0, CENTER=1, STRETCH=2. This PB enum
-// is exported as a `const enum` (erased at compile time), so its numeric value
-// is hard-coded here with a comment — same convention as the UiTransform enums
-// centralized in ../../lib/sdk/ui-transform-constants. See
-// node_modules/@dcl/ecs/dist/components/generated/pb/decentraland/sdk/components/ui_background.gen.d.ts
-// Only CENTER needs distinct handling; STRETCH and NINE_SLICES (approximated)
-// both map to a full-box stretch.
 const BTM_CENTER = 1;
 
 const FLEX_DIRECTION: Record<number, React.CSSProperties['flexDirection']> = {
@@ -175,17 +159,12 @@ const JUSTIFY_CONTENT: Record<number, React.CSSProperties['justifyContent']> = {
   5: 'space-evenly',
 };
 
-// YGWrap. Yoga and CSS agree on `nowrap` as the default, so an unset value needs
-// no explicit write (unlike flexShrink below).
 const FLEX_WRAP: Record<number, React.CSSProperties['flexWrap']> = {
   0: 'nowrap',
   1: 'wrap',
   2: 'wrap-reverse',
 };
 
-// YGAlign — used for alignItems / alignSelf / alignContent. CSS doesn't have
-// a one-to-one mapping for `baseline` on alignContent, but the common values
-// (auto/flex-start/center/flex-end/stretch/space-between/space-around) line up.
 const ALIGN: Record<number, string> = {
   0: 'auto',
   1: 'flex-start',
@@ -203,35 +182,20 @@ const OVERFLOW: Record<number, React.CSSProperties['overflow']> = {
   2: 'scroll',
 };
 
-// TextAlignMode (PB) → CSS text-align. PB combines vertical+horizontal in a
-// single 9-value enum; CSS text-align is horizontal only, so this covers the
-// horizontal axis of multi-line wrapping inside the text span. The box-level
-// anchoring (both axes) is done with flexbox via TEXT_ALIGN_FLEX below.
-// A Button carries `uiText` exactly like a Label — react-ecs's Button reuses
-// Label's getTextAlign/getFont/getFontSize and writes the result into uiText —
-// so every text path has to treat the two alike. Forgetting Button is what left
-// its label stuck top-left (no flex anchoring) and blank inside a nested
-// component (no text span at all).
 const rendersText = (type: UINodeType): boolean => type === 'Label' || type === 'Button';
 
 const TEXT_ALIGN_H: Record<number, React.CSSProperties['textAlign']> = {
-  0: 'left', // TOP_LEFT
-  1: 'center', // TOP_CENTER
-  2: 'right', // TOP_RIGHT
-  3: 'left', // MIDDLE_LEFT
-  4: 'center', // MIDDLE_CENTER
-  5: 'right', // MIDDLE_RIGHT
-  6: 'left', // BOTTOM_LEFT
-  7: 'center', // BOTTOM_CENTER
-  8: 'right', // BOTTOM_RIGHT
+  0: 'left',
+  1: 'center',
+  2: 'right',
+  3: 'left',
+  4: 'center',
+  5: 'right',
+  6: 'left',
+  7: 'center',
+  8: 'right',
 };
 
-// TextAlignMode (PB, row-major: top/middle/bottom × left/center/right) → the
-// flex justify/align pair that anchors a Label's text span in its box, so the
-// canvas reproduces react-ecs's 2D text placement (not just the horizontal
-// axis). flexDirection stays 'row', so justifyContent is the horizontal axis and
-// alignItems the vertical one. PB default is TAM_TOP_LEFT (0) — react-ecs adds no
-// default of its own, so an unset textAlign anchors top-left in-world.
 const TEXT_ALIGN_FLEX: Record<
   number,
   {
@@ -250,7 +214,6 @@ const TEXT_ALIGN_FLEX: Record<
   8: { justifyContent: 'flex-end', alignItems: 'flex-end' },
 };
 
-// Font (PB) → CSS font-family, for a faithful preview of the Label `font` prop.
 const FONT_FAMILY: Record<number, string> = {
   0: 'sans-serif',
   1: 'serif',
@@ -271,14 +234,8 @@ function color4ToRgba(c: { r: number; g: number; b: number; a?: number }): strin
   return `rgba(${Math.round(c.r * 255)}, ${Math.round(c.g * 255)}, ${Math.round(c.b * 255)}, ${a})`;
 }
 
-// react-ecs writes no border color when a width is set but no color is given; the
-// in-world renderer and the property panel both treat that default as opaque
-// black. Match it so the canvas preview doesn't fall back to `currentColor` (the
-// node's light text color), which read as a mismatch against the panel swatch.
 const DEFAULT_BORDER_COLOR = { r: 0, g: 0, b: 0, a: 1 };
 
-// The Label/Button text field, driving the inline mixed-content editor (literal
-// text + variable/prop bindings). Same UiText.value field the panel binds.
 const TEXT_VALUE_FIELD: FieldConfig = {
   label: 'Text',
   componentId: 'core::UiText',
@@ -299,23 +256,6 @@ function nodeStyle(node: UINode): React.CSSProperties {
     font?: number;
   };
 
-  // The DCL react-ecs runtime seeds a default UiTransform, so apply those same
-  // defaults up-front for a faithful preview when a prop is unset:
-  //   - flexDirection: react-ecs defaults to ROW (its UiEntity overrides Yoga's
-  //     COLUMN default; @dcl/react-ecs uiTransform defaultUiTransform). This also
-  //     matches CSS flexbox's row default.
-  //   - flexShrink:    the PROTOCOL default is 1 (ui_transform.proto documents
-  //     the absent-value default; react-ecs never writes the field), which is
-  //     also CSS's default — so no explicit value. Yoga's library default of 0
-  //     is NOT what an unauthored node gets in-world; forcing 0 here was why
-  //     canvas labels held full width while in-world ones shrank and wrapped
-  //     per character.
-  //   - alignContent:  left at CSS's stretch DELIBERATELY. The proto documents
-  //     the absent-value default as flex-start, but the explorer empirically
-  //     STRETCHES wrapped lines (verified in-world 2026-08-06: a full-height
-  //     wrapping container's second line starts at the vertical midpoint).
-  //     The renderer is the de-facto contract; the proto comment is upstream's
-  //     to reconcile.
   const style: React.CSSProperties = {
     display: t.display === YGD_NONE ? 'none' : 'flex',
     position: t.positionType === YGPT_ABSOLUTE ? 'absolute' : 'relative',
@@ -394,7 +334,6 @@ function nodeStyle(node: UINode): React.CSSProperties {
   if (t.opacity !== undefined) style.opacity = t.opacity;
   if (t.zIndex !== undefined) style.zIndex = t.zIndex;
 
-  // Border radius — CSS `border-radius` shorthand is TL TR BR BL.
   const rTL = cssLen(t.borderTopLeftRadius, t.borderTopLeftRadiusUnit);
   const rTR = cssLen(t.borderTopRightRadius, t.borderTopRightRadiusUnit);
   const rBR = cssLen(t.borderBottomRightRadius, t.borderBottomRightRadiusUnit);
@@ -403,7 +342,6 @@ function nodeStyle(node: UINode): React.CSSProperties {
     style.borderRadius = `${rTL ?? 0} ${rTR ?? 0} ${rBR ?? 0} ${rBL ?? 0}`;
   }
 
-  // Border width + color, per side.
   const applyBorder = (
     side: 'Top' | 'Right' | 'Bottom' | 'Left',
     widthKey: keyof typeof t,
@@ -419,8 +357,6 @@ function nodeStyle(node: UINode): React.CSSProperties {
       );
     }
   };
-  // Border colors are color objects, not the numbers `t` is typed as; read
-  // them off the same object through a widened view.
   const tc = t as Record<string, any>;
   applyBorder('Top', 'borderTopWidth', 'borderTopWidthUnit', tc.borderTopColor);
   applyBorder('Right', 'borderRightWidth', 'borderRightWidthUnit', tc.borderRightColor);
@@ -436,14 +372,6 @@ function nodeStyle(node: UINode): React.CSSProperties {
   if (text?.fontSize !== undefined) {
     style.fontSize = `${text.fontSize}px`;
   }
-  // Label/Button text: anchor the text span in its box exactly as react-ecs
-  // does. The textAlign enum drives BOTH axes via flexbox (justify = horizontal,
-  // align = vertical), overriding the generic container justify/align — the only
-  // "child" here is the text. CSS text-align alone cannot do this: the span is a
-  // flex ITEM, so its position comes from justify-content, not text-align. An
-  // unset textAlign anchors middle-center (4): the in-world default per @dcl/ecs
-  // PBUiText ("alignment within the bounds (default: center)"), NOT the proto-3
-  // zero (top-left).
   if (rendersText(node.type)) {
     const ta = typeof text.textAlign === 'number' ? text.textAlign : 4;
     const flex = TEXT_ALIGN_FLEX[ta] ?? TEXT_ALIGN_FLEX[4];
@@ -459,24 +387,12 @@ function nodeStyle(node: UINode): React.CSSProperties {
   return style;
 }
 
-// The resolved URL is interpolated into a CSS `url("...")` context. A value
-// containing a quote/paren/whitespace/backslash could break out of that
-// context, so we gate emission on a strict allowlist (output-sink hardening,
-// independent of the TextureField commit-path validation). blob: is the normal
-// asset-path case; http/https covers acceptURLs; data:image/ is harmless for
-// images. Anything else (or an unsafe character) drops the image entirely and
-// the background color still shows.
 function safeTextureUrl(url: string): string | undefined {
   if (/["'()\\\s]/.test(url)) return undefined;
   if (!/^(blob:|https?:|data:image\/)/.test(url)) return undefined;
   return url;
 }
 
-// Map a resolved file-texture blob URL + PB textureMode to CSS background-*.
-// Layered on top of nodeStyle so the background COLOR remains a fallback while
-// the image is still loading. NINE_SLICES has no clean CSS equivalent here;
-// we approximate it with a full stretch (border-image slicing would need the
-// per-side slice values and is out of scope for the preview).
 function textureStyle(
   url: string,
   textureMode: number | undefined,
@@ -488,9 +404,6 @@ function textureStyle(
   if (textureMode === BTM_CENTER) {
     return { ...base, backgroundSize: 'auto', backgroundPosition: 'center' };
   }
-  // STRETCH with a sub-region: show that region scaled to fill the box. UV v is
-  // bottom-up, CSS background-position y is top-down — hence (1 - vMax) below.
-  // Approximate preview; runtime uses the raw uvs.
   if (textureMode === 2 && uvs && uvs.length >= 8) {
     const us = [uvs[0], uvs[2], uvs[4], uvs[6]];
     const vs = [uvs[1], uvs[3], uvs[5], uvs[7]];
@@ -513,21 +426,12 @@ function textureStyle(
   return { ...base, backgroundSize: '100% 100%' };
 }
 
-// A canvas drag of an IN-FLOW node, captured on mousedown: it reorders the node
-// among its siblings rather than offsetting it. Boxes are viewport px read once —
-// nothing reflows during the drag (the node moves by CSS transform), so re-reading
-// them per mousemove would measure the same layout.
 type ReorderDrag = {
   parentEl: HTMLElement;
   parentBox: Box;
   flow: Flow;
-  // In-flow siblings excluding the dragged node, in DOM order (= source order).
   siblings: { entity: Entity; box: Box }[];
-  // Center of the dragged node's own box — the point hit-tested against the
-  // siblings, offset by the live drag delta. Grabbing a node near its edge must
-  // not decide the drop.
   center: { x: number; y: number };
-  // Slot equal to a no-op drop, and the live slot under the drag.
   selfIndex: number;
   slot: InsertionSlot;
 };
@@ -539,10 +443,6 @@ const toBox = (r: DOMRect): Box => ({
   bottom: r.bottom,
 });
 
-// Snapshot the reorder context for `el` from the rendered DOM: the parent's flow
-// comes from its computed style (the canvas renders UiTransform as real CSS, so
-// the browser's layout IS what the user drops onto). Absolute siblings are out of
-// flow, and zero-area ones (display: none) carry no box to hit-test against.
 function captureReorderDrag(el: HTMLElement): ReorderDrag | null {
   const parentEl = el.parentElement;
   if (!parentEl) return null;
@@ -580,10 +480,6 @@ function captureReorderDrag(el: HTMLElement): ReorderDrag | null {
   };
 }
 
-// Place the insertion-indicator line for a reorder drag. The slot is computed in
-// viewport px against the same captured boxes, so it converts to the parent's
-// local (logical) px — the portal target is the parent node, which lives inside
-// the scaled canvas root.
 function reorderIndicatorStyle(ro: ReorderDrag): React.CSSProperties {
   const scale = getCanvasScale();
   const { slot, parentBox, flow } = ro;
@@ -596,18 +492,11 @@ function reorderIndicatorStyle(ro: ReorderDrag): React.CSSProperties {
     : { position: 'absolute', top: main, left: cross, height: 2, width: crossLength };
 }
 
-// `hidden` = editor-only canvas hide (tree eye button): render with
-// `visibility: hidden` so the node keeps its layout box — siblings must NOT
-// reflow — but paints nothing and takes no pointer events.
 type CanvasNodeProps = { node: CodeUINode; hidden?: boolean };
 
 const hiddenStyle = (style: React.CSSProperties, hidden?: boolean): React.CSSProperties =>
   hidden ? { ...style, visibility: 'hidden' } : style;
 
-// Floating Duplicate / Delete bar shown on the selected (non-root) node. Mounted
-// only for the selected node, so `useUINodeActions` (and its tree subscription)
-// isn't paid per-node. Counter-scaled via --uid-scale so it stays legible at any
-// canvas zoom. Stops mouse events so clicking it never starts a node drag.
 const CanvasNodeActions: React.FC<{ entity: Entity }> = ({ entity }) => {
   const { remove, duplicate } = useUINodeActions();
   const [addOpen, setAddOpen] = useState(false);
@@ -659,15 +548,7 @@ const CanvasNodeActions: React.FC<{ entity: Entity }> = ({ entity }) => {
 
 const CanvasNode: React.FC<CanvasNodeProps> = ({ node, hidden }) => {
   const dispatch = useAppDispatch();
-  // Subscribe to a derived boolean rather than the raw selection: selecting a
-  // node is a Redux action that does NOT rebuild the node tree, so a raw
-  // selection subscription would re-render every CanvasNode on each click.
-  // react-redux only re-renders when the selector OUTPUT changes, so this
-  // confines the re-render to the nodes whose membership actually flips.
   const isSelected = useAppSelector(state => getSelectedNodes(state).includes(node.entity));
-  // Editor-only canvas lock (tree lock button): the node still renders but
-  // takes no select/drag/resize. Derived boolean for the same re-render
-  // reasons as isSelected.
   const isLocked = useAppSelector(
     state => !!getLockedNodes(state)[node.entity as unknown as number],
   );
@@ -675,8 +556,6 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node, hidden }) => {
   const groupLive = useSyncExternalStore(subscribeGroupDrag, () =>
     groupLiveOffsetFor(node.entity as unknown as number),
   );
-  // Aspect-ratio lock (Size row toggle). Held in a ref too, so the window resize
-  // handler reads the latest value without re-subscribing its effect.
   const aspectLocked = useAppSelector(
     state => !!getAspectLockedNodes(state)[node.entity as unknown as number],
   );
@@ -690,16 +569,8 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node, hidden }) => {
     snapEnabledRef.current = snapEnabled;
   }, [snapEnabled]);
 
-  // Interaction-state preview. Two sources: pointing at the node on the canvas
-  // previews its Hover layer, and the layer the properties panel is editing is
-  // previewed on the SELECTED node (so opening "Pressed" shows the pressed look
-  // without needing to hold the mouse — which would collide with drag-to-move).
   const [canvasHovered, setCanvasHovered] = useState(false);
   const panelLayer = useAppSelector(getInteractionLayer);
-  // Only the STYLE is resolved through the preview — never the node the drag /
-  // resize math reads. Those write the `base` layer, so deriving their numbers
-  // from a previewed override (a narrower `press` width, say) would bake the
-  // override's geometry into Default on the next drag.
   const previewNode = useMemo(
     () =>
       resolveInteractionPreview(
@@ -720,9 +591,6 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node, hidden }) => {
     emptyLabel?: string;
   };
 
-  // Preview bound/mixed text: a bound field composes from its binding row
-  // (single expr or template segments), resolving each variable to its default
-  // value (`state.name` → "John") via the Canvas-root resolver.
   const resolveVar = useContext(VarPreviewContext);
   const labelText = previewBoundText(
     node.bindings,
@@ -740,8 +608,6 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node, hidden }) => {
     ) ||
     'Input';
 
-  // Only the FILE texture variant is previewable as a CSS background-image.
-  // Avatar/video textures resolve to no preview (color/layout still renders).
   const background = (previewNode.uiBackground ?? {}) as {
     texture?: { tex?: { $case: string; texture?: { src?: string } } };
     textureMode?: number;
@@ -751,22 +617,14 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node, hidden }) => {
   const texSrc = tex?.$case === 'texture' ? tex.texture?.src : undefined;
   const texUrl = useAssetUrl(texSrc);
 
-  // Ref to the rendered div so we can translate viewport drop coords into
-  // logical (Yoga) coords inside this node.
   const divRef = useRef<HTMLDivElement | null>(null);
 
-  // --- Drop target (palette → place new node) ---
-  // Reparenting via canvas drag was removed; reparent lives in the tree view
-  // only (matches Unity / Unreal / Godot — viewport drag = reposition, tree
-  // drag = reparent). The drop target still exists for palette placement.
   const [{ isOver }, drop] = useDrop<UIDesignerDragItem, unknown, { isOver: boolean }>(
     () => ({
       accept: UI_DESIGNER_DND_TYPE,
       collect: monitor => ({ isOver: monitor.isOver({ shallow: true }) }),
       drop: async (item, monitor) => {
         if (monitor.didDrop()) return;
-        // Add the child by splicing a new element into the parent's source
-        // (drop position not honored yet — appended as a child).
         if (item.source === 'palette') {
           void spliceAddChild(
             node.entity as unknown as number,
@@ -774,7 +632,6 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node, hidden }) => {
             item.preset,
           );
         } else if (item.source === 'component') {
-          // Nest another root as a component (guarded against reference cycles).
           void spliceInsertComponent(node.entity as unknown as number, item.name);
         }
       },
@@ -795,16 +652,7 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node, hidden }) => {
     [drop, node.entity],
   );
 
-  // --- Native drag-to-move (Unity/Unreal/Godot style) ---
-  // We bypass react-dnd here because we want live, continuous movement with
-  // CSS transforms (no per-tick CRDT writes). Listener installs only run
-  // while a drag is in flight.
   const t = (node.uiTransform ?? null) as PBUiTransform | null;
-  // The root is the only entity in the tree whose UiTransform.parent is 0.
-  // We don't let the root be dragged. Any non-root node is draggable; if it's
-  // currently flex-flow (positionType !== ABSOLUTE) we implicitly convert it
-  // to absolute on the first drag and pin it at the position it was rendered
-  // at — same as Unreal's Canvas Panel behaviour.
   const isRoot = !t?.parent;
   const tool = useAppSelector(getUIDesignerTool);
   const canDragMove =
@@ -827,13 +675,7 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node, hidden }) => {
   } | null>(null);
   const liveOffsetRef = useRef<{ dx: number; dy: number }>({ dx: 0, dy: 0 });
   const [isDragging, setIsDragging] = useState(false);
-  // Force re-render during move without storing the offset in state directly
-  // (state writes during pointermove would batch-cancel each other in React).
   const [, setRenderTick] = useState(0);
-  // On release we hold the node at its dropped position/size until the committed
-  // transform catches up — the engine write round-trips asynchronously, so
-  // without this the node snaps back to its old box for a frame, then jumps.
-  // Move sets top/left; resize also sets width/height.
   const [optimisticPos, setOptimisticPos] = useState<{
     top?: number;
     left?: number;
@@ -843,18 +685,10 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node, hidden }) => {
     marginLeft?: number;
   } | null>(null);
 
-  // --- Reorder-drag state (in-flow nodes) ---
   const reorderRef = useRef<ReorderDrag | null>(null);
   const [isReordering, setIsReordering] = useState(false);
-  // A reorder changes the node's PATH, not its offsets, so optimisticPos can't
-  // express the dropped state. Hold the drag translate instead: the node stays
-  // under the cursor until the spliced source round-trips and the rebuilt tree
-  // reflows it into its new slot — releasing on mouseup would snap it back to the
-  // old slot for a frame. Released by the reparse (below) or by the splice
-  // settling, which covers a drop the store rejects (no reparse follows one).
   const [heldOffset, setHeldOffset] = useState<{ dx: number; dy: number } | null>(null);
 
-  // --- Resize-tool state ---
   const resizeOriginRef = useRef<{
     mouseX: number;
     mouseY: number;
@@ -873,11 +707,6 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node, hidden }) => {
   });
   const [isResizing, setIsResizing] = useState(false);
 
-  // --- Inline canvas text editing (double-click a Label/Button) ---
-  // Reuses the panel's MixedContentField, so the inline editor handles literal
-  // text AND variable/prop bindings (type, or insert a chip via the picker) —
-  // including editing an already-bound value. Editing ends on a click outside
-  // the editor and its (portaled) picker, or on Escape.
   const [editing, setEditing] = useState(false);
   const editingRef = useRef(false);
   editingRef.current = editing;
@@ -891,8 +720,6 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node, hidden }) => {
       }
       if (isLocked) return;
       e.stopPropagation();
-      // Modifier-click toggles membership in the multi-selection (#1400); the
-      // canvas has no row order, so shift behaves like ctrl here.
       if (e.ctrlKey || e.metaKey || e.shiftKey)
         dispatch(toggleNodeSelection({ node: node.entity }));
       else dispatch(selectNode({ node: node.entity }));
@@ -936,21 +763,13 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node, hidden }) => {
       if (e.ctrlKey || e.metaKey || e.shiftKey) return;
       if (isLocked) return;
       if (!canDragMove) return;
-      if (editingRef.current) return; // don't drag while editing text inline
-      // Ignore clicks inside inputs / interactive children so the property
-      // panel doesn't end up dragging the parent node.
+      if (editingRef.current) return;
       const target = e.target as HTMLElement;
       if (target.closest('button, input, select, textarea')) return;
 
       e.stopPropagation();
       e.preventDefault();
 
-      // The gesture adapts to the node's layout mode, with no positionType
-      // conversion: an absolute node MOVES (drop writes `position`), an in-flow
-      // node REORDERS among its siblings (drop splices the source order), taking
-      // advantage of the flow instead of fighting it with a margin offset.
-      // Margins stay editable in the properties panel; reparenting stays in the
-      // Nodes tree.
       const isAbsolute = t?.positionType === YGPT_ABSOLUTE;
 
       if (isAbsolute) {
@@ -999,7 +818,6 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node, hidden }) => {
       liveOffsetRef.current = { dx: 0, dy: 0 };
       setOptimisticPos(null);
       setHeldOffset(null);
-      // Selection follows the drag — feels natural in every editor.
       dispatch(selectNode({ node: node.entity }));
       if (isAbsolute) {
         setIsDragging(true);
@@ -1020,8 +838,6 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node, hidden }) => {
       let dxLogical = (e.clientX - origin.mouseX) / getCanvasScale();
       let dyLogical = (e.clientY - origin.mouseY) / getCanvasScale();
       if (snapEnabledRef.current && !e.shiftKey) {
-        // Snap to grid by quantising the FINAL position, not the delta,
-        // so the snapped grid is anchored to absolute logical coords.
         const snappedLeft =
           Math.round((origin.startLeft + dxLogical) / DRAG_SNAP_GRID) * DRAG_SNAP_GRID;
         const snappedTop =
@@ -1125,8 +941,6 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node, hidden }) => {
       const dx = e.clientX - origin.mouseX;
       const dy = e.clientY - origin.mouseY;
       liveOffsetRef.current = { dx: dx / scale, dy: dy / scale };
-      // Hit-test the dragged box's live center against the captured sibling boxes
-      // — all still in viewport px, so the raw (unscaled) delta is what moves it.
       ro.slot = insertionSlot(
         ro.siblings.map(s => s.box),
         { x: ro.center.x + dx, y: ro.center.y + dy },
@@ -1144,14 +958,7 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node, hidden }) => {
       liveOffsetRef.current = { dx: 0, dy: 0 };
       setIsReordering(false);
       if (!ro) return;
-      // Nothing to write when the node was released over the slot it already
-      // holds. The movement check is not redundant: siblings can overlap (negative
-      // margins), so a node's resting center can already sit past a sibling's
-      // midpoint and a plain click must never reorder.
       if ((offset.dx === 0 && offset.dy === 0) || ro.slot.index === ro.selfIndex) return;
-      // Reorder by moving the element's source after the preceding sibling, or
-      // before the first one when dropped at the head. The reparse reflows the
-      // node into its new slot; the drop offset is held until it lands.
       const anchor: MoveAnchor =
         ro.slot.index > 0
           ? { kind: 'after', targetId: Number(ro.siblings[ro.slot.index - 1].entity) }
@@ -1168,17 +975,10 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node, hidden }) => {
     };
   }, [isReordering, node.entity]);
 
-  // Release the reorder hold on the first reparse after the drop: the rebuilt tree
-  // is what reflows the node into its new slot, and it arrives in the same React
-  // batch, so no frame shows the node both reordered and offset. (Synthetic ids
-  // are positional, so the moved node usually remounts under a new id and this
-  // never runs — it covers the case where the id survives the move.)
   useEffect(() => {
     setHeldOffset(held => (held ? null : held));
   }, [node]);
 
-  // Clear the optimistic hold once the committed transform matches the dropped
-  // position (so external edits / the property panel drive rendering again).
   useEffect(() => {
     if (!optimisticPos) return;
     const t = node.uiTransform as PBUiTransform | undefined;
@@ -1187,8 +987,6 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node, hidden }) => {
     if (optimisticPos.left !== undefined && num(t?.positionLeft) !== optimisticPos.left) return;
     if (optimisticPos.width !== undefined && num(t?.width) !== optimisticPos.width) return;
     if (optimisticPos.height !== undefined && num(t?.height) !== optimisticPos.height) return;
-    // A margin the commit CLEARS comes back absent, not 0 — so an absent margin
-    // has to read as the 0 it means in Yoga, or the hold never releases.
     const margin = (v: unknown) => Math.round((v as number | undefined) ?? 0);
     if (optimisticPos.marginTop !== undefined && margin(t?.marginTop) !== optimisticPos.marginTop)
       return;
@@ -1200,7 +998,6 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node, hidden }) => {
     setOptimisticPos(null);
   }, [node, optimisticPos]);
 
-  // --- Resize handle interaction ---
   const handleResizeStart = useCallback(
     (dir: HandleDir) => (e: React.MouseEvent) => {
       if (isLocked || !divRef.current) return;
@@ -1209,9 +1006,6 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node, hidden }) => {
       const el = divRef.current;
       const parentEl = el.parentElement;
       if (!parentEl) return;
-      // Read the rendered box from the DOM rather than the PB component —
-      // works regardless of unit (%, px, auto) since getBoundingClientRect
-      // returns post-layout viewport pixels which we convert with CANVAS_SCALE.
       const elRect = el.getBoundingClientRect();
       const start = offsetInParent(el, parentEl);
       resizeOriginRef.current = {
@@ -1242,13 +1036,6 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node, hidden }) => {
       const dyRaw = (e.clientY - origin.mouseY) / getCanvasScale();
       const axes = HANDLE_AXES[origin.dir];
 
-      // The box follows the dragged handle in BOTH layout modes: left/top edges
-      // move the top-left (axes.dx/dy) while shrinking width/height (axes.dw/dh),
-      // so the opposite edge stays put and the box grows toward the dragged edge.
-      // The live translate and the commit both honor this (in-flow nodes commit
-      // the top-left shift as margin), so the preview matches the result.
-      // Snap the FINAL position/size, not the delta, so the grid is anchored
-      // to absolute logical coords (consistent with move).
       const snap = (v: number) => Math.round(v / DRAG_SNAP_GRID) * DRAG_SNAP_GRID;
       const doSnap = snapEnabledRef.current && !e.shiftKey;
 
@@ -1259,14 +1046,9 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node, hidden }) => {
         nextW = snap(nextW);
         nextH = snap(nextH);
       }
-      // Don't allow negative sizes — clamp at 0.
       nextW = Math.max(0, nextW);
       nextH = Math.max(0, nextH);
 
-      // Aspect-ratio lock (Size toggle) or Ctrl held → constrain to the node's
-      // original W:H. The axis that moved more (normalised by the ratio) drives;
-      // the other is derived. macOS turns Ctrl+click into a secondary click, so
-      // the handles preventDefault their contextmenu (see render).
       if ((aspectLockedRef.current || e.ctrlKey) && origin.startW > 0 && origin.startH > 0) {
         const ratio = origin.startW / origin.startH;
         const drivesWidth =
@@ -1278,10 +1060,6 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node, hidden }) => {
         else nextW = Math.max(0, nextH * ratio);
       }
 
-      // Keep the edge opposite the dragged handle fixed by deriving the top-left
-      // from the (possibly constrained) size, so left/top drags grow toward the
-      // handle and the anchor never drifts. dx===1 ⇔ a left-moving handle;
-      // dy===1 ⇔ a top-moving handle.
       const nextLeft =
         axes.dx === 1 ? origin.startLeft + (origin.startW - nextW) : origin.startLeft;
       const nextTop = axes.dy === 1 ? origin.startTop + (origin.startH - nextH) : origin.startTop;
@@ -1303,14 +1081,11 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node, hidden }) => {
       setIsResizing(false);
       if (!origin) return;
       if (live.dw === 0 && live.dh === 0 && live.dx === 0 && live.dy === 0) return;
-      // Commit size AND the top-left shift the handle produced, in one splice, so
-      // a left/top-edge drag grows toward that edge instead of always down-right.
       const width = Math.max(0, Math.round(origin.startW + live.dw));
       const height = Math.max(0, Math.round(origin.startH + live.dh));
       const id = node.entity as unknown as number;
       const hasMove = live.dx !== 0 || live.dy !== 0;
       if (origin.isAbsolute) {
-        // Absolute → reposition via `position: { top, left }`.
         const top = Math.round(origin.startTop + live.dy);
         const left = Math.round(origin.startLeft + live.dx);
         setOptimisticPos(
@@ -1324,8 +1099,6 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node, hidden }) => {
           position: hasMove ? { top, left } : undefined,
         });
       } else {
-        // In-flow → shift via `margin` (current + delta), mirroring the move path.
-        // Right/bottom-edge drags leave dx/dy at 0, so margin is left untouched.
         const marginTop = Math.round(((t?.marginTop as number) ?? 0) + live.dy);
         const marginLeft = Math.round(((t?.marginLeft as number) ?? 0) + live.dx);
         setOptimisticPos(hasMove ? { marginTop, marginLeft, width, height } : { width, height });
@@ -1345,8 +1118,6 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node, hidden }) => {
     };
   }, [isResizing, node.entity]);
 
-  // Apply the live drag offset visually via CSS transform so we don't write
-  // to the CRDT/data-layer until the user releases the mouse.
   const baseStyle = nodeStyle(previewNode);
   const liveOffset = isDragging || isReordering ? liveOffsetRef.current : (groupLive ?? heldOffset);
   let style: React.CSSProperties = liveOffset
@@ -1369,39 +1140,25 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node, hidden }) => {
     }
   }
 
-  // Hold the just-dropped position until the committed transform catches up,
-  // preventing the snap-back-then-jump flicker on release.
   if (optimisticPos && !isDragging && !isResizing && !groupLive) {
     style = { ...style };
     if (optimisticPos.top !== undefined && optimisticPos.left !== undefined) {
       style.position = 'absolute';
       style.top = `${optimisticPos.top}px`;
       style.left = `${optimisticPos.left}px`;
-      // The commit degrades the node to a top-left pin, so drop the pin it had: a
-      // stale right/bottom held next to the new top/left would stretch the box.
       style.right = undefined;
       style.bottom = undefined;
     }
     if (optimisticPos.width !== undefined) style.width = `${optimisticPos.width}px`;
     if (optimisticPos.height !== undefined) style.height = `${optimisticPos.height}px`;
-    // The margins the commit rewrites: 0 for a counter-margin a drop clears, the
-    // shifted value for an in-flow resize. A margin the commit leaves authored is
-    // absent here, and the held inset already compensates for it.
     if (optimisticPos.marginTop !== undefined) style.marginTop = `${optimisticPos.marginTop}px`;
     if (optimisticPos.marginLeft !== undefined) style.marginLeft = `${optimisticPos.marginLeft}px`;
   }
 
-  // Layer the resolved file-texture on top. backgroundColor (a separate
-  // property) survives as a fallback while the blob URL is still loading.
   if (texUrl) {
     style = { ...style, ...textureStyle(texUrl, background.textureMode, background.uvs) };
   }
 
-  // The root IS the screen: its authored size/position must never distort the
-  // frame. Force it to fill the .ui-designer-canvas-root box regardless of what
-  // its stored UiTransform says (a legacy root may have been saved absolute or
-  // a fixed 1920px). The runtime + repair op keep it 100% relative; this is the
-  // editor-side guarantee.
   if (isRoot) {
     style = {
       ...style,
@@ -1434,10 +1191,6 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node, hidden }) => {
       onClick={handleClick}
       onDoubleClick={handleDoubleClick}
       onMouseDown={handleMouseDown}
-      // Preview the Hover layer while pointing at the node. Enter/leave don't
-      // collide with the canvas gestures (which are click / mousedown-drag), so
-      // this is safe where a mousedown-driven "pressed" preview would not be.
-      // Only nodes that actually declare a hover layer subscribe to the cost.
       onMouseEnter={node.interaction?.states.hover ? () => setCanvasHovered(true) : undefined}
       onMouseLeave={node.interaction?.states.hover ? () => setCanvasHovered(false) : undefined}
       data-type={node.type}
@@ -1452,11 +1205,6 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node, hidden }) => {
           <span className="ui-designer-canvas-dropdown-chevron">▼</span>
         </span>
       ) : null}
-      {/* Label/Button text: a mixed-content editor while editing (double-click) —
-          literal text + variable/prop chips — else the resolved preview text.
-          Button had no text branch before, so it painted as an empty box.
-          Markup (<b>/<i>) renders only on the non-editing branch: the editor has
-          to show the raw tags, since typing them is the only way to edit them. */}
       {rendersText(node.type) ? (
         editing ? (
           <span
@@ -1493,15 +1241,11 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node, hidden }) => {
               key={dir}
               className={cx('ui-designer-resize-handle', dir)}
               onMouseDown={handleResizeStart(dir)}
-              // Ctrl+drag constrains the ratio; on macOS Ctrl+click is a
-              // secondary click, so suppress the context menu on the handle.
               onContextMenu={e => e.preventDefault()}
             />
           ))
         : null}
       {isSelected && !isRoot ? <CanvasNodeActions entity={node.entity} /> : null}
-      {/* Portaled into the PARENT so the line spans the slot it marks, not this
-          node's box. It is absolutely positioned, so it adds no flex item. */}
       {isReordering && reorderRef.current && reorderRef.current.siblings.length > 0
         ? createPortal(
             <div
@@ -1515,10 +1259,6 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node, hidden }) => {
   );
 };
 
-// A grayed, read-only stand-in for code the UI Designer can't represent (loops,
-// conditionals, custom components, spread/dynamic props). It keeps the node's
-// place in the layout and is selectable (so the code view can locate it), but
-// carries none of the drag/resize/drop machinery — it is edited only in code.
 const CanvasOpaqueNode: React.FC<{ node: CodeUINode; hidden?: boolean }> = ({ node, hidden }) => {
   const dispatch = useAppDispatch();
   const isSelected = useAppSelector(state => getSelectedNodes(state).includes(node.entity));
@@ -1550,12 +1290,6 @@ const CanvasOpaqueNode: React.FC<{ node: CodeUINode; hidden?: boolean }> = ({ no
   );
 };
 
-// Read-only recursive render of a resolved component tree (Phase 2). Purely
-// visual: applies nodeStyle + text/background like CanvasNode, but registers no
-// node element and wires no interaction (its ids belong to another file and must
-// not collide with the active tree). `pointer-events: none` (on the root) lets
-// clicks fall through to the enclosing component-ref block, so selecting still
-// targets the reference, not its internals.
 const CanvasReadonlyNode: React.FC<{
   node: CodeUINode;
   resolveMap: Record<string, string>;
@@ -1564,8 +1298,6 @@ const CanvasReadonlyNode: React.FC<{
   const resolve = useCallback((expr: string) => resolveMap[expr], [resolveMap]);
   let style = nodeStyle(node);
   if (isRoot) {
-    // The nested component fills the block the wrapper sizes — neutralize its own
-    // root transform (a standalone root may be absolute / fixed-size).
     style = {
       ...style,
       position: 'relative',
@@ -1635,11 +1367,6 @@ const CanvasReadonlyNode: React.FC<{
   );
 };
 
-// A first-class reference to another root used as a component (`<OtroNOmbre />`).
-// Unlike an opaque block it is selectable (and movable/removable via the tree +
-// actions, since its span is a real JSX element); it's edited in code by opening
-// the referenced root. When the referenced tree has resolved it renders inline
-// read-only (edits to the original reflect here); until then, a labeled block.
 const CanvasComponentRefNode: React.FC<{ node: CodeUINode; hidden?: boolean }> = ({
   node,
   hidden,
@@ -1655,9 +1382,6 @@ const CanvasComponentRefNode: React.FC<{ node: CodeUINode; hidden?: boolean }> =
   );
   const name = node.componentRef?.name ?? node.name;
   const resolved = componentTrees[name] ?? null;
-  // pointer-events:none (CSS) makes this block transparent — clicks/drags reach
-  // the wrapper UiEntity (the movable/resizable unit). Selection outline still
-  // shows when the ref is picked in the node tree.
   return (
     <div
       ref={setRef}
@@ -1683,22 +1407,12 @@ const CanvasComponentRefNode: React.FC<{ node: CodeUINode; hidden?: boolean }> =
   );
 };
 
-// Route each node to the right renderer: a component reference gets the
-// first-class block, anything flagged opaque gets the read-only block, and
-// representable nodes get the full interactive CanvasNode. A node flipping
-// between these (as code is edited) swaps component type, which remounts cleanly
-// — no shared hook state to get out of sync.
 const CanvasNodeView: React.FC<CanvasNodeProps> = ({ node }) => {
-  // Editor-only canvas hide (tree eye button): rendered with visibility:
-  // hidden so the layout box stays (siblings don't reflow) — code untouched.
   const isNodeHidden = useAppSelector(
     state => !!getHiddenNodes(state)[node.entity as unknown as number],
   );
   const platform = useAppSelector(getPlatform);
   const cn = node as CodeUINode;
-  // A platform variant contributes no box of its own — render the branch for the
-  // device being previewed. Nothing when that device has no branch, which is
-  // exactly what the scene renders there.
   if (cn.platformVariant) {
     const branch = cn.children.find(c => c.platform === platform);
     return branch ? <CanvasNodeView node={branch} /> : null;
@@ -1725,10 +1439,6 @@ const CanvasNodeView: React.FC<CanvasNodeProps> = ({ node }) => {
   );
 };
 
-// Shown when a GUI is selected but its component is EMPTY (a plain `return`, no
-// elements). A drop target for the first element: drag a widget from the palette,
-// or click "+ Add element". Either routes through spliceSetRootChild, which
-// splices the `return (<…/>)` and turns the empty root into a real tree.
 const EmptyRootDropZone: React.FC = () => {
   const btnRef = useRef<HTMLButtonElement>(null);
   const [pickerOpen, setPickerOpen] = useState(false);
@@ -1744,8 +1454,6 @@ const EmptyRootDropZone: React.FC = () => {
     [],
   );
   return (
-    // The drop ref sits on the full-bleed wrapper — the whole empty canvas
-    // accepts the first element, not just the dashed box (#1399).
     <div
       ref={drop}
       className={cx('ui-designer-canvas-empty', { over: isOver })}
@@ -1777,20 +1485,14 @@ const EmptyRootDropZone: React.FC = () => {
 
 const CanvasComponent: React.FC = () => {
   const tree = useUINodeTree();
-  // Resolve `state.<var>` → its default value for the text preview (built once
-  // here; every CanvasNode reads it via VarPreviewContext).
   const { bindingSurface, emptyRoot, roots, filename } = useCodeState();
   const resolveVar = useMemo(() => {
     const map = buildResolveMap(bindingSurface.variables);
     return (expr: string) => map[expr];
   }, [bindingSurface]);
-  // Code-mode roots are files under src/ui/ (see code/store), not ECS entities.
   const createRoot = useCallback(() => void createCodeRoot(), []);
   const selectedNode = useAppSelector(getSelectedNode);
   const [scale, setScale] = useState(getCanvasScale());
-  // The device toggle is the EDIT target, not just a preview: a platform-variant
-  // node renders (and routes edits to) the branch matching it, so it lives in the
-  // slice where the code store can read it too.
   const dispatch = useAppDispatch();
   const device = useAppSelector(getPlatform);
   const screen = useAppSelector(getScreens)[device];
@@ -1798,16 +1500,12 @@ const CanvasComponent: React.FC = () => {
   const activeInset: UiScreenInset = activeRoot?.topLevel ? activeRoot.screenInset : 'none';
   const [showSafeAreas, setShowSafeAreas] = useState(false);
   const viewportRef = useRef<HTMLDivElement>(null);
-  // Infinite-canvas pan (Figma-style): the viewport centres the stage and this
-  // translate offsets it, so it can be moved anywhere at any zoom.
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const panDragRef = useRef<{ startX: number; startY: number; panX: number; panY: number } | null>(
     null,
   );
   const [isPanning, setIsPanning] = useState(false);
 
-  // A node selected from the tree / roots list that's fully off-screen is
-  // recentred by adjusting the pan; an already-visible node never jumps the view.
   useEffect(() => {
     if (selectedNode === null) return;
     const vp = viewportRef.current;
@@ -1870,13 +1568,8 @@ const CanvasComponent: React.FC = () => {
     setCanvasScale(scale * fitScale);
   }, [scale, fitScale]);
 
-  // Defensive: drop any stale entity→element entries when the canvas unmounts
-  // (e.g. switching scenes). Individual node unmounts already unregister via
-  // `setRef`; this guards against an entry surviving a full canvas teardown.
   useEffect(() => () => clearNodeRegistry(), []);
 
-  // Wheel pans; ctrl/⌘ + wheel zooms. Non-passive so preventDefault stops the
-  // browser page-zoom / back-swipe.
   useEffect(() => {
     const el = viewportRef.current;
     if (!el) return;
@@ -1892,7 +1585,6 @@ const CanvasComponent: React.FC = () => {
     return () => el.removeEventListener('wheel', onWheel);
   }, []);
 
-  // Right-/middle-drag pans.
   const handlePanStart = useCallback(
     (e: React.MouseEvent) => {
       if (e.button !== 2 && e.button !== 1) return;
@@ -1933,13 +1625,6 @@ const CanvasComponent: React.FC = () => {
         <div className="ui-designer-canvas-stagewrap">
           {tree ? (
             <>
-              {/* One shape for both devices: a screen of the previewed size, with
-                  the design-resolution UI scaled to fit and letterboxed inside it.
-                  Desktop used to be its own branch with the root AS the screen —
-                  that is just this with fitScale === 1. The frame chrome (black,
-                  rounded) is the only thing still device-specific.
-                  The stage reserves the *scaled* footprint so the canvas holds a
-                  strict size and the viewport scrolls when it overflows. */}
               <div
                 className={cx('ui-designer-canvas-stage', {
                   'ui-designer-device-frame': device === 'mobile',
@@ -1958,19 +1643,11 @@ const CanvasComponent: React.FC = () => {
                       height: frameHeight,
                       transform: `scale(${scale})`,
                       transformOrigin: 'top left',
-                      // Exposed so selection chrome can counter-scale and stay
-                      // legible at any zoom without re-rendering each node. Two
-                      // vars because there are two frames: chrome INSIDE the canvas
-                      // root also carries the fit transform, chrome alongside it
-                      // (the safe-area overlay) carries only the zoom.
                       '--uid-scale': scale * fitScale,
                       '--uid-screen-scale': scale,
                     } as React.CSSProperties
                   }
                 >
-                  {/* Editable through both transforms: drag/resize math is
-                      delta-based over client rects divided by the effective scale,
-                      so the fit transform and the letterbox offset cancel out. */}
                   <div
                     className="ui-designer-canvas-root"
                     style={rootStyle}
