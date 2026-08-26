@@ -1,278 +1,94 @@
-import React, { useCallback, useMemo, useRef, useState } from 'react';
-import {
-  IoClose,
-  IoCubeOutline,
-  IoDesktopOutline,
-  IoEyeOffOutline,
-  IoEyeOutline,
-  IoOptionsOutline,
-  IoPhoneLandscapeOutline,
-  IoWarningOutline,
-} from 'react-icons/io5';
-import { VscTrash } from 'react-icons/vsc';
+import React from 'react';
+import { useCallback } from 'react';
+import { useMemo } from 'react';
+import { useRef } from 'react';
+import { useState } from 'react';
 import { AiOutlinePlus } from 'react-icons/ai';
+import { IoClose } from 'react-icons/io5';
+import { IoCubeOutline } from 'react-icons/io5';
+import { IoDesktopOutline } from 'react-icons/io5';
+import { IoEyeOffOutline } from 'react-icons/io5';
+import { IoEyeOutline } from 'react-icons/io5';
+import { IoOptionsOutline } from 'react-icons/io5';
+import { IoPhoneLandscapeOutline } from 'react-icons/io5';
+import { IoWarningOutline } from 'react-icons/io5';
+import { VscTrash } from 'react-icons/vsc';
 import cx from 'classnames';
-import type { Entity, TextureUnion } from '@dcl/ecs';
-
-import {
-  YGD_FLEX,
-  YGD_NONE,
-  YGPT_ABSOLUTE,
-  YGPT_RELATIVE,
-  YGU_AUTO,
-  YGU_PERCENT,
-  YGU_POINT,
-  YGU_UNDEFINED,
-} from '../../../../lib/sdk/ui-transform-constants';
-import { useAppDispatch, useAppSelector } from '../../../../redux/hooks';
-import {
-  getAspectLockedNodes,
-  getCollapsedGroups,
-  getHiddenNodes,
-  getInteractionLayer,
-  getPlatform,
-  getSelectedNode,
-  setAspectLocked,
-  setGroupCollapsed,
-  setInteractionLayer,
-  setNodeHidden,
-  setPlatform,
-} from '../../../../redux/ui-designer';
-import { Block } from '../../../Block';
-import { Container } from '../../../Container';
-import { Modal } from '../../../Modal';
-import { CheckboxField, Dropdown, RgbaColorField, TextArea, TextField } from '../../../ui';
-import { Pill } from '../../../ui/Pill';
-import { measureParentBox, axisForPath, convertLength } from '../../shared/measure';
-import type { DeviceKind } from '../../shared/safe-areas';
-import {
-  classifyNode,
-  nodeLabelText,
-  soleComponentRef,
-  type CanvasSegment,
-  type UINodeType,
-} from '../../shared/tree-model';
+import type { Entity } from '@dcl/ecs';
+import { classifyNode } from '../../shared/tree-model';
+import { codeComponentValueForLayer } from '../../code/store';
+import { addPlatformVariant } from '../../code/store';
+import { addInteractionStates } from '../../code/store';
+import { addInteractionLayer } from '../../code/store';
+import { YGD_NONE } from '../../../../lib/sdk/ui-transform-constants';
+import { YGD_FLEX } from '../../../../lib/sdk/ui-transform-constants';
 import { WIDGET_ICONS } from '../../shared/widget-catalog';
-import {
-  addInteractionLayer,
-  addInteractionStates,
-  addPlatformVariant,
-  codeComponentValueForLayer,
-  findCodeLayoutParent,
-  findCodeNode,
-  interactionLayerValue,
-  removeInteractionLayer,
-  removeInteractionStates,
-  platformBranchesWithContent,
-  removePlatformVariant,
-  setInteractionActiveBinding,
-  setInteractionField,
-  setRootScreenInset,
-  spliceComponentPatch,
-  useCodeState,
-} from '../../code/store';
 import type { UiScreenInset } from '../../code/aggregator';
-import { INTERACTION_STATES, type InteractionStateKey } from '../../code/interaction-convention';
-import { isLayerableComponent } from '../../code/parse-adapter';
-import type { CodeUINode } from '../../code/types';
-import { clearedCenterMargins } from '../../shared/align-presets';
+import type { UINodeType } from '../../shared/tree-model';
+import { Pill } from '../../../ui/Pill';
+import { Modal } from '../../../Modal';
+import type { InteractionStateKey } from '../../code/interaction-convention';
+import { INTERACTION_STATES } from '../../code/interaction-convention';
 import { EmptyState } from '../../EmptyState';
-import {
-  type Alignment,
-  ALIGNMENTS,
-  alignmentToPatch,
-  clearAlignmentPatch,
-  patchToAlignment,
-} from './alignment-presets';
-import { absolutePatch, inFlowPatch } from './flow';
-import { type OverflowFlag, overflowFlags, overflowPatch } from './overflow-flags';
+import { Dropdown } from '../../../ui';
+import type { DeviceKind } from '../../shared/safe-areas';
+import { Container } from '../../../Container';
+import type { CodeUINode } from '../../code/types';
+import { CheckboxField } from '../../../ui';
+import type { CanvasSegment } from '../../shared/tree-model';
+import { Block } from '../../../Block';
+import { findCodeLayoutParent } from '../../code/store';
+import { findCodeNode } from '../../code/store';
+import { getCollapsedGroups } from '../../../../redux/ui-designer';
+import { getHiddenNodes } from '../../../../redux/ui-designer';
+import { getInteractionLayer } from '../../../../redux/ui-designer';
+import { getPlatform } from '../../../../redux/ui-designer';
+import { getSelectedNode } from '../../../../redux/ui-designer';
+import { interactionLayerValue } from '../../code/store';
+import { isLayerableComponent } from '../../code/parse-adapter';
+import { nodeLabelText } from '../../shared/tree-model';
+import { platformBranchesWithContent } from '../../code/store';
+import { removeInteractionLayer } from '../../code/store';
+import { removeInteractionStates } from '../../code/store';
+import { removePlatformVariant } from '../../code/store';
+import { setGroupCollapsed } from '../../../../redux/ui-designer';
+import { setInteractionActiveBinding } from '../../code/store';
+import { setInteractionField } from '../../code/store';
+import { setInteractionLayer } from '../../../../redux/ui-designer';
+import { setNodeHidden } from '../../../../redux/ui-designer';
+import { setPlatform } from '../../../../redux/ui-designer';
+import { setRootScreenInset } from '../../code/store';
+import { soleComponentRef } from '../../shared/tree-model';
+import { spliceComponentPatch } from '../../code/store';
+import { useAppDispatch } from '../../../../redux/hooks';
+import { useAppSelector } from '../../../../redux/hooks';
+import { useCodeState } from '../../code/store';
+import { buildRemovePatch } from './field-helpers';
+import { buildGroups } from './field-configs';
+import { buildAddPatch } from './field-helpers';
+import { bindPathFor } from './field-configs';
+import { TRANSFORM } from './field-configs';
+import { POSITION_MODE_FIELD } from './field-configs';
+import { FieldRow } from './FieldRow';
+import type { FieldConfig } from './field-configs';
+import { isTogglable } from './field-helpers';
+import { isInlineStub } from './field-helpers';
+import { isFieldSet } from './field-helpers';
+import { isAddableField } from './field-helpers';
+import { isAbsolute } from './field-helpers';
+import { hiddenUnderAbsoluteParent } from './field-helpers';
 import { fillOwnsProp } from './resize-modes';
-import { AnchorPresetField } from './AnchorPresetField';
+import { CHECKBOX_KINDS } from './field-helpers';
+import { hiddenOnRoot } from './field-helpers';
 import { BindAffordance } from './BindAffordance';
-import { BindableField } from './BindableField';
-import { BoxModelField } from './BoxModelField';
-import { BindableSubField } from './BindableSubField';
-import { FlowField } from './FlowField';
-import { MixedContentField } from './MixedContentField';
-import { seedSegments } from './MixedContentField/segments';
-import { CallbackField } from './CallbackField';
-import { ResizeField } from './ResizeField';
-import { FillField } from './FillField';
-import { TextAlignField } from './TextAlignField';
-import { regionToUvs, uvsToRegion } from './uv-region';
-import {
-  bindPathFor,
-  buildGroups,
-  POSITION_MODE_FIELD,
-  TRANSFORM,
-  type FieldConfig,
-} from './field-configs';
-
 import './PropertyPanel.css';
 
-type Color4 = { r: number; g: number; b: number; a?: number };
-
-const TW_WRAP = 0;
-const TW_NO_WRAP = 1;
-
-function clampNumber(raw: string): number {
-  const n = Number(raw);
-  return Number.isFinite(n) ? n : 0;
-}
-
-function expandWriteAll(
-  paths: string[],
-  value: unknown,
-  withUnit?: { unit: number },
-): Record<string, unknown> {
-  const patch: Record<string, unknown> = {};
-  for (const p of paths) {
-    patch[p] = value;
-    if (withUnit) patch[`${p}Unit`] = withUnit.unit;
-  }
-  return patch;
-}
-
-const UNIT_OPTIONS = [
-  { value: YGU_POINT, label: 'px' },
-  { value: YGU_PERCENT, label: '%' },
-];
-
-const ALIGNMENT_OPTIONS: { value: string; label: string }[] = [
-  { value: '', label: 'Default' },
-  ...ALIGNMENTS.map(a => {
-    const [v, h] = a.split('-');
-    return { value: a, label: `${v[0].toUpperCase()}${v.slice(1)} ${h}` };
-  }),
-];
-
-const TOGGLABLE_KINDS = new Set([
-  'number',
-  'index',
-  'boolean',
-  'string',
-  'string-array',
-  'color',
-  'enum',
-  'length',
-  'length-vec',
-  'position-mode',
-]);
-
-function isTogglable(field: FieldConfig): boolean {
-  return !field.core && TOGGLABLE_KINDS.has(field.kind);
-}
-
-const CHECKBOX_KINDS = new Set([
-  'boolean',
-  'position-mode',
-  'overflow-scroll',
-  'overflow-clip',
-  'text-wrap',
-]);
-
-function fieldSetPaths(field: FieldConfig): string[] {
-  if (field.writeAll) return field.writeAll;
-  if (field.subFields) return field.subFields.map(s => s.path);
-  return field.path ? [field.path] : [];
-}
-
-function isFieldSet(field: FieldConfig, value: Record<string, unknown> | null): boolean {
-  if (!value) return false;
-  return fieldSetPaths(field).some(p => p in value);
-}
-
-/** Whether a field belongs in its group's `+ Add property` menu. */
-export function isAddableField(
-  field: FieldConfig,
-  value: Record<string, unknown> | null,
-  boundFields: ReadonlySet<string>,
-): boolean {
-  return (
-    isTogglable(field) &&
-    !field.inlineAdd &&
-    !isFieldSet(field, value) &&
-    !boundFields.has(`${field.componentId}.${field.path}`)
-  );
-}
-
-/** Whether an inline-addable field shows its `+` stub rather than its control. */
-export function isInlineStub(field: FieldConfig, value: Record<string, unknown> | null): boolean {
-  return !!field.inlineAdd && !isFieldSet(field, value);
-}
-
-const isAbsolute = (value: Record<string, unknown> | null | undefined): boolean =>
-  ((value?.positionType as number | undefined) ?? YGPT_RELATIVE) === YGPT_ABSOLUTE;
-
-function hiddenOnRoot(
-  field: FieldConfig,
-  isGuiRoot: boolean,
-  value: Record<string, unknown> | null,
-): boolean {
-  if (!field.hideOnRoot || !isGuiRoot) return false;
-  return !isAbsolute(value);
-}
-
-/** Whether to drop "Ignore Layout Flow" because the node's PARENT is itself absolutely positioned. */
-export function hiddenUnderAbsoluteParent(
-  parentInFlow: boolean,
-  value: Record<string, unknown> | null,
-): boolean {
-  return !parentInFlow && !isAbsolute(value);
-}
-
-/** Seed patch written when the user ADDS an optional prop — a sensible default plus whatever `addAlso` declares. */
-export function buildAddPatch(field: FieldConfig): Record<string, unknown> {
-  return { ...seedPatch(field), ...field.addAlso };
-}
-
-function seedPatch(field: FieldConfig): Record<string, unknown> {
-  switch (field.kind) {
-    case 'number':
-      return { [field.path]: field.defaultValue ?? 0 };
-    case 'index':
-      return { [field.path]: 0 };
-    case 'boolean':
-      return { [field.path]: false };
-    case 'string':
-      return { [field.path]: '' };
-    case 'string-array':
-      return { [field.path]: [] };
-    case 'enum':
-    case 'position-mode':
-      return { [field.path]: field.defaultValue ?? field.options?.[0]?.value ?? 0 };
-    case 'color': {
-      const black = { r: 0, g: 0, b: 0, a: 1 };
-      return field.writeAll ? expandWriteAll(field.writeAll, black) : { [field.path]: black };
-    }
-    case 'length': {
-      const seed = /width/i.test(field.path) ? 1 : 0;
-      return field.writeAll
-        ? expandWriteAll(field.writeAll, seed, { unit: YGU_POINT })
-        : { [field.path]: seed, [`${field.path}Unit`]: YGU_POINT };
-    }
-    case 'length-vec': {
-      const patch: Record<string, unknown> = {};
-      for (const s of field.subFields ?? []) {
-        patch[s.path] = 0;
-        patch[`${s.path}Unit`] = YGU_POINT;
-      }
-      return patch;
-    }
-    default:
-      return {};
-  }
-}
-
-function buildRemovePatch(field: FieldConfig): Record<string, unknown> {
-  const patch: Record<string, unknown> = {};
-  for (const p of fieldSetPaths(field)) {
-    patch[p] = undefined;
-    patch[`${p}Unit`] = undefined;
-  }
-  for (const p of Object.keys(field.addAlso ?? {})) patch[p] = undefined;
-  return patch;
-}
+export {
+  buildAddPatch,
+  hiddenUnderAbsoluteParent,
+  isAddableField,
+  isInlineStub,
+} from './field-helpers';
 
 const AddPropertyMenu: React.FC<{ fields: FieldConfig[]; onAdd: (f: FieldConfig) => void }> = ({
   fields,
@@ -995,517 +811,6 @@ const PropertyPanelComponent: React.FC = () => {
     </div>
   );
 };
-
-interface LengthVecFieldProps {
-  field: FieldConfig;
-  componentValue: Record<string, unknown> | null;
-  entity: Entity;
-  bindings?: Record<string, string>;
-  boundProp?: { variable: string };
-  fieldDisabled: boolean;
-  onPatch: (patch: Record<string, unknown>) => void;
-}
-
-const LengthVecField = React.memo(function LengthVecField({
-  field,
-  componentValue,
-  entity,
-  bindings,
-  boundProp,
-  fieldDisabled,
-  onPatch,
-}: LengthVecFieldProps) {
-  const dispatch = useAppDispatch();
-  const aspectLockedMap = useAppSelector(getAspectLockedNodes);
-  const aspectLocked = !!field.aspectLockable && !!aspectLockedMap[entity as unknown as number];
-  const subs = field.facadeSubFields?.(componentValue) ?? field.subFields ?? [];
-
-  const firstUnitKey = subs[0] ? `${subs[0].path}Unit` : '';
-  const firstUnitRaw = (componentValue?.[firstUnitKey] as number | undefined) ?? YGU_UNDEFINED;
-  const unit = firstUnitRaw === YGU_UNDEFINED ? YGU_POINT : firstUnitRaw;
-  const numbersDisabled = fieldDisabled || unit === YGU_AUTO;
-
-  return (
-    <BindableField
-      field={field}
-      entity={entity}
-      bound={boundProp}
-    >
-      {subs.map(sub => {
-        const v = (componentValue?.[sub.path] as number | undefined) ?? 0;
-        const subBound = bindings?.[`${field.componentId}.${sub.path}`];
-        return (
-          <BindableSubField
-            key={sub.path}
-            field={{ componentId: field.componentId, path: sub.path, kind: 'length' }}
-            entity={entity}
-            bound={subBound}
-          >
-            <TextField
-              type="number"
-              leftLabel={sub.leftLabel}
-              value={String(v)}
-              disabled={numbersDisabled}
-              onChange={e => {
-                const next = clampNumber(e.target.value);
-                const patch: Record<string, unknown> = {
-                  [sub.path]: next,
-                  [`${sub.path}Unit`]: unit,
-                };
-                if (aspectLocked && subs.length === 2) {
-                  const other = subs.find(s => s.path !== sub.path);
-                  const curThis = (componentValue?.[sub.path] as number | undefined) ?? 0;
-                  const curOther = other
-                    ? ((componentValue?.[other.path] as number | undefined) ?? 0)
-                    : 0;
-                  if (other && curThis > 0 && curOther > 0) {
-                    patch[other.path] = Math.max(0, Math.round(next * (curOther / curThis)));
-                    patch[`${other.path}Unit`] = unit;
-                  }
-                }
-                onPatch(patch);
-              }}
-            />
-          </BindableSubField>
-        );
-      })}
-      <div className="ui-designer-unit-selector">
-        {field.aspectLockable ? (
-          <button
-            type="button"
-            className={`ui-designer-vec-lock${aspectLocked ? ' active' : ''}`}
-            aria-pressed={aspectLocked}
-            aria-label={aspectLocked ? 'Unlock aspect ratio' : 'Lock aspect ratio'}
-            title={aspectLocked ? 'Unlock aspect ratio' : 'Lock aspect ratio'}
-            onClick={() => dispatch(setAspectLocked({ entity, locked: !aspectLocked }))}
-          />
-        ) : null}
-        <Dropdown
-          options={UNIT_OPTIONS}
-          value={unit}
-          aria-label="Unit"
-          disabled={fieldDisabled}
-          onChange={e => {
-            const nextUnit = Number(e.target.value);
-            const parent = measureParentBox(entity);
-            const patch: Record<string, unknown> = {};
-            for (const sub of subs) {
-              const cur = (componentValue?.[sub.path] as number | undefined) ?? 0;
-              const dim = parent ? parent[axisForPath(sub.path)] : 0;
-              patch[sub.path] = convertLength(cur, unit, nextUnit, dim);
-              patch[`${sub.path}Unit`] = nextUnit;
-            }
-            onPatch(patch);
-          }}
-        />
-      </div>
-    </BindableField>
-  );
-});
-
-interface FieldRowProps {
-  field: FieldConfig;
-  componentValue: Record<string, unknown> | null;
-  entity: Entity;
-  bound?: string;
-  bindings?: Record<string, string>;
-  mixed?: CanvasSegment[];
-  parentFlexDirection: number;
-  overriding: boolean;
-  write: (componentId: string, patch: Record<string, unknown>) => void;
-}
-
-const FieldRow = React.memo(function FieldRow({
-  field,
-  componentValue,
-  entity,
-  bound,
-  bindings,
-  mixed,
-  parentFlexDirection,
-  overriding,
-  write,
-}: FieldRowProps) {
-  const onPatch = useCallback(
-    (patch: Record<string, unknown>) => write(field.componentId, patch),
-    [write, field.componentId],
-  );
-  const boundProp = bound ? { variable: bound } : undefined;
-  const raw = componentValue?.[field.path];
-  const fieldDisabled =
-    field.disabledWhen?.((componentValue ?? {}) as Record<string, unknown>) ?? false;
-
-  const bindable = (control: React.ReactNode) => (
-    <BindableField
-      field={field}
-      entity={entity}
-      bound={boundProp}
-    >
-      {control}
-    </BindableField>
-  );
-
-  switch (field.kind) {
-    case 'string': {
-      if (field.mixable) {
-        return (
-          <Block
-            label={field.label}
-            info={field.info}
-          >
-            <MixedContentField
-              field={field}
-              entity={entity}
-              segments={seedSegments(raw, mixed, bound)}
-            />
-          </Block>
-        );
-      }
-      const v = (raw as string | undefined) ?? '';
-      return bindable(
-        <TextField
-          value={v}
-          onChange={e =>
-            onPatch({
-              [field.path]: field.sanitize ? field.sanitize(e.target.value) : e.target.value,
-            })
-          }
-        />,
-      );
-    }
-    case 'number': {
-      const v = (raw as number | undefined) ?? field.defaultValue ?? 0;
-      return bindable(
-        <TextField
-          type="number"
-          rightLabel={field.suffix}
-          value={String(field.toDisplay ? field.toDisplay(v) : v)}
-          onChange={e => {
-            const next = clampNumber(e.target.value);
-            onPatch({ [field.path]: field.fromDisplay ? field.fromDisplay(next) : next });
-          }}
-        />,
-      );
-    }
-    case 'boolean': {
-      const v = !!raw;
-      return bindable(
-        <CheckboxField
-          checked={v}
-          aria-label={field.label}
-          onChange={e => onPatch({ [field.path]: e.target.checked })}
-        />,
-      );
-    }
-    case 'enum': {
-      const v = (raw as number | undefined) ?? field.defaultValue ?? 0;
-      return bindable(
-        <Dropdown
-          options={field.options ?? []}
-          value={v}
-          aria-label={field.label}
-          onChange={e => onPatch({ [field.path]: Number(e.target.value) })}
-        />,
-      );
-    }
-    case 'length': {
-      const unitKey = `${field.path}Unit`;
-      const numeric = (componentValue?.[field.path] as number | undefined) ?? 0;
-      const unitRaw = (componentValue?.[unitKey] as number | undefined) ?? YGU_UNDEFINED;
-      const unit = unitRaw === YGU_UNDEFINED ? YGU_POINT : unitRaw;
-      return bindable(
-        <div className="ui-designer-length-row">
-          <TextField
-            type="number"
-            value={String(numeric)}
-            disabled={unit === YGU_AUTO}
-            onChange={e =>
-              onPatch(
-                field.writeAll
-                  ? expandWriteAll(field.writeAll, clampNumber(e.target.value), { unit })
-                  : { [field.path]: clampNumber(e.target.value), [unitKey]: unit },
-              )
-            }
-          />
-          <Dropdown
-            options={UNIT_OPTIONS}
-            value={unit}
-            aria-label="Unit"
-            onChange={e => {
-              const nextUnit = Number(e.target.value);
-              const parent = measureParentBox(entity);
-              const dim = parent ? parent[axisForPath(field.path)] : 0;
-              const nextValue = convertLength(numeric, unit, nextUnit, dim);
-              onPatch(
-                field.writeAll
-                  ? expandWriteAll(field.writeAll, nextValue, { unit: nextUnit })
-                  : { [field.path]: nextValue, [unitKey]: nextUnit },
-              );
-            }}
-          />
-        </div>,
-      );
-    }
-    case 'resize': {
-      const absolute =
-        ((componentValue?.positionType as number | undefined) ?? YGPT_RELATIVE) === YGPT_ABSOLUTE;
-      return (
-        <Block
-          label={absolute ? field.label : 'Resize'}
-          info={field.info}
-        >
-          <ResizeField
-            field={field}
-            value={componentValue}
-            entity={entity}
-            bindings={bindings}
-            parentFlexDirection={parentFlexDirection}
-            overriding={overriding}
-            onPatch={onPatch}
-          />
-        </Block>
-      );
-    }
-    case 'overflow-scroll':
-    case 'overflow-clip': {
-      const flag: OverflowFlag = field.kind === 'overflow-scroll' ? 'scroll' : 'clip';
-      const flags = overflowFlags(componentValue);
-      return bindable(
-        <CheckboxField
-          checked={flags[flag]}
-          disabled={fieldDisabled || (flag === 'clip' && flags.clipLocked)}
-          aria-label={field.label}
-          onChange={e => onPatch(overflowPatch(flag, e.target.checked, componentValue))}
-        />,
-      );
-    }
-    case 'length-vec': {
-      return (
-        <LengthVecField
-          field={field}
-          componentValue={componentValue}
-          entity={entity}
-          bindings={bindings}
-          boundProp={boundProp}
-          fieldDisabled={fieldDisabled}
-          onPatch={onPatch}
-        />
-      );
-    }
-    case 'color': {
-      const c = (raw as Color4 | undefined) ?? {
-        r: 0,
-        g: 0,
-        b: 0,
-        a: 1,
-      };
-      return bindable(
-        <RgbaColorField
-          value={c}
-          onChange={next =>
-            onPatch(field.writeAll ? expandWriteAll(field.writeAll, next) : { [field.path]: next })
-          }
-        />,
-      );
-    }
-    case 'fill': {
-      return bindable(
-        <FillField
-          key={entity}
-          color={componentValue?.color as Color4 | undefined}
-          texture={componentValue?.texture as TextureUnion | undefined}
-          entity={entity}
-          bindings={bindings}
-          onPatch={onPatch}
-        />,
-      );
-    }
-    case 'text-align': {
-      return bindable(
-        <TextAlignField
-          value={raw as number | undefined}
-          onChange={mode => onPatch({ [field.path]: mode })}
-        />,
-      );
-    }
-    case 'text-wrap': {
-      return bindable(
-        <CheckboxField
-          checked={((raw as number | undefined) ?? TW_WRAP) === TW_WRAP}
-          aria-label={field.label}
-          onChange={e => onPatch({ [field.path]: e.target.checked ? TW_WRAP : TW_NO_WRAP })}
-        />,
-      );
-    }
-    case 'string-array': {
-      const arr = (raw as string[] | undefined) ?? [];
-      return bindable(
-        <TextArea
-          className="ui-designer-string-array"
-          aria-label={field.label}
-          value={arr.join('\n')}
-          onChange={e => onPatch({ [field.path]: e.target.value.split('\n') })}
-        />,
-      );
-    }
-    case 'index': {
-      const v = (raw as number | undefined) ?? 0;
-      return bindable(
-        <TextField
-          type="number"
-          value={String(v)}
-          onChange={e => onPatch({ [field.path]: clampNumber(e.target.value) })}
-        />,
-      );
-    }
-    case 'callback': {
-      return (
-        <CallbackField
-          field={field}
-          entity={entity}
-          bound={bound}
-        />
-      );
-    }
-    case 'position-mode': {
-      const absolute = ((raw as number | undefined) ?? YGPT_RELATIVE) === YGPT_ABSOLUTE;
-      return bindable(
-        <CheckboxField
-          checked={absolute}
-          aria-label={field.label}
-          onChange={e =>
-            onPatch(
-              e.target.checked
-                ? absolutePatch()
-                : { ...inFlowPatch(), ...clearedCenterMargins(componentValue) },
-            )
-          }
-        />,
-      );
-    }
-    case 'flow': {
-      return (
-        <Block
-          label={field.label}
-          info={field.info}
-        >
-          <FlowField
-            value={componentValue}
-            onPatch={onPatch}
-          />
-        </Block>
-      );
-    }
-    case 'alignment': {
-      const direction = (componentValue?.flexDirection as number | undefined) ?? 0;
-      const current = patchToAlignment(componentValue, direction);
-      return (
-        <Block
-          label={field.label}
-          info={field.info}
-        >
-          <Dropdown
-            options={ALIGNMENT_OPTIONS}
-            value={current ?? ''}
-            aria-label={field.label}
-            onChange={e => {
-              const next = (e.target as HTMLSelectElement).value as Alignment | '';
-              onPatch(next ? alignmentToPatch(next, direction) : clearAlignmentPatch());
-            }}
-          />
-        </Block>
-      );
-    }
-    case 'align-preset': {
-      return (
-        <Block
-          label={field.label}
-          info={field.info}
-        >
-          <AnchorPresetField
-            value={componentValue}
-            entity={entity}
-            disabled={fieldDisabled}
-            onPatch={onPatch}
-          />
-        </Block>
-      );
-    }
-    case 'box-model': {
-      return (
-        <Block
-          label={field.label}
-          info={field.info}
-        >
-          <BoxModelField
-            value={componentValue}
-            componentId={field.componentId}
-            entity={entity}
-            box={field.box ?? 'padding'}
-            bindings={bindings}
-            onPatch={onPatch}
-          />
-        </Block>
-      );
-    }
-    case 'uv-region': {
-      const region = uvsToRegion(componentValue?.uvs as number[] | undefined);
-      const setField = (key: keyof typeof region, raw: string) =>
-        onPatch({ uvs: regionToUvs({ ...region, [key]: clampNumber(raw) }) });
-      const rows: { key: keyof typeof region; leftLabel: string }[] = [
-        { key: 'uMin', leftLabel: 'U₀' },
-        { key: 'vMin', leftLabel: 'V₀' },
-        { key: 'uMax', leftLabel: 'U₁' },
-        { key: 'vMax', leftLabel: 'V₁' },
-      ];
-      return (
-        <Block
-          label={field.label}
-          info={field.info}
-        >
-          {rows.map(r => (
-            <TextField
-              key={r.key}
-              type="number"
-              leftLabel={r.leftLabel}
-              value={String(region[r.key])}
-              onChange={e => setField(r.key, e.target.value)}
-            />
-          ))}
-        </Block>
-      );
-    }
-    case 'border-rect': {
-      const rect = (raw as Record<string, number> | undefined) ?? {};
-      const setSide = (side: string, v: string) =>
-        onPatch({ textureSlices: { ...rect, [side]: clampNumber(v) } });
-      const sides: { key: string; leftLabel: string }[] = [
-        { key: 'top', leftLabel: 'T' },
-        { key: 'right', leftLabel: 'R' },
-        { key: 'bottom', leftLabel: 'B' },
-        { key: 'left', leftLabel: 'L' },
-      ];
-      return (
-        <Block
-          label={field.label}
-          info={field.info}
-        >
-          {sides.map(s => (
-            <TextField
-              key={s.key}
-              type="number"
-              leftLabel={s.leftLabel}
-              value={String(rect[s.key] ?? 0)}
-              onChange={e => setSide(s.key, e.target.value)}
-            />
-          ))}
-        </Block>
-      );
-    }
-    default:
-      return null;
-  }
-});
 
 export const PropertyPanel = React.memo(PropertyPanelComponent);
 
