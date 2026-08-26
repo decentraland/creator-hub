@@ -12,12 +12,14 @@ interface Props {
   onClose: () => void;
   // Pop the chat out into a separate window (#1504).
   onPopOut: () => void;
+  // Draggable panel width in px (owned by EditorPage).
+  width: number;
 }
 
 // The inline chat panel: a thin container that wires the redux store + thunks to the shared
 // presentational ChatView. The turn event stream, persistence and provider detection live
 // in useAiSession (mounted in the editor), so this is purely a view over the store.
-export function AiChatPanel({ onClose, onPopOut }: Props) {
+export function AiChatPanel({ onClose, onPopOut, width }: Props) {
   const dispatch = useDispatch();
   const {
     providers,
@@ -64,6 +66,7 @@ export function AiChatPanel({ onClose, onPopOut }: Props) {
       billingDismissed={billingDismissed}
       sessions={sessions}
       currentSessionId={currentSessionId}
+      width={width}
       onSend={onSend}
       onStop={onStop}
       onNewChat={onNewChat}

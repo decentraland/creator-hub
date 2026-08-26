@@ -17,7 +17,6 @@ import {
   Button,
   CircularProgress,
   IconButton,
-  Menu,
   MenuItem,
   Select,
   type SelectChangeEvent,
@@ -44,11 +43,13 @@ import {
   ErrorRow,
   HeaderActions,
   HeaderTitle,
+  HistoryBar,
+  HistoryList,
+  HistoryRow,
   Panel,
   PanelHeader,
   ProviderRow,
   SelectionBar,
-  SessionRow,
   SessionText,
   SessionTitle,
   SessionWhen,
@@ -107,6 +108,8 @@ export interface ChatViewProps {
   currentSessionId: string;
   // Shown after the title in the header (the open project) — the detached window uses it.
   title?: string;
+  // Inline panel width in px (the user-draggable size). Ignored when detached (fills the window).
+  width?: number;
   // True when rendered as the detached window: fills the window and shows a "dock" affordance
   // instead of "pop out".
   detached?: boolean;
@@ -139,6 +142,7 @@ export function ChatView(props: ChatViewProps) {
     sessions,
     currentSessionId,
     title,
+    width,
     detached = false,
     onSend,
     onStop,
@@ -157,7 +161,7 @@ export function ChatView(props: ChatViewProps) {
   const transcriptRef = useRef<HTMLDivElement>(null);
   const [mcpInfo, setMcpInfo] = useState<{ url: string; token: string } | null>(null);
   const [mcpCopied, setMcpCopied] = useState(false);
-  const [historyAnchor, setHistoryAnchor] = useState<HTMLElement | null>(null);
+  const [historyOpen, setHistoryOpen] = useState(false);
 
   // Saved conversations for the history menu (the current not-yet-used session isn't listed).
   const savedSessions = useMemo(() => sessions.filter(s => s.title !== ''), [sessions]);
@@ -365,6 +369,7 @@ export function ChatView(props: ChatViewProps) {
   return (
     <Panel
       fill={detached}
+      panelWidth={width}
       aria-label="ai-chat-panel"
     >
       <PanelHeader>
@@ -386,12 +391,13 @@ export function ChatView(props: ChatViewProps) {
               </IconButton>
             </span>
           </Tooltip>
-          {savedSessions.length > 0 && (
+          {(savedSessions.length > 0 || historyOpen) && (
             <Tooltip title={t('editor.ai.history.title')}>
               <IconButton
                 size="small"
                 aria-label={t('editor.ai.history.title')}
-                onClick={e => setHistoryAnchor(e.currentTarget)}
+                color={historyOpen ? 'primary' : 'default'}
+                onClick={() => setHistoryOpen(o => !o)}
               >
                 <HistoryIcon fontSize="small" />
               </IconButton>
@@ -420,133 +426,151 @@ export function ChatView(props: ChatViewProps) {
         </HeaderActions>
       </PanelHeader>
 
-      <Menu
-        anchorEl={historyAnchor}
-        open={historyAnchor !== null}
-        onClose={() => setHistoryAnchor(null)}
-      >
-        {savedSessions.map(s => (
-          <MenuItem
-            key={s.id}
-            selected={s.id === currentSessionId}
-            onClick={() => {
-              setHistoryAnchor(null);
-              onSwitchSession(s.id);
-            }}
-          >
-            <SessionRow>
-              <SessionText>
-                <SessionTitle>{s.title}</SessionTitle>
-                <SessionWhen>{formatWhen(s.updatedAt)}</SessionWhen>
-              </SessionText>
-              <IconButton
-                size="small"
-                aria-label={t('editor.ai.history.delete')}
-                onClick={e => {
-                  e.stopPropagation();
-                  onDeleteSession(s.id);
-                }}
-              >
-                <DeleteOutlineIcon fontSize="small" />
-              </IconButton>
-            </SessionRow>
-          </MenuItem>
-        ))}
-      </Menu>
-
-      {providers.length > 1 && (
-        <ProviderRow>
-          <Select
-            size="small"
-            fullWidth
-            value={provider}
-            onChange={handleProviderChange}
-            disabled={busy}
-          >
-            {providers.map(p => (
-              <MenuItem
-                key={p.id}
-                value={p.id}
-                disabled={!p.available}
-              >
-                {p.label}
-                {!p.available ? ` — ${p.reason ?? 'not installed'}` : ''}
-              </MenuItem>
-            ))}
-          </Select>
-        </ProviderRow>
-      )}
-
-      <Transcript ref={transcriptRef}>{available ? renderTranscript() : renderSetup()}</Transcript>
-
-      {available && selection.length > 0 && (
-        <SelectionBar>
-          <HighlightAltIcon fontSize="small" />
-          {t('editor.ai.selection', {
-            names: selection.map(s => (s.name !== '' ? s.name : `#${s.id}`)).join(', '),
-          })}
-        </SelectionBar>
-      )}
-
-      {available && !billingDismissed && (
-        <BillingHint>
-          <InfoOutlinedIcon fontSize="inherit" />
-          <span>
-            {t('editor.ai.billing', { provider: currentProvider?.label ?? 'AI' })}{' '}
-            <BillingDismiss
-              role="button"
-              tabIndex={0}
-              onClick={onDismissBilling}
-              onKeyDown={e => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  e.preventDefault();
-                  onDismissBilling();
-                }
+      {available && historyOpen ? (
+        <HistoryList>
+          <HistoryBar>
+            <span>{t('editor.ai.history.title')}</span>
+            <Button
+              color="secondary"
+              size="small"
+              startIcon={<AddCommentIcon fontSize="small" />}
+              onClick={() => {
+                onNewChat();
+                setHistoryOpen(false);
               }}
             >
-              {t('editor.ai.billing_dismiss')}
-            </BillingDismiss>
-          </span>
-        </BillingHint>
-      )}
-
-      <Composer>
-        <TextField
-          fullWidth
-          multiline
-          maxRows={6}
-          size="small"
-          placeholder={t('editor.ai.placeholder')}
-          value={input}
-          disabled={!available}
-          onChange={e => setInput(e.target.value)}
-          onKeyDown={handleKeyDown}
-        />
-        {busy ? (
-          <Tooltip title={t('editor.ai.stop')}>
-            <IconButton
-              color="error"
-              aria-label={t('editor.ai.stop')}
-              onClick={onStop}
-            >
-              <StopIcon />
-            </IconButton>
-          </Tooltip>
-        ) : (
-          <Tooltip title={t('editor.ai.send')}>
-            <span>
-              <IconButton
-                color="primary"
-                aria-label={t('editor.ai.send')}
-                disabled={!available || input.trim() === ''}
-                onClick={handleSend}
+              {t('editor.ai.new_chat')}
+            </Button>
+          </HistoryBar>
+          {savedSessions.length === 0 ? (
+            <EmptyState>{t('editor.ai.history.empty')}</EmptyState>
+          ) : (
+            savedSessions.map(s => (
+              <HistoryRow
+                key={s.id}
+                current={s.id === currentSessionId}
+                onClick={() => {
+                  onSwitchSession(s.id);
+                  setHistoryOpen(false);
+                }}
               >
-                <SendIcon />
-              </IconButton>
-            </span>
-          </Tooltip>
-        )}
-      </Composer>
+                <SessionText>
+                  <SessionTitle>{s.title}</SessionTitle>
+                  <SessionWhen>{formatWhen(s.updatedAt)}</SessionWhen>
+                </SessionText>
+                <IconButton
+                  size="small"
+                  aria-label={t('editor.ai.history.delete')}
+                  onClick={e => {
+                    e.stopPropagation();
+                    onDeleteSession(s.id);
+                  }}
+                >
+                  <DeleteOutlineIcon fontSize="small" />
+                </IconButton>
+              </HistoryRow>
+            ))
+          )}
+        </HistoryList>
+      ) : (
+        <>
+          {providers.length > 1 && (
+            <ProviderRow>
+              <Select
+                size="small"
+                fullWidth
+                value={provider}
+                onChange={handleProviderChange}
+                disabled={busy}
+              >
+                {providers.map(p => (
+                  <MenuItem
+                    key={p.id}
+                    value={p.id}
+                    disabled={!p.available}
+                  >
+                    {p.label}
+                    {!p.available ? ` — ${p.reason ?? 'not installed'}` : ''}
+                  </MenuItem>
+                ))}
+              </Select>
+            </ProviderRow>
+          )}
+
+          <Transcript ref={transcriptRef}>
+            {available ? renderTranscript() : renderSetup()}
+          </Transcript>
+
+          {available && selection.length > 0 && (
+            <SelectionBar>
+              <HighlightAltIcon fontSize="small" />
+              {t('editor.ai.selection', {
+                names: selection.map(s => (s.name !== '' ? s.name : `#${s.id}`)).join(', '),
+              })}
+            </SelectionBar>
+          )}
+
+          {available && !billingDismissed && (
+            <BillingHint>
+              <InfoOutlinedIcon fontSize="inherit" />
+              <span>
+                {t('editor.ai.billing', { provider: currentProvider?.label ?? 'AI' })}{' '}
+                <BillingDismiss
+                  role="button"
+                  tabIndex={0}
+                  onClick={onDismissBilling}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      onDismissBilling();
+                    }
+                  }}
+                >
+                  {t('editor.ai.billing_dismiss')}
+                </BillingDismiss>
+              </span>
+            </BillingHint>
+          )}
+
+          <Composer>
+            <TextField
+              fullWidth
+              multiline
+              maxRows={6}
+              size="small"
+              placeholder={t('editor.ai.placeholder')}
+              value={input}
+              disabled={!available}
+              onChange={e => setInput(e.target.value)}
+              onKeyDown={handleKeyDown}
+            />
+            {busy ? (
+              <Tooltip title={t('editor.ai.stop')}>
+                <IconButton
+                  color="error"
+                  aria-label={t('editor.ai.stop')}
+                  onClick={onStop}
+                >
+                  <StopIcon />
+                </IconButton>
+              </Tooltip>
+            ) : (
+              <Tooltip title={t('editor.ai.send')}>
+                <span>
+                  <IconButton
+                    color="primary"
+                    aria-label={t('editor.ai.send')}
+                    disabled={!available || input.trim() === ''}
+                    onClick={handleSend}
+                  >
+                    <SendIcon />
+                  </IconButton>
+                </span>
+              </Tooltip>
+            )}
+          </Composer>
+        </>
+      )}
     </Panel>
   );
 }

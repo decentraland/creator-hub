@@ -124,11 +124,35 @@
 
 /* Horizontal row holding the inspector iframe and (when open) the AI chat panel.
    flex-shrink must stay 1: shrink 0 let the row grow to its content's height and
-   overflow the viewport when the chat transcript got long (#1501). */
+   overflow the viewport when the chat transcript got long (#1501). position:relative
+   anchors the resize overlay below. */
 .Editor .EditorBody {
   display: flex;
   flex: 1 1 auto;
   min-height: 0;
+  position: relative;
+}
+
+/* Drag handle on the AI panel's left edge — resize the panel like the inspector's own. */
+.Editor .EditorBody .ai-resize-handle {
+  flex: 0 0 auto;
+  width: 5px;
+  cursor: col-resize;
+  background-color: var(--dark-gray, rgba(255, 255, 255, 0.12));
+  opacity: 0;
+  transition: opacity 0.15s ease-in-out;
+}
+
+.Editor .EditorBody .ai-resize-handle:hover {
+  opacity: 1;
+}
+
+/* Covers the iframe while dragging so it doesn't swallow the mouse-move events. */
+.Editor .EditorBody .ai-resize-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  cursor: col-resize;
 }
 
 .Editor .inspector {

@@ -55,6 +55,27 @@ import type { PreviewOptionsProps } from './MenuOptions';
 
 import './styles.css';
 
+// The AI panel is drag-resizable like the inspector's own panels; its width persists
+// across sessions (global, not per-scene). Bounds keep both the panel and the iframe usable.
+const AI_PANEL_WIDTH_KEY = 'creator-hub:ai-panel-width';
+const AI_PANEL_MIN = 320;
+const AI_PANEL_DEFAULT = 360;
+const AI_PANEL_IFRAME_MIN = 360; // never squeeze the editor below this
+
+function clampAiPanelWidth(px: number): number {
+  const max = Math.max(AI_PANEL_MIN, window.innerWidth - AI_PANEL_IFRAME_MIN);
+  return Math.min(Math.max(px, AI_PANEL_MIN), max);
+}
+function readAiPanelWidth(): number {
+  try {
+    const raw = localStorage.getItem(AI_PANEL_WIDTH_KEY);
+    const n = raw === null ? NaN : Number(raw);
+    return Number.isFinite(n) ? clampAiPanelWidth(n) : AI_PANEL_DEFAULT;
+  } catch {
+    return AI_PANEL_DEFAULT;
+  }
+}
+
 // The Bevy realm launches `sdk-commands start --no-client --data-layer`; an old
 // scene's local `@dcl/sdk-commands` predates those flags and fails with a raw CLI
 // usage dump (e.g. "unknown or unexpected option: --no-client"). Detect that so we
@@ -160,6 +181,9 @@ export function EditorPage() {
   const hydratedOptimizedAssetsPathRef = useRef<string | null>(null);
   const [modalState, setModalState] = useState<ModalState>({ type: undefined });
   const [aiOpen, setAiOpen] = useState(false);
+  // Draggable width of the AI panel (like the inspector's own panels). Persisted globally.
+  const [aiPanelWidth, setAiPanelWidth] = useState(readAiPanelWidth);
+  const [aiResizing, setAiResizing] = useState(false);
   const [mobileQRData, setMobileQRData] = useState<{ url: string; qr: string } | null>(null);
   // When the Bevy renderer is selected the engine loads from a headless
   // sdk-commands realm, and the inspector shares its data-layer WS. We start it
@@ -618,6 +642,30 @@ export function EditorPage() {
   // iframe src
   const iframeUrl = `${htmlUrl}?${params}`;
 
+  // Drag the divider on the AI panel's left edge to resize it. A transparent overlay covers
+  // the iframe while dragging so it doesn't swallow the mouse-move events.
+  const startAiResize = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    setAiResizing(true);
+    const onMove = (ev: MouseEvent) =>
+      setAiPanelWidth(clampAiPanelWidth(window.innerWidth - ev.clientX));
+    const onUp = () => {
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup', onUp);
+      setAiResizing(false);
+      setAiPanelWidth(w => {
+        try {
+          localStorage.setItem(AI_PANEL_WIDTH_KEY, String(w));
+        } catch {
+          /* storage unavailable — non-fatal */
+        }
+        return w;
+      });
+    };
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+  }, []);
+
   const renderLoading = () => {
     // Recoverable stuck-load state (#1380): the realm failed to start (broken code)
     // or the scene never finished loading. Offer Back + Open code + the error,
@@ -825,16 +873,29 @@ export function EditorPage() {
               // for the Babylon renderer.
               allow="cross-origin-isolated"
             ></iframe>
-            {aiChatEnabled &&
-              aiOpen &&
-              (aiDetached ? (
-                <DetachedPlaceholder onDock={closeAiWindow} />
-              ) : (
-                <AiChatPanel
-                  onClose={() => setAiOpen(false)}
-                  onPopOut={openAiWindow}
+            {aiChatEnabled && aiOpen && (
+              <>
+                {aiResizing && <div className="ai-resize-overlay" />}
+                <div
+                  className="ai-resize-handle"
+                  onMouseDown={startAiResize}
+                  role="separator"
+                  aria-orientation="vertical"
                 />
-              ))}
+                {aiDetached ? (
+                  <DetachedPlaceholder
+                    onDock={closeAiWindow}
+                    width={aiPanelWidth}
+                  />
+                ) : (
+                  <AiChatPanel
+                    onClose={() => setAiOpen(false)}
+                    onPopOut={openAiWindow}
+                    width={aiPanelWidth}
+                  />
+                )}
+              </>
+            )}
           </div>
           <DeployModal
             type={modalState.type}

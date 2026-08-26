@@ -1,17 +1,17 @@
 import { Box, styled } from 'decentraland-ui2';
 
-const Panel = styled(Box, { shouldForwardProp: prop => prop !== 'fill' })<{ fill?: boolean }>(
-  ({ theme, fill }) => ({
-    display: 'flex',
-    flexDirection: 'column',
-    width: fill ? '100%' : theme.spacing(45),
-    flex: fill ? '1 1 auto' : '0 0 auto',
-    height: '100%',
-    borderLeft: fill ? 'none' : `1px solid ${theme.palette.divider}`,
-    backgroundColor: theme.palette.background.paper,
-    overflow: 'hidden',
-  }),
-);
+const Panel = styled(Box, {
+  shouldForwardProp: prop => prop !== 'fill' && prop !== 'panelWidth',
+})<{ fill?: boolean; panelWidth?: number }>(({ theme, fill, panelWidth }) => ({
+  display: 'flex',
+  flexDirection: 'column',
+  width: fill ? '100%' : panelWidth !== undefined ? `${panelWidth}px` : theme.spacing(45),
+  flex: fill ? '1 1 auto' : '0 0 auto',
+  height: '100%',
+  borderLeft: fill ? 'none' : `1px solid ${theme.palette.divider}`,
+  backgroundColor: theme.palette.background.paper,
+  overflow: 'hidden',
+}));
 
 const PanelHeader = styled(Box)(({ theme }) => ({
   display: 'flex',
@@ -180,12 +180,40 @@ const Composer = styled(Box)(({ theme }) => ({
   borderTop: `1px solid ${theme.palette.divider}`,
 }));
 
-const SessionRow = styled(Box)(({ theme }) => ({
+const HistoryList = styled(Box)(({ theme }) => ({
+  flex: '1 1 auto',
+  minHeight: 0,
+  overflowY: 'auto',
+  overscrollBehavior: 'contain',
+  display: 'flex',
+  flexDirection: 'column',
+  gap: theme.spacing(0.25),
+  padding: theme.spacing(1),
+}));
+
+const HistoryBar = styled(Box)(({ theme }) => ({
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  gap: theme.spacing(1),
+  padding: theme.spacing(0.5, 1, 1),
+  color: theme.palette.text.secondary,
+  fontSize: theme.typography.caption.fontSize,
+  textTransform: 'uppercase',
+  letterSpacing: '0.08em',
+}));
+
+const HistoryRow = styled(Box, { shouldForwardProp: prop => prop !== 'current' })<{
+  current?: boolean;
+}>(({ theme, current }) => ({
   display: 'flex',
   alignItems: 'center',
   gap: theme.spacing(1),
-  width: '100%',
-  minWidth: theme.spacing(28),
+  padding: theme.spacing(1, 1.5),
+  borderRadius: theme.spacing(1),
+  cursor: 'pointer',
+  backgroundColor: current ? theme.palette.action.selected : 'transparent',
+  '&:hover': { backgroundColor: theme.palette.action.hover },
 }));
 
 const SessionText = styled(Box)({
@@ -298,11 +326,13 @@ export {
   ErrorRow,
   HeaderActions,
   HeaderTitle,
+  HistoryBar,
+  HistoryList,
+  HistoryRow,
   Panel,
   PanelHeader,
   ProviderRow,
   SelectionBar,
-  SessionRow,
   SessionText,
   SessionTitle,
   SessionWhen,

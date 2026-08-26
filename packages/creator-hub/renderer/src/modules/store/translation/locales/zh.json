@@ -104,6 +104,7 @@
       "screenshot_alt": "助手的截图",
       "history": {
         "title": "聊天记录",
+        "empty": "还没有已保存的聊天。",
         "delete": "删除聊天",
         "now": "刚刚",
         "minutes": "{n} 分钟前",

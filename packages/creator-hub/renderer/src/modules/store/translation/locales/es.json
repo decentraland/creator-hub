@@ -104,6 +104,7 @@
       "screenshot_alt": "Captura de pantalla del asistente",
       "history": {
         "title": "Historial de chats",
+        "empty": "Aún no hay chats guardados.",
         "delete": "Eliminar chat",
         "now": "ahora mismo",
         "minutes": "hace {n} min",

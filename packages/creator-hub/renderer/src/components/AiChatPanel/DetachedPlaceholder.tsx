@@ -8,9 +8,12 @@ import { EmptyState, HeaderTitle, Panel, PanelHeader } from './component.styled'
 
 // Shown in the editor in place of the inline panel while the chat is popped out into its
 // own window (#1504) — tells the user where the chat went and offers to dock it back.
-export function DetachedPlaceholder({ onDock }: { onDock: () => void }) {
+export function DetachedPlaceholder({ onDock, width }: { onDock: () => void; width: number }) {
   return (
-    <Panel aria-label="ai-chat-detached">
+    <Panel
+      panelWidth={width}
+      aria-label="ai-chat-detached"
+    >
       <PanelHeader>
         <HeaderTitle>
           <SmartToyIcon fontSize="small" />

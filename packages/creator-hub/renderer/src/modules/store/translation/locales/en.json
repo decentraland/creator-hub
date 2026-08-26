@@ -104,6 +104,7 @@
       "screenshot_alt": "Screenshot from the assistant",
       "history": {
         "title": "Chat history",
+        "empty": "No saved chats yet.",
         "delete": "Delete chat",
         "now": "just now",
         "minutes": "{n}m ago",
