@@ -8,6 +8,7 @@ import RefreshIcon from '@mui/icons-material/Refresh';
 import UndoIcon from '@mui/icons-material/Undo';
 import HighlightAltIcon from '@mui/icons-material/HighlightAlt';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
+import Markdown, { type MarkdownToJSX } from 'markdown-to-jsx';
 import {
   Button,
   CircularProgress,
@@ -50,6 +51,14 @@ import {
   Transcript,
   UserBubble,
 } from './component.styled';
+
+// Render assistant replies as markdown. Raw HTML is disabled so nothing the model emits
+// can inject markup, and links open in the default browser (the Electron security layer
+// only lets allowlisted origins through, blocking the rest — no navigation of the app).
+const MARKDOWN_OPTIONS: MarkdownToJSX.Options = {
+  disableParsingRawHTML: true,
+  overrides: { a: { props: { target: '_blank', rel: 'noopener noreferrer' } } },
+};
 
 // Install + sign-in commands per provider, shown on the setup card when the CLI isn't
 // found. Obviously-safe public package names.
@@ -240,7 +249,11 @@ export function AiChatPanel({ onClose }: Props) {
               {chip.detail !== '' && <ToolDetail>{chip.detail}</ToolDetail>}
             </ToolChip>
           ))}
-          {msg.text !== '' && <AssistantText>{msg.text}</AssistantText>}
+          {msg.text !== '' && (
+            <AssistantText>
+              <Markdown options={MARKDOWN_OPTIONS}>{msg.text}</Markdown>
+            </AssistantText>
+          )}
           {!msg.done && msg.text === '' && msg.error === undefined && (
             <ThinkingRow>
               <CircularProgress size={12} />

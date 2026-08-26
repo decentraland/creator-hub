@@ -84,11 +84,46 @@ const AssistantBubble = styled(Box)(({ theme }) => ({
   color: theme.palette.text.primary,
 }));
 
-const AssistantText = styled(Box)({
-  whiteSpace: 'pre-wrap',
+const AssistantText = styled(Box)(({ theme }) => ({
   wordBreak: 'break-word',
   lineHeight: 1.6,
-});
+  fontSize: theme.typography.body2.fontSize,
+  '& > *:first-child, & > div > *:first-child': { marginTop: 0 },
+  '& > *:last-child, & > div > *:last-child': { marginBottom: 0 },
+  '& p': { margin: theme.spacing(1, 0) },
+  '& ul, & ol': { margin: theme.spacing(1, 0), paddingLeft: theme.spacing(2.5) },
+  '& li': { marginTop: theme.spacing(0.25) },
+  '& h1, & h2, & h3, & h4, & h5, & h6': {
+    margin: theme.spacing(1.5, 0, 0.75),
+    fontWeight: theme.typography.fontWeightBold,
+    lineHeight: 1.25,
+  },
+  '& h1': { fontSize: theme.typography.body1.fontSize },
+  '& h2, & h3, & h4, & h5, & h6': { fontSize: theme.typography.body2.fontSize },
+  '& strong': { fontWeight: theme.typography.fontWeightBold },
+  '& a': { color: theme.palette.primary.main, textDecoration: 'underline' },
+  '& code': {
+    fontFamily: 'monospace',
+    fontSize: theme.typography.caption.fontSize,
+    backgroundColor: theme.palette.action.hover,
+    padding: theme.spacing(0.25, 0.5),
+    borderRadius: theme.spacing(0.5),
+  },
+  '& pre': {
+    margin: theme.spacing(1, 0),
+    padding: theme.spacing(1, 1.5),
+    borderRadius: theme.spacing(0.75),
+    backgroundColor: theme.palette.action.hover,
+    overflowX: 'auto',
+  },
+  '& pre code': { padding: 0, backgroundColor: 'transparent' },
+  '& blockquote': {
+    margin: theme.spacing(1, 0),
+    paddingLeft: theme.spacing(1.5),
+    borderLeft: `1px solid ${theme.palette.divider}`,
+    color: theme.palette.text.secondary,
+  },
+}));
 
 const ToolChip = styled(Box)(({ theme }) => ({
   display: 'inline-flex',
