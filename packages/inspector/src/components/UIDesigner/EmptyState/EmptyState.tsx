@@ -9,14 +9,7 @@ interface EmptyStateProps {
   action?: React.ReactNode;
 }
 
-/**
- * Shared empty / first-run state for the UI Designer panels (canvas, properties,
- * variables, roots): icon + title + guidance + optional call-to-action, so an
- * empty editor reads as intentional onboarding rather than a broken panel.
- *
- * `message` is a ReactNode, not a string — the canvas copy names UI affordances
- * inline (see EmptyStateChip).
- */
+/** Shared empty / first-run state for the UI Designer panels: icon, title, guidance, optional CTA. */
 export const EmptyState: React.FC<EmptyStateProps> = ({ icon, title, message, action }) => (
   <div className="ui-designer-empty-state">
     {icon ? (
@@ -33,10 +26,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({ icon, title, message, ac
   </div>
 );
 
-/**
- * Names a real control inside empty-state copy ("click the ⟨GUIs +⟩ button"), so
- * the instruction points at something the reader can find in the panel.
- */
+/** Names a real control inside empty-state copy so the instruction points at something findable. */
 export const EmptyStateChip: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   <span className="ui-designer-empty-state-chip">{children}</span>
 );

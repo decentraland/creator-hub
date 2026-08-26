@@ -1,5 +1,3 @@
-// Maps a UI node's Entity id to its rendered canvas element, so measurement
-// code can look up DOM boxes without building DOM-attribute selectors.
 import type { Entity } from '@dcl/ecs';
 
 const nodeElements = new Map<number, HTMLElement>();
@@ -16,8 +14,7 @@ export function getNodeElement(entity: Entity): HTMLElement | undefined {
   return nodeElements.get(Number(entity));
 }
 
-// Drop all entries (e.g. on canvas teardown / scene switch) so recycled entity
-// ids never resolve to a detached element from a previous scene.
+/** Drop all entries (canvas teardown / scene switch) so recycled ids never resolve stale elements. */
 export function clearNodeRegistry(): void {
   nodeElements.clear();
 }

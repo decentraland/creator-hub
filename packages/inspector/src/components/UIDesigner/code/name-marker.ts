@@ -1,17 +1,4 @@
-/**
- * The `@ui-name` marker carries a node's user-facing NAME. It lives as a comment
- * inside the element's opening tag because no attribute is type-legal: react-ecs'
- * `EntityPropTypes` exposes only uiTransform/uiBackground/key and the listeners,
- * so `name="X"` would stop the scene compiling — and `key` is off limits (a
- * changed key unmounts the fiber and recursively destroys the entity subtree).
- * Inside the opening tag it also travels with the element through `moveElement`,
- * which cuts the element verbatim by span.
- *
- * Dependency-free (pure spans + strings) so it is trivially unit-testable and
- * shared by the parse and emit halves. Same ceiling as component-marker: the
- * match is anchored to the comment form, so only a string literal that itself
- * contains both delimiters could false-match.
- */
+/** The `@ui-name` marker carries a node's user-facing name as a comment inside the element's opening tag. */
 
 import type { Edit } from './emit-adapter';
 import { uniqueName } from './root-naming';
@@ -26,10 +13,7 @@ interface AstNode {
 const MARKER_RE = /\/\*\s*@ui-name\s+([^*]*?)\s*\*\//;
 const MARKER_RE_ALL = new RegExp(MARKER_RE.source, 'g');
 
-/**
- * Strip what would break out of the comment (`*`, `/`) and flatten whitespace.
- * Returns '' when nothing usable is left, which callers read as "no name".
- */
+/** Strip what would break out of the comment (`*`, `/`) and flatten whitespace; '' means no usable name. */
 export function sanitizeNodeName(input: string): string {
   return (input || '')
     .replace(/[*/\r\n\t]+/g, ' ')
@@ -54,15 +38,7 @@ export function readNodeName(source: string, el: AstNode): string | undefined {
   return name || undefined;
 }
 
-/**
- * Edits to make `name` the node's marker — inserting, replacing, or (for an
- * empty name) removing it. Idempotent: [] when already in that state.
- *
- * Removal absorbs the whitespace on BOTH sides into a single separator, so the
- * tag returns to its unnamed form whatever spacing it was authored with —
- * deleting only the comment's own span would leave `<X  y>` or, for a marker
- * authored without a leading space, splice the tag name into the next attribute.
- */
+/** Edits to make `name` the node's marker — inserting, replacing, or (for an empty name) removing it; idempotent. */
 export function nodeNameEdit(el: AstNode, source: string, name: string): Edit[] {
   const open = openingOf(el);
   const text = source.slice(open.start, open.end);
@@ -90,11 +66,7 @@ export function withNodeName(jsx: string, name: string): string {
   return jsx.replace(/^<\w+/, tag => `${tag} ${nameMarkerText(name)}`);
 }
 
-/**
- * Give every marker in a verbatim copy of a subtree a free name, so duplicating
- * a node can't produce colliding names. Trailing digits are treated as the
- * suffix, so a copy of `Panel1` is `Panel2` rather than `Panel11`.
- */
+/** Give every marker in a verbatim copy of a subtree a free name, so duplicating a node can't produce colliding names. */
 export function renumberNodeNames(raw: string, taken: readonly string[]): string {
   const names = [...taken];
   return raw.replace(MARKER_RE_ALL, (_whole, current: string) => {

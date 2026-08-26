@@ -1,11 +1,3 @@
-// The `/** @ui-component */` marker decides whether a root is a top-level SCREEN
-// (rendered by the src/ui/index.tsx aggregator) or a reusable COMPONENT (only
-// rendered where another root nests it). Marker PRESENT → component (not
-// aggregated); ABSENT → top-level (default: all roots are promoted). The editor's
-// per-root "top-level" toggle writes/removes this marker, so the checkbox and a
-// hand-authored decorator are the SAME signal. Dependency-free (pure AST + spans)
-// so it can be unit-tested and shared by the store.
-
 import type { Edit } from './emit-adapter';
 
 interface AstNode {
@@ -23,19 +15,13 @@ interface Comment {
 }
 
 const MARKER = '@ui-component';
-// A block comment containing the tag. Anchored to the comment form (not a bare
-// substring) so a string literal like "@ui-component" in the UI can't false-match.
 const MARKER_RE = /\/\*[\s\S]*?@ui-component[\s\S]*?\*\//;
 
-// Cheap whole-source test — used by refreshRoots to classify a root without a
-// full parse. Good enough for the aggregate/display decision; the precise
-// add/remove below is used for the actual toggle edit.
+/** Cheap whole-source test for the @ui-component marker, to classify a root without a full parse. */
 export function hasComponentMarker(source: string): boolean {
   return MARKER_RE.test(source);
 }
 
-// The top-level statement declaring `componentName` (an exported function or
-// `export const X = …`), so the marker can be placed right before it.
 function findComponentStatement(program: AstNode, componentName: string): AstNode | undefined {
   for (const stmt of (program.body ?? []) as AstNode[]) {
     const decl = (stmt.type === 'ExportNamedDeclaration' ? stmt.declaration : stmt) as
@@ -52,8 +38,6 @@ function findComponentStatement(program: AstNode, componentName: string): AstNod
   return undefined;
 }
 
-// The @ui-component comment abutting `stmtStart` (only whitespace between it and
-// the declaration), if any — mirrors bindings.markerFor.
 function markerCommentFor(
   comments: Comment[],
   stmtStart: number,
@@ -67,8 +51,7 @@ function markerCommentFor(
   return undefined;
 }
 
-// Edits to make the `@ui-component` marker present or absent on `componentName`.
-// Idempotent: [] when already in the desired state or the component isn't found.
+/** Edits to make the `@ui-component` marker present or absent on `componentName`; idempotent. */
 export function componentMarkerEdit(
   program: AstNode,
   comments: Comment[],
@@ -84,7 +67,5 @@ export function componentMarkerEdit(
     return [{ start: stmt.start, end: stmt.start, text: '/** @ui-component */\n' }];
   }
   if (!existing) return [];
-  // Remove the comment and the whitespace up to the declaration (drops the
-  // blank line the add introduced).
   return [{ start: existing.start, end: stmt.start, text: '' }];
 }

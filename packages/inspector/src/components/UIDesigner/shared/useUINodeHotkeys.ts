@@ -6,18 +6,12 @@ import { useAppSelector } from '../../../redux/hooks';
 import { getSelectedNode } from '../../../redux/ui-designer';
 import { useUINodeActions } from './useUINodeActions';
 
-// UI-Designer keyboard shortcuts, attached to `document` but scoped by guards
-// (editable-target, visible panel, selected node) so they don't interfere with
-// typing or the 3D editor's hotkeys. Deliberately NOT built on useHotkey — that
-// hook's cleanup unbinds keys GLOBALLY and would clobber the Renderer's
-// Ctrl+C/V/D/Delete. A UI-node "clipboard" is just the last-copied entity id
-// (in a ref); paste clones it via spliceDuplicate (sibling of the original).
+/** UI-Designer keyboard shortcuts (copy/paste/duplicate/delete), scoped to the panel. */
 export function useUINodeHotkeys(containerRef: RefObject<HTMLElement>): void {
   const selectedNode = useAppSelector(getSelectedNode);
   const { remove, duplicate } = useUINodeActions();
   const copiedRef = useRef<Entity | null>(null);
 
-  // Keep the latest values addressable from the stable listener.
   const state = useRef({ selectedNode, remove, duplicate });
   state.current = { selectedNode, remove, duplicate };
 
@@ -32,7 +26,6 @@ export function useUINodeHotkeys(containerRef: RefObject<HTMLElement>): void {
     };
 
     const onKeyDown = (e: KeyboardEvent) => {
-      // Only when the UI Designer is actually on screen.
       const container = containerRef.current;
       if (!container || container.offsetParent === null) return;
       if (isEditable(e.target)) return;
@@ -40,10 +33,6 @@ export function useUINodeHotkeys(containerRef: RefObject<HTMLElement>): void {
       const { selectedNode, remove, duplicate } = state.current;
       const mod = e.ctrlKey || e.metaKey;
       const key = e.key.toLowerCase();
-
-      // Undo/redo are NOT handled here: the Toolbar owns the Ctrl+Z/Y hotkeys
-      // (useHotkey) and routes them to the code store when the UI Designer is
-      // open — a second document-level listener would double-fire.
 
       if (mod && key === 'c') {
         if (selectedNode === null) return;
@@ -55,7 +44,7 @@ export function useUINodeHotkeys(containerRef: RefObject<HTMLElement>): void {
         const source = copiedRef.current;
         if (source === null) return;
         e.preventDefault();
-        void duplicate(source); // clone the copied node (sibling of original), selects it
+        void duplicate(source);
         return;
       }
       if (mod && key === 'd') {

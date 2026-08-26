@@ -1,11 +1,3 @@
-// Extract the "public binding surface" a scene's UI code exposes to the editor,
-// declared with JSDoc markers (mirrors Unity [SerializeField] / Godot @export /
-// Unreal UPROPERTY — see the plan's engine-precedent note):
-//   /** @ui-bind */   let score: number = 0     → a bindable variable
-//   /** @ui-action */ function onClick() {}      → an event handler
-// A field can then reference a variable (`value={score}`) or a handler
-// (`onMouseDown={onClick}`) instead of a static literal.
-
 interface AstNode {
   type: string;
   start: number;
@@ -22,20 +14,9 @@ interface Comment {
 
 export interface BindVariable {
   name: string;
-  // 'number' | 'string' | 'boolean' — from an explicit annotation, else shallow
-  // literal-initializer inference, else 'string'. OXC parses but does not
-  // type-check, so inferred/complex types aren't resolved.
   type: string;
-  // The expression a field binds to (`value={<expr>}`). A marker variable binds
-  // bare (`score`); a state variable binds through the object (`state.score`).
   expr: string;
-  // The default value (statically-evaluated literal), used to preview a bound
-  // field on the canvas. Undefined for markers and non-literal initializers.
   value?: string | number | boolean;
-  // Set when this variable is declared in ANOTHER file (imported via
-  // `import { name } from '<imported>'`) — the target file's scene-relative
-  // path. Such vars are bindable here but read-only (edit them in their own
-  // file). Undefined for local state/marker vars. See code/imports.ts.
   imported?: string;
 }
 
@@ -50,14 +31,9 @@ export interface BindingSurface {
 
 const EMPTY: BindingSurface = { variables: [], actions: [] };
 
-// The names the generated handler signature occupies: adding an action splices a
-// top-level `function <name>({ state, props, value }: UiAction) {}`.
 const RESERVED_ACTION_NAMES = ['state', 'props', 'value', 'UiAction'];
 
-// Whether a new @ui-action may NOT be called `name`. That function is spliced at
-// top level, so it shares a scope with every other action, with the surface's
-// variables and props, and with its own signature's names — and a collision is a
-// scene that stops compiling, with nothing in the editor to say why.
+/** Whether a new @ui-action may NOT be called `name` (collides with a reserved name, another action, or a variable). */
 export function isActionNameTaken(surface: BindingSurface, name: string): boolean {
   return (
     RESERVED_ACTION_NAMES.includes(name) ||
@@ -66,10 +42,7 @@ export function isActionNameTaken(surface: BindingSurface, name: string): boolea
   );
 }
 
-// Build a default-value lookup (binding expr → value string) from a surface's
-// variables, for previewing bound text on the canvas (`state.score` → "0"). Only
-// vars carrying a known default (state vars / literal markers) are included;
-// props and expression bindings have none.
+/** Build a default-value lookup (binding expr → value string) from a surface's variables, for previewing bound text on the canvas. */
 export function buildResolveMap(variables: BindVariable[]): Record<string, string> {
   const map: Record<string, string> = {};
   for (const v of variables) if (v.value !== undefined) map[v.expr] = String(v.value);
@@ -92,9 +65,7 @@ function inferInitializerType(init: AstNode | undefined): string {
   return 'string';
 }
 
-// A leading JSDoc marker for a declaration: a comment whose end abuts the
-// declaration's start (only whitespace between) and carries the tag. Exported so
-// the action reader (code/actions.ts) recognizes @ui-action handlers the same way.
+/** A leading JSDoc marker for a declaration: a comment abutting the declaration's start that carries the tag. */
 export function markerFor(
   comments: Comment[],
   declStart: number,

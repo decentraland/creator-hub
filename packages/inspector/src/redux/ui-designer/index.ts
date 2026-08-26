@@ -7,9 +7,6 @@ import type { DeviceKind, ScreenSize } from '../../components/UIDesigner/shared/
 import { DEFAULT_SCREENS } from '../../components/UIDesigner/shared/safe-areas';
 import type { RootState } from '../store';
 
-// Persist the property-panel group collapse state across reloads. There is no
-// persistence middleware in this app, so we read/write localStorage directly
-// (guarded for non-browser/test environments).
 const COLLAPSED_GROUPS_KEY = 'ui-designer:collapsed-groups';
 const SCREENS_KEY = 'ui-designer:screens';
 
@@ -28,36 +25,19 @@ function persist(key: string, value: unknown): void {
   try {
     localStorage.setItem(key, JSON.stringify(value));
   } catch {
-    // ignore quota / disabled-storage errors
+    return;
   }
 }
 
 export interface UIDesignerState {
-  // Multi-selection in click order; the property-panel / hotkey target is the
-  // LAST entry (getSelectedNode). Single-select is the length-1 case.
   selectedNodes: Entity[];
   expanded: Record<number, boolean>;
-  // Editor-only canvas affordances (never written to code): a hidden node
-  // isn't rendered on the canvas; a locked node can't be selected/dragged/
-  // resized there. Keyed by the synthetic node id (session-only).
   hidden: Record<number, boolean>;
   locked: Record<number, boolean>;
-  // Editor-only: nodes whose width/height are constrained to their aspect ratio
-  // when resized (panel edits + canvas handles). Keyed by synthetic node id.
   aspectLocked: Record<number, boolean>;
   collapsedGroups: Record<string, boolean>;
-  // Editor-only: which interaction layer the properties panel edits (and the
-  // canvas previews). Global rather than per-node — it is a view mode, and it
-  // resets to 'base' on selection change so you never land in a hidden state.
   interactionLayer: InteractionStateKey;
-  // The device the canvas previews AND edits: a platform-variant node renders and
-  // routes edits to the branch matching this (see code/platform-convention.ts).
   platform: DeviceKind;
-  // The SCREEN the canvas frames per device — a preview preference, not scene
-  // data, so it is persisted per user and never reaches the composite. Held as
-  // resolved dimensions rather than a preset id so the orientation swap is just
-  // a transpose. (Distinct from the design resolution, which lives in the code
-  // store and comes from src/ui/index.tsx.)
   screens: Record<DeviceKind, ScreenSize>;
 }
 
@@ -77,19 +57,16 @@ export const uiDesignerSlice = createSlice({
   name: 'uiDesigner',
   initialState,
   reducers: {
-    // Single-select (replaces the whole selection). null clears it.
     selectNode: (state, { payload }: PayloadAction<{ node: Entity | null }>) => {
       state.selectedNodes = payload.node === null ? [] : [payload.node];
       state.interactionLayer = 'base';
     },
-    // Ctrl/Cmd-click: add the node to the selection, or drop it if present.
     toggleNodeSelection: (state, { payload }: PayloadAction<{ node: Entity }>) => {
       const idx = state.selectedNodes.indexOf(payload.node);
       if (idx >= 0) state.selectedNodes.splice(idx, 1);
       else state.selectedNodes.push(payload.node);
       state.interactionLayer = 'base';
     },
-    // Replace the selection wholesale (shift-range, post-reparse re-anchor).
     selectNodes: (state, { payload }: PayloadAction<{ nodes: Entity[] }>) => {
       state.selectedNodes = payload.nodes;
       state.interactionLayer = 'base';
@@ -122,9 +99,6 @@ export const uiDesignerSlice = createSlice({
       if (payload.locked) state.aspectLocked[id] = true;
       else delete state.aspectLocked[id];
     },
-    // Synthetic node ids are positional per parse — after a reparse the code
-    // store re-anchors every id-keyed map through an oldId→newId mapping
-    // (unmapped ids are dropped: the node no longer exists).
     remapNodeIds: (state, { payload }: PayloadAction<{ mapping: Record<number, number> }>) => {
       const remap = (rec: Record<number, boolean>): Record<number, boolean> => {
         const next: Record<number, boolean> = {};
@@ -149,8 +123,6 @@ export const uiDesignerSlice = createSlice({
     resetExpanded: state => {
       state.expanded = {};
     },
-    // Clear all id-keyed node state — dispatched on active-file switches, where
-    // the positional ids of the previous file would collide with the new one's.
     resetNodeState: state => {
       state.expanded = {};
       state.hidden = {};
@@ -178,7 +150,6 @@ export const {
 } = uiDesignerSlice.actions;
 
 export const getSelectedNodes = (state: RootState) => state.uiDesigner.selectedNodes;
-// The single-node consumers' view of the selection: its most recent entry.
 export const getSelectedNode = (state: RootState) => state.uiDesigner.selectedNodes.at(-1) ?? null;
 export const getExpanded = (state: RootState) => state.uiDesigner.expanded;
 export const getHiddenNodes = (state: RootState) => state.uiDesigner.hidden;

@@ -5,9 +5,7 @@ import { useAppDispatch, useAppSelector } from '../../../redux/hooks';
 import { getSelectedNodes, selectNode } from '../../../redux/ui-designer';
 import { spliceDuplicate, spliceRemoveNodes } from '../code/store';
 
-// Shared remove / duplicate actions for a UI node, used by the NodeTree
-// context menu, the canvas selection action bar and the hotkeys so the
-// selection-fallback behaviour stays identical everywhere.
+/** Shared remove / duplicate actions for a UI node (tree menu, canvas action bar, hotkeys). */
 export function useUINodeActions(): {
   remove: (entity: Entity) => void;
   duplicate: (entity: Entity) => Promise<void>;
@@ -17,9 +15,6 @@ export function useUINodeActions(): {
 
   const remove = useCallback(
     (entity: Entity) => {
-      // Removing a node that is part of a multi-selection removes the whole
-      // selection, in ONE splice (sequential removals would corrupt the
-      // positional ids mid-batch).
       const batch = selectedNodes.includes(entity) ? selectedNodes : [entity];
       void spliceRemoveNodes(batch.map(e => e as unknown as number));
       if (batch !== selectedNodes) return;
@@ -29,8 +24,6 @@ export function useUINodeActions(): {
   );
 
   const duplicate = useCallback(async (entity: Entity) => {
-    // spliceDuplicate selects the clone itself (before its post-splice format
-    // pass — the reparse re-anchors the selection through the reflow).
     await spliceDuplicate(entity as unknown as number);
   }, []);
 

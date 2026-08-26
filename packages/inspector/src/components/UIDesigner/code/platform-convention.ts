@@ -1,26 +1,3 @@
-// The platform-variant convention — a STRUCTURAL desktop/mobile split. When a UI
-// needs a genuinely different subtree per device (a phone menu vs a desktop bar),
-// it branches on the reported platform:
-//
-//   const platform = usePlatform()
-//   return platform === 'mobile' ? <MobileMenu /> : <DesktopBar />
-//
-// …and the same as a conditional child inside a parent.
-//
-// Why a recognized construct: a ConditionalExpression child is otherwise an
-// OPAQUE node (parse-adapter, the 'conditional' reason), and opaque nodes render
-// `children: []` — so an unrecognized conditional makes its whole subtree vanish
-// from the canvas. Recognizing the platform shape turns it into a pass-through
-// node with two first-class, individually editable branches instead.
-//
-// Per-PROPERTY overrides (`mobile: { uiTransform: { width } }`) are deliberately
-// NOT modeled: proportional responsiveness is already handled at runtime by
-// pixel-ratio scaling, so only genuinely different subtrees need authoring.
-//
-// This module locates and rewrites the construct; it evaluates nothing (the
-// branches are ordinary elements parse-adapter already reads). Dependency-free
-// apart from the emit-adapter Edit builders, so it unit-tests in isolation.
-
 import type { DeviceKind } from '../shared/safe-areas';
 import { type Edit, ensureNamedImport, insertStatementBeforeReturn } from './emit-adapter';
 
@@ -33,8 +10,7 @@ interface AstNode {
 
 const PLATFORM_HELPER = 'usePlatform';
 
-// Desktop first, so a variant's branches list in a stable order regardless of
-// which side the author put the mobile test on.
+/** Platform kinds, desktop first for a stable branch order. */
 export const PLATFORMS = ['desktop', 'mobile'] as const;
 
 function isPlatformLiteral(v: unknown): v is DeviceKind {
@@ -42,19 +18,13 @@ function isPlatformLiteral(v: unknown): v is DeviceKind {
 }
 
 export interface PlatformVariantAst {
-  // The node whose FULL span the conditional occupies: the `{…}` container when
-  // it's a JSX child, the ConditionalExpression itself at the component's
-  // `return`. Unwrapping replaces this span — replacing only the conditional
-  // would leave `{<El/>}` behind, which parses back as an opaque expression child.
   outer: AstNode;
   conditional: AstNode;
-  // Each platform's branch slot: a JSXElement, or the `null` literal standing in
-  // for a branch that isn't authored yet.
   desktop: AstNode;
   mobile: AstNode;
 }
 
-// The JSXElement a branch slot holds, or null when that branch is unauthored.
+/** The JSXElement a branch slot holds, or null when that branch is unauthored. */
 export function branchElement(slot: AstNode): AstNode | null {
   return slot.type === 'JSXElement' ? slot : null;
 }
@@ -65,8 +35,7 @@ function unparen(node: AstNode): AstNode {
   return n;
 }
 
-// Statements of a component function's block body (or [] for a concise arrow) —
-// the scope a `const platform = usePlatform()` resolves against.
+/** Statements of a component function's block body (or [] for a concise arrow). */
 export function componentStatements(fnNode: AstNode | null | undefined): AstNode[] {
   const body = fnNode?.body as AstNode | undefined;
   if (!body || body.type !== 'BlockStatement') return [];
@@ -82,8 +51,7 @@ function isPlatformCall(node: AstNode | undefined): boolean {
   );
 }
 
-// The `const <name> = usePlatform()` declaration in scope, when present. Reused
-// rather than re-declared when a second node gains variants.
+/** The `const <name> = usePlatform()` declaration in scope, when present. */
 export function findPlatformConst(
   statements: AstNode[],
 ): { name: string; declaration: AstNode } | null {
@@ -99,9 +67,6 @@ export function findPlatformConst(
   return null;
 }
 
-// `platform === 'mobile'` — also accepted: `!==`, reversed operands, and an
-// inline `usePlatform() === …`. Returns the compared platform plus whether the
-// test is negated, so the caller can map consequent/alternate onto the platforms.
 function readPlatformTest(
   test: AstNode,
   statements: AstNode[],
@@ -125,9 +90,7 @@ function isBranchSlot(node: AstNode): boolean {
   return node.type === 'JSXElement' || (node.type === 'Literal' && node.value === null);
 }
 
-// Parse a platform conditional from a JSX child container or from the expression
-// a component returns. Returns null for any other conditional — those keep
-// collapsing to an opaque node, exactly as before this convention existed.
+/** Parse a platform conditional from a JSX child container or a component's return expression; null for any other conditional. */
 export function parsePlatformConditional(
   node: AstNode | undefined,
   statements: AstNode[],
@@ -142,9 +105,6 @@ export function parsePlatformConditional(
 
   const consequent = unparen(inner.consequent as AstNode);
   const alternate = unparen(inner.alternate as AstNode);
-  // Both sides must be a representable element or an explicit `null`; anything
-  // else stays opaque rather than half-owned by the editor. At least one side
-  // must be an element, or there is nothing to render.
   if (!isBranchSlot(consequent) || !isBranchSlot(alternate)) return null;
   if (!branchElement(consequent) && !branchElement(alternate)) return null;
 
@@ -155,20 +115,11 @@ export function parsePlatformConditional(
     : { outer: node, conditional: inner, desktop: matched, mobile: other };
 }
 
-// ---------------------------------------------------------------------------
-// Write side — Edit builders. Each splices the smallest span expressing the
-// change, so the branch the edit doesn't touch survives byte-for-byte.
-// ---------------------------------------------------------------------------
-
 export function platformStatement(varName: string): string {
   return `const ${varName} = ${PLATFORM_HELPER}()`;
 }
 
-// Wrap an element in a platform conditional: it becomes the DESKTOP branch and
-// `seedJsx` seeds the mobile one. The element's source moves VERBATIM, so nothing
-// the parser can't round-trip is lost. `braced` emits the JSX expression
-// container a child needs and a `return` argument must not have; `declare` is
-// false when a `usePlatform()` const is already in scope.
+/** Wrap an element in a platform conditional: it becomes the desktop branch and `seedJsx` seeds the mobile one. */
 export function wrapInPlatformEdits(args: {
   program: { body?: AstNode[] };
   fnNode: AstNode;
@@ -189,8 +140,7 @@ export function wrapInPlatformEdits(args: {
   ];
 }
 
-// Fill in a branch that isn't authored yet — a hand-written one-sided conditional
-// (`platform === 'mobile' ? <A /> : null`). No-op when the branch exists.
+/** Fill in a branch that isn't authored yet; no-op when the branch exists. */
 export function addPlatformBranchEdits(
   ast: PlatformVariantAst,
   platform: DeviceKind,
@@ -201,11 +151,7 @@ export function addPlatformBranchEdits(
   return [{ start: slot.start, end: slot.end, text: jsx }];
 }
 
-// Collapse the conditional back to a single node, keeping one branch. The other
-// branch is dropped — that IS "remove the platform variant". The
-// `const platform = usePlatform()` statement is intentionally left in place: it
-// costs nothing (the scene tsconfig sets no `noUnusedLocals`) and the next wrap
-// reuses it.
+/** Collapse the conditional back to a single node, keeping one branch and dropping the other. */
 export function unwrapPlatformEdits(
   ast: PlatformVariantAst,
   keep: DeviceKind,

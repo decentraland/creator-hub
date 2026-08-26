@@ -1,5 +1,4 @@
-// Editor-only safe-area guides: where the Decentraland explorer HUD covers the
-// player's screen, so authored UI stays clear of it.
+/** Editor-only safe-area guides: where the explorer HUD covers the player's screen. */
 export type DeviceKind = 'desktop' | 'mobile';
 
 /** A rect in normalized screen coords, `[start, end]` per axis, 0..1. */
@@ -25,11 +24,6 @@ export interface SafeAreaSpec {
   deviceSafeArea: SafeRect;
 }
 
-// Mobile — OFFICIAL values (docs.decentraland.org build-for-mobile/develop/
-// safe-area, 1600×720 landscape reference). Modelled as REGIONS, not four edge
-// bands: the right 25% is two clusters with a documented gap between them, and a
-// solid right band shades that gap as forbidden when the docs explicitly offer it
-// for small elements.
 const MOBILE_SAFE_AREA: SafeAreaSpec = {
   label: 'Mobile safe area',
   regions: [
@@ -44,11 +38,6 @@ const MOBILE_SAFE_AREA: SafeAreaSpec = {
   deviceSafeArea: { x: [0, 1], y: [0.08, 0.92] },
 };
 
-// Desktop — OFFICIAL value (docs.decentraland.org designing-the-experience/
-// ux-ui-guide#layout): the default explorer UI (sidebar, minimap, chat) occupies
-// the LEFT 25%; the remaining 75% is the safe zone. ONE region on purpose — the
-// docs publish the block, not its contents, and splitting it into invented
-// sub-rects would read as precision we don't have.
 const DESKTOP_SAFE_AREA: SafeAreaSpec = {
   label: 'Desktop safe area',
   regions: [{ label: 'Sidebar, minimap, chat', severity: 'reserved', x: [0, 0.25], y: [0, 1] }],
@@ -72,14 +61,7 @@ export interface ScreenPreset extends ScreenSize {
   label: string;
 }
 
-// Preview screens per device. These are the SCREEN, not the design resolution —
-// the UI is authored at src/ui/index.tsx's virtualWidth/Height and the explorer
-// scales it to fit whatever screen the player has, which is what switching these
-// lets you rehearse.
-//
-// Mobile leads with 1600×720 because that is the reference the published safe
-// area is derived at (see MOBILE_SAFE_AREA); the other two are common device
-// aspects, there to check the layout holds, not to claim per-device accuracy.
+/** Preview screens per device — the screen, not the design resolution. */
 export const SCREEN_PRESETS: Record<DeviceKind, ScreenPreset[]> = {
   desktop: [
     { id: 'desktop-1080p', label: '1920 × 1080 · 16:9', width: 1920, height: 1080 },

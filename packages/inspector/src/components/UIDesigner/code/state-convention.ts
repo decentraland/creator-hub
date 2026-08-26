@@ -1,16 +1,3 @@
-// The "state object" binding convention — the functional analog of the
-// class-field surface we considered, and the signature the editor imposes:
-//
-//   export interface State { score: number }
-//   export const state: State = { score: 0 }
-//
-// Bindable variables are the properties of `state` (typed by the interface, else
-// inferred from the initializer). The editor reads these as the binding surface
-// and writes new ones here; hand-authored /** @ui-bind */ markers remain a
-// fallback for foreign code (see bindings.ts). Dependency-free so it can be
-// shared by the reader (bindings.ts) and the writer (emit-adapter.ts) and
-// unit-tested in isolation.
-
 import type { Edit } from './emit-adapter';
 
 interface AstNode {
@@ -23,16 +10,11 @@ interface AstNode {
 export interface StateVar {
   name: string;
   type: string;
-  // The default value from the object initializer (a statically-evaluated
-  // literal), used to preview a bound field on the canvas. Undefined when the
-  // initializer isn't a simple literal.
   value?: string | number | boolean;
 }
 
 export interface StateNodes {
-  // ObjectExpression initializer of `const state = { … }`.
   object?: AstNode;
-  // TSInterfaceBody of the interface typing `state` (if any).
   interfaceBody?: AstNode;
 }
 
@@ -42,10 +24,6 @@ function declOf(stmt: AstNode): AstNode | undefined {
 
 const COLOR_KEYS = ['r', 'g', 'b'];
 
-/**
- * The type an interface member's annotation names. Object and array annotations
- * are matched structurally, mirroring how they are written (see TYPE_ANNOTATION).
- */
 function tsAnnotationToType(ann: AstNode | undefined): string | null {
   const t = ann?.type;
   if (t === 'TSNumberKeyword') return 'number';
@@ -75,7 +53,6 @@ function inferType(init: AstNode | undefined): string {
       .map(pr => pr.key.name as string);
     if (COLOR_KEYS.every(k => names.includes(k))) return 'Color4';
   }
-  // A negative/positive numeric literal parses as a UnaryExpression (`-3`).
   if (
     init?.type === 'UnaryExpression' &&
     (init.operator === '-' || init.operator === '+') &&
@@ -86,9 +63,6 @@ function inferType(init: AstNode | undefined): string {
   return 'string';
 }
 
-// Statically evaluate a state property's initializer to its literal value
-// (string / number / boolean), for the canvas default-value preview. Handles a
-// negative-number unary (`-5`). Non-literal initializers → undefined.
 function evalLiteral(init: AstNode | undefined): string | number | boolean | undefined {
   if (!init) return undefined;
   if (init.type === 'Literal') {
@@ -102,8 +76,7 @@ function evalLiteral(init: AstNode | undefined): string | number | boolean | und
   return undefined;
 }
 
-// Format a user-entered default (raw text) as the TS literal to splice into the
-// state object, per the variable's type. Empty raw → the type's zero default.
+/** Format a user-entered default as the TS literal to splice into the state object, per the variable's type. */
 export function literalForType(type: string, raw?: string): string {
   if (raw === undefined || raw === '') return STATE_DEFAULT[type] ?? "''";
   if (type === 'number') {
@@ -114,10 +87,7 @@ export function literalForType(type: string, raw?: string): string {
   return JSON.stringify(raw);
 }
 
-// Locate the `state` const's object initializer and the interface body that
-// types it (matched by the const's type annotation, else an interface named
-// "State"). Returns the AST nodes (with byte spans) so callers can read or
-// splice them.
+/** Locate the `state` const's object initializer and the interface body that types it. */
 export function findStateNodes(program: AstNode): StateNodes {
   const interfaceByName = new Map<string, AstNode>();
   let stateDeclarator: AstNode | undefined;
@@ -145,8 +115,7 @@ export function findStateNodes(program: AstNode): StateNodes {
   return { object, interfaceBody };
 }
 
-// Read the bindable variables declared by the state convention, typed from the
-// interface (preferred) or shallow literal inference from the initializer.
+/** Read the bindable variables declared by the state convention, typed from the interface or inferred from the initializer. */
 export function readStateVariables(program: AstNode): StateVar[] {
   const { object, interfaceBody } = findStateNodes(program);
   if (!object) return [];
@@ -174,7 +143,6 @@ export function readStateVariables(program: AstNode): StateVar[] {
   return vars;
 }
 
-// Literal default per bindable type, used when seeding a new state property.
 const STATE_DEFAULT: Record<string, string> = {
   number: '0',
   string: "''",
@@ -183,23 +151,13 @@ const STATE_DEFAULT: Record<string, string> = {
   'string[]': '[]',
 };
 
-/**
- * The TS text a type is ANNOTATED with, where that differs from its name. A colour
- * is written structurally so a generated `state` needs no import to be valid —
- * the shape is assignable to @dcl/sdk/math's Color4 either way.
- */
 const TYPE_ANNOTATION: Record<string, string> = {
   Color4: '{ r: number; g: number; b: number; a: number }',
 };
 
 const annotationFor = (type: string): string => TYPE_ANNOTATION[type] ?? type;
 
-// Produce the edits that add `name` to the `state` object (and, when an
-// interface types it, to that interface). `rawDefault` (optional) is the
-// user-entered default; when omitted the type's zero default is used. Returns []
-// when no `state` object exists — the caller seeds the scaffold first (see
-// store.addBindVariable). Pure: located entirely by the AST spans from
-// findStateNodes, so it round-trips without reprinting.
+/** Produce the edits that add `name` to the `state` object (and its typing interface); [] when no `state` object exists. */
 export function addStateProperty(
   program: AstNode,
   name: string,
@@ -216,7 +174,6 @@ export function addStateProperty(
     const last = props[props.length - 1];
     edits.push({ start: last.end, end: last.end, text: `,\n  ${name}: ${value}` });
   } else {
-    // Empty object literal `{}` → seed the first property.
     edits.push({ start: object.start + 1, end: object.end - 1, text: `\n  ${name}: ${value},\n` });
   }
 
@@ -253,9 +210,6 @@ interface PropertyLocation {
   memberIndex: number;
 }
 
-// Locate a single state variable by name: its object-literal Property node and,
-// when the state const is typed, the matching interface member — plus the
-// surrounding lists so removers can compute the delimiter span to absorb.
 function locateProperty(program: AstNode, name: string): PropertyLocation {
   const { object, interfaceBody } = findStateNodes(program);
   const props = (object?.properties ?? []) as AstNode[];
@@ -278,11 +232,6 @@ function locateProperty(program: AstNode, name: string): PropertyLocation {
   };
 }
 
-// Removal edit for element `i` of a delimited list inside `container`, absorbing
-// one neighbouring delimiter so no dangling comma / blank line is left: sole
-// element → empty the container's interior (also drops any seeded trailing
-// comma); otherwise drop the preceding delimiter when there's an earlier
-// sibling, else the following one.
 function spanRemovingElement(list: AstNode[], i: number, container: AstNode): Edit {
   const el = list[i];
   if (list.length === 1) return { start: container.start + 1, end: container.end - 1, text: '' };
@@ -290,11 +239,7 @@ function spanRemovingElement(list: AstNode[], i: number, container: AstNode): Ed
   return { start: el.start, end: list[i + 1].start, text: '' };
 }
 
-// Remove a state variable: delete its object property (with an adjacent comma)
-// and, when the state const is typed, its interface member. Returns [] when the
-// variable isn't found. Bound references (`state.<name>` in JSX) are left as-is —
-// deleting a bound variable surfaces a type error the author resolves, matching
-// the classic variables panel's delete semantics.
+/** Remove a state variable: delete its object property and, when typed, its interface member; [] when not found. */
 export function removeStateProperty(program: AstNode, name: string): Edit[] {
   const loc = locateProperty(program, name);
   const edits: Edit[] = [];
@@ -304,10 +249,7 @@ export function removeStateProperty(program: AstNode, name: string): Edit[] {
   return edits;
 }
 
-// Change a state variable's type: rewrite its interface member's type annotation
-// (when typed) and reset its object initializer to the new type's default literal
-// (a Boolean field shouldn't keep a stale `0`, mirroring the classic panel).
-// Returns [] when the variable isn't in the object.
+/** Change a state variable's type: rewrite its interface member's annotation and reset its initializer to the new type's default; [] when not found. */
 export function setStatePropertyType(program: AstNode, name: string, newType: string): Edit[] {
   const loc = locateProperty(program, name);
   if (!loc.prop) return [];
@@ -319,8 +261,7 @@ export function setStatePropertyType(program: AstNode, name: string, newType: st
   return edits;
 }
 
-// Set a state variable's default value: replace its object initializer with the
-// `rawDefault` formatted per `type`. Returns [] when the variable isn't found.
+/** Set a state variable's default value: replace its object initializer with `rawDefault` formatted per `type`; [] when not found. */
 export function setStatePropertyValue(
   program: AstNode,
   name: string,

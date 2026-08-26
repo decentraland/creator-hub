@@ -6,18 +6,8 @@ import {
   YGU_POINT,
 } from '../../../lib/sdk/ui-transform-constants';
 
-// Convert a react-ecs ergonomic `uiTransform` prop value into the flattened
-// PBUiTransform shape the rest of the editor (Canvas nodeStyle, PropertyPanel)
-// consumes. react-ecs authors write friendly values — bare numbers, '50%',
-// 'auto', `position: { top }`, `positionType: 'absolute'` — which the react-ecs
-// reconciler normalizes to PB (value + YGUnit + numeric enums) when writing to
-// the ECS. Code-mode does that same normalization here so a parsed .tsx renders
-// identically to the ECS-backed path.
-
 type Len = number | string;
 
-// A length → { value, unit } pair. Bare number / 'Npx' → POINT; 'N%' → PERCENT;
-// 'auto' → AUTO. Unrecognized → empty (field left unset).
 function toLenUnit(v: Len | undefined): { value?: number; unit?: number } {
   if (typeof v === 'number') return { value: v, unit: YGU_POINT };
   if (typeof v === 'string') {
@@ -31,10 +21,6 @@ function toLenUnit(v: Len | undefined): { value?: number; unit?: number } {
 
 const EDGES = ['Top', 'Right', 'Bottom', 'Left'] as const;
 
-// react-ecs also accepts a CSS-style shorthand for position/margin/padding:
-// a bare number/'Npx'/'N%' (all edges) or a space-separated string of 2–4
-// values ('8px 16px' → vertical horizontal; 3 → top horizontal bottom;
-// 4 → top right bottom left) — react-ecs uiTransform/utils parsePosition.
 function shorthandToEdges(v: number | string): Record<string, Len> | undefined {
   if (typeof v === 'number') return { top: v, right: v, bottom: v, left: v };
   const parts = v.trim().split(/\s+/);
@@ -53,9 +39,6 @@ function shorthandToEdges(v: number | string): Record<string, Len> | undefined {
   }
 }
 
-// Expand an edge value — an object (`{ top, right, bottom, left }`) or the
-// react-ecs shorthand (number / '8px 16px') — into flattened `<prefix><Edge>`
-// + `<prefix><Edge>Unit` fields.
 function writeEdges(pb: Record<string, unknown>, prefix: string, input: unknown): void {
   const obj =
     typeof input === 'number' || typeof input === 'string' ? shorthandToEdges(input) : input;
@@ -80,18 +63,6 @@ const DIMENSIONS = [
   'flexBasis',
 ];
 
-// react-ecs flex/layout ENUM props: ergonomic string ⇄ PBUiTransform numeric
-// enum. The string spellings are exactly the keys react-ecs's own parser accepts
-// (@dcl/react-ecs components/uiTransform/utils.js parse* maps) — emitting any
-// other spelling (e.g. 'no-wrap' instead of 'nowrap', 'start' instead of
-// 'flex-start') makes the runtime's parser return undefined and silently fall
-// back to its default. The numeric values are the PBUiTransform enums (@dcl/ecs
-// ui_transform.gen: YGDisplay / YGFlexDirection / YGJustify / YGAlign / YGWrap /
-// YGOverflow). alignItems / alignSelf / alignContent all share the YGAlign map.
-// Without this table the whole enum-prop group (Display, Flex direction, Justify,
-// Align, Flex wrap, Overflow) round-trips as a no-op: parse never populates the
-// PB field (so the panel dropdown always shows its default) and emit never writes
-// it (so a panel change never reaches the .tsx).
 const ALIGN_ENUM: Record<number, string> = {
   0: 'auto',
   1: 'flex-start',
@@ -119,20 +90,13 @@ const ENUM_TO_STRING: Record<string, Record<number, string>> = {
   alignContent: ALIGN_ENUM,
   flexWrap: { 0: 'nowrap', 1: 'wrap', 2: 'wrap-reverse' },
   overflow: { 0: 'visible', 1: 'hidden', 2: 'scroll' },
-  // PointerFilterMode (PFM_NONE / PFM_BLOCK) ⇄ react-ecs 'none' | 'block'.
   pointerFilter: { 0: 'none', 1: 'block' },
 };
 
-// Plain numeric passthrough props (no unit companion, no enum table).
 const SCALAR_PROPS = ['flexGrow', 'flexShrink', 'opacity', 'zIndex'] as const;
 
-// Border groups: react-ecs takes `borderRadius` / `borderWidth` / `borderColor`
-// as a uniform value OR a per-corner/per-edge object; the PB shape flattens
-// them to border<Corner>Radius(+Unit) / border<Edge>Width(+Unit) /
-// border<Edge>Color (react-ecs uiTransform/utils parseBorder*).
 const RADIUS_CORNERS = ['TopLeft', 'TopRight', 'BottomLeft', 'BottomRight'] as const;
 
-// Ergonomic border value (per react-ecs) → flattened PB fields.
 function writeBorderRadius(pb: Record<string, unknown>, v: unknown): void {
   const perCorner =
     typeof v === 'number' || typeof v === 'string'
@@ -184,7 +148,6 @@ function writeBorderColor(pb: Record<string, unknown>, v: unknown): void {
   }
 }
 
-// Inverse (ergonomic string → enum number) per prop, derived once.
 const STRING_TO_ENUM: Record<string, Record<string, number>> = Object.fromEntries(
   Object.entries(ENUM_TO_STRING).map(([prop, m]) => [
     prop,
@@ -218,7 +181,6 @@ export function ergonomicToPBTransform(ergo: Record<string, unknown>): Record<st
     if (typeof ergo[prop] === 'number') pb[prop] = ergo[prop];
   }
 
-  // Enum props (string → numeric enum). Unknown strings are dropped.
   for (const prop of Object.keys(ENUM_TO_STRING)) {
     const v = ergo[prop];
     if (typeof v === 'string') {
@@ -230,13 +192,6 @@ export function ergonomicToPBTransform(ergo: Record<string, unknown>): Record<st
   return pb;
 }
 
-// Inverse of ergonomicToPBTransform: a flattened PBUiTransform (what the
-// PropertyPanel edits) → the ergonomic react-ecs prop object we splice back into
-// source. Units become '%' / 'auto' / bare number; `positionType` becomes
-// 'absolute' (relative is the default, so it's omitted); edge groups
-// (position/margin/padding) fold back into `{ top, right, bottom, left }`.
-// Fields with an undefined/unrecognized unit are dropped, so switching back to
-// in-flow (which zeroes position with undefined units) cleanly removes them.
 function pbLen(value: unknown, unit: unknown): Len | undefined {
   if (typeof value !== 'number') return undefined;
   if (unit === YGU_PERCENT) return `${value}%`;
@@ -245,9 +200,6 @@ function pbLen(value: unknown, unit: unknown): Len | undefined {
   return undefined;
 }
 
-// Collapse four per-corner/per-edge values back to a single uniform value when
-// they are all present and identical (matching how a hand-author would write
-// `borderRadius: 8`), else an object with only the present keys.
 function foldGroup(
   entries: [key: string, value: unknown][],
 ): unknown | Record<string, unknown> | undefined {
@@ -307,9 +259,6 @@ export function pbToErgonomicTransform(pb: Record<string, unknown>): Record<stri
     if (typeof pb[prop] === 'number') ergo[prop] = pb[prop];
   }
 
-  // Enum props (numeric enum → string). Only emitted when present in the PB, so
-  // a node that never declared the prop stays undeclared (no spurious default is
-  // injected); an out-of-range value is dropped.
   for (const prop of Object.keys(ENUM_TO_STRING)) {
     const v = pb[prop];
     if (typeof v === 'number') {
@@ -320,16 +269,6 @@ export function pbToErgonomicTransform(pb: Record<string, unknown>): Record<stri
 
   return ergo;
 }
-
-// ---------------------------------------------------------------------------
-// uiBackground. react-ecs's ergonomic shape (`texture: { src, wrapMode:
-// 'repeat', … }`, `textureMode: 'stretch'`) differs from the PB shape the
-// panel edits (a discriminated `TextureUnion`, numeric enums) — react-ecs
-// uiBackground/utils getTexture/getTextureMode do this same normalization at
-// runtime. `color` / `textureSlices` / `uvs` are the same shape on both sides.
-// NOTE: react-ecs has no `videoTexture` prop, so a PB videoTexture union
-// variant is NOT expressible in source — writers must skip it.
-// ---------------------------------------------------------------------------
 
 const TEXTURE_MODE_ENUM: Record<number, string> = { 0: 'nine-slices', 1: 'center', 2: 'stretch' };
 const WRAP_ENUM: Record<number, string> = { 0: 'repeat', 1: 'clamp', 2: 'mirror' };
@@ -347,7 +286,6 @@ type ErgoTexture = { src?: string; wrapMode?: string; filterMode?: string } & Re
   unknown
 >;
 
-// One texture payload: react-ecs string enums → PB numeric enums.
 function ergoTextureToPB(t: ErgoTexture): Record<string, unknown> {
   const out: Record<string, unknown> = { ...t };
   if (typeof t.wrapMode === 'string') out.wrapMode = WRAP_STR[t.wrapMode];
@@ -362,8 +300,6 @@ function pbTextureToErgo(t: Record<string, unknown>): ErgoTexture {
   return out;
 }
 
-// react-ecs uiBackground prop object → the flattened-PB shape the panel reads
-// (texture/avatarTexture fold into a discriminated TextureUnion).
 export function ergonomicToPBBackground(ergo: Record<string, unknown>): Record<string, unknown> {
   const pb: Record<string, unknown> = { ...ergo };
   if (typeof ergo.textureMode === 'string') {
@@ -388,15 +324,12 @@ export function ergonomicToPBBackground(ergo: Record<string, unknown>): Record<s
   return pb;
 }
 
-// Inverse: one PB background field value → its ergonomic react-ecs form, keyed
-// by the ergonomic prop it lands in. Returns null for a PB texture variant that
-// react-ecs cannot express (videoTexture) — the caller must skip the write.
 function pbBackgroundFieldToErgo(
   key: string,
   value: unknown,
 ): { key: string; value: unknown } | null {
   if (key === 'textureMode') {
-    if (value == null) return { key, value: undefined }; // unset (panel Remove/−)
+    if (value == null) return { key, value: undefined };
     if (typeof value !== 'number') return null;
     const s = TEXTURE_MODE_ENUM[value];
     return s !== undefined ? { key, value: s } : null;
@@ -418,18 +351,11 @@ function pbBackgroundFieldToErgo(
         value: pbTextureToErgo(tex.avatarTexture as Record<string, unknown>),
       };
     }
-    return null; // videoTexture (or unknown variant) — not expressible in react-ecs
+    return null;
   }
-  // color / textureSlices / uvs are the same shape on both sides.
   return { key, value };
 }
 
-// The ergonomic `uiBackground` fields a PropertyPanel patch resolves to. Shared
-// by the element write path and the interaction-layer one so both convert
-// identically. A PB variant react-ecs cannot express (videoTexture) is skipped
-// with a warning rather than emitted as a broken prop. Switching or clearing the
-// texture kind clears BOTH ergonomic texture props — react-ecs applies whichever
-// one is present, so leaving the old variant behind would silently win.
 export function pbBackgroundPatchToErgoFields(
   patch: Record<string, unknown>,
 ): Record<string, unknown> {
@@ -450,15 +376,6 @@ export function pbBackgroundPatchToErgoFields(
   return fields;
 }
 
-// ---------------------------------------------------------------------------
-// Label text props. react-ecs's <Label> takes `textAlign` / `font` as ENUM
-// STRINGS ('middle-center', 'serif' — @dcl/react-ecs Label utils parseTextAlign
-// / parseFont), while the editor (field-configs, PropertyPanel, Canvas) speaks
-// the PBUiText numeric enums (TextAlignMode 0-8, Font 0-2). Same translation the
-// uiTransform enums need: parse normalizes to numbers, emit converts back to the
-// strings the Label parser accepts. `value` / `fontSize` / `color` are the same
-// shape on both sides and pass through unchanged.
-// ---------------------------------------------------------------------------
 const TEXT_ALIGN_ENUM: Record<number, string> = {
   0: 'top-left',
   1: 'top-center',
@@ -485,8 +402,6 @@ const TEXT_WRAP_STR: Record<string, number> = Object.fromEntries(
   Object.entries(TEXT_WRAP_ENUM).map(([n, s]) => [s, Number(n)]),
 );
 
-// react-ecs uiText prop object → flattened PBUiText (textAlign/font string →
-// numeric enum). Unknown enum strings are dropped.
 export function ergonomicToPBText(ergo: Record<string, unknown>): Record<string, unknown> {
   const pb: Record<string, unknown> = { ...ergo };
   if (typeof ergo.textAlign === 'string') {
@@ -507,9 +422,6 @@ export function ergonomicToPBText(ergo: Record<string, unknown>): Record<string,
   return pb;
 }
 
-// Inverse: PBUiText → react-ecs uiText props (textAlign/font numeric enum →
-// string). An out-of-range enum is dropped rather than emitted as a bare number
-// (which the Label parser would reject).
 export function pbToErgonomicText(pb: Record<string, unknown>): Record<string, unknown> {
   const ergo: Record<string, unknown> = { ...pb };
   if (typeof pb.textAlign === 'number') {
@@ -530,14 +442,6 @@ export function pbToErgonomicText(pb: Record<string, unknown>): Record<string, u
   return ergo;
 }
 
-// ---------------------------------------------------------------------------
-// Button-only props. <Button> adds `variant` ('primary' | 'secondary') and
-// `disabled` on top of UiLabelProps, neither of which has a PB component to live
-// in. `variant` still gets the enum treatment the text enums get, so the panel can
-// draw it with the same numeric `enum` control every other enum uses; the numbers
-// are ours, not a wire format (field-configs' Variant options mirror this map, and
-// field-configs.spec pins them to it). `disabled` is a boolean on both sides.
-// ---------------------------------------------------------------------------
 export const BUTTON_VARIANT_ENUM: Record<number, string> = { 0: 'primary', 1: 'secondary' };
 
 const BUTTON_VARIANT_STR = invert(BUTTON_VARIANT_ENUM);

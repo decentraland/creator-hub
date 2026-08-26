@@ -1,25 +1,3 @@
-// The "action" surface — event-handler callbacks the editor can author. A
-// callback is a top-level `/** @ui-action */` function that takes the `state`
-// object as its parameter and mutates it:
-//
-//   /** @ui-action */
-//   function onIncrement(state: State) {
-//     state.counter += 1
-//   }
-//
-// Passing `state` in (rather than closing over the module const) keeps the
-// handler a pure function of state and side-steps use-before-declaration when the
-// function is emitted above the `state` const. Events bind through a thunk:
-// `onMouseDown={() => onIncrement(state)}`.
-//
-// The body is edited as a `{{ var }}` TEMPLATE: a bound-variable reference
-// (`state.counter` for a typed-state var, a bare `counter` for a /** @ui-bind */
-// marker) is shown as `{{ counter }}`, so the author never has to know which form
-// a variable takes. Read (code → template) is AST-accurate; write (template →
-// code) resolves each `{{ name }}` to that variable's expression. Everything else
-// in the body is literal code, so any handler round-trips. Dependency-free
-// (AST-span based) and unit-testable.
-
 import { markerFor } from './bindings';
 import { afterImports, type Edit } from './emit-adapter';
 import { ensurePropsParamEdit } from './props-convention';
@@ -37,27 +15,19 @@ interface Comment {
   end: number;
 }
 
-// A bound variable the template can reference: `name` is what appears inside
-// `{{ }}`, `expr` is the code it resolves to (`state.name` / `props.name` / bare
-// marker `name`). `type` distinguishes a callback input (invoked optional-chained
-// in code) from a value.
+/** A bound variable the template can reference: `name` inside `{{ }}`, `expr` the code it resolves to. */
 export interface BoundVar {
   name: string;
   expr: string;
   type?: string;
 }
 
-// Names of callback-typed PROPS. Invoking one in a handler body is optional-
-// chained in CODE (`props.x?.(…)` — editor inputs are always optional), but shown
-// clean in the template (`{{ props.x }}(…)`); the `?.` is added on write and
-// stripped on read so it lives code-side only.
 function callbackPropNames(vars: BoundVar[]): string[] {
   return vars.filter(v => v.type === 'callback' && v.expr === `props.${v.name}`).map(v => v.name);
 }
 
 export interface CodeAction {
   name: string;
-  // The handler body rendered with `{{ var }}` placeholders, dedented for editing.
   template: string;
 }
 
@@ -65,7 +35,6 @@ function declOf(stmt: AstNode): AstNode | undefined {
   return stmt.type === 'ExportNamedDeclaration' ? (stmt.declaration as AstNode) : stmt;
 }
 
-// The BlockStatement body of the named @ui-action function (for span math).
 function findActionBody(program: AstNode, name: string): AstNode | undefined {
   for (const stmt of (program.body ?? []) as AstNode[]) {
     const decl = declOf(stmt);
@@ -82,12 +51,6 @@ interface Ref {
   name: string;
 }
 
-// Walk a body AST collecting the spans of bound-variable references: a
-// `state.<name>` member-expression (name ∈ stateNames), a `props.<name>`
-// member-expression (name ∈ propNames), or a bare identifier reference to a
-// marker var (name ∈ markerNames) that ISN'T a property key, member property, or
-// declaration id (those aren't references). `parent` is tracked so those
-// non-reference positions can be excluded.
 function collectRefs(
   body: AstNode,
   stateNames: Set<string>,
@@ -107,12 +70,9 @@ function collectRefs(
       stateNames.has(node.property.name)
     ) {
       out.push({ start: node.start, end: node.end, name: node.property.name });
-      return; // don't recurse into the `state` object / property identifiers
+      return;
     }
 
-    // `props.<name>` — a component input referenced in the handler (args object).
-    // Templatized as the QUALIFIED `{{ props.<name> }}` so it can't collide with a
-    // same-named state variable.
     if (
       node.type === 'MemberExpression' &&
       !node.computed &&
@@ -154,8 +114,6 @@ function collectRefs(
   return out;
 }
 
-// Strip leading/trailing blank lines and the common indentation, so the body
-// edits as clean left-aligned lines in the textarea.
 function dedent(s: string): string {
   const lines = s.split('\n');
   while (lines.length && lines[0].trim() === '') lines.shift();
@@ -165,7 +123,6 @@ function dedent(s: string): string {
   return lines.map(l => l.slice(min).replace(/\s+$/, '')).join('\n');
 }
 
-// Render a handler body (code) as a `{{ var }}` template.
 function codeToTemplate(body: AstNode, source: string, vars: BoundVar[]): string {
   const innerStart = body.start + 1;
   const innerEnd = body.end - 1;
@@ -182,16 +139,13 @@ function codeToTemplate(body: AstNode, source: string, vars: BoundVar[]): string
     cursor = r.end;
   }
   out += source.slice(cursor, innerEnd);
-  // A callback input's `?.` is code-side only — strip it so the template shows a
-  // clean `{{ props.x }}(…)` call. templateToBody re-adds it on write.
   for (const name of callbackPropNames(vars)) {
     out = out.replaceAll(`{{ props.${name} }}?.(`, `{{ props.${name} }}(`);
   }
   return dedent(out);
 }
 
-// Read every @ui-action handler as a `{{ var }}`-template body. `vars` is the
-// binding surface (state + marker), so references can be templatized.
+/** Read every @ui-action handler as a `{{ var }}`-template body, templatizing references against `vars`. */
 export function readActions(
   program: AstNode,
   comments: Comment[] | undefined,
@@ -212,37 +166,25 @@ export function readActions(
   return actions;
 }
 
-// A `{{ var }}` template is well-formed when every `{{ … }}` holds a single
-// identifier (or a `props.<name>` input reference), so it resolves to valid code.
-// Strip well-formed placeholders; any `{{` or `}}` left is malformed — a space in
-// the name (`{{ none prope }}`), an unclosed `{{`, or a stray `}}` — which would
-// splice invalid code. The editor uses this to mark the body invalid and NOT sync
-// it (a local guard on top of the store's don't-persist-syntax-errors backstop).
+/** Whether every `{{ … }}` in the template holds a single identifier (or `props.<name>`), so it resolves to valid code. */
 export function isValidTemplate(text: string): boolean {
   const stripped = text.replace(/\{\{\s*(?:props\.)?[A-Za-z_$][\w$]*\s*\}\}/g, '');
   return !stripped.includes('{{') && !stripped.includes('}}');
 }
 
-// Resolve a `{{ var }}` template to code: a bare `{{ name }}` → that variable's
-// expression (`state.name` / bare marker `name`); a qualified `{{ props.name }}`
-// → `props.name` (itself). Bare names never resolve to props — props are always
-// qualified — so a state var and a prop of the same name can't collide.
+/** Resolve a `{{ var }}` template to code, mapping each placeholder to its variable's expression. */
 export function templateToBody(template: string, vars: BoundVar[]): string {
   const byName = new Map(vars.filter(v => !v.expr.startsWith('props.')).map(v => [v.name, v.expr]));
   let code = template.replace(/\{\{\s*((?:props\.)?[A-Za-z_$][\w$]*)\s*\}\}/g, (_m, ref: string) =>
     ref.startsWith('props.') ? ref : (byName.get(ref) ?? ref),
   );
-  // Callback inputs are optional — invoke them optional-chained in code (a no-op
-  // if the parent didn't wire them). Idempotent: `props.x(` matches, an already
-  // optional-chained `props.x?.(` does not.
   for (const name of callbackPropNames(vars)) {
     code = code.replaceAll(`props.${name}(`, `props.${name}?.(`);
   }
   return code;
 }
 
-// Splice a handler's body with `code`, re-indented one level. An empty body
-// collapses to `{}`.
+/** Splice a handler's body with `code`, re-indented one level; an empty body collapses to `{}`. */
 export function setActionBodyEdit(program: AstNode, name: string, code: string): Edit[] {
   const body = findActionBody(program, name);
   if (!body) return [];
@@ -259,8 +201,7 @@ export function setActionBodyEdit(program: AstNode, name: string, code: string):
   return [{ start: body.start + 1, end: body.end - 1, text }];
 }
 
-// Remove an entire @ui-action function declaration, including its leading
-// `/** @ui-action */` comment and a preceding blank line.
+/** Remove an entire @ui-action function declaration, including its leading marker comment and a preceding blank line. */
 export function removeActionDecl(
   program: AstNode,
   name: string,
@@ -286,14 +227,6 @@ export function removeActionDecl(
   return [];
 }
 
-// --- Migration: legacy positional handlers → the args-object contract ---
-//
-// Old form: a top-level `function h(state: State, value?: unknown)` bound via
-// `() => h(state)`. New form: `function h({ state, props, value }: UiAction)`
-// bound via `() => h({ state, props })`, so a handler can read props (call a
-// callback the parent passed) and `{{ props.x }}` works. The migration rewrites
-// legacy handlers + their thunks + seeds the `UiAction` type and a `props` param.
-
 function hasUiActionType(program: AstNode): boolean {
   for (const stmt of (program.body ?? []) as AstNode[]) {
     const decl = declOf(stmt);
@@ -302,9 +235,7 @@ function hasUiActionType(program: AstNode): boolean {
   return false;
 }
 
-// The `type UiAction = { state; props; value? }` scaffold edit, or null if present.
-// `props` references the component's OWN inline props type, so adding/removing a
-// prop never touches this alias or any thunk.
+/** The `type UiAction = { state; props; value? }` scaffold edit, or null if already present. */
 export function uiActionTypeEdit(program: AstNode, componentName: string): Edit | null {
   if (hasUiActionType(program)) return null;
   const at = afterImports(program as { body?: AstNode[] });
@@ -315,7 +246,6 @@ export function uiActionTypeEdit(program: AstNode, componentName: string): Edit 
   };
 }
 
-// Visit every CallExpression under `root`.
 function walkCalls(root: AstNode, cb: (call: AstNode) => void): void {
   const visit = (n: any): void => {
     if (!n || typeof n !== 'object' || typeof n.type !== 'string') return;
@@ -333,10 +263,7 @@ function walkCalls(root: AstNode, cb: (call: AstNode) => void): void {
   visit(root);
 }
 
-// Rewrite legacy positional @ui-action handlers to the args-object contract, plus
-// seed the `UiAction` type and a `props: {}` param when missing. Returns [] (a
-// no-op) when nothing is old-form, so it's idempotent — re-running on migrated
-// source changes nothing.
+/** Rewrite legacy positional @ui-action handlers to the args-object contract, seeding the `UiAction` type and a `props` param when missing; idempotent. */
 export function migrateActionsToArgsObject(
   program: AstNode,
   comments: Comment[] | undefined,
@@ -345,8 +272,6 @@ export function migrateActionsToArgsObject(
 ): Edit[] {
   if (!program?.body || !comments) return [];
 
-  // Old-form handlers: an @ui-action FunctionDeclaration whose FIRST param is the
-  // identifier `state` (the new form is a `{ … }` ObjectPattern).
   const oldActions = new Map<string, { start: number; end: number }>();
   for (const stmt of program.body as AstNode[]) {
     const decl = declOf(stmt);
@@ -364,13 +289,10 @@ export function migrateActionsToArgsObject(
 
   const edits: Edit[] = [];
 
-  // Handler signatures → the destructured args object.
   for (const span of oldActions.values()) {
     edits.push({ start: span.start, end: span.end, text: '{ state, props, value }: UiAction' });
   }
 
-  // Thunk calls: name(state) / name(state, value) → name({ state, props[, value] }).
-  // An unrecognized argument shape is left untouched (never corrupt a hand call).
   const names = new Set(oldActions.keys());
   walkCalls(program, call => {
     if (call.callee?.type !== 'Identifier' || !names.has(call.callee.name)) return;
@@ -386,7 +308,6 @@ export function migrateActionsToArgsObject(
     });
   });
 
-  // Seed the UiAction type + a props param so the rewritten handlers typecheck.
   const typeEdit = uiActionTypeEdit(program, componentName);
   if (typeEdit) edits.push(typeEdit);
   const propsEdit = ensurePropsParamEdit(program, source, componentName);

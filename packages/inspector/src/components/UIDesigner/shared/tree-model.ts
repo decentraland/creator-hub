@@ -4,9 +4,7 @@ import type { CodeUINode } from '../code/types';
 
 export type UINodeType = 'UiEntity' | 'Label' | 'Button' | 'Input' | 'Dropdown';
 
-// Discriminator for a mixed-content segment (literal text interleaved with
-// variable bindings) in a text field. Editor-local: the persisted form is the
-// spliced template literal in source, so no runtime enum is involved.
+/** Discriminator for a mixed-content text segment: literal text vs a variable binding. */
 export enum SegmentKind {
   LITERAL = 'literal',
   BINDING = 'binding',
@@ -32,10 +30,7 @@ export interface UINode {
   children: UINode[];
 }
 
-// What a node reads as in the UI. `<UiEntity>` is one JSX tag for two widgets:
-// with a background texture it's an Image, otherwise a Container. Every other
-// type displays as itself. Callers handle opaque/component-ref/platform nodes
-// before classifying.
+/** What a node reads as in the UI (UiEntity splits into Container / Image). */
 export type WidgetKind = Exclude<UINodeType, 'UiEntity'> | 'Container' | 'Image';
 
 export function classifyNode(node: Pick<UINode, 'type' | 'uiBackground'>): WidgetKind {
@@ -44,11 +39,7 @@ export function classifyNode(node: Pick<UINode, 'type' | 'uiBackground'>): Widge
   return texture ? 'Image' : 'Container';
 }
 
-// The entities of a shift-click range: the slice of the tree's VISIBLE row
-// order (pre-order, honoring the tree's own child/collapse view via
-// `getChildren`/`isOpen`) between the anchor and the clicked row. Ordered so
-// the clicked row lands LAST — it becomes the selection's panel target. When
-// the anchor is gone (collapsed away / removed), just the clicked row.
+/** The entities of a shift-click range, in visible pre-order, with the clicked row last. */
 export function visibleRange(
   root: UINode,
   getChildren: (n: UINode) => UINode[],
@@ -70,12 +61,7 @@ export function visibleRange(
   return from <= to ? slice : slice.reverse();
 }
 
-// Compose the canvas preview for a (possibly bound) text field. `resolve` maps a
-// binding expression (`state.name`) to its default value; when it returns a value
-// the preview shows it (`Hello: John`), otherwise the binding falls back to a
-// `[state.name]` placeholder (a marker with no default, or an unresolved expr).
-// Mixed-content rows compose literal text with each binding's resolved/placeholder
-// value; a whole-field binding resolves the single expr; else the static value.
+/** Compose the canvas preview for a (possibly bound) text field. */
 export function previewBoundText(
   bindings: CanvasBindingRow[] | undefined,
   fieldKey: string,
@@ -97,19 +83,14 @@ export function previewBoundText(
   return staticValue;
 }
 
-// A UiEntity wrapping exactly one component-ref (and nothing else) is the
-// positioning wrapper `spliceInsertComponent` emits. The tree collapses it into a
-// single "component" row: the wrapper stays in source (it carries the instance's
-// layout), but the editor presents wrapper+ref as ONE node. Anything with extra
-// children renders normally.
+/** The sole component-ref child of a positioning-wrapper UiEntity, or null. */
 export function soleComponentRef(n: UINode): CodeUINode | null {
   if (n.children.length !== 1) return null;
   const child = n.children[0] as CodeUINode;
   return child.componentRef ? child : null;
 }
 
-// Plain-text row label. The tree's getLabel may return a NODE (a dimmed platform
-// branch), so filtering needs the string form separately.
+/** Plain-text row label for a node. */
 export function nodeLabelText(n: UINode): string {
   const ref = soleComponentRef(n);
   if (ref) return ref.componentRef?.name ?? ref.name;
@@ -120,9 +101,7 @@ export function nodeLabelText(n: UINode): string {
     : classifyNode(n);
 }
 
-// A node survives a tree filter when it matches OR any descendant does, so the
-// path down to a match stays navigable rather than the match appearing orphaned.
-// `term` must already be lower-cased and trimmed by the caller.
+/** Whether a node or any descendant matches an already lower-cased, trimmed term. */
 export function matchesFilter(n: UINode, term: string): boolean {
   if (nodeLabelText(n).toLowerCase().includes(term)) return true;
   return n.children.some(c => matchesFilter(c, term));

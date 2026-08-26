@@ -1,11 +1,6 @@
 import React from 'react';
 
-/**
- * The UI-Designer first-run glyph: an image placeholder beside a few text lines,
- * standing for "the widgets a GUI is made of". Inline (rather than a mask-image
- * .svg like the panel's field icons) because EmptyState takes its icon as a React
- * node, and `currentColor` lets it inherit the empty state's muted color.
- */
+/** The UI-Designer first-run glyph: an image placeholder beside a few text lines. */
 export const GuiIcon: React.FC = () => (
   <svg
     width="64"

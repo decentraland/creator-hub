@@ -1,16 +1,6 @@
 import { type Edit, raw, setObjectFields } from './emit-adapter';
 import { pbToErgonomicTransform } from './ecs-shape';
 
-// The PropertyPanel patches flattened PBUiTransform fields (width + widthUnit,
-// positionTop + positionTopUnit, borderTopLeftRadius…, positionType, opacity…).
-// Turn such a patch into SURGICAL per-field edits on the ergonomic
-// `uiTransform={{ … }}` object: only the ergonomic keys the patch actually
-// touches are written (or removed when the patched value resolves to unset) —
-// every other key in the source object, including ones the editor doesn't
-// model, is left byte-for-byte intact. This is what keeps a panel edit from
-// erasing hand-authored props (the audit's P0 finding: the previous
-// whole-attribute re-emit destroyed `opacity`/`zIndex`/bindings/spreads).
-
 interface AstElement {
   type: string;
   start: number;
@@ -18,12 +8,7 @@ interface AstElement {
   [k: string]: any;
 }
 
-/**
- * Where one flattened-PB patch key lives in the ergonomic `uiTransform` object:
- * its key, plus the member within it when that key holds a per-edge/per-corner
- * object (react-ecs takes `padding?: Partial<Position>`, not `paddingTop`).
- */
-// Returns null for keys that never reach source (the structural `parent`).
+/** Where one flattened-PB patch key lives in the ergonomic `uiTransform` object (its key, plus a member for per-edge/corner groups); null for keys that never reach source. */
 export function flattenedToErgonomicPath(key: string): { group: string; member?: string } | null {
   if (key === 'parent' || key === 'rightOf') return null;
   const base = key.endsWith('Unit') ? key.slice(0, -4) : key;
@@ -44,17 +29,12 @@ export function flattenedToErgonomicPath(key: string): { group: string; member?:
   return { group: base };
 }
 
-/**
- * Map one flattened-PB patch key to the ergonomic uiTransform key it lives in.
- */
+/** Map one flattened-PB patch key to the ergonomic uiTransform key it lives in. */
 export function flattenedToErgonomicKey(key: string): string | null {
   return flattenedToErgonomicPath(key)?.group ?? null;
 }
 
-/**
- * The ergonomic uiTransform keys that hold a per-edge / per-corner object, and so
- * address their members by a nested key rather than a flattened one.
- */
+/** The ergonomic uiTransform keys that hold a per-edge / per-corner object, addressed by a nested key. */
 export const NESTED_TRANSFORM_GROUPS = new Set([
   'position',
   'margin',
@@ -70,10 +50,7 @@ const BORDER_SUFFIX: Record<string, string> = {
   borderColor: 'Color',
 };
 
-/**
- * Inverse of flattenedToErgonomicPath for a nested member: the flattened PB key a
- * group member addresses, or null when the pair is not one this shape models.
- */
+/** Inverse of flattenedToErgonomicPath for a nested member: the flattened PB key a group member addresses, or null. */
 export function ergonomicToFlattenedKey(group: string, member: string): string | null {
   if (!NESTED_TRANSFORM_GROUPS.has(group) || !member) return null;
   const cap = member[0].toUpperCase() + member.slice(1);
@@ -81,18 +58,7 @@ export function ergonomicToFlattenedKey(group: string, member: string): string |
   return suffix ? `border${cap}${suffix}` : `${group}${cap}`;
 }
 
-// The ergonomic `uiTransform` fields a panel patch resolves to — the sink-agnostic
-// half of uiTransformPatchEdits, shared with the interaction-layer write path (an
-// interaction state's `uiTransform` lives in an object literal, not a JSX
-// attribute). `currentPB` is the node's current flattened-PB uiTransform
-// (parse-adapter output), merged with the patch so group re-folds (an edge
-// object, a border group) keep their untouched members. A field resolving to
-// `undefined` means "remove it" to the setObjectFields family — exactly right
-// when a patched value becomes unset (switching back to in-flow clears the
-// position edges; positionType folds away when relative).
-// `bound` carries the node's bound keys: they have no PB value to merge, so the
-// re-fold drops them, and for a nested group the whole object is re-emitted —
-// which would erase a bound sibling member from source. Each is re-injected raw.
+/** The ergonomic `uiTransform` fields a panel patch resolves to (sink-agnostic); merges `currentPB` with the patch and re-injects `bound` keys raw. */
 export function uiTransformPatchFields(
   currentPB: Record<string, unknown>,
   patch: Record<string, unknown>,
@@ -132,11 +98,7 @@ export function uiTransformPatchFields(
 
 const TRANSFORM_BINDING_PREFIX = 'core::UiTransform.';
 
-/**
- * A node's bound uiTransform keys, flattened-PB path → expression: the shape
- * uiTransformPatchFields needs to carry them across a re-fold. Mixed-content rows
- * (segments, no single expression) are skipped — they never reach uiTransform.
- */
+/** A node's bound uiTransform keys, flattened-PB path → expression; mixed-content rows are skipped. */
 export function boundTransformKeys(
   bindings: { field: string; variable: string }[] | undefined,
 ): Record<string, string> {
@@ -148,7 +110,7 @@ export function boundTransformKeys(
   return out;
 }
 
-// Build the edits for a panel patch against the node's backing JSX element.
+/** Build the edits for a panel patch against the node's backing JSX element. */
 export function uiTransformPatchEdits(
   el: AstElement,
   currentPB: Record<string, unknown>,

@@ -1,9 +1,3 @@
-// Canvas-side resolution of interaction-state styles: base → active → hover →
-// press. Deliberately duplicates the merge in aggregator.generateInteractionHelper
-// — that one is source text scaffolded into the scene and must stand alone, so no
-// module can span the two. The spec pins them together; upstreaming
-// `useInteraction` into @dcl/react-ecs would let this import it instead.
-
 import type { InteractionStateKey } from './interaction-convention';
 import type { CodeUINode, InteractionStateStyles } from './types';
 
@@ -13,9 +7,6 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
-// Deep-merge `over` onto `base`, mirroring the runtime helper's merge so a layer
-// can override one nested field (just uiBackground.color) without dropping its
-// siblings.
 function merge(
   base: Record<string, unknown>,
   over: Record<string, unknown> | undefined,
@@ -30,10 +21,7 @@ function merge(
   return out;
 }
 
-// The layers to apply, in precedence order, for a preview. `layer` is the state
-// the panel is editing (so editing Hover previews Hover even without the pointer
-// there); `hovered`/`pressed` are live canvas pointer state. Duplicates collapse
-// and `base` is implicit.
+/** The layers to apply, in precedence order, for a preview; `base` is implicit and duplicates collapse. */
 export function previewLayers(opts: {
   layer?: InteractionStateKey;
   hovered?: boolean;
@@ -43,13 +31,10 @@ export function previewLayers(opts: {
   if (opts.layer && opts.layer !== 'base') wanted.add(opts.layer);
   if (opts.hovered) wanted.add('hover');
   if (opts.pressed) wanted.add('press');
-  // Emit in runtime precedence order, not insertion order.
   return (['active', 'hover', 'press'] as const).filter(k => wanted.has(k));
 }
 
-// A copy of `node` whose style bags are resolved for `layers`. Returns the node
-// unchanged when it has no interaction states or nothing to apply, so callers can
-// use it unconditionally without allocating on the common path.
+/** A copy of `node` whose style bags are resolved for `layers`; returns the node unchanged when there's nothing to apply. */
 export function resolveInteractionPreview(
   node: CodeUINode,
   layers: InteractionStateKey[],
@@ -63,9 +48,6 @@ export function resolveInteractionPreview(
   type StyleField = (typeof STYLE_FIELDS)[number];
   const patch: Partial<Record<StyleField, Record<string, unknown>>> = {};
   for (const field of STYLE_FIELDS) {
-    // The node's own bag IS the base layer (the parse adapter hydrated it), and
-    // it also carries structural data the layers never hold — uiTransform.parent,
-    // which the canvas needs for layout — so start from the node, not states.base.
     let bag = node[field] as Record<string, unknown> | undefined;
     let touched = false;
     for (const key of applicable) {
