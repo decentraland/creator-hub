@@ -53,6 +53,7 @@ enum Method {
   UNDO = 'undo',
   GET_SCENE_METRICS = 'get_scene_metrics',
   GET_SELECTION = 'get_selection',
+  CLEAR_SELECTION = 'clear_selection',
 }
 
 // A row in the Smart Items catalog, as returned by search_catalog.
@@ -100,6 +101,7 @@ type Params = {
   [Method.UNDO]: Record<string, never>;
   [Method.GET_SCENE_METRICS]: Record<string, never>;
   [Method.GET_SELECTION]: Record<string, never>;
+  [Method.CLEAR_SELECTION]: Record<string, never>;
 };
 
 type Result = {
@@ -135,6 +137,7 @@ type Result = {
     entitiesOutOfBoundaries: number[];
   };
   [Method.GET_SELECTION]: { selected: { id: number; name: string }[] };
+  [Method.CLEAR_SELECTION]: { ok: true };
 };
 
 // Validate an AI-supplied entity id before branding it as an Entity. The id comes from the
@@ -475,6 +478,20 @@ export class SceneServer extends RPC<Method, Params, Result> {
           selected.push({ id: entity as number, name: label(entity) });
         }
         return { selected };
+      });
+
+      // Deselect everything — the "Clear" affordance on the AI selection chip. Drops the
+      // Selection component from every entity, then ticks so the viewport gizmo clears. Not
+      // a scene mutation (selection is editor-only state), so it doesn't mark the scene dirty.
+      this.handle('clear_selection', async () => {
+        const Selection = engine.getComponent(
+          EditorComponentNames.Selection,
+        ) as EditorComponents['Selection'];
+        for (const [entity] of engine.getEntitiesWith(Selection)) {
+          Selection.deleteFrom(entity);
+        }
+        await operations.dispatch({ dirty: false });
+        return { ok: true as const };
       });
     }
   }

@@ -13,16 +13,22 @@ const MIRROR_THROTTLE_MS = 60;
 // loading, so they keep running while the inline panel is hidden. It also bridges the
 // detached window: it mirrors the store's `ai` slice to it and applies the actions it
 // sends back, so the main window stays the single source of truth (no forked store).
-export function useAiSession(enabled: boolean, projectPath: string | undefined) {
+export function useAiSession(
+  enabled: boolean,
+  projectPath: string | undefined,
+  // Deselect all entities in the editor. Only the caller (EditorPage) holds the inspector
+  // iframe RPC, so it supplies this; the detached window triggers it via a remote command.
+  onClearSelection?: () => void,
+) {
   const dispatch = useDispatch();
   const aiState = useSelector(state => state.ai);
   const projectTitle = useSelector(state => state.editor.project?.title);
   const locale = useSelector(state => state.translation.locale);
   const [detachedOpen, setDetachedOpen] = useState(false);
-  // Latest snapshot, read by the (stable) remote-command listener so it doesn't need to
-  // re-subscribe on every streamed token.
-  const latest = useRef({ aiState, projectTitle });
-  latest.current = { aiState, projectTitle };
+  // Latest snapshot + clear callback, read by the (stable) remote-command listener so it
+  // doesn't need to re-subscribe on every streamed token / callback identity change.
+  const latest = useRef({ aiState, projectTitle, onClearSelection });
+  latest.current = { aiState, projectTitle, onClearSelection };
 
   // Provider detection + the turn event stream (fold events into the store, persist on done).
   useEffect(() => {
@@ -102,6 +108,9 @@ export function useAiSession(enabled: boolean, projectPath: string | undefined) 
           break;
         case 'deleteSession':
           dispatch(aiActions.deleteSession(command.id));
+          break;
+        case 'clearSelection':
+          latest.current.onClearSelection?.();
           break;
         case 'sync':
           aiPreload.pushAiMirrorState({

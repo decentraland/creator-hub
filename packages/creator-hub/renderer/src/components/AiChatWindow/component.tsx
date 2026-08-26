@@ -66,6 +66,10 @@ export function AiChatWindow() {
     (id: string) => aiPreload.sendAiRemoteCommand({ type: 'deleteSession', id }),
     [],
   );
+  const onClearSelection = useCallback(
+    () => aiPreload.sendAiRemoteCommand({ type: 'clearSelection' }),
+    [],
+  );
   // Closing the detached window docks the chat back inline.
   const onClose = useCallback(() => void aiPreload.closeAiWindow(), []);
 
@@ -101,6 +105,7 @@ export function AiChatWindow() {
       onDismissBilling={onDismissBilling}
       onSwitchSession={onSwitchSession}
       onDeleteSession={onDeleteSession}
+      onClearSelection={onClearSelection}
       onClose={onClose}
     />
   );

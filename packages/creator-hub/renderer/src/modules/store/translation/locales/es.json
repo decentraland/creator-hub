@@ -114,6 +114,7 @@
       "retry": "Reintentar",
       "revert": "Deshacer los cambios de la IA",
       "selection": "Selección: {names}",
+      "selection_clear": "Limpiar",
       "provider": "Asistente",
       "setup": {
         "title": "Configura un asistente IA",

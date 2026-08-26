@@ -157,13 +157,6 @@ export function EditorPage() {
   // The AI assistant is an experimental opt-in (Settings → Experimental), like the Bevy
   // renderer — not a remote feature flag.
   const aiChatEnabled = settings.aiAssistant;
-  // The AI session engine + detached-window bridge (#1504). Runs whenever the assistant is
-  // on, independent of whether the chat is shown inline or popped out.
-  const {
-    detachedOpen: aiDetached,
-    openDetached: openAiWindow,
-    closeDetached: closeAiWindow,
-  } = useAiSession(aiChatEnabled, project?.path);
   const { executeDeployment, getDeployment } = useDeploy();
   const deployment = project ? getDeployment(project.path) : undefined;
 
@@ -178,6 +171,21 @@ export function EditorPage() {
   const { detectCustomCode, isLoading: isDetectingCustomCode } = useSceneCustomCode(project);
   const { status } = useConnectionStatus();
   const iframeRef = useRef<ReturnType<typeof initRpc>>();
+  // Clear the AI selection chips: deselect everything in the inspector (only the renderer
+  // holds the iframe RPC). Optimistically empty the store so the chips vanish immediately;
+  // the next selection poll confirms. No-op under Bevy (no selection RPC).
+  const handleClearAiSelection = useCallback(() => {
+    void iframeRef.current?.scene.clearSelection().catch(() => undefined);
+    dispatch(aiActions.setSelection([]));
+  }, [dispatch]);
+  // The AI session engine + detached-window bridge (#1504). Runs whenever the assistant is
+  // on, independent of whether the chat is shown inline or popped out. It also relays the
+  // detached window's "clear selection" back to the inspector here.
+  const {
+    detachedOpen: aiDetached,
+    openDetached: openAiWindow,
+    closeDetached: closeAiWindow,
+  } = useAiSession(aiChatEnabled, project?.path, handleClearAiSelection);
   const hydratedOptimizedAssetsPathRef = useRef<string | null>(null);
   const [modalState, setModalState] = useState<ModalState>({ type: undefined });
   const [aiOpen, setAiOpen] = useState(false);
@@ -891,6 +899,7 @@ export function EditorPage() {
                   <AiChatPanel
                     onClose={() => setAiOpen(false)}
                     onPopOut={openAiWindow}
+                    onClearSelection={handleClearAiSelection}
                     width={aiPanelWidth}
                   />
                 )}

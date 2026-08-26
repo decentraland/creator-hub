@@ -114,6 +114,7 @@
       "retry": "重试",
       "revert": "撤销 AI 的更改",
       "selection": "选择：{names}",
+      "selection_clear": "清除",
       "provider": "助手",
       "setup": {
         "title": "设置 AI 助手",

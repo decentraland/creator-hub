@@ -603,3 +603,37 @@ describe('SceneServer RPC get_selection', () => {
     });
   });
 });
+
+// clear_selection drops the Selection component from every selected entity (the AI panel's
+// "Clear" affordance) and ticks the engine without marking the scene dirty.
+describe('SceneServer RPC clear_selection', () => {
+  it('deselects every entity', async () => {
+    const parent = new InMemoryTransport();
+    const iframe = new InMemoryTransport();
+    parent.connect(iframe);
+    iframe.connect(parent);
+
+    const store = { dispatch: vi.fn(), getState: vi.fn(), subscribe: vi.fn() } as any as Store;
+    const sel = new Set<number>([512, 513]);
+    const selectionComp = { deleteFrom: vi.fn((e: number) => void sel.delete(e)) };
+    const engine = {
+      RootEntity: 0,
+      getComponent: (n: string) => {
+        if (n === EditorComponentNames.Selection) return selectionComp;
+        throw new Error(`unexpected getComponent(${n})`);
+      },
+      getEntitiesWith: (c: unknown) =>
+        (c === selectionComp ? [...sel].map(id => [id]) : [])[Symbol.iterator](),
+    } as any;
+    const operations = { dispatch: vi.fn(async () => undefined) } as any;
+
+    new SceneServer(iframe, store, undefined, undefined, operations, engine);
+    const host = new RPC('SceneRpcInbound', parent);
+
+    const res = await host.request('clear_selection', {});
+    expect(res).toEqual({ ok: true });
+    expect(selectionComp.deleteFrom).toHaveBeenCalledWith(512);
+    expect(selectionComp.deleteFrom).toHaveBeenCalledWith(513);
+    expect(operations.dispatch).toHaveBeenCalledWith({ dirty: false });
+  });
+});

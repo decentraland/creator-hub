@@ -114,6 +114,7 @@
       "retry": "Retry",
       "revert": "Undo AI changes",
       "selection": "Selection: {names}",
+      "selection_clear": "Clear",
       "provider": "Assistant",
       "setup": {
         "title": "Set up an AI assistant",

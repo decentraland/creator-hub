@@ -50,6 +50,8 @@ import {
   PanelHeader,
   ProviderRow,
   SelectionBar,
+  SelectionClear,
+  SelectionNames,
   SessionText,
   SessionTitle,
   SessionWhen,
@@ -124,6 +126,8 @@ export interface ChatViewProps {
   // Open a past session from the history / delete one.
   onSwitchSession: (id: string) => void;
   onDeleteSession: (id: string) => void;
+  // Deselect all entities (clears the selection chips).
+  onClearSelection: () => void;
   // Open the detached window (inline only — omitted/no-op in the detached window).
   onPopOut?: () => void;
   // Inline: hide the panel. Detached: dock the chat back inline (close the window).
@@ -153,6 +157,7 @@ export function ChatView(props: ChatViewProps) {
     onDismissBilling,
     onSwitchSession,
     onDeleteSession,
+    onClearSelection,
     onPopOut,
     onClose,
   } = props;
@@ -504,9 +509,24 @@ export function ChatView(props: ChatViewProps) {
           {available && selection.length > 0 && (
             <SelectionBar>
               <HighlightAltIcon fontSize="small" />
-              {t('editor.ai.selection', {
-                names: selection.map(s => (s.name !== '' ? s.name : `#${s.id}`)).join(', '),
-              })}
+              <SelectionNames>
+                {t('editor.ai.selection', {
+                  names: selection.map(s => (s.name !== '' ? s.name : `#${s.id}`)).join(', '),
+                })}
+              </SelectionNames>
+              <SelectionClear
+                role="button"
+                tabIndex={0}
+                onClick={onClearSelection}
+                onKeyDown={e => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    onClearSelection();
+                  }
+                }}
+              >
+                {t('editor.ai.selection_clear')}
+              </SelectionClear>
             </SelectionBar>
           )}
 

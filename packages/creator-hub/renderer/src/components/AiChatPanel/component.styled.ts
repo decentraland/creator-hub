@@ -309,9 +309,21 @@ const SelectionBar = styled(Box)(({ theme }) => ({
   borderTop: `1px solid ${theme.palette.divider}`,
   color: theme.palette.text.secondary,
   fontSize: theme.typography.caption.fontSize,
+}));
+
+const SelectionNames = styled('span')({
+  flex: 1,
+  minWidth: 0,
   overflow: 'hidden',
   textOverflow: 'ellipsis',
   whiteSpace: 'nowrap',
+});
+
+const SelectionClear = styled('span')(({ theme }) => ({
+  flexShrink: 0,
+  textDecoration: 'underline',
+  cursor: 'pointer',
+  color: theme.palette.text.primary,
 }));
 
 export {
@@ -333,6 +345,8 @@ export {
   PanelHeader,
   ProviderRow,
   SelectionBar,
+  SelectionClear,
+  SelectionNames,
   SessionText,
   SessionTitle,
   SessionWhen,

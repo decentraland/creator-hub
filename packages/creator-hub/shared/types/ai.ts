@@ -120,4 +120,5 @@ export type AiRemoteCommand =
   | { type: 'dismissBilling' }
   | { type: 'switchSession'; id: string }
   | { type: 'deleteSession'; id: string }
+  | { type: 'clearSelection' }
   | { type: 'sync' };
