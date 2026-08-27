@@ -1,0 +1,53 @@
+.ui-designer-text-align {
+  display: flex;
+  align-items: center;
+  gap: var(--uid-space-2);
+  width: 100%;
+}
+
+.ui-designer-text-align-group {
+  display: flex;
+  flex: 1 1 0;
+  min-width: 0;
+  border: 1px solid var(--ui-designer-control-border);
+  border-radius: var(--ui-designer-radius-field);
+  overflow: hidden;
+}
+
+.ui-designer-text-align-cell {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1 1 0;
+  min-width: 0;
+  height: 26px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--ui-designer-glyph);
+  cursor: pointer;
+}
+
+.ui-designer-text-align-cell svg {
+  width: 16px;
+  height: 16px;
+}
+
+.ui-designer-text-align-group .ui-designer-text-align-cell + .ui-designer-text-align-cell {
+  border-left: 1px solid var(--ui-designer-hairline);
+}
+
+.ui-designer-text-align-cell:hover {
+  background: var(--ui-designer-control-hover-bg);
+  color: var(--title);
+}
+
+.ui-designer-text-align-cell.selected {
+  background: var(--ui-designer-control-active-bg);
+  color: var(--ui-designer-control-active-fg);
+}
+
+.ui-designer-text-align-cell:focus-visible {
+  outline: 2px solid var(--border-focused);
+  outline-offset: -2px;
+}
