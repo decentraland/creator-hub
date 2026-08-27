@@ -62,6 +62,8 @@ The subtlety is **run intent**. `sceneRun` exposes only a boolean `isRunning()`,
 - `useSyncSceneRunWithMode` freezes the scene when 2D opens (editing needs a static viewport, because the renderer is only CSS-hidden in 2D) and resumes it when 3D returns, but only if the intent was to run.
 - The 2D toolbar displays the intent, so switching to 2D while a scene runs shows **Pause** (it's still your running scene, just frozen), not Play as if it never ran.
 
+**Hot-reload suppression (`register.ts`).** `sdk-commands start` broadcasts `SCENE_UPDATE` on any file change, and under `--data-layer` mode that message carries no filename and also fires when the data-layer rewrites `main.crdt` for the inspector's own edits — so reloading on every one reloads on every gizmo drag (the #1391 regression). A short quiet window after any local edit suppresses those; only an update with no recent local edit (an external code save, #1419) reloads. "Local edit" comes from a shared beacon, not a timestamp stamped here, because there are two writers — CRDT edits and code mode (which writes `src/ui/*.tsx` through the storage bridge and never touches the CRDT).
+
 ## Multi-node move
 
 Dragging a multi-selection moves every selected absolute node together and commits in one batch.
@@ -83,6 +85,8 @@ Dragging a multi-selection moves every selected absolute node together and commi
 The 2D/3D mode rides `inspector::UIState.uiDesignerOpen` on the scene root and is serialized into the composite, so it survives a reload in the Creator Hub app. `useRestorePersistedMode` replays it into Redux on load.
 
 The restore must wait for a **defined** `uiDesignerOpen`, not merely a non-null `uiState`. `useInspectorUIState` surfaces a default (with `uiDesignerOpen` undefined) the instant the sdk exists, before the CRDT stream hydrates the component. Latching on that premature default locks in 3D and ignores a persisted 2D. A scene that never chose a mode keeps `uiDesignerOpen` undefined and correctly stays in the 3D default.
+
+Never add a member to an already-released `inspector::UIState` version in `versioning/registry.ts`: an object schema is a positional `Schemas.Map`, so an extra member overruns buffers written by an older engine ("Outside of the bounds of writen data") even when `Optional`. Append a new version diff to the array instead.
 
 ## Scene Inset (screenInset)
 

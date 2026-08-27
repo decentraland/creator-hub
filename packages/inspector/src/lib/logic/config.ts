@@ -34,6 +34,10 @@ export type InspectorConfig = {
    * back to the persisted/localStorage choice.
    */
   renderer: string | null;
+  /** Whether the host enabled the UI Editor (2D mode) this session. */
+  uiEditorEnabled: boolean;
+  /** Whether the scene's `@dcl/sdk` supports the UI Editor (gates the upgrade notice). */
+  uiEditorSupported: boolean;
 };
 
 export type GlobalWithConfig = typeof globalThis & {
@@ -45,6 +49,15 @@ export const CONTENT_URL = version.includes('commit')
   : 'https://builder-items.decentraland.org';
 
 export const CATALYST_BASE_URL = 'https://peer.decentraland.org';
+
+function readBoolParam(
+  params: URLSearchParams,
+  key: string,
+  fallback: boolean | undefined,
+): boolean {
+  if (params.has(key)) return params.get(key) === 'true';
+  return fallback ?? INSPECTOR_DEV_PARSER;
+}
 
 export function getConfig(): InspectorConfig {
   const config = (globalThis as GlobalWithConfig).InspectorConfig;
@@ -69,5 +82,7 @@ export function getConfig(): InspectorConfig {
     bevyPosition: params.get('bevyPosition') || config?.bevyPosition || null,
     bevySystemScene: params.get('bevySystemScene') || config?.bevySystemScene || null,
     renderer: params.get('renderer') || config?.renderer || null,
+    uiEditorEnabled: readBoolParam(params, 'uiEditorEnabled', config?.uiEditorEnabled),
+    uiEditorSupported: readBoolParam(params, 'uiEditorSupported', config?.uiEditorSupported),
   };
 }
