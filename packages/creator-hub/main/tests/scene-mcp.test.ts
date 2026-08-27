@@ -111,6 +111,7 @@ describe('scene-mcp server', () => {
         'explorer_call',
         'get_project_info',
         'get_scene_metrics',
+        'get_scene_settings',
         'get_selection',
         'launch_preview',
         'place_smart_item',
@@ -121,6 +122,7 @@ describe('scene-mcp server', () => {
         'search_catalog',
         'set_component',
         'set_parent',
+        'set_scene_settings',
         'stop_preview',
       ].sort(),
     );

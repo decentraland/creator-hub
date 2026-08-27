@@ -16,6 +16,7 @@ import * as mobileDebugStore from '../../logic/mobile-debug-store';
 import { setFeatureFlags } from '../../../redux/feature-flags';
 import { type EnumEntity } from '../../sdk/enum-entity';
 import { EditorComponentNames, type EditorComponents } from '../../sdk/components';
+import { resolveActiveSceneComponent } from '../../sdk/components/scene-metadata-version';
 import { fetchLatestCatalog, getAssetById } from '../../logic/catalog';
 import { getDataLayerInterface, refreshUndoRedoState } from '../../../redux/data-layer';
 import { getConfig } from '../../logic/config';
@@ -54,6 +55,8 @@ enum Method {
   GET_SCENE_METRICS = 'get_scene_metrics',
   GET_SELECTION = 'get_selection',
   CLEAR_SELECTION = 'clear_selection',
+  GET_SCENE_SETTINGS = 'get_scene_settings',
+  SET_SCENE_SETTINGS = 'set_scene_settings',
 }
 
 // A row in the Smart Items catalog, as returned by search_catalog.
@@ -102,6 +105,9 @@ type Params = {
   [Method.GET_SCENE_METRICS]: Record<string, never>;
   [Method.GET_SELECTION]: Record<string, never>;
   [Method.CLEAR_SELECTION]: Record<string, never>;
+  [Method.GET_SCENE_SETTINGS]: Record<string, never>;
+  // The patch: the SceneMetadata fields to change (each replaces that field wholesale).
+  [Method.SET_SCENE_SETTINGS]: Record<string, unknown>;
 };
 
 type Result = {
@@ -138,6 +144,8 @@ type Result = {
   };
   [Method.GET_SELECTION]: { selected: { id: number; name: string }[] };
   [Method.CLEAR_SELECTION]: { ok: true };
+  [Method.GET_SCENE_SETTINGS]: { settings: Record<string, unknown> };
+  [Method.SET_SCENE_SETTINGS]: { settings: Record<string, unknown> };
 };
 
 // Validate an AI-supplied entity id before branding it as an Entity. The id comes from the
@@ -492,6 +500,28 @@ export class SceneServer extends RPC<Method, Params, Result> {
         }
         await operations.dispatch({ dirty: false });
         return { ok: true as const };
+      });
+
+      // Scene settings live in the versioned SceneMetadata component on the root — name,
+      // description, categories, spawn points, skybox, terrain, layout/parcels, etc. — which
+      // the AI otherwise can't see or edit (#1527). resolveActiveSceneComponent picks the
+      // version the data-layer actually speaks, so reads/writes round-trip and persist to
+      // scene.json on save exactly like the SceneInspector UI.
+      this.handle('get_scene_settings', async () => {
+        const Scene = resolveActiveSceneComponent(engine);
+        return { settings: (Scene.getOrNull(engine.RootEntity) ?? {}) as Record<string, unknown> };
+      });
+
+      // Merge a partial patch into the current settings (each field the caller includes
+      // replaces that field wholesale) and write it through the real operations layer, so it
+      // updates the live editor, is undoable, and autosaves. The component schema validates
+      // the merged value on write — an invalid patch throws, surfaced to the assistant.
+      this.handle('set_scene_settings', async patch => {
+        const Scene = resolveActiveSceneComponent(engine);
+        const current = (Scene.getOrNull(engine.RootEntity) ?? {}) as Record<string, unknown>;
+        operations.updateValue(Scene as never, engine.RootEntity, { ...current, ...patch });
+        await operations.dispatch();
+        return { settings: (Scene.getOrNull(engine.RootEntity) ?? {}) as Record<string, unknown> };
       });
     }
   }

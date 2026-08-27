@@ -637,3 +637,57 @@ describe('SceneServer RPC clear_selection', () => {
     expect(operations.dispatch).toHaveBeenCalledWith({ dirty: false });
   });
 });
+
+// get_scene_settings / set_scene_settings read and patch the versioned SceneMetadata
+// component on the root, so the AI can change scene.json fields (#1527).
+describe('SceneServer RPC scene settings', () => {
+  it('reads the current settings and merges a patch into them', async () => {
+    const parent = new InMemoryTransport();
+    const iframe = new InMemoryTransport();
+    parent.connect(iframe);
+    iframe.connect(parent);
+
+    const store = { dispatch: vi.fn(), getState: vi.fn(), subscribe: vi.fn() } as any as Store;
+    let value: Record<string, unknown> = {
+      name: 'Old name',
+      layout: { base: { x: 0, y: 0 }, parcels: [{ x: 0, y: 0 }] },
+    };
+    // Stands in for the active SceneMetadata component: resolveActiveSceneComponent picks the
+    // newest version whose `has(root)` is true — this mock answers for any version name.
+    const sceneComp = {
+      has: () => true,
+      getOrNull: () => value,
+      createOrReplace: (_e: number, v: Record<string, unknown>) => {
+        value = v;
+      },
+    };
+    const engine = {
+      RootEntity: 0,
+      getComponentOrNull: () => sceneComp,
+      getComponent: () => sceneComp,
+    } as any;
+    const operations = {
+      updateValue: (_c: unknown, _e: number, v: Record<string, unknown>) =>
+        sceneComp.createOrReplace(0, v),
+      dispatch: vi.fn(async () => undefined),
+    } as any;
+
+    new SceneServer(iframe, store, undefined, undefined, operations, engine);
+    const host = new RPC('SceneRpcInbound', parent);
+
+    const got = await host.request('get_scene_settings', {});
+    expect(got.settings).toMatchObject({ name: 'Old name' });
+
+    const set = await host.request('set_scene_settings', {
+      name: 'New name',
+      description: 'Hi',
+    } as any);
+    // Patched fields replace; untouched fields (layout) are preserved.
+    expect(set.settings).toMatchObject({
+      name: 'New name',
+      description: 'Hi',
+      layout: { base: { x: 0, y: 0 }, parcels: [{ x: 0, y: 0 }] },
+    });
+    expect(operations.dispatch).toHaveBeenCalled();
+  });
+});

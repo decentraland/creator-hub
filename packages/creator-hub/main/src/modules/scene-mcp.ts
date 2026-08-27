@@ -127,6 +127,7 @@ const MUTATION_UNDO_COST: Record<string, number> = {
   remove_component: 1,
   attach_script: 1,
   place_smart_item: 2,
+  set_scene_settings: 1,
 };
 
 // Count of undo entries the current AI turn has applied to the scene graph. Reset when a
@@ -271,6 +272,85 @@ function registerTools(server: McpServer): void {
     description:
       'The entities the user currently has selected in the editor (id + name). Use this to resolve what the user means by "this", "the selected entity", or "the one I have open" before acting. Returns an empty list if nothing is selected.',
     inputSchema: {},
+  });
+
+  registerSceneOpTool(server, 'get_scene_settings', {
+    title: 'Get scene settings',
+    description:
+      "The scene's settings (from scene.json / the editor's Scene metadata): name, description, categories, tags, age rating, spawn points, skybox, terrain, layout (parcels), and voice-chat/portable-experience flags. Read this before set_scene_settings to see the exact current shape and values.",
+    inputSchema: {},
+  });
+
+  registerSceneOpTool(server, 'set_scene_settings', {
+    title: 'Set scene settings',
+    description:
+      'Change the scene settings (scene.json / Scene metadata). Include only the fields you want to change — each is replaced wholesale (call get_scene_settings first to see the current shape, especially for spawnPoints and layout). Applies live in the editor, autosaves, and is undoable. Note: `thumbnail` is a resource the editor manages (leave it); changing `layout.parcels` reshapes the parcels the scene occupies.',
+    inputSchema: {
+      name: z.string().optional().describe('Scene display name'),
+      description: z.string().optional().describe('Scene description'),
+      categories: z
+        .array(
+          z.enum([
+            'art',
+            'game',
+            'casino',
+            'social',
+            'music',
+            'fashion',
+            'crypto',
+            'education',
+            'shop',
+            'business',
+            'sports',
+          ]),
+        )
+        .optional()
+        .describe('Scene category tags'),
+      ageRating: z.enum(['A']).optional().describe('Content age rating ("A" = adult)'),
+      tags: z.array(z.string()).optional(),
+      author: z.string().optional(),
+      email: z.string().optional(),
+      silenceVoiceChat: z.boolean().optional(),
+      disableNearbyVoiceChat: z.boolean().optional(),
+      disablePortableExperiences: z.boolean().optional(),
+      hideLandscapeTerrain: z
+        .boolean()
+        .optional()
+        .describe('Hide the surrounding Genesis City terrain'),
+      skyboxConfig: z
+        .object({
+          fixedTime: z
+            .number()
+            .optional()
+            .describe('Fixed time of day, in seconds since midnight (0–86400)'),
+          transitionMode: z.number().optional().describe('0 = forward, 1 = backward'),
+        })
+        .optional(),
+      layout: z
+        .object({
+          base: z.object({ x: z.number(), y: z.number() }),
+          parcels: z.array(z.object({ x: z.number(), y: z.number() })),
+        })
+        .optional()
+        .describe('The parcels the scene occupies (base + the full parcel list)'),
+      spawnPoints: z
+        .array(
+          z.object({
+            name: z.string(),
+            default: z.boolean().optional().describe('The primary spawn point'),
+            position: z
+              .object({
+                x: z.union([z.number(), z.array(z.number())]),
+                y: z.union([z.number(), z.array(z.number())]),
+                z: z.union([z.number(), z.array(z.number())]),
+              })
+              .describe('Each axis is a fixed number or a [min, max] range'),
+            cameraTarget: z.object({ x: z.number(), y: z.number(), z: z.number() }).optional(),
+          }),
+        )
+        .optional()
+        .describe('Where avatars spawn'),
+    },
   });
 
   server.registerTool(

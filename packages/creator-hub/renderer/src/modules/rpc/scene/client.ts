@@ -52,6 +52,8 @@ export enum Method {
   GET_SCENE_METRICS = 'get_scene_metrics',
   GET_SELECTION = 'get_selection',
   CLEAR_SELECTION = 'clear_selection',
+  GET_SCENE_SETTINGS = 'get_scene_settings',
+  SET_SCENE_SETTINGS = 'set_scene_settings',
 }
 
 type CatalogHit = { id: string; name: string; category: string; tags: string[] };
@@ -107,6 +109,8 @@ export type Params = {
   [Method.GET_SCENE_METRICS]: Record<string, never>;
   [Method.GET_SELECTION]: Record<string, never>;
   [Method.CLEAR_SELECTION]: Record<string, never>;
+  [Method.GET_SCENE_SETTINGS]: Record<string, never>;
+  [Method.SET_SCENE_SETTINGS]: Record<string, unknown>;
 };
 
 export type Result = {
@@ -143,6 +147,8 @@ export type Result = {
   };
   [Method.GET_SELECTION]: { selected: { id: number; name: string }[] };
   [Method.CLEAR_SELECTION]: { ok: true };
+  [Method.GET_SCENE_SETTINGS]: { settings: Record<string, unknown> };
+  [Method.SET_SCENE_SETTINGS]: { settings: Record<string, unknown> };
 };
 
 // @dcl/mini-rpc's request() never settles if no server answers (it just parks a
@@ -300,5 +306,13 @@ export class SceneRpcClient extends RPC<Method, Params, Result> {
 
   clearSelection = () => {
     return this.request('clear_selection', {} as Record<string, never>);
+  };
+
+  getSceneSettings = () => {
+    return this.request('get_scene_settings', {} as Record<string, never>);
+  };
+
+  setSceneSettings = (patch: Record<string, unknown>) => {
+    return this.request('set_scene_settings', patch);
   };
 }

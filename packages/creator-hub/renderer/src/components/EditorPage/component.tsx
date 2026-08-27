@@ -123,6 +123,8 @@ const SCENE_OP_HANDLERS: Record<
   undo: scene => scene.undo(),
   get_scene_metrics: scene => scene.getSceneMetrics(),
   get_selection: scene => scene.getSelection(),
+  get_scene_settings: scene => scene.getSceneSettings(),
+  set_scene_settings: (scene, p) => scene.setSceneSettings(p),
 };
 
 export function EditorPage() {
