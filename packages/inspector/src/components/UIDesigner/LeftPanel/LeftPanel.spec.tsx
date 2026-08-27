@@ -2,14 +2,22 @@ import { afterEach, describe, expect, it, vi, beforeEach } from 'vitest';
 import { act, fireEvent, render, screen } from '@testing-library/react';
 
 import type { UINode } from '../shared/tree-model';
+import type * as AnalyticsModule from '../../../lib/logic/analytics';
+import { Event } from '../../../lib/logic/analytics';
 import { LeftPanel } from './LeftPanel';
 
 const mocks = vi.hoisted(() => ({
   createRoot: vi.fn(),
+  track: vi.fn(),
   roots: [] as { name: string; filename: string; topLevel: boolean }[],
   filename: null as string | null,
   tree: null as UINode | null,
   emptyRoot: false,
+}));
+
+vi.mock('../../../lib/logic/analytics', async importActual => ({
+  ...(await importActual<typeof AnalyticsModule>()),
+  analytics: { track: mocks.track },
 }));
 
 vi.mock('../code/store', () => ({
@@ -60,6 +68,7 @@ function renderRail(term?: string) {
 beforeEach(() => {
   vi.useFakeTimers();
   mocks.createRoot.mockClear();
+  mocks.track.mockClear();
   mocks.roots = [{ name: 'MainUI', filename: 'src/ui/MainUI.tsx', topLevel: true }];
   mocks.filename = 'src/ui/MainUI.tsx';
   mocks.tree = root({ uiName: 'Sidebar', children: [] } as Partial<UINode>);
@@ -182,5 +191,12 @@ describe('when creating a GUI from the section header', () => {
     fireEvent.click(screen.getByLabelText('New GUI'));
 
     expect(mocks.createRoot).toHaveBeenCalled();
+  });
+
+  it('should track the creation', () => {
+    renderRail();
+    fireEvent.click(screen.getByLabelText('New GUI'));
+
+    expect(mocks.track).toHaveBeenCalledWith(Event.CREATE_UI, {});
   });
 });

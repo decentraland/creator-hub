@@ -3,6 +3,7 @@ import { IoListOutline } from 'react-icons/io5';
 import { VscTrash } from 'react-icons/vsc';
 
 import { Container } from '../../../Container';
+import { analytics, Event } from '../../../../lib/logic/analytics';
 import { isValidIdentifier } from '../../../../lib/sdk/operations/validators';
 import { CheckboxField, Dropdown, TextField } from '../../../ui';
 import { EmptyState } from '../../EmptyState';
@@ -113,6 +114,7 @@ const CodeVariablesPanelComponent: React.FC = () => {
   const add = () => {
     if (!canAdd) return;
     void addBindVariable(trimmed, type, def);
+    analytics.track(Event.ADD_UI_LOGIC, { logicType: 'variable' });
     setName('');
     setDef('');
   };

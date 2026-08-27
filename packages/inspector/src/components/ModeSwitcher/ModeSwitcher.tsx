@@ -2,6 +2,7 @@ import React, { useCallback, useMemo } from 'react';
 import cx from 'classnames';
 
 import { useInspectorUIState } from '../../hooks/sdk/useInspectorUIState';
+import { analytics, Event } from '../../lib/logic/analytics';
 import { getConfig } from '../../lib/logic/config';
 import { useAppDispatch, useAppSelector } from '../../redux/hooks';
 import { getHiddenPanels, togglePanel } from '../../redux/ui';
@@ -23,6 +24,7 @@ const ModeSwitcherComponent: React.FC = () => {
   const handleSelect2D = useCallback(() => {
     if (!isUIDesigner) {
       dispatch(togglePanel({ panel: PanelName.UI_DESIGNER, enabled: true }));
+      analytics.track(Event.OPEN_UI_EDITOR, {});
     }
     updateUIState({ uiDesignerOpen: true });
   }, [dispatch, isUIDesigner, updateUIState]);

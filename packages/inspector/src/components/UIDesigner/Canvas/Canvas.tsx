@@ -57,8 +57,6 @@ import { useUINodeActions } from '../shared/useUINodeActions';
 import { useUINodeTree } from '../shared/useUINodeTree';
 import {
   createRoot as createCodeRoot,
-  spliceAddChild,
-  spliceInsertComponent,
   spliceMove,
   spliceSetRootChild,
   spliceUiTransformPosition,
@@ -76,7 +74,6 @@ import {
   DEFAULT_CANVAS_HEIGHT,
   DEFAULT_CANVAS_WIDTH,
   previewBoundText,
-  type UINodeType,
 } from '../shared/tree-model';
 import {
   clearNodeRegistry,
@@ -84,6 +81,7 @@ import {
   registerNodeElement,
   unregisterNodeElement,
 } from '../shared/node-registry';
+import { applyCanvasDrop } from './drop';
 import {
   armGroupClickSuppression,
   clearGroupDrag,
@@ -326,17 +324,9 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node, hidden }) => {
     () => ({
       accept: UI_DESIGNER_DND_TYPE,
       collect: monitor => ({ isOver: monitor.isOver({ shallow: true }) }),
-      drop: async (item, monitor) => {
+      drop: (item, monitor) => {
         if (monitor.didDrop()) return;
-        if (item.source === 'palette') {
-          void spliceAddChild(
-            node.entity as unknown as number,
-            item.type as UINodeType,
-            item.preset,
-          );
-        } else if (item.source === 'component') {
-          void spliceInsertComponent(node.entity as unknown as number, item.name);
-        }
+        applyCanvasDrop(item, node.entity as unknown as number);
       },
     }),
     [node.entity],

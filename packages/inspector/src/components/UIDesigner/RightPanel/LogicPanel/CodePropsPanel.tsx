@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { VscTrash } from 'react-icons/vsc';
 
 import { Container } from '../../../Container';
+import { analytics, Event } from '../../../../lib/logic/analytics';
 import { isValidIdentifier } from '../../../../lib/sdk/operations/validators';
 import { Dropdown, TextField } from '../../../ui';
 import type { BindVariable } from '../../code/bindings';
@@ -27,6 +28,7 @@ const CodePropsPanelComponent: React.FC = () => {
   const add = () => {
     if (!canAdd) return;
     void addBindProp(trimmed, type);
+    analytics.track(Event.ADD_UI_LOGIC, { logicType: 'input' });
     setName('');
   };
 

@@ -20,6 +20,7 @@ import { codeComponentValueForLayer } from '../../code/store';
 import { addPlatformVariant } from '../../code/store';
 import { addInteractionStates } from '../../code/store';
 import { addInteractionLayer } from '../../code/store';
+import { analytics, Event } from '../../../../lib/logic/analytics';
 import { YGD_NONE } from '../../../../lib/sdk/ui-transform-constants';
 import { YGD_FLEX } from '../../../../lib/sdk/ui-transform-constants';
 import { WIDGET_ICONS } from '../../shared/widget-catalog';
@@ -81,6 +82,7 @@ import { fillOwnsProp } from './resize-modes';
 import { CHECKBOX_KINDS } from './field-helpers';
 import { hiddenOnRoot } from './field-helpers';
 import { BindAffordance } from './BindAffordance';
+import { editUiPropertyEvent } from './edit-event';
 import './PropertyPanel.css';
 
 export {
@@ -151,6 +153,10 @@ const StatesBar: React.FC<{
 
   const addLayer = (key: InteractionStateKey) => {
     void addInteractionLayer(id, key);
+    analytics.track(Event.EDIT_UI_PROPERTY, {
+      property: 'interactionState',
+      interactionLayer: key,
+    });
     onPick(key);
   };
 
@@ -192,7 +198,10 @@ const StatesBar: React.FC<{
             className="ui-designer-prop-add"
             aria-label="Add interaction states"
             title={STATES_INFO}
-            onClick={() => void addInteractionStates(id)}
+            onClick={() => {
+              void addInteractionStates(id);
+              analytics.track(Event.EDIT_UI_PROPERTY, { property: 'interactionState' });
+            }}
           >
             <AiOutlinePlus aria-hidden />
           </button>
@@ -291,7 +300,10 @@ const VariantsBar: React.FC<{
             className="ui-designer-prop-add"
             aria-label="Add device variants"
             title={VARIANTS_INFO}
-            onClick={() => void addPlatformVariant(id)}
+            onClick={() => {
+              void addPlatformVariant(id);
+              analytics.track(Event.EDIT_UI_PROPERTY, { property: 'deviceVariant' });
+            }}
           >
             <AiOutlinePlus aria-hidden />
           </button>
@@ -585,8 +597,13 @@ const PropertyPanelComponent: React.FC = () => {
       const id = selected as unknown as number;
       if (hasInteraction && isLayerableComponent(componentId)) {
         void setInteractionField(id, activeLayer, componentId, patch);
+        analytics.track(
+          Event.EDIT_UI_PROPERTY,
+          editUiPropertyEvent(componentId, patch, activeLayer),
+        );
       } else {
         void spliceComponentPatch(id, componentId, patch);
+        analytics.track(Event.EDIT_UI_PROPERTY, editUiPropertyEvent(componentId, patch));
       }
     },
     [selected, hasInteraction, activeLayer],
@@ -732,7 +749,10 @@ const PropertyPanelComponent: React.FC = () => {
               {isGuiRoot && activeRoot?.topLevel && codeState.filename ? (
                 <SceneInsetRow
                   value={activeRoot.screenInset}
-                  onChange={inset => setRootScreenInset(codeState.filename as string, inset)}
+                  onChange={inset => {
+                    setRootScreenInset(codeState.filename as string, inset);
+                    analytics.track(Event.EDIT_UI_PROPERTY, { property: 'screenInset' });
+                  }}
                 />
               ) : null}
               {hiddenOnRoot(POSITION_MODE_FIELD, isGuiRoot, transform) ||

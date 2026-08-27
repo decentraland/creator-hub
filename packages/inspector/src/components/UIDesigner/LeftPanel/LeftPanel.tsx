@@ -4,6 +4,7 @@ import { AiOutlineSearch as SearchIcon } from 'react-icons/ai';
 import { IoAddOutline } from 'react-icons/io5';
 import { VscClose as ClearIcon } from 'react-icons/vsc';
 
+import { analytics, Event } from '../../../lib/logic/analytics';
 import { useAppSelector } from '../../../redux/hooks';
 import { getSelectedNode } from '../../../redux/ui-designer';
 import { Box } from '../../Box';
@@ -100,6 +101,7 @@ const LeftPanel: React.FC = () => {
                     onClick={() => {
                       rippleGui();
                       void createRoot();
+                      analytics.track(Event.CREATE_UI, {});
                     }}
                     aria-label="New GUI"
                     title="New GUI"

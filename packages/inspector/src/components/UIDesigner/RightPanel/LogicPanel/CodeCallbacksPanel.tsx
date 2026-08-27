@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { VscTrash } from 'react-icons/vsc';
 
 import { Container } from '../../../Container';
+import { analytics, Event } from '../../../../lib/logic/analytics';
 import { isValidIdentifier } from '../../../../lib/sdk/operations/validators';
 import { TextField } from '../../../ui';
 import { type CodeAction, isValidTemplate } from '../../code/actions';
@@ -171,6 +172,7 @@ const CodeCallbacksPanelComponent: React.FC = () => {
   const add = () => {
     if (!canAdd) return;
     void addBindAction(trimmed);
+    analytics.track(Event.ADD_UI_LOGIC, { logicType: 'event' });
     setName('');
   };
 
