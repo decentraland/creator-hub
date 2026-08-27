@@ -1,6 +1,8 @@
 import { useCallback } from 'react';
 import { Box, FormControlLabel, MenuItem, Select, Switch, Typography } from 'decentraland-ui2';
 
+import { analytics } from '#preload';
+
 import { RENDERER } from '/shared/types/settings';
 import { t } from '/@/modules/store/translation/utils';
 import type { BaseTabProps } from '../../types';
@@ -18,6 +20,7 @@ const ExperimentalTab = ({ settings, updateSettings }: BaseTabProps) => {
   const handleGuiEditorChange = useCallback(
     (checked: boolean) => {
       updateSettings({ ...settings, guiEditor: checked });
+      void analytics.track('Toggle UI Editor', { enabled: checked });
     },
     [settings, updateSettings],
   );

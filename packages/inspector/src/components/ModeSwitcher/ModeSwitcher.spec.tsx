@@ -2,14 +2,22 @@ import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 
 import { PanelName } from '../../redux/ui/types';
+import type * as AnalyticsModule from '../../lib/logic/analytics';
+import { Event } from '../../lib/logic/analytics';
 import { ModeSwitcher } from './ModeSwitcher';
 
 const mocks = vi.hoisted(() => ({
   dispatch: vi.fn(),
   updateUIState: vi.fn(),
+  track: vi.fn(),
   uiState: null as { uiDesignerOpen?: boolean } | null,
   hiddenPanels: {} as Record<string, boolean>,
   uiEditorEnabled: true,
+}));
+
+vi.mock('../../lib/logic/analytics', async importActual => ({
+  ...(await importActual<typeof AnalyticsModule>()),
+  analytics: { track: mocks.track },
 }));
 
 vi.mock('../../hooks/sdk/useInspectorUIState', () => ({
@@ -29,6 +37,7 @@ vi.mock('../../redux/hooks', () => ({
 beforeEach(() => {
   mocks.dispatch.mockClear();
   mocks.updateUIState.mockClear();
+  mocks.track.mockClear();
   mocks.uiState = { uiDesignerOpen: false };
   mocks.hiddenPanels = { [PanelName.UI_DESIGNER]: true };
   mocks.uiEditorEnabled = true;
@@ -93,6 +102,25 @@ describe('when a mode is picked', () => {
       expect.objectContaining({ payload: { panel: PanelName.UI_DESIGNER, enabled: true } }),
     );
     expect(mocks.updateUIState).toHaveBeenCalledWith({ uiDesignerOpen: true });
+  });
+
+  it('should track opening the UI editor only on a real switch into 2D', () => {
+    render(<ModeSwitcher />);
+
+    fireEvent.click(tabs().twoD);
+
+    expect(mocks.track).toHaveBeenCalledWith(Event.OPEN_UI_EDITOR, {});
+    expect(mocks.track).toHaveBeenCalledTimes(1);
+  });
+
+  it('should not track when already in 2D or when switching to 3D', () => {
+    mocks.hiddenPanels = { [PanelName.UI_DESIGNER]: false };
+    render(<ModeSwitcher />);
+
+    fireEvent.click(tabs().twoD);
+    fireEvent.click(tabs().threeD);
+
+    expect(mocks.track).not.toHaveBeenCalled();
   });
 
   it('should close the designer again', () => {

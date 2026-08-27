@@ -2,6 +2,9 @@ export type Events = {
   'Open Editor': {
     version: string;
   };
+  'Toggle UI Editor': {
+    enabled: boolean;
+  };
   'Install Creator Hub': {
     version: string;
   };
