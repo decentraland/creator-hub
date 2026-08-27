@@ -52,6 +52,7 @@ export type AppSettings = {
   experimental: boolean;
   // Which engine the inspector uses to render the scene in the editor viewport.
   renderer: RENDERER;
+  guiEditor: boolean;
 };
 
 export interface ReleaseNotes {

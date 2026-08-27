@@ -9,6 +9,7 @@ import type { Severity } from '../../store/snackbar/types';
 import { store } from '../../store';
 import { actions as snackbarActions } from '../../store/snackbar';
 import { createGenericNotification } from '../../store/snackbar/utils';
+import { actions as workspaceActions } from '../../store/workspace';
 
 type NotificationRequest = {
   severity: Severity;
@@ -25,6 +26,7 @@ export enum Method {
   PUSH_NOTIFICATION = 'push_notification',
   BROADCAST_MOBILE_DEBUG_COMMAND = 'broadcast_mobile_debug_command',
   GET_FEATURE_FLAGS = 'get_feature_flags',
+  UPDATE_SDK = 'update_sdk',
 }
 
 export type Params = {
@@ -33,6 +35,7 @@ export type Params = {
   [Method.PUSH_NOTIFICATION]: { notification: NotificationRequest };
   [Method.BROADCAST_MOBILE_DEBUG_COMMAND]: { cmd: string; args: Record<string, unknown> };
   [Method.GET_FEATURE_FLAGS]: Record<string, never>;
+  [Method.UPDATE_SDK]: Record<string, never>;
 };
 
 export type Result = {
@@ -44,6 +47,7 @@ export type Result = {
     results: { sessionId: number; ok: boolean; data: unknown }[];
   };
   [Method.GET_FEATURE_FLAGS]: { flags: Record<string, boolean> };
+  [Method.UPDATE_SDK]: { ok: boolean };
 };
 
 export class SceneRpcServer extends RPC<Method, Params, Result> {
@@ -91,6 +95,24 @@ export class SceneRpcServer extends RPC<Method, Params, Result> {
     // (setFeatureFlags) can land before a slow-booting renderer's server exists.
     this.handle('get_feature_flags', async () => {
       return { flags: store.getState().featureFlags.flags };
+    });
+
+    this.handle('update_sdk', async () => {
+      const state = store.getState();
+      if (state.editor.isInstallingProject) {
+        return { ok: false };
+      }
+      const currentProject = state.editor.project ?? project;
+      try {
+        await store.dispatch(workspaceActions.updatePackages(currentProject)).unwrap();
+        await store
+          .dispatch(workspaceActions.fetchSdkCommandsVersion(currentProject.path))
+          .unwrap();
+        return { ok: true };
+      } catch (error) {
+        console.error('[SceneRpc] Failed to update the scene SDK', error);
+        return { ok: false };
+      }
     });
   }
 }
