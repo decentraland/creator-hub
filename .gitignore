@@ -31,5 +31,11 @@ packages/creator-hub/node-bin
 
 settings.local.json
 .serena/
+
+# Local dev artifacts (env files kept locally for restore, Playwright MCP logs)
+*.env*
+!.env.example
+.playwright-mcp/
+
 # Claude agent verification screenshots
 .claude/screenshots/
