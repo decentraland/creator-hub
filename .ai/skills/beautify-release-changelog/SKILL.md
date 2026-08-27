@@ -66,12 +66,18 @@ Use this template. Omit empty sections.
 - **Label** — Sentence in user-facing prose.
 - ...
 
+<!-- Optional, rare — only when a genuine cluster of several UX/quality items reads oddly under Fixes; the default is two sections. -->
+## Improvements
+
+- **Label** — Sentence in user-facing prose.
+- ...
+
 **Full Changelog**: https://github.com/decentraland/creator-hub/compare/X...Y
 ```
 
 Format rules (the shipped house style — reference release **0.44.2**):
 
-- Section titles are **H2** (`## New features`, `## Fixes`).
+- Section titles are **H2** (`## New features`, `## Fixes`, and the rare optional `## Improvements`).
 - Every bullet is `- **Bold label** — sentence.` — bold label, em dash (`—`, not a hyphen), then 1–2 sentences of benefit-focused prose.
 - End with the **`**Full Changelog**:`** line — bold inline text, **not** a heading — if the compare URL was in the input and the user did not ask to remove it.
 
