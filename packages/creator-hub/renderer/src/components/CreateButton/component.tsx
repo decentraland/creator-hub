@@ -2,15 +2,19 @@ import { useCallback, useRef, useState } from 'react';
 import AddIcon from '@mui/icons-material/Add';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import FileDownloadOutlinedIcon from '@mui/icons-material/FileDownloadOutlined';
-import { Button, ButtonGroup, Menu, MenuItem } from 'decentraland-ui2';
+import { MenuItem } from 'decentraland-ui2';
 
 import { useWorkspace } from '/@/hooks/useWorkspace';
 import { t } from '/@/modules/store/translation/utils';
 import { CreateProject } from '../Modals/CreateProject';
 
+import {
+  StyledButtonRow,
+  StyledLabelButton,
+  StyledMenu,
+  StyledToggleButton,
+} from './component.styled';
 import type { CreateProjectValue, NewProjectPayload } from './types';
-
-import './styles.css';
 
 export function CreateButton() {
   const { createProject, getAvailableProject, importProject } = useWorkspace();
@@ -48,33 +52,29 @@ export function CreateButton() {
 
   return (
     <>
-      <ButtonGroup
-        className="CreateButton"
-        ref={anchorRef}
-        variant="contained"
-        disableRipple
-      >
-        <Button
-          className="CreateButtonMain"
+      <StyledButtonRow ref={anchorRef}>
+        <StyledLabelButton
+          variant="contained"
+          disableRipple
           data-testid="create-button"
-          startIcon={<AddIcon />}
+          startIcon={<AddIcon sx={{ fontSize: 18 }} />}
           onClick={handleClickNewScene}
         >
           {t('navbar.create.label')}
-        </Button>
-        <Button
-          className="CreateButtonToggle"
+        </StyledLabelButton>
+        <StyledToggleButton
+          variant="contained"
+          disableRipple
           data-testid="create-button-toggle"
           aria-label={t('navbar.create.label')}
           aria-haspopup="menu"
           aria-expanded={open ? 'true' : undefined}
           onClick={handleOpenMenu}
         >
-          <ArrowDropDownIcon />
-        </Button>
-      </ButtonGroup>
-      <Menu
-        className="CreateButtonMenu"
+          <ArrowDropDownIcon sx={{ fontSize: 18 }} />
+        </StyledToggleButton>
+      </StyledButtonRow>
+      <StyledMenu
         anchorEl={anchorRef.current}
         open={open}
         onClose={handleCloseMenu}
@@ -95,7 +95,7 @@ export function CreateButton() {
           <FileDownloadOutlinedIcon fontSize="small" />
           {t('navbar.create.import_scene')}
         </MenuItem>
-      </Menu>
+      </StyledMenu>
       {newProject && (
         <CreateProject
           open
