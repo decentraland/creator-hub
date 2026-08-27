@@ -4,6 +4,9 @@ import type { CodeUINode } from '../code/types';
 
 export type UINodeType = 'UiEntity' | 'Label' | 'Button' | 'Input' | 'Dropdown';
 
+/** A UiEntity variant selected only by its initial template (not a distinct element type). */
+export type WidgetPreset = 'image' | 'fullscreen';
+
 /** Discriminator for a mixed-content text segment: literal text vs a variable binding. */
 export enum SegmentKind {
   LITERAL = 'literal',

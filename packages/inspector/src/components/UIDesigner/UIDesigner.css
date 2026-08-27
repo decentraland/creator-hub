@@ -152,8 +152,14 @@
 }
 
 .ui-designer-bottom-bar .ui-designer-palette-label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.4em;
   font-size: 11px;
+  line-height: 1.2;
   letter-spacing: 0.02em;
+  text-align: center;
   color: rgba(255, 255, 255, 0.75);
 }
 
