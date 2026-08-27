@@ -48,7 +48,7 @@ const UIDesignerToolbar = withSdk(({ sdk }) => {
   const handlePlay = useCallback(() => {
     dispatch(setSceneRunIntent({ running: true }));
     dispatch(togglePanel({ panel: PanelName.UI_DESIGNER, enabled: false }));
-    void getSceneClient()?.setUiDesignerMode(false);
+    void getSceneClient()?.setUiDesignerMode(false).catch(console.error);
     sceneRun?.setRunning(true);
   }, [dispatch, sceneRun]);
   const handlePause = useCallback(() => {

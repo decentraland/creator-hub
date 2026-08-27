@@ -8,7 +8,7 @@ import { ModeSwitcher } from './ModeSwitcher';
 
 const mocks = vi.hoisted(() => ({
   dispatch: vi.fn(),
-  setUiDesignerMode: vi.fn(),
+  setUiDesignerMode: vi.fn(() => Promise.resolve()),
   track: vi.fn(),
   hiddenPanels: {} as Record<string, boolean>,
   uiEditorEnabled: true,

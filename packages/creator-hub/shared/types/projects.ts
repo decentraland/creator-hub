@@ -22,7 +22,7 @@ export type DependencyState = { [k in PACKAGES]?: Outdated[keyof Outdated] };
 export type ProjectInfo = {
   id: string;
   skipPublishWarning: boolean;
-  uiDesignerOpen: boolean;
+  uiDesignerOpen?: boolean;
 };
 
 export type Project = {

@@ -24,14 +24,14 @@ const ModeSwitcherComponent: React.FC = () => {
       dispatch(togglePanel({ panel: PanelName.UI_DESIGNER, enabled: true }));
       analytics.track(Event.OPEN_UI_EDITOR, {});
     }
-    void getSceneClient()?.setUiDesignerMode(true);
+    void getSceneClient()?.setUiDesignerMode(true).catch(console.error);
   }, [dispatch, isUIDesigner]);
 
   const handleSelect3D = useCallback(() => {
     if (isUIDesigner) {
       dispatch(togglePanel({ panel: PanelName.UI_DESIGNER, enabled: false }));
     }
-    void getSceneClient()?.setUiDesignerMode(false);
+    void getSceneClient()?.setUiDesignerMode(false).catch(console.error);
   }, [dispatch, isUIDesigner]);
 
   if (!uiEditorEnabled) return null;

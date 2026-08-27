@@ -35,7 +35,7 @@ const SdkUpgradeNoticeComponent: React.FC = () => {
 
   const handleMaybeLater = useCallback(() => {
     dispatch(togglePanel({ panel: PanelName.UI_DESIGNER, enabled: false }));
-    void getSceneClient()?.setUiDesignerMode(false);
+    void getSceneClient()?.setUiDesignerMode(false).catch(console.error);
   }, [dispatch]);
 
   return (

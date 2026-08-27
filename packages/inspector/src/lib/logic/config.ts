@@ -56,9 +56,10 @@ function readBoolParam(
   params: URLSearchParams,
   key: string,
   fallback: boolean | undefined,
+  defaultValue: boolean = INSPECTOR_DEV_PARSER,
 ): boolean {
   if (params.has(key)) return params.get(key) === 'true';
-  return fallback ?? INSPECTOR_DEV_PARSER;
+  return fallback ?? defaultValue;
 }
 
 export function getConfig(): InspectorConfig {
@@ -86,6 +87,6 @@ export function getConfig(): InspectorConfig {
     renderer: params.get('renderer') || config?.renderer || null,
     uiEditorEnabled: readBoolParam(params, 'uiEditorEnabled', config?.uiEditorEnabled),
     uiEditorSupported: readBoolParam(params, 'uiEditorSupported', config?.uiEditorSupported),
-    uiDesignerOpen: params.get('uiDesignerOpen') === 'true' || !!config?.uiDesignerOpen,
+    uiDesignerOpen: readBoolParam(params, 'uiDesignerOpen', config?.uiDesignerOpen, false),
   };
 }

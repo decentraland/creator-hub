@@ -119,6 +119,7 @@ export class SceneRpcServer extends RPC<Method, Params, Result> {
     });
 
     this.handle('set_ui_designer_mode', async ({ open }) => {
+      if (typeof open !== 'boolean') return;
       try {
         await store.dispatch(
           workspaceActions.updateProjectInfo({
