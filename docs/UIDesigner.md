@@ -88,6 +88,12 @@ The restore must wait for a **defined** `uiDesignerOpen`, not merely a non-null 
 
 Never add a member to an already-released `inspector::UIState` version in `versioning/registry.ts`: an object schema is a positional `Schemas.Map`, so an extra member overruns buffers written by an older engine ("Outside of the bounds of writen data") even when `Optional`. Append a new version diff to the array instead.
 
+## App shell (mode toggle)
+
+- **`<Renderer />` stays mounted across mode toggles, hidden with CSS, never unmounted.** Babylon's engine/canvas refs don't survive unmount/remount — unmounting kills the GL context. Because it stays live under 2D, its document-level entity hotkeys (Delete / Cmd+D / copy-paste) must be guarded, and the bare camera keys (space/f/+/-) must be *unbound* via `useHotkey({ enabled })` while the designer is open — `useHotkey` preventDefaults before dispatch, so a callback-level guard is not enough (ref #1401).
+- **react-resizable-panels layout quirks (`App.tsx`).** The top `<Panel>` omits `defaultSize` — pinning it wouldn't sum to 100 once the bottom panel asks for its 2D height, and the library rescales any layout that doesn't total 100. The bottom panel's `id` switches between `palette` (2D) and `assets` (3D) because the library keys saved layout by `id` and only re-reads it on (un)register, so a shared id would leak one mode's height into the other.
+- **`isReady` doubles as the e2e readiness gate**, so it must include `modeResolved` — otherwise tests race the mode restore.
+
 ## Scene Inset (screenInset)
 
 Each top-level root is placed in a screen area via react-ecs' `UiScreenInset` (`'device'` | `'interactable'` | `'none'`), chosen with the **Scene Inset** dropdown in the property panel. The control shows only for top-level roots (`isGuiRoot && activeRoot.topLevel`) — that is "only for Parents". Default: `'device'`.
