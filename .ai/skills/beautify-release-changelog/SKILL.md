@@ -1,6 +1,6 @@
 ---
 name: beautify-release-changelog
-description: Transforms raw GitHub release notes (What's Changed with PR links and @mentions) into a verbose, user-friendly, product-ready changelog with sections (New features, Fixes, Improvements). By default fetches each merged PR body and writes short, well-redacted summaries suitable for release notes and product marketing. Can fetch the latest creator-hub pre-release (tag x.y.z) via curl. Use when drafting or editing a release changelog, beautifying release notes, or when the user asks for the latest pre-release changelog.
+description: Transforms raw GitHub release notes (What's Changed with PR links and @mentions) into a user-friendly, product-ready changelog in the house style — two sections (New features, Fixes), bold-label em-dash bullets, non-user-facing PRs dropped and multi-PR feature stacks collapsed. By default fetches each merged PR body and writes short, well-redacted summaries suitable for release notes and product marketing. Can fetch the latest creator-hub pre-release (tag x.y.z) via curl. Use when drafting or editing a release changelog, beautifying release notes, or when the user asks for the latest pre-release changelog.
 ---
 
 # Beautify Release Changelog
@@ -37,13 +37,19 @@ Strip PR URLs and @mentions when rewriting; do not include them in the beautifie
 
 ## Classification rules
 
-Assign each item to one of:
+Assign each **user-facing** item to one of two default sections:
 
 - **New features** — `feat:` prefix, or titles that describe new capabilities (e.g. multi-scene worlds, new component, new actions).
-- **Fixes** — `fix:` prefix, or titles that describe bug fixes or corrections (e.g. "trigger area activates only on your player", "Scale gizmo white center fix", "fix virtual camera component").
-- **Improvements** — UX or quality improvements that are not new features nor bugfixes (e.g. "remove save icon" as UI cleanup). Use an "Improvements" section; if there are very few items, you may merge into Fixes or omit the section.
+- **Fixes** — `fix:` prefix, or titles that describe bug fixes or corrections (e.g. "trigger area activates only on your player", "Scale gizmo white center fix", "fix virtual camera component"). **Also fold user-facing UX/cleanup changes here** (a removed card, a relinked button, an icon removal) — they are not features, and the house style has no standalone "Improvements" section.
 
-Output sections in this order: New features, Fixes, Improvements. Omit any section that has no items.
+Output exactly these two sections, in this order: **New features**, **Fixes**. Omit either if it has no items.
+
+Add an **Improvements** section only when there is a genuine cluster of several UX/quality items that read oddly under Fixes — this is rare; the default is two sections.
+
+Before classifying, apply these filters:
+
+- **Drop non-user-facing items entirely.** CI, build/tooling, internal refactors, dependency bumps, and chores with no perceivable user impact (e.g. "cache node_modules", "skip typecheck build") do **not** belong in product release notes. Omit them — do not invent a "Behind the scenes" section for them.
+- **Collapse a multi-PR feature stack into a single bullet.** A stack whose parts each say "no user-facing change on its own" (parse engine, panels, canvas, wiring, gating) is **one** feature to a reader. Write one bullet describing the shipped capability, not one bullet per PR.
 
 ## Output structure
 
@@ -52,25 +58,26 @@ Use this template. Omit empty sections.
 ```markdown
 ## New features
 
-- [Bullet in user-facing prose]
+- **Label** — Sentence in user-facing prose.
 - ...
 
 ## Fixes
 
-- [Bullet in user-facing prose]
+- **Label** — Sentence in user-facing prose.
 - ...
 
-## Improvements
-
-- [Bullet in user-facing prose]
-- ...
+**Full Changelog**: https://github.com/decentraland/creator-hub/compare/X...Y
 ```
 
-Optionally keep the "Full Changelog" compare URL at the end if it was in the input and the user did not ask to remove it.
+Format rules (the shipped house style — reference release **0.44.2**):
+
+- Section titles are **H2** (`## New features`, `## Fixes`).
+- Every bullet is `- **Bold label** — sentence.` — bold label, em dash (`—`, not a hyphen), then 1–2 sentences of benefit-focused prose.
+- End with the **`**Full Changelog**:`** line — bold inline text, **not** a heading — if the compare URL was in the input and the user did not ask to remove it.
 
 ## Default: verbose, user-friendly, product-ready output
 
-**By default**, produce a verbose, friendly, product-ready changelog. Fetch each merged PR and use its body to write a short, well-redacted summary.
+**By default**, produce a friendly, product-ready changelog in the **house style** (reference release **0.44.2**): two H2 sections (New features, Fixes), `- **Label** — sentence.` bullets, and a bold `**Full Changelog**:` line at the end. Fetch each merged PR and use its body to write a short, well-redacted summary — but apply the classification filters first (drop non-user-facing PRs; collapse a feature's multi-PR stack into one bullet).
 
 **Workflow:**
 
@@ -87,7 +94,7 @@ Optionally keep the "Full Changelog" compare URL at the end if it was in the inp
 
 **Rate limits:** Unauthenticated GitHub API requests are limited (e.g. 60/hour). If the release has many PRs, use an optional `Authorization: Bearer <token>` header (user can set `GITHUB_TOKEN`) to avoid hitting the limit.
 
-**Output:** Keep the same sections (New features, Fixes, Improvements) and classification rules. Use bold labels and short paragraphs (1–3 sentences) per item. You may use a format like "**Feature name** — Summary sentence."
+**Output:** Keep the two-section house style (New features, Fixes) and the classification rules above. Use bold labels and short paragraphs (1–2 sentences) per item, formatted as "**Feature name** — Summary sentence."
 
 **Fallback:** If the user explicitly asks for a **short** or **concise** changelog, or if PR fetch fails (e.g. rate limit, network), use title-only rewriting as in "Short format (fallback)" below.
 
