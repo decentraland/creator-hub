@@ -5,7 +5,7 @@ import type { Entity } from '@dcl/ecs';
 import { usePopoverPosition } from '../../../ui/usePopoverPosition';
 import Search from '../../../Search';
 import { spliceAddChild } from '../../code/store';
-import { type UINodeType } from '../../shared/tree-model';
+import { type UINodeType, type WidgetPreset } from '../../shared/tree-model';
 import { WIDGET_CATALOG } from '../../shared/widget-catalog';
 
 import './WidgetPicker.css';
@@ -14,7 +14,7 @@ const WIDTH = 240;
 
 interface WidgetPickerProps {
   parent?: Entity;
-  onAdd?: (type: UINodeType, preset?: 'image') => void;
+  onAdd?: (type: UINodeType, preset?: WidgetPreset) => void;
   anchorRef: React.RefObject<HTMLElement>;
   onDismiss: () => void;
 }
