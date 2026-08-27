@@ -423,6 +423,15 @@ let gizmoCamera: Entity | null = null;
 let lastCanvasW = 0;
 let lastCanvasH = 0;
 let lastCanvasDpr = 0;
+// Frames of a stable canvas size before we recreate the gizmo camera after a resize
+// (see the resync in gizmoSystemInner). Mutating a TextureCamera's width/height in place
+// keeps the target crisp but doesn't reliably re-derive the perspective aspect, so the
+// full-screen `stretch` composite ends up misaligned ("gizmo stuck to the camera") and
+// stays broken until reload (#1529). Rebuilding the camera once the resize settles forces
+// a fresh projection at the new aspect. Small enough to feel instant, big enough to not
+// thrash create/destroy every frame during a drag-resize.
+const RESIZE_SETTLE_FRAMES = 12;
+let resizeSettle = 0;
 
 // Size the gizmo render target in DEVICE pixels. UiCanvasInformation width/height
 // are VIRTUAL (logical) px; on a retina display the real framebuffer is dpr×
@@ -660,7 +669,15 @@ function setupGizmoCamera(): void {
     lastCanvasDpr = canvas.devicePixelRatio;
   }
   const cam = engine.addEntity();
-  Transform.create(cam);
+  // Seed the pose from the main camera up front so the very first rendered frame is aligned
+  // — the per-frame mirror in gizmoSystemInner only runs NEXT tick, so a bare identity
+  // Transform would flash the gizmo at the origin for one frame (a visible "snap" after a
+  // resize recreate). #1529.
+  const camT = Transform.getOrNull(engine.CameraEntity);
+  Transform.create(
+    cam,
+    camT !== null ? { position: { ...camT.position }, rotation: { ...camT.rotation } } : {},
+  );
   TextureCamera.create(cam, {
     width: size.width,
     height: size.height,
@@ -678,10 +695,26 @@ function setupGizmoCamera(): void {
   gizmoCamera = cam;
 }
 
+// Rebuild the gizmo camera from scratch so its perspective projection is re-derived at the
+// current viewport aspect. Used after a resize settles (#1529): recreating is the reliable
+// way to refresh the aspect — mutating width/height in place leaves the composite skewed.
+// setupGizmoCamera re-reads the live canvas and re-sets lastCanvas*, so this leaves the
+// resync in a settled state (no recreate loop).
+function recreateGizmoCamera(): void {
+  if (gizmoCamera !== null) {
+    engine.removeEntity(gizmoCamera);
+    gizmoCamera = null;
+  }
+  setupGizmoCamera();
+}
+
 function gizmoOverlay(): ReactEcs.JSX.Element | null {
   // Show the composite while a gizmo is up — an entity selection OR a spawn point
   // (driven via the SPAWN_SENTINEL, so `selected`/`selectedPos` are set for it too).
-  const gizmoUp = selected !== null && selectedPos !== null;
+  // Hidden while a resize is in flight (resizeSettle > 0): the in-place-resized target is
+  // skewed until the camera recreates, so hiding it avoids showing a wrong-aspect gizmo and
+  // the "snap" back into place — it reappears already-correct once the size settles (#1529).
+  const gizmoUp = selected !== null && selectedPos !== null && resizeSettle === 0;
   if (gizmoCamera === null || !gizmoUp) return null;
   return (
     <UiEntity
@@ -1196,21 +1229,24 @@ function gizmoSystemInner(): void {
     // framebuffer is dpr× bigger, so logical sizing renders at half-res and the
     // composite upscales it, soft + aliased). See gizmoTextureSize.
     const canvas = tc !== null ? UiCanvasInformation.getOrNull(engine.RootEntity) : null;
-    if (
-      tc !== null &&
-      canvas !== null &&
-      canvas.width > 0 &&
-      canvas.height > 0 &&
-      (canvas.width !== lastCanvasW ||
+    if (tc !== null && canvas !== null && canvas.width > 0 && canvas.height > 0) {
+      if (
+        canvas.width !== lastCanvasW ||
         canvas.height !== lastCanvasH ||
-        canvas.devicePixelRatio !== lastCanvasDpr)
-    ) {
-      lastCanvasW = canvas.width;
-      lastCanvasH = canvas.height;
-      lastCanvasDpr = canvas.devicePixelRatio;
-      const size = gizmoTextureSize(canvas.width, canvas.height, canvas.devicePixelRatio || 1);
-      tc.width = size.width;
-      tc.height = size.height;
+        canvas.devicePixelRatio !== lastCanvasDpr
+      ) {
+        lastCanvasW = canvas.width;
+        lastCanvasH = canvas.height;
+        lastCanvasDpr = canvas.devicePixelRatio;
+        const size = gizmoTextureSize(canvas.width, canvas.height, canvas.devicePixelRatio || 1);
+        tc.width = size.width;
+        tc.height = size.height;
+        // Keep it crisp live; recreate the camera once the size stops changing so the
+        // perspective aspect is re-derived (in-place width/height doesn't — #1529).
+        resizeSettle = RESIZE_SETTLE_FRAMES;
+      } else if (resizeSettle > 0 && --resizeSettle === 0) {
+        recreateGizmoCamera();
+      }
     }
   }
 
