@@ -499,9 +499,9 @@ export function EditorPage() {
   }
   if (project) {
     params.append('projectId', project.id);
+    params.append('uiDesignerOpen', String(project.info.uiDesignerOpen ?? false));
   }
 
-  // iframe src
   const iframeUrl = `${htmlUrl}?${params}`;
 
   const renderLoading = () => {

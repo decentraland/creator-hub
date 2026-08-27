@@ -27,6 +27,7 @@ export enum Method {
   BROADCAST_MOBILE_DEBUG_COMMAND = 'broadcast_mobile_debug_command',
   GET_FEATURE_FLAGS = 'get_feature_flags',
   UPDATE_SDK = 'update_sdk',
+  SET_UI_DESIGNER_MODE = 'set_ui_designer_mode',
 }
 
 export type Params = {
@@ -36,6 +37,7 @@ export type Params = {
   [Method.BROADCAST_MOBILE_DEBUG_COMMAND]: { cmd: string; args: Record<string, unknown> };
   [Method.GET_FEATURE_FLAGS]: Record<string, never>;
   [Method.UPDATE_SDK]: Record<string, never>;
+  [Method.SET_UI_DESIGNER_MODE]: { open: boolean };
 };
 
 export type Result = {
@@ -48,6 +50,7 @@ export type Result = {
   };
   [Method.GET_FEATURE_FLAGS]: { flags: Record<string, boolean> };
   [Method.UPDATE_SDK]: { ok: boolean };
+  [Method.SET_UI_DESIGNER_MODE]: void;
 };
 
 export class SceneRpcServer extends RPC<Method, Params, Result> {
@@ -112,6 +115,19 @@ export class SceneRpcServer extends RPC<Method, Params, Result> {
       } catch (error) {
         console.error('[SceneRpc] Failed to update the scene SDK', error);
         return { ok: false };
+      }
+    });
+
+    this.handle('set_ui_designer_mode', async ({ open }) => {
+      try {
+        await store.dispatch(
+          workspaceActions.updateProjectInfo({
+            path: project.path,
+            info: { uiDesignerOpen: open },
+          }),
+        );
+      } catch (error) {
+        console.error('[SceneRpc] Failed to persist the UI designer mode', error);
       }
     });
   }

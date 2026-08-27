@@ -38,6 +38,8 @@ export type InspectorConfig = {
   uiEditorEnabled: boolean;
   /** Whether the scene's `@dcl/sdk` supports the UI Editor (gates the upgrade notice). */
   uiEditorSupported: boolean;
+  /** The scene's persisted 2D/3D mode, seeded by the host from `.editor/project.json`. */
+  uiDesignerOpen: boolean;
 };
 
 export type GlobalWithConfig = typeof globalThis & {
@@ -84,5 +86,6 @@ export function getConfig(): InspectorConfig {
     renderer: params.get('renderer') || config?.renderer || null,
     uiEditorEnabled: readBoolParam(params, 'uiEditorEnabled', config?.uiEditorEnabled),
     uiEditorSupported: readBoolParam(params, 'uiEditorSupported', config?.uiEditorSupported),
+    uiDesignerOpen: params.get('uiDesignerOpen') === 'true' || !!config?.uiDesignerOpen,
   };
 }
