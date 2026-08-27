@@ -15,6 +15,7 @@ import * as metrics from './metrics';
 import * as ai from './ai';
 import * as aiWindow from './ai-window';
 import {
+  captureViewport,
   ensureSceneMcpServer,
   resolveEditorScreenshot,
   resolveSceneOp,
@@ -137,6 +138,7 @@ export function initIpc({ beforeQuitCleanup }: InitIpcOptions) {
   );
   handle('ai.isBusy', async () => ai.aiBusy());
   handle('ai.screenshotResult', (_event, id, dataUrl) => resolveEditorScreenshot(id, dataUrl));
+  handle('ai.captureViewport', (_event, rect) => captureViewport(rect));
   handle('ai.sceneOpResult', (_event, id, ok, payload) => resolveSceneOp(id, ok, payload));
   handle('ai.revertTurn', (_event, count) => revertTurn(count));
   // Reveal the CH MCP server's URL + token so an external agent can register it (gated in

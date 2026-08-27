@@ -1,7 +1,7 @@
 import { type Project } from '/shared/types/projects';
 import { hasCustomCode } from '/shared/scene-parser';
 
-import { fs, custom, workspace } from '#preload';
+import { fs, custom, workspace, ai } from '#preload';
 
 import { SceneRpcClient } from './scene/client';
 import { SceneRpcServer } from './scene/server';
@@ -85,9 +85,12 @@ export async function takeScreenshot(iframe: HTMLIFrameElement, sceneRPC?: Scene
   // leaving the next line just for reference:
   // await Promise.all([camera.setPosition(x, y, z), camera.setTarget(x, y, z)]);
   if (sceneRPC) {
-    // SceneRpcClient.request is timeout-bounded, so this rejects rather than hanging
-    // when no renderer answers (e.g. under Bevy). Callers treat that as "no thumbnail".
-    return sceneRPC.takeScreenshot(+iframe.width, +iframe.height);
+    // SceneRpcClient.request is timeout-bounded, so this rejects rather than hanging when no
+    // renderer answers. Under Bevy the scene-RPC capture yields nothing (wgpu canvas), so
+    // fall back to a compositor capture of the viewport (#1526) — used for AI screenshots
+    // AND scene thumbnails, so Bevy scenes get a thumbnail too.
+    const shot = await sceneRPC.takeScreenshot(+iframe.width, +iframe.height).catch(() => null);
+    return shot ?? (await captureViewportFallback(iframe, sceneRPC)) ?? undefined;
   }
 
   // Owned here, so it has to be closed here: every thumbnail regenerated without a caller
@@ -95,9 +98,36 @@ export async function takeScreenshot(iframe: HTMLIFrameElement, sceneRPC?: Scene
   const transport = new AuthenticatedMessageTransport(iframe);
   const client = new SceneRpcClient(transport);
   try {
-    return await client.takeScreenshot(+iframe.width, +iframe.height);
+    const shot = await client.takeScreenshot(+iframe.width, +iframe.height).catch(() => null);
+    return shot ?? (await captureViewportFallback(iframe, client)) ?? undefined;
   } finally {
     client.dispose();
     transport.dispose();
+  }
+}
+
+// Bevy screenshot/thumbnail fallback (#1526): the wgpu canvas can't be read via
+// canvas.toDataURL and the engine's `/screenshot` command may be unavailable, so the
+// scene-RPC capture returns nothing. Capture the viewport region off Electron's compositor
+// instead — the inspector reports where the viewport sits inside its (cross-origin) iframe,
+// we offset by the iframe's position in this window, and main runs webContents.capturePage
+// on that rect (it sees the wgpu canvas, unlike a DOM readback). Returns null if the
+// viewport rect is unavailable or the capture fails; callers treat that as "no image".
+export async function captureViewportFallback(
+  iframe: HTMLIFrameElement,
+  sceneRPC: SceneRpcClient,
+): Promise<string | null> {
+  try {
+    const { rect } = await sceneRPC.getViewportRect();
+    if (rect === null) return null;
+    const host = iframe.getBoundingClientRect();
+    return await ai.captureViewport({
+      x: host.x + rect.x,
+      y: host.y + rect.y,
+      width: rect.width,
+      height: rect.height,
+    });
+  } catch {
+    return null;
   }
 }

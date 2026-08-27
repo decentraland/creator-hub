@@ -144,6 +144,15 @@ export interface Ipc {
   // Renderer's answer to an AI_SCREENSHOT_REQUEST: the captured image as a data URL, or
   // null if the capture failed (e.g. the Bevy renderer, which has no screenshot RPC).
   'ai.screenshotResult': (id: string, dataUrl: string | null) => void;
+  // Compositor capture of a window region as a PNG data URL, used as the editor-screenshot
+  // fallback for renderers whose canvas can't be read via toDataURL (Bevy's wgpu). Rect is
+  // in the renderer window's CSS px; returns null if the window is gone or the capture fails.
+  'ai.captureViewport': (rect: {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  }) => Promise<string | null>;
   // Renderer's answer to an AI_SCENE_OP_REQUEST: ok + the op's result value, or the error
   // message when the mutation failed (or no scene is loaded).
   'ai.sceneOpResult': (id: string, ok: boolean, payload: unknown) => void;

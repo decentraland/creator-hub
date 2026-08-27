@@ -54,6 +54,15 @@ export enum Method {
   CLEAR_SELECTION = 'clear_selection',
   GET_SCENE_SETTINGS = 'get_scene_settings',
   SET_SCENE_SETTINGS = 'set_scene_settings',
+  GET_VIEWPORT_RECT = 'get_viewport_rect',
+}
+
+export interface ViewportRect {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  devicePixelRatio: number;
 }
 
 type CatalogHit = { id: string; name: string; category: string; tags: string[] };
@@ -111,6 +120,7 @@ export type Params = {
   [Method.CLEAR_SELECTION]: Record<string, never>;
   [Method.GET_SCENE_SETTINGS]: Record<string, never>;
   [Method.SET_SCENE_SETTINGS]: Record<string, unknown>;
+  [Method.GET_VIEWPORT_RECT]: Record<string, never>;
 };
 
 export type Result = {
@@ -149,6 +159,7 @@ export type Result = {
   [Method.CLEAR_SELECTION]: { ok: true };
   [Method.GET_SCENE_SETTINGS]: { settings: Record<string, unknown> };
   [Method.SET_SCENE_SETTINGS]: { settings: Record<string, unknown> };
+  [Method.GET_VIEWPORT_RECT]: { rect: ViewportRect | null };
 };
 
 // @dcl/mini-rpc's request() never settles if no server answers (it just parks a
@@ -314,5 +325,9 @@ export class SceneRpcClient extends RPC<Method, Params, Result> {
 
   setSceneSettings = (patch: Record<string, unknown>) => {
     return this.request('set_scene_settings', patch);
+  };
+
+  getViewportRect = () => {
+    return this.request('get_viewport_rect', {} as Record<string, never>);
   };
 }

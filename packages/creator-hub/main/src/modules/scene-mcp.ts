@@ -77,6 +77,35 @@ function requestEditorScreenshot(width: number, height: number): Promise<string 
   });
 }
 
+// Compositor capture of a window region → PNG data URL. Used as the editor-screenshot
+// fallback for the Bevy renderer, whose wgpu canvas can't be read via canvas.toDataURL and
+// whose engine `/screenshot` command may be unavailable (#1526). capturePage snapshots the
+// composited frame, so it sees the wgpu canvas (and cross-origin iframes) unlike a DOM
+// readback. The renderer supplies the viewport rect in the window's CSS px.
+export async function captureViewport(rect: {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}): Promise<string | null> {
+  const win = getWindow(MAIN_WINDOW_ID);
+  if (win === undefined || win.isDestroyed()) return null;
+  const r = {
+    x: Math.max(0, Math.round(rect.x)),
+    y: Math.max(0, Math.round(rect.y)),
+    width: Math.max(1, Math.round(rect.width)),
+    height: Math.max(1, Math.round(rect.height)),
+  };
+  try {
+    const img = await win.webContents.capturePage(r);
+    const size = img.getSize();
+    if (size.width === 0 || size.height === 0) return null;
+    return img.toDataURL();
+  } catch {
+    return null; // capture unavailable (window hidden/occluded, etc.) — the tool reports it
+  }
+}
+
 // Called from the `ai.screenshotResult` IPC handler when the renderer answers.
 export function resolveEditorScreenshot(id: string, dataUrl: string | null): void {
   const pending = pendingScreenshots.get(id);

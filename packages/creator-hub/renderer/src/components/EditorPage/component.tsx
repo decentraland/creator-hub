@@ -16,7 +16,8 @@ import { RENDERER } from '/shared/types/settings';
 import { isWorkspaceError } from '/shared/types/workspace';
 
 import { t } from '/@/modules/store/translation/utils';
-import { initRpc } from '/@/modules/rpc';
+import { captureViewportFallback, initRpc } from '/@/modules/rpc';
+import { resizeImage } from '/@/modules/image';
 import { actions as aiActions } from '/@/modules/store/ai';
 import { config } from '/@/config';
 import { useEditor } from '/@/hooks/useEditor';
@@ -246,18 +247,26 @@ export function EditorPage() {
     }
   }, [featureFlags]);
 
-  // Answer the AI assistant's `editor_screenshot` tool: main asks the renderer to
-  // capture the inspector iframe (only the renderer can reach it). Returns null under
-  // the Bevy renderer, which has no screenshot RPC — the tool reports that to the agent.
+  // Answer the AI assistant's `editor_screenshot` tool: main asks the renderer to capture
+  // the viewport (only the renderer can reach the inspector iframe). Babylon renders its own
+  // canvas via the scene RPC. That path returns null under Bevy (its wgpu canvas can't be
+  // read via toDataURL, and the engine's /screenshot command may be unavailable), so fall
+  // back to a compositor capture of just the viewport region: ask the inspector where the
+  // viewport is inside its (cross-origin) iframe, offset by the iframe's position in this
+  // window, and capturePage that rect in main — then downscale to the requested size (#1526).
   useEffect(() => {
     if (!aiChatEnabled) return;
     const { cleanup } = ai.onScreenshotRequest(async req => {
+      const rpc = iframeRef.current;
       let dataUrl: string | null = null;
       try {
-        const rpc = iframeRef.current;
         if (rpc) dataUrl = await rpc.scene.takeScreenshot(req.width, req.height);
       } catch {
         dataUrl = null;
+      }
+      if (dataUrl === null && rpc) {
+        const raw = await captureViewportFallback(rpc.iframe, rpc.scene);
+        dataUrl = raw !== null ? await resizeImage(raw, req.width, req.height) : null;
       }
       ai.screenshotResult(req.id, dataUrl);
     });

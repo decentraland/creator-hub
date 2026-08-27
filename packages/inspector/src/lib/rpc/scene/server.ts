@@ -17,6 +17,7 @@ import { setFeatureFlags } from '../../../redux/feature-flags';
 import { type EnumEntity } from '../../sdk/enum-entity';
 import { EditorComponentNames, type EditorComponents } from '../../sdk/components';
 import { resolveActiveSceneComponent } from '../../sdk/components/scene-metadata-version';
+import { getViewportRect, type ViewportRect } from '../../logic/viewport-rect';
 import { fetchLatestCatalog, getAssetById } from '../../logic/catalog';
 import { getDataLayerInterface, refreshUndoRedoState } from '../../../redux/data-layer';
 import { getConfig } from '../../logic/config';
@@ -57,6 +58,7 @@ enum Method {
   CLEAR_SELECTION = 'clear_selection',
   GET_SCENE_SETTINGS = 'get_scene_settings',
   SET_SCENE_SETTINGS = 'set_scene_settings',
+  GET_VIEWPORT_RECT = 'get_viewport_rect',
 }
 
 // A row in the Smart Items catalog, as returned by search_catalog.
@@ -108,6 +110,7 @@ type Params = {
   [Method.GET_SCENE_SETTINGS]: Record<string, never>;
   // The patch: the SceneMetadata fields to change (each replaces that field wholesale).
   [Method.SET_SCENE_SETTINGS]: Record<string, unknown>;
+  [Method.GET_VIEWPORT_RECT]: Record<string, never>;
 };
 
 type Result = {
@@ -146,6 +149,7 @@ type Result = {
   [Method.CLEAR_SELECTION]: { ok: true };
   [Method.GET_SCENE_SETTINGS]: { settings: Record<string, unknown> };
   [Method.SET_SCENE_SETTINGS]: { settings: Record<string, unknown> };
+  [Method.GET_VIEWPORT_RECT]: { rect: ViewportRect | null };
 };
 
 // Validate an AI-supplied entity id before branding it as an Entity. The id comes from the
@@ -307,6 +311,11 @@ export class SceneServer extends RPC<Method, Params, Result> {
       store.dispatch(setMobileDebugSessionEnabled({ enabled }));
       mobileDebugStore.updateSessions(sessions);
     });
+
+    // The 3D viewport's screen rect (inspector-window coords), so the host can crop a
+    // compositor screenshot to just the viewport — the Bevy screenshot fallback (#1526).
+    // DOM-only, so it's available for both renderers regardless of the operations layer.
+    this.handle('get_viewport_rect', async () => ({ rect: getViewportRect() }));
 
     // Scene-graph mutations (AI assistant). Only wired when the operations layer + engine
     // are provided (i.e. embedded in a host). Each mutation runs the inspector's real

@@ -83,6 +83,16 @@ export function screenshotResult(id: string, dataUrl: string | null): void {
   void invoke('ai.screenshotResult', id, dataUrl);
 }
 
+// Compositor capture of a window region (the Bevy editor-screenshot fallback, #1526).
+export async function captureViewport(rect: {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}): Promise<string | null> {
+  return invoke('ai.captureViewport', rect);
+}
+
 // Scene-graph mutation ops (Phase 2): main asks the renderer to run an inspector SceneRpc
 // mutation; the renderer answers with `sceneOpResult`. Only the renderer can reach the iframe.
 export function onSceneOpRequest(cb: (req: AiSceneOpRequest) => void): { cleanup: () => void } {
