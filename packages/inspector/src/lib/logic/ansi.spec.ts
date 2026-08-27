@@ -66,26 +66,25 @@ describe('parseAnsi', () => {
       ]);
     });
 
-    it('should resolve 256-colour sequences', () => {
-      expect(parseAnsi(`${ESC}[38;5;196mx`)).toEqual([{ text: 'x', color: '#ff0000' }]);
+    it.each([
+      ['2', 'opacity', 0.6],
+      ['9', 'textDecoration', 'line-through'],
+    ])('should map code %s to the CSS property %s', (code, property, value) => {
+      expect(parseAnsi(`${ESC}[${code}mx`)).toEqual([{ text: 'x', [property]: value }]);
     });
 
-    it('should resolve truecolor sequences', () => {
-      expect(parseAnsi(`${ESC}[38;2;18;52;86mx`)).toEqual([{ text: 'x', color: '#123456' }]);
-    });
-
-    it('should drop a truncated extended-colour sequence rather than emit an invalid colour', () => {
-      const segments = parseAnsi(`${ESC}[38;2;18mx`);
-
-      expect(segments).toEqual([{ text: 'x' }]);
-      expect(segments[0]).not.toHaveProperty('color');
-    });
-
-    it('should leave a colour already in effect alone when a later sequence is truncated', () => {
-      expect(parseAnsi(`${RED}a${ESC}[38;2;18mb`)).toEqual([
-        { text: 'a', color: '#cd3131' },
-        { text: 'b', color: '#cd3131' },
+    // One CSS property carries two independent codes, so neither may clobber the other.
+    it('should combine underline and strikethrough', () => {
+      expect(parseAnsi(`${ESC}[4;9mx`)).toEqual([
+        { text: 'x', textDecoration: 'underline line-through' },
       ]);
+      expect(parseAnsi(`${ESC}[9;4mx`)).toEqual([
+        { text: 'x', textDecoration: 'underline line-through' },
+      ]);
+    });
+
+    it('should let 22 turn off dim as well as bold', () => {
+      expect(parseAnsi(`${ESC}[1;2mon${ESC}[22moff`)[1]).toEqual({ text: 'off' });
     });
   });
 

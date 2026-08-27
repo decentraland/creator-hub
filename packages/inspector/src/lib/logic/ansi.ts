@@ -18,7 +18,7 @@ import type { CSSProperties } from 'react';
  */
 export type AnsiStyle = Pick<
   CSSProperties,
-  'color' | 'backgroundColor' | 'fontWeight' | 'fontStyle' | 'textDecoration'
+  'color' | 'backgroundColor' | 'fontWeight' | 'fontStyle' | 'textDecoration' | 'opacity'
 >;
 
 export type AnsiSegment = { text: string } & AnsiStyle;
@@ -48,78 +48,33 @@ const BASE_COLORS = [
 // eslint-disable-next-line no-control-regex
 const SGR = /(?:\u001b\[|\u009b)([0-9;]*)m/g;
 
-/** Resolves a 256-colour index to a hex string, per the xterm cube + greyscale ramp. */
-function color256(index: number): string | undefined {
-  if (!Number.isFinite(index) || index < 0) return undefined;
-  if (index < 16) return BASE_COLORS[index];
-  if (index < 232) {
-    const level = (n: number) => (n === 0 ? 0 : 55 + n * 40);
-    const offset = index - 16;
-    return rgb(
-      level(Math.floor(offset / 36) % 6),
-      level(Math.floor(offset / 6) % 6),
-      level(offset % 6),
-    );
-  }
-  if (index < 256) {
-    const grey = 8 + (index - 232) * 10;
-    return rgb(grey, grey, grey);
-  }
-  return undefined;
-}
+// `textDecoration` is one property but underline (4) and strikethrough (9) are independent
+// codes, so each has to preserve the other rather than overwrite it.
+const underlined = (style: Style) => String(style.textDecoration ?? '').includes('underline');
+const struck = (style: Style) => String(style.textDecoration ?? '').includes('line-through');
 
-function rgb(r: number, g: number, b: number) {
-  // A truncated sequence (`38;2;12` with no green/blue) yields NaN; drop the colour
-  // rather than emitting `#NaNNaNNaN`.
-  if (!Number.isFinite(r) || !Number.isFinite(g) || !Number.isFinite(b)) return undefined;
-  const hex = (n: number) => Math.max(0, Math.min(255, n)).toString(16).padStart(2, '0');
-  return `#${hex(r)}${hex(g)}${hex(b)}`;
-}
-
-/**
- * Sets a colour only when one could be resolved, so a truncated sequence leaves the colour
- * in effect rather than adding a key with no value.
- */
-function assign(style: Style, key: 'color' | 'backgroundColor', value: string | undefined) {
-  if (value !== undefined) style[key] = value;
-}
-
-/**
- * Applies one SGR parameter list to `style`, mutating it.
- *
- * Returns nothing: extended forms (`38;5;n`, `38;2;r;g;b`) consume following parameters,
- * so the loop index is owned here rather than by the caller.
- */
+/** Applies one SGR parameter list to `style`, mutating it. */
 function applyCodes(codes: number[], style: Style) {
-  for (let i = 0; i < codes.length; i++) {
-    const code = codes[i];
-
-    // Extended colour: `38`/`48` then a selector, then its arguments.
-    if (code === 38 || code === 48) {
-      const key = code === 38 ? 'color' : 'backgroundColor';
-      const selector = codes[i + 1];
-      if (selector === 5) {
-        assign(style, key, color256(codes[i + 2]));
-        i += 2;
-      } else if (selector === 2) {
-        assign(style, key, rgb(codes[i + 2], codes[i + 3], codes[i + 4]));
-        i += 4;
-      }
-      continue;
-    }
-
+  for (const code of codes) {
     if (code === 0) {
       delete style.color;
       delete style.backgroundColor;
       delete style.fontWeight;
       delete style.fontStyle;
       delete style.textDecoration;
+      delete style.opacity;
     } else if (code === 1) style.fontWeight = 'bold';
+    else if (code === 2) style.opacity = 0.6;
     else if (code === 3) style.fontStyle = 'italic';
-    else if (code === 4) style.textDecoration = 'underline';
-    else if (code === 22) delete style.fontWeight;
-    else if (code === 23) delete style.fontStyle;
-    else if (code === 24) delete style.textDecoration;
+    else if (code === 4)
+      style.textDecoration = struck(style) ? 'underline line-through' : 'underline';
+    else if (code === 9)
+      style.textDecoration = underlined(style) ? 'underline line-through' : 'line-through';
+    else if (code === 22) {
+      delete style.fontWeight;
+      delete style.opacity;
+    } else if (code === 23) delete style.fontStyle;
+    else if (code === 24 || code === 29) delete style.textDecoration;
     else if (code >= 30 && code <= 37) style.color = BASE_COLORS[code - 30];
     else if (code === 39) delete style.color;
     else if (code >= 40 && code <= 47) style.backgroundColor = BASE_COLORS[code - 40];
