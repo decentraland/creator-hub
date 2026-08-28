@@ -150,6 +150,7 @@ export function EditorPage() {
     getMobileQR,
     supportsMultiInstance,
     supportsMcp,
+    supportsUiDesigner,
     isPreviewRunning,
     startBevyRealm,
     killBevyRealm,
@@ -599,6 +600,9 @@ export function EditorPage() {
   // Bevy inside the inspector mounts the engine with no realm and boots the wrong
   // (default) world.
   params.append('renderer', useBevy ? RENDERER.BEVY : RENDERER.BABYLON);
+
+  params.append('uiEditorEnabled', String(settings.guiEditor));
+  params.append('uiEditorSupported', String(supportsUiDesigner));
 
   // The parent-window scene-RPC control channel (host↔inspector feature flags,
   // notifications, file/dir open) is wired whenever this is set — for BOTH

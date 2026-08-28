@@ -395,6 +395,9 @@
         "editor": {
           "label": "編輯器"
         },
+        "experimental": {
+          "label": "實驗性功能"
+        },
         "about": {
           "label": "關於"
         }
@@ -458,6 +461,10 @@
         "ai_api_key": {
           "label": "为 AI 助手使用我的 API 密钥",
           "help": "使用你环境中的 API 密钥（ANTHROPIC_API_KEY / OPENAI_API_KEY）为助手计费，而不是使用已登录的 CLI 订阅。Creator Hub 从不存储该密钥。默认关闭。"
+        },
+        "gui_editor": {
+          "toggle": "UI 编辑器",
+          "hint": "启用此功能后，你可以在编辑器中组合 GUI 对象、属性和脚本来构建 UI。"
         }
       },
       "actions": {

@@ -395,6 +395,9 @@
         "editor": {
           "label": "EDITOR"
         },
+        "experimental": {
+          "label": "EXPERIMENTAL"
+        },
         "about": {
           "label": "ABOUT"
         }
@@ -458,6 +461,10 @@
         "ai_api_key": {
           "label": "Use my API key for the AI assistant",
           "help": "Bill the assistant against the API key in your environment (ANTHROPIC_API_KEY / OPENAI_API_KEY) instead of your signed-in CLI subscription. Creator Hub never stores the key. Off by default."
+        },
+        "gui_editor": {
+          "toggle": "UI Editor",
+          "hint": "Enabling this feature will allow you to combine GUI objects, properties and scripting to build UI in the editor."
         }
       },
       "actions": {

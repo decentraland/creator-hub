@@ -11,6 +11,7 @@ import * as analytics from './analytics';
 import * as npm from './npm';
 import * as config from './config';
 import * as mobileDebug from './mobile-debug-server';
+import * as oxc from './oxc';
 import * as metrics from './metrics';
 import * as ai from './ai';
 import * as aiCli from './ai-cli';
@@ -122,6 +123,8 @@ export function initIpc({ beforeQuitCleanup }: InitIpcOptions) {
   handle('npm.install', (_event, path, packages) => npm.install(path, packages));
   handle('npm.getOutdatedDeps', (_event, path, packages) => npm.getOutdatedDeps(path, packages));
   handle('npm.getContextFiles', (_event, path) => npm.getContextFiles(path));
+
+  handle('oxc.parse', (_event, filename, source) => oxc.parse(filename, source));
 
   // ai assistant — `ai.send` streams AiEvents back to the calling WebContents over
   // AI_STREAM_EVENT; the returned turnId lets the renderer correlate the stream.

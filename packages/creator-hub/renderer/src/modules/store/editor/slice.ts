@@ -2,7 +2,7 @@ import { createAction, createSlice, isRejectedWithValue } from '@reduxjs/toolkit
 import { captureException } from '@sentry/electron/renderer';
 import { createAsyncThunk } from '/@/modules/store/thunk';
 
-import { supportsMcp, supportsMultiInstance } from '/shared/flags';
+import { supportsMcp, supportsMultiInstance, supportsUiDesigner } from '/shared/flags';
 import type { DeployOptions } from '/shared/types/deploy';
 import type { PreviewProgress } from '/shared/types/ipc';
 import { isProjectError, ProjectError, type Project } from '/shared/types/projects';
@@ -80,6 +80,7 @@ export type EditorState = {
   version: string | null;
   supportsMultiInstance: boolean;
   supportsMcp: boolean;
+  supportsUiDesigner: boolean;
   project?: Project;
   inspectorPort: number;
   publishPort: number;
@@ -102,6 +103,7 @@ const initialState: EditorState = {
   version: null,
   supportsMultiInstance: false,
   supportsMcp: false,
+  supportsUiDesigner: false,
   inspectorPort: 0,
   publishPort: 0,
   loadingPublish: false,
@@ -132,11 +134,13 @@ export const slice = createSlice({
       state.project = undefined;
       state.supportsMultiInstance = false;
       state.supportsMcp = false;
+      state.supportsUiDesigner = false;
       state.error = null;
     });
     builder.addCase(workspaceActions.fetchSdkCommandsVersion.fulfilled, (state, action) => {
       state.supportsMultiInstance = supportsMultiInstance(action.payload);
       state.supportsMcp = supportsMcp(action.payload);
+      state.supportsUiDesigner = supportsUiDesigner(action.payload);
     });
     builder.addCase(workspaceActions.runProject.fulfilled, (state, action) => {
       state.project = action.payload;

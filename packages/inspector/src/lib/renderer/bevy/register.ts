@@ -1,4 +1,5 @@
 import { getConfig } from '../../logic/config';
+import { hasRecentLocalEdit, markLocalEdit } from '../../logic/local-edit';
 import { getSceneClient } from '../../rpc/scene';
 import { store } from '../../../redux/store';
 import { selectAssetCatalog } from '../../../redux/app';
@@ -375,27 +376,15 @@ export function registerBevyRenderer(): void {
         forwardBridge?.setAnimationsFrozen(!running);
       });
 
-      // Hot-reload on scene-code change (#1419). `sdk-commands start` watches the
-      // project and broadcasts SCENE_UPDATE over the realm-root WS on any file
-      // change; on a code edit we reload the editor scene via the same Stop/reset
-      // path (reload + re-pin + reconcile). The catch: in --data-layer mode that
-      // message carries no filename and ALSO fires when the data-layer rewrites
-      // main.crdt for the inspector's OWN edits — so reloading on every one would
-      // reload on every gizmo drag (the #1391 regression). Suppress a SCENE_UPDATE
-      // that lands within a short quiet window after any local CRDT change; only an
-      // update with no recent local edit (an external code save) reloads.
-      let lastLocalEdit = 0;
       const LOCAL_EDIT_QUIET_MS = 1500;
       const HOT_RELOAD_DEBOUNCE_MS = 400;
-      const offLocalEdit = bevy.context.onChange(() => {
-        lastLocalEdit = performance.now();
-      });
+      const offLocalEdit = bevy.context.onChange(markLocalEdit);
       let hotReloadTimer: ReturnType<typeof setTimeout> | null = null;
       const disconnectHotReload = createHotReloadBridge({
         realmUrl: config.bevyRealm,
         onSceneUpdate: () => {
           // Our own edit just rewrote the scene files — ignore (not a code change).
-          if (performance.now() - lastLocalEdit < LOCAL_EDIT_QUIET_MS) return;
+          if (hasRecentLocalEdit(LOCAL_EDIT_QUIET_MS)) return;
           // Coalesce a burst of file events (a save can touch several files) into
           // one reload once it settles.
           if (hotReloadTimer !== null) clearTimeout(hotReloadTimer);
@@ -403,7 +392,7 @@ export function registerBevyRenderer(): void {
             hotReloadTimer = null;
             // Re-check the quiet window at fire time (an edit may have landed while
             // debouncing), then reload via the reset path (reload + reconcile).
-            if (performance.now() - lastLocalEdit < LOCAL_EDIT_QUIET_MS) return;
+            if (hasRecentLocalEdit(LOCAL_EDIT_QUIET_MS)) return;
             // Preserve the RUN state across a hot-reload: reset() always lands
             // frozen (the Stop default), but a code edit while the user is running
             // the scene should keep running with the new code (like the preview

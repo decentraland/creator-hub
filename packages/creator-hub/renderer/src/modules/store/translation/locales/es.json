@@ -395,6 +395,9 @@
         "editor": {
           "label": "EDITOR"
         },
+        "experimental": {
+          "label": "EXPERIMENTAL"
+        },
         "about": {
           "label": "ACERCA DE"
         }
@@ -458,6 +461,10 @@
         "ai_api_key": {
           "label": "Usar mi clave de API para el asistente de IA",
           "help": "Cobra el asistente con la clave de API de tu entorno (ANTHROPIC_API_KEY / OPENAI_API_KEY) en lugar de tu suscripción de CLI. Creator Hub nunca almacena la clave. Desactivado por defecto."
+        },
+        "gui_editor": {
+          "toggle": "Editor de UI",
+          "hint": "Habilitar esta función te permitirá combinar objetos de interfaz, propiedades y scripting para crear UI en el editor."
         }
       },
       "actions": {

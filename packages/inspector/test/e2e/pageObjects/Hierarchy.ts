@@ -243,8 +243,6 @@ class HierarchyPageObject {
   }
 
   async selectMultiple(entityIds: number[]) {
-    // Close any open context menus first by clicking outside
-    await page.click('body', { position: { x: 0, y: 0 } });
     await page.keyboard.press('Escape');
 
     try {

@@ -65,6 +65,7 @@ export type AppSettings = {
   // default — the assistant strips those keys to force subscription billing. Base-URL
   // overrides are always stripped regardless (they could redirect the OAuth token).
   useApiKeyFromEnv: boolean;
+  guiEditor: boolean;
 };
 
 export interface ReleaseNotes {

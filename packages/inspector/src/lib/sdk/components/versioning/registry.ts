@@ -139,7 +139,14 @@ const COMPONENT_REGISTRY = {
       version: Schemas.Optional(Schemas.Number),
     },
   ],
-  'inspector::UIState': [{ sceneInfoPanelVisible: Schemas.Optional(Schemas.Boolean) }],
+  'inspector::UIState': [
+    {
+      sceneInfoPanelVisible: Schemas.Optional(Schemas.Boolean),
+    },
+    {
+      uiDesignerOpen: Schemas.Optional(Schemas.Boolean),
+    },
+  ],
   'inspector::SceneMetadata': [
     // V0 - Original version
     {
