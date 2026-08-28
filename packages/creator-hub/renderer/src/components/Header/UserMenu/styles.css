@@ -19,3 +19,26 @@
 .Header.Navbar > .user > .AvatarButton:hover {
   background-color: transparent;
 }
+
+.Header.Navbar > .user > .AvatarButton .MuiAvatar-root {
+  width: 44px !important;
+  height: 44px !important;
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+  transition: outline-color 150ms ease;
+}
+
+.Header.Navbar > .user > .AvatarButton:hover .MuiAvatar-root {
+  outline-color: #ffffff;
+}
+
+.AccountTooltip {
+  background-color: #2d2a33 !important;
+  border-radius: 8px !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+}
+
+.MuiTooltip-popper[data-popper-placement*="bottom"] .AccountTooltip {
+  margin-top: 10px !important;
+}
