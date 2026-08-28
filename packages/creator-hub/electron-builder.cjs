@@ -13,6 +13,11 @@ const config = {
     buildResources: 'buildResources',
   },
   beforePack: path.join(__dirname, 'scripts', 'before-pack.js'),
+  // The only native dep (node-pty) ships N-API prebuilds for every target (darwin/win ×
+  // arm64/x64), which are ABI-stable under Electron — so don't let @electron/rebuild recompile
+  // it from source. That rebuild failed the Windows CI build outright ("Could not find any
+  // Visual Studio installation"): the runner has no C++ toolchain, and none is needed.
+  npmRebuild: false,
   // npm must be under app dir for asarUnpack to match (26.4.1+). beforePack runs before file copy.
   files: [
     'package.json',
