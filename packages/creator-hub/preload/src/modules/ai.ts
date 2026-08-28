@@ -1,12 +1,15 @@
 import { ipcRenderer, type IpcRendererEvent } from 'electron';
 
 import {
+  AI_CLI_LOGIN_EVENTS,
   AI_MIRROR_STATE,
   AI_REMOTE_COMMAND,
   AI_SCENE_OP_REQUEST,
   AI_SCREENSHOT_REQUEST,
   AI_STREAM_EVENT,
   AI_WINDOW_STATE,
+  type AiCliLoginEvent,
+  type AiCliState,
   type AiSceneOpRequest,
   type AiScreenshotRequest,
   type AiWindowState,
@@ -23,6 +26,7 @@ import { invoke } from '../services/ipc';
 
 export type { AiEvent, AiProviderInfo, AiSendParams, AiScreenshotRequest, AiSceneOpRequest };
 export type { AiMirrorState, AiRemoteCommand, AiWindowState };
+export type { AiCliLoginEvent, AiCliState };
 
 export async function detectProviders(): Promise<AiProviderInfo[]> {
   return invoke('ai.detectProviders');
@@ -59,6 +63,35 @@ export async function revertTurn(count: number): Promise<void> {
 
 export async function getMcpServerInfo(): Promise<{ url: string; token: string }> {
   return invoke('ai.getMcpServerInfo');
+}
+
+// AI sign-in without a CLI (#1531). Installs the official CLI on demand (if needed) and
+// drives its subscription login; steps (progress + the browser URL) arrive via `onEvent`,
+// and the promise settles when the flow completes or fails. The channel subscription is
+// scoped to the call.
+export async function signInCli(
+  provider: 'claude' | 'codex',
+  onEvent: (event: AiCliLoginEvent) => void,
+): Promise<void> {
+  const handler = (_: IpcRendererEvent, event: AiCliLoginEvent) => onEvent(event);
+  ipcRenderer.on(AI_CLI_LOGIN_EVENTS, handler);
+  try {
+    await invoke('ai.signInCli', provider);
+  } finally {
+    ipcRenderer.off(AI_CLI_LOGIN_EVENTS, handler);
+  }
+}
+
+export async function cancelSignInCli(): Promise<void> {
+  return invoke('ai.cancelSignInCli');
+}
+
+export async function signOutCli(provider: 'claude' | 'codex'): Promise<void> {
+  return invoke('ai.signOutCli', provider);
+}
+
+export async function getCliState(): Promise<AiCliState> {
+  return invoke('ai.getCliState');
 }
 
 // Subscribe to the AI turn event stream. There is one active turn at a time and one

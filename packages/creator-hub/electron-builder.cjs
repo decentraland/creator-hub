@@ -30,7 +30,9 @@ const config = {
       filter: ['**/*'],
     },
   ],
-  asarUnpack: ['node_modules/npm/**/*'],
+  // node-pty ships N-API .node prebuilds + a spawn-helper binary that must run from disk,
+  // not from inside the asar (#1531 drives the CLI login through a PTY).
+  asarUnpack: ['node_modules/npm/**/*', 'node_modules/node-pty/**/*'],
   extraResources: [
     {
       from: 'devtools-frontend',

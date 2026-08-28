@@ -27,6 +27,7 @@
     "http-server": "14.1.1",
     "immer": "10.1.1",
     "is-running": "2.1.0",
+    "node-pty": "1.1.0",
     "npm": "10.8.1",
     "p-limit": "6.1.0",
     "qrcode": "^1.5.4",

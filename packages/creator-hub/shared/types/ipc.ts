@@ -61,6 +61,18 @@ export const AI_WINDOW_STATE = 'ai.windowState';
 
 export type AiWindowState = { open: boolean };
 
+// AI sign-in without a pre-installed CLI (#1531). Users with a Claude/ChatGPT subscription
+// who never installed a CLI can sign in from the setup panel: main installs the official CLI
+// into an app-managed dir (using the bundled Node) and drives its own subscription login
+// (`claude setup-token` / `codex login`). `ai.signInCli` runs install-if-needed + login,
+// streaming its steps — progress messages and the browser URL to open — over this channel.
+export const AI_CLI_LOGIN_EVENTS = 'ai.cliLogin';
+
+export type AiCliLoginEvent = { type: 'progress'; message: string } | { type: 'auth'; url: string };
+
+// Per-provider setup state for the managed (app-installed) CLIs.
+export type AiCliState = Record<'claude' | 'codex', { installed: boolean; signedIn: boolean }>;
+
 export interface MobileDebugSessionInfo {
   id: number;
   sessionId: string | null;
@@ -141,6 +153,13 @@ export interface Ipc {
   // the `done` event reported as `mutations`).
   'ai.revertTurn': (count: number) => Promise<void>;
   'ai.getMcpServerInfo': () => Promise<{ url: string; token: string }>;
+  // AI sign-in without a CLI (#1531). signInCli installs the official CLI (if needed) and
+  // drives its subscription login, streaming steps over AI_CLI_LOGIN_EVENTS; signOutCli
+  // clears the managed sign-in; getCliState reports install/sign-in status per provider.
+  'ai.signInCli': (provider: 'claude' | 'codex') => Promise<void>;
+  'ai.cancelSignInCli': () => Promise<void>;
+  'ai.signOutCli': (provider: 'claude' | 'codex') => Promise<void>;
+  'ai.getCliState': () => Promise<AiCliState>;
   // Renderer's answer to an AI_SCREENSHOT_REQUEST: the captured image as a data URL, or
   // null if the capture failed (e.g. the Bevy renderer, which has no screenshot RPC).
   'ai.screenshotResult': (id: string, dataUrl: string | null) => void;

@@ -177,6 +177,53 @@ export function ChatView(props: ChatViewProps) {
   );
   const available = currentProvider?.available ?? false;
 
+  // In-app sign-in without a CLI (#1531): install the official CLI on demand + drive its
+  // subscription login (browser OAuth), streaming steps here. On success we re-detect so
+  // the provider flips to available.
+  const [signIn, setSignIn] = useState<{
+    busy: boolean;
+    message: string;
+    url: string | null;
+    error: string | null;
+  }>({ busy: false, message: '', url: null, error: null });
+  // A user cancel kills the CLI, which rejects the sign-in promise — flag it so that
+  // expected rejection resets to idle instead of showing a scary "exited with code" error.
+  const signInCancelled = useRef(false);
+
+  const handleSignIn = useCallback(async () => {
+    signInCancelled.current = false;
+    setSignIn({
+      busy: true,
+      message: t('editor.ai.setup.signin_starting'),
+      url: null,
+      error: null,
+    });
+    try {
+      await aiPreload.signInCli(provider, event => {
+        setSignIn(s =>
+          event.type === 'auth'
+            ? { ...s, url: event.url, message: t('editor.ai.setup.signin_browser') }
+            : { ...s, message: event.message },
+        );
+      });
+      setSignIn({ busy: false, message: '', url: null, error: null });
+      onRecheck();
+    } catch (e) {
+      setSignIn({
+        busy: false,
+        message: '',
+        url: null,
+        error: signInCancelled.current ? null : e instanceof Error ? e.message : String(e),
+      });
+    }
+  }, [provider, onRecheck]);
+
+  const handleCancelSignIn = useCallback(() => {
+    signInCancelled.current = true;
+    void aiPreload.cancelSignInCli();
+    setSignIn({ busy: false, message: '', url: null, error: null });
+  }, []);
+
   // Keep the newest message in view as text streams in.
   useEffect(() => {
     const el = transcriptRef.current;
@@ -257,6 +304,37 @@ export function ChatView(props: ChatViewProps) {
       <SetupBox>
         <strong>{t('editor.ai.setup.title')}</strong>
         <span>{t('editor.ai.setup.description')}</span>
+        {/* Primary path (#1531): sign in with the subscription in-app — installs the
+            official CLI on demand and drives its browser OAuth. No terminal needed. */}
+        <Button
+          color="primary"
+          size="small"
+          disabled={signIn.busy}
+          startIcon={signIn.busy ? <CircularProgress size={16} /> : undefined}
+          onClick={handleSignIn}
+        >
+          {t('editor.ai.setup.signin_button', { provider: currentProvider?.label ?? provider })}
+        </Button>
+        {signIn.busy && signIn.message !== '' && <span>{signIn.message}</span>}
+        {signIn.busy && (
+          <Button
+            color="secondary"
+            size="small"
+            onClick={handleCancelSignIn}
+          >
+            {t('editor.ai.setup.signin_cancel')}
+          </Button>
+        )}
+        {signIn.url !== null && (
+          <SetupStep>
+            <span>{t('editor.ai.setup.signin_browser')}</span>
+            <CommandLine>{signIn.url}</CommandLine>
+          </SetupStep>
+        )}
+        {signIn.error !== null && <ErrorRow>{signIn.error}</ErrorRow>}
+        <SetupDivider />
+        {/* Fallback: run the CLI yourself in a terminal. */}
+        <span>{t('editor.ai.setup.manual_title')}</span>
         <SetupStep>
           <span>{t('editor.ai.setup.install')}</span>
           <CommandLine>{cmds.install}</CommandLine>

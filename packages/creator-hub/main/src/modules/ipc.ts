@@ -13,6 +13,7 @@ import * as config from './config';
 import * as mobileDebug from './mobile-debug-server';
 import * as metrics from './metrics';
 import * as ai from './ai';
+import * as aiCli from './ai-cli';
 import * as aiWindow from './ai-window';
 import {
   captureViewport,
@@ -137,6 +138,12 @@ export function initIpc({ beforeQuitCleanup }: InitIpcOptions) {
     ai.aiDeleteSession(path, sessionId),
   );
   handle('ai.isBusy', async () => ai.aiBusy());
+  // AI sign-in without a CLI (#1531): install the official CLI on demand + drive its
+  // subscription login; steps stream over AI_CLI_LOGIN_EVENTS.
+  handle('ai.signInCli', (_event, provider) => aiCli.signInCli(provider));
+  handle('ai.cancelSignInCli', () => aiCli.cancelSignInCli());
+  handle('ai.signOutCli', (_event, provider) => aiCli.signOutCli(provider));
+  handle('ai.getCliState', async () => aiCli.getCliState());
   handle('ai.screenshotResult', (_event, id, dataUrl) => resolveEditorScreenshot(id, dataUrl));
   handle('ai.captureViewport', (_event, rect) => captureViewport(rect));
   handle('ai.sceneOpResult', (_event, id, ok, payload) => resolveSceneOp(id, ok, payload));

@@ -18,6 +18,7 @@ import type { ChildProcess } from 'child_process';
 import log from 'electron-log/main';
 import type { AiEvent, AiProvider, AiProviderInfo, AiSendParams } from '/shared/types/ai';
 import { DCL_SYSTEM_PROMPT } from './ai-prompt';
+import { getManagedBinDir, isSignedIn as isManagedSignedIn } from './ai-cli-paths';
 import { getUserDataPath } from './electron';
 import { getProjectId, track } from './analytics';
 import {
@@ -141,7 +142,9 @@ let cachedDirs: string[] | null = null;
 function searchDirs(): string[] {
   if (cachedDirs === null) {
     const nvmRoot = path.join(process.env.NVM_DIR ?? path.join(HOME, '.nvm'), 'versions', 'node');
-    cachedDirs = [...shellDirs, ...EXTRA_BIN_DIRS, ...nvmBinDirs(nvmRoot)];
+    // Include the app-managed CLI dir (#1531) so a CLI we installed on demand resolves
+    // like a PATH install. Static path — fine to keep listed before anything is installed.
+    cachedDirs = [...shellDirs, ...EXTRA_BIN_DIRS, ...nvmBinDirs(nvmRoot), getManagedBinDir()];
   }
   return cachedDirs;
 }
@@ -500,13 +503,23 @@ const scan = (): AiProviderInfo[] =>
   (Object.keys(PROVIDERS) as AiProvider[]).map(id => {
     const def = PROVIDERS[id];
     const bin = findExecutable(def.binNames);
+    // A CLI we installed on demand (#1531) lives under the managed bin dir; unlike a
+    // user-PATH install (which we assume is already logged in), it's only usable once its
+    // subscription login completed, so gate its availability on the signed-in marker.
+    const managed = bin !== null && bin.startsWith(getManagedBinDir());
+    const signedIn = managed ? isManagedSignedIn(id) : true;
+    const available = bin !== null && signedIn;
     return {
       id: def.id,
       label: def.label,
       models: def.models,
       defaultModel: def.defaultModel,
-      available: bin !== null,
-      reason: bin === null ? `${def.label} CLI not found — install it and sign in` : undefined,
+      available,
+      reason: available
+        ? undefined
+        : bin === null
+          ? `${def.label} not found — sign in with your subscription`
+          : `${def.label} installed — finish signing in`,
     };
   });
 
