@@ -132,6 +132,9 @@ async function login(provider: AiProvider, onProgress: (message: string) => void
     let urlOpened = false;
     let buffer = '';
     child.onData(data => {
+      // A cancelled/superseded login keeps streaming until its process actually exits; drop
+      // its output so it can't emit progress into the panel of whatever login is current now.
+      if (activeLogin !== child) return;
       buffer += data.replace(ANSI_RE, '');
       // Emit whole lines; keep the trailing partial for the next chunk.
       const lines = buffer.split(/\r?\n/);
@@ -150,7 +153,9 @@ async function login(provider: AiProvider, onProgress: (message: string) => void
       }
     });
     child.onExit(({ exitCode }) => {
-      activeLogin = null;
+      // Only clear the shared ref if it still points at us — a late exit from a cancelled
+      // login must not stomp a newer one the user already started.
+      if (activeLogin === child) activeLogin = null;
       if (exitCode === 0) resolve();
       else reject(new Error(`${spec.pkg} sign-in exited with code ${exitCode}`));
     });
@@ -165,15 +170,29 @@ export async function signInCli(provider: AiProvider): Promise<void> {
   log.info(`[AI-CLI] signed in to ${provider} (managed CLI)`);
 }
 
+const SIGKILL_ESCALATION_MS = 2000;
+
 export async function cancelSignInCli(): Promise<void> {
-  if (!activeLogin) return;
+  const child = activeLogin;
+  if (!child) return;
+  activeLogin = null;
   log.info('[AI-CLI] cancelling sign-in');
   try {
-    activeLogin.kill('SIGTERM');
+    child.kill('SIGTERM');
   } catch {
-    /* already gone */
+    return; // already gone
   }
-  activeLogin = null;
+  // Escalate to SIGKILL if the login ignores the polite signal (e.g. stuck mid-OAuth), so a
+  // hung CLI can't linger until the app quits. Cleared as soon as it exits on its own.
+  const escalate = setTimeout(() => {
+    try {
+      child.kill('SIGKILL');
+    } catch {
+      /* already gone */
+    }
+  }, SIGKILL_ESCALATION_MS);
+  escalate.unref?.();
+  child.onExit(() => clearTimeout(escalate));
 }
 
 export async function signOutCli(provider: AiProvider): Promise<void> {
