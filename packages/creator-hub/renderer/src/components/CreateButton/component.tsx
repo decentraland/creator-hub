@@ -1,9 +1,9 @@
 import { useCallback, useRef, useState } from 'react';
 import AddIcon from '@mui/icons-material/Add';
-import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import FileDownloadOutlinedIcon from '@mui/icons-material/FileDownloadOutlined';
 import { MenuItem } from 'decentraland-ui2';
 
+import arrowDown from '/assets/images/arrow-down.svg';
 import { useWorkspace } from '/@/hooks/useWorkspace';
 import { t } from '/@/modules/store/translation/utils';
 import { CreateProject } from '../Modals/CreateProject';
@@ -71,7 +71,12 @@ export function CreateButton() {
           aria-expanded={open ? 'true' : undefined}
           onClick={handleOpenMenu}
         >
-          <ArrowDropDownIcon sx={{ fontSize: 18 }} />
+          <img
+            src={arrowDown}
+            alt=""
+            width={11}
+            height={8}
+          />
         </StyledToggleButton>
       </StyledButtonRow>
       <StyledMenu
