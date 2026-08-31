@@ -226,6 +226,22 @@ describe('codex parseLine', () => {
     expect(texts).toEqual([]);
     expect(tools).toEqual([]);
   });
+
+  it('surfaces a top-level error event as text (so a failed turn is never silent)', () => {
+    const { texts } = run(
+      'codex',
+      JSON.stringify({ type: 'error', message: 'Reconnecting... 401 Unauthorized' }),
+    );
+    expect(texts).toEqual(['Reconnecting... 401 Unauthorized\n']);
+  });
+
+  it('surfaces a terminal error item as text', () => {
+    const { texts } = run(
+      'codex',
+      JSON.stringify({ type: 'item.completed', item: { type: 'error', message: 'stream failed' } }),
+    );
+    expect(texts).toEqual(['stream failed\n']);
+  });
 });
 
 describe('parseShellPath', () => {

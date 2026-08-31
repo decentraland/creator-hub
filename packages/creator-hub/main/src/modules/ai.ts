@@ -460,9 +460,11 @@ export const PROVIDERS: Record<AiProvider, ProviderDef> = {
       let obj: {
         type?: string;
         thread_id?: string;
+        message?: string; // top-level `error` events (e.g. transient "Reconnecting… 401")
         item?: {
           type?: string;
           text?: string;
+          message?: string; // an `error` item — codex's terminal failure for the turn
           command?: string;
           changes?: Array<{ path?: string }>;
           server?: string; // mcp_tool_call: the MCP server name (e.g. "creator-hub")
@@ -477,11 +479,21 @@ export const PROVIDERS: Record<AiProvider, ProviderDef> = {
         return undefined;
       }
       if (obj.type === 'thread.started') return obj.thread_id;
+      // codex reports failures as `error` events (reconnect attempts) and terminal `error`
+      // items — NEITHER is an agent_message, so without surfacing them a failed turn shows
+      // absolutely nothing and the panel just sits there ("codex connected but won't respond").
+      // Emit the text (newline-separated) so the user sees why it stalled instead of silence.
+      if (obj.type === 'error' && obj.message !== undefined && obj.message !== '') {
+        emit(`${obj.message}\n`);
+        return undefined;
+      }
       // act only on completed items (started/updated are partial and would dup)
       if (obj.type === 'item.completed' && obj.item !== undefined) {
         const item = obj.item;
         if (item.type === 'agent_message' && item.text !== undefined && item.text !== '')
           emit(item.text);
+        else if (item.type === 'error' && item.message !== undefined && item.message !== '')
+          emit(`${item.message}\n`);
         else if (item.type === 'file_change')
           for (const ch of item.changes ?? []) emit('', ['Edit', rel(projectDir, ch.path ?? '')]);
         else if (item.type === 'command_execution' && item.command !== undefined)
