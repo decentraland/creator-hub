@@ -6,7 +6,7 @@ import CodeIcon from '@mui/icons-material/Code';
 import PublicIcon from '@mui/icons-material/Public';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import CloseIcon from '@mui/icons-material/Close';
-import SmartToyIcon from '@mui/icons-material/SmartToy';
+import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import { CircularProgress as Loader, Tooltip } from 'decentraland-ui2';
 import { IconButton } from '@mui/material';
 
@@ -872,11 +872,11 @@ export function EditorPage() {
               {aiChatEnabled && (
                 <Tooltip title={t('editor.ai.toggle')}>
                   <IconButton
+                    className={`ai-toggle${aiOpen ? ' active' : ''}`}
                     aria-label={t('editor.ai.toggle')}
-                    color={aiOpen ? 'primary' : 'default'}
                     onClick={() => setAiOpen(open => !open)}
                   >
-                    <SmartToyIcon />
+                    <AutoAwesomeIcon />
                   </IconButton>
                 </Tooltip>
               )}

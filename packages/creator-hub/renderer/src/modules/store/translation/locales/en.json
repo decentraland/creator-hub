@@ -98,7 +98,7 @@
       "send": "Send",
       "stop": "Stop",
       "thinking": "Thinking…",
-      "empty": "Ask a question about your scene, or tell me what to build. I can read the scene and write SDK7 code under src/.",
+      "empty": "Hi there! I'm here to help. Ask questions about your scene, get help with scripting, or tell me what you'd like to build or change. I can inspect your scene and write the code needed to bring your ideas to life.",
       "billing": "Runs on your own {provider} account — messages count against your plan's usage, not a free Creator Hub allowance.",
       "billing_dismiss": "Don't show again",
       "screenshot_alt": "Screenshot from the assistant",

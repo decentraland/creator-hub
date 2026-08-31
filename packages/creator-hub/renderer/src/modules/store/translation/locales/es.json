@@ -98,7 +98,7 @@
       "send": "Enviar",
       "stop": "Detener",
       "thinking": "Pensando…",
-      "empty": "Pregunta sobre tu escena o dime qué construir. Puedo leer la escena y escribir código SDK7 en src/.",
+      "empty": "¡Hola! Estoy aquí para ayudarte. Haz preguntas sobre tu escena, pide ayuda con el scripting o dime qué te gustaría construir o cambiar. Puedo inspeccionar tu escena y escribir el código necesario para dar vida a tus ideas.",
       "billing": "Se ejecuta con tu propia cuenta de {provider}: los mensajes consumen el uso de tu plan, no una asignación gratuita de Creator Hub.",
       "billing_dismiss": "No mostrar de nuevo",
       "screenshot_alt": "Captura de pantalla del asistente",

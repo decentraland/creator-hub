@@ -85,6 +85,23 @@
   display: inline-flex;
 }
 
+/* AI Assistant toggle: a blue sparkle badge that carries the feature's identity in the top bar */
+.Editor .Header .actions .ai-toggle {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  background-color: var(--ai-accent);
+  color: var(--white);
+}
+
+.Editor .Header .actions .ai-toggle:hover {
+  background-color: var(--ai-accent-hover);
+}
+
+.Editor .Header .actions .ai-toggle.active {
+  box-shadow: 0 0 0 2px var(--ai-accent-hover);
+}
+
 /* while optimizing, the Preview button and its dropdown look disabled (same opacity:0.5 the
    app uses for .Mui-disabled) and are inert; only the inline cancel (✕) stays clickable */
 .Editor .Header .actions .preview-control.optimizing .MuiButton-root {

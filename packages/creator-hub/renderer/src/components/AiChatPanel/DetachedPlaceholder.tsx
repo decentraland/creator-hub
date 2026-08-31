@@ -1,4 +1,3 @@
-import SmartToyIcon from '@mui/icons-material/SmartToy';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import { Button } from 'decentraland-ui2';
 
@@ -15,10 +14,7 @@ export function DetachedPlaceholder({ onDock, width }: { onDock: () => void; wid
       aria-label="ai-chat-detached"
     >
       <PanelHeader>
-        <HeaderTitle>
-          <SmartToyIcon fontSize="small" />
-          {t('editor.ai.title')}
-        </HeaderTitle>
+        <HeaderTitle>{t('editor.ai.title')}</HeaderTitle>
       </PanelHeader>
       <EmptyState>
         <div>{t('editor.ai.detached_message')}</div>

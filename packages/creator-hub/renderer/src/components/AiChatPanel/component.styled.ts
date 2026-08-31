@@ -1,4 +1,4 @@
-import { Box, styled } from 'decentraland-ui2';
+import { Box, IconButton, styled } from 'decentraland-ui2';
 
 const Panel = styled(Box, {
   shouldForwardProp: prop => prop !== 'fill' && prop !== 'panelWidth',
@@ -67,11 +67,14 @@ const EmptyState = styled(Box)(({ theme }) => ({
 const UserBubble = styled(Box)(({ theme }) => ({
   alignSelf: 'flex-end',
   maxWidth: '88%',
-  padding: theme.spacing(1, 1.5),
-  borderRadius: theme.spacing(1.5),
-  backgroundColor: theme.palette.primary.main,
-  color: theme.palette.primary.contrastText,
+  padding: theme.spacing(1.25, 1.75),
+  // A dark neutral surface (not the brand red) — the new design makes user messages read as
+  // quiet cards, letting the assistant's content and the red send button carry the accent.
+  borderRadius: theme.spacing(2),
+  backgroundColor: theme.palette.action.selected,
+  color: theme.palette.text.primary,
   fontSize: theme.typography.body2.fontSize,
+  lineHeight: 1.5,
   whiteSpace: 'pre-wrap',
   wordBreak: 'break-word',
 }));
@@ -276,6 +279,55 @@ const CommandLine = styled('pre')(({ theme }) => ({
   whiteSpace: 'pre',
 }));
 
+// The row of pill controls under the header: the chat/session picker on the left, the agent
+// picker on the right. No bottom border — the transcript flows straight under it.
+const Toolbar = styled(Box)(({ theme }) => ({
+  display: 'flex',
+  alignItems: 'center',
+  gap: theme.spacing(1),
+  padding: theme.spacing(1.5, 2, 0.5),
+}));
+
+// A dark rounded pill used for the toolbar controls (New Chat menu + agent select), matching
+// the CODE/PREVIEW pills in the editor top bar but on the panel's darker surface.
+const ToolbarPill = styled('button')(({ theme }) => ({
+  display: 'flex',
+  alignItems: 'center',
+  gap: theme.spacing(0.75),
+  minWidth: 0,
+  flex: '0 1 auto',
+  height: theme.spacing(4),
+  padding: theme.spacing(0, 1.25),
+  border: `1px solid ${theme.palette.divider}`,
+  borderRadius: theme.spacing(3),
+  backgroundColor: theme.palette.action.hover,
+  color: theme.palette.text.primary,
+  fontSize: theme.typography.body2.fontSize,
+  fontFamily: 'inherit',
+  cursor: 'pointer',
+  whiteSpace: 'nowrap',
+  '&:hover': { backgroundColor: theme.palette.action.selected },
+  '&:disabled': { opacity: 0.5, cursor: 'default' },
+}));
+
+const ToolbarPillLabel = styled('span')({
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
+  whiteSpace: 'nowrap',
+});
+
+// The circular accent send button in the composer (red with a white up-arrow).
+const SendButton = styled(IconButton)(({ theme }) => ({
+  flexShrink: 0,
+  width: theme.spacing(4.5),
+  height: theme.spacing(4.5),
+  borderRadius: '50%',
+  backgroundColor: theme.palette.primary.main,
+  color: theme.palette.primary.contrastText,
+  '&:hover': { backgroundColor: theme.palette.primary.dark },
+  '&.Mui-disabled': { backgroundColor: theme.palette.action.disabledBackground },
+}));
+
 const ProviderRow = styled(Box)(({ theme }) => ({
   display: 'flex',
   alignItems: 'center',
@@ -370,6 +422,7 @@ export {
   SelectionBar,
   SelectionClear,
   SelectionNames,
+  SendButton,
   SessionText,
   SessionTitle,
   SessionWhen,
@@ -378,6 +431,9 @@ export {
   SetupDivider,
   SetupStep,
   ThinkingRow,
+  Toolbar,
+  ToolbarPill,
+  ToolbarPillLabel,
   ToolChip,
   ToolDetail,
   Transcript,

@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import SmartToyIcon from '@mui/icons-material/SmartToy';
-import SendIcon from '@mui/icons-material/Send';
 import StopIcon from '@mui/icons-material/Stop';
+import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
 import AddCommentIcon from '@mui/icons-material/AddComment';
+import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import CloseIcon from '@mui/icons-material/Close';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import UndoIcon from '@mui/icons-material/Undo';
@@ -10,13 +10,14 @@ import HighlightAltIcon from '@mui/icons-material/HighlightAlt';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
-import HistoryIcon from '@mui/icons-material/History';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import Markdown, { type MarkdownToJSX } from 'markdown-to-jsx';
 import {
   Button,
   CircularProgress,
+  Divider,
   IconButton,
+  Menu,
   MenuItem,
   Select,
   type SelectChangeEvent,
@@ -43,18 +44,15 @@ import {
   ErrorRow,
   HeaderActions,
   HeaderTitle,
-  HistoryBar,
-  HistoryList,
-  HistoryRow,
   Panel,
   PanelHeader,
   ProviderHint,
   ProviderOption,
-  ProviderRow,
   ProviderValueHint,
   SelectionBar,
   SelectionClear,
   SelectionNames,
+  SendButton,
   SessionText,
   SessionTitle,
   SessionWhen,
@@ -63,6 +61,9 @@ import {
   SetupDivider,
   SetupStep,
   ThinkingRow,
+  Toolbar,
+  ToolbarPill,
+  ToolbarPillLabel,
   ToolChip,
   ToolDetail,
   Transcript,
@@ -169,7 +170,9 @@ export function ChatView(props: ChatViewProps) {
   const transcriptRef = useRef<HTMLDivElement>(null);
   const [mcpInfo, setMcpInfo] = useState<{ url: string; token: string } | null>(null);
   const [mcpCopied, setMcpCopied] = useState(false);
-  const [historyOpen, setHistoryOpen] = useState(false);
+  // Anchor for the "New Chat" dropdown (new chat + recent sessions), replacing the old
+  // full-panel history view.
+  const [chatMenuAnchor, setChatMenuAnchor] = useState<null | HTMLElement>(null);
 
   // Saved conversations for the history menu (the current not-yet-used session isn't listed).
   const savedSessions = useMemo(() => sessions.filter(s => s.title !== ''), [sessions]);
@@ -460,35 +463,10 @@ export function ChatView(props: ChatViewProps) {
     >
       <PanelHeader>
         <HeaderTitle>
-          <SmartToyIcon fontSize="small" />
           {t('editor.ai.title')}
           {title !== undefined && title !== '' ? ` — ${title}` : ''}
         </HeaderTitle>
         <HeaderActions>
-          <Tooltip title={t('editor.ai.new_chat')}>
-            <span>
-              <IconButton
-                size="small"
-                aria-label={t('editor.ai.new_chat')}
-                disabled={busy || messages.length === 0}
-                onClick={onNewChat}
-              >
-                <AddCommentIcon fontSize="small" />
-              </IconButton>
-            </span>
-          </Tooltip>
-          {(savedSessions.length > 0 || historyOpen) && (
-            <Tooltip title={t('editor.ai.history.title')}>
-              <IconButton
-                size="small"
-                aria-label={t('editor.ai.history.title')}
-                color={historyOpen ? 'primary' : 'default'}
-                onClick={() => setHistoryOpen(o => !o)}
-              >
-                <HistoryIcon fontSize="small" />
-              </IconButton>
-            </Tooltip>
-          )}
           {!detached && onPopOut !== undefined && (
             <Tooltip title={t('editor.ai.pop_out')}>
               <IconButton
@@ -512,32 +490,44 @@ export function ChatView(props: ChatViewProps) {
         </HeaderActions>
       </PanelHeader>
 
-      {available && historyOpen ? (
-        <HistoryList>
-          <HistoryBar>
-            <span>{t('editor.ai.history.title')}</span>
-            <Button
-              color="secondary"
-              size="small"
-              startIcon={<AddCommentIcon fontSize="small" />}
+      <>
+        <Toolbar>
+          <ToolbarPill
+            aria-label={t('editor.ai.new_chat')}
+            onClick={e => setChatMenuAnchor(e.currentTarget)}
+          >
+            <AddCommentIcon fontSize="small" />
+            <ToolbarPillLabel>{t('editor.ai.new_chat')}</ToolbarPillLabel>
+            <KeyboardArrowDownIcon
+              fontSize="small"
+              sx={{ marginLeft: 'auto' }}
+            />
+          </ToolbarPill>
+          <Menu
+            anchorEl={chatMenuAnchor}
+            open={chatMenuAnchor !== null}
+            onClose={() => setChatMenuAnchor(null)}
+          >
+            <MenuItem
+              disabled={busy || messages.length === 0}
+              sx={{ gap: 1 }}
               onClick={() => {
                 onNewChat();
-                setHistoryOpen(false);
+                setChatMenuAnchor(null);
               }}
             >
+              <AddCommentIcon fontSize="small" />
               {t('editor.ai.new_chat')}
-            </Button>
-          </HistoryBar>
-          {savedSessions.length === 0 ? (
-            <EmptyState>{t('editor.ai.history.empty')}</EmptyState>
-          ) : (
-            savedSessions.map(s => (
-              <HistoryRow
+            </MenuItem>
+            {savedSessions.length > 0 && <Divider />}
+            {savedSessions.map(s => (
+              <MenuItem
                 key={s.id}
-                current={s.id === currentSessionId}
+                selected={s.id === currentSessionId}
+                sx={{ gap: 1 }}
                 onClick={() => {
                   onSwitchSession(s.id);
-                  setHistoryOpen(false);
+                  setChatMenuAnchor(null);
                 }}
               >
                 <SessionText>
@@ -554,143 +544,144 @@ export function ChatView(props: ChatViewProps) {
                 >
                   <DeleteOutlineIcon fontSize="small" />
                 </IconButton>
-              </HistoryRow>
-            ))
-          )}
-        </HistoryList>
-      ) : (
-        <>
+              </MenuItem>
+            ))}
+          </Menu>
           {providers.length > 1 && (
-            <ProviderRow>
-              <Select
-                size="small"
-                fullWidth
-                value={provider}
-                onChange={handleProviderChange}
-                disabled={busy}
-                // Show just the active agent's name in the closed box (with a subtle "sign in"
-                // cue when it isn't ready), not the full per-row status.
-                renderValue={id => {
-                  const p = providers.find(x => x.id === id);
-                  if (p === undefined) return id;
-                  return (
-                    <ProviderOption>
-                      <span>{p.label}</span>
-                      {!p.available && (
-                        <ProviderValueHint>{t('editor.ai.provider_signin')}</ProviderValueHint>
-                      )}
-                    </ProviderOption>
-                  );
-                }}
-              >
-                {/* Every agent is selectable — picking one that isn't signed in yet switches the
-                    panel to its sign-in screen, so users can add and swap agents on the fly. */}
-                {providers.map(p => (
-                  <MenuItem
-                    key={p.id}
-                    value={p.id}
-                  >
-                    <ProviderOption>
-                      <span>{p.label}</span>
-                      {!p.available && (
-                        <ProviderHint>{t('editor.ai.provider_signin')}</ProviderHint>
-                      )}
-                    </ProviderOption>
-                  </MenuItem>
-                ))}
-              </Select>
-            </ProviderRow>
+            <Select
+              size="small"
+              value={provider}
+              onChange={handleProviderChange}
+              disabled={busy}
+              sx={{
+                flex: 1,
+                minWidth: 0,
+                height: theme => theme.spacing(4),
+                borderRadius: theme => theme.spacing(3),
+                backgroundColor: 'action.hover',
+                '& .MuiOutlinedInput-notchedOutline': { borderColor: 'divider' },
+                '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: 'divider' },
+                '& .MuiSelect-select': { display: 'flex', alignItems: 'center' },
+              }}
+              // Show just the active agent's name in the closed box (with a subtle "sign in"
+              // cue when it isn't ready), not the full per-row status.
+              renderValue={id => {
+                const p = providers.find(x => x.id === id);
+                if (p === undefined) return id;
+                return (
+                  <ProviderOption>
+                    <span>{p.label}</span>
+                    {!p.available && (
+                      <ProviderValueHint>{t('editor.ai.provider_signin')}</ProviderValueHint>
+                    )}
+                  </ProviderOption>
+                );
+              }}
+            >
+              {/* Every agent is selectable — picking one that isn't signed in yet switches the
+                  panel to its sign-in screen, so users can add and swap agents on the fly. */}
+              {providers.map(p => (
+                <MenuItem
+                  key={p.id}
+                  value={p.id}
+                >
+                  <ProviderOption>
+                    <span>{p.label}</span>
+                    {!p.available && <ProviderHint>{t('editor.ai.provider_signin')}</ProviderHint>}
+                  </ProviderOption>
+                </MenuItem>
+              ))}
+            </Select>
           )}
+        </Toolbar>
 
-          <Transcript ref={transcriptRef}>
-            {available ? renderTranscript() : renderSetup()}
-          </Transcript>
+        <Transcript ref={transcriptRef}>
+          {available ? renderTranscript() : renderSetup()}
+        </Transcript>
 
-          {available && selection.length > 0 && (
-            <SelectionBar>
-              <HighlightAltIcon fontSize="small" />
-              <SelectionNames>
-                {t('editor.ai.selection', {
-                  names: selection.map(s => (s.name !== '' ? s.name : `#${s.id}`)).join(', '),
-                })}
-              </SelectionNames>
-              <SelectionClear
+        {available && selection.length > 0 && (
+          <SelectionBar>
+            <HighlightAltIcon fontSize="small" />
+            <SelectionNames>
+              {t('editor.ai.selection', {
+                names: selection.map(s => (s.name !== '' ? s.name : `#${s.id}`)).join(', '),
+              })}
+            </SelectionNames>
+            <SelectionClear
+              role="button"
+              tabIndex={0}
+              onClick={onClearSelection}
+              onKeyDown={e => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  onClearSelection();
+                }
+              }}
+            >
+              {t('editor.ai.selection_clear')}
+            </SelectionClear>
+          </SelectionBar>
+        )}
+
+        {available && !billingDismissed && (
+          <BillingHint>
+            <InfoOutlinedIcon fontSize="inherit" />
+            <span>
+              {t('editor.ai.billing', { provider: currentProvider?.label ?? 'AI' })}{' '}
+              <BillingDismiss
                 role="button"
                 tabIndex={0}
-                onClick={onClearSelection}
+                onClick={onDismissBilling}
                 onKeyDown={e => {
                   if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault();
-                    onClearSelection();
+                    onDismissBilling();
                   }
                 }}
               >
-                {t('editor.ai.selection_clear')}
-              </SelectionClear>
-            </SelectionBar>
-          )}
+                {t('editor.ai.billing_dismiss')}
+              </BillingDismiss>
+            </span>
+          </BillingHint>
+        )}
 
-          {available && !billingDismissed && (
-            <BillingHint>
-              <InfoOutlinedIcon fontSize="inherit" />
+        <Composer>
+          <TextField
+            fullWidth
+            multiline
+            maxRows={6}
+            size="small"
+            placeholder={t('editor.ai.placeholder')}
+            value={input}
+            disabled={!available}
+            onChange={e => setInput(e.target.value)}
+            onKeyDown={handleKeyDown}
+          />
+          {busy ? (
+            <Tooltip title={t('editor.ai.stop')}>
+              <IconButton
+                color="error"
+                aria-label={t('editor.ai.stop')}
+                onClick={onStop}
+              >
+                <StopIcon />
+              </IconButton>
+            </Tooltip>
+          ) : (
+            <Tooltip title={t('editor.ai.send')}>
               <span>
-                {t('editor.ai.billing', { provider: currentProvider?.label ?? 'AI' })}{' '}
-                <BillingDismiss
-                  role="button"
-                  tabIndex={0}
-                  onClick={onDismissBilling}
-                  onKeyDown={e => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                      e.preventDefault();
-                      onDismissBilling();
-                    }
-                  }}
+                <SendButton
+                  aria-label={t('editor.ai.send')}
+                  disabled={!available || input.trim() === ''}
+                  onClick={handleSend}
                 >
-                  {t('editor.ai.billing_dismiss')}
-                </BillingDismiss>
+                  <ArrowUpwardIcon fontSize="small" />
+                </SendButton>
               </span>
-            </BillingHint>
+            </Tooltip>
           )}
-
-          <Composer>
-            <TextField
-              fullWidth
-              multiline
-              maxRows={6}
-              size="small"
-              placeholder={t('editor.ai.placeholder')}
-              value={input}
-              disabled={!available}
-              onChange={e => setInput(e.target.value)}
-              onKeyDown={handleKeyDown}
-            />
-            {busy ? (
-              <Tooltip title={t('editor.ai.stop')}>
-                <IconButton
-                  color="error"
-                  aria-label={t('editor.ai.stop')}
-                  onClick={onStop}
-                >
-                  <StopIcon />
-                </IconButton>
-              </Tooltip>
-            ) : (
-              <Tooltip title={t('editor.ai.send')}>
-                <span>
-                  <IconButton
-                    color="primary"
-                    aria-label={t('editor.ai.send')}
-                    disabled={!available || input.trim() === ''}
-                    onClick={handleSend}
-                  >
-                    <SendIcon />
-                  </IconButton>
-                </span>
-              </Tooltip>
-            )}
-          </Composer>
-        </>
-      )}
+        </Composer>
+      </>
     </Panel>
   );
 }
