@@ -120,6 +120,11 @@ function extractAuthUrl(text: string): string | null {
 
 let activeLogin: pty.IPty | null = null;
 
+// Auto-kill a sign-in that never completes, so a hung login (provider OAuth failing, user
+// walked away) can't wedge activeLogin. Generous enough for an unhurried browser SSO; codex's
+// own device code, for reference, expires at 15m.
+const LOGIN_TIMEOUT_MS = 5 * 60_000;
+
 // node-pty execs its bundled `spawn-helper` binary (via posix_spawn) as the FIRST step of
 // every spawn, before it ever reaches our command — so if that helper isn't executable, the
 // spawn dies with a bare "posix_spawnp failed" regardless of what we're launching. node-pty
@@ -185,6 +190,18 @@ async function login(provider: AiProvider, onProgress: (message: string) => void
       return;
     }
     activeLogin = child;
+    // A login the user never finishes (e.g. the provider's OAuth is failing server-side, so the
+    // CLI waits on a callback that never comes) would keep its PTY alive forever — wedging
+    // activeLogin so every retry throws "Another sign-in is already in progress". Cap it: kill a
+    // login that hasn't exited within LOGIN_TIMEOUT_MS and reject so the panel resets to idle.
+    const timeout = setTimeout(() => {
+      if (activeLogin !== child) return; // already resolved / cancelled / superseded
+      activeLogin = null;
+      log.warn(`[AI-CLI] ${spec.pkg} sign-in timed out after ${LOGIN_TIMEOUT_MS}ms; killing`);
+      killLogin(child);
+      reject(new Error(`${spec.pkg} sign-in timed out. Please try again.`));
+    }, LOGIN_TIMEOUT_MS);
+    timeout.unref?.();
     let authUrlSent = false;
     let buffer = '';
     child.onData(data => {
@@ -213,6 +230,7 @@ async function login(provider: AiProvider, onProgress: (message: string) => void
       }
     });
     child.onExit(({ exitCode }) => {
+      clearTimeout(timeout);
       // Only clear the shared ref if it still points at us — a late exit from a cancelled
       // login must not stomp a newer one the user already started.
       if (activeLogin === child) activeLogin = null;
@@ -232,18 +250,14 @@ export async function signInCli(provider: AiProvider): Promise<void> {
 
 const SIGKILL_ESCALATION_MS = 2000;
 
-export async function cancelSignInCli(): Promise<void> {
-  const child = activeLogin;
-  if (!child) return;
-  activeLogin = null;
-  log.info('[AI-CLI] cancelling sign-in');
+// SIGTERM the login PTY, escalating to SIGKILL if it ignores the polite signal — a login stuck
+// mid-OAuth won't exit on its own. Safe to call on an already-dead child.
+function killLogin(child: pty.IPty): void {
   try {
     child.kill('SIGTERM');
   } catch {
     return; // already gone
   }
-  // Escalate to SIGKILL if the login ignores the polite signal (e.g. stuck mid-OAuth), so a
-  // hung CLI can't linger until the app quits. Cleared as soon as it exits on its own.
   const escalate = setTimeout(() => {
     try {
       child.kill('SIGKILL');
@@ -253,6 +267,14 @@ export async function cancelSignInCli(): Promise<void> {
   }, SIGKILL_ESCALATION_MS);
   escalate.unref?.();
   child.onExit(() => clearTimeout(escalate));
+}
+
+export async function cancelSignInCli(): Promise<void> {
+  const child = activeLogin;
+  if (!child) return;
+  activeLogin = null;
+  log.info('[AI-CLI] cancelling sign-in');
+  killLogin(child);
 }
 
 export async function signOutCli(provider: AiProvider): Promise<void> {
