@@ -40,11 +40,17 @@ export function useAiSession(
       if (!mainBusy) dispatch(aiActions.stopped());
     });
     dispatch(aiActions.fetchProviders());
-    const { cleanup } = aiPreload.subscribeAiStream(event => {
+    const stream = aiPreload.subscribeAiStream(event => {
       dispatch(aiActions.applyEvent(event));
       if (event.kind === 'done') dispatch(aiActions.persistConversation());
     });
-    return cleanup;
+    // Interactive `ask_user` prompts arrive on their own channel (they block an MCP tool call,
+    // not a stream token) — fold each into the transcript.
+    const ask = aiPreload.onAskRequest(req => dispatch(aiActions.pushPrompt(req)));
+    return () => {
+      stream.cleanup();
+      ask.cleanup();
+    };
   }, [enabled, dispatch]);
 
   // Killing the CLI child when the assistant is turned OFF mid-turn (not on navigate-away —
@@ -96,6 +102,9 @@ export function useAiSession(
           break;
         case 'revertTurn':
           dispatch(aiActions.revertTurn({ id: command.id, count: command.count }));
+          break;
+        case 'answerPrompt':
+          dispatch(aiActions.answerPrompt({ id: command.id, answer: command.answer }));
           break;
         case 'fetchProviders':
           dispatch(aiActions.fetchProviders());

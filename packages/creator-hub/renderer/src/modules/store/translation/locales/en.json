@@ -117,6 +117,11 @@
       "selection_clear": "Clear",
       "provider": "Assistant",
       "provider_signin": "Sign in",
+      "prompt": {
+        "confirm": "Confirm",
+        "other_placeholder": "Type an answer…",
+        "dismissed": "This question is no longer active."
+      },
       "setup": {
         "title": "Set up an AI assistant",
         "description": "The assistant runs a coding CLI you install and sign into. It uses your own subscription — no API key needed.",

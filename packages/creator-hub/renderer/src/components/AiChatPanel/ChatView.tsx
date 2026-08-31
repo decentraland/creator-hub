@@ -30,7 +30,7 @@ import type { AiProvider } from '/shared/types/ai';
 import { ai as aiPreload } from '#preload';
 import { t } from '/@/modules/store/translation/utils';
 
-import type { AiMessage, AiSessionMeta } from '/@/modules/store/ai/types';
+import type { AiMessage, AiPromptData, AiSessionMeta } from '/@/modules/store/ai/types';
 import { toolChipLabel } from './labels';
 import {
   AssistantBubble,
@@ -46,6 +46,14 @@ import {
   HeaderTitle,
   Panel,
   PanelHeader,
+  PromptAnswer,
+  PromptBox,
+  PromptNote,
+  PromptOption,
+  PromptOptionDesc,
+  PromptOptions,
+  PromptOtherRow,
+  PromptQuestion,
   ProviderHint,
   ProviderOption,
   ProviderValueHint,
@@ -97,6 +105,113 @@ const SETUP_COMMANDS: Record<AiProvider, { install: string; signin: string }> = 
   codex: { install: 'npm i -g @openai/codex', signin: 'codex login' },
 };
 
+// An interactive `ask_user` prompt rendered inline in the transcript. Single-select answers on
+// click; multi-select toggles then confirms; free-text (allowOther / no options) uses the field.
+function PromptBlock({
+  prompt,
+  onAnswer,
+}: {
+  prompt: AiPromptData;
+  onAnswer: (answer: string) => void;
+}) {
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [other, setOther] = useState('');
+  const answered = prompt.answer !== undefined;
+  const disabled = answered || prompt.dismissed === true;
+  const showOther = prompt.allowOther || prompt.options.length === 0;
+
+  const toggle = (label: string) =>
+    setSelected(prev => {
+      const next = new Set(prev);
+      if (next.has(label)) next.delete(label);
+      else next.add(label);
+      return next;
+    });
+
+  const submitMulti = () => {
+    const picks = prompt.options.filter(o => selected.has(o.label)).map(o => o.label);
+    if (other.trim() !== '') picks.push(other.trim());
+    if (picks.length > 0) onAnswer(picks.join(', '));
+  };
+  const submitOther = () => {
+    if (other.trim() !== '') onAnswer(other.trim());
+  };
+
+  return (
+    <PromptBox>
+      <PromptQuestion>{prompt.question}</PromptQuestion>
+      {answered ? (
+        <PromptAnswer>{prompt.answer}</PromptAnswer>
+      ) : (
+        <>
+          {prompt.options.length > 0 && (
+            <PromptOptions>
+              {prompt.options.map(o => (
+                <PromptOption
+                  key={o.label}
+                  type="button"
+                  disabled={disabled}
+                  selected={prompt.multiSelect && selected.has(o.label)}
+                  onClick={() => {
+                    if (disabled) return;
+                    if (prompt.multiSelect) toggle(o.label);
+                    else onAnswer(o.label);
+                  }}
+                >
+                  <span>{o.label}</span>
+                  {o.description !== undefined && o.description !== '' && (
+                    <PromptOptionDesc>{o.description}</PromptOptionDesc>
+                  )}
+                </PromptOption>
+              ))}
+            </PromptOptions>
+          )}
+          {showOther && (
+            <PromptOtherRow>
+              <TextField
+                fullWidth
+                multiline
+                maxRows={4}
+                size="small"
+                placeholder={t('editor.ai.prompt.other_placeholder')}
+                value={other}
+                disabled={disabled}
+                onChange={e => setOther(e.target.value)}
+                onKeyDown={e => {
+                  if (e.key === 'Enter' && !e.shiftKey && !prompt.multiSelect) {
+                    e.preventDefault();
+                    submitOther();
+                  }
+                }}
+              />
+              {!prompt.multiSelect && (
+                <SendButton
+                  aria-label={t('editor.ai.send')}
+                  disabled={disabled || other.trim() === ''}
+                  onClick={submitOther}
+                >
+                  <ArrowUpwardIcon fontSize="small" />
+                </SendButton>
+              )}
+            </PromptOtherRow>
+          )}
+          {prompt.multiSelect && (
+            <Button
+              color="primary"
+              size="small"
+              disabled={disabled || (selected.size === 0 && other.trim() === '')}
+              onClick={submitMulti}
+            >
+              {t('editor.ai.prompt.confirm')}
+            </Button>
+          )}
+          {prompt.dismissed === true && <PromptNote>{t('editor.ai.prompt.dismissed')}</PromptNote>}
+        </>
+      )}
+    </PromptBox>
+  );
+}
+
 // The pure chat surface, driven entirely by props. Both the inline panel (redux-backed)
 // and the detached window (mirror-backed) render this — neither reaches into a store from
 // here, so the same view works whichever owns the state (#1504).
@@ -124,6 +239,8 @@ export interface ChatViewProps {
   onNewChat: () => void;
   onProviderChange: (provider: AiProvider) => void;
   onRevertTurn: (id: string, count: number) => void;
+  // Answer an interactive `ask_user` prompt (unblocks the agent's waiting tool call).
+  onAnswerPrompt: (id: string, answer: string) => void;
   onRecheck: () => void;
   // Dismiss the billing hint for this scene (persisted per-project).
   onDismissBilling: () => void;
@@ -157,6 +274,7 @@ export function ChatView(props: ChatViewProps) {
     onNewChat,
     onProviderChange,
     onRevertTurn,
+    onAnswerPrompt,
     onRecheck,
     onDismissBilling,
     onSwitchSession,
@@ -413,7 +531,15 @@ export function ChatView(props: ChatViewProps) {
               <Markdown options={MARKDOWN_OPTIONS}>{msg.text}</Markdown>
             </AssistantText>
           )}
-          {!msg.done && msg.text === '' && msg.error === undefined && (
+          {msg.prompt !== undefined && (
+            <PromptBlock
+              prompt={msg.prompt}
+              onAnswer={answer => {
+                if (msg.prompt !== undefined) onAnswerPrompt(msg.prompt.id, answer);
+              }}
+            />
+          )}
+          {!msg.done && msg.text === '' && msg.error === undefined && msg.prompt === undefined && (
             <ThinkingRow>
               <CircularProgress size={12} />
               {t('editor.ai.thinking')}

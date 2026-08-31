@@ -22,6 +22,7 @@ import { getManagedBinDir, isSignedIn as isManagedSignedIn } from './ai-cli-path
 import { getUserDataPath } from './electron';
 import { getProjectId, track } from './analytics';
 import {
+  clearPendingAsks,
   ensureSceneMcpServer,
   getTurnMutations,
   resetTurnMutations,
@@ -610,6 +611,9 @@ export function aiBusy(): boolean {
 }
 
 export function aiStop(): void {
+  // Unblock any `ask_user` the (about-to-die) turn is waiting on, so its MCP tool call
+  // resolves as dismissed instead of hanging.
+  clearPendingAsks();
   if (current === null) return;
   const c = current;
   current = null;

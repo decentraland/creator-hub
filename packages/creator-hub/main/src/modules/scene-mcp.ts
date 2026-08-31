@@ -17,7 +17,12 @@ import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/
 import { type CallToolResult, isInitializeRequest } from '@modelcontextprotocol/sdk/types.js';
 import { z, type ZodRawShape, type ZodTypeAny } from 'zod';
 
-import { AI_SCENE_OP_REQUEST, AI_SCREENSHOT_REQUEST } from '/shared/types/ipc';
+import {
+  AI_ASK_REQUEST,
+  AI_SCENE_OP_REQUEST,
+  AI_SCREENSHOT_REQUEST,
+  type AiAskRequest,
+} from '/shared/types/ipc';
 import { MAIN_WINDOW_ID } from '../mainWindow';
 import { getWindow } from './window';
 import { buildRoster, entityDetail, projectInfo, readComposite } from './scene-composite';
@@ -206,6 +211,48 @@ export function resolveSceneOp(id: string, ok: boolean, payload: unknown): void 
   pending.resolve({ ok, payload });
 }
 
+// Interactive `ask_user` bridge: the tool asks the chat panel a question and blocks until the
+// user answers (or dismisses / the turn is stopped). Long timeout — a person may take a while.
+const ASK_TIMEOUT_MS = 10 * 60_000;
+const pendingAsks = new Map<
+  string,
+  { resolve: (v: string | null) => void; timer: NodeJS.Timeout }
+>();
+
+function requestUserPrompt(req: Omit<AiAskRequest, 'id'>): Promise<string | null> {
+  const win = getWindow(MAIN_WINDOW_ID);
+  if (win === undefined || win.isDestroyed()) return Promise.resolve(null);
+  const id = randomUUID();
+  return new Promise<string | null>(resolve => {
+    const timer = setTimeout(() => {
+      pendingAsks.delete(id);
+      resolve(null); // no answer in time — the tool reports a dismissal
+    }, ASK_TIMEOUT_MS);
+    pendingAsks.set(id, { resolve, timer });
+    const payload: AiAskRequest = { id, ...req };
+    win.webContents.send(AI_ASK_REQUEST, payload);
+  });
+}
+
+// Called from the `ai.askResult` IPC handler when the user answers (null = dismissed).
+export function resolveUserPrompt(id: string, answer: string | null): void {
+  const pending = pendingAsks.get(id);
+  if (pending === undefined) return;
+  clearTimeout(pending.timer);
+  pendingAsks.delete(id);
+  pending.resolve(answer);
+}
+
+// Resolve every outstanding prompt as dismissed — called when a turn is stopped/killed so a
+// blocked `ask_user` can't hang the (now-dead) agent's tool call.
+export function clearPendingAsks(): void {
+  for (const pending of pendingAsks.values()) {
+    clearTimeout(pending.timer);
+    pending.resolve(null);
+  }
+  pendingAsks.clear();
+}
+
 // A tool result is either a JSON payload (rendered as text) or an error the model can
 // read and recover from.
 function ok(payload: unknown) {
@@ -245,6 +292,37 @@ function formatExplorerResult(res: { content?: unknown[]; isError?: boolean }) {
 }
 
 function registerTools(server: McpServer): void {
+  server.registerTool(
+    'ask_user',
+    {
+      title: 'Ask the user',
+      description:
+        'Ask the user a question and WAIT for their answer, shown as an interactive prompt in the chat. Use this whenever you need a decision only the user can make — choosing between approaches, confirming intent, or filling in missing information — instead of guessing or stopping the turn. Give 2–4 short, distinct options for a choice; set multiSelect to let them pick several; set allowOther (or omit options entirely) to accept a typed answer. Returns the user’s answer as text.',
+      inputSchema: {
+        question: z.string().describe('The question to ask the user.'),
+        options: z
+          .array(z.object({ label: z.string(), description: z.string().optional() }))
+          .optional()
+          .describe('2–4 concise choices. Omit for a free-text question.'),
+        multiSelect: z.boolean().optional().describe('Allow selecting more than one option.'),
+        allowOther: z.boolean().optional().describe('Also offer a free-text answer.'),
+      },
+    },
+    async ({ question, options, multiSelect, allowOther }) => {
+      const opts = options ?? [];
+      const answer = await requestUserPrompt({
+        question,
+        options: opts,
+        multiSelect: multiSelect ?? false,
+        allowOther: allowOther ?? opts.length === 0,
+      });
+      if (answer === null || answer === '') {
+        return fail('The user dismissed the question without answering.');
+      }
+      return ok({ answer });
+    },
+  );
+
   server.registerTool(
     'get_project_info',
     {

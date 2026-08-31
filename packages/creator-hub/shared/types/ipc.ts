@@ -51,6 +51,21 @@ export const AI_SCENE_OP_REQUEST = 'ai.sceneOpRequest';
 
 export type AiSceneOpRequest = { id: string; op: string; params: Record<string, unknown> };
 
+// Interactive user prompt (AI assistant): the `ask_user` MCP tool lives in main, but only the
+// user can answer. Main pushes the question over this channel; the renderer renders an
+// interactive prompt in the transcript and answers with `ai.askResult`, correlated by `id`.
+// A null answer means the user dismissed it (or the turn was stopped before they chose).
+export const AI_ASK_REQUEST = 'ai.askRequest';
+
+export type AiAskOption = { label: string; description?: string };
+export type AiAskRequest = {
+  id: string;
+  question: string;
+  options: AiAskOption[]; // empty ⇒ free-text only
+  multiSelect: boolean;
+  allowOther: boolean; // offer a free-text answer alongside the options
+};
+
 // Detached AI window (#1504). The main window mirrors its `ai` slice to the detached
 // window over AI_MIRROR_STATE; the detached window's actions come back over
 // AI_REMOTE_COMMAND (main relays them to the main window). AI_WINDOW_STATE tells the
@@ -177,6 +192,9 @@ export interface Ipc {
   // Renderer's answer to an AI_SCENE_OP_REQUEST: ok + the op's result value, or the error
   // message when the mutation failed (or no scene is loaded).
   'ai.sceneOpResult': (id: string, ok: boolean, payload: unknown) => void;
+  // User's answer to an AI_ASK_REQUEST (the `ask_user` tool): the chosen answer as text, or
+  // null when dismissed / the turn ended. Unblocks the pending MCP tool call.
+  'ai.askResult': (id: string, answer: string | null) => void;
   // Detached AI window (#1504). openWindow/closeWindow manage the separate OS window;
   // `locale` seeds its i18n. mirrorPush (main window → main → detached) and remoteCommand
   // (detached → main → main window) carry the mirrored state and the user's actions.

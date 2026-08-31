@@ -46,6 +46,11 @@ export function AiChatWindow() {
     (provider: AiProvider) => aiPreload.sendAiRemoteCommand({ type: 'setProvider', provider }),
     [],
   );
+  const onAnswerPrompt = useCallback(
+    (id: string, answer: string) =>
+      aiPreload.sendAiRemoteCommand({ type: 'answerPrompt', id, answer }),
+    [],
+  );
   const onRevertTurn = useCallback(
     (id: string, count: number) => aiPreload.sendAiRemoteCommand({ type: 'revertTurn', id, count }),
     [],
@@ -101,6 +106,7 @@ export function AiChatWindow() {
       onNewChat={onNewChat}
       onProviderChange={onProviderChange}
       onRevertTurn={onRevertTurn}
+      onAnswerPrompt={onAnswerPrompt}
       onRecheck={onRecheck}
       onDismissBilling={onDismissBilling}
       onSwitchSession={onSwitchSession}

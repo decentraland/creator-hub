@@ -1,6 +1,7 @@
 import { ipcRenderer, type IpcRendererEvent } from 'electron';
 
 import {
+  AI_ASK_REQUEST,
   AI_CLI_LOGIN_EVENTS,
   AI_MIRROR_STATE,
   AI_REMOTE_COMMAND,
@@ -8,6 +9,7 @@ import {
   AI_SCREENSHOT_REQUEST,
   AI_STREAM_EVENT,
   AI_WINDOW_STATE,
+  type AiAskRequest,
   type AiCliLoginEvent,
   type AiCliState,
   type AiSceneOpRequest,
@@ -24,7 +26,14 @@ import type {
 
 import { invoke } from '../services/ipc';
 
-export type { AiEvent, AiProviderInfo, AiSendParams, AiScreenshotRequest, AiSceneOpRequest };
+export type {
+  AiEvent,
+  AiProviderInfo,
+  AiSendParams,
+  AiScreenshotRequest,
+  AiSceneOpRequest,
+  AiAskRequest,
+};
 export type { AiMirrorState, AiRemoteCommand, AiWindowState };
 export type { AiCliLoginEvent, AiCliState };
 
@@ -114,6 +123,18 @@ export function onScreenshotRequest(cb: (req: AiScreenshotRequest) => void): {
 
 export function screenshotResult(id: string, dataUrl: string | null): void {
   void invoke('ai.screenshotResult', id, dataUrl);
+}
+
+// The `ask_user` MCP tool (via main) asks the user a question; the chat panel renders it and
+// answers with `answerPrompt`. A null answer means dismissed.
+export function onAskRequest(cb: (req: AiAskRequest) => void): { cleanup: () => void } {
+  const handler = (_: IpcRendererEvent, req: AiAskRequest) => cb(req);
+  ipcRenderer.on(AI_ASK_REQUEST, handler);
+  return { cleanup: () => ipcRenderer.off(AI_ASK_REQUEST, handler) };
+}
+
+export function answerPrompt(id: string, answer: string | null): void {
+  void invoke('ai.askResult', id, answer);
 }
 
 // Compositor capture of a window region (the Bevy editor-screenshot fallback, #1526).

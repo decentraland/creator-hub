@@ -21,6 +21,7 @@ import {
   ensureSceneMcpServer,
   resolveEditorScreenshot,
   resolveSceneOp,
+  resolveUserPrompt,
   revertTurn,
 } from './scene-mcp';
 
@@ -150,6 +151,7 @@ export function initIpc({ beforeQuitCleanup }: InitIpcOptions) {
   handle('ai.screenshotResult', (_event, id, dataUrl) => resolveEditorScreenshot(id, dataUrl));
   handle('ai.captureViewport', (_event, rect) => captureViewport(rect));
   handle('ai.sceneOpResult', (_event, id, ok, payload) => resolveSceneOp(id, ok, payload));
+  handle('ai.askResult', (_event, id, answer) => resolveUserPrompt(id, answer));
   handle('ai.revertTurn', (_event, count) => revertTurn(count));
   // Reveal the CH MCP server's URL + token so an external agent can register it (gated in
   // the UI behind the exposeMcpServer setting). Starts the server if it isn't up yet.

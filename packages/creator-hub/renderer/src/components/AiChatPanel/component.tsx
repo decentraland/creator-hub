@@ -46,6 +46,10 @@ export function AiChatPanel({ onClose, onPopOut, onClearSelection, width }: Prop
     (id: string, count: number) => dispatch(aiActions.revertTurn({ id, count })),
     [dispatch],
   );
+  const onAnswerPrompt = useCallback(
+    (id: string, answer: string) => dispatch(aiActions.answerPrompt({ id, answer })),
+    [dispatch],
+  );
   const onRecheck = useCallback(() => dispatch(aiActions.fetchProviders()), [dispatch]);
   const onDismissBilling = useCallback(() => dispatch(aiActions.dismissBilling()), [dispatch]);
   const onSwitchSession = useCallback(
@@ -74,6 +78,7 @@ export function AiChatPanel({ onClose, onPopOut, onClearSelection, width }: Prop
       onNewChat={onNewChat}
       onProviderChange={onProviderChange}
       onRevertTurn={onRevertTurn}
+      onAnswerPrompt={onAnswerPrompt}
       onRecheck={onRecheck}
       onDismissBilling={onDismissBilling}
       onSwitchSession={onSwitchSession}

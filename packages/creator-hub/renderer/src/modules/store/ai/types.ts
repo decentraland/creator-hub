@@ -7,6 +7,19 @@ export interface AiToolChip {
   detail: string;
 }
 
+// An interactive question the assistant posed via the `ask_user` tool, rendered in the
+// transcript. The turn blocks until `answer` is set (or `dismissed` on stop). Ephemeral —
+// stripped before a transcript is persisted.
+export interface AiPromptData {
+  id: string;
+  question: string;
+  options: { label: string; description?: string }[];
+  multiSelect: boolean;
+  allowOther: boolean;
+  answer?: string; // set once the user answers
+  dismissed?: boolean; // turn stopped / timed out before an answer
+}
+
 // One bubble in the transcript. Assistant messages are keyed by their turnId so the
 // event stream can find and append to them; user messages get a local id.
 export interface AiMessage {
@@ -16,6 +29,8 @@ export interface AiMessage {
   tools: AiToolChip[];
   done: boolean;
   error?: string;
+  // An interactive `ask_user` prompt carried by this (assistant) message.
+  prompt?: AiPromptData;
   // How many undo steps this turn applied to the scene graph (from the `done` event).
   // Drives the one-click "Undo AI changes" affordance.
   mutations?: number;

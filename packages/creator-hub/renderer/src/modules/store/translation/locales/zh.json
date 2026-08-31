@@ -117,6 +117,11 @@
       "selection_clear": "清除",
       "provider": "助手",
       "provider_signin": "登录",
+      "prompt": {
+        "confirm": "确认",
+        "other_placeholder": "输入答案…",
+        "dismissed": "此问题已失效。"
+      },
       "setup": {
         "title": "设置 AI 助手",
         "description": "助手会运行你安装并登录的编程 CLI。它使用你自己的订阅，无需 API 密钥。",

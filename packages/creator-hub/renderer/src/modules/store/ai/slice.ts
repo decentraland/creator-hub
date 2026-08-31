@@ -13,7 +13,7 @@ import {
   writeSessionIndex,
   writeSessionMessages,
 } from './persistence';
-import type { AiMessage, AiSessionMeta, AiState } from './types';
+import type { AiMessage, AiPromptData, AiSessionMeta, AiState } from './types';
 
 const initialState: AiState = {
   providers: [],
@@ -100,6 +100,16 @@ export const stop = createAsyncThunk('ai/stop', async (_: void, { dispatch }) =>
   await ai.stop();
   dispatch(actions.stopped());
 });
+
+// The user answered an `ask_user` prompt: record it in the transcript and unblock the agent's
+// waiting tool call (main resolves the pending MCP request, so the turn resumes).
+export const answerPrompt = createAsyncThunk(
+  'ai/answerPrompt',
+  ({ id, answer }: { id: string; answer: string }, { dispatch }) => {
+    dispatch(actions.resolvePrompt({ id, answer }));
+    ai.answerPrompt(id, answer);
+  },
+);
 
 // Start a fresh conversation, keeping the scene's past sessions in the history. Just a new
 // in-memory session with an empty transcript — a fresh sessionId has no resume id in main,
@@ -338,6 +348,12 @@ const slice = createSlice({
     // Finalize on an intentional stop (no `done` event follows a kill).
     stopped: state => {
       state.busy = false;
+      // A pending prompt can't be answered once the turn is dead (main already resolved its
+      // tool call as dismissed) — mark it so the UI disables it instead of looking answerable.
+      for (const msg of state.messages) {
+        if (msg.prompt !== undefined && msg.prompt.answer === undefined)
+          msg.prompt.dismissed = true;
+      }
       for (let i = state.messages.length - 1; i >= 0; i--) {
         const msg = state.messages[i];
         if (msg.role === 'assistant' && !msg.done) {
@@ -376,6 +392,23 @@ const slice = createSlice({
     markReverted: (state, { payload }: PayloadAction<string>) => {
       const msg = state.messages.find(m => m.id === payload);
       if (msg !== undefined) msg.reverted = true;
+    },
+    // An `ask_user` question arrived (over AI_ASK_REQUEST) — append it to the transcript as a
+    // prompt-carrying assistant message so it renders inline, in order, below the current reply.
+    pushPrompt: (state, { payload }: PayloadAction<AiPromptData>) => {
+      state.messages.push({
+        id: `prompt-${payload.id}`,
+        role: 'assistant',
+        text: '',
+        tools: [],
+        done: true,
+        prompt: payload,
+      });
+    },
+    // The user answered a prompt: record it so the block shows the choice and the turn resumes.
+    resolvePrompt: (state, { payload }: PayloadAction<{ id: string; answer: string }>) => {
+      const msg = state.messages.find(m => m.prompt?.id === payload.id);
+      if (msg?.prompt !== undefined) msg.prompt.answer = payload.answer;
     },
   },
   extraReducers: builder => {
@@ -433,6 +466,7 @@ export const actions = {
   fetchProviders,
   send,
   stop,
+  answerPrompt,
   newChat,
   revertTurn,
   loadConversation,

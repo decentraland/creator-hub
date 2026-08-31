@@ -116,6 +116,7 @@ export type AiRemoteCommand =
   | { type: 'newChat' }
   | { type: 'setProvider'; provider: AiProvider }
   | { type: 'revertTurn'; id: string; count: number }
+  | { type: 'answerPrompt'; id: string; answer: string }
   | { type: 'fetchProviders' }
   | { type: 'dismissBilling' }
   | { type: 'switchSession'; id: string }

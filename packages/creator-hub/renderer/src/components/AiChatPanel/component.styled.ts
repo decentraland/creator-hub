@@ -130,6 +130,83 @@ const AssistantText = styled(Box)(({ theme }) => ({
   },
 }));
 
+// Interactive `ask_user` prompt block, rendered inline in the transcript.
+const PromptBox = styled(Box)(({ theme }) => ({
+  alignSelf: 'stretch',
+  display: 'flex',
+  flexDirection: 'column',
+  gap: theme.spacing(1),
+  padding: theme.spacing(1.5),
+  borderRadius: theme.spacing(1.5),
+  border: `1px solid ${theme.palette.divider}`,
+  backgroundColor: theme.palette.action.hover,
+}));
+
+const PromptQuestion = styled(Box)(({ theme }) => ({
+  fontSize: theme.typography.body2.fontSize,
+  fontWeight: theme.typography.fontWeightMedium,
+  color: theme.palette.text.primary,
+  lineHeight: 1.5,
+}));
+
+const PromptOptions = styled(Box)(({ theme }) => ({
+  display: 'flex',
+  flexDirection: 'column',
+  gap: theme.spacing(0.75),
+}));
+
+const PromptOption = styled('button', {
+  shouldForwardProp: prop => prop !== 'selected',
+})<{ selected?: boolean }>(({ theme, selected }) => ({
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'flex-start',
+  gap: theme.spacing(0.25),
+  width: '100%',
+  textAlign: 'left',
+  padding: theme.spacing(1, 1.25),
+  borderRadius: theme.spacing(1),
+  border: `1px solid ${selected ? theme.palette.primary.main : theme.palette.divider}`,
+  backgroundColor: selected ? theme.palette.action.selected : theme.palette.background.paper,
+  color: theme.palette.text.primary,
+  fontFamily: 'inherit',
+  fontSize: theme.typography.body2.fontSize,
+  cursor: 'pointer',
+  '&:hover:not(:disabled)': {
+    borderColor: theme.palette.primary.main,
+    backgroundColor: theme.palette.action.selected,
+  },
+  '&:disabled': { cursor: 'default', opacity: 0.6 },
+}));
+
+const PromptOptionDesc = styled('span')(({ theme }) => ({
+  color: theme.palette.text.secondary,
+  fontSize: theme.typography.caption.fontSize,
+  fontWeight: theme.typography.fontWeightRegular,
+}));
+
+const PromptOtherRow = styled(Box)(({ theme }) => ({
+  display: 'flex',
+  alignItems: 'flex-end',
+  gap: theme.spacing(1),
+}));
+
+const PromptAnswer = styled(Box)(({ theme }) => ({
+  alignSelf: 'flex-start',
+  padding: theme.spacing(0.75, 1.25),
+  borderRadius: theme.spacing(1),
+  backgroundColor: theme.palette.action.selected,
+  color: theme.palette.text.primary,
+  fontSize: theme.typography.body2.fontSize,
+  whiteSpace: 'pre-wrap',
+  wordBreak: 'break-word',
+}));
+
+const PromptNote = styled('span')(({ theme }) => ({
+  color: theme.palette.text.secondary,
+  fontSize: theme.typography.caption.fontSize,
+}));
+
 const AssistantImage = styled('img')(({ theme }) => ({
   maxWidth: '100%',
   borderRadius: theme.spacing(1),
@@ -415,6 +492,14 @@ export {
   HistoryRow,
   Panel,
   PanelHeader,
+  PromptAnswer,
+  PromptBox,
+  PromptNote,
+  PromptOption,
+  PromptOptionDesc,
+  PromptOptions,
+  PromptOtherRow,
+  PromptQuestion,
   ProviderHint,
   ProviderOption,
   ProviderRow,
