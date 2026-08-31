@@ -179,7 +179,8 @@
     "report_an_issue": "Informar un problema",
     "user_menu": {
       "sign_in": "Iniciar Sesión",
-      "sign_out": "Cerrar Sesión"
+      "sign_out": "Cerrar Sesión",
+      "account_tooltip": "Cuenta"
     },
     "create": {
       "label": "Crear",
@@ -187,6 +188,7 @@
       "import_scene": "Importar Escena"
     },
     "logo_menu": {
+      "main_menu_tooltip": "Menú Principal",
       "about": "Acerca de Creator Hub",
       "check_for_updates": "Buscar Actualizaciones",
       "settings": "Configuración",
