@@ -15,11 +15,11 @@
 // credentials the login stored, the same subscription-billing model ai.ts already relies on.
 //
 // The light path/state helpers live in ai-cli-paths so ai.ts can consult them without
-// pulling these heavy imports (npm/pty/electron-shell) into its unit-test graph.
+// pulling these heavy imports (npm/pty) into its unit-test graph.
+import fs from 'node:fs';
 import fsp from 'node:fs/promises';
 import path from 'node:path';
 import * as pty from 'node-pty';
-import { shell } from 'electron';
 import log from 'electron-log/main';
 
 import type { AiProvider } from '/shared/types/ai';
@@ -34,7 +34,7 @@ import {
   setSignedIn,
 } from './ai-cli-paths';
 import { install as npmInstall } from './npm';
-import { getBundledNodePath } from './path';
+import { APP_UNPACKED_PATH, getBundledNodePath } from './path';
 import { getWindow } from './window';
 
 export { getCliState } from './ai-cli-paths';
@@ -94,16 +94,71 @@ function loginEnv(): Record<string, string> {
 // text we surface aren't polluted by cursor moves and colors.
 // eslint-disable-next-line no-control-regex
 const ANSI_RE = /\u001b\[[0-9;?]*[A-Za-z]|\u009b[0-9;?]*[A-Za-z]/g;
-const URL_RE = /(https?:\/\/[^\s'"]+)/;
+const URL_RE = /(https?:\/\/[^\s'"]+)/g;
+
+// Pull the *sign-in* URL out of a CLI line — the remote page the user must open. Two traps:
+//  - trailing sentence punctuation gets captured too (codex prints "…server on http://…:1455."),
+//    so a greedy match yields an unparseable URL; trim it.
+//  - the CLI also prints its own loopback callback server (127.0.0.1/localhost). That's NOT the
+//    page to open; skip it so we don't hijack the first match and miss the real auth URL.
+function extractAuthUrl(text: string): string | null {
+  URL_RE.lastIndex = 0;
+  let match: RegExpExecArray | null;
+  while ((match = URL_RE.exec(text)) !== null) {
+    const candidate = match[1].replace(/[.,;:!?)\]}'"]+$/, '');
+    let host: string;
+    try {
+      host = new URL(candidate).hostname;
+    } catch {
+      continue; // not a real URL (truncated/garbled) — keep scanning
+    }
+    if (host === 'localhost' || host === '127.0.0.1' || host === '::1') continue;
+    return candidate;
+  }
+  return null;
+}
 
 let activeLogin: pty.IPty | null = null;
 
+// node-pty execs its bundled `spawn-helper` binary (via posix_spawn) as the FIRST step of
+// every spawn, before it ever reaches our command — so if that helper isn't executable, the
+// spawn dies with a bare "posix_spawnp failed" regardless of what we're launching. node-pty
+// 1.1.0's darwin prebuild ships spawn-helper as 0644 (its post-install only fixes a source
+// `build/Release`, never the `prebuilds/` we load from), and electron-builder copies that
+// mode verbatim, so both `npm start` and the packaged app hit it. Add the exec bit before
+// the first login. Best-effort: a read-only install is covered by the build-time after-pack.
+let spawnHelperEnsured = false;
+function ensureSpawnHelperExecutable(): void {
+  if (spawnHelperEnsured || process.platform === 'win32') return;
+  spawnHelperEnsured = true;
+  // Same dir node-pty loads the binding from: <node-pty>/prebuilds/<platform>-<arch>. Also
+  // try build/Release in case a source build is ever used. APP_UNPACKED_PATH already resolves
+  // dev (hoisted node_modules) vs packaged (app.asar.unpacked).
+  const root = path.join(APP_UNPACKED_PATH, 'node_modules', 'node-pty');
+  const candidates = [
+    path.join(root, 'prebuilds', `${process.platform}-${process.arch}`, 'spawn-helper'),
+    path.join(root, 'build', 'Release', 'spawn-helper'),
+  ];
+  for (const helper of candidates) {
+    try {
+      const { mode } = fs.statSync(helper);
+      if ((mode & 0o111) === 0) {
+        fs.chmodSync(helper, mode | 0o111);
+        log.info(`[AI-CLI] marked node-pty spawn-helper executable: ${helper}`);
+      }
+    } catch {
+      /* not this candidate, or not writable — the build-time hook is the fallback */
+    }
+  }
+}
+
 // The official CLIs' subscription login (`claude setup-token` / `codex login`) is
 // terminal-interactive — it does nothing over a plain pipe — so we run it in a real PTY
-// (node-pty). It opens a browser (or prints a URL, which we open) and completes via a
-// localhost OAuth callback, storing credentials where a later `-p` turn reads them via the
-// inherited HOME. We surface the URL and streamed lines to the setup panel and treat a
-// clean exit as success.
+// (node-pty). The CLI opens its OWN browser tab and completes via a localhost OAuth callback,
+// storing credentials where a later `-p` turn reads them via the inherited HOME. We surface
+// the URL (as a manual fallback) and the streamed lines to the setup panel, but deliberately
+// do not open the browser ourselves — a second tab double-redeems the one-time code and fails
+// the login. A clean exit is treated as success.
 //
 // NOTE (needs live verification with a real subscription — no test account here): if a
 // flow turns out to prompt for a pasted code instead of a pure browser-callback, we'd wire
@@ -112,6 +167,7 @@ async function login(provider: AiProvider, onProgress: (message: string) => void
   if (activeLogin) throw new Error('Another sign-in is already in progress');
   const spec = CLI_SPECS[provider];
   const bin = managedBinPath(provider);
+  ensureSpawnHelperExecutable();
   onProgress('Starting sign-in…');
 
   await new Promise<void>((resolve, reject) => {
@@ -129,7 +185,7 @@ async function login(provider: AiProvider, onProgress: (message: string) => void
       return;
     }
     activeLogin = child;
-    let urlOpened = false;
+    let authUrlSent = false;
     let buffer = '';
     child.onData(data => {
       // A cancelled/superseded login keeps streaming until its process actually exits; drop
@@ -142,11 +198,15 @@ async function login(provider: AiProvider, onProgress: (message: string) => void
       for (const line of lines) {
         const text = line.trim();
         if (text === '') continue;
-        const url = URL_RE.exec(text)?.[1];
-        if (url && !urlOpened) {
-          urlOpened = true;
+        // Surface the auth URL to the panel, but DON'T open it ourselves: the CLIs open their
+        // own browser tab (their "if your browser didn't open…" line is the tell). A second tab
+        // from us means two one-time auth codes hitting the CLI's localhost callback, and the
+        // duplicate redeem fails the whole login (codex: "token_exchange_failed"). The panel
+        // shows the URL as the manual fallback for when the CLI's own open doesn't fire.
+        const url = authUrlSent ? null : extractAuthUrl(text);
+        if (url !== null) {
+          authUrlSent = true;
           sendLoginEvent({ type: 'auth', url });
-          void shell.openExternal(url);
         } else {
           sendLoginEvent({ type: 'progress', message: text });
         }

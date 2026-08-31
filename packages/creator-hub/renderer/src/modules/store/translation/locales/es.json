@@ -116,6 +116,7 @@
       "selection": "Selección: {names}",
       "selection_clear": "Limpiar",
       "provider": "Asistente",
+      "provider_signin": "Iniciar sesión",
       "setup": {
         "title": "Configura un asistente IA",
         "description": "El asistente ejecuta una CLI de programación que instalas e inicias sesión. Usa tu propia suscripción, sin clave de API.",

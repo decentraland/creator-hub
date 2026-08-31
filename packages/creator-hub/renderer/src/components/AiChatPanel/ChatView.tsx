@@ -48,7 +48,10 @@ import {
   HistoryRow,
   Panel,
   PanelHeader,
+  ProviderHint,
+  ProviderOption,
   ProviderRow,
+  ProviderValueHint,
   SelectionBar,
   SelectionClear,
   SelectionNames,
@@ -565,15 +568,34 @@ export function ChatView(props: ChatViewProps) {
                 value={provider}
                 onChange={handleProviderChange}
                 disabled={busy}
+                // Show just the active agent's name in the closed box (with a subtle "sign in"
+                // cue when it isn't ready), not the full per-row status.
+                renderValue={id => {
+                  const p = providers.find(x => x.id === id);
+                  if (p === undefined) return id;
+                  return (
+                    <ProviderOption>
+                      <span>{p.label}</span>
+                      {!p.available && (
+                        <ProviderValueHint>{t('editor.ai.provider_signin')}</ProviderValueHint>
+                      )}
+                    </ProviderOption>
+                  );
+                }}
               >
+                {/* Every agent is selectable — picking one that isn't signed in yet switches the
+                    panel to its sign-in screen, so users can add and swap agents on the fly. */}
                 {providers.map(p => (
                   <MenuItem
                     key={p.id}
                     value={p.id}
-                    disabled={!p.available}
                   >
-                    {p.label}
-                    {!p.available ? ` — ${p.reason ?? 'not installed'}` : ''}
+                    <ProviderOption>
+                      <span>{p.label}</span>
+                      {!p.available && (
+                        <ProviderHint>{t('editor.ai.provider_signin')}</ProviderHint>
+                      )}
+                    </ProviderOption>
                   </MenuItem>
                 ))}
               </Select>

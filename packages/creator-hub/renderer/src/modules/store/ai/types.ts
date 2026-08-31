@@ -39,6 +39,10 @@ export interface AiState {
   providers: AiProviderInfo[];
   // The selected backend and model. Resets the conversation when changed.
   provider: AiProvider;
+  // True once the user explicitly picked a provider from the dropdown. While pinned, a
+  // re-detection won't auto-switch away from it — otherwise picking a not-yet-signed-in
+  // agent to sign into would bounce back to an available one the moment detection reran.
+  providerPinned: boolean;
   model: string;
   messages: AiMessage[];
   // A turn is running (a CLI child is streaming).

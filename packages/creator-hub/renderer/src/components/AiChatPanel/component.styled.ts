@@ -284,6 +284,26 @@ const ProviderRow = styled(Box)(({ theme }) => ({
   borderBottom: `1px solid ${theme.palette.divider}`,
 }));
 
+const ProviderOption = styled(Box)(({ theme }) => ({
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  gap: theme.spacing(1.5),
+  width: '100%',
+}));
+
+const ProviderHint = styled('span')(({ theme }) => ({
+  flexShrink: 0,
+  color: 'var(--dcl)',
+  fontSize: theme.typography.pxToRem(11),
+  fontWeight: 500,
+}));
+
+const ProviderValueHint = styled('span')(({ theme }) => ({
+  color: theme.palette.text.secondary,
+  fontSize: theme.typography.pxToRem(11),
+}));
+
 const BillingHint = styled(Box)(({ theme }) => ({
   display: 'flex',
   alignItems: 'center',
@@ -343,7 +363,10 @@ export {
   HistoryRow,
   Panel,
   PanelHeader,
+  ProviderHint,
+  ProviderOption,
   ProviderRow,
+  ProviderValueHint,
   SelectionBar,
   SelectionClear,
   SelectionNames,

@@ -13,6 +13,7 @@ const config = {
     buildResources: 'buildResources',
   },
   beforePack: path.join(__dirname, 'scripts', 'before-pack.js'),
+  afterPack: path.join(__dirname, 'scripts', 'after-pack.js'),
   // The only native dep (node-pty) ships N-API prebuilds for every target (darwin/win ×
   // arm64/x64), which are ABI-stable under Electron — so don't let @electron/rebuild recompile
   // it from source. That rebuild failed the Windows CI build outright ("Could not find any

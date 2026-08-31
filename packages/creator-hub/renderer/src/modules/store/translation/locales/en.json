@@ -116,6 +116,7 @@
       "selection": "Selection: {names}",
       "selection_clear": "Clear",
       "provider": "Assistant",
+      "provider_signin": "Sign in",
       "setup": {
         "title": "Set up an AI assistant",
         "description": "The assistant runs a coding CLI you install and sign into. It uses your own subscription — no API key needed.",

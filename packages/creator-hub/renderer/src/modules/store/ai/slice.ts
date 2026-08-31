@@ -18,6 +18,7 @@ import type { AiMessage, AiSessionMeta, AiState } from './types';
 const initialState: AiState = {
   providers: [],
   provider: 'claude',
+  providerPinned: false,
   model: 'default',
   messages: [],
   busy: false,
@@ -249,6 +250,9 @@ const slice = createSlice({
   initialState,
   reducers: {
     setProvider: (state, { payload }: PayloadAction<AiProvider>) => {
+      // Pin even on a no-op re-pick: choosing the current provider is still an explicit
+      // choice that should survive the next detection pass.
+      state.providerPinned = true;
       if (payload === state.provider) return;
       state.provider = payload;
       const info = state.providers.find(p => p.id === payload);
@@ -382,13 +386,17 @@ const slice = createSlice({
       .addCase(fetchProviders.fulfilled, (state, { payload }) => {
         state.detecting = false;
         state.providers = payload;
-        // If the selected provider isn't available, fall to the first that is.
-        const current = payload.find(p => p.id === state.provider);
-        if (current === undefined || !current.available) {
-          const firstAvailable = payload.find(p => p.available);
-          if (firstAvailable !== undefined) {
-            state.provider = firstAvailable.id;
-            state.model = firstAvailable.defaultModel;
+        // On the first (un-pinned) detection, land on an available provider so the panel
+        // opens ready to use. Once the user has explicitly picked one, respect it — even if
+        // it's not signed in yet — so they can sit on its sign-in screen without being bounced.
+        if (!state.providerPinned) {
+          const current = payload.find(p => p.id === state.provider);
+          if (current === undefined || !current.available) {
+            const firstAvailable = payload.find(p => p.available);
+            if (firstAvailable !== undefined) {
+              state.provider = firstAvailable.id;
+              state.model = firstAvailable.defaultModel;
+            }
           }
         }
       })
