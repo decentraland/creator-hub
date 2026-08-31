@@ -3,7 +3,7 @@ import { getCodeParser } from '../../../lib/logic/code-parser';
 import { store as reduxStore } from '../../../redux/store';
 import { selectNode } from '../../../redux/ui-designer';
 import { dragPinPatch } from '../shared/align-presets';
-import { type UINodeType, type WidgetKind } from '../shared/tree-model';
+import { type UINodeType, type WidgetKind, type WidgetPreset } from '../shared/tree-model';
 import { type UiScreenInset } from './aggregator';
 import { nodeNameEdit, renumberNodeNames, sanitizeNodeName, withNodeName } from './name-marker';
 import { collectComponentRefNames, wouldCycle } from './component-graph';
@@ -172,9 +172,16 @@ export const CHILD_TEMPLATES: Record<UINodeType, string> = {
 export const IMAGE_TEMPLATE =
   "<UiEntity uiTransform={{ width: 200, height: 200 }} uiBackground={{ color: { r: 1, g: 1, b: 1, a: 1 }, textureMode: 'center' }} />";
 
-export function widgetJsx(type: UINodeType, preset?: 'image', named = true): string {
+export const FULLSCREEN_TEMPLATE =
+  "<UiEntity uiTransform={{ flexGrow: 1, alignSelf: 'stretch' }} uiBackground={{ color: { r: 1, g: 1, b: 1, a: 0.1 } }} />";
+
+export function widgetJsx(type: UINodeType, preset?: WidgetPreset, named = true): string {
   const jsx =
-    preset === 'image' ? IMAGE_TEMPLATE : (CHILD_TEMPLATES[type] ?? CHILD_TEMPLATES.UiEntity);
+    preset === 'image'
+      ? IMAGE_TEMPLATE
+      : preset === 'fullscreen'
+        ? FULLSCREEN_TEMPLATE
+        : (CHILD_TEMPLATES[type] ?? CHILD_TEMPLATES.UiEntity);
   if (!named) return jsx;
   const kind: WidgetKind = preset === 'image' ? 'Image' : type === 'UiEntity' ? 'Container' : type;
   return withNodeName(jsx, uniqueName(kind, collectNodeLabels(state.parsed?.root)));
@@ -183,7 +190,7 @@ export function widgetJsx(type: UINodeType, preset?: 'image', named = true): str
 export async function spliceAddChildUnlocked(
   parentEntityId: number,
   type: UINodeType,
-  preset?: 'image',
+  preset?: WidgetPreset,
 ): Promise<void> {
   const ast = astNodeFor(parentEntityId) as Parameters<typeof insertChild>[0] | undefined;
   if (!ast || !guardElementWrite(parentEntityId, 'spliceAddChild')) return;
@@ -199,7 +206,7 @@ export async function spliceAddWidgetUnlocked(
   anchorEntityId: number,
   dropType: 'before' | 'after' | 'inside',
   type: UINodeType,
-  preset?: 'image',
+  preset?: WidgetPreset,
 ): Promise<void> {
   const ast = astNodeFor(anchorEntityId) as Parameters<typeof insertChild>[0] | undefined;
   if (!ast || !state.program) return;
@@ -217,7 +224,7 @@ export async function spliceAddWidgetUnlocked(
 
 export async function spliceSetRootChildUnlocked(
   type: UINodeType,
-  preset?: 'image',
+  preset?: WidgetPreset,
 ): Promise<void> {
   if (!state.program || !state.filename) return;
   const activeName = state.roots.find(r => r.filename === state.filename)?.name;

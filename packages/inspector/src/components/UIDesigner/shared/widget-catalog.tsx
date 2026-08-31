@@ -1,7 +1,7 @@
 import React from 'react';
-import { IoEllipseOutline, IoImageOutline, IoSquareOutline } from 'react-icons/io5';
+import { IoEllipseOutline, IoImageOutline, IoScanOutline, IoSquareOutline } from 'react-icons/io5';
 
-import type { UINodeType, WidgetKind } from './tree-model';
+import type { UINodeType, WidgetKind, WidgetPreset } from './tree-model';
 import { DropdownFieldIcon, InputFieldIcon, LabelFieldIcon } from './widget-icons';
 
 export interface WidgetDef {
@@ -10,7 +10,7 @@ export interface WidgetDef {
   label: string;
   icon: JSX.Element;
   keywords?: string[];
-  preset?: 'image';
+  preset?: WidgetPreset;
 }
 
 export interface WidgetCategory {
@@ -23,6 +23,14 @@ export const WIDGET_CATALOG: WidgetCategory[] = [
   {
     category: 'Containers',
     items: [
+      {
+        id: 'fullscreen',
+        type: 'UiEntity',
+        label: 'Full Screen',
+        icon: <IoScanOutline />,
+        preset: 'fullscreen',
+        keywords: ['root', 'wrapper', 'stretch', 'fill', 'screen', 'full'],
+      },
       {
         id: 'UiEntity',
         type: 'UiEntity',
