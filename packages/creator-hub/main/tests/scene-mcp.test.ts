@@ -104,6 +104,7 @@ describe('scene-mcp server', () => {
     const { tools } = await client.listTools();
     expect(tools.map(t => t.name).sort()).toEqual(
       [
+        'ask_user',
         'attach_script',
         'create_entity',
         'editor_screenshot',
