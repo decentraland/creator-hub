@@ -133,6 +133,13 @@ Rules, all keyed on the parent's `flexDirection` (never its `positionType`):
 
 ## Codegen & runtime gotchas
 
+- **An intermediate splice inside a relocating op must not reformat.** An op that finds a
+  moved/new node by byte offset (`expectedStart` over `state.parsed.spans`) breaks if an earlier
+  write reformats the file — offsets shift, the re-find returns nothing, and the trailing
+  `selectNode` is skipped (a reparent silently deselecting). Apply intermediate edits with
+  `applySourceEdits(edits, { format: false })` (or `pinEdits`) and call `formatActiveFile()` once
+  at the end. `writeUiTransformFields` formats by default, so don't reach for it mid-op.
+
 - **Hotkeys are not built on the shared `useHotkey` hook** (`shared/useUINodeHotkeys.ts`). `useHotkey`'s cleanup unbinds keys _globally_, which would clobber the 3D Renderer's Ctrl+C/V/D/Delete. Undo/redo are also deliberately not handled here — the Toolbar owns Ctrl+Z/Y, and a second document-level listener would double-fire.
 - **Scene files arrive as a plain `Uint8Array`, not a Node `Buffer`, over the iframe↔CH RPC** (`code/store.ts` disk read/write). The `Buffer` prototype is lost across the bridge, so `.toString('utf8')` yields a comma-joined byte string (`"47,42,…"`) instead of text. Decode/encode via `TextDecoder`/`TextEncoder` (matching `fs-composite-provider`).
 - **Enum string spellings must match react-ecs's own parser keys exactly** (`code/ecs-shape.ts` `ENUM_TO_STRING`) — `'nowrap'` not `'no-wrap'`, `'flex-start'` not `'start'`. A wrong spelling makes the runtime parser return `undefined` and silently fall back to its default, so the whole enum-prop group round-trips as a no-op with no error.

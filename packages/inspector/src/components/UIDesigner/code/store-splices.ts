@@ -1,5 +1,6 @@
 import type { Entity } from '@dcl/ecs';
 import { getCodeParser } from '../../../lib/logic/code-parser';
+import { YGPT_ABSOLUTE, YGPT_RELATIVE } from '../../../lib/sdk/ui-transform-constants';
 import { store as reduxStore } from '../../../redux/store';
 import { selectNode } from '../../../redux/ui-designer';
 import { dragPinPatch } from '../shared/align-presets';
@@ -459,6 +460,33 @@ export async function spliceRemoveNodesUnlocked(entityIds: number[]): Promise<vo
 
 export type MoveAnchor = { kind: 'after' | 'before' | 'into'; targetId: number };
 
+const nodeIdAtSpan = (start: number): number | null => {
+  for (const [id, span] of state.parsed?.spans ?? []) {
+    if (span[0] === start) return id as unknown as number;
+  }
+  return null;
+};
+
+/** For an absolute ("Ignore Layout Flow") node being reparented, the local top/left under its new parent that keeps it in the same on-screen spot; null when the node flows, the parent is unchanged, or either element is unmeasured. */
+function reparentOffset(
+  entityId: number,
+  anchor: MoveAnchor,
+): { top: number; left: number } | null {
+  const t = findCodeNode(state.parsed?.root, entityId)?.uiTransform as
+    | Record<string, unknown>
+    | undefined;
+  if (((t?.positionType as number | undefined) ?? YGPT_RELATIVE) !== YGPT_ABSOLUTE) return null;
+  const parentOf = (id: number) =>
+    findCodeLayoutParent(state.parsed?.root, id)?.entity as unknown as number | undefined;
+  const newParentId = anchor.kind === 'into' ? anchor.targetId : parentOf(anchor.targetId);
+  if (newParentId == null || newParentId === parentOf(entityId)) return null;
+  const nodeEl = getNodeElement(entityId as unknown as Entity);
+  const parentEl = getNodeElement(newParentId as unknown as Entity);
+  if (!nodeEl || !parentEl) return null;
+  const { top, left } = offsetInParent(nodeEl, parentEl);
+  return { top: Math.round(top), left: Math.round(left) };
+}
+
 export async function spliceMoveUnlocked(entityId: number, anchor: MoveAnchor): Promise<void> {
   const el = astNodeFor(entityId) as
     | (Parameters<typeof removeNode>[0] & Record<string, any>)
@@ -482,6 +510,7 @@ export async function spliceMoveUnlocked(entityId: number, anchor: MoveAnchor): 
     }
   }
 
+  const preserved = reparentOffset(entityId, anchor);
   const elLen = el.end - el.start;
   let expectedStart: number;
   let edits: Edit[];
@@ -505,15 +534,13 @@ export async function spliceMoveUnlocked(entityId: number, anchor: MoveAnchor): 
   }
   await applySourceEdits(edits, { format: false });
 
-  const spans = state.parsed?.spans;
-  if (spans) {
-    for (const [id, span] of spans) {
-      if (span[0] === expectedStart) {
-        reduxStore.dispatch(selectNode({ node: id as unknown as Entity }));
-        break;
-      }
-    }
+  let movedId = nodeIdAtSpan(expectedStart);
+  if (preserved !== null && movedId !== null) {
+    const pin = pinEdits(movedId, preserved.top, preserved.left, 'spliceMove');
+    if (pin.length) await applySourceEdits(pin, { format: false });
+    movedId = nodeIdAtSpan(expectedStart);
   }
+  if (movedId !== null) reduxStore.dispatch(selectNode({ node: movedId as unknown as Entity }));
   await formatActiveFile();
 }
 
