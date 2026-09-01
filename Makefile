@@ -22,6 +22,10 @@ PROTOC = node_modules/.bin/protobuf/bin/protoc
 INSPECTOR_PATH = packages/inspector
 CH_PATH = packages/creator-hub
 ASSET_PACKS_PATH = packages/asset-packs
+# The Bevy editor-agent scene: a separate SDK7 project (NOT a workspace) with its
+# own node_modules pinned to the engine's companion SDK. The inspector build
+# exports it into public/bevy-agent, so it must be installed + built first.
+BEVY_AGENT_PATH = packages/inspector/agents/bevy
 SYNC_PACK = node_modules/.bin/syncpack
 
 install:
@@ -36,7 +40,11 @@ install-asset-packs:
 
 install-inspector:
 	make install-protoc
+	make install-bevy-agent
 	cd $(INSPECTOR_PATH); npm i
+
+install-bevy-agent:
+	cd $(BEVY_AGENT_PATH); npm i
 
 install-creator-hub:
 	cd $(CH_PATH); npm i
@@ -45,7 +53,12 @@ install-creator-hub:
 init-submodules:
 	git submodule update --init --recursive
 
-install-protoc:
+get-protobuf-version:
+	@echo $(PROTOBUF_VERSION)
+
+install-protoc: $(PROTOC)
+
+$(PROTOC):
 	mkdir -p node_modules/.bin/protobuf
 	@echo "Downloading protoc $(PROTOBUF_VERSION) for $(UNAME_S) $(UNAME_M)..."
 	@echo "Target file: $(PROTOBUF_ZIP)"
@@ -59,7 +72,7 @@ install-protoc:
 	rm $(PROTOBUF_ZIP)
 	chmod +x $(PROTOC)
 
-protoc:
+protoc: $(PROTOC)
 	mkdir -p $(INSPECTOR_PATH)/src/lib/data-layer/proto/gen
 	$(PROTOC) \
 		--plugin=node_modules/.bin/protoc-gen-dcl_ts_proto \
@@ -77,7 +90,11 @@ build-asset-packs:
 	cd $(ASSET_PACKS_PATH); npm run build;
 
 build-inspector:
+	make build-bevy-agent
 	cd $(INSPECTOR_PATH); npm run build;
+
+build-bevy-agent: install-bevy-agent
+	cd $(BEVY_AGENT_PATH); npm run build;
 
 build-creator-hub:
 	cd $(CH_PATH); npm run build;
@@ -125,6 +142,14 @@ test-inspector-e2e:
 
 test-creator-hub-e2e:
 	cd $(CH_PATH); npm run test:e2e
+
+# CI variant: runs test:e2e:ci, which skips the `npm run build` that test:e2e runs.
+# Contract: the caller MUST ensure packages/creator-hub/{main,preload,renderer}/dist
+# already exist. CI provides them via the download-build action (built once by the
+# build job); locally, run `make build-creator-hub` first. Without a prior build the
+# Electron app won't launch and the suite fails.
+test-creator-hub-e2e-ci:
+	cd $(CH_PATH); npm run test:e2e:ci
 
 format:
 	npm run format

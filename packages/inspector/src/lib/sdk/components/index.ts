@@ -25,6 +25,7 @@ import type { GizmoType } from '../../utils/gizmo';
 import type { TransformConfig } from './TransformConfig';
 import type { TransitionMode } from './SceneMetadata';
 import { Coords, SceneAgeRating, SceneCategory } from './SceneMetadata';
+import { createActiveSceneComponentProxy } from './scene-metadata-version';
 import type { ConfigComponentType } from './Config';
 import type { InspectorUIStateType } from './InspectorUIState';
 import { EditorComponentNames as BaseEditorComponentNames } from './types';
@@ -81,6 +82,7 @@ export type SceneComponent = {
   silenceVoiceChat?: boolean;
   disablePortableExperiences?: boolean;
   disableNearbyVoiceChat?: boolean;
+  hideLandscapeTerrain?: boolean;
   spawnPoints?: SceneSpawnPoint[];
 };
 
@@ -152,7 +154,9 @@ export type SdkComponents = {
   AudioSource: ReturnType<typeof components.AudioSource>;
   AudioStream: ReturnType<typeof components.AudioStream>;
   AvatarAttach: ReturnType<typeof components.AvatarAttach>;
+  AvatarModifierArea: ReturnType<typeof components.AvatarModifierArea>;
   Billboard: ReturnType<typeof components.Billboard>;
+  CameraModeArea: ReturnType<typeof components.CameraModeArea>;
   GltfContainer: ReturnType<typeof components.GltfContainer>;
   Material: ReturnType<typeof components.Material>;
   MeshCollider: ReturnType<typeof components.MeshCollider>;
@@ -180,7 +184,9 @@ export function createComponents(engine: IEngine): SdkComponents {
   const AudioSource = components.AudioSource(engine);
   const AudioStream = components.AudioStream(engine);
   const AvatarAttach = components.AvatarAttach(engine);
+  const AvatarModifierArea = components.AvatarModifierArea(engine);
   const Billboard = components.Billboard(engine);
+  const CameraModeArea = components.CameraModeArea(engine);
   const GltfContainer = components.GltfContainer(engine);
   const Material = components.Material(engine);
   const MeshCollider = components.MeshCollider(engine);
@@ -210,7 +216,9 @@ export function createComponents(engine: IEngine): SdkComponents {
     AudioSource,
     AudioStream,
     AvatarAttach,
+    AvatarModifierArea,
     Billboard,
+    CameraModeArea,
     GltfContainer,
     Material,
     MeshCollider,
@@ -264,7 +272,13 @@ export function createEditorComponents(engine: IEngine): EditorComponents {
 
   return {
     Selection: inspectorComponents['inspector::Selection'],
-    Scene: inspectorComponents['inspector::SceneMetadata'],
+    // Scene resolves to the SceneMetadata version the data-layer actually uses, so
+    // reads + writes round-trip even when the (Bevy) realm's pinned sdk-commands is
+    // a version behind this inspector. Transparent when versions match (the active
+    // version is then the latest). See scene-metadata-version.ts.
+    Scene: createActiveSceneComponentProxy(
+      engine,
+    ) as unknown as LastWriteWinElementSetComponentDefinition<EditorComponentsTypes['Scene']>,
     Nodes: inspectorComponents['inspector::Nodes'],
     TransformConfig: inspectorComponents['inspector::TransformConfig'],
     Hide: inspectorComponents['inspector::Hide'],

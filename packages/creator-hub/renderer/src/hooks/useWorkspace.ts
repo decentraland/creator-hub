@@ -43,6 +43,10 @@ export const useWorkspace = () => {
     dispatch(workspaceActions.duplicateProject(project.path));
   }, []);
 
+  const renameProject = useCallback((project: Project, newName: string) => {
+    return dispatch(workspaceActions.renameProject({ path: project.path, newName })).unwrap();
+  }, []);
+
   const importProject = useCallback(() => {
     dispatch(workspaceActions.importProject());
   }, []);
@@ -76,12 +80,17 @@ export const useWorkspace = () => {
    * If the project name is provided, it ensures that the path is not used by another project yet.
    */
   const validateProjectPath = useCallback(async (projectPath: string, projectName?: string) => {
+    // Distinguish the two failure modes so the modal can show an accurate message:
+    // 'invalid-dir' = the Path isn't an existing writable folder (e.g. the user
+    // typed a bare folder name instead of picking a directory); 'path-taken' = a
+    // project already lives at <path>/<name>. `true` = ok.
     const isValidDirectory = await workspacePreload.validateScenesPath(projectPath);
-    if (!projectName) return isValidDirectory; // If no name provided, just validate the directory
+    if (!isValidDirectory) return 'invalid-dir' as const;
+    if (!projectName) return true; // no name provided → directory check is enough
     const isPathAvailable = await workspacePreload.isProjectPathAvailable(
       `${projectPath}/${projectName}`,
     );
-    return isValidDirectory && isPathAvailable;
+    return isPathAvailable ? true : ('path-taken' as const);
   }, []);
 
   const selectNewProjectPath = useCallback(async () => {
@@ -108,6 +117,7 @@ export const useWorkspace = () => {
     createProject,
     deleteProject,
     duplicateProject,
+    renameProject,
     importProject,
     reimportProject,
     unlistProjects,

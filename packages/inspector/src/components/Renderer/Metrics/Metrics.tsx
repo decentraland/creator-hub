@@ -3,17 +3,14 @@ import { FiAlertTriangle as WarningIcon } from 'react-icons/fi';
 import { IoGridOutline as SquaresGridIcon } from 'react-icons/io5';
 import cx from 'classnames';
 
-import type { Material } from '@babylonjs/core';
-import { MultiMaterial } from '@babylonjs/core';
 import { CrdtMessageType } from '@dcl/ecs';
 
 import type { WithSdkProps } from '../../../hoc/withSdk';
 import { withSdk } from '../../../hoc/withSdk';
 import { useChange } from '../../../hooks/sdk/useChange';
 import { useOutsideClick } from '../../../hooks/useOutsideClick';
-import { getLayoutManager } from '../../../lib/babylon/decentraland/layout-manager';
 import type { Layout } from '../../../lib/utils/layout';
-import { GROUND_MESH_PREFIX, PARCEL_SIZE } from '../../../lib/utils/scene';
+import { PARCEL_SIZE } from '../../../lib/utils/scene';
 import { useAppDispatch, useAppSelector } from '../../../redux/hooks';
 import {
   getMetrics,
@@ -26,53 +23,11 @@ import {
 } from '../../../redux/scene-metrics';
 import type { SceneMetrics } from '../../../redux/scene-metrics/types';
 import { Button } from '../../Button';
-import { collectTexturesFromMaterial, getSceneLimits } from './utils';
+import { getSceneLimits } from './utils';
 
 import './Metrics.css';
 
 const ICON_SIZE = 18;
-const IGNORE_MATERIALS = [
-  // Babylon default materials
-  'BackgroundSkyboxMaterial',
-  'BackgroundPlaneMaterial',
-  'colorShader',
-  'colorShaderOccQuery',
-  'skyBox',
-  // Utils Materials
-  'entity_outside_layout',
-  'entity_outside_layout_multimaterial',
-  'layout_grid',
-  'grid',
-  'base-box',
-  'collider-material',
-  '__GLTFLoader._default',
-];
-const IGNORE_TEXTURES = [
-  // Babylon default textures
-  'https://assets.babylonjs.com/environments/backgroundGround.png',
-  'https://assets.babylonjs.com/environments/backgroundSkybox.dds',
-  'https://assets.babylonjs.com/environments/environmentSpecular.env',
-  'EffectLayerMainRTT',
-  'HighlightLayerBlurRTT',
-  'data:EnvironmentBRDFTexture0',
-  // Utils Textures
-  'GlowLayerBlurRTT',
-  'GlowLayerBlurRTT2',
-];
-const IGNORE_MESHES = [
-  'BackgroundHelper',
-  'BackgroundPlane',
-  'BackgroundSkybox',
-  // Editor environment meshes from createDefaultEnvironment
-  'ground',
-  'skybox',
-  '__root__',
-  // Axis indicator meshes from layout manager
-  'axis_x_line',
-  'axis_y_line',
-  'axis_z_line',
-  'z_cone_axis',
-];
 
 const Metrics = withSdk<WithSdkProps>(({ sdk }) => {
   const ROOT = sdk.engine.RootEntity;
@@ -98,66 +53,19 @@ const Metrics = withSdk<WithSdkProps>(({ sdk }) => {
   );
 
   const handleUpdateMetrics = useCallback(() => {
-    const meshes = sdk.scene.meshes.filter(
-      mesh =>
-        !IGNORE_MESHES.includes(mesh.id) &&
-        !mesh.id.startsWith(GROUND_MESH_PREFIX) &&
-        !mesh.id.startsWith('BoundingMesh') &&
-        !mesh.id.startsWith('axis_') && // Exclude all axis indicator meshes
-        !mesh.id.startsWith('axisHelper') && // Exclude axis helper meshes
-        !mesh.metadata?.isPlaceholder && // Exclude placeholder meshes (editor-only visualization)
-        !mesh.id.startsWith('spawn_point_'), // Exclude spawn point visual meshes
-    );
-    // Calculate triangle count correctly: getTotalIndices() / 3
-    // If a mesh doesn't have indices, it might be using vertices directly, so we fall back to vertices / 3
-    const triangles = meshes.reduce((acc, mesh) => {
-      const indices = mesh.getTotalIndices();
-      if (indices > 0) {
-        return acc + indices / 3;
-      }
-      // Fallback for meshes without indices (shouldn't happen for proper meshes, but safe fallback)
-      const vertices = mesh.getTotalVertices();
-      return acc + Math.floor(vertices / 3);
-    }, 0);
-
-    // Collect materials and textures only from user-created meshes (not editor meshes)
-    // This ensures we don't count editor-only materials/textures
-    const materialsFromMeshes = new Set<string>();
-    const texturesFromMaterials = new Set<string>();
-
-    meshes.forEach(mesh => {
-      // Handle multi-material meshes
-      if (mesh.material instanceof MultiMaterial) {
-        const multiMaterial = mesh.material;
-        multiMaterial.subMaterials.forEach((subMaterial: Material | null) => {
-          if (subMaterial) {
-            const materialId = subMaterial.id;
-            if (!IGNORE_MATERIALS.includes(materialId)) {
-              materialsFromMeshes.add(materialId);
-              collectTexturesFromMaterial(subMaterial, texturesFromMaterials, IGNORE_TEXTURES);
-            }
-          }
-        });
-      } else if (mesh.material) {
-        // Collect materials from this mesh
-        const materialId = mesh.material.id;
-        if (!IGNORE_MATERIALS.includes(materialId)) {
-          materialsFromMeshes.add(materialId);
-          collectTexturesFromMaterial(mesh.material, texturesFromMaterials, IGNORE_TEXTURES);
-        }
-      }
-    });
-
+    const { triangles, bodies, materials, textures } = sdk.renderer.metrics.getSceneMetrics();
     dispatch(
       setMetrics({
         triangles,
+        // Entity count is an ECS concept (the Nodes tree), not a renderer one,
+        // so the inspector still derives it itself.
         entities: getNodes().length,
-        bodies: meshes.length,
-        materials: materialsFromMeshes.size,
-        textures: texturesFromMaterials.size,
+        bodies,
+        materials,
+        textures,
       }),
     );
-  }, [sdk, dispatch, getNodes, setMetrics]);
+  }, [sdk, dispatch, getNodes]);
 
   const handleUpdateSceneLayout = useCallback(() => {
     const scene = sdk.components.Scene.getOrNull(ROOT);
@@ -168,49 +76,18 @@ const Metrics = withSdk<WithSdkProps>(({ sdk }) => {
   }, [sdk, setSceneLayout]);
 
   const handleSceneChange = useCallback(() => {
-    const nodes = getNodes();
-    const { isEntityOutsideLayout } = getLayoutManager(sdk.scene);
-
-    const entitiesOutOfBoundariesArray: number[] = [];
-
-    nodes.forEach(node => {
-      const entity = sdk.sceneContext.getEntityOrNull(node.entity);
-      if (entity && entity.boundingInfoMesh) {
-        const isOutside = isEntityOutsideLayout(entity.boundingInfoMesh);
-        if (isOutside) {
-          entitiesOutOfBoundariesArray.push(node.entity);
-        }
-      }
-    });
-
-    dispatch(setEntitiesOutOfBoundaries(entitiesOutOfBoundariesArray));
-  }, [sdk, dispatch, getNodes, setEntitiesOutOfBoundaries]);
+    dispatch(setEntitiesOutOfBoundaries(sdk.renderer.metrics.getEntitiesOutsideLayout()));
+  }, [sdk, dispatch]);
 
   useEffect(() => {
-    const handleOutsideMaterialChange = (material: Material) => {
-      if (material.name === 'entity_outside_layout_multimaterial') {
-        handleSceneChange();
-      }
-    };
-
-    const addOutsideMaterialObservable = sdk.scene.onNewMultiMaterialAddedObservable.add(
-      handleOutsideMaterialChange,
-    );
-    const removeOutsideMaterialObservable = sdk.scene.onMaterialRemovedObservable.add(
-      handleOutsideMaterialChange,
-    );
-
-    sdk.scene.onDataLoadedObservable.add(handleUpdateMetrics);
-    sdk.scene.onMeshRemovedObservable.add(handleUpdateMetrics);
+    const unsubscribe = sdk.renderer.metrics.onChange(() => {
+      handleUpdateMetrics();
+      handleSceneChange();
+    });
 
     handleUpdateSceneLayout();
 
-    return () => {
-      sdk.scene.onDataLoadedObservable.removeCallback(handleUpdateMetrics);
-      sdk.scene.onMeshRemovedObservable.removeCallback(handleUpdateMetrics);
-      sdk.scene.onNewMultiMaterialAddedObservable.remove(addOutsideMaterialObservable);
-      sdk.scene.onMaterialRemovedObservable.remove(removeOutsideMaterialObservable);
-    };
+    return unsubscribe;
   }, []);
 
   useChange(

@@ -5,6 +5,8 @@ import { BodyShape, EmoteCategory, WearableCategory } from '@dcl/schemas';
 import type { EmoteWithBlobs, WearableWithBlobs } from '@dcl/schemas';
 import '@babylonjs/loaders/glTF';
 
+import { isEmoteContainer } from './emote';
+
 export function toWearableWithBlobs(file: File, resources: File[] = []): WearableWithBlobs {
   return {
     id: file.name,
@@ -87,14 +89,7 @@ export async function isEmote(file: File): Promise<boolean> {
       file.name.endsWith('.gltf') ? '.gltf' : '.glb',
     );
 
-    const armature = result.transformNodes.find(node => node.name === 'Armature');
-    if (!armature) return false;
-
-    const hasAvatarChildren = armature
-      .getChildren()
-      .some(child => child.name.startsWith('Avatar_'));
-    const hasProp = armature.getChildren().some(child => child.name.startsWith('Armature_Prop'));
-    return hasAvatarChildren || hasProp;
+    return isEmoteContainer(result);
   } catch (err) {
     console.error('Error checking if file is emote:', err);
     return false;

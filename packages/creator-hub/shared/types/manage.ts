@@ -22,6 +22,12 @@ export type ManagedProject = {
   type: ManagedProjectType;
   role: LandRoleType | WorldRoleType;
   deployment?: ProjectDeployment;
+  /**
+   * Base coordinate of each scene deployed in this world. A world can hold
+   * several at different coordinates, and analytics is keyed per scene, so the
+   * coordinates are needed to ask about it — most are `0,0`, but far from all.
+   */
+  scenes?: Array<{ x: number; y: number }>;
 };
 
 export type ProjectDeployment = {

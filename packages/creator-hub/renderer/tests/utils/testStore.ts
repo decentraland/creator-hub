@@ -8,7 +8,13 @@ import * as analytics from '../../src/modules/store/analytics';
 import * as ens from '../../src/modules/store/ens';
 import * as land from '../../src/modules/store/land';
 import * as management from '../../src/modules/store/management';
+import * as featureFlags from '../../src/modules/store/featureFlags';
+import * as settings from '../../src/modules/store/settings';
+import * as defaultEditor from '../../src/modules/store/defaultEditor';
+import * as profiles from '../../src/modules/store/profiles';
+import * as placeAnalytics from '../../src/modules/store/placeAnalytics';
 
+/** Mirrors the app's root reducer, so a component under test finds every slice. */
 export const createTestStore = () =>
   configureStore({
     reducer: {
@@ -21,6 +27,11 @@ export const createTestStore = () =>
       ens: ens.reducer,
       land: land.reducer,
       management: management.reducer,
+      featureFlags: featureFlags.reducer,
+      settings: settings.reducer,
+      defaultEditor: defaultEditor.reducer,
+      profiles: profiles.reducer,
+      placeAnalytics: placeAnalytics.reducer,
     },
     middleware: getDefaultMiddleware =>
       getDefaultMiddleware({

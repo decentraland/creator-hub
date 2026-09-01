@@ -1,0 +1,53 @@
+.EndOfLineLabelText {
+  fill: var(--text);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.MuiChartsTooltip-root .MuiChartsTooltip-valueCell {
+  font-weight: 600;
+}
+
+.ChartEmpty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 200px;
+  color: var(--secondary-text);
+}
+
+.ChartLegend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+  margin-bottom: 16px;
+}
+
+.ChartLegend .LegendEntry {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--secondary-text);
+}
+
+.ChartLegend .LegendKey {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+.ChartLegend svg {
+  font-size: 16px;
+  cursor: help;
+}
+
+/*
+ * The 2px surface-colored separation between stacked segments. x-charts has no
+ * gap of its own, and the stroke sits in the surface color so it reads as the
+ * card showing through rather than as an outline on the mark.
+ */
+.StackedBars .MuiBarElement-root {
+  stroke: var(--card);
+  stroke-width: 2;
+}

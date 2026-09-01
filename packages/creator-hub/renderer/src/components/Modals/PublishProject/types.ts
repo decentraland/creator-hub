@@ -28,11 +28,6 @@ export type Step =
   | 'publish-to-land'
   | 'deploy';
 
-export type InitialTarget = 'worlds' | 'land';
-export type AlternativeTarget = 'test' | 'custom';
-
-export type TargetType = InitialTarget | AlternativeTarget;
-
 export const COLORS = Object.freeze({
   occupiedParcel: '#774642',
   freeParcel: '#ff9990',

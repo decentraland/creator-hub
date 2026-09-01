@@ -6,7 +6,7 @@ import type { Asset } from '../types';
 import { determineAssetType, formatFileName } from '../utils';
 import { AssetSlides } from './AssetSlides';
 import { useSliderAssets } from './useSliderAssets';
-import type { PropTypes, Thumbnails } from './types';
+import type { PropTypes, ReportedThumbnails } from './types';
 
 import './Slider.css';
 
@@ -18,7 +18,7 @@ enum ImportStep {
 export function Slider({ assets, onSubmit, isNameAvailable, isImporting = false }: PropTypes) {
   const { assets: uploadedAssets, setAssets: setUploadedAssets } = useSliderAssets(assets);
   const [slide, setSlide] = useState(0);
-  const [screenshots, setScreenshots] = useState<Thumbnails>({});
+  const [reportedThumbnails, setReportedThumbnails] = useState<ReportedThumbnails>({});
   const [step, setStep] = useState<ImportStep>(ImportStep.UPLOAD);
 
   const invalidNames = useMemo(() => {
@@ -41,10 +41,10 @@ export function Slider({ assets, onSubmit, isNameAvailable, isImporting = false 
     onSubmit(
       uploadedAssets.map($ => ({
         ...$,
-        thumbnail: screenshots[$.blob.name],
+        thumbnail: reportedThumbnails[$.blob.name],
       })),
     );
-  }, [uploadedAssets, screenshots, onSubmit]);
+  }, [uploadedAssets, reportedThumbnails, onSubmit]);
 
   const handleConfirmImport = useCallback(() => {
     if (invalidNames.size > 0) {
@@ -55,9 +55,9 @@ export function Slider({ assets, onSubmit, isNameAvailable, isImporting = false 
   }, [invalidNames, handleSubmit]);
 
   const handleScreenshot = useCallback(
-    (file: Asset) => (thumbnail: string) => {
+    (file: Asset) => (thumbnail?: string) => {
       const { name } = file.blob;
-      setScreenshots(prev => (prev[name] ? prev : { ...prev, [name]: thumbnail }));
+      setReportedThumbnails(prev => (name in prev ? prev : { ...prev, [name]: thumbnail }));
     },
     [],
   );
@@ -77,13 +77,13 @@ export function Slider({ assets, onSubmit, isNameAvailable, isImporting = false 
     ? 'IMPORTING...'
     : `IMPORT${manyAssets ? ` ALL (${uploadedAssets.length})` : ''}`;
 
-  const allScreenshotsTaken = useMemo(() => {
-    const neededScreenshots = uploadedAssets.filter($ => {
+  const allPreviewsReported = useMemo(() => {
+    const assetsWithPreviews = uploadedAssets.filter($ => {
       const type = determineAssetType($.extension);
       return type === 'Models' || type === 'Images';
     });
-    return neededScreenshots.length === Object.keys(screenshots).length;
-  }, [uploadedAssets, screenshots]);
+    return assetsWithPreviews.length === Object.keys(reportedThumbnails).length;
+  }, [uploadedAssets, reportedThumbnails]);
 
   const isNameUnique = useCallback(
     (asset: Asset) => !invalidNames.has(formatFileName(asset)),
@@ -124,7 +124,7 @@ export function Slider({ assets, onSubmit, isNameAvailable, isImporting = false 
             type="danger"
             size="big"
             onClick={handleConfirmImport}
-            disabled={!allScreenshotsTaken || isImporting}
+            disabled={!allPreviewsReported || isImporting}
           >
             {importText}
           </Button>

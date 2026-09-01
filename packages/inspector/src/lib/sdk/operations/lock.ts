@@ -12,7 +12,9 @@ export function lock(engine: IEngine) {
 
     // Apply the lock only to the selected entity, not to its children
     if (value) {
-      addComponent(entity, Lock.componentId, { value: true });
+      // Guard against a double-add: addComponent uses component.create, which
+      // throws if Lock already exists on the entity.
+      if (!Lock.has(entity)) addComponent(entity, Lock.componentId, { value: true });
     } else {
       removeComponent(entity, Lock);
     }

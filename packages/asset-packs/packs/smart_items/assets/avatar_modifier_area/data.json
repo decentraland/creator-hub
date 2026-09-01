@@ -1,0 +1,8 @@
+{
+  "id": "96cf5582-be1e-4043-92b9-fcabdc202df0",
+  "name": "Avatar Modifier Area",
+  "category": "utils",
+  "tags": ["area", "avatar", "invisible", "hide", "passport", "profile", "modifier", "region"],
+  "description": "An invisible area that changes how avatars behave or appear for players inside it",
+  "author": "Decentraland Foundation"
+}

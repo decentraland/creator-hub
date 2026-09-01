@@ -13,6 +13,7 @@ import { createLocalDataLayerRpcClient } from '../../../lib/data-layer/client/lo
 import { DataServiceDefinition } from '../../../lib/data-layer/proto/gen/data-layer.gen';
 import type { DataLayerRpcClient } from '../../../lib/data-layer/types';
 import { createIframeDataLayerRpcClient } from '../../../lib/data-layer/client/iframe-data-layer';
+import { wireParentBridges } from '../../../lib/data-layer/client/parent-bridges';
 import type { InspectorConfig } from '../../../lib/logic/config';
 import { getConfig } from '../../../lib/logic/config';
 
@@ -59,6 +60,9 @@ export function* connectSaga() {
     );
     yield put(connected({ dataLayer }));
     return;
+  }
+  if (config.dataLayerRpcParentUrl) {
+    yield call(wireParentBridges, config.dataLayerRpcParentUrl);
   }
   const ws: WebSocket = yield call(createWebSocketConnection, config.dataLayerRpcWsUrl);
   const socketChannel: EventChannel<WsActions> = yield call(createSocketChannel, ws);

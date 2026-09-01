@@ -1,5 +1,5 @@
 import { FreeCamera, NullEngine, Scene, Vector3, ScreenshotTools } from '@babylonjs/core';
-import { InMemoryTransport } from '@dcl/mini-rpc';
+import { InMemoryTransport, RPC } from '@dcl/mini-rpc';
 import type { Store } from '../../../redux/store';
 import { SceneClient } from './client';
 import { SceneServer } from './server';
@@ -35,6 +35,18 @@ describe('SceneClient RPC', () => {
     it('should send the open_file request with the correct path', async () => {
       await client.openFile(path);
       expect(spy).toHaveBeenCalledWith('open_file', { path });
+    });
+  });
+
+  describe('when using the getFeatureFlags method', () => {
+    it('should send the get_feature_flags request and return the flags', async () => {
+      const spy = vi
+        .spyOn(client, 'request')
+        .mockResolvedValueOnce({ flags: { 'creatorhub-inspector-scene-minimap': true } });
+      const result = await client.getFeatureFlags();
+      expect(spy).toHaveBeenCalledWith('get_feature_flags', {});
+      expect(result).toEqual({ flags: { 'creatorhub-inspector-scene-minimap': true } });
+      spy.mockRestore();
     });
   });
 
@@ -160,5 +172,54 @@ describe('SceneServer RPC', () => {
       expect(spy).toHaveBeenCalledWith(engine, camera, expect.objectContaining({ width, height }));
       spy.mockRestore();
     });
+  });
+});
+
+// The renderer-agnostic handlers must work WITHOUT a Babylon renderer — this is
+// what lets feature flags (and debug/tab controls) reach a non-Babylon renderer
+// like Bevy. Without them the SceneMinimap flag never arrives and the minimap
+// never shows under Bevy.
+describe('SceneServer RPC without a renderer (non-Babylon path)', () => {
+  let parent: InMemoryTransport;
+  let iframe: InMemoryTransport;
+  // A caller on the SERVER's inbound channel (the host side sends these). The
+  // SceneClient uses a different RPC name, so drive the server directly.
+  let host: RPC<string, any, any>;
+  let store: Store;
+
+  beforeEach(() => {
+    parent = new InMemoryTransport();
+    iframe = new InMemoryTransport();
+    parent.connect(iframe);
+    iframe.connect(parent);
+
+    store = {
+      dispatch: vi.fn(),
+      getState: vi.fn(),
+      subscribe: vi.fn(),
+      replaceReducer: vi.fn(),
+    } as any as Store;
+
+    // No renderer argument — the Bevy path.
+    new SceneServer(iframe, store);
+    host = new RPC('SceneRpcInbound', parent);
+  });
+
+  afterEach(() => vi.resetAllMocks());
+
+  it('should handle set_feature_flags and dispatch them to the store', async () => {
+    await host.request('set_feature_flags', {
+      flags: { 'creatorhub-inspector-scene-minimap': true },
+    });
+    expect(store.dispatch).toHaveBeenCalledWith(
+      expect.objectContaining({ payload: { 'creatorhub-inspector-scene-minimap': true } }),
+    );
+  });
+
+  it('should still handle other agnostic controls (e.g. toggle_ground_grid)', async () => {
+    await host.request('toggle_ground_grid', { enabled: false });
+    expect(store.dispatch).toHaveBeenCalledWith(
+      expect.objectContaining({ type: 'ui/toggleGroundGrid', payload: { enabled: false } }),
+    );
   });
 });

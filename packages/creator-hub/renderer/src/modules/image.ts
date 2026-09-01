@@ -34,6 +34,10 @@ export function resizeImage(image: string, maxWidth: number, maxHeight: number) 
       const newDataUri = imageToDataUri(img, width, height);
       resolve(newDataUri);
     };
+    // Never hang on a malformed image (e.g. a screenshot RPC that resolved with an
+    // error string instead of a data URL — a renderer whose engine lacks the
+    // screenshot command): resolve null so callers treat it as "no thumbnail".
+    img.onerror = () => resolve(null);
     img.src = image;
   });
 }

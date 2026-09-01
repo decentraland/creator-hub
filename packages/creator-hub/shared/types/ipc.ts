@@ -7,6 +7,8 @@ import type { DeployOptions } from '/shared/types/deploy';
 import type { PreviewOptions, ReleaseNotes } from './settings';
 import type { Config, EditorConfig } from './config';
 import type { Env } from './env';
+import type { OxcParseResult } from './oxc';
+import type { MetricsRequest, MetricsResponse } from './metrics';
 
 export type IpcResult<T> = {
   success: true;
@@ -19,6 +21,13 @@ export type IpcError = {
     name: string;
   };
 };
+
+// Asset-conversion progress pushed from main to the renderer while a preview spawn is
+// converting. Shared here because preload subscribes to the channel and cannot import
+// from main, so the event name and payload shape must have a single home.
+export const PREVIEW_PROGRESS_EVENT = 'preview.progress';
+
+export type PreviewProgress = { seconds: number; done?: number; total?: number };
 
 export interface MobileDebugSessionInfo {
   id: number;
@@ -56,9 +65,13 @@ export interface Ipc {
   'electron.showOpenDialog': (opts: Partial<OpenDialogOptions>) => Promise<string[]>;
   'electron.openExternal': (url: string) => Promise<void>;
   'electron.copyToClipboard': (text: string) => Promise<void>;
+  'oxc.parse': (filename: string, source: string) => Promise<OxcParseResult>;
+  'metrics.request': (request: MetricsRequest) => Promise<MetricsResponse>;
   'inspector.start': () => Promise<number>;
   'inspector.attachSceneDebugger': (path: string) => Promise<string>;
   'inspector.detachSceneDebugger': (path: string) => void;
+  'bevyRealm.start': (path: string) => Promise<{ url: string; wsUrl: string }>;
+  'bevyRealm.kill': (path: string) => Promise<void>;
   'config.getConfig': () => Promise<Config>;
   'config.writeConfig': (config: Config) => Promise<void>;
   'bin.install': () => Promise<void>;
@@ -70,7 +83,9 @@ export interface Ipc {
   'code.removeEditor': (path: string) => Promise<EditorConfig[]>;
 
   'cli.init': (path: string, repo: string) => Promise<void>;
-  'cli.start': (path: string, opts: PreviewOptions) => Promise<string>;
+  'cli.start': (path: string, opts: PreviewOptions, mobile?: boolean) => Promise<string>;
+  'cli.cancelPreview': (path: string) => Promise<void>;
+  'cli.supportsAssetBundles': (path: string) => Promise<boolean>;
   'cli.deploy': (opts: DeployOptions) => Promise<number>;
   'cli.killPreview': (path: string) => Promise<void>;
   'cli.getMobilePreview': (path: string) => Promise<{ url: string; qr: string } | null>;

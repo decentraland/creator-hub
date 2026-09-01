@@ -11,7 +11,7 @@ import { actions as landActions } from '../land';
 import { actions as managementActions } from '../management';
 import { actions as workspaceActions } from '../workspace';
 import { shouldNotifyUpdates } from '../workspace/utils';
-import { createCustomNotification, createGenericNotification } from './utils';
+import { createCustomNotification, createGenericNotification, sanitizePreviewError } from './utils';
 import type { Notification } from './types';
 
 // state
@@ -116,7 +116,8 @@ export const slice = createSlice({
           createGenericNotification('error', t('snackbar.generic.preview_scene_failed'), {
             requestId,
             duration: 0,
-            description: payload.error.message,
+            // Show only the esbuild diagnostic, not the raw stack/paths/CLI text (#1464).
+            description: sanitizePreviewError(payload.error.message),
           }),
         );
       })
@@ -125,10 +126,14 @@ export const slice = createSlice({
         state.notifications = state.notifications.filter($ => $.id !== requestId);
       })
       .addCase(workspaceActions.importProject.rejected, (state, payload) => {
+        const isAlreadyImported = isProjectError(payload.payload, 'PROJECT_ALREADY_IMPORTED');
+        const translatedError = isAlreadyImported
+          ? t('snackbar.generic.import_scene_already_imported')
+          : t('snackbar.generic.import_scene_failed');
         const { requestId } = payload.meta;
         state.notifications = state.notifications.filter($ => $.id !== requestId);
         state.notifications.push(
-          createGenericNotification('error', t('snackbar.generic.import_scene_failed'), {
+          createGenericNotification('error', translatedError, {
             requestId,
           }),
         );

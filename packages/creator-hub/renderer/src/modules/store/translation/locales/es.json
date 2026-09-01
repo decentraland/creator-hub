@@ -17,42 +17,60 @@
       "sign_in": {
         "title": "Inicia sesión para publicar tus escenas",
         "action": "Iniciar sesión"
+      }
+    },
+    "rows": {
+      "my_scenes": {
+        "title": "Mis Escenas"
       },
-      "scenes": {
-        "title": "Escenas",
-        "empty_scenes": {
-          "description": "Crea tu primera escena",
-          "action": "Empezar a construir"
-        },
-        "action": "Ver Todo"
+      "templates": {
+        "title": "Plantillas",
+        "description": "Ahorra tiempo con experiencias listas para usar que incluyen mecánicas reutilizables, prefabs y espacios para explorar y socializar."
       },
       "learn": {
         "title": "Aprender",
-        "action": "Ver Todo"
-      },
-      "feedback": {
-        "title": "Da forma al futuro de Creator Hub",
-        "action": "Darnos feedback"
+        "description": "Domina las herramientas de Creator con guías, tutoriales y ejemplos prácticos diseñados para ayudarte a crear con confianza.",
+        "videos": "Videos",
+        "documentation": "Documentación"
       }
     }
   },
   "editor": {
     "loading": {
-      "title": "Preparando tu escena..."
+      "title": "Preparando tu escena...",
+      "installing": "Instalando dependencias... Puede tardar un momento la primera vez.",
+      "failed": {
+        "title": "Error al cargar",
+        "timeout": "La escena está tardando demasiado en cargar. Puede tener un error en su código.",
+        "back": "Volver a escenas",
+        "outdated_deps": "Las dependencias de esta escena están desactualizadas y no son compatibles con el renderizador Bevy. Actualízalas para continuar.",
+        "update_deps": "Actualizar dependencias"
+      }
     },
     "header": {
       "actions": {
         "code": "Código",
         "preview": "Previsualizar",
+        "optimizing": "Optimizando",
+        "cancel_optimizing": "Cancelar la optimización",
         "publish": "Publicar",
         "refresh": "Recargar escena desde disco",
         "preview_options": {
           "title": "Opciones de Previsualización",
+          "client": {
+            "label": "Previsualizar con",
+            "desktop": "Cliente de Escritorio",
+            "bevy_web": "Bevy (Web)"
+          },
           "debugger": "Abrir la ventana de la Consola durante la previsualización",
           "skip_auth_screen": "Omitir la pantalla de autenticación",
           "open_new_instance": "Abrir multiples clientes",
           "landscape_terrain_enabled": "Habilitar terrenos de vista panorámica",
+          "landscape_terrain_disabled_by_scene": "El terreno panorámico está oculto por la configuración de esta escena",
           "multi_instance": "Vista previa multi-instancia",
+          "mcp": "Habilitar servidor MCP",
+          "optimized_assets": "Optimizar assets",
+          "optimized_assets_tooltip": "Previsualiza la escena con assets optimizados, igual que se ve en producción",
           "mobile_preview": "Mostrar código QR para móvil"
         },
         "publish_options": {
@@ -78,6 +96,7 @@
       "delete_project": "Borrar de Mis Escenas",
       "duplicate_project": "Duplicar",
       "open_folder": "Abrir Carpeta",
+      "rename_folder": "Renombrar Carpeta",
       "view_deployments": "Ver Despliegues"
     },
     "no_scenes": {
@@ -101,6 +120,7 @@
       "home": "Inicio",
       "scenes": "Escenas",
       "collections": "Colecciones",
+      "analytics": "Analíticas",
       "manage": "Gestionar",
       "learn": "Aprender",
       "more": "Más"
@@ -109,7 +129,26 @@
     "report_an_issue": "Informar un problema",
     "user_menu": {
       "sign_in": "Iniciar Sesión",
-      "sign_out": "Cerrar Sesión"
+      "sign_out": "Cerrar Sesión",
+      "account_tooltip": "Cuenta"
+    },
+    "create": {
+      "label": "Crear",
+      "new_scene": "Nueva Escena",
+      "import_scene": "Importar Escena"
+    },
+    "logo_menu": {
+      "main_menu_tooltip": "Menú Principal",
+      "about": "Acerca de Creator Hub",
+      "check_for_updates": "Buscar Actualizaciones",
+      "settings": "Configuración",
+      "report_bug": "Reportar Error",
+      "help": {
+        "label": "Ayuda y Soporte",
+        "faq": "Preguntas Frecuentes",
+        "contact_support": "Contactar Soporte",
+        "discord": "Discord"
+      }
     }
   },
   "modal": {
@@ -125,6 +164,15 @@
       "title": "Estas seguro que quieres eliminar {title} de 'Mis Escenas'?",
       "files_checkbox": "También eliminar los archivos de la escena de mi computadora",
       "files_warning": "Los archivos de la escena se eliminarán permanentemente de tu computadora, no podrás acceder a esta escena nuevamente."
+    },
+    "rename_folder": {
+      "title": "Renombrar Carpeta",
+      "field_label": "Nombre de la Carpeta",
+      "errors": {
+        "invalid_name": "Ese nombre no es válido. Evita nombres vacíos y caracteres como / \\ : * ? \" < > |.",
+        "name_taken": "Ya existe una carpeta con ese nombre.",
+        "rename_failed": "No se pudo renombrar la carpeta. Inténtalo de nuevo."
+      }
     },
     "publish_project": {
       "title": "Publicar escena \"{title}\"",
@@ -199,12 +247,10 @@
         "title": "Publicar en un Servidor Alternativo",
         "list": "Servidores Alternativos",
         "options": {
-          "test_server": "Servidor de Prueba",
           "custom_server": "Servidor Personalizado"
         },
         "custom_server_url": "URL del Servidor",
         "action": {
-          "test_server": "Publicar en el Servidor de Prueba",
           "custom_server": "Publicar en Servidor Personalizado"
         },
         "errors": {
@@ -302,6 +348,9 @@
         "editor": {
           "label": "EDITOR"
         },
+        "experimental": {
+          "label": "EXPERIMENTAL"
+        },
         "about": {
           "label": "ACERCA DE"
         }
@@ -342,6 +391,18 @@
         "app_warnings": {
           "label": "Advertencias de la Aplicación",
           "show_warnings": "Mostrar un mensaje de advertencia cada vez que previsualizas o publicas una escena que contiene código personalizado"
+        },
+        "renderer": {
+          "label": "Motor de renderizado",
+          "babylon": "Babylon (predeterminado)",
+          "bevy": "Bevy (vista previa)"
+        },
+        "experimental": {
+          "label": "Funciones experimentales"
+        },
+        "gui_editor": {
+          "toggle": "Editor de UI",
+          "hint": "Habilitar esta función te permitirá combinar objetos de interfaz, propiedades y scripting para crear UI en el editor."
         }
       },
       "actions": {
@@ -606,6 +667,7 @@
         "create": "Crear"
       },
       "errors": {
+        "invalid_directory": "Esa ruta de carpeta no existe. Usa el botón de carpeta para elegir una ubicación existente para tu escena.",
         "path_exists_or_not_writable": "La ruta ya existe o no tienes permiso para crear archivos allí. Por favor, elige otra carpeta."
       }
     },
@@ -627,6 +689,11 @@
       "title": "Conectar Mobile Debug Session",
       "description": "Escanea este código QR con tu dispositivo móvil para previsualizar la escena",
       "disclaimer": "Tu computadora y dispositivo móvil deben estar en la misma red"
+    },
+    "about": {
+      "title": "Acerca de",
+      "app_name": "Decentraland Creator Hub",
+      "action": "Aceptar"
     }
   },
   "popup": {
@@ -636,6 +703,7 @@
     "generic": {
       "import_scene": "Importando escena...",
       "import_scene_failed": "Error al importar escena",
+      "import_scene_already_imported": "La escena ya fue importada",
       "duplicate_scene": "Duplicando escena...",
       "duplicate_scene_failed": "Error al duplicar escena",
       "delete_scene": "Borrando escena...",
@@ -731,10 +799,6 @@
         "submit_event": {
           "title": "Enviar Evento",
           "description": "Organiza tu propio evento en Decentraland."
-        },
-        "legacy_web_editor": {
-          "title": "Editor Web Clásico",
-          "description": "Accede al editor web antiguo para continuar trabajando en tus escenas."
         },
         "collections": {
           "title": "Colecciones",
@@ -883,6 +947,213 @@
     },
     "unpublish_world_confirmation": {
       "title": "¿Despublicar <b>{worldName}</b>?"
+    }
+  },
+  "analytics": {
+    "header": {
+      "title": "Analíticas"
+    },
+    "empty_list": {
+      "title": "Aún no hay Places para analizar",
+      "description": "Publica una escena para empezar a medir su rendimiento. Cuando esté en vivo, vas a encontrar acá las métricas y datos clave de tu Place.",
+      "search": {
+        "title": "No se encontraron Places",
+        "description": "Ningún Place coincide con tu búsqueda. Probá con otro nombre."
+      }
+    },
+    "error": {
+      "title": "No pudimos cargar tus Places"
+    },
+    "actions": {
+      "export": "Exportar Analíticas",
+      "export_unavailable": "Vas a poder exportar cuando los datos de analíticas estén disponibles"
+    },
+    "detail": {
+      "title": "Analíticas - {name}",
+      "tabs": {
+        "overview": "Resumen",
+        "retention": "Retención",
+        "visits": "Visitas",
+        "engagement": "Interacción"
+      },
+      "date_range": {
+        "title": "Rango de Fechas",
+        "last_7_days": "Últimos 7 Días",
+        "last_30_days": "Últimos 30 Días",
+        "last_60_days": "Últimos 60 Días"
+      },
+      "place": {
+        "access": "Acceso",
+        "private": "Privado",
+        "public": "Público",
+        "published_in": "Publicado en",
+        "last_published_by": "Última publicación por",
+        "last_update": "Última Actualización"
+      },
+      "actions": {
+        "create_event": "Crear Evento",
+        "edit_scene": "Editar Escena",
+        "edit_scene_unavailable": "Todavía no se puede abrir la escena desde acá",
+        "copy_url": "Copiar URL",
+        "jump_in": "Entrar"
+      },
+      "overview": {
+        "title": "Resumen",
+        "description": "Un panorama del crecimiento, la interacción y la retención de tu place."
+      },
+      "retention": {
+        "title": "Retención",
+        "description": "Entendé qué porcentaje de usuarios vuelve después de su primera sesión.",
+        "platforms": {
+          "title": "Plataformas",
+          "description": "Tu promedio móvil de 60 días, comparado entre mobile y escritorio."
+        },
+        "day_7_cohort": {
+          "title": "Retención Día 7 por Semana de Cohorte",
+          "description": "Porcentaje de usuarios que volvieron al menos una vez durante los 7 días posteriores a su primera visita, agrupados por la semana en que entraron por primera vez a tu place.",
+          "benchmark": "{value}% Día 7 KR"
+        },
+        "churn": {
+          "title": "Tasa de Abandono Semanal",
+          "description": "Porcentaje de usuarios activos de la semana anterior que no volvieron esta semana."
+        }
+      },
+      "visits": {
+        "title": "Visitas",
+        "description": "Entendé cuántos usuarios visitaron tu place y cuántos eran nuevos o recurrentes.",
+        "unique": {
+          "title": "Visitas Únicas en los Últimos 60 Días",
+          "footnote": "Usuarios únicos, sin duplicados entre plataformas. Quienes usan escritorio y móvil se cuentan una vez en Todas las Plataformas y una vez en el total de cada plataforma."
+        },
+        "weekly_active": {
+          "title": "Usuarios Activos Semanales",
+          "description": "Usuarios únicos activos durante cada semana."
+        },
+        "flow": {
+          "title": "Flujo Semanal de Usuarios",
+          "description": "Seguí cómo tus usuarios semanales se mueven entre nuevos, recurrentes y reactivados.",
+          "returned": {
+            "label": "Usuarios Recurrentes",
+            "tooltip": "Usuarios que visitaron la semana pasada y volvieron esta semana."
+          },
+          "reactivated": {
+            "label": "Usuarios Reactivados",
+            "tooltip": "Usuarios que habían dejado de visitar y volvieron esta semana."
+          }
+        }
+      },
+      "engagement": {
+        "title": "Interacción",
+        "description": "Entendé cómo interactúan los usuarios con tu place.",
+        "minutes": "min",
+        "delta": "{value} min",
+        "vs_last_week": "{value} vs. la semana pasada",
+        "daily": {
+          "title": "Tiempo de Juego Diario Promedio",
+          "description": "Tiempo promedio que cada usuario pasa en tu place en una sola visita.",
+          "chart_title": "Tiempo de Juego Diario Promedio por semana"
+        },
+        "weekly": {
+          "title": "Tiempo de Juego Semanal Promedio",
+          "description": "Tiempo promedio que cada usuario pasa en tu place por semana.",
+          "chart_title": "Tiempo de Juego Semanal Promedio por Usuario"
+        },
+        "social": {
+          "title": "Interacciones Sociales",
+          "description": "Las interacciones se cuentan por realm (una copia en ejecución del place), así que el juego repartido entre realms se ve un poco más bajo.",
+          "totals_title": "Totales Semanales de Interacciones Sociales",
+          "rate_title": "Tasa de Interacción Social de Visitantes",
+          "messages": {
+            "label": "Mensajes Enviados",
+            "tooltip": "Mensajes de chat enviados por visitantes en tu place."
+          },
+          "emotes": {
+            "label": "Emotes Reproducidos",
+            "tooltip": "Emotes reproducidos por visitantes en tu place."
+          },
+          "friendships": {
+            "label": "Nuevas Amistades",
+            "tooltip": "Solicitudes de amistad aceptadas entre visitantes de tu place."
+          }
+        }
+      },
+      "platforms": {
+        "all": "Todas las Plataformas",
+        "desktop": "Escritorio",
+        "mobile": "Móvil"
+      },
+      "charts": {
+        "no_data": "Todavía no hay datos para este período"
+      },
+      "error": {
+        "title": "No pudimos cargar las analíticas de este Place"
+      }
+    },
+    "metrics": {
+      "total_visits": {
+        "label": "Visitas Totales",
+        "tooltip": "Todas las visitas a tu place, incluidas las repetidas del mismo usuario."
+      },
+      "unique_visits": {
+        "label": "Visitas Únicas",
+        "tooltip": "Usuarios distintos que visitaron tu place, contados una sola vez."
+      },
+      "new_users": {
+        "label": "Usuarios Nuevos",
+        "tooltip": "Usuarios que visitaron tu place por primera vez."
+      },
+      "concurrent_users": {
+        "label": "Usuarios Simultáneos",
+        "tooltip": "La mayor cantidad de usuarios en tu place al mismo tiempo."
+      },
+      "revenue": {
+        "label": "Ingresos",
+        "tooltip": "MANA ganado en tu place."
+      },
+      "day_7_retention": {
+        "label": "Retención Día 7",
+        "tooltip": "El porcentaje de usuarios nuevos que volvieron a tu place al menos una vez durante los 7 días posteriores a su primera visita."
+      },
+      "avg_playtime": {
+        "label": "Tiempo de Juego Prom.",
+        "tooltip": "Tiempo promedio que cada usuario pasa en tu place en una sola visita."
+      },
+      "afk_time": {
+        "label": "Tiempo AFK",
+        "tooltip": "Tiempo promedio que los usuarios pasan en tu place sin interactuar."
+      },
+      "desktop": {
+        "label": "Escritorio",
+        "tooltip": "Usuarios que visitaron tu place desde un cliente de escritorio."
+      },
+      "mobile": {
+        "label": "Móvil",
+        "tooltip": "Usuarios que visitaron tu place desde un cliente móvil."
+      }
+    },
+    "list": {
+      "places": "{count} {count, plural, one {Place} other {Places}}",
+      "search": "Buscar",
+      "minutes": "{value} min",
+      "pinned": "Fijado a la Watchlist",
+      "sort": {
+        "title": "Ordenar por",
+        "name_asc": "Nombre A-Z",
+        "name_desc": "Nombre Z-A",
+        "most_visits": "Más Visitas"
+      },
+      "columns": {
+        "place": "Place",
+        "total_visits": "Visitas Únicas",
+        "new_users": "Usuarios Nuevos",
+        "day_7_retention": "Retención D7",
+        "revenue": "Ingresos",
+        "avg_playtime": "Tiempo de Juego Prom."
+      },
+      "actions": {
+        "pin_to_watchlist": "Fijar a la Watchlist",
+        "unpin_from_watchlist": "Quitar de la Watchlist"
+      }
     }
   },
   "connection": {

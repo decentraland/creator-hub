@@ -17,7 +17,7 @@ import { useComponentValue } from '../../hooks/sdk/useComponentValue';
 import type { WithSdkProps } from '../../hoc/withSdk';
 import { withSdk } from '../../hoc/withSdk';
 import type { EditorComponentsTypes } from '../../lib/sdk/components';
-import type { SpawnPointSelectionTarget } from '../../lib/babylon/decentraland/spawn-point-manager';
+import type { SpawnPointTarget } from '../../lib/renderer/types';
 import {
   isValidSpawnAreaName,
   fromSceneSpawnPoint,
@@ -33,7 +33,7 @@ import './PlayerTree.css';
 
 type SpawnAreaSelection = {
   index: number | null;
-  target: SpawnPointSelectionTarget;
+  target: SpawnPointTarget | null;
 };
 
 type PlayerTreeProps = {
@@ -46,7 +46,7 @@ const getLevelStyles = (level: number) => ({ paddingLeft: `${level * 10}px` });
 const PlayerTree: React.FC<WithSdkProps & PlayerTreeProps> = ({ sdk, onSelect }) => {
   const { Scene } = sdk.components;
   const rootEntity = sdk.engine.RootEntity;
-  const spawnPointManager = sdk.sceneContext.spawnPoints;
+  const spawnPointManager = sdk.renderer.spawnPoints;
 
   const [componentValue, setComponentValue] = useComponentValue<EditorComponentsTypes['Scene']>(
     rootEntity,
@@ -73,7 +73,7 @@ const PlayerTree: React.FC<WithSdkProps & PlayerTreeProps> = ({ sdk, onSelect })
   const [hiddenNames, setHiddenNames] = useState<Set<string>>(() => {
     const names = new Set<string>();
     for (const sp of spawnPoints) {
-      if (spawnPointManager.isSpawnPointHidden(sp.name)) {
+      if (spawnPointManager.isHidden(sp.name)) {
         names.add(sp.name);
       }
     }
@@ -106,7 +106,7 @@ const PlayerTree: React.FC<WithSdkProps & PlayerTreeProps> = ({ sdk, onSelect })
   }, [spawnPointManager]);
 
   const handlePlayerClick = useCallback(() => {
-    spawnPointManager.selectSpawnPoint(null);
+    spawnPointManager.select(null);
     onSelect(PLAYER);
   }, [spawnPointManager, onSelect]);
 
@@ -117,7 +117,7 @@ const PlayerTree: React.FC<WithSdkProps & PlayerTreeProps> = ({ sdk, onSelect })
 
   const handleSpawnAreaClick = useCallback(
     (index: number) => {
-      spawnPointManager.selectSpawnPoint(index);
+      spawnPointManager.select(index);
       onSelect(PLAYER);
     },
     [spawnPointManager, onSelect],
@@ -135,7 +135,7 @@ const PlayerTree: React.FC<WithSdkProps & PlayerTreeProps> = ({ sdk, onSelect })
     (e: React.MouseEvent, index: number, name: string) => {
       e.stopPropagation();
       const isHidden = hiddenNames.has(name);
-      spawnPointManager.setSpawnPointVisible(index, name, isHidden);
+      spawnPointManager.setVisible(index, name, isHidden);
     },
     [spawnPointManager, hiddenNames],
   );
@@ -206,13 +206,13 @@ const PlayerTree: React.FC<WithSdkProps & PlayerTreeProps> = ({ sdk, onSelect })
       }
       setComponentValue({ ...componentValue, spawnPoints: updatedSpawnPoints });
       if (selection.index === index) {
-        spawnPointManager.selectSpawnPoint(null);
+        spawnPointManager.select(null);
       } else if (selection.index !== null && selection.index > index) {
         const adjustedIndex = selection.index - 1;
         if (selection.target === 'cameraTarget') {
           spawnPointManager.selectCameraTarget(adjustedIndex);
         } else {
-          spawnPointManager.selectSpawnPoint(adjustedIndex);
+          spawnPointManager.select(adjustedIndex);
         }
       }
     },

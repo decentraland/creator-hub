@@ -17,42 +17,60 @@
       "sign_in": {
         "title": "登入以發布您的現場",
         "action": "登录"
+      }
+    },
+    "rows": {
+      "my_scenes": {
+        "title": "我的场景"
       },
-      "scenes": {
-        "title": "場景",
-        "empty_scenes": {
-          "description": "創建您的第一個場景",
-          "action": "開始建造"
-        },
-        "action": "看全部"
+      "templates": {
+        "title": "模板",
+        "description": "使用现成的体验节省时间，其中包含可重复使用的机制、预制件以及可供探索和聚会的空间。"
       },
       "learn": {
-        "title": "學習",
-        "action": "看全部"
-      },
-      "feedback": {
-        "title": "塑造創作者中心的未來",
-        "action": "提交回饋"
+        "title": "学习",
+        "description": "通过指南、教程和实践示例掌握创作者工具，帮助你自信地进行创作。",
+        "videos": "视频",
+        "documentation": "文档"
       }
     }
   },
   "editor": {
     "loading": {
-      "title": "正在准备场景..."
+      "title": "正在准备场景...",
+      "installing": "正在安装依赖项……首次可能需要一些时间。",
+      "failed": {
+        "title": "加载失败",
+        "timeout": "场景加载时间过长，可能其代码中存在错误。",
+        "back": "返回场景",
+        "outdated_deps": "此场景的依赖项已过时，不支持 Bevy 渲染器。请更新它们以继续。",
+        "update_deps": "更新依赖项"
+      }
     },
     "header": {
       "actions": {
         "code": "代码",
         "preview": "预览",
+        "optimizing": "优化中",
+        "cancel_optimizing": "取消优化",
         "publish": "发布",
         "refresh": "从磁盘重新加载场景",
         "preview_options": {
           "title": "预览选项",
+          "client": {
+            "label": "预览方式",
+            "desktop": "桌面客户端",
+            "bevy_web": "Bevy（网页）"
+          },
           "debugger": "在预览期间打开控制台窗口",
           "skip_auth_screen": "跳过认证屏幕",
           "open_new_instance": "打开多个实例",
           "landscape_terrain_enabled": "启用景观地形",
+          "landscape_terrain_disabled_by_scene": "此场景的设置已隐藏景观地形",
           "multi_instance": "多实例预览",
+          "mcp": "启用 MCP 服务器",
+          "optimized_assets": "优化资源",
+          "optimized_assets_tooltip": "使用优化后的资源预览场景，与生产环境的渲染效果一致",
           "mobile_preview": "显示移动端二维码"
         },
         "publish_options": {
@@ -78,6 +96,7 @@
       "delete_project": "删除场景",
       "duplicate_project": "复制场景",
       "open_folder": "打开文件夹",
+      "rename_folder": "重命名文件夹",
       "view_deployments": "查看部署"
     },
     "no_scenes": {
@@ -101,6 +120,7 @@
       "home": "首页",
       "scenes": "场景",
       "collections": "收藏",
+      "analytics": "数据分析",
       "manage": "管理",
       "learn": "学习",
       "more": "更多"
@@ -109,7 +129,26 @@
     "report_an_issue": "报告问题",
     "user_menu": {
       "sign_in": "登录",
-      "sign_out": "登出"
+      "sign_out": "登出",
+      "account_tooltip": "账户"
+    },
+    "create": {
+      "label": "创建",
+      "new_scene": "新建场景",
+      "import_scene": "导入场景"
+    },
+    "logo_menu": {
+      "main_menu_tooltip": "主菜单",
+      "about": "关于 Creator Hub",
+      "check_for_updates": "检查更新",
+      "settings": "设置",
+      "report_bug": "报告错误",
+      "help": {
+        "label": "帮助与支持",
+        "faq": "常见问题",
+        "contact_support": "联系支持",
+        "discord": "Discord"
+      }
     }
   },
   "modal": {
@@ -125,6 +164,15 @@
       "title": "您确定要从「我的场景」中删除 {title} 吗？",
       "files_checkbox": "也从我的电脑中删除场景文件",
       "files_warning": "您的场景文件将从您的电脑中永久删除，您将无法再次访问此场景。"
+    },
+    "rename_folder": {
+      "title": "重命名文件夹",
+      "field_label": "文件夹名称",
+      "errors": {
+        "invalid_name": "该名称无效。请避免空名称和 / \\ : * ? \" < > | 等字符。",
+        "name_taken": "已存在同名文件夹。",
+        "rename_failed": "无法重命名文件夹，请重试。"
+      }
     },
     "publish_project": {
       "title": "公共场所 \"{title}\"",
@@ -199,12 +247,10 @@
         "title": "发布到不同的服务器",
         "list": "备用服务器",
         "options": {
-          "test_server": "测试服务器",
           "custom_server": "定制服务器"
         },
         "custom_server_url": "服务器地址",
         "action": {
-          "test_server": "发布到测试服务器",
           "custom_server": "发布到自定义服务器"
         },
         "errors": {
@@ -302,6 +348,9 @@
         "editor": {
           "label": "編輯器"
         },
+        "experimental": {
+          "label": "實驗性功能"
+        },
         "about": {
           "label": "關於"
         }
@@ -342,6 +391,18 @@
         "app_warnings": {
           "label": "应用警告",
           "show_warnings": "每次预览或发布包含自定义代码的场景时显示警告消息"
+        },
+        "renderer": {
+          "label": "场景渲染器",
+          "babylon": "Babylon（默认）",
+          "bevy": "Bevy（预览）"
+        },
+        "experimental": {
+          "label": "实验性功能"
+        },
+        "gui_editor": {
+          "toggle": "UI 编辑器",
+          "hint": "启用此功能后，你可以在编辑器中组合 GUI 对象、属性和脚本来构建 UI。"
         }
       },
       "actions": {
@@ -606,6 +667,7 @@
         "create": "創建"
       },
       "errors": {
+        "invalid_directory": "该文件夹路径不存在。请使用文件夹按钮为场景选择一个已存在的位置。",
         "path_exists_or_not_writable": "项目路径已存在或无法在其中保存文件。请选择其他文件夹。"
       }
     },
@@ -627,6 +689,11 @@
       "title": "连接 Mobile Debug Session",
       "description": "使用移动设备扫描此二维码预览场景",
       "disclaimer": "您的电脑和移动设备必须在同一网络中"
+    },
+    "about": {
+      "title": "关于",
+      "app_name": "Decentraland Creator Hub",
+      "action": "确定"
     }
   },
   "popup": {
@@ -636,6 +703,7 @@
     "generic": {
       "import_scene": "导入场景...",
       "import_scene_failed": "场景导入失败",
+      "import_scene_already_imported": "场景已导入",
       "duplicate_scene": "复制场景...",
       "duplicate_scene_failed": "复制场景失败",
       "delete_scene": "删除场景...",
@@ -731,10 +799,6 @@
         "submit_event": {
           "title": "提交事件",
           "description": "在 Decentraland 上舉辦您自己的活動。"
-        },
-        "legacy_web_editor": {
-          "title": "旧版网页编辑器",
-          "description": "访问旧版网页编辑器继续编辑你的场景。"
         },
         "collections": {
           "title": "收藏",
@@ -883,6 +947,213 @@
     },
     "unpublish_world_confirmation": {
       "title": "取消发布 <b>{worldName}</b>？"
+    }
+  },
+  "analytics": {
+    "header": {
+      "title": "数据分析"
+    },
+    "empty_list": {
+      "title": "暂无可分析的 Place",
+      "description": "发布一个场景即可开始追踪其表现。上线后，你可以在这里查看该 Place 的关键指标和数据洞察。",
+      "search": {
+        "title": "未找到 Place",
+        "description": "没有符合搜索条件的 Place。请尝试其他名称。"
+      }
+    },
+    "error": {
+      "title": "无法加载你的 Place"
+    },
+    "actions": {
+      "export": "导出分析数据",
+      "export_unavailable": "分析数据上线后即可导出"
+    },
+    "detail": {
+      "title": "数据分析 - {name}",
+      "tabs": {
+        "overview": "概览",
+        "retention": "留存",
+        "visits": "访问",
+        "engagement": "互动"
+      },
+      "date_range": {
+        "title": "日期范围",
+        "last_7_days": "最近 7 天",
+        "last_30_days": "最近 30 天",
+        "last_60_days": "最近 60 天"
+      },
+      "place": {
+        "access": "访问权限",
+        "private": "私密",
+        "public": "公开",
+        "published_in": "发布于",
+        "last_published_by": "最后发布者",
+        "last_update": "最后更新"
+      },
+      "actions": {
+        "create_event": "创建活动",
+        "edit_scene": "编辑场景",
+        "edit_scene_unavailable": "暂时无法从此处打开场景",
+        "copy_url": "复制链接",
+        "jump_in": "进入"
+      },
+      "overview": {
+        "title": "概览",
+        "description": "你的 Place 在增长、互动和用户留存方面的概况。"
+      },
+      "retention": {
+        "title": "留存",
+        "description": "了解首次访问后再次回访的用户占比。",
+        "platforms": {
+          "title": "平台",
+          "description": "你的 60 天滚动平均值，按移动端和桌面端对比。"
+        },
+        "day_7_cohort": {
+          "title": "按首访周划分的 7 日留存",
+          "description": "首次访问后的 7 天内至少回访过一次的用户占比，按首次进入你的 Place 的那一周分组。",
+          "benchmark": "{value}% 7 日留存目标"
+        },
+        "churn": {
+          "title": "每周流失率",
+          "description": "上周活跃但本周没有回访的用户占比。"
+        }
+      },
+      "visits": {
+        "title": "访问",
+        "description": "了解有多少用户访问了你的 Place，其中有多少是新访客或回访用户。",
+        "unique": {
+          "title": "最近 60 天的独立访问量",
+          "footnote": "独立用户，已跨平台去重。同时使用桌面端和移动端的用户在「所有平台」中只计一次，并在各平台的总数中各计一次。"
+        },
+        "weekly_active": {
+          "title": "每周活跃用户",
+          "description": "每周的独立活跃用户数。"
+        },
+        "flow": {
+          "title": "每周用户流动",
+          "description": "追踪每周用户在新增、回访和重新激活之间的变化。",
+          "returned": {
+            "label": "回访用户",
+            "tooltip": "上周访问过并且本周再次到访的用户。"
+          },
+          "reactivated": {
+            "label": "重新激活用户",
+            "tooltip": "曾经停止访问、本周重新回来的用户。"
+          }
+        }
+      },
+      "engagement": {
+        "title": "互动",
+        "description": "了解用户如何与你的 Place 互动。",
+        "minutes": "分钟",
+        "delta": "{value} 分钟",
+        "vs_last_week": "{value}（对比上周）",
+        "daily": {
+          "title": "平均每日游玩时长",
+          "description": "每位用户单次访问在你的 Place 中停留的平均时间。",
+          "chart_title": "每周的平均每日游玩时长"
+        },
+        "weekly": {
+          "title": "平均每周游玩时长",
+          "description": "每位用户每周在你的 Place 中停留的平均时间。",
+          "chart_title": "每位用户的平均每周游玩时长"
+        },
+        "social": {
+          "title": "社交互动",
+          "description": "互动按 realm（该 Place 的一个运行副本）统计，因此跨 realm 的游玩数据会略低。",
+          "totals_title": "每周社交互动总量",
+          "rate_title": "访客社交互动率",
+          "messages": {
+            "label": "发送消息数",
+            "tooltip": "访客在你的 Place 中发送的聊天消息。"
+          },
+          "emotes": {
+            "label": "播放表情数",
+            "tooltip": "访客在你的 Place 中播放的表情动作。"
+          },
+          "friendships": {
+            "label": "新增好友",
+            "tooltip": "访客之间在你的 Place 中接受的好友请求。"
+          }
+        }
+      },
+      "platforms": {
+        "all": "所有平台",
+        "desktop": "桌面端",
+        "mobile": "移动端"
+      },
+      "charts": {
+        "no_data": "此期间暂无数据"
+      },
+      "error": {
+        "title": "无法加载该 Place 的分析数据"
+      }
+    },
+    "metrics": {
+      "total_visits": {
+        "label": "总访问量",
+        "tooltip": "对你的 Place 的所有访问，包括同一用户的重复访问。"
+      },
+      "unique_visits": {
+        "label": "独立访问量",
+        "tooltip": "访问过你的 Place 的不同用户数，每人只计一次。"
+      },
+      "new_users": {
+        "label": "新用户",
+        "tooltip": "首次访问你的 Place 的用户。"
+      },
+      "concurrent_users": {
+        "label": "同时在线用户",
+        "tooltip": "同一时间在你的 Place 中的最高用户数。"
+      },
+      "revenue": {
+        "label": "收入",
+        "tooltip": "在你的 Place 中获得的 MANA。"
+      },
+      "day_7_retention": {
+        "label": "7 日留存",
+        "tooltip": "首次访问后的 7 天内至少回访过一次的新用户占比。"
+      },
+      "avg_playtime": {
+        "label": "平均游玩时长",
+        "tooltip": "每位用户单次访问在你的 Place 中停留的平均时间。"
+      },
+      "afk_time": {
+        "label": "挂机时长",
+        "tooltip": "用户在你的 Place 中未进行互动的平均时间。"
+      },
+      "desktop": {
+        "label": "桌面端",
+        "tooltip": "通过桌面客户端访问你的 Place 的用户。"
+      },
+      "mobile": {
+        "label": "移动端",
+        "tooltip": "通过移动客户端访问你的 Place 的用户。"
+      }
+    },
+    "list": {
+      "places": "{count} 个 Place",
+      "search": "搜索",
+      "minutes": "{value} 分钟",
+      "pinned": "已固定到关注列表",
+      "sort": {
+        "title": "排序方式",
+        "name_asc": "名称 A-Z",
+        "name_desc": "名称 Z-A",
+        "most_visits": "访问量最高"
+      },
+      "columns": {
+        "place": "Place",
+        "total_visits": "独立访问量",
+        "new_users": "新用户",
+        "day_7_retention": "7 日留存",
+        "revenue": "收入",
+        "avg_playtime": "平均游玩时长"
+      },
+      "actions": {
+        "pin_to_watchlist": "固定到关注列表",
+        "unpin_from_watchlist": "从关注列表移除"
+      }
     }
   },
   "connection": {

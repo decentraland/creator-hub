@@ -1,0 +1,43 @@
+.MetricsCard {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+  flex: 1 1 0;
+  padding: 24px;
+  border-radius: 16px;
+  background-color: var(--card);
+}
+
+.MetricsCard .MetricsGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 32px 16px;
+}
+
+.MetricsCard .Metric {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.MetricsCard .MetricLabel {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--secondary-text);
+}
+
+.MetricsCard .MetricLabel svg {
+  font-size: 16px;
+  cursor: help;
+}
+
+.MetricsCard .Metric .MuiTypography-h4,
+.MetricsCard .Metric .MuiTypography-h5 {
+  font-weight: 600;
+}
+
+.MetricsCard .Metric .ManaValue {
+  font-size: inherit;
+  font-weight: inherit;
+}

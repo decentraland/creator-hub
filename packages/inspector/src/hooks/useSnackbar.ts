@@ -7,6 +7,12 @@ export type NotificationType = AlertColor | 'loading';
 export type NotificationRequest = {
   severity: NotificationType;
   message: string;
+  /** Auto-hide delay in ms. 0 = persistent (renders a close button). Omit for the
+   * host default (5s, no close button). */
+  duration?: number;
+  /** Secondary detail shown under the message. A notification with a description
+   * renders as a closeable alert (title + detail + X). */
+  description?: string;
 };
 
 /**

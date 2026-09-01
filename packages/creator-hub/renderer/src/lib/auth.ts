@@ -1,8 +1,7 @@
 import { createPublicClient, http } from 'viem';
-import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
 import { type Socket, io } from 'socket.io-client';
 import { ChainId, ProviderType } from '@dcl/schemas';
-import { Authenticator, type AuthIdentity, type AuthChain } from '@dcl/crypto';
+import { type AuthIdentity, type AuthChain } from '@dcl/crypto';
 import * as sso from '@dcl/single-sign-on-client';
 import { analytics } from '#preload';
 
@@ -88,7 +87,6 @@ function isErrorWithMessage(error: unknown): error is Error {
 export class AuthServerProvider {
   private static authServerUrl: string = '';
   private static authDappUrl: string = '';
-  private static identityExpirationInMillis: number = 30 * 24 * 60 * 60 * 1000; // 30 days in the future.
   private static openBrowser: (url: string, target?: string, features?: string) => void;
 
   /**
@@ -106,13 +104,6 @@ export class AuthServerProvider {
   }
 
   /**
-   * Set the time it will take for the ephemeral message used on sign in to expire.
-   */
-  static setIdentityExpiration(millis: number) {
-    AuthServerProvider.identityExpirationInMillis = millis;
-  }
-
-  /**
    * Set the function that will be used to open the browser.
    */
   static setOpenBrowser(openBrowser: (url: string, target?: string, features?: string) => void) {
@@ -120,30 +111,11 @@ export class AuthServerProvider {
   }
 
   /**
-   * Creates an auth request and returns its id.
-   * An ephemeral key pair is generated only to form the `dcl_personal_sign`
-   * request body; the identity fetched on completion is self-contained, so this
-   * local key pair is not reused.
+   * Generates the id that correlates a deep-link sign in with this app instance.
+   * The auth dapp only needs a valid UUID v4 in the link — the deep-link flow
+   * never recovers a server-side request for it — so nothing is created here.
    */
-  static createSignInRequest = async (): Promise<string> => {
-    const privateKey = generatePrivateKey();
-    const account = privateKeyToAccount(privateKey);
-    const expiration = new Date(Date.now() + AuthServerProvider.identityExpirationInMillis);
-    const ephemeralMessage = Authenticator.getEphemeralMessage(account.address, expiration);
-
-    const response = await fetch(`${AuthServerProvider.authServerUrl}/requests`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ method: 'dcl_personal_sign', params: [ephemeralMessage] }),
-    });
-
-    if (!response.ok) {
-      throw new Error(`Failed to create auth request (${response.status})`);
-    }
-
-    const { requestId } = await response.json();
-    return requestId;
-  };
+  static createSignInRequestId = (): string => crypto.randomUUID();
 
   /**
    * Fetches a stored identity by its id (delivered via deep link). The identity

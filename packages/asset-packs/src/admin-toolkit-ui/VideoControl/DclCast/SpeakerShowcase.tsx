@@ -188,7 +188,7 @@ export function SpeakerShowcase({
         value="Prev"
         variant="secondary"
         disabled={page <= 1}
-        fontSize={18}
+        fontSize={14}
         icon={ICONS.BACK}
         iconTransform={styles.prevIcon}
         iconBackground={{ color: getPaginationColor(page <= 1) }}
@@ -206,7 +206,7 @@ export function SpeakerShowcase({
         id="showcase-next"
         value="<b>Next</b>"
         variant="secondary"
-        fontSize={18}
+        fontSize={14}
         iconRight={ICONS.NEXT}
         iconRightTransform={styles.nextIcon}
         labelTransform={styles.nextLabel}
@@ -250,7 +250,7 @@ export function SpeakerShowcase({
             />
             <Label
               value="Speakers will be automatically featured when they speak"
-              fontSize={10}
+              fontSize={12}
               color={colors.gray}
             />
           </UiEntity>

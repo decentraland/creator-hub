@@ -1,262 +1,283 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import cx from 'classnames';
-import LayersOutlinedIcon from '@mui/icons-material/LayersOutlined';
-import BookmarkBorderIcon from '@mui/icons-material/BookmarkBorder';
-import VideoLibraryIcon from '@mui/icons-material/VideoLibrary';
-import { CircularProgress as Loader } from 'decentraland-ui2';
-import {
-  Container,
-  Card,
-  CardContent,
-  Typography,
-  CardActions,
-  Button,
-  Grid,
-} from 'decentraland-ui2';
+import ChevronRightIcon from '@mui/icons-material/ChevronRight';
+import MovieOutlinedIcon from '@mui/icons-material/MovieOutlined';
+import MenuBookOutlinedIcon from '@mui/icons-material/MenuBookOutlined';
+import RocketLaunchOutlinedIcon from '@mui/icons-material/RocketLaunchOutlined';
+import CodeIcon from '@mui/icons-material/Code';
+import AccountTreeOutlinedIcon from '@mui/icons-material/AccountTreeOutlined';
+import WidgetsOutlinedIcon from '@mui/icons-material/WidgetsOutlined';
+import { CircularProgress as Loader, Typography } from 'decentraland-ui2';
 
 import { misc } from '#preload';
 
 import { type Project } from '/shared/types/projects';
-import EditorPng from '/assets/images/editor.png';
-import BookPng from '/assets/images/book.png';
-import InfluencePng from '/assets/images/influence.png';
+import type { Template } from '/shared/types/workspace';
+import { STUDIOS_ADMIN_URL } from '/shared/urls';
+import NewScenePng from '/assets/images/new-scene.png';
 import { useEditor } from '/@/hooks/useEditor';
-import { useAuth } from '/@/hooks/useAuth';
 import { useWorkspace } from '/@/hooks/useWorkspace';
+import { addBase64ImagePrefix } from '/@/modules/image';
 import { t } from '/@/modules/store/translation/utils';
-import { FEEDBACK_URL } from '/@/modules/utils';
 import { actions } from '/@/modules/store/settings';
 import type { AppState } from '../../modules/store';
 import { UpdateAvailableModal } from '../Modals/UpdateAvailableModal';
+import { CreateProject } from '../Modals/CreateProject';
 import { Navbar, NavbarItem } from '../Navbar';
 import { Footer } from '../Footer';
-import { type CardBannerProps, type CardItemProps, type SignInCardProps } from './types';
+import { DOCS, LearnTab, VIDEOS } from './resources';
+import type { HomeCardProps, NewProjectPayload, RowProps } from './types';
 
 import './styles.css';
 
-const learn_resources = [
-  {
-    title: "Let's build the metaverse together",
-    icon: <BookmarkBorderIcon />,
-    href: 'https://docs.decentraland.org/creator/',
-  },
-  {
-    title: 'Scene Editor About',
-    icon: <BookmarkBorderIcon />,
-    href: 'https://docs.decentraland.org/creator/scene-editor/get-started/about-editor',
-  },
-  {
-    title: 'Development Workflow',
-    icon: <BookmarkBorderIcon />,
-    href: 'https://docs.decentraland.org/creator/scenes-sdk7/getting-started/dev-workflow',
-  },
-  {
-    title: 'Product Updates',
-    icon: <VideoLibraryIcon />,
-    href: 'https://www.youtube.com/playlist?list=PLAcRraQmr_GMJw77zKvN84LX_OLyn-lVz',
-  },
-  {
-    title: 'SDK Tutorials',
-    icon: <VideoLibraryIcon />,
-    href: 'https://www.youtube.com/playlist?list=PLAcRraQmr_GP_K8WN7csnKnImK4R2TgMA',
-  },
-];
+/** Number of cards shown in each home row — one row's worth, no wrapping. */
+const ROW_SIZE = 4;
 
-const CardBanner: React.FC<CardBannerProps> = React.memo(({ image, title, onClick }) => (
-  <div
-    className={cx('CardBanner', { Clickable: !!onClick })}
-    onClick={onClick}
-  >
-    <img
-      className="CardBannerImage"
-      src={image}
-    />
-    <div className="CardBannerContent">{title}</div>
-  </div>
-));
-
-const CardItem: React.FC<CardItemProps> = React.memo(({ title, icon, onClick }) => (
-  <Button
-    className="CardItem"
-    variant="text"
-    color="secondary"
-    size="small"
-    fullWidth
-    onClick={onClick}
-    startIcon={icon}
-  >
-    <Typography variant="h6">{title}</Typography>
-  </Button>
-));
-
-const SignInCard: React.FC<SignInCardProps> = React.memo(({ onClickSignIn }) => (
-  <Card className="Card SignInCard">
-    <CardContent className="CardContent CenteredContent">
+const Row: React.FC<RowProps> = React.memo(({ title, description, children, onClickTitle }) => (
+  <section className="HomeRow">
+    <div
+      className={cx('HomeRowHeader', { Clickable: !!onClickTitle })}
+      onClick={onClickTitle}
+    >
       <Typography
-        className="Title"
-        variant="subtitle1"
+        variant="h5"
+        className="HomeRowTitle"
       >
-        {t('home.cards.sign_in.title')}
+        {title}
       </Typography>
-      <Button
-        className="SignInButton"
-        variant="contained"
-        onClick={onClickSignIn}
-      >
-        {t('home.cards.sign_in.action')}
-      </Button>
-    </CardContent>
-  </Card>
+      <ChevronRightIcon className="HomeRowChevron" />
+    </div>
+    {description && <p className="HomeRowDescription">{description}</p>}
+    {children}
+  </section>
 ));
 
-const ScenesCard: React.FC = React.memo(() => {
+const HomeCard: React.FC<HomeCardProps> = React.memo(
+  ({ title, description, imageUrl, videoUrl, icon, meta, onClick }) => (
+    <div
+      className="HomeCard"
+      onClick={onClick}
+    >
+      {icon ? (
+        <div className="HomeCardIcon">{icon}</div>
+      ) : videoUrl ? (
+        <video
+          className="HomeCardThumbnail"
+          src={videoUrl}
+          muted
+          loop
+        />
+      ) : (
+        <div
+          className="HomeCardThumbnail"
+          style={imageUrl ? { backgroundImage: `url(${imageUrl})` } : undefined}
+        />
+      )}
+      <div className="HomeCardInfo">
+        <Typography
+          variant="subtitle2"
+          className="HomeCardTitle"
+        >
+          {title}
+        </Typography>
+        {description && <p className="HomeCardDescription">{description}</p>}
+        {meta && <div className="HomeCardMeta">{meta}</div>}
+      </div>
+    </div>
+  ),
+);
+
+const MyScenesRow: React.FC = React.memo(() => {
   const navigate = useNavigate();
   const { projects, isLoading, runProject } = useWorkspace();
-  const emptyProjects = projects.length === 0;
 
-  const handleStartBuildingClick = useCallback(() => {
-    navigate('/templates');
-  }, []);
+  // Most recently updated first — the row is a shortcut to what the user last touched.
+  const recentProjects = useMemo(
+    () => [...projects].sort((a, b) => b.updatedAt - a.updatedAt).slice(0, ROW_SIZE),
+    [projects],
+  );
 
-  const handleSeeAllClick = useCallback(() => {
-    navigate('/scenes');
-  }, []);
+  const handleSeeAll = useCallback(() => navigate('/scenes'), [navigate]);
+  const handleClickProject = useCallback(
+    (project: Project) => () => runProject(project),
+    [runProject],
+  );
 
-  const handleProjectClick = useCallback((project: Project) => {
-    runProject(project);
-  }, []);
+  if (isLoading) return <Loader />;
+  if (recentProjects.length === 0) return null;
 
   return (
-    <Card className="Card ScenesCard">
-      <CardBanner
-        image={EditorPng}
-        title={t('home.cards.scenes.title')}
-        onClick={handleSeeAllClick}
-      />
-      <CardContent
-        className={cx('CardContent', {
-          CenteredContent: emptyProjects,
-          EmptyProjects: emptyProjects,
-        })}
-      >
-        {isLoading ? (
-          <Loader />
-        ) : emptyProjects ? (
-          <>
-            <Typography variant="h6">{t('home.cards.scenes.empty_scenes.description')}</Typography>
-            <Button
-              variant="outlined"
-              color="secondary"
-              size="small"
-              onClick={handleStartBuildingClick}
-            >
-              {t('home.cards.scenes.empty_scenes.action')}
-            </Button>
-          </>
-        ) : (
-          <div className="CardList">
-            {projects.slice(0, 6).map(project => (
-              <CardItem
-                key={project.id}
-                title={project.title}
-                icon={<LayersOutlinedIcon />}
-                onClick={() => handleProjectClick(project)}
-              />
-            ))}
-          </div>
-        )}
-      </CardContent>
-      {!emptyProjects ? (
-        <CardActions className="CardActions">
-          <Button
-            className="SeeAllButton"
-            variant="text"
-            color="secondary"
-            fullWidth
-            onClick={handleSeeAllClick}
-          >
-            {t('home.cards.scenes.action')}
-          </Button>
-        </CardActions>
-      ) : null}
-    </Card>
+    <Row
+      title={t('home.rows.my_scenes.title')}
+      onClickTitle={handleSeeAll}
+    >
+      <div className="HomeCardList">
+        {recentProjects.map(project => (
+          <HomeCard
+            key={project.path}
+            title={project.title}
+            imageUrl={project.thumbnail ? addBase64ImagePrefix(project.thumbnail) : undefined}
+            meta={
+              <>
+                <i className="ParcelIcon" />
+                {t('scene_list.parcel_count', { parcels: project.scene.parcels.length })}
+              </>
+            }
+            onClick={handleClickProject(project)}
+          />
+        ))}
+      </div>
+    </Row>
   );
 });
 
-const LearnCard: React.FC = React.memo(() => {
+const TemplatesRow: React.FC = React.memo(() => {
   const navigate = useNavigate();
+  const { templates, createProject, getAvailableProject } = useWorkspace();
+  const [newProject, setNewProject] = useState<NewProjectPayload | undefined>();
 
-  const handleClickSeeAll = useCallback(() => {
-    navigate('/learn');
-  }, []);
+  const handleSeeAll = useCallback(() => navigate('/templates'), [navigate]);
 
-  const handleLearnItemClick = useCallback((href: string) => {
-    misc.openExternal(href);
+  const handleClickTemplate = useCallback(
+    (repo?: string) => async () => {
+      const [error, data] = await getAvailableProject();
+      if (error) return;
+      const { name, path } = data;
+      setNewProject({
+        name,
+        path: path.endsWith(name) ? path.slice(0, -name.length) : path,
+        repo,
+      });
+    },
+    [getAvailableProject],
+  );
+
+  const handleCreateProject = useCallback(
+    (value: { name: string; path: string }) => {
+      if (!newProject) return;
+      createProject({ ...newProject, ...value });
+      setNewProject(undefined);
+    },
+    [createProject, newProject],
+  );
+
+  const getThumbnail = useCallback(({ image_1: imageUrl, video_1: videoUrl }: Template) => {
+    const assetId = videoUrl || imageUrl;
+    if (!assetId) return {};
+    const url = `${STUDIOS_ADMIN_URL}/assets/${assetId}`;
+    return videoUrl ? { videoUrl: url } : { imageUrl: url };
   }, []);
 
   return (
-    <Card className="Card LearnCard">
-      <CardBanner
-        image={BookPng}
-        title={t('home.cards.learn.title')}
-        onClick={handleClickSeeAll}
-      />
-      <CardContent className="CardContent">
-        <div className="CardList">
-          {learn_resources.map((item, idx) => (
-            <CardItem
-              key={idx}
-              title={item.title}
-              icon={item.icon}
-              onClick={() => handleLearnItemClick(item.href)}
+    <>
+      <Row
+        title={t('home.rows.templates.title')}
+        description={t('home.rows.templates.description')}
+        onClickTitle={handleSeeAll}
+      >
+        <div className="HomeCardList">
+          <HomeCard
+            title={t('templates.new_scene.title')}
+            description={t('templates.new_scene.description')}
+            imageUrl={NewScenePng}
+            onClick={handleClickTemplate()}
+          />
+          {/* -1 leaves room for the "Empty Scene" card so the row stays a single row. */}
+          {templates.slice(0, ROW_SIZE - 1).map(template => (
+            <HomeCard
+              key={template.id}
+              title={template.title}
+              description={template.description}
+              {...getThumbnail(template)}
+              onClick={handleClickTemplate(template.github_link)}
             />
           ))}
         </div>
-      </CardContent>
-      <CardActions className="CardActions">
-        <Button
-          className="SeeAllButton"
-          variant="text"
-          color="secondary"
-          fullWidth
-          onClick={handleClickSeeAll}
-        >
-          {t('home.cards.learn.action')}
-        </Button>
-      </CardActions>
-    </Card>
+      </Row>
+      {newProject && (
+        <CreateProject
+          open
+          initialValue={newProject}
+          onClose={() => setNewProject(undefined)}
+          onSubmit={handleCreateProject}
+        />
+      )}
+    </>
   );
 });
 
-const FeedbackCard: React.FC = React.memo(() => {
-  const handleClickFeedback = useCallback(() => misc.openExternal(FEEDBACK_URL), []);
+const LearnRow: React.FC = React.memo(() => {
+  const navigate = useNavigate();
+  const [tab, setTab] = useState<LearnTab>(LearnTab.VIDEOS);
+
+  const handleSeeAll = useCallback(
+    () => navigate(tab === LearnTab.VIDEOS ? '/learn/videos' : '/learn/docs'),
+    [navigate, tab],
+  );
+
+  const handleClickResource = useCallback((url: string) => () => misc.openExternal(url), []);
+
+  const docIcons = [
+    <RocketLaunchOutlinedIcon />,
+    <CodeIcon />,
+    <AccountTreeOutlinedIcon />,
+    <WidgetsOutlinedIcon />,
+  ];
 
   return (
-    <Card className="Card FeedbackCard">
-      <CardContent className="CardContent CenteredContent">
-        <img src={InfluencePng} />
-        <Typography
-          className="Title"
-          variant="h5"
+    <Row
+      title={t('home.rows.learn.title')}
+      description={t('home.rows.learn.description')}
+      onClickTitle={handleSeeAll}
+    >
+      <div className="LearnTabs">
+        <button
+          className={cx('LearnTab', { active: tab === LearnTab.VIDEOS })}
+          data-testid="learn-tab-videos"
+          onClick={() => setTab(LearnTab.VIDEOS)}
         >
-          {t('home.cards.feedback.title')}
-        </Typography>
-        <Button
-          className="FeedbackButton"
-          variant="contained"
-          onClick={handleClickFeedback}
+          <MovieOutlinedIcon fontSize="small" />
+          {t('home.rows.learn.videos')}
+        </button>
+        <button
+          className={cx('LearnTab', { active: tab === LearnTab.DOCS })}
+          data-testid="learn-tab-docs"
+          onClick={() => setTab(LearnTab.DOCS)}
         >
-          {t('home.cards.feedback.action')}
-        </Button>
-      </CardContent>
-    </Card>
+          <MenuBookOutlinedIcon fontSize="small" />
+          {t('home.rows.learn.documentation')}
+        </button>
+      </div>
+      <div className="HomeCardList">
+        {tab === LearnTab.VIDEOS
+          ? VIDEOS.slice(0, ROW_SIZE).map(video => (
+              <HomeCard
+                key={video.id}
+                title={video.title}
+                description={video.description}
+                imageUrl={`https://img.youtube.com/vi/${video.id}/mqdefault.jpg`}
+                onClick={handleClickResource(
+                  `https://youtu.be/${video.id}${video.list ? `?list=${video.list}` : ''}`,
+                )}
+              />
+            ))
+          : DOCS.slice(0, ROW_SIZE).map((doc, idx) => (
+              <HomeCard
+                key={doc.url}
+                title={doc.title}
+                description={doc.description}
+                icon={docIcons[idx % docIcons.length]}
+                onClick={handleClickResource(doc.url)}
+              />
+            ))}
+      </div>
+    </Row>
   );
 });
 
 export function HomePage() {
-  const auth = useAuth();
   const { version } = useEditor();
   const updateInfo = useSelector((state: AppState) => state.settings.updateInfo);
   const openNewUpdateModal = useSelector((state: AppState) => state.settings.openNewUpdateModal);
@@ -266,45 +287,17 @@ export function HomePage() {
     <>
       <main className="HomePage">
         <Navbar active={NavbarItem.HOME} />
-        <Container>
+        <div className="HomeContent">
           <Typography
             variant="h3"
-            mb="48px"
+            className="HomeTitle"
           >
             {t('home.header.title')}
           </Typography>
-          <Grid
-            container
-            spacing={4}
-          >
-            {!auth.isSignedIn ? (
-              <Grid
-                item
-                xs
-              >
-                <SignInCard onClickSignIn={auth.signIn} />
-              </Grid>
-            ) : null}
-            <Grid
-              item
-              xs
-            >
-              <ScenesCard />
-            </Grid>
-            <Grid
-              item
-              xs
-            >
-              <LearnCard />
-            </Grid>
-            <Grid
-              item
-              xs
-            >
-              <FeedbackCard />
-            </Grid>
-          </Grid>
-        </Container>
+          <MyScenesRow />
+          <TemplatesRow />
+          <LearnRow />
+        </div>
       </main>
       <UpdateAvailableModal
         open={openNewUpdateModal}

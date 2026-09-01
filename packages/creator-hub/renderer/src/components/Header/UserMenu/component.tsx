@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react';
 import type { AvatarFaceProps } from 'decentraland-ui2/dist/components/AvatarFace/AvatarFace.types';
 import { AvatarFace } from 'decentraland-ui2/dist/components/AvatarFace/AvatarFace';
-import { Menu, MenuItem, Button } from 'decentraland-ui2';
+import { Menu, MenuItem, Button, Tooltip } from 'decentraland-ui2';
 import { t } from '/@/modules/store/translation/utils';
 import type { Props } from './types';
 
@@ -20,20 +20,27 @@ export function UserMenu({ avatar, isSignedIn, onClickSignOut, onClickSignIn }: 
 
   return isSignedIn ? (
     <>
-      <Button
-        id="AvatarButton"
-        className="AvatarButton"
-        aria-controls={open ? 'UserMenu' : undefined}
-        aria-haspopup="true"
-        aria-expanded={open ? 'true' : undefined}
-        onClick={handleClick}
-        disableRipple
+      <Tooltip
+        title={t('navbar.user_menu.account_tooltip')}
+        placement="bottom"
+        classes={{ tooltip: 'AccountTooltip' }}
       >
-        <AvatarFace
-          size="medium"
-          avatar={avatar as AvatarFaceProps['avatar']}
-        />
-      </Button>
+        <Button
+          id="AvatarButton"
+          className="AvatarButton"
+          data-testid="user-menu-avatar-button"
+          aria-controls={open ? 'UserMenu' : undefined}
+          aria-haspopup="true"
+          aria-expanded={open ? 'true' : undefined}
+          onClick={handleClick}
+          disableRipple
+        >
+          <AvatarFace
+            size="medium"
+            avatar={avatar as AvatarFaceProps['avatar']}
+          />
+        </Button>
+      </Tooltip>
       <Menu
         id="UserMenu"
         anchorEl={anchorEl}
@@ -43,12 +50,18 @@ export function UserMenu({ avatar, isSignedIn, onClickSignOut, onClickSignIn }: 
           'aria-labelledby': 'AvatarButton',
         }}
       >
-        <MenuItem onClick={onClickSignOut}>{t('navbar.user_menu.sign_out')}</MenuItem>
+        <MenuItem
+          data-testid="user-menu-sign-out"
+          onClick={onClickSignOut}
+        >
+          {t('navbar.user_menu.sign_out')}
+        </MenuItem>
       </Menu>
     </>
   ) : (
     <Button
       className="SignInButton"
+      data-testid="user-menu-sign-in"
       onClick={onClickSignIn}
       variant="contained"
       disableRipple

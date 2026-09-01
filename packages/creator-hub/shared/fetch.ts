@@ -45,7 +45,15 @@ export async function fetch(
   }
 
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+  const timeoutId = setTimeout(
+    () =>
+      controller.abort(
+        new Error(
+          `Request timeout at ${input.toString()}. Please check your internet connection and try again.`,
+        ),
+      ),
+    timeoutMs,
+  );
 
   try {
     const response = await globalThis.fetch(input, {

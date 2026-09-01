@@ -1,8 +1,8 @@
-import type { AnimationGroup } from '@babylonjs/core';
 import type { Entity, PBAnimationState, PBAnimator } from '@dcl/ecs';
 import { Animator } from '@dcl/ecs';
 
 import type { SdkContextValue } from '../../../lib/sdk/context';
+import type { RendererAnimation } from '../../../lib/renderer/types';
 
 export function fromNumber(value: string | number, mul: number = 100) {
   return Number(value) * mul;
@@ -22,26 +22,26 @@ export function isValidSpeed(speed: string | undefined): boolean {
   return !isNaN(parseFloat(value)) && parseFloat(value) >= 0 && parseFloat(value) <= 200;
 }
 
-export function mapAnimationGroupsToStates(animations: AnimationGroup[]): PBAnimationState[] {
-  return animations.map($ => {
-    const weight = isValidWeight($.weight?.toString()) ? $.weight : 1;
-    return {
-      weight,
-      clip: $.name,
-      playing: !!$.isPlaying,
-      speed: $.speedRatio ?? 1,
-      loop: $.loopAnimation ?? false,
-      shouldReset: false,
-    };
-  });
+// Build animation states from the renderer's clips, honoring any GLTF-authored
+// playback values the renderer reports and falling back to the inspector
+// defaults (weight 1, not playing, speed 1, no loop) for anything omitted.
+export function mapAnimationsToStates(animations: RendererAnimation[]): PBAnimationState[] {
+  return animations.map(({ name, weight, speed, loop, playing }) => ({
+    weight: weight ?? 1,
+    clip: name,
+    playing: playing ?? false,
+    speed: speed ?? 1,
+    loop: loop ?? false,
+    shouldReset: false,
+  }));
 }
 
 export async function initializeAnimatorComponent(
   sdk: SdkContextValue,
   entity: Entity,
-  animations: AnimationGroup[],
+  animations: RendererAnimation[],
 ): Promise<PBAnimator> {
-  const states = mapAnimationGroupsToStates(animations);
+  const states = mapAnimationsToStates(animations);
   const value: PBAnimator = { states };
 
   try {

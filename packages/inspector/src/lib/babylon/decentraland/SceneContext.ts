@@ -1,9 +1,13 @@
 import type * as BABYLON from '@babylonjs/core';
 import future from 'fp-future';
+import mitt from 'mitt';
+import type { Emitter } from 'mitt';
 import type { ComponentDefinition, Entity } from '@dcl/ecs';
 import { CrdtMessageType, Engine } from '@dcl/ecs';
 import * as components from '@dcl/ecs/dist/components';
 import type * as Schemas from '@dcl/schemas';
+
+import type { RendererEvents } from '../../renderer/types';
 
 import { createEditorComponents } from '../../sdk/components';
 import { createOperations } from '../../sdk/operations';
@@ -59,6 +63,14 @@ export class SceneContext {
   gizmos = createGizmoManager(this);
   spawnPoints = createSpawnPointManager(this.scene);
 
+  /**
+   * Reverse-channel event bus (pick/gizmoCommit/…). The renderer emits viewport
+   * interactions here; the inspector subscribes and owns the ECS response. This
+   * is the single path from viewport → ECS edits. {@link BabylonRenderer}
+   * re-exposes this as its `events`, and input.ts / GizmoManager emit onto it.
+   */
+  rendererEvents: Emitter<RendererEvents> = mitt<RendererEvents>();
+
   Billboard = components.Billboard(this.engine);
   Transform = components.Transform(this.engine);
   Material = components.Material(this.engine);
@@ -71,6 +83,11 @@ export class SceneContext {
   NftShape = components.NftShape(this.engine);
   VideoPlayer = components.VideoPlayer(this.engine);
   AvatarAttach = components.AvatarAttach(this.engine);
+  // No render operation for these two: they're defined so their state exists in
+  // this engine and the gizmo-commit path (operations.updateValue on Transform)
+  // can mirror scale changes into their `area` field.
+  AvatarModifierArea = components.AvatarModifierArea(this.engine);
+  CameraModeArea = components.CameraModeArea(this.engine);
   ParticleSystem = this.engine.defineComponentFromSchema(
     'core::ParticleSystem',
     ParticleSystemSchema,
@@ -117,11 +134,21 @@ export class SceneContext {
   // this future is resolved when the scene is disposed
   readonly stopped = future<void>();
 
+  /**
+   * How file bytes are fetched. Defaults to the inspector's data layer (the
+   * in-process path). When this SceneContext runs inside an out-of-process
+   * renderer iframe, the boundary's `loadAsset` is injected instead, since the
+   * data layer is unreachable from there.
+   */
+  #assetLoader?: (src: string) => Promise<Uint8Array | null>;
+
   constructor(
     public babylon: BABYLON.Engine,
     public scene: BABYLON.Scene,
     public loadableScene: LoadableScene,
+    assetLoader?: (src: string) => Promise<Uint8Array | null>,
   ) {
+    this.#assetLoader = assetLoader;
     this.rootNode = this.getOrCreateEntity(ROOT);
     Object.assign(globalThis, { babylon: this.engine });
   }
@@ -170,6 +197,10 @@ export class SceneContext {
     return this.#entities.get(entityId) || null;
   }
 
+  getAllEntities(): Iterable<EcsEntity> {
+    return this.#entities.values();
+  }
+
   resolveFile(src: string): string | null {
     // filenames are lower cased as per https://adr.decentraland.org/adr/ADR-80
     const normalized = src.toLowerCase();
@@ -185,6 +216,9 @@ export class SceneContext {
   async getFile(src: string, retryCount = 3): Promise<Uint8Array | null> {
     if (!src) return null;
     try {
+      // Out-of-process: fetch bytes across the renderer boundary.
+      if (this.#assetLoader) return await this.#assetLoader(src);
+      // In-process: read from the inspector's data layer directly.
       // TODO: how we handle this with redux ?
       const dataLayer = getDataLayerInterface();
       if (!dataLayer) return null;

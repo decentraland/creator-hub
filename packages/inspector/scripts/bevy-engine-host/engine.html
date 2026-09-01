@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!--
+      Content-Security-Policy for the engine host frame (it runs same-origin with
+      the editor bridge, so a script-injection here is high-impact). Restrictions:
+        - script-src: only same-origin + the pinned+SRI'd jsDelivr media libs. NO
+          'unsafe-inline', so an injected inline <script> or event handler can't
+          run — the boot logic lives in the external host-boot.js for this reason.
+          'unsafe-eval' is REQUIRED: the engine bundle's engine.js builds its
+          `window.engine.<command>` wrappers with `new Function` at init (not our
+          code — can't avoid it); 'wasm-unsafe-eval' also allows the wasm compile.
+        - object-src 'none' + base-uri 'self': block plugins and <base> hijacking.
+        - worker-src self+blob: the engine spawns same-origin and blob: workers.
+      img/media/font/connect stay broad: the engine streams textures, video, and
+      comms/content from many realms/CDNs that can't be enumerated ahead of time.
+    -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="
+        default-src 'self';
+        script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' https://cdn.jsdelivr.net;
+        worker-src 'self' blob:;
+        child-src 'self' blob:;
+        style-src 'self' 'unsafe-inline';
+        img-src 'self' data: blob: https: http:;
+        media-src 'self' data: blob: https: http:;
+        font-src 'self' data: https:;
+        connect-src 'self' data: blob: https: http: ws: wss:;
+        object-src 'none';
+        base-uri 'self';
+      "
+    />
+    <title>Bevy Engine</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        overflow: hidden;
+        background: #000;
+      }
+      #canvas-parent {
+        position: fixed;
+        inset: 0;
+      }
+      #mygame-canvas {
+        width: 100%;
+        height: 100%;
+        display: block;
+      }
+    </style>
+    <!-- Media libs the engine wasm expects as window globals (LivekitClient, Hls).
+         These run same-origin with the editor bridge, so pin EXACT versions with
+         Subresource Integrity: the browser refuses to execute a script whose bytes
+         don't match the hash, so a compromised/mutated CDN payload can't run. Bump
+         the version + regenerate the hash together (jsDelivr serves the pinned file
+         immutably). `crossorigin="anonymous"` is required for SRI on cross-origin
+         scripts. -->
+    <script
+      src="https://cdn.jsdelivr.net/npm/livekit-client@2.21.0/dist/livekit-client.umd.min.js"
+      integrity="sha384-/0L8HD1sXzBDqZAU0s9eTwBbWz4KHVXXXT/aIZRsdbLZRm2z8jkLs5VYHJgnHTqj"
+      crossorigin="anonymous"
+    ></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/hls.js@1.6.16/dist/hls.min.js"
+      integrity="sha384-5E8B0pTlZZJMabWpC0fyYf6OUpe15jJij34BqBAh4NXoHAlLNOjCPRrwtOXOQFAn"
+      crossorigin="anonymous"
+    ></script>
+  </head>
+  <body>
+    <div id="canvas-parent">
+      <canvas id="mygame-canvas"></canvas>
+    </div>
+    <!-- gpu_cache.js flips this to `flex` while shaders compile; kept empty so it
+         shows nothing (the inspector owns any loading overlay). -->
+    <div id="shader-compiling" style="display: none"></div>
+
+    <!--
+      Bevy engine host page.
+
+      The engine npm package's own root index.html is the full Decentraland React
+      HUD, loaded from a CDN — not an embeddable, same-origin engine. So the
+      inspector owns this bare host page instead: it boots the engine IN THIS
+      DOCUMENT via the package's boot contract (`engine/boot.js` + `__bevyLaunch`),
+      served same-origin from `/bevy-engine/`. Same-origin is required so the
+      inspector can reach `contentWindow.engine_console_command` directly and share
+      the `dcl-editor-bus` BroadcastChannel with the editor-agent scene.
+
+      The inspector mounts this page in its viewport iframe with the realm /
+      position / systemScene on the query string (see engine-iframe.ts); we read
+      them here and drive the boot contract.
+
+      The boot logic lives in the external same-origin `host-boot.js` (not inline)
+      so the CSP above can forbid inline scripts.
+    -->
+    <script type="module" src="host-boot.js"></script>
+  </body>
+</html>

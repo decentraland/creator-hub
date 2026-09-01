@@ -1,7 +1,7 @@
-import { Color4 } from '@dcl/ecs-math';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import ReactEcs, { UiEntity, Label, type UiTransformProps } from '@dcl/react-ecs';
 import { getContentUrl } from './constants';
+import { COLORS, TYPE } from './theme';
 
 interface ErrorProps {
   text: string;
@@ -43,8 +43,8 @@ export function Error({ text, uiTransform }: ErrorProps) {
           maxWidth: '90%',
         }}
         value={`<b>${text}</b>`}
-        color={Color4.Red()}
-        fontSize={14}
+        color={COLORS.danger}
+        fontSize={TYPE.label}
       />
     </UiEntity>
   );

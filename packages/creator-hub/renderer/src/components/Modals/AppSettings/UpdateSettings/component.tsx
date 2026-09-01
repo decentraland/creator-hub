@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Box, Typography, Button, type ButtonProps } from 'decentraland-ui2';
 import { InfoOutlined } from '@mui/icons-material';
 import { t } from '/@/modules/store/translation/utils';
@@ -17,7 +17,10 @@ interface UpdateButtonProps {
   color: ButtonProps['color'];
 }
 
-export const UpdateSettings: React.FC<{ className?: string }> = ({ className = '' }) => {
+export const UpdateSettings: React.FC<{ className?: string; autoCheck?: boolean }> = ({
+  className = '',
+  autoCheck = false,
+}) => {
   const dispatch = useDispatch();
   const {
     downloadingUpdate: { progress, finished, isDownloading },
@@ -49,6 +52,12 @@ export const UpdateSettings: React.FC<{ className?: string }> = ({ className = '
     setHasCheckedForUpdates(true);
     dispatch(checkForUpdates({ autoDownload: false }));
   }, [dispatch]);
+
+  // Entering from the logo menu's "Check for Updates" runs the check immediately,
+  // so the user lands on this tab with the result already on its way.
+  useEffect(() => {
+    if (autoCheck) handleCheckForUpdates();
+  }, [autoCheck, handleCheckForUpdates]);
 
   const handleInstallUpdate = useCallback(async () => {
     dispatch(installUpdate());

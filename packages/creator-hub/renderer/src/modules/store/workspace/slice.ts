@@ -1,8 +1,12 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
 
-import { supportsMultiInstance } from '/shared/flags';
+import { supportsMcp, supportsMultiInstance } from '/shared/flags';
 import { type Project, SortBy } from '/shared/types/projects';
-import { DEFAULT_DEPENDENCY_UPDATE_STRATEGY } from '/shared/types/settings';
+import {
+  DEFAULT_DEPENDENCY_UPDATE_STRATEGY,
+  DEFAULT_PREVIEW_CLIENT,
+  DEFAULT_RENDERER,
+} from '/shared/types/settings';
 import { type Workspace } from '/shared/types/workspace';
 
 import type { Async } from '/shared/types/async';
@@ -24,8 +28,15 @@ const initialState: Async<Workspace> = {
       enableLandscapeTerrains: true,
       openNewInstance: false,
       multiInstance: false,
+      mcp: false,
       showWarnings: true,
+      optimizedAssets: false,
+      client: DEFAULT_PREVIEW_CLIENT,
     },
+    optimizedAssetsByPath: {},
+    experimental: false,
+    renderer: DEFAULT_RENDERER,
+    guiEditor: false,
   },
   status: 'idle',
   error: null,
@@ -100,6 +111,22 @@ export const slice = createSlice({
         state.status = 'failed';
         state.error = action.error.message || `Failed to duplicate project ${action.meta.arg}`;
       })
+      // Like duplicateProject, deliberately not 'loading': the full-page loader would unmount
+      // the rename modal mid-await, making its inline error handling unreachable.
+      .addCase(thunks.renameProject.pending, _state => {})
+      .addCase(thunks.renameProject.fulfilled, (state, action) => {
+        const oldPath = action.meta.arg.path;
+        return {
+          ...state,
+          projects: state.projects.map($ => ($.path === oldPath ? action.payload : $)),
+          status: 'succeeded',
+          error: null,
+        };
+      })
+      .addCase(thunks.renameProject.rejected, (state, action) => {
+        state.status = 'failed';
+        state.error = action.error.message || `Failed to rename project ${action.meta.arg.path}`;
+      })
       .addCase(thunks.importProject.pending, state => {
         state.status = 'loading';
       })
@@ -164,6 +191,9 @@ export const slice = createSlice({
       .addCase(thunks.fetchSdkCommandsVersion.fulfilled, (state, action) => {
         if (!supportsMultiInstance(action.payload)) {
           state.settings.previewOptions.multiInstance = false;
+        }
+        if (!supportsMcp(action.payload)) {
+          state.settings.previewOptions.mcp = false;
         }
       })
       .addCase(thunks.getProject.pending, (state, { meta }) => {

@@ -44,6 +44,8 @@ import { GltfNodeModifiersInspector } from './GltfNodeModifiersInspector';
 import { ScriptInspector } from './ScriptInspector';
 import { TagsInspector } from './TagsInspector';
 import { VirtualCameraInspector } from './VirtualCameraInspector';
+import { AvatarModifierAreaInspector } from './AvatarModifierAreaInspector';
+import { CameraModeAreaInspector } from './CameraModeAreaInspector';
 import { PlaceholderInspector } from './PlaceholderInspector';
 import { PlayerInspector } from './PlayerInspector';
 import { ParticleSystemInspector } from './ParticleSystemInspector';
@@ -213,6 +215,14 @@ const SingleEntityInspector = withSdk<{ entity: Entity | null }>(({ sdk, entity 
       {
         name: sdk.components.VirtualCamera.componentName,
         component: VirtualCameraInspector,
+      },
+      {
+        name: sdk.components.AvatarModifierArea.componentName,
+        component: AvatarModifierAreaInspector,
+      },
+      {
+        name: sdk.components.CameraModeArea.componentName,
+        component: CameraModeAreaInspector,
       },
       {
         name: sdk.components.GltfNodeModifiers.componentName,

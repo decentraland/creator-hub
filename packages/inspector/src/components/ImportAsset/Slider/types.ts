@@ -9,4 +9,4 @@ export type PropTypes = {
 
 export type AssetWithEmote = Asset & { isEmote?: boolean };
 
-export type Thumbnails = Record<string, string>;
+export type ReportedThumbnails = Record<string, string | undefined>;

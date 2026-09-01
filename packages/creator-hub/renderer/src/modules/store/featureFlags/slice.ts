@@ -4,15 +4,17 @@ import type { FeatureFlagsResult } from '@dcl/feature-flags';
 import type { Status } from '/shared/types/async';
 import { config } from '/@/config';
 import { createAsyncThunk } from '../thunk';
+import { applyFlagOverrides } from './overrides';
 
 const APPLICATION_NAME = 'creatorhub';
 
-export const fetchFeatureFlags = createAsyncThunk('featureFlags/fetch', () =>
-  fetchFlags({
+export const fetchFeatureFlags = createAsyncThunk('featureFlags/fetch', async () => {
+  const result = await fetchFlags({
     applicationName: APPLICATION_NAME,
     featureFlagsUrl: config.get('FEATURE_FLAGS_URL'),
-  }),
-);
+  });
+  return { ...result, flags: applyFlagOverrides(result.flags) };
+});
 
 export type FeatureFlagsState = {
   flags: FeatureFlagsResult['flags'];

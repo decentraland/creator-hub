@@ -26,10 +26,11 @@ jobs:
       - uses: actions/checkout@v6
         with:
           fetch-depth: 0
+          filter: blob:none
 
       - name: Bump release version
         id: version
-        uses: paulhatch/semantic-version@v5.4.0
+        uses: paulhatch/semantic-version@502226b17e3e242e4befd0a45690fcbb27dd1373 # v6.0.3
         with:
           tag_prefix: "@dcl/asset-packs@"
           version_format: ${major}.${minor}.${patch}
@@ -47,13 +48,14 @@ jobs:
     if: ${{ needs.version.outputs.changed == 'true' }}
     steps:
       - uses: actions/checkout@v6
-      - uses: actions/setup-node@v6
-        with:
-          node-version: 24
-          cache: 'npm'
+      - uses: ./.github/actions/setup
+        id: setup
 
       - name: install
+        if: steps.setup.outputs.node-modules-cache-hit != 'true'
         run: npm i --silent && make install-asset-packs
+        env:
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: '1'
 
       - name: validate
         run: make validate-asset-packs
@@ -71,14 +73,16 @@ jobs:
       - uses: actions/checkout@v6
         with:
           fetch-depth: 0
+          filter: blob:none
 
-      - uses: actions/setup-node@v6
-        with:
-          node-version: 24
-          cache: 'npm'
+      - uses: ./.github/actions/setup
+        id: setup
 
       - name: install
+        if: steps.setup.outputs.node-modules-cache-hit != 'true'
         run: npm i --silent && make install-asset-packs
+        env:
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: '1'
 
       - name: build
         run: make build-asset-packs
@@ -134,13 +138,14 @@ jobs:
     if: ${{ needs.version.outputs.changed == 'true' && github.ref == 'refs/heads/main' }}
     steps:
       - uses: actions/checkout@v6
-      - uses: actions/setup-node@v6
-        with:
-          node-version: 24
-          cache: 'npm'
+      - uses: ./.github/actions/setup
+        id: setup
 
       - name: install
+        if: steps.setup.outputs.node-modules-cache-hit != 'true'
         run: npm i --silent && make install-asset-packs
+        env:
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: '1'
 
       - name: build
         run: make build-asset-packs
@@ -160,7 +165,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: find Comment
-        uses: peter-evans/find-comment@v1
+        uses: peter-evans/find-comment@b30e6a3c0ed37e7c023ccd3f1db5c6c0b0c23aad # v4.0.0
         id: fc
         with:
           issue-number: ${{ github.event.pull_request.number }}
@@ -168,7 +173,7 @@ jobs:
           body-includes: Test @dcl/asset-packs package
 
       - name: create or update comment
-        uses: peter-evans/create-or-update-comment@v1
+        uses: peter-evans/create-or-update-comment@e8674b075228eee787fea43ef493e45ece1004c9 # v5.0.0
         with:
           comment-id: ${{ steps.fc.outputs.comment-id }}
           issue-number: ${{ github.event.pull_request.number }}
@@ -191,6 +196,7 @@ jobs:
       - uses: actions/checkout@v6
         with:
           fetch-depth: 0
+          filter: blob:none
 
       - name: generate release notes
         if: ${{ github.ref == 'refs/heads/main' }}

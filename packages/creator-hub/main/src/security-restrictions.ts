@@ -1,6 +1,58 @@
+/**
+ * Navigation, permission and response-header restrictions for the app's web contents.
+ *
+ * ## Cross-origin isolation
+ *
+ * `self.crossOriginIsolated` — which the Bevy engine's `SharedArrayBuffer` requires — is only
+ * true when the top-level document AND every ancestor frame are isolated via COOP: same-origin
+ * plus COEP. The engine runs three frames deep: creator-hub renderer, inspector iframe,
+ * bevy-engine iframe. The inspector and engine come from our http-server, which already stamps
+ * these headers, but the top document loads from `file://` in production (mainWindow's
+ * `loadFile`), which carries no HTTP headers, leaving the whole chain un-isolated and the
+ * engine's asset-loader worker throwing `SharedArrayBuffer transfer requires
+ * self.crossOriginIsolated`.
+ *
+ * The headers are therefore injected onto the app's own documents (`file://` renderer plus
+ * localhost inspector) and nothing else, so external embeds such as YouTube, docs and studios
+ * are unaffected — a blanket COEP would block their cross-origin subresources. COEP is
+ * `credentialless` rather than `require-corp` so the inspector iframe's cross-origin
+ * subresources load without needing CORP on every one, matching the inspector http-server and
+ * the engine's own service worker.
+ *
+ * ## Frames the app embeds
+ *
+ * A document with COEP set may only embed a cross-origin *frame* whose own response also
+ * carries COEP; `credentialless` relaxes that for subresources, not for frames. So once the
+ * inspector document became isolated, the wearable-preview that renders GLB and emote previews
+ * had to carry COEP or stop loading — and the import dialog waits on its `onLoad`, so the
+ * spinner never resolved. All three environments are listed because decentraland-ui picks the
+ * origin from its own env config.
+ *
+ * ## One listener, one handler
+ *
+ * Electron keeps only ONE `onHeadersReceived` listener per session — a second registration
+ * replaces the first — so the Studios CORS rewrite and the isolation headers must share a
+ * handler registered over the union of their filters, each rule applying to the URLs it
+ * matches. CORS only fills in a header the response omitted; isolation is forced and replaces
+ * whatever the response sent.
+ *
+ * ## Header names are case-insensitive, and a spread is not
+ *
+ * Electron rebuilds the whole response header block from the object the handler returns,
+ * writing one line per key with no case-insensitive de-duplication, and it keys the incoming
+ * object by the *wire* casing — lowercase over HTTP/2, which every CDN in front of these
+ * origins speaks. Spreading a capitalized override on top of `details.responseHeaders`
+ * therefore appends a SECOND header rather than replacing the response's own. Chromium joins
+ * the two (`credentialless, credentialless`), fails to parse the result as a structured item
+ * and falls back to `unsafe-none` — an injection that reads correctly while having no effect
+ * at all, silently. A duplicated `Access-Control-Allow-Origin` is rejected outright. Hence
+ * `setHeader` below, which drops every casing of a name before setting it.
+ */
 import { URL } from 'node:url';
 import { session, type Session } from 'electron';
 import { app, shell } from 'electron';
+
+import { STUDIOS_ADMIN_URL } from '/shared/urls';
 
 const IS_DEV = import.meta.env.DEV;
 
@@ -41,6 +93,7 @@ const ALLOWED_EXTERNAL_ORIGINS = new Set<AllowedOrigins<typeof IS_DEV>>([
   'https://decentraland.today',
   'https://decentraland.zone',
   'https://studios.decentraland.org',
+  STUDIOS_ADMIN_URL,
   'https://docs.decentraland.org',
   'https://youtube.com',
   'https://www.youtube.com',
@@ -50,7 +103,7 @@ const ALLOWED_EXTERNAL_ORIGINS = new Set<AllowedOrigins<typeof IS_DEV>>([
 
 app.on('ready', () => {
   const filter = {
-    urls: ['https://studios.decentraland.org/*'],
+    urls: ['https://studios.decentraland.org/*', `${STUDIOS_ADMIN_URL}/*`],
   };
 
   session.defaultSession.webRequest.onBeforeSendHeaders(filter, (details, callback) => {
@@ -58,13 +111,70 @@ app.on('ready', () => {
     callback({ requestHeaders: details.requestHeaders });
   });
 
-  session.defaultSession.webRequest.onHeadersReceived(filter, (details, callback) => {
-    callback({
-      responseHeaders: {
-        'Access-Control-Allow-Origin': ['*'],
-        ...details.responseHeaders,
-      },
+  const isolationFilter = { urls: ['file://*/*', 'http://localhost/*', 'http://localhost:*/*'] };
+
+  const embedFilter = {
+    urls: [
+      'https://wearable-preview.decentraland.org/*',
+      'https://wearable-preview.decentraland.today/*',
+      'https://wearable-preview.decentraland.zone/*',
+    ],
+  };
+
+  const combinedFilter = {
+    urls: [...filter.urls, ...isolationFilter.urls, ...embedFilter.urls],
+  };
+  const matches = (url: string, patterns: string[]) =>
+    patterns.some(pattern => {
+      // Electron url patterns are `<scheme>://<host><path>` with `*` wildcards;
+      // translate to a RegExp (escape regex metachars, `*` → `.*`).
+      const re = new RegExp(
+        '^' + pattern.replace(/[.+?^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '.*') + '$',
+      );
+      return re.test(url);
     });
+
+  type ResponseHeaders = Record<string, string[]>;
+
+  const hasHeader = (headers: ResponseHeaders, name: string) =>
+    Object.keys(headers).some(key => key.toLowerCase() === name.toLowerCase());
+
+  const setHeader = (headers: ResponseHeaders, name: string, value: string): ResponseHeaders => ({
+    ...Object.fromEntries(
+      Object.entries(headers).filter(([key]) => key.toLowerCase() !== name.toLowerCase()),
+    ),
+    [name]: [value],
+  });
+
+  session.defaultSession.webRequest.onHeadersReceived(combinedFilter, (details, callback) => {
+    let responseHeaders: ResponseHeaders = details.responseHeaders ?? {};
+
+    if (
+      matches(details.url, filter.urls) &&
+      !hasHeader(responseHeaders, 'Access-Control-Allow-Origin')
+    ) {
+      responseHeaders = setHeader(responseHeaders, 'Access-Control-Allow-Origin', '*');
+    }
+
+    if (matches(details.url, isolationFilter.urls)) {
+      responseHeaders = setHeader(responseHeaders, 'Cross-Origin-Opener-Policy', 'same-origin');
+      responseHeaders = setHeader(
+        responseHeaders,
+        'Cross-Origin-Embedder-Policy',
+        'credentialless',
+      );
+      responseHeaders = setHeader(responseHeaders, 'Cross-Origin-Resource-Policy', 'cross-origin');
+    }
+
+    if (matches(details.url, embedFilter.urls)) {
+      responseHeaders = setHeader(
+        responseHeaders,
+        'Cross-Origin-Embedder-Policy',
+        'credentialless',
+      );
+    }
+
+    callback({ responseHeaders });
   });
 });
 

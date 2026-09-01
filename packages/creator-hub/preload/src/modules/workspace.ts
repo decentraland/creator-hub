@@ -6,16 +6,20 @@ import {
   SortBy,
   type Project,
   type ProjectInfo,
+  PROJECT_ALREADY_IMPORTED_ERROR_PREFIX,
 } from '/shared/types/projects';
 import { PACKAGES_LIST } from '/shared/types/pkg';
 import { DEFAULT_DEPENDENCY_UPDATE_STRATEGY } from '/shared/types/settings';
 import type { GetProjectsOpts, Template, Workspace } from '/shared/types/workspace';
 import { FileSystemStorage } from '/shared/types/storage';
 import { fetch } from '/shared/fetch';
+import { isValidFolderName } from '/shared/utils';
+import { STUDIOS_ADMIN_URL } from '/shared/urls';
 
 import type { Services } from '../services';
 
 import { getScene, getRowsAndCols, parseCoords, updateSceneThumbnail } from './scene';
+import { resolveOutdated } from './outdated';
 import { getDefaultScenesPath, getScenesPath } from './settings';
 
 import { DEFAULT_THUMBNAIL, NEW_SCENE_NAME, EMPTY_SCENE_TEMPLATE_REPO } from './constants';
@@ -104,7 +108,19 @@ export function initializeWorkspace(services: Services) {
       });
 
       const outdated = await Promise.race([outdatedPromise, timeoutPromise]);
-      return outdated as DependencyState;
+
+      // `npm outdated` flags any installed version that differs from `latest`,
+      // including auth-server/experimental commit builds where "updating" would
+      // pull the scene off its pinned line. `resolveOutdated` keeps prompts only
+      // for clean official releases that are genuinely behind.
+      const result: DependencyState = {};
+      for (const [name, info] of Object.entries(outdated)) {
+        const resolved = resolveOutdated(info);
+        if (resolved) {
+          result[name as keyof DependencyState] = resolved;
+        }
+      }
+      return result;
     } catch (error: any) {
       console.warn('Failed to get outdated packages:', error?.message);
       return {} as DependencyState;
@@ -184,8 +200,15 @@ export function initializeWorkspace(services: Services) {
     paths = Array.isArray(paths) ? paths : [paths];
     if (!paths.length) return [[], []];
 
-    const promises: Promise<Project>[] = [];
+    const promises: Promise<Project | null>[] = [];
     const missing: string[] = [];
+
+    // a project that fails to load shouldn't prevent the rest of the workspace from loading
+    const safeGetProject = (projectPath: string): Promise<Project | null> =>
+      getProject({ path: projectPath, opts }).catch((error: any) => {
+        console.warn(`[Preload] Skipping project in "${projectPath}":`, error);
+        return null;
+      });
 
     for (const _path of paths) {
       try {
@@ -194,7 +217,7 @@ export function initializeWorkspace(services: Services) {
           missing.push(_path);
         } else if (await isDCL(_path)) {
           // _path is a project
-          promises.push(getProject({ path: _path, opts }));
+          promises.push(safeGetProject(_path));
         } else {
           // _path is a directory with projects
           const files = await fs.readdir(_path);
@@ -202,7 +225,7 @@ export function initializeWorkspace(services: Services) {
             try {
               const projectDir = path.join(_path, dir);
               if (await isDCL(projectDir)) {
-                promises.push(getProject({ path: projectDir, opts }));
+                promises.push(safeGetProject(projectDir));
               }
               // eslint-disable-next-line no-empty
             } catch (_) {}
@@ -213,7 +236,9 @@ export function initializeWorkspace(services: Services) {
       }
     }
 
-    const projects = await Promise.all(promises);
+    const projects = (await Promise.all(promises)).filter(
+      (project): project is Project => project !== null,
+    );
     return [projects, missing];
   }
 
@@ -224,8 +249,9 @@ export function initializeWorkspace(services: Services) {
    */
   async function getTemplates(): Promise<Template[]> {
     try {
-      const response = await fetch('https://studios.decentraland.org/api/get/resources', {}, 5000);
-      const templates: Template[] = (await response.json()) as Template[];
+      const response = await fetch(`${STUDIOS_ADMIN_URL}/items/resources?limit=-1`, {}, 5000);
+      const json = (await response.json()) as { data: Template[] };
+      const templates: Template[] = json.data;
       return templates.filter($ => $.scene_type?.includes('Scene template'));
     } catch (e) {
       console.warn('[Preload] Could not get templates', e);
@@ -331,9 +357,14 @@ export function initializeWorkspace(services: Services) {
    */
   async function unlistProjects(paths: string[]): Promise<void> {
     const pathSet = new Set(paths);
-    await config.setConfig(
-      ({ workspace }) => (workspace.paths = workspace.paths.filter($ => !pathSet.has($))),
-    );
+    await config.setConfig(({ workspace, settings }) => {
+      workspace.paths = workspace.paths.filter($ => !pathSet.has($));
+      // Drop the per-project Optimize Assets preference along with the project so the map
+      // doesn't accumulate entries for projects removed from the workspace.
+      for (const _path of paths) {
+        delete settings.optimizedAssetsByPath?.[_path];
+      }
+    });
   }
 
   /**
@@ -371,6 +402,55 @@ export function initializeWorkspace(services: Services) {
     await fs.writeFile(path.join(available.path, 'scene.json'), JSON.stringify(scene, null, 2));
     const project = await getProject({ path: available.path });
     return project;
+  }
+
+  /**
+   * Renames a project's folder on disk. The project keeps its identity (`.editor/` metadata,
+   * `scene.json` title, etc.) since those live inside the folder and simply move along with it.
+   *
+   * @param path - The current path of the project directory to rename.
+   * @param newName - The desired new folder name (not a full path).
+   * @returns A Promise that resolves to the renamed Project.
+   */
+  async function renameProject({
+    path: _path,
+    newName,
+  }: {
+    path: string;
+    newName: string;
+  }): Promise<Project> {
+    const trimmedName = newName.trim();
+    if (!isValidFolderName(trimmedName)) {
+      throw new Error(`Invalid folder name: "${newName}"`);
+    }
+
+    const newPath = path.join(path.dirname(_path), trimmedName);
+
+    if (newPath === _path) {
+      return getProject({ path: _path });
+    }
+
+    // On case-insensitive filesystems (APFS, NTFS) a case-only rename makes `fs.exists(newPath)`
+    // match the project's own folder, so the collision check must be skipped for it —
+    // `fs.rename` handles case-only renames fine on those filesystems.
+    const isCaseOnlyRename = newPath.toLowerCase() === _path.toLowerCase();
+    if (!isCaseOnlyRename && (await fs.exists(newPath))) {
+      throw new Error(`A folder named "${trimmedName}" already exists`);
+    }
+
+    await fs.rename(_path, newPath);
+
+    try {
+      await config.setConfig(draft => {
+        draft.workspace.paths = draft.workspace.paths.map($ => ($ === _path ? newPath : $));
+      });
+    } catch (error) {
+      // Keep disk and config consistent: undo the rename if the config write fails.
+      await fs.rename(newPath, _path);
+      throw error;
+    }
+
+    return getProject({ path: newPath });
   }
 
   /**
@@ -417,7 +497,9 @@ export function initializeWorkspace(services: Services) {
     const isAvailable = await isProjectPathAvailable(projectPath);
 
     if (!isAvailable) {
-      throw new Error(`"${pathBaseName}" is already on the projects library`);
+      throw new Error(
+        `${PROJECT_ALREADY_IMPORTED_ERROR_PREFIX}: "${pathBaseName}" is already on the projects library`,
+      );
     }
 
     const isDCLProject = await isDCL(projectPath);
@@ -517,6 +599,7 @@ export function initializeWorkspace(services: Services) {
     unlistProjects,
     deleteProject,
     duplicateProject,
+    renameProject,
     reimportProject,
     saveThumbnail,
     openFolder,

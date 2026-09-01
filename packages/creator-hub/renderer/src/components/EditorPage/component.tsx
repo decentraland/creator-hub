@@ -5,10 +5,13 @@ import PlayCircleIcon from '@mui/icons-material/PlayCircle';
 import CodeIcon from '@mui/icons-material/Code';
 import PublicIcon from '@mui/icons-material/Public';
 import RefreshIcon from '@mui/icons-material/Refresh';
+import CloseIcon from '@mui/icons-material/Close';
 import { CircularProgress as Loader, Tooltip } from 'decentraland-ui2';
+import { IconButton } from '@mui/material';
 
 import { isClientNotInstalledError } from '/shared/types/client';
 import { isProjectError } from '/shared/types/projects';
+import { RENDERER } from '/shared/types/settings';
 import { isWorkspaceError } from '/shared/types/workspace';
 
 import { t } from '/@/modules/store/translation/utils';
@@ -16,6 +19,7 @@ import { initRpc } from '/@/modules/rpc';
 import { config } from '/@/config';
 import { useEditor } from '/@/hooks/useEditor';
 import { useSettings } from '/@/hooks/useSettings';
+import { useWorkspace } from '/@/hooks/useWorkspace';
 import { useSceneCustomCode } from '/@/hooks/useSceneCustomCode';
 import { useDeploy } from '/@/hooks/useDeploy';
 import { useConnectionStatus } from '/@/hooks/useConnectionStatus';
@@ -28,6 +32,7 @@ import EditorPng from '/assets/images/editor.png';
 import { useDispatch, useSelector } from '#store';
 import { useFeatureFlags } from '/@/hooks/useFeatureFlags';
 import { actions as snackbarActions } from '/@/modules/store/snackbar';
+import { actions as editorActions } from '/@/modules/store/editor';
 import { createGenericNotification } from '/@/modules/store/snackbar/utils';
 import { Button } from '../Button';
 import { Header } from '../Header';
@@ -44,6 +49,21 @@ import type { PreviewOptionsProps } from './MenuOptions';
 
 import './styles.css';
 
+// The Bevy realm launches `sdk-commands start --no-client --data-layer`; an old
+// scene's local `@dcl/sdk-commands` predates those flags and fails with a raw CLI
+// usage dump (e.g. "unknown or unexpected option: --no-client"). Detect that so we
+// can show a clear "update dependencies" message instead of the dump (#1457).
+// Require BOTH the option-rejection phrasing AND one of our flags — matching a bare
+// "--data-layer"/"--no-client" mention would misfire on an unrelated build error that
+// merely prints the flag as text.
+function isOutdatedDepsError(message: string): boolean {
+  const rejectsOption = /(?:unknown|unexpected|unrecognized|invalid)[^\n]{0,40}option/i.test(
+    message,
+  );
+  const namesBevyFlag = /--(?:no-client|data-layer)/i.test(message);
+  return rejectsOption && namesBevyFlag;
+}
+
 export function EditorPage() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -57,15 +77,22 @@ export function EditorPage() {
     openCode,
     updateScene,
     loadingPreview,
+    previewCancelled,
+    previewProgress,
     loadingPublish,
     isInstallingProject,
     killPreview,
     publishScene,
     getMobileQR,
     supportsMultiInstance,
+    supportsMcp,
+    supportsUiDesigner,
     isPreviewRunning,
+    startBevyRealm,
+    killBevyRealm,
   } = useEditor();
   const { settings, updateAppSettings } = useSettings();
+  const { updatePackages } = useWorkspace();
   const { flags: featureFlags } = useFeatureFlags();
   const { executeDeployment, getDeployment } = useDeploy();
   const deployment = project ? getDeployment(project.path) : undefined;
@@ -81,8 +108,20 @@ export function EditorPage() {
   const { detectCustomCode, isLoading: isDetectingCustomCode } = useSceneCustomCode(project);
   const { status } = useConnectionStatus();
   const iframeRef = useRef<ReturnType<typeof initRpc>>();
+  const hydratedOptimizedAssetsPathRef = useRef<string | null>(null);
   const [modalState, setModalState] = useState<ModalState>({ type: undefined });
   const [mobileQRData, setMobileQRData] = useState<{ url: string; qr: string } | null>(null);
+  // When the Bevy renderer is selected the engine loads from a headless
+  // sdk-commands realm, and the inspector shares its data-layer WS. We start it
+  // for the project and hold the URLs to thread into the iframe config below.
+  const useBevy = settings.renderer === RENDERER.BEVY;
+  const [bevyRealm, setBevyRealm] = useState<{ url: string; wsUrl: string } | null>(null);
+  // A broken scene (e.g. a TS error) makes the Bevy realm's `sdk-commands start`
+  // fail, or the scene never finishes loading — leaving the editor stuck on the
+  // loader with no way out. Capture the failure (or a load timeout) so the loading
+  // screen can offer Back + Open code + the error message (#1380).
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [loadTimedOut, setLoadTimedOut] = useState(false);
 
   const isOffline = status === ConnectionStatus.OFFLINE;
   const showDebugPanel = settings.previewOptions.debugger;
@@ -137,7 +176,66 @@ export function EditorPage() {
     };
   }, [error]);
 
-  const isReady = !!project && inspectorPort > 0;
+  // converting for an optimized preview: the button shows progress + an inline cancel (✕)
+  const isOptimizing = loadingPreview && !!previewProgress;
+
+  // Start (or tear down) the Bevy realm as the renderer setting / project changes.
+  // The iframe render is gated on the realm being ready when Bevy is selected, so
+  // the inspector boots already pointed at the right data-layer + realm.
+  const projectPath = project?.path;
+  useEffect(() => {
+    if (!projectPath || !useBevy) {
+      setBevyRealm(null);
+      return;
+    }
+    // Wait for dependency install to finish before starting the realm. On a
+    // freshly created scene CH installs deps, then this effect fires — starting
+    // `sdk-commands start` while node_modules is still being written fails with
+    // "Could not find package.json for module @dcl/sdk-commands". Gating on
+    // isInstallingProject (in the deps below) re-runs this once install completes,
+    // and keeps the loader spinning (not the error screen) meanwhile.
+    if (isInstallingProject) {
+      setBevyRealm(null);
+      return;
+    }
+    let cancelled = false;
+    setLoadError(null);
+    setLoadTimedOut(false);
+    void startBevyRealm(projectPath)
+      .then(realm => {
+        if (!cancelled) setBevyRealm(realm ?? null);
+      })
+      .catch(error => {
+        console.error('[Bevy] Failed to start realm:', error);
+        if (!cancelled) {
+          setBevyRealm(null);
+          // Surface the failure so the loader shows Back + the error instead of
+          // spinning forever. `sdk-commands start` rejects with the build error
+          // line (see bevy-realm.ts waitFor) — show it.
+          setLoadError(error instanceof Error ? error.message : String(error));
+        }
+      });
+    return () => {
+      cancelled = true;
+      void killBevyRealm(projectPath);
+    };
+  }, [projectPath, useBevy, isInstallingProject, startBevyRealm, killBevyRealm]);
+
+  const isReady = !!project && inspectorPort > 0 && (!useBevy || bevyRealm !== null);
+
+  // A load timeout backstop: even if the realm "starts", a broken scene can leave
+  // the editor never becoming ready. After a grace period on the loader, offer the
+  // same escape hatch (Back + Open code) rather than an infinite spinner. Don't run
+  // the timer while deps are still installing — a fresh scene's npm install can
+  // exceed the grace period and isn't a load failure.
+  useEffect(() => {
+    if (isReady || loadError || isInstallingProject) {
+      setLoadTimedOut(false);
+      return;
+    }
+    const timer = setTimeout(() => setLoadTimedOut(true), 45_000);
+    return () => clearTimeout(timer);
+  }, [isReady, loadError, isInstallingProject, projectPath, useBevy]);
 
   const openModal = useCallback((type: ModalType, initialStep?: ModalState['initialStep']) => {
     setModalState({ type, initialStep });
@@ -177,10 +275,31 @@ export function EditorPage() {
 
   const handleBack = useCallback(async () => {
     const rpc = iframeRef.current;
-    if (rpc) await refreshProject(rpc);
+    // Refresh the project (saves + regenerates the thumbnail) on the way out, but
+    // never let it block navigation. The thumbnail is a screenshot over the scene
+    // RPC — Babylon captures its canvas, Bevy captures via its engine's
+    // `/screenshot` command; both are timeout-bounded and non-fatal, so a throw
+    // or stall can't wedge Back.
+    if (rpc) {
+      try {
+        await refreshProject(rpc);
+      } catch (error) {
+        console.error('[Editor] refreshProject on back failed:', error);
+      }
+    }
     killPreview();
     navigate('/scenes');
-  }, [navigate, iframeRef.current]);
+  }, [navigate, refreshProject, killPreview]);
+
+  // Recover from the outdated-deps load error (#1457): update the scene's packages.
+  // installProject toggles isInstallingProject, which re-runs the realm-start effect
+  // once the install finishes — so the editor retries automatically with fresh deps.
+  // Clear the error now so the loader shows the spinner instead of the error screen.
+  const handleUpdateDependencies = useCallback(() => {
+    if (!project) return;
+    setLoadError(null);
+    updatePackages(project);
+  }, [project, updatePackages]);
 
   const handleOpenPublishModal = useCallback(async () => {
     await handleActionWithWarningCheck(() => openModal('publish'));
@@ -196,12 +315,42 @@ export function EditorPage() {
     [modalState],
   );
 
+  // Restore the per-project Optimize Assets preference when a project opens. Selecting the
+  // toggle is inert — conversion only happens when Preview is pressed. Runs once per project
+  // path so it never fights a live user toggle.
+  useEffect(() => {
+    if (!project) return;
+    if (hydratedOptimizedAssetsPathRef.current === project.path) return;
+    hydratedOptimizedAssetsPathRef.current = project.path;
+    const persisted = settings.optimizedAssetsByPath?.[project.path] ?? false;
+    if (persisted !== settings.previewOptions.optimizedAssets) {
+      updateAppSettings({
+        ...settings,
+        previewOptions: { ...settings.previewOptions, optimizedAssets: persisted },
+      });
+    }
+  }, [project?.path, settings, updateAppSettings]);
+
   const handleChangePreviewOptions = useCallback(
     (options: PreviewOptionsProps['options']) => {
-      updateAppSettings({ ...settings, previewOptions: options });
+      // Persist the choice per project so it comes back on next time this scene is opened
+      // (restored by the effect above). Kept separate from the global previewOptions so
+      // the preference never carries across projects. Selecting Optimize Assets is inert:
+      // the conversion runs when Preview is pressed, with feedback on the Preview button.
+      const optimizedAssetsByPath = project
+        ? { ...settings.optimizedAssetsByPath, [project.path]: options.optimizedAssets }
+        : settings.optimizedAssetsByPath;
+      updateAppSettings({ ...settings, previewOptions: options, optimizedAssetsByPath });
     },
-    [settings, updateAppSettings],
+    [project, settings, updateAppSettings],
   );
+
+  const handleCancelOptimizing = useCallback(() => {
+    if (project) {
+      // kill the converting spawn; the pending runScene settles without opening the client
+      void dispatch(editorActions.cancelPreview(project.path));
+    }
+  }, [project, dispatch]);
 
   const handleShowMobileQR = useCallback(async () => {
     if (!project) return;
@@ -228,35 +377,40 @@ export function EditorPage() {
     await handleActionWithWarningCheck(handleOpenPreviewWithErrorHandling);
   }, [handleActionWithWarningCheck, handleOpenPreviewWithErrorHandling]);
 
-  const handlePublishScene = useCallback(async () => {
+  // The thumbnail comes from a screenshot over the scene RPC — Babylon captures
+  // its canvas, Bevy captures via its engine's `/screenshot` command. Both are
+  // timeout-guarded and non-fatal, so this can never hang or wedge the flow.
+  const saveThumbnailIfSupported = useCallback(() => {
     const rpc = iframeRef.current;
     if (rpc) saveAndGetThumbnail(rpc);
+  }, [saveAndGetThumbnail]);
+
+  const handlePublishScene = useCallback(async () => {
+    saveThumbnailIfSupported();
     await handleOpenPublishModal();
-  }, [saveAndGetThumbnail, handleOpenPublishModal]);
+  }, [saveThumbnailIfSupported, handleOpenPublishModal]);
 
   const handleDeployWorld = useCallback(async () => {
     if (!project) return;
-    const rpc = iframeRef.current;
-    if (rpc) saveAndGetThumbnail(rpc);
+    saveThumbnailIfSupported();
     try {
       await publishScene({ targetContent: config.get('WORLDS_CONTENT_SERVER_URL') });
       executeDeployment(project.path);
     } catch {
       openModal('publish', 'deploy');
     }
-  }, [project, saveAndGetThumbnail, publishScene, executeDeployment, openModal]);
+  }, [project, saveThumbnailIfSupported, publishScene, executeDeployment, openModal]);
 
   const handleDeployLand = useCallback(async () => {
     if (!project) return;
-    const rpc = iframeRef.current;
-    if (rpc) saveAndGetThumbnail(rpc);
+    saveThumbnailIfSupported();
     try {
       await publishScene({ target: config.get('PEER_URL') });
       executeDeployment(project.path);
     } catch {
       openModal('publish', 'deploy');
     }
-  }, [project, saveAndGetThumbnail, publishScene, executeDeployment, openModal]);
+  }, [project, saveThumbnailIfSupported, publishScene, executeDeployment, openModal]);
 
   const publishOptions = useMemo(
     () =>
@@ -279,9 +433,45 @@ export function EditorPage() {
   // query params
   const params = new URLSearchParams();
 
-  // params.append('dataLayerRpcWsUrl', `ws://localhost:${previewPort}/data-layer`); // this connects the inspector to the data layer running on the preview server
+  // Always tell the inspector which renderer to use, so IT doesn't offer an
+  // independent (un-plumbed) choice via its own toolbar picker — the host owns
+  // renderer selection and supplies each renderer's config. Without this, picking
+  // Bevy inside the inspector mounts the engine with no realm and boots the wrong
+  // (default) world.
+  params.append('renderer', useBevy ? RENDERER.BEVY : RENDERER.BABYLON);
 
+  params.append('uiEditorEnabled', String(settings.guiEditor));
+  params.append('uiEditorSupported', String(supportsUiDesigner));
+
+  // The parent-window scene-RPC control channel (host↔inspector feature flags,
+  // notifications, file/dir open) is wired whenever this is set — for BOTH
+  // renderers. Babylon also uses it as its data-layer transport; Bevy instead
+  // uses the realm WS (set below, which takes precedence), but still needs this
+  // channel or the host's feature flags never reach it (e.g. SceneMinimap).
   params.append('dataLayerRpcParentUrl', window.location.origin);
+
+  if (useBevy && bevyRealm) {
+    // Bevy editor: the inspector shares the realm's data-layer WS so entity ids
+    // align with the engine (forward edits land on the right entities), and the
+    // engine loads the scene from the realm. `dataLayerRpcWsUrl` takes precedence
+    // over `dataLayerRpcParentUrl` in the inspector, so we set the WS instead of
+    // the parent-window data-layer here.
+    params.append('dataLayerRpcWsUrl', bevyRealm.wsUrl);
+    params.append('bevyRealm', bevyRealm.url);
+    if (project) {
+      // The engine loads the scene at its real parcel; the base coord is bevyPosition.
+      params.append('bevyPosition', project.scene.base);
+    }
+    // The super-user editor-agent portable experience (viewport pick + gizmo),
+    // shipped as a static realm at public/bevy-agent and served same-origin by the
+    // inspector http-server. The engine loads it as a realm (GETs
+    // `<systemScene>/about`); the export nests `<realmName>/about`, hence the
+    // doubled path segment. A dev server can override via VITE_BEVY_SYSTEM_SCENE.
+    params.append(
+      'bevySystemScene',
+      import.meta.env.VITE_BEVY_SYSTEM_SCENE || `${htmlUrl}/bevy-agent/bevy-agent`,
+    );
+  }
 
   if (import.meta.env.VITE_ASSET_PACKS_CONTENT_URL) {
     // this is for local development of the asset-packs repo, or to use a different environment like .zone
@@ -314,15 +504,66 @@ export function EditorPage() {
   // iframe src
   const iframeUrl = `${htmlUrl}?${params}`;
 
-  const renderLoading = () => (
-    <div className="loading">
-      <img src={EditorPng} />
-      <Row>
-        <Loader />
-        {t('editor.loading.title')}
-      </Row>
-    </div>
-  );
+  const renderLoading = () => {
+    // Recoverable stuck-load state (#1380): the realm failed to start (broken code)
+    // or the scene never finished loading. Offer Back + Open code + the error,
+    // instead of an infinite spinner with no way out.
+    const stuck = loadError !== null || loadTimedOut;
+    if (stuck) {
+      // An outdated-deps failure has a clear fix (Update dependencies), so show a
+      // friendly message + an update action instead of the raw CLI dump (#1457).
+      const outdatedDeps = loadError !== null && isOutdatedDepsError(loadError);
+      return (
+        <div className="loading loading-error">
+          <img src={EditorPng} />
+          <div className="loading-error-title">{t('editor.loading.failed.title')}</div>
+          <div className="loading-error-message">
+            {outdatedDeps
+              ? t('editor.loading.failed.outdated_deps')
+              : (loadError ?? t('editor.loading.failed.timeout'))}
+          </div>
+          <Row>
+            <Button
+              color="secondary"
+              startIcon={<ArrowBackIosIcon />}
+              onClick={handleBack}
+            >
+              {t('editor.loading.failed.back')}
+            </Button>
+            {outdatedDeps ? (
+              <Button
+                color="primary"
+                startIcon={<RefreshIcon />}
+                onClick={handleUpdateDependencies}
+              >
+                {t('editor.loading.failed.update_deps')}
+              </Button>
+            ) : (
+              <Button
+                color="secondary"
+                startIcon={<CodeIcon />}
+                onClick={openCode}
+              >
+                {t('editor.header.actions.code')}
+              </Button>
+            )}
+          </Row>
+        </div>
+      );
+    }
+    return (
+      <div className="loading">
+        <img src={EditorPng} />
+        <Row>
+          <Loader />
+          {/* Tell the user WHY the load is taking longer when we're installing a
+              scene's dependencies (e.g. opening a scene whose node_modules was
+              deleted, #1425) — otherwise a long npm install looks like a hang. */}
+          {isInstallingProject ? t('editor.loading.installing') : t('editor.loading.title')}
+        </Row>
+      </div>
+    );
+  };
 
   return (
     <main className="Editor">
@@ -357,24 +598,62 @@ export function EditorPage() {
               >
                 {t('editor.header.actions.code')}
               </Button>
-              <ButtonGroup
-                color="secondary"
-                disabled={
-                  loadingPreview || isInstallingProject || isDetectingCustomCode || isOffline
-                }
-                onClick={handleOpenPreview}
-                startIcon={loadingPreview ? <Loader size={20} /> : <PlayCircleIcon />}
-                extra={
-                  <PreviewOptions
-                    options={settings.previewOptions}
-                    onChange={handleChangePreviewOptions}
-                    onShowMobileQR={handleShowMobileQR}
-                    supportsMultiInstance={supportsMultiInstance}
-                  />
-                }
-              >
-                {t('editor.header.actions.preview')}
-              </ButtonGroup>
+              <div className={isOptimizing ? 'preview-control optimizing' : 'preview-control'}>
+                <ButtonGroup
+                  color="secondary"
+                  // Not natively disabled while optimizing (that would kill the inline ✕ too):
+                  // the group is greyed and made inert via CSS, and only the ✕ stays clickable.
+                  // aria-disabled flags the CSS-inert state to assistive tech, which the visual
+                  // greying and pointer-events:none don't convey on their own.
+                  aria-disabled={isOptimizing || undefined}
+                  disabled={
+                    (loadingPreview && !isOptimizing) ||
+                    isInstallingProject ||
+                    isDetectingCustomCode ||
+                    isOffline
+                  }
+                  onClick={isOptimizing ? undefined : handleOpenPreview}
+                  startIcon={loadingPreview ? <Loader size={20} /> : <PlayCircleIcon />}
+                  extra={
+                    <PreviewOptions
+                      options={settings.previewOptions}
+                      onChange={handleChangePreviewOptions}
+                      onShowMobileQR={handleShowMobileQR}
+                      supportsMultiInstance={supportsMultiInstance}
+                      supportsMcp={supportsMcp}
+                      projectPath={project.path}
+                    />
+                  }
+                >
+                  {isOptimizing ? (
+                    <span className="optimizing-label">
+                      {t('editor.header.actions.optimizing')}
+                      {previewProgress?.total
+                        ? ` ${Math.round(((previewProgress.done ?? 0) / previewProgress.total) * 100)}%`
+                        : ''}
+                      <Tooltip title={t('editor.header.actions.cancel_optimizing')}>
+                        {/* a real button so the only live control in the CSS-inert group
+                            stays reachable by keyboard and assistive tech */}
+                        <IconButton
+                          className="cancel-optimizing"
+                          size="small"
+                          aria-label={t('editor.header.actions.cancel_optimizing')}
+                          // a cancel is already in flight (main is killing the spawn)
+                          disabled={previewCancelled}
+                          onClick={e => {
+                            e.stopPropagation();
+                            handleCancelOptimizing();
+                          }}
+                        >
+                          <CloseIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                    </span>
+                  ) : (
+                    t('editor.header.actions.preview')
+                  )}
+                </ButtonGroup>
+              </div>
               {publishOptions.length > 0 ? (
                 <ButtonGroup
                   color="primary"
@@ -412,6 +691,13 @@ export function EditorPage() {
             className="inspector"
             src={iframeUrl}
             onLoad={handleIframeRef}
+            // Grant cross-origin isolation to the inspector iframe so the Bevy
+            // engine (nested one level deeper) can use SharedArrayBuffer. The
+            // renderer document + inspector server carry COOP/COEP, but a
+            // cross-origin child frame only becomes crossOriginIsolated when the
+            // embedder explicitly delegates it via this Permissions-Policy. Inert
+            // for the Babylon renderer.
+            allow="cross-origin-isolated"
           ></iframe>
           <DeployModal
             type={modalState.type}

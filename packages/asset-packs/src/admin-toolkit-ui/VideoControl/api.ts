@@ -74,8 +74,10 @@ export async function getDclCastInfo(): Promise<Result<DclCastResponse, string>>
   return wrapSignedFetch<DclCastResponse>({ url: URLS().GET_DCL_CAST_INFO }, { toCamelCase: true });
 }
 
-export async function getPresenters(): Promise<Result<string[], string>> {
-  return wrapSignedFetch<string[]>({ url: URLS().PRESENTERS });
+export type PresentersResponse = { presenters: string[] };
+
+export async function getPresenters(): Promise<Result<PresentersResponse, string>> {
+  return wrapSignedFetch<PresentersResponse>({ url: URLS().PRESENTERS });
 }
 
 export async function promotePresenter(address: string): Promise<Result<void, string>> {
@@ -85,26 +87,22 @@ export async function promotePresenter(address: string): Promise<Result<void, st
   });
 }
 
-export async function ensurePresenterRole(playerAddress: string): Promise<void> {
-  const [error, presenters] = await getPresenters();
-  console.log(
-    '[DclCast] ensurePresenterRole - error:',
-    error,
-    'presenters:',
-    JSON.stringify(presenters),
-    'playerAddress:',
-    playerAddress,
-  );
-  if (error || !presenters) return;
+// Resolves true if the player is (or was successfully promoted to) a presenter,
+// false if the lookup or promotion failed. Callers that gate on presenter-only
+// data (the presentation:state topic) should retry when this is false.
+export async function ensurePresenterRole(playerAddress: string): Promise<boolean> {
+  const [error, response] = await getPresenters();
+  if (error || !response) return false;
 
+  // The endpoint returns { presenters: string[] }, and addresses may be
+  // checksummed — compare case-insensitively against the lowercased player.
   const addr = playerAddress.toLowerCase();
-  const isPresenter = Array.isArray(presenters) ? presenters.includes(addr) : false;
-  console.log('[DclCast] isPresenter:', isPresenter, 'addr:', addr);
+  const presenters = Array.isArray(response.presenters) ? response.presenters : [];
+  const isPresenter = presenters.some(p => p.toLowerCase() === addr);
+  if (isPresenter) return true;
 
-  if (!isPresenter) {
-    const [promoteError] = await promotePresenter(addr);
-    console.log('[DclCast] promotePresenter result - error:', promoteError);
-  }
+  const [promoteError] = await promotePresenter(addr);
+  return !promoteError;
 }
 
 type PresentationBotTokenResponse = {
@@ -225,7 +223,7 @@ export async function getActiveStreams(): Promise<FlattenedTrack[] | undefined> 
 export function subscribeToPresentationTopic(): void {
   subscribeToTopic({ topic: PRESENTATION_TOPIC })
     .then(() => {
-      // Request current state from bot so late joiners get the presentation state
+      // Request current state from the bot so late joiners get the presentation state
       requestPresentationState();
     })
     .catch(() => {
@@ -240,11 +238,27 @@ export function requestPresentationState(): void {
   });
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
+}
+
+// consumeMessages resolves to a bare array of { sender, data }; tolerate a
+// { messages: [...] } wrapper too in case the runtime shape changes. Narrow
+// each entry to a string `data` before it reaches JSON.parse.
+function extractMessages(response: unknown): { data: string }[] {
+  const raw = Array.isArray(response)
+    ? response
+    : isRecord(response) && Array.isArray(response.messages)
+      ? response.messages
+      : [];
+  return raw.filter((m): m is { data: string } => isRecord(m) && typeof m.data === 'string');
+}
+
 export async function consumePresentationMessages(): Promise<
   PresentationState | 'stopped' | undefined
 > {
   try {
-    const { messages } = await consumeMessages({ topic: PRESENTATION_TOPIC });
+    const messages = extractMessages(await consumeMessages({ topic: PRESENTATION_TOPIC }));
 
     let latestState: PresentationState | 'stopped' | undefined;
     for (const msg of messages) {

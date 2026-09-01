@@ -1,6 +1,10 @@
 import deepmerge from 'deepmerge';
 import { type AppSettings } from './settings';
-import { DEFAULT_DEPENDENCY_UPDATE_STRATEGY } from './settings';
+import {
+  DEFAULT_DEPENDENCY_UPDATE_STRATEGY,
+  DEFAULT_PREVIEW_CLIENT,
+  DEFAULT_RENDERER,
+} from './settings';
 
 export const CURRENT_CONFIG_VERSION = 2;
 
@@ -37,8 +41,15 @@ export const DEFAULT_CONFIG: Config = {
       enableLandscapeTerrains: true,
       openNewInstance: false,
       multiInstance: false,
+      mcp: false,
       showWarnings: true,
+      optimizedAssets: false,
+      client: DEFAULT_PREVIEW_CLIENT,
     },
+    optimizedAssetsByPath: {},
+    experimental: false,
+    renderer: DEFAULT_RENDERER,
+    guiEditor: false,
   },
   editors: [],
 };

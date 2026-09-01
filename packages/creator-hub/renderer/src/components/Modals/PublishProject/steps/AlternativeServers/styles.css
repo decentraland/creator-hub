@@ -37,16 +37,12 @@
   width: 318px;
 }
 
-.MuiModal-root .AlternativeServers .box .selection .MuiInputBase-root {
+.MuiModal-root .AlternativeServers .box .selection .server_name {
   border-radius: 4px;
   border: 1px solid var(--white);
   padding: 5px 15px;
   width: 250px;
-}
-
-.MuiModal-root .AlternativeServers .box .selection .MuiInputBase-root::before,
-.MuiModal-root .AlternativeServers .box .selection .MuiInputBase-root::after {
-  border: none;
+  box-sizing: border-box;
 }
 
 .MuiModal-root .AlternativeServers .box .selection .custom_input {

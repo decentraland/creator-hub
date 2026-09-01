@@ -1,0 +1,20 @@
+.VisitsTab {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.VisitsTab .MuiTypography-h5 {
+  font-weight: 600;
+}
+
+.VisitsTab .Description {
+  color: var(--secondary-text);
+}
+
+.VisitsTab .Cards {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  margin-top: 24px;
+}

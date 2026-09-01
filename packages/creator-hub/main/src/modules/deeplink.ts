@@ -1,7 +1,7 @@
 import { app } from 'electron';
 import log from 'electron-log';
 
-import { AUTH_DEEPLINK_SIGNIN_CHANNEL } from '/shared/deeplink';
+import { AUTH_DEEPLINK_SIGNIN_CHANNEL, type DeepLinkSignIn } from '/shared/deeplink';
 import { restoreOrCreateMainWindow } from '/@/mainWindow';
 
 /** Custom URL scheme used for deeplinks into the app (e.g. `dcl-creator-hub://open`). */
@@ -20,6 +20,23 @@ export type Deeplink = {
  * before `app.whenReady()`). Flushed via `flushPendingDeeplink` once ready.
  */
 let pendingDeeplink: string | null = null;
+
+/**
+ * Whether this build should claim the deeplink scheme with the OS.
+ *
+ * A development build on macOS must not: the executable is Electron itself, so
+ * the only identity it can register is the generic `com.github.electron` bundle
+ * that every Electron project on the machine shares. Registering it makes
+ * macOS hand `dcl-creator-hub://` links to whichever Electron copy it resolves
+ * that id to — often another project, or a bare Electron with no app — and it
+ * outranks the installed Creator Hub, breaking deeplinks there too.
+ *
+ * Windows and Linux register a full command line including the app path, so the
+ * URL reaches the right app and dev registration stays useful.
+ */
+export function shouldRegisterProtocolClient(isDevBuild: boolean, osPlatform: string): boolean {
+  return !(isDevBuild && osPlatform === 'darwin');
+}
 
 /**
  * Returns true when the given CLI argument is a deeplink URL for our scheme.
@@ -49,13 +66,13 @@ export function parseDeeplink(url: string): Deeplink | null {
 }
 
 /**
- * Forwards a sign-in identityId to the renderer. Sign in is always initiated
- * from the running app, so the renderer is already mounted and listening.
+ * Forwards a sign-in payload to the renderer. Sign in is always initiated from
+ * the running app, so the renderer is already mounted and listening.
  */
-async function dispatchSignIn(identityId: string): Promise<void> {
+async function dispatchSignIn(payload: DeepLinkSignIn): Promise<void> {
   const window = await restoreOrCreateMainWindow();
   if (!window.isDestroyed()) {
-    window.webContents.send(AUTH_DEEPLINK_SIGNIN_CHANNEL, identityId);
+    window.webContents.send(AUTH_DEEPLINK_SIGNIN_CHANNEL, payload);
   }
 }
 
@@ -64,8 +81,10 @@ async function dispatchSignIn(identityId: string): Promise<void> {
  * buffered and replayed by `flushPendingDeeplink`.
  *
  * Always launches/focuses the app. When the URL carries a `signin` param
- * (`dcl-creator-hub://open?signin={identityId}`) the identityId is forwarded to
- * the renderer to complete a deep-link sign-in.
+ * (`dcl-creator-hub://open?signin={identityId}&authRequestId={requestId}`) the
+ * identityId is forwarded to the renderer to complete a deep-link sign-in,
+ * together with the `authRequestId` the renderer uses to confirm the identity
+ * belongs to the sign in it started.
  */
 export async function handleDeeplink(url: string): Promise<void> {
   const deeplink = parseDeeplink(url);
@@ -82,7 +101,10 @@ export async function handleDeeplink(url: string): Promise<void> {
 
   const signin = deeplink.params.get('signin');
   if (deeplink.action === 'open' && signin) {
-    await dispatchSignIn(signin);
+    await dispatchSignIn({
+      identityId: signin,
+      authRequestId: deeplink.params.get('authRequestId'),
+    });
     return;
   }
 

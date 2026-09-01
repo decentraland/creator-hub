@@ -4,8 +4,6 @@ import LogoENSSVG from '/assets/images/logo-ens-transparent.svg';
 import { ManagedProjectType } from '/shared/types/manage';
 import { config } from '/@/config';
 
-const IS_DEV = import.meta.env.DEV;
-const WORLDS_CONTENT_SERVER_URL = config.get('WORLDS_CONTENT_SERVER_URL');
 const WORLDS_STORAGE_SERVICE_URL = config.get('WORLDS_STORAGE_SERVICE_URL');
 
 export const isENSDomain = (name: string) => {
@@ -36,12 +34,6 @@ export const formatName = (name: string) => {
     );
   }
   return name;
-};
-
-export const getJumpInUrl = (world: string) => {
-  return IS_DEV
-    ? `https://decentraland.zone/play/?realm=${WORLDS_CONTENT_SERVER_URL}/world/${world}&NETWORK=sepolia`
-    : `https://decentraland.org/play/world/${world}`;
 };
 
 /**

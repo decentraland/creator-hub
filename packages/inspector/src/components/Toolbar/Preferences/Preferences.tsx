@@ -27,8 +27,8 @@ export const Preferences = withSdk(({ sdk }) => {
         freeCameraInvertRotation: !preferences?.freeCameraInvertRotation,
       }),
     );
-    // TODO: this should be done by the saga but we dont have the sdk.editorCamera on the store
-    sdk.editorCamera.setFreeCameraInvertRotation(!preferences?.freeCameraInvertRotation);
+    // TODO: this should be done by the saga but we dont have the renderer on the store
+    sdk.renderer.camera.setInvertRotation(!preferences?.freeCameraInvertRotation);
   }, [preferences?.freeCameraInvertRotation]);
 
   const toggleAutosaveEnabled = useCallback(() => {

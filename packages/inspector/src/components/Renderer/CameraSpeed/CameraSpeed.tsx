@@ -1,16 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import './CameraSpeed.css';
-import { withSdk } from '../../../hoc/withSdk';
 import classNames from 'classnames';
+import { withSdk } from '../../../hoc/withSdk';
 
 const CameraSpeed = withSdk(({ sdk }) => {
-  const [speed, setSpeed] = useState<number>(sdk.editorCamera.getSpeed());
+  const [speed, setSpeed] = useState<number>(sdk.renderer.camera.getSpeed());
   const [visible, setVisible] = useState<boolean>(false);
 
   useEffect(() => {
     let timeoutId: NodeJS.Timeout | null = null;
 
-    const onSpeedChange = (newSpeed: number) => {
+    const onSpeedChange = ({ speed: newSpeed }: { speed: number }) => {
       setSpeed(newSpeed);
       setVisible(true);
       if (timeoutId) {
@@ -19,10 +19,10 @@ const CameraSpeed = withSdk(({ sdk }) => {
       }
       timeoutId = setTimeout(() => setVisible(false), 1000);
     };
-    sdk.editorCamera.getSpeedChangeObservable().on('change', onSpeedChange);
+    sdk.renderer.events.on('cameraSpeedChange', onSpeedChange);
 
     return () => {
-      sdk.editorCamera.getSpeedChangeObservable().off('change', onSpeedChange);
+      sdk.renderer.events.off('cameraSpeedChange', onSpeedChange);
       if (timeoutId) clearTimeout(timeoutId);
     };
   }, [sdk]);

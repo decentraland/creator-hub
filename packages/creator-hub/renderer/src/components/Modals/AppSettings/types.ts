@@ -29,4 +29,6 @@ export interface EditorTabProps extends BaseTabProps {
 export interface AboutTabProps {
   version: string | null;
   onViewChangelog: () => void;
+  /** Run an update check as soon as the tab mounts (used by the "Check for Updates" menu entry). */
+  autoCheckForUpdates?: boolean;
 }

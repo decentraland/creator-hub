@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from 'react';
+import { useCallback, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import cx from 'classnames';
 import RefreshIcon from '@mui/icons-material/Cached';
@@ -7,6 +7,7 @@ import { Box, Chip, IconButton, MenuItem, Typography } from 'decentraland-ui2';
 import { analytics, misc } from '#preload';
 import { t } from '/@/modules/store/translation/utils';
 import { actions as managementActions } from '/@/modules/store/management';
+import { fetchENSList } from '/@/modules/store/ens';
 import { useAuth } from '/@/hooks/useAuth';
 import { useDispatch, useSelector } from '#store';
 import { FilterBy, SortBy } from '/shared/types/manage';
@@ -49,7 +50,7 @@ const SORT_OPTIONS: Array<{ label: string; value: SortBy }> = [
 ];
 
 export function ManagePage() {
-  const { isSignedIn, isSigningIn, signIn } = useAuth();
+  const { isSignedIn, isSigningIn, signIn, wallet } = useAuth();
   const { data: ens } = useSelector(state => state.ens);
   const { status, projects, total, page, sortBy, searchQuery, publishFilter } = useSelector(
     state => state.management,
@@ -59,6 +60,14 @@ export function ManagePage() {
 
   const isLoading = status === 'idle' || status === 'loading';
   const showMainLoader = isLoading && !projects.length;
+
+  // Names can change outside the app (a purchase, a granted deploy permission), so the
+  // sign-in-time fetch goes stale. Refresh in the background on every visit to this tab.
+  useEffect(() => {
+    if (wallet) {
+      dispatch(fetchENSList({ address: wallet }));
+    }
+  }, [wallet, dispatch]);
 
   const handleSortDropdownChange = useCallback((e: SelectChangeEvent<SortBy>) => {
     dispatch(managementActions.setSortBy(e.target.value as SortBy));

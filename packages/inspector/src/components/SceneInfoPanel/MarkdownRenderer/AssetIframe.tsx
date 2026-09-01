@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { useAssetUrl } from './useAssetUrl';
+import { useAssetUrl } from '../../../hooks/useAssetUrl';
 import { isAllowedExternalIframeOrigin } from './utils';
 
 interface AssetIframeProps extends React.IframeHTMLAttributes<HTMLIFrameElement> {}

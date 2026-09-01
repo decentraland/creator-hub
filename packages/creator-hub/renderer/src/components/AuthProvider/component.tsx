@@ -91,6 +91,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         console.error('Signin error:', error);
         pushGeneric('error', signInErrorMessage(error));
       } finally {
+        requestIdRef.current = null;
         setIsSigningIn(false);
         navigate(-1);
       }
@@ -117,21 +118,35 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       signInAttemptCountRef.current += 1;
       setIsSigningIn(true);
 
+      // The id is generated before listening so the correlation check below always
+      // has something to compare against, however fast the deep link arrives.
+      const requestId = AuthServerProvider.createSignInRequestId();
+      requestIdRef.current = requestId;
+
       // Listen for the deep link that completes this attempt. Scoped to the
       // attempt: it fires once, then unsubscribes (also on cancel/re-entry).
       stopDeepLinkListener();
-      const { cleanup } = auth.onDeepLinkSignIn(identityId => {
+      const { cleanup } = auth.onDeepLinkSignIn(({ identityId, authRequestId }) => {
+        // The dapp echoes back the id this attempt opened it with, and with no
+        // server-side request left it is the only thing tying the returned
+        // identity to this attempt: unchecked, any deep link arriving while the
+        // listener is up would sign the user into whatever identity it names. A
+        // link that does not match is dropped with the listener left up, so it
+        // can neither complete nor cancel this attempt.
+        if (!requestIdRef.current || authRequestId !== requestIdRef.current) {
+          console.warn('Ignoring deep-link sign in: request id does not match the sign in started');
+          return;
+        }
         stopDeepLinkListener();
         void finishSignIn(identityId);
       });
       deepLinkCleanupRef.current = cleanup;
 
-      const requestId = await AuthServerProvider.createSignInRequest();
-      requestIdRef.current = requestId;
       navigate('/sign-in');
       AuthServerProvider.openAuthDapp(requestId, true);
     } catch (error: any) {
       stopDeepLinkListener();
+      requestIdRef.current = null;
       captureException(error, {
         tags: { source: 'auth', event: 'signin-init' },
       });

@@ -1,75 +1,27 @@
 import { type IEngine } from '@dcl/ecs';
-import ReactEcs, { Label, UiEntity, Dropdown } from '@dcl/react-ecs';
-import { Color4 } from '@dcl/sdk/math';
-import { Button } from '../Button';
-import { getContentUrl } from '../constants';
+import ReactEcs, { UiEntity, Dropdown } from '@dcl/react-ecs';
 import { type State } from '../types';
 import type { AdminTools } from '../../definitions';
-import { Header } from '../Header';
-import { Active } from '../Active';
-import { Card } from '../Card';
-import {
-  getVideoPlayers,
-  isDclCast,
-  isLiveStream,
-  isVideoUrl,
-  useSelectedVideoPlayer,
-} from './utils';
+import { COLORS, RADIUS, SPACING, TYPE } from '../theme';
+import { SectionHeader, FieldLabel, ActivePill, Divider } from '../Primitives';
+import { Segmented } from '../Controls';
+import { selectVideoSubTab, selectVideoPlayer } from '../actions';
+import { getVideoPlayers, isVideoUrl, useSelectedVideoPlayer } from './utils';
 import { VideoControlURL } from './VideoUrl';
 import { LiveStream } from './LiveStream';
 import DclCast from './DclCast';
-import PresentationPanel from './DclCast/PresentationPanel';
 
-// Constants
-export const ICONS = {
-  get VIDEO_CONTROL() {
-    return `${getContentUrl()}/admin_toolkit/assets/icons/video-control.png`;
-  },
-  get PREVIOUS_BUTTON() {
-    return `${getContentUrl()}/admin_toolkit/assets/icons/video-control-previous-button.png`;
-  },
-  get FORWARD_BUTTON() {
-    return `${getContentUrl()}/admin_toolkit/assets/icons/video-control-forward-button.png`;
-  },
-  get PLAY_BUTTON() {
-    return `${getContentUrl()}/admin_toolkit/assets/icons/video-control-play-button.png`;
-  },
-  get MUTE() {
-    return `${getContentUrl()}/admin_toolkit/assets/icons/video-control-mute.png`;
-  },
-  get LOOP() {
-    return `${getContentUrl()}/admin_toolkit/assets/icons/video-control-loop.png`;
-  },
-  get VOLUME_MINUS_BUTTON() {
-    return `${getContentUrl()}/admin_toolkit/assets/icons/video-control-volume-minus-button.png`;
-  },
-  get VOLUME_PLUS_BUTTON() {
-    return `${getContentUrl()}/admin_toolkit/assets/icons/video-control-volume-plus-button.png`;
-  },
-  get VIDEO_SOURCE() {
-    return `${getContentUrl()}/admin_toolkit/assets/icons/video-control-video-icon.png`;
-  },
-  get LIVE_SOURCE() {
-    return `${getContentUrl()}/admin_toolkit/assets/icons/video-control-live.png`;
-  },
-  get DCL_CAST_SOURCE() {
-    return `${getContentUrl()}/admin_toolkit/assets/icons/video-control-dcl-cast.png`;
-  },
-  get INFO() {
-    return `${getContentUrl()}/admin_toolkit/assets/icons/info.png`;
-  },
-};
-
-export const VOLUME_STEP = 0.1;
 export const DEFAULT_VOLUME = 1;
 
-export const COLORS = {
-  WHITE: Color4.White(),
-  GRAY: Color4.create(160 / 255, 155 / 255, 168 / 255, 1),
-  SUCCESS: Color4.fromHexString('#34CE77'),
-} as const;
+type MediaSource = 'video-url' | 'dcl-cast' | 'live';
 
-// Main component
+const SECTION_PADDING = {
+  left: SPACING.xxl,
+  right: SPACING.xxl,
+  top: SPACING.xl,
+  bottom: SPACING.xl,
+};
+
 export function VideoControl({
   engine,
   state,
@@ -81,145 +33,78 @@ export function VideoControl({
 }) {
   const [selectedEntity, selectedVideo] = useSelectedVideoPlayer(engine) ?? [];
   const videoPlayers = getVideoPlayers(engine);
-  const [selected, setSelected] = ReactEcs.useState<'video-url' | 'live' | 'dcl-cast' | undefined>(
-    undefined,
-  );
+  const selected = state.videoControl.selectedTab;
 
   ReactEcs.useEffect(() => {
-    setSelected(
-      selectedVideo && isDclCast(selectedVideo.src)
-        ? 'dcl-cast'
-        : selectedVideo && isVideoUrl(selectedVideo.src)
-          ? 'video-url'
-          : 'live',
-    );
-  }, [state.videoControl.selectedVideoPlayer]);
+    // An explicit DCL Cast context (auto-open on a presentation, or an active cast
+    // stream) wins over src-derivation, so the panel lands on DCL Cast even when no
+    // scene screen is casting yet. Otherwise reflect the selected screen's source.
+    if (state.videoControl.selectedStream === 'dcl-cast') {
+      selectVideoSubTab('dcl-cast');
+      return;
+    }
+    selectVideoSubTab(selectedVideo && isVideoUrl(selectedVideo.src) ? 'video-url' : 'live');
+  }, [state.videoControl.selectedVideoPlayer, state.videoControl.selectedStream]);
+
+  const isActive = !!(selectedVideo?.src && selectedVideo.src.length > 0);
 
   return (
     <UiEntity uiTransform={{ flexDirection: 'column', width: '100%' }}>
-      <Card
-        uiTransform={{
-          padding: {
-            top: 32,
-            right: 32,
-            bottom: 0,
-            left: 32,
-          },
-        }}
-      >
-        <UiEntity
-          uiTransform={{
-            width: '100%',
-            flexDirection: 'column',
-          }}
-        >
-          {/* Header */}
-          <Header
-            iconSrc={ICONS.VIDEO_CONTROL}
-            title="<b>VIDEO SCREENS</b>"
-          />
-          {videoPlayers.length > 1 && (
-            <Label
-              value="<b>Current Screen</b>"
-              fontSize={16}
-              color={Color4.White()}
-              uiTransform={{ margin: { bottom: 16 } }}
-            />
-          )}
+      <UiEntity uiTransform={{ flexDirection: 'column', width: '100%', padding: SECTION_PADDING }}>
+        <SectionHeader
+          title="Video screens"
+          right={isActive && <ActivePill />}
+        />
 
+        {videoPlayers.length > 1 && (
           <UiEntity
-            uiTransform={{
-              flexDirection: 'column',
-              margin: { bottom: 16 },
-            }}
+            uiTransform={{ flexDirection: 'column', width: '100%', margin: { top: SPACING.xl } }}
           >
-            {videoPlayers.length > 1 && (
-              <UiEntity uiTransform={{ flexDirection: 'column' }}>
-                <Dropdown
-                  options={videoPlayers.map(
-                    (player: NonNullable<AdminTools['videoControl']['videoPlayers']>[0]) =>
-                      `<b>${player.customName}</b>`,
-                  )}
-                  selectedIndex={state.videoControl.selectedVideoPlayer ?? 0}
-                  onChange={idx => (state.videoControl.selectedVideoPlayer = idx)}
-                  textAlign="middle-left"
-                  fontSize={16}
-                  uiTransform={{
-                    margin: { right: 8 },
-                    width: '100%',
-                  }}
-                  uiBackground={{ color: Color4.White() }}
-                />
-              </UiEntity>
-            )}
-            <Label
-              fontSize={16}
-              value="<b>Media Source</b>"
-              color={Color4.White()}
+            <FieldLabel text="Screen" />
+            <Dropdown
+              options={videoPlayers.map(
+                (player: NonNullable<AdminTools['videoControl']['videoPlayers']>[0]) =>
+                  player.customName,
+              )}
+              selectedIndex={state.videoControl.selectedVideoPlayer ?? 0}
+              onChange={idx => selectVideoPlayer(idx)}
+              textAlign="middle-left"
+              fontSize={TYPE.body}
+              color={COLORS.inputText}
               uiTransform={{
-                margin: { bottom: 2, top: 16 },
-              }}
-            />
-            <UiEntity
-              uiTransform={{
-                margin: { top: 10 },
-                flexDirection: 'row',
                 width: '100%',
-                justifyContent: 'space-between',
+                height: 40,
+                borderRadius: RADIUS.md,
+                borderWidth: 1,
+                borderColor: COLORS.inputBorder,
               }}
-            >
-              <UiEntity
-                uiTransform={{
-                  width: '30%',
-                }}
-              >
-                <CustomButton
-                  engine={engine}
-                  id="video_control_url"
-                  value="<b>VIDEO URL</b>"
-                  icon={ICONS.VIDEO_SOURCE}
-                  onClick={() => setSelected('video-url')}
-                  selected={selected === 'video-url'}
-                  active={selectedVideo && isVideoUrl(selectedVideo.src)}
-                />
-              </UiEntity>
-              <UiEntity
-                uiTransform={{
-                  width: '30%',
-                }}
-              >
-                <CustomButton
-                  engine={engine}
-                  id="video_control_dcl_cast"
-                  value="<b>DCL CAST</b>"
-                  icon={ICONS.DCL_CAST_SOURCE}
-                  onClick={() => setSelected('dcl-cast')}
-                  selected={selected === 'dcl-cast'}
-                  active={selectedVideo && isDclCast(selectedVideo.src)}
-                />
-              </UiEntity>
-              <UiEntity
-                uiTransform={{
-                  width: '30%',
-                }}
-              >
-                <CustomButton
-                  engine={engine}
-                  id="video_control_live"
-                  value="<b>STREAM</b>"
-                  icon={ICONS.LIVE_SOURCE}
-                  onClick={() => setSelected('live')}
-                  active={selectedVideo && isLiveStream(selectedVideo.src)}
-                  selected={selected === 'live'}
-                />
-              </UiEntity>
-            </UiEntity>
+              uiBackground={{ color: COLORS.inputBackground }}
+            />
           </UiEntity>
+        )}
+
+        <UiEntity
+          uiTransform={{ flexDirection: 'column', width: '100%', margin: { top: SPACING.xl } }}
+        >
+          <FieldLabel text="Media source" />
+          <Segmented<MediaSource>
+            options={[
+              { key: 'video-url', label: 'URL', icon: 'play' },
+              { key: 'dcl-cast', label: 'DCL Cast', icon: 'tv' },
+              { key: 'live', label: 'Stream', icon: 'broadcast' },
+            ]}
+            selected={selected}
+            onSelect={selectVideoSubTab}
+          />
         </UiEntity>
-      </Card>
+      </UiEntity>
+
       {selected && selectedEntity && (
         <UiEntity uiTransform={{ flexDirection: 'column', width: '100%' }}>
-          <Card>
+          <Divider />
+          <UiEntity
+            uiTransform={{ flexDirection: 'column', width: '100%', padding: SECTION_PADDING }}
+          >
             {selected === 'video-url' && (
               <VideoControlURL
                 engine={engine}
@@ -243,81 +128,8 @@ export function VideoControl({
                 playerAddress={playerAddress}
               />
             )}
-          </Card>
-          <Card
-            uiTransform={{
-              display:
-                selected === 'dcl-cast' &&
-                !!state.videoControl.presentationState &&
-                !state.videoControl.isMinimized
-                  ? 'flex'
-                  : 'none',
-            }}
-          >
-            <PresentationPanel
-              presentationState={state.videoControl.presentationState}
-              onStopSharing={() => {
-                state.videoControl.presentationState = undefined;
-              }}
-            />
-          </Card>
+          </UiEntity>
         </UiEntity>
-      )}
-    </UiEntity>
-  );
-}
-
-interface Props {
-  id: string;
-  value: string;
-  onClick(): void;
-  selected: boolean;
-  icon: string;
-  engine: IEngine;
-  active?: boolean;
-}
-
-function CustomButton({ active, value, id, onClick, icon, selected, engine }: Props) {
-  return (
-    <UiEntity uiTransform={{ flexDirection: 'column', height: '100%', width: '100%' }}>
-      <UiEntity uiTransform={{ width: '100%' }}>
-        <Button
-          id={id}
-          onMouseDown={onClick}
-          value={value}
-          fontSize={14}
-          icon={icon}
-          iconTransform={{
-            width: 24,
-            height: 24,
-            margin: { right: 8 },
-          }}
-          color={selected ? Color4.Black() : Color4.fromHexString('#FCFCFC')}
-          iconBackground={{
-            color: selected ? Color4.Black() : Color4.fromHexString('#FCFCFC'),
-          }}
-          uiBackground={{
-            color: selected ? Color4.White() : Color4.fromHexString('#43404A'),
-          }}
-          uiTransform={{
-            padding: {
-              top: 6,
-              bottom: 6,
-            },
-            borderRadius: 6,
-            alignItems: 'center',
-            justifyContent: 'center',
-            width: '100%',
-            height: 36,
-          }}
-        />
-      </UiEntity>
-
-      {active && (
-        <Active
-          engine={engine}
-          uiTransform={{ width: '100%', margin: { top: 6 } }}
-        />
       )}
     </UiEntity>
   );

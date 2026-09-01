@@ -2,6 +2,7 @@ import { handle, handleSync } from './handle';
 import * as electron from './electron';
 import * as updater from './updater';
 import * as inspector from './inspector';
+import * as bevyRealm from './bevy-realm';
 import * as cli from './cli';
 import * as bin from './bin';
 import * as code from './code';
@@ -9,6 +10,8 @@ import * as analytics from './analytics';
 import * as npm from './npm';
 import * as config from './config';
 import * as mobileDebug from './mobile-debug-server';
+import * as oxc from './oxc';
+import * as metrics from './metrics';
 
 interface InitIpcOptions {
   beforeQuitCleanup: () => Promise<void>;
@@ -26,6 +29,9 @@ export function initIpc({ beforeQuitCleanup }: InitIpcOptions) {
   handle('electron.openExternal', (_event, url) => electron.openExternal(url));
   handle('electron.copyToClipboard', (_event, text) => electron.copyToClipboard(text));
 
+  // analytics API (fetched here because the renderer's `Origin: null` fails CORS)
+  handle('metrics.request', (_event, request) => metrics.request(request));
+
   // updater
   handle('updater.checkForUpdates', (_event, config) => updater.checkForUpdates(config));
   handle('updater.quitAndInstall', (_event, version) =>
@@ -42,11 +48,17 @@ export function initIpc({ beforeQuitCleanup }: InitIpcOptions) {
   handle('inspector.attachSceneDebugger', (_event, path) => inspector.attachSceneDebugger(path));
   handle('inspector.detachSceneDebugger', (_event, path) => inspector.detachSceneDebugger(path));
 
+  // bevy realm (headless sdk-commands server feeding the embedded Bevy editor engine)
+  handle('bevyRealm.start', (_event, path) => bevyRealm.start(path));
+  handle('bevyRealm.kill', (_event, path) => bevyRealm.kill(path));
+
   // cli
   handle('cli.init', (_event, path, repo) => cli.init(path, repo));
-  handle('cli.start', (_event, path, opts) => cli.start(path, opts));
+  handle('cli.start', (_event, path, opts, mobile) => cli.start(path, { ...opts, mobile }));
   handle('cli.deploy', (_event, opts) => cli.deploy(opts));
   handle('cli.killPreview', (_event, path) => cli.killPreview(path));
+  handle('cli.cancelPreview', (_event, path) => cli.cancelPreview(path));
+  handle('cli.supportsAssetBundles', (_event, path) => cli.supportsAssetBundles(path));
   handle('cli.getMobilePreview', (_event, path) => cli.getMobilePreview(path));
 
   // mobile debug session
@@ -100,4 +112,6 @@ export function initIpc({ beforeQuitCleanup }: InitIpcOptions) {
   handle('npm.install', (_event, path, packages) => npm.install(path, packages));
   handle('npm.getOutdatedDeps', (_event, path, packages) => npm.getOutdatedDeps(path, packages));
   handle('npm.getContextFiles', (_event, path) => npm.getContextFiles(path));
+
+  handle('oxc.parse', (_event, filename, source) => oxc.parse(filename, source));
 }

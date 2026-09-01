@@ -5,6 +5,8 @@ export type PreviewOptionsProps = {
   onChange: (options: PreviewOptions) => void;
   onShowMobileQR: () => void;
   supportsMultiInstance: boolean;
+  supportsMcp: boolean;
+  projectPath: string;
 };
 
 export type PublishOptionId = 'publish-scene' | 'deploy-world' | 'deploy-land';

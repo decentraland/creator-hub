@@ -1,7 +1,6 @@
 import type { Entity, IEngine } from '@dcl/ecs';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import ReactEcs, { Dropdown, Label, UiEntity } from '@dcl/react-ecs';
-import { Color4 } from '@dcl/sdk/math';
 import {
   getActionEvents,
   getComponents,
@@ -10,333 +9,152 @@ import {
   type AdminTools,
 } from '../definitions';
 import { getExplorerComponents } from '../components';
-import { Button } from './Button';
-import { getContentUrl } from './constants';
 import { type State } from './types';
-import { Header } from './Header';
-import { Card } from './Card';
+import { COLORS, RADIUS, SPACING, TYPE } from './theme';
+import { FieldLabel } from './Primitives';
+import { PillButton } from './Controls';
+import { selectSmartItem, setSmartItemAction, setSmartItemVisibility } from './actions';
 import { getSmartItems } from '.';
 
-// Constants
-const ICONS = {
-  get SMART_ITEM_CONTROL() {
-    return `${getContentUrl()}/admin_toolkit/assets/icons/smart-item-control.png`;
-  },
-};
+type SmartItemList = NonNullable<AdminTools['smartItemsControl']['smartItems']>;
 
-function getSmartItemActions(
-  engine: IEngine,
-  smartItem: NonNullable<AdminTools['smartItemsControl']['smartItems']>[0],
-) {
+function getSmartItemActions(engine: IEngine, smartItem: SmartItemList[0]) {
   const { Actions } = getComponents(engine);
   if (!smartItem || !Actions.has(smartItem.entity as Entity)) return [];
-
-  const actions = Array.from(Actions.get(smartItem.entity as Entity).value);
-  return actions;
+  return Array.from(Actions.get(smartItem.entity as Entity).value);
 }
 
-// Event Handlers
-function handleExecuteAction(
-  smartItem: NonNullable<AdminTools['smartItemsControl']['smartItems']>[0],
-  action: Action,
-) {
+function handleExecuteAction(smartItem: SmartItemList[0], action: Action) {
   const actionEvents = getActionEvents(smartItem.entity as Entity);
   actionEvents.emit(action.name, getPayload(action));
 }
 
-function handleSelectSmartItem(
-  state: State,
-  smartItems: NonNullable<AdminTools['smartItemsControl']['smartItems']>,
-  idx: number,
-) {
-  state.smartItemsControl.selectedSmartItem = idx;
+function handleSelectSmartItem(smartItems: SmartItemList, idx: number) {
   const smartItem = smartItems[idx];
-
-  if (!state.smartItemsControl.smartItems.has(smartItem.entity as Entity)) {
-    const stateSmartItems = new Map(state.smartItemsControl.smartItems);
-    stateSmartItems.set(smartItem.entity as Entity, {
-      visible: true,
-      selectedAction: smartItem.defaultAction,
-    });
-    state.smartItemsControl = {
-      ...state.smartItemsControl,
-      smartItems: new Map(stateSmartItems),
-    };
-  }
+  selectSmartItem(idx, smartItem.entity as Entity, smartItem.defaultAction);
 }
 
-function handleSelectAction(
-  state: State,
-  smartItem: NonNullable<AdminTools['smartItemsControl']['smartItems']>[0],
-  action: Action,
-) {
-  const stateSmartItems = new Map(state.smartItemsControl.smartItems);
-  stateSmartItems.set(smartItem.entity as Entity, {
-    ...stateSmartItems.get(smartItem.entity as Entity)!,
-    selectedAction: action.name,
-  });
-
-  state.smartItemsControl = {
-    ...state.smartItemsControl,
-    smartItems: new Map(stateSmartItems),
-  };
+function handleSelectAction(smartItem: SmartItemList[0], action: Action) {
+  setSmartItemAction(smartItem.entity as Entity, action.name);
 }
 
-function handleHideShowEntity(
-  engine: IEngine,
-  state: State,
-  smartItems: NonNullable<AdminTools['smartItemsControl']['smartItems']>,
-) {
+function handleHideShowEntity(engine: IEngine, state: State, smartItems: SmartItemList) {
   const { VisibilityComponent } = getExplorerComponents(engine);
-
   const smartItemEntity = smartItems[state.smartItemsControl.selectedSmartItem!].entity as Entity;
   const smartItem = state.smartItemsControl.smartItems.get(smartItemEntity);
-
   const toggleVisibility = !smartItem!.visible;
-  state.smartItemsControl.smartItems.get(smartItemEntity)!.visible = toggleVisibility;
-
+  setSmartItemVisibility(smartItemEntity, toggleVisibility);
   const visibility = VisibilityComponent.getOrCreateMutable(smartItemEntity);
   visibility.visible = toggleVisibility;
 }
 
-function SmartItemSelector({
-  engine,
-  smartItems,
-  selectedIndex,
-  onSelect,
-}: {
-  engine: IEngine;
-  smartItems: NonNullable<AdminTools['smartItemsControl']['smartItems']>;
-  selectedIndex: number | undefined;
-  onSelect: (idx: number) => void;
-}) {
-  return (
-    <UiEntity
-      key="SmartItemsControlDropdownWrapper"
-      uiTransform={{
-        flexDirection: 'column',
-        margin: { bottom: 32 },
-      }}
-    >
-      <Label
-        value="<b>Selected Smart Item</b>"
-        fontSize={16}
-        color={Color4.White()}
-        uiTransform={{
-          margin: { bottom: 16 },
-        }}
-      />
-      <Dropdown
-        key="SmartItemsControlDropdownSelector"
-        acceptEmpty
-        emptyLabel="Select Smart Item"
-        options={smartItems.map(
-          (item: NonNullable<AdminTools['smartItemsControl']['smartItems']>[0]) => item.customName,
-        )}
-        selectedIndex={selectedIndex ?? -1}
-        onChange={onSelect}
-        textAlign="middle-left"
-        fontSize={14}
-        uiTransform={{
-          height: 40,
-          width: '100%',
-        }}
-        uiBackground={{ color: Color4.White() }}
-        color={Color4.Black()}
-      />
-    </UiEntity>
-  );
-}
+const DROPDOWN_TRANSFORM = {
+  width: '100%' as const,
+  height: 40,
+  borderRadius: RADIUS.md,
+  borderWidth: 1,
+  borderColor: COLORS.inputBorder,
+};
 
-function ActionSelector({
-  engine,
-  actions,
-  selectedIndex,
-  disabled,
-  onChange,
-}: {
-  engine: IEngine;
-  actions: Action[];
-  selectedIndex: number | undefined;
-  disabled: boolean;
-  onChange: (idx: number) => void;
-}) {
-  return (
-    <UiEntity
-      uiTransform={{
-        flexDirection: 'column',
-        margin: { bottom: 32 },
-      }}
-    >
-      <Label
-        value="<b>Actions</b>"
-        fontSize={16}
-        color={Color4.White()}
-        uiTransform={{
-          margin: { bottom: 16 },
-        }}
-      />
-      {actions.length ? (
-        <Dropdown
-          acceptEmpty
-          emptyLabel="Select Action"
-          options={actions.map((action: Action) => action.name)}
-          selectedIndex={selectedIndex}
-          onChange={onChange}
-          disabled={disabled}
-          textAlign="middle-left"
-          fontSize={14}
-          uiTransform={{
-            height: 40,
-            width: '100%',
-          }}
-          uiBackground={{
-            color: disabled ? Color4.Gray() : Color4.White(),
-          }}
-          color={Color4.Black()}
-        />
-      ) : (
-        <UiEntity />
-      )}
-    </UiEntity>
-  );
-}
+export function SmartItemsControl({ engine, state }: { engine: IEngine; state: State }) {
+  const smartItems = getSmartItems(engine);
+  const selectedIndex = state.smartItemsControl.selectedSmartItem;
+  const hasSelection = selectedIndex !== undefined;
+  const actions = hasSelection ? getSmartItemActions(engine, smartItems[selectedIndex]) : [];
 
-function ActionButtons({
-  engine,
-  state,
-  smartItems,
-  actions,
-  selectedAction,
-}: {
-  engine: IEngine;
-  state: State;
-  smartItems: NonNullable<AdminTools['smartItemsControl']['smartItems']>;
-  actions: Action[];
-  selectedAction: Action | undefined;
-}) {
-  const selectedSmartItem =
-    state.smartItemsControl.selectedSmartItem !== undefined
-      ? smartItems[state.smartItemsControl.selectedSmartItem]
-      : undefined;
+  const selectedActionIndex = hasSelection
+    ? actions.findIndex((action: Action) => {
+        const smartItem = smartItems[selectedIndex];
+        const stateSelectedAction = state.smartItemsControl.smartItems.get(
+          smartItem.entity as Entity,
+        )?.selectedAction;
+        return action.name === (stateSelectedAction ?? smartItem.defaultAction);
+      })
+    : -1;
 
+  const selectedAction = selectedActionIndex >= 0 ? actions[selectedActionIndex] : undefined;
+  const selectedSmartItem = hasSelection ? smartItems[selectedIndex] : undefined;
   const isVisible =
     selectedSmartItem &&
     state.smartItemsControl.smartItems.get(selectedSmartItem.entity as Entity)?.visible;
 
   return (
     <UiEntity
-      uiTransform={{
-        flexDirection: 'row',
-      }}
+      key="SmartItemsControl"
+      uiTransform={{ flexDirection: 'column', width: '100%', padding: SPACING.xxl }}
     >
-      <Button
-        id="smart_items_control_restart"
-        value="<b>Play Action</b>"
-        variant="text"
-        fontSize={16}
-        color={Color4.White()}
-        uiTransform={{
-          margin: { right: 8 },
-          height: 40,
-        }}
-        labelTransform={{
-          margin: { left: 10, right: 10 },
-        }}
-        disabled={!selectedSmartItem || !selectedAction}
-        onMouseDown={() => {
-          if (selectedSmartItem && selectedAction) {
-            handleExecuteAction(selectedSmartItem, selectedAction);
-          }
-        }}
+      <Label
+        value="<b>Smart item actions</b>"
+        fontSize={TYPE.title}
+        color={COLORS.textPrimary}
+        uiTransform={{ margin: { bottom: SPACING.xl } }}
       />
-      <Button
-        id="smart_items_control_hide_show"
-        value={`<b>${isVisible ? 'Hide' : 'Show'} Entity</b>`}
-        variant="text"
-        fontSize={16}
-        color={Color4.White()}
-        onMouseDown={() => handleHideShowEntity(engine, state, smartItems)}
-        disabled={!selectedSmartItem}
-        uiTransform={{ margin: { right: 8 } }}
-        labelTransform={{
-          margin: { left: 10, right: 10 },
-        }}
-      />
-    </UiEntity>
-  );
-}
 
-// Main Component
-export function SmartItemsControl({ engine, state }: { engine: IEngine; state: State }) {
-  const smartItems = getSmartItems(engine);
-  const actions =
-    state.smartItemsControl.selectedSmartItem !== undefined
-      ? getSmartItemActions(engine, smartItems[state.smartItemsControl.selectedSmartItem])
-      : [];
-
-  const selectedActionIndex =
-    state.smartItemsControl.selectedSmartItem !== undefined
-      ? actions.findIndex((action: Action) => {
-          const selectedSmartItem: NonNullable<AdminTools['smartItemsControl']['smartItems']>[0] =
-            smartItems[state.smartItemsControl.selectedSmartItem!];
-          const stateSelectedAction = state.smartItemsControl.smartItems.get(
-            selectedSmartItem.entity as Entity,
-          )?.selectedAction;
-
-          return action.name === (stateSelectedAction ?? selectedSmartItem.defaultAction);
-        })
-      : undefined;
-  return (
-    <Card>
       <UiEntity
-        key="SmartItemsControl"
-        uiTransform={{
-          height: '100%',
-          width: '100%',
-          flexDirection: 'column',
-        }}
+        uiTransform={{ flexDirection: 'column', width: '100%', margin: { bottom: SPACING.xl } }}
       >
-        <Header
-          iconSrc={ICONS.SMART_ITEM_CONTROL}
-          title="SMART ITEM ACTIONS"
+        <FieldLabel text="Smart item" />
+        <Dropdown
+          acceptEmpty
+          emptyLabel="Select smart item"
+          options={smartItems.map((item: SmartItemList[0]) => item.customName)}
+          selectedIndex={selectedIndex ?? -1}
+          onChange={idx => handleSelectSmartItem(smartItems, idx)}
+          textAlign="middle-left"
+          fontSize={TYPE.body}
+          color={COLORS.inputText}
+          uiTransform={DROPDOWN_TRANSFORM}
+          uiBackground={{ color: COLORS.inputBackground }}
         />
+      </UiEntity>
 
-        <SmartItemSelector
-          engine={engine}
-          smartItems={smartItems}
-          selectedIndex={state.smartItemsControl.selectedSmartItem}
-          onSelect={idx => {
-            handleSelectSmartItem(state, smartItems, idx);
+      <UiEntity
+        uiTransform={{ flexDirection: 'column', width: '100%', margin: { bottom: SPACING.xl } }}
+      >
+        <FieldLabel text="Action" />
+        <Dropdown
+          acceptEmpty
+          emptyLabel="Select action"
+          options={actions.map((action: Action) => action.name)}
+          selectedIndex={selectedActionIndex}
+          disabled={!hasSelection}
+          onChange={idx => {
+            if (hasSelection) handleSelectAction(smartItems[selectedIndex], actions[idx]);
+          }}
+          textAlign="middle-left"
+          fontSize={TYPE.body}
+          color={COLORS.inputText}
+          uiTransform={DROPDOWN_TRANSFORM}
+          uiBackground={{
+            color: hasSelection ? COLORS.inputBackground : COLORS.disabledBackground,
           }}
         />
+      </UiEntity>
 
-        <ActionSelector
-          engine={engine}
-          actions={actions}
-          selectedIndex={selectedActionIndex}
-          disabled={state.smartItemsControl.selectedSmartItem === undefined}
-          onChange={idx => {
-            if (state.smartItemsControl.selectedSmartItem !== undefined) {
-              handleSelectAction(
-                state,
-                smartItems[state.smartItemsControl.selectedSmartItem],
-                actions[idx],
-              );
+      <UiEntity uiTransform={{ flexDirection: 'row', width: '100%' }}>
+        <PillButton
+          id="smart_items_control_restart"
+          label="Play action"
+          iconName="play"
+          variant="filled"
+          disabled={!selectedSmartItem || !selectedAction}
+          uiTransform={{ flexGrow: 1, flexBasis: 0, margin: { right: SPACING.md } }}
+          onClick={() => {
+            if (selectedSmartItem && selectedAction) {
+              handleExecuteAction(selectedSmartItem, selectedAction);
             }
           }}
         />
-
-        <ActionButtons
-          engine={engine}
-          state={state}
-          smartItems={smartItems}
-          actions={actions}
-          selectedAction={
-            selectedActionIndex !== undefined ? actions[selectedActionIndex] : undefined
-          }
+        <PillButton
+          id="smart_items_control_hide_show"
+          label={`${isVisible ? 'Hide' : 'Show'} entity`}
+          iconName="eyeoff"
+          variant="outlined"
+          disabled={!selectedSmartItem}
+          uiTransform={{ flexGrow: 1, flexBasis: 0 }}
+          onClick={() => handleHideShowEntity(engine, state, smartItems)}
         />
       </UiEntity>
-    </Card>
+    </UiEntity>
   );
 }

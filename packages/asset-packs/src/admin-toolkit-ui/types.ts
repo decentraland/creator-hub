@@ -1,5 +1,6 @@
 import type { Entity } from '@dcl/ecs';
-import type { DclCastResponse } from './VideoControl/api';
+import type { DclCastResponse, FlattenedTrack, Participant } from './VideoControl/api';
+import type { SceneAdmin } from './ModerationControl';
 
 // Tab enum for type safety
 export enum TabType {
@@ -8,7 +9,6 @@ export enum TabType {
   SMART_ITEMS_CONTROL = 'SmartItemsControl',
   TEXT_ANNOUNCEMENT_CONTROL = 'TextAnnouncementControl',
   MODERATION_CONTROL = 'ModerationControl',
-  REWARDS_CONTROL = 'RewardsControl',
 }
 
 export type SelectedSmartItem = { visible: boolean; selectedAction: string };
@@ -33,9 +33,21 @@ export type State = {
   videoControl: {
     selectedVideoPlayer: number | undefined;
     selectedStream: 'live' | 'dcl-cast' | undefined;
+    selectedTab: 'video-url' | 'live' | 'dcl-cast' | undefined;
     dclCast: DclCastResponse | undefined;
-    isMinimized: boolean;
     presentationState: PresentationState | undefined;
+    participants: Participant[];
+    showcase: {
+      show: boolean;
+      activeTrackSid: string | undefined;
+      onSelectTrack: ((track: FlattenedTrack) => void) | undefined;
+      onSetDefault: (() => void) | undefined;
+      onClose: (() => void) | undefined;
+    };
+    sharePresentation: {
+      show: boolean;
+      onClose: (() => void) | undefined;
+    };
   };
   smartItemsControl: {
     selectedSmartItem: number | undefined;
@@ -51,7 +63,10 @@ export type State = {
     }[];
     maxAnnouncements: number;
   };
-  rewardsControl: {
-    selectedRewardItem: number | undefined;
+  moderationControl: {
+    showModalAdminList: boolean;
+    adminToRemove: SceneAdmin | undefined;
+    showModalBanList: boolean;
+    unbanMessage: string | undefined;
   };
 };

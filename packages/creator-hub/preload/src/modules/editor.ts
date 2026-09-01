@@ -1,6 +1,7 @@
 import { ipcRenderer, type IpcRendererEvent } from 'electron';
 
 import type { DeployOptions } from '/shared/types/deploy';
+import { PREVIEW_PROGRESS_EVENT, type PreviewProgress } from '/shared/types/ipc';
 import type { MobileDebugSessionInfo } from '/shared/types/ipc';
 
 import { invoke } from '../services/ipc';
@@ -23,6 +24,19 @@ export async function openCode(_path: string) {
 export async function startInspector() {
   const port = await invoke('inspector.start');
   return port;
+}
+
+/**
+ * Start the headless Bevy realm server for a project (the sdk-commands content +
+ * data-layer the embedded Bevy editor engine loads from). Returns the realm URL
+ * and its data-layer WS URL, which the inspector iframe is configured with.
+ */
+export async function startBevyRealm(path: string) {
+  return invoke('bevyRealm.start', path);
+}
+
+export async function killBevyRealm(path: string) {
+  return invoke('bevyRealm.kill', path);
 }
 
 const activeDebuggers = new Map<string, () => void>();
@@ -50,9 +64,39 @@ export async function attachSceneDebugger(
   return { cleanup };
 }
 
-export async function runScene({ path, opts }: { path: string; opts: PreviewOptions }) {
-  const port = await invoke('cli.start', path, opts);
+export async function runScene({
+  path,
+  opts,
+  mobile,
+}: {
+  path: string;
+  opts: PreviewOptions;
+  mobile?: boolean;
+}) {
+  const port = await invoke('cli.start', path, opts, mobile);
   return port;
+}
+
+export function subscribePreviewProgress(
+  path: string,
+  cb: (progress: PreviewProgress | null) => void,
+): { cleanup: () => void } {
+  const handler = (
+    _: IpcRendererEvent,
+    payload: { path: string; progress: PreviewProgress | null },
+  ) => {
+    if (payload.path === path) cb(payload.progress);
+  };
+  ipcRenderer.on(PREVIEW_PROGRESS_EVENT, handler);
+  return { cleanup: () => ipcRenderer.off(PREVIEW_PROGRESS_EVENT, handler) };
+}
+
+export async function cancelPreview(path: string) {
+  return invoke('cli.cancelPreview', path);
+}
+
+export async function supportsAssetBundles(path: string) {
+  return invoke('cli.supportsAssetBundles', path);
 }
 
 export async function killPreviewScene(path: string) {

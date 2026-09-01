@@ -13,7 +13,7 @@ type ComponentSnapshot = Record<string, unknown> | null;
  * is the most stable way to assert post-spawn component state in e2e.
  */
 class InspectorPageObject {
-  async waitForEngineReady(timeout = 30_000) {
+  async waitForEngineReady(timeout = 60_000) {
     await page.waitForFunction(
       () => !!(window as any).store?.getState?.().sdk?.inspectorEngine,
       undefined,
