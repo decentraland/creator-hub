@@ -10,7 +10,7 @@
               {
                 "clip": "armature_psAction",
                 "playing": false,
-                "weight": 0.9399999976158142,
+                "weight": 1,
                 "speed": 1,
                 "loop": true,
                 "shouldReset": false
@@ -18,7 +18,7 @@
               {
                 "clip": "RaysAnim",
                 "playing": false,
-                "weight": -1,
+                "weight": 1,
                 "speed": 1,
                 "loop": false,
                 "shouldReset": false
