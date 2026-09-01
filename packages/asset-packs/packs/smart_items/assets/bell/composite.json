@@ -24,31 +24,27 @@
       }
     },
     {
-      "name": "core-schema::Name",
+      "name": "asset-packs::Script",
       "data": {
         "0": {
           "json": {
-            "value": "Bell"
+            "value": [
+              {
+                "path": "{assetPath}/Bell.ts",
+                "priority": 0,
+                "layout": "{\"params\":{\"hoverText\":{\"type\":\"string\",\"optional\":true,\"value\":\"Ring\",\"tooltip\":\"Text shown when the player points at the bell.\"},\"sound\":{\"type\":\"string\",\"optional\":true,\"value\":\"bell.mp3\",\"tooltip\":\"Name of an audio file inside this smart item's folder (e.g. bell.mp3), played when the bell rings. Leave empty for no sound.\"},\"animation\":{\"type\":\"string\",\"optional\":true,\"value\":\"trigger\",\"tooltip\":\"Name of the animation clip in the bell's model that plays when the bell rings. Leave empty for no animation.\"},\"onRing\":{\"type\":\"action\",\"optional\":true,\"value\":{\"entity\":0,\"action\":\"\"},\"tooltip\":\"Action triggered every time the bell rings.\"}},\"actions\":[{\"methodName\":\"ring\",\"description\":\"Rings the bell, playing its animation and sound\",\"params\":{}}]}"
+              }
+            ]
           }
         }
       }
     },
     {
-      "name": "core::PointerEvents",
+      "name": "core-schema::Name",
       "data": {
         "0": {
           "json": {
-            "pointerEvents": [
-              {
-                "eventType": 1,
-                "eventInfo": {
-                  "button": 1,
-                  "hoverText": "Ring",
-                  "maxDistance": 10,
-                  "showFeedback": true
-                }
-              }
-            ]
+            "value": "Bell"
           }
         }
       }
@@ -71,82 +67,12 @@
             "id": "{self}",
             "value": [
               {
-                "name": "Play Animation",
-                "type": "play_animation",
-                "jsonPayload": "{\"animation\":\"trigger\"}"
-              },
-              {
-                "name": "Play Sound",
-                "type": "play_sound",
-                "jsonPayload": "{\"src\":\"{assetPath}/bell.mp3\"}"
-              },
-              {
-                "name": "Stop Animation",
-                "type": "stop_animation",
-                "jsonPayload": "{}"
-              },
-              {
-                "name": "Stop Sound",
-                "type": "stop_sound",
-                "jsonPayload": "{}",
-                "allowedInBasicView": true
-              },
-              {
-                "type": "batch",
+                "type": "call_script_method",
                 "name": "Ring",
-                "jsonPayload": "{\"actions\":[\"Play Sound\",\"Play Animation\"]}",
-                "allowedInBasicView": true
+                "jsonPayload": "{\"scriptPath\":\"{assetPath}/Bell.ts\",\"methodName\":\"ring\",\"params\":{}}",
+                "default": true
               }
             ]
-          }
-        }
-      }
-    },
-    {
-      "name": "asset-packs::Triggers",
-      "data": {
-        "0": {
-          "json": {
-            "value": [
-              {
-                "type": "on_input_action",
-                "conditions": [],
-                "actions": [
-                  {
-                    "id": "{self:asset-packs::Actions}",
-                    "name": "Ring"
-                  }
-                ],
-                "basicViewId": "trigger-when-clicked"
-              }
-            ]
-          }
-        }
-      }
-    },
-    {
-      "name": "inspector::Config",
-      "data": {
-        "0": {
-          "json": {
-            "isBasicViewEnabled": true,
-            "componentName": "Bell",
-            "fields": [
-              {
-                "name": "Hover Text",
-                "type": "core::PointerEvents"
-              },
-              {
-                "name": "When Clicked",
-                "type": "asset-packs::Triggers",
-                "basicViewId": "trigger-when-clicked"
-              }
-            ],
-            "assetId": "44beb08d-443f-4290-bcc1-a5032ce77249",
-            "helpTooltip": {
-              "text": "A large metal bell that rings when clicked."
-            },
-            "version": 1
           }
         }
       }
