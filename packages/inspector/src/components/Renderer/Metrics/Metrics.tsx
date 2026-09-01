@@ -130,7 +130,7 @@ const Metrics = withSdk<WithSdkProps>(({ sdk }) => {
       if (metricsUnavailable) return;
       setShowMetrics(value => !value);
     },
-    [showMetrics, setShowMetrics, metricsUnavailable],
+    [setShowMetrics, metricsUnavailable],
   );
 
   const overlayRef = useOutsideClick(handleToggleMetricsOverlay);
@@ -174,7 +174,9 @@ const Metrics = withSdk<WithSdkProps>(({ sdk }) => {
             LimitExceeded: !metricsUnavailable && isAnyLimitExceeded(limitsExceeded),
           })}
           title={
-            metricsUnavailable ? "Scene metrics aren't available with the Bevy renderer" : undefined
+            metricsUnavailable
+              ? 'Scene metrics are only available with the Babylon renderer'
+              : undefined
           }
           onClick={handleToggleMetricsOverlay}
         >

@@ -294,7 +294,7 @@ export function registerBevyRenderer(): void {
         resolve: (entity): HoverHint | null => {
           const pe = bevy.context.PointerEvents.getOrNull(entity as Entity);
           if (!pe) return null;
-          const entry = pe.pointerEvents.find(
+          const entry = pe.pointerEvents?.find(
             e =>
               (e.eventType === PointerEventType.PET_DOWN ||
                 e.eventType === PointerEventType.PET_UP) &&

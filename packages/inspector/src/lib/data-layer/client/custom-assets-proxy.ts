@@ -19,23 +19,36 @@ import type { GetFileRequest } from '../proto/gen/data-layer.gen';
  * than the scene's — acceptable, since a custom asset lives in the shared library,
  * not the scene.
  */
-const CUSTOM_ASSET_METHODS = new Set<PropertyKey>([
+const CUSTOM_ASSET_METHODS = [
   'getCustomAssets',
   'createCustomAsset',
   'deleteCustomAsset',
   'renameCustomAsset',
-]);
+] as const;
+
+/**
+ * The only slice of the data layer the parent host serves here: the custom-asset
+ * RPCs plus `getFile` (for `custom/`-prefixed reads). Narrowing to this (instead of
+ * the full client) makes the `parentHost.rpcMethods` cast in connect.ts fail at
+ * compile time if any of these methods ever stops being implemented.
+ */
+export type ParentCustomAssets = Pick<
+  DataLayerRpcClient,
+  (typeof CUSTOM_ASSET_METHODS)[number] | 'getFile'
+>;
+
+const CUSTOM_ASSET_METHOD_SET = new Set<PropertyKey>(CUSTOM_ASSET_METHODS);
 
 const isCustomPath = (path: string | undefined): boolean =>
   path === 'custom' || (path?.startsWith('custom/') ?? false);
 
 export function withCustomAssetsFromParent(
   ws: DataLayerRpcClient,
-  parent: DataLayerRpcClient,
+  parent: ParentCustomAssets,
 ): DataLayerRpcClient {
   return new Proxy(ws, {
     get(target, prop, receiver) {
-      if (CUSTOM_ASSET_METHODS.has(prop)) {
+      if (CUSTOM_ASSET_METHOD_SET.has(prop)) {
         const fn = Reflect.get(parent, prop) as unknown;
         return typeof fn === 'function' ? fn.bind(parent) : fn;
       }

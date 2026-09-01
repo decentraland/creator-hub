@@ -1352,21 +1352,29 @@ function readModifiers(): { shift: boolean; ctrl: boolean } {
   return { shift: false, ctrl: false };
 }
 
-/** Emit a pick from a raycast result (nearest authored hit, id ≥ 512). */
+/** Raycast hits as candidate scene-entity ids, NEAREST first: real entities only
+ * (id ≥ 512, minus the probe/gizmo/reserved range and our own gizmo handles, which
+ * are CL_POINTER hits but not scene entities). Spawn markers stay in — callers treat
+ * them differently (pick selects the spawn; hover skips it). Shared by emitPick +
+ * emitHover so both run the same hit pipeline. */
+function sceneHitIds(result: {
+  hits: readonly { readonly entityId?: number; readonly length?: number }[];
+}): number[] {
+  return [...result.hits]
+    .filter(h => h.entityId !== undefined)
+    .sort((a, b) => (a.length ?? 0) - (b.length ?? 0))
+    .map(h => Number(h.entityId))
+    .filter(id => id >= 512 && !isGizmoHandle(id));
+}
+
 // Report the nearest scene entity under the pointer for the hover hint (#1476).
-// Same hit-filtering as emitPick (skip reserved ids, gizmo handles, spawn markers),
-// but deduped: only posts when the hovered entity changes. 0 = pointer over nothing.
+// Deduped: only posts when the hovered entity changes. 0 = pointer over nothing
+// (or over a spawn marker, which isn't a hoverable item).
 function emitHover(result: {
   hits: readonly { readonly entityId?: number; readonly length?: number }[];
 }): void {
-  const ordered = [...result.hits]
-    .filter(h => h.entityId !== undefined)
-    .sort((a, b) => (a.length ?? 0) - (b.length ?? 0));
   let hovered = 0;
-  for (const h of ordered) {
-    const id = Number(h.entityId);
-    if (id < 512) continue;
-    if (isGizmoHandle(id)) continue;
+  for (const id of sceneHitIds(result)) {
     if (getSpawnMarkerTarget(id) !== null) continue;
     hovered = id;
     break;
@@ -1377,18 +1385,12 @@ function emitHover(result: {
   }
 }
 
+/** Emit a pick from a raycast result (nearest authored hit, id ≥ 512). */
 function emitPick(
   result: { hits: readonly { readonly entityId?: number; readonly length?: number }[] },
   mods: { shift: boolean; ctrl: boolean },
 ): void {
-  const ordered = [...result.hits]
-    .filter(h => h.entityId !== undefined)
-    .sort((a, b) => (a.length ?? 0) - (b.length ?? 0));
-  for (const h of ordered) {
-    const id = Number(h.entityId);
-    if (id < 512) continue; // skip probe/gizmo/reserved
-    // Skip our own gizmo handles (they're CL_POINTER hits but not scene entities).
-    if (isGizmoHandle(id)) continue;
+  for (const id of sceneHitIds(result)) {
     // A spawn-point marker (avatar / camera target) — select that spawn point,
     // not a scene entity (#2). Spawn points are scene metadata, handled separately.
     const spawn = getSpawnMarkerTarget(id);

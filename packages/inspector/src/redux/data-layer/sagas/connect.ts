@@ -14,6 +14,7 @@ import { DataServiceDefinition } from '../../../lib/data-layer/proto/gen/data-la
 import type { DataLayerRpcClient } from '../../../lib/data-layer/types';
 import { createIframeDataLayerRpcClient } from '../../../lib/data-layer/client/iframe-data-layer';
 import { wireParentBridges } from '../../../lib/data-layer/client/parent-bridges';
+import type { ParentCustomAssets } from '../../../lib/data-layer/client/custom-assets-proxy';
 import { withCustomAssetsFromParent } from '../../../lib/data-layer/client/custom-assets-proxy';
 import type { DataLayerHost } from '../../../lib/data-layer/host';
 import { createDataLayerHost } from '../../../lib/data-layer/host';
@@ -71,12 +72,12 @@ export function* connectSaga() {
   // it, purely to serve the custom-asset library: those files live in a shared
   // per-user dir the parent redirects to, which the realm data-layer can't see
   // (#1554). Everything else flows through the WS data-layer below.
-  let parentDataLayer: DataLayerRpcClient | undefined;
+  let parentDataLayer: ParentCustomAssets | undefined;
   if (config.dataLayerRpcParentUrl) {
     const storage: Storage = yield call(wireParentBridges, config.dataLayerRpcParentUrl);
     const fs: FileSystemInterface = yield call(createFileSystemInterface, storage);
     const parentHost: DataLayerHost = yield call(createDataLayerHost, fs);
-    parentDataLayer = parentHost.rpcMethods as unknown as DataLayerRpcClient;
+    parentDataLayer = parentHost.rpcMethods as unknown as ParentCustomAssets;
   }
   const ws: WebSocket = yield call(createWebSocketConnection, config.dataLayerRpcWsUrl);
   const socketChannel: EventChannel<WsActions> = yield call(createSocketChannel, ws);
