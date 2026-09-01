@@ -51,6 +51,12 @@ describe('widgetJsx free seed', () => {
     expect(isAbsolute(transformOf(jsx))).toBe(true);
   });
 
+  it('rounds a fractional drop point so generated source stays integer', () => {
+    const jsx = widgetJsx('UiEntity', undefined, false, true, { top: 80.6, left: 119.4 });
+
+    expect(jsx).toContain('position: { top: 81, left: 119 }');
+  });
+
   it('leaves an in-flow node relative (no positionType)', () => {
     const jsx = widgetJsx('UiEntity', undefined, false, false);
 

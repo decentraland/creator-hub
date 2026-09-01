@@ -209,7 +209,7 @@ export const FULLSCREEN_FREE_TEMPLATE =
 export type DropPoint = { top: number; left: number };
 
 const freePositionFields = (pos: DropPoint = { top: 0, left: 0 }): string =>
-  `positionType: 'absolute', position: { top: ${pos.top}, left: ${pos.left} }`;
+  `positionType: 'absolute', position: { top: ${Math.round(pos.top)}, left: ${Math.round(pos.left)} }`;
 
 /** A parent lays its children out freely (absolute) when it has no flexDirection; a parent with a flexDirection flows its children (relative). */
 export const parentIsFree = (parent: { uiTransform?: unknown } | null | undefined): boolean =>
