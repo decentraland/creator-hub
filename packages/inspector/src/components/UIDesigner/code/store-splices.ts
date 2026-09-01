@@ -3,6 +3,8 @@ import { getCodeParser } from '../../../lib/logic/code-parser';
 import { store as reduxStore } from '../../../redux/store';
 import { selectNode } from '../../../redux/ui-designer';
 import { dragPinPatch } from '../shared/align-presets';
+import { offsetInParent } from '../shared/measure';
+import { getNodeElement } from '../shared/node-registry';
 import { type UINodeType, type WidgetKind, type WidgetPreset } from '../shared/tree-model';
 import { type UiScreenInset } from './aggregator';
 import { nodeNameEdit, renumberNodeNames, sanitizeNodeName, withNodeName } from './name-marker';
@@ -45,7 +47,13 @@ import {
   state,
   writeToDisk,
 } from './store-core';
-import { astNodeFor, collectNodeLabels, findCodeNode, guardElementWrite } from './store-nodes';
+import {
+  astNodeFor,
+  collectNodeLabels,
+  findCodeLayoutParent,
+  findCodeNode,
+  guardElementWrite,
+} from './store-nodes';
 import {
   activeComponentName,
   guardPlatformBranch,
@@ -124,21 +132,23 @@ export async function spliceUiTransformPositionUnlocked(
   );
 }
 
+/** Edits pinning one node absolute at (top, left), honouring an interaction base layer; empty when the node can't be written. */
+function pinEdits(entityId: number, top: number, left: number, opName: string): Edit[] {
+  const ast = astNodeFor(entityId) as Parameters<typeof setObjectFields>[0] | undefined;
+  if (!ast || !guardElementWrite(entityId, opName)) return [];
+  const fields = dropPinFields(entityId, top, left);
+  const interaction = interactionAstFor(entityId);
+  return interaction
+    ? setInteractionNested(interaction, 'base', 'uiTransform', fields)
+    : setObjectFields(ast, 'uiTransform', fields);
+}
+
 export async function spliceUiTransformPositionsUnlocked(
   moves: { entityId: number; top: number; left: number }[],
 ): Promise<void> {
-  const edits: Edit[] = [];
-  for (const { entityId, top, left } of moves) {
-    const ast = astNodeFor(entityId) as Parameters<typeof setObjectFields>[0] | undefined;
-    if (!ast || !guardElementWrite(entityId, 'spliceUiTransformPositions')) continue;
-    const interaction = interactionAstFor(entityId);
-    const fields = dropPinFields(entityId, top, left);
-    edits.push(
-      ...(interaction
-        ? setInteractionNested(interaction, 'base', 'uiTransform', fields)
-        : setObjectFields(ast, 'uiTransform', fields)),
-    );
-  }
+  const edits = moves.flatMap(({ entityId, top, left }) =>
+    pinEdits(entityId, top, left, 'spliceUiTransformPositions'),
+  );
   if (edits.length) await applySourceEdits(edits);
 }
 
@@ -159,6 +169,24 @@ export async function spliceUiTransformResizeUnlocked(
   await writeUiTransformFields(entityId, 'spliceUiTransformResize', fields);
 }
 
+/** Switch a container to free layout: clear its flexDirection and pin each child absolute at the position it currently flows to, so children become individually movable instead of staying stuck in the flow. */
+export async function spliceSetFreeFlowUnlocked(parentEntityId: number): Promise<void> {
+  const parentAst = astNodeFor(parentEntityId) as Parameters<typeof setObjectFields>[0] | undefined;
+  const parentEl = getNodeElement(parentEntityId as unknown as Entity);
+  if (!parentAst || !parentEl || !guardElementWrite(parentEntityId, 'spliceSetFreeFlow')) return;
+  const edits: Edit[] = [
+    ...setObjectFields(parentAst, 'uiTransform', { flexDirection: undefined }),
+  ];
+  for (const child of findCodeNode(state.parsed?.root, parentEntityId)?.children ?? []) {
+    const el = getNodeElement(child.entity);
+    if (!el) continue;
+    const { top, left } = offsetInParent(el, parentEl);
+    const id = child.entity as unknown as number;
+    edits.push(...pinEdits(id, Math.round(top), Math.round(left), 'spliceSetFreeFlow'));
+  }
+  if (edits.length) await applySourceEdits(edits);
+}
+
 export const CHILD_TEMPLATES: Record<UINodeType, string> = {
   UiEntity:
     '<UiEntity uiTransform={{ width: 200, height: 100 }} uiBackground={{ color: { r: 1, g: 1, b: 1, a: 0.1 } }} />',
@@ -175,13 +203,36 @@ export const IMAGE_TEMPLATE =
 export const FULLSCREEN_TEMPLATE =
   "<UiEntity uiTransform={{ flexGrow: 1, alignSelf: 'stretch' }} uiBackground={{ color: { r: 1, g: 1, b: 1, a: 0.1 } }} />";
 
-export function widgetJsx(type: UINodeType, preset?: WidgetPreset, named = true): string {
-  const jsx =
+export const FULLSCREEN_FREE_TEMPLATE =
+  "<UiEntity uiTransform={{ positionType: 'absolute', position: { top: 0, right: 0, bottom: 0, left: 0 } }} uiBackground={{ color: { r: 1, g: 1, b: 1, a: 0.1 } }} />";
+
+export type DropPoint = { top: number; left: number };
+
+const freePositionFields = (pos: DropPoint = { top: 0, left: 0 }): string =>
+  `positionType: 'absolute', position: { top: ${pos.top}, left: ${pos.left} }`;
+
+/** A parent lays its children out freely (absolute) when it has no flexDirection; a parent with a flexDirection flows its children (relative). */
+export const parentIsFree = (parent: { uiTransform?: unknown } | null | undefined): boolean =>
+  (parent?.uiTransform as Record<string, unknown> | undefined)?.flexDirection === undefined;
+
+export function widgetJsx(
+  type: UINodeType,
+  preset?: WidgetPreset,
+  named = true,
+  free = false,
+  pos?: DropPoint,
+): string {
+  let jsx =
     preset === 'image'
       ? IMAGE_TEMPLATE
       : preset === 'fullscreen'
-        ? FULLSCREEN_TEMPLATE
+        ? free
+          ? FULLSCREEN_FREE_TEMPLATE
+          : FULLSCREEN_TEMPLATE
         : (CHILD_TEMPLATES[type] ?? CHILD_TEMPLATES.UiEntity);
+  if (free && preset !== 'fullscreen') {
+    jsx = jsx.replace('uiTransform={{ ', `uiTransform={{ ${freePositionFields(pos)}, `);
+  }
   if (!named) return jsx;
   const kind: WidgetKind = preset === 'image' ? 'Image' : type === 'UiEntity' ? 'Container' : type;
   return withNodeName(jsx, uniqueName(kind, collectNodeLabels(state.parsed?.root)));
@@ -191,10 +242,12 @@ export async function spliceAddChildUnlocked(
   parentEntityId: number,
   type: UINodeType,
   preset?: WidgetPreset,
+  pos?: DropPoint,
 ): Promise<void> {
   const ast = astNodeFor(parentEntityId) as Parameters<typeof insertChild>[0] | undefined;
   if (!ast || !guardElementWrite(parentEntityId, 'spliceAddChild')) return;
-  const jsx = widgetJsx(type, preset);
+  const parent = findCodeNode(state.parsed?.root, parentEntityId);
+  const jsx = widgetJsx(type, preset, true, parentIsFree(parent), pos);
   const edits = [...insertChild(ast, state.source, jsx)];
   if (state.program) {
     edits.push(...ensureNamedImport(state.program as any, type, '@dcl/sdk/react-ecs'));
@@ -210,7 +263,11 @@ export async function spliceAddWidgetUnlocked(
 ): Promise<void> {
   const ast = astNodeFor(anchorEntityId) as Parameters<typeof insertChild>[0] | undefined;
   if (!ast || !state.program) return;
-  const jsx = widgetJsx(type, preset);
+  const parent =
+    dropType === 'inside'
+      ? findCodeNode(state.parsed?.root, anchorEntityId)
+      : findCodeLayoutParent(state.parsed?.root, anchorEntityId);
+  const jsx = widgetJsx(type, preset, true, parentIsFree(parent));
   let edits: Edit[];
   if (dropType === 'inside') {
     if (!guardElementWrite(anchorEntityId, 'spliceAddWidget')) return;
@@ -231,7 +288,7 @@ export async function spliceSetRootChildUnlocked(
   if (!activeName) return;
   const fn = findComponentFn(state.program as Parameters<typeof findComponentFn>[0], activeName);
   if (!fn) return;
-  const jsx = widgetJsx(type, preset, false);
+  const jsx = widgetJsx(type, preset, false, true);
   const edits = [
     ...setReturnJsx(fn as Parameters<typeof setReturnJsx>[0], state.source, jsx),
     ...ensureNamedImport(state.program as any, type, '@dcl/sdk/react-ecs'),

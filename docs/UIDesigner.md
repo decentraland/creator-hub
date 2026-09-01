@@ -114,6 +114,36 @@ The canvas frames the root two ways (`Canvas.tsx`, `fixedRoot`): a root whose wi
 
 Overflow is shown, not clipped: the clip lived on `.ui-designer-canvas-screen` (`overflow: hidden`), which cut nodes at the frame edge. It is now `visible`, and `.ui-designer-canvas-stagewrap` too, so a child larger than the frame renders past it; the outer `.ui-designer-canvas-viewport` still clips at the panel boundary. The mobile `.ui-designer-device-frame` keeps its bezel clip.
 
+## Flow vs position: two orthogonal axes
+
+The Flow control and "Ignore Layout Flow" are **independent**, keyed on **different**
+`uiTransform` fields — do not conflate them (`flow.ts`, `RightPanel/PropertyPanel`):
+
+- **`positionType`** — how a node sits in *its own parent*: relative (in flow) vs absolute
+  (free). This is the **"Ignore Layout Flow"** checkbox (`POSITION_MODE_FIELD`,
+  `absolutePatch`/`inFlowPatch`).
+- **`flexDirection`** — how a node arranges *its children*: the **Flow** control (`FlowField`),
+  cells = **Free** + four directions. **Free is the *absence* of `flexDirection`**
+  (`flowValue`/`isFreeFlow`: `flexDirection === undefined` ⇒ `'free'`). A node can be absolute
+  itself *and* flow its children (`Flow: Row`) — different fields.
+
+Rules, all keyed on the parent's `flexDirection` (never its `positionType`):
+
+- **Child seeding** (`store-splices.ts` `parentIsFree`): a dropped child is seeded
+  `positionType: absolute` iff the parent has **no** `flexDirection`; a parent with one seeds
+  relative children. Roots are always `positionType: absolute` (`spliceSetRootChild` seeds free).
+- **"Ignore Layout Flow" visibility** (`PropertyPanel.tsx`, `isFreeFlow`): a child shows the
+  toggle only when its parent is **in flow** (has a `flexDirection`); hidden for children of a
+  free parent and for **all roots** (`isGuiRoot`).
+- **Switching a container to Free** (`spliceSetFreeFlow`): clearing `flexDirection` alone is
+  **not** enough — Yoga still flows relative children in its default direction, so each child
+  must be pinned `positionType: absolute`. The op measures each child's `offsetInParent` and
+  pins it there in one batched `applySourceEdits` (synthetic ids are positional per parse), so
+  children don't collapse to 0,0.
+
+`resize-modes.ts` "Fill" is a **flow-only** concept and reads `positionType` directly, not the
+Flow control.
+
 ## Codegen & runtime gotchas
 
 - **Hotkeys are not built on the shared `useHotkey` hook** (`shared/useUINodeHotkeys.ts`). `useHotkey`'s cleanup unbinds keys *globally*, which would clobber the 3D Renderer's Ctrl+C/V/D/Delete. Undo/redo are also deliberately not handled here — the Toolbar owns Ctrl+Z/Y, and a second document-level listener would double-fire.

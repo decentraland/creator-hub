@@ -26,7 +26,6 @@ const allLabels = (type: UINodeType) => buildGroups(type).flatMap(g => labelsIn(
 const CONTAINER_ONLY = [
   'Flow',
   'Alignment',
-  'Flex Direction',
   'Flex Wrap',
   'Justify Content',
   'Align Items',
@@ -45,7 +44,7 @@ const ITEM_PROPS = [
   'Flex Shrink',
 ];
 
-const RAW_ROWS = ['Flex Direction', 'Flex Wrap', 'Justify Content', 'Align Items'];
+const RAW_ROWS = ['Flex Wrap', 'Justify Content', 'Align Items'];
 
 function visibleRawRows(transform: Record<string, unknown>): string[] {
   return fieldsIn('UiEntity', 'Layout')
@@ -60,7 +59,6 @@ const ALIGN_STRETCH = 4;
 const WRAP_NO = 0;
 const WRAP_YES = 1;
 const WRAP_REVERSE = 2;
-const ABSOLUTE = 1;
 
 describe('buildGroups', () => {
   describe('when composing the panel for each node type', () => {
@@ -209,9 +207,9 @@ describe('buildGroups', () => {
       }
     });
 
-    it('should move Z-Index into Position and Transparency into Style', () => {
+    it('should move Z-Index into Position and Opacity into Style', () => {
       expect(labelsIn('UiEntity', 'Position')).toContain('Z-Index');
-      expect(labelsIn('UiEntity', 'Style')).toContain('Transparency');
+      expect(labelsIn('UiEntity', 'Style')).toContain('Opacity');
     });
 
     it('should gate Anchor and Position on Absolute positioning', () => {
@@ -309,11 +307,6 @@ describe('buildGroups', () => {
       expect(visibleRawRows({})).toEqual([]);
     });
 
-    it('should reveal Flex direction only while the node ignores layout flow', () => {
-      expect(visibleRawRows({ ...inCell, positionType: ABSOLUTE })).toEqual(['Flex Direction']);
-      expect(visibleRawRows({ ...inCell, flexDirection: 1 })).toEqual([]);
-    });
-
     it('should reveal both alignment rows for a distributing justifyContent', () => {
       expect(
         visibleRawRows({ justifyContent: JUSTIFY_SPACE_BETWEEN, alignItems: ALIGN_START }),
@@ -397,7 +390,7 @@ describe('buildGroups', () => {
   describe('and a row is paired into two columns', () => {
     it('should mark exactly the fields the design pairs', () => {
       const TEXT_PAIR = ['Typography', 'Size'];
-      const STYLE_PAIR = ['Transparency', 'Corner Radius'];
+      const STYLE_PAIR = ['Opacity', 'Corner Radius'];
       const expected: Record<string, string[]> = {
         UiEntity: STYLE_PAIR,
         Label: [...TEXT_PAIR, ...STYLE_PAIR],
@@ -424,22 +417,22 @@ describe('buildGroups', () => {
     });
   });
 
-  describe('and Transparency displays the inverse of the stored opacity', () => {
-    const transparency = () => fieldsIn('UiEntity', 'Style').find(f => f.label === 'Transparency');
+  describe('and Opacity displays the stored opacity as a percentage', () => {
+    const opacity = () => fieldsIn('UiEntity', 'Style').find(f => f.label === 'Opacity');
 
     it('should round-trip the extremes and a mid value exactly', () => {
-      const f = transparency();
+      const f = opacity();
       for (const display of [0, 33, 33.5, 50, 66.67, 100]) {
         expect(f?.toDisplay?.(f.fromDisplay!(display)), String(display)).toBe(display);
       }
-      for (const opacity of [0, 0.25, 0.665, 1]) {
-        expect(f?.fromDisplay?.(f.toDisplay!(opacity)), String(opacity)).toBe(opacity);
+      for (const stored of [0, 0.25, 0.665, 1]) {
+        expect(f?.fromDisplay?.(f.toDisplay!(stored)), String(stored)).toBe(stored);
       }
     });
 
-    it('should read unset opacity as fully opaque, i.e. 0% transparent', () => {
-      const f = transparency();
-      expect(f?.toDisplay?.(f?.defaultValue as number)).toBe(0);
+    it('should read unset opacity as fully opaque, i.e. 100%', () => {
+      const f = opacity();
+      expect(f?.toDisplay?.(f?.defaultValue as number)).toBe(100);
     });
   });
 
