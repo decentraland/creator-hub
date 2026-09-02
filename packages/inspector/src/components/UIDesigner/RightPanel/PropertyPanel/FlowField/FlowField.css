@@ -1,0 +1,93 @@
+.ui-designer-flow {
+  display: flex;
+  align-items: center;
+  gap: var(--uid-space-2);
+  width: 100%;
+}
+
+.ui-designer-flow-group {
+  display: flex;
+  flex: 1 1 auto;
+  min-width: 0;
+  border: 1px solid var(--ui-designer-control-border);
+  border-radius: var(--ui-designer-radius-field);
+  overflow: hidden;
+}
+
+.ui-designer-flow-cell {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1 1 0;
+  min-width: 0;
+  height: 26px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--ui-designer-glyph);
+  cursor: pointer;
+}
+
+.ui-designer-flow-group .ui-designer-flow-cell + .ui-designer-flow-cell {
+  border-left: 1px solid var(--ui-designer-hairline);
+}
+
+.ui-designer-flow-cell.wrap {
+  flex: 0 0 32px;
+  border: 1px solid var(--ui-designer-control-border);
+  border-radius: var(--ui-designer-radius-field);
+}
+
+.ui-designer-flow-cell:hover {
+  background: var(--ui-designer-control-hover-bg);
+  color: var(--title);
+}
+
+.ui-designer-flow-cell.selected {
+  background: var(--ui-designer-control-active-bg);
+  color: var(--ui-designer-control-active-fg);
+}
+
+.ui-designer-flow-cell.wrap.selected {
+  background: var(--ui-designer-control-active-bg);
+  border-color: var(--ui-designer-control-active-bg);
+  color: var(--ui-designer-control-active-fg);
+}
+
+.ui-designer-flow-cell:focus-visible {
+  outline: 2px solid var(--border-focused);
+  outline-offset: -2px;
+}
+
+.ui-designer-flow-cell::before {
+  content: "";
+  width: 16px;
+  height: 16px;
+  background-color: currentColor;
+  mask-position: center;
+  mask-repeat: no-repeat;
+}
+
+.ui-designer-flow-cell[data-flow="absolute"]::before {
+  mask-image: url("./icons/absolute.svg");
+}
+
+.ui-designer-flow-cell[data-flow="column"]::before {
+  mask-image: url("./icons/column.svg");
+}
+
+.ui-designer-flow-cell[data-flow="column-reverse"]::before {
+  mask-image: url("./icons/column-reverse.svg");
+}
+
+.ui-designer-flow-cell[data-flow="row"]::before {
+  mask-image: url("./icons/row.svg");
+}
+
+.ui-designer-flow-cell[data-flow="row-reverse"]::before {
+  mask-image: url("./icons/row-reverse.svg");
+}
+
+.ui-designer-flow-cell[data-flow="wrap"]::before {
+  mask-image: url("./icons/wrap.svg");
+}

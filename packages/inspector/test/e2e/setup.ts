@@ -87,7 +87,9 @@ beforeAll(async () => {
   // 90s (Playwright defaults to 30s): the dev server serves a ~43MB unminified
   // bundle, and on a heavily-loaded runner the first byte alone can take >10s.
   // A genuinely dead server still fails fast via the fetch() check above.
-  await page.goto(`${serverUrl}?contentUrl=${encodeURIComponent(contentUrl)}`, {
+  const navUrl = `${serverUrl}?contentUrl=${encodeURIComponent(contentUrl)}`;
+  (global as any).__e2eNavUrl = navUrl;
+  await page.goto(navUrl, {
     timeout: 90_000,
   });
 

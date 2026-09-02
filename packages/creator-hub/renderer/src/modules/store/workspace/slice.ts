@@ -36,6 +36,7 @@ const initialState: Async<Workspace> = {
     optimizedAssetsByPath: {},
     experimental: false,
     renderer: DEFAULT_RENDERER,
+    guiEditor: false,
   },
   status: 'idle',
   error: null,

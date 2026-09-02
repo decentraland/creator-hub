@@ -220,5 +220,5 @@ export async function feededFileSystem(mappings: Record<string, string> = builde
     'assets/Scripts/feeded-script.ts': Buffer.from(scriptTemplate, 'utf-8'),
   });
 
-  return createFileSystemInterface(storage);
+  return { fs: createFileSystemInterface(storage), storage };
 }

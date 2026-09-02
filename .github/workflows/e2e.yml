@@ -30,11 +30,15 @@ jobs:
         if: steps.setup.outputs.node-modules-cache-hit != 'true'
         run: make install
 
-      # Reuse the shared build; the inspector server below serves the prebuilt bundle.
+      # Provides index.html + copied runtime assets; the JS bundle is rebuilt below.
       - uses: ./.github/actions/download-build
 
       - name: install Playwright browsers
         run: npx playwright install
+
+      # The UI Designer code-mode e2e needs the wasm parser that --production drops.
+      - name: build inspector
+        run: cd packages/inspector && node ./build.js
 
       - name: start inspector server
         shell: bash

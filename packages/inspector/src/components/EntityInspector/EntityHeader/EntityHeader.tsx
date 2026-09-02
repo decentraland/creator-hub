@@ -197,6 +197,30 @@ export default React.memo(
             'Momentarily replace the default camera with a virtual camera on the position of this entity.',
           link: 'https://docs.decentraland.org/creator/scenes-sdk7/3d-content-essentials/camera#using-virtual-cameras',
         }),
+        createOption(
+          sdk.components.AvatarModifierArea,
+          'Avatar Modifier Area',
+          {
+            description:
+              "Changes how avatars behave or appear for players inside a region centered on this entity. The entity's scale sets the size of the region, and effects revert when players walk out.",
+            link: 'https://docs.decentraland.org/creator/scenes-sdk7/interactivity/player-avatar#avatar-modifier-areas',
+          },
+          {},
+          // Default modifier is Hide Avatars (AvatarModifierType.AMT_HIDE_AVATARS = 0)
+          { modifiers: [0], excludeIds: [] },
+        ),
+        createOption(
+          sdk.components.CameraModeArea,
+          'Camera Modifier Area',
+          {
+            description:
+              "Forces the player's camera into first or third person inside a region centered on this entity. The entity's scale sets the size of the region, and the previous camera mode is restored when players walk out.",
+            link: 'https://docs.decentraland.org/creator/scenes-sdk7/3d-content-essentials/camera#1st-and-3rd-person-camera-modes',
+          },
+          {},
+          // Default mode is First Person (CameraType.CT_FIRST_PERSON = 0)
+          { mode: 0 },
+        ),
         createOption(sdk.components.MeshCollider, 'Mesh Collider', {
           description:
             'MeshCollider defines the collision properties of an item, based on its invisible collision geometry. Collisions serve to make an item clickable or to block the player from walking through an item',

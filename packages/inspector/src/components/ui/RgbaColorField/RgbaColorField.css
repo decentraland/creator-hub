@@ -1,0 +1,60 @@
+.RgbaColorField {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--uid-space-2);
+  flex: 1 1 auto;
+  width: 100%;
+  min-width: 0;
+}
+
+.RgbaColorField .RgbaColorHex {
+  flex: 1 1 76px;
+  min-width: 0;
+}
+
+.RgbaColorField .RgbaColorHex .input {
+  font-variant-numeric: tabular-nums;
+  text-transform: uppercase;
+}
+
+.RgbaColorField .RgbaColorAlpha {
+  flex: 0 0 66px;
+}
+
+.RgbaColorSwatch {
+  flex: 0 0 auto;
+  width: 28px;
+  height: 18px;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 4px;
+  cursor: pointer;
+  overflow: hidden;
+  background-image:
+    linear-gradient(45deg, #888 25%, transparent 25%),
+    linear-gradient(-45deg, #888 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #888 75%),
+    linear-gradient(-45deg, transparent 75%, #888 75%);
+  background-size: 8px 8px;
+  background-position:
+    0 0,
+    0 4px,
+    4px -4px,
+    -4px 0;
+}
+
+.RgbaColorSwatchFill {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.RgbaColorPopover {
+  z-index: 1000;
+  padding: 8px;
+  background: var(--tree-bg-color);
+  border: 1px solid var(--ui-designer-control-border);
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}

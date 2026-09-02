@@ -3,6 +3,9 @@
     "target": "es2016",
     "module": "NodeNext",
     "esModuleInterop": true,
+    // ../bevy-agent-realm.js — plain CommonJS, shared with build.js (a plain
+    // node script, so it cannot be TypeScript).
+    "allowJs": true,
     "forceConsistentCasingInFileNames": true,
     "strict": true,
     "skipLibCheck": true

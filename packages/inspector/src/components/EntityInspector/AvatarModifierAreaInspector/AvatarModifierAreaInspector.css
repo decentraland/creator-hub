@@ -1,0 +1,27 @@
+.AvatarModifierAreaInspector.Container {
+  height: auto;
+}
+
+.AvatarModifierAreaInspector .exclude-ids .content {
+  flex-direction: column;
+  align-items: normal;
+}
+
+.AvatarModifierAreaInspector .exclude-ids .content .label-with-info {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.AvatarModifierAreaInspector .exclude-ids .content .row {
+  display: flex;
+  align-items: center;
+}
+
+.AvatarModifierAreaInspector .exclude-ids .content .row .Text.Field {
+  width: 100%;
+}
+
+.AvatarModifierAreaInspector .exclude-ids .content .row + .row {
+  margin-top: 4px;
+}

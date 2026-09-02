@@ -81,6 +81,33 @@ jobs:
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
           VITE_SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
 
+      # macos-latest runners are arm64, so the install only pulls the host-arch oxc-parser
+      # native binding. electron-builder then packs BOTH the arm64 and x64 dmgs from that single
+      # node_modules, leaving the Intel build with no loadable parser ("Failed to load native
+      # binding"). Fetch the cross-arch binding straight from its tarball into node_modules
+      # (npm install --force would reconcile/prune the whole workspace right before packaging)
+      # so both dmgs ship a working parser.
+      - name: Provision cross-arch macOS oxc-parser binding
+        if: matrix.os == 'macos-latest'
+        run: |
+          set -euo pipefail
+          OXC=$(node -p "require('oxc-parser/package.json').version")
+          HOST=$(node -p process.arch)
+          OTHER=$([ "$HOST" = "arm64" ] && echo x64 || echo arm64)
+          DIR="node_modules/@oxc-parser/binding-darwin-$OTHER"
+          if [ ! -e "$DIR/parser.darwin-$OTHER.node" ]; then
+            echo "Host arch $HOST -> fetching @oxc-parser/binding-darwin-$OTHER@$OXC"
+            TMP=$(mktemp -d)
+            ( cd "$TMP" && npm pack "@oxc-parser/binding-darwin-$OTHER@$OXC" >/dev/null )
+            mkdir -p "$DIR"
+            tar -xzf "$TMP"/*.tgz -C "$DIR" --strip-components=1
+            rm -rf "$TMP"
+          fi
+          for A in arm64 x64; do
+            test -e "node_modules/@oxc-parser/binding-darwin-$A/parser.darwin-$A.node" \
+              || { echo "::error::missing @oxc-parser/binding-darwin-$A native binding"; exit 1; }
+          done
+
       - name: Bump release version
         id: version
         uses: paulhatch/semantic-version@502226b17e3e242e4befd0a45690fcbb27dd1373 # v6.0.3
