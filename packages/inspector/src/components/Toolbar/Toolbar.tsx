@@ -5,7 +5,6 @@ import {
   BiSave,
   BiBadgeCheck,
   BiVideo,
-  BiWalk,
   BiChevronDown,
   BiPlay,
   BiPause,
@@ -28,6 +27,7 @@ import {
   selectSceneInfo,
 } from '../../redux/data-layer';
 import { selectCanSave, selectInspectorPreferences } from '../../redux/app';
+import { setSceneRunIntent } from '../../redux/ui';
 import { useInspectorUIState } from '../../hooks/sdk/useInspectorUIState';
 import { useAppSelector, useAppDispatch } from '../../redux/hooks';
 import {
@@ -106,11 +106,14 @@ const Toolbar = withSdk(({ sdk }) => {
   }, [sceneRun]);
   const handleToggleSceneRun = useCallback(() => {
     if (!sceneRun) return;
-    sceneRun.setRunning(!sceneRun.isRunning());
-  }, [sceneRun]);
+    const next = !sceneRun.isRunning();
+    dispatch(setSceneRunIntent({ running: next }));
+    sceneRun.setRunning(next);
+  }, [dispatch, sceneRun]);
   const handleResetScene = useCallback(() => {
+    dispatch(setSceneRunIntent({ running: false }));
     void sceneRun?.reset();
-  }, [sceneRun]);
+  }, [dispatch, sceneRun]);
 
   // "Interact" toggle — only for renderers whose viewport editing is a scene-side
   // interception that can be turned off (Bevy exposes `interaction`; Babylon omits
@@ -131,12 +134,11 @@ const Toolbar = withSdk(({ sdk }) => {
   }, [interaction]);
 
   const handleSaveClick = useCallback(() => dispatch(save()), []);
-  const handleUndo = useCallback(() => dispatch(undo()), []);
-  const handleRedo = useCallback(() => dispatch(redo()), []);
+  const handleUndo = useCallback(() => dispatch(undo()), [dispatch]);
+  const handleRedo = useCallback(() => dispatch(redo()), [dispatch]);
   const handleToggleSceneInfo = useCallback(() => {
     updateUIState({ sceneInfoPanelVisible: !isSceneInfoPanelOpen });
   }, [isSceneInfoPanelOpen, updateUIState]);
-
   useHotkey([SAVE, SAVE_ALT], handleSaveClick);
   useHotkey([UNDO, UNDO_ALT], handleUndo);
   useHotkey([REDO, REDO_2, REDO_ALT, REDO_ALT_2], handleRedo);
@@ -187,7 +189,7 @@ const Toolbar = withSdk(({ sdk }) => {
             value={cameraMode}
             trigger={
               <>
-                {cameraMode === 'free' ? <BiVideo /> : <BiWalk />}
+                <BiVideo />
                 <span className="CameraModeLabel">{cameraMode === 'free' ? 'Free' : 'Player'}</span>
                 <BiChevronDown className="CameraModeChevron" />
               </>
@@ -214,22 +216,22 @@ const Toolbar = withSdk(({ sdk }) => {
         </div>
       )}
       {sceneRun && (
-        <ToolbarButton
-          className={cx('scene-run', { active: sceneRunning })}
-          onClick={handleToggleSceneRun}
-          title={sceneRunning ? 'Pause scene' : 'Run scene'}
-        >
-          {sceneRunning ? <BiPause /> : <BiPlay />}
-        </ToolbarButton>
-      )}
-      {sceneRun && (
-        <ToolbarButton
-          className="scene-reset"
-          onClick={handleResetScene}
-          title="Stop and reset scene to its initial state"
-        >
-          <BiStop />
-        </ToolbarButton>
+        <>
+          <ToolbarButton
+            className={cx('scene-run', { active: sceneRunning })}
+            onClick={handleToggleSceneRun}
+            title={sceneRunning ? 'Pause scene' : 'Run scene'}
+          >
+            {sceneRunning ? <BiPause /> : <BiPlay />}
+          </ToolbarButton>
+          <ToolbarButton
+            className="scene-reset"
+            onClick={handleResetScene}
+            title="Stop and reset scene to its initial state"
+          >
+            <BiStop />
+          </ToolbarButton>
+        </>
       )}
       {interaction && (
         <ToolbarButton

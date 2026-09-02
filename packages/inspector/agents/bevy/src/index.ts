@@ -50,18 +50,19 @@ import { setBrokenAssets } from './broken-assets';
 let pinnedSceneHash: string | null = null;
 
 /**
- * Whether the engine auto-freezes an editor scene after main() runs once
- * (bevy-explorer #1015 — `refreeze_at_tick`). When true, the agent must NOT
- * force-freeze on boot/reset: the engine owns freezing, and an agent freeze would
- * race it (Stop lands on frame 0 instead of the deterministic "main ran once").
+ * The engine auto-freezes an editor scene after main() runs once (bevy-explorer
+ * #1015 — `refreeze_at_tick`), gated on the `editor: true` boot flag we pass in
+ * host-boot.js. So the agent must NOT force-freeze on boot/reset: the engine owns
+ * freezing, and an agent freeze would race it (Stop lands on frame 0 instead of
+ * the deterministic "main ran once").
  *
- * FALSE until #1015 is merged, republished, and the pin is bumped in
- * packages/inspector/package.json. On the current published engine there is NO
- * auto-freeze, so the agent MUST force-freeze — otherwise the inspected scene
- * just runs freely on load. Flip to `true` (or delete the gate) in the same
- * change that bumps the engine pin.
+ * TRUE since the engine pin was bumped to a build that includes #1015
+ * (packages/inspector/package.json). Both call sites keep the
+ * `else await setSceneUiVisible(false)` branch: the engine owns freezing, but
+ * hiding the scene's UI while frozen is still ours. The play/stop toggle still
+ * rides /freeze_scene · /unfreeze_scene.
  */
-const ENGINE_AUTO_FREEZES_EDITOR_SCENE = false;
+const ENGINE_AUTO_FREEZES_EDITOR_SCENE = true;
 
 export function main(): void {
   // Inspector → agent messages.
@@ -264,13 +265,14 @@ async function boot(): Promise<void> {
   // toolbar "reset view" action once the user is in the fly camera.
   void sceneLocalCenter;
   // Editor default: the inspected scene is FROZEN (static — no SDK7 systems /
-  // timers / onUpdate run), so it's a stable subject to edit. With the engine's
-  // editor auto-freeze (#1015) the engine owns this and the agent must stay out
-  // of its way; until that ships the agent force-freezes here, else the scene
-  // just runs on load. See ENGINE_AUTO_FREEZES_EDITOR_SCENE. The toolbar toggle
-  // still unfreezes to run live; the agent itself keeps ticking (super scene,
-  // exempt); freeze does NOT block avatar walking (bevy-editor walks while frozen).
+  // timers / onUpdate run), so it's a stable subject to edit. The engine's editor
+  // auto-freeze (#1015) owns this now, so the agent stays out of its way and only
+  // hides the scene's UI (setSceneFrozen's other half). See
+  // ENGINE_AUTO_FREEZES_EDITOR_SCENE. The toolbar toggle still unfreezes to run
+  // live; the agent itself keeps ticking (super scene, exempt); freeze does NOT
+  // block avatar walking (bevy-editor walks while frozen).
   if (!ENGINE_AUTO_FREEZES_EDITOR_SCENE) await setSceneFrozen(true);
+  else await setSceneUiVisible(false);
   // Freeze the day/night clock at noon so the skybox doesn't drift into night
   // while the scene sits open (the day/night clock advances with the wall clock
   // even while the scene is frozen — freezing the SCENE doesn't freeze TIME).
@@ -307,12 +309,27 @@ function entityAnimationNames(entity: Entity): string[] {
 }
 
 /**
- * Freeze (static) or run the pinned inspection scene via the engine's
- * `/freeze_scene` / `/unfreeze_scene` console commands. Retries a few times when
- * freezing right after boot: the scene entity can take a moment to be resolvable
- * even once `/set_scene` has recorded it as the active inspection target.
+ * Freeze (static) or run the pinned inspection scene, and keep its UI in step.
+ *
+ * Frozen ⇔ scene UI hidden is one invariant, owned here. A scene's react-ecs UI
+ * is created by its first render pass, before the engine's auto-freeze lands, and
+ * freezing stops the SDK7 tick — not entities that already exist. So
+ * without this the authored UI sits full-screen over the editor viewport (above
+ * picking) the whole time you are editing. It should only appear on Play.
  */
 async function setSceneFrozen(frozen: boolean): Promise<void> {
+  const api = getBevyApi();
+  if (!api) return;
+  await applyFreeze(frozen);
+  await setSceneUiVisible(!frozen);
+}
+
+/**
+ * The `/freeze_scene` / `/unfreeze_scene` half. Retries a few times when freezing
+ * right after boot: the scene entity can take a moment to be resolvable even once
+ * `/set_scene` has recorded it as the active inspection target.
+ */
+async function applyFreeze(frozen: boolean): Promise<void> {
   const api = getBevyApi();
   if (!api) return;
   const command = frozen ? 'freeze_scene' : 'unfreeze_scene';
@@ -332,6 +349,27 @@ async function setSceneFrozen(frozen: boolean): Promise<void> {
       console.error(`[bevy-agent] ${command} attempt failed:`, e);
     }
     await new Promise<void>(resolve => setTimeout(() => resolve(), 500));
+  }
+}
+
+/**
+ * Show or hide the INSPECTED scene's own UI, via the engine's `/show_ui`
+ * console command (`show_ui <hash|all> <true|false>`).
+ *
+ * Scoped to the pinned hash rather than `all`: the engine exempts the system UI
+ * scene — which is where this agent's gizmo overlay lives — but leaning on that
+ * exemption costs more than passing the hash we already track.
+ *
+ * Best-effort. A failure must not fail the freeze it rides along with; the worst
+ * case is the old behaviour (UI visible while frozen).
+ */
+async function setSceneUiVisible(visible: boolean): Promise<void> {
+  const api = getBevyApi();
+  if (!api || !pinnedSceneHash) return;
+  try {
+    await api.consoleCommand('show_ui', [pinnedSceneHash, visible ? 'true' : 'false']);
+  } catch (e) {
+    console.error('[bevy-agent] show_ui failed:', e);
   }
 }
 
@@ -404,7 +442,11 @@ async function resetScene(): Promise<void> {
     try {
       const reply = await api.consoleCommand('set_scene', [hash]);
       if (!/could not find|not found|no longer exists/i.test(reply)) {
+        // A reloaded scene is a fresh instance: it ran main() again, so its UI is
+        // back and visible. Re-hide it here (the `else` for the same reason as on
+        // boot — setSceneFrozen owns both halves, auto-freeze owns only one).
         if (!ENGINE_AUTO_FREEZES_EDITOR_SCENE) await setSceneFrozen(true);
+        else await setSceneUiVisible(false);
         bus.postToPage({ kind: 'reset-complete', ok: true });
         return;
       }

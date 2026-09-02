@@ -129,7 +129,8 @@
     "report_an_issue": "Report an Issue",
     "user_menu": {
       "sign_in": "Sign In",
-      "sign_out": "Sign Out"
+      "sign_out": "Sign Out",
+      "account_tooltip": "Account"
     },
     "create": {
       "label": "Create",
@@ -137,6 +138,7 @@
       "import_scene": "Import Scene"
     },
     "logo_menu": {
+      "main_menu_tooltip": "Main Menu",
       "about": "About Creator Hub",
       "check_for_updates": "Check for Updates",
       "settings": "Settings",
@@ -346,6 +348,9 @@
         "editor": {
           "label": "EDITOR"
         },
+        "experimental": {
+          "label": "EXPERIMENTAL"
+        },
         "about": {
           "label": "ABOUT"
         }
@@ -394,6 +399,10 @@
         },
         "experimental": {
           "label": "Experimental features"
+        },
+        "gui_editor": {
+          "toggle": "UI Editor",
+          "hint": "Enabling this feature will allow you to combine GUI objects, properties and scripting to build UI in the editor."
         }
       },
       "actions": {

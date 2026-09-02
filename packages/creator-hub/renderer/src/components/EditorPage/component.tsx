@@ -86,6 +86,7 @@ export function EditorPage() {
     getMobileQR,
     supportsMultiInstance,
     supportsMcp,
+    supportsUiDesigner,
     isPreviewRunning,
     startBevyRealm,
     killBevyRealm,
@@ -439,6 +440,9 @@ export function EditorPage() {
   // (default) world.
   params.append('renderer', useBevy ? RENDERER.BEVY : RENDERER.BABYLON);
 
+  params.append('uiEditorEnabled', String(settings.guiEditor));
+  params.append('uiEditorSupported', String(supportsUiDesigner));
+
   // The parent-window scene-RPC control channel (host↔inspector feature flags,
   // notifications, file/dir open) is wired whenever this is set — for BOTH
   // renderers. Babylon also uses it as its data-layer transport; Bevy instead
@@ -495,9 +499,9 @@ export function EditorPage() {
   }
   if (project) {
     params.append('projectId', project.id);
+    params.append('uiDesignerOpen', String(project.info.uiDesignerOpen ?? false));
   }
 
-  // iframe src
   const iframeUrl = `${htmlUrl}?${params}`;
 
   const renderLoading = () => {

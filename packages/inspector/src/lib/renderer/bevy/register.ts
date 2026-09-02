@@ -1,4 +1,8 @@
+import type { Entity } from '@dcl/ecs';
+import { InputAction, PointerEventType } from '@dcl/ecs';
+
 import { getConfig } from '../../logic/config';
+import { hasRecentLocalEdit, markLocalEdit } from '../../logic/local-edit';
 import { getSceneClient } from '../../rpc/scene';
 import { store } from '../../../redux/store';
 import { selectAssetCatalog } from '../../../redux/app';
@@ -23,6 +27,8 @@ import { createLayoutReloadBridge } from './layout-reload-bridge';
 import { createVerticalInputBridge } from './vertical-input-bridge';
 import { createModifierTracker } from './modifier-tracker';
 import { createPickBridge } from './pick-bridge';
+import type { HoverHint } from './hover-hint-bridge';
+import { createHoverHintBridge } from './hover-hint-bridge';
 import { createPreviewBridge } from './preview-bridge';
 import { createSceneRunBridge } from './scene-run-bridge';
 import { createSelectionBridge } from './selection-bridge';
@@ -38,6 +44,29 @@ import { createBrokenAssetsBridge } from './broken-assets-bridge';
  */
 export interface BevyInternals {
   takeScreenshot: () => Promise<string>;
+}
+
+/** The keyboard/mouse label shown in the hover hint for a PointerEvents InputAction (#1476). */
+function inputActionKeyLabel(action: InputAction): string {
+  switch (action) {
+    case InputAction.IA_POINTER:
+      return 'Click';
+    case InputAction.IA_SECONDARY:
+      return 'F';
+    case InputAction.IA_JUMP:
+      return 'Space';
+    case InputAction.IA_ACTION_3:
+      return '1';
+    case InputAction.IA_ACTION_4:
+      return '2';
+    case InputAction.IA_ACTION_5:
+      return '3';
+    case InputAction.IA_ACTION_6:
+      return '4';
+    default:
+      // IA_PRIMARY (the common "Press E" case) + any unmapped action.
+      return 'E';
+  }
 }
 
 /** Type guard for narrowing `MountedRenderer.internals` back to Bevy's. */
@@ -255,6 +284,30 @@ export function registerBevyRenderer(): void {
         worldToLocalPosition: (entity, world) => bevy.context.worldToLocalPosition(entity, world),
       });
 
+      // Hover hint (#1476): the agent reports the entity under the pointer while
+      // Interact is toggled on; show its PointerEvents hoverText + input key as a
+      // prompt over the viewport (the engine's own hover HUD isn't mounted here).
+      // The hoverText/key come from THIS engine's decoded PointerEvents — the agent
+      // can't read the scene's component values from its separate engine.
+      const disconnectHoverHint = createHoverHintBridge({
+        container,
+        resolve: (entity): HoverHint | null => {
+          const pe = bevy.context.PointerEvents.getOrNull(entity as Entity);
+          if (!pe) return null;
+          const entry = pe.pointerEvents?.find(
+            e =>
+              (e.eventType === PointerEventType.PET_DOWN ||
+                e.eventType === PointerEventType.PET_UP) &&
+              e.eventInfo?.showFeedback !== false,
+          );
+          if (!entry) return null;
+          return {
+            key: inputActionKeyLabel(entry.eventInfo?.button ?? InputAction.IA_PRIMARY),
+            text: entry.eventInfo?.hoverText?.trim() || 'Interact',
+          };
+        },
+      });
+
       // Forward the inspector's selection to the agent so its gizmo attaches to
       // the selected entity (from a viewport pick OR a tree click). The gizmos
       // handle carries the "align to world" setting; the snap handle carries the
@@ -375,27 +428,15 @@ export function registerBevyRenderer(): void {
         forwardBridge?.setAnimationsFrozen(!running);
       });
 
-      // Hot-reload on scene-code change (#1419). `sdk-commands start` watches the
-      // project and broadcasts SCENE_UPDATE over the realm-root WS on any file
-      // change; on a code edit we reload the editor scene via the same Stop/reset
-      // path (reload + re-pin + reconcile). The catch: in --data-layer mode that
-      // message carries no filename and ALSO fires when the data-layer rewrites
-      // main.crdt for the inspector's OWN edits — so reloading on every one would
-      // reload on every gizmo drag (the #1391 regression). Suppress a SCENE_UPDATE
-      // that lands within a short quiet window after any local CRDT change; only an
-      // update with no recent local edit (an external code save) reloads.
-      let lastLocalEdit = 0;
       const LOCAL_EDIT_QUIET_MS = 1500;
       const HOT_RELOAD_DEBOUNCE_MS = 400;
-      const offLocalEdit = bevy.context.onChange(() => {
-        lastLocalEdit = performance.now();
-      });
+      const offLocalEdit = bevy.context.onChange(markLocalEdit);
       let hotReloadTimer: ReturnType<typeof setTimeout> | null = null;
       const disconnectHotReload = createHotReloadBridge({
         realmUrl: config.bevyRealm,
         onSceneUpdate: () => {
           // Our own edit just rewrote the scene files — ignore (not a code change).
-          if (performance.now() - lastLocalEdit < LOCAL_EDIT_QUIET_MS) return;
+          if (hasRecentLocalEdit(LOCAL_EDIT_QUIET_MS)) return;
           // Coalesce a burst of file events (a save can touch several files) into
           // one reload once it settles.
           if (hotReloadTimer !== null) clearTimeout(hotReloadTimer);
@@ -403,7 +444,7 @@ export function registerBevyRenderer(): void {
             hotReloadTimer = null;
             // Re-check the quiet window at fire time (an edit may have landed while
             // debouncing), then reload via the reset path (reload + reconcile).
-            if (performance.now() - lastLocalEdit < LOCAL_EDIT_QUIET_MS) return;
+            if (hasRecentLocalEdit(LOCAL_EDIT_QUIET_MS)) return;
             // Preserve the RUN state across a hot-reload: reset() always lands
             // frozen (the Stop default), but a code edit while the user is running
             // the scene should keep running with the new code (like the preview
@@ -562,6 +603,7 @@ export function registerBevyRenderer(): void {
           animations.disconnect();
           disconnectSelection();
           disconnectPick();
+          disconnectHoverHint();
           disconnectLayoutReload();
           disconnectHotReload();
           offLocalEdit();
