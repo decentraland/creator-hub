@@ -660,9 +660,9 @@ export function EditorPage() {
   }
   if (project) {
     params.append('projectId', project.id);
+    params.append('uiDesignerOpen', String(project.info.uiDesignerOpen ?? false));
   }
 
-  // iframe src
   const iframeUrl = `${htmlUrl}?${params}`;
 
   // Drag the divider on the AI panel's left edge to resize it. A transparent overlay covers
