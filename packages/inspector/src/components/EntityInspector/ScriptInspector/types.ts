@@ -28,6 +28,7 @@ export type ScriptAction = {
 
 export type ScriptParamUnion =
   | ScriptParamNumber
+  | ScriptParamSlider
   | ScriptParamBoolean
   | ScriptParamString
   | ScriptParamEntity
@@ -41,6 +42,14 @@ export type ScriptParam = {
 export type ScriptParamNumber = ScriptParam & {
   type: 'number';
   value: number;
+};
+
+export type ScriptParamSlider = ScriptParam & {
+  type: 'slider';
+  value: number;
+  min: number;
+  max: number;
+  step: number;
 };
 
 export type ScriptParamBoolean = ScriptParam & {
