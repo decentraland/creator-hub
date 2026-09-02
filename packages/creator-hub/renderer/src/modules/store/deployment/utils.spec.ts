@@ -185,11 +185,14 @@ describe('fetchDeploymentStatus', () => {
     });
 
     describe('and the regular registry does not know the entity yet', () => {
+      let cancelErrorBody: ReturnType<typeof vi.fn>;
+
       beforeEach(() => {
+        cancelErrorBody = vi.fn().mockResolvedValue(undefined);
         fetchMock.mockImplementation((url: URL) =>
           url.toString().startsWith(ABGEN_REGISTRY)
             ? registryResponse({ assetBundles: bothPlatforms('complete') })
-            : { ok: false, status: 404 },
+            : { ok: false, status: 404, body: { cancel: cancelErrorBody } },
         );
       });
 
@@ -197,6 +200,12 @@ describe('fetchDeploymentStatus', () => {
         await expect(fetchDeploymentStatus(info, identity, true)).rejects.toThrow(
           'Error fetching deployment status: 404',
         );
+      });
+
+      it('should release the error body rather than leave it to the collector', async () => {
+        await fetchDeploymentStatus(info, identity, true).catch(() => undefined);
+
+        expect(cancelErrorBody).toHaveBeenCalled();
       });
     });
   });

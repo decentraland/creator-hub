@@ -178,7 +178,12 @@ async function fetchEntityStatus(
 ): Promise<AssetBundleRegistryResponse> {
   const response = await fetch(url, { method: 'get', headers });
 
-  if (!response.ok) throw new Error(`Error fetching deployment status: ${response.status}`);
+  if (!response.ok) {
+    // A publish polls this until the deployment event reaches the registry, so the 404 branch
+    // can run hundreds of times: release the body instead of leaving it to the collector.
+    await response.body?.cancel().catch(() => undefined);
+    throw new Error(`Error fetching deployment status: ${response.status}`);
+  }
 
   return (await response.json()) as AssetBundleRegistryResponse;
 }
