@@ -11,6 +11,8 @@ import type { DataLayerRpcClient } from '../../../lib/data-layer/types';
 import reducer, { connected, getDataLayerInterface, reconnect } from '..';
 import { createLocalDataLayerRpcClient } from '../../../lib/data-layer/client/local-data-layer';
 import { wireParentBridges } from '../../../lib/data-layer/client/parent-bridges';
+import { createDataLayerHost } from '../../../lib/data-layer/host';
+import { createFileSystemInterface } from '../../../lib/logic/file-system-interface';
 import { getConfig } from '../../../lib/logic/config';
 import { connectSaga, createSocketChannel, createWebSocketConnection } from './connect';
 
@@ -87,18 +89,27 @@ describe('WebSocket Connection Saga', () => {
   // The Bevy renderer takes the WS branch (the realm's data layer) but the host
   // still sets dataLayerRpcParentUrl, because the scene file storage and the code
   // parser ride the parent-window bridge, not the data layer. Without this the UI
-  // Designer reads '' and drops every write.
+  // Designer reads '' and drops every write. We also stand up a parent-backed
+  // data-layer host to serve the shared custom-asset library the realm can't see
+  // (#1554), before opening the socket.
   describe('when the parent-window bridge is available alongside the ws data layer', () => {
-    it('should wire storage and the code parser before opening the socket', () => {
+    it('should wire the parent bridge + custom-asset host before opening the socket', () => {
       const url = 'ws://boedo.com';
       const parentUrl = 'http://localhost:3000';
+      const storage = { get: () => {} } as any;
+      const fs = { existFile: () => {} } as any;
+      const parentHost = { rpcMethods: {} } as any;
 
       testSaga(connectSaga)
         .next()
         .call(getConfig)
         .next({ dataLayerRpcWsUrl: url, dataLayerRpcParentUrl: parentUrl })
         .call(wireParentBridges, parentUrl)
-        .next()
+        .next(storage)
+        .call(createFileSystemInterface, storage)
+        .next(fs)
+        .call(createDataLayerHost, fs)
+        .next(parentHost)
         .call(createWebSocketConnection, url);
     });
   });
