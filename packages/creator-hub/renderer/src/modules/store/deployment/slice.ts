@@ -10,6 +10,7 @@ import { delay } from '/shared/utils';
 import { isFetchError } from '/shared/fetch';
 import type { DeploymentComponentsStatus, Info, Status, File, ErrorName } from '/@/lib/deploy';
 import { DeploymentError, isDeploymentError } from '/@/lib/deploy';
+import { FeatureFlag } from '/@/modules/store/featureFlags';
 import { actions as managementActions } from '/@/modules/store/management';
 import { createAsyncThunk } from '/@/modules/store/thunk';
 import {
@@ -237,7 +238,14 @@ export const executeDeployment = createAsyncThunk(
       // no longer be the one we started with. Poll the rootCID that actually got deployed.
       const { info } = await dispatch(deploy({ identity, deployment })).unwrap();
 
-      const fetchStatus = () => fetchDeploymentStatus(info, identity);
+      // Read on every poll rather than once: flags are fetched asynchronously at startup and
+      // this runs for up to an hour, so a late arrival still takes effect.
+      const fetchStatus = () =>
+        fetchDeploymentStatus(
+          info,
+          identity,
+          getState().featureFlags.flags[FeatureFlag.ABGEN_PIPELINE] === true,
+        );
       let isCancelled = false;
       const shouldAbort = () => signal.aborted || isCancelled;
 

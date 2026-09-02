@@ -26,6 +26,7 @@ export const MAX_FILE_SIZE_BYTES = 50 * 1e6; // 50MB defined in sdk-commands...
 export const MAX_POINTER_SIZE_BYTES = 15 * 1e6; // 15MB validation in the content-server
 
 const ASSET_BUNDLE_REGISTRY = config.get('ASSET_BUNDLE_REGISTRY_URL');
+const ASSET_BUNDLE_REGISTRY_ABGEN = config.get('ASSET_BUNDLE_REGISTRY_ABGEN_URL');
 
 export const getDeploymentUrl = (publishPort: number) => {
   const port = import.meta.env.VITE_CLI_DEPLOY_PORT || publishPort;
@@ -171,35 +172,55 @@ export function cleanPendingsFromDeploymentStatus(
   ) as DeploymentComponentsStatus;
 }
 
+async function fetchEntityStatus(
+  url: URL,
+  headers: Record<string, string>,
+): Promise<AssetBundleRegistryResponse> {
+  const response = await fetch(url, { method: 'get', headers });
+
+  if (!response.ok) throw new Error(`Error fetching deployment status: ${response.status}`);
+
+  return (await response.json()) as AssetBundleRegistryResponse;
+}
+
 /**
  * Fetches the deployment status for a given scene.
  *
  * @param info - The scene info.
  * @param identity - The authentication identity for signing requests.
+ * @param useAbgenRegistry - Whether asset-bundle status comes from the abgen registry.
  * @returns A promise resolving to the deployment status.
  */
 export async function fetchDeploymentStatus(
   info: Info,
   identity: AuthIdentity,
+  useAbgenRegistry: boolean = false,
 ): Promise<DeploymentComponentsStatus> {
   const { rootCID: sceneId, isWorld } = info;
-  const method = 'get';
-  const path = `/entities/status/${sceneId}`;
-  const url = new URL(path, ASSET_BUNDLE_REGISTRY);
-  const headers = getAuthHeaders(method, url.pathname, payload =>
+  const bundlesUrl = new URL(
+    `/entities/status/${sceneId}`,
+    useAbgenRegistry ? ASSET_BUNDLE_REGISTRY_ABGEN : ASSET_BUNDLE_REGISTRY,
+  );
+  // Both registries serve this endpoint at the same pathname, so one signature covers the
+  // LOD request below too.
+  const headers = getAuthHeaders('get', bundlesUrl.pathname, payload =>
     Authenticator.signPayload(identity, payload),
   );
 
-  const response = await fetch(url, { method, headers });
-
-  if (!response.ok) throw new Error(`Error fetching deployment status: ${response.status}`);
-
-  const json = (await response.json()) as AssetBundleRegistryResponse;
+  // Nothing feeds LODs into the abgen registry — no LOD jobs reach the abgen lambda, and its
+  // queue filters the LOD generator's events out — so there they stay pending forever. Until
+  // the new LODs version lands they keep coming from the regular registry.
+  const [bundles, lodsSource] = await Promise.all([
+    fetchEntityStatus(bundlesUrl, headers),
+    useAbgenRegistry && !isWorld
+      ? fetchEntityStatus(new URL(bundlesUrl.pathname, ASSET_BUNDLE_REGISTRY), headers)
+      : null,
+  ]);
 
   return {
-    catalyst: validateStatus(json.catalyst),
-    assetBundle: deriveOverallStatus(json.assetBundles),
-    lods: isWorld ? 'complete' : deriveOverallStatus(json.lods), // Skip lods for worlds
+    catalyst: validateStatus(bundles.catalyst),
+    assetBundle: deriveOverallStatus(bundles.assetBundles),
+    lods: isWorld ? 'complete' : deriveOverallStatus((lodsSource ?? bundles).lods), // Skip lods for worlds
   };
 }
 
