@@ -13,11 +13,13 @@
     "@dcl/mini-rpc": "^1.0.7",
     "@dcl/schemas": "26.5.0",
     "@dcl/single-sign-on-client": "0.1.0",
+    "@modelcontextprotocol/sdk": "^1.30.0",
     "@mui/x-charts": "^7.29.1",
     "@segment/analytics-node": "2.1.2",
     "@sentry/electron": "7.8.0",
     "@sentry/react": "10.39.0",
     "cmd-shim": "6.0.3",
+    "cross-spawn": "7.0.6",
     "decentraland-crypto-fetch": "3.0.0",
     "deepmerge": "4.3.1",
     "electron-log": "5.1.6",
@@ -26,6 +28,7 @@
     "http-server": "14.1.1",
     "immer": "10.1.1",
     "is-running": "2.1.0",
+    "node-pty": "1.1.0",
     "npm": "10.8.1",
     "oxc-parser": "^0.60.0",
     "p-limit": "6.1.0",
@@ -35,7 +38,8 @@
     "socket.io-client": "4.8.3",
     "tree-kill": "1.2.2",
     "viem": "^2.46.2",
-    "ws": "^8.18.0"
+    "ws": "^8.18.0",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@dcl/hooks": "0.0.2",
