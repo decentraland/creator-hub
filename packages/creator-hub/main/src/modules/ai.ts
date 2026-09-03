@@ -15,6 +15,10 @@ import path from 'path';
 import { StringDecoder } from 'string_decoder';
 import { spawn } from 'child_process';
 import type { ChildProcess } from 'child_process';
+// The turn child is an npm-installed CLI. On Windows that's a `.cmd` shim, which child_process
+// can't spawn directly with an arg array (the prompt would need cmd.exe escaping); cross-spawn
+// handles the `.cmd` + quoting correctly and is a transparent drop-in for spawn on macOS/Linux.
+import crossSpawn from 'cross-spawn';
 import log from 'electron-log/main';
 import type { AiEvent, AiProvider, AiProviderInfo, AiSendParams } from '/shared/types/ai';
 import { DCL_SYSTEM_PROMPT } from './ai-prompt';
@@ -163,8 +167,14 @@ export function parseShellPath(out: string): string[] {
 function findExecutable(names: string[]): string | null {
   const pathDirs = (process.env.PATH ?? '').split(path.delimiter).filter(Boolean);
   const dirs = [...pathDirs, ...searchDirs()];
+  // On Windows npm links a CLI as `<name>.cmd` (+ `.ps1` + an extensionless POSIX shebang
+  // script that is NOT a runnable PE). Prefer the `.cmd`/`.exe`, or spawn hands CreateProcess
+  // the shebang script → ERROR_BAD_EXE_FORMAT (exit 193). accessSync(X_OK) can't catch it —
+  // there's no execute bit on Windows. cross-spawn (used for the turn) runs the `.cmd` safely.
+  const candidates =
+    process.platform === 'win32' ? names.flatMap(n => [`${n}.cmd`, `${n}.exe`, n]) : names;
   for (const dir of dirs) {
-    for (const name of names) {
+    for (const name of candidates) {
       const p = path.join(dir, name);
       try {
         const real = fs.realpathSync(p); // resolves & proves the target exists
@@ -741,7 +751,7 @@ export async function aiSend(
 
   let child: ChildProcess;
   try {
-    child = spawn(bin, args, {
+    child = crossSpawn(bin, args, {
       cwd: projectDir,
       env,
       stdio: ['ignore', 'pipe', 'pipe'],

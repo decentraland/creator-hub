@@ -175,10 +175,18 @@ async function login(provider: AiProvider, onProgress: (message: string) => void
   ensureSpawnHelperExecutable();
   onProgress('Starting sign-in…');
 
+  // On Windows `bin` is a `.cmd` shim, which ConPTY can't launch directly (CreateProcess only
+  // runs a real PE) — run it through the command interpreter. The login args are fixed tokens
+  // (`setup-token` / `login`), so there's no argument-escaping concern here.
+  const [file, args]: [string, string[]] =
+    process.platform === 'win32'
+      ? [process.env.ComSpec ?? 'cmd.exe', ['/c', bin, ...spec.loginArgs]]
+      : [bin, spec.loginArgs];
+
   await new Promise<void>((resolve, reject) => {
     let child: pty.IPty;
     try {
-      child = pty.spawn(bin, spec.loginArgs, {
+      child = pty.spawn(file, args, {
         name: 'xterm-color',
         cols: 120,
         rows: 40,

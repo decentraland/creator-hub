@@ -13,6 +13,7 @@ import {
   getManagedBinDir,
   isInstalled,
   isSignedIn,
+  managedBinPath,
   setSignedIn,
 } from '../src/modules/ai-cli-paths';
 
@@ -68,6 +69,30 @@ describe('ai-cli-paths', () => {
     expect(getCliState()).toEqual({
       claude: { installed: false, signedIn: false },
       codex: { installed: true, signedIn: true },
+    });
+  });
+
+  // On Windows npm links the CLI as `<bin>.cmd`; the bare extensionless file it also writes is a
+  // POSIX shebang script that CreateProcess can't run (ERROR_BAD_EXE_FORMAT). managedBinPath must
+  // target the `.cmd`, and isInstalled must gate on it — not the unrunnable bare file.
+  describe('on Windows', () => {
+    const realPlatform = process.platform;
+    beforeEach(() => {
+      Object.defineProperty(process, 'platform', { value: 'win32', configurable: true });
+    });
+    afterEach(() => {
+      Object.defineProperty(process, 'platform', { value: realPlatform, configurable: true });
+    });
+
+    it('targets the .cmd shim, not the bare name', () => {
+      expect(managedBinPath('claude').endsWith('claude.cmd')).toBe(true);
+    });
+
+    it('treats only the .cmd as installed, not the bare shebang file', () => {
+      makeInstalled('claude'); // the bare, unrunnable file
+      expect(isInstalled('claude')).toBe(false);
+      makeInstalled('claude.cmd');
+      expect(isInstalled('claude')).toBe(true);
     });
   });
 });

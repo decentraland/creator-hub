@@ -44,7 +44,12 @@ export function getManagedBinDir(): string {
 }
 
 export function managedBinPath(provider: AiProvider): string {
-  return path.join(getManagedBinDir(), CLI_SPECS[provider].bin);
+  const bin = CLI_SPECS[provider].bin;
+  // On Windows npm links the CLI as `<bin>.cmd` (plus a `.ps1` and an extensionless POSIX
+  // shebang script that is NOT a runnable PE). The `.cmd` shim is the one to spawn — handing
+  // the bare name to CreateProcess fails with ERROR_BAD_EXE_FORMAT (exit 193).
+  const name = process.platform === 'win32' ? `${bin}.cmd` : bin;
+  return path.join(getManagedBinDir(), name);
 }
 
 /** Is this provider's CLI installed in the managed dir? (existsSync follows the .bin symlink). */
