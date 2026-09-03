@@ -212,10 +212,11 @@ export async function fetchDeploymentStatus(
     Authenticator.signPayload(identity, payload),
   );
 
-  // Nothing feeds LODs into the abgen registry — no LOD jobs reach the abgen lambda, and its
-  // queue filters the LOD generator's events out — so there they stay pending forever. Until
-  // the new LODs version lands they keep coming from the regular registry.
-  const [bundles, lodsSource] = await Promise.all([
+  // The abgen registry answers with a `lods` field, but nothing ever fills it: no LOD jobs
+  // reach the abgen lambda, and its queue filters the LOD generator's events out, so it reads
+  // pending forever. Trusting it would hang every land publish until the retry window runs
+  // out, so LODs keep coming from the regular registry until the new LODs version lands.
+  const [bundlesStatus, lodsStatus] = await Promise.all([
     fetchEntityStatus(bundlesUrl, headers),
     useAbgenRegistry && !isWorld
       ? fetchEntityStatus(new URL(bundlesUrl.pathname, ASSET_BUNDLE_REGISTRY), headers)
@@ -223,9 +224,10 @@ export async function fetchDeploymentStatus(
   ]);
 
   return {
-    catalyst: validateStatus(bundles.catalyst),
-    assetBundle: deriveOverallStatus(bundles.assetBundles),
-    lods: isWorld ? 'complete' : deriveOverallStatus((lodsSource ?? bundles).lods), // Skip lods for worlds
+    catalyst: validateStatus(bundlesStatus.catalyst),
+    assetBundle: deriveOverallStatus(bundlesStatus.assetBundles),
+    // Skip lods for worlds
+    lods: isWorld ? 'complete' : deriveOverallStatus((lodsStatus ?? bundlesStatus).lods),
   };
 }
 
