@@ -91,8 +91,8 @@ function parsePeriod(period: string): number {
 /**
  * A metric bucketed by week, oldest first.
  *
- * The export is a rolling 60-day product rebuilt daily, so this is always about
- * 8 weeks and never grows — next month's response holds 8 later weeks.
+ * The export carries the last 16 complete weeks and is rebuilt daily, so the
+ * series never grows — next month's response holds 16 later weeks.
  */
 function weeklySeries(
   bag: Bag,
