@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import ArrowBackIosIcon from '@mui/icons-material/ArrowBackIos';
 import PlayCircleIcon from '@mui/icons-material/PlayCircle';
 import CodeIcon from '@mui/icons-material/Code';
+import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh';
 import PublicIcon from '@mui/icons-material/Public';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import CloseIcon from '@mui/icons-material/Close';
@@ -38,6 +39,7 @@ import { useFeatureFlags } from '/@/hooks/useFeatureFlags';
 import { useAiSession } from '/@/hooks/useAiSession';
 import { actions as snackbarActions } from '/@/modules/store/snackbar';
 import { actions as editorActions } from '/@/modules/store/editor';
+import { actions as optimizerActions } from '/@/modules/store/optimizer';
 import { createGenericNotification } from '/@/modules/store/snackbar/utils';
 import { Button } from '../Button';
 import { Header } from '../Header';
@@ -47,6 +49,7 @@ import { ConnectionStatusIndicator } from '../ConnectionStatusIndicator';
 import { MobileQRCode } from '../Modals/MobileQRCode';
 import { AiChatPanel } from '../AiChatPanel';
 import { DetachedPlaceholder } from '../AiChatPanel/DetachedPlaceholder';
+import { OptimizeModal } from '../OptimizeModal';
 import { DeployModal } from './DeployModal';
 import { PreviewOptions, PublishOptions } from './MenuOptions';
 import { getPublishButtonText, getPublishOptions } from './utils';
@@ -794,6 +797,13 @@ export function EditorPage() {
               >
                 {t('editor.header.actions.code')}
               </Button>
+              <Button
+                color="secondary"
+                onClick={() => dispatch(optimizerActions.open())}
+                startIcon={<AutoFixHighIcon />}
+              >
+                {t('editor.header.actions.optimize')}
+              </Button>
               <div className={isOptimizing ? 'preview-control optimizing' : 'preview-control'}>
                 <ButtonGroup
                   color="secondary"
@@ -938,6 +948,7 @@ export function EditorPage() {
             onClose={handleCloseModal}
             initialStep={modalState.initialStep}
           />
+          <OptimizeModal project={project} />
           {mobileQRData && (
             <MobileQRCode
               open={!!mobileQRData}
