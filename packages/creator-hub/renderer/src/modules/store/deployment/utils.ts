@@ -212,10 +212,8 @@ export async function fetchDeploymentStatus(
     Authenticator.signPayload(identity, payload),
   );
 
-  // The abgen registry answers with a `lods` field, but nothing ever fills it: no LOD jobs
-  // reach the abgen lambda, and its queue filters the LOD generator's events out, so it reads
-  // pending forever. Trusting it would hang every land publish until the retry window runs
-  // out, so LODs keep coming from the regular registry until the new LODs version lands.
+  // Both pipelines run on every deployment — the flag only flips which URLs this client reads
+  // — so the regular registry still owns live LOD status, while abgen never fills its own.
   const [bundlesStatus, lodsStatus] = await Promise.all([
     fetchEntityStatus(bundlesUrl, headers),
     useAbgenRegistry && !isWorld
