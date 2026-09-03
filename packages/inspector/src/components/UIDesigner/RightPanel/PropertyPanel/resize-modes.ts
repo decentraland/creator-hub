@@ -1,15 +1,19 @@
 import {
   YGA_STRETCH,
+  YGPT_ABSOLUTE,
+  YGPT_RELATIVE,
   YGU_AUTO,
   YGU_PERCENT,
   YGU_POINT,
 } from '../../../../lib/sdk/ui-transform-constants';
-import { flowValue } from './flow';
 
 export type ResizeMode = 'fixed' | 'percent' | 'hug' | 'fill';
 export type ResizeAxis = 'width' | 'height';
 
 const FILL_GROW = 1;
+
+const isAbsolute = (t: Record<string, unknown>): boolean =>
+  ((t.positionType as number | undefined) ?? YGPT_RELATIVE) === YGPT_ABSOLUTE;
 
 const ALL_MODES: ResizeMode[] = ['fixed', 'percent', 'hug', 'fill'];
 
@@ -39,7 +43,7 @@ export function fillsAxis(
   mainAxis: ResizeAxis,
 ): boolean {
   const t = transform ?? {};
-  if (flowValue(t) === 'absolute') return false;
+  if (isAbsolute(t)) return false;
   if (axisSized(t, axis)) return false;
   return axis === mainAxis ? t.flexGrow === FILL_GROW : t.alignSelf === YGA_STRETCH;
 }
@@ -63,8 +67,7 @@ export function resizeModesFor(
   transform: Record<string, unknown> | null,
   opts: { overriding?: boolean; current?: ResizeMode } = {},
 ): ResizeMode[] {
-  const offerFill =
-    flowValue(transform ?? {}) !== 'absolute' && (!opts.overriding || opts.current === 'fill');
+  const offerFill = !isAbsolute(transform ?? {}) && (!opts.overriding || opts.current === 'fill');
   return offerFill ? ALL_MODES : ALL_MODES.filter(m => m !== 'fill');
 }
 

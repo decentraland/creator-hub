@@ -34,6 +34,7 @@ import { clearedCenterMargins } from '../../../shared/align-presets';
 import { convertLength } from '../../../shared/measure';
 import { inFlowPatch } from '../flow';
 import { measureParentBox } from '../../../shared/measure';
+import { spliceSetFreeFlow } from '../../../code/store';
 import { overflowFlags } from '../overflow-flags';
 import { overflowPatch } from '../overflow-flags';
 import { patchToAlignment } from '../alignment-presets';
@@ -340,6 +341,7 @@ export const FieldRow = React.memo(function FieldRow({
           <FlowField
             value={componentValue}
             onPatch={onPatch}
+            onFree={() => void spliceSetFreeFlow(entity as unknown as number)}
           />
         </Block>
       );
