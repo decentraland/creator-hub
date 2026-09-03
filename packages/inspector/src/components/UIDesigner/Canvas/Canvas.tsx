@@ -326,7 +326,13 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node, hidden }) => {
       collect: monitor => ({ isOver: monitor.isOver({ shallow: true }) }),
       drop: (item, monitor) => {
         if (monitor.didDrop()) return;
-        applyCanvasDrop(item, node.entity as unknown as number);
+        const p = monitor.getClientOffset();
+        const r = divRef.current?.getBoundingClientRect();
+        const pos =
+          p && r
+            ? { top: (p.y - r.top) / getCanvasScale(), left: (p.x - r.left) / getCanvasScale() }
+            : undefined;
+        applyCanvasDrop(item, node.entity as unknown as number, pos);
       },
     }),
     [node.entity],

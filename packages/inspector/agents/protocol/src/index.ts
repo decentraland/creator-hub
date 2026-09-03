@@ -163,7 +163,13 @@ export type AgentToPage =
   // engine records it as a SceneError). The agent polls the scene logs and reports
   // each NEW error so the host can notify the user and stop the scene (#1448).
   // `message` is the error's first log line.
-  | { kind: 'scene-error'; message: string };
+  | { kind: 'scene-error'; message: string }
+  // The scene entity under the pointer while editing is OFF (Interact toggled on),
+  // so the host can show its PointerEvents hover hint — e.g. "Press E" (#1476). The
+  // engine's own hover-hint HUD isn't mounted in the editor. `entity` 0 = pointer
+  // over nothing / cleared. Only the id is sent; the host reads the hoverText/key
+  // from its own ECS (the agent's separate engine can't read the scene's values).
+  | { kind: 'hover'; entity: number };
 
 /** One selected entity's world pose, supplied by the inspector (the agent can't
  * read the inspected scene's Transform from its own engine). */

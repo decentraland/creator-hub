@@ -9,6 +9,7 @@ enum Method {
   BROADCAST_MOBILE_DEBUG_COMMAND = 'broadcast_mobile_debug_command',
   GET_FEATURE_FLAGS = 'get_feature_flags',
   UPDATE_SDK = 'update_sdk',
+  SET_UI_DESIGNER_MODE = 'set_ui_designer_mode',
 }
 
 type Params = {
@@ -18,6 +19,7 @@ type Params = {
   [Method.BROADCAST_MOBILE_DEBUG_COMMAND]: { cmd: string; args: Record<string, unknown> };
   [Method.GET_FEATURE_FLAGS]: Record<string, never>;
   [Method.UPDATE_SDK]: Record<string, never>;
+  [Method.SET_UI_DESIGNER_MODE]: { open: boolean };
 };
 
 type Result = {
@@ -30,6 +32,7 @@ type Result = {
   };
   [Method.GET_FEATURE_FLAGS]: { flags: Record<string, boolean> };
   [Method.UPDATE_SDK]: { ok: boolean };
+  [Method.SET_UI_DESIGNER_MODE]: void;
 };
 
 export class SceneClient extends RPC<Method, Params, Result> {
@@ -66,5 +69,9 @@ export class SceneClient extends RPC<Method, Params, Result> {
 
   updateSdk = () => {
     return this.request('update_sdk', {});
+  };
+
+  setUiDesignerMode = (open: boolean) => {
+    return this.request('set_ui_designer_mode', { open });
   };
 }

@@ -14,6 +14,13 @@ import { DataServiceDefinition } from '../../../lib/data-layer/proto/gen/data-la
 import type { DataLayerRpcClient } from '../../../lib/data-layer/types';
 import { createIframeDataLayerRpcClient } from '../../../lib/data-layer/client/iframe-data-layer';
 import { wireParentBridges } from '../../../lib/data-layer/client/parent-bridges';
+import type { ParentCustomAssets } from '../../../lib/data-layer/client/custom-assets-proxy';
+import { withCustomAssetsFromParent } from '../../../lib/data-layer/client/custom-assets-proxy';
+import type { DataLayerHost } from '../../../lib/data-layer/host';
+import { createDataLayerHost } from '../../../lib/data-layer/host';
+import type { FileSystemInterface } from '../../../lib/data-layer/types';
+import { createFileSystemInterface } from '../../../lib/logic/file-system-interface';
+import type { Storage } from '../../../lib/logic/storage/types';
 import type { InspectorConfig } from '../../../lib/logic/config';
 import { getConfig } from '../../../lib/logic/config';
 
@@ -61,8 +68,16 @@ export function* connectSaga() {
     yield put(connected({ dataLayer }));
     return;
   }
+  // Under a WS realm (Bevy) we still keep a parent-backed data-layer host alongside
+  // it, purely to serve the custom-asset library: those files live in a shared
+  // per-user dir the parent redirects to, which the realm data-layer can't see
+  // (#1554). Everything else flows through the WS data-layer below.
+  let parentDataLayer: ParentCustomAssets | undefined;
   if (config.dataLayerRpcParentUrl) {
-    yield call(wireParentBridges, config.dataLayerRpcParentUrl);
+    const storage: Storage = yield call(wireParentBridges, config.dataLayerRpcParentUrl);
+    const fs: FileSystemInterface = yield call(createFileSystemInterface, storage);
+    const parentHost: DataLayerHost = yield call(createDataLayerHost, fs);
+    parentDataLayer = parentHost.rpcMethods as unknown as ParentCustomAssets;
   }
   const ws: WebSocket = yield call(createWebSocketConnection, config.dataLayerRpcWsUrl);
   const socketChannel: EventChannel<WsActions> = yield call(createSocketChannel, ws);
@@ -74,10 +89,13 @@ export function* connectSaga() {
         const clientTransport: Transport = yield call(WebSocketTransport, ws);
         const client: RpcClient = yield call(createRpcClient, clientTransport);
         const clientPort: RpcClientPort = yield call(client.createPort, 'scene-ctx');
-        const dataLayer: DataLayerRpcClient = codegen.loadService<
+        const wsDataLayer: DataLayerRpcClient = codegen.loadService<
           { engine: IEngine },
           DataServiceDefinition
         >(clientPort, DataServiceDefinition);
+        const dataLayer = parentDataLayer
+          ? withCustomAssetsFromParent(wsDataLayer, parentDataLayer)
+          : wsDataLayer;
         yield put(connected({ dataLayer }));
       } else if (wsEvent.type === 'WS_ERROR') {
         console.error(wsEvent.error);
