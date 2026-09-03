@@ -24,31 +24,27 @@
       }
     },
     {
-      "name": "core-schema::Name",
+      "name": "asset-packs::Script",
       "data": {
         "0": {
           "json": {
-            "value": "Parrot_3"
+            "value": [
+              {
+                "path": "{assetPath}/Alarm.ts",
+                "priority": 0,
+                "layout": "{\"params\":{\"activateAnimation\":{\"type\":\"string\",\"optional\":true,\"value\":\"activate\",\"tooltip\":\"Name of the animation clip in the alarm's model, looped while the alarm is triggered.\"},\"idleAnimation\":{\"type\":\"string\",\"optional\":true,\"value\":\"\",\"tooltip\":\"Name of an animation clip to play when the alarm is disarmed or the scene loads, to set the resting pose. Leave empty for none.\"},\"sound\":{\"type\":\"string\",\"optional\":true,\"value\":\"siren.mp3\",\"tooltip\":\"Name of an audio file inside this smart item's folder (e.g. siren.mp3), looped while the alarm is triggered. Leave empty for no sound.\"},\"hoverText\":{\"type\":\"string\",\"optional\":true,\"value\":\"Poke\",\"tooltip\":\"Text shown when the player points at the alarm.\"},\"clickToTrigger\":{\"type\":\"boolean\",\"optional\":true,\"value\":false,\"tooltip\":\"If true, clicking the alarm triggers it. If false, clicking plays the animation and sound once without triggering the alarm.\"}},\"actions\":[{\"methodName\":\"trigger\",\"description\":\"Triggers the alarm, looping its animation and sound until disarmed\",\"params\":{}},{\"methodName\":\"disarm\",\"description\":\"Disarms the alarm, stopping its animation and sound\",\"params\":{}}]}"
+              }
+            ]
           }
         }
       }
     },
     {
-      "name": "core::PointerEvents",
+      "name": "core-schema::Name",
       "data": {
         "0": {
           "json": {
-            "pointerEvents": [
-              {
-                "eventType": 1,
-                "eventInfo": {
-                  "button": 1,
-                  "hoverText": "Poke",
-                  "maxDistance": 10,
-                  "showFeedback": true
-                }
-              }
-            ]
+            "value": "Parrot_3"
           }
         }
       }
@@ -71,154 +67,17 @@
             "id": "{self}",
             "value": [
               {
-                "name": "Play Activate Animation",
-                "type": "play_animation",
-                "jsonPayload": "{\"animation\":\"activate\"}"
-              },
-              {
-                "name": "Play Sound",
-                "type": "play_sound",
-                "jsonPayload": "{\"src\":\"{assetPath}/siren.mp3\"}"
-              },
-              {
-                "type": "play_sound",
-                "name": "Loop Sound",
-                "jsonPayload": "{\"src\":\"{assetPath}/siren.mp3\",\"loop\":true}"
-              },
-              {
-                "type": "play_animation",
-                "name": "Loop Animation",
-                "jsonPayload": "{\"animation\":\"activate\",\"loop\":true}"
-              },
-              {
-                "type": "stop_animation",
-                "name": "Stop Animation",
-                "jsonPayload": "{}"
-              },
-              {
-                "type": "stop_sound",
-                "name": "Stop Sound",
-                "jsonPayload": "{}"
-              },
-              {
-                "type": "set_state",
+                "type": "call_script_method",
                 "name": "Trigger",
-                "jsonPayload": "{\"state\":\"Triggered\"}",
-                "allowedInBasicView": true
+                "jsonPayload": "{\"scriptPath\":\"{assetPath}/Alarm.ts\",\"methodName\":\"trigger\",\"params\":{}}",
+                "default": true
               },
               {
-                "type": "set_state",
+                "type": "call_script_method",
                 "name": "Disarm",
-                "jsonPayload": "{\"state\":\"Silent\"}",
-                "allowedInBasicView": true
+                "jsonPayload": "{\"scriptPath\":\"{assetPath}/Alarm.ts\",\"methodName\":\"disarm\",\"params\":{}}"
               }
             ]
-          }
-        }
-      }
-    },
-    {
-      "name": "asset-packs::Triggers",
-      "data": {
-        "0": {
-          "json": {
-            "value": [
-              {
-                "type": "on_input_action",
-                "actions": [
-                  {
-                    "id": "{self:asset-packs::Actions}",
-                    "name": "Play Activate Animation"
-                  },
-                  {
-                    "id": "{self:asset-packs::Actions}",
-                    "name": "Play Sound"
-                  }
-                ],
-                "basicViewId": "trigger-when-clicked",
-                "conditions": []
-              },
-              {
-                "type": "on_state_change",
-                "conditions": [
-                  {
-                    "id": "{self:asset-packs::States}",
-                    "type": "when_state_is",
-                    "value": "Silent"
-                  }
-                ],
-                "operation": "and",
-                "actions": [
-                  {
-                    "id": "{self:asset-packs::Actions}",
-                    "name": "Stop Sound"
-                  },
-                  {
-                    "id": "{self:asset-packs::Actions}",
-                    "name": "Stop Animation"
-                  }
-                ]
-              },
-              {
-                "type": "on_state_change",
-                "conditions": [
-                  {
-                    "id": "{self:asset-packs::States}",
-                    "type": "when_state_is",
-                    "value": "Triggered"
-                  }
-                ],
-                "operation": "and",
-                "actions": [
-                  {
-                    "id": "{self:asset-packs::Actions}",
-                    "name": "Loop Sound"
-                  },
-                  {
-                    "id": "{self:asset-packs::Actions}",
-                    "name": "Loop Animation"
-                  }
-                ]
-              }
-            ]
-          }
-        }
-      }
-    },
-    {
-      "name": "asset-packs::States",
-      "data": {
-        "0": {
-          "json": {
-            "id": "{self}",
-            "value": ["Silent", "Triggered"],
-            "defaultValue": "Silent"
-          }
-        }
-      }
-    },
-    {
-      "name": "inspector::Config",
-      "data": {
-        "0": {
-          "json": {
-            "isBasicViewEnabled": true,
-            "componentName": "Parrot",
-            "fields": [
-              {
-                "name": "Hover Text",
-                "type": "core::PointerEvents"
-              },
-              {
-                "name": "When Clicked",
-                "type": "asset-packs::Triggers",
-                "basicViewId": "trigger-when-clicked"
-              }
-            ],
-            "helpTooltip": {
-              "text": "A parrot that starts making noise when activated. It can be used as an alarm system."
-            },
-            "version": 1
           }
         }
       }

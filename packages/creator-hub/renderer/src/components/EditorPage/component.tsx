@@ -6,6 +6,7 @@ import CodeIcon from '@mui/icons-material/Code';
 import PublicIcon from '@mui/icons-material/Public';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import CloseIcon from '@mui/icons-material/Close';
+import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import { CircularProgress as Loader, Tooltip } from 'decentraland-ui2';
 import { IconButton } from '@mui/material';
 
@@ -15,7 +16,9 @@ import { RENDERER } from '/shared/types/settings';
 import { isWorkspaceError } from '/shared/types/workspace';
 
 import { t } from '/@/modules/store/translation/utils';
-import { initRpc } from '/@/modules/rpc';
+import { captureViewportFallback, initRpc } from '/@/modules/rpc';
+import { resizeImage } from '/@/modules/image';
+import { actions as aiActions } from '/@/modules/store/ai';
 import { config } from '/@/config';
 import { useEditor } from '/@/hooks/useEditor';
 import { useSettings } from '/@/hooks/useSettings';
@@ -29,8 +32,10 @@ import { ConnectionStatus } from '/@/lib/connection';
 
 import EditorPng from '/assets/images/editor.png';
 
+import { ai } from '#preload';
 import { useDispatch, useSelector } from '#store';
 import { useFeatureFlags } from '/@/hooks/useFeatureFlags';
+import { useAiSession } from '/@/hooks/useAiSession';
 import { actions as snackbarActions } from '/@/modules/store/snackbar';
 import { actions as editorActions } from '/@/modules/store/editor';
 import { createGenericNotification } from '/@/modules/store/snackbar/utils';
@@ -40,6 +45,8 @@ import { Row } from '../Row';
 import { ButtonGroup } from '../Button';
 import { ConnectionStatusIndicator } from '../ConnectionStatusIndicator';
 import { MobileQRCode } from '../Modals/MobileQRCode';
+import { AiChatPanel } from '../AiChatPanel';
+import { DetachedPlaceholder } from '../AiChatPanel/DetachedPlaceholder';
 import { DeployModal } from './DeployModal';
 import { PreviewOptions, PublishOptions } from './MenuOptions';
 import { getPublishButtonText, getPublishOptions } from './utils';
@@ -48,6 +55,27 @@ import type { ModalType, ModalState } from './DeployModal';
 import type { PreviewOptionsProps } from './MenuOptions';
 
 import './styles.css';
+
+// The AI panel is drag-resizable like the inspector's own panels; its width persists
+// across sessions (global, not per-scene). Bounds keep both the panel and the iframe usable.
+const AI_PANEL_WIDTH_KEY = 'creator-hub:ai-panel-width';
+const AI_PANEL_MIN = 320;
+const AI_PANEL_DEFAULT = 360;
+const AI_PANEL_IFRAME_MIN = 360; // never squeeze the editor below this
+
+function clampAiPanelWidth(px: number): number {
+  const max = Math.max(AI_PANEL_MIN, window.innerWidth - AI_PANEL_IFRAME_MIN);
+  return Math.min(Math.max(px, AI_PANEL_MIN), max);
+}
+function readAiPanelWidth(): number {
+  try {
+    const raw = localStorage.getItem(AI_PANEL_WIDTH_KEY);
+    const n = raw === null ? NaN : Number(raw);
+    return Number.isFinite(n) ? clampAiPanelWidth(n) : AI_PANEL_DEFAULT;
+  } catch {
+    return AI_PANEL_DEFAULT;
+  }
+}
 
 // The Bevy realm launches `sdk-commands start --no-client --data-layer`; an old
 // scene's local `@dcl/sdk-commands` predates those flags and fails with a raw CLI
@@ -63,6 +91,42 @@ function isOutdatedDepsError(message: string): boolean {
   const namesBevyFlag = /--(?:no-client|data-layer)/i.test(message);
   return rejectsOption && namesBevyFlag;
 }
+
+// Routes an AI scene-mutation op (from main) to the inspector SceneRpc client. One entry
+// per SceneRpc mutation method; add a line here + the matching client method + MCP tool as
+// Phase 2 grows (set_component, remove_entity, place_smart_item, …).
+type SceneClient = ReturnType<typeof initRpc>['scene'];
+const SCENE_OP_HANDLERS: Record<
+  string,
+  (scene: SceneClient, params: Record<string, unknown>) => Promise<unknown>
+> = {
+  create_entity: (scene, p) =>
+    scene.createEntity(p.name as string | undefined, p.parent as number | undefined),
+  remove_entity: (scene, p) => scene.removeEntity(p.entity as number),
+  set_parent: (scene, p) => scene.setParent(p.entity as number, p.parent as number),
+  set_component: (scene, p) =>
+    scene.setComponent(
+      p.entity as number,
+      p.component as string,
+      p.value as Record<string, unknown>,
+    ),
+  remove_component: (scene, p) => scene.removeComponent(p.entity as number, p.component as string),
+  attach_script: (scene, p) =>
+    scene.attachScript(p.entity as number, p.path as string, p.priority as number | undefined),
+  search_catalog: (scene, p) =>
+    scene.searchCatalog(p.query as string | undefined, p.limit as number | undefined),
+  place_smart_item: (scene, p) =>
+    scene.placeSmartItem(
+      p.assetId as string,
+      p.name as string | undefined,
+      p.position as { x: number; y: number; z: number } | undefined,
+    ),
+  undo: scene => scene.undo(),
+  get_scene_metrics: scene => scene.getSceneMetrics(),
+  get_selection: scene => scene.getSelection(),
+  get_scene_settings: scene => scene.getSceneSettings(),
+  set_scene_settings: (scene, p) => scene.setSceneSettings(p),
+};
 
 export function EditorPage() {
   const dispatch = useDispatch();
@@ -94,6 +158,9 @@ export function EditorPage() {
   const { settings, updateAppSettings } = useSettings();
   const { updatePackages } = useWorkspace();
   const { flags: featureFlags } = useFeatureFlags();
+  // The AI assistant is an experimental opt-in (Settings → Experimental), like the Bevy
+  // renderer — not a remote feature flag.
+  const aiChatEnabled = settings.aiAssistant;
   const { executeDeployment, getDeployment } = useDeploy();
   const deployment = project ? getDeployment(project.path) : undefined;
 
@@ -108,8 +175,27 @@ export function EditorPage() {
   const { detectCustomCode, isLoading: isDetectingCustomCode } = useSceneCustomCode(project);
   const { status } = useConnectionStatus();
   const iframeRef = useRef<ReturnType<typeof initRpc>>();
+  // Clear the AI selection chips: deselect everything in the inspector (only the renderer
+  // holds the iframe RPC). Optimistically empty the store so the chips vanish immediately;
+  // the next selection poll confirms. No-op under Bevy (no selection RPC).
+  const handleClearAiSelection = useCallback(() => {
+    void iframeRef.current?.scene.clearSelection().catch(() => undefined);
+    dispatch(aiActions.setSelection([]));
+  }, [dispatch]);
+  // The AI session engine + detached-window bridge (#1504). Runs whenever the assistant is
+  // on, independent of whether the chat is shown inline or popped out. It also relays the
+  // detached window's "clear selection" back to the inspector here.
+  const {
+    detachedOpen: aiDetached,
+    openDetached: openAiWindow,
+    closeDetached: closeAiWindow,
+  } = useAiSession(aiChatEnabled, project?.path, handleClearAiSelection);
   const hydratedOptimizedAssetsPathRef = useRef<string | null>(null);
   const [modalState, setModalState] = useState<ModalState>({ type: undefined });
+  const [aiOpen, setAiOpen] = useState(false);
+  // Draggable width of the AI panel (like the inspector's own panels). Persisted globally.
+  const [aiPanelWidth, setAiPanelWidth] = useState(readAiPanelWidth);
+  const [aiResizing, setAiResizing] = useState(false);
   const [mobileQRData, setMobileQRData] = useState<{ url: string; qr: string } | null>(null);
   // When the Bevy renderer is selected the engine loads from a headless
   // sdk-commands realm, and the inspector shares its data-layer WS. We start it
@@ -161,6 +247,81 @@ export function EditorPage() {
       void rpc.scene.setFeatureFlags(featureFlags).catch(console.error);
     }
   }, [featureFlags]);
+
+  // Answer the AI assistant's `editor_screenshot` tool: main asks the renderer to capture
+  // the viewport (only the renderer can reach the inspector iframe). Babylon renders its own
+  // canvas via the scene RPC. That path returns null under Bevy (its wgpu canvas can't be
+  // read via toDataURL, and the engine's /screenshot command may be unavailable), so fall
+  // back to a compositor capture of just the viewport region: ask the inspector where the
+  // viewport is inside its (cross-origin) iframe, offset by the iframe's position in this
+  // window, and capturePage that rect in main — then downscale to the requested size (#1526).
+  useEffect(() => {
+    if (!aiChatEnabled) return;
+    const { cleanup } = ai.onScreenshotRequest(async req => {
+      const rpc = iframeRef.current;
+      let dataUrl: string | null = null;
+      try {
+        if (rpc) dataUrl = await rpc.scene.takeScreenshot(req.width, req.height);
+      } catch {
+        dataUrl = null;
+      }
+      if (dataUrl === null && rpc) {
+        const raw = await captureViewportFallback(rpc.iframe, rpc.scene);
+        dataUrl = raw !== null ? await resizeImage(raw, req.width, req.height) : null;
+      }
+      ai.screenshotResult(req.id, dataUrl);
+    });
+    return cleanup;
+  }, [aiChatEnabled]);
+
+  // Answer the AI assistant's scene-mutation ops (Phase 2): main asks the renderer to run
+  // an inspector SceneRpc mutation on the live engine, and we reply with the result. Only
+  // the renderer holds the iframe RPC handle. Ops are serialized on the main side.
+  useEffect(() => {
+    if (!aiChatEnabled) return;
+    const { cleanup } = ai.onSceneOpRequest(async req => {
+      const rpc = iframeRef.current;
+      const handler = SCENE_OP_HANDLERS[req.op];
+      if (!rpc) return ai.sceneOpResult(req.id, false, 'No scene is open.');
+      if (!handler) return ai.sceneOpResult(req.id, false, `Unknown scene op "${req.op}".`);
+      try {
+        const value = await handler(rpc.scene, req.params);
+        ai.sceneOpResult(req.id, true, value);
+      } catch (e) {
+        ai.sceneOpResult(req.id, false, e instanceof Error ? e.message : String(e));
+      }
+    });
+    return cleanup;
+  }, [aiChatEnabled]);
+
+  // While the AI panel is open, keep the assistant aware of the editor selection: poll the
+  // inspector for the selected entities and mirror them into the ai store (shown as a composer
+  // chip, attached as context on send). Cheap read; only runs while the panel is visible.
+  // Rejects harmlessly under the Bevy renderer (no selection RPC) — selection just stays empty.
+  useEffect(() => {
+    // Poll while the chat is visible anywhere — inline or in the detached window (#1504).
+    if (!aiOpen && !aiDetached) {
+      dispatch(aiActions.setSelection([]));
+      return;
+    }
+    let cancelled = false;
+    const poll = async () => {
+      const rpc = iframeRef.current;
+      if (!rpc) return;
+      try {
+        const { selected } = await rpc.scene.getSelection();
+        if (!cancelled) dispatch(aiActions.setSelection(selected));
+      } catch {
+        /* Bevy renderer, or a transient miss — leave the last known selection */
+      }
+    };
+    void poll();
+    const timer = setInterval(poll, 2000);
+    return () => {
+      cancelled = true;
+      clearInterval(timer);
+    };
+  }, [aiOpen, aiDetached, dispatch]);
 
   useEffect(() => {
     if (isWorkspaceError(error, 'PROJECT_NOT_FOUND') || isProjectError(error)) {
@@ -504,6 +665,30 @@ export function EditorPage() {
 
   const iframeUrl = `${htmlUrl}?${params}`;
 
+  // Drag the divider on the AI panel's left edge to resize it. A transparent overlay covers
+  // the iframe while dragging so it doesn't swallow the mouse-move events.
+  const startAiResize = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    setAiResizing(true);
+    const onMove = (ev: MouseEvent) =>
+      setAiPanelWidth(clampAiPanelWidth(window.innerWidth - ev.clientX));
+    const onUp = () => {
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup', onUp);
+      setAiResizing(false);
+      setAiPanelWidth(w => {
+        try {
+          localStorage.setItem(AI_PANEL_WIDTH_KEY, String(w));
+        } catch {
+          /* storage unavailable — non-fatal */
+        }
+        return w;
+      });
+    };
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+  }, []);
+
   const renderLoading = () => {
     // Recoverable stuck-load state (#1380): the realm failed to start (broken code)
     // or the scene never finished loading. Offer Back + Open code + the error,
@@ -684,21 +869,58 @@ export function EditorPage() {
                   {publishButtonText}
                 </Button>
               )}
+              {aiChatEnabled && (
+                <Tooltip title={t('editor.ai.toggle')}>
+                  <IconButton
+                    className={`ai-toggle${aiOpen ? ' active' : ''}`}
+                    aria-label={t('editor.ai.toggle')}
+                    onClick={() => setAiOpen(open => !open)}
+                  >
+                    <AutoAwesomeIcon />
+                  </IconButton>
+                </Tooltip>
+              )}
               <ConnectionStatusIndicator />
             </div>
           </Header>
-          <iframe
-            className="inspector"
-            src={iframeUrl}
-            onLoad={handleIframeRef}
-            // Grant cross-origin isolation to the inspector iframe so the Bevy
-            // engine (nested one level deeper) can use SharedArrayBuffer. The
-            // renderer document + inspector server carry COOP/COEP, but a
-            // cross-origin child frame only becomes crossOriginIsolated when the
-            // embedder explicitly delegates it via this Permissions-Policy. Inert
-            // for the Babylon renderer.
-            allow="cross-origin-isolated"
-          ></iframe>
+          <div className="EditorBody">
+            <iframe
+              className="inspector"
+              src={iframeUrl}
+              onLoad={handleIframeRef}
+              // Grant cross-origin isolation to the inspector iframe so the Bevy
+              // engine (nested one level deeper) can use SharedArrayBuffer. The
+              // renderer document + inspector server carry COOP/COEP, but a
+              // cross-origin child frame only becomes crossOriginIsolated when the
+              // embedder explicitly delegates it via this Permissions-Policy. Inert
+              // for the Babylon renderer.
+              allow="cross-origin-isolated"
+            ></iframe>
+            {aiChatEnabled && aiOpen && (
+              <>
+                {aiResizing && <div className="ai-resize-overlay" />}
+                <div
+                  className="ai-resize-handle"
+                  onMouseDown={startAiResize}
+                  role="separator"
+                  aria-orientation="vertical"
+                />
+                {aiDetached ? (
+                  <DetachedPlaceholder
+                    onDock={closeAiWindow}
+                    width={aiPanelWidth}
+                  />
+                ) : (
+                  <AiChatPanel
+                    onClose={() => setAiOpen(false)}
+                    onPopOut={openAiWindow}
+                    onClearSelection={handleClearAiSelection}
+                    width={aiPanelWidth}
+                  />
+                )}
+              </>
+            )}
+          </div>
           <DeployModal
             type={modalState.type}
             project={project}

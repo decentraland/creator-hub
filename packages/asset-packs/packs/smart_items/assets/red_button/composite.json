@@ -12,46 +12,15 @@
       }
     },
     {
-      "name": "asset-packs::Actions",
-      "data": {
-        "0": {
-          "json": {
-            "id": "{self}",
-            "value": [
-              {
-                "name": "Play Activate Animation",
-                "type": "play_animation",
-                "jsonPayload": "{ \"animation\": \"trigger\" }"
-              },
-              {
-                "name": "Play Sound",
-                "type": "play_sound",
-                "jsonPayload": "{ \"src\": \"{assetPath}/sound.mp3\" }"
-              }
-            ]
-          }
-        }
-      }
-    },
-    {
-      "name": "asset-packs::Triggers",
+      "name": "asset-packs::Script",
       "data": {
         "0": {
           "json": {
             "value": [
               {
-                "type": "on_input_action",
-                "actions": [
-                  {
-                    "id": "{self:asset-packs::Actions}",
-                    "name": "Play Activate Animation"
-                  },
-                  {
-                    "id": "{self:asset-packs::Actions}",
-                    "name": "Play Sound"
-                  }
-                ],
-                "basicViewId": "trigger-when-clicked"
+                "path": "{assetPath}/Button.ts",
+                "priority": 0,
+                "layout": "{\"params\":{\"hoverText\":{\"type\":\"string\",\"optional\":true,\"value\":\"Press\",\"tooltip\":\"Text shown when the player points at the button.\"},\"onClick\":{\"type\":\"action\",\"optional\":true,\"value\":{\"entity\":0,\"action\":\"\"},\"tooltip\":\"Action triggered every time the button is pressed.\"},\"inputButton\":{\"type\":\"number\",\"optional\":true,\"value\":1,\"tooltip\":\"Input that presses the button: 0 = mouse click, 1 = E key, 2 = F key.\"},\"sound\":{\"type\":\"string\",\"optional\":true,\"value\":\"sound.mp3\",\"tooltip\":\"Name of an audio file inside this smart item's folder (e.g. sound.mp3), played whenever the button is pressed. Leave empty for no sound.\"},\"animation\":{\"type\":\"string\",\"optional\":true,\"value\":\"trigger\",\"tooltip\":\"Name of the animation clip in the button's model that plays when the button is pressed. Leave empty for no animation.\"}},\"actions\":[{\"methodName\":\"press\",\"description\":\"Presses the button, playing its animation and sound and triggering its On Click action\",\"params\":{}}]}"
               }
             ]
           }
@@ -64,52 +33,6 @@
         "0": {
           "json": {
             "value": ["core::Animator", "core::AudioSource"]
-          }
-        }
-      }
-    },
-    {
-      "name": "core::PointerEvents",
-      "data": {
-        "0": {
-          "json": {
-            "pointerEvents": [
-              {
-                "eventType": 1,
-                "eventInfo": {
-                  "button": 1,
-                  "hoverText": "Press",
-                  "maxDistance": 10,
-                  "showFeedback": true
-                }
-              }
-            ]
-          }
-        }
-      }
-    },
-    {
-      "name": "inspector::Config",
-      "data": {
-        "0": {
-          "json": {
-            "isBasicViewEnabled": true,
-            "componentName": "Button",
-            "helpTooltip": {
-              "text": "Configure the button's hover text and actions. Set what happens when the button is clicked by configuring triggers and actions."
-            },
-            "fields": [
-              {
-                "name": "Hover Text",
-                "type": "core::PointerEvents"
-              },
-              {
-                "name": "When Clicked",
-                "type": "asset-packs::Triggers",
-                "basicViewId": "trigger-when-clicked"
-              }
-            ],
-            "version": 1
           }
         }
       }

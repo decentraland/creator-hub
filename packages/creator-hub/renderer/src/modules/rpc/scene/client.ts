@@ -40,7 +40,40 @@ export enum Method {
   SET_FEATURE_FLAGS = 'set_feature_flags',
   PUSH_MOBILE_DEBUG_ENTRIES = 'push_mobile_debug_entries',
   SET_MOBILE_DEBUG_SESSION_ENABLED = 'set_mobile_debug_session_enabled',
+  CREATE_ENTITY = 'create_entity',
+  REMOVE_ENTITY = 'remove_entity',
+  SET_PARENT = 'set_parent',
+  SET_COMPONENT = 'set_component',
+  REMOVE_COMPONENT = 'remove_component',
+  ATTACH_SCRIPT = 'attach_script',
+  SEARCH_CATALOG = 'search_catalog',
+  PLACE_SMART_ITEM = 'place_smart_item',
+  UNDO = 'undo',
+  GET_SCENE_METRICS = 'get_scene_metrics',
+  GET_SELECTION = 'get_selection',
+  CLEAR_SELECTION = 'clear_selection',
+  GET_SCENE_SETTINGS = 'get_scene_settings',
+  SET_SCENE_SETTINGS = 'set_scene_settings',
+  GET_VIEWPORT_RECT = 'get_viewport_rect',
 }
+
+export interface ViewportRect {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  devicePixelRatio: number;
+}
+
+type CatalogHit = { id: string; name: string; category: string; tags: string[] };
+// The editor's scene budget counters (mirrors the inspector's SceneMetrics).
+type SceneMetrics = {
+  triangles: number;
+  entities: number;
+  bodies: number;
+  materials: number;
+  textures: number;
+};
 
 export type Params = {
   [Method.TOGGLE_COMPONENT]: { component: string; enabled: boolean };
@@ -69,6 +102,25 @@ export type Params = {
       messageCount: number;
     }[];
   };
+  [Method.CREATE_ENTITY]: { name?: string; parent?: number };
+  [Method.REMOVE_ENTITY]: { entity: number };
+  [Method.SET_PARENT]: { entity: number; parent: number };
+  [Method.SET_COMPONENT]: { entity: number; component: string; value: Record<string, unknown> };
+  [Method.REMOVE_COMPONENT]: { entity: number; component: string };
+  [Method.ATTACH_SCRIPT]: { entity: number; path: string; priority?: number };
+  [Method.SEARCH_CATALOG]: { query?: string; limit?: number };
+  [Method.PLACE_SMART_ITEM]: {
+    assetId: string;
+    name?: string;
+    position?: { x: number; y: number; z: number };
+  };
+  [Method.UNDO]: Record<string, never>;
+  [Method.GET_SCENE_METRICS]: Record<string, never>;
+  [Method.GET_SELECTION]: Record<string, never>;
+  [Method.CLEAR_SELECTION]: Record<string, never>;
+  [Method.GET_SCENE_SETTINGS]: Record<string, never>;
+  [Method.SET_SCENE_SETTINGS]: Record<string, unknown>;
+  [Method.GET_VIEWPORT_RECT]: Record<string, never>;
 };
 
 export type Result = {
@@ -89,6 +141,25 @@ export type Result = {
   [Method.SET_FEATURE_FLAGS]: void;
   [Method.PUSH_MOBILE_DEBUG_ENTRIES]: void;
   [Method.SET_MOBILE_DEBUG_SESSION_ENABLED]: void;
+  [Method.CREATE_ENTITY]: { entity: number };
+  [Method.REMOVE_ENTITY]: { entity: number };
+  [Method.SET_PARENT]: { entity: number; parent: number };
+  [Method.SET_COMPONENT]: { entity: number; component: string };
+  [Method.REMOVE_COMPONENT]: { entity: number; component: string };
+  [Method.ATTACH_SCRIPT]: { entity: number; path: string };
+  [Method.SEARCH_CATALOG]: { total: number; results: CatalogHit[] };
+  [Method.PLACE_SMART_ITEM]: { entity: number; name: string };
+  [Method.UNDO]: { ok: true };
+  [Method.GET_SCENE_METRICS]: {
+    metrics: SceneMetrics;
+    limits: SceneMetrics;
+    entitiesOutOfBoundaries: number[];
+  };
+  [Method.GET_SELECTION]: { selected: { id: number; name: string }[] };
+  [Method.CLEAR_SELECTION]: { ok: true };
+  [Method.GET_SCENE_SETTINGS]: { settings: Record<string, unknown> };
+  [Method.SET_SCENE_SETTINGS]: { settings: Record<string, unknown> };
+  [Method.GET_VIEWPORT_RECT]: { rect: ViewportRect | null };
 };
 
 // @dcl/mini-rpc's request() never settles if no server answers (it just parks a
@@ -194,5 +265,69 @@ export class SceneRpcClient extends RPC<Method, Params, Result> {
     }[] = [],
   ) => {
     return this.request('set_mobile_debug_session_enabled', { enabled, sessions });
+  };
+
+  createEntity = (name?: string, parent?: number) => {
+    return this.request('create_entity', { name, parent });
+  };
+
+  removeEntity = (entity: number) => {
+    return this.request('remove_entity', { entity });
+  };
+
+  setParent = (entity: number, parent: number) => {
+    return this.request('set_parent', { entity, parent });
+  };
+
+  setComponent = (entity: number, component: string, value: Record<string, unknown>) => {
+    return this.request('set_component', { entity, component, value });
+  };
+
+  removeComponent = (entity: number, component: string) => {
+    return this.request('remove_component', { entity, component });
+  };
+
+  attachScript = (entity: number, path: string, priority?: number) => {
+    return this.request('attach_script', { entity, path, priority });
+  };
+
+  searchCatalog = (query?: string, limit?: number) => {
+    return this.request('search_catalog', { query, limit });
+  };
+
+  placeSmartItem = (
+    assetId: string,
+    name?: string,
+    position?: { x: number; y: number; z: number },
+  ) => {
+    return this.request('place_smart_item', { assetId, name, position });
+  };
+
+  undo = () => {
+    return this.request('undo', {} as Record<string, never>);
+  };
+
+  getSceneMetrics = () => {
+    return this.request('get_scene_metrics', {} as Record<string, never>);
+  };
+
+  getSelection = () => {
+    return this.request('get_selection', {} as Record<string, never>);
+  };
+
+  clearSelection = () => {
+    return this.request('clear_selection', {} as Record<string, never>);
+  };
+
+  getSceneSettings = () => {
+    return this.request('get_scene_settings', {} as Record<string, never>);
+  };
+
+  setSceneSettings = (patch: Record<string, unknown>) => {
+    return this.request('set_scene_settings', patch);
+  };
+
+  getViewportRect = () => {
+    return this.request('get_viewport_rect', {} as Record<string, never>);
   };
 }
