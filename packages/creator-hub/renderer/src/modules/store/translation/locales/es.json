@@ -1114,9 +1114,9 @@
         "label": "Retención Día 7",
         "tooltip": "El porcentaje de usuarios nuevos que volvieron a tu place al menos una vez durante los 7 días posteriores a su primera visita."
       },
-      "avg_playtime": {
-        "label": "Tiempo de Juego Prom.",
-        "tooltip": "Tiempo promedio que cada usuario pasa en tu place en una sola visita."
+      "median_playtime": {
+        "label": "Mediana de Tiempo de Juego",
+        "tooltip": "Mediana del tiempo que cada usuario pasa en tu place por día: la mitad de las visitas diarias duran más y la otra mitad menos."
       },
       "afk_time": {
         "label": "Tiempo AFK",
@@ -1148,7 +1148,7 @@
         "new_users": "Usuarios Nuevos",
         "day_7_retention": "Retención D7",
         "revenue": "Ingresos",
-        "avg_playtime": "Tiempo de Juego Prom."
+        "median_playtime": "Mediana de Tiempo de Juego"
       },
       "actions": {
         "pin_to_watchlist": "Fijar a la Watchlist",

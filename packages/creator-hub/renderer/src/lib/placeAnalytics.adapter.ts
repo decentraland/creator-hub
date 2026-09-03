@@ -14,7 +14,7 @@ import type { LocationMetrics, MetricRow } from './metricsApi';
 /**
  * Projects the analytics API's flat metric bag onto the shapes the tabs render.
  *
- * `metrics[name]` is a list of `{ series, period, value }` rows. Twelve metrics
+ * `metrics[name]` is a list of `{ series, period, value }` rows. Fourteen metrics
  * split three ways by platform; five carry no series at all. Reading a split
  * metric without picking a series returns three rows and silently yields the
  * wrong number, so the two readers below are deliberately separate: a call site
@@ -22,7 +22,7 @@ import type { LocationMetrics, MetricRow } from './metricsApi';
  *
  * Anything the API does not carry stays `null` or empty, which the UI renders as
  * "-" or "no data yet". Partial bags are the norm — most locations carry only
- * some of the 17 — so every field falls back on its own.
+ * some of the 19 — so every field falls back on its own.
  */
 
 /** Every metric the service exports. */
@@ -38,6 +38,8 @@ export const METRIC_NAMES = [
   'd7_retention_rate_30d',
   'd7_retention_rate_60d',
   'd7_retention_rate_weekly',
+  'median_playtime_seconds_30d',
+  'median_playtime_seconds_60d',
   'socially_engaged_ratio_weekly',
   'unique_visitors_30d',
   'unique_visitors_60d',
@@ -140,7 +142,7 @@ export function toOverview(
     concurrentUsers: singleValue(metrics, `concurrent_users_avg_${window}`),
     peakConcurrentUsers: singleValue(metrics, `concurrent_users_peak_${window}`),
     day7Retention: toPercentage(platformValue(metrics, `d7_retention_rate_${window}`, 'all')),
-    avgPlaytime: toMinutes(platformValue(metrics, `avg_playtime_seconds_${window}`, 'all')),
+    medianPlaytime: toMinutes(platformValue(metrics, `median_playtime_seconds_${window}`, 'all')),
     afkTime: toMinutes(platformValue(metrics, `avg_afk_seconds_per_user_${window}`, 'all')),
     desktopUsers: platformValue(metrics, `unique_visitors_${window}`, 'desktop'),
     mobileUsers: platformValue(metrics, `unique_visitors_${window}`, 'mobile'),
@@ -174,7 +176,7 @@ export function toEngagement(
   window: MetricsWindow,
 ): PlaceEngagementMetrics {
   return {
-    avgPlaytime: toMinutes(platformValue(metrics, `avg_playtime_seconds_${window}`, 'all')),
+    medianPlaytime: toMinutes(platformValue(metrics, `median_playtime_seconds_${window}`, 'all')),
     afkTime: toMinutes(platformValue(metrics, `avg_afk_seconds_per_user_${window}`, 'all')),
     sociallyEngaged: weeklySeries(
       metrics,
@@ -198,7 +200,7 @@ export function toSummary(
     thumbnail,
     totalVisits: overview.totalVisits,
     day7Retention: overview.day7Retention,
-    avgPlaytime: overview.avgPlaytime,
+    medianPlaytime: overview.medianPlaytime,
     concurrentUsers: overview.concurrentUsers,
     hasNoData: hasNoData(location),
   };

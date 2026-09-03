@@ -77,6 +77,40 @@
             "value": 229.088733
           }
         ],
+        "median_playtime_seconds_30d": [
+          {
+            "series": "all",
+            "period": null,
+            "value": 152.5
+          },
+          {
+            "series": "desktop",
+            "period": null,
+            "value": 512.25
+          },
+          {
+            "series": "mobile",
+            "period": null,
+            "value": 121.0
+          }
+        ],
+        "median_playtime_seconds_60d": [
+          {
+            "series": "all",
+            "period": null,
+            "value": 163.75
+          },
+          {
+            "series": "desktop",
+            "period": null,
+            "value": 498.5
+          },
+          {
+            "series": "mobile",
+            "period": null,
+            "value": 131.5
+          }
+        ],
         "concurrent_users_avg_30d": [
           {
             "series": null,
@@ -540,6 +574,40 @@
             "value": 1.0
           }
         ],
+        "median_playtime_seconds_30d": [
+          {
+            "series": "all",
+            "period": null,
+            "value": 98.5
+          },
+          {
+            "series": "desktop",
+            "period": null,
+            "value": 210.75
+          },
+          {
+            "series": "mobile",
+            "period": null,
+            "value": 74.0
+          }
+        ],
+        "median_playtime_seconds_60d": [
+          {
+            "series": "all",
+            "period": null,
+            "value": 104.25
+          },
+          {
+            "series": "desktop",
+            "period": null,
+            "value": 224.5
+          },
+          {
+            "series": "mobile",
+            "period": null,
+            "value": 81.5
+          }
+        ],
         "unique_visitors_30d": [
           {
             "series": "all",
@@ -672,6 +740,40 @@
             "series": "mobile",
             "period": null,
             "value": 200.692504
+          }
+        ],
+        "median_playtime_seconds_30d": [
+          {
+            "series": "all",
+            "period": null,
+            "value": 187.0
+          },
+          {
+            "series": "desktop",
+            "period": null,
+            "value": 342.5
+          },
+          {
+            "series": "mobile",
+            "period": null,
+            "value": 96.25
+          }
+        ],
+        "median_playtime_seconds_60d": [
+          {
+            "series": "all",
+            "period": null,
+            "value": 201.5
+          },
+          {
+            "series": "desktop",
+            "period": null,
+            "value": 356.75
+          },
+          {
+            "series": "mobile",
+            "period": null,
+            "value": 102.0
           }
         ],
         "concurrent_users_avg_30d": [
