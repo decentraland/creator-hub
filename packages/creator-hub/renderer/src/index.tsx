@@ -18,6 +18,7 @@ import { TranslationProvider } from '/@/components/TranslationProvider';
 
 import { AuthProvider } from '/@/components/AuthProvider';
 
+import { AiChatWindow } from '/@/components/AiChatWindow';
 import { HomePage } from '/@/components/HomePage';
 import { ScenesPage } from '/@/components/ScenesPage';
 import { EditorPage } from '/@/components/EditorPage';
@@ -75,78 +76,97 @@ if (import.meta.env.PROD) {
   );
 }
 
-root.render(
-  <React.StrictMode>
-    <StoreProvider store={store}>
-      <TranslationProvider>
-        <ThemeProvider theme={dark}>
-          <main className="Main">
-            <Router>
-              <AuthProvider>
-                <Routes>
-                  <Route
-                    path="/"
-                    element={<HomePage />}
-                  />
-                  <Route
-                    path="/home"
-                    element={<HomePage />}
-                  />
-                  <Route
-                    path="/scenes"
-                    element={<ScenesPage />}
-                  />
-                  <Route
-                    path="/templates"
-                    element={<TemplatesPage />}
-                  />
-                  <Route
-                    path="/collections"
-                    element={<CollectionsPage />}
-                  />
-                  <Route
-                    path="/analytics"
-                    element={<AnalyticsPage />}
-                  />
-                  <Route
-                    path="/analytics/:placeId"
-                    element={<AnalyticsDetailPage />}
-                  />
-                  <Route
-                    path="/manage"
-                    element={<ManagePage />}
-                  />
-                  <Route
-                    path="/learn"
-                    element={<LearnPage />}
-                  />
-                  <Route
-                    path="/learn/videos"
-                    element={<VideosPage />}
-                  />
-                  <Route
-                    path="/learn/docs"
-                    element={<DocsPage />}
-                  />
-                  <Route
-                    path="/more"
-                    element={<MorePage />}
-                  />
-                  <Route
-                    path="/editor"
-                    element={<EditorPage />}
-                  />
-                  <Route
-                    path="/sign-in"
-                    element={<SignInPage />}
-                  />
-                </Routes>
-                <Snackbar />
-              </AuthProvider>
-            </Router>
-          </main>
-        </ThemeProvider>
-      </TranslationProvider>
-    </StoreProvider>
-  </React.StrictMode>,
-);
+// The detached AI chat window (#1504) boots the same bundle with `?view=ai-chat`, but
+// renders only the chat — no router, no app chrome. It keeps no chat store of its own
+// (the store here is just for i18n/theme); it mirrors the main window's state over IPC.
+const isAiChatWindow = new URLSearchParams(window.location.search).get('view') === 'ai-chat';
+
+if (isAiChatWindow) {
+  root.render(
+    <React.StrictMode>
+      <StoreProvider store={store}>
+        <TranslationProvider>
+          <ThemeProvider theme={dark}>
+            <AiChatWindow />
+          </ThemeProvider>
+        </TranslationProvider>
+      </StoreProvider>
+    </React.StrictMode>,
+  );
+} else {
+  root.render(
+    <React.StrictMode>
+      <StoreProvider store={store}>
+        <TranslationProvider>
+          <ThemeProvider theme={dark}>
+            <main className="Main">
+              <Router>
+                <AuthProvider>
+                  <Routes>
+                    <Route
+                      path="/"
+                      element={<HomePage />}
+                    />
+                    <Route
+                      path="/home"
+                      element={<HomePage />}
+                    />
+                    <Route
+                      path="/scenes"
+                      element={<ScenesPage />}
+                    />
+                    <Route
+                      path="/templates"
+                      element={<TemplatesPage />}
+                    />
+                    <Route
+                      path="/collections"
+                      element={<CollectionsPage />}
+                    />
+                    <Route
+                      path="/analytics"
+                      element={<AnalyticsPage />}
+                    />
+                    <Route
+                      path="/analytics/:placeId"
+                      element={<AnalyticsDetailPage />}
+                    />
+                    <Route
+                      path="/manage"
+                      element={<ManagePage />}
+                    />
+                    <Route
+                      path="/learn"
+                      element={<LearnPage />}
+                    />
+                    <Route
+                      path="/learn/videos"
+                      element={<VideosPage />}
+                    />
+                    <Route
+                      path="/learn/docs"
+                      element={<DocsPage />}
+                    />
+                    <Route
+                      path="/more"
+                      element={<MorePage />}
+                    />
+                    <Route
+                      path="/editor"
+                      element={<EditorPage />}
+                    />
+                    <Route
+                      path="/sign-in"
+                      element={<SignInPage />}
+                    />
+                  </Routes>
+                  <Snackbar />
+                </AuthProvider>
+              </Router>
+            </main>
+          </ThemeProvider>
+        </TranslationProvider>
+      </StoreProvider>
+    </React.StrictMode>,
+  );
+}

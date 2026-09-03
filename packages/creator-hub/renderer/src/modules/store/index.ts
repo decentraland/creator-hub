@@ -8,6 +8,7 @@ import logger from 'redux-logger';
 import { captureException } from '@sentry/electron/renderer';
 
 import { createAnalyticsMiddleware } from './analytics/middleware';
+import * as ai from './ai';
 import * as editor from './editor';
 import * as snackbar from './snackbar';
 import * as translations from './translation';
@@ -25,6 +26,7 @@ import * as profiles from './profiles';
 
 export function createRootReducer() {
   return {
+    ai: ai.reducer,
     editor: editor.reducer,
     snackbar: snackbar.reducer,
     translation: translations.reducer,

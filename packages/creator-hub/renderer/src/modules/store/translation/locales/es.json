@@ -85,6 +85,61 @@
           "failed": "Falló"
         }
       }
+    },
+    "ai": {
+      "title": "Asistente IA",
+      "toggle": "Mostrar/ocultar el asistente IA",
+      "pop_out": "Abrir en una ventana separada",
+      "dock": "Volver a acoplar en el editor",
+      "detached_message": "El asistente está abierto en una ventana separada.",
+      "detached_dock": "Traerlo de vuelta aquí",
+      "new_chat": "Nueva conversación",
+      "placeholder": "Pregunta sobre tu escena o describe un cambio…",
+      "send": "Enviar",
+      "stop": "Detener",
+      "thinking": "Pensando…",
+      "empty": "¡Hola! Estoy aquí para ayudarte. Haz preguntas sobre tu escena, pide ayuda con el scripting o dime qué te gustaría construir o cambiar. Puedo inspeccionar tu escena y escribir el código necesario para dar vida a tus ideas.",
+      "billing": "Se ejecuta con tu propia cuenta de {provider}: los mensajes consumen el uso de tu plan, no una asignación gratuita de Creator Hub.",
+      "billing_dismiss": "No mostrar de nuevo",
+      "screenshot_alt": "Captura de pantalla del asistente",
+      "history": {
+        "title": "Historial de chats",
+        "empty": "Aún no hay chats guardados.",
+        "delete": "Eliminar chat",
+        "now": "ahora mismo",
+        "minutes": "hace {n} min",
+        "hours": "hace {n} h",
+        "days": "hace {n} d"
+      },
+      "retry": "Reintentar",
+      "revert": "Deshacer los cambios de la IA",
+      "selection": "Selección: {names}",
+      "selection_clear": "Limpiar",
+      "provider": "Asistente",
+      "provider_signin": "Iniciar sesión",
+      "prompt": {
+        "confirm": "Confirmar",
+        "other_placeholder": "Escribe una respuesta…",
+        "dismissed": "Esta pregunta ya no está activa."
+      },
+      "setup": {
+        "title": "Configura un asistente IA",
+        "description": "El asistente ejecuta una CLI de programación que instalas e inicias sesión. Usa tu propia suscripción, sin clave de API.",
+        "install": "Instálalo:",
+        "signin": "Inicia sesión:",
+        "signin_button": "Iniciar sesión con {provider}",
+        "signin_cancel": "Cancelar inicio de sesión",
+        "signin_starting": "Iniciando sesión…",
+        "signin_browser": "Termina de iniciar sesión en tu navegador y vuelve.",
+        "manual_title": "¿Prefieres la terminal? Instálalo e inicia sesión tú mismo:",
+        "recheck": "Volver a comprobar",
+        "ready": "Listo",
+        "alt_title": "¿Sin CLI? Conecta una herramienta que ya usas",
+        "alt_description": "¿Ya iniciaste sesión en Claude Desktop, la extensión de VS Code u otra herramienta compatible con MCP? Apúntala a esta escena, sin necesidad de CLI. Agrega esto a su configuración MCP:",
+        "alt_copy": "Copiar configuración",
+        "alt_copied": "Copiado",
+        "alt_note": "Solo localhost. La URL y el token cambian cada vez que Creator Hub se reinicia."
+      }
     }
   },
   "scene_list": {
@@ -399,6 +454,21 @@
         },
         "experimental": {
           "label": "Funciones experimentales"
+        },
+        "ai_assistant": {
+          "label": "Asistente de escena con IA",
+          "help": "Ejecuta tu CLI de Claude o Codex con acceso completo a tu equipo, el mismo alcance que tiene en tu terminal. Usa la cuenta con la que ya iniciaste sesión allí, así que cada mensaje consume el uso de tu propio plan, no una asignación gratuita de Creator Hub. Actívalo solo si confías en lo que le pides."
+        },
+        "mcp_server": {
+          "label": "Exponer el servidor MCP del asistente de IA",
+          "help": "Permite que un agente de IA externo a Creator Hub controle la escena abierta. Pega esto en la configuración MCP del agente.",
+          "copy": "Copiar configuración",
+          "copied": "Copiado",
+          "note": "Solo localhost. La URL y el token cambian cada vez que Creator Hub se reinicia, así que tendrás que pegar los últimos aquí."
+        },
+        "ai_api_key": {
+          "label": "Usar mi clave de API para el asistente de IA",
+          "help": "Cobra el asistente con la clave de API de tu entorno (ANTHROPIC_API_KEY / OPENAI_API_KEY) en lugar de tu suscripción de CLI. Creator Hub nunca almacena la clave. Desactivado por defecto."
         },
         "gui_editor": {
           "toggle": "Editor de UI",
