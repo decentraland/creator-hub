@@ -4,8 +4,8 @@ import { fireEvent, render } from '@testing-library/react';
 import { FLOW_DIRECTIONS } from '../flow';
 import { FlowField } from './FlowField';
 
-const ABSOLUTE_CELL = 0;
-const ROW_CELL = 3;
+const FREE_CELL = 0;
+const COLUMN_CELL = 1;
 
 function renderField(value: Record<string, unknown> | null) {
   const onPatch = vi.fn();
@@ -19,11 +19,11 @@ function renderField(value: Record<string, unknown> | null) {
 }
 
 describe('when the Flow selector has focus', () => {
-  it('should be one tab stop, on the selected cell', () => {
+  it('should be one tab stop, on the selected (Free) cell', () => {
     const { group } = renderField({});
     const stops = [...group.children].map(cell => cell.getAttribute('tabindex'));
 
-    expect(stops).toEqual(['-1', '-1', '-1', '0', '-1']);
+    expect(stops).toEqual(['0', '-1', '-1', '-1', '-1']);
   });
 
   it('should move the selection with the arrow keys', () => {
@@ -31,19 +31,20 @@ describe('when the Flow selector has focus', () => {
 
     fireEvent.keyDown(group, { key: 'ArrowRight' });
 
-    expect(onPatch).toHaveBeenCalledWith({ flexDirection: FLOW_DIRECTIONS['row-reverse'] });
-    expect(document.activeElement).toBe(group.children[ROW_CELL + 1]);
+    expect(onPatch).toHaveBeenCalledWith({ flexDirection: FLOW_DIRECTIONS.column });
+    expect(document.activeElement).toBe(group.children[COLUMN_CELL]);
   });
 });
 
-describe('when picking the absolute cell', () => {
-  it('should anchor the node to the leading edges, not bake its measured offset', () => {
-    const { group, onPatch } = renderField({});
+describe('when picking the Free cell', () => {
+  it('clears flexDirection and leaves the node’s positionType untouched', () => {
+    const { group, onPatch } = renderField({ flexDirection: FLOW_DIRECTIONS.column });
 
-    fireEvent.click(group.children[ABSOLUTE_CELL]);
+    fireEvent.click(group.children[FREE_CELL]);
 
-    expect(onPatch).toHaveBeenCalledWith(
-      expect.objectContaining({ positionTop: 0, positionLeft: 0 }),
-    );
+    const patch = onPatch.mock.calls[0][0] as Record<string, unknown>;
+    expect('flexDirection' in patch).toBe(true);
+    expect(patch.flexDirection).toBeUndefined();
+    expect(patch).not.toHaveProperty('positionType');
   });
 });

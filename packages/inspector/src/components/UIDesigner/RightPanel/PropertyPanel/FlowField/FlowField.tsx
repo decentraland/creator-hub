@@ -8,13 +8,14 @@ import './FlowField.css';
 interface FlowFieldProps {
   value: Record<string, unknown> | null;
   onPatch: (patch: Record<string, unknown>) => void;
+  onFree?: () => void;
 }
 
 const CELLS: { value: FlowValue; label: string; hint: string }[] = [
   {
-    value: 'absolute',
-    label: 'Absolute',
-    hint: 'Absolute — pinned at its own Top/Left offsets, outside the parent’s layout',
+    value: 'free',
+    label: 'Free',
+    hint: 'Free — place children at their own positions instead of flowing them',
   },
   {
     value: 'column',
@@ -40,12 +41,13 @@ const CELLS: { value: FlowValue; label: string; hint: string }[] = [
 
 const CELL_VALUES = CELLS.map(cell => cell.value);
 
-export const FlowField: React.FC<FlowFieldProps> = ({ value, onPatch }) => {
+export const FlowField: React.FC<FlowFieldProps> = ({ value, onPatch, onFree }) => {
   const current = flowValue(value);
   const wrapping = isWrapping(value);
 
   const pick = (next: FlowValue) => {
-    const patch = flowPatch(next, current, value);
+    if (next === 'free' && onFree) return onFree();
+    const patch = flowPatch(next, current);
     if (patch) onPatch(patch);
   };
 
