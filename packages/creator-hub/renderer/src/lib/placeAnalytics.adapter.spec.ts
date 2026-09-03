@@ -253,7 +253,7 @@ describe('toRetention', () => {
     );
   });
 
-  it('should read the weekly cohort series as percentages over 8 weeks', () => {
+  it('should read the weekly cohort series as percentages, one point per exported week', () => {
     const { day7ByCohortWeek } = toRetention(FULL, LAST_60_DAYS);
 
     expect(day7ByCohortWeek).toHaveLength(8);
