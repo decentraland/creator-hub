@@ -69,7 +69,7 @@
               {
                 "path": "{assetPath}/Seat.ts",
                 "priority": 0,
-                "layout": "{\"params\":{\"hoverText\":{\"type\":\"string\",\"optional\":true,\"value\":\"Sit Here\",\"tooltip\":\"Text shown when the player points at the seat.\"},\"takenMessage\":{\"type\":\"string\",\"optional\":true,\"value\":\"Seat is taken\",\"tooltip\":\"Message shown when trying to sit while every spot is taken. Leave empty for no message.\"}},\"actions\":[{\"methodName\":\"sit\",\"description\":\"Sits the player on the nearest free sit spot, or shows the taken message if every spot is taken\",\"params\":{}},{\"methodName\":\"markAsFree\",\"description\":\"Marks every sit spot of this seat as free\",\"params\":{}}]}"
+                "layout": "{\"params\":{\"hoverText\":{\"type\":\"string\",\"optional\":true,\"value\":\"Sit Here\",\"tooltip\":\"Text shown when the player points at the seat.\"},\"takenMessage\":{\"type\":\"string\",\"optional\":true,\"value\":\"Seat is taken\",\"tooltip\":\"Text shown as the hover hint, and as an on-screen message when the Sit action is called, while every spot is taken. Leave empty for no message.\"}},\"actions\":[{\"methodName\":\"sit\",\"description\":\"Sits the player on the nearest free sit spot, or shows the taken message if every spot is taken\",\"params\":{}},{\"methodName\":\"markAsFree\",\"description\":\"Marks every sit spot of this seat as free\",\"params\":{}}]}"
               }
             ]
           }

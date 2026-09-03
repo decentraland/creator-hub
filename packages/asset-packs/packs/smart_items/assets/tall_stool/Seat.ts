@@ -4,6 +4,7 @@ import {
   Font,
   InputAction,
   Name,
+  PointerEvents,
   PointerFilterMode,
   pointerEventsSystem,
   TextAlignMode,
@@ -19,11 +20,15 @@ import { movePlayerTo, triggerEmote } from '~system/RestrictedActions';
 
 const SITTING_EMOTES = ['sittingChair1', 'sittingChair2'];
 const STAND_UP_DISTANCE = 1.5;
+const ARRIVE_TIMEOUT_SECONDS = 3;
 const MESSAGE_SECONDS = 2;
 
 export class Seat {
   private seats: Entity[] = [];
   private sittingOn: Entity | null = null;
+  private seated: boolean = false;
+  private arriveTimer: number = 0;
+  private currentHoverText: string = '';
   private messageEntity: Entity | null = null;
   private messageTimer: number = 0;
 
@@ -33,7 +38,7 @@ export class Seat {
    * when the player who sat down stands up and walks away.
    *
    * @param hoverText - Text shown when the player points at the seat.
-   * @param takenMessage - Message shown when trying to sit while every spot is taken. Leave empty for no message.
+   * @param takenMessage - Text shown as the hover hint, and as an on-screen message when the Sit action is called, while every spot is taken. Leave empty for no message.
    */
   constructor(
     public src: string, // DO NOT REMOVE
@@ -74,6 +79,7 @@ export class Seat {
       }
     }
 
+    this.currentHoverText = this.hoverText;
     pointerEventsSystem.onPointerDown(
       {
         entity: this.entity,
@@ -83,7 +89,9 @@ export class Seat {
           maxDistance: 10,
         },
       },
-      () => this.sit(),
+      () => {
+        if (this.hasFreeSeat()) this.sit();
+      },
     );
   }
 
@@ -99,18 +107,8 @@ export class Seat {
       }
     }
 
-    // Only the client of the player who sat down frees the spot, once that player
-    // stands up and moves away. Other players coming and going must not free it.
-    if (this.sittingOn !== null) {
-      const player = Transform.getOrNull(engine.PlayerEntity);
-      if (
-        player &&
-        Vector3.distance(player.position, getWorldPosition(this.sittingOn)) > STAND_UP_DISTANCE
-      ) {
-        this.setSeatState(this.sittingOn, 'Free');
-        this.sittingOn = null;
-      }
-    }
+    this.trackSitter(dt);
+    this.refreshHoverText();
   }
 
   /**
@@ -121,39 +119,29 @@ export class Seat {
     const player = Transform.getOrNull(engine.PlayerEntity);
     if (!player) return;
 
-    if (this.sittingOn !== null) {
-      this.setSeatState(this.sittingOn, 'Free');
-      this.sittingOn = null;
-    }
-
-    const { States } = getComponents(engine);
-    let nearest: Entity | null = null;
-    let nearestDistance = Infinity;
-    for (const seat of this.seats) {
-      if (States.getOrNull(seat)?.currentValue === 'Taken') continue;
-      const distance = Vector3.distance(player.position, getWorldPosition(seat));
-      if (distance < nearestDistance) {
-        nearestDistance = distance;
-        nearest = seat;
-      }
-    }
-    if (nearest === null) {
+    const target = this.nearestFreeSeat(player.position);
+    if (target === null) {
       this.showMessage();
       return;
+    }
+    if (this.sittingOn !== null && this.sittingOn !== target) {
+      this.setSeatState(this.sittingOn, 'Free');
     }
 
     // The avatar must be moved before the sitting emote plays: in the reverse
     // order the movement can cancel the emote and leave the avatar standing.
-    const position = getWorldPosition(nearest);
-    const forward = Vector3.rotate(Vector3.Forward(), getWorldRotation(nearest));
+    const position = getWorldPosition(target);
+    const forward = Vector3.rotate(Vector3.Forward(), getWorldRotation(target));
     void movePlayerTo({
       newRelativePosition: position,
       avatarTarget: Vector3.add(position, forward),
     });
-    this.setSeatState(nearest, 'Taken');
+    this.setSeatState(target, 'Taken');
     const emote = SITTING_EMOTES[Math.floor(Math.random() * SITTING_EMOTES.length)];
     void triggerEmote({ predefinedEmote: emote });
-    this.sittingOn = nearest;
+    this.sittingOn = target;
+    this.seated = false;
+    this.arriveTimer = ARRIVE_TIMEOUT_SECONDS;
   }
 
   /**
@@ -165,6 +153,76 @@ export class Seat {
       this.setSeatState(seat, 'Free');
     }
     this.sittingOn = null;
+    this.seated = false;
+  }
+
+  // Only the client of the player who sat down frees the spot, once that player
+  // stands up and moves away. Other players coming and going must not free it.
+  private trackSitter(dt: number) {
+    if (this.sittingOn === null) return;
+    const player = Transform.getOrNull(engine.PlayerEntity);
+    if (!player) return;
+    const distance = Vector3.distance(player.position, getWorldPosition(this.sittingOn));
+
+    // movePlayerTo takes a few frames to land, so until the avatar has arrived the
+    // player is still where they clicked from, and a stand-up check would free the
+    // spot right away. If the avatar never arrives, the move was rejected.
+    if (!this.seated) {
+      if (distance <= STAND_UP_DISTANCE) {
+        this.seated = true;
+        return;
+      }
+      this.arriveTimer -= dt;
+      if (this.arriveTimer <= 0) this.standUp();
+      return;
+    }
+
+    if (distance > STAND_UP_DISTANCE) this.standUp();
+  }
+
+  private standUp() {
+    if (this.sittingOn !== null) {
+      this.setSeatState(this.sittingOn, 'Free');
+    }
+    this.sittingOn = null;
+    this.seated = false;
+  }
+
+  // The spot the local player sits on counts as available to them, so clicking
+  // the seat again re-seats them instead of reporting it as taken.
+  private isAvailable(seat: Entity): boolean {
+    if (seat === this.sittingOn) return true;
+    const { States } = getComponents(engine);
+    return States.getOrNull(seat)?.currentValue !== 'Taken';
+  }
+
+  private hasFreeSeat(): boolean {
+    return this.seats.some(seat => this.isAvailable(seat));
+  }
+
+  private nearestFreeSeat(from: Vector3): Entity | null {
+    let nearest: Entity | null = null;
+    let nearestDistance = Infinity;
+    for (const seat of this.seats) {
+      if (!this.isAvailable(seat)) continue;
+      const distance = Vector3.distance(from, getWorldPosition(seat));
+      if (distance < nearestDistance) {
+        nearestDistance = distance;
+        nearest = seat;
+      }
+    }
+    return nearest;
+  }
+
+  private refreshHoverText() {
+    const text = this.hasFreeSeat() || !this.takenMessage ? this.hoverText : this.takenMessage;
+    if (text === this.currentHoverText) return;
+    this.currentHoverText = text;
+    const pointerEvents = PointerEvents.getMutableOrNull(this.entity);
+    if (!pointerEvents) return;
+    for (const event of pointerEvents.pointerEvents) {
+      if (event.eventInfo) event.eventInfo.hoverText = text;
+    }
   }
 
   private setSeatState(seat: Entity, next: string) {
