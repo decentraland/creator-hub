@@ -364,6 +364,15 @@ let sceneOffset: Vector3 = Vector3.Zero();
 let picker: Entity | null = null;
 let rayTs = 0;
 
+// Hover-hint raycast (#1476): a dedicated picker + timestamp so a per-frame hover
+// probe never clobbers the click-pick raycast above. Throttled by frame count.
+let hoverPicker: Entity | null = null;
+let hoverTs = 0;
+let hoverPending = false;
+let lastHoverEntity = 0;
+let hoverThrottle = 0;
+const HOVER_RAYCAST_EVERY = 5;
+
 interface DragState {
   mode: 'translate' | 'rotate' | 'scale';
   // 'xyz' = the scale gizmo's center cube (uniform scale on all three axes);
@@ -624,6 +633,8 @@ function isSupportedMode(mode: GizmoMode): boolean {
 export function setupGizmo(): void {
   picker = engine.addEntity();
   Transform.create(picker);
+  hoverPicker = engine.addEntity();
+  Transform.create(hoverPicker);
   buildGizmo();
   // Initialize per-mode handle visibility: buildGizmo creates EVERY handle group
   // visible (scale One), so without this the first anchored frame would show all
@@ -1294,6 +1305,41 @@ function gizmoSystemInner(): void {
     }
   }
 
+  // Hover hint (#1476): with editing OFF (Interact toggled ON), report the scene
+  // entity under the pointer so the host can surface its PointerEvents hoverText
+  // (e.g. "Press E"). The engine's own hover-hint HUD isn't mounted in the editor.
+  // Throttled, on a dedicated picker so it never clobbers the click-pick raycast.
+  if (!editingEnabled) {
+    hoverThrottle = (hoverThrottle + 1) % HOVER_RAYCAST_EVERY;
+    if (!hoverPending && hoverPicker !== null && hoverThrottle === 0) {
+      const ray = pointerRay();
+      if (ray !== null) {
+        Transform.createOrReplace(hoverPicker, { position: { ...ray.origin } });
+        hoverTs += 1;
+        Raycast.createOrReplace(hoverPicker, {
+          timestamp: hoverTs,
+          maxDistance: 1000,
+          queryType: RaycastQueryType.RQT_QUERY_ALL,
+          continuous: false,
+          collisionMask: PICK_OR_HANDLE_MASK,
+          direction: { $case: 'globalDirection', globalDirection: { ...ray.dir } },
+        });
+        hoverPending = true;
+      }
+    }
+    if (hoverPending && hoverPicker !== null) {
+      const result = RaycastResult.getOrNull(hoverPicker);
+      if (result !== null && result.timestamp === hoverTs) {
+        hoverPending = false;
+        emitHover(result);
+      }
+    }
+  } else if (lastHoverEntity !== 0) {
+    // Editing re-enabled → clear any hint the host is still showing.
+    lastHoverEntity = 0;
+    bus.postToPage({ kind: 'hover', entity: 0 });
+  }
+
   // Drive / finish an active drag.
   if (drag !== null) {
     if (up) endDrag();
@@ -1306,19 +1352,45 @@ function readModifiers(): { shift: boolean; ctrl: boolean } {
   return { shift: false, ctrl: false };
 }
 
+/** Raycast hits as candidate scene-entity ids, NEAREST first: real entities only
+ * (id ≥ 512, minus the probe/gizmo/reserved range and our own gizmo handles, which
+ * are CL_POINTER hits but not scene entities). Spawn markers stay in — callers treat
+ * them differently (pick selects the spawn; hover skips it). Shared by emitPick +
+ * emitHover so both run the same hit pipeline. */
+function sceneHitIds(result: {
+  hits: readonly { readonly entityId?: number; readonly length?: number }[];
+}): number[] {
+  return [...result.hits]
+    .filter(h => h.entityId !== undefined)
+    .sort((a, b) => (a.length ?? 0) - (b.length ?? 0))
+    .map(h => Number(h.entityId))
+    .filter(id => id >= 512 && !isGizmoHandle(id));
+}
+
+// Report the nearest scene entity under the pointer for the hover hint (#1476).
+// Deduped: only posts when the hovered entity changes. 0 = pointer over nothing
+// (or over a spawn marker, which isn't a hoverable item).
+function emitHover(result: {
+  hits: readonly { readonly entityId?: number; readonly length?: number }[];
+}): void {
+  let hovered = 0;
+  for (const id of sceneHitIds(result)) {
+    if (getSpawnMarkerTarget(id) !== null) continue;
+    hovered = id;
+    break;
+  }
+  if (hovered !== lastHoverEntity) {
+    lastHoverEntity = hovered;
+    bus.postToPage({ kind: 'hover', entity: hovered });
+  }
+}
+
 /** Emit a pick from a raycast result (nearest authored hit, id ≥ 512). */
 function emitPick(
   result: { hits: readonly { readonly entityId?: number; readonly length?: number }[] },
   mods: { shift: boolean; ctrl: boolean },
 ): void {
-  const ordered = [...result.hits]
-    .filter(h => h.entityId !== undefined)
-    .sort((a, b) => (a.length ?? 0) - (b.length ?? 0));
-  for (const h of ordered) {
-    const id = Number(h.entityId);
-    if (id < 512) continue; // skip probe/gizmo/reserved
-    // Skip our own gizmo handles (they're CL_POINTER hits but not scene entities).
-    if (isGizmoHandle(id)) continue;
+  for (const id of sceneHitIds(result)) {
     // A spawn-point marker (avatar / camera target) — select that spawn point,
     // not a scene entity (#2). Spawn points are scene metadata, handled separately.
     const spawn = getSpawnMarkerTarget(id);

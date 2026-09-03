@@ -5,7 +5,6 @@ import {
   BiSave,
   BiBadgeCheck,
   BiVideo,
-  BiWalk,
   BiChevronDown,
   BiPlay,
   BiPause,
@@ -190,7 +189,7 @@ const Toolbar = withSdk(({ sdk }) => {
             value={cameraMode}
             trigger={
               <>
-                {cameraMode === 'free' ? <BiVideo /> : <BiWalk />}
+                <BiVideo />
                 <span className="CameraModeLabel">{cameraMode === 'free' ? 'Free' : 'Player'}</span>
                 <BiChevronDown className="CameraModeChevron" />
               </>

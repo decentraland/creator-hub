@@ -131,6 +131,7 @@ const SingleEntityInspector = withSdk<{ entity: Entity | null }>(({ sdk, entity 
     () => [
       { name: sdk.components.GltfContainer.componentName, component: GltfInspector },
       { name: sdk.components.Placeholder.componentName, component: PlaceholderInspector },
+      { name: sdk.components.Script.componentName, component: ScriptInspector },
       {
         name: sdk.components.VisibilityComponent.componentName,
         component: VisibilityComponentInspector,
@@ -228,7 +229,6 @@ const SingleEntityInspector = withSdk<{ entity: Entity | null }>(({ sdk, entity 
         name: sdk.components.GltfNodeModifiers.componentName,
         component: GltfNodeModifiersInspector,
       },
-      { name: sdk.components.Script.componentName, component: ScriptInspector },
       {
         name: sdk.components.ParticleSystem.componentName,
         component: ParticleSystemInspector,

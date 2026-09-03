@@ -129,7 +129,8 @@
     "report_an_issue": "报告问题",
     "user_menu": {
       "sign_in": "登录",
-      "sign_out": "登出"
+      "sign_out": "登出",
+      "account_tooltip": "账户"
     },
     "create": {
       "label": "创建",
@@ -137,6 +138,7 @@
       "import_scene": "导入场景"
     },
     "logo_menu": {
+      "main_menu_tooltip": "主菜单",
       "about": "关于 Creator Hub",
       "check_for_updates": "检查更新",
       "settings": "设置",

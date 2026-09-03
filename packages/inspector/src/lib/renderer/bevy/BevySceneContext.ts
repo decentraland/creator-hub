@@ -106,6 +106,12 @@ export class BevySceneContext {
   // here so it decodes off the CRDT stream and exposes its id + schema.
   readonly Name = components.Name(this.engine);
 
+  // PointerEvents (core::PointerEvents) — registered so it DECODES off the CRDT
+  // stream, giving the hover-hint bridge (#1476) read access to each entity's
+  // hoverText/InputAction. Deliberately NOT in #registeredComponents: it's read
+  // for the hint only, never forwarded to the engine (the scene authors it).
+  readonly PointerEvents = components.PointerEvents(this.engine);
+
   // Engine-bound operations + editor components, so the reverse-channel handler
   // can apply picks/edits against this renderer's engine just like Babylon and
   // Three do — the shared handler needs this exact surface.
