@@ -128,7 +128,7 @@ export type PlaceEngagementMetrics = {
  *
  * The value is the metric-name suffix, so a projection composes the name
  * directly (`unique_visitors_${window}`). It is not a date filter: 30d and 60d
- * are separate metrics, and the weekly series always carry their full ~8 weeks.
+ * are separate metrics, and the weekly series always carry their full 16 weeks.
  */
 export enum MetricsWindow {
   LAST_30_DAYS = '30d',
