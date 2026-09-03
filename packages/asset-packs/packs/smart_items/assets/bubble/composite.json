@@ -96,6 +96,22 @@
       }
     },
     {
+      "name": "asset-packs::Script",
+      "data": {
+        "0": {
+          "json": {
+            "value": [
+              {
+                "path": "{assetPath}/Showable.ts",
+                "priority": 0,
+                "layout": "{\"params\":{},\"actions\":[{\"methodName\":\"show\",\"description\":\"Shows the item\",\"params\":{}},{\"methodName\":\"hide\",\"description\":\"Hides the item\",\"params\":{}},{\"methodName\":\"toggle\",\"description\":\"Shows the item if it is hidden, or hides it if it is shown\",\"params\":{}}]}"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
       "name": "core::VisibilityComponent",
       "data": {
         "0": {
@@ -113,14 +129,20 @@
             "id": "{self}",
             "value": [
               {
-                "name": "Hide",
-                "type": "set_visibility",
-                "jsonPayload": "{\"visible\":false,\"collider\":0}"
+                "type": "call_script_method",
+                "name": "Show",
+                "jsonPayload": "{\"scriptPath\":\"{assetPath}/Showable.ts\",\"methodName\":\"show\",\"params\":{}}"
               },
               {
-                "name": "Show",
-                "type": "set_visibility",
-                "jsonPayload": "{\"visible\":true,\"collider\":0}"
+                "type": "call_script_method",
+                "name": "Hide",
+                "jsonPayload": "{\"scriptPath\":\"{assetPath}/Showable.ts\",\"methodName\":\"hide\",\"params\":{}}"
+              },
+              {
+                "type": "call_script_method",
+                "name": "Show or Hide",
+                "jsonPayload": "{\"scriptPath\":\"{assetPath}/Showable.ts\",\"methodName\":\"toggle\",\"params\":{}}",
+                "default": true
               }
             ]
           }

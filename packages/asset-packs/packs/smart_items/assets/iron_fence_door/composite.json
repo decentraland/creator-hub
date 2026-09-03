@@ -12,6 +12,22 @@
       }
     },
     {
+      "name": "asset-packs::Script",
+      "data": {
+        "0": {
+          "json": {
+            "value": [
+              {
+                "path": "{assetPath}/Door.ts",
+                "priority": 0,
+                "layout": "{\"params\":{\"openAnimation\":{\"type\":\"string\",\"optional\":true,\"value\":\"open\",\"tooltip\":\"Name of the animation clip in the door's model that plays when it opens.\"},\"closeAnimation\":{\"type\":\"string\",\"optional\":true,\"value\":\"close\",\"tooltip\":\"Name of the animation clip in the door's model that plays when it closes.\"},\"openSound\":{\"type\":\"string\",\"optional\":true,\"value\":\"sound.mp3\",\"tooltip\":\"Name of an audio file inside this smart item's folder (e.g. open.mp3), played when the door opens. Leave empty for no sound.\"},\"closeSound\":{\"type\":\"string\",\"optional\":true,\"value\":\"sound.mp3\",\"tooltip\":\"Name of an audio file inside this smart item's folder (e.g. close.mp3), played when the door closes. Leave empty for no sound.\"},\"hoverText\":{\"type\":\"string\",\"optional\":true,\"value\":\"Open / Close\",\"tooltip\":\"Text shown when the player points at the door.\"},\"idleAnimation\":{\"type\":\"string\",\"optional\":true,\"value\":\"main\",\"tooltip\":\"Name of an animation clip to play once when the scene loads, to set the door's resting pose. Leave empty for none.\"}},\"actions\":[{\"methodName\":\"open\",\"description\":\"Opens the door\",\"params\":{}},{\"methodName\":\"close\",\"description\":\"Closes the door\",\"params\":{}},{\"methodName\":\"toggle\",\"description\":\"Opens the door if it is closed, or closes it if it is open\",\"params\":{}}]}"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
       "name": "asset-packs::Actions",
       "data": {
         "0": {
@@ -19,173 +35,22 @@
             "id": "{self}",
             "value": [
               {
+                "type": "call_script_method",
                 "name": "Open",
-                "type": "set_state",
-                "jsonPayload": "{ \"state\": \"Open\" }",
-                "allowedInBasicView": true
+                "jsonPayload": "{\"scriptPath\":\"{assetPath}/Door.ts\",\"methodName\":\"open\",\"params\":{}}"
               },
               {
+                "type": "call_script_method",
                 "name": "Close",
-                "type": "set_state",
-                "jsonPayload": "{ \"state\": \"Closed\" }",
-                "allowedInBasicView": true
+                "jsonPayload": "{\"scriptPath\":\"{assetPath}/Door.ts\",\"methodName\":\"close\",\"params\":{}}"
               },
               {
+                "type": "call_script_method",
                 "name": "Open or Close",
-                "type": "set_state",
-                "jsonPayload": "{ \"state\": \"Toggle\" }",
-                "allowedInBasicView": true
-              },
-              {
-                "name": "Play Sound",
-                "type": "play_sound",
-                "jsonPayload": "{ \"src\": \"{assetPath}/sound.mp3\" }"
-              },
-              {
-                "name": "Play Open Animation",
-                "type": "play_animation",
-                "jsonPayload": "{ \"animation\": \"open\" }"
-              },
-              {
-                "name": "Play Close Animation",
-                "type": "play_animation",
-                "jsonPayload": "{ \"animation\": \"close\" }"
-              },
-              {
-                "name": "Play Idle Animation",
-                "type": "play_animation",
-                "jsonPayload": "{ \"animation\": \"main\" }"
+                "jsonPayload": "{\"scriptPath\":\"{assetPath}/Door.ts\",\"methodName\":\"toggle\",\"params\":{}}",
+                "default": true
               }
             ]
-          }
-        }
-      }
-    },
-    {
-      "name": "asset-packs::Triggers",
-      "data": {
-        "0": {
-          "json": {
-            "value": [
-              {
-                "type": "on_input_action",
-                "conditions": [],
-                "actions": [
-                  {
-                    "id": "{self:asset-packs::Actions}",
-                    "name": "Open or Close"
-                  }
-                ],
-                "basicViewId": "trigger-when-clicked"
-              },
-              {
-                "type": "on_state_change",
-                "conditions": [
-                  {
-                    "id": "{self:asset-packs::States}",
-                    "type": "when_state_is",
-                    "value": "Open"
-                  }
-                ],
-                "actions": [
-                  {
-                    "id": "{self:asset-packs::Actions}",
-                    "name": "Play Open Animation"
-                  },
-                  {
-                    "id": "{self:asset-packs::Actions}",
-                    "name": "Play Sound"
-                  }
-                ],
-                "basicViewId": "trigger-when-opened"
-              },
-              {
-                "type": "on_state_change",
-                "conditions": [
-                  {
-                    "id": "{self:asset-packs::States}",
-                    "type": "when_state_is",
-                    "value": "Closed"
-                  }
-                ],
-                "actions": [
-                  {
-                    "id": "{self:asset-packs::Actions}",
-                    "name": "Play Close Animation"
-                  },
-                  {
-                    "id": "{self:asset-packs::Actions}",
-                    "name": "Play Sound"
-                  }
-                ],
-                "basicViewId": "trigger-when-closed"
-              },
-              {
-                "type": "on_spawn",
-                "actions": [
-                  {
-                    "id": "{self:asset-packs::Actions}",
-                    "name": "Play Idle Animation"
-                  }
-                ]
-              },
-              {
-                "type": "on_state_change",
-                "operation": "and",
-                "conditions": [
-                  {
-                    "id": "{self:asset-packs::States}",
-                    "type": "when_state_is",
-                    "value": "Toggle"
-                  },
-                  {
-                    "id": "{self:asset-packs::States}",
-                    "type": "when_previous_state_is",
-                    "value": "Open"
-                  }
-                ],
-                "actions": [
-                  {
-                    "id": "{self:asset-packs::Actions}",
-                    "name": "Close"
-                  }
-                ]
-              },
-              {
-                "type": "on_state_change",
-                "operation": "and",
-                "conditions": [
-                  {
-                    "id": "{self:asset-packs::States}",
-                    "type": "when_state_is",
-                    "value": "Toggle"
-                  },
-                  {
-                    "id": "{self:asset-packs::States}",
-                    "type": "when_previous_state_is",
-                    "value": "Closed"
-                  }
-                ],
-                "actions": [
-                  {
-                    "id": "{self:asset-packs::Actions}",
-                    "name": "Open"
-                  }
-                ]
-              }
-            ]
-          }
-        }
-      }
-    },
-    {
-      "name": "asset-packs::States",
-      "data": {
-        "0": {
-          "json": {
-            "id": "{self}",
-            "value": ["Open", "Closed", "Toggle"],
-            "defaultValue": "Closed"
           }
         }
       }
@@ -195,63 +60,7 @@
       "data": {
         "0": {
           "json": {
-            "value": ["core::Animator", "core::AudioSource", "asset-packs::States"]
-          }
-        }
-      }
-    },
-    {
-      "name": "core::PointerEvents",
-      "data": {
-        "0": {
-          "json": {
-            "pointerEvents": [
-              {
-                "eventType": 1,
-                "eventInfo": {
-                  "button": 1,
-                  "hoverText": "Open / Close",
-                  "maxDistance": 10,
-                  "showFeedback": true
-                }
-              }
-            ]
-          }
-        }
-      }
-    },
-    {
-      "name": "inspector::Config",
-      "data": {
-        "0": {
-          "json": {
-            "isBasicViewEnabled": true,
-            "componentName": "Door",
-            "fields": [
-              {
-                "name": "Hover Text",
-                "type": "core::PointerEvents"
-              },
-              {
-                "name": "When Clicked",
-                "type": "asset-packs::Triggers",
-                "basicViewId": "trigger-when-clicked"
-              },
-              {
-                "name": "When Opened",
-                "type": "asset-packs::Triggers",
-                "basicViewId": "trigger-when-opened"
-              },
-              {
-                "name": "When Closed",
-                "type": "asset-packs::Triggers",
-                "basicViewId": "trigger-when-closed"
-              }
-            ],
-            "helpTooltip": {
-              "text": "Configure the door's hover text and actions. Set what happens when the door is clicked, opened, or closed. The door can be toggled open and closed."
-            },
-            "version": 1
+            "componentIds": ["asset-packs::States"]
           }
         }
       }
