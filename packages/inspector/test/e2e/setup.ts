@@ -29,9 +29,7 @@ beforeAll(async () => {
 
   browser = await chromium.launch({
     headless: process.env.CI ? true : false,
-    // slowMo throttles each action to stabilise runs against races; lowered from 100 (CI) to 50
-    // to cut wall-clock. If CI e2e turns flaky, raise this back first (e.g. process.env.CI ? 100 : 50).
-    slowMo: 50,
+    slowMo: process.env.CI ? 100 : 50, // Increase slowMo for CI
     timeout: 60_000, // slow shared runners can exceed the 30s launch default
     args: [
       '--disable-dev-shm-usage',

@@ -36,8 +36,25 @@ jobs:
       - name: install Playwright browsers
         run: npx playwright install
 
-      # The UI Designer code-mode e2e needs the wasm parser that --production drops.
+      # The UI Designer code-mode e2e needs the wasm parser that --production drops, so
+      # e2e rebuilds a dev bundle (~74s) instead of reusing download-build's production
+      # one. Cache that dev bundle so re-runs and PRs that don't touch inspector/asset-packs
+      # source skip the rebuild. The key MUST cover every input that feeds the bundle: a
+      # miss is cheap (rebuild below), but a STALE hit would silently serve wrong code to
+      # e2e. build.js inlines all assets (dataurl), so bundle.js + bundle.css are the
+      # complete output set — no hashed asset files to miss (unlike the past bundle.css bug).
+      - name: Cache inspector dev bundle
+        id: inspector-dev-bundle
+        uses: actions/cache@v4
+        with:
+          path: |
+            packages/inspector/public/bundle.js
+            packages/inspector/public/bundle.css
+          # Single line on purpose: newlines inside a ${{ }} expression are brittle.
+          key: inspector-e2e-devbundle-${{ runner.os }}-${{ hashFiles('packages/inspector/src/**', 'packages/inspector/build.js', 'packages/inspector/bevy-agent-realm.js', 'packages/inspector/package.json', 'packages/asset-packs/src/**', 'packages/asset-packs/package.json', 'package-lock.json') }}
+
       - name: build inspector
+        if: steps.inspector-dev-bundle.outputs.cache-hit != 'true'
         run: cd packages/inspector && node ./build.js
 
       - name: start inspector server

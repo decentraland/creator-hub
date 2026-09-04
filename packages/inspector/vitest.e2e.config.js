@@ -21,21 +21,16 @@ export default defineConfig({
         // across files until the OS killed it mid-run in CI ("Worker exited
         // unexpectedly"); a fresh process per file reclaims that memory.
         singleFork: false,
-        // Bound how many spec files (each a fresh fork with its own Chromium +
-        // Babylon) run at once. The old fully-serial design existed to avoid N
-        // concurrent browsers OOM-ing the runner; capping the pool gets most of
-        // the wall-clock win while keeping peak memory bounded — unlike
-        // singleFork, memory is still reclaimed as each file's fork exits. CI
-        // runners are memory-constrained (macos-latest: 3 vCPU / ~7GB), so cap
-        // at 2 there; locally use more.
-        maxForks: process.env.CI ? 2 : 4,
-        minForks: 1,
       },
     },
-    // Run spec files concurrently, bounded by maxForks above. Was fully serial
-    // (fileParallelism: false); maxForks now caps the concurrent-browser count
-    // that the serial design was guarding against.
-    fileParallelism: true,
+    // Run spec files one at a time so only one headless Chromium is alive at
+    // once. Running two concurrently was tried and reverted: the CI runner is
+    // CPU-bound (macos-latest: 3 vCPU), so two browsers just contend — each
+    // action ran ~40% slower and the drag/drop-heavy Hierarchy specs raced
+    // (entities not settled → "Could not find entity"), for almost no
+    // wall-clock win. Speed comes from the lower per-action slowMo instead
+    // (test/e2e/setup.ts), which is safe precisely because runs stay serial.
+    fileParallelism: false,
   },
   resolve: {
     alias: {
