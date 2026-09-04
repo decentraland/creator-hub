@@ -47,10 +47,15 @@ export type OptimizeOptions = {
   textures: TextureOptions;
 };
 
+// totalBytes covers the models AND the texture files they reference, so a scene whose textures
+// already live beside its GLBs isn't reported as a fraction of its real weight.
 export type OptimizeScanResult = {
   glbCount: number;
   totalBytes: number;
+  glbBytes: number;
+  textureBytes: number; // external texture files referenced by the GLBs, each counted once
   embeddedTextureCount: number;
+  externalTextureCount: number;
   hasBackup: boolean; // a prior run's backup exists, so revert is available
 };
 
@@ -64,13 +69,21 @@ export type OptimizeFileResult = {
   texturesDeduped: number;
 };
 
+// bytesBefore/bytesAfter describe the scene's model+texture footprint, not just the GLBs:
+// before = GLB bytes + superseded original textures the run removed; after = GLB bytes +
+// sidecar textures the run wrote. Counting only GLBs made a run that moved textures out of
+// the models look like an 85% saving when the deploy folder had actually grown.
 export type OptimizeResult = {
   glbsProcessed: number;
   glbsChanged: number;
   texturesExtracted: number;
   texturesDeduped: number;
+  // Original external textures superseded by a sidecar and moved into the backup.
+  texturesRemoved: number;
   bytesBefore: number;
   bytesAfter: number;
+  sidecarBytes: number;
+  removedBytes: number;
   files: OptimizeFileResult[];
 };
 

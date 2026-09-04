@@ -54,7 +54,13 @@ export async function runMeshPass(document: Document, options: MeshOptions): Pro
 
   if (options.join) transforms.push(join({ keepNamed: true }));
 
-  transforms.push(reorder({ encoder: MeshoptEncoder }), dedup(), prune({ keepAttributes: true }));
+  // keepLeaves: empty marker nodes (an "Empty"/"bellMOVE" with no mesh) are exactly what a
+  // scene targets by name through GltfNodeModifiers; prune's default drops them.
+  transforms.push(
+    reorder({ encoder: MeshoptEncoder }),
+    dedup(),
+    prune({ keepAttributes: true, keepLeaves: true }),
+  );
 
   // Extension-based geometry compression (opt-in). draco is left at its defaults for now — it
   // decodes to float in-runtime and is already gated behind a runtime-support warning.

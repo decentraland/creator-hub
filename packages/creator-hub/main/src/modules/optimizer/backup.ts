@@ -18,6 +18,9 @@ export type OptimizeManifest = {
   createdAt: number;
   modifiedGlbs: string[]; // project-relative posix paths of GLBs overwritten in place
   createdFiles: string[]; // project-relative posix paths of sidecar textures written
+  // project-relative posix paths of original textures moved into the backup because a
+  // sidecar superseded them (absent in manifests written before this field existed)
+  removedFiles: string[];
 };
 
 const toPosix = (value: string) => value.split(path.sep).join('/');
@@ -36,7 +39,10 @@ function manifestPath(projectPath: string): string {
 
 export async function readManifest(projectPath: string): Promise<OptimizeManifest | null> {
   try {
-    return JSON.parse(await fs.readFile(manifestPath(projectPath), 'utf8')) as OptimizeManifest;
+    const manifest = JSON.parse(
+      await fs.readFile(manifestPath(projectPath), 'utf8'),
+    ) as OptimizeManifest;
+    return { ...manifest, removedFiles: manifest.removedFiles ?? [] };
   } catch {
     return null;
   }
@@ -51,7 +57,13 @@ export async function writeManifest(
 }
 
 export function createManifest(): OptimizeManifest {
-  return { version: MANIFEST_VERSION, createdAt: Date.now(), modifiedGlbs: [], createdFiles: [] };
+  return {
+    version: MANIFEST_VERSION,
+    createdAt: Date.now(),
+    modifiedGlbs: [],
+    createdFiles: [],
+    removedFiles: [],
+  };
 }
 
 export async function hasBackup(projectPath: string): Promise<boolean> {
@@ -69,6 +81,12 @@ export async function backupFile(projectPath: string, relPath: string): Promise<
   }
   await fs.mkdir(path.dirname(dest), { recursive: true });
   await fs.copyFile(path.join(projectPath, relPath), dest);
+}
+
+// Move a project file into the backup (same relative path), so revert can put it back.
+export async function stashFile(projectPath: string, relPath: string): Promise<void> {
+  await backupFile(projectPath, relPath);
+  await fs.rm(path.join(projectPath, relPath), { force: true });
 }
 
 export async function ensureDclignoreBlock(projectPath: string): Promise<void> {
@@ -133,6 +151,17 @@ export async function revertFromManifest(
 
   for (const rel of manifest.createdFiles) {
     await fs.rm(path.join(projectPath, rel), { force: true });
+  }
+
+  for (const rel of manifest.removedFiles ?? []) {
+    const src = path.join(backupDir(projectPath), rel);
+    try {
+      await fs.access(src);
+    } catch {
+      continue;
+    }
+    await fs.mkdir(path.dirname(path.join(projectPath, rel)), { recursive: true });
+    await fs.copyFile(src, path.join(projectPath, rel));
   }
 
   await stripDclignoreBlock(projectPath);

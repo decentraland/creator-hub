@@ -285,8 +285,19 @@ export function OptimizeModal({ project }: { project?: Project | null }) {
               ) : (
                 <>
                   <span>{t('optimize.scan.glbs', { count: scan.glbCount })}</span>
-                  <span>{t('optimize.scan.size', { size: formatBytes(scan.totalBytes) })}</span>
-                  <span>{t('optimize.scan.textures', { count: scan.embeddedTextureCount })}</span>
+                  <span>
+                    {t('optimize.scan.size', {
+                      size: formatBytes(scan.totalBytes),
+                      models: formatBytes(scan.glbBytes),
+                      textures: formatBytes(scan.textureBytes),
+                    })}
+                  </span>
+                  <span>
+                    {t('optimize.scan.textures', {
+                      embedded: scan.embeddedTextureCount,
+                      external: scan.externalTextureCount,
+                    })}
+                  </span>
                 </>
               )}
             </Box>
@@ -523,6 +534,14 @@ export function OptimizeModal({ project }: { project?: Project | null }) {
               <span>
                 {t('optimize.result.textures_deduped', { count: result.texturesDeduped })}
               </span>
+              {result.texturesRemoved > 0 && (
+                <span>
+                  {t('optimize.result.textures_removed', {
+                    count: result.texturesRemoved,
+                    bytes: formatBytes(result.removedBytes),
+                  })}
+                </span>
+              )}
               {(details.counts.unchanged > 0 || details.counts.skipped > 0) && (
                 <span className="muted">
                   {t('optimize.result.unchanged_skipped', {

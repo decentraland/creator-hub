@@ -195,8 +195,8 @@
     "no_projects": "No se encontraron escenas. Crea o importa una escena primero.",
     "scan": {
       "glbs": "{count} modelos",
-      "size": "Tamaño total: {size}",
-      "textures": "{count} texturas incrustadas",
+      "size": "Tamaño total: {size} (modelos {models} + texturas {textures})",
+      "textures": "{embedded} texturas embebidas · {external} externas",
       "empty": "Esta escena no tiene modelos GLB para optimizar."
     },
     "options": {
@@ -246,10 +246,11 @@
     "result": {
       "title": "Listo",
       "saved": "Ahorrado {saved} ({percent}%)",
-      "before_after": "{before} → {after}",
+      "before_after": "{before} → {after} (modelos + texturas)",
       "glbs_changed": "{count} modelos actualizados",
       "textures_extracted": "{count} texturas extraídas",
       "textures_deduped": "{count} duplicados eliminados",
+      "textures_removed": "{count} texturas reemplazadas eliminadas ({bytes})",
       "unchanged_skipped": "{unchanged} sin cambios · {skipped} omitidos",
       "show_details": "Ver detalles por modelo",
       "status": {

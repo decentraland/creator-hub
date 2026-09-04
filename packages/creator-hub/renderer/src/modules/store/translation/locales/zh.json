@@ -195,8 +195,8 @@
     "no_projects": "未找到场景。请先创建或导入一个场景。",
     "scan": {
       "glbs": "{count} 个模型",
-      "size": "总大小：{size}",
-      "textures": "{count} 个内嵌纹理",
+      "size": "总大小：{size}（模型 {models} + 纹理 {textures}）",
+      "textures": "{embedded} 个内嵌纹理 · {external} 个外部纹理",
       "empty": "该场景没有可优化的 GLB 模型。"
     },
     "options": {
@@ -246,10 +246,11 @@
     "result": {
       "title": "完成",
       "saved": "节省了 {saved}（{percent}%）",
-      "before_after": "{before} → {after}",
+      "before_after": "{before} → {after}（模型 + 纹理）",
       "glbs_changed": "更新了 {count} 个模型",
       "textures_extracted": "提取了 {count} 个纹理",
       "textures_deduped": "移除了 {count} 个重复项",
+      "textures_removed": "已移除 {count} 个被替代的纹理（{bytes}）",
       "unchanged_skipped": "{unchanged} 个未更改 · {skipped} 个已跳过",
       "show_details": "查看每个模型的详情",
       "status": {

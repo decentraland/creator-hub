@@ -196,8 +196,8 @@
     "no_projects": "No scenes found. Create or import a scene first.",
     "scan": {
       "glbs": "{count} models",
-      "size": "Total size: {size}",
-      "textures": "{count} embedded textures",
+      "size": "Total size: {size} (models {models} + textures {textures})",
+      "textures": "{embedded} embedded · {external} external textures",
       "empty": "This scene has no GLB models to optimize."
     },
     "options": {
@@ -247,10 +247,11 @@
     "result": {
       "title": "Done",
       "saved": "Saved {saved} ({percent}%)",
-      "before_after": "{before} → {after}",
+      "before_after": "{before} → {after} (models + textures)",
       "glbs_changed": "{count} models updated",
       "textures_extracted": "{count} textures extracted",
       "textures_deduped": "{count} duplicates removed",
+      "textures_removed": "{count} superseded textures removed ({bytes})",
       "unchanged_skipped": "{unchanged} unchanged · {skipped} skipped",
       "show_details": "Show per-model details",
       "status": {
