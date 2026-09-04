@@ -3,6 +3,7 @@ import { ChainId } from '@dcl/schemas';
 import { localStorageGetIdentity } from '@dcl/single-sign-on-client';
 import { AuthServerProvider } from '../../../lib/auth';
 import { createTestStore } from '../../../../tests/utils/testStore';
+import { FeatureFlag, fetchFeatureFlags } from '../featureFlags';
 import { executeDeployment, initializeDeployment } from './slice';
 
 const TEST_PATH = '/test/path';
@@ -464,6 +465,7 @@ describe('deployment slice', () => {
         expect(vi.mocked(fetchDeploymentStatus)).toHaveBeenCalledWith(
           expect.objectContaining({ rootCID: REBUILT_SCENE_INFO.rootCID }),
           expect.anything(),
+          false,
         );
       });
 
@@ -473,6 +475,34 @@ describe('deployment slice', () => {
         const result = await resultPromise.unwrap();
 
         expect(result.info.rootCID).toBe(REBUILT_SCENE_INFO.rootCID);
+      });
+    });
+
+    describe('when the abgen pipeline flag is on', () => {
+      beforeEach(async () => {
+        store = await initDeploymentStore();
+        store.dispatch(
+          fetchFeatureFlags.fulfilled(
+            { flags: { [FeatureFlag.ABGEN_PIPELINE]: true }, variants: {} },
+            'test-request-id',
+            undefined,
+          ),
+        );
+        mockDeploySuccess();
+        mockCheckStatus();
+
+        await store.dispatch(executeDeployment(TEST_PATH));
+      });
+
+      it('should poll the abgen registry for the conversion status', async () => {
+        const fetchStatus = vi.mocked(checkDeploymentStatus).mock.calls[0][2];
+        await fetchStatus();
+
+        expect(vi.mocked(fetchDeploymentStatus)).toHaveBeenCalledWith(
+          expect.anything(),
+          expect.anything(),
+          true,
+        );
       });
     });
 

@@ -9,6 +9,7 @@
   "SOCIAL_API_URL": "https://social-api.decentraland.org",
   "PEER_TESTING_URL": "https://peer-testing.decentraland.org",
   "ASSET_BUNDLE_REGISTRY_URL": "https://asset-bundle-registry.decentraland.org",
+  "ASSET_BUNDLE_REGISTRY_ABGEN_URL": "https://asset-bundle-registry-abgen.decentraland.org",
   "DCL_LISTS_URL": "https://dcl-lists.decentraland.org",
   "ATLAS_SERVER_API_URL": "https://api.decentraland.org/v2",
   "RPC_URL": "https://rpc.decentraland.org/mainnet",
