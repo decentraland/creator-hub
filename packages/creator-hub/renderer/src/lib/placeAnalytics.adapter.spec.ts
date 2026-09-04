@@ -144,7 +144,7 @@ describe('toOverview', () => {
 
   describe('when converting units', () => {
     it('should read playtime as minutes, from a metric measured in seconds', () => {
-      const seconds = FULL.metrics.median_playtime_seconds_60d.find(
+      const seconds = FULL.metrics.playtime_seconds_p50_60d.find(
         row => row.series === 'all',
       )!.value;
 
@@ -289,7 +289,7 @@ describe('toEngagement', () => {
     const engagement = toEngagement(FULL, LAST_30_DAYS);
 
     expect(engagement.medianPlaytime).toBeCloseTo(
-      FULL.metrics.median_playtime_seconds_30d.find(row => row.series === 'all')!.value / 60,
+      FULL.metrics.playtime_seconds_p50_30d.find(row => row.series === 'all')!.value / 60,
       6,
     );
     expect(engagement.afkTime).toBeCloseTo(

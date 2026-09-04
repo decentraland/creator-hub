@@ -38,8 +38,8 @@ export const METRIC_NAMES = [
   'd7_retention_rate_30d',
   'd7_retention_rate_60d',
   'd7_retention_rate_weekly',
-  'median_playtime_seconds_30d',
-  'median_playtime_seconds_60d',
+  'playtime_seconds_p50_30d',
+  'playtime_seconds_p50_60d',
   'socially_engaged_ratio_weekly',
   'unique_visitors_30d',
   'unique_visitors_60d',
@@ -142,7 +142,7 @@ export function toOverview(
     concurrentUsers: singleValue(metrics, `concurrent_users_avg_${window}`),
     peakConcurrentUsers: singleValue(metrics, `concurrent_users_peak_${window}`),
     day7Retention: toPercentage(platformValue(metrics, `d7_retention_rate_${window}`, 'all')),
-    medianPlaytime: toMinutes(platformValue(metrics, `median_playtime_seconds_${window}`, 'all')),
+    medianPlaytime: toMinutes(platformValue(metrics, `playtime_seconds_p50_${window}`, 'all')),
     afkTime: toMinutes(platformValue(metrics, `avg_afk_seconds_per_user_${window}`, 'all')),
     desktopUsers: platformValue(metrics, `unique_visitors_${window}`, 'desktop'),
     mobileUsers: platformValue(metrics, `unique_visitors_${window}`, 'mobile'),
@@ -176,7 +176,7 @@ export function toEngagement(
   window: MetricsWindow,
 ): PlaceEngagementMetrics {
   return {
-    medianPlaytime: toMinutes(platformValue(metrics, `median_playtime_seconds_${window}`, 'all')),
+    medianPlaytime: toMinutes(platformValue(metrics, `playtime_seconds_p50_${window}`, 'all')),
     afkTime: toMinutes(platformValue(metrics, `avg_afk_seconds_per_user_${window}`, 'all')),
     sociallyEngaged: weeklySeries(
       metrics,
