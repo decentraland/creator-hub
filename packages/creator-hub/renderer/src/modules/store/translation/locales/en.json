@@ -85,6 +85,61 @@
           "failed": "Failed"
         }
       }
+    },
+    "ai": {
+      "title": "AI Assistant",
+      "toggle": "Toggle AI assistant",
+      "pop_out": "Open in a separate window",
+      "dock": "Dock back in the editor",
+      "detached_message": "The assistant is open in a separate window.",
+      "detached_dock": "Bring it back here",
+      "new_chat": "New chat",
+      "placeholder": "Ask about your scene, or describe a change…",
+      "send": "Send",
+      "stop": "Stop",
+      "thinking": "Thinking…",
+      "empty": "Hi there! I'm here to help. Ask questions about your scene, get help with scripting, or tell me what you'd like to build or change. I can inspect your scene and write the code needed to bring your ideas to life.",
+      "billing": "Runs on your own {provider} account — messages count against your plan's usage, not a free Creator Hub allowance.",
+      "billing_dismiss": "Don't show again",
+      "screenshot_alt": "Screenshot from the assistant",
+      "history": {
+        "title": "Chat history",
+        "empty": "No saved chats yet.",
+        "delete": "Delete chat",
+        "now": "just now",
+        "minutes": "{n}m ago",
+        "hours": "{n}h ago",
+        "days": "{n}d ago"
+      },
+      "retry": "Retry",
+      "revert": "Undo AI changes",
+      "selection": "Selection: {names}",
+      "selection_clear": "Clear",
+      "provider": "Assistant",
+      "provider_signin": "Sign in",
+      "prompt": {
+        "confirm": "Confirm",
+        "other_placeholder": "Type an answer…",
+        "dismissed": "This question is no longer active."
+      },
+      "setup": {
+        "title": "Set up an AI assistant",
+        "description": "The assistant runs a coding CLI you install and sign into. It uses your own subscription — no API key needed.",
+        "install": "Install it:",
+        "signin": "Sign in:",
+        "signin_button": "Sign in with {provider}",
+        "signin_cancel": "Cancel sign-in",
+        "signin_starting": "Starting sign-in…",
+        "signin_browser": "Finish signing in in your browser, then come back.",
+        "manual_title": "Prefer the terminal? Install and sign in yourself:",
+        "recheck": "Recheck",
+        "ready": "Ready",
+        "alt_title": "No CLI? Connect a tool you already use",
+        "alt_description": "Already signed into Claude Desktop, the VS Code extension, or another MCP-capable tool? Point it at this scene instead — no CLI needed. Add this to its MCP configuration:",
+        "alt_copy": "Copy configuration",
+        "alt_copied": "Copied",
+        "alt_note": "Localhost only. The URL and token change each time Creator Hub restarts."
+      }
     }
   },
   "scene_list": {
@@ -399,6 +454,21 @@
         },
         "experimental": {
           "label": "Experimental features"
+        },
+        "ai_assistant": {
+          "label": "AI scene assistant",
+          "help": "Runs your installed Claude or Codex CLI with full access to your machine, the same reach it has in your terminal. It uses the account you're already signed into there, so every message counts against your own plan's usage — not a free Creator Hub allowance. Only enable it if you trust what you ask it to do."
+        },
+        "mcp_server": {
+          "label": "Expose AI assistant MCP server",
+          "help": "Let an AI agent running outside Creator Hub control the open scene. Paste this into the agent's MCP configuration.",
+          "copy": "Copy configuration",
+          "copied": "Copied",
+          "note": "Localhost only. The URL and token change each time Creator Hub restarts, so you'll need to paste the latest here."
+        },
+        "ai_api_key": {
+          "label": "Use my API key for the AI assistant",
+          "help": "Bill the assistant against the API key in your environment (ANTHROPIC_API_KEY / OPENAI_API_KEY) instead of your signed-in CLI subscription. Creator Hub never stores the key. Off by default."
         },
         "gui_editor": {
           "toggle": "UI Editor",

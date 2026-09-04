@@ -33,6 +33,22 @@
       }
     },
     {
+      "name": "asset-packs::Script",
+      "data": {
+        "0": {
+          "json": {
+            "value": [
+              {
+                "path": "{assetPath}/VisualEffect.ts",
+                "priority": 0,
+                "layout": "{\"params\":{\"animation\":{\"type\":\"string\",\"optional\":true,\"value\":\"Play\",\"tooltip\":\"Name of the animation clip in the effect's model that plays when the effect is triggered.\"},\"loop\":{\"type\":\"boolean\",\"optional\":true,\"value\":false,\"tooltip\":\"If true, the animation keeps playing until the effect is hidden.\"},\"sound\":{\"type\":\"string\",\"optional\":true,\"value\":\"fireworklaunch.mp3\",\"tooltip\":\"Name of an audio file inside this smart item's folder (e.g. sound.mp3), played when the effect is triggered. Leave empty for no sound.\"},\"hideAfter\":{\"type\":\"number\",\"optional\":true,\"value\":5,\"tooltip\":\"Seconds until the effect hides itself again after being triggered. Use 0 to keep it visible until Hide is called.\"},\"delayedSound\":{\"type\":\"string\",\"optional\":true,\"value\":\"fireworkexplode.mp3\",\"tooltip\":\"Name of a second audio file inside this smart item's folder, played some seconds after the effect is triggered (e.g. a firework explosion after the launch). Leave empty for no sound.\"},\"delayedSoundDelay\":{\"type\":\"number\",\"optional\":true,\"value\":1.3,\"tooltip\":\"Seconds after the trigger before the delayed sound plays.\"}},\"actions\":[{\"methodName\":\"trigger\",\"description\":\"Shows the effect, playing its animation and sound\",\"params\":{}},{\"methodName\":\"hide\",\"description\":\"Hides the effect and stops its animation\",\"params\":{}}]}"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
       "name": "core-schema::Name",
       "data": {
         "0": {
@@ -60,63 +76,16 @@
             "id": "{self}",
             "value": [
               {
+                "type": "call_script_method",
                 "name": "Shoot",
-                "type": "batch",
-                "jsonPayload": "{\"actions\":[\"Launch Sound\",\"Play Animation\",\"Delayed Explode sound\",\"Visible\",\"Delay Invisible\"]}",
-                "allowedInBasicView": true
+                "jsonPayload": "{\"scriptPath\":\"{assetPath}/VisualEffect.ts\",\"methodName\":\"trigger\",\"params\":{}}"
               },
               {
-                "name": "Launch Sound",
-                "type": "play_sound",
-                "jsonPayload": "{\"src\":\"{assetPath}/fireworklaunch.mp3\"}"
-              },
-              {
-                "name": "Play Animation",
-                "type": "play_animation",
-                "jsonPayload": "{\"animation\":\"Play\"}"
-              },
-              {
-                "name": "Explode sound",
-                "type": "play_sound",
-                "jsonPayload": "{\"src\":\"{assetPath}/fireworkexplode.mp3\"}"
-              },
-              {
-                "name": "Delayed Explode sound",
-                "type": "start_delay",
-                "jsonPayload": "{\"actions\":[\"Explode sound\"],\"timeout\":1.3}"
-              },
-              {
-                "type": "set_visibility",
-                "name": "Visible",
-                "jsonPayload": "{\"visible\":true,\"collider\":0}"
-              },
-              {
-                "type": "set_visibility",
-                "name": "Invisible",
-                "jsonPayload": "{\"visible\":false,\"collider\":0}"
-              },
-              {
-                "type": "start_delay",
-                "name": "Delay Invisible",
-                "jsonPayload": "{\"actions\":[\"Invisible\"],\"timeout\":5}"
+                "type": "call_script_method",
+                "name": "Hide",
+                "jsonPayload": "{\"scriptPath\":\"{assetPath}/VisualEffect.ts\",\"methodName\":\"hide\",\"params\":{}}"
               }
             ]
-          }
-        }
-      }
-    },
-    {
-      "name": "inspector::Config",
-      "data": {
-        "0": {
-          "json": {
-            "isBasicViewEnabled": true,
-            "componentName": "Firework",
-            "fields": [],
-            "helpTooltip": {
-              "text": "A firework that shoots up into the air and explodes. It is invisible until activated. Trigger it from another smart item."
-            },
-            "version": 1
           }
         }
       }

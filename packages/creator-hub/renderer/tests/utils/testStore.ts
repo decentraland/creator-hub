@@ -1,4 +1,5 @@
 import { configureStore } from '@reduxjs/toolkit';
+import * as ai from '../../src/modules/store/ai';
 import * as editor from '../../src/modules/store/editor';
 import * as snackbar from '../../src/modules/store/snackbar';
 import * as translations from '../../src/modules/store/translation';
@@ -18,6 +19,7 @@ import * as placeAnalytics from '../../src/modules/store/placeAnalytics';
 export const createTestStore = () =>
   configureStore({
     reducer: {
+      ai: ai.reducer,
       editor: editor.reducer,
       snackbar: snackbar.reducer,
       translation: translations.reducer,

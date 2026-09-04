@@ -40,6 +40,23 @@ function toHoverMsg(data: unknown): Extract<AgentToPage, { kind: 'hover' }> | nu
   return null;
 }
 
+/** Layout `display` each element uses while shown — see `setShown`. */
+const HINT_DISPLAY = 'flex';
+const BADGE_DISPLAY = 'inline-flex';
+
+/**
+ * Show/hide an element that carries an INLINE `display`. The `hidden` property
+ * alone does NOT hide these: it works through the UA stylesheet rule
+ * `[hidden]{display:none}`, and a style-attribute declaration outranks any
+ * stylesheet rule — so the prompt sat permanently visible (and empty, its white
+ * key badge reading as a stray checkbox) over every Bevy viewport. Keep `hidden`
+ * in sync for semantics, but drive `display` for the actual effect.
+ */
+function setShown(el: HTMLElement, shown: boolean, display: string): void {
+  el.hidden = !shown;
+  el.style.display = shown ? display : 'none';
+}
+
 export function createHoverHintBridge(options: HoverHintBridgeOptions): () => void {
   const { container, resolve } = options;
   const channel =
@@ -50,7 +67,6 @@ export function createHoverHintBridge(options: HoverHintBridgeOptions): () => vo
 
   const hint = document.createElement('div');
   hint.className = 'BevyHoverHint';
-  hint.hidden = true;
   // Overlays the (dark) 3D viewport, so fixed dark-on-light styling reads in either
   // app theme. pointer-events:none keeps it from stealing the hover it describes.
   hint.style.cssText = [
@@ -58,7 +74,6 @@ export function createHoverHintBridge(options: HoverHintBridgeOptions): () => vo
     'left:50%',
     'bottom:14%',
     'transform:translateX(-50%)',
-    'display:flex',
     'align-items:center',
     'gap:8px',
     'padding:7px 12px',
@@ -76,7 +91,6 @@ export function createHoverHintBridge(options: HoverHintBridgeOptions): () => vo
   const badge = document.createElement('span');
   badge.className = 'BevyHoverHint-key';
   badge.style.cssText = [
-    'display:inline-flex',
     'align-items:center',
     'justify-content:center',
     'min-width:20px',
@@ -90,6 +104,7 @@ export function createHoverHintBridge(options: HoverHintBridgeOptions): () => vo
   ].join(';');
   const label = document.createElement('span');
   hint.append(badge, label);
+  setShown(hint, false, HINT_DISPLAY);
   // The prompt is absolutely positioned; anchor it to the container (the engine
   // iframe fills it) unless the container is already a positioned ancestor.
   if (getComputedStyle(container).position === 'static') container.style.position = 'relative';
@@ -97,12 +112,12 @@ export function createHoverHintBridge(options: HoverHintBridgeOptions): () => vo
 
   const show = (h: HoverHint) => {
     badge.textContent = h.key;
-    badge.hidden = h.key.length === 0;
+    setShown(badge, h.key.length > 0, BADGE_DISPLAY);
     label.textContent = h.text;
-    hint.hidden = false;
+    setShown(hint, true, HINT_DISPLAY);
   };
   const hide = () => {
-    hint.hidden = true;
+    setShown(hint, false, HINT_DISPLAY);
   };
 
   channel.onmessage = ({ data }: { data: unknown }) => {
