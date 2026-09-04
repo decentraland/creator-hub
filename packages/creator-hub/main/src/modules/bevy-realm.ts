@@ -2,7 +2,7 @@ import log from 'electron-log/main';
 
 import { run, type Child } from './bin';
 import { getAvailablePort } from './port';
-import { getProjectId } from './analytics';
+import { getProjectId, track } from './analytics';
 
 /**
  * The Bevy editor renderer loads the scene from an HTTP realm, and the inspector
@@ -115,6 +115,13 @@ async function startInternal(path: string): Promise<{ url: string; wsUrl: string
   }
 
   log.info(`[BevyRealm] Serving ${path} at ${url}`);
+
+  // Usage analytics (fire-and-forget): a realm only starts when the Bevy renderer is the
+  // active renderer for this project, so one event per successful start is "Bevy renderer
+  // used". Anonymous project id only — no scene content. start() coalesces concurrent
+  // starts and reuses a running realm, so this fires once per activation, not per toggle.
+  void getProjectId(path).then(project_id => track('Use Bevy Renderer', { project_id }));
+
   return { url, wsUrl };
 }
 

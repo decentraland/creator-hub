@@ -32,7 +32,7 @@ import { ConnectionStatus } from '/@/lib/connection';
 
 import EditorPng from '/assets/images/editor.png';
 
-import { ai } from '#preload';
+import { ai, analytics } from '#preload';
 import { useDispatch, useSelector } from '#store';
 import { useFeatureFlags } from '/@/hooks/useFeatureFlags';
 import { useAiSession } from '/@/hooks/useAiSession';
@@ -344,6 +344,17 @@ export function EditorPage() {
   // The iframe render is gated on the realm being ready when Bevy is selected, so
   // the inspector boots already pointed at the right data-layer + realm.
   const projectPath = project?.path;
+
+  // Usage analytics: fire once each time the inline AI chat panel is opened. Anonymous project
+  // id, matching the id space of the AI Turn events so "opened" and "used" correlate. Fires on
+  // the false→true transition only (aiOpen starts false).
+  useEffect(() => {
+    if (!aiOpen || projectPath === undefined) return;
+    void analytics
+      .getProjectId(projectPath)
+      .then(project_id => analytics.track('AI Chat Opened', { project_id }));
+  }, [aiOpen, projectPath]);
+
   useEffect(() => {
     if (!projectPath || !useBevy) {
       setBevyRealm(null);

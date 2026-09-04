@@ -13,7 +13,7 @@ import fs from 'fs';
 import os from 'os';
 import path from 'path';
 import { StringDecoder } from 'string_decoder';
-import { spawn } from 'child_process';
+import { spawn, spawnSync } from 'child_process';
 import type { ChildProcess } from 'child_process';
 // The turn child is an npm-installed CLI. On Windows that's a `.cmd` shim, which child_process
 // can't spawn directly with an arg array (the prompt would need cmd.exe escaping); cross-spawn
@@ -188,6 +188,42 @@ function findExecutable(names: string[]): string | null {
     }
   }
   return null;
+}
+
+// `<bin> --version` prints e.g. "2.1.260 (Claude Code)". Best-effort: a probe failure or an
+// unparseable line yields undefined and the UI simply won't nudge — this only gates a proactive
+// hint, never the turn (the raw-error rewrite below covers a too-old CLI regardless). Cached per
+// resolved path: scan() runs on every panel open/recheck and a CLI's version only changes on
+// reinstall; detectProviders() clears the cache on an explicit recheck so an update is re-read.
+// Windows note: a bare spawnSync of a `.cmd` shim can fail (see the turn's cross-spawn use) — the
+// probe just returns undefined there, so Windows loses the proactive hint but not the rewrite.
+const cliVersionCache = new Map<string, string | undefined>();
+
+function getCliVersion(bin: string): string | undefined {
+  if (cliVersionCache.has(bin)) return cliVersionCache.get(bin);
+  let version: string | undefined;
+  try {
+    const res = spawnSync(bin, ['--version'], { encoding: 'utf8', timeout: 5000 });
+    const out = `${res.stdout ?? ''}${res.stderr ?? ''}`;
+    const m = out.match(/(\d+\.\d+\.\d+)/);
+    version = m ? m[1] : undefined;
+  } catch {
+    version = undefined;
+  }
+  cliVersionCache.set(bin, version);
+  return version;
+}
+
+// The CLI relays an API 400 as a raw JSON blob when the installed version is too old for the
+// requested model (a Fable/newer model set as the user's own CLI default — the Creator Hub
+// never selects it, it only omits `--model` and lets the CLI use its default). Swap that blob
+// for one short actionable line; the payload itself is noise to the user. English to match the
+// other hard-coded turn-status strings in this module.
+export function friendlyCliError(text: string): string {
+  if (/claude_code_version_too_old/.test(text) || /does not support this model/.test(text)) {
+    return 'Your installed Claude CLI is too old for the selected model. Update it — run `claude update` in a terminal, or update the Claude app — then try again.';
+  }
+  return text;
 }
 
 // ALWAYS dropped from the child: CLAUDE_CODE_* / CLAUDECODE (don't let the spawned CLI think
@@ -538,6 +574,7 @@ const scan = (): AiProviderInfo[] =>
       models: def.models,
       defaultModel: def.defaultModel,
       available,
+      version: bin !== null ? getCliVersion(bin) : undefined,
       reason: available
         ? undefined
         : bin === null
@@ -550,6 +587,7 @@ const scan = (): AiProviderInfo[] =>
 // also exactly when the user presses Recheck after installing.
 export async function detectProviders(): Promise<AiProviderInfo[]> {
   cachedDirs = null; // an explicit check re-reads the disk: they may have just installed
+  cliVersionCache.clear(); // ...and may have just updated the CLI — re-probe its version
   const first = scan();
   if (first.every(p => p.available)) return first;
   await loadShellDirs();
@@ -808,7 +846,7 @@ export async function aiSend(
   const onLine = (line: string): void => {
     if (line === '') return;
     const session = def.parseLine(line, projectDir, (text, tool, image) => {
-      if (text !== '') emit({ kind: 'text', turnId, text });
+      if (text !== '') emit({ kind: 'text', turnId, text: friendlyCliError(text) });
       if (tool !== undefined) {
         toolCount++;
         emit({ kind: 'tool', turnId, tool: tool[0], detail: tool[1] });
