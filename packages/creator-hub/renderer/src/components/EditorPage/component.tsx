@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import ArrowBackIosIcon from '@mui/icons-material/ArrowBackIos';
 import PlayCircleIcon from '@mui/icons-material/PlayCircle';
 import CodeIcon from '@mui/icons-material/Code';
+import SpeedOutlinedIcon from '@mui/icons-material/SpeedOutlined';
 import PublicIcon from '@mui/icons-material/Public';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import CloseIcon from '@mui/icons-material/Close';
@@ -38,6 +39,7 @@ import { useFeatureFlags } from '/@/hooks/useFeatureFlags';
 import { useAiSession } from '/@/hooks/useAiSession';
 import { actions as snackbarActions } from '/@/modules/store/snackbar';
 import { actions as editorActions } from '/@/modules/store/editor';
+import { actions as optimizerActions } from '/@/modules/store/optimizer';
 import { createGenericNotification } from '/@/modules/store/snackbar/utils';
 import { Button } from '../Button';
 import { Header } from '../Header';
@@ -47,6 +49,7 @@ import { ConnectionStatusIndicator } from '../ConnectionStatusIndicator';
 import { MobileQRCode } from '../Modals/MobileQRCode';
 import { AiChatPanel } from '../AiChatPanel';
 import { DetachedPlaceholder } from '../AiChatPanel/DetachedPlaceholder';
+import { OptimizeModal } from '../OptimizeModal';
 import { DeployModal } from './DeployModal';
 import { PreviewOptions, PublishOptions } from './MenuOptions';
 import { getPublishButtonText, getPublishOptions } from './utils';
@@ -761,6 +764,8 @@ export function EditorPage() {
     );
   };
 
+  const previewIcon = loadingPreview ? <Loader size={20} /> : <PlayCircleIcon />;
+
   return (
     <main className="Editor">
       {!isReady ? (
@@ -787,16 +792,44 @@ export function EditorPage() {
               </Tooltip>
             </>
             <div className="actions">
-              <Button
-                color="secondary"
-                onClick={openCode}
-                startIcon={<CodeIcon />}
-              >
-                {t('editor.header.actions.code')}
-              </Button>
+              {aiChatEnabled && (
+                <Tooltip title={t('editor.ai.toggle')}>
+                  <IconButton
+                    className={`ai-toggle${aiOpen ? ' active' : ''}`}
+                    aria-label={t('editor.ai.toggle')}
+                    onClick={() => setAiOpen(open => !open)}
+                  >
+                    <AutoAwesomeIcon />
+                  </IconButton>
+                </Tooltip>
+              )}
+              <Tooltip title={t('editor.header.actions.optimize')}>
+                <Button
+                  className="icon-only"
+                  color="secondary"
+                  aria-label={t('editor.header.actions.optimize')}
+                  onClick={() => dispatch(optimizerActions.open())}
+                >
+                  <SpeedOutlinedIcon />
+                </Button>
+              </Tooltip>
+              <Tooltip title={t('editor.header.actions.code')}>
+                <Button
+                  className="icon-only"
+                  color="secondary"
+                  aria-label={t('editor.header.actions.code')}
+                  onClick={openCode}
+                >
+                  <CodeIcon />
+                </Button>
+              </Tooltip>
               <div className={isOptimizing ? 'preview-control optimizing' : 'preview-control'}>
                 <ButtonGroup
+                  className={isOptimizing ? undefined : 'icon-only'}
                   color="secondary"
+                  aria-label={t('editor.header.actions.preview')}
+                  tooltip={t('editor.header.actions.preview')}
+                  extraTooltip={t('editor.header.actions.preview_options.title')}
                   // Not natively disabled while optimizing (that would kill the inline ✕ too):
                   // the group is greyed and made inert via CSS, and only the ✕ stays clickable.
                   // aria-disabled flags the CSS-inert state to assistive tech, which the visual
@@ -809,7 +842,9 @@ export function EditorPage() {
                     isOffline
                   }
                   onClick={isOptimizing ? undefined : handleOpenPreview}
-                  startIcon={loadingPreview ? <Loader size={20} /> : <PlayCircleIcon />}
+                  // icon-only at rest (the icon IS the content); while optimizing the icon moves
+                  // to startIcon so the progress label can sit beside it
+                  startIcon={isOptimizing ? previewIcon : undefined}
                   extra={
                     <PreviewOptions
                       options={settings.previewOptions}
@@ -846,13 +881,14 @@ export function EditorPage() {
                       </Tooltip>
                     </span>
                   ) : (
-                    t('editor.header.actions.preview')
+                    previewIcon
                   )}
                 </ButtonGroup>
               </div>
               {publishOptions.length > 0 ? (
                 <ButtonGroup
                   color="primary"
+                  extraTooltip={t('editor.header.actions.publish_options.title')}
                   disabled={
                     loadingPublish || isInstallingProject || isDetectingCustomCode || isOffline
                   }
@@ -879,17 +915,6 @@ export function EditorPage() {
                 >
                   {publishButtonText}
                 </Button>
-              )}
-              {aiChatEnabled && (
-                <Tooltip title={t('editor.ai.toggle')}>
-                  <IconButton
-                    className={`ai-toggle${aiOpen ? ' active' : ''}`}
-                    aria-label={t('editor.ai.toggle')}
-                    onClick={() => setAiOpen(open => !open)}
-                  >
-                    <AutoAwesomeIcon />
-                  </IconButton>
-                </Tooltip>
               )}
               <ConnectionStatusIndicator />
             </div>
@@ -938,6 +963,7 @@ export function EditorPage() {
             onClose={handleCloseModal}
             initialStep={modalState.initialStep}
           />
+          <OptimizeModal project={project} />
           {mobileQRData && (
             <MobileQRCode
               open={!!mobileQRData}

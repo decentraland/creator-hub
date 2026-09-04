@@ -108,6 +108,36 @@ jobs:
               || { echo "::error::missing @oxc-parser/binding-darwin-$A native binding"; exit 1; }
           done
 
+      # Same cross-arch trap as oxc-parser above: sharp's native binding + its libvips live in
+      # per-arch optional deps, so the arm64 runner never installs the x64 ones and the Intel
+      # dmg would ship without sharp. Fetch the cross-arch binding + libvips from their tarballs
+      # (versions read from sharp's own optionalDependencies) so both dmgs ship a working sharp.
+      - name: Provision cross-arch macOS sharp binding
+        if: matrix.os == 'macos-latest'
+        run: |
+          set -euo pipefail
+          HOST=$(node -p process.arch)
+          OTHER=$([ "$HOST" = "arm64" ] && echo x64 || echo arm64)
+          BINDING_VER=$(node -p "require('sharp/package.json').optionalDependencies['@img/sharp-darwin-$OTHER']")
+          LIBVIPS_VER=$(node -p "require('sharp/package.json').optionalDependencies['@img/sharp-libvips-darwin-$OTHER']")
+          fetch() {
+            local SPEC="$1" DIR="$2" SENTINEL="$3"
+            if [ ! -e "$DIR/$SENTINEL" ]; then
+              echo "Fetching $SPEC"
+              TMP=$(mktemp -d)
+              ( cd "$TMP" && npm pack "$SPEC" >/dev/null )
+              mkdir -p "$DIR"
+              tar -xzf "$TMP"/*.tgz -C "$DIR" --strip-components=1
+              rm -rf "$TMP"
+            fi
+          }
+          fetch "@img/sharp-darwin-$OTHER@$BINDING_VER" "node_modules/@img/sharp-darwin-$OTHER" "lib/sharp-darwin-$OTHER.node"
+          fetch "@img/sharp-libvips-darwin-$OTHER@$LIBVIPS_VER" "node_modules/@img/sharp-libvips-darwin-$OTHER" "package.json"
+          for A in arm64 x64; do
+            test -e "node_modules/@img/sharp-darwin-$A/lib/sharp-darwin-$A.node" \
+              || { echo "::error::missing @img/sharp-darwin-$A native binding"; exit 1; }
+          done
+
       - name: Bump release version
         id: version
         uses: paulhatch/semantic-version@502226b17e3e242e4befd0a45690fcbb27dd1373 # v6.0.3

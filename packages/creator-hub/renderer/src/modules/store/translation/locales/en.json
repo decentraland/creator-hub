@@ -50,6 +50,7 @@
     "header": {
       "actions": {
         "code": "Code",
+        "optimize": "Optimize",
         "preview": "Preview",
         "optimizing": "Optimizing",
         "cancel_optimizing": "Cancel optimization",
@@ -69,11 +70,12 @@
           "landscape_terrain_disabled_by_scene": "Landscape terrain is hidden by this scene's settings",
           "multi_instance": "Multi-Instance Preview",
           "mcp": "Enable MCP Server",
-          "optimized_assets": "Optimize Assets",
-          "optimized_assets_tooltip": "Preview the scene with optimized assets, matching how it renders in production",
+          "optimized_assets": "Compress",
+          "optimized_assets_tooltip": "Preview the scene with assets compressed the same way they are in production",
           "mobile_preview": "Show QR Code for Mobile"
         },
         "publish_options": {
+          "title": "Publish Options",
           "publish_scene": "Publish Scene",
           "republish_to_world": "Republish to {name}",
           "republish_to_land": "Republish to {coords}"
@@ -170,6 +172,95 @@
     "badges": {
       "published": "Published"
     }
+  },
+  "optimize": {
+    "title": "Optimize models",
+    "subtitle": "Shrink your scene's GLBs by compressing and deduplicating textures and cleaning up meshes. Originals are backed up so you can revert.",
+    "docs_link": "How each option works",
+    "consent": {
+      "blurb": "Optimizing runs entirely on your machine using these open-source tools. They load and initialize the first time you run — nothing leaves your computer. Review them before continuing.",
+      "npm": "npm",
+      "source": "Source",
+      "note": "Your original models are backed up and can be reverted at any time.",
+      "continue": "Continue",
+      "cancel": "Cancel",
+      "purpose": {
+        "sharp": "Resizes and re-encodes textures.",
+        "gltf": "Reads and writes GLBs; runs the mesh cleanup.",
+        "oxipng": "Lossless PNG optimization.",
+        "meshopt": "Mesh reorder, simplify, and the Meshopt codec.",
+        "draco": "Draco geometry compression — only loads if you choose Draco."
+      }
+    },
+    "select_project": "Select a scene",
+    "no_projects": "No scenes found. Create or import a scene first.",
+    "scan": {
+      "glbs": "{count} models",
+      "size": "Total size: {size} (models {models} + textures {textures})",
+      "textures": "{embedded} embedded · {external} external textures",
+      "empty": "This scene has no GLB models to optimize."
+    },
+    "options": {
+      "title": "Optimizations",
+      "mesh": {
+        "title": "Meshes",
+        "enabled": "Optimize meshes (weld, reorder, clean up)",
+        "enabled_tip": "Lossless cleanup: merges duplicate vertices (weld), reorders indices for GPU cache efficiency, removes unused/duplicate data, and folds flat-color textures into material colors. Output loads in every runtime.",
+        "join": "Merge meshes to reduce draw calls",
+        "join_tip": "Combines compatible meshes into fewer objects so the runtime issues fewer draw calls. Changes the scene's object structure; leave off if you rely on individual meshes.",
+        "simplify": "Simplify geometry (reduces polygon count)",
+        "simplify_tip": "Reduces triangle count with the meshoptimizer simplifier. Lossy — use the Target detail slider to choose how much geometry to keep. Best for high-poly props over the triangle budget.",
+        "ratio": "Target detail",
+        "compression": "Geometry compression",
+        "compression_tip": "Optional extension-based compression. Quantize lowers vertex precision; Meshopt adds a compact codec on top; Draco compresses the most. All add a glTF extension the target runtime must support, or the model won't load in-world.",
+        "compression_none": "None (loads everywhere)",
+        "compression_quantize": "Quantize (KHR_mesh_quantization)",
+        "compression_meshopt": "Meshopt (EXT_meshopt_compression)",
+        "compression_draco": "Draco (KHR_draco_mesh_compression)",
+        "compression_warning": "Advanced: smaller files, but the target runtime must support this extension or models may not load in-world. Leave as None if unsure."
+      },
+      "textures": {
+        "title": "Textures",
+        "compress": "Compress and resize textures",
+        "compress_tip": "Resizes each texture to its per-type max size and re-encodes it. PNG uses lossless oxipng (no quality loss); JPEG/WebP use the Quality slider.",
+        "dedup": "Remove duplicate textures",
+        "dedup_tip": "Finds textures with identical pixels (SHA-256) and points every model at a single shared copy. Biggest win when the same texture is reused across many models.",
+        "externalize": "Extract embedded textures to files",
+        "externalize_tip": "Pulls textures out of the GLB into shared files under optimized-textures/, so a shared texture downloads once instead of per-model. Required for cross-model dedup; these files deploy with your scene.",
+        "format": "Format",
+        "format_tip": "Output image format. PNG is lossless (recommended). JPEG and WebP are smaller but lossy and use the Quality slider.",
+        "quality": "Quality",
+        "quality_tip": "Encoding quality for JPEG/WebP (1–100). Higher keeps more detail at a larger file size. Ignored for PNG.",
+        "denoise": "Denoise",
+        "sizes": "Max texture sizes (px)",
+        "sizes_tip": "Maximum height in pixels per texture type; anything taller is downscaled proportionally. Base color and normal maps usually need more resolution than ORM or emissive.",
+        "baseColor": "Base color",
+        "normal": "Normal",
+        "orm": "ORM",
+        "emissive": "Emissive",
+        "other": "Other"
+      }
+    },
+    "run": "Optimize",
+    "running": "Optimizing…",
+    "revert": "Revert to originals",
+    "result": {
+      "title": "Done",
+      "saved": "Saved {saved} ({percent}%)",
+      "before_after": "{before} → {after} (models + textures)",
+      "glbs_changed": "{count} models updated",
+      "textures_extracted": "{count} textures extracted",
+      "textures_deduped": "{count} duplicates removed",
+      "textures_removed": "{count} superseded textures removed ({bytes})",
+      "unchanged_skipped": "{unchanged} unchanged · {skipped} skipped",
+      "show_details": "Show per-model details",
+      "status": {
+        "optimized": "optimized",
+        "unchanged": "no change",
+        "skipped": "skipped"
+      }
+    },
+    "error": "Optimization failed: {message}"
   },
   "navbar": {
     "menu": {

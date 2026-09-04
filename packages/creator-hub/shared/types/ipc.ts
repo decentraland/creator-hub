@@ -10,6 +10,7 @@ import type { Env } from './env';
 import type { OxcParseResult } from './oxc';
 import type { MetricsRequest, MetricsResponse } from './metrics';
 import type { AiMirrorState, AiProviderInfo, AiRemoteCommand, AiSendParams } from './ai';
+import type { OptimizeOptions, OptimizeResult, OptimizeScanResult } from './optimizer';
 
 export type IpcResult<T> = {
   success: true;
@@ -126,6 +127,9 @@ export interface Ipc {
   'electron.openExternal': (url: string) => Promise<void>;
   'electron.copyToClipboard': (text: string) => Promise<void>;
   'oxc.parse': (filename: string, source: string) => Promise<OxcParseResult>;
+  'optimizer.scan': (path: string) => Promise<OptimizeScanResult>;
+  'optimizer.run': (path: string, options: OptimizeOptions) => Promise<OptimizeResult>;
+  'optimizer.revert': (path: string) => Promise<{ restored: number }>;
   'metrics.request': (request: MetricsRequest) => Promise<MetricsResponse>;
   'inspector.start': () => Promise<number>;
   'inspector.attachSceneDebugger': (path: string) => Promise<string>;
