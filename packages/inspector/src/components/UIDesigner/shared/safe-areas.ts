@@ -7,42 +7,60 @@ export interface SafeRect {
   y: [number, number];
 }
 
-export interface SafeRegion extends SafeRect {
-  label: string;
-  /** `reserved` — keep UI out. `limited` — usable, but with a documented caveat. */
-  severity: 'reserved' | 'limited';
-  /** A hardware inset (notch, island, system bar) — the `screenInset: 'device'` area. */
-  hardware?: boolean;
+/** A reference client HUD control, drawn as a non-interactive guide on the canvas. */
+export type HudKind =
+  | 'joystick'
+  | 'jump'
+  | 'keyF'
+  | 'keyE'
+  | 'emote'
+  | 'profile'
+  | 'chat'
+  | 'counter'
+  | 'pointer';
+
+export interface HudGuide {
+  id: string;
+  kind: HudKind;
+  /** Center position in normalized screen coords. */
+  x: number;
+  y: number;
+  /** Diameter as a fraction of the smaller screen dimension. */
+  size: number;
 }
 
 export interface SafeAreaSpec {
   label: string;
-  /** Non-overlapping: the bands are translucent, so overlap reads as a region. */
-  regions: SafeRegion[];
-  safeZone: SafeRect;
-  /** Screen minus hardware insets (react-ecs `screenInset: 'device'`). */
-  deviceSafeArea: SafeRect;
+  /** react-ecs `screenInset: 'device'` — hardware insets (notch, island, system bars). */
+  screenInsetArea: SafeRect;
+  /** react-ecs `screenInset: 'interactable'` — the HUD-safe zone inside the device area. */
+  interactableArea: SafeRect;
+  /** Reference client HUD controls, shown as guides so authors design around them. */
+  hud: HudGuide[];
 }
 
 const MOBILE_SAFE_AREA: SafeAreaSpec = {
   label: 'Mobile safe area',
-  regions: [
-    { label: 'System bar', severity: 'reserved', x: [0, 1], y: [0, 0.08], hardware: true },
-    { label: 'System bar', severity: 'reserved', x: [0, 1], y: [0.92, 1], hardware: true },
-    { label: 'Chat, joystick, emotes', severity: 'reserved', x: [0, 0.3], y: [0.08, 0.92] },
-    { label: 'Profile, camera', severity: 'reserved', x: [0.75, 1], y: [0.08, 0.22] },
-    { label: 'Icons only — max 48×48', severity: 'limited', x: [0.75, 1], y: [0.22, 0.5] },
-    { label: 'Interaction button', severity: 'reserved', x: [0.75, 1], y: [0.5, 0.92] },
+  screenInsetArea: { x: [0.069, 0.931], y: [0.06, 0.94] },
+  interactableArea: { x: [0.28, 0.931], y: [0.06, 0.94] },
+  hud: [
+    { id: 'profile', kind: 'profile', x: 0.05, y: 0.1, size: 0.09 },
+    { id: 'chat', kind: 'chat', x: 0.11, y: 0.1, size: 0.07 },
+    { id: 'joystick', kind: 'joystick', x: 0.13, y: 0.72, size: 0.22 },
+    { id: 'emote', kind: 'emote', x: 0.06, y: 0.88, size: 0.08 },
+    { id: 'counter', kind: 'counter', x: 0.9, y: 0.66, size: 0.07 },
+    { id: 'keyF', kind: 'keyF', x: 0.955, y: 0.68, size: 0.075 },
+    { id: 'keyE', kind: 'keyE', x: 0.87, y: 0.75, size: 0.075 },
+    { id: 'jump', kind: 'jump', x: 0.92, y: 0.83, size: 0.15 },
+    { id: 'pointer', kind: 'pointer', x: 0.83, y: 0.88, size: 0.075 },
   ],
-  safeZone: { x: [0.3, 0.75], y: [0.08, 0.92] },
-  deviceSafeArea: { x: [0, 1], y: [0.08, 0.92] },
 };
 
 const DESKTOP_SAFE_AREA: SafeAreaSpec = {
   label: 'Desktop safe area',
-  regions: [{ label: 'Sidebar, minimap, chat', severity: 'reserved', x: [0, 0.25], y: [0, 1] }],
-  safeZone: { x: [0.25, 1], y: [0, 1] },
-  deviceSafeArea: { x: [0, 1], y: [0, 1] },
+  screenInsetArea: { x: [0, 1], y: [0, 1] },
+  interactableArea: { x: [0.25, 1], y: [0, 1] },
+  hud: [],
 };
 
 export const SAFE_AREAS: Record<DeviceKind, SafeAreaSpec> = {
@@ -83,5 +101,7 @@ export const DEFAULT_SCREENS: Record<DeviceKind, ScreenSize> = {
 /** The screen rect a react-ecs `screenInset` value maps to, in normalized coords. */
 export function insetRect(device: DeviceKind, inset: 'device' | 'interactable' | 'none'): SafeRect {
   if (inset === 'none') return { x: [0, 1], y: [0, 1] };
-  return inset === 'interactable' ? SAFE_AREAS[device].safeZone : SAFE_AREAS[device].deviceSafeArea;
+  return inset === 'interactable'
+    ? SAFE_AREAS[device].interactableArea
+    : SAFE_AREAS[device].screenInsetArea;
 }
