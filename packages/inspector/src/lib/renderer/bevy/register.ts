@@ -25,6 +25,7 @@ import { createHotReloadBridge } from './hot-reload-bridge';
 import { createInputFocusBridge } from './input-focus-bridge';
 import { createLayoutReloadBridge } from './layout-reload-bridge';
 import { createVerticalInputBridge } from './vertical-input-bridge';
+import { createWheelZoomBridge } from './wheel-zoom-bridge';
 import { createModifierTracker } from './modifier-tracker';
 import { createPickBridge } from './pick-bridge';
 import type { HoverHint } from './hover-hint-bridge';
@@ -183,7 +184,7 @@ export function registerBevyRenderer(): void {
       bevy.attachEngine(engine.engineWindow);
 
       // Bindings tied to the engine's WINDOW (its iframe contentWindow): the edit
-      // forward, gizmo preview, focus forwarding and E/Q capture. A layout reload
+      // forward, gizmo preview, focus forwarding, E/Q capture and wheel zoom. A layout reload
       // (#1369) reboots the engine iframe, replacing that window — so these are
       // held in mutable holders and rebuilt against the new window on reload (the
       // bus-based bridges below survive a reboot, and `modifiers` is retargeted).
@@ -191,6 +192,7 @@ export function registerBevyRenderer(): void {
       let disconnectPreview = () => {};
       let disconnectInputFocus = () => {};
       let disconnectVertical = () => {};
+      let disconnectWheelZoom = () => {};
 
       // #1468: publish the running engine's highest live entity id (authored + the
       // scene's own CODE entities) so the inspector allocates NEW authored entities
@@ -215,6 +217,7 @@ export function registerBevyRenderer(): void {
         disconnectPreview();
         disconnectInputFocus();
         disconnectVertical();
+        disconnectWheelZoom();
 
         liveEngineWindow = engineWindow;
         // Refresh the entity-id floor for this (re)load: the scene's code entities
@@ -261,6 +264,15 @@ export function registerBevyRenderer(): void {
           onChange: (up, down) => cameraBridge.setVertical(up, down),
           // In Interact mode, don't capture E/Q — the scene reads them (#1458).
           isEditingEnabled: () => bevy.interaction.isEditingEnabled(),
+        });
+
+        // Mouse-wheel zoom (Babylon parity): the fly camera lives in the agent, so
+        // capture the wheel on the engine window and dolly through the same `zoom`
+        // op as the toolbar buttons. Left to the engine's avatar camera otherwise.
+        disconnectWheelZoom = createWheelZoomBridge({
+          engineWindow: engineWindow as unknown as Window,
+          onZoom: steps => bevy.camera.zoom(steps),
+          isFreeCamera: () => bevy.editorCamera.getMode() === 'free',
         });
       };
 
@@ -590,6 +602,7 @@ export function registerBevyRenderer(): void {
         engine: bevy.context.engine,
         internals,
         dispose: () => {
+          disconnectWheelZoom();
           disconnectVertical();
           disconnectInputFocus();
           modifiers.disconnect();
