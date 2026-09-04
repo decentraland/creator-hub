@@ -25,6 +25,7 @@ import { useDeploy } from '/@/hooks/useDeploy';
 import { useConnectionStatus } from '/@/hooks/useConnectionStatus';
 import { useDebugLogForwarding } from '/@/hooks/useDebugLogForwarding';
 import { useMobileDebugForwarding } from '/@/hooks/useMobileDebugForwarding';
+import { usePreviewCleanup } from '/@/hooks/usePreviewCleanup';
 import { ConnectionStatus } from '/@/lib/connection';
 
 import EditorPng from '/assets/images/editor.png';
@@ -183,6 +184,7 @@ export function EditorPage() {
   // The iframe render is gated on the realm being ready when Bevy is selected, so
   // the inspector boots already pointed at the right data-layer + realm.
   const projectPath = project?.path;
+  usePreviewCleanup(projectPath);
   useEffect(() => {
     if (!projectPath || !useBevy) {
       setBevyRealm(null);
