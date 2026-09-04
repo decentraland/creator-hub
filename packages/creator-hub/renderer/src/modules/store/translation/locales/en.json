@@ -75,6 +75,7 @@
           "mobile_preview": "Show QR Code for Mobile"
         },
         "publish_options": {
+          "title": "Publish Options",
           "publish_scene": "Publish Scene",
           "republish_to_world": "Republish to {name}",
           "republish_to_land": "Republish to {coords}"

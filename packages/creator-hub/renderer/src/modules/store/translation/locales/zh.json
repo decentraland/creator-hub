@@ -75,6 +75,7 @@
           "mobile_preview": "显示移动端二维码"
         },
         "publish_options": {
+          "title": "发布选项",
           "publish_scene": "发布场景",
           "republish_to_world": "重新发布到 {name}",
           "republish_to_land": "重新发布到 {coords}"
