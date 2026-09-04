@@ -23,6 +23,33 @@ export interface AiProviderInfo {
   models: string[];
   defaultModel: string;
   reason?: string;
+  // The installed CLI's version (e.g. "2.1.260"), best-effort from `<bin> --version`.
+  // Absent when the binary isn't found or didn't report a parseable version. Used to
+  // warn when the CLI is too old for the newest models (see isClaudeCliOutdated).
+  version?: string;
+}
+
+// Newest Claude models (e.g. Fable) are gated on the CLI version: an older `claude`
+// rejects them with a `claude_code_version_too_old` API error. This is the floor the
+// UI nudges users up to. Bump it as newer models raise the requirement.
+export const MIN_CLAUDE_CLI_VERSION = '2.1.251';
+
+// True when `version` is a parseable semver strictly older than `min`. Unknown/absent
+// versions are treated as NOT outdated — we never nag when we couldn't read the version.
+export function isCliVersionOutdated(version: string | undefined, min: string): boolean {
+  if (version === undefined) return false;
+  const parse = (v: string): number[] | null => {
+    const m = v.match(/(\d+)\.(\d+)\.(\d+)/);
+    return m ? [Number(m[1]), Number(m[2]), Number(m[3])] : null;
+  };
+  const a = parse(version);
+  const b = parse(min);
+  if (a === null || b === null) return false;
+  for (let i = 0; i < 3; i++) {
+    if (a[i] < b[i]) return true;
+    if (a[i] > b[i]) return false;
+  }
+  return false;
 }
 
 // Pasted/attached images, as data URLs. Main writes them to temp files and hands the

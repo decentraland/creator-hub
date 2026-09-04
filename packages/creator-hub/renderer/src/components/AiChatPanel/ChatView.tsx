@@ -26,6 +26,7 @@ import {
 } from 'decentraland-ui2';
 
 import type { AiProvider } from '/shared/types/ai';
+import { MIN_CLAUDE_CLI_VERSION, isCliVersionOutdated } from '/shared/types/ai';
 
 import { ai as aiPreload } from '#preload';
 import { t } from '/@/modules/store/translation/utils';
@@ -44,6 +45,7 @@ import {
   ErrorRow,
   HeaderActions,
   HeaderTitle,
+  OutdatedHint,
   Panel,
   PanelHeader,
   PromptAnswer,
@@ -216,7 +218,13 @@ function PromptBlock({
 // and the detached window (mirror-backed) render this — neither reaches into a store from
 // here, so the same view works whichever owns the state (#1504).
 export interface ChatViewProps {
-  providers: { id: AiProvider; label: string; available: boolean; reason?: string }[];
+  providers: {
+    id: AiProvider;
+    label: string;
+    available: boolean;
+    reason?: string;
+    version?: string;
+  }[];
   provider: AiProvider;
   messages: AiMessage[];
   busy: boolean;
@@ -748,6 +756,15 @@ export function ChatView(props: ChatViewProps) {
             </SelectionClear>
           </SelectionBar>
         )}
+
+        {available &&
+          currentProvider?.id === 'claude' &&
+          isCliVersionOutdated(currentProvider.version, MIN_CLAUDE_CLI_VERSION) && (
+            <OutdatedHint>
+              <InfoOutlinedIcon fontSize="inherit" />
+              <span>{t('editor.ai.outdated', { version: currentProvider.version ?? '' })}</span>
+            </OutdatedHint>
+          )}
 
         {available && !billingDismissed && (
           <BillingHint>
