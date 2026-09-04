@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useRef, useSyncExternalStore } from 'react';
 
+import { parseAnsi } from '../../lib/logic/ansi';
 import { subscribe, getSnapshot, clear, type DebugLogEntry } from '../../lib/logic/debug-log-store';
 import { useAppSelector } from '../../redux/hooks';
 import { getDebugConsoleEnabled } from '../../redux/ui';
@@ -7,6 +8,32 @@ import { getDebugConsoleEnabled } from '../../redux/ui';
 import './DebugConsole.css';
 
 const SCROLL_THRESHOLD = 10;
+
+/**
+ * A single log line, rendered as styled spans.
+ *
+ * Memoized, and declared here rather than inside `DebugConsole`: entries are immutable and
+ * keyed by id, so each line is parsed once while it stays mounted instead of on every render
+ * of a console holding up to `MAX_ENTRIES` of them. The outer span is what
+ * `.DebugConsole-logs > span` styles as a block, so it has to stay a direct child.
+ */
+const LogLine = React.memo(function LogLine({ text }: { text: string }) {
+  return (
+    <span>
+      {parseAnsi(text).map((segment, index) => {
+        const { text: content, ...style } = segment;
+        return (
+          <span
+            key={index}
+            style={style}
+          >
+            {content}
+          </span>
+        );
+      })}
+    </span>
+  );
+});
 
 function DebugConsole() {
   const logs = useSyncExternalStore(subscribe, getSnapshot);
@@ -77,9 +104,9 @@ function DebugConsole() {
       >
         {logs.length > 0 ? (
           logs.map((entry: DebugLogEntry) => (
-            <span
+            <LogLine
               key={entry.id}
-              dangerouslySetInnerHTML={{ __html: entry.html }}
+              text={entry.text}
             />
           ))
         ) : (
