@@ -1184,9 +1184,9 @@
         "label": "7 日留存",
         "tooltip": "首次访问后的 7 天内至少回访过一次的新用户占比。"
       },
-      "avg_playtime": {
-        "label": "平均游玩时长",
-        "tooltip": "每位用户单次访问在你的 Place 中停留的平均时间。"
+      "median_playtime": {
+        "label": "游玩时长中位数",
+        "tooltip": "每位用户每天在你的 Place 中停留时间的中位数：一半的每日访问更长，一半更短。"
       },
       "afk_time": {
         "label": "挂机时长",
@@ -1218,7 +1218,7 @@
         "new_users": "新用户",
         "day_7_retention": "7 日留存",
         "revenue": "收入",
-        "avg_playtime": "平均游玩时长"
+        "median_playtime": "游玩时长中位数"
       },
       "actions": {
         "pin_to_watchlist": "固定到关注列表",

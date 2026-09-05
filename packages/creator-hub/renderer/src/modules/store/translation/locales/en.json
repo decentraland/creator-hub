@@ -1147,8 +1147,8 @@
           }
         },
         "playtime": {
-          "title": "Average Playtime",
-          "description": "Average time each user spends in your place on a single visit."
+          "title": "Median Playtime",
+          "description": "Median time each user spends in your place per day: half of the daily visits are longer, half shorter."
         },
         "afk": {
           "title": "Average AFK Time",
@@ -1201,9 +1201,9 @@
         "label": "Day 7 Retention",
         "tooltip": "The percentage of new users who returned to your place at least once over the 7 days after their first visit."
       },
-      "avg_playtime": {
-        "label": "Avg. Playtime",
-        "tooltip": "Average time each user spends in your place on a single visit."
+      "median_playtime": {
+        "label": "Median Playtime",
+        "tooltip": "Median time each user spends in your place per day: half of the daily visits are longer, half shorter."
       },
       "afk_time": {
         "label": "AFK Time",
@@ -1239,7 +1239,7 @@
         "new_users": "New Users",
         "day_7_retention": "D7 Retention",
         "revenue": "Revenue",
-        "avg_playtime": "Avg. Playtime",
+        "median_playtime": "Median Playtime",
         "concurrent_users": "Concurrent Users"
       },
       "actions": {
