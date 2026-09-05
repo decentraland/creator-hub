@@ -17,11 +17,11 @@
     "declarationDir": "dist",
     "outDir": "dist",
     "jsx": "react-jsx",
-    "sourceMap": true,
+    "sourceMap": false,
     "rootDir": "src/",
     "incremental": true,
     "types": []
   },
   "exclude": ["**/*.spec.ts"],
-  "include": ["src"]
+  "include": ["src/**/*.ts", "src/**/*.tsx"]
 }
