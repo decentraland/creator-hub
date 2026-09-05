@@ -12,7 +12,7 @@ interface VideoPlayerControls {
   restart(): void;
   setVolume(volume: number): void;
   setVolumeExact(volume: number): void;
-  setSource(url: string): void;
+  setSource(url: string, syncPlayback?: boolean): void;
   setLoop(loop: boolean): void;
 }
 
@@ -86,8 +86,17 @@ export function createVideoPlayerControls(entity: Entity, engine: IEngine): Vide
       const clamped = Math.max(0, Math.min(1, volume));
       getAdminMessageBus().emitSetVideo(entity, { volume: clamped, position: undefined });
     },
-    setSource: url => {
-      getAdminMessageBus().emitSetVideo(entity, { src: url, playing: true });
+    setSource: (url, syncPlayback) => {
+      if (syncPlayback && url) {
+        getAdminMessageBus().emitSetVideo(entity, {
+          src: url,
+          playing: true,
+          position: 0,
+          sync: true,
+        });
+      } else {
+        getAdminMessageBus().emitSetVideo(entity, { src: url, playing: true });
+      }
     },
     setLoop(loop) {
       getAdminMessageBus().emitSetVideo(entity, { loop, position: undefined });
