@@ -107,7 +107,7 @@ export async function killAllPreviews() {
 // `doStart()`; `debugger`/`showWarnings` are renderer-only. Everything left maps to a flag.
 type PreviewArguments = Omit<
   PreviewOptions,
-  'debugger' | 'showWarnings' | 'optimizedAssets' | 'client'
+  'debugger' | 'showWarnings' | 'optimizedAssets' | 'client' | 'customClientUrl'
 >;
 
 const PREVIEW_OPTIONS_MAP: Record<keyof PreviewArguments, string> = {
@@ -392,6 +392,10 @@ async function doStart(path: string, opts: StartOptions): Promise<string> {
       await shell.openExternal(preview.url);
       return path;
     }
+    if (opts.client === PREVIEW_CLIENT.CUSTOM) {
+      await shell.openExternal(opts.customClientUrl ?? '');
+      return path;
+    }
 
     // Desktop (Unity): the sidecar lives and dies with the preview process
     // (--asset-bundles is a spawn-time flag), so whenever the Optimized Assets toggle
@@ -414,7 +418,8 @@ async function doStart(path: string, opts: StartOptions): Promise<string> {
 
   let stopConversionProgress = () => {};
 
-  const isBevyWeb = opts.client === PREVIEW_CLIENT.BEVY_WEB;
+  const isCustomClient = opts.client === PREVIEW_CLIENT.CUSTOM;
+  const isBevyWeb = opts.client === PREVIEW_CLIENT.BEVY_WEB || isCustomClient;
   // Mobile-QR start: `--mobile` makes sdk-commands serve the scene and print a capturable
   // mobile deeplink without opening the desktop client. Only meaningful on the Unity path
   // (the mobile app opens `decentraland://`); Bevy is web-only, so it keeps its own launch.
@@ -446,7 +451,12 @@ async function doStart(path: string, opts: StartOptions): Promise<string> {
     // once the preview is ready; the capture below is only for the cache (re-focus,
     // option flips, mobile QR).
     const args = isBevyWeb
-      ? ['start', '--bevy-web', ...generatePreviewArguments(opts)]
+      ? [
+          'start',
+          '--bevy-web',
+          ...(isCustomClient ? ['--no-browser'] : []),
+          ...generatePreviewArguments(opts),
+        ]
       : [
           'start',
           '--explorer-alpha',
@@ -490,7 +500,14 @@ async function doStart(path: string, opts: StartOptions): Promise<string> {
           .join('')
           .match(/https?:\/\/\S*bevy-web\S*/i)?.[0] ?? '';
       const entry = previewCache.get(path);
-      if (entry?.child === process) entry.url = bevyUrl;
+      if (entry?.child === process) {
+        // Custom stores a truthy token so reuse can re-open the typed URL without
+        // respawning. Official Bevy stores the printed browser URL.
+        entry.url = isCustomClient ? opts.customClientUrl || 'custom' : bevyUrl;
+      }
+      if (isCustomClient) {
+        await shell.openExternal(opts.customClientUrl ?? '');
+      }
       return path;
     }
 

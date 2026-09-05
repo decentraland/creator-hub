@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { PreviewOptions } from '/shared/types/settings';
+import { PREVIEW_CLIENT } from '/shared/types/settings';
 import type { Child } from '../src/modules/bin';
 
 const mocks = vi.hoisted(() => ({
@@ -10,10 +11,14 @@ const mocks = vi.hoisted(() => ({
   readFile: vi.fn(),
   stat: vi.fn(),
   send: vi.fn(),
+  openExternal: vi.fn(),
   getBundledNodePath: vi.fn(() => '/fake/node-bin/node'),
 }));
 
-vi.mock('electron', () => ({ app: { getPath: vi.fn(() => '/fake/exe') } }));
+vi.mock('electron', () => ({
+  app: { getPath: vi.fn(() => '/fake/exe') },
+  shell: { openExternal: mocks.openExternal },
+}));
 vi.mock('electron-log/main', () => ({
   default: { info: vi.fn(), warn: vi.fn(), error: vi.fn() },
 }));
@@ -42,8 +47,10 @@ const BASE_OPTS: PreviewOptions = {
   enableLandscapeTerrains: false,
   openNewInstance: false,
   multiInstance: false,
+  mcp: false,
   showWarnings: false,
   optimizedAssets: false,
+  client: PREVIEW_CLIENT.DESKTOP,
 };
 
 // Fake bin.Child whose deeplink print, failure and death the test controls.
@@ -264,6 +271,73 @@ describe('cli preview start', () => {
       expect(fake.child.kill).toHaveBeenCalled();
       expect(mocks.run).toHaveBeenCalledTimes(1);
       expect(spawnedArgs()).not.toContain('--mobile');
+    });
+  });
+
+  describe('when starting a custom client preview', () => {
+    const customOpts: PreviewOptions = {
+      ...BASE_OPTS,
+      client: PREVIEW_CLIENT.CUSTOM,
+      customClientUrl: 'http://localhost:5173/not-even-valid-params',
+    };
+
+    it('should spawn bevy-web with --no-browser and open the typed URL as-is', async () => {
+      const fake = createFakeChild();
+      mocks.run.mockReturnValue(fake.child);
+
+      const promise = start(path, customOpts);
+      fake.printDeeplink('Preview server is now running');
+      await promise;
+
+      expect(spawnedArgs()).toContain('--bevy-web');
+      expect(spawnedArgs()).toContain('--no-browser');
+      expect(spawnedArgs()).not.toContain('--explorer-alpha');
+      expect(mocks.openExternal).toHaveBeenCalledTimes(1);
+      expect(mocks.openExternal).toHaveBeenCalledWith(
+        'http://localhost:5173/not-even-valid-params',
+      );
+    });
+
+    it('should open whatever string was typed, including garbage', async () => {
+      const fake = createFakeChild();
+      mocks.run.mockReturnValue(fake.child);
+
+      const promise = start(path, { ...customOpts, customClientUrl: 'lol not a url' });
+      fake.printDeeplink('Preview server is now running');
+      await promise;
+
+      expect(mocks.openExternal).toHaveBeenCalledWith('lol not a url');
+    });
+
+    it('should re-open the typed URL without respawning', async () => {
+      const fake = createFakeChild();
+      mocks.run.mockReturnValue(fake.child);
+      const first = start(path, customOpts);
+      fake.printDeeplink('Preview server is now running');
+      await first;
+      mocks.run.mockClear();
+      mocks.openExternal.mockClear();
+
+      await start(path, { ...customOpts, customClientUrl: 'decentraland://whatever' });
+
+      expect(mocks.run).not.toHaveBeenCalled();
+      expect(mocks.openExternal).toHaveBeenCalledTimes(1);
+      expect(mocks.openExternal).toHaveBeenCalledWith('decentraland://whatever');
+    });
+  });
+
+  describe('when starting a bevy web preview', () => {
+    it('should spawn --bevy-web without --no-browser and not open a custom URL', async () => {
+      const fake = createFakeChild();
+      mocks.run.mockReturnValue(fake.child);
+
+      const promise = start(path, { ...BASE_OPTS, client: PREVIEW_CLIENT.BEVY_WEB });
+      fake.printDeeplink('Preview server is now running');
+      await promise;
+
+      expect(spawnedArgs()).toContain('--bevy-web');
+      expect(spawnedArgs()).not.toContain('--no-browser');
+      expect(mocks.openExternal).not.toHaveBeenCalled();
     });
   });
 

@@ -229,9 +229,21 @@
 
 .PreviewOptions {
   padding: 20px;
-  width: 300px;
+  width: 360px;
   display: flex;
   flex-direction: column;
+}
+
+.PreviewOptions .custom-client-url {
+  margin-top: 8px;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 8px 10px;
+  border: 1px solid var(--clear-divider);
+  border-radius: 4px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
 }
 
 .PreviewOptions .title {
