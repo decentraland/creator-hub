@@ -14,12 +14,20 @@ import { Block } from '../../Block';
 import { Container } from '../../Container';
 import { TextField, CheckboxField, InfoTooltip, Dropdown, RangeField } from '../../ui';
 import { fromTween, toTween, fromTweenSequence, toTweenSequence } from './utils';
-import { type Props } from './types';
+import { ContinuousTweenType, UNSUPPORTED_TWEEN_TYPE, type Props } from './types';
 
-const TweenMapOption: Record<string, string> = {
-  [TweenType.MOVE_ITEM]: 'Move Item',
-  [TweenType.ROTATE_ITEM]: 'Rotate Item',
-  [TweenType.SCALE_ITEM]: 'Scale Item',
+const TweenTypeOptions = [
+  { label: 'Move Item', value: TweenType.MOVE_ITEM },
+  { label: 'Rotate Item', value: TweenType.ROTATE_ITEM },
+  { label: 'Scale Item', value: TweenType.SCALE_ITEM },
+  { label: 'Move Continuous', value: ContinuousTweenType.MOVE_CONTINUOUS },
+  { label: 'Rotate Continuous', value: ContinuousTweenType.ROTATE_CONTINUOUS },
+];
+
+const UnsupportedModeLabels: Record<string, string> = {
+  textureMove: 'Texture Move',
+  textureMoveContinuous: 'Texture Move Continuous',
+  moveRotateScale: 'Move, Rotate & Scale',
 };
 
 const EasingFunctionOptions = [
@@ -85,7 +93,7 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
     const gltfContainer = getComponentValue(entity, GltfContainer);
     const asset = getAssetByModel(gltfContainer.src);
     analytics.track(Event.REMOVE_COMPONENT, {
-      componentName: CoreComponents.VIDEO_PLAYER,
+      componentName: CoreComponents.TWEEN,
       itemId: asset?.id,
       itemPath: gltfContainer.src,
     });
@@ -103,6 +111,22 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
 
   const playing = getTweenInputProps('playing', e => e.target.checked);
   const loop = getTweenSequenceInputProps('loop', e => e.target.checked);
+  const tweenType = getTweenInputProps('type').value;
+  const isContinuous =
+    tweenType === ContinuousTweenType.MOVE_CONTINUOUS ||
+    tweenType === ContinuousTweenType.ROTATE_CONTINUOUS;
+  const isUnsupported = tweenType === UNSUPPORTED_TWEEN_TYPE;
+  const unsupportedMode = getTweenInputProps('unsupportedMode').value?.toString() ?? '';
+  const tweenTypeOptions = isUnsupported
+    ? [
+        ...TweenTypeOptions,
+        {
+          label: `${UnsupportedModeLabels[unsupportedMode] ?? unsupportedMode} (not editable)`,
+          value: UNSUPPORTED_TWEEN_TYPE,
+          disabled: true,
+        },
+      ]
+    : TweenTypeOptions;
 
   return (
     <Container
@@ -123,74 +147,110 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
       <Block label="Tween Type">
         <Dropdown
           placeholder="Select a Tween Type"
-          options={[
-            ...Object.values(TweenType).map(tweenType => ({
-              label: TweenMapOption[tweenType],
-              value: tweenType,
-            })),
-          ]}
+          options={tweenTypeOptions}
           {...getTweenInputProps('type')}
         />
       </Block>
-      <Block label="Start">
-        <TextField
-          autoSelect
-          leftLabel="X"
-          type="number"
-          {...getTweenInputProps('start.x')}
-        />
-        <TextField
-          autoSelect
-          leftLabel="Y"
-          type="number"
-          {...getTweenInputProps('start.y')}
-        />
-        <TextField
-          autoSelect
-          leftLabel="Z"
-          type="number"
-          {...getTweenInputProps('start.z')}
-        />
-      </Block>
-      <Block label="End">
-        <TextField
-          autoSelect
-          leftLabel="X"
-          type="number"
-          {...getTweenInputProps('end.x')}
-        />
-        <TextField
-          autoSelect
-          leftLabel="Y"
-          type="number"
-          {...getTweenInputProps('end.y')}
-        />
-        <TextField
-          autoSelect
-          leftLabel="Z"
-          type="number"
-          {...getTweenInputProps('end.z')}
-        />
-      </Block>
-      <Block>
-        <RangeField
-          step={0.1}
-          label="Duration"
-          {...getTweenInputProps('duration')}
-        />
-      </Block>
-      <Block>
-        <Dropdown
-          label="Easing Function"
-          options={[
-            ...EasingFunctionOptions.map(easingFunctionType => ({
-              label: EasingFunctionMapOption[easingFunctionType],
-              value: easingFunctionType,
-            })),
-          ]}
-          {...getTweenInputProps('easingFunction')}
-        />
-      </Block>
+      {!isContinuous && !isUnsupported && (
+        <>
+          <Block label="Start">
+            <TextField
+              autoSelect
+              leftLabel="X"
+              type="number"
+              {...getTweenInputProps('start.x')}
+            />
+            <TextField
+              autoSelect
+              leftLabel="Y"
+              type="number"
+              {...getTweenInputProps('start.y')}
+            />
+            <TextField
+              autoSelect
+              leftLabel="Z"
+              type="number"
+              {...getTweenInputProps('start.z')}
+            />
+          </Block>
+          <Block label="End">
+            <TextField
+              autoSelect
+              leftLabel="X"
+              type="number"
+              {...getTweenInputProps('end.x')}
+            />
+            <TextField
+              autoSelect
+              leftLabel="Y"
+              type="number"
+              {...getTweenInputProps('end.y')}
+            />
+            <TextField
+              autoSelect
+              leftLabel="Z"
+              type="number"
+              {...getTweenInputProps('end.z')}
+            />
+          </Block>
+          <Block>
+            <RangeField
+              step={0.1}
+              label="Duration"
+              {...getTweenInputProps('duration')}
+            />
+          </Block>
+          <Block>
+            <Dropdown
+              label="Easing Function"
+              options={[
+                ...EasingFunctionOptions.map(easingFunctionType => ({
+                  label: EasingFunctionMapOption[easingFunctionType],
+                  value: easingFunctionType,
+                })),
+              ]}
+              {...getTweenInputProps('easingFunction')}
+            />
+          </Block>
+        </>
+      )}
+      {isContinuous && (
+        <>
+          <Block
+            label={
+              tweenType === ContinuousTweenType.ROTATE_CONTINUOUS
+                ? 'Direction (degrees/sec)'
+                : 'Direction (meters/sec)'
+            }
+          >
+            <TextField
+              autoSelect
+              leftLabel="X"
+              type="number"
+              {...getTweenInputProps('direction.x')}
+            />
+            <TextField
+              autoSelect
+              leftLabel="Y"
+              type="number"
+              {...getTweenInputProps('direction.y')}
+            />
+            <TextField
+              autoSelect
+              leftLabel="Z"
+              type="number"
+              {...getTweenInputProps('direction.z')}
+            />
+          </Block>
+          <Block label="Speed">
+            <TextField
+              autoSelect
+              type="number"
+              {...getTweenInputProps('speed')}
+            />
+          </Block>
+        </>
+      )}
       <Block>
         <CheckboxField
           label="Auto start"

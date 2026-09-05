@@ -10,5 +10,9 @@ export type AudioSourceInput = {
   playing?: boolean;
   loop?: boolean;
   volume?: string;
+  pitch?: string;
   global?: boolean;
+  // Hidden pass-through (no UI control): playback-position seek, only meaningful at runtime.
+  // Carried through the input so edits from the inspector never delete it.
+  currentTime?: string;
 };
