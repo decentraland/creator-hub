@@ -450,6 +450,17 @@ const BillingDismiss = styled('span')({
   color: 'var(--dcl)',
 });
 
+const OutdatedHint = styled(Box)(({ theme }) => ({
+  display: 'flex',
+  alignItems: 'center',
+  gap: theme.spacing(0.5),
+  padding: theme.spacing(0.5, 1.5),
+  borderTop: `1px solid ${theme.palette.divider}`,
+  color: theme.palette.warning.main,
+  fontSize: theme.typography.pxToRem(11),
+  lineHeight: 1.35,
+}));
+
 const SelectionBar = styled(Box)(({ theme }) => ({
   display: 'flex',
   alignItems: 'center',
@@ -490,6 +501,7 @@ export {
   HistoryBar,
   HistoryList,
   HistoryRow,
+  OutdatedHint,
   Panel,
   PanelHeader,
   PromptAnswer,

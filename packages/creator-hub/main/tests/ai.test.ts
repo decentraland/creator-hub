@@ -20,7 +20,13 @@ vi.mock('../src/modules/explorer-gateway', () => ({
   stopPreview: vi.fn(),
 }));
 
-import { PROVIDERS, filterEnvForChild, nvmBinDirs, parseShellPath } from '../src/modules/ai';
+import {
+  PROVIDERS,
+  filterEnvForChild,
+  friendlyCliError,
+  nvmBinDirs,
+  parseShellPath,
+} from '../src/modules/ai';
 
 const PROJECT = '/home/user/scene';
 
@@ -336,5 +342,27 @@ describe('buildArgs MCP wiring', () => {
 
   it('codex: no mcp_servers override when the server is unavailable', () => {
     expect(PROVIDERS.codex.buildArgs({ ...base }).join(' ')).not.toContain('mcp_servers');
+  });
+});
+
+describe('friendlyCliError', () => {
+  // The exact blob the old CLI relays for a model it can't serve (the Fable-on-2.1.39 case).
+  const versionTooOld =
+    'API Error: 400 {"type":"error","error":{"type":"invalid_request_error","message":"Claude Code 2.1.39 does not support this model; version 2.1.251 or newer is required. Run \'claude update\', or update the Claude desktop app, then try again.","details":{"error_code":"claude_code_version_too_old"}},"request_id":"req_011CeiMWbNfXe9zppoJqNSwo"}';
+
+  it('rewrites the version-too-old blob to one actionable line', () => {
+    const out = friendlyCliError(versionTooOld);
+    expect(out).not.toContain('request_id');
+    expect(out).not.toContain('{');
+    expect(out).toContain('claude update');
+  });
+
+  it('matches on error_code alone', () => {
+    expect(friendlyCliError('boom error_code":"claude_code_version_too_old"')).toContain('too old');
+  });
+
+  it('passes ordinary assistant text through untouched', () => {
+    const text = 'Sure — I added a GltfContainer to the scene.';
+    expect(friendlyCliError(text)).toBe(text);
   });
 });

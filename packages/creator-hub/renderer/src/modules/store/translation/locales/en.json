@@ -101,6 +101,7 @@
       "empty": "Hi there! I'm here to help. Ask questions about your scene, get help with scripting, or tell me what you'd like to build or change. I can inspect your scene and write the code needed to bring your ideas to life.",
       "billing": "Runs on your own {provider} account — messages count against your plan's usage, not a free Creator Hub allowance.",
       "billing_dismiss": "Don't show again",
+      "outdated": "Your Claude CLI (v{version}) is out of date — run \"claude update\" in a terminal to use the latest models.",
       "screenshot_alt": "Screenshot from the assistant",
       "history": {
         "title": "Chat history",

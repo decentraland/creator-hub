@@ -24,7 +24,12 @@ export default defineConfig({
       },
     },
     // Run spec files one at a time so only one headless Chromium is alive at
-    // once (avoids N concurrent browsers, which would be worse than the bug).
+    // once. Running two concurrently was tried and reverted: the CI runner is
+    // CPU-bound (macos-latest: 3 vCPU), so two browsers just contend — each
+    // action ran ~40% slower and the drag/drop-heavy Hierarchy specs raced
+    // (entities not settled → "Could not find entity"), for almost no
+    // wall-clock win. Speed comes from the lower per-action slowMo instead
+    // (test/e2e/setup.ts), which is safe precisely because runs stay serial.
     fileParallelism: false,
   },
   resolve: {
