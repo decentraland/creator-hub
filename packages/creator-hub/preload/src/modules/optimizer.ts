@@ -20,6 +20,14 @@ export async function revert(path: string) {
   return invoke('optimizer.revert', path);
 }
 
+export async function tools() {
+  return invoke('optimizer.tools');
+}
+
+export async function installTools(path: string) {
+  return invoke('optimizer.installTools', path);
+}
+
 export function subscribeProgress(
   path: string,
   cb: (progress: OptimizeProgress) => void,

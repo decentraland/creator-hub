@@ -89,6 +89,21 @@ function setupMainPackageWatcher({ resolvedUrls }) {
 }
 
 /**
+ * Watches the optimizer worker bundle (main/vite.worker.config.js). It is copied into the tools
+ * dir on each optimizer run, so a rebuild needs no Electron restart.
+ */
+function setupOptimizerWorkerWatcher() {
+  return build({
+    mode,
+    logLevel,
+    configFile: 'main/vite.worker.config.js',
+    build: {
+      watch: {},
+    },
+  });
+}
+
+/**
  * Setup watcher for `preload` package
  * On file changed it reload web page.
  * @param {import('vite').ViteDevServer} watchServer Renderer watch server instance.
@@ -136,3 +151,4 @@ setupTypeChecker();
 
 await setupPreloadPackageWatcher(rendererWatchServer);
 await setupMainPackageWatcher(rendererWatchServer);
+await setupOptimizerWorkerWatcher();

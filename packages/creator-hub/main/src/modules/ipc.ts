@@ -171,4 +171,6 @@ export function initIpc({ beforeQuitCleanup }: InitIpcOptions) {
   handle('optimizer.scan', (_event, path) => optimizer.scan(path));
   handle('optimizer.run', (_event, path, options) => optimizer.run(path, options));
   handle('optimizer.revert', (_event, path) => optimizer.revert(path));
+  handle('optimizer.tools', () => optimizer.tools());
+  handle('optimizer.installTools', (_event, path) => optimizer.installTools(path));
 }

@@ -38,15 +38,9 @@ const config = {
   ],
   // node-pty ships N-API .node prebuilds + a spawn-helper binary that must run from disk,
   // not from inside the asar (#1531 drives the CLI login through a PTY).
-  // sharp's native .node + libvips .dylib are auto-unpacked by electron-builder's smartUnpack.
-  // oxipng and draco3dgltf load their wasm via fs.readFileSync(__dirname/*.wasm), so unpack those
-  // to real files. (meshoptimizer embeds its wasm as base64 in JS — nothing to unpack.)
-  asarUnpack: [
-    'node_modules/npm/**/*',
-    'node_modules/node-pty/**/*',
-    'node_modules/@wasm-codecs/**/*.wasm',
-    'node_modules/draco3dgltf/*.wasm',
-  ],
+  // The optimizer toolchain (sharp, gltf-transform, …) is NOT packaged: it is downloaded on
+  // first use into userData (main/src/modules/optimizer/tools.ts).
+  asarUnpack: ['node_modules/npm/**/*', 'node_modules/node-pty/**/*'],
   extraResources: [
     {
       from: 'devtools-frontend',

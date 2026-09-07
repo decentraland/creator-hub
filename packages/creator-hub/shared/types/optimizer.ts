@@ -87,7 +87,15 @@ export type OptimizeResult = {
   files: OptimizeFileResult[];
 };
 
-export type OptimizePhase = 'prepare' | 'backup' | 'mesh' | 'textures' | 'write' | 'done' | 'error';
+export type OptimizePhase =
+  | 'install'
+  | 'prepare'
+  | 'backup'
+  | 'mesh'
+  | 'textures'
+  | 'write'
+  | 'done'
+  | 'error';
 
 // Progress pushed from main to the renderer during a run.
 export const OPTIMIZE_PROGRESS_EVENT = 'optimizer.progress';
@@ -100,6 +108,34 @@ export type OptimizeProgress = {
   total: number;
   message: string;
 };
+
+// The toolchain is downloaded on first use (see main's optimizer/tools.ts), pinned to exact
+// versions; the renderer shows this list on the consent screen before anything is fetched.
+export type OptimizeToolsStatus = 'missing' | 'ready';
+
+export type OptimizeToolInfo = {
+  pkg: string;
+  name: string;
+  version: string;
+  purposeKey: 'sharp' | 'gltf' | 'oxipng' | 'meshopt' | 'draco';
+  npm: string; // npm page of the exact version
+  source: string; // upstream release page
+};
+
+export type OptimizeToolsInfo = {
+  status: OptimizeToolsStatus;
+  tools: OptimizeToolInfo[];
+  downloadSizeMb: number;
+};
+
+// Host ⇄ worker contract: the job goes to the worker in OPTIMIZER_JOB, messages come back as
+// one JSON object per stdout line.
+export type OptimizeWorkerJob = { command: 'run'; projectPath: string; options: OptimizeOptions };
+
+export type OptimizeWorkerMessage =
+  | { type: 'progress'; progress: Omit<OptimizeProgress, 'path'> }
+  | { type: 'result'; result: OptimizeResult }
+  | { type: 'error'; message: string };
 
 export const DEFAULT_OPTIMIZE_OPTIONS: OptimizeOptions = {
   mesh: {

@@ -177,10 +177,11 @@
     "subtitle": "Reduce el tamaño de los GLB de tu escena comprimiendo y deduplicando texturas y limpiando las mallas. Se guarda una copia de los originales para poder revertir.",
     "docs_link": "Cómo funciona cada opción",
     "consent": {
-      "blurb": "La optimización se ejecuta por completo en tu equipo usando estas herramientas de código abierto. Se cargan e inicializan la primera vez que ejecutas — nada sale de tu computadora. Revísalas antes de continuar.",
+      "blurb": "La optimización se ejecuta por completo en tu equipo con estas herramientas de código abierto. Se descargan de npm la primera vez que continúas, fijadas a las versiones indicadas abajo, y se guardan en la carpeta de datos de la app. Tus modelos nunca salen de tu computadora.",
       "npm": "npm",
       "source": "Código",
       "note": "Tus modelos originales se respaldan y pueden revertirse en cualquier momento.",
+      "download": "Se descargarán unos {size} MB ahora.",
       "continue": "Continuar",
       "cancel": "Cancelar",
       "purpose": {
@@ -190,6 +191,12 @@
         "meshopt": "Reordenado y simplificación de mallas, y el códec Meshopt.",
         "draco": "Compresión de geometría Draco — solo se carga si eliges Draco."
       }
+    },
+    "tools": {
+      "installing_blurb": "Preparando las herramientas de optimización. Esto ocurre una sola vez.",
+      "installing": "Descargando herramientas de optimización…",
+      "failed": "No se pudieron descargar las herramientas de optimización: {message}",
+      "retry": "Reintentar"
     },
     "select_project": "Selecciona una escena",
     "no_projects": "No se encontraron escenas. Crea o importa una escena primero.",

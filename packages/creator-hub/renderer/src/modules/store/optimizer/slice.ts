@@ -6,6 +6,7 @@ import type {
   OptimizeProgress,
   OptimizeResult,
   OptimizeScanResult,
+  OptimizeToolsInfo,
 } from '/shared/types/optimizer';
 
 import { createAsyncThunk } from '../thunk';
@@ -18,6 +19,9 @@ type OptimizerState = {
   // Reset every time the window opens, so the decision is made each session.
   acknowledged: boolean;
   activePath: string | null;
+  // The pinned toolchain and whether it is on disk yet; installed on demand after consent.
+  tools: OptimizeToolsInfo | null;
+  installStatus: Status;
   scan: OptimizeScanResult | null;
   scanStatus: Status;
   runStatus: Status;
@@ -30,6 +34,8 @@ const initialState: OptimizerState = {
   isOpen: false,
   acknowledged: false,
   activePath: null,
+  tools: null,
+  installStatus: 'idle',
   scan: null,
   scanStatus: 'idle',
   runStatus: 'idle',
@@ -52,6 +58,14 @@ export const runOptimize = createAsyncThunk(
   },
 );
 
+export const loadTools = createAsyncThunk('optimizer/tools', async () => {
+  return optimizerPreload.tools();
+});
+
+export const installTools = createAsyncThunk('optimizer/installTools', async (path: string) => {
+  return optimizerPreload.installTools(path);
+});
+
 export const revertProject = createAsyncThunk('optimizer/revert', async (path: string) => {
   await optimizerPreload.revert(path);
   const scan = await optimizerPreload.scan(path);
@@ -65,6 +79,9 @@ const slice = createSlice({
     open: state => {
       state.isOpen = true;
       state.acknowledged = false;
+      state.installStatus = 'idle';
+      state.progress = null;
+      state.error = null;
     },
     acknowledge: state => {
       state.acknowledged = true;
@@ -80,6 +97,21 @@ const slice = createSlice({
   },
   extraReducers: builder => {
     builder
+      .addCase(loadTools.fulfilled, (state, action) => {
+        state.tools = action.payload;
+      })
+      .addCase(installTools.pending, state => {
+        state.installStatus = 'loading';
+        state.error = null;
+      })
+      .addCase(installTools.fulfilled, (state, action) => {
+        state.installStatus = 'succeeded';
+        state.tools = action.payload;
+      })
+      .addCase(installTools.rejected, (state, action) => {
+        state.installStatus = 'failed';
+        state.error = action.error.message ?? 'Could not install the optimizer tools';
+      })
       .addCase(scanProject.pending, (state, action) => {
         state.scanStatus = 'loading';
         state.activePath = action.meta.arg;
@@ -119,5 +151,12 @@ const slice = createSlice({
   },
 });
 
-export const actions = { ...slice.actions, scanProject, runOptimize, revertProject };
+export const actions = {
+  ...slice.actions,
+  scanProject,
+  runOptimize,
+  revertProject,
+  loadTools,
+  installTools,
+};
 export const { reducer } = slice;

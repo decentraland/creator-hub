@@ -45,47 +45,6 @@ const FORMATS: TextureFormat[] = ['png', 'jpeg', 'webp'];
 // TODO: replace with the published "Optimize models" documentation URL.
 const DOCS_URL = 'https://docs.decentraland.org/creator/optimize-models';
 
-// The open-source tools the optimizer relies on. Shown up front (with links out to their
-// package and source pages) so the creator can review them before running anything. `draco`
-// only loads when Draco compression is chosen.
-const TOOLS: {
-  name: string;
-  purposeKey: 'sharp' | 'gltf' | 'oxipng' | 'meshopt' | 'draco';
-  npm: string;
-  source: string;
-}[] = [
-  {
-    name: 'sharp',
-    purposeKey: 'sharp',
-    npm: 'https://www.npmjs.com/package/sharp',
-    source: 'https://github.com/lovell/sharp/releases',
-  },
-  {
-    name: 'glTF-Transform',
-    purposeKey: 'gltf',
-    npm: 'https://www.npmjs.com/package/@gltf-transform/core',
-    source: 'https://github.com/donmccurdy/glTF-Transform/releases',
-  },
-  {
-    name: 'oxipng',
-    purposeKey: 'oxipng',
-    npm: 'https://www.npmjs.com/package/@wasm-codecs/oxipng',
-    source: 'https://github.com/oxipng/oxipng/releases',
-  },
-  {
-    name: 'meshoptimizer',
-    purposeKey: 'meshopt',
-    npm: 'https://www.npmjs.com/package/meshoptimizer',
-    source: 'https://github.com/zeux/meshoptimizer/releases',
-  },
-  {
-    name: 'Draco',
-    purposeKey: 'draco',
-    npm: 'https://www.npmjs.com/package/draco3dgltf',
-    source: 'https://github.com/google/draco/releases',
-  },
-];
-
 function InfoTip({ tip }: { tip: string }) {
   return (
     <Tooltip
@@ -115,8 +74,18 @@ function LabelWithInfo({ text, tip }: { text: string; tip: string }) {
 
 export function OptimizeModal({ project }: { project?: Project | null }) {
   const dispatch = useDispatch();
-  const { isOpen, acknowledged, scan, scanStatus, runStatus, progress, result, error } =
-    useSelector(state => state.optimizer);
+  const {
+    isOpen,
+    acknowledged,
+    tools,
+    installStatus,
+    scan,
+    scanStatus,
+    runStatus,
+    progress,
+    result,
+    error,
+  } = useSelector(state => state.optimizer);
 
   const [options, setOptions] = useState<OptimizeOptions>(DEFAULT_OPTIMIZE_OPTIONS);
   const [showDetails, setShowDetails] = useState(false);
@@ -124,11 +93,25 @@ export function OptimizeModal({ project }: { project?: Project | null }) {
   const projectPath = project?.path ?? null;
   const isRunning = runStatus === 'loading';
 
-  // Scan the scene only after the creator has seen the disclosure and continued — so nothing
-  // touches their files until they've decided to proceed.
+  // The consent screen lists the pinned toolchain, so fetch that list as soon as the modal opens.
   useEffect(() => {
-    if (isOpen && acknowledged && projectPath) dispatch(actions.scanProject(projectPath));
-  }, [isOpen, acknowledged, projectPath, dispatch]);
+    if (isOpen) dispatch(actions.loadTools());
+  }, [isOpen, dispatch]);
+
+  // Nothing is downloaded until the creator has seen the disclosure and continued.
+  useEffect(() => {
+    if (isOpen && acknowledged && projectPath && tools?.status === 'missing') {
+      if (installStatus === 'idle') dispatch(actions.installTools(projectPath));
+    }
+  }, [isOpen, acknowledged, projectPath, tools?.status, installStatus, dispatch]);
+
+  // Scan the scene only once the tools are on disk — so nothing touches the creator's files
+  // before they've decided to proceed and the run can actually happen.
+  useEffect(() => {
+    if (isOpen && acknowledged && projectPath && tools?.status === 'ready') {
+      dispatch(actions.scanProject(projectPath));
+    }
+  }, [isOpen, acknowledged, projectPath, tools?.status, dispatch]);
 
   // Stream progress for this scene while the modal is open.
   useEffect(() => {
@@ -210,10 +193,12 @@ export function OptimizeModal({ project }: { project?: Project | null }) {
             {t('optimize.consent.blurb')}
           </Typography>
           <ul className="tool-list">
-            {TOOLS.map(tool => (
-              <li key={tool.name}>
+            {(tools?.tools ?? []).map(tool => (
+              <li key={tool.pkg}>
                 <div className="tool-head">
-                  <span className="tool-name">{tool.name}</span>
+                  <span className="tool-name">
+                    {tool.name} <span className="tool-version">v{tool.version}</span>
+                  </span>
                   <span className="tool-links">
                     <button
                       type="button"
@@ -243,11 +228,14 @@ export function OptimizeModal({ project }: { project?: Project | null }) {
             variant="caption"
             className="consent-note"
           >
-            {t('optimize.consent.note')}
+            {tools?.status === 'missing'
+              ? `${t('optimize.consent.download', { size: tools.downloadSizeMb })} ${t('optimize.consent.note')}`
+              : t('optimize.consent.note')}
           </Typography>
           <Box className="actions">
             <Button
               variant="contained"
+              disabled={!tools}
               onClick={() => dispatch(actions.acknowledge())}
             >
               {t('optimize.consent.continue')}
@@ -259,6 +247,43 @@ export function OptimizeModal({ project }: { project?: Project | null }) {
               {t('optimize.consent.cancel')}
             </Button>
           </Box>
+        </div>
+      ) : tools?.status !== 'ready' ? (
+        <div className="OptimizeModal installing">
+          <Typography
+            variant="body2"
+            className="subtitle"
+          >
+            {t('optimize.tools.installing_blurb')}
+          </Typography>
+          {installStatus === 'failed' ? (
+            <>
+              <Typography className="error">
+                {t('optimize.tools.failed', { message: error ?? '' })}
+              </Typography>
+              <Box className="actions">
+                <Button
+                  variant="contained"
+                  onClick={() => projectPath && dispatch(actions.installTools(projectPath))}
+                >
+                  {t('optimize.tools.retry')}
+                </Button>
+                <Button
+                  variant="outlined"
+                  onClick={handleClose}
+                >
+                  {t('optimize.consent.cancel')}
+                </Button>
+              </Box>
+            </>
+          ) : (
+            <Box className="progress">
+              <LinearProgress variant="indeterminate" />
+              <span className="progress-message">
+                {progress?.phase === 'install' ? progress.message : t('optimize.tools.installing')}
+              </span>
+            </Box>
+          )}
         </div>
       ) : (
         <div className="OptimizeModal">

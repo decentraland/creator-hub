@@ -10,7 +10,12 @@ import type { Env } from './env';
 import type { OxcParseResult } from './oxc';
 import type { MetricsRequest, MetricsResponse } from './metrics';
 import type { AiMirrorState, AiProviderInfo, AiRemoteCommand, AiSendParams } from './ai';
-import type { OptimizeOptions, OptimizeResult, OptimizeScanResult } from './optimizer';
+import type {
+  OptimizeOptions,
+  OptimizeResult,
+  OptimizeScanResult,
+  OptimizeToolsInfo,
+} from './optimizer';
 
 export type IpcResult<T> = {
   success: true;
@@ -130,6 +135,8 @@ export interface Ipc {
   'optimizer.scan': (path: string) => Promise<OptimizeScanResult>;
   'optimizer.run': (path: string, options: OptimizeOptions) => Promise<OptimizeResult>;
   'optimizer.revert': (path: string) => Promise<{ restored: number }>;
+  'optimizer.tools': () => Promise<OptimizeToolsInfo>;
+  'optimizer.installTools': (path: string) => Promise<OptimizeToolsInfo>;
   'metrics.request': (request: MetricsRequest) => Promise<MetricsResponse>;
   'inspector.start': () => Promise<number>;
   'inspector.attachSceneDebugger': (path: string) => Promise<string>;

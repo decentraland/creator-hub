@@ -178,10 +178,11 @@
     "subtitle": "Shrink your scene's GLBs by compressing and deduplicating textures and cleaning up meshes. Originals are backed up so you can revert.",
     "docs_link": "How each option works",
     "consent": {
-      "blurb": "Optimizing runs entirely on your machine using these open-source tools. They load and initialize the first time you run — nothing leaves your computer. Review them before continuing.",
+      "blurb": "Optimizing runs entirely on your machine with these open-source tools. They are downloaded from npm the first time you continue, pinned to the versions listed below, and kept in the app's data folder. Your models never leave your computer.",
       "npm": "npm",
       "source": "Source",
       "note": "Your original models are backed up and can be reverted at any time.",
+      "download": "About {size} MB will be downloaded now.",
       "continue": "Continue",
       "cancel": "Cancel",
       "purpose": {
@@ -191,6 +192,12 @@
         "meshopt": "Mesh reorder, simplify, and the Meshopt codec.",
         "draco": "Draco geometry compression — only loads if you choose Draco."
       }
+    },
+    "tools": {
+      "installing_blurb": "Getting the optimizer tools ready. This happens once.",
+      "installing": "Downloading optimizer tools…",
+      "failed": "Could not download the optimizer tools: {message}",
+      "retry": "Retry"
     },
     "select_project": "Select a scene",
     "no_projects": "No scenes found. Create or import a scene first.",
