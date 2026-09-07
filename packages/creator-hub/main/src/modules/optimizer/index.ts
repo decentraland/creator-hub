@@ -10,7 +10,6 @@ import {
   type OptimizeResult,
   type OptimizeToolsInfo,
   type OptimizeWorkerJob,
-  type OptimizeWorkerMessage,
 } from '/shared/types/optimizer';
 
 import { MAIN_WINDOW_ID } from '../../mainWindow';
@@ -18,6 +17,7 @@ import { run as runBin } from '../bin';
 import { getBundledNodePath } from '../path';
 import { getWindow } from '../window';
 import { readManifest, revertFromManifest } from './backup';
+import { createWorkerOutputReader } from './protocol';
 import { TEXTURES_DIR, scan } from './scan';
 import { getToolsDir, getToolsInfo, installTools as installToolchain } from './tools';
 
@@ -103,40 +103,26 @@ export async function run(projectPath: string, options: OptimizeOptions): Promis
 
   let result: OptimizeResult | null = null;
   let failure: string | null = null;
-  let pending = '';
 
-  const handleLine = (line: string) => {
-    if (!line.startsWith('{')) {
-      if (line.trim()) log.info(`[Optimizer] ${line}`);
-      return;
-    }
-    let message: OptimizeWorkerMessage;
-    try {
-      message = JSON.parse(line);
-    } catch {
-      return;
-    }
-    if (message.type === 'progress') emitProgress(projectPath, message.progress);
-    else if (message.type === 'result') result = message.result;
-    else if (message.type === 'error') failure = message.message;
-  };
-
-  child.process.stdout?.on('data', (chunk: Buffer) => {
-    pending += chunk.toString('utf8');
-    const lines = pending.split('\n');
-    pending = lines.pop() ?? '';
-    lines.forEach(handleLine);
+  const reader = createWorkerOutputReader({
+    onLog: line => log.info(`[Optimizer] ${line}`),
+    onMessage: message => {
+      if (message.type === 'progress') emitProgress(projectPath, message.progress);
+      else if (message.type === 'result') result = message.result;
+      else if (message.type === 'error') failure = message.message;
+    },
   });
+  child.process.stdout?.on('data', (chunk: Buffer) => reader.push(chunk));
 
   try {
     await child.wait();
   } catch (error) {
     await stdoutDrained(child.process.stdout);
-    if (pending) handleLine(pending);
+    reader.flush();
     throw new Error(failure ?? (error instanceof Error ? error.message : String(error)));
   }
   await stdoutDrained(child.process.stdout);
-  if (pending) handleLine(pending);
+  reader.flush();
 
   if (failure) throw new Error(failure);
   if (!result) throw new Error('The optimizer worker exited without a result.');
