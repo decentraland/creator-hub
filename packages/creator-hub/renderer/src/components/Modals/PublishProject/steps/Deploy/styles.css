@@ -234,21 +234,6 @@
   margin-top: auto;
 }
 
-.Deploy .scene .Deploying .info {
-  display: flex;
-  flex-direction: row;
-  background-color: #1764c03d;
-  border-radius: 8px;
-  padding: 20px;
-  width: 450px;
-  color: var(--dcl-silver);
-  margin-bottom: auto;
-}
-
-.Deploy .scene .Deploying .info svg {
-  color: var(--twitter);
-}
-
 .Deploy .scene .jump-in-url label {
   color: var(--dcl-silver);
   line-height: 20px;

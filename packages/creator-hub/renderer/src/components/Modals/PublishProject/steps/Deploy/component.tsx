@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import cx from 'classnames';
-import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import { Typography, Checkbox } from 'decentraland-ui2';
 
 import { misc, env } from '#preload';
@@ -241,15 +240,10 @@ export function Deploy(props: Props) {
             <div className="content">
               <div className="Warning" />
               <div className="message">
-                {t(
-                  isReplacingWorldContent || needsUndeploy
-                    ? 'modal.publish_project.deploy.warning.message_replacing_world_content'
-                    : 'modal.publish_project.deploy.warning.message_basic',
-                  {
-                    ul: (child: string) => <ul>{child}</ul>,
-                    li: (child: string) => <li>{child}</li>,
-                  },
-                )}
+                {t('modal.publish_project.deploy.warning.message_replacing_world_content', {
+                  ul: (child: string) => <ul>{child}</ul>,
+                  li: (child: string) => <li>{child}</li>,
+                })}
               </div>
             </div>
             <div className="actions">
@@ -314,7 +308,11 @@ export function Deploy(props: Props) {
                   <Idle
                     files={deployment.files}
                     error={deployment.error}
-                    onClick={() => (skipWarning ? handlePublish() : setShowWarning(true))}
+                    onClick={() =>
+                      skipWarning || !(isReplacingWorldContent || needsUndeploy)
+                        ? handlePublish()
+                        : setShowWarning(true)
+                    }
                   />
                 )}
                 {(deployment.status === 'pending' || undeployStatus === 'pending') && (
@@ -429,7 +427,7 @@ function Deploying({ deployment, steps, url, onClick }: DeployingProps) {
         <Typography variant="h5">{title}</Typography>
       </div>
       <ConnectedSteps steps={steps} />
-      {isFinishing ? (
+      {isFinishing && (
         <>
           <div className="jump">
             <JumpUrl
@@ -448,11 +446,6 @@ function Deploying({ deployment, steps, url, onClick }: DeployingProps) {
             </Button>
           </div>
         </>
-      ) : (
-        <div className="info">
-          <InfoOutlinedIcon />
-          {t('modal.publish_project.deploy.deploying.info')}
-        </div>
       )}
     </div>
   );
