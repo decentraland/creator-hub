@@ -2,7 +2,6 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Box,
   Button,
-  Checkbox,
   FormControlLabel,
   LinearProgress,
   MenuItem,
@@ -344,50 +343,6 @@ export function OptimizeModal({ project }: { project?: Project | null }) {
                 />
               }
             />
-            <FormControlLabel
-              control={
-                <Checkbox
-                  checked={options.mesh.join}
-                  disabled={!options.mesh.enabled}
-                  onChange={e => updateMesh({ join: e.target.checked })}
-                />
-              }
-              label={
-                <LabelWithInfo
-                  text={t('optimize.options.mesh.join')}
-                  tip={t('optimize.options.mesh.join_tip')}
-                />
-              }
-            />
-            <FormControlLabel
-              control={
-                <Checkbox
-                  checked={options.mesh.simplify}
-                  disabled={!options.mesh.enabled}
-                  onChange={e => updateMesh({ simplify: e.target.checked })}
-                />
-              }
-              label={
-                <LabelWithInfo
-                  text={t('optimize.options.mesh.simplify')}
-                  tip={t('optimize.options.mesh.simplify_tip')}
-                />
-              }
-            />
-            {options.mesh.enabled && options.mesh.simplify && (
-              <Box className="slider">
-                <span>{t('optimize.options.mesh.ratio')}</span>
-                <Slider
-                  min={0.1}
-                  max={1}
-                  step={0.05}
-                  value={options.mesh.simplifyRatio}
-                  valueLabelDisplay="auto"
-                  onChange={(_, v) => updateMesh({ simplifyRatio: v as number })}
-                />
-              </Box>
-            )}
-
             <Box className="row">
               <LabelWithInfo
                 text={t('optimize.options.mesh.compression')}

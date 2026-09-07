@@ -189,7 +189,7 @@
         "sharp": "Resizes and re-encodes textures.",
         "gltf": "Reads and writes GLBs; runs the mesh cleanup.",
         "oxipng": "Lossless PNG optimization.",
-        "meshopt": "Mesh reorder, simplify, and the Meshopt codec.",
+        "meshopt": "Mesh reorder and the Meshopt codec.",
         "draco": "Draco geometry compression — only loads if you choose Draco."
       }
     },
@@ -213,11 +213,6 @@
         "title": "Meshes",
         "enabled": "Optimize meshes (weld, reorder, clean up)",
         "enabled_tip": "Lossless cleanup: merges duplicate vertices (weld), reorders indices for GPU cache efficiency, removes unused/duplicate data, and folds flat-color textures into material colors. Output loads in every runtime.",
-        "join": "Merge meshes to reduce draw calls",
-        "join_tip": "Combines compatible meshes into fewer objects so the runtime issues fewer draw calls. Changes the scene's object structure; leave off if you rely on individual meshes.",
-        "simplify": "Simplify geometry (reduces polygon count)",
-        "simplify_tip": "Reduces triangle count with the meshoptimizer simplifier. Lossy — use the Target detail slider to choose how much geometry to keep. Best for high-poly props over the triangle budget.",
-        "ratio": "Target detail",
         "compression": "Geometry compression",
         "compression_tip": "Optional extension-based compression. Quantize lowers vertex precision; Meshopt adds a compact codec on top; Draco compresses the most. All add a glTF extension the target runtime must support, or the model won't load in-world.",
         "compression_none": "None (loads everywhere)",

@@ -20,13 +20,6 @@ export type GeometryCompression = 'none' | 'quantize' | 'meshopt' | 'draco';
 export type MeshOptions = {
   // Master toggle for the lossless mesh cleanup pass (prune + dedup + weld + reorder).
   enabled: boolean;
-  // Merge compatible meshes/primitives to cut draw calls. Structural; opt-in.
-  join: boolean;
-  // Lossy polygon reduction via the meshoptimizer simplifier. Opt-in.
-  simplify: boolean;
-  // Target triangle ratio (0..1) and max error (0..1) for simplify.
-  simplifyRatio: number;
-  simplifyError: number;
   // Extension-based geometry compression (opt-in; needs runtime support).
   compression: GeometryCompression;
 };
@@ -140,10 +133,6 @@ export type OptimizeWorkerMessage =
 export const DEFAULT_OPTIMIZE_OPTIONS: OptimizeOptions = {
   mesh: {
     enabled: true,
-    join: false,
-    simplify: false,
-    simplifyRatio: 0.75,
-    simplifyError: 0.01,
     compression: 'none',
   },
   textures: {
