@@ -178,7 +178,9 @@
     "subtitle": "Shrink your scene's GLBs by compressing and deduplicating textures and cleaning up meshes. Originals are backed up so you can revert.",
     "docs_link": "How each option works",
     "consent": {
-      "blurb": "Optimizing runs entirely on your machine with these open-source tools. They are downloaded from npm the first time you continue, pinned to the versions listed below, and kept in the app's data folder. Your models never leave your computer.",
+      "blurb": "Optimizing runs entirely on your machine with open-source tools. They are downloaded from npm the first time you continue, pinned to fixed versions, and kept in the app's data folder. Your models never leave your computer.",
+      "show_tools": "Show the {count} open-source tools",
+      "hide_tools": "Hide the tool list",
       "npm": "npm",
       "source": "Source",
       "note": "Your original models are backed up and can be reverted at any time.",
@@ -204,7 +206,7 @@
     "scan": {
       "glbs": "{count} models",
       "size": "Total size: {size} (models {models} + textures {textures})",
-      "textures": "{embedded} embedded · {external} external textures",
+      "textures": "{embedded} embedded textures · {external} external textures",
       "empty": "This scene has no GLB models to optimize."
     },
     "options": {
@@ -256,6 +258,7 @@
       "textures_removed": "{count} superseded textures removed ({bytes})",
       "unchanged_skipped": "{unchanged} unchanged · {skipped} skipped",
       "show_details": "Show per-model details",
+      "hide_details": "Hide per-model details",
       "status": {
         "optimized": "optimized",
         "unchanged": "no change",

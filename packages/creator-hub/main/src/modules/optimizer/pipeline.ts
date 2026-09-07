@@ -17,15 +17,18 @@ import {
 } from '/shared/types/optimizer';
 
 import { fixGlbAlignment, patchGlbImageURIs, readGlbJson } from './glb';
-import { SKIP_DIRS, TEXTURES_DIR, resolveImageUri, walkGlbs } from './scan';
+import { SKIP_DIRS, TEXTURES_DIR, measureFootprint, resolveImageUri, walkGlbs } from './scan';
 import { runMeshPass } from './mesh';
 import {
   CATEGORY_PRIORITY,
   classifyTextureSlot,
-  compressImage,
+  mimeToExtension,
   pixelHash,
   sanitizeFilename,
+  type CompressResult,
 } from './textures';
+import { createInlinePool, type CompressPool } from './compress-pool';
+import { TextureCache } from './texture-cache';
 import {
   backupFile,
   createManifest,
@@ -165,16 +168,41 @@ type RunState = {
   externalBefore: Set<string>;
   manifest: OptimizeManifest;
   result: OptimizeResult;
+  pool: CompressPool;
+  cache: TextureCache;
+  // Position in the GLB loop, for texture-level progress lines.
+  progress: { index: number; total: number };
+};
+
+type TextureJob = {
+  index: number;
+  texture: Texture;
+  buffer: Buffer;
+  category: TextureCategory;
+  // Set when the texture was already a sidecar file of this GLB (not embedded).
+  originalAbs: string | null;
+  hash: string | null;
+  cacheKey: string | null;
+  canonicalAbs: string | null;
+  compressed: Promise<CompressResult> | null;
+  onPool: boolean;
 };
 
 // Pull embedded textures out to sidecar files (deduping identical pixels across all GLBs),
 // returning the index->relative-URI map to patch into the written GLB.
+//
+// Two passes, both in texture order. Pass 1 hashes each texture and settles what needs no
+// compression — a dedup hit, a duplicate earlier in this same GLB, a texture the cache says
+// cannot shrink — and hands everything else to the pool at once (a 63-texture model took 55 s
+// serially). Pass 2 does the bookkeeping as results land, so the dedup index fills in the same
+// order a serial loop would have and duplicates resolve to the first occurrence.
 async function externalizeTextures(
   document: Document,
   glbAbsPath: string,
+  relPath: string,
   state: RunState,
 ): Promise<Map<number, string>> {
-  const { options } = state;
+  const { options, pool, cache } = state;
   const glbDir = path.dirname(glbAbsPath);
   const categoryMap = buildCategoryMap(document);
   const textures = document.getRoot().listTextures();
@@ -182,40 +210,96 @@ async function externalizeTextures(
 
   await fs.mkdir(state.texturesDirAbs, { recursive: true });
 
+  const jobs: TextureJob[] = [];
+  const scheduledByHash = new Set<string>();
   for (let i = 0; i < textures.length; i++) {
     const texture = textures[i];
     const image = texture.getImage();
     if (!image) continue;
 
     const buffer = Buffer.from(image);
-    const category = categoryMap.get(texture) ?? 'other';
-    // Set when the texture was already a sidecar file of this GLB (not embedded).
-    const originalAbs = texture.getURI() ? resolveImageUri(glbAbsPath, texture.getURI()) : null;
+    const mime = texture.getMimeType();
+    const job: TextureJob = {
+      index: i,
+      texture,
+      buffer,
+      category: categoryMap.get(texture) ?? 'other',
+      originalAbs: texture.getURI() ? resolveImageUri(glbAbsPath, texture.getURI()) : null,
+      hash: options.textures.dedup || options.textures.compress ? await pixelHash(buffer) : null,
+      cacheKey: null,
+      canonicalAbs: null,
+      compressed: null,
+      onPool: false,
+    };
+    jobs.push(job);
 
-    let canonicalAbs: string | null = null;
-    let hash: string | null = null;
-    if (options.textures.dedup) {
-      hash = await pixelHash(buffer);
-      if (hash && state.dedupIndex.has(hash)) {
-        canonicalAbs = state.dedupIndex.get(hash)!;
-        if (canonicalAbs !== originalAbs) state.result.texturesDeduped++;
+    if (job.hash && options.textures.dedup) {
+      const known = state.dedupIndex.get(job.hash);
+      if (known) {
+        job.canonicalAbs = known;
+        continue;
       }
+      if (scheduledByHash.has(job.hash)) continue;
+      scheduledByHash.add(job.hash);
     }
 
-    if (!canonicalAbs) {
-      const { data, ext } = await compressImage(
-        buffer,
-        category,
-        texture.getMimeType(),
-        options.textures,
+    const cacheable =
+      job.hash &&
+      options.textures.compress &&
+      mime === 'image/png' &&
+      options.textures.format === 'png';
+    if (cacheable) {
+      job.cacheKey = TextureCache.key(job.hash!, job.category, options.textures);
+      if (cache.hasNoGain(job.cacheKey, buffer.length)) {
+        job.compressed = Promise.resolve({ data: buffer, ext: mimeToExtension(mime), mime });
+        continue;
+      }
+    }
+    job.compressed = pool.compress(buffer, job.category, mime, options.textures);
+    job.onPool = true;
+  }
+
+  const onPool = jobs.filter(job => job.onPool);
+  if (onPool.length > 1) {
+    let done = 0;
+    for (const job of onPool) {
+      job.compressed!.then(
+        () => {
+          done++;
+          emitProgress(
+            state.projectPath,
+            'textures',
+            state.progress.index,
+            state.progress.total,
+            `Optimizing ${relPath} · texture ${done}/${onPool.length}`,
+            relPath,
+          );
+        },
+        () => {},
       );
-      if (originalAbs && data.length >= buffer.length) {
+    }
+  }
+
+  for (const job of jobs) {
+    const { hash, originalAbs, buffer } = job;
+    let canonicalAbs = job.canonicalAbs;
+    if (!canonicalAbs && !job.compressed && hash) canonicalAbs = state.dedupIndex.get(hash) ?? null;
+
+    if (canonicalAbs) {
+      if (canonicalAbs !== originalAbs) state.result.texturesDeduped++;
+    } else {
+      const { data, ext } = await job.compressed!;
+      const noGain = data.length >= buffer.length;
+      if (job.cacheKey && noGain) cache.rememberNoGain(job.cacheKey, buffer.length);
+      if (originalAbs && noGain) {
         // Re-encoding an existing sidecar gained nothing: keep pointing at the original rather
         // than writing a same-size copy that would only supersede it.
         canonicalAbs = originalAbs;
       } else {
         const base = sanitizeFilename(
-          path.parse(texture.getURI()).name || texture.getName() || `texture_${category}`,
+          path.parse(job.texture.getURI()).name ||
+            job.texture.getName() ||
+            `texture_${job.category}`,
         );
         const finalName = uniqueName(base, ext, state.usedNames);
         canonicalAbs = path.join(state.texturesDirAbs, finalName);
@@ -227,11 +311,11 @@ async function externalizeTextures(
         state.result.texturesExtracted++;
         state.result.sidecarBytes += data.length;
       }
-      if (hash) state.dedupIndex.set(hash, canonicalAbs);
+      if (hash && options.textures.dedup) state.dedupIndex.set(hash, canonicalAbs);
     }
 
-    uriMap.set(i, toPosix(path.relative(glbDir, canonicalAbs)));
-    texture.setImage(null);
+    uriMap.set(job.index, toPosix(path.relative(glbDir, canonicalAbs)));
+    job.texture.setImage(null);
   }
 
   return uriMap;
@@ -326,19 +410,24 @@ async function recompressEmbedded(document: Document, state: RunState): Promise<
   const categoryMap = buildCategoryMap(document);
 
   if (options.textures.compress) {
-    for (const texture of document.getRoot().listTextures()) {
-      const image = texture.getImage();
-      if (!image) continue;
-      const category = categoryMap.get(texture) ?? 'other';
-      const { data, mime } = await compressImage(
-        Buffer.from(image),
-        category,
-        texture.getMimeType(),
-        options.textures,
-      );
-      texture.setImage(new Uint8Array(data));
-      texture.setMimeType(mime);
-    }
+    const textures = document
+      .getRoot()
+      .listTextures()
+      .filter(texture => texture.getImage());
+    const results = await Promise.all(
+      textures.map(texture =>
+        state.pool.compress(
+          Buffer.from(texture.getImage()!),
+          categoryMap.get(texture) ?? 'other',
+          texture.getMimeType(),
+          options.textures,
+        ),
+      ),
+    );
+    textures.forEach((texture, i) => {
+      texture.setImage(new Uint8Array(results[i].data));
+      texture.setMimeType(results[i].mime);
+    });
   }
 
   if (options.textures.dedup) {
@@ -351,7 +440,6 @@ async function processGlb(relPath: string, state: RunState): Promise<void> {
   const glbAbsPath = path.join(projectPath, relPath);
 
   const rawBuf = await fs.readFile(glbAbsPath);
-  state.result.bytesBefore += rawBuf.length;
 
   // Snapshot the global texture counters so we can attribute this file's share.
   const extractedBefore = state.result.texturesExtracted;
@@ -371,7 +459,6 @@ async function processGlb(relPath: string, state: RunState): Promise<void> {
     options.textures.compress ||
     options.textures.dedup;
   if (!anyWork) {
-    state.result.bytesAfter += rawBuf.length;
     state.result.files.push(fileResult);
     return;
   }
@@ -380,7 +467,6 @@ async function processGlb(relPath: string, state: RunState): Promise<void> {
   try {
     document = await io.read(glbAbsPath);
   } catch {
-    state.result.bytesAfter += rawBuf.length;
     fileResult.status = 'skipped';
     state.result.files.push(fileResult);
     return;
@@ -404,7 +490,7 @@ async function processGlb(relPath: string, state: RunState): Promise<void> {
 
   let uriMap: Map<number, string> | null = null;
   if (doExternalize) {
-    uriMap = await externalizeTextures(document, glbAbsPath, state);
+    uriMap = await externalizeTextures(document, glbAbsPath, relPath, state);
   } else if (doEmbedded) {
     await recompressEmbedded(document, state);
   }
@@ -419,7 +505,6 @@ async function processGlb(relPath: string, state: RunState): Promise<void> {
   if (uriMap && uriMap.size > 0) await patchGlbImageURIs(glbAbsPath, uriMap);
 
   const newSize = (await fs.stat(glbAbsPath)).size;
-  state.result.bytesAfter += newSize;
   state.result.glbsChanged++;
   fileResult.status = 'optimized';
   fileResult.bytesAfter = newSize;
@@ -430,6 +515,7 @@ export async function runPipeline(
   projectPath: string,
   options: OptimizeOptions,
   sink: ProgressSink,
+  deps: { pool?: CompressPool } = {},
 ): Promise<OptimizeResult> {
   emit = sink;
   // First run is a cold start: the native/WASM tools (sharp, meshoptimizer, oxipng) load and
@@ -441,6 +527,7 @@ export async function runPipeline(
 
   const glbs = await walkGlbs(projectPath);
   const total = glbs.length;
+  const before = await measureFootprint(projectPath, glbs);
 
   // Re-runs merge into the previous manifest: revert must undo EVERY run since the last revert,
   // and `backupFile` already keeps the first (pristine) copy of a GLB across runs.
@@ -455,6 +542,9 @@ export async function runPipeline(
     dedupIndex: new Map<string, string>(),
     externalBefore: new Set<string>(),
     manifest: previousManifest ?? createManifest(),
+    pool: deps.pool ?? createInlinePool(),
+    cache: await TextureCache.read(projectPath),
+    progress: { index: 0, total },
     result: {
       glbsProcessed: 0,
       glbsChanged: 0,
@@ -488,6 +578,7 @@ export async function runPipeline(
 
   for (let i = 0; i < glbs.length; i++) {
     const rel = glbs[i];
+    state.progress.index = i;
     emitProgress(projectPath, 'textures', i, total, `Optimizing ${rel}`, rel);
     try {
       await processGlb(rel, state);
@@ -499,11 +590,16 @@ export async function runPipeline(
 
   emitProgress(projectPath, 'write', total, total, 'Removing superseded textures…');
   await removeSupersededTextures(state, glbs);
-  state.result.bytesBefore += state.result.removedBytes;
-  state.result.bytesAfter += state.result.sidecarBytes;
+  // Same definition as the scan line (GLBs + every texture they reference), so the modal's
+  // "before → after" and its post-run scan total agree instead of differing by the originals
+  // the run left in place because they were already optimal.
+  const after = await measureFootprint(projectPath, glbs);
+  state.result.bytesBefore = before.glbBytes + before.textureBytes;
+  state.result.bytesAfter = after.glbBytes + after.textureBytes;
 
   emitProgress(projectPath, 'write', total, total, 'Writing manifest…');
   await writeManifest(projectPath, state.manifest);
+  await state.cache.write(projectPath);
 
   emitProgress(projectPath, 'done', total, total, 'Optimization complete');
   return state.result;

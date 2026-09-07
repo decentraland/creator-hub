@@ -177,7 +177,9 @@
     "subtitle": "通过压缩和去重纹理以及清理网格来缩减场景 GLB 的体积。原始文件会被备份，方便随时还原。",
     "docs_link": "了解每个选项的作用",
     "consent": {
-      "blurb": "优化完全在你的电脑上运行，使用以下开源工具。首次继续时会从 npm 下载这些工具（固定为下方列出的版本），并保存在应用数据文件夹中。你的模型不会离开你的电脑。",
+      "blurb": "优化完全在你的电脑上运行，使用开源工具。首次继续时会从 npm 下载这些工具（固定版本），并保存在应用数据文件夹中。你的模型不会离开你的电脑。",
+      "show_tools": "查看这 {count} 个开源工具",
+      "hide_tools": "收起工具列表",
       "npm": "npm",
       "source": "源码",
       "note": "你的原始模型会被备份，可随时还原。",
@@ -255,6 +257,7 @@
       "textures_removed": "已移除 {count} 个被替代的纹理（{bytes}）",
       "unchanged_skipped": "{unchanged} 个未更改 · {skipped} 个已跳过",
       "show_details": "查看每个模型的详情",
+      "hide_details": "收起每个模型的详情",
       "status": {
         "optimized": "已优化",
         "unchanged": "无变化",

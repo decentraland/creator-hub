@@ -47,8 +47,14 @@ export async function walkGlbs(projectPath: string): Promise<string[]> {
   return results;
 }
 
-export async function scan(projectPath: string): Promise<OptimizeScanResult> {
-  const glbs = await walkGlbs(projectPath);
+export type Footprint = Pick<
+  OptimizeScanResult,
+  'glbBytes' | 'textureBytes' | 'embeddedTextureCount' | 'externalTextureCount'
+>;
+
+// The scene's model+texture weight: every GLB plus each external texture file they reference,
+// counted once. Both the scan line and a run's before/after use this, so the two agree.
+export async function measureFootprint(projectPath: string, glbs: string[]): Promise<Footprint> {
   let glbBytes = 0;
   let embeddedTextureCount = 0;
   const externalTextures = new Set<string>();
@@ -77,12 +83,20 @@ export async function scan(projectPath: string): Promise<OptimizeScanResult> {
   }
 
   return {
-    glbCount: glbs.length,
-    totalBytes: glbBytes + textureBytes,
     glbBytes,
     textureBytes,
     embeddedTextureCount,
     externalTextureCount: externalTextures.size,
+  };
+}
+
+export async function scan(projectPath: string): Promise<OptimizeScanResult> {
+  const glbs = await walkGlbs(projectPath);
+  const footprint = await measureFootprint(projectPath, glbs);
+  return {
+    glbCount: glbs.length,
+    totalBytes: footprint.glbBytes + footprint.textureBytes,
+    ...footprint,
     hasBackup: await hasBackup(projectPath),
   };
 }

@@ -62,10 +62,11 @@ export type OptimizeFileResult = {
   texturesDeduped: number;
 };
 
-// bytesBefore/bytesAfter describe the scene's model+texture footprint, not just the GLBs:
-// before = GLB bytes + superseded original textures the run removed; after = GLB bytes +
-// sidecar textures the run wrote. Counting only GLBs made a run that moved textures out of
-// the models look like an 85% saving when the deploy folder had actually grown.
+// bytesBefore/bytesAfter are the scene's model+texture footprint by the SAME definition the scan
+// uses (every GLB + each external texture file they reference), measured before and after the run.
+// Counting only GLBs made a run that moved textures out of the models look like an 85% saving
+// when the deploy folder had actually grown; counting only the textures the run touched made the
+// result disagree with the scan line shown right under it.
 export type OptimizeResult = {
   glbsProcessed: number;
   glbsChanged: number;

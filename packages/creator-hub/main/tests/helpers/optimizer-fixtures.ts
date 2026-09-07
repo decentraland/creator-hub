@@ -5,7 +5,10 @@ import { ALL_EXTENSIONS } from '@gltf-transform/extensions';
 import { MeshoptDecoder } from 'meshoptimizer';
 import sharp from 'sharp';
 
+import { DEFAULT_OPTIMIZE_OPTIONS } from '/shared/types/optimizer';
+
 import { patchGlbImageURIs, readGlbJson } from '../../src/modules/optimizer/glb';
+import { compressImage } from '../../src/modules/optimizer/textures';
 
 // Synthetic GLBs for the optimizer specs, built at test time instead of checked in: each is a
 // textured quad whose triangle count, node names and pixels are known because the test wrote
@@ -44,6 +47,18 @@ export async function gradientPng(seed: number, size = 16): Promise<Buffer> {
   return sharp(raw, { raw: { width: size, height: size, channels: 4 } })
     .png({ compressionLevel: 0 })
     .toBuffer();
+}
+
+// A PNG oxipng has already had its way with, so the optimizer finds nothing to gain and must
+// leave it in place (the shape of most of Genesis Plaza's textures).
+export async function optimalPng(seed: number, size = 16): Promise<Buffer> {
+  const { data } = await compressImage(
+    await gradientPng(seed, size),
+    'baseColor',
+    'image/png',
+    DEFAULT_OPTIMIZE_OPTIONS.textures,
+  );
+  return data;
 }
 
 export type QuadSpec = {

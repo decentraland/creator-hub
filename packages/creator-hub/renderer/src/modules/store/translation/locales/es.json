@@ -177,7 +177,9 @@
     "subtitle": "Reduce el tamaño de los GLB de tu escena comprimiendo y deduplicando texturas y limpiando las mallas. Se guarda una copia de los originales para poder revertir.",
     "docs_link": "Cómo funciona cada opción",
     "consent": {
-      "blurb": "La optimización se ejecuta por completo en tu equipo con estas herramientas de código abierto. Se descargan de npm la primera vez que continúas, fijadas a las versiones indicadas abajo, y se guardan en la carpeta de datos de la app. Tus modelos nunca salen de tu computadora.",
+      "blurb": "La optimización se ejecuta por completo en tu equipo con herramientas de código abierto. Se descargan de npm la primera vez que continúas, fijadas a versiones concretas, y se guardan en la carpeta de datos de la app. Tus modelos nunca salen de tu computadora.",
+      "show_tools": "Ver las {count} herramientas de código abierto",
+      "hide_tools": "Ocultar la lista de herramientas",
       "npm": "npm",
       "source": "Código",
       "note": "Tus modelos originales se respaldan y pueden revertirse en cualquier momento.",
@@ -203,7 +205,7 @@
     "scan": {
       "glbs": "{count} modelos",
       "size": "Tamaño total: {size} (modelos {models} + texturas {textures})",
-      "textures": "{embedded} texturas embebidas · {external} externas",
+      "textures": "{embedded} texturas embebidas · {external} texturas externas",
       "empty": "Esta escena no tiene modelos GLB para optimizar."
     },
     "options": {
@@ -255,6 +257,7 @@
       "textures_removed": "{count} texturas reemplazadas eliminadas ({bytes})",
       "unchanged_skipped": "{unchanged} sin cambios · {skipped} omitidos",
       "show_details": "Ver detalles por modelo",
+      "hide_details": "Ocultar detalles por modelo",
       "status": {
         "optimized": "optimizado",
         "unchanged": "sin cambios",

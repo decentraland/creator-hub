@@ -11,7 +11,8 @@ import type {
 
 // Texture classification + compression, adapted from decentraland/SceneOptimizer
 // (utils.js + compress.js). PNG output is optimized losslessly with oxipng; JPEG/WebP go
-// through sharp with the quality slider. sharp handles all resizing/denoising.
+// through sharp with the quality slider. sharp handles all resizing/denoising and the 16-bit → 8-bit
+// depth reduction.
 
 export const CATEGORY_PRIORITY: Record<TextureCategory, number> = {
   baseColor: 5,
@@ -122,7 +123,11 @@ export async function compressImage(
   }
 
   const needsResize = (metadata.height ?? 0) > maxHeight;
-  const needsTransform = needsResize || !!denoise;
+  // 16-bit PNGs are dead weight for a GPU texture (every DCL runtime uploads 8-bit) and oxipng,
+  // being lossless, keeps the depth — on Genesis Plaza 19 such files held 36 MB that a plain
+  // sharp re-encode (which writes 8-bit) cuts to ~8 MB. Route them through sharp.
+  const needsDepthReduction = metadata.depth === 'ushort';
+  const needsTransform = needsResize || !!denoise || needsDepthReduction;
 
   const applyTransforms = (pipeline: SharpPipeline): SharpPipeline => {
     let p = pipeline;

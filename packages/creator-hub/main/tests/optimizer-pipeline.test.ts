@@ -13,6 +13,7 @@ import {
 } from '../src/modules/optimizer/backup';
 import { runPipeline } from '../src/modules/optimizer/pipeline';
 import { TEXTURES_DIR } from '../src/modules/optimizer/scan';
+import { TextureCache } from '../src/modules/optimizer/texture-cache';
 import {
   buildQuad,
   countTriangles,
@@ -22,6 +23,7 @@ import {
   imageRefs,
   listFiles,
   nodeNames,
+  optimalPng,
   solidPng,
   writeEmbeddedGlb,
   writeExternalGlb,
@@ -29,12 +31,20 @@ import {
 
 // End-to-end over the real toolchain (devDependencies), on a synthetic scene that carries every
 // case the Genesis Plaza run taught us: embedded textures, a texture already external and shared
-// by two models, a flat normal map, an empty marker node, a texture the scene code names, and a
-// second run over the first run's output. Slow-ish (WASM init + oxipng), so generous timeouts.
+// by two models, a flat normal map, an empty marker node, a texture the scene code names, an
+// external texture that is already optimal, and a second run over the first run's output.
+// Slow-ish (WASM init + oxipng), so generous timeouts.
 
-const GLBS = ['embedded', 'shared-a', 'shared-b', 'flat', 'marker', 'logo'].map(
+const GLBS = ['embedded', 'shared-a', 'shared-b', 'flat', 'marker', 'logo', 'kept'].map(
   n => `models/${n}.glb`,
 );
+const EXTERNAL_PNGS = [
+  'models/shared.png',
+  'models/flat_base.png',
+  'models/flat_normal.png',
+  'models/ui_logo.png',
+  'models/kept.png',
+];
 const MARKER_NODE = 'bellMOVE';
 
 async function makeScene(dir: string): Promise<void> {
@@ -82,6 +92,12 @@ async function makeScene(dir: string): Promise<void> {
     path.join(models, 'logo.glb'),
     [{ uri: 'ui_logo.png', png: logo }],
   );
+  const kept = await optimalPng(6);
+  await writeExternalGlb(
+    buildQuad({ nodeName: 'Kept', baseColor: { name: 'Kept', png: kept } }),
+    path.join(models, 'kept.glb'),
+    [{ uri: 'kept.png', png: kept }],
+  );
   await fs.mkdir(path.join(dir, 'src'), { recursive: true });
   await fs.writeFile(path.join(dir, 'src/ui.ts'), "export const LOGO = 'models/ui_logo.png';\n");
 }
@@ -112,13 +128,7 @@ describe('optimizer pipeline', () => {
   beforeEach(async () => {
     scene = await fs.mkdtemp(path.join(os.tmpdir(), 'optimizer-pipeline-'));
     await makeScene(scene);
-    originals = await snapshot(scene, [
-      ...GLBS,
-      'models/shared.png',
-      'models/flat_base.png',
-      'models/flat_normal.png',
-      'models/ui_logo.png',
-    ]);
+    originals = await snapshot(scene, [...GLBS, ...EXTERNAL_PNGS]);
   });
   afterEach(async () => {
     await fs.rm(scene, { recursive: true, force: true });
@@ -129,9 +139,9 @@ describe('optimizer pipeline', () => {
       const phases: string[] = [];
       const result = await runPipeline(scene, defaults(), p => phases.push(p.phase));
 
-      expect(result.glbsProcessed).toBe(6);
-      expect(result.glbsChanged).toBe(6);
-      expect(result.files.map(f => f.status)).toEqual(Array(6).fill('optimized'));
+      expect(result.glbsProcessed).toBe(7);
+      expect(result.glbsChanged).toBe(7);
+      expect(result.files.map(f => f.status)).toEqual(Array(7).fill('optimized'));
       expect(phases[0]).toBe('prepare');
       expect(phases.at(-1)).toBe('done');
 
@@ -142,10 +152,29 @@ describe('optimizer pipeline', () => {
         expect(await countTriangles(file)).toBe(2);
         const refs = await imageRefs(file);
         expect(refs.missing).toEqual([]);
-        expect(
-          refs.resolved.every(abs => abs.includes(`${path.sep}${TEXTURES_DIR}${path.sep}`)),
-        ).toBe(true);
+        if (rel !== 'models/kept.glb') {
+          expect(
+            refs.resolved.every(abs => abs.includes(`${path.sep}${TEXTURES_DIR}${path.sep}`)),
+          ).toBe(true);
+        }
       }
+
+      // An already-optimal external texture stays where it is, still referenced, and the run
+      // remembers that it cannot shrink so the next run does not try again.
+      expect((await imageRefs(path.join(scene, 'models/kept.glb'))).resolved).toEqual([
+        path.join(scene, 'models/kept.png'),
+      ]);
+      expect(
+        Buffer.compare(
+          await fs.readFile(path.join(scene, 'models/kept.png')),
+          originals.get('models/kept.png')!,
+        ),
+      ).toBe(0);
+      const cache = await TextureCache.read(scene);
+      expect(cache.size).toBe(1);
+      expect(Object.values(cache.toJSON().noGain)).toEqual([
+        originals.get('models/kept.png')!.length,
+      ]);
 
       // The marker node survives prune; the flat normal map does not (replaced by its factor).
       expect(await nodeNames(path.join(scene, 'models/marker.glb'))).toContain(MARKER_NODE);
@@ -176,14 +205,29 @@ describe('optimizer pipeline', () => {
         ).toBe(0);
       }
 
-      // Honest accounting: before includes what was removed, after includes what was written.
+      // Accounting follows the scan's definition: GLBs plus every texture they reference. The
+      // protected ui_logo.png stays on disk but no model points at it any more, so it leaves
+      // the footprint; the removed originals were referenced before, so they were in it.
       const removedBytes = manifest.removedFiles.reduce(
         (sum, rel) => sum + originals.get(rel)!.length,
         0,
       );
       expect(result.removedBytes).toBe(removedBytes);
       expect(result.bytesBefore).toBe(
-        GLBS.reduce((sum, rel) => sum + originals.get(rel)!.length, 0) + removedBytes,
+        [...originals.values()].reduce((sum, bytes) => sum + bytes.length, 0),
+      );
+      const sizeOf = async (files: string[]) =>
+        (await Promise.all(files.map(async f => (await fs.stat(f)).size))).reduce(
+          (a, b) => a + b,
+          0,
+        );
+      const sidecars = (await listFiles(path.join(scene, TEXTURES_DIR))).map(f =>
+        path.join(scene, TEXTURES_DIR, f),
+      );
+      expect(result.bytesAfter).toBe(
+        (await sizeOf(GLBS.map(rel => path.join(scene, rel)))) +
+          (await sizeOf(sidecars)) +
+          originals.get('models/kept.png')!.length,
       );
       expect(result.bytesAfter).toBeLessThan(result.bytesBefore);
       expect(result.sidecarBytes).toBeGreaterThan(0);
@@ -229,7 +273,7 @@ describe('optimizer pipeline', () => {
       const manifest = (await readManifest(scene)) as OptimizeManifest;
       const restored = await revertFromManifest(scene, manifest);
 
-      expect(restored).toBe(6);
+      expect(restored).toBe(7);
       for (const [rel, bytes] of originals) {
         expect(Buffer.compare(await fs.readFile(path.join(scene, rel)), bytes)).toBe(0);
       }
@@ -266,7 +310,7 @@ describe('optimizer pipeline', () => {
 
       const result = await runPipeline(scene, options, () => {});
 
-      expect(result.files.map(f => f.status)).toEqual(Array(6).fill('unchanged'));
+      expect(result.files.map(f => f.status)).toEqual(Array(7).fill('unchanged'));
       for (const [rel, bytes] of originals) {
         expect(Buffer.compare(await fs.readFile(path.join(scene, rel)), bytes)).toBe(0);
       }

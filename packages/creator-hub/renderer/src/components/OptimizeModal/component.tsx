@@ -12,6 +12,7 @@ import {
   Tooltip,
   Typography,
 } from 'decentraland-ui2';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 
 import {
@@ -61,6 +62,30 @@ function InfoTip({ tip }: { tip: string }) {
   );
 }
 
+// Text button with a chevron that reveals a block below it, so optional detail (the tool list,
+// the per-model table) reads as "more info" rather than as a setting.
+function Disclosure({
+  open,
+  label,
+  onToggle,
+}: {
+  open: boolean;
+  label: string;
+  onToggle: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      className={open ? 'disclosure open' : 'disclosure'}
+      aria-expanded={open}
+      onClick={onToggle}
+    >
+      <ExpandMoreIcon fontSize="small" />
+      {label}
+    </button>
+  );
+}
+
 // Label + info icon, for use as a FormControlLabel `label` or a standalone field label.
 function LabelWithInfo({ text, tip }: { text: string; tip: string }) {
   return (
@@ -88,6 +113,7 @@ export function OptimizeModal({ project }: { project?: Project | null }) {
 
   const [options, setOptions] = useState<OptimizeOptions>(DEFAULT_OPTIMIZE_OPTIONS);
   const [showDetails, setShowDetails] = useState(false);
+  const [showTools, setShowTools] = useState(false);
 
   const projectPath = project?.path ?? null;
   const isRunning = runStatus === 'loading';
@@ -191,38 +217,49 @@ export function OptimizeModal({ project }: { project?: Project | null }) {
           >
             {t('optimize.consent.blurb')}
           </Typography>
-          <ul className="tool-list">
-            {(tools?.tools ?? []).map(tool => (
-              <li key={tool.pkg}>
-                <div className="tool-head">
-                  <span className="tool-name">
-                    {tool.name} <span className="tool-version">v{tool.version}</span>
+          <Disclosure
+            open={showTools}
+            label={
+              showTools
+                ? t('optimize.consent.hide_tools')
+                : t('optimize.consent.show_tools', { count: tools?.tools.length ?? 0 })
+            }
+            onToggle={() => setShowTools(v => !v)}
+          />
+          {showTools && (
+            <ul className="tool-list">
+              {(tools?.tools ?? []).map(tool => (
+                <li key={tool.pkg}>
+                  <div className="tool-head">
+                    <span className="tool-name">
+                      {tool.name} <span className="tool-version">v{tool.version}</span>
+                    </span>
+                    <span className="tool-links">
+                      <button
+                        type="button"
+                        className="docs-link"
+                        onClick={() => misc.openExternal(tool.npm)}
+                      >
+                        {t('optimize.consent.npm')}
+                        <OpenInNewIcon fontSize="inherit" />
+                      </button>
+                      <button
+                        type="button"
+                        className="docs-link"
+                        onClick={() => misc.openExternal(tool.source)}
+                      >
+                        {t('optimize.consent.source')}
+                        <OpenInNewIcon fontSize="inherit" />
+                      </button>
+                    </span>
+                  </div>
+                  <span className="tool-purpose">
+                    {t(`optimize.consent.purpose.${tool.purposeKey}`)}
                   </span>
-                  <span className="tool-links">
-                    <button
-                      type="button"
-                      className="docs-link"
-                      onClick={() => misc.openExternal(tool.npm)}
-                    >
-                      {t('optimize.consent.npm')}
-                      <OpenInNewIcon fontSize="inherit" />
-                    </button>
-                    <button
-                      type="button"
-                      className="docs-link"
-                      onClick={() => misc.openExternal(tool.source)}
-                    >
-                      {t('optimize.consent.source')}
-                      <OpenInNewIcon fontSize="inherit" />
-                    </button>
-                  </span>
-                </div>
-                <span className="tool-purpose">
-                  {t(`optimize.consent.purpose.${tool.purposeKey}`)}
-                </span>
-              </li>
-            ))}
-          </ul>
+                </li>
+              ))}
+            </ul>
+          )}
           <Typography
             variant="caption"
             className="consent-note"
@@ -531,16 +568,12 @@ export function OptimizeModal({ project }: { project?: Project | null }) {
                 </span>
               )}
 
-              <FormControlLabel
-                className="details-toggle"
-                control={
-                  <Switch
-                    size="small"
-                    checked={showDetails}
-                    onChange={e => setShowDetails(e.target.checked)}
-                  />
-                }
-                label={t('optimize.result.show_details')}
+              <Disclosure
+                open={showDetails}
+                label={t(
+                  showDetails ? 'optimize.result.hide_details' : 'optimize.result.show_details',
+                )}
+                onToggle={() => setShowDetails(v => !v)}
               />
 
               {showDetails && (
