@@ -7,20 +7,37 @@ import path from 'node:path';
 // strip exactly. The newly created sidecar textures are NOT ignored — they must deploy.
 
 export const OPTIMIZE_DIR = '.optimize';
+// Where externalized textures go, under the inspector-managed `assets/` folder so they show in
+// Local Assets. Not dot-prefixed: these files must deploy, unlike the backup. Scenes optimized
+// before the move keep their folder — the manifest records which one a scene uses.
+export const TEXTURES_DIR = 'assets/optimized-textures';
+export const LEGACY_TEXTURES_DIR = 'optimized-textures';
 const BACKUP_SUBDIR = 'backup';
 const MANIFEST_NAME = 'manifest.json';
 const DCLIGNORE = '.dclignore';
 const DCLIGNORE_MARKER = '# --- creator-hub optimize backup (auto-generated, do not edit) ---';
 const MANIFEST_VERSION = 1;
 
+// What a run left on disk for one GLB, so the next run can tell "still my output, same options"
+// from a file the creator re-exported. Re-processing an already-optimized GLB rewrites it with a
+// fraction-of-a-percent size change (re-serialization, not rounding) and costs a full pass.
+export type OutputRecord = {
+  size: number;
+  mtimeMs: number;
+  options: string; // hash of the OptimizeOptions the output was produced with
+};
+
 export type OptimizeManifest = {
   version: number;
   createdAt: number;
+  updatedAt: number; // last run that wrote this manifest
+  texturesDir: string; // project-relative posix dir the sidecars live in (see TEXTURES_DIR)
   modifiedGlbs: string[]; // project-relative posix paths of GLBs overwritten in place
   createdFiles: string[]; // project-relative posix paths of sidecar textures written
   // project-relative posix paths of original textures moved into the backup because a
   // sidecar superseded them (absent in manifests written before this field existed)
   removedFiles: string[];
+  outputs: Record<string, OutputRecord>; // keyed by the GLB's project-relative posix path
 };
 
 const toPosix = (value: string) => value.split(path.sep).join('/');
@@ -41,8 +58,17 @@ export async function readManifest(projectPath: string): Promise<OptimizeManifes
   try {
     const manifest = JSON.parse(
       await fs.readFile(manifestPath(projectPath), 'utf8'),
-    ) as OptimizeManifest;
-    return { ...manifest, removedFiles: manifest.removedFiles ?? [] };
+    ) as Partial<OptimizeManifest> & Pick<OptimizeManifest, 'version' | 'createdAt'>;
+    // Fields added after the first manifests shipped default to what those runs did.
+    return {
+      modifiedGlbs: [],
+      createdFiles: [],
+      ...manifest,
+      updatedAt: manifest.updatedAt ?? manifest.createdAt,
+      texturesDir: manifest.texturesDir ?? LEGACY_TEXTURES_DIR,
+      removedFiles: manifest.removedFiles ?? [],
+      outputs: manifest.outputs ?? {},
+    };
   } catch {
     return null;
   }
@@ -52,6 +78,7 @@ export async function writeManifest(
   projectPath: string,
   manifest: OptimizeManifest,
 ): Promise<void> {
+  manifest.updatedAt = Date.now();
   await fs.mkdir(optimizeDir(projectPath), { recursive: true });
   await fs.writeFile(manifestPath(projectPath), JSON.stringify(manifest, null, 2), 'utf8');
 }
@@ -60,9 +87,12 @@ export function createManifest(): OptimizeManifest {
   return {
     version: MANIFEST_VERSION,
     createdAt: Date.now(),
+    updatedAt: Date.now(),
+    texturesDir: TEXTURES_DIR,
     modifiedGlbs: [],
     createdFiles: [],
     removedFiles: [],
+    outputs: {},
   };
 }
 
@@ -166,6 +196,8 @@ export async function revertFromManifest(
 
   await stripDclignoreBlock(projectPath);
   await fs.rm(optimizeDir(projectPath), { recursive: true, force: true });
+  // rmdir only succeeds on an empty dir, so a folder the creator also put files in is preserved.
+  await fs.rmdir(path.join(projectPath, manifest.texturesDir)).catch(() => {});
   return restored;
 }
 

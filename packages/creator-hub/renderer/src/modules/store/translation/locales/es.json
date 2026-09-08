@@ -229,7 +229,7 @@
         "dedup": "Eliminar texturas duplicadas",
         "dedup_tip": "Encuentra texturas con píxeles idénticos (SHA-256) y hace que todos los modelos apunten a una única copia compartida. El mayor ahorro cuando la misma textura se reutiliza en muchos modelos.",
         "externalize": "Extraer texturas incrustadas a archivos",
-        "externalize_tip": "Saca las texturas del GLB a archivos compartidos en optimized-textures/, para que una textura compartida se descargue una sola vez. Necesario para la deduplicación entre modelos; estos archivos se despliegan con tu escena.",
+        "externalize_tip": "Saca las texturas del GLB a archivos compartidos en assets/optimized-textures/, para que una textura compartida se descargue una sola vez. Necesario para la deduplicación entre modelos; estos archivos se despliegan con tu escena.",
         "format": "Formato",
         "format_tip": "Formato de imagen de salida. PNG es sin pérdida (recomendado). JPEG y WebP son más pequeños pero con pérdida y usan el control de Calidad.",
         "quality": "Calidad",
@@ -256,12 +256,14 @@
       "textures_deduped": "{count} duplicados eliminados",
       "textures_removed": "{count} texturas reemplazadas eliminadas ({bytes})",
       "unchanged_skipped": "{unchanged} sin cambios · {skipped} omitidos",
+      "up_to_date": "{count} ya optimizados, sin cambios",
       "show_details": "Ver detalles por modelo",
       "hide_details": "Ocultar detalles por modelo",
       "status": {
         "optimized": "optimizado",
         "unchanged": "sin cambios",
-        "skipped": "omitido"
+        "skipped": "omitido",
+        "up_to_date": "ya optimizado"
       }
     },
     "error": "La optimización falló: {message}"

@@ -230,7 +230,7 @@
         "dedup": "Remove duplicate textures",
         "dedup_tip": "Finds textures with identical pixels (SHA-256) and points every model at a single shared copy. Biggest win when the same texture is reused across many models.",
         "externalize": "Extract embedded textures to files",
-        "externalize_tip": "Pulls textures out of the GLB into shared files under optimized-textures/, so a shared texture downloads once instead of per-model. Required for cross-model dedup; these files deploy with your scene.",
+        "externalize_tip": "Pulls textures out of the GLB into shared files under assets/optimized-textures/, so a shared texture downloads once instead of per-model. Required for cross-model dedup; these files deploy with your scene.",
         "format": "Format",
         "format_tip": "Output image format. PNG is lossless (recommended). JPEG and WebP are smaller but lossy and use the Quality slider.",
         "quality": "Quality",
@@ -257,12 +257,14 @@
       "textures_deduped": "{count} duplicates removed",
       "textures_removed": "{count} superseded textures removed ({bytes})",
       "unchanged_skipped": "{unchanged} unchanged · {skipped} skipped",
+      "up_to_date": "{count} already optimized, left as they were",
       "show_details": "Show per-model details",
       "hide_details": "Hide per-model details",
       "status": {
         "optimized": "optimized",
         "unchanged": "no change",
-        "skipped": "skipped"
+        "skipped": "skipped",
+        "up_to_date": "already optimized"
       }
     },
     "error": "Optimization failed: {message}"

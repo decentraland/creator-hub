@@ -50,12 +50,14 @@ export type OptimizeScanResult = {
   embeddedTextureCount: number;
   externalTextureCount: number;
   hasBackup: boolean; // a prior run's backup exists, so revert is available
+  lastOptimizedAt: number | null; // epoch ms of the last run, from the manifest
 };
 
 // Per-GLB outcome, for the verbose (expandable) results view.
 export type OptimizeFileResult = {
   file: string; // project-relative path
-  status: 'optimized' | 'unchanged' | 'skipped';
+  // up_to_date: still the previous run's output, produced with the same options, so not touched
+  status: 'optimized' | 'unchanged' | 'skipped' | 'up_to_date';
   bytesBefore: number;
   bytesAfter: number;
   texturesExtracted: number;

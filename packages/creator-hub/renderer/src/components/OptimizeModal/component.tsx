@@ -192,7 +192,7 @@ export function OptimizeModal({ project }: { project?: Project | null }) {
 
   const details = useMemo(() => {
     const files = result?.files ?? [];
-    const counts = { optimized: 0, unchanged: 0, skipped: 0 };
+    const counts = { optimized: 0, unchanged: 0, skipped: 0, up_to_date: 0 };
     for (const f of files) counts[f.status]++;
     const saved = (f: (typeof files)[number]) => f.bytesBefore - f.bytesAfter;
     // Most-impactful first — that's what a creator wants to scan.
@@ -557,6 +557,11 @@ export function OptimizeModal({ project }: { project?: Project | null }) {
                     count: result.texturesRemoved,
                     bytes: formatBytes(result.removedBytes),
                   })}
+                </span>
+              )}
+              {details.counts.up_to_date > 0 && (
+                <span className="muted">
+                  {t('optimize.result.up_to_date', { count: details.counts.up_to_date })}
                 </span>
               )}
               {(details.counts.unchanged > 0 || details.counts.skipped > 0) && (

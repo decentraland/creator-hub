@@ -18,7 +18,7 @@ import { getBundledNodePath } from '../path';
 import { getWindow } from '../window';
 import { readManifest, revertFromManifest } from './backup';
 import { createWorkerOutputReader } from './protocol';
-import { TEXTURES_DIR, scan } from './scan';
+import { scan } from './scan';
 import { getToolsDir, getToolsInfo, installTools as installToolchain } from './tools';
 
 export { scan };
@@ -133,8 +133,5 @@ export async function revert(projectPath: string): Promise<{ restored: number }>
   const manifest = await readManifest(projectPath);
   if (!manifest) return { restored: 0 };
   const restored = await revertFromManifest(projectPath, manifest);
-  // Remove the externalized-textures dir if the reverted files left it empty (rmdir only
-  // succeeds on an empty dir, so a shared/hand-added dir is preserved).
-  await fs.rmdir(path.join(projectPath, TEXTURES_DIR)).catch(() => {});
   return { restored };
 }

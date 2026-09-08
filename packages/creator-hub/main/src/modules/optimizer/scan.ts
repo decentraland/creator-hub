@@ -4,19 +4,19 @@ import type { Dirent } from 'node:fs';
 
 import type { OptimizeScanResult } from '/shared/types/optimizer';
 
-import { OPTIMIZE_DIR, hasBackup, toPosix } from './backup';
+import { LEGACY_TEXTURES_DIR, OPTIMIZE_DIR, TEXTURES_DIR, readManifest, toPosix } from './backup';
 import { readGlbJson } from './glb';
+
+export { TEXTURES_DIR };
 
 // Everything here is plain fs work shared by the Electron main process (scan, revert) and the
 // optimizer worker (pipeline). It must stay free of the downloaded toolchain: main never has
 // sharp / gltf-transform on its module path.
 
-// Directory (at the project root, deployed with the scene) that holds textures pulled out
-// of GLBs. Not dot-prefixed: these files must ship, unlike the `.optimize/` backup.
-export const TEXTURES_DIR = 'optimized-textures';
-
-// Dirs never walked for GLBs: VCS/deps, our own backup, and the externalized-texture output.
-export const SKIP_DIRS = new Set(['node_modules', '.git', OPTIMIZE_DIR, TEXTURES_DIR]);
+// Dir NAMES never walked: VCS/deps and our own backup. The sidecar folders are skipped by
+// project-relative path below, since the current one is nested.
+export const SKIP_DIRS = new Set(['node_modules', '.git', OPTIMIZE_DIR]);
+const SKIP_PATHS = new Set([TEXTURES_DIR, LEGACY_TEXTURES_DIR]);
 
 export function resolveImageUri(glbAbsPath: string, uri: string): string {
   return path.resolve(path.dirname(glbAbsPath), decodeURIComponent(uri));
@@ -36,6 +36,7 @@ export async function walkGlbs(projectPath: string): Promise<string[]> {
       const full = path.join(dir, entry.name);
       if (entry.isDirectory()) {
         if (SKIP_DIRS.has(entry.name) || entry.name.startsWith('.')) continue;
+        if (SKIP_PATHS.has(toPosix(path.relative(projectPath, full)))) continue;
         await walk(full);
       } else if (entry.isFile() && entry.name.toLowerCase().endsWith('.glb')) {
         results.push(toPosix(path.relative(projectPath, full)));
@@ -93,10 +94,12 @@ export async function measureFootprint(projectPath: string, glbs: string[]): Pro
 export async function scan(projectPath: string): Promise<OptimizeScanResult> {
   const glbs = await walkGlbs(projectPath);
   const footprint = await measureFootprint(projectPath, glbs);
+  const manifest = await readManifest(projectPath);
   return {
     glbCount: glbs.length,
     totalBytes: footprint.glbBytes + footprint.textureBytes,
     ...footprint,
-    hasBackup: await hasBackup(projectPath),
+    hasBackup: manifest !== null,
+    lastOptimizedAt: manifest?.updatedAt ?? null,
   };
 }

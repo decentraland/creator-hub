@@ -154,7 +154,7 @@ describe('optimizer pipeline', () => {
         expect(refs.missing).toEqual([]);
         if (rel !== 'models/kept.glb') {
           expect(
-            refs.resolved.every(abs => abs.includes(`${path.sep}${TEXTURES_DIR}${path.sep}`)),
+            refs.resolved.every(abs => abs.startsWith(path.join(scene, TEXTURES_DIR) + path.sep)),
           ).toBe(true);
         }
       }
@@ -238,14 +238,22 @@ describe('optimizer pipeline', () => {
   });
 
   describe('when run a second time over its own output', () => {
-    it('should merge into the manifest and write nothing new', async () => {
+    it('should leave every model alone, merge into the manifest and write nothing new', async () => {
       await runPipeline(scene, defaults(), () => {});
       const first = (await readManifest(scene)) as OptimizeManifest;
       const sidecarsAfterFirst = await listFiles(path.join(scene, TEXTURES_DIR));
+      const outputsAfterFirst = await snapshot(scene, GLBS);
 
       const second = await runPipeline(scene, defaults(), () => {});
       const merged = (await readManifest(scene)) as OptimizeManifest;
 
+      // Re-serializing an already-optimized GLB shifts its size by a fraction of a percent and
+      // costs a full pass; a model that is still this optimizer's output is recognized instead.
+      expect(second.files.map(f => f.status)).toEqual(Array(7).fill('up_to_date'));
+      expect(second.glbsChanged).toBe(0);
+      for (const [rel, bytes] of outputsAfterFirst) {
+        expect(Buffer.compare(await fs.readFile(path.join(scene, rel)), bytes)).toBe(0);
+      }
       expect(second.texturesRemoved).toBe(0);
       expect(second.texturesExtracted).toBe(0);
       expect([...merged.modifiedGlbs].sort()).toEqual([...first.modifiedGlbs].sort());
@@ -263,6 +271,44 @@ describe('optimizer pipeline', () => {
         ).toBe(0);
       }
     });
+
+    it('should re-process a model the creator re-exported, and everything when options change', async () => {
+      await runPipeline(scene, defaults(), () => {});
+      // "Re-export": the pristine file comes back, with a new mtime.
+      await fs.writeFile(
+        path.join(scene, 'models/embedded.glb'),
+        originals.get('models/embedded.glb')!,
+      );
+
+      const touched = await runPipeline(scene, defaults(), () => {});
+      const byFile = new Map(touched.files.map(f => [f.file, f.status]));
+      expect(byFile.get('models/embedded.glb')).toBe('optimized');
+      expect([...byFile.entries()].filter(([, s]) => s === 'up_to_date')).toHaveLength(6);
+
+      const options = defaults();
+      options.mesh.compression = 'quantize';
+      const changed = await runPipeline(scene, options, () => {});
+      expect(changed.files.map(f => f.status)).toEqual(Array(7).fill('optimized'));
+    });
+  });
+
+  describe('when the scene was optimized before the sidecar folder moved under assets/', () => {
+    it('should keep writing to the folder the manifest names', async () => {
+      // A manifest from before `texturesDir` existed: those runs wrote to the project root.
+      await fs.mkdir(path.join(scene, OPTIMIZE_DIR), { recursive: true });
+      await fs.writeFile(
+        path.join(scene, OPTIMIZE_DIR, 'manifest.json'),
+        JSON.stringify({ version: 1, createdAt: 1, modifiedGlbs: [], createdFiles: [] }),
+      );
+
+      await runPipeline(scene, defaults(), () => {});
+
+      expect(await listFiles(path.join(scene, 'optimized-textures'))).toHaveLength(5);
+      expect(await exists(path.join(scene, TEXTURES_DIR))).toBe(false);
+      expect(((await readManifest(scene)) as OptimizeManifest).texturesDir).toBe(
+        'optimized-textures',
+      );
+    });
   });
 
   describe('when reverted', () => {
@@ -277,7 +323,7 @@ describe('optimizer pipeline', () => {
       for (const [rel, bytes] of originals) {
         expect(Buffer.compare(await fs.readFile(path.join(scene, rel)), bytes)).toBe(0);
       }
-      expect(await listFiles(path.join(scene, TEXTURES_DIR))).toEqual([]);
+      expect(await exists(path.join(scene, TEXTURES_DIR))).toBe(false);
       expect(await exists(path.join(scene, OPTIMIZE_DIR))).toBe(false);
       expect(await exists(path.join(scene, '.dclignore'))).toBe(false);
     });

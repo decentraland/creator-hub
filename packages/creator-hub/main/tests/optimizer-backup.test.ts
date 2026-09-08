@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import {
   OPTIMIZE_DIR,
+  TEXTURES_DIR,
   backupFile,
   createManifest,
   ensureDclignoreBlock,
@@ -127,6 +128,10 @@ describe('optimizer backup', () => {
       const manifest = await readManifest(project);
 
       expect(manifest?.removedFiles).toEqual([]);
+      expect(manifest?.outputs).toEqual({});
+      expect(manifest?.updatedAt).toBe(1);
+      // Those runs wrote sidecars to the project root; the scene keeps that folder.
+      expect(manifest?.texturesDir).toBe('optimized-textures');
       expect(manifest?.modifiedGlbs).toEqual(['a.glb']);
     });
 
@@ -147,12 +152,12 @@ describe('optimizer backup', () => {
       await backupFile(project, 'models/b.glb');
       await write(path.join(project, 'models/a.glb'), 'optimized a');
       await write(path.join(project, 'models/b.glb'), 'optimized b');
-      await write(path.join(project, 'optimized-textures/shared.png'), 'sidecar');
+      await write(path.join(project, TEXTURES_DIR, 'shared.png'), 'sidecar');
       await stashFile(project, 'models/shared.png');
 
       const manifest = createManifest();
       manifest.modifiedGlbs.push('models/a.glb', 'models/b.glb');
-      manifest.createdFiles.push('optimized-textures/shared.png');
+      manifest.createdFiles.push(`${TEXTURES_DIR}/shared.png`);
       manifest.removedFiles.push('models/shared.png');
       await writeManifest(project, manifest);
 
@@ -164,7 +169,7 @@ describe('optimizer backup', () => {
       expect(await fs.readFile(path.join(project, 'models/shared.png'), 'utf8')).toBe(
         'original png',
       );
-      expect(await exists(path.join(project, 'optimized-textures/shared.png'))).toBe(false);
+      expect(await exists(path.join(project, TEXTURES_DIR))).toBe(false);
       expect(await fs.readFile(path.join(project, 'src/ui.ts'), 'utf8')).toBe('untouched');
       expect(await exists(path.join(project, OPTIMIZE_DIR))).toBe(false);
       expect(await exists(path.join(project, '.dclignore'))).toBe(false);

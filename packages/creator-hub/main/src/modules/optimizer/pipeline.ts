@@ -1,3 +1,4 @@
+import crypto from 'node:crypto';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import type { Dirent } from 'node:fs';
@@ -17,7 +18,7 @@ import {
 } from '/shared/types/optimizer';
 
 import { fixGlbAlignment, patchGlbImageURIs, readGlbJson } from './glb';
-import { SKIP_DIRS, TEXTURES_DIR, measureFootprint, resolveImageUri, walkGlbs } from './scan';
+import { SKIP_DIRS, measureFootprint, resolveImageUri, walkGlbs } from './scan';
 import { runMeshPass } from './mesh';
 import {
   CATEGORY_PRIORITY,
@@ -170,6 +171,7 @@ type RunState = {
   result: OptimizeResult;
   pool: CompressPool;
   cache: TextureCache;
+  optionsKey: string; // identifies the options this run uses, for the manifest's output records
   // Position in the GLB loop, for texture-level progress lines.
   progress: { index: number; total: number };
 };
@@ -439,19 +441,33 @@ async function processGlb(relPath: string, state: RunState): Promise<void> {
   const { projectPath, io, options } = state;
   const glbAbsPath = path.join(projectPath, relPath);
 
+  const stat = await fs.stat(glbAbsPath);
+  const fileResult: OptimizeFileResult = {
+    file: relPath,
+    status: 'unchanged',
+    bytesBefore: stat.size,
+    bytesAfter: stat.size,
+    texturesExtracted: 0,
+    texturesDeduped: 0,
+  };
+
+  const recorded = state.manifest.outputs[relPath];
+  if (
+    recorded &&
+    recorded.options === state.optionsKey &&
+    recorded.size === stat.size &&
+    recorded.mtimeMs === stat.mtimeMs
+  ) {
+    fileResult.status = 'up_to_date';
+    state.result.files.push(fileResult);
+    return;
+  }
+
   const rawBuf = await fs.readFile(glbAbsPath);
 
   // Snapshot the global texture counters so we can attribute this file's share.
   const extractedBefore = state.result.texturesExtracted;
   const dedupedBefore = state.result.texturesDeduped;
-  const fileResult: OptimizeFileResult = {
-    file: relPath,
-    status: 'unchanged',
-    bytesBefore: rawBuf.length,
-    bytesAfter: rawBuf.length,
-    texturesExtracted: 0,
-    texturesDeduped: 0,
-  };
 
   const anyWork =
     options.mesh.enabled ||
@@ -479,7 +495,7 @@ async function processGlb(relPath: string, state: RunState): Promise<void> {
 
   const doMesh = options.mesh.enabled;
   // gltf-transform embeds every image when it writes a .glb, so a model whose textures already
-  // live in sidecar files must be re-externalized (into TEXTURES_DIR, through the same
+  // live in sidecar files must be re-externalized (into the sidecar folder, through the same
   // compress/dedup options) even when the user left externalize off — otherwise a mesh-only run
   // would pull its textures back inside and grow the file. The original sidecars stay on disk,
   // untouched, so revert restores a consistent model.
@@ -504,10 +520,15 @@ async function processGlb(relPath: string, state: RunState): Promise<void> {
   await io.write(glbAbsPath, document);
   if (uriMap && uriMap.size > 0) await patchGlbImageURIs(glbAbsPath, uriMap);
 
-  const newSize = (await fs.stat(glbAbsPath)).size;
+  const written = await fs.stat(glbAbsPath);
+  state.manifest.outputs[relPath] = {
+    size: written.size,
+    mtimeMs: written.mtimeMs,
+    options: state.optionsKey,
+  };
   state.result.glbsChanged++;
   fileResult.status = 'optimized';
-  fileResult.bytesAfter = newSize;
+  fileResult.bytesAfter = written.size;
   state.result.files.push(fileResult);
 }
 
@@ -531,19 +552,20 @@ export async function runPipeline(
 
   // Re-runs merge into the previous manifest: revert must undo EVERY run since the last revert,
   // and `backupFile` already keeps the first (pristine) copy of a GLB across runs.
-  const previousManifest = await readManifest(projectPath);
+  const manifest = (await readManifest(projectPath)) ?? createManifest();
 
   const state: RunState = {
     io: createIO(),
     options,
     projectPath,
-    texturesDirAbs: path.join(projectPath, TEXTURES_DIR),
+    texturesDirAbs: path.join(projectPath, manifest.texturesDir),
     usedNames: new Set<string>(),
     dedupIndex: new Map<string, string>(),
     externalBefore: new Set<string>(),
-    manifest: previousManifest ?? createManifest(),
+    manifest,
     pool: deps.pool ?? createInlinePool(),
     cache: await TextureCache.read(projectPath),
+    optionsKey: crypto.createHash('sha1').update(JSON.stringify(options)).digest('hex'),
     progress: { index: 0, total },
     result: {
       glbsProcessed: 0,

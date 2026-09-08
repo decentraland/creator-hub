@@ -78,6 +78,7 @@ describe('optimizer scan', () => {
         embeddedTextureCount: 0,
         externalTextureCount: 0,
         hasBackup: false,
+        lastOptimizedAt: null,
       });
     });
   });
