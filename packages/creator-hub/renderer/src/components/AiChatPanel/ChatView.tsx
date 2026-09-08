@@ -41,10 +41,10 @@ import {
   BillingHint,
   CommandLine,
   Composer,
-  EmptyState,
   ErrorRow,
   HeaderActions,
   HeaderTitle,
+  IntroMessage,
   OutdatedHint,
   Panel,
   PanelHeader,
@@ -510,13 +510,10 @@ export function ChatView(props: ChatViewProps) {
   };
 
   const renderTranscript = () => {
-    if (messages.length === 0) {
-      return <EmptyState>{t('editor.ai.empty')}</EmptyState>;
-    }
     // "Undo AI changes" is offered only on the latest turn: undo is a shared stack, so an
     // older turn's entries aren't on top and can't be cleanly reverted in isolation.
     const lastId = messages[messages.length - 1]?.id;
-    return messages.map(msg =>
+    const transcript = messages.map(msg =>
       msg.role === 'user' ? (
         <UserBubble key={msg.id}>{msg.text}</UserBubble>
       ) : (
@@ -586,6 +583,12 @@ export function ChatView(props: ChatViewProps) {
             )}
         </AssistantBubble>
       ),
+    );
+    return (
+      <>
+        <IntroMessage>{t('editor.ai.empty')}</IntroMessage>
+        {transcript}
+      </>
     );
   };
 

@@ -65,6 +65,18 @@ const EmptyState = styled(Box)(({ theme }) => ({
   lineHeight: 1.6,
 }));
 
+// The greeting that opens every chat: top-left, and it stays as the first entry of the
+// transcript once the conversation starts (it is not a centered empty-state placeholder).
+const IntroMessage = styled(Box)(({ theme }) => ({
+  alignSelf: 'flex-start',
+  maxWidth: '100%',
+  color: theme.palette.text.secondary,
+  fontSize: theme.typography.body2.fontSize,
+  lineHeight: 1.6,
+  whiteSpace: 'pre-wrap',
+  wordBreak: 'break-word',
+}));
+
 const UserBubble = styled(Box)(({ theme }) => ({
   alignSelf: 'flex-end',
   maxWidth: '88%',
@@ -502,6 +514,7 @@ export {
   HistoryBar,
   HistoryList,
   HistoryRow,
+  IntroMessage,
   OutdatedHint,
   Panel,
   PanelHeader,
