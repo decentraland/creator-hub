@@ -46,6 +46,8 @@ const EXTERNAL_PNGS = [
   'models/kept.png',
 ];
 const MARKER_NODE = 'bellMOVE';
+// Every fixture model lives in models/, so they share one sidecar folder beside them.
+const SIDECARS = `models/${TEXTURES_DIR}`;
 
 async function makeScene(dir: string): Promise<void> {
   const models = path.join(dir, 'models');
@@ -154,8 +156,14 @@ describe('optimizer pipeline', () => {
         expect(refs.missing).toEqual([]);
         if (rel !== 'models/kept.glb') {
           expect(
-            refs.resolved.every(abs => abs.startsWith(path.join(scene, TEXTURES_DIR) + path.sep)),
+            refs.resolved.every(abs => abs.startsWith(path.join(scene, SIDECARS) + path.sep)),
           ).toBe(true);
+        }
+        // The Bevy explorer does not collapse `..` when it maps a GLB's image URI onto the scene
+        // content, so a sidecar reached through a parent folder renders as a missing texture.
+        for (const image of (await glbJson(file)).images ?? []) {
+          expect(image.uri).not.toContain('..');
+          expect(image.uri).toMatch(/^optimized-textures\//);
         }
       }
 
@@ -183,7 +191,7 @@ describe('optimizer pipeline', () => {
 
       // One sidecar per distinct texture: the two shared models collapse onto one file.
       expect(result.texturesDeduped).toBe(1);
-      expect(await listFiles(path.join(scene, TEXTURES_DIR))).toHaveLength(5);
+      expect(await listFiles(path.join(scene, SIDECARS))).toHaveLength(5);
       expect(result.texturesExtracted).toBe(5);
 
       // Superseded originals leave, unless the scene's code names them.
@@ -221,8 +229,8 @@ describe('optimizer pipeline', () => {
           (a, b) => a + b,
           0,
         );
-      const sidecars = (await listFiles(path.join(scene, TEXTURES_DIR))).map(f =>
-        path.join(scene, TEXTURES_DIR, f),
+      const sidecars = (await listFiles(path.join(scene, SIDECARS))).map(f =>
+        path.join(scene, SIDECARS, f),
       );
       expect(result.bytesAfter).toBe(
         (await sizeOf(GLBS.map(rel => path.join(scene, rel)))) +
@@ -241,7 +249,7 @@ describe('optimizer pipeline', () => {
     it('should leave every model alone, merge into the manifest and write nothing new', async () => {
       await runPipeline(scene, defaults(), () => {});
       const first = (await readManifest(scene)) as OptimizeManifest;
-      const sidecarsAfterFirst = await listFiles(path.join(scene, TEXTURES_DIR));
+      const sidecarsAfterFirst = await listFiles(path.join(scene, SIDECARS));
       const outputsAfterFirst = await snapshot(scene, GLBS);
 
       const second = await runPipeline(scene, defaults(), () => {});
@@ -259,7 +267,7 @@ describe('optimizer pipeline', () => {
       expect([...merged.modifiedGlbs].sort()).toEqual([...first.modifiedGlbs].sort());
       expect([...merged.createdFiles].sort()).toEqual([...first.createdFiles].sort());
       expect([...merged.removedFiles].sort()).toEqual([...first.removedFiles].sort());
-      expect(await listFiles(path.join(scene, TEXTURES_DIR))).toEqual(sidecarsAfterFirst);
+      expect(await listFiles(path.join(scene, SIDECARS))).toEqual(sidecarsAfterFirst);
 
       // The backup still holds the pristine originals, not the first run's output.
       for (const rel of GLBS) {
@@ -292,22 +300,32 @@ describe('optimizer pipeline', () => {
     });
   });
 
-  describe('when the scene was optimized before the sidecar folder moved under assets/', () => {
-    it('should keep writing to the folder the manifest names', async () => {
-      // A manifest from before `texturesDir` existed: those runs wrote to the project root.
+  describe('when the scene was optimized into a single root folder by an earlier version', () => {
+    it('should write new sidecars beside the models and still clean the old folder up on revert', async () => {
+      // A manifest from before `texturesDir` existed, whose run wrote one sidecar at the root.
       await fs.mkdir(path.join(scene, OPTIMIZE_DIR), { recursive: true });
+      await fs.mkdir(path.join(scene, TEXTURES_DIR), { recursive: true });
+      await fs.writeFile(path.join(scene, TEXTURES_DIR, 'old.png'), await gradientPng(9));
       await fs.writeFile(
         path.join(scene, OPTIMIZE_DIR, 'manifest.json'),
-        JSON.stringify({ version: 1, createdAt: 1, modifiedGlbs: [], createdFiles: [] }),
+        JSON.stringify({
+          version: 1,
+          createdAt: 1,
+          modifiedGlbs: [],
+          createdFiles: [`${TEXTURES_DIR}/old.png`],
+        }),
       );
 
       await runPipeline(scene, defaults(), () => {});
 
-      expect(await listFiles(path.join(scene, 'optimized-textures'))).toHaveLength(5);
+      expect(await listFiles(path.join(scene, SIDECARS))).toHaveLength(5);
+      expect(await listFiles(path.join(scene, TEXTURES_DIR))).toEqual(['old.png']);
+
+      const manifest = (await readManifest(scene)) as OptimizeManifest;
+      expect(manifest.texturesDir).toBe(TEXTURES_DIR);
+      await revertFromManifest(scene, manifest);
       expect(await exists(path.join(scene, TEXTURES_DIR))).toBe(false);
-      expect(((await readManifest(scene)) as OptimizeManifest).texturesDir).toBe(
-        'optimized-textures',
-      );
+      expect(await exists(path.join(scene, SIDECARS))).toBe(false);
     });
   });
 
@@ -323,7 +341,7 @@ describe('optimizer pipeline', () => {
       for (const [rel, bytes] of originals) {
         expect(Buffer.compare(await fs.readFile(path.join(scene, rel)), bytes)).toBe(0);
       }
-      expect(await exists(path.join(scene, TEXTURES_DIR))).toBe(false);
+      expect(await exists(path.join(scene, SIDECARS))).toBe(false);
       expect(await exists(path.join(scene, OPTIMIZE_DIR))).toBe(false);
       expect(await exists(path.join(scene, '.dclignore'))).toBe(false);
     });
@@ -341,7 +359,7 @@ describe('optimizer pipeline', () => {
       for (const [rel, bytes] of originals) {
         expect(Buffer.compare(await fs.readFile(path.join(scene, rel)), bytes)).toBe(0);
       }
-      expect(await exists(path.join(scene, TEXTURES_DIR))).toBe(false);
+      expect(await exists(path.join(scene, SIDECARS))).toBe(false);
     });
   });
 }, 120_000);

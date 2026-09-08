@@ -70,9 +70,12 @@ export function extensionForFormat(format: TextureFormat): string {
   return FORMAT_TO_EXT[format];
 }
 
+// A sidecar name ends up verbatim in a glTF URI, which loaders treat as a URL: besides the
+// filesystem-hostile set, drop the URL-reserved characters (`#` fragment, `%` escape, `&`, `+`,
+// `;`, `=`) rather than percent-encode them, since not every explorer decodes consistently.
 export function sanitizeFilename(name: string): string {
   // eslint-disable-next-line no-control-regex -- control chars are intentionally stripped from filenames
-  return name.replace(/[<>:"/\\|?*\x00-\x1f]/g, '_').replace(/\s+/g, '_');
+  return name.replace(/[<>:"/\\|?*#%&+;=\x00-\x1f]/g, '_').replace(/\s+/g, '_');
 }
 
 export function formatBytes(bytes: number): string {
