@@ -450,7 +450,7 @@
         "renderer": {
           "label": "Motor de renderizado",
           "babylon": "Babylon (predeterminado)",
-          "bevy": "Bevy (vista previa)"
+          "bevy": "Bevy (experimental)"
         },
         "experimental": {
           "label": "Funciones experimentales"
