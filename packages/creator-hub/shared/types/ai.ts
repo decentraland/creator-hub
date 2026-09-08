@@ -149,4 +149,7 @@ export type AiRemoteCommand =
   | { type: 'switchSession'; id: string }
   | { type: 'deleteSession'; id: string }
   | { type: 'clearSelection' }
+  // The detached window's close button: shut the assistant entirely (close the window AND the
+  // inline panel), instead of just docking back — so close is consistent whether detached or not.
+  | { type: 'closeAssistant' }
   | { type: 'sync' };

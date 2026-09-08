@@ -185,14 +185,14 @@ export function EditorPage() {
   // The AI session engine + detached-window bridge (#1504). Runs whenever the assistant is
   // on, independent of whether the chat is shown inline or popped out. It also relays the
   // detached window's "clear selection" back to the inspector here.
+  const [aiOpen, setAiOpen] = useState(false);
   const {
     detachedOpen: aiDetached,
     openDetached: openAiWindow,
     closeDetached: closeAiWindow,
-  } = useAiSession(aiChatEnabled, project?.path, handleClearAiSelection);
+  } = useAiSession(aiChatEnabled, project?.path, handleClearAiSelection, () => setAiOpen(false));
   const hydratedOptimizedAssetsPathRef = useRef<string | null>(null);
   const [modalState, setModalState] = useState<ModalState>({ type: undefined });
-  const [aiOpen, setAiOpen] = useState(false);
   // Draggable width of the AI panel (like the inspector's own panels). Persisted globally.
   const [aiPanelWidth, setAiPanelWidth] = useState(readAiPanelWidth);
   const [aiResizing, setAiResizing] = useState(false);

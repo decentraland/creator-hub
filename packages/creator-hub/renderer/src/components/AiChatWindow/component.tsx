@@ -75,8 +75,12 @@ export function AiChatWindow() {
     () => aiPreload.sendAiRemoteCommand({ type: 'clearSelection' }),
     [],
   );
-  // Closing the detached window docks the chat back inline.
-  const onClose = useCallback(() => void aiPreload.closeAiWindow(), []);
+  // The close button shuts the assistant entirely (window + inline panel), consistent with the
+  // inline close — not a dock-back. The main window handles it (it owns the inline open flag).
+  const onClose = useCallback(
+    () => aiPreload.sendAiRemoteCommand({ type: 'closeAssistant' }),
+    [],
+  );
 
   if (mirror === null) {
     return (
