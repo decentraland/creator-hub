@@ -259,6 +259,9 @@ async function externalizeTextures(
     }
     job.compressed = pool.compress(buffer, job.category, mime, options.textures);
     job.onPool = true;
+    // Pass 2 awaits this later; a rejection that lands while pass 1 is still hashing the next
+    // texture would otherwise be an unhandled rejection and take the worker process down.
+    job.compressed.catch(() => {});
   }
 
   const onPool = jobs.filter(job => job.onPool);

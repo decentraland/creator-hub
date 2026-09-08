@@ -88,9 +88,12 @@ describe('compress pool', () => {
           }),
       });
 
+      // Both inputs first: an `await` between the two compress calls would let the first
+      // rejection land before allSettled attaches its handler, as an unhandled rejection.
+      const [one, two] = await Promise.all([gradientPng(1), gradientPng(2)]);
       const [first, second] = await Promise.allSettled([
-        failing.compress(await gradientPng(1), 'baseColor', 'image/png', options),
-        failing.compress(await gradientPng(2), 'baseColor', 'image/png', options),
+        failing.compress(one, 'baseColor', 'image/png', options),
+        failing.compress(two, 'baseColor', 'image/png', options),
       ]);
 
       expect(first.status).toBe('rejected');
