@@ -2,6 +2,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { Document, NodeIO } from '@gltf-transform/core';
 import { ALL_EXTENSIONS } from '@gltf-transform/extensions';
+import { MeshoptDecoder } from 'meshoptimizer';
 import sharp from 'sharp';
 
 import { DEFAULT_OPTIMIZE_OPTIONS } from '/shared/types/optimizer';
@@ -148,12 +149,16 @@ export async function writeExternalGlb(
   await patchGlbImageURIs(file, new Map(images.map((image, index) => [index, image.uri])));
 }
 
-// Reader able to open whatever the optimizer writes.
+// Reader able to open whatever the optimizer writes, including meshopt-compressed output.
 export async function createReaderIO(): Promise<NodeIO> {
-  return new NodeIO().registerExtensions(ALL_EXTENSIONS);
+  await MeshoptDecoder.ready;
+  return new NodeIO()
+    .registerExtensions(ALL_EXTENSIONS)
+    .registerDependencies({ 'meshopt.decoder': MeshoptDecoder });
 }
 
-// Rendered triangles: every node instance's primitives, from the JSON chunk alone.
+// Rendered triangles: every node instance's primitives, from the JSON chunk alone (accessor
+// counts survive meshopt compression, so this reads compressed output too).
 export async function countTriangles(file: string): Promise<number> {
   const json = readGlbJson(await fs.readFile(file));
   if (!json) throw new Error(`${file} is not a GLB`);

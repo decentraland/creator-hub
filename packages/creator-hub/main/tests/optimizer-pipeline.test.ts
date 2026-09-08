@@ -329,6 +329,29 @@ describe('optimizer pipeline', () => {
     });
   });
 
+  describe('when meshopt compression is on', () => {
+    it('should emit EXT_meshopt_compression that decodes to the same triangles, with float positions and UVs', async () => {
+      const options = defaults();
+      options.mesh.meshopt = true;
+
+      await runPipeline(scene, options, () => {});
+
+      const io = await createReaderIO();
+      for (const rel of GLBS) {
+        const file = path.join(scene, rel);
+        const json = await glbJson(file);
+        expect(json.extensionsRequired).toContain('EXT_meshopt_compression');
+        const primitive = json.meshes[0].primitives[0];
+        const FLOAT = 5126;
+        expect(json.accessors[primitive.attributes.POSITION].componentType).toBe(FLOAT);
+        expect(json.accessors[primitive.attributes.TEXCOORD_0].componentType).toBe(FLOAT);
+        const doc = await io.read(file);
+        const indices = doc.getRoot().listMeshes()[0].listPrimitives()[0].getIndices();
+        expect(indices?.getCount()).toBe(6);
+      }
+    });
+  });
+
   describe('when every option is off', () => {
     it('should touch nothing and report every model unchanged', async () => {
       const options = defaults();
