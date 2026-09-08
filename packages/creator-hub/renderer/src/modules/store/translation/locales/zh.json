@@ -450,7 +450,7 @@
         "renderer": {
           "label": "场景渲染器",
           "babylon": "Babylon（默认）",
-          "bevy": "Bevy（预览）"
+          "bevy": "Bevy（实验性）"
         },
         "experimental": {
           "label": "实验性功能"
