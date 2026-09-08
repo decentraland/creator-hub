@@ -489,13 +489,6 @@ const SelectionNames = styled('span')({
   whiteSpace: 'nowrap',
 });
 
-const SelectionClear = styled('span')(({ theme }) => ({
-  flexShrink: 0,
-  textDecoration: 'underline',
-  cursor: 'pointer',
-  color: theme.palette.text.primary,
-}));
-
 export {
   AssistantBubble,
   AssistantImage,
@@ -528,7 +521,6 @@ export {
   ProviderRow,
   ProviderValueHint,
   SelectionBar,
-  SelectionClear,
   SelectionNames,
   SendButton,
   SessionText,

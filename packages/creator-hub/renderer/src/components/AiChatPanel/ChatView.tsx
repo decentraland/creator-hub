@@ -60,7 +60,6 @@ import {
   ProviderOption,
   ProviderValueHint,
   SelectionBar,
-  SelectionClear,
   SelectionNames,
   SendButton,
   SessionText,
@@ -744,19 +743,15 @@ export function ChatView(props: ChatViewProps) {
                 names: selection.map(s => (s.name !== '' ? s.name : `#${s.id}`)).join(', '),
               })}
             </SelectionNames>
-            <SelectionClear
-              role="button"
-              tabIndex={0}
-              onClick={onClearSelection}
-              onKeyDown={e => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  e.preventDefault();
-                  onClearSelection();
-                }
-              }}
-            >
-              {t('editor.ai.selection_clear')}
-            </SelectionClear>
+            <Tooltip title={t('editor.ai.selection_clear')}>
+              <IconButton
+                size="small"
+                aria-label={t('editor.ai.selection_clear')}
+                onClick={onClearSelection}
+              >
+                <CloseIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
           </SelectionBar>
         )}
 
