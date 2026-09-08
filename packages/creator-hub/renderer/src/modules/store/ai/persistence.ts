@@ -99,13 +99,13 @@ export function writeSessionMessages(
       storage.removeItem(sessionKey(path, id));
       return;
     }
-    // Drop inline screenshot images (#1506): a few base64 PNGs would blow the size budget
-    // and evict the transcript. They're ephemeral — the text/tool history is what's worth
-    // keeping across restarts. Interactive `ask_user` prompts are ephemeral too (they belong
-    // to a live turn and can't be answered after a reload), so drop those messages entirely.
-    const slim = messages
-      .filter(m => m.prompt === undefined)
-      .map(m => (m.images === undefined ? m : { ...m, images: undefined }));
+    // Drop ephemeral parts before persisting: inline screenshot images (#1506) would blow the
+    // size budget and evict the transcript, and interactive `ask_user` prompts belong to a live
+    // turn (they can't be answered after a reload). The text/tool history is what's worth keeping.
+    const slim = messages.map(m => ({
+      ...m,
+      parts: m.parts.filter(p => p.kind !== 'image' && p.kind !== 'prompt'),
+    }));
     const raw = JSON.stringify({ messages: slim });
     if (raw.length > MAX_BYTES) return; // too big to persist; skip rather than throw
     storage.setItem(sessionKey(path, id), raw);

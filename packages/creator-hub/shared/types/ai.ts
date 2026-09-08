@@ -103,21 +103,34 @@ export type AiEvent =
 // hops are relayed through the main process, since two renderers can't talk directly.
 // These payloads must stay plain-serializable for IPC.
 
-export interface AiMirrorToolChip {
-  tool: string;
-  detail: string;
+// An interactive `ask_user` question, rendered in the transcript. The turn blocks until
+// `answer` is set (or `dismissed` on stop). Ephemeral — stripped before a transcript persists.
+export interface AiPromptData {
+  id: string;
+  question: string;
+  options: { label: string; description?: string }[];
+  multiSelect: boolean;
+  allowOther: boolean;
+  answer?: string;
+  dismissed?: boolean;
 }
+
+// One ordered piece of an assistant turn, rendered in the exact order it arrived so text,
+// tool chips, screenshots and interactive prompts stay chronological (#1573).
+export type AiPart =
+  | { kind: 'text'; text: string }
+  | { kind: 'tool'; tool: string; detail: string }
+  | { kind: 'image'; dataUrl: string }
+  | { kind: 'prompt'; prompt: AiPromptData };
 
 export interface AiMirrorMessage {
   id: string;
   role: 'user' | 'assistant';
-  text: string;
-  tools: AiMirrorToolChip[];
+  parts: AiPart[];
   done: boolean;
   error?: string;
   mutations?: number;
   reverted?: boolean;
-  images?: string[];
 }
 
 export interface AiMirrorState {

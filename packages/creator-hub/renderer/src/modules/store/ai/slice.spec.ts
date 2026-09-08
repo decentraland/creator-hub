@@ -57,3 +57,27 @@ describe('send.rejected', () => {
     expect(state.messages[0]).toMatchObject({ id: 't1', error: 'boom', done: true });
   });
 });
+
+// A turn's content must render in the order it streamed — text, tool chips and later text
+// interleaved, never grouped by kind (#1573).
+describe('applyEvent chronological parts', () => {
+  const apply = (payload: unknown) => ({ type: 'ai/applyEvent', payload });
+
+  it('keeps text → tool → later text in arrival order', () => {
+    let s = reducer(undefined, apply({ kind: 'started', turnId: 't1' }));
+    s = reducer(s, apply({ kind: 'text', turnId: 't1', text: 'Looking…' }));
+    s = reducer(s, apply({ kind: 'tool', turnId: 't1', tool: 'Read', detail: 'src/index.ts' }));
+    s = reducer(s, apply({ kind: 'text', turnId: 't1', text: 'Done.' }));
+    const parts = s.messages[0].parts;
+    expect(parts.map(p => p.kind)).toEqual(['text', 'tool', 'text']);
+    expect(parts[0]).toMatchObject({ kind: 'text', text: 'Looking…' });
+    expect(parts[2]).toMatchObject({ kind: 'text', text: 'Done.' });
+  });
+
+  it('coalesces consecutive text tokens into one part', () => {
+    let s = reducer(undefined, apply({ kind: 'started', turnId: 't1' }));
+    s = reducer(s, apply({ kind: 'text', turnId: 't1', text: 'Hel' }));
+    s = reducer(s, apply({ kind: 'text', turnId: 't1', text: 'lo' }));
+    expect(s.messages[0].parts).toEqual([{ kind: 'text', text: 'Hello' }]);
+  });
+});

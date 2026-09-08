@@ -99,6 +99,12 @@ function formatWhen(ts: number): string {
   return new Date(ts).toLocaleDateString();
 }
 
+// The plain-text content of a message (its text parts joined) — for the user bubble and for
+// re-sending the last prompt on retry.
+function messageText(msg: AiMessage): string {
+  return msg.parts.map(p => (p.kind === 'text' ? p.text : '')).join('');
+}
+
 // Install + sign-in commands per provider, shown on the setup card when the CLI isn't
 // found. Obviously-safe public package names.
 const SETUP_COMMANDS: Record<AiProvider, { install: string; signin: string }> = {
@@ -514,36 +520,45 @@ export function ChatView(props: ChatViewProps) {
     const lastId = messages[messages.length - 1]?.id;
     const transcript = messages.map(msg =>
       msg.role === 'user' ? (
-        <UserBubble key={msg.id}>{msg.text}</UserBubble>
+        <UserBubble key={msg.id}>{messageText(msg)}</UserBubble>
       ) : (
         <AssistantBubble key={msg.id}>
-          {msg.tools.map((chip, i) => (
-            <ToolChip key={i}>
-              <span>{toolChipLabel(chip.tool)}</span>
-              {chip.detail !== '' && <ToolDetail>{chip.detail}</ToolDetail>}
-            </ToolChip>
-          ))}
-          {msg.images?.map((src, i) => (
-            <AssistantImage
-              key={`img-${i}`}
-              src={src}
-              alt={t('editor.ai.screenshot_alt')}
-            />
-          ))}
-          {msg.text !== '' && (
-            <AssistantText>
-              <Markdown options={MARKDOWN_OPTIONS}>{msg.text}</Markdown>
-            </AssistantText>
-          )}
-          {msg.prompt !== undefined && (
-            <PromptBlock
-              prompt={msg.prompt}
-              onAnswer={answer => {
-                if (msg.prompt !== undefined) onAnswerPrompt(msg.prompt.id, answer);
-              }}
-            />
-          )}
-          {!msg.done && msg.text === '' && msg.error === undefined && msg.prompt === undefined && (
+          {msg.parts.map((part, i) => {
+            switch (part.kind) {
+              case 'text':
+                return (
+                  <AssistantText key={i}>
+                    <Markdown options={MARKDOWN_OPTIONS}>{part.text}</Markdown>
+                  </AssistantText>
+                );
+              case 'tool':
+                return (
+                  <ToolChip key={i}>
+                    <span>{toolChipLabel(part.tool)}</span>
+                    {part.detail !== '' && <ToolDetail>{part.detail}</ToolDetail>}
+                  </ToolChip>
+                );
+              case 'image':
+                return (
+                  <AssistantImage
+                    key={i}
+                    src={part.dataUrl}
+                    alt={t('editor.ai.screenshot_alt')}
+                  />
+                );
+              case 'prompt':
+                return (
+                  <PromptBlock
+                    key={i}
+                    prompt={part.prompt}
+                    onAnswer={answer => onAnswerPrompt(part.prompt.id, answer)}
+                  />
+                );
+              default:
+                return null;
+            }
+          })}
+          {!msg.done && msg.parts.length === 0 && msg.error === undefined && (
             <ThinkingRow>
               <CircularProgress size={12} />
               {t('editor.ai.thinking')}
@@ -558,7 +573,7 @@ export function ChatView(props: ChatViewProps) {
                   size="small"
                   onClick={() => {
                     const lastUser = [...messages].reverse().find(m => m.role === 'user');
-                    if (lastUser !== undefined) onSend(lastUser.text);
+                    if (lastUser !== undefined) onSend(messageText(lastUser));
                   }}
                 >
                   {t('editor.ai.retry')}
@@ -814,30 +829,29 @@ export function ChatView(props: ChatViewProps) {
               },
             }}
             InputProps={{
-              endAdornment:
-                busy ? (
-                  <Tooltip title={t('editor.ai.stop')}>
-                    <IconButton
-                      color="error"
-                      aria-label={t('editor.ai.stop')}
-                      onClick={onStop}
+              endAdornment: busy ? (
+                <Tooltip title={t('editor.ai.stop')}>
+                  <IconButton
+                    color="error"
+                    aria-label={t('editor.ai.stop')}
+                    onClick={onStop}
+                  >
+                    <StopIcon />
+                  </IconButton>
+                </Tooltip>
+              ) : (
+                <Tooltip title={t('editor.ai.send')}>
+                  <span>
+                    <SendButton
+                      aria-label={t('editor.ai.send')}
+                      disabled={!available || input.trim() === ''}
+                      onClick={handleSend}
                     >
-                      <StopIcon />
-                    </IconButton>
-                  </Tooltip>
-                ) : (
-                  <Tooltip title={t('editor.ai.send')}>
-                    <span>
-                      <SendButton
-                        aria-label={t('editor.ai.send')}
-                        disabled={!available || input.trim() === ''}
-                        onClick={handleSend}
-                      >
-                        <ArrowUpwardIcon fontSize="small" />
-                      </SendButton>
-                    </span>
-                  </Tooltip>
-                ),
+                      <ArrowUpwardIcon fontSize="small" />
+                    </SendButton>
+                  </span>
+                </Tooltip>
+              ),
             }}
           />
         </Composer>

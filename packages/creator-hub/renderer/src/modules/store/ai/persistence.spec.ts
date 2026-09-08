@@ -24,8 +24,8 @@ function fakeStorage() {
 }
 
 const MSG: AiMessage[] = [
-  { id: 'u1', role: 'user', text: 'hi', tools: [], done: true },
-  { id: 't1', role: 'assistant', text: 'hello', tools: [], done: true },
+  { id: 'u1', role: 'user', parts: [{ kind: 'text', text: 'hi' }], done: true },
+  { id: 't1', role: 'assistant', parts: [{ kind: 'text', text: 'hello' }], done: true },
 ];
 
 describe('ai session transcripts', () => {
@@ -62,14 +62,17 @@ describe('ai session transcripts', () => {
       {
         id: 't1',
         role: 'assistant',
-        text: 'see',
-        tools: [],
+        parts: [
+          { kind: 'text', text: 'see' },
+          { kind: 'image', dataUrl: 'data:image/png;base64,AAAA' },
+        ],
         done: true,
-        images: ['data:image/png;base64,AAAA'],
       },
     ];
     writeSessionMessages('/scene/a', 's1', withImage, s);
-    expect(readSessionMessages('/scene/a', 's1', s)[0].images).toBeUndefined();
+    expect(readSessionMessages('/scene/a', 's1', s)[0].parts).toEqual([
+      { kind: 'text', text: 'see' },
+    ]);
   });
 
   it('deleteSessionStorage removes only that session', () => {
