@@ -125,4 +125,24 @@ export type Events = {
     method: 'deeplink';
   };
   'Sign Out Action': undefined;
+  'Use Bevy Renderer': {
+    project_id: string;
+  };
+  'AI Chat Opened': {
+    project_id: string;
+  };
+  'AI Turn Started': {
+    project_id: string;
+    provider: string;
+    model: string;
+  };
+  'AI Turn Completed': {
+    project_id: string;
+    provider: string;
+    model: string;
+    ok: boolean;
+    duration_ms: number;
+    tool_count: number;
+    mutations: number;
+  };
 };

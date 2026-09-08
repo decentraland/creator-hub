@@ -9,6 +9,7 @@
   "SOCIAL_API_URL": "https://social-api.decentraland.zone",
   "PEER_TESTING_URL": "https://peer-testing.decentraland.zone",
   "ASSET_BUNDLE_REGISTRY_URL": "https://asset-bundle-registry.decentraland.zone",
+  "ASSET_BUNDLE_REGISTRY_ABGEN_URL": "https://asset-bundle-registry-abgen.decentraland.zone",
   "DCL_LISTS_URL": "https://dcl-lists.decentraland.zone",
   "ATLAS_SERVER_API_URL": "https://api.decentraland.zone/v2",
   "RPC_URL": "https://rpc.decentraland.org/sepolia",

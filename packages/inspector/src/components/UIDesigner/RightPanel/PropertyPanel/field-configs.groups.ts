@@ -9,7 +9,6 @@ import {
   BINDS_VIA_PRIMARY_ROW_ONLY,
   DISPLAY_OPTIONS,
   DROPDOWN,
-  FLEX_DIRECTION_OPTIONS,
   FLEX_WRAP_OPTIONS,
   FONT_OPTIONS,
   INPUT,
@@ -19,7 +18,7 @@ import {
   TRANSFORM,
   UI_EVENTS,
 } from './field-configs.constants';
-import { directionIsRepresentable, wrapIsRepresentable, YGW_WRAP_REVERSE } from './flow';
+import { wrapIsRepresentable, YGW_WRAP_REVERSE } from './flow';
 import type { FieldConfig } from './field-configs.types';
 
 export const POSITION_MODE_FIELD: FieldConfig = {
@@ -181,16 +180,6 @@ const LAYOUT_FIELDS: (FieldConfig & { container?: true })[] = [
     info: 'Hides anything that overflows this box instead of letting it spill out. Forced on while Scroll Overflow is on.',
   },
   {
-    label: 'Flex Direction',
-    componentId: TRANSFORM,
-    path: 'flexDirection',
-    kind: 'enum' as const,
-    options: FLEX_DIRECTION_OPTIONS,
-    container: true,
-    hiddenWhen: directionIsRepresentable,
-    info: 'Main axis children flow along. Shown while the node ignores layout flow, where the Flow control cannot display it.',
-  },
-  {
     label: 'Flex Wrap',
     componentId: TRANSFORM,
     path: 'flexWrap',
@@ -304,7 +293,7 @@ export const STYLE_GROUP = {
   title: 'Style',
   fields: [
     {
-      label: 'Transparency',
+      label: 'Opacity',
       componentId: TRANSFORM,
       path: 'opacity',
       kind: 'number' as const,
@@ -312,9 +301,9 @@ export const STYLE_GROUP = {
       half: true,
       suffix: '%',
       defaultValue: 1,
-      toDisplay: (opacity: number) => round2(100 - opacity * 100),
-      fromDisplay: (transparency: number) => round4((100 - transparency) / 100),
-      info: '100% is fully transparent, 0% fully opaque. Stored as the SDK’s `opacity`, which runs the other way.',
+      toDisplay: (opacity: number) => round2(opacity * 100),
+      fromDisplay: (opacityPct: number) => round4(opacityPct / 100),
+      info: '100% is fully opaque, 0% fully transparent.',
     },
     {
       label: 'Corner Radius',

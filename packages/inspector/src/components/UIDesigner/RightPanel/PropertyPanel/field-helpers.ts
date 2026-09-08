@@ -110,14 +110,6 @@ export function hiddenOnRoot(
   return !isAbsolute(value);
 }
 
-/** Whether to drop "Ignore Layout Flow" because the node's PARENT is itself absolutely positioned. */
-export function hiddenUnderAbsoluteParent(
-  parentInFlow: boolean,
-  value: Record<string, unknown> | null,
-): boolean {
-  return !parentInFlow && !isAbsolute(value);
-}
-
 /** Seed patch written when the user ADDS an optional prop — a sensible default plus whatever `addAlso` declares. */
 export function buildAddPatch(field: FieldConfig): Record<string, unknown> {
   return { ...seedPatch(field), ...field.addAlso };

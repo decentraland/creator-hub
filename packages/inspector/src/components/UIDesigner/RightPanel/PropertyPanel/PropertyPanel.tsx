@@ -70,14 +70,13 @@ import { buildAddPatch } from './field-helpers';
 import { bindPathFor } from './field-configs';
 import { TRANSFORM } from './field-configs';
 import { POSITION_MODE_FIELD } from './field-configs';
+import { isFreeFlow } from './flow';
 import { FieldRow } from './FieldRow';
 import type { FieldConfig } from './field-configs';
 import { isTogglable } from './field-helpers';
 import { isInlineStub } from './field-helpers';
 import { isFieldSet } from './field-helpers';
 import { isAddableField } from './field-helpers';
-import { isAbsolute } from './field-helpers';
-import { hiddenUnderAbsoluteParent } from './field-helpers';
 import { fillOwnsProp } from './resize-modes';
 import { CHECKBOX_KINDS } from './field-helpers';
 import { hiddenOnRoot } from './field-helpers';
@@ -85,12 +84,7 @@ import { BindAffordance } from './BindAffordance';
 import { editUiPropertyEvent } from './edit-event';
 import './PropertyPanel.css';
 
-export {
-  buildAddPatch,
-  hiddenUnderAbsoluteParent,
-  isAddableField,
-  isInlineStub,
-} from './field-helpers';
+export { buildAddPatch, isAddableField, isInlineStub } from './field-helpers';
 
 const AddPropertyMenu: React.FC<{ fields: FieldConfig[]; onAdd: (f: FieldConfig) => void }> = ({
   fields,
@@ -565,7 +559,6 @@ const PropertyPanelComponent: React.FC = () => {
   }, [codeState, selected]);
 
   const parentFlexDirection = (parentTransform?.flexDirection as number | undefined) ?? 0;
-  const parentInFlow = !isAbsolute(parentTransform);
 
   const activeLayer: InteractionStateKey = useMemo(
     () =>
@@ -755,8 +748,7 @@ const PropertyPanelComponent: React.FC = () => {
                   }}
                 />
               ) : null}
-              {hiddenOnRoot(POSITION_MODE_FIELD, isGuiRoot, transform) ||
-              hiddenUnderAbsoluteParent(parentInFlow, transform)
+              {isGuiRoot || isFreeFlow(parentTransform)
                 ? null
                 : renderRow(POSITION_MODE_FIELD, transform)}
             </div>

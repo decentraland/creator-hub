@@ -16,6 +16,7 @@ import { getNode, DROP_TYPES, isDropType, DropTypesEnum } from '../../lib/sdk/dr
 import { useRenderer } from '../../hooks/sdk/useRenderer';
 import { useSdk } from '../../hooks/sdk/useSdk';
 import { getConfig } from '../../lib/logic/config';
+import { setViewportElement } from '../../lib/logic/viewport-rect';
 import { snapPositionValue } from '../../lib/babylon/decentraland/snap-manager';
 import { ROOT } from '../../lib/sdk/tree';
 import type { CustomAsset } from '../../lib/logic/catalog';
@@ -71,6 +72,12 @@ const Renderer: React.FC = () => {
   // the drop's NDC without threading the monitor through every path.
   const dropClientOffsetRef = React.useRef<{ x: number; y: number } | null>(null);
   useRenderer(() => canvasRef);
+  // Expose the viewport rect so the host can crop a compositor screenshot to just the 3D
+  // view (the Bevy fallback when the engine's /screenshot command is unavailable — #1526).
+  useEffect(() => {
+    setViewportElement(viewportRef.current);
+    return () => setViewportElement(null);
+  }, []);
   const sdk = useSdk();
   const [isLoading, setIsLoading] = useState(false);
   const isMounted = useIsMounted();

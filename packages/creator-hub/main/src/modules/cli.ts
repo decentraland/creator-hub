@@ -311,7 +311,12 @@ export async function supportsAssetBundles(path: string): Promise<boolean> {
   }
 }
 
-type StartOptions = PreviewOptions & { retry?: boolean; mobile?: boolean };
+// `mcpPort` is transient (not a user PreviewOptions setting): the Explorer-gateway
+// launches a preview with `mcp: true` and needs the Explorer's MCP server on a known
+// port so it can connect an MCP client to it. sdk-commands accepts `--mcp-port` (≥7.25.0)
+// and forwards it to the Explorer as a deeplink param; omitted, the Explorer defaults to
+// 8123. Only honoured on the Unity (`--explorer-alpha`) path alongside `--mcp`.
+type StartOptions = PreviewOptions & { retry?: boolean; mobile?: boolean; mcpPort?: number };
 
 // Serializes concurrent starts per path: a second Preview press (or a mobile-QR start)
 // while a spawn is still converting must ride that spawn, not race a second one.
@@ -449,6 +454,9 @@ async function doStart(path: string, opts: StartOptions): Promise<string> {
           ...(isMobile ? ['--mobile'] : []),
           ...extraArgs,
           ...generatePreviewArguments(opts),
+          // `--mcp` (a boolean) is emitted by generatePreviewArguments from opts.mcp;
+          // pin the port too when the gateway asked for one, so it knows where to connect.
+          ...(opts.mcp && opts.mcpPort !== undefined ? ['--mcp-port', String(opts.mcpPort)] : []),
         ];
 
     // Preview runs on the bundled Node binary rather than an Electron utility process. The

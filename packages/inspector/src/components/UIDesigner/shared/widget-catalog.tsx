@@ -1,8 +1,15 @@
 import React from 'react';
-import { IoEllipseOutline, IoImageOutline, IoScanOutline, IoSquareOutline } from 'react-icons/io5';
+import { IoScanOutline } from 'react-icons/io5';
 
 import type { UINodeType, WidgetKind, WidgetPreset } from './tree-model';
-import { DropdownFieldIcon, InputFieldIcon, LabelFieldIcon } from './widget-icons';
+import {
+  ButtonIcon,
+  ContainerIcon,
+  DropdownFieldIcon,
+  ImageIcon,
+  InputFieldIcon,
+  LabelFieldIcon,
+} from './widget-icons';
 
 export interface WidgetDef {
   id: string;
@@ -35,14 +42,14 @@ export const WIDGET_CATALOG: WidgetCategory[] = [
         id: 'UiEntity',
         type: 'UiEntity',
         label: 'Container',
-        icon: <IoSquareOutline />,
+        icon: <ContainerIcon />,
         keywords: ['box', 'panel', 'div', 'group', 'layout', 'flex'],
       },
       {
         id: 'image',
         type: 'UiEntity',
         label: 'Image',
-        icon: <IoImageOutline />,
+        icon: <ImageIcon />,
         preset: 'image',
         keywords: ['picture', 'texture', 'sprite', 'photo'],
       },
@@ -62,7 +69,7 @@ export const WIDGET_CATALOG: WidgetCategory[] = [
         id: 'Button',
         type: 'Button',
         label: 'Button',
-        icon: <IoEllipseOutline />,
+        icon: <ButtonIcon />,
         keywords: ['click', 'action', 'cta'],
       },
     ],

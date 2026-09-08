@@ -4,6 +4,10 @@
   flex-direction: column;
   width: 100%;
   height: 100vh;
+  /* Pin the editor to the viewport so only inner panels (the chat transcript) scroll —
+     without this a long AI conversation grew the body past 100vh and scrolled the whole
+     inspector, canvas and asset-packs view included (#1501). */
+  overflow: hidden;
 }
 
 .Editor .Header {
@@ -81,6 +85,23 @@
   display: inline-flex;
 }
 
+/* AI Assistant toggle: a blue sparkle badge that carries the feature's identity in the top bar */
+.Editor .Header .actions .ai-toggle {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  background-color: var(--ai-accent);
+  color: var(--white);
+}
+
+.Editor .Header .actions .ai-toggle:hover {
+  background-color: var(--ai-accent-hover);
+}
+
+.Editor .Header .actions .ai-toggle.active {
+  box-shadow: 0 0 0 2px var(--ai-accent-hover);
+}
+
 /* while optimizing, the Preview button and its dropdown look disabled (same opacity:0.5 the
    app uses for .Mui-disabled) and are inert; only the inline cancel (✕) stays clickable */
 .Editor .Header .actions .preview-control.optimizing .MuiButton-root {
@@ -118,9 +139,48 @@
   color: inherit;
 }
 
+/* Horizontal row holding the inspector iframe and (when open) the AI chat panel.
+   flex-shrink must stay 1: shrink 0 let the row grow to its content's height and
+   overflow the viewport when the chat transcript got long (#1501). position:relative
+   anchors the resize overlay below. */
+.Editor .EditorBody {
+  display: flex;
+  flex: 1 1 auto;
+  min-height: 0;
+  position: relative;
+}
+
+/* Drag handle on the AI panel's left edge — resize the panel like the inspector's own. */
+.Editor .EditorBody .ai-resize-handle {
+  flex: 0 0 auto;
+  width: 5px;
+  cursor: col-resize;
+  background-color: var(--dark-gray, rgba(255, 255, 255, 0.12));
+  opacity: 0;
+  transition: opacity 0.15s ease-in-out;
+}
+
+.Editor .EditorBody .ai-resize-handle:hover {
+  opacity: 1;
+}
+
+/* Covers the iframe while dragging so it doesn't swallow the mouse-move events. */
+.Editor .EditorBody .ai-resize-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  cursor: col-resize;
+}
+
 .Editor .inspector {
-  flex: 1 0 auto;
+  flex: 1 1 auto;
   border: none;
+}
+
+/* Let the iframe shrink so the fixed-width chat panel fits beside it (needs the
+   flex-shrink:1 above — min-width:0 alone can't shrink a flex:...0... child). */
+.Editor .EditorBody .inspector {
+  min-width: 0;
 }
 
 .Editor .loading {

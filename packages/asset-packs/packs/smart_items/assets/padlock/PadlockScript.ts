@@ -25,6 +25,7 @@ export class PadlockScript {
     public entity: Entity,
     public combination: number = 1234,
     public unlockedEntity: Entity,
+    public unlockedAction: string = 'Open',
   ) {
     this.name = Name.get(entity).value || this.name;
 
@@ -140,7 +141,7 @@ export class PadlockScript {
     if (currentCombination === this.combination && !this.isSolved) {
       this.onSolve();
       if (this.unlockedEntity) {
-        getActionEvents(this.unlockedEntity).emit('Open', {});
+        getActionEvents(this.unlockedEntity).emit(this.unlockedAction, {});
       }
     }
   }

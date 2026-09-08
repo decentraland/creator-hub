@@ -12,36 +12,71 @@ const base = {
   'aria-hidden': true,
 };
 
-/** A GUI root: a dashboard grid of panels. */
+/** The shared rounded-square frame the field-like widgets are built on. */
+const SQUIRCLE = { x: 4, y: 4, width: 16, height: 16, rx: 5 } as const;
+
+/** A GUI root: a uniform 2×2 grid of panels. */
 export const GuiGridIcon: React.FC = () => (
   <svg {...base}>
     <rect
-      x="3"
-      y="3"
-      width="8"
-      height="8"
+      x="5"
+      y="5"
+      width="6"
+      height="6"
       rx="1.5"
     />
     <rect
       x="13"
-      y="3"
-      width="8"
-      height="5"
+      y="5"
+      width="6"
+      height="6"
       rx="1.5"
     />
     <rect
-      x="13"
-      y="10"
-      width="8"
-      height="11"
-      rx="1.5"
-    />
-    <rect
-      x="3"
+      x="5"
       y="13"
-      width="8"
-      height="8"
+      width="6"
+      height="6"
       rx="1.5"
+    />
+    <rect
+      x="13"
+      y="13"
+      width="6"
+      height="6"
+      rx="1.5"
+    />
+  </svg>
+);
+
+/** Container: an empty rounded square. */
+export const ContainerIcon: React.FC = () => (
+  <svg {...base}>
+    <rect {...SQUIRCLE} />
+  </svg>
+);
+
+/** Image: a framed picture with a sun and a mountain. */
+export const ImageIcon: React.FC = () => (
+  <svg {...base}>
+    <rect {...SQUIRCLE} />
+    <circle
+      cx="9"
+      cy="9.5"
+      r="1.3"
+    />
+    <path d="M5.5 16.5 L9.5 12.5 L12.5 15.5" />
+    <path d="M11.5 14.5 L14.5 11.5 L18.5 15.5" />
+  </svg>
+);
+
+/** Button: a bare pill/circle, outside any frame. */
+export const ButtonIcon: React.FC = () => (
+  <svg {...base}>
+    <circle
+      cx="12"
+      cy="12"
+      r="7"
     />
   </svg>
 );
@@ -52,13 +87,7 @@ export const LabelFieldIcon: React.FC = () => (
     {...base}
     strokeWidth={1.4}
   >
-    <rect
-      x="2.5"
-      y="5"
-      width="19"
-      height="14"
-      rx="3"
-    />
+    <rect {...SQUIRCLE} />
     <path d="M4.9 15 L7 9 L9.1 15" />
     <path d="M5.6 12.9 H8.4" />
     <path d="M16.4 11.7 V15.2" />
@@ -66,24 +95,18 @@ export const LabelFieldIcon: React.FC = () => (
   </svg>
 );
 
-/** Input: an editable field (box with a pencil). */
+/** Input: an editable field (framed box with a pencil). */
 export const InputFieldIcon: React.FC = () => (
   <svg {...base}>
-    <path d="M12.5 5H5.5A2.5 2.5 0 0 0 3 7.5v9A2.5 2.5 0 0 0 5.5 19h9a2.5 2.5 0 0 0 2.5-2.5v-6.5" />
-    <path d="M15.6 4.4a1.9 1.9 0 0 1 2.7 2.7l-6.1 6.1-3.2.5.5-3.2z" />
+    <path d="M14 4 H9 A5 5 0 0 0 4 9 V15 A5 5 0 0 0 9 20 H15 A5 5 0 0 0 20 15 V10" />
+    <path d="M15.6 5.2 a1.9 1.9 0 0 1 2.7 2.7 l-6.1 6.1 -3.2 .5 .5 -3.2 z" />
   </svg>
 );
 
-/** Dropdown: a select field (box with a chevron). */
+/** Dropdown: a select field (framed box with a chevron). */
 export const DropdownFieldIcon: React.FC = () => (
   <svg {...base}>
-    <rect
-      x="2.5"
-      y="5"
-      width="19"
-      height="14"
-      rx="3"
-    />
+    <rect {...SQUIRCLE} />
     <path d="M9 10.5l3 3 3-3" />
   </svg>
 );

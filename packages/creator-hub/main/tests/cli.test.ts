@@ -153,6 +153,35 @@ describe('cli preview start', () => {
       expect(getPreview(path)?.url).toContain('realm=http');
     });
 
+    it('should pass --mcp and the chosen --mcp-port (the Explorer gateway launch path)', async () => {
+      const fake = createFakeChild();
+      mocks.run.mockReturnValue(fake.child);
+
+      const promise = start(path, { ...BASE_OPTS, mcp: true, mcpPort: 4321 });
+      fake.printDeeplink('realm=http://127.0.0.1:8000&mcp=true');
+      await promise;
+
+      const args = spawnedArgs();
+      expect(args).toContain('--mcp');
+      expect(args.slice(args.indexOf('--mcp-port'), args.indexOf('--mcp-port') + 2)).toEqual([
+        '--mcp-port',
+        '4321',
+      ]);
+    });
+
+    it('should not pass --mcp-port when no port is chosen', async () => {
+      const fake = createFakeChild();
+      mocks.run.mockReturnValue(fake.child);
+
+      const promise = start(path, { ...BASE_OPTS, mcp: true });
+      fake.printDeeplink('realm=http://127.0.0.1:8000&mcp=true');
+      await promise;
+
+      const args = spawnedArgs();
+      expect(args).toContain('--mcp');
+      expect(args).not.toContain('--mcp-port');
+    });
+
     describe('and optimized assets are enabled with a supporting sdk', () => {
       beforeEach(() => {
         setSceneSupportsAssetBundles(true);

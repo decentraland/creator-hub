@@ -35,6 +35,7 @@ import {
   spliceMoveUnlocked,
   spliceRemoveNodesUnlocked,
   spliceRenameNodeUnlocked,
+  spliceSetFreeFlowUnlocked,
   spliceSetRootChildUnlocked,
   spliceUiTransformPositionsUnlocked,
   spliceUiTransformPositionUnlocked,
@@ -81,6 +82,7 @@ export const spliceUiTransformResize = exclusive(spliceUiTransformResizeUnlocked
 export const spliceAddChild = exclusive(spliceAddChildUnlocked);
 export const spliceAddWidget = exclusive(spliceAddWidgetUnlocked);
 export const spliceSetRootChild = exclusive(spliceSetRootChildUnlocked);
+export const spliceSetFreeFlow = exclusive(spliceSetFreeFlowUnlocked);
 export const spliceInsertComponent = exclusive(spliceInsertComponentUnlocked);
 export const spliceInstanceProp = exclusive(spliceInstancePropUnlocked);
 export const unsetInstanceProp = exclusive(unsetInstancePropUnlocked);

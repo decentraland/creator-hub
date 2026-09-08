@@ -148,6 +148,23 @@ describe('response header rules', () => {
     });
   });
 
+  describe('when the request is for the asset-packs content CDN', () => {
+    const url =
+      'https://builder-items.decentraland.org/contents/bafkreic73ieebx4cins2vy26rbyksh3nutvn4ynrit2sfwhzv6qz64zfti';
+
+    it('should inject an allowed origin so the inspector iframe can fetch Smart Item files when CloudFront served a cached response without one', () => {
+      expect(subject.valuesFor(url, 'Access-Control-Allow-Origin')).toEqual(['*']);
+    });
+
+    it('should not add a second allowed origin when the CDN already sent one', () => {
+      expect(
+        subject.valuesFor(url, 'Access-Control-Allow-Origin', {
+          'access-control-allow-origin': ['*'],
+        }),
+      ).toEqual(['*']);
+    });
+  });
+
   describe('when the request is for an unrelated external origin', () => {
     it('should add no cross-origin headers', () => {
       const url = 'https://www.youtube.com/embed/abc';

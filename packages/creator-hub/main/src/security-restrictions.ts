@@ -121,8 +121,22 @@ app.on('ready', () => {
     ],
   };
 
+  // The asset-packs content CDN (Smart Item catalog + model files). Its CloudFront layer only
+  // returns Access-Control-Allow-Origin when it forwards/varies on Origin, but it intermittently
+  // serves cached responses WITHOUT that header — so a cross-origin fetch from the inspector
+  // iframe (a localhost origin) is CORS-blocked and place_smart_item / drag-drop fail with a
+  // bare "Failed to fetch". Inject ACAO ourselves (as we do for studios) so it's immune to the
+  // CDN's cache state. Public, read-only content, so `*` is safe.
+  const contentFilter = {
+    urls: [
+      'https://builder-items.decentraland.org/*',
+      'https://builder-items.decentraland.zone/*',
+      'https://builder-items.decentraland.today/*',
+    ],
+  };
+
   const combinedFilter = {
-    urls: [...filter.urls, ...isolationFilter.urls, ...embedFilter.urls],
+    urls: [...filter.urls, ...isolationFilter.urls, ...embedFilter.urls, ...contentFilter.urls],
   };
   const matches = (url: string, patterns: string[]) =>
     patterns.some(pattern => {
@@ -150,7 +164,7 @@ app.on('ready', () => {
     let responseHeaders: ResponseHeaders = details.responseHeaders ?? {};
 
     if (
-      matches(details.url, filter.urls) &&
+      matches(details.url, [...filter.urls, ...contentFilter.urls]) &&
       !hasHeader(responseHeaders, 'Access-Control-Allow-Origin')
     ) {
       responseHeaders = setHeader(responseHeaders, 'Access-Control-Allow-Origin', '*');
