@@ -181,6 +181,7 @@
       "blurb": "Optimizing runs entirely on your machine with open-source tools. They are downloaded from npm the first time you continue, pinned to fixed versions, and kept in the app's data folder. Your models never leave your computer.",
       "show_tools": "Show the {count} open-source tools",
       "hide_tools": "Hide the tool list",
+      "dont_show_again": "Don't show this again",
       "npm": "npm",
       "source": "Source",
       "note": "Your original models are backed up and can be reverted at any time.",
@@ -207,6 +208,7 @@
       "glbs": "{count} models",
       "size": "Total size: {size} (models {models} + textures {textures})",
       "textures": "{embedded} embedded textures · {external} external textures",
+      "last_optimized": "Optimized on {date} · you can revert to the originals",
       "empty": "This scene has no GLB models to optimize."
     },
     "options": {
@@ -246,6 +248,8 @@
       }
     },
     "run": "Optimize",
+    "run_again": "Optimize again",
+    "done": "Done",
     "running": "Optimizing…",
     "revert": "Revert to originals",
     "result": {

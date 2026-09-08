@@ -180,6 +180,7 @@
       "blurb": "La optimización se ejecuta por completo en tu equipo con herramientas de código abierto. Se descargan de npm la primera vez que continúas, fijadas a versiones concretas, y se guardan en la carpeta de datos de la app. Tus modelos nunca salen de tu computadora.",
       "show_tools": "Ver las {count} herramientas de código abierto",
       "hide_tools": "Ocultar la lista de herramientas",
+      "dont_show_again": "No volver a mostrar",
       "npm": "npm",
       "source": "Código",
       "note": "Tus modelos originales se respaldan y pueden revertirse en cualquier momento.",
@@ -206,6 +207,7 @@
       "glbs": "{count} modelos",
       "size": "Tamaño total: {size} (modelos {models} + texturas {textures})",
       "textures": "{embedded} texturas embebidas · {external} texturas externas",
+      "last_optimized": "Optimizado el {date} · puedes volver a los originales",
       "empty": "Esta escena no tiene modelos GLB para optimizar."
     },
     "options": {
@@ -245,6 +247,8 @@
       }
     },
     "run": "Optimizar",
+    "run_again": "Optimizar de nuevo",
+    "done": "Listo",
     "running": "Optimizando…",
     "revert": "Revertir a originales",
     "result": {

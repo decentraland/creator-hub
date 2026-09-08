@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState, type MouseEventHandler } from 'react';
 import {
   Box,
   Button,
+  Checkbox,
   FormControlLabel,
   LinearProgress,
   MenuItem,
@@ -26,11 +27,16 @@ import type { Project } from '/shared/types/projects';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import { misc, optimizer as optimizerPreload } from '#preload';
 import { useDispatch, useSelector } from '#store';
+import { useSettings } from '/@/hooks/useSettings';
 import { actions } from '/@/modules/store/optimizer';
 import { t } from '/@/modules/store/translation/utils';
 
 import { Modal } from '../Modals';
 import './styles.css';
+
+function formatDate(epochMs: number): string {
+  return new Date(epochMs).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' });
+}
 
 function formatBytes(bytes: number): string {
   if (!bytes) return '0 B';
@@ -114,6 +120,8 @@ export function OptimizeModal({ project }: { project?: Project | null }) {
   const [options, setOptions] = useState<OptimizeOptions>(DEFAULT_OPTIMIZE_OPTIONS);
   const [showDetails, setShowDetails] = useState(false);
   const [showTools, setShowTools] = useState(false);
+  const [dontShowAgain, setDontShowAgain] = useState(false);
+  const { settings, updateAppSettings } = useSettings();
 
   const projectPath = project?.path ?? null;
   const isRunning = runStatus === 'loading';
@@ -122,6 +130,17 @@ export function OptimizeModal({ project }: { project?: Project | null }) {
   useEffect(() => {
     if (isOpen) dispatch(actions.loadTools());
   }, [isOpen, dispatch]);
+
+  useEffect(() => {
+    if (isOpen) setDontShowAgain(false);
+  }, [isOpen]);
+
+  // A creator who asked not to see the disclosure again goes straight to the scan.
+  useEffect(() => {
+    if (isOpen && !acknowledged && settings.optimizerConsentAcknowledged) {
+      dispatch(actions.acknowledge());
+    }
+  }, [isOpen, acknowledged, settings.optimizerConsentAcknowledged, dispatch]);
 
   // Nothing is downloaded until the creator has seen the disclosure and continued.
   useEffect(() => {
@@ -170,6 +189,22 @@ export function OptimizeModal({ project }: { project?: Project | null }) {
     if (!isRunning) dispatch(actions.close());
   }, [isRunning, dispatch]);
 
+  // MUI calls onClose with a reason for the backdrop and Escape; the X passes a click event.
+  // Configuring and running a job should not be lost to a stray click beside the dialog, so
+  // only the X, Escape and the buttons close it. (ui2 types the prop as a click handler.)
+  const handleModalClose = useCallback(
+    (_event: unknown, reason?: string) => {
+      if (reason === 'backdropClick') return;
+      handleClose();
+    },
+    [handleClose],
+  ) as unknown as MouseEventHandler<HTMLButtonElement>;
+
+  const handleAcknowledge = useCallback(() => {
+    if (dontShowAgain) updateAppSettings({ ...settings, optimizerConsentAcknowledged: true });
+    dispatch(actions.acknowledge());
+  }, [dontShowAgain, settings, updateAppSettings, dispatch]);
+
   const handleRun = useCallback(() => {
     if (projectPath) dispatch(actions.runOptimize({ path: projectPath, options }));
   }, [projectPath, options, dispatch]);
@@ -207,7 +242,7 @@ export function OptimizeModal({ project }: { project?: Project | null }) {
       open={isOpen}
       size="small"
       title={t('optimize.title')}
-      onClose={handleClose}
+      onClose={handleModalClose}
     >
       {!acknowledged ? (
         <div className="OptimizeModal consent">
@@ -268,11 +303,22 @@ export function OptimizeModal({ project }: { project?: Project | null }) {
               ? `${t('optimize.consent.download', { size: tools.downloadSizeMb })} ${t('optimize.consent.note')}`
               : t('optimize.consent.note')}
           </Typography>
+          <FormControlLabel
+            className="dont-show-again"
+            control={
+              <Checkbox
+                size="small"
+                checked={dontShowAgain}
+                onChange={e => setDontShowAgain(e.target.checked)}
+              />
+            }
+            label={t('optimize.consent.dont_show_again')}
+          />
           <Box className="actions">
             <Button
               variant="contained"
               disabled={!tools}
-              onClick={() => dispatch(actions.acknowledge())}
+              onClick={handleAcknowledge}
             >
               {t('optimize.consent.continue')}
             </Button>
@@ -359,6 +405,13 @@ export function OptimizeModal({ project }: { project?: Project | null }) {
                       external: scan.externalTextureCount,
                     })}
                   </span>
+                  {scan.lastOptimizedAt !== null && (
+                    <span className="last-optimized">
+                      {t('optimize.scan.last_optimized', {
+                        date: formatDate(scan.lastOptimizedAt),
+                      })}
+                    </span>
+                  )}
                 </>
               )}
             </Box>
@@ -621,13 +674,31 @@ export function OptimizeModal({ project }: { project?: Project | null }) {
           )}
 
           <Box className="actions">
-            <Button
-              variant="contained"
-              disabled={isRunning || !projectPath || scan?.glbCount === 0}
-              onClick={handleRun}
-            >
-              {isRunning ? t('optimize.running') : t('optimize.run')}
-            </Button>
+            {result && runStatus === 'succeeded' ? (
+              <>
+                <Button
+                  variant="contained"
+                  onClick={handleClose}
+                >
+                  {t('optimize.done')}
+                </Button>
+                <Button
+                  variant="text"
+                  disabled={!projectPath}
+                  onClick={handleRun}
+                >
+                  {t('optimize.run_again')}
+                </Button>
+              </>
+            ) : (
+              <Button
+                variant="contained"
+                disabled={isRunning || !projectPath || scan?.glbCount === 0}
+                onClick={handleRun}
+              >
+                {isRunning ? t('optimize.running') : t('optimize.run')}
+              </Button>
+            )}
             {scan?.hasBackup && (
               <Button
                 variant="outlined"

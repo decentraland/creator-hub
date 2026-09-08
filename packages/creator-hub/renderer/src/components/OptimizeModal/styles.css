@@ -64,6 +64,16 @@
   opacity: 0.6;
 }
 
+.OptimizeModal.consent .dont-show-again {
+  margin: 0 0 0 -6px;
+  opacity: 0.85;
+}
+
+.OptimizeModal .summary .last-optimized {
+  flex-basis: 100%;
+  opacity: 0.7;
+}
+
 .OptimizeModal .docs-link {
   align-self: flex-start;
   display: inline-flex;

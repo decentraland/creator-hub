@@ -180,6 +180,7 @@
       "blurb": "优化完全在你的电脑上运行，使用开源工具。首次继续时会从 npm 下载这些工具（固定版本），并保存在应用数据文件夹中。你的模型不会离开你的电脑。",
       "show_tools": "查看这 {count} 个开源工具",
       "hide_tools": "收起工具列表",
+      "dont_show_again": "不再显示",
       "npm": "npm",
       "source": "源码",
       "note": "你的原始模型会被备份，可随时还原。",
@@ -206,6 +207,7 @@
       "glbs": "{count} 个模型",
       "size": "总大小：{size}（模型 {models} + 纹理 {textures}）",
       "textures": "{embedded} 个内嵌纹理 · {external} 个外部纹理",
+      "last_optimized": "已于 {date} 优化 · 可还原为原始文件",
       "empty": "该场景没有可优化的 GLB 模型。"
     },
     "options": {
@@ -245,6 +247,8 @@
       }
     },
     "run": "优化",
+    "run_again": "再次优化",
+    "done": "完成",
     "running": "优化中…",
     "revert": "还原为原始文件",
     "result": {
