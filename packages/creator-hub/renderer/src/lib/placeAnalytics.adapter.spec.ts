@@ -17,9 +17,9 @@ import {
 
 const locations = BATCH.locations as unknown as LocationMetrics[];
 
-/** A world scene carrying all 17 metrics. */
+/** A world scene carrying all 19 metrics. */
 const FULL = locations[0];
-/** A world scene carrying 8 of 17 — the common case, not an edge case. */
+/** A world scene carrying 10 of 19 — the common case, not an edge case. */
 const PARTIAL = locations[1];
 /** A Genesis City scene carrying all 17. */
 const GENESIS_CITY = locations[2];
@@ -29,8 +29,8 @@ const EMPTY = locations[3];
 const { LAST_30_DAYS, LAST_60_DAYS } = MetricsWindow;
 
 describe('the metric name registry', () => {
-  it('should list exactly the 17 metrics the service exports', () => {
-    expect(METRIC_NAMES).toHaveLength(17);
+  it('should list exactly the 19 metrics the service exports', () => {
+    expect(METRIC_NAMES).toHaveLength(19);
     expect([...METRIC_NAMES].sort()).toEqual(
       [...Object.keys(FULL.metrics), ...Object.keys(GENESIS_CITY.metrics)]
         .filter((name, index, all) => all.indexOf(name) === index)
@@ -144,12 +144,20 @@ describe('toOverview', () => {
 
   describe('when converting units', () => {
     it('should read playtime as minutes, from a metric measured in seconds', () => {
-      const seconds = FULL.metrics.avg_playtime_seconds_60d.find(
+      const seconds = FULL.metrics.playtime_seconds_p50_60d.find(
         row => row.series === 'all',
       )!.value;
 
-      expect(toOverview(FULL, LAST_60_DAYS).avgPlaytime).toBeCloseTo(seconds / 60, 6);
+      expect(toOverview(FULL, LAST_60_DAYS).medianPlaytime).toBeCloseTo(seconds / 60, 6);
       expect(seconds).toBeGreaterThan(60);
+    });
+
+    it('should read the median playtime, not the average one', () => {
+      const averageSeconds = FULL.metrics.avg_playtime_seconds_60d.find(
+        row => row.series === 'all',
+      )!.value;
+
+      expect(toOverview(FULL, LAST_60_DAYS).medianPlaytime).not.toBeCloseTo(averageSeconds / 60, 6);
     });
 
     it('should read AFK time as minutes too', () => {
@@ -182,7 +190,7 @@ describe('toOverview', () => {
       const overview = toOverview(PARTIAL, LAST_60_DAYS);
 
       expect(overview.uniqueVisits).not.toBeNull();
-      expect(overview.avgPlaytime).not.toBeNull();
+      expect(overview.medianPlaytime).not.toBeNull();
       expect(overview.day7Retention).toBeNull();
       expect(overview.concurrentUsers).toBeNull();
     });
@@ -280,8 +288,8 @@ describe('toEngagement', () => {
   it('should read playtime and AFK as minutes for the selected window', () => {
     const engagement = toEngagement(FULL, LAST_30_DAYS);
 
-    expect(engagement.avgPlaytime).toBeCloseTo(
-      FULL.metrics.avg_playtime_seconds_30d.find(row => row.series === 'all')!.value / 60,
+    expect(engagement.medianPlaytime).toBeCloseTo(
+      FULL.metrics.playtime_seconds_p50_30d.find(row => row.series === 'all')!.value / 60,
       6,
     );
     expect(engagement.afkTime).toBeCloseTo(
@@ -306,7 +314,7 @@ describe('toEngagement', () => {
   it('should leave a location with no engagement metrics empty', () => {
     const engagement = toEngagement(EMPTY, LAST_60_DAYS);
 
-    expect(engagement.avgPlaytime).toBeNull();
+    expect(engagement.medianPlaytime).toBeNull();
     expect(engagement.sociallyEngaged).toEqual([]);
   });
 });
