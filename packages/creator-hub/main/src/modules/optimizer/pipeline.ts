@@ -18,7 +18,7 @@ import {
 } from '/shared/types/optimizer';
 
 import { fixGlbAlignment, patchGlbImageURIs, readGlbJson } from './glb';
-import { SKIP_DIRS, TEXTURES_DIR, measureFootprint, resolveImageUri, walkGlbs } from './scan';
+import { SKIP_DIRS, measureFootprint, resolveImageUri, walkGlbs } from './scan';
 import { runMeshPass } from './mesh';
 import {
   CATEGORY_PRIORITY,
@@ -98,56 +98,22 @@ function hasExternalImages(glbJson: any): boolean {
   );
 }
 
-// One sidecar folder per GLB directory (see TEXTURES_DIR for why they are not shared): the names
-// taken in it and the pixel hashes already written there.
-type SidecarDir = {
-  abs: string;
-  usedNames: Set<string>;
-  dedupIndex: Map<string, string>; // pixelHash -> absolute path of the canonical texture file
-};
-
-function sidecarDirFor(state: RunState, glbDir: string): SidecarDir {
-  const abs = path.join(glbDir, TEXTURES_DIR);
-  let dir = state.sidecarDirs.get(abs);
-  if (!dir) {
-    dir = { abs, usedNames: new Set(), dedupIndex: new Map() };
-    state.sidecarDirs.set(abs, dir);
-  }
-  return dir;
-}
-
 // Sidecars written by earlier runs must stay unique (a re-run reusing `foo.png` would overwrite
 // a texture some untouched GLB still points at) and stay deduplicable, so seed both indexes
-// from every sidecar folder already on disk.
+// from what is already on disk.
 async function seedFromExistingSidecars(state: RunState): Promise<void> {
-  async function walk(dir: string): Promise<void> {
-    let entries: Dirent[];
-    try {
-      entries = await fs.readdir(dir, { withFileTypes: true });
-    } catch {
-      return;
-    }
-    for (const entry of entries) {
-      if (!entry.isDirectory()) continue;
-      const full = path.join(dir, entry.name);
-      if (entry.name === TEXTURES_DIR) {
-        await seedSidecarDir(state, full);
-      } else if (!SKIP_DIRS.has(entry.name) && !entry.name.startsWith('.')) {
-        await walk(full);
-      }
-    }
+  let entries: string[];
+  try {
+    entries = await fs.readdir(state.texturesDirAbs);
+  } catch {
+    return;
   }
-  await walk(state.projectPath);
-}
-
-async function seedSidecarDir(state: RunState, abs: string): Promise<void> {
-  const dir = sidecarDirFor(state, path.dirname(abs));
-  for (const name of await fs.readdir(abs)) {
-    dir.usedNames.add(name);
+  for (const name of entries) {
+    state.usedNames.add(name);
     if (!state.options.textures.dedup) continue;
-    const file = path.join(abs, name);
-    const hash = await pixelHash(await fs.readFile(file));
-    if (hash && !dir.dedupIndex.has(hash)) dir.dedupIndex.set(hash, file);
+    const abs = path.join(state.texturesDirAbs, name);
+    const hash = await pixelHash(await fs.readFile(abs));
+    if (hash && !state.dedupIndex.has(hash)) state.dedupIndex.set(hash, abs);
   }
 }
 
@@ -193,7 +159,9 @@ type RunState = {
   io: NodeIO;
   options: OptimizeOptions;
   projectPath: string;
-  sidecarDirs: Map<string, SidecarDir>; // keyed by the folder's absolute path
+  texturesDirAbs: string;
+  usedNames: Set<string>;
+  dedupIndex: Map<string, string>; // pixelHash -> absolute path of the canonical texture file
   // Every external texture file a processed GLB pointed at BEFORE it was rewritten. At the end
   // of the run, once every GLB is written, the ones nothing points at anymore are removed —
   // whether a sidecar replaced them or a transform dropped the texture (prune replaces a
@@ -222,9 +190,8 @@ type TextureJob = {
   onPool: boolean;
 };
 
-// Pull embedded textures out to sidecar files beside the GLB (deduping identical pixels across
-// the GLBs of that folder), returning the index->relative-URI map to patch into the written GLB.
-// The URIs never contain `..` — see TEXTURES_DIR.
+// Pull embedded textures out to sidecar files (deduping identical pixels across all GLBs),
+// returning the index->relative-URI map to patch into the written GLB.
 //
 // Two passes, both in texture order. Pass 1 hashes each texture and settles what needs no
 // compression — a dedup hit, a duplicate earlier in this same GLB, a texture the cache says
@@ -243,8 +210,7 @@ async function externalizeTextures(
   const textures = document.getRoot().listTextures();
   const uriMap = new Map<number, string>();
 
-  const sidecars = sidecarDirFor(state, glbDir);
-  await fs.mkdir(sidecars.abs, { recursive: true });
+  await fs.mkdir(state.texturesDirAbs, { recursive: true });
 
   const jobs: TextureJob[] = [];
   const scheduledByHash = new Set<string>();
@@ -270,7 +236,7 @@ async function externalizeTextures(
     jobs.push(job);
 
     if (job.hash && options.textures.dedup) {
-      const known = sidecars.dedupIndex.get(job.hash);
+      const known = state.dedupIndex.get(job.hash);
       if (known) {
         job.canonicalAbs = known;
         continue;
@@ -319,9 +285,7 @@ async function externalizeTextures(
   for (const job of jobs) {
     const { hash, originalAbs, buffer } = job;
     let canonicalAbs = job.canonicalAbs;
-    if (!canonicalAbs && !job.compressed && hash) {
-      canonicalAbs = sidecars.dedupIndex.get(hash) ?? null;
-    }
+    if (!canonicalAbs && !job.compressed && hash) canonicalAbs = state.dedupIndex.get(hash) ?? null;
 
     if (canonicalAbs) {
       if (canonicalAbs !== originalAbs) state.result.texturesDeduped++;
@@ -339,8 +303,8 @@ async function externalizeTextures(
             job.texture.getName() ||
             `texture_${job.category}`,
         );
-        const finalName = uniqueName(base, ext, sidecars.usedNames);
-        canonicalAbs = path.join(sidecars.abs, finalName);
+        const finalName = uniqueName(base, ext, state.usedNames);
+        canonicalAbs = path.join(state.texturesDirAbs, finalName);
         await fs.writeFile(canonicalAbs, data);
         pushUnique(
           state.manifest.createdFiles,
@@ -349,7 +313,7 @@ async function externalizeTextures(
         state.result.texturesExtracted++;
         state.result.sidecarBytes += data.length;
       }
-      if (hash && options.textures.dedup) sidecars.dedupIndex.set(hash, canonicalAbs);
+      if (hash && options.textures.dedup) state.dedupIndex.set(hash, canonicalAbs);
     }
 
     uriMap.set(job.index, toPosix(path.relative(glbDir, canonicalAbs)));
@@ -362,8 +326,8 @@ async function externalizeTextures(
 // Our own sidecars are tracked as createdFiles (deleted on revert); never also stash them as
 // removed files, or revert would fight itself over the same path.
 function isInsideTexturesDir(state: RunState, abs: string): boolean {
-  const rel = path.relative(state.projectPath, abs);
-  return !rel.startsWith('..') && rel.split(path.sep).slice(0, -1).includes(TEXTURES_DIR);
+  const rel = path.relative(state.texturesDirAbs, abs);
+  return !!rel && !rel.startsWith('..') && !path.isAbsolute(rel);
 }
 
 // Every image file any GLB in the project still points at, as absolute paths.
@@ -594,7 +558,9 @@ export async function runPipeline(
     io: createIO(),
     options,
     projectPath,
-    sidecarDirs: new Map<string, SidecarDir>(),
+    texturesDirAbs: path.join(projectPath, manifest.texturesDir),
+    usedNames: new Set<string>(),
+    dedupIndex: new Map<string, string>(),
     externalBefore: new Set<string>(),
     manifest,
     pool: deps.pool ?? createInlinePool(),

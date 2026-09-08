@@ -7,13 +7,14 @@ import path from 'node:path';
 // strip exactly. The newly created sidecar textures are NOT ignored — they must deploy.
 
 export const OPTIMIZE_DIR = '.optimize';
-// Name of the folder, BESIDE EACH GLB, that holds the textures pulled out of it. Not dot-prefixed:
-// these files must deploy, unlike the backup. It has to sit next to the model because the Bevy
-// explorer resolves a GLB's image URIs by plain string against the scene's content map — its
-// `normalize_path` only swaps backslashes, it never collapses `..` — so a shared folder reached
-// through `../` loads no texture there (models rendered with only their emissive map). Dedup is
-// therefore per folder on disk; across folders the content server dedups by hash on deploy.
-export const TEXTURES_DIR = 'optimized-textures';
+// Where externalized textures go, under the inspector-managed `assets/` folder so they show in
+// Local Assets. Not dot-prefixed: these files must deploy, unlike the backup. Scenes optimized
+// before the move keep their folder — the manifest records which one a scene uses.
+// GLBs reach it through `../` URIs; the Bevy explorer resolves those only from
+// decentraland/bevy-explorer#1245 on (older builds render such models with just their emissive
+// map). That is a client bug, fixed there — don't work around it by relocating textures.
+export const TEXTURES_DIR = 'assets/optimized-textures';
+export const LEGACY_TEXTURES_DIR = 'optimized-textures';
 const BACKUP_SUBDIR = 'backup';
 const MANIFEST_NAME = 'manifest.json';
 const DCLIGNORE = '.dclignore';
@@ -33,9 +34,7 @@ export type OptimizeManifest = {
   version: number;
   createdAt: number;
   updatedAt: number; // last run that wrote this manifest
-  // Single sidecar folder used by runs before sidecars moved beside each GLB; revert removes it
-  // when empty. New runs record their folders through createdFiles instead.
-  texturesDir: string;
+  texturesDir: string; // project-relative posix dir the sidecars live in (see TEXTURES_DIR)
   modifiedGlbs: string[]; // project-relative posix paths of GLBs overwritten in place
   createdFiles: string[]; // project-relative posix paths of sidecar textures written
   // project-relative posix paths of original textures moved into the backup because a
@@ -69,7 +68,7 @@ export async function readManifest(projectPath: string): Promise<OptimizeManifes
       createdFiles: [],
       ...manifest,
       updatedAt: manifest.updatedAt ?? manifest.createdAt,
-      texturesDir: manifest.texturesDir ?? TEXTURES_DIR,
+      texturesDir: manifest.texturesDir ?? LEGACY_TEXTURES_DIR,
       removedFiles: manifest.removedFiles ?? [],
       outputs: manifest.outputs ?? {},
     };
@@ -201,13 +200,7 @@ export async function revertFromManifest(
   await stripDclignoreBlock(projectPath);
   await fs.rm(optimizeDir(projectPath), { recursive: true, force: true });
   // rmdir only succeeds on an empty dir, so a folder the creator also put files in is preserved.
-  const sidecarDirs = new Set([
-    manifest.texturesDir,
-    ...manifest.createdFiles.map(rel => path.posix.dirname(rel)),
-  ]);
-  for (const dir of sidecarDirs) {
-    await fs.rmdir(path.join(projectPath, dir)).catch(() => {});
-  }
+  await fs.rmdir(path.join(projectPath, manifest.texturesDir)).catch(() => {});
   return restored;
 }
 
