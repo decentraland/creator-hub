@@ -21,6 +21,7 @@ const PanelHeader = styled(Box)(({ theme }) => ({
   padding: theme.spacing(1, 1, 1, 2),
   borderBottom: `1px solid ${theme.palette.divider}`,
   minHeight: theme.spacing(6),
+  backgroundColor: theme.palette.background.default,
 }));
 
 const HeaderTitle = styled(Box)(({ theme }) => ({

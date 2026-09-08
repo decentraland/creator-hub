@@ -612,10 +612,10 @@ export function ChatView(props: ChatViewProps) {
               </IconButton>
             </Tooltip>
           )}
-          <Tooltip title={detached ? t('editor.ai.dock') : t('editor.ai.toggle')}>
+          <Tooltip title={t('editor.ai.close')}>
             <IconButton
               size="small"
-              aria-label={detached ? t('editor.ai.dock') : t('editor.ai.toggle')}
+              aria-label={t('editor.ai.close')}
               onClick={onClose}
             >
               <CloseIcon fontSize="small" />
