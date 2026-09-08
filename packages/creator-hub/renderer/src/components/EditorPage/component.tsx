@@ -6,7 +6,6 @@ import CodeIcon from '@mui/icons-material/Code';
 import PublicIcon from '@mui/icons-material/Public';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import CloseIcon from '@mui/icons-material/Close';
-import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import { CircularProgress as Loader, Tooltip } from 'decentraland-ui2';
 import { IconButton } from '@mui/material';
 
@@ -45,6 +44,7 @@ import { Row } from '../Row';
 import { ButtonGroup } from '../Button';
 import { ConnectionStatusIndicator } from '../ConnectionStatusIndicator';
 import { MobileQRCode } from '../Modals/MobileQRCode';
+import { AssistantIcon } from '../Icons';
 import { AiChatPanel } from '../AiChatPanel';
 import { DetachedPlaceholder } from '../AiChatPanel/DetachedPlaceholder';
 import { DeployModal } from './DeployModal';
@@ -787,6 +787,17 @@ export function EditorPage() {
               </Tooltip>
             </>
             <div className="actions">
+              {aiChatEnabled && (
+                <Tooltip title={aiOpen ? t('editor.ai.close') : t('editor.ai.open')}>
+                  <IconButton
+                    className={`ai-toggle${aiOpen ? ' active' : ''}`}
+                    aria-label={aiOpen ? t('editor.ai.close') : t('editor.ai.open')}
+                    onClick={() => setAiOpen(open => !open)}
+                  >
+                    <AssistantIcon gradient={aiOpen} />
+                  </IconButton>
+                </Tooltip>
+              )}
               <Button
                 color="secondary"
                 onClick={openCode}
@@ -879,17 +890,6 @@ export function EditorPage() {
                 >
                   {publishButtonText}
                 </Button>
-              )}
-              {aiChatEnabled && (
-                <Tooltip title={t('editor.ai.toggle')}>
-                  <IconButton
-                    className={`ai-toggle${aiOpen ? ' active' : ''}`}
-                    aria-label={t('editor.ai.toggle')}
-                    onClick={() => setAiOpen(open => !open)}
-                  >
-                    <AutoAwesomeIcon />
-                  </IconButton>
-                </Tooltip>
               )}
               <ConnectionStatusIndicator />
             </div>

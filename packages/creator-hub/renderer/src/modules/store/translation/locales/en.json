@@ -92,6 +92,7 @@
       "pop_out": "Open in a separate window",
       "dock": "Dock back in the editor",
       "close": "Close AI Assistant",
+      "open": "Open AI Assistant",
       "detached_message": "The assistant is open in a separate window.",
       "detached_dock": "Bring it back here",
       "new_chat": "New chat",
