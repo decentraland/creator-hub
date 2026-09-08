@@ -16,7 +16,7 @@ function buildPlace(
     newUsers: 0,
     day7Retention: 0,
     revenue: 0,
-    avgPlaytime: 0,
+    medianPlaytime: 0,
     ...overrides,
   };
 }

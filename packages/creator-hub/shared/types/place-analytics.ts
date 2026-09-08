@@ -19,7 +19,7 @@ export type PlaceAnalyticsSummary = {
   /** Percentage, 0-100. */
   day7Retention: number | null;
   /** Minutes. */
-  avgPlaytime: number | null;
+  medianPlaytime: number | null;
   concurrentUsers: number | null;
   /** True when the API returned no metrics at all for this scene. */
   hasNoData: boolean;
@@ -60,7 +60,7 @@ export type PlaceOverviewMetrics = {
   /** Percentage, 0-100. */
   day7Retention: number | null;
   /** Minutes. */
-  avgPlaytime: number | null;
+  medianPlaytime: number | null;
   /** Minutes. */
   afkTime: number | null;
   desktopUsers: number | null;
@@ -110,7 +110,7 @@ export type PlaceRetentionMetrics = {
 /** The metrics behind the Engagement tab. */
 export type PlaceEngagementMetrics = {
   /** Minutes, over the selected window. */
-  avgPlaytime: number | null;
+  medianPlaytime: number | null;
   /** Minutes per user, over the selected window. */
   afkTime: number | null;
   /** Share of each week's visitors who engaged socially, as percentages. */
