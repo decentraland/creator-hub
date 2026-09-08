@@ -797,35 +797,54 @@ export function ChatView(props: ChatViewProps) {
             multiline
             maxRows={6}
             size="small"
+            autoFocus
             placeholder={t('editor.ai.placeholder')}
             value={input}
             disabled={!available}
             onChange={e => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
+            sx={{
+              // Rounded field with the send control living inside it; a white focus/hover
+              // outline instead of the default primary (ruby) ring (#1576).
+              '& .MuiOutlinedInput-root': {
+                borderRadius: '10px',
+                alignItems: 'flex-end',
+                paddingRight: theme => theme.spacing(0.75),
+              },
+              '& .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline': {
+                borderColor: 'text.secondary',
+              },
+              '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                borderColor: 'secondary.main',
+              },
+            }}
+            InputProps={{
+              endAdornment:
+                busy ? (
+                  <Tooltip title={t('editor.ai.stop')}>
+                    <IconButton
+                      color="error"
+                      aria-label={t('editor.ai.stop')}
+                      onClick={onStop}
+                    >
+                      <StopIcon />
+                    </IconButton>
+                  </Tooltip>
+                ) : (
+                  <Tooltip title={t('editor.ai.send')}>
+                    <span>
+                      <SendButton
+                        aria-label={t('editor.ai.send')}
+                        disabled={!available || input.trim() === ''}
+                        onClick={handleSend}
+                      >
+                        <ArrowUpwardIcon fontSize="small" />
+                      </SendButton>
+                    </span>
+                  </Tooltip>
+                ),
+            }}
           />
-          {busy ? (
-            <Tooltip title={t('editor.ai.stop')}>
-              <IconButton
-                color="error"
-                aria-label={t('editor.ai.stop')}
-                onClick={onStop}
-              >
-                <StopIcon />
-              </IconButton>
-            </Tooltip>
-          ) : (
-            <Tooltip title={t('editor.ai.send')}>
-              <span>
-                <SendButton
-                  aria-label={t('editor.ai.send')}
-                  disabled={!available || input.trim() === ''}
-                  onClick={handleSend}
-                >
-                  <ArrowUpwardIcon fontSize="small" />
-                </SendButton>
-              </span>
-            </Tooltip>
-          )}
         </Composer>
       </>
     </Panel>

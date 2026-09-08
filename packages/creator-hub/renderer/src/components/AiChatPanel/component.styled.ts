@@ -266,9 +266,6 @@ const ErrorRow = styled(Box)(({ theme }) => ({
 }));
 
 const Composer = styled(Box)(({ theme }) => ({
-  display: 'flex',
-  alignItems: 'flex-end',
-  gap: theme.spacing(1),
   padding: theme.spacing(1.5),
   borderTop: `1px solid ${theme.palette.divider}`,
 }));
