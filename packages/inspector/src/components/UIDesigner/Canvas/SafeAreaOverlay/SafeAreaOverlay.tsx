@@ -12,6 +12,8 @@ interface SafeAreaOverlayProps {
   device: DeviceKind;
   /** `hud` outlines the interactable area; `device` outlines only the hardware insets. */
   variant?: 'hud' | 'device';
+  /** Draw the safe-area outline. Independent of the HUD guides. */
+  showOutline?: boolean;
   /** Draw the reference HUD guides (joystick, buttons). Independent of which area is outlined. */
   showHud?: boolean;
 }
@@ -22,6 +24,7 @@ export const SafeAreaOverlay: React.FC<SafeAreaOverlayProps> = ({
   height,
   device,
   variant = 'hud',
+  showOutline = true,
   showHud = false,
 }) => {
   const { screenInsetArea, interactableArea, hud } = SAFE_AREAS[device];
@@ -39,10 +42,12 @@ export const SafeAreaOverlay: React.FC<SafeAreaOverlayProps> = ({
       style={{ width, height }}
       aria-hidden="true"
     >
-      <div
-        className="ui-designer-safe-outline"
-        style={box(area)}
-      />
+      {showOutline ? (
+        <div
+          className="ui-designer-safe-outline"
+          style={box(area)}
+        />
+      ) : null}
       {showHud
         ? hud.map(g => {
             const d = g.size * min;

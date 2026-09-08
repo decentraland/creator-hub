@@ -1201,7 +1201,7 @@ const CanvasComponent: React.FC = () => {
   const activeRoot = roots.find(r => r.filename === filename);
   const activeInset: UiScreenInset = activeRoot?.topLevel ? activeRoot.screenInset : 'none';
   const [showSafeAreas, setShowSafeAreas] = useState(false);
-  const [showMobileHud, setShowMobileHud] = useState(true);
+  const [hudOverride, setHudOverride] = useState<boolean | null>(null);
   const viewportRef = useRef<HTMLDivElement>(null);
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const panDragRef = useRef<{ startX: number; startY: number; panX: number; panY: number } | null>(
@@ -1251,6 +1251,7 @@ const CanvasComponent: React.FC = () => {
   const insetLocked = activeInset !== 'none' && !fixedRoot;
   const safeAreasVisible = insetLocked || showSafeAreas;
   const overlayVariant = activeInset === 'device' ? 'device' : 'hud';
+  const hudVisible = device === 'mobile' && !fixedRoot && (hudOverride ?? activeInset !== 'none');
 
   const insetR = insetLocked ? insetRect(device, activeInset) : null;
   const fsLeft = (frameWidth - canvasWidth * fitScale) / 2;
@@ -1379,13 +1380,14 @@ const CanvasComponent: React.FC = () => {
                   >
                     <CanvasNodeView node={tree} />
                   </div>
-                  {safeAreasVisible && !fixedRoot ? (
+                  {(safeAreasVisible || hudVisible) && !fixedRoot ? (
                     <SafeAreaOverlay
                       width={screen.width}
                       height={screen.height}
                       device={device}
                       variant={overlayVariant}
-                      showHud={device === 'mobile' && showMobileHud}
+                      showOutline={safeAreasVisible}
+                      showHud={hudVisible}
                     />
                   ) : null}
                 </div>
@@ -1492,11 +1494,11 @@ const CanvasComponent: React.FC = () => {
             {device === 'mobile' ? (
               <button
                 type="button"
-                className={cx('ui-designer-canvas-zoom-btn', { active: showMobileHud })}
-                onClick={() => setShowMobileHud(s => !s)}
+                className={cx('ui-designer-canvas-zoom-btn', { active: hudVisible })}
+                onClick={() => setHudOverride(!hudVisible)}
                 title="Toggle mobile HUD guides"
                 aria-label="Toggle mobile HUD guides"
-                aria-pressed={showMobileHud}
+                aria-pressed={hudVisible}
               >
                 <IoGameControllerOutline />
               </button>
