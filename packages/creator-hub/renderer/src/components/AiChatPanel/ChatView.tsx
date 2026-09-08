@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import StopIcon from '@mui/icons-material/Stop';
 import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
-import AddCommentIcon from '@mui/icons-material/AddComment';
+import AddCommentOutlinedIcon from '@mui/icons-material/AddCommentOutlined';
+import CheckIcon from '@mui/icons-material/Check';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import CloseIcon from '@mui/icons-material/Close';
 import RefreshIcon from '@mui/icons-material/Refresh';
@@ -647,7 +648,7 @@ export function ChatView(props: ChatViewProps) {
             aria-label={t('editor.ai.new_chat')}
             onClick={e => setChatMenuAnchor(e.currentTarget)}
           >
-            <AddCommentIcon fontSize="small" />
+            <AddCommentOutlinedIcon fontSize="small" />
             <ToolbarPillLabel>{t('editor.ai.new_chat')}</ToolbarPillLabel>
             <KeyboardArrowDownIcon
               fontSize="small"
@@ -658,6 +659,11 @@ export function ChatView(props: ChatViewProps) {
             anchorEl={chatMenuAnchor}
             open={chatMenuAnchor !== null}
             onClose={() => setChatMenuAnchor(null)}
+            sx={{
+              '& .MuiMenuItem-root.Mui-selected, & .MuiMenuItem-root.Mui-selected:hover': {
+                backgroundColor: 'var(--ai-selected)',
+              },
+            }}
           >
             <MenuItem
               disabled={busy || messages.length === 0}
@@ -667,7 +673,7 @@ export function ChatView(props: ChatViewProps) {
                 setChatMenuAnchor(null);
               }}
             >
-              <AddCommentIcon fontSize="small" />
+              <AddCommentOutlinedIcon fontSize="small" />
               {t('editor.ai.new_chat')}
             </MenuItem>
             {savedSessions.length > 0 && <Divider />}
@@ -681,6 +687,10 @@ export function ChatView(props: ChatViewProps) {
                   setChatMenuAnchor(null);
                 }}
               >
+                <CheckIcon
+                  fontSize="small"
+                  sx={{ visibility: s.id === currentSessionId ? 'visible' : 'hidden' }}
+                />
                 <SessionText>
                   <SessionTitle>{s.title}</SessionTitle>
                   <SessionWhen>{formatWhen(s.updatedAt)}</SessionWhen>
@@ -704,14 +714,23 @@ export function ChatView(props: ChatViewProps) {
               value={provider}
               onChange={handleProviderChange}
               disabled={busy}
+              IconComponent={KeyboardArrowDownIcon}
+              MenuProps={{
+                sx: {
+                  '& .MuiMenuItem-root.Mui-selected, & .MuiMenuItem-root.Mui-selected:hover': {
+                    backgroundColor: 'var(--ai-selected)',
+                  },
+                },
+              }}
               sx={{
                 flex: 1,
                 minWidth: 0,
                 height: theme => theme.spacing(4),
-                borderRadius: theme => theme.spacing(3),
+                borderRadius: theme => theme.spacing(1.25),
                 backgroundColor: 'action.hover',
                 '& .MuiOutlinedInput-notchedOutline': { borderColor: 'divider' },
-                '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: 'divider' },
+                '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: 'text.secondary' },
+                '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: 'secondary.main' },
                 '& .MuiSelect-select': { display: 'flex', alignItems: 'center' },
               }}
               // Show just the active agent's name in the closed box (with a subtle "sign in"
@@ -735,7 +754,12 @@ export function ChatView(props: ChatViewProps) {
                 <MenuItem
                   key={p.id}
                   value={p.id}
+                  sx={{ gap: 1 }}
                 >
+                  <CheckIcon
+                    fontSize="small"
+                    sx={{ visibility: p.id === provider ? 'visible' : 'hidden' }}
+                  />
                   <ProviderOption>
                     <span>{p.label}</span>
                     {!p.available && <ProviderHint>{t('editor.ai.provider_signin')}</ProviderHint>}

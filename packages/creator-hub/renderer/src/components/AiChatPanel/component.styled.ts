@@ -386,7 +386,7 @@ const ToolbarPill = styled('button')(({ theme }) => ({
   height: theme.spacing(4),
   padding: theme.spacing(0, 1.25),
   border: `1px solid ${theme.palette.divider}`,
-  borderRadius: theme.spacing(3),
+  borderRadius: theme.spacing(1.25),
   backgroundColor: theme.palette.action.hover,
   color: theme.palette.text.primary,
   fontSize: theme.typography.body2.fontSize,
