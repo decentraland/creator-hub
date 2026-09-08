@@ -62,6 +62,13 @@ function setupMainPackageWatcher({ resolvedUrls }) {
        * @see https://vitejs.dev/config/build-options.html#build-watch
        */
       watch: {},
+      /**
+       * main/dist also holds optimizer-worker.js, written by the worker watcher below. The
+       * config's emptyOutDir wipes the dir on every rebuild, and both watchers fire on the same
+       * source change, so whichever finishes last would delete the other's bundle. Only the
+       * one-shot `build:main` (main, then worker) may empty it.
+       */
+      emptyOutDir: false,
     },
     plugins: [
       {
