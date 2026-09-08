@@ -12,11 +12,6 @@ export type TextureSizes = Record<TextureCategory, number>;
 export type MeshOptions = {
   // Master toggle for the lossless mesh cleanup pass (prune + dedup + weld + reorder).
   enabled: boolean;
-  // EXT_meshopt_compression on top of the cleanup (opt-in). The one compression mode kept in
-  // this PR: verified on Genesis Plaza (445 → 234 MB, same triangles, every reference resolves).
-  // Adds a glTF extension the target runtime must support. Draco and standalone quantization
-  // live on feat/creator-hub-optimize-compression.
-  meshopt: boolean;
 };
 
 export type TextureOptions = {
@@ -131,7 +126,6 @@ export type OptimizeWorkerMessage =
 export const DEFAULT_OPTIMIZE_OPTIONS: OptimizeOptions = {
   mesh: {
     enabled: true,
-    meshopt: false,
   },
   textures: {
     compress: true,

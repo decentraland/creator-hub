@@ -214,10 +214,7 @@
       "mesh": {
         "title": "Mallas",
         "enabled": "Optimizar mallas (soldar, reordenar, limpiar)",
-        "enabled_tip": "Limpieza sin pérdida: fusiona vértices duplicados (weld), reordena índices para mejor uso de la caché GPU, elimina datos sin usar o duplicados y convierte texturas de color plano en colores de material. El resultado carga en todos los runtimes.",
-        "meshopt": "Comprimir geometría (Meshopt)",
-        "meshopt_tip": "Codifica vértices e índices con EXT_meshopt_compression además de la limpieza. Posiciones y UV mantienen precisión completa, así que colliders y planos texturizados en runtime no se ven afectados; normales y colores se cuantizan. Descargas mucho más pequeñas, mismos triángulos.",
-        "meshopt_warning": "Avanzado: añade una extensión glTF que el runtime de destino debe soportar. Verificado con el Explorer de Decentraland; déjalo apagado si apuntas a otros visores."
+        "enabled_tip": "Limpieza sin pérdida: fusiona vértices duplicados (weld), reordena índices para mejor uso de la caché GPU, elimina datos sin usar o duplicados y convierte texturas de color plano en colores de material. El resultado carga en todos los runtimes."
       },
       "textures": {
         "title": "Texturas",

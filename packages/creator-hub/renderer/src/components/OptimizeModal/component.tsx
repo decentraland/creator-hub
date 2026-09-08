@@ -432,29 +432,6 @@ export function OptimizeModal({ project }: { project?: Project | null }) {
                 />
               }
             />
-            <FormControlLabel
-              control={
-                <Checkbox
-                  checked={options.mesh.meshopt}
-                  disabled={!options.mesh.enabled}
-                  onChange={e => updateMesh({ meshopt: e.target.checked })}
-                />
-              }
-              label={
-                <LabelWithInfo
-                  text={t('optimize.options.mesh.meshopt')}
-                  tip={t('optimize.options.mesh.meshopt_tip')}
-                />
-              }
-            />
-            {options.mesh.enabled && options.mesh.meshopt && (
-              <Typography
-                variant="caption"
-                className="warning"
-              >
-                {t('optimize.options.mesh.meshopt_warning')}
-              </Typography>
-            )}
             <Typography variant="h6">{t('optimize.options.textures.title')}</Typography>
             <FormControlLabel
               control={

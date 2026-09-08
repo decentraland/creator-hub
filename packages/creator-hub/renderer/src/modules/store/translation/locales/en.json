@@ -215,10 +215,7 @@
       "mesh": {
         "title": "Meshes",
         "enabled": "Optimize meshes (weld, reorder, clean up)",
-        "enabled_tip": "Lossless cleanup: merges duplicate vertices (weld), reorders indices for GPU cache efficiency, removes unused/duplicate data, and folds flat-color textures into material colors. Output loads in every runtime.",
-        "meshopt": "Compress geometry (Meshopt)",
-        "meshopt_tip": "Encodes vertex and index data with EXT_meshopt_compression on top of the cleanup. Positions and UVs stay full precision, so colliders and runtime-textured planes are unaffected; normals and colors are quantized. Much smaller downloads, same triangles.",
-        "meshopt_warning": "Advanced: adds a glTF extension the target runtime must support. Verified with the Decentraland Explorer; leave off if you target other viewers."
+        "enabled_tip": "Lossless cleanup: merges duplicate vertices (weld), reorders indices for GPU cache efficiency, removes unused/duplicate data, and folds flat-color textures into material colors. Output loads in every runtime."
       },
       "textures": {
         "title": "Textures",
