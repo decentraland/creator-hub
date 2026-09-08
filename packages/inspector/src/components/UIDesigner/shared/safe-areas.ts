@@ -16,6 +16,7 @@ export type HudKind =
   | 'emote'
   | 'profile'
   | 'chat'
+  | 'compass'
   | 'counter'
   | 'pointer';
 
@@ -46,6 +47,7 @@ const MOBILE_SAFE_AREA: SafeAreaSpec = {
   hud: [
     { id: 'profile', kind: 'profile', x: 0.05, y: 0.1, size: 0.09 },
     { id: 'chat', kind: 'chat', x: 0.11, y: 0.1, size: 0.07 },
+    { id: 'compass', kind: 'compass', x: 0.16, y: 0.1, size: 0.07 },
     { id: 'joystick', kind: 'joystick', x: 0.13, y: 0.72, size: 0.22 },
     { id: 'emote', kind: 'emote', x: 0.06, y: 0.88, size: 0.08 },
     { id: 'counter', kind: 'counter', x: 0.9, y: 0.66, size: 0.07 },
