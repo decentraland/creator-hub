@@ -8,7 +8,6 @@
     "@gltf-transform/extensions": "4.5.0",
     "@gltf-transform/functions": "4.5.0",
     "@wasm-codecs/oxipng": "1.0.1",
-    "draco3dgltf": "1.5.7",
     "meshoptimizer": "0.22.0",
     "sharp": "0.34.5"
   }

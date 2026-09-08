@@ -18,7 +18,6 @@ import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 
 import {
   DEFAULT_OPTIMIZE_OPTIONS,
-  type GeometryCompression,
   type OptimizeOptions,
   type TextureCategory,
   type TextureFormat,
@@ -433,36 +432,6 @@ export function OptimizeModal({ project }: { project?: Project | null }) {
                 />
               }
             />
-            <Box className="row">
-              <LabelWithInfo
-                text={t('optimize.options.mesh.compression')}
-                tip={t('optimize.options.mesh.compression_tip')}
-              />
-              <Select
-                size="small"
-                value={options.mesh.compression}
-                disabled={!options.mesh.enabled}
-                onChange={e => updateMesh({ compression: e.target.value as GeometryCompression })}
-              >
-                <MenuItem value="none">{t('optimize.options.mesh.compression_none')}</MenuItem>
-                <MenuItem value="quantize">
-                  {t('optimize.options.mesh.compression_quantize')}
-                </MenuItem>
-                <MenuItem value="meshopt">
-                  {t('optimize.options.mesh.compression_meshopt')}
-                </MenuItem>
-                <MenuItem value="draco">{t('optimize.options.mesh.compression_draco')}</MenuItem>
-              </Select>
-            </Box>
-            {options.mesh.enabled && options.mesh.compression !== 'none' && (
-              <Typography
-                variant="caption"
-                className="warning"
-              >
-                {t('optimize.options.mesh.compression_warning')}
-              </Typography>
-            )}
-
             <Typography variant="h6">{t('optimize.options.textures.title')}</Typography>
             <FormControlLabel
               control={

@@ -67,7 +67,6 @@
     "cross-env": "7.0.3",
     "dcl-catalyst-client": "21.8.1",
     "decentraland-ui2": "0.23.1",
-    "draco3dgltf": "^1.5.7",
     "electron": "40.0.0",
     "electron-builder": "26.8.1",
     "flat": "6.0.1",

@@ -191,8 +191,7 @@
         "sharp": "Redimensiona y vuelve a codificar texturas.",
         "gltf": "Lee y escribe GLBs; ejecuta la limpieza de mallas.",
         "oxipng": "Optimización de PNG sin pérdida.",
-        "meshopt": "Reordenado de mallas y el códec Meshopt.",
-        "draco": "Compresión de geometría Draco — solo se carga si eliges Draco."
+        "meshopt": "Reordenado de mallas y el códec Meshopt."
       }
     },
     "tools": {
@@ -215,14 +214,7 @@
       "mesh": {
         "title": "Mallas",
         "enabled": "Optimizar mallas (soldar, reordenar, limpiar)",
-        "enabled_tip": "Limpieza sin pérdida: fusiona vértices duplicados (weld), reordena índices para mejor uso de la caché GPU, elimina datos sin usar o duplicados y convierte texturas de color plano en colores de material. El resultado carga en todos los runtimes.",
-        "compression": "Compresión de geometría",
-        "compression_tip": "Compresión opcional basada en extensiones. Quantize baja la precisión de los vértices; Meshopt añade un códec compacto; Draco comprime lo máximo. Todas añaden una extensión glTF que el runtime de destino debe soportar, o el modelo no cargará in-world.",
-        "compression_none": "Ninguna (carga en todos lados)",
-        "compression_quantize": "Quantize (KHR_mesh_quantization)",
-        "compression_meshopt": "Meshopt (EXT_meshopt_compression)",
-        "compression_draco": "Draco (KHR_draco_mesh_compression)",
-        "compression_warning": "Avanzado: archivos más pequeños, pero el runtime de destino debe soportar esta extensión o los modelos podrían no cargar in-world. Déjalo en Ninguna si tienes dudas."
+        "enabled_tip": "Limpieza sin pérdida: fusiona vértices duplicados (weld), reordena índices para mejor uso de la caché GPU, elimina datos sin usar o duplicados y convierte texturas de color plano en colores de material. El resultado carga en todos los runtimes."
       },
       "textures": {
         "title": "Texturas",

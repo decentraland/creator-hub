@@ -68,7 +68,6 @@ describe('optimizer tools', () => {
         '@gltf-transform/core',
         '@wasm-codecs/oxipng',
         'meshoptimizer',
-        'draco3dgltf',
       ]);
       for (const tool of OPTIMIZER_TOOLS) {
         expect(tool.version).toBe(pinned[tool.pkg]);

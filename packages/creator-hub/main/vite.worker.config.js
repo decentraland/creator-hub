@@ -34,13 +34,7 @@ const config = {
       formats: ['es'],
     },
     rollupOptions: {
-      external: [
-        'sharp',
-        'meshoptimizer',
-        'draco3dgltf',
-        '@wasm-codecs/oxipng',
-        /^@gltf-transform\//,
-      ],
+      external: ['sharp', 'meshoptimizer', '@wasm-codecs/oxipng', /^@gltf-transform\//],
       output: {
         entryFileNames: '[name].js',
       },

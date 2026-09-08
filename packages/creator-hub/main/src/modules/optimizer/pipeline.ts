@@ -51,7 +51,7 @@ const CODE_JSON_DIRS = new Set(['', 'src']);
 
 // This module runs in the optimizer WORKER (a child process on the bundled Node with the
 // downloaded toolchain on its module path), never in the Electron main process: main ships
-// none of sharp / gltf-transform / meshoptimizer / draco / oxipng. Progress goes back to the
+// none of sharp / gltf-transform / meshoptimizer / oxipng. Progress goes back to the
 // host through the sink `runPipeline` receives, which the worker turns into stdout JSON lines.
 export type ProgressSink = (progress: Omit<OptimizeProgress, 'path'>) => void;
 
@@ -580,19 +580,6 @@ export async function runPipeline(
       files: [],
     },
   };
-
-  // Draco encoding/decoding happens at write/read time via these registered deps. Loaded
-  // lazily (WASM) only when the user opts into Draco compression — the slowest tool to init,
-  // so it gets its own message.
-  if (options.mesh.enabled && options.mesh.compression === 'draco') {
-    emitProgress(projectPath, 'prepare', 0, total, 'Loading the Draco compressor…');
-    const ns = await import('draco3dgltf');
-    const draco3d = (ns as any).default ?? ns;
-    state.io.registerDependencies({
-      'draco3d.encoder': await draco3d.createEncoderModule(),
-      'draco3d.decoder': await draco3d.createDecoderModule(),
-    });
-  }
 
   emitProgress(projectPath, 'backup', 0, total, 'Preparing backup…');
   await ensureDclignoreBlock(projectPath);

@@ -10,7 +10,7 @@ import { run } from '../bin';
 import toolsLockfile from './tools/optimizer-tools.package-lock.json?raw';
 import toolsPackageJson from './tools/optimizer-tools.package.json?raw';
 
-// The optimizer's toolchain (sharp, glTF-Transform, meshoptimizer, Draco, oxipng) is NOT shipped
+// The optimizer's toolchain (sharp, glTF-Transform, meshoptimizer, oxipng) is NOT shipped
 // with the app. It is downloaded on first use, after the consent screen, into userData, by the
 // bundled npm — the same path the AI CLI (ai-cli.ts) and scene dependencies already take.
 //
@@ -59,12 +59,6 @@ const TOOL_META: ToolMeta[] = [
     purposeKey: 'meshopt',
     // the npm package is versioned 0.NN.0 against the upstream tag v0.NN
     release: v => `https://github.com/zeux/meshoptimizer/releases/tag/v${v.replace(/\.0$/, '')}`,
-  },
-  {
-    pkg: 'draco3dgltf',
-    name: 'Draco',
-    purposeKey: 'draco',
-    release: v => `https://github.com/google/draco/releases/tag/${v}`,
   },
 ];
 

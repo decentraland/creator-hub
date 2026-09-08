@@ -9,19 +9,9 @@ export type TextureCategory = 'baseColor' | 'normal' | 'orm' | 'emissive' | 'oth
 
 export type TextureSizes = Record<TextureCategory, number>;
 
-// Geometry compression applied after the base mesh pass. Everything except 'none'
-// adds a glTF extension the TARGET RUNTIME must support, or the model won't load
-// in-world — hence opt-in and clearly flagged in the UI.
-//   quantize -> KHR_mesh_quantization
-//   meshopt  -> EXT_meshopt_compression (includes quantization)
-//   draco    -> KHR_draco_mesh_compression
-export type GeometryCompression = 'none' | 'quantize' | 'meshopt' | 'draco';
-
 export type MeshOptions = {
   // Master toggle for the lossless mesh cleanup pass (prune + dedup + weld + reorder).
   enabled: boolean;
-  // Extension-based geometry compression (opt-in; needs runtime support).
-  compression: GeometryCompression;
 };
 
 export type TextureOptions = {
@@ -113,7 +103,7 @@ export type OptimizeToolInfo = {
   pkg: string;
   name: string;
   version: string;
-  purposeKey: 'sharp' | 'gltf' | 'oxipng' | 'meshopt' | 'draco';
+  purposeKey: 'sharp' | 'gltf' | 'oxipng' | 'meshopt';
   npm: string; // npm page of the exact version
   source: string; // upstream release page
 };
@@ -136,7 +126,6 @@ export type OptimizeWorkerMessage =
 export const DEFAULT_OPTIMIZE_OPTIONS: OptimizeOptions = {
   mesh: {
     enabled: true,
-    compression: 'none',
   },
   textures: {
     compress: true,

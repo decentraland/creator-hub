@@ -286,7 +286,7 @@ describe('optimizer pipeline', () => {
       expect([...byFile.entries()].filter(([, s]) => s === 'up_to_date')).toHaveLength(6);
 
       const options = defaults();
-      options.mesh.compression = 'quantize';
+      options.textures.sizes.baseColor = 512;
       const changed = await runPipeline(scene, options, () => {});
       expect(changed.files.map(f => f.status)).toEqual(Array(7).fill('optimized'));
     });
@@ -326,25 +326,6 @@ describe('optimizer pipeline', () => {
       expect(await exists(path.join(scene, TEXTURES_DIR))).toBe(false);
       expect(await exists(path.join(scene, OPTIMIZE_DIR))).toBe(false);
       expect(await exists(path.join(scene, '.dclignore'))).toBe(false);
-    });
-  });
-
-  describe('when meshopt compression is on', () => {
-    it('should emit EXT_meshopt_compression that decodes to the same triangles', async () => {
-      const options = defaults();
-      options.mesh.compression = 'meshopt';
-
-      await runPipeline(scene, options, () => {});
-
-      const io = await createReaderIO();
-      for (const rel of GLBS) {
-        const file = path.join(scene, rel);
-        const json = await glbJson(file);
-        expect(json.extensionsRequired).toContain('EXT_meshopt_compression');
-        const doc = await io.read(file);
-        const indices = doc.getRoot().listMeshes()[0].listPrimitives()[0].getIndices();
-        expect(indices?.getCount()).toBe(6);
-      }
     });
   });
 
