@@ -28,13 +28,13 @@ describe.each(DEVICES)('the %s safe area', device => {
     expect(contains(spec.screenInsetArea, spec.interactableArea)).toBe(true);
   });
 
-  it('should place every HUD guide inside the screen', () => {
+  it('should keep every HUD guide box inside the screen', () => {
     for (const g of spec.hud) {
-      expect(g.x).toBeGreaterThanOrEqual(0);
-      expect(g.x).toBeLessThanOrEqual(1);
-      expect(g.y).toBeGreaterThanOrEqual(0);
-      expect(g.y).toBeLessThanOrEqual(1);
       expect(g.size).toBeGreaterThan(0);
+      expect(g.x - g.size / 2).toBeGreaterThanOrEqual(0);
+      expect(g.x + g.size / 2).toBeLessThanOrEqual(1);
+      expect(g.y - g.size / 2).toBeGreaterThanOrEqual(0);
+      expect(g.y + g.size / 2).toBeLessThanOrEqual(1);
     }
   });
 });
