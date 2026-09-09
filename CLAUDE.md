@@ -114,6 +114,8 @@ make protoc        # Regenerate TypeScript from .proto files
 - **Canvas CSS defaults mirror the PROTOCOL's absent-value default, not Yoga's library default — and where the explorer disagrees with the proto, the explorer wins.** react-ecs leaves most `uiTransform` fields unwritten, so what an unauthored node gets in-world is `ui_transform.proto`'s documented default, which is not always Yoga's (`flexShrink`: proto 1, Yoga 0 — forcing 0 made canvas labels hold full width while in-world ones wrapped per character). And the proto is not always right either: it documents `alignContent`'s default as flex-start, but the explorer empirically stretches wrapped lines. Verify in-world before encoding a default in `Canvas.tsx` `nodeStyle`, and comment which source you followed.
 - **Never store editor metadata in a react-ecs `key`.** react-ecs uses stock `react-reconciler`, so React's key diffing runs above the host config: a changed key unmounts the fiber → `removeChildEntity` → `engine.removeEntity` RECURSIVELY over the whole subtree, then recreates it (`reconciler/index.ts:207-213`). Anything editable — a display name, say — would destroy and rebuild the entity tree on every edit.
 - **Multi-node ops must batch their splices.** Synthetic ids are positional per parse, so the FIRST op's reparse invalidates every id after it. `Tree` delivers a multi-item drop by calling `onDrop` once per item, so a naive loop of store ops corrupts the source. Build one `Edit[]` and apply it in a single `applySourceEdits` (see `removeNodes` in `emit-adapter.ts`). Multi-node MOVE uses this — `spliceUiTransformPositions` (`code/store.ts`) commits every dragged node in one batch; see [`docs/UIDesigner.md`](docs/UIDesigner.md).
+- **Script inputs reach a RUNNING scene through two halves that must both be present.** The scene bundle bakes each `asset-packs::Script` layout in at build time (`@dcl/sdk-commands` `collectScriptData`), and `runtime-script.ts` (also sdk-commands, inlined into the bundle) resolves the params once at startup — so an input edit is invisible until a reload. The fix is split: the Bevy forward bridge (`lib/renderer/bevy/forward-edits.ts`) sends the component as a raw CRDT PUT (`set_component_raw`, timestamp from the inspector engine's own dump) because schema components have no engine name, and the sdk-commands runtime watches the component and rewrites changed inputs onto the live instance (js-sdk-toolchain branch `fix/script-live-inputs`). Scenes on an sdk-commands without that runtime accept the forwarded PUT and ignore it. The Unity preview has no live channel — it reloads the scene on the rebuilt bundle (`SCENE_UPDATE`), and in the Bevy editor that reload is deliberately suppressed after a local edit (`register.ts` `LOCAL_EDIT_QUIET_MS`), which is why forwarding, not reloading, is the path.
+- **Nothing in the Bevy editor can read engine-written state on a frozen scene without ticking it — so don't.** The editor agent (`agents/bevy`) is a separate super-user scene: its SDK getters (`GltfContainerLoadingState.getOrNull(entity)`) see only its own ECS and return null for the inspected scene. And every engine console READ (`crdt_snapshot`, `scene_entities`, `inspect_component`) is answered by the scene THREAD's copy of the world, which a frozen scene refreshes only on a tick — while console WRITES (`set_component`, `new_entity`) apply to the renderer immediately and are queued for the scene thread until the next tick (a `set 1086.Transform = …` reply says nothing about that). `tick_scene` runs the scene's systems for a frame per edit (it surfaced a scene-script runtime error live), so it is not an editor tool. Anything the panels need from a model — e.g. Animator clip names — is parsed from the GLTF file itself via the mount context's `loadAsset` (`lib/renderer/bevy/gltf-animations.ts`; unnamed clips are `Animation<index>` like the engine). Engine-written state becomes readable once the scene ticks on Play.
 - **Interaction-state styling is a "recognized construct"** — a `useInteraction({ base, hover, press, active })` call spread onto an element (`code/interaction-convention.ts`). The parser special-cases that spread instead of opacifying it, so the node stays first-class and splice-editable. Reuse this pattern for other constructs (e.g. platform variants): an inline ternary inside `uiTransform`/`uiBackground` instead sets `dynamicProps`, a hard write barrier that freezes EVERY panel edit on the node. Two consequences worth knowing: an opaque node renders `children: []`, so a mis-resolved construct makes the whole subtree vanish from the canvas; and for a node with interaction states, every modeled prop must live in the layers — a JSX attribute would shadow the spread and, for the pointer props, replace the helper's own hover/press trackers.
 
 ### Asset Packs
@@ -126,74 +128,19 @@ make protoc        # Regenerate TypeScript from .proto files
 
 ## CI / GitHub Actions
 
-CI is orchestrated by `.github/workflows/ci.yml`, which calls reusable
-(`on: [workflow_call]`) sub-workflows. Key conventions and gotchas:
+CI is orchestrated by `.github/workflows/ci.yml`, which calls reusable (`on: [workflow_call]`) sub-workflows. Key conventions and gotchas:
 
-- **Build once, reuse.** `build.yml` builds the portable artifacts (proto gen,
-  asset-packs `dist/bin/catalog.json`, inspector `dist/public`) a single time per
-  run, gated by a combined source-hash `actions/cache`. QA jobs (`typechecking`,
-  `tests`) consume them via the `.github/actions/download-build` composite action
-  instead of rebuilding. Don't reintroduce per-job `make protoc` / `make build-*`
-  in the QA jobs. The publish chain (asset-packs → inspector → creator-hub) still
-  builds its own tarballs on purpose.
-- **A reusable workflow's `needs:` can only reference jobs in the same file.**
-  Cross-workflow ordering and artifact prerequisites are expressed at the
-  `ci.yml` caller level (e.g. `tests: needs: [build]`), not inside `tests.yml`.
-  Artifacts are run-scoped and shared across all called reusable workflows.
-- **`e2e` is decoupled from the publish chain — enforced by branch protection, not
-  `needs`.** `tests.yml` is unit-only; the Playwright suites live in `e2e.yml`
-  (`e2e-inspector` + `e2e-creator-hub`), wired as `e2e: needs: [build, tests]` in `ci.yml`.
-  It is a leaf job — nothing depends on it — so the publish chain
-  (`drop_pre_release → asset-packs → inspector → creator-hub`) starts after `unit`/`lint`/
-  `typechecking` instead of waiting ~12 min for e2e (that serialization was the pipeline's
-  long pole). **Do NOT add `e2e` to `drop_pre_release`'s `needs`.** Because the DAG no longer
-  gates on e2e, `e2e-inspector` and `e2e-creator-hub` MUST be **required status checks in
-  branch protection**, or they silently become optional. On `main` pushes (no branch
-  protection) the chain publishes in parallel with e2e — safe because the merged code already
-  passed e2e on the PR.
-- **Lint workflows with `actionlint`, not the JS toolchain.** `make format`/
-  `make lint`/`make test` do NOT cover `.github/**` YAML (Prettier globs
-  `js,ts,tsx,json` and `.prettierignore` excludes `.github`; ESLint is `js,cjs,ts`).
-- **`actionlint` mis-lints composite `action.yml` files** as workflows and reports
-  bogus "jobs/on section missing" errors. Validate `.github/actions/*/action.yml`
-  with a YAML parser instead; run `actionlint` on `.github/workflows/*.yml`.
-- **Cache whole output directories, not file lists.** The build cache once listed
-  inspector outputs individually and missed `bundle.css`; warm-cache runs then
-  served an unstyled app, and every e2e "flake" was really a cache hit (`build.yml`).
-- **Debugging `e2e-inspector` failures: read the `[e2e-diag]` log lines first**
-  (plus the `inspector-e2e-diagnostics` artifact). The suite dumps DOM boxes,
-  console/page errors, and a screenshot on readiness timeout — match those before
-  changing any config.
-- **Pin third-party actions to a full commit SHA** with a trailing `# vX.Y.Z`
-  comment (e.g. `nick-fields/retry@<sha> # v4.0.0`); leave first-party `actions/*`
-  as major tags. `upload-artifact` (max v7) and `download-artifact` (v8) are
-  independently versioned but artifact-format-compatible across v4+ — keep both
-  at v7 for consistency.
-- **Creator-hub PR builds are unsigned zip-only; releases build the full signed dmg.**
-  electron-builder auto-skips code signing on PRs ("Current build is a part of pull
-  request, code signing will be skipped"), so on PRs the two `.dmg` builds (~115 s) were
-  pure cost with no signed output. `mac.target` in `electron-builder.cjs` is `DRY_RUN`-gated:
-  zip-only (both arches) on PRs, full `dmg + zip` on `main` (`dry-run: false`). Don't re-add
-  dmg to the PR path or expect signing/notarization on PR builds.
-- **Build/tool targets must self-provision — the build job skips `make install` on a
-  node_modules cache hit.** `build.yml`'s install step is gated on the node_modules cache, so
-  any target that runs during a build cannot assume `make install` ran. Make each ensure its
-  own inputs: `protoc: $(PROTOC)` (self-download); `build-bevy-agent: install-bevy-agent` (the
-  Bevy agent's pinned `@dcl/sdk` must be installed locally or esbuild resolves root's wrong
-  version). The node_modules cache path must also cover every nested project's `node_modules`
-  (e.g. `packages/inspector/agents/bevy/node_modules`), or a cache hit serves an incomplete
-  tree. Symptoms of a gap: cold-cache failures like `protoc: not found` (Error 127) or
-  `No matching export … CameraLayer`.
-- **Every job that can run `make install` MUST checkout with `submodules: true`.** The
-  install chain calls `init-submodules` (`git submodule update --init`), which clones the
-  `devtools-frontend` submodule over its `.gitmodules` SSH URL; `checkout` only rewrites that
-  to a token-authenticated HTTPS URL when `submodules: true` is set, so a cache-miss install
-  otherwise dies with `Permission denied (publickey)`. This is **orthogonal to the build
-  cache** — a green build-artifact download does NOT skip install; `node_modules` is a
-  separate cache keyed on `package-lock.json`, so any lockfile bump (or fresh branch) makes
-  install run and hit the submodule. Invisible on warm-cache PR runs, which is why it slipped
-  past `build.yml` and both `e2e.yml` jobs one at a time. Adding a new install-running job?
-  Add `submodules: true`.
+- **Build once, reuse.** `build.yml` builds the portable artifacts (proto gen, asset-packs `dist/bin/catalog.json`, inspector `dist/public`) a single time per run, gated by a combined source-hash `actions/cache`. QA jobs (`typechecking`, `tests`) consume them via the `.github/actions/download-build` composite action instead of rebuilding. Don't reintroduce per-job `make protoc` / `make build-*` in the QA jobs. The publish chain (asset-packs → inspector → creator-hub) still builds its own tarballs on purpose.
+- **A reusable workflow's `needs:` can only reference jobs in the same file.** Cross-workflow ordering and artifact prerequisites are expressed at the `ci.yml` caller level (e.g. `tests: needs: [build]`), not inside `tests.yml`. Artifacts are run-scoped and shared across all called reusable workflows.
+- **`e2e` is decoupled from the publish chain — enforced by branch protection, not `needs`.** `tests.yml` is unit-only; the Playwright suites live in `e2e.yml` (`e2e-inspector` + `e2e-creator-hub`), wired as `e2e: needs: [build, tests]` in `ci.yml`. It is a leaf job — nothing depends on it — so the publish chain (`drop_pre_release → asset-packs → inspector → creator-hub`) starts after `unit`/`lint`/ `typechecking` instead of waiting ~12 min for e2e (that serialization was the pipeline's long pole). **Do NOT add `e2e` to `drop_pre_release`'s `needs`.** Because the DAG no longer gates on e2e, `e2e-inspector` and `e2e-creator-hub` MUST be **required status checks in branch protection**, or they silently become optional. On `main` pushes (no branch protection) the chain publishes in parallel with e2e — safe because the merged code already passed e2e on the PR.
+- **Lint workflows with `actionlint`, not the JS toolchain.** `make format`/ `make lint`/`make test` do NOT cover `.github/**` YAML (Prettier globs `js,ts,tsx,json` and `.prettierignore` excludes `.github`; ESLint is `js,cjs,ts`).
+- **`actionlint` mis-lints composite `action.yml` files** as workflows and reports bogus "jobs/on section missing" errors. Validate `.github/actions/*/action.yml` with a YAML parser instead; run `actionlint` on `.github/workflows/*.yml`.
+- **Cache whole output directories, not file lists.** The build cache once listed inspector outputs individually and missed `bundle.css`; warm-cache runs then served an unstyled app, and every e2e "flake" was really a cache hit (`build.yml`).
+- **Debugging `e2e-inspector` failures: read the `[e2e-diag]` log lines first** (plus the `inspector-e2e-diagnostics` artifact). The suite dumps DOM boxes, console/page errors, and a screenshot on readiness timeout — match those before changing any config.
+- **Pin third-party actions to a full commit SHA** with a trailing `# vX.Y.Z` comment (e.g. `nick-fields/retry@<sha> # v4.0.0`); leave first-party `actions/*` as major tags. `upload-artifact` (max v7) and `download-artifact` (v8) are independently versioned but artifact-format-compatible across v4+ — keep both at v7 for consistency.
+- **Creator-hub PR builds are unsigned zip-only; releases build the full signed dmg.** electron-builder auto-skips code signing on PRs ("Current build is a part of pull request, code signing will be skipped"), so on PRs the two `.dmg` builds (~115 s) were pure cost with no signed output. `mac.target` in `electron-builder.cjs` is `DRY_RUN`-gated: zip-only (both arches) on PRs, full `dmg + zip` on `main` (`dry-run: false`). Don't re-add dmg to the PR path or expect signing/notarization on PR builds.
+- **Build/tool targets must self-provision — the build job skips `make install` on a node_modules cache hit.** `build.yml`'s install step is gated on the node_modules cache, so any target that runs during a build cannot assume `make install` ran. Make each ensure its own inputs: `protoc: $(PROTOC)` (self-download); `build-bevy-agent: install-bevy-agent` (the Bevy agent's pinned `@dcl/sdk` must be installed locally or esbuild resolves root's wrong version). The node_modules cache path must also cover every nested project's `node_modules` (e.g. `packages/inspector/agents/bevy/node_modules`), or a cache hit serves an incomplete tree. Symptoms of a gap: cold-cache failures like `protoc: not found` (Error 127) or `No matching export … CameraLayer`.
+- **Every job that can run `make install` MUST checkout with `submodules: true`.** The install chain calls `init-submodules` (`git submodule update --init`), which clones the `devtools-frontend` submodule over its `.gitmodules` SSH URL; `checkout` only rewrites that to a token-authenticated HTTPS URL when `submodules: true` is set, so a cache-miss install otherwise dies with `Permission denied (publickey)`. This is **orthogonal to the build cache** — a green build-artifact download does NOT skip install; `node_modules` is a separate cache keyed on `package-lock.json`, so any lockfile bump (or fresh branch) makes install run and hit the submodule. Invisible on warm-cache PR runs, which is why it slipped past `build.yml` and both `e2e.yml` jobs one at a time. Adding a new install-running job? Add `submodules: true`.
 
 ## Code Style
 
