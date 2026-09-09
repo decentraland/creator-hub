@@ -34,6 +34,13 @@ export interface AiProviderInfo {
 // UI nudges users up to. Bump it as newer models raise the requirement.
 export const MIN_CLAUDE_CLI_VERSION = '2.1.251';
 
+// Install + sign-in commands per agent, shown on the chat setup card and the settings
+// "Connect" section. Obviously-safe public package names.
+export const AI_CLI_COMMANDS: Record<AiProvider, { install: string; signin: string }> = {
+  claude: { install: 'npm i -g @anthropic-ai/claude-code', signin: 'claude' },
+  codex: { install: 'npm i -g @openai/codex', signin: 'codex login' },
+};
+
 // True when `version` is a parseable semver strictly older than `min`. Unknown/absent
 // versions are treated as NOT outdated — we never nag when we couldn't read the version.
 export function isCliVersionOutdated(version: string | undefined, min: string): boolean {

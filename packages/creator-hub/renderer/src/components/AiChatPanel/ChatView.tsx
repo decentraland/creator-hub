@@ -26,7 +26,7 @@ import {
 } from 'decentraland-ui2';
 
 import type { AiProvider } from '/shared/types/ai';
-import { MIN_CLAUDE_CLI_VERSION, isCliVersionOutdated } from '/shared/types/ai';
+import { AI_CLI_COMMANDS, MIN_CLAUDE_CLI_VERSION, isCliVersionOutdated } from '/shared/types/ai';
 
 import { ai as aiPreload } from '#preload';
 import { t } from '/@/modules/store/translation/utils';
@@ -108,13 +108,6 @@ function formatWhen(ts: number): string {
 function messageText(msg: AiMessage): string {
   return msg.parts.map(p => (p.kind === 'text' ? p.text : '')).join('');
 }
-
-// Install + sign-in commands per provider, shown on the setup card when the CLI isn't
-// found. Obviously-safe public package names.
-const SETUP_COMMANDS: Record<AiProvider, { install: string; signin: string }> = {
-  claude: { install: 'npm i -g @anthropic-ai/claude-code', signin: 'claude' },
-  codex: { install: 'npm i -g @openai/codex', signin: 'codex login' },
-};
 
 // An interactive `ask_user` prompt rendered inline in the transcript. Single-select answers on
 // click; multi-select toggles then confirms; free-text (allowOther / no options) uses the field.
@@ -402,7 +395,7 @@ export function ChatView(props: ChatViewProps) {
   );
 
   const renderSetup = () => {
-    const cmds = SETUP_COMMANDS[provider];
+    const cmds = AI_CLI_COMMANDS[provider];
     return (
       <SetupBox>
         <strong>{t('editor.ai.setup.title')}</strong>
@@ -520,8 +513,11 @@ export function ChatView(props: ChatViewProps) {
                     onAnswer={answer => onAnswerPrompt(part.prompt.id, answer)}
                   />
                 );
-              default:
-                return null;
+              default: {
+                // Exhaustiveness: a new AiPart variant fails to compile until handled here.
+                const _exhaustive: never = part;
+                return _exhaustive;
+              }
             }
           })}
           {!msg.done && msg.parts.length === 0 && msg.error === undefined && (

@@ -16,19 +16,13 @@ import {
 
 import { ai, analytics } from '#preload';
 
-import type { AiProvider, AiProviderInfo } from '/shared/types/ai';
+import { AI_CLI_COMMANDS, type AiProviderInfo } from '/shared/types/ai';
 import { RENDERER } from '/shared/types/settings';
 import { t } from '/@/modules/store/translation/utils';
 import { useCliSignIn } from '/@/hooks/useCliSignIn';
 import type { BaseTabProps } from '../../types';
 
 import './styles.css';
-
-// Install + sign-in commands per agent, shown in the "Via Terminal" section. Public package names.
-const SETUP_COMMANDS: Record<AiProvider, { install: string; signin: string }> = {
-  claude: { install: 'npm i -g @anthropic-ai/claude-code', signin: 'claude' },
-  codex: { install: 'npm i -g @openai/codex', signin: 'codex login' },
-};
 
 // A lightweight expand/collapse section (chevron + title). Custom rather than MUI's Accordion so
 // no new @mui module is pulled in — a not-yet-bundled import retriggers Vite's dep optimizer.
@@ -102,7 +96,7 @@ function CommandField({ label, value }: { label?: string; value: string }) {
 function AgentConnect({ info, onRecheck }: { info: AiProviderInfo; onRecheck: () => void }) {
   const { signIn, start, cancel } = useCliSignIn(info.id, onRecheck);
   const [terminalOpen, setTerminalOpen] = useState(false);
-  const cmds = SETUP_COMMANDS[info.id];
+  const cmds = AI_CLI_COMMANDS[info.id];
 
   const handleSignOut = useCallback(() => {
     void ai.signOutCli(info.id).then(onRecheck);

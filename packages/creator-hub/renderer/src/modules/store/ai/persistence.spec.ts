@@ -120,6 +120,32 @@ describe('ai session transcripts', () => {
     ]);
   });
 
+  it('drops malformed parts from a persisted message', () => {
+    const s = fakeStorage();
+    s._map.set(
+      'creator-hub:ai-session:/scene/a:s1',
+      JSON.stringify({
+        messages: [
+          {
+            id: 't1',
+            role: 'assistant',
+            parts: [
+              { kind: 'text', text: 'ok' },
+              { kind: 'text' }, // missing text
+              { kind: 'tool', tool: 'edit' }, // missing detail
+              { kind: 'bogus' },
+              null,
+            ],
+            done: true,
+          },
+        ],
+      }),
+    );
+    expect(readSessionMessages('/scene/a', 's1', s)[0].parts).toEqual([
+      { kind: 'text', text: 'ok' },
+    ]);
+  });
+
   it('deleteSessionStorage removes only that session', () => {
     const s = fakeStorage();
     writeSessionMessages('/scene/a', 's1', MSG, s);

@@ -102,6 +102,33 @@ function legacyParts(m: LegacyMessage): AiPart[] {
   return parts;
 }
 
+// Guard a persisted part so a malformed entry (e.g. a `text` part missing its `text`) can't
+// reach the transcript renderer. The write path always builds these correctly, so this only
+// defends against hand-edited or corrupt storage.
+function isValidPart(p: unknown): p is AiPart {
+  if (p === null || typeof p !== 'object') return false;
+  const part = p as {
+    kind?: unknown;
+    text?: unknown;
+    tool?: unknown;
+    detail?: unknown;
+    dataUrl?: unknown;
+    prompt?: unknown;
+  };
+  switch (part.kind) {
+    case 'text':
+      return typeof part.text === 'string';
+    case 'tool':
+      return typeof part.tool === 'string' && typeof part.detail === 'string';
+    case 'image':
+      return typeof part.dataUrl === 'string';
+    case 'prompt':
+      return part.prompt !== null && typeof part.prompt === 'object';
+    default:
+      return false;
+  }
+}
+
 function normalizeMessage(x: unknown): AiMessage | null {
   if (x === null || typeof x !== 'object') return null;
   const m = x as Partial<AiMessage> & LegacyMessage;
@@ -109,7 +136,7 @@ function normalizeMessage(x: unknown): AiMessage | null {
   return {
     id: m.id,
     role: m.role,
-    parts: Array.isArray(m.parts) ? m.parts : legacyParts(m),
+    parts: Array.isArray(m.parts) ? m.parts.filter(isValidPart) : legacyParts(m),
     // A persisted message is a finished turn; never rehydrate it as still in-flight.
     done: true,
     ...(typeof m.error === 'string' ? { error: m.error } : {}),
