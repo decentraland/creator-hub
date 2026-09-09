@@ -470,15 +470,16 @@ const BillingBody = styled('span')(({ theme }) => ({
 
 const OutdatedHint = styled(Box)(({ theme }) => ({
   display: 'flex',
-  alignItems: 'flex-start',
-  gap: theme.spacing(1),
+  alignItems: 'center',
+  gap: theme.spacing(1.25),
   margin: theme.spacing(0, 1.5, 1),
-  padding: theme.spacing(1.25, 1.5),
-  borderRadius: theme.spacing(1),
+  padding: theme.spacing(1.5, 1.75),
+  borderRadius: theme.spacing(1.25),
   backgroundColor: 'var(--ai-warning-bg)',
   color: theme.palette.warning.main,
   fontSize: theme.typography.caption.fontSize,
   lineHeight: 1.4,
+  '& svg': { flexShrink: 0 },
 }));
 
 const MenuSectionLabel = styled('div')(({ theme }) => ({

@@ -10,7 +10,6 @@ import UndoIcon from '@mui/icons-material/Undo';
 import HighlightAltIcon from '@mui/icons-material/HighlightAlt';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
-import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import Markdown, { type MarkdownToJSX } from 'markdown-to-jsx';
 import {
@@ -33,6 +32,7 @@ import { ai as aiPreload } from '#preload';
 import { t } from '/@/modules/store/translation/utils';
 
 import type { AiMessage, AiPromptData, AiSessionMeta } from '/@/modules/store/ai/types';
+import { WarningCircleIcon } from '../Icons';
 import { toolChipLabel } from './labels';
 import {
   AssistantBubble,
@@ -789,6 +789,37 @@ export function ChatView(props: ChatViewProps) {
           {available ? renderTranscript() : renderSetup()}
         </Transcript>
 
+        {available &&
+          currentProvider?.id === 'claude' &&
+          isCliVersionOutdated(currentProvider.version, MIN_CLAUDE_CLI_VERSION) && (
+            <OutdatedHint>
+              <WarningCircleIcon size={28} />
+              <span>{t('editor.ai.outdated', { version: currentProvider.version ?? '' })}</span>
+            </OutdatedHint>
+          )}
+
+        {available && !billingDismissed && (
+          <BillingCard>
+            <BillingTitle>{t('editor.ai.billing_title')}</BillingTitle>
+            <BillingBody>{t('editor.ai.billing')}</BillingBody>
+            <Button
+              color="secondary"
+              variant="text"
+              size="small"
+              onClick={onDismissBilling}
+              sx={{
+                backgroundColor: 'var(--dark-gray)',
+                '&:hover': { backgroundColor: 'var(--light-gray)' },
+                // ui2 pins secondary-text buttons to secondary.contrast (grey) in every state at
+                // 0,6,0 specificity; out-specify it (repeated & = 0,7,0) so the label stays white.
+                '&&&&&&&': { color: 'var(--white)' },
+              }}
+            >
+              {t('editor.ai.billing_dismiss')}
+            </Button>
+          </BillingCard>
+        )}
+
         {available && selection.length > 0 && (
           <SelectionBar>
             <HighlightAltIcon fontSize="small" />
@@ -814,37 +845,6 @@ export function ChatView(props: ChatViewProps) {
               </IconButton>
             </Tooltip>
           </SelectionBar>
-        )}
-
-        {available &&
-          currentProvider?.id === 'claude' &&
-          isCliVersionOutdated(currentProvider.version, MIN_CLAUDE_CLI_VERSION) && (
-            <OutdatedHint>
-              <InfoOutlinedIcon fontSize="small" />
-              <span>{t('editor.ai.outdated', { version: currentProvider.version ?? '' })}</span>
-            </OutdatedHint>
-          )}
-
-        {available && !billingDismissed && (
-          <BillingCard>
-            <BillingTitle>{t('editor.ai.billing_title')}</BillingTitle>
-            <BillingBody>{t('editor.ai.billing')}</BillingBody>
-            <Button
-              color="secondary"
-              variant="text"
-              size="small"
-              onClick={onDismissBilling}
-              sx={{
-                backgroundColor: 'var(--dark-gray)',
-                '&:hover': { backgroundColor: 'var(--light-gray)' },
-                // ui2 pins secondary-text buttons to secondary.contrast (grey) in every state at
-                // 0,6,0 specificity; out-specify it (repeated & = 0,7,0) so the label stays white.
-                '&&&&&&&': { color: 'var(--white)' },
-              }}
-            >
-              {t('editor.ai.billing_dismiss')}
-            </Button>
-          </BillingCard>
         )}
 
         <Composer>
