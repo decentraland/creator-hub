@@ -30,6 +30,7 @@ import { MIN_CLAUDE_CLI_VERSION, isCliVersionOutdated } from '/shared/types/ai';
 
 import { ai as aiPreload } from '#preload';
 import { t } from '/@/modules/store/translation/utils';
+import { useCliSignIn } from '/@/hooks/useCliSignIn';
 
 import type { AiMessage, AiPromptData, AiSessionMeta } from '/@/modules/store/ai/types';
 import { WarningCircleIcon } from '../Icons';
@@ -320,49 +321,11 @@ export function ChatView(props: ChatViewProps) {
   // In-app sign-in without a CLI (#1531): install the official CLI on demand + drive its
   // subscription login (browser OAuth), streaming steps here. On success we re-detect so
   // the provider flips to available.
-  const [signIn, setSignIn] = useState<{
-    busy: boolean;
-    message: string;
-    url: string | null;
-    error: string | null;
-  }>({ busy: false, message: '', url: null, error: null });
-  // A user cancel kills the CLI, which rejects the sign-in promise — flag it so that
-  // expected rejection resets to idle instead of showing a scary "exited with code" error.
-  const signInCancelled = useRef(false);
-
-  const handleSignIn = useCallback(async () => {
-    signInCancelled.current = false;
-    setSignIn({
-      busy: true,
-      message: t('editor.ai.setup.signin_starting'),
-      url: null,
-      error: null,
-    });
-    try {
-      await aiPreload.signInCli(provider, event => {
-        setSignIn(s =>
-          event.type === 'auth'
-            ? { ...s, url: event.url, message: t('editor.ai.setup.signin_browser') }
-            : { ...s, message: event.message },
-        );
-      });
-      setSignIn({ busy: false, message: '', url: null, error: null });
-      onRecheck();
-    } catch (e) {
-      setSignIn({
-        busy: false,
-        message: '',
-        url: null,
-        error: signInCancelled.current ? null : e instanceof Error ? e.message : String(e),
-      });
-    }
-  }, [provider, onRecheck]);
-
-  const handleCancelSignIn = useCallback(() => {
-    signInCancelled.current = true;
-    void aiPreload.cancelSignInCli();
-    setSignIn({ busy: false, message: '', url: null, error: null });
-  }, []);
+  const {
+    signIn,
+    start: handleSignIn,
+    cancel: handleCancelSignIn,
+  } = useCliSignIn(provider, onRecheck);
 
   // Keep the newest message in view as text streams in.
   useEffect(() => {
