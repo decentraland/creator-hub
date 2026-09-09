@@ -98,8 +98,13 @@
   background-color: rgba(255, 255, 255, 0.08);
 }
 
-.Editor .Header .actions .ai-toggle.active {
-  background-color: rgba(255, 255, 255, 0.12);
+.Editor .Header .actions .ai-toggle.active,
+.Editor .Header .actions .ai-toggle.active:hover {
+  background-color: var(--ai-selected);
+}
+
+.Editor .Header .actions .ai-toggle.active:hover {
+  background-color: var(--ai-selected-hover);
 }
 
 /* while optimizing, the Preview button and its dropdown look disabled (same opacity:0.5 the

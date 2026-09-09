@@ -794,7 +794,7 @@ export function EditorPage() {
                     aria-label={aiOpen ? t('editor.ai.close') : t('editor.ai.open')}
                     onClick={() => setAiOpen(open => !open)}
                   >
-                    <AssistantIcon gradient={aiOpen} />
+                    <AssistantIcon gradient={!aiOpen} />
                   </IconButton>
                 </Tooltip>
               )}

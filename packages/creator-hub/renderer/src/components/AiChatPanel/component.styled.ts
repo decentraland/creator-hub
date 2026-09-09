@@ -372,7 +372,8 @@ const Toolbar = styled(Box)(({ theme }) => ({
   display: 'flex',
   alignItems: 'center',
   gap: theme.spacing(1),
-  padding: theme.spacing(1.5, 2, 0.5),
+  padding: theme.spacing(0.75, 2),
+  borderBottom: `1px solid ${theme.palette.divider}`,
 }));
 
 // A dark rounded pill used for the toolbar controls (New Chat menu + agent select), matching
@@ -382,18 +383,19 @@ const ToolbarPill = styled('button')(({ theme }) => ({
   alignItems: 'center',
   gap: theme.spacing(0.75),
   minWidth: 0,
-  flex: '0 1 auto',
-  height: theme.spacing(4),
+  flex: '0 0 auto',
+  width: theme.spacing(20),
+  height: theme.spacing(3.75),
   padding: theme.spacing(0, 1.25),
   border: `1px solid ${theme.palette.divider}`,
-  borderRadius: theme.spacing(1.25),
-  backgroundColor: theme.palette.action.hover,
+  borderRadius: theme.spacing(1),
+  backgroundColor: 'var(--ai-menu-bg)',
   color: theme.palette.text.primary,
   fontSize: theme.typography.body2.fontSize,
   fontFamily: 'inherit',
   cursor: 'pointer',
   whiteSpace: 'nowrap',
-  '&:hover': { backgroundColor: theme.palette.action.selected },
+  '&:hover': { borderColor: theme.palette.text.secondary },
   '&:disabled': { opacity: 0.5, cursor: 'default' },
 }));
 
@@ -406,8 +408,8 @@ const ToolbarPillLabel = styled('span')({
 // The circular accent send button in the composer (red with a white up-arrow).
 const SendButton = styled(IconButton)(({ theme }) => ({
   flexShrink: 0,
-  width: theme.spacing(4.5),
-  height: theme.spacing(4.5),
+  width: theme.spacing(3.5),
+  height: theme.spacing(3.5),
   borderRadius: '50%',
   backgroundColor: theme.palette.primary.main,
   color: theme.palette.primary.contrastText,
@@ -433,7 +435,7 @@ const ProviderOption = styled(Box)(({ theme }) => ({
 
 const ProviderHint = styled('span')(({ theme }) => ({
   flexShrink: 0,
-  color: 'var(--dcl)',
+  color: theme.palette.text.secondary,
   fontSize: theme.typography.pxToRem(11),
   fontWeight: 500,
 }));
@@ -479,6 +481,14 @@ const OutdatedHint = styled(Box)(({ theme }) => ({
   lineHeight: 1.4,
 }));
 
+const MenuSectionLabel = styled('div')(({ theme }) => ({
+  padding: theme.spacing(0.75, 2, 0.25),
+  color: theme.palette.text.secondary,
+  fontSize: theme.typography.pxToRem(11),
+  textTransform: 'uppercase',
+  letterSpacing: '0.08em',
+}));
+
 const SelectionBar = styled(Box)(({ theme }) => ({
   display: 'flex',
   alignItems: 'center',
@@ -490,7 +500,7 @@ const SelectionBar = styled(Box)(({ theme }) => ({
 }));
 
 const SelectionNames = styled('span')({
-  flex: 1,
+  flex: '0 1 auto',
   minWidth: 0,
   overflow: 'hidden',
   textOverflow: 'ellipsis',
@@ -514,6 +524,7 @@ export {
   HistoryList,
   HistoryRow,
   IntroMessage,
+  MenuSectionLabel,
   OutdatedHint,
   Panel,
   PanelHeader,

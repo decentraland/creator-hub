@@ -47,6 +47,7 @@ import {
   HeaderActions,
   HeaderTitle,
   IntroMessage,
+  MenuSectionLabel,
   OutdatedHint,
   Panel,
   PanelHeader,
@@ -661,14 +662,19 @@ export function ChatView(props: ChatViewProps) {
             open={chatMenuAnchor !== null}
             onClose={() => setChatMenuAnchor(null)}
             sx={{
+              '& .MuiPaper-root': {
+                backgroundColor: 'var(--ai-menu-bg)',
+                borderRadius: '12px',
+                width: '300px',
+              },
               '& .MuiMenuItem-root.Mui-selected, & .MuiMenuItem-root.Mui-selected:hover': {
-                backgroundColor: 'var(--ai-selected)',
+                backgroundColor: 'var(--ai-session-selected)',
               },
             }}
           >
             <MenuItem
               disabled={busy || messages.length === 0}
-              sx={{ gap: 1 }}
+              sx={{ gap: 1, mx: 1, my: 0.5, borderRadius: 1 }}
               onClick={() => {
                 onNewChat();
                 setChatMenuAnchor(null);
@@ -677,21 +683,20 @@ export function ChatView(props: ChatViewProps) {
               <AddCommentOutlinedIcon fontSize="small" />
               {t('editor.ai.new_chat')}
             </MenuItem>
-            {savedSessions.length > 0 && <Divider />}
+            {savedSessions.length > 0 && [
+              <Divider key="div" />,
+              <MenuSectionLabel key="label">{t('editor.ai.history.title')}</MenuSectionLabel>,
+            ]}
             {savedSessions.map(s => (
               <MenuItem
                 key={s.id}
                 selected={s.id === currentSessionId}
-                sx={{ gap: 1 }}
+                sx={{ gap: 1, mx: 1, my: 0.5, borderRadius: 1 }}
                 onClick={() => {
                   onSwitchSession(s.id);
                   setChatMenuAnchor(null);
                 }}
               >
-                <CheckIcon
-                  fontSize="small"
-                  sx={{ visibility: s.id === currentSessionId ? 'visible' : 'hidden' }}
-                />
                 <SessionText>
                   <SessionTitle>{s.title}</SessionTitle>
                   <SessionWhen>{formatWhen(s.updatedAt)}</SessionWhen>
@@ -718,20 +723,27 @@ export function ChatView(props: ChatViewProps) {
               IconComponent={KeyboardArrowDownIcon}
               MenuProps={{
                 sx: {
-                  '& .MuiMenuItem-root.Mui-selected, & .MuiMenuItem-root.Mui-selected:hover': {
+                  '& .MuiPaper-root': {
+                    backgroundColor: 'var(--ai-menu-bg)',
+                    borderRadius: '12px',
+                  },
+                  '& .MuiMenuItem-root.Mui-selected': {
                     backgroundColor: 'var(--ai-selected)',
+                  },
+                  '& .MuiMenuItem-root.Mui-selected:hover': {
+                    backgroundColor: 'var(--ai-selected-hover)',
                   },
                 },
               }}
               sx={{
                 flex: 1,
                 minWidth: 0,
-                height: theme => theme.spacing(4),
-                borderRadius: theme => theme.spacing(1.25),
-                backgroundColor: 'action.hover',
+                height: theme => theme.spacing(3.75),
+                borderRadius: theme => theme.spacing(1),
+                backgroundColor: 'var(--ai-menu-bg)',
                 '& .MuiOutlinedInput-notchedOutline': { borderColor: 'divider' },
                 '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: 'text.secondary' },
-                '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: 'secondary.main' },
+                '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: 'text.secondary' },
                 '& .MuiSelect-select': { display: 'flex', alignItems: 'center' },
               }}
               // Show just the active agent's name in the closed box (with a subtle "sign in"
@@ -755,7 +767,7 @@ export function ChatView(props: ChatViewProps) {
                 <MenuItem
                   key={p.id}
                   value={p.id}
-                  sx={{ gap: 1 }}
+                  sx={{ gap: 1, mx: 1, my: 0.5, borderRadius: 1 }}
                 >
                   <CheckIcon
                     fontSize="small"
@@ -763,7 +775,9 @@ export function ChatView(props: ChatViewProps) {
                   />
                   <ProviderOption>
                     <span>{p.label}</span>
-                    {!p.available && <ProviderHint>{t('editor.ai.provider_signin')}</ProviderHint>}
+                    {!p.available && (
+                      <ProviderHint>{p.reason ?? t('editor.ai.provider_signin')}</ProviderHint>
+                    )}
                   </ProviderOption>
                 </MenuItem>
               ))}
@@ -788,8 +802,15 @@ export function ChatView(props: ChatViewProps) {
                 size="small"
                 aria-label={t('editor.ai.selection_clear')}
                 onClick={onClearSelection}
+                sx={{
+                  flexShrink: 0,
+                  padding: 0.25,
+                  color: 'text.primary',
+                  backgroundColor: 'action.hover',
+                  '&:hover': { backgroundColor: 'action.selected' },
+                }}
               >
-                <CloseIcon fontSize="small" />
+                <CloseIcon sx={{ fontSize: 13 }} />
               </IconButton>
             </Tooltip>
           </SelectionBar>
@@ -843,8 +864,9 @@ export function ChatView(props: ChatViewProps) {
               // outline instead of the default primary (ruby) ring (#1576).
               '& .MuiOutlinedInput-root': {
                 borderRadius: '10px',
-                alignItems: 'flex-end',
+                alignItems: 'center',
                 paddingRight: theme => theme.spacing(0.75),
+                backgroundColor: 'var(--ai-input-bg)',
               },
               '& .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline': {
                 borderColor: 'text.secondary',
