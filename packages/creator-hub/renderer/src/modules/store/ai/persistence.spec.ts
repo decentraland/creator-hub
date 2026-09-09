@@ -75,6 +75,51 @@ describe('ai session transcripts', () => {
     ]);
   });
 
+  it('migrates a legacy transcript (text/tools, no parts) to the parts model', () => {
+    const s = fakeStorage();
+    // Shape persisted before #1573: text + tool chips, no `parts`.
+    s._map.set(
+      'creator-hub:ai-session:/scene/a:s1',
+      JSON.stringify({
+        messages: [
+          { id: 'u1', role: 'user', text: 'hi', tools: [], done: true },
+          {
+            id: 't1',
+            role: 'assistant',
+            text: 'done',
+            tools: [{ tool: 'edit', detail: 'scene.ts' }],
+            done: true,
+          },
+        ],
+      }),
+    );
+    expect(readSessionMessages('/scene/a', 's1', s)).toEqual([
+      { id: 'u1', role: 'user', parts: [{ kind: 'text', text: 'hi' }], done: true },
+      {
+        id: 't1',
+        role: 'assistant',
+        parts: [
+          { kind: 'text', text: 'done' },
+          { kind: 'tool', tool: 'edit', detail: 'scene.ts' },
+        ],
+        done: true,
+      },
+    ]);
+  });
+
+  it('drops malformed persisted messages', () => {
+    const s = fakeStorage();
+    s._map.set(
+      'creator-hub:ai-session:/scene/a:s1',
+      JSON.stringify({
+        messages: [{ id: 'u1', role: 'user', parts: [] }, null, 42, { role: 'x' }],
+      }),
+    );
+    expect(readSessionMessages('/scene/a', 's1', s)).toEqual([
+      { id: 'u1', role: 'user', parts: [], done: true },
+    ]);
+  });
+
   it('deleteSessionStorage removes only that session', () => {
     const s = fakeStorage();
     writeSessionMessages('/scene/a', 's1', MSG, s);

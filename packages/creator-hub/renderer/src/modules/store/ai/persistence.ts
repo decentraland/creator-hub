@@ -10,7 +10,7 @@
  * `--resume` continue are persisted separately by the main process (ai.ts), keyed by the
  * same (project path, sessionId) — the two are coordinated only by those.
  */
-import type { AiMessage, AiSessionMeta } from './types';
+import type { AiMessage, AiPart, AiSessionMeta } from './types';
 
 const INDEX_PREFIX = 'creator-hub:ai-index:';
 const SESSION_PREFIX = 'creator-hub:ai-session:';
@@ -73,6 +73,51 @@ export function writeSessionIndex(
   }
 }
 
+// A transcript persisted before the parts model (#1573) stores `text`/`tools` on each message
+// and no `parts`. Migrate those to ordered parts on read so old conversations still render (the
+// grouped text-then-tools order is the best we can reconstruct; true arrival order wasn't stored).
+interface LegacyMessage {
+  text?: unknown;
+  tools?: unknown;
+}
+function legacyParts(m: LegacyMessage): AiPart[] {
+  const parts: AiPart[] = [];
+  if (typeof m.text === 'string' && m.text !== '') parts.push({ kind: 'text', text: m.text });
+  if (Array.isArray(m.tools)) {
+    for (const t of m.tools) {
+      if (
+        t !== null &&
+        typeof t === 'object' &&
+        typeof (t as { tool?: unknown }).tool === 'string'
+      ) {
+        const chip = t as { tool: string; detail?: unknown };
+        parts.push({
+          kind: 'tool',
+          tool: chip.tool,
+          detail: typeof chip.detail === 'string' ? chip.detail : '',
+        });
+      }
+    }
+  }
+  return parts;
+}
+
+function normalizeMessage(x: unknown): AiMessage | null {
+  if (x === null || typeof x !== 'object') return null;
+  const m = x as Partial<AiMessage> & LegacyMessage;
+  if (typeof m.id !== 'string' || (m.role !== 'user' && m.role !== 'assistant')) return null;
+  return {
+    id: m.id,
+    role: m.role,
+    parts: Array.isArray(m.parts) ? m.parts : legacyParts(m),
+    // A persisted message is a finished turn; never rehydrate it as still in-flight.
+    done: true,
+    ...(typeof m.error === 'string' ? { error: m.error } : {}),
+    ...(typeof m.mutations === 'number' ? { mutations: m.mutations } : {}),
+    ...(m.reverted === true ? { reverted: true } : {}),
+  };
+}
+
 export function readSessionMessages(
   path: string,
   id: string,
@@ -82,7 +127,8 @@ export function readSessionMessages(
     const raw = storage.getItem(sessionKey(path, id));
     if (raw === null) return [];
     const parsed = JSON.parse(raw) as { messages?: unknown };
-    return Array.isArray(parsed.messages) ? (parsed.messages as AiMessage[]) : [];
+    if (!Array.isArray(parsed.messages)) return [];
+    return parsed.messages.map(normalizeMessage).filter((m): m is AiMessage => m !== null);
   } catch {
     return [];
   }

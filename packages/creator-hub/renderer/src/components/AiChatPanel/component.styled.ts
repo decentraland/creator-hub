@@ -443,32 +443,40 @@ const ProviderValueHint = styled('span')(({ theme }) => ({
   fontSize: theme.typography.pxToRem(11),
 }));
 
-const BillingHint = styled(Box)(({ theme }) => ({
+const BillingCard = styled(Box)(({ theme }) => ({
   display: 'flex',
-  alignItems: 'center',
-  gap: theme.spacing(0.5),
-  padding: theme.spacing(0.5, 1.5),
-  borderTop: `1px solid ${theme.palette.divider}`,
-  color: theme.palette.text.primary,
-  fontSize: theme.typography.pxToRem(11),
-  lineHeight: 1.35,
+  flexDirection: 'column',
+  alignItems: 'flex-start',
+  gap: theme.spacing(1),
+  margin: theme.spacing(0, 1.5, 1),
+  padding: theme.spacing(1.5),
+  borderRadius: theme.spacing(1),
+  backgroundColor: 'var(--card)',
 }));
 
-const BillingDismiss = styled('span')({
-  textDecoration: 'underline',
-  cursor: 'pointer',
-  color: 'var(--dcl)',
-});
+const BillingTitle = styled('span')(({ theme }) => ({
+  fontWeight: 700,
+  color: theme.palette.text.primary,
+  fontSize: theme.typography.body2.fontSize,
+}));
+
+const BillingBody = styled('span')(({ theme }) => ({
+  color: theme.palette.text.secondary,
+  fontSize: theme.typography.caption.fontSize,
+  lineHeight: 1.4,
+}));
 
 const OutdatedHint = styled(Box)(({ theme }) => ({
   display: 'flex',
-  alignItems: 'center',
-  gap: theme.spacing(0.5),
-  padding: theme.spacing(0.5, 1.5),
-  borderTop: `1px solid ${theme.palette.divider}`,
+  alignItems: 'flex-start',
+  gap: theme.spacing(1),
+  margin: theme.spacing(0, 1.5, 1),
+  padding: theme.spacing(1.25, 1.5),
+  borderRadius: theme.spacing(1),
+  backgroundColor: 'var(--ai-warning-bg)',
   color: theme.palette.warning.main,
-  fontSize: theme.typography.pxToRem(11),
-  lineHeight: 1.35,
+  fontSize: theme.typography.caption.fontSize,
+  lineHeight: 1.4,
 }));
 
 const SelectionBar = styled(Box)(({ theme }) => ({
@@ -493,8 +501,9 @@ export {
   AssistantBubble,
   AssistantImage,
   AssistantText,
-  BillingDismiss,
-  BillingHint,
+  BillingBody,
+  BillingCard,
+  BillingTitle,
   CommandLine,
   Composer,
   EmptyState,

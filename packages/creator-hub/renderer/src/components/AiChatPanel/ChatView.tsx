@@ -38,8 +38,9 @@ import {
   AssistantBubble,
   AssistantImage,
   AssistantText,
-  BillingDismiss,
-  BillingHint,
+  BillingBody,
+  BillingCard,
+  BillingTitle,
   CommandLine,
   Composer,
   ErrorRow,
@@ -798,31 +799,31 @@ export function ChatView(props: ChatViewProps) {
           currentProvider?.id === 'claude' &&
           isCliVersionOutdated(currentProvider.version, MIN_CLAUDE_CLI_VERSION) && (
             <OutdatedHint>
-              <InfoOutlinedIcon fontSize="inherit" />
+              <InfoOutlinedIcon fontSize="small" />
               <span>{t('editor.ai.outdated', { version: currentProvider.version ?? '' })}</span>
             </OutdatedHint>
           )}
 
         {available && !billingDismissed && (
-          <BillingHint>
-            <InfoOutlinedIcon fontSize="inherit" />
-            <span>
-              {t('editor.ai.billing', { provider: currentProvider?.label ?? 'AI' })}{' '}
-              <BillingDismiss
-                role="button"
-                tabIndex={0}
-                onClick={onDismissBilling}
-                onKeyDown={e => {
-                  if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
-                    onDismissBilling();
-                  }
-                }}
-              >
-                {t('editor.ai.billing_dismiss')}
-              </BillingDismiss>
-            </span>
-          </BillingHint>
+          <BillingCard>
+            <BillingTitle>{t('editor.ai.billing_title')}</BillingTitle>
+            <BillingBody>{t('editor.ai.billing')}</BillingBody>
+            <Button
+              color="secondary"
+              variant="text"
+              size="small"
+              onClick={onDismissBilling}
+              sx={{
+                backgroundColor: 'var(--dark-gray)',
+                '&:hover': { backgroundColor: 'var(--light-gray)' },
+                // ui2 pins secondary-text buttons to secondary.contrast (grey) in every state at
+                // 0,6,0 specificity; out-specify it (repeated & = 0,7,0) so the label stays white.
+                '&&&&&&&': { color: 'var(--white)' },
+              }}
+            >
+              {t('editor.ai.billing_dismiss')}
+            </Button>
+          </BillingCard>
         )}
 
         <Composer>

@@ -101,8 +101,9 @@
       "stop": "Detener",
       "thinking": "Pensando…",
       "empty": "¡Hola! Estoy aquí para ayudarte. Haz preguntas sobre tu escena, pide ayuda con el scripting o dime qué te gustaría construir o cambiar. Puedo inspeccionar tu escena y escribir el código necesario para dar vida a tus ideas.",
-      "billing": "Se ejecuta con tu propia cuenta de {provider}: los mensajes consumen el uso de tu plan, no una asignación gratuita de Creator Hub.",
-      "billing_dismiss": "No mostrar de nuevo",
+      "billing_title": "Sobre el uso de la IA",
+      "billing": "El Asistente IA consume tokens de tu cuenta conectada. Vigila el uso de tu cuenta.",
+      "billing_dismiss": "Entendido",
       "screenshot_alt": "Captura de pantalla del asistente",
       "history": {
         "title": "Historial de chats",
