@@ -33,8 +33,9 @@ const initialState: AiState = {
 // a brand-new session renders as "New chat". Exported for tests.
 export function sessionTitle(messages: AiMessage[]): string {
   const firstUser = messages.find(m => m.role === 'user');
-  if (firstUser === undefined) return '';
-  const t = firstUser.text.trim().replace(/\s+/g, ' ');
+  const firstText = firstUser?.parts.find(p => p.kind === 'text');
+  if (firstText === undefined || firstText.kind !== 'text') return '';
+  const t = firstText.text.trim().replace(/\s+/g, ' ');
   return t.length > 48 ? `${t.slice(0, 48)}…` : t;
 }
 
@@ -286,8 +287,7 @@ const slice = createSlice({
         // transcript after an HMR reload resets module state but the store survives.
         id: `u-${crypto.randomUUID()}`,
         role: 'user',
-        text: payload,
-        tools: [],
+        parts: [{ kind: 'text', text: payload }],
         done: true,
       };
       state.messages.push(msg);
@@ -298,30 +298,32 @@ const slice = createSlice({
       switch (payload.kind) {
         case 'started': {
           if (find() === undefined) {
-            state.messages.push({
-              id: payload.turnId,
-              role: 'assistant',
-              text: '',
-              tools: [],
-              done: false,
-            });
+            state.messages.push({ id: payload.turnId, role: 'assistant', parts: [], done: false });
           }
           state.busy = true;
           break;
         }
         case 'text': {
           const msg = find();
-          if (msg !== undefined) msg.text += payload.text;
+          if (msg !== undefined) {
+            // Extend the trailing text run in place so streamed tokens coalesce, but a tool
+            // chip / image / prompt that arrived since starts a new text part after it —
+            // keeping the parts in true chronological order (#1573).
+            const last = msg.parts[msg.parts.length - 1];
+            if (last?.kind === 'text') last.text += payload.text;
+            else msg.parts.push({ kind: 'text', text: payload.text });
+          }
           break;
         }
         case 'tool': {
           const msg = find();
-          if (msg !== undefined) msg.tools.push({ tool: payload.tool, detail: payload.detail });
+          if (msg !== undefined)
+            msg.parts.push({ kind: 'tool', tool: payload.tool, detail: payload.detail });
           break;
         }
         case 'image': {
           const msg = find();
-          if (msg !== undefined) (msg.images ??= []).push(payload.dataUrl);
+          if (msg !== undefined) msg.parts.push({ kind: 'image', dataUrl: payload.dataUrl });
           break;
         }
         case 'error': {
@@ -351,8 +353,10 @@ const slice = createSlice({
       // A pending prompt can't be answered once the turn is dead (main already resolved its
       // tool call as dismissed) — mark it so the UI disables it instead of looking answerable.
       for (const msg of state.messages) {
-        if (msg.prompt !== undefined && msg.prompt.answer === undefined)
-          msg.prompt.dismissed = true;
+        for (const part of msg.parts) {
+          if (part.kind === 'prompt' && part.prompt.answer === undefined)
+            part.prompt.dismissed = true;
+        }
       }
       for (let i = state.messages.length - 1; i >= 0; i--) {
         const msg = state.messages[i];
@@ -393,22 +397,38 @@ const slice = createSlice({
       const msg = state.messages.find(m => m.id === payload);
       if (msg !== undefined) msg.reverted = true;
     },
-    // An `ask_user` question arrived (over AI_ASK_REQUEST) — append it to the transcript as a
-    // prompt-carrying assistant message so it renders inline, in order, below the current reply.
+    // An `ask_user` question arrived (over AI_ASK_REQUEST) — append it as the next part of the
+    // in-flight turn so it renders inline, in order; anything the turn streams after the answer
+    // then follows it chronologically (#1573). Falls back to its own message if no turn is live.
     pushPrompt: (state, { payload }: PayloadAction<AiPromptData>) => {
-      state.messages.push({
-        id: `prompt-${payload.id}`,
-        role: 'assistant',
-        text: '',
-        tools: [],
-        done: true,
-        prompt: payload,
-      });
+      let target: AiMessage | undefined;
+      for (let i = state.messages.length - 1; i >= 0; i--) {
+        const m = state.messages[i];
+        if (m.role === 'assistant' && !m.done) {
+          target = m;
+          break;
+        }
+      }
+      if (target !== undefined) {
+        target.parts.push({ kind: 'prompt', prompt: payload });
+      } else {
+        state.messages.push({
+          id: `prompt-${payload.id}`,
+          role: 'assistant',
+          parts: [{ kind: 'prompt', prompt: payload }],
+          done: true,
+        });
+      }
     },
     // The user answered a prompt: record it so the block shows the choice and the turn resumes.
     resolvePrompt: (state, { payload }: PayloadAction<{ id: string; answer: string }>) => {
-      const msg = state.messages.find(m => m.prompt?.id === payload.id);
-      if (msg?.prompt !== undefined) msg.prompt.answer = payload.answer;
+      for (const msg of state.messages) {
+        const part = msg.parts.find(p => p.kind === 'prompt' && p.prompt.id === payload.id);
+        if (part?.kind === 'prompt') {
+          part.prompt.answer = payload.answer;
+          return;
+        }
+      }
     },
   },
   extraReducers: builder => {
@@ -451,8 +471,7 @@ const slice = createSlice({
           state.messages.push({
             id: `err-${crypto.randomUUID()}`,
             role: 'assistant',
-            text: '',
-            tools: [],
+            parts: [],
             done: true,
             error: message,
           });

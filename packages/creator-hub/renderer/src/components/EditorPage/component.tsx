@@ -6,7 +6,6 @@ import CodeIcon from '@mui/icons-material/Code';
 import PublicIcon from '@mui/icons-material/Public';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import CloseIcon from '@mui/icons-material/Close';
-import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import { CircularProgress as Loader, Tooltip } from 'decentraland-ui2';
 import { IconButton } from '@mui/material';
 
@@ -45,6 +44,7 @@ import { Row } from '../Row';
 import { ButtonGroup } from '../Button';
 import { ConnectionStatusIndicator } from '../ConnectionStatusIndicator';
 import { MobileQRCode } from '../Modals/MobileQRCode';
+import { AssistantIcon } from '../Icons';
 import { AiChatPanel } from '../AiChatPanel';
 import { DetachedPlaceholder } from '../AiChatPanel/DetachedPlaceholder';
 import { DeployModal } from './DeployModal';
@@ -185,14 +185,14 @@ export function EditorPage() {
   // The AI session engine + detached-window bridge (#1504). Runs whenever the assistant is
   // on, independent of whether the chat is shown inline or popped out. It also relays the
   // detached window's "clear selection" back to the inspector here.
+  const [aiOpen, setAiOpen] = useState(false);
   const {
     detachedOpen: aiDetached,
     openDetached: openAiWindow,
     closeDetached: closeAiWindow,
-  } = useAiSession(aiChatEnabled, project?.path, handleClearAiSelection);
+  } = useAiSession(aiChatEnabled, project?.path, handleClearAiSelection, () => setAiOpen(false));
   const hydratedOptimizedAssetsPathRef = useRef<string | null>(null);
   const [modalState, setModalState] = useState<ModalState>({ type: undefined });
-  const [aiOpen, setAiOpen] = useState(false);
   // Draggable width of the AI panel (like the inspector's own panels). Persisted globally.
   const [aiPanelWidth, setAiPanelWidth] = useState(readAiPanelWidth);
   const [aiResizing, setAiResizing] = useState(false);
@@ -787,6 +787,17 @@ export function EditorPage() {
               </Tooltip>
             </>
             <div className="actions">
+              {aiChatEnabled && (
+                <Tooltip title={aiOpen ? t('editor.ai.close') : t('editor.ai.open')}>
+                  <IconButton
+                    className={`ai-toggle${aiOpen ? ' active' : ''}`}
+                    aria-label={aiOpen ? t('editor.ai.close') : t('editor.ai.open')}
+                    onClick={() => setAiOpen(open => !open)}
+                  >
+                    <AssistantIcon gradient={!aiOpen} />
+                  </IconButton>
+                </Tooltip>
+              )}
               <Button
                 color="secondary"
                 onClick={openCode}
@@ -879,17 +890,6 @@ export function EditorPage() {
                 >
                   {publishButtonText}
                 </Button>
-              )}
-              {aiChatEnabled && (
-                <Tooltip title={t('editor.ai.toggle')}>
-                  <IconButton
-                    className={`ai-toggle${aiOpen ? ' active' : ''}`}
-                    aria-label={t('editor.ai.toggle')}
-                    onClick={() => setAiOpen(open => !open)}
-                  >
-                    <AutoAwesomeIcon />
-                  </IconButton>
-                </Tooltip>
               )}
               <ConnectionStatusIndicator />
             </div>
