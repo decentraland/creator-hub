@@ -301,15 +301,26 @@ interface TurnCtx {
   mcp?: SceneMcpInfo; // CH MCP server (scene + gateway tools); each provider wires it its own way
 }
 
-// A provider = how to find its binary + how to turn a turn into an argv + how to read
-// its streaming stdout. Only these two things differ between Claude and Codex.
+// A built invocation: the argv, plus any text to feed on stdin instead of argv. On Windows,
+// cross-spawn runs the CLI's `.cmd` shim through `cmd.exe /c`, whose command line is capped at
+// 8191 chars — the ~7KB DCL system prompt on argv overflowed it on its own ("The command line
+// is too long"), so every turn failed regardless of the user's prompt size. Big text now rides
+// OFF argv: Claude takes the system prompt from a file (--append-system-prompt-file) and the
+// user prompt on stdin; Codex takes both (rules + prompt) on stdin via the `-` prompt token.
+interface BuiltTurn {
+  args: string[];
+  stdin?: string;
+}
+
+// A provider = how to find its binary + how to turn a turn into an argv (+ stdin) + how to read
+// its streaming stdout. Only these things differ between Claude and Codex.
 interface ProviderDef {
   id: AiProvider;
   label: string;
   binNames: string[];
   models: string[];
   defaultModel: string;
-  buildArgs: (ctx: TurnCtx) => string[];
+  buildArgs: (ctx: TurnCtx) => BuiltTurn;
   // Parse one NDJSON stdout line. Emit chat events; return a session id to remember
   // (for --resume) when the line carries one, else undefined. `image` is a data-URL an
   // MCP tool returned (e.g. an Explorer/editor screenshot), rendered inline in the chat.
@@ -392,7 +403,6 @@ export const PROVIDERS: Record<AiProvider, ProviderDef> = {
     buildArgs: ctx => {
       const args = [
         '-p',
-        ctx.text,
         '--output-format',
         'stream-json',
         '--verbose', // required alongside stream-json under -p
@@ -404,8 +414,11 @@ export const PROVIDERS: Record<AiProvider, ProviderDef> = {
         // the system prompt (see ai-prompt.ts).
         '--permission-mode',
         'bypassPermissions',
-        '--append-system-prompt',
-        DCL_SYSTEM_PROMPT,
+        // The ~7KB system prompt goes via a file, not `--append-system-prompt <string>`: on
+        // Windows the inline string alone overflowed cmd.exe's 8191-char command line (see
+        // BuiltTurn). Mac/Linux are unaffected but read the same file.
+        '--append-system-prompt-file',
+        writeSystemPromptFile(DCL_SYSTEM_PROMPT),
       ];
       if (ctx.model !== undefined && ctx.model !== 'default') args.push('--model', ctx.model);
       if (ctx.resume !== undefined) args.push('--resume', ctx.resume);
@@ -414,8 +427,10 @@ export const PROVIDERS: Record<AiProvider, ProviderDef> = {
       // auto-allows the tool calls.
       if (ctx.mcp !== undefined) args.push('--mcp-config', writeSceneMcpConfigFile(ctx.mcp));
       // images travel as paths inside the prompt — claude's Read tool renders image
-      // files natively, no dedicated flag exists (or is needed)
-      return args;
+      // files natively, no dedicated flag exists (or is needed). The user prompt rides on
+      // stdin (`claude -p` reads it there when no prompt arg is given), keeping it off argv
+      // for the same cmd.exe-length reason as the system prompt.
+      return { args, stdin: ctx.text };
     },
     parseLine: (line, projectDir, emit) => {
       let obj: {
@@ -465,7 +480,8 @@ export const PROVIDERS: Record<AiProvider, ProviderDef> = {
   // a SUBCOMMAND (`codex exec resume <threadId>`), not a flag; the thread id comes from
   // the `thread.started` event. codex ≥0.145 removed the --ask-for-approval flag, so the
   // policy is pinned through `-c` instead (also overrides a user config.toml that asks
-  // for approvals — we spawn with stdin ignored, so a prompt would hang forever);
+  // for approvals — stdin is closed right after the prompt is written, so a prompt would
+  // read EOF, not hang);
   // `--sandbox danger-full-access` is the bypassPermissions equivalent;
   // `--skip-git-repo-check` lets it run in a scene folder that isn't a git repo. Present
   // so a signed-in Codex works out of the box; the UI defaults to Claude.
@@ -498,10 +514,13 @@ export const PROVIDERS: Record<AiProvider, ProviderDef> = {
       }
       if (ctx.model !== undefined && ctx.model !== 'default') args.push('--model', ctx.model);
       for (const img of ctx.images) args.push('-i', img); // codex's native image flag
-      // `codex exec` has no system-prompt flag, so the rules ride in front of the prompt
-      // on every turn, matching claude's --append-system-prompt.
-      args.push(`${DCL_SYSTEM_PROMPT}\n\n---\n\n${ctx.text}`);
-      return args;
+      // `codex exec` has no system-prompt flag, so the rules ride in front of the prompt on
+      // every turn, matching claude's --append-system-prompt. The whole thing goes on STDIN
+      // (the `-` prompt token tells `codex exec` / `exec resume <id>` to read instructions
+      // from stdin) rather than as an argv positional — on Windows the ~7KB rules overflowed
+      // cmd.exe's 8191-char command line (see BuiltTurn).
+      args.push('-');
+      return { args, stdin: `${DCL_SYSTEM_PROMPT}\n\n---\n\n${ctx.text}` };
     },
     parseLine: (line, projectDir, emit) => {
       let obj: {
@@ -704,6 +723,15 @@ const IMG_EXT: Record<string, string> = {
   'image/webp': '.webp',
 };
 
+// Spill the system prompt to a temp file so it can be passed by path (--append-system-prompt-file)
+// instead of inline on argv — see BuiltTurn for why (Windows cmd.exe 8191-char command-line cap).
+function writeSystemPromptFile(text: string): string {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'creator-hub-ai-'));
+  const p = path.join(dir, 'system-prompt.txt');
+  fs.writeFileSync(p, text);
+  return p;
+}
+
 function writeAttachments(images: AiSendParams['images']): string[] {
   if (images === undefined || images.length === 0) return [];
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'creator-hub-ai-'));
@@ -773,7 +801,7 @@ export async function aiSend(
   }
   // Resume the CLI thread saved for THIS session (empty id = a default single bucket).
   const sessionId = params.sessionId ?? '';
-  const args = def.buildArgs({
+  const { args, stdin } = def.buildArgs({
     text: prompt,
     model: params.model,
     projectDir,
@@ -792,11 +820,20 @@ export async function aiSend(
     child = crossSpawn(bin, args, {
       cwd: projectDir,
       env,
-      stdio: ['ignore', 'pipe', 'pipe'],
+      // The prompt/rules ride on stdin (see BuiltTurn — keeps the ~7KB off Windows' 8191-char
+      // command line); pipe it when present, otherwise leave stdin closed as before.
+      stdio: [stdin !== undefined ? 'pipe' : 'ignore', 'pipe', 'pipe'],
       detached: process.platform !== 'win32', // own process group so killTree reaps children
     });
   } catch (e) {
     throw new Error(`failed to launch ${def.label}: ${String(e)}`);
+  }
+
+  if (stdin !== undefined && child.stdin !== null) {
+    // Swallow EPIPE: if the child dies before draining stdin, the write races the exit. The
+    // exit handler already surfaces the real failure; an unhandled 'error' here would crash main.
+    child.stdin.on('error', () => {});
+    child.stdin.end(stdin);
   }
 
   const turn = { child, turnId, done: false };
