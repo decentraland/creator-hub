@@ -72,6 +72,8 @@ export type TextureInput = {
   // Empty string means "unset" (engine default); the value only gets written when the user sets it.
   wrapMode: string;
   filterMode: string;
+  // Hidden pass-through (no UI control): the explorers' particle texture path ignores offset
+  // and tiling, so the fields are only carried so code-authored values survive an edit.
   offset: { x: string; y: string };
   tiling: { x: string; y: string };
 };

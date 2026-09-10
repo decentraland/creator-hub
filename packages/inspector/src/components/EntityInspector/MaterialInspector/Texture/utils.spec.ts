@@ -139,6 +139,15 @@ describe('fromTexture', () => {
     expect(result.tiling).toEqual({ x: '2.50', y: '3.00' });
   });
 
+  describe('when the texture union is unset', () => {
+    it('should map to the none type instead of an empty texture', () => {
+      const result = fromTexture({});
+
+      expect(result.type).toBe(Texture.TT_NONE);
+      expect(result.src).toBeUndefined();
+    });
+  });
+
   describe('when the wrap and filter modes are unset', () => {
     it('should default a texture to the engine defaults (clamp and bilinear)', () => {
       const value: TextureUnion = {
@@ -318,6 +327,18 @@ describe('toTexture', () => {
 
       expect(result.tex.texture.wrapMode).toBe(TextureWrapMode.TWM_CLAMP);
       expect(result.tex.texture.filterMode).toBe(TextureFilterMode.TFM_BILINEAR);
+    });
+  });
+
+  describe('when the type is none', () => {
+    it('should return undefined so the material field is unset', () => {
+      const value: TextureInput = {
+        type: Texture.TT_NONE,
+        wrapMode: String(TextureWrapMode.TWM_CLAMP),
+        filterMode: String(TextureFilterMode.TFM_BILINEAR),
+      };
+
+      expect(toTexture(value)).toBeUndefined();
     });
   });
 

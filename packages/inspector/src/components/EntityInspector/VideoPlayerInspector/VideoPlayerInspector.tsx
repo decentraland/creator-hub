@@ -141,7 +141,17 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
           {...loop}
         />
       </Block>
-      <Block label="Playback Rate">
+      <Block
+        label={
+          <>
+            Playback Rate{' '}
+            <InfoTooltip
+              text="Playback speed multiplier: 1 is normal speed, 2 is twice as fast, 0.5 is half speed. Leave empty for the default (1)."
+              type="help"
+            />
+          </>
+        }
+      >
         <TextField
           autoSelect
           type="number"
@@ -150,7 +160,17 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
           error={!isValidPlaybackRate(playbackRate.value as string)}
         />
       </Block>
-      <Block label="Start Position (seconds)">
+      <Block
+        label={
+          <>
+            Start Position (seconds){' '}
+            <InfoTooltip
+              text="Time in seconds at which playback starts when the video begins. Leave empty to start from the beginning (0)."
+              type="help"
+            />
+          </>
+        }
+      >
         <TextField
           autoSelect
           type="number"
@@ -183,17 +203,19 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
           {...spatial}
         />
       </Block>
-      <Block label="Spatial Distance">
+      <Block
+        label={
+          <>
+            Spatial Distance{' '}
+            <InfoTooltip
+              text="Only applies when Spatial is on. Within Min meters of the entity the audio plays at full volume; from there it fades out until Max meters, where it becomes inaudible. Leave empty for the defaults (0 and 60)."
+              type="help"
+            />
+          </>
+        }
+      >
         <TextField
-          leftLabel={
-            <>
-              Min{' '}
-              <InfoTooltip
-                text="Distance in meters from the entity within which the audio plays at full volume. Beyond it, the volume starts to fade."
-                type="help"
-              />
-            </>
-          }
+          leftLabel="Min"
           autoSelect
           type="number"
           placeholder="0"
@@ -201,15 +223,7 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
           error={!isValidSpatialDistance(spatialMinDistance.value as string)}
         />
         <TextField
-          leftLabel={
-            <>
-              Max{' '}
-              <InfoTooltip
-                text="Distance in meters from the entity at which the audio becomes inaudible."
-                type="help"
-              />
-            </>
-          }
+          leftLabel="Max"
           autoSelect
           type="number"
           placeholder="60"

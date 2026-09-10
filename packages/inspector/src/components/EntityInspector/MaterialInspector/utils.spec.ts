@@ -1,7 +1,8 @@
 import type { PBMaterial, PBMaterial_PbrMaterial, PBMaterial_UnlitMaterial } from '@dcl/ecs';
+import { MaterialTransparencyMode } from '@dcl/ecs';
 import type { MaterialInput } from './types';
 import { MaterialType } from './types';
-import { fromMaterial, toMaterial, isValidMaterial } from './utils';
+import { fromMaterial, toMaterial, isValidMaterial, usesAlphaTest } from './utils';
 import { Texture } from './Texture/types';
 
 describe('fromMaterial', () => {
@@ -133,6 +134,20 @@ describe('fromMaterial', () => {
       expect(result.diffuseColorAlpha).toBe('0.3');
     });
   });
+
+  describe('when the pbr material has no textures', () => {
+    it('should expose them as the none texture type', () => {
+      const value: PBMaterial = {
+        material: { $case: 'pbr' as const, pbr: {} },
+      };
+
+      const result = fromMaterial(value);
+
+      expect(result.texture?.type).toBe(Texture.TT_NONE);
+      expect(result.bumpTexture?.type).toBe(Texture.TT_NONE);
+      expect(result.emissiveTexture?.type).toBe(Texture.TT_NONE);
+    });
+  });
 });
 
 describe('toMaterial', () => {
@@ -176,6 +191,7 @@ describe('toMaterial', () => {
     const value: MaterialInput = {
       type: MaterialType.MT_PBR,
       alphaTest: '0.6',
+      transparencyMode: String(MaterialTransparencyMode.MTM_ALPHA_TEST),
       castShadows: false,
       emissiveColor: '#FF0000',
       texture: {
@@ -229,7 +245,7 @@ describe('toMaterial', () => {
       const value: MaterialInput = {
         type: MaterialType.MT_PBR,
         alphaTest: '0',
-        transparencyMode: '0',
+        transparencyMode: String(MaterialTransparencyMode.MTM_ALPHA_TEST_AND_ALPHA_BLEND),
         metallic: '0',
         roughness: '0',
         specularIntensity: '0',
@@ -242,7 +258,7 @@ describe('toMaterial', () => {
       };
 
       expect(result.material.pbr.alphaTest).toBe(0);
-      expect(result.material.pbr.transparencyMode).toBe(0);
+      expect(result.material.pbr.transparencyMode).toBe(3);
       expect(result.material.pbr.metallic).toBe(0);
       expect(result.material.pbr.roughness).toBe(0);
       expect(result.material.pbr.specularIntensity).toBe(0);
@@ -284,7 +300,7 @@ describe('toMaterial', () => {
         material: { $case: 'pbr'; pbr: PBMaterial_PbrMaterial };
       };
 
-      expect(result.material.pbr.alphaTest).toBe(0.5);
+      expect(result.material.pbr.alphaTest).toBeUndefined();
       expect(result.material.pbr.transparencyMode).toBe(4);
       expect(result.material.pbr.metallic).toBe(0.5);
       expect(result.material.pbr.roughness).toBe(0.5);
@@ -381,6 +397,114 @@ describe('toMaterial', () => {
       expect(result.diffuseColor).toBe('#00FF00');
       expect(result.diffuseColorAlpha).toBe('0.3');
     });
+  });
+
+  describe('when the colors are cleared to an empty string', () => {
+    it('should unset the pbr colors', () => {
+      const value: MaterialInput = {
+        type: MaterialType.MT_PBR,
+        albedoColor: '',
+        albedoColorAlpha: '0.5',
+        emissiveColor: '',
+        reflectivityColor: '',
+      };
+
+      const result = toMaterial(value) as {
+        material: { $case: 'pbr'; pbr: PBMaterial_PbrMaterial };
+      };
+
+      expect(result.material.pbr.albedoColor).toBeUndefined();
+      expect(result.material.pbr.emissiveColor).toBeUndefined();
+      expect(result.material.pbr.reflectivityColor).toBeUndefined();
+    });
+
+    it('should unset the unlit diffuse color', () => {
+      const value: MaterialInput = {
+        type: MaterialType.MT_UNLIT,
+        diffuseColor: '',
+      };
+
+      const result = toMaterial(value) as {
+        material: { $case: 'unlit'; unlit: PBMaterial_UnlitMaterial };
+      };
+
+      expect(result.material.unlit.diffuseColor).toBeUndefined();
+    });
+  });
+
+  describe('when the textures are set to the none type', () => {
+    it('should unset them on the pbr material', () => {
+      const none = { type: Texture.TT_NONE, wrapMode: '', filterMode: '' };
+      const value: MaterialInput = {
+        type: MaterialType.MT_PBR,
+        texture: none,
+        bumpTexture: none,
+        emissiveTexture: none,
+      };
+
+      const result = toMaterial(value) as {
+        material: { $case: 'pbr'; pbr: PBMaterial_PbrMaterial };
+      };
+
+      expect(result.material.pbr.texture).toBeUndefined();
+      expect(result.material.pbr.bumpTexture).toBeUndefined();
+      expect(result.material.pbr.emissiveTexture).toBeUndefined();
+    });
+  });
+});
+
+describe('usesAlphaTest', () => {
+  it('should only be true for the alpha-test modes', () => {
+    expect(usesAlphaTest(MaterialTransparencyMode.MTM_ALPHA_TEST)).toBe(true);
+    expect(usesAlphaTest(String(MaterialTransparencyMode.MTM_ALPHA_TEST_AND_ALPHA_BLEND))).toBe(
+      true,
+    );
+    expect(usesAlphaTest(MaterialTransparencyMode.MTM_OPAQUE)).toBe(false);
+    expect(usesAlphaTest(MaterialTransparencyMode.MTM_ALPHA_BLEND)).toBe(false);
+    expect(usesAlphaTest(MaterialTransparencyMode.MTM_AUTO)).toBe(false);
+    expect(usesAlphaTest(undefined)).toBe(false);
+  });
+});
+
+describe('toMaterial alphaTest gating', () => {
+  const modes = [
+    MaterialTransparencyMode.MTM_OPAQUE,
+    MaterialTransparencyMode.MTM_ALPHA_BLEND,
+    MaterialTransparencyMode.MTM_AUTO,
+  ];
+
+  it.each(modes)('should leave alphaTest unset in mode %i', mode => {
+    const value: MaterialInput = {
+      type: MaterialType.MT_PBR,
+      alphaTest: '0.7',
+      transparencyMode: String(mode),
+      albedoColor: '#FF0000',
+      albedoColorAlpha: '0.3',
+    };
+
+    const result = toMaterial(value) as {
+      material: { $case: 'pbr'; pbr: PBMaterial_PbrMaterial };
+    };
+
+    expect(result.material.pbr.alphaTest).toBeUndefined();
+    expect(result.material.pbr.albedoColor?.a).toBe(0.3);
+  });
+
+  it('should leave alphaTest unset when the mode is not provided (defaults to Auto)', () => {
+    const result = toMaterial({ type: MaterialType.MT_PBR, alphaTest: '0.7' }) as {
+      material: { $case: 'pbr'; pbr: PBMaterial_PbrMaterial };
+    };
+
+    expect(result.material.pbr.alphaTest).toBeUndefined();
+    expect(result.material.pbr.transparencyMode).toBe(MaterialTransparencyMode.MTM_AUTO);
+  });
+
+  it('should still read a stored alphaTest back into the input for the slider', () => {
+    const result = fromMaterial({
+      material: { $case: 'pbr' as const, pbr: { alphaTest: 0.7 } },
+    });
+
+    expect(result.alphaTest).toBe('0.7');
   });
 });
 

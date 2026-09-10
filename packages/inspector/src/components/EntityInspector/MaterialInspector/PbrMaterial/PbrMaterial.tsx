@@ -2,11 +2,11 @@ import { selectAssetCatalog } from '../../../../redux/app';
 import { useAppSelector } from '../../../../redux/hooks';
 import { Block } from '../../../Block';
 import { Container } from '../../../Container';
-import { CheckboxField, Dropdown, RangeField } from '../../../ui';
+import { CheckboxField, Dropdown, InfoTooltip, RangeField } from '../../../ui';
 import { ColorField } from '../../../ui/ColorField';
 import { Texture } from '../Texture';
 import { TextureType } from '../types';
-import { TRANSPARENCY_MODES } from '../utils';
+import { TRANSPARENCY_MODES, usesAlphaTest } from '../utils';
 import type { PbrMaterialProps } from './types';
 
 function PbrMaterial({
@@ -54,13 +54,22 @@ function PbrMaterial({
       <Block>
         <ColorField
           label="Color"
+          clearable
           {...albedoColor}
         />
       </Block>
       {albedoColorAlpha && (
         <Block>
           <RangeField
-            label="Color Alpha"
+            label={
+              <>
+                Color Alpha{' '}
+                <InfoTooltip
+                  text="Opacity of the Color: 1 is fully opaque, 0 is fully transparent. Has no effect when Transparency Mode is Opaque."
+                  type="help"
+                />
+              </>
+            }
             max={1}
             step={0.01}
             {...albedoColorAlpha}
@@ -70,6 +79,7 @@ function PbrMaterial({
       <Block>
         <ColorField
           label="Reflectivity color"
+          clearable
           {...reflectivityColor}
         />
       </Block>
@@ -109,14 +119,24 @@ function PbrMaterial({
             {...transparencyMode}
           />
         </Block>
-        <Block>
-          <RangeField
-            label="Alpha test"
-            max={1}
-            step={0.1}
-            {...alphaTest}
-          />
-        </Block>
+        {usesAlphaTest(transparencyMode.value as string | number | undefined) && (
+          <Block>
+            <RangeField
+              label={
+                <>
+                  Alpha test{' '}
+                  <InfoTooltip
+                    text="Pixels with alpha below this threshold are cut out; the rest are fully opaque."
+                    type="help"
+                  />
+                </>
+              }
+              max={1}
+              step={0.1}
+              {...alphaTest}
+            />
+          </Block>
+        )}
       </Container>
       <Container
         label="Emissive"
@@ -134,6 +154,7 @@ function PbrMaterial({
         <Block>
           <ColorField
             label="Emissive color"
+            clearable
             {...emissiveColor}
           />
         </Block>

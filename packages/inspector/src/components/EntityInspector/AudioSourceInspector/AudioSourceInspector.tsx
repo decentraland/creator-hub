@@ -107,7 +107,15 @@ export default withSdk<Props>(({ sdk, entities, initialOpen = true }) => {
           {...loop}
         />
         <CheckboxField
-          label="Global"
+          label={
+            <>
+              Global{' '}
+              <InfoTooltip
+                text="Plays at the same volume everywhere in the scene, no matter how far the player is from this item. When off, the sound comes from the item's position and fades with distance."
+                type="help"
+              />
+            </>
+          }
           checked={!!global.value}
           {...global}
         />

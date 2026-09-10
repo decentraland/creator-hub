@@ -22,6 +22,17 @@ const toColor4WithAlphaOrUndefined = (
   return { ...color, a: isNaN(parsedAlpha) ? color.a : parsedAlpha };
 };
 
+// alpha_test is only read by the explorers in these two modes. Writing it in any other mode
+// is not neutral: the Bevy explorer treats a *present* alpha_test under Auto as a request for
+// masking, so an editor default of 0.5 turned the albedo alpha into an opaque/invisible step.
+export const usesAlphaTest = (transparencyMode: string | number | undefined): boolean => {
+  const mode = Number(transparencyMode);
+  return (
+    mode === MaterialTransparencyMode.MTM_ALPHA_TEST ||
+    mode === MaterialTransparencyMode.MTM_ALPHA_TEST_AND_ALPHA_BLEND
+  );
+};
+
 export const fromMaterial = (value: PBMaterial): MaterialInput => {
   switch (value.material?.$case) {
     case 'unlit':
@@ -77,17 +88,20 @@ export const toMaterial = (value: MaterialInput): PBMaterial => {
         },
       };
     case MaterialType.MT_PBR:
-    default:
+    default: {
+      const transparencyMode = toNumberOrDefault(
+        value.transparencyMode,
+        MaterialTransparencyMode.MTM_AUTO,
+      );
       return {
         material: {
           $case: 'pbr',
           pbr: {
-            alphaTest: toNumberOrDefault(value.alphaTest, 0.5),
+            alphaTest: usesAlphaTest(transparencyMode)
+              ? toNumberOrDefault(value.alphaTest, 0.5)
+              : undefined,
             castShadows: !!(value.castShadows ?? true),
-            transparencyMode: toNumberOrDefault(
-              value.transparencyMode,
-              MaterialTransparencyMode.MTM_AUTO,
-            ),
+            transparencyMode,
             metallic: toNumberOrDefault(value.metallic, 0.5),
             roughness: toNumberOrDefault(value.roughness, 0.5),
             specularIntensity: toNumberOrDefault(value.specularIntensity, 1),
@@ -103,6 +117,7 @@ export const toMaterial = (value: MaterialInput): PBMaterial => {
           },
         },
       };
+    }
   }
 };
 

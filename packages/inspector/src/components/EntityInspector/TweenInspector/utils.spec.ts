@@ -2,7 +2,7 @@ import type { PBTween } from '@dcl/ecs';
 import { EasingFunction } from '@dcl/ecs';
 import { TweenType } from '@dcl/asset-packs';
 
-import { fromTween, toTween } from './utils';
+import { fromTween, toTween, withModeDefaults } from './utils';
 import type { TweenInput } from './types';
 import { ContinuousTweenType, UNSUPPORTED_TWEEN_TYPE } from './types';
 
@@ -221,5 +221,62 @@ describe('TweenInspector utils', () => {
       expect(tween.mode.rotate.end?.y).toBeCloseTo(1);
       expect(tween.mode.rotate.end?.w).toBeCloseTo(0);
     });
+  });
+});
+
+describe('withModeDefaults', () => {
+  const edited: TweenInput = {
+    ...baseInput,
+    start: { x: '1.00', y: '2.00', z: '3.00' },
+    end: { x: '4.00', y: '5.00', z: '6.00' },
+    direction: { x: '7.00', y: '8.00', z: '9.00' },
+    speed: '3.00',
+    duration: '2.5',
+    easingFunction: String(EasingFunction.EF_EASEBOUNCE),
+    playing: false,
+  };
+
+  it('should reset start and end to zero when switching to move or rotate', () => {
+    for (const type of [TweenType.MOVE_ITEM, TweenType.ROTATE_ITEM]) {
+      const result = withModeDefaults(edited, type);
+      expect(result.type).toBe(type);
+      expect(result.start).toEqual({ x: '0.00', y: '0.00', z: '0.00' });
+      expect(result.end).toEqual({ x: '0.00', y: '0.00', z: '0.00' });
+    }
+  });
+
+  it('should reset start and end to one when switching to scale', () => {
+    const result = withModeDefaults(edited, TweenType.SCALE_ITEM);
+    expect(result.start).toEqual({ x: '1.00', y: '1.00', z: '1.00' });
+    expect(result.end).toEqual({ x: '1.00', y: '1.00', z: '1.00' });
+  });
+
+  it('should reset direction and speed when switching to a continuous mode', () => {
+    const result = withModeDefaults(edited, ContinuousTweenType.ROTATE_CONTINUOUS);
+    expect(result.direction).toEqual({ x: '0.00', y: '0.00', z: '0.00' });
+    expect(result.speed).toBe('1.00');
+  });
+
+  it('should keep duration, easing and playing across the switch', () => {
+    const result = withModeDefaults(edited, TweenType.SCALE_ITEM);
+    expect(result.duration).toBe('2.5');
+    expect(result.easingFunction).toBe(String(EasingFunction.EF_EASEBOUNCE));
+    expect(result.playing).toBe(false);
+  });
+});
+
+describe('fromTween playing default', () => {
+  it('should read an unset playing as true, matching the protocol default', () => {
+    const result = fromTween({ duration: 1000, easingFunction: EasingFunction.EF_LINEAR });
+    expect(result.playing).toBe(true);
+  });
+
+  it('should keep an explicit false', () => {
+    const result = fromTween({
+      duration: 1000,
+      easingFunction: EasingFunction.EF_LINEAR,
+      playing: false,
+    });
+    expect(result.playing).toBe(false);
   });
 });

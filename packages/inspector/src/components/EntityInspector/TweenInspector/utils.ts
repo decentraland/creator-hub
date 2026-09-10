@@ -6,6 +6,21 @@ import type { TweenInput, TweenModeType, TweenSequenceInput } from './types';
 import { ContinuousTweenType, UNSUPPORTED_TWEEN_TYPE } from './types';
 
 const zeroVector = () => ({ x: '0.00', y: '0.00', z: '0.00' });
+const oneVector = () => ({ x: '1.00', y: '1.00', z: '1.00' });
+
+// Start/End mean different things per mode (meters, degrees, scale factors), so a mode switch
+// resets them to the mode's identity instead of carrying the previous numbers over.
+export const withModeDefaults = (input: TweenInput, type: TweenModeType): TweenInput => {
+  const vector = type === TweenType.SCALE_ITEM ? oneVector : zeroVector;
+  return {
+    ...input,
+    type,
+    start: vector(),
+    end: vector(),
+    direction: zeroVector(),
+    speed: '1.00',
+  };
+};
 
 export const fromTween = (value: PBTween): TweenInput => {
   let type: TweenModeType = TweenType.MOVE_ITEM;
@@ -70,7 +85,9 @@ export const fromTween = (value: PBTween): TweenInput => {
     unsupportedMode,
     duration: (value.duration / 1000).toString(),
     easingFunction: value.easingFunction.toString(),
-    playing: value.playing,
+    // the protocol default is true, so an unset value must read as checked or a fresh tween
+    // shows "off" while the explorers run it
+    playing: value.playing ?? true,
   };
 };
 

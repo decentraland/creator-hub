@@ -25,7 +25,14 @@ export const toNumberOrDefault = (value: string | undefined, def: number): numbe
 };
 
 export const fromTexture = (value: TextureUnion): TextureInput => {
-  switch (value.tex?.$case) {
+  if (!value.tex) {
+    return {
+      type: Texture.TT_NONE,
+      wrapMode: toString(DEFAULT_WRAP_MODE),
+      filterMode: toString(DEFAULT_FILTER_MODE),
+    };
+  }
+  switch (value.tex.$case) {
     case 'avatarTexture':
       return {
         type: Texture.TT_AVATAR_TEXTURE,
@@ -61,8 +68,10 @@ export const fromTexture = (value: TextureUnion): TextureInput => {
   }
 };
 
-export const toTexture = (value?: TextureInput): TextureUnion => {
+export const toTexture = (value?: TextureInput): TextureUnion | undefined => {
   switch (value?.type) {
+    case Texture.TT_NONE:
+      return undefined;
     case Texture.TT_AVATAR_TEXTURE:
       return {
         tex: {

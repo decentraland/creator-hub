@@ -735,11 +735,43 @@ export default withSdk<Props>(({ sdk, entities, initialOpen = true }) => {
         initialOpen={false}
         rightContent={
           <InfoTooltip
-            text="Rotate particles around their own axes. Only visible with Billboard off (or non-square textures)."
+            text="How particles are oriented and how they spin around their own axes."
             type="help"
           />
         }
       >
+        <Block
+          label={
+            <>
+              Billboard{' '}
+              <InfoTooltip
+                text="When on, each particle always faces the camera: Z rotation spins it in place and X/Y tilt it. Turn off for particles that should tumble freely in 3D."
+                type="help"
+              />
+            </>
+          }
+        >
+          <CheckboxField
+            checked={!!billboard.value}
+            {...billboard}
+          />
+        </Block>
+        <Block
+          label={
+            <>
+              Face Travel Direction{' '}
+              <InfoTooltip
+                text="Each particle starts out pointing along its direction of movement, like an arrow or asteroid. Initial Rotation and Rotation Over Time still apply on top of that alignment."
+                type="help"
+              />
+            </>
+          }
+        >
+          <CheckboxField
+            checked={!!faceTravelDirection.value}
+            {...faceTravelDirection}
+          />
+        </Block>
         <Block
           label={
             <>
@@ -927,58 +959,6 @@ export default withSdk<Props>(({ sdk, entities, initialOpen = true }) => {
                 value={String(textureFilterMode.value || DEFAULT_FILTER_MODE)}
               />
             </Block>
-            <Block
-              label={
-                <>
-                  Offset{' '}
-                  <InfoTooltip
-                    text="UV offset applied to the texture. Leave empty for the engine default (0, 0)."
-                    type="help"
-                  />
-                </>
-              }
-            >
-              <TextField
-                leftLabel="X"
-                type="number"
-                placeholder="0"
-                {...getInputProps('texture.offset.x')}
-                autoSelect
-              />
-              <TextField
-                leftLabel="Y"
-                type="number"
-                placeholder="0"
-                {...getInputProps('texture.offset.y')}
-                autoSelect
-              />
-            </Block>
-            <Block
-              label={
-                <>
-                  Tiling{' '}
-                  <InfoTooltip
-                    text="UV tiling multiplier for texture repetition. Leave empty for the engine default (1, 1)."
-                    type="help"
-                  />
-                </>
-              }
-            >
-              <TextField
-                leftLabel="X"
-                type="number"
-                placeholder="1"
-                {...getInputProps('texture.tiling.x')}
-                autoSelect
-              />
-              <TextField
-                leftLabel="Y"
-                type="number"
-                placeholder="1"
-                {...getInputProps('texture.tiling.y')}
-                autoSelect
-              />
-            </Block>
           </>
         )}
         <Block>
@@ -994,38 +974,6 @@ export default withSdk<Props>(({ sdk, entities, initialOpen = true }) => {
             }
             options={BLEND_MODE_OPTIONS}
             {...getInputProps('blendMode')}
-          />
-        </Block>
-        <Block
-          label={
-            <>
-              Billboard{' '}
-              <InfoTooltip
-                text="When on, each particle always faces the camera. Turn off for particles that should tumble in 3D."
-                type="help"
-              />
-            </>
-          }
-        >
-          <CheckboxField
-            checked={!!billboard.value}
-            {...billboard}
-          />
-        </Block>
-        <Block
-          label={
-            <>
-              Face Travel Direction{' '}
-              <InfoTooltip
-                text="Particles auto-rotate to point in their direction of movement, like asteroids. Overrides Billboard when on."
-                type="help"
-              />
-            </>
-          }
-        >
-          <CheckboxField
-            checked={!!faceTravelDirection.value}
-            {...faceTravelDirection}
           />
         </Block>
       </Container>

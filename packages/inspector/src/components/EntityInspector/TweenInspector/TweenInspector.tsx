@@ -13,8 +13,13 @@ import { CoreComponents } from '../../../lib/sdk/components';
 import { Block } from '../../Block';
 import { Container } from '../../Container';
 import { TextField, CheckboxField, InfoTooltip, Dropdown, RangeField } from '../../ui';
-import { fromTween, toTween, fromTweenSequence, toTweenSequence } from './utils';
-import { ContinuousTweenType, UNSUPPORTED_TWEEN_TYPE, type Props } from './types';
+import { fromTween, toTween, fromTweenSequence, toTweenSequence, withModeDefaults } from './utils';
+import {
+  ContinuousTweenType,
+  UNSUPPORTED_TWEEN_TYPE,
+  type Props,
+  type TweenModeType,
+} from './types';
 
 const TweenTypeOptions = [
   { label: 'Move Item', value: TweenType.MOVE_ITEM },
@@ -111,10 +116,22 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
 
   const playing = getTweenInputProps('playing', e => e.target.checked);
   const loop = getTweenSequenceInputProps('loop', e => e.target.checked);
-  const tweenType = getTweenInputProps('type').value;
-  const isContinuous =
-    tweenType === ContinuousTweenType.MOVE_CONTINUOUS ||
-    tweenType === ContinuousTweenType.ROTATE_CONTINUOUS;
+  const typeProps = getTweenInputProps('type');
+  const tweenType = typeProps.value;
+
+  // Bypasses the per-field input so the whole mode is replaced in one write; the input hook
+  // re-derives its state from the engine value afterwards.
+  const handleTypeChange = useCallback(
+    (e: React.ChangeEvent<HTMLSelectElement>) => {
+      const current = getComponentValue(entity, Tween);
+      const next = withModeDefaults(fromTween(current), e.target.value as TweenModeType);
+      sdk.operations.updateValue(Tween, entity, toTween(next));
+      void sdk.operations.dispatch();
+    },
+    [sdk, entity, Tween],
+  );
+  const isRotateContinuous = tweenType === ContinuousTweenType.ROTATE_CONTINUOUS;
+  const isContinuous = tweenType === ContinuousTweenType.MOVE_CONTINUOUS || isRotateContinuous;
   const isUnsupported = tweenType === UNSUPPORTED_TWEEN_TYPE;
   const unsupportedMode = getTweenInputProps('unsupportedMode').value?.toString() ?? '';
   const tweenTypeOptions = isUnsupported
@@ -144,11 +161,22 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
       entity={entity}
       onRemoveContainer={handleRemove}
     >
-      <Block label="Tween Type">
+      <Block
+        label={
+          <>
+            Tween Type{' '}
+            <InfoTooltip
+              text="Move, Rotate and Scale Item animate from a start to an end value over the Duration. Move Continuous and Rotate Continuous keep the item moving or spinning at a constant speed, with no end value."
+              type="help"
+            />
+          </>
+        }
+      >
         <Dropdown
           placeholder="Select a Tween Type"
           options={tweenTypeOptions}
-          {...getTweenInputProps('type')}
+          {...typeProps}
+          onChange={handleTypeChange}
         />
       </Block>
       {!isContinuous && !isUnsupported && (
@@ -218,9 +246,17 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
         <>
           <Block
             label={
-              tweenType === ContinuousTweenType.ROTATE_CONTINUOUS
-                ? 'Direction (degrees/sec)'
-                : 'Direction (meters/sec)'
+              <>
+                {isRotateContinuous ? 'Rotation Axis (degrees)' : 'Direction'}{' '}
+                <InfoTooltip
+                  text={
+                    isRotateContinuous
+                      ? 'Axis to spin around, entered as Euler degrees: for example 0, 90, 0 spins around Y. Only the axis matters, the angle size is ignored. The rate is set by Speed.'
+                      : 'Direction of travel: for example 0, 0, 1 moves forward along Z. Use a unit-length vector so Speed is exactly meters per second.'
+                  }
+                  type="help"
+                />
+              </>
             }
           >
             <TextField
@@ -242,7 +278,21 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
               {...getTweenInputProps('direction.z')}
             />
           </Block>
-          <Block label="Speed">
+          <Block
+            label={
+              <>
+                {isRotateContinuous ? 'Speed (degrees/sec)' : 'Speed (meters/sec)'}{' '}
+                <InfoTooltip
+                  text={
+                    isRotateContinuous
+                      ? 'How fast the item spins around the axis, in degrees per second. A negative value spins the opposite way.'
+                      : 'How fast the item moves along the Direction, in meters per second. A negative value moves the opposite way.'
+                  }
+                  type="help"
+                />
+              </>
+            }
+          >
             <TextField
               autoSelect
               type="number"
@@ -253,15 +303,25 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
       )}
       <Block>
         <CheckboxField
-          label="Auto start"
+          label={
+            <>
+              Playing{' '}
+              <InfoTooltip
+                text="When on, the tween runs as soon as the scene loads. When off, it is created paused at its Start value and only runs once a script sets playing to true; the Start Tween action creates a separate tween instead of resuming this one."
+                type="help"
+              />
+            </>
+          }
           checked={!!playing.value}
           {...playing}
         />
-        <CheckboxField
-          label="Loop"
-          checked={!!loop.value}
-          {...loop}
-        />
+        {!isContinuous && (
+          <CheckboxField
+            label="Loop"
+            checked={!!loop.value}
+            {...loop}
+          />
+        )}
       </Block>
     </Container>
   );
