@@ -76,6 +76,14 @@
 
 .Container.Scene .thumbnail {
   margin-right: 8px;
+  min-width: 70px;
+  flex-shrink: 0;
+}
+
+.Container.Scene .ThumbnailRow .ImportAssetField {
+  flex: 1;
+  min-width: 0;
+  width: auto;
 }
 
 .Container.Scene .thumbnail img {
