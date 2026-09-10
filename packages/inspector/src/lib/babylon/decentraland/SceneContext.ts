@@ -83,6 +83,11 @@ export class SceneContext {
   NftShape = components.NftShape(this.engine);
   VideoPlayer = components.VideoPlayer(this.engine);
   AvatarAttach = components.AvatarAttach(this.engine);
+  // No render operation for these two: they're defined so their state exists in
+  // this engine and the gizmo-commit path (operations.updateValue on Transform)
+  // can mirror scale changes into their `area` field.
+  AvatarModifierArea = components.AvatarModifierArea(this.engine);
+  CameraModeArea = components.CameraModeArea(this.engine);
   ParticleSystem = this.engine.defineComponentFromSchema(
     'core::ParticleSystem',
     ParticleSystemSchema,

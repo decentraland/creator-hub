@@ -14,10 +14,14 @@ vi.mock('../../src/modules/settings');
 // `getProjectId` goes through the real `services/ipc.ts` (backed by electron's `ipcRenderer`)
 // instead of the injected `ipc` service, so it can't be exercised in this Node test environment.
 vi.mock('../../src/modules/analytics');
-// `getProject` (used by `renameProject`) reads/writes a per-project metadata file via
-// `FileSystemStorage`, which uses `node:fs/promises` directly instead of the mocked `fs` service.
-// Auto-mock it so those tests never touch the real filesystem.
-vi.mock('node:fs/promises');
+// `getProject` reads/writes a per-project metadata file via `FileSystemStorage`, which uses
+// `node:fs/promises` directly instead of the mocked `fs` service. Mock the storage module so
+// those tests never touch the real filesystem.
+vi.mock('/shared/types/storage', () => ({
+  FileSystemStorage: {
+    getOrCreate: vi.fn().mockResolvedValue({ getAll: vi.fn().mockResolvedValue({}) }),
+  },
+}));
 
 describe('initializeWorkspace', () => {
   const services = getMockServices();
@@ -198,6 +202,47 @@ describe('initializeWorkspace', () => {
       await expect(workspace.createProject()).rejects.toThrow(
         `Failed to create project "${NEW_SCENE_NAME}": ${errorMessage}`,
       );
+    });
+  });
+
+  describe('getProjects', () => {
+    const goodPath = '/projects/good';
+    const badPath = '/projects/bad';
+
+    beforeEach(() => {
+      services.fs.exists.mockResolvedValue(true);
+      services.pkg.hasDependency.mockResolvedValue(true);
+      services.fs.stat.mockResolvedValue({
+        birthtime: new Date(0),
+        mtime: new Date(0),
+        size: 1,
+      } as any);
+      services.fs.readFile.mockResolvedValue(Buffer.from('thumbnail'));
+      services.ipc.invoke.mockResolvedValue('/config/path' as any);
+      vi.mocked(getScene).mockImplementation(async _path => {
+        if (_path === badPath) {
+          // a corrupt scene.json: missing the "scene" section makes getProject throw
+          return {} as Scene;
+        }
+        return {
+          display: { title: 'Good scene' },
+          scene: { parcels: ['0,0'], base: '0,0' },
+        } as Scene;
+      });
+    });
+
+    describe('when one project fails to load', () => {
+      it('should return the healthy projects and skip the broken one', async () => {
+        const workspace = initializeWorkspace(services);
+        const [projects, missing] = await workspace.getProjects([goodPath, badPath], {
+          omitOutdatedPackages: true,
+        });
+
+        expect(projects).toHaveLength(1);
+        expect(projects[0].path).toBe(goodPath);
+        expect(projects[0].title).toBe('Good scene');
+        expect(missing).toEqual([]);
+      });
     });
   });
 

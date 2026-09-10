@@ -18,90 +18,108 @@ runs:
   using: composite
   steps:
     - name: Delete pre-releases by pattern
-      shell: bash
+      uses: nick-fields/retry@ad984534de44a9489a53aefd81eb77f87c70dc60 # v4.0.0
       env:
         GITHUB_TOKEN: ${{ inputs.github_token }}
         PATTERN: ${{ inputs.pattern }}
         DRY_RUN: ${{ inputs.dry_run }}
-      run: |
-        echo "Looking for pre-releases matching pattern: $PATTERN"
-        echo "Dry run mode: $DRY_RUN"
-        echo ""
+        REPO: ${{ github.repository }}
+      with:
+        timeout_minutes: 10
+        max_attempts: 3
+        retry_wait_seconds: 10
+        retry_on: error
+        shell: bash
+        command: |
+          set -euo pipefail
 
-        releases=$(gh api repos/${{ github.repository }}/releases --paginate)
-
-        matching_releases=$(echo "$releases" | jq -r --arg pattern "$PATTERN" '
-          .[] |
-          select(.prerelease == true) |
-          select(((.name // "") | test($pattern)) or ((.tag_name // "") | test($pattern))) |
-          "ID: \(.id) | Name: \(.name) | Tag: \(.tag_name) | Created: \(.created_at)"
-        ')
-
-        if [ -z "$matching_releases" ]; then
-          echo "No pre-releases found matching pattern: $PATTERN"
-          exit 0
-        fi
-
-        echo "Found matching pre-releases:"
-        echo "$matching_releases"
-        echo ""
-
-        match_count=$(echo "$matching_releases" | wc -l)
-        echo "Total matches: $match_count"
-        echo ""
-
-        if [ "$DRY_RUN" = "true" ]; then
-          echo "🔍 DRY RUN: The following $match_count pre-release(s) and their tags would be deleted:"
-          echo "$matching_releases"
-          echo ""
-          echo "To actually delete these releases and tags, set dry_run to false"
-        else
-          echo "🗑️  Deleting $match_count pre-releases and their tags..."
+          echo "Looking for pre-releases matching pattern: $PATTERN"
+          echo "Dry run mode: $DRY_RUN"
           echo ""
 
-          release_ids=$(echo "$releases" | jq -r --arg pattern "$PATTERN" '
+          releases=$(gh api "repos/$REPO/releases" --paginate)
+
+          matching_releases=$(echo "$releases" | jq -r --arg pattern "$PATTERN" '
             .[] |
             select(.prerelease == true) |
             select(((.name // "") | test($pattern)) or ((.tag_name // "") | test($pattern))) |
-            .id
+            "ID: \(.id) | Name: \(.name) | Tag: \(.tag_name) | Created: \(.created_at)"
           ')
 
-          deleted_count=0
-          failed_count=0
+          if [ -z "$matching_releases" ]; then
+            echo "No pre-releases found matching pattern: $PATTERN"
+            exit 0
+          fi
 
-          for release_id in $release_ids; do
-            release_data=$(echo "$releases" | jq -r --arg id "$release_id" '.[] | select(.id == ($id | tonumber)) | {name: .name, tag: .tag_name}')
-            release_name=$(echo "$release_data" | jq -r '.name')
-            tag_name=$(echo "$release_data" | jq -r '.tag')
+          echo "Found matching pre-releases:"
+          echo "$matching_releases"
+          echo ""
 
-            echo "Deleting release ID: $release_id (Name: $release_name, Tag: $tag_name)"
+          match_count=$(echo "$matching_releases" | wc -l)
+          echo "Total matches: $match_count"
+          echo ""
 
-            # Delete the release
-            if gh api -X DELETE repos/${{ github.repository }}/releases/$release_id; then
-              echo "✅ Successfully deleted release ID: $release_id"
+          if [ "$DRY_RUN" = "true" ]; then
+            echo "🔍 DRY RUN: The following $match_count pre-release(s) and their tags would be deleted:"
+            echo "$matching_releases"
+            echo ""
+            echo "To actually delete these releases and tags, set dry_run to false"
+          else
+            echo "🗑️  Deleting $match_count pre-releases and their tags..."
+            echo ""
 
-              # Delete the associated tag
+            release_ids=$(echo "$releases" | jq -r --arg pattern "$PATTERN" '
+              .[] |
+              select(.prerelease == true) |
+              select(((.name // "") | test($pattern)) or ((.tag_name // "") | test($pattern))) |
+              .id
+            ')
+
+            deleted_count=0
+            failed_count=0
+
+            for release_id in $release_ids; do
+              release_data=$(echo "$releases" | jq -r --arg id "$release_id" '.[] | select(.id == ($id | tonumber)) | {name: .name, tag: .tag_name}')
+              release_name=$(echo "$release_data" | jq -r '.name')
+              tag_name=$(echo "$release_data" | jq -r '.tag')
+
+              echo "Processing release ID: $release_id (Name: $release_name, Tag: $tag_name)"
+
+              release_failed=0
+
+              # Delete the tag first: a failure then leaves the still-matching release in place
+              # so a retry re-discovers it, instead of orphaning the tag behind a deleted release.
               if [ -n "$tag_name" ] && [ "$tag_name" != "null" ]; then
-                echo "  Deleting associated tag: $tag_name"
-                if gh api -X DELETE repos/${{ github.repository }}/git/refs/tags/$tag_name; then
-                  echo "  ✅ Successfully deleted tag: $tag_name"
+                if gh api -X DELETE "repos/$REPO/git/refs/tags/$tag_name" 2>/dev/null \
+                   || ! gh api "repos/$REPO/git/refs/tags/$tag_name" >/dev/null 2>&1; then
+                  echo "  ✅ Tag deleted (or already absent): $tag_name"
                 else
-                  echo "  ⚠️  Failed to delete tag: $tag_name (release was deleted)"
+                  echo "  ❌ Failed to delete tag: $tag_name"
+                  release_failed=1
                 fi
               fi
 
-              deleted_count=$((deleted_count + 1))
-            else
-              echo "❌ Failed to delete release ID: $release_id"
-              failed_count=$((failed_count + 1))
-            fi
-            echo ""
-          done
+              # Only delete the release once its tag is gone.
+              if [ "$release_failed" -eq 0 ]; then
+                if gh api -X DELETE "repos/$REPO/releases/$release_id"; then
+                  echo "  ✅ Successfully deleted release ID: $release_id"
+                  deleted_count=$((deleted_count + 1))
+                else
+                  echo "  ❌ Failed to delete release ID: $release_id"
+                  release_failed=1
+                fi
+              fi
 
-          echo "📊 Summary:"
-          echo "  - Successfully deleted: $deleted_count pre-release(s) and their associated tags"
-          if [ "$failed_count" -gt 0 ]; then
-            echo "  - Failed to delete: $failed_count pre-release(s)"
-            exit 1
+              if [ "$release_failed" -ne 0 ]; then
+                failed_count=$((failed_count + 1))
+              fi
+              echo ""
+            done
+
+            echo "📊 Summary:"
+            echo "  - Successfully deleted: $deleted_count pre-release(s) and their associated tags"
+            if [ "$failed_count" -gt 0 ]; then
+              echo "  - Failed to delete: $failed_count pre-release(s)"
+              exit 1
+            fi
           fi
-        fi

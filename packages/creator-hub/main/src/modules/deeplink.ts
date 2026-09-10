@@ -22,6 +22,23 @@ export type Deeplink = {
 let pendingDeeplink: string | null = null;
 
 /**
+ * Whether this build should claim the deeplink scheme with the OS.
+ *
+ * A development build on macOS must not: the executable is Electron itself, so
+ * the only identity it can register is the generic `com.github.electron` bundle
+ * that every Electron project on the machine shares. Registering it makes
+ * macOS hand `dcl-creator-hub://` links to whichever Electron copy it resolves
+ * that id to — often another project, or a bare Electron with no app — and it
+ * outranks the installed Creator Hub, breaking deeplinks there too.
+ *
+ * Windows and Linux register a full command line including the app path, so the
+ * URL reaches the right app and dev registration stays useful.
+ */
+export function shouldRegisterProtocolClient(isDevBuild: boolean, osPlatform: string): boolean {
+  return !(isDevBuild && osPlatform === 'darwin');
+}
+
+/**
  * Returns true when the given CLI argument is a deeplink URL for our scheme.
  * Used to pick the deeplink out of `process.argv` / `second-instance` argv on
  * Windows and Linux, where the URL arrives as a command-line argument.

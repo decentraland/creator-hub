@@ -1,0 +1,41 @@
+.ui-designer-resize {
+  display: flex;
+  flex-direction: column;
+  gap: var(--uid-space-1);
+  width: 100%;
+}
+
+.ui-designer-property-panel .ui-designer-resize .ui-designer-bindable-subfield {
+  flex: 0 0 auto;
+  width: 100%;
+  min-width: 0;
+}
+
+.ui-designer-resize-axis {
+  display: flex;
+  align-items: center;
+  gap: var(--uid-space-2);
+  width: 100%;
+}
+
+.ui-designer-resize-axis > :first-child {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.ui-designer-resize-axis > .Dropdown.Field {
+  flex: 0 0 108px;
+  width: 108px;
+}
+
+.ui-designer-resize:has(> .ui-designer-vec-lock) {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  column-gap: var(--uid-space-2);
+}
+
+.ui-designer-resize > .ui-designer-vec-lock {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  align-self: center;
+}

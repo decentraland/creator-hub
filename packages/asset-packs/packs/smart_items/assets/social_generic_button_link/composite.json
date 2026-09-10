@@ -24,6 +24,22 @@
       }
     },
     {
+      "name": "asset-packs::Script",
+      "data": {
+        "0": {
+          "json": {
+            "value": [
+              {
+                "path": "{assetPath}/SocialLink.ts",
+                "priority": 0,
+                "layout": "{\"params\":{\"url\":{\"type\":\"string\",\"optional\":true,\"value\":\"https://decentraland.org\",\"tooltip\":\"URL opened when the item is clicked.\"},\"hoverText\":{\"type\":\"string\",\"optional\":true,\"value\":\"Website Link\",\"tooltip\":\"Text shown when the player points at the item.\"}},\"actions\":[{\"methodName\":\"openLink\",\"description\":\"Opens the link in the player's browser\",\"params\":{}}]}"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
       "name": "core-schema::Name",
       "data": {
         "0": {
@@ -41,66 +57,11 @@
             "id": "{self}",
             "value": [
               {
+                "type": "call_script_method",
                 "name": "Open Link",
-                "type": "open_link",
-                "jsonPayload": "{\"url\":\"www.decentraland.org\"}",
-                "allowedInBasicView": true,
-                "basicViewId": "open-link"
+                "jsonPayload": "{\"scriptPath\":\"{assetPath}/SocialLink.ts\",\"methodName\":\"openLink\",\"params\":{}}"
               }
             ]
-          }
-        }
-      }
-    },
-    {
-      "name": "asset-packs::Triggers",
-      "data": {
-        "0": {
-          "json": {
-            "value": [
-              {
-                "type": "on_click",
-                "actions": [
-                  {
-                    "id": "{self:asset-packs::Actions}",
-                    "name": "Open Link"
-                  }
-                ],
-                "conditions": []
-              }
-            ]
-          }
-        }
-      }
-    },
-    {
-      "name": "inspector::Config",
-      "data": {
-        "0": {
-          "json": {
-            "isBasicViewEnabled": true,
-            "componentName": "",
-            "fields": [],
-            "assetId": "e11d2848-b79d-4ddc-bfea-5033cbdd8f9f",
-            "label": "Website Link",
-            "sections": [
-              {
-                "id": "link",
-                "items": [
-                  {
-                    "component": "asset-packs::Actions",
-                    "widget": "TextField",
-                    "label": "Website Link",
-                    "path": "url",
-                    "basicViewId": "open-link"
-                  }
-                ]
-              }
-            ],
-            "helpTooltip": {
-              "text": "Enter a Website URL to open when the item is clicked."
-            },
-            "version": 2
           }
         }
       }

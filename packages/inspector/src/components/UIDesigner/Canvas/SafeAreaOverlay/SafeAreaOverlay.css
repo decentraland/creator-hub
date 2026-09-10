@@ -1,0 +1,59 @@
+.ui-designer-safe-area {
+  position: absolute;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  z-index: 900;
+}
+
+.ui-designer-safe-band {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.ui-designer-safe-band.reserved {
+  background: rgba(0, 0, 0, 0.35);
+}
+
+/* Usable, with a caveat — half the shading and a dashed edge, so it reads as
+   "mind the rules here" rather than "keep out" like the reserved bands. */
+.ui-designer-safe-band.limited {
+  background: rgba(0, 0, 0, 0.15);
+  border: 1px dashed rgba(255, 255, 255, 0.35);
+}
+
+/* Counter-scaled so the labels stay legible however far out the stage is zoomed.
+   --uid-screen-scale, NOT --uid-scale: this overlay sits beside the canvas root
+   rather than inside it, so it carries the editor zoom alone — the design→screen
+   fit transform does not apply. Using the inner factor over-magnifies by 1/fit. */
+.ui-designer-safe-band-label {
+  padding: 0 4px;
+  font-size: 11px;
+  line-height: 1.2;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.75);
+  white-space: nowrap;
+  transform: scale(calc(1 / var(--uid-screen-scale, 1)));
+}
+
+.ui-designer-safe-zone {
+  position: absolute;
+  border: 1px dashed rgba(120, 200, 255, 0.9);
+  box-sizing: border-box;
+}
+
+/* Inside the zone, not above it: the top edge of the safe zone is the bottom edge
+   of a reserved band, so an outside label lands on that band's own label. */
+.ui-designer-safe-label {
+  position: absolute;
+  transform-origin: top left;
+  transform: scale(calc(1 / var(--uid-screen-scale, 1)));
+  padding: 2px 4px;
+  font-size: 11px;
+  color: rgba(120, 200, 255, 0.95);
+  white-space: nowrap;
+}

@@ -6,6 +6,7 @@ import cleanAssetsReducer from './clean-assets';
 import dataLayerReducer from './data-layer';
 import sdkReducer from './sdk';
 import uiReducer from './ui';
+import uiDesignerReducer from './ui-designer';
 import sceneMetricsReducer from './scene-metrics';
 import featureFlagsReducer from './feature-flags';
 import sagas from './root-saga';
@@ -19,6 +20,7 @@ export const store = configureStore({
     app: appStateReducer,
     cleanAssets: cleanAssetsReducer,
     ui: uiReducer,
+    uiDesigner: uiDesignerReducer,
     sceneMetrics: sceneMetricsReducer,
     featureFlags: featureFlagsReducer,
   },

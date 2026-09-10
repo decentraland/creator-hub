@@ -1,7 +1,11 @@
 .ui.popup.InfoTooltip {
   border-color: var(--gray-0);
   background-color: var(--gray-0);
-  color: var(--base05);
+  /* Explicit light foreground on the dark --gray-0 surface. Was `var(--base05)`
+     — an undefined token (the ramp is `--base-05`), so the declaration was
+     invalid and Semantic UI's default dark popup text applied, rendering hints
+     dark-on-dark / unreadable. */
+  color: var(--title);
   font-size: 11px;
   font-weight: 500;
   line-height: normal;

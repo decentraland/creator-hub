@@ -76,6 +76,10 @@ export function createSelectionBridge(options: SelectionBridgeOptions): () => vo
     // gizmo mode is a per-selection setting (Selection.gizmo), shared across the
     // selection — read it from whichever entity we see first.
     const selected: Entity[] = [];
+    // Entities to OUTLINE: broader than the gizmo targets — a LOCKED entity gets
+    // no gizmo but must still show a selection highlight when picked from the tree
+    // (#1444). Hidden entities are excluded (nothing visible to outline).
+    const highlight: number[] = [];
     let gizmo: GizmoType | undefined;
     for (const [e, selection] of context.engine.getEntitiesWith(Selection)) {
       // Player/Root aren't gizmo-able entities: selecting the Player marks a spawn
@@ -83,12 +87,14 @@ export function createSelectionBridge(options: SelectionBridgeOptions): () => vo
       // (set-spawn-gizmo). Posting an entity selection for them here would fight
       // that — clear the entity gizmo instead by skipping them.
       if (e === context.engine.PlayerEntity || e === context.engine.RootEntity) continue;
-      // Locked or hidden entities get no gizmo — they can be selected in the tree
-      // (to see/edit their components) but must not be movable in the viewport.
-      // Skip them from the gizmo targets so the agent shows/drags nothing. Mirrors
-      // Babylon, which unsets the gizmo manager for a locked OR hidden entity.
-      if (Lock.getOrNull(e)?.value) continue;
+      // Hidden entities are invisible — no gizmo and nothing to outline.
       if (Hide.getOrNull(e)?.value) continue;
+      // A locked entity still gets an outline (selection feedback), just no gizmo:
+      // it can be selected in the tree to see/edit its components but must not be
+      // movable in the viewport. Mirrors Babylon, which unsets the gizmo manager
+      // for a locked entity but still highlights it.
+      highlight.push(e as number);
+      if (Lock.getOrNull(e)?.value) continue;
       if (gizmo === undefined) gizmo = selection.gizmo;
       selected.push(e);
     }
@@ -114,6 +120,7 @@ export function createSelectionBridge(options: SelectionBridgeOptions): () => vo
     const msg: PageToScene = {
       kind: 'set-selection',
       entities,
+      highlight,
       alignToWorld,
       snap,
       mode,

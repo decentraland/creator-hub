@@ -53,7 +53,55 @@ const ENGINE_COMPONENT_NAMES: Record<string, string> = {
   'core::Billboard': 'Billboard',
   'core::TextShape': 'TextShape',
   'core::Animator': 'Animator',
+  'core::VideoPlayer': 'VideoPlayer',
+  'core::ParticleSystem': 'ParticleSystem',
 };
+
+// PBParticleSystem.PlaybackState: PS_PLAYING=0, PS_PAUSED=1 ("simulation frozen; no
+// new particles emitted"), PS_STOPPED=2. Used to freeze emission on scene pause.
+const PARTICLE_PLAYBACK_PAUSED = 1;
+
+// Pointer-collision layer bit (ColliderLayer.CL_POINTER). The editor forces it on so
+// every visible mesh is clickable in the viewport (matching Babylon).
+const CL_POINTER = 1;
+
+/**
+ * Convert an `@dcl/ecs` component value to the JSON shape the engine's
+ * `set_component` accepts (#1466). The engine parses the value as serde-proto,
+ * where a protobuf `oneof` is an externally-tagged enum — the variant name is the
+ * single key, e.g. `{ mesh: { box: {...} } }`. `@dcl/ecs` (ts-proto) instead
+ * tags oneofs with a `$case` discriminator: `{ mesh: { $case: 'box', box: {...} } }`.
+ * serde rejects that extra key, so a MeshRenderer/Material/MeshCollider edit never
+ * applied live (only after a reload, which loads from the composite, not
+ * set_component). Recursively collapse each `{$case, [case]}` to `{ [case]: ... }`;
+ * a value with no oneof passes through unchanged.
+ */
+function toEngineJson(value: unknown, seen: WeakSet<object> = new WeakSet()): unknown {
+  if (value && typeof value === 'object') {
+    // Cycle guard: schema-decoded component values are trees today, but a back-
+    // reference would otherwise recurse forever. Track the current path (add on
+    // descent, remove on unwind) so a repeated sibling in a DAG isn't mistaken for a
+    // cycle; drop a true back-reference rather than loop.
+    if (seen.has(value)) return undefined;
+    seen.add(value);
+    let result: unknown;
+    if (Array.isArray(value)) {
+      result = value.map(v => toEngineJson(v, seen));
+    } else {
+      const obj = value as Record<string, unknown>;
+      if (typeof obj.$case === 'string') {
+        result = { [obj.$case]: toEngineJson(obj[obj.$case], seen) };
+      } else {
+        const out: Record<string, unknown> = {};
+        for (const [key, v] of Object.entries(obj)) out[key] = toEngineJson(v, seen);
+        result = out;
+      }
+    }
+    seen.delete(value);
+    return result;
+  }
+  return value;
+}
 
 export interface ForwardEditBridgeOptions {
   /**
@@ -185,6 +233,19 @@ export function createForwardEditBridge(options: ForwardEditBridgeOptions): Forw
         });
       }
     }
+    // Re-forward each MeshRenderer primitive + its editor pointer collider so it
+    // stays clickable after a reload (the load burst that would carry it was
+    // suppressed) — the MeshRenderer counterpart of the GltfContainer replay above.
+    const meshRenderer = context.getForwardableComponent('core::MeshRenderer');
+    if (meshRenderer) {
+      for (const [entity, current] of context.engine.getEntitiesWith(meshRenderer)) {
+        enqueue(entity, async () => {
+          await ensureInstantiated(entity);
+          await forwardSet(entity, 'MeshRenderer', current);
+        });
+        forwardMeshPickCollider(entity, current);
+      }
+    }
     // #1382: the editor boots frozen, but a scene loads with its Animator clips
     // playing — pause them to match the frozen state (setAnimationsFrozen forwards
     // playing:false; the toolbar toggle later resumes/re-pauses).
@@ -287,6 +348,31 @@ export function createForwardEditBridge(options: ForwardEditBridgeOptions): Forw
           'GltfContainer',
         ]);
       }
+    });
+  };
+
+  const MESH_COLLIDER = 'core::MeshCollider';
+  // Make a MeshRenderer PRIMITIVE pointer-pickable in the editor. Unlike a GLTF
+  // (whose visibleMeshesCollisionMask carries pointer collision, #1373), a bare
+  // MeshRenderer has no collider, so a viewport click can't hit it — it's only
+  // selectable from the tree. Forward an editor-only MeshCollider of the SAME shape
+  // with CL_POINTER so it's clickable, matching Babylon (every visible mesh is
+  // pickable). Skip when the entity has its OWN MeshCollider — forwardSet already
+  // ORs CL_POINTER into that. Editor-only: the CRDT keeps just the MeshRenderer, so
+  // preview/live collision is unchanged. The MeshCollider mesh oneof mirrors the
+  // renderer's (extra fields like `uvs` are ignored by the collider schema).
+  const forwardMeshPickCollider = (entity: Entity, renderer: unknown) => {
+    const authored = (
+      context.getForwardableComponent(MESH_COLLIDER) as {
+        getOrNull?: (e: Entity) => unknown;
+      } | null
+    )?.getOrNull?.(entity);
+    if (authored != null) return;
+    const mesh = (renderer as { mesh?: unknown } | null | undefined)?.mesh;
+    if (mesh == null) return;
+    enqueue(entity, async () => {
+      await ensureInstantiated(entity);
+      await forwardSet(entity, 'MeshCollider', { collisionMask: CL_POINTER, mesh });
     });
   };
 
@@ -403,14 +489,15 @@ export function createForwardEditBridge(options: ForwardEditBridgeOptions): Forw
       const readable = component as { getOrNull?: (e: Entity) => unknown };
       const current = value ?? readable.getOrNull?.(entity);
       if (current == null) return;
-      // An Animator PUT that arrives WHILE THE SCENE IS FROZEN must be forced to
-      // playing:false, not forwarded as-is. After a Stop/reload the scene's GLTFs
-      // re-load and re-PUT their Animator with the authored playing:true — which
-      // would resume the animation a beat after the freeze (#1421: "animations run
-      // for a couple frames after stop"). Route it through forwardAnimatorFrozen so
-      // a frozen scene's clips stay paused; when unfrozen it forwards as-is.
-      if (engineName === 'Animator' && isFrozen()) {
-        forwardAnimatorFrozen(entity, current, true);
+      // A time-based component PUT that arrives WHILE THE SCENE IS FROZEN must be
+      // forced to its paused override, not forwarded as-is. After a Stop/reload the
+      // scene's GLTFs re-load and re-PUT their authored Animator (playing:true) —
+      // which would resume playback a beat after the freeze (#1421: "animations run
+      // for a couple frames after stop"); likewise a VideoPlayer (#1469) or
+      // ParticleSystem (#1467) added/loaded while paused must not start playing.
+      // Route it through forwardFrozenOverride so a frozen scene stays paused.
+      if (isFrozen() && FROZEN_OVERRIDES.has(engineName)) {
+        forwardFrozenOverride(entity, engineName, current, true);
         return;
       }
       // Serialize the forward so a component arriving before its entity's Name PUT
@@ -421,6 +508,10 @@ export function createForwardEditBridge(options: ForwardEditBridgeOptions): Forw
         await ensureInstantiated(entity);
         await forwardSet(entity, engineName, current);
       });
+      // A MeshRenderer primitive has no collider — add an editor-only pointer one so
+      // it's selectable in the viewport, not just the tree. Re-derived on every
+      // MeshRenderer PUT so a shape change updates the collider too.
+      if (engineName === 'MeshRenderer') forwardMeshPickCollider(entity, current);
     },
   );
 
@@ -434,19 +525,20 @@ export function createForwardEditBridge(options: ForwardEditBridgeOptions): Forw
       // it (matching Babylon, where every visible mesh is pickable). CL_POINTER is
       // bit 1; OR it into visibleMeshesCollisionMask. Editor-only — the CRDT keeps
       // the authored mask, so preview/live collision is unchanged.
-      const CL_POINTER = 1;
-      const g = (current ?? {}) as { visibleMeshesCollisionMask?: number };
+      const g = (current ?? {}) as { visibleMeshesCollisionMask?: number; src?: string };
       payload = {
         ...g,
         visibleMeshesCollisionMask: (g.visibleMeshesCollisionMask ?? 0) | CL_POINTER,
       };
-      try {
-        await send('scene_content', []);
-      } catch (error) {
-        onError(`scene_content (before ${entity} GltfContainer)`, error);
-      }
+      await refreshContentForGltf(entity, g.src);
+    } else if (engineName === 'MeshCollider') {
+      // Same idea for an authored MeshCollider: OR CL_POINTER into its mask so the
+      // primitive is clickable in the editor even if it was authored without pointer
+      // collision. Editor-only — the CRDT keeps the authored mask.
+      const m = (current ?? {}) as { collisionMask?: number };
+      payload = { ...m, collisionMask: (m.collisionMask ?? 0) | CL_POINTER };
     }
-    const setArgs = [String(entity), engineName, JSON.stringify(payload)];
+    const setArgs = [String(entity), engineName, JSON.stringify(toEngineJson(payload))];
     try {
       await send('set_component', setArgs);
     } catch (error) {
@@ -454,28 +546,108 @@ export function createForwardEditBridge(options: ForwardEditBridgeOptions): Forw
     }
   }
 
-  // #1382: pause/resume GLTF animation playback with the scene freeze. Freezing
-  // stops the SDK7 tick but the engine's AnimationPlayers keep advancing GLTF
-  // clips (update_animations sets each clip's speed from Animator.states[].playing
-  // — playing:false → speed 0). So while FROZEN, forward every animated entity's
-  // Animator with all states playing:false (engine pauses the clips); on UNFREEZE,
-  // re-forward the AUTHORED Animator so it resumes as the scene intends. The CRDT
-  // keeps the authored value — this only changes what the engine plays.
-  const forwardAnimatorFrozen = (entity: Entity, animator: unknown, frozen: boolean) => {
-    const a = animator as { states?: Array<Record<string, unknown>> } | null | undefined;
-    const value = frozen ? { states: (a?.states ?? []).map(s => ({ ...s, playing: false })) } : a;
+  /**
+   * Refresh the engine's content map before a GltfContainer set — and, if the src
+   * file isn't in it yet, retry until it appears (#1459). `/scene_content` re-fetches
+   * the dev server's content map (which globs the whole project), so a freshly
+   * dropped asset's file lands there once its write propagates. On Windows that
+   * write lags the CRDT edit, so the first refresh misses it, the engine can't
+   * resolve the src, and the model never renders until a preview forces a full
+   * reload. Waiting for the src to appear closes that race; on a fast FS (Mac) it's
+   * already present on the first pass, so this returns immediately. Bounded — a src
+   * that's genuinely absent (or unparseable reply) falls through and sets anyway.
+   */
+  async function refreshContentForGltf(entity: Entity, src?: string): Promise<void> {
+    const target = src?.toLowerCase();
+    const MAX_ATTEMPTS = 8;
+    const RETRY_DELAY_MS = 120;
+    for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
+      let reply: string;
+      try {
+        reply = await send('scene_content', []);
+      } catch (error) {
+        onError(`scene_content (before ${entity} GltfContainer)`, error);
+        return;
+      }
+      // No src to resolve, or the reply isn't the expected file-list JSON → the
+      // refresh alone is all we can do; proceed to set_component.
+      if (!target) return;
+      let files: unknown;
+      try {
+        files = JSON.parse(reply);
+      } catch {
+        return;
+      }
+      if (!Array.isArray(files)) return;
+      // `/scene_content` returns content-map keys already lowercased.
+      if (files.some(f => typeof f === 'string' && f.toLowerCase() === target)) return;
+      if (attempt < MAX_ATTEMPTS - 1) {
+        await new Promise(resolve => setTimeout(resolve, RETRY_DELAY_MS));
+        if (disposed) return;
+      }
+    }
+    // Timed out waiting for the file — set anyway; a later refresh/preview picks it up.
+  }
+
+  // Freeze/resume time-based playback with the scene freeze. Freezing stops the SDK7
+  // tick but the engine keeps advancing each of these on its own, so while FROZEN we
+  // forward a paused override; on UNFREEZE we forward the AUTHORED value so it resumes
+  // as the scene intends. The CRDT always keeps the authored value — this only changes
+  // what the engine plays. Each entry maps the engine component to its paused override
+  // (returns null to skip a missing value):
+  //  - Animator (#1382/#1421): AnimationPlayers advance clips from states[].playing —
+  //    force every state playing:false (a null Animator still pauses as {states:[]}).
+  //  - VideoPlayer (#1469): a loaded video keeps playing — force playing:false.
+  //  - ParticleSystem (#1467): emission/simulation keeps running — force PS_PAUSED.
+  const FROZEN_OVERRIDES = new Map<string, (raw: unknown) => unknown>([
+    [
+      'Animator',
+      raw => {
+        const a = raw as { states?: Array<Record<string, unknown>> } | null | undefined;
+        return { states: (a?.states ?? []).map(s => ({ ...s, playing: false })) };
+      },
+    ],
+    [
+      'VideoPlayer',
+      raw => (raw == null ? null : { ...(raw as Record<string, unknown>), playing: false }),
+    ],
+    [
+      'ParticleSystem',
+      raw =>
+        raw == null
+          ? null
+          : { ...(raw as Record<string, unknown>), playbackState: PARTICLE_PLAYBACK_PAUSED },
+    ],
+  ]);
+
+  // Forward one time-based component honoring the freeze state: paused override while
+  // FROZEN, authored value while running. A null value (missing, or an override that
+  // opted out) is skipped.
+  const forwardFrozenOverride = (
+    entity: Entity,
+    engineName: string,
+    raw: unknown,
+    frozen: boolean,
+  ) => {
+    const override = FROZEN_OVERRIDES.get(engineName);
+    const value = frozen && override ? override(raw) : raw;
     if (value == null) return;
     enqueue(entity, async () => {
       await ensureInstantiated(entity);
-      await forwardSet(entity, 'Animator', value);
+      await forwardSet(entity, engineName, value);
     });
   };
 
+  // Freeze/resume all time-based playback (GLTF animation clips #1382, video #1469,
+  // particle systems #1467) with the scene run state. Called on arm (boot frozen)
+  // and by the run/freeze toggle.
   const setAnimationsFrozen = (frozen: boolean) => {
-    const Animator = context.getForwardableComponent('core::Animator');
-    if (!Animator) return;
-    for (const [entity, animator] of context.engine.getEntitiesWith(Animator)) {
-      forwardAnimatorFrozen(entity, animator, frozen);
+    for (const engineName of FROZEN_OVERRIDES.keys()) {
+      const component = context.getForwardableComponent(`core::${engineName}`);
+      if (!component) continue;
+      for (const [entity, value] of context.engine.getEntitiesWith(component)) {
+        forwardFrozenOverride(entity, engineName, value, frozen);
+      }
     }
   };
 

@@ -7,6 +7,7 @@ import type { Quaternion, Vector3 } from '@dcl/ecs-math';
 
 import { createOperations } from '../../sdk/operations';
 import { createEditorComponents } from '../../sdk/components';
+import { ParticleSystemSchema } from '../../sdk/components/ParticleSystem';
 import { PARCEL_SIZE } from '../../utils/scene';
 
 const ROOT = 0 as Entity;
@@ -70,6 +71,22 @@ export class BevySceneContext {
     // forward bridge sets all Animator states to playing:false while frozen (engine
     // update_animations → speed 0) and restores the authored value on unfreeze.
     components.Animator(this.engine),
+    // Area components: registered so their state decodes on this engine and the
+    // reverse-channel gizmo commits (operations.updateValue on Transform) can
+    // mirror scale changes into their `area` field.
+    components.AvatarModifierArea(this.engine),
+    components.CameraModeArea(this.engine),
+    // VideoPlayer: forwarded so the freeze can pause video playback (#1469) — a
+    // frozen scene stops ticking but the engine keeps playing a loaded video, so
+    // the forward bridge sends playing:false while frozen and restores the authored
+    // value on unfreeze.
+    components.VideoPlayer(this.engine),
+    // ParticleSystem (#1467): the engine renders it natively (proto id 1217), but
+    // the inspector's @dcl/ecs lacks the native proto, so it's a schema component.
+    // Define it here (same name/schema as the inspector's engine) so its CRDT stream
+    // decodes and the forward bridge can send it live (otherwise a newly added
+    // particle system isn't visible until a reload loads it from the composite).
+    this.engine.defineComponentFromSchema('core::ParticleSystem', ParticleSystemSchema),
   ];
 
   /**
@@ -88,6 +105,12 @@ export class BevySceneContext {
   // components like Transform flow one-way and can't anchor an entity). Registered
   // here so it decodes off the CRDT stream and exposes its id + schema.
   readonly Name = components.Name(this.engine);
+
+  // PointerEvents (core::PointerEvents) — registered so it DECODES off the CRDT
+  // stream, giving the hover-hint bridge (#1476) read access to each entity's
+  // hoverText/InputAction. Deliberately NOT in #registeredComponents: it's read
+  // for the hint only, never forwarded to the engine (the scene authors it).
+  readonly PointerEvents = components.PointerEvents(this.engine);
 
   // Engine-bound operations + editor components, so the reverse-channel handler
   // can apply picks/edits against this renderer's engine just like Babylon and

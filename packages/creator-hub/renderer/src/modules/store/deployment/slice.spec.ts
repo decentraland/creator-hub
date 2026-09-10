@@ -3,6 +3,7 @@ import { ChainId } from '@dcl/schemas';
 import { localStorageGetIdentity } from '@dcl/single-sign-on-client';
 import { AuthServerProvider } from '../../../lib/auth';
 import { createTestStore } from '../../../../tests/utils/testStore';
+import { FeatureFlag, fetchFeatureFlags } from '../featureFlags';
 import { executeDeployment, initializeDeployment } from './slice';
 
 const TEST_PATH = '/test/path';
@@ -44,12 +45,13 @@ vi.mock('./utils', async () => {
     getDeploymentUrl: vi.fn((port: number) => `http://localhost:${port}/api`),
     deploy: vi.fn().mockResolvedValue(undefined),
     checkDeploymentStatus: vi.fn(),
+    fetchDeploymentStatus: vi.fn().mockResolvedValue({}),
     fetchFiles: vi.fn().mockResolvedValue([]),
     fetchInfo: vi.fn().mockResolvedValue({}),
   };
 });
 
-import { deploy, checkDeploymentStatus, fetchInfo } from './utils';
+import { deploy, checkDeploymentStatus, fetchDeploymentStatus, fetchInfo } from './utils';
 
 describe('deployment slice', () => {
   let store: ReturnType<typeof createTestStore>;
@@ -430,6 +432,77 @@ describe('deployment slice', () => {
 
         const deployment = store.getState().deployment.deployments[TEST_PATH];
         expect(deployment?.createdAt).toBe(initialCreatedAt);
+      });
+    });
+
+    describe('when a retry rebuilds the scene under a new rootCID', () => {
+      const REBUILT_SCENE_INFO = { ...TEST_SCENE_INFO, rootCID: 'QmRebuilt456' };
+
+      beforeEach(async () => {
+        vi.useFakeTimers();
+        store = await initDeploymentStore();
+        // Retrying against another catalyst respawns the CLI server, which rebuilds the
+        // scene and produces a different rootCID than the one we started with.
+        vi.mocked(fetchInfo).mockResolvedValue(REBUILT_SCENE_INFO);
+        mockDeployWithRetryOnce();
+        mockCheckStatus();
+      });
+
+      afterEach(() => {
+        vi.useRealTimers();
+      });
+
+      it('should poll the status of the rootCID that was actually deployed', async () => {
+        const resultPromise = store.dispatch(executeDeployment(TEST_PATH));
+        await advanceRetryTimers(1);
+        await resultPromise.unwrap();
+
+        // checkDeploymentStatus receives fetchStatus as its 3rd arg; invoking it reveals
+        // which entity the poller is asking the asset-bundle-registry about.
+        const fetchStatus = vi.mocked(checkDeploymentStatus).mock.calls[0][2];
+        await fetchStatus();
+
+        expect(vi.mocked(fetchDeploymentStatus)).toHaveBeenCalledWith(
+          expect.objectContaining({ rootCID: REBUILT_SCENE_INFO.rootCID }),
+          expect.anything(),
+          false,
+        );
+      });
+
+      it('should return the rebuilt info rather than the initial one', async () => {
+        const resultPromise = store.dispatch(executeDeployment(TEST_PATH));
+        await advanceRetryTimers(1);
+        const result = await resultPromise.unwrap();
+
+        expect(result.info.rootCID).toBe(REBUILT_SCENE_INFO.rootCID);
+      });
+    });
+
+    describe('when the abgen pipeline flag is on', () => {
+      beforeEach(async () => {
+        store = await initDeploymentStore();
+        store.dispatch(
+          fetchFeatureFlags.fulfilled(
+            { flags: { [FeatureFlag.ABGEN_PIPELINE]: true }, variants: {} },
+            'test-request-id',
+            undefined,
+          ),
+        );
+        mockDeploySuccess();
+        mockCheckStatus();
+
+        await store.dispatch(executeDeployment(TEST_PATH));
+      });
+
+      it('should poll the abgen registry for the conversion status', async () => {
+        const fetchStatus = vi.mocked(checkDeploymentStatus).mock.calls[0][2];
+        await fetchStatus();
+
+        expect(vi.mocked(fetchDeploymentStatus)).toHaveBeenCalledWith(
+          expect.anything(),
+          expect.anything(),
+          true,
+        );
       });
     });
 

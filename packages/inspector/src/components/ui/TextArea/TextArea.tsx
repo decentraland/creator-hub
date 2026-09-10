@@ -1,10 +1,10 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import cx from 'classnames';
 
 import { InfoTooltip } from '../InfoTooltip';
 import { Message, MessageType } from '../Message';
 
-import { Props } from './types';
+import type { Props } from './types';
 
 import './TextArea.css';
 
@@ -14,12 +14,16 @@ const TextArea = React.forwardRef<HTMLTextAreaElement, Props>((props, ref) => {
   const [inputValue, setInputValue] = useState(value);
   const [isHovered, setHovered] = useState(false);
   const [isFocused, setFocused] = useState(false);
+  const lastValueRef = useRef(value);
 
   useEffect(() => {
-    if (value !== inputValue) {
+    const externalChange = value !== lastValueRef.current;
+    lastValueRef.current = value;
+    if (isFocused) return;
+    if (externalChange && inputValue !== value) {
       setInputValue(value);
     }
-  }, [inputValue, value, setInputValue]);
+  }, [value, isFocused]);
 
   const handleInputChange: React.ChangeEventHandler<HTMLTextAreaElement> = useCallback(
     event => {

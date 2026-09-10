@@ -1,4 +1,4 @@
-import { GltfContainerLoadingState } from '@dcl/sdk/ecs';
+import { engine, GltfContainerLoadingState } from '@dcl/sdk/ecs';
 import type { Entity } from '@dcl/sdk/ecs';
 import { getPlayer } from '@dcl/sdk/players';
 
@@ -19,8 +19,10 @@ import {
   setupGizmo,
   setSelectedEntity,
   setSceneOffset,
+  setEditingEnabled,
 } from './gizmo';
 import { getDefaultSpawnWorld, setSpawnAreas } from './spawn-areas';
+import { setBrokenAssets } from './broken-assets';
 
 /**
  * Super-user editor agent for the inspector's Bevy renderer.
@@ -48,18 +50,19 @@ import { getDefaultSpawnWorld, setSpawnAreas } from './spawn-areas';
 let pinnedSceneHash: string | null = null;
 
 /**
- * Whether the engine auto-freezes an editor scene after main() runs once
- * (bevy-explorer #1015 — `refreeze_at_tick`). When true, the agent must NOT
- * force-freeze on boot/reset: the engine owns freezing, and an agent freeze would
- * race it (Stop lands on frame 0 instead of the deterministic "main ran once").
+ * The engine auto-freezes an editor scene after main() runs once (bevy-explorer
+ * #1015 — `refreeze_at_tick`), gated on the `editor: true` boot flag we pass in
+ * host-boot.js. So the agent must NOT force-freeze on boot/reset: the engine owns
+ * freezing, and an agent freeze would race it (Stop lands on frame 0 instead of
+ * the deterministic "main ran once").
  *
- * FALSE until #1015 is merged, republished, and the pin is bumped in
- * packages/inspector/package.json. On the current published engine there is NO
- * auto-freeze, so the agent MUST force-freeze — otherwise the inspected scene
- * just runs freely on load. Flip to `true` (or delete the gate) in the same
- * change that bumps the engine pin.
+ * TRUE since the engine pin was bumped to a build that includes #1015
+ * (packages/inspector/package.json). Both call sites keep the
+ * `else await setSceneUiVisible(false)` branch: the engine owns freezing, but
+ * hiding the scene's UI while frozen is still ours. The play/stop toggle still
+ * rides /freeze_scene · /unfreeze_scene.
  */
-const ENGINE_AUTO_FREEZES_EDITOR_SCENE = false;
+const ENGINE_AUTO_FREEZES_EDITOR_SCENE = true;
 
 export function main(): void {
   // Inspector → agent messages.
@@ -69,10 +72,10 @@ export function main(): void {
     if (msg.kind === 'set-selection') {
       setSelectedEntity(msg.entities, msg.mode, msg.alignToWorld, msg.snap);
       // Outline the selected entities in the viewport (render-only, never saved —
-      // see the engine's /highlight). Empty selection clears it. These are the
-      // inspected scene's entity ids, which /highlight resolves on the pinned
-      // scene — the same ids the gizmo/pick use.
-      highlightEntities(msg.entities.map(e => e.entity));
+      // see the engine's /highlight). Empty selection clears it. Use the dedicated
+      // `highlight` list (includes LOCKED entities, which have no gizmo but still
+      // outline — #1444); fall back to the gizmo `entities` for older callers.
+      highlightEntities(msg.highlight ?? msg.entities.map(e => e.entity));
       return;
     }
     // Drag-drop placement: raycast the ground under the pointer and reply with
@@ -128,6 +131,10 @@ export function main(): void {
       setSpawnAreas(msg.areas);
       return;
     }
+    if (msg.kind === 'set-broken-assets') {
+      setBrokenAssets(msg.assets);
+      return;
+    }
     // Freeze (static) or run the inspected scene (the toolbar's run/freeze toggle).
     if (msg.kind === 'set-scene-frozen') {
       void setSceneFrozen(msg.frozen);
@@ -145,14 +152,92 @@ export function main(): void {
       setVerticalInput(msg.up, msg.down);
       return;
     }
+    // Enable/disable viewport editing (click-to-pick + gizmo grab). Disabled lets
+    // clicks reach the running scene so the user can test mechanics (#1458).
+    if (msg.kind === 'set-editing-enabled') {
+      setEditingEnabled(msg.enabled);
+      return;
+    }
   });
 
   // setupGizmo installs the pointer-down handler (grab-or-pick) + drag system.
   setupGizmo();
   // setupCamera installs the (initially inactive) editor fly-camera.
   setupCamera();
+  // Watch the inspected scene's logs for a runtime error (#1448). The SDK wraps
+  // main() (and each system) in a try/catch that `console.error(e)`s the throw, so
+  // an uncaught scene error surfaces as a SceneError log entry (prefixed "ERROR ")
+  // — NOT a SystemError, which the engine only records for its own runtime failures.
+  // Report each new error so the host can notify + stop the scene. Throttled — the
+  // agent (a super scene) keeps ticking even while the inspected scene is frozen.
+  setupSceneErrorWatch();
 
   void boot();
+}
+
+// --- Scene runtime-error watch (#1448) ---
+
+/** Log-line signatures already reported, so a persisted error isn't re-toasted
+ * every poll. Cleared on Stop/reset (the reloaded scene starts a fresh log). */
+const reportedErrors = new Set<string>();
+let sinceErrorCheck = 0;
+const ERROR_CHECK_INTERVAL = 1.5; // seconds
+
+/** Poll `/scene_logs` for NEW error entries and report them to the host. */
+async function reportSceneErrors(): Promise<void> {
+  const api = getBevyApi();
+  if (!api) return;
+  let reply: string;
+  try {
+    reply = await api.consoleCommand('scene_logs', ['100']);
+  } catch {
+    return; // no pinned scene yet / command failed — nothing to report
+  }
+  // Each entry is `[<ts>] <Level>: <message>`. SceneError = a scene-side throw the
+  // SDK caught and console.error'd (prefixed "ERROR "); SystemError = an engine-level
+  // failure. Report either — both mean the scene is broken.
+  for (const line of reply.split('\n')) {
+    const match = line.match(/^\[[\d.]+\]\s+(SceneError|SystemError):\s*(.*)$/);
+    if (!match) continue;
+    if (reportedErrors.has(line)) continue;
+    reportedErrors.add(line);
+    // Skip benign DEV WARNINGS: React (and react-ecs) log warnings via console.error,
+    // so they arrive as SceneError entries (e.g. "ERROR Warning: Each child in a list
+    // should have a unique key prop"). These aren't fatal — the scene keeps running —
+    // so they must NOT trigger the "runtime error, can't run" toast + stop the scene.
+    // A real error never carries the framework's "Warning:" tag.
+    const stripped = match[2].replace(/^ERROR\s+/, '').trim();
+    if (/^Warning:/i.test(stripped)) continue;
+    bus.postToPage({ kind: 'scene-error', message: cleanErrorMessage(match[2]) });
+  }
+}
+
+/** Turn a raw log message into a short, single-line summary for the toast, or '' if
+ * the engine gave us nothing usable (the host then shows a generic detail). */
+function cleanErrorMessage(raw: string): string {
+  // `console.error(...)` prefixes every entry with "ERROR " (the engine's console
+  // shim) — drop it. The value may inline a stack as escaped or real `\n`; keep the
+  // first line only, and cap the length.
+  const withoutPrefix = raw.replace(/^ERROR\s+/, '');
+  let firstLine = withoutPrefix.split('\\n')[0].split('\n')[0].trim();
+  // The web engine serializes objects with JSON.stringify, so a thrown Error (no
+  // enumerable keys) collapses to "{}" — useless as a message. Treat contentless
+  // blobs as empty so the host falls back to a generic detail.
+  if (/^(\{\s*\}|\[\s*\]|null|""|'')$/.test(firstLine)) return '';
+  // JSON.stringify also wraps a plain string arg in quotes — unwrap for readability.
+  const quoted = firstLine.match(/^"(.*)"$/);
+  if (quoted) firstLine = quoted[1];
+  return firstLine.length > 200 ? `${firstLine.slice(0, 197)}...` : firstLine;
+}
+
+/** Install the throttled scene-error poll. */
+function setupSceneErrorWatch(): void {
+  engine.addSystem((dt: number) => {
+    sinceErrorCheck += dt;
+    if (sinceErrorCheck < ERROR_CHECK_INTERVAL) return;
+    sinceErrorCheck = 0;
+    void reportSceneErrors();
+  });
 }
 
 async function boot(): Promise<void> {
@@ -180,13 +265,14 @@ async function boot(): Promise<void> {
   // toolbar "reset view" action once the user is in the fly camera.
   void sceneLocalCenter;
   // Editor default: the inspected scene is FROZEN (static — no SDK7 systems /
-  // timers / onUpdate run), so it's a stable subject to edit. With the engine's
-  // editor auto-freeze (#1015) the engine owns this and the agent must stay out
-  // of its way; until that ships the agent force-freezes here, else the scene
-  // just runs on load. See ENGINE_AUTO_FREEZES_EDITOR_SCENE. The toolbar toggle
-  // still unfreezes to run live; the agent itself keeps ticking (super scene,
-  // exempt); freeze does NOT block avatar walking (bevy-editor walks while frozen).
+  // timers / onUpdate run), so it's a stable subject to edit. The engine's editor
+  // auto-freeze (#1015) owns this now, so the agent stays out of its way and only
+  // hides the scene's UI (setSceneFrozen's other half). See
+  // ENGINE_AUTO_FREEZES_EDITOR_SCENE. The toolbar toggle still unfreezes to run
+  // live; the agent itself keeps ticking (super scene, exempt); freeze does NOT
+  // block avatar walking (bevy-editor walks while frozen).
   if (!ENGINE_AUTO_FREEZES_EDITOR_SCENE) await setSceneFrozen(true);
+  else await setSceneUiVisible(false);
   // Freeze the day/night clock at noon so the skybox doesn't drift into night
   // while the scene sits open (the day/night clock advances with the wall clock
   // even while the scene is frozen — freezing the SCENE doesn't freeze TIME).
@@ -223,12 +309,27 @@ function entityAnimationNames(entity: Entity): string[] {
 }
 
 /**
- * Freeze (static) or run the pinned inspection scene via the engine's
- * `/freeze_scene` / `/unfreeze_scene` console commands. Retries a few times when
- * freezing right after boot: the scene entity can take a moment to be resolvable
- * even once `/set_scene` has recorded it as the active inspection target.
+ * Freeze (static) or run the pinned inspection scene, and keep its UI in step.
+ *
+ * Frozen ⇔ scene UI hidden is one invariant, owned here. A scene's react-ecs UI
+ * is created by its first render pass, before the engine's auto-freeze lands, and
+ * freezing stops the SDK7 tick — not entities that already exist. So
+ * without this the authored UI sits full-screen over the editor viewport (above
+ * picking) the whole time you are editing. It should only appear on Play.
  */
 async function setSceneFrozen(frozen: boolean): Promise<void> {
+  const api = getBevyApi();
+  if (!api) return;
+  await applyFreeze(frozen);
+  await setSceneUiVisible(!frozen);
+}
+
+/**
+ * The `/freeze_scene` / `/unfreeze_scene` half. Retries a few times when freezing
+ * right after boot: the scene entity can take a moment to be resolvable even once
+ * `/set_scene` has recorded it as the active inspection target.
+ */
+async function applyFreeze(frozen: boolean): Promise<void> {
   const api = getBevyApi();
   if (!api) return;
   const command = frozen ? 'freeze_scene' : 'unfreeze_scene';
@@ -248,6 +349,27 @@ async function setSceneFrozen(frozen: boolean): Promise<void> {
       console.error(`[bevy-agent] ${command} attempt failed:`, e);
     }
     await new Promise<void>(resolve => setTimeout(() => resolve(), 500));
+  }
+}
+
+/**
+ * Show or hide the INSPECTED scene's own UI, via the engine's `/show_ui`
+ * console command (`show_ui <hash|all> <true|false>`).
+ *
+ * Scoped to the pinned hash rather than `all`: the engine exempts the system UI
+ * scene — which is where this agent's gizmo overlay lives — but leaning on that
+ * exemption costs more than passing the hash we already track.
+ *
+ * Best-effort. A failure must not fail the freeze it rides along with; the worst
+ * case is the old behaviour (UI visible while frozen).
+ */
+async function setSceneUiVisible(visible: boolean): Promise<void> {
+  const api = getBevyApi();
+  if (!api || !pinnedSceneHash) return;
+  try {
+    await api.consoleCommand('show_ui', [pinnedSceneHash, visible ? 'true' : 'false']);
+  } catch (e) {
+    console.error('[bevy-agent] show_ui failed:', e);
   }
 }
 
@@ -291,6 +413,9 @@ async function resetScene(): Promise<void> {
   const api = getBevyApi();
   if (!api || !pinnedSceneHash) return;
   const hash = pinnedSceneHash;
+  // The reload starts a fresh scene instance with a fresh log — drop the reported
+  // signatures so a re-thrown error surfaces again (#1448).
+  reportedErrors.clear();
   try {
     await api.consoleCommand('reload', [hash]);
   } catch (e) {
@@ -317,7 +442,11 @@ async function resetScene(): Promise<void> {
     try {
       const reply = await api.consoleCommand('set_scene', [hash]);
       if (!/could not find|not found|no longer exists/i.test(reply)) {
+        // A reloaded scene is a fresh instance: it ran main() again, so its UI is
+        // back and visible. Re-hide it here (the `else` for the same reason as on
+        // boot — setSceneFrozen owns both halves, auto-freeze owns only one).
         if (!ENGINE_AUTO_FREEZES_EDITOR_SCENE) await setSceneFrozen(true);
+        else await setSceneUiVisible(false);
         bus.postToPage({ kind: 'reset-complete', ok: true });
         return;
       }

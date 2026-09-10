@@ -364,6 +364,15 @@ let sceneOffset: Vector3 = Vector3.Zero();
 let picker: Entity | null = null;
 let rayTs = 0;
 
+// Hover-hint raycast (#1476): a dedicated picker + timestamp so a per-frame hover
+// probe never clobbers the click-pick raycast above. Throttled by frame count.
+let hoverPicker: Entity | null = null;
+let hoverTs = 0;
+let hoverPending = false;
+let lastHoverEntity = 0;
+let hoverThrottle = 0;
+const HOVER_RAYCAST_EVERY = 5;
+
 interface DragState {
   mode: 'translate' | 'rotate' | 'scale';
   // 'xyz' = the scale gizmo's center cube (uniform scale on all three axes);
@@ -396,6 +405,15 @@ let drag: DragState | null = null;
 // A pointer-down sets this; the next raycast result decides drag-vs-pick.
 let grabPending = false;
 let pendingModifiers = { shift: false, ctrl: false };
+// Viewport EDITING: when false, a pointer-down does NOT pick or grab, so the click
+// reaches the running scene instead (test a mechanic, e.g. a button — #1458). The
+// inspector's "Interact" toggle drives this via set-editing-enabled.
+let editingEnabled = true;
+
+/** Enable/disable viewport editing (click-to-pick + gizmo grab). See #1458. */
+export function setEditingEnabled(enabled: boolean): void {
+  editingEnabled = enabled;
+}
 // The entity's live position during a drag (committed on release).
 let dragPos: Vector3 | null = null;
 
@@ -414,6 +432,15 @@ let gizmoCamera: Entity | null = null;
 let lastCanvasW = 0;
 let lastCanvasH = 0;
 let lastCanvasDpr = 0;
+// Frames of a stable canvas size before we recreate the gizmo camera after a resize
+// (see the resync in gizmoSystemInner). Mutating a TextureCamera's width/height in place
+// keeps the target crisp but doesn't reliably re-derive the perspective aspect, so the
+// full-screen `stretch` composite ends up misaligned ("gizmo stuck to the camera") and
+// stays broken until reload (#1529). Rebuilding the camera once the resize settles forces
+// a fresh projection at the new aspect. Small enough to feel instant, big enough to not
+// thrash create/destroy every frame during a drag-resize.
+const RESIZE_SETTLE_FRAMES = 12;
+let resizeSettle = 0;
 
 // Size the gizmo render target in DEVICE pixels. UiCanvasInformation width/height
 // are VIRTUAL (logical) px; on a retina display the real framebuffer is dpr×
@@ -615,6 +642,8 @@ function isSupportedMode(mode: GizmoMode): boolean {
 export function setupGizmo(): void {
   picker = engine.addEntity();
   Transform.create(picker);
+  hoverPicker = engine.addEntity();
+  Transform.create(hoverPicker);
   buildGizmo();
   // Initialize per-mode handle visibility: buildGizmo creates EVERY handle group
   // visible (scale One), so without this the first anchored frame would show all
@@ -651,7 +680,15 @@ function setupGizmoCamera(): void {
     lastCanvasDpr = canvas.devicePixelRatio;
   }
   const cam = engine.addEntity();
-  Transform.create(cam);
+  // Seed the pose from the main camera up front so the very first rendered frame is aligned
+  // — the per-frame mirror in gizmoSystemInner only runs NEXT tick, so a bare identity
+  // Transform would flash the gizmo at the origin for one frame (a visible "snap" after a
+  // resize recreate). #1529.
+  const camT = Transform.getOrNull(engine.CameraEntity);
+  Transform.create(
+    cam,
+    camT !== null ? { position: { ...camT.position }, rotation: { ...camT.rotation } } : {},
+  );
   TextureCamera.create(cam, {
     width: size.width,
     height: size.height,
@@ -669,10 +706,26 @@ function setupGizmoCamera(): void {
   gizmoCamera = cam;
 }
 
+// Rebuild the gizmo camera from scratch so its perspective projection is re-derived at the
+// current viewport aspect. Used after a resize settles (#1529): recreating is the reliable
+// way to refresh the aspect — mutating width/height in place leaves the composite skewed.
+// setupGizmoCamera re-reads the live canvas and re-sets lastCanvas*, so this leaves the
+// resync in a settled state (no recreate loop).
+function recreateGizmoCamera(): void {
+  if (gizmoCamera !== null) {
+    engine.removeEntity(gizmoCamera);
+    gizmoCamera = null;
+  }
+  setupGizmoCamera();
+}
+
 function gizmoOverlay(): ReactEcs.JSX.Element | null {
   // Show the composite while a gizmo is up — an entity selection OR a spawn point
   // (driven via the SPAWN_SENTINEL, so `selected`/`selectedPos` are set for it too).
-  const gizmoUp = selected !== null && selectedPos !== null;
+  // Hidden while a resize is in flight (resizeSettle > 0): the in-place-resized target is
+  // skewed until the camera recreates, so hiding it avoids showing a wrong-aspect gizmo and
+  // the "snap" back into place — it reappears already-correct once the size settles (#1529).
+  const gizmoUp = selected !== null && selectedPos !== null && resizeSettle === 0;
   if (gizmoCamera === null || !gizmoUp) return null;
   return (
     <UiEntity
@@ -1187,21 +1240,24 @@ function gizmoSystemInner(): void {
     // framebuffer is dpr× bigger, so logical sizing renders at half-res and the
     // composite upscales it, soft + aliased). See gizmoTextureSize.
     const canvas = tc !== null ? UiCanvasInformation.getOrNull(engine.RootEntity) : null;
-    if (
-      tc !== null &&
-      canvas !== null &&
-      canvas.width > 0 &&
-      canvas.height > 0 &&
-      (canvas.width !== lastCanvasW ||
+    if (tc !== null && canvas !== null && canvas.width > 0 && canvas.height > 0) {
+      if (
+        canvas.width !== lastCanvasW ||
         canvas.height !== lastCanvasH ||
-        canvas.devicePixelRatio !== lastCanvasDpr)
-    ) {
-      lastCanvasW = canvas.width;
-      lastCanvasH = canvas.height;
-      lastCanvasDpr = canvas.devicePixelRatio;
-      const size = gizmoTextureSize(canvas.width, canvas.height, canvas.devicePixelRatio || 1);
-      tc.width = size.width;
-      tc.height = size.height;
+        canvas.devicePixelRatio !== lastCanvasDpr
+      ) {
+        lastCanvasW = canvas.width;
+        lastCanvasH = canvas.height;
+        lastCanvasDpr = canvas.devicePixelRatio;
+        const size = gizmoTextureSize(canvas.width, canvas.height, canvas.devicePixelRatio || 1);
+        tc.width = size.width;
+        tc.height = size.height;
+        // Keep it crisp live; recreate the camera once the size stops changing so the
+        // perspective aspect is re-derived (in-place width/height doesn't — #1529).
+        resizeSettle = RESIZE_SETTLE_FRAMES;
+      } else if (resizeSettle > 0 && --resizeSettle === 0) {
+        recreateGizmoCamera();
+      }
     }
   }
 
@@ -1246,8 +1302,9 @@ function gizmoSystemInner(): void {
   // On pointer-down: FIRST try to grab a gizmo axis analytically (ray-vs-axis-
   // segment) — the engine's collider raycast is unreliable for these tiny,
   // screen-scaled handles (it lands offset, camera-dependently). If no axis is
-  // grabbed, fall through to an engine raycast for entity picking.
-  if (drag === null && !grabPending && down) {
+  // grabbed, fall through to an engine raycast for entity picking. Skipped entirely
+  // when editing is disabled (#1458) so the click reaches the running scene.
+  if (editingEnabled && drag === null && !grabPending && down) {
     const ray = pointerRay();
     if (ray !== null && picker !== null) {
       const grabbedAxis = pickHandleAtRay(ray);
@@ -1284,6 +1341,41 @@ function gizmoSystemInner(): void {
     }
   }
 
+  // Hover hint (#1476): with editing OFF (Interact toggled ON), report the scene
+  // entity under the pointer so the host can surface its PointerEvents hoverText
+  // (e.g. "Press E"). The engine's own hover-hint HUD isn't mounted in the editor.
+  // Throttled, on a dedicated picker so it never clobbers the click-pick raycast.
+  if (!editingEnabled) {
+    hoverThrottle = (hoverThrottle + 1) % HOVER_RAYCAST_EVERY;
+    if (!hoverPending && hoverPicker !== null && hoverThrottle === 0) {
+      const ray = pointerRay();
+      if (ray !== null) {
+        Transform.createOrReplace(hoverPicker, { position: { ...ray.origin } });
+        hoverTs += 1;
+        Raycast.createOrReplace(hoverPicker, {
+          timestamp: hoverTs,
+          maxDistance: 1000,
+          queryType: RaycastQueryType.RQT_QUERY_ALL,
+          continuous: false,
+          collisionMask: PICK_OR_HANDLE_MASK,
+          direction: { $case: 'globalDirection', globalDirection: { ...ray.dir } },
+        });
+        hoverPending = true;
+      }
+    }
+    if (hoverPending && hoverPicker !== null) {
+      const result = RaycastResult.getOrNull(hoverPicker);
+      if (result !== null && result.timestamp === hoverTs) {
+        hoverPending = false;
+        emitHover(result);
+      }
+    }
+  } else if (lastHoverEntity !== 0) {
+    // Editing re-enabled → clear any hint the host is still showing.
+    lastHoverEntity = 0;
+    bus.postToPage({ kind: 'hover', entity: 0 });
+  }
+
   // Drive / finish an active drag.
   if (drag !== null) {
     if (up) endDrag();
@@ -1296,19 +1388,45 @@ function readModifiers(): { shift: boolean; ctrl: boolean } {
   return { shift: false, ctrl: false };
 }
 
+/** Raycast hits as candidate scene-entity ids, NEAREST first: real entities only
+ * (id ≥ 512, minus the probe/gizmo/reserved range and our own gizmo handles, which
+ * are CL_POINTER hits but not scene entities). Spawn markers stay in — callers treat
+ * them differently (pick selects the spawn; hover skips it). Shared by emitPick +
+ * emitHover so both run the same hit pipeline. */
+function sceneHitIds(result: {
+  hits: readonly { readonly entityId?: number; readonly length?: number }[];
+}): number[] {
+  return [...result.hits]
+    .filter(h => h.entityId !== undefined)
+    .sort((a, b) => (a.length ?? 0) - (b.length ?? 0))
+    .map(h => Number(h.entityId))
+    .filter(id => id >= 512 && !isGizmoHandle(id));
+}
+
+// Report the nearest scene entity under the pointer for the hover hint (#1476).
+// Deduped: only posts when the hovered entity changes. 0 = pointer over nothing
+// (or over a spawn marker, which isn't a hoverable item).
+function emitHover(result: {
+  hits: readonly { readonly entityId?: number; readonly length?: number }[];
+}): void {
+  let hovered = 0;
+  for (const id of sceneHitIds(result)) {
+    if (getSpawnMarkerTarget(id) !== null) continue;
+    hovered = id;
+    break;
+  }
+  if (hovered !== lastHoverEntity) {
+    lastHoverEntity = hovered;
+    bus.postToPage({ kind: 'hover', entity: hovered });
+  }
+}
+
 /** Emit a pick from a raycast result (nearest authored hit, id ≥ 512). */
 function emitPick(
   result: { hits: readonly { readonly entityId?: number; readonly length?: number }[] },
   mods: { shift: boolean; ctrl: boolean },
 ): void {
-  const ordered = [...result.hits]
-    .filter(h => h.entityId !== undefined)
-    .sort((a, b) => (a.length ?? 0) - (b.length ?? 0));
-  for (const h of ordered) {
-    const id = Number(h.entityId);
-    if (id < 512) continue; // skip probe/gizmo/reserved
-    // Skip our own gizmo handles (they're CL_POINTER hits but not scene entities).
-    if (isGizmoHandle(id)) continue;
+  for (const id of sceneHitIds(result)) {
     // A spawn-point marker (avatar / camera target) — select that spawn point,
     // not a scene entity (#2). Spawn points are scene metadata, handled separately.
     const spawn = getSpawnMarkerTarget(id);

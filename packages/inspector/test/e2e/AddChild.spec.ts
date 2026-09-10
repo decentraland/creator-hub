@@ -16,17 +16,19 @@ declare const page: Page;
  * Why Siren: its catalog composite carries both signals in one drag —
  *   - `core::GltfContainer.src = "{assetPath}/Siren.glb"`   (top-level
  *     path string; the walker has always handled this correctly)
- *   - `asset-packs::Actions.value[0]` PLAY_SOUND with
- *     `jsonPayload = "{\"src\":\"{assetPath}/siren.mp3\",\"loop\":true}"`
- *     (the regression surface — the walker collapsed this to the bare
- *     base directory before the fix in `deepReplaceAssetPath`).
+ *   - `asset-packs::Actions.value[0]` CALL_SCRIPT_METHOD with
+ *     `jsonPayload = "{\"scriptPath\":\"{assetPath}/Alarm.ts\",...}"`
+ *     (the regression surface — the walker collapsed this nested path to
+ *     the bare base directory before the fix in `deepReplaceAssetPath`).
+ *     Siren became a script-backed smart item in the #1354 migration, so
+ *     the `{assetPath}` guard now rides on `scriptPath` instead of the old
+ *     PLAY_SOUND `src`; the substitution path under test is unchanged.
  *
  * The assertion reads the spawned entity's components directly from
  * `state.sdk.inspectorEngine` (already exposed via `window.store` in
- * `redux/store.ts`). This avoids the EntityInspector UI's smart-item
- * BasicView (`isBasicViewEnabled: true` on Siren's Config), which would
- * never render `.GltfInspector` / `.ActionInspector` for the spawned
- * entity, making any DOM-panel assertion time out.
+ * `redux/store.ts`), rather than the EntityInspector UI panels — the
+ * smart-item BasicView never renders `.GltfInspector` / `.ActionInspector`
+ * for a spawned entity, so any DOM-panel assertion would time out.
  */
 describe('Add builder asset as child', () => {
   beforeAll(async () => {
@@ -35,7 +37,7 @@ describe('Add builder asset as child', () => {
     await Inspector.waitForEngineReady();
   }, 60_000);
 
-  test('Siren spawn substitutes {assetPath} in GltfContainer and PLAY_SOUND Action', async () => {
+  test('Siren spawn substitutes {assetPath} in GltfContainer and script-method Action', async () => {
     await Assets.selectTab(AssetsTab.AssetsPack);
     await Assets.selectAssetPack('Smart Items');
     await Assets.addBuilderAsset('Siren');
@@ -53,21 +55,21 @@ describe('Add builder asset as child', () => {
     expect(gltf!.src).not.toContain('{assetPath}');
     expect(gltf!.src!.toLowerCase()).toContain('.glb');
 
-    // Regression surface: PLAY_SOUND's `jsonPayload.src` must have
-    // `{assetPath}` substituted before the inspector engine reads it. With
-    // the previous walker behavior the entire `jsonPayload` collapsed to
-    // the bare base directory, no `.mp3` would surface anywhere.
+    // Regression surface: CALL_SCRIPT_METHOD's `jsonPayload.scriptPath` must
+    // have `{assetPath}` substituted before the inspector engine reads it.
+    // With the previous walker behavior the entire `jsonPayload` collapsed to
+    // the bare base directory, no `.ts` would surface anywhere.
     const actions = (await Inspector.waitForComponent(sirenId, 'asset-packs::Actions')) as {
       value?: Array<{ type: string; jsonPayload?: string }>;
     } | null;
     expect(actions).not.toBeNull();
     expect(Array.isArray(actions!.value)).toBe(true);
-    const playSound = actions!.value!.find(action => action.type === 'play_sound');
-    expect(playSound).toBeDefined();
-    expect(playSound!.jsonPayload).toBeDefined();
-    const payload = JSON.parse(playSound!.jsonPayload!) as { src?: string };
-    expect(payload.src).toBeDefined();
-    expect(payload.src).not.toContain('{assetPath}');
-    expect(payload.src!.toLowerCase()).toContain('.mp3');
+    const callScript = actions!.value!.find(action => action.type === 'call_script_method');
+    expect(callScript).toBeDefined();
+    expect(callScript!.jsonPayload).toBeDefined();
+    const payload = JSON.parse(callScript!.jsonPayload!) as { scriptPath?: string };
+    expect(payload.scriptPath).toBeDefined();
+    expect(payload.scriptPath).not.toContain('{assetPath}');
+    expect(payload.scriptPath!.toLowerCase()).toContain('.ts');
   }, 60_000);
 });

@@ -13,7 +13,7 @@ interface AssetSlidesProps {
   uploadedAssets: AssetWithEmote[];
   currentSlide: number;
   onSlideChange: (newSlide: number) => void;
-  onScreenshot: (file: Asset) => (thumbnail: string) => void;
+  onScreenshot: (file: Asset) => (thumbnail?: string) => void;
   onNameChange: (fileIdx: number) => (newName: string) => void;
   isNameUnique: (asset: Asset) => boolean;
 }

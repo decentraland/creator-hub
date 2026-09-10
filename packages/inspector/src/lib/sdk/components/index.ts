@@ -154,7 +154,9 @@ export type SdkComponents = {
   AudioSource: ReturnType<typeof components.AudioSource>;
   AudioStream: ReturnType<typeof components.AudioStream>;
   AvatarAttach: ReturnType<typeof components.AvatarAttach>;
+  AvatarModifierArea: ReturnType<typeof components.AvatarModifierArea>;
   Billboard: ReturnType<typeof components.Billboard>;
+  CameraModeArea: ReturnType<typeof components.CameraModeArea>;
   GltfContainer: ReturnType<typeof components.GltfContainer>;
   Material: ReturnType<typeof components.Material>;
   MeshCollider: ReturnType<typeof components.MeshCollider>;
@@ -182,7 +184,9 @@ export function createComponents(engine: IEngine): SdkComponents {
   const AudioSource = components.AudioSource(engine);
   const AudioStream = components.AudioStream(engine);
   const AvatarAttach = components.AvatarAttach(engine);
+  const AvatarModifierArea = components.AvatarModifierArea(engine);
   const Billboard = components.Billboard(engine);
+  const CameraModeArea = components.CameraModeArea(engine);
   const GltfContainer = components.GltfContainer(engine);
   const Material = components.Material(engine);
   const MeshCollider = components.MeshCollider(engine);
@@ -212,7 +216,9 @@ export function createComponents(engine: IEngine): SdkComponents {
     AudioSource,
     AudioStream,
     AvatarAttach,
+    AvatarModifierArea,
     Billboard,
+    CameraModeArea,
     GltfContainer,
     Material,
     MeshCollider,

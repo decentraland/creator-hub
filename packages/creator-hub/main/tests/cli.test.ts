@@ -10,6 +10,7 @@ const mocks = vi.hoisted(() => ({
   readFile: vi.fn(),
   stat: vi.fn(),
   send: vi.fn(),
+  getBundledNodePath: vi.fn(() => '/fake/node-bin/node'),
 }));
 
 vi.mock('electron', () => ({ app: { getPath: vi.fn(() => '/fake/exe') } }));
@@ -19,6 +20,7 @@ vi.mock('electron-log/main', () => ({
 vi.mock('fs/promises', () => ({ default: { readFile: mocks.readFile, stat: mocks.stat } }));
 vi.mock('../src/mainWindow', () => ({ MAIN_WINDOW_ID: 'main' }));
 vi.mock('../src/modules/bin', () => ({ run: mocks.run, dclDeepLink: mocks.dclDeepLink }));
+vi.mock('../src/modules/path', () => ({ getBundledNodePath: mocks.getBundledNodePath }));
 vi.mock('../src/modules/port', () => ({ getAvailablePort: vi.fn(async () => 4000) }));
 vi.mock('../src/modules/window', () => ({
   getWindow: vi.fn(() => ({ isDestroyed: () => false, webContents: { send: mocks.send } })),
@@ -149,6 +151,35 @@ describe('cli preview start', () => {
       await promise;
 
       expect(getPreview(path)?.url).toContain('realm=http');
+    });
+
+    it('should pass --mcp and the chosen --mcp-port (the Explorer gateway launch path)', async () => {
+      const fake = createFakeChild();
+      mocks.run.mockReturnValue(fake.child);
+
+      const promise = start(path, { ...BASE_OPTS, mcp: true, mcpPort: 4321 });
+      fake.printDeeplink('realm=http://127.0.0.1:8000&mcp=true');
+      await promise;
+
+      const args = spawnedArgs();
+      expect(args).toContain('--mcp');
+      expect(args.slice(args.indexOf('--mcp-port'), args.indexOf('--mcp-port') + 2)).toEqual([
+        '--mcp-port',
+        '4321',
+      ]);
+    });
+
+    it('should not pass --mcp-port when no port is chosen', async () => {
+      const fake = createFakeChild();
+      mocks.run.mockReturnValue(fake.child);
+
+      const promise = start(path, { ...BASE_OPTS, mcp: true });
+      fake.printDeeplink('realm=http://127.0.0.1:8000&mcp=true');
+      await promise;
+
+      const args = spawnedArgs();
+      expect(args).toContain('--mcp');
+      expect(args).not.toContain('--mcp-port');
     });
 
     describe('and optimized assets are enabled with a supporting sdk', () => {

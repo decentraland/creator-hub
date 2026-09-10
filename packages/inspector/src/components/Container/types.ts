@@ -10,6 +10,7 @@ export type Props = {
   border?: boolean;
   gap?: boolean;
   variant?: 'minimal';
+  onToggle?: (open: boolean) => void;
   onRemoveContainer?: () => void;
   component?: Component<any>;
   entity?: Entity | Entity[];

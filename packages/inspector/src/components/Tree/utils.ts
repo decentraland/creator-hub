@@ -5,10 +5,9 @@ export enum ClickType {
   CONTEXT_MENU = 'contextmenu',
 }
 
-export function calculateDropType(y: number, rect: DOMRect): DropType {
+export function calculateDropType(y: number, rect: DOMRect, allowBefore = false): DropType {
   const threshold = Math.round(rect.height / 3);
-  // we can calculate for "before" type if (rect.top + threshold > y)
-  // but for now we don't need it since it only adds unnecessary complexity...
+  if (allowBefore && rect.top + threshold > y) return 'before';
   if (rect.bottom - threshold < y) return 'after';
   return 'inside';
 }

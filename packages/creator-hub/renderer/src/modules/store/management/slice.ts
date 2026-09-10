@@ -1,4 +1,5 @@
 import { createSlice, createSelector, type PayloadAction } from '@reduxjs/toolkit';
+import pLimit from 'p-limit';
 import type { Async } from '/shared/types/async';
 import type { ManagedProject } from '/shared/types/manage';
 import { FilterBy } from '/shared/types/manage';
@@ -22,6 +23,7 @@ import {
   getThumbnailUrlFromDeployment,
   getWorldPermissionsInitialState,
   getWorldSettingsInitialState,
+  toManagedProject,
 } from './utils';
 import type {
   AddressPermissionPayload,
@@ -83,6 +85,9 @@ export const initialState: Async<ManagementState> = {
 };
 
 const PROJECTS_PAGE_LIMIT = 50;
+
+/** Scene lookups fan out one request per world, so they run a few at a time. */
+const limit = pLimit(6);
 
 // thunks
 /** Gets all user ENS, LANDs, storage stats and filtered managed projects */
@@ -151,25 +156,9 @@ export const fetchWorlds = createAsyncThunk(
       throw new Error('Failed to fetch worlds');
     }
 
-    const worldProjects: ManagedProject[] = worldsResponse.worlds.map(world => ({
-      id: world.name,
-      displayName: world.name,
-      type: ManagedProjectType.WORLD,
-      role:
-        world.owner?.toLowerCase() === address.toLowerCase()
-          ? WorldRoleType.OWNER
-          : WorldRoleType.COLLABORATOR,
-      deployment: world.owner // If world has never been deployed, backend returns null in the owner and every field.
-        ? {
-            title: world.title || world.name,
-            description: world.description || '',
-            thumbnail: world.thumbnailHash ? WorldsAPI.getContentSrcUrl(world.thumbnailHash) : '',
-
-            lastPublishedAt: world.lastDeployedAt ? new Date(world.lastDeployedAt).getTime() : 0,
-            scenesCount: world.deployedScenes || 0,
-          }
-        : undefined,
-    }));
+    const worldProjects: ManagedProject[] = await Promise.all(
+      worldsResponse.worlds.map(world => limit(() => toManagedProject(WorldsAPI, world, address))),
+    );
 
     return { worlds: worldProjects, total: worldsResponse.total };
   },

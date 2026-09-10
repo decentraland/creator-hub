@@ -1,8 +1,7 @@
 import { join } from 'path';
 import fs from 'fs/promises';
-import { realpathSync } from 'fs';
 import log from 'electron-log/main';
-import { app, shell } from 'electron';
+import { shell } from 'electron';
 import QRCode from 'qrcode';
 
 import type { PreviewOptions } from '/shared/types/settings';
@@ -18,6 +17,7 @@ import { dynamicImport } from '/shared/dynamic-import';
 
 import { MAIN_WINDOW_ID } from '../mainWindow';
 import { dclDeepLink, run, type Child } from './bin';
+import { getBundledNodePath } from './path';
 import { getAvailablePort } from './port';
 import { getWindow } from './window';
 import { getProjectId, track } from './analytics';
@@ -278,8 +278,6 @@ function updateDeepLinkWithOpts(params: string, newOpts: PreviewOptions): string
 
     // this param is different from what we recieved from the CLI that the one that the launcher uses.
     setOrDeleteParam('open-deeplink-in-new-instance', newOpts.openNewInstance);
-    urlParams.set('creator-hub-bin-path', selfBinPath());
-
     const output = urlParams.toString();
     log.info(`[CLI] created deeplink with options: ${output}`);
     return output;
@@ -288,31 +286,6 @@ function updateDeepLinkWithOpts(params: string, newOpts: PreviewOptions): string
       `[CLI] error occuring when adding additional arguments to deeplink, fallback to deeplink without params: ${e}`,
     );
     return params;
-  }
-}
-
-// Returns self bin path for both dev and build in Windows and MacOS
-// This hook allows the client to request creator hub back with commands
-function selfBinPath(): string {
-  const exe = app.getPath('exe');
-
-  function realPath(): string {
-    // Resolve symlinks (common on macOS; harmless elsewhere)
-    try {
-      const realpathNative = realpathSync.native as (p: string) => string | undefined;
-      return (realpathNative ? realpathNative(exe) : realpathSync(exe)) || exe;
-    } catch {
-      return exe;
-    }
-  }
-
-  const path = realPath();
-
-  // trim trailing slash symbol
-  if (path.endsWith('/')) {
-    return path.slice(0, -1);
-  } else {
-    return path;
   }
 }
 
@@ -338,7 +311,12 @@ export async function supportsAssetBundles(path: string): Promise<boolean> {
   }
 }
 
-type StartOptions = PreviewOptions & { retry?: boolean; mobile?: boolean };
+// `mcpPort` is transient (not a user PreviewOptions setting): the Explorer-gateway
+// launches a preview with `mcp: true` and needs the Explorer's MCP server on a known
+// port so it can connect an MCP client to it. sdk-commands accepts `--mcp-port` (≥7.25.0)
+// and forwards it to the Explorer as a deeplink param; omitted, the Explorer defaults to
+// 8123. Only honoured on the Unity (`--explorer-alpha`) path alongside `--mcp`.
+type StartOptions = PreviewOptions & { retry?: boolean; mobile?: boolean; mcpPort?: number };
 
 // Serializes concurrent starts per path: a second Preview press (or a mobile-QR start)
 // while a spawn is still converting must ride that spawn, not race a second one.
@@ -476,13 +454,22 @@ async function doStart(path: string, opts: StartOptions): Promise<string> {
           ...(isMobile ? ['--mobile'] : []),
           ...extraArgs,
           ...generatePreviewArguments(opts),
+          // `--mcp` (a boolean) is emitted by generatePreviewArguments from opts.mcp;
+          // pin the port too when the gateway asked for one, so it knows where to connect.
+          ...(opts.mcp && opts.mcpPort !== undefined ? ['--mcp-port', String(opts.mcpPort)] : []),
         ];
 
+    // Preview runs on the bundled Node binary rather than an Electron utility process. The
+    // multiplayer server sdk-commands spawns inherits this runtime, and its `isolated-vm`
+    // dependency has no build for Electron's module ABI. Falls back to the utility process when
+    // no real Node is around, which just leaves the multiplayer server unavailable as before.
+    // TEMPORARY: remove with the Bevy migration.
     const process = run('@dcl/sdk-commands', 'sdk-commands', {
       args,
       cwd: path,
       workspace: path,
       env: await getEnv(path),
+      nodePath: getBundledNodePath(),
     });
 
     // registered before the deeplink resolves so the spawn can be cancelled mid-conversion
@@ -636,7 +623,7 @@ export async function legacyDeploy({
 
   process.waitFor(/close the terminal/gi).then(() => process.kill());
 
-  process.wait().catch(); // handle rejection of main promise to avoid warnings in console
+  process.wait().catch(() => {}); // handle rejection of main promise to avoid warnings in console
 
   deployServer = { stop: () => process.kill() };
 

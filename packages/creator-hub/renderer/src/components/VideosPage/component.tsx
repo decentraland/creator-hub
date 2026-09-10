@@ -79,6 +79,16 @@ export function VideosPage() {
             ]}
           />
           <Playlist
+            title="Friendzone Buildathon 2026"
+            list="PLZnx2g41Pk_s"
+            videos={[
+              { id: 'tK5-fyBVnK0', title: 'Workshop #1: Creator Hub' },
+              { id: 'FBr2gye3qh8', title: 'Workshop #2: Building for Mobile' },
+              { id: '5OmTTzpPdDc', title: 'Workshop #3: Mobile UX & Controls Customization' },
+              { id: 'tc1PwYKW1Kc', title: 'Workshop #4: Performance, Optimization & VFXs' },
+            ]}
+          />
+          <Playlist
             title="Editor (No Code) Tutorials"
             list="PLAcRraQmr_GOJiVO5ZtZ86hef4unLsEkf"
             videos={[

@@ -36,7 +36,12 @@ if ('serviceWorker' in navigator) {
 // eval). `PUBLIC_URL` is intentionally left UNSET so engine.js resolves its
 // `pkg/` wasm relative to its own module URL — i.e. the same-origin
 // `/bevy-engine/engine/` dir we serve — instead of a CDN.
-window.__bevyBootConfig = { systemScene, portables, preview };
+// `editor: true` tells the engine this is an editor session: it runs the scene's
+// main() once and then auto-freezes it at tick 3 (bevy-explorer #1015), the
+// deterministic "static subject to edit" state. Always true — this host page only
+// ever boots the embedded editor engine. The agent no longer force-freezes
+// (see ENGINE_AUTO_FREEZES_EDITOR_SCENE); play/stop still ride /freeze_scene.
+window.__bevyBootConfig = { systemScene, portables, preview, editor: true };
 
 // Load the engine's boot module as a runtime <script> (NOT an import): it
 // ships in the engine package under `/bevy-engine/engine/` and must load

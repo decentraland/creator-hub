@@ -48,6 +48,12 @@ export interface InputFocusBridgeOptions {
   hostWindow?: Window;
   /** The engine iframe element, refocused on viewport pointer-down. */
   iframe?: HTMLIFrameElement;
+  /** True while editing is on (default). When editing is OFF (the "Interact"
+   * toggle, #1458), BARE editor-shortcut keys (F, `, Delete…) are NOT forwarded to
+   * the editor — they reach only the running scene (F = IA_SECONDARY). Modifier
+   * combos (undo/save/copy) are still forwarded (they don't conflict with scene
+   * input). Defaults to always-on. */
+  isEditingEnabled?: () => boolean;
 }
 
 /**
@@ -57,12 +63,19 @@ export function createInputFocusBridge(options: InputFocusBridgeOptions): () => 
   const { engineWindow } = options;
   const hostWindow = options.hostWindow ?? window;
   const iframe = options.iframe;
+  const isEditingEnabled = options.isEditingEnabled ?? (() => true);
 
   const onKey = (e: KeyboardEvent) => {
     if (!isForwardedKey(e)) return;
+    const isModifierCombo = e.metaKey || e.ctrlKey;
+    // In Interact mode (editing off), a BARE editor-shortcut key (F, `, Delete…)
+    // must reach only the running scene, not fire the editor action — don't forward
+    // it. Modifier combos (undo/save/copy) don't map to scene input, so keep
+    // forwarding those regardless. The engine always receives the raw event.
+    if (!isEditingEnabled() && !isModifierCombo) return;
     // The re-dispatched host event can't cancel the real engine event, so cancel
     // the BROWSER default here for modifier combos (e.g. Cmd+D = bookmark).
-    if (e.metaKey || e.ctrlKey) e.preventDefault();
+    if (isModifierCombo) e.preventDefault();
     // Re-dispatch on the host so the inspector's shortcut listeners fire as if it
     // had focus. The engine still receives the original event (not cancelled).
     //

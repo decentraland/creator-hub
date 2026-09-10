@@ -1,0 +1,49 @@
+/* The 2D | 3D mode switcher: a tab band at the top of the LEFT panel, above
+   whichever tree the active mode shows.
+
+   Deliberately the same treatment as the right rail's PROPERTIES | VARIABLES bar
+   (.ui-designer-right-rail-tab) — the Figma uses one TabBar component for both.
+   That includes its documented deviation: the resting label holds at 50% white
+   rather than the design's White 40, which over this band composites to 3.75:1,
+   under the 4.5:1 a tab label needs. */
+.ModeSwitcher {
+  display: flex;
+  flex: 0 0 auto;
+  background-color: var(--tree-bg-color);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.ModeSwitcher-tab {
+  flex: 1 1 0;
+  box-sizing: border-box;
+  min-height: 36px;
+  padding: 9px 4px;
+  appearance: none;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: rgba(255, 255, 255, 0.5);
+  font-family: var(--font-family);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: color 80ms linear, border-color 80ms linear;
+}
+
+.ModeSwitcher-tab:hover {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.ModeSwitcher-tab.active {
+  color: var(--ui-designer-text);
+  border-bottom-color: var(--ui-designer-text);
+  font-weight: 600;
+}
+
+.ModeSwitcher-tab:focus-visible {
+  outline: 2px solid var(--border-focused);
+  outline-offset: -2px;
+}

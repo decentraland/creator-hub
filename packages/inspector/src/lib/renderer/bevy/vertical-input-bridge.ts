@@ -29,6 +29,10 @@ export interface VerticalInputBridgeOptions {
   engineWindow: Window;
   /** Called with the current held state whenever it changes (up = E, down = Q). */
   onChange: (up: boolean, down: boolean) => void;
+  /** True while editing is on (the default). When editing is OFF (the "Interact"
+   * toggle, #1458), E/Q are NOT captured — they reach the engine as InputActions so
+   * the running scene can react to them (E = IA_PRIMARY). Defaults to always-on. */
+  isEditingEnabled?: () => boolean;
 }
 
 const UP_KEY = 'e';
@@ -37,6 +41,7 @@ const DOWN_KEY = 'q';
 /** Wire E/Q capture on the engine window. Returns a disconnect fn. */
 export function createVerticalInputBridge(options: VerticalInputBridgeOptions): () => void {
   const { engineWindow, onChange } = options;
+  const isEditingEnabled = options.isEditingEnabled ?? (() => true);
   let up = false;
   let down = false;
 
@@ -69,12 +74,16 @@ export function createVerticalInputBridge(options: VerticalInputBridgeOptions): 
   };
 
   const onKeyDown = (e: KeyboardEvent) => {
+    // In Interact mode (editing off) let E/Q flow to the engine so the running
+    // scene gets them (E = IA_PRIMARY) — don't swallow or drive the fly camera.
+    if (!isEditingEnabled()) return;
     // Bare key only — a modifier combo (e.g. Cmd+E) is an editor shortcut, not fly.
     if (e.metaKey || e.ctrlKey || e.altKey) return;
     if (isVerticalKey(e.key)) swallow(e);
     apply(e.key, true);
   };
   const onKeyUp = (e: KeyboardEvent) => {
+    if (!isEditingEnabled()) return;
     if (!e.metaKey && !e.ctrlKey && !e.altKey && isVerticalKey(e.key)) swallow(e);
     apply(e.key, false);
   };

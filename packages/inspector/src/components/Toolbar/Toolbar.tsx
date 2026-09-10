@@ -5,11 +5,11 @@ import {
   BiSave,
   BiBadgeCheck,
   BiVideo,
-  BiWalk,
   BiChevronDown,
   BiPlay,
   BiPause,
   BiStop,
+  BiJoystick,
 } from 'react-icons/bi';
 import { RiListSettingsLine } from 'react-icons/ri';
 import { FaPencilAlt } from 'react-icons/fa';
@@ -27,6 +27,7 @@ import {
   selectSceneInfo,
 } from '../../redux/data-layer';
 import { selectCanSave, selectInspectorPreferences } from '../../redux/app';
+import { setSceneRunIntent } from '../../redux/ui';
 import { useInspectorUIState } from '../../hooks/sdk/useInspectorUIState';
 import { useAppSelector, useAppDispatch } from '../../redux/hooks';
 import {
@@ -105,19 +106,39 @@ const Toolbar = withSdk(({ sdk }) => {
   }, [sceneRun]);
   const handleToggleSceneRun = useCallback(() => {
     if (!sceneRun) return;
-    sceneRun.setRunning(!sceneRun.isRunning());
-  }, [sceneRun]);
+    const next = !sceneRun.isRunning();
+    dispatch(setSceneRunIntent({ running: next }));
+    sceneRun.setRunning(next);
+  }, [dispatch, sceneRun]);
   const handleResetScene = useCallback(() => {
+    dispatch(setSceneRunIntent({ running: false }));
     void sceneRun?.reset();
-  }, [sceneRun]);
+  }, [dispatch, sceneRun]);
+
+  // "Interact" toggle — only for renderers whose viewport editing is a scene-side
+  // interception that can be turned off (Bevy exposes `interaction`; Babylon omits
+  // it). OFF (default) = clicks edit (select/move); ON = clicks reach the running
+  // scene so mechanics can be tested (#1458).
+  const interaction = sdk.renderer.interaction;
+  const [editingEnabled, setEditingEnabled] = useState<boolean>(
+    interaction?.isEditingEnabled() ?? true,
+  );
+  useEffect(() => {
+    if (!interaction) return;
+    setEditingEnabled(interaction.isEditingEnabled());
+    return interaction.onEditingChange(setEditingEnabled);
+  }, [interaction]);
+  const handleToggleInteract = useCallback(() => {
+    if (!interaction) return;
+    interaction.setEditingEnabled(!interaction.isEditingEnabled());
+  }, [interaction]);
 
   const handleSaveClick = useCallback(() => dispatch(save()), []);
-  const handleUndo = useCallback(() => dispatch(undo()), []);
-  const handleRedo = useCallback(() => dispatch(redo()), []);
+  const handleUndo = useCallback(() => dispatch(undo()), [dispatch]);
+  const handleRedo = useCallback(() => dispatch(redo()), [dispatch]);
   const handleToggleSceneInfo = useCallback(() => {
     updateUIState({ sceneInfoPanelVisible: !isSceneInfoPanelOpen });
   }, [isSceneInfoPanelOpen, updateUIState]);
-
   useHotkey([SAVE, SAVE_ALT], handleSaveClick);
   useHotkey([UNDO, UNDO_ALT], handleUndo);
   useHotkey([REDO, REDO_2, REDO_ALT, REDO_ALT_2], handleRedo);
@@ -168,7 +189,7 @@ const Toolbar = withSdk(({ sdk }) => {
             value={cameraMode}
             trigger={
               <>
-                {cameraMode === 'free' ? <BiVideo /> : <BiWalk />}
+                <BiVideo />
                 <span className="CameraModeLabel">{cameraMode === 'free' ? 'Free' : 'Player'}</span>
                 <BiChevronDown className="CameraModeChevron" />
               </>
@@ -195,21 +216,34 @@ const Toolbar = withSdk(({ sdk }) => {
         </div>
       )}
       {sceneRun && (
-        <ToolbarButton
-          className={cx('scene-run', { active: sceneRunning })}
-          onClick={handleToggleSceneRun}
-          title={sceneRunning ? 'Pause scene' : 'Run scene'}
-        >
-          {sceneRunning ? <BiPause /> : <BiPlay />}
-        </ToolbarButton>
+        <>
+          <ToolbarButton
+            className={cx('scene-run', { active: sceneRunning })}
+            onClick={handleToggleSceneRun}
+            title={sceneRunning ? 'Pause scene' : 'Run scene'}
+          >
+            {sceneRunning ? <BiPause /> : <BiPlay />}
+          </ToolbarButton>
+          <ToolbarButton
+            className="scene-reset"
+            onClick={handleResetScene}
+            title="Stop and reset scene to its initial state"
+          >
+            <BiStop />
+          </ToolbarButton>
+        </>
       )}
-      {sceneRun && (
+      {interaction && (
         <ToolbarButton
-          className="scene-reset"
-          onClick={handleResetScene}
-          title="Stop and reset scene to its initial state"
+          className={cx('interact', { active: !editingEnabled })}
+          onClick={handleToggleInteract}
+          title={
+            editingEnabled
+              ? 'Interact with the scene — turn off editing so clicks reach the running scene'
+              : 'Interacting with the scene — click to re-enable editing'
+          }
         >
-          <BiStop />
+          <BiJoystick />
         </ToolbarButton>
       )}
       <Preferences />

@@ -14,6 +14,7 @@ import type {
   RendererEditorCamera,
   RendererEvents,
   RendererGizmos,
+  RendererInteraction,
   RendererMetrics,
   RendererSceneRun,
   RendererViewport,
@@ -73,6 +74,7 @@ export class BevyRenderer implements IRenderer {
   readonly debug: RendererDebug;
   readonly editorCamera: RendererEditorCamera;
   readonly sceneRun: RendererSceneRun;
+  readonly interaction: RendererInteraction;
 
   // In-memory camera pose. No wasm camera yet; this exists so the pose getters
   // are coherent (setPose → getPose) as the contract requires.
@@ -114,6 +116,12 @@ export class BevyRenderer implements IRenderer {
   #sceneRunning = false;
   #postSceneRunning: ((running: boolean) => void) | null = null;
   #sceneRunHandlers = new Set<(running: boolean) => void>();
+  // Viewport editing (click-to-select + gizmo). Default ENABLED; the "Interact"
+  // toolbar toggle disables it so clicks reach the running scene (#1458). The
+  // poster (injected by `register`) forwards the intent to the agent.
+  #editingEnabled = true;
+  #postEditingEnabled: ((enabled: boolean) => void) | null = null;
+  #editingHandlers = new Set<(enabled: boolean) => void>();
   // True from a Stop/reset until the agent signals `reset-complete` (the reloaded
   // scene is re-pinned + re-frozen). While resetting, Play is deferred: unfreezing
   // an unpinned scene silently no-ops, which is the "hit Play right after Stop and
@@ -155,6 +163,7 @@ export class BevyRenderer implements IRenderer {
     this.camera = this.#createCamera();
     this.editorCamera = this.#createEditorCamera();
     this.sceneRun = this.#createSceneRun();
+    this.interaction = this.#createInteraction();
     this.gizmos = this.#createGizmos();
     this.metrics = this.#createMetrics();
     this.viewport = this.#createViewport();
@@ -347,6 +356,11 @@ export class BevyRenderer implements IRenderer {
     this.#postSceneRunning = post;
   }
 
+  /** Wire the editing-enabled poster (forwards the Interact toggle to the agent). */
+  setEditingEnabledPoster(post: (enabled: boolean) => void): void {
+    this.#postEditingEnabled = post;
+  }
+
   /** Wire the scene resetter (Stop = reboot the engine to the scene's initial
    * state + re-freeze). Injected by `register`. */
   setSceneResetter(reset: () => Promise<void>): void {
@@ -453,6 +467,22 @@ export class BevyRenderer implements IRenderer {
           for (const cb of this.#sceneRunHandlers) cb(false);
         }
         await this.#sceneResetter();
+      },
+    };
+  }
+
+  #createInteraction(): RendererInteraction {
+    return {
+      isEditingEnabled: () => this.#editingEnabled,
+      setEditingEnabled: (enabled: boolean) => {
+        if (enabled === this.#editingEnabled) return;
+        this.#editingEnabled = enabled;
+        this.#postEditingEnabled?.(enabled);
+        for (const cb of this.#editingHandlers) cb(enabled);
+      },
+      onEditingChange: (cb: (enabled: boolean) => void): Unsubscribe => {
+        this.#editingHandlers.add(cb);
+        return () => this.#editingHandlers.delete(cb);
       },
     };
   }

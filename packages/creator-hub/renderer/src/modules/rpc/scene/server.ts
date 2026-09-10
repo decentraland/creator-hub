@@ -9,10 +9,15 @@ import type { Severity } from '../../store/snackbar/types';
 import { store } from '../../store';
 import { actions as snackbarActions } from '../../store/snackbar';
 import { createGenericNotification } from '../../store/snackbar/utils';
+import { actions as workspaceActions } from '../../store/workspace';
 
 type NotificationRequest = {
   severity: Severity;
   message: string;
+  // 0 = persistent + closeable; omit for the default auto-hide.
+  duration?: number;
+  // Secondary detail; a notification with a description renders closeable.
+  description?: string;
 };
 
 export enum Method {
@@ -21,6 +26,8 @@ export enum Method {
   PUSH_NOTIFICATION = 'push_notification',
   BROADCAST_MOBILE_DEBUG_COMMAND = 'broadcast_mobile_debug_command',
   GET_FEATURE_FLAGS = 'get_feature_flags',
+  UPDATE_SDK = 'update_sdk',
+  SET_UI_DESIGNER_MODE = 'set_ui_designer_mode',
 }
 
 export type Params = {
@@ -29,6 +36,8 @@ export type Params = {
   [Method.PUSH_NOTIFICATION]: { notification: NotificationRequest };
   [Method.BROADCAST_MOBILE_DEBUG_COMMAND]: { cmd: string; args: Record<string, unknown> };
   [Method.GET_FEATURE_FLAGS]: Record<string, never>;
+  [Method.UPDATE_SDK]: Record<string, never>;
+  [Method.SET_UI_DESIGNER_MODE]: { open: boolean };
 };
 
 export type Result = {
@@ -40,6 +49,8 @@ export type Result = {
     results: { sessionId: number; ok: boolean; data: unknown }[];
   };
   [Method.GET_FEATURE_FLAGS]: { flags: Record<string, boolean> };
+  [Method.UPDATE_SDK]: { ok: boolean };
+  [Method.SET_UI_DESIGNER_MODE]: void;
 };
 
 export class SceneRpcServer extends RPC<Method, Params, Result> {
@@ -71,7 +82,10 @@ export class SceneRpcServer extends RPC<Method, Params, Result> {
     this.handle('push_notification', async ({ notification }) => {
       store.dispatch(
         snackbarActions.pushSnackbar(
-          createGenericNotification(notification.severity, notification.message),
+          createGenericNotification(notification.severity, notification.message, {
+            duration: notification.duration,
+            description: notification.description,
+          }),
         ),
       );
     });
@@ -84,6 +98,38 @@ export class SceneRpcServer extends RPC<Method, Params, Result> {
     // (setFeatureFlags) can land before a slow-booting renderer's server exists.
     this.handle('get_feature_flags', async () => {
       return { flags: store.getState().featureFlags.flags };
+    });
+
+    this.handle('update_sdk', async () => {
+      const state = store.getState();
+      if (state.editor.isInstallingProject) {
+        return { ok: false };
+      }
+      const currentProject = state.editor.project ?? project;
+      try {
+        await store.dispatch(workspaceActions.updatePackages(currentProject)).unwrap();
+        await store
+          .dispatch(workspaceActions.fetchSdkCommandsVersion(currentProject.path))
+          .unwrap();
+        return { ok: true };
+      } catch (error) {
+        console.error('[SceneRpc] Failed to update the scene SDK', error);
+        return { ok: false };
+      }
+    });
+
+    this.handle('set_ui_designer_mode', async ({ open }) => {
+      if (typeof open !== 'boolean') return;
+      try {
+        await store.dispatch(
+          workspaceActions.updateProjectInfo({
+            path: project.path,
+            info: { uiDesignerOpen: open },
+          }),
+        );
+      } catch (error) {
+        console.error('[SceneRpc] Failed to persist the UI designer mode', error);
+      }
     });
   }
 }

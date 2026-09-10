@@ -28,6 +28,34 @@
       }
     },
     {
+      "name": "core::GltfContainer",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/Chair_Wood_01.glb",
+            "visibleMeshesCollisionMask": 0,
+            "invisibleMeshesCollisionMask": 3
+          }
+        }
+      }
+    },
+    {
+      "name": "asset-packs::Script",
+      "data": {
+        "0": {
+          "json": {
+            "value": [
+              {
+                "path": "{assetPath}/Seat.ts",
+                "priority": 0,
+                "layout": "{\"params\":{\"hoverText\":{\"type\":\"string\",\"optional\":true,\"value\":\"Sit Here\",\"tooltip\":\"Text shown when the player points at the seat.\"},\"takenMessage\":{\"type\":\"string\",\"optional\":true,\"value\":\"Seat is taken\",\"tooltip\":\"Text shown as the hover hint, and as an on-screen message when the Sit action is called, while every spot is taken. Leave empty for no message.\"}},\"actions\":[{\"methodName\":\"sit\",\"description\":\"Sits the player on the nearest free sit spot, or shows the taken message if every spot is taken\",\"params\":{}},{\"methodName\":\"markAsFree\",\"description\":\"Marks every sit spot of this seat as free\",\"params\":{}}]}"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
       "name": "core-schema::Name",
       "data": {
         "0": {
@@ -65,215 +93,20 @@
     {
       "name": "asset-packs::Actions",
       "data": {
-        "513": {
+        "0": {
           "json": {
             "id": "{self}",
             "value": [
               {
-                "name": "Move here",
-                "type": "move_player_here",
-                "jsonPayload": "{}"
-              },
-              {
-                "name": "Sit anim1",
-                "type": "play_default_emote",
-                "jsonPayload": "{\"emote\":\"sittingChair1\"}"
-              },
-              {
-                "name": "Mark as taken",
-                "type": "set_state",
-                "jsonPayload": "{\"state\":\"Taken\"}"
-              },
-              {
-                "name": "Mark as free",
-                "type": "set_state",
-                "jsonPayload": "{\"state\":\"Free\"}",
-                "allowedInBasicView": true
-              },
-              {
+                "type": "call_script_method",
                 "name": "Sit Here",
-                "type": "batch",
-                "jsonPayload": "{\"actions\":[\"Move here\",\"Mark as taken\",\"Random sit anim\"]}",
-                "allowedInBasicView": true
+                "jsonPayload": "{\"scriptPath\":\"{assetPath}/Seat.ts\",\"methodName\":\"sit\",\"params\":{}}",
+                "default": true
               },
               {
-                "name": "Sit anim2",
-                "type": "play_default_emote",
-                "jsonPayload": "{\"emote\":\"sittingChair2\"}"
-              },
-              {
-                "name": "Random sit anim",
-                "type": "random",
-                "jsonPayload": "{\"actions\":[\"Sit anim1\",\"Sit anim2\"]}"
-              },
-              {
-                "name": "Print text",
-                "type": "show_text",
-                "jsonPayload": "{\"text\":\"Seat is taken\",\"hideAfterSeconds\":2,\"font\":0,\"fontSize\":40,\"textAlign\":7}"
-              },
-              {
-                "name": "Hide text",
-                "type": "hide_text",
-                "jsonPayload": "{}"
-              },
-              {
-                "name": "Show text",
-                "type": "batch",
-                "jsonPayload": "{\"actions\":[\"Hide text\",\"Print text\"]}"
-              }
-            ]
-          }
-        }
-      }
-    },
-    {
-      "name": "asset-packs::Triggers",
-      "data": {
-        "0": {
-          "json": {
-            "value": [
-              {
-                "type": "on_input_action",
-                "conditions": [
-                  {
-                    "id": "{513:asset-packs::States}",
-                    "type": "when_state_is",
-                    "value": "Free"
-                  }
-                ],
-                "operation": "and",
-                "actions": [
-                  {
-                    "id": "{513:asset-packs::Actions}",
-                    "name": "Sit Here"
-                  }
-                ]
-              },
-              {
-                "type": "on_input_action",
-                "conditions": [
-                  {
-                    "id": "{513:asset-packs::States}",
-                    "type": "when_state_is",
-                    "value": "Taken"
-                  }
-                ],
-                "operation": "and",
-                "actions": [
-                  {
-                    "id": "{513:asset-packs::Actions}",
-                    "name": "Show text"
-                  }
-                ]
-              }
-            ]
-          }
-        },
-        "513": {
-          "json": {
-            "value": [
-              {
-                "type": "on_player_leaves_area",
-                "conditions": [
-                  {
-                    "id": "{self:asset-packs::States}",
-                    "type": "when_state_is",
-                    "value": "Taken"
-                  }
-                ],
-                "operation": "and",
-                "actions": [
-                  {
-                    "id": "{self:asset-packs::Actions}",
-                    "name": "Mark as free"
-                  }
-                ]
-              }
-            ]
-          }
-        }
-      }
-    },
-    {
-      "name": "asset-packs::States",
-      "data": {
-        "513": {
-          "json": {
-            "id": "{self}",
-            "value": ["Free", "Taken"],
-            "defaultValue": "Free"
-          }
-        }
-      }
-    },
-    {
-      "name": "inspector::Config",
-      "data": {
-        "513": {
-          "json": {
-            "componentName": "Sit Spot",
-            "fields": [
-              {
-                "name": "Hover Text",
-                "type": "core::PointerEvents"
-              },
-              {
-                "name": "When Clicked",
-                "type": "asset-packs::Triggers",
-                "basicViewId": "trigger-when-clicked"
-              }
-            ],
-            "assetId": "b3bc0885-d2cc-4cbe-ba62-a50c8e8cf211",
-            "helpTooltip": {
-              "text": "Configure the sit spot's hover text and actions. Players can click to sit here. The spot tracks whether it's free or taken and shows a message when occupied."
-            },
-            "version": 1
-          }
-        }
-      }
-    },
-    {
-      "name": "inspector::Config",
-      "data": {
-        "0": {
-          "json": {
-            "componentName": "Chair",
-            "fields": [],
-            "helpTooltip": {
-              "text": "A chair that players can sit on. Click to sit down at this location."
-            },
-            "version": 1
-          }
-        }
-      }
-    },
-    {
-      "name": "core::GltfContainer",
-      "data": {
-        "0": {
-          "json": {
-            "src": "{assetPath}/Chair_Wood_01.glb",
-            "visibleMeshesCollisionMask": 0,
-            "invisibleMeshesCollisionMask": 3
-          }
-        }
-      }
-    },
-    {
-      "name": "core::PointerEvents",
-      "data": {
-        "0": {
-          "json": {
-            "pointerEvents": [
-              {
-                "eventType": 1,
-                "eventInfo": {
-                  "button": 1,
-                  "hoverText": "Sit Here",
-                  "maxDistance": 10,
-                  "showFeedback": true,
-                  "showHighlight": true
-                }
+                "type": "call_script_method",
+                "name": "Mark as free",
+                "jsonPayload": "{\"scriptPath\":\"{assetPath}/Seat.ts\",\"methodName\":\"markAsFree\",\"params\":{}}"
               }
             ]
           }

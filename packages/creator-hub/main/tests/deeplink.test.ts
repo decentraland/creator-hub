@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { AUTH_DEEPLINK_SIGNIN_CHANNEL } from '/shared/deeplink';
-import { handleDeeplink } from '../src/modules/deeplink';
+import { handleDeeplink, shouldRegisterProtocolClient } from '../src/modules/deeplink';
 import { restoreOrCreateMainWindow } from '../src/mainWindow';
 
 vi.mock('electron', () => ({
@@ -88,5 +88,26 @@ describe('when handling a URL that is not a deeplink for our scheme', () => {
 
     expect(restoreOrCreateMainWindow).not.toHaveBeenCalled();
     expect(send).not.toHaveBeenCalled();
+  });
+});
+
+describe('shouldRegisterProtocolClient', () => {
+  describe('when running a packaged build', () => {
+    it.each(['darwin', 'win32', 'linux'])('should claim the scheme on %s', osPlatform => {
+      expect(shouldRegisterProtocolClient(false, osPlatform)).toBe(true);
+    });
+  });
+
+  describe('when running a development build', () => {
+    it('should not claim the scheme on macOS, where the id is the generic Electron bundle', () => {
+      expect(shouldRegisterProtocolClient(true, 'darwin')).toBe(false);
+    });
+
+    it.each(['win32', 'linux'])(
+      'should still claim it on %s, where the registration carries the app path',
+      osPlatform => {
+        expect(shouldRegisterProtocolClient(true, osPlatform)).toBe(true);
+      },
+    );
   });
 });

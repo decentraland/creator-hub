@@ -10,6 +10,7 @@ import { delay } from '/shared/utils';
 import { isFetchError } from '/shared/fetch';
 import type { DeploymentComponentsStatus, Info, Status, File, ErrorName } from '/@/lib/deploy';
 import { DeploymentError, isDeploymentError } from '/@/lib/deploy';
+import { FeatureFlag } from '/@/modules/store/featureFlags';
 import { actions as managementActions } from '/@/modules/store/management';
 import { createAsyncThunk } from '/@/modules/store/thunk';
 import {
@@ -138,7 +139,10 @@ export const deploy = createAsyncThunk(
     while (retries > 0) {
       try {
         const authChain = Authenticator.signPayload(identity, currentInfo.rootCID);
-        return await deployFn(currentUrl, { address: wallet, authChain, chainId });
+        await deployFn(currentUrl, { address: wallet, authChain, chainId });
+        // Retrying against another catalyst rebuilds the scene and yields a new rootCID,
+        // so the caller must poll the status of the entity that actually got deployed.
+        return { info: currentInfo };
       } catch (error: any) {
         retries--;
 
@@ -191,6 +195,15 @@ export const deploy = createAsyncThunk(
         currentInfo = result.info;
       }
     }
+
+    // Unreachable in practice, but returning undefined here would fulfill the thunk and leave
+    // the caller polling a deployment that never happened.
+    return rejectWithValue(
+      new DeploymentError(
+        'CATALYST_SERVERS_EXHAUSTED',
+        getState().deployment.deployments[path]?.componentsStatus ?? getInitialDeploymentStatus(),
+      ),
+    );
   },
 );
 
@@ -205,7 +218,7 @@ export const executeDeployment = createAsyncThunk(
       );
     }
 
-    const { info, id: deploymentId, wallet } = deployment;
+    const { id: deploymentId, wallet } = deployment;
 
     const hasValidIdentity = AuthServerProvider.hasValidIdentity();
     const identity = localStorageGetIdentity(wallet);
@@ -221,9 +234,18 @@ export const executeDeployment = createAsyncThunk(
     }
 
     try {
-      await dispatch(deploy({ identity, deployment })).unwrap();
+      // Retries against alternative catalysts rebuild the scene, so the deployed entity may
+      // no longer be the one we started with. Poll the rootCID that actually got deployed.
+      const { info } = await dispatch(deploy({ identity, deployment })).unwrap();
 
-      const fetchStatus = () => fetchDeploymentStatus(info, identity);
+      // Read on every poll rather than once: flags are fetched asynchronously at startup and
+      // this runs for up to an hour, so a late arrival still takes effect.
+      const fetchStatus = () =>
+        fetchDeploymentStatus(
+          info,
+          identity,
+          getState().featureFlags.flags[FeatureFlag.ABGEN_PIPELINE] === true,
+        );
       let isCancelled = false;
       const shouldAbort = () => signal.aborted || isCancelled;
 

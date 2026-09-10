@@ -1,0 +1,52 @@
+.ui-designer-nodetree {
+  border-top: 1px solid var(--ui-designer-hairline);
+  padding: var(--uid-space-1) 0;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  font-size: 12px;
+}
+
+/* The shared Tree renders the type icon as an <svg> directly inside
+   .selectable-area, which the generic `.item > div > svg` margin rule in
+   Tree.css does not match — so the icon sits flush against the label. Add the
+   gap on the flex row (scoped to the UI Designer trees so the Hierarchy tree
+   is untouched). Also give each row a little breathing room. */
+.ui-designer-nodetree .selectable-area {
+  gap: var(--uid-space-2);
+}
+
+.ui-designer-nodetree .item-area {
+  padding-top: 3px;
+  padding-bottom: 3px;
+}
+
+.ui-designer-nodetree .selectable-area svg {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+/* A platform-variant branch for the device that isn't being edited: still listed
+   (clicking it switches device) but visibly not the live one. */
+.ui-designer-tree-branch.inactive {
+  color: var(--sub-text);
+  opacity: 0.55;
+}
+
+/* A hidden node reads grayed. The signal is the class on the action area rather
+   than which eye icon rendered, so the row styling doesn't depend on an icon's
+   class name. Scoped high enough to beat the .selectable-area svg rule above. */
+.ui-designer-nodetree .selectable-area:has(.action-area.is-hidden) {
+  color: var(--ui-designer-text-muted);
+}
+
+.ui-designer-nodetree .selectable-area:has(.action-area.is-hidden) svg {
+  color: var(--ui-designer-glyph);
+}
+
+.ui-designer-nodetree .action-area .action-button .remove-icon {
+  color: var(--ui-designer-glyph);
+}
+
+.ui-designer-nodetree .action-area .action-button:hover .remove-icon {
+  color: var(--ui-designer-control-accent);
+}

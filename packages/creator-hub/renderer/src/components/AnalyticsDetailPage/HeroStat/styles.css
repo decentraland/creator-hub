@@ -1,0 +1,40 @@
+.HeroStat {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 16px 24px;
+  border-radius: 12px;
+  background-color: var(--background);
+}
+
+.HeroStat .Value {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.HeroStat .Value .MuiTypography-h4 {
+  font-weight: 600;
+}
+
+.HeroStat .Unit {
+  color: var(--secondary-text);
+}
+
+.HeroStat .Delta {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.HeroStat .Delta svg {
+  font-size: 16px;
+}
+
+.HeroStat .Delta.Up {
+  color: var(--success);
+}
+
+.HeroStat .Delta.Down {
+  color: var(--error);
+}

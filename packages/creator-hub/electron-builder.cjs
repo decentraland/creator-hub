@@ -1,13 +1,24 @@
 const { execSync } = require('child_process');
 const path = require('path');
 
+// On PRs (dry-run) skip the slow .dmg build and ship only the unsigned .zip; electron-builder
+// already skips code signing on PRs, so this keeps a downloadable per-PR build for a fraction
+// of the time. Release builds (not dry-run) still produce the signed, notarized dmg + zip.
+const isDryRun = process.env.DRY_RUN === 'true';
+
 const config = {
   appId: 'com.decentraland.creatorshub',
   directories: {
     output: 'dist',
     buildResources: 'buildResources',
   },
-  beforePack: path.join(__dirname, 'scripts', 'copy-npm-for-asar.js'),
+  beforePack: path.join(__dirname, 'scripts', 'before-pack.js'),
+  afterPack: path.join(__dirname, 'scripts', 'after-pack.js'),
+  // The only native dep (node-pty) ships N-API prebuilds for every target (darwin/win ×
+  // arm64/x64), which are ABI-stable under Electron — so don't let @electron/rebuild recompile
+  // it from source. That rebuild failed the Windows CI build outright ("Could not find any
+  // Visual Studio installation"): the runner has no C++ toolchain, and none is needed.
+  npmRebuild: false,
   // npm must be under app dir for asarUnpack to match (26.4.1+). beforePack runs before file copy.
   files: [
     'package.json',
@@ -25,11 +36,21 @@ const config = {
       filter: ['**/*'],
     },
   ],
-  asarUnpack: ['node_modules/npm/**/*'],
+  // node-pty ships N-API .node prebuilds + a spawn-helper binary that must run from disk,
+  // not from inside the asar (#1531 drives the CLI login through a PTY).
+  asarUnpack: ['node_modules/npm/**/*', 'node_modules/node-pty/**/*'],
   extraResources: [
     {
       from: 'devtools-frontend',
       to: 'devtools-frontend',
+      filter: ['**/*'],
+    },
+    // Real Node.js binary, fetched by the beforePack hook. Scene tooling is spawned on this
+    // instead of Electron so the multiplayer server gets a runtime whose ABI matches the
+    // native builds it depends on. TEMPORARY: remove with the Bevy migration.
+    {
+      from: 'node-bin',
+      to: 'node-bin',
       filter: ['**/*'],
     },
   ],
@@ -90,24 +111,17 @@ const config = {
     writeUpdateInfo: false,
   },
   mac: {
-    target: [
-      {
-        target: 'dmg',
-        arch: 'arm64',
-      },
-      {
-        target: 'dmg',
-        arch: 'x64',
-      },
-      {
-        target: 'zip',
-        arch: 'arm64',
-      },
-      {
-        target: 'zip',
-        arch: 'x64',
-      },
-    ],
+    target: isDryRun
+      ? [
+          { target: 'zip', arch: 'arm64' },
+          { target: 'zip', arch: 'x64' },
+        ]
+      : [
+          { target: 'dmg', arch: 'arm64' },
+          { target: 'dmg', arch: 'x64' },
+          { target: 'zip', arch: 'arm64' },
+          { target: 'zip', arch: 'x64' },
+        ],
   },
   publish: [
     {

@@ -1,10 +1,57 @@
 import { describe, it, expect } from 'vitest';
+import type { Scene } from '@dcl/schemas';
 
-import { parseCoords, getRowsAndCols } from '../../src/modules/scene';
+import { parseCoords, getRowsAndCols, sanitizeScene } from '../../src/modules/scene';
 
 describe('parseCoords', () => {
   it('should parse a "x,y" string into numeric coordinates', () => {
     expect(parseCoords('3,-2')).toEqual({ x: 3, y: -2 });
+  });
+});
+
+describe('sanitizeScene', () => {
+  function getScene(scene: unknown): Scene {
+    return { main: 'bin/index.js', scene } as Scene;
+  }
+
+  describe('when the scene has valid parcels and base', () => {
+    it('should return them unchanged', () => {
+      const scene = getScene({ parcels: ['0,0', '0,1'], base: '0,0' });
+      expect(sanitizeScene(scene).scene).toEqual({ parcels: ['0,0', '0,1'], base: '0,0' });
+    });
+  });
+
+  describe('when the parcels have the wrong type', () => {
+    it('should drop numeric parcels and fall back to the base parcel', () => {
+      const scene = getScene({ parcels: [0, 0], base: '0,0' });
+      expect(sanitizeScene(scene).scene).toEqual({ parcels: ['0,0'], base: '0,0' });
+    });
+
+    it('should keep the valid parcels and drop the invalid ones', () => {
+      const scene = getScene({ parcels: ['1,1', 0, 'not-a-parcel'], base: '1,1' });
+      expect(sanitizeScene(scene).scene).toEqual({ parcels: ['1,1'], base: '1,1' });
+    });
+  });
+
+  describe('when the parcels are empty', () => {
+    it('should fall back to a single parcel at the base coordinates', () => {
+      const scene = getScene({ parcels: [], base: '2,3' });
+      expect(sanitizeScene(scene).scene).toEqual({ parcels: ['2,3'], base: '2,3' });
+    });
+  });
+
+  describe('when the base is invalid', () => {
+    it('should fall back to the first valid parcel', () => {
+      const scene = getScene({ parcels: ['5,5'], base: 7 });
+      expect(sanitizeScene(scene).scene).toEqual({ parcels: ['5,5'], base: '5,5' });
+    });
+  });
+
+  describe('when the scene section is missing entirely', () => {
+    it('should default to a single parcel at 0,0', () => {
+      const scene = getScene(undefined);
+      expect(sanitizeScene(scene).scene).toEqual({ parcels: ['0,0'], base: '0,0' });
+    });
   });
 });
 

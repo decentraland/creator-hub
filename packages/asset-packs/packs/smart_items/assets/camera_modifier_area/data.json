@@ -1,0 +1,8 @@
+{
+  "id": "24e2680c-d91c-43d8-8872-ce9ac1fe08be",
+  "name": "Camera Modifier Area",
+  "category": "utils",
+  "tags": ["area", "camera", "invisible", "first person", "third person", "view", "mode", "region"],
+  "description": "An invisible area that forces the player's camera into first or third person while inside",
+  "author": "Decentraland Foundation"
+}

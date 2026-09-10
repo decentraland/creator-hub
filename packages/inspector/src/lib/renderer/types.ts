@@ -354,6 +354,22 @@ export interface RendererSceneRun {
 }
 
 /**
+ * Optional capability for renderers whose viewport editing (click-to-select +
+ * gizmo drag) is a scene-side interception that can be turned off — so a viewport
+ * click reaches the running scene instead (test a mechanic, e.g. a button that
+ * opens a door — #1458). Bevy exposes this (its editor agent intercepts clicks);
+ * Babylon omits it (its editing isn't a scene-side interception).
+ */
+export interface RendererInteraction {
+  /** True (default) when viewport clicks edit (select/move); false when they're
+   * passed through to the running scene. */
+  isEditingEnabled(): boolean;
+  setEditingEnabled(enabled: boolean): void;
+  /** Notify on change (so the toolbar toggle reflects the state). */
+  onEditingChange(cb: (enabled: boolean) => void): Unsubscribe;
+}
+
+/**
  * An animation clip exposed by a renderer (see `getEntityAnimations`). Only
  * `name` is consumed today; the object shape leaves room to add `duration`,
  * `loopable`, etc. without breaking the public contract.
@@ -403,6 +419,11 @@ export interface IRenderer {
    * only renders authored components, so it omits this).
    */
   readonly sceneRun?: RendererSceneRun;
+  /**
+   * Present only if the renderer's viewport editing is a scene-side interception
+   * that can be toggled off to interact with the running scene (Bevy; #1458).
+   */
+  readonly interaction?: RendererInteraction;
 
   /** Set the editor selection by entity ID (the renderer draws it however it likes). */
   setSelection(entities: Entity[]): void;

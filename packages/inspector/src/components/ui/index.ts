@@ -8,6 +8,7 @@ export { RangeField } from './RangeField';
 export { HybridField } from './HybridField';
 export { ColorPicker } from './ColorPicker';
 export { ColorField } from './ColorField';
+export { RgbaColorField } from './RgbaColorField';
 export { TextArea } from './TextArea';
 export { InfoTooltip } from './InfoTooltip';
 export { Label } from './Label';

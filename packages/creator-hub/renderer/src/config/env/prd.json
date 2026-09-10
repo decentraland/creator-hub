@@ -9,6 +9,7 @@
   "SOCIAL_API_URL": "https://social-api.decentraland.org",
   "PEER_TESTING_URL": "https://peer-testing.decentraland.org",
   "ASSET_BUNDLE_REGISTRY_URL": "https://asset-bundle-registry.decentraland.org",
+  "ASSET_BUNDLE_REGISTRY_ABGEN_URL": "https://asset-bundle-registry-abgen.decentraland.org",
   "DCL_LISTS_URL": "https://dcl-lists.decentraland.org",
   "ATLAS_SERVER_API_URL": "https://api.decentraland.org/v2",
   "RPC_URL": "https://rpc.decentraland.org/mainnet",
@@ -21,6 +22,10 @@
   "ASSETS_CDN_URL": "https://assets-cdn.decentraland.org",
   "REPORT_ISSUES_URL": "https://decentraland.typeform.com/creatorhub",
   "FEEDBACK_URL": "https://decentraland.typeform.com/creatorhub",
+  "HELP_FAQ_URL": "https://decentraland.org/help/",
+  "CONTACT_SUPPORT_URL": "https://decentraland.org/help/",
+  "DISCORD_URL": "https://decentraland.org/discord/",
   "FEATURE_FLAGS_URL": "https://feature-flags.decentraland.org",
-  "WORLDS_STORAGE_SERVICE_URL": "https://decentraland.org/storage"
+  "WORLDS_STORAGE_SERVICE_URL": "https://decentraland.org/storage",
+  "METRICS_API_URL": "https://creators-data.decentraland.org/v2"
 }

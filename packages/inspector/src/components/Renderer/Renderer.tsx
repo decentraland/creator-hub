@@ -16,6 +16,7 @@ import { getNode, DROP_TYPES, isDropType, DropTypesEnum } from '../../lib/sdk/dr
 import { useRenderer } from '../../hooks/sdk/useRenderer';
 import { useSdk } from '../../hooks/sdk/useSdk';
 import { getConfig } from '../../lib/logic/config';
+import { setViewportElement } from '../../lib/logic/viewport-rect';
 import { snapPositionValue } from '../../lib/babylon/decentraland/snap-manager';
 import { ROOT } from '../../lib/sdk/tree';
 import type { CustomAsset } from '../../lib/logic/catalog';
@@ -71,6 +72,12 @@ const Renderer: React.FC = () => {
   // the drop's NDC without threading the monitor through every path.
   const dropClientOffsetRef = React.useRef<{ x: number; y: number } | null>(null);
   useRenderer(() => canvasRef);
+  // Expose the viewport rect so the host can crop a compositor screenshot to just the 3D
+  // view (the Bevy fallback when the engine's /screenshot command is unavailable — #1526).
+  useEffect(() => {
+    setViewportElement(viewportRef.current);
+    return () => setViewportElement(null);
+  }, []);
   const sdk = useSdk();
   const [isLoading, setIsLoading] = useState(false);
   const isMounted = useIsMounted();
@@ -100,15 +107,17 @@ const Renderer: React.FC = () => {
     }
   }, [sdk, groundGridDisabled]);
 
+  const isUIDesignerOpen = !hiddenPanels[PanelName.UI_DESIGNER];
+
   const deleteSelectedEntities = useCallback(() => {
-    if (!sdk) return;
+    if (!sdk || isUIDesignerOpen) return;
     const selectedEntitites = sdk.operations.getSelectedEntities();
     selectedEntitites.forEach(entity => sdk.operations.removeEntity(entity));
     void sdk.operations.dispatch();
-  }, [sdk]);
+  }, [sdk, isUIDesignerOpen]);
 
   const duplicateSelectedEntities = useCallback(() => {
-    if (!sdk) return;
+    if (!sdk || isUIDesignerOpen) return;
     sdk.renderer.camera.setControlEnabled(false);
     const selectedEntitites = sdk.operations.getSelectedEntities();
     const preferredGizmo =
@@ -126,16 +135,16 @@ const Renderer: React.FC = () => {
     setTimeout(() => {
       sdk.renderer.camera.setControlEnabled(true);
     }, 100);
-  }, [sdk]);
+  }, [sdk, isUIDesignerOpen]);
 
   const copySelectedEntities = useCallback(() => {
-    if (!sdk) return;
+    if (!sdk || isUIDesignerOpen) return;
     const selectedEntitites = sdk.operations.getSelectedEntities();
     setCopyEntities([...selectedEntitites]);
-  }, [sdk, setCopyEntities]);
+  }, [sdk, setCopyEntities, isUIDesignerOpen]);
 
   const pasteSelectedEntities = useCallback(() => {
-    if (!sdk) return;
+    if (!sdk || isUIDesignerOpen) return;
     const selectedEntities = sdk.operations.getSelectedEntities();
     const preferredGizmo =
       selectedEntities.length > 0
@@ -148,7 +157,7 @@ const Renderer: React.FC = () => {
       insertAfter = cloned;
     });
     void sdk.operations.dispatch();
-  }, [sdk, copyEntities]);
+  }, [sdk, copyEntities, isUIDesignerOpen]);
 
   const zoomIn = useCallback(() => {
     if (!sdk) return;
@@ -177,11 +186,12 @@ const Renderer: React.FC = () => {
   useHotkey([DELETE, BACKSPACE], deleteSelectedEntities, document.body);
   useHotkey([COPY, COPY_ALT], copySelectedEntities, document.body);
   useHotkey([PASTE, PASTE_ALT], pasteSelectedEntities, document.body);
-  useHotkey([ZOOM_IN, ZOOM_IN_ALT], zoomIn, document.body);
-  useHotkey([ZOOM_OUT, ZOOM_OUT_ALT], zoomOut, document.body);
-  useHotkey([RESET_CAMERA], resetCamera, document.body);
   useHotkey([DUPLICATE, DUPLICATE_ALT], duplicateSelectedEntities, document.body);
-  useHotkey([FOCUS_SELECTED], focusOnSelected, document.body);
+  const cameraKeys = { enabled: !isUIDesignerOpen };
+  useHotkey([ZOOM_IN, ZOOM_IN_ALT], zoomIn, document.body, cameraKeys);
+  useHotkey([ZOOM_OUT, ZOOM_OUT_ALT], zoomOut, document.body, cameraKeys);
+  useHotkey([RESET_CAMERA], resetCamera, document.body, cameraKeys);
+  useHotkey([FOCUS_SELECTED], focusOnSelected, document.body, cameraKeys);
 
   // listen to ctrl key to place single tile
   useEffect(() => {
