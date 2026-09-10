@@ -1,10 +1,10 @@
-.RendererSubField {
+.ExperimentalTab {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 20px;
 }
 
-.GuiEditorField {
+.ExperimentalField {
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -12,12 +12,134 @@
 
 .ExperimentalHint {
   margin-left: 44px;
-  max-width: 420px;
+  max-width: 480px;
 }
 
 .ExperimentalNestedField {
   display: flex;
   flex-direction: column;
+  gap: 12px;
+  margin-top: 8px;
+  margin-left: 44px;
+}
+
+.ExperimentalDivider {
+  width: 100%;
+  margin: 4px 0;
+  border: none;
+  border-top: 1px solid var(--mui-palette-divider);
+}
+
+.SettingsAccordion {
+  display: flex;
+  flex-direction: column;
   gap: 8px;
-  margin-left: 32px;
+}
+
+.SettingsAccordionHeader {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--white);
+  font: inherit;
+  cursor: pointer;
+}
+
+.SettingsAccordionTitle {
+  font-weight: 600;
+}
+
+.SettingsAccordionChevron {
+  color: var(--mui-palette-text-secondary);
+  transform: rotate(-90deg);
+  transition: transform 0.15s ease;
+}
+
+.SettingsAccordionChevron.expanded {
+  transform: rotate(0deg);
+}
+
+.SettingsAccordionBody {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-left: 24px;
+}
+
+.CommandFieldWrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.CommandField {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 4px 8px 4px 12px;
+  border: 1px solid var(--mui-palette-divider);
+  border-radius: 8px;
+  background-color: var(--mui-palette-background-default);
+}
+
+.CommandField code {
+  overflow: hidden;
+  color: var(--white);
+  font-family: var(--font-monospace);
+  font-size: 13px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.AgentConnect {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.AgentConnectHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.AgentName {
+  font-weight: 600;
+}
+
+.AgentStatus {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--mui-palette-text-secondary);
+  font-size: 13px;
+}
+
+.AgentStatusDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: var(--success);
+}
+
+.AgentSignLink {
+  margin-left: auto;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--mui-palette-text-secondary);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.AgentSignLink.primary {
+  color: var(--dcl);
 }

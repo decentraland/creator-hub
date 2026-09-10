@@ -21,6 +21,7 @@ const PanelHeader = styled(Box)(({ theme }) => ({
   padding: theme.spacing(1, 1, 1, 2),
   borderBottom: `1px solid ${theme.palette.divider}`,
   minHeight: theme.spacing(6),
+  backgroundColor: theme.palette.background.default,
 }));
 
 const HeaderTitle = styled(Box)(({ theme }) => ({
@@ -62,6 +63,18 @@ const EmptyState = styled(Box)(({ theme }) => ({
   color: theme.palette.text.secondary,
   fontSize: theme.typography.body2.fontSize,
   lineHeight: 1.6,
+}));
+
+// The greeting that opens every chat: top-left, and it stays as the first entry of the
+// transcript once the conversation starts (it is not a centered empty-state placeholder).
+const IntroMessage = styled(Box)(({ theme }) => ({
+  alignSelf: 'flex-start',
+  maxWidth: '100%',
+  color: theme.palette.text.secondary,
+  fontSize: theme.typography.body2.fontSize,
+  lineHeight: 1.6,
+  whiteSpace: 'pre-wrap',
+  wordBreak: 'break-word',
 }));
 
 const UserBubble = styled(Box)(({ theme }) => ({
@@ -253,9 +266,6 @@ const ErrorRow = styled(Box)(({ theme }) => ({
 }));
 
 const Composer = styled(Box)(({ theme }) => ({
-  display: 'flex',
-  alignItems: 'flex-end',
-  gap: theme.spacing(1),
   padding: theme.spacing(1.5),
   borderTop: `1px solid ${theme.palette.divider}`,
 }));
@@ -362,7 +372,8 @@ const Toolbar = styled(Box)(({ theme }) => ({
   display: 'flex',
   alignItems: 'center',
   gap: theme.spacing(1),
-  padding: theme.spacing(1.5, 2, 0.5),
+  padding: theme.spacing(0.75, 2),
+  borderBottom: `1px solid ${theme.palette.divider}`,
 }));
 
 // A dark rounded pill used for the toolbar controls (New Chat menu + agent select), matching
@@ -372,18 +383,19 @@ const ToolbarPill = styled('button')(({ theme }) => ({
   alignItems: 'center',
   gap: theme.spacing(0.75),
   minWidth: 0,
-  flex: '0 1 auto',
-  height: theme.spacing(4),
+  flex: '0 0 auto',
+  width: theme.spacing(20),
+  height: theme.spacing(3.75),
   padding: theme.spacing(0, 1.25),
   border: `1px solid ${theme.palette.divider}`,
-  borderRadius: theme.spacing(3),
-  backgroundColor: theme.palette.action.hover,
+  borderRadius: theme.spacing(1),
+  backgroundColor: 'var(--ai-menu-bg)',
   color: theme.palette.text.primary,
   fontSize: theme.typography.body2.fontSize,
   fontFamily: 'inherit',
   cursor: 'pointer',
   whiteSpace: 'nowrap',
-  '&:hover': { backgroundColor: theme.palette.action.selected },
+  '&:hover': { borderColor: theme.palette.text.secondary },
   '&:disabled': { opacity: 0.5, cursor: 'default' },
 }));
 
@@ -396,8 +408,8 @@ const ToolbarPillLabel = styled('span')({
 // The circular accent send button in the composer (red with a white up-arrow).
 const SendButton = styled(IconButton)(({ theme }) => ({
   flexShrink: 0,
-  width: theme.spacing(4.5),
-  height: theme.spacing(4.5),
+  width: theme.spacing(3.5),
+  height: theme.spacing(3.5),
   borderRadius: '50%',
   backgroundColor: theme.palette.primary.main,
   color: theme.palette.primary.contrastText,
@@ -423,7 +435,7 @@ const ProviderOption = styled(Box)(({ theme }) => ({
 
 const ProviderHint = styled('span')(({ theme }) => ({
   flexShrink: 0,
-  color: 'var(--dcl)',
+  color: theme.palette.text.secondary,
   fontSize: theme.typography.pxToRem(11),
   fontWeight: 500,
 }));
@@ -433,32 +445,49 @@ const ProviderValueHint = styled('span')(({ theme }) => ({
   fontSize: theme.typography.pxToRem(11),
 }));
 
-const BillingHint = styled(Box)(({ theme }) => ({
+const BillingCard = styled(Box)(({ theme }) => ({
   display: 'flex',
-  alignItems: 'center',
-  gap: theme.spacing(0.5),
-  padding: theme.spacing(0.5, 1.5),
-  borderTop: `1px solid ${theme.palette.divider}`,
-  color: theme.palette.text.primary,
-  fontSize: theme.typography.pxToRem(11),
-  lineHeight: 1.35,
+  flexDirection: 'column',
+  alignItems: 'flex-start',
+  gap: theme.spacing(1),
+  margin: theme.spacing(0, 1.5, 1),
+  padding: theme.spacing(1.5),
+  borderRadius: theme.spacing(1),
+  backgroundColor: 'var(--card)',
 }));
 
-const BillingDismiss = styled('span')({
-  textDecoration: 'underline',
-  cursor: 'pointer',
-  color: 'var(--dcl)',
-});
+const BillingTitle = styled('span')(({ theme }) => ({
+  fontWeight: 700,
+  color: theme.palette.text.primary,
+  fontSize: theme.typography.body2.fontSize,
+}));
+
+const BillingBody = styled('span')(({ theme }) => ({
+  color: theme.palette.text.secondary,
+  fontSize: theme.typography.caption.fontSize,
+  lineHeight: 1.4,
+}));
 
 const OutdatedHint = styled(Box)(({ theme }) => ({
   display: 'flex',
   alignItems: 'center',
-  gap: theme.spacing(0.5),
-  padding: theme.spacing(0.5, 1.5),
-  borderTop: `1px solid ${theme.palette.divider}`,
+  gap: theme.spacing(1.25),
+  margin: theme.spacing(0, 1.5, 1),
+  padding: theme.spacing(1.5, 1.75),
+  borderRadius: theme.spacing(1.25),
+  backgroundColor: 'var(--ai-warning-bg)',
   color: theme.palette.warning.main,
+  fontSize: theme.typography.caption.fontSize,
+  lineHeight: 1.4,
+  '& svg': { flexShrink: 0 },
+}));
+
+const MenuSectionLabel = styled('div')(({ theme }) => ({
+  padding: theme.spacing(0.75, 2, 0.25),
+  color: theme.palette.text.secondary,
   fontSize: theme.typography.pxToRem(11),
-  lineHeight: 1.35,
+  textTransform: 'uppercase',
+  letterSpacing: '0.08em',
 }));
 
 const SelectionBar = styled(Box)(({ theme }) => ({
@@ -472,26 +501,20 @@ const SelectionBar = styled(Box)(({ theme }) => ({
 }));
 
 const SelectionNames = styled('span')({
-  flex: 1,
+  flex: '0 1 auto',
   minWidth: 0,
   overflow: 'hidden',
   textOverflow: 'ellipsis',
   whiteSpace: 'nowrap',
 });
 
-const SelectionClear = styled('span')(({ theme }) => ({
-  flexShrink: 0,
-  textDecoration: 'underline',
-  cursor: 'pointer',
-  color: theme.palette.text.primary,
-}));
-
 export {
   AssistantBubble,
   AssistantImage,
   AssistantText,
-  BillingDismiss,
-  BillingHint,
+  BillingBody,
+  BillingCard,
+  BillingTitle,
   CommandLine,
   Composer,
   EmptyState,
@@ -501,6 +524,8 @@ export {
   HistoryBar,
   HistoryList,
   HistoryRow,
+  IntroMessage,
+  MenuSectionLabel,
   OutdatedHint,
   Panel,
   PanelHeader,
@@ -517,7 +542,6 @@ export {
   ProviderRow,
   ProviderValueHint,
   SelectionBar,
-  SelectionClear,
   SelectionNames,
   SendButton,
   SessionText,

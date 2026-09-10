@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import StopIcon from '@mui/icons-material/Stop';
 import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
-import AddCommentIcon from '@mui/icons-material/AddComment';
+import AddCommentOutlinedIcon from '@mui/icons-material/AddCommentOutlined';
+import CheckIcon from '@mui/icons-material/Check';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import CloseIcon from '@mui/icons-material/Close';
 import RefreshIcon from '@mui/icons-material/Refresh';
@@ -9,7 +10,6 @@ import UndoIcon from '@mui/icons-material/Undo';
 import HighlightAltIcon from '@mui/icons-material/HighlightAlt';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
-import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import Markdown, { type MarkdownToJSX } from 'markdown-to-jsx';
 import {
@@ -26,25 +26,29 @@ import {
 } from 'decentraland-ui2';
 
 import type { AiProvider } from '/shared/types/ai';
-import { MIN_CLAUDE_CLI_VERSION, isCliVersionOutdated } from '/shared/types/ai';
+import { AI_CLI_COMMANDS, MIN_CLAUDE_CLI_VERSION, isCliVersionOutdated } from '/shared/types/ai';
 
 import { ai as aiPreload } from '#preload';
 import { t } from '/@/modules/store/translation/utils';
+import { useCliSignIn } from '/@/hooks/useCliSignIn';
 
 import type { AiMessage, AiPromptData, AiSessionMeta } from '/@/modules/store/ai/types';
+import { WarningCircleIcon } from '../Icons';
 import { toolChipLabel } from './labels';
 import {
   AssistantBubble,
   AssistantImage,
   AssistantText,
-  BillingDismiss,
-  BillingHint,
+  BillingBody,
+  BillingCard,
+  BillingTitle,
   CommandLine,
   Composer,
-  EmptyState,
   ErrorRow,
   HeaderActions,
   HeaderTitle,
+  IntroMessage,
+  MenuSectionLabel,
   OutdatedHint,
   Panel,
   PanelHeader,
@@ -60,7 +64,6 @@ import {
   ProviderOption,
   ProviderValueHint,
   SelectionBar,
-  SelectionClear,
   SelectionNames,
   SendButton,
   SessionText,
@@ -100,12 +103,11 @@ function formatWhen(ts: number): string {
   return new Date(ts).toLocaleDateString();
 }
 
-// Install + sign-in commands per provider, shown on the setup card when the CLI isn't
-// found. Obviously-safe public package names.
-const SETUP_COMMANDS: Record<AiProvider, { install: string; signin: string }> = {
-  claude: { install: 'npm i -g @anthropic-ai/claude-code', signin: 'claude' },
-  codex: { install: 'npm i -g @openai/codex', signin: 'codex login' },
-};
+// The plain-text content of a message (its text parts joined) — for the user bubble and for
+// re-sending the last prompt on retry.
+function messageText(msg: AiMessage): string {
+  return msg.parts.map(p => (p.kind === 'text' ? p.text : '')).join('');
+}
 
 // An interactive `ask_user` prompt rendered inline in the transcript. Single-select answers on
 // click; multi-select toggles then confirms; free-text (allowOther / no options) uses the field.
@@ -312,49 +314,11 @@ export function ChatView(props: ChatViewProps) {
   // In-app sign-in without a CLI (#1531): install the official CLI on demand + drive its
   // subscription login (browser OAuth), streaming steps here. On success we re-detect so
   // the provider flips to available.
-  const [signIn, setSignIn] = useState<{
-    busy: boolean;
-    message: string;
-    url: string | null;
-    error: string | null;
-  }>({ busy: false, message: '', url: null, error: null });
-  // A user cancel kills the CLI, which rejects the sign-in promise — flag it so that
-  // expected rejection resets to idle instead of showing a scary "exited with code" error.
-  const signInCancelled = useRef(false);
-
-  const handleSignIn = useCallback(async () => {
-    signInCancelled.current = false;
-    setSignIn({
-      busy: true,
-      message: t('editor.ai.setup.signin_starting'),
-      url: null,
-      error: null,
-    });
-    try {
-      await aiPreload.signInCli(provider, event => {
-        setSignIn(s =>
-          event.type === 'auth'
-            ? { ...s, url: event.url, message: t('editor.ai.setup.signin_browser') }
-            : { ...s, message: event.message },
-        );
-      });
-      setSignIn({ busy: false, message: '', url: null, error: null });
-      onRecheck();
-    } catch (e) {
-      setSignIn({
-        busy: false,
-        message: '',
-        url: null,
-        error: signInCancelled.current ? null : e instanceof Error ? e.message : String(e),
-      });
-    }
-  }, [provider, onRecheck]);
-
-  const handleCancelSignIn = useCallback(() => {
-    signInCancelled.current = true;
-    void aiPreload.cancelSignInCli();
-    setSignIn({ busy: false, message: '', url: null, error: null });
-  }, []);
+  const {
+    signIn,
+    start: handleSignIn,
+    cancel: handleCancelSignIn,
+  } = useCliSignIn(provider, onRecheck);
 
   // Keep the newest message in view as text streams in.
   useEffect(() => {
@@ -431,7 +395,7 @@ export function ChatView(props: ChatViewProps) {
   );
 
   const renderSetup = () => {
-    const cmds = SETUP_COMMANDS[provider];
+    const cmds = AI_CLI_COMMANDS[provider];
     return (
       <SetupBox>
         <strong>{t('editor.ai.setup.title')}</strong>
@@ -510,44 +474,53 @@ export function ChatView(props: ChatViewProps) {
   };
 
   const renderTranscript = () => {
-    if (messages.length === 0) {
-      return <EmptyState>{t('editor.ai.empty')}</EmptyState>;
-    }
     // "Undo AI changes" is offered only on the latest turn: undo is a shared stack, so an
     // older turn's entries aren't on top and can't be cleanly reverted in isolation.
     const lastId = messages[messages.length - 1]?.id;
-    return messages.map(msg =>
+    const transcript = messages.map(msg =>
       msg.role === 'user' ? (
-        <UserBubble key={msg.id}>{msg.text}</UserBubble>
+        <UserBubble key={msg.id}>{messageText(msg)}</UserBubble>
       ) : (
         <AssistantBubble key={msg.id}>
-          {msg.tools.map((chip, i) => (
-            <ToolChip key={i}>
-              <span>{toolChipLabel(chip.tool)}</span>
-              {chip.detail !== '' && <ToolDetail>{chip.detail}</ToolDetail>}
-            </ToolChip>
-          ))}
-          {msg.images?.map((src, i) => (
-            <AssistantImage
-              key={`img-${i}`}
-              src={src}
-              alt={t('editor.ai.screenshot_alt')}
-            />
-          ))}
-          {msg.text !== '' && (
-            <AssistantText>
-              <Markdown options={MARKDOWN_OPTIONS}>{msg.text}</Markdown>
-            </AssistantText>
-          )}
-          {msg.prompt !== undefined && (
-            <PromptBlock
-              prompt={msg.prompt}
-              onAnswer={answer => {
-                if (msg.prompt !== undefined) onAnswerPrompt(msg.prompt.id, answer);
-              }}
-            />
-          )}
-          {!msg.done && msg.text === '' && msg.error === undefined && msg.prompt === undefined && (
+          {msg.parts.map((part, i) => {
+            switch (part.kind) {
+              case 'text':
+                return (
+                  <AssistantText key={i}>
+                    <Markdown options={MARKDOWN_OPTIONS}>{part.text}</Markdown>
+                  </AssistantText>
+                );
+              case 'tool':
+                return (
+                  <ToolChip key={i}>
+                    <span>{toolChipLabel(part.tool)}</span>
+                    {part.detail !== '' && <ToolDetail>{part.detail}</ToolDetail>}
+                  </ToolChip>
+                );
+              case 'image':
+                return (
+                  <AssistantImage
+                    key={i}
+                    src={part.dataUrl}
+                    alt={t('editor.ai.screenshot_alt')}
+                  />
+                );
+              case 'prompt':
+                return (
+                  <PromptBlock
+                    key={i}
+                    prompt={part.prompt}
+                    onAnswer={answer => onAnswerPrompt(part.prompt.id, answer)}
+                  />
+                );
+              default: {
+                // Exhaustiveness: a new AiPart variant fails to compile until handled here.
+                const _exhaustive: never = part;
+                return _exhaustive;
+              }
+            }
+          })}
+          {!msg.done && msg.parts.length === 0 && msg.error === undefined && (
             <ThinkingRow>
               <CircularProgress size={12} />
               {t('editor.ai.thinking')}
@@ -562,7 +535,7 @@ export function ChatView(props: ChatViewProps) {
                   size="small"
                   onClick={() => {
                     const lastUser = [...messages].reverse().find(m => m.role === 'user');
-                    if (lastUser !== undefined) onSend(lastUser.text);
+                    if (lastUser !== undefined) onSend(messageText(lastUser));
                   }}
                 >
                   {t('editor.ai.retry')}
@@ -586,6 +559,12 @@ export function ChatView(props: ChatViewProps) {
             )}
         </AssistantBubble>
       ),
+    );
+    return (
+      <>
+        <IntroMessage>{t('editor.ai.empty')}</IntroMessage>
+        {transcript}
+      </>
     );
   };
 
@@ -612,10 +591,10 @@ export function ChatView(props: ChatViewProps) {
               </IconButton>
             </Tooltip>
           )}
-          <Tooltip title={detached ? t('editor.ai.dock') : t('editor.ai.toggle')}>
+          <Tooltip title={t('editor.ai.close')}>
             <IconButton
               size="small"
-              aria-label={detached ? t('editor.ai.dock') : t('editor.ai.toggle')}
+              aria-label={t('editor.ai.close')}
               onClick={onClose}
             >
               <CloseIcon fontSize="small" />
@@ -630,7 +609,7 @@ export function ChatView(props: ChatViewProps) {
             aria-label={t('editor.ai.new_chat')}
             onClick={e => setChatMenuAnchor(e.currentTarget)}
           >
-            <AddCommentIcon fontSize="small" />
+            <AddCommentOutlinedIcon fontSize="small" />
             <ToolbarPillLabel>{t('editor.ai.new_chat')}</ToolbarPillLabel>
             <KeyboardArrowDownIcon
               fontSize="small"
@@ -641,24 +620,37 @@ export function ChatView(props: ChatViewProps) {
             anchorEl={chatMenuAnchor}
             open={chatMenuAnchor !== null}
             onClose={() => setChatMenuAnchor(null)}
+            sx={{
+              '& .MuiPaper-root': {
+                backgroundColor: 'var(--ai-menu-bg)',
+                borderRadius: '12px',
+                width: '300px',
+              },
+              '& .MuiMenuItem-root.Mui-selected, & .MuiMenuItem-root.Mui-selected:hover': {
+                backgroundColor: 'var(--ai-session-selected)',
+              },
+            }}
           >
             <MenuItem
               disabled={busy || messages.length === 0}
-              sx={{ gap: 1 }}
+              sx={{ gap: 1, mx: 1, my: 0.5, borderRadius: 1 }}
               onClick={() => {
                 onNewChat();
                 setChatMenuAnchor(null);
               }}
             >
-              <AddCommentIcon fontSize="small" />
+              <AddCommentOutlinedIcon fontSize="small" />
               {t('editor.ai.new_chat')}
             </MenuItem>
-            {savedSessions.length > 0 && <Divider />}
+            {savedSessions.length > 0 && [
+              <Divider key="div" />,
+              <MenuSectionLabel key="label">{t('editor.ai.history.title')}</MenuSectionLabel>,
+            ]}
             {savedSessions.map(s => (
               <MenuItem
                 key={s.id}
                 selected={s.id === currentSessionId}
-                sx={{ gap: 1 }}
+                sx={{ gap: 1, mx: 1, my: 0.5, borderRadius: 1 }}
                 onClick={() => {
                   onSwitchSession(s.id);
                   setChatMenuAnchor(null);
@@ -687,14 +679,30 @@ export function ChatView(props: ChatViewProps) {
               value={provider}
               onChange={handleProviderChange}
               disabled={busy}
+              IconComponent={KeyboardArrowDownIcon}
+              MenuProps={{
+                sx: {
+                  '& .MuiPaper-root': {
+                    backgroundColor: 'var(--ai-menu-bg)',
+                    borderRadius: '12px',
+                  },
+                  '& .MuiMenuItem-root.Mui-selected': {
+                    backgroundColor: 'var(--ai-selected)',
+                  },
+                  '& .MuiMenuItem-root.Mui-selected:hover': {
+                    backgroundColor: 'var(--ai-selected-hover)',
+                  },
+                },
+              }}
               sx={{
                 flex: 1,
                 minWidth: 0,
-                height: theme => theme.spacing(4),
-                borderRadius: theme => theme.spacing(3),
-                backgroundColor: 'action.hover',
+                height: theme => theme.spacing(3.75),
+                borderRadius: theme => theme.spacing(1),
+                backgroundColor: 'var(--ai-menu-bg)',
                 '& .MuiOutlinedInput-notchedOutline': { borderColor: 'divider' },
-                '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: 'divider' },
+                '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: 'text.secondary' },
+                '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: 'text.secondary' },
                 '& .MuiSelect-select': { display: 'flex', alignItems: 'center' },
               }}
               // Show just the active agent's name in the closed box (with a subtle "sign in"
@@ -718,10 +726,17 @@ export function ChatView(props: ChatViewProps) {
                 <MenuItem
                   key={p.id}
                   value={p.id}
+                  sx={{ gap: 1, mx: 1, my: 0.5, borderRadius: 1 }}
                 >
+                  <CheckIcon
+                    fontSize="small"
+                    sx={{ visibility: p.id === provider ? 'visible' : 'hidden' }}
+                  />
                   <ProviderOption>
                     <span>{p.label}</span>
-                    {!p.available && <ProviderHint>{t('editor.ai.provider_signin')}</ProviderHint>}
+                    {!p.available && (
+                      <ProviderHint>{p.reason ?? t('editor.ai.provider_signin')}</ProviderHint>
+                    )}
                   </ProviderOption>
                 </MenuItem>
               ))}
@@ -733,6 +748,37 @@ export function ChatView(props: ChatViewProps) {
           {available ? renderTranscript() : renderSetup()}
         </Transcript>
 
+        {available &&
+          currentProvider?.id === 'claude' &&
+          isCliVersionOutdated(currentProvider.version, MIN_CLAUDE_CLI_VERSION) && (
+            <OutdatedHint>
+              <WarningCircleIcon size={28} />
+              <span>{t('editor.ai.outdated', { version: currentProvider.version ?? '' })}</span>
+            </OutdatedHint>
+          )}
+
+        {available && !billingDismissed && (
+          <BillingCard>
+            <BillingTitle>{t('editor.ai.billing_title')}</BillingTitle>
+            <BillingBody>{t('editor.ai.billing')}</BillingBody>
+            <Button
+              color="secondary"
+              variant="text"
+              size="small"
+              onClick={onDismissBilling}
+              sx={{
+                backgroundColor: 'var(--dark-gray)',
+                '&:hover': { backgroundColor: 'var(--light-gray)' },
+                // ui2 pins secondary-text buttons to secondary.contrast (grey) in every state at
+                // 0,6,0 specificity; out-specify it (repeated & = 0,7,0) so the label stays white.
+                '&&&&&&&': { color: 'var(--white)' },
+              }}
+            >
+              {t('editor.ai.billing_dismiss')}
+            </Button>
+          </BillingCard>
+        )}
+
         {available && selection.length > 0 && (
           <SelectionBar>
             <HighlightAltIcon fontSize="small" />
@@ -741,51 +787,23 @@ export function ChatView(props: ChatViewProps) {
                 names: selection.map(s => (s.name !== '' ? s.name : `#${s.id}`)).join(', '),
               })}
             </SelectionNames>
-            <SelectionClear
-              role="button"
-              tabIndex={0}
-              onClick={onClearSelection}
-              onKeyDown={e => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  e.preventDefault();
-                  onClearSelection();
-                }
-              }}
-            >
-              {t('editor.ai.selection_clear')}
-            </SelectionClear>
-          </SelectionBar>
-        )}
-
-        {available &&
-          currentProvider?.id === 'claude' &&
-          isCliVersionOutdated(currentProvider.version, MIN_CLAUDE_CLI_VERSION) && (
-            <OutdatedHint>
-              <InfoOutlinedIcon fontSize="inherit" />
-              <span>{t('editor.ai.outdated', { version: currentProvider.version ?? '' })}</span>
-            </OutdatedHint>
-          )}
-
-        {available && !billingDismissed && (
-          <BillingHint>
-            <InfoOutlinedIcon fontSize="inherit" />
-            <span>
-              {t('editor.ai.billing', { provider: currentProvider?.label ?? 'AI' })}{' '}
-              <BillingDismiss
-                role="button"
-                tabIndex={0}
-                onClick={onDismissBilling}
-                onKeyDown={e => {
-                  if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
-                    onDismissBilling();
-                  }
+            <Tooltip title={t('editor.ai.selection_clear')}>
+              <IconButton
+                size="small"
+                aria-label={t('editor.ai.selection_clear')}
+                onClick={onClearSelection}
+                sx={{
+                  flexShrink: 0,
+                  padding: 0.25,
+                  color: 'text.primary',
+                  backgroundColor: 'action.hover',
+                  '&:hover': { backgroundColor: 'action.selected' },
                 }}
               >
-                {t('editor.ai.billing_dismiss')}
-              </BillingDismiss>
-            </span>
-          </BillingHint>
+                <CloseIcon sx={{ fontSize: 13 }} />
+              </IconButton>
+            </Tooltip>
+          </SelectionBar>
         )}
 
         <Composer>
@@ -794,35 +812,54 @@ export function ChatView(props: ChatViewProps) {
             multiline
             maxRows={6}
             size="small"
+            autoFocus
             placeholder={t('editor.ai.placeholder')}
             value={input}
             disabled={!available}
             onChange={e => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
+            sx={{
+              // Rounded field with the send control living inside it; a white focus/hover
+              // outline instead of the default primary (ruby) ring (#1576).
+              '& .MuiOutlinedInput-root': {
+                borderRadius: '10px',
+                alignItems: 'center',
+                paddingRight: theme => theme.spacing(0.75),
+                backgroundColor: 'var(--ai-input-bg)',
+              },
+              '& .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline': {
+                borderColor: 'text.secondary',
+              },
+              '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                borderColor: 'secondary.main',
+              },
+            }}
+            InputProps={{
+              endAdornment: busy ? (
+                <Tooltip title={t('editor.ai.stop')}>
+                  <IconButton
+                    color="error"
+                    aria-label={t('editor.ai.stop')}
+                    onClick={onStop}
+                  >
+                    <StopIcon />
+                  </IconButton>
+                </Tooltip>
+              ) : (
+                <Tooltip title={t('editor.ai.send')}>
+                  <span>
+                    <SendButton
+                      aria-label={t('editor.ai.send')}
+                      disabled={!available || input.trim() === ''}
+                      onClick={handleSend}
+                    >
+                      <ArrowUpwardIcon fontSize="small" />
+                    </SendButton>
+                  </span>
+                </Tooltip>
+              ),
+            }}
           />
-          {busy ? (
-            <Tooltip title={t('editor.ai.stop')}>
-              <IconButton
-                color="error"
-                aria-label={t('editor.ai.stop')}
-                onClick={onStop}
-              >
-                <StopIcon />
-              </IconButton>
-            </Tooltip>
-          ) : (
-            <Tooltip title={t('editor.ai.send')}>
-              <span>
-                <SendButton
-                  aria-label={t('editor.ai.send')}
-                  disabled={!available || input.trim() === ''}
-                  onClick={handleSend}
-                >
-                  <ArrowUpwardIcon fontSize="small" />
-                </SendButton>
-              </span>
-            </Tooltip>
-          )}
         </Composer>
       </>
     </Panel>

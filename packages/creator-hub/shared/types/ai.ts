@@ -34,6 +34,13 @@ export interface AiProviderInfo {
 // UI nudges users up to. Bump it as newer models raise the requirement.
 export const MIN_CLAUDE_CLI_VERSION = '2.1.251';
 
+// Install + sign-in commands per agent, shown on the chat setup card and the settings
+// "Connect" section. Obviously-safe public package names.
+export const AI_CLI_COMMANDS: Record<AiProvider, { install: string; signin: string }> = {
+  claude: { install: 'npm i -g @anthropic-ai/claude-code', signin: 'claude' },
+  codex: { install: 'npm i -g @openai/codex', signin: 'codex login' },
+};
+
 // True when `version` is a parseable semver strictly older than `min`. Unknown/absent
 // versions are treated as NOT outdated — we never nag when we couldn't read the version.
 export function isCliVersionOutdated(version: string | undefined, min: string): boolean {
@@ -103,21 +110,34 @@ export type AiEvent =
 // hops are relayed through the main process, since two renderers can't talk directly.
 // These payloads must stay plain-serializable for IPC.
 
-export interface AiMirrorToolChip {
-  tool: string;
-  detail: string;
+// An interactive `ask_user` question, rendered in the transcript. The turn blocks until
+// `answer` is set (or `dismissed` on stop). Ephemeral — stripped before a transcript persists.
+export interface AiPromptData {
+  id: string;
+  question: string;
+  options: { label: string; description?: string }[];
+  multiSelect: boolean;
+  allowOther: boolean;
+  answer?: string;
+  dismissed?: boolean;
 }
+
+// One ordered piece of an assistant turn, rendered in the exact order it arrived so text,
+// tool chips, screenshots and interactive prompts stay chronological (#1573).
+export type AiPart =
+  | { kind: 'text'; text: string }
+  | { kind: 'tool'; tool: string; detail: string }
+  | { kind: 'image'; dataUrl: string }
+  | { kind: 'prompt'; prompt: AiPromptData };
 
 export interface AiMirrorMessage {
   id: string;
   role: 'user' | 'assistant';
-  text: string;
-  tools: AiMirrorToolChip[];
+  parts: AiPart[];
   done: boolean;
   error?: string;
   mutations?: number;
   reverted?: boolean;
-  images?: string[];
 }
 
 export interface AiMirrorState {
@@ -149,4 +169,7 @@ export type AiRemoteCommand =
   | { type: 'switchSession'; id: string }
   | { type: 'deleteSession'; id: string }
   | { type: 'clearSelection' }
+  // The detached window's close button: shut the assistant entirely (close the window AND the
+  // inline panel), instead of just docking back — so close is consistent whether detached or not.
+  | { type: 'closeAssistant' }
   | { type: 'sync' };
