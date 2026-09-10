@@ -106,7 +106,7 @@ export function asBevyInternals(internals: unknown): BevyInternals | null {
 export function registerBevyRenderer(): void {
   registerRenderer({
     id: 'bevy',
-    label: 'Bevy (preview)',
+    label: 'Bevy (experimental)',
     mount: async ({ canvas, container }) => {
       // The engine runs in its own iframe in the viewport container; the shared
       // (Babylon) canvas is hidden while Bevy is active and restored on dispose.

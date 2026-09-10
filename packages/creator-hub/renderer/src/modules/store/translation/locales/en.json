@@ -91,16 +91,19 @@
       "toggle": "Toggle AI assistant",
       "pop_out": "Open in a separate window",
       "dock": "Dock back in the editor",
+      "close": "Close AI Assistant",
+      "open": "AI Assistant",
       "detached_message": "The assistant is open in a separate window.",
       "detached_dock": "Bring it back here",
       "new_chat": "New chat",
-      "placeholder": "Ask about your scene, or describe a change…",
+      "placeholder": "Ask Assistant",
       "send": "Send",
       "stop": "Stop",
       "thinking": "Thinking…",
       "empty": "Hi there! I'm here to help. Ask questions about your scene, get help with scripting, or tell me what you'd like to build or change. I can inspect your scene and write the code needed to bring your ideas to life.",
-      "billing": "Runs on your own {provider} account — messages count against your plan's usage, not a free Creator Hub allowance.",
-      "billing_dismiss": "Don't show again",
+      "billing_title": "About AI usage",
+      "billing": "Using the AI Assistant consumes tokens from your connected account. Keep an eye on your account usage.",
+      "billing_dismiss": "Got It",
       "outdated": "Your Claude CLI (v{version}) is out of date — run \"claude update\" in a terminal to use the latest models.",
       "screenshot_alt": "Screenshot from the assistant",
       "history": {
@@ -321,8 +324,7 @@
         "loading": "Loading...",
         "error": "Error",
         "warning": {
-          "message_basic": "PLEASE READ CAREFULLY:<ul><li>After deployment, your scene will undergo processing before becoming available.</li><li>This process may take 15 minutes on average.</li><li>During this time, your scene will appear empty until it has been updated on the client.</li></ul>",
-          "message_replacing_world_content": "PLEASE READ CAREFULLY:<ul><li>The existing content in your World will be totally or partially replaced with the new content you're about to publish.</li><li>After deployment, your scene will undergo processing before becoming available.</li><li>This process may take 15 minutes on average.</li><li>During this time, your scene will appear empty until it has been updated on the client.</li></ul>",
+          "message_replacing_world_content": "PLEASE READ CAREFULLY:<ul><li>The existing content in your World will be totally or partially replaced with the new content you're about to publish.</li></ul>",
           "checkbox": "Don't show again",
           "continue": "Continue",
           "back": "Go back"
@@ -341,7 +343,6 @@
           "finishing": "Finishing up...",
           "failed": "Publishing failed",
           "try_again": "Please try again",
-          "info": "This process may take 15 minutes on average. During this time, your scene may appear empty until it has been updated in the client.",
           "step": {
             "uploading": "Uploading",
             "converting": "Converting",
@@ -451,29 +452,41 @@
         "renderer": {
           "label": "Scene renderer",
           "babylon": "Babylon (default)",
-          "bevy": "Bevy (preview)"
+          "bevy": "Bevy (experimental)",
+          "toggle": "Enable Bevy Scene Renderer"
         },
         "experimental": {
           "label": "Experimental features"
         },
         "ai_assistant": {
-          "label": "AI scene assistant",
-          "help": "Runs your installed Claude or Codex CLI with full access to your machine, the same reach it has in your terminal. It uses the account you're already signed into there, so every message counts against your own plan's usage — not a free Creator Hub allowance. Only enable it if you trust what you ask it to do."
+          "label": "Enable AI Assistant",
+          "help": "Runs your installed Claude or Codex CLI with full access to your machine, the same reach it has in your terminal. Only enable it if you trust what you ask it to do."
         },
         "mcp_server": {
           "label": "Expose AI assistant MCP server",
           "help": "Let an AI agent running outside Creator Hub control the open scene. Paste this into the agent's MCP configuration.",
           "copy": "Copy configuration",
-          "copied": "Copied",
-          "note": "Localhost only. The URL and token change each time Creator Hub restarts, so you'll need to paste the latest here."
+          "copied": "Copied!",
+          "note": "Localhost only. The URL and token change each time Creator Hub restarts."
         },
         "ai_api_key": {
-          "label": "Use my API key for the AI assistant",
-          "help": "Bill the assistant against the API key in your environment (ANTHROPIC_API_KEY / OPENAI_API_KEY) instead of your signed-in CLI subscription. Creator Hub never stores the key. Off by default."
+          "label": "Bill this to an API key instead",
+          "help": "Uses ANTHROPIC_API_KEY / OPENAI_API_KEY from your environment. Off by default."
         },
         "gui_editor": {
-          "toggle": "UI Editor",
+          "toggle": "Enable UI Editor",
           "hint": "Enabling this feature will allow you to combine GUI objects, properties and scripting to build UI in the editor."
+        },
+        "ai_connect": {
+          "title": "Connect",
+          "connected": "Connected",
+          "sign_in": "Sign in",
+          "sign_out": "Sign out",
+          "cancel": "Cancel",
+          "via_terminal": "Via Terminal",
+          "install": "Install",
+          "sign_in_label": "Sign In",
+          "copy": "Copy"
         }
       },
       "actions": {
@@ -1147,8 +1160,8 @@
           }
         },
         "playtime": {
-          "title": "Average Playtime",
-          "description": "Average time each user spends in your place on a single visit."
+          "title": "Median Playtime",
+          "description": "Median time each user spends in your place per day: half of the daily visits are longer, half shorter."
         },
         "afk": {
           "title": "Average AFK Time",
@@ -1201,9 +1214,9 @@
         "label": "Day 7 Retention",
         "tooltip": "The percentage of new users who returned to your place at least once over the 7 days after their first visit."
       },
-      "avg_playtime": {
-        "label": "Avg. Playtime",
-        "tooltip": "Average time each user spends in your place on a single visit."
+      "median_playtime": {
+        "label": "Median Playtime",
+        "tooltip": "Median time each user spends in your place per day: half of the daily visits are longer, half shorter."
       },
       "afk_time": {
         "label": "AFK Time",
@@ -1239,7 +1252,7 @@
         "new_users": "New Users",
         "day_7_retention": "D7 Retention",
         "revenue": "Revenue",
-        "avg_playtime": "Avg. Playtime",
+        "median_playtime": "Median Playtime",
         "concurrent_users": "Concurrent Users"
       },
       "actions": {

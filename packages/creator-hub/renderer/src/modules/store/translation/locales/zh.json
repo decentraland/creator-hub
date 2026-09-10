@@ -91,16 +91,19 @@
       "toggle": "切换 AI 助手",
       "pop_out": "在单独的窗口中打开",
       "dock": "停靠回编辑器",
+      "close": "关闭 AI 助手",
+      "open": "AI 助手",
       "detached_message": "助手已在单独的窗口中打开。",
       "detached_dock": "带回此处",
       "new_chat": "新对话",
-      "placeholder": "询问你的场景，或描述一个改动…",
+      "placeholder": "询问助手",
       "send": "发送",
       "stop": "停止",
       "thinking": "思考中…",
       "empty": "你好！我在这里为你提供帮助。你可以询问关于场景的问题、获取脚本编写方面的帮助，或者告诉我你想构建或修改什么。我可以检查你的场景并编写所需的代码，把你的想法变为现实。",
-      "billing": "使用你自己的 {provider} 账户运行——消息会计入你自己套餐的用量，而不是 Creator Hub 提供的免费额度。",
-      "billing_dismiss": "不再显示",
+      "billing_title": "关于 AI 用量",
+      "billing": "使用 AI 助手会消耗你所连接账户的额度。请留意你的账户用量。",
+      "billing_dismiss": "知道了",
       "screenshot_alt": "助手的截图",
       "history": {
         "title": "聊天记录",
@@ -320,8 +323,7 @@
         "loading": "加载中...",
         "error": "错误",
         "warning": {
-          "message_basic": "请仔细阅读：<ul><li>部署后，您的场景将进行处理，然后才能使用。</li><li>此过程平均可能需要15分钟。</li><li>在此期间，您的场景将显示为空，直到客户端更新。</li></ul>",
-          "message_replacing_world_content": "请仔细阅读：<ul><li>您的世界中的现有内容将被您即将发布的新的内容完全或部分替换。</li><li>部署后，您的场景将进行处理，然后才能使用。</li><li>此过程平均可能需要15分钟。</li><li>在此期间，您的场景将显示为空，直到客户端更新。</li></ul>",
+          "message_replacing_world_content": "请仔细阅读：<ul><li>您的世界中的现有内容将被您即将发布的新的内容完全或部分替换。</li></ul>",
           "checkbox": "不再显示",
           "continue": "继续",
           "back": "返回"
@@ -340,7 +342,6 @@
           "finishing": "整理完毕...",
           "failed": "发布失败",
           "try_again": "请重试",
-          "info": "此过程平均可能需要 15 分钟。在此期间，您的场景可能会显示为空，直到在客户端中更新为止。",
           "step": {
             "uploading": "上传中...",
             "converting": "转换...",
@@ -450,29 +451,41 @@
         "renderer": {
           "label": "场景渲染器",
           "babylon": "Babylon（默认）",
-          "bevy": "Bevy（预览）"
+          "bevy": "Bevy（实验性）",
+          "toggle": "启用 Bevy 场景渲染器"
         },
         "experimental": {
           "label": "实验性功能"
         },
         "ai_assistant": {
-          "label": "AI 场景助手",
-          "help": "运行你安装的 Claude 或 Codex CLI，对你的电脑拥有完全访问权限，与在终端中的权限相同。它使用你已在终端登录的账户，因此每条消息都会计入你自己套餐的用量，而不是 Creator Hub 提供的免费额度。请仅在你信任所要求的操作时启用。"
+          "label": "启用 AI 助手",
+          "help": "使用你已安装的 Claude 或 Codex CLI 运行，拥有与终端相同的对你机器的完全访问权限。只有在你信任所要求的操作时才启用。"
         },
         "mcp_server": {
           "label": "公开 AI 助手 MCP 服务器",
           "help": "让 Creator Hub 之外运行的 AI 代理控制打开的场景。将此内容粘贴到该代理的 MCP 配置中。",
           "copy": "复制配置",
-          "copied": "已复制",
-          "note": "仅限本地主机。每次 Creator Hub 重启时 URL 和令牌都会更改，因此你需要在此处粘贴最新的内容。"
+          "copied": "已复制！",
+          "note": "仅限本地。每次重启 Creator Hub 时 URL 和令牌都会改变。"
         },
         "ai_api_key": {
-          "label": "为 AI 助手使用我的 API 密钥",
-          "help": "使用你环境中的 API 密钥（ANTHROPIC_API_KEY / OPENAI_API_KEY）为助手计费，而不是使用已登录的 CLI 订阅。Creator Hub 从不存储该密钥。默认关闭。"
+          "label": "改为计入 API 密钥",
+          "help": "使用你环境中的 ANTHROPIC_API_KEY / OPENAI_API_KEY。默认关闭。"
         },
         "gui_editor": {
-          "toggle": "UI 编辑器",
+          "toggle": "启用 UI 编辑器",
           "hint": "启用此功能后，你可以在编辑器中组合 GUI 对象、属性和脚本来构建 UI。"
+        },
+        "ai_connect": {
+          "title": "连接",
+          "connected": "已连接",
+          "sign_in": "登录",
+          "sign_out": "退出登录",
+          "cancel": "取消",
+          "via_terminal": "通过终端",
+          "install": "安装",
+          "sign_in_label": "登录",
+          "copy": "复制"
         }
       },
       "actions": {
@@ -1184,9 +1197,9 @@
         "label": "7 日留存",
         "tooltip": "首次访问后的 7 天内至少回访过一次的新用户占比。"
       },
-      "avg_playtime": {
-        "label": "平均游玩时长",
-        "tooltip": "每位用户单次访问在你的 Place 中停留的平均时间。"
+      "median_playtime": {
+        "label": "游玩时长中位数",
+        "tooltip": "每位用户每天在你的 Place 中停留时间的中位数：一半的每日访问更长，一半更短。"
       },
       "afk_time": {
         "label": "挂机时长",
@@ -1218,7 +1231,7 @@
         "new_users": "新用户",
         "day_7_retention": "7 日留存",
         "revenue": "收入",
-        "avg_playtime": "平均游玩时长"
+        "median_playtime": "游玩时长中位数"
       },
       "actions": {
         "pin_to_watchlist": "固定到关注列表",

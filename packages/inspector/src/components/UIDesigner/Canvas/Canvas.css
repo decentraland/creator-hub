@@ -44,6 +44,10 @@
   display: flex;
 }
 
+.ui-designer-canvas-screenfill {
+  background: #24262c;
+}
+
 /* Every node carries a faint dotted marker so ALL elements (not just
    containers) stay locatable when empty or transparent. Outlines paint INSIDE
    the scaled canvas-root (transform: scale(--uid-scale)), so a raw 1px renders
@@ -465,12 +469,29 @@
   opacity: 1;
 }
 
-/* Mobile device-preview chrome, layered onto the stage. Desktop previews the
-   same screen box without the bezel. */
+/* Mobile device-preview chrome, layered onto the stage. The bezel colour shows
+   through wherever the screen is inset (device / gameplay safe area); the ::before
+   is the landscape notch, seated in the left inset where the physical one sits.
+   Desktop previews the same screen box without the bezel. */
 .ui-designer-device-frame {
-  background: #000;
+  background: #202127;
   border-radius: 12px;
   overflow: hidden;
+}
+
+.ui-designer-device-frame::before {
+  content: "";
+  position: absolute;
+  left: 1.4%;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 1.3%;
+  min-width: 5px;
+  height: 30%;
+  background: #000;
+  border-radius: 999px;
+  z-index: 2;
+  pointer-events: none;
 }
 
 /* The previewed screen: the preset resolution, editor-zoom-scaled with

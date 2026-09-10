@@ -91,16 +91,19 @@
       "toggle": "Mostrar/ocultar el asistente IA",
       "pop_out": "Abrir en una ventana separada",
       "dock": "Volver a acoplar en el editor",
+      "close": "Cerrar el Asistente IA",
+      "open": "Asistente IA",
       "detached_message": "El asistente está abierto en una ventana separada.",
       "detached_dock": "Traerlo de vuelta aquí",
       "new_chat": "Nueva conversación",
-      "placeholder": "Pregunta sobre tu escena o describe un cambio…",
+      "placeholder": "Preguntar al Asistente",
       "send": "Enviar",
       "stop": "Detener",
       "thinking": "Pensando…",
       "empty": "¡Hola! Estoy aquí para ayudarte. Haz preguntas sobre tu escena, pide ayuda con el scripting o dime qué te gustaría construir o cambiar. Puedo inspeccionar tu escena y escribir el código necesario para dar vida a tus ideas.",
-      "billing": "Se ejecuta con tu propia cuenta de {provider}: los mensajes consumen el uso de tu plan, no una asignación gratuita de Creator Hub.",
-      "billing_dismiss": "No mostrar de nuevo",
+      "billing_title": "Sobre el uso de la IA",
+      "billing": "El Asistente IA consume tokens de tu cuenta conectada. Vigila el uso de tu cuenta.",
+      "billing_dismiss": "Entendido",
       "screenshot_alt": "Captura de pantalla del asistente",
       "history": {
         "title": "Historial de chats",
@@ -320,8 +323,7 @@
         "loading": "Cargando...",
         "error": "Error",
         "warning": {
-          "message_basic": "POR FAVOR LEA CUIDADOSAMENTE:<ul><li>Después de la implementación, tu escena pasará por un proceso antes de estar disponible.</li><li>Este proceso puede tardar en promedio 15 minutos.</li><li>Durante este tiempo, tu escena aparecerá vacía hasta que se haya actualizado en el cliente.</li></ul>",
-          "message_replacing_world_content": "POR FAVOR LEA CUIDADOSAMENTE:<ul><li>El contenido existente en tu Mundo será total o parcialmente reemplazado con el nuevo contenido que estás a punto de publicar.</li><li>Después de la implementación, tu escena pasará por un proceso antes de estar disponible.</li><li>Este proceso puede tardar en promedio 15 minutos.</li><li>Durante este tiempo, tu escena aparecerá vacía hasta que se haya actualizado en el cliente.</li></ul>",
+          "message_replacing_world_content": "POR FAVOR LEA CUIDADOSAMENTE:<ul><li>El contenido existente en tu Mundo será total o parcialmente reemplazado con el nuevo contenido que estás a punto de publicar.</li></ul>",
           "checkbox": "No mostrar de nuevo",
           "continue": "Continuar",
           "back": "Regresar"
@@ -340,7 +342,6 @@
           "finishing": "Terminando...",
           "failed": "Error al publicar",
           "try_again": "Por favor inténtalo de nuevo",
-          "info": "Este proceso puede tardar una media de 15 minutos. Durante este tiempo, su escena puede aparecer vacía hasta que se actualice en el cliente.",
           "step": {
             "uploading": "Subiendo",
             "converting": "Convirtiendo",
@@ -450,29 +451,41 @@
         "renderer": {
           "label": "Motor de renderizado",
           "babylon": "Babylon (predeterminado)",
-          "bevy": "Bevy (vista previa)"
+          "bevy": "Bevy (experimental)",
+          "toggle": "Activar el renderizador Bevy"
         },
         "experimental": {
           "label": "Funciones experimentales"
         },
         "ai_assistant": {
-          "label": "Asistente de escena con IA",
-          "help": "Ejecuta tu CLI de Claude o Codex con acceso completo a tu equipo, el mismo alcance que tiene en tu terminal. Usa la cuenta con la que ya iniciaste sesión allí, así que cada mensaje consume el uso de tu propio plan, no una asignación gratuita de Creator Hub. Actívalo solo si confías en lo que le pides."
+          "label": "Activar el Asistente IA",
+          "help": "Ejecuta tu CLI de Claude o Codex instalada con acceso total a tu equipo, el mismo alcance que tiene en tu terminal. Actívalo solo si confías en lo que le pides."
         },
         "mcp_server": {
           "label": "Exponer el servidor MCP del asistente de IA",
           "help": "Permite que un agente de IA externo a Creator Hub controle la escena abierta. Pega esto en la configuración MCP del agente.",
           "copy": "Copiar configuración",
-          "copied": "Copiado",
-          "note": "Solo localhost. La URL y el token cambian cada vez que Creator Hub se reinicia, así que tendrás que pegar los últimos aquí."
+          "copied": "¡Copiado!",
+          "note": "Solo localhost. La URL y el token cambian cada vez que se reinicia Creator Hub."
         },
         "ai_api_key": {
-          "label": "Usar mi clave de API para el asistente de IA",
-          "help": "Cobra el asistente con la clave de API de tu entorno (ANTHROPIC_API_KEY / OPENAI_API_KEY) en lugar de tu suscripción de CLI. Creator Hub nunca almacena la clave. Desactivado por defecto."
+          "label": "Facturar a una clave de API en su lugar",
+          "help": "Usa ANTHROPIC_API_KEY / OPENAI_API_KEY de tu entorno. Desactivado por defecto."
         },
         "gui_editor": {
-          "toggle": "Editor de UI",
+          "toggle": "Activar el editor de UI",
           "hint": "Habilitar esta función te permitirá combinar objetos de interfaz, propiedades y scripting para crear UI en el editor."
+        },
+        "ai_connect": {
+          "title": "Conectar",
+          "connected": "Conectado",
+          "sign_in": "Iniciar sesión",
+          "sign_out": "Cerrar sesión",
+          "cancel": "Cancelar",
+          "via_terminal": "Desde la terminal",
+          "install": "Instalar",
+          "sign_in_label": "Iniciar sesión",
+          "copy": "Copiar"
         }
       },
       "actions": {
@@ -1184,9 +1197,9 @@
         "label": "Retención Día 7",
         "tooltip": "El porcentaje de usuarios nuevos que volvieron a tu place al menos una vez durante los 7 días posteriores a su primera visita."
       },
-      "avg_playtime": {
-        "label": "Tiempo de Juego Prom.",
-        "tooltip": "Tiempo promedio que cada usuario pasa en tu place en una sola visita."
+      "median_playtime": {
+        "label": "Mediana de Tiempo de Juego",
+        "tooltip": "Mediana del tiempo que cada usuario pasa en tu place por día: la mitad de las visitas diarias duran más y la otra mitad menos."
       },
       "afk_time": {
         "label": "Tiempo AFK",
@@ -1218,7 +1231,7 @@
         "new_users": "Usuarios Nuevos",
         "day_7_retention": "Retención D7",
         "revenue": "Ingresos",
-        "avg_playtime": "Tiempo de Juego Prom."
+        "median_playtime": "Mediana de Tiempo de Juego"
       },
       "actions": {
         "pin_to_watchlist": "Fijar a la Watchlist",
