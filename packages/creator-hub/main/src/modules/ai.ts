@@ -725,10 +725,16 @@ const IMG_EXT: Record<string, string> = {
 
 // Spill the system prompt to a temp file so it can be passed by path (--append-system-prompt-file)
 // instead of inline on argv — see BuiltTurn for why (Windows cmd.exe 8191-char command-line cap).
+// The prompt is a module constant, so write it once and reuse the path (mirrors
+// writeSceneMcpConfigFile). 0600 matches the project's temp-file convention — the mkdtemp dir is
+// already 0700 on Unix, but Windows ACLs are looser.
+let systemPromptPath: string | null = null;
 function writeSystemPromptFile(text: string): string {
+  if (systemPromptPath !== null) return systemPromptPath;
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'creator-hub-ai-'));
   const p = path.join(dir, 'system-prompt.txt');
-  fs.writeFileSync(p, text);
+  fs.writeFileSync(p, text, { mode: 0o600 });
+  systemPromptPath = p;
   return p;
 }
 
@@ -830,9 +836,12 @@ export async function aiSend(
   }
 
   if (stdin !== undefined && child.stdin !== null) {
-    // Swallow EPIPE: if the child dies before draining stdin, the write races the exit. The
-    // exit handler already surfaces the real failure; an unhandled 'error' here would crash main.
-    child.stdin.on('error', () => {});
+    // If the child dies before draining stdin, the write races the exit and throws EPIPE — the
+    // exit handler already surfaces the real failure, so that one is expected and ignored. An
+    // unhandled 'error' would crash main; anything other than EPIPE is unexpected, so log it.
+    child.stdin.on('error', (err: NodeJS.ErrnoException) => {
+      if (err.code !== 'EPIPE') log.warn(`[AI] stdin write error: ${err.code ?? err.message}`);
+    });
     child.stdin.end(stdin);
   }
 
