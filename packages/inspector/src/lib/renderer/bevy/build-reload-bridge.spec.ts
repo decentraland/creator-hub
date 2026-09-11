@@ -31,6 +31,7 @@ describe('createBuildReloadBridge', () => {
   let unsubscribe: ReturnType<typeof vi.fn>;
   let reload: ReturnType<typeof vi.fn>;
   let ownWrites: Set<string>;
+  let running: boolean;
   let bridge: BuildReloadBridge;
 
   const emit = (event: SceneBuildEvent) => listener?.(event);
@@ -45,6 +46,7 @@ describe('createBuildReloadBridge', () => {
     unsubscribe = vi.fn();
     reload = vi.fn();
     ownWrites = new Set();
+    running = true;
     bridge = createBuildReloadBridge({
       subscribe: cb => {
         listener = cb;
@@ -52,6 +54,7 @@ describe('createBuildReloadBridge', () => {
       },
       isOwnWrite: file => ownWrites.has(file),
       reload,
+      isRunning: () => running,
       quietMs: QUIET_MS,
     });
   });
@@ -71,12 +74,13 @@ describe('createBuildReloadBridge', () => {
   });
 
   describe('when a rebuild was triggered by a source file', () => {
-    it('should reload once the bundle has landed and the cycles go quiet', () => {
+    it('should reload once the bundle has landed and the cycles go quiet, naming the file', () => {
       cycle(CODE);
 
       expect(reload).not.toHaveBeenCalled();
       vi.advanceTimersByTime(QUIET_MS);
       expect(reload).toHaveBeenCalledTimes(1);
+      expect(reload).toHaveBeenCalledWith(`source changed: ${CODE}`);
     });
 
     it('should reload even when an autosave shares the cycle', () => {
@@ -115,6 +119,7 @@ describe('createBuildReloadBridge', () => {
       vi.advanceTimersByTime(QUIET_MS);
 
       expect(reload).toHaveBeenCalledTimes(1);
+      expect(reload).toHaveBeenCalledWith('Script component edited');
     });
 
     it('should reload just once for the edit', () => {
@@ -125,6 +130,46 @@ describe('createBuildReloadBridge', () => {
       vi.advanceTimersByTime(QUIET_MS);
 
       expect(reload).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('when a Script component was edited while the scene is frozen', () => {
+    beforeEach(() => {
+      running = false;
+      bridge.noteScriptEdit();
+      cycle(COMPOSITE);
+      vi.advanceTimersByTime(QUIET_MS * 10);
+    });
+
+    it('should not reload, and hand the reload to Play exactly once', () => {
+      expect(reload).not.toHaveBeenCalled();
+      expect(bridge.takeDeferredReload()).toBe(true);
+      expect(bridge.takeDeferredReload()).toBe(false);
+    });
+
+    it('should let a later code change reload immediately and cover the deferred one', () => {
+      cycle(CODE);
+      vi.advanceTimersByTime(QUIET_MS);
+
+      expect(reload).toHaveBeenCalledTimes(1);
+      expect(bridge.takeDeferredReload()).toBe(false);
+    });
+  });
+
+  describe('when a source file changes while the scene is frozen', () => {
+    it('should still reload immediately', () => {
+      running = false;
+      cycle(CODE);
+      vi.advanceTimersByTime(QUIET_MS);
+
+      expect(reload).toHaveBeenCalledTimes(1);
+      expect(bridge.takeDeferredReload()).toBe(false);
+    });
+  });
+
+  describe('when nothing is pending', () => {
+    it('should report no deferred reload', () => {
+      expect(bridge.takeDeferredReload()).toBe(false);
     });
   });
 

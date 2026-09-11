@@ -268,6 +268,12 @@ export function createForwardEditBridge(options: ForwardEditBridgeOptions): Forw
     ? null
     : setTimeout(() => {
         armed = true;
+        // Everything the load burst brought in exists in the engine already (it
+        // loaded the same composite), so the arm replays must not `/new_entity` it —
+        // that collides ("id N already live"), same as after a reload.
+        for (const [entity] of context.engine.getEntitiesWith(context.Name)) {
+          instantiated.add(entity);
+        }
         reconcileEditorOverridesOnArm();
       }, ARM_DELAY_MS);
   const shouldForward = options.shouldForward ?? (() => armed);

@@ -428,20 +428,15 @@ export function registerBevyRenderer(): void {
           if (bevy.sceneRun.isRunning()) bevy.sceneRun.setRunning(false);
         },
       });
-      bevy.setSceneRunPoster(running => {
-        sceneRunBridge.setRunning(running);
-        // #1382: freezing stops the SDK7 tick but not the engine's GLTF animation
-        // playback — so also pause/resume Animator clips with the run state.
-        forwardBridge?.setAnimationsFrozen(!running);
-      });
-
       // Hot-reload on code changes (#1419) — decided from the bundler's own per-file
       // build events the host relays, so the editor's autosave rebuilds never reload
       // (#1391). See build-reload-bridge.ts.
       const buildReload = createBuildReloadBridge({
         subscribe: onSceneBuildEvent,
         isOwnWrite,
-        reload: () => {
+        isRunning: () => bevy.sceneRun.isRunning(),
+        reload: reason => {
+          console.info(`[bevy] hot-reloading the scene (${reason})`);
           // Preserve the RUN state across a hot-reload: reset() always lands frozen
           // (the Stop default), but a code edit while the user is running the scene
           // should keep running with the new code (like the preview window). Capture
@@ -454,14 +449,39 @@ export function registerBevyRenderer(): void {
       });
       // Script inputs are resolved once when the scene starts, so unlike every other
       // component (forwarded live) an edit only shows after a reload of the bundle
-      // that embeds it. The initial CRDT load also streams Script components in; only
-      // writes after the forward bridge's arm window count as edits.
+      // that embeds it. The initial CRDT load streams every Script in as a first-seen
+      // PUT, so only a value that CHANGES (or a Script that goes away) is an edit —
+      // plus a first-seen PUT once the load burst is over, which is a script attached
+      // to an entity that had none.
       const scriptComponentName = bevy.context.editorComponents.Script.componentName;
+      const seenScripts = new Map<Entity, string>();
       const scriptEditsArmAt = performance.now() + SCRIPT_EDITS_ARM_DELAY_MS;
-      const offScriptEdits = bevy.context.onChange((_entity, _op, component) => {
+      const offScriptEdits = bevy.context.onChange((entity, _op, component, value) => {
         if (component?.componentName !== scriptComponentName) return;
-        if (performance.now() < scriptEditsArmAt) return;
-        buildReload.noteScriptEdit();
+        const previous = seenScripts.get(entity);
+        const current = value === undefined ? undefined : JSON.stringify(value);
+        if (current === undefined) seenScripts.delete(entity);
+        else seenScripts.set(entity, current);
+        const isEdit =
+          previous !== undefined ? current !== previous : performance.now() >= scriptEditsArmAt;
+        if (isEdit) buildReload.noteScriptEdit();
+      });
+
+      bevy.setSceneRunPoster(running => {
+        // A Script edit landed in the bundle while the scene was frozen (see
+        // build-reload-bridge): Play must run THAT bundle, not resume the instance
+        // built before the edit. reset() reloads and lands frozen; the re-requested
+        // Play is deferred by its #resetting guard and applied on reset-complete.
+        if (running && buildReload.takeDeferredReload()) {
+          console.info('[bevy] reloading the scene before Play (Script edited while paused)');
+          void bevy.sceneRun.reset();
+          bevy.sceneRun.setRunning(true);
+          return;
+        }
+        sceneRunBridge.setRunning(running);
+        // #1382: freezing stops the SDK7 tick but not the engine's GLTF animation
+        // playback — so also pause/resume Animator clips with the run state.
+        forwardBridge?.setAnimationsFrozen(!running);
       });
 
       // Wire the engine-window bindings for the initial boot. Re-run on reboot.
@@ -502,6 +522,8 @@ export function registerBevyRenderer(): void {
       // reboot to re-read dimensions); a freshly reloaded scene starts running, so
       // re-assert freeze right after.
       bevy.setSceneResetter(async () => {
+        // Stop reloads regardless, so a reload that was waiting for Play is covered.
+        buildReload.takeDeferredReload();
         // Ask the agent to reload+re-pin+re-freeze the scene. BevyRenderer.reset
         // already flipped the local run-state to frozen (so the button reads Play
         // at once) and raised its reset guard (blocking Play until done). The reload

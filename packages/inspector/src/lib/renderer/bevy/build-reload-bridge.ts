@@ -15,7 +15,10 @@ import type { SceneBuildEvent } from '../../logic/scene-build-events';
  * saved"), so the two cases are told apart by the files a cycle names, never by timing.
  * Script inputs are the one edit that needs a reload of its own: the scene runtime
  * resolves them once at start, so `noteScriptEdit()` marks the next bundle as one to
- * reload on. Same-origin writes the inspector makes itself (code mode splicing
+ * reload on. While the scene is frozen that reload is deferred — a paused scene shows
+ * nothing a script does, so reloading it mid-edit only disrupts — and Play consumes it
+ * (`takeDeferredReload`), the way the standalone bevy-editor reloads a stale scene on
+ * Play. Same-origin writes the inspector makes itself (code mode splicing
  * `src/ui/*.tsx`) are excluded through `isOwnWrite`.
  */
 
@@ -37,8 +40,11 @@ export interface BuildReloadBridgeOptions {
   subscribe: (listener: (event: SceneBuildEvent) => void) => () => void;
   /** Was this trigger file written by the inspector itself? */
   isOwnWrite: (file: string) => boolean;
-  /** Reload the engine scene (the Stop/reset path, preserving the run state). */
-  reload: () => void;
+  /** Reload the engine scene (the Stop/reset path, preserving the run state). `reason`
+   * names what made the bundle stale, for the console. */
+  reload: (reason: string) => void;
+  /** Is the scene running (unfrozen)? A Script-only reload while frozen waits for Play. */
+  isRunning: () => boolean;
   /** Test seam. */
   quietMs?: number;
 }
@@ -46,11 +52,17 @@ export interface BuildReloadBridgeOptions {
 export interface BuildReloadBridge {
   /** A Script component was written: the next bundle embeds inputs the runtime must re-read. */
   noteScriptEdit(): void;
+  /**
+   * Call on Play (and on Stop, which reloads anyway). True when a Script edit landed
+   * in a bundle while the scene was frozen: the caller must reload before running,
+   * or Play resumes an instance built before the edit. Clears the flag.
+   */
+  takeDeferredReload(): boolean;
   disconnect(): void;
 }
 
 export function createBuildReloadBridge(options: BuildReloadBridgeOptions): BuildReloadBridge {
-  const { subscribe, isOwnWrite, reload } = options;
+  const { subscribe, isOwnWrite, reload, isRunning } = options;
   const quietMs = options.quietMs ?? QUIET_MS;
 
   let triggers: string[] = [];
@@ -58,6 +70,7 @@ export function createBuildReloadBridge(options: BuildReloadBridgeOptions): Buil
   // A reload was due but a new cycle started first: reload on THAT cycle's bundle instead,
   // so a burst never loads a bundle that is about to be superseded.
   let reloadCarried = false;
+  let deferredReload = false;
   let timer: ReturnType<typeof setTimeout> | null = null;
 
   const unsubscribe = subscribe(event => {
@@ -70,20 +83,38 @@ export function createBuildReloadBridge(options: BuildReloadBridgeOptions): Buil
       }
       return;
     }
-    const codeChanged = triggers.some(file => !isEditorOutput(file) && !isOwnWrite(file));
+    const changedSources = triggers.filter(file => !isEditorOutput(file) && !isOwnWrite(file));
+    const codeChanged = changedSources.length > 0;
     triggers = [];
     if (!codeChanged && !scriptStale && !reloadCarried) return;
+    const scriptOnly = !codeChanged && !reloadCarried;
+    const reason = codeChanged
+      ? `source changed: ${changedSources.join(', ')}`
+      : reloadCarried
+        ? 'carried over from an interrupted reload'
+        : 'Script component edited';
     scriptStale = false;
     reloadCarried = false;
+    if (scriptOnly && !isRunning()) {
+      deferredReload = true;
+      return;
+    }
+    // An immediate reload also covers any reload that was waiting for Play.
+    deferredReload = false;
     timer = setTimeout(() => {
       timer = null;
-      reload();
+      reload(reason);
     }, quietMs);
   });
 
   return {
     noteScriptEdit: () => {
       scriptStale = true;
+    },
+    takeDeferredReload: () => {
+      const due = deferredReload;
+      deferredReload = false;
+      return due;
     },
     disconnect: () => {
       unsubscribe();
