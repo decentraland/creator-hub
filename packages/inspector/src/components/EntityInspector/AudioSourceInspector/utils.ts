@@ -11,7 +11,9 @@ export const fromAudioSource = (value: PBAudioSource): AudioSourceInput => {
     loop: value.loop,
     playing: value.playing,
     volume: volumeFromAudioSource(value.volume),
+    pitch: pitchFromAudioSource(value.pitch),
     global: value.global,
+    currentTime: currentTimeFromAudioSource(value.currentTime),
   };
 };
 
@@ -21,7 +23,9 @@ export const toAudioSource = (value: AudioSourceInput): PBAudioSource => {
     loop: value.loop,
     playing: value.playing,
     volume: volumeToAudioSource(value.volume),
+    pitch: pitchToAudioSource(value.pitch),
     global: value.global,
+    currentTime: currentTimeToAudioSource(value.currentTime),
   };
 };
 
@@ -33,6 +37,25 @@ export function volumeFromAudioSource(volume: number | undefined): string {
 export function volumeToAudioSource(volume: string | undefined): number {
   const value = parseFloat(volume ?? '0');
   return parseFloat((value / 100).toFixed(2));
+}
+
+export function pitchFromAudioSource(pitch: number | undefined): string {
+  return (pitch ?? 1).toString();
+}
+
+export function pitchToAudioSource(pitch: string | undefined): number {
+  const value = parseFloat(pitch ?? '1');
+  return isNaN(value) ? 1 : value;
+}
+
+export function currentTimeFromAudioSource(currentTime: number | undefined): string | undefined {
+  return currentTime === undefined ? undefined : currentTime.toString();
+}
+
+export function currentTimeToAudioSource(currentTime: string | undefined): number | undefined {
+  if (currentTime === undefined || currentTime === '') return undefined;
+  const value = parseFloat(currentTime);
+  return isNaN(value) ? undefined : value;
 }
 
 export function isValidInput({ assets }: AssetCatalogResponse, src: string): boolean {
@@ -51,4 +74,9 @@ export const isAudio = (node: TreeNode): node is AssetNodeItem =>
 export function isValidVolume(volume: string | undefined): boolean {
   const value = (volume ?? 0).toString();
   return !isNaN(parseFloat(value)) && parseFloat(value) >= 0 && parseFloat(value) <= 100;
+}
+
+export function isValidPitch(pitch: string | undefined): boolean {
+  const value = (pitch ?? 0).toString();
+  return !isNaN(parseFloat(value)) && parseFloat(value) > 0;
 }

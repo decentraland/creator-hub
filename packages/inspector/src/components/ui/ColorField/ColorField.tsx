@@ -6,8 +6,10 @@ import { type Props, type ColorOptions } from './types';
 
 import './ColorField.css';
 
-const getColorOptions = (): ColorOptions[] => {
-  return COLORS.map(color => ({
+const NONE_COLOR: ColorOptions = { label: 'None', value: '' };
+
+const getColorOptions = (clearable: boolean): ColorOptions[] => {
+  const options: ColorOptions[] = COLORS.map(color => ({
     ...color,
     leftContent: (
       <div
@@ -17,9 +19,19 @@ const getColorOptions = (): ColorOptions[] => {
     ),
     secondaryText: color.value,
   }));
+  return clearable ? [NONE_COLOR, ...options] : options;
 };
 
-const ColorField: React.FC<Props> = ({ label, value, onChange, basic = false }) => {
+const ColorField: React.FC<Props> = ({
+  label,
+  value: rawValue,
+  onChange,
+  basic = false,
+  clearable = false,
+}) => {
+  // an unset optional colour reads as undefined; the "None" option is keyed on ''
+  const value = clearable && rawValue == null ? '' : rawValue;
+
   const isValidColor = useMemo(() => {
     if (value) {
       return COLORS.some(color => color.value === value);
@@ -29,7 +41,7 @@ const ColorField: React.FC<Props> = ({ label, value, onChange, basic = false }) 
   }, [value]);
 
   const basicOptions = useMemo(() => {
-    const options = getColorOptions();
+    const options = getColorOptions(clearable);
 
     if (!isValidColor && value) {
       options.unshift({
@@ -41,7 +53,7 @@ const ColorField: React.FC<Props> = ({ label, value, onChange, basic = false }) 
     }
 
     return options;
-  }, [value, isValidColor]);
+  }, [value, isValidColor, clearable]);
 
   if (basic) {
     return (
@@ -57,8 +69,9 @@ const ColorField: React.FC<Props> = ({ label, value, onChange, basic = false }) 
   }
 
   // Existing HybridField logic for full-featured mode
-  const stockColor = COLORS.find($ => $.value === value)?.value;
-  const isStockColor = !!stockColor;
+  const stockColors = useMemo(() => getColorOptions(clearable), [clearable]);
+  const stockColor = stockColors.find($ => $.value === value)?.value;
+  const isStockColor = stockColor !== undefined;
   const initialOption = isStockColor ? Options.BASICS : Options.CUSTOM;
   const [selectedOption, setSelectedOption] = useState(initialOption);
 
@@ -89,7 +102,7 @@ const ColorField: React.FC<Props> = ({ label, value, onChange, basic = false }) 
             ? HybridFieldTypes.FieldType.DROPDOWN
             : HybridFieldTypes.FieldType.COLOR_PICKER
         }
-        secondaryOptions={getColorOptions()}
+        secondaryOptions={stockColors}
         secondaryValue={selectedOption === Options.BASICS ? (stockColor ?? COLORS[0].value) : value}
         onChange={handleOptionChange}
         onChangeSecondary={onChange}

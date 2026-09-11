@@ -16,7 +16,15 @@ import { selectAssetCatalog } from '../../../redux/app';
 import { Block } from '../../Block';
 import { Container } from '../../Container';
 import { TextField, CheckboxField, RangeField, InfoTooltip } from '../../ui';
-import { fromVideoPlayer, toVideoPlayer, isVideo, isValidVolume } from './utils';
+import {
+  fromVideoPlayer,
+  toVideoPlayer,
+  isVideo,
+  isValidVolume,
+  isValidPlaybackRate,
+  isValidPosition,
+  isValidSpatialDistance,
+} from './utils';
 import type { Props } from './types';
 
 import './VideoPlayerInspector.css';
@@ -80,6 +88,11 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
   const loop = getInputProps('loop', e => e.target.checked);
   const volume = getInputProps('volume', e => e.target.value);
   const src = getInputProps('src');
+  const position = getInputProps('position');
+  const playbackRate = getInputProps('playbackRate');
+  const spatial = getInputProps('spatial', e => e.target.checked);
+  const spatialMinDistance = getInputProps('spatialMinDistance');
+  const spatialMaxDistance = getInputProps('spatialMaxDistance');
 
   const isVideoURLDisabled = useMemo(() => {
     return src?.value === LIVEKIT_STREAM_SRC;
@@ -129,12 +142,93 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
         />
       </Block>
       <Block
+        label={
+          <>
+            Playback Rate{' '}
+            <InfoTooltip
+              text="Playback speed multiplier: 1 is normal speed, 2 is twice as fast, 0.5 is half speed. Leave empty for the default (1)."
+              type="help"
+            />
+          </>
+        }
+      >
+        <TextField
+          autoSelect
+          type="number"
+          placeholder="1"
+          {...playbackRate}
+          error={!isValidPlaybackRate(playbackRate.value as string)}
+        />
+      </Block>
+      <Block
+        label={
+          <>
+            Start Position (seconds){' '}
+            <InfoTooltip
+              text="Time in seconds at which playback starts when the video begins. Leave empty to start from the beginning (0)."
+              type="help"
+            />
+          </>
+        }
+      >
+        <TextField
+          autoSelect
+          type="number"
+          placeholder="0"
+          {...position}
+          error={!isValidPosition(position.value as string)}
+        />
+      </Block>
+      <Block
         className="volume"
         label="Volume"
       >
         <RangeField
           {...volume}
           isValidValue={isValidVolume}
+        />
+      </Block>
+      <Block label="Spatial Audio">
+        <CheckboxField
+          label={
+            <>
+              Spatial{' '}
+              <InfoTooltip
+                text="Makes the video's audio positional: the volume fades as the player moves away from this entity. When off, the audio plays at the same volume everywhere in the scene."
+                type="help"
+              />
+            </>
+          }
+          checked={!!spatial.value}
+          {...spatial}
+        />
+      </Block>
+      <Block
+        label={
+          <>
+            Spatial Distance{' '}
+            <InfoTooltip
+              text="Only applies when Spatial is on. Within Min meters of the entity the audio plays at full volume; from there it fades out until Max meters, where it becomes inaudible. Leave empty for the defaults (0 and 60)."
+              type="help"
+            />
+          </>
+        }
+      >
+        <TextField
+          leftLabel="Min"
+          autoSelect
+          type="number"
+          placeholder="0"
+          {...spatialMinDistance}
+          error={!isValidSpatialDistance(spatialMinDistance.value as string)}
+        />
+        <TextField
+          leftLabel="Max"
+          autoSelect
+          type="number"
+          placeholder="60"
+          {...spatialMaxDistance}
+          error={!isValidSpatialDistance(spatialMaxDistance.value as string)}
         />
       </Block>
     </Container>

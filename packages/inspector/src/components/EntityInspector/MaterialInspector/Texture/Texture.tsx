@@ -39,6 +39,7 @@ const TextureInspector = withSdk<Props>(({ label, texture, files, getInputProps 
   );
 
   const type = getTextureProps('type');
+  const isNone = type.value === Texture.TT_NONE;
 
   return (
     <Container
@@ -62,18 +63,20 @@ const TextureInspector = withSdk<Props>(({ label, texture, files, getInputProps 
           files={files}
         />
       )}
-      <Block>
-        <Dropdown
-          label="Wrap mode"
-          options={WRAP_MODES}
-          {...getTextureProps('wrapMode')}
-        />
-        <Dropdown
-          label="Filter node"
-          options={FILTER_MODES}
-          {...getTextureProps('filterMode')}
-        />
-      </Block>
+      {!isNone && (
+        <Block>
+          <Dropdown
+            label="Wrap mode"
+            options={WRAP_MODES}
+            {...getTextureProps('wrapMode')}
+          />
+          <Dropdown
+            label="Filter mode"
+            options={FILTER_MODES}
+            {...getTextureProps('filterMode')}
+          />
+        </Block>
+      )}
       {type.value === Texture.TT_VIDEO_TEXTURE && videoPlayerOptions.length > 0 ? (
         <Dropdown
           label="Video Source Entity"
