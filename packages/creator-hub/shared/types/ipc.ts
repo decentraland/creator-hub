@@ -43,6 +43,16 @@ export const AI_SCREENSHOT_REQUEST = 'ai.screenshotRequest';
 
 export type AiScreenshotRequest = { id: string; width: number; height: number };
 
+// Scene build events from the Bevy realm's `sdk-commands start` (main → renderer → the
+// inspector's Bevy renderer). The realm's bundler names every file that triggers a rebuild
+// and reports when the bundle lands; the editor uses that to tell an IDE code edit (reload)
+// from its own autosave (no reload). Shared for the same reason as the events above.
+export const BEVY_REALM_BUILD_EVENT = 'bevyRealm.build';
+
+export type SceneBuildEvent = { kind: 'rebuild'; file: string } | { kind: 'bundle-saved' };
+
+export type BevyRealmBuildEvent = SceneBuildEvent & { path: string };
+
 // Scene-graph mutation ops (AI assistant, Phase 2) run in the inspector iframe via its
 // SceneRpc. Main pushes an op request over this channel; the renderer routes it to the
 // SceneRpcClient and answers with `ai.sceneOpResult`, correlated by `id`. `op` is the

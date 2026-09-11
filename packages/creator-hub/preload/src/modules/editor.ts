@@ -1,7 +1,12 @@
 import { ipcRenderer, type IpcRendererEvent } from 'electron';
 
 import type { DeployOptions } from '/shared/types/deploy';
-import { PREVIEW_PROGRESS_EVENT, type PreviewProgress } from '/shared/types/ipc';
+import {
+  BEVY_REALM_BUILD_EVENT,
+  PREVIEW_PROGRESS_EVENT,
+  type BevyRealmBuildEvent,
+  type PreviewProgress,
+} from '/shared/types/ipc';
 import type { MobileDebugSessionInfo } from '/shared/types/ipc';
 
 import { invoke } from '../services/ipc';
@@ -37,6 +42,18 @@ export async function startBevyRealm(path: string) {
 
 export async function killBevyRealm(path: string) {
   return invoke('bevyRealm.kill', path);
+}
+
+/**
+ * Subscribe to the Bevy realm bundler's build events (a rebuild trigger naming its file,
+ * or the bundle landing). Events for every running realm arrive; filter by `path`.
+ */
+export function onBevyRealmBuildEvent(callback: (event: BevyRealmBuildEvent) => void): () => void {
+  const handler = (_event: IpcRendererEvent, event: BevyRealmBuildEvent) => callback(event);
+  ipcRenderer.on(BEVY_REALM_BUILD_EVENT, handler);
+  return () => {
+    ipcRenderer.removeListener(BEVY_REALM_BUILD_EVENT, handler);
+  };
 }
 
 const activeDebuggers = new Map<string, () => void>();

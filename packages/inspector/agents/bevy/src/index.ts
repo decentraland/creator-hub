@@ -445,8 +445,17 @@ async function resetScene(): Promise<void> {
         // A reloaded scene is a fresh instance: it ran main() again, so its UI is
         // back and visible. Re-hide it here (the `else` for the same reason as on
         // boot — setSceneFrozen owns both halves, auto-freeze owns only one).
-        if (!ENGINE_AUTO_FREEZES_EDITOR_SCENE) await setSceneFrozen(true);
-        else await setSceneUiVisible(false);
+        if (!ENGINE_AUTO_FREEZES_EDITOR_SCENE) {
+          await setSceneFrozen(true);
+        } else {
+          // `reset-complete` promises a re-FROZEN scene, and the host acts on it at
+          // once — a hot-reload of a running scene re-requests Play right here. The
+          // engine's auto-freeze only lands once the reloaded main() has run, which
+          // on a large bundle is well after the re-pin; an unfreeze sent before it
+          // gets overridden and the scene comes back paused. So wait for it.
+          await waitForEngineAutoFreeze();
+          await setSceneUiVisible(false);
+        }
         bus.postToPage({ kind: 'reset-complete', ok: true });
         return;
       }
@@ -458,6 +467,38 @@ async function resetScene(): Promise<void> {
   // block Play forever. Play may not work until the next reset, but a stuck
   // disabled button is worse.
   bus.postToPage({ kind: 'reset-complete', ok: false });
+}
+
+// `/scene_stats` reports `status: blocked({"frozen", "gltfs loading"})` — one set of
+// reasons — while frozen, and `status: running` otherwise (same reading as bevy-editor).
+function isFrozenStatus(stats: string): boolean {
+  const blocked = /status:\s*blocked\(([^)]*)\)/i.exec(stats);
+  return blocked !== null && /"frozen"/i.test(blocked[1]);
+}
+
+const AUTO_FREEZE_POLL_MS = 250;
+const AUTO_FREEZE_POLL_ATTEMPTS = 20;
+
+/**
+ * Block until the engine's editor auto-freeze (#1015) has landed on the pinned
+ * scene, bounded so a scene whose main() never finishes can't wedge Stop. An engine
+ * without `/scene_stats` returns at once — the host then races as before, no worse.
+ */
+async function waitForEngineAutoFreeze(): Promise<void> {
+  const api = getBevyApi();
+  if (!api) return;
+  for (let attempt = 0; attempt < AUTO_FREEZE_POLL_ATTEMPTS; attempt++) {
+    try {
+      const stats = await api.consoleCommand('scene_stats', []);
+      if (/unknown command/i.test(stats)) return;
+      if (isFrozenStatus(stats)) return;
+    } catch (e) {
+      // The scene may still be resolving right after the re-pin — keep polling.
+      console.log('[bevy-agent] scene_stats failed while waiting for auto-freeze:', e);
+    }
+    await new Promise<void>(resolve => setTimeout(() => resolve(), AUTO_FREEZE_POLL_MS));
+  }
+  console.log('[bevy-agent] reloaded scene did not report frozen in time; continuing');
 }
 
 /**
