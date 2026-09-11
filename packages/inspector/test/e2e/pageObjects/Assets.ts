@@ -45,11 +45,35 @@ class AssetsPageObject {
     await this.waitForRenderer();
   }
 
+  async search(term: string) {
+    await page.fill('.Assets .assets-catalog-header-search input', term);
+    await page.waitForSelector(`.Assets .assets-catalog-asset[data-test-label="${term}"]`);
+  }
+
+  // Hovers the tile and returns how far above it the name tooltip's bottom edge sits.
+  async getNameTooltipGapAbove(asset: string) {
+    const tile = page.locator(`.Assets .assets-catalog-asset[data-test-label="${asset}"]`).first();
+    await tile.hover();
+    const tooltip = page.locator('.ui.popup.InfoTooltip').first();
+    await tooltip.waitFor({ state: 'visible', timeout: 5_000 });
+    const [tileBox, tooltipBox] = await Promise.all([tile.boundingBox(), tooltip.boundingBox()]);
+    await page.mouse.move(0, 0);
+    return tileBox!.y - (tooltipBox!.y + tooltipBox!.height);
+  }
+
   async openFolder(path: string) {
     const element = await page.$(`.FolderView .Tile[data-test-id="${path}"]`);
     if (element) {
       await element.click({ clickCount: 2 });
     }
+  }
+
+  async addFileSystemAssetFromTree(path: string) {
+    await dragAndDrop(
+      `.editor-assets-tree .Tree[data-test-id="${path}"] .item-area`,
+      '.Renderer canvas',
+    );
+    await this.waitForRenderer();
   }
 
   async addFileSystemAsset(path: string) {

@@ -118,6 +118,13 @@ class HierarchyPageObject {
     return label || '';
   }
 
+  // `innerText` is the text as laid out, so it collapses whitespace exactly as
+  // CSS does — unlike `textContent`, which always returns the source string.
+  async getRenderedLabel(entityId: number) {
+    const item = await this.getItem(entityId, this.getItemSelectorById);
+    return item.evaluate(el => (el as HTMLElement).innerText);
+  }
+
   // Open the row's context menu and click an item, resiliently.
   //
   // Opening a contexify menu needs a `contextmenu` event to land on a stable
@@ -240,6 +247,11 @@ class HierarchyPageObject {
     } catch (error) {
       return false;
     }
+  }
+
+  async select(entityId: number) {
+    const item = await this.getItem(entityId, this.getItemSelectorById);
+    await item.click();
   }
 
   async selectMultiple(entityIds: number[]) {
