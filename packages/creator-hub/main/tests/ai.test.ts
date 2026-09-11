@@ -20,6 +20,8 @@ vi.mock('../src/modules/explorer-gateway', () => ({
   stopPreview: vi.fn(),
 }));
 
+import type { AiProvider } from '/shared/types/ai';
+
 import {
   PROVIDERS,
   filterEnvForChild,
@@ -32,7 +34,7 @@ const PROJECT = '/home/user/scene';
 
 // Collect what a provider's parseLine emits, so a CLI output-format change is caught by
 // something instead of silently dropping text or tool chips.
-function run(provider: 'claude' | 'codex', line: string) {
+function run(provider: AiProvider, line: string) {
   const texts: string[] = [];
   const tools: Array<[string, string]> = [];
   const images: string[] = [];
@@ -247,6 +249,210 @@ describe('codex parseLine', () => {
       JSON.stringify({ type: 'item.completed', item: { type: 'error', message: 'stream failed' } }),
     );
     expect(texts).toEqual(['stream failed\n']);
+  });
+});
+
+describe('cursor parseLine', () => {
+  it('captures the session id from system/init', () => {
+    const { session } = run(
+      'cursor',
+      JSON.stringify({ type: 'system', subtype: 'init', session_id: 'c-1' }),
+    );
+    expect(session).toBe('c-1');
+  });
+
+  it('emits assistant text blocks', () => {
+    const { texts } = run(
+      'cursor',
+      JSON.stringify({
+        type: 'assistant',
+        message: { role: 'assistant', content: [{ type: 'text', text: 'Hello' }] },
+      }),
+    );
+    expect(texts).toEqual(['Hello']);
+  });
+
+  it('emits a tool chip on a started tool_call, mapping the tool name and file', () => {
+    const { tools } = run(
+      'cursor',
+      JSON.stringify({
+        type: 'tool_call',
+        subtype: 'started',
+        call_id: 'x',
+        tool_call: { editToolCall: { args: { path: '/home/user/scene/src/index.ts' } } },
+      }),
+    );
+    expect(tools).toEqual([['Edit', 'src/index.ts']]);
+  });
+
+  it('does not emit a chip for the completed half of the started/completed pair', () => {
+    const { tools } = run(
+      'cursor',
+      JSON.stringify({
+        type: 'tool_call',
+        subtype: 'completed',
+        call_id: 'x',
+        tool_call: {
+          editToolCall: { args: { path: '/home/user/scene/src/index.ts' }, result: {} },
+        },
+      }),
+    );
+    expect(tools).toEqual([]);
+  });
+
+  it('reads the session id from the terminal result without re-emitting its text', () => {
+    const { session, texts } = run(
+      'cursor',
+      JSON.stringify({
+        type: 'result',
+        subtype: 'success',
+        is_error: false,
+        result: 'full text',
+        session_id: 'c-2',
+      }),
+    );
+    expect(session).toBe('c-2');
+    expect(texts).toEqual([]); // the result text would duplicate the assistant events
+  });
+
+  it('ignores non-JSON chatter', () => {
+    const { session, texts, tools } = run('cursor', 'not json at all');
+    expect(session).toBeUndefined();
+    expect(texts).toEqual([]);
+    expect(tools).toEqual([]);
+  });
+});
+
+describe('cursor buildArgs', () => {
+  const base = { text: 'hi', projectDir: PROJECT, images: [] as string[] };
+
+  it('runs print + stream-json + force, with the prompt as the trailing positional', () => {
+    const { args, stdin } = PROVIDERS.cursor.buildArgs({ ...base });
+    expect(args).toContain('-p');
+    expect(args.join(' ')).toContain('--output-format stream-json');
+    expect(args).toContain('-f');
+    expect(args[args.length - 1]).toBe('hi'); // prompt is the last positional
+    expect(stdin).toBeUndefined(); // cursor has no stdin prompt channel
+  });
+
+  it('adds --model only for a non-default model', () => {
+    expect(PROVIDERS.cursor.buildArgs({ ...base }).args).not.toContain('--model');
+    const { args } = PROVIDERS.cursor.buildArgs({ ...base, model: 'sonnet-4' });
+    expect(args[args.indexOf('--model') + 1]).toBe('sonnet-4');
+  });
+
+  it('resumes a chat by id', () => {
+    const { args } = PROVIDERS.cursor.buildArgs({ ...base, resume: 'chat-123' });
+    expect(args[args.indexOf('--resume') + 1]).toBe('chat-123');
+  });
+
+  // Cursor's rules ride in a project rule file (writeCursorRules), never on argv — so even a big
+  // prompt keeps argv to just the flags + the user's own text, no ~7KB blob (Windows cmd.exe cap).
+  it('keeps the DCL rules off argv', () => {
+    const TOKEN = 'ZZ_USER_PROMPT_ZZ';
+    const joined = PROVIDERS.cursor.buildArgs({ ...base, text: TOKEN }).args.join(' ');
+    expect(joined).toContain(TOKEN); // the user prompt is on argv (cursor has no stdin)
+    expect(joined.replace(TOKEN, '').length).toBeLessThan(100); // nothing else large inlined
+  });
+});
+
+describe('gemini parseLine', () => {
+  it('captures the session id from init', () => {
+    const { session } = run(
+      'gemini',
+      JSON.stringify({ type: 'init', session_id: 'g-1', model: 'gemini-3-pro' }),
+    );
+    expect(session).toBe('g-1');
+  });
+
+  it('emits assistant message content and ignores the user echo', () => {
+    const assistant = run(
+      'gemini',
+      JSON.stringify({ type: 'message', role: 'assistant', content: 'Hi there' }),
+    );
+    expect(assistant.texts).toEqual(['Hi there']);
+    const user = run(
+      'gemini',
+      JSON.stringify({ type: 'message', role: 'user', content: 'prompt' }),
+    );
+    expect(user.texts).toEqual([]);
+  });
+
+  it('maps a tool_use to a chip with a scene-relative file path', () => {
+    const { tools } = run(
+      'gemini',
+      JSON.stringify({
+        type: 'tool_use',
+        tool_name: 'write_file',
+        tool_id: '1',
+        parameters: { file_path: `${PROJECT}/src/Door.ts` },
+      }),
+    );
+    expect(tools).toEqual([['Write', 'src/Door.ts']]);
+  });
+
+  it('shows the command for a shell tool_use', () => {
+    const { tools } = run(
+      'gemini',
+      JSON.stringify({
+        type: 'tool_use',
+        tool_name: 'run_shell_command',
+        parameters: { command: 'npm run build' },
+      }),
+    );
+    expect(tools).toEqual([['Run', 'npm run build']]);
+  });
+
+  it('surfaces an error event as text so a failed turn is never silent', () => {
+    const { texts } = run(
+      'gemini',
+      JSON.stringify({ type: 'error', severity: 'error', message: 'quota exceeded' }),
+    );
+    expect(texts).toEqual(['quota exceeded\n']);
+  });
+
+  it('surfaces a failed result error message', () => {
+    const { texts } = run(
+      'gemini',
+      JSON.stringify({ type: 'result', status: 'error', error: { message: 'boom' } }),
+    );
+    expect(texts).toEqual(['boom\n']);
+  });
+
+  it('ignores non-JSON chatter', () => {
+    const { session, texts, tools } = run('gemini', 'not json at all');
+    expect(session).toBeUndefined();
+    expect(texts).toEqual([]);
+    expect(tools).toEqual([]);
+  });
+});
+
+describe('gemini buildArgs', () => {
+  const base = { text: 'hi', projectDir: PROJECT, images: [] as string[] };
+
+  it('runs stream-json with full-access + workspace-trust flags', () => {
+    const { args } = PROVIDERS.gemini.buildArgs({ ...base });
+    expect(args.join(' ')).toContain('-o stream-json');
+    expect(args).toContain('--yolo');
+    expect(args).toContain('--skip-trust');
+  });
+
+  it('adds -m only for a non-default model', () => {
+    expect(PROVIDERS.gemini.buildArgs({ ...base }).args).not.toContain('-m');
+    const { args } = PROVIDERS.gemini.buildArgs({ ...base, model: 'gemini-3-flash' });
+    expect(args[args.indexOf('-m') + 1]).toBe('gemini-3-flash');
+  });
+
+  // The DCL rules ride on stdin; the user prompt goes via -p. That keeps the ~7KB constant off
+  // argv (Windows cmd.exe cap, #1588) while staying in the documented headless (-p) mode.
+  it('puts the rules on stdin and the user prompt via -p, keeping the rules off argv', () => {
+    const TOKEN = 'ZZ_USER_PROMPT_ZZ';
+    const { args, stdin } = PROVIDERS.gemini.buildArgs({ ...base, text: TOKEN });
+    expect(typeof stdin).toBe('string');
+    expect((stdin ?? '').length).toBeGreaterThan(100); // the system prompt
+    expect(stdin).not.toContain(TOKEN); // the user prompt is NOT in the rules blob
+    expect(args[args.indexOf('-p') + 1]).toBe(TOKEN); // ...it's the -p value
+    expect(args.join(' ').replace(TOKEN, '').length).toBeLessThan(100); // no big blob on argv
   });
 });
 

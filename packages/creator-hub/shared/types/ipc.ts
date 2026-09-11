@@ -9,7 +9,13 @@ import type { Config, EditorConfig } from './config';
 import type { Env } from './env';
 import type { OxcParseResult } from './oxc';
 import type { MetricsRequest, MetricsResponse } from './metrics';
-import type { AiMirrorState, AiProviderInfo, AiRemoteCommand, AiSendParams } from './ai';
+import type {
+  AiMirrorState,
+  AiProvider,
+  AiProviderInfo,
+  AiRemoteCommand,
+  AiSendParams,
+} from './ai';
 
 export type IpcResult<T> = {
   success: true;
@@ -87,7 +93,7 @@ export const AI_CLI_LOGIN_EVENTS = 'ai.cliLogin';
 export type AiCliLoginEvent = { type: 'progress'; message: string } | { type: 'auth'; url: string };
 
 // Per-provider setup state for the managed (app-installed) CLIs.
-export type AiCliState = Record<'claude' | 'codex', { installed: boolean; signedIn: boolean }>;
+export type AiCliState = Record<AiProvider, { installed: boolean; signedIn: boolean }>;
 
 export interface MobileDebugSessionInfo {
   id: number;
@@ -173,9 +179,9 @@ export interface Ipc {
   // AI sign-in without a CLI (#1531). signInCli installs the official CLI (if needed) and
   // drives its subscription login, streaming steps over AI_CLI_LOGIN_EVENTS; signOutCli
   // clears the managed sign-in; getCliState reports install/sign-in status per provider.
-  'ai.signInCli': (provider: 'claude' | 'codex') => Promise<void>;
+  'ai.signInCli': (provider: AiProvider) => Promise<void>;
   'ai.cancelSignInCli': () => Promise<void>;
-  'ai.signOutCli': (provider: 'claude' | 'codex') => Promise<void>;
+  'ai.signOutCli': (provider: AiProvider) => Promise<void>;
   'ai.getCliState': () => Promise<AiCliState>;
   // Renderer's answer to an AI_SCREENSHOT_REQUEST: the captured image as a data URL, or
   // null if the capture failed (e.g. the Bevy renderer, which has no screenshot RPC).
