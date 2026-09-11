@@ -1,7 +1,8 @@
 import React from 'react';
-import cx from 'classnames';
 
 import { type DeviceKind, type SafeRect, SAFE_AREAS } from '../../shared/safe-areas';
+
+import { HudIcon } from './hud-icons';
 
 import './SafeAreaOverlay.css';
 
@@ -9,19 +10,26 @@ interface SafeAreaOverlayProps {
   width: number;
   height: number;
   device: DeviceKind;
-  /** `hud` shades HUD regions + safe zone (Gameplay Safe Area); `device` shades only hardware insets. */
+  /** `hud` outlines the interactable area; `device` outlines only the hardware insets. */
   variant?: 'hud' | 'device';
+  /** Draw the safe-area outline. Independent of the HUD guides. */
+  showOutline?: boolean;
+  /** Draw the reference HUD guides (joystick, buttons). Independent of which area is outlined. */
+  showHud?: boolean;
 }
 
-/** Shades a device's reserved regions on the canvas. Visual only (pointer-events: none). */
+/** Outlines a device's safe area and draws its reference HUD. Visual only (pointer-events: none). */
 export const SafeAreaOverlay: React.FC<SafeAreaOverlayProps> = ({
   width,
   height,
   device,
   variant = 'hud',
+  showOutline = true,
+  showHud = false,
 }) => {
-  const { regions, safeZone } = SAFE_AREAS[device];
-  const shown = variant === 'device' ? regions.filter(r => r.hardware) : regions;
+  const { screenInsetArea, interactableArea, hud } = SAFE_AREAS[device];
+  const area = variant === 'device' ? screenInsetArea : interactableArea;
+  const min = Math.min(width, height);
   const box = (rect: SafeRect) => ({
     left: rect.x[0] * width,
     top: rect.y[0] * height,
@@ -34,21 +42,31 @@ export const SafeAreaOverlay: React.FC<SafeAreaOverlayProps> = ({
       style={{ width, height }}
       aria-hidden="true"
     >
-      {shown.map(region => (
+      {showOutline ? (
         <div
-          key={`${region.label}-${region.x[0]}-${region.y[0]}`}
-          className={cx('ui-designer-safe-band', region.severity)}
-          style={box(region)}
-        >
-          <span className="ui-designer-safe-band-label">{region.label}</span>
-        </div>
-      ))}
-      {variant === 'hud' ? (
-        <div
-          className="ui-designer-safe-zone"
-          style={box(safeZone)}
+          className="ui-designer-safe-outline"
+          style={box(area)}
         />
       ) : null}
+      {showHud
+        ? hud.map(g => {
+            const d = g.size * min;
+            return (
+              <div
+                key={g.id}
+                className="ui-designer-hud-guide"
+                style={{
+                  left: g.x * width - d / 2,
+                  top: g.y * height - d / 2,
+                  width: d,
+                  height: d,
+                }}
+              >
+                <HudIcon kind={g.kind} />
+              </div>
+            );
+          })
+        : null}
     </div>
   );
 };

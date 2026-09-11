@@ -1,3 +1,5 @@
+import type { ComponentRefProp } from './types';
+
 interface AstNode {
   type: string;
   start: number;
@@ -46,6 +48,25 @@ export function isActionNameTaken(surface: BindingSurface, name: string): boolea
 export function buildResolveMap(variables: BindVariable[]): Record<string, string> {
   const map: Record<string, string> = {};
   for (const v of variables) if (v.value !== undefined) map[v.expr] = String(v.value);
+  return map;
+}
+
+/** The nested component's own defaults, overlaid with what this instance passes: literal props directly, bound props through the outer root's preview values. */
+export function instanceResolveMap(
+  componentDefaults: Record<string, string>,
+  props: ComponentRefProp[],
+  resolveOuterVar: (expr: string) => string | undefined,
+): Record<string, string> {
+  const map = { ...componentDefaults };
+  for (const prop of props) {
+    const value =
+      prop.value !== undefined
+        ? String(prop.value)
+        : prop.expr
+          ? resolveOuterVar(prop.expr)
+          : undefined;
+    if (value !== undefined) map[`props.${prop.name}`] = value;
+  }
   return map;
 }
 
