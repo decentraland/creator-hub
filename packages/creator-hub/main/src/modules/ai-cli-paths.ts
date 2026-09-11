@@ -26,6 +26,7 @@ export type CliSpec = {
 export const CLI_SPECS: Record<AiProvider, CliSpec> = {
   claude: { pkg: '@anthropic-ai/claude-code', bin: 'claude', loginArgs: ['setup-token'] },
   codex: { pkg: '@openai/codex', bin: 'codex', loginArgs: ['login'] },
+  cursor: { pkg: 'cursor-agent', bin: 'cursor-agent', loginArgs: ['login'] },
 };
 
 const MANAGED_DIRNAME = 'ai-cli';
@@ -95,8 +96,8 @@ export function isSignedIn(provider: AiProvider): boolean {
 }
 
 export function getCliState(): AiCliState {
-  return {
-    claude: { installed: isInstalled('claude'), signedIn: isSignedIn('claude') },
-    codex: { installed: isInstalled('codex'), signedIn: isSignedIn('codex') },
-  };
+  const providers = Object.keys(CLI_SPECS) as AiProvider[];
+  return Object.fromEntries(
+    providers.map(id => [id, { installed: isInstalled(id), signedIn: isSignedIn(id) }]),
+  ) as AiCliState;
 }

@@ -247,6 +247,7 @@ const API_KEY_ENV = new Set([
   'ANTHROPIC_AUTH_TOKEN',
   'OPENAI_API_KEY',
   'CODEX_API_KEY',
+  'CURSOR_API_KEY',
 ]);
 
 // API keys read from the user's login shell, so a GUI launch (sparse env) can still bill
@@ -320,6 +321,11 @@ interface ProviderDef {
   binNames: string[];
   models: string[];
   defaultModel: string;
+  // Optional on-disk setup run once per turn, before the child spawns, for a CLI that takes
+  // its rules/config from project files rather than flags (Cursor). Best-effort: a failure is
+  // logged and the turn still runs (degraded). Kept out of buildArgs so buildArgs stays pure
+  // and unit-testable — it must never write into the project dir.
+  prepareTurn?: (ctx: TurnCtx) => void;
   buildArgs: (ctx: TurnCtx) => BuiltTurn;
   // Parse one NDJSON stdout line. Emit chat events; return a session id to remember
   // (for --resume) when the line carries one, else undefined. `image` is a data-URL an
@@ -390,6 +396,40 @@ function toolDetail(tool: string, inp: Record<string, unknown>, projectDir: stri
 // `bearer_token_env_var`) rather than from argv — argv is visible to `ps` on the machine,
 // and the token gates local scene control. aiSend sets it in the codex child's env.
 const CODEX_MCP_TOKEN_ENV = 'CREATOR_HUB_MCP_TOKEN';
+
+// Cursor's stream-json reports a tool call as a single-key object `{ <name>ToolCall: {...} }`
+// (readToolCall, writeToolCall, shellToolCall, …). Map the base name to the same chip labels
+// claude/codex use so the panel renders a readable tool name.
+const CURSOR_TOOL_NAMES: Record<string, string> = {
+  read: 'Read',
+  write: 'Write',
+  edit: 'Edit',
+  delete: 'Delete',
+  ls: 'List',
+  glob: 'Glob',
+  grep: 'Grep',
+  shell: 'Run',
+  search: 'Search',
+};
+
+// Turn a cursor `tool_call` object into a [chip-name, detail] pair. Prefers the target file
+// path; falls back to the command/pattern/query for shell and search tools.
+function cursorTool(
+  toolCall: Record<string, { args?: Record<string, unknown> }>,
+  projectDir: string,
+): [string, string] | null {
+  const key = Object.keys(toolCall)[0];
+  if (key === undefined) return null;
+  const base = key.replace(/ToolCall$/, '');
+  const name = CURSOR_TOOL_NAMES[base] ?? base.charAt(0).toUpperCase() + base.slice(1);
+  const args = toolCall[key]?.args ?? {};
+  const str = (v: unknown): string => (typeof v === 'string' ? v.trim() : '');
+  const clip = (s: string): string => (s.length > 64 ? s.slice(0, 64) + '…' : s);
+  const file = rel(projectDir, args.path ?? args.file_path ?? '');
+  const detail =
+    file !== '' ? file : clip(str(args.command) || str(args.pattern) || str(args.query));
+  return [name, detail];
+}
 
 // Exported for the parser tests: parseLine tracks two external CLIs' output formats, so
 // a format change has to be caught by something.
@@ -575,6 +615,77 @@ export const PROVIDERS: Record<AiProvider, ProviderDef> = {
       return undefined;
     },
   },
+  // Cursor's CLI agent (`cursor-agent`), wired against `-p --output-format stream-json`. Very
+  // close to claude's shape: `session_id` from the `system`/`init` and `result` events drives
+  // `--resume`; `assistant` events carry complete text blocks; `tool_call` events (started +
+  // completed on one `call_id`) mark file/shell tools. Two things differ from claude/codex:
+  //  - No system-prompt or rules flag, and no stdin prompt channel — so the DCL rules go in a
+  //    project rule file (see prepareTurn / writeCursorRules) and the user prompt is the trailing
+  //    argv positional.
+  //  - `-f` (force) is the bypassPermissions/danger-full-access equivalent.
+  // The CH MCP server (scene + Explorer-gateway tools) is NOT wired for Cursor yet: its only
+  // channel is a project-local `.cursor/mcp.json` that would carry the bearer token in-repo, and
+  // it needs live verification against a Cursor login — a follow-up. File edits work without it.
+  cursor: {
+    id: 'cursor',
+    label: 'Cursor',
+    binNames: ['cursor-agent'],
+    // Documented model examples (`cursor-agent --help`: e.g. gpt-5, sonnet-4, sonnet-4-thinking).
+    // `default` omits --model so Cursor uses the user's configured default.
+    models: ['default', 'sonnet-4', 'sonnet-4-thinking', 'gpt-5'],
+    defaultModel: 'default',
+    prepareTurn: ctx => writeCursorRules(ctx.projectDir),
+    buildArgs: ctx => {
+      const args = [
+        '-p', // non-interactive print mode (required for stream-json)
+        '--output-format',
+        'stream-json',
+        '-f', // force-allow tool commands (bypassPermissions/danger-full-access equivalent)
+      ];
+      if (ctx.model !== undefined && ctx.model !== 'default') args.push('--model', ctx.model);
+      if (ctx.resume !== undefined) args.push('--resume', ctx.resume);
+      // No stdin prompt channel (undocumented, and the bundle reads no fd0), so the user prompt
+      // is the trailing argv positional. The ~7KB DCL rules stay OFF argv (they're in the project
+      // rule file), so argv length tracks only the user's own text — within cmd.exe's cap for
+      // normal prompts. Image paths were appended to ctx.text by aiSend; Cursor reads them with
+      // its own file tools (it has no image flag).
+      args.push(ctx.text);
+      return { args };
+    },
+    parseLine: (line, projectDir, emit) => {
+      let obj: {
+        type?: string;
+        subtype?: string;
+        session_id?: string;
+        message?: { content?: Array<{ type?: string; text?: string }> };
+        tool_call?: Record<string, { args?: Record<string, unknown> }>;
+      };
+      try {
+        obj = JSON.parse(line);
+      } catch {
+        return undefined;
+      }
+      // system/init and the terminal result both report the chat id used for --resume.
+      if (obj.type === 'system' && obj.subtype === 'init') return obj.session_id;
+      // Each `assistant` event is a COMPLETE message segment (no --stream-partial-output). Emit
+      // its text blocks; the final `result` event repeats the full text in `result`, so we DON'T
+      // emit that (it would duplicate) and only read its session id.
+      if (obj.type === 'assistant' && obj.message?.content !== undefined) {
+        for (const block of obj.message.content) {
+          if (block.type === 'text' && block.text !== undefined && block.text !== '')
+            emit(block.text);
+        }
+      }
+      // A tool call streams as a started/completed pair on one call_id — emit the chip once, on
+      // `started`, to avoid a duplicate.
+      if (obj.type === 'tool_call' && obj.subtype === 'started' && obj.tool_call !== undefined) {
+        const chip = cursorTool(obj.tool_call, projectDir);
+        if (chip !== null) emit('', chip);
+      }
+      if (obj.type === 'result') return obj.session_id;
+      return undefined;
+    },
+  },
 };
 
 const scan = (): AiProviderInfo[] =>
@@ -738,6 +849,26 @@ function writeSystemPromptFile(text: string): string {
   return p;
 }
 
+// Cursor has no system-prompt flag and no stdin prompt channel, so the DCL rules can't ride
+// with the turn the way claude (--append-system-prompt-file) and codex (stdin) take them.
+// Cursor's native channel is a project rule file it auto-loads, so write the rules as an
+// always-applied `.cursor/rules/creator-hub.mdc`. This also keeps the ~7KB off argv (the
+// Windows cmd.exe 8191-char cap BuiltTurn fights, #1588). Idempotent: rewritten only when the
+// content changes, so it isn't churned every turn. Best-effort — a write failure (read-only
+// project) just means no rules this turn; the caller logs and continues.
+function writeCursorRules(projectDir: string): void {
+  const dir = path.join(projectDir, '.cursor', 'rules');
+  const file = path.join(dir, 'creator-hub.mdc');
+  const body = `---\ndescription: Decentraland Creator Hub scene assistant\nalwaysApply: true\n---\n\n${DCL_SYSTEM_PROMPT}\n`;
+  try {
+    if (fs.readFileSync(file, 'utf8') === body) return;
+  } catch {
+    /* absent or unreadable — (re)write it below */
+  }
+  fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(file, body);
+}
+
 function writeAttachments(images: AiSendParams['images']): string[] {
   if (images === undefined || images.length === 0) return [];
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'creator-hub-ai-'));
@@ -807,14 +938,22 @@ export async function aiSend(
   }
   // Resume the CLI thread saved for THIS session (empty id = a default single bucket).
   const sessionId = params.sessionId ?? '';
-  const { args, stdin } = def.buildArgs({
+  const turnCtx: TurnCtx = {
     text: prompt,
     model: params.model,
     projectDir,
     resume: getSessions()[projectDir]?.[sessionId]?.[params.provider],
     images,
     mcp,
-  });
+  };
+  // On-disk setup for a file-configured CLI (Cursor writes its rules into the project). Best-
+  // effort: a failure just means a degraded turn, never a hard stop.
+  try {
+    def.prepareTurn?.(turnCtx);
+  } catch (e) {
+    log.warn(`[AI] ${def.label} prepareTurn failed:`, e);
+  }
+  const { args, stdin } = def.buildArgs(turnCtx);
 
   const env = childEnv(params.apiKeyFromEnv ?? false);
   // Codex reads the MCP bearer token from this env var (see CODEX_MCP_TOKEN_ENV); keeping it

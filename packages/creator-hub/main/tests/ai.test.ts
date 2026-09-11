@@ -20,6 +20,8 @@ vi.mock('../src/modules/explorer-gateway', () => ({
   stopPreview: vi.fn(),
 }));
 
+import type { AiProvider } from '/shared/types/ai';
+
 import {
   PROVIDERS,
   filterEnvForChild,
@@ -32,7 +34,7 @@ const PROJECT = '/home/user/scene';
 
 // Collect what a provider's parseLine emits, so a CLI output-format change is caught by
 // something instead of silently dropping text or tool chips.
-function run(provider: 'claude' | 'codex', line: string) {
+function run(provider: AiProvider, line: string) {
   const texts: string[] = [];
   const tools: Array<[string, string]> = [];
   const images: string[] = [];
@@ -247,6 +249,110 @@ describe('codex parseLine', () => {
       JSON.stringify({ type: 'item.completed', item: { type: 'error', message: 'stream failed' } }),
     );
     expect(texts).toEqual(['stream failed\n']);
+  });
+});
+
+describe('cursor parseLine', () => {
+  it('captures the session id from system/init', () => {
+    const { session } = run(
+      'cursor',
+      JSON.stringify({ type: 'system', subtype: 'init', session_id: 'c-1' }),
+    );
+    expect(session).toBe('c-1');
+  });
+
+  it('emits assistant text blocks', () => {
+    const { texts } = run(
+      'cursor',
+      JSON.stringify({
+        type: 'assistant',
+        message: { role: 'assistant', content: [{ type: 'text', text: 'Hello' }] },
+      }),
+    );
+    expect(texts).toEqual(['Hello']);
+  });
+
+  it('emits a tool chip on a started tool_call, mapping the tool name and file', () => {
+    const { tools } = run(
+      'cursor',
+      JSON.stringify({
+        type: 'tool_call',
+        subtype: 'started',
+        call_id: 'x',
+        tool_call: { editToolCall: { args: { path: '/home/user/scene/src/index.ts' } } },
+      }),
+    );
+    expect(tools).toEqual([['Edit', 'src/index.ts']]);
+  });
+
+  it('does not emit a chip for the completed half of the started/completed pair', () => {
+    const { tools } = run(
+      'cursor',
+      JSON.stringify({
+        type: 'tool_call',
+        subtype: 'completed',
+        call_id: 'x',
+        tool_call: {
+          editToolCall: { args: { path: '/home/user/scene/src/index.ts' }, result: {} },
+        },
+      }),
+    );
+    expect(tools).toEqual([]);
+  });
+
+  it('reads the session id from the terminal result without re-emitting its text', () => {
+    const { session, texts } = run(
+      'cursor',
+      JSON.stringify({
+        type: 'result',
+        subtype: 'success',
+        is_error: false,
+        result: 'full text',
+        session_id: 'c-2',
+      }),
+    );
+    expect(session).toBe('c-2');
+    expect(texts).toEqual([]); // the result text would duplicate the assistant events
+  });
+
+  it('ignores non-JSON chatter', () => {
+    const { session, texts, tools } = run('cursor', 'not json at all');
+    expect(session).toBeUndefined();
+    expect(texts).toEqual([]);
+    expect(tools).toEqual([]);
+  });
+});
+
+describe('cursor buildArgs', () => {
+  const base = { text: 'hi', projectDir: PROJECT, images: [] as string[] };
+
+  it('runs print + stream-json + force, with the prompt as the trailing positional', () => {
+    const { args, stdin } = PROVIDERS.cursor.buildArgs({ ...base });
+    expect(args).toContain('-p');
+    expect(args.join(' ')).toContain('--output-format stream-json');
+    expect(args).toContain('-f');
+    expect(args[args.length - 1]).toBe('hi'); // prompt is the last positional
+    expect(stdin).toBeUndefined(); // cursor has no stdin prompt channel
+  });
+
+  it('adds --model only for a non-default model', () => {
+    expect(PROVIDERS.cursor.buildArgs({ ...base }).args).not.toContain('--model');
+    const { args } = PROVIDERS.cursor.buildArgs({ ...base, model: 'sonnet-4' });
+    expect(args[args.indexOf('--model') + 1]).toBe('sonnet-4');
+  });
+
+  it('resumes a chat by id', () => {
+    const { args } = PROVIDERS.cursor.buildArgs({ ...base, resume: 'chat-123' });
+    expect(args[args.indexOf('--resume') + 1]).toBe('chat-123');
+  });
+
+  // Cursor's rules ride in a project rule file (writeCursorRules), never on argv — so even a big
+  // prompt keeps argv to just the flags + the user's own text, no ~7KB blob (Windows cmd.exe cap).
+  it('keeps the DCL rules off argv', () => {
+    const TOKEN = 'ZZ_USER_PROMPT_ZZ';
+    const joined = PROVIDERS.cursor.buildArgs({ ...base, text: TOKEN }).args.join(' ');
+    expect(joined).toContain(TOKEN); // the user prompt is on argv (cursor has no stdin)
+    expect(joined.replace(TOKEN, '').length).toBeLessThan(100); // nothing else large inlined
   });
 });
 

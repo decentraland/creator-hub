@@ -459,7 +459,7 @@
         },
         "ai_assistant": {
           "label": "启用 AI 助手",
-          "help": "使用你已安装的 Claude 或 Codex CLI 运行，拥有与终端相同的对你机器的完全访问权限。只有在你信任所要求的操作时才启用。"
+          "help": "使用你已安装的 Claude、Codex 或 Cursor CLI 运行，拥有与终端相同的对你机器的完全访问权限。只有在你信任所要求的操作时才启用。"
         },
         "mcp_server": {
           "label": "公开 AI 助手 MCP 服务器",

@@ -460,7 +460,7 @@
         },
         "ai_assistant": {
           "label": "Enable AI Assistant",
-          "help": "Runs your installed Claude or Codex CLI with full access to your machine, the same reach it has in your terminal. Only enable it if you trust what you ask it to do."
+          "help": "Runs your installed Claude, Codex, or Cursor CLI with full access to your machine, the same reach it has in your terminal. Only enable it if you trust what you ask it to do."
         },
         "mcp_server": {
           "label": "Expose AI assistant MCP server",
