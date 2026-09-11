@@ -134,12 +134,6 @@ export type AgentToPage =
   // inspector selects that spawn point / target (spawn points are scene metadata,
   // not entities, so this is separate from the entity `pick`).
   | { kind: 'spawn-pick'; index: number; target: 'position' | 'cameraTarget' }
-  // Reply to `query-animations`: the animation clip names of the entity's loaded
-  // GLTF (empty if none / not loaded). The agent reads them from the engine's
-  // `GltfContainerLoadingState.animationNames` — a field the inspector's older
-  // `@dcl/ecs` can't decode, so it must come from the engine over the bus. `id`
-  // correlates the reply with its request.
-  | { kind: 'animations'; id: number; names: string[] }
   // The editor (free-fly) camera's live pose, streamed while free-cam is active so
   // the inspector's minimap can track it (the camera lives in the engine). Both
   // vectors are SCENE-LOCAL (the agent subtracts the scene offset) since the
@@ -227,11 +221,6 @@ export type PageToScene =
   // pointer is stale (the host overlay captures the drag). Omit `ndc` to fall back
   // to the engine's current pointer. `id` correlates the `drop-point` reply.
   | { kind: 'query-drop-point'; id: number; ndc?: { x: number; y: number } }
-  // Ask the agent for the animation clip names of an entity's loaded GLTF. The
-  // agent reads `GltfContainerLoadingState.animationNames` from the engine (the
-  // inspector's `@dcl/ecs` can't decode that field); answered by `animations`.
-  // `id` correlates request/reply.
-  | { kind: 'query-animations'; id: number; entity: number }
   // Toggle the editor camera. `avatar` = the engine's native player camera (walk
   // /look/zoom); `free` = an editor fly-camera the agent drives (WASD + mouse-
   // look), with avatar input disabled. The inspector's camera toggle sends this.
