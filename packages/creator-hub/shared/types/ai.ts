@@ -3,15 +3,15 @@
 // the other IPC payloads, they live in `shared/` where every layer can import them
 // but main/preload cannot import each other.
 //
-// Phase 1: main spawns the user's own installed coding CLI (Claude Code / Codex / Cursor)
-// as a child process, one per turn, with the open project as its working directory. It
+// Phase 1: main spawns the user's own installed coding CLI (Claude Code / Codex / Cursor /
+// Gemini) as a child process, one per turn, with the open project as its working directory. It
 // runs on the user's subscription/OAuth session (API keys are stripped from the
 // child env on purpose), reads the scene and writes SDK7 code under `src/`. The
 // renderer only sends prompts and renders the streamed events below. The transport
 // sits behind this contract so it can be swapped (e.g. for ACP) without touching the
 // panel or the IPC surface.
 
-export type AiProvider = 'claude' | 'codex' | 'cursor';
+export type AiProvider = 'claude' | 'codex' | 'cursor' | 'gemini';
 
 // One selectable backend, as reported to the chat UI. `available` is false when the
 // CLI binary isn't installed (or, best-effort, isn't logged in) — the UI disables it
@@ -27,6 +27,10 @@ export interface AiProviderInfo {
   // Absent when the binary isn't found or didn't report a parseable version. Used to
   // warn when the CLI is too old for the newest models (see isClaudeCliOutdated).
   version?: string;
+  // Whether the app can drive this CLI's sign-in itself (install-on-demand + scripted OAuth).
+  // False for a CLI with no scriptable login (Gemini authenticates from its own interactive CLI
+  // or an API-key env var), so the UI shows the terminal command instead of an in-app button.
+  managedSignIn: boolean;
 }
 
 // Newest Claude models (e.g. Fable) are gated on the CLI version: an older `claude`
@@ -40,6 +44,7 @@ export const AI_CLI_COMMANDS: Record<AiProvider, { install: string; signin: stri
   claude: { install: 'npm i -g @anthropic-ai/claude-code', signin: 'claude' },
   codex: { install: 'npm i -g @openai/codex', signin: 'codex login' },
   cursor: { install: 'npm i -g cursor-agent', signin: 'cursor-agent login' },
+  gemini: { install: 'npm i -g @google/gemini-cli', signin: 'gemini' },
 };
 
 // True when `version` is a parseable semver strictly older than `min`. Unknown/absent

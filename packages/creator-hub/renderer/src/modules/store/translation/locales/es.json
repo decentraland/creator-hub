@@ -459,7 +459,7 @@
         },
         "ai_assistant": {
           "label": "Activar el Asistente IA",
-          "help": "Ejecuta tu CLI de Claude, Codex o Cursor instalada con acceso total a tu equipo, el mismo alcance que tiene en tu terminal. Actívalo solo si confías en lo que le pides."
+          "help": "Ejecuta tu CLI de Claude, Codex, Cursor o Gemini instalada con acceso total a tu equipo, el mismo alcance que tiene en tu terminal. Actívalo solo si confías en lo que le pides."
         },
         "mcp_server": {
           "label": "Exponer el servidor MCP del asistente de IA",

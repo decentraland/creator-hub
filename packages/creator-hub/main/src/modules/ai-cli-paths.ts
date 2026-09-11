@@ -21,12 +21,24 @@ export type CliSpec = {
   /** args that drive an interactive subscription login (browser OAuth), storing creds in
    *  the CLI's standard location so a later `-p` turn reads them via the inherited HOME. */
   loginArgs: string[];
+  /** Whether the app can drive this CLI's install-on-demand + scripted login (#1531). False for
+   *  a CLI with no scriptable login subcommand (Gemini): it authenticates from its own
+   *  interactive CLI or an API-key env var, so the UI points the user at the terminal instead. */
+  managedSignIn: boolean;
 };
 
 export const CLI_SPECS: Record<AiProvider, CliSpec> = {
-  claude: { pkg: '@anthropic-ai/claude-code', bin: 'claude', loginArgs: ['setup-token'] },
-  codex: { pkg: '@openai/codex', bin: 'codex', loginArgs: ['login'] },
-  cursor: { pkg: 'cursor-agent', bin: 'cursor-agent', loginArgs: ['login'] },
+  claude: {
+    pkg: '@anthropic-ai/claude-code',
+    bin: 'claude',
+    loginArgs: ['setup-token'],
+    managedSignIn: true,
+  },
+  codex: { pkg: '@openai/codex', bin: 'codex', loginArgs: ['login'], managedSignIn: true },
+  cursor: { pkg: 'cursor-agent', bin: 'cursor-agent', loginArgs: ['login'], managedSignIn: true },
+  // Gemini has no login subcommand — its auth is a fully interactive TUI (or GEMINI_API_KEY),
+  // which the scripted PTY login (watch-for-URL / clean-exit) can't drive. loginArgs is unused.
+  gemini: { pkg: '@google/gemini-cli', bin: 'gemini', loginArgs: [], managedSignIn: false },
 };
 
 const MANAGED_DIRNAME = 'ai-cli';

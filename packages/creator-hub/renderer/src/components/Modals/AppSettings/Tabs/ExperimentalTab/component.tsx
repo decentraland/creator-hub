@@ -128,7 +128,7 @@ function AgentConnect({ info, onRecheck }: { info: AiProviderInfo; onRecheck: ()
           >
             {t('modal.app_settings.fields.ai_connect.cancel')}
           </button>
-        ) : (
+        ) : info.managedSignIn !== false ? (
           <button
             type="button"
             className="AgentSignLink primary"
@@ -136,7 +136,7 @@ function AgentConnect({ info, onRecheck }: { info: AiProviderInfo; onRecheck: ()
           >
             {t('modal.app_settings.fields.ai_connect.sign_in')}
           </button>
-        )}
+        ) : null}
       </Box>
       {signIn.busy && signIn.message !== '' && (
         <Typography

@@ -38,6 +38,7 @@ describe('ai-cli-paths', () => {
       claude: { installed: false, signedIn: false },
       codex: { installed: false, signedIn: false },
       cursor: { installed: false, signedIn: false },
+      gemini: { installed: false, signedIn: false },
     });
   });
 
@@ -71,6 +72,7 @@ describe('ai-cli-paths', () => {
       claude: { installed: false, signedIn: false },
       codex: { installed: true, signedIn: true },
       cursor: { installed: false, signedIn: false },
+      gemini: { installed: false, signedIn: false },
     });
   });
 
