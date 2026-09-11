@@ -5,6 +5,7 @@ import type { Store } from '../../../redux/store';
 import { fetchLatestCatalog, getAssetById } from '../../logic/catalog';
 import { getDataLayerInterface } from '../../../redux/data-layer';
 import { EditorComponentNames } from '../../sdk/components';
+import { onSceneBuildEvent, type SceneBuildEvent } from '../../logic/scene-build-events';
 import { SceneClient } from './client';
 import { SceneServer } from './server';
 
@@ -230,6 +231,34 @@ describe('SceneServer RPC without a renderer (non-Babylon path)', () => {
     expect(store.dispatch).toHaveBeenCalledWith(
       expect.objectContaining({ payload: { 'creatorhub-inspector-scene-minimap': true } }),
     );
+  });
+
+  describe('when the host relays scene build events', () => {
+    let received: SceneBuildEvent[];
+    let off: () => void;
+
+    beforeEach(() => {
+      received = [];
+      off = onSceneBuildEvent(event => received.push(event));
+    });
+
+    afterEach(() => off());
+
+    it('should publish each event to the build-event subscribers', async () => {
+      await host.request('notify_scene_build', { kind: 'rebuild', file: '/scene/src/index.ts' });
+      await host.request('notify_scene_build', { kind: 'bundle-saved' });
+
+      expect(received).toEqual([
+        { kind: 'rebuild', file: '/scene/src/index.ts' },
+        { kind: 'bundle-saved' },
+      ]);
+    });
+
+    it('should drop a malformed event instead of publishing it', async () => {
+      await host.request('notify_scene_build', { kind: 'rebuild' } as never);
+
+      expect(received).toEqual([]);
+    });
   });
 
   it('should still handle other agnostic controls (e.g. toggle_ground_grid)', async () => {

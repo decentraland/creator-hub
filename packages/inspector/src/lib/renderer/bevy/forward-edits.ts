@@ -55,6 +55,15 @@ const ENGINE_COMPONENT_NAMES: Record<string, string> = {
   'core::Animator': 'Animator',
   'core::VideoPlayer': 'VideoPlayer',
   'core::ParticleSystem': 'ParticleSystem',
+  'core::LightSource': 'LightSource',
+  'core::NftShape': 'NftShape',
+  'core::GltfNodeModifiers': 'GltfNodeModifiers',
+  'core::AvatarAttach': 'AvatarAttach',
+  'core::AvatarModifierArea': 'AvatarModifierArea',
+  'core::CameraModeArea': 'CameraModeArea',
+  'core::VirtualCamera': 'VirtualCamera',
+  'core::AudioSource': 'AudioSource',
+  'core::AudioStream': 'AudioStream',
 };
 
 // PBParticleSystem.PlaybackState: PS_PLAYING=0, PS_PAUSED=1 ("simulation frozen; no
@@ -599,6 +608,9 @@ export function createForwardEditBridge(options: ForwardEditBridgeOptions): Forw
   //    force every state playing:false (a null Animator still pauses as {states:[]}).
   //  - VideoPlayer (#1469): a loaded video keeps playing — force playing:false.
   //  - ParticleSystem (#1467): emission/simulation keeps running — force PS_PAUSED.
+  //  - AudioSource / AudioStream: sound keeps playing — force playing:false.
+  const pausePlaying = (raw: unknown) =>
+    raw == null ? null : { ...(raw as Record<string, unknown>), playing: false };
   const FROZEN_OVERRIDES = new Map<string, (raw: unknown) => unknown>([
     [
       'Animator',
@@ -607,10 +619,9 @@ export function createForwardEditBridge(options: ForwardEditBridgeOptions): Forw
         return { states: (a?.states ?? []).map(s => ({ ...s, playing: false })) };
       },
     ],
-    [
-      'VideoPlayer',
-      raw => (raw == null ? null : { ...(raw as Record<string, unknown>), playing: false }),
-    ],
+    ['VideoPlayer', pausePlaying],
+    ['AudioSource', pausePlaying],
+    ['AudioStream', pausePlaying],
     [
       'ParticleSystem',
       raw =>

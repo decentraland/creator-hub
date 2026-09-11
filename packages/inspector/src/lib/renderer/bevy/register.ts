@@ -2,7 +2,8 @@ import type { Entity } from '@dcl/ecs';
 import { InputAction, PointerEventType } from '@dcl/ecs';
 
 import { getConfig } from '../../logic/config';
-import { hasRecentLocalEdit, markLocalEdit } from '../../logic/local-edit';
+import { isOwnWrite } from '../../logic/own-writes';
+import { onSceneBuildEvent } from '../../logic/scene-build-events';
 import { getSceneClient } from '../../rpc/scene';
 import { store } from '../../../redux/store';
 import { selectAssetCatalog } from '../../../redux/app';
@@ -21,7 +22,7 @@ import { createCameraBridge } from './camera-bridge';
 import { createAnimationsBridge } from './animations-bridge';
 import { createDropPointBridge } from './drop-point-bridge';
 import { createForwardEditBridge } from './forward-edits';
-import { createHotReloadBridge } from './hot-reload-bridge';
+import { createBuildReloadBridge } from './build-reload-bridge';
 import { createInputFocusBridge } from './input-focus-bridge';
 import { createLayoutReloadBridge } from './layout-reload-bridge';
 import { createVerticalInputBridge } from './vertical-input-bridge';
@@ -102,6 +103,12 @@ export function asBevyInternals(internals: unknown): BevyInternals | null {
  * sandbox and talks to this side over the `dcl-editor-bus` BroadcastChannel. The
  * pick-bridge / selection-bridge here are its inspector-side peers.
  */
+/**
+ * Script component writes before this are the initial CRDT load streaming in, not
+ * edits. Mirrors the forward bridge's arm window (forward-edits.ts ARM_DELAY_MS).
+ */
+const SCRIPT_EDITS_ARM_DELAY_MS = 3000;
+
 export function registerBevyRenderer(): void {
   registerRenderer({
     id: 'bevy',
@@ -428,34 +435,33 @@ export function registerBevyRenderer(): void {
         forwardBridge?.setAnimationsFrozen(!running);
       });
 
-      const LOCAL_EDIT_QUIET_MS = 1500;
-      const HOT_RELOAD_DEBOUNCE_MS = 400;
-      const offLocalEdit = bevy.context.onChange(markLocalEdit);
-      let hotReloadTimer: ReturnType<typeof setTimeout> | null = null;
-      const disconnectHotReload = createHotReloadBridge({
-        realmUrl: config.bevyRealm,
-        onSceneUpdate: () => {
-          // Our own edit just rewrote the scene files — ignore (not a code change).
-          if (hasRecentLocalEdit(LOCAL_EDIT_QUIET_MS)) return;
-          // Coalesce a burst of file events (a save can touch several files) into
-          // one reload once it settles.
-          if (hotReloadTimer !== null) clearTimeout(hotReloadTimer);
-          hotReloadTimer = setTimeout(() => {
-            hotReloadTimer = null;
-            // Re-check the quiet window at fire time (an edit may have landed while
-            // debouncing), then reload via the reset path (reload + reconcile).
-            if (hasRecentLocalEdit(LOCAL_EDIT_QUIET_MS)) return;
-            // Preserve the RUN state across a hot-reload: reset() always lands
-            // frozen (the Stop default), but a code edit while the user is running
-            // the scene should keep running with the new code (like the preview
-            // window). Capture whether it was playing BEFORE reset flips it, then
-            // re-request Play — reset() defers it (#resetting guard) and applies it
-            // on reset-complete, so the reloaded scene resumes.
-            const wasRunning = bevy.sceneRun.isRunning();
-            void bevy.sceneRun.reset();
-            if (wasRunning) bevy.sceneRun.setRunning(true);
-          }, HOT_RELOAD_DEBOUNCE_MS);
+      // Hot-reload on code changes (#1419) — decided from the bundler's own per-file
+      // build events the host relays, so the editor's autosave rebuilds never reload
+      // (#1391). See build-reload-bridge.ts.
+      const buildReload = createBuildReloadBridge({
+        subscribe: onSceneBuildEvent,
+        isOwnWrite,
+        reload: () => {
+          // Preserve the RUN state across a hot-reload: reset() always lands frozen
+          // (the Stop default), but a code edit while the user is running the scene
+          // should keep running with the new code (like the preview window). Capture
+          // whether it was playing BEFORE reset flips it, then re-request Play —
+          // reset() defers it (#resetting guard) and applies it on reset-complete.
+          const wasRunning = bevy.sceneRun.isRunning();
+          void bevy.sceneRun.reset();
+          if (wasRunning) bevy.sceneRun.setRunning(true);
         },
+      });
+      // Script inputs are resolved once when the scene starts, so unlike every other
+      // component (forwarded live) an edit only shows after a reload of the bundle
+      // that embeds it. The initial CRDT load also streams Script components in; only
+      // writes after the forward bridge's arm window count as edits.
+      const scriptComponentName = bevy.context.editorComponents.Script.componentName;
+      const scriptEditsArmAt = performance.now() + SCRIPT_EDITS_ARM_DELAY_MS;
+      const offScriptEdits = bevy.context.onChange((_entity, _op, component) => {
+        if (component?.componentName !== scriptComponentName) return;
+        if (performance.now() < scriptEditsArmAt) return;
+        buildReload.noteScriptEdit();
       });
 
       // Wire the engine-window bindings for the initial boot. Re-run on reboot.
@@ -605,9 +611,8 @@ export function registerBevyRenderer(): void {
           disconnectPick();
           disconnectHoverHint();
           disconnectLayoutReload();
-          disconnectHotReload();
-          offLocalEdit();
-          if (hotReloadTimer !== null) clearTimeout(hotReloadTimer);
+          buildReload.disconnect();
+          offScriptEdits();
           clearInterval(entityFloorTimer);
           // Clear the entity-id floor so a subsequent Babylon scene (or a smaller
           // scene) isn't held above this scene's ids (#1468).
