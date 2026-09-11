@@ -97,14 +97,14 @@ async function runShellProbe(): Promise<void> {
     try {
       // detached: the profile may spawn its own children (a version manager resolving a
       // default), and killing only the shell would orphan them.
-      // Capture $PATH plus the two API keys (for API-key billing on a GUI launch whose env
-      // lacks them). The PATH marker keeps its shape so parseShellPath is unchanged; the key
+      // Capture $PATH plus the providers' API keys (for API-key billing on a GUI launch whose
+      // env lacks them). The PATH marker keeps its shape so parseShellPath is unchanged; the key
       // markers are parsed separately. This output is NEVER logged.
       child = spawn(
         shell,
         [
           '-ilc',
-          'printf "<<<%s>>>@@A=%s@@@@O=%s@@" "$PATH" "$ANTHROPIC_API_KEY" "$OPENAI_API_KEY"',
+          'printf "<<<%s>>>@@A=%s@@@@O=%s@@@@C=%s@@@@G=%s@@@@GA=%s@@" "$PATH" "$ANTHROPIC_API_KEY" "$OPENAI_API_KEY" "$CURSOR_API_KEY" "$GEMINI_API_KEY" "$GOOGLE_API_KEY"',
         ],
         { stdio: ['ignore', 'pipe', 'ignore'], detached: true },
       );
@@ -134,6 +134,9 @@ async function runShellProbe(): Promise<void> {
   // Capture the shell's API keys for API-key billing (in memory only; never logged).
   shellApiKeys.ANTHROPIC_API_KEY = /@@A=(.*?)@@/s.exec(out)?.[1] || undefined;
   shellApiKeys.OPENAI_API_KEY = /@@O=(.*?)@@/s.exec(out)?.[1] || undefined;
+  shellApiKeys.CURSOR_API_KEY = /@@C=(.*?)@@/s.exec(out)?.[1] || undefined;
+  shellApiKeys.GEMINI_API_KEY = /@@G=(.*?)@@/s.exec(out)?.[1] || undefined;
+  shellApiKeys.GOOGLE_API_KEY = /@@GA=(.*?)@@/s.exec(out)?.[1] || undefined;
   const dirs = parseShellPath(out);
   if (dirs.length > 0) {
     shellDirs = dirs; // no marker: keep what we had, the static list still applies
@@ -238,6 +241,11 @@ const ALWAYS_STRIP = new Set([
   'ANTHROPIC_VERTEX_BASE_URL',
   'OPENAI_BASE_URL',
   'OPENAI_API_BASE',
+  // Cursor's and Gemini's endpoint overrides (verified against each CLI's bundle) — same
+  // token-redirect risk as the Anthropic/OpenAI ones above.
+  'CURSOR_API_ENDPOINT',
+  'GOOGLE_GEMINI_BASE_URL',
+  'GOOGLE_VERTEX_BASE_URL',
 ]);
 
 // Metered API keys: stripped by default to force subscription/OAuth billing (the whole
@@ -257,7 +265,13 @@ const API_KEY_ENV = new Set([
 // API keys read from the user's login shell, so a GUI launch (sparse env) can still bill
 // against a shell-configured key in API-key mode. Populated by the shell probe; only ever
 // held in memory, never logged or persisted.
-const shellApiKeys: { ANTHROPIC_API_KEY?: string; OPENAI_API_KEY?: string } = {};
+const shellApiKeys: {
+  ANTHROPIC_API_KEY?: string;
+  OPENAI_API_KEY?: string;
+  CURSOR_API_KEY?: string;
+  GEMINI_API_KEY?: string;
+  GOOGLE_API_KEY?: string;
+} = {};
 
 // Filter an inherited env for a spawned CLI: always drop base-URL/session overrides; drop the
 // metered API keys unless the user chose API-key billing. Exported for tests.
@@ -379,12 +393,34 @@ function rel(projectDir: string, p: unknown): string {
   }
 }
 
+// Tool-chip detail helpers, shared by all three providers' tool mappers below.
+const str = (v: unknown): string => (typeof v === 'string' ? v.trim() : '');
+const clip = (s: string): string => (s.length > 64 ? s.slice(0, 64) + '…' : s);
+
+// A tool chip's detail, for the CLIs whose tool args differ only in which keys hold the path:
+// the first non-empty scene-relative file path, else the first non-empty fallback field
+// (command/pattern/query/url), clipped.
+function argDetail(
+  projectDir: string,
+  args: Record<string, unknown>,
+  pathKeys: string[],
+  fallbackKeys: string[],
+): string {
+  for (const k of pathKeys) {
+    const file = rel(projectDir, args[k]);
+    if (file !== '') return file;
+  }
+  for (const k of fallbackKeys) {
+    const v = str(args[k]);
+    if (v !== '') return clip(v);
+  }
+  return '';
+}
+
 // What a tool chip shows after its name. File tools report paths; for the rest, prefer
 // what a creator can read — Bash's human description over the raw command, a search's
 // pattern over nothing.
 function toolDetail(tool: string, inp: Record<string, unknown>, projectDir: string): string {
-  const str = (v: unknown): string => (typeof v === 'string' ? v.trim() : '');
-  const clip = (s: string): string => (s.length > 64 ? s.slice(0, 64) + '…' : s);
   const file = rel(projectDir, inp.file_path ?? inp.path ?? '');
   if (file !== '') return file;
   if (tool === 'Bash')
@@ -427,12 +463,10 @@ function cursorTool(
   const base = key.replace(/ToolCall$/, '');
   const name = CURSOR_TOOL_NAMES[base] ?? base.charAt(0).toUpperCase() + base.slice(1);
   const args = toolCall[key]?.args ?? {};
-  const str = (v: unknown): string => (typeof v === 'string' ? v.trim() : '');
-  const clip = (s: string): string => (s.length > 64 ? s.slice(0, 64) + '…' : s);
-  const file = rel(projectDir, args.path ?? args.file_path ?? '');
-  const detail =
-    file !== '' ? file : clip(str(args.command) || str(args.pattern) || str(args.query));
-  return [name, detail];
+  return [
+    name,
+    argDetail(projectDir, args, ['path', 'file_path'], ['command', 'pattern', 'query']),
+  ];
 }
 
 // Gemini's built-in tools are snake_case (`read_file`, `run_shell_command`, …). Map the common
@@ -459,15 +493,15 @@ function geminiTool(
   projectDir: string,
 ): [string, string] {
   const name = GEMINI_TOOL_NAMES[toolName] ?? toolName;
-  const args = parameters ?? {};
-  const str = (v: unknown): string => (typeof v === 'string' ? v.trim() : '');
-  const clip = (s: string): string => (s.length > 64 ? s.slice(0, 64) + '…' : s);
-  const file = rel(projectDir, args.absolute_path ?? args.file_path ?? args.path ?? '');
-  const detail =
-    file !== ''
-      ? file
-      : clip(str(args.command) || str(args.pattern) || str(args.query) || str(args.url));
-  return [name, detail];
+  return [
+    name,
+    argDetail(
+      projectDir,
+      parameters ?? {},
+      ['absolute_path', 'file_path', 'path'],
+      ['command', 'pattern', 'query', 'url'],
+    ),
+  ];
 }
 
 // Exported for the parser tests: parseLine tracks two external CLIs' output formats, so
