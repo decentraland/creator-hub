@@ -9,6 +9,10 @@
 .assets-catalog-assets-container {
   display: flex;
   flex-wrap: wrap;
+  /* The search-mode container is full height, and the default `stretch` would grow
+     each row to fill it — the name tooltip anchors to the row-tall trigger wrapper
+     and floats far above the tile (#1010). */
+  align-content: flex-start;
   gap: 8px;
 }
 

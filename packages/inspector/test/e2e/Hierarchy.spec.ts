@@ -97,6 +97,18 @@ describe('Hierarchy', () => {
     await expect(Hierarchy.getLabel(child2)).resolves.toBe('gltf');
   });
 
+  test('keep consecutive spaces of a name visible once out of edit mode', async () => {
+    const label = 'this  is  a  test';
+    await Hierarchy.addChild(ROOT, label);
+    const entity = await Hierarchy.getId(label);
+    await expect(Hierarchy.getRenderedLabel(entity)).resolves.toBe(label);
+    await Hierarchy.select(entity);
+    await expect(
+      page.locator('.EntityHeader .Title').evaluate(el => (el as HTMLElement).innerText),
+    ).resolves.toBe(label);
+    await Hierarchy.remove(entity);
+  });
+
   test('add Gltf to "gltf"', async () => {
     const gltf = await Hierarchy.getId('gltf');
     await expect(Hierarchy.addComponent(gltf, 'GLTF')).resolves.not.toThrow();

@@ -42,6 +42,9 @@ function Dropdown(props: Props) {
         anchorEl={anchorEl}
         open={open}
         onClose={handleClose}
+        // The default scroll lock hides the app scrollbar while the menu is open,
+        // which widens the page and reflows the card grid on every open/close (#654).
+        disableScrollLock
         transformOrigin={{ horizontal: 'right', vertical: 'top' }}
         anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
       >
