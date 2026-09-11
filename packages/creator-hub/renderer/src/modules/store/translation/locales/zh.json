@@ -470,7 +470,7 @@
         },
         "ai_api_key": {
           "label": "改为计入 API 密钥",
-          "help": "使用你环境中的 ANTHROPIC_API_KEY / OPENAI_API_KEY。默认关闭。"
+          "help": "使用你环境中所用提供方的 API 密钥（ANTHROPIC_API_KEY、OPENAI_API_KEY、CURSOR_API_KEY 或 GEMINI_API_KEY）。默认关闭。"
         },
         "gui_editor": {
           "toggle": "启用 UI 编辑器",

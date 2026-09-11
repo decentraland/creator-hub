@@ -470,7 +470,7 @@
         },
         "ai_api_key": {
           "label": "Facturar a una clave de API en su lugar",
-          "help": "Usa ANTHROPIC_API_KEY / OPENAI_API_KEY de tu entorno. Desactivado por defecto."
+          "help": "Usa la API key de tu proveedor desde tu entorno (ANTHROPIC_API_KEY, OPENAI_API_KEY, CURSOR_API_KEY o GEMINI_API_KEY). Desactivado por defecto."
         },
         "gui_editor": {
           "toggle": "Activar el editor de UI",
