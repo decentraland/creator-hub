@@ -471,7 +471,7 @@
         },
         "ai_api_key": {
           "label": "Bill this to an API key instead",
-          "help": "Uses ANTHROPIC_API_KEY / OPENAI_API_KEY from your environment. Off by default."
+          "help": "Uses your provider's API key from your environment (ANTHROPIC_API_KEY, OPENAI_API_KEY, CURSOR_API_KEY, or GEMINI_API_KEY). Off by default."
         },
         "gui_editor": {
           "toggle": "Enable UI Editor",
