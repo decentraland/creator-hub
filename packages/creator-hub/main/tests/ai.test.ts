@@ -356,6 +356,106 @@ describe('cursor buildArgs', () => {
   });
 });
 
+describe('gemini parseLine', () => {
+  it('captures the session id from init', () => {
+    const { session } = run(
+      'gemini',
+      JSON.stringify({ type: 'init', session_id: 'g-1', model: 'gemini-3-pro' }),
+    );
+    expect(session).toBe('g-1');
+  });
+
+  it('emits assistant message content and ignores the user echo', () => {
+    const assistant = run(
+      'gemini',
+      JSON.stringify({ type: 'message', role: 'assistant', content: 'Hi there' }),
+    );
+    expect(assistant.texts).toEqual(['Hi there']);
+    const user = run(
+      'gemini',
+      JSON.stringify({ type: 'message', role: 'user', content: 'prompt' }),
+    );
+    expect(user.texts).toEqual([]);
+  });
+
+  it('maps a tool_use to a chip with a scene-relative file path', () => {
+    const { tools } = run(
+      'gemini',
+      JSON.stringify({
+        type: 'tool_use',
+        tool_name: 'write_file',
+        tool_id: '1',
+        parameters: { file_path: `${PROJECT}/src/Door.ts` },
+      }),
+    );
+    expect(tools).toEqual([['Write', 'src/Door.ts']]);
+  });
+
+  it('shows the command for a shell tool_use', () => {
+    const { tools } = run(
+      'gemini',
+      JSON.stringify({
+        type: 'tool_use',
+        tool_name: 'run_shell_command',
+        parameters: { command: 'npm run build' },
+      }),
+    );
+    expect(tools).toEqual([['Run', 'npm run build']]);
+  });
+
+  it('surfaces an error event as text so a failed turn is never silent', () => {
+    const { texts } = run(
+      'gemini',
+      JSON.stringify({ type: 'error', severity: 'error', message: 'quota exceeded' }),
+    );
+    expect(texts).toEqual(['quota exceeded\n']);
+  });
+
+  it('surfaces a failed result error message', () => {
+    const { texts } = run(
+      'gemini',
+      JSON.stringify({ type: 'result', status: 'error', error: { message: 'boom' } }),
+    );
+    expect(texts).toEqual(['boom\n']);
+  });
+
+  it('ignores non-JSON chatter', () => {
+    const { session, texts, tools } = run('gemini', 'not json at all');
+    expect(session).toBeUndefined();
+    expect(texts).toEqual([]);
+    expect(tools).toEqual([]);
+  });
+});
+
+describe('gemini buildArgs', () => {
+  const base = { text: 'hi', projectDir: PROJECT, images: [] as string[] };
+
+  it('runs stream-json with full-access + workspace-trust flags', () => {
+    const { args } = PROVIDERS.gemini.buildArgs({ ...base });
+    expect(args.join(' ')).toContain('-o stream-json');
+    expect(args).toContain('--yolo');
+    expect(args).toContain('--skip-trust');
+  });
+
+  it('adds -m only for a non-default model', () => {
+    expect(PROVIDERS.gemini.buildArgs({ ...base }).args).not.toContain('-m');
+    const { args } = PROVIDERS.gemini.buildArgs({ ...base, model: 'gemini-3-flash' });
+    expect(args[args.indexOf('-m') + 1]).toBe('gemini-3-flash');
+  });
+
+  // The DCL rules ride on stdin; the user prompt goes via -p. That keeps the ~7KB constant off
+  // argv (Windows cmd.exe cap, #1588) while staying in the documented headless (-p) mode.
+  it('puts the rules on stdin and the user prompt via -p, keeping the rules off argv', () => {
+    const TOKEN = 'ZZ_USER_PROMPT_ZZ';
+    const { args, stdin } = PROVIDERS.gemini.buildArgs({ ...base, text: TOKEN });
+    expect(typeof stdin).toBe('string');
+    expect((stdin ?? '').length).toBeGreaterThan(100); // the system prompt
+    expect(stdin).not.toContain(TOKEN); // the user prompt is NOT in the rules blob
+    expect(args[args.indexOf('-p') + 1]).toBe(TOKEN); // ...it's the -p value
+    expect(args.join(' ').replace(TOKEN, '').length).toBeLessThan(100); // no big blob on argv
+  });
+});
+
 describe('parseShellPath', () => {
   it('extracts the marker-delimited PATH split on colons', () => {
     expect(parseShellPath('banner\n<<</usr/bin:/opt/homebrew/bin>>>trailer')).toEqual([

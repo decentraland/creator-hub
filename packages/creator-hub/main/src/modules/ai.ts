@@ -22,7 +22,7 @@ import crossSpawn from 'cross-spawn';
 import log from 'electron-log/main';
 import type { AiEvent, AiProvider, AiProviderInfo, AiSendParams } from '/shared/types/ai';
 import { DCL_SYSTEM_PROMPT } from './ai-prompt';
-import { getManagedBinDir, isSignedIn as isManagedSignedIn } from './ai-cli-paths';
+import { CLI_SPECS, getManagedBinDir, isSignedIn as isManagedSignedIn } from './ai-cli-paths';
 import { getUserDataPath } from './electron';
 import { getProjectId, track } from './analytics';
 import {
@@ -248,6 +248,10 @@ const API_KEY_ENV = new Set([
   'OPENAI_API_KEY',
   'CODEX_API_KEY',
   'CURSOR_API_KEY',
+  // Gemini's metered keys. NOT its auth-method selectors (GOOGLE_GENAI_USE_GCA / _USE_VERTEXAI) —
+  // those pick the Google-login/Vertex path we WANT to keep in subscription mode.
+  'GEMINI_API_KEY',
+  'GOOGLE_API_KEY',
 ]);
 
 // API keys read from the user's login shell, so a GUI launch (sparse env) can still bill
@@ -428,6 +432,41 @@ function cursorTool(
   const file = rel(projectDir, args.path ?? args.file_path ?? '');
   const detail =
     file !== '' ? file : clip(str(args.command) || str(args.pattern) || str(args.query));
+  return [name, detail];
+}
+
+// Gemini's built-in tools are snake_case (`read_file`, `run_shell_command`, …). Map the common
+// ones to the same chip labels claude/codex use; unknown names pass through unchanged.
+const GEMINI_TOOL_NAMES: Record<string, string> = {
+  read_file: 'Read',
+  read_many_files: 'Read',
+  write_file: 'Write',
+  replace: 'Edit',
+  edit: 'Edit',
+  run_shell_command: 'Run',
+  search_file_content: 'Grep',
+  glob: 'Glob',
+  list_directory: 'List',
+  web_fetch: 'WebFetch',
+  google_web_search: 'WebSearch',
+};
+
+// Turn a gemini `tool_use` event's name + parameters into a [chip-name, detail] pair. Gemini's
+// file tools use absolute_path/file_path/path; shell uses command; search uses pattern/query.
+function geminiTool(
+  toolName: string,
+  parameters: Record<string, unknown> | undefined,
+  projectDir: string,
+): [string, string] {
+  const name = GEMINI_TOOL_NAMES[toolName] ?? toolName;
+  const args = parameters ?? {};
+  const str = (v: unknown): string => (typeof v === 'string' ? v.trim() : '');
+  const clip = (s: string): string => (s.length > 64 ? s.slice(0, 64) + '…' : s);
+  const file = rel(projectDir, args.absolute_path ?? args.file_path ?? args.path ?? '');
+  const detail =
+    file !== ''
+      ? file
+      : clip(str(args.command) || str(args.pattern) || str(args.query) || str(args.url));
   return [name, detail];
 }
 
@@ -686,6 +725,76 @@ export const PROVIDERS: Record<AiProvider, ProviderDef> = {
       return undefined;
     },
   },
+  // Google's Gemini CLI (`gemini`), wired against `-o stream-json`. Notable differences:
+  //  - No login subcommand: auth is the CLI's own interactive Google sign-in or GEMINI_API_KEY
+  //    (managedSignIn:false in CLI_SPECS), so the app doesn't drive sign-in — a PATH install the
+  //    user already authed (or an API key) is what makes it available.
+  //  - `--yolo` auto-approves every tool (bypassPermissions/danger-full-access equivalent) and
+  //    `--skip-trust` trusts the workspace for the session (else Gemini skips project context).
+  //  - No system-prompt flag, but `-p` is appended to stdin — so the DCL rules ride on stdin and
+  //    the user prompt on `-p`, keeping the ~7KB constant off argv (Windows cmd.exe cap, #1588).
+  //  - Session resume is index-based (`--resume latest|N`), which doesn't map to a stable
+  //    per-conversation key, so multi-turn resume is deferred: each turn is independent for now.
+  // The CH MCP scene tools are not wired for Gemini yet (same project-file/secret concern as
+  // Cursor) — a follow-up; file edits work without them.
+  gemini: {
+    id: 'gemini',
+    label: 'Gemini',
+    binNames: ['gemini'],
+    models: ['default', 'gemini-3-pro', 'gemini-3-flash', 'gemini-2.5-flash'],
+    defaultModel: 'default',
+    buildArgs: ctx => {
+      const args = [
+        '-o',
+        'stream-json',
+        '--yolo', // auto-approve all tools (full access, matches claude/codex/cursor)
+        '--skip-trust', // trust this workspace for the session so project context/tools work
+      ];
+      if (ctx.model !== undefined && ctx.model !== 'default') args.push('-m', ctx.model);
+      // DCL rules on stdin, user prompt via -p (appended to stdin by gemini) — keeps the ~7KB
+      // rules off argv. Image paths were appended to ctx.text by aiSend; gemini reads them with
+      // its own file tools.
+      args.push('-p', ctx.text);
+      return { args, stdin: DCL_SYSTEM_PROMPT };
+    },
+    parseLine: (line, projectDir, emit) => {
+      let obj: {
+        type?: string;
+        session_id?: string;
+        role?: string;
+        content?: string;
+        message?: string;
+        severity?: string;
+        status?: string;
+        error?: { message?: string };
+        tool_name?: string;
+        parameters?: Record<string, unknown>;
+      };
+      try {
+        obj = JSON.parse(line);
+      } catch {
+        return undefined;
+      }
+      // init carries the session id + model.
+      if (obj.type === 'init') return obj.session_id;
+      // Assistant text arrives as `message` events with role:"assistant" (delta chunks that the
+      // renderer concatenates). role:"user" is our own prompt echoed back — ignore it.
+      if (obj.type === 'message' && obj.role === 'assistant' && obj.content !== undefined) {
+        if (obj.content !== '') emit(obj.content);
+      }
+      if (obj.type === 'tool_use' && obj.tool_name !== undefined) {
+        emit('', geminiTool(obj.tool_name, obj.parameters, projectDir));
+      }
+      // Surface errors/warnings as text so a failed turn is never silent (mirrors codex).
+      if (obj.type === 'error' && obj.message !== undefined && obj.message !== '') {
+        emit(`${obj.message}\n`);
+      }
+      if (obj.type === 'result' && obj.status === 'error' && obj.error?.message !== undefined) {
+        emit(`${obj.error.message}\n`);
+      }
+      return undefined;
+    },
+  },
 };
 
 const scan = (): AiProviderInfo[] =>
@@ -704,11 +813,14 @@ const scan = (): AiProviderInfo[] =>
       models: def.models,
       defaultModel: def.defaultModel,
       available,
+      managedSignIn: CLI_SPECS[id].managedSignIn,
       version: bin !== null ? getCliVersion(bin) : undefined,
       reason: available
         ? undefined
         : bin === null
-          ? `${def.label} not found — sign in with your subscription`
+          ? CLI_SPECS[id].managedSignIn
+            ? `${def.label} not found — sign in with your subscription`
+            : `${def.label} not found — install it and sign in from your terminal`
           : `${def.label} installed — finish signing in`,
     };
   });

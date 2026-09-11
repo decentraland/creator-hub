@@ -226,6 +226,8 @@ export interface ChatViewProps {
     available: boolean;
     reason?: string;
     version?: string;
+    // False when the CLI has no scriptable login (Gemini) — hides the in-app "Sign in" button.
+    managedSignIn: boolean;
   }[];
   provider: AiProvider;
   messages: AiMessage[];
@@ -401,34 +403,41 @@ export function ChatView(props: ChatViewProps) {
         <strong>{t('editor.ai.setup.title')}</strong>
         <span>{t('editor.ai.setup.description')}</span>
         {/* Primary path (#1531): sign in with the subscription in-app — installs the
-            official CLI on demand and drives its browser OAuth. No terminal needed. */}
-        <Button
-          color="primary"
-          size="small"
-          disabled={signIn.busy}
-          startIcon={signIn.busy ? <CircularProgress size={16} /> : undefined}
-          onClick={handleSignIn}
-        >
-          {t('editor.ai.setup.signin_button', { provider: currentProvider?.label ?? provider })}
-        </Button>
-        {signIn.busy && signIn.message !== '' && <span>{signIn.message}</span>}
-        {signIn.busy && (
-          <Button
-            color="secondary"
-            size="small"
-            onClick={handleCancelSignIn}
-          >
-            {t('editor.ai.setup.signin_cancel')}
-          </Button>
+            official CLI on demand and drives its browser OAuth. No terminal needed. Hidden for a
+            provider whose CLI has no scriptable login (Gemini): only the terminal path applies. */}
+        {currentProvider?.managedSignIn !== false && (
+          <>
+            <Button
+              color="primary"
+              size="small"
+              disabled={signIn.busy}
+              startIcon={signIn.busy ? <CircularProgress size={16} /> : undefined}
+              onClick={handleSignIn}
+            >
+              {t('editor.ai.setup.signin_button', {
+                provider: currentProvider?.label ?? provider,
+              })}
+            </Button>
+            {signIn.busy && signIn.message !== '' && <span>{signIn.message}</span>}
+            {signIn.busy && (
+              <Button
+                color="secondary"
+                size="small"
+                onClick={handleCancelSignIn}
+              >
+                {t('editor.ai.setup.signin_cancel')}
+              </Button>
+            )}
+            {signIn.url !== null && (
+              <SetupStep>
+                <span>{t('editor.ai.setup.signin_browser')}</span>
+                <CommandLine>{signIn.url}</CommandLine>
+              </SetupStep>
+            )}
+            {signIn.error !== null && <ErrorRow>{signIn.error}</ErrorRow>}
+            <SetupDivider />
+          </>
         )}
-        {signIn.url !== null && (
-          <SetupStep>
-            <span>{t('editor.ai.setup.signin_browser')}</span>
-            <CommandLine>{signIn.url}</CommandLine>
-          </SetupStep>
-        )}
-        {signIn.error !== null && <ErrorRow>{signIn.error}</ErrorRow>}
-        <SetupDivider />
         {/* Fallback: run the CLI yourself in a terminal. */}
         <span>{t('editor.ai.setup.manual_title')}</span>
         <SetupStep>
