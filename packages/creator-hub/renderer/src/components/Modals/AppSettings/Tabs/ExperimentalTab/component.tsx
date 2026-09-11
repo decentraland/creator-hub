@@ -128,7 +128,7 @@ function AgentConnect({ info, onRecheck }: { info: AiProviderInfo; onRecheck: ()
           >
             {t('modal.app_settings.fields.ai_connect.cancel')}
           </button>
-        ) : info.managedSignIn !== false ? (
+        ) : info.managedSignIn === true ? (
           <button
             type="button"
             className="AgentSignLink primary"

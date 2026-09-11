@@ -405,7 +405,7 @@ export function ChatView(props: ChatViewProps) {
         {/* Primary path (#1531): sign in with the subscription in-app — installs the
             official CLI on demand and drives its browser OAuth. No terminal needed. Hidden for a
             provider whose CLI has no scriptable login (Gemini): only the terminal path applies. */}
-        {currentProvider?.managedSignIn !== false && (
+        {currentProvider?.managedSignIn === true && (
           <>
             <Button
               color="primary"
