@@ -8,7 +8,7 @@ export function applyCanvasDrop(item: UIDesignerDragItem, entity: number, pos?: 
   if (item.source === 'palette') {
     void spliceAddChild(entity, item.type as UINodeType, item.preset, pos);
   } else if (item.source === 'component') {
-    void spliceInsertComponent(entity, item.name);
+    void spliceInsertComponent(entity, item.name, pos);
     analytics.track(Event.NEST_UI_COMPONENT, {});
   }
 }
