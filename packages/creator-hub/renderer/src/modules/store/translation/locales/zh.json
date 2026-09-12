@@ -60,7 +60,8 @@
           "client": {
             "label": "预览方式",
             "desktop": "桌面客户端",
-            "bevy_web": "Bevy（网页）"
+            "bevy_web": "Bevy（网页）",
+            "custom": "自定义客户端"
           },
           "debugger": "在预览期间打开控制台窗口",
           "skip_auth_screen": "跳过认证屏幕",

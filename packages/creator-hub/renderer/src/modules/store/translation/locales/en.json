@@ -60,7 +60,8 @@
           "client": {
             "label": "Preview with",
             "desktop": "Desktop Client",
-            "bevy_web": "Bevy (Web)"
+            "bevy_web": "Bevy (Web)",
+            "custom": "Custom Client"
           },
           "debugger": "Open Debug Console",
           "skip_auth_screen": "Skip Auth Screen",
