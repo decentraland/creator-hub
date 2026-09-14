@@ -433,6 +433,10 @@
             "do_nothing": "Do nothing"
           }
         },
+        "scenes_tab": {
+          "label": "Scenes tab",
+          "show_tutorials": "Show tutorials"
+        },
         "code_editor": {
           "label": "Code editor of choice",
           "choose_device": "Choose from your device...",

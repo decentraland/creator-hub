@@ -40,6 +40,7 @@ export const DEFAULT_RENDERER = RENDERER.BABYLON;
 export type AppSettings = {
   scenesPath: string;
   dependencyUpdateStrategy: DEPENDENCY_UPDATE_STRATEGY;
+  showScenesTutorials: boolean;
   previewOptions: PreviewOptions;
   // Per-project Optimize Assets preference, keyed by project path. `previewOptions.optimizedAssets`
   // is the ephemeral value for the open project; this map is the persisted per-project source of
