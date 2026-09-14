@@ -21,4 +21,6 @@ export type Props = React.SelectHTMLAttributes<HTMLSelectElement> & {
   multiple?: boolean;
   clearable?: boolean;
   trigger?: React.ReactNode;
+  /** Which menu edge lines up with the same edge of the field. Defaults to 'left'. */
+  menuAlign?: 'left' | 'right';
 };
