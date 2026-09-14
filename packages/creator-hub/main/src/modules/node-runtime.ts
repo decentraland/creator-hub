@@ -21,7 +21,7 @@ function npmCliDir(node: string) {
   return path.join(prefix, ...(IS_WINDOWS ? [] : ['lib']), 'node_modules', 'npm', 'bin');
 }
 
-function realNodeRuntime(source: 'bundled' | 'system', node: string): NodeRuntime {
+function getNodeRuntime(source: 'bundled' | 'system', node: string): NodeRuntime {
   const npmDir = npmCliDir(node);
   const shipsNpm = fs.existsSync(path.join(npmDir, 'npm-cli.js'));
   return {
@@ -63,23 +63,23 @@ function getBundledNodePath(): string | null {
 export function resolveNodeRuntime(): NodeRuntime {
   if (import.meta.env.DEV || import.meta.env.TEST) {
     const devNode = findNodeOnPath();
-    return devNode ? realNodeRuntime('system', devNode) : electronRuntime();
+    return devNode ? getNodeRuntime('system', devNode) : getElectronRuntime();
   }
 
   const bundled = getBundledNodePath();
-  if (bundled) return realNodeRuntime('bundled', bundled);
+  if (bundled) return getNodeRuntime('bundled', bundled);
 
   const systemNode = findNodeOnPath();
   if (systemNode) {
     log.warn(`[NodeRuntime] Bundled Node not found, using system Node at ${systemNode}`);
-    return realNodeRuntime('system', systemNode);
+    return getNodeRuntime('system', systemNode);
   }
 
   log.warn('[NodeRuntime] Bundled Node not found and no Node on PATH, using Electron as Node');
-  return electronRuntime();
+  return getElectronRuntime();
 }
 
-function electronRuntime(): NodeRuntime {
+function getElectronRuntime(): NodeRuntime {
   return {
     source: 'electron',
     node: process.execPath,
