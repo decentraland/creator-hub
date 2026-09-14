@@ -122,7 +122,7 @@
 
 /* Two short options (Free / Player). The active one shows a checkmark leftIcon;
    the other a same-width spacer so the labels line up. */
-.Toolbar .camera-mode .OptionList {
+.OptionList.camera-mode {
   min-width: 140px;
   padding-bottom: 8px;
 }

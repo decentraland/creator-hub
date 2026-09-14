@@ -1,13 +1,13 @@
 import React, { useCallback, useMemo, useState } from 'react';
-import cx from 'classnames';
 import { VscSearch as SearchIcon } from 'react-icons/vsc';
+import cx from 'classnames';
 import { TextField } from '../../TextField';
 import { InfoTooltip } from '../../InfoTooltip';
-import { Props as TooltipProps } from '../../InfoTooltip/types';
+import type { Props as TooltipProps } from '../../InfoTooltip/types';
 import { Option } from '../Option';
-import { Props as OptionProp } from '../Option/types';
+import type { Props as OptionProp } from '../Option/types';
 import { isMultipleOptionSelected, isOptionSelected } from '../utils';
-import { Props } from './types';
+import type { Props } from './types';
 import './OptionList.css';
 
 const isTooltipText = (tooltip: string | TooltipProps | undefined | null): tooltip is string => {
@@ -18,9 +18,20 @@ const isTooltipText = (tooltip: string | TooltipProps | undefined | null): toolt
   );
 };
 
-const OptionList: React.FC<Props> = props => {
-  const { empty, minWidth, multiple, options, searchable, selectedValue, isField, onChange } =
-    props;
+const OptionList = React.forwardRef<HTMLDivElement, Props>((props, ref) => {
+  const {
+    empty,
+    minWidth,
+    multiple,
+    options,
+    searchable,
+    selectedValue,
+    isField,
+    className,
+    style,
+    scope,
+    onChange,
+  } = props;
   const [search, setSearch] = useState('');
 
   const filterOptions = useCallback(
@@ -116,7 +127,12 @@ const OptionList: React.FC<Props> = props => {
   );
 
   return (
-    <div className={cx('OptionList', { searchable })}>
+    <div
+      ref={ref}
+      className={cx('OptionList', className, { searchable })}
+      style={style}
+      data-dropdown-scope={scope}
+    >
       {searchable && options.length > 0 ? (
         <TextField
           className="OptionListSearch"
@@ -149,6 +165,6 @@ const OptionList: React.FC<Props> = props => {
       )}
     </div>
   );
-};
+});
 
 export default React.memo(OptionList);

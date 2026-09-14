@@ -69,11 +69,7 @@
   width: 100%;
 }
 
-.ScriptInspector .actions .MoreOptionsMenu .MoreOptionsContent {
-  z-index: 1000;
-  bottom: 100%;
-  top: auto;
-  margin-bottom: 4px;
+.MoreOptionsContent.ScriptActionsMenu {
   min-width: auto;
   width: max-content;
 }

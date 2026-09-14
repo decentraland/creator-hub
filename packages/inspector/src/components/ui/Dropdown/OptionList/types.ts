@@ -8,5 +8,9 @@ export interface Props {
   selectedValue?: Option | Option[];
   minWidth?: number;
   isField?: boolean;
+  className?: string;
+  style?: React.CSSProperties;
+  /** Panel scope inherited from the anchor's ancestors, so panel styles reach the portalled menu. */
+  scope?: string;
   onChange?: (e: React.ChangeEvent<HTMLSelectElement>) => void;
 }
