@@ -322,7 +322,7 @@ describe('buildArgs MCP wiring', () => {
   const base = { text: 'hi', projectDir: PROJECT, images: [] as string[] };
 
   it('claude: passes --mcp-config a file path (token rides in the file, not argv)', () => {
-    const args = PROVIDERS.claude.buildArgs({ ...base, mcp: MCP });
+    const { args } = PROVIDERS.claude.buildArgs({ ...base, mcp: MCP });
     const i = args.indexOf('--mcp-config');
     expect(i).toBeGreaterThan(-1);
     expect(typeof args[i + 1]).toBe('string');
@@ -330,18 +330,47 @@ describe('buildArgs MCP wiring', () => {
   });
 
   it('claude: no --mcp-config when the server is unavailable', () => {
-    expect(PROVIDERS.claude.buildArgs({ ...base }).join(' ')).not.toContain('--mcp-config');
+    expect(PROVIDERS.claude.buildArgs({ ...base }).args.join(' ')).not.toContain('--mcp-config');
   });
 
   it('codex: defines the HTTP MCP server via -c overrides, token via env var not argv', () => {
-    const args = PROVIDERS.codex.buildArgs({ ...base, mcp: MCP });
+    const { args } = PROVIDERS.codex.buildArgs({ ...base, mcp: MCP });
     expect(args).toContain(`mcp_servers.creator-hub.url="${MCP.url}"`);
     expect(args).toContain('mcp_servers.creator-hub.bearer_token_env_var="CREATOR_HUB_MCP_TOKEN"');
     expect(args.join(' ')).not.toContain(MCP.token); // token comes from the child env, never argv
   });
 
   it('codex: no mcp_servers override when the server is unavailable', () => {
-    expect(PROVIDERS.codex.buildArgs({ ...base }).join(' ')).not.toContain('mcp_servers');
+    expect(PROVIDERS.codex.buildArgs({ ...base }).args.join(' ')).not.toContain('mcp_servers');
+  });
+
+  // The regression this fixes: on Windows cross-spawn runs the CLI's `.cmd` shim through
+  // `cmd.exe /c`, whose command line caps at 8191 chars. The ~7KB DCL system prompt inline on
+  // argv overflowed it ("The command line is too long"), failing every turn. Both providers now
+  // keep the big text OFF argv — Claude via a system-prompt FILE + the prompt on stdin, Codex
+  // via the whole thing on stdin — so argv stays short regardless of prompt size.
+  describe('keeps the system prompt off argv (Windows cmd.exe 8191-char cap)', () => {
+    const TOKEN = 'ZZ_USER_PROMPT_ZZ';
+    const big = { text: TOKEN, projectDir: PROJECT, images: [] as string[] };
+
+    it('claude: prompt on stdin, system prompt via --append-system-prompt-file, none inline', () => {
+      const { args, stdin } = PROVIDERS.claude.buildArgs({ ...big });
+      const joined = args.join(' ');
+      expect(joined).toContain('--append-system-prompt-file');
+      expect(joined).not.toContain('--append-system-prompt '); // no inline string variant
+      expect(stdin).toBe(TOKEN); // the user prompt rides on stdin, not argv
+      expect(joined).not.toContain(TOKEN); // ...and is absent from argv
+      // argv must stay well under cmd.exe's 8191-char limit
+      expect(joined.length).toBeLessThan(2000);
+    });
+
+    it('codex: instructions (rules + prompt) on stdin via the `-` token, none inline', () => {
+      const { args, stdin } = PROVIDERS.codex.buildArgs({ ...big });
+      expect(args[args.length - 1]).toBe('-'); // read prompt from stdin
+      expect(stdin).toContain(TOKEN); // prompt is on stdin
+      expect(args.join(' ')).not.toContain(TOKEN); // ...not argv
+      expect(args.join(' ').length).toBeLessThan(2000);
+    });
   });
 });
 
