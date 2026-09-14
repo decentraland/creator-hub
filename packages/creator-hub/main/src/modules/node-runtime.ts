@@ -109,3 +109,14 @@ export function getChildEnv(
   }
   return env;
 }
+
+/** Script a child should run for `pkg`'s `bin`: npm and npx come from the runtime, anything else from the workspace. */
+export function resolveBin(
+  runtime: NodeRuntime,
+  pkg: string,
+  bin: string,
+  workspace?: string,
+): string {
+  if (pkg !== 'npm') return getBinPath(pkg, bin, workspace);
+  return bin === 'npx' ? runtime.npxCli : runtime.npmCli;
+}

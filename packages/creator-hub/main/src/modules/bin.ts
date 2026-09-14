@@ -10,9 +10,9 @@ import { createCircularBuffer } from '/shared/circular-buffer';
 
 import { CLIENT_NOT_INSTALLED_ERROR } from '/shared/types/client';
 import { ClientError } from '/shared/types/client';
-import { APP_UNPACKED_PATH, getBinPath } from './path';
+import { APP_UNPACKED_PATH } from './path';
 import { setupNodeBinary } from './setup-node';
-import { getChildEnv, resolveNodeRuntime } from './node-runtime';
+import { getChildEnv, resolveBin, resolveNodeRuntime } from './node-runtime';
 
 // Registry to track all forked utility processes
 const processes: Map<number, Child> = new Map();
@@ -116,10 +116,9 @@ export function run(pkg: string, bin: string, options: RunOptions = {}): Child {
   const { workspace = APP_UNPACKED_PATH, cwd = APP_UNPACKED_PATH, args = [], env = {} } = options;
 
   const runtime = resolveNodeRuntime();
-  const binPath =
-    pkg === 'npm' ? runtime[bin === 'npx' ? 'npxCli' : 'npmCli'] : getBinPath(pkg, bin, workspace);
+  const binPath = resolveBin(runtime, pkg, bin, workspace);
   const childEnv = getChildEnv(runtime, env);
-  const isRealNode = runtime.source !== 'electron';
+  const isElectronNode = runtime.source === 'electron';
 
   const stdout = createCircularBuffer<Uint8Array>(MAX_BUFFER_SIZE);
   const stderr = createCircularBuffer<Uint8Array>(MAX_BUFFER_SIZE);
@@ -127,11 +126,11 @@ export function run(pkg: string, bin: string, options: RunOptions = {}): Child {
 
   const ready = future<void>();
 
-  const forked: ChildProcessLike = isRealNode
-    ? spawn(runtime.node, [binPath, ...args], { cwd, stdio: 'pipe', env: childEnv })
-    : utilityProcess.fork(binPath, [...args], { cwd, stdio: 'pipe', env: childEnv });
+  const forked: ChildProcessLike = isElectronNode
+    ? utilityProcess.fork(binPath, [...args], { cwd, stdio: 'pipe', env: childEnv })
+    : spawn(runtime.node, [binPath, ...args], { cwd, stdio: 'pipe', env: childEnv });
 
-  if (isRealNode) {
+  if (!isElectronNode) {
     (forked as ReturnType<typeof spawn>).on('error', error => {
       if (!alive) return;
       alive = false;

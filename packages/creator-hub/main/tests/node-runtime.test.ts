@@ -25,7 +25,12 @@ vi.mock('../src/modules/path', () => ({
   joinEnvPaths: (...paths: (string | undefined)[]) => paths.filter(Boolean).join(path.delimiter),
 }));
 
-import { getChildEnv, resolveNodeRuntime, type NodeRuntime } from '../src/modules/node-runtime';
+import {
+  getChildEnv,
+  resolveBin,
+  resolveNodeRuntime,
+  type NodeRuntime,
+} from '../src/modules/node-runtime';
 
 function touch(file: string) {
   fs.mkdirSync(path.dirname(file), { recursive: true });
@@ -236,6 +241,36 @@ describe('when building the env for a child process', () => {
 
     it('should set ELECTRON_RUN_AS_NODE so the node shim behaves as Node', () => {
       expect(getChildEnv(runtime).ELECTRON_RUN_AS_NODE).toBe('1');
+    });
+  });
+
+  describe('and resolving the bin a child should run', () => {
+    let runtime: NodeRuntime;
+
+    beforeEach(() => {
+      runtime = {
+        source: 'bundled',
+        node: '/bundle/bin/node',
+        binDir: '/bundle/bin',
+        npmCli: '/bundle/lib/node_modules/npm/bin/npm-cli.js',
+        npxCli: '/bundle/lib/node_modules/npm/bin/npx-cli.js',
+      };
+      mocks.getBinPath.mockReturnValue('/scene/node_modules/@dcl/sdk-commands/dist/index.js');
+    });
+
+    it('should run npm through the runtime npm', () => {
+      expect(resolveBin(runtime, 'npm', 'npm', '/scene')).toBe(runtime.npmCli);
+    });
+
+    it('should run npx through the runtime npx', () => {
+      expect(resolveBin(runtime, 'npm', 'npx', '/scene')).toBe(runtime.npxCli);
+    });
+
+    it('should resolve any other package bin from the workspace', () => {
+      expect(resolveBin(runtime, '@dcl/sdk-commands', 'sdk-commands', '/scene')).toBe(
+        '/scene/node_modules/@dcl/sdk-commands/dist/index.js',
+      );
+      expect(mocks.getBinPath).toHaveBeenCalledWith('@dcl/sdk-commands', 'sdk-commands', '/scene');
     });
   });
 });
