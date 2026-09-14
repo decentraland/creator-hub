@@ -20,6 +20,9 @@ import type { SceneBuildEvent } from '../../logic/scene-build-events';
  * (`takeDeferredReload`), the way the standalone bevy-editor reloads a stale scene on
  * Play. Same-origin writes the inspector makes itself (code mode splicing
  * `src/ui/*.tsx`) are excluded through `isOwnWrite`.
+ *
+ * Trigger files arrive scene-relative (the host strips the project root), so both
+ * checks are exact matches — a nested look-alike path never passes as an output.
  */
 
 /** Files the editor's autosave writes; a cycle triggered only by these is not a code change. */
@@ -29,10 +32,8 @@ const EDITOR_OUTPUT_FILES = ['assets/scene/main.composite', 'assets/scene/entity
 const QUIET_MS = 300;
 
 export function isEditorOutput(file: string): boolean {
-  const normalized = file.replace(/\\/g, '/');
-  return EDITOR_OUTPUT_FILES.some(
-    output => normalized === output || normalized.endsWith(`/${output}`),
-  );
+  const normalized = file.replace(/\\/g, '/').replace(/^\.\//, '');
+  return EDITOR_OUTPUT_FILES.includes(normalized);
 }
 
 export interface BuildReloadBridgeOptions {
@@ -72,6 +73,27 @@ export function createBuildReloadBridge(options: BuildReloadBridgeOptions): Buil
   let reloadCarried = false;
   let deferredReload = false;
   let timer: ReturnType<typeof setTimeout> | null = null;
+  // What the last bundle decided, so a bundle that follows it with no trigger of its
+  // own can inherit the decision (see the empty-trigger branch below).
+  let lastDecision: 'none' | 'reload' | 'deferred' = 'none';
+  let lastScriptOnly = false;
+
+  const decide = (scriptOnly: boolean, reason: string) => {
+    lastScriptOnly = scriptOnly;
+    if (scriptOnly && !isRunning()) {
+      deferredReload = true;
+      lastDecision = 'deferred';
+      return;
+    }
+    // An immediate reload also covers any reload that was waiting for Play.
+    deferredReload = false;
+    lastDecision = 'reload';
+    if (timer !== null) clearTimeout(timer);
+    timer = setTimeout(() => {
+      timer = null;
+      reload(reason);
+    }, quietMs);
+  };
 
   const unsubscribe = subscribe(event => {
     if (event.kind === 'rebuild') {
@@ -83,10 +105,23 @@ export function createBuildReloadBridge(options: BuildReloadBridgeOptions): Buil
       }
       return;
     }
+    if (triggers.length === 0 && !scriptStale && !reloadCarried) {
+      // A bundle with no trigger of its own is a rebuild that was already queued when
+      // the previous bundle landed — the bundler serialises overlapping rebuilds, and
+      // the previous bundle-saved took this cycle's trigger lines with it. Whatever
+      // that bundle decided was really about THIS one, the first to embed those
+      // triggers: repeat it, unless Play is still going to load the newest bundle.
+      if (lastDecision === 'none' || (lastDecision === 'deferred' && deferredReload)) return;
+      decide(lastScriptOnly, 'a rebuild queued behind the previous bundle finished');
+      return;
+    }
     const changedSources = triggers.filter(file => !isEditorOutput(file) && !isOwnWrite(file));
     const codeChanged = changedSources.length > 0;
     triggers = [];
-    if (!codeChanged && !scriptStale && !reloadCarried) return;
+    if (!codeChanged && !scriptStale && !reloadCarried) {
+      lastDecision = 'none';
+      return;
+    }
     const scriptOnly = !codeChanged && !reloadCarried;
     const reason = codeChanged
       ? `source changed: ${changedSources.join(', ')}`
@@ -95,16 +130,7 @@ export function createBuildReloadBridge(options: BuildReloadBridgeOptions): Buil
         : 'Script component edited';
     scriptStale = false;
     reloadCarried = false;
-    if (scriptOnly && !isRunning()) {
-      deferredReload = true;
-      return;
-    }
-    // An immediate reload also covers any reload that was waiting for Play.
-    deferredReload = false;
-    timer = setTimeout(() => {
-      timer = null;
-      reload(reason);
-    }, quietMs);
+    decide(scriptOnly, reason);
   });
 
   return {

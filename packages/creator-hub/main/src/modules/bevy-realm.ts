@@ -7,7 +7,7 @@ import { run, type Child } from './bin';
 import { getAvailablePort } from './port';
 import { getProjectId, track } from './analytics';
 import { getWindow } from './window';
-import { BUILD_EVENT_PATTERN, parseSceneBuildEvents } from './bevy-realm-build-events';
+import { createLineBuffer, parseSceneBuildEvents } from './bevy-realm-build-events';
 
 /**
  * The Bevy editor renderer loads the scene from an HTTP realm, and the inspector
@@ -139,10 +139,16 @@ async function startInternal(path: string): Promise<{ url: string; wsUrl: string
  * The matcher dies with the child, so nothing to detach on kill.
  */
 function relayBuildEvents(path: string, child: Child): void {
-  child.on(BUILD_EVENT_PATTERN, data => {
+  // Match every chunk and split into lines ourselves: a pipe chunk can end mid-line,
+  // and a matcher tested per chunk would miss a build line cut in two.
+  const lines = createLineBuffer();
+  child.on(/(.*)/, data => {
+    if (!data) return;
+    const events = lines.push(data).flatMap(parseSceneBuildEvents);
+    if (events.length === 0) return;
     const window = getWindow(MAIN_WINDOW_ID);
-    if (!data || !window || window.isDestroyed()) return;
-    for (const event of parseSceneBuildEvents(data)) {
+    if (!window || window.isDestroyed()) return;
+    for (const event of events) {
       const payload: BevyRealmBuildEvent = { path, ...event };
       window.webContents.send(BEVY_REALM_BUILD_EVENT, payload);
     }

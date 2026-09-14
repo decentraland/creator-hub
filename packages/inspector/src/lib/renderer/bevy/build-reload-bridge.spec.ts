@@ -7,22 +7,22 @@ import {
   type BuildReloadBridge,
 } from './build-reload-bridge';
 
-const COMPOSITE = '/scene/assets/scene/main.composite';
-const ENTITY_NAMES = '/scene/assets/scene/entity-names.ts';
-const CODE = '/scene/src/index.ts';
-const UI_ROOT = '/scene/src/ui/root.tsx';
+const COMPOSITE = 'assets/scene/main.composite';
+const ENTITY_NAMES = 'assets/scene/entity-names.ts';
+const CODE = 'src/index.ts';
+const UI_ROOT = 'src/ui/root.tsx';
 const QUIET_MS = 300;
 
 describe('isEditorOutput', () => {
-  it('should recognise the autosave outputs by any absolute prefix and slash style', () => {
+  it('should recognise the autosave outputs in any slash style', () => {
     expect(isEditorOutput(COMPOSITE)).toBe(true);
-    expect(isEditorOutput('C:\\scenes\\demo\\assets\\scene\\entity-names.ts')).toBe(true);
-    expect(isEditorOutput('assets/scene/main.composite')).toBe(true);
+    expect(isEditorOutput('assets\\scene\\entity-names.ts')).toBe(true);
+    expect(isEditorOutput('./assets/scene/main.composite')).toBe(true);
   });
 
-  it('should not claim source files or look-alikes', () => {
+  it('should not claim source files or nested look-alikes', () => {
     expect(isEditorOutput(CODE)).toBe(false);
-    expect(isEditorOutput('/scene/other-assets/scene/main.composite')).toBe(false);
+    expect(isEditorOutput('vendor/assets/scene/main.composite')).toBe(false);
   });
 });
 
@@ -99,6 +99,53 @@ describe('createBuildReloadBridge', () => {
       expect(reload).not.toHaveBeenCalled();
       vi.advanceTimersByTime(1);
       expect(reload).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('when a rebuild was queued behind the bundle that just landed', () => {
+    // The bundler serialises overlapping rebuilds: the second cycle's trigger line is
+    // printed while the first is still building, so the first bundle-saved takes it,
+    // and the second bundle-saved arrives with no trigger of its own.
+    it('should reload again for a Script edit whose bundle was the queued one', () => {
+      emit({ kind: 'rebuild', file: COMPOSITE }); // cycle A: a Transform autosave
+      bridge.noteScriptEdit();
+      emit({ kind: 'rebuild', file: COMPOSITE }); // cycle B: the Script autosave, queued
+      emit({ kind: 'bundle-saved' }); // A lands — does not embed B
+      vi.advanceTimersByTime(QUIET_MS);
+      expect(reload).toHaveBeenCalledTimes(1);
+
+      emit({ kind: 'bundle-saved' }); // B lands, no trigger left for it
+      vi.advanceTimersByTime(QUIET_MS);
+      expect(reload).toHaveBeenCalledTimes(2);
+    });
+
+    it('should coalesce when the queued bundle lands inside the quiet window', () => {
+      cycle(CODE);
+      vi.advanceTimersByTime(QUIET_MS - 1);
+      emit({ kind: 'bundle-saved' });
+      vi.advanceTimersByTime(QUIET_MS);
+
+      expect(reload).toHaveBeenCalledTimes(1);
+    });
+
+    it('should stay quiet when the previous bundle decided nothing', () => {
+      cycle(COMPOSITE);
+      emit({ kind: 'bundle-saved' });
+      vi.advanceTimersByTime(QUIET_MS * 10);
+
+      expect(reload).not.toHaveBeenCalled();
+    });
+
+    it('should leave a deferred reload to Play, which loads the newest bundle anyway', () => {
+      running = false;
+      bridge.noteScriptEdit();
+      cycle(COMPOSITE);
+      emit({ kind: 'bundle-saved' });
+      vi.advanceTimersByTime(QUIET_MS * 10);
+
+      expect(reload).not.toHaveBeenCalled();
+      expect(bridge.takeDeferredReload()).toBe(true);
+      expect(bridge.takeDeferredReload()).toBe(false);
     });
   });
 

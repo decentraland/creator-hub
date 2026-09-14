@@ -1,57 +1,71 @@
 import { describe, expect, it } from 'vitest';
 
-import { BUILD_EVENT_PATTERN, parseSceneBuildEvents } from './bevy-realm-build-events';
+import { createLineBuffer, parseSceneBuildEvents } from './bevy-realm-build-events';
 
 describe('parseSceneBuildEvents', () => {
   describe('when the bundler names a changed file', () => {
     it('should report a rebuild event with the path as printed', () => {
-      const chunk = 'File /scene/assets/scene/main.composite changed, rebuilding...\n';
-
-      expect(parseSceneBuildEvents(chunk)).toEqual([
-        { kind: 'rebuild', file: '/scene/assets/scene/main.composite' },
-      ]);
+      expect(
+        parseSceneBuildEvents('File /scene/assets/scene/main.composite changed, rebuilding...'),
+      ).toEqual([{ kind: 'rebuild', file: '/scene/assets/scene/main.composite' }]);
     });
 
     it('should keep a Windows path intact', () => {
-      const chunk = 'File C:\\scenes\\demo\\src\\index.ts changed, rebuilding...';
-
-      expect(parseSceneBuildEvents(chunk)).toEqual([
-        { kind: 'rebuild', file: 'C:\\scenes\\demo\\src\\index.ts' },
-      ]);
+      expect(
+        parseSceneBuildEvents('File C:\\scenes\\demo\\src\\index.ts changed, rebuilding...'),
+      ).toEqual([{ kind: 'rebuild', file: 'C:\\scenes\\demo\\src\\index.ts' }]);
     });
   });
 
   describe('when the bundle is written', () => {
     it('should report a bundle-saved event', () => {
-      expect(parseSceneBuildEvents('Bundle saved bin/index.js\n')).toEqual([
+      expect(parseSceneBuildEvents('Bundle saved bin/index.js')).toEqual([
         { kind: 'bundle-saved' },
       ]);
     });
   });
 
-  describe('when a chunk carries several lines', () => {
-    it('should report every event in order and skip unrelated lines', () => {
-      const chunk = [
-        'File /scene/src/index.ts changed, rebuilding...',
-        'File /scene/assets/scene/main.composite changed, rebuilding...',
-        'Type checking completed without errors',
-        'Bundle saved bin/index.js',
-      ].join('\r\n');
+  describe('when the line is unrelated', () => {
+    it('should report nothing', () => {
+      expect(parseSceneBuildEvents('Preview server is now running')).toEqual([]);
+      expect(parseSceneBuildEvents('')).toEqual([]);
+    });
+  });
+});
 
-      expect(parseSceneBuildEvents(chunk)).toEqual([
+describe('createLineBuffer', () => {
+  describe('when a chunk carries several complete lines', () => {
+    it('should return them in order, with either line ending', () => {
+      const lines = createLineBuffer();
+
+      expect(lines.push('one\r\ntwo\nthree\n')).toEqual(['one', 'two', 'three']);
+    });
+  });
+
+  describe('when a build line is cut across two chunks', () => {
+    it('should hold the partial back and complete it with the next chunk', () => {
+      const lines = createLineBuffer();
+
+      const first = lines.push('Type checking completed\nFile /scene/src/ind');
+      const second = lines.push('ex.ts changed, rebuilding...\nBundle sav');
+      const third = lines.push('ed bin/index.js\n');
+
+      expect(first).toEqual(['Type checking completed']);
+      expect(second).toEqual(['File /scene/src/index.ts changed, rebuilding...']);
+      expect(third).toEqual(['Bundle saved bin/index.js']);
+      expect([...second, ...third].flatMap(parseSceneBuildEvents)).toEqual([
         { kind: 'rebuild', file: '/scene/src/index.ts' },
-        { kind: 'rebuild', file: '/scene/assets/scene/main.composite' },
         { kind: 'bundle-saved' },
       ]);
     });
   });
 
-  describe('when a chunk has no build lines', () => {
-    it('should report nothing and not match the subscription pattern', () => {
-      const chunk = 'Preview server is now running\n';
+  describe('when a chunk has no line ending at all', () => {
+    it('should return nothing until the line completes', () => {
+      const lines = createLineBuffer();
 
-      expect(parseSceneBuildEvents(chunk)).toEqual([]);
-      expect(BUILD_EVENT_PATTERN.test(chunk)).toBe(false);
+      expect(lines.push('Bundle saved')).toEqual([]);
+      expect(lines.push(' bin/index.js\n')).toEqual(['Bundle saved bin/index.js']);
     });
   });
 });

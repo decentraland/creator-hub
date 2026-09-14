@@ -104,10 +104,14 @@ export function asBevyInternals(internals: unknown): BevyInternals | null {
  * pick-bridge / selection-bridge here are its inspector-side peers.
  */
 /**
- * Script component writes before this are the initial CRDT load streaming in, not
- * edits. Mirrors the forward bridge's arm window (forward-edits.ts ARM_DELAY_MS).
+ * A first-seen Script component counts as an edit (a script attached to an entity
+ * that had none) only once the initial CRDT load is over: at least this long after
+ * mount (mirrors forward-edits.ts ARM_DELAY_MS) AND after the change stream has
+ * been quiet for LOAD_BURST_QUIET_MS. The load burst streams continuously, so a
+ * wall-clock window alone misfires on a large scene whose load outlives it.
  */
 const SCRIPT_EDITS_ARM_DELAY_MS = 3000;
+const LOAD_BURST_QUIET_MS = 1500;
 
 export function registerBevyRenderer(): void {
   registerRenderer({
@@ -456,14 +460,23 @@ export function registerBevyRenderer(): void {
       const scriptComponentName = bevy.context.editorComponents.Script.componentName;
       const seenScripts = new Map<Entity, string>();
       const scriptEditsArmAt = performance.now() + SCRIPT_EDITS_ARM_DELAY_MS;
+      // Flips once a gap of LOAD_BURST_QUIET_MS separates two ECS changes: the load
+      // burst never pauses that long, a user's first edit always follows such a gap.
+      let lastEcsChangeAt: number | null = null;
+      let loadBurstOver = false;
       const offScriptEdits = bevy.context.onChange((entity, _op, component, value) => {
+        const now = performance.now();
+        if (lastEcsChangeAt !== null && now - lastEcsChangeAt >= LOAD_BURST_QUIET_MS) {
+          loadBurstOver = true;
+        }
+        lastEcsChangeAt = now;
         if (component?.componentName !== scriptComponentName) return;
         const previous = seenScripts.get(entity);
         const current = value === undefined ? undefined : JSON.stringify(value);
         if (current === undefined) seenScripts.delete(entity);
         else seenScripts.set(entity, current);
         const isEdit =
-          previous !== undefined ? current !== previous : performance.now() >= scriptEditsArmAt;
+          previous !== undefined ? current !== previous : loadBurstOver && now >= scriptEditsArmAt;
         if (isEdit) buildReload.noteScriptEdit();
       });
 

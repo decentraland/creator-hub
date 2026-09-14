@@ -25,7 +25,7 @@ describe('useBevyBuildForwarding', () => {
   });
 
   describe('when the Bevy renderer is active for a project', () => {
-    it('should forward that project’s build events to the inspector without the path', () => {
+    it('should forward that project’s build events with the trigger made scene-relative', () => {
       renderHook(() => useBevyBuildForwarding(iframeRef, '/scenes/demo'));
 
       emit({ path: '/scenes/demo', kind: 'rebuild', file: '/scenes/demo/src/index.ts' });
@@ -33,9 +33,28 @@ describe('useBevyBuildForwarding', () => {
 
       expect(notifySceneBuild).toHaveBeenNthCalledWith(1, {
         kind: 'rebuild',
-        file: '/scenes/demo/src/index.ts',
+        file: 'src/index.ts',
       });
       expect(notifySceneBuild).toHaveBeenNthCalledWith(2, { kind: 'bundle-saved' });
+    });
+
+    it('should make a Windows trigger relative regardless of separators and drive-letter case', () => {
+      renderHook(() => useBevyBuildForwarding(iframeRef, 'C:\\scenes\\demo'));
+
+      emit({ path: 'C:\\scenes\\demo', kind: 'rebuild', file: 'c:\\scenes\\demo\\src\\index.ts' });
+
+      expect(notifySceneBuild).toHaveBeenCalledWith({ kind: 'rebuild', file: 'src/index.ts' });
+    });
+
+    it('should pass a trigger outside the project root through unchanged', () => {
+      renderHook(() => useBevyBuildForwarding(iframeRef, '/scenes/demo'));
+
+      emit({ path: '/scenes/demo', kind: 'rebuild', file: '/elsewhere/src/index.ts' });
+
+      expect(notifySceneBuild).toHaveBeenCalledWith({
+        kind: 'rebuild',
+        file: '/elsewhere/src/index.ts',
+      });
     });
 
     it('should ignore events from another project’s realm', () => {
