@@ -19,6 +19,7 @@ import {
 import type {
   AiEvent,
   AiMirrorState,
+  AiProvider,
   AiProviderInfo,
   AiRemoteCommand,
   AiSendParams,
@@ -79,7 +80,7 @@ export async function getMcpServerInfo(): Promise<{ url: string; token: string }
 // and the promise settles when the flow completes or fails. The channel subscription is
 // scoped to the call.
 export async function signInCli(
-  provider: 'claude' | 'codex',
+  provider: AiProvider,
   onEvent: (event: AiCliLoginEvent) => void,
 ): Promise<void> {
   const handler = (_: IpcRendererEvent, event: AiCliLoginEvent) => onEvent(event);
@@ -95,7 +96,7 @@ export async function cancelSignInCli(): Promise<void> {
   return invoke('ai.cancelSignInCli');
 }
 
-export async function signOutCli(provider: 'claude' | 'codex'): Promise<void> {
+export async function signOutCli(provider: AiProvider): Promise<void> {
   return invoke('ai.signOutCli', provider);
 }
 

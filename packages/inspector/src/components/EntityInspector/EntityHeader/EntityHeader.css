@@ -16,6 +16,8 @@
   display: flex;
   align-items: center;
   gap: 4px;
+  /* Keep consecutive spaces of the entity name visible (#376). */
+  white-space: pre-wrap;
 }
 
 .EntityHeader .Title .EditTitleWrapper {
