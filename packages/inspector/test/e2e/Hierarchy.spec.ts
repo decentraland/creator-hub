@@ -109,6 +109,26 @@ describe('Hierarchy', () => {
     await Hierarchy.remove(entity);
   });
 
+  test('keep consecutive spaces visible in the rename confirmation', async () => {
+    const label = 'spaced  name';
+    await Hierarchy.addChild(ROOT, label);
+    const entity = await Hierarchy.getId(label);
+
+    // The confirmation appears when the edit input loses focus with a changed
+    // value, and it previews both names — they must read as they will be saved.
+    const renamed = 'renamed  by  blur';
+    await Hierarchy.startRenameAndBlur(entity, renamed);
+    await expect(
+      page
+        .locator('.EditTree span')
+        .first()
+        .evaluate(el => (el as HTMLElement).innerText),
+    ).resolves.toBe(`Do you want to rename "${label}" to "${renamed}"`);
+
+    await page.locator('.EditTree button', { hasText: 'Cancel' }).click();
+    await Hierarchy.remove(entity);
+  });
+
   test('add Gltf to "gltf"', async () => {
     const gltf = await Hierarchy.getId('gltf');
     await expect(Hierarchy.addComponent(gltf, 'GLTF')).resolves.not.toThrow();

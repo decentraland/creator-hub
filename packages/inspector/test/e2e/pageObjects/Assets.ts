@@ -50,15 +50,25 @@ class AssetsPageObject {
     await page.waitForSelector(`.Assets .assets-catalog-asset[data-test-label="${term}"]`);
   }
 
-  // Hovers the tile and returns how far above it the name tooltip's bottom edge sits.
-  async getNameTooltipGapAbove(asset: string) {
+  // Hovers the tile and measures where the name tooltip lands: how far above the
+  // tile its bottom edge sits, and how far below the panel header its top edge sits
+  // (negative means it covers the header).
+  async getNameTooltipPlacement(asset: string) {
     const tile = page.locator(`.Assets .assets-catalog-asset[data-test-label="${asset}"]`).first();
     await tile.hover();
     const tooltip = page.locator('.ui.popup.InfoTooltip').first();
     await tooltip.waitFor({ state: 'visible', timeout: 5_000 });
-    const [tileBox, tooltipBox] = await Promise.all([tile.boundingBox(), tooltip.boundingBox()]);
+    const header = page.locator('.Assets .assets-catalog-header-title').first();
+    const [tileBox, tooltipBox, headerBox] = await Promise.all([
+      tile.boundingBox(),
+      tooltip.boundingBox(),
+      header.boundingBox(),
+    ]);
     await page.mouse.move(0, 0);
-    return tileBox!.y - (tooltipBox!.y + tooltipBox!.height);
+    return {
+      gapAbove: tileBox!.y - (tooltipBox!.y + tooltipBox!.height),
+      clearsHeaderBy: tooltipBox!.y - (headerBox!.y + headerBox!.height),
+    };
   }
 
   async openFolder(path: string) {

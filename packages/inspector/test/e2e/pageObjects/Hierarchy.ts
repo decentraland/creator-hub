@@ -212,6 +212,24 @@ class HierarchyPageObject {
     await this.waitForLabel(newLabel);
   }
 
+  // Types a new name into the rename input and blurs instead of submitting, which
+  // is what raises the confirmation dialog (Enter submits straight away).
+  async startRenameAndBlur(entityId: number, newLabel: string) {
+    await this.openContextMenuItem(entityId, 'rename', 'rename');
+    await page.locator('input.Input').first().waitFor({ state: 'visible', timeout: 5_000 });
+    await page.waitForFunction(
+      () =>
+        document.activeElement instanceof HTMLInputElement &&
+        document.activeElement.classList.contains('Input'),
+      undefined,
+      { timeout: 5_000 },
+    );
+    await page.keyboard.press('ControlOrMeta+a');
+    await page.keyboard.type(newLabel);
+    await page.locator('.Renderer').click({ position: { x: 20, y: 20 } });
+    await page.locator('.EditTree').waitFor({ state: 'visible', timeout: 5_000 });
+  }
+
   async addChild(entityId: number, label: string) {
     await this.openContextMenuItem(entityId, 'add-child', 'add child to');
     await this.typeIntoTreeInput(label);
