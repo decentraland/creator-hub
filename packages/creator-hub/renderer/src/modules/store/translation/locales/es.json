@@ -60,7 +60,8 @@
           "client": {
             "label": "Previsualizar con",
             "desktop": "Cliente de Escritorio",
-            "bevy_web": "Bevy (Web)"
+            "bevy_web": "Bevy (Web)",
+            "custom": "Cliente personalizado"
           },
           "debugger": "Abrir la ventana de la Consola durante la previsualización",
           "skip_auth_screen": "Omitir la pantalla de autenticación",

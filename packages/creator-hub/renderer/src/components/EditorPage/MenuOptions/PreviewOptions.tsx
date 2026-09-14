@@ -40,7 +40,8 @@ export function PreviewOptions({
   const supportsOptimizedAssets = platformSupportsOptimizedAssets && sceneSupportsOptimizedAssets;
   // The asset-bundle sidecar rides the Unity deep-link (local-ab param); the Bevy web
   // client has no deep-link, so an optimized preview can't apply there.
-  const isBevyWebClient = options.client === PREVIEW_CLIENT.BEVY_WEB;
+  const isWebClient =
+    options.client === PREVIEW_CLIENT.BEVY_WEB || options.client === PREVIEW_CLIENT.CUSTOM;
 
   useEffect(() => {
     if (!platformSupportsOptimizedAssets) {
@@ -92,6 +93,13 @@ export function PreviewOptions({
     [onChange, options],
   );
 
+  const handleCustomUrlChange = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      onChange({ ...options, customClientUrl: event.target.value });
+    },
+    [onChange, options],
+  );
+
   return (
     <div className="PreviewOptions">
       <span className="title">{t('editor.header.actions.preview_options.title')}</span>
@@ -111,7 +119,23 @@ export function PreviewOptions({
             control={<Radio />}
             label={t('editor.header.actions.preview_options.client.bevy_web')}
           />
+          <FormControlLabel
+            value={PREVIEW_CLIENT.CUSTOM}
+            control={<Radio />}
+            label={t('editor.header.actions.preview_options.client.custom')}
+          />
         </RadioGroup>
+        {options.client === PREVIEW_CLIENT.CUSTOM && (
+          <input
+            className="custom-client-url"
+            type="text"
+            autoFocus
+            spellCheck={false}
+            placeholder="http://localhost:5173"
+            value={options.customClientUrl ?? ''}
+            onChange={handleCustomUrlChange}
+          />
+        )}
       </FormControl>
       <Divider />
       <FormGroup>
@@ -167,7 +191,7 @@ export function PreviewOptions({
             label={t('editor.header.actions.preview_options.mcp')}
           />
         )}
-        {supportsOptimizedAssets && !isBevyWebClient && (
+        {supportsOptimizedAssets && !isWebClient && (
           <Tooltip
             title={t('editor.header.actions.preview_options.optimized_assets_tooltip')}
             placement="left"
