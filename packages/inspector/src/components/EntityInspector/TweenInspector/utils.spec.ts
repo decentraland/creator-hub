@@ -186,6 +186,25 @@ describe('TweenInspector utils', () => {
       expect(tween.easingFunction).toBe(1);
     });
 
+    it('should also omit the playing key so merging preserves the original (possibly unset) value', () => {
+      const tween = toTween(input);
+      expect('playing' in tween).toBe(false);
+    });
+
+    it('should preserve an originally-unset playing when spread over the current component value', () => {
+      const current: PBTween = {
+        mode: {
+          $case: 'textureMove',
+          textureMove: { start: { x: 0, y: 0 }, end: { x: 1, y: 1 } },
+        },
+        duration: 1000,
+        easingFunction: EasingFunction.EF_LINEAR,
+        // playing intentionally left unset
+      };
+      const merged = { ...current, ...toTween(input) };
+      expect(merged.playing).toBeUndefined();
+    });
+
     it('should preserve the unsupported mode when spread over the current component value', () => {
       const current: PBTween = {
         mode: {

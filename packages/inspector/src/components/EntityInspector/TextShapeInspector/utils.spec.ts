@@ -216,3 +216,45 @@ describe('isValidInput', () => {
     expect(result).toBe(true);
   });
 });
+
+describe('when converting a TextShapeInput with negative Width/Height/Padding to PBTextShape', () => {
+  it('should clamp them to 0 instead of persisting the negative value', () => {
+    const input: TextShapeInput = {
+      ...fromTextShape({ text: 'Hello' }),
+      width: '-2',
+      height: '-3',
+      fontSize: '-10',
+      paddingTop: '-1',
+      paddingRight: '-1',
+      paddingBottom: '-1',
+      paddingLeft: '-1',
+      outlineWidth: '-5',
+    };
+
+    const result = toTextShape(input);
+
+    expect(result.width).toBe(0);
+    expect(result.height).toBe(0);
+    expect(result.fontSize).toBe(0);
+    expect(result.paddingTop).toBe(0);
+    expect(result.paddingRight).toBe(0);
+    expect(result.paddingBottom).toBe(0);
+    expect(result.paddingLeft).toBe(0);
+    expect(result.outlineWidth).toBe(0);
+  });
+});
+
+describe('when converting a TextShapeInput with a negative shadow offset to PBTextShape', () => {
+  it('should keep the negative value since offsets encode direction', () => {
+    const input: TextShapeInput = {
+      ...fromTextShape({ text: 'Hello' }),
+      shadowOffsetX: '-5',
+      shadowOffsetY: '-6',
+    };
+
+    const result = toTextShape(input);
+
+    expect(result.shadowOffsetX).toBe(-5);
+    expect(result.shadowOffsetY).toBe(-6);
+  });
+});

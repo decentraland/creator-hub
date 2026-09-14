@@ -77,6 +77,6 @@ export function isValidVolume(volume: string | undefined): boolean {
 }
 
 export function isValidPitch(pitch: string | undefined): boolean {
-  const value = (pitch ?? 0).toString();
-  return !isNaN(parseFloat(value)) && parseFloat(value) > 0;
+  if (!pitch) return true; // empty means "unset" (engine default: 1)
+  return !isNaN(parseFloat(pitch)) && parseFloat(pitch) > 0;
 }

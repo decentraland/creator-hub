@@ -88,3 +88,14 @@ export function isValidSpatialDistance(distance: string | undefined): boolean {
   if (!distance) return true; // empty means "unset" (engine defaults: min 0, max 60)
   return !isNaN(parseFloat(distance)) && parseFloat(distance) >= 0;
 }
+
+// Gates useComponentInput's engine writes: any invalid numeric field blocks the whole
+// component update, matching the per-field `error` props shown in VideoPlayerInspector.
+export function isValidVideoPlayerInput(input: VideoPlayerInput): boolean {
+  return (
+    isValidPlaybackRate(input.playbackRate) &&
+    isValidPosition(input.position) &&
+    isValidSpatialDistance(input.spatialMinDistance) &&
+    isValidSpatialDistance(input.spatialMaxDistance)
+  );
+}

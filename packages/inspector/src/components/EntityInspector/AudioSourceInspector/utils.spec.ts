@@ -107,7 +107,13 @@ describe('AudioSourceInspector utils', () => {
       expect(isValidPitch('0')).toBe(false);
       expect(isValidPitch('-1')).toBe(false);
       expect(isValidPitch('invalid')).toBe(false);
-      expect(isValidPitch(undefined)).toBe(false);
+    });
+
+    describe('and the pitch is empty', () => {
+      it('should accept it since empty means unset', () => {
+        expect(isValidPitch('')).toBe(true);
+        expect(isValidPitch(undefined)).toBe(true);
+      });
     });
   });
 

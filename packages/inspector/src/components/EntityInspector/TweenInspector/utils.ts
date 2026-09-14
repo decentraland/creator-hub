@@ -92,17 +92,21 @@ export const fromTween = (value: PBTween): TweenInput => {
 };
 
 export const toTween = (value: TweenInput): PBTween => {
+  if (value.type === UNSUPPORTED_TWEEN_TYPE) {
+    // omit both "mode" and "playing" so merging with the current component value preserves
+    // the unsupported mode and the original (possibly unset) playing state instead of
+    // materializing fromTween's display default (true) into the engine on an unrelated edit
+    return {
+      duration: parseFloat(value.duration) * 1000,
+      easingFunction: parseInt(value.easingFunction),
+    };
+  }
+
   const base = {
     duration: parseFloat(value.duration) * 1000,
     easingFunction: parseInt(value.easingFunction),
     playing: value.playing,
   };
-
-  if (value.type === UNSUPPORTED_TWEEN_TYPE) {
-    // omit the "mode" key entirely so merging with the current component value
-    // preserves the unsupported mode instead of destroying it
-    return base;
-  }
 
   let mode: PBTween['mode'];
 

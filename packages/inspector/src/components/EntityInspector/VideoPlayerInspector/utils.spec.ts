@@ -15,7 +15,9 @@ import {
   isValidPlaybackRate,
   isValidPosition,
   isValidSpatialDistance,
+  isValidVideoPlayerInput,
 } from './utils';
+import type { VideoPlayerInput } from './types';
 
 describe('VideoPlayerUtils', () => {
   const assetCatalogResponse = {
@@ -325,6 +327,55 @@ describe('VideoPlayerUtils', () => {
       it('should return false', () => {
         expect(isValidSpatialDistance('-5')).toBe(false);
         expect(isValidSpatialDistance('invalid')).toBe(false);
+      });
+    });
+  });
+
+  describe('isValidVideoPlayerInput', () => {
+    const validInput: VideoPlayerInput = {
+      src: 'video.mp4',
+      playbackRate: '1',
+      position: '0',
+      spatialMinDistance: '0',
+      spatialMaxDistance: '60',
+    };
+
+    describe('when every numeric field is valid', () => {
+      it('should return true', () => {
+        expect(isValidVideoPlayerInput(validInput)).toBe(true);
+      });
+    });
+
+    describe('when playbackRate is negative', () => {
+      it('should return false, blocking the write', () => {
+        expect(isValidVideoPlayerInput({ ...validInput, playbackRate: '-1' })).toBe(false);
+      });
+    });
+
+    describe('when position is negative', () => {
+      it('should return false, blocking the write', () => {
+        expect(isValidVideoPlayerInput({ ...validInput, position: '-1' })).toBe(false);
+      });
+    });
+
+    describe('when spatialMinDistance or spatialMaxDistance is negative', () => {
+      it('should return false, blocking the write', () => {
+        expect(isValidVideoPlayerInput({ ...validInput, spatialMinDistance: '-1' })).toBe(false);
+        expect(isValidVideoPlayerInput({ ...validInput, spatialMaxDistance: '-1' })).toBe(false);
+      });
+    });
+
+    describe('when the numeric fields are empty', () => {
+      it('should return true since empty means unset', () => {
+        expect(
+          isValidVideoPlayerInput({
+            src: 'video.mp4',
+            playbackRate: '',
+            position: '',
+            spatialMinDistance: '',
+            spatialMaxDistance: '',
+          }),
+        ).toBe(true);
       });
     });
   });

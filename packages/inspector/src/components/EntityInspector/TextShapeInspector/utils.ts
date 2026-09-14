@@ -6,9 +6,12 @@ import { toColor3, toColor4, toHex } from '../../ui/ColorField/utils';
 import { toString } from '../utils';
 import type { TextShapeInput } from './types';
 
+// `min` is a floor, not a ceiling: a field below it clamps up to `min` instead of persisting
+// a negative/invalid value. Pass no `min` for fields that may legitimately go negative
+// (e.g. shadow offsets, which encode direction).
 const toNumber = (value: string, min?: number) => {
   const num = Number(value) || 0;
-  return min ? Math.min(num, min) : num;
+  return min !== undefined ? Math.max(num, min) : num;
 };
 
 // the hex color picker is RGB-only, so the alpha channel is carried through the
@@ -121,8 +124,9 @@ export const toTextShape = (value: TextShapeInput): PBTextShape => {
     lineSpacing: toNumber(value.lineSpacing, 0) * 100,
     textWrapping: !!value.textWrapping,
     shadowBlur: toNumber(value.shadowBlur, 0),
-    shadowOffsetX: toNumber(value.shadowOffsetX, 0),
-    shadowOffsetY: toNumber(value.shadowOffsetY, 0),
+    // no floor: offsets encode direction and are legitimately negative
+    shadowOffsetX: toNumber(value.shadowOffsetX),
+    shadowOffsetY: toNumber(value.shadowOffsetY),
     shadowColor: toColor3(value.shadowColor),
     outlineColor: toColor3(value.outlineColor),
     textColor: toColor4WithAlpha(value.textColor, value.textColorAlpha),

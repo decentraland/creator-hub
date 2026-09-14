@@ -24,6 +24,7 @@ import {
   isValidPlaybackRate,
   isValidPosition,
   isValidSpatialDistance,
+  isValidVideoPlayerInput,
 } from './utils';
 import type { Props } from './types';
 
@@ -42,7 +43,7 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
     VideoPlayer,
     fromVideoPlayer,
     toVideoPlayer,
-    { deps: [files] },
+    { validateInput: isValidVideoPlayerInput, deps: [files] },
   );
 
   const handleRemove = useCallback(async () => {
