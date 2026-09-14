@@ -14,6 +14,7 @@ import {
 import { snapManager } from '../../babylon/decentraland/snap-manager';
 import { connectReverseChannel } from '../reverse-channel';
 import { registerRenderer } from '../plugin';
+import { isTransformInputArmed } from '../../logic/transform-input';
 import { consoleCommand } from './console';
 import { BevyRenderer } from './BevyRenderer';
 import { mountBevyEngine } from './engine-iframe';
@@ -256,6 +257,9 @@ export function registerBevyRenderer(): void {
           iframe: engine.iframe,
           // In Interact mode, let bare editor-shortcut keys reach the scene (#1458).
           isEditingEnabled: () => bevy.interaction.isEditingEnabled(),
+          // Axis letters and digits are ordinary scene input until numeric
+          // transform entry is armed (#1087).
+          isTransformInputArmed,
         });
 
         // E/Q vertical fly movement: no SDK InputAction is bound to Q, so the
