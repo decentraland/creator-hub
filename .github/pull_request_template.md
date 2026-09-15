@@ -29,31 +29,28 @@ Do the same run once on **Windows** and once on **macOS**.
 - **What you're testing:** [what to open or import — e.g. a link to a test scene, or "the current project"]
 - **How to know it passed:** [the thing you look at — e.g. "the box at the bottom of the scene turns green instead of red"]
 
-### Step 1 — with the build from this PR
+### Run the build from this PR
 
 1. Grab the installer for your OS from the build comment on this PR and install it.
 2. Open Creator Hub and [open / import what you're testing].
 3. [Do the action — e.g. hit **Preview**].
 4. Look at the result:
    - **Passed** → you're done on this OS.
-   - **Didn't pass** → leave everything open and go to Step 2.
+   - **Didn't pass** → leave everything open and grab the log (see below).
 
-- [ ] Windows — passed at Step 1
-- [ ] macOS — passed at Step 1
+- [ ] Windows — passed
+- [ ] macOS — passed
 
-### Step 2 — only if Step 1 didn't pass
-
-[One line on why: e.g. "the test scene ships an older @dcl/sdk, so pin the canary that has the fix."]
-
-1. Open a terminal in [the project folder] and install the canary:
-   ```bash
-   [npm install "<canary tarball url>"]
-   ```
-2. Back in Creator Hub, do the same action from Step 1 again.
-3. Check the result the same way.
-
-- [ ] Windows — passed at Step 2
-- [ ] macOS — passed at Step 2
+<!--
+AGENT GUIDANCE — SDK version step (only sometimes needed):
+Add this to the body ONLY if the fix needs a specific @dcl/sdk version
+(a canary tarball or a released version) the test scene doesn't ship yet.
+If so, add after the run above:
+  1. In the project folder: npm install "<@dcl/sdk version or tarball url>"
+  2. Reload the scene's editor so the new SDK version is available.
+  3. Re-run the action; check the result the same way.
+  Then add: [ ] Windows / [ ] macOS — passed with that SDK version.
+-->
 
 Still not passing? Attach the log so we can dig in — `%APPDATA%\creator-hub\logs\main.log` on Windows, `~/Library/Logs/creator-hub/main.log` on macOS — and highlight the lines about this change [e.g. `Multiplayer Server`, `[Server]`, `[NodeRuntime]`].
 
