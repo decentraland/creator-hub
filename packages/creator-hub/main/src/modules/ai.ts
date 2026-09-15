@@ -603,11 +603,14 @@ export const PROVIDERS: Record<AiProvider, ProviderDef> = {
     defaultModel: 'default',
     buildArgs: ctx => {
       const base = ctx.resume !== undefined ? ['exec', 'resume', ctx.resume] : ['exec'];
+      // No `-C <dir>`: `codex exec resume` doesn't define that flag (only `codex exec` does), so
+      // passing it failed every follow-up turn with `unexpected argument '-C' found`. The child
+      // already spawns with cwd=projectDir (see aiSend), which codex uses as its working root by
+      // default and as the cwd filter that matches the session to resume — so cwd covers both
+      // subcommands and -C was redundant.
       const args = [
         ...base,
         '--json',
-        '-C',
-        ctx.projectDir,
         '--sandbox',
         'danger-full-access',
         '-c',
