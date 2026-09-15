@@ -1,8 +1,9 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { VscChevronDown as DownArrowIcon } from 'react-icons/vsc';
 import cx from 'classnames';
 import { isMixedValue } from '../utils';
-import { useOutsideClick } from '../../../hooks/useOutsideClick';
+import { usePopoverPosition } from '../usePopoverPosition';
 import { useContainerSize } from '../../../hooks/useContainerSize';
 import { Label } from '../Label';
 import { Message, MessageType } from '../Message';
@@ -35,12 +36,25 @@ const Dropdown = React.forwardRef<HTMLInputElement, Props>((props, parentRef) =>
     value,
     multiple,
     trigger,
+    menuAlign,
     onChange,
     placeholder = '',
   } = props;
   const [showOptions, setShowOptions] = useState(false);
   const [isFocused, setFocus] = useState(false);
+  const [menuScope, setMenuScope] = useState<string | null>(null);
   const isField = useMemo(() => !trigger, [trigger]);
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const optionListRef = useRef<HTMLDivElement>(null);
+
+  const setContainerRef = useCallback(
+    (node: HTMLDivElement | null) => {
+      containerRef.current = node;
+      if (typeof parentRef === 'function') parentRef(node as never);
+      else if (parentRef) (parentRef as React.MutableRefObject<unknown>).current = node;
+    },
+    [parentRef],
+  );
 
   const handleClick = useCallback(
     (e: React.MouseEvent<HTMLDivElement>) => {
@@ -51,6 +65,13 @@ const Dropdown = React.forwardRef<HTMLInputElement, Props>((props, parentRef) =>
         // Clear search text when closing the dropdown
         setShowOptions(false);
       } else {
+        // The menu is portalled out of the panel, so panel-scoped styles can no longer reach it
+        // by descendant selector. A scope declared on an ancestor rides along to the menu instead.
+        setMenuScope(
+          containerRef.current
+            ?.closest('[data-dropdown-scope]')
+            ?.getAttribute('data-dropdown-scope') ?? null,
+        );
         setShowOptions(true);
       }
     },
@@ -62,8 +83,17 @@ const Dropdown = React.forwardRef<HTMLInputElement, Props>((props, parentRef) =>
     setFocus(false);
   }, [setShowOptions, setFocus]);
 
-  const ref = useOutsideClick(handleCloseDropdown);
-  const containerSize = useContainerSize(ref);
+  const containerSize = useContainerSize(containerRef);
+  const menuPosition = usePopoverPosition({
+    anchorRef: containerRef,
+    popoverRef: optionListRef,
+    open: showOptions,
+    onDismiss: handleCloseDropdown,
+    // A trigger dropdown sizes its menu to the content, so let the hook measure it.
+    width: isField ? containerSize.width : undefined,
+    align: menuAlign,
+    gap: 1,
+  });
 
   const handleRemoveOption = useCallback(
     (e: any, option: Partial<OptionProp>) => {
@@ -172,10 +202,7 @@ const Dropdown = React.forwardRef<HTMLInputElement, Props>((props, parentRef) =>
   }, [selectedValue, placeholder, minWidth, multiple, handleRemoveOption, isMixed]);
 
   return (
-    <div
-      className={cx('Dropdown', { Field: isField, Trigger: !!trigger })}
-      ref={ref}
-    >
+    <div className={cx('Dropdown', { Field: isField, Trigger: !!trigger })}>
       <Label text={label} />
       <div
         className={cx('DropdownContainer', className, {
@@ -185,22 +212,33 @@ const Dropdown = React.forwardRef<HTMLInputElement, Props>((props, parentRef) =>
           error: !!error,
         })}
         onClick={handleClick}
-        ref={parentRef}
+        ref={setContainerRef}
         role="combobox"
         aria-expanded={showOptions}
         aria-label={props['aria-label']}
       >
         {isField ? renderPlaceholder() : trigger}
-        {showOptions ? (
-          <OptionList
-            options={options}
-            searchable={searchable}
-            selectedValue={selectedValue}
-            multiple={multiple}
-            onChange={onChange}
-            isField={isField}
-          />
-        ) : null}
+        {showOptions
+          ? createPortal(
+              <OptionList
+                ref={optionListRef}
+                className={className}
+                scope={menuScope ?? undefined}
+                style={{
+                  top: menuPosition.top,
+                  left: menuPosition.left,
+                  width: isField ? containerSize.width : undefined,
+                }}
+                options={options}
+                searchable={searchable}
+                selectedValue={selectedValue}
+                multiple={multiple}
+                onChange={onChange}
+                isField={isField}
+              />,
+              document.body,
+            )
+          : null}
         {isField && (
           <div className="DropIcon">
             <DownArrowIcon size={ICON_SIZE} />

@@ -16,6 +16,8 @@
   display: flex;
   align-items: center;
   gap: 4px;
+  /* Keep consecutive spaces of the entity name visible (#376). */
+  white-space: pre-wrap;
 }
 
 .EntityHeader .Title .EditTitleWrapper {
@@ -60,11 +62,9 @@
   font-size: 14px;
 }
 
-.EntityHeader .RightContent > .Dropdown.Trigger > .DropdownContainer.AddComponent > .OptionList {
+.OptionList.AddComponent {
   min-width: 155px;
   white-space: nowrap;
-  right: 0;
-  left: unset;
   max-height: max-content;
 }
 
@@ -98,7 +98,7 @@
   border-color: var(--primary-dark);
 }
 
-.EntityHeader .RightContent > .MoreOptionsMenu > .MoreOptionsContent {
+.MoreOptionsContent.EntityHeaderMenu {
   min-width: 190px;
 }
 

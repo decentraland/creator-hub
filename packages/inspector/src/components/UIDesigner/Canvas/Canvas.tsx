@@ -66,7 +66,7 @@ import {
   useCodeState,
 } from '../code/store';
 import type { MoveAnchor } from '../code/store';
-import { buildResolveMap } from '../code/bindings';
+import { buildResolveMap, instanceResolveMap } from '../code/bindings';
 import { previewLayers, resolveInteractionPreview } from '../code/interaction-preview';
 import type { CodeUINode } from '../code/types';
 import { MixedContentField } from '../RightPanel/PropertyPanel/MixedContentField';
@@ -1084,6 +1084,12 @@ const CanvasComponentRefNode: React.FC<{ node: CodeUINode; hidden?: boolean }> =
   );
   const name = node.componentRef?.name ?? node.name;
   const resolved = componentTrees[name] ?? null;
+  const resolveOuterVar = useContext(VarPreviewContext);
+  const instanceProps = node.componentRef?.props;
+  const resolveMap = useMemo(
+    () => instanceResolveMap(resolved?.resolveMap ?? {}, instanceProps ?? [], resolveOuterVar),
+    [resolved, instanceProps, resolveOuterVar],
+  );
   return (
     <div
       ref={setRef}
@@ -1099,7 +1105,7 @@ const CanvasComponentRefNode: React.FC<{ node: CodeUINode; hidden?: boolean }> =
       {resolved?.parsed ? (
         <CanvasReadonlyNode
           node={resolved.parsed.root}
-          resolveMap={resolved.resolveMap}
+          resolveMap={resolveMap}
           isRoot
         />
       ) : (

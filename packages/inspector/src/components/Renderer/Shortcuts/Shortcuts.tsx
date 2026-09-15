@@ -1,17 +1,17 @@
 import React, { useCallback, useMemo } from 'react';
-import cx from 'classnames';
 import {
   MdOutlineZoomIn as ZoomInIcon,
   MdOutlineZoomOut as ZoomOutIcon,
   MdKeyboard as KeyboardIcon,
 } from 'react-icons/md';
 import { HiOutlineViewfinderCircle as ResetCameraIcon } from 'react-icons/hi2';
+import cx from 'classnames';
 
 import { useContainerSize } from '../../../hooks/useContainerSize';
 import { useOutsideClick } from '../../../hooks/useOutsideClick';
 import { Button } from '../../Button';
 import { InfoTooltip } from '../../ui';
-import { Props } from './types';
+import type { Props } from './types';
 
 import './Shortcuts.css';
 
@@ -142,6 +142,13 @@ const Shortcuts: React.FC<Props> = ({ canvas, onResetCamera, onZoomIn, onZoomOut
                 <span className="Key">space</span>
               </div>
             </div>
+            <div className="Item">
+              <div className="Title">Zoom In / Out</div>
+              <div className="Description">
+                <span className="Key">+</span>
+                <span className="Key">-</span>
+              </div>
+            </div>
           </div>
           <div className="Items">
             <h5 className="SubHeader">Item Selected</h5>
@@ -154,7 +161,7 @@ const Shortcuts: React.FC<Props> = ({ canvas, onResetCamera, onZoomIn, onZoomOut
             <div className="Item">
               <div className="Title">Toggle Positioning</div>
               <div className="Description">
-                <span className="Key">M</span>
+                <span className="Key">M</span>or<span className="Key">G</span>
               </div>
             </div>
             <div className="Item">
@@ -186,6 +193,53 @@ const Shortcuts: React.FC<Props> = ({ canvas, onResetCamera, onZoomIn, onZoomOut
               <div className="Title">Focus on Selected</div>
               <div className="Description">
                 <span className="Key">F</span>
+              </div>
+            </div>
+          </div>
+          <div className="Items">
+            <h5 className="SubHeader">Transform by an Exact Amount</h5>
+            <p className="Note">
+              After picking a tool, type the amount instead of dragging. Typed values ignore
+              snapping, and move the selection relative to where it is now.
+            </p>
+            <div className="Item">
+              <div className="Title">Choose an Axis</div>
+              <div className="Description">
+                <span className="Key">X</span>
+                <span className="Key">Y</span>
+                <span className="Key">Z</span>
+              </div>
+            </div>
+            <div className="Item">
+              <div className="Title">Enter an Amount</div>
+              <div className="Description">
+                <span className="Key">0</span>-<span className="Key">9</span>
+                <span className="Key">.</span>
+                <span className="Key">-</span>
+              </div>
+            </div>
+            <div className="Item">
+              <div className="Title">Apply or Cancel</div>
+              <div className="Description">
+                <span className="Key">enter</span>or<span className="Key">esc</span>
+              </div>
+            </div>
+            <div className="Item">
+              <div className="Title">Rotate 15° on X</div>
+              <div className="Description">
+                <span className="Key">R</span>
+                <span className="Key">X</span>
+                <span className="Key">1</span>
+                <span className="Key">5</span>
+                <span className="Key">enter</span>
+              </div>
+            </div>
+            <div className="Item">
+              <div className="Title">Scale Up ×2</div>
+              <div className="Description">
+                <span className="Key">X</span>
+                <span className="Key">2</span>
+                <span className="Key">enter</span>
               </div>
             </div>
           </div>

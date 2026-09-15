@@ -52,6 +52,7 @@ import { IncompatibleAssetModal } from '../IncompatibleAssetModal';
 import { Warnings } from '../Warnings';
 import { CameraSpeed } from './CameraSpeed';
 import { Shortcuts } from './Shortcuts';
+import { TransformInput } from './TransformInput';
 import { Metrics } from './Metrics';
 import { SceneMinimap } from './SceneMinimap';
 
@@ -438,6 +439,7 @@ const Renderer: React.FC = () => {
       {isLoading && <Loading />}
       <Warnings />
       <CameraSpeed />
+      <TransformInput />
       {!hiddenPanels[PanelName.METRICS] && <Metrics />}
       <SceneMinimap />
       {!hiddenPanels[PanelName.SHORTCUTS] && (
