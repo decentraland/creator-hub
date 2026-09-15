@@ -16,7 +16,7 @@ import {
   revertFromManifest,
   type OptimizeManifest,
 } from '../src/modules/optimizer/backup';
-import type { CompressPool } from '../src/modules/optimizer/compress-pool';
+import { createInlinePool, type CompressPool } from '../src/modules/optimizer/compress-pool';
 import { runPipeline } from '../src/modules/optimizer/pipeline';
 import { TEXTURES_DIR } from '../src/modules/optimizer/scan';
 import { TextureCache } from '../src/modules/optimizer/texture-cache';
@@ -360,6 +360,23 @@ describe('optimizer pipeline', () => {
     });
   });
 
+  describe('when a sidecar name matches a .dclignore pattern', () => {
+    it('should report the files the deploy would drop', async () => {
+      // A creator ignoring a work-in-progress folder with a loose glob: the deploy applies it to
+      // the sidecar named after the model's texture too, and the model loads without it.
+      await fs.writeFile(path.join(scene, '.dclignore'), 'node_modules\n**/Embedded*\n');
+
+      const result = await runPipeline(scene, defaults(), () => {});
+
+      expect(result.ignoredFiles).toEqual([`${TEXTURES_DIR}/Embedded.png`]);
+    });
+
+    it('should report nothing when the sidecars are clear', async () => {
+      const result = await runPipeline(scene, defaults(), () => {});
+      expect(result.ignoredFiles).toEqual([]);
+    });
+  });
+
   describe('when a texture is shared with a .gltf model', () => {
     it('should leave that texture in place', async () => {
       // walkGlbs collects only `.glb`, so nothing else in the run knows this model exists — its
@@ -398,6 +415,49 @@ describe('optimizer pipeline', () => {
       expect(result.files.map(f => f.status)).toEqual(Array(7).fill('failed'));
       expect(result.files.every(f => f.error === 'compressor died')).toBe(true);
       expect(result.glbsChanged).toBe(0);
+      // The size column still shows the real file, not 0 B.
+      for (const f of result.files) {
+        expect(f.bytesBefore).toBe(originals.get(f.file)!.length);
+      }
+    });
+  });
+
+  describe('when the run is interrupted', () => {
+    it('should have already written a manifest that maps every backup made so far', async () => {
+      // A pool that dies on the second model: the first was backed up and overwritten, then the
+      // run stops — the manifest written before that overwrite is what makes a revert possible.
+      let calls = 0;
+      const pool: CompressPool = {
+        size: 1,
+        compress: (...args) => {
+          if (++calls > 1) return new Promise(() => {});
+          return createInlinePool().compress(...args);
+        },
+        close: async () => {},
+      };
+      // The pipeline walks the models in sorted order; GLBS is in authoring order.
+      const [first, second] = [...GLBS].sort();
+      const interrupted = new Promise<void>(resolve => {
+        void runPipeline(
+          scene,
+          defaults(),
+          p => {
+            if (p.phase === 'textures' && p.file === second) resolve();
+          },
+          { pool },
+        );
+      });
+      await interrupted;
+
+      const manifest = (await readManifest(scene)) as OptimizeManifest;
+      expect(manifest.modifiedGlbs).toEqual([first]);
+      expect(manifest.optionsKey).toBeNull();
+      expect(
+        Buffer.compare(
+          await fs.readFile(path.join(scene, OPTIMIZE_DIR, 'backup', first)),
+          originals.get(first)!,
+        ),
+      ).toBe(0);
     });
   });
 

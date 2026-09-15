@@ -72,6 +72,9 @@ export type OptimizeResult = {
   bytesAfter: number;
   sidecarBytes: number;
   removedBytes: number;
+  // Sidecars this run wrote that the scene's `.dclignore` would leave out of the deploy: the
+  // models would point at textures that never reach the server, with nothing else to say so.
+  ignoredFiles: string[];
   files: OptimizeFileResult[];
 };
 

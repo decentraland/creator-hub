@@ -24,6 +24,9 @@ import toolsPackageJson from './tools/optimizer-tools.package.json?raw';
 
 const DOWNLOAD_SIZE_MB = 20;
 const INSTALLED_MARKER = 'installed.json';
+// A registry stall would otherwise leave the modal on "Downloading…" forever, with nothing to
+// cancel it. Generous, since the download is ~20 MB on a slow link.
+const INSTALL_TIMEOUT_MS = 5 * 60_000;
 
 type ToolMeta = {
   pkg: string;
@@ -130,7 +133,18 @@ export async function installTools(onProgress: (message: string) => void): Promi
     args: ['ci', '--ignore-scripts', '--no-audit', '--no-fund', '--loglevel', 'error'],
     cwd: dir,
   });
-  await install.wait();
+  let timer: NodeJS.Timeout | undefined;
+  const timeout = new Promise<never>((_, reject) => {
+    timer = setTimeout(async () => {
+      await install.kill();
+      reject(new Error('Downloading the optimizer tools took too long. Check your connection.'));
+    }, INSTALL_TIMEOUT_MS);
+  });
+  try {
+    await Promise.race([install.wait(), timeout]);
+  } finally {
+    clearTimeout(timer);
+  }
 
   for (const pkg of Object.keys(pinnedVersions)) {
     if (!(await exists(path.join(dir, 'node_modules', pkg, 'package.json')))) {

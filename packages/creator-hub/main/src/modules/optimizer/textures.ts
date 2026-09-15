@@ -2,11 +2,12 @@ import crypto from 'node:crypto';
 import path from 'node:path';
 import sharp from 'sharp';
 
-import type {
-  DenoiseLevel,
-  TextureCategory,
-  TextureFormat,
-  TextureOptions,
+import {
+  DEFAULT_OPTIMIZE_OPTIONS,
+  type DenoiseLevel,
+  type TextureCategory,
+  type TextureFormat,
+  type TextureOptions,
 } from '/shared/types/optimizer';
 
 // Texture classification + compression, adapted from decentraland/SceneOptimizer
@@ -100,13 +101,6 @@ export function sanitizeFilename(name: string): string {
   return name.replace(/[<>:"/\\|?*#%&+;=\x00-\x1f]/g, '_').replace(/\s+/g, '_');
 }
 
-export function formatBytes(bytes: number): string {
-  if (bytes === 0) return '0 B';
-  const units = ['B', 'KB', 'MB', 'GB'];
-  const i = Math.floor(Math.log(bytes) / Math.log(1024));
-  return `${(bytes / 1024 ** i).toFixed(1)} ${units[i]}`;
-}
-
 // SHA-256 of the decoded (raw) pixels, so two textures with identical content but different
 // encodings/names still dedup. Returns null when sharp can't decode (e.g. KTX2/Basis).
 export async function pixelHash(input: Buffer): Promise<string | null> {
@@ -138,8 +132,14 @@ export async function compressImage(
   const format = options.format;
   // A size of 0 (or a negative one) reaches sharp as `resize(null, 0)`, which throws for EVERY
   // texture — one empty field in the UI would fail an entire run. Floor it here too, so no
-  // caller can turn a bad number into a scene-wide failure.
-  const maxHeight = Math.max(1, options.sizes[category] ?? options.sizes.other);
+  // caller can turn a bad number into a scene-wide failure. A missing size (an options object
+  // from an older app) would make that floor NaN, so it falls back to the default instead.
+  const maxHeight = Math.max(
+    1,
+    options.sizes?.[category] ??
+      options.sizes?.other ??
+      DEFAULT_OPTIMIZE_OPTIONS.textures.sizes.other,
+  );
   const denoise = DENOISE_SETTINGS[options.denoise];
 
   let metadata: Awaited<ReturnType<SharpPipeline['metadata']>>;

@@ -1,11 +1,4 @@
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useState,
-  type ChangeEvent,
-  type MouseEventHandler,
-} from 'react';
+import { useCallback, useEffect, useMemo, useState, type ChangeEvent } from 'react';
 import {
   Box,
   Button,
@@ -30,6 +23,7 @@ import {
   type TextureFormat,
 } from '/shared/types/optimizer';
 import type { Project } from '/shared/types/projects';
+import { formatBytes } from '/shared/utils';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import { misc, optimizer as optimizerPreload } from '#preload';
 import { useDispatch, useSelector } from '#store';
@@ -42,13 +36,6 @@ import './styles.css';
 
 function formatDate(epochMs: number): string {
   return new Date(epochMs).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' });
-}
-
-function formatBytes(bytes: number): string {
-  if (!bytes) return '0 B';
-  const units = ['B', 'KB', 'MB', 'GB'];
-  const i = Math.floor(Math.log(bytes) / Math.log(1024));
-  return `${(bytes / 1024 ** i).toFixed(1)} ${units[i]}`;
 }
 
 const TEXTURE_CATEGORIES: TextureCategory[] = ['baseColor', 'normal', 'orm', 'emissive', 'other'];
@@ -247,16 +234,17 @@ export function OptimizeModal({ project }: { project?: Project | null }) {
     if (!isRunning && !isReverting) dispatch(actions.close());
   }, [isRunning, isReverting, dispatch]);
 
-  // MUI calls onClose with a reason for the backdrop and Escape; the X passes a click event.
+  // MUI calls onClose(event, reason) for the backdrop and Escape; the X passes a click event.
   // Configuring and running a job should not be lost to a stray click beside the dialog, so
-  // only the X, Escape and the buttons close it. (ui2 types the prop as a click handler.)
+  // only the X, Escape and the buttons close it. ui2 types the prop as a plain click handler,
+  // so the reason is read off the rest args — a variadic handler is assignable to it as is.
   const handleModalClose = useCallback(
-    (_event: unknown, reason?: string) => {
-      if (reason === 'backdropClick') return;
+    (...args: unknown[]) => {
+      if (args[1] === 'backdropClick') return;
       handleClose();
     },
     [handleClose],
-  ) as unknown as MouseEventHandler<HTMLButtonElement>;
+  );
 
   const handleAcknowledge = useCallback(() => {
     if (dontShowAgain) updateAppSettings({ ...settings, optimizerConsentAcknowledged: true });
@@ -666,6 +654,17 @@ export function OptimizeModal({ project }: { project?: Project | null }) {
               {details.counts.failed > 0 && (
                 <span className="failed">
                   {t('optimize.result.failed', { count: details.counts.failed })}
+                </span>
+              )}
+              {result.ignoredFiles.length > 0 && (
+                <span
+                  className="warning"
+                  title={result.ignoredFiles.join('\n')}
+                >
+                  {t('optimize.result.ignored_files', {
+                    count: result.ignoredFiles.length,
+                    files: result.ignoredFiles.slice(0, 3).join(', '),
+                  })}
                 </span>
               )}
 

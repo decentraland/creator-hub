@@ -19,6 +19,10 @@ const BACKUP_SUBDIR = 'backup';
 const MANIFEST_NAME = 'manifest.json';
 const DCLIGNORE = '.dclignore';
 const DCLIGNORE_MARKER = '# --- creator-hub optimize backup (auto-generated, do not edit) ---';
+const DCLIGNORE_END_MARKER = '# --- end creator-hub optimize backup ---';
+// Entry count of the block as written before the end marker existed, so those can still be
+// stripped exactly.
+const LEGACY_BLOCK_LINES = 3;
 const MANIFEST_VERSION = 1;
 
 // What a run left on disk for one GLB, so the next run can tell "still my output, same options"
@@ -48,6 +52,19 @@ export type OptimizeManifest = {
 };
 
 const toPosix = (value: string) => value.split(path.sep).join('/');
+
+// Every path the manifest names is joined onto the project (or its backup mirror) and then
+// copied to or deleted. The manifest is a plain JSON file inside the scene, so an entry like
+// `../../.zshrc` must not turn a revert into a write outside the project.
+export function resolveInside(root: string, relPath: string): string {
+  const rootAbs = path.resolve(root);
+  const abs = path.resolve(rootAbs, relPath);
+  const rel = path.relative(rootAbs, abs);
+  if (!rel || rel.startsWith('..') || path.isAbsolute(rel)) {
+    throw new Error(`Refusing to touch "${relPath}": it resolves outside the project`);
+  }
+  return abs;
+}
 
 export function optimizeDir(projectPath: string): string {
   return path.join(projectPath, OPTIMIZE_DIR);
@@ -82,13 +99,15 @@ export async function readManifest(projectPath: string): Promise<OptimizeManifes
   }
 }
 
+// Returns the manifest as written (with this write's `updatedAt`); the input is left untouched.
 export async function writeManifest(
   projectPath: string,
   manifest: OptimizeManifest,
-): Promise<void> {
-  manifest.updatedAt = Date.now();
+): Promise<OptimizeManifest> {
+  const written = { ...manifest, updatedAt: Date.now() };
   await fs.mkdir(optimizeDir(projectPath), { recursive: true });
-  await fs.writeFile(manifestPath(projectPath), JSON.stringify(manifest, null, 2), 'utf8');
+  await fs.writeFile(manifestPath(projectPath), JSON.stringify(written, null, 2), 'utf8');
+  return written;
 }
 
 export function createManifest(): OptimizeManifest {
@@ -111,7 +130,8 @@ export async function hasBackup(projectPath: string): Promise<boolean> {
 
 // Mirror an original file into the backup dir, once. `relPath` is project-relative posix.
 export async function backupFile(projectPath: string, relPath: string): Promise<void> {
-  const dest = path.join(backupDir(projectPath), relPath);
+  const source = resolveInside(projectPath, relPath);
+  const dest = resolveInside(backupDir(projectPath), relPath);
   try {
     await fs.access(dest);
     return; // already backed up (idempotent across re-runs before a revert)
@@ -119,13 +139,13 @@ export async function backupFile(projectPath: string, relPath: string): Promise<
     // not yet backed up
   }
   await fs.mkdir(path.dirname(dest), { recursive: true });
-  await fs.copyFile(path.join(projectPath, relPath), dest);
+  await fs.copyFile(source, dest);
 }
 
 // Move a project file into the backup (same relative path), so revert can put it back.
 export async function stashFile(projectPath: string, relPath: string): Promise<void> {
   await backupFile(projectPath, relPath);
-  await fs.rm(path.join(projectPath, relPath), { force: true });
+  await fs.rm(resolveInside(projectPath, relPath), { force: true });
 }
 
 export async function ensureDclignoreBlock(projectPath: string): Promise<void> {
@@ -139,8 +159,10 @@ export async function ensureDclignoreBlock(projectPath: string): Promise<void> {
   if (existing.includes(DCLIGNORE_MARKER)) return;
 
   const prefix = existing.length > 0 && !existing.endsWith('\n') ? '\n' : '';
-  const block = `${prefix}${DCLIGNORE_MARKER}\n${OPTIMIZE_DIR}\n${OPTIMIZE_DIR}/**\n`;
-  await fs.writeFile(file, existing + block, 'utf8');
+  const block = [DCLIGNORE_MARKER, OPTIMIZE_DIR, `${OPTIMIZE_DIR}/**`, DCLIGNORE_END_MARKER].join(
+    '\n',
+  );
+  await fs.writeFile(file, `${existing}${prefix}${block}\n`, 'utf8');
 }
 
 export async function stripDclignoreBlock(projectPath: string): Promise<void> {
@@ -154,11 +176,13 @@ export async function stripDclignoreBlock(projectPath: string): Promise<void> {
   const markerIdx = text.indexOf(DCLIGNORE_MARKER);
   if (markerIdx === -1) return;
 
-  // Drop the marker line and the two entries that follow it, trimming a preceding newline.
+  // Everything from the marker through the end marker goes; a block written before the end
+  // marker existed is exactly LEGACY_BLOCK_LINES long. A preceding newline goes with it.
   let start = markerIdx;
   if (start > 0 && text[start - 1] === '\n') start -= 1;
   const lines = text.slice(markerIdx).split('\n');
-  const removed = lines.slice(0, 3).join('\n'); // marker + OPTIMIZE_DIR + OPTIMIZE_DIR/**
+  const endIdx = lines.indexOf(DCLIGNORE_END_MARKER);
+  const removed = lines.slice(0, endIdx === -1 ? LEGACY_BLOCK_LINES : endIdx + 1).join('\n');
   const rest = text.slice(markerIdx + removed.length);
   const cleaned = text.slice(0, start) + rest;
 
@@ -175,39 +199,50 @@ export async function revertFromManifest(
   projectPath: string,
   manifest: OptimizeManifest,
 ): Promise<number> {
+  // Every entry is checked before the first byte moves, so a tampered manifest fails the whole
+  // revert instead of restoring half the scene and then throwing.
+  const modified = manifest.modifiedGlbs.map(rel => resolvePair(projectPath, rel));
+  const created = manifest.createdFiles.map(rel => resolveInside(projectPath, rel));
+  const removed = (manifest.removedFiles ?? []).map(rel => resolvePair(projectPath, rel));
+  const texturesDir = resolveInside(projectPath, manifest.texturesDir);
+
   let restored = 0;
-  for (const rel of manifest.modifiedGlbs) {
-    const src = path.join(backupDir(projectPath), rel);
-    try {
-      await fs.access(src);
-    } catch {
-      continue;
-    }
-    await fs.mkdir(path.dirname(path.join(projectPath, rel)), { recursive: true });
-    await fs.copyFile(src, path.join(projectPath, rel));
-    restored++;
+  for (const { backup, target } of modified) {
+    if (await restoreFile(backup, target)) restored++;
   }
 
-  for (const rel of manifest.createdFiles) {
-    await fs.rm(path.join(projectPath, rel), { force: true });
+  for (const abs of created) {
+    await fs.rm(abs, { force: true });
   }
 
-  for (const rel of manifest.removedFiles ?? []) {
-    const src = path.join(backupDir(projectPath), rel);
-    try {
-      await fs.access(src);
-    } catch {
-      continue;
-    }
-    await fs.mkdir(path.dirname(path.join(projectPath, rel)), { recursive: true });
-    await fs.copyFile(src, path.join(projectPath, rel));
+  for (const { backup, target } of removed) {
+    await restoreFile(backup, target);
   }
 
   await stripDclignoreBlock(projectPath);
   await fs.rm(optimizeDir(projectPath), { recursive: true, force: true });
   // rmdir only succeeds on an empty dir, so a folder the creator also put files in is preserved.
-  await fs.rmdir(path.join(projectPath, manifest.texturesDir)).catch(() => {});
+  await fs.rmdir(texturesDir).catch(() => {});
   return restored;
+}
+
+function resolvePair(projectPath: string, rel: string): { backup: string; target: string } {
+  return {
+    backup: resolveInside(backupDir(projectPath), rel),
+    target: resolveInside(projectPath, rel),
+  };
+}
+
+// False when there is nothing in the backup for this entry (skipped, not an error).
+async function restoreFile(backup: string, target: string): Promise<boolean> {
+  try {
+    await fs.access(backup);
+  } catch {
+    return false;
+  }
+  await fs.mkdir(path.dirname(target), { recursive: true });
+  await fs.copyFile(backup, target);
+  return true;
 }
 
 export { toPosix };

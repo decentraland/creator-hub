@@ -257,6 +257,7 @@
       "textures_removed": "已移除 {count} 个被替代的纹理（{bytes}）",
       "unchanged_skipped": "{unchanged} 个未更改 · {skipped} 个已跳过",
       "failed": "{count} 个模型失败 — 请查看每个模型的详情",
+      "ignored_files": "{count} 个提取的纹理匹配 .dclignore 中的模式，将不会被部署 — 请修改该模式，否则模型加载时会缺少这些纹理：{files}",
       "up_to_date": "{count} 个已优化，保持原样",
       "show_details": "查看每个模型的详情",
       "hide_details": "收起每个模型的详情",

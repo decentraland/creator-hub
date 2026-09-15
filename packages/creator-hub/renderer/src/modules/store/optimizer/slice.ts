@@ -55,7 +55,14 @@ export const runOptimize = createAsyncThunk(
   'optimizer/run',
   async ({ path, options }: { path: string; options: OptimizeOptions }) => {
     const result = await optimizerPreload.run(path, options);
-    const scan = await optimizerPreload.scan(path);
+    // The run is done and the files are on disk by now; a failure re-scanning must not turn
+    // that into "Optimization failed" — the summary line just keeps the pre-run numbers.
+    let scan: OptimizeScanResult | null = null;
+    try {
+      scan = await optimizerPreload.scan(path);
+    } catch {
+      scan = null;
+    }
     return { result, scan };
   },
 );
@@ -78,12 +85,20 @@ const slice = createSlice({
   name: 'optimizer',
   initialState,
   reducers: {
+    // Everything per-run goes, not only the statuses: with consent remembered the modal shows
+    // its body immediately, and a stale `scan`/`result` would flash the previous scene's numbers
+    // until this scene's scan lands.
     open: state => {
       state.isOpen = true;
       state.acknowledged = false;
+      state.activePath = null;
       state.installStatus = 'idle';
+      state.scan = null;
+      state.scanStatus = 'idle';
+      state.runStatus = 'idle';
       state.revertStatus = 'idle';
       state.progress = null;
+      state.result = null;
       state.error = null;
     },
     acknowledge: state => {
@@ -140,7 +155,7 @@ const slice = createSlice({
       .addCase(runOptimize.fulfilled, (state, action) => {
         state.runStatus = 'succeeded';
         state.result = action.payload.result;
-        state.scan = action.payload.scan;
+        if (action.payload.scan) state.scan = action.payload.scan;
       })
       .addCase(runOptimize.rejected, (state, action) => {
         state.runStatus = 'failed';

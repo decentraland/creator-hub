@@ -115,6 +115,26 @@ describe('optimizer tools', () => {
       expect((await getToolsInfo()).status).toBe('ready');
     });
 
+    it('should give up on an install that never finishes, and kill it', async () => {
+      // A registry stall left the modal on "Downloading…" with nothing to cancel it.
+      vi.useFakeTimers();
+      try {
+        const kill = vi.fn(async () => {});
+        mocks.run.mockImplementation(() => ({ wait: () => new Promise(() => {}), kill }));
+
+        const attempt = installTools(() => {});
+        const outcome = expect(attempt).rejects.toThrow(/took too long/);
+        await vi.waitFor(() => expect(mocks.run).toHaveBeenCalledTimes(1));
+        await vi.advanceTimersByTimeAsync(5 * 60_000);
+
+        await outcome;
+        expect(kill).toHaveBeenCalledTimes(1);
+        expect((await getToolsInfo()).status).toBe('missing');
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
     it('should fail when the install did not produce a pinned package', async () => {
       mocks.run.mockImplementation((_pkg: string, _bin: string, options: { cwd: string }) => ({
         wait: async () => {

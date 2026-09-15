@@ -31,6 +31,22 @@ export { scan };
 const WORKER_PKG = '@dcl-creator-hub/optimizer-worker';
 const WORKER_BIN = 'optimizer-worker';
 
+// One run at a time, app-wide. The modal disables its buttons while a run is in flight, but the
+// IPC handlers are open to any renderer call; two runs (or a run and a revert) on the same scene
+// would race on the backup, the manifest and the GLB writes.
+let running: Promise<unknown> | null = null;
+
+async function exclusive<T>(what: string, task: () => Promise<T>): Promise<T> {
+  if (running) throw new Error(`Cannot ${what}: an optimization is already in progress.`);
+  const promise = task();
+  running = promise;
+  try {
+    return await promise;
+  } finally {
+    if (running === promise) running = null;
+  }
+}
+
 function emitProgress(projectPath: string, progress: Omit<OptimizeProgress, 'path'>): void {
   const window = getWindow(MAIN_WINDOW_ID);
   if (window && !window.isDestroyed()) {
@@ -75,7 +91,11 @@ async function ensureWorkerPackage(): Promise<void> {
   );
 }
 
-export async function run(projectPath: string, options: OptimizeOptions): Promise<OptimizeResult> {
+export function run(projectPath: string, options: OptimizeOptions): Promise<OptimizeResult> {
+  return exclusive('start a run', () => runWorker(projectPath, options));
+}
+
+async function runWorker(projectPath: string, options: OptimizeOptions): Promise<OptimizeResult> {
   const info = await getToolsInfo();
   if (info.status !== 'ready') throw new Error('The optimizer tools are not installed yet.');
   await ensureWorkerPackage();
@@ -137,9 +157,11 @@ export async function run(projectPath: string, options: OptimizeOptions): Promis
   return result;
 }
 
-export async function revert(projectPath: string): Promise<{ restored: number }> {
-  const manifest = await readManifest(projectPath);
-  if (!manifest) return { restored: 0 };
-  const restored = await revertFromManifest(projectPath, manifest);
-  return { restored };
+export function revert(projectPath: string): Promise<{ restored: number }> {
+  return exclusive('revert', async () => {
+    const manifest = await readManifest(projectPath);
+    if (!manifest) return { restored: 0 };
+    const restored = await revertFromManifest(projectPath, manifest);
+    return { restored };
+  });
 }

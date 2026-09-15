@@ -5,7 +5,7 @@ import type { Dirent } from 'node:fs';
 import type { OptimizeScanResult } from '/shared/types/optimizer';
 
 import { LEGACY_TEXTURES_DIR, OPTIMIZE_DIR, TEXTURES_DIR, readManifest, toPosix } from './backup';
-import { readGlbJson } from './glb';
+import { readGlbJsonFromFile } from './glb';
 
 export { TEXTURES_DIR };
 
@@ -64,7 +64,7 @@ export async function measureFootprint(projectPath: string, glbs: string[]): Pro
     const abs = path.join(projectPath, rel);
     try {
       glbBytes += (await fs.stat(abs)).size;
-      const json = readGlbJson(await fs.readFile(abs));
+      const json = await readGlbJsonFromFile(abs);
       for (const img of json?.images ?? []) {
         if (typeof img.uri === 'string') externalTextures.add(resolveImageUri(abs, img.uri));
         else if (img.bufferView !== undefined) embeddedTextureCount++;

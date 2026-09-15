@@ -11,6 +11,7 @@ import {
   ensureDclignoreBlock,
   hasBackup,
   readManifest,
+  resolveInside,
   revertFromManifest,
   stashFile,
   stripDclignoreBlock,
@@ -77,6 +78,33 @@ describe('optimizer backup', () => {
       await stripDclignoreBlock(project);
       expect(await exists(path.join(project, '.dclignore'))).toBe(false);
     });
+
+    it('should strip a block written before the end marker existed', async () => {
+      await write(
+        path.join(project, '.dclignore'),
+        `node_modules\n# --- creator-hub optimize backup (auto-generated, do not edit) ---\n${OPTIMIZE_DIR}\n${OPTIMIZE_DIR}/**\n**/sakura*\n`,
+      );
+
+      await stripDclignoreBlock(project);
+
+      expect(await fs.readFile(path.join(project, '.dclignore'), 'utf8')).toBe(
+        'node_modules\n**/sakura*\n',
+      );
+    });
+
+    it('should strip everything up to the end marker, however long the block grows', async () => {
+      await write(path.join(project, '.dclignore'), 'node_modules\n');
+      await ensureDclignoreBlock(project);
+      const withExtraEntry = (await fs.readFile(path.join(project, '.dclignore'), 'utf8')).replace(
+        `${OPTIMIZE_DIR}/**\n`,
+        `${OPTIMIZE_DIR}/**\n${OPTIMIZE_DIR}-cache\n`,
+      );
+      await write(path.join(project, '.dclignore'), withExtraEntry);
+
+      await stripDclignoreBlock(project);
+
+      expect(await fs.readFile(path.join(project, '.dclignore'), 'utf8')).toBe('node_modules\n');
+    });
   });
 
   describe('backupFile', () => {
@@ -113,10 +141,20 @@ describe('optimizer backup', () => {
       manifest.createdFiles.push('optimized-textures/t.png');
       manifest.removedFiles.push('assets/old.png');
 
-      await writeManifest(project, manifest);
+      const written = await writeManifest(project, manifest);
 
       expect(await hasBackup(project)).toBe(true);
-      expect(await readManifest(project)).toEqual(manifest);
+      expect(await readManifest(project)).toEqual(written);
+      expect(written).toEqual({ ...manifest, updatedAt: written.updatedAt });
+    });
+
+    it('should stamp the write time on the copy it writes, not on the input', async () => {
+      const manifest = { ...createManifest(), updatedAt: 1 };
+
+      const written = await writeManifest(project, manifest);
+
+      expect(manifest.updatedAt).toBe(1);
+      expect(written.updatedAt).toBeGreaterThan(1);
     });
 
     it('should default removedFiles for a manifest written before the field existed', async () => {
@@ -185,6 +223,51 @@ describe('optimizer backup', () => {
 
       expect(restored).toBe(0);
       expect(await fs.readFile(path.join(project, 'models/a.glb'), 'utf8')).toBe('still optimized');
+    });
+
+    it('should refuse a manifest entry that resolves outside the project, before touching anything', async () => {
+      // The manifest is a plain JSON file inside the scene: an entry that climbs out of the
+      // project must not turn revert into a write or delete anywhere else on disk.
+      const outside = await fs.mkdtemp(path.join(os.tmpdir(), 'optimizer-outside-'));
+      try {
+        await write(path.join(outside, 'precious.txt'), 'keep me');
+        await write(path.join(project, 'models/a.glb'), 'optimized a');
+        await backupFile(project, 'models/a.glb');
+        const escape = path.relative(project, path.join(outside, 'precious.txt'));
+
+        const deleting = createManifest();
+        deleting.modifiedGlbs.push('models/a.glb');
+        deleting.createdFiles.push(escape);
+        await expect(revertFromManifest(project, deleting)).rejects.toThrow(/outside the project/);
+
+        const writing = createManifest();
+        writing.modifiedGlbs.push(escape);
+        await expect(revertFromManifest(project, writing)).rejects.toThrow(/outside the project/);
+
+        const absolute = createManifest();
+        absolute.removedFiles.push(path.join(outside, 'precious.txt'));
+        await expect(revertFromManifest(project, absolute)).rejects.toThrow(/outside the project/);
+
+        expect(await fs.readFile(path.join(outside, 'precious.txt'), 'utf8')).toBe('keep me');
+        // Nothing was restored either: the whole manifest is vetted first.
+        expect(await fs.readFile(path.join(project, 'models/a.glb'), 'utf8')).toBe('optimized a');
+      } finally {
+        await fs.rm(outside, { recursive: true, force: true });
+      }
+    });
+  });
+
+  describe('resolveInside', () => {
+    it('should resolve a project-relative path and reject anything that escapes', () => {
+      expect(resolveInside(project, 'models/a.glb')).toBe(path.join(project, 'models/a.glb'));
+      expect(resolveInside(project, 'models/../models/a.glb')).toBe(
+        path.join(project, 'models/a.glb'),
+      );
+      expect(() => resolveInside(project, '../sibling.glb')).toThrow(/outside the project/);
+      expect(() => resolveInside(project, '')).toThrow(/outside the project/);
+      expect(() => resolveInside(project, path.join(os.tmpdir(), 'x.glb'))).toThrow(
+        /outside the project/,
+      );
     });
   });
 });

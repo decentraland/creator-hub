@@ -17,8 +17,9 @@ import {
   type TextureCategory,
 } from '/shared/types/optimizer';
 
-import { fixGlbAlignment, patchGlbImageURIs, readGlbJson } from './glb';
+import { fixGlbAlignment, patchGlbImageURIs, readGlbJson, readGlbJsonFromFile } from './glb';
 import { SKIP_DIRS, measureFootprint, resolveImageUri, walkGlbs } from './scan';
+import { DEFAULT_DCLIGNORE, createIgnoreMatcher, parseDclignore } from './dclignore';
 import { runMeshPass } from './mesh';
 import {
   CATEGORY_PRIORITY,
@@ -61,10 +62,8 @@ const MODEL_TEXT_EXTENSIONS = new Set(['.gltf']);
 // host through the sink `runPipeline` receives, which the worker turns into stdout JSON lines.
 export type ProgressSink = (progress: Omit<OptimizeProgress, 'path'>) => void;
 
-let emit: ProgressSink = () => {};
-
 function emitProgress(
-  _projectPath: string,
+  emit: ProgressSink,
   phase: OptimizePhase,
   current: number,
   total: number,
@@ -179,6 +178,7 @@ function uniqueName(base: string, ext: string, used: Set<string>): string {
 // Shared run-scoped state for cross-GLB texture dedup and unique filenames.
 type RunState = {
   io: NodeIO;
+  emit: ProgressSink;
   options: OptimizeOptions;
   projectPath: string;
   texturesDirAbs: string;
@@ -294,7 +294,7 @@ async function externalizeTextures(
         () => {
           done++;
           emitProgress(
-            state.projectPath,
+            state.emit,
             'textures',
             state.progress.index,
             state.progress.total,
@@ -365,7 +365,7 @@ async function collectReferencedImages(projectPath: string, glbs: string[]): Pro
     const abs = path.join(projectPath, rel);
     let json: any;
     try {
-      json = readGlbJson(await fs.readFile(abs));
+      json = await readGlbJsonFromFile(abs);
     } catch {
       continue;
     }
@@ -376,11 +376,14 @@ async function collectReferencedImages(projectPath: string, glbs: string[]): Pro
   return referenced;
 }
 
-// Concatenated text of the scene's source, composites and JSON, so a texture name that the
-// scene loads directly (UI images, material textures set in code) can be recognised.
-async function collectCodeText(projectPath: string): Promise<string> {
-  const chunks: string[] = [];
+// Which of `names` the scene's source, composites and JSON mention, so a texture the scene loads
+// directly (UI images, material textures set in code) can be recognised. One file in memory at a
+// time, and the walk stops as soon as every name has been seen.
+async function findNamesInCode(projectPath: string, names: Set<string>): Promise<Set<string>> {
+  const found = new Set<string>();
+  const pending = new Set(names);
   async function walk(dir: string): Promise<void> {
+    if (pending.size === 0) return;
     let entries: Dirent[];
     try {
       entries = await fs.readdir(dir, { withFileTypes: true });
@@ -388,6 +391,7 @@ async function collectCodeText(projectPath: string): Promise<string> {
       return;
     }
     for (const entry of entries) {
+      if (pending.size === 0) return;
       const full = path.join(dir, entry.name);
       if (entry.isDirectory()) {
         if (SKIP_DIRS.has(entry.name) || entry.name === 'bin' || entry.name.startsWith('.')) {
@@ -402,13 +406,19 @@ async function collectCodeText(projectPath: string): Promise<string> {
           MODEL_TEXT_EXTENSIONS.has(ext) ||
           (ext === '.json' && CODE_JSON_DIRS.has(relDir))
         ) {
-          chunks.push(await fs.readFile(full, 'utf8'));
+          const text = await fs.readFile(full, 'utf8');
+          for (const name of pending) {
+            if (text.includes(name)) {
+              found.add(name);
+              pending.delete(name);
+            }
+          }
         }
       }
     }
   }
   await walk(projectPath);
-  return chunks.join('\n');
+  return found;
 }
 
 // Move superseded original textures into the backup. Runs after every GLB is written, so the
@@ -418,11 +428,14 @@ async function removeSupersededTextures(state: RunState, glbs: string[]): Promis
   if (state.externalBefore.size === 0) return;
   const { projectPath } = state;
   const referenced = await collectReferencedImages(projectPath, glbs);
-  const codeText = await collectCodeText(projectPath);
+  const candidates = [...state.externalBefore].filter(abs => !referenced.has(abs));
+  const mentioned = await findNamesInCode(
+    projectPath,
+    new Set(candidates.map(abs => path.basename(abs))),
+  );
 
-  for (const abs of state.externalBefore) {
-    if (referenced.has(abs)) continue;
-    if (codeText.includes(path.basename(abs))) continue;
+  for (const abs of candidates) {
+    if (mentioned.has(path.basename(abs))) continue;
     const rel = toPosix(path.relative(projectPath, abs));
     if (rel.startsWith('..')) continue;
     let bytes: number;
@@ -562,6 +575,9 @@ async function processGlb(relPath: string, state: RunState): Promise<void> {
 
   await backupFile(projectPath, relPath);
   pushUnique(state.manifest.modifiedGlbs, relPath);
+  // The manifest has to name this backup BEFORE the original is overwritten: a crash between
+  // the two would otherwise leave a pristine copy that no revert knows about.
+  await writeManifest(projectPath, state.manifest);
 
   await io.write(glbAbsPath, document);
   if (uriMap && uriMap.size > 0) await patchGlbImageURIs(glbAbsPath, uriMap);
@@ -581,14 +597,13 @@ async function processGlb(relPath: string, state: RunState): Promise<void> {
 export async function runPipeline(
   projectPath: string,
   options: OptimizeOptions,
-  sink: ProgressSink,
+  emit: ProgressSink,
   deps: { pool?: CompressPool } = {},
 ): Promise<OptimizeResult> {
-  emit = sink;
   // First run is a cold start: the native/WASM tools (sharp, meshoptimizer) load and
   // compile here, which takes a moment before any file is touched. Tell the user so it doesn't
   // look frozen — the message is shown on the modal's progress bar.
-  emitProgress(projectPath, 'prepare', 0, 0, 'Preparing optimizer (loading tools)…');
+  emitProgress(emit, 'prepare', 0, 0, 'Preparing optimizer (loading tools)…');
   await MeshoptEncoder.ready;
   await MeshoptDecoder.ready;
 
@@ -602,6 +617,7 @@ export async function runPipeline(
 
   const state: RunState = {
     io: createIO(),
+    emit,
     options,
     projectPath,
     texturesDirAbs: path.join(projectPath, manifest.texturesDir),
@@ -623,38 +639,50 @@ export async function runPipeline(
       bytesAfter: 0,
       sidecarBytes: 0,
       removedBytes: 0,
+      ignoredFiles: [],
       files: [],
     },
   };
 
-  emitProgress(projectPath, 'backup', 0, total, 'Preparing backup…');
+  emitProgress(emit, 'backup', 0, total, 'Preparing backup…');
   await ensureDclignoreBlock(projectPath);
   await seedFromExistingSidecars(state);
+  // Until the run completes, the sidecars on disk are a mix of the previous run's and this one's
+  // — so the manifest on disk must not vouch for them with either options key. The per-output
+  // records still let a run that resumes after a crash tell them apart.
+  state.manifest.optionsKey = null;
+  await writeManifest(projectPath, state.manifest);
 
   for (let i = 0; i < glbs.length; i++) {
     const rel = glbs[i];
     state.progress.index = i;
-    emitProgress(projectPath, 'textures', i, total, `Optimizing ${rel}`, rel);
+    emitProgress(emit, 'textures', i, total, `Optimizing ${rel}`, rel);
     try {
       await processGlb(rel, state);
     } catch (error: any) {
-      emitProgress(projectPath, 'error', i, total, `Failed on ${rel}: ${error.message}`, rel);
+      emitProgress(emit, 'error', i, total, `Failed on ${rel}: ${error.message}`, rel);
       // Without a record here, a run where every single model threw still resolves and reports
       // "succeeded" with an empty file list — indistinguishable from "nothing needed doing".
+      const bytes = await fs.stat(path.join(projectPath, rel)).then(
+        stat => stat.size,
+        () => 0,
+      );
       state.result.files.push({
         file: rel,
         status: 'failed',
         error: error instanceof Error ? error.message : String(error),
-        bytesBefore: 0,
-        bytesAfter: 0,
+        bytesBefore: bytes,
+        bytesAfter: bytes,
         texturesExtracted: 0,
         texturesDeduped: 0,
       });
     }
     state.result.glbsProcessed++;
+    // Checkpoint, so a kill mid-run leaves a manifest that maps every backup and sidecar so far.
+    await writeManifest(projectPath, state.manifest);
   }
 
-  emitProgress(projectPath, 'write', total, total, 'Removing superseded textures…');
+  emitProgress(emit, 'write', total, total, 'Removing superseded textures…');
   await removeSupersededTextures(state, glbs);
   // Same definition as the scan line (GLBs + every texture they reference), so the modal's
   // "before → after" and its post-run scan total agree instead of differing by the originals
@@ -663,11 +691,27 @@ export async function runPipeline(
   state.result.bytesBefore = before.glbBytes + before.textureBytes;
   state.result.bytesAfter = after.glbBytes + after.textureBytes;
 
-  emitProgress(projectPath, 'write', total, total, 'Writing manifest…');
+  emitProgress(emit, 'write', total, total, 'Writing manifest…');
   state.manifest.optionsKey = state.optionsKey;
   await writeManifest(projectPath, state.manifest);
   await state.cache.write(projectPath);
+  state.result.ignoredFiles = await findIgnoredSidecars(projectPath, state.manifest.createdFiles);
 
-  emitProgress(projectPath, 'done', total, total, 'Optimization complete');
+  emitProgress(emit, 'done', total, total, 'Optimization complete');
   return state.result;
+}
+
+// Sidecars the deploy would silently drop. A creator's own `.dclignore` glob (`**/Pride*` to keep
+// a work-in-progress folder out) can match a sidecar named after its texture, and nothing else in
+// the flow would ever say so — the scene just loads with missing textures.
+async function findIgnoredSidecars(projectPath: string, createdFiles: string[]): Promise<string[]> {
+  if (createdFiles.length === 0) return [];
+  let text = '';
+  try {
+    text = await fs.readFile(path.join(projectPath, '.dclignore'), 'utf8');
+  } catch {
+    return [];
+  }
+  const ignored = createIgnoreMatcher([...parseDclignore(text), ...DEFAULT_DCLIGNORE]);
+  return createdFiles.filter(ignored);
 }

@@ -57,6 +57,7 @@ describe('optimizer worker output reader', () => {
           bytesAfter: 5,
           sidecarBytes: 0,
           removedBytes: 0,
+          ignoredFiles: [],
           files: [],
         },
       };

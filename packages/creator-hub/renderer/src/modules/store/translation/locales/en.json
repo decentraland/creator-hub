@@ -258,6 +258,7 @@
       "textures_removed": "{count} superseded textures removed ({bytes})",
       "unchanged_skipped": "{unchanged} unchanged · {skipped} skipped",
       "failed": "{count} models failed — see the per-model details",
+      "ignored_files": "{count} extracted textures match a pattern in your .dclignore and will NOT deploy — edit the pattern or the model will load without them: {files}",
       "up_to_date": "{count} already optimized, left as they were",
       "show_details": "Show per-model details",
       "hide_details": "Hide per-model details",

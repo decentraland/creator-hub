@@ -54,6 +54,24 @@ export function readGlbJson(buf: Buffer): any | null {
   }
 }
 
+// The JSON chunk alone, without pulling the binary chunk (all of the geometry and any embedded
+// textures — the bulk of a 50 MB model) into memory just to list its images.
+export async function readGlbJsonFromFile(glbPath: string): Promise<any | null> {
+  const handle = await fs.open(glbPath, 'r');
+  try {
+    const header = Buffer.alloc(20);
+    const { bytesRead } = await handle.read(header, 0, 20, 0);
+    if (bytesRead < 20 || header.readUInt32LE(0) !== GLB_MAGIC) return null;
+    const jsonChunkLength = header.readUInt32LE(12);
+    const chunk = Buffer.alloc(20 + jsonChunkLength);
+    header.copy(chunk);
+    await handle.read(chunk, 20, jsonChunkLength, 20);
+    return readGlbJson(chunk);
+  } finally {
+    await handle.close();
+  }
+}
+
 function serializeGlb(json: unknown, binaryChunk: Buffer): Buffer {
   let newJsonStr = JSON.stringify(json);
   while (Buffer.byteLength(newJsonStr, 'utf8') % 4 !== 0) newJsonStr += ' ';

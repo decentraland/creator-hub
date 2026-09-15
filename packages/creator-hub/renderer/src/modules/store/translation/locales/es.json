@@ -257,6 +257,7 @@
       "textures_removed": "{count} texturas reemplazadas eliminadas ({bytes})",
       "unchanged_skipped": "{unchanged} sin cambios · {skipped} omitidos",
       "failed": "{count} modelos fallaron — mira el detalle por modelo",
+      "ignored_files": "{count} texturas extraídas coinciden con un patrón de tu .dclignore y NO se publicarán — edita el patrón o el modelo cargará sin ellas: {files}",
       "up_to_date": "{count} ya optimizados, sin cambios",
       "show_details": "Ver detalles por modelo",
       "hide_details": "Ocultar detalles por modelo",
