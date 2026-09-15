@@ -11,8 +11,8 @@ export const OPTIMIZE_DIR = '.optimize';
 // Local Assets. Not dot-prefixed: these files must deploy, unlike the backup. Scenes optimized
 // before the move keep their folder — the manifest records which one a scene uses.
 // GLBs reach it through `../` URIs; the Bevy explorer resolves those only from
-// decentraland/bevy-explorer#1245 on (older builds render such models with just their emissive
-// map). That is a client bug, fixed there — don't work around it by relocating textures.
+// decentraland/bevy-explorer commit 7546497 on (older builds render such models with just their
+// emissive map). That is a client bug, fixed there — don't work around it by relocating textures.
 export const TEXTURES_DIR = 'assets/optimized-textures';
 export const LEGACY_TEXTURES_DIR = 'optimized-textures';
 const BACKUP_SUBDIR = 'backup';
