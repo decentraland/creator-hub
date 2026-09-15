@@ -112,13 +112,6 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
     }
   }, [hasTween, hasTweenSequence]);
 
-  if (!hasTween || !hasTweenSequence) return null;
-
-  const playing = getTweenInputProps('playing', e => e.target.checked);
-  const loop = getTweenSequenceInputProps('loop', e => e.target.checked);
-  const typeProps = getTweenInputProps('type');
-  const tweenType = typeProps.value;
-
   // Bypasses the per-field input so the whole mode is replaced in one write; the input hook
   // re-derives its state from the engine value afterwards.
   const handleTypeChange = useCallback(
@@ -130,6 +123,14 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
     },
     [sdk, entity, Tween],
   );
+
+  if (!hasTween || !hasTweenSequence) return null;
+
+  const playing = getTweenInputProps('playing', e => e.target.checked);
+  const loop = getTweenSequenceInputProps('loop', e => e.target.checked);
+  const typeProps = getTweenInputProps('type');
+  const tweenType = typeProps.value;
+
   const isRotateContinuous = tweenType === ContinuousTweenType.ROTATE_CONTINUOUS;
   const isContinuous = tweenType === ContinuousTweenType.MOVE_CONTINUOUS || isRotateContinuous;
   const isUnsupported = tweenType === UNSUPPORTED_TWEEN_TYPE;

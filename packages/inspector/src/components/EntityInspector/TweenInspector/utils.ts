@@ -12,13 +12,14 @@ const oneVector = () => ({ x: '1.00', y: '1.00', z: '1.00' });
 // resets them to the mode's identity instead of carrying the previous numbers over.
 export const withModeDefaults = (input: TweenInput, type: TweenModeType): TweenInput => {
   const vector = type === TweenType.SCALE_ITEM ? oneVector : zeroVector;
+  const isRotateContinuous = type === ContinuousTweenType.ROTATE_CONTINUOUS;
   return {
     ...input,
     type,
     start: vector(),
     end: vector(),
-    direction: zeroVector(),
-    speed: '1.00',
+    direction: isRotateContinuous ? { x: '0.00', y: '90.00', z: '0.00' } : zeroVector(),
+    speed: isRotateContinuous ? '30.00' : '1.00',
   };
 };
 

@@ -270,10 +270,16 @@ describe('withModeDefaults', () => {
     expect(result.end).toEqual({ x: '1.00', y: '1.00', z: '1.00' });
   });
 
-  it('should reset direction and speed when switching to a continuous mode', () => {
-    const result = withModeDefaults(edited, ContinuousTweenType.ROTATE_CONTINUOUS);
+  it('should reset direction and speed when switching to move continuous', () => {
+    const result = withModeDefaults(edited, ContinuousTweenType.MOVE_CONTINUOUS);
     expect(result.direction).toEqual({ x: '0.00', y: '0.00', z: '0.00' });
     expect(result.speed).toBe('1.00');
+  });
+
+  it('should default to spinning around Y at 30 degrees per second when switching to rotate continuous', () => {
+    const result = withModeDefaults(edited, ContinuousTweenType.ROTATE_CONTINUOUS);
+    expect(result.direction).toEqual({ x: '0.00', y: '90.00', z: '0.00' });
+    expect(result.speed).toBe('30.00');
   });
 
   it('should keep duration, easing and playing across the switch', () => {
