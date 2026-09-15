@@ -719,7 +719,10 @@ const PropertyPanelComponent: React.FC = () => {
   );
 
   return (
-    <div className="ui-designer-property-panel">
+    <div
+      className="ui-designer-property-panel"
+      data-dropdown-scope="ui-designer"
+    >
       {codeNode ? (
         <div className="ui-designer-panel-header-block">
           <PanelHeader

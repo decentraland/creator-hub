@@ -34,7 +34,8 @@ import {
   setSignedIn,
 } from './ai-cli-paths';
 import { install as npmInstall } from './npm';
-import { APP_UNPACKED_PATH, getBundledNodePath } from './path';
+import { APP_UNPACKED_PATH } from './path';
+import { getChildEnv, resolveNodeRuntime } from './node-runtime';
 import { getWindow } from './window';
 
 export { getCliState } from './ai-cli-paths';
@@ -77,15 +78,10 @@ function sendLoginEvent(event: AiCliLoginEvent): void {
   if (win && !win.isDestroyed()) win.webContents.send(AI_CLI_LOGIN_EVENTS, event);
 }
 
-// Env for the login child: inherit the user's environment (HOME/keychain, so the CLI can
-// store its credentials where a later turn reads them) and widen PATH with the bundled
-// Node's dir so a JS-shebang CLI (codex) can resolve `node`.
 function loginEnv(): Record<string, string> {
   const env: Record<string, string> = {};
-  for (const [k, v] of Object.entries(process.env)) if (v !== undefined) env[k] = v;
-  const nodePath = getBundledNodePath();
-  if (nodePath) {
-    env.PATH = [path.dirname(nodePath), env.PATH ?? ''].filter(Boolean).join(path.delimiter);
+  for (const [k, v] of Object.entries(getChildEnv(resolveNodeRuntime()))) {
+    if (v !== undefined) env[k] = v;
   }
   return env;
 }
@@ -249,6 +245,14 @@ async function login(provider: AiProvider, onProgress: (message: string) => void
 }
 
 export async function signInCli(provider: AiProvider): Promise<void> {
+  // A CLI without a scriptable login (Gemini) can't be signed in through the PTY flow — its
+  // auth is an interactive TUI. The UI hides the in-app button for these (managedSignIn:false),
+  // but guard here too so a stray call fails fast with guidance instead of hanging on a TUI.
+  if (!CLI_SPECS[provider].managedSignIn) {
+    throw new Error(
+      `${provider} signs in from its own CLI. Run \`${provider}\` in a terminal (or set an API key), then click Recheck.`,
+    );
+  }
   const onProgress = (message: string) => sendLoginEvent({ type: 'progress', message });
   await ensureInstalled(provider, onProgress);
   await login(provider, onProgress);
