@@ -23,6 +23,7 @@ import { runMeshPass } from './mesh';
 import {
   CATEGORY_PRIORITY,
   classifyTextureSlot,
+  mimeForPath,
   mimeToExtension,
   pixelHash,
   sanitizeFilename,
@@ -48,10 +49,15 @@ import {
 // model folder naming every texture, which protected 273 superseded files (86 MB) for nothing.
 const CODE_EXTENSIONS = new Set(['.ts', '.tsx', '.js', '.jsx', '.mjs', '.composite']);
 const CODE_JSON_DIRS = new Set(['', 'src']);
+// A `.gltf` references its textures as plain URIs in JSON, and `walkGlbs` collects only `.glb` —
+// so a texture shared between a GLB and a glTF looks superseded once the GLB gets its sidecar,
+// and stashing it leaves the glTF untextured. Their text is read wherever they live, unlike the
+// inventory JSON above.
+const MODEL_TEXT_EXTENSIONS = new Set(['.gltf']);
 
 // This module runs in the optimizer WORKER (a child process on the bundled Node with the
 // downloaded toolchain on its module path), never in the Electron main process: main ships
-// none of sharp / gltf-transform / meshoptimizer / oxipng. Progress goes back to the
+// none of sharp / gltf-transform / meshoptimizer. Progress goes back to the
 // host through the sink `runPipeline` receives, which the worker turns into stdout JSON lines.
 export type ProgressSink = (progress: Omit<OptimizeProgress, 'path'>) => void;
 
@@ -98,9 +104,24 @@ function hasExternalImages(glbJson: any): boolean {
   );
 }
 
+// Whether the sidecars already on disk are this run's own output. `io.read` resolves each GLB's
+// sidecar back into its texture, so those pixels hash to what the previous run wrote: seeding
+// the dedup index from them short-circuits every texture to the file already there. That is
+// right when the encoding matches and silently wrong when it does not — switching baseColor
+// 1024 → 512 (or png → webp) would reprocess and report every model as `optimized` while
+// leaving every pixel at the old setting.
+function sidecarsAreReusable(state: RunState): boolean {
+  if (state.manifest.optionsKey !== null) return state.manifest.optionsKey === state.optionsKey;
+  // Manifests written before `optionsKey` existed carry the same fact per GLB: if every recorded
+  // output was produced with this run's options, so were the sidecars those outputs point at.
+  const records = Object.values(state.manifest.outputs);
+  return records.length > 0 && records.every(record => record.options === state.optionsKey);
+}
+
 // Sidecars written by earlier runs must stay unique (a re-run reusing `foo.png` would overwrite
-// a texture some untouched GLB still points at) and stay deduplicable, so seed both indexes
-// from what is already on disk.
+// a texture some untouched GLB still points at), and stay deduplicable when they are still this
+// run's own output, so seed the name set from disk unconditionally and the dedup index only when
+// `sidecarsAreReusable` says so.
 async function seedFromExistingSidecars(state: RunState): Promise<void> {
   let entries: string[];
   try {
@@ -108,9 +129,10 @@ async function seedFromExistingSidecars(state: RunState): Promise<void> {
   } catch {
     return;
   }
+  const reusable = sidecarsAreReusable(state);
   for (const name of entries) {
     state.usedNames.add(name);
-    if (!state.options.textures.dedup) continue;
+    if (!reusable || !state.options.textures.dedup) continue;
     const abs = path.join(state.texturesDirAbs, name);
     const hash = await pixelHash(await fs.readFile(abs));
     if (hash && !state.dedupIndex.has(hash)) state.dedupIndex.set(hash, abs);
@@ -321,13 +343,16 @@ async function externalizeTextures(
 
     uriMap.set(job.index, toPosix(path.relative(glbDir, canonicalAbs)));
     job.texture.setImage(null);
+    // Any branch above can land on a file whose format differs from the texture's source mime —
+    // a re-encode to webp/jpeg, or a dedup hit on a sidecar written in another format — and the
+    // writer emits the texture's mimeType verbatim beside the new uri.
+    const sidecarMime = mimeForPath(canonicalAbs);
+    if (sidecarMime) job.texture.setMimeType(sidecarMime);
   }
 
   return uriMap;
 }
 
-// Our own sidecars are tracked as createdFiles (deleted on revert); never also stash them as
-// removed files, or revert would fight itself over the same path.
 function isInsideTexturesDir(state: RunState, abs: string): boolean {
   const rel = path.relative(state.texturesDirAbs, abs);
   return !!rel && !rel.startsWith('..') && !path.isAbsolute(rel);
@@ -372,7 +397,11 @@ async function collectCodeText(projectPath: string): Promise<string> {
       } else if (entry.isFile()) {
         const ext = path.extname(entry.name).toLowerCase();
         const relDir = toPosix(path.relative(projectPath, dir)).split('/')[0];
-        if (CODE_EXTENSIONS.has(ext) || (ext === '.json' && CODE_JSON_DIRS.has(relDir))) {
+        if (
+          CODE_EXTENSIONS.has(ext) ||
+          MODEL_TEXT_EXTENSIONS.has(ext) ||
+          (ext === '.json' && CODE_JSON_DIRS.has(relDir))
+        ) {
           chunks.push(await fs.readFile(full, 'utf8'));
         }
       }
@@ -392,7 +421,7 @@ async function removeSupersededTextures(state: RunState, glbs: string[]): Promis
   const codeText = await collectCodeText(projectPath);
 
   for (const abs of state.externalBefore) {
-    if (referenced.has(abs) || isInsideTexturesDir(state, abs)) continue;
+    if (referenced.has(abs)) continue;
     if (codeText.includes(path.basename(abs))) continue;
     const rel = toPosix(path.relative(projectPath, abs));
     if (rel.startsWith('..')) continue;
@@ -402,8 +431,22 @@ async function removeSupersededTextures(state: RunState, glbs: string[]): Promis
     } catch {
       continue;
     }
-    await stashFile(projectPath, rel);
-    pushUnique(state.manifest.removedFiles, rel);
+
+    if (isInsideTexturesDir(state, abs)) {
+      // One of OUR sidecars that nothing points at anymore: an earlier run's output, superseded
+      // now that this run's options wrote `foo_2.png` beside it. It has to go, or every re-run
+      // adds another unreferenced file to the deployed scene. Stashing it is the wrong move —
+      // it is tracked in createdFiles, which revert deletes, so revert would restore and delete
+      // the same path. Drop the file and stop tracking it instead. A file the creator put in the
+      // sidecar folder themselves is not in createdFiles, and is left alone.
+      const tracked = state.manifest.createdFiles.indexOf(rel);
+      if (tracked === -1) continue;
+      await fs.rm(abs, { force: true });
+      state.manifest.createdFiles.splice(tracked, 1);
+    } else {
+      await stashFile(projectPath, rel);
+      pushUnique(state.manifest.removedFiles, rel);
+    }
     state.result.texturesRemoved++;
     state.result.removedBytes += bytes;
   }
@@ -542,7 +585,7 @@ export async function runPipeline(
   deps: { pool?: CompressPool } = {},
 ): Promise<OptimizeResult> {
   emit = sink;
-  // First run is a cold start: the native/WASM tools (sharp, meshoptimizer, oxipng) load and
+  // First run is a cold start: the native/WASM tools (sharp, meshoptimizer) load and
   // compile here, which takes a moment before any file is touched. Tell the user so it doesn't
   // look frozen — the message is shown on the modal's progress bar.
   emitProgress(projectPath, 'prepare', 0, 0, 'Preparing optimizer (loading tools)…');
@@ -596,6 +639,17 @@ export async function runPipeline(
       await processGlb(rel, state);
     } catch (error: any) {
       emitProgress(projectPath, 'error', i, total, `Failed on ${rel}: ${error.message}`, rel);
+      // Without a record here, a run where every single model threw still resolves and reports
+      // "succeeded" with an empty file list — indistinguishable from "nothing needed doing".
+      state.result.files.push({
+        file: rel,
+        status: 'failed',
+        error: error instanceof Error ? error.message : String(error),
+        bytesBefore: 0,
+        bytesAfter: 0,
+        texturesExtracted: 0,
+        texturesDeduped: 0,
+      });
     }
     state.result.glbsProcessed++;
   }
@@ -610,6 +664,7 @@ export async function runPipeline(
   state.result.bytesAfter = after.glbBytes + after.textureBytes;
 
   emitProgress(projectPath, 'write', total, total, 'Writing manifest…');
+  state.manifest.optionsKey = state.optionsKey;
   await writeManifest(projectPath, state.manifest);
   await state.cache.write(projectPath);
 

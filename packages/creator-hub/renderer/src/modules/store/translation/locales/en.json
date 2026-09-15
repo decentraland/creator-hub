@@ -189,9 +189,8 @@
       "continue": "Continue",
       "cancel": "Cancel",
       "purpose": {
-        "sharp": "Resizes and re-encodes textures.",
+        "sharp": "Resizes, re-encodes and losslessly compresses textures.",
         "gltf": "Reads and writes GLBs; runs the mesh cleanup.",
-        "oxipng": "Lossless PNG optimization.",
         "meshopt": "Mesh reorder and the Meshopt codec."
       }
     },
@@ -220,7 +219,7 @@
       "textures": {
         "title": "Textures",
         "compress": "Compress and resize textures",
-        "compress_tip": "Resizes each texture to its per-type max size and re-encodes it. PNG uses lossless oxipng (no quality loss); JPEG/WebP use the Quality slider.",
+        "compress_tip": "Resizes each texture to its per-type max size and re-encodes it. PNG is recompressed losslessly (no quality loss); JPEG/WebP use the Quality slider.",
         "dedup": "Remove duplicate textures",
         "dedup_tip": "Finds textures with identical pixels (SHA-256) and points every model at a single shared copy. Biggest win when the same texture is reused across many models.",
         "externalize": "Extract embedded textures to files",
@@ -244,6 +243,8 @@
     "done": "Done",
     "running": "Optimizing…",
     "revert": "Revert to originals",
+    "reverting": "Restoring originals…",
+    "revert_error": "Could not restore the originals: {message}",
     "result": {
       "title": "Done",
       "saved": "Saved {saved} ({percent}%)",
@@ -253,6 +254,7 @@
       "textures_deduped": "{count} duplicates removed",
       "textures_removed": "{count} superseded textures removed ({bytes})",
       "unchanged_skipped": "{unchanged} unchanged · {skipped} skipped",
+      "failed": "{count} models failed — see the per-model details",
       "up_to_date": "{count} already optimized, left as they were",
       "show_details": "Show per-model details",
       "hide_details": "Hide per-model details",
@@ -260,7 +262,8 @@
         "optimized": "optimized",
         "unchanged": "no change",
         "skipped": "skipped",
-        "up_to_date": "already optimized"
+        "up_to_date": "already optimized",
+        "failed": "failed"
       }
     },
     "error": "Optimization failed: {message}"

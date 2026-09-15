@@ -25,6 +25,7 @@ type OptimizerState = {
   scan: OptimizeScanResult | null;
   scanStatus: Status;
   runStatus: Status;
+  revertStatus: Status;
   progress: OptimizeProgress | null;
   result: OptimizeResult | null;
   error: string | null;
@@ -39,6 +40,7 @@ const initialState: OptimizerState = {
   scan: null,
   scanStatus: 'idle',
   runStatus: 'idle',
+  revertStatus: 'idle',
   progress: null,
   result: null,
   error: null,
@@ -80,6 +82,7 @@ const slice = createSlice({
       state.isOpen = true;
       state.acknowledged = false;
       state.installStatus = 'idle';
+      state.revertStatus = 'idle';
       state.progress = null;
       state.error = null;
     },
@@ -130,6 +133,7 @@ const slice = createSlice({
       })
       .addCase(runOptimize.pending, state => {
         state.runStatus = 'loading';
+        state.revertStatus = 'idle';
         state.result = null;
         state.error = null;
       })
@@ -142,11 +146,23 @@ const slice = createSlice({
         state.runStatus = 'failed';
         state.error = action.error.message ?? 'Optimization failed';
       })
+      .addCase(revertProject.pending, state => {
+        state.revertStatus = 'loading';
+        state.error = null;
+      })
       .addCase(revertProject.fulfilled, (state, action) => {
+        state.revertStatus = 'succeeded';
         state.scan = action.payload.scan;
         state.result = null;
         state.progress = null;
         state.runStatus = 'idle';
+      })
+      // A revert that throws (a locked file, a permissions error) left no trace before this:
+      // the modal looked exactly as it does when nothing happened, so the creator had no way to
+      // know their originals were NOT restored.
+      .addCase(revertProject.rejected, (state, action) => {
+        state.revertStatus = 'failed';
+        state.error = action.error.message ?? 'Could not restore the original models';
       });
   },
 });

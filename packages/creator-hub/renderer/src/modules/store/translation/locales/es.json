@@ -188,9 +188,8 @@
       "continue": "Continuar",
       "cancel": "Cancelar",
       "purpose": {
-        "sharp": "Redimensiona y vuelve a codificar texturas.",
+        "sharp": "Redimensiona, recodifica y comprime texturas sin pérdida.",
         "gltf": "Lee y escribe GLBs; ejecuta la limpieza de mallas.",
-        "oxipng": "Optimización de PNG sin pérdida.",
         "meshopt": "Reordenado de mallas y el códec Meshopt."
       }
     },
@@ -219,7 +218,7 @@
       "textures": {
         "title": "Texturas",
         "compress": "Comprimir y redimensionar texturas",
-        "compress_tip": "Redimensiona cada textura a su tamaño máximo por tipo y la vuelve a codificar. PNG usa oxipng sin pérdida; JPEG/WebP usan el control de Calidad.",
+        "compress_tip": "Redimensiona cada textura a su tamaño máximo por tipo y la vuelve a codificar. PNG se recomprime sin pérdida; JPEG/WebP usan el control de Calidad.",
         "dedup": "Eliminar texturas duplicadas",
         "dedup_tip": "Encuentra texturas con píxeles idénticos (SHA-256) y hace que todos los modelos apunten a una única copia compartida. El mayor ahorro cuando la misma textura se reutiliza en muchos modelos.",
         "externalize": "Extraer texturas incrustadas a archivos",
@@ -243,6 +242,8 @@
     "done": "Listo",
     "running": "Optimizando…",
     "revert": "Revertir a originales",
+    "reverting": "Restaurando originales…",
+    "revert_error": "No se pudieron restaurar los originales: {message}",
     "result": {
       "title": "Listo",
       "saved": "Ahorrado {saved} ({percent}%)",
@@ -252,6 +253,7 @@
       "textures_deduped": "{count} duplicados eliminados",
       "textures_removed": "{count} texturas reemplazadas eliminadas ({bytes})",
       "unchanged_skipped": "{unchanged} sin cambios · {skipped} omitidos",
+      "failed": "{count} modelos fallaron — mira el detalle por modelo",
       "up_to_date": "{count} ya optimizados, sin cambios",
       "show_details": "Ver detalles por modelo",
       "hide_details": "Ocultar detalles por modelo",
@@ -259,7 +261,8 @@
         "optimized": "optimizado",
         "unchanged": "sin cambios",
         "skipped": "omitido",
-        "up_to_date": "ya optimizado"
+        "up_to_date": "ya optimizado",
+        "failed": "falló"
       }
     },
     "error": "La optimización falló: {message}"

@@ -5,10 +5,11 @@ import type { TextureCategory, TextureOptions } from '/shared/types/optimizer';
 
 import { compressImage, type CompressResult } from './textures';
 
-// oxipng is a synchronous WebAssembly build: 1–3 s per 1024² texture, on one thread. Run serially
-// it was the whole optimizer run (Genesis Plaza: 12.7 min, 69% of it in 50 texture-heavy models),
-// so compression fans out over worker threads. The threads run this same bundle with
-// `workerData.role` set; the entry (optimizer-worker.ts) dispatches on it.
+// A lossless PNG re-encode costs roughly 1.5 s per 1024² texture (sharp at compressionLevel 9
+// with adaptive filtering). Run serially that was the whole optimizer run — Genesis Plaza took
+// 12.7 min, 69% of it in 50 texture-heavy models — so compression fans out over worker threads.
+// The threads run this same bundle with `workerData.role` set; the entry (optimizer-worker.ts)
+// dispatches on it.
 
 export const COMPRESS_POOL_ROLE = 'compress-pool-worker';
 
@@ -126,6 +127,15 @@ export function createCompressPool(config: {
     }
   };
 
+  // A thread that reported 'error' is gone: take it out of rotation before anything is handed
+  // to it again.
+  const drop = (worker: PoolWorker): void => {
+    const idleIndex = idle.indexOf(worker);
+    if (idleIndex !== -1) idle.splice(idleIndex, 1);
+    const workerIndex = workers.indexOf(worker);
+    if (workerIndex !== -1) workers.splice(workerIndex, 1);
+  };
+
   const settle = (worker: PoolWorker, reply: CompressReply): void => {
     const task = inflight.get(worker);
     inflight.delete(worker);
@@ -133,7 +143,7 @@ export function createCompressPool(config: {
       if ('error' in reply) task.reject(new Error(reply.error));
       else task.resolve({ data: Buffer.from(reply.data), ext: reply.ext, mime: reply.mime });
     }
-    if (!closed) idle.push(worker);
+    if (!closed && workers.includes(worker)) idle.push(worker);
     pump();
   };
 
@@ -142,10 +152,20 @@ export function createCompressPool(config: {
     worker.on('message', reply => settle(worker, reply));
     worker.on('error', error => {
       // A crashed thread fails only the texture it was holding; the rest of the run continues
-      // on the remaining threads.
+      // on the remaining threads. Dropping it is what makes that true: a thread that died before
+      // it was ever dispatched anything — a module-load failure (a half-installed sharp), or a
+      // failed spawn — holds no task to reject, and left in `idle` it would swallow every task
+      // pump() hands it afterwards, with nothing left to settle those promises. There is no
+      // timeout anywhere below this, so that hangs the whole run.
       const task = inflight.get(worker);
       inflight.delete(worker);
+      drop(worker);
       task?.reject(error);
+      if (workers.length === 0) {
+        const message = `compress pool lost every worker: ${error.message}`;
+        for (const queued of queue.splice(0)) queued.reject(new Error(message));
+        return;
+      }
       pump();
     });
     workers.push(worker);
@@ -156,6 +176,9 @@ export function createCompressPool(config: {
     size,
     compress(input, category, mime, options) {
       if (closed) return Promise.reject(new Error('compress pool is closed'));
+      if (workers.length === 0) {
+        return Promise.reject(new Error('compress pool has no live workers'));
+      }
       return new Promise<CompressResult>((resolve, reject) => {
         queue.push({
           request: { id: nextId++, input: toTransferable(input), category, mime, options },

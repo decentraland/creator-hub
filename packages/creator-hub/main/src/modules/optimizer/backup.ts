@@ -35,6 +35,10 @@ export type OptimizeManifest = {
   createdAt: number;
   updatedAt: number; // last run that wrote this manifest
   texturesDir: string; // project-relative posix dir the sidecars live in (see TEXTURES_DIR)
+  // Options hash the sidecars currently on disk were produced with, so the next run can tell its
+  // own reusable output from a previous run's, which was encoded to different sizes/format.
+  // Null in manifests written before this field existed — treated as "not reusable".
+  optionsKey: string | null;
   modifiedGlbs: string[]; // project-relative posix paths of GLBs overwritten in place
   createdFiles: string[]; // project-relative posix paths of sidecar textures written
   // project-relative posix paths of original textures moved into the backup because a
@@ -70,6 +74,7 @@ export async function readManifest(projectPath: string): Promise<OptimizeManifes
       updatedAt: manifest.updatedAt ?? manifest.createdAt,
       texturesDir: manifest.texturesDir ?? LEGACY_TEXTURES_DIR,
       removedFiles: manifest.removedFiles ?? [],
+      optionsKey: manifest.optionsKey ?? null,
       outputs: manifest.outputs ?? {},
     };
   } catch {
@@ -95,6 +100,7 @@ export function createManifest(): OptimizeManifest {
     modifiedGlbs: [],
     createdFiles: [],
     removedFiles: [],
+    optionsKey: null,
     outputs: {},
   };
 }

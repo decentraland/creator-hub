@@ -5,11 +5,12 @@ import type { TextureCategory, TextureOptions } from '/shared/types/optimizer';
 
 import { optimizeDir } from './backup';
 
-// Textures oxipng could not shrink, remembered across runs. On Genesis Plaza 266 originals were
-// already optimal, and finding that out cost ~1 s each — a third of every run, for nothing. The
-// key is the pixel hash (already computed for dedup) plus every compress option the outcome
-// depends on; the value is the byte size that had no gain, so a re-encoded, larger file with the
-// same pixels is still tried. Lives in `.optimize/`, so a revert clears it with the backup.
+// Textures the re-encode could not shrink, remembered across runs. On Genesis Plaza 266 originals
+// were already optimal, and finding that out costs a full re-encode each — a third of every run,
+// for nothing. The key is the pixel hash (already computed for dedup) plus every compress option
+// the outcome depends on; the value is the byte size that had no gain, so a re-encoded, larger
+// file with the same pixels is still tried. Lives in `.optimize/`, so a revert clears it with
+// the backup.
 
 const CACHE_FILE = 'texture-cache.json';
 const CACHE_VERSION = 1;

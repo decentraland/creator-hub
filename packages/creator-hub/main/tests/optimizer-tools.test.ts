@@ -66,7 +66,6 @@ describe('optimizer tools', () => {
       expect(OPTIMIZER_TOOLS.map(tool => tool.pkg)).toEqual([
         'sharp',
         '@gltf-transform/core',
-        '@wasm-codecs/oxipng',
         'meshoptimizer',
       ]);
       for (const tool of OPTIMIZER_TOOLS) {

@@ -189,7 +189,11 @@ function Assets({ isAssetsPanelCollapsed }: { isAssetsPanelCollapsed: boolean })
   const handleOptimizeClick = useCallback(() => {
     // The optimizer runs in the Creator Hub main process (it needs the native
     // texture toolchain); the inspector only asks the host to open its modal.
-    getSceneClient()?.optimizeScene();
+    // A host that does not implement the method (the standalone inspector) rejects, which is
+    // nothing to surface — but leaving it floating makes it an unhandled rejection.
+    void getSceneClient()
+      ?.optimizeScene()
+      .catch(error => console.warn('The host does not support optimize_scene:', error));
   }, []);
 
   const handleRecoverAssets = useCallback(async () => {

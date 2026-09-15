@@ -15,7 +15,13 @@ import { gradientPng } from './helpers/optimizer-fixtures';
 // An in-process stand-in for a worker thread: same request/reply protocol, same handler the real
 // thread runs, no thread. Lets the pool's queueing, ordering and failure paths be exercised
 // without spawning the bundle.
-type FakeWorker = PoolWorker & { inflight: number; peak: number; terminated: boolean };
+type FakeWorker = PoolWorker & {
+  inflight: number;
+  peak: number;
+  terminated: boolean;
+  // Fire the thread's 'error' event, the way worker_threads does when a thread dies.
+  fail: (error: Error) => void;
+};
 
 function fakeWorker(
   respond: (request: CompressRequest) => Promise<CompressReply> = handleCompressRequest,
@@ -40,8 +46,24 @@ function fakeWorker(
     terminate() {
       worker.terminated = true;
     },
+    fail(error: Error) {
+      for (const listener of listeners.error) listener(error);
+    },
   };
   return worker;
+}
+
+function poolOf(size: number, respond?: (request: CompressRequest) => Promise<CompressReply>) {
+  const workers: FakeWorker[] = [];
+  const pool = createCompressPool({
+    size,
+    spawn: () => {
+      const worker = fakeWorker(respond);
+      workers.push(worker);
+      return worker;
+    },
+  });
+  return { pool, workers };
 }
 
 const options = DEFAULT_OPTIMIZE_OPTIONS.textures;
@@ -100,6 +122,49 @@ describe('compress pool', () => {
       expect((first as PromiseRejectedResult).reason.message).toBe('boom');
       expect(second.status).toBe('fulfilled');
       await failing.close();
+    });
+
+    it('should keep compressing after a thread dies before it was ever given work', async () => {
+      const { pool, workers } = poolOf(2);
+
+      // A thread that fails at module load (a half-installed sharp, say) reports 'error' while
+      // idle: it holds no task, so nothing rejects — and left in the idle list it swallows every
+      // task handed to it afterwards. Nothing below the pool times out, so the run would hang.
+      workers[0].fail(new Error('Cannot find module sharp'));
+
+      const result = await pool.compress(await gradientPng(1), 'baseColor', 'image/png', options);
+
+      expect(result.ext).toBe('.png');
+      expect(workers[0].peak).toBe(0);
+      expect(workers[1].peak).toBe(1);
+      await pool.close();
+    });
+
+    it('should reject work still queued when the last thread dies', async () => {
+      // Threads that never reply, so both hold a texture and the third request has to queue.
+      const { pool, workers } = poolOf(2, () => new Promise<CompressReply>(() => {}));
+      const png = await gradientPng(1);
+      const settled = Promise.allSettled([
+        pool.compress(png, 'baseColor', 'image/png', options),
+        pool.compress(png, 'baseColor', 'image/png', options),
+        pool.compress(png, 'baseColor', 'image/png', options),
+      ]);
+
+      for (const worker of workers) worker.fail(new Error('thread died'));
+
+      const results = await settled;
+      expect(results.map(r => r.status)).toEqual(['rejected', 'rejected', 'rejected']);
+      await pool.close();
+    });
+
+    it('should reject new work once every thread has died', async () => {
+      const { pool, workers } = poolOf(2);
+      for (const worker of workers) worker.fail(new Error('thread died'));
+
+      await expect(
+        pool.compress(await gradientPng(1), 'baseColor', 'image/png', options),
+      ).rejects.toThrow(/no live workers/);
+      await pool.close();
     });
 
     it('should reject new work once closed', async () => {

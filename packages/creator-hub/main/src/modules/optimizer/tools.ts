@@ -10,17 +10,17 @@ import { run } from '../bin';
 import toolsLockfile from './tools/optimizer-tools.package-lock.json?raw';
 import toolsPackageJson from './tools/optimizer-tools.package.json?raw';
 
-// The optimizer's toolchain (sharp, glTF-Transform, meshoptimizer, oxipng) is NOT shipped
-// with the app. It is downloaded on first use, after the consent screen, into userData, by the
-// bundled npm — the same path the AI CLI (ai-cli.ts) and scene dependencies already take.
+// The optimizer's toolchain (sharp, glTF-Transform, meshoptimizer) is NOT shipped with the app.
+// It is downloaded on first use, after the consent screen, into userData, by the bundled npm —
+// the same path the AI CLI (ai-cli.ts) and scene dependencies already take.
 //
 // Pinned to releases: optimizer-tools.package.json holds exact versions and its committed
 // lockfile carries the registry URL + integrity hash of every package, so `npm ci` installs
 // byte-for-byte what was reviewed. Bump a version there, then `npm run lock:optimizer-tools`.
 //
-// Why not bundle: ~20 MB per architecture (15 MB of it libvips), a cross-arch provisioning
-// step for the Intel dmg, and a main-process blocked by synchronous WASM. Downloading keeps
-// the installer lean and lets the worker run on the bundled real Node instead.
+// Why not bundle: ~20 MB per architecture (15 MB of it libvips) and a cross-arch provisioning
+// step for the Intel dmg. Downloading keeps the installer lean and lets the worker run on the
+// bundled real Node instead.
 
 const DOWNLOAD_SIZE_MB = 20;
 const INSTALLED_MARKER = 'installed.json';
@@ -46,12 +46,6 @@ const TOOL_META: ToolMeta[] = [
     name: 'glTF-Transform',
     purposeKey: 'gltf',
     release: v => `https://github.com/donmccurdy/glTF-Transform/releases/tag/v${v}`,
-  },
-  {
-    pkg: '@wasm-codecs/oxipng',
-    name: 'oxipng',
-    purposeKey: 'oxipng',
-    release: () => 'https://github.com/oxipng/oxipng/releases',
   },
   {
     pkg: 'meshoptimizer',

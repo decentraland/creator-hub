@@ -188,9 +188,8 @@
       "continue": "继续",
       "cancel": "取消",
       "purpose": {
-        "sharp": "缩放并重新编码纹理。",
+        "sharp": "调整尺寸、重新编码并无损压缩纹理。",
         "gltf": "读取和写入 GLB；执行网格清理。",
-        "oxipng": "无损 PNG 优化。",
         "meshopt": "网格重排以及 Meshopt 编解码器。"
       }
     },
@@ -219,7 +218,7 @@
       "textures": {
         "title": "纹理",
         "compress": "压缩并缩放纹理",
-        "compress_tip": "将每个纹理缩放到其按类型的最大尺寸并重新编码。PNG 使用无损 oxipng；JPEG/WebP 使用“质量”滑块。",
+        "compress_tip": "将每个纹理缩放到其按类型的最大尺寸并重新编码。PNG 采用无损重新压缩；JPEG/WebP 使用“质量”滑块。",
         "dedup": "移除重复纹理",
         "dedup_tip": "查找像素完全相同的纹理（SHA-256），让所有模型指向单一共享副本。当同一纹理在多个模型中重复使用时收益最大。",
         "externalize": "将内嵌纹理提取为文件",
@@ -243,6 +242,8 @@
     "done": "完成",
     "running": "优化中…",
     "revert": "还原为原始文件",
+    "reverting": "正在还原原始文件…",
+    "revert_error": "无法还原原始文件：{message}",
     "result": {
       "title": "完成",
       "saved": "节省了 {saved}（{percent}%）",
@@ -252,6 +253,7 @@
       "textures_deduped": "移除了 {count} 个重复项",
       "textures_removed": "已移除 {count} 个被替代的纹理（{bytes}）",
       "unchanged_skipped": "{unchanged} 个未更改 · {skipped} 个已跳过",
+      "failed": "{count} 个模型失败 — 请查看每个模型的详情",
       "up_to_date": "{count} 个已优化，保持原样",
       "show_details": "查看每个模型的详情",
       "hide_details": "收起每个模型的详情",
@@ -259,7 +261,8 @@
         "optimized": "已优化",
         "unchanged": "无变化",
         "skipped": "已跳过",
-        "up_to_date": "已优化"
+        "up_to_date": "已优化",
+        "failed": "失败"
       }
     },
     "error": "优化失败：{message}"

@@ -21,7 +21,7 @@ export type TextureOptions = {
   externalize: boolean;
   sizes: TextureSizes;
   format: TextureFormat;
-  quality: number; // 1..100 — JPEG/WebP only; PNG uses lossless oxipng
+  quality: number; // 1..100 — JPEG/WebP only; PNG is re-encoded losslessly instead
   denoise: DenoiseLevel;
 };
 
@@ -47,7 +47,9 @@ export type OptimizeScanResult = {
 export type OptimizeFileResult = {
   file: string; // project-relative path
   // up_to_date: still the previous run's output, produced with the same options, so not touched
-  status: 'optimized' | 'unchanged' | 'skipped' | 'up_to_date';
+  // failed: this model threw; the run carried on with the rest (see `error`)
+  status: 'optimized' | 'unchanged' | 'skipped' | 'up_to_date' | 'failed';
+  error?: string; // why the model failed, for the 'failed' status only
   bytesBefore: number;
   bytesAfter: number;
   texturesExtracted: number;
@@ -103,7 +105,7 @@ export type OptimizeToolInfo = {
   pkg: string;
   name: string;
   version: string;
-  purposeKey: 'sharp' | 'gltf' | 'oxipng' | 'meshopt';
+  purposeKey: 'sharp' | 'gltf' | 'meshopt';
   npm: string; // npm page of the exact version
   source: string; // upstream release page
 };

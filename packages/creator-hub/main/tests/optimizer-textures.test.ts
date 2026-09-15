@@ -28,7 +28,29 @@ async function png8(size = 32): Promise<Buffer> {
     .toBuffer();
 }
 
+// 8-bit RGBA of the decoded image, so a lossless colour-TYPE change (RGBA -> RGB on a fully
+// opaque image) does not read as pixel loss.
+async function pixels(buffer: Buffer): Promise<Buffer> {
+  return sharp(buffer).ensureAlpha().toColourspace('srgb').raw({ depth: 'uchar' }).toBuffer();
+}
+
 describe('compressImage', () => {
+  describe('the PNG re-encode', () => {
+    it('should shrink the file without touching a pixel', async () => {
+      const input = await sharp(noisyRaw(64), { raw: { width: 64, height: 64, channels: 4 } })
+        .png({ compressionLevel: 0 })
+        .toBuffer();
+
+      const { data } = await compressImage(input, 'baseColor', 'image/png', options());
+
+      expect(data.length).toBeLessThan(input.length);
+      // Guards the one-word mistake: adding `effort` to sharp's png() options silently turns on
+      // `palette: true`, which quantises to 256 colours. It reads as a ~40% extra win on the
+      // scales and changes every pixel of a texture.
+      expect(Buffer.compare(await pixels(data), await pixels(input))).toBe(0);
+    });
+  });
+
   describe('when the source is a 16-bit PNG', () => {
     it('should re-encode it as 8-bit, smaller, even when it needs no resize', async () => {
       const input = await png16();
@@ -44,14 +66,16 @@ describe('compressImage', () => {
     });
   });
 
-  describe('when the source is an 8-bit PNG that oxipng cannot improve', () => {
+  describe('when the source is an 8-bit PNG the re-encode cannot improve', () => {
     it('should return the original bytes so the caller can keep the file in place', async () => {
       const input = await png8();
-      const oxipngOptimal = (await compressImage(input, 'baseColor', 'image/png', options())).data;
+      const alreadyOptimal = (await compressImage(input, 'baseColor', 'image/png', options())).data;
 
-      const { data } = await compressImage(oxipngOptimal, 'baseColor', 'image/png', options());
+      const { data } = await compressImage(alreadyOptimal, 'baseColor', 'image/png', options());
 
-      expect(data.length).toBe(oxipngOptimal.length);
+      // Identity, not just the same length: re-encoding its own output gains nothing, so the
+      // bytes handed in must come straight back for `noGain` to keep the file in place.
+      expect(Buffer.compare(data, alreadyOptimal)).toBe(0);
       expect((await sharp(data).metadata()).depth).toBe('uchar');
     });
   });

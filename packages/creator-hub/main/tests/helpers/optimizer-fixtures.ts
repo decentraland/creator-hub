@@ -16,8 +16,8 @@ import { compressImage } from '../../src/modules/optimizer/textures';
 
 export type Rgba = [number, number, number, number];
 
-// PNGs are written uncompressed on purpose: the optimizer's oxipng pass then always has a gain
-// to make, which is what turns an already-external texture into a superseded one.
+// PNGs are written uncompressed on purpose: the optimizer's re-encode then always has a gain to
+// make, which is what turns an already-external texture into a superseded one.
 export async function solidPng(color: Rgba, size = 16): Promise<Buffer> {
   return sharp({
     create: {
@@ -48,8 +48,8 @@ export async function gradientPng(seed: number, size = 16): Promise<Buffer> {
     .toBuffer();
 }
 
-// A PNG oxipng has already had its way with, so the optimizer finds nothing to gain and must
-// leave it in place (the shape of most of Genesis Plaza's textures).
+// A PNG the optimizer has already re-encoded, so a run finds nothing to gain and must leave it
+// in place (the shape of most of Genesis Plaza's textures).
 export async function optimalPng(seed: number, size = 16): Promise<Buffer> {
   const { data } = await compressImage(
     await gradientPng(seed, size),

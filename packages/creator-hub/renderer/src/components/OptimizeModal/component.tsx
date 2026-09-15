@@ -1,4 +1,11 @@
-import { useCallback, useEffect, useMemo, useState, type MouseEventHandler } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  type ChangeEvent,
+  type MouseEventHandler,
+} from 'react';
 import {
   Box,
   Button,
@@ -91,6 +98,56 @@ function Disclosure({
   );
 }
 
+// A max-size field, backed by TEXT rather than by the number itself. A `type="number"` input
+// reads back as `''` while the creator clears it to retype, `Number('')` is 0, and 0 reaches
+// sharp as `resize(null, 0)` — which throws for EVERY texture, failing the whole run under a
+// "succeeded" result. Valid input commits as it is typed; anything else is only reverted to the
+// last good value on blur, so the field can still be emptied mid-edit.
+function SizeField({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: number;
+  onChange: (value: number) => void;
+}) {
+  const [text, setText] = useState(String(value));
+  const [isFocused, setFocused] = useState(false);
+
+  // Adopt an external change only while the creator does not own the field (coding-standards.md).
+  useEffect(() => {
+    if (isFocused) return;
+    setText(String(value));
+  }, [value, isFocused]);
+
+  const handleChange = useCallback(
+    (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+      const next = event.target.value;
+      setText(next);
+      const parsed = Number(next);
+      if (next.trim() !== '' && Number.isFinite(parsed) && parsed >= 1) {
+        onChange(Math.round(parsed));
+      }
+    },
+    [onChange],
+  );
+
+  return (
+    <TextField
+      size="small"
+      type="number"
+      label={label}
+      value={text}
+      onFocus={() => setFocused(true)}
+      // Releasing the field lets the effect above put the last committed value back, which is
+      // what discards an empty or out-of-range draft.
+      onBlur={() => setFocused(false)}
+      onChange={handleChange}
+    />
+  );
+}
+
 // Label + info icon, for use as a FormControlLabel `label` or a standalone field label.
 function LabelWithInfo({ text, tip }: { text: string; tip: string }) {
   return (
@@ -111,6 +168,7 @@ export function OptimizeModal({ project }: { project?: Project | null }) {
     scan,
     scanStatus,
     runStatus,
+    revertStatus,
     progress,
     result,
     error,
@@ -124,6 +182,7 @@ export function OptimizeModal({ project }: { project?: Project | null }) {
 
   const projectPath = project?.path ?? null;
   const isRunning = runStatus === 'loading';
+  const isReverting = revertStatus === 'loading';
 
   // The consent screen lists the pinned toolchain, so fetch that list as soon as the modal opens.
   useEffect(() => {
@@ -185,8 +244,8 @@ export function OptimizeModal({ project }: { project?: Project | null }) {
   );
 
   const handleClose = useCallback(() => {
-    if (!isRunning) dispatch(actions.close());
-  }, [isRunning, dispatch]);
+    if (!isRunning && !isReverting) dispatch(actions.close());
+  }, [isRunning, isReverting, dispatch]);
 
   // MUI calls onClose with a reason for the backdrop and Escape; the X passes a click event.
   // Configuring and running a job should not be lost to a stray click beside the dialog, so
@@ -226,11 +285,17 @@ export function OptimizeModal({ project }: { project?: Project | null }) {
 
   const details = useMemo(() => {
     const files = result?.files ?? [];
-    const counts = { optimized: 0, unchanged: 0, skipped: 0, up_to_date: 0 };
+    const counts = { optimized: 0, unchanged: 0, skipped: 0, up_to_date: 0, failed: 0 };
     for (const f of files) counts[f.status]++;
     const saved = (f: (typeof files)[number]) => f.bytesBefore - f.bytesAfter;
-    // Most-impactful first — that's what a creator wants to scan.
-    const sorted = [...files].sort((a, b) => saved(b) - saved(a));
+    // Failures first (the only rows that need acting on), then most-impactful — what a creator
+    // wants to scan.
+    const sorted = [...files].sort((a, b) => {
+      if ((a.status === 'failed') !== (b.status === 'failed')) {
+        return a.status === 'failed' ? -1 : 1;
+      }
+      return saved(b) - saved(a);
+    });
     return { counts, sorted };
   }, [result]);
 
@@ -523,13 +588,11 @@ export function OptimizeModal({ project }: { project?: Project | null }) {
                 </Typography>
                 <Box className="sizes">
                   {TEXTURE_CATEGORIES.map(cat => (
-                    <TextField
+                    <SizeField
                       key={cat}
-                      size="small"
-                      type="number"
                       label={t(`optimize.options.textures.${cat}`)}
                       value={options.textures.sizes[cat]}
-                      onChange={e => updateSize(cat, Number(e.target.value))}
+                      onChange={size => updateSize(cat, size)}
                     />
                   ))}
                 </Box>
@@ -547,8 +610,14 @@ export function OptimizeModal({ project }: { project?: Project | null }) {
             </Box>
           )}
 
-          {error && runStatus === 'failed' && (
-            <Typography className="error">{t('optimize.error', { message: error })}</Typography>
+          {error && (runStatus === 'failed' || revertStatus === 'failed') && (
+            <Typography className="error">
+              {/* `error` is shared, and whichever action failed most recently owns it: both
+                  pending reducers clear it, and starting a run resets revertStatus. */}
+              {revertStatus === 'failed'
+                ? t('optimize.revert_error', { message: error })
+                : t('optimize.error', { message: error })}
+            </Typography>
           )}
 
           {result && runStatus === 'succeeded' && (
@@ -594,6 +663,11 @@ export function OptimizeModal({ project }: { project?: Project | null }) {
                   })}
                 </span>
               )}
+              {details.counts.failed > 0 && (
+                <span className="failed">
+                  {t('optimize.result.failed', { count: details.counts.failed })}
+                </span>
+              )}
 
               <Disclosure
                 open={showDetails}
@@ -626,7 +700,10 @@ export function OptimizeModal({ project }: { project?: Project | null }) {
                             <em className="file-pct"> −{pct}%</em>
                           </span>
                         ) : (
-                          <span className="file-status">
+                          <span
+                            className={f.status === 'failed' ? 'file-status failed' : 'file-status'}
+                            title={f.error}
+                          >
                             {t(`optimize.result.status.${f.status}`)}
                           </span>
                         )}
@@ -671,10 +748,10 @@ export function OptimizeModal({ project }: { project?: Project | null }) {
             {scan?.hasBackup && (
               <Button
                 variant="outlined"
-                disabled={isRunning}
+                disabled={isRunning || isReverting}
                 onClick={handleRevert}
               >
-                {t('optimize.revert')}
+                {isReverting ? t('optimize.reverting') : t('optimize.revert')}
               </Button>
             )}
           </Box>

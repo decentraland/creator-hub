@@ -197,6 +197,11 @@
   opacity: 0.6;
 }
 
+.OptimizeModal .result .failed {
+  color: var(--error, #ff5b5b);
+  font-weight: 600;
+}
+
 .OptimizeModal .disclosure {
   align-self: flex-start;
   display: inline-flex;
@@ -280,6 +285,11 @@
 .OptimizeModal .file-status {
   opacity: 0.5;
   font-style: italic;
+}
+
+.OptimizeModal .file-status.failed {
+  color: var(--error, #ff5b5b);
+  opacity: 1;
 }
 
 .OptimizeModal .file-badges {

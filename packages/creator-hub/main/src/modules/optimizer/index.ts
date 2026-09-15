@@ -13,7 +13,7 @@ import {
 } from '/shared/types/optimizer';
 
 import { MAIN_WINDOW_ID } from '../../mainWindow';
-import { run as runBin } from '../bin';
+import { StreamError, run as runBin } from '../bin';
 import { getBundledNodePath } from '../path';
 import { getWindow } from '../window';
 import { readManifest, revertFromManifest } from './backup';
@@ -75,56 +75,63 @@ async function ensureWorkerPackage(): Promise<void> {
   );
 }
 
-// Resolves once the worker's stdout has delivered everything: 'exit' can fire before the last
-// chunk (the result line) is read, so waiting on the process alone is not enough.
-function stdoutDrained(stream: NodeJS.ReadableStream | null): Promise<void> {
-  return new Promise(resolve => {
-    if (!stream) return resolve();
-    const done = () => resolve();
-    stream.once('end', done);
-    stream.once('close', done);
-    setTimeout(done, 2000);
-  });
-}
-
 export async function run(projectPath: string, options: OptimizeOptions): Promise<OptimizeResult> {
   const info = await getToolsInfo();
   if (info.status !== 'ready') throw new Error('The optimizer tools are not installed yet.');
   await ensureWorkerPackage();
+
+  // The toolchain is built for real Node's ABI. Without a node binary `bin.run` silently falls
+  // back to an Electron utility process, which sharp has no prebuilt binary for — the run would
+  // then die deep inside the worker on a native load error that says nothing about the cause.
+  const nodePath = getBundledNodePath();
+  if (!nodePath) throw new Error('Could not find the Node runtime the optimizer needs to run.');
 
   const job: OptimizeWorkerJob = { command: 'run', projectPath, options };
   const toolsDir = getToolsDir();
   const child = runBin(WORKER_PKG, WORKER_BIN, {
     workspace: toolsDir,
     cwd: toolsDir,
-    nodePath: getBundledNodePath(),
+    nodePath,
     env: { OPTIMIZER_JOB: JSON.stringify(job) },
   });
 
-  let result: OptimizeResult | null = null;
-  let failure: string | null = null;
-
-  const reader = createWorkerOutputReader({
+  // Progress has to reach the renderer while the run is still going, so it is read off the live
+  // stream. The OUTCOME is not: `bin`'s own 'exit' handler calls cleanup(), which does
+  // `stdout.removeAllListeners('data')` — and Node documents that 'exit' can fire before the
+  // child's stdio has drained. Any chunk still in the pipe is then dropped, which turns a run
+  // that finished fine into "exited without a result". So the result/error line is parsed from
+  // the COMPLETE buffer instead: wait() resolves with it, and StreamError carries it on failure.
+  const live = createWorkerOutputReader({
     onLog: line => log.info(`[Optimizer] ${line}`),
     onMessage: message => {
       if (message.type === 'progress') emitProgress(projectPath, message.progress);
-      else if (message.type === 'result') result = message.result;
+    },
+  });
+  child.process.stdout?.on('data', (chunk: Buffer) => live.push(chunk));
+
+  let stdout: Buffer;
+  let exitError: Error | null = null;
+  try {
+    stdout = await child.wait();
+  } catch (error) {
+    stdout = error instanceof StreamError ? error.stdout : Buffer.alloc(0);
+    exitError = error instanceof Error ? error : new Error(String(error));
+  }
+
+  let result: OptimizeResult | null = null;
+  let failure: string | null = null;
+  const outcome = createWorkerOutputReader({
+    onMessage: message => {
+      if (message.type === 'result') result = message.result;
       else if (message.type === 'error') failure = message.message;
     },
   });
-  child.process.stdout?.on('data', (chunk: Buffer) => reader.push(chunk));
+  outcome.push(stdout);
+  outcome.flush();
 
-  try {
-    await child.wait();
-  } catch (error) {
-    await stdoutDrained(child.process.stdout);
-    reader.flush();
-    throw new Error(failure ?? (error instanceof Error ? error.message : String(error)));
-  }
-  await stdoutDrained(child.process.stdout);
-  reader.flush();
-
+  // The worker's own error line says more than "exited with code 1", so it wins.
   if (failure) throw new Error(failure);
+  if (exitError) throw exitError;
   if (!result) throw new Error('The optimizer worker exited without a result.');
   return result;
 }

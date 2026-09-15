@@ -1,6 +1,6 @@
 import crypto from 'node:crypto';
+import path from 'node:path';
 import sharp from 'sharp';
-import oxipng from '@wasm-codecs/oxipng';
 
 import type {
   DenoiseLevel,
@@ -10,9 +10,8 @@ import type {
 } from '/shared/types/optimizer';
 
 // Texture classification + compression, adapted from decentraland/SceneOptimizer
-// (utils.js + compress.js). PNG output is optimized losslessly with oxipng; JPEG/WebP go
-// through sharp with the quality slider. sharp handles all resizing/denoising and the 16-bit → 8-bit
-// depth reduction.
+// (utils.js + compress.js). Everything goes through sharp: resizing, denoising, the
+// 16-bit → 8-bit depth reduction, the lossless PNG re-encode, and the JPEG/WebP quality slider.
 
 export const CATEGORY_PRIORITY: Record<TextureCategory, number> = {
   baseColor: 5,
@@ -42,11 +41,26 @@ const FORMAT_TO_EXT: Record<TextureFormat, string> = {
   webp: '.webp',
 };
 
+const EXT_TO_MIME: Record<string, string> = {
+  '.png': 'image/png',
+  '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.webp': 'image/webp',
+};
+
 const FORMAT_TO_MIME: Record<TextureFormat, string> = {
   png: 'image/png',
   jpeg: 'image/jpeg',
   webp: 'image/webp',
 };
+
+// Lossless, and where the PNG gain actually is. sharp's defaults (compressionLevel 6, adaptive
+// filtering off) are roughly what an exporter writes, so leaving them alone means re-encoding for
+// nothing. Measured over real 1024²/1920² scene textures: 11.70 MB → 6.85 MB (41% off) at these
+// settings, against 8.72 MB (25%) for the `@wasm-codecs/oxipng` pass they replaced, in under half
+// the time. NOTE: do NOT add `effort` here — sharp turns that into `palette: true`, which
+// quantises to 256 colours and is lossy.
+const PNG_ENCODE = { compressionLevel: 9, adaptiveFiltering: true } as const;
 
 const DENOISE_SETTINGS: Record<
   DenoiseLevel,
@@ -68,6 +82,14 @@ export function mimeToExtension(mimeType: string | null): string {
 
 export function extensionForFormat(format: TextureFormat): string {
   return FORMAT_TO_EXT[format];
+}
+
+// The glTF writer copies `images[].mimeType` straight through, so a texture pointed at a sidecar
+// must carry that file's type: a loader trusting mimeType over the extension would otherwise
+// decode a `.webp` as the PNG the source claimed to be. Null when the extension says nothing —
+// keep whatever the texture already had.
+export function mimeForPath(filePath: string): string | null {
+  return EXT_TO_MIME[path.extname(filePath).toLowerCase()] ?? null;
 }
 
 // A sidecar name ends up verbatim in a glTF URI, which loaders treat as a URL: besides the
@@ -114,7 +136,10 @@ export async function compressImage(
   }
 
   const format = options.format;
-  const maxHeight = options.sizes[category] ?? options.sizes.other;
+  // A size of 0 (or a negative one) reaches sharp as `resize(null, 0)`, which throws for EVERY
+  // texture — one empty field in the UI would fail an entire run. Floor it here too, so no
+  // caller can turn a bad number into a scene-wide failure.
+  const maxHeight = Math.max(1, options.sizes[category] ?? options.sizes.other);
   const denoise = DENOISE_SETTINGS[options.denoise];
 
   let metadata: Awaited<ReturnType<SharpPipeline['metadata']>>;
@@ -126,9 +151,9 @@ export async function compressImage(
   }
 
   const needsResize = (metadata.height ?? 0) > maxHeight;
-  // 16-bit PNGs are dead weight for a GPU texture (every DCL runtime uploads 8-bit) and oxipng,
-  // being lossless, keeps the depth — on Genesis Plaza 19 such files held 36 MB that a plain
-  // sharp re-encode (which writes 8-bit) cuts to ~8 MB. Route them through sharp.
+  // 16-bit PNGs are dead weight for a GPU texture (every DCL runtime uploads 8-bit): on Genesis
+  // Plaza 19 such files held 36 MB that the sharp re-encode below (which writes 8-bit) cuts to
+  // ~8 MB. Counted as a transform so the re-encode is always kept for them.
   const needsDepthReduction = metadata.depth === 'ushort';
   const needsTransform = needsResize || !!denoise || needsDepthReduction;
 
@@ -143,22 +168,14 @@ export async function compressImage(
   };
 
   if (format === 'png') {
-    let pngBuffer: Buffer;
-    if (needsTransform) {
-      pngBuffer = await applyTransforms(sharp(input)).png().toBuffer();
-    } else if (metadata.format === 'png') {
-      pngBuffer = input;
-    } else {
-      // Non-PNG source, PNG target, no resize/denoise: still need a format conversion.
-      pngBuffer = await sharp(input).png().toBuffer();
-    }
-    try {
-      const optimized = oxipng(pngBuffer, { level: 2 });
-      if (optimized.length < pngBuffer.length) pngBuffer = optimized;
-    } catch {
-      // oxipng failed — keep the sharp/original PNG.
-    }
-    return { data: pngBuffer, ext: '.png', mime: 'image/png' };
+    // Re-encoded even when there is nothing to resize: PNG_ENCODE is the whole optimization for
+    // a texture that is already the right size.
+    const encoded = await applyTransforms(sharp(input)).png(PNG_ENCODE).toBuffer();
+    // Handing back a re-encode that gained nothing is strictly worse than the bytes we were
+    // given, and `recompressEmbedded` writes back whatever it receives. Only safe to keep the
+    // original when it IS a PNG already and nothing had to be applied to it.
+    const worthIt = needsTransform || metadata.format !== 'png' || encoded.length < input.length;
+    return { data: worthIt ? encoded : input, ext: '.png', mime: 'image/png' };
   }
 
   let pipeline = applyTransforms(sharp(input));

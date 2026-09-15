@@ -1,9 +1,14 @@
 import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
+import sharp from 'sharp';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import { DEFAULT_OPTIMIZE_OPTIONS, type OptimizeOptions } from '/shared/types/optimizer';
+import {
+  DEFAULT_OPTIMIZE_OPTIONS,
+  type OptimizeOptions,
+  type TextureCategory,
+} from '/shared/types/optimizer';
 
 import {
   OPTIMIZE_DIR,
@@ -11,6 +16,7 @@ import {
   revertFromManifest,
   type OptimizeManifest,
 } from '../src/modules/optimizer/backup';
+import type { CompressPool } from '../src/modules/optimizer/compress-pool';
 import { runPipeline } from '../src/modules/optimizer/pipeline';
 import { TEXTURES_DIR } from '../src/modules/optimizer/scan';
 import { TextureCache } from '../src/modules/optimizer/texture-cache';
@@ -33,7 +39,7 @@ import {
 // case the Genesis Plaza run taught us: embedded textures, a texture already external and shared
 // by two models, a flat normal map, an empty marker node, a texture the scene code names, an
 // external texture that is already optimal, and a second run over the first run's output.
-// Slow-ish (WASM init + oxipng), so generous timeouts.
+// Slow-ish (WASM init + a lossless re-encode per texture), so generous timeouts.
 
 const GLBS = ['embedded', 'shared-a', 'shared-b', 'flat', 'marker', 'logo', 'kept'].map(
   n => `models/${n}.glb`,
@@ -119,6 +125,19 @@ async function exists(file: string): Promise<boolean> {
 
 function defaults(): OptimizeOptions {
   return structuredClone(DEFAULT_OPTIMIZE_OPTIONS);
+}
+
+// Every fixture texture is 16px tall, so this is the smallest change that forces a real resize.
+function sizedTo(pixels: number): OptimizeOptions {
+  const options = defaults();
+  for (const category of Object.keys(options.textures.sizes) as TextureCategory[]) {
+    options.textures.sizes[category] = pixels;
+  }
+  return options;
+}
+
+async function heightOf(file: string): Promise<number | undefined> {
+  return (await sharp(await fs.readFile(file)).metadata()).height;
 }
 
 describe('optimizer pipeline', () => {
@@ -289,6 +308,96 @@ describe('optimizer pipeline', () => {
       options.textures.sizes.baseColor = 512;
       const changed = await runPipeline(scene, options, () => {});
       expect(changed.files.map(f => f.status)).toEqual(Array(7).fill('optimized'));
+    });
+
+    it('should re-encode the sidecars when the options change, not point back at the old ones', async () => {
+      await runPipeline(scene, defaults(), () => {});
+      const firstSidecars = await listFiles(path.join(scene, TEXTURES_DIR));
+      expect(firstSidecars.length).toBeGreaterThan(0);
+
+      // Reading a GLB resolves its sidecar back into the texture, so the pixels hash to exactly
+      // what the previous run wrote. Seeding the dedup index from those files would short-circuit
+      // every texture to the file already on disk: the run reports each model as `optimized`
+      // while leaving every pixel at the OLD size.
+      const changed = await runPipeline(scene, sizedTo(8), () => {});
+      expect(changed.files.map(f => f.status)).toEqual(Array(7).fill('optimized'));
+
+      for (const rel of GLBS) {
+        for (const abs of (await imageRefs(path.join(scene, rel))).resolved) {
+          expect(await heightOf(abs)).toBe(8);
+        }
+      }
+
+      // The first run's sidecars are superseded and nothing points at them any more. Leaving
+      // them behind would grow the deployed scene on every re-run.
+      const after = await listFiles(path.join(scene, TEXTURES_DIR));
+      expect(after.filter(name => firstSidecars.includes(name))).toEqual([]);
+      const manifest = (await readManifest(scene)) as OptimizeManifest;
+      const stale = manifest.createdFiles.filter(rel => firstSidecars.includes(path.basename(rel)));
+      expect(stale).toEqual([]);
+      expect([...manifest.createdFiles].sort()).toEqual(
+        after.map(name => `${TEXTURES_DIR}/${name}`).sort(),
+      );
+    });
+  });
+
+  describe('when the output format is not the source format', () => {
+    it("should declare the sidecar's own type in the GLB, not the source's", async () => {
+      const webp = defaults();
+      webp.textures.format = 'webp';
+      await runPipeline(scene, webp, () => {});
+
+      for (const rel of GLBS) {
+        const json = await glbJson(path.join(scene, rel));
+        for (const image of json.images ?? []) {
+          if (typeof image.uri !== 'string') continue;
+          // The writer emits images[].mimeType verbatim; a loader that trusts it over the
+          // extension would decode a .webp sidecar as the PNG the source claimed to be.
+          const expected = image.uri.endsWith('.webp') ? 'image/webp' : 'image/png';
+          expect(image.mimeType).toBe(expected);
+        }
+      }
+    });
+  });
+
+  describe('when a texture is shared with a .gltf model', () => {
+    it('should leave that texture in place', async () => {
+      // walkGlbs collects only `.glb`, so nothing else in the run knows this model exists — its
+      // texture looks superseded the moment shared-a/shared-b get their sidecars, and stashing
+      // it leaves the .gltf rendering untextured until the creator reverts.
+      await fs.writeFile(
+        path.join(scene, 'models/legacy.gltf'),
+        JSON.stringify({ asset: { version: '2.0' }, images: [{ uri: 'shared.png' }] }),
+      );
+
+      const result = await runPipeline(scene, defaults(), () => {});
+
+      expect(await exists(path.join(scene, 'models/shared.png'))).toBe(true);
+      const manifest = (await readManifest(scene)) as OptimizeManifest;
+      expect([...manifest.removedFiles].sort()).toEqual([
+        'models/flat_base.png',
+        'models/flat_normal.png',
+      ]);
+      expect(result.texturesRemoved).toBe(2);
+    });
+  });
+
+  describe('when a model throws', () => {
+    it('should record it as failed instead of leaving it out of the results', async () => {
+      const pool: CompressPool = {
+        size: 1,
+        compress: () => Promise.reject(new Error('compressor died')),
+        close: async () => {},
+      };
+
+      const result = await runPipeline(scene, defaults(), () => {}, { pool });
+
+      // Every model fails and the run still RESOLVES. With no record per file this is
+      // indistinguishable from a scene where nothing needed doing: the modal would show
+      // "0 B saved · 0 models changed" and no error at all.
+      expect(result.files.map(f => f.status)).toEqual(Array(7).fill('failed'));
+      expect(result.files.every(f => f.error === 'compressor died')).toBe(true);
+      expect(result.glbsChanged).toBe(0);
     });
   });
 
