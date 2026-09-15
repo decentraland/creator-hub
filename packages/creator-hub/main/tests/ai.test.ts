@@ -1,4 +1,5 @@
-import { describe, expect, it, vi } from 'vitest';
+import path from 'path';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // ai.ts → scene-mcp → explorer-gateway → cli → path.ts calls electron `app.getAppPath()` at
 // import. This suite only tests pure parseLine/PATH helpers, so stub the gateway to keep the
@@ -9,6 +10,25 @@ vi.mock('../src/modules/analytics', () => ({
   track: vi.fn(),
   getProjectId: vi.fn(async () => 'test-project-id'),
 }));
+const runtimeMocks = vi.hoisted(() => ({
+  runtime: {
+    source: 'bundled' as const,
+    node: '/bundle/bin/node',
+    binDir: '/bundle/bin',
+    npmCli: '/bundle/lib/node_modules/npm/bin/npm-cli.js',
+    npxCli: '/bundle/lib/node_modules/npm/bin/npx-cli.js',
+  },
+  getChildEnv: vi.fn(),
+  spawnSync: vi.fn(),
+}));
+vi.mock('../src/modules/node-runtime', () => ({
+  resolveNodeRuntime: () => runtimeMocks.runtime,
+  getChildEnv: runtimeMocks.getChildEnv,
+}));
+vi.mock('cross-spawn', () => ({
+  default: Object.assign(vi.fn(), { sync: runtimeMocks.spawnSync }),
+}));
+vi.mock('../src/modules/electron', () => ({ getUserDataPath: () => '/tmp/creator-hub-test' }));
 vi.mock('../src/modules/explorer-gateway', () => ({
   callExplorerTool: vi.fn(),
   explorerTools: () => [],
@@ -24,8 +44,10 @@ import type { AiProvider } from '/shared/types/ai';
 
 import {
   PROVIDERS,
+  childEnv,
   filterEnvForChild,
   friendlyCliError,
+  getCliVersion,
   nvmBinDirs,
   parseShellPath,
 } from '../src/modules/ai';
@@ -523,6 +545,29 @@ describe('filterEnvForChild', () => {
 
 // Both providers must receive the CH MCP server (scene + Explorer-gateway tools) — the
 // point of Codex parity — each in its own format, and never leak the token via argv.
+describe('codex buildArgs working dir', () => {
+  const base = { text: 'hi', projectDir: PROJECT, images: [] as string[] };
+
+  // Regression: `codex exec resume` doesn't define `-C`, so passing it failed every follow-up
+  // turn with `unexpected argument '-C' found`. The child spawns with cwd=projectDir, so -C is
+  // dropped from BOTH subcommands and cwd is the single source of the working dir.
+  it('never passes -C (resume rejects it; cwd carries the working dir)', () => {
+    expect(PROVIDERS.codex.buildArgs({ ...base }).args).not.toContain('-C');
+    expect(PROVIDERS.codex.buildArgs({ ...base, resume: 'thread-1' }).args).not.toContain('-C');
+  });
+
+  it('resumes via the `exec resume <id>` subcommand', () => {
+    const { args } = PROVIDERS.codex.buildArgs({ ...base, resume: 'thread-1' });
+    expect(args.slice(0, 3)).toEqual(['exec', 'resume', 'thread-1']);
+  });
+
+  it('starts a fresh turn with `exec` (no resume subcommand)', () => {
+    const { args } = PROVIDERS.codex.buildArgs({ ...base });
+    expect(args[0]).toBe('exec');
+    expect(args).not.toContain('resume');
+  });
+});
+
 describe('buildArgs MCP wiring', () => {
   const MCP = { url: 'http://127.0.0.1:65000/mcp', token: 'secret-token-xyz' };
   const base = { text: 'hi', projectDir: PROJECT, images: [] as string[] };
@@ -599,5 +644,44 @@ describe('friendlyCliError', () => {
   it('passes ordinary assistant text through untouched', () => {
     const text = 'Sure — I added a GltfContainer to the scene.';
     expect(friendlyCliError(text)).toBe(text);
+  });
+});
+
+describe('when building the env for an AI CLI turn', () => {
+  let env: NodeJS.ProcessEnv;
+
+  beforeEach(() => {
+    runtimeMocks.getChildEnv.mockReturnValue({
+      HOME: '/home/u',
+      PATH: ['/bundle/bin', '/usr/bin'].join(path.delimiter),
+      ANTHROPIC_API_KEY: 'sk-ant-example',
+    });
+    env = childEnv(false);
+  });
+
+  it('should start from the resolved runtime env so the CLI runs on the selected Node', () => {
+    expect(runtimeMocks.getChildEnv).toHaveBeenCalledWith(runtimeMocks.runtime);
+    expect(env.PATH?.split(path.delimiter)[0]).toBe('/bundle/bin');
+  });
+
+  it('should still apply the billing filter on top of it', () => {
+    expect(env.ANTHROPIC_API_KEY).toBeUndefined();
+    expect(env.HOME).toBe('/home/u');
+  });
+});
+
+describe('when probing an AI CLI version', () => {
+  beforeEach(() => {
+    runtimeMocks.getChildEnv.mockReturnValue({ PATH: '/bundle/bin' });
+    runtimeMocks.spawnSync.mockReturnValue({ stdout: '2.1.260 (Claude Code)', stderr: '' });
+  });
+
+  it('should run the probe with the resolved runtime env', () => {
+    expect(getCliVersion('/managed/bin/claude')).toBe('2.1.260');
+    expect(runtimeMocks.spawnSync).toHaveBeenCalledWith(
+      '/managed/bin/claude',
+      ['--version'],
+      expect.objectContaining({ env: { PATH: '/bundle/bin' } }),
+    );
   });
 });
