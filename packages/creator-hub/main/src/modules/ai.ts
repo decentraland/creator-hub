@@ -13,7 +13,7 @@ import fs from 'fs';
 import os from 'os';
 import path from 'path';
 import { StringDecoder } from 'string_decoder';
-import { spawn, spawnSync } from 'child_process';
+import { spawn } from 'child_process';
 import type { ChildProcess } from 'child_process';
 // The turn child is an npm-installed CLI. On Windows that's a `.cmd` shim, which child_process
 // can't spawn directly with an arg array (the prompt would need cmd.exe escaping); cross-spawn
@@ -22,8 +22,9 @@ import crossSpawn from 'cross-spawn';
 import log from 'electron-log/main';
 import type { AiEvent, AiProvider, AiProviderInfo, AiSendParams } from '/shared/types/ai';
 import { DCL_SYSTEM_PROMPT } from './ai-prompt';
-import { getManagedBinDir, isSignedIn as isManagedSignedIn } from './ai-cli-paths';
+import { CLI_SPECS, getManagedBinDir, isSignedIn as isManagedSignedIn } from './ai-cli-paths';
 import { getUserDataPath } from './electron';
+import { getChildEnv, resolveNodeRuntime } from './node-runtime';
 import { getProjectId, track } from './analytics';
 import {
   clearPendingAsks,
@@ -97,14 +98,14 @@ async function runShellProbe(): Promise<void> {
     try {
       // detached: the profile may spawn its own children (a version manager resolving a
       // default), and killing only the shell would orphan them.
-      // Capture $PATH plus the two API keys (for API-key billing on a GUI launch whose env
-      // lacks them). The PATH marker keeps its shape so parseShellPath is unchanged; the key
+      // Capture $PATH plus the providers' API keys (for API-key billing on a GUI launch whose
+      // env lacks them). The PATH marker keeps its shape so parseShellPath is unchanged; the key
       // markers are parsed separately. This output is NEVER logged.
       child = spawn(
         shell,
         [
           '-ilc',
-          'printf "<<<%s>>>@@A=%s@@@@O=%s@@" "$PATH" "$ANTHROPIC_API_KEY" "$OPENAI_API_KEY"',
+          'printf "<<<%s>>>@@A=%s@@@@O=%s@@@@C=%s@@@@G=%s@@@@GA=%s@@" "$PATH" "$ANTHROPIC_API_KEY" "$OPENAI_API_KEY" "$CURSOR_API_KEY" "$GEMINI_API_KEY" "$GOOGLE_API_KEY"',
         ],
         { stdio: ['ignore', 'pipe', 'ignore'], detached: true },
       );
@@ -134,6 +135,9 @@ async function runShellProbe(): Promise<void> {
   // Capture the shell's API keys for API-key billing (in memory only; never logged).
   shellApiKeys.ANTHROPIC_API_KEY = /@@A=(.*?)@@/s.exec(out)?.[1] || undefined;
   shellApiKeys.OPENAI_API_KEY = /@@O=(.*?)@@/s.exec(out)?.[1] || undefined;
+  shellApiKeys.CURSOR_API_KEY = /@@C=(.*?)@@/s.exec(out)?.[1] || undefined;
+  shellApiKeys.GEMINI_API_KEY = /@@G=(.*?)@@/s.exec(out)?.[1] || undefined;
+  shellApiKeys.GOOGLE_API_KEY = /@@GA=(.*?)@@/s.exec(out)?.[1] || undefined;
   const dirs = parseShellPath(out);
   if (dirs.length > 0) {
     shellDirs = dirs; // no marker: keep what we had, the static list still applies
@@ -190,20 +194,18 @@ function findExecutable(names: string[]): string | null {
   return null;
 }
 
-// `<bin> --version` prints e.g. "2.1.260 (Claude Code)". Best-effort: a probe failure or an
-// unparseable line yields undefined and the UI simply won't nudge — this only gates a proactive
-// hint, never the turn (the raw-error rewrite below covers a too-old CLI regardless). Cached per
-// resolved path: scan() runs on every panel open/recheck and a CLI's version only changes on
-// reinstall; detectProviders() clears the cache on an explicit recheck so an update is re-read.
-// Windows note: a bare spawnSync of a `.cmd` shim can fail (see the turn's cross-spawn use) — the
-// probe just returns undefined there, so Windows loses the proactive hint but not the rewrite.
 const cliVersionCache = new Map<string, string | undefined>();
 
-function getCliVersion(bin: string): string | undefined {
+/** Version reported by `<bin> --version`, probed on the resolved runtime; undefined when unknown. */
+export function getCliVersion(bin: string): string | undefined {
   if (cliVersionCache.has(bin)) return cliVersionCache.get(bin);
   let version: string | undefined;
   try {
-    const res = spawnSync(bin, ['--version'], { encoding: 'utf8', timeout: 5000 });
+    const res = crossSpawn.sync(bin, ['--version'], {
+      encoding: 'utf8',
+      timeout: 5000,
+      env: getChildEnv(resolveNodeRuntime()),
+    });
     const out = `${res.stdout ?? ''}${res.stderr ?? ''}`;
     const m = out.match(/(\d+\.\d+\.\d+)/);
     version = m ? m[1] : undefined;
@@ -238,6 +240,11 @@ const ALWAYS_STRIP = new Set([
   'ANTHROPIC_VERTEX_BASE_URL',
   'OPENAI_BASE_URL',
   'OPENAI_API_BASE',
+  // Cursor's and Gemini's endpoint overrides (verified against each CLI's bundle) — same
+  // token-redirect risk as the Anthropic/OpenAI ones above.
+  'CURSOR_API_ENDPOINT',
+  'GOOGLE_GEMINI_BASE_URL',
+  'GOOGLE_VERTEX_BASE_URL',
 ]);
 
 // Metered API keys: stripped by default to force subscription/OAuth billing (the whole
@@ -247,12 +254,23 @@ const API_KEY_ENV = new Set([
   'ANTHROPIC_AUTH_TOKEN',
   'OPENAI_API_KEY',
   'CODEX_API_KEY',
+  'CURSOR_API_KEY',
+  // Gemini's metered keys. NOT its auth-method selectors (GOOGLE_GENAI_USE_GCA / _USE_VERTEXAI) —
+  // those pick the Google-login/Vertex path we WANT to keep in subscription mode.
+  'GEMINI_API_KEY',
+  'GOOGLE_API_KEY',
 ]);
 
 // API keys read from the user's login shell, so a GUI launch (sparse env) can still bill
 // against a shell-configured key in API-key mode. Populated by the shell probe; only ever
 // held in memory, never logged or persisted.
-const shellApiKeys: { ANTHROPIC_API_KEY?: string; OPENAI_API_KEY?: string } = {};
+const shellApiKeys: {
+  ANTHROPIC_API_KEY?: string;
+  OPENAI_API_KEY?: string;
+  CURSOR_API_KEY?: string;
+  GEMINI_API_KEY?: string;
+  GOOGLE_API_KEY?: string;
+} = {};
 
 // Filter an inherited env for a spawned CLI: always drop base-URL/session overrides; drop the
 // metered API keys unless the user chose API-key billing. Exported for tests.
@@ -276,11 +294,9 @@ export function filterEnvForChild(
   return env;
 }
 
-// The child env: filter per the billing mode, keep everything else (HOME, keychain access),
-// and widen PATH so the CLI finds its own `env node` shebang under a version manager. In
-// API-key mode, fill any key the GUI env lacks from the login-shell probe.
-function childEnv(apiKeyFromEnv: boolean): NodeJS.ProcessEnv {
-  const env = filterEnvForChild(process.env, apiKeyFromEnv);
+/** Env for an AI CLI turn: the resolved runtime env, filtered per billing mode, plus the version-manager search dirs. */
+export function childEnv(apiKeyFromEnv: boolean): NodeJS.ProcessEnv {
+  const env = filterEnvForChild(getChildEnv(resolveNodeRuntime()), apiKeyFromEnv);
   if (apiKeyFromEnv) {
     for (const [k, v] of Object.entries(shellApiKeys)) {
       if (v !== undefined && v !== '' && env[k] === undefined) env[k] = v;
@@ -301,15 +317,31 @@ interface TurnCtx {
   mcp?: SceneMcpInfo; // CH MCP server (scene + gateway tools); each provider wires it its own way
 }
 
-// A provider = how to find its binary + how to turn a turn into an argv + how to read
-// its streaming stdout. Only these two things differ between Claude and Codex.
+// A built invocation: the argv, plus any text to feed on stdin instead of argv. On Windows,
+// cross-spawn runs the CLI's `.cmd` shim through `cmd.exe /c`, whose command line is capped at
+// 8191 chars — the ~7KB DCL system prompt on argv overflowed it on its own ("The command line
+// is too long"), so every turn failed regardless of the user's prompt size. Big text now rides
+// OFF argv: Claude takes the system prompt from a file (--append-system-prompt-file) and the
+// user prompt on stdin; Codex takes both (rules + prompt) on stdin via the `-` prompt token.
+interface BuiltTurn {
+  args: string[];
+  stdin?: string;
+}
+
+// A provider = how to find its binary + how to turn a turn into an argv (+ stdin) + how to read
+// its streaming stdout. Only these things differ between Claude and Codex.
 interface ProviderDef {
   id: AiProvider;
   label: string;
   binNames: string[];
   models: string[];
   defaultModel: string;
-  buildArgs: (ctx: TurnCtx) => string[];
+  // Optional on-disk setup run once per turn, before the child spawns, for a CLI that takes
+  // its rules/config from project files rather than flags (Cursor). Best-effort: a failure is
+  // logged and the turn still runs (degraded). Kept out of buildArgs so buildArgs stays pure
+  // and unit-testable — it must never write into the project dir.
+  prepareTurn?: (ctx: TurnCtx) => void;
+  buildArgs: (ctx: TurnCtx) => BuiltTurn;
   // Parse one NDJSON stdout line. Emit chat events; return a session id to remember
   // (for --resume) when the line carries one, else undefined. `image` is a data-URL an
   // MCP tool returned (e.g. an Explorer/editor screenshot), rendered inline in the chat.
@@ -358,12 +390,34 @@ function rel(projectDir: string, p: unknown): string {
   }
 }
 
+// Tool-chip detail helpers, shared by all three providers' tool mappers below.
+const str = (v: unknown): string => (typeof v === 'string' ? v.trim() : '');
+const clip = (s: string): string => (s.length > 64 ? s.slice(0, 64) + '…' : s);
+
+// A tool chip's detail, for the CLIs whose tool args differ only in which keys hold the path:
+// the first non-empty scene-relative file path, else the first non-empty fallback field
+// (command/pattern/query/url), clipped.
+function argDetail(
+  projectDir: string,
+  args: Record<string, unknown>,
+  pathKeys: string[],
+  fallbackKeys: string[],
+): string {
+  for (const k of pathKeys) {
+    const file = rel(projectDir, args[k]);
+    if (file !== '') return file;
+  }
+  for (const k of fallbackKeys) {
+    const v = str(args[k]);
+    if (v !== '') return clip(v);
+  }
+  return '';
+}
+
 // What a tool chip shows after its name. File tools report paths; for the rest, prefer
 // what a creator can read — Bash's human description over the raw command, a search's
 // pattern over nothing.
 function toolDetail(tool: string, inp: Record<string, unknown>, projectDir: string): string {
-  const str = (v: unknown): string => (typeof v === 'string' ? v.trim() : '');
-  const clip = (s: string): string => (s.length > 64 ? s.slice(0, 64) + '…' : s);
   const file = rel(projectDir, inp.file_path ?? inp.path ?? '');
   if (file !== '') return file;
   if (tool === 'Bash')
@@ -380,6 +434,73 @@ function toolDetail(tool: string, inp: Record<string, unknown>, projectDir: stri
 // and the token gates local scene control. aiSend sets it in the codex child's env.
 const CODEX_MCP_TOKEN_ENV = 'CREATOR_HUB_MCP_TOKEN';
 
+// Cursor's stream-json reports a tool call as a single-key object `{ <name>ToolCall: {...} }`
+// (readToolCall, writeToolCall, shellToolCall, …). Map the base name to the same chip labels
+// claude/codex use so the panel renders a readable tool name.
+const CURSOR_TOOL_NAMES: Record<string, string> = {
+  read: 'Read',
+  write: 'Write',
+  edit: 'Edit',
+  delete: 'Delete',
+  ls: 'List',
+  glob: 'Glob',
+  grep: 'Grep',
+  shell: 'Run',
+  search: 'Search',
+};
+
+// Turn a cursor `tool_call` object into a [chip-name, detail] pair. Prefers the target file
+// path; falls back to the command/pattern/query for shell and search tools.
+function cursorTool(
+  toolCall: Record<string, { args?: Record<string, unknown> }>,
+  projectDir: string,
+): [string, string] | null {
+  const key = Object.keys(toolCall)[0];
+  if (key === undefined) return null;
+  const base = key.replace(/ToolCall$/, '');
+  const name = CURSOR_TOOL_NAMES[base] ?? base.charAt(0).toUpperCase() + base.slice(1);
+  const args = toolCall[key]?.args ?? {};
+  return [
+    name,
+    argDetail(projectDir, args, ['path', 'file_path'], ['command', 'pattern', 'query']),
+  ];
+}
+
+// Gemini's built-in tools are snake_case (`read_file`, `run_shell_command`, …). Map the common
+// ones to the same chip labels claude/codex use; unknown names pass through unchanged.
+const GEMINI_TOOL_NAMES: Record<string, string> = {
+  read_file: 'Read',
+  read_many_files: 'Read',
+  write_file: 'Write',
+  replace: 'Edit',
+  edit: 'Edit',
+  run_shell_command: 'Run',
+  search_file_content: 'Grep',
+  glob: 'Glob',
+  list_directory: 'List',
+  web_fetch: 'WebFetch',
+  google_web_search: 'WebSearch',
+};
+
+// Turn a gemini `tool_use` event's name + parameters into a [chip-name, detail] pair. Gemini's
+// file tools use absolute_path/file_path/path; shell uses command; search uses pattern/query.
+function geminiTool(
+  toolName: string,
+  parameters: Record<string, unknown> | undefined,
+  projectDir: string,
+): [string, string] {
+  const name = GEMINI_TOOL_NAMES[toolName] ?? toolName;
+  return [
+    name,
+    argDetail(
+      projectDir,
+      parameters ?? {},
+      ['absolute_path', 'file_path', 'path'],
+      ['command', 'pattern', 'query', 'url'],
+    ),
+  ];
+}
+
 // Exported for the parser tests: parseLine tracks two external CLIs' output formats, so
 // a format change has to be caught by something.
 export const PROVIDERS: Record<AiProvider, ProviderDef> = {
@@ -392,7 +513,6 @@ export const PROVIDERS: Record<AiProvider, ProviderDef> = {
     buildArgs: ctx => {
       const args = [
         '-p',
-        ctx.text,
         '--output-format',
         'stream-json',
         '--verbose', // required alongside stream-json under -p
@@ -404,8 +524,11 @@ export const PROVIDERS: Record<AiProvider, ProviderDef> = {
         // the system prompt (see ai-prompt.ts).
         '--permission-mode',
         'bypassPermissions',
-        '--append-system-prompt',
-        DCL_SYSTEM_PROMPT,
+        // The ~7KB system prompt goes via a file, not `--append-system-prompt <string>`: on
+        // Windows the inline string alone overflowed cmd.exe's 8191-char command line (see
+        // BuiltTurn). Mac/Linux are unaffected but read the same file.
+        '--append-system-prompt-file',
+        writeSystemPromptFile(DCL_SYSTEM_PROMPT),
       ];
       if (ctx.model !== undefined && ctx.model !== 'default') args.push('--model', ctx.model);
       if (ctx.resume !== undefined) args.push('--resume', ctx.resume);
@@ -414,8 +537,10 @@ export const PROVIDERS: Record<AiProvider, ProviderDef> = {
       // auto-allows the tool calls.
       if (ctx.mcp !== undefined) args.push('--mcp-config', writeSceneMcpConfigFile(ctx.mcp));
       // images travel as paths inside the prompt — claude's Read tool renders image
-      // files natively, no dedicated flag exists (or is needed)
-      return args;
+      // files natively, no dedicated flag exists (or is needed). The user prompt rides on
+      // stdin (`claude -p` reads it there when no prompt arg is given), keeping it off argv
+      // for the same cmd.exe-length reason as the system prompt.
+      return { args, stdin: ctx.text };
     },
     parseLine: (line, projectDir, emit) => {
       let obj: {
@@ -465,7 +590,8 @@ export const PROVIDERS: Record<AiProvider, ProviderDef> = {
   // a SUBCOMMAND (`codex exec resume <threadId>`), not a flag; the thread id comes from
   // the `thread.started` event. codex ≥0.145 removed the --ask-for-approval flag, so the
   // policy is pinned through `-c` instead (also overrides a user config.toml that asks
-  // for approvals — we spawn with stdin ignored, so a prompt would hang forever);
+  // for approvals — stdin is closed right after the prompt is written, so a prompt would
+  // read EOF, not hang);
   // `--sandbox danger-full-access` is the bypassPermissions equivalent;
   // `--skip-git-repo-check` lets it run in a scene folder that isn't a git repo. Present
   // so a signed-in Codex works out of the box; the UI defaults to Claude.
@@ -477,11 +603,14 @@ export const PROVIDERS: Record<AiProvider, ProviderDef> = {
     defaultModel: 'default',
     buildArgs: ctx => {
       const base = ctx.resume !== undefined ? ['exec', 'resume', ctx.resume] : ['exec'];
+      // No `-C <dir>`: `codex exec resume` doesn't define that flag (only `codex exec` does), so
+      // passing it failed every follow-up turn with `unexpected argument '-C' found`. The child
+      // already spawns with cwd=projectDir (see aiSend), which codex uses as its working root by
+      // default and as the cwd filter that matches the session to resume — so cwd covers both
+      // subcommands and -C was redundant.
       const args = [
         ...base,
         '--json',
-        '-C',
-        ctx.projectDir,
         '--sandbox',
         'danger-full-access',
         '-c',
@@ -498,10 +627,13 @@ export const PROVIDERS: Record<AiProvider, ProviderDef> = {
       }
       if (ctx.model !== undefined && ctx.model !== 'default') args.push('--model', ctx.model);
       for (const img of ctx.images) args.push('-i', img); // codex's native image flag
-      // `codex exec` has no system-prompt flag, so the rules ride in front of the prompt
-      // on every turn, matching claude's --append-system-prompt.
-      args.push(`${DCL_SYSTEM_PROMPT}\n\n---\n\n${ctx.text}`);
-      return args;
+      // `codex exec` has no system-prompt flag, so the rules ride in front of the prompt on
+      // every turn, matching claude's --append-system-prompt. The whole thing goes on STDIN
+      // (the `-` prompt token tells `codex exec` / `exec resume <id>` to read instructions
+      // from stdin) rather than as an argv positional — on Windows the ~7KB rules overflowed
+      // cmd.exe's 8191-char command line (see BuiltTurn).
+      args.push('-');
+      return { args, stdin: `${DCL_SYSTEM_PROMPT}\n\n---\n\n${ctx.text}` };
     },
     parseLine: (line, projectDir, emit) => {
       let obj: {
@@ -556,6 +688,147 @@ export const PROVIDERS: Record<AiProvider, ProviderDef> = {
       return undefined;
     },
   },
+  // Cursor's CLI agent (`cursor-agent`), wired against `-p --output-format stream-json`. Very
+  // close to claude's shape: `session_id` from the `system`/`init` and `result` events drives
+  // `--resume`; `assistant` events carry complete text blocks; `tool_call` events (started +
+  // completed on one `call_id`) mark file/shell tools. Two things differ from claude/codex:
+  //  - No system-prompt or rules flag, and no stdin prompt channel — so the DCL rules go in a
+  //    project rule file (see prepareTurn / writeCursorRules) and the user prompt is the trailing
+  //    argv positional.
+  //  - `-f` (force) is the bypassPermissions/danger-full-access equivalent.
+  // The CH MCP server (scene + Explorer-gateway tools) is NOT wired for Cursor yet: its only
+  // channel is a project-local `.cursor/mcp.json` that would carry the bearer token in-repo, and
+  // it needs live verification against a Cursor login — a follow-up. File edits work without it.
+  cursor: {
+    id: 'cursor',
+    label: 'Cursor',
+    binNames: ['cursor-agent'],
+    // Documented model examples (`cursor-agent --help`: e.g. gpt-5, sonnet-4, sonnet-4-thinking).
+    // `default` omits --model so Cursor uses the user's configured default.
+    models: ['default', 'sonnet-4', 'sonnet-4-thinking', 'gpt-5'],
+    defaultModel: 'default',
+    prepareTurn: ctx => writeCursorRules(ctx.projectDir),
+    buildArgs: ctx => {
+      const args = [
+        '-p', // non-interactive print mode (required for stream-json)
+        '--output-format',
+        'stream-json',
+        '-f', // force-allow tool commands (bypassPermissions/danger-full-access equivalent)
+      ];
+      if (ctx.model !== undefined && ctx.model !== 'default') args.push('--model', ctx.model);
+      if (ctx.resume !== undefined) args.push('--resume', ctx.resume);
+      // No stdin prompt channel (undocumented, and the bundle reads no fd0), so the user prompt
+      // is the trailing argv positional. The ~7KB DCL rules stay OFF argv (they're in the project
+      // rule file), so argv length tracks only the user's own text — within cmd.exe's cap for
+      // normal prompts. Image paths were appended to ctx.text by aiSend; Cursor reads them with
+      // its own file tools (it has no image flag).
+      args.push(ctx.text);
+      return { args };
+    },
+    parseLine: (line, projectDir, emit) => {
+      let obj: {
+        type?: string;
+        subtype?: string;
+        session_id?: string;
+        message?: { content?: Array<{ type?: string; text?: string }> };
+        tool_call?: Record<string, { args?: Record<string, unknown> }>;
+      };
+      try {
+        obj = JSON.parse(line);
+      } catch {
+        return undefined;
+      }
+      // system/init and the terminal result both report the chat id used for --resume.
+      if (obj.type === 'system' && obj.subtype === 'init') return obj.session_id;
+      // Each `assistant` event is a COMPLETE message segment (no --stream-partial-output). Emit
+      // its text blocks; the final `result` event repeats the full text in `result`, so we DON'T
+      // emit that (it would duplicate) and only read its session id.
+      if (obj.type === 'assistant' && obj.message?.content !== undefined) {
+        for (const block of obj.message.content) {
+          if (block.type === 'text' && block.text !== undefined && block.text !== '')
+            emit(block.text);
+        }
+      }
+      // A tool call streams as a started/completed pair on one call_id — emit the chip once, on
+      // `started`, to avoid a duplicate.
+      if (obj.type === 'tool_call' && obj.subtype === 'started' && obj.tool_call !== undefined) {
+        const chip = cursorTool(obj.tool_call, projectDir);
+        if (chip !== null) emit('', chip);
+      }
+      if (obj.type === 'result') return obj.session_id;
+      return undefined;
+    },
+  },
+  // Google's Gemini CLI (`gemini`), wired against `-o stream-json`. Notable differences:
+  //  - No login subcommand: auth is the CLI's own interactive Google sign-in or GEMINI_API_KEY
+  //    (managedSignIn:false in CLI_SPECS), so the app doesn't drive sign-in — a PATH install the
+  //    user already authed (or an API key) is what makes it available.
+  //  - `--yolo` auto-approves every tool (bypassPermissions/danger-full-access equivalent) and
+  //    `--skip-trust` trusts the workspace for the session (else Gemini skips project context).
+  //  - No system-prompt flag, but `-p` is appended to stdin — so the DCL rules ride on stdin and
+  //    the user prompt on `-p`, keeping the ~7KB constant off argv (Windows cmd.exe cap, #1588).
+  //  - Session resume is index-based (`--resume latest|N`), which doesn't map to a stable
+  //    per-conversation key, so multi-turn resume is deferred: each turn is independent for now.
+  // The CH MCP scene tools are not wired for Gemini yet (same project-file/secret concern as
+  // Cursor) — a follow-up; file edits work without them.
+  gemini: {
+    id: 'gemini',
+    label: 'Gemini',
+    binNames: ['gemini'],
+    models: ['default', 'gemini-3-pro', 'gemini-3-flash', 'gemini-2.5-flash'],
+    defaultModel: 'default',
+    buildArgs: ctx => {
+      const args = [
+        '-o',
+        'stream-json',
+        '--yolo', // auto-approve all tools (full access, matches claude/codex/cursor)
+        '--skip-trust', // trust this workspace for the session so project context/tools work
+      ];
+      if (ctx.model !== undefined && ctx.model !== 'default') args.push('-m', ctx.model);
+      // DCL rules on stdin, user prompt via -p (appended to stdin by gemini) — keeps the ~7KB
+      // rules off argv. Image paths were appended to ctx.text by aiSend; gemini reads them with
+      // its own file tools.
+      args.push('-p', ctx.text);
+      return { args, stdin: DCL_SYSTEM_PROMPT };
+    },
+    parseLine: (line, projectDir, emit) => {
+      let obj: {
+        type?: string;
+        session_id?: string;
+        role?: string;
+        content?: string;
+        message?: string;
+        severity?: string;
+        status?: string;
+        error?: { message?: string };
+        tool_name?: string;
+        parameters?: Record<string, unknown>;
+      };
+      try {
+        obj = JSON.parse(line);
+      } catch {
+        return undefined;
+      }
+      // init carries the session id + model.
+      if (obj.type === 'init') return obj.session_id;
+      // Assistant text arrives as `message` events with role:"assistant" (delta chunks that the
+      // renderer concatenates). role:"user" is our own prompt echoed back — ignore it.
+      if (obj.type === 'message' && obj.role === 'assistant' && obj.content !== undefined) {
+        if (obj.content !== '') emit(obj.content);
+      }
+      if (obj.type === 'tool_use' && obj.tool_name !== undefined) {
+        emit('', geminiTool(obj.tool_name, obj.parameters, projectDir));
+      }
+      // Surface errors/warnings as text so a failed turn is never silent (mirrors codex).
+      if (obj.type === 'error' && obj.message !== undefined && obj.message !== '') {
+        emit(`${obj.message}\n`);
+      }
+      if (obj.type === 'result' && obj.status === 'error' && obj.error?.message !== undefined) {
+        emit(`${obj.error.message}\n`);
+      }
+      return undefined;
+    },
+  },
 };
 
 const scan = (): AiProviderInfo[] =>
@@ -574,11 +847,14 @@ const scan = (): AiProviderInfo[] =>
       models: def.models,
       defaultModel: def.defaultModel,
       available,
+      managedSignIn: CLI_SPECS[id].managedSignIn,
       version: bin !== null ? getCliVersion(bin) : undefined,
       reason: available
         ? undefined
         : bin === null
-          ? `${def.label} not found — sign in with your subscription`
+          ? CLI_SPECS[id].managedSignIn
+            ? `${def.label} not found — sign in with your subscription`
+            : `${def.label} not found — install it and sign in from your terminal`
           : `${def.label} installed — finish signing in`,
     };
   });
@@ -704,6 +980,41 @@ const IMG_EXT: Record<string, string> = {
   'image/webp': '.webp',
 };
 
+// Spill the system prompt to a temp file so it can be passed by path (--append-system-prompt-file)
+// instead of inline on argv — see BuiltTurn for why (Windows cmd.exe 8191-char command-line cap).
+// The prompt is a module constant, so write it once and reuse the path (mirrors
+// writeSceneMcpConfigFile). 0600 matches the project's temp-file convention — the mkdtemp dir is
+// already 0700 on Unix, but Windows ACLs are looser.
+let systemPromptPath: string | null = null;
+function writeSystemPromptFile(text: string): string {
+  if (systemPromptPath !== null) return systemPromptPath;
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'creator-hub-ai-'));
+  const p = path.join(dir, 'system-prompt.txt');
+  fs.writeFileSync(p, text, { mode: 0o600 });
+  systemPromptPath = p;
+  return p;
+}
+
+// Cursor has no system-prompt flag and no stdin prompt channel, so the DCL rules can't ride
+// with the turn the way claude (--append-system-prompt-file) and codex (stdin) take them.
+// Cursor's native channel is a project rule file it auto-loads, so write the rules as an
+// always-applied `.cursor/rules/creator-hub.mdc`. This also keeps the ~7KB off argv (the
+// Windows cmd.exe 8191-char cap BuiltTurn fights, #1588). Idempotent: rewritten only when the
+// content changes, so it isn't churned every turn. Best-effort — a write failure (read-only
+// project) just means no rules this turn; the caller logs and continues.
+function writeCursorRules(projectDir: string): void {
+  const dir = path.join(projectDir, '.cursor', 'rules');
+  const file = path.join(dir, 'creator-hub.mdc');
+  const body = `---\ndescription: Decentraland Creator Hub scene assistant\nalwaysApply: true\n---\n\n${DCL_SYSTEM_PROMPT}\n`;
+  try {
+    if (fs.readFileSync(file, 'utf8') === body) return;
+  } catch {
+    /* absent or unreadable — (re)write it below */
+  }
+  fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(file, body);
+}
+
 function writeAttachments(images: AiSendParams['images']): string[] {
   if (images === undefined || images.length === 0) return [];
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'creator-hub-ai-'));
@@ -773,14 +1084,22 @@ export async function aiSend(
   }
   // Resume the CLI thread saved for THIS session (empty id = a default single bucket).
   const sessionId = params.sessionId ?? '';
-  const args = def.buildArgs({
+  const turnCtx: TurnCtx = {
     text: prompt,
     model: params.model,
     projectDir,
     resume: getSessions()[projectDir]?.[sessionId]?.[params.provider],
     images,
     mcp,
-  });
+  };
+  // On-disk setup for a file-configured CLI (Cursor writes its rules into the project). Best-
+  // effort: a failure just means a degraded turn, never a hard stop.
+  try {
+    def.prepareTurn?.(turnCtx);
+  } catch (e) {
+    log.warn(`[AI] ${def.label} prepareTurn failed:`, e);
+  }
+  const { args, stdin } = def.buildArgs(turnCtx);
 
   const env = childEnv(params.apiKeyFromEnv ?? false);
   // Codex reads the MCP bearer token from this env var (see CODEX_MCP_TOKEN_ENV); keeping it
@@ -792,11 +1111,23 @@ export async function aiSend(
     child = crossSpawn(bin, args, {
       cwd: projectDir,
       env,
-      stdio: ['ignore', 'pipe', 'pipe'],
+      // The prompt/rules ride on stdin (see BuiltTurn — keeps the ~7KB off Windows' 8191-char
+      // command line); pipe it when present, otherwise leave stdin closed as before.
+      stdio: [stdin !== undefined ? 'pipe' : 'ignore', 'pipe', 'pipe'],
       detached: process.platform !== 'win32', // own process group so killTree reaps children
     });
   } catch (e) {
     throw new Error(`failed to launch ${def.label}: ${String(e)}`);
+  }
+
+  if (stdin !== undefined && child.stdin !== null) {
+    // If the child dies before draining stdin, the write races the exit and throws EPIPE — the
+    // exit handler already surfaces the real failure, so that one is expected and ignored. An
+    // unhandled 'error' would crash main; anything other than EPIPE is unexpected, so log it.
+    child.stdin.on('error', (err: NodeJS.ErrnoException) => {
+      if (err.code !== 'EPIPE') log.warn(`[AI] stdin write error: ${err.code ?? err.message}`);
+    });
+    child.stdin.end(stdin);
   }
 
   const turn = { child, turnId, done: false };

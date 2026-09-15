@@ -14,11 +14,11 @@ import {
 import { snapManager } from '../../babylon/decentraland/snap-manager';
 import { connectReverseChannel } from '../reverse-channel';
 import { registerRenderer } from '../plugin';
+import { isTransformInputArmed } from '../../logic/transform-input';
 import { consoleCommand } from './console';
 import { BevyRenderer } from './BevyRenderer';
 import { mountBevyEngine } from './engine-iframe';
 import { createCameraBridge } from './camera-bridge';
-import { createAnimationsBridge } from './animations-bridge';
 import { createDropPointBridge } from './drop-point-bridge';
 import { createForwardEditBridge } from './forward-edits';
 import { createHotReloadBridge } from './hot-reload-bridge';
@@ -105,14 +105,20 @@ export function asBevyInternals(internals: unknown): BevyInternals | null {
 export function registerBevyRenderer(): void {
   registerRenderer({
     id: 'bevy',
-    label: 'Bevy (preview)',
-    mount: async ({ canvas, container }) => {
+    label: 'Bevy (experimental)',
+    mount: async ({ canvas, container, loadAsset }) => {
       // The engine runs in its own iframe in the viewport container; the shared
       // (Babylon) canvas is hidden while Bevy is active and restored on dispose.
       const previousDisplay = canvas.style.display;
       canvas.style.display = 'none';
 
       const bevy = new BevyRenderer();
+
+      // The Animator panel's clip names are parsed from the model file (no engine
+
+      // read works on a frozen scene without ticking it; see gltf-animations.ts).
+
+      bevy.setAssetLoader(loadAsset);
       // Clicking a code-created entity (present only while the scene runs, not in
       // the authored tree) can't select/edit it — tell the user why, throttled so
       // repeated clicks don't stack toasts (#1418).
@@ -251,6 +257,9 @@ export function registerBevyRenderer(): void {
           iframe: engine.iframe,
           // In Interact mode, let bare editor-shortcut keys reach the scene (#1458).
           isEditingEnabled: () => bevy.interaction.isEditingEnabled(),
+          // Axis letters and digits are ordinary scene input until numeric
+          // transform entry is armed (#1087).
+          isTransformInputArmed,
         });
 
         // E/Q vertical fly movement: no SDK InputAction is bound to Q, so the
@@ -346,12 +355,6 @@ export function registerBevyRenderer(): void {
       // replies over the bus; wire it into the renderer's getPointerWorldPoint.
       const dropPoint = createDropPointBridge();
       bevy.setDropPointResolver(ndc => dropPoint.query(ndc));
-
-      // Animator: the agent reads an entity's GLTF animation clip names from the
-      // engine (GltfContainerLoadingState) and replies over the bus; wire it into
-      // getEntityAnimations so the Animator panel's clip dropdown populates.
-      const animations = createAnimationsBridge();
-      bevy.setAnimationsResolver(entity => animations.query(entity as number));
 
       // Editor camera: the toggle posts the chosen mode to the agent, which
       // enacts the fly-camera takeover in the engine. The agent also streams the
@@ -600,7 +603,6 @@ export function registerBevyRenderer(): void {
           sceneRunBridge.disconnect();
           cameraBridge.disconnect();
           dropPoint.disconnect();
-          animations.disconnect();
           disconnectSelection();
           disconnectPick();
           disconnectHoverHint();

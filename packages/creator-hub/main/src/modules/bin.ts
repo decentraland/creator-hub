@@ -1,4 +1,3 @@
-import path from 'path';
 import { promisify } from 'util';
 import { exec as execSync, spawn } from 'child_process';
 import log from 'electron-log/main';
@@ -11,16 +10,12 @@ import { createCircularBuffer } from '/shared/circular-buffer';
 
 import { CLIENT_NOT_INSTALLED_ERROR } from '/shared/types/client';
 import { ClientError } from '/shared/types/client';
-import { APP_UNPACKED_PATH, getBinPath, joinEnvPaths } from './path';
+import { APP_UNPACKED_PATH } from './path';
 import { setupNodeBinary } from './setup-node';
+import { getChildEnv, resolveBin, resolveNodeRuntime } from './node-runtime';
 
 // Registry to track all forked utility processes
 const processes: Map<number, Child> = new Map();
-
-// Get the current PATH value
-function getPath() {
-  return process.env.PATH || '';
-}
 
 // exec async
 const exec = promisify(execSync);
@@ -99,15 +94,15 @@ type RunOptions = {
   cwd?: string; // this is the directory where the command should be executed, it defaults to the app path.
   env?: Record<string, string>; // this are the env vars that should be added to the command's env
   workspace?: string; // this is the path where the node_modules that should be used are located, it defaults to the app path.
-  nodePath?: string | null; // a real Node binary to run the script on, instead of an Electron utility process
 };
 
 /**
  * Runs a javascript bin script in a child process, provides helpers to wait for the process to finish, listen for outputs, etc.
- * Uses an Electron utility process by default, or a real Node binary when `nodePath` is given.
+ * The script runs on the Node runtime picked by {@link resolveNodeRuntime}; an Electron utility
+ * process is only used when no real Node is available.
  * @param pkg The npm package
  * @param bin The command to run
- * @param options Options for the child process (args, cwd, env, workspace, nodePath)
+ * @param options Options for the child process (args, cwd, env, workspace)
  * @returns Child
  */
 export function run(pkg: string, bin: string, options: RunOptions = {}): Child {
@@ -118,50 +113,24 @@ export function run(pkg: string, bin: string, options: RunOptions = {}): Child {
   const promise = future<Awaited<ReturnType<Child['wait']>>>();
   const matchers: Matcher[] = [];
 
-  const {
-    workspace = APP_UNPACKED_PATH,
-    cwd = APP_UNPACKED_PATH,
-    args = [],
-    env = {},
-    nodePath,
-  } = options;
+  const { workspace = APP_UNPACKED_PATH, cwd = APP_UNPACKED_PATH, args = [], env = {} } = options;
 
-  const binPath = getBinPath(pkg, bin, workspace);
+  const runtime = resolveNodeRuntime();
+  const binPath = resolveBin(runtime, pkg, bin, workspace);
+  const childEnv = getChildEnv(runtime, env);
+  const isElectronNode = runtime.source === 'electron';
 
   const stdout = createCircularBuffer<Uint8Array>(MAX_BUFFER_SIZE);
   const stderr = createCircularBuffer<Uint8Array>(MAX_BUFFER_SIZE);
-  const stdall = createCircularBuffer<Uint8Array>(MAX_BUFFER_SIZE); // ordered buffer of stdout and stderr
-
-  // Running on a real Node binary matters for anything that spawns children of its own, which
-  // otherwise inherit Electron's module ABI — one that native dependencies ship no builds for.
-  //
-  // Putting its directory first on PATH is not just belt-and-braces: descendants launched
-  // through `npx` run their bin via a `#!/usr/bin/env node` shebang, which resolves `node` from
-  // PATH rather than from `process.execPath`. Without this, that lookup finds the Electron link
-  // setup-node.ts installs and lands back on the wrong ABI even though we spawned real Node.
-  const childEnv: Record<string, string | undefined> = {
-    ...process.env,
-    ...env,
-    PATH: nodePath ? joinEnvPaths(path.dirname(nodePath), getPath()) : getPath(),
-  };
-
-  // node-gyp-build treats this variable as "we are on Electron" regardless of the runtime it is
-  // actually loading into, and then looks for builds tagged for Electron's ABI. Inheriting it
-  // into a real Node process would recreate the very failure the nodePath branch avoids.
-  if (nodePath) {
-    delete childEnv.ELECTRON_RUN_AS_NODE;
-  }
+  const stdall = createCircularBuffer<Uint8Array>(MAX_BUFFER_SIZE);
 
   const ready = future<void>();
 
-  const forked: ChildProcessLike = nodePath
-    ? spawn(nodePath, [binPath, ...args], { cwd, stdio: 'pipe', env: childEnv })
-    : utilityProcess.fork(binPath, [...args], { cwd, stdio: 'pipe', env: childEnv });
+  const forked: ChildProcessLike = isElectronNode
+    ? utilityProcess.fork(binPath, [...args], { cwd, stdio: 'pipe', env: childEnv })
+    : spawn(runtime.node, [binPath, ...args], { cwd, stdio: 'pipe', env: childEnv });
 
-  // A plain child process reports a failed launch through 'error', and no 'exit' follows
-  // it; settle everything here so wait() and kill() never block on a process that never
-  // ran. Electron utility processes only emit 'spawn'/'exit'.
-  if (nodePath) {
+  if (!isElectronNode) {
     (forked as ReturnType<typeof spawn>).on('error', error => {
       if (!alive) return;
       alive = false;

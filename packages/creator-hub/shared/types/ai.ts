@@ -3,15 +3,15 @@
 // the other IPC payloads, they live in `shared/` where every layer can import them
 // but main/preload cannot import each other.
 //
-// Phase 1: main spawns the user's own installed coding CLI (Claude Code / Codex) as
-// a child process, one per turn, with the open project as its working directory. It
+// Phase 1: main spawns the user's own installed coding CLI (Claude Code / Codex / Cursor /
+// Gemini) as a child process, one per turn, with the open project as its working directory. It
 // runs on the user's subscription/OAuth session (API keys are stripped from the
 // child env on purpose), reads the scene and writes SDK7 code under `src/`. The
 // renderer only sends prompts and renders the streamed events below. The transport
 // sits behind this contract so it can be swapped (e.g. for ACP) without touching the
 // panel or the IPC surface.
 
-export type AiProvider = 'claude' | 'codex';
+export type AiProvider = 'claude' | 'codex' | 'cursor' | 'gemini';
 
 // One selectable backend, as reported to the chat UI. `available` is false when the
 // CLI binary isn't installed (or, best-effort, isn't logged in) — the UI disables it
@@ -27,12 +27,25 @@ export interface AiProviderInfo {
   // Absent when the binary isn't found or didn't report a parseable version. Used to
   // warn when the CLI is too old for the newest models (see isClaudeCliOutdated).
   version?: string;
+  // Whether the app can drive this CLI's sign-in itself (install-on-demand + scripted OAuth).
+  // False for a CLI with no scriptable login (Gemini authenticates from its own interactive CLI
+  // or an API-key env var), so the UI shows the terminal command instead of an in-app button.
+  managedSignIn: boolean;
 }
 
 // Newest Claude models (e.g. Fable) are gated on the CLI version: an older `claude`
 // rejects them with a `claude_code_version_too_old` API error. This is the floor the
 // UI nudges users up to. Bump it as newer models raise the requirement.
 export const MIN_CLAUDE_CLI_VERSION = '2.1.251';
+
+// Install + sign-in commands per agent, shown on the chat setup card and the settings
+// "Connect" section. Obviously-safe public package names.
+export const AI_CLI_COMMANDS: Record<AiProvider, { install: string; signin: string }> = {
+  claude: { install: 'npm i -g @anthropic-ai/claude-code', signin: 'claude' },
+  codex: { install: 'npm i -g @openai/codex', signin: 'codex login' },
+  cursor: { install: 'npm i -g cursor-agent', signin: 'cursor-agent login' },
+  gemini: { install: 'npm i -g @google/gemini-cli', signin: 'gemini' },
+};
 
 // True when `version` is a parseable semver strictly older than `min`. Unknown/absent
 // versions are treated as NOT outdated — we never nag when we couldn't read the version.
@@ -103,21 +116,34 @@ export type AiEvent =
 // hops are relayed through the main process, since two renderers can't talk directly.
 // These payloads must stay plain-serializable for IPC.
 
-export interface AiMirrorToolChip {
-  tool: string;
-  detail: string;
+// An interactive `ask_user` question, rendered in the transcript. The turn blocks until
+// `answer` is set (or `dismissed` on stop). Ephemeral — stripped before a transcript persists.
+export interface AiPromptData {
+  id: string;
+  question: string;
+  options: { label: string; description?: string }[];
+  multiSelect: boolean;
+  allowOther: boolean;
+  answer?: string;
+  dismissed?: boolean;
 }
+
+// One ordered piece of an assistant turn, rendered in the exact order it arrived so text,
+// tool chips, screenshots and interactive prompts stay chronological (#1573).
+export type AiPart =
+  | { kind: 'text'; text: string }
+  | { kind: 'tool'; tool: string; detail: string }
+  | { kind: 'image'; dataUrl: string }
+  | { kind: 'prompt'; prompt: AiPromptData };
 
 export interface AiMirrorMessage {
   id: string;
   role: 'user' | 'assistant';
-  text: string;
-  tools: AiMirrorToolChip[];
+  parts: AiPart[];
   done: boolean;
   error?: string;
   mutations?: number;
   reverted?: boolean;
-  images?: string[];
 }
 
 export interface AiMirrorState {
@@ -149,4 +175,7 @@ export type AiRemoteCommand =
   | { type: 'switchSession'; id: string }
   | { type: 'deleteSession'; id: string }
   | { type: 'clearSelection' }
+  // The detached window's close button: shut the assistant entirely (close the window AND the
+  // inline panel), instead of just docking back — so close is consistent whether detached or not.
+  | { type: 'closeAssistant' }
   | { type: 'sync' };

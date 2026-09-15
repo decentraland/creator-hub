@@ -293,7 +293,7 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
           />
           <TextField
             autoSelect
-            label="Creator name (optional)"
+            label="Creator name"
             placeholder="Decentraland user"
             {...authorProps}
           />

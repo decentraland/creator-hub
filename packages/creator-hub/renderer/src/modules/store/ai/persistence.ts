@@ -10,7 +10,7 @@
  * `--resume` continue are persisted separately by the main process (ai.ts), keyed by the
  * same (project path, sessionId) — the two are coordinated only by those.
  */
-import type { AiMessage, AiSessionMeta } from './types';
+import type { AiMessage, AiPart, AiSessionMeta } from './types';
 
 const INDEX_PREFIX = 'creator-hub:ai-index:';
 const SESSION_PREFIX = 'creator-hub:ai-session:';
@@ -73,6 +73,78 @@ export function writeSessionIndex(
   }
 }
 
+// A transcript persisted before the parts model (#1573) stores `text`/`tools` on each message
+// and no `parts`. Migrate those to ordered parts on read so old conversations still render (the
+// grouped text-then-tools order is the best we can reconstruct; true arrival order wasn't stored).
+interface LegacyMessage {
+  text?: unknown;
+  tools?: unknown;
+}
+function legacyParts(m: LegacyMessage): AiPart[] {
+  const parts: AiPart[] = [];
+  if (typeof m.text === 'string' && m.text !== '') parts.push({ kind: 'text', text: m.text });
+  if (Array.isArray(m.tools)) {
+    for (const t of m.tools) {
+      if (
+        t !== null &&
+        typeof t === 'object' &&
+        typeof (t as { tool?: unknown }).tool === 'string'
+      ) {
+        const chip = t as { tool: string; detail?: unknown };
+        parts.push({
+          kind: 'tool',
+          tool: chip.tool,
+          detail: typeof chip.detail === 'string' ? chip.detail : '',
+        });
+      }
+    }
+  }
+  return parts;
+}
+
+// Guard a persisted part so a malformed entry (e.g. a `text` part missing its `text`) can't
+// reach the transcript renderer. The write path always builds these correctly, so this only
+// defends against hand-edited or corrupt storage.
+function isValidPart(p: unknown): p is AiPart {
+  if (p === null || typeof p !== 'object') return false;
+  const part = p as {
+    kind?: unknown;
+    text?: unknown;
+    tool?: unknown;
+    detail?: unknown;
+    dataUrl?: unknown;
+    prompt?: unknown;
+  };
+  switch (part.kind) {
+    case 'text':
+      return typeof part.text === 'string';
+    case 'tool':
+      return typeof part.tool === 'string' && typeof part.detail === 'string';
+    case 'image':
+      return typeof part.dataUrl === 'string';
+    case 'prompt':
+      return part.prompt !== null && typeof part.prompt === 'object';
+    default:
+      return false;
+  }
+}
+
+function normalizeMessage(x: unknown): AiMessage | null {
+  if (x === null || typeof x !== 'object') return null;
+  const m = x as Partial<AiMessage> & LegacyMessage;
+  if (typeof m.id !== 'string' || (m.role !== 'user' && m.role !== 'assistant')) return null;
+  return {
+    id: m.id,
+    role: m.role,
+    parts: Array.isArray(m.parts) ? m.parts.filter(isValidPart) : legacyParts(m),
+    // A persisted message is a finished turn; never rehydrate it as still in-flight.
+    done: true,
+    ...(typeof m.error === 'string' ? { error: m.error } : {}),
+    ...(typeof m.mutations === 'number' ? { mutations: m.mutations } : {}),
+    ...(m.reverted === true ? { reverted: true } : {}),
+  };
+}
+
 export function readSessionMessages(
   path: string,
   id: string,
@@ -82,7 +154,8 @@ export function readSessionMessages(
     const raw = storage.getItem(sessionKey(path, id));
     if (raw === null) return [];
     const parsed = JSON.parse(raw) as { messages?: unknown };
-    return Array.isArray(parsed.messages) ? (parsed.messages as AiMessage[]) : [];
+    if (!Array.isArray(parsed.messages)) return [];
+    return parsed.messages.map(normalizeMessage).filter((m): m is AiMessage => m !== null);
   } catch {
     return [];
   }
@@ -99,13 +172,13 @@ export function writeSessionMessages(
       storage.removeItem(sessionKey(path, id));
       return;
     }
-    // Drop inline screenshot images (#1506): a few base64 PNGs would blow the size budget
-    // and evict the transcript. They're ephemeral — the text/tool history is what's worth
-    // keeping across restarts. Interactive `ask_user` prompts are ephemeral too (they belong
-    // to a live turn and can't be answered after a reload), so drop those messages entirely.
-    const slim = messages
-      .filter(m => m.prompt === undefined)
-      .map(m => (m.images === undefined ? m : { ...m, images: undefined }));
+    // Drop ephemeral parts before persisting: inline screenshot images (#1506) would blow the
+    // size budget and evict the transcript, and interactive `ask_user` prompts belong to a live
+    // turn (they can't be answered after a reload). The text/tool history is what's worth keeping.
+    const slim = messages.map(m => ({
+      ...m,
+      parts: m.parts.filter(p => p.kind !== 'image' && p.kind !== 'prompt'),
+    }));
     const raw = JSON.stringify({ messages: slim });
     if (raw.length > MAX_BYTES) return; // too big to persist; skip rather than throw
     storage.setItem(sessionKey(path, id), raw);

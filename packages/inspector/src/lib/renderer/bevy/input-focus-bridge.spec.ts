@@ -83,8 +83,11 @@ describe('createInputFocusBridge', () => {
   let hostWindow: ReturnType<typeof fakeWindow>;
   let iframe: { focused: number; focus: () => void };
   let disconnect: () => void;
+  /** Stands in for the numeric-transform modal's armed flag. */
+  let armed: boolean;
 
   beforeEach(() => {
+    armed = false;
     engineWindow = fakeWindow();
     hostWindow = fakeWindow(true);
     iframe = {
@@ -97,6 +100,7 @@ describe('createInputFocusBridge', () => {
       engineWindow: engineWindow as unknown as Window,
       hostWindow: hostWindow as unknown as Window,
       iframe: iframe as unknown as HTMLIFrameElement,
+      isTransformInputArmed: () => armed,
     });
   });
 
@@ -133,6 +137,42 @@ describe('createInputFocusBridge', () => {
     const e = keyEvent('f');
     engineWindow.emit('keydown', e);
     expect(e.defaultPrevented).toBe(false);
+  });
+
+  it('should forward the bare gizmo tool keys', () => {
+    for (const k of ['m', 'g', 'r', 'x']) engineWindow.emit('keydown', keyEvent(k));
+    expect(hostWindow.document!.body.dispatched.map((e: any) => e.key)).toEqual([
+      'm',
+      'g',
+      'r',
+      'x',
+    ]);
+  });
+
+  it('should NOT forward axis letters, digits or Enter while the transform entry is closed', () => {
+    for (const k of ['y', 'z', '1', '5', '.', '-', 'Enter', 'Escape']) {
+      engineWindow.emit('keydown', keyEvent(k));
+    }
+    // They are ordinary scene input until the entry is armed — a bare `1` must
+    // keep reaching a running scene.
+    expect(hostWindow.document!.body.dispatched).toHaveLength(0);
+  });
+
+  it('should forward axis letters, digits and Enter once the transform entry is armed', () => {
+    armed = true;
+    for (const k of ['y', '1', '5', 'Enter']) engineWindow.emit('keydown', keyEvent(k));
+    expect(hostWindow.document!.body.dispatched.map((e: any) => e.key)).toEqual([
+      'y',
+      '1',
+      '5',
+      'Enter',
+    ]);
+  });
+
+  it('should keep movement keys engine-only even while the transform entry is armed', () => {
+    armed = true;
+    for (const k of ['w', 'a', 's', 'd', ' ']) engineWindow.emit('keydown', keyEvent(k));
+    expect(hostWindow.document!.body.dispatched).toHaveLength(0);
   });
 
   it('should refocus the iframe on viewport pointer-down', () => {

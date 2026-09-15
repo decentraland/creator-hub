@@ -14,7 +14,7 @@ import {
 
 import { MAIN_WINDOW_ID } from '../../mainWindow';
 import { StreamError, run as runBin } from '../bin';
-import { getBundledNodePath } from '../path';
+import { resolveNodeRuntime } from '../node-runtime';
 import { getWindow } from '../window';
 import { readManifest, revertFromManifest } from './backup';
 import { createWorkerOutputReader } from './protocol';
@@ -80,18 +80,19 @@ export async function run(projectPath: string, options: OptimizeOptions): Promis
   if (info.status !== 'ready') throw new Error('The optimizer tools are not installed yet.');
   await ensureWorkerPackage();
 
-  // The toolchain is built for real Node's ABI. Without a node binary `bin.run` silently falls
-  // back to an Electron utility process, which sharp has no prebuilt binary for — the run would
-  // then die deep inside the worker on a native load error that says nothing about the cause.
-  const nodePath = getBundledNodePath();
-  if (!nodePath) throw new Error('Could not find the Node runtime the optimizer needs to run.');
+  // The toolchain is built for real Node's ABI. `resolveNodeRuntime` falls back to running the
+  // script on Electron when no Node binary is found, and sharp has no prebuilt binary for that
+  // ABI — the run would die deep inside the worker on a native load error that says nothing
+  // about the cause.
+  if (resolveNodeRuntime().source === 'electron') {
+    throw new Error('Could not find the Node runtime the optimizer needs to run.');
+  }
 
   const job: OptimizeWorkerJob = { command: 'run', projectPath, options };
   const toolsDir = getToolsDir();
   const child = runBin(WORKER_PKG, WORKER_BIN, {
     workspace: toolsDir,
     cwd: toolsDir,
-    nodePath,
     env: { OPTIMIZER_JOB: JSON.stringify(job) },
   });
 
