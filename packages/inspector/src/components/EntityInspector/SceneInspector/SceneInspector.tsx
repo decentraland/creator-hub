@@ -1,5 +1,4 @@
 import { useCallback } from 'react';
-import { IoIosImage } from 'react-icons/io';
 
 import { useComponentInput } from '../../../hooks/sdk/useComponentInput';
 import { useHasComponent } from '../../../hooks/sdk/useHasComponent';
@@ -29,13 +28,12 @@ import {
 } from '../../../redux/ui';
 import { SceneInspectorTab } from '../../../redux/ui/types';
 import { Tab } from '../Tab';
-import { transformBinaryToBase64Resource } from '../../../lib/data-layer/host/fs-utils';
-import { selectThumbnails } from '../../../redux/app';
 import { TransitionMode } from '../../../lib/sdk/components/SceneMetadata';
 import { Layout } from './Layout';
 import type { Props } from './types';
 import { fromScene, toScene, isValidInput, isImage, MIDDAY_SECONDS } from './utils';
 import { SceneInfoInput } from './SceneInfoInput';
+import { ThumbnailPreview } from './ThumbnailPreview';
 
 import './SceneInspector.css';
 
@@ -174,36 +172,6 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
   const selectedSceneInspectorTab = useAppSelector(getSelectedSceneInspectorTab);
   const dispatch = useAppDispatch();
 
-  const thumbnails = useAppSelector(selectThumbnails);
-  const getThumbnail = useCallback(
-    (value: string) => {
-      const [name] = value.split('.');
-      const thumbnail = thumbnails.find($ => $.path.endsWith(name + '.png'));
-      if (thumbnail) {
-        return thumbnail?.content;
-      }
-    },
-    [thumbnails],
-  );
-
-  const renderThumbnail = useCallback(() => {
-    const filename = thumbnailProps.value
-      ? (thumbnailProps.value as unknown as string).split('/').pop()
-      : null;
-    if (filename) {
-      const thumbnail = getThumbnail(filename);
-      if (thumbnail) {
-        return (
-          <img
-            src={transformBinaryToBase64Resource(thumbnail)}
-            alt={filename}
-          />
-        );
-      }
-    }
-    return <IoIosImage />;
-  }, [thumbnailProps.value, getThumbnail]);
-
   const handleSelectTab = useCallback(
     (tab: SceneInspectorTab) => {
       if (tab === selectedSceneInspectorTab) {
@@ -267,8 +235,7 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
             label="Description"
             {...descriptionProps}
           />
-          <span className="ThumbnailRow">
-            <div className="thumbnail">{renderThumbnail()}</div>
+          <div className="ThumbnailRow">
             <FileUploadField
               {...thumbnailProps}
               label="Thumbnail"
@@ -276,9 +243,9 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
               options={imageOptions}
               onDrop={handleDrop}
               isValidFile={isImage}
-              showPreview
             />
-          </span>
+            <ThumbnailPreview path={(thumbnailProps.value as unknown as string) ?? ''} />
+          </div>
           <Dropdown
             label="Categories"
             options={CATEGORIES_OPTIONS}

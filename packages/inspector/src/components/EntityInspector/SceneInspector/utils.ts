@@ -105,5 +105,47 @@ export const isImageFile = (value: string): boolean =>
 export const isImage = (node: TreeNode): node is AssetNodeItem =>
   isAssetNode(node) && isImageFile(node.name);
 
+export const THUMBNAIL_RECOMMENDED_WIDTH = 1920;
+export const THUMBNAIL_RECOMMENDED_HEIGHT = 1080;
+const THUMBNAIL_ASPECT_RATIO = THUMBNAIL_RECOMMENDED_WIDTH / THUMBNAIL_RECOMMENDED_HEIGHT;
+// A 16:9 thumbnail is not perfectly reproducible at every size once rounded to
+// whole pixels (1000x563 is as close as it gets), so allow a 1% deviation.
+const THUMBNAIL_ASPECT_TOLERANCE = 0.01;
+
+/**
+ * Fraction of the thumbnail's width hidden on EACH side wherever the platform
+ * shows the square crop (the central 1080x1080 of a 1920x1080 image). Sizes
+ * other than 16:9 get stretched to 16:9 first, so the fraction holds for them too.
+ */
+export const THUMBNAIL_SAFE_AREA_INSET =
+  (THUMBNAIL_RECOMMENDED_WIDTH - THUMBNAIL_RECOMMENDED_HEIGHT) / (2 * THUMBNAIL_RECOMMENDED_WIDTH);
+
+export type ThumbnailDimensions = { width: number; height: number };
+
+export function hasThumbnailAspectRatio(width: number, height: number): boolean {
+  if (width <= 0 || height <= 0) return false;
+  return (
+    Math.abs(width / height - THUMBNAIL_ASPECT_RATIO) <=
+    THUMBNAIL_ASPECT_RATIO * THUMBNAIL_ASPECT_TOLERANCE
+  );
+}
+
+export function getThumbnailWarnings(
+  path: string,
+  dimensions: ThumbnailDimensions | null,
+): string[] {
+  const warnings: string[] = [];
+  if (!isImageFile(path)) {
+    warnings.push('The thumbnail must be a .png or .jpg image.');
+  }
+  if (dimensions && !hasThumbnailAspectRatio(dimensions.width, dimensions.height)) {
+    warnings.push(
+      `The thumbnail is ${dimensions.width}×${dimensions.height}, not 16:9, so it may look stretched. ` +
+        `Use ${THUMBNAIL_RECOMMENDED_WIDTH}×${THUMBNAIL_RECOMMENDED_HEIGHT} or another 16:9 size.`,
+    );
+  }
+  return warnings;
+}
+
 export const MIDDAY_SECONDS = 43200;
 export const MIDNIGHT_SECONDS = 86400;

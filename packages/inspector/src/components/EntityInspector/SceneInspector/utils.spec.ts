@@ -3,7 +3,14 @@ import { SceneAgeRating, SceneCategory } from '../../../lib/sdk/components';
 import { TransitionMode } from '../../../lib/sdk/components/SceneMetadata';
 import type { Layout } from '../../../lib/utils/layout';
 import type { SceneInput } from './types';
-import { fromScene, isValidInput, parseParcels, toScene } from './utils';
+import {
+  fromScene,
+  getThumbnailWarnings,
+  hasThumbnailAspectRatio,
+  isValidInput,
+  parseParcels,
+  toScene,
+} from './utils';
 
 //TODO fix tests
 function getInput(base: string, parcels: string): SceneInput {
@@ -137,6 +144,72 @@ describe('SceneInspector/utils', () => {
 
       expect(isValidValidInput).toBe(true);
       expect(isValidInvalidInput).toBe(false);
+    });
+  });
+
+  describe('hasThumbnailAspectRatio', () => {
+    it('should accept the recommended 1920x1080 size', () => {
+      expect(hasThumbnailAspectRatio(1920, 1080)).toBe(true);
+    });
+
+    it('should accept other 16:9 sizes', () => {
+      expect(hasThumbnailAspectRatio(1280, 720)).toBe(true);
+      expect(hasThumbnailAspectRatio(640, 360)).toBe(true);
+    });
+
+    it('should tolerate rounding to whole pixels', () => {
+      expect(hasThumbnailAspectRatio(1000, 563)).toBe(true);
+    });
+
+    it('should reject other aspect ratios', () => {
+      expect(hasThumbnailAspectRatio(1080, 1080)).toBe(false);
+      expect(hasThumbnailAspectRatio(1600, 1200)).toBe(false);
+      expect(hasThumbnailAspectRatio(1080, 1920)).toBe(false);
+    });
+
+    it('should reject degenerate sizes', () => {
+      expect(hasThumbnailAspectRatio(0, 0)).toBe(false);
+      expect(hasThumbnailAspectRatio(1920, 0)).toBe(false);
+    });
+  });
+
+  describe('getThumbnailWarnings', () => {
+    describe('when the thumbnail is a 16:9 png', () => {
+      it('should return no warnings', () => {
+        expect(
+          getThumbnailWarnings('assets/scene/thumbnail.png', { width: 1920, height: 1080 }),
+        ).toEqual([]);
+      });
+    });
+
+    describe('when the dimensions are not known yet', () => {
+      it('should not warn about the aspect ratio', () => {
+        expect(getThumbnailWarnings('assets/scene/thumbnail.png', null)).toEqual([]);
+      });
+    });
+
+    describe('when the thumbnail is not 16:9', () => {
+      it('should warn with the actual size', () => {
+        const warnings = getThumbnailWarnings('assets/scene/thumbnail.png', {
+          width: 1080,
+          height: 1080,
+        });
+        expect(warnings).toHaveLength(1);
+        expect(warnings[0]).toContain('1080×1080');
+        expect(warnings[0]).toContain('16:9');
+      });
+    });
+
+    describe('when the thumbnail is not a png or jpg', () => {
+      it('should warn about the format', () => {
+        const warnings = getThumbnailWarnings('assets/scene/thumbnail.gif', {
+          width: 1920,
+          height: 1080,
+        });
+        expect(warnings).toHaveLength(1);
+        expect(warnings[0]).toContain('.png');
+        expect(warnings[0]).toContain('.jpg');
+      });
     });
   });
 });
