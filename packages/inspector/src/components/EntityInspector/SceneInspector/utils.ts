@@ -7,6 +7,9 @@ import type { AssetNodeItem } from '../../ProjectAssetExplorer/types';
 import { isAssetNode } from '../../ProjectAssetExplorer/utils';
 import { ACCEPTED_FILE_TYPES } from '../../ui/FileUploadField/types';
 import { TransitionMode } from '../../../lib/sdk/components/SceneMetadata';
+import { getDataLayerInterface } from '../../../redux/data-layer';
+import { normalizePath } from '../../SceneInfoPanel/MarkdownRenderer/utils';
+import type { ValidationError } from '../../ImportAsset/types';
 import { fromSceneSpawnPoint, toSceneSpawnPoint } from '../PlayerInspector/utils';
 import type { SceneInput } from './types';
 
@@ -145,6 +148,47 @@ export function getThumbnailWarnings(
     );
   }
   return warnings;
+}
+
+async function getImageDimensions(blob: Blob): Promise<ThumbnailDimensions> {
+  const bitmap = await createImageBitmap(blob);
+  const dimensions = { width: bitmap.width, height: bitmap.height };
+  bitmap.close();
+  return dimensions;
+}
+
+export async function validateThumbnailFile(blob: Blob): Promise<ValidationError> {
+  let dimensions: ThumbnailDimensions;
+  try {
+    dimensions = await getImageDimensions(blob);
+  } catch {
+    return { type: 'dimensions', message: 'The file could not be read as an image.' };
+  }
+  if (hasThumbnailAspectRatio(dimensions.width, dimensions.height)) return undefined;
+  return {
+    type: 'dimensions',
+    message:
+      `${dimensions.width}×${dimensions.height} is not a supported thumbnail size. ` +
+      `Use a 16:9 image, ideally ${THUMBNAIL_RECOMMENDED_WIDTH}×${THUMBNAIL_RECOMMENDED_HEIGHT}.`,
+  };
+}
+
+/**
+ * Checks an existing scene file before it is set as the thumbnail. A file that
+ * cannot be read is a broken reference rather than a bad image, so it is let
+ * through and the preview reports it instead.
+ */
+export async function validateThumbnailPath(path: string): Promise<ValidationError> {
+  if (!path) return undefined;
+  const dataLayer = getDataLayerInterface();
+  if (!dataLayer) return undefined;
+  let content: Uint8Array;
+  try {
+    ({ content } = await dataLayer.getFile({ path: normalizePath(path) }));
+  } catch {
+    return undefined;
+  }
+  return validateThumbnailFile(new Blob([content as BlobPart]));
 }
 
 export const MIDDAY_SECONDS = 43200;

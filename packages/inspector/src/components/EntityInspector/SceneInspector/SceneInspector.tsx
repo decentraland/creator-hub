@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 
 import { useComponentInput } from '../../../hooks/sdk/useComponentInput';
 import { useHasComponent } from '../../../hooks/sdk/useHasComponent';
@@ -28,10 +28,20 @@ import {
 } from '../../../redux/ui';
 import { SceneInspectorTab } from '../../../redux/ui/types';
 import { Tab } from '../Tab';
+import { Modal } from '../../Modal';
+import { Error as ImportError } from '../../ImportAsset/Error';
 import { TransitionMode } from '../../../lib/sdk/components/SceneMetadata';
 import { Layout } from './Layout';
 import type { Props } from './types';
-import { fromScene, toScene, isValidInput, isImage, MIDDAY_SECONDS } from './utils';
+import {
+  fromScene,
+  toScene,
+  isValidInput,
+  isImage,
+  validateThumbnailFile,
+  validateThumbnailPath,
+  MIDDAY_SECONDS,
+} from './utils';
 import { SceneInfoInput } from './SceneInfoInput';
 import { ThumbnailPreview } from './ThumbnailPreview';
 
@@ -114,6 +124,7 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
     entity,
     Scene,
   );
+  const [rejectedThumbnail, setRejectedThumbnail] = useState<string | null>(null);
 
   const handleSkyboxAutoChange = useCallback(
     async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -158,11 +169,21 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
     [componentValue, setComponentValue],
   );
 
-  const handleDrop = useCallback(async (thumbnail: string) => {
-    const { operations } = sdk;
-    operations.updateValue(Scene, entity, { thumbnail });
-    await operations.dispatch();
-  }, []);
+  const handleThumbnailChange = useCallback(
+    async (thumbnail: string) => {
+      const error = await validateThumbnailPath(thumbnail);
+      if (error) {
+        setRejectedThumbnail(error.message);
+        return;
+      }
+      const { operations } = sdk;
+      operations.updateValue(Scene, entity, { thumbnail });
+      await operations.dispatch();
+    },
+    [sdk, Scene, entity],
+  );
+
+  const dismissRejectedThumbnail = useCallback(() => setRejectedThumbnail(null), []);
 
   if (!hasScene) {
     return null;
@@ -238,14 +259,29 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
           <div className="ThumbnailRow">
             <FileUploadField
               {...thumbnailProps}
+              onChange={undefined}
               label="Thumbnail"
               accept={ACCEPTED_FILE_TYPES['image']}
               options={imageOptions}
-              onDrop={handleDrop}
+              onDrop={handleThumbnailChange}
               isValidFile={isImage}
+              validateFile={validateThumbnailFile}
             />
             <ThumbnailPreview path={(thumbnailProps.value as unknown as string) ?? ''} />
           </div>
+          <Modal
+            isOpen={rejectedThumbnail !== null}
+            onRequestClose={dismissRejectedThumbnail}
+            className="ImportAssetModal"
+            overlayClassName="ImportAssetModalOverlay"
+          >
+            <ImportError
+              assets={[]}
+              errorMessage="Thumbnail not supported"
+              description={rejectedThumbnail}
+              primaryAction={{ name: 'OK', onClick: dismissRejectedThumbnail }}
+            />
+          </Modal>
           <Dropdown
             label="Categories"
             options={CATEGORIES_OPTIONS}

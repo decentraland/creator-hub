@@ -20,7 +20,7 @@ const DOCS_URL =
 
 const GUIDANCE =
   `Use a .png or .jpg image with a 16:9 aspect ratio, ideally ${THUMBNAIL_RECOMMENDED_WIDTH}×${THUMBNAIL_RECOMMENDED_HEIGHT}px. ` +
-  'Other sizes are stretched to 16:9. Some parts of the platform show only the central square ' +
+  'Other aspect ratios are not accepted. Some parts of the platform show only the central square ' +
   `(${THUMBNAIL_RECOMMENDED_HEIGHT}×${THUMBNAIL_RECOMMENDED_HEIGHT} of a ${THUMBNAIL_RECOMMENDED_WIDTH}×${THUMBNAIL_RECOMMENDED_HEIGHT} image): ` +
   'the shaded sides are cut off there, so keep text and logos out of them.';
 
