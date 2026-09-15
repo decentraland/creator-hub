@@ -15,19 +15,20 @@
   background-color: transparent;
 }
 
-.MoreOptionsMenu .MoreOptionsContent {
-  position: absolute;
-  right: 0;
+/* Rendered in a portal on document.body and placed by usePopoverPosition, so the menu escapes the
+   scroll/overflow clipping of whichever panel it opens in. Consumers size it via `className`. */
+.MoreOptionsContent {
+  position: fixed;
   padding: 4px 0;
   border-radius: 4px;
   background-color: var(--gray-0);
   min-width: 140px;
-  z-index: 5;
+  z-index: 1000;
   box-shadow: 0px 3px 5px -1px rgba(0, 0, 0, 0.4);
 }
 
 /* legacy children (Button-based) support */
-.MoreOptionsMenu .MoreOptionsContent .Button {
+.MoreOptionsContent .Button {
   display: flex;
   align-items: center;
   gap: 4px;
@@ -35,10 +36,10 @@
   width: 100%;
 }
 
-.MoreOptionsMenu .MoreOptionsContent .Button:not(:hover) {
+.MoreOptionsContent .Button:not(:hover) {
   background-color: transparent;
 }
 
-.MoreOptionsMenu .MoreOptionsContent .Button:hover:not(:disabled) {
+.MoreOptionsContent .Button:hover:not(:disabled) {
   background-color: var(--primary-main);
 }

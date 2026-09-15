@@ -499,7 +499,10 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
           <AddButton onClick={() => handleScriptModuleMode('create')}>
             Add New Script Module
           </AddButton>
-          <MoreOptionsMenu icon={<>⌄</>}>
+          <MoreOptionsMenu
+            className="ScriptActionsMenu"
+            icon={<>⌄</>}
+          >
             <Button onClick={() => handleScriptModuleMode('import')}>
               <FileUploadIcon />
               Import Script File

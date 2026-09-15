@@ -3,12 +3,20 @@
   overflow: scroll;
   overflow-y: auto;
   overflow-x: hidden;
-  padding: 0 24px;
+  /* Headroom for the name tooltip, which sits ~37px above the tile it labels
+     (its own height plus the popup offset). The category view gets that room
+     for free from the category label above each row; search mode has no label,
+     so without this the tooltip lands on the panel header (#1010). */
+  padding: 28px 24px 0;
 }
 
 .assets-catalog-assets-container {
   display: flex;
   flex-wrap: wrap;
+  /* The search-mode container is full height, and the default `stretch` would grow
+     each row to fill it — the name tooltip anchors to the row-tall trigger wrapper
+     and floats far above the tile (#1010). */
+  align-content: flex-start;
   gap: 8px;
 }
 
