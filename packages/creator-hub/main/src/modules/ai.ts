@@ -13,7 +13,7 @@ import fs from 'fs';
 import os from 'os';
 import path from 'path';
 import { StringDecoder } from 'string_decoder';
-import { spawn, spawnSync } from 'child_process';
+import { spawn } from 'child_process';
 import type { ChildProcess } from 'child_process';
 // The turn child is an npm-installed CLI. On Windows that's a `.cmd` shim, which child_process
 // can't spawn directly with an arg array (the prompt would need cmd.exe escaping); cross-spawn
@@ -24,6 +24,7 @@ import type { AiEvent, AiProvider, AiProviderInfo, AiSendParams } from '/shared/
 import { DCL_SYSTEM_PROMPT } from './ai-prompt';
 import { CLI_SPECS, getManagedBinDir, isSignedIn as isManagedSignedIn } from './ai-cli-paths';
 import { getUserDataPath } from './electron';
+import { getChildEnv, resolveNodeRuntime } from './node-runtime';
 import { getProjectId, track } from './analytics';
 import {
   clearPendingAsks,
@@ -193,20 +194,18 @@ function findExecutable(names: string[]): string | null {
   return null;
 }
 
-// `<bin> --version` prints e.g. "2.1.260 (Claude Code)". Best-effort: a probe failure or an
-// unparseable line yields undefined and the UI simply won't nudge — this only gates a proactive
-// hint, never the turn (the raw-error rewrite below covers a too-old CLI regardless). Cached per
-// resolved path: scan() runs on every panel open/recheck and a CLI's version only changes on
-// reinstall; detectProviders() clears the cache on an explicit recheck so an update is re-read.
-// Windows note: a bare spawnSync of a `.cmd` shim can fail (see the turn's cross-spawn use) — the
-// probe just returns undefined there, so Windows loses the proactive hint but not the rewrite.
 const cliVersionCache = new Map<string, string | undefined>();
 
-function getCliVersion(bin: string): string | undefined {
+/** Version reported by `<bin> --version`, probed on the resolved runtime; undefined when unknown. */
+export function getCliVersion(bin: string): string | undefined {
   if (cliVersionCache.has(bin)) return cliVersionCache.get(bin);
   let version: string | undefined;
   try {
-    const res = spawnSync(bin, ['--version'], { encoding: 'utf8', timeout: 5000 });
+    const res = crossSpawn.sync(bin, ['--version'], {
+      encoding: 'utf8',
+      timeout: 5000,
+      env: getChildEnv(resolveNodeRuntime()),
+    });
     const out = `${res.stdout ?? ''}${res.stderr ?? ''}`;
     const m = out.match(/(\d+\.\d+\.\d+)/);
     version = m ? m[1] : undefined;
@@ -295,11 +294,9 @@ export function filterEnvForChild(
   return env;
 }
 
-// The child env: filter per the billing mode, keep everything else (HOME, keychain access),
-// and widen PATH so the CLI finds its own `env node` shebang under a version manager. In
-// API-key mode, fill any key the GUI env lacks from the login-shell probe.
-function childEnv(apiKeyFromEnv: boolean): NodeJS.ProcessEnv {
-  const env = filterEnvForChild(process.env, apiKeyFromEnv);
+/** Env for an AI CLI turn: the resolved runtime env, filtered per billing mode, plus the version-manager search dirs. */
+export function childEnv(apiKeyFromEnv: boolean): NodeJS.ProcessEnv {
+  const env = filterEnvForChild(getChildEnv(resolveNodeRuntime()), apiKeyFromEnv);
   if (apiKeyFromEnv) {
     for (const [k, v] of Object.entries(shellApiKeys)) {
       if (v !== undefined && v !== '' && env[k] === undefined) env[k] = v;
