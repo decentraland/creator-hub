@@ -19,7 +19,7 @@ const BACKUP_SUBDIR = 'backup';
 const MANIFEST_NAME = 'manifest.json';
 const DCLIGNORE = '.dclignore';
 const DCLIGNORE_MARKER = '# --- creator-hub optimize backup (auto-generated, do not edit) ---';
-const DCLIGNORE_END_MARKER = '# --- end creator-hub optimize backup ---';
+const DCLIGNORE_END_MARKER = '# --- end of creator-hub optimize block ---';
 // Entry count of the block as written before the end marker existed, so those can still be
 // stripped exactly.
 const LEGACY_BLOCK_LINES = 3;

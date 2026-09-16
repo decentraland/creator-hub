@@ -71,11 +71,17 @@ describe('compressImage', () => {
       const input = await png8();
       const alreadyOptimal = (await compressImage(input, 'baseColor', 'image/png', options())).data;
 
-      const { data } = await compressImage(alreadyOptimal, 'baseColor', 'image/png', options());
+      const { data, transformed } = await compressImage(
+        alreadyOptimal,
+        'baseColor',
+        'image/png',
+        options(),
+      );
 
       // Identity, not just the same length: re-encoding its own output gains nothing, so the
       // bytes handed in must come straight back for `noGain` to keep the file in place.
       expect(Buffer.compare(data, alreadyOptimal)).toBe(0);
+      expect(transformed).toBe(false);
       expect((await sharp(data).metadata()).depth).toBe('uchar');
     });
   });
@@ -86,7 +92,7 @@ describe('compressImage', () => {
         .png()
         .toBuffer();
 
-      const { data } = await compressImage(
+      const { data, transformed } = await compressImage(
         input,
         'orm',
         'image/png',
@@ -96,6 +102,9 @@ describe('compressImage', () => {
       const meta = await sharp(data).metadata();
       expect(meta.height).toBe(16);
       expect(meta.width).toBe(16);
+      // The pipeline must not weigh a resize on bytes alone: a smaller image that does not
+      // compress smaller is still the size that was asked for.
+      expect(transformed).toBe(true);
     });
   });
 

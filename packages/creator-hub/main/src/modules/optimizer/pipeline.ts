@@ -275,7 +275,12 @@ async function externalizeTextures(
     if (cacheable) {
       job.cacheKey = TextureCache.key(job.hash!, job.category, options.textures);
       if (cache.hasNoGain(job.cacheKey, buffer.length)) {
-        job.compressed = Promise.resolve({ data: buffer, ext: mimeToExtension(mime), mime });
+        job.compressed = Promise.resolve({
+          data: buffer,
+          ext: mimeToExtension(mime),
+          mime,
+          transformed: false,
+        });
         continue;
       }
     }
@@ -315,8 +320,12 @@ async function externalizeTextures(
     if (canonicalAbs) {
       if (canonicalAbs !== originalAbs) state.result.texturesDeduped++;
     } else {
-      const { data, ext } = await job.compressed!;
-      const noGain = data.length >= buffer.length;
+      const { data, ext, transformed } = await job.compressed!;
+      // Bytes decide only when the pixels are the same image. A resize to a smaller cap that
+      // does not shrink a tiny PNG is still the resolution the creator asked for — treating it
+      // as "no gain" pointed every model back at the old sidecar and silently ignored the new
+      // size (and would have cached that verdict for the next run).
+      const noGain = !transformed && data.length >= buffer.length;
       if (job.cacheKey && noGain) cache.rememberNoGain(job.cacheKey, buffer.length);
       if (originalAbs && noGain) {
         // Re-encoding an existing sidecar gained nothing: keep pointing at the original rather
@@ -435,9 +444,14 @@ async function removeSupersededTextures(state: RunState, glbs: string[]): Promis
   );
 
   for (const abs of candidates) {
-    if (mentioned.has(path.basename(abs))) continue;
     const rel = toPosix(path.relative(projectPath, abs));
     if (rel.startsWith('..')) continue;
+    // A sidecar this optimizer wrote is only ever reached through a GLB, so a scene-code mention
+    // of its name is a coincidence with the ORIGINAL it was named after (`ui_logo.png` in
+    // src/ui.ts protects models/ui_logo.png, not optimized-textures/ui_logo.png). Protecting it
+    // too would keep every superseded sidecar with a code-named source around forever.
+    const ownSidecar = isInsideTexturesDir(state, abs) && state.manifest.createdFiles.includes(rel);
+    if (!ownSidecar && mentioned.has(path.basename(abs))) continue;
     let bytes: number;
     try {
       bytes = (await fs.stat(abs)).size;
@@ -452,10 +466,9 @@ async function removeSupersededTextures(state: RunState, glbs: string[]): Promis
       // it is tracked in createdFiles, which revert deletes, so revert would restore and delete
       // the same path. Drop the file and stop tracking it instead. A file the creator put in the
       // sidecar folder themselves is not in createdFiles, and is left alone.
-      const tracked = state.manifest.createdFiles.indexOf(rel);
-      if (tracked === -1) continue;
+      if (!ownSidecar) continue;
       await fs.rm(abs, { force: true });
-      state.manifest.createdFiles.splice(tracked, 1);
+      state.manifest.createdFiles.splice(state.manifest.createdFiles.indexOf(rel), 1);
     } else {
       await stashFile(projectPath, rel);
       pushUnique(state.manifest.removedFiles, rel);

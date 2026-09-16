@@ -22,7 +22,7 @@ export type CompressRequest = {
 };
 
 export type CompressReply =
-  | { id: number; data: ArrayBuffer; ext: string; mime: string }
+  | { id: number; data: ArrayBuffer; ext: string; mime: string; transformed: boolean }
   | { id: number; error: string };
 
 // The subset of worker_threads.Worker the pool uses, so tests can hand it an in-process stand-in.
@@ -59,13 +59,13 @@ function toTransferable(buffer: Buffer): ArrayBuffer {
 
 export async function handleCompressRequest(request: CompressRequest): Promise<CompressReply> {
   try {
-    const { data, ext, mime } = await compressImage(
+    const { data, ext, mime, transformed } = await compressImage(
       Buffer.from(request.input),
       request.category,
       request.mime,
       request.options,
     );
-    return { id: request.id, data: toTransferable(data), ext, mime };
+    return { id: request.id, data: toTransferable(data), ext, mime, transformed };
   } catch (error) {
     return { id: request.id, error: error instanceof Error ? error.message : String(error) };
   }
@@ -141,7 +141,14 @@ export function createCompressPool(config: {
     inflight.delete(worker);
     if (task && task.request.id === reply.id) {
       if ('error' in reply) task.reject(new Error(reply.error));
-      else task.resolve({ data: Buffer.from(reply.data), ext: reply.ext, mime: reply.mime });
+      else {
+        task.resolve({
+          data: Buffer.from(reply.data),
+          ext: reply.ext,
+          mime: reply.mime,
+          transformed: reply.transformed,
+        });
+      }
     }
     if (!closed && workers.includes(worker)) idle.push(worker);
     pump();

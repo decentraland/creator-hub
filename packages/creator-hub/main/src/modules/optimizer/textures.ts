@@ -112,7 +112,10 @@ export async function pixelHash(input: Buffer): Promise<string | null> {
   }
 }
 
-export type CompressResult = { data: Buffer; ext: string; mime: string };
+// `transformed`: the pixels changed (resize, denoise, 16→8-bit), as opposed to a re-encode of
+// the same image. A byte-count comparison alone cannot tell the two apart, and a resize that
+// happens not to shrink the file is still the size the creator asked for.
+export type CompressResult = { data: Buffer; ext: string; mime: string; transformed: boolean };
 
 type SharpPipeline = ReturnType<typeof sharp>;
 
@@ -126,7 +129,12 @@ export async function compressImage(
   options: TextureOptions,
 ): Promise<CompressResult> {
   if (!options.compress) {
-    return { data: input, ext: mimeToExtension(sourceMime), mime: sourceMime || 'image/png' };
+    return {
+      data: input,
+      ext: mimeToExtension(sourceMime),
+      mime: sourceMime || 'image/png',
+      transformed: false,
+    };
   }
 
   const format = options.format;
@@ -147,7 +155,12 @@ export async function compressImage(
     metadata = await sharp(input).metadata();
   } catch {
     // Undecodable by sharp — leave it untouched.
-    return { data: input, ext: mimeToExtension(sourceMime), mime: sourceMime || 'image/png' };
+    return {
+      data: input,
+      ext: mimeToExtension(sourceMime),
+      mime: sourceMime || 'image/png',
+      transformed: false,
+    };
   }
 
   const needsResize = (metadata.height ?? 0) > maxHeight;
@@ -175,7 +188,12 @@ export async function compressImage(
     // given, and `recompressEmbedded` writes back whatever it receives. Only safe to keep the
     // original when it IS a PNG already and nothing had to be applied to it.
     const worthIt = needsTransform || metadata.format !== 'png' || encoded.length < input.length;
-    return { data: worthIt ? encoded : input, ext: '.png', mime: 'image/png' };
+    return {
+      data: worthIt ? encoded : input,
+      ext: '.png',
+      mime: 'image/png',
+      transformed: needsTransform,
+    };
   }
 
   let pipeline = applyTransforms(sharp(input));
@@ -189,5 +207,10 @@ export async function compressImage(
   }
 
   const data = await pipeline.toBuffer();
-  return { data, ext: FORMAT_TO_EXT[format], mime: FORMAT_TO_MIME[format] };
+  return {
+    data,
+    ext: FORMAT_TO_EXT[format],
+    mime: FORMAT_TO_MIME[format],
+    transformed: needsTransform,
+  };
 }
