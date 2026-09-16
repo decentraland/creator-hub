@@ -36,7 +36,7 @@ Do the same run once on **Windows** and once on **macOS**.
 3. [Do the action — e.g. hit **Preview**].
 4. Look at the result:
    - **Passed** → you're done on this OS.
-   - **Didn't pass** → leave everything open and grab the log (see below).
+   - **Didn't pass** → leave everything open and note what you saw.
 
 - [ ] Windows — passed
 - [ ] macOS — passed
@@ -53,8 +53,6 @@ If so, add after the run above:
   - [ ] Windows — passed with that SDK version
   - [ ] macOS — passed with that SDK version
 -->
-
-Still not passing? Attach the log so we can dig in — `%APPDATA%\creator-hub\logs\main.log` on Windows, `~/Library/Logs/creator-hub/main.log` on macOS — and highlight the lines about this change [e.g. `Multiplayer Server`, `[Server]`, `[NodeRuntime]`].
 
 ## Impact
 
