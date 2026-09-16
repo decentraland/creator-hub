@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState, type ChangeEvent } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Box,
   Button,
@@ -40,6 +40,7 @@ function formatDate(epochMs: number): string {
 
 const TEXTURE_CATEGORIES: TextureCategory[] = ['baseColor', 'normal', 'orm', 'emissive', 'other'];
 const FORMATS: TextureFormat[] = ['png', 'jpeg', 'webp'];
+const TEXTURE_SIZES = [32, 64, 128, 256, 512, 1024, 2048, 4096];
 
 // TODO: replace with the published "Optimize models" documentation URL.
 const DOCS_URL = 'https://docs.decentraland.org/creator/optimize-models';
@@ -85,11 +86,10 @@ function Disclosure({
   );
 }
 
-// A max-size field, backed by TEXT rather than by the number itself. A `type="number"` input
-// reads back as `''` while the creator clears it to retype, `Number('')` is 0, and 0 reaches
-// sharp as `resize(null, 0)` — which throws for EVERY texture, failing the whole run under a
-// "succeeded" result. Valid input commits as it is typed; anything else is only reverted to the
-// last good value on blur, so the field can still be emptied mid-edit.
+// A max-size field. GPUs sample mipmapped textures from power-of-two dimensions, so anything
+// else is padded or rescaled by the runtime anyway — the choice is a fixed list rather than a
+// free number. It also keeps the value away from 0, which reaches sharp as `resize(null, 0)`
+// and throws for EVERY texture, failing the whole run under a "succeeded" result.
 function SizeField({
   label,
   value,
@@ -99,39 +99,23 @@ function SizeField({
   value: number;
   onChange: (value: number) => void;
 }) {
-  const [text, setText] = useState(String(value));
-  const [isFocused, setFocused] = useState(false);
-
-  // Adopt an external change only while the creator does not own the field (coding-standards.md).
-  useEffect(() => {
-    if (isFocused) return;
-    setText(String(value));
-  }, [value, isFocused]);
-
-  const handleChange = useCallback(
-    (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-      const next = event.target.value;
-      setText(next);
-      const parsed = Number(next);
-      if (next.trim() !== '' && Number.isFinite(parsed) && parsed >= 1) {
-        onChange(Math.round(parsed));
-      }
-    },
-    [onChange],
-  );
-
   return (
     <TextField
+      select
       size="small"
-      type="number"
       label={label}
-      value={text}
-      onFocus={() => setFocused(true)}
-      // Releasing the field lets the effect above put the last committed value back, which is
-      // what discards an empty or out-of-range draft.
-      onBlur={() => setFocused(false)}
-      onChange={handleChange}
-    />
+      value={value}
+      onChange={event => onChange(Number(event.target.value))}
+    >
+      {TEXTURE_SIZES.map(size => (
+        <MenuItem
+          key={size}
+          value={size}
+        >
+          {size}
+        </MenuItem>
+      ))}
+    </TextField>
   );
 }
 
