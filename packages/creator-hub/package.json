@@ -93,7 +93,7 @@
     "start": "npm run watch",
     "test": "npm run test:unit",
     "test:e2e": "npm run compile && playwright test --project=electron-offline --project=electron-live",
-    "test:e2e:ci": "playwright test --project=electron-offline --project=electron-live",
+    "test:e2e:ci": "electron-builder build --config electron-builder.cjs --dir && playwright test --project=electron-offline --project=electron-live",
     "test:e2e:live": "npm run compile && playwright test --project=electron-live",
     "test:main": "vitest run -r main --passWithNoTests",
     "test:preload": "vitest run -r preload --passWithNoTests",
