@@ -1,6 +1,7 @@
 import type { ActionRef } from '@dcl/asset-packs';
 
 import { TextField, CheckboxField, RangeField } from '../../../ui';
+import { Dropdown } from '../../../ui/Dropdown';
 import EntityField from '../../../ui/EntityField/EntityField';
 import InfoTooltip from '../../../ui/InfoTooltip/InfoTooltip';
 import { fromNumber, toNumber, isValidNumber } from '../utils';
@@ -49,6 +50,16 @@ export function ScriptParamField({ name, param, onUpdate }: Props) {
           label={labelWithTooltip(name, param.tooltip)}
           checked={param.value}
           onChange={e => onUpdate(e.target.checked)}
+        />
+      );
+
+    case 'enum':
+      return (
+        <Dropdown
+          label={labelWithTooltip(name, param.tooltip)}
+          value={param.value}
+          options={param.options.map(option => ({ value: option, label: option }))}
+          onChange={e => onUpdate(String(e.target.value))}
         />
       );
 
