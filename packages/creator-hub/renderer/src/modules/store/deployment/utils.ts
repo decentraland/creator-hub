@@ -90,12 +90,9 @@ export const deploy = async (
   }
 };
 
-export const getInitialDeploymentStatus = (
-  isWorld: boolean = false,
-): DeploymentComponentsStatus => ({
+export const getInitialDeploymentStatus = (): DeploymentComponentsStatus => ({
   catalyst: 'idle',
   assetBundle: 'idle',
-  lods: isWorld ? 'complete' : 'idle', // Auto-complete for worlds
 });
 
 export const retryDelayInMs = seconds(10);
@@ -191,6 +188,10 @@ async function fetchEntityStatus(
 /**
  * Fetches the deployment status for a given scene.
  *
+ * LOD generation is deliberately not a deployment component: it keeps running on the registry
+ * long after the scene is live, and creators should not wait on it to enter their scene. The
+ * registry still reports a `lods` field — it is ignored on purpose.
+ *
  * @param info - The scene info.
  * @param identity - The authentication identity for signing requests.
  * @param useAbgenRegistry - Whether asset-bundle status comes from the abgen registry.
@@ -201,31 +202,20 @@ export async function fetchDeploymentStatus(
   identity: AuthIdentity,
   useAbgenRegistry: boolean = false,
 ): Promise<DeploymentComponentsStatus> {
-  const { rootCID: sceneId, isWorld } = info;
-  const bundlesUrl = new URL(
+  const { rootCID: sceneId } = info;
+  const url = new URL(
     `/entities/status/${sceneId}`,
     useAbgenRegistry ? ASSET_BUNDLE_REGISTRY_ABGEN : ASSET_BUNDLE_REGISTRY,
   );
-  // Both registries serve this endpoint at the same pathname, so one signature covers the
-  // LOD request below too.
-  const headers = getAuthHeaders('get', bundlesUrl.pathname, payload =>
+  const headers = getAuthHeaders('get', url.pathname, payload =>
     Authenticator.signPayload(identity, payload),
   );
 
-  // Both pipelines run on every deployment — the flag only flips which URLs this client reads
-  // — so the regular registry still owns live LOD status, while abgen never fills its own.
-  const [bundlesStatus, lodsStatus] = await Promise.all([
-    fetchEntityStatus(bundlesUrl, headers),
-    useAbgenRegistry && !isWorld
-      ? fetchEntityStatus(new URL(bundlesUrl.pathname, ASSET_BUNDLE_REGISTRY), headers)
-      : null,
-  ]);
+  const status = await fetchEntityStatus(url, headers);
 
   return {
-    catalyst: validateStatus(bundlesStatus.catalyst),
-    assetBundle: deriveOverallStatus(bundlesStatus.assetBundles),
-    // Skip lods for worlds
-    lods: isWorld ? 'complete' : deriveOverallStatus((lodsStatus ?? bundlesStatus).lods),
+    catalyst: validateStatus(status.catalyst),
+    assetBundle: deriveOverallStatus(status.assetBundles),
   };
 }
 
@@ -300,6 +290,8 @@ export async function checkDeploymentStatus(
  *
  * This function evaluates the `DeploymentStatus` object to determine whether the proportion
  * of steps with a 'complete' status meets or exceeds the specified threshold (default: 60%).
+ * With LODs no longer a component there are two steps left, so the default threshold means
+ * both of them: the catalyst upload alone is 50% and does not qualify.
  *
  * @param status - The `DeploymentStatus` object containing the current statuses of deployment steps.
  * @param percentage - The completion threshold as a decimal (e.g., `0.6` for 60%). Defaults to 0.6.

@@ -196,7 +196,7 @@ export function Deploy(props: Props) {
 
     if (!deployment) return stepsList;
 
-    const { catalyst, assetBundle, lods } = deployment.componentsStatus;
+    const { catalyst, assetBundle } = deployment.componentsStatus;
     stepsList.push({
       bulletText: stepNumber++,
       name: t('modal.publish_project.deploy.deploying.step.uploading'),
@@ -210,18 +210,8 @@ export function Deploy(props: Props) {
       state: assetBundle,
     });
 
-    // Only add LODs step for non-world deployments
-    if (!isWorld) {
-      stepsList.push({
-        bulletText: stepNumber++,
-        name: t('modal.publish_project.deploy.deploying.step.optimizing'),
-        description: getStepDescription(lods),
-        state: lods,
-      });
-    }
-
     return stepsList;
-  }, [deployment?.componentsStatus, getStepDescription, needsUndeploy, undeployStatus, isWorld]);
+  }, [deployment?.componentsStatus, getStepDescription, needsUndeploy, undeployStatus]);
 
   const hasError =
     publishError || !deployment || deployment.status === 'failed' || undeployStatus === 'failed';
