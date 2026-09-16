@@ -352,8 +352,23 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
       };
 
       updateScript(index, { ...script, layout: JSON.stringify(updatedLayout) });
+
+      // A Trigger Area's editor placeholder is a static glb and can't react to the script at
+      // edit time, so keep it in sync with the shape dropdown here: swap the Placeholder src
+      // to the box or sphere model (both ship in the smart item, so both are in the scene).
+      if (paramName === 'shape' && TRIGGER_DETECTOR.test(script.path)) {
+        const { Placeholder } = sdk.components;
+        const placeholder = Placeholder.getOrNull(entityId);
+        if (placeholder) {
+          const file = paramValue === 'sphere' ? 'trigger-area-sphere.glb' : 'trigger-area.glb';
+          sdk.operations.updateValue(Placeholder, entityId, {
+            src: placeholder.src.replace(/[^/]+\.glb$/i, file),
+          });
+          void sdk.operations.dispatch();
+        }
+      }
     },
-    [scripts, parsedLayouts, updateScript],
+    [sdk, entityId, scripts, parsedLayouts, updateScript],
   );
 
   const renderScriptParams = useCallback(

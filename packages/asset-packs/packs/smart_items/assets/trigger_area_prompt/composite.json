@@ -20,7 +20,7 @@
               {
                 "path": "{assetPath}/TriggerArea.tsx",
                 "priority": 0,
-                "layout": "{\"params\":{\"onlyMe\":{\"type\":\"boolean\",\"optional\":false,\"tooltip\":\"Only react to your own player. Turn off to react to every player.\",\"value\":false}}}"
+                "layout": "{\"params\":{\"onlyMe\":{\"type\":\"boolean\",\"optional\":false,\"tooltip\":\"Only react to your own player. Turn off to react to every player.\",\"value\":false},\"shape\":{\"type\":\"enum\",\"options\":[\"box\",\"sphere\"],\"optional\":true,\"tooltip\":\"Box or round (sphere) trigger volume.\",\"value\":\"box\"}}}"
               }
             ]
           }

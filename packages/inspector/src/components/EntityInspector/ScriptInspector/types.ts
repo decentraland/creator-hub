@@ -31,6 +31,7 @@ export type ScriptParamUnion =
   | ScriptParamSlider
   | ScriptParamBoolean
   | ScriptParamString
+  | ScriptParamEnum
   | ScriptParamEntity
   | ScriptParamAction;
 
@@ -60,6 +61,14 @@ export type ScriptParamBoolean = ScriptParam & {
 export type ScriptParamString = ScriptParam & {
   type: 'string';
   value: string;
+};
+
+// A string-literal union in the constructor (e.g. `shape: 'box' | 'sphere'`) becomes a
+// dropdown. `options` come from the parsed type; `value` is the current choice.
+export type ScriptParamEnum = ScriptParam & {
+  type: 'enum';
+  value: string;
+  options: string[];
 };
 
 export type ScriptParamEntity = ScriptParam & {
