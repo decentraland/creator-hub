@@ -1,8 +1,13 @@
 import log from 'electron-log/main';
 
+import { BEVY_REALM_BUILD_EVENT, type BevyRealmBuildEvent } from '/shared/types/ipc';
+
+import { MAIN_WINDOW_ID } from '../mainWindow';
 import { run, type Child } from './bin';
 import { getAvailablePort } from './port';
 import { getProjectId, track } from './analytics';
+import { getWindow } from './window';
+import { createLineBuffer, parseSceneBuildEvents } from './bevy-realm-build-events';
 
 /**
  * The Bevy editor renderer loads the scene from an HTTP realm, and the inspector
@@ -94,6 +99,8 @@ async function startInternal(path: string): Promise<{ url: string; wsUrl: string
     env: await getEnv(path),
   });
 
+  relayBuildEvents(path, child);
+
   // Track the child IMMEDIATELY (before waiting for it to serve) so a kill(path)
   // during startup — the user switches renderer or closes the editor while the
   // server is still coming up — can find and terminate it. Storing only after
@@ -123,6 +130,29 @@ async function startInternal(path: string): Promise<{ url: string; wsUrl: string
   void getProjectId(path).then(project_id => track('Use Bevy Renderer', { project_id }));
 
   return { url, wsUrl };
+}
+
+/**
+ * Forward the realm bundler's per-file rebuild lines to the renderer, which hands them
+ * to the inspector's Bevy renderer. That is how the editor tells a code edit it must
+ * hot-reload from a rebuild its own autosave caused (see BEVY_REALM_BUILD_EVENT).
+ * The matcher dies with the child, so nothing to detach on kill.
+ */
+function relayBuildEvents(path: string, child: Child): void {
+  // Match every chunk and split into lines ourselves: a pipe chunk can end mid-line,
+  // and a matcher tested per chunk would miss a build line cut in two.
+  const lines = createLineBuffer();
+  child.on(/(.*)/, data => {
+    if (!data) return;
+    const events = lines.push(data).flatMap(parseSceneBuildEvents);
+    if (events.length === 0) return;
+    const window = getWindow(MAIN_WINDOW_ID);
+    if (!window || window.isDestroyed()) return;
+    for (const event of events) {
+      const payload: BevyRealmBuildEvent = { path, ...event };
+      window.webContents.send(BEVY_REALM_BUILD_EVENT, payload);
+    }
+  });
 }
 
 export async function kill(path: string): Promise<void> {

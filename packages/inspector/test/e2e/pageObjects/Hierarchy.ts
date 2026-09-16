@@ -118,6 +118,13 @@ class HierarchyPageObject {
     return label || '';
   }
 
+  // `innerText` is the text as laid out, so it collapses whitespace exactly as
+  // CSS does — unlike `textContent`, which always returns the source string.
+  async getRenderedLabel(entityId: number) {
+    const item = await this.getItem(entityId, this.getItemSelectorById);
+    return item.evaluate(el => (el as HTMLElement).innerText);
+  }
+
   // Open the row's context menu and click an item, resiliently.
   //
   // Opening a contexify menu needs a `contextmenu` event to land on a stable
@@ -205,6 +212,24 @@ class HierarchyPageObject {
     await this.waitForLabel(newLabel);
   }
 
+  // Types a new name into the rename input and blurs instead of submitting, which
+  // is what raises the confirmation dialog (Enter submits straight away).
+  async startRenameAndBlur(entityId: number, newLabel: string) {
+    await this.openContextMenuItem(entityId, 'rename', 'rename');
+    await page.locator('input.Input').first().waitFor({ state: 'visible', timeout: 5_000 });
+    await page.waitForFunction(
+      () =>
+        document.activeElement instanceof HTMLInputElement &&
+        document.activeElement.classList.contains('Input'),
+      undefined,
+      { timeout: 5_000 },
+    );
+    await page.keyboard.press('ControlOrMeta+a');
+    await page.keyboard.type(newLabel);
+    await page.locator('.Renderer').click({ position: { x: 20, y: 20 } });
+    await page.locator('.EditTree').waitFor({ state: 'visible', timeout: 5_000 });
+  }
+
   async addChild(entityId: number, label: string) {
     await this.openContextMenuItem(entityId, 'add-child', 'add child to');
     await this.typeIntoTreeInput(label);
@@ -240,6 +265,11 @@ class HierarchyPageObject {
     } catch (error) {
       return false;
     }
+  }
+
+  async select(entityId: number) {
+    const item = await this.getItem(entityId, this.getItemSelectorById);
+    await item.click();
   }
 
   async selectMultiple(entityIds: number[]) {
