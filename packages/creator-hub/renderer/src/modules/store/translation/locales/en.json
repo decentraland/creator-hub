@@ -340,13 +340,11 @@
         },
         "deploying": {
           "publish": "Publishing...",
-          "finishing": "Finishing up...",
           "failed": "Publishing failed",
           "try_again": "Please try again",
           "step": {
             "uploading": "Uploading",
             "converting": "Converting",
-            "optimizing": "Optimizing",
             "unpublishing": "Unpublishing",
             "loading": "In process...",
             "failed": "Error"
@@ -381,8 +379,7 @@
           "url": "The URL to jump in your {target} is:",
           "world": "World",
           "land": "Land",
-          "jump_in": "Jump In",
-          "in_progress": "You can now access your scene even while it's still processing."
+          "jump_in": "Jump In"
         }
       }
     },

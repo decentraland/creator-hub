@@ -1,7 +1,7 @@
 import type { Project } from '/shared/types/projects';
 import type { Step as PublishStep } from '/@/components/Modals/PublishProject/types';
 
-export type ModalType = 'publish' | 'publish-history' | 'install-client' | 'warning';
+export type ModalType = 'publish' | 'install-client' | 'warning';
 
 export type ModalState = {
   type?: ModalType;
