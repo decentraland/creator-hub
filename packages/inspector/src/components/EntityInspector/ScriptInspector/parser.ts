@@ -86,13 +86,29 @@ function getValueAndTypeFromType(
         }
       }
       break;
-    case 'TSUnionType': // (e.g: string | undefined)
-      // TODO: what do we do with union types? for now, we'll return the first non-undefined type
+    case 'TSUnionType': {
+      // A union of string literals (e.g. `'box' | 'sphere'`) is a dropdown. Any other union
+      // (e.g. `string | undefined`) degrades to its first non-undefined member, as before.
+      const literals: string[] = [];
+      let onlyStringLiterals = true;
+      for (const subType of typeAnnotation.types) {
+        if (subType.type === 'TSUndefinedKeyword') continue;
+        if (subType.type === 'TSLiteralType' && subType.literal.type === 'StringLiteral') {
+          literals.push(subType.literal.value);
+        } else {
+          onlyStringLiterals = false;
+        }
+      }
+      if (onlyStringLiterals && literals.length > 0) {
+        return { type: 'enum', value: literals[0], options: literals };
+      }
       for (const subType of typeAnnotation.types) {
         if (subType.type !== 'TSUndefinedKeyword') {
           return getValueAndTypeFromType(subType);
         }
       }
+      break;
+    }
   }
 
   return { type: 'string', value: '' };
