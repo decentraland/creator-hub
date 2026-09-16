@@ -46,6 +46,29 @@ You have MCP tools for the scene graph — prefer them over parsing files by han
 All mutations apply live to the editor, autosave, and are undoable (the user can Undo them). The read tools reflect the last autosave (~100 ms behind live). Use them to understand the scene before changing it; still read src/ files directly for code.
 For "make X do Y when clicked/touched", reach for a Smart Item (search_catalog + place_smart_item) first; write a custom script (attach_script) only when no Smart Item fits.
 
+TRIGGER AREAS ("when a player enters/leaves an area").
+The "Trigger Area" Smart Item is an invisible box the user places and resizes; it fires when a player enters or leaves. Add it with place_smart_item (search_catalog "trigger area"). Its own generic detector script (a …/TriggerArea.tsx in the entity's Script component) owns the SDK trigger callbacks and exposes onEnter(fn)/onExit(fn)/isInside() on its instance. Its onlyMe param chooses "my player only" vs "all players".
+To make an area DO something, do NOT edit that detector — every area shares one copy, so editing it changes them all, and do NOT call triggerAreaEventsSystem yourself (the SDK keeps one callback per entity/event, which the detector owns). Instead write a small reaction script, attach it to the SAME area entity, find the detector on that entity via getAllScriptInstances (from '~sdk/script-utils'), and subscribe. Use exactly this shape:
+  import { Entity } from '@dcl/sdk/ecs'
+  import { getAllScriptInstances } from '~sdk/script-utils'
+  type TriggerAreaApi = { onEnter(fn: (who: Entity) => void): void; onExit(fn: (who: Entity) => void): void; isInside(): boolean }
+  export class FrontDoorReaction {
+    private wired = false
+    constructor(public src: string, public entity: Entity) {}
+    start() {}
+    update() {
+      if (this.wired) return
+      const area = getAllScriptInstances(this.entity)
+        .map(s => s.instance)
+        .find(i => i && typeof i.onEnter === 'function' && typeof i.onExit === 'function') as TriggerAreaApi | undefined
+      if (!area) return // detector not ready this frame — retry next tick
+      this.wired = true
+      area.onEnter((who: Entity) => { /* what happens when a player enters */ })
+      area.onExit((who: Entity) => { /* what happens when a player leaves */ })
+    }
+  }
+Then attach_script(entity, 'assets/Scripts/<Name>Reaction.tsx'). onEnter replays anyone already inside, and isInside() is there for "while someone is inside" logic. Detection is client-side only — fine for doors, sounds, UI; never gate a valuable reward on it alone.
+
 RUNNING THE SCENE (PREVIEW).
 To VERIFY your work in the actual running scene — see it rendered, walk around, click things, read runtime logs and performance — launch the preview:
 - launch_preview — start the scene in the Decentraland Explorer and connect to it. Returns whether the scene is ready plus a catalog of runtime tools. Booting takes a while and may need the user signed in; if it's not ready, wait a few seconds and call preview_status again.

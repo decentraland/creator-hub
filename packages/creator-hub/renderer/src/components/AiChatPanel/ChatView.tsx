@@ -265,6 +265,10 @@ export interface ChatViewProps {
   onPopOut?: () => void;
   // Inline: hide the panel. Detached: dock the chat back inline (close the window).
   onClose: () => void;
+  // A prompt seeded from the inspector (Trigger Area "describe a reaction"). When its nonce
+  // changes the composer copies `text` into its input and calls onDraftConsumed. Inline only.
+  draftPrompt?: { text: string; nonce: number } | null;
+  onDraftConsumed?: () => void;
 }
 
 export function ChatView(props: ChatViewProps) {
@@ -294,10 +298,27 @@ export function ChatView(props: ChatViewProps) {
     onClearSelection,
     onPopOut,
     onClose,
+    draftPrompt,
+    onDraftConsumed,
   } = props;
 
   const [input, setInput] = useState('');
   const transcriptRef = useRef<HTMLDivElement>(null);
+  const composerRef = useRef<HTMLTextAreaElement>(null);
+
+  // Seed the composer from an inspector-supplied prompt (Trigger Area). Replaces the current
+  // draft and focuses so the user can finish typing; consumes it so it fires once per click.
+  useEffect(() => {
+    if (!draftPrompt) return;
+    setInput(draftPrompt.text);
+    onDraftConsumed?.();
+    requestAnimationFrame(() => {
+      const el = composerRef.current;
+      if (el === null) return;
+      el.focus();
+      el.setSelectionRange(el.value.length, el.value.length);
+    });
+  }, [draftPrompt?.nonce]);
   const [mcpInfo, setMcpInfo] = useState<{ url: string; token: string } | null>(null);
   const [mcpCopied, setMcpCopied] = useState(false);
   // Anchor for the "New Chat" dropdown (new chat + recent sessions), replacing the old
@@ -822,6 +843,7 @@ export function ChatView(props: ChatViewProps) {
             maxRows={6}
             size="small"
             autoFocus
+            inputRef={composerRef}
             placeholder={t('editor.ai.placeholder')}
             value={input}
             disabled={!available}

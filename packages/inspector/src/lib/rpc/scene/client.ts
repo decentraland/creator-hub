@@ -10,6 +10,7 @@ enum Method {
   GET_FEATURE_FLAGS = 'get_feature_flags',
   UPDATE_SDK = 'update_sdk',
   SET_UI_DESIGNER_MODE = 'set_ui_designer_mode',
+  PROMPT_ASSISTANT = 'prompt_assistant',
 }
 
 type Params = {
@@ -20,6 +21,7 @@ type Params = {
   [Method.GET_FEATURE_FLAGS]: Record<string, never>;
   [Method.UPDATE_SDK]: Record<string, never>;
   [Method.SET_UI_DESIGNER_MODE]: { open: boolean };
+  [Method.PROMPT_ASSISTANT]: { text: string };
 };
 
 type Result = {
@@ -33,6 +35,7 @@ type Result = {
   [Method.GET_FEATURE_FLAGS]: { flags: Record<string, boolean> };
   [Method.UPDATE_SDK]: { ok: boolean };
   [Method.SET_UI_DESIGNER_MODE]: void;
+  [Method.PROMPT_ASSISTANT]: void;
 };
 
 export class SceneClient extends RPC<Method, Params, Result> {
@@ -73,5 +76,12 @@ export class SceneClient extends RPC<Method, Params, Result> {
 
   setUiDesignerMode = (open: boolean) => {
     return this.request('set_ui_designer_mode', { open });
+  };
+
+  // Open the AI assistant panel in the host and seed its composer with `text` (without
+  // sending). Used by the Trigger Area inspector to hand a "when a player enters…" prompt
+  // to the assistant.
+  promptAssistant = (text: string) => {
+    return this.request('prompt_assistant', { text });
   };
 }
