@@ -5,4 +5,5 @@ export type Step = {
   name: string;
   description?: string;
   state?: 'idle' | 'pending' | 'complete' | 'failed';
+  testId?: string;
 };

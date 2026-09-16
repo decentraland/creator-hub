@@ -29,9 +29,10 @@ loadDotenv({ path: join(__dirname, '.env.e2e') });
  * reclamation is gone — but the native memory lives in the Electron *child* process,
  * which `electronApp.close()` reaps. See docs/testing-standards.md.
  */
-export default defineConfig({
+export default defineConfig<{ appArgs: string[] }>({
   testDir: './e2e',
   forbidOnly: !!process.env.CI,
+  workers: 1,
   // Cold-launching a packaged Electron app plus a full scene flow is slow and
   // run-to-run variable on a contended runner.
   timeout: 120_000,
@@ -41,7 +42,6 @@ export default defineConfig({
     {
       name: 'electron-offline',
       grep: /@offline/,
-      workers: 1,
       fullyParallel: false,
       retries: process.env.CI ? 2 : 0,
       use: {
@@ -50,17 +50,43 @@ export default defineConfig({
       },
     },
     {
-      // No trace, no video, no screenshot: a @live run carries a real signed auth chain,
-      // and Playwright traces record request headers verbatim. This repo is public, so
-      // an uploaded trace would publish the identity. Diagnose from the job log, which
-      // GitHub Actions already scrubs of registered secrets.
+      // Not @offline: creating a scene dispatches `installProject` -> `npm.install`, a real
+      // registry install into the scene folder. These specs can therefore fail because npm is
+      // slow or down rather than because the app broke, so they stay out of the PR-blocking
+      // set — that is what keeps @offline's "cannot fail from someone else's outage" true.
+      name: 'electron-scene',
+      grep: /@scene/,
+      fullyParallel: false,
+      retries: process.env.CI ? 1 : 0,
+      // Scene creation plus an inspector iframe load is the slowest thing the suite does.
+      timeout: 300_000,
+      use: {
+        trace: 'retain-on-failure',
+        screenshot: 'only-on-failure',
+      },
+    },
+    {
+      name: 'electron-live-auth',
+      testMatch: /specs\/live\/auth\.setup\.ts$/,
+      fullyParallel: false,
+      retries: 0,
+      timeout: 300_000,
+      use: {
+        appArgs: ['--env=dev'],
+        trace: 'off',
+        screenshot: 'off',
+        video: 'off',
+      },
+    },
+    {
       name: 'electron-live',
       grep: /@live/,
-      workers: 1,
+      dependencies: ['electron-live-auth'],
       fullyParallel: false,
-      // Retrying a partially-completed real deploy is worse than failing loudly.
       retries: 0,
+      timeout: 1_200_000,
       use: {
+        appArgs: ['--env=dev'],
         trace: 'off',
         screenshot: 'off',
         video: 'off',

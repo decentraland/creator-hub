@@ -1,38 +1,19 @@
-import { expect, test } from '../fixtures';
+import { expect, test } from '@playwright/test';
+import type { ElectronApplication, Page } from 'playwright';
+import { launchApp } from '../helpers/app';
 import {
   type StubResponse,
+  captureOpenExternal,
   fireSignInDeeplink,
   installAuthMocks,
   requestIdFromAuthUrl,
+  setIdentityResponse,
 } from '../helpers/auth';
 import { Auth } from '../pageObjects/Auth';
 
 const IDENTITY_ID = 'e2e-identity-id';
-
-/**
- * The snackbar the AuthProvider pushes on failure. Severity is part of the hook, so a passing
- * assertion means an *error* was surfaced, not merely some notification.
- *
- * Always filtered by expected text: a packaged build pushes its own auto-updater errors on
- * startup ("We couldn't check for updates", "Unable to install the update") because there is
- * no release to check against, so an unfiltered locator hits three elements and trips strict
- * mode. Filtering also states the intent more precisely — *an* error snackbar carrying this
- * message is visible — and needs no production change to suppress the noise.
- */
 const ERROR_SNACKBAR = '[data-testid="snackbar-generic-error"]';
 
-/**
- * The sign-in failure surface. `lib/auth.ts` maps an auth-server status onto a
- * `SignInError.reason`, and `AuthProvider/component.tsx` maps that reason onto a translated
- * message — so each case is asserted through the message the user actually sees, not through
- * a rejected promise.
- *
- * These are only expressible because the fetch stub controls the response status.
- * `route.fulfill()` reports `status: 0` to an Electron renderer regardless of what it is
- * given, MSW's browser integration cannot register a Service Worker on the packaged app's
- * `file://` origin, and Synpress would exercise the auth dapp rather than creator-hub. See
- * `learnings/phase-3.json`.
- */
 const DEEPLINK_FAILURES: {
   name: string;
   identityResponse: StubResponse;
@@ -59,29 +40,47 @@ const DEEPLINK_FAILURES: {
     message: 'Signin failed. Please try again.',
   },
   {
-    // 200 with a body the app cannot read: `fetchIdentity` requires
-    // `identity.authChain[0].payload` to be a string. A status-only mock could not express
-    // this case at all — it is about response *shape*.
     name: 'malformed identity body (200)',
     identityResponse: { status: 200, body: { identity: {} } },
     message: 'Signin failed. Please try again.',
   },
 ];
 
+let electronApp: ElectronApplication;
+let cleanup: () => void;
+let page: Page;
+
+test.describe.configure({ mode: 'serial' });
+
 test.describe('sign in failures', { tag: '@offline' }, () => {
+  test.beforeAll(async () => {
+    ({ electronApp, cleanup } = await launchApp());
+    page = await electronApp.firstWindow();
+    await Auth.waitUntilReady(page);
+    await installAuthMocks(page, electronApp);
+  });
+
+  test.afterAll(async () => {
+    await electronApp?.close().catch(() => undefined);
+    cleanup?.();
+  });
+
+  test.beforeEach(async () => {
+    await page.reload();
+    await Auth.waitUntilReady(page);
+  });
+
   for (const failure of DEEPLINK_FAILURES) {
-    test(`surfaces an error on ${failure.name}`, async ({ electronApp, page }) => {
+    test(`surfaces an error on ${failure.name}`, async () => {
       const errorSaying = (text: string) => page.locator(ERROR_SNACKBAR).filter({ hasText: text });
+      await setIdentityResponse(page, failure.identityResponse);
 
-      const mocks = await installAuthMocks(page, electronApp, {
-        identityResponse: failure.identityResponse,
-      });
-
+      const openCalls = await captureOpenExternal(electronApp);
       await Auth.clickSignIn(page);
       await Auth.waitForSignInPage(page);
 
-      await expect.poll(async () => (await mocks.openCalls()).length).toBe(1);
-      const [url] = await mocks.openCalls();
+      await expect.poll(async () => (await openCalls()).length).toBe(1);
+      const [url] = await openCalls();
       await fireSignInDeeplink(electronApp, IDENTITY_ID, requestIdFromAuthUrl(url));
 
       await expect(errorSaying(failure.message)).toBeVisible();

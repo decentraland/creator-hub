@@ -109,8 +109,13 @@ jobs:
         with:
           include-creator-hub: 'true'
 
+      - name: install playwright chromium
+        run: cd packages/creator-hub && npx playwright install chromium
+
       - name: e2e
         run: make test-creator-hub-e2e-ci
         env:
           NODE_OPTIONS: "--max-old-space-size=8192"
           E2E_CONTENT_URL: https://builder-items.decentraland.zone
+          E2E_PRIVATE_KEY: ${{ secrets.E2E_PRIVATE_KEY }}
+          E2E_NAME: ${{ secrets.E2E_NAME }}

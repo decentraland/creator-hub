@@ -67,14 +67,18 @@ export type AuthMockRecorder = {
  * normal 400, so cross-origin fetch itself is fine). Patching `fetch` in JS sidesteps
  * the network stack entirely and therefore controls the status.
  */
+type StubWindow = {
+  __e2eFetchCalls?: { url: string; method: string; body: string | null }[];
+  __e2eFetchPatched?: boolean;
+  __e2eResponses?: { requests: StubResponse; identity: StubResponse };
+  fetch: typeof fetch;
+};
+
 function installFetchStub(page: Page, payload: { requests: StubResponse; identity: StubResponse }) {
   const script = ({ requests, identity }: { requests: StubResponse; identity: StubResponse }) => {
-    const w = window as unknown as {
-      __e2eFetchCalls?: { url: string; method: string; body: string | null }[];
-      __e2eFetchPatched?: boolean;
-      fetch: typeof fetch;
-    };
+    const w = window as unknown as StubWindow;
     w.__e2eFetchCalls ??= [];
+    w.__e2eResponses = { requests, identity };
     if (w.__e2eFetchPatched) return;
     w.__e2eFetchPatched = true;
 
@@ -91,17 +95,24 @@ function installFetchStub(page: Page, payload: { requests: StubResponse; identit
 
       if (url.includes('/requests') && method === 'POST') {
         w.__e2eFetchCalls!.push({ url, method, body: (init?.body as string) ?? null });
-        return reply(requests);
+        return reply(w.__e2eResponses!.requests);
       }
       if (url.includes('/identities/')) {
         w.__e2eFetchCalls!.push({ url, method, body: (init?.body as string) ?? null });
-        return reply(identity);
+        return reply(w.__e2eResponses!.identity);
       }
       return realFetch(input, init);
     };
   };
 
   return Promise.all([page.addInitScript(script, payload), page.evaluate(script, payload)]);
+}
+
+/** Overrides the stubbed `GET /identities/:id` reply for the next sign-in attempt. */
+export function setIdentityResponse(page: Page, identity: StubResponse): Promise<void> {
+  return page.evaluate(response => {
+    (window as unknown as StubWindow).__e2eResponses!.identity = response;
+  }, identity);
 }
 
 /**
@@ -132,8 +143,27 @@ export async function installAuthMocks(
     identity: options.identityResponse ?? { status: 200, body: { identity } },
   });
 
-  // Only the injected electron module is reachable inside `evaluate` — the main process is
-  // bundled ESM, so `require` is not defined there.
+  const openCalls = await captureOpenExternal(electronApp);
+
+  return {
+    openCalls,
+    fetchCalls: () =>
+      page.evaluate(
+        () => (window as unknown as { __e2eFetchCalls?: RecordedFetch[] }).__e2eFetchCalls ?? [],
+      ),
+  };
+}
+
+/**
+ * Stubs `shell.openExternal` in the main process.
+ *
+ * @remarks Only the injected electron module is reachable inside `evaluate` — the main process
+ * is bundled ESM, so `require` is not defined there.
+ * @returns a reader for the URLs the app asked the OS to open.
+ */
+export async function captureOpenExternal(
+  electronApp: ElectronApplication,
+): Promise<() => Promise<string[]>> {
   await electronApp.evaluate(({ shell }) => {
     const store = globalThis as unknown as { __e2eOpenExternalCalls?: string[] };
     store.__e2eOpenExternalCalls = [];
@@ -142,18 +172,12 @@ export async function installAuthMocks(
     };
   });
 
-  return {
-    openCalls: () =>
-      electronApp.evaluate(
-        () =>
-          (globalThis as unknown as { __e2eOpenExternalCalls?: string[] }).__e2eOpenExternalCalls ??
-          [],
-      ),
-    fetchCalls: () =>
-      page.evaluate(
-        () => (window as unknown as { __e2eFetchCalls?: RecordedFetch[] }).__e2eFetchCalls ?? [],
-      ),
-  };
+  return () =>
+    electronApp.evaluate(
+      () =>
+        (globalThis as unknown as { __e2eOpenExternalCalls?: string[] }).__e2eOpenExternalCalls ??
+        [],
+    );
 }
 
 /**

@@ -1,5 +1,5 @@
 import { fileURLToPath } from 'node:url';
-import { dirname, join } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
 import { existsSync, mkdtempSync, readdirSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import type { ElectronApplication } from 'playwright';
@@ -23,8 +23,19 @@ export const creatorHubDir = join(__dirname, '..', '..');
  * knowable ahead of time.
  */
 export function resolvePackagedApp(): string {
+  const override = process.env.E2E_APP_PATH;
+  if (override) {
+    const bundle = resolve(override);
+    if (!existsSync(bundle)) throw new Error(`e2e: E2E_APP_PATH does not exist: ${bundle}`);
+    if (!bundle.endsWith('.app')) return bundle;
+
+    const macOsDir = join(bundle, 'Contents', 'MacOS');
+    if (!existsSync(macOsDir)) throw new Error(`e2e: not an app bundle, no ${macOsDir}`);
+    return join(macOsDir, readdirSync(macOsDir)[0]);
+  }
+
   const distRoot = join(creatorHubDir, 'dist');
-  const hint = 'run `npm run compile` in packages/creator-hub first';
+  const hint = 'run `npm run compile` in packages/creator-hub first, or set E2E_APP_PATH';
 
   if (!existsSync(distRoot)) throw new Error(`e2e: no ${distRoot} — ${hint}`);
 
@@ -46,6 +57,10 @@ export function resolvePackagedApp(): string {
  */
 export type LaunchedApp = {
   electronApp: ElectronApplication;
+  /** The throwaway `--user-data-dir`. Scenes are created under `<userData>/Scenes`
+   *  (`getDefaultScenesPath`), so filesystem assertions about a scene resolve from here —
+   *  not from HOME, which only backs the legacy `.decentraland` path. */
+  userDataDir: string;
   /** Removes the throwaway user-data and home directories. Safe to call more than once. */
   cleanup: () => void;
 };
@@ -56,14 +71,18 @@ export type LaunchedApp = {
  * the whole suite. `timeout` is Playwright's own launch timeout (default 30s).
  *
  * Each launch gets a fresh, throwaway `--user-data-dir` **and** a fresh `HOME`:
- *   - `--user-data-dir` keeps a persisted sign-in identity from leaking in, which would
- *     start the app already logged in and break any logged-out precondition.
- *   - `HOME` is redirected because scene projects are created under the user's home;
- *     without it a scene-lifecycle test writes into the developer's real home directory.
- *     Electron derives `app.getPath('home')` from `$HOME`, so passing it here replaces
- *     the `app.setPath('home', ...)` call a test-only main-process branch would need.
+ *   - `--user-data-dir` is what isolates real work: it keeps a persisted sign-in identity
+ *     from leaking in (which would start the app already logged in), and scenes are created
+ *     under `<userData>/Scenes` per `getDefaultScenesPath`, so a scene test cannot touch the
+ *     developer's own projects.
+ *   - `HOME` is redirected for the legacy `.decentraland` path (`getAppHomeLegacy`). Electron
+ *     derives `app.getPath('home')` from `$HOME`, so passing it here avoids needing a
+ *     test-only `app.setPath('home', ...)` branch in the main process.
  */
-export async function launchApp(attempts = 3): Promise<LaunchedApp> {
+export async function launchApp(
+  options: { attempts?: number; extraArgs?: string[] } = {},
+): Promise<LaunchedApp> {
+  const { attempts = 3, extraArgs = [] } = options;
   const userDataDir = mkdtempSync(join(tmpdir(), 'creator-hub-e2e-data-'));
   const homeDir = mkdtempSync(join(tmpdir(), 'creator-hub-e2e-home-'));
 
@@ -83,7 +102,7 @@ export async function launchApp(attempts = 3): Promise<LaunchedApp> {
       const electronApp = await electron.launch({
         executablePath: resolvePackagedApp(),
         // No `args: ['.']` and no `cwd`: a packaged app resolves its own resources.
-        args: [`--user-data-dir=${userDataDir}`],
+        args: [`--user-data-dir=${userDataDir}`, ...extraArgs],
         env: {
           ...process.env,
           HOME: homeDir,
@@ -92,7 +111,7 @@ export async function launchApp(attempts = 3): Promise<LaunchedApp> {
         },
         timeout: 60_000,
       });
-      return { electronApp, cleanup };
+      return { electronApp, userDataDir, cleanup };
     } catch (error) {
       lastError = error;
       console.warn(`[e2e] Electron launch attempt ${attempt}/${attempts} failed:`, error);

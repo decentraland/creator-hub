@@ -488,6 +488,7 @@ function Error({
         </Button>
         <Button
           size="large"
+          data-testid="publish-modal-deploy-error-retry"
           onClick={onRetry}
         >
           {t('modal.publish_project.deploy.deploying.actions.retry')}

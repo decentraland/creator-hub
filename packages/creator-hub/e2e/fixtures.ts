@@ -1,12 +1,20 @@
 import { test as base } from '@playwright/test';
 import type { ElectronApplication, Page } from 'playwright';
-import { launchApp } from './helpers/app';
+import { type LaunchedApp, launchApp } from './helpers/app';
+import { seedLiveState } from './helpers/live-auth';
+import { Auth } from './pageObjects/Auth';
 
 type AppFixtures = {
+  /** Extra CLI arguments for the packaged app; set per project via `use`. */
+  appArgs: string[];
   /** A freshly launched packaged app, torn down after the test. */
   electronApp: ElectronApplication;
   /** The app's first window, already rendered. */
   page: Page;
+  /** The throwaway user-data dir; scenes are created under `<userDataDir>/Scenes`. */
+  userDataDir: string;
+  /** The app's first window, already signed in as the wallet the `@live` setup captured. */
+  signedInLive: Page;
 };
 
 /**
@@ -20,29 +28,44 @@ type AppFixtures = {
  * chain instead of reporting several confusing failures. Playwright has no per-file
  * fixture scope, which is why both shapes exist.
  */
-export const test = base.extend<AppFixtures>({
-  // Playwright inspects the source of the first parameter to work out which fixtures this
-  // one depends on, and rejects anything that is not a destructuring pattern
-  // ("First argument must use the object destructuring pattern"). This fixture has no
-  // dependencies, so the pattern must be empty — which trips `no-empty-pattern`.
-  // eslint-disable-next-line no-empty-pattern
-  electronApp: async ({}, use) => {
-    const { electronApp, cleanup } = await launchApp();
+/** Owns the launch/teardown so `electronApp` and `homeDir` describe the same instance. */
+type InternalFixtures = { launchedApp: LaunchedApp };
+
+export const test = base.extend<AppFixtures & InternalFixtures>({
+  appArgs: [[], { option: true }],
+
+  launchedApp: async ({ appArgs }, use) => {
+    const launched = await launchApp({ extraArgs: appArgs });
     try {
-      await use(electronApp);
+      await use(launched);
     } finally {
       try {
-        await electronApp.close();
+        await launched.electronApp.close();
       } catch {
         // ignore teardown errors so they don't mask the test result
       }
-      cleanup();
+      launched.cleanup();
     }
+  },
+
+  electronApp: async ({ launchedApp }, use) => {
+    await use(launchedApp.electronApp);
+  },
+
+  userDataDir: async ({ launchedApp }, use) => {
+    await use(launchedApp.userDataDir);
   },
 
   page: async ({ electronApp }, use) => {
     const page = await electronApp.firstWindow();
     await page.waitForSelector('#app main.Main', { state: 'visible' });
+    await use(page);
+  },
+
+  signedInLive: async ({ page }, use) => {
+    await seedLiveState(page);
+    await Auth.waitUntilReady(page);
+    await Auth.waitForSignedIn(page);
     await use(page);
   },
 });
