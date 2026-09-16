@@ -346,7 +346,6 @@
           "step": {
             "uploading": "Uploading",
             "converting": "Converting",
-            "optimizing": "Optimizing",
             "unpublishing": "Unpublishing",
             "loading": "In process...",
             "failed": "Error"

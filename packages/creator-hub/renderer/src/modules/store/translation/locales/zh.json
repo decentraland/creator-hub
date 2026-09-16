@@ -345,7 +345,6 @@
           "step": {
             "uploading": "上传中...",
             "converting": "转换...",
-            "optimizing": "优化...",
             "unpublishing": "取消发布中...",
             "loading": "加载中...",
             "failed": "失败的"
