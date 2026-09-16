@@ -1,7 +1,7 @@
 import { useSyncExternalStore } from 'react';
 import type { Entity } from '@dcl/ecs';
 import { getCodeParser } from '../../../lib/logic/code-parser';
-import { markLocalEdit } from '../../../lib/logic/local-edit';
+import { markOwnWrite } from '../../../lib/logic/own-writes';
 import { getStorage } from '../../../lib/data-layer/client/storage';
 import { store as reduxStore } from '../../../redux/store';
 import {
@@ -132,7 +132,7 @@ export async function writeToDisk(path: string, source: string): Promise<void> {
     warnNoStorage('write', path);
     return;
   }
-  markLocalEdit();
+  markOwnWrite(path);
   try {
     await storage.writeFile(path, new TextEncoder().encode(source) as unknown as Buffer);
   } catch (e) {

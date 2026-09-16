@@ -26,6 +26,7 @@ import { useWorkspace } from '/@/hooks/useWorkspace';
 import { useSceneCustomCode } from '/@/hooks/useSceneCustomCode';
 import { useDeploy } from '/@/hooks/useDeploy';
 import { useConnectionStatus } from '/@/hooks/useConnectionStatus';
+import { useBevyBuildForwarding } from '/@/hooks/useBevyBuildForwarding';
 import { useDebugLogForwarding } from '/@/hooks/useDebugLogForwarding';
 import { useMobileDebugForwarding } from '/@/hooks/useMobileDebugForwarding';
 import { ConnectionStatus } from '/@/lib/connection';
@@ -217,6 +218,7 @@ export function EditorPage() {
 
   useDebugLogForwarding(iframeRef, isPreviewRunning, showDebugPanel, project?.path);
   useMobileDebugForwarding(iframeRef, isPreviewRunning, project?.path);
+  useBevyBuildForwarding(iframeRef, useBevy ? project?.path : undefined);
 
   const handleIframeRef = useCallback(
     (e: React.SyntheticEvent<HTMLIFrameElement, Event>) => {
