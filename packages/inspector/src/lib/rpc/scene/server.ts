@@ -13,6 +13,7 @@ import { type SceneMetrics } from '../../../redux/scene-metrics/types';
 import { setDebugConsoleEnabled, setMobileDebugSessionEnabled } from '../../../redux/ui';
 import * as debugLogStore from '../../logic/debug-log-store';
 import * as mobileDebugStore from '../../logic/mobile-debug-store';
+import { publishSceneBuildEvent, type SceneBuildEvent } from '../../logic/scene-build-events';
 import { setFeatureFlags } from '../../../redux/feature-flags';
 import { type EnumEntity } from '../../sdk/enum-entity';
 import { EditorComponentNames, type EditorComponents } from '../../sdk/components';
@@ -41,6 +42,10 @@ enum Method {
   SET_FEATURE_FLAGS = 'set_feature_flags',
   PUSH_MOBILE_DEBUG_ENTRIES = 'push_mobile_debug_entries',
   SET_MOBILE_DEBUG_SESSION_ENABLED = 'set_mobile_debug_session_enabled',
+  // A rebuild cycle of the scene's `sdk-commands start`, relayed by the host: the file
+  // that triggered it, then the bundle landing. Consumed by the Bevy renderer's
+  // hot-reload decision (see logic/scene-build-events.ts).
+  NOTIFY_SCENE_BUILD = 'notify_scene_build',
   // Scene-graph mutations for the AI assistant. Registered only when `operations` is
   // provided (always, when embedded). They run the inspector's real operations layer on
   // the live engine, so the viewport updates and undo/redo + autosave come for free.
@@ -91,6 +96,7 @@ type Params = {
       messageCount: number;
     }[];
   };
+  [Method.NOTIFY_SCENE_BUILD]: SceneBuildEvent;
   [Method.CREATE_ENTITY]: { name?: string; parent?: number };
   [Method.REMOVE_ENTITY]: { entity: number };
   [Method.SET_PARENT]: { entity: number; parent: number };
@@ -131,6 +137,7 @@ type Result = {
   [Method.SET_FEATURE_FLAGS]: void;
   [Method.PUSH_MOBILE_DEBUG_ENTRIES]: void;
   [Method.SET_MOBILE_DEBUG_SESSION_ENABLED]: void;
+  [Method.NOTIFY_SCENE_BUILD]: void;
   [Method.CREATE_ENTITY]: { entity: number };
   [Method.REMOVE_ENTITY]: { entity: number };
   [Method.SET_PARENT]: { entity: number; parent: number };
@@ -305,6 +312,14 @@ export class SceneServer extends RPC<Method, Params, Result> {
 
     this.handle('push_mobile_debug_entries', async ({ entries }) => {
       mobileDebugStore.pushEntries(entries);
+    });
+
+    this.handle('notify_scene_build', async event => {
+      if (event.kind === 'bundle-saved') {
+        publishSceneBuildEvent({ kind: 'bundle-saved' });
+      } else if (event.kind === 'rebuild' && typeof event.file === 'string') {
+        publishSceneBuildEvent({ kind: 'rebuild', file: event.file });
+      }
     });
 
     this.handle('set_mobile_debug_session_enabled', async ({ enabled, sessions }) => {
