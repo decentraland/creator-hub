@@ -52,18 +52,6 @@ export type ENS = {
   size?: string;
 };
 
-export type ENSError = {
-  message: string;
-  code?: number;
-  origin?: ENSOrigin;
-};
-
-export enum ENSOrigin {
-  RESOLVER = 'Resolver',
-  CONTENT = 'Content',
-  ADDRESS = 'Address',
-}
-
 export enum USER_PERMISSIONS {
   DEPLOYMENT = 'deployment',
   STREAMING = 'streaming',

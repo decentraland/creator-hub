@@ -140,6 +140,14 @@ projects in `e2e/setup/`, and all specs flat in `e2e/specs/` with the tier chose
 (`new PublishModal(page)`) rather than injecting them as fixtures — the objects are lazy, so
 per-test construction is free.
 
+Each tier maps to an npm script (all drive the packaged app, so they build/package first):
+`test:e2e` runs `@offline` + `@live` locally (`npm run compile` then Playwright); `test:e2e:ci` is
+the CI form (packages with `electron-builder --dir` but skips the Vite rebuild that the
+`download-build` action already provides); `test:e2e:live` runs only `@live`. **`@scene` is
+deliberately not in those scripts** — creating a scene runs a live `npm install`, so it can fail on
+registry outages rather than real regressions, which would make it a flaky PR gate. Run it on demand
+with `test:e2e:scene`.
+
 ### Type with real keyboard events, not `locator.fill()`
 
 Prefer `page.keyboard.type` / `page.keyboard.press` over `locator.fill()`. Real users send per-character `keydown`/`input`/`keyup` events; `.fill()` sets the value with a single synthetic event and bypasses any per-keystroke state management. If a test only passes with `.fill()`, the underlying React component has a bug — fix the component, not the test.

@@ -253,10 +253,6 @@ export const fetchENSList = createAsyncThunk(
 export type ENSState = {
   chainId: ChainId;
   data: Record<string, ENS>;
-  // No `error` here on purpose: the state is wrapped in `Async`, which already supplies
-  // `error: string | null`. Declaring `error: ENSError | null` as well intersected to
-  // `(ENSError & string) | null` — uninhabitable except for `null`, which is why the
-  // rejected reducer could only ever store `null` and the failure was invisible to the UI.
 };
 
 export const initialState: Async<ENSState> = {
