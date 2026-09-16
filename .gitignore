@@ -44,3 +44,6 @@ settings.local.json
 
 # Claude agent verification screenshots
 .claude/screenshots/
+
+# Captured @live signed-in identity (never commit)
+packages/creator-hub/e2e/.auth/
