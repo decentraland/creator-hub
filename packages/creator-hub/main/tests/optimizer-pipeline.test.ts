@@ -424,40 +424,46 @@ describe('optimizer pipeline', () => {
 
   describe('when the run is interrupted', () => {
     it('should have already written a manifest that maps every backup made so far', async () => {
-      // A pool that dies on the second model: the first was backed up and overwritten, then the
-      // run stops — the manifest written before that overwrite is what makes a revert possible.
+      // The pool pauses on the second model, so the run is observed with the first model backed
+      // up and overwritten and nothing else touched. It is then released to finish: a run left
+      // hanging kept writing into .optimize while afterEach removed the scene (ENOTEMPTY).
+      let release!: () => void;
+      const gate = new Promise<void>(resolve => (release = resolve));
+      let pause!: () => void;
+      const paused = new Promise<void>(resolve => (pause = resolve));
+      const inline = createInlinePool();
       let calls = 0;
       const pool: CompressPool = {
         size: 1,
-        compress: (...args) => {
-          if (++calls > 1) return new Promise(() => {});
-          return createInlinePool().compress(...args);
+        compress: async (...args) => {
+          if (++calls === 2) {
+            pause();
+            await gate;
+          }
+          return inline.compress(...args);
         },
         close: async () => {},
       };
-      // The pipeline walks the models in sorted order; GLBS is in authoring order.
-      const [first, second] = [...GLBS].sort();
-      const interrupted = new Promise<void>(resolve => {
-        void runPipeline(
-          scene,
-          defaults(),
-          p => {
-            if (p.phase === 'textures' && p.file === second) resolve();
-          },
-          { pool },
-        );
-      });
-      await interrupted;
+      const run = runPipeline(scene, defaults(), () => {}, { pool });
+      await paused;
 
-      const manifest = (await readManifest(scene)) as OptimizeManifest;
-      expect(manifest.modifiedGlbs).toEqual([first]);
-      expect(manifest.optionsKey).toBeNull();
+      // The pipeline walks the models in sorted order; GLBS is in authoring order.
+      const [first] = [...GLBS].sort();
+      const midRun = (await readManifest(scene)) as OptimizeManifest;
+      expect(midRun.modifiedGlbs).toEqual([first]);
+      expect(midRun.optionsKey).toBeNull();
       expect(
         Buffer.compare(
           await fs.readFile(path.join(scene, OPTIMIZE_DIR, 'backup', first)),
           originals.get(first)!,
         ),
       ).toBe(0);
+
+      release();
+      await run;
+      const done = (await readManifest(scene)) as OptimizeManifest;
+      expect([...done.modifiedGlbs].sort()).toEqual([...GLBS].sort());
+      expect(done.optionsKey).not.toBeNull();
     });
   });
 
