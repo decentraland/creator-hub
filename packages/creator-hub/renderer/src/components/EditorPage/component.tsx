@@ -192,6 +192,9 @@ export function EditorPage() {
     openDetached: openAiWindow,
     closeDetached: closeAiWindow,
   } = useAiSession(aiChatEnabled, project?.path, handleClearAiSelection, () => setAiOpen(false));
+  // A prompt seeded from the inspector (Trigger Area "describe a reaction"). Open the inline
+  // panel on it; ChatView copies the text into the composer and clears the draft.
+  const aiDraftPrompt = useSelector(state => state.ai.draftPrompt);
   const hydratedOptimizedAssetsPathRef = useRef<string | null>(null);
   const [modalState, setModalState] = useState<ModalState>({ type: undefined });
   // Draggable width of the AI panel (like the inspector's own panels). Persisted globally.
@@ -356,6 +359,12 @@ export function EditorPage() {
       .getProjectId(projectPath)
       .then(project_id => analytics.track('AI Chat Opened', { project_id }));
   }, [aiOpen, projectPath]);
+
+  // Open the panel when the inspector seeds a prompt. The host RPC only sets a draft when the
+  // assistant is enabled, so no extra gate is needed here.
+  useEffect(() => {
+    if (aiDraftPrompt !== null && aiChatEnabled) setAiOpen(true);
+  }, [aiDraftPrompt?.nonce, aiChatEnabled]);
 
   useEffect(() => {
     if (!projectPath || !useBevy) {

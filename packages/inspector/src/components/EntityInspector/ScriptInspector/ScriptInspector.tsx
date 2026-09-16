@@ -43,6 +43,20 @@ import './ScriptInspector.css';
 
 type ScriptModuleMode = 'create' | 'import' | undefined;
 
+// A Trigger Area smart item carries this generic detector script; its enter/leave behaviour
+// is authored by the AI assistant, not a param. Matched on the file name like the placed copy
+// (assets/asset-packs/…/TriggerArea.tsx), so a renamed copy still counts.
+const TRIGGER_DETECTOR = /(^|\/)TriggerArea\.tsx$/i;
+
+// One-tap prompts offered under a Trigger Area's Reactions. Full sentences a creator can send
+// as-is; each is bound to this area by name. `${l}` is the quoted area name (or "this area").
+const TRIGGER_ASKS: { label: string; build: (label: string) => string }[] = [
+  { label: 'Play a sound', build: l => `Play a sound when a player enters ${l}` },
+  { label: 'Show a message', build: l => `Show a message when a player enters ${l}` },
+  { label: 'Give points', build: l => `Give the player points when they enter ${l}` },
+  { label: 'On leaving', build: l => `Do something when a player leaves ${l}` },
+];
+
 export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) => {
   const { Script } = sdk.components;
   const dispatch = useAppDispatch();
@@ -370,6 +384,22 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
     [handleUpdateDynamicField],
   );
 
+  const isTriggerArea = useMemo(
+    () => scripts.some(script => TRIGGER_DETECTOR.test(script.path)),
+    [scripts],
+  );
+
+  // Hand a natural-language reaction prompt to the host's AI assistant (opens the panel and
+  // seeds the composer, without sending). The area's name binds the sentence to this instance.
+  const promptReaction = useCallback(
+    (build: (label: string) => string) => {
+      const name = sdk.components.Name.getOrNull(entityId)?.value?.trim();
+      const label = name ? `"${name}"` : 'this area';
+      void getSceneClient()?.promptAssistant(build(label)).catch(console.error);
+    },
+    [sdk, entityId],
+  );
+
   if (!hasScript) return null;
 
   return (
@@ -462,6 +492,45 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
             </Container>
           ))}
         </>
+      )}
+      {isTriggerArea && (
+        <Container
+          label="Reactions"
+          initialOpen
+          variant="minimal"
+        >
+          <div className="TriggerAreaReactions">
+            <div className="description">
+              Describe what should happen — the assistant writes a reaction script and attaches it
+              here. Each area keeps its own reaction.
+            </div>
+            <div className="asks">
+              <Button
+                className="ReactionButton"
+                onClick={() => promptReaction(l => `When a player enters ${l}, `)}
+              >
+                When a player enters…
+              </Button>
+              <Button
+                className="ReactionButton"
+                onClick={() => promptReaction(l => `When a player leaves ${l}, `)}
+              >
+                When a player leaves…
+              </Button>
+            </div>
+            <div className="chips">
+              {TRIGGER_ASKS.map(ask => (
+                <Button
+                  key={ask.label}
+                  className="ReactionChip"
+                  onClick={() => promptReaction(ask.build)}
+                >
+                  {ask.label}
+                </Button>
+              ))}
+            </div>
+          </div>
+        </Container>
       )}
       {emptyScriptModuleMode || scripts.length === 0 ? (
         <Container
