@@ -20,8 +20,10 @@ export class TriggerAreaDetector {
     public src: string, // DO NOT REMOVE
     public entity: Entity, // DO NOT REMOVE
     public onlyMe: boolean = false,
+    public shape: 'box' | 'sphere' = 'box',
   ) {
     this.onlyMe = onlyMe;
+    this.shape = shape;
   }
 
   /**
@@ -30,7 +32,11 @@ export class TriggerAreaDetector {
    * (resize it with the scale gizmo) and starts tracking who is inside.
    */
   start() {
-    TriggerArea.setBox(this.entity, ColliderLayer.CL_PLAYER);
+    if (this.shape === 'sphere') {
+      TriggerArea.setSphere(this.entity, ColliderLayer.CL_PLAYER);
+    } else {
+      TriggerArea.setBox(this.entity, ColliderLayer.CL_PLAYER);
+    }
     triggerAreaEventsSystem.onTriggerEnter(this.entity, event => this.seen(event.trigger?.entity));
     triggerAreaEventsSystem.onTriggerStay(this.entity, event => this.seen(event.trigger?.entity));
     triggerAreaEventsSystem.onTriggerExit(this.entity, event => this.gone(event.trigger?.entity));

@@ -114,6 +114,39 @@ export function start(src: string, entity: Entity, speed: Slider<0, 10> = 5) {}
     });
   });
 
+  describe('when parsing a string-literal union param', () => {
+    it('should return an enum with the literals as options and the default as the value', () => {
+      const { params } = getScriptParams(classScript("public shape: 'box' | 'sphere' = 'sphere',"));
+      expect(params.shape).toEqual({
+        type: 'enum',
+        value: 'sphere',
+        options: ['box', 'sphere'],
+        optional: true,
+      });
+    });
+
+    it('should use the first option as the value when there is no default', () => {
+      const { params } = getScriptParams(classScript("public shape: 'box' | 'sphere',"));
+      expect(params.shape).toMatchObject({
+        type: 'enum',
+        value: 'box',
+        options: ['box', 'sphere'],
+      });
+    });
+
+    it('should treat an optional string-literal union as an enum', () => {
+      const { params } = getScriptParams(
+        classScript("public shape: 'box' | 'sphere' | undefined,"),
+      );
+      expect(params.shape).toMatchObject({ type: 'enum', options: ['box', 'sphere'] });
+    });
+
+    it('should NOT treat `string | undefined` as an enum', () => {
+      const { params } = getScriptParams(classScript('public label: string | undefined,'));
+      expect(params.label).toMatchObject({ type: 'string' });
+    });
+  });
+
   describe('when parsing the other param types alongside a slider', () => {
     it('should keep parsing number, boolean, string and entity params', () => {
       const { params } = getScriptParams(
