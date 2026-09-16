@@ -8,8 +8,8 @@ import {
   installAuthMocks,
   requestIdFromAuthUrl,
   setIdentityResponse,
-} from '../helpers/auth';
-import { Auth } from '../pageObjects/Auth';
+} from '../helpers/auth-mocks';
+import { Auth } from '../pages/Auth';
 
 const IDENTITY_ID = 'e2e-identity-id';
 const ERROR_SNACKBAR = '[data-testid="snackbar-generic-error"]';
@@ -49,6 +49,7 @@ const DEEPLINK_FAILURES: {
 let electronApp: ElectronApplication;
 let cleanup: () => void;
 let page: Page;
+let auth: Auth;
 
 test.describe.configure({ mode: 'serial' });
 
@@ -56,7 +57,8 @@ test.describe('sign in failures', { tag: '@offline' }, () => {
   test.beforeAll(async () => {
     ({ electronApp, cleanup } = await launchApp());
     page = await electronApp.firstWindow();
-    await Auth.waitUntilReady(page);
+    auth = new Auth(page);
+    await auth.waitUntilReady();
     await installAuthMocks(page, electronApp);
   });
 
@@ -67,7 +69,7 @@ test.describe('sign in failures', { tag: '@offline' }, () => {
 
   test.beforeEach(async () => {
     await page.reload();
-    await Auth.waitUntilReady(page);
+    await auth.waitUntilReady();
   });
 
   for (const failure of DEEPLINK_FAILURES) {
@@ -76,15 +78,15 @@ test.describe('sign in failures', { tag: '@offline' }, () => {
       await setIdentityResponse(page, failure.identityResponse);
 
       const openCalls = await captureOpenExternal(electronApp);
-      await Auth.clickSignIn(page);
-      await Auth.waitForSignInPage(page);
+      await auth.clickSignIn();
+      await auth.waitForSignInPage();
 
       await expect.poll(async () => (await openCalls()).length).toBe(1);
       const [url] = await openCalls();
       await fireSignInDeeplink(electronApp, IDENTITY_ID, requestIdFromAuthUrl(url));
 
       await expect(errorSaying(failure.message)).toBeVisible();
-      expect(await Auth.isSignedIn(page), 'must not appear signed in after a failure').toBe(false);
+      expect(await auth.isSignedIn(), 'must not appear signed in after a failure').toBe(false);
     });
   }
 });

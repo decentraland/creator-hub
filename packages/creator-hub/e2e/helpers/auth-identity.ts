@@ -8,24 +8,24 @@ const TESTNET_AUTH_API = 'auth-api.decentraland.zone';
 const MAINNET_AUTH_API = 'auth-api.decentraland.org';
 
 /** Gitignored file holding the renderer localStorage captured by the `electron-live-auth` setup. */
-export const LIVE_STATE_PATH = join(creatorHubDir, 'e2e', '.auth', 'live-state.json');
+export const IDENTITY_STATE_PATH = join(creatorHubDir, 'e2e', '.auth', 'live-state.json');
 
 /** Dumps the signed-in renderer's localStorage so later `@live` tests can reuse the identity. */
-export async function saveLiveState(page: Page): Promise<void> {
+export async function saveIdentity(page: Page): Promise<void> {
   const entries = await page.evaluate(() => ({ ...localStorage }));
-  mkdirSync(dirname(LIVE_STATE_PATH), { recursive: true });
-  writeFileSync(LIVE_STATE_PATH, JSON.stringify(entries, null, 2));
+  mkdirSync(dirname(IDENTITY_STATE_PATH), { recursive: true });
+  writeFileSync(IDENTITY_STATE_PATH, JSON.stringify(entries, null, 2));
 }
 
 /** Restores the captured identity into a freshly launched app and reloads it. */
-export async function seedLiveState(page: Page): Promise<void> {
-  if (!existsSync(LIVE_STATE_PATH)) {
+export async function seedIdentity(page: Page): Promise<void> {
+  if (!existsSync(IDENTITY_STATE_PATH)) {
     throw new Error(
-      `e2e: ${LIVE_STATE_PATH} is missing — run the electron-live-auth setup project first`,
+      `e2e: ${IDENTITY_STATE_PATH} is missing — run the electron-live-auth setup project first`,
     );
   }
 
-  const entries = JSON.parse(readFileSync(LIVE_STATE_PATH, 'utf8')) as Record<string, string>;
+  const entries = JSON.parse(readFileSync(IDENTITY_STATE_PATH, 'utf8')) as Record<string, string>;
   await page.evaluate(stored => {
     for (const [key, value] of Object.entries(stored)) {
       localStorage.setItem(key, value);
@@ -37,11 +37,9 @@ export async function seedLiveState(page: Page): Promise<void> {
 /**
  * Rewrites the auth-dapp URL the app opened into one that loads on `decentraland.org`.
  *
- * @remarks `decentraland.zone` is behind Cloudflare bot protection. The `env=dev` parameter is
- * carried on both the login URL and its `redirectTo`, because the dapp drops unknown parameters
- * when it redirects to the login page and then talks to the mainnet auth-api instead.
+ * @remarks Carries `env=dev` on both the login URL and its `redirectTo`. See docs/testing-standards.md.
  */
-export function liveAuthDappUrl(openedUrl: string): string {
+export function authDappUrl(openedUrl: string): string {
   const opened = new URL(openedUrl);
   const loginUrl = new URL('https://decentraland.org/auth/login');
   loginUrl.searchParams.set('redirectTo', `${opened.pathname}${opened.search}&env=dev`);

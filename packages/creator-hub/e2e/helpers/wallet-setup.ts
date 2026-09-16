@@ -14,18 +14,17 @@ function readPrivateKey(): `0x${string}` {
 }
 
 /** Address of the wallet the `@live` tier signs with. */
-export function liveWalletAddress(): string {
+export function walletAddress(): string {
   return privateKeyToAccount(readPrivateKey()).address;
 }
 
 /**
  * Installs an EIP-1193 provider, announced over EIP-6963 as MetaMask, that signs with
- * `E2E_PRIVATE_KEY`. Signing runs in the test process through `exposeFunction`, so the key
- * never reaches the page.
+ * `E2E_PRIVATE_KEY`. Signing runs in the test process via `exposeFunction`; the key stays there.
  *
  * @returns the address the provider reports.
  */
-export async function installLiveWallet(page: Page): Promise<string> {
+export async function setupTestWallet(page: Page): Promise<string> {
   const account = privateKeyToAccount(readPrivateKey());
 
   await page.exposeFunction('__e2eWalletSign', async (method: string, params: string[]) => {

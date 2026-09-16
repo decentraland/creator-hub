@@ -1,15 +1,15 @@
 import { chromium, expect, test } from '@playwright/test';
-import { launchApp } from '../../helpers/app';
-import { captureOpenExternal, fireSignInDeeplink } from '../../helpers/auth';
+import { launchApp } from '../helpers/app';
+import { captureOpenExternal, fireSignInDeeplink } from '../helpers/auth-mocks';
 import {
+  authDappUrl,
   captureDeepLink,
-  liveAuthDappUrl,
   readDeepLink,
-  saveLiveState,
+  saveIdentity,
   watchAuthApi,
-} from '../../helpers/live-auth';
-import { installLiveWallet } from '../../helpers/live-wallet';
-import { Auth } from '../../pageObjects/Auth';
+} from '../helpers/auth-identity';
+import { setupTestWallet } from '../helpers/wallet-setup';
+import { Auth } from '../pages/Auth';
 
 const BROWSER_WALLET_BUTTON = 'secondary-test-id-metamask-button';
 
@@ -25,11 +25,12 @@ test('signs in for real and captures the identity', async () => {
 
   try {
     const appPage = await electronApp.firstWindow();
-    await Auth.waitUntilReady(appPage);
+    const auth = new Auth(appPage);
+    await auth.waitUntilReady();
 
     const openCalls = await captureOpenExternal(electronApp);
-    await Auth.clickSignIn(appPage);
-    await Auth.waitForSignInPage(appPage);
+    await auth.clickSignIn();
+    await auth.waitForSignInPage();
     await expect
       .poll(async () => (await openCalls()).length, {
         message: 'the app never asked the OS to open the auth dapp',
@@ -39,9 +40,9 @@ test('signs in for real and captures the identity', async () => {
 
     const dappPage = await browser.newPage();
     const authApi = watchAuthApi(dappPage);
-    await installLiveWallet(dappPage);
+    await setupTestWallet(dappPage);
     await captureDeepLink(dappPage);
-    await dappPage.goto(liveAuthDappUrl(openedUrl), { waitUntil: 'domcontentloaded' });
+    await dappPage.goto(authDappUrl(openedUrl), { waitUntil: 'domcontentloaded' });
     await dappPage.getByTestId(BROWSER_WALLET_BUTTON).click();
 
     await expect
@@ -61,8 +62,8 @@ test('signs in for real and captures the identity', async () => {
       identityId!,
       deepLink.searchParams.get('authRequestId') ?? undefined,
     );
-    await Auth.waitForSignedIn(appPage);
-    await saveLiveState(appPage);
+    await auth.waitForSignedIn();
+    await saveIdentity(appPage);
   } finally {
     await browser.close().catch(() => undefined);
     await electronApp.close().catch(() => undefined);

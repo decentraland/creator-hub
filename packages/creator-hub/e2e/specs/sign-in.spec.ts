@@ -6,8 +6,8 @@ import {
   type AuthMockRecorder,
   fireSignInDeeplink,
   installAuthMocks,
-} from '../helpers/auth';
-import { Auth } from '../pageObjects/Auth';
+} from '../helpers/auth-mocks';
+import { Auth } from '../pages/Auth';
 
 const IDENTITY_ID = 'e2e-identity-id';
 const FOREIGN_IDENTITY_ID = 'e2e-foreign-identity-id';
@@ -18,6 +18,7 @@ const REQUESTS_PATH_WITH_UUID_V4 =
 let electronApp: ElectronApplication;
 let cleanup: () => void;
 let page: Page;
+let auth: Auth;
 let mocks: AuthMockRecorder;
 let openedRequestId: string;
 
@@ -27,7 +28,8 @@ test.describe('sign in (happy path)', { tag: '@offline' }, () => {
   test.beforeAll(async () => {
     ({ electronApp, cleanup } = await launchApp());
     page = await electronApp.firstWindow();
-    await Auth.waitUntilReady(page);
+    auth = new Auth(page);
+    await auth.waitUntilReady();
     mocks = await installAuthMocks(page, electronApp, { address: MOCK_ADDRESS });
   });
 
@@ -37,13 +39,13 @@ test.describe('sign in (happy path)', { tag: '@offline' }, () => {
   });
 
   test('shows the Sign In button when logged out', async () => {
-    expect(await Auth.isSignInButtonVisible(page), 'Sign In button not visible').toBe(true);
-    expect(await Auth.isSignedIn(page), 'Avatar button should not be visible yet').toBe(false);
+    expect(await auth.isSignInButtonVisible(), 'Sign In button not visible').toBe(true);
+    expect(await auth.isSignedIn(), 'Avatar button should not be visible yet').toBe(false);
   });
 
   test('opens the auth dapp with deeplink params on sign in', async () => {
-    await Auth.clickSignIn(page);
-    await Auth.waitForSignInPage(page);
+    await auth.clickSignIn();
+    await auth.waitForSignInPage();
 
     await expect
       .poll(async () => (await mocks.openCalls()).length, {
@@ -71,10 +73,10 @@ test.describe('sign in (happy path)', { tag: '@offline' }, () => {
     await fireSignInDeeplink(electronApp, FOREIGN_IDENTITY_ID, 'a-foreign-request-id');
 
     expect(
-      await Auth.becomesSignedIn(page, 3_000),
+      await auth.becomesSignedIn(3_000),
       'an uncorrelated deeplink must not complete sign in',
     ).toBe(false);
-    expect(await Auth.isSignInPageVisible(page), 'Sign In page should still be visible').toBe(true);
+    expect(await auth.isSignInPageVisible(), 'Sign In page should still be visible').toBe(true);
 
     const foreignFetched = (await mocks.fetchCalls()).some(c =>
       c.url.includes(FOREIGN_IDENTITY_ID),
@@ -85,9 +87,9 @@ test.describe('sign in (happy path)', { tag: '@offline' }, () => {
   test('completes sign in when the deeplink arrives', async () => {
     await fireSignInDeeplink(electronApp, IDENTITY_ID, openedRequestId);
 
-    await Auth.waitForSignedIn(page);
-    expect(await Auth.isSignedIn(page), 'Avatar button not visible after sign in').toBe(true);
-    expect(await Auth.isSignInPageVisible(page), 'Sign In page should be gone').toBe(false);
+    await auth.waitForSignedIn();
+    expect(await auth.isSignedIn(), 'Avatar button not visible after sign in').toBe(true);
+    expect(await auth.isSignInPageVisible(), 'Sign In page should be gone').toBe(false);
 
     const identityFetched = (await mocks.fetchCalls()).some(c =>
       c.url.includes(`/identities/${IDENTITY_ID}`),

@@ -29,10 +29,11 @@ loadDotenv({ path: join(__dirname, '.env.e2e') });
  * reclamation is gone — but the native memory lives in the Electron *child* process,
  * which `electronApp.close()` reaps. See docs/testing-standards.md.
  */
-export default defineConfig<{ appArgs: string[] }>({
+export default defineConfig<{ appArgs: string[]; signedIn: boolean }>({
   testDir: './e2e',
   forbidOnly: !!process.env.CI,
   workers: 1,
+  fullyParallel: false,
   // Cold-launching a packaged Electron app plus a full scene flow is slow and
   // run-to-run variable on a contended runner.
   timeout: 120_000,
@@ -42,7 +43,6 @@ export default defineConfig<{ appArgs: string[] }>({
     {
       name: 'electron-offline',
       grep: /@offline/,
-      fullyParallel: false,
       retries: process.env.CI ? 2 : 0,
       use: {
         trace: 'retain-on-failure',
@@ -56,7 +56,6 @@ export default defineConfig<{ appArgs: string[] }>({
       // set — that is what keeps @offline's "cannot fail from someone else's outage" true.
       name: 'electron-scene',
       grep: /@scene/,
-      fullyParallel: false,
       retries: process.env.CI ? 1 : 0,
       // Scene creation plus an inspector iframe load is the slowest thing the suite does.
       timeout: 300_000,
@@ -67,8 +66,7 @@ export default defineConfig<{ appArgs: string[] }>({
     },
     {
       name: 'electron-live-auth',
-      testMatch: /specs\/live\/auth\.setup\.ts$/,
-      fullyParallel: false,
+      testMatch: /setup\//,
       retries: 0,
       timeout: 300_000,
       use: {
@@ -82,11 +80,11 @@ export default defineConfig<{ appArgs: string[] }>({
       name: 'electron-live',
       grep: /@live/,
       dependencies: ['electron-live-auth'],
-      fullyParallel: false,
       retries: 0,
       timeout: 1_200_000,
       use: {
         appArgs: ['--env=dev'],
+        signedIn: true,
         trace: 'off',
         screenshot: 'off',
         video: 'off',

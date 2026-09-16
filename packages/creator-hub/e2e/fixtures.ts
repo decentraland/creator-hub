@@ -1,38 +1,28 @@
 import { test as base } from '@playwright/test';
 import type { ElectronApplication, Page } from 'playwright';
 import { type LaunchedApp, launchApp } from './helpers/app';
-import { seedLiveState } from './helpers/live-auth';
-import { Auth } from './pageObjects/Auth';
+import { seedIdentity } from './helpers/auth-identity';
+import { Auth } from './pages/Auth';
 
 type AppFixtures = {
   /** Extra CLI arguments for the packaged app; set per project via `use`. */
   appArgs: string[];
+  /** When true, the `page` fixture seeds the captured `@live` identity and waits for signed-in. */
+  signedIn: boolean;
   /** A freshly launched packaged app, torn down after the test. */
   electronApp: ElectronApplication;
-  /** The app's first window, already rendered. */
+  /** The app's first window, ready (and signed in when `signedIn` is set). */
   page: Page;
   /** The throwaway user-data dir; scenes are created under `<userDataDir>/Scenes`. */
   userDataDir: string;
-  /** The app's first window, already signed in as the wallet the `@live` setup captured. */
-  signedInLive: Page;
 };
 
-/**
- * `test` for specs whose tests are independent: each gets its own packaged-app instance
- * with throwaway user-data and home directories.
- *
- * Specs whose tests form a dependent chain (the sign-in flow: open → request → deeplink →
- * signed in) cannot use this — they need one app across several tests. Those call
- * `launchApp()` from `test.beforeAll` and declare
- * `test.describe.configure({ mode: 'serial' })`, so a broken link fails the rest of the
- * chain instead of reporting several confusing failures. Playwright has no per-file
- * fixture scope, which is why both shapes exist.
- */
 /** Owns the launch/teardown so `electronApp` and `homeDir` describe the same instance. */
 type InternalFixtures = { launchedApp: LaunchedApp };
 
 export const test = base.extend<AppFixtures & InternalFixtures>({
   appArgs: [[], { option: true }],
+  signedIn: [false, { option: true }],
 
   launchedApp: async ({ appArgs }, use) => {
     const launched = await launchApp({ extraArgs: appArgs });
@@ -42,7 +32,7 @@ export const test = base.extend<AppFixtures & InternalFixtures>({
       try {
         await launched.electronApp.close();
       } catch {
-        // ignore teardown errors so they don't mask the test result
+        void 0;
       }
       launched.cleanup();
     }
@@ -56,16 +46,15 @@ export const test = base.extend<AppFixtures & InternalFixtures>({
     await use(launchedApp.userDataDir);
   },
 
-  page: async ({ electronApp }, use) => {
+  page: async ({ electronApp, signedIn }, use) => {
     const page = await electronApp.firstWindow();
-    await page.waitForSelector('#app main.Main', { state: 'visible' });
-    await use(page);
-  },
-
-  signedInLive: async ({ page }, use) => {
-    await seedLiveState(page);
-    await Auth.waitUntilReady(page);
-    await Auth.waitForSignedIn(page);
+    const auth = new Auth(page);
+    await auth.waitUntilReady();
+    if (signedIn) {
+      await seedIdentity(page);
+      await auth.waitUntilReady();
+      await auth.waitForSignedIn();
+    }
     await use(page);
   },
 });

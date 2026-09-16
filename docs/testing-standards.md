@@ -132,6 +132,14 @@ etc.) rather than via the `definitions.ts` barrel.
 
 ## E2E (Playwright)
 
+The creator-hub Playwright suite mirrors the layout of `decentraland/explorer-automation`
+(`web/tests/marketplace`): page objects in `e2e/pages/` (a class per screen/modal,
+`constructor(page)`), fixtures in `e2e/fixtures.ts`, cross-cutting helpers in `e2e/helpers/`, setup
+projects in `e2e/setup/`, and all specs flat in `e2e/specs/` with the tier chosen by **tag**
+(`@offline`/`@scene`/`@live`), not by folder. Specs construct page objects directly
+(`new PublishModal(page)`) rather than injecting them as fixtures — the objects are lazy, so
+per-test construction is free.
+
 ### Type with real keyboard events, not `locator.fill()`
 
 Prefer `page.keyboard.type` / `page.keyboard.press` over `locator.fill()`. Real users send per-character `keydown`/`input`/`keyup` events; `.fill()` sets the value with a single synthetic event and bypasses any per-keystroke state management. If a test only passes with `.fill()`, the underlying React component has a bug — fix the component, not the test.
@@ -203,7 +211,7 @@ The class carries no styling — it exists purely as this signal, which makes it
 
 ### The `@live` tier signs in once, then seeds `localStorage`
 
-`electron-live-auth` (`e2e/specs/live/auth.setup.ts`) is a Playwright setup project that
+`electron-live-auth` (`e2e/setup/auth.ts`) is a Playwright setup project that
 `electron-live` declares as a `dependencies:` entry. It drives the real auth dapp once and writes
 the signed-in renderer's whole `localStorage` to the gitignored `e2e/.auth/live-state.json`; every
 `@live` test then gets it back through the `signedInLive` fixture (`seedLiveState` + reload). The
@@ -216,8 +224,9 @@ run does touches mainnet Decentraland.
 
 Neither project records a trace, video or screenshot: a `@live` run carries a real signed auth
 chain and Playwright traces record request headers verbatim, so an uploaded artifact from this
-public repo would publish the identity. `retries: 0` too — retrying a partially-completed real
-deploy is worse than failing loudly.
+public repo would publish the identity. The `electron-live` project defaults to `retries: 0`; only
+the two publish specs opt into `test.describe.configure({ retries: 2 })` (see the deploy section
+below), because a catalyst rejection is a transient infra blip on an atomic, idempotent deploy.
 
 ### `env=dev` must be on the login URL *and* its `redirectTo`
 
@@ -251,7 +260,7 @@ key in the page and cannot produce a signature a catalyst would accept.
 
 ### The publish `@live` specs deploy for real
 
-`e2e/specs/live/publish-to-world.spec.ts` and `publish-to-land.spec.ts` create a scene and run a
+`e2e/specs/publish-to-world.spec.ts` and `publish-to-land.spec.ts` create a scene and run a
 genuine `.zone` deployment with the `.env.e2e` wallet, then stop at the point the content server has
 **accepted** it. Acceptance has three possible renderings and the spec waits for whichever arrives:
 
@@ -278,8 +287,14 @@ queue depth into a red test.
 
 `ConnectedSteps` is what exposes the signal: `Step` renders `data-state` plus the `testId` its caller
 supplies, and `Deploy` names them `publish-modal-deploy-step-{unpublishing,uploading,converting,optimizing}`.
-The error screen carries `publish-modal-deploy-error`; the helper races it against the acceptance
-locators so a rejected deploy fails in seconds instead of burning the whole timeout.
+The error screen carries `publish-modal-deploy-error`; `deployToAccepted` races it against the
+acceptance locators so a rejected deploy fails in seconds (throwing the error text) instead of
+burning the whole timeout. It does **not** drive the app's own "Retry" button: `handleDeployRetry`
+calls `onBack()`, which navigates back to the target-selection step rather than re-running the
+deploy in place — so a loop that clicked it then waited on the deploy screen hung the full 600s.
+The catalyst rejects `~1/3` of Genesis City deploys transiently (a World via WCS almost never), and
+a catalyst deploy is atomic and idempotent, so the recovery is a clean full re-run: `publish-to-land`
+and `publish-to-world` set `test.describe.configure({ retries: 2 })`. `signed-in` stays at 0.
 
 To see where a deployment actually is, read the registry rather than the UI:
 `GET <asset-bundle-registry>/entities/status/<entityId>` (signed with the same auth chain) returns
