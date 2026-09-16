@@ -2,7 +2,7 @@ import { beforeEach, describe, it, expect, vi } from 'vitest';
 import { ChainId } from '@dcl/schemas';
 import type { AuthIdentity } from 'decentraland-crypto-fetch';
 import type * as SharedFetch from '/shared/fetch';
-import type { DeploymentComponentsStatus, Info, Status } from '/@/lib/deploy';
+import type { DeploymentComponentsStatus, Info } from '/@/lib/deploy';
 
 const REGISTRY = 'https://asset-bundle-registry.example.org';
 const ABGEN_REGISTRY = 'https://asset-bundle-registry-abgen.example.org';
@@ -44,8 +44,7 @@ vi.mock('dcl-catalyst-client/dist/contracts-snapshots', () => ({
 }));
 
 // Imported after the mocks: `utils` reads the registry hosts from config at module load.
-const { checkDeploymentCompletion, fetchDeploymentStatus, getAvailableCatalystServer } =
-  await import('./utils');
+const { fetchDeploymentStatus, getAvailableCatalystServer } = await import('./utils');
 
 describe('getAvailableCatalystServer', () => {
   it('should return a server for sepolia network', () => {
@@ -184,45 +183,6 @@ describe('fetchDeploymentStatus', () => {
       await fetchDeploymentStatus(info, identity, true).catch(() => undefined);
 
       expect(cancelErrorBody).toHaveBeenCalled();
-    });
-  });
-});
-
-describe('checkDeploymentCompletion', () => {
-  const status = (catalyst: Status, assetBundle: Status): DeploymentComponentsStatus => ({
-    catalyst,
-    assetBundle,
-  });
-
-  describe('when nothing has completed yet', () => {
-    it('should not report the deployment as finishing', () => {
-      expect(checkDeploymentCompletion(status('pending', 'idle'))).toBe(false);
-    });
-  });
-
-  describe('when only the catalyst upload has completed', () => {
-    // Two components, so the catalyst alone is 50% and misses the 60% default: the
-    // in-progress "Jump In" must not appear until the asset bundles land.
-    it('should not report the deployment as finishing', () => {
-      expect(checkDeploymentCompletion(status('complete', 'pending'))).toBe(false);
-    });
-  });
-
-  describe('when the asset bundles have completed too', () => {
-    it('should report the deployment as finishing', () => {
-      expect(checkDeploymentCompletion(status('complete', 'complete'))).toBe(true);
-    });
-  });
-
-  describe('when a custom threshold is given', () => {
-    it('should honour it instead of the 60% default', () => {
-      expect(checkDeploymentCompletion(status('complete', 'pending'), 0.5)).toBe(true);
-    });
-  });
-
-  describe('when the status carries no components', () => {
-    it('should not report the deployment as finishing', () => {
-      expect(checkDeploymentCompletion({} as DeploymentComponentsStatus)).toBe(false);
     });
   });
 });

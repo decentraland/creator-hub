@@ -339,7 +339,6 @@
         },
         "deploying": {
           "publish": "Publicando...",
-          "finishing": "Terminando...",
           "failed": "Error al publicar",
           "try_again": "Por favor inténtalo de nuevo",
           "step": {
@@ -379,8 +378,7 @@
           "url": "La URL para acceder a tu {target} es:",
           "world": "Mundo",
           "land": "Tierra",
-          "jump_in": "Entrar",
-          "in_progress": "Ahora puedes acceder a tu escena incluso mientras aún se está procesando."
+          "jump_in": "Entrar"
         }
       }
     },

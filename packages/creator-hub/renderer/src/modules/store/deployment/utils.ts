@@ -285,29 +285,6 @@ export async function checkDeploymentStatus(
   throw maxRetriesError;
 }
 
-/**
- * Checks if the deployment is nearing completion based on a given percentage threshold.
- *
- * This function evaluates the `DeploymentStatus` object to determine whether the proportion
- * of steps with a 'complete' status meets or exceeds the specified threshold (default: 60%).
- * With LODs no longer a component there are two steps left, so the default threshold means
- * both of them: the catalyst upload alone is 50% and does not qualify.
- *
- * @param status - The `DeploymentStatus` object containing the current statuses of deployment steps.
- * @param percentage - The completion threshold as a decimal (e.g., `0.6` for 60%). Defaults to 0.6.
- * @returns `true` if the proportion of completed steps is greater than or equal to the threshold; otherwise, `false`.
- */
-export function checkDeploymentCompletion(
-  status: DeploymentComponentsStatus,
-  percentage: number = 0.6,
-): boolean {
-  const statuses = Object.values(status);
-  const total = statuses.length;
-  if (total === 0) return false;
-  const completedCount = statuses.filter(value => value === 'complete').length;
-  return completedCount / total >= percentage;
-}
-
 export function getCatalystServers(chainId: ChainId) {
   const network = chainId === ChainId.ETHEREUM_SEPOLIA ? 'sepolia' : 'mainnet';
   return getCatalystServersFromCache(network);
