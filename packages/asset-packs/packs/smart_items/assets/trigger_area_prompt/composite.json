@@ -1,0 +1,41 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core-schema::Name",
+      "data": {
+        "0": {
+          "json": {
+            "value": "Trigger Area"
+          }
+        }
+      }
+    },
+    {
+      "name": "asset-packs::Script",
+      "data": {
+        "0": {
+          "json": {
+            "value": [
+              {
+                "path": "{assetPath}/TriggerArea.tsx",
+                "priority": 0,
+                "layout": "{\"params\":{\"onlyMe\":{\"type\":\"boolean\",\"optional\":false,\"tooltip\":\"Only react to your own player. Turn off to react to every player.\",\"value\":false}}}"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "asset-packs::Placeholder",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/trigger-area.glb"
+          }
+        }
+      }
+    }
+  ]
+}

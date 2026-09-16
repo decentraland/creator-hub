@@ -33,6 +33,7 @@ export function AiChatPanel({ onClose, onPopOut, onClearSelection, width }: Prop
     billingDismissed,
     sessions,
     currentSessionId,
+    draftPrompt,
   } = useSelector(state => state.ai);
 
   const onSend = useCallback((text: string) => dispatch(aiActions.send(text)), [dispatch]);
@@ -60,9 +61,12 @@ export function AiChatPanel({ onClose, onPopOut, onClearSelection, width }: Prop
     (id: string) => dispatch(aiActions.deleteSession(id)),
     [dispatch],
   );
+  const onDraftConsumed = useCallback(() => dispatch(aiActions.consumeDraftPrompt()), [dispatch]);
 
   return (
     <ChatView
+      draftPrompt={draftPrompt}
+      onDraftConsumed={onDraftConsumed}
       providers={providers}
       provider={provider}
       messages={messages}

@@ -1,0 +1,19 @@
+{
+  "id": "e9fa0eab-44de-4efe-af77-a71171a1a73f",
+  "name": "Trigger Area",
+  "category": "utils",
+  "tags": [
+    "area",
+    "trigger",
+    "invisible",
+    "enter",
+    "leave",
+    "players",
+    "sensor",
+    "detection",
+    "detect",
+    "ai"
+  ],
+  "description": "An invisible area you place and resize. Choose whether it reacts to only your player or all players, then describe in the AI assistant what should happen when a player enters or leaves.",
+  "author": "Decentraland Foundation"
+}
