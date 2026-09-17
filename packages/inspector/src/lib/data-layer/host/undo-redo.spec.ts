@@ -53,8 +53,14 @@ describe('[UNDO] Inspector<->DataLayer<->Babylon', () => {
     inspectorOperations.updateValue(Transform, cachedEntity, { position: { x: 9, y: 8, z: 8 } });
     await inspectorOperations.dispatch();
     await tick();
-    // wait a bit more to ensure the operation is properly recorded
-    await new Promise(resolve => setTimeout(resolve, 10));
+    // Do NOT sleep here. The next test undoes this edit AND the creation above in
+    // ONE step, which only holds while both land inside the provider's 100ms
+    // deferred-grouping window (`startDeferredMode`). A sleep spends that window
+    // instead of helping — the assertions below read state that is already
+    // applied. NOTE this test is still wall-clock dependent even without it: the
+    // whole three-test sequence has to fit in those 100ms, so it flakes under a
+    // loaded test runner. Removing the sleep widens the margin; it does not fix
+    // the underlying race.
     expect(getTransform(dataLayerEngine).get(cachedEntity).position.x).toBe(9);
     expect(getTransform(inspectorEngine).get(cachedEntity).position.x).toBe(9);
   });

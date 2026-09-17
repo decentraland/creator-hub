@@ -19,13 +19,14 @@ import { useEditor } from '/@/hooks/useEditor';
 import { useDispatch, useSelector } from '#store';
 import { settings as settingsPreload, misc } from '#preload';
 import { TabsModal } from '../TabsModal';
-import { ScenesTab, EditorTab, AboutTab } from './Tabs';
+import { ScenesTab, EditorTab, ExperimentalTab, AboutTab } from './Tabs';
 
 import './styles.css';
 
-enum SettingsTab {
+export enum SettingsTab {
   SCENES = 'scenes',
   EDITOR = 'editor',
+  EXPERIMENTAL = 'experimental',
   ABOUT = 'about',
 }
 
@@ -39,22 +40,42 @@ const SETTINGS_TABS: Array<{ label: string; value: SettingsTab }> = [
     value: SettingsTab.EDITOR,
   },
   {
+    label: t('modal.app_settings.tabs.experimental.label'),
+    value: SettingsTab.EXPERIMENTAL,
+  },
+  {
     label: t('modal.app_settings.tabs.about.label'),
     value: SettingsTab.ABOUT,
   },
 ];
 
-export function AppSettings({ open, onClose }: { open: boolean; onClose: () => void }) {
+export function AppSettings({
+  open,
+  onClose,
+  initialTab = SettingsTab.SCENES,
+  autoCheckForUpdates = false,
+}: {
+  open: boolean;
+  onClose: () => void;
+  initialTab?: SettingsTab;
+  autoCheckForUpdates?: boolean;
+}) {
   const dispatch = useDispatch();
   const { settings: _settings, updateAppSettings } = useSettings();
   const { validateProjectPath } = useWorkspace();
   const { version } = useEditor();
   const [settings, setSettings] = useState(_settings);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<SettingsTab>(SettingsTab.SCENES);
+  const [activeTab, setActiveTab] = useState<SettingsTab>(initialTab);
   const [isCustomScenesPath, setIsCustomScenesPath] = useState(false);
   const { loading } = useSelector(state => state.defaultEditor);
   const editors = useSelector(getEditors);
+
+  // Each opening starts on the tab the caller asked for, so "Settings" lands on
+  // Scenes while "Check for Updates" lands on About.
+  useEffect(() => {
+    if (open) setActiveTab(initialTab);
+  }, [open, initialTab]);
 
   useEffect(() => {
     if (open) {
@@ -74,7 +95,10 @@ export function AppSettings({ open, onClose }: { open: boolean; onClose: () => v
 
   const validateScenesPathField = useCallback(
     debounce(async (path: string) => {
-      const isValid = await validateProjectPath(path);
+      // validateProjectPath now returns true | 'invalid-dir' | 'path-taken'; with
+      // no name it's true | 'invalid-dir'. Only `=== true` is valid (a truthy
+      // string must NOT read as valid).
+      const isValid = (await validateProjectPath(path)) === true;
       setError(!isValid ? t('modal.app_settings.fields.scenes_folder.errors.invalid_path') : null);
     }, 500),
     [validateProjectPath],
@@ -162,11 +186,19 @@ export function AppSettings({ open, onClose }: { open: boolean; onClose: () => v
             onSelectEditorPath={handleSelectEditorPath}
           />
         );
+      case SettingsTab.EXPERIMENTAL:
+        return (
+          <ExperimentalTab
+            settings={settings}
+            updateSettings={handleUpdateSettings}
+          />
+        );
       case SettingsTab.ABOUT:
         return (
           <AboutTab
             version={version}
             onViewChangelog={handleViewChangelog}
+            autoCheckForUpdates={autoCheckForUpdates}
           />
         );
       default:

@@ -1,0 +1,1 @@
+export { TextAlignField } from './TextAlignField';

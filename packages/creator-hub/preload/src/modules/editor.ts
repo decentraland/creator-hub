@@ -1,6 +1,14 @@
 import { ipcRenderer, type IpcRendererEvent } from 'electron';
 
 import type { DeployOptions } from '/shared/types/deploy';
+import {
+  BEVY_REALM_BUILD_EVENT,
+  PREVIEW_PROGRESS_EVENT,
+  PROJECT_ASSETS_CHANGED_EVENT,
+  type BevyRealmBuildEvent,
+  type PreviewProgress,
+  type ProjectAssetsChangedEvent,
+} from '/shared/types/ipc';
 import type { MobileDebugSessionInfo } from '/shared/types/ipc';
 
 import { invoke } from '../services/ipc';
@@ -23,6 +31,57 @@ export async function openCode(_path: string) {
 export async function startInspector() {
   const port = await invoke('inspector.start');
   return port;
+}
+
+/**
+ * Start the headless Bevy realm server for a project (the sdk-commands content +
+ * data-layer the embedded Bevy editor engine loads from). Returns the realm URL
+ * and its data-layer WS URL, which the inspector iframe is configured with.
+ */
+export async function startBevyRealm(path: string) {
+  return invoke('bevyRealm.start', path);
+}
+
+export async function killBevyRealm(path: string) {
+  return invoke('bevyRealm.kill', path);
+}
+
+/**
+ * Subscribe to the Bevy realm bundler's build events (a rebuild trigger naming its file,
+ * or the bundle landing). Events for every running realm arrive; filter by `path`.
+ */
+export function onBevyRealmBuildEvent(callback: (event: BevyRealmBuildEvent) => void): () => void {
+  const handler = (_event: IpcRendererEvent, event: BevyRealmBuildEvent) => callback(event);
+  ipcRenderer.on(BEVY_REALM_BUILD_EVENT, handler);
+  return () => {
+    ipcRenderer.removeListener(BEVY_REALM_BUILD_EVENT, handler);
+  };
+}
+
+/**
+ * Start (or reuse) a filesystem watcher over the project's assets/ tree, so files dropped
+ * in from outside the editor auto-refresh the inspector catalog. Idempotent per path.
+ */
+export async function startProjectWatcher(path: string) {
+  return invoke('projectWatcher.start', path);
+}
+
+export async function stopProjectWatcher(path: string) {
+  return invoke('projectWatcher.stop', path);
+}
+
+/**
+ * Subscribe to out-of-editor asset changes (a file added/changed/removed in a watched
+ * project's assets/ tree). Events for every watched project arrive; filter by `path`.
+ */
+export function onProjectAssetsChanged(
+  callback: (event: ProjectAssetsChangedEvent) => void,
+): () => void {
+  const handler = (_event: IpcRendererEvent, event: ProjectAssetsChangedEvent) => callback(event);
+  ipcRenderer.on(PROJECT_ASSETS_CHANGED_EVENT, handler);
+  return () => {
+    ipcRenderer.removeListener(PROJECT_ASSETS_CHANGED_EVENT, handler);
+  };
 }
 
 const activeDebuggers = new Map<string, () => void>();
@@ -50,9 +109,39 @@ export async function attachSceneDebugger(
   return { cleanup };
 }
 
-export async function runScene({ path, opts }: { path: string; opts: PreviewOptions }) {
-  const port = await invoke('cli.start', path, opts);
+export async function runScene({
+  path,
+  opts,
+  mobile,
+}: {
+  path: string;
+  opts: PreviewOptions;
+  mobile?: boolean;
+}) {
+  const port = await invoke('cli.start', path, opts, mobile);
   return port;
+}
+
+export function subscribePreviewProgress(
+  path: string,
+  cb: (progress: PreviewProgress | null) => void,
+): { cleanup: () => void } {
+  const handler = (
+    _: IpcRendererEvent,
+    payload: { path: string; progress: PreviewProgress | null },
+  ) => {
+    if (payload.path === path) cb(payload.progress);
+  };
+  ipcRenderer.on(PREVIEW_PROGRESS_EVENT, handler);
+  return { cleanup: () => ipcRenderer.off(PREVIEW_PROGRESS_EVENT, handler) };
+}
+
+export async function cancelPreview(path: string) {
+  return invoke('cli.cancelPreview', path);
+}
+
+export async function supportsAssetBundles(path: string) {
+  return invoke('cli.supportsAssetBundles', path);
 }
 
 export async function killPreviewScene(path: string) {

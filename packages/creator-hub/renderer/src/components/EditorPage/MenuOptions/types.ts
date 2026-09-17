@@ -5,6 +5,7 @@ export type PreviewOptionsProps = {
   onChange: (options: PreviewOptions) => void;
   onShowMobileQR: () => void;
   supportsMultiInstance: boolean;
+  supportsMcp: boolean;
   projectPath: string;
 };
 

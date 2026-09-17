@@ -1,20 +1,11 @@
 import { createFileSystemInterface } from '../../logic/file-system-interface';
-import { createIframeStorage } from '../../logic/storage';
 import { createDataLayerHost } from '../host';
 import type { DataLayerRpcClient } from '../types';
-import type { Storage } from '../../logic/storage/types';
 import { createIframeScene } from '../../rpc/scene';
-
-let storageInstance: Storage | undefined;
-
-export function getStorage(): Storage | undefined {
-  return storageInstance;
-}
+import { wireParentBridges } from './parent-bridges';
 
 export async function createIframeDataLayerRpcClient(origin: string): Promise<DataLayerRpcClient> {
-  const storage = createIframeStorage(origin);
-  storageInstance = storage;
-
+  const storage = wireParentBridges(origin);
   createIframeScene(origin);
 
   const fs = createFileSystemInterface(storage);

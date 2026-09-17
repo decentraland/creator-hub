@@ -1,30 +1,32 @@
 import { promisify } from 'util';
-import { exec as execSync } from 'child_process';
+import { exec as execSync, spawn } from 'child_process';
 import log from 'electron-log/main';
-import { utilityProcess } from 'electron';
+import { shell, utilityProcess } from 'electron';
 import treeKill from 'tree-kill';
-import { future } from 'fp-future';
+import { future, type IFuture } from 'fp-future';
 import isRunning from 'is-running';
 import { ErrorBase } from '/shared/types/error';
 import { createCircularBuffer } from '/shared/circular-buffer';
 
 import { CLIENT_NOT_INSTALLED_ERROR } from '/shared/types/client';
 import { ClientError } from '/shared/types/client';
-import { APP_UNPACKED_PATH, getBinPath } from './path';
+import { APP_UNPACKED_PATH } from './path';
 import { setupNodeBinary } from './setup-node';
+import { getChildEnv, resolveBin, resolveNodeRuntime } from './node-runtime';
 
 // Registry to track all forked utility processes
 const processes: Map<number, Child> = new Map();
-
-// Get the current PATH value
-function getPath() {
-  return process.env.PATH || '';
-}
 
 // exec async
 const exec = promisify(execSync);
 
 const MAX_BUFFER_SIZE = 2048;
+
+// Window for a child to exit gracefully before the kill escalates.
+// On Windows, tree-kill already issues taskkill /F /T so a long graceful wait just delays
+// NSIS-triggered update installs; 500 ms is sufficient for the process tree to collapse.
+// The quit budget in index.ts is derived from this value and must stay above it.
+export const FORCE_KILL_TIMEOUT_MS = process.platform === 'win32' ? 500 : 5000;
 
 type Error = 'COMMAND_FAILED';
 
@@ -46,12 +48,26 @@ export type EventOptions = {
   sanitize?: boolean;
 };
 
+/**
+ * A Child is backed by an Electron utility process, or by a plain child process when the script
+ * runs on a real Node binary instead. Both expose the surface below, so describing it
+ * structurally saves narrowing a union at every call site.
+ */
+export type ChildProcessLike = {
+  pid?: number;
+  stdout: NodeJS.ReadableStream | null;
+  stderr: NodeJS.ReadableStream | null;
+  on(event: 'spawn' | 'exit', listener: (code: number | null) => void): unknown;
+  once(event: 'exit', listener: () => void): unknown;
+  off(event: 'exit', listener: () => void): unknown;
+};
+
 export type Child = {
   pkg: string;
   bin: string;
   args: string[];
   cwd: string;
-  process: Electron.UtilityProcess;
+  process: ChildProcessLike;
   on: (pattern: RegExp, handler: (data?: string) => void, opts?: EventOptions) => number;
   once: (pattern: RegExp, handler: (data?: string) => void, opts?: EventOptions) => number;
   off: (index: number) => void;
@@ -81,7 +97,9 @@ type RunOptions = {
 };
 
 /**
- * Runs a javascript bin script in a utility child process, provides helpers to wait for the process to finish, listen for outputs, etc
+ * Runs a javascript bin script in a child process, provides helpers to wait for the process to finish, listen for outputs, etc.
+ * The script runs on the Node runtime picked by {@link resolveNodeRuntime}; an Electron utility
+ * process is only used when no real Node is available.
  * @param pkg The npm package
  * @param bin The command to run
  * @param options Options for the child process (args, cwd, env, workspace)
@@ -90,27 +108,50 @@ type RunOptions = {
 export function run(pkg: string, bin: string, options: RunOptions = {}): Child {
   let isKilling = false;
   let alive = true;
+  let killPromise: IFuture<void> | null = null;
 
   const promise = future<Awaited<ReturnType<Child['wait']>>>();
   const matchers: Matcher[] = [];
 
   const { workspace = APP_UNPACKED_PATH, cwd = APP_UNPACKED_PATH, args = [], env = {} } = options;
 
-  const binPath = getBinPath(pkg, bin, workspace);
+  const runtime = resolveNodeRuntime();
+  const binPath = resolveBin(runtime, pkg, bin, workspace);
+  const childEnv = getChildEnv(runtime, env);
+  const isElectronNode = runtime.source === 'electron';
 
   const stdout = createCircularBuffer<Uint8Array>(MAX_BUFFER_SIZE);
   const stderr = createCircularBuffer<Uint8Array>(MAX_BUFFER_SIZE);
-  const stdall = createCircularBuffer<Uint8Array>(MAX_BUFFER_SIZE); // ordered buffer of stdout and stderr
+  const stdall = createCircularBuffer<Uint8Array>(MAX_BUFFER_SIZE);
 
-  const forked = utilityProcess.fork(binPath, [...args], {
-    cwd,
-    stdio: 'pipe',
-    env: {
-      ...process.env,
-      ...env,
-      PATH: getPath(),
-    },
-  });
+  const ready = future<void>();
+
+  const forked: ChildProcessLike = isElectronNode
+    ? utilityProcess.fork(binPath, [...args], { cwd, stdio: 'pipe', env: childEnv })
+    : spawn(runtime.node, [binPath, ...args], { cwd, stdio: 'pipe', env: childEnv });
+
+  if (!isElectronNode) {
+    (forked as ReturnType<typeof spawn>).on('error', error => {
+      if (!alive) return;
+      alive = false;
+      log.error(`[UtilityProcess] Process "${name}" failed to start:`, error);
+      if (isKilling) {
+        promise.resolve(Buffer.concat(stdout.getAll()));
+      } else {
+        promise.reject(
+          new StreamError(
+            'COMMAND_FAILED',
+            `Error: process "${name}" failed to start: ${error.message}`,
+            Buffer.concat(stdout.getAll()),
+            Buffer.concat(stderr.getAll()),
+          ),
+        );
+      }
+      cleanup();
+      ready.resolve();
+      killPromise?.resolve();
+    });
+  }
 
   const cleanup = () => {
     for (const matcher of matchers) {
@@ -135,8 +176,6 @@ export function run(pkg: string, bin: string, options: RunOptions = {}): Child {
     stderr.push(Uint8Array.from(data));
     stdall.push(Uint8Array.from(data));
   });
-
-  const ready = future<void>();
 
   const name = `${bin} ${args.join(' ')}`.trim();
   let spawnedPid: number | undefined;
@@ -175,6 +214,11 @@ export function run(pkg: string, bin: string, options: RunOptions = {}): Child {
       promise.resolve(stdoutBuf);
     }
     cleanup();
+    // a spawn that never happened still needs kill() unblocked, and an exit landing
+    // mid-kill() must settle the kill instead of leaving it to the pid poll, which
+    // can stay truthy forever on Windows pid reuse
+    ready.resolve();
+    killPromise?.resolve();
   });
 
   const child: Child = {
@@ -232,52 +276,69 @@ export function run(pkg: string, bin: string, options: RunOptions = {}): Child {
         }
       }),
     kill: async () => {
-      await ready;
-      const pid = forked.pid!;
+      // a repeat caller shares the in-flight kill instead of getting an instantly
+      // resolved undefined that would let shutdown truncate the first one's cleanup
+      if (killPromise) return killPromise;
+      if (!alive) return;
 
-      // if child is being killed or already killed then return
-      if (isKilling || !alive) return;
-
+      const pending = (killPromise = future<void>());
       isKilling = true;
-      log.info(`[UtilityProcess] Killing process "${name}" with pid=${pid}...`);
 
-      // create promise to kill child
-      const killPromise = future<void>();
+      await ready;
+
+      const pid = spawnedPid;
+      if (!alive || !pid) {
+        pending.resolve();
+        return pending;
+      }
+
+      log.info(`[UtilityProcess] Killing process "${name}" with pid=${pid}...`);
 
       // kill child gracefully
       treeKill(pid);
 
-      // child successfully killed
-      const die = (force: boolean = false) => {
+      let forced = false;
+
+      // child confirmed dead: settle wait() too — 'exit' early-returns once alive is
+      // false, and may never fire at all after a forced tree kill
+      const die = () => {
+        if (!pending.isPending) return;
         alive = false;
+        processes.delete(pid);
+        log.info(
+          `[UtilityProcess] Process "${name}" with pid=${pid} ${
+            forced ? 'forcefully' : 'gracefully'
+          } killed`,
+        );
+        promise.resolve(Buffer.concat(stdout.getAll()));
         cleanup();
-        clearInterval(interval);
-        clearTimeout(timeout);
-        if (force) {
-          log.info(`[UtilityProcess] Process "${name}" with pid=${pid} forcefully killed`);
-          treeKill(pid, 'SIGKILL');
-        } else {
-          log.info(`[UtilityProcess] Process "${name}" with pid=${pid} gracefully killed`);
-        }
-        killPromise.resolve();
+        pending.resolve();
       };
 
       // interval to check if child still running and flag it as dead when is not running anymore
       const interval = setInterval(() => {
-        if (!pid || !isRunning(pid)) {
+        if (!isRunning(pid)) {
           die();
         }
       }, 100);
 
-      // timeout to stop checking if child still running, kill it with fire
+      // timeout to stop waiting for a graceful exit, kill it with fire. The poll keeps
+      // running afterwards: resolving right here would declare success while the tree
+      // can still be alive holding the very files an NSIS update needs to replace.
       const timeout = setTimeout(() => {
         if (alive) {
-          die(true);
+          forced = true;
+          treeKill(pid, 'SIGKILL');
         }
-      }, 5000);
+      }, FORCE_KILL_TIMEOUT_MS);
 
-      // return promise
-      return killPromise;
+      // whether death is confirmed by the poll or by the 'exit' event, stop the timers
+      void pending.then(() => {
+        clearInterval(interval);
+        clearTimeout(timeout);
+      });
+
+      return pending;
     },
     alive: () => alive,
   };
@@ -329,8 +390,7 @@ export async function dclDeepLink(deepLink: string) {
       await exec('reg query "HKEY_CLASSES_ROOT\\decentraland"');
     }
 
-    const command = process.platform === 'win32' ? 'start' : 'open';
-    await exec(`${command} decentraland://"${deepLink}"`);
+    await shell.openExternal(`decentraland://${deepLink}`);
   } catch (e) {
     throw new ClientError('CLIENT_NOT_INSTALLED', CLIENT_NOT_INSTALLED_ERROR);
   }

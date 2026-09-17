@@ -12,6 +12,22 @@
       }
     },
     {
+      "name": "asset-packs::Script",
+      "data": {
+        "0": {
+          "json": {
+            "value": [
+              {
+                "path": "{assetPath}/Teleport.ts",
+                "priority": 0,
+                "layout": "{\"params\":{\"world\":{\"type\":\"string\",\"optional\":true,\"value\":\"\",\"tooltip\":\"Name of the world to teleport to (e.g. myname.dcl.eth). Leave empty to teleport to coordinates instead.\"},\"x\":{\"type\":\"number\",\"optional\":true,\"value\":0,\"tooltip\":\"Scene X coordinate to teleport to when no world is set.\"},\"y\":{\"type\":\"number\",\"optional\":true,\"value\":0,\"tooltip\":\"Scene Y coordinate to teleport to when no world is set.\"},\"hoverText\":{\"type\":\"string\",\"optional\":true,\"value\":\"Teleport\",\"tooltip\":\"Text shown when the player points at the item.\"}},\"actions\":[{\"methodName\":\"teleport\",\"description\":\"Teleports the player to the configured world or coordinates\",\"params\":{}}]}"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
       "name": "core::Animator",
       "data": {
         "0": {
@@ -35,80 +51,11 @@
             "id": "{self}",
             "value": [
               {
+                "type": "call_script_method",
                 "name": "Teleport",
-                "type": "teleport_player",
-                "jsonPayload": "{ \"x\": 0, \"y\": 0 }",
-                "basicViewId": "teleport-player",
-                "allowedInBasicView": true
+                "jsonPayload": "{\"scriptPath\":\"{assetPath}/Teleport.ts\",\"methodName\":\"teleport\",\"params\":{}}"
               }
             ]
-          }
-        }
-      }
-    },
-    {
-      "name": "asset-packs::Triggers",
-      "data": {
-        "0": {
-          "json": {
-            "value": [
-              {
-                "type": "on_click",
-                "actions": [
-                  {
-                    "id": "{self:asset-packs::Actions}",
-                    "name": "Teleport"
-                  }
-                ]
-              }
-            ]
-          }
-        }
-      }
-    },
-    {
-      "name": "core::PointerEvents",
-      "data": {
-        "0": {
-          "json": {
-            "pointerEvents": [
-              {
-                "eventType": 1,
-                "eventInfo": {
-                  "button": 1,
-                  "hoverText": "Teleport",
-                  "maxDistance": 10,
-                  "showFeedback": true
-                }
-              }
-            ]
-          }
-        }
-      }
-    },
-    {
-      "name": "inspector::Config",
-      "data": {
-        "0": {
-          "json": {
-            "isBasicViewEnabled": true,
-            "componentName": "Scene Teleport",
-            "helpTooltip": {
-              "text": "Configure the coordinates where players will be teleported when they click this item. Set the X and Y coordinates in the scene."
-            },
-            "fields": [
-              {
-                "name": "Coordinates",
-                "type": "asset-packs::Actions",
-                "basicViewId": "teleport-player",
-                "layout": "{\"x\": { \"field\": \"TextField\", \"type\": \"number\", \"label\": \"Scene X\" }, \"y\": { \"field\": \"TextField\", \"type\": \"number\", \"label\": \"Scene Y\" } }"
-              },
-              {
-                "name": "Hover Text",
-                "type": "core::PointerEvents"
-              }
-            ],
-            "version": 1
           }
         }
       }

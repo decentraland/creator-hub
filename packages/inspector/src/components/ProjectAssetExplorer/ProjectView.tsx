@@ -157,6 +157,13 @@ function ProjectView({ folders, thumbnails }: Props) {
     [setLastSelected],
   );
   const handleDragContext = useCallback(() => ({ tree }), [tree]);
+  // Drop targets (renderer, video inputs) read a `value` like the Tile emits; the
+  // tree's default `{ items }` payload was silently ignored, so dragging from the
+  // list did nothing (#1062). `items` stays so the tree's own hover hints keep working.
+  const handleDragItem = useCallback(
+    (items: string[], context: unknown) => ({ items, value: items[0], context }),
+    [],
+  );
   const isOpen = useCallback((val: string) => open.has(val), [open]);
 
   const getChildren = useCallback(
@@ -248,6 +255,7 @@ function ProjectView({ folders, thumbnails }: Props) {
             canAddChild={() => false}
             getIcon={val => <NodeIcon value={tree.get(val)} />}
             getDragContext={handleDragContext}
+            getDragItem={handleDragItem}
             dndType={DRAG_N_DROP_ASSET_KEY}
           />
         </div>

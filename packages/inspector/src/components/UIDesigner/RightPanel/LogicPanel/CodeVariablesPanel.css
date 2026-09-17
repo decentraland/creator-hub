@@ -1,0 +1,196 @@
+.ui-designer-code-variables {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px;
+}
+
+.ui-designer-code-props {
+  border-top: 1px solid var(--ui-designer-control-border);
+}
+
+.ui-designer-code-variables-title {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  opacity: 0.6;
+}
+
+.ui-designer-code-variables-hint {
+  font-size: 11px;
+  opacity: 0.6;
+  margin-bottom: 2px;
+}
+
+.ui-designer-code-variables-hint code {
+  opacity: 0.9;
+}
+
+.ui-designer-code-gui-header {
+  display: flex;
+  align-items: center;
+  gap: var(--uid-space-2);
+  padding: var(--uid-space-2) var(--uid-space-3);
+  margin-bottom: var(--uid-space-2);
+  border-bottom: 1px solid var(--ui-designer-hairline);
+  color: var(--ui-designer-text);
+}
+
+.ui-designer-code-gui-header svg {
+  width: 18px;
+  height: 18px;
+  flex: none;
+  color: var(--ui-designer-text-muted);
+}
+
+.ui-designer-code-gui-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ui-designer-text);
+}
+
+.ui-designer-code-variables-empty {
+  font-size: 12px;
+  opacity: 0.5;
+  padding: 4px 0;
+}
+
+.ui-designer-code-variable-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ui-designer-code-variable-row.is-readonly {
+  opacity: 0.6;
+}
+
+.ui-designer-code-variable-name {
+  flex: 1 1 auto;
+  min-width: 56px;
+  font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ui-designer-code-variable-source {
+  font-size: 11px;
+  opacity: 0.7;
+  font-style: normal;
+}
+
+.ui-designer-code-variable-row .Dropdown.Field,
+.ui-designer-code-variables-add .Dropdown.Field {
+  flex: 0 0 100px;
+  width: 100px;
+}
+
+.ui-designer-code-variables-add .Text.Field:not(.ui-designer-code-variable-default) {
+  flex: 1 1 auto;
+  min-width: 56px;
+}
+
+.ui-designer-code-variable-row .Checkbox.Field {
+  flex: 0 1 64px;
+  width: 64px;
+  min-width: 40px;
+}
+
+.ui-designer-code-variable-row .Checkbox.Field .InputContainer {
+  justify-content: center;
+}
+
+.ui-designer-code-variable-row .ui-designer-bindable-link {
+  opacity: 1;
+  flex: 0 0 auto;
+}
+
+.Text.Field.ui-designer-code-variable-default {
+  flex: 0 1 64px;
+  width: 64px;
+  min-width: 40px;
+}
+
+.ui-designer-code-variable-delete {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: none;
+  border-radius: var(--ui-designer-radius-field);
+  background: transparent;
+  color: var(--ui-designer-text-muted);
+  cursor: pointer;
+}
+
+.ui-designer-code-variable-delete svg {
+  width: 13px;
+  height: 13px;
+}
+
+.ui-designer-code-variables-add {
+  display: flex;
+  gap: var(--uid-space-1);
+  align-items: center;
+  margin-top: var(--uid-space-2);
+  padding-top: var(--uid-space-2);
+  border-top: 1px solid var(--ui-designer-hairline);
+}
+
+.ui-designer-code-add {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  font-size: 16px;
+  line-height: 1;
+  border-radius: var(--ui-designer-radius-field);
+  border: 1px solid var(--ui-designer-control-border);
+  background: transparent;
+  color: var(--ui-designer-text);
+  cursor: pointer;
+}
+
+.ui-designer-code-add:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.ui-designer-code-open-component {
+  margin-top: 8px;
+  font-size: 12px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  border: 1px solid var(--ui-designer-control-border);
+  background: transparent;
+  color: var(--title);
+  cursor: pointer;
+}
+
+.ui-designer-code-open-component:hover {
+  background: var(--ui-designer-control-accent-21);
+}
+
+.ui-designer-code-variable-delete:hover {
+  background: var(--ui-designer-control-accent-21);
+  color: var(--ui-designer-text);
+}
+
+.ui-designer-code-add:hover:not(:disabled) {
+  background: var(--ui-designer-control-accent-21);
+}
+
+.ui-designer-code-variable-delete:focus-visible,
+.ui-designer-code-add:focus-visible,
+.ui-designer-code-open-component:focus-visible {
+  outline: 2px solid var(--border-focused);
+  outline-offset: 1px;
+}

@@ -5,8 +5,8 @@ import { Box, Button, Card, CardContent, Container, Grid, Typography } from 'dec
 import { misc } from '#preload';
 
 import { t } from '/@/modules/store/translation/utils';
+import { SUBMIT_EVENT_URL } from '/@/modules/utils';
 
-import EditorPng from '/assets/images/editor.png';
 import CollectionsPng from '/assets/images/collections.png';
 import NamesPng from '/assets/images/names.png';
 import LandPng from '/assets/images/land.png';
@@ -17,7 +17,7 @@ import { Navbar, NavbarItem } from '../Navbar';
 import './styles.css';
 
 const BUILDER_URL = 'https://decentraland.org/builder';
-const SUBMIT_EVENT_URL = 'https://decentraland.org/events/submit';
+const NAMES_URL = 'https://decentraland.org/shop/items?category=names';
 
 const HorizontalCardWithImage: React.FC<{
   className?: string;
@@ -92,21 +92,6 @@ export function MorePage() {
             lg={4}
           >
             <HorizontalCardWithImage
-              className="FlipImage"
-              title={t('more.cards.create.legacy_web_editor.title')}
-              description={t('more.cards.create.legacy_web_editor.description')}
-              action={() => misc.openExternal(`${BUILDER_URL}/scenes`)}
-              image={EditorPng}
-            />
-          </Grid>
-          <Grid
-            item
-            xs={12}
-            sm={6}
-            md={6}
-            lg={4}
-          >
-            <HorizontalCardWithImage
               title={t('more.cards.create.collections.title')}
               description={t('more.cards.create.collections.description')}
               action={() => misc.openExternal(`${BUILDER_URL}/collections`)}
@@ -135,7 +120,7 @@ export function MorePage() {
             <HorizontalCardWithImage
               title={t('more.cards.manage.names.title')}
               description={t('more.cards.manage.names.description')}
-              action={() => misc.openExternal(`${BUILDER_URL}/names`)}
+              action={() => misc.openExternal(NAMES_URL)}
               image={NamesPng}
             />
           </Grid>

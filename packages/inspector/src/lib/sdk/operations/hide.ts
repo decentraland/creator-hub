@@ -16,7 +16,10 @@ export function hide(engine: IEngine) {
     const tree = Array.from(getComponentEntityTree(engine, entity, Transform));
     for (const node of tree) {
       if (value) {
-        addComponent(node, Hide.componentId, { value: true });
+        // Guard: a node in the tree may already carry Hide (e.g. a child hidden
+        // earlier, then the parent hidden) — addComponent uses component.create,
+        // which throws if it already exists ("already exists"). Skip those.
+        if (!Hide.has(node)) addComponent(node, Hide.componentId, { value: true });
       } else {
         removeComponent(node, Hide);
       }

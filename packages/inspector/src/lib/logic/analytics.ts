@@ -21,6 +21,11 @@ export enum Event {
   REMOVE_SCRIPT = 'Remove Script',
   RELOAD_SCRIPTS = 'Reload Scripts',
   EDIT_SCRIPT = 'Edit Script',
+  OPEN_UI_EDITOR = 'Open UI Editor',
+  ADD_UI_LOGIC = 'Add UI Logic',
+  CREATE_UI = 'Create UI',
+  NEST_UI_COMPONENT = 'Nest UI Component',
+  EDIT_UI_PROPERTY = 'Edit UI Property',
 }
 
 export type Events = {
@@ -100,6 +105,16 @@ export type Events = {
   [Event.EDIT_SCRIPT]: {
     scriptPath: string;
     scriptName: string;
+  };
+  [Event.OPEN_UI_EDITOR]: Record<string, never>;
+  [Event.ADD_UI_LOGIC]: {
+    logicType: 'variable' | 'event' | 'input';
+  };
+  [Event.CREATE_UI]: Record<string, never>;
+  [Event.NEST_UI_COMPONENT]: Record<string, never>;
+  [Event.EDIT_UI_PROPERTY]: {
+    property: string;
+    interactionLayer?: 'base' | 'hover' | 'press' | 'active';
   };
 };
 

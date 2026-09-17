@@ -1,0 +1,26 @@
+.AboutModal {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 280px;
+  padding: 8px 8px 0 8px;
+  gap: 4px;
+}
+
+.AboutModal .AboutModalLogo {
+  width: 56px;
+  height: 56px;
+  margin-bottom: 12px;
+}
+
+.AboutModal .AboutModalName {
+  font-weight: 600;
+}
+
+.AboutModal .AboutModalVersion {
+  color: var(--secondary-text);
+}
+
+.AboutModal .AboutModalAction {
+  margin-top: 24px;
+}

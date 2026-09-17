@@ -39,10 +39,11 @@ jobs:
       - uses: actions/checkout@v6
         with:
           fetch-depth: 0
+          filter: blob:none
 
       - name: Bump release version
         id: semantic-version
-        uses: paulhatch/semantic-version@v5.4.0
+        uses: paulhatch/semantic-version@502226b17e3e242e4befd0a45690fcbb27dd1373 # v6.0.3
         with:
           tag_prefix: "@dcl/inspector@"
           version_format: ${major}.${minor}.${patch}
@@ -96,14 +97,18 @@ jobs:
       - uses: actions/checkout@v6
         with:
           fetch-depth: 0
+          filter: blob:none
 
-      - uses: actions/setup-node@v6
+      - uses: ./.github/actions/setup
+        id: setup
         with:
-          node-version: 24
-          cache: 'npm'
+          cache-protoc: 'true'
 
       - name: install
+        if: steps.setup.outputs.node-modules-cache-hit != 'true'
         run: npm i --silent && make install-inspector
+        env:
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: '1'
 
       - name: install asset-packs
         working-directory: packages/inspector
@@ -165,18 +170,25 @@ jobs:
           echo "safe_branch=$safe_branch" >> $GITHUB_OUTPUT
 
       - name: deploy to gh-pages
-        uses: peaceiris/actions-gh-pages@v4
+        uses: peaceiris/actions-gh-pages@84c30a85c19949d7eee79c4ff27748b70285e453 # v4.1.0
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./packages/inspector/public
           destination_dir: inspector/${{ steps.sanitize-branch.outputs.safe_branch }}
           keep_files: true
+          # Keep these out of the gh-pages preview (with keep_files they'd accumulate
+          # forever): source maps (~80MB, unused by the preview) and the Bevy engine
+          # wasm bundle + editor-agent realm (webgpu_build_bg.wasm is ~105MB, over
+          # GitHub's 100MB per-file push limit; both are runtime assets in the npm
+          # tarball / creator-hub, not needed to render the Babylon inspector).
+          exclude_assets: '.github,*.map,bevy-engine,bevy-engine/**,bevy-agent,bevy-agent/**'
 
       - name: set preview url
         id: set-preview-url
+        env:
+          SAFE_BRANCH: ${{ steps.sanitize-branch.outputs.safe_branch }}
         run: |
-          safe_branch=${{ steps.sanitize-branch.outputs.safe_branch }}
-          echo "preview_url=https://decentraland.github.io/creator-hub/inspector/$safe_branch" >> $GITHUB_OUTPUT
+          echo "preview_url=https://decentraland.github.io/creator-hub/inspector/${SAFE_BRANCH}" >> $GITHUB_OUTPUT
 
       - name: publish to npm registry
         if: ${{ github.ref == 'refs/heads/main' }}
@@ -193,7 +205,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: find Comment
-        uses: peter-evans/find-comment@v1
+        uses: peter-evans/find-comment@b30e6a3c0ed37e7c023ccd3f1db5c6c0b0c23aad # v4.0.0
         id: fc
         with:
           issue-number: ${{ github.event.pull_request.number }}
@@ -201,7 +213,7 @@ jobs:
           body-includes: Test @dcl/inspector package
 
       - name: create or update comment
-        uses: peter-evans/create-or-update-comment@v1
+        uses: peter-evans/create-or-update-comment@e8674b075228eee787fea43ef493e45ece1004c9 # v5.0.0
         with:
           comment-id: ${{ steps.fc.outputs.comment-id }}
           issue-number: ${{ github.event.pull_request.number }}
@@ -223,6 +235,7 @@ jobs:
       - uses: actions/checkout@v6
         with:
           fetch-depth: 0
+          filter: blob:none
 
       - name: generate release notes
         if: ${{ github.ref == 'refs/heads/main' }}

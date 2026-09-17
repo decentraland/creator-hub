@@ -6,11 +6,11 @@ export default defineConfig({
     globals: true,
     environment: 'node',
     include: ['test/e2e/**/*.spec.ts'],
-    // 60s (was 30s): on a heavily-loaded CI runner with slowMo:100, legitimately
-    // long sequences (e.g. the multi-select drag test does 4 addChilds + a drag)
-    // can exceed 30s. A genuinely hung/broken test still fails at 60s.
-    testTimeout: 60000,
-    hookTimeout: 60000,
+    // 120s: heavy sequences with slowMo:100 have been observed exceeding 60s on
+    // contended runners, and the per-action waits (60s default, 90s cold boot)
+    // must fail first so their error — not a blunt vitest timeout — names the cause.
+    testTimeout: 120000,
+    hookTimeout: 120000,
     setupFiles: ['./test/e2e/setup.ts'],
     setupFilesAfterEnv: ['./test/e2e/types.d.ts'],
     pool: 'forks', // use forks instead of threads for better isolation
@@ -24,7 +24,12 @@ export default defineConfig({
       },
     },
     // Run spec files one at a time so only one headless Chromium is alive at
-    // once (avoids N concurrent browsers, which would be worse than the bug).
+    // once. Running two concurrently was tried and reverted: the CI runner is
+    // CPU-bound (macos-latest: 3 vCPU), so two browsers just contend — each
+    // action ran ~40% slower and the drag/drop-heavy Hierarchy specs raced
+    // (entities not settled → "Could not find entity"), for almost no
+    // wall-clock win. Speed comes from the lower per-action slowMo instead
+    // (test/e2e/setup.ts), which is safe precisely because runs stay serial.
     fileParallelism: false,
   },
   resolve: {

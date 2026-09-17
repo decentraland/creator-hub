@@ -15,6 +15,8 @@ import type {
 import { getNode, DROP_TYPES, isDropType, DropTypesEnum } from '../../lib/sdk/drag-drop';
 import { useRenderer } from '../../hooks/sdk/useRenderer';
 import { useSdk } from '../../hooks/sdk/useSdk';
+import { getConfig } from '../../lib/logic/config';
+import { setViewportElement } from '../../lib/logic/viewport-rect';
 import { snapPositionValue } from '../../lib/babylon/decentraland/snap-manager';
 import { ROOT } from '../../lib/sdk/tree';
 import type { CustomAsset } from '../../lib/logic/catalog';
@@ -50,6 +52,7 @@ import { IncompatibleAssetModal } from '../IncompatibleAssetModal';
 import { Warnings } from '../Warnings';
 import { CameraSpeed } from './CameraSpeed';
 import { Shortcuts } from './Shortcuts';
+import { TransformInput } from './TransformInput';
 import { Metrics } from './Metrics';
 import { SceneMinimap } from './SceneMinimap';
 
@@ -61,7 +64,21 @@ const SINGLE_TILE_HINT_OFFSET = 30;
 
 const Renderer: React.FC = () => {
   const canvasRef = React.useRef<HTMLCanvasElement>(null);
+  // The viewport container — its bounding rect turns a drop's client coords into
+  // normalized device coords (the canvas is display:none under Bevy, so its rect
+  // is unusable; the container always has the real viewport size).
+  const viewportRef = React.useRef<HTMLDivElement>(null);
+  // The client coords of the in-flight drop, captured in the drop handler so
+  // getDropPosition (called indirectly via importCatalogAsset/etc.) can compute
+  // the drop's NDC without threading the monitor through every path.
+  const dropClientOffsetRef = React.useRef<{ x: number; y: number } | null>(null);
   useRenderer(() => canvasRef);
+  // Expose the viewport rect so the host can crop a compositor screenshot to just the 3D
+  // view (the Bevy fallback when the engine's /screenshot command is unavailable — #1526).
+  useEffect(() => {
+    setViewportElement(viewportRef.current);
+    return () => setViewportElement(null);
+  }, []);
   const sdk = useSdk();
   const [isLoading, setIsLoading] = useState(false);
   const isMounted = useIsMounted();
@@ -91,15 +108,17 @@ const Renderer: React.FC = () => {
     }
   }, [sdk, groundGridDisabled]);
 
+  const isUIDesignerOpen = !hiddenPanels[PanelName.UI_DESIGNER];
+
   const deleteSelectedEntities = useCallback(() => {
-    if (!sdk) return;
+    if (!sdk || isUIDesignerOpen) return;
     const selectedEntitites = sdk.operations.getSelectedEntities();
     selectedEntitites.forEach(entity => sdk.operations.removeEntity(entity));
     void sdk.operations.dispatch();
-  }, [sdk]);
+  }, [sdk, isUIDesignerOpen]);
 
   const duplicateSelectedEntities = useCallback(() => {
-    if (!sdk) return;
+    if (!sdk || isUIDesignerOpen) return;
     sdk.renderer.camera.setControlEnabled(false);
     const selectedEntitites = sdk.operations.getSelectedEntities();
     const preferredGizmo =
@@ -117,16 +136,16 @@ const Renderer: React.FC = () => {
     setTimeout(() => {
       sdk.renderer.camera.setControlEnabled(true);
     }, 100);
-  }, [sdk]);
+  }, [sdk, isUIDesignerOpen]);
 
   const copySelectedEntities = useCallback(() => {
-    if (!sdk) return;
+    if (!sdk || isUIDesignerOpen) return;
     const selectedEntitites = sdk.operations.getSelectedEntities();
     setCopyEntities([...selectedEntitites]);
-  }, [sdk, setCopyEntities]);
+  }, [sdk, setCopyEntities, isUIDesignerOpen]);
 
   const pasteSelectedEntities = useCallback(() => {
-    if (!sdk) return;
+    if (!sdk || isUIDesignerOpen) return;
     const selectedEntities = sdk.operations.getSelectedEntities();
     const preferredGizmo =
       selectedEntities.length > 0
@@ -139,7 +158,7 @@ const Renderer: React.FC = () => {
       insertAfter = cloned;
     });
     void sdk.operations.dispatch();
-  }, [sdk, copyEntities]);
+  }, [sdk, copyEntities, isUIDesignerOpen]);
 
   const zoomIn = useCallback(() => {
     if (!sdk) return;
@@ -161,17 +180,19 @@ const Renderer: React.FC = () => {
     const selectedEntities = sdk.operations.getSelectedEntities();
     if (selectedEntities.length > 0) {
       sdk.renderer.camera.focusOnEntity(selectedEntities[0]);
+      sdk.events.emit('focusEntity', { entity: selectedEntities[0] });
     }
   }, [sdk]);
 
   useHotkey([DELETE, BACKSPACE], deleteSelectedEntities, document.body);
   useHotkey([COPY, COPY_ALT], copySelectedEntities, document.body);
   useHotkey([PASTE, PASTE_ALT], pasteSelectedEntities, document.body);
-  useHotkey([ZOOM_IN, ZOOM_IN_ALT], zoomIn, document.body);
-  useHotkey([ZOOM_OUT, ZOOM_OUT_ALT], zoomOut, document.body);
-  useHotkey([RESET_CAMERA], resetCamera, document.body);
   useHotkey([DUPLICATE, DUPLICATE_ALT], duplicateSelectedEntities, document.body);
-  useHotkey([FOCUS_SELECTED], focusOnSelected, document.body);
+  const cameraKeys = { enabled: !isUIDesignerOpen };
+  useHotkey([ZOOM_IN, ZOOM_IN_ALT], zoomIn, document.body, cameraKeys);
+  useHotkey([ZOOM_OUT, ZOOM_OUT_ALT], zoomOut, document.body, cameraKeys);
+  useHotkey([RESET_CAMERA], resetCamera, document.body, cameraKeys);
+  useHotkey([FOCUS_SELECTED], focusOnSelected, document.body, cameraKeys);
 
   // listen to ctrl key to place single tile
   useEffect(() => {
@@ -206,8 +227,21 @@ const Renderer: React.FC = () => {
 
   const getDropPosition = async () => {
     // Renderer-agnostic: ask the active renderer where the pointer hits the
-    // ground, then snap. Works for any renderer.
-    const point = (await sdk!.renderer.getPointerWorldPoint()) ?? { x: 0, y: 0, z: 0 };
+    // ground, then snap. The drop's client coords (captured at drop time) →
+    // normalized device coords (x,y ∈ [-1,1], y up) relative to the viewport, so
+    // an out-of-process renderer (Bevy) can raycast from the real cursor — its own
+    // pointer is stale while the host overlay captures the HTML5 drag. Babylon
+    // reads its live pointer and ignores the NDC.
+    const clientOffset = dropClientOffsetRef.current;
+    const rect = viewportRef.current?.getBoundingClientRect();
+    const ndc =
+      clientOffset && rect && rect.width > 0 && rect.height > 0
+        ? {
+            x: ((clientOffset.x - rect.left) / rect.width) * 2 - 1,
+            y: -(((clientOffset.y - rect.top) / rect.height) * 2 - 1),
+          }
+        : undefined;
+    const point = (await sdk!.renderer.getPointerWorldPoint(ndc)) ?? { x: 0, y: 0, z: 0 };
     // Plain {x,y,z} throughout — no Babylon Vector3, so this works for any renderer.
     return snapPositionValue({ x: fixedNumber(point.x), y: 0, z: fixedNumber(point.z) });
   };
@@ -311,11 +345,15 @@ const Renderer: React.FC = () => {
     }
   };
 
-  const [, drop] = useDrop(
+  const [{ isDragActive }, drop] = useDrop<IDrop, void, { isDragActive: boolean }>(
     () => ({
       accept: DROP_TYPES,
-      drop: async (item: IDrop, monitor) => {
+      collect: monitor => ({ isDragActive: monitor.canDrop() }),
+      drop: (item: IDrop, monitor) => {
         if (monitor.didDrop()) return;
+        // Capture where the drop landed so getDropPosition can raycast from the
+        // real cursor (see dropClientOffsetRef).
+        dropClientOffsetRef.current = monitor.getClientOffset();
         const itemType = monitor.getItemType();
 
         if (isDropType<CatalogAssetDrop>(item, itemType, DropTypesEnum.CatalogAsset)) {
@@ -327,9 +365,14 @@ const Renderer: React.FC = () => {
           const node = item.context.tree.get(item.value)!;
           const model = getNode(node, item.context.tree, isModel);
           if (model) {
-            const position = await getDropPosition();
-            await addAsset(model, position, DIRECTORY.ASSETS, false);
+            // Fire-and-forget: react-dnd's drop() returns a DropResult, not a
+            // promise, so run the async placement without awaiting it here.
+            void (async () => {
+              const position = await getDropPosition();
+              await addAsset(model, position, DIRECTORY.ASSETS, false);
+            })();
           }
+          return;
         }
 
         if (isDropType<CustomAssetDrop>(item, itemType, DropTypesEnum.CustomAsset)) {
@@ -337,7 +380,7 @@ const Renderer: React.FC = () => {
           return;
         }
       },
-      hover(item, monitor) {
+      hover(item: IDrop, monitor) {
         if (isDropType<CatalogAssetDrop>(item, monitor.getItemType(), DropTypesEnum.CatalogAsset)) {
           const asset = item.value;
           if (isGround(asset)) {
@@ -353,18 +396,50 @@ const Renderer: React.FC = () => {
     [addAsset, showSingleTileHint, setShowSingleTileHint],
   );
 
-  drop(canvasRef);
+  // Out-of-process renderers (Bevy) run the viewport in an iframe on top of the
+  // hidden shared canvas. HTML5 drag events don't cross an iframe boundary and a
+  // display:none canvas has zero area, so a drop onto the canvas never fires. For
+  // those, the drop target is a viewport-covering overlay in THIS document (above
+  // both canvas and iframe) so the drag stays in the parent document and the drop
+  // lands. Babylon draws into the visible canvas in-process, so it keeps using the
+  // canvas as the drop target (its proven path, unchanged).
+  const usesIframeViewport = getConfig().renderer === 'bevy';
+  const dropOverlayRef = useCallback(
+    (node: HTMLDivElement | null) => {
+      if (usesIframeViewport) drop(node);
+    },
+    [drop, usesIframeViewport],
+  );
+  useEffect(() => {
+    if (!usesIframeViewport) drop(canvasRef);
+  }, [drop, usesIframeViewport]);
 
   return (
     <div
+      ref={viewportRef}
       className={cx('Renderer', {
         'is-loaded': !isLoading,
         'is-loading': isLoading,
       })}
     >
+      {usesIframeViewport && (
+        <div
+          ref={dropOverlayRef}
+          className="drop-overlay"
+          style={{
+            position: 'absolute',
+            inset: 0,
+            zIndex: 10,
+            // Only intercept while a compatible drag is active, so the overlay
+            // never blocks engine pointer input the rest of the time.
+            pointerEvents: isDragActive ? 'auto' : 'none',
+          }}
+        />
+      )}
       {isLoading && <Loading />}
       <Warnings />
       <CameraSpeed />
+      <TransformInput />
       {!hiddenPanels[PanelName.METRICS] && <Metrics />}
       <SceneMinimap />
       {!hiddenPanels[PanelName.SHORTCUTS] && (

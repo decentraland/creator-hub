@@ -1,10 +1,13 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { PanelGroup, Panel, PanelResizeHandle } from 'react-resizable-panels';
 import cx from 'classnames';
 
 import { useSelectedEntity } from '../../hooks/sdk/useSelectedEntity';
 import { useInspectorUIState } from '../../hooks/sdk/useInspectorUIState';
+import { useSyncSceneRunWithMode } from '../../hooks/useSyncSceneRunWithMode';
+import { useRestorePersistedMode } from '../../hooks/useRestorePersistedMode';
 import { useWindowSize } from '../../hooks/useWindowSize';
+import { getConfig } from '../../lib/logic/config';
 import { useAppSelector } from '../../redux/hooks';
 import { selectDataLayerError, selectSceneInfo } from '../../redux/data-layer';
 import { selectEngines } from '../../redux/sdk';
@@ -13,11 +16,19 @@ import { PanelName } from '../../redux/ui/types';
 
 import { EntityInspector } from '../EntityInspector';
 import { Hierarchy } from '../Hierarchy';
+import { Loading } from '../Loading';
+import { ModeSwitcher } from '../ModeSwitcher';
 import { Renderer } from '../Renderer';
 import { Box } from '../Box';
 import { Toolbar } from '../Toolbar';
 import Assets from '../Assets';
 import { SceneInfoPanel } from '../SceneInfoPanel';
+import UIDesigner from '../UIDesigner/UIDesigner';
+import { SdkUpgradeNotice } from '../UIDesigner/SdkUpgradeNotice';
+import { LeftPanel } from '../UIDesigner/LeftPanel';
+import { RightPanel } from '../UIDesigner/RightPanel';
+import { Palette } from '../UIDesigner/Palette';
+import { UIDesignerToolbar } from '../UIDesigner/Toolbar';
 
 import './App.css';
 
@@ -30,6 +41,16 @@ const App = () => {
   const sceneInfoContent = useAppSelector(selectSceneInfo).content;
   const disconnected = useAppSelector(selectDataLayerError);
   const [uiState] = useInspectorUIState();
+  const isUIDesigner = !hiddenPanels[PanelName.UI_DESIGNER];
+  const uiEditorSupported = useMemo(() => getConfig().uiEditorSupported, []);
+
+  useRestorePersistedMode();
+
+  useSyncSceneRunWithMode();
+
+  const modeResolved = uiState !== null;
+
+  const isReady = !!sdkInitialized && modeResolved;
 
   const [isAssetsPanelCollapsed, setIsAssetsPanelCollapsed] = useState(false);
 
@@ -44,14 +65,14 @@ const App = () => {
 
   return (
     <div
-      className={cx('App', { 'is-ready': !!sdkInitialized })}
+      className={cx('App', { 'is-ready': isReady })}
       style={{ pointerEvents: disconnected ? 'none' : 'auto' }}
     >
       <PanelGroup
         direction="vertical"
         autoSaveId="vertical"
       >
-        <Panel defaultSize={70}>
+        <Panel>
           <PanelGroup
             direction="horizontal"
             autoSaveId="horizontal"
@@ -64,7 +85,8 @@ const App = () => {
                   order={1}
                 >
                   <Box className="composite-inspector">
-                    <Hierarchy />
+                    <ModeSwitcher />
+                    {modeResolved ? isUIDesigner ? <LeftPanel /> : <Hierarchy /> : null}
                   </Box>
                 </Panel>
                 <PanelResizeHandle className="horizontal-handle" />
@@ -83,8 +105,22 @@ const App = () => {
                     !!hiddenPanels[PanelName.COMPONENTS],
                 })}
               >
-                {!hiddenPanels[PanelName.TOOLBAR] && <Toolbar />}
-                <Renderer />
+                {!hiddenPanels[PanelName.TOOLBAR] &&
+                  (isUIDesigner ? <UIDesignerToolbar /> : <Toolbar />)}
+                <div
+                  className="renderer-host"
+                  style={{
+                    display: !hiddenPanels[PanelName.UI_DESIGNER] ? 'none' : 'contents',
+                  }}
+                >
+                  <Renderer />
+                </div>
+                {modeResolved && !hiddenPanels[PanelName.UI_DESIGNER] && <UIDesigner />}
+                {!modeResolved && (
+                  <div className="mode-pending">
+                    <Loading />
+                  </div>
+                )}
               </Box>
             </Panel>
             {uiState?.sceneInfoPanelVisible && !!sceneInfoContent && (
@@ -101,7 +137,7 @@ const App = () => {
                 </Panel>
               </>
             )}
-            {!hiddenPanels[PanelName.COMPONENTS] && selectedEntity !== null && (
+            {!hiddenPanels[PanelName.COMPONENTS] && (isUIDesigner || selectedEntity !== null) && (
               <>
                 <PanelResizeHandle className="horizontal-handle" />
                 <Panel
@@ -110,7 +146,7 @@ const App = () => {
                   order={4}
                 >
                   <Box className="entity-inspector">
-                    <EntityInspector />
+                    {isUIDesigner ? <RightPanel /> : <EntityInspector />}
                   </Box>
                 </Panel>
               </>
@@ -121,8 +157,8 @@ const App = () => {
           <>
             <PanelResizeHandle className="vertical-handle" />
             <Panel
-              id="assets"
-              defaultSize={30}
+              id={isUIDesigner ? 'palette' : 'assets'}
+              defaultSize={isUIDesigner ? 14 : 30}
               {...(height
                 ? { collapsible: true, collapsedSize: footerMin, minSize: collapseAt }
                 : {})}
@@ -130,12 +166,19 @@ const App = () => {
               onExpand={() => handleToggleAssetsPanel(false)}
             >
               <Box className="composite-renderer">
-                <Assets isAssetsPanelCollapsed={isAssetsPanelCollapsed} />
+                {isUIDesigner ? (
+                  <div className="ui-designer-bottom-bar">
+                    <Palette />
+                  </div>
+                ) : (
+                  <Assets isAssetsPanelCollapsed={isAssetsPanelCollapsed} />
+                )}
               </Box>
             </Panel>
           </>
         )}
       </PanelGroup>
+      {isUIDesigner && modeResolved && !uiEditorSupported && <SdkUpgradeNotice />}
     </div>
   );
 };

@@ -17,8 +17,8 @@
   --text-primary: #000000de;
   --sub-text: #ffffffcf;
   --border-focused: #127fd4;
-  --selected-item: #731F30;
-  --header-hover-bg-color: #38222D;
+  --selected-item: #731f30;
+  --header-hover-bg-color: #38222d;
   --disabled-bg-color: #323036;
 
   /* DCL Colors */
@@ -45,7 +45,6 @@
   --violet: #a524b3;
   --purple: #691fa9;
   --gray-0: #43404a;
-
 
   /* Neutrals Colors */
   --base-01: #ffffff;
@@ -118,6 +117,103 @@
   --modal-content-bg-color: var(--tree-bg-color);
   --modal-content-border-color: var(--tree-border-color);
   --modal-overlay-bg-color: rgba(0, 0, 0, 0.6);
+
+  /* UI Designer — TWO accents, split by what they sit on.
+
+     CANVAS accent (cyan). Deliberately OUTSIDE the Decentraland palette. The
+     canvas renders the author's own UI in arbitrary colours, so a selection ring
+     in a brand colour would vanish the moment they use that colour themselves —
+     and #ff2d55 is exactly the colour the palette encourages. Since the backdrop
+     here is unknowable, WCAG's ≥3:1 for non-text UI cannot be verified against
+     it; picking a hue authors are unlikely to choose is the mitigation. Use for
+     node selection/hover, resize handles, drop targets, reorder indicators. */
+  --ui-designer-accent: rgb(80, 200, 255);
+  --ui-designer-accent-80: rgba(80, 200, 255, 0.8);
+  --ui-designer-accent-40: rgba(80, 200, 255, 0.4);
+  --ui-designer-accent-12: rgba(80, 200, 255, 0.12);
+  --ui-designer-accent-08: rgba(80, 200, 255, 0.08);
+  --ui-designer-accent-05: rgba(80, 200, 255, 0.05);
+
+  /* CONTROL accent — the Anchor pin's accented edge and leash, focus rings, the
+     bind affordance, and selected rows. NOT the selected/active state of a
+     segmented control or a checkbox: the design paints those neutral, see the
+     trio below. Always composited on --base-20, so contrast is fixed and
+     verifiable. The steps repeat the rgb triple because CSS cannot derive rgba()
+     from a hex token.
+
+     Deliberately NOT --primary-main: pink/red is reserved for CTAs and main
+     buttons (.Button.danger, the callback confirm), so a panel control painted
+     with it competes with the one thing on screen that should read as the action.
+
+     Do NOT reuse the cyan alphas above — they are solved for a different
+     luminance (cyan 0.502 vs this blue 0.419). Named for their real alpha:
+     base 8.13:1 · -62 3.87:1 · -21 1.47:1 · -15 1.30:1, with Snow on the -21
+     fill at 12.03:1. Every step is brighter than the pink it replaced, and -62
+     now clears the 3:1 non-text minimum (pink managed only 2.55:1). */
+  --ui-designer-control-accent: #63b4f6;
+  --ui-designer-control-accent-62: rgba(99, 180, 246, 0.62);
+  --ui-designer-control-accent-21: rgba(99, 180, 246, 0.21);
+  --ui-designer-control-accent-15: rgba(99, 180, 246, 0.15);
+
+  /* Selected / active controls, per the Figma 08/26 states matrix. A selected
+     segmented cell (Flow, Text alignment, Fill mode) and an active standalone
+     toggle (Flow wrap, the aspect lock) share ONE treatment: a solid accent-blue
+     fill with a dark Charcoal glyph. A checkbox is separate — see
+     --ui-designer-checkbox-border.
+
+     Charcoal on the accent fill measures ~5.9:1 (clears both the ≥3:1 non-text and
+     ≥4.5:1 text minimums), and the accent reads as a strong hue+luminance jump
+     against the resting glyph — so a white glyph is deliberately NOT used here (it
+     lands ~2.2:1 on this blue). Hover stays a faint white tint; selection is the
+     accent fill. --ui-designer-control-selected-bg is retained as the subtle
+     hover/selected fill for menu ROWS only, not toggles. */
+  --ui-designer-control-hover-bg: rgba(255, 255, 255, 0.06);
+  --ui-designer-control-empty-bg: rgba(255, 255, 255, 0.05); /* placeholder / unbound field fill */
+  --ui-designer-control-selected-bg: rgba(255, 255, 255, 0.1); /* White 10 · menu rows */
+  --ui-designer-control-active-bg: var(--ui-designer-control-accent); /* toggle fill */
+  --ui-designer-control-active-fg: #35333b; /* Charcoal · glyph on accent fill */
+  /* Panel surfaces, foreground and glyphs — the Figma's own Neutrals ramp
+     (PropertiesFull 1492:1939). The panel frame reuses --base-19 rather than
+     declaring the design's #25212a: the two differ by 1/255, and the group cards
+     (Container.css) already paint --base-19, so borrowing it keeps frame and card
+     identical instead of near-miss different. */
+  --ui-designer-panel-bg: var(--base-19);
+  --ui-designer-control-bg: #35333b; /* Neutrals/Charcoal */
+  --ui-designer-text: #fcfcfc; /* Neutrals/Snow — labels, group titles */
+  --ui-designer-text-value: #cfcdd4; /* Neutrals/Gray — value inside a field */
+  --ui-designer-text-muted: #a09ba8; /* Neutrals/Silver — hints, secondary */
+  --ui-designer-control-border: rgba(255, 255, 255, 0.1); /* Transparencies/White 10 */
+  /* One step up, for a border that has to out-weigh another White 10 stroke
+     inside the same control (the Anchor preview's box vs its crosshair). */
+  --ui-designer-control-border-strong: rgba(255, 255, 255, 0.2); /* Transparencies/White 20 */
+  /* A checkbox stays transparent in both states and carries its state on the tick
+     alone (Neutrals/Gray, 10.07:1 on the panel), so the border is all that draws
+     the empty box — which is why it sits four steps above the control border
+     rather than reusing it. Compositing White 40 over the panel gives ~#7c7a80 at
+     3.73:1, clearing the 3:1 non-text minimum. Dropping the old --gray-0 fill was
+     therefore a contrast GAIN, not a loss: that fill was doing the work a 1.39:1
+     White 10 border could not. */
+  --ui-designer-checkbox-border: rgba(255, 255, 255, 0.4); /* Transparencies/White 40 */
+  --ui-designer-hairline: rgba(255, 255, 255, 0.07);
+
+  /* Glyph stroke. The design paints every panel glyph Neutrals/Cloudy Sky, which
+     clears the 3:1 non-text minimum on the panel frame (3.08:1) but not on a field
+     fill (2.43:1) — and the box-model edge ticks are in-input prefixes whose whole
+     job is to say WHICH edge. Those lift to Silver (4.6:1 on the fill); everything
+     sitting on the frame keeps the design's value. */
+  --ui-designer-glyph: #716b7c; /* Neutrals/Cloudy Sky */
+  --ui-designer-glyph-on-control: var(--ui-designer-text-muted);
+
+  /* Field and menu corners, per the Figma's Input (rx 6) and Menu (rx 12). */
+  --ui-designer-radius-field: 6px;
+  --ui-designer-radius-menu: 12px;
+  /* 4px spacing scale */
+  --uid-space-1: 4px;
+  --uid-space-2: 8px;
+  --uid-space-3: 12px;
+  --uid-space-4: 16px;
+  --uid-space-5: 20px;
+  --uid-space-6: 24px;
 
   /* Margins */
   --sidebar: 314px;

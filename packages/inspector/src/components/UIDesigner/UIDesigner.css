@@ -1,0 +1,543 @@
+/* The designer's three panels are siblings in the app layout, with no shared
+   ancestor to scope this on. Repointing the shared tokens here — rather than
+   overriding each component's selectors — gives every shared input, dropdown,
+   checkbox and option list inside the designer the design's surface and
+   foreground, hover/focus/disabled variants included, with no specificity fight
+   against the components' own stylesheets (which the 3D inspector keeps using
+   unchanged). */
+.ui-designer,
+.ui-designer-left-rail,
+.ui-designer-right-rail {
+  --gray-0: var(--ui-designer-control-bg);
+  --title: var(--ui-designer-text);
+  --sub-text: var(--ui-designer-text-muted);
+  --selected-item: var(--ui-designer-control-accent-21);
+}
+
+.ui-designer-toolbar {
+  --selected-item: #244b7d;
+}
+
+.ui-designer-toolbar.Toolbar .scene-info.active {
+  background-color: #244b7d !important;
+}
+
+.ui-designer {
+  width: 100%;
+  height: 100%;
+}
+
+/* The designer is a manipulation surface, not a document: text selection is
+   never wanted and a Shift-click would otherwise range-select across the whole
+   editor. Inputs and the inline text editor opt back in. */
+[class*="ui-designer"] {
+  user-select: none;
+}
+
+[class*="ui-designer"] input,
+[class*="ui-designer"] textarea,
+[class*="ui-designer"] [contenteditable="true"] {
+  user-select: text;
+}
+
+.ui-designer-roots {
+  height: 100%;
+  overflow: auto;
+}
+
+.ui-designer-canvas {
+  height: 100%;
+  overflow: auto;
+}
+
+.ui-designer-inspector {
+  height: 100%;
+  overflow: auto;
+}
+
+.ui-designer-palette {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px;
+  border-bottom: 1px solid var(--ui-designer-hairline);
+}
+
+.ui-designer-palette-card {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border: 1px solid var(--ui-designer-control-border);
+  border-radius: 4px;
+  cursor: grab;
+  user-select: none;
+  touch-action: manipulation;
+}
+
+.ui-designer-palette-card:active {
+  cursor: grabbing;
+}
+
+.ui-designer-palette-card.disabled,
+.ui-designer-palette-card.disabled:active {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.ui-designer-palette-icon {
+  display: inline-flex;
+  align-items: center;
+}
+
+/* Horizontal variant — when the palette lives in the bottom panel, cards
+   sit side-by-side in a strip with the icon stacked above the label. */
+.ui-designer-bottom-bar {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: flex-start;
+  overflow-x: auto;
+  overflow-y: hidden;
+  background-color: var(--tree-bg-color);
+}
+
+.ui-designer-bottom-bar .ui-designer-palette {
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 12px;
+  border-bottom: none;
+}
+
+.ui-designer-bottom-bar .ui-designer-palette-card {
+  flex: 0 0 auto;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 14px;
+  width: 88px;
+  height: 76px;
+  background-color: rgba(255, 255, 255, 0.02);
+  transition:
+    background-color 80ms linear,
+    border-color 80ms linear;
+}
+
+.ui-designer-bottom-bar .ui-designer-palette-card:hover:not(.disabled) {
+  background-color: var(--ui-designer-control-accent-15);
+  border-color: var(--ui-designer-control-accent-62);
+}
+
+.ui-designer-bottom-bar .ui-designer-palette-card:focus-visible {
+  outline: 2px solid var(--ui-designer-control-accent);
+  outline-offset: 1px;
+}
+
+/* Honor reduced-motion across the whole UI Designer surface — the hover
+   reveals, outline fades and palette transitions all collapse to instant. */
+@media (prefers-reduced-motion: reduce) {
+  [class*="ui-designer"],
+  [class*="ui-designer"] * {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
+
+.ui-designer-bottom-bar .ui-designer-palette-icon {
+  font-size: 22px;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.ui-designer-bottom-bar .ui-designer-palette-label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.4em;
+  font-size: 11px;
+  line-height: 1.2;
+  letter-spacing: 0.02em;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.ui-designer-left-rail,
+.ui-designer-right-rail {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* The shared <Box> wrapper inserts an extra <div class="content"> between
+   the rail and our flex children. Make it transparent to the flex layout
+   so palette/tree/properties partition the rail height correctly.
+
+   The panel surface goes HERE, not on the rail: Box.css paints `--main-bg-color`
+   on this same element, so a background on the rail itself is covered by it. */
+.ui-designer-left-rail > .content,
+.ui-designer-right-rail > .content {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+  background: var(--ui-designer-panel-bg);
+}
+
+.ui-designer-rail-section {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+/* The two sections are sized by a vertical react-resizable-panels group (the
+   draggable divider); each fills its Panel and scrolls internally. Scrolling
+   belongs to the list inside, not the section: a scroll container clips on BOTH
+   axes (a `visible` axis computes to `auto` alongside a scrolling one), which
+   would cut the "+" wave off. */
+.ui-designer-rail-panels {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.ui-designer-rail-header {
+  flex-shrink: 0;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: rgba(255, 255, 255, 0.5);
+  padding: 8px 12px 4px;
+}
+
+.ui-designer-rail-handle {
+  flex-shrink: 0;
+  height: 3px;
+  background-color: var(--ui-designer-hairline);
+  transition: background-color 0.2s ease;
+}
+
+.ui-designer-rail-handle:hover,
+.ui-designer-rail-handle[data-resize-handle-active] {
+  background-color: var(--ui-designer-control-border-strong);
+}
+
+.ui-designer-rail-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.ui-designer-rail-add {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  background: transparent;
+  border: 1px solid var(--ui-designer-control-border);
+  border-radius: 4px;
+  color: rgba(255, 255, 255, 0.7);
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.ui-designer-rail-add:hover:not(:disabled) {
+  border-color: var(--ui-designer-control-accent-62);
+  color: var(--ui-designer-control-accent);
+}
+
+.ui-designer-rail-add:focus-visible {
+  outline: 2px solid var(--ui-designer-control-accent);
+  outline-offset: 1px;
+}
+
+.ui-designer-rail-add:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+/* Press feedback on the two "+" buttons: one ripple per click, expanding out of
+   the button and fading. Purely a confirmation that the click landed — the GUI or
+   node it creates is the real feedback — so it never loops.
+
+   Scale is capped at 2: the ripple is 22px (the 20px button plus `inset: -1px`)
+   and the button sits 12px from the rail's edge, which `overflow: hidden` clips.
+   (22*2 - 20)/2 = 12px is exactly as far as it can travel without being cut.
+   Only transform/opacity animate. */
+.ui-designer-rail-add-ripple {
+  position: absolute;
+  inset: -1px;
+  border-radius: 50%;
+  background: var(--ui-designer-control-accent-21);
+  pointer-events: none;
+  animation: ui-designer-add-ripple 0.5s ease-out forwards;
+}
+
+@keyframes ui-designer-add-ripple {
+  from {
+    transform: scale(1);
+    opacity: 1;
+  }
+
+  to {
+    transform: scale(2);
+    opacity: 0;
+  }
+}
+
+/* Decorative only: the created GUI/node is the feedback that matters, so under
+   reduced motion the ripple simply doesn't play. */
+@media (prefers-reduced-motion: reduce) {
+  .ui-designer-rail-add-ripple {
+    display: none;
+  }
+}
+
+.ui-designer-rail-add svg {
+  position: relative;
+  width: 14px;
+  height: 14px;
+}
+
+.ui-designer-right-rail-tabs {
+  display: flex;
+  flex: 0 0 auto;
+  background: var(--tree-bg-color);
+  border-bottom: 1px solid var(--ui-designer-hairline);
+}
+
+/* The Figma's tab bar is a 36px band on Neutrals/Shadow (= --base-20) with the
+   active tab underlined edge to edge and its label brighter + heavier than the
+   resting one. The underline is the tab's own bottom border, so it spans exactly
+   the tab it belongs to at any rail width.
+
+   The resting label holds at 50% white rather than the design's White 40: at 40%
+   over this band it composites to 3.75:1, under the 4.5:1 a tab label needs. */
+.ui-designer-right-rail-tab {
+  flex: 1 1 0;
+  box-sizing: border-box;
+  min-height: 36px;
+  padding: 9px 12px;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: rgba(255, 255, 255, 0.5);
+  font-family: var(--font-family);
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.ui-designer-right-rail-tab:hover {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.ui-designer-right-rail-tab.active {
+  color: var(--ui-designer-text);
+  border-bottom-color: var(--ui-designer-text);
+  font-weight: 600;
+}
+
+.ui-designer-right-rail-tab:focus-visible {
+  outline: 2px solid var(--ui-designer-control-accent);
+  outline-offset: -2px;
+}
+
+.ui-designer-right-rail-tabpanel {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 4px 0 16px;
+}
+
+.ui-designer-right-rail-tabpanel::-webkit-scrollbar {
+  width: 8px;
+}
+
+.ui-designer-right-rail-tabpanel::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.ui-designer-right-rail-tabpanel::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 4px;
+}
+
+.ui-designer-right-rail-tabpanel::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.22);
+}
+
+/* Right-rail section headers follow the design system: title case, not the
+   shared Container's global uppercase. Scoped so 3D panels are unaffected. */
+.ui-designer-right-rail .Container > .title span {
+  text-transform: none;
+  letter-spacing: normal;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ui-designer-text);
+}
+
+/* Node-tree search — always visible, matching the 3D asset panels. */
+/* The rail's one search box, above both sections — it filters GUIs and Nodes
+   together, so it belongs to the rail rather than to either list. */
+.ui-designer-rail-search {
+  display: flex;
+  flex-shrink: 0;
+  padding: var(--uid-space-2);
+  border-bottom: 1px solid var(--ui-designer-hairline);
+}
+
+.ui-designer-rail-search .LeftIcon {
+  color: var(--base-09);
+}
+
+.ui-designer-rail-search .ClearSearch {
+  cursor: pointer;
+  color: var(--base-09);
+}
+
+.ui-designer-rail-search .ClearSearch:hover {
+  color: var(--base-01);
+}
+
+/* Note shown while a nested component instance is selected: its Variables and
+   Events are hidden (they belong to the component's own file), and this points
+   the author there. */
+.ui-designer-logic-note {
+  margin: 0;
+  padding: var(--uid-space-3);
+  color: var(--ui-designer-text-muted);
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.ui-designer-variant-remove-modal.Modal {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 50px;
+  min-width: 0;
+  width: 700px;
+  max-width: calc(100vw - 48px);
+  min-height: 420px;
+  max-height: calc(100vh - 48px);
+  padding: 100px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 24px;
+  background: #181225;
+  color: #fcfcfc;
+}
+
+.ui-designer-variant-remove-modal.Modal::before {
+  content: "";
+  position: absolute;
+  z-index: 0;
+  width: 1037px;
+  height: 513px;
+  left: calc(50% - 1037px / 2 - 0.5px);
+  top: calc(50% - 513px / 2 + 436.5px);
+  background: #ff4bed;
+  opacity: 0.3;
+  filter: blur(250px);
+  pointer-events: none;
+}
+
+.ui-designer-variant-remove-modal .close {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  color: #fcfcfc;
+  font-size: 20px;
+  cursor: pointer;
+  transition: background 0.12s;
+}
+
+.ui-designer-variant-remove-modal .close:hover {
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.ui-designer-variant-remove-modal .content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 50px;
+}
+
+.ui-designer-variant-remove-modal .title {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 600;
+  color: #fcfcfc;
+}
+
+.ui-designer-variant-remove-modal .description {
+  margin: 0;
+  color: #cfcdd4;
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+.ui-designer-variant-remove-modal .actions {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: row;
+  gap: 20px;
+}
+
+.ui-designer-modal-btn {
+  flex: 1;
+  height: 46px;
+  padding: 0 16px;
+  border: none;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.1);
+  color: #fcfcfc;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 0.12s;
+}
+
+.ui-designer-modal-btn:hover {
+  background: rgba(255, 255, 255, 0.16);
+}
+
+.ui-designer-modal-btn.danger {
+  background: #ff2d55;
+  color: #ffffff;
+}
+
+.ui-designer-modal-btn.danger:hover {
+  background: #e51f45;
+}
+
+.ui-designer-modal-btn:focus-visible {
+  outline: 2px solid var(--ui-designer-control-accent);
+  outline-offset: 1px;
+}

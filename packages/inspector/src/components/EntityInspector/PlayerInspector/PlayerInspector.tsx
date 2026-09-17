@@ -39,6 +39,9 @@ export default withSdk<Props>(({ sdk }) => {
 
   const [spawnPoints, addSpawnPoint, modifySpawnPoint, removeSpawnPoint, setSpawnPoints] =
     useArrayState<SceneSpawnPoint>(componentValue?.spawnPoints ?? []);
+  // Whether a spawn-area input is focused — gates the render-time CRDT→local sync
+  // below so live writes don't clobber the field mid-typing.
+  const [isFocused, setIsFocused] = useState(false);
 
   // Render-time sync: ensure spawnPoints stays in sync with componentValue.spawnPoints
   // before effects run. useArrayState defers its sync to a useEffect, which means
@@ -49,7 +52,11 @@ export default withSdk<Props>(({ sdk }) => {
   if (prevCvSpawnPointsRef.current !== componentValue?.spawnPoints) {
     prevCvSpawnPointsRef.current = componentValue?.spawnPoints;
     const cvSpawnPoints = componentValue?.spawnPoints ?? [];
-    if (recursiveCheck(cvSpawnPoints, spawnPoints, 2)) {
+    // Don't pull the CRDT value back into local state WHILE a field is focused:
+    // writes are now live (see the effect below), so the async round-trip can lag
+    // the user's typing — re-syncing then would clobber the input mid-edit and jump
+    // the cursor. Skip while focused; a blur re-runs this and reconciles.
+    if (!isFocused && recursiveCheck(cvSpawnPoints, spawnPoints, 2)) {
       setSpawnPoints([...cvSpawnPoints]);
     }
   }
@@ -171,7 +178,6 @@ export default withSdk<Props>(({ sdk }) => {
     );
   }, [spawnPoints, addSpawnPoint]);
 
-  const [isFocused, setIsFocused] = useState(false);
   const [revertKey, setRevertKey] = useState(0);
 
   const revertAndWarn = useCallback(
@@ -182,13 +188,15 @@ export default withSdk<Props>(({ sdk }) => {
     [showBoundsWarning],
   );
 
+  // Persist spawn-point edits LIVE (not only on blur): writing on every change lets
+  // the marker + move gizmo track the field as you type. This is safe because the
+  // fields' displayed value comes from local `spawnPoints` (not the CRDT), and the
+  // render-time sync above is skipped while focused — so the async CRDT round-trip
+  // can't clobber the input mid-edit. isComponentEqual drops redundant writes.
   useEffect(() => {
-    if (isComponentEqual({ ...componentValue, spawnPoints }) || isFocused) {
-      return;
-    }
-
+    if (isComponentEqual({ ...componentValue, spawnPoints })) return;
     setComponentValue({ ...componentValue, spawnPoints });
-  }, [spawnPoints, isFocused, componentValue, isComponentEqual, setComponentValue]);
+  }, [spawnPoints, componentValue, isComponentEqual, setComponentValue]);
 
   const handleFocusInput = useCallback(() => setIsFocused(true), []);
   const handleBlurInput = useCallback(() => setIsFocused(false), []);

@@ -12,6 +12,22 @@
       }
     },
     {
+      "name": "asset-packs::Script",
+      "data": {
+        "0": {
+          "json": {
+            "value": [
+              {
+                "path": "{assetPath}/Lever.ts",
+                "priority": 0,
+                "layout": "{\"params\":{\"activateAnimation\":{\"type\":\"string\",\"optional\":true,\"value\":\"activate\",\"tooltip\":\"Name of the animation clip in the lever's model that plays when it is activated.\"},\"deactivateAnimation\":{\"type\":\"string\",\"optional\":true,\"value\":\"deactivate\",\"tooltip\":\"Name of the animation clip in the lever's model that plays when it is deactivated.\"},\"sound\":{\"type\":\"string\",\"optional\":true,\"value\":\"sound.mp3\",\"tooltip\":\"Name of an audio file inside this smart item's folder (e.g. sound.mp3), played whenever the lever is flipped. Leave empty for no sound.\"},\"hoverText\":{\"type\":\"string\",\"optional\":true,\"value\":\"Activate / Deactivate\",\"tooltip\":\"Text shown when the player points at the lever.\"},\"onActivate\":{\"type\":\"action\",\"optional\":true,\"value\":{\"entity\":0,\"action\":\"\"},\"tooltip\":\"Action triggered every time the lever is activated.\"},\"onDeactivate\":{\"type\":\"action\",\"optional\":true,\"value\":{\"entity\":0,\"action\":\"\"},\"tooltip\":\"Action triggered every time the lever is deactivated.\"}},\"actions\":[{\"methodName\":\"activate\",\"description\":\"Activates the lever\",\"params\":{}},{\"methodName\":\"deactivate\",\"description\":\"Deactivates the lever\",\"params\":{}},{\"methodName\":\"toggle\",\"description\":\"Activates the lever if it is deactivated, or deactivates it if it is activated\",\"params\":{}}]}"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
       "name": "asset-packs::Actions",
       "data": {
         "0": {
@@ -19,130 +35,22 @@
             "id": "{self}",
             "value": [
               {
+                "type": "call_script_method",
                 "name": "Activate",
-                "type": "set_state",
-                "jsonPayload": "{ \"state\": \"Activated\" }",
-                "allowedInBasicView": true
+                "jsonPayload": "{\"scriptPath\":\"{assetPath}/Lever.ts\",\"methodName\":\"activate\",\"params\":{}}"
               },
               {
+                "type": "call_script_method",
                 "name": "Deactivate",
-                "type": "set_state",
-                "jsonPayload": "{ \"state\": \"Deactivated\" }",
-                "allowedInBasicView": true
+                "jsonPayload": "{\"scriptPath\":\"{assetPath}/Lever.ts\",\"methodName\":\"deactivate\",\"params\":{}}"
               },
               {
-                "name": "Play Sound",
-                "type": "play_sound",
-                "jsonPayload": "{ \"src\": \"{assetPath}/sound.mp3\" }"
-              },
-              {
-                "name": "Play Activate Animation",
-                "type": "play_animation",
-                "jsonPayload": "{ \"animation\": \"activate\" }"
-              },
-              {
-                "name": "Play Deactivate Animation",
-                "type": "play_animation",
-                "jsonPayload": "{ \"animation\": \"deactivate\" }"
+                "type": "call_script_method",
+                "name": "Activate or Deactivate",
+                "jsonPayload": "{\"scriptPath\":\"{assetPath}/Lever.ts\",\"methodName\":\"toggle\",\"params\":{}}",
+                "default": true
               }
             ]
-          }
-        }
-      }
-    },
-    {
-      "name": "asset-packs::Triggers",
-      "data": {
-        "0": {
-          "json": {
-            "value": [
-              {
-                "type": "on_input_action",
-                "conditions": [
-                  {
-                    "id": "{self:asset-packs::States}",
-                    "type": "when_state_is",
-                    "value": "Deactivated"
-                  }
-                ],
-                "actions": [
-                  {
-                    "id": "{self:asset-packs::Actions}",
-                    "name": "Activate"
-                  }
-                ]
-              },
-              {
-                "type": "on_input_action",
-                "conditions": [
-                  {
-                    "id": "{self:asset-packs::States}",
-                    "type": "when_state_is",
-                    "value": "Activated"
-                  }
-                ],
-                "actions": [
-                  {
-                    "id": "{self:asset-packs::Actions}",
-                    "name": "Deactivate"
-                  }
-                ]
-              },
-              {
-                "type": "on_state_change",
-                "conditions": [
-                  {
-                    "id": "{self:asset-packs::States}",
-                    "type": "when_state_is",
-                    "value": "Activated"
-                  }
-                ],
-                "actions": [
-                  {
-                    "id": "{self:asset-packs::Actions}",
-                    "name": "Play Activate Animation"
-                  },
-                  {
-                    "id": "{self:asset-packs::Actions}",
-                    "name": "Play Sound"
-                  }
-                ],
-                "basicViewId": "trigger-when-activated"
-              },
-              {
-                "type": "on_state_change",
-                "conditions": [
-                  {
-                    "id": "{self:asset-packs::States}",
-                    "type": "when_state_is",
-                    "value": "Deactivated"
-                  }
-                ],
-                "actions": [
-                  {
-                    "id": "{self:asset-packs::Actions}",
-                    "name": "Play Deactivate Animation"
-                  },
-                  {
-                    "id": "{self:asset-packs::Actions}",
-                    "name": "Play Sound"
-                  }
-                ],
-                "basicViewId": "trigger-when-deactivated"
-              }
-            ]
-          }
-        }
-      }
-    },
-    {
-      "name": "asset-packs::States",
-      "data": {
-        "0": {
-          "json": {
-            "id": "{self}",
-            "value": ["Activated", "Deactivated"],
-            "defaultValue": "Deactivated"
           }
         }
       }
@@ -152,58 +60,7 @@
       "data": {
         "0": {
           "json": {
-            "value": ["core::Animator", "core::AudioSource", "asset-packs::States"]
-          }
-        }
-      }
-    },
-    {
-      "name": "core::PointerEvents",
-      "data": {
-        "0": {
-          "json": {
-            "pointerEvents": [
-              {
-                "eventType": 1,
-                "eventInfo": {
-                  "button": 1,
-                  "hoverText": "Activate / Deactivate",
-                  "maxDistance": 10,
-                  "showFeedback": true
-                }
-              }
-            ]
-          }
-        }
-      }
-    },
-    {
-      "name": "inspector::Config",
-      "data": {
-        "0": {
-          "json": {
-            "isBasicViewEnabled": true,
-            "componentName": "Lever",
-            "fields": [
-              {
-                "name": "Hover Text",
-                "type": "core::PointerEvents"
-              },
-              {
-                "name": "When Activated",
-                "type": "asset-packs::Triggers",
-                "basicViewId": "trigger-when-activated"
-              },
-              {
-                "name": "When Deactivated",
-                "type": "asset-packs::Triggers",
-                "basicViewId": "trigger-when-deactivated"
-              }
-            ],
-            "helpTooltip": {
-              "text": "Configure the lever's hover text and actions. Set what happens when the lever is activated or deactivated. The lever switches between activated and deactivated states when clicked."
-            },
-            "version": 1
+            "componentIds": ["asset-packs::States"]
           }
         }
       }

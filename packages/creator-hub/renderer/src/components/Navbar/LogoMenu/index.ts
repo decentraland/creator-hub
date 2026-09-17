@@ -1,0 +1,1 @@
+export { LogoMenu } from './component';

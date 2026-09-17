@@ -26,6 +26,7 @@ export const MAX_FILE_SIZE_BYTES = 50 * 1e6; // 50MB defined in sdk-commands...
 export const MAX_POINTER_SIZE_BYTES = 15 * 1e6; // 15MB validation in the content-server
 
 const ASSET_BUNDLE_REGISTRY = config.get('ASSET_BUNDLE_REGISTRY_URL');
+const ASSET_BUNDLE_REGISTRY_ABGEN = config.get('ASSET_BUNDLE_REGISTRY_ABGEN_URL');
 
 export const getDeploymentUrl = (publishPort: number) => {
   const port = import.meta.env.VITE_CLI_DEPLOY_PORT || publishPort;
@@ -89,12 +90,9 @@ export const deploy = async (
   }
 };
 
-export const getInitialDeploymentStatus = (
-  isWorld: boolean = false,
-): DeploymentComponentsStatus => ({
+export const getInitialDeploymentStatus = (): DeploymentComponentsStatus => ({
   catalyst: 'idle',
   assetBundle: 'idle',
-  lods: isWorld ? 'complete' : 'idle', // Auto-complete for worlds
 });
 
 export const retryDelayInMs = seconds(10);
@@ -171,35 +169,53 @@ export function cleanPendingsFromDeploymentStatus(
   ) as DeploymentComponentsStatus;
 }
 
+async function fetchEntityStatus(
+  url: URL,
+  headers: Record<string, string>,
+): Promise<AssetBundleRegistryResponse> {
+  const response = await fetch(url, { method: 'get', headers });
+
+  if (!response.ok) {
+    // A publish polls this until the deployment event reaches the registry, so the 404 branch
+    // can run hundreds of times: release the body instead of leaving it to the collector.
+    await response.body?.cancel().catch(() => undefined);
+    throw new Error(`Error fetching deployment status: ${response.status}`);
+  }
+
+  return (await response.json()) as AssetBundleRegistryResponse;
+}
+
 /**
  * Fetches the deployment status for a given scene.
  *
+ * LOD generation is deliberately not a deployment component: it keeps running on the registry
+ * long after the scene is live, and creators should not wait on it to enter their scene. The
+ * registry still reports a `lods` field — it is ignored on purpose.
+ *
  * @param info - The scene info.
  * @param identity - The authentication identity for signing requests.
+ * @param useAbgenRegistry - Whether asset-bundle status comes from the abgen registry.
  * @returns A promise resolving to the deployment status.
  */
 export async function fetchDeploymentStatus(
   info: Info,
   identity: AuthIdentity,
+  useAbgenRegistry: boolean = false,
 ): Promise<DeploymentComponentsStatus> {
-  const { rootCID: sceneId, isWorld } = info;
-  const method = 'get';
-  const path = `/entities/status/${sceneId}`;
-  const url = new URL(path, ASSET_BUNDLE_REGISTRY);
-  const headers = getAuthHeaders(method, url.pathname, payload =>
+  const { rootCID: sceneId } = info;
+  const url = new URL(
+    `/entities/status/${sceneId}`,
+    useAbgenRegistry ? ASSET_BUNDLE_REGISTRY_ABGEN : ASSET_BUNDLE_REGISTRY,
+  );
+  const headers = getAuthHeaders('get', url.pathname, payload =>
     Authenticator.signPayload(identity, payload),
   );
 
-  const response = await fetch(url, { method, headers });
-
-  if (!response.ok) throw new Error(`Error fetching deployment status: ${response.status}`);
-
-  const json = (await response.json()) as AssetBundleRegistryResponse;
+  const status = await fetchEntityStatus(url, headers);
 
   return {
-    catalyst: validateStatus(json.catalyst),
-    assetBundle: deriveOverallStatus(json.assetBundles),
-    lods: isWorld ? 'complete' : deriveOverallStatus(json.lods), // Skip lods for worlds
+    catalyst: validateStatus(status.catalyst),
+    assetBundle: deriveOverallStatus(status.assetBundles),
   };
 }
 
@@ -267,27 +283,6 @@ export async function checkDeploymentStatus(
   const maxRetriesError = new DeploymentError('MAX_RETRIES', currentStatus, error);
   console.error(maxRetriesError);
   throw maxRetriesError;
-}
-
-/**
- * Checks if the deployment is nearing completion based on a given percentage threshold.
- *
- * This function evaluates the `DeploymentStatus` object to determine whether the proportion
- * of steps with a 'complete' status meets or exceeds the specified threshold (default: 60%).
- *
- * @param status - The `DeploymentStatus` object containing the current statuses of deployment steps.
- * @param percentage - The completion threshold as a decimal (e.g., `0.6` for 60%). Defaults to 0.6.
- * @returns `true` if the proportion of completed steps is greater than or equal to the threshold; otherwise, `false`.
- */
-export function checkDeploymentCompletion(
-  status: DeploymentComponentsStatus,
-  percentage: number = 0.6,
-): boolean {
-  const statuses = Object.values(status);
-  const total = statuses.length;
-  if (total === 0) return false;
-  const completedCount = statuses.filter(value => value === 'complete').length;
-  return completedCount / total >= percentage;
 }
 
 export function getCatalystServers(chainId: ChainId) {

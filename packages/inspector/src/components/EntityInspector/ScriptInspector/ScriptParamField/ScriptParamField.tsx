@@ -1,10 +1,10 @@
 import type { ActionRef } from '@dcl/asset-packs';
 
-import { TextField, CheckboxField } from '../../../ui';
+import { TextField, CheckboxField, RangeField } from '../../../ui';
 import EntityField from '../../../ui/EntityField/EntityField';
 import InfoTooltip from '../../../ui/InfoTooltip/InfoTooltip';
-import ActionField from './ActionField';
 import { fromNumber, toNumber, isValidNumber } from '../utils';
+import ActionField from './ActionField';
 
 import type { Props } from './types';
 
@@ -28,6 +28,18 @@ export function ScriptParamField({ name, param, onUpdate }: Props) {
           onChange={e => onUpdate(toNumber(e.target.value))}
           debounceTime={300}
           error={!isValidNumber(fromNumber(param.value))}
+        />
+      );
+
+    case 'slider':
+      return (
+        <RangeField
+          label={labelWithTooltip(name, param.tooltip)}
+          value={param.value}
+          min={param.min}
+          max={param.max}
+          step={param.step}
+          onChange={e => onUpdate(toNumber((e.target as HTMLInputElement).value))}
         />
       );
 

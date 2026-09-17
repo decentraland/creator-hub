@@ -259,6 +259,7 @@ const TagsInspector = withSdk<Props>(({ entities, sdk }) => {
       </div>
       <div className="tags-selector">
         <Dropdown
+          className="TagsDropdown"
           placeholder="Add or create tags"
           multiple
           onChange={handleDropdownChange}

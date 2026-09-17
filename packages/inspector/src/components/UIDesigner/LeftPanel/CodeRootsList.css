@@ -1,0 +1,116 @@
+.ui-designer-roots-list {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.ui-designer-roots-tree {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+
+.ui-designer-code-root-row {
+  display: flex;
+  align-items: center;
+  gap: var(--uid-space-2);
+  padding: 3px var(--uid-space-2);
+  cursor: pointer;
+  color: var(--ui-designer-text);
+  user-select: none;
+  touch-action: manipulation;
+}
+
+.ui-designer-code-root-row svg {
+  color: var(--ui-designer-glyph);
+  flex-shrink: 0;
+}
+
+.ui-designer-code-root-row:hover {
+  background: var(--ui-designer-control-accent-15);
+}
+
+.ui-designer-code-root-row.is-active {
+  background: var(--selected-item);
+}
+
+.ui-designer-code-root-row:focus-visible {
+  outline: 2px solid var(--ui-designer-control-accent);
+  outline-offset: -2px;
+}
+
+/* A nested-only root renders nowhere on its own, so it reads grayed — the same
+   treatment a hidden node gets in the Nodes tree. */
+.ui-designer-code-root-row.is-hidden,
+.ui-designer-code-root-row.is-hidden svg {
+  color: var(--ui-designer-text-muted);
+}
+
+.ui-designer-code-root-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ui-designer-code-root-name-input {
+  flex: 1;
+  min-width: 0;
+  background: var(--ui-designer-control-bg);
+  border: 1px solid var(--ui-designer-control-border);
+  border-radius: 3px;
+  color: var(--ui-designer-text);
+  padding: 1px 4px;
+  font: inherit;
+}
+
+/* Both row actions appear on hover (or keyboard focus within the row). The eye
+   stays visible while it is OFF, so a grayed row explains itself without hover —
+   mirroring the Nodes tree, where the lock/eye "on" states also persist. */
+.ui-designer-code-root-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--uid-space-1);
+  visibility: hidden;
+}
+
+.ui-designer-code-root-row:hover .ui-designer-code-root-actions,
+.ui-designer-code-root-row:focus-within .ui-designer-code-root-actions,
+.ui-designer-code-root-actions:has(.is-off) {
+  visibility: visible;
+}
+
+.ui-designer-code-root-toplevel,
+.ui-designer-code-root-remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.ui-designer-code-root-toplevel:hover svg,
+.ui-designer-code-root-remove:hover svg {
+  color: var(--ui-designer-control-accent);
+}
+
+.ui-designer-code-root-toplevel:focus-visible,
+.ui-designer-code-root-remove:focus-visible {
+  outline: 2px solid var(--ui-designer-control-accent);
+  outline-offset: -1px;
+}
+
+.ui-designer-roots-error {
+  margin: var(--uid-space-1) var(--uid-space-2);
+  padding: 6px var(--uid-space-2);
+  border-radius: 4px;
+  background: var(--ui-designer-control-accent-15);
+  color: var(--ui-designer-text);
+  font-size: 11px;
+  line-height: 1.4;
+}

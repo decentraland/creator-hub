@@ -5,8 +5,6 @@ import type { useComponentInput } from '../../../../hooks/sdk/useComponentInput'
 import type { AssetCatalogResponse } from '../../../../lib/data-layer/remote-data-layer';
 import type { TextureType } from '../types';
 
-export type VideoTexture = Map<number, { name: string }>;
-
 export type Props = {
   label: string;
   texture: TextureType;

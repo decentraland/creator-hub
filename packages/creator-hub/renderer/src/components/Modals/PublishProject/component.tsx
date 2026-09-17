@@ -1,4 +1,7 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useDispatch } from '#store';
+import { fetchENSList } from '/@/modules/store/ens';
+import { useAuth } from '/@/hooks/useAuth';
 import { Initial } from './steps/Initial';
 import { AlternativeServers } from './steps/AlternativeServers';
 import { PublishToWorld } from './steps/PublishToWorld';
@@ -14,8 +17,19 @@ export function PublishProject({
   initialStep = 'initial',
   disableGoBack = false,
 }: Omit<Props, 'onStep' | 'deploymentMetadata'>) {
+  const dispatch = useDispatch();
+  const { wallet } = useAuth();
   const [history, setHistory] = useState<Step[]>([]);
   const [deploymentMetadata, setDeploymentMetadata] = useState<DeploymentMetadata>({});
+
+  // Names can change outside the app (a purchase, a granted deploy permission), so the
+  // sign-in-time fetch goes stale. Refresh in the background on every open: consumers only
+  // read ens.data and fulfilled merges into it, so the current list stays visible meanwhile.
+  useEffect(() => {
+    if (open && wallet) {
+      dispatch(fetchENSList({ address: wallet }));
+    }
+  }, [open, wallet, dispatch]);
   const step = useMemo<Step>(
     () => (history.length > 0 ? history[history.length - 1] : initialStep),
     [history, initialStep],

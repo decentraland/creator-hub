@@ -22,9 +22,20 @@ yarn-error.log*
 
 **/public/bundle*
 **/public/bin
+**/public/bevy-engine
+**/public/bevy-agent
+packages/creator-hub/node-bin
 **/gen
 **/tsconfig.tsbuildinfo
 **/tsconfig.check.tsbuildinfo
 
 settings.local.json
 .serena/
+
+# Local dev artifacts (env files kept locally for restore, Playwright MCP logs)
+*.env*
+!.env.example
+.playwright-mcp/
+
+# Claude agent verification screenshots
+.claude/screenshots/

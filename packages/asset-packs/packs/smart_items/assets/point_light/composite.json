@@ -12,6 +12,22 @@
       }
     },
     {
+      "name": "asset-packs::Script",
+      "data": {
+        "0": {
+          "json": {
+            "value": [
+              {
+                "path": "{assetPath}/Lights.ts",
+                "priority": 0,
+                "layout": "{\"params\":{},\"actions\":[{\"methodName\":\"turnOn\",\"description\":\"Turns the light on\",\"params\":{}},{\"methodName\":\"turnOff\",\"description\":\"Turns the light off\",\"params\":{}},{\"methodName\":\"toggle\",\"description\":\"Turns the light off if it is on, or on if it is off\",\"params\":{}}]}"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
       "name": "core-schema::Name",
       "data": {
         "0": {
@@ -127,14 +143,20 @@
             "id": "{self}",
             "value": [
               {
+                "type": "call_script_method",
                 "name": "Turn On",
-                "type": "lights_on",
-                "jsonPayload": "{}"
+                "jsonPayload": "{\"scriptPath\":\"{assetPath}/Lights.ts\",\"methodName\":\"turnOn\",\"params\":{}}"
               },
               {
+                "type": "call_script_method",
                 "name": "Turn Off",
-                "type": "lights_off",
-                "jsonPayload": "{}"
+                "jsonPayload": "{\"scriptPath\":\"{assetPath}/Lights.ts\",\"methodName\":\"turnOff\",\"params\":{}}"
+              },
+              {
+                "type": "call_script_method",
+                "name": "Toggle",
+                "jsonPayload": "{\"scriptPath\":\"{assetPath}/Lights.ts\",\"methodName\":\"toggle\",\"params\":{}}",
+                "default": true
               }
             ]
           }

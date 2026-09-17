@@ -1,14 +1,25 @@
 import mitt from 'mitt';
 import type { Emitter } from 'mitt';
+import { Quaternion, Vector3 } from '@dcl/ecs-math';
 
 import type { SceneContext } from '../babylon/decentraland/SceneContext';
+import { snapManager } from '../babylon/decentraland/snap-manager';
 import { connectReverseChannel } from './reverse-channel';
 import type { RendererEvents } from './types';
 
+// getNodes lists the AUTHORED entities; applyPick treats a pick on any entity not
+// in it as code-created (#1418). Default to the ids the entity-pick tests use (42
+// + root/player) so they read as authored; the unauthored test overrides it.
+const authoredNodes = vi.fn(() => [
+  { entity: 0, children: [] },
+  { entity: 5, children: [] },
+  { entity: 42, children: [] },
+]);
 vi.mock('../sdk/nodes', () => ({
   getAncestors: vi.fn(() => new Set<number>()),
   isAncestor: vi.fn(() => false),
   mapNodes: vi.fn(() => [{ entity: 0, children: [], open: false }]),
+  getNodes: (...args: unknown[]) => authoredNodes(...(args as [])),
 }));
 
 describe('connectReverseChannel', () => {
@@ -33,12 +44,21 @@ describe('connectReverseChannel', () => {
       dispatch: vi.fn().mockResolvedValue(undefined),
     };
     transformValue = { position: { x: 0, y: 0, z: 0 } };
+    // The merge tests below assert pure composition; snapping (enabled by
+    // default) is exercised by its own describe.
+    snapManager.setEnabled(false);
 
     context = {
       rendererEvents: events,
       operations,
       engine: { RootEntity: ROOT, PlayerEntity: PLAYER },
-      editorComponents: { Nodes: { componentId: 1 } },
+      // Lock/Hide are consulted by applyPick to block locked/hidden entities from
+      // viewport selection (#1366/#1367). Default: neither set (getOrNull → null).
+      editorComponents: {
+        Nodes: { componentId: 1 },
+        Lock: { componentId: 3, getOrNull: vi.fn(() => null) },
+        Hide: { componentId: 4, getOrNull: vi.fn(() => null) },
+      },
       Transform: { componentId: 2, getOrNull: vi.fn(() => transformValue) },
     } as unknown as SceneContext;
 
@@ -49,6 +69,14 @@ describe('connectReverseChannel', () => {
     disconnect();
     vi.clearAllMocks();
   });
+
+  // Reconnect in DELTA mode (the Bevy agent path): rotation is a world-frame delta
+  // quaternion and scale a multiplier, composed onto the current value. The default
+  // connection (above) is ABSOLUTE mode (Babylon: the committed value is set as-is).
+  const reconnectDelta = () => {
+    disconnect();
+    disconnect = connectReverseChannel(context, { gizmoDeltas: true });
+  };
 
   describe('when an entity is picked', () => {
     it('should expand ancestors, select the entity with the multi flag, and dispatch', () => {
@@ -65,6 +93,44 @@ describe('connectReverseChannel', () => {
       );
       expect(operations.updateSelectedEntity).toHaveBeenCalledWith(42, true);
       expect(operations.dispatch).toHaveBeenCalledTimes(1);
+    });
+
+    it('should ignore a pick on a LOCKED entity (#1366)', () => {
+      (context.editorComponents.Lock.getOrNull as ReturnType<typeof vi.fn>).mockReturnValueOnce({
+        value: true,
+      });
+      events.emit('pick', {
+        target: { kind: 'entity', entity: 42 as never },
+        modifiers: { multi: false },
+      });
+      expect(operations.updateSelectedEntity).not.toHaveBeenCalled();
+      expect(operations.dispatch).not.toHaveBeenCalled();
+    });
+
+    it('should ignore a pick on a HIDDEN entity (#1367)', () => {
+      (context.editorComponents.Hide.getOrNull as ReturnType<typeof vi.fn>).mockReturnValueOnce({
+        value: true,
+      });
+      events.emit('pick', {
+        target: { kind: 'entity', entity: 42 as never },
+        modifiers: { multi: false },
+      });
+      expect(operations.updateSelectedEntity).not.toHaveBeenCalled();
+      expect(operations.dispatch).not.toHaveBeenCalled();
+    });
+
+    it('should not select a code-created (non-authored) entity, and report it (#1418)', () => {
+      const onPickUnauthored = vi.fn();
+      disconnect();
+      disconnect = connectReverseChannel(context, { onPickUnauthored });
+      // 999 is not in the authored Nodes list → created by the scene's code.
+      events.emit('pick', {
+        target: { kind: 'entity', entity: 999 as never },
+        modifiers: { multi: false },
+      });
+      expect(onPickUnauthored).toHaveBeenCalledWith(999);
+      expect(operations.updateSelectedEntity).not.toHaveBeenCalled();
+      expect(operations.dispatch).not.toHaveBeenCalled();
     });
   });
 
@@ -102,7 +168,9 @@ describe('connectReverseChannel', () => {
     });
   });
 
-  describe('when a gizmo commit arrives', () => {
+  describe('when a gizmo commit arrives (delta mode — Bevy agent)', () => {
+    beforeEach(reconnectDelta);
+
     it('should merge each transform onto the current value without dispatching', () => {
       events.emit('gizmoCommit', {
         transforms: [{ entity: 42 as never, position: { x: 1, y: 2, z: 3 } as never }],
@@ -125,6 +193,269 @@ describe('connectReverseChannel', () => {
       });
 
       expect(operations.updateValue).not.toHaveBeenCalled();
+    });
+
+    it('should COMPOSE a rotation delta onto the current rotation', () => {
+      // Current: 90° about Y. World-frame delta: 90° about Y. Expected: 180°
+      // about Y (new = delta ⊗ current).
+      transformValue = {
+        position: { x: 0, y: 0, z: 0 },
+        rotation: Quaternion.fromEulerDegrees(0, 90, 0),
+        scale: { x: 1, y: 1, z: 1 },
+      };
+      const delta = Quaternion.fromEulerDegrees(0, 90, 0);
+      const expected = Quaternion.multiply(delta, transformValue.rotation);
+
+      events.emit('gizmoCommit', {
+        transforms: [{ entity: 7 as never, rotation: delta as never }],
+      });
+
+      const written = (operations.updateValue as ReturnType<typeof vi.fn>).mock.calls[0][2];
+      for (const k of ['x', 'y', 'z', 'w'] as const) {
+        expect(written.rotation[k]).toBeCloseTo(expected[k], 5);
+      }
+      // Rotation-only commit leaves position/scale untouched.
+      expect(written.position).toEqual({ x: 0, y: 0, z: 0 });
+    });
+
+    it('should apply the rotation delta in the WORLD frame (delta ⊗ current, not current ⊗ delta)', () => {
+      // Current: 90° about Y (local X points along world -Z). A world-aligned
+      // ring drag about world X must rotate about world X regardless of the
+      // entity's orientation — only delta ⊗ current does that; the two orders
+      // differ here (unlike the same-axis case above).
+      transformValue = {
+        position: { x: 0, y: 0, z: 0 },
+        rotation: Quaternion.fromEulerDegrees(0, 90, 0),
+        scale: { x: 1, y: 1, z: 1 },
+      };
+      const delta = Quaternion.fromEulerDegrees(90, 0, 0); // 90° about world X
+      const expected = Quaternion.multiply(delta, transformValue.rotation);
+      const wrongOrder = Quaternion.multiply(transformValue.rotation, delta);
+
+      events.emit('gizmoCommit', {
+        transforms: [{ entity: 7 as never, rotation: delta as never }],
+      });
+
+      const written = (operations.updateValue as ReturnType<typeof vi.fn>).mock.calls[0][2];
+      for (const k of ['x', 'y', 'z', 'w'] as const) {
+        expect(written.rotation[k]).toBeCloseTo(expected[k], 5);
+      }
+      // Sanity: the two orders genuinely differ for this case.
+      expect(Math.abs(Quaternion.dot(expected, wrongOrder))).toBeLessThan(0.999);
+    });
+
+    it('should MULTIPLY a scale factor onto the current scale', () => {
+      transformValue = {
+        position: { x: 0, y: 0, z: 0 },
+        rotation: Quaternion.Identity(),
+        scale: { x: 2, y: 3, z: 4 },
+      };
+      const factor = { x: 2, y: 2, z: 0.5 };
+
+      events.emit('gizmoCommit', {
+        transforms: [{ entity: 7 as never, scale: factor as never }],
+      });
+
+      const written = (operations.updateValue as ReturnType<typeof vi.fn>).mock.calls[0][2];
+      expect(written.scale).toEqual(Vector3.multiply(transformValue.scale, factor));
+    });
+
+    it('should clamp a committed scale away from zero', () => {
+      transformValue = {
+        position: { x: 0, y: 0, z: 0 },
+        rotation: Quaternion.Identity(),
+        scale: { x: 1, y: 1, z: 1 },
+      };
+
+      events.emit('gizmoCommit', {
+        transforms: [{ entity: 7 as never, scale: { x: 0.001, y: 1, z: 1 } as never }],
+      });
+
+      const written = (operations.updateValue as ReturnType<typeof vi.fn>).mock.calls[0][2];
+      expect(written.scale.x).toBeCloseTo(0.01, 10);
+      expect(written.scale.y).toBeCloseTo(1, 10);
+      expect(written.scale.z).toBeCloseTo(1, 10);
+    });
+
+    it('should recover an entity whose scale is already zero', () => {
+      // 0 × factor = 0 forever — the base is clamped to the minimum first, so an
+      // outward drag stretches the entity back into shape.
+      transformValue = {
+        position: { x: 0, y: 0, z: 0 },
+        rotation: Quaternion.Identity(),
+        scale: { x: 0, y: 0, z: 0 },
+      };
+
+      events.emit('gizmoCommit', {
+        transforms: [{ entity: 7 as never, scale: { x: 50, y: 50, z: 50 } as never }],
+      });
+
+      const written = (operations.updateValue as ReturnType<typeof vi.fn>).mock.calls[0][2];
+      expect(written.scale.x).toBeCloseTo(0.5, 10);
+      expect(written.scale.y).toBeCloseTo(0.5, 10);
+      expect(written.scale.z).toBeCloseTo(0.5, 10);
+    });
+  });
+
+  describe('when a gizmo commit arrives (absolute mode — default, Babylon)', () => {
+    // Babylon drags the local node and emits the FINAL rotation/scale; the merge
+    // must SET them, not compose/multiply onto the current value (that was the
+    // regression — rotation doubled, scale compounded — when the shared handler
+    // assumed the Bevy delta semantics for every renderer).
+    it('should SET the committed rotation, not compose it onto the current', () => {
+      transformValue = {
+        position: { x: 0, y: 0, z: 0 },
+        rotation: Quaternion.fromEulerDegrees(0, 90, 0),
+        scale: { x: 1, y: 1, z: 1 },
+      };
+      const committed = Quaternion.fromEulerDegrees(0, 45, 0); // the entity's NEW rotation
+
+      events.emit('gizmoCommit', {
+        transforms: [{ entity: 7 as never, rotation: committed as never }],
+      });
+
+      const written = (operations.updateValue as ReturnType<typeof vi.fn>).mock.calls[0][2];
+      for (const k of ['x', 'y', 'z', 'w'] as const) {
+        expect(written.rotation[k]).toBeCloseTo(committed[k], 5);
+      }
+    });
+
+    it('should SET the committed scale, not multiply it onto the current', () => {
+      transformValue = {
+        position: { x: 0, y: 0, z: 0 },
+        rotation: Quaternion.Identity(),
+        scale: { x: 2, y: 3, z: 4 },
+      };
+      const committed = { x: 5, y: 5, z: 5 }; // the entity's NEW scale
+
+      events.emit('gizmoCommit', {
+        transforms: [{ entity: 7 as never, scale: committed as never }],
+      });
+
+      const written = (operations.updateValue as ReturnType<typeof vi.fn>).mock.calls[0][2];
+      expect(written.scale).toEqual(committed);
+    });
+  });
+
+  describe('when a live gizmo drag arrives (gizmoDrag)', () => {
+    beforeEach(reconnectDelta);
+
+    it('should emit merged previewTransforms WITHOUT writing the CRDT or dispatching', () => {
+      transformValue = {
+        position: { x: 0, y: 0, z: 0 },
+        rotation: Quaternion.Identity(),
+        scale: { x: 1, y: 1, z: 1 },
+      };
+      const previews: RendererEvents['previewTransforms'][] = [];
+      events.on('previewTransforms', p => previews.push(p));
+
+      const delta = Quaternion.fromEulerDegrees(0, 90, 0);
+      events.emit('gizmoDrag', {
+        transforms: [
+          { entity: 7 as never, position: { x: 5, y: 0, z: 0 }, rotation: delta } as never,
+        ],
+      });
+
+      // Merged, absolute values are emitted for the renderer to preview…
+      expect(previews).toHaveLength(1);
+      const t = previews[0].transforms[0];
+      expect(t.entity).toBe(7);
+      expect(t.position).toEqual({ x: 5, y: 0, z: 0 });
+      const expected = Quaternion.multiply(delta, transformValue.rotation);
+      for (const k of ['x', 'y', 'z', 'w'] as const) {
+        expect(t.rotation[k]).toBeCloseTo(expected[k], 5);
+      }
+      // …but NOTHING is written to the CRDT and no dispatch happens (no undo entry).
+      expect(operations.updateValue).not.toHaveBeenCalled();
+      expect(operations.dispatch).not.toHaveBeenCalled();
+    });
+
+    it('should skip preview entities that no longer have a Transform', () => {
+      (context.Transform.getOrNull as ReturnType<typeof vi.fn>).mockReturnValueOnce(null);
+      const previews: RendererEvents['previewTransforms'][] = [];
+      events.on('previewTransforms', p => previews.push(p));
+
+      events.emit('gizmoDrag', {
+        transforms: [{ entity: 99 as never, position: { x: 1, y: 1, z: 1 } } as never],
+      });
+      expect(previews).toEqual([]);
+    });
+  });
+
+  describe('when snapping is enabled', () => {
+    beforeEach(() => {
+      snapManager.setEnabled(true);
+      snapManager.setPositionSnap(0.25);
+      snapManager.setRotationSnap(Math.PI / 2); // 90°
+      snapManager.setScaleSnap(0.1);
+    });
+
+    afterEach(() => {
+      snapManager.setEnabled(false);
+    });
+
+    it('should snap a committed position to the position step', () => {
+      events.emit('gizmoCommit', {
+        transforms: [{ entity: 42 as never, position: { x: 1.1, y: 2.04, z: 2.9 } as never }],
+      });
+
+      const written = (operations.updateValue as ReturnType<typeof vi.fn>).mock.calls[0][2];
+      expect(written.position).toEqual({ x: 1, y: 2, z: 3 });
+    });
+
+    it('should snap the composed rotation to the rotation step', () => {
+      // Identity ⊕ 80° about Y, snapped to 90° steps → 90° about Y.
+      transformValue = {
+        position: { x: 0, y: 0, z: 0 },
+        rotation: Quaternion.Identity(),
+        scale: { x: 1, y: 1, z: 1 },
+      };
+      const delta = Quaternion.fromEulerDegrees(0, 80, 0);
+      const expected = Quaternion.fromEulerDegrees(0, 90, 0);
+
+      events.emit('gizmoCommit', {
+        transforms: [{ entity: 7 as never, rotation: delta as never }],
+      });
+
+      const written = (operations.updateValue as ReturnType<typeof vi.fn>).mock.calls[0][2];
+      for (const k of ['x', 'y', 'z', 'w'] as const) {
+        expect(written.rotation[k]).toBeCloseTo(expected[k], 5);
+      }
+    });
+
+    it('should snap the multiplied scale to the scale step', () => {
+      transformValue = {
+        position: { x: 0, y: 0, z: 0 },
+        rotation: Quaternion.Identity(),
+        scale: { x: 1, y: 1, z: 1 },
+      };
+
+      events.emit('gizmoCommit', {
+        transforms: [{ entity: 7 as never, scale: { x: 1.07, y: 1, z: 1 } as never }],
+      });
+
+      const written = (operations.updateValue as ReturnType<typeof vi.fn>).mock.calls[0][2];
+      expect(written.scale.x).toBeCloseTo(1.1, 10);
+      expect(written.scale.y).toBeCloseTo(1, 10);
+      expect(written.scale.z).toBeCloseTo(1, 10);
+    });
+
+    it('should clamp a snapped-to-zero scale away from zero', () => {
+      // 1 × 0.01 = 0.01, which the 0.1 snap step rounds to 0 — the final clamp
+      // must keep it recoverable.
+      transformValue = {
+        position: { x: 0, y: 0, z: 0 },
+        rotation: Quaternion.Identity(),
+        scale: { x: 1, y: 1, z: 1 },
+      };
+
+      events.emit('gizmoCommit', {
+        transforms: [{ entity: 7 as never, scale: { x: 0.01, y: 1, z: 1 } as never }],
+      });
+
+      const written = (operations.updateValue as ReturnType<typeof vi.fn>).mock.calls[0][2];
+      expect(written.scale.x).toBeCloseTo(0.01, 10);
+      expect(written.scale.y).toBeCloseTo(1, 10);
     });
   });
 

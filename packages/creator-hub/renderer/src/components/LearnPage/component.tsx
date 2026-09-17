@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { Button, Typography } from 'decentraland-ui2';
 import { t } from '/@/modules/store/translation/utils';
+import { tutorials } from '/@/modules/tutorials';
 import { misc } from '#preload';
 
 import { Container } from '../Container';
@@ -61,26 +62,14 @@ export function LearnPage() {
                 <span className="title">{t('learn.header.videos')}</span>
               </div>
               <div className="content">
-                <Video
-                  list="PLAcRraQmr_GMJw77zKvN84LX_OLyn-lVz"
-                  id="nWiyoX70vtc"
-                  title="Project Updates"
-                />
-                <Video
-                  list="PLAcRraQmr_GP_K8WN7csnKnImK4R2TgMA"
-                  id="52LiG-4VI9c"
-                  title="Editor (no code)"
-                />
-                <Video
-                  list="PLAcRraQmr_GN8LcnnQk2BByo9L2Orvp9c"
-                  id="-iWslh4uQIk"
-                  title="Emote Tutorials"
-                />
-                <Video
-                  list="PLAcRraQmr_GP_K8WN7csnKnImK4R2TgMA"
-                  id="J_EO1LZkaiA"
-                  title="Combine drag & dop + Code"
-                />
+                {tutorials.map(video => (
+                  <Video
+                    key={video.id}
+                    id={video.id}
+                    list={video.list}
+                    title={video.title}
+                  />
+                ))}
               </div>
               <Button
                 className="see-all"

@@ -1,0 +1,7 @@
+.RenameFolderModal .MuiInputBase-root + .MuiTypography-root {
+  margin-top: 16px;
+}
+
+.RenameFolderModal .error {
+  color: var(--error);
+}

@@ -68,6 +68,22 @@
       }
     },
     {
+      "name": "asset-packs::Script",
+      "data": {
+        "0": {
+          "json": {
+            "value": [
+              {
+                "path": "{assetPath}/Sign.ts",
+                "priority": 0,
+                "layout": "{\"params\":{\"sound\":{\"type\":\"string\",\"optional\":true,\"value\":\"NeonTube.mp3\",\"tooltip\":\"Name of an audio file inside this smart item's folder, played whenever the sign flips. Leave empty for no sound.\"},\"onOpen\":{\"type\":\"action\",\"optional\":true,\"value\":{\"entity\":0,\"action\":\"\"},\"tooltip\":\"Action triggered every time the sign flips to Open.\"},\"onClose\":{\"type\":\"action\",\"optional\":true,\"value\":{\"entity\":0,\"action\":\"\"},\"tooltip\":\"Action triggered every time the sign flips to Closed.\"}},\"actions\":[{\"methodName\":\"open\",\"description\":\"Flips the sign to Open\",\"params\":{}},{\"methodName\":\"close\",\"description\":\"Flips the sign to Closed\",\"params\":{}},{\"methodName\":\"toggle\",\"description\":\"Flips the sign to Closed if it shows Open, or to Open if it shows Closed\",\"params\":{}}]}"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
       "name": "core-schema::Name",
       "data": {
         "0": {
@@ -110,132 +126,22 @@
             "id": "{self}",
             "value": [
               {
-                "type": "play_sound",
-                "name": "Play sound",
-                "jsonPayload": "{\"src\":\"{assetPath}/NeonTube.mp3\"}"
-              },
-              {
-                "type": "set_state",
+                "type": "call_script_method",
                 "name": "Open",
-                "jsonPayload": "{\"state\":\"Open\"}",
-                "allowedInBasicView": true
+                "jsonPayload": "{\"scriptPath\":\"{assetPath}/Sign.ts\",\"methodName\":\"open\",\"params\":{}}"
               },
               {
-                "type": "set_state",
+                "type": "call_script_method",
                 "name": "Close",
-                "jsonPayload": "{\"state\":\"Closed\"}",
-                "allowedInBasicView": true
-              }
-            ]
-          }
-        },
-        "513": {
-          "json": {
-            "id": "{self}",
-            "value": [
-              {
-                "type": "set_visibility",
-                "name": "Show",
-                "jsonPayload": "{\"visible\":true}"
+                "jsonPayload": "{\"scriptPath\":\"{assetPath}/Sign.ts\",\"methodName\":\"close\",\"params\":{}}"
               },
               {
-                "type": "set_visibility",
-                "name": "Hide",
-                "jsonPayload": "{\"visible\":false,\"collider\":0}"
+                "type": "call_script_method",
+                "name": "Open or Close",
+                "jsonPayload": "{\"scriptPath\":\"{assetPath}/Sign.ts\",\"methodName\":\"toggle\",\"params\":{}}",
+                "default": true
               }
             ]
-          }
-        },
-        "514": {
-          "json": {
-            "id": "{self}",
-            "value": [
-              {
-                "type": "set_visibility",
-                "name": "Show",
-                "jsonPayload": "{\"visible\":true}"
-              },
-              {
-                "type": "set_visibility",
-                "name": "Hide",
-                "jsonPayload": "{\"visible\":false,\"collider\":0}"
-              }
-            ]
-          }
-        }
-      }
-    },
-    {
-      "name": "asset-packs::Triggers",
-      "data": {
-        "0": {
-          "json": {
-            "value": [
-              {
-                "type": "on_state_change",
-                "conditions": [
-                  {
-                    "id": "{self:asset-packs::States}",
-                    "type": "when_state_is",
-                    "value": "Open"
-                  }
-                ],
-                "operation": "and",
-                "actions": [
-                  {
-                    "id": "{self:asset-packs::Actions}",
-                    "name": "Play sound"
-                  },
-                  {
-                    "id": "{514:asset-packs::Actions}",
-                    "name": "Show"
-                  },
-                  {
-                    "id": "{513:asset-packs::Actions}",
-                    "name": "Hide"
-                  }
-                ],
-                "basicViewId": "trigger-when-activated"
-              },
-              {
-                "type": "on_state_change",
-                "conditions": [
-                  {
-                    "id": "{self:asset-packs::States}",
-                    "type": "when_state_is",
-                    "value": "Closed"
-                  }
-                ],
-                "operation": "and",
-                "actions": [
-                  {
-                    "id": "{514:asset-packs::Actions}",
-                    "name": "Hide"
-                  },
-                  {
-                    "id": "{513:asset-packs::Actions}",
-                    "name": "Show"
-                  },
-                  {
-                    "id": "{self:asset-packs::Actions}",
-                    "name": "Play sound"
-                  }
-                ],
-                "basicViewId": "trigger-when-deactivated"
-              }
-            ]
-          }
-        }
-      }
-    },
-    {
-      "name": "asset-packs::States",
-      "data": {
-        "0": {
-          "json": {
-            "id": "{self}",
-            "value": ["Open", "Closed"],
-            "defaultValue": "Open"
           }
         }
       }
@@ -245,34 +151,7 @@
       "data": {
         "0": {
           "json": {
-            "value": ["core::VisibilityComponent", "core::AudioSource", "asset-packs::States"]
-          }
-        }
-      }
-    },
-    {
-      "name": "inspector::Config",
-      "data": {
-        "0": {
-          "json": {
-            "isBasicViewEnabled": true,
-            "componentName": "Open Close Sign",
-            "fields": [
-              {
-                "name": "When Open",
-                "type": "asset-packs::Triggers",
-                "basicViewId": "trigger-when-activated"
-              },
-              {
-                "name": "When Closed",
-                "type": "asset-packs::Triggers",
-                "basicViewId": "trigger-when-deactivated"
-              }
-            ],
-            "helpTooltip": {
-              "text": "A sign that can swap between displaying 'Open' or 'Closed' when clicked."
-            },
-            "version": 1
+            "componentIds": ["asset-packs::States"]
           }
         }
       }
