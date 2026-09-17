@@ -39,6 +39,7 @@ jobs:
   e2e:
     needs: [ build, tests ]
     uses: ./.github/workflows/e2e.yml
+    secrets: inherit
   drop_pre_release:
     name: drop pre-release
     needs: [ lint, typechecking, tests ]
