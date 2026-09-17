@@ -4,8 +4,10 @@ import type { DeployOptions } from '/shared/types/deploy';
 import {
   BEVY_REALM_BUILD_EVENT,
   PREVIEW_PROGRESS_EVENT,
+  PROJECT_ASSETS_CHANGED_EVENT,
   type BevyRealmBuildEvent,
   type PreviewProgress,
+  type ProjectAssetsChangedEvent,
 } from '/shared/types/ipc';
 import type { MobileDebugSessionInfo } from '/shared/types/ipc';
 
@@ -53,6 +55,32 @@ export function onBevyRealmBuildEvent(callback: (event: BevyRealmBuildEvent) => 
   ipcRenderer.on(BEVY_REALM_BUILD_EVENT, handler);
   return () => {
     ipcRenderer.removeListener(BEVY_REALM_BUILD_EVENT, handler);
+  };
+}
+
+/**
+ * Start (or reuse) a filesystem watcher over the project's assets/ tree, so files dropped
+ * in from outside the editor auto-refresh the inspector catalog. Idempotent per path.
+ */
+export async function startProjectWatcher(path: string) {
+  return invoke('projectWatcher.start', path);
+}
+
+export async function stopProjectWatcher(path: string) {
+  return invoke('projectWatcher.stop', path);
+}
+
+/**
+ * Subscribe to out-of-editor asset changes (a file added/changed/removed in a watched
+ * project's assets/ tree). Events for every watched project arrive; filter by `path`.
+ */
+export function onProjectAssetsChanged(
+  callback: (event: ProjectAssetsChangedEvent) => void,
+): () => void {
+  const handler = (_event: IpcRendererEvent, event: ProjectAssetsChangedEvent) => callback(event);
+  ipcRenderer.on(PROJECT_ASSETS_CHANGED_EVENT, handler);
+  return () => {
+    ipcRenderer.removeListener(PROJECT_ASSETS_CHANGED_EVENT, handler);
   };
 }
 
