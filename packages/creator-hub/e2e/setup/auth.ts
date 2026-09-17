@@ -1,13 +1,7 @@
 import { chromium, expect, test } from '@playwright/test';
 import { launchApp } from '../helpers/app';
 import { captureOpenExternal, fireSignInDeeplink } from '../helpers/auth-mocks';
-import {
-  authDappUrl,
-  captureDeepLink,
-  readDeepLink,
-  saveIdentity,
-  watchAuthApi,
-} from '../helpers/auth-identity';
+import { authDappUrl, captureDeepLink, saveIdentity, watchAuthApi } from '../helpers/auth-identity';
 import { setupTestWallet } from '../helpers/wallet-setup';
 import { Auth } from '../pages/Auth';
 
@@ -41,19 +35,19 @@ test('signs in for real and captures the identity', async () => {
     const dappPage = await browser.newPage();
     const authApi = watchAuthApi(dappPage);
     await setupTestWallet(dappPage);
-    await captureDeepLink(dappPage);
+    const readDeepLink = await captureDeepLink(dappPage);
     await dappPage.goto(authDappUrl(openedUrl), { waitUntil: 'domcontentloaded' });
     await dappPage.getByTestId(BROWSER_WALLET_BUTTON).click();
 
     await expect
-      .poll(() => readDeepLink(dappPage), {
+      .poll(() => readDeepLink(), {
         message: 'the auth dapp never fired the creator-hub deeplink',
         timeout: 120_000,
       })
       .toBeTruthy();
     authApi.assertTestnetBackend();
 
-    const deepLink = new URL((await readDeepLink(dappPage))!);
+    const deepLink = new URL(readDeepLink()!);
     const identityId = deepLink.searchParams.get('signin');
     expect(identityId, 'the deeplink carries no identity id').toBeTruthy();
 

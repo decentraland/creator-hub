@@ -48,8 +48,19 @@ export function authDappUrl(openedUrl: string): string {
   return loginUrl.href;
 }
 
-/** Records the `dcl-creator-hub://` deeplink the dapp fires through a hidden iframe. */
-export async function captureDeepLink(page: Page): Promise<void> {
+/**
+ * Records the `dcl-creator-hub://` deeplink the dapp fires through a hidden iframe.
+ *
+ * @returns a Node-side getter for the captured deeplink. Reading it never touches a page context,
+ * so it survives the dapp navigating away after firing (which destroys a `page.evaluate` read).
+ */
+export async function captureDeepLink(page: Page): Promise<() => string | undefined> {
+  let deepLink: string | undefined;
+
+  await page.exposeFunction('__e2eReportDeepLink', (url: string) => {
+    deepLink ??= url;
+  });
+
   await page.addInitScript(scheme => {
     const descriptor = Object.getOwnPropertyDescriptor(HTMLIFrameElement.prototype, 'src');
     const originalSet = descriptor?.set;
@@ -59,17 +70,16 @@ export async function captureDeepLink(page: Page): Promise<void> {
       ...descriptor,
       set(value: string) {
         if (typeof value === 'string' && value.startsWith(scheme)) {
-          (window as unknown as { __e2eDeepLink?: string }).__e2eDeepLink = value;
+          (
+            window as unknown as { __e2eReportDeepLink?: (url: string) => void }
+          ).__e2eReportDeepLink?.(value);
         }
         originalSet.call(this, value);
       },
     });
   }, DEEPLINK_SCHEME);
-}
 
-/** Reads the deeplink recorded by `captureDeepLink`, or `undefined` if the dapp has not fired it. */
-export function readDeepLink(page: Page): Promise<string | undefined> {
-  return page.evaluate(() => (window as unknown as { __e2eDeepLink?: string }).__e2eDeepLink);
+  return () => deepLink;
 }
 
 /** Asserts the dapp resolved the identity against the testnet backend. */
