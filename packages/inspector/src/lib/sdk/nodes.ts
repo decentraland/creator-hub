@@ -5,6 +5,12 @@ import type { EditorComponents, Node } from './components';
 import { EditorComponentNames } from './components';
 import { CAMERA, PLAYER, ROOT } from './tree';
 
+type ReadonlyNode = DeepReadonlyObject<Node>;
+
+function toNode(node: ReadonlyNode): Node {
+  return { ...node, children: [...node.children] };
+}
+
 export function getParent(entity: Entity, nodes: DeepReadonlyObject<Node[]>) {
   if (isRoot(entity)) return entity;
   const node = nodes.find($ => $.children.includes(entity));
@@ -44,7 +50,7 @@ export function removeNode(engine: IEngine, entity: Entity): Node[] {
 }
 
 export function addNode(engine: IEngine, entity: Entity): Node[] {
-  const nodes = Array.from(getNodes(engine));
+  const nodes = getNodes(engine).map(toNode);
 
   const alreadyNode = nodes.find($ => $.entity === entity);
   if (!alreadyNode) nodes.push({ entity, children: [] });
@@ -56,7 +62,11 @@ export function pushChild(engine: IEngine, parent: Entity, child: Entity): Node[
   return pushChildToNodes(getNodes(engine), parent, child);
 }
 
-export function pushChildToNodes(nodes: readonly Node[], parent: Entity, child: Entity): Node[] {
+export function pushChildToNodes(
+  nodes: readonly ReadonlyNode[],
+  parent: Entity,
+  child: Entity,
+): Node[] {
   const newValue: Node[] = [];
   let alreadyInNodes = false;
 
@@ -64,7 +74,7 @@ export function pushChildToNodes(nodes: readonly Node[], parent: Entity, child: 
     if ($.entity === parent) {
       newValue.push({ ...$, children: cleanPush($.children, child) });
     } else {
-      newValue.push($);
+      newValue.push(toNode($));
     }
     alreadyInNodes ||= $.entity === child;
   }
@@ -73,7 +83,7 @@ export function pushChildToNodes(nodes: readonly Node[], parent: Entity, child: 
 }
 
 export function insertChildAfterInNodes(
-  nodes: readonly Node[],
+  nodes: readonly ReadonlyNode[],
   parent: Entity,
   child: Entity,
   afterEntity: Entity,
@@ -84,7 +94,7 @@ export function insertChildAfterInNodes(
   for (const $ of nodes) {
     if ($.entity === parent) {
       if ($.children.includes(child)) {
-        newValue.push($);
+        newValue.push(toNode($));
       } else {
         const afterIdx = $.children.indexOf(afterEntity);
         if (afterIdx >= 0) {
@@ -96,7 +106,7 @@ export function insertChildAfterInNodes(
         }
       }
     } else {
-      newValue.push($);
+      newValue.push(toNode($));
     }
     alreadyInNodes ||= $.entity === child;
   }
@@ -112,14 +122,14 @@ export function removeChild(engine: IEngine, parent: Entity, child: Entity): Nod
     if ($.entity === parent) {
       newValue.push(filterChild($, child));
     } else {
-      newValue.push($);
+      newValue.push(toNode($));
     }
   }
 
   return newValue;
 }
 
-export function filterChild(parent: Node, child: Entity): Node {
+export function filterChild(parent: ReadonlyNode, child: Entity): Node {
   return {
     ...parent,
     children: parent.children.filter($ => $ !== child),
@@ -152,12 +162,12 @@ export function isAncestor(ancestors: Set<Entity>, entity: Entity): boolean {
   return ancestors.has(entity);
 }
 
-export function mapNodes(engine: IEngine, fn: (node: Node) => Node) {
+export function mapNodes(engine: IEngine, fn: (node: ReadonlyNode) => ReadonlyNode) {
   const nodes = getNodes(engine);
   const newValue: Node[] = [];
 
   for (const node of nodes) {
-    newValue.push(fn(node));
+    newValue.push(toNode(fn(node)));
   }
 
   return newValue;

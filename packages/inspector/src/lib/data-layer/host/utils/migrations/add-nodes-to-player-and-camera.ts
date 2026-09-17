@@ -1,5 +1,5 @@
 import type { IEngine, LastWriteWinElementSetComponentDefinition } from '@dcl/ecs';
-import type { EditorComponentsTypes } from '../../../../sdk/components';
+import type { EditorComponentsTypes, Node } from '../../../../sdk/components';
 import { EditorComponentNames } from '../../../../sdk/components';
 
 export function addNodesComponentsToPlayerAndCamera(engine: IEngine) {
@@ -11,7 +11,7 @@ export function addNodesComponentsToPlayerAndCamera(engine: IEngine) {
     if (!Nodes) return;
 
     const nodes = Nodes.getOrNull(engine.RootEntity)?.value || [];
-    const newNodes = [...nodes];
+    const newNodes: Node[] = nodes.map(node => ({ ...node, children: [...node.children] }));
     let shouldUpdate = false;
 
     if (!newNodes.some(node => node.entity === engine.PlayerEntity)) {
