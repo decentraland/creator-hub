@@ -39,7 +39,10 @@ jobs:
   e2e:
     needs: [ build, tests ]
     uses: ./.github/workflows/e2e.yml
-    secrets: inherit
+    secrets:
+      E2E_PRIVATE_KEY: ${{ secrets.E2E_PRIVATE_KEY }}
+      E2E_NAME: ${{ secrets.E2E_NAME }}
+      E2E_LAND: ${{ secrets.E2E_LAND }}
   drop_pre_release:
     name: drop pre-release
     needs: [ lint, typechecking, tests ]

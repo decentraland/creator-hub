@@ -1,5 +1,13 @@
 name: E2E
-on: [ workflow_call ]
+on:
+  workflow_call:
+    secrets:
+      E2E_PRIVATE_KEY:
+        required: false
+      E2E_NAME:
+        required: false
+      E2E_LAND:
+        required: false
 
 permissions:
   contents: read
@@ -45,7 +53,7 @@ jobs:
       # complete output set — no hashed asset files to miss (unlike the past bundle.css bug).
       - name: Cache inspector dev bundle
         id: inspector-dev-bundle
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: |
             packages/inspector/public/bundle.js
