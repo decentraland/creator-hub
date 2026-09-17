@@ -10,6 +10,7 @@ declare global {
   const afterAll: (typeof import('vitest'))['afterAll'];
   const beforeEach: (typeof import('vitest'))['beforeEach'];
   const afterEach: (typeof import('vitest'))['afterEach'];
+  const page: import('playwright').Page;
 }
 
 export {};
