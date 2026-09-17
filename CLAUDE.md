@@ -72,6 +72,8 @@ make typecheck     # TypeScript type checking across all workspaces
 
 **Note:** npm won't repair a missing transitive lockfile node. When `npm ls` / a build's `ELSPROBLEMS` reports a transitive dep `missing` (e.g. `buffer-crc32` under the `@dcl/sdk-commands` tarball subtree), a plain `npm install` will NOT add it — npm trusts the existing lockfile and reports "up to date". Add the `node_modules/<dep>` package node to `package-lock.json` directly (version + registry `resolved`/`integrity`), then `npm install`/`npm ci` to reify it. Since the parent packages declare the dep, the node then sticks.
 
+**Note:** `make typecheck` only covers what a tsconfig's `include` names, and every package config scopes itself narrowly — creator-hub's three to `src/**`, the inspector's `tsconfig.check.json` to `src`. A new top-level source directory is therefore typechecked by NOTHING until it gets its own tsconfig plus a `typecheck:*` script chained into the package's `typecheck`. This is what left the Playwright/vitest e2e suites unchecked: both runners transpile via esbuild without type-checking, so a type error surfaced only as an opaque runtime failure in the e2e job (`packages/creator-hub/e2e/tsconfig.json` and `packages/inspector/test/tsconfig.json` now cover them). Two traps when adding one: a config whose `include` matches nothing exits 0 exactly like one that works, so prove coverage with `--listFiles` plus a deliberate type error before trusting it; and `extends`-ing a sibling config inherits its `exclude`, so extending `renderer/tsconfig.json` would silently drop every `*.spec.ts`. Still uncovered: `packages/creator-hub/shared/**`, checked only transitively via the `/shared/*` alias.
+
 ### Protocol Buffers
 
 Proto files live at `packages/inspector/src/lib/data-layer/proto/`. After modifying `.proto` files:
@@ -181,6 +183,10 @@ Asset-pack `composite.json` files encode references as portable placeholders: pa
 ### `~system/CommsApi` `consumeMessages` returns a bare array
 
 `consumeMessages({ topic })` resolves to a **bare array** of `{ sender, data }`, not the `{ messages: [...] }` wrapper its TypeScript type implies (the explorer's `CommsApiWrap.ConsumeMessages` serializes a raw JSON array). Destructuring `const { messages } = await consumeMessages(...)` yields `undefined` and throws on `.length` — and inside a `try/catch` that silently drops every message with no error. Read it as an array, tolerating both shapes: `Array.isArray(res) ? res : (res?.messages ?? [])`.
+
+### Some branches track `origin/main`, so `git push` needs an explicit refspec
+
+Several local branches have their upstream set to `origin/main` rather than their own remote branch (`feat/e2e-playwright-suite`, `fix/inspector-dev-server-bevy-agent-origin`, `worktree-improve-linting-speed` at time of writing). `git status -sb` shows it as `## <branch>...origin/main`, which reads like ordinary ahead/behind info. A bare `git push` — and especially `git push --force-with-lease` — resolves that upstream and targets **main**. Push these with an explicit refspec (`git push origin <branch>`), and pin the lease to a known SHA (`--force-with-lease=<branch>:<sha>`) rather than the bare form, which trusts a remote-tracking ref that a background fetch can silently advance.
 
 ## Design handoff
 
