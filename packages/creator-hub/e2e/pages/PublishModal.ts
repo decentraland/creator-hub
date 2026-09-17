@@ -81,7 +81,6 @@ export class PublishModal {
     const accepted = this.page.locator(
       [
         '[data-testid="publish-modal-deploy-step-uploading"][data-state="complete"]',
-        '[data-testid="publish-modal-deploy-deploying-jump"]',
         '[data-testid="publish-modal-deploy-success"]',
       ].join(', '),
     );
