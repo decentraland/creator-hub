@@ -1,0 +1,66 @@
+name: E2E Inspector Flake Check
+
+on:
+  workflow_dispatch:
+    inputs:
+      slowmo:
+        description: 'Per-action slowMo in ms (0 exercises the deterministic waits)'
+        default: '0'
+        required: false
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: 'bash'
+
+jobs:
+  flake-check:
+    runs-on: macos-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        run: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: true
+      - uses: ./.github/actions/setup
+        id: setup
+        with:
+          cache-playwright: 'true'
+
+      - name: install
+        if: steps.setup.outputs.node-modules-cache-hit != 'true'
+        run: make install
+
+      - uses: ./.github/actions/download-build
+
+      - name: install Playwright browsers
+        run: npx playwright install
+
+      - name: build inspector
+        run: cd packages/inspector && node ./build.js
+
+      - name: start inspector server
+        run: |
+          cd packages/inspector
+          npx http-server public -p 8000 --cors -a localhost &
+          sleep 5
+
+      - name: e2e
+        run: make test-inspector-e2e
+        env:
+          NODE_OPTIONS: '--max-old-space-size=8192'
+          E2E_CONTENT_URL: https://builder-items.decentraland.zone
+          E2E_SLOWMO: ${{ inputs.slowmo }}
+
+      - name: upload e2e diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: flake-check-diagnostics-${{ matrix.run }}
+          path: packages/inspector/test-results
+          if-no-files-found: ignore
+          retention-days: 3
