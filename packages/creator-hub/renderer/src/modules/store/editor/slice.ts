@@ -60,17 +60,17 @@ export const openExternalURL = createAsyncThunk('editor/openExternalURL', editor
 
 export const getMobileQR = createAsyncThunk(
   'editor/getMobileQR',
-  async ({ path, opts }: { path: string; opts: PreviewOptions }, { dispatch, getState }) => {
-    const { editor: editorState } = getState();
+  async ({ path, opts }: { path: string; opts: PreviewOptions }, { dispatch }) => {
+    // `mobile: true` asks main for a server the phone can reach: it reuses whatever preview
+    // is already up (desktop client, Bevy tab) and otherwise starts one without opening any
+    // client. Always dispatched — main decides from the live process, whereas this store's
+    // isPreviewRunning only flips back on an explicit kill and can be stale.
+    await dispatch(runScene({ path, ...opts, mobile: true })).unwrap();
 
-    // Start preview if not running. `mobile: true` runs the preview server without
-    // opening the desktop client — the QR only needs the server for the phone to reach.
-    if (!editorState.isPreviewRunning) {
-      await dispatch(runScene({ path, ...opts, mobile: true })).unwrap();
-    }
-
-    // Fetch mobile QR data
     const data = await editor.getMobilePreview(path);
+    // null is main's "no usable server" (no LAN IP, preview gone): fail loudly so the
+    // caller's error path runs instead of the click silently doing nothing
+    if (!data) throw new Error('Mobile preview is unavailable for this scene');
     return data;
   },
 );
