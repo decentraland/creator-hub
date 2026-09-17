@@ -1,23 +1,30 @@
 import { type Page } from 'playwright';
 import type { AssetsTab } from '../../../src/redux/ui/types';
 import { dragAndDrop } from '../utils/drag-and-drop';
+import { actUntil } from '../utils/interactions';
 import { sleep } from '../utils/sleep';
 
 declare const page: Page;
 
 class AssetsPageObject {
   async selectTab(tab: AssetsTab) {
-    const element = await page.$(`.Assets .tab[data-test-id="${tab}"]`);
-    if (element) {
-      await element.click();
-    }
+    const trigger = page.locator(`.Assets .tab[data-test-id="${tab}"]`);
+    await actUntil(
+      () => trigger.click(),
+      () => trigger.locator('.underlined').waitFor({ state: 'attached', timeout: 2_000 }),
+    );
   }
 
   async selectAssetPack(assetPack: string) {
-    const element = await page.$(`.Assets .theme[data-test-label="${assetPack}"]`);
-    if (element) {
-      await element.click();
-    }
+    const trigger = page.locator(`.Assets .theme[data-test-label="${assetPack}"]`);
+    await actUntil(
+      () => trigger.click(),
+      () =>
+        page
+          .locator('.Assets .assets-catalog-asset')
+          .first()
+          .waitFor({ state: 'attached', timeout: 5_000 }),
+    );
   }
 
   private async waitForRenderer() {

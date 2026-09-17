@@ -1,5 +1,6 @@
 import { type Page } from 'playwright';
 import { type Positions, dragAndDrop } from '../utils/drag-and-drop';
+import { actUntil } from '../utils/interactions';
 
 declare const page: Page;
 
@@ -360,20 +361,17 @@ class HierarchyPageObject {
   }
 
   async addComponent(entityId: number, componentName: string) {
-    const item = await this.getItem(entityId, this.getItemSelectorById);
-    await item.click({ button: 'right' });
-    const addComponent = await item.$('.contexify_item[itemid="add-component"]');
-    if (!addComponent) {
-      throw new Error(`Can't add components on entity with id=${entityId}`);
-    }
-    await addComponent.click();
-    const component = await addComponent.$(`.contexify_item[itemid="${componentName}"]`);
-    if (!component) {
-      throw new Error(
-        `Can't add component with componentName=${componentName} on entity with id=${entityId}`,
-      );
-    }
-    await component.click();
+    const rowSelector = this.getItemSelectorById(entityId);
+    const addComponent = page.locator('.contexify_item[itemid="add-component"]').first();
+    await actUntil(
+      () => page.locator(rowSelector).first().click({ button: 'right', timeout: 3_000 }),
+      () => addComponent.waitFor({ state: 'visible', timeout: 2_000 }),
+      { retries: 4 },
+    );
+    await addComponent.hover();
+    const component = addComponent.locator(`.contexify_item[itemid="${componentName}"]`);
+    await component.waitFor({ state: 'visible', timeout: 3_000 });
+    await component.click({ timeout: 5_000 });
   }
 }
 
