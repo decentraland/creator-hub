@@ -147,6 +147,26 @@ export function start(src: string, entity: Entity, speed: Slider<0, 10> = 5) {}
     });
   });
 
+  describe('when a class declares @event tags', () => {
+    it('extracts the event names', () => {
+      const { events } = getScriptParams(
+        classScript(
+          'public onlyMe: boolean = false,',
+          `/**
+   * @event enter
+   * @event exit
+   */`,
+        ),
+      );
+      expect(events).toEqual(['enter', 'exit']);
+    });
+
+    it('is empty when there are no @event tags', () => {
+      const { events } = getScriptParams(classScript('public speed: number = 1,'));
+      expect(events).toEqual([]);
+    });
+  });
+
   describe('when parsing the other param types alongside a slider', () => {
     it('should keep parsing number, boolean, string and entity params', () => {
       const { params } = getScriptParams(

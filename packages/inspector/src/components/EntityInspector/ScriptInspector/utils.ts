@@ -92,6 +92,7 @@ export function mergeLayout(source: ScriptLayout, target: ScriptLayout): ScriptL
   }
 
   layout.actions = source.actions;
+  layout.events = source.events;
   layout.error = source.error;
 
   return layout;
