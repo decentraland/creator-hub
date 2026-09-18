@@ -199,6 +199,25 @@ function extractParamTooltips(
   return tooltips;
 }
 
+// A smart item declares the events its reactions can hook with `@event <name>` tags in the
+// class JSDoc — parsed here like @param/@action. Drives the inspector's Reactions section and
+// the AI reaction recipe, so the gate isn't a brittle per-item filename check.
+function extractEvents(comments?: { type: string; value: string }[] | undefined | null): string[] {
+  const events: string[] = [];
+  if (!comments) return events;
+  for (const comment of comments) {
+    if (comment.type !== 'CommentBlock') continue;
+    for (const rawLine of comment.value.split('\n')) {
+      const match = rawLine
+        .trim()
+        .replace(/^\*\s?/, '')
+        .match(/^@event\s+([A-Za-z0-9_-]+)/);
+      if (match && !events.includes(match[1])) events.push(match[1]);
+    }
+  }
+  return events;
+}
+
 function mergeTooltips(
   params: Record<string, ScriptParamUnion>,
   comments: { type: string; value: string }[] | undefined | null,
@@ -295,12 +314,15 @@ function extractParamsFromFunctionParams(
 export type ScriptParseResult = {
   params: Record<string, ScriptParamUnion>;
   actions: ScriptAction[];
+  // Event names the script's reactions can hook (from `@event` JSDoc tags).
+  events: string[];
   error?: string;
 };
 
 export function getScriptParams(content: string): ScriptParseResult {
   let params: Record<string, ScriptParamUnion> = {};
   const actions: ScriptAction[] = [];
+  let events: string[] = [];
 
   try {
     const ast = parse(content, {
@@ -323,6 +345,7 @@ export function getScriptParams(content: string): ScriptParseResult {
         params = extractParamsFromFunctionParams(restParams);
 
         mergeTooltips(params, functionDeclaration.leadingComments);
+        events = extractEvents(functionDeclaration.leadingComments);
 
         break;
       }
@@ -350,6 +373,13 @@ export function getScriptParams(content: string): ScriptParseResult {
           mergeTooltips(params, constructor.leadingComments);
         }
 
+        // `@event` tags may sit on the export statement, the class, or the constructor JSDoc.
+        events = extractEvents([
+          ...(statement.leadingComments ?? []),
+          ...(classDeclaration.leadingComments ?? []),
+          ...(constructor?.leadingComments ?? []),
+        ]);
+
         // extract @action tagged methods
         for (const member of classDeclaration.body.body) {
           if (member.type === 'ClassMethod' && member.kind === 'method') {
@@ -376,10 +406,10 @@ export function getScriptParams(content: string): ScriptParseResult {
       }
     }
 
-    return { params, actions };
+    return { params, actions, events };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : '';
     console.warn('Failed to parse script params:', error);
-    return { params, actions, error: errorMessage };
+    return { params, actions, events, error: errorMessage };
   }
 }
