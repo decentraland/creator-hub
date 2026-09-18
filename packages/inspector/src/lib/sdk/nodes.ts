@@ -7,7 +7,7 @@ import { CAMERA, PLAYER, ROOT } from './tree';
 
 type ReadonlyNode = DeepReadonlyObject<Node>;
 
-function toNode(node: ReadonlyNode): Node {
+export function toNode(node: ReadonlyNode): Node {
   return { ...node, children: [...node.children] };
 }
 

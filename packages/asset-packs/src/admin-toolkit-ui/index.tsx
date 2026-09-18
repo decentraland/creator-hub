@@ -7,7 +7,7 @@ import ReactEcs, {
   UiEntity,
   type ReactBasedUiSystem,
 } from '@dcl/react-ecs';
-import { type Entity, type IEngine, type PointerEventsSystem } from '@dcl/ecs';
+import { EntityState, type Entity, type IEngine, type PointerEventsSystem } from '@dcl/ecs';
 import {
   getComponents,
   type GetPlayerDataRes,
@@ -197,6 +197,8 @@ export function createAdminToolkitUI(
   // size wins, so the mobile size below only applies to scenes that set none.
   const uiRoot = engine.addEntity();
   initializeAdminData(engine, sdkHelpers, playersHelper).then(() => {
+    // The smart item may have been removed while the admin data was loading.
+    if (engine.getEntityState(uiRoot) === EntityState.Removed) return;
     console.log('createAdminToolkitUI - initialized');
     reactBasedUiSystem.addUiRenderer(
       uiRoot,
