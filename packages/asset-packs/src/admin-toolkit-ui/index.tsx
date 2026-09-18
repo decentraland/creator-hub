@@ -47,6 +47,9 @@ import { IconTab, Divider } from './Primitives';
 // mobile gets the zoom for free, including every child component's text.
 const MOBILE_UI_SCALE = 2;
 const BASE_VIRTUAL_UI_SIZE = { virtualWidth: 1920, virtualHeight: 1080 };
+// Stacks the toolkit above the scene's own renderers. The explorer reads a
+// renderer zIndex of 0 as "unset" (positional order), so this must be non-zero.
+const ADMIN_TOOLKIT_UI_Z_INDEX = 1000;
 
 function getVirtualUiSize() {
   return detectIsMobile()
@@ -187,12 +190,18 @@ export function createAdminToolkitUI(
   reactBasedUiSystem: ReactBasedUiSystem,
   sdkHelpers?: ISDKHelpers,
   playersHelper?: IPlayersHelper,
-) {
+): Entity {
+  // The renderer is shared with the scene, so the toolkit registers as an
+  // additional renderer keyed by its own entity: `setUiRenderer` here would
+  // replace the scene's main UI. In a shared renderer the main UI's virtual
+  // size wins, so the mobile size below only applies to scenes that set none.
+  const uiRoot = engine.addEntity();
   initializeAdminData(engine, sdkHelpers, playersHelper).then(() => {
     console.log('createAdminToolkitUI - initialized');
-    reactBasedUiSystem.setUiRenderer(
+    reactBasedUiSystem.addUiRenderer(
+      uiRoot,
       () => uiComponent(engine, pointerEventsSystem, sdkHelpers, playersHelper),
-      getVirtualUiSize(),
+      { ...getVirtualUiSize(), zIndex: ADMIN_TOOLKIT_UI_Z_INDEX },
     );
 
     // Background service: auto-open the panel to the DCL Cast tab when a
@@ -205,6 +214,7 @@ export function createAdminToolkitUI(
       () => dismissPresentation(),
     );
   });
+  return uiRoot;
 }
 
 function isAllowedAdmin(
