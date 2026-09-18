@@ -4,10 +4,15 @@ import { getComponents } from '@dcl/asset-packs/dist/definitions';
 
 export class Chest {
   private lastState: string = '';
+  // Reactions subscribe here (via getAllScriptInstances + onEvent); update() fans out to them.
+  private subs: Record<string, Array<(arg?: Entity) => void>> = {};
 
   /**
    * A chest that can be opened and closed by clicking it or by other smart items.
    * Its state is shared with other players, so everyone sees it open and close.
+   *
+   * @event open
+   * @event close
    *
    * @param openAnimation - Name of the animation clip in the chest's model that plays when it opens.
    * @param closeAnimation - Name of the animation clip in the chest's model that plays when it closes.
@@ -24,7 +29,7 @@ export class Chest {
     public openSound: string = 'open.mp3',
     public closeSound: string = 'close.mp3',
     public hoverText: string = 'Open / Close',
-    public idleAnimation: string = 'close',
+    public idleAnimation: string = '',
   ) {}
 
   /**
@@ -85,6 +90,12 @@ export class Chest {
       // playSound resets currentTime so the sound replays from the start
       AudioSource.playSound(this.entity, `${this.src}/${sound}`);
     }
+    for (const fn of this.subs[isOpen ? 'open' : 'close'] ?? []) fn();
+  }
+
+  /** Subscribe a reaction to this item's events ('open' / 'close'). */
+  onEvent(name: string, fn: (arg?: Entity) => void) {
+    (this.subs[name] ??= []).push(fn);
   }
 
   /**
