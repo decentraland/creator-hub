@@ -120,6 +120,89 @@ export function buildQuad(spec: QuadSpec): Document {
   return doc;
 }
 
+// An untextured quad, for cases about which files the mesh pass touches rather than about pixels.
+export function buildPlainMesh(nodeName: string): Document {
+  const doc = new Document();
+  const buffer = doc.createBuffer();
+  const primitive = doc
+    .createPrimitive()
+    .setAttribute(
+      'POSITION',
+      doc
+        .createAccessor('POSITION')
+        .setType('VEC3')
+        .setArray(new Float32Array([0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0]))
+        .setBuffer(buffer),
+    )
+    .setIndices(
+      doc
+        .createAccessor('indices')
+        .setType('SCALAR')
+        .setArray(new Uint16Array([0, 1, 2, 0, 2, 3]))
+        .setBuffer(buffer),
+    );
+  const node = doc.createNode(nodeName).setMesh(doc.createMesh(nodeName).addPrimitive(primitive));
+  doc.createScene('scene').addChild(node);
+  return doc;
+}
+
+const IDENTITY_MAT4 = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1];
+
+// An emote: the avatar armature as a skin, one clip driving a bone, and no mesh of its own —
+// the avatar supplies that at runtime. The missing mesh is the whole point of the fixture: it is
+// what makes the skin look unused to `prune`.
+export function buildEmote(clipName = 'Clip'): Document {
+  const doc = new Document();
+  const buffer = doc.createBuffer();
+
+  const hips = doc.createNode('Avatar_Hips');
+  const spine = doc.createNode('Avatar_Spine');
+  hips.addChild(spine);
+  const armature = doc.createNode('Armature').addChild(hips);
+  doc.createScene('scene').addChild(armature);
+
+  doc
+    .createSkin('Armature')
+    .addJoint(hips)
+    .addJoint(spine)
+    .setInverseBindMatrices(
+      doc
+        .createAccessor('ibm')
+        .setType('MAT4')
+        .setArray(new Float32Array(IDENTITY_MAT4.concat(IDENTITY_MAT4)))
+        .setBuffer(buffer),
+    );
+
+  const sampler = doc
+    .createAnimationSampler()
+    .setInput(
+      doc
+        .createAccessor('time')
+        .setType('SCALAR')
+        .setArray(new Float32Array([0, 1]))
+        .setBuffer(buffer),
+    )
+    .setOutput(
+      doc
+        .createAccessor('rotation')
+        .setType('VEC4')
+        .setArray(new Float32Array([0, 0, 0, 1, 0, 1, 0, 0]))
+        .setBuffer(buffer),
+    );
+  doc
+    .createAnimation(clipName)
+    .addSampler(sampler)
+    .addChannel(
+      doc
+        .createAnimationChannel()
+        .setTargetNode(hips)
+        .setTargetPath('rotation')
+        .setSampler(sampler),
+    );
+
+  return doc;
+}
+
 const writerIO = new NodeIO().registerExtensions(ALL_EXTENSIONS);
 
 export async function writeEmbeddedGlb(doc: Document, file: string): Promise<void> {

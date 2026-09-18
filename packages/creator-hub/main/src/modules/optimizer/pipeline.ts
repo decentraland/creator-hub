@@ -20,6 +20,7 @@ import {
 import { fixGlbAlignment, patchGlbImageURIs, readGlbJson, readGlbJsonFromFile } from './glb';
 import { SKIP_DIRS, measureFootprint, resolveImageUri, walkGlbs } from './scan';
 import { DEFAULT_DCLIGNORE, createIgnoreMatcher, parseDclignore } from './dclignore';
+import { isEmoteGlb } from './emote';
 import { runMeshPass } from './mesh';
 import {
   CATEGORY_PRIORITY,
@@ -536,6 +537,14 @@ async function processGlb(relPath: string, state: RunState): Promise<void> {
   }
 
   const rawBuf = await fs.readFile(glbAbsPath);
+  const glbJson = readGlbJson(rawBuf);
+
+  // An emote's rig would not survive the mesh pass, and it has nothing to optimize anyway.
+  if (isEmoteGlb(relPath, glbJson)) {
+    fileResult.status = 'skipped';
+    state.result.files.push(fileResult);
+    return;
+  }
 
   // Snapshot the global texture counters so we can attribute this file's share.
   const extractedBefore = state.result.texturesExtracted;
@@ -560,7 +569,6 @@ async function processGlb(relPath: string, state: RunState): Promise<void> {
     return;
   }
 
-  const glbJson = readGlbJson(rawBuf);
   for (const img of glbJson?.images ?? []) {
     if (typeof img.uri === 'string') state.externalBefore.add(resolveImageUri(glbAbsPath, img.uri));
   }
