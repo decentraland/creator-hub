@@ -4,10 +4,15 @@ import { getComponents } from '@dcl/asset-packs/dist/definitions';
 
 export class Door {
   private lastState: string = '';
+  // Reactions subscribe here (via getAllScriptInstances + onEvent); update() fans out to them.
+  private subs: Record<string, Array<(arg?: Entity) => void>> = {};
 
   /**
    * A door that can be opened and closed by clicking it or by other smart items.
    * Its state is shared with other players, so everyone sees it open and close.
+   *
+   * @event open
+   * @event close
    *
    * @param openAnimation - Name of the animation clip in the door's model that plays when it opens.
    * @param closeAnimation - Name of the animation clip in the door's model that plays when it closes.
@@ -19,12 +24,12 @@ export class Door {
   constructor(
     public src: string, // DO NOT REMOVE
     public entity: Entity, // DO NOT REMOVE
-    public openAnimation: string = 'open',
-    public closeAnimation: string = 'close',
+    public openAnimation: string = 'Open',
+    public closeAnimation: string = 'Close',
     public openSound: string = 'sound.mp3',
     public closeSound: string = 'sound.mp3',
     public hoverText: string = 'Open / Close',
-    public idleAnimation: string = 'main',
+    public idleAnimation: string = '',
   ) {}
 
   /**
@@ -85,6 +90,12 @@ export class Door {
       // playSound resets currentTime so the sound replays from the start
       AudioSource.playSound(this.entity, `${this.src}/${sound}`);
     }
+    for (const fn of this.subs[isOpen ? 'open' : 'close'] ?? []) fn();
+  }
+
+  /** Subscribe a reaction to this item's events ('open' / 'close'). */
+  onEvent(name: string, fn: (arg?: Entity) => void) {
+    (this.subs[name] ??= []).push(fn);
   }
 
   /**

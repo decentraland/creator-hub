@@ -86,26 +86,26 @@
   align-items: normal;
 }
 
-.ScriptInspector .TriggerAreaReactions {
+.ScriptInspector .ScriptReactions {
   display: flex;
   flex-direction: column;
   gap: 10px;
   width: 100%;
 }
 
-.ScriptInspector .TriggerAreaReactions .description {
+.ScriptInspector .ScriptReactions .description {
   font-size: 12px;
   line-height: 1.4;
   color: var(--text-color-secondary, #a1a1a1);
 }
 
-.ScriptInspector .TriggerAreaReactions .asks {
+.ScriptInspector .ScriptReactions .asks {
   display: flex;
   flex-direction: column;
   gap: 8px;
 }
 
-.ScriptInspector .TriggerAreaReactions .ReactionButton {
+.ScriptInspector .ScriptReactions .ReactionButton {
   display: flex;
   justify-content: flex-start;
   padding: 8px 10px;
@@ -117,13 +117,13 @@
   color: var(--text-color);
 }
 
-.ScriptInspector .TriggerAreaReactions .chips {
+.ScriptInspector .ScriptReactions .chips {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
 }
 
-.ScriptInspector .TriggerAreaReactions .ReactionChip {
+.ScriptInspector .ScriptReactions .ReactionChip {
   padding: 4px 10px;
   font-size: 12px;
   background: transparent;
@@ -133,7 +133,7 @@
   color: var(--text-color);
 }
 
-.ScriptInspector .TriggerAreaReactions .ReactionButton:hover,
-.ScriptInspector .TriggerAreaReactions .ReactionChip:hover {
+.ScriptInspector .ScriptReactions .ReactionButton:hover,
+.ScriptInspector .ScriptReactions .ReactionChip:hover {
   background: rgba(255, 255, 255, 0.05);
 }

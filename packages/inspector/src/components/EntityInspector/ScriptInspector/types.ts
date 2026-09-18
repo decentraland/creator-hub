@@ -17,6 +17,9 @@ export type ScriptInput = {
 export type ScriptLayout = {
   params: Record<string, ScriptParamUnion>;
   actions?: ScriptAction[];
+  // Event names the script's reactions can hook (from `@event` JSDoc tags). Drives the
+  // Reactions section; baked into a smart item's composite so it shows on placement.
+  events?: string[];
   error?: string;
 };
 

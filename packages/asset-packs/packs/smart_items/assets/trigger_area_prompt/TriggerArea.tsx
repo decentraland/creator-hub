@@ -15,14 +15,17 @@ const LAYER_MASK: Record<string, ColliderLayer> = {
 
 // The generic Trigger Area detector. It owns the SDK trigger callbacks (the SDK keeps only
 // ONE per (entity, event), so a reaction must NOT touch triggerAreaEventsSystem itself) and
-// exposes enter/leave/occupancy as instance methods. A reaction script on the SAME entity
-// finds this instance via getAllScriptInstances(entity) from '~sdk/script-utils' and subscribes
-// through onEnter/onExit/isInside — so the shared detector never changes per trigger, and each
-// reaction stays its own file.
+// fans out enter/exit to any number of reactions. A reaction script on the SAME entity finds
+// this instance via getAllScriptInstances(entity) from '~sdk/script-utils' and subscribes with
+// onEvent(name, fn) — so the shared detector never changes per trigger, and each reaction stays
+// its own file. The @event tags below are read by the editor to offer per-event reaction prompts.
+/**
+ * @event enter
+ * @event exit
+ */
 export class TriggerAreaDetector {
   private inside = new Set<Entity>();
-  private enterFns: Array<(who: Entity) => void> = [];
-  private exitFns: Array<(who: Entity) => void> = [];
+  private subs: Record<string, Array<(who?: Entity) => void>> = { enter: [], exit: [] };
 
   /**
    * Constructor / Inputs
@@ -63,20 +66,22 @@ export class TriggerAreaDetector {
     triggerAreaEventsSystem.onTriggerExit(this.entity, event => this.gone(event.trigger?.entity));
   }
 
-  /** Run `fn` when something enters. Anything already inside is replayed immediately. */
-  onEnter(fn: (who: Entity) => void) {
-    this.enterFns.push(fn);
-    for (const who of this.inside) fn(who);
-  }
-
-  /** Run `fn` when something leaves. */
-  onExit(fn: (who: Entity) => void) {
-    this.exitFns.push(fn);
+  /**
+   * Subscribe a reaction to 'enter' or 'exit'. Anything already inside replays as 'enter' so a
+   * late subscriber still fires. The callback receives the avatar/entity that moved.
+   */
+  onEvent(name: string, fn: (who?: Entity) => void) {
+    (this.subs[name] ??= []).push(fn);
+    if (name === 'enter') for (const who of this.inside) fn(who);
   }
 
   /** True while at least one accepted entity is inside — use for "while inside" logic. */
   isInside() {
     return this.inside.size > 0;
+  }
+
+  private emit(name: string, who: Entity) {
+    for (const fn of this.subs[name] ?? []) fn(who);
   }
 
   // The result carries a raw entity id (0 is the scene root, never an avatar). "my player" is
@@ -93,13 +98,13 @@ export class TriggerAreaDetector {
     const who = this.accepts(raw);
     if (who === undefined || this.inside.has(who)) return;
     this.inside.add(who);
-    for (const fn of this.enterFns) fn(who);
+    this.emit('enter', who);
   }
 
   private gone(raw?: number) {
     if (raw === undefined || raw === 0) return;
     const who = raw as Entity;
     if (!this.inside.delete(who)) return;
-    for (const fn of this.exitFns) fn(who);
+    this.emit('exit', who);
   }
 }
