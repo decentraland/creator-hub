@@ -12,9 +12,14 @@ thumbs.db
 .vscode/settings.json
 
 .env
+.env.*
 
 coverage/
 /build
+
+# Playwright E2E output
+test-results/
+playwright-report/
 
 npm-debug.log*
 yarn-debug.log*
@@ -39,3 +44,6 @@ settings.local.json
 
 # Claude agent verification screenshots
 .claude/screenshots/
+
+# Captured @live signed-in identity (never commit)
+packages/creator-hub/e2e/.auth/

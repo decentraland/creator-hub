@@ -1,5 +1,13 @@
 name: E2E
-on: [ workflow_call ]
+on:
+  workflow_call:
+    secrets:
+      E2E_PRIVATE_KEY:
+        required: false
+      E2E_NAME:
+        required: false
+      E2E_LAND:
+        required: false
 
 permissions:
   contents: read
@@ -45,7 +53,7 @@ jobs:
       # complete output set — no hashed asset files to miss (unlike the past bundle.css bug).
       - name: Cache inspector dev bundle
         id: inspector-dev-bundle
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: |
             packages/inspector/public/bundle.js
@@ -109,8 +117,22 @@ jobs:
         with:
           include-creator-hub: 'true'
 
+      - name: install playwright chromium
+        run: cd packages/creator-hub && npx playwright install chromium
+
       - name: e2e
         run: make test-creator-hub-e2e-ci
         env:
           NODE_OPTIONS: "--max-old-space-size=8192"
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
           E2E_CONTENT_URL: https://builder-items.decentraland.zone
+
+      - name: e2e live tier (post-merge and manual dispatch only; reuses the app packaged above)
+        if: github.event_name != 'pull_request'
+        run: make test-creator-hub-e2e-ci-live
+        env:
+          NODE_OPTIONS: "--max-old-space-size=8192"
+          E2E_CONTENT_URL: https://builder-items.decentraland.zone
+          E2E_PRIVATE_KEY: ${{ secrets.E2E_PRIVATE_KEY }}
+          E2E_NAME: ${{ secrets.E2E_NAME }}
+          E2E_LAND: ${{ secrets.E2E_LAND }}

@@ -286,6 +286,14 @@
           "title": "No tienes ningún mundo disponible",
           "description": "<b>Obtén un mundo gratis cuando tengas un NOMBRE</b>.<br></br>Cada NOMBRE te dará acceso a un mundo. Puedes tener tantos como quieras.",
           "action": "Solicitar un nuevo Nombre"
+        },
+        "loading_names": {
+          "title": "Buscando tus mundos..."
+        },
+        "names_error": {
+          "title": "No pudimos cargar tus mundos",
+          "description": "Hubo un problema al conectar con Decentraland. Por favor, verifica tu conexión e inténtalo de nuevo.",
+          "action": "Inténtalo de nuevo"
         }
       },
       "land": {

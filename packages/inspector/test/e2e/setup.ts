@@ -6,6 +6,16 @@ let browser: Browser;
 let page: Page;
 let isSetup = false;
 
+/** Per-action delay: `E2E_SLOWMO` overrides when set, else the CI-aware default. */
+function resolveSlowMo() {
+  const override = process.env.E2E_SLOWMO;
+  if (override !== undefined && override !== '') {
+    const parsed = Number.parseInt(override, 10);
+    if (!Number.isNaN(parsed)) return parsed;
+  }
+  return process.env.CI ? 100 : 50;
+}
+
 beforeAll(async () => {
   if (isSetup) {
     return;
@@ -29,7 +39,7 @@ beforeAll(async () => {
 
   browser = await chromium.launch({
     headless: process.env.CI ? true : false,
-    slowMo: process.env.CI ? 100 : 50, // Increase slowMo for CI
+    slowMo: resolveSlowMo(),
     timeout: 60_000, // slow shared runners can exceed the 30s launch default
     args: [
       '--disable-dev-shm-usage',

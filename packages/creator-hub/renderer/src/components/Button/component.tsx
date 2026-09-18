@@ -36,13 +36,17 @@ export function ButtonGroup({ extra, ...props }: GroupProps) {
 
   return (
     <>
-      <DclButtonGroup variant="contained">
+      <DclButtonGroup
+        variant="contained"
+        data-testid="button-group"
+      >
         <Button {...props} />
         <Button
           className="extra-button"
           color={props.color}
           size="small"
           disabled={props.disabled}
+          data-testid="button-group-extra-button"
           onClick={handleToggle}
         >
           <ArrowDropDownIcon />
@@ -53,6 +57,7 @@ export function ButtonGroup({ extra, ...props }: GroupProps) {
             onClose={handleClose}
             anchorEl={anchorEl}
             placement="bottom-end"
+            data-testid="button-group-popper"
           >
             {extra}
           </Popper>
