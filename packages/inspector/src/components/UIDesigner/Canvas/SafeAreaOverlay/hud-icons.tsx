@@ -66,10 +66,11 @@ const Joystick: React.FC = () => (
 const Jump: React.FC = () => (
   <svg {...svg}>
     <Disc />
-    <g {...line}>
-      <path d="M7.5 12.5 L12 8 L16.5 12.5" />
-      <path d="M7.5 16 L12 11.5 L16.5 16" />
-    </g>
+    <path
+      d="M6.5 14 L12 8 L17.5 14"
+      {...line}
+      strokeWidth={2}
+    />
   </svg>
 );
 
@@ -147,6 +148,28 @@ const Pointer: React.FC = () => (
   </svg>
 );
 
+/** The center reticle: a thin plus, no disc. */
+const Crosshair: React.FC = () => (
+  <svg {...svg}>
+    <g {...line}>
+      <path d="M12 7 V17" />
+      <path d="M7 12 H17" />
+    </g>
+  </svg>
+);
+
+/** The overflow toggle: a plus in a disc. */
+const Plus: React.FC = () => (
+  <svg {...svg}>
+    <Disc />
+    <path
+      d="M12 7.5 V16.5 M7.5 12 H16.5"
+      {...line}
+      strokeWidth={2}
+    />
+  </svg>
+);
+
 const ICONS: Record<HudKind, React.FC> = {
   joystick: Joystick,
   jump: Jump,
@@ -163,6 +186,12 @@ const ICONS: Record<HudKind, React.FC> = {
     />
   ),
   pointer: Pointer,
+  crosshair: Crosshair,
+  plus: Plus,
+  action1: () => <KeyIcon label="1" />,
+  action2: () => <KeyIcon label="2" />,
+  action3: () => <KeyIcon label="3" />,
+  action4: () => <KeyIcon label="4" />,
 };
 
 export const HudIcon: React.FC<{ kind: HudKind }> = ({ kind }) => {

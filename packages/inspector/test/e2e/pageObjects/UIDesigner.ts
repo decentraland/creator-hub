@@ -5,6 +5,9 @@ declare const page: Page;
 const RAIL = '.ui-designer-left-rail';
 const TREE = '.ui-designer-nodetree';
 const ROOT_ROW = '.ui-designer-code-root-row';
+const MOBILE_HUD_ROW = '.ui-designer-mobile-hud-row';
+const MOBILE_HUD_PANEL = '.ui-designer-mobile-hud-panel';
+const HUD_GUIDE = '.ui-designer-hud-guide';
 
 const exactly = (text: string) => new RegExp(`^${text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`);
 
@@ -12,6 +15,9 @@ class UIDesignerPageObject {
   readonly railSelector = RAIL;
   readonly treeSelector = TREE;
   readonly rootRowSelector = ROOT_ROW;
+  readonly mobileHudRowSelector = MOBILE_HUD_ROW;
+  readonly mobileHudPanelSelector = MOBILE_HUD_PANEL;
+  readonly hudGuideSelector = HUD_GUIDE;
   readonly emptyStateSelector = '.ui-designer-canvas-empty .ui-designer-empty-state';
 
   /** Open 2D mode and wait for the rail to mount. */
@@ -119,6 +125,84 @@ class UIDesignerPageObject {
     const items = await page.locator('role=menuitem').allTextContents();
     await page.keyboard.press('Escape');
     return items.map(t => t.trim());
+  }
+
+  async isMobileHudRowVisible() {
+    return (await page.locator(`${RAIL} ${MOBILE_HUD_ROW}`).count()) > 0;
+  }
+
+  /** Click a GUI row by name to select it. */
+  async selectRoot(name: string) {
+    await this.rootRow(name).click();
+  }
+
+  async isRootActive(name: string) {
+    return (await this.rootRow(name).evaluate(el => el.classList.contains('is-active'))) === true;
+  }
+
+  async selectMobileHud() {
+    await page.locator(`${RAIL} ${MOBILE_HUD_ROW}`).click();
+    await page.locator(MOBILE_HUD_PANEL).waitFor({ state: 'attached', timeout: 10_000 });
+  }
+
+  async isMobileHudPanelVisible() {
+    return (await page.locator(MOBILE_HUD_PANEL).count()) > 0;
+  }
+
+  /** How many GUI rows show as selected (should be 0 while MobileHUD is selected). */
+  async activeRootCount() {
+    return page.locator(`${RAIL} ${ROOT_ROW}.is-active`).count();
+  }
+
+  /** How many bottom-bar palette cards are draggable (0 while MobileHUD is selected). */
+  async enabledPaletteCount() {
+    return page.locator('.ui-designer-palette-card:not(.disabled)').count();
+  }
+
+  async toggleHudGlobal(label: 'Hide Joystick' | 'Hide Crosshair' | 'Hide Input Actions') {
+    await page.locator(`${MOBILE_HUD_PANEL} [aria-label="${label}"]`).click();
+  }
+
+  async isHudGlobalChecked(label: 'Hide Joystick' | 'Hide Crosshair' | 'Hide Input Actions') {
+    return page.locator(`${MOBILE_HUD_PANEL} [aria-label="${label}"]`).isChecked();
+  }
+
+  async setMainAction(action: string) {
+    await page.locator(`${MOBILE_HUD_PANEL} [aria-label="Set ${action} as Main"]`).click();
+  }
+
+  async mainAction() {
+    const rows = page.locator(
+      `${MOBILE_HUD_PANEL} .ui-designer-mobile-hud-action[data-main="true"]`,
+    );
+    return (await rows.count()) > 0 ? rows.first().getAttribute('data-action') : null;
+  }
+
+  /** Toggle a button's visibility via its eye control. */
+  async toggleActionHidden(action: string) {
+    await page
+      .locator(`${MOBILE_HUD_PANEL} .ui-designer-mobile-hud-action[data-action="${action}"]`)
+      .locator(`[aria-label="Hide ${action}"], [aria-label="Show ${action}"]`)
+      .click();
+  }
+
+  /** The action drawn as the big Main button in the canvas preview (`data-main`). */
+  async canvasMainAction() {
+    const main = page.locator('.ui-designer-mobile-hud-guide[data-main="true"][data-action]');
+    return (await main.count()) > 0 ? main.first().getAttribute('data-action') : null;
+  }
+
+  /** The `data-kind`s of the buttons/crosshair currently drawn in the read-only preview. */
+  async hudGuideKinds() {
+    return page
+      .locator(`${HUD_GUIDE}[data-kind]`)
+      .evaluateAll(els => els.map(el => el.getAttribute('data-kind') ?? ''));
+  }
+
+  async isDeviceToggleDisabled() {
+    const desktop = await page.locator('[aria-label="Desktop preview"]').isDisabled();
+    const mobile = await page.locator('[aria-label="Mobile preview"]').isDisabled();
+    return desktop && mobile;
   }
 
   async renameNode(label: string, next: string) {
