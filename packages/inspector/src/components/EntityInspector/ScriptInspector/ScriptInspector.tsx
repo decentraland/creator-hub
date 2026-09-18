@@ -53,7 +53,7 @@ const TRIGGER_DETECTOR = /(^|\/)TriggerArea\.tsx$/i;
 const TRIGGER_ASKS: { label: string; build: (label: string) => string }[] = [
   { label: 'Play a sound', build: l => `Play a sound when a player enters ${l}` },
   { label: 'Show a message', build: l => `Show a message when a player enters ${l}` },
-  { label: 'Give points', build: l => `Give the player points when they enter ${l}` },
+  { label: 'Score points', build: l => `Score points when a player enters ${l}` },
   { label: 'On leaving', build: l => `Do something when a player leaves ${l}` },
 ];
 
@@ -135,7 +135,7 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
 
   const getScriptName = useCallback((path: string) => {
     const fileName = path.split('/').pop() || path;
-    return fileName.replace(/\.(ts|js)$/, '');
+    return fileName.replace(/\.(tsx?|jsx?)$/, '');
   }, []);
 
   const handleRemoveScript = useCallback(
@@ -516,8 +516,8 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
         >
           <div className="TriggerAreaReactions">
             <div className="description">
-              Describe what should happen — the assistant writes a reaction script and attaches it
-              here. Each area keeps its own reaction.
+              Describe what should happen when entering or leaving. The AI assistant writes a script
+              and attaches it here.
             </div>
             <div className="asks">
               <Button
