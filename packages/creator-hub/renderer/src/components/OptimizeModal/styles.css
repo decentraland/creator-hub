@@ -148,8 +148,11 @@
   gap: 12px;
 }
 
+/* The dropdowns below are outlined selects, whose floating label sits 9px ABOVE the field box
+   and so overflows into whatever precedes it — more than `.options`' 2px gap leaves free. */
 .OptimizeModal .sizes-title {
   margin-top: 8px;
+  margin-bottom: 10px;
   opacity: 0.7;
 }
 
