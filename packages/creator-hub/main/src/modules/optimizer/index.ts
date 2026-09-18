@@ -95,6 +95,22 @@ export function run(projectPath: string, options: OptimizeOptions): Promise<Opti
   return exclusive('start a run', () => runWorker(projectPath, options));
 }
 
+// How much of the worker's stderr to put in front of the user. Native module loaders print a
+// long "possible solutions" block after the line that matters, so the tail is what carries the
+// reason; the full text goes to the log either way.
+const STDERR_TAIL_LINES = 10;
+
+// A worker that dies before `main()` gets to run — a native module that fails to load, an OOM
+// kill — writes no error line, so all `exitError` says is "exited with code=1". That is not
+// enough to diagnose anything from a bug report, and the reason is sitting on stderr.
+function describeExit(exitError: Error, stderr: Buffer): string {
+  const text = stderr.toString('utf8').trim();
+  if (!text) return exitError.message;
+  log.error(`[Optimizer] worker stderr:\n${text}`);
+  const tail = text.split(/\r?\n/).slice(-STDERR_TAIL_LINES).join('\n');
+  return `${exitError.message}\n${tail}`;
+}
+
 async function runWorker(projectPath: string, options: OptimizeOptions): Promise<OptimizeResult> {
   const info = await getToolsInfo();
   if (info.status !== 'ready') throw new Error('The optimizer tools are not installed yet.');
@@ -131,11 +147,13 @@ async function runWorker(projectPath: string, options: OptimizeOptions): Promise
   child.process.stdout?.on('data', (chunk: Buffer) => live.push(chunk));
 
   let stdout: Buffer;
+  let stderr = Buffer.alloc(0);
   let exitError: Error | null = null;
   try {
     stdout = await child.wait();
   } catch (error) {
     stdout = error instanceof StreamError ? error.stdout : Buffer.alloc(0);
+    stderr = error instanceof StreamError ? error.stderr : Buffer.alloc(0);
     exitError = error instanceof Error ? error : new Error(String(error));
   }
 
@@ -152,7 +170,7 @@ async function runWorker(projectPath: string, options: OptimizeOptions): Promise
 
   // The worker's own error line says more than "exited with code 1", so it wins.
   if (failure) throw new Error(failure);
-  if (exitError) throw exitError;
+  if (exitError) throw new Error(describeExit(exitError, stderr));
   if (!result) throw new Error('The optimizer worker exited without a result.');
   return result;
 }

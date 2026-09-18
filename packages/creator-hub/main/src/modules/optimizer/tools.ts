@@ -117,6 +117,47 @@ export async function getToolsInfo(): Promise<OptimizeToolsInfo> {
   };
 }
 
+// Every sharp build ships its libvips as `libvips-42.dll` / `libvips-cpp-<ver>.dll`. Windows
+// resolves a DLL by base name once per process, so a second sharp in the tree gets handed the
+// first copy's libvips and dies on `ERR_DLOPEN_FAILED: The specified procedure could not be
+// found`. npm nests one whenever a transitive range (`@gltf-transform/functions` ->
+// `ndarray-pixels`) disagrees with the pin in optimizer-tools.package.json. It fails at import,
+// before the worker can report anything, so catch it here instead.
+async function findNestedSharp(dir: string): Promise<string | null> {
+  const root = path.join(dir, 'node_modules');
+  let entries: string[];
+  try {
+    entries = await fs.readdir(root);
+  } catch {
+    return null;
+  }
+  // one level for plain names, two for scopes — anything deeper needs a duplicate above it to
+  // nest under, which this same scan already catches.
+  for (const entry of entries) {
+    const dirs = entry.startsWith('@')
+      ? (await fs.readdir(path.join(root, entry)).catch(() => [])).map(scoped =>
+          path.join(root, entry, scoped),
+        )
+      : [path.join(root, entry)];
+    for (const pkgDir of dirs) {
+      const nested = path.join(pkgDir, 'node_modules', 'sharp');
+      if (await exists(path.join(nested, 'package.json'))) return nested;
+    }
+  }
+  return null;
+}
+
+async function assertSingleSharp(dir: string): Promise<void> {
+  const nested = await findNestedSharp(dir);
+  if (nested) {
+    throw new Error(
+      `The optimizer tools installed a second copy of sharp at ${nested}. Align the pinned ` +
+        'sharp version with the one its dependents require, then re-run ' +
+        '`npm run lock:optimizer-tools`.',
+    );
+  }
+}
+
 export async function installTools(onProgress: (message: string) => void): Promise<void> {
   const dir = getToolsDir();
   await fs.mkdir(dir, { recursive: true });
@@ -159,6 +200,7 @@ export async function installTools(onProgress: (message: string) => void): Promi
       throw new Error(`The optimizer tools install did not include ${binding}`);
     }
   }
+  await assertSingleSharp(dir);
 
   await fs.writeFile(
     path.join(dir, INSTALLED_MARKER),
