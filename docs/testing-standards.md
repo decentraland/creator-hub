@@ -239,7 +239,7 @@ below), because a catalyst rejection is a transient infra blip on an atomic, ide
 ### `env=dev` must be on the login URL *and* its `redirectTo`
 
 The app opens `https://decentraland.zone/auth/requests/<id>?…`, but `decentraland.zone` is behind
-Cloudflare bot protection, so the setup rewrites it to `decentraland.org` (`liveAuthDappUrl`). The
+Cloudflare bot protection, so the setup rewrites it to `decentraland.org` (`authDappUrl`). The
 dapp immediately redirects `/auth/requests/<id>` to `/auth/login?redirectTo=…` and **drops any
 parameter it does not recognise on the way**. Put `env=dev` only on the request URL and the login
 page runs in mainnet mode: it `POST`s the identity to `auth-api.decentraland.org`, which an app
@@ -250,7 +250,7 @@ even stored.
 
 ### Sign the auth dapp in with an injected provider, not a wallet extension
 
-`installLiveWallet` (`e2e/helpers/live-wallet.ts`) injects an EIP-1193 provider that announces
+`setupTestWallet` (`e2e/helpers/wallet-setup.ts`) injects an EIP-1193 provider that announces
 itself over EIP-6963 as MetaMask, which is what makes the dapp's "Continue with MetaMask" button
 appear. `personal_sign` / `eth_signTypedData_v4` are forwarded through `page.exposeFunction` to
 viem's `privateKeyToAccount` in the test process, so signatures are real and `E2E_PRIVATE_KEY`
@@ -270,11 +270,10 @@ key in the page and cannot produce a signature a catalyst would accept.
 
 `e2e/specs/publish-to-world.spec.ts` and `publish-to-land.spec.ts` create a scene and run a
 genuine `.zone` deployment with the `.env.e2e` wallet, then stop at the point the content server has
-**accepted** it. Acceptance has three possible renderings and the spec waits for whichever arrives:
+**accepted** it. Acceptance has two possible renderings and the spec waits for whichever arrives:
 
 ```ts
 '[data-testid="publish-modal-deploy-step-uploading"][data-state="complete"]',
-'[data-testid="publish-modal-deploy-deploying-jump"]',
 '[data-testid="publish-modal-deploy-success"]',
 ```
 

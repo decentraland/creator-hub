@@ -12,27 +12,29 @@ export async function actUntil(
   verify: () => Promise<unknown>,
   { retries = 3, gap = 150 }: RetryOptions = {},
 ): Promise<void> {
-  let lastError: unknown;
+  let lastActionError: unknown;
+  let lastVerifyError: unknown;
   for (let attempt = 0; attempt <= retries; attempt++) {
     try {
       await action();
     } catch (error) {
-      lastError = error;
+      lastActionError = error;
     }
     try {
       await verify();
       return;
     } catch (error) {
-      lastError = error;
+      lastVerifyError = error;
     }
     if (attempt < retries) {
       await sleep(gap * (attempt + 1));
     }
   }
+  const describe = (error: unknown) =>
+    error instanceof Error ? error.message : String(error ?? 'none');
   throw new Error(
-    `actUntil: outcome not observed after ${retries + 1} attempt(s): ${
-      lastError instanceof Error ? lastError.message : String(lastError)
-    }`,
+    `actUntil: outcome not observed after ${retries + 1} attempt(s). ` +
+      `action: ${describe(lastActionError)}; verify: ${describe(lastVerifyError)}`,
   );
 }
 
