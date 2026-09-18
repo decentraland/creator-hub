@@ -33,6 +33,7 @@ import { MorePage } from '/@/components/MorePage';
 import { VideosPage } from '/@/components/VideosPage';
 import { DocsPage } from '/@/components/DocsPage';
 import { Snackbar } from '/@/components/Snackbar';
+import { ScrollToTop } from '/@/components/ScrollToTop';
 
 import { store } from '#store';
 
@@ -101,6 +102,7 @@ if (isAiChatWindow) {
           <ThemeProvider theme={dark}>
             <main className="Main">
               <Router>
+                <ScrollToTop />
                 <AuthProvider>
                   <Routes>
                     <Route
