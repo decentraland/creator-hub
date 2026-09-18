@@ -126,6 +126,13 @@ jobs:
           NODE_OPTIONS: "--max-old-space-size=8192"
           CSC_IDENTITY_AUTO_DISCOVERY: 'false'
           E2E_CONTENT_URL: https://builder-items.decentraland.zone
+
+      - name: e2e live tier (post-merge and manual dispatch only; reuses the app packaged above)
+        if: github.event_name != 'pull_request'
+        run: make test-creator-hub-e2e-ci-live
+        env:
+          NODE_OPTIONS: "--max-old-space-size=8192"
+          E2E_CONTENT_URL: https://builder-items.decentraland.zone
           E2E_PRIVATE_KEY: ${{ secrets.E2E_PRIVATE_KEY }}
           E2E_NAME: ${{ secrets.E2E_NAME }}
           E2E_LAND: ${{ secrets.E2E_LAND }}

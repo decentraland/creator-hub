@@ -152,6 +152,9 @@ test-creator-hub-e2e:
 test-creator-hub-e2e-ci:
 	cd $(CH_PATH); npm run test:e2e:ci
 
+test-creator-hub-e2e-ci-live:
+	cd $(CH_PATH); npm run test:e2e:ci:live
+
 format:
 	npm run format
 
