@@ -143,7 +143,10 @@ per-test construction is free.
 Each tier maps to an npm script (all drive the packaged app, so they build/package first):
 `test:e2e` runs `@offline` + `@live` locally (`npm run compile` then Playwright); `test:e2e:ci` is
 the CI form (packages with `electron-builder --dir` but skips the Vite rebuild that the
-`download-build` action already provides); `test:e2e:live` runs only `@live`. **`@scene` is
+`download-build` action already provides) and runs **`@offline` only**; `test:e2e:ci:live` runs
+`@live` against the app `test:e2e:ci` already packaged, and `e2e.yml` gates that step on
+`github.event_name != 'pull_request'` — real `.zone` deploys must never run on a PR, and the
+offline step is given no secrets at all; `test:e2e:live` runs only `@live` locally. **`@scene` is
 deliberately not in those scripts** — creating a scene runs a live `npm install`, so it can fail on
 registry outages rather than real regressions, which would make it a flaky PR gate. Run it on demand
 with `test:e2e:scene`.
@@ -216,6 +219,10 @@ The class carries no styling — it exists purely as this signal, which makes it
 ### Run each E2E spec file in its own forked process
 
 `vitest.e2e.config.js` uses `pool: 'forks'` with `singleFork: false` **and** `fileParallelism: false`: each spec file runs in a fresh forked process, one at a time. Do not set `singleFork: true` — sharing one long-lived worker across all files accumulates Chromium/Babylon native memory until the CI runner kills the process. The signature is `Error: Worker exited unexpectedly` at a _moving_ spec-file boundary (every test that ran passed; no V8 heap-OOM message) — it reads like flakiness but is memory exhaustion, so raising `--max-old-space-size` won't help. A fresh process per file reclaims memory; sequential execution keeps only one headless Chromium alive at a time.
+
+### E2E helpers have no unit-test home
+
+`vitest.config.js` includes only `src/**/*.spec.ts(x)`, and `vitest.e2e.config.js` includes `test/e2e/**/*.spec.ts` — whose `setupFiles` launch Chromium and need a dev server. A "unit" spec placed beside a pure-logic helper in `test/e2e/utils/` is therefore NOT picked up by the unit runner; it is swept into the browser suite and fails in `beforeAll`. Check such a helper by bundling the real module and running it directly — `npx esbuild <driver>.ts --bundle --platform=node --format=esm --outfile=/tmp/check.mjs && node /tmp/check.mjs` — rather than adding a spec that quietly changes suite. A helper that genuinely deserves a standing spec belongs under `src/`, not `test/e2e/utils/`.
 
 ### The `@live` tier signs in once, then seeds `localStorage`
 
