@@ -131,6 +131,15 @@ class UIDesignerPageObject {
     return (await page.locator(`${RAIL} ${MOBILE_HUD_ROW}`).count()) > 0;
   }
 
+  /** Click a GUI row by name to select it. */
+  async selectRoot(name: string) {
+    await this.rootRow(name).click();
+  }
+
+  async isRootActive(name: string) {
+    return (await this.rootRow(name).evaluate(el => el.classList.contains('is-active'))) === true;
+  }
+
   async selectMobileHud() {
     await page.locator(`${RAIL} ${MOBILE_HUD_ROW}`).click();
     await page.locator(MOBILE_HUD_PANEL).waitFor({ state: 'attached', timeout: 10_000 });

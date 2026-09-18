@@ -1420,12 +1420,6 @@ const CanvasComponent: React.FC = () => {
                           reference
                         />
                       ) : null}
-                      <div
-                        className="ui-designer-canvas-root"
-                        style={{ ...rootStyle, zIndex: 901 }}
-                      >
-                        {tree ? <CanvasNodeView node={tree} /> : null}
-                      </div>
                       {safeAreasVisible && !fixedRoot ? (
                         <SafeAreaOverlay
                           width={screen.width}
@@ -1436,6 +1430,12 @@ const CanvasComponent: React.FC = () => {
                           showHud={false}
                         />
                       ) : null}
+                      <div
+                        className="ui-designer-canvas-root"
+                        style={{ ...rootStyle, zIndex: 901 }}
+                      >
+                        {tree ? <CanvasNodeView node={tree} /> : null}
+                      </div>
                     </>
                   )}
                 </div>

@@ -18,6 +18,8 @@ const CONFIGURABLE_KINDS = [
   'action4',
 ];
 
+const ROOT = 'MainUI';
+
 const joystickGuide = () => page.locator(`${UIDesigner.hudGuideSelector}[data-kind="joystick"]`);
 
 describe('UI Designer MobileHUD', () => {
@@ -98,5 +100,17 @@ describe('UI Designer MobileHUD', () => {
     for (const action of ['IA_PRIMARY', 'IA_SECONDARY', 'IA_ACTION_4']) {
       await UIDesigner.toggleActionHidden(action);
     }
+  });
+
+  test('re-select the empty GUI from MobileHUD (no nodes to fall back on)', async () => {
+    await UIDesigner.selectMobileHud();
+    await expect(UIDesigner.isMobileHudPanelVisible()).resolves.toBe(true);
+
+    await UIDesigner.selectRoot(ROOT);
+
+    await page
+      .locator(UIDesigner.mobileHudPanelSelector)
+      .waitFor({ state: 'detached', timeout: 10_000 });
+    await expect(UIDesigner.isRootActive(ROOT)).resolves.toBe(true);
   });
 });

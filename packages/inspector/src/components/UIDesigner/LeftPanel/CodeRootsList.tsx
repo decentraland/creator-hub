@@ -207,7 +207,7 @@ export const CodeRootsList: React.FC<{ filter?: string }> = ({ filter = '' }) =>
   const handleSelect = useCallback(
     (root: CodeRoot) => {
       if (root.filename !== filename) void selectRootFile(root.filename);
-      else if (parsed?.root) dispatch(selectNode({ node: parsed.root.entity }));
+      else dispatch(selectNode({ node: parsed?.root ? parsed.root.entity : null }));
     },
     [filename, parsed, dispatch],
   );

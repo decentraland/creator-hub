@@ -190,25 +190,30 @@ the right rail becomes the MobileHUD editor.
   mobile frame while MobileHUD is selected (preview shows even on an empty scene)
   and draws the device safe-area outline, which shares the box's rect so the
   buttons read as inside it.
-- **The editing canvas layers the mobile HUD between the surface and the nodes.**
-  While editing a GUI on the mobile preview, `MobileHudPreview` renders as a
-  dimmed reference (`--reference`, `z-index: 890`, gated on the existing
-  `hudVisible`/game-controller toggle) so creators design around the touch
-  controls. The usable-area fill moved out of `.ui-designer-canvas-root` into a
-  separate `.ui-designer-canvas-rootbg` backdrop **below** the reference, and the
-  now-transparent `canvas-root` sits at `z-index: 901` **above** it — so the
-  buttons read over the empty canvas while authored nodes occlude them (a single
-  `z-index` on `canvas-root` couldn't do this: its fill and its child nodes are
-  one stacking box). The reference and MobileHUD mode share the same
-  `MobileHudPreview`, so positions stay identical; MobileHUD mode shows the
-  controls solid and alone. The older `SafeAreaOverlay` HUD guides
-  (`MOBILE_SAFE_AREA.hud` + the profile/chat/compass/counter icons) are no longer
-  drawn — `showHud` is always false — leaving `SafeAreaOverlay` to render only the
-  safe-area outline.
+- **One preview component, two modes.** Both HUDs are `MobileHudPreview` (same
+  box-relative layout inside the Device Safe Area, so positions never differ). In
+  MobileHUD mode it renders the editable `TouchScreenControls` buttons alone; while
+  editing a GUI it renders with `reference` — the same buttons **plus** the
+  non-configurable client chrome (`CHROME`: profile + chat top-left, emote
+  bottom-left) so creators design around the real on-screen HUD. `SafeAreaOverlay`
+  is now only the safe-area outline (`showHud` is always false); its
+  `MOBILE_SAFE_AREA.hud` guide set is dormant.
+- **The editing canvas layers the reference HUD between the surface and the nodes.**
+  The usable-area fill moved out of `.ui-designer-canvas-root` into a separate
+  `.ui-designer-canvas-rootbg` backdrop; the reference `MobileHudPreview` sits at
+  `z-index: 890` and the now-transparent `canvas-root` at `z-index: 901` **above**
+  it — so the reference HUD reads over the empty canvas while authored nodes
+  occlude it (a single `z-index` on `canvas-root` couldn't do this: its fill and
+  its child nodes are one stacking box).
 - **Icons are scene images only.** The Custom Icon picker reuses
   `FileUploadField` over `useAssetOptions(ACCEPTED_FILE_TYPES.image)` — the SDK
   icon field is a scene-content texture `src`, so no external URL, avatar, or
   video is offered.
+- **Custom icons re-resolve on catalog change.** A synchronously-published config
+  (unlike a react-ecs source round-trip, which re-mounts the node after the import
+  finishes) can reference a just-imported image before its bytes exist, so
+  `useAssetUrl` re-resolves when the asset lands in `selectAssetCatalog` —
+  otherwise the icon only appears after a hide/show remount.
 
 ## Canvas framing (artboard vs screen) and overflow
 

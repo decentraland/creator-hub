@@ -38,6 +38,13 @@ const JOYSTICK: Slot = { kind: 'joystick', x: 0.1, y: 0.76, size: 0.2715 };
 const CROSSHAIR: Slot = { kind: 'crosshair', x: 0.5, y: 0.5, size: 0.08 };
 const PLUS: Slot = { kind: 'plus', x: 0.971, y: 0.607, size: 0.1263 };
 
+/** Non-configurable client chrome, shown only in the editing reference (profile/chat top-left, emote bottom-left). */
+const CHROME: Slot[] = [
+  { kind: 'profile', x: 0.035, y: 0.075, size: 0.11 },
+  { kind: 'chat', x: 0.12, y: 0.075, size: 0.09 },
+  { kind: 'emote', x: 0.035, y: 0.93, size: 0.11 },
+];
+
 const Guide: React.FC<{
   kind: HudKind;
   slot: Slot;
@@ -79,7 +86,7 @@ const Guide: React.FC<{
   );
 };
 
-/** Read-only mobile-controls view from the config; `reference` dims it below the authored nodes. */
+/** Read-only mobile-controls view from the config; `reference` adds client chrome and drops it below the nodes. */
 export const MobileHudPreview: React.FC<{
   width: number;
   height: number;
@@ -111,6 +118,16 @@ export const MobileHudPreview: React.FC<{
       style={{ left: boxLeft, top: boxTop, width: boxW, height: boxH }}
       aria-hidden="true"
     >
+      {reference
+        ? CHROME.map(slot => (
+            <Guide
+              key={slot.kind}
+              kind={slot.kind}
+              slot={slot}
+              {...box}
+            />
+          ))
+        : null}
       {!config.hideJoystick ? (
         <Guide
           kind={JOYSTICK.kind}
