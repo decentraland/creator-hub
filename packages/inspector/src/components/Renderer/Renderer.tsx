@@ -4,7 +4,7 @@ import { useDrop } from 'react-dnd';
 import cx from 'classnames';
 import type { Entity, Vector3Type } from '@dcl/ecs';
 
-import { DIRECTORY } from '../../lib/data-layer/host/fs-utils';
+import { DIRECTORY, withAssetDir } from '../../lib/data-layer/host/fs-utils';
 import { useAppSelector } from '../../redux/hooks';
 import type {
   CatalogAssetDrop,
@@ -20,13 +20,20 @@ import { setViewportElement } from '../../lib/logic/viewport-rect';
 import { snapPositionValue } from '../../lib/babylon/decentraland/snap-manager';
 import { ROOT } from '../../lib/sdk/tree';
 import type { CustomAsset } from '../../lib/logic/catalog';
-import { isGround, isSmart, type Asset } from '../../lib/logic/catalog';
+import { getAssetById, isGround, isSmart, type Asset } from '../../lib/logic/catalog';
 import { useImportAssetToFilesystem } from '../../hooks/useImportAssetToFilesystem';
 import { areGizmosDisabled, getHiddenPanels, isGroundGridDisabled } from '../../redux/ui';
 import { PanelName } from '../../redux/ui/types';
 import type { AssetNodeItem } from '../ProjectAssetExplorer/types';
+import type { TreeNode } from '../ProjectAssetExplorer/ProjectView';
+import { isAssetNode } from '../ProjectAssetExplorer/utils';
 import { Loading } from '../Loading';
 import { isModel } from '../EntityInspector/GltfInspector/utils';
+import {
+  isQuickItemKind,
+  isTemplateMedia,
+  QUICK_ITEM_TEMPLATES,
+} from '../../lib/sdk/operations/quick-item';
 import { useIsMounted } from '../../hooks/useIsMounted';
 import {
   useHotkey,
@@ -61,6 +68,9 @@ import './Renderer.css';
 const fixedNumber = (val: number) => Math.round(val * 1e2) / 1e2;
 
 const SINGLE_TILE_HINT_OFFSET = 30;
+
+const isQuickItemMedia = (node: TreeNode): node is AssetNodeItem =>
+  isAssetNode(node) && isQuickItemKind(node.asset.type);
 
 const Renderer: React.FC = () => {
   const canvasRef = React.useRef<HTMLCanvasElement>(null);
@@ -345,6 +355,54 @@ const Renderer: React.FC = () => {
     }
   };
 
+  // A dropped image, sound or video spawns the matching catalog item pointed at that
+  // file (#231), so the entity arrives with the components and basic view a
+  // hand-placed item has instead of a bare component.
+  const importLocalMedia = async (asset: AssetNodeItem) => {
+    const kind = asset.asset.type;
+    if (!sdk || !isQuickItemKind(kind)) return;
+    const template = getAssetById(QUICK_ITEM_TEMPLATES[kind].assetId);
+    if (!template) {
+      console.warn(`No "${QUICK_ITEM_TEMPLATES[kind].name}" item in the catalog to spawn`);
+      return;
+    }
+
+    const position = await getDropPosition();
+    // The image plane is centred on its origin; lift it so it stands on the ground.
+    if (kind === 'image') position.y += 0.5;
+
+    setIsLoading(true);
+    const result = await importCatalogAssetToFilesystem(template, {
+      skipContent: path => isTemplateMedia(kind, path),
+    });
+    if (!isMounted()) return;
+    setIsLoading(false);
+
+    const name = asset.name.replace(/\.[^.]+$/, '');
+    const { operations } = sdk;
+    const entity = operations.addAsset(
+      ROOT,
+      result.assetPath ?? '',
+      name,
+      position,
+      result.basePath,
+      sdk.enumEntity,
+      template.composite,
+      template.id,
+      false,
+    );
+    operations.setQuickItemSource(entity, kind, withAssetDir(asset.asset.src), name);
+    await operations.dispatch();
+    analytics.track(Event.ADD_ITEM, {
+      itemId: template.id,
+      itemName: name,
+      itemPath: asset.asset.src,
+      isSmart: isSmart(template),
+      isCustom: false,
+    });
+    canvasRef.current?.focus();
+  };
+
   const [{ isDragActive }, drop] = useDrop<IDrop, void, { isDragActive: boolean }>(
     () => ({
       accept: DROP_TYPES,
@@ -362,8 +420,9 @@ const Renderer: React.FC = () => {
         }
 
         if (isDropType<LocalAssetDrop>(item, itemType, DropTypesEnum.LocalAsset)) {
-          const node = item.context.tree.get(item.value)!;
-          const model = getNode(node, item.context.tree, isModel);
+          const { tree } = item.context;
+          const node = tree.get(item.value)!;
+          const model = getNode(node, tree, isModel);
           if (model) {
             // Fire-and-forget: react-dnd's drop() returns a DropResult, not a
             // promise, so run the async placement without awaiting it here.
@@ -371,7 +430,10 @@ const Renderer: React.FC = () => {
               const position = await getDropPosition();
               await addAsset(model, position, DIRECTORY.ASSETS, false);
             })();
+            return;
           }
+          const media = getNode(node, tree, isQuickItemMedia);
+          if (media) void importLocalMedia(media);
           return;
         }
 
