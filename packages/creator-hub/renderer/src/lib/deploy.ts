@@ -24,17 +24,12 @@ export type Status = (typeof STATUS_VALUES)[number];
 export type DeploymentComponentsStatus = {
   catalyst: Status;
   assetBundle: Status;
-  lods: Status;
 };
 
 export type AssetBundleRegistryResponse = {
   complete: boolean;
   catalyst: string;
   assetBundles: {
-    mac: string;
-    windows: string;
-  };
-  lods: {
     mac: string;
     windows: string;
   };
