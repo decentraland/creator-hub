@@ -602,33 +602,67 @@ async function doStart(path: string, opts: StartOptions): Promise<string> {
   }
 }
 
+// sdk-commands builds the deployment entity (metadata included) straight from scene.json
+// before the linker ever learns which wallet will sign, so `metadata.owner` — which the
+// Web Builder sets and the Worlds Content Server reads to resolve permissions — can only
+// reach the entity by being in the file while it is built. The deploy server reporting
+// ready means the entity is already built, so the field is put back right after and the
+// project keeps no trace of it (#774).
+async function withSceneOwner<T>(path: string, wallet: string, fn: () => Promise<T>): Promise<T> {
+  const sceneJsonPath = join(path, 'scene.json');
+  const raw = await fs.readFile(sceneJsonPath, 'utf-8');
+  const scene = JSON.parse(raw);
+  const originalOwner: string | undefined = scene.owner;
+  const trailingNewline = raw.endsWith('\n') ? '\n' : '';
+  const write = (value: unknown) =>
+    fs.writeFile(sceneJsonPath, JSON.stringify(value, null, 2) + trailingNewline, 'utf-8');
+
+  await write({ ...scene, owner: wallet.toLowerCase() });
+  try {
+    return await fn();
+  } finally {
+    const current = JSON.parse(await fs.readFile(sceneJsonPath, 'utf-8'));
+    if (originalOwner === undefined) {
+      delete current.owner;
+    } else {
+      current.owner = originalOwner;
+    }
+    await write(current);
+  }
+}
+
 // ############################################################################################
 // TODO: Remove this after a couple of months...
 export async function legacyDeploy({
   path,
   target,
   targetContent,
+  wallet,
 }: DeployOptions): Promise<number> {
   if (deployServer) {
     await deployServer.stop();
   }
   const port = await getAvailablePort();
-  const process = run('@dcl/sdk-commands', 'sdk-commands', {
-    args: [
-      'deploy',
-      '--no-browser',
-      '--port',
-      port.toString(),
-      ...(target ? ['--target', target] : []),
-      ...(targetContent ? ['--target-content', targetContent] : []),
-    ],
-    cwd: path,
-    env: await getEnv(path),
-    workspace: path,
-  });
+  const env = await getEnv(path);
+  const process = await withSceneOwner(path, wallet, async () => {
+    const child = run('@dcl/sdk-commands', 'sdk-commands', {
+      args: [
+        'deploy',
+        '--no-browser',
+        '--port',
+        port.toString(),
+        ...(target ? ['--target', target] : []),
+        ...(targetContent ? ['--target-content', targetContent] : []),
+      ],
+      cwd: path,
+      env,
+      workspace: path,
+    });
 
-  // App ready at
-  await process.waitFor(/listening/i, /error:/i, { reject: 'stderr' });
+    // App ready at
+    await child.waitFor(/listening/i, /error:/i, { reject: 'stderr' });
+    return child;
+  });
 
   process.waitFor(/close the terminal/gi).then(() => process.kill());
 
@@ -692,19 +726,21 @@ export async function deploy({
   const port = await getAvailablePort();
   const multiScene = await supportsMultiSceneDeploy(path);
 
-  const { stop } = await runCommand(path, 'deploy', [
-    '--dir',
-    path,
-    '--no-browser',
-    '--port',
-    port.toString(),
-    ...(target ? ['--target', target] : []),
-    ...(targetContent ? ['--target-content', targetContent] : []),
-    '--programmatic',
-    '--yes',
-    ...(multiScene ? ['--multi-scene'] : []),
-    ...(language ? ['--language', language] : []),
-  ]);
+  const { stop } = await withSceneOwner(path, wallet, () =>
+    runCommand(path, 'deploy', [
+      '--dir',
+      path,
+      '--no-browser',
+      '--port',
+      port.toString(),
+      ...(target ? ['--target', target] : []),
+      ...(targetContent ? ['--target-content', targetContent] : []),
+      '--programmatic',
+      '--yes',
+      ...(multiScene ? ['--multi-scene'] : []),
+      ...(language ? ['--language', language] : []),
+    ]),
+  );
 
   deployServer = { stop };
 

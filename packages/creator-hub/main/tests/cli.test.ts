@@ -8,10 +8,13 @@ const mocks = vi.hoisted(() => ({
   dclDeepLink: vi.fn(),
   install: vi.fn(),
   readFile: vi.fn(),
+  writeFile: vi.fn(),
   stat: vi.fn(),
   send: vi.fn(),
   openExternal: vi.fn(),
   startMobileDebugServer: vi.fn(),
+  dynamicImport: vi.fn(),
+  runSdkCommand: vi.fn(),
 }));
 
 vi.mock('electron', () => ({
@@ -21,7 +24,10 @@ vi.mock('electron', () => ({
 vi.mock('electron-log/main', () => ({
   default: { info: vi.fn(), warn: vi.fn(), error: vi.fn() },
 }));
-vi.mock('fs/promises', () => ({ default: { readFile: mocks.readFile, stat: mocks.stat } }));
+vi.mock('fs/promises', () => ({
+  default: { readFile: mocks.readFile, writeFile: mocks.writeFile, stat: mocks.stat },
+}));
+vi.mock('/shared/dynamic-import', () => ({ dynamicImport: mocks.dynamicImport }));
 vi.mock('../src/mainWindow', () => ({ MAIN_WINDOW_ID: 'main' }));
 vi.mock('../src/modules/bin', () => ({ run: mocks.run, dclDeepLink: mocks.dclDeepLink }));
 vi.mock('../src/modules/port', () => ({ getAvailablePort: vi.fn(async () => 4000) }));
@@ -41,6 +47,7 @@ vi.mock('../src/modules/network', () => ({ getLanIp: vi.fn(() => '192.168.0.10')
 
 import {
   cancelPreview,
+  deploy,
   getMobilePreview,
   getPreview,
   start,
@@ -807,6 +814,113 @@ describe('supportsAssetBundles', () => {
       mocks.stat.mockResolvedValue({ mtimeMs: 1000 });
       mocks.readFile.mockResolvedValue('args spec with "--asset-bundles" flag');
       await expect(supportsAssetBundles(path)).resolves.toBe(true);
+    });
+  });
+});
+
+describe('deploy', () => {
+  const WALLET = '0xA7CDF25A0211C089A0338C0E5B204A34AC180489';
+  const path = '/scenes/deploy-scene';
+  const sceneJsonPath = `${path}/scene.json`;
+  const BASE_SCENE = { scene: { parcels: ['0,0'], base: '0,0' }, main: 'bin/index.js' };
+  let files: Record<string, string>;
+
+  // sdk-commands reads scene.json when the deploy command boots; the owner must be in
+  // the file at that moment, so each fake records what the file held when it ran.
+  const sceneOwnerSeenByDeploy = () => JSON.parse(files[sceneJsonPath]).owner;
+
+  function setSdkCommandsDeployFile(content: string) {
+    files[`${path}/node_modules/@dcl/sdk-commands/dist/commands/deploy/index.js`] = content;
+  }
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    files = {};
+    files[sceneJsonPath] = JSON.stringify(BASE_SCENE, null, 2) + '\n';
+    mocks.readFile.mockImplementation(async (file: unknown) => {
+      const content = files[String(file)];
+      if (content === undefined) throw new Error(`ENOENT: ${String(file)}`);
+      return content;
+    });
+    mocks.writeFile.mockImplementation(async (file: unknown, content: string) => {
+      files[String(file)] = content;
+    });
+    mocks.dynamicImport.mockImplementation(async (file: string) => {
+      if (file.endsWith('components/index.js')) return { initComponents: async () => ({}) };
+      if (file.endsWith('run-command.js')) return { runSdkCommand: mocks.runSdkCommand };
+      throw new Error(`unexpected import ${file}`);
+    });
+  });
+
+  describe('with a programmatic sdk-commands deploy', () => {
+    let ownerDuringDeploy: string | undefined;
+
+    beforeEach(() => {
+      setSdkCommandsDeployFile('args spec with "--programmatic" and "--multi-scene"');
+      mocks.runSdkCommand.mockImplementation(async () => {
+        ownerDuringDeploy = sceneOwnerSeenByDeploy();
+        return { stop: vi.fn() };
+      });
+    });
+
+    it('should have the lowercased deployer wallet as scene.json owner while the entity is built', async () => {
+      await deploy({ path, chainId: 1, wallet: WALLET });
+
+      expect(ownerDuringDeploy).toBe(WALLET.toLowerCase());
+      expect(mocks.runSdkCommand).toHaveBeenCalledWith(
+        expect.anything(),
+        'deploy',
+        expect.arrayContaining(['--programmatic']),
+      );
+    });
+
+    it('should leave scene.json exactly as it was once the deploy server is up', async () => {
+      const before = files[sceneJsonPath];
+
+      await deploy({ path, chainId: 1, wallet: WALLET });
+
+      expect(files[sceneJsonPath]).toBe(before);
+    });
+
+    it('should put back an owner the project already declared', async () => {
+      files[sceneJsonPath] = JSON.stringify({ ...BASE_SCENE, owner: '0xoriginal' }, null, 2);
+
+      await deploy({ path, chainId: 1, wallet: WALLET });
+
+      expect(ownerDuringDeploy).toBe(WALLET.toLowerCase());
+      expect(JSON.parse(files[sceneJsonPath]).owner).toBe('0xoriginal');
+    });
+
+    it('should still restore scene.json when the deploy command fails to start', async () => {
+      const before = files[sceneJsonPath];
+      mocks.runSdkCommand.mockRejectedValue(new Error('boom'));
+
+      await expect(deploy({ path, chainId: 1, wallet: WALLET })).rejects.toThrow('boom');
+
+      expect(files[sceneJsonPath]).toBe(before);
+    });
+  });
+
+  describe('with a legacy sdk-commands deploy (no --programmatic)', () => {
+    it('should set the owner before spawning and restore it once the linker is listening', async () => {
+      setSdkCommandsDeployFile('args spec without programmatic mode');
+      const before = files[sceneJsonPath];
+      const fake = createFakeChild();
+      let ownerAtSpawn: string | undefined;
+      mocks.run.mockImplementation(() => {
+        ownerAtSpawn = sceneOwnerSeenByDeploy();
+        return fake.child;
+      });
+
+      const promise = deploy({ path, chainId: 1, wallet: WALLET });
+      await flush();
+      expect(sceneOwnerSeenByDeploy()).toBe(WALLET.toLowerCase());
+      fake.print('Linker app listening on port 4000');
+      await promise;
+
+      expect(ownerAtSpawn).toBe(WALLET.toLowerCase());
+      expect(spawnedArgs()).toContain('deploy');
+      expect(files[sceneJsonPath]).toBe(before);
     });
   });
 });
