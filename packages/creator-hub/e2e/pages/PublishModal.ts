@@ -3,6 +3,7 @@ import type { Page } from 'playwright';
 
 const PREPARE_TIMEOUT = 300_000;
 const SELECT_TIMEOUT = 120_000;
+const WARNING_TIMEOUT = 5_000;
 const DEPLOY_ACCEPT_TIMEOUT = 600_000;
 
 /** Page object for the publish modal: target choice, name/parcel selection, and deploy. */
@@ -76,7 +77,7 @@ export class PublishModal {
     const warningContinue = this.page.locator(
       '[data-testid="publish-modal-deploy-warning-continue-button"]',
     );
-    if (await warningContinue.isVisible()) await warningContinue.click();
+    await warningContinue.click({ timeout: WARNING_TIMEOUT }).catch(() => {});
 
     const accepted = this.page.locator(
       [

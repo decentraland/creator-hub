@@ -875,6 +875,7 @@ export function EditorPage() {
                   disabled={
                     loadingPublish || isInstallingProject || isDetectingCustomCode || isOffline
                   }
+                  data-testid="editor-page-publish-button"
                   onClick={() => {
                     if (deployment?.status === 'pending') {
                       openModal('publish', 'deploy');
