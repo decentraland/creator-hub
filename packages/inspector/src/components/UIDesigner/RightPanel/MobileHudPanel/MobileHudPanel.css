@@ -1,0 +1,113 @@
+.ui-designer-mobile-hud-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--uid-space-2);
+  padding: var(--uid-space-2);
+  color: var(--ui-designer-text);
+  overflow: auto;
+}
+
+.ui-designer-mobile-hud-header {
+  display: flex;
+  align-items: center;
+  gap: var(--uid-space-1);
+}
+
+.ui-designer-mobile-hud-title {
+  font-weight: 600;
+}
+
+.InfoTooltip a.ui-designer-mobile-hud-help-link {
+  color: var(--primary-main);
+}
+
+.InfoTooltip a.ui-designer-mobile-hud-help-link:hover {
+  color: var(--primary-dark);
+}
+
+.ui-designer-mobile-hud-toggles {
+  display: flex;
+  flex-direction: column;
+  gap: var(--uid-space-1);
+  padding-bottom: var(--uid-space-2);
+  border-bottom: 1px solid var(--ui-designer-control-border);
+}
+
+.ui-designer-mobile-hud-toggle {
+  display: flex;
+  align-items: center;
+  gap: var(--uid-space-2);
+  cursor: pointer;
+}
+
+.ui-designer-mobile-hud-section-title {
+  font-weight: 600;
+  margin-top: var(--uid-space-1);
+}
+
+.ui-designer-mobile-hud-hint {
+  margin: 0;
+  color: var(--ui-designer-text-muted);
+  font-size: 11px;
+}
+
+.ui-designer-mobile-hud-actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--uid-space-2);
+}
+
+.ui-designer-mobile-hud-action {
+  display: flex;
+  flex-direction: column;
+  gap: var(--uid-space-1);
+  padding: var(--uid-space-2);
+  border: 1px solid var(--ui-designer-control-border);
+  border-radius: 4px;
+}
+
+.ui-designer-mobile-hud-action[data-main='true'] {
+  border-color: var(--ui-designer-control-accent);
+}
+
+.ui-designer-mobile-hud-action-head {
+  display: flex;
+  align-items: center;
+  gap: var(--uid-space-2);
+}
+
+.ui-designer-mobile-hud-action-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ui-designer-mobile-hud-main {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--uid-space-1);
+  cursor: pointer;
+  color: var(--ui-designer-text-muted);
+}
+
+.ui-designer-mobile-hud-eye {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px;
+  border: none;
+  background: transparent;
+  color: var(--ui-designer-glyph);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.ui-designer-mobile-hud-eye:hover {
+  color: var(--ui-designer-control-accent);
+}
+
+.ui-designer-mobile-hud-eye.is-hidden {
+  color: var(--ui-designer-text-muted);
+}

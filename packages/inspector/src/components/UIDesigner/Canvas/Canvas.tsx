@@ -30,6 +30,7 @@ import {
   getHiddenNodes,
   getInteractionLayer,
   getLockedNodes,
+  getMobileHudSelected,
   getPlatform,
   getScreens,
   getSelectedNode,
@@ -84,6 +85,7 @@ import {
   registerNodeElement,
   unregisterNodeElement,
 } from '../shared/node-registry';
+import { loadMobileHudConfig, useMobileHudConfig } from '../MobileHud/mobile-hud-store';
 import { applyCanvasDrop } from './drop';
 import {
   armGroupClickSuppression,
@@ -101,6 +103,7 @@ import type { Box, Flow, InsertionSlot } from './reorder';
 import { flowFrom, insertionSlot } from './reorder';
 import { hiddenStyle, nodeStyle, rendersText, TEXT_VALUE_FIELD, textureStyle } from './node-style';
 import { renderTextMarkup } from './text-markup';
+import { MobileHudPreview } from './MobileHudPreview';
 import { SafeAreaOverlay } from './SafeAreaOverlay';
 
 const ZOOM_MIN = 0.1;
@@ -1202,7 +1205,10 @@ const CanvasComponent: React.FC = () => {
   const selectedNode = useAppSelector(getSelectedNode);
   const [scale, setScale] = useState(getCanvasScale());
   const dispatch = useAppDispatch();
-  const device = useAppSelector(getPlatform);
+  const platform = useAppSelector(getPlatform);
+  const mobileHudSelected = useAppSelector(getMobileHudSelected);
+  const mobileHudConfig = useMobileHudConfig();
+  const device = mobileHudSelected ? 'mobile' : platform;
   const screen = useAppSelector(getScreens)[device];
   const activeRoot = roots.find(r => r.filename === filename);
   const activeInset: UiScreenInset = activeRoot?.topLevel ? activeRoot.screenInset : 'none';
@@ -1297,6 +1303,10 @@ const CanvasComponent: React.FC = () => {
   useEffect(() => () => clearNodeRegistry(), []);
 
   useEffect(() => {
+    void loadMobileHudConfig();
+  }, []);
+
+  useEffect(() => {
     const el = viewportRef.current;
     if (!el) return;
     const onWheel = (e: WheelEvent) => {
@@ -1349,7 +1359,7 @@ const CanvasComponent: React.FC = () => {
         onContextMenu={e => e.preventDefault()}
       >
         <div className="ui-designer-canvas-stagewrap">
-          {tree ? (
+          {tree || mobileHudSelected ? (
             <>
               <div
                 className={cx('ui-designer-canvas-stage', {
@@ -1380,22 +1390,54 @@ const CanvasComponent: React.FC = () => {
                       style={screenFill}
                     />
                   ) : null}
-                  <div
-                    className="ui-designer-canvas-root"
-                    style={rootStyle}
-                  >
-                    <CanvasNodeView node={tree} />
-                  </div>
-                  {(safeAreasVisible || hudVisible) && !fixedRoot ? (
-                    <SafeAreaOverlay
-                      width={screen.width}
-                      height={screen.height}
-                      device={device}
-                      variant={overlayVariant}
-                      showOutline={safeAreasVisible}
-                      showHud={hudVisible}
-                    />
-                  ) : null}
+                  {mobileHudSelected ? (
+                    <>
+                      <SafeAreaOverlay
+                        width={frameWidth}
+                        height={frameHeight}
+                        device="mobile"
+                        variant="device"
+                        showOutline
+                        showHud={false}
+                      />
+                      <MobileHudPreview
+                        width={frameWidth}
+                        height={frameHeight}
+                        config={mobileHudConfig}
+                      />
+                    </>
+                  ) : (
+                    <>
+                      <div
+                        className="ui-designer-canvas-rootbg"
+                        style={rootStyle}
+                      />
+                      {hudVisible ? (
+                        <MobileHudPreview
+                          width={frameWidth}
+                          height={frameHeight}
+                          config={mobileHudConfig}
+                          reference
+                        />
+                      ) : null}
+                      <div
+                        className="ui-designer-canvas-root"
+                        style={{ ...rootStyle, zIndex: 901 }}
+                      >
+                        {tree ? <CanvasNodeView node={tree} /> : null}
+                      </div>
+                      {safeAreasVisible && !fixedRoot ? (
+                        <SafeAreaOverlay
+                          width={screen.width}
+                          height={screen.height}
+                          device={device}
+                          variant={overlayVariant}
+                          showOutline
+                          showHud={false}
+                        />
+                      ) : null}
+                    </>
+                  )}
                 </div>
               </div>
             </>
@@ -1425,7 +1467,7 @@ const CanvasComponent: React.FC = () => {
             </div>
           )}
         </div>
-        {tree ? (
+        {tree || mobileHudSelected ? (
           <div className="ui-designer-canvas-zoom">
             <button
               type="button"
@@ -1461,6 +1503,7 @@ const CanvasComponent: React.FC = () => {
               type="button"
               className={cx('ui-designer-canvas-zoom-btn', { active: device === 'desktop' })}
               onClick={() => dispatch(setPlatform({ platform: 'desktop' }))}
+              disabled={mobileHudSelected}
               title="Desktop preview"
               aria-label="Desktop preview"
               aria-pressed={device === 'desktop'}
@@ -1471,6 +1514,7 @@ const CanvasComponent: React.FC = () => {
               type="button"
               className={cx('ui-designer-canvas-zoom-btn', { active: device === 'mobile' })}
               onClick={() => dispatch(setPlatform({ platform: 'mobile' }))}
+              disabled={mobileHudSelected}
               title="Mobile preview"
               aria-label="Mobile preview"
               aria-pressed={device === 'mobile'}

@@ -39,9 +39,18 @@
   position: absolute;
   top: 0;
   left: 0;
+  display: flex;
+}
+
+/* The usable-area fill sits in its own layer BELOW the mobile HUD reference, so
+   the reference buttons read over the empty canvas while authored nodes (drawn
+   in the transparent canvas-root above the buttons) occlude them. */
+.ui-designer-canvas-rootbg {
+  position: absolute;
+  top: 0;
+  left: 0;
   background: #2a2c30;
   box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.1);
-  display: flex;
 }
 
 .ui-designer-canvas-screenfill {

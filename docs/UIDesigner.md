@@ -126,6 +126,90 @@ Accepted approximation: the mobile frame stays `1600×720` (Android window size)
 
 **Overflow is not clipped to the inset.** react-ecs `ScreenInsetArea` / `InteractableArea` are absolute containers at the inset margins with no `overflow: hidden` (Yoga defaults to visible), so an absolute node placed beyond the inset overflows into the reserved zone **in-world**. The editor matches this — content renders past the safe-area outline (clipped only to the phone body) as a placement warning, not hidden. **Don't** add `overflow: hidden` to the inset root; the overflow is the signal that a node would collide with the game HUD.
 
+## MobileHUD (mobile touch controls)
+
+**MobileHUD** lets creators customize the on-screen mobile gamepad
+(`TouchScreenControls`) without writing code. It appears as a fixed first row
+above the authored GUIs in the left rail once the scene has at least one GUI,
+and selecting it enters a read-only mode: the canvas shows the touch buttons +
+a center crosshair, the device-variant switch and node-adding are disabled, and
+the right rail becomes the MobileHUD editor.
+
+- **MobileHUD is not a react-ecs UI root.** It is a
+  `TouchScreenControls.createOrReplace(engine.RootEntity, { … })` setup call,
+  written to `src/mobile-hud.ts` (**outside `src/ui/`** so `refreshRoots` never
+  treats it as a GUI and imports it into the aggregator) and wired into
+  `src/index.ts` next to `setupUi()`. It therefore has its own selection flag
+  (`mobileHudSelected` in `redux/ui-designer`), its own RightPanel branch, and
+  its own store — it can't ride the parsed-`CodeUINode` path the GUI nodes use.
+- **Lazy write + auto-clean.** `MobileHud/mobile-hud-store.ts` writes the module
+  and the `src/index.ts` wiring only when the config leaves SDK defaults
+  (`isDefaultMobileHudConfig`); resetting every field deletes the module and
+  strips the wiring, so untouched scenes carry no no-op call. Code is the source
+  of truth — the store reads the config back from `src/mobile-hud.ts` on select
+  (`MobileHud/mobile-hud-emit.ts` parses its own generated format).
+- **Emit every required PB field, even at its default.** `TouchScreenControls` is a
+  raw protobuf component and `createOrReplace` takes the full `PBTouchScreenControls`,
+  not a `Partial` — so `hideJoystick`, `hideCrosshair`, `touchInputs`, and each
+  touch-input's `hide` must always be written (zero value included), or the scene's
+  `tsc` fails with `TS2741: Property … is missing`. This is the opposite of react-ecs
+  authoring props, where omitting a default is correct; don't carry the "only emit
+  non-defaults" habit into `mobile-hud-emit.ts`.
+- **Config model.** `MobileHud/mobile-hud-config.ts` holds the eight
+  configurable actions (`IA_JUMP`, `IA_POINTER`, `IA_PRIMARY`/E,
+  `IA_SECONDARY`/F, `IA_ACTION_3..6`/1-4), each with a `hide` flag and an
+  optional scene-image `icon`, plus `hideJoystick`, `hideCrosshair`, and
+  `mainAction`. "Hide Input Actions" is **derived** (every action hidden), not
+  stored — the SDK's `PBTouchScreenControls` has no such field, so a stored
+  boolean would not round-trip.
+- **No drag-reorder (v1).** The explorer renders the buttons in a fixed priority
+  order and only `mainAction` promotes one to the central slot, so the editor
+  exposes Main selection, per-button visibility, and custom icons only.
+- **Read-only preview, positioned inside a safe-area box.** `Canvas/MobileHudPreview/`
+  renders a container div at the mobile **device safe area**
+  (`SAFE_AREAS.mobile.screenInsetArea`) and places each button at a `HOME` slot in
+  **box coordinates** (0..1 of the box, not the screen) — derived from the HUD
+  Revamp Figma. Box-relative is deliberate: a button at box-x near 0 sits at the
+  left margin by construction, so the margins do the work and nothing is
+  re-verified against the screen. Layout: the 1-4 column + a static `+` at the
+  right edge, the F→E→pointer diagonal, the big central button bottom-right, and
+  the joystick bottom-left. Only `TouchScreenControls`'s own buttons are drawn —
+  no emote/profile/chat client chrome. It stays flat (the 1-4 are always shown,
+  not behind the `+`).
+- **The Main action drives the canvas (stack model, not a swap).** The visible
+  actions fill fixed slots in priority order (`MOBILE_ACTIONS`) with the Main
+  action pulled to the big central slot: `visible = [main, …rest].filter(!hide)`
+  then slot `i` = `HOME[MOBILE_ACTIONS[i]]` (`slotFor`). So making `IA_PRIMARY`
+  Main puts **E** in the big slot and **Jump lands in the first cluster slot**
+  (bottom-left, s1), not in E's old spot; and hiding buttons re-packs the rest
+  with no gaps (hide E/F/"2" → Pointer, 1, 3, 4 around Main). The `+` overflow
+  shows only when more than five buttons are visible (`showPlus`). The Main
+  button gets an accent ring; glyphs follow the action (`HOME[action].kind`), the
+  slot follows the packing. Custom icons resolve through `useAssetUrl`; hovering a
+  RightPanel row highlights its button via `mobileHudHighlightedAction`. The canvas forces the
+  mobile frame while MobileHUD is selected (preview shows even on an empty scene)
+  and draws the device safe-area outline, which shares the box's rect so the
+  buttons read as inside it.
+- **The editing canvas layers the mobile HUD between the surface and the nodes.**
+  While editing a GUI on the mobile preview, `MobileHudPreview` renders as a
+  dimmed reference (`--reference`, `z-index: 890`, gated on the existing
+  `hudVisible`/game-controller toggle) so creators design around the touch
+  controls. The usable-area fill moved out of `.ui-designer-canvas-root` into a
+  separate `.ui-designer-canvas-rootbg` backdrop **below** the reference, and the
+  now-transparent `canvas-root` sits at `z-index: 901` **above** it — so the
+  buttons read over the empty canvas while authored nodes occlude them (a single
+  `z-index` on `canvas-root` couldn't do this: its fill and its child nodes are
+  one stacking box). The reference and MobileHUD mode share the same
+  `MobileHudPreview`, so positions stay identical; MobileHUD mode shows the
+  controls solid and alone. The older `SafeAreaOverlay` HUD guides
+  (`MOBILE_SAFE_AREA.hud` + the profile/chat/compass/counter icons) are no longer
+  drawn — `showHud` is always false — leaving `SafeAreaOverlay` to render only the
+  safe-area outline.
+- **Icons are scene images only.** The Custom Icon picker reuses
+  `FileUploadField` over `useAssetOptions(ACCEPTED_FILE_TYPES.image)` — the SDK
+  icon field is a scene-content texture `src`, so no external URL, avatar, or
+  video is offered.
+
 ## Canvas framing (artboard vs screen) and overflow
 
 The canvas frames the root two ways (`Canvas.tsx`, `fixedRoot`): a root whose width AND height are fixed px (`widthUnit/heightUnit === YGU_POINT`) is an **artboard** — the frame is the root's own box, drawn at true size (`fitScale = 1`, no device-screen letterbox), and the screen-relative overlays (safe-area, inset guide) are hidden. A **full-screen** root (%, auto or unset) is fitted into the previewed device screen: the design resolution is `DEFAULT_CANVAS_WIDTH/HEIGHT` (`1920×1080`) on desktop and `MOBILE_CANVAS_WIDTH/HEIGHT` (`1600×720`) on mobile. Since each matches its default screen, `fitScale` is 1 and there is no letterbox unless a non-default screen preset is chosen (see the mobile safe-area section). Feeding a fixed 400×400 root into the old `min(screen/virtual)` fit blew it up to fill 1080px — the "canvas not resized to the root" symptom.
