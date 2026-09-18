@@ -67,7 +67,7 @@ To make an area DO something, do NOT edit that detector — every area shares on
       area.onExit((who: Entity) => { /* what happens when a player leaves */ })
     }
   }
-Then attach_script(entity, 'assets/Scripts/<Name>Reaction.tsx'). onEnter replays anyone already inside, and isInside() is there for "while someone is inside" logic. Detection is client-side only — fine for doors, sounds, UI; never gate a valuable reward on it alone.
+Then attach_script(entity, 'assets/Scripts/<Name>Reaction.tsx'). Name the reaction for WHAT IT DOES, not the edge it currently handles — ShowMessageReaction, not EnterMessageReaction/InsideMessageReaction — because the same script often ends up handling both enter and leave. onEnter replays anyone already inside, and isInside() is there for "while someone is inside" logic. Detection is client-side only — fine for doors, sounds, UI; never gate a valuable reward on it alone.
 
 RUNNING THE SCENE (PREVIEW).
 To VERIFY your work in the actual running scene — see it rendered, walk around, click things, read runtime logs and performance — launch the preview:

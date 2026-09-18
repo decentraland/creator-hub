@@ -1,5 +1,18 @@
 import { ColliderLayer, engine, Entity, TriggerArea, triggerAreaEventsSystem } from '@dcl/sdk/ecs';
 
+// The collision layer the area listens on, by dropdown value. Both player options mask on
+// CL_PLAYER (which lets in every avatar, local + remote); "my player" additionally narrows to
+// the local avatar in accepts(). The rest map straight to their collider layer.
+const LAYER_MASK: Record<string, ColliderLayer> = {
+  'my player': ColliderLayer.CL_PLAYER,
+  'all players': ColliderLayer.CL_PLAYER,
+  'any collider': ColliderLayer.CL_PHYSICS,
+  clickable: ColliderLayer.CL_POINTER,
+  'custom 1': ColliderLayer.CL_CUSTOM1,
+  'custom 2': ColliderLayer.CL_CUSTOM2,
+  'custom 3': ColliderLayer.CL_CUSTOM3,
+};
+
 // The generic Trigger Area detector. It owns the SDK trigger callbacks (the SDK keeps only
 // ONE per (entity, event), so a reaction must NOT touch triggerAreaEventsSystem itself) and
 // exposes enter/leave/occupancy as instance methods. A reaction script on the SAME entity
@@ -19,52 +32,60 @@ export class TriggerAreaDetector {
   constructor(
     public src: string, // DO NOT REMOVE
     public entity: Entity, // DO NOT REMOVE
-    public onlyMe: boolean = false,
+    public activatedBy:
+      | 'my player'
+      | 'all players'
+      | 'any collider'
+      | 'clickable'
+      | 'custom 1'
+      | 'custom 2'
+      | 'custom 3' = 'my player',
     public shape: 'box' | 'sphere' = 'box',
   ) {
-    this.onlyMe = onlyMe;
+    this.activatedBy = activatedBy;
     this.shape = shape;
   }
 
   /**
    * start()
    * Turns this entity into an invisible trigger volume sized by its Transform
-   * (resize it with the scale gizmo) and starts tracking who is inside.
+   * (resize it with the scale gizmo) and starts tracking what is inside.
    */
   start() {
+    const mask = LAYER_MASK[this.activatedBy] ?? ColliderLayer.CL_PLAYER;
     if (this.shape === 'sphere') {
-      TriggerArea.setSphere(this.entity, ColliderLayer.CL_PLAYER);
+      TriggerArea.setSphere(this.entity, mask);
     } else {
-      TriggerArea.setBox(this.entity, ColliderLayer.CL_PLAYER);
+      TriggerArea.setBox(this.entity, mask);
     }
     triggerAreaEventsSystem.onTriggerEnter(this.entity, event => this.seen(event.trigger?.entity));
     triggerAreaEventsSystem.onTriggerStay(this.entity, event => this.seen(event.trigger?.entity));
     triggerAreaEventsSystem.onTriggerExit(this.entity, event => this.gone(event.trigger?.entity));
   }
 
-  /** Run `fn` when a player enters. Anyone already inside is replayed immediately. */
+  /** Run `fn` when something enters. Anything already inside is replayed immediately. */
   onEnter(fn: (who: Entity) => void) {
     this.enterFns.push(fn);
     for (const who of this.inside) fn(who);
   }
 
-  /** Run `fn` when a player leaves. */
+  /** Run `fn` when something leaves. */
   onExit(fn: (who: Entity) => void) {
     this.exitFns.push(fn);
   }
 
-  /** True while at least one accepted player is inside — use for "while inside" logic. */
+  /** True while at least one accepted entity is inside — use for "while inside" logic. */
   isInside() {
     return this.inside.size > 0;
   }
 
-  // The result carries a raw entity id (0 is the scene root, never an avatar).
-  // onlyMe reacts to this player only; otherwise to any player's avatar the client is
-  // simulating (local + remote). The CL_PLAYER mask already keeps non-player colliders out.
+  // The result carries a raw entity id (0 is the scene root, never an avatar). "my player" is
+  // the only layer that narrows to the local avatar; every other layer accepts whatever the
+  // collision mask let through.
   private accepts(raw?: number): Entity | undefined {
     if (raw === undefined || raw === 0) return undefined;
     const who = raw as Entity;
-    if (this.onlyMe && who !== engine.PlayerEntity) return undefined;
+    if (this.activatedBy === 'my player' && who !== engine.PlayerEntity) return undefined;
     return who;
   }
 
