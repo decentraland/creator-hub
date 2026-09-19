@@ -3,7 +3,11 @@ import cx from 'classnames';
 import WorldSettingsIcon from '@mui/icons-material/SpaceDashboard';
 import { Box, Button, Typography } from 'decentraland-ui2';
 import { useDispatch } from '#store';
-import { actions as managementActions, type ParcelsPermission } from '/@/modules/store/management';
+import {
+  actions as managementActions,
+  hasWorldWidePermission,
+  type ParcelsPermission,
+} from '/@/modules/store/management';
 import { t } from '/@/modules/store/translation/utils';
 import { type WorldScene, type WorldSettings } from '/@/lib/worlds';
 import { WorldSettingsTab } from '/shared/types/manage';
@@ -58,6 +62,15 @@ const WorldSettingsModal: React.FC<Props> = React.memo(
       [settingsUpdates],
     );
 
+    // World-wide collaborators have deployment rights for the entire world, so they get
+    // access to all settings tabs, just like owners.
+    const canEditSettings = isOwner || hasWorldWidePermission(userParcelsPermissions);
+
+    // While parcel permissions are being fetched (for non-owners), keep the loading state
+    // to avoid a brief flash from the restricted layout-only view to the full settings modal.
+    const isEffectivelyLoading =
+      isLoading || (!isOwner && userParcelsPermissions?.status === 'loading');
+
     const handleUpdateSettings = useCallback((newSettings: Partial<WorldSettings>) => {
       setSettingsUpdates(prev => ({ ...prev, ...newSettings }));
     }, []);
@@ -88,12 +101,14 @@ const WorldSettingsModal: React.FC<Props> = React.memo(
         {...props}
         activeTab={activeTab}
         tabs={WORLD_SETTINGS_TABS}
-        showTabs={isOwner}
+        showTabs={canEditSettings}
         title={t('modal.world_settings.title', { worldName: worldName })}
-        className={cx('WorldSettingsModal', { Collaborator: !isOwner })}
+        className={cx('WorldSettingsModal', {
+          Collaborator: !canEditSettings && !isEffectivelyLoading,
+        })}
         icon={<WorldSettingsIcon />}
       >
-        {isLoading && !hasChanges ? (
+        {isEffectivelyLoading && !hasChanges ? (
           <Loader size={40} />
         ) : (
           <>
