@@ -429,6 +429,10 @@
             "do_nothing": "No hacer nada"
           }
         },
+        "scenes_tab": {
+          "label": "Pestaña de escenas",
+          "show_tutorials": "Mostrar tutoriales"
+        },
         "code_editor": {
           "label": "Editor de código preferido",
           "choose_device": "Elegir desde tu dispositivo...",
