@@ -199,10 +199,10 @@ class UIDesignerPageObject {
       .evaluateAll(els => els.map(el => el.getAttribute('data-kind') ?? ''));
   }
 
-  async isDeviceToggleDisabled() {
-    const desktop = await page.locator('[aria-label="Desktop preview"]').isDisabled();
-    const mobile = await page.locator('[aria-label="Mobile preview"]').isDisabled();
-    return desktop && mobile;
+  async isDeviceToggleHidden() {
+    const desktop = await page.locator('[aria-label="Desktop preview"]').count();
+    const mobile = await page.locator('[aria-label="Mobile preview"]').count();
+    return desktop === 0 && mobile === 0;
   }
 
   async renameNode(label: string, next: string) {

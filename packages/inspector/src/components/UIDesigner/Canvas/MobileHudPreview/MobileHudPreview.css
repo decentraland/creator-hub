@@ -6,6 +6,10 @@
   z-index: 890;
 }
 
+.ui-designer-mobile-hud-guide {
+  color: #dfd0ff;
+}
+
 .ui-designer-mobile-hud-guide.is-highlighted {
   border-radius: 50%;
   outline: 2px solid var(--ui-designer-control-accent, #4aa3ff);

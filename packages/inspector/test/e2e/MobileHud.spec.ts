@@ -53,8 +53,8 @@ describe('UI Designer MobileHUD', () => {
     }
   });
 
-  test('lock the device variant switch while MobileHUD is selected', async () => {
-    await expect(UIDesigner.isDeviceToggleDisabled()).resolves.toBe(true);
+  test('hide the device variant switch and canvas tools while MobileHUD is selected', async () => {
+    await expect(UIDesigner.isDeviceToggleHidden()).resolves.toBe(true);
   });
 
   test('default the main action to IA_JUMP', async () => {

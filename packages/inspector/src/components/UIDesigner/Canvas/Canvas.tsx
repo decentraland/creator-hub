@@ -1498,60 +1498,62 @@ const CanvasComponent: React.FC = () => {
             >
               +
             </button>
-            <span className="ui-designer-canvas-zoom-sep" />
-            <button
-              type="button"
-              className={cx('ui-designer-canvas-zoom-btn', { active: device === 'desktop' })}
-              onClick={() => dispatch(setPlatform({ platform: 'desktop' }))}
-              disabled={mobileHudSelected}
-              title="Desktop preview"
-              aria-label="Desktop preview"
-              aria-pressed={device === 'desktop'}
-            >
-              <IoDesktopOutline />
-            </button>
-            <button
-              type="button"
-              className={cx('ui-designer-canvas-zoom-btn', { active: device === 'mobile' })}
-              onClick={() => dispatch(setPlatform({ platform: 'mobile' }))}
-              disabled={mobileHudSelected}
-              title="Mobile preview"
-              aria-label="Mobile preview"
-              aria-pressed={device === 'mobile'}
-            >
-              <IoPhoneLandscapeOutline />
-            </button>
-            <button
-              type="button"
-              className={cx('ui-designer-canvas-zoom-btn', {
-                active: safeAreasVisible,
-                locked: insetLocked,
-              })}
-              onClick={() => {
-                if (!insetLocked) setShowSafeAreas(s => !s);
-              }}
-              disabled={insetLocked}
-              title={
-                insetLocked
-                  ? 'Safe-area guides follow the Scene Inset — change it to unlock'
-                  : 'Toggle safe-area guides'
-              }
-              aria-label="Toggle safe-area guides"
-              aria-pressed={safeAreasVisible}
-            >
-              <IoScanOutline />
-            </button>
-            {device === 'mobile' ? (
-              <button
-                type="button"
-                className={cx('ui-designer-canvas-zoom-btn', { active: hudVisible })}
-                onClick={() => setHudOverride(!hudVisible)}
-                title="Toggle mobile HUD guides"
-                aria-label="Toggle mobile HUD guides"
-                aria-pressed={hudVisible}
-              >
-                <IoGameControllerOutline />
-              </button>
+            {!mobileHudSelected ? (
+              <>
+                <span className="ui-designer-canvas-zoom-sep" />
+                <button
+                  type="button"
+                  className={cx('ui-designer-canvas-zoom-btn', { active: device === 'desktop' })}
+                  onClick={() => dispatch(setPlatform({ platform: 'desktop' }))}
+                  title="Desktop preview"
+                  aria-label="Desktop preview"
+                  aria-pressed={device === 'desktop'}
+                >
+                  <IoDesktopOutline />
+                </button>
+                <button
+                  type="button"
+                  className={cx('ui-designer-canvas-zoom-btn', { active: device === 'mobile' })}
+                  onClick={() => dispatch(setPlatform({ platform: 'mobile' }))}
+                  title="Mobile preview"
+                  aria-label="Mobile preview"
+                  aria-pressed={device === 'mobile'}
+                >
+                  <IoPhoneLandscapeOutline />
+                </button>
+                <button
+                  type="button"
+                  className={cx('ui-designer-canvas-zoom-btn', {
+                    active: safeAreasVisible,
+                    locked: insetLocked,
+                  })}
+                  onClick={() => {
+                    if (!insetLocked) setShowSafeAreas(s => !s);
+                  }}
+                  disabled={insetLocked}
+                  title={
+                    insetLocked
+                      ? 'Safe-area guides follow the Scene Inset — change it to unlock'
+                      : 'Toggle safe-area guides'
+                  }
+                  aria-label="Toggle safe-area guides"
+                  aria-pressed={safeAreasVisible}
+                >
+                  <IoScanOutline />
+                </button>
+                {device === 'mobile' ? (
+                  <button
+                    type="button"
+                    className={cx('ui-designer-canvas-zoom-btn', { active: hudVisible })}
+                    onClick={() => setHudOverride(!hudVisible)}
+                    title="Toggle mobile HUD guides"
+                    aria-label="Toggle mobile HUD guides"
+                    aria-pressed={hudVisible}
+                  >
+                    <IoGameControllerOutline />
+                  </button>
+                ) : null}
+              </>
             ) : null}
           </div>
         ) : null}
