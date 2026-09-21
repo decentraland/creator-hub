@@ -449,11 +449,11 @@ const BillingCard = styled(Box)(({ theme }) => ({
   display: 'flex',
   flexDirection: 'column',
   alignItems: 'flex-start',
-  gap: theme.spacing(1),
+  gap: theme.spacing(2),
   margin: theme.spacing(0, 1.5, 1),
-  padding: theme.spacing(1.5),
-  borderRadius: theme.spacing(1),
-  backgroundColor: 'var(--card)',
+  padding: theme.spacing(2.5),
+  borderRadius: theme.spacing(1.5),
+  backgroundColor: '#35333b',
 }));
 
 const BillingTitle = styled('span')(({ theme }) => ({
@@ -471,10 +471,10 @@ const BillingBody = styled('span')(({ theme }) => ({
 const OutdatedHint = styled(Box)(({ theme }) => ({
   display: 'flex',
   alignItems: 'center',
-  gap: theme.spacing(1.25),
+  gap: theme.spacing(2),
   margin: theme.spacing(0, 1.5, 1),
-  padding: theme.spacing(1.5, 1.75),
-  borderRadius: theme.spacing(1.25),
+  padding: theme.spacing(1.5, 2.5),
+  borderRadius: theme.spacing(1.5),
   backgroundColor: 'var(--ai-warning-bg)',
   color: theme.palette.warning.main,
   fontSize: theme.typography.caption.fontSize,
