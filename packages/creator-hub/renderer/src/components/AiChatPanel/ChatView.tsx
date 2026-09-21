@@ -777,10 +777,14 @@ export function ChatView(props: ChatViewProps) {
               onClick={onDismissBilling}
               sx={{
                 backgroundColor: 'var(--dark-gray)',
+                borderRadius: theme => theme.spacing(1),
+                paddingLeft: theme => theme.spacing(2.5),
+                paddingRight: theme => theme.spacing(2.5),
                 '&:hover': { backgroundColor: 'var(--light-gray)' },
-                // ui2 pins secondary-text buttons to secondary.contrast (grey) in every state at
-                // 0,6,0 specificity; out-specify it (repeated & = 0,7,0) so the label stays white.
-                '&&&&&&&': { color: 'var(--white)' },
+                // ui2 pins secondary-text buttons' color AND textTransform (forced uppercase) at
+                // 0,6,0 specificity; out-specify both here (repeated & = 0,7,0) so the label stays
+                // white and reads as "Got It" rather than "GOT IT".
+                '&&&&&&&': { color: 'var(--white)', textTransform: 'none' },
               }}
             >
               {t('editor.ai.billing_dismiss')}
