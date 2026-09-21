@@ -29,7 +29,7 @@ export class Chest {
     public openSound: string = 'open.mp3',
     public closeSound: string = 'close.mp3',
     public hoverText: string = 'Open / Close',
-    public idleAnimation: string = '',
+    public idleAnimation: string = 'close',
   ) {}
 
   /**

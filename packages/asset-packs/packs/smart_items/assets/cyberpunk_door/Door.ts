@@ -24,12 +24,12 @@ export class Door {
   constructor(
     public src: string, // DO NOT REMOVE
     public entity: Entity, // DO NOT REMOVE
-    public openAnimation: string = 'Open',
-    public closeAnimation: string = 'Close',
+    public openAnimation: string = 'open',
+    public closeAnimation: string = 'close',
     public openSound: string = 'sound.mp3',
     public closeSound: string = 'sound.mp3',
     public hoverText: string = 'Open / Close',
-    public idleAnimation: string = '',
+    public idleAnimation: string = 'close',
   ) {}
 
   /**
