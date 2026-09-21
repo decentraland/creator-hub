@@ -6,7 +6,7 @@
     "markdown-to-jsx": "^7.5.0"
   },
   "devDependencies": {
-    "@dcl/ecs": "7.26.0",
+    "@dcl/ecs": "7.29.0",
     "@dcl/ts-proto": "1.154.0",
     "@playwright/test": "1.62.0",
     "@testing-library/react": "14.0.0",
