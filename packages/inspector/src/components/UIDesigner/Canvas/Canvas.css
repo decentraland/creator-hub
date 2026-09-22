@@ -422,11 +422,11 @@
   width: 16px;
   height: 16px;
   padding: 0;
-  font-size: 13px;
+  font-size: 14px;
   background: transparent;
   border: none;
   border-radius: 4px;
-  color: rgba(255, 255, 255, 0.85);
+  color: #fcfcfc;
   cursor: pointer;
 }
 
@@ -476,8 +476,8 @@
 }
 
 .ui-designer-canvas-zoom-btn.active {
-  background: var(--ui-designer-accent);
-  color: #000;
+  background: #244b7d;
+  color: #fcfcfc;
 }
 
 .ui-designer-canvas-zoom-btn.locked {
@@ -535,7 +535,7 @@
   font-size: 14px;
   background: transparent;
   border: 1px solid transparent;
-  color: rgba(255, 255, 255, 0.85);
+  color: #fcfcfc;
   cursor: pointer;
 }
 
