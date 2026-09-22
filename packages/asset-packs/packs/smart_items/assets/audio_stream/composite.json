@@ -32,126 +32,23 @@
         "0": {
           "json": {
             "url": "https://n07.radiojar.com/2qm1fc5kb.m4a?1617129761=&rj-tok=AAABeIR7VqwAilDFeUM39SDjmw&rj-ttl=5",
-            "playing": true
+            "playing": false
           }
         }
       }
     },
     {
-      "name": "asset-packs::Actions",
-      "data": {
-        "0": {
-          "json": {
-            "id": "{self}",
-            "value": [
-              {
-                "name": "Play",
-                "type": "set_state",
-                "jsonPayload": "{ \"state\": \"Playing\" }"
-              },
-              {
-                "name": "Stop",
-                "type": "set_state",
-                "jsonPayload": "{ \"state\": \"Stopped\" }"
-              },
-              {
-                "name": "Play Audio Stream",
-                "type": "play_audio_stream",
-                "jsonPayload": "{ \"url\": \"https://n07.radiojar.com/2qm1fc5kb.m4a?1617129761=&rj-tok=AAABeIR7VqwAilDFeUM39SDjmw&rj-ttl=5\", \"volume\": 1 }"
-              },
-              {
-                "name": "Stop Audio Stream",
-                "type": "stop_audio_stream",
-                "jsonPayload": "{}"
-              }
-            ]
-          }
-        }
-      }
-    },
-    {
-      "name": "asset-packs::Triggers",
+      "name": "asset-packs::Script",
       "data": {
         "0": {
           "json": {
             "value": [
               {
-                "type": "on_click",
-                "conditions": [
-                  {
-                    "id": "{self:asset-packs::States}",
-                    "type": "when_state_is",
-                    "value": "Playing"
-                  }
-                ],
-                "actions": [
-                  {
-                    "id": "{self:asset-packs::Actions}",
-                    "name": "Stop"
-                  }
-                ]
-              },
-              {
-                "type": "on_click",
-                "conditions": [
-                  {
-                    "id": "{self:asset-packs::States}",
-                    "type": "when_state_is",
-                    "value": "Stopped"
-                  }
-                ],
-                "actions": [
-                  {
-                    "id": "{self:asset-packs::Actions}",
-                    "name": "Play"
-                  }
-                ]
-              },
-              {
-                "type": "on_state_change",
-                "conditions": [
-                  {
-                    "id": "{self:asset-packs::States}",
-                    "type": "when_state_is",
-                    "value": "Playing"
-                  }
-                ],
-                "actions": [
-                  {
-                    "id": "{self:asset-packs::Actions}",
-                    "name": "Play Audio Stream"
-                  }
-                ]
-              },
-              {
-                "type": "on_state_change",
-                "conditions": [
-                  {
-                    "id": "{self:asset-packs::States}",
-                    "type": "when_state_is",
-                    "value": "Stopped"
-                  }
-                ],
-                "actions": [
-                  {
-                    "id": "{self:asset-packs::Actions}",
-                    "name": "Stop Audio Stream"
-                  }
-                ]
+                "path": "{assetPath}/Radio.tsx",
+                "priority": 0,
+                "layout": "{\"params\":{\"hoverText\":{\"type\":\"string\",\"optional\":true,\"value\":\"Play / Stop\"}},\"events\":[\"click\"]}"
               }
             ]
-          }
-        }
-      }
-    },
-    {
-      "name": "asset-packs::States",
-      "data": {
-        "0": {
-          "json": {
-            "id": "{self}",
-            "value": ["Playing", "Stopped"],
-            "defaultValue": "Stopped"
           }
         }
       }
