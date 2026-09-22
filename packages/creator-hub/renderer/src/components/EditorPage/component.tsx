@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import ArrowBackIosIcon from '@mui/icons-material/ArrowBackIos';
 import PlayCircleIcon from '@mui/icons-material/PlayCircle';
 import CodeIcon from '@mui/icons-material/Code';
+import SpeedOutlinedIcon from '@mui/icons-material/SpeedOutlined';
 import PublicIcon from '@mui/icons-material/Public';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import CloseIcon from '@mui/icons-material/Close';
@@ -39,6 +40,7 @@ import { useFeatureFlags } from '/@/hooks/useFeatureFlags';
 import { useAiSession } from '/@/hooks/useAiSession';
 import { actions as snackbarActions } from '/@/modules/store/snackbar';
 import { actions as editorActions } from '/@/modules/store/editor';
+import { actions as optimizerActions } from '/@/modules/store/optimizer';
 import { createGenericNotification } from '/@/modules/store/snackbar/utils';
 import { Button } from '../Button';
 import { Header } from '../Header';
@@ -49,6 +51,7 @@ import { MobileQRCode } from '../Modals/MobileQRCode';
 import { AssistantIcon } from '../Icons';
 import { AiChatPanel } from '../AiChatPanel';
 import { DetachedPlaceholder } from '../AiChatPanel/DetachedPlaceholder';
+import { OptimizeModal } from '../OptimizeModal';
 import { DeployModal } from './DeployModal';
 import { PreviewOptions, PublishOptions } from './MenuOptions';
 import { getPublishButtonText, getPublishOptions } from './utils';
@@ -193,6 +196,9 @@ export function EditorPage() {
     openDetached: openAiWindow,
     closeDetached: closeAiWindow,
   } = useAiSession(aiChatEnabled, project?.path, handleClearAiSelection, () => setAiOpen(false));
+  // A prompt seeded from the inspector (Trigger Area "describe a reaction"). Open the inline
+  // panel on it; ChatView copies the text into the composer and clears the draft.
+  const aiDraftPrompt = useSelector(state => state.ai.draftPrompt);
   const hydratedOptimizedAssetsPathRef = useRef<string | null>(null);
   const [modalState, setModalState] = useState<ModalState>({ type: undefined });
   // Draggable width of the AI panel (like the inspector's own panels). Persisted globally.
@@ -359,6 +365,12 @@ export function EditorPage() {
       .then(project_id => analytics.track('AI Chat Opened', { project_id }));
   }, [aiOpen, projectPath]);
 
+  // Open the panel when the inspector seeds a prompt. The host RPC only sets a draft when the
+  // assistant is enabled, so no extra gate is needed here.
+  useEffect(() => {
+    if (aiDraftPrompt !== null && aiChatEnabled) setAiOpen(true);
+  }, [aiDraftPrompt?.nonce, aiChatEnabled]);
+
   useEffect(() => {
     if (!projectPath || !useBevy) {
       setBevyRealm(null);
@@ -427,9 +439,13 @@ export function EditorPage() {
     }
   }, [openPreview, settings.previewOptions]);
 
+  // The "code elements may only become visible once running" warning describes a
+  // Babylon limitation: it renders only the composite, so code-created entities are
+  // invisible until the scene runs. The Bevy editor runs the scene while editing and
+  // already shows them, so the warning would be false there.
   const handleActionWithWarningCheck = useCallback(
     async (action: () => void | Promise<void>) => {
-      if (!settings.previewOptions.showWarnings) {
+      if (!settings.previewOptions.showWarnings || useBevy) {
         await action();
         return;
       }
@@ -446,7 +462,7 @@ export function EditorPage() {
 
       await action();
     },
-    [settings.previewOptions.showWarnings, detectCustomCode],
+    [settings.previewOptions.showWarnings, useBevy, detectCustomCode],
   );
 
   const handleBack = useCallback(async () => {
@@ -765,6 +781,8 @@ export function EditorPage() {
     );
   };
 
+  const previewIcon = loadingPreview ? <Loader size={20} /> : <PlayCircleIcon />;
+
   return (
     <main className="Editor">
       {!isReady ? (
@@ -802,16 +820,33 @@ export function EditorPage() {
                   </IconButton>
                 </Tooltip>
               )}
-              <Button
-                color="secondary"
-                onClick={openCode}
-                startIcon={<CodeIcon />}
-              >
-                {t('editor.header.actions.code')}
-              </Button>
+              <Tooltip title={t('editor.header.actions.optimize')}>
+                <Button
+                  className="icon-only"
+                  color="secondary"
+                  aria-label={t('editor.header.actions.optimize')}
+                  onClick={() => dispatch(optimizerActions.open())}
+                >
+                  <SpeedOutlinedIcon />
+                </Button>
+              </Tooltip>
+              <Tooltip title={t('editor.header.actions.code')}>
+                <Button
+                  className="icon-only"
+                  color="secondary"
+                  aria-label={t('editor.header.actions.code')}
+                  onClick={openCode}
+                >
+                  <CodeIcon />
+                </Button>
+              </Tooltip>
               <div className={isOptimizing ? 'preview-control optimizing' : 'preview-control'}>
                 <ButtonGroup
+                  className={isOptimizing ? undefined : 'icon-only'}
                   color="secondary"
+                  aria-label={t('editor.header.actions.preview')}
+                  tooltip={t('editor.header.actions.preview')}
+                  extraTooltip={t('editor.header.actions.preview_options.title')}
                   // Not natively disabled while optimizing (that would kill the inline ✕ too):
                   // the group is greyed and made inert via CSS, and only the ✕ stays clickable.
                   // aria-disabled flags the CSS-inert state to assistive tech, which the visual
@@ -824,7 +859,9 @@ export function EditorPage() {
                     isOffline
                   }
                   onClick={isOptimizing ? undefined : handleOpenPreview}
-                  startIcon={loadingPreview ? <Loader size={20} /> : <PlayCircleIcon />}
+                  // icon-only at rest (the icon IS the content); while optimizing the icon moves
+                  // to startIcon so the progress label can sit beside it
+                  startIcon={isOptimizing ? previewIcon : undefined}
                   extra={
                     <PreviewOptions
                       options={settings.previewOptions}
@@ -861,13 +898,14 @@ export function EditorPage() {
                       </Tooltip>
                     </span>
                   ) : (
-                    t('editor.header.actions.preview')
+                    previewIcon
                   )}
                 </ButtonGroup>
               </div>
               {publishOptions.length > 0 ? (
                 <ButtonGroup
                   color="primary"
+                  extraTooltip={t('editor.header.actions.publish_options.title')}
                   disabled={
                     loadingPublish || isInstallingProject || isDetectingCustomCode || isOffline
                   }
@@ -942,6 +980,7 @@ export function EditorPage() {
             onClose={handleCloseModal}
             initialStep={modalState.initialStep}
           />
+          <OptimizeModal project={project} />
           {mobileQRData && (
             <MobileQRCode
               open={!!mobileQRData}

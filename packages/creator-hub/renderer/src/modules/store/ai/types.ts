@@ -54,4 +54,9 @@ export interface AiState {
   // while the panel is open). Shown as a composer chip and prepended to the turn as context
   // so the assistant can resolve "this" / "the selected entity".
   selection: { id: number; name: string }[];
+  // A prompt seeded from elsewhere in the editor — e.g. the Trigger Area inspector's
+  // "describe a reaction" buttons (inspector→host `prompt_assistant` RPC). EditorPage opens
+  // the panel on it and the composer seeds its input from `text`, then clears it. `nonce`
+  // makes the same text fire again (a second click on the same button).
+  draftPrompt: { text: string; nonce: number } | null;
 }
