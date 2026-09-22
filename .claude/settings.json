@@ -12,6 +12,16 @@
           }
         ]
       }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/.ai/hooks/figma/hook.py\""
+          }
+        ]
+      }
     ]
   }
 }
