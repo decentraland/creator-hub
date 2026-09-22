@@ -37,6 +37,7 @@ export default withSdk<Props>(({ sdk, entities, initialOpen = true }) => {
   if (!allEntitiesHaveTextShape) return null;
 
   const fontAutoSize = getInputProps('fontAutoSize', e => e.target.checked);
+  const textWrapping = getInputProps('textWrapping', e => e.target.checked);
 
   return (
     <Container
@@ -79,7 +80,15 @@ export default withSdk<Props>(({ sdk, entities, initialOpen = true }) => {
           {...getInputProps('fontSize')}
         />
         <CheckboxField
-          label="Font Auto-Size"
+          label={
+            <>
+              Font Auto-Size{' '}
+              <InfoTooltip
+                text="Ignores Font Size and scales the text to fit inside the Size box."
+                type="help"
+              />
+            </>
+          }
           {...fontAutoSize}
           checked={!!fontAutoSize.value}
         />
@@ -122,6 +131,45 @@ export default withSdk<Props>(({ sdk, entities, initialOpen = true }) => {
           leftLabel="Spacing"
           type="number"
           {...getInputProps('lineSpacing')}
+        />
+      </Block>
+      <Block>
+        <CheckboxField
+          label={
+            <>
+              Text Wrapping{' '}
+              <InfoTooltip
+                text="Breaks the text into new lines when it reaches the width set in Size. When off, the text stays on a single line."
+                type="help"
+              />
+            </>
+          }
+          {...textWrapping}
+          checked={!!textWrapping.value}
+        />
+      </Block>
+      <Block
+        label={
+          <>
+            Size{' '}
+            <InfoTooltip
+              text="Width and height of the text area, in meters. Text Wrapping and Font Auto-Size fit the text into this box, and alignment and padding are relative to it."
+              type="help"
+            />
+          </>
+        }
+      >
+        <TextField
+          autoSelect
+          leftLabel="W"
+          type="number"
+          {...getInputProps('width')}
+        />
+        <TextField
+          autoSelect
+          leftLabel="H"
+          type="number"
+          {...getInputProps('height')}
         />
       </Block>
       <Block>
