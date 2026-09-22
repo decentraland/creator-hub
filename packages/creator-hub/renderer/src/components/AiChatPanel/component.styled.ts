@@ -377,8 +377,11 @@ const Toolbar = styled(Box)(({ theme }) => ({
 }));
 
 // A dark rounded pill used for the toolbar controls (New Chat menu + agent select), matching
-// the CODE/PREVIEW pills in the editor top bar but on the panel's darker surface.
-const ToolbarPill = styled('button')(({ theme }) => ({
+// the CODE/PREVIEW pills in the editor top bar but on the panel's darker surface. The outline is
+// transparent at rest and only shows on hover or while the menu is open (#1619).
+const ToolbarPill = styled('button', {
+  shouldForwardProp: prop => prop !== 'open',
+})<{ open?: boolean }>(({ theme, open }) => ({
   display: 'flex',
   alignItems: 'center',
   gap: theme.spacing(0.75),
@@ -387,11 +390,11 @@ const ToolbarPill = styled('button')(({ theme }) => ({
   width: theme.spacing(20),
   height: theme.spacing(3.75),
   padding: theme.spacing(0, 1.25),
-  border: `1px solid ${theme.palette.divider}`,
+  border: `1px solid ${open === true ? theme.palette.text.secondary : 'transparent'}`,
   borderRadius: theme.spacing(1),
   backgroundColor: 'var(--ai-menu-bg)',
   color: theme.palette.text.primary,
-  fontSize: theme.typography.body2.fontSize,
+  fontSize: theme.typography.pxToRem(12),
   fontFamily: 'inherit',
   cursor: 'pointer',
   whiteSpace: 'nowrap',
@@ -416,6 +419,11 @@ const SendButton = styled(IconButton)(({ theme }) => ({
   '&:hover': { backgroundColor: theme.palette.primary.dark },
   '&.Mui-disabled': { backgroundColor: theme.palette.action.disabledBackground },
 }));
+
+// The stop button shown while a turn streams — the same ruby circle as SendButton with a white
+// square, so the composer control keeps a constant size and style whether idle or busy
+// (#1618: the old raw IconButton was taller and stretched the input; #1620: match the Send style).
+const StopButton = styled(SendButton)({});
 
 const ProviderRow = styled(Box)(({ theme }) => ({
   display: 'flex',
@@ -449,11 +457,11 @@ const BillingCard = styled(Box)(({ theme }) => ({
   display: 'flex',
   flexDirection: 'column',
   alignItems: 'flex-start',
-  gap: theme.spacing(1),
+  gap: theme.spacing(2),
   margin: theme.spacing(0, 1.5, 1),
-  padding: theme.spacing(1.5),
-  borderRadius: theme.spacing(1),
-  backgroundColor: 'var(--card)',
+  padding: theme.spacing(2.5),
+  borderRadius: theme.spacing(1.5),
+  backgroundColor: '#35333b',
 }));
 
 const BillingTitle = styled('span')(({ theme }) => ({
@@ -471,10 +479,10 @@ const BillingBody = styled('span')(({ theme }) => ({
 const OutdatedHint = styled(Box)(({ theme }) => ({
   display: 'flex',
   alignItems: 'center',
-  gap: theme.spacing(1.25),
+  gap: theme.spacing(2),
   margin: theme.spacing(0, 1.5, 1),
-  padding: theme.spacing(1.5, 1.75),
-  borderRadius: theme.spacing(1.25),
+  padding: theme.spacing(1.5, 2.5),
+  borderRadius: theme.spacing(1.5),
   backgroundColor: 'var(--ai-warning-bg)',
   color: theme.palette.warning.main,
   fontSize: theme.typography.caption.fontSize,
@@ -482,8 +490,10 @@ const OutdatedHint = styled(Box)(({ theme }) => ({
   '& svg': { flexShrink: 0 },
 }));
 
+// Left inset matches a menu item's content start (mx:1 = 8px margin + MUI's 16px item padding),
+// so 'Chat History' lines up with the row icons above and below it (#1619).
 const MenuSectionLabel = styled('div')(({ theme }) => ({
-  padding: theme.spacing(0.75, 2, 0.25),
+  padding: theme.spacing(0.75, 2, 0.25, 3),
   color: theme.palette.text.secondary,
   fontSize: theme.typography.pxToRem(11),
   textTransform: 'uppercase',
@@ -551,6 +561,7 @@ export {
   SetupBox,
   SetupDivider,
   SetupStep,
+  StopButton,
   ThinkingRow,
   Toolbar,
   ToolbarPill,
