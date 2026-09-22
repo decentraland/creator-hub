@@ -1,5 +1,7 @@
 import { RPC, type Transport } from '@dcl/mini-rpc';
 
+import type { SceneBuildEvent } from '/shared/types/ipc';
+
 export enum AssetsTab {
   FileSystem = 'FileSystem',
   AssetsPack = 'AssetsPack',
@@ -40,6 +42,8 @@ export enum Method {
   SET_FEATURE_FLAGS = 'set_feature_flags',
   PUSH_MOBILE_DEBUG_ENTRIES = 'push_mobile_debug_entries',
   SET_MOBILE_DEBUG_SESSION_ENABLED = 'set_mobile_debug_session_enabled',
+  NOTIFY_SCENE_BUILD = 'notify_scene_build',
+  NOTIFY_ASSETS_CHANGED = 'notify_assets_changed',
   CREATE_ENTITY = 'create_entity',
   REMOVE_ENTITY = 'remove_entity',
   SET_PARENT = 'set_parent',
@@ -102,6 +106,8 @@ export type Params = {
       messageCount: number;
     }[];
   };
+  [Method.NOTIFY_SCENE_BUILD]: SceneBuildEvent;
+  [Method.NOTIFY_ASSETS_CHANGED]: Record<string, never>;
   [Method.CREATE_ENTITY]: { name?: string; parent?: number };
   [Method.REMOVE_ENTITY]: { entity: number };
   [Method.SET_PARENT]: { entity: number; parent: number };
@@ -141,6 +147,8 @@ export type Result = {
   [Method.SET_FEATURE_FLAGS]: void;
   [Method.PUSH_MOBILE_DEBUG_ENTRIES]: void;
   [Method.SET_MOBILE_DEBUG_SESSION_ENABLED]: void;
+  [Method.NOTIFY_SCENE_BUILD]: void;
+  [Method.NOTIFY_ASSETS_CHANGED]: void;
   [Method.CREATE_ENTITY]: { entity: number };
   [Method.REMOVE_ENTITY]: { entity: number };
   [Method.SET_PARENT]: { entity: number; parent: number };
@@ -265,6 +273,14 @@ export class SceneRpcClient extends RPC<Method, Params, Result> {
     }[] = [],
   ) => {
     return this.request('set_mobile_debug_session_enabled', { enabled, sessions });
+  };
+
+  notifySceneBuild = (event: SceneBuildEvent) => {
+    return this.request('notify_scene_build', event);
+  };
+
+  notifyAssetsChanged = () => {
+    return this.request('notify_assets_changed', {} as Record<string, never>);
   };
 
   createEntity = (name?: string, parent?: number) => {

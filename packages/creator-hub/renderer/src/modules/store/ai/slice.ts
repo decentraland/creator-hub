@@ -27,6 +27,7 @@ const initialState: AiState = {
   billingDismissed: false,
   sessions: [],
   currentSessionId: '',
+  draftPrompt: null,
 };
 
 // A session's title is its first user prompt (trimmed/clipped); empty until it has one, so
@@ -277,6 +278,15 @@ const slice = createSlice({
     },
     setSelection: (state, { payload }: PayloadAction<{ id: number; name: string }[]>) => {
       state.selection = payload;
+    },
+    // Seed the composer from elsewhere in the editor (the Trigger Area "describe a reaction"
+    // buttons). Bumps a nonce so clicking the same button twice re-seeds. EditorPage opens the
+    // panel on this; ChatView copies `text` into the composer and calls consumeDraftPrompt.
+    setDraftPrompt: (state, { payload }: PayloadAction<string>) => {
+      state.draftPrompt = { text: payload, nonce: (state.draftPrompt?.nonce ?? 0) + 1 };
+    },
+    consumeDraftPrompt: state => {
+      state.draftPrompt = null;
     },
     setBillingDismissed: (state, { payload }: PayloadAction<boolean>) => {
       state.billingDismissed = payload;

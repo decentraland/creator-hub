@@ -1,0 +1,41 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core-schema::Name",
+      "data": {
+        "0": {
+          "json": {
+            "value": "Trigger Area"
+          }
+        }
+      }
+    },
+    {
+      "name": "asset-packs::Script",
+      "data": {
+        "0": {
+          "json": {
+            "value": [
+              {
+                "path": "{assetPath}/TriggerArea.tsx",
+                "priority": 0,
+                "layout": "{\"params\":{\"activatedBy\":{\"type\":\"enum\",\"options\":[\"my player\",\"all players\",\"any collider\",\"clickable\",\"custom 1\",\"custom 2\",\"custom 3\"],\"optional\":true,\"tooltip\":\"What sets off the area. 'my player' is just you; 'all players' is any avatar; the rest match other collision layers.\",\"value\":\"my player\"},\"shape\":{\"type\":\"enum\",\"options\":[\"box\",\"sphere\"],\"optional\":true,\"tooltip\":\"Box or round (sphere) trigger volume.\",\"value\":\"box\"}},\"events\":[\"enter\",\"exit\"]}"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "asset-packs::Placeholder",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/trigger-area.glb"
+          }
+        }
+      }
+    }
+  ]
+}

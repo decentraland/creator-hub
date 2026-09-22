@@ -1,5 +1,7 @@
+import fs from 'fs';
+import os from 'os';
 import path from 'path';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // ai.ts → scene-mcp → explorer-gateway → cli → path.ts calls electron `app.getAppPath()` at
 // import. This suite only tests pure parseLine/PATH helpers, so stub the gateway to keep the
@@ -478,6 +480,104 @@ describe('gemini buildArgs', () => {
   });
 });
 
+describe('gemini MCP config (prepareTurn writes .gemini/settings.json)', () => {
+  const MCP = { url: 'http://127.0.0.1:65000/mcp', token: 'secret-token-xyz' };
+  let dir: string;
+
+  beforeEach(() => {
+    dir = fs.mkdtempSync(path.join(os.tmpdir(), 'ch-gemini-mcp-'));
+  });
+  afterEach(() => {
+    fs.rmSync(dir, { recursive: true, force: true });
+  });
+
+  function settings() {
+    return JSON.parse(fs.readFileSync(path.join(dir, '.gemini', 'settings.json'), 'utf8'));
+  }
+
+  it('wires the CH server as an httpUrl server with an env-ref token (secret not in the file)', () => {
+    PROVIDERS.gemini.prepareTurn?.({ text: 'hi', projectDir: dir, images: [], mcp: MCP });
+    const raw = fs.readFileSync(path.join(dir, '.gemini', 'settings.json'), 'utf8');
+    const s = settings();
+    expect(s.mcpServers['creator-hub'].httpUrl).toBe(MCP.url);
+    expect(s.mcpServers['creator-hub'].headers.Authorization).toBe('Bearer $CREATOR_HUB_MCP_TOKEN');
+    expect(s.mcpServers['creator-hub'].trust).toBe(true);
+    expect(raw).not.toContain(MCP.token); // the token rides via the env var, never the file
+  });
+
+  it('merges into existing settings without clobbering the user’s own servers', () => {
+    fs.mkdirSync(path.join(dir, '.gemini'), { recursive: true });
+    fs.writeFileSync(
+      path.join(dir, '.gemini', 'settings.json'),
+      JSON.stringify({ theme: 'dark', mcpServers: { mine: { httpUrl: 'http://x/mcp' } } }),
+    );
+    PROVIDERS.gemini.prepareTurn?.({ text: 'hi', projectDir: dir, images: [], mcp: MCP });
+    const s = settings();
+    expect(s.theme).toBe('dark'); // unrelated key preserved
+    expect(s.mcpServers.mine.httpUrl).toBe('http://x/mcp'); // user's server preserved
+    expect(s.mcpServers['creator-hub'].httpUrl).toBe(MCP.url); // ours added
+  });
+
+  it('does nothing when the MCP server is unavailable', () => {
+    PROVIDERS.gemini.prepareTurn?.({ text: 'hi', projectDir: dir, images: [] });
+    expect(fs.existsSync(path.join(dir, '.gemini', 'settings.json'))).toBe(false);
+  });
+});
+
+describe('cursor MCP config (prepareTurn writes .cursor/mcp.json)', () => {
+  const MCP = { url: 'http://127.0.0.1:65000/mcp', token: 'secret-token-xyz' };
+  let dir: string;
+
+  beforeEach(() => {
+    dir = fs.mkdtempSync(path.join(os.tmpdir(), 'ch-cursor-mcp-'));
+  });
+  afterEach(() => {
+    fs.rmSync(dir, { recursive: true, force: true });
+  });
+
+  const mcpFile = () => path.join(dir, '.cursor', 'mcp.json');
+  const config = () => JSON.parse(fs.readFileSync(mcpFile(), 'utf8'));
+
+  it('wires the CH server as a url server with the bearer token in the file', () => {
+    PROVIDERS.cursor.prepareTurn?.({ text: 'hi', projectDir: dir, images: [], mcp: MCP });
+    const s = config();
+    expect(s.mcpServers['creator-hub'].url).toBe(MCP.url);
+    // Cursor has no token indirection, so the token is literally in the file (unlike codex/gemini).
+    expect(s.mcpServers['creator-hub'].headers.Authorization).toBe(`Bearer ${MCP.token}`);
+  });
+
+  it('writes the token file 0600 and gitignores it so it cannot be committed', () => {
+    PROVIDERS.cursor.prepareTurn?.({ text: 'hi', projectDir: dir, images: [], mcp: MCP });
+    expect(fs.statSync(mcpFile()).mode & 0o777).toBe(0o600);
+    expect(fs.readFileSync(path.join(dir, '.gitignore'), 'utf8')).toContain('.cursor/mcp.json');
+  });
+
+  it('merges into an existing mcp.json without clobbering the user’s servers', () => {
+    fs.mkdirSync(path.join(dir, '.cursor'), { recursive: true });
+    fs.writeFileSync(mcpFile(), JSON.stringify({ mcpServers: { mine: { command: 'x' } } }));
+    PROVIDERS.cursor.prepareTurn?.({ text: 'hi', projectDir: dir, images: [], mcp: MCP });
+    const s = config();
+    expect(s.mcpServers.mine.command).toBe('x'); // user's server preserved
+    expect(s.mcpServers['creator-hub'].url).toBe(MCP.url); // ours added
+  });
+
+  it('does not duplicate the gitignore entry across turns', () => {
+    PROVIDERS.cursor.prepareTurn?.({ text: 'hi', projectDir: dir, images: [], mcp: MCP });
+    PROVIDERS.cursor.prepareTurn?.({ text: 'hi', projectDir: dir, images: [], mcp: MCP });
+    const lines = fs
+      .readFileSync(path.join(dir, '.gitignore'), 'utf8')
+      .split(/\r?\n/)
+      .filter(l => l.trim() === '.cursor/mcp.json');
+    expect(lines).toHaveLength(1);
+  });
+
+  it('still writes the rules file but no mcp.json when the server is unavailable', () => {
+    PROVIDERS.cursor.prepareTurn?.({ text: 'hi', projectDir: dir, images: [] });
+    expect(fs.existsSync(path.join(dir, '.cursor', 'rules', 'creator-hub.mdc'))).toBe(true);
+    expect(fs.existsSync(mcpFile())).toBe(false);
+  });
+});
+
 describe('parseShellPath', () => {
   it('extracts the marker-delimited PATH split on colons', () => {
     expect(parseShellPath('banner\n<<</usr/bin:/opt/homebrew/bin>>>trailer')).toEqual([
@@ -545,6 +645,29 @@ describe('filterEnvForChild', () => {
 
 // Both providers must receive the CH MCP server (scene + Explorer-gateway tools) — the
 // point of Codex parity — each in its own format, and never leak the token via argv.
+describe('codex buildArgs working dir', () => {
+  const base = { text: 'hi', projectDir: PROJECT, images: [] as string[] };
+
+  // Regression: `codex exec resume` doesn't define `-C`, so passing it failed every follow-up
+  // turn with `unexpected argument '-C' found`. The child spawns with cwd=projectDir, so -C is
+  // dropped from BOTH subcommands and cwd is the single source of the working dir.
+  it('never passes -C (resume rejects it; cwd carries the working dir)', () => {
+    expect(PROVIDERS.codex.buildArgs({ ...base }).args).not.toContain('-C');
+    expect(PROVIDERS.codex.buildArgs({ ...base, resume: 'thread-1' }).args).not.toContain('-C');
+  });
+
+  it('resumes via the `exec resume <id>` subcommand', () => {
+    const { args } = PROVIDERS.codex.buildArgs({ ...base, resume: 'thread-1' });
+    expect(args.slice(0, 3)).toEqual(['exec', 'resume', 'thread-1']);
+  });
+
+  it('starts a fresh turn with `exec` (no resume subcommand)', () => {
+    const { args } = PROVIDERS.codex.buildArgs({ ...base });
+    expect(args[0]).toBe('exec');
+    expect(args).not.toContain('resume');
+  });
+});
+
 describe('buildArgs MCP wiring', () => {
   const MCP = { url: 'http://127.0.0.1:65000/mcp', token: 'secret-token-xyz' };
   const base = { text: 'hi', projectDir: PROJECT, images: [] as string[] };

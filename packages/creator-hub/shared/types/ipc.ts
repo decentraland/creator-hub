@@ -16,6 +16,12 @@ import type {
   AiRemoteCommand,
   AiSendParams,
 } from './ai';
+import type {
+  OptimizeOptions,
+  OptimizeResult,
+  OptimizeScanResult,
+  OptimizeToolsInfo,
+} from './optimizer';
 
 export type IpcResult<T> = {
   success: true;
@@ -48,6 +54,25 @@ export const AI_STREAM_EVENT = 'ai.stream';
 export const AI_SCREENSHOT_REQUEST = 'ai.screenshotRequest';
 
 export type AiScreenshotRequest = { id: string; width: number; height: number };
+
+// Scene build events from the Bevy realm's `sdk-commands start` (main → renderer → the
+// inspector's Bevy renderer). The realm's bundler names every file that triggers a rebuild
+// and reports when the bundle lands; the editor uses that to tell an IDE code edit (reload)
+// from its own autosave (no reload). Shared for the same reason as the events above.
+export const BEVY_REALM_BUILD_EVENT = 'bevyRealm.build';
+
+export type SceneBuildEvent = { kind: 'rebuild'; file: string } | { kind: 'bundle-saved' };
+
+export type BevyRealmBuildEvent = SceneBuildEvent & { path: string };
+
+// Asset files added/changed/removed in a project's `assets/` tree from OUTSIDE the editor
+// (main → renderer → the inspector, which re-fetches its asset catalog). Lets the project
+// explorer auto-refresh when a user drops a file into the folder from Finder/Explorer,
+// instead of needing the manual "Refresh assets" button (#512). Events for every watched
+// project arrive; filter by `path`. Shared for the same reason as the events above.
+export const PROJECT_ASSETS_CHANGED_EVENT = 'project.assetsChanged';
+
+export type ProjectAssetsChangedEvent = { path: string };
 
 // Scene-graph mutation ops (AI assistant, Phase 2) run in the inspector iframe via its
 // SceneRpc. Main pushes an op request over this channel; the renderer routes it to the
@@ -132,12 +157,21 @@ export interface Ipc {
   'electron.openExternal': (url: string) => Promise<void>;
   'electron.copyToClipboard': (text: string) => Promise<void>;
   'oxc.parse': (filename: string, source: string) => Promise<OxcParseResult>;
+  'optimizer.scan': (path: string) => Promise<OptimizeScanResult>;
+  'optimizer.run': (path: string, options: OptimizeOptions) => Promise<OptimizeResult>;
+  'optimizer.revert': (path: string) => Promise<{ restored: number }>;
+  'optimizer.tools': () => Promise<OptimizeToolsInfo>;
+  'optimizer.installTools': (path: string) => Promise<OptimizeToolsInfo>;
   'metrics.request': (request: MetricsRequest) => Promise<MetricsResponse>;
   'inspector.start': () => Promise<number>;
   'inspector.attachSceneDebugger': (path: string) => Promise<string>;
   'inspector.detachSceneDebugger': (path: string) => void;
   'bevyRealm.start': (path: string) => Promise<{ url: string; wsUrl: string }>;
   'bevyRealm.kill': (path: string) => Promise<void>;
+  // Watch a project's assets/ tree for out-of-editor file changes, pushing
+  // PROJECT_ASSETS_CHANGED_EVENT when one lands (#512). Idempotent per path.
+  'projectWatcher.start': (path: string) => Promise<void>;
+  'projectWatcher.stop': (path: string) => Promise<void>;
   'config.getConfig': () => Promise<Config>;
   'config.writeConfig': (config: Config) => Promise<void>;
   'bin.install': () => Promise<void>;

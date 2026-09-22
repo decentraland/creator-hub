@@ -13,6 +13,7 @@ export type Props = {
 };
 
 export enum Texture {
+  TT_NONE = 'none',
   TT_TEXTURE = 'texture',
   TT_AVATAR_TEXTURE = 'avatarTexture',
   TT_VIDEO_TEXTURE = 'videoTexture',
@@ -66,6 +67,7 @@ export const FILTER_MODES = [
 ];
 
 export const TEXTURE_TYPES = mapSelectFieldOptions({
+  TT_NONE: 'none',
   TT_TEXTURE: 'texture',
   TT_VIDEO_TEXTURE: 'videoTexture',
 });

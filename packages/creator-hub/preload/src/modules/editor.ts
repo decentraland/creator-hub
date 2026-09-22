@@ -1,7 +1,14 @@
 import { ipcRenderer, type IpcRendererEvent } from 'electron';
 
 import type { DeployOptions } from '/shared/types/deploy';
-import { PREVIEW_PROGRESS_EVENT, type PreviewProgress } from '/shared/types/ipc';
+import {
+  BEVY_REALM_BUILD_EVENT,
+  PREVIEW_PROGRESS_EVENT,
+  PROJECT_ASSETS_CHANGED_EVENT,
+  type BevyRealmBuildEvent,
+  type PreviewProgress,
+  type ProjectAssetsChangedEvent,
+} from '/shared/types/ipc';
 import type { MobileDebugSessionInfo } from '/shared/types/ipc';
 
 import { invoke } from '../services/ipc';
@@ -37,6 +44,44 @@ export async function startBevyRealm(path: string) {
 
 export async function killBevyRealm(path: string) {
   return invoke('bevyRealm.kill', path);
+}
+
+/**
+ * Subscribe to the Bevy realm bundler's build events (a rebuild trigger naming its file,
+ * or the bundle landing). Events for every running realm arrive; filter by `path`.
+ */
+export function onBevyRealmBuildEvent(callback: (event: BevyRealmBuildEvent) => void): () => void {
+  const handler = (_event: IpcRendererEvent, event: BevyRealmBuildEvent) => callback(event);
+  ipcRenderer.on(BEVY_REALM_BUILD_EVENT, handler);
+  return () => {
+    ipcRenderer.removeListener(BEVY_REALM_BUILD_EVENT, handler);
+  };
+}
+
+/**
+ * Start (or reuse) a filesystem watcher over the project's assets/ tree, so files dropped
+ * in from outside the editor auto-refresh the inspector catalog. Idempotent per path.
+ */
+export async function startProjectWatcher(path: string) {
+  return invoke('projectWatcher.start', path);
+}
+
+export async function stopProjectWatcher(path: string) {
+  return invoke('projectWatcher.stop', path);
+}
+
+/**
+ * Subscribe to out-of-editor asset changes (a file added/changed/removed in a watched
+ * project's assets/ tree). Events for every watched project arrive; filter by `path`.
+ */
+export function onProjectAssetsChanged(
+  callback: (event: ProjectAssetsChangedEvent) => void,
+): () => void {
+  const handler = (_event: IpcRendererEvent, event: ProjectAssetsChangedEvent) => callback(event);
+  ipcRenderer.on(PROJECT_ASSETS_CHANGED_EVENT, handler);
+  return () => {
+    ipcRenderer.removeListener(PROJECT_ASSETS_CHANGED_EVENT, handler);
+  };
 }
 
 const activeDebuggers = new Map<string, () => void>();

@@ -429,10 +429,11 @@ function toolDetail(tool: string, inp: Record<string, unknown>, projectDir: stri
   return '';
 }
 
-// Codex reads the CH MCP server's bearer token from this env var (via the server config's
-// `bearer_token_env_var`) rather than from argv — argv is visible to `ps` on the machine,
-// and the token gates local scene control. aiSend sets it in the codex child's env.
-const CODEX_MCP_TOKEN_ENV = 'CREATOR_HUB_MCP_TOKEN';
+// The CH MCP server's bearer token rides in this env var, not argv or a project file — argv is
+// visible to `ps`, and a file in the scene dir could be committed. Codex reads it via its config's
+// `bearer_token_env_var`; Gemini via a `$CREATOR_HUB_MCP_TOKEN` reference in `.gemini/settings.json`
+// (gemini expands it). aiSend sets it on the child env for both.
+const MCP_TOKEN_ENV = 'CREATOR_HUB_MCP_TOKEN';
 
 // Cursor's stream-json reports a tool call as a single-key object `{ <name>ToolCall: {...} }`
 // (readToolCall, writeToolCall, shellToolCall, …). Map the base name to the same chip labels
@@ -603,11 +604,14 @@ export const PROVIDERS: Record<AiProvider, ProviderDef> = {
     defaultModel: 'default',
     buildArgs: ctx => {
       const base = ctx.resume !== undefined ? ['exec', 'resume', ctx.resume] : ['exec'];
+      // No `-C <dir>`: `codex exec resume` doesn't define that flag (only `codex exec` does), so
+      // passing it failed every follow-up turn with `unexpected argument '-C' found`. The child
+      // already spawns with cwd=projectDir (see aiSend), which codex uses as its working root by
+      // default and as the cwd filter that matches the session to resume — so cwd covers both
+      // subcommands and -C was redundant.
       const args = [
         ...base,
         '--json',
-        '-C',
-        ctx.projectDir,
         '--sandbox',
         'danger-full-access',
         '-c',
@@ -620,7 +624,7 @@ export const PROVIDERS: Record<AiProvider, ProviderDef> = {
       // token comes from an env var (set on the child in aiSend), not argv.
       if (ctx.mcp !== undefined) {
         args.push('-c', `mcp_servers.creator-hub.url="${ctx.mcp.url}"`);
-        args.push('-c', `mcp_servers.creator-hub.bearer_token_env_var="${CODEX_MCP_TOKEN_ENV}"`);
+        args.push('-c', `mcp_servers.creator-hub.bearer_token_env_var="${MCP_TOKEN_ENV}"`);
       }
       if (ctx.model !== undefined && ctx.model !== 'default') args.push('--model', ctx.model);
       for (const img of ctx.images) args.push('-i', img); // codex's native image flag
@@ -693,9 +697,12 @@ export const PROVIDERS: Record<AiProvider, ProviderDef> = {
   //    project rule file (see prepareTurn / writeCursorRules) and the user prompt is the trailing
   //    argv positional.
   //  - `-f` (force) is the bypassPermissions/danger-full-access equivalent.
-  // The CH MCP server (scene + Explorer-gateway tools) is NOT wired for Cursor yet: its only
-  // channel is a project-local `.cursor/mcp.json` that would carry the bearer token in-repo, and
-  // it needs live verification against a Cursor login — a follow-up. File edits work without it.
+  //  - The CH MCP scene tools are wired via a project `.cursor/mcp.json` (see prepareTurn /
+  //    writeCursorMcpConfig). Cursor's config has no token indirection (no env-var/file-path flag
+  //    like codex/gemini/claude), so the bearer token must sit literally in that file — it's
+  //    written 0600 and added to the scene's .gitignore so it can't be committed. Cursor's own
+  //    MCP-server approval prompt is interactive-only (`if (!printMode)`), so headless `-p` loads
+  //    the server without it.
   cursor: {
     id: 'cursor',
     label: 'Cursor',
@@ -704,7 +711,10 @@ export const PROVIDERS: Record<AiProvider, ProviderDef> = {
     // `default` omits --model so Cursor uses the user's configured default.
     models: ['default', 'sonnet-4', 'sonnet-4-thinking', 'gpt-5'],
     defaultModel: 'default',
-    prepareTurn: ctx => writeCursorRules(ctx.projectDir),
+    prepareTurn: ctx => {
+      writeCursorRules(ctx.projectDir);
+      if (ctx.mcp !== undefined) writeCursorMcpConfig(ctx.projectDir, ctx.mcp);
+    },
     buildArgs: ctx => {
       const args = [
         '-p', // non-interactive print mode (required for stream-json)
@@ -766,14 +776,18 @@ export const PROVIDERS: Record<AiProvider, ProviderDef> = {
   //    the user prompt on `-p`, keeping the ~7KB constant off argv (Windows cmd.exe cap, #1588).
   //  - Session resume is index-based (`--resume latest|N`), which doesn't map to a stable
   //    per-conversation key, so multi-turn resume is deferred: each turn is independent for now.
-  // The CH MCP scene tools are not wired for Gemini yet (same project-file/secret concern as
-  // Cursor) — a follow-up; file edits work without them.
+  //  - The CH MCP scene tools are wired via a project `.gemini/settings.json` (see prepareTurn /
+  //    writeGeminiMcpConfig); the bearer token rides via a `$CREATOR_HUB_MCP_TOKEN` env reference,
+  //    so no secret lands in the project file.
   gemini: {
     id: 'gemini',
     label: 'Gemini',
     binNames: ['gemini'],
     models: ['default', 'gemini-3-pro', 'gemini-3-flash', 'gemini-2.5-flash'],
     defaultModel: 'default',
+    prepareTurn: ctx => {
+      if (ctx.mcp !== undefined) writeGeminiMcpConfig(ctx.projectDir, ctx.mcp);
+    },
     buildArgs: ctx => {
       const args = [
         '-o',
@@ -1012,6 +1026,96 @@ function writeCursorRules(projectDir: string): void {
   fs.writeFileSync(file, body);
 }
 
+// Gemini reads MCP servers from its project workspace settings (`.gemini/settings.json`), not a
+// flag. Wire the CH server as a streamable-HTTP server (`httpUrl` → StreamableHTTPClientTransport);
+// the bearer token rides as a `$CREATOR_HUB_MCP_TOKEN` env reference (gemini expands `$VAR` in
+// values), set on the child in aiSend — so the token never lands in the project file. `trust: true`
+// bypasses per-tool confirmations (matches --yolo). Merge into any existing settings so the user's
+// own config/servers are preserved. Best-effort — a write failure just means no scene tools.
+function writeGeminiMcpConfig(projectDir: string, mcp: SceneMcpInfo): void {
+  const dir = path.join(projectDir, '.gemini');
+  const file = path.join(dir, 'settings.json');
+  let config: Record<string, unknown> = {};
+  try {
+    const parsed: unknown = JSON.parse(fs.readFileSync(file, 'utf8'));
+    if (parsed !== null && typeof parsed === 'object' && !Array.isArray(parsed))
+      config = parsed as Record<string, unknown>;
+  } catch {
+    /* no file yet, or invalid JSON — start fresh (below) */
+  }
+  const servers =
+    config.mcpServers !== null && typeof config.mcpServers === 'object'
+      ? (config.mcpServers as Record<string, unknown>)
+      : {};
+  config.mcpServers = {
+    ...servers,
+    'creator-hub': {
+      httpUrl: mcp.url,
+      headers: { Authorization: `Bearer $${MCP_TOKEN_ENV}` },
+      trust: true,
+    },
+  };
+  fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(file, `${JSON.stringify(config, null, 2)}\n`);
+}
+
+// Cursor reads MCP servers from `<project>/.cursor/mcp.json` (merged with a global one). Unlike
+// claude (--mcp-config <tmp file>), codex (bearer_token_env_var) and gemini ($VAR expansion),
+// cursor's config has NO token indirection and no arbitrary-path flag — the bearer token has to
+// sit literally in that project file. So write it 0600 and add the file to the scene's .gitignore
+// (see ensureCursorMcpGitignored) so a rotating localhost token can't be committed. A `url` server
+// is loaded over HTTP; cursor's own approval prompt is interactive-only, so headless `-p` uses it
+// without prompting. Merge to preserve the user's own servers. Best-effort.
+function writeCursorMcpConfig(projectDir: string, mcp: SceneMcpInfo): void {
+  const dir = path.join(projectDir, '.cursor');
+  const file = path.join(dir, 'mcp.json');
+  let config: Record<string, unknown> = {};
+  try {
+    const parsed: unknown = JSON.parse(fs.readFileSync(file, 'utf8'));
+    if (parsed !== null && typeof parsed === 'object' && !Array.isArray(parsed))
+      config = parsed as Record<string, unknown>;
+  } catch {
+    /* no file yet, or invalid JSON — start fresh (below) */
+  }
+  const servers =
+    config.mcpServers !== null && typeof config.mcpServers === 'object'
+      ? (config.mcpServers as Record<string, unknown>)
+      : {};
+  config.mcpServers = {
+    ...servers,
+    'creator-hub': { url: mcp.url, headers: { Authorization: `Bearer ${mcp.token}` } },
+  };
+  fs.mkdirSync(dir, { recursive: true });
+  // Put the ignore rule in place BEFORE the token file exists, so there's no window where a
+  // secret-bearing file is tracked.
+  ensureCursorMcpGitignored(projectDir);
+  // mode:0600 applies only when creating the file; an existing user file keeps its own perms.
+  fs.writeFileSync(file, `${JSON.stringify(config, null, 2)}\n`, { mode: 0o600 });
+}
+
+// Keep the token-bearing `.cursor/mcp.json` out of version control. Idempotent: appends the entry
+// only when nothing already ignores it. Best-effort — the token file is still 0600 regardless.
+function ensureCursorMcpGitignored(projectDir: string): void {
+  const gitignore = path.join(projectDir, '.gitignore');
+  const entry = '.cursor/mcp.json';
+  let content = '';
+  try {
+    content = fs.readFileSync(gitignore, 'utf8');
+  } catch {
+    /* no .gitignore yet — created below */
+  }
+  const ignores = content
+    .split(/\r?\n/)
+    .map(l => l.trim())
+    .some(l => l === entry || l === '.cursor' || l === '.cursor/' || l === '/.cursor/mcp.json');
+  if (ignores) return;
+  const prefix = content === '' || content.endsWith('\n') ? content : `${content}\n`;
+  fs.writeFileSync(
+    gitignore,
+    `${prefix}\n# Creator Hub AI assistant — holds a local MCP token, do not commit\n${entry}\n`,
+  );
+}
+
 function writeAttachments(images: AiSendParams['images']): string[] {
   if (images === undefined || images.length === 0) return [];
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'creator-hub-ai-'));
@@ -1099,9 +1203,11 @@ export async function aiSend(
   const { args, stdin } = def.buildArgs(turnCtx);
 
   const env = childEnv(params.apiKeyFromEnv ?? false);
-  // Codex reads the MCP bearer token from this env var (see CODEX_MCP_TOKEN_ENV); keeping it
-  // out of argv. Claude gets the token via its --mcp-config file instead, so it needs nothing here.
-  if (params.provider === 'codex' && mcp !== undefined) env[CODEX_MCP_TOKEN_ENV] = mcp.token;
+  // Codex and Gemini read the MCP bearer token from this env var (see MCP_TOKEN_ENV), keeping it
+  // out of argv and off the project file. Claude gets it via its --mcp-config temp file, and Cursor
+  // via its own .cursor/mcp.json (gitignored) — neither needs the env var, so only codex/gemini here.
+  if ((params.provider === 'codex' || params.provider === 'gemini') && mcp !== undefined)
+    env[MCP_TOKEN_ENV] = mcp.token;
 
   let child: ChildProcess;
   try {

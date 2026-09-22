@@ -254,7 +254,7 @@ export const executeDeployment = createAsyncThunk(
         dispatch(actions.updateDeploymentStatus({ path, deploymentId, componentsStatus }));
       };
 
-      const currentStatus = getInitialDeploymentStatus(info.isWorld);
+      const currentStatus = getInitialDeploymentStatus();
       const componentsStatus = await checkDeploymentStatus(
         maxRetries,
         retryDelayInMs,
@@ -361,7 +361,7 @@ const deploymentSlice = createSlice({
           wallet,
           chainId,
           status: 'idle',
-          componentsStatus: getInitialDeploymentStatus(info.isWorld),
+          componentsStatus: getInitialDeploymentStatus(),
           createdAt: timestamp,
           lastUpdated: timestamp,
         };

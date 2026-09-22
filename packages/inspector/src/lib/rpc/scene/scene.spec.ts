@@ -3,8 +3,9 @@ import { EntityState, Name as NameEngine } from '@dcl/ecs';
 import { InMemoryTransport, RPC } from '@dcl/mini-rpc';
 import type { Store } from '../../../redux/store';
 import { fetchLatestCatalog, getAssetById } from '../../logic/catalog';
-import { getDataLayerInterface } from '../../../redux/data-layer';
+import { getAssetCatalog, getDataLayerInterface } from '../../../redux/data-layer';
 import { EditorComponentNames } from '../../sdk/components';
+import { onSceneBuildEvent, type SceneBuildEvent } from '../../logic/scene-build-events';
 import { SceneClient } from './client';
 import { SceneServer } from './server';
 
@@ -12,6 +13,7 @@ import { SceneServer } from './server';
 // (vi.mock is hoisted above the imports by vitest regardless of position here.)
 vi.mock('../../logic/catalog', () => ({ fetchLatestCatalog: vi.fn(), getAssetById: vi.fn() }));
 vi.mock('../../../redux/data-layer', () => ({
+  getAssetCatalog: vi.fn(() => ({ type: 'data-layer/getAssetCatalog' })),
   getDataLayerInterface: vi.fn(),
   refreshUndoRedoState: vi.fn(() => ({ type: 'data-layer/refreshUndoRedoState' })),
 }));
@@ -232,11 +234,49 @@ describe('SceneServer RPC without a renderer (non-Babylon path)', () => {
     );
   });
 
+  describe('when the host relays scene build events', () => {
+    let received: SceneBuildEvent[];
+    let off: () => void;
+
+    beforeEach(() => {
+      received = [];
+      off = onSceneBuildEvent(event => received.push(event));
+    });
+
+    afterEach(() => off());
+
+    it('should publish each event to the build-event subscribers', async () => {
+      await host.request('notify_scene_build', { kind: 'rebuild', file: '/scene/src/index.ts' });
+      await host.request('notify_scene_build', { kind: 'bundle-saved' });
+
+      expect(received).toEqual([
+        { kind: 'rebuild', file: '/scene/src/index.ts' },
+        { kind: 'bundle-saved' },
+      ]);
+    });
+
+    it('should drop a malformed event instead of publishing it', async () => {
+      await host.request('notify_scene_build', { kind: 'rebuild' } as never);
+
+      expect(received).toEqual([]);
+    });
+  });
+
   it('should still handle other agnostic controls (e.g. toggle_ground_grid)', async () => {
     await host.request('toggle_ground_grid', { enabled: false });
     expect(store.dispatch).toHaveBeenCalledWith(
       expect.objectContaining({ type: 'ui/toggleGroundGrid', payload: { enabled: false } }),
     );
+  });
+
+  it('notify_assets_changed: re-fetches the asset catalog (works under the Bevy path)', async () => {
+    // resetAllMocks (afterEach) wipes the factory impl, so set the return here.
+    vi.mocked(getAssetCatalog).mockReturnValue({ type: 'data-layer/getAssetCatalog' } as never);
+
+    await host.request('notify_assets_changed', {});
+
+    expect(getAssetCatalog).toHaveBeenCalled();
+    expect(store.dispatch).toHaveBeenCalledWith({ type: 'data-layer/getAssetCatalog' });
   });
 
   it('get_scene_metrics: returns the scene budget, limits and out-of-bounds from the store', async () => {

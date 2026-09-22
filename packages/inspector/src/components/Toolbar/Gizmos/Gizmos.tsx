@@ -7,7 +7,6 @@ import { withSdk } from '../../../hoc/withSdk';
 import { useComponentValue } from '../../../hooks/sdk/useComponentValue';
 import { useSelectedEntity } from '../../../hooks/sdk/useSelectedEntity';
 import { useOutsideClick } from '../../../hooks/useOutsideClick';
-import { useHotkey } from '../../../hooks/useHotkey';
 import { useSnapToggle } from '../../../hooks/editor/useSnap';
 import { useGizmoAlignment } from '../../../hooks/editor/useGizmoAlignment';
 import { ROOT } from '../../../lib/sdk/tree';
@@ -66,11 +65,6 @@ export const Gizmos = withSdk(({ sdk }) => {
     () => setSelection({ gizmo: GizmoType.FREE }),
     [selection, setSelection],
   );
-
-  useHotkey(['M'], handlePositionGizmo);
-  useHotkey(['R'], handleRotationGizmo);
-  useHotkey(['X'], handleScaleGizmo);
-  useHotkey(['F'], handleFreeGizmo);
 
   const { isGizmoWorldAligned, setGizmoWorldAligned } = useGizmoAlignment();
 
