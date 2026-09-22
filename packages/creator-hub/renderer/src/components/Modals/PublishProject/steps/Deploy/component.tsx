@@ -196,7 +196,7 @@ export function Deploy(props: Props) {
 
     if (!deployment) return stepsList;
 
-    const { catalyst, assetBundle, lods } = deployment.componentsStatus;
+    const { catalyst, assetBundle } = deployment.componentsStatus;
     stepsList.push({
       bulletText: stepNumber++,
       name: t('modal.publish_project.deploy.deploying.step.uploading'),
@@ -210,18 +210,8 @@ export function Deploy(props: Props) {
       state: assetBundle,
     });
 
-    // Only add LODs step for non-world deployments
-    if (!isWorld) {
-      stepsList.push({
-        bulletText: stepNumber++,
-        name: t('modal.publish_project.deploy.deploying.step.optimizing'),
-        description: getStepDescription(lods),
-        state: lods,
-      });
-    }
-
     return stepsList;
-  }, [deployment?.componentsStatus, getStepDescription, needsUndeploy, undeployStatus, isWorld]);
+  }, [deployment?.componentsStatus, getStepDescription, needsUndeploy, undeployStatus]);
 
   const hasError =
     publishError || !deployment || deployment.status === 'failed' || undeployStatus === 'failed';
@@ -316,13 +306,7 @@ export function Deploy(props: Props) {
                   />
                 )}
                 {(deployment.status === 'pending' || undeployStatus === 'pending') && (
-                  <Deploying
-                    deployment={deployment}
-                    url={jumpInUrl}
-                    steps={steps}
-                    onClick={handleJumpIn}
-                    onRetry={handleDeployRetry}
-                  />
+                  <Deploying steps={steps} />
                 )}
                 {deployment.status === 'complete' && (
                   <Success
@@ -404,49 +388,17 @@ function Idle({ files, error, onClick }: IdleProps) {
 }
 
 type DeployingProps = {
-  deployment: Deployment;
-  url: string;
   steps: Step[];
-  onClick: () => void;
-  onRetry: () => void;
 };
 
-function Deploying({ deployment, steps, url, onClick }: DeployingProps) {
-  const { isDeployFinishing } = useDeploy();
-  const isFinishing = isDeployFinishing(deployment);
-
-  const title = useMemo(() => {
-    if (isFinishing) return t('modal.publish_project.deploy.deploying.finishing');
-    return t('modal.publish_project.deploy.deploying.publish');
-  }, [isFinishing]);
-
+function Deploying({ steps }: DeployingProps) {
   return (
     <div className="Deploying">
       <div className="header">
         <Loader />
-        <Typography variant="h5">{title}</Typography>
+        <Typography variant="h5">{t('modal.publish_project.deploy.deploying.publish')}</Typography>
       </div>
       <ConnectedSteps steps={steps} />
-      {isFinishing && (
-        <>
-          <div className="jump">
-            <JumpUrl
-              inProgress
-              info={deployment.info}
-              url={url}
-            />
-          </div>
-          <div className="actions">
-            <Button
-              size="large"
-              onClick={onClick}
-            >
-              {t('modal.publish_project.deploy.success.jump_in')}
-              <i className="jump-in-icon" />
-            </Button>
-          </div>
-        </>
-      )}
     </div>
   );
 }
@@ -556,10 +508,9 @@ function Success({ info, url, onClick }: SuccessProps) {
   );
 }
 
-function JumpUrl({ inProgress, info, url }: { inProgress?: boolean; info: Info; url: string }) {
+function JumpUrl({ info, url }: { info: Info; url: string }) {
   return (
     <div className="jump-in-url">
-      {inProgress && <label>{t('modal.publish_project.deploy.success.in_progress')}</label>}
       <label>
         {t('modal.publish_project.deploy.success.url', {
           target: info.isWorld

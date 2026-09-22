@@ -2,10 +2,7 @@ import { useCallback } from 'react';
 import type { ChainId } from '@dcl/schemas';
 
 import { actions, type Deployment } from '/@/modules/store/deployment';
-import {
-  deriveOverallStatus as _deriveOverallStatus,
-  checkDeploymentCompletion,
-} from '/@/modules/store/deployment/utils';
+import { deriveOverallStatus as _deriveOverallStatus } from '/@/modules/store/deployment/utils';
 import { useDispatch, useSelector } from '#store';
 
 export const useDeploy = () => {
@@ -52,11 +49,6 @@ export const useDeploy = () => {
     return _deriveOverallStatus(deployment.componentsStatus);
   }, []);
 
-  const isDeployFinishing = useCallback(
-    (deployment: Deployment) => checkDeploymentCompletion(deployment.componentsStatus),
-    [],
-  );
-
   return {
     deployments,
     history,
@@ -65,7 +57,6 @@ export const useDeploy = () => {
     initializeDeployment,
     executeDeployment,
     deriveOverallStatus,
-    isDeployFinishing,
     removeDeployment,
   };
 };

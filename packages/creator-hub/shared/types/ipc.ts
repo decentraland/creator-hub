@@ -65,6 +65,15 @@ export type SceneBuildEvent = { kind: 'rebuild'; file: string } | { kind: 'bundl
 
 export type BevyRealmBuildEvent = SceneBuildEvent & { path: string };
 
+// Asset files added/changed/removed in a project's `assets/` tree from OUTSIDE the editor
+// (main → renderer → the inspector, which re-fetches its asset catalog). Lets the project
+// explorer auto-refresh when a user drops a file into the folder from Finder/Explorer,
+// instead of needing the manual "Refresh assets" button (#512). Events for every watched
+// project arrive; filter by `path`. Shared for the same reason as the events above.
+export const PROJECT_ASSETS_CHANGED_EVENT = 'project.assetsChanged';
+
+export type ProjectAssetsChangedEvent = { path: string };
+
 // Scene-graph mutation ops (AI assistant, Phase 2) run in the inspector iframe via its
 // SceneRpc. Main pushes an op request over this channel; the renderer routes it to the
 // SceneRpcClient and answers with `ai.sceneOpResult`, correlated by `id`. `op` is the
@@ -159,6 +168,10 @@ export interface Ipc {
   'inspector.detachSceneDebugger': (path: string) => void;
   'bevyRealm.start': (path: string) => Promise<{ url: string; wsUrl: string }>;
   'bevyRealm.kill': (path: string) => Promise<void>;
+  // Watch a project's assets/ tree for out-of-editor file changes, pushing
+  // PROJECT_ASSETS_CHANGED_EVENT when one lands (#512). Idempotent per path.
+  'projectWatcher.start': (path: string) => Promise<void>;
+  'projectWatcher.stop': (path: string) => Promise<void>;
   'config.getConfig': () => Promise<Config>;
   'config.writeConfig': (config: Config) => Promise<void>;
   'bin.install': () => Promise<void>;

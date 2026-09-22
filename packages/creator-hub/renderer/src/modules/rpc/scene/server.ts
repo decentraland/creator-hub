@@ -7,6 +7,7 @@ import { type Project } from '/shared/types/projects';
 import { getPath } from '../';
 import type { Severity } from '../../store/snackbar/types';
 import { store } from '../../store';
+import { actions as aiActions } from '../../store/ai';
 import { actions as snackbarActions } from '../../store/snackbar';
 import { createGenericNotification } from '../../store/snackbar/utils';
 import { actions as workspaceActions } from '../../store/workspace';
@@ -30,6 +31,7 @@ export enum Method {
   UPDATE_SDK = 'update_sdk',
   SET_UI_DESIGNER_MODE = 'set_ui_designer_mode',
   OPTIMIZE_SCENE = 'optimize_scene',
+  PROMPT_ASSISTANT = 'prompt_assistant',
 }
 
 export type Params = {
@@ -41,6 +43,7 @@ export type Params = {
   [Method.UPDATE_SDK]: Record<string, never>;
   [Method.SET_UI_DESIGNER_MODE]: { open: boolean };
   [Method.OPTIMIZE_SCENE]: Record<string, never>;
+  [Method.PROMPT_ASSISTANT]: { text: string };
 };
 
 export type Result = {
@@ -55,6 +58,7 @@ export type Result = {
   [Method.UPDATE_SDK]: { ok: boolean };
   [Method.SET_UI_DESIGNER_MODE]: void;
   [Method.OPTIMIZE_SCENE]: void;
+  [Method.PROMPT_ASSISTANT]: void;
 };
 
 export class SceneRpcServer extends RPC<Method, Params, Result> {
@@ -126,6 +130,24 @@ export class SceneRpcServer extends RPC<Method, Params, Result> {
     // heavy work runs in the CH main process — the inspector only triggers the UI here.
     this.handle('optimize_scene', async () => {
       store.dispatch(optimizerActions.open());
+    });
+
+    this.handle('prompt_assistant', async ({ text }) => {
+      if (typeof text !== 'string' || text.trim() === '') return;
+      // The panel only exists when the experimental AI assistant is on. Guide the user there
+      // instead of silently dropping the prompt (EditorPage opens the panel off draftPrompt).
+      if (store.getState().workspace.settings?.aiAssistant !== true) {
+        store.dispatch(
+          snackbarActions.pushSnackbar(
+            createGenericNotification(
+              'info',
+              'Turn on the AI assistant in Settings → Experimental to describe what a Trigger Area does.',
+            ),
+          ),
+        );
+        return;
+      }
+      store.dispatch(aiActions.setDraftPrompt(text));
     });
 
     this.handle('set_ui_designer_mode', async ({ open }) => {

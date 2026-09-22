@@ -58,7 +58,7 @@ const TagsInspector = withSdk<Props>(({ entities, sdk }) => {
     const map = new Map<Entity, string[]>();
     entities.forEach(ent => {
       const component = getComponentValue(ent, Tags);
-      map.set(ent, component?.tags ?? []);
+      map.set(ent, [...(component?.tags ?? [])]);
     });
     const tagArrays = Array.from(map.values());
     const { common, partial } = partitionByFrequency(tagArrays, entities.length);
