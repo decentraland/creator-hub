@@ -57,43 +57,15 @@
   background-image: url(./icons/settings.svg);
 }
 
-.Container.Scene .thumbnail {
-  width: 76px;
-  height: 54px;
-  border-radius: 4px;
-  border: 1px solid var(--gray-0);
-  background-color: var(--gray-0);
-  color: var(--base-14);
-  overflow: hidden;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
 .Container.Scene .ThumbnailRow {
   display: flex;
-}
-
-.Container.Scene .thumbnail {
-  margin-right: 8px;
-  min-width: 70px;
-  flex-shrink: 0;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .Container.Scene .ThumbnailRow .ImportAssetField {
-  flex: 1;
   min-width: 0;
-  width: auto;
-}
-
-.Container.Scene .thumbnail img {
   width: 100%;
-}
-
-.Container.Scene .thumbnail svg {
-  color: white;
-  width: 32px;
-  height: 32px;
 }
 
 .Container.Scene .SpawnPointContainer {
