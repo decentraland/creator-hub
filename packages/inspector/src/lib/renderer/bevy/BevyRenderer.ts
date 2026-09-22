@@ -1,6 +1,6 @@
 import mitt from 'mitt';
 import type { Emitter } from 'mitt';
-import type { Entity } from '@dcl/ecs';
+import type { DeepReadonlyObject, Entity } from '@dcl/ecs';
 import { Vector3 as DclVector3 } from '@dcl/ecs-math';
 import type { Vector3 } from '@dcl/ecs-math';
 
@@ -33,7 +33,7 @@ import { createSpawnPointController } from './spawn-point-controller';
 import type { BevySpawnPointController } from './spawn-point-controller';
 
 /** A spawn-point coordinate resolves to a single value, or a range's midpoint. */
-function spawnCoordValue(coord: SceneSpawnPointCoord): number {
+function spawnCoordValue(coord: DeepReadonlyObject<SceneSpawnPointCoord>): number {
   if (coord.$case === 'range') {
     const [a, b] = coord.value;
     return b === undefined ? a : (a + b) / 2;

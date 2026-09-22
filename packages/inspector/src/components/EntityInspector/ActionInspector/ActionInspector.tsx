@@ -143,7 +143,7 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
     componentValue === null ? [] : componentValue.value,
   );
   const [animations, setAnimations] = useState<string[]>([]);
-  const [states, setStates] = useState<string[]>(States.getOrNull(entityId)?.value || []);
+  const [states, setStates] = useState<string[]>([...(States.getOrNull(entityId)?.value ?? [])]);
 
   const hasActions = useHasComponent(entityId, Actions);
   const hasStates = useHasComponent(entityId, States);
