@@ -11,6 +11,7 @@ import HighlightAltIcon from '@mui/icons-material/HighlightAlt';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
+import type { Theme } from '@mui/material/styles';
 import Markdown, { type MarkdownToJSX } from 'markdown-to-jsx';
 import {
   Button,
@@ -91,6 +92,24 @@ const MARKDOWN_OPTIONS: MarkdownToJSX.Options = {
   disableParsingRawHTML: true,
   overrides: { a: { props: { target: '_blank', rel: 'noopener noreferrer' } } },
 };
+
+// Both toolbar dropdowns (the chat menu and the agent select) open below their trigger with a
+// 10px gap and share the same dark rounded paper + 12px option labels (#1619). `aiMenuSx` takes
+// extra paper styles so the chat menu can widen its paper on top of the shared chrome.
+const AI_MENU_ORIGIN = {
+  anchorOrigin: { vertical: 'bottom', horizontal: 'left' },
+  transformOrigin: { vertical: 'top', horizontal: 'left' },
+} as const;
+
+const aiMenuSx = (theme: Theme, paper?: Record<string, string | number>) => ({
+  '& .MuiPaper-root': {
+    backgroundColor: 'var(--ai-menu-bg)',
+    borderRadius: '12px',
+    marginTop: theme.spacing(1.25),
+    ...paper,
+  },
+  '& .MuiMenuItem-root': { fontSize: theme.typography.pxToRem(12) },
+});
 
 // Compact "last used" label for a session in the history menu.
 function formatWhen(ts: number): string {
@@ -646,6 +665,8 @@ export function ChatView(props: ChatViewProps) {
           <ToolbarPill
             open={chatMenuAnchor !== null}
             aria-label={t('editor.ai.new_chat')}
+            aria-haspopup="menu"
+            aria-expanded={chatMenuAnchor !== null}
             onClick={e => setChatMenuAnchor(e.currentTarget)}
           >
             <AddCommentOutlinedIcon sx={{ fontSize: 16 }} />
@@ -661,20 +682,13 @@ export function ChatView(props: ChatViewProps) {
             anchorEl={chatMenuAnchor}
             open={chatMenuAnchor !== null}
             onClose={() => setChatMenuAnchor(null)}
-            anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
-            transformOrigin={{ vertical: 'top', horizontal: 'left' }}
-            sx={{
-              '& .MuiPaper-root': {
-                backgroundColor: 'var(--ai-menu-bg)',
-                borderRadius: '12px',
-                width: '300px',
-                marginTop: '10px',
-              },
-              '& .MuiMenuItem-root': { fontSize: '12px' },
+            {...AI_MENU_ORIGIN}
+            sx={theme => ({
+              ...aiMenuSx(theme, { width: '300px' }),
               '& .MuiMenuItem-root.Mui-selected, & .MuiMenuItem-root.Mui-selected:hover': {
                 backgroundColor: 'var(--ai-session-selected)',
               },
-            }}
+            })}
           >
             <MenuItem
               disabled={busy || messages.length === 0}
@@ -732,22 +746,16 @@ export function ChatView(props: ChatViewProps) {
               disabled={busy}
               IconComponent={KeyboardArrowDownIcon}
               MenuProps={{
-                anchorOrigin: { vertical: 'bottom', horizontal: 'left' },
-                transformOrigin: { vertical: 'top', horizontal: 'left' },
-                sx: {
-                  '& .MuiPaper-root': {
-                    backgroundColor: 'var(--ai-menu-bg)',
-                    borderRadius: '12px',
-                    marginTop: '10px',
-                  },
-                  '& .MuiMenuItem-root': { fontSize: '12px' },
+                ...AI_MENU_ORIGIN,
+                sx: theme => ({
+                  ...aiMenuSx(theme),
                   '& .MuiMenuItem-root.Mui-selected': {
                     backgroundColor: 'var(--ai-selected)',
                   },
                   '& .MuiMenuItem-root.Mui-selected:hover': {
                     backgroundColor: 'var(--ai-selected-hover)',
                   },
-                },
+                }),
               }}
               sx={{
                 flex: 1,
