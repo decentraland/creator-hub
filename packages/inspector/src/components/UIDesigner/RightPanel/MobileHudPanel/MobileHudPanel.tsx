@@ -8,6 +8,7 @@ import { useAppDispatch } from '../../../../redux/hooks';
 import { setMobileHudHighlight } from '../../../../redux/ui-designer';
 import { FileUploadField, InfoTooltip } from '../../../ui';
 import { ACCEPTED_FILE_TYPES } from '../../../ui/FileUploadField/types';
+import { MobileHudIcon } from '../../shared/widget-icons';
 import type { MobileAction, MobileHudConfig } from '../../MobileHud/mobile-hud-config';
 import {
   allActionsHidden,
@@ -116,6 +117,7 @@ const MobileHudPanel: React.FC = () => {
   return (
     <div className="ui-designer-mobile-hud-panel">
       <div className="ui-designer-mobile-hud-header">
+        <MobileHudIcon />
         <span className="ui-designer-mobile-hud-title">MobileHUD</span>
         <InfoTooltip
           className="ui-designer-mobile-hud-info"

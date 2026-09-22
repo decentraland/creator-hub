@@ -112,8 +112,6 @@
   align-items: center;
   gap: var(--uid-space-2);
   padding: 3px var(--uid-space-2);
-  margin-bottom: 2px;
-  border-bottom: 1px solid var(--ui-designer-control-border);
   cursor: pointer;
   color: var(--ui-designer-text);
   user-select: none;

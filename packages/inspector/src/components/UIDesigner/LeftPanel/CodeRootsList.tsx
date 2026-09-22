@@ -1,17 +1,12 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useDrag } from 'react-dnd';
-import {
-  IoEyeOffOutline,
-  IoEyeOutline,
-  IoGameControllerOutline,
-  IoTrashOutline,
-} from 'react-icons/io5';
+import { IoEyeOffOutline, IoEyeOutline, IoTrashOutline } from 'react-icons/io5';
 import cx from 'classnames';
 
 import { useAppDispatch, useAppSelector } from '../../../redux/hooks';
 import { getMobileHudSelected, selectMobileHud, selectNode } from '../../../redux/ui-designer';
 import { UI_DESIGNER_DND_TYPE, type UIDesignerDragItem } from '../shared/dnd';
-import { GuiGridIcon } from '../shared/widget-icons';
+import { GuiGridIcon, MobileHudIcon } from '../shared/widget-icons';
 import {
   type CodeRoot,
   removeRoot,
@@ -20,7 +15,7 @@ import {
   toggleTopLevel,
   useCodeState,
 } from '../code/store';
-import { loadMobileHudConfig } from '../MobileHud/mobile-hud-store';
+import { loadMobileHudConfig, removeMobileHud } from '../MobileHud/mobile-hud-store';
 
 import './CodeRootsList.css';
 
@@ -47,7 +42,7 @@ const MobileHudRow: React.FC = () => {
       }}
       title="Customize the mobile touch-screen controls"
     >
-      <IoGameControllerOutline aria-hidden="true" />
+      <MobileHudIcon />
       <span className="ui-designer-mobile-hud-row-name">MobileHUD</span>
     </div>
   );
@@ -203,6 +198,16 @@ export const CodeRootsList: React.FC<{ filter?: string }> = ({ filter = '' }) =>
       dispatch(selectNode({ node: parsed.root.entity }));
     }
   }, [filename, parsed, dispatch]);
+
+  const hadRoots = useRef(false);
+  useEffect(() => {
+    const hasRoots = roots.length > 0;
+    if (hadRoots.current && !hasRoots) {
+      if (mobileHudSelected) dispatch(selectNode({ node: null }));
+      void removeMobileHud();
+    }
+    hadRoots.current = hasRoots;
+  }, [roots.length, mobileHudSelected, dispatch]);
 
   const handleSelect = useCallback(
     (root: CodeRoot) => {

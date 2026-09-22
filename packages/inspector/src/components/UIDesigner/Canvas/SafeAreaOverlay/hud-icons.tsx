@@ -32,6 +32,55 @@ const DiscGradient: React.FC = () => (
   </radialGradient>
 );
 
+/** The Figma glass inner-shadow: a soft top-left purple highlight (#D1ADFF) inside the disc. */
+const InnerShadow: React.FC<{ id: string; offset: number; blur: number }> = ({
+  id,
+  offset,
+  blur,
+}) => (
+  <filter
+    id={id}
+    colorInterpolationFilters="sRGB"
+  >
+    <feFlood
+      floodOpacity="0"
+      result="BackgroundImageFix"
+    />
+    <feBlend
+      mode="normal"
+      in="SourceGraphic"
+      in2="BackgroundImageFix"
+      result="shape"
+    />
+    <feColorMatrix
+      in="SourceAlpha"
+      type="matrix"
+      values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0"
+      result="hardAlpha"
+    />
+    <feOffset
+      dx={offset}
+      dy={offset}
+    />
+    <feGaussianBlur stdDeviation={blur} />
+    <feComposite
+      in2="hardAlpha"
+      operator="arithmetic"
+      k2="-1"
+      k3="1"
+    />
+    <feColorMatrix
+      type="matrix"
+      values="0 0 0 0 0.818575 0 0 0 0 0.679838 0 0 0 0 1 0 0 0 0.7 0"
+    />
+    <feBlend
+      mode="normal"
+      in2="shape"
+      result="effect1_innerShadow"
+    />
+  </filter>
+);
+
 /** The shared button body in the 24-space icons: a dark gradient disc with a ring in the current colour. */
 const Disc: React.FC<{ r?: number }> = ({ r = 11 }) => (
   <>
@@ -57,17 +106,27 @@ const DiscButton: React.FC<{ children: React.ReactNode }> = ({ children }) => (
     height="100%"
     aria-hidden
   >
-    <circle
-      cx="22"
-      cy="22"
-      r="21.8"
-      fill="url(#mobile-hud-disc)"
-      fillOpacity="0.5"
-      stroke="currentColor"
-      strokeWidth="0.9"
-    />
+    <g filter="url(#mobile-hud-inner-44)">
+      <circle
+        cx="22"
+        cy="22"
+        r="21.8"
+        fill="url(#mobile-hud-disc)"
+        fillOpacity="0.5"
+        stroke="currentColor"
+        strokeOpacity="0.35"
+        strokeWidth="0.5"
+      />
+    </g>
     <g opacity="0.8">{children}</g>
-    <DiscGradient />
+    <defs>
+      <DiscGradient />
+      <InnerShadow
+        id="mobile-hud-inner-44"
+        offset={1.6}
+        blur={1.6}
+      />
+    </defs>
   </svg>
 );
 
@@ -197,15 +256,18 @@ const Jump: React.FC = () => (
     height="100%"
     aria-hidden
   >
-    <circle
-      cx="43.6"
-      cy="43.6"
-      r="43.6"
-      fill="url(#mobile-hud-disc)"
-      fillOpacity="0.5"
-      stroke="currentColor"
-      strokeWidth="0.9"
-    />
+    <g filter="url(#mobile-hud-inner-88)">
+      <circle
+        cx="43.6"
+        cy="43.6"
+        r="43.4"
+        fill="url(#mobile-hud-disc)"
+        fillOpacity="0.5"
+        stroke="currentColor"
+        strokeOpacity="0.35"
+        strokeWidth="0.9"
+      />
+    </g>
     <g opacity="0.8">
       <path
         d="M37.9603 64.0377C37.6189 64.0377 37.3302 63.785 37.285 63.4466L35.9983 53.8067C35.9531 53.4683 35.6645 53.2156 35.3231 53.2156H29.0714C28.505 53.2156 28.186 52.5646 28.5331 52.1169L42.6384 33.9232C42.9112 33.5714 43.4425 33.5714 43.7152 33.9232L57.8206 52.1169C58.1676 52.5646 57.8486 53.2156 57.2822 53.2156H50.8345C50.493 53.2156 50.2044 53.4683 50.1592 53.8067L48.8725 63.4466C48.8273 63.785 48.5386 64.0377 48.1972 64.0377H37.9603Z"
@@ -219,7 +281,14 @@ const Jump: React.FC = () => (
         strokeLinecap="round"
       />
     </g>
-    <DiscGradient />
+    <defs>
+      <DiscGradient />
+      <InnerShadow
+        id="mobile-hud-inner-88"
+        offset={3.2}
+        blur={3.2}
+      />
+    </defs>
   </svg>
 );
 
