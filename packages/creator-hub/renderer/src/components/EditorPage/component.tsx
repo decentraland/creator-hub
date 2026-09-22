@@ -439,9 +439,13 @@ export function EditorPage() {
     }
   }, [openPreview, settings.previewOptions]);
 
+  // The "code elements may only become visible once running" warning describes a
+  // Babylon limitation: it renders only the composite, so code-created entities are
+  // invisible until the scene runs. The Bevy editor runs the scene while editing and
+  // already shows them, so the warning would be false there.
   const handleActionWithWarningCheck = useCallback(
     async (action: () => void | Promise<void>) => {
-      if (!settings.previewOptions.showWarnings) {
+      if (!settings.previewOptions.showWarnings || useBevy) {
         await action();
         return;
       }
@@ -458,7 +462,7 @@ export function EditorPage() {
 
       await action();
     },
-    [settings.previewOptions.showWarnings, detectCustomCode],
+    [settings.previewOptions.showWarnings, useBevy, detectCustomCode],
   );
 
   const handleBack = useCallback(async () => {
