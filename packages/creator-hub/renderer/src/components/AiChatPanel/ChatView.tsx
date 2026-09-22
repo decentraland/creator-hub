@@ -11,6 +11,7 @@ import HighlightAltIcon from '@mui/icons-material/HighlightAlt';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
+import type { Theme } from '@mui/material/styles';
 import Markdown, { type MarkdownToJSX } from 'markdown-to-jsx';
 import {
   Button,
@@ -73,6 +74,7 @@ import {
   SetupBox,
   SetupDivider,
   SetupStep,
+  StopButton,
   ThinkingRow,
   Toolbar,
   ToolbarPill,
@@ -90,6 +92,24 @@ const MARKDOWN_OPTIONS: MarkdownToJSX.Options = {
   disableParsingRawHTML: true,
   overrides: { a: { props: { target: '_blank', rel: 'noopener noreferrer' } } },
 };
+
+// Both toolbar dropdowns (the chat menu and the agent select) open below their trigger with a
+// 10px gap and share the same dark rounded paper + 12px option labels (#1619). `aiMenuSx` takes
+// extra paper styles so the chat menu can widen its paper on top of the shared chrome.
+const AI_MENU_ORIGIN = {
+  anchorOrigin: { vertical: 'bottom', horizontal: 'left' },
+  transformOrigin: { vertical: 'top', horizontal: 'left' },
+} as const;
+
+const aiMenuSx = (theme: Theme, paper?: Record<string, string | number>) => ({
+  '& .MuiPaper-root': {
+    backgroundColor: 'var(--ai-menu-bg)',
+    borderRadius: '12px',
+    marginTop: theme.spacing(1.25),
+    ...paper,
+  },
+  '& .MuiMenuItem-root': { fontSize: theme.typography.pxToRem(12) },
+});
 
 // Compact "last used" label for a session in the history menu.
 function formatWhen(ts: number): string {
@@ -327,6 +347,13 @@ export function ChatView(props: ChatViewProps) {
 
   // Saved conversations for the history menu (the current not-yet-used session isn't listed).
   const savedSessions = useMemo(() => sessions.filter(s => s.title !== ''), [sessions]);
+
+  // The active saved conversation, if any — its title labels the dropdown button; otherwise the
+  // button reads "New chat" (#1619).
+  const currentSession = useMemo(
+    () => savedSessions.find(s => s.id === currentSessionId),
+    [savedSessions, currentSessionId],
+  );
 
   const currentProvider = useMemo(
     () => providers.find(p => p.id === provider),
@@ -636,11 +663,16 @@ export function ChatView(props: ChatViewProps) {
       <>
         <Toolbar>
           <ToolbarPill
+            open={chatMenuAnchor !== null}
             aria-label={t('editor.ai.new_chat')}
+            aria-haspopup="menu"
+            aria-expanded={chatMenuAnchor !== null}
             onClick={e => setChatMenuAnchor(e.currentTarget)}
           >
-            <AddCommentOutlinedIcon fontSize="small" />
-            <ToolbarPillLabel>{t('editor.ai.new_chat')}</ToolbarPillLabel>
+            <AddCommentOutlinedIcon sx={{ fontSize: 16 }} />
+            <ToolbarPillLabel>
+              {currentSession !== undefined ? currentSession.title : t('editor.ai.new_chat')}
+            </ToolbarPillLabel>
             <KeyboardArrowDownIcon
               fontSize="small"
               sx={{ marginLeft: 'auto' }}
@@ -650,16 +682,13 @@ export function ChatView(props: ChatViewProps) {
             anchorEl={chatMenuAnchor}
             open={chatMenuAnchor !== null}
             onClose={() => setChatMenuAnchor(null)}
-            sx={{
-              '& .MuiPaper-root': {
-                backgroundColor: 'var(--ai-menu-bg)',
-                borderRadius: '12px',
-                width: '300px',
-              },
+            {...AI_MENU_ORIGIN}
+            sx={theme => ({
+              ...aiMenuSx(theme, { width: '300px' }),
               '& .MuiMenuItem-root.Mui-selected, & .MuiMenuItem-root.Mui-selected:hover': {
                 backgroundColor: 'var(--ai-session-selected)',
               },
-            }}
+            })}
           >
             <MenuItem
               disabled={busy || messages.length === 0}
@@ -669,7 +698,7 @@ export function ChatView(props: ChatViewProps) {
                 setChatMenuAnchor(null);
               }}
             >
-              <AddCommentOutlinedIcon fontSize="small" />
+              <AddCommentOutlinedIcon sx={{ fontSize: 16 }} />
               {t('editor.ai.new_chat')}
             </MenuItem>
             {savedSessions.length > 0 && [
@@ -686,6 +715,12 @@ export function ChatView(props: ChatViewProps) {
                   setChatMenuAnchor(null);
                 }}
               >
+                <CheckIcon
+                  sx={{
+                    fontSize: 16,
+                    visibility: s.id === currentSessionId ? 'visible' : 'hidden',
+                  }}
+                />
                 <SessionText>
                   <SessionTitle>{s.title}</SessionTitle>
                   <SessionWhen>{formatWhen(s.updatedAt)}</SessionWhen>
@@ -711,18 +746,16 @@ export function ChatView(props: ChatViewProps) {
               disabled={busy}
               IconComponent={KeyboardArrowDownIcon}
               MenuProps={{
-                sx: {
-                  '& .MuiPaper-root': {
-                    backgroundColor: 'var(--ai-menu-bg)',
-                    borderRadius: '12px',
-                  },
+                ...AI_MENU_ORIGIN,
+                sx: theme => ({
+                  ...aiMenuSx(theme),
                   '& .MuiMenuItem-root.Mui-selected': {
                     backgroundColor: 'var(--ai-selected)',
                   },
                   '& .MuiMenuItem-root.Mui-selected:hover': {
                     backgroundColor: 'var(--ai-selected-hover)',
                   },
-                },
+                }),
               }}
               sx={{
                 flex: 1,
@@ -730,7 +763,10 @@ export function ChatView(props: ChatViewProps) {
                 height: theme => theme.spacing(3.75),
                 borderRadius: theme => theme.spacing(1),
                 backgroundColor: 'var(--ai-menu-bg)',
-                '& .MuiOutlinedInput-notchedOutline': { borderColor: 'divider' },
+                fontSize: theme => theme.typography.pxToRem(12),
+                // Outline only on hover / while open, transparent at rest — matches the New Chat
+                // pill (#1619).
+                '& .MuiOutlinedInput-notchedOutline': { borderColor: 'transparent' },
                 '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: 'text.secondary' },
                 '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: 'text.secondary' },
                 '& .MuiSelect-select': { display: 'flex', alignItems: 'center' },
@@ -872,13 +908,12 @@ export function ChatView(props: ChatViewProps) {
             InputProps={{
               endAdornment: busy ? (
                 <Tooltip title={t('editor.ai.stop')}>
-                  <IconButton
-                    color="error"
+                  <StopButton
                     aria-label={t('editor.ai.stop')}
                     onClick={onStop}
                   >
-                    <StopIcon />
-                  </IconButton>
+                    <StopIcon fontSize="small" />
+                  </StopButton>
                 </Tooltip>
               ) : (
                 <Tooltip title={t('editor.ai.send')}>
