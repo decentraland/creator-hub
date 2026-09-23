@@ -504,6 +504,9 @@
         "editor": {
           "label": "編輯器"
         },
+        "ai": {
+          "label": "AI"
+        },
         "experimental": {
           "label": "實驗性功能"
         },

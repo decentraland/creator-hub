@@ -40,6 +40,9 @@ describe('when a stored config still carries the removed guiEditor setting', () 
     expect(mocks.setAll).toHaveBeenCalledTimes(1);
     const written = mocks.setAll.mock.calls[0][0] as { settings: Record<string, unknown> };
     expect('guiEditor' in written.settings).toBe(false);
-    expect(written).toEqual(getDefaultConfig());
+
+    const expected = getDefaultConfig();
+    (expected.settings as Record<string, unknown>).aiAssistantPromoted = true;
+    expect(written).toEqual(expected);
   });
 });

@@ -165,8 +165,6 @@ export function EditorPage() {
   const { settings, updateAppSettings } = useSettings();
   const { updatePackages } = useWorkspace();
   const { flags: featureFlags } = useFeatureFlags();
-  // The AI assistant is an experimental opt-in (Settings → Experimental), like the Bevy
-  // renderer — not a remote feature flag.
   const aiChatEnabled = settings.aiAssistant;
   const { executeDeployment, getDeployment } = useDeploy();
   const deployment = project ? getDeployment(project.path) : undefined;

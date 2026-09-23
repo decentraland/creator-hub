@@ -505,6 +505,9 @@
         "editor": {
           "label": "EDITOR"
         },
+        "ai": {
+          "label": "AI"
+        },
         "experimental": {
           "label": "EXPERIMENTAL"
         },
