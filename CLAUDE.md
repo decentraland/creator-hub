@@ -146,7 +146,7 @@ CI is orchestrated by `.github/workflows/ci.yml`, which calls reusable (`on: [wo
 ## Code Style
 
 - **ESLint**: `@typescript-eslint/consistent-type-imports` is enforced (use `import type` for type-only imports).
-- **Lint scope**: `make lint` / `npm run lint` runs `eslint . --ext js,cjs,ts` — it does **not** lint `.tsx` files. Real violations DO hide there, so lint touched `.tsx` explicitly before shipping (`npx eslint "packages/inspector/src/**/*.tsx"`). Two `import/order` errors survived on the UI Designer branch precisely because the gate skips them. A standalone `.tsx` run also reports two spurious errors to ignore: `consistent-type-imports` on the `@dcl/react-ecs` JSX-pragma default import (e.g. `ui-renderer.tsx`), and `react-hooks/exhaustive-deps` "Definition for rule … was not found" (the plugin isn't loaded for a standalone invocation).
+- **Lint scope**: `make lint` / `npm run lint` runs `eslint . --ext js,cjs,ts` — it does **not** lint `.tsx` files. Real violations DO hide there, so lint touched `.tsx` explicitly before shipping (`npx eslint "packages/inspector/src/**/*.tsx"`). Two `import/order` errors survived on the UI Designer branch precisely because the gate skips them. For the same reason a standalone run surfaces violations that predate your branch — `OptimizeModal/component.tsx` carries two `import/order` errors on `main` as of #1642. Check `git status` before fixing one: repairing an untouched file drags it into your commit. A standalone `.tsx` run also reports two spurious errors to ignore: `consistent-type-imports` on the `@dcl/react-ecs` JSX-pragma default import (e.g. `ui-renderer.tsx`), and `react-hooks/exhaustive-deps` "Definition for rule … was not found" (the plugin isn't loaded for a standalone invocation).
 - **Prettier**: `.prettierrc` is the contract — follow it, don't infer style from surrounding code. Single quotes, semicolons, trailing commas, 100 char print width, `arrowParens: "avoid"`, and an override making `**/*.{css,scss,html}` use DOUBLE quotes. Note the `npm run format` glob is only `**/*.{js,ts,tsx,json}`: CSS is configured but never checked, so stylesheets drift and a passing `npm run format` says nothing about them.
 - **Import order**: ESLint enforced. React first, then `@dcl/*`, then `decentraland-*`, then MUI/internal, then relative.
 - **Component-directory barrels**: inspector component directories use a per-directory `index.ts` barrel (`export { X } from './X'`) — ~30/31 dirs follow this. Add one when creating a component; don't strip these barrels for file-count reduction — it breaks the established convention.
@@ -170,6 +170,16 @@ Files matching `*.styled.ts` / `*.styled.tsx` must follow these rules:
 ## Gotchas
 
 Hard-won traps that reading the code does not reveal. Testing-specific ones live in [`docs/testing-standards.md`](docs/testing-standards.md).
+
+### Changing a value in `DEFAULT_CONFIG` does nothing for existing installs
+
+`mergeConfig(existingConfig, defaultConfig)` forwards to `deepmerge(defaults, stored)`, so **stored values win**, and `getConfigStorage` persists the *whole* default settings object on first launch. Every existing machine therefore already has a literal value on disk for every non-optional setting, and editing `DEFAULT_CONFIG` only reaches brand-new configs. To change a default for the installed base, add a one-time fix-up in `getConfigStorage` (`promoteAiAssistantSetting` is the worked example) plus a marker so it cannot re-run and silently revert the user's later choice — optional marker fields are declared on `AppSettings` but deliberately left **out** of `DEFAULT_CONFIG`, so "absent" means "not yet done" (`optimizerConsentAcknowledged`, `aiAssistantPromoted`).
+
+Any such fix-up must mutate **`mergedConfig.settings`**, never `existingConfig.settings` or the `storedSettings` cast above it — those are the same object, and mutating them makes both sides of the `JSON.stringify` write guard agree, so nothing reaches disk and the fix-up re-runs every launch. The `experimental`-from-`renderer` derivation in the same function has exactly that shape and is re-derived on every launch instead of being persisted. Only a test asserting `setAll` was called can catch this; one asserting the returned object passes straight through it.
+
+### The settings Accordion is hand-rolled on purpose
+
+`Tabs/AiTab/component.tsx` defines its own chevron/title `Accordion` rather than importing MUI's. Pulling in a not-yet-bundled `@mui/material` module retriggers Vite's dependency optimizer mid-session. The same file's copy button carries an `'&&&&&&&': { color: 'var(--white)' }` `sx` rule for a related reason: `decentraland-ui2` pins secondary-text buttons to a grey `secondary.contrast` at high specificity, and the repeated `&` (0,7,0) is what out-specifies it.
 
 ### Redux state freeze + in-place mutating helpers
 

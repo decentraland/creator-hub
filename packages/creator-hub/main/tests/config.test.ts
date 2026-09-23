@@ -214,3 +214,40 @@ describe('writeConfig', () => {
     });
   });
 });
+
+describe('the one-time AI assistant promotion', () => {
+  beforeEach(() => {
+    vi.resetModules();
+    vi.clearAllMocks();
+    vi.mocked(existsSync).mockReturnValue(true);
+  });
+
+  describe('when the stored config predates the promotion', () => {
+    it('should persist the assistant as enabled and marked', async () => {
+      const { getConfig, getDefaultConfig } = await import('../src/modules/config');
+      storedConfig = getDefaultConfig();
+      storedConfig.settings!.aiAssistant = false;
+
+      await getConfig();
+
+      expect(storage.setAll).toHaveBeenCalledTimes(1);
+      const written = storage.setAll.mock.calls[0][0] as Config;
+      expect(written.settings.aiAssistant).toBe(true);
+      expect(written.settings.aiAssistantPromoted).toBe(true);
+    });
+  });
+
+  describe('when the creator turned the assistant off after the promotion ran', () => {
+    it('should leave it off and write nothing', async () => {
+      const { getConfig, getDefaultConfig } = await import('../src/modules/config');
+      storedConfig = getDefaultConfig();
+      storedConfig.settings!.aiAssistant = false;
+      storedConfig.settings!.aiAssistantPromoted = true;
+
+      const config = await getConfig();
+
+      expect(config.settings.aiAssistant).toBe(false);
+      expect(storage.setAll).not.toHaveBeenCalled();
+    });
+  });
+});
