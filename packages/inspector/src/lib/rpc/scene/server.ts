@@ -10,7 +10,11 @@ import { type initRenderer } from '../../babylon/setup/init';
 import type { AssetsTab, PanelName, SceneInspectorTab } from '../../../redux/ui/types';
 import { setHasCustomCode } from '../../../redux/scene-metrics';
 import { type SceneMetrics } from '../../../redux/scene-metrics/types';
-import { setDebugConsoleEnabled, setMobileDebugSessionEnabled } from '../../../redux/ui';
+import {
+  setDebugConsoleEnabled,
+  setDebugConsoleDetached,
+  setMobileDebugSessionEnabled,
+} from '../../../redux/ui';
 import * as debugLogStore from '../../logic/debug-log-store';
 import * as mobileDebugStore from '../../logic/mobile-debug-store';
 import { publishSceneBuildEvent, type SceneBuildEvent } from '../../logic/scene-build-events';
@@ -41,6 +45,7 @@ enum Method {
   TAKE_SCREENSHOT = 'take_screenshot',
   SET_SCENE_CUSTOM_CODE = 'set_scene_custom_code',
   SET_DEBUG_CONSOLE_ENABLED = 'set_debug_console_enabled',
+  SET_CONSOLE_DETACHED = 'set_console_detached',
   PUSH_DEBUG_LOGS = 'push_debug_logs',
   CLEAR_DEBUG_LOGS = 'clear_debug_logs',
   SET_FEATURE_FLAGS = 'set_feature_flags',
@@ -89,6 +94,7 @@ type Params = {
   [Method.TAKE_SCREENSHOT]: { width: number; height: number; precision?: number };
   [Method.SET_SCENE_CUSTOM_CODE]: { hasCustomCode: boolean };
   [Method.SET_DEBUG_CONSOLE_ENABLED]: { enabled: boolean };
+  [Method.SET_CONSOLE_DETACHED]: { detached: boolean };
   [Method.PUSH_DEBUG_LOGS]: { logs: string[] };
   [Method.CLEAR_DEBUG_LOGS]: Record<string, never>;
   [Method.SET_FEATURE_FLAGS]: { flags: Record<string, boolean> };
@@ -140,6 +146,7 @@ type Result = {
   [Method.TAKE_SCREENSHOT]: string;
   [Method.SET_SCENE_CUSTOM_CODE]: void;
   [Method.SET_DEBUG_CONSOLE_ENABLED]: void;
+  [Method.SET_CONSOLE_DETACHED]: void;
   [Method.PUSH_DEBUG_LOGS]: void;
   [Method.CLEAR_DEBUG_LOGS]: void;
   [Method.SET_FEATURE_FLAGS]: void;
@@ -305,6 +312,10 @@ export class SceneServer extends RPC<Method, Params, Result> {
 
     this.handle('set_debug_console_enabled', async ({ enabled }) => {
       store.dispatch(setDebugConsoleEnabled({ enabled }));
+    });
+
+    this.handle('set_console_detached', async ({ detached }) => {
+      store.dispatch(setDebugConsoleDetached({ detached }));
     });
 
     this.handle('push_debug_logs', async ({ logs }) => {

@@ -12,6 +12,7 @@ enum Method {
   SET_UI_DESIGNER_MODE = 'set_ui_designer_mode',
   OPTIMIZE_SCENE = 'optimize_scene',
   PROMPT_ASSISTANT = 'prompt_assistant',
+  SET_CONSOLE_WINDOW_OPEN = 'set_console_window_open',
 }
 
 type Params = {
@@ -24,6 +25,7 @@ type Params = {
   [Method.SET_UI_DESIGNER_MODE]: { open: boolean };
   [Method.OPTIMIZE_SCENE]: Record<string, never>;
   [Method.PROMPT_ASSISTANT]: { text: string };
+  [Method.SET_CONSOLE_WINDOW_OPEN]: { open: boolean };
 };
 
 type Result = {
@@ -39,6 +41,7 @@ type Result = {
   [Method.SET_UI_DESIGNER_MODE]: void;
   [Method.OPTIMIZE_SCENE]: void;
   [Method.PROMPT_ASSISTANT]: void;
+  [Method.SET_CONSOLE_WINDOW_OPEN]: void;
 };
 
 export class SceneClient extends RPC<Method, Params, Result> {
@@ -83,6 +86,12 @@ export class SceneClient extends RPC<Method, Params, Result> {
 
   optimizeScene = () => {
     return this.request('optimize_scene', {});
+  };
+
+  // Ask the host to pop the debug console out into a separate window (#1272), or to close it
+  // (dock it back into the inline tab).
+  setConsoleWindowOpen = (open: boolean) => {
+    return this.request('set_console_window_open', { open });
   };
 
   // Open the AI assistant panel in the host and seed its composer with `text` (without

@@ -2,11 +2,17 @@ import React from 'react';
 import { useDrag } from 'react-dnd';
 import cx from 'classnames';
 
+import { useAppSelector } from '../../../redux/hooks';
+import { getMobileHudSelected } from '../../../redux/ui-designer';
 import { useCodeState } from '../code/store';
 import { WIDGET_LIST, type WidgetDef } from '../shared/widget-catalog';
 import { UI_DESIGNER_DND_TYPE, type UIDesignerDragItem } from '../shared/dnd';
 
-const PaletteCard: React.FC<{ entry: WidgetDef; enabled: boolean }> = ({ entry, enabled }) => {
+const PaletteCard: React.FC<{ entry: WidgetDef; enabled: boolean; disabledTitle: string }> = ({
+  entry,
+  enabled,
+  disabledTitle,
+}) => {
   const [{ isDragging }, drag] = useDrag<UIDesignerDragItem, unknown, { isDragging: boolean }>(
     () => ({
       type: UI_DESIGNER_DND_TYPE,
@@ -24,11 +30,7 @@ const PaletteCard: React.FC<{ entry: WidgetDef; enabled: boolean }> = ({ entry, 
       style={{ opacity: isDragging ? 0.4 : 1 }}
       aria-label={`Add ${entry.label}`}
       aria-disabled={!enabled}
-      title={
-        enabled
-          ? `Drag onto the canvas to add a ${entry.label}`
-          : 'Create a GUI first to add elements'
-      }
+      title={enabled ? `Drag onto the canvas to add a ${entry.label}` : disabledTitle}
     >
       <span className="ui-designer-palette-icon">{entry.icon}</span>
       <span className="ui-designer-palette-label">{entry.label}</span>
@@ -38,13 +40,19 @@ const PaletteCard: React.FC<{ entry: WidgetDef; enabled: boolean }> = ({ entry, 
 
 const PaletteComponent: React.FC = () => {
   const { roots } = useCodeState();
+  const mobileHudSelected = useAppSelector(getMobileHudSelected);
+  const enabled = roots.length > 0 && !mobileHudSelected;
+  const disabledTitle = mobileHudSelected
+    ? 'Not available while the MobileHUD is selected'
+    : 'Create a GUI first to add elements';
   return (
     <div className="ui-designer-palette">
       {WIDGET_LIST.map(entry => (
         <PaletteCard
           key={entry.id}
           entry={entry}
-          enabled={roots.length > 0}
+          enabled={enabled}
+          disabledTitle={disabledTitle}
         />
       ))}
     </div>

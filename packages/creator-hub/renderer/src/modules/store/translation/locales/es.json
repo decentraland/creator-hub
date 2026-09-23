@@ -88,6 +88,11 @@
         }
       }
     },
+    "console": {
+      "clear": "Limpiar consola",
+      "dock": "Traerla de vuelta al editor",
+      "empty": "Ejecuta una escena para ver la salida de depuración"
+    },
     "ai": {
       "title": "Asistente IA",
       "toggle": "Mostrar/ocultar el asistente IA",

@@ -20,6 +20,7 @@ const FileUploadField: React.FC<Props> = ({
   onDrop,
   onChange,
   isValidFile,
+  validateFile,
   acceptURLs = false,
   accept,
   openFileExplorerOnMount = false,
@@ -41,6 +42,7 @@ const FileUploadField: React.FC<Props> = ({
       onDrop={onDrop}
       onChange={onChange}
       isValidFile={isValidFile}
+      validateFile={validateFile}
       acceptURLs={acceptURLs}
       accept={accept}
       openFileExplorerOnMount={openFileExplorerOnMount}
