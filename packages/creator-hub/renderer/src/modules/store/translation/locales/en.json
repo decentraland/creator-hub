@@ -568,10 +568,6 @@
           "label": "Bill this to an API key instead",
           "help": "Uses your provider's API key from your environment (ANTHROPIC_API_KEY, OPENAI_API_KEY, CURSOR_API_KEY, or GEMINI_API_KEY). Off by default."
         },
-        "gui_editor": {
-          "toggle": "Enable UI Editor",
-          "hint": "Enabling this feature will allow you to combine GUI objects, properties and scripting to build UI in the editor."
-        },
         "ai_connect": {
           "title": "Connect",
           "connected": "Connected",

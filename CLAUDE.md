@@ -54,6 +54,8 @@ cd packages/inspector && npm run test:e2e          # Inspector E2E tests
 
 **Note:** run vitest from inside the package (`cd packages/<pkg> && npx vitest run`). Invoking `npx vitest run` from the repo root sweeps up every workspace's specs without their per-package configs/setup and reports mass failures that are pure cwd artifacts.
 
+**Note:** no spec file is type-checked. All three creator-hub tsconfigs carry `exclude: ["**/*.spec.ts", "**/*.test.ts"]`, and vitest transpiles without checking — so `npm run typecheck` says nothing about a test's own types. A wrong cast or a stale `Partial<…>` in a fixture is caught by neither the type gate nor the test run. The production code a spec imports *is* checked (tsc follows the import graph), so only the fixture is blind.
+
 **Note:** the inspector's Playwright e2e needs the browser binaries installed once (`npx playwright install chromium`) and a dev server already running at `E2E_URL` (default `http://localhost:8000`) — `npm run start` in `packages/inspector` with `VITE_INSPECTOR_PORT` set serves one. Without the binary the suite fails at launch with `browserType.launch: Executable doesn't exist`, which reads like a code failure.
 
 ### Code Quality
@@ -169,6 +171,10 @@ Files matching `*.styled.ts` / `*.styled.tsx` must follow these rules:
 ## Gotchas
 
 Hard-won traps that reading the code does not reveal. Testing-specific ones live in [`docs/testing-standards.md`](docs/testing-standards.md).
+
+### The dev app's userData directory is `creator-hub`, not the product name
+
+Electron derives `app.getPath('userData')` from the package `name` (`creator-hub`), so a `npm run start` dev run reads and writes `~/Library/Application Support/creator-hub/Settings/config.json` on macOS. Only a packaged build uses `~/Library/Application Support/Decentraland Creator Hub/…`, from `productName` in `electron-builder.cjs`. Verifying persisted-settings behaviour against the packaged path while running the dev app silently inspects a file the app never touched. `electron-log` follows the same name: `~/Library/Logs/creator-hub/main.log`.
 
 ### Redux state freeze + in-place mutating helpers
 

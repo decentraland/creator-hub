@@ -39,7 +39,6 @@ const initialState: Async<Workspace> = {
     aiAssistant: false,
     exposeMcpServer: false,
     useApiKeyFromEnv: false,
-    guiEditor: false,
   },
   status: 'idle',
   error: null,

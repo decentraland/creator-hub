@@ -14,7 +14,7 @@ import {
   Typography,
 } from 'decentraland-ui2';
 
-import { ai, analytics } from '#preload';
+import { ai } from '#preload';
 
 import { AI_CLI_COMMANDS, type AiProviderInfo } from '/shared/types/ai';
 import { RENDERER } from '/shared/types/settings';
@@ -181,14 +181,6 @@ const ExperimentalTab = ({ settings, updateSettings }: BaseTabProps) => {
     [settings, updateSettings],
   );
 
-  const handleGuiEditorChange = useCallback(
-    (checked: boolean) => {
-      updateSettings({ ...settings, guiEditor: checked });
-      void analytics.track('Toggle UI Editor', { enabled: checked });
-    },
-    [settings, updateSettings],
-  );
-
   const handleAiAssistantChange = useCallback(
     (checked: boolean) => {
       // The API-key option only affects the in-app assistant, so it follows it off.
@@ -284,25 +276,6 @@ const ExperimentalTab = ({ settings, updateSettings }: BaseTabProps) => {
           }
           label={t('modal.app_settings.fields.renderer.toggle')}
         />
-      </Box>
-
-      <Box className="ExperimentalField">
-        <FormControlLabel
-          control={
-            <Switch
-              checked={!!settings.guiEditor}
-              onChange={(_event, checked) => handleGuiEditorChange(checked)}
-            />
-          }
-          label={t('modal.app_settings.fields.gui_editor.toggle')}
-        />
-        <Typography
-          variant="body2"
-          color="text.secondary"
-          className="ExperimentalHint"
-        >
-          {t('modal.app_settings.fields.gui_editor.hint')}
-        </Typography>
       </Box>
 
       <hr className="ExperimentalDivider" />

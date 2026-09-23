@@ -567,10 +567,6 @@
           "label": "改为计入 API 密钥",
           "help": "使用你环境中所用提供方的 API 密钥（ANTHROPIC_API_KEY、OPENAI_API_KEY、CURSOR_API_KEY 或 GEMINI_API_KEY）。默认关闭。"
         },
-        "gui_editor": {
-          "toggle": "启用 UI 编辑器",
-          "hint": "启用此功能后，你可以在编辑器中组合 GUI 对象、属性和脚本来构建 UI。"
-        },
         "ai_connect": {
           "title": "连接",
           "connected": "已连接",

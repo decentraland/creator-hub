@@ -52,7 +52,6 @@ export const DEFAULT_CONFIG: Config = {
     aiAssistant: false,
     exposeMcpServer: false,
     useApiKeyFromEnv: false,
-    guiEditor: false,
   },
   editors: [],
 };
@@ -68,4 +67,10 @@ export function mergeConfig(target: Partial<Config>, source: Config): Config {
     // Clone arrays instead of merging them
     arrayMerge: (_, sourceArray) => sourceArray,
   });
+}
+
+export function dropGuiEditorSetting(settings: Partial<AppSettings> | undefined): void {
+  if (settings) {
+    delete (settings as Record<string, unknown>).guiEditor;
+  }
 }
