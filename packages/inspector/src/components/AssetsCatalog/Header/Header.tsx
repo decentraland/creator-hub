@@ -3,7 +3,7 @@ import { AiOutlineSearch as SearchIcon } from 'react-icons/ai';
 import { VscChevronLeft as BackIcon } from 'react-icons/vsc';
 import cx from 'classnames';
 import { TextField } from '../../ui';
-import { Props } from './types';
+import type { Props } from './types';
 
 import './Header.css';
 
@@ -25,10 +25,10 @@ const Header: React.FC<Props> = ({ selectedTheme, search, onChangeTheme, onSearc
   );
 
   const renderHeaderTitle = useCallback(() => {
-    if (!!search) {
+    if (search) {
       const category = selectedTheme ? ` in ${selectedTheme.name}` : '';
       return `Search Results for '${search}'${category}`;
-    } else if (!!selectedTheme) {
+    } else if (selectedTheme) {
       return selectedTheme.name;
     } else {
       return 'Asset Packs';

@@ -1,8 +1,8 @@
 /** @jsx ReactEcs.createElement */
+import type { Entity } from '@dcl/sdk/ecs';
 import {
   EasingFunction,
   engine,
-  Entity,
   InputAction,
   inputSystem,
   PointerEventType,
@@ -18,10 +18,11 @@ import {
 import { Vector3, Color4, Quaternion } from '@dcl/sdk/math';
 import ReactEcs, { Input, UiEntity, ReactEcsRenderer } from '@dcl/sdk/react-ecs';
 import { openExternalUrl } from '~system/RestrictedActions';
-import { getRealm, PBRealmInfo } from '~system/Runtime';
+import type { PBRealmInfo } from '~system/Runtime';
+import { getRealm } from '~system/Runtime';
 import { signedFetch } from '~system/SignedFetch';
 import { getUserData } from '~system/UserIdentity';
-import { ActionCallback } from '~sdk/script-utils';
+import type { ActionCallback } from '~sdk/script-utils';
 
 const SPINNER_COMPONENT_NAME = 'clap-claim-spinner';
 
@@ -133,11 +134,11 @@ export class ClapClaim {
     this.initClapToClaim();
 
     TriggerArea.setBox(triggerEntity);
-    triggerAreaEventsSystem.onTriggerEnter(triggerEntity, e => {
+    triggerAreaEventsSystem.onTriggerEnter(triggerEntity, _e => {
       console.log('Trigger entered');
       this.playerInTrigger = true;
     });
-    triggerAreaEventsSystem.onTriggerExit(triggerEntity, e => {
+    triggerAreaEventsSystem.onTriggerExit(triggerEntity, _e => {
       console.log('Trigger exited');
       this.playerInTrigger = false;
     });
@@ -1547,17 +1548,6 @@ function clampTextLines(text: string, opts: { maxCharsPerLine: number; maxLines:
   }
 
   return joined;
-}
-
-function splitTitleAndBodyForUi(text: string): { title: string; body: string | null } {
-  const normalized = normalizeTextForUi(text);
-  const paragraphs = normalized
-    .split(/\n\s*\n/)
-    .map(p => p.trim())
-    .filter(Boolean);
-  const title = paragraphs[0] ?? 'Error';
-  const body = paragraphs.length > 1 ? paragraphs.slice(1).join('\n\n') : null;
-  return { title, body };
 }
 
 function normalizeTextForUi(text: string): string {

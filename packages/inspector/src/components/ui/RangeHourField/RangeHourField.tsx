@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import cx from 'classnames';
 import { MIDNIGHT_SECONDS } from '../../../components/EntityInspector/SceneInspector/utils';
-import { Props } from './types';
+import type { Props } from './types';
 
 import './RangeHourField.css';
 

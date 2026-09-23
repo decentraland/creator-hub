@@ -1,7 +1,7 @@
 import { useCallback, useRef } from 'react';
 import { MdLink as LinkIcon, MdLinkOff as LinkOffIcon } from 'react-icons/md';
 
-import { Props } from './types';
+import type { Props } from './types';
 
 import './Link.css';
 
@@ -14,7 +14,7 @@ export function Link({ field, getInputProps }: Props) {
     if (inputRef.current) inputRef.current.click();
   }, [getInputProps]);
 
-  const icon = !!value ? <LinkIcon /> : <LinkOffIcon />;
+  const icon = value ? <LinkIcon /> : <LinkOffIcon />;
 
   return (
     <>

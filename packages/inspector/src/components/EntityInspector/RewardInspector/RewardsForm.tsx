@@ -1,6 +1,6 @@
 import React, { useCallback } from 'react';
-import { Entity } from '@dcl/ecs';
 import { FiExternalLink as ExternalLinkIcon } from 'react-icons/fi';
+import type { Entity } from '@dcl/ecs';
 
 import { withSdk } from '../../../hoc/withSdk';
 import { useComponentValue } from '../../../hooks/sdk/useComponentValue';

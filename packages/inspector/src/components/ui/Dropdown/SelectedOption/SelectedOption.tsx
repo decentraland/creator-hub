@@ -1,8 +1,8 @@
 import React from 'react';
 import { Option } from '../Option';
 import { MultipleOption } from '../MultipleOption';
-import { Props as OptionProp } from '../Option/types';
-import { Props } from './types';
+import type { Props as OptionProp } from '../Option/types';
+import type { Props } from './types';
 import './SelectedOption.css';
 
 const SelectedOption: React.FC<Props> = props => {

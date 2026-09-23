@@ -1,9 +1,8 @@
 import React, { useCallback, useMemo } from 'react';
 import type { Entity } from '@dcl/ecs';
-import { ActionPayload, ActionType } from '@dcl/asset-packs';
 import { Dropdown, Label, InfoTooltip } from '../../../ui';
 import { withSdk } from '../../../../hoc/withSdk';
-import { Props } from './types';
+import type { Props } from './types';
 
 const ChangeCameraAction: React.FC<Props & { sdk: any }> = ({ value, onUpdate, sdk, entity }) => {
   const { engine } = sdk;

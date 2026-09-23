@@ -1,7 +1,7 @@
 import React, { useCallback } from 'react';
-import cx from 'classnames';
 import { IoAlertCircleOutline as AlertIcon, IoCheckmark as CheckIcon } from 'react-icons/io5';
-import { Props } from './types';
+import cx from 'classnames';
+import type { Props } from './types';
 import './Option.css';
 
 const Option: React.FC<Props> = props => {

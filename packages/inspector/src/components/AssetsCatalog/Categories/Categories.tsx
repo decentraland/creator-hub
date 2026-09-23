@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { getAssetsByCategory } from '../../../lib/logic/catalog';
 import { Assets } from '../Assets';
-import { Props } from './types';
+import type { Props } from './types';
 import './Categories.css';
 
 const Categories: React.FC<Props> = ({ value, onAddToFilesystem }) => {
