@@ -504,6 +504,9 @@
         "editor": {
           "label": "EDITOR"
         },
+        "ai": {
+          "label": "IA"
+        },
         "experimental": {
           "label": "EXPERIMENTAL"
         },
@@ -571,10 +574,6 @@
         "ai_api_key": {
           "label": "Facturar a una clave de API en su lugar",
           "help": "Usa la API key de tu proveedor desde tu entorno (ANTHROPIC_API_KEY, OPENAI_API_KEY, CURSOR_API_KEY o GEMINI_API_KEY). Desactivado por defecto."
-        },
-        "gui_editor": {
-          "toggle": "Activar el editor de UI",
-          "hint": "Habilitar esta función te permitirá combinar objetos de interfaz, propiedades y scripting para crear UI en el editor."
         },
         "ai_connect": {
           "title": "Conectar",
