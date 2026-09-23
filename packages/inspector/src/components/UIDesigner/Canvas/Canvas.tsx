@@ -14,9 +14,7 @@ import {
   IoAddOutline,
   IoCopyOutline,
   IoDesktopOutline,
-  IoGameControllerOutline,
   IoPhoneLandscapeOutline,
-  IoScanOutline,
   IoTrashOutline,
 } from 'react-icons/io5';
 import cx from 'classnames';
@@ -30,6 +28,7 @@ import {
   getHiddenNodes,
   getInteractionLayer,
   getLockedNodes,
+  getMobileHudSelected,
   getPlatform,
   getScreens,
   getSelectedNode,
@@ -84,6 +83,7 @@ import {
   registerNodeElement,
   unregisterNodeElement,
 } from '../shared/node-registry';
+import { loadMobileHudConfig, useMobileHudConfig } from '../MobileHud/mobile-hud-store';
 import { applyCanvasDrop } from './drop';
 import {
   armGroupClickSuppression,
@@ -101,7 +101,9 @@ import type { Box, Flow, InsertionSlot } from './reorder';
 import { flowFrom, insertionSlot } from './reorder';
 import { hiddenStyle, nodeStyle, rendersText, TEXT_VALUE_FIELD, textureStyle } from './node-style';
 import { renderTextMarkup } from './text-markup';
+import { MobileHudPreview } from './MobileHudPreview';
 import { SafeAreaOverlay } from './SafeAreaOverlay';
+import { HudGuidesIcon, SafeAreaFrameIcon } from './toolbar-icons';
 
 const ZOOM_MIN = 0.1;
 const ZOOM_MAX = 2;
@@ -1202,7 +1204,10 @@ const CanvasComponent: React.FC = () => {
   const selectedNode = useAppSelector(getSelectedNode);
   const [scale, setScale] = useState(getCanvasScale());
   const dispatch = useAppDispatch();
-  const device = useAppSelector(getPlatform);
+  const platform = useAppSelector(getPlatform);
+  const mobileHudSelected = useAppSelector(getMobileHudSelected);
+  const mobileHudConfig = useMobileHudConfig();
+  const device = mobileHudSelected ? 'mobile' : platform;
   const screen = useAppSelector(getScreens)[device];
   const activeRoot = roots.find(r => r.filename === filename);
   const activeInset: UiScreenInset = activeRoot?.topLevel ? activeRoot.screenInset : 'none';
@@ -1297,6 +1302,10 @@ const CanvasComponent: React.FC = () => {
   useEffect(() => () => clearNodeRegistry(), []);
 
   useEffect(() => {
+    void loadMobileHudConfig();
+  }, []);
+
+  useEffect(() => {
     const el = viewportRef.current;
     if (!el) return;
     const onWheel = (e: WheelEvent) => {
@@ -1349,7 +1358,7 @@ const CanvasComponent: React.FC = () => {
         onContextMenu={e => e.preventDefault()}
       >
         <div className="ui-designer-canvas-stagewrap">
-          {tree ? (
+          {tree || mobileHudSelected ? (
             <>
               <div
                 className={cx('ui-designer-canvas-stage', {
@@ -1380,22 +1389,54 @@ const CanvasComponent: React.FC = () => {
                       style={screenFill}
                     />
                   ) : null}
-                  <div
-                    className="ui-designer-canvas-root"
-                    style={rootStyle}
-                  >
-                    <CanvasNodeView node={tree} />
-                  </div>
-                  {(safeAreasVisible || hudVisible) && !fixedRoot ? (
-                    <SafeAreaOverlay
-                      width={screen.width}
-                      height={screen.height}
-                      device={device}
-                      variant={overlayVariant}
-                      showOutline={safeAreasVisible}
-                      showHud={hudVisible}
-                    />
-                  ) : null}
+                  {mobileHudSelected ? (
+                    <>
+                      <SafeAreaOverlay
+                        width={frameWidth}
+                        height={frameHeight}
+                        device="mobile"
+                        variant="device"
+                        showOutline
+                        showHud={false}
+                      />
+                      <MobileHudPreview
+                        width={frameWidth}
+                        height={frameHeight}
+                        config={mobileHudConfig}
+                      />
+                    </>
+                  ) : (
+                    <>
+                      <div
+                        className="ui-designer-canvas-rootbg"
+                        style={rootStyle}
+                      />
+                      {hudVisible ? (
+                        <MobileHudPreview
+                          width={frameWidth}
+                          height={frameHeight}
+                          config={mobileHudConfig}
+                          reference
+                        />
+                      ) : null}
+                      {safeAreasVisible && !fixedRoot ? (
+                        <SafeAreaOverlay
+                          width={screen.width}
+                          height={screen.height}
+                          device={device}
+                          variant={overlayVariant}
+                          showOutline
+                          showHud={false}
+                        />
+                      ) : null}
+                      <div
+                        className="ui-designer-canvas-root"
+                        style={{ ...rootStyle, zIndex: 901 }}
+                      >
+                        {tree ? <CanvasNodeView node={tree} /> : null}
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
             </>
@@ -1425,90 +1466,110 @@ const CanvasComponent: React.FC = () => {
             </div>
           )}
         </div>
-        {tree ? (
+        {tree || mobileHudSelected ? (
           <div className="ui-designer-canvas-zoom">
-            <button
-              type="button"
-              className="ui-designer-canvas-zoom-btn"
-              onClick={() => setScale(s => clampZoom(s - ZOOM_STEP))}
-              aria-label="Zoom out"
-            >
-              −
-            </button>
-            <button
-              type="button"
-              className="ui-designer-canvas-zoom-level"
-              onClick={() => {
-                setScale(DEFAULT_CANVAS_SCALE);
-                setPan({ x: 0, y: 0 });
-              }}
-              title="Reset view"
-              aria-label="Reset view"
-              aria-live="polite"
-            >
-              {Math.round(scale * 100)}%
-            </button>
-            <button
-              type="button"
-              className="ui-designer-canvas-zoom-btn"
-              onClick={() => setScale(s => clampZoom(s + ZOOM_STEP))}
-              aria-label="Zoom in"
-            >
-              +
-            </button>
-            <span className="ui-designer-canvas-zoom-sep" />
-            <button
-              type="button"
-              className={cx('ui-designer-canvas-zoom-btn', { active: device === 'desktop' })}
-              onClick={() => dispatch(setPlatform({ platform: 'desktop' }))}
-              title="Desktop preview"
-              aria-label="Desktop preview"
-              aria-pressed={device === 'desktop'}
-            >
-              <IoDesktopOutline />
-            </button>
-            <button
-              type="button"
-              className={cx('ui-designer-canvas-zoom-btn', { active: device === 'mobile' })}
-              onClick={() => dispatch(setPlatform({ platform: 'mobile' }))}
-              title="Mobile preview"
-              aria-label="Mobile preview"
-              aria-pressed={device === 'mobile'}
-            >
-              <IoPhoneLandscapeOutline />
-            </button>
-            <button
-              type="button"
-              className={cx('ui-designer-canvas-zoom-btn', {
-                active: safeAreasVisible,
-                locked: insetLocked,
-              })}
-              onClick={() => {
-                if (!insetLocked) setShowSafeAreas(s => !s);
-              }}
-              disabled={insetLocked}
-              title={
-                insetLocked
-                  ? 'Safe-area guides follow the Scene Inset — change it to unlock'
-                  : 'Toggle safe-area guides'
-              }
-              aria-label="Toggle safe-area guides"
-              aria-pressed={safeAreasVisible}
-            >
-              <IoScanOutline />
-            </button>
-            {device === 'mobile' ? (
+            {!mobileHudSelected ? (
+              <div className="ui-designer-preview-mode-panel">
+                <div className="ui-designer-toggles">
+                  <button
+                    type="button"
+                    className={cx('ui-designer-canvas-zoom-btn', { active: hudVisible })}
+                    onClick={() => setHudOverride(!hudVisible)}
+                    disabled={device === 'desktop'}
+                    title={
+                      device === 'desktop'
+                        ? 'The HUD only shows in the mobile preview'
+                        : 'Toggle mobile HUD guides'
+                    }
+                    aria-label="Toggle mobile HUD guides"
+                    aria-pressed={hudVisible}
+                  >
+                    <HudGuidesIcon />
+                  </button>
+                  <button
+                    type="button"
+                    className={cx('ui-designer-canvas-zoom-btn', {
+                      active: safeAreasVisible,
+                      locked: insetLocked,
+                    })}
+                    onClick={() => {
+                      if (!insetLocked) setShowSafeAreas(s => !s);
+                    }}
+                    disabled={insetLocked}
+                    title={
+                      insetLocked
+                        ? 'Safe-area guides follow the Scene Inset — change it to unlock'
+                        : 'Toggle safe-area guides'
+                    }
+                    aria-label="Toggle safe-area guides"
+                    aria-pressed={safeAreasVisible}
+                  >
+                    <SafeAreaFrameIcon />
+                  </button>
+                </div>
+                <div
+                  className="ui-designer-device-toggle"
+                  role="group"
+                  aria-label="Preview device"
+                >
+                  <button
+                    type="button"
+                    className={cx('ui-designer-device-toggle-btn', {
+                      active: device === 'desktop',
+                    })}
+                    onClick={() => dispatch(setPlatform({ platform: 'desktop' }))}
+                    title="Desktop preview"
+                    aria-label="Desktop preview"
+                    aria-pressed={device === 'desktop'}
+                  >
+                    <IoDesktopOutline />
+                  </button>
+                  <button
+                    type="button"
+                    className={cx('ui-designer-device-toggle-btn', {
+                      active: device === 'mobile',
+                    })}
+                    onClick={() => dispatch(setPlatform({ platform: 'mobile' }))}
+                    title="Mobile preview"
+                    aria-label="Mobile preview"
+                    aria-pressed={device === 'mobile'}
+                  >
+                    <IoPhoneLandscapeOutline />
+                  </button>
+                </div>
+              </div>
+            ) : null}
+            <div className="ui-designer-zoom-panel">
               <button
                 type="button"
-                className={cx('ui-designer-canvas-zoom-btn', { active: hudVisible })}
-                onClick={() => setHudOverride(!hudVisible)}
-                title="Toggle mobile HUD guides"
-                aria-label="Toggle mobile HUD guides"
-                aria-pressed={hudVisible}
+                className="ui-designer-canvas-zoom-btn"
+                onClick={() => setScale(s => clampZoom(s - ZOOM_STEP))}
+                aria-label="Zoom out"
               >
-                <IoGameControllerOutline />
+                −
               </button>
-            ) : null}
+              <button
+                type="button"
+                className="ui-designer-canvas-zoom-level"
+                onClick={() => {
+                  setScale(DEFAULT_CANVAS_SCALE);
+                  setPan({ x: 0, y: 0 });
+                }}
+                title="Reset view"
+                aria-label="Reset view"
+                aria-live="polite"
+              >
+                {Math.round(scale * 100)}%
+              </button>
+              <button
+                type="button"
+                className="ui-designer-canvas-zoom-btn"
+                onClick={() => setScale(s => clampZoom(s + ZOOM_STEP))}
+                aria-label="Zoom in"
+              >
+                +
+              </button>
+            </div>
           </div>
         ) : null}
       </div>
