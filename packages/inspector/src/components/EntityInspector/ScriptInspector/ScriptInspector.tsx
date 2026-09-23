@@ -43,6 +43,42 @@ import './ScriptInspector.css';
 
 type ScriptModuleMode = 'create' | 'import' | undefined;
 
+// Only the Trigger Area has a box/sphere placeholder to swap when its `shape` dropdown changes.
+// Matched on the file name like the placed copy (…/TriggerArea.tsx), so a renamed copy counts.
+const TRIGGER_DETECTOR = /(^|\/)TriggerArea\.tsx$/i;
+
+// Human phrasing for each reaction event a smart item can declare (via `@event`), used for the
+// Reactions button labels and the prompt sentences. Unknown events fall back to a generic
+// phrasing so a new `@event` still works without touching this map.
+const EVENT_LABEL: Record<string, string> = {
+  enter: 'When a player enters…',
+  exit: 'When a player leaves…',
+  click: 'When clicked…',
+  open: 'When it opens…',
+  close: 'When it closes…',
+  activate: 'When activated…',
+  deactivate: 'When deactivated…',
+  toggle: 'When toggled…',
+  unlock: 'When unlocked…',
+};
+const EVENT_CLAUSE: Record<string, (name: string) => string> = {
+  enter: n => `when a player enters ${n}`,
+  exit: n => `when a player leaves ${n}`,
+  click: n => `when ${n} is clicked`,
+  open: n => `when ${n} opens`,
+  close: n => `when ${n} closes`,
+  activate: n => `when ${n} is activated`,
+  deactivate: n => `when ${n} is deactivated`,
+  toggle: n => `when ${n} is toggled`,
+  unlock: n => `when ${n} is unlocked`,
+};
+const ACTION_CHIPS = ['Play a sound', 'Show a message', 'Score points'];
+
+const eventLabel = (event: string): string => EVENT_LABEL[event] ?? `When ${event}…`;
+const eventClause = (event: string, name: string): string =>
+  (EVENT_CLAUSE[event] ?? (n => `when ${n} fires "${event}"`))(name);
+const capitalize = (s: string): string => s.charAt(0).toUpperCase() + s.slice(1);
+
 export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) => {
   const { Script } = sdk.components;
   const dispatch = useAppDispatch();
@@ -99,8 +135,8 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
 
   const createScript = useCallback(
     (path: string, priority = 0, content: string) => {
-      const { params, actions, error } = getScriptParams(content);
-      const layout: ScriptLayout = { params, actions, error };
+      const { params, actions, events, error } = getScriptParams(content);
+      const layout: ScriptLayout = { params, actions, events, error };
 
       const newScript: ScriptItem = {
         path,
@@ -121,7 +157,7 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
 
   const getScriptName = useCallback((path: string) => {
     const fileName = path.split('/').pop() || path;
-    return fileName.replace(/\.(ts|js)$/, '');
+    return fileName.replace(/\.(tsx?|jsx?)$/, '');
   }, []);
 
   const handleRemoveScript = useCallback(
@@ -338,8 +374,23 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
       };
 
       updateScript(index, { ...script, layout: JSON.stringify(updatedLayout) });
+
+      // A Trigger Area's editor placeholder is a static glb and can't react to the script at
+      // edit time, so keep it in sync with the shape dropdown here: swap the Placeholder src
+      // to the box or sphere model (both ship in the smart item, so both are in the scene).
+      if (paramName === 'shape' && TRIGGER_DETECTOR.test(script.path)) {
+        const { Placeholder } = sdk.components;
+        const placeholder = Placeholder.getOrNull(entityId);
+        if (placeholder) {
+          const file = paramValue === 'sphere' ? 'trigger-area-sphere.glb' : 'trigger-area.glb';
+          sdk.operations.updateValue(Placeholder, entityId, {
+            src: placeholder.src.replace(/[^/]+\.glb$/i, file),
+          });
+          void sdk.operations.dispatch();
+        }
+      }
     },
-    [scripts, parsedLayouts, updateScript],
+    [sdk, entityId, scripts, parsedLayouts, updateScript],
   );
 
   const renderScriptParams = useCallback(
@@ -368,6 +419,27 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
       );
     },
     [handleUpdateDynamicField],
+  );
+
+  // The union of reaction events declared by this entity's scripts (via `@event`). Non-empty =>
+  // show the Reactions section, with one prompt button per event.
+  const reactionEvents = useMemo(() => {
+    const all: string[] = [];
+    for (const layout of parsedLayouts) {
+      for (const event of layout?.events ?? []) if (!all.includes(event)) all.push(event);
+    }
+    return all;
+  }, [parsedLayouts]);
+
+  // Hand a natural-language reaction prompt to the host's AI assistant (opens the panel and
+  // seeds the composer, without sending). The item's name binds the sentence to this instance.
+  const promptReaction = useCallback(
+    (build: (label: string) => string) => {
+      const name = sdk.components.Name.getOrNull(entityId)?.value?.trim();
+      const label = name ? `"${name}"` : 'this item';
+      void getSceneClient()?.promptAssistant(build(label)).catch(console.error);
+    },
+    [sdk, entityId],
   );
 
   if (!hasScript) return null;
@@ -462,6 +534,43 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
             </Container>
           ))}
         </>
+      )}
+      {reactionEvents.length > 0 && (
+        <Container
+          label="Reactions"
+          initialOpen
+          variant="minimal"
+        >
+          <div className="ScriptReactions">
+            <div className="description">
+              Describe what should happen. The AI assistant writes a script and attaches it here.
+            </div>
+            <div className="asks">
+              {reactionEvents.map(event => (
+                <Button
+                  key={event}
+                  className="ReactionButton"
+                  onClick={() => promptReaction(l => `${capitalize(eventClause(event, l))}, `)}
+                >
+                  {eventLabel(event)}
+                </Button>
+              ))}
+            </div>
+            <div className="chips">
+              {ACTION_CHIPS.map(verb => (
+                <Button
+                  key={verb}
+                  className="ReactionChip"
+                  onClick={() =>
+                    promptReaction(l => `${verb} ${eventClause(reactionEvents[0], l)}`)
+                  }
+                >
+                  {verb}
+                </Button>
+              ))}
+            </div>
+          </div>
+        </Container>
       )}
       {emptyScriptModuleMode || scripts.length === 0 ? (
         <Container

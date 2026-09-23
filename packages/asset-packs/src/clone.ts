@@ -55,7 +55,7 @@ export function clone(
       const syncComponent = SyncComponents.getOrNull(cloned);
 
       if (syncComponent && sdkHelpers?.syncEntity) {
-        sdkHelpers?.syncEntity(cloned, syncComponent.componentIds);
+        sdkHelpers?.syncEntity(cloned, [...syncComponent.componentIds]);
       }
     }
 

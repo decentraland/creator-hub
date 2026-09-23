@@ -119,16 +119,16 @@ export function fromSceneComponent(
             default: spawnPoint.default,
             position: hasRange
               ? {
-                  x: x.$case === 'range' ? x.value : [x.value, x.value],
-                  y: y.$case === 'range' ? y.value : [y.value, y.value],
-                  z: z.$case === 'range' ? z.value : [z.value, z.value],
+                  x: x.$case === 'range' ? [...x.value] : [x.value, x.value],
+                  y: y.$case === 'range' ? [...y.value] : [y.value, y.value],
+                  z: z.$case === 'range' ? [...z.value] : [z.value, z.value],
                 }
               : {
                   x: x.value as number,
                   y: y.value as number,
                   z: z.value as number,
                 },
-            cameraTarget: spawnPoint.cameraTarget,
+            cameraTarget: spawnPoint.cameraTarget ? { ...spawnPoint.cameraTarget } : undefined,
           };
         })
       : [],

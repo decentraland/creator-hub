@@ -3,6 +3,7 @@ import { createSlice } from '@reduxjs/toolkit';
 import type { Entity } from '@dcl/ecs';
 
 import type { InteractionStateKey } from '../../components/UIDesigner/code/interaction-convention';
+import type { MobileAction } from '../../components/UIDesigner/MobileHud/mobile-hud-config';
 import type { DeviceKind, ScreenSize } from '../../components/UIDesigner/shared/safe-areas';
 import { DEFAULT_SCREENS } from '../../components/UIDesigner/shared/safe-areas';
 import type { RootState } from '../store';
@@ -39,6 +40,8 @@ export interface UIDesignerState {
   interactionLayer: InteractionStateKey;
   platform: DeviceKind;
   screens: Record<DeviceKind, ScreenSize>;
+  mobileHudSelected: boolean;
+  mobileHudHighlightedAction: MobileAction | null;
 }
 
 export const initialState: UIDesignerState = {
@@ -51,6 +54,8 @@ export const initialState: UIDesignerState = {
   screens: loadPersisted<Record<DeviceKind, ScreenSize>>(SCREENS_KEY, DEFAULT_SCREENS),
   interactionLayer: 'base',
   platform: 'desktop',
+  mobileHudSelected: false,
+  mobileHudHighlightedAction: null,
 };
 
 export const uiDesignerSlice = createSlice({
@@ -60,16 +65,27 @@ export const uiDesignerSlice = createSlice({
     selectNode: (state, { payload }: PayloadAction<{ node: Entity | null }>) => {
       state.selectedNodes = payload.node === null ? [] : [payload.node];
       state.interactionLayer = 'base';
+      state.mobileHudSelected = false;
     },
     toggleNodeSelection: (state, { payload }: PayloadAction<{ node: Entity }>) => {
       const idx = state.selectedNodes.indexOf(payload.node);
       if (idx >= 0) state.selectedNodes.splice(idx, 1);
       else state.selectedNodes.push(payload.node);
       state.interactionLayer = 'base';
+      state.mobileHudSelected = false;
     },
     selectNodes: (state, { payload }: PayloadAction<{ nodes: Entity[] }>) => {
       state.selectedNodes = payload.nodes;
       state.interactionLayer = 'base';
+      state.mobileHudSelected = false;
+    },
+    selectMobileHud: state => {
+      state.selectedNodes = [];
+      state.interactionLayer = 'base';
+      state.mobileHudSelected = true;
+    },
+    setMobileHudHighlight: (state, { payload }: PayloadAction<{ action: MobileAction | null }>) => {
+      state.mobileHudHighlightedAction = payload.action;
     },
     setInteractionLayer: (state, { payload }: PayloadAction<{ layer: InteractionStateKey }>) => {
       state.interactionLayer = payload.layer;
@@ -136,6 +152,8 @@ export const {
   selectNode,
   toggleNodeSelection,
   selectNodes,
+  selectMobileHud,
+  setMobileHudHighlight,
   setExpanded,
   setNodeHidden,
   setNodeLocked,
@@ -159,5 +177,8 @@ export const getCollapsedGroups = (state: RootState) => state.uiDesigner.collaps
 export const getInteractionLayer = (state: RootState) => state.uiDesigner.interactionLayer;
 export const getPlatform = (state: RootState) => state.uiDesigner.platform;
 export const getScreens = (state: RootState) => state.uiDesigner.screens;
+export const getMobileHudSelected = (state: RootState) => state.uiDesigner.mobileHudSelected;
+export const getMobileHudHighlight = (state: RootState) =>
+  state.uiDesigner.mobileHudHighlightedAction;
 
 export default uiDesignerSlice.reducer;
