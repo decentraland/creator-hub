@@ -30,20 +30,25 @@ By default the skill fetches each PR body and writes user-focused, product-ready
 ## ✨ New & Improved
 
 ### Multi-Scene Worlds
+
 Publish and manage worlds that contain multiple scenes. Assign collaborator permissions per world and build richer experiences from the Creator Hub.
 
 ### Placeholder component
+
 Add a **Placeholder** component to represent invisible entities in the editor, such as sit spots or trigger areas, without rendering anything in the game. Design interactions without affecting scene metrics.
 
 ### Smart Items — Log & Delete actions
+
 New actions let you log data and delete entities from your Smart Item logic, giving you more control over in-world behavior.
 
 ## 🔧 Changes
+
 - The unused **Save** icon has been removed from the top bar for a cleaner interface.
 - The "Slow connection" warning has been removed from the menu to reduce noise.
 - The "Custom Code" warning is now more accurate, so you only see it when it's relevant.
 
 ## 🐛 Fixes
+
 - **Trigger areas:** Trigger areas now activate only for the local player, so other players walking into the same zone no longer trigger it on your client.
 - **Devtools:** The panel for inspecting your scene's web traffic works again, so you can debug network requests with confidence.
 - **Virtual camera:** The duration field works as expected, and an entity can select itself in the **Change camera** action.

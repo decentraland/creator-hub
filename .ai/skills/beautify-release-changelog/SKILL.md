@@ -57,15 +57,19 @@ Use this template. Omit empty sections.
 ## ✨ New & Improved
 
 ### [Feature name]
+
 [1–3 sentences in user-facing prose.]
 
 ### [Feature name]
+
 [...]
 
 ## 🔧 Changes
+
 - [One-line behavior change in user-facing prose]
 
 ## 🐛 Fixes
+
 - **[Area]:** [What now works]
 - [Fix with no specific area]
 ```
@@ -136,12 +140,15 @@ Fetching continues to use curl; only the update step uses `gh`.
 ## ✨ New & Improved
 
 ### Multi-scene worlds
+
 You can now publish and manage worlds that contain multiple scenes. Assign collaborator permissions per world and build richer experiences.
 
 ## 🔧 Changes
+
 - The unused **Save** icon has been removed from the top bar for a cleaner interface.
 
 ## 🐛 Fixes
+
 - **Devtools:** The panel for inspecting your scene's web traffic works again, so you can debug network requests with confidence.
 ```
 
@@ -149,12 +156,15 @@ You can now publish and manage worlds that contain multiple scenes. Assign colla
 
 ```markdown
 ## ✨ New & Improved
+
 - Multi-scene worlds support
 
 ## 🔧 Changes
+
 - Remove unused "Save" icon from the top bar
 
 ## 🐛 Fixes
+
 - Fix devtools for viewing scene web traffic
 ```
 
