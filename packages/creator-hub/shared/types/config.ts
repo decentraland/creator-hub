@@ -52,7 +52,6 @@ export const DEFAULT_CONFIG: Config = {
     aiAssistant: true,
     exposeMcpServer: false,
     useApiKeyFromEnv: false,
-    guiEditor: false,
   },
   editors: [],
 };
@@ -67,6 +66,12 @@ export function mergeConfig(target: Partial<Config>, source: Config): Config {
     },
     arrayMerge: (_, sourceArray) => sourceArray,
   });
+}
+
+export function dropGuiEditorSetting(settings: Partial<AppSettings> | undefined): void {
+  if (settings) {
+    delete (settings as Record<string, unknown>).guiEditor;
+  }
 }
 
 /** Enables the AI assistant once, in place, on merged settings not yet promoted. */

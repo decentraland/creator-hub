@@ -7,6 +7,7 @@ import deepmerge from 'deepmerge';
 import { SETTINGS_DIRECTORY, CONFIG_FILE_NAME, getFullScenesPath } from '/shared/paths';
 import {
   DEFAULT_CONFIG,
+  dropGuiEditorSetting,
   mergeConfig,
   promoteAiAssistantSetting,
   type Config,
@@ -70,6 +71,7 @@ export async function getConfigStorage(): Promise<IFileSystemStorage<Config>> {
       }
     }
 
+    dropGuiEditorSetting(mergedConfig.settings);
     promoteAiAssistantSetting(mergedConfig.settings);
 
     if (JSON.stringify(existingConfig) !== JSON.stringify(mergedConfig)) {

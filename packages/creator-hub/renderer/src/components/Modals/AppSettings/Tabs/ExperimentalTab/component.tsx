@@ -1,7 +1,5 @@
 import { useCallback } from 'react';
-import { Box, FormControlLabel, Switch, Typography } from 'decentraland-ui2';
-
-import { analytics } from '#preload';
+import { Box, FormControlLabel, Switch } from 'decentraland-ui2';
 
 import { RENDERER } from '/shared/types/settings';
 import { t } from '/@/modules/store/translation/utils';
@@ -13,14 +11,6 @@ const ExperimentalTab = ({ settings, updateSettings }: BaseTabProps) => {
   const handleRendererChange = useCallback(
     (bevy: boolean) => {
       updateSettings({ ...settings, renderer: bevy ? RENDERER.BEVY : RENDERER.BABYLON });
-    },
-    [settings, updateSettings],
-  );
-
-  const handleGuiEditorChange = useCallback(
-    (checked: boolean) => {
-      updateSettings({ ...settings, guiEditor: checked });
-      void analytics.track('Toggle UI Editor', { enabled: checked });
     },
     [settings, updateSettings],
   );
@@ -37,25 +27,6 @@ const ExperimentalTab = ({ settings, updateSettings }: BaseTabProps) => {
           }
           label={t('modal.app_settings.fields.renderer.toggle')}
         />
-      </Box>
-
-      <Box className="ExperimentalField">
-        <FormControlLabel
-          control={
-            <Switch
-              checked={!!settings.guiEditor}
-              onChange={(_event, checked) => handleGuiEditorChange(checked)}
-            />
-          }
-          label={t('modal.app_settings.fields.gui_editor.toggle')}
-        />
-        <Typography
-          variant="body2"
-          color="text.secondary"
-          className="ExperimentalHint"
-        >
-          {t('modal.app_settings.fields.gui_editor.hint')}
-        </Typography>
       </Box>
     </Box>
   );

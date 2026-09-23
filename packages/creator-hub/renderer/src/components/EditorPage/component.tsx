@@ -56,6 +56,7 @@ import { OptimizeModal } from '../OptimizeModal';
 import { DeployModal } from './DeployModal';
 import { PreviewOptions, PublishOptions } from './MenuOptions';
 import { getPublishButtonText, getPublishOptions } from './utils';
+import { buildInspectorUrl } from './inspectorUrl';
 
 import type { ModalType, ModalState } from './DeployModal';
 import type { PreviewOptionsProps } from './MenuOptions';
@@ -626,83 +627,14 @@ export function EditorPage() {
     [project, isDeploying, handlePublishScene, handleDeployWorld, handleDeployLand],
   );
 
-  // inspector url
-  const htmlUrl = `http://localhost:${import.meta.env.VITE_INSPECTOR_PORT || inspectorPort}`;
-  let binIndexJsUrl = `${htmlUrl}/bin/index.js`;
-
-  // query params
-  const params = new URLSearchParams();
-
-  // Always tell the inspector which renderer to use, so IT doesn't offer an
-  // independent (un-plumbed) choice via its own toolbar picker — the host owns
-  // renderer selection and supplies each renderer's config. Without this, picking
-  // Bevy inside the inspector mounts the engine with no realm and boots the wrong
-  // (default) world.
-  params.append('renderer', useBevy ? RENDERER.BEVY : RENDERER.BABYLON);
-
-  params.append('uiEditorEnabled', String(settings.guiEditor));
-  params.append('uiEditorSupported', String(supportsUiDesigner));
-
-  // The parent-window scene-RPC control channel (host↔inspector feature flags,
-  // notifications, file/dir open) is wired whenever this is set — for BOTH
-  // renderers. Babylon also uses it as its data-layer transport; Bevy instead
-  // uses the realm WS (set below, which takes precedence), but still needs this
-  // channel or the host's feature flags never reach it (e.g. SceneMinimap).
-  params.append('dataLayerRpcParentUrl', window.location.origin);
-
-  if (useBevy && bevyRealm) {
-    // Bevy editor: the inspector shares the realm's data-layer WS so entity ids
-    // align with the engine (forward edits land on the right entities), and the
-    // engine loads the scene from the realm. `dataLayerRpcWsUrl` takes precedence
-    // over `dataLayerRpcParentUrl` in the inspector, so we set the WS instead of
-    // the parent-window data-layer here.
-    params.append('dataLayerRpcWsUrl', bevyRealm.wsUrl);
-    params.append('bevyRealm', bevyRealm.url);
-    if (project) {
-      // The engine loads the scene at its real parcel; the base coord is bevyPosition.
-      params.append('bevyPosition', project.scene.base);
-    }
-    // The super-user editor-agent portable experience (viewport pick + gizmo),
-    // shipped as a static realm at public/bevy-agent and served same-origin by the
-    // inspector http-server. The engine loads it as a realm (GETs
-    // `<systemScene>/about`); the export nests `<realmName>/about`, hence the
-    // doubled path segment. A dev server can override via VITE_BEVY_SYSTEM_SCENE.
-    params.append(
-      'bevySystemScene',
-      import.meta.env.VITE_BEVY_SYSTEM_SCENE || `${htmlUrl}/bevy-agent/bevy-agent`,
-    );
-  }
-
-  if (import.meta.env.VITE_ASSET_PACKS_CONTENT_URL) {
-    // this is for local development of the asset-packs repo, or to use a different environment like .zone
-    params.append('contentUrl', import.meta.env.VITE_ASSET_PACKS_CONTENT_URL);
-  }
-
-  if (import.meta.env.VITE_ASSET_PACKS_JS_PORT && import.meta.env.VITE_ASSET_PACKS_JS_PATH) {
-    // this is for local development of the asset-packs repo
-    const b64 = btoa(import.meta.env.VITE_ASSET_PACKS_JS_PATH);
-    binIndexJsUrl = `http://localhost:${import.meta.env.VITE_ASSET_PACKS_JS_PORT}/content/contents/b64-${b64}`;
-  }
-
-  // this is the asset-packs javascript file
-  params.append('binIndexJsUrl', binIndexJsUrl);
-
-  // these are analytics related
-  if (import.meta.env.VITE_SEGMENT_INSPECTOR_API_KEY) {
-    params.append('segmentKey', import.meta.env.VITE_SEGMENT_INSPECTOR_API_KEY);
-  }
-
-  // analytics
-  params.append('segmentAppId', 'creator-hub');
-  if (userId) {
-    params.append('segmentUserId', userId);
-  }
-  if (project) {
-    params.append('projectId', project.id);
-    params.append('uiDesignerOpen', String(project.info.uiDesignerOpen ?? false));
-  }
-
-  const iframeUrl = `${htmlUrl}?${params}`;
+  const iframeUrl = buildInspectorUrl({
+    inspectorPort,
+    useBevy,
+    supportsUiDesigner,
+    bevyRealm,
+    project,
+    userId,
+  });
 
   // Drag the divider on the AI panel's left edge to resize it. A transparent overlay covers
   // the iframe while dragging so it doesn't swallow the mouse-move events.
