@@ -69,6 +69,12 @@ export class StateManager {
   private pendingTransaction: Transaction | null = null;
   private transactionQueue: Transaction[] = [];
   private processing = false;
+  // Engine changes are ignored only while an explicit transaction (undo/redo/import) mutates
+  // the engine itself: those are persisted by their caller and must not be re-captured. They
+  // are NOT ignored while the queue is being persisted — persisting awaits disk writes, and
+  // any edit that lands meanwhile (the next keystroke of a rename) has to be queued, or it is
+  // silently lost even though the engine already holds it.
+  private captureSuspended = false;
   private readonly maxBatchSize = 200; // prevent oversized batches
   private readonly fs: FileSystemInterface;
   private readonly engine: IEngine;
@@ -97,7 +103,7 @@ export class StateManager {
 
   createOnChangeHandler(): OnChangeFunction {
     return (entity, operation, component, componentValue) => {
-      if (this.processing) return;
+      if (this.captureSuspended) return;
 
       const opType = this.determineOperationType(operation, component);
       const baseOp = {
@@ -266,10 +272,12 @@ export class StateManager {
 
     const wasProcessing = this.processing;
     this.processing = true;
+    this.captureSuspended = true;
 
     try {
       return await operations();
     } finally {
+      this.captureSuspended = false;
       this.processing = wasProcessing;
       await this.processTransactionQueue();
     }

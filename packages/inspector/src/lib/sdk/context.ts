@@ -15,6 +15,7 @@ import type { InspectorPreferences } from '../logic/preferences/types';
 import { SceneMetricsServer } from '../../lib/rpc/scene-metrics/server';
 import { SceneServer } from '../rpc/scene/server';
 import { createIframeScene, getSceneClient } from '../rpc/scene';
+import { createSceneTitleNotifier } from '../rpc/scene/scene-title-notifier';
 import { getConfig } from '../logic/config';
 import type { AssetPack } from '../logic/catalog';
 import { store } from '../../redux/store';
@@ -137,6 +138,11 @@ export async function createSdkContext(
         // The host may not implement get_feature_flags (older creator-hub); the
         // push path still delivers flags, so this is a non-fatal best-effort pull.
       });
+
+    const stopTitleNotifier = createSceneTitleNotifier(events, engine.RootEntity, title =>
+      getSceneClient()?.notifySceneMetadata(title),
+    );
+    events.on('dispose', stopTitleNotifier);
 
     if (babylonInternals) {
       new SceneMetricsServer(transport, store);

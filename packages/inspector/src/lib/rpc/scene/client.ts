@@ -13,6 +13,7 @@ enum Method {
   OPTIMIZE_SCENE = 'optimize_scene',
   PROMPT_ASSISTANT = 'prompt_assistant',
   SET_CONSOLE_WINDOW_OPEN = 'set_console_window_open',
+  NOTIFY_SCENE_METADATA = 'notify_scene_metadata',
 }
 
 type Params = {
@@ -26,6 +27,7 @@ type Params = {
   [Method.OPTIMIZE_SCENE]: Record<string, never>;
   [Method.PROMPT_ASSISTANT]: { text: string };
   [Method.SET_CONSOLE_WINDOW_OPEN]: { open: boolean };
+  [Method.NOTIFY_SCENE_METADATA]: { title: string };
 };
 
 type Result = {
@@ -42,6 +44,7 @@ type Result = {
   [Method.OPTIMIZE_SCENE]: void;
   [Method.PROMPT_ASSISTANT]: void;
   [Method.SET_CONSOLE_WINDOW_OPEN]: void;
+  [Method.NOTIFY_SCENE_METADATA]: void;
 };
 
 export class SceneClient extends RPC<Method, Params, Result> {
@@ -92,6 +95,11 @@ export class SceneClient extends RPC<Method, Params, Result> {
   // (dock it back into the inline tab).
   setConsoleWindowOpen = (open: boolean) => {
     return this.request('set_console_window_open', { open });
+  };
+
+  // The scene's display title as it is being edited, so the host header follows a rename live.
+  notifySceneMetadata = (title: string) => {
+    return this.request('notify_scene_metadata', { title });
   };
 
   // Open the AI assistant panel in the host and seed its composer with `text` (without

@@ -33,6 +33,7 @@ export enum Method {
   OPTIMIZE_SCENE = 'optimize_scene',
   PROMPT_ASSISTANT = 'prompt_assistant',
   SET_CONSOLE_WINDOW_OPEN = 'set_console_window_open',
+  NOTIFY_SCENE_METADATA = 'notify_scene_metadata',
 }
 
 export type Params = {
@@ -46,6 +47,7 @@ export type Params = {
   [Method.OPTIMIZE_SCENE]: Record<string, never>;
   [Method.PROMPT_ASSISTANT]: { text: string };
   [Method.SET_CONSOLE_WINDOW_OPEN]: { open: boolean };
+  [Method.NOTIFY_SCENE_METADATA]: { title: string };
 };
 
 export type Result = {
@@ -62,11 +64,21 @@ export type Result = {
   [Method.OPTIMIZE_SCENE]: void;
   [Method.PROMPT_ASSISTANT]: void;
   [Method.SET_CONSOLE_WINDOW_OPEN]: void;
+  [Method.NOTIFY_SCENE_METADATA]: void;
 };
 
 export class SceneRpcServer extends RPC<Method, Params, Result> {
   constructor(transport: Transport, project: Project) {
     super('SceneRpcOutbound', transport);
+
+    // The header title used to refresh from the scene.json write passing through the storage
+    // RPC. Under a WebSocket data-layer (Bevy) that write happens in the realm's process, so
+    // the inspector reports the title itself as it is edited.
+    this.handle('notify_scene_metadata', async ({ title }) => {
+      const current = store.getState().editor.project ?? project;
+      if (!title || current.title === title) return;
+      store.dispatch(workspaceActions.updateProject({ ...current, title }));
+    });
 
     this.handle('open_file', async ({ path }) => {
       const resolvedPath = await getPath(path, project);
