@@ -221,6 +221,10 @@ export function EditorPage() {
   // screen can offer Back + Open code + the error message (#1380).
   const [loadError, setLoadError] = useState<string | null>(null);
   const [loadTimedOut, setLoadTimedOut] = useState(false);
+  // Counts the inspector's "scene RPC ready" reports. The iframe ref is stable across
+  // "Reload scene from disk", so the hooks that push state into the inspector key on this
+  // to re-apply it to the fresh iframe.
+  const [inspectorReadyNonce, setInspectorReadyNonce] = useState(0);
 
   const isOffline = status === ConnectionStatus.OFFLINE;
   const showDebugPanel = settings.previewOptions.debugger;
@@ -234,8 +238,9 @@ export function EditorPage() {
     showDebugPanel,
     project?.path,
     consoleDetached,
+    inspectorReadyNonce,
   );
-  useMobileDebugForwarding(iframeRef, isPreviewRunning, project?.path);
+  useMobileDebugForwarding(iframeRef, isPreviewRunning, project?.path, inspectorReadyNonce);
   useBevyBuildForwarding(iframeRef, useBevy ? project?.path : undefined);
   useProjectAssetWatch(iframeRef, project?.path);
 
@@ -247,9 +252,14 @@ export function EditorPage() {
           iframeRef.current.dispose();
           iframeRef.current = undefined;
         }
-        const rpc = initRpc(iframe, project, { writeFile: updateScene });
+        const rpc = initRpc(iframe, project, {
+          writeFile: updateScene,
+          onReady: ({ scene }) => {
+            void scene.setFeatureFlags(featureFlags).catch(console.error);
+            setInspectorReadyNonce(nonce => nonce + 1);
+          },
+        });
         iframeRef.current = rpc;
-        void rpc.scene.setFeatureFlags(featureFlags).catch(console.error);
       }
     },
     [project, updateScene, featureFlags],
