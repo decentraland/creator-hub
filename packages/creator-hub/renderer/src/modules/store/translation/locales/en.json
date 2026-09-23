@@ -88,6 +88,11 @@
         }
       }
     },
+    "console": {
+      "clear": "Clear console",
+      "dock": "Dock back in the editor",
+      "empty": "Run a scene to see debug output"
+    },
     "ai": {
       "title": "AI Assistant",
       "toggle": "Toggle AI assistant",

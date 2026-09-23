@@ -19,6 +19,7 @@ import { TranslationProvider } from '/@/components/TranslationProvider';
 import { AuthProvider } from '/@/components/AuthProvider';
 
 import { AiChatWindow } from '/@/components/AiChatWindow';
+import { ConsoleWindow } from '/@/components/ConsoleWindow';
 import { HomePage } from '/@/components/HomePage';
 import { ScenesPage } from '/@/components/ScenesPage';
 import { EditorPage } from '/@/components/EditorPage';
@@ -80,15 +81,19 @@ if (import.meta.env.PROD) {
 // The detached AI chat window (#1504) boots the same bundle with `?view=ai-chat`, but
 // renders only the chat — no router, no app chrome. It keeps no chat store of its own
 // (the store here is just for i18n/theme); it mirrors the main window's state over IPC.
-const isAiChatWindow = new URLSearchParams(window.location.search).get('view') === 'ai-chat';
+const view = new URLSearchParams(window.location.search).get('view');
+const isAiChatWindow = view === 'ai-chat';
+// The detached console window (#1272) boots the same bundle with `?view=console`, rendering
+// only the console — no router, no app chrome.
+const isConsoleWindow = view === 'console';
 
-if (isAiChatWindow) {
+if (isAiChatWindow || isConsoleWindow) {
   root.render(
     <React.StrictMode>
       <StoreProvider store={store}>
         <TranslationProvider>
           <ThemeProvider theme={dark}>
-            <AiChatWindow />
+            {isConsoleWindow ? <ConsoleWindow /> : <AiChatWindow />}
           </ThemeProvider>
         </TranslationProvider>
       </StoreProvider>

@@ -1,19 +1,30 @@
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
-import { app } from 'electron';
+import { app, type WebContents } from 'electron';
 import { createServer } from 'http-server';
 import log from 'electron-log';
-
-import { MAIN_WINDOW_ID } from '../mainWindow';
 
 import type { Child } from './bin';
 import * as cache from './cache';
 import { getAvailablePort } from './port';
-import { getWindow } from './window';
 
-type DebuggerState = { preview: Child; listener: number; exitHandler: () => void };
+// One debugger per preview (keyed by scene path), fanning its output out to every window
+// that attached — the main window's inline console AND the detached console window (#1272)
+// can both be subscribed at once, so this tracks a set of targets rather than a single one.
+type DebuggerState = {
+  preview: Child;
+  listener: number;
+  exitHandler: () => void;
+  targets: Set<WebContents>;
+};
 
 const debuggers: Map<string, DebuggerState> = new Map();
+
+function sendToTargets(state: DebuggerState, eventName: string, data: string) {
+  for (const wc of state.targets) {
+    if (!wc.isDestroyed()) wc.send(eventName, data);
+  }
+}
 
 let inspectorServer: ReturnType<typeof createServer> | null = null;
 
@@ -113,13 +124,16 @@ function getDebuggerChannel(path: string) {
   return `debugger://${path}`;
 }
 
-export async function attachSceneDebugger(path: string): Promise<string> {
-  const mainWindow = getWindow(MAIN_WINDOW_ID);
-  const preview = cache.getPreview(path);
+function teardownDebugger(state: DebuggerState) {
+  state.preview.off(state.listener);
+  state.preview.process.off('exit', state.exitHandler);
+}
 
-  if (!mainWindow || mainWindow.isDestroyed()) {
-    throw new Error('Main window not found');
-  }
+// Subscribe `sender` (the requesting window's webContents) to a preview's output. Multiple
+// windows can attach to the same preview — the first attach wires the child listener, later
+// ones just join the target set. Each caller gets the current backlog on attach.
+export async function attachSceneDebugger(sender: WebContents, path: string): Promise<string> {
+  const preview = cache.getPreview(path);
 
   if (!preview || !preview.child.alive()) {
     throw new Error(`Preview not found for path: ${path}`);
@@ -128,43 +142,58 @@ export async function attachSceneDebugger(path: string): Promise<string> {
   const eventName = getDebuggerChannel(path);
   const { child } = preview;
 
-  detachSceneDebugger(path);
-
-  // Send all the current logs to the main window
-  const stdall = child.stdall({ sanitize: false });
-  if (stdall.length > 0) {
-    mainWindow.webContents.send(eventName, stdall);
+  // A stale entry for a previous run of this scene points at a dead child — replace it.
+  const stale = debuggers.get(path);
+  if (stale && stale.preview !== child) {
+    teardownDebugger(stale);
+    debuggers.delete(path);
   }
 
-  // Attach the event listener to preview output to send future logs to main window
-  const listener = child.on(
-    /(.*)/i,
-    (data?: string) => {
-      if (data && mainWindow && !mainWindow.isDestroyed()) {
-        mainWindow.webContents.send(eventName, data);
-      }
-    },
-    { sanitize: false },
-  );
+  let state = debuggers.get(path);
+  if (!state) {
+    const created: DebuggerState = {
+      preview: child,
+      listener: 0,
+      exitHandler: () => {},
+      targets: new Set<WebContents>(),
+    };
+    created.listener = child.on(
+      /(.*)/i,
+      (data?: string) => {
+        if (data) sendToTargets(created, eventName, data);
+      },
+      { sanitize: false },
+    );
+    created.exitHandler = () => {
+      sendToTargets(created, eventName, '\n--- Process exited ---\n');
+      teardownDebugger(created);
+      debuggers.delete(path);
+    };
+    child.process.once('exit', created.exitHandler);
+    debuggers.set(path, created);
+    state = created;
+  }
 
-  const exitHandler = () => {
-    if (mainWindow && !mainWindow.isDestroyed()) {
-      mainWindow.webContents.send(eventName, '\n--- Process exited ---\n');
-    }
-    detachSceneDebugger(path);
-  };
+  state.targets.add(sender);
+  // Prune a window that goes away without an explicit detach (e.g. the detached console
+  // window is closed), tearing the whole debugger down once nobody is left listening.
+  sender.once('destroyed', () => detachSceneDebugger(sender, path));
 
-  debuggers.set(path, { preview: child, listener, exitHandler });
-  child.process.once('exit', exitHandler);
+  // Send this subscriber the logs so far (each window gets the backlog on join).
+  const stdall = child.stdall({ sanitize: false });
+  if (stdall.length > 0 && !sender.isDestroyed()) {
+    sender.send(eventName, stdall);
+  }
 
   return eventName;
 }
 
-export function detachSceneDebugger(path: string): void {
+export function detachSceneDebugger(sender: WebContents, path: string): void {
   const existing = debuggers.get(path);
-  if (existing) {
-    existing.preview.off(existing.listener);
-    existing.preview.process.off('exit', existing.exitHandler);
+  if (!existing) return;
+  existing.targets.delete(sender);
+  if (existing.targets.size === 0) {
+    teardownDebugger(existing);
     debuggers.delete(path);
   }
 }

@@ -13,6 +13,10 @@ export function useDebugLogForwarding(
   isPreviewRunning: boolean,
   showDebugPanel: boolean,
   projectPath: string | undefined,
+  // The console has been popped out into a separate window (#1272). We keep forwarding logs
+  // into the inspector store regardless (so docking back is instant), and only flip the
+  // inspector's inline tab between the logs and a "opened in a separate window" placeholder.
+  consoleDetached = false,
 ) {
   const logBatchRef = useRef<string[]>([]);
   const timerRef = useRef<ReturnType<typeof setInterval>>();
@@ -66,4 +70,11 @@ export function useDebugLogForwarding(
       void scene.setDebugConsoleEnabled(false).catch(() => {});
     };
   }, [isPreviewRunning, showDebugPanel, projectPath, iframeRef]);
+
+  // Reflect the detached state into the inspector's inline tab (logs vs placeholder) without
+  // tearing down the forwarding above, so toggling pop-out/dock doesn't flicker the tab.
+  useEffect(() => {
+    if (!isPreviewRunning || !showDebugPanel || !projectPath || !iframeRef.current) return;
+    void iframeRef.current.scene.setConsoleDetached(consoleDetached).catch(() => {});
+  }, [consoleDetached, isPreviewRunning, showDebugPanel, projectPath, iframeRef]);
 }
