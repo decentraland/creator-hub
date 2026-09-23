@@ -137,14 +137,12 @@ export class SceneRpcServer extends RPC<Method, Params, Result> {
 
     this.handle('prompt_assistant', async ({ text }) => {
       if (typeof text !== 'string' || text.trim() === '') return;
-      // The panel only exists when the experimental AI assistant is on. Guide the user there
-      // instead of silently dropping the prompt (EditorPage opens the panel off draftPrompt).
       if (store.getState().workspace.settings?.aiAssistant !== true) {
         store.dispatch(
           snackbarActions.pushSnackbar(
             createGenericNotification(
               'info',
-              'Turn on the AI assistant in Settings → Experimental to describe what a Trigger Area does.',
+              'Turn on the AI assistant in Settings → AI to describe what a Trigger Area does.',
             ),
           ),
         );

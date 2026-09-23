@@ -49,7 +49,7 @@ export const DEFAULT_CONFIG: Config = {
     optimizedAssetsByPath: {},
     experimental: false,
     renderer: DEFAULT_RENDERER,
-    aiAssistant: false,
+    aiAssistant: true,
     exposeMcpServer: false,
     useApiKeyFromEnv: false,
     guiEditor: false,
@@ -65,7 +65,14 @@ export function mergeConfig(target: Partial<Config>, source: Config): Config {
         return (targetPath: string, sourcePath: string) => targetPath || sourcePath;
       }
     },
-    // Clone arrays instead of merging them
     arrayMerge: (_, sourceArray) => sourceArray,
   });
+}
+
+/** Enables the AI assistant once, in place, on merged settings not yet promoted. */
+export function promoteAiAssistantSetting(settings: Partial<AppSettings> | undefined): void {
+  if (settings && !settings.aiAssistantPromoted) {
+    settings.aiAssistant = true;
+    settings.aiAssistantPromoted = true;
+  }
 }
