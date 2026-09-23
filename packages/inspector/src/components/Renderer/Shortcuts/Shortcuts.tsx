@@ -19,9 +19,12 @@ const ICON_SIZE = 18;
 const isMac = /Mac|iPhone|iPod|iPad/.test(navigator.userAgent);
 const prefixKey = isMac ? '⌘' : 'ctrl';
 
-const Shortcuts: React.FC<Props> = ({ canvas, onResetCamera, onZoomIn, onZoomOut }) => {
+const Shortcuts: React.FC<Props> = ({ viewport, onResetCamera, onZoomIn, onZoomOut }) => {
   const [showShortcuts, setShowShortcuts] = React.useState(false);
-  const { height } = useContainerSize(canvas);
+  // Measure the viewport container, never the shared canvas: Bevy hides that canvas
+  // (display:none) while its iframe renders, so observing it reports height 0 and the
+  // overlay loses its height cap (#1602).
+  const { height } = useContainerSize(viewport);
 
   const maxOverlayHeight = useMemo(() => {
     return (height ?? 600) - 60;
