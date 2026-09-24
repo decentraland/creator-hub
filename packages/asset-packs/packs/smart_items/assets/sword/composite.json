@@ -12,6 +12,22 @@
       }
     },
     {
+      "name": "asset-packs::Script",
+      "data": {
+        "0": {
+          "json": {
+            "value": [
+              {
+                "path": "{assetPath}/Sword.ts",
+                "priority": 0,
+                "layout": "{\"params\":{\"hoverText\":{\"type\":\"string\",\"value\":\"Pick up\",\"optional\":true,\"tooltip\":\"Text shown when pointing at the sword.\"},\"radius\":{\"type\":\"number\",\"value\":3,\"optional\":true,\"tooltip\":\"How far the swing's damage reaches from the player.\"},\"damagePoints\":{\"type\":\"number\",\"value\":10,\"optional\":true,\"tooltip\":\"How much damage each swing deals.\"},\"damageTarget\":{\"type\":\"enum\",\"value\":\"non_player\",\"options\":[\"all\",\"player\",\"non_player\"],\"optional\":true,\"tooltip\":\"Who the swing damages.\"},\"cooldown\":{\"type\":\"number\",\"value\":0.5,\"optional\":true,\"tooltip\":\"Seconds between swings.\"},\"attackEmote\":{\"type\":\"string\",\"value\":\"sword_attack_emote.glb\",\"optional\":true,\"tooltip\":\"Emote file (.glb) played when swinging (e.g. sword_attack_emote.glb). Empty for none.\"}},\"actions\":[{\"methodName\":\"pickUp\",\"description\":\"Picks up the sword and attaches it to the player's hand.\",\"params\":{}},{\"methodName\":\"attack\",\"description\":\"Swings the sword, damaging targets in range of the player, then starts the cooldown.\",\"params\":{}}],\"events\":[]}"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
       "name": "asset-packs::Actions",
       "data": {
         "0": {
@@ -20,167 +36,15 @@
             "value": [
               {
                 "name": "Pick Up",
-                "type": "start_delay",
-                "jsonPayload": "{ \"actions\": [\"Set Ready\"], \"timeout\": 0.1 }",
-                "allowedInBasicView": true
-              },
-              {
-                "name": "Set Ready",
-                "type": "set_state",
-                "jsonPayload": "{ \"state\": \"Ready\" }"
-              },
-              {
-                "name": "Attach To Player",
-                "type": "attach_to_player",
-                "jsonPayload": "{ \"anchorPointId\": 3 }"
-              },
-              {
-                "name": "Play Attack Emote",
-                "type": "play_custom_emote",
-                "jsonPayload": "{ \"src\": \"{assetPath}/sword_attack_emote.glb\", \"loop\": false }"
-              },
-              {
-                "name": "Damage",
-                "type": "damage",
-                "jsonPayload": "{ \"radius\": 3, \"hits\": 10, \"layer\": \"non_player\" }",
-                "basicViewId": "action-damage"
-              },
-              {
-                "name": "Set Cooling Down",
-                "type": "set_state",
-                "jsonPayload": "{ \"state\": \"Cooling Down\" }"
-              },
-              {
-                "name": "Start Cool Down Delay",
-                "type": "start_delay",
-                "jsonPayload": "{ \"actions\": [\"Set Ready\"], \"timeout\": 0.5 }",
-                "basicViewId": "action-cool-down-delay",
-                "allowedInBasicView": true
-              },
-              {
-                "name": "Cool Down",
-                "type": "batch",
-                "jsonPayload": "{ \"actions\": [\"Set Cooling Down\", \"Start Cool Down Delay\"] }"
+                "type": "call_script_method",
+                "jsonPayload": "{\"scriptPath\":\"{assetPath}/Sword.ts\",\"methodName\":\"pickUp\",\"params\":{}}"
               },
               {
                 "name": "Attack",
-                "type": "batch",
-                "jsonPayload": "{ \"actions\": [\"Play Attack Emote\", \"Damage\", \"Cool Down\"] }"
+                "type": "call_script_method",
+                "jsonPayload": "{\"scriptPath\":\"{assetPath}/Sword.ts\",\"methodName\":\"attack\",\"params\":{}}"
               }
             ]
-          }
-        }
-      }
-    },
-    {
-      "name": "asset-packs::Triggers",
-      "data": {
-        "0": {
-          "json": {
-            "value": [
-              {
-                "type": "on_input_action",
-                "actions": [
-                  {
-                    "id": "{self:asset-packs::Actions}",
-                    "name": "Pick Up"
-                  }
-                ]
-              },
-              {
-                "type": "on_state_change",
-                "conditions": [
-                  {
-                    "id": "{self:asset-packs::States}",
-                    "type": "when_state_is",
-                    "value": "Ready"
-                  }
-                ],
-                "actions": [
-                  {
-                    "id": "{self:asset-packs::Actions}",
-                    "name": "Attach To Player"
-                  }
-                ]
-              },
-              {
-                "type": "on_global_primary",
-                "conditions": [
-                  {
-                    "id": "{self:asset-packs::States}",
-                    "type": "when_state_is",
-                    "value": "Ready"
-                  }
-                ],
-                "actions": [
-                  {
-                    "id": "{self:asset-packs::Actions}",
-                    "name": "Attack"
-                  }
-                ]
-              }
-            ]
-          }
-        }
-      }
-    },
-    {
-      "name": "asset-packs::States",
-      "data": {
-        "0": {
-          "json": {
-            "id": "{self}",
-            "value": ["Idle", "Ready", "Cooling Down"],
-            "defaultValue": "Idle"
-          }
-        }
-      }
-    },
-    {
-      "name": "core::PointerEvents",
-      "data": {
-        "0": {
-          "json": {
-            "pointerEvents": [
-              {
-                "eventType": 1,
-                "eventInfo": {
-                  "button": 1,
-                  "hoverText": "Pick Up",
-                  "maxDistance": 10,
-                  "showFeedback": true
-                }
-              }
-            ]
-          }
-        }
-      }
-    },
-    {
-      "name": "inspector::Config",
-      "data": {
-        "0": {
-          "json": {
-            "isBasicViewEnabled": true,
-            "componentName": "Sword",
-            "helpTooltip": {
-              "text": "Configure the sword's damage and attack cooldown. Players can pick up the sword and use it to attack. Set the damage radius, damage points, and cooldown time between attacks."
-            },
-            "fields": [
-              {
-                "name": "Damage",
-                "type": "asset-packs::Actions",
-                "basicViewId": "action-damage",
-                "layout": "{\"radius\": { \"field\": \"TextField\", \"type\": \"number\" }, \"hits\": { \"field\": \"TextField\", \"type\": \"number\", \"label\": \"Damage Points\" }, \"layer\": { \"field\": \"Dropdown\", \"label\": \"Damage Target\" }}"
-              },
-              {
-                "name": "Attack Cooldown",
-                "type": "asset-packs::Actions",
-                "basicViewId": "action-cool-down-delay",
-                "layout": "{\"timeout\": { \"field\": \"RangeField\", \"label\": \"Attack Cooldown\", \"step\": \"0.1\" } }"
-              }
-            ],
-            "version": 1
           }
         }
       }

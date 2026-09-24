@@ -61,4 +61,87 @@ describe('mergeLayout', () => {
       expect(mergeLayout(source, target).params.title).toMatchObject({ value: 'hello' });
     });
   });
+
+  describe('when merging object params', () => {
+    it('keeps stored field values, adds new keys from source, and drops removed keys', () => {
+      const source: ScriptLayout = {
+        params: {
+          cfg: {
+            type: 'object',
+            value: { enabled: false, retries: 3 },
+            fields: {
+              enabled: { type: 'boolean', value: false },
+              retries: { type: 'number', value: 3 },
+            },
+          },
+        },
+      };
+      const target: ScriptLayout = {
+        params: {
+          cfg: {
+            type: 'object',
+            // stored: `enabled` edited to true, `legacy` key no longer in source, `retries` absent
+            value: { enabled: true, legacy: 'x' },
+            fields: {
+              enabled: { type: 'boolean', value: false },
+              legacy: { type: 'string', value: '' },
+            },
+          },
+        },
+      };
+      expect(mergeLayout(source, target).params.cfg).toMatchObject({
+        type: 'object',
+        value: { enabled: true, retries: 3 },
+      });
+      const merged = mergeLayout(source, target).params.cfg;
+      expect(merged.type === 'object' && 'legacy' in merged.value).toBe(false);
+    });
+  });
+
+  describe('when merging array params', () => {
+    it('preserves stored rows against the fresh item shape', () => {
+      const source: ScriptLayout = {
+        params: {
+          items: {
+            type: 'array',
+            value: [],
+            item: {
+              type: 'object',
+              value: { entity: 0, label: '' },
+              fields: {
+                entity: { type: 'entity', value: 0 },
+                label: { type: 'string', value: '' },
+              },
+            },
+          },
+        },
+      };
+      const target: ScriptLayout = {
+        params: {
+          items: {
+            type: 'array',
+            value: [
+              { entity: 512, label: 'a' },
+              { entity: 513, label: 'b' },
+            ],
+            item: {
+              type: 'object',
+              value: { entity: 0, label: '' },
+              fields: {
+                entity: { type: 'entity', value: 0 },
+                label: { type: 'string', value: '' },
+              },
+            },
+          },
+        },
+      };
+      expect(mergeLayout(source, target).params.items).toMatchObject({
+        type: 'array',
+        value: [
+          { entity: 512, label: 'a' },
+          { entity: 513, label: 'b' },
+        ],
+      });
+    });
+  });
 });

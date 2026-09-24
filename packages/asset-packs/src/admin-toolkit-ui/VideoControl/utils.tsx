@@ -1,9 +1,10 @@
 import type { DeepReadonlyObject, Entity, IEngine, PBVideoPlayer } from '@dcl/ecs';
 import type { AdminTools } from '../../definitions';
-import { getComponents, LIVEKIT_STREAM_SRC, VIDEO_URL_TYPE } from '../../definitions';
+import { LIVEKIT_STREAM_SRC, VIDEO_URL_TYPE } from '../../definitions';
 import { getExplorerComponents } from '../../components';
 import { state } from '../store';
 import { getAdminMessageBus } from '../admin-message-bus';
+import { getAdminConfigOrNull } from '../config';
 import { DEFAULT_VOLUME } from '.';
 
 interface VideoPlayerControls {
@@ -17,9 +18,7 @@ interface VideoPlayerControls {
 }
 
 export function getAdminToolkitVideoControl(engine: IEngine) {
-  const { AdminTools } = getComponents(engine);
-  const adminToolkitEntities = Array.from(engine.getEntitiesWith(AdminTools));
-  return adminToolkitEntities.length > 0 ? adminToolkitEntities[0][1].videoControl : null;
+  return getAdminConfigOrNull(engine)?.videoControl ?? null;
 }
 
 export function getVideoPlayers(
