@@ -43,6 +43,7 @@ describe('when a stored config still carries the removed guiEditor setting', () 
 
     const expected = getDefaultConfig();
     (expected.settings as Record<string, unknown>).aiAssistantPromoted = true;
+    (expected.settings as Record<string, unknown>).debugConsolePromoted = true;
     expect(written).toEqual(expected);
   });
 });
