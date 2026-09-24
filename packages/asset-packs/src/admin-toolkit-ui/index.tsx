@@ -41,7 +41,7 @@ import { COLORS, RADIUS, SPACING, TYPE } from './theme';
 import { IconTab, Divider } from './Primitives';
 import { getAdminConfig, getAdminEntityOrNull } from './config';
 
-export { setAdminConfig, getAdminConfig } from './config';
+export { setAdminConfig, getAdminConfig, getAdminEntityOrNull } from './config';
 
 // Mobile scaling: shrink the virtual canvas on
 // mobile so the SDK's global UI scale factor — min(screen/virtual), see

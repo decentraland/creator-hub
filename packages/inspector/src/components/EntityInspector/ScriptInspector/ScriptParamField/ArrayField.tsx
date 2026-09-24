@@ -9,6 +9,8 @@ import { formatLabel } from './labels';
 import { ScriptParamField } from './ScriptParamField';
 import { resolveParamUpdate, type ParamUpdate } from './update';
 
+import './ArrayField.css';
+
 type Props = {
   name: string;
   param: ScriptParamArray;

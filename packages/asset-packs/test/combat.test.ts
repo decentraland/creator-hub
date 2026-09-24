@@ -2,14 +2,22 @@ import { describe, it, expect, vi, afterEach } from 'vitest';
 import { engine, Transform } from '@dcl/sdk/ecs';
 import { Vector3 } from '@dcl/sdk/math';
 
-import { dealDamageInRadius, dealHealToPlayers } from '../src/combat';
+import {
+  dealDamageInRadius,
+  dealHealToPlayers,
+  registerDamageTarget,
+  unregisterDamageTarget,
+  registerHealTarget,
+  onDamage,
+  onHeal,
+} from '../src/combat';
 import { damageTargets, healTargets } from '../src/triggers';
-import { getTriggerEvents } from '../src/events';
-import { ProximityLayer, TriggerType } from '../src/definitions';
+import { ProximityLayer } from '../src/definitions';
 
 // The combat helpers + the position/parent helpers they use are bound to the global @dcl/sdk/ecs
-// engine, so these tests drive that same engine (fresh entities per test avoid cross-talk).
-
+// engine, so these tests drive that same engine (fresh entities per test avoid cross-talk). Setup
+// goes through the public API (registerDamageTarget/registerHealTarget/onDamage/onHeal); the Sets
+// are only cleared here for isolation.
 afterEach(() => {
   damageTargets.clear();
   healTargets.clear();
@@ -27,9 +35,9 @@ function makeAt(position: Vector3, parent?: number) {
 describe('dealHealToPlayers', () => {
   it('heals a player-rooted target `multiplier` times', () => {
     const target = makeAt(Vector3.create(0, 0, 0), engine.PlayerEntity);
-    healTargets.add(target);
+    registerHealTarget(target);
     const spy = vi.fn();
-    getTriggerEvents(target).on(TriggerType.ON_HEAL_PLAYER, spy);
+    onHeal(target, spy);
 
     dealHealToPlayers(engine, engine.addEntity(), { multiplier: 3 });
 
@@ -38,9 +46,9 @@ describe('dealHealToPlayers', () => {
 
   it('does not heal a target that is not rooted at the player', () => {
     const target = makeAt(Vector3.create(0, 0, 0)); // no player parent
-    healTargets.add(target);
+    registerHealTarget(target);
     const spy = vi.fn();
-    getTriggerEvents(target).on(TriggerType.ON_HEAL_PLAYER, spy);
+    onHeal(target, spy);
 
     dealHealToPlayers(engine, engine.addEntity(), { multiplier: 5 });
 
@@ -49,16 +57,16 @@ describe('dealHealToPlayers', () => {
 });
 
 describe('dealDamageInRadius', () => {
-  it('damages a target in range `hits` times and skips one out of range', () => {
+  it('damages a registered target in range `hits` times and skips one out of range', () => {
     const origin = makeAt(Vector3.create(0, 0, 0));
     const inRange = makeAt(Vector3.create(0, 0, 3));
     const outOfRange = makeAt(Vector3.create(0, 0, 100));
-    damageTargets.add(inRange);
-    damageTargets.add(outOfRange);
+    registerDamageTarget(inRange);
+    registerDamageTarget(outOfRange);
     const hitSpy = vi.fn();
     const missSpy = vi.fn();
-    getTriggerEvents(inRange).on(TriggerType.ON_DAMAGE, hitSpy);
-    getTriggerEvents(outOfRange).on(TriggerType.ON_DAMAGE, missSpy);
+    onDamage(inRange, hitSpy);
+    onDamage(outOfRange, missSpy);
 
     dealDamageInRadius(engine, origin, { radius: 5, hits: 2 });
 
@@ -66,14 +74,44 @@ describe('dealDamageInRadius', () => {
     expect(missSpy).not.toHaveBeenCalled();
   });
 
+  it('honors the PLAYER layer filter (hits player-rooted targets, skips others)', () => {
+    const origin = makeAt(Vector3.create(0, 0, 0));
+    const playerTarget = makeAt(Vector3.create(0, 0, 1), engine.PlayerEntity);
+    const otherTarget = makeAt(Vector3.create(0, 0, 1));
+    registerDamageTarget(playerTarget);
+    registerDamageTarget(otherTarget);
+    const playerSpy = vi.fn();
+    const otherSpy = vi.fn();
+    onDamage(playerTarget, playerSpy);
+    onDamage(otherTarget, otherSpy);
+
+    dealDamageInRadius(engine, origin, { radius: 5, layer: ProximityLayer.PLAYER });
+
+    expect(playerSpy).toHaveBeenCalledTimes(1);
+    expect(otherSpy).not.toHaveBeenCalled();
+  });
+
   it('honors the NON_PLAYER layer filter (skips player-rooted targets)', () => {
     const origin = makeAt(Vector3.create(0, 0, 0));
     const playerTarget = makeAt(Vector3.create(0, 0, 1), engine.PlayerEntity);
-    damageTargets.add(playerTarget);
+    registerDamageTarget(playerTarget);
     const spy = vi.fn();
-    getTriggerEvents(playerTarget).on(TriggerType.ON_DAMAGE, spy);
+    onDamage(playerTarget, spy);
 
     dealDamageInRadius(engine, origin, { radius: 5, layer: ProximityLayer.NON_PLAYER });
+
+    expect(spy).not.toHaveBeenCalled();
+  });
+
+  it('stops damaging a target once it is unregistered', () => {
+    const origin = makeAt(Vector3.create(0, 0, 0));
+    const target = makeAt(Vector3.create(0, 0, 1));
+    registerDamageTarget(target);
+    unregisterDamageTarget(target);
+    const spy = vi.fn();
+    onDamage(target, spy);
+
+    dealDamageInRadius(engine, origin, { radius: 5 });
 
     expect(spy).not.toHaveBeenCalled();
   });

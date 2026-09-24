@@ -31,6 +31,7 @@ export { ModalUserList, UserListType } from './ModerationControl/UsersList';
 export {
   isAllowedAdmin,
   getAdminConfig,
+  getAdminEntityOrNull,
   getSceneAdminsCache,
   getSceneBansCache,
   getSmartItems,
