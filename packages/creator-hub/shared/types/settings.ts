@@ -41,6 +41,10 @@ export type AppSettings = {
   scenesPath: string;
   dependencyUpdateStrategy: DEPENDENCY_UPDATE_STRATEGY;
   previewOptions: PreviewOptions;
+  // Marker for the one-time `previewOptions.debugger` promotion (the toolbar's "Open Debug
+  // Console" checkbox was removed, so this is now the only way an existing install gets it
+  // turned on) — see `promoteDebugConsoleSetting`.
+  debugConsolePromoted?: boolean;
   // Per-project Optimize Assets preference, keyed by project path. `previewOptions.optimizedAssets`
   // is the ephemeral value for the open project; this map is the persisted per-project source of
   // truth so the toggle comes back on for a project that had it on, without carrying across projects.
