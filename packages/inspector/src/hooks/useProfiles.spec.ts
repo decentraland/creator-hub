@@ -40,6 +40,36 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
+describe('when the address list changes', () => {
+  it('should keep the profiles it already resolved, so no row blanks while the batch is in flight', async () => {
+    mocks.getProfiles.mockResolvedValue({ profiles: [PROFILE_A] });
+
+    const { result, rerender } = renderHook(({ list }) => useProfiles(list), {
+      initialProps: { list: [ADDRESS_A] },
+    });
+    await flush();
+    expect(result.current[ADDRESS_A]).toEqual(PROFILE_A);
+
+    let resolveSecond: (value: { profiles: ProfileSummary[] }) => void = () => {};
+    mocks.getProfiles.mockReturnValue(
+      new Promise<{ profiles: ProfileSummary[] }>(resolve => {
+        resolveSecond = resolve;
+      }),
+    );
+
+    rerender({ list: [ADDRESS_A, ADDRESS_B] });
+    await flush();
+
+    expect(result.current[ADDRESS_A]).toEqual(PROFILE_A);
+
+    await act(async () => {
+      resolveSecond({ profiles: [PROFILE_A, PROFILE_B] });
+    });
+
+    expect(result.current).toEqual({ [ADDRESS_A]: PROFILE_A, [ADDRESS_B]: PROFILE_B });
+  });
+});
+
 describe('when the host resolves the addresses', () => {
   it('should key every profile by its address', async () => {
     mocks.getProfiles.mockResolvedValue({ profiles: [PROFILE_A, PROFILE_B] });

@@ -16,8 +16,6 @@ export function useProfiles(addresses: string[]): Record<string, ProfileSummary>
   const addressesKey = JSON.stringify(addresses);
 
   useEffect(() => {
-    setProfiles({});
-
     const requested: string[] = JSON.parse(addressesKey);
     const client = getSceneClient();
     if (!client || requested.length === 0) return;
@@ -31,7 +29,10 @@ export function useProfiles(addresses: string[]): Record<string, ProfileSummary>
       .getProfiles(requested)
       .then(({ profiles: resolved }) => {
         if (cancelled) return;
-        setProfiles(Object.fromEntries(resolved.map(profile => [profile.address, profile])));
+        setProfiles(current => ({
+          ...current,
+          ...Object.fromEntries(resolved.map(profile => [profile.address, profile])),
+        }));
       })
       .catch(() => {})
       .finally(() => clearTimeout(timeout));
