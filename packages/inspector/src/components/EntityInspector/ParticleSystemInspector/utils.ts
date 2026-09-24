@@ -1,11 +1,79 @@
+import { Quaternion } from '@babylonjs/core';
+
 import type {
   ParticleSystemBurst,
   ParticleSystemComponentType,
   ParticleSystemShape,
+  ParticleSystemTexture,
 } from '../../../lib/sdk/components/ParticleSystem';
 import { toHex, toColor3 } from '../../ui/ColorField/utils';
-import type { ParticleSystemInput, BurstInput } from './types';
+import type { ParticleSystemInput, BurstInput, EulerInput, TextureInput } from './types';
 import { ShapeType } from './types';
+
+type QuaternionType = { x: number; y: number; z: number; w: number };
+
+const formatDegrees = (radians: number): string =>
+  String(Math.round(((radians * 180) / Math.PI) * 100) / 100);
+
+const fromQuaternion = (value: QuaternionType | undefined): EulerInput => {
+  if (!value) return { x: '0', y: '0', z: '0' };
+  const angles = new Quaternion(value.x, value.y, value.z, value.w).toEulerAngles();
+  return {
+    x: formatDegrees(angles.x),
+    y: formatDegrees(angles.y),
+    z: formatDegrees(angles.z),
+  };
+};
+
+export const eulerDegreesToQuaternion = (euler: EulerInput): QuaternionType => {
+  const quaternion = Quaternion.RotationYawPitchRoll(
+    (Number(euler.y) * Math.PI) / 180,
+    (Number(euler.x) * Math.PI) / 180,
+    (Number(euler.z) * Math.PI) / 180,
+  );
+  return { x: quaternion.x, y: quaternion.y, z: quaternion.z, w: quaternion.w };
+};
+
+// Zero rotation maps to "unset" so an untouched editor never materializes the field.
+const toQuaternion = (euler: EulerInput): QuaternionType | undefined => {
+  const isZero = Number(euler.x) === 0 && Number(euler.y) === 0 && Number(euler.z) === 0;
+  return isZero ? undefined : eulerDegreesToQuaternion(euler);
+};
+
+const fromTexture = (texture: ParticleSystemTexture | undefined): TextureInput => ({
+  src: texture?.src ?? '',
+  wrapMode: texture?.wrapMode !== undefined ? String(texture.wrapMode) : '',
+  filterMode: texture?.filterMode !== undefined ? String(texture.filterMode) : '',
+  offset: {
+    x: texture?.offset !== undefined ? String(texture.offset.x) : '',
+    y: texture?.offset !== undefined ? String(texture.offset.y) : '',
+  },
+  tiling: {
+    x: texture?.tiling !== undefined ? String(texture.tiling.x) : '',
+    y: texture?.tiling !== undefined ? String(texture.tiling.y) : '',
+  },
+});
+
+const toVector2 = (
+  value: { x: string; y: string },
+  defaultValue: number,
+): { x: number; y: number } | undefined => {
+  if (value.x === '' && value.y === '') return undefined;
+  return {
+    x: value.x === '' ? defaultValue : Number(value.x),
+    y: value.y === '' ? defaultValue : Number(value.y),
+  };
+};
+
+// Fields the user never set stay unset instead of materializing values
+// (engine defaults are Clamp / Bilinear / offset {0,0} / tiling {1,1}).
+const toTexture = (input: TextureInput): ParticleSystemTexture => ({
+  src: input.src ?? '',
+  wrapMode: input.wrapMode === '' ? undefined : Number(input.wrapMode),
+  filterMode: input.filterMode === '' ? undefined : Number(input.filterMode),
+  offset: toVector2(input.offset, 0),
+  tiling: toVector2(input.tiling, 1),
+});
 
 const fromShape = (shape: ParticleSystemShape | undefined) => {
   const sphere = shape?.$case === 'sphere' ? shape.sphere : undefined;
@@ -98,6 +166,8 @@ export const fromComponent = (value: ParticleSystemComponentType): ParticleSyste
     start: String(value.sizeOverTime?.start ?? 1),
     end: String(value.sizeOverTime?.end ?? 1),
   },
+  initialRotation: fromQuaternion(value.initialRotation),
+  rotationOverTime: fromQuaternion(value.rotationOverTime),
   faceTravelDirection: value.faceTravelDirection ?? false,
   initialColor: {
     startColor: toHex(value.initialColor?.start).toUpperCase(),
@@ -116,7 +186,7 @@ export const fromComponent = (value: ParticleSystemComponentType): ParticleSyste
     end: String(value.initialVelocitySpeed?.end ?? 1),
   },
   textureEnabled: !!value.texture,
-  texture: { src: value.texture?.src ?? '' },
+  texture: fromTexture(value.texture),
   blendMode: String(value.blendMode ?? 0),
   billboard: value.billboard ?? true,
   spriteSheetEnabled: !!value.spriteSheet,
@@ -163,6 +233,8 @@ export const toComponent = (input: ParticleSystemInput): ParticleSystemComponent
       start: Number(input.sizeOverTime.start),
       end: Number(input.sizeOverTime.end),
     },
+    initialRotation: toQuaternion(input.initialRotation),
+    rotationOverTime: toQuaternion(input.rotationOverTime),
     faceTravelDirection: input.faceTravelDirection,
     initialColor: {
       start: { ...startColor, a: Number(input.initialColor.startAlpha) },
@@ -176,6 +248,9 @@ export const toComponent = (input: ParticleSystemInput): ParticleSystemComponent
       start: Number(input.initialVelocitySpeed.start),
       end: Number(input.initialVelocitySpeed.end),
     },
+    // Explicit undefined (not a missing key) so disabling the texture actually removes it
+    // when the save path spread-merges over the current component value.
+    texture: input.textureEnabled ? toTexture(input.texture) : undefined,
     blendMode: Number(input.blendMode),
     billboard: input.billboard,
     spriteSheet: input.spriteSheetEnabled
@@ -199,10 +274,6 @@ export const toComponent = (input: ParticleSystemInput): ParticleSystemComponent
     bursts: input.bursts.length > 0 ? { values: input.bursts.map(toBurst) } : undefined,
   };
 
-  if (input.textureEnabled) {
-    component.texture = { src: input.texture.src ?? '' };
-  }
-
   return component;
 };
 
@@ -216,6 +287,15 @@ export const isValidInput = (input: ParticleSystemInput): boolean => {
     const time = Number(burst.time);
     const count = Number(burst.count);
     if (isNaN(time) || isNaN(count) || time < 0 || count < 0) return false;
+  }
+  for (const euler of [input.initialRotation, input.rotationOverTime]) {
+    if (isNaN(Number(euler.x)) || isNaN(Number(euler.y)) || isNaN(Number(euler.z))) return false;
+  }
+  if (input.textureEnabled) {
+    for (const vector of [input.texture.offset, input.texture.tiling]) {
+      if (vector.x !== '' && isNaN(Number(vector.x))) return false;
+      if (vector.y !== '' && isNaN(Number(vector.y))) return false;
+    }
   }
   return true;
 };

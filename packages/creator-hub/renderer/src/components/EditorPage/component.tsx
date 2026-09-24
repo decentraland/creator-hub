@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import ArrowBackIosIcon from '@mui/icons-material/ArrowBackIos';
 import PlayCircleIcon from '@mui/icons-material/PlayCircle';
 import CodeIcon from '@mui/icons-material/Code';
+import SpeedOutlinedIcon from '@mui/icons-material/SpeedOutlined';
 import PublicIcon from '@mui/icons-material/Public';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import CloseIcon from '@mui/icons-material/Close';
@@ -28,6 +29,7 @@ import { useConnectionStatus } from '/@/hooks/useConnectionStatus';
 import { useBevyBuildForwarding } from '/@/hooks/useBevyBuildForwarding';
 import { useProjectAssetWatch } from '/@/hooks/useProjectAssetWatch';
 import { useDebugLogForwarding } from '/@/hooks/useDebugLogForwarding';
+import { useConsoleSession } from '/@/hooks/useConsoleSession';
 import { useMobileDebugForwarding } from '/@/hooks/useMobileDebugForwarding';
 import { ConnectionStatus } from '/@/lib/connection';
 
@@ -39,6 +41,7 @@ import { useFeatureFlags } from '/@/hooks/useFeatureFlags';
 import { useAiSession } from '/@/hooks/useAiSession';
 import { actions as snackbarActions } from '/@/modules/store/snackbar';
 import { actions as editorActions } from '/@/modules/store/editor';
+import { actions as optimizerActions } from '/@/modules/store/optimizer';
 import { createGenericNotification } from '/@/modules/store/snackbar/utils';
 import { Button } from '../Button';
 import { Header } from '../Header';
@@ -49,9 +52,11 @@ import { MobileQRCode } from '../Modals/MobileQRCode';
 import { AssistantIcon } from '../Icons';
 import { AiChatPanel } from '../AiChatPanel';
 import { DetachedPlaceholder } from '../AiChatPanel/DetachedPlaceholder';
+import { OptimizeModal } from '../OptimizeModal';
 import { DeployModal } from './DeployModal';
 import { PreviewOptions, PublishOptions } from './MenuOptions';
 import { getPublishButtonText, getPublishOptions } from './utils';
+import { buildInspectorUrl } from './inspectorUrl';
 
 import type { ModalType, ModalState } from './DeployModal';
 import type { PreviewOptionsProps } from './MenuOptions';
@@ -160,8 +165,6 @@ export function EditorPage() {
   const { settings, updateAppSettings } = useSettings();
   const { updatePackages } = useWorkspace();
   const { flags: featureFlags } = useFeatureFlags();
-  // The AI assistant is an experimental opt-in (Settings → Experimental), like the Bevy
-  // renderer — not a remote feature flag.
   const aiChatEnabled = settings.aiAssistant;
   const { executeDeployment, getDeployment } = useDeploy();
   const deployment = project ? getDeployment(project.path) : undefined;
@@ -193,6 +196,9 @@ export function EditorPage() {
     openDetached: openAiWindow,
     closeDetached: closeAiWindow,
   } = useAiSession(aiChatEnabled, project?.path, handleClearAiSelection, () => setAiOpen(false));
+  // A prompt seeded from the inspector (Trigger Area "describe a reaction"). Open the inline
+  // panel on it; ChatView copies the text into the composer and clears the draft.
+  const aiDraftPrompt = useSelector(state => state.ai.draftPrompt);
   const hydratedOptimizedAssetsPathRef = useRef<string | null>(null);
   const [modalState, setModalState] = useState<ModalState>({ type: undefined });
   // Draggable width of the AI panel (like the inspector's own panels). Persisted globally.
@@ -214,7 +220,16 @@ export function EditorPage() {
   const isOffline = status === ConnectionStatus.OFFLINE;
   const showDebugPanel = settings.previewOptions.debugger;
 
-  useDebugLogForwarding(iframeRef, isPreviewRunning, showDebugPanel, project?.path);
+  // The console can be popped out into its own window (#1272); while it is, the inspector's
+  // inline console tab shows a placeholder instead of the logs.
+  const { detachedOpen: consoleDetached } = useConsoleSession(showDebugPanel, isPreviewRunning);
+  useDebugLogForwarding(
+    iframeRef,
+    isPreviewRunning,
+    showDebugPanel,
+    project?.path,
+    consoleDetached,
+  );
   useMobileDebugForwarding(iframeRef, isPreviewRunning, project?.path);
   useBevyBuildForwarding(iframeRef, useBevy ? project?.path : undefined);
   useProjectAssetWatch(iframeRef, project?.path);
@@ -359,6 +374,12 @@ export function EditorPage() {
       .then(project_id => analytics.track('AI Chat Opened', { project_id }));
   }, [aiOpen, projectPath]);
 
+  // Open the panel when the inspector seeds a prompt. The host RPC only sets a draft when the
+  // assistant is enabled, so no extra gate is needed here.
+  useEffect(() => {
+    if (aiDraftPrompt !== null && aiChatEnabled) setAiOpen(true);
+  }, [aiDraftPrompt?.nonce, aiChatEnabled]);
+
   useEffect(() => {
     if (!projectPath || !useBevy) {
       setBevyRealm(null);
@@ -427,9 +448,13 @@ export function EditorPage() {
     }
   }, [openPreview, settings.previewOptions]);
 
+  // The "code elements may only become visible once running" warning describes a
+  // Babylon limitation: it renders only the composite, so code-created entities are
+  // invisible until the scene runs. The Bevy editor runs the scene while editing and
+  // already shows them, so the warning would be false there.
   const handleActionWithWarningCheck = useCallback(
     async (action: () => void | Promise<void>) => {
-      if (!settings.previewOptions.showWarnings) {
+      if (!settings.previewOptions.showWarnings || useBevy) {
         await action();
         return;
       }
@@ -446,7 +471,7 @@ export function EditorPage() {
 
       await action();
     },
-    [settings.previewOptions.showWarnings, detectCustomCode],
+    [settings.previewOptions.showWarnings, useBevy, detectCustomCode],
   );
 
   const handleBack = useCallback(async () => {
@@ -602,83 +627,14 @@ export function EditorPage() {
     [project, isDeploying, handlePublishScene, handleDeployWorld, handleDeployLand],
   );
 
-  // inspector url
-  const htmlUrl = `http://localhost:${import.meta.env.VITE_INSPECTOR_PORT || inspectorPort}`;
-  let binIndexJsUrl = `${htmlUrl}/bin/index.js`;
-
-  // query params
-  const params = new URLSearchParams();
-
-  // Always tell the inspector which renderer to use, so IT doesn't offer an
-  // independent (un-plumbed) choice via its own toolbar picker — the host owns
-  // renderer selection and supplies each renderer's config. Without this, picking
-  // Bevy inside the inspector mounts the engine with no realm and boots the wrong
-  // (default) world.
-  params.append('renderer', useBevy ? RENDERER.BEVY : RENDERER.BABYLON);
-
-  params.append('uiEditorEnabled', String(settings.guiEditor));
-  params.append('uiEditorSupported', String(supportsUiDesigner));
-
-  // The parent-window scene-RPC control channel (host↔inspector feature flags,
-  // notifications, file/dir open) is wired whenever this is set — for BOTH
-  // renderers. Babylon also uses it as its data-layer transport; Bevy instead
-  // uses the realm WS (set below, which takes precedence), but still needs this
-  // channel or the host's feature flags never reach it (e.g. SceneMinimap).
-  params.append('dataLayerRpcParentUrl', window.location.origin);
-
-  if (useBevy && bevyRealm) {
-    // Bevy editor: the inspector shares the realm's data-layer WS so entity ids
-    // align with the engine (forward edits land on the right entities), and the
-    // engine loads the scene from the realm. `dataLayerRpcWsUrl` takes precedence
-    // over `dataLayerRpcParentUrl` in the inspector, so we set the WS instead of
-    // the parent-window data-layer here.
-    params.append('dataLayerRpcWsUrl', bevyRealm.wsUrl);
-    params.append('bevyRealm', bevyRealm.url);
-    if (project) {
-      // The engine loads the scene at its real parcel; the base coord is bevyPosition.
-      params.append('bevyPosition', project.scene.base);
-    }
-    // The super-user editor-agent portable experience (viewport pick + gizmo),
-    // shipped as a static realm at public/bevy-agent and served same-origin by the
-    // inspector http-server. The engine loads it as a realm (GETs
-    // `<systemScene>/about`); the export nests `<realmName>/about`, hence the
-    // doubled path segment. A dev server can override via VITE_BEVY_SYSTEM_SCENE.
-    params.append(
-      'bevySystemScene',
-      import.meta.env.VITE_BEVY_SYSTEM_SCENE || `${htmlUrl}/bevy-agent/bevy-agent`,
-    );
-  }
-
-  if (import.meta.env.VITE_ASSET_PACKS_CONTENT_URL) {
-    // this is for local development of the asset-packs repo, or to use a different environment like .zone
-    params.append('contentUrl', import.meta.env.VITE_ASSET_PACKS_CONTENT_URL);
-  }
-
-  if (import.meta.env.VITE_ASSET_PACKS_JS_PORT && import.meta.env.VITE_ASSET_PACKS_JS_PATH) {
-    // this is for local development of the asset-packs repo
-    const b64 = btoa(import.meta.env.VITE_ASSET_PACKS_JS_PATH);
-    binIndexJsUrl = `http://localhost:${import.meta.env.VITE_ASSET_PACKS_JS_PORT}/content/contents/b64-${b64}`;
-  }
-
-  // this is the asset-packs javascript file
-  params.append('binIndexJsUrl', binIndexJsUrl);
-
-  // these are analytics related
-  if (import.meta.env.VITE_SEGMENT_INSPECTOR_API_KEY) {
-    params.append('segmentKey', import.meta.env.VITE_SEGMENT_INSPECTOR_API_KEY);
-  }
-
-  // analytics
-  params.append('segmentAppId', 'creator-hub');
-  if (userId) {
-    params.append('segmentUserId', userId);
-  }
-  if (project) {
-    params.append('projectId', project.id);
-    params.append('uiDesignerOpen', String(project.info.uiDesignerOpen ?? false));
-  }
-
-  const iframeUrl = `${htmlUrl}?${params}`;
+  const iframeUrl = buildInspectorUrl({
+    inspectorPort,
+    useBevy,
+    supportsUiDesigner,
+    bevyRealm,
+    project,
+    userId,
+  });
 
   // Drag the divider on the AI panel's left edge to resize it. A transparent overlay covers
   // the iframe while dragging so it doesn't swallow the mouse-move events.
@@ -765,6 +721,8 @@ export function EditorPage() {
     );
   };
 
+  const previewIcon = loadingPreview ? <Loader size={20} /> : <PlayCircleIcon />;
+
   return (
     <main
       className="Editor"
@@ -806,16 +764,33 @@ export function EditorPage() {
                   </IconButton>
                 </Tooltip>
               )}
-              <Button
-                color="secondary"
-                onClick={openCode}
-                startIcon={<CodeIcon />}
-              >
-                {t('editor.header.actions.code')}
-              </Button>
+              <Tooltip title={t('editor.header.actions.optimize')}>
+                <Button
+                  className="icon-only"
+                  color="secondary"
+                  aria-label={t('editor.header.actions.optimize')}
+                  onClick={() => dispatch(optimizerActions.open())}
+                >
+                  <SpeedOutlinedIcon />
+                </Button>
+              </Tooltip>
+              <Tooltip title={t('editor.header.actions.code')}>
+                <Button
+                  className="icon-only"
+                  color="secondary"
+                  aria-label={t('editor.header.actions.code')}
+                  onClick={openCode}
+                >
+                  <CodeIcon />
+                </Button>
+              </Tooltip>
               <div className={isOptimizing ? 'preview-control optimizing' : 'preview-control'}>
                 <ButtonGroup
+                  className={isOptimizing ? undefined : 'icon-only'}
                   color="secondary"
+                  aria-label={t('editor.header.actions.preview')}
+                  tooltip={t('editor.header.actions.preview')}
+                  extraTooltip={t('editor.header.actions.preview_options.title')}
                   // Not natively disabled while optimizing (that would kill the inline ✕ too):
                   // the group is greyed and made inert via CSS, and only the ✕ stays clickable.
                   // aria-disabled flags the CSS-inert state to assistive tech, which the visual
@@ -828,7 +803,9 @@ export function EditorPage() {
                     isOffline
                   }
                   onClick={isOptimizing ? undefined : handleOpenPreview}
-                  startIcon={loadingPreview ? <Loader size={20} /> : <PlayCircleIcon />}
+                  // icon-only at rest (the icon IS the content); while optimizing the icon moves
+                  // to startIcon so the progress label can sit beside it
+                  startIcon={isOptimizing ? previewIcon : undefined}
                   extra={
                     <PreviewOptions
                       options={settings.previewOptions}
@@ -865,13 +842,14 @@ export function EditorPage() {
                       </Tooltip>
                     </span>
                   ) : (
-                    t('editor.header.actions.preview')
+                    previewIcon
                   )}
                 </ButtonGroup>
               </div>
               {publishOptions.length > 0 ? (
                 <ButtonGroup
                   color="primary"
+                  extraTooltip={t('editor.header.actions.publish_options.title')}
                   disabled={
                     loadingPublish || isInstallingProject || isDetectingCustomCode || isOffline
                   }
@@ -949,6 +927,7 @@ export function EditorPage() {
             onClose={handleCloseModal}
             initialStep={modalState.initialStep}
           />
+          <OptimizeModal project={project} />
           {mobileQRData && (
             <MobileQRCode
               open={!!mobileQRData}

@@ -17,6 +17,7 @@ import * as metrics from './metrics';
 import * as ai from './ai';
 import * as aiCli from './ai-cli';
 import * as aiWindow from './ai-window';
+import * as consoleWindow from './console-window';
 import {
   captureViewport,
   ensureSceneMcpServer,
@@ -25,6 +26,7 @@ import {
   resolveUserPrompt,
   revertTurn,
 } from './scene-mcp';
+import * as optimizer from './optimizer';
 
 interface InitIpcOptions {
   beforeQuitCleanup: () => Promise<void>;
@@ -58,8 +60,12 @@ export function initIpc({ beforeQuitCleanup }: InitIpcOptions) {
 
   // inspector
   handle('inspector.start', () => inspector.start());
-  handle('inspector.attachSceneDebugger', (_event, path) => inspector.attachSceneDebugger(path));
-  handle('inspector.detachSceneDebugger', (_event, path) => inspector.detachSceneDebugger(path));
+  handle('inspector.attachSceneDebugger', (event, path) =>
+    inspector.attachSceneDebugger(event.sender, path),
+  );
+  handle('inspector.detachSceneDebugger', (event, path) =>
+    inspector.detachSceneDebugger(event.sender, path),
+  );
 
   // bevy realm (headless sdk-commands server feeding the embedded Bevy editor engine)
   handle('bevyRealm.start', (_event, path) => bevyRealm.start(path));
@@ -171,4 +177,17 @@ export function initIpc({ beforeQuitCleanup }: InitIpcOptions) {
   handle('ai.isWindowOpen', async () => aiWindow.isAiWindowOpen());
   handle('ai.mirrorPush', (_event, state) => aiWindow.pushMirrorState(state));
   handle('ai.remoteCommand', (_event, command) => aiWindow.forwardRemoteCommand(command));
+  // Detached console window (#1272): lifecycle + the preview-running relay to it.
+  handle('console.openWindow', (_event, path, locale) =>
+    consoleWindow.openConsoleWindow(path, locale),
+  );
+  handle('console.closeWindow', async () => consoleWindow.closeConsoleWindow());
+  handle('console.isWindowOpen', async () => consoleWindow.isConsoleWindowOpen());
+  handle('console.mirrorPush', (_event, state) => consoleWindow.pushMirrorState(state));
+  // optimizer (model/texture optimization)
+  handle('optimizer.scan', (_event, path) => optimizer.scan(path));
+  handle('optimizer.run', (_event, path, options) => optimizer.run(path, options));
+  handle('optimizer.revert', (_event, path) => optimizer.revert(path));
+  handle('optimizer.tools', () => optimizer.tools());
+  handle('optimizer.installTools', (_event, path) => optimizer.installTools(path));
 }

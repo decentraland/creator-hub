@@ -16,6 +16,12 @@ import type {
   AiRemoteCommand,
   AiSendParams,
 } from './ai';
+import type {
+  OptimizeOptions,
+  OptimizeResult,
+  OptimizeScanResult,
+  OptimizeToolsInfo,
+} from './optimizer';
 
 export type IpcResult<T> = {
   success: true;
@@ -102,6 +108,19 @@ export const AI_WINDOW_STATE = 'ai.windowState';
 
 export type AiWindowState = { open: boolean };
 
+// Detached console window (#1272). Same shape as the AI window: the console can be popped
+// out of its lower tab into its own always-on-top-able OS window. CONSOLE_WINDOW_STATE tells
+// the main window whether that window is open (so the inline tab shows the logs or a "opened
+// in a separate window" placeholder). CONSOLE_MIRROR_STATE (main window → main → detached)
+// carries the bits the detached window can't observe itself — whether the preview is running,
+// so it knows to (re)attach to the debugger on the next run. The log lines themselves are
+// NOT mirrored: the detached window subscribes to the main-process debugger directly.
+export const CONSOLE_MIRROR_STATE = 'console.mirrorState';
+export const CONSOLE_WINDOW_STATE = 'console.windowState';
+
+export type ConsoleWindowState = { open: boolean };
+export type ConsoleMirrorState = { previewRunning: boolean };
+
 // AI sign-in without a pre-installed CLI (#1531). Users with a Claude/ChatGPT subscription
 // who never installed a CLI can sign in from the setup panel: main installs the official CLI
 // into an app-managed dir (using the bundled Node) and drives its own subscription login
@@ -151,6 +170,11 @@ export interface Ipc {
   'electron.openExternal': (url: string) => Promise<void>;
   'electron.copyToClipboard': (text: string) => Promise<void>;
   'oxc.parse': (filename: string, source: string) => Promise<OxcParseResult>;
+  'optimizer.scan': (path: string) => Promise<OptimizeScanResult>;
+  'optimizer.run': (path: string, options: OptimizeOptions) => Promise<OptimizeResult>;
+  'optimizer.revert': (path: string) => Promise<{ restored: number }>;
+  'optimizer.tools': () => Promise<OptimizeToolsInfo>;
+  'optimizer.installTools': (path: string) => Promise<OptimizeToolsInfo>;
   'metrics.request': (request: MetricsRequest) => Promise<MetricsResponse>;
   'inspector.start': () => Promise<number>;
   'inspector.attachSceneDebugger': (path: string) => Promise<string>;
@@ -232,6 +256,13 @@ export interface Ipc {
   'ai.isWindowOpen': () => Promise<boolean>;
   'ai.mirrorPush': (state: AiMirrorState) => void;
   'ai.remoteCommand': (command: AiRemoteCommand) => void;
+  // Detached console window (#1272). openWindow/closeWindow manage the separate OS window
+  // (`path` picks the scene to attach to, `locale` seeds its i18n); mirrorPush relays the
+  // main window's preview-running state to it (main window → main → detached).
+  'console.openWindow': (path: string, locale?: string) => Promise<void>;
+  'console.closeWindow': () => Promise<void>;
+  'console.isWindowOpen': () => Promise<boolean>;
+  'console.mirrorPush': (state: ConsoleMirrorState) => void;
   'mobileDebug.getSessions': () => Promise<MobileDebugSessionInfo[]>;
   'mobileDebug.subscribeEntries': () => Promise<void>;
   'mobileDebug.unsubscribeEntries': () => Promise<void>;
