@@ -215,7 +215,7 @@ Design specs live in Figma ("📗️ Design System | Creator Hub"). The Figma MC
 
 Skills live in `.ai/skills/*/SKILL.md`. Read the relevant `SKILL.md` when a task matches a skill's domain.
 
-**Figma / design work:** whenever a task involves a `figma.com` URL, the word "figma", "design from figma", or matching/implementing a design, read [`.ai/skills/figma/SKILL.md`](.ai/skills/figma/SKILL.md) FIRST. It is the project umbrella for Figma→code work — it delegates the spec→code flow to the installed `figma-implement-design` / `figma-create-design-system-rules` skills and adds this repo's browser fallback (for when the Figma MCP is capped — supersedes the "Design handoff" note below as the actionable procedure), palette→`DESIGN.md`/`vars.css` sync, live verification against the running Creator Hub/inspector, and the SVG/CSS gotchas. A `UserPromptSubmit` hook (`.ai/hooks/figma/hook.py`, wired in `.claude/settings.json`) reminds you of this on any Figma cue.
+**Figma / design work:** on any Figma cue (a `figma.com` URL or the word "figma"), read [`.ai/skills/figma/SKILL.md`](.ai/skills/figma/SKILL.md) FIRST — the project umbrella for Figma→code work (leaf skills, the browser fallback when the Figma MCP is capped, palette→`vars.css`/`DESIGN.md` sync, live verification, SVG/CSS gotchas), which makes the "Design handoff" note above actionable. A `UserPromptSubmit` hook (`.ai/hooks/figma/hook.py`) fires the reminder automatically.
 
 ## Standards
 

@@ -9,12 +9,16 @@ import os
 import re
 import sys
 
-TRIGGER = re.compile(r"figma\.com|\bfigma\b", re.IGNORECASE)
+TRIGGER = re.compile(r"\bfigma\b", re.IGNORECASE)
 
 LEAVES = ("figma-implement-design", "figma-create-design-system-rules")
 INSTALL = (
     "npx skills add openai/skills --skill "
     "figma-implement-design,figma-create-design-system-rules --full-depth --copy --yes"
+)
+
+REPO_ROOT = os.path.dirname(
+    os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 )
 
 REMINDER = (
@@ -40,11 +44,11 @@ def main() -> int:
         data = json.load(sys.stdin)
     except Exception:
         return 0
-    if not TRIGGER.search(str(data.get("prompt", ""))):
+    if not isinstance(data, dict) or not TRIGGER.search(str(data.get("prompt", ""))):
         return 0
     print(REMINDER)
 
-    project_dir = os.environ.get("CLAUDE_PROJECT_DIR") or str(data.get("cwd") or ".")
+    project_dir = os.environ.get("CLAUDE_PROJECT_DIR") or data.get("cwd") or REPO_ROOT
     missing = missing_leaves(project_dir)
     if missing:
         print(
