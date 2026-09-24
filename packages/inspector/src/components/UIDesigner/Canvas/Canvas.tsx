@@ -1598,6 +1598,8 @@ const CanvasComponent: React.FC = () => {
                 type="button"
                 className="ui-designer-canvas-zoom-btn"
                 onClick={() => setScale(s => clampZoom(s + ZOOM_STEP))}
+                disabled={scale >= ZOOM_MAX}
+                title={scale >= ZOOM_MAX ? 'Maximum zoom reached' : undefined}
                 aria-label="Zoom in"
               >
                 +

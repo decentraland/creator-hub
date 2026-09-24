@@ -459,6 +459,10 @@
   font-size: 16px;
 }
 
+.ui-designer-zoom-panel .ui-designer-canvas-zoom-btn:disabled {
+  color: #fcfcfc;
+}
+
 .ui-designer-canvas-zoom-btn:hover {
   background: rgba(255, 255, 255, 0.1);
 }
@@ -538,7 +542,7 @@
 }
 
 .ui-designer-canvas-zoom-btn:disabled:not(.locked) {
-  opacity: 0.35;
+  opacity: 0.2;
   cursor: default;
   pointer-events: none;
 }
@@ -582,12 +586,8 @@
   color: #fcfcfc;
 }
 
-.ui-designer-device-toggle-btn:hover {
+.ui-designer-device-toggle-btn:not(.active):hover {
   background: rgba(255, 255, 255, 0.1);
-}
-
-.ui-designer-device-toggle-btn.active:hover {
-  background: #243852;
 }
 
 .ui-designer-device-toggle-btn:focus-visible {
