@@ -47,7 +47,7 @@ describe('ObjectField', () => {
     expect(screen.getByText('Count')).toBeTruthy();
   });
 
-  it('bubbles the whole updated object when a field changes', () => {
+  it('bubbles a functional update that merges the change into the freshest object', () => {
     const onUpdate = vi.fn();
     const { container } = render(
       <ScriptParamField
@@ -59,11 +59,40 @@ describe('ObjectField', () => {
     // isEnabled is the only checkbox (nested.count is a number field)
     const checkbox = container.querySelector('input[type="checkbox"]') as HTMLInputElement;
     fireEvent.click(checkbox);
-    expect(onUpdate).toHaveBeenCalledWith({
+    // Containers emit a `(prev) => next` updater, not the whole value, so concurrent sibling edits
+    // compose instead of clobbering. Applying it to the current object yields the merged result.
+    const updater = onUpdate.mock.calls[0][0] as (prev: unknown) => unknown;
+    expect(typeof updater).toBe('function');
+    expect(updater(objectParam.value)).toEqual({
       isEnabled: false,
       title: 'hello',
       nested: { count: 2 },
     });
+  });
+
+  it('composes two sibling edits without clobbering (the data-loss regression)', () => {
+    const onUpdate = vi.fn();
+    // Two boolean siblings (checkboxes commit immediately, unlike debounced text/number fields).
+    const twoBools: ScriptParamObject = {
+      type: 'object',
+      value: { a: true, b: true },
+      fields: { a: { type: 'boolean', value: false }, b: { type: 'boolean', value: false } },
+    };
+    const { container } = render(
+      <ScriptParamField
+        name="cfg"
+        param={twoBools}
+        onUpdate={onUpdate}
+      />,
+    );
+    const boxes = container.querySelectorAll('input[type="checkbox"]');
+    fireEvent.click(boxes[0]); // a -> false
+    fireEvent.click(boxes[1]); // b -> false
+    const u1 = onUpdate.mock.calls[0][0] as (p: unknown) => unknown;
+    const u2 = onUpdate.mock.calls[1][0] as (p: unknown) => unknown;
+    // Apply both against the SAME starting value (as if both fired before a re-render): composing
+    // the two updaters must keep both edits — the second must not revert the first.
+    expect(u2(u1({ a: true, b: true }))).toEqual({ a: false, b: false });
   });
 });
 
@@ -98,7 +127,8 @@ describe('ArrayField', () => {
       />,
     );
     fireEvent.click(screen.getByText('Add'));
-    expect(onUpdate).toHaveBeenCalledWith(['0xabc', '0xdef', '']);
+    const updater = onUpdate.mock.calls[0][0] as (prev: unknown) => unknown;
+    expect(updater(['0xabc', '0xdef'])).toEqual(['0xabc', '0xdef', '']);
   });
 
   it('removes the targeted row', () => {
@@ -113,7 +143,8 @@ describe('ArrayField', () => {
     const removeButtons = container.querySelectorAll('.ArrayFieldRemove');
     expect(removeButtons.length).toBe(2);
     fireEvent.click(removeButtons[0]);
-    expect(onUpdate).toHaveBeenCalledWith(['0xdef']);
+    const updater = onUpdate.mock.calls[0][0] as (prev: unknown) => unknown;
+    expect(updater(['0xabc', '0xdef'])).toEqual(['0xdef']);
   });
 
   it('renders a list of objects with per-row sub-fields', () => {

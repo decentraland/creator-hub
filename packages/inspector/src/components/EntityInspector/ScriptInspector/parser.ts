@@ -327,7 +327,14 @@ function withDefaultValue(
   valueInfo: ScriptParamUnion,
 ): ScriptParamUnion {
   if (typeInfo.type === 'object') {
-    return { ...typeInfo, value: valueInfo.type === 'object' ? valueInfo.value : typeInfo.value };
+    // Shallow-merge the authored default over the type-derived one so a partial literal (or one
+    // whose values weren't statically evaluable) keeps a defined value for every declared key
+    // rather than leaving some undefined at runtime.
+    const value =
+      valueInfo.type === 'object'
+        ? { ...(typeInfo.value as Record<string, unknown>), ...valueInfo.value }
+        : typeInfo.value;
+    return { ...typeInfo, value };
   }
   if (typeInfo.type === 'array') {
     return { ...typeInfo, value: valueInfo.type === 'array' ? valueInfo.value : typeInfo.value };

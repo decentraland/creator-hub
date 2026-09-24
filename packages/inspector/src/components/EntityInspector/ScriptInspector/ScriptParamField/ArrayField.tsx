@@ -4,29 +4,27 @@ import type { ScriptParamArray, ScriptParamUnion } from '../types';
 import { Container } from '../../../Container';
 import { Button } from '../../../Button';
 import { AddButton } from '../../AddButton';
+import InfoTooltip from '../../../ui/InfoTooltip/InfoTooltip';
 import { formatLabel } from './labels';
 import { ScriptParamField } from './ScriptParamField';
-
-import './ArrayField.css';
+import { resolveParamUpdate, type ParamUpdate } from './update';
 
 type Props = {
   name: string;
   param: ScriptParamArray;
-  onUpdate: (value: unknown[]) => void;
+  onUpdate: (update: ParamUpdate) => void;
 };
 
+const asArray = (prev: unknown): unknown[] => (Array.isArray(prev) ? prev : []);
+
 // Renders a list param as add/remove rows. Each row reuses ScriptParamField with the array's
-// `item` shape, so a list of strings, entities, actions, or nested objects all work. `value`
-// stays a plain array the runtime spreads verbatim; a new row seeds from a deep clone of the
+// `item` shape, so a list of strings, entities, actions, or nested objects all work. Every edit
+// bubbles a FUNCTIONAL update that recomputes from the freshest array (see update.ts), so a row
+// edit, an add, and a remove don't clobber one another. A new row seeds from a deep clone of the
 // item's default value.
 export function ArrayField({ name, param, onUpdate }: Props) {
   const { value, item } = param;
-  const rows = Array.isArray(value) ? value : [];
-
-  const updateAt = (index: number, next: unknown) =>
-    onUpdate(rows.map((element, i) => (i === index ? next : element)));
-  const removeAt = (index: number) => onUpdate(rows.filter((_, i) => i !== index));
-  const add = () => onUpdate([...rows, structuredClone(item.value)]);
+  const rows = asArray(value);
 
   return (
     <Container
@@ -34,6 +32,7 @@ export function ArrayField({ name, param, onUpdate }: Props) {
       initialOpen={false}
       variant="minimal"
       border
+      rightContent={param.tooltip ? <InfoTooltip text={param.tooltip} /> : undefined}
     >
       {rows.map((element, index) => (
         <div
@@ -43,17 +42,27 @@ export function ArrayField({ name, param, onUpdate }: Props) {
           <ScriptParamField
             name={`${index + 1}`}
             param={{ ...item, value: element } as ScriptParamUnion}
-            onUpdate={next => updateAt(index, next)}
+            onUpdate={childUpdate =>
+              onUpdate((prev: unknown) => {
+                const next = asArray(prev).slice();
+                next[index] = resolveParamUpdate(childUpdate, next[index]);
+                return next;
+              })
+            }
           />
           <Button
             className="ArrayFieldRemove"
-            onClick={() => removeAt(index)}
+            onClick={() => onUpdate((prev: unknown) => asArray(prev).filter((_, i) => i !== index))}
           >
             <RemoveIcon />
           </Button>
         </div>
       ))}
-      <AddButton onClick={add}>Add</AddButton>
+      <AddButton
+        onClick={() => onUpdate((prev: unknown) => [...asArray(prev), structuredClone(item.value)])}
+      >
+        Add
+      </AddButton>
     </Container>
   );
 }

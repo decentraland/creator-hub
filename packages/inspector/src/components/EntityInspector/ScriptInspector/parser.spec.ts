@@ -260,6 +260,15 @@ export function start(src: string, entity: Entity, speed: Slider<0, 10> = 5) {}
       });
     });
 
+    it('fills type-derived defaults for keys whose literal value is not statically evaluable', () => {
+      // `b`'s default is an identifier the parser can't evaluate; it must fall back to the
+      // type-derived default rather than leaving `b` undefined at runtime.
+      const { params } = getScriptParams(
+        classScript('public cfg: { a: number; b: number } = { a: 5, b: someConst },'),
+      );
+      expect(params.cfg).toMatchObject({ type: 'object', value: { a: 5, b: 0 } });
+    });
+
     it('recurses into object-in-object', () => {
       const { params } = getScriptParams(
         classScript(

@@ -79,7 +79,7 @@ export function ScriptParamField({ name, param, onUpdate }: Props) {
         <ObjectField
           name={name}
           param={param}
-          onUpdate={value => onUpdate(value)}
+          onUpdate={onUpdate}
         />
       );
 
@@ -88,7 +88,7 @@ export function ScriptParamField({ name, param, onUpdate }: Props) {
         <ArrayField
           name={name}
           param={param}
-          onUpdate={value => onUpdate(value)}
+          onUpdate={onUpdate}
         />
       );
 

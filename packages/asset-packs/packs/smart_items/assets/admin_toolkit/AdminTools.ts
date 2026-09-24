@@ -5,6 +5,7 @@ import { syncEntity } from '@dcl/sdk/network';
 import players from '@dcl/sdk/players';
 import type { AdminTools as AdminConfig } from '@dcl/asset-packs/dist/definitions';
 import { createAdminToolkitUI, setAdminConfig } from '@dcl/asset-packs/dist/admin-toolkit-ui';
+import { isServer } from '~system/EngineApi';
 
 export class AdminTools {
   /**
@@ -82,7 +83,21 @@ export class AdminTools {
     // the scene an "editor scene" so `@dcl/sdk-commands` bundles `initAssetPacks` — the thing that
     // registers the asset-pack components (VideoControlState, TextAnnouncements, …) the UI needs.
     setAdminConfig(this.buildConfig(), this.entity);
-    createAdminToolkitUI(engine, pointerEventsSystem, ReactEcsRenderer, { syncEntity }, players);
+
+    // The Admin Toolkit is a CLIENT-ONLY feature: it renders a React UI, opens a text-comms
+    // MessageBus, and calls the comms-gatekeeper scene-admin/scene-bans endpoints. SDK7 runs the
+    // SAME scene bundle on both the client and the headless authoritative server, so without this
+    // guard the toolkit also initializes server-side — where there is no UI to operate it and it
+    // only emits failing comms-gatekeeper requests and unsupported (legacy) `EngineApi.subscribe`
+    // calls. A failed query defaults to client behavior so the toolkit is never lost on a real
+    // client (mirrors `createAdminToolkitSystem`).
+    const mount = () =>
+      createAdminToolkitUI(engine, pointerEventsSystem, ReactEcsRenderer, { syncEntity }, players);
+    isServer({})
+      .then(({ isServer: runsOnServer }) => {
+        if (!runsOnServer) mount();
+      })
+      .catch(mount);
   }
 
   private buildConfig(): AdminConfig {
