@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useId, useMemo, useState } from 'react';
 
 import { useComponentInput } from '../../../hooks/sdk/useComponentInput';
 import { useHasComponent } from '../../../hooks/sdk/useHasComponent';
@@ -19,6 +19,7 @@ import { CheckboxField } from '../../ui/CheckboxField';
 import { InfoTooltip } from '../../ui/InfoTooltip';
 import RangeHourField from '../../ui/RangeHourField/RangeHourField';
 import { useComponentValue } from '../../../hooks/sdk/useComponentValue';
+import { useProfiles } from '../../../hooks/useProfiles';
 import { useAppDispatch, useAppSelector } from '../../../redux/hooks';
 import { useAssetOptions } from '../../../hooks/useAssetOptions';
 import {
@@ -31,16 +32,23 @@ import { Tab } from '../Tab';
 import { Modal } from '../../Modal';
 import { Error as ImportError } from '../../ImportAsset/Error';
 import { TransitionMode } from '../../../lib/sdk/components/SceneMetadata';
+import { getConfig } from '../../../lib/logic/config';
+import { getSceneClient } from '../../../lib/rpc/scene';
 import { Layout } from './Layout';
+import { ProfileRow } from './ProfileRow';
 import type { Props } from './types';
 import {
   fromScene,
   toScene,
   isValidInput,
   isImage,
+  nextMultiplayerValue,
+  MIDDAY_SECONDS,
+  containsAddress,
+  dedupeAddresses,
+  withoutAddress,
   validateThumbnailFile,
   validateThumbnailPath,
-  MIDDAY_SECONDS,
 } from './utils';
 import { SceneInfoInput } from './SceneInfoInput';
 import { ThumbnailPreview } from './ThumbnailPreview';
@@ -164,6 +172,72 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
       setComponentValue({
         ...componentValue,
         creator: value,
+      });
+    },
+    [componentValue, setComponentValue],
+  );
+
+  const authServerSupported = useMemo(() => getConfig().authServerSupported, []);
+  const multiplayerStatusId = useId();
+  const [installingMultiplayer, setInstallingMultiplayer] = useState(false);
+  const [multiplayerInstallFailed, setMultiplayerInstallFailed] = useState(false);
+
+  const handleMultiplayerServerChange = useCallback(
+    async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const { install, patch } = nextMultiplayerValue(e.target.checked, authServerSupported);
+
+      if (!install) {
+        setComponentValue({ ...componentValue, ...(patch ?? {}) });
+        return;
+      }
+
+      setInstallingMultiplayer(true);
+      setMultiplayerInstallFailed(false);
+      try {
+        const result = await getSceneClient()?.installMultiplayer();
+        if (!result?.ok) setMultiplayerInstallFailed(true);
+      } catch {
+        setMultiplayerInstallFailed(true);
+      }
+      setInstallingMultiplayer(false);
+    },
+    [componentValue, setComponentValue, authServerSupported],
+  );
+
+  const logsPermissionsId = useId();
+  const [logsPermissionsCommits, setLogsPermissionsCommits] = useState(0);
+  const [logsPermissionIsDuplicate, setLogsPermissionIsDuplicate] = useState(false);
+
+  const addresses = useMemo(
+    () => dedupeAddresses(componentValue.logsPermissions),
+    [componentValue.logsPermissions],
+  );
+
+  const profiles = useProfiles(addresses);
+
+  const handleAddLogsPermission = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      setLogsPermissionIsDuplicate(false);
+      const address = event.target.value;
+      if (!address) return;
+
+      const logsPermissions = componentValue.logsPermissions ?? [];
+      if (containsAddress(logsPermissions, address)) {
+        setLogsPermissionIsDuplicate(true);
+        return;
+      }
+
+      setComponentValue({ ...componentValue, logsPermissions: [...logsPermissions, address] });
+      setLogsPermissionsCommits(commits => commits + 1);
+    },
+    [componentValue, setComponentValue],
+  );
+
+  const handleRemoveLogsPermission = useCallback(
+    (address: string) => {
+      setComponentValue({
+        ...componentValue,
+        logsPermissions: withoutAddress(componentValue.logsPermissions, address),
       });
     },
     [componentValue, setComponentValue],
@@ -386,6 +460,77 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
             {...transitionModeProps}
             disabled={componentValue.skyboxConfig?.fixedTime === undefined}
           />
+          <Block
+            label="Advanced"
+            className="underlined"
+          ></Block>
+          <CheckboxField
+            label="Enable Multiplayer Server"
+            aria-label="Enable Multiplayer Server"
+            aria-describedby={multiplayerStatusId}
+            checked={componentValue.multiplayerServer}
+            disabled={installingMultiplayer}
+            onChange={handleMultiplayerServerChange}
+          />
+          <div
+            className="MultiplayerStatusRow"
+            id={multiplayerStatusId}
+            role="status"
+          >
+            {installingMultiplayer && (
+              <Label
+                className="MultiplayerStatus"
+                text="Installing the multiplayer-server SDK…"
+              />
+            )}
+            {multiplayerInstallFailed && (
+              <Label
+                className="MultiplayerStatus error"
+                text="Couldn't install the multiplayer-server SDK package."
+              />
+            )}
+          </div>
+          {componentValue.multiplayerServer && (
+            <div className="LogsAccess">
+              <Label text="Log Access & Storage" />
+              <div
+                className="LogsAccessHint"
+                id={`${logsPermissionsId}-hint`}
+              >
+                Add by User ID who can access this scene's logs and manage its storage.
+              </div>
+              <WalletField
+                key={logsPermissionsCommits}
+                aria-label="User ID"
+                aria-describedby={`${logsPermissionsId}-hint ${logsPermissionsId}-duplicate`}
+                onChange={handleAddLogsPermission}
+              />
+              {logsPermissionIsDuplicate && (
+                <div
+                  className="LogsAccessHint error"
+                  id={`${logsPermissionsId}-duplicate`}
+                  role="alert"
+                >
+                  This User ID is already on the list.
+                </div>
+              )}
+              <div className="LogsAccessList">
+                {addresses.map(address => {
+                  const profile = profiles[address];
+                  return (
+                    <ProfileRow
+                      key={address}
+                      address={address}
+                      name={profile?.name}
+                      faceUrl={profile?.faceUrl}
+                      removeLabel="Remove Address"
+                      onRemove={() => handleRemoveLogsPermission(address)}
+                    />
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </>
       ) : null}
     </Container>

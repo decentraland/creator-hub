@@ -1,6 +1,6 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import cx from 'classnames';
-import { isAddress } from '../../../lib/logic/ethereum';
+import { formatAddress, isAddress } from '../../../lib/logic/ethereum';
 import { TextField } from '../TextField';
 import type { Props } from './types';
 
@@ -52,11 +52,7 @@ export const WalletField: React.FC<Props> = ({
   );
 
   const formattedWallet = useMemo(() => {
-    return isFocused
-      ? wallet
-      : isAddress(wallet)
-        ? `${wallet.slice(0, 12)}...${wallet.slice(-8)}`
-        : wallet;
+    return isFocused ? wallet : formatAddress(wallet);
   }, [wallet, isFocused]);
 
   return (

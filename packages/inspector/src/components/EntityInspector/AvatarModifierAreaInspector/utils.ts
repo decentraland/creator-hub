@@ -12,19 +12,3 @@ export function fromModifiers(modifiers: readonly AvatarModifierType[] = []): st
 export function toModifiers(values: readonly string[]): AvatarModifierType[] {
   return values.map(value => Number(value) as AvatarModifierType);
 }
-
-export function addExcludeId(excludeIds: readonly string[] = []): string[] {
-  return [...excludeIds, ''];
-}
-
-export function updateExcludeId(
-  excludeIds: readonly string[] = [],
-  index: number,
-  value: string,
-): string[] {
-  return excludeIds.map((id, idx) => (idx === index ? value : id));
-}
-
-export function removeExcludeId(excludeIds: readonly string[] = [], index: number): string[] {
-  return excludeIds.filter((_, idx) => idx !== index);
-}

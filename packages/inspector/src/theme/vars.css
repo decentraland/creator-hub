@@ -20,6 +20,11 @@
   --selected-item: #731f30;
   --header-hover-bg-color: #38222d;
   --disabled-bg-color: #323036;
+  /* Row hover in list controls. Same white-overlay convention as the
+     ui-designer control tokens (:175-177) but role-scoped, not
+     subsystem-scoped: --ui-designer-control-hover-bg is the closest of the
+     three and differs only by one point of opacity. */
+  --row-hover-bg: rgba(255, 255, 255, 0.05);
 
   /* DCL Colors */
   --primary-main: #ff2d55;
