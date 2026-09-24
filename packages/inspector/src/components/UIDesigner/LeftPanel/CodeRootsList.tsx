@@ -3,10 +3,10 @@ import { useDrag } from 'react-dnd';
 import { IoEyeOffOutline, IoEyeOutline, IoTrashOutline } from 'react-icons/io5';
 import cx from 'classnames';
 
-import { useAppDispatch } from '../../../redux/hooks';
-import { selectNode } from '../../../redux/ui-designer';
+import { useAppDispatch, useAppSelector } from '../../../redux/hooks';
+import { getMobileHudSelected, selectMobileHud, selectNode } from '../../../redux/ui-designer';
 import { UI_DESIGNER_DND_TYPE, type UIDesignerDragItem } from '../shared/dnd';
-import { GuiGridIcon } from '../shared/widget-icons';
+import { GuiGridIcon, MobileHudIcon } from '../shared/widget-icons';
 import {
   type CodeRoot,
   removeRoot,
@@ -15,8 +15,38 @@ import {
   toggleTopLevel,
   useCodeState,
 } from '../code/store';
+import { loadMobileHudConfig, removeMobileHud } from '../MobileHud/mobile-hud-store';
 
 import './CodeRootsList.css';
+
+const MobileHudRow: React.FC = () => {
+  const dispatch = useAppDispatch();
+  const active = useAppSelector(getMobileHudSelected);
+
+  const onSelect = useCallback(() => {
+    dispatch(selectMobileHud());
+    void loadMobileHudConfig();
+  }, [dispatch]);
+
+  return (
+    <div
+      className={cx('ui-designer-mobile-hud-row', { 'is-active': active })}
+      role="button"
+      tabIndex={0}
+      aria-current={active}
+      onClick={onSelect}
+      onKeyDown={e => {
+        if (e.key !== 'Enter' && e.key !== ' ') return;
+        e.preventDefault();
+        onSelect();
+      }}
+      title="Customize the mobile touch-screen controls"
+    >
+      <MobileHudIcon />
+      <span className="ui-designer-mobile-hud-row-name">MobileHUD</span>
+    </div>
+  );
+};
 
 const RootRow: React.FC<{
   root: CodeRoot;
@@ -142,6 +172,7 @@ const RootRow: React.FC<{
 export const CodeRootsList: React.FC<{ filter?: string }> = ({ filter = '' }) => {
   const { roots, filename, parsed, error } = useCodeState();
   const dispatch = useAppDispatch();
+  const mobileHudSelected = useAppSelector(getMobileHudSelected);
 
   const [editing, setEditing] = useState<string | null>(null);
   const [draft, setDraft] = useState('');
@@ -168,11 +199,22 @@ export const CodeRootsList: React.FC<{ filter?: string }> = ({ filter = '' }) =>
     }
   }, [filename, parsed, dispatch]);
 
+  const hadRoots = useRef(false);
+  useEffect(() => {
+    const hasRoots = roots.length > 0;
+    if (hadRoots.current && !hasRoots) {
+      if (mobileHudSelected) dispatch(selectNode({ node: null }));
+      void removeMobileHud();
+    }
+    hadRoots.current = hasRoots;
+  }, [roots.length, mobileHudSelected, dispatch]);
+
   const handleSelect = useCallback(
     (root: CodeRoot) => {
       if (root.filename !== filename) void selectRootFile(root.filename);
+      else dispatch(selectNode({ node: parsed?.root ? parsed.root.entity : null }));
     },
-    [filename],
+    [filename, parsed, dispatch],
   );
 
   const handleRemove = useCallback((e: React.MouseEvent, root: CodeRoot) => {
@@ -194,11 +236,12 @@ export const CodeRootsList: React.FC<{ filter?: string }> = ({ filter = '' }) =>
         </div>
       ) : null}
       <div className="ui-designer-roots-tree">
+        {roots.length > 0 ? <MobileHudRow /> : null}
         {shown.map(root => (
           <RootRow
             key={root.filename}
             root={root}
-            active={root.filename === filename}
+            active={!mobileHudSelected && root.filename === filename}
             editing={editing === root.filename}
             draft={draft}
             onSelect={() => handleSelect(root)}

@@ -4,13 +4,26 @@ The UI Designer is the inspector's 2D mode for authoring a scene's `@dcl/react-e
 
 Read this when working on the 2D toolbar, the canvas direct-manipulation, or the 2D/3D mode switch.
 
-## Availability (opt-in gate and SDK requirement)
+## Availability (SDK requirement and the embedder gate)
 
-The UI Designer is gated twice, and both gates arrive as **inspector config query params** (`InspectorConfig`, read once per session via `getConfig`) — the same mechanism as `renderer`, not the feature-flag channel. Creator Hub appends them to the iframe URL in `EditorPage`, so changing a setting rebuilds the URL and reloads the iframe with the new value. Its user-facing name is **UI Editor**; the internal code keeps the older `uiDesigner` name.
+Two **inspector config query params** (`InspectorConfig`, read once per session via `getConfig`) decide whether 2D mode is reachable — the same mechanism as `renderer`, not the feature-flag channel. Creator Hub appends them to the iframe URL in `EditorPage` (`buildInspectorUrl`, `renderer/src/components/EditorPage/inspectorUrl.ts`), so a change that rebuilds the URL reloads the iframe with the new value. Its user-facing name is **UI Editor**; the internal code keeps the older `uiDesigner` name.
 
-- **Feature opt-in** (`uiEditorEnabled`). It is an app setting, off by default: **Settings → Experimental → UI Editor** (`settings.guiEditor`, a toggle in the dedicated Experimental tab, alongside the Scene renderer picker). Creator Hub passes it as the `uiEditorEnabled` query param straight from `settings.guiEditor`. `ModeSwitcher` renders nothing when `getConfig().uiEditorEnabled` is false, so the 2D/3D tablist — the only entry into 2D — is absent, and `useRestorePersistedMode` never restores a persisted 2D mode. The standalone dev inspector has no Creator Hub to pass params, so `getConfig` defaults both to `INSPECTOR_DEV_PARSER` (on in dev builds).
+- **Embedder gate** (`uiEditorEnabled`). Creator Hub always passes `true` — the UI Editor is stable and has no setting. The param exists for *other* hosts: `@dcl/inspector` is published to npm with documented iframe and WebSocket embedding, and `getConfig` defaults it to `INSPECTOR_DEV_PARSER` — true in dev builds, false in production — because code-as-source needs a parser a production standalone build does not ship. The `@oxc-parser/wasm` fallback is compiled out under `--production`, and only Creator Hub's RPC bridge reaches main's native `oxc-parser`. `ModeSwitcher` renders nothing when the param is false, so the 2D/3D tablist — the only entry into 2D — is absent, and `useRestorePersistedMode` never restores a persisted 2D mode.
 
-- **SDK compatibility** (`uiEditorSupported`). The editor emits `ScreenInsetArea` / `InteractableArea` wrappers and relies on react-ecs' per-device default virtual screen, both of which exist only in `@dcl/sdk` 7.26.0+ (react-ecs 7.26.0). Below that, a generated `src/ui/index.tsx` fails to compile. Creator Hub derives `supportsUiDesigner` from the scene's installed SDK version (`shared/flags.ts`, `editor` slice) and passes it as the `uiEditorSupported` query param. When the feature is on but the scene is incompatible, the 2D tab stays available and entering it renders `SdkUpgradeNotice` (a full-cover dropout) instead of the canvas. **Update SDK** calls the `update_sdk` scene RPC, which runs the SAME canonical update as the "New dependencies version detected" toast (`updatePackages`, guarded by `editor.isInstallingProject` so the two can't double-install) then `fetchSdkCommandsVersion`; on success the inspector reloads itself (`window.location.reload()`) so the scene picks up the new dependency. **Maybe later** switches back to 3D (`togglePanel` off + `uiDesignerOpen: false`).
+- **SDK compatibility** (`uiEditorSupported`). The editor emits `ScreenInsetArea` / `InteractableArea` wrappers and relies on react-ecs' per-device default virtual screen, both of which exist only in `@dcl/sdk` 7.26.0+ (react-ecs 7.26.0). Below that, a generated `src/ui/index.tsx` fails to compile. Creator Hub derives `supportsUiDesigner` from the scene's installed SDK version (`shared/flags.ts`, `editor` slice) and passes it as the `uiEditorSupported` query param. When the scene's SDK is too old, the 2D tab stays available and entering it renders `SdkUpgradeNotice` (a full-cover dropout) instead of the canvas. **Update SDK** calls the `update_sdk` scene RPC, which runs the SAME canonical update as the "New dependencies version detected" toast (`updatePackages`, guarded by `editor.isInstallingProject` so the two can't double-install) then `fetchSdkCommandsVersion`; on success the inspector reloads itself (`window.location.reload()`) so the scene picks up the new dependency. **Maybe later** switches back to 3D (`togglePanel` off + `uiDesignerOpen: false`).
+
+`getConfigStorage` (`creator-hub/main/src/modules/config.ts`) deletes a `guiEditor` key from `mergedConfig.settings`: configs written while the UI Editor was an opt-in still carry it, and `mergeConfig` is `deepmerge(defaults, stored)`, so a stored key absent from the defaults survives every merge. The deletion targets `mergedConfig` rather than `existingConfig` on purpose — `existingConfig.settings` is what the `storedSettings` cast aliases, so mutating it there would make the `JSON.stringify(existingConfig) !== JSON.stringify(mergedConfig)` write guard see no change and the cleaned config would never reach disk. It works because `deepmerge` clones into a fresh tree instead of aliasing, which is the same reason the `previewOptions.optimizedAssets` reset and the `optimizedAssetsByPath` prune sit after the merge: mutate `mergedConfig` when the result must persist, `existingConfig` when it only has to be right in memory.
+
+## Inspector iframe config params
+
+The transport and asset params `buildInspectorUrl` (`creator-hub/renderer/src/components/EditorPage/inspectorUrl.ts`) appends. Several look redundant and are load-bearing — check this list before changing or dropping one. The analytics params (`segmentKey`, `segmentAppId`, `segmentUserId`), `projectId` and `uiDesignerOpen` are not listed here; `uiDesignerOpen` is covered under Mode persistence below.
+
+- **`renderer`** is always sent. Without it the inspector offers an independent, un-plumbed renderer picker in its own toolbar, and choosing Bevy there mounts the engine with no realm and boots the default world. The host owns renderer selection and supplies each renderer's config.
+- **`dataLayerRpcParentUrl`** is always sent, for *both* renderers. It carries the parent-window scene-RPC control channel — host-to-inspector feature flags, notifications, file/dir open. Babylon additionally uses it as its data-layer transport.
+- **`dataLayerRpcWsUrl`** and **`bevyRealm`** are sent only on the Bevy path, and the WS takes precedence over `dataLayerRpcParentUrl` *for the data layer*: sharing the realm's websocket keeps entity ids aligned with the engine so forwarded edits land on the right entities. It does not supersede the control channel, which is why `dataLayerRpcParentUrl` is still sent alongside it — drop it and host feature flags (`SceneMinimap`, for one) never arrive.
+- **`bevyPosition`** is the scene's real parcel base coord (`project.scene.base`), where the engine loads the scene.
+- **`bevySystemScene`** points at the super-user editor-agent portable experience (viewport pick and gizmo), a static realm at `inspector/public/bevy-agent` served same-origin by the inspector's http-server. The engine GETs `<systemScene>/about` and the realm export nests `<realmName>/about`, which is why the path segment is doubled (`/bevy-agent/bevy-agent`). `VITE_BEVY_SYSTEM_SCENE` overrides it to point at a dev server.
+- **`binIndexJsUrl`** and **`contentUrl`** exist for local `@dcl/asset-packs` development, or for pointing the inspector at another environment such as `.zone`. `binIndexJsUrl` defaults to the inspector's own `bin/index.js`; setting both `VITE_ASSET_PACKS_JS_PORT` and `VITE_ASSET_PACKS_JS_PATH` redirects it at a local content server, and `VITE_ASSET_PACKS_CONTENT_URL` adds `contentUrl`, which is otherwise left to the inspector's default.
 
 ## Testing the UI Designer
 
@@ -125,6 +138,95 @@ Accepted approximation: the mobile frame stays `1600×720` (Android window size)
 **Screen backdrop (three tones).** The clipped root (`.ui-designer-canvas-root`) is the *usable* area — under gameplay inset it fills only the ~64% interactable region. Without a backdrop the reserved HUD area would fall back to the phone-body colour and the screen looked shrunk. So `Canvas.tsx` paints a `.ui-designer-canvas-screenfill` div at the **full fitted screen** (`fsLeft…fsBottom`, i.e. the whole physical display — the notch is a cutout in the glass, not a border) *behind* the root, in a dimmer gray. The device-frame's `overflow: hidden` + radius clip it to the phone shape, so the display reads as almost-100% of the body. Result is three tones: phone **bezel** (thin rounded edge + notch) → **screen** (dim, reserved HUD area) → **usable** root (brightest, on top). The root stays clipped (accurate to how `<InteractableArea>` confines content in-world); only the perceived screen size is fixed.
 
 **Overflow is not clipped to the inset.** react-ecs `ScreenInsetArea` / `InteractableArea` are absolute containers at the inset margins with no `overflow: hidden` (Yoga defaults to visible), so an absolute node placed beyond the inset overflows into the reserved zone **in-world**. The editor matches this — content renders past the safe-area outline (clipped only to the phone body) as a placement warning, not hidden. **Don't** add `overflow: hidden` to the inset root; the overflow is the signal that a node would collide with the game HUD.
+
+## MobileHUD (mobile touch controls)
+
+**MobileHUD** lets creators customize the on-screen mobile gamepad
+(`TouchScreenControls`) without writing code. It appears as a fixed first row
+above the authored GUIs in the left rail once the scene has at least one GUI,
+and selecting it enters a read-only mode: the canvas shows the touch buttons +
+a center crosshair, the device-variant switch and node-adding are disabled, and
+the right rail becomes the MobileHUD editor.
+
+- **MobileHUD is not a react-ecs UI root.** It is a
+  `TouchScreenControls.createOrReplace(engine.RootEntity, { … })` setup call,
+  written to `src/mobile-hud.ts` (**outside `src/ui/`** so `refreshRoots` never
+  treats it as a GUI and imports it into the aggregator) and wired into
+  `src/index.ts` next to `setupUi()`. It therefore has its own selection flag
+  (`mobileHudSelected` in `redux/ui-designer`), its own RightPanel branch, and
+  its own store — it can't ride the parsed-`CodeUINode` path the GUI nodes use.
+- **Lazy write + auto-clean.** `MobileHud/mobile-hud-store.ts` writes the module
+  and the `src/index.ts` wiring only when the config leaves SDK defaults
+  (`isDefaultMobileHudConfig`); resetting every field deletes the module and
+  strips the wiring, so untouched scenes carry no no-op call. Code is the source
+  of truth — the store reads the config back from `src/mobile-hud.ts` on select
+  (`MobileHud/mobile-hud-emit.ts` parses its own generated format).
+- **Emit every required PB field, even at its default.** `TouchScreenControls` is a
+  raw protobuf component and `createOrReplace` takes the full `PBTouchScreenControls`,
+  not a `Partial` — so `hideJoystick`, `hideCrosshair`, `touchInputs`, and each
+  touch-input's `hide` must always be written (zero value included), or the scene's
+  `tsc` fails with `TS2741: Property … is missing`. This is the opposite of react-ecs
+  authoring props, where omitting a default is correct; don't carry the "only emit
+  non-defaults" habit into `mobile-hud-emit.ts`.
+- **Config model.** `MobileHud/mobile-hud-config.ts` holds the eight
+  configurable actions (`IA_JUMP`, `IA_POINTER`, `IA_PRIMARY`/E,
+  `IA_SECONDARY`/F, `IA_ACTION_3..6`/1-4), each with a `hide` flag and an
+  optional scene-image `icon`, plus `hideJoystick`, `hideCrosshair`, and
+  `mainAction`. "Hide Input Actions" is **derived** (every action hidden), not
+  stored — the SDK's `PBTouchScreenControls` has no such field, so a stored
+  boolean would not round-trip.
+- **No drag-reorder (v1).** The explorer renders the buttons in a fixed priority
+  order and only `mainAction` promotes one to the central slot, so the editor
+  exposes Main selection, per-button visibility, and custom icons only.
+- **Read-only preview, positioned inside a safe-area box.** `Canvas/MobileHudPreview/`
+  renders a container div at the mobile **device safe area**
+  (`SAFE_AREAS.mobile.screenInsetArea`) and places each button at a `HOME` slot in
+  **box coordinates** (0..1 of the box, not the screen) — derived from the HUD
+  Revamp Figma. Box-relative is deliberate: a button at box-x near 0 sits at the
+  left margin by construction, so the margins do the work and nothing is
+  re-verified against the screen. Layout: the 1-4 column + a static `+` at the
+  right edge, the F→E→pointer diagonal, the big central button bottom-right, and
+  the joystick bottom-left. Only `TouchScreenControls`'s own buttons are drawn —
+  no emote/profile/chat client chrome. It stays flat (the 1-4 are always shown,
+  not behind the `+`).
+- **The Main action drives the canvas (stack model, not a swap).** The visible
+  actions fill fixed slots in priority order (`MOBILE_ACTIONS`) with the Main
+  action pulled to the big central slot: `visible = [main, …rest].filter(!hide)`
+  then slot `i` = `HOME[MOBILE_ACTIONS[i]]` (`slotFor`). So making `IA_PRIMARY`
+  Main puts **E** in the big slot and **Jump lands in the first cluster slot**
+  (bottom-left, s1), not in E's old spot; and hiding buttons re-packs the rest
+  with no gaps (hide E/F/"2" → Pointer, 1, 3, 4 around Main). The `+` overflow
+  shows only when more than five buttons are visible (`showPlus`). The Main
+  button gets an accent ring; glyphs follow the action (`HOME[action].kind`), the
+  slot follows the packing. Custom icons resolve through `useAssetUrl`; hovering a
+  RightPanel row highlights its button via `mobileHudHighlightedAction`. The canvas forces the
+  mobile frame while MobileHUD is selected (preview shows even on an empty scene)
+  and draws the device safe-area outline, which shares the box's rect so the
+  buttons read as inside it.
+- **One preview component, two modes.** Both HUDs are `MobileHudPreview` (same
+  box-relative layout inside the Device Safe Area, so positions never differ). In
+  MobileHUD mode it renders the editable `TouchScreenControls` buttons alone; while
+  editing a GUI it renders with `reference` — the same buttons **plus** the
+  non-configurable client chrome (`CHROME`: profile + chat top-left, emote
+  bottom-left) so creators design around the real on-screen HUD. `SafeAreaOverlay`
+  is now only the safe-area outline (`showHud` is always false); its
+  `MOBILE_SAFE_AREA.hud` guide set is dormant.
+- **The editing canvas layers the reference HUD between the surface and the nodes.**
+  The usable-area fill moved out of `.ui-designer-canvas-root` into a separate
+  `.ui-designer-canvas-rootbg` backdrop; the reference `MobileHudPreview` sits at
+  `z-index: 890` and the now-transparent `canvas-root` at `z-index: 901` **above**
+  it — so the reference HUD reads over the empty canvas while authored nodes
+  occlude it (a single `z-index` on `canvas-root` couldn't do this: its fill and
+  its child nodes are one stacking box).
+- **Icons are scene images only.** The Custom Icon picker reuses
+  `FileUploadField` over `useAssetOptions(ACCEPTED_FILE_TYPES.image)` — the SDK
+  icon field is a scene-content texture `src`, so no external URL, avatar, or
+  video is offered.
+- **Custom icons re-resolve on catalog change.** A synchronously-published config
+  (unlike a react-ecs source round-trip, which re-mounts the node after the import
+  finishes) can reference a just-imported image before its bytes exist, so
+  `useAssetUrl` re-resolves when the asset lands in `selectAssetCatalog` —
+  otherwise the icon only appears after a hide/show remount.
 
 ## Canvas framing (artboard vs screen) and overflow
 
