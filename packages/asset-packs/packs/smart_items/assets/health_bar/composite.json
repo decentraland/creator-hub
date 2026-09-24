@@ -23,6 +23,22 @@
       }
     },
     {
+      "name": "asset-packs::Script",
+      "data": {
+        "0": {
+          "json": {
+            "value": [
+              {
+                "path": "{assetPath}/HealthBar.ts",
+                "priority": 0,
+                "layout": "{\"params\":{\"maxHealth\":{\"type\":\"number\",\"value\":100,\"optional\":true,\"tooltip\":\"The full health value the bar represents.\"},\"startHealth\":{\"type\":\"number\",\"value\":100,\"optional\":true,\"tooltip\":\"The health value the bar starts at.\"},\"primaryColor\":{\"type\":\"string\",\"value\":\"#00FF00\",\"optional\":true,\"tooltip\":\"Hex colour of the filled part of the bar (e.g. #00FF00).\"},\"secondaryColor\":{\"type\":\"string\",\"value\":\"#FF0000\",\"optional\":true,\"tooltip\":\"Hex colour of the empty part of the bar (e.g. #FF0000).\"},\"showBar\":{\"type\":\"boolean\",\"value\":true,\"optional\":true,\"tooltip\":\"Show the floating bar. Turn off to track health without a visual.\"}},\"actions\":[{\"methodName\":\"heal\",\"description\":\"Increases health by an amount (default 1), up to the maximum.\",\"params\":{\"amount\":{\"type\":\"number\",\"value\":1,\"optional\":true}}},{\"methodName\":\"damage\",\"description\":\"Decreases health by an amount (default 1), down to zero; fires \\\"death\\\" when it reaches zero.\",\"params\":{\"amount\":{\"type\":\"number\",\"value\":1,\"optional\":true}}},{\"methodName\":\"reset\",\"description\":\"Resets health back to the maximum.\",\"params\":{}},{\"methodName\":\"remove\",\"description\":\"Removes this health bar from the scene.\",\"params\":{}}],\"events\":[\"damaged\",\"healed\",\"death\"]}"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
       "name": "asset-packs::Actions",
       "data": {
         "0": {
@@ -30,28 +46,24 @@
             "id": "{self}",
             "value": [
               {
-                "name": "Heal",
-                "type": "increment_counter",
-                "jsonPayload": "{ \"amount\": 1 }",
-                "allowedInBasicView": true
+                "name": "Damage",
+                "type": "call_script_method",
+                "jsonPayload": "{\"scriptPath\":\"{assetPath}/HealthBar.ts\",\"methodName\":\"damage\",\"params\":{}}"
               },
               {
-                "name": "Damage",
-                "type": "decrease_counter",
-                "jsonPayload": "{ \"amount\": 1 }",
-                "allowedInBasicView": true
+                "name": "Heal",
+                "type": "call_script_method",
+                "jsonPayload": "{\"scriptPath\":\"{assetPath}/HealthBar.ts\",\"methodName\":\"heal\",\"params\":{}}"
               },
               {
                 "name": "Reset",
-                "type": "set_counter",
-                "jsonPayload": "{ \"counter\": 100 }",
-                "allowedInBasicView": true
+                "type": "call_script_method",
+                "jsonPayload": "{\"scriptPath\":\"{assetPath}/HealthBar.ts\",\"methodName\":\"reset\",\"params\":{}}"
               },
               {
                 "name": "Remove",
-                "type": "remove_entity",
-                "jsonPayload": "{}",
-                "allowedInBasicView": true
+                "type": "call_script_method",
+                "jsonPayload": "{\"scriptPath\":\"{assetPath}/HealthBar.ts\",\"methodName\":\"remove\",\"params\":{}}"
               }
             ]
           }
@@ -71,8 +83,7 @@
                     "id": "{self:asset-packs::Actions}",
                     "name": "Damage"
                   }
-                ],
-                "basicViewId": "trigger-when-damaged"
+                ]
               },
               {
                 "type": "on_heal_player",
@@ -81,71 +92,9 @@
                     "id": "{self:asset-packs::Actions}",
                     "name": "Heal"
                   }
-                ],
-                "basicViewId": "trigger-when-healed"
-              },
-              {
-                "type": "on_counter_change",
-                "conditions": [
-                  {
-                    "id": "{self:asset-packs::Counter}",
-                    "type": "when_counter_is_less_than",
-                    "value": "1"
-                  }
-                ],
-                "actions": [],
-                "basicViewId": "trigger-when-health-reaches-zero"
+                ]
               }
             ]
-          }
-        }
-      }
-    },
-    {
-      "name": "asset-packs::Counter",
-      "data": {
-        "0": {
-          "json": {
-            "id": "{self}",
-            "value": 100
-          }
-        }
-      }
-    },
-    {
-      "name": "asset-packs::CounterBar",
-      "data": {
-        "0": {
-          "json": {
-            "maxValue": 100,
-            "primaryColor": "#00FF00",
-            "secondaryColor:": "#FF0000"
-          }
-        }
-      }
-    },
-    {
-      "name": "inspector::Config",
-      "data": {
-        "0": {
-          "json": {
-            "isBasicViewEnabled": true,
-            "componentName": "Health Bar",
-            "fields": [
-              {
-                "name": "Health Points",
-                "type": "asset-packs::Counter"
-              },
-              {
-                "name": "When Health Reaches Zero",
-                "type": "asset-packs::Triggers",
-                "basicViewId": "trigger-when-health-reaches-zero"
-              }
-            ],
-            "helpTooltip": {
-              "text": "A health bar that can be used to keep track of and display the player's health. It works together with other items like the spikes, the first aid and healing pad smart items."
-            },
-            "version": 1
           }
         }
       }
