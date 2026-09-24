@@ -506,7 +506,7 @@ const Renderer: React.FC = () => {
       <SceneMinimap />
       {!hiddenPanels[PanelName.SHORTCUTS] && (
         <Shortcuts
-          canvas={canvasRef}
+          viewport={viewportRef}
           onResetCamera={resetCamera}
           onZoomIn={zoomIn}
           onZoomOut={zoomOut}

@@ -1,7 +1,7 @@
 import type { Transport } from '@dcl/mini-rpc';
 import { RPC } from '@dcl/mini-rpc';
 
-import { fs, editor } from '#preload';
+import { fs, editor, consoleWindow } from '#preload';
 
 import { type Project } from '/shared/types/projects';
 import { getPath } from '../';
@@ -32,6 +32,7 @@ export enum Method {
   SET_UI_DESIGNER_MODE = 'set_ui_designer_mode',
   OPTIMIZE_SCENE = 'optimize_scene',
   PROMPT_ASSISTANT = 'prompt_assistant',
+  SET_CONSOLE_WINDOW_OPEN = 'set_console_window_open',
 }
 
 export type Params = {
@@ -44,6 +45,7 @@ export type Params = {
   [Method.SET_UI_DESIGNER_MODE]: { open: boolean };
   [Method.OPTIMIZE_SCENE]: Record<string, never>;
   [Method.PROMPT_ASSISTANT]: { text: string };
+  [Method.SET_CONSOLE_WINDOW_OPEN]: { open: boolean };
 };
 
 export type Result = {
@@ -59,6 +61,7 @@ export type Result = {
   [Method.SET_UI_DESIGNER_MODE]: void;
   [Method.OPTIMIZE_SCENE]: void;
   [Method.PROMPT_ASSISTANT]: void;
+  [Method.SET_CONSOLE_WINDOW_OPEN]: void;
 };
 
 export class SceneRpcServer extends RPC<Method, Params, Result> {
@@ -134,20 +137,34 @@ export class SceneRpcServer extends RPC<Method, Params, Result> {
 
     this.handle('prompt_assistant', async ({ text }) => {
       if (typeof text !== 'string' || text.trim() === '') return;
-      // The panel only exists when the experimental AI assistant is on. Guide the user there
-      // instead of silently dropping the prompt (EditorPage opens the panel off draftPrompt).
       if (store.getState().workspace.settings?.aiAssistant !== true) {
         store.dispatch(
           snackbarActions.pushSnackbar(
             createGenericNotification(
               'info',
-              'Turn on the AI assistant in Settings → Experimental to describe what a Trigger Area does.',
+              'Turn on the AI assistant in Settings → AI to describe what a Trigger Area does.',
             ),
           ),
         );
         return;
       }
       store.dispatch(aiActions.setDraftPrompt(text));
+    });
+
+    // The console's pop-out / dock-back controls live inside the inspector iframe (#1272).
+    // Opening the detached console window is a host concern, so the inspector asks for it here.
+    this.handle('set_console_window_open', async ({ open }) => {
+      if (typeof open !== 'boolean') return;
+      try {
+        if (open) {
+          const locale = store.getState().translation.locale;
+          await consoleWindow.openConsoleWindow(project.path, locale);
+        } else {
+          await consoleWindow.closeConsoleWindow();
+        }
+      } catch (error) {
+        console.error('[SceneRpc] Failed to toggle the detached console window', error);
+      }
     });
 
     this.handle('set_ui_designer_mode', async ({ open }) => {
