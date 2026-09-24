@@ -326,8 +326,8 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
         if (!dataLayer) return;
 
         const content = await retry(readScript, [dataLayer, path]);
-        const { params, actions, error: parseError } = getScriptParams(content);
-        const layout: ScriptLayout = { params, actions, error: parseError };
+        const { params, actions, events, error: parseError } = getScriptParams(content);
+        const layout: ScriptLayout = { params, actions, events, error: parseError };
 
         if (isNewScript) {
           addScript({
@@ -366,7 +366,12 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
       const layout = parsedLayouts[index];
       if (!layout) return;
 
+      // Preserve the rest of the layout (actions, events, error) — rebuilding it from
+      // `params` alone drops `events`, which is what drives the Reactions section, so
+      // editing any param (e.g. the Trigger Area's shape) would wipe the prompt fields
+      // for good (#1654).
       const updatedLayout: ScriptLayout = {
+        ...layout,
         params: {
           ...layout.params,
           [paramName]: { ...layout.params[paramName], value: paramValue } as ScriptParamUnion,
