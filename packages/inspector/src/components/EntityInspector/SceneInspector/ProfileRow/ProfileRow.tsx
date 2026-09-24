@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { IoIosClose as CloseIcon } from 'react-icons/io';
 import { IoPersonCircle as GenericAvatarIcon } from 'react-icons/io5';
 
@@ -18,14 +18,16 @@ export type Props = {
 
 const ProfileRow: React.FC<Props> = ({ address, name, faceUrl, removeLabel, onRemove }) => {
   const shortAddress = formatAddress(address);
+  const [unreachableFaceUrl, setUnreachableFaceUrl] = useState<string>();
 
   return (
     <div className="ProfileRow">
-      {faceUrl ? (
+      {faceUrl && faceUrl !== unreachableFaceUrl ? (
         <img
           className="Avatar"
           src={faceUrl}
           alt=""
+          onError={() => setUnreachableFaceUrl(faceUrl)}
         />
       ) : (
         <GenericAvatarIcon className="Avatar" />

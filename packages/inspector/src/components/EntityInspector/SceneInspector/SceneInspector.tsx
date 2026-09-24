@@ -506,7 +506,11 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
               <WalletField
                 key={logsPermissionsCommits}
                 aria-label="User ID"
-                aria-describedby={`${logsPermissionsId}-hint ${logsPermissionsId}-duplicate`}
+                aria-describedby={
+                  logsPermissionIsDuplicate
+                    ? `${logsPermissionsId}-hint ${logsPermissionsId}-duplicate`
+                    : `${logsPermissionsId}-hint`
+                }
                 onChange={handleAddLogsPermission}
               />
               {logsPermissionIsDuplicate && (

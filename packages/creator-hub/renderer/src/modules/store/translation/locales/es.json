@@ -891,7 +891,7 @@
       "delete_scene": "Borrando escena...",
       "delete_scene_failed": "Error al borrar escena",
       "dependencies_updated": "Las dependencias de la escena fueron actualizadas",
-      "multiplayer_sdk_installed": "SDK de Multiplayer Server instalado. El editor de escena se ha recargado.",
+      "multiplayer_sdk_installed": "SDK de Multiplayer Server instalado.",
       "installing_dependencies": "Instalando dependencias...",
       "installing_dependencies_failed": "Error al instalar dependencias",
       "invalid_scenes_folder": "Carpeta de escenas inválida. Por favor, ingresa una carpeta de escenas válida en la configuración de la aplicación antes de crear una escena.",

@@ -115,10 +115,6 @@
   width: 100%;
 }
 
-.Container.Scene .MultiplayerStatusRow {
-  display: contents;
-}
-
 .Container.Scene .MultiplayerStatus {
   font-size: 12px;
   font-weight: 400;

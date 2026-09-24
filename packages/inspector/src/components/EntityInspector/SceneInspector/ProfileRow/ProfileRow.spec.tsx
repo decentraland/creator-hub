@@ -24,6 +24,29 @@ describe('when a ProfileRow renders a resolved profile', () => {
   });
 });
 
+describe('when a ProfileRow avatar image cannot be loaded', () => {
+  it('should fall back to the generic avatar rather than a broken image', () => {
+    const { container } = render(
+      <ProfileRow
+        address={ADDRESS}
+        name="turbo_creator"
+        faceUrl="https://example.com/gone.png"
+        removeLabel="Remove"
+        onRemove={vi.fn()}
+      />,
+    );
+
+    const image = container.querySelector('img.Avatar');
+    expect(image).not.toBeNull();
+
+    fireEvent.error(image as HTMLImageElement);
+
+    expect(container.querySelector('img.Avatar')).toBeNull();
+    expect(container.querySelector('svg.Avatar')).not.toBeNull();
+    expect(screen.getByText('turbo_creator')).toBeDefined();
+  });
+});
+
 describe('when a ProfileRow renders an unresolved profile', () => {
   it('should show the address alone, with no username element', () => {
     const { container } = render(
