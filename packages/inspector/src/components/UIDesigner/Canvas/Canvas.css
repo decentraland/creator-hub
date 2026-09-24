@@ -540,6 +540,7 @@
 .ui-designer-canvas-zoom-btn:disabled:not(.locked) {
   opacity: 0.35;
   cursor: default;
+  pointer-events: none;
 }
 
 .ui-designer-device-toggle {
