@@ -10,13 +10,7 @@ import React, {
 import { createPortal } from 'react-dom';
 import { useDrop } from 'react-dnd';
 import { useStore } from 'react-redux';
-import {
-  IoAddOutline,
-  IoCopyOutline,
-  IoDesktopOutline,
-  IoPhoneLandscapeOutline,
-  IoTrashOutline,
-} from 'react-icons/io5';
+import { IoAddOutline, IoCopyOutline, IoTrashOutline } from 'react-icons/io5';
 import cx from 'classnames';
 import type { Entity, PBUiTransform } from '@dcl/ecs';
 
@@ -103,7 +97,7 @@ import { hiddenStyle, nodeStyle, rendersText, TEXT_VALUE_FIELD, textureStyle } f
 import { renderTextMarkup } from './text-markup';
 import { MobileHudPreview } from './MobileHudPreview';
 import { SafeAreaOverlay } from './SafeAreaOverlay';
-import { HudGuidesIcon, SafeAreaFrameIcon } from './toolbar-icons';
+import { DesktopIcon, HudGuidesIcon, MobileIcon, SafeAreaFrameIcon } from './toolbar-icons';
 
 const ZOOM_MIN = 0.1;
 const ZOOM_MAX = 2;
@@ -1203,6 +1197,8 @@ const CanvasComponent: React.FC = () => {
   const createRoot = useCallback(() => void createCodeRoot(), []);
   const selectedNode = useAppSelector(getSelectedNode);
   const [scale, setScale] = useState(getCanvasScale());
+  const [zoomInputValue, setZoomInputValue] = useState<string | null>(null);
+  const zoomResetTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const dispatch = useAppDispatch();
   const platform = useAppSelector(getPlatform);
   const mobileHudSelected = useAppSelector(getMobileHudSelected);
@@ -1319,6 +1315,40 @@ const CanvasComponent: React.FC = () => {
     el.addEventListener('wheel', onWheel, { passive: false });
     return () => el.removeEventListener('wheel', onWheel);
   }, []);
+
+  useEffect(() => {
+    return () => {
+      if (zoomResetTimeoutRef.current) clearTimeout(zoomResetTimeoutRef.current);
+    };
+  }, []);
+
+  const handleZoomLevelClick = useCallback(() => {
+    // Deferred so a double-click's two leading clicks don't reset the view
+    // right before handleZoomLevelDoubleClick opens the input.
+    if (zoomResetTimeoutRef.current) clearTimeout(zoomResetTimeoutRef.current);
+    zoomResetTimeoutRef.current = setTimeout(() => {
+      zoomResetTimeoutRef.current = null;
+      setScale(DEFAULT_CANVAS_SCALE);
+      setPan({ x: 0, y: 0 });
+    }, 200);
+  }, []);
+
+  const handleZoomLevelDoubleClick = useCallback(() => {
+    if (zoomResetTimeoutRef.current) {
+      clearTimeout(zoomResetTimeoutRef.current);
+      zoomResetTimeoutRef.current = null;
+    }
+    setZoomInputValue(String(Math.round(scale * 100)));
+  }, [scale]);
+
+  const commitZoomInput = useCallback(() => {
+    if (zoomInputValue === null) return;
+    const parsed = parseInt(zoomInputValue, 10);
+    if (!Number.isNaN(parsed)) {
+      setScale(clampZoom(parsed / 100));
+    }
+    setZoomInputValue(null);
+  }, [zoomInputValue]);
 
   const handlePanStart = useCallback(
     (e: React.MouseEvent) => {
@@ -1522,7 +1552,7 @@ const CanvasComponent: React.FC = () => {
                     aria-label="Desktop preview"
                     aria-pressed={device === 'desktop'}
                   >
-                    <IoDesktopOutline />
+                    <DesktopIcon />
                   </button>
                   <button
                     type="button"
@@ -1534,7 +1564,7 @@ const CanvasComponent: React.FC = () => {
                     aria-label="Mobile preview"
                     aria-pressed={device === 'mobile'}
                   >
-                    <IoPhoneLandscapeOutline />
+                    <MobileIcon />
                   </button>
                 </div>
               </div>
@@ -1548,19 +1578,38 @@ const CanvasComponent: React.FC = () => {
               >
                 −
               </button>
-              <button
-                type="button"
-                className="ui-designer-canvas-zoom-level"
-                onClick={() => {
-                  setScale(DEFAULT_CANVAS_SCALE);
-                  setPan({ x: 0, y: 0 });
-                }}
-                title="Reset view"
-                aria-label="Reset view"
-                aria-live="polite"
-              >
-                {Math.round(scale * 100)}%
-              </button>
+              {zoomInputValue !== null ? (
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  className="ui-designer-canvas-zoom-level ui-designer-canvas-zoom-level-input"
+                  autoFocus
+                  value={zoomInputValue}
+                  onChange={e => setZoomInputValue(e.target.value.replace(/\D/g, ''))}
+                  onFocus={e => e.currentTarget.select()}
+                  onBlur={commitZoomInput}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter') {
+                      e.currentTarget.blur();
+                    } else if (e.key === 'Escape') {
+                      setZoomInputValue(null);
+                    }
+                  }}
+                  aria-label="Set zoom percentage"
+                />
+              ) : (
+                <button
+                  type="button"
+                  className="ui-designer-canvas-zoom-level"
+                  onClick={handleZoomLevelClick}
+                  onDoubleClick={handleZoomLevelDoubleClick}
+                  title="Reset view · double-click to type a zoom percentage"
+                  aria-label="Reset view"
+                  aria-live="polite"
+                >
+                  {Math.round(scale * 100)}%
+                </button>
+              )}
               <button
                 type="button"
                 className="ui-designer-canvas-zoom-btn"
