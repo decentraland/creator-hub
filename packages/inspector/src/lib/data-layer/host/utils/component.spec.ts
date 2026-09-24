@@ -228,10 +228,10 @@ describe('toSceneComponent', () => {
   });
 
   describe('when the scene has no authoritativeMultiplayer key', () => {
-    it('should read as on when the auth-server SDK is present', () => {
+    it('should read as off even when the auth-server SDK is present, so the scene opts in explicitly', () => {
       mocks.authServerSupported = true;
       const result = toSceneComponent(getScene({ parcels: ['0,0'], base: '0,0' }));
-      expect(result.multiplayerServer).toBe(true);
+      expect(result.multiplayerServer).toBe(false);
     });
 
     it('should read as off when the auth-server SDK is absent', () => {
@@ -247,6 +247,27 @@ describe('toSceneComponent', () => {
         getScene({ parcels: ['0,0'], base: '0,0' }, { authoritativeMultiplayer: false }),
       );
       expect(result.multiplayerServer).toBe(false);
+    });
+  });
+
+  describe('when scene.json holds an entry the write path would reject', () => {
+    it('should not surface it, so the panel cannot show access it never granted', () => {
+      const result = toSceneComponent(
+        getScene({ parcels: ['0,0'], base: '0,0' }, {
+          logsPermissions: ['0x5aAeb6053f3e94c9b9a09f33669435e7ef1beaed'],
+        } as unknown as SceneWithMultiplayer),
+      );
+      expect(result.logsPermissions).toEqual([]);
+    });
+
+    it('should surface an entry the write path keeps', () => {
+      const address = '0x5aaeb6053f3e94c9b9a09f33669435e7ef1beaed';
+      const result = toSceneComponent(
+        getScene({ parcels: ['0,0'], base: '0,0' }, {
+          logsPermissions: [address],
+        } as unknown as SceneWithMultiplayer),
+      );
+      expect(result.logsPermissions).toEqual([address]);
     });
   });
 

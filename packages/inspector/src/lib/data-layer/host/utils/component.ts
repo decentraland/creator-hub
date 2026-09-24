@@ -208,10 +208,10 @@ export function toSceneComponent(value: Scene): EditorComponentsTypes['Scene'] {
     hideLandscapeTerrain: (value as SceneWithRating).landscapeTerrain === false,
     multiplayerServer:
       getConfig().authServerSupported &&
-      (value as SceneWithRating).authoritativeMultiplayer !== false,
-    logsPermissions: Array.isArray(rawLogsPermissions)
-      ? rawLogsPermissions.filter(entry => typeof entry === 'string')
-      : [],
+      (value as SceneWithRating).authoritativeMultiplayer === true,
+    logsPermissions: toAllowlist(
+      Array.isArray(rawLogsPermissions) ? rawLogsPermissions : undefined,
+    ),
     ageRating: (value as SceneWithRating).rating,
     skyboxConfig: {
       fixedTime: (value as SceneWithRating).skyboxConfig?.fixedTime,

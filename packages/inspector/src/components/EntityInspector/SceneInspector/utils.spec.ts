@@ -167,18 +167,25 @@ describe('SceneInspector/utils', () => {
   });
 
   describe('nextMultiplayerValue', () => {
-    it('should clear the address list and not install when switching off with the SDK present', () => {
+    it('should keep the address list when switching off with the SDK present', () => {
       expect(nextMultiplayerValue(false, true)).toEqual({
         install: false,
-        patch: { multiplayerServer: false, logsPermissions: [] },
+        patch: { multiplayerServer: false },
       });
     });
 
-    it('should clear the address list and not install when switching off without the SDK', () => {
+    it('should keep the address list when switching off without the SDK', () => {
       expect(nextMultiplayerValue(false, false)).toEqual({
         install: false,
-        patch: { multiplayerServer: false, logsPermissions: [] },
+        patch: { multiplayerServer: false },
       });
+    });
+
+    it('should never name logsPermissions, so an accidental toggle cannot erase it', () => {
+      for (const supported of [true, false]) {
+        const { patch } = nextMultiplayerValue(false, supported);
+        expect(patch && 'logsPermissions' in patch).toBe(false);
+      }
     });
 
     it('should enable without installing when the SDK is already present', () => {

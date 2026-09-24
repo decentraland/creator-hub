@@ -204,7 +204,7 @@ export function nextMultiplayerValue(
   authServerSupported: boolean,
 ): { install: boolean; patch: Partial<EditorComponentsTypes['Scene']> | null } {
   if (!enabled) {
-    return { install: false, patch: { multiplayerServer: false, logsPermissions: [] } };
+    return { install: false, patch: { multiplayerServer: false } };
   }
   if (authServerSupported) return { install: false, patch: { multiplayerServer: true } };
   return { install: true, patch: null };

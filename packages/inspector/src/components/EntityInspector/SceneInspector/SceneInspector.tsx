@@ -195,7 +195,11 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
       setMultiplayerInstallFailed(false);
       try {
         const result = await getSceneClient()?.installMultiplayer();
-        if (!result?.ok) setMultiplayerInstallFailed(true);
+        if (result?.ok) {
+          setComponentValue({ ...componentValue, multiplayerServer: true });
+        } else {
+          setMultiplayerInstallFailed(true);
+        }
       } catch {
         setMultiplayerInstallFailed(true);
       }
