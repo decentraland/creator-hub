@@ -6,6 +6,7 @@ export type InspectorUrlInput = {
   inspectorPort: number;
   useBevy: boolean;
   supportsUiDesigner: boolean;
+  supportsAuthServer: boolean;
   bevyRealm: { url: string; wsUrl: string } | null;
   project: Project | undefined;
   userId: string | null;
@@ -16,6 +17,7 @@ export function buildInspectorUrl({
   inspectorPort,
   useBevy,
   supportsUiDesigner,
+  supportsAuthServer,
   bevyRealm,
   project,
   userId,
@@ -29,6 +31,7 @@ export function buildInspectorUrl({
 
   params.append('uiEditorEnabled', 'true');
   params.append('uiEditorSupported', String(supportsUiDesigner));
+  params.append('authServerSupported', String(supportsAuthServer));
 
   params.append('dataLayerRpcParentUrl', window.location.origin);
 

@@ -40,6 +40,8 @@ export type InspectorConfig = {
   uiEditorSupported: boolean;
   /** The scene's persisted 2D/3D mode, seeded by the host from `.editor/project.json`. */
   uiDesignerOpen: boolean;
+  /** Whether the scene's `@dcl/sdk` ships the authoritative-server runtime. */
+  authServerSupported: boolean;
 };
 
 export type GlobalWithConfig = typeof globalThis & {
@@ -88,5 +90,11 @@ export function getConfig(): InspectorConfig {
     uiEditorEnabled: readBoolParam(params, 'uiEditorEnabled', config?.uiEditorEnabled),
     uiEditorSupported: readBoolParam(params, 'uiEditorSupported', config?.uiEditorSupported),
     uiDesignerOpen: readBoolParam(params, 'uiDesignerOpen', config?.uiDesignerOpen, false),
+    authServerSupported: readBoolParam(
+      params,
+      'authServerSupported',
+      config?.authServerSupported,
+      false,
+    ),
   };
 }

@@ -44,3 +44,16 @@ export async function hasDependency(_path: string, moduleName: string) {
   const isDevDependency = !!pkg.devDependencies && moduleName in pkg.devDependencies;
   return isDependency || isDevDependency;
 }
+
+/**
+ * Returns whether a module inside the project's node_modules ships a given file.
+ * Used to feature-detect optional subpaths that carry no package.json marker.
+ */
+export async function hasModuleEntry(_path: string, moduleName: string, subpath: string) {
+  try {
+    await fs.access(path.join(_path, 'node_modules', moduleName, subpath));
+    return true;
+  } catch (_) {
+    return false;
+  }
+}

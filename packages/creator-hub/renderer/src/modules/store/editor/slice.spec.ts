@@ -1,10 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import type { Project } from '/shared/types/projects';
 import type { PreviewOptions } from '/shared/types/settings';
 
 import { editor } from '#preload';
 
 import { createTestStore } from '../../../../tests/utils/testStore';
+import { actions as workspaceActions } from '../workspace';
 import { cancelPreview, runScene, setPreviewProgress } from './slice';
 
 const TEST_PATH = '/test/scene';
@@ -17,7 +19,6 @@ const PREVIEW_OPTS: PreviewOptions = {
   showWarnings: false,
   optimizedAssets: true,
 };
-
 describe('editor slice preview state', () => {
   let store: ReturnType<typeof createTestStore>;
 
@@ -163,6 +164,94 @@ describe('editor slice preview state', () => {
       store.dispatch(setPreviewProgress(null));
 
       expect(store.getState().editor.previewProgress).toBeNull();
+    });
+  });
+});
+
+describe('editor slice SDK capability flags', () => {
+  const AUTH_SERVER_SDK_VERSION = '7.29.1-35154657340.commit-e2bbcc9';
+  const PROJECT: Project = {
+    id: 'test-project',
+    path: TEST_PATH,
+    title: 'Test scene',
+    thumbnail: '',
+    layout: { rows: 1, cols: 1 },
+    scene: { base: '0,0', parcels: ['0,0'] },
+    createdAt: 0,
+    updatedAt: 0,
+    publishedAt: 0,
+    size: 0,
+    dependencyAvailableUpdates: {},
+    info: { id: 'test-project', skipPublishWarning: false },
+  };
+  const fetchVersionFulfilled = (hasAuthServer: boolean) =>
+    workspaceActions.fetchSdkCommandsVersion.fulfilled(
+      { version: AUTH_SERVER_SDK_VERSION, hasAuthServer },
+      'request-id',
+      TEST_PATH,
+    );
+
+  let store: ReturnType<typeof createTestStore>;
+
+  beforeEach(() => {
+    store = createTestStore();
+  });
+
+  describe('when the version fetch reports the auth-server runtime', () => {
+    beforeEach(() => {
+      store.dispatch(fetchVersionFulfilled(true));
+    });
+
+    it('should support the auth server', () => {
+      expect(store.getState().editor.supportsAuthServer).toBe(true);
+    });
+
+    it('should still derive the UI designer support from the version', () => {
+      expect(store.getState().editor.supportsUiDesigner).toBe(true);
+    });
+
+    it('should drop the auth server support when another scene starts running', () => {
+      store.dispatch(workspaceActions.runProject.pending('request-id', PROJECT));
+
+      expect(store.getState().editor.supportsAuthServer).toBe(false);
+    });
+  });
+
+  describe('when the version fetch reports no auth-server runtime', () => {
+    beforeEach(() => {
+      store.dispatch(fetchVersionFulfilled(false));
+    });
+
+    it('should not support the auth server', () => {
+      expect(store.getState().editor.supportsAuthServer).toBe(false);
+    });
+
+    it('should still derive the UI designer support from the version', () => {
+      expect(store.getState().editor.supportsUiDesigner).toBe(true);
+    });
+  });
+
+  describe('when a project is opened', () => {
+    it('should enable the flags from a version fetch for that project', () => {
+      store.dispatch(workspaceActions.runProject.pending('request-id', PROJECT));
+      store.dispatch(fetchVersionFulfilled(true));
+
+      expect(store.getState().editor.supportsAuthServer).toBe(true);
+      expect(store.getState().editor.supportsUiDesigner).toBe(true);
+    });
+
+    it('should ignore a version fetch that resolves for a different project', () => {
+      store.dispatch(workspaceActions.runProject.pending('request-id', PROJECT));
+      store.dispatch(
+        workspaceActions.fetchSdkCommandsVersion.fulfilled(
+          { version: AUTH_SERVER_SDK_VERSION, hasAuthServer: true },
+          'other-request',
+          '/some/other/scene',
+        ),
+      );
+
+      expect(store.getState().editor.supportsAuthServer).toBe(false);
+      expect(store.getState().editor.supportsUiDesigner).toBe(false);
     });
   });
 });

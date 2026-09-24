@@ -191,10 +191,10 @@ export const slice = createSlice({
         state.settings = meta.arg;
       })
       .addCase(thunks.fetchSdkCommandsVersion.fulfilled, (state, action) => {
-        if (!supportsMultiInstance(action.payload)) {
+        if (!supportsMultiInstance(action.payload.version)) {
           state.settings.previewOptions.multiInstance = false;
         }
-        if (!supportsMcp(action.payload)) {
+        if (!supportsMcp(action.payload.version)) {
           state.settings.previewOptions.mcp = false;
         }
       })
