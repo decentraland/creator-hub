@@ -156,12 +156,8 @@ export function fromSceneComponent(
       transitionMode: value.skyboxConfig?.transitionMode,
     },
     landscapeTerrain: !value.hideLandscapeTerrain,
-    ...(config.authServerSupported
-      ? {
-          authoritativeMultiplayer: !!value.multiplayerServer,
-          logsPermissions: allowlist.length ? allowlist : undefined,
-        }
-      : {}),
+    authoritativeMultiplayer: !!value.multiplayerServer,
+    logsPermissions: allowlist.length ? allowlist : undefined,
   };
 
   if (config.segmentAppId && config.projectId) {
@@ -206,9 +202,7 @@ export function toSceneComponent(value: Scene): EditorComponentsTypes['Scene'] {
     disablePortableExperiences: value.featureToggles?.portableExperiences === 'disabled',
     disableNearbyVoiceChat: value.featureToggles?.nearbyVoiceChat === 'disabled',
     hideLandscapeTerrain: (value as SceneWithRating).landscapeTerrain === false,
-    multiplayerServer:
-      getConfig().authServerSupported &&
-      (value as SceneWithRating).authoritativeMultiplayer === true,
+    multiplayerServer: (value as SceneWithRating).authoritativeMultiplayer === true,
     logsPermissions: toAllowlist(
       Array.isArray(rawLogsPermissions) ? rawLogsPermissions : undefined,
     ),

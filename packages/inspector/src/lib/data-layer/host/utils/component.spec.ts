@@ -156,20 +156,37 @@ describe('fromSceneComponent', () => {
     });
   });
 
+  describe('when an existing multiplayer scene is opened with the flag false', () => {
+    it('should round-trip the allowlist instead of deleting it', () => {
+      mocks.authServerSupported = false;
+      const address = '0x0000000000000000000000000000000000000001';
+
+      const opened = toSceneComponent(
+        getScene({ parcels: ['0,0'], base: '0,0' }, {
+          authoritativeMultiplayer: true,
+          logsPermissions: [address],
+        } as unknown as SceneWithMultiplayer),
+      );
+      const saved = fromSceneComponent(getSceneComponent(LAYOUT, opened));
+
+      expect(opened.multiplayerServer).toBe(true);
+      expect(saved.authoritativeMultiplayer).toBe(true);
+      expect(saved.logsPermissions).toEqual([address]);
+    });
+  });
+
   describe('when the auth-server SDK is absent', () => {
-    it('should omit authoritativeMultiplayer entirely', () => {
+    it('should still persist authoritativeMultiplayer, because the host cannot see that flag', () => {
       const result = fromSceneComponent(getSceneComponent(LAYOUT, { multiplayerServer: true }));
-      expect('authoritativeMultiplayer' in result).toBe(false);
+      expect(result.authoritativeMultiplayer).toBe(true);
     });
 
-    it('should omit logsPermissions rather than deleting a hand-written allowlist', () => {
+    it('should still persist the allowlist', () => {
+      const address = '0x0000000000000000000000000000000000000001';
       const result = fromSceneComponent(
-        getSceneComponent(LAYOUT, {
-          multiplayerServer: true,
-          logsPermissions: ['0x0000000000000000000000000000000000000001'],
-        }),
+        getSceneComponent(LAYOUT, { multiplayerServer: true, logsPermissions: [address] }),
       );
-      expect('logsPermissions' in result).toBe(false);
+      expect(result.logsPermissions).toEqual([address]);
     });
   });
 });
