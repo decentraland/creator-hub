@@ -5,6 +5,7 @@ import { LIVEKIT_STREAM_SRC } from '../../definitions';
 import { COLORS, RADIUS, SPACING, TYPE } from '../theme';
 import { SectionHeader, FieldLabel, Icon } from '../Primitives';
 import { PillButton } from '../Controls';
+import { getAdminMessageBusOrNull } from '../admin-message-bus';
 import { VolumeSlider } from './VolumeSlider';
 import { createVideoPlayerControls, isVideoUrl } from './utils';
 
@@ -21,13 +22,17 @@ export function VideoControlURL({
   video: DeepReadonlyObject<PBVideoPlayer> | undefined;
 }) {
   const [videoURL, setVideoURL] = ReactEcs.useState('');
+  const [syncPlayback, setSyncPlayback] = ReactEcs.useState(false);
   ReactEcs.useEffect(() => {
     const url = video?.src?.startsWith('livekit-video://') ? '' : video?.src;
     setVideoURL(url ?? '');
+    setSyncPlayback(getAdminMessageBusOrNull()?.isVideoSynced(entity) ?? false);
   }, [entity]);
   const controls = createVideoPlayerControls(entity, engine);
   const isActive = !!(video && isVideoUrl(video.src));
-  const changed = !!(video?.src && videoURL !== video.src && video.src !== LIVEKIT_STREAM_SRC);
+  const isSynced = getAdminMessageBusOrNull()?.isVideoSynced(entity) ?? false;
+  const urlChanged = !!(video?.src && videoURL !== video.src && video.src !== LIVEKIT_STREAM_SRC);
+  const changed = urlChanged || (isActive && syncPlayback !== isSynced);
   const primaryLabel = isActive && !changed ? 'Deactivate' : changed ? 'Update' : 'Activate';
 
   return (
@@ -86,9 +91,57 @@ export function VideoControlURL({
           variant="filled"
           disabled={primaryLabel !== 'Deactivate' && !isVideoUrl(videoURL)}
           uiTransform={{ flexShrink: 0 }}
-          onClick={() => controls.setSource(primaryLabel === 'Deactivate' ? '' : videoURL)}
+          onClick={() =>
+            primaryLabel === 'Deactivate'
+              ? controls.setSource('')
+              : controls.setSource(videoURL, syncPlayback)
+          }
         />
       </UiEntity>
+
+      <UiEntity
+        uiTransform={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          width: '100%',
+          margin: { top: SPACING.lg },
+        }}
+        onMouseDown={() => setSyncPlayback(!syncPlayback)}
+      >
+        <UiEntity
+          uiTransform={{
+            width: 16,
+            height: 16,
+            borderRadius: 4,
+            borderWidth: 1,
+            borderColor: syncPlayback ? COLORS.primary : COLORS.outline,
+            margin: { right: SPACING.md },
+            flexShrink: 0,
+          }}
+          uiBackground={{ color: syncPlayback ? COLORS.primary : COLORS.transparent }}
+        />
+        <UiEntity
+          uiTransform={{ flexGrow: 1, flexBasis: 0, minWidth: 0, height: 16 }}
+          uiText={{
+            value: 'Play in sync for everyone',
+            fontSize: TYPE.label,
+            color: COLORS.textSecondary,
+            textAlign: 'middle-left',
+          }}
+        />
+      </UiEntity>
+      <UiEntity
+        uiTransform={{ width: '100%', height: 14, margin: { top: SPACING.sm } }}
+        uiText={{
+          value: syncPlayback
+            ? 'Players who join later will jump to the current playback time.'
+            : '',
+          fontSize: TYPE.label,
+          color: COLORS.textTertiary,
+          textAlign: 'top-left',
+          textWrap: 'wrap',
+        }}
+      />
 
       <UiEntity
         uiTransform={{ flexDirection: 'column', width: '100%', margin: { top: SPACING.xl } }}
