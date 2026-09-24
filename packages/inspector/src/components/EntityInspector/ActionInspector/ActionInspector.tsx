@@ -32,6 +32,7 @@ import { InfoTooltip } from '../../ui/InfoTooltip';
 import type { ScriptAction } from '../ScriptInspector/types';
 import { parseLayout } from '../ScriptInspector/utils';
 import { ScriptParamField } from '../ScriptInspector/ScriptParamField/ScriptParamField';
+import { resolveParamUpdate } from '../ScriptInspector/ScriptParamField/update';
 import { truncateMiddle } from '../../ImportAsset/utils';
 import { PlaySoundAction } from './PlaySoundAction';
 import { TweenAction } from './TweenAction';
@@ -1307,7 +1308,9 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
                 key={name}
                 name={name}
                 param={{ ...param, value: paramValues?.[name] ?? param.value }}
-                onUpdate={value => {
+                onUpdate={update => {
+                  // Leaves pass a plain value; object/array editors pass a `(prev) => next` updater.
+                  const value = resolveParamUpdate(update, paramValues?.[name] ?? param.value);
                   const updatedParams = { ...paramValues, [name]: value };
                   handleChangeScriptAction({ scriptPath, methodName, params: updatedParams }, idx);
                 }}
