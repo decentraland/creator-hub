@@ -1,6 +1,7 @@
 import { areConnected } from '@dcl/ecs';
 import type { EditorComponentsTypes, SceneCategory } from '../../../lib/sdk/components';
 import { SceneAgeRating } from '../../../lib/sdk/components';
+import { normalizeAddress } from '../../../lib/logic/ethereum';
 import type { Coords } from '../../../lib/utils/layout';
 import type { TreeNode } from '../../ProjectAssetExplorer/ProjectView';
 import type { AssetNodeItem } from '../../ProjectAssetExplorer/types';
@@ -193,3 +194,38 @@ export async function validateThumbnailPath(path: string): Promise<ValidationErr
 
 export const MIDDAY_SECONDS = 43200;
 export const MIDNIGHT_SECONDS = 86400;
+
+/**
+ * The component patch a Multiplayer Server toggle produces, and whether the host
+ * must install the authoritative-server SDK first.
+ */
+export function nextMultiplayerValue(
+  enabled: boolean,
+  authServerSupported: boolean,
+): { install: boolean; patch: Partial<EditorComponentsTypes['Scene']> | null } {
+  if (!enabled) {
+    return { install: false, patch: { multiplayerServer: false, logsPermissions: [] } };
+  }
+  if (authServerSupported) return { install: false, patch: { multiplayerServer: true } };
+  return { install: true, patch: null };
+}
+
+/** One entry per distinct address, in stored order and stored spelling, blanks dropped. */
+export const dedupeAddresses = (stored: string[] = []): string[] => {
+  const seen = new Set<string>();
+  return stored.filter(address => {
+    if (!address) return false;
+    const key = normalizeAddress(address);
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+};
+
+/** Whether `address` is already stored, under any spelling. */
+export const containsAddress = (stored: string[] = [], address: string): boolean =>
+  stored.some(entry => normalizeAddress(entry) === normalizeAddress(address));
+
+/** Every stored entry that is not `address`, under any spelling. */
+export const withoutAddress = (stored: string[] = [], address: string): string[] =>
+  stored.filter(entry => normalizeAddress(entry) !== normalizeAddress(address));

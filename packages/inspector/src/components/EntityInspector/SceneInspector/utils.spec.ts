@@ -6,14 +6,18 @@ import { TransitionMode } from '../../../lib/sdk/components/SceneMetadata';
 import type { Layout } from '../../../lib/utils/layout';
 import type { SceneInput } from './types';
 import {
+  containsAddress,
+  dedupeAddresses,
   fromScene,
   getThumbnailWarnings,
   hasThumbnailAspectRatio,
   isValidInput,
+  nextMultiplayerValue,
   parseParcels,
   toScene,
   validateThumbnailFile,
   validateThumbnailPath,
+  withoutAddress,
 } from './utils';
 
 const getFile = vi.fn();
@@ -75,6 +79,11 @@ function getScene(layout: Layout): EditorComponentsTypes['Scene'] {
   };
   return scene;
 }
+
+const CHECKSUM_ADDRESS = '0x5aAeb6053F3E94C9b9A09f33669435E7Ef1BeAed';
+const LOWERCASE_ADDRESS = '0x5aaeb6053f3e94c9b9a09f33669435e7ef1beaed';
+const PREFIXLESS_ADDRESS = '5aAeb6053F3E94C9b9A09f33669435E7Ef1BeAed';
+const OTHER_ADDRESS = '0x0000000000000000000000000000000000000001';
 
 describe('SceneInspector/utils', () => {
   describe('fromScene', () => {
@@ -154,6 +163,85 @@ describe('SceneInspector/utils', () => {
 
       expect(isValidValidInput).toBe(true);
       expect(isValidInvalidInput).toBe(false);
+    });
+  });
+
+  describe('nextMultiplayerValue', () => {
+    it('should clear the address list and not install when switching off with the SDK present', () => {
+      expect(nextMultiplayerValue(false, true)).toEqual({
+        install: false,
+        patch: { multiplayerServer: false, logsPermissions: [] },
+      });
+    });
+
+    it('should clear the address list and not install when switching off without the SDK', () => {
+      expect(nextMultiplayerValue(false, false)).toEqual({
+        install: false,
+        patch: { multiplayerServer: false, logsPermissions: [] },
+      });
+    });
+
+    it('should enable without installing when the SDK is already present', () => {
+      expect(nextMultiplayerValue(true, true)).toEqual({
+        install: false,
+        patch: { multiplayerServer: true },
+      });
+    });
+
+    it('should install and write nothing when the SDK is absent', () => {
+      expect(nextMultiplayerValue(true, false)).toEqual({ install: true, patch: null });
+    });
+  });
+
+  describe('dedupeAddresses', () => {
+    it('should fold every spelling of one address into a single entry', () => {
+      expect(dedupeAddresses([CHECKSUM_ADDRESS, LOWERCASE_ADDRESS, PREFIXLESS_ADDRESS])).toEqual([
+        CHECKSUM_ADDRESS,
+      ]);
+    });
+
+    it('should drop blank entries', () => {
+      expect(dedupeAddresses([CHECKSUM_ADDRESS, '', OTHER_ADDRESS])).toEqual([
+        CHECKSUM_ADDRESS,
+        OTHER_ADDRESS,
+      ]);
+    });
+
+    it('should keep the stored spelling of the entry it kept', () => {
+      expect(dedupeAddresses([CHECKSUM_ADDRESS])).toEqual([CHECKSUM_ADDRESS]);
+    });
+
+    it('should return an empty list when there is nothing stored', () => {
+      expect(dedupeAddresses(undefined)).toEqual([]);
+    });
+  });
+
+  describe('containsAddress', () => {
+    it('should match a stored address under a different spelling', () => {
+      expect(containsAddress([CHECKSUM_ADDRESS], LOWERCASE_ADDRESS)).toBe(true);
+      expect(containsAddress([CHECKSUM_ADDRESS], PREFIXLESS_ADDRESS)).toBe(true);
+    });
+
+    it('should not match a different address', () => {
+      expect(containsAddress([CHECKSUM_ADDRESS], OTHER_ADDRESS)).toBe(false);
+    });
+
+    it('should not match when nothing is stored', () => {
+      expect(containsAddress(undefined, CHECKSUM_ADDRESS)).toBe(false);
+    });
+  });
+
+  describe('withoutAddress', () => {
+    it('should remove every stored spelling of the address', () => {
+      expect(
+        withoutAddress([CHECKSUM_ADDRESS, LOWERCASE_ADDRESS, PREFIXLESS_ADDRESS], CHECKSUM_ADDRESS),
+      ).toEqual([]);
+    });
+
+    it('should keep the addresses it was not asked to remove', () => {
+      expect(withoutAddress([CHECKSUM_ADDRESS, OTHER_ADDRESS], CHECKSUM_ADDRESS)).toEqual([
+        OTHER_ADDRESS,
+      ]);
     });
   });
 

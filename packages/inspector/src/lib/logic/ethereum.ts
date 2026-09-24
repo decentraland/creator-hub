@@ -83,3 +83,13 @@ export const isAddress = (value: ValidInputTypes, checkChecksum = true) => {
   }
   return checkChecksum ? checkAddressCheckSum(valueToCheck) : true;
 };
+
+/** Shorten an address for display: `0x1234567890...12345678`. */
+export function formatAddress(address: string): string {
+  return isAddress(address) ? `${address.slice(0, 12)}...${address.slice(-8)}` : address;
+}
+
+/** Canonical identity for an address: lowercase, always `0x`-prefixed. */
+export function normalizeAddress(address: string): string {
+  return `0x${address.replace(/^0x/i, '').toLowerCase()}`;
+}

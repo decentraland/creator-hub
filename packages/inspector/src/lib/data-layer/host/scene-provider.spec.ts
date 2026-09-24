@@ -2,9 +2,18 @@ import type { LastWriteWinElementSetComponentDefinition, OnChangeFunction } from
 import { ReadWriteByteBuffer } from '@dcl/ecs/dist/serialization/ByteBuffer';
 import { feededFileSystem } from '../client/feeded-local-fs';
 import type { EditorComponentsTypes } from '../../sdk/components';
+import type * as ConfigModule from '../../logic/config';
 import { EditorComponentNames } from '../../sdk/components';
 import { initRpcMethods } from './rpc-methods';
 import { createEngineContext } from './utils/engine';
+
+vi.mock('../../logic/config', async orig => {
+  const actual = await orig<typeof ConfigModule>();
+  return {
+    ...actual,
+    getConfig: () => ({ ...actual.getConfig(), authServerSupported: true }),
+  };
+});
 
 async function mockedRpcInit() {
   const callbackFunctions: OnChangeFunction[] = [];
@@ -86,6 +95,90 @@ describe('SceneProvider', () => {
 
       const sceneJsonAfter = await readSceneJson(mocked.fs);
       expect(sceneJsonAfter.landscapeTerrain).toBe(true);
+    });
+  });
+
+  describe('when toggling multiplayerServer on the Scene component', () => {
+    it('should persist the allowlist into scene.json and remove it when the switch-off patch clears it', async () => {
+      const mocked = await mockedRpcInit();
+      await initRpcMethods(mocked.fs, mocked.engine, mocked.addEngineListener);
+
+      const Scene = mocked.engine.getComponent(
+        EditorComponentNames.Scene,
+      ) as LastWriteWinElementSetComponentDefinition<EditorComponentsTypes['Scene']>;
+
+      const addresses = [
+        '0x0000000000000000000000000000000000000001',
+        '0x0000000000000000000000000000000000000002',
+      ];
+      const current = Scene.get(mocked.engine.RootEntity);
+      Scene.createOrReplace(
+        mocked.engine.RootEntity,
+        serializationRoundTrip(Scene, {
+          ...current,
+          multiplayerServer: true,
+          logsPermissions: addresses,
+        }),
+      );
+      await mocked.engine.update(1);
+      // state-manager batches operations with setTimeout(0) and saving is async
+      await new Promise(resolve => setTimeout(resolve, 50));
+
+      const sceneJson = await readSceneJson(mocked.fs);
+      expect(sceneJson.authoritativeMultiplayer).toBe(true);
+      expect(sceneJson.logsPermissions).toEqual(addresses);
+
+      const updated = Scene.get(mocked.engine.RootEntity);
+      Scene.createOrReplace(
+        mocked.engine.RootEntity,
+        serializationRoundTrip(Scene, {
+          ...updated,
+          multiplayerServer: false,
+          logsPermissions: [],
+        }),
+      );
+      await mocked.engine.update(1);
+      await new Promise(resolve => setTimeout(resolve, 50));
+
+      const sceneJsonAfter = await readSceneJson(mocked.fs);
+      expect(sceneJsonAfter.authoritativeMultiplayer).toBe(false);
+      expect('logsPermissions' in sceneJsonAfter).toBe(false);
+    });
+
+    it('should keep the allowlist when multiplayerServer is switched off without clearing it', async () => {
+      const mocked = await mockedRpcInit();
+      await initRpcMethods(mocked.fs, mocked.engine, mocked.addEngineListener);
+
+      const Scene = mocked.engine.getComponent(
+        EditorComponentNames.Scene,
+      ) as LastWriteWinElementSetComponentDefinition<EditorComponentsTypes['Scene']>;
+
+      const addresses = ['0x0000000000000000000000000000000000000001'];
+      const current = Scene.get(mocked.engine.RootEntity);
+      Scene.createOrReplace(
+        mocked.engine.RootEntity,
+        serializationRoundTrip(Scene, {
+          ...current,
+          multiplayerServer: true,
+          logsPermissions: addresses,
+        }),
+      );
+      await mocked.engine.update(1);
+      await new Promise(resolve => setTimeout(resolve, 50));
+
+      expect((await readSceneJson(mocked.fs)).logsPermissions).toEqual(addresses);
+
+      const updated = Scene.get(mocked.engine.RootEntity);
+      Scene.createOrReplace(
+        mocked.engine.RootEntity,
+        serializationRoundTrip(Scene, { ...updated, multiplayerServer: false }),
+      );
+      await mocked.engine.update(1);
+      await new Promise(resolve => setTimeout(resolve, 50));
+
+      const sceneJsonAfter = await readSceneJson(mocked.fs);
+      expect(sceneJsonAfter.authoritativeMultiplayer).toBe(false);
+      expect(sceneJsonAfter.logsPermissions).toEqual(addresses);
     });
   });
 });
