@@ -120,8 +120,8 @@
   background-color: var(--ai-selected-hover);
 }
 
-/* Title-bar design: Optimize / Code / Preview are square icon-only buttons whose label lives
-   in the tooltip. The icon is the button's content (not a startIcon) so MUI adds no gap. */
+/* Optimize and Code are compact icon-only actions. Preview retains its text label because it
+   is the primary scene action. */
 .Editor .Header .actions .Button.icon-only,
 .Editor .Header .actions .Button.extra-button {
   width: 34px;
