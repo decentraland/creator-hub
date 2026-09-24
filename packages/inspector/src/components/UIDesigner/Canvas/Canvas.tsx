@@ -40,12 +40,7 @@ import { EmptyState, EmptyStateChip, GuiIcon } from '../EmptyState';
 import { WidgetPicker } from '../LeftPanel/WidgetPicker';
 import type { UiScreenInset } from '../code/aggregator';
 import { dragPinHold } from '../shared/align-presets';
-import {
-  DEFAULT_CANVAS_SCALE,
-  getCanvasScale,
-  offsetInParent,
-  setCanvasScale,
-} from '../shared/measure';
+import { getCanvasScale, offsetInParent, setCanvasScale } from '../shared/measure';
 import { insetRect } from '../shared/safe-areas';
 import { useUINodeActions } from '../shared/useUINodeActions';
 import { useUINodeTree } from '../shared/useUINodeTree';
@@ -1198,7 +1193,6 @@ const CanvasComponent: React.FC = () => {
   const selectedNode = useAppSelector(getSelectedNode);
   const [scale, setScale] = useState(getCanvasScale());
   const [zoomInputValue, setZoomInputValue] = useState<string | null>(null);
-  const zoomResetTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const dispatch = useAppDispatch();
   const platform = useAppSelector(getPlatform);
   const mobileHudSelected = useAppSelector(getMobileHudSelected);
@@ -1316,28 +1310,7 @@ const CanvasComponent: React.FC = () => {
     return () => el.removeEventListener('wheel', onWheel);
   }, []);
 
-  useEffect(() => {
-    return () => {
-      if (zoomResetTimeoutRef.current) clearTimeout(zoomResetTimeoutRef.current);
-    };
-  }, []);
-
-  const handleZoomLevelClick = useCallback(() => {
-    // Deferred so a double-click's two leading clicks don't reset the view
-    // right before handleZoomLevelDoubleClick opens the input.
-    if (zoomResetTimeoutRef.current) clearTimeout(zoomResetTimeoutRef.current);
-    zoomResetTimeoutRef.current = setTimeout(() => {
-      zoomResetTimeoutRef.current = null;
-      setScale(DEFAULT_CANVAS_SCALE);
-      setPan({ x: 0, y: 0 });
-    }, 200);
-  }, []);
-
-  const handleZoomLevelDoubleClick = useCallback(() => {
-    if (zoomResetTimeoutRef.current) {
-      clearTimeout(zoomResetTimeoutRef.current);
-      zoomResetTimeoutRef.current = null;
-    }
+  const activateZoomEdit = useCallback(() => {
     setZoomInputValue(String(Math.round(scale * 100)));
   }, [scale]);
 
@@ -1584,8 +1557,14 @@ const CanvasComponent: React.FC = () => {
                   inputMode="numeric"
                   className="ui-designer-canvas-zoom-level ui-designer-canvas-zoom-level-input"
                   autoFocus
+                  maxLength={3}
                   value={zoomInputValue}
-                  onChange={e => setZoomInputValue(e.target.value.replace(/\D/g, ''))}
+                  onChange={e => {
+                    const digits = e.target.value.replace(/\D/g, '');
+                    setZoomInputValue(
+                      digits === '' ? '' : String(Math.min(parseInt(digits, 10), 200)),
+                    );
+                  }}
                   onFocus={e => e.currentTarget.select()}
                   onBlur={commitZoomInput}
                   onKeyDown={e => {
@@ -1598,17 +1577,22 @@ const CanvasComponent: React.FC = () => {
                   aria-label="Set zoom percentage"
                 />
               ) : (
-                <button
-                  type="button"
+                <input
+                  type="text"
+                  readOnly
                   className="ui-designer-canvas-zoom-level"
-                  onClick={handleZoomLevelClick}
-                  onDoubleClick={handleZoomLevelDoubleClick}
-                  title="Reset view · double-click to type a zoom percentage"
-                  aria-label="Reset view"
+                  value={`${Math.round(scale * 100)}%`}
+                  onClick={activateZoomEdit}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      activateZoomEdit();
+                    }
+                  }}
+                  title="Click to type a zoom percentage"
+                  aria-label="Zoom level, click to edit"
                   aria-live="polite"
-                >
-                  {Math.round(scale * 100)}%
-                </button>
+                />
               )}
               <button
                 type="button"

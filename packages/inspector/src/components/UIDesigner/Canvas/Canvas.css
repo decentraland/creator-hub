@@ -436,7 +436,7 @@
   align-items: center;
   justify-content: center;
   width: 50px;
-  height: 16px;
+  height: 22px;
   padding: 0;
   background: transparent;
   border: none;
@@ -449,14 +449,7 @@
 }
 
 .ui-designer-canvas-zoom-level-input {
-  font: inherit;
   cursor: text;
-  background: rgba(255, 255, 255, 0.1);
-}
-
-.ui-designer-canvas-zoom-level-input:focus-visible {
-  outline: 2px solid var(--border-focused);
-  outline-offset: 1px;
 }
 
 .ui-designer-zoom-panel .ui-designer-canvas-zoom-btn {
@@ -466,15 +459,23 @@
   font-size: 16px;
 }
 
-.ui-designer-canvas-zoom-btn:hover,
-.ui-designer-canvas-zoom-level:hover {
+.ui-designer-canvas-zoom-btn:hover {
   background: rgba(255, 255, 255, 0.1);
 }
 
-.ui-designer-canvas-zoom-btn:focus-visible,
-.ui-designer-canvas-zoom-level:focus-visible {
+.ui-designer-canvas-zoom-btn:focus-visible {
   outline: 2px solid var(--border-focused);
   outline-offset: 1px;
+}
+
+.ui-designer-canvas-zoom-level:hover {
+  outline: 1px solid rgba(255, 255, 255, 0.4);
+  outline-offset: -1px;
+}
+
+.ui-designer-canvas-zoom-level:focus-visible {
+  outline: 1px solid #fcfcfc;
+  outline-offset: -1px;
 }
 
 .ui-designer-reorder-indicator {
