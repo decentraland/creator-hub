@@ -6,6 +6,7 @@ import players from '@dcl/sdk/players';
 import type { AdminTools as AdminConfig } from '@dcl/asset-packs/dist/definitions';
 import { createAdminToolkitUI, setAdminConfig } from '@dcl/asset-packs/dist/admin-toolkit-ui';
 import { isServer } from '~system/EngineApi';
+import { renderAdminPanel } from './AdminPanel';
 
 export class AdminTools {
   /**
@@ -91,8 +92,17 @@ export class AdminTools {
     // only emits failing comms-gatekeeper requests and unsupported (legacy) `EngineApi.subscribe`
     // calls. A failed query defaults to client behavior so the toolkit is never lost on a real
     // client (mirrors `createAdminToolkitSystem`).
+    // `renderAdminPanel` is the editable panel that ships in this smart item's folder — edit
+    // AdminPanel.tsx to customize the in-world panel (add links, tabs, branding).
     const mount = () =>
-      createAdminToolkitUI(engine, pointerEventsSystem, ReactEcsRenderer, { syncEntity }, players);
+      createAdminToolkitUI(
+        engine,
+        pointerEventsSystem,
+        ReactEcsRenderer,
+        { syncEntity },
+        players,
+        renderAdminPanel,
+      );
     isServer({})
       .then(({ isServer: runsOnServer }) => {
         if (!runsOnServer) mount();
