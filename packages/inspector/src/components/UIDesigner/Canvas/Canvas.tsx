@@ -34,7 +34,7 @@ import {
 import { getUIDesignerSnapEnabled, getUIDesignerTool } from '../../../redux/ui';
 import { UIDesignerTool } from '../../../redux/ui/types';
 import { Button } from '../../Button';
-import { YGPT_ABSOLUTE, YGPT_RELATIVE, YGU_POINT } from '../../../lib/sdk/ui-transform-constants';
+import { YGPT_ABSOLUTE, YGPT_RELATIVE } from '../../../lib/sdk/ui-transform-constants';
 import { UI_DESIGNER_DND_TYPE, type UIDesignerDragItem } from '../shared/dnd';
 import { EmptyState, EmptyStateChip, GuiIcon } from '../EmptyState';
 import { WidgetPicker } from '../LeftPanel/WidgetPicker';
@@ -59,13 +59,8 @@ import { previewLayers, resolveInteractionPreview } from '../code/interaction-pr
 import type { CodeUINode } from '../code/types';
 import { MixedContentField } from '../RightPanel/PropertyPanel/MixedContentField';
 import { seedSegments } from '../RightPanel/PropertyPanel/MixedContentField/segments';
-import {
-  DEFAULT_CANVAS_HEIGHT,
-  DEFAULT_CANVAS_WIDTH,
-  MOBILE_CANVAS_HEIGHT,
-  MOBILE_CANVAS_WIDTH,
-  previewBoundText,
-} from '../shared/tree-model';
+import { previewBoundText } from '../shared/tree-model';
+import { computeCanvasGeometry, type RootTransform } from '../shared/canvas-geometry';
 import {
   clearNodeRegistry,
   getNodeElement,
@@ -1197,8 +1192,22 @@ const CanvasComponent: React.FC = () => {
   const platform = useAppSelector(getPlatform);
   const mobileHudSelected = useAppSelector(getMobileHudSelected);
   const mobileHudConfig = useMobileHudConfig();
-  const device = mobileHudSelected ? 'mobile' : platform;
-  const screen = useAppSelector(getScreens)[device];
+  const screens = useAppSelector(getScreens);
+  const {
+    device,
+    screen,
+    fixedRoot,
+    canvasWidth,
+    canvasHeight,
+    frameWidth,
+    frameHeight,
+    fitScale,
+  } = computeCanvasGeometry({
+    mobileHudSelected,
+    platform,
+    screens,
+    rootTransform: tree?.uiTransform as RootTransform | undefined,
+  });
   const activeRoot = roots.find(r => r.filename === filename);
   const activeInset: UiScreenInset = activeRoot?.topLevel ? activeRoot.screenInset : 'none';
   const [showSafeAreas, setShowSafeAreas] = useState(false);
@@ -1227,27 +1236,6 @@ const CanvasComponent: React.FC = () => {
       }));
     });
   }, [selectedNode]);
-
-  const rootT = (tree?.uiTransform ?? {}) as Record<string, number | undefined>;
-  const rootFixedW = rootT.widthUnit === YGU_POINT ? rootT.width : undefined;
-  const rootFixedH = rootT.heightUnit === YGU_POINT ? rootT.height : undefined;
-  const fixedRoot = rootFixedW !== undefined && rootFixedH !== undefined;
-
-  const canvasWidth = fixedRoot
-    ? (rootFixedW as number)
-    : device === 'mobile'
-      ? MOBILE_CANVAS_WIDTH
-      : DEFAULT_CANVAS_WIDTH;
-  const canvasHeight = fixedRoot
-    ? (rootFixedH as number)
-    : device === 'mobile'
-      ? MOBILE_CANVAS_HEIGHT
-      : DEFAULT_CANVAS_HEIGHT;
-
-  const frameWidth = fixedRoot ? canvasWidth : screen.width;
-  const frameHeight = fixedRoot ? canvasHeight : screen.height;
-
-  const fitScale = fixedRoot ? 1 : Math.min(frameWidth / canvasWidth, frameHeight / canvasHeight);
 
   const insetLocked = activeInset !== 'none' && !fixedRoot;
   const safeAreasVisible = insetLocked || showSafeAreas;
