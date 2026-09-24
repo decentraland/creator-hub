@@ -1,14 +1,21 @@
 #!/usr/bin/env python3
 """UserPromptSubmit hook: when a prompt references Figma, inject a reminder to
-load the project's figma skill first. Reads the hook payload as JSON on stdin;
-prints reminder text (added to the turn's context) only on a match; always
-exits 0 so it never blocks a prompt.
+load the project's figma skill first — and, if the leaf skills it delegates to
+are not installed, the command to install them. Reads the hook payload as JSON on
+stdin; prints only on a Figma match; always exits 0 so it never blocks a prompt.
 """
 import json
+import os
 import re
 import sys
 
 TRIGGER = re.compile(r"figma\.com|\bfigma\b", re.IGNORECASE)
+
+LEAVES = ("figma-implement-design", "figma-create-design-system-rules")
+INSTALL = (
+    "npx skills add openai/skills --skill "
+    "figma-implement-design,figma-create-design-system-rules --full-depth --copy --yes"
+)
 
 REMINDER = (
     "This message references Figma. Before any design/visual work, read "
@@ -19,13 +26,32 @@ REMINDER = (
 )
 
 
+def missing_leaves(project_dir):
+    """Leaf skills not found in the project or the user's global skills dir."""
+    roots = [
+        os.path.join(project_dir, ".claude", "skills"),
+        os.path.join(os.path.expanduser("~"), ".claude", "skills"),
+    ]
+    return [s for s in LEAVES if not any(os.path.exists(os.path.join(r, s)) for r in roots)]
+
+
 def main() -> int:
     try:
         data = json.load(sys.stdin)
     except Exception:
         return 0
-    if TRIGGER.search(str(data.get("prompt", ""))):
-        print(REMINDER)
+    if not TRIGGER.search(str(data.get("prompt", ""))):
+        return 0
+    print(REMINDER)
+
+    project_dir = os.environ.get("CLAUDE_PROJECT_DIR") or str(data.get("cwd") or ".")
+    missing = missing_leaves(project_dir)
+    if missing:
+        print(
+            f"\nYou don't have the {', '.join(missing)} skill(s) installed. Run:\n"
+            f"  {INSTALL}\n"
+            "to install them, then `/reload-skills` to properly use this figma skill."
+        )
     return 0
 
 
