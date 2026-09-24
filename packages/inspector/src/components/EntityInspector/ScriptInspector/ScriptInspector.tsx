@@ -326,8 +326,8 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
         if (!dataLayer) return;
 
         const content = await retry(readScript, [dataLayer, path]);
-        const { params, actions, error: parseError } = getScriptParams(content);
-        const layout: ScriptLayout = { params, actions, error: parseError };
+        const { params, actions, events, error: parseError } = getScriptParams(content);
+        const layout: ScriptLayout = { params, actions, events, error: parseError };
 
         if (isNewScript) {
           addScript({
@@ -367,6 +367,7 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
       if (!layout) return;
 
       const updatedLayout: ScriptLayout = {
+        ...layout,
         params: {
           ...layout.params,
           [paramName]: { ...layout.params[paramName], value: paramValue } as ScriptParamUnion,

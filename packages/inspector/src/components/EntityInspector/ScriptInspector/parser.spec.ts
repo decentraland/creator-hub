@@ -185,4 +185,95 @@ export function start(src: string, entity: Entity, speed: Slider<0, 10> = 5) {}
       expect(params.speed).toMatchObject({ type: 'slider', value: 1 });
     });
   });
+
+  describe('when parsing a list param', () => {
+    it('parses `string[]` as an empty array of strings', () => {
+      const { params } = getScriptParams(classScript('public tags: string[],'));
+      expect(params.tags).toMatchObject({
+        type: 'array',
+        value: [],
+        item: { type: 'string' },
+      });
+    });
+
+    it('parses the `Array<T>` form the same as `T[]`', () => {
+      const { params } = getScriptParams(classScript('public tags: Array<number>,'));
+      expect(params.tags).toMatchObject({ type: 'array', value: [], item: { type: 'number' } });
+    });
+
+    it('keeps an authored default array', () => {
+      const { params } = getScriptParams(classScript("public tags: string[] = ['a', 'b'],"));
+      expect(params.tags).toMatchObject({
+        type: 'array',
+        value: ['a', 'b'],
+        item: { type: 'string' },
+      });
+    });
+
+    it('parses a list of objects, including nested entity and action leaves', () => {
+      const { params } = getScriptParams(
+        classScript(
+          'public items: Array<{ entity: Entity; onDo: ActionCallback; label: string }>,',
+        ),
+      );
+      expect(params.items).toMatchObject({
+        type: 'array',
+        value: [],
+        item: {
+          type: 'object',
+          fields: {
+            entity: { type: 'entity' },
+            onDo: { type: 'action' },
+            label: { type: 'string' },
+          },
+        },
+      });
+    });
+  });
+
+  describe('when parsing a nested object param', () => {
+    it('parses an inline object type into fields with type-derived defaults', () => {
+      const { params } = getScriptParams(
+        classScript('public coords: { x: number; y: number; z: number },'),
+      );
+      expect(params.coords).toMatchObject({
+        type: 'object',
+        value: { x: 0, y: 0, z: 0 },
+        fields: {
+          x: { type: 'number', value: 0 },
+          y: { type: 'number', value: 0 },
+          z: { type: 'number', value: 0 },
+        },
+      });
+    });
+
+    it('keeps an authored object default and does not clobber it with an empty string', () => {
+      const { params } = getScriptParams(
+        classScript(
+          'public cfg: { enabled: boolean; count: number } = { enabled: true, count: 3 },',
+        ),
+      );
+      expect(params.cfg).toMatchObject({
+        type: 'object',
+        value: { enabled: true, count: 3 },
+        fields: { enabled: { type: 'boolean' }, count: { type: 'number' } },
+      });
+    });
+
+    it('recurses into object-in-object', () => {
+      const { params } = getScriptParams(
+        classScript(
+          'public group: { pos: { x: number }; on: boolean } = { pos: { x: 5 }, on: true },',
+        ),
+      );
+      expect(params.group).toMatchObject({
+        type: 'object',
+        value: { pos: { x: 5 }, on: true },
+        fields: {
+          pos: { type: 'object', fields: { x: { type: 'number' } } },
+          on: { type: 'boolean' },
+        },
+      });
+    });
+  });
 });

@@ -14,23 +14,77 @@ import type { ScriptParamUnion, ScriptAction } from './types';
 
 const SLIDER_DEFAULT_STEP = 1;
 
-function getValueAndTypeFromExpression(expression: Expression): ScriptParamUnion {
+// Recursively evaluate a constructor default expression into the plain JSON value it
+// denotes: numbers (incl. negatives), booleans, strings, and nested object/array literals.
+// Returns undefined for anything not statically evaluable (a call, an identifier, a spread),
+// so the caller can fall back to the type-derived default.
+function evaluateLiteralExpression(expression: Expression): unknown {
   switch (expression.type) {
     case 'NumericLiteral':
-      return { type: 'number', value: expression.value };
-    case 'UnaryExpression':
-      // negative default values (e.g. "= -50") are unary expressions
-      if (expression.operator === '-' && expression.argument.type === 'NumericLiteral') {
-        return { type: 'number', value: -expression.argument.value };
-      }
-      break;
+      return expression.value;
     case 'BooleanLiteral':
-      return { type: 'boolean', value: expression.value };
+      return expression.value;
     case 'StringLiteral':
-      return { type: 'string', value: expression.value };
+      return expression.value;
+    case 'UnaryExpression':
+      if (expression.operator === '-' && expression.argument.type === 'NumericLiteral') {
+        return -expression.argument.value;
+      }
+      return undefined;
+    case 'ObjectExpression': {
+      const obj: Record<string, unknown> = {};
+      for (const prop of expression.properties) {
+        if (prop.type !== 'ObjectProperty' || prop.computed) continue;
+        const key =
+          prop.key.type === 'Identifier'
+            ? prop.key.name
+            : prop.key.type === 'StringLiteral'
+              ? prop.key.value
+              : undefined;
+        if (key === undefined) continue;
+        const value = evaluateLiteralExpression(prop.value as Expression);
+        if (value !== undefined) obj[key] = value;
+      }
+      return obj;
+    }
+    case 'ArrayExpression': {
+      const arr: unknown[] = [];
+      for (const element of expression.elements) {
+        if (!element || element.type === 'SpreadElement') continue;
+        const value = evaluateLiteralExpression(element as Expression);
+        if (value !== undefined) arr.push(value);
+      }
+      return arr;
+    }
   }
+  return undefined;
+}
 
+// Infers a param's type/shape from a plain JSON value. Used when a param has a default
+// expression but no type annotation (so the editor can still render sub-fields/rows).
+function inferParamFromValue(value: unknown): ScriptParamUnion {
+  if (typeof value === 'number') return { type: 'number', value };
+  if (typeof value === 'boolean') return { type: 'boolean', value };
+  if (typeof value === 'string') return { type: 'string', value };
+  if (Array.isArray(value)) {
+    const item: ScriptParamUnion =
+      value.length > 0 ? inferParamFromValue(value[0]) : { type: 'string', value: '' };
+    return { type: 'array', value, item };
+  }
+  if (value && typeof value === 'object') {
+    const fields: Record<string, ScriptParamUnion> = {};
+    for (const [key, fieldValue] of Object.entries(value)) {
+      fields[key] = inferParamFromValue(fieldValue);
+    }
+    return { type: 'object', value: value as Record<string, unknown>, fields };
+  }
   return { type: 'string', value: '' };
+}
+
+function getValueAndTypeFromExpression(expression: Expression): ScriptParamUnion {
+  const value = evaluateLiteralExpression(expression);
+  if (value === undefined) return { type: 'string', value: '' };
+  return inferParamFromValue(value);
 }
 
 // resolves numeric literal types, including negative ones (e.g. -90 is a unary expression)
@@ -84,8 +138,42 @@ function getValueAndTypeFromType(
         if (typeAnnotation.typeName.name === 'Slider') {
           return getSliderParam(typeAnnotation) ?? { type: 'number', value: 0 };
         }
+        // `Array<T>` — same list param as the `T[]` shorthand below.
+        if (typeAnnotation.typeName.name === 'Array') {
+          const element = typeAnnotation.typeParameters?.params[0];
+          const item = element
+            ? getValueAndTypeFromType(element)
+            : ({ type: 'string', value: '' } as ScriptParamUnion);
+          return { type: 'array', value: [], item };
+        }
       }
       break;
+    // `T[]`
+    case 'TSArrayType':
+      return {
+        type: 'array',
+        value: [],
+        item: getValueAndTypeFromType(typeAnnotation.elementType),
+      };
+    // an inline object type literal, e.g. `{ x: number; y: number; z: number }`. Nested
+    // object/array members recurse. Named interface/alias refs are NOT resolved (Babel has
+    // no type checker), so authors declare nested shapes inline.
+    case 'TSTypeLiteral': {
+      const fields: Record<string, ScriptParamUnion> = {};
+      const value: Record<string, unknown> = {};
+      for (const member of typeAnnotation.members) {
+        if (
+          member.type === 'TSPropertySignature' &&
+          member.key.type === 'Identifier' &&
+          member.typeAnnotation?.type === 'TSTypeAnnotation'
+        ) {
+          const child = getValueAndTypeFromType(member.typeAnnotation.typeAnnotation);
+          fields[member.key.name] = member.optional ? { ...child, optional: true } : child;
+          value[member.key.name] = child.value;
+        }
+      }
+      return { type: 'object', value, fields };
+    }
     case 'TSUnionType': {
       // A union of string literals (e.g. `'box' | 'sphere'`) is a dropdown. Any other union
       // (e.g. `string | undefined`) degrades to its first non-undefined member, as before.
@@ -228,12 +316,22 @@ function mergeTooltips(
   }
 }
 
-// merges a param's declared type info with its default value expression,
-// keeping type-specific fields (e.g. slider min/max/step) intact
+// merges a param's declared type info with its default value expression, keeping
+// type-specific metadata (slider min/max/step, object `fields`, array `item`) from the
+// TYPE while taking the value from the DEFAULT expression. For containers, only adopt the
+// expression's value when it actually parsed as a matching container — otherwise the
+// (scalar-fallback) valueInfo would clobber the structure with '' and the type-derived
+// default stands.
 function withDefaultValue(
   typeInfo: ScriptParamUnion,
   valueInfo: ScriptParamUnion,
 ): ScriptParamUnion {
+  if (typeInfo.type === 'object') {
+    return { ...typeInfo, value: valueInfo.type === 'object' ? valueInfo.value : typeInfo.value };
+  }
+  if (typeInfo.type === 'array') {
+    return { ...typeInfo, value: valueInfo.type === 'array' ? valueInfo.value : typeInfo.value };
+  }
   return { ...typeInfo, value: valueInfo.value } as ScriptParamUnion;
 }
 

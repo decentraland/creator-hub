@@ -39,6 +39,9 @@ import {
 } from './actions';
 import { COLORS, RADIUS, SPACING, TYPE } from './theme';
 import { IconTab, Divider } from './Primitives';
+import { getAdminConfig, getAdminEntityOrNull } from './config';
+
+export { setAdminConfig } from './config';
 
 // Mobile scaling: shrink the virtual canvas on
 // mobile so the SDK's global UI scale factor — min(screen/virtual), see
@@ -76,13 +79,11 @@ const ADMIN_ICONS = {
 const ADMIN_TOOLS_ENTITY = 8000 as Entity;
 
 function getAdminToolkitEntity(engine: IEngine) {
-  const { AdminTools } = getComponents(engine);
-  return Array.from(engine.getEntitiesWith(AdminTools))[0][0];
+  return getAdminEntityOrNull(engine);
 }
 
 function getAdminToolkitComponent(engine: IEngine) {
-  const { AdminTools } = getComponents(engine);
-  return Array.from(engine.getEntitiesWith(AdminTools))[0][1];
+  return getAdminConfig(engine);
 }
 
 export async function fetchSceneAdmins() {
