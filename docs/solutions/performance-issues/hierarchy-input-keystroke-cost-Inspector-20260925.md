@@ -61,8 +61,11 @@ This is a hypothesis, not a conclusion. Nobody has profiled the render path.
 
 1. **Confirm the re-render.** Run the Inspector with React DevTools profiling
    and type into the entity-name input. Does each keystroke re-render the whole
-   tree, or only the edited row? `Tree` and the tree `<Input>` in
-   `packages/inspector/src/components/Tree/` are the entry points.
+   tree, or only the edited row? The entry points are
+   `packages/inspector/src/components/Input/Input.tsx` (the controlled input the
+   suite types into, matched by the `input.Input` selector) and
+   `packages/inspector/src/components/Tree/Tree.tsx`, with the rename flow in
+   `components/Tree/Edit/`.
 2. **Check the controlled-input pattern.** `docs/coding-standards.md` has a
    section, "Don't mirror props into local state via `useEffect`", which
    describes the most common cause of exactly this. Verify whether the tree
