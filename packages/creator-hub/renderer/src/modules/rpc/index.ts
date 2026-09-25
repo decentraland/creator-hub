@@ -20,6 +20,10 @@ export interface Callbacks {
     rpcInfo: RPCInfo,
     fnParams: Params[Method.WRITE_FILE],
   ) => Promise<Result[Method.WRITE_FILE]>;
+  // The inspector's scene RPC server came up (once per iframe load). Anything the host must
+  // push into a fresh inspector belongs here, not at the iframe's load event: the server
+  // boots asynchronously after load, and a push sent before it exists times out and is lost.
+  onReady?: (rpcInfo: RPCInfo) => void;
 }
 
 /**
@@ -44,25 +48,29 @@ export const getPath = async (filePath: string, project: Project) => {
 export function initRpc(iframe: HTMLIFrameElement, project: Project, cbs: Partial<Callbacks> = {}) {
   const transport = new AuthenticatedMessageTransport(iframe);
   const sceneClient = new SceneRpcClient(transport);
-  const sceneServer = new SceneRpcServer(transport, project);
   const params = { iframe, project, scene: sceneClient };
+  const sceneServer = new SceneRpcServer(transport, project, {
+    onReady: () => {
+      void Promise.all([
+        sceneClient.selectAssetsTab('AssetsPack'),
+        sceneClient.selectSceneInspectorTab('details'),
+      ]).catch(console.error);
+
+      void (async () => {
+        try {
+          const content = await workspace.getSceneSourceFile(project.path);
+          const hasCustom = hasCustomCode(content);
+          await sceneClient.setSceneCustomCode(hasCustom);
+        } catch (error) {
+          console.error('Failed to detect custom code:', error);
+        }
+      })();
+
+      cbs.onReady?.(params);
+    },
+  });
   const storage = new StorageRPC(transport, cbs, params);
   const codeParser = new CodeParserRPC(transport);
-
-  void Promise.all([
-    sceneClient.selectAssetsTab('AssetsPack'),
-    sceneClient.selectSceneInspectorTab('details'),
-  ]).catch(console.error);
-
-  void (async () => {
-    try {
-      const content = await workspace.getSceneSourceFile(project.path);
-      const hasCustom = hasCustomCode(content);
-      await sceneClient.setSceneCustomCode(hasCustom);
-    } catch (error) {
-      console.error('Failed to detect custom code:', error);
-    }
-  })();
 
   return {
     ...params,

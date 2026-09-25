@@ -88,15 +88,20 @@ const activeDebuggers = new Map<string, () => void>();
 
 export async function attachSceneDebugger(
   path: string,
-  cb: (data: string) => void,
+  cb: (data: string | string[]) => void,
 ): Promise<{ cleanup: () => void }> {
   // Clean up any previous debugger for this path (handles React StrictMode double-mount)
   activeDebuggers.get(path)?.();
 
-  const eventName = await invoke('inspector.attachSceneDebugger', path);
+  const { eventName, backlog } = await invoke('inspector.attachSceneDebugger', path);
 
   const handler = (_: IpcRendererEvent, data: string) => cb(data);
   ipcRenderer.on(eventName, handler);
+
+  // Replay the backlog now that the listener is registered. Main returns it (instead of
+  // pushing it on the channel before we subscribe) precisely so re-attaching after a scene
+  // reload repaints the console with the running preview's output instead of leaving it empty.
+  if (backlog.length > 0) cb(backlog);
 
   const cleanup = () => {
     ipcRenderer.off(eventName, handler);

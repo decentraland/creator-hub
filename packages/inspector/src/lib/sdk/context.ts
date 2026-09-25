@@ -144,6 +144,16 @@ export async function createSdkContext(
     );
     events.on('dispose', stopTitleNotifier);
 
+    // Let the host (re)apply everything it pushes to a fresh iframe — debug console
+    // state, selected tabs — now that the server can receive it. Matters most after
+    // the host's "reload scene" (a new iframe with a fresh store) while a preview is
+    // running: the host's own state didn't change, so nothing else would re-send.
+    void getSceneClient()
+      ?.notifyReady()
+      .catch(() => {
+        // Older hosts don't implement notify_ready; their initial pushes still apply.
+      });
+
     if (babylonInternals) {
       new SceneMetricsServer(transport, store);
     } else {

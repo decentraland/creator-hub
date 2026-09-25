@@ -261,6 +261,29 @@
   cursor: col-resize;
 }
 
+/* Covers the iframe while it reloads in place (manual "reload scene from disk", renderer
+   switch) so the user sees the loader instead of the black frame the iframe paints until it
+   boots — a long wait under Bevy (#1652). */
+.Editor .EditorBody .reload-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--bg-inspector);
+}
+
+/* Shown inside the reload cover when a reload never becomes ready (#1652): a recoverable
+   Retry + Back instead of an endless spinner. */
+.Editor .EditorBody .reload-overlay .reload-overlay-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 0 24px;
+}
+
 .Editor .inspector {
   flex: 1 1 auto;
   border: none;
