@@ -73,16 +73,9 @@ jobs:
           npx http-server public -p 8000 --cors -a localhost &
           sleep 5
 
-      # Machine-level backstop: a re-run is clean (fresh forks + browser per spec
-      # file, in-page data layer) and a real regression fails both attempts.
       - name: e2e
-        uses: nick-fields/retry@ad984534de44a9489a53aefd81eb77f87c70dc60 # v4.0.0
-        with:
-          timeout_minutes: 20
-          max_attempts: 2
-          retry_on: error
-          shell: 'bash'
-          command: make test-inspector-e2e
+        timeout-minutes: 20
+        run: make test-inspector-e2e
         env:
           NODE_OPTIONS: "--max-old-space-size=8192"
           E2E_CONTENT_URL: https://builder-items.decentraland.zone

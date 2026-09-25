@@ -217,13 +217,11 @@ So anything that delays the **first mount** of a panel a spec touches must be fo
 
 The class carries no styling — it exists purely as this signal, which makes it look safe to ignore.
 
-### Run each E2E spec file in its own forked process
+### The inspector suite boots one browser per worker, not per spec file
 
-`vitest.e2e.config.js` uses `pool: 'forks'` with `singleFork: false` **and** `fileParallelism: false`: each spec file runs in a fresh forked process, one at a time. Do not set `singleFork: true` — sharing one long-lived worker across all files accumulates Chromium/Babylon native memory until the CI runner kills the process. The signature is `Error: Worker exited unexpectedly` at a _moving_ spec-file boundary (every test that ran passed; no V8 heap-OOM message) — it reads like flakiness but is memory exhaustion, so raising `--max-old-space-size` won't help. A fresh process per file reclaims memory; sequential execution keeps only one headless Chromium alive at a time.
+The inspector e2e runs on `@playwright/test` (`packages/inspector/playwright.config.ts`, chromium only), not vitest. A worker-scoped `auto` fixture in `test/e2e/fixtures.ts` launches one browser, boots the app once, and assigns it to `globalThis.page`, which is what every page object reads — so page objects need no `page` argument and no spec passes one. All spec files in a worker share that one boot: the suite went from ~430s to ~85s locally when it stopped paying a cold boot (Chromium launch + a ~55MB unminified dev bundle + Babylon init) per file.
 
-### E2E helpers have no unit-test home
-
-`vitest.config.js` includes only `src/**/*.spec.ts(x)`, and `vitest.e2e.config.js` includes `test/e2e/**/*.spec.ts` — whose `setupFiles` launch Chromium and need a dev server. A "unit" spec placed beside a pure-logic helper in `test/e2e/utils/` is therefore NOT picked up by the unit runner; it is swept into the browser suite and fails in `beforeAll`. Check such a helper by bundling the real module and running it directly — `npx esbuild <driver>.ts --bundle --platform=node --format=esm --outfile=/tmp/check.mjs && node /tmp/check.mjs` — rather than adding a spec that quietly changes suite. A helper that genuinely deserves a standing spec belongs under `src/`, not `test/e2e/utils/`.
+Two consequences. A spec that navigates with extra params (`MobileHud`, `UIDesignerPanel` add `uiEditorEnabled`) MUST restore the base URL in `test.afterAll`, or it leaks that mode into every later file. And `slowMo` is gone: it was a global per-action delay used as a stability crutch, which inflated every one of the ~60 page-object actions. Stability now comes from auto-retrying assertions (`expect(locator)`, `expect.poll`) and the `actUntil`/`openThenSelect`/`revealThenClick` helpers, with `retries: 2` on CI so one flaky test costs seconds rather than a whole-job rerun.
 
 ### The `@live` tier signs in once, then seeds `localStorage`
 

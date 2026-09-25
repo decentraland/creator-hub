@@ -1,6 +1,7 @@
 import { type Page } from 'playwright';
 import { App } from './pageObjects/App';
 import { UIDesigner } from './pageObjects/UIDesigner';
+import { expect, test } from './fixtures';
 
 declare const page: Page;
 declare const __e2eNavUrl: string;
@@ -22,8 +23,8 @@ const ROOT = 'MainUI';
 
 const joystickGuide = () => page.locator(`${UIDesigner.hudGuideSelector}[data-kind="joystick"]`);
 
-describe('UI Designer MobileHUD', () => {
-  beforeAll(async () => {
+test.describe('UI Designer MobileHUD', () => {
+  test.beforeAll(async () => {
     await page.goto(`${__e2eNavUrl}&uiEditorEnabled=true&uiEditorSupported=true`, {
       timeout: 90_000,
     });
@@ -113,4 +114,9 @@ describe('UI Designer MobileHUD', () => {
       .waitFor({ state: 'detached', timeout: 10_000 });
     await expect(UIDesigner.isRootActive(ROOT)).resolves.toBe(true);
   });
+});
+
+test.afterAll(async () => {
+  await page.goto(__e2eNavUrl, { timeout: 90_000 });
+  await App.waitUntilReady();
 });

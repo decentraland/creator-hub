@@ -166,9 +166,6 @@ class HierarchyPageObject {
       );
     }
 
-    // The menu is open and the item is present. Click it with a generous
-    // timeout: once the item is actionable, the click itself can still be slow
-    // under slowMo on a loaded CI runner — that's a reason to wait, not retry.
     await page.click(itemSelector, { timeout: 10_000 });
   }
 

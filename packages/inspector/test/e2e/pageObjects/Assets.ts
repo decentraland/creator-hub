@@ -57,9 +57,7 @@ class AssetsPageObject {
     await page.waitForSelector(`.Assets .assets-catalog-asset[data-test-label="${term}"]`);
   }
 
-  // Hovers the tile and measures where the name tooltip lands: how far above the
-  // tile its bottom edge sits, and how far below the panel header its top edge sits
-  // (negative means it covers the header).
+  /** Gap between the name tooltip's bottom and the tile, and its clearance below the panel header. */
   async getNameTooltipPlacement(asset: string) {
     const tile = page.locator(`.Assets .assets-catalog-asset[data-test-label="${asset}"]`).first();
     await tile.hover();
