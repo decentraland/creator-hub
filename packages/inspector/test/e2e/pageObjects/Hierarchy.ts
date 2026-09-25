@@ -146,9 +146,12 @@ class HierarchyPageObject {
     // until the item appears. Escape between tries clears a half-open menu so
     // the next right-click opens a fresh one.
     const deadline = Date.now() + 10_000;
+    const startedAt = Date.now();
+    let attempts = 0;
     let opened = false;
     let lastError: unknown;
     while (!opened && Date.now() < deadline) {
+      attempts++;
       try {
         await page.locator(rowSelector).first().click({ button: 'right', timeout: 3_000 });
         await page.waitForSelector(itemSelector, { state: 'visible', timeout: 3_000 });
@@ -157,6 +160,10 @@ class HierarchyPageObject {
         lastError = error;
         await page.keyboard.press('Escape').catch(() => {});
       }
+    }
+    const elapsed = Date.now() - startedAt;
+    if (attempts > 1 || elapsed > 1_000) {
+      console.log(`[e2e-diag] contextmenu ${itemId}: ${attempts} attempt(s), ${elapsed}ms`);
     }
     if (!opened) {
       throw new Error(
