@@ -18,7 +18,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 \"$CLAUDE_PROJECT_DIR/.ai/hooks/figma/hook.py\""
+            "command": "p=$(cat); case \"$p\" in *[Ff][Ii][Gg][Mm][Aa]*) printf '%s' \"$p\" | python3 \"$CLAUDE_PROJECT_DIR/.ai/hooks/figma/hook.py\" ;; esac"
           }
         ]
       }
