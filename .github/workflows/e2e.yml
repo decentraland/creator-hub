@@ -130,3 +130,14 @@ jobs:
           E2E_PRIVATE_KEY: ${{ secrets.E2E_PRIVATE_KEY }}
           E2E_NAME: ${{ secrets.E2E_NAME }}
           E2E_LAND: ${{ secrets.E2E_LAND }}
+
+      - name: upload e2e diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: creator-hub-e2e-diagnostics
+          path: |
+            packages/creator-hub/test-results
+            packages/creator-hub/playwright-report
+          if-no-files-found: ignore
+          retention-days: 3
