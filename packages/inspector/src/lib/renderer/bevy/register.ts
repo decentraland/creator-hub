@@ -248,6 +248,8 @@ export function registerBevyRenderer(): void {
           engineWindow,
           // On arm, pause loaded Animator clips if the scene is frozen (#1382).
           isFrozen: () => !sceneRunBridge.isRunning(),
+          // Re-silence audio on arm/reload while the mute toggle is on (#1569).
+          isMuted: () => bevy.audio.isMuted(),
         });
 
         // Live gizmo preview: a drag emits `previewTransforms` every frame (merged
@@ -397,6 +399,10 @@ export function registerBevyRenderer(): void {
       // "Interact" toggle (#1458): forward editing-enabled to the agent so it stops
       // intercepting viewport clicks for pick/gizmo — clicks reach the running scene.
       bevy.setEditingEnabledPoster(enabled => cameraBridge.setEditingEnabled(enabled));
+      // "Mute" toggle (#1569): silence/restore scene audio host-side via the forward
+      // bridge (there's no engine volume/mute console command). Persists across reload
+      // via the bridge's isMuted arm/reconcile above.
+      bevy.setMutedPoster(muted => forwardBridge?.setAudioMuted(muted));
 
       // Scene run/freeze: the toolbar toggle posts the intent to the agent, which
       // runs /freeze_scene or /unfreeze_scene on the pinned scene. Default frozen
