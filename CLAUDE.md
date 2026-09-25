@@ -213,7 +213,7 @@ Design specs live in Figma ("📗️ Design System | Creator Hub"). The Figma MC
 
 ## Skills
 
-Skills live in `.ai/skills/*/SKILL.md`. Read the relevant `SKILL.md` when a task matches a skill's domain.
+Skills live in `.ai/skills/*/SKILL.md`. Read the relevant `SKILL.md` when a task matches a skill's domain. Third-party skills are different: each developer installs them into `.claude/skills/` (gitignored) with `npx skills add … -a claude-code`, and the committed `skills-lock.json` records which ones the repo expects. Install personal skills with `-g` so they stay out of the lock.
 
 **Figma / design work:** on any Figma cue (a `figma.com` URL or the word "figma"), read [`.ai/skills/figma/SKILL.md`](.ai/skills/figma/SKILL.md) FIRST — the project umbrella for Figma→code work (leaf skills, the browser fallback when the Figma MCP is capped, palette→`vars.css`/`DESIGN.md` sync, live verification, SVG/CSS gotchas), which makes the "Design handoff" note above actionable. A `UserPromptSubmit` hook (`.ai/hooks/figma/hook.py`) fires the reminder automatically.
 

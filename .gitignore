@@ -39,3 +39,6 @@ settings.local.json
 
 # Claude agent verification screenshots
 .claude/screenshots/
+
+# Third-party skills, installed per-developer and tracked in skills-lock.json
+.claude/skills/

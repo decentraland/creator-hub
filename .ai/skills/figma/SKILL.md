@@ -18,13 +18,13 @@ Delegate the mechanics to the OpenAI leaf skills (in `.claude/skills/`):
 - **figma-implement-design** — `get_design_context` → (`get_metadata` to drill if large) → `get_screenshot` → download assets → translate to this project's tokens/components → validate against the design.
 - **figma-create-design-system-rules** — generate/refresh design-system rules for this repo.
 
-They are installed per-developer (they live in `.claude/skills/`, symlinked from `.agents/skills/`, and are not committed). If missing, install with:
+They are third-party skills, installed per-developer into `.claude/skills/` and tracked in `skills-lock.json` (repo skills like this one live in `.ai/skills/`). If missing, install with:
 
 ```
-npx skills add openai/skills --skill figma-implement-design,figma-create-design-system-rules --full-depth --copy --yes
+npx skills add openai/skills --skill figma-implement-design figma-create-design-system-rules --full-depth --copy --yes -a claude-code
 ```
 
-⚠️ The CLI installs to **all** detected agents by default and litters the repo root with `.<agent>/` dirs (`.commandcode`, `.devin`, `.goose`, `.grok`, `.pi`, …). After installing, delete any top-level `.<agent>/` dir that contains only these skills. Keep `.claude/`, `.agents/`, `.ai/`, `.cursor/`.
+Space-separate the skill names: a comma-joined `--skill a,b` matches nothing. Keep `-a claude-code`: without it the CLI installs into every detected agent's `.<agent>/` dir, and `npx skills experimental_install` restores the lock only into `.agents/skills/`, which Claude Code does not read.
 
 ## What the leaf skills do NOT cover — do these (repo-specific)
 
@@ -55,7 +55,7 @@ Before adding any CSS or a new control, prove it isn't already built:
 When colours change, reconcile into BOTH, kept in sync:
 
 - `packages/inspector/src/theme/vars.css` — the **source of truth** (`:root`; the 21-step `--base-01 … --base-21` light→dark ramp, role tokens like `--primary-main`, and the `--ui-designer-*` family). No hardcoded hex in inspector CSS — if a colour isn't a token, add one here.
-- `docs/DESIGN.md` — the human doc: role tables (`| Token | Value | Use |`) under "Palette by role", plus the "neutral ramp runs LIGHT → DARK" section. Always update it when tokens change; **if it does not exist, create it** from `theme/vars.css` (or the general styles — the `figma-create-design-system-rules` skill can scaffold it). Refresh the WCAG contrast notes where accent luminance changes.
+- `docs/DESIGN.md` — the human doc: role tables (`| Token | Value | Use |`) under "Palette by role", plus the "neutral ramp runs LIGHT → DARK" section. Always update it when tokens change. Refresh the WCAG contrast notes where accent luminance changes.
 
 Respect intentional deviations (e.g. `--ui-designer-panel-bg` deliberately reuses `--base-19` `#242129`, not Figma's `#25212a`) — don't blindly overwrite. Use the `figma-create-design-system-rules` skill to (re)generate the rules doc.
 
@@ -63,8 +63,8 @@ Respect intentional deviations (e.g. `--ui-designer-panel-bg` deliberately reuse
 
 Preferred: run the Creator Hub app and navigate to the inspector, rather than spinning the inspector server each time.
 
-- `cd packages/creator-hub && npm run start`. CH loads the inspector from `packages/inspector/public` at runtime, so rebuilding the inspector's `public/` (its own `npm run start` watch in `packages/inspector`) refreshes it with **no CH rebuild** (true for the iframe UI; the Bevy renderer has a second consumer, `dist/tooling-entrypoint.js`, loaded by `sdk-commands start --data-layer` from the _scene project's_ `node_modules` — but design work is UI-only so it rarely applies).
-- Reach 2D: **Settings → Experimental → UI Editor**, then the toolbar **ModeSwitcher "2D"** tab (needs scene `@dcl/sdk` ≥ 7.26.0).
+- `cd packages/creator-hub && npm run start`. CH loads the inspector from `packages/inspector/public` at runtime, so rebuilding the inspector's `public/` (its own `npm run start` watch in `packages/inspector`) refreshes it with **no CH rebuild**.
+- Reach 2D: the toolbar **ModeSwitcher "2D"** tab (needs scene `@dcl/sdk` ≥ 7.26.0).
 - **Tradeoff:** CH is an Electron window that Chrome automation can't attach to. For pure 2D visual checks (canvas, panels, toolbar layout — no Bevy run controls, no persistence), the **standalone inspector dev server** (`cd packages/inspector && npm run start`, set `VITE_INSPECTOR_PORT` for a fixed port) is the browser-automatable surface — Babylon-only, non-persistent fixture. Use CH for anything touching Bevy scene-run or mode persistence.
 - **Screenshots are ground truth.** `getComputedStyle` over CDP is unreliable for `:hover` / `:focus-within`.
 
@@ -75,7 +75,7 @@ Preferred: run the Creator Hub app and navigate to the inspector, rather than sp
 - **`fill="currentColor"` + state cascade** — a higher-specificity state rule (`.active { color: … }`) silently overrides the base colour whenever that state is on. Check every state's _resolved_ colour.
 - **Element-type selectors defeat class-scoped overrides.** A panel rule like `.Container.Scene .content svg { … }` (specificity 0,3,1) reaches a subcomponent's icon and out-ranks a `.Parent > .Child` override (0,2,0) — renaming the class can't dodge it. When nesting a subcomponent under a panel, grep for element-type selectors (`svg`, `input`, `img`) scoped to that panel, not just class names.
 - **Relabelling a control can strip its accessible name.** In `CheckboxField` the visible `Label` is a sibling with no `htmlFor`, so `aria-label` is the input's only accessible name; deleting it as "redundant" after a rename passes typecheck, eslint, tests, and a grep for the old string. Verify the accessible name still **exists**, not just that the old string is gone.
-- **CSS/TSX are not linted or formatted by the repo gates** — `make format` / `make lint` skip `.css` and `.tsx`. Run `npx prettier --check` on touched `.css`, and `npx eslint` on touched `.tsx`, explicitly. The `.tsx` glob carries a standing baseline of pre-existing problems (never zero) — capture the count before editing, diff against it, and never `--fix` across the glob.
+- **CSS/TSX slip past the repo gates** — `make lint` skips `.tsx`, and neither `make lint` nor `make format` covers `.css`. Run `npx prettier --check` on touched `.css`, and `npx eslint` on touched `.tsx`, explicitly. The `.tsx` glob carries a standing baseline of pre-existing problems (never zero) — capture the count before editing, diff against it, and never `--fix` across the glob.
 
 ## After the change, verify these are still TRUE
 

@@ -14,11 +14,8 @@ TRIGGER = re.compile(r"\bfigma\b", re.IGNORECASE)
 LEAVES = ("figma-implement-design", "figma-create-design-system-rules")
 INSTALL = (
     "npx skills add openai/skills --skill "
-    "figma-implement-design,figma-create-design-system-rules --full-depth --copy --yes"
-)
-
-REPO_ROOT = os.path.dirname(
-    os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    "figma-implement-design figma-create-design-system-rules "
+    "--full-depth --copy --yes -a claude-code"
 )
 
 REMINDER = (
@@ -48,8 +45,7 @@ def main() -> int:
         return 0
     print(REMINDER)
 
-    project_dir = os.environ.get("CLAUDE_PROJECT_DIR") or data.get("cwd") or REPO_ROOT
-    missing = missing_leaves(project_dir)
+    missing = missing_leaves(os.environ.get("CLAUDE_PROJECT_DIR", ""))
     if missing:
         print(
             f"\nYou don't have the {', '.join(missing)} skill(s) installed. Run:\n"
