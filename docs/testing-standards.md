@@ -158,6 +158,15 @@ Prefer `page.keyboard.type` / `page.keyboard.press` over `locator.fill()`. Real 
 
 (See `coding-standards.md` → "Don't mirror props into local state via `useEffect`" for the most common offender.)
 
+Budget for it: on the GPU-less Linux CI runner each character costs about
+**280ms**, against roughly 28ms locally. Typing 262 characters across the
+inspector suite's 28 `addChild` calls came to 100s — 14% of a 12-minute run.
+The cost is the application, not Playwright: every keystroke re-renders the
+hierarchy tree, and without a GPU that rasterises on the CPU. So keep labels in
+fixtures short, and treat a long typed string in a test as a deliberate expense.
+It is also a product signal — a user on weak hardware pays the same per
+keystroke.
+
 ### Use locators for actions that follow another mutation
 
 A pre-fetched `ElementHandle` references a specific DOM node. If a re-render replaces that node between the fetch and the action, the handle goes stale and `.click()` fails with "Element is not attached to the DOM". Locators re-resolve the selector at action time and pick up the live element:

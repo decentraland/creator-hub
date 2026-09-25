@@ -146,37 +146,19 @@ class HierarchyPageObject {
     // until the item appears. Escape between tries clears a half-open menu so
     // the next right-click opens a fresh one.
     const deadline = Date.now() + 10_000;
-    const startedAt = Date.now();
-    let attempts = 0;
-    let rowMs = 0;
-    let clickMs = 0;
-    let menuMs = 0;
     let opened = false;
     let lastError: unknown;
     while (!opened && Date.now() < deadline) {
-      attempts++;
       try {
-        const rowAt = Date.now();
         const row = page.locator(rowSelector).first();
         await row.waitFor({ state: 'visible', timeout: 3_000 });
-        const clickAt = Date.now();
-        rowMs += clickAt - rowAt;
         await row.click({ button: 'right', timeout: 3_000, force: true });
-        clickMs += Date.now() - clickAt;
-        const menuAt = Date.now();
         await page.waitForSelector(itemSelector, { state: 'visible', timeout: 3_000 });
-        menuMs += Date.now() - menuAt;
         opened = true;
       } catch (error) {
         lastError = error;
         await page.keyboard.press('Escape').catch(() => {});
       }
-    }
-    const elapsed = Date.now() - startedAt;
-    if (attempts > 1 || elapsed > 1_000) {
-      console.log(
-        `[e2e-diag] contextmenu ${itemId}: ${attempts} attempt(s), ${elapsed}ms (row ${rowMs}ms, click ${clickMs}ms, menu ${menuMs}ms)`,
-      );
     }
     if (!opened) {
       throw new Error(
@@ -200,7 +182,6 @@ class HierarchyPageObject {
   // Gate typing on `document.activeElement` actually being the Input —
   // mount-visible isn't enough since the Input's onBlur unmounts itself.
   private async typeIntoTreeInput(value: string, timeout = 5_000) {
-    const focusAt = Date.now();
     const input = page.locator('input.Input').first();
     await input.waitFor({ state: 'visible', timeout });
     await page.waitForFunction(
@@ -210,11 +191,7 @@ class HierarchyPageObject {
       undefined,
       { timeout },
     );
-    const typeAt = Date.now();
     await page.keyboard.type(value);
-    console.log(
-      `[e2e-diag]   input focus ${typeAt - focusAt}ms, keystrokes ${Date.now() - typeAt}ms (${value.length} chars)`,
-    );
   }
 
   async rename(entityId: number, newLabel: string) {
@@ -254,17 +231,10 @@ class HierarchyPageObject {
   }
 
   async addChild(entityId: number, label: string) {
-    const t0 = Date.now();
     await this.openContextMenuItem(entityId, 'add-child', 'add child to');
-    const t1 = Date.now();
     await this.typeIntoTreeInput(label);
-    const t2 = Date.now();
     await page.keyboard.press('Enter');
     await this.waitForLabel(label);
-    const t3 = Date.now();
-    console.log(
-      `[e2e-diag] addChild ${label}: ${t3 - t0}ms (menu ${t1 - t0}ms, type ${t2 - t1}ms, commit ${t3 - t2}ms)`,
-    );
   }
 
   async duplicate(entityId: number) {
