@@ -4,7 +4,6 @@ import { UIDesigner } from './pageObjects/UIDesigner';
 import { expect, test } from './fixtures';
 
 declare const page: Page;
-declare const __e2eNavUrl: string;
 
 const CONFIGURABLE_KINDS = [
   'joystick',
@@ -25,9 +24,6 @@ const joystickGuide = () => page.locator(`${UIDesigner.hudGuideSelector}[data-ki
 
 test.describe('UI Designer MobileHUD', () => {
   test.beforeAll(async () => {
-    await page.goto(`${__e2eNavUrl}&uiEditorEnabled=true&uiEditorSupported=true`, {
-      timeout: 90_000,
-    });
     await App.waitUntilReady();
     await UIDesigner.open();
   });
@@ -117,6 +113,6 @@ test.describe('UI Designer MobileHUD', () => {
 });
 
 test.afterAll(async () => {
-  await page.goto(__e2eNavUrl, { timeout: 90_000 });
-  await App.waitUntilReady();
+  await UIDesigner.removeRoot(ROOT).catch(() => undefined);
+  await UIDesigner.close();
 });

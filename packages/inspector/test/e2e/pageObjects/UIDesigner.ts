@@ -30,6 +30,15 @@ class UIDesignerPageObject {
     );
   }
 
+  /** Return to 3D mode and wait for the rail to unmount. */
+  async close() {
+    const tab = page.locator('[role="tab"]', { hasText: '3D' }).first();
+    await actUntil(
+      () => tab.click(),
+      () => page.locator(RAIL).waitFor({ state: 'detached', timeout: 3_000 }),
+    );
+  }
+
   nodeRowSelector(label: string) {
     return `${TREE} .Tree[data-test-label="${label}"] > .item`;
   }

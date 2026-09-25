@@ -31,7 +31,7 @@ async function boot(page: Page): Promise<void> {
 
   await mockContentRequests(page, contentUrl);
 
-  navUrl = `${serverUrl}?contentUrl=${encodeURIComponent(contentUrl)}`;
+  navUrl = `${serverUrl}?contentUrl=${encodeURIComponent(contentUrl)}&uiEditorEnabled=true&uiEditorSupported=true`;
   (globalThis as Record<string, unknown>).E2E_URL = serverUrl;
   (globalThis as Record<string, unknown>).__e2eNavUrl = navUrl;
 
