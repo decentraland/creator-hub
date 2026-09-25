@@ -19,6 +19,7 @@ import setGround from './set-ground';
 import lock from './lock';
 import hide from './hide';
 import createCustomAsset from './create-custom-asset';
+import setQuickItemSource from './quick-item';
 
 export interface Dispatch {
   dirty?: boolean;
@@ -47,6 +48,7 @@ export function createOperations(engine: IEngine) {
     setGround: setGround(engine),
     lock: lock(engine),
     hide: hide(engine),
+    setQuickItemSource: setQuickItemSource(engine),
   };
 }
 
