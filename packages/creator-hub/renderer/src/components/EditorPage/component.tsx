@@ -53,6 +53,7 @@ import { AssistantIcon } from '../Icons';
 import { AiChatPanel } from '../AiChatPanel';
 import { DetachedPlaceholder } from '../AiChatPanel/DetachedPlaceholder';
 import { OptimizeModal } from '../OptimizeModal';
+import type { ButtonGroupHandle } from '../Button';
 import { DeployModal } from './DeployModal';
 import { PreviewOptions, PublishOptions } from './MenuOptions';
 import { getPublishButtonText, getPublishOptions } from './utils';
@@ -206,6 +207,10 @@ export function EditorPage() {
   const [aiPanelWidth, setAiPanelWidth] = useState(readAiPanelWidth);
   const [aiResizing, setAiResizing] = useState(false);
   const [mobileQRData, setMobileQRData] = useState<{ url: string; qr: string } | null>(null);
+  // Lets handleShowMobileQR dismiss the Preview options menu itself — a Popper click stays
+  // "inside" as far as its own click-away close goes, so without this it stays open behind
+  // the QR modal and reappears once the modal closes.
+  const previewButtonGroupRef = useRef<ButtonGroupHandle>(null);
   // When the Bevy renderer is selected the engine loads from a headless
   // sdk-commands realm, and the inspector shares its data-layer WS. We start it
   // for the project and hold the URLs to thread into the iframe config below.
@@ -557,6 +562,8 @@ export function EditorPage() {
   const handleShowMobileQR = useCallback(async () => {
     if (!project) return;
 
+    previewButtonGroupRef.current?.close();
+
     try {
       const data = await getMobileQR(settings.previewOptions);
       if (data) {
@@ -784,11 +791,13 @@ export function EditorPage() {
               </Tooltip>
               <div className={isOptimizing ? 'preview-control optimizing' : 'preview-control'}>
                 <ButtonGroup
+                  ref={previewButtonGroupRef}
                   className={isOptimizing ? undefined : 'icon-only'}
                   color="secondary"
                   aria-label={t('editor.header.actions.preview')}
                   tooltip={t('editor.header.actions.preview')}
                   extraTooltip={t('editor.header.actions.preview_options.title')}
+                  popperOffset={10}
                   // Not natively disabled while optimizing (that would kill the inline ✕ too):
                   // the group is greyed and made inert via CSS, and only the ✕ stays clickable.
                   // aria-disabled flags the CSS-inert state to assistive tech, which the visual

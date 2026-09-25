@@ -23,7 +23,7 @@ const initialState: Async<Workspace> = {
     scenesPath: '',
     dependencyUpdateStrategy: DEFAULT_DEPENDENCY_UPDATE_STRATEGY,
     previewOptions: {
-      debugger: false,
+      debugger: true,
       skipAuthScreen: true,
       enableLandscapeTerrains: true,
       openNewInstance: false,
