@@ -148,13 +148,19 @@ class HierarchyPageObject {
     const deadline = Date.now() + 10_000;
     const startedAt = Date.now();
     let attempts = 0;
+    let clickMs = 0;
+    let menuMs = 0;
     let opened = false;
     let lastError: unknown;
     while (!opened && Date.now() < deadline) {
       attempts++;
       try {
+        const clickAt = Date.now();
         await page.locator(rowSelector).first().click({ button: 'right', timeout: 3_000 });
+        clickMs += Date.now() - clickAt;
+        const menuAt = Date.now();
         await page.waitForSelector(itemSelector, { state: 'visible', timeout: 3_000 });
+        menuMs += Date.now() - menuAt;
         opened = true;
       } catch (error) {
         lastError = error;
@@ -163,7 +169,9 @@ class HierarchyPageObject {
     }
     const elapsed = Date.now() - startedAt;
     if (attempts > 1 || elapsed > 1_000) {
-      console.log(`[e2e-diag] contextmenu ${itemId}: ${attempts} attempt(s), ${elapsed}ms`);
+      console.log(
+        `[e2e-diag] contextmenu ${itemId}: ${attempts} attempt(s), ${elapsed}ms (click ${clickMs}ms, menu ${menuMs}ms)`,
+      );
     }
     if (!opened) {
       throw new Error(
