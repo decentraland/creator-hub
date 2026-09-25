@@ -10,6 +10,8 @@ import {
   BiPause,
   BiStop,
   BiJoystick,
+  BiVolumeFull,
+  BiVolumeMute,
 } from 'react-icons/bi';
 import { RiListSettingsLine } from 'react-icons/ri';
 import { FaPencilAlt } from 'react-icons/fa';
@@ -133,6 +135,20 @@ const Toolbar = withSdk(({ sdk }) => {
     interaction.setEditingEnabled(!interaction.isEditingEnabled());
   }, [interaction]);
 
+  // "Mute" toggle — only for renderers that play the scene's audio (Bevy exposes
+  // `audio`; Babylon omits it). Silences a looping sound while editing (#1569).
+  const audio = sdk.renderer.audio;
+  const [muted, setMuted] = useState<boolean>(audio?.isMuted() ?? false);
+  useEffect(() => {
+    if (!audio) return;
+    setMuted(audio.isMuted());
+    return audio.onMuteChange(setMuted);
+  }, [audio]);
+  const handleToggleMute = useCallback(() => {
+    if (!audio) return;
+    audio.setMuted(!audio.isMuted());
+  }, [audio]);
+
   const handleSaveClick = useCallback(() => dispatch(save()), []);
   const handleUndo = useCallback(() => dispatch(undo()), [dispatch]);
   const handleRedo = useCallback(() => dispatch(redo()), [dispatch]);
@@ -244,6 +260,15 @@ const Toolbar = withSdk(({ sdk }) => {
           }
         >
           <BiJoystick />
+        </ToolbarButton>
+      )}
+      {audio && (
+        <ToolbarButton
+          className={cx('mute', { active: muted })}
+          onClick={handleToggleMute}
+          title={muted ? 'Unmute scene audio' : 'Mute scene audio'}
+        >
+          {muted ? <BiVolumeMute /> : <BiVolumeFull />}
         </ToolbarButton>
       )}
       <Preferences />

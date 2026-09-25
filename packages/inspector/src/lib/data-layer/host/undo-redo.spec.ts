@@ -141,4 +141,28 @@ describe('[UNDO] Inspector<->DataLayer<->Babylon', () => {
     expect(getGLTFContainer(inspectorEngine).has(cachedEntity)).toBe(false);
     expect(getGLTFContainer(rendererEngine).has(cachedEntity)).toBe(false);
   });
+
+  it('should undo a large single operation (300+ components) in ONE step (#1460)', async () => {
+    // A single operation whose synchronous change burst is large (e.g. adding a
+    // multi-entity composite) must remain one atomic undo entry. Previously the state
+    // manager force-committed mid-burst at 200 ops, which set `processing` and dropped
+    // the rest of the burst from undo capture — so one Ctrl+Z reverted only part and
+    // left orphaned entities in the scene files/preview.
+    const { inspectorEngine, dataLayerEngine, inspectorOperations, dataLayer, tick } = context;
+    const Transform = getTransform(inspectorEngine);
+    const bulkEntities: Entity[] = [];
+    for (let i = 0; i < 300; i++) {
+      const entity = inspectorEngine.addEntity();
+      bulkEntities.push(entity);
+      Transform.create(entity, { position: { x: i, y: 0, z: 0 } });
+    }
+    await inspectorOperations.dispatch();
+    await tick();
+    expect(bulkEntities.every(e => getTransform(dataLayerEngine).has(e))).toBe(true);
+
+    await dataLayer.undo({});
+    await tick();
+    // A single undo removes ALL of them — the whole burst is one entry, nothing dropped.
+    expect(bulkEntities.some(e => getTransform(dataLayerEngine).has(e))).toBe(false);
+  });
 });

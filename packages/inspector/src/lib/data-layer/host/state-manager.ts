@@ -75,7 +75,6 @@ export class StateManager {
   // any edit that lands meanwhile (the next keystroke of a rename) has to be queued, or it is
   // silently lost even though the engine already holds it.
   private captureSuspended = false;
-  private readonly maxBatchSize = 200; // prevent oversized batches
   private readonly fs: FileSystemInterface;
   private readonly engine: IEngine;
   private readonly getInspectorPreferences: () => InspectorPreferences;
@@ -188,10 +187,13 @@ export class StateManager {
 
     this.pendingTransaction.operations.push(operation);
 
-    // force commit if batch gets too large to prevent memory issues
-    if (this.pendingTransaction.operations.length >= this.maxBatchSize) {
-      this.commitPendingTransaction();
-    }
+    // NOTE: we deliberately do NOT force-commit mid-burst on a size cap. Committing splits a
+    // single synchronous change burst across more than one transaction, i.e. more than one undo
+    // entry — so a large operation (e.g. adding a multi-entity composite) is only partially
+    // undone by a single Ctrl+Z, leaving orphaned entities in the scene files/preview (#1460).
+    // The whole burst now lands in ONE transaction, committed together on the setTimeout(0)
+    // above, so the operation stays atomic. A burst is bounded by the size of one user
+    // operation; the initial scene-load burst is the only large one and it commits once too.
   }
 
   private async commitPendingTransaction(): Promise<void> {
