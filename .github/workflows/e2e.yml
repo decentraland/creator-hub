@@ -23,8 +23,11 @@ defaults:
 jobs:
   # Playwright + Chromium against the served bundle (no Electron). Kept separate
   # from the Electron suite so the two heavy suites get memory-isolated runners.
+  # ubuntu, not macos: nothing here is mac- or Electron-specific, and the Linux
+  # runner has 4 vCPU/16GB against macOS arm64's 3 vCPU/7GB at a tenth the
+  # billed minutes. Only e2e-creator-hub needs darwin, to package the .app.
   e2e-inspector:
-    runs-on: macos-latest
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
         with:
@@ -43,7 +46,7 @@ jobs:
 
       # chromium only: it is the sole engine the suite launches (test/e2e/setup.ts).
       - name: install Playwright browsers
-        run: npx playwright install chromium
+        run: npx playwright install --with-deps chromium
 
       # The UI Designer code-mode e2e needs the wasm parser that --production drops, so
       # e2e rebuilds a dev bundle (~74s) instead of reusing download-build's production
