@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 
-import { PropTypes } from './types';
+import type { PropTypes } from './types';
 
 import './Input.css';
 

@@ -1,7 +1,7 @@
+import type { Entity } from '@dcl/sdk/ecs';
 import {
   ColliderLayer,
   engine,
-  Entity,
   Physics,
   TriggerArea,
   triggerAreaEventsSystem,

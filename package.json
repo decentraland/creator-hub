@@ -32,7 +32,7 @@
   "scripts": {
     "format": "npx prettier --check \"**/*.{js,ts,tsx,json}\" --log-level=error --ignore-path .gitignore --ignore-path .prettierignore",
     "format:fix": "npx prettier --write \"**/*.{js,ts,tsx,json}\" --log-level=error --ignore-path .gitignore --ignore-path .prettierignore",
-    "lint": "eslint . --ext js,cjs,ts --ignore-path .gitignore",
+    "lint": "eslint . --ext js,cjs,ts,tsx --ignore-path .gitignore",
     "lint:fix": "npm run lint -- --fix",
     "syncpack:fix": "syncpack fix-mismatches --config .syncpackrc.json --source \"packages/*/package.json\" --source \"package.json\"",
     "syncpack:format": "syncpack format --config .syncpackrc.json --source \"packages/*/package.json\" --source \"package.json\"",

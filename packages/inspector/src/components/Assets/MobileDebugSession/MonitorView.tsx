@@ -1,6 +1,6 @@
 import React from 'react';
 import type { PerfSnapshot } from '../../../lib/logic/mobile-debug-store';
-import * as mobileDebugStore from '../../../lib/logic/mobile-debug-store';
+import type * as mobileDebugStore from '../../../lib/logic/mobile-debug-store';
 import MetricRow from './MetricRow';
 import FpsSparkline from './FpsSparkline';
 import { fmt } from './utils';

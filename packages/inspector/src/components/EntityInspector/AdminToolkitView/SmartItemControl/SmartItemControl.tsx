@@ -1,8 +1,9 @@
 import React, { useCallback, useEffect, useMemo } from 'react';
-import { Entity } from '@dcl/ecs';
-import { Action } from '@dcl/asset-packs';
 import { VscTrash as RemoveIcon } from 'react-icons/vsc';
-import { withSdk, WithSdkProps } from '../../../../hoc/withSdk';
+import type { Entity } from '@dcl/ecs';
+import type { Action } from '@dcl/asset-packs';
+import type { WithSdkProps } from '../../../../hoc/withSdk';
+import { withSdk } from '../../../../hoc/withSdk';
 import { getComponentValue, useComponentValue } from '../../../../hooks/sdk/useComponentValue';
 import { useEntitiesWith } from '../../../../hooks/sdk/useEntitiesWith';
 
@@ -10,7 +11,7 @@ import { TextField, Dropdown, EntityField } from '../../../ui';
 import { Button } from '../../../Button';
 import { AddButton } from '../../AddButton';
 import MoreOptionsMenu from '../../MoreOptionsMenu';
-import { Component } from '../../../../lib/sdk/components';
+import type { Component } from '../../../../lib/sdk/components';
 import { addSyncComponentsToEntities } from '../../../../lib/sdk/operations/entitySyncUtils';
 import { Block } from '../../../Block';
 

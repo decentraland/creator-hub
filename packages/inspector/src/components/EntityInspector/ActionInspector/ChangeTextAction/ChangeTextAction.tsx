@@ -1,10 +1,10 @@
 import React, { useCallback } from 'react';
-import { ActionPayload, ActionType } from '@dcl/asset-packs';
-import { Color4 } from '@dcl/ecs-math';
+import type { ActionPayload, ActionType } from '@dcl/asset-packs';
+import type { Color4 } from '@dcl/ecs-math';
 import { Block } from '../../../Block';
 import { ColorField, TextField } from '../../../ui';
 import { toHex, toColor4 } from '../../../ui/ColorField/utils';
-import { Props } from './types';
+import type { Props } from './types';
 
 const ChangeTextAction: React.FC<Props> = ({ value, onUpdate }) => {
   const handleChangeText = useCallback(
