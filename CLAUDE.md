@@ -213,7 +213,7 @@ Design specs live in Figma ("📗️ Design System | Creator Hub"). The Figma MC
 
 ## Skills
 
-Skills live in `.ai/skills/*/SKILL.md`. Read the relevant `SKILL.md` when a task matches a skill's domain. Third-party skills are different: each developer installs them into `.claude/skills/` (gitignored) with `npx skills add … -a claude-code`, and the committed `skills-lock.json` records which ones the repo expects. Install personal skills with `-g` so they stay out of the lock.
+Skills live in `.ai/skills/*/SKILL.md`. Read the relevant `SKILL.md` when a task matches a skill's domain. Third-party skills are pinned in the committed `skills-lock.json`; on a fresh clone run `make install-skills`. It runs `npx skills experimental_install`, which restores the lock only into `.agents/skills/` (a folder Claude Code does not read), then symlinks each skill into `.claude/skills/`. Both folders are gitignored. To add a skill, run `npx skills add <source> --skill <name…> -a claude-code` (names space-separated; a comma-joined `a,b` matches nothing) and commit the updated lock. Install personal skills with `-g` so they stay out of the lock.
 
 **Figma / design work:** on any Figma cue (a `figma.com` URL or the word "figma"), read [`.ai/skills/figma/SKILL.md`](.ai/skills/figma/SKILL.md) FIRST — the project umbrella for Figma→code work (leaf skills, the browser fallback when the Figma MCP is capped, palette→`vars.css`/`DESIGN.md` sync, live verification, SVG/CSS gotchas), which makes the "Design handoff" note above actionable. A `UserPromptSubmit` hook (`.ai/hooks/figma/hook.py`) fires the reminder automatically.
 

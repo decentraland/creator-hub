@@ -41,4 +41,5 @@ settings.local.json
 .claude/screenshots/
 
 # Third-party skills, installed per-developer and tracked in skills-lock.json
+.agents/skills/
 .claude/skills/

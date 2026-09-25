@@ -12,11 +12,7 @@ import sys
 TRIGGER = re.compile(r"\bfigma\b", re.IGNORECASE)
 
 LEAVES = ("figma-implement-design", "figma-create-design-system-rules")
-INSTALL = (
-    "npx skills add openai/skills --skill "
-    "figma-implement-design figma-create-design-system-rules "
-    "--full-depth --copy --yes -a claude-code"
-)
+INSTALL = "make install-skills"
 
 REMINDER = (
     "This message references Figma. Before any design/visual work, read "

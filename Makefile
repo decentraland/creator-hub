@@ -53,6 +53,14 @@ install-creator-hub:
 init-submodules:
 	git submodule update --init --recursive
 
+install-skills:
+	npx --yes skills experimental_install -y
+	mkdir -p .claude/skills
+	for s in .agents/skills/*/; do \
+		n=$$(basename $$s); \
+		[ -e .claude/skills/$$n ] || ln -sfn ../../.agents/skills/$$n .claude/skills/$$n; \
+	done
+
 get-protobuf-version:
 	@echo $(PROTOBUF_VERSION)
 

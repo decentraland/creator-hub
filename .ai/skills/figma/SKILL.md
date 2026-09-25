@@ -18,13 +18,7 @@ Delegate the mechanics to the OpenAI leaf skills (in `.claude/skills/`):
 - **figma-implement-design** — `get_design_context` → (`get_metadata` to drill if large) → `get_screenshot` → download assets → translate to this project's tokens/components → validate against the design.
 - **figma-create-design-system-rules** — generate/refresh design-system rules for this repo.
 
-They are third-party skills, installed per-developer into `.claude/skills/` and tracked in `skills-lock.json` (repo skills like this one live in `.ai/skills/`). If missing, install with:
-
-```
-npx skills add openai/skills --skill figma-implement-design figma-create-design-system-rules --full-depth --copy --yes -a claude-code
-```
-
-Space-separate the skill names: a comma-joined `--skill a,b` matches nothing. Keep `-a claude-code`: without it the CLI installs into every detected agent's `.<agent>/` dir, and `npx skills experimental_install` restores the lock only into `.agents/skills/`, which Claude Code does not read.
+They are third-party skills pinned in `skills-lock.json` (repo skills like this one live in `.ai/skills/`). If missing, run `make install-skills`, then `/reload-skills`.
 
 ## What the leaf skills do NOT cover — do these (repo-specific)
 
