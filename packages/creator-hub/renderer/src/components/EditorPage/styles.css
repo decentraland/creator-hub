@@ -67,7 +67,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: 10px;
 }
 
 /* the shared Button sheet adds margin-left between adjacent buttons/groups; the title bar spaces
@@ -87,11 +87,28 @@
 }
 
 .Editor .Header .actions .MuiButtonGroup-root {
-  height: 34px;
+  height: 32px;
 }
 
 .Editor .Header .actions .MuiButtonGroup-root .MuiButton-root {
-  height: 34px;
+  height: 32px;
+}
+
+/* every title-bar control shares an 8px radius; a group rounds only its outer corners (the
+   shared Button sheet squares the inner edges where the main button meets its dropdown) */
+.Editor .Header .actions .Button.MuiButton-root:not(.MuiButtonGroup-grouped) {
+  border-radius: 8px;
+}
+
+.Editor .Header .actions .Button.MuiButton-root.MuiButtonGroup-grouped:not(.extra-button) {
+  border-top-left-radius: 8px;
+  border-bottom-left-radius: 8px;
+  border-right: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.Editor .Header .actions .Button.extra-button {
+  border-top-right-radius: 8px;
+  border-bottom-right-radius: 8px;
 }
 
 .Editor .Header .actions .preview-control {
@@ -101,33 +118,72 @@
 /* AI Assistant toggle: the sparkle mark sits first in the toolbar. White when the chat is
    closed; the icon itself paints the brand gradient when open (via the `active` state). */
 .Editor .Header .actions .ai-toggle {
-  width: 34px;
-  height: 34px;
+  width: 32px;
+  height: 32px;
+  padding: 0;
   border-radius: 8px;
   color: var(--white);
 }
 
+/* flex-shrink:0 — the 32px button would otherwise squeeze the 24px mark */
+.Editor .Header .actions .ai-toggle svg {
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+}
+
 .Editor .Header .actions .ai-toggle:hover {
-  background-color: rgba(255, 255, 255, 0.08);
+  background-color: var(--title-bar-button);
 }
 
-.Editor .Header .actions .ai-toggle.active,
-.Editor .Header .actions .ai-toggle.active:hover {
-  background-color: var(--ai-selected);
+.Editor .Header .actions .ai-toggle.active {
+  background-color: var(--ai-session-selected);
 }
 
 .Editor .Header .actions .ai-toggle.active:hover {
-  background-color: var(--ai-selected-hover);
+  background-color: var(--ai-session-selected-hover);
+}
+
+/* Optimize / Code / Preview: the hover lays a 10% white overlay on the resting fill rather
+   than replacing it — over the black header a bare rgba(255,255,255,0.1) would read darker
+   than the idle state. A pseudo-element (not background-image) so it fades, and so the
+   grouped Preview buttons' own background rules can't cancel it. */
+.Editor .Header .actions .Button.MuiButton-colorSecondary {
+  background-color: var(--title-bar-button) !important;
+}
+
+.Editor .Header .actions .Button.MuiButton-colorSecondary::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background-color: rgba(255, 255, 255, 0.1);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s ease-in-out;
+}
+
+.Editor .Header .actions .Button.MuiButton-colorSecondary:hover::after {
+  opacity: 1;
+}
+
+.Editor .Header .actions .Button.MuiButton-colorPrimary:hover {
+  background-color: var(--dcl-hover) !important;
 }
 
 /* Title-bar design: Optimize / Code / Preview are square icon-only buttons whose label lives
    in the tooltip. The icon is the button's content (not a startIcon) so MUI adds no gap. */
 .Editor .Header .actions .Button.icon-only,
 .Editor .Header .actions .Button.extra-button {
-  width: 34px;
-  min-width: 34px !important;
-  height: 34px;
+  width: 32px;
+  min-width: 32px !important;
+  height: 32px;
   padding: 0 !important;
+}
+
+.Editor .Header .actions .preview-control .Button.icon-only {
+  width: 38px;
+  min-width: 38px !important;
 }
 
 .Editor .Header .actions .Button.icon-only svg {
@@ -153,8 +209,8 @@
   .actions
   .preview-control.optimizing
   .Button.MuiButton-root.MuiButtonGroup-grouped:not(.extra-button) {
-  border-top-right-radius: var(--mui-shape-borderRadius);
-  border-bottom-right-radius: var(--mui-shape-borderRadius);
+  border-top-right-radius: 8px;
+  border-bottom-right-radius: 8px;
   border-right: none;
 }
 

@@ -23,10 +23,13 @@
 
   --dcl: #ff2d55;
   --dcl-dark: #9c1c34;
+  --dcl-hover: #f70038;
+  --title-bar-button: #2d2a33;
   --ai-selected: #214272;
   --ai-selected-hover: #2e4a7a;
   --ai-menu-bg: #2f2d34;
   --ai-session-selected: #244b7d;
+  --ai-session-selected-hover: #243852;
   --ai-input-bg: #28252d;
   --ai-warning-bg: rgba(244, 130, 33, 0.16);
   --dcl-silver: #a09ba8;
