@@ -16,13 +16,17 @@ export function OptionBox({
   buttonText,
   onClickPublish,
   learnMoreUrl,
+  'data-testid': dataTestId,
 }: Props) {
   const handleClickLearnMore = useCallback(() => {
     if (learnMoreUrl) misc.openExternal(learnMoreUrl);
   }, []);
 
   return (
-    <div className="OptionBox">
+    <div
+      className="OptionBox"
+      data-testid={dataTestId}
+    >
       <img
         className="thumbnail"
         src={thumbnailSrc}

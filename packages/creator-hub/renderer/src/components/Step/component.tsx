@@ -7,7 +7,7 @@ import type { Step } from './types';
 
 import './styles.css';
 
-export function Step({ bulletText, name, description, state = 'idle' }: Step) {
+export function Step({ bulletText, name, description, state = 'idle', testId }: Step) {
   const bullet = useMemo(() => {
     if (state === 'complete') return <CheckIcon />;
     if (state === 'failed') return <CloseIcon />;
@@ -15,7 +15,11 @@ export function Step({ bulletText, name, description, state = 'idle' }: Step) {
   }, [state, bulletText]);
 
   return (
-    <div className={cx('Step', state)}>
+    <div
+      className={cx('Step', state)}
+      data-testid={testId}
+      data-state={state}
+    >
       <div className="bullet">{bullet}</div>
       <div className="body">
         <h4>{name}</h4>

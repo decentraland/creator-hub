@@ -78,9 +78,9 @@
     "copy-bin": "ts-node --project ./scripts/tsconfig.json ./scripts/copy-bin.ts",
     "start": "npm run copy-bin && npm run copy-bevy-engine && npm run copy-bevy-agent && node ./build.js --watch",
     "test": "npm run test:unit",
-    "test:e2e": "vitest run --config vitest.e2e.config.js",
+    "test:e2e": "playwright test",
     "test:unit": "vitest run",
-    "typecheck": "tsc -p tsconfig.check.json"
+    "typecheck": "tsc -p tsconfig.check.json && tsc --noEmit -p test/tsconfig.json"
   },
   "types": "dist/tooling-entrypoint.d.ts",
   "typings": "dist/tooling-entrypoint.d.ts"

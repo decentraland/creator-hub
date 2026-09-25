@@ -389,6 +389,14 @@
           "title": "您沒有任何可用的世界",
           "description": "<b>當您擁有一個NAME 時，您將獲得一個免費的世界</b>。你想要多少就可以有多少。",
           "action": "索取新名字"
+        },
+        "loading_names": {
+          "title": "正在查找您的世界..."
+        },
+        "names_error": {
+          "title": "无法加载您的世界",
+          "description": "连接 Decentraland 时出现问题。请检查您的连接并重试。",
+          "action": "重试"
         }
       },
       "land": {
