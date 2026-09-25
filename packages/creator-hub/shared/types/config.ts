@@ -36,7 +36,7 @@ export const DEFAULT_CONFIG: Config = {
     scenesPath: '', // Will be set with userDataPath + SCENES_DIRECTORY by main/preload
     dependencyUpdateStrategy: DEFAULT_DEPENDENCY_UPDATE_STRATEGY,
     previewOptions: {
-      debugger: false,
+      debugger: true,
       skipAuthScreen: true,
       enableLandscapeTerrains: true,
       openNewInstance: false,
@@ -79,5 +79,15 @@ export function promoteAiAssistantSetting(settings: Partial<AppSettings> | undef
   if (settings && !settings.aiAssistantPromoted) {
     settings.aiAssistant = true;
     settings.aiAssistantPromoted = true;
+  }
+}
+
+/** Enables the debug console once, in place, on merged settings not yet promoted — the
+ * toolbar's "Open Debug Console" checkbox was removed, so this is now the only way an
+ * existing install gets it turned on. */
+export function promoteDebugConsoleSetting(settings: Partial<AppSettings> | undefined): void {
+  if (settings && settings.previewOptions && !settings.debugConsolePromoted) {
+    settings.previewOptions.debugger = true;
+    settings.debugConsolePromoted = true;
   }
 }

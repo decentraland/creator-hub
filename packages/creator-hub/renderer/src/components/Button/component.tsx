@@ -1,11 +1,11 @@
-import { forwardRef, useCallback, useState } from 'react';
+import { forwardRef, useCallback, useImperativeHandle, useState } from 'react';
 import cx from 'classnames';
-import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import { Button as DclButton, ButtonGroup as DclButtonGroup, Tooltip } from 'decentraland-ui2';
 
+import { ChevronDownIcon } from '../Icons';
 import { Popper } from '../Popper';
 
-import type { ButtonProps, GroupProps } from './types';
+import type { ButtonGroupHandle, ButtonProps, GroupProps } from './types';
 
 import './styles.css';
 
@@ -36,7 +36,12 @@ function withTooltip(
   return title && !disabled ? <Tooltip title={title}>{button}</Tooltip> : button;
 }
 
-export function ButtonGroup({ extra, tooltip, extraTooltip, ...props }: GroupProps) {
+// forwardRef so a caller can close the "extra" popover imperatively (e.g. a one-shot action
+// inside it, like "Show QR Code for Mobile", that should dismiss the menu when it fires).
+export const ButtonGroup = forwardRef<ButtonGroupHandle, GroupProps>(function ButtonGroup(
+  { extra, tooltip, extraTooltip, popperOffset, ...props },
+  ref,
+) {
   const [open, setOpen] = useState(false);
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
   const handleToggle = useCallback((e: React.MouseEvent<HTMLElement>) => {
@@ -48,6 +53,8 @@ export function ButtonGroup({ extra, tooltip, extraTooltip, ...props }: GroupPro
     setOpen(false);
     setAnchorEl(null);
   }, []);
+
+  useImperativeHandle(ref, () => ({ close: handleClose }), [handleClose]);
 
   return (
     <>
@@ -63,7 +70,7 @@ export function ButtonGroup({ extra, tooltip, extraTooltip, ...props }: GroupPro
             disabled={props.disabled}
             onClick={handleToggle}
           >
-            <ArrowDropDownIcon />
+            <ChevronDownIcon />
           </Button>,
         )}
         {open && (
@@ -72,6 +79,11 @@ export function ButtonGroup({ extra, tooltip, extraTooltip, ...props }: GroupPro
             onClose={handleClose}
             anchorEl={anchorEl}
             placement="bottom-end"
+            modifiers={
+              popperOffset
+                ? [{ name: 'offset', options: { offset: [0, popperOffset] } }]
+                : undefined
+            }
           >
             {extra}
           </Popper>
@@ -79,4 +91,4 @@ export function ButtonGroup({ extra, tooltip, extraTooltip, ...props }: GroupPro
       </DclButtonGroup>
     </>
   );
-}
+});
