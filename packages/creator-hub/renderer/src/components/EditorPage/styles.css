@@ -274,6 +274,16 @@
   background-color: var(--bg-inspector);
 }
 
+/* Shown inside the reload cover when a reload never becomes ready (#1652): a recoverable
+   Retry + Back instead of an endless spinner. */
+.Editor .EditorBody .reload-overlay .reload-overlay-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 0 24px;
+}
+
 .Editor .inspector {
   flex: 1 1 auto;
   border: none;
