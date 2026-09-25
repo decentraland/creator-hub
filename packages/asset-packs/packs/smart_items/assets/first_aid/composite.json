@@ -12,6 +12,22 @@
       }
     },
     {
+      "name": "asset-packs::Script",
+      "data": {
+        "0": {
+          "json": {
+            "value": [
+              {
+                "path": "{assetPath}/FirstAid.ts",
+                "priority": 0,
+                "layout": "{\"params\":{\"healingPoints\":{\"type\":\"number\",\"value\":100,\"optional\":true,\"tooltip\":\"How much health to restore when used.\"},\"hoverText\":{\"type\":\"string\",\"value\":\"Heal\",\"optional\":true,\"tooltip\":\"Text shown when the player points at the kit.\"},\"removeOnUse\":{\"type\":\"boolean\",\"value\":true,\"optional\":true,\"tooltip\":\"Remove the kit after it's used.\"}},\"actions\":[{\"methodName\":\"heal\",\"description\":\"Heals the player and, if enabled, removes the kit.\",\"params\":{}}],\"events\":[\"healed\"]}"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
       "name": "asset-packs::Actions",
       "data": {
         "0": {
@@ -19,68 +35,11 @@
             "id": "{self}",
             "value": [
               {
-                "name": "Heal Player",
-                "type": "heal_player",
-                "jsonPayload": "{ \"multiplier\": 100 }",
-                "basicViewId": "action-heal-player"
-              },
-              {
-                "name": "Remove",
-                "type": "remove_entity",
-                "jsonPayload": "{ }",
-                "allowedInBasicView": true
-              },
-              {
                 "name": "Heal",
-                "type": "batch",
-                "jsonPayload": "{ \"actions\": [\"Heal Player\", \"Remove\"] }",
-                "allowedInBasicView": true
+                "type": "call_script_method",
+                "jsonPayload": "{\"scriptPath\":\"{assetPath}/FirstAid.ts\",\"methodName\":\"heal\",\"params\":{}}"
               }
             ]
-          }
-        }
-      }
-    },
-    {
-      "name": "asset-packs::Triggers",
-      "data": {
-        "0": {
-          "json": {
-            "value": [
-              {
-                "type": "on_input_action",
-                "actions": [
-                  {
-                    "id": "{self:asset-packs::Actions}",
-                    "name": "Heal"
-                  }
-                ],
-                "basicViewId": "trigger-when-clicked"
-              }
-            ]
-          }
-        }
-      }
-    },
-    {
-      "name": "inspector::Config",
-      "data": {
-        "0": {
-          "json": {
-            "isBasicViewEnabled": true,
-            "componentName": "First Aid",
-            "helpTooltip": {
-              "text": "Configure the healing points that players receive when they interact with this first aid item. Set the amount of health points to restore."
-            },
-            "fields": [
-              {
-                "name": "Healing Points",
-                "type": "asset-packs::Actions",
-                "basicViewId": "action-heal-player",
-                "layout": "{\"multiplier\": { \"field\": \"TextField\", \"type\": \"number\", \"label\": \"Healing Points Amount\" } }"
-              }
-            ],
-            "version": 1
           }
         }
       }

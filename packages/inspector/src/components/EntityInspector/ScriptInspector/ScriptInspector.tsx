@@ -22,6 +22,7 @@ import { AddButton } from '../AddButton';
 import MoreOptionsMenu from '../MoreOptionsMenu';
 import { Button } from '../../Button';
 import { ScriptParamField } from './ScriptParamField';
+import { resolveParamUpdate, type ParamUpdate } from './ScriptParamField/update';
 import { CreateScriptModal } from './CreateScriptModal';
 
 import { getScriptTemplateClass } from './templates';
@@ -361,33 +362,40 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
   );
 
   const handleUpdateDynamicField = useCallback(
-    (index: number, paramName: string, paramValue: ScriptParamUnion['value']) => {
-      const script = scripts[index];
-      const layout = parsedLayouts[index];
-      if (!layout) return;
-
-      // Preserve the rest of the layout (actions, events, error) — rebuilding it from
-      // `params` alone drops `events`, which is what drives the Reactions section, so
-      // editing any param (e.g. the Trigger Area's shape) would wipe the prompt fields
-      // for good (#1654).
-      const updatedLayout: ScriptLayout = {
-        ...layout,
-        params: {
-          ...layout.params,
-          [paramName]: { ...layout.params[paramName], value: paramValue } as ScriptParamUnion,
-        },
-      };
-
-      updateScript(index, { ...script, layout: JSON.stringify(updatedLayout) });
+    (index: number, paramName: string, update: ParamUpdate) => {
+      // Apply against the FRESHEST component value via a functional setState, so concurrent edits
+      // to sibling params (or nested container fields) compose instead of overwriting each other —
+      // debounced leaf edits can otherwise land with a stale render-closure value (data loss).
+      // Only `param.value` changes, so the rest of the layout (actions, events, error) is
+      // preserved — that's what drives the Reactions section (#1654).
+      setComponentValue(prev => {
+        const list = prev?.value ?? [];
+        const script = list[index];
+        if (!script) return prev;
+        let layout: ScriptLayout;
+        try {
+          layout = JSON.parse(script.layout || '{"params":{}}');
+        } catch {
+          return prev;
+        }
+        const param = layout.params?.[paramName];
+        if (!param) return prev;
+        param.value = resolveParamUpdate(update, param.value) as ScriptParamUnion['value'];
+        const newList = list.slice();
+        newList[index] = { ...script, layout: JSON.stringify(layout) };
+        return { value: newList };
+      });
 
       // A Trigger Area's editor placeholder is a static glb and can't react to the script at
       // edit time, so keep it in sync with the shape dropdown here: swap the Placeholder src
       // to the box or sphere model (both ship in the smart item, so both are in the scene).
-      if (paramName === 'shape' && TRIGGER_DETECTOR.test(script.path)) {
+      const script = scripts[index];
+      if (paramName === 'shape' && script && TRIGGER_DETECTOR.test(script.path)) {
+        const nextShape = resolveParamUpdate(update, parsedLayouts[index]?.params?.shape?.value);
         const { Placeholder } = sdk.components;
         const placeholder = Placeholder.getOrNull(entityId);
         if (placeholder) {
-          const file = paramValue === 'sphere' ? 'trigger-area-sphere.glb' : 'trigger-area.glb';
+          const file = nextShape === 'sphere' ? 'trigger-area-sphere.glb' : 'trigger-area.glb';
           sdk.operations.updateValue(Placeholder, entityId, {
             src: placeholder.src.replace(/[^/]+\.glb$/i, file),
           });
@@ -395,7 +403,7 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
         }
       }
     },
-    [sdk, entityId, scripts, parsedLayouts, updateScript],
+    [sdk, entityId, scripts, parsedLayouts, setComponentValue],
   );
 
   const renderScriptParams = useCallback(
@@ -416,7 +424,7 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
                 key={name}
                 name={name}
                 param={param}
-                onUpdate={value => handleUpdateDynamicField(index, name, value)}
+                onUpdate={update => handleUpdateDynamicField(index, name, update)}
               />
             ))}
           </div>
