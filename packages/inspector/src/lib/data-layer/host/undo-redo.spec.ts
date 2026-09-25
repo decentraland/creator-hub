@@ -27,6 +27,11 @@ describe('[UNDO] Inspector<->DataLayer<->Babylon', () => {
     return GltfContainer;
   }
   let cachedEntity: Entity;
+  // The undo provider reads an edit's previous value from the LAST DUMPED composite, and the
+  // composite provider skips dumps closer than its 100ms autosave interval. Letting that
+  // interval pass before each edit keeps every undo entry exact, so the edits below undo one
+  // at a time instead of collapsing into the neighbour's entry.
+  const settleAutosave = () => new Promise(resolve => setTimeout(resolve, 150));
 
   it('initialize dataLayer composite and send it to inspector', async () => {
     const { dataLayerEngine, tick } = context;
@@ -36,6 +41,7 @@ describe('[UNDO] Inspector<->DataLayer<->Babylon', () => {
 
   it('creates a new entity with a Transform component', async () => {
     const { inspectorEngine, dataLayerEngine, inspectorOperations, tick } = context;
+    await settleAutosave();
     const Transform = getTransform(inspectorEngine);
     const entity = (cachedEntity = inspectorEngine.addEntity());
     inspectorOperations.addComponent(entity, Transform.componentId);
@@ -49,27 +55,21 @@ describe('[UNDO] Inspector<->DataLayer<->Babylon', () => {
 
   it('modifies the Transform component', async () => {
     const { inspectorEngine, dataLayerEngine, inspectorOperations, tick } = context;
+    await settleAutosave();
     const Transform = getTransform(inspectorEngine);
     inspectorOperations.updateValue(Transform, cachedEntity, { position: { x: 9, y: 8, z: 8 } });
     await inspectorOperations.dispatch();
     await tick();
-    // Do NOT sleep here. The next test undoes this edit AND the creation above in
-    // ONE step, which only holds while both land inside the provider's 100ms
-    // deferred-grouping window (`startDeferredMode`). A sleep spends that window
-    // instead of helping — the assertions below read state that is already
-    // applied. NOTE this test is still wall-clock dependent even without it: the
-    // whole three-test sequence has to fit in those 100ms, so it flakes under a
-    // loaded test runner. Removing the sleep widens the margin; it does not fix
-    // the underlying race.
     expect(getTransform(dataLayerEngine).get(cachedEntity).position.x).toBe(9);
     expect(getTransform(inspectorEngine).get(cachedEntity).position.x).toBe(9);
   });
 
-  it('undo the transform update (8 -> 9)', async () => {
+  it('undo the transform update (9 -> 8)', async () => {
     const { inspectorEngine, dataLayer, tick } = context;
+    await settleAutosave();
     await dataLayer.undo({});
     await tick();
-    expect(getTransform(inspectorEngine).has(cachedEntity)).toBe(false);
+    expect(getTransform(inspectorEngine).get(cachedEntity).position.x).toBe(8);
   });
   it('undo the create transform operation, so the transform now will be deleted', async () => {
     const { inspectorEngine, dataLayer, tick } = context;
