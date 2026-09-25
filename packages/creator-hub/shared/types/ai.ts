@@ -65,11 +65,30 @@ export function isCliVersionOutdated(version: string | undefined, min: string): 
   return false;
 }
 
-// Pasted/attached images, as data URLs. Main writes them to temp files and hands the
-// CLI paths (claude reads them with its Read tool; codex takes -i).
-export interface AiImageAttachment {
+// A file the user attached to a prompt — an image, a 3D model, audio, or any other file.
+// How it reaches the CLI depends on where it came from:
+//   • Dropped/picked from disk → `path` (its real absolute path). Handed to the CLI as-is:
+//     no copy, no base64 round-trip, no size cap. Claude reads images with its Read tool and
+//     references models/audio/etc. by path when writing scene code; codex takes images via -i.
+//   • Pasted from the clipboard (no file on disk) → `dataUrl`. Main writes it to a temp file
+//     and hands over that path instead.
+// Exactly one of `path` / `dataUrl` is set. `kind` classifies it for the UI and for codex's
+// image-only -i flag; `mimeType` is best-effort (absent for some dropped files).
+export type AiAttachmentKind = 'image' | 'model' | 'audio' | 'file';
+
+export interface AiAttachment {
   name: string;
-  dataUrl: string;
+  kind: AiAttachmentKind;
+  mimeType?: string;
+  path?: string;
+  dataUrl?: string;
+}
+
+// The subset of an attachment kept on a persisted user message, for the transcript's chips —
+// just enough to label it. The bytes/paths themselves aren't stored in the transcript.
+export interface AiAttachmentMeta {
+  name: string;
+  kind: AiAttachmentKind;
 }
 
 // A single user turn to run. `text` is the prompt the user typed; `context` is editor
@@ -82,7 +101,7 @@ export interface AiSendParams {
   model?: string;
   text: string;
   context?: string;
-  images?: AiImageAttachment[];
+  attachments?: AiAttachment[];
   // When true, the assistant keeps the API key in its environment (bill via API key) instead
   // of stripping it to force subscription billing. From the `useApiKeyFromEnv` setting.
   apiKeyFromEnv?: boolean;
@@ -144,6 +163,8 @@ export interface AiMirrorMessage {
   error?: string;
   mutations?: number;
   reverted?: boolean;
+  // Files the user attached to this prompt (chips under the user bubble). Name + kind only.
+  attachments?: AiAttachmentMeta[];
 }
 
 export interface AiMirrorState {
@@ -164,7 +185,7 @@ export interface AiMirrorState {
 // A user action taken in the detached window, forwarded to the main window to run against
 // the single store. `sync` asks the main window to push the current state (on mount).
 export type AiRemoteCommand =
-  | { type: 'send'; text: string }
+  | { type: 'send'; text: string; attachments?: AiAttachment[] }
   | { type: 'stop' }
   | { type: 'newChat' }
   | { type: 'setProvider'; provider: AiProvider }

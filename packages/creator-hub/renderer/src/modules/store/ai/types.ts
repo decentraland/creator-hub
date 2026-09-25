@@ -1,4 +1,10 @@
-import type { AiPart, AiPromptData, AiProvider, AiProviderInfo } from '/shared/types/ai';
+import type {
+  AiAttachmentMeta,
+  AiPart,
+  AiPromptData,
+  AiProvider,
+  AiProviderInfo,
+} from '/shared/types/ai';
 
 // The message content model (parts + prompt) is shared with the detached-window mirror, so it
 // lives in shared/types/ai and is re-exported here for the store's own consumers.
@@ -18,6 +24,9 @@ export interface AiMessage {
   mutations?: number;
   // Set once the user reverts this turn's scene changes, so the button hides.
   reverted?: boolean;
+  // Files the user attached to this prompt (user messages only), shown as chips under the
+  // bubble. Name + kind only — the bytes/paths aren't kept in the transcript.
+  attachments?: AiAttachmentMeta[];
 }
 
 // One saved conversation for a scene, shown in the history picker. `title` is the first

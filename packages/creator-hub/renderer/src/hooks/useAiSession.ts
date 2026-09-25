@@ -92,7 +92,7 @@ export function useAiSession(
     const { cleanup } = aiPreload.onAiRemoteCommand(command => {
       switch (command.type) {
         case 'send':
-          dispatch(aiActions.send(command.text));
+          dispatch(aiActions.send({ text: command.text, attachments: command.attachments }));
           break;
         case 'stop':
           dispatch(aiActions.stop());

@@ -113,6 +113,11 @@
       "billing": "El Asistente IA consume tokens de tu cuenta conectada. Vigila el uso de tu cuenta.",
       "billing_dismiss": "Entendido",
       "screenshot_alt": "Captura de pantalla del asistente",
+      "attach": {
+        "button": "Adjuntar archivos",
+        "remove": "Quitar",
+        "drop_hint": "Suelta archivos para adjuntarlos"
+      },
       "history": {
         "title": "Historial de chats",
         "empty": "Aún no hay chats guardados.",

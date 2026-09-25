@@ -1,7 +1,7 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
 
 import { ai } from '#preload';
-import type { AiEvent, AiProvider } from '/shared/types/ai';
+import type { AiAttachment, AiAttachmentMeta, AiEvent, AiProvider } from '/shared/types/ai';
 
 import { createAsyncThunk } from '/@/modules/store/thunk';
 import {
@@ -54,9 +54,9 @@ export const fetchProviders = createAsyncThunk('ai/fetchProviders', () => ai.det
 // state; the assistant bubble is created when the `started` event arrives on the stream
 // (the panel subscribes to it). The turn streams asynchronously — this resolves as soon
 // as main has spawned the child.
-export const send = createAsyncThunk<void, string>(
+export const send = createAsyncThunk<void, { text: string; attachments?: AiAttachment[] }>(
   'ai/send',
-  async (text, { getState, dispatch }) => {
+  async ({ text, attachments }, { getState, dispatch }) => {
     const state = getState();
     const path = state.editor.project?.path;
     if (path === undefined || path === '')
@@ -64,7 +64,9 @@ export const send = createAsyncThunk<void, string>(
     const { provider, model, busy, selection } = state.ai;
     if (busy) return; // one turn at a time
     const trimmed = text.trim();
-    if (trimmed === '') return;
+    const files = attachments ?? [];
+    // Allow an attachments-only turn (a dropped file with no words), but never an empty one.
+    if (trimmed === '' && files.length === 0) return;
     // Every turn belongs to a session (its transcript + the CLI resume id are keyed by it).
     // One should already exist from loadConversation; create one defensively if not.
     let sessionId = state.ai.currentSessionId;
@@ -78,13 +80,22 @@ export const send = createAsyncThunk<void, string>(
         }),
       );
     }
-    dispatch(actions.pushUserMessage(trimmed));
+    const attachmentMeta: AiAttachmentMeta[] = files.map(f => ({ name: f.name, kind: f.kind }));
+    dispatch(actions.pushUserMessage({ text: trimmed, attachments: attachmentMeta }));
     dispatch(actions.setBusy(true)); // optimistic; the `started` event confirms
     // Attach the current editor selection as context so the assistant can resolve "this"
     // without the user spelling out ids. Not shown in the chat bubble (main prepends it).
     const context = selectionContext(selection);
     const apiKeyFromEnv = state.workspace.settings?.useApiKeyFromEnv ?? false;
-    await ai.send(path, { provider, model, text: trimmed, context, apiKeyFromEnv, sessionId });
+    await ai.send(path, {
+      provider,
+      model,
+      text: trimmed,
+      context,
+      attachments: files,
+      apiKeyFromEnv,
+      sessionId,
+    });
   },
 );
 
@@ -291,14 +302,21 @@ const slice = createSlice({
     setBillingDismissed: (state, { payload }: PayloadAction<boolean>) => {
       state.billingDismissed = payload;
     },
-    pushUserMessage: (state, { payload }: PayloadAction<string>) => {
+    pushUserMessage: (
+      state,
+      { payload }: PayloadAction<{ text: string; attachments?: AiAttachmentMeta[] }>,
+    ) => {
       const msg: AiMessage = {
         // A UUID (not a module-level counter) so ids can't collide with the persisted
         // transcript after an HMR reload resets module state but the store survives.
         id: `u-${crypto.randomUUID()}`,
         role: 'user',
-        parts: [{ kind: 'text', text: payload }],
+        parts: [{ kind: 'text', text: payload.text }],
         done: true,
+        attachments:
+          payload.attachments !== undefined && payload.attachments.length > 0
+            ? payload.attachments
+            : undefined,
       };
       state.messages.push(msg);
     },
