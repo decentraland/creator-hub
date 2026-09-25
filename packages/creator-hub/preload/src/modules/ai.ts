@@ -1,4 +1,4 @@
-import { ipcRenderer, type IpcRendererEvent } from 'electron';
+import { ipcRenderer, webUtils, type IpcRendererEvent } from 'electron';
 
 import {
   AI_ASK_REQUEST,
@@ -40,6 +40,18 @@ export type { AiCliLoginEvent, AiCliState };
 
 export async function detectProviders(): Promise<AiProviderInfo[]> {
   return invoke('ai.detectProviders');
+}
+
+// Resolve a dropped/picked File to its absolute path on disk. Electron 32+ removed File.path
+// and contextIsolation hides the path from the renderer, so the lookup must happen here in
+// preload via webUtils. Returns '' when the File has no backing path (e.g. a clipboard-pasted
+// image), so the caller can fall back to reading it as a data URL.
+export function getPathForFile(file: File): string {
+  try {
+    return webUtils.getPathForFile(file);
+  } catch {
+    return '';
+  }
 }
 
 // Start one turn. Its events stream over AI_STREAM_EVENT — subscribe with

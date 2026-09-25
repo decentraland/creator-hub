@@ -265,9 +265,82 @@ const ErrorRow = styled(Box)(({ theme }) => ({
   wordBreak: 'break-word',
 }));
 
-const Composer = styled(Box)(({ theme }) => ({
+const Composer = styled(Box, { shouldForwardProp: prop => prop !== 'dragging' })<{
+  dragging?: boolean;
+}>(({ theme, dragging }) => ({
+  position: 'relative',
   padding: theme.spacing(1.5),
   borderTop: `1px solid ${theme.palette.divider}`,
+  ...(dragging === true && {
+    outline: `2px dashed ${theme.palette.secondary.main}`,
+    outlineOffset: theme.spacing(-1),
+    borderRadius: theme.spacing(1),
+    backgroundColor: theme.palette.action.hover,
+  }),
+}));
+
+// A drop hint shown over the composer while a file is dragged over it.
+const DropHint = styled(Box)(({ theme }) => ({
+  position: 'absolute',
+  inset: 0,
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  gap: theme.spacing(1),
+  borderRadius: theme.spacing(1),
+  backgroundColor: 'var(--ai-input-bg)',
+  color: theme.palette.text.secondary,
+  fontSize: theme.typography.caption.fontSize,
+  pointerEvents: 'none',
+  zIndex: 1,
+}));
+
+// The row of attachment pills above the input (both the pending composer chips and the ones
+// shown under a sent user bubble). Wraps when several files are attached.
+const AttachmentBar = styled(Box)(({ theme }) => ({
+  display: 'flex',
+  flexWrap: 'wrap',
+  gap: theme.spacing(0.75),
+  marginBottom: theme.spacing(1),
+}));
+
+const AttachmentChip = styled(Box)(({ theme }) => ({
+  display: 'flex',
+  alignItems: 'center',
+  gap: theme.spacing(0.5),
+  maxWidth: theme.spacing(22),
+  padding: theme.spacing(0.5, 0.75),
+  borderRadius: theme.spacing(0.75),
+  backgroundColor: theme.palette.action.hover,
+  color: theme.palette.text.primary,
+  fontSize: theme.typography.pxToRem(11),
+  '& > svg': { flexShrink: 0, fontSize: theme.typography.pxToRem(15) },
+}));
+
+const AttachmentName = styled('span')({
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
+  whiteSpace: 'nowrap',
+});
+
+const AttachmentRemove = styled(IconButton)(({ theme }) => ({
+  flexShrink: 0,
+  padding: 0,
+  width: theme.spacing(2),
+  height: theme.spacing(2),
+  color: theme.palette.text.secondary,
+  '& svg': { fontSize: theme.typography.pxToRem(14) },
+  '&:hover': { color: theme.palette.text.primary },
+}));
+
+// The paperclip that opens the file picker, sitting inside the input at its left edge.
+const AttachButton = styled(IconButton)(({ theme }) => ({
+  flexShrink: 0,
+  width: theme.spacing(3.5),
+  height: theme.spacing(3.5),
+  color: theme.palette.text.secondary,
+  '&:hover': { color: theme.palette.text.primary },
+  '&.Mui-disabled': { color: theme.palette.action.disabled },
 }));
 
 const HistoryList = styled(Box)(({ theme }) => ({
@@ -522,11 +595,17 @@ export {
   AssistantBubble,
   AssistantImage,
   AssistantText,
+  AttachButton,
+  AttachmentBar,
+  AttachmentChip,
+  AttachmentName,
+  AttachmentRemove,
   BillingBody,
   BillingCard,
   BillingTitle,
   CommandLine,
   Composer,
+  DropHint,
   EmptyState,
   ErrorRow,
   HeaderActions,

@@ -20,7 +20,13 @@ import type { ChildProcess } from 'child_process';
 // handles the `.cmd` + quoting correctly and is a transparent drop-in for spawn on macOS/Linux.
 import crossSpawn from 'cross-spawn';
 import log from 'electron-log/main';
-import type { AiEvent, AiProvider, AiProviderInfo, AiSendParams } from '/shared/types/ai';
+import type {
+  AiAttachmentKind,
+  AiEvent,
+  AiProvider,
+  AiProviderInfo,
+  AiSendParams,
+} from '/shared/types/ai';
 import { DCL_SYSTEM_PROMPT } from './ai-prompt';
 import { CLI_SPECS, getManagedBinDir, isSignedIn as isManagedSignedIn } from './ai-cli-paths';
 import { getUserDataPath } from './electron';
@@ -308,12 +314,20 @@ export function childEnv(apiKeyFromEnv: boolean): NodeJS.ProcessEnv {
   return env;
 }
 
+// An attachment resolved to a concrete on-disk path (a file the user dropped/picked, or a
+// temp file main wrote from a pasted data URL) plus its kind, so a provider can treat images
+// differently from other files (codex's -i is image-only).
+interface ResolvedAttachment {
+  path: string;
+  kind: AiAttachmentKind;
+}
+
 interface TurnCtx {
   text: string;
   model?: string;
   projectDir: string;
   resume?: string;
-  images: string[]; // temp-file paths of attached images (already written to disk)
+  attachments: ResolvedAttachment[]; // on-disk paths of the user's attachments for this turn
   mcp?: SceneMcpInfo; // CH MCP server (scene + gateway tools); each provider wires it its own way
 }
 
@@ -537,10 +551,11 @@ export const PROVIDERS: Record<AiProvider, ProviderDef> = {
       // MCP config, not strict — their servers stay available too. bypassPermissions
       // auto-allows the tool calls.
       if (ctx.mcp !== undefined) args.push('--mcp-config', writeSceneMcpConfigFile(ctx.mcp));
-      // images travel as paths inside the prompt — claude's Read tool renders image
-      // files natively, no dedicated flag exists (or is needed). The user prompt rides on
-      // stdin (`claude -p` reads it there when no prompt arg is given), keeping it off argv
-      // for the same cmd.exe-length reason as the system prompt.
+      // attachments travel as paths inside the prompt (aiSend listed them) — claude's Read
+      // tool renders image files natively and reads any other file by path, so no dedicated
+      // flag exists (or is needed). The user prompt rides on stdin (`claude -p` reads it there
+      // when no prompt arg is given), keeping it off argv for the same cmd.exe-length reason as
+      // the system prompt.
       return { args, stdin: ctx.text };
     },
     parseLine: (line, projectDir, emit) => {
@@ -627,7 +642,9 @@ export const PROVIDERS: Record<AiProvider, ProviderDef> = {
         args.push('-c', `mcp_servers.creator-hub.bearer_token_env_var="${MCP_TOKEN_ENV}"`);
       }
       if (ctx.model !== undefined && ctx.model !== 'default') args.push('--model', ctx.model);
-      for (const img of ctx.images) args.push('-i', img); // codex's native image flag
+      // codex's native image flag is image-only; models/audio/other files ride as paths in the
+      // prompt text (aiSend already listed every attachment there, so codex reads them by path).
+      for (const a of ctx.attachments) if (a.kind === 'image') args.push('-i', a.path);
       // `codex exec` has no system-prompt flag, so the rules ride in front of the prompt on
       // every turn, matching claude's --append-system-prompt. The whole thing goes on STDIN
       // (the `-` prompt token tells `codex exec` / `exec resume <id>` to read instructions
@@ -979,11 +996,11 @@ export function aiDeleteSession(projectDir: string, sessionId: string): void {
   }
 }
 
-// Attached images, written to one temp dir per turn. Kept for the whole app session
-// (not deleted when the turn ends): with --resume the conversation can come back to an
-// image several turns later, and the CLI re-reads it from the same path.
-const MAX_IMAGES = 4;
-const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
+// How many attachments a single turn may carry, and the byte ceiling for a pasted (data-URL)
+// one — pasted images are decoded into memory and written to disk here, so they're bounded.
+// Dropped/picked files come in as a path and aren't read or copied, so no byte cap applies.
+const MAX_ATTACHMENTS = 8;
+const MAX_DATA_URL_BYTES = 8 * 1024 * 1024;
 const IMG_EXT: Record<string, string> = {
   'image/png': '.png',
   'image/jpeg': '.jpg',
@@ -1116,18 +1133,41 @@ function ensureCursorMcpGitignored(projectDir: string): void {
   );
 }
 
-function writeAttachments(images: AiSendParams['images']): string[] {
-  if (images === undefined || images.length === 0) return [];
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'creator-hub-ai-'));
-  const out: string[] = [];
-  for (const [i, img] of images.slice(0, MAX_IMAGES).entries()) {
-    const m = /^data:(image\/[\w.+-]+);base64,(.+)$/.exec(img.dataUrl);
+// A filesystem-safe basename for a data-URL attachment (no dir, no odd chars), keeping the
+// original name's extension when it looks sane so the CLI's Read tool infers the type.
+function safeBaseName(name: string, fallbackExt: string): string {
+  const base = path.basename(name).replace(/[^\w.-]+/g, '_');
+  return base !== '' && /\.[\w]+$/.test(base) ? base : `attachment${fallbackExt}`;
+}
+
+// Resolve each user attachment to a concrete on-disk path for this turn:
+//   • `path` set → the user's own file, used in place (existence-checked, never copied).
+//   • `dataUrl` set → a pasted/in-memory blob, decoded and written to a per-turn temp dir.
+// The temp dir is kept for the whole app session (not deleted on turn end): with --resume the
+// conversation can come back to an attachment several turns later and the CLI re-reads its path.
+function resolveAttachments(attachments: AiSendParams['attachments']): ResolvedAttachment[] {
+  if (attachments === undefined || attachments.length === 0) return [];
+  const out: ResolvedAttachment[] = [];
+  let tempDir: string | null = null;
+  for (const [i, att] of attachments.slice(0, MAX_ATTACHMENTS).entries()) {
+    if (att.path !== undefined && att.path !== '') {
+      try {
+        if (fs.statSync(att.path).isFile()) out.push({ path: att.path, kind: att.kind });
+      } catch {
+        /* the file moved or is unreadable — skip it rather than fail the turn */
+      }
+      continue;
+    }
+    if (att.dataUrl === undefined) continue;
+    const m = /^data:([\w.+-]+\/[\w.+-]+);base64,(.+)$/.exec(att.dataUrl);
     if (m === null) continue;
     const buf = Buffer.from(m[2], 'base64');
-    if (buf.length === 0 || buf.length > MAX_IMAGE_BYTES) continue;
-    const p = path.join(dir, `image-${i + 1}${IMG_EXT[m[1]] ?? '.png'}`);
+    if (buf.length === 0 || buf.length > MAX_DATA_URL_BYTES) continue;
+    if (tempDir === null) tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'creator-hub-ai-'));
+    const ext = IMG_EXT[m[1]] ?? path.extname(att.name) ?? '';
+    const p = path.join(tempDir, `attachment-${i + 1}-${safeBaseName(att.name, ext)}`);
     fs.writeFileSync(p, buf);
-    out.push(p);
+    out.push({ path: p, kind: att.kind });
   }
   return out;
 }
@@ -1177,11 +1217,13 @@ export async function aiSend(
     params.context !== undefined && params.context !== ''
       ? `${params.context}\n\n---\n\n${params.text}`
       : params.text;
-  const images = writeAttachments(params.images);
-  if (images.length > 0) {
-    prompt += `\n\n[The user attached ${
-      images.length === 1 ? 'an image' : `${images.length} images`
-    } to this message — view ${images.length === 1 ? 'it' : 'them'} before answering:\n${images.join('\n')}]`;
+  const attachments = resolveAttachments(params.attachments);
+  if (attachments.length > 0) {
+    const n = attachments.length;
+    const lines = attachments.map(a => `- ${a.path} (${a.kind})`).join('\n');
+    prompt += `\n\n[The user attached ${n === 1 ? 'a file' : `${n} files`} to this message. Inspect ${
+      n === 1 ? 'it' : 'them'
+    } as needed before answering — you can view images directly with your Read tool, and reference any file by its path when building or editing the scene:\n${lines}]`;
   }
   // Resume the CLI thread saved for THIS session (empty id = a default single bucket).
   const sessionId = params.sessionId ?? '';
@@ -1190,7 +1232,7 @@ export async function aiSend(
     model: params.model,
     projectDir,
     resume: getSessions()[projectDir]?.[sessionId]?.[params.provider],
-    images,
+    attachments,
     mcp,
   };
   // On-disk setup for a file-configured CLI (Cursor writes its rules into the project). Best-

@@ -113,6 +113,11 @@
       "billing": "使用 AI 助手会消耗你所连接账户的额度。请留意你的账户用量。",
       "billing_dismiss": "知道了",
       "screenshot_alt": "助手的截图",
+      "attach": {
+        "button": "添加文件",
+        "remove": "移除",
+        "drop_hint": "拖放文件以添加"
+      },
       "history": {
         "title": "聊天记录",
         "empty": "还没有已保存的聊天。",

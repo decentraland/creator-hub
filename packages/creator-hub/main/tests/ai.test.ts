@@ -348,7 +348,7 @@ describe('cursor parseLine', () => {
 });
 
 describe('cursor buildArgs', () => {
-  const base = { text: 'hi', projectDir: PROJECT, images: [] as string[] };
+  const base = { text: 'hi', projectDir: PROJECT, attachments: [] };
 
   it('runs print + stream-json + force, with the prompt as the trailing positional', () => {
     const { args, stdin } = PROVIDERS.cursor.buildArgs({ ...base });
@@ -452,7 +452,7 @@ describe('gemini parseLine', () => {
 });
 
 describe('gemini buildArgs', () => {
-  const base = { text: 'hi', projectDir: PROJECT, images: [] as string[] };
+  const base = { text: 'hi', projectDir: PROJECT, attachments: [] };
 
   it('runs stream-json with full-access + workspace-trust flags', () => {
     const { args } = PROVIDERS.gemini.buildArgs({ ...base });
@@ -496,7 +496,7 @@ describe('gemini MCP config (prepareTurn writes .gemini/settings.json)', () => {
   }
 
   it('wires the CH server as an httpUrl server with an env-ref token (secret not in the file)', () => {
-    PROVIDERS.gemini.prepareTurn?.({ text: 'hi', projectDir: dir, images: [], mcp: MCP });
+    PROVIDERS.gemini.prepareTurn?.({ text: 'hi', projectDir: dir, attachments: [], mcp: MCP });
     const raw = fs.readFileSync(path.join(dir, '.gemini', 'settings.json'), 'utf8');
     const s = settings();
     expect(s.mcpServers['creator-hub'].httpUrl).toBe(MCP.url);
@@ -511,7 +511,7 @@ describe('gemini MCP config (prepareTurn writes .gemini/settings.json)', () => {
       path.join(dir, '.gemini', 'settings.json'),
       JSON.stringify({ theme: 'dark', mcpServers: { mine: { httpUrl: 'http://x/mcp' } } }),
     );
-    PROVIDERS.gemini.prepareTurn?.({ text: 'hi', projectDir: dir, images: [], mcp: MCP });
+    PROVIDERS.gemini.prepareTurn?.({ text: 'hi', projectDir: dir, attachments: [], mcp: MCP });
     const s = settings();
     expect(s.theme).toBe('dark'); // unrelated key preserved
     expect(s.mcpServers.mine.httpUrl).toBe('http://x/mcp'); // user's server preserved
@@ -519,7 +519,7 @@ describe('gemini MCP config (prepareTurn writes .gemini/settings.json)', () => {
   });
 
   it('does nothing when the MCP server is unavailable', () => {
-    PROVIDERS.gemini.prepareTurn?.({ text: 'hi', projectDir: dir, images: [] });
+    PROVIDERS.gemini.prepareTurn?.({ text: 'hi', projectDir: dir, attachments: [] });
     expect(fs.existsSync(path.join(dir, '.gemini', 'settings.json'))).toBe(false);
   });
 });
@@ -539,7 +539,7 @@ describe('cursor MCP config (prepareTurn writes .cursor/mcp.json)', () => {
   const config = () => JSON.parse(fs.readFileSync(mcpFile(), 'utf8'));
 
   it('wires the CH server as a url server with the bearer token in the file', () => {
-    PROVIDERS.cursor.prepareTurn?.({ text: 'hi', projectDir: dir, images: [], mcp: MCP });
+    PROVIDERS.cursor.prepareTurn?.({ text: 'hi', projectDir: dir, attachments: [], mcp: MCP });
     const s = config();
     expect(s.mcpServers['creator-hub'].url).toBe(MCP.url);
     // Cursor has no token indirection, so the token is literally in the file (unlike codex/gemini).
@@ -547,7 +547,7 @@ describe('cursor MCP config (prepareTurn writes .cursor/mcp.json)', () => {
   });
 
   it('writes the token file 0600 and gitignores it so it cannot be committed', () => {
-    PROVIDERS.cursor.prepareTurn?.({ text: 'hi', projectDir: dir, images: [], mcp: MCP });
+    PROVIDERS.cursor.prepareTurn?.({ text: 'hi', projectDir: dir, attachments: [], mcp: MCP });
     expect(fs.statSync(mcpFile()).mode & 0o777).toBe(0o600);
     expect(fs.readFileSync(path.join(dir, '.gitignore'), 'utf8')).toContain('.cursor/mcp.json');
   });
@@ -555,15 +555,15 @@ describe('cursor MCP config (prepareTurn writes .cursor/mcp.json)', () => {
   it('merges into an existing mcp.json without clobbering the user’s servers', () => {
     fs.mkdirSync(path.join(dir, '.cursor'), { recursive: true });
     fs.writeFileSync(mcpFile(), JSON.stringify({ mcpServers: { mine: { command: 'x' } } }));
-    PROVIDERS.cursor.prepareTurn?.({ text: 'hi', projectDir: dir, images: [], mcp: MCP });
+    PROVIDERS.cursor.prepareTurn?.({ text: 'hi', projectDir: dir, attachments: [], mcp: MCP });
     const s = config();
     expect(s.mcpServers.mine.command).toBe('x'); // user's server preserved
     expect(s.mcpServers['creator-hub'].url).toBe(MCP.url); // ours added
   });
 
   it('does not duplicate the gitignore entry across turns', () => {
-    PROVIDERS.cursor.prepareTurn?.({ text: 'hi', projectDir: dir, images: [], mcp: MCP });
-    PROVIDERS.cursor.prepareTurn?.({ text: 'hi', projectDir: dir, images: [], mcp: MCP });
+    PROVIDERS.cursor.prepareTurn?.({ text: 'hi', projectDir: dir, attachments: [], mcp: MCP });
+    PROVIDERS.cursor.prepareTurn?.({ text: 'hi', projectDir: dir, attachments: [], mcp: MCP });
     const lines = fs
       .readFileSync(path.join(dir, '.gitignore'), 'utf8')
       .split(/\r?\n/)
@@ -572,7 +572,7 @@ describe('cursor MCP config (prepareTurn writes .cursor/mcp.json)', () => {
   });
 
   it('still writes the rules file but no mcp.json when the server is unavailable', () => {
-    PROVIDERS.cursor.prepareTurn?.({ text: 'hi', projectDir: dir, images: [] });
+    PROVIDERS.cursor.prepareTurn?.({ text: 'hi', projectDir: dir, attachments: [] });
     expect(fs.existsSync(path.join(dir, '.cursor', 'rules', 'creator-hub.mdc'))).toBe(true);
     expect(fs.existsSync(mcpFile())).toBe(false);
   });
@@ -646,7 +646,7 @@ describe('filterEnvForChild', () => {
 // Both providers must receive the CH MCP server (scene + Explorer-gateway tools) — the
 // point of Codex parity — each in its own format, and never leak the token via argv.
 describe('codex buildArgs working dir', () => {
-  const base = { text: 'hi', projectDir: PROJECT, images: [] as string[] };
+  const base = { text: 'hi', projectDir: PROJECT, attachments: [] };
 
   // Regression: `codex exec resume` doesn't define `-C`, so passing it failed every follow-up
   // turn with `unexpected argument '-C' found`. The child spawns with cwd=projectDir, so -C is
@@ -666,11 +666,28 @@ describe('codex buildArgs working dir', () => {
     expect(args[0]).toBe('exec');
     expect(args).not.toContain('resume');
   });
+
+  // codex's -i flag is image-only; models/audio/other files reach it as paths in the prompt text
+  // (aiSend lists them there), so they must NOT be passed via -i.
+  it('passes only image attachments via -i', () => {
+    const { args } = PROVIDERS.codex.buildArgs({
+      ...base,
+      attachments: [
+        { path: '/tmp/a.png', kind: 'image' as const },
+        { path: '/tmp/b.glb', kind: 'model' as const },
+        { path: '/tmp/c.mp3', kind: 'audio' as const },
+      ],
+    });
+    const imgArgs = args.filter((a, i) => args[i - 1] === '-i');
+    expect(imgArgs).toEqual(['/tmp/a.png']);
+    expect(args).not.toContain('/tmp/b.glb');
+    expect(args).not.toContain('/tmp/c.mp3');
+  });
 });
 
 describe('buildArgs MCP wiring', () => {
   const MCP = { url: 'http://127.0.0.1:65000/mcp', token: 'secret-token-xyz' };
-  const base = { text: 'hi', projectDir: PROJECT, images: [] as string[] };
+  const base = { text: 'hi', projectDir: PROJECT, attachments: [] };
 
   it('claude: passes --mcp-config a file path (token rides in the file, not argv)', () => {
     const { args } = PROVIDERS.claude.buildArgs({ ...base, mcp: MCP });
@@ -702,7 +719,7 @@ describe('buildArgs MCP wiring', () => {
   // via the whole thing on stdin — so argv stays short regardless of prompt size.
   describe('keeps the system prompt off argv (Windows cmd.exe 8191-char cap)', () => {
     const TOKEN = 'ZZ_USER_PROMPT_ZZ';
-    const big = { text: TOKEN, projectDir: PROJECT, images: [] as string[] };
+    const big = { text: TOKEN, projectDir: PROJECT, attachments: [] };
 
     it('claude: prompt on stdin, system prompt via --append-system-prompt-file, none inline', () => {
       const { args, stdin } = PROVIDERS.claude.buildArgs({ ...big });

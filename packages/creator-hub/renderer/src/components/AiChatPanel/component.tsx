@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
 
-import type { AiProvider } from '/shared/types/ai';
+import type { AiAttachment, AiProvider } from '/shared/types/ai';
 
 import { useDispatch, useSelector } from '#store';
 import { actions as aiActions } from '/@/modules/store/ai';
@@ -36,7 +36,10 @@ export function AiChatPanel({ onClose, onPopOut, onClearSelection, width }: Prop
     draftPrompt,
   } = useSelector(state => state.ai);
 
-  const onSend = useCallback((text: string) => dispatch(aiActions.send(text)), [dispatch]);
+  const onSend = useCallback(
+    (text: string, attachments?: AiAttachment[]) => dispatch(aiActions.send({ text, attachments })),
+    [dispatch],
+  );
   const onStop = useCallback(() => dispatch(aiActions.stop()), [dispatch]);
   const onNewChat = useCallback(() => dispatch(aiActions.newChat()), [dispatch]);
   const onProviderChange = useCallback(

@@ -114,6 +114,11 @@
       "billing_dismiss": "Got It",
       "outdated": "Your Claude CLI (v{version}) is out of date — run \"claude update\" in a terminal to use the latest models.",
       "screenshot_alt": "Screenshot from the assistant",
+      "attach": {
+        "button": "Attach files",
+        "remove": "Remove",
+        "drop_hint": "Drop files to attach"
+      },
       "history": {
         "title": "Chat history",
         "empty": "No saved chats yet.",

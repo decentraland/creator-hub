@@ -1,6 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import StopIcon from '@mui/icons-material/Stop';
 import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
+import AttachFileIcon from '@mui/icons-material/AttachFile';
+import ImageOutlinedIcon from '@mui/icons-material/ImageOutlined';
+import ViewInArOutlinedIcon from '@mui/icons-material/ViewInArOutlined';
+import AudiotrackIcon from '@mui/icons-material/Audiotrack';
+import InsertDriveFileOutlinedIcon from '@mui/icons-material/InsertDriveFileOutlined';
 import AddCommentOutlinedIcon from '@mui/icons-material/AddCommentOutlined';
 import CheckIcon from '@mui/icons-material/Check';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
@@ -26,7 +31,7 @@ import {
   Tooltip,
 } from 'decentraland-ui2';
 
-import type { AiProvider } from '/shared/types/ai';
+import type { AiAttachment, AiAttachmentKind, AiProvider } from '/shared/types/ai';
 import { AI_CLI_COMMANDS, MIN_CLAUDE_CLI_VERSION, isCliVersionOutdated } from '/shared/types/ai';
 
 import { ai as aiPreload } from '#preload';
@@ -40,11 +45,17 @@ import {
   AssistantBubble,
   AssistantImage,
   AssistantText,
+  AttachButton,
+  AttachmentBar,
+  AttachmentChip,
+  AttachmentName,
+  AttachmentRemove,
   BillingBody,
   BillingCard,
   BillingTitle,
   CommandLine,
   Composer,
+  DropHint,
   ErrorRow,
   HeaderActions,
   HeaderTitle,
@@ -127,6 +138,60 @@ function formatWhen(ts: number): string {
 // re-sending the last prompt on retry.
 function messageText(msg: AiMessage): string {
   return msg.parts.map(p => (p.kind === 'text' ? p.text : '')).join('');
+}
+
+// Cap on how many files a single prompt carries (mirrors MAX_ATTACHMENTS in main/modules/ai.ts).
+const MAX_ATTACHMENTS = 8;
+
+const IMAGE_EXTS = ['png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp', 'svg', 'avif'];
+const MODEL_EXTS = ['glb', 'gltf'];
+const AUDIO_EXTS = ['mp3', 'wav', 'ogg', 'm4a', 'flac'];
+
+// Classify a file for its chip icon and codex's image-only -i flag. Prefers the MIME type the OS
+// reported, falling back to the extension (dropped files often arrive with an empty MIME type).
+function classifyAttachment(name: string, mimeType: string): AiAttachmentKind {
+  const ext = name.split('.').pop()?.toLowerCase() ?? '';
+  if (mimeType.startsWith('image/') || IMAGE_EXTS.includes(ext)) return 'image';
+  if (mimeType.startsWith('model/') || MODEL_EXTS.includes(ext)) return 'model';
+  if (mimeType.startsWith('audio/') || AUDIO_EXTS.includes(ext)) return 'audio';
+  return 'file';
+}
+
+// Turn a dropped/picked/pasted File into an attachment. A file on disk (drop or picker) resolves
+// to its real path via preload — Electron hides File.path from the renderer, so main hands the
+// CLI that path directly (no copy, no size limit). A pasted blob has no path, so read its bytes
+// into a data URL and let main temp-file it.
+async function fileToAttachment(file: File): Promise<AiAttachment | null> {
+  const kind = classifyAttachment(file.name, file.type);
+  const mimeType = file.type !== '' ? file.type : undefined;
+  const name = file.name !== '' ? file.name : 'attachment';
+  const diskPath = aiPreload.getPathForFile(file);
+  if (diskPath !== '') return { name, kind, mimeType, path: diskPath };
+  const dataUrl = await new Promise<string | null>(resolve => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(typeof reader.result === 'string' ? reader.result : null);
+    reader.onerror = () => resolve(null);
+    reader.readAsDataURL(file);
+  });
+  return dataUrl === null ? null : { name, kind, mimeType, dataUrl };
+}
+
+// Whether a drag carries files (not a text/selection drag within the composer).
+function isFileDrag(e: React.DragEvent): boolean {
+  return Array.from(e.dataTransfer.types).includes('Files');
+}
+
+function AttachmentIcon({ kind }: { kind: AiAttachmentKind }) {
+  switch (kind) {
+    case 'image':
+      return <ImageOutlinedIcon />;
+    case 'model':
+      return <ViewInArOutlinedIcon />;
+    case 'audio':
+      return <AudiotrackIcon />;
+    default:
+      return <InsertDriveFileOutlinedIcon />;
+  }
 }
 
 // An interactive `ask_user` prompt rendered inline in the transcript. Single-select answers on
@@ -266,7 +331,7 @@ export interface ChatViewProps {
   // True when rendered as the detached window: fills the window and shows a "dock" affordance
   // instead of "pop out".
   detached?: boolean;
-  onSend: (text: string) => void;
+  onSend: (text: string, attachments?: AiAttachment[]) => void;
   onStop: () => void;
   onNewChat: () => void;
   onProviderChange: (provider: AiProvider) => void;
@@ -323,8 +388,11 @@ export function ChatView(props: ChatViewProps) {
   } = props;
 
   const [input, setInput] = useState('');
+  const [attachments, setAttachments] = useState<AiAttachment[]>([]);
+  const [dragging, setDragging] = useState(false);
   const transcriptRef = useRef<HTMLDivElement>(null);
   const composerRef = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Seed the composer from an inspector-supplied prompt (Trigger Area). Replaces the current
   // draft and focuses so the user can finish typing; consumes it so it fires once per click.
@@ -423,11 +491,29 @@ export function ChatView(props: ChatViewProps) {
     });
   }, [mcpConfigSnippet]);
 
+  // Resolve dropped/picked/pasted files to attachments and append them, keeping within the cap.
+  const addFiles = useCallback(async (files: FileList | File[]) => {
+    const list = Array.from(files);
+    if (list.length === 0) return;
+    const resolved = (await Promise.all(list.map(fileToAttachment))).filter(
+      (a): a is AiAttachment => a !== null,
+    );
+    if (resolved.length === 0) return;
+    setAttachments(prev => [...prev, ...resolved].slice(0, MAX_ATTACHMENTS));
+  }, []);
+
+  const removeAttachment = useCallback((index: number) => {
+    setAttachments(prev => prev.filter((_, i) => i !== index));
+  }, []);
+
   const handleSend = useCallback(() => {
-    if (busy || input.trim() === '') return;
-    onSend(input.trim());
+    if (busy) return;
+    const text = input.trim();
+    if (text === '' && attachments.length === 0) return;
+    onSend(text, attachments.length > 0 ? attachments : undefined);
     setInput('');
-  }, [busy, input, onSend]);
+    setAttachments([]);
+  }, [busy, input, attachments, onSend]);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
@@ -437,6 +523,53 @@ export function ChatView(props: ChatViewProps) {
       }
     },
     [handleSend],
+  );
+
+  const handleDragOver = useCallback(
+    (e: React.DragEvent) => {
+      if (!isFileDrag(e)) return;
+      // Always swallow the default: an unprevented file drop makes the window try to open the
+      // file (will-navigate then blocks it, but the flash is ugly). Only signal/accept when the
+      // provider is available.
+      e.preventDefault();
+      e.dataTransfer.dropEffect = available ? 'copy' : 'none';
+      if (available) setDragging(true);
+    },
+    [available],
+  );
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    // Ignore leaves into a child element — only clear when the pointer exits the composer.
+    if (e.currentTarget.contains(e.relatedTarget as Node | null)) return;
+    setDragging(false);
+  }, []);
+
+  const handleDrop = useCallback(
+    (e: React.DragEvent) => {
+      if (!isFileDrag(e)) return;
+      e.preventDefault();
+      setDragging(false);
+      if (available && e.dataTransfer.files.length > 0) void addFiles(e.dataTransfer.files);
+    },
+    [available, addFiles],
+  );
+
+  // Pasting an image from the clipboard attaches it (it has no disk path, so it rides as a data URL).
+  const handlePaste = useCallback(
+    (e: React.ClipboardEvent) => {
+      if (!available || e.clipboardData.files.length === 0) return;
+      e.preventDefault();
+      void addFiles(e.clipboardData.files);
+    },
+    [available, addFiles],
+  );
+
+  const handleFilePick = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      if (e.target.files !== null) void addFiles(e.target.files);
+      e.target.value = ''; // reset so the same file can be picked again
+    },
+    [addFiles],
   );
 
   const handleProviderChange = useCallback(
@@ -536,7 +669,19 @@ export function ChatView(props: ChatViewProps) {
     const lastId = messages[messages.length - 1]?.id;
     const transcript = messages.map(msg =>
       msg.role === 'user' ? (
-        <UserBubble key={msg.id}>{messageText(msg)}</UserBubble>
+        <UserBubble key={msg.id}>
+          {messageText(msg)}
+          {msg.attachments !== undefined && msg.attachments.length > 0 && (
+            <AttachmentBar sx={{ mt: messageText(msg) !== '' ? 0.75 : 0, mb: 0 }}>
+              {msg.attachments.map((att, i) => (
+                <AttachmentChip key={`${att.name}-${i}`}>
+                  <AttachmentIcon kind={att.kind} />
+                  <AttachmentName title={att.name}>{att.name}</AttachmentName>
+                </AttachmentChip>
+              ))}
+            </AttachmentBar>
+          )}
+        </UserBubble>
       ) : (
         <AssistantBubble key={msg.id}>
           {msg.parts.map((part, i) => {
@@ -876,7 +1021,43 @@ export function ChatView(props: ChatViewProps) {
           </SelectionBar>
         )}
 
-        <Composer>
+        <Composer
+          dragging={dragging}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+        >
+          {dragging && (
+            <DropHint>
+              <AttachFileIcon fontSize="small" />
+              {t('editor.ai.attach.drop_hint')}
+            </DropHint>
+          )}
+          {attachments.length > 0 && (
+            <AttachmentBar>
+              {attachments.map((att, i) => (
+                <AttachmentChip key={`${att.name}-${i}`}>
+                  <AttachmentIcon kind={att.kind} />
+                  <AttachmentName title={att.name}>{att.name}</AttachmentName>
+                  <Tooltip title={t('editor.ai.attach.remove')}>
+                    <AttachmentRemove
+                      aria-label={t('editor.ai.attach.remove')}
+                      onClick={() => removeAttachment(i)}
+                    >
+                      <CloseIcon />
+                    </AttachmentRemove>
+                  </Tooltip>
+                </AttachmentChip>
+              ))}
+            </AttachmentBar>
+          )}
+          <input
+            ref={fileInputRef}
+            type="file"
+            multiple
+            hidden
+            onChange={handleFilePick}
+          />
           <TextField
             fullWidth
             multiline
@@ -889,6 +1070,7 @@ export function ChatView(props: ChatViewProps) {
             disabled={!available}
             onChange={e => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
+            onPaste={handlePaste}
             sx={{
               // Rounded field with the send control living inside it; a white focus/hover
               // outline instead of the default primary (ruby) ring (#1576).
@@ -906,6 +1088,19 @@ export function ChatView(props: ChatViewProps) {
               },
             }}
             InputProps={{
+              startAdornment: (
+                <Tooltip title={t('editor.ai.attach.button')}>
+                  <span>
+                    <AttachButton
+                      aria-label={t('editor.ai.attach.button')}
+                      disabled={!available || attachments.length >= MAX_ATTACHMENTS}
+                      onClick={() => fileInputRef.current?.click()}
+                    >
+                      <AttachFileIcon fontSize="small" />
+                    </AttachButton>
+                  </span>
+                </Tooltip>
+              ),
               endAdornment: busy ? (
                 <Tooltip title={t('editor.ai.stop')}>
                   <StopButton
@@ -920,7 +1115,7 @@ export function ChatView(props: ChatViewProps) {
                   <span>
                     <SendButton
                       aria-label={t('editor.ai.send')}
-                      disabled={!available || input.trim() === ''}
+                      disabled={!available || (input.trim() === '' && attachments.length === 0)}
                       onClick={handleSend}
                     >
                       <ArrowUpwardIcon fontSize="small" />
