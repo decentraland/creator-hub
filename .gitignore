@@ -47,3 +47,7 @@ settings.local.json
 
 # Captured @live signed-in identity (never commit)
 packages/creator-hub/e2e/.auth/
+
+# Third-party skills, installed per-developer and tracked in skills-lock.json
+.agents/skills/
+.claude/skills/

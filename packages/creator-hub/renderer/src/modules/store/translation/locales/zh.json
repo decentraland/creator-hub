@@ -58,10 +58,10 @@
         "refresh": "从磁盘重新加载场景",
         "preview_options": {
           "title": "预览选项",
+          "menu_title": "预览方式",
           "client": {
-            "label": "预览方式",
             "desktop": "桌面客户端",
-            "bevy_web": "Bevy（网页）"
+            "bevy_web": "网页（Bevy）"
           },
           "debugger": "在预览期间打开控制台窗口",
           "skip_auth_screen": "跳过认证屏幕",
@@ -70,7 +70,7 @@
           "landscape_terrain_disabled_by_scene": "此场景的设置已隐藏景观地形",
           "multi_instance": "多实例预览",
           "mcp": "启用 MCP 服务器",
-          "optimized_assets": "压缩",
+          "optimized_assets": "压缩资源",
           "optimized_assets_tooltip": "使用与生产环境相同方式压缩后的资源预览场景",
           "mobile_preview": "显示移动端二维码"
         },

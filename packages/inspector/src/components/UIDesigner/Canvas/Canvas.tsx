@@ -10,13 +10,7 @@ import React, {
 import { createPortal } from 'react-dom';
 import { useDrop } from 'react-dnd';
 import { useStore } from 'react-redux';
-import {
-  IoAddOutline,
-  IoCopyOutline,
-  IoDesktopOutline,
-  IoPhoneLandscapeOutline,
-  IoTrashOutline,
-} from 'react-icons/io5';
+import { IoAddOutline, IoCopyOutline, IoTrashOutline } from 'react-icons/io5';
 import cx from 'classnames';
 import type { Entity, PBUiTransform } from '@dcl/ecs';
 
@@ -40,18 +34,13 @@ import {
 import { getUIDesignerSnapEnabled, getUIDesignerTool } from '../../../redux/ui';
 import { UIDesignerTool } from '../../../redux/ui/types';
 import { Button } from '../../Button';
-import { YGPT_ABSOLUTE, YGPT_RELATIVE, YGU_POINT } from '../../../lib/sdk/ui-transform-constants';
+import { YGPT_ABSOLUTE, YGPT_RELATIVE } from '../../../lib/sdk/ui-transform-constants';
 import { UI_DESIGNER_DND_TYPE, type UIDesignerDragItem } from '../shared/dnd';
 import { EmptyState, EmptyStateChip, GuiIcon } from '../EmptyState';
 import { WidgetPicker } from '../LeftPanel/WidgetPicker';
 import type { UiScreenInset } from '../code/aggregator';
 import { dragPinHold } from '../shared/align-presets';
-import {
-  DEFAULT_CANVAS_SCALE,
-  getCanvasScale,
-  offsetInParent,
-  setCanvasScale,
-} from '../shared/measure';
+import { getCanvasScale, offsetInParent, setCanvasScale } from '../shared/measure';
 import { insetRect } from '../shared/safe-areas';
 import { useUINodeActions } from '../shared/useUINodeActions';
 import { useUINodeTree } from '../shared/useUINodeTree';
@@ -70,13 +59,8 @@ import { previewLayers, resolveInteractionPreview } from '../code/interaction-pr
 import type { CodeUINode } from '../code/types';
 import { MixedContentField } from '../RightPanel/PropertyPanel/MixedContentField';
 import { seedSegments } from '../RightPanel/PropertyPanel/MixedContentField/segments';
-import {
-  DEFAULT_CANVAS_HEIGHT,
-  DEFAULT_CANVAS_WIDTH,
-  MOBILE_CANVAS_HEIGHT,
-  MOBILE_CANVAS_WIDTH,
-  previewBoundText,
-} from '../shared/tree-model';
+import { previewBoundText } from '../shared/tree-model';
+import { computeCanvasGeometry, type RootTransform } from '../shared/canvas-geometry';
 import {
   clearNodeRegistry,
   getNodeElement,
@@ -103,7 +87,7 @@ import { hiddenStyle, nodeStyle, rendersText, TEXT_VALUE_FIELD, textureStyle } f
 import { renderTextMarkup } from './text-markup';
 import { MobileHudPreview } from './MobileHudPreview';
 import { SafeAreaOverlay } from './SafeAreaOverlay';
-import { HudGuidesIcon, SafeAreaFrameIcon } from './toolbar-icons';
+import { DesktopIcon, HudGuidesIcon, MobileIcon, SafeAreaFrameIcon } from './toolbar-icons';
 
 const ZOOM_MIN = 0.1;
 const ZOOM_MAX = 2;
@@ -1203,12 +1187,27 @@ const CanvasComponent: React.FC = () => {
   const createRoot = useCallback(() => void createCodeRoot(), []);
   const selectedNode = useAppSelector(getSelectedNode);
   const [scale, setScale] = useState(getCanvasScale());
+  const [zoomInputValue, setZoomInputValue] = useState<string | null>(null);
   const dispatch = useAppDispatch();
   const platform = useAppSelector(getPlatform);
   const mobileHudSelected = useAppSelector(getMobileHudSelected);
   const mobileHudConfig = useMobileHudConfig();
-  const device = mobileHudSelected ? 'mobile' : platform;
-  const screen = useAppSelector(getScreens)[device];
+  const screens = useAppSelector(getScreens);
+  const {
+    device,
+    screen,
+    fixedRoot,
+    canvasWidth,
+    canvasHeight,
+    frameWidth,
+    frameHeight,
+    fitScale,
+  } = computeCanvasGeometry({
+    mobileHudSelected,
+    platform,
+    screens,
+    rootTransform: tree?.uiTransform as RootTransform | undefined,
+  });
   const activeRoot = roots.find(r => r.filename === filename);
   const activeInset: UiScreenInset = activeRoot?.topLevel ? activeRoot.screenInset : 'none';
   const [showSafeAreas, setShowSafeAreas] = useState(false);
@@ -1237,27 +1236,6 @@ const CanvasComponent: React.FC = () => {
       }));
     });
   }, [selectedNode]);
-
-  const rootT = (tree?.uiTransform ?? {}) as Record<string, number | undefined>;
-  const rootFixedW = rootT.widthUnit === YGU_POINT ? rootT.width : undefined;
-  const rootFixedH = rootT.heightUnit === YGU_POINT ? rootT.height : undefined;
-  const fixedRoot = rootFixedW !== undefined && rootFixedH !== undefined;
-
-  const canvasWidth = fixedRoot
-    ? (rootFixedW as number)
-    : device === 'mobile'
-      ? MOBILE_CANVAS_WIDTH
-      : DEFAULT_CANVAS_WIDTH;
-  const canvasHeight = fixedRoot
-    ? (rootFixedH as number)
-    : device === 'mobile'
-      ? MOBILE_CANVAS_HEIGHT
-      : DEFAULT_CANVAS_HEIGHT;
-
-  const frameWidth = fixedRoot ? canvasWidth : screen.width;
-  const frameHeight = fixedRoot ? canvasHeight : screen.height;
-
-  const fitScale = fixedRoot ? 1 : Math.min(frameWidth / canvasWidth, frameHeight / canvasHeight);
 
   const insetLocked = activeInset !== 'none' && !fixedRoot;
   const safeAreasVisible = insetLocked || showSafeAreas;
@@ -1319,6 +1297,19 @@ const CanvasComponent: React.FC = () => {
     el.addEventListener('wheel', onWheel, { passive: false });
     return () => el.removeEventListener('wheel', onWheel);
   }, []);
+
+  const activateZoomEdit = useCallback(() => {
+    setZoomInputValue(String(Math.round(scale * 100)));
+  }, [scale]);
+
+  const commitZoomInput = useCallback(() => {
+    if (zoomInputValue === null) return;
+    const parsed = parseInt(zoomInputValue, 10);
+    if (!Number.isNaN(parsed)) {
+      setScale(clampZoom(parsed / 100));
+    }
+    setZoomInputValue(null);
+  }, [zoomInputValue]);
 
   const handlePanStart = useCallback(
     (e: React.MouseEvent) => {
@@ -1522,7 +1513,7 @@ const CanvasComponent: React.FC = () => {
                     aria-label="Desktop preview"
                     aria-pressed={device === 'desktop'}
                   >
-                    <IoDesktopOutline />
+                    <DesktopIcon />
                   </button>
                   <button
                     type="button"
@@ -1534,7 +1525,7 @@ const CanvasComponent: React.FC = () => {
                     aria-label="Mobile preview"
                     aria-pressed={device === 'mobile'}
                   >
-                    <IoPhoneLandscapeOutline />
+                    <MobileIcon />
                   </button>
                 </div>
               </div>
@@ -1548,23 +1539,55 @@ const CanvasComponent: React.FC = () => {
               >
                 −
               </button>
-              <button
-                type="button"
-                className="ui-designer-canvas-zoom-level"
-                onClick={() => {
-                  setScale(DEFAULT_CANVAS_SCALE);
-                  setPan({ x: 0, y: 0 });
-                }}
-                title="Reset view"
-                aria-label="Reset view"
-                aria-live="polite"
-              >
-                {Math.round(scale * 100)}%
-              </button>
+              {zoomInputValue !== null ? (
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  className="ui-designer-canvas-zoom-level ui-designer-canvas-zoom-level-input"
+                  autoFocus
+                  maxLength={3}
+                  value={zoomInputValue}
+                  onChange={e => {
+                    const digits = e.target.value.replace(/\D/g, '');
+                    setZoomInputValue(
+                      digits === '' ? '' : String(Math.min(parseInt(digits, 10), 200)),
+                    );
+                  }}
+                  onFocus={e => e.currentTarget.select()}
+                  onBlur={commitZoomInput}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter') {
+                      e.currentTarget.blur();
+                    } else if (e.key === 'Escape') {
+                      setZoomInputValue(null);
+                    }
+                  }}
+                  aria-label="Set zoom percentage"
+                />
+              ) : (
+                <input
+                  type="text"
+                  readOnly
+                  className="ui-designer-canvas-zoom-level"
+                  value={`${Math.round(scale * 100)}%`}
+                  onClick={activateZoomEdit}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      activateZoomEdit();
+                    }
+                  }}
+                  title="Click to type a zoom percentage"
+                  aria-label="Zoom level, click to edit"
+                  aria-live="polite"
+                />
+              )}
               <button
                 type="button"
                 className="ui-designer-canvas-zoom-btn"
                 onClick={() => setScale(s => clampZoom(s + ZOOM_STEP))}
+                disabled={scale >= ZOOM_MAX}
+                title={scale >= ZOOM_MAX ? 'Maximum zoom reached' : undefined}
                 aria-label="Zoom in"
               >
                 +

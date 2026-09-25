@@ -243,10 +243,49 @@ describe('the one-time AI assistant promotion', () => {
       storedConfig = getDefaultConfig();
       storedConfig.settings!.aiAssistant = false;
       storedConfig.settings!.aiAssistantPromoted = true;
+      storedConfig.settings!.debugConsolePromoted = true;
 
       const config = await getConfig();
 
       expect(config.settings.aiAssistant).toBe(false);
+      expect(storage.setAll).not.toHaveBeenCalled();
+    });
+  });
+});
+
+describe('the one-time debug console promotion', () => {
+  beforeEach(() => {
+    vi.resetModules();
+    vi.clearAllMocks();
+    vi.mocked(existsSync).mockReturnValue(true);
+  });
+
+  describe('when the stored config predates the promotion', () => {
+    it('should persist the debug console as enabled and marked', async () => {
+      const { getConfig, getDefaultConfig } = await import('../src/modules/config');
+      storedConfig = getDefaultConfig();
+      storedConfig.settings!.previewOptions.debugger = false;
+
+      await getConfig();
+
+      expect(storage.setAll).toHaveBeenCalledTimes(1);
+      const written = storage.setAll.mock.calls[0][0] as Config;
+      expect(written.settings.previewOptions.debugger).toBe(true);
+      expect(written.settings.debugConsolePromoted).toBe(true);
+    });
+  });
+
+  describe('when the creator turned the debug console off after the promotion ran', () => {
+    it('should leave it off and write nothing', async () => {
+      const { getConfig, getDefaultConfig } = await import('../src/modules/config');
+      storedConfig = getDefaultConfig();
+      storedConfig.settings!.previewOptions.debugger = false;
+      storedConfig.settings!.aiAssistantPromoted = true;
+      storedConfig.settings!.debugConsolePromoted = true;
+
+      const config = await getConfig();
+
+      expect(config.settings.previewOptions.debugger).toBe(false);
       expect(storage.setAll).not.toHaveBeenCalled();
     });
   });

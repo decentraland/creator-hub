@@ -1,15 +1,14 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import cx from 'classnames';
+import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import {
   Checkbox,
   Divider,
-  FormControl,
   FormControlLabel,
   FormGroup,
-  FormLabel,
   ListItemButton,
   ListItemText,
   Radio,
-  RadioGroup,
   Tooltip,
 } from 'decentraland-ui2';
 
@@ -29,6 +28,15 @@ export function PreviewOptions({
   projectPath,
 }: PreviewOptionsProps) {
   const [terrainHiddenByScene, setTerrainHiddenByScene] = useState(false);
+  const [desktopOptionsOpen, setDesktopOptionsOpen] = useState(false);
+  // The flyout normally opens to the right of the Desktop Client row (per design), but that
+  // row sits in a popover already right-aligned to the toolbar's Preview button — near the
+  // window's right edge in practice — so a fixed-right flyout gets clipped off-screen. Flip
+  // it to the left whenever there isn't enough room on the right.
+  const desktopRowRef = useRef<HTMLDivElement>(null);
+  // null until measured for the current open — rendering nothing meanwhile (rather than a
+  // default side) avoids a visible flash-then-flip when the flyout needs to go left.
+  const [submenuAlign, setSubmenuAlign] = useState<'left' | 'right' | null>(null);
 
   // No Unity desktop client ships for Linux, so an optimized preview has no client to
   // open there — hide the toggle entirely. (abgen itself has Linux builds; the client
@@ -38,9 +46,7 @@ export function PreviewOptions({
   // otherwise the toggle silently does nothing — so hide it entirely for unsupported scenes
   const [sceneSupportsOptimizedAssets, setSceneSupportsOptimizedAssets] = useState(false);
   const supportsOptimizedAssets = platformSupportsOptimizedAssets && sceneSupportsOptimizedAssets;
-  // The asset-bundle sidecar rides the Unity deep-link (local-ab param); the Bevy web
-  // client has no deep-link, so an optimized preview can't apply there.
-  const isBevyWebClient = options.client === PREVIEW_CLIENT.BEVY_WEB;
+  const isDesktopClient = options.client === PREVIEW_CLIENT.DESKTOP;
 
   useEffect(() => {
     if (!platformSupportsOptimizedAssets) {
@@ -85,115 +91,161 @@ export function PreviewOptions({
     [onChange, options],
   );
 
-  const handleClientChange = useCallback(
-    (event: React.ChangeEvent<HTMLInputElement>) => {
-      onChange({ ...options, client: event.target.value as PREVIEW_CLIENT });
+  const handleClientSelect = useCallback(
+    (client: PREVIEW_CLIENT) => () => {
+      onChange({ ...options, client });
     },
     [onChange, options],
   );
 
+  const handleDesktopRowMouseEnter = useCallback(() => {
+    setDesktopOptionsOpen(true);
+  }, []);
+
+  const handleDesktopRowMouseLeave = useCallback(() => {
+    setDesktopOptionsOpen(false);
+  }, []);
+
+  const showDesktopSubmenu = isDesktopClient && desktopOptionsOpen;
+
+  useLayoutEffect(() => {
+    if (!showDesktopSubmenu || !desktopRowRef.current) {
+      // Reset so the next hover re-measures instead of briefly showing last time's side.
+      setSubmenuAlign(null);
+      return;
+    }
+    // Measured a frame late (rAF) on purpose: the outer Popper (popper.js) applies its own
+    // position transform in its own effect, and ordering against that isn't guaranteed —
+    // measuring in the same layout-effect pass can read the row's pre-positioned rect. The
+    // flyout stays unrendered (submenuAlign is null) until this resolves, so there's nothing
+    // to flash on the wrong side in the meantime.
+    const raf = requestAnimationFrame(() => {
+      if (!desktopRowRef.current) return;
+      const SUBMENU_WIDTH_WITH_MARGIN = 308; // width: 300px + margin-left: 8px
+      const { right } = desktopRowRef.current.getBoundingClientRect();
+      const hasRoomOnRight = window.innerWidth - right >= SUBMENU_WIDTH_WITH_MARGIN;
+      setSubmenuAlign(hasRoomOnRight ? 'right' : 'left');
+    });
+    return () => cancelAnimationFrame(raf);
+  }, [showDesktopSubmenu]);
+
   return (
-    <div
-      className="PreviewOptions"
-      data-testid="editor-page-preview-options"
-    >
-      <span className="title">{t('editor.header.actions.preview_options.title')}</span>
-      <FormControl>
-        <FormLabel>{t('editor.header.actions.preview_options.client.label')}</FormLabel>
-        <RadioGroup
-          value={options.client}
-          onChange={handleClientChange}
+    <div className="PreviewOptions">
+      <div className="options">
+        <span className="title">{t('editor.header.actions.preview_options.menu_title')}</span>
+        <div
+          ref={desktopRowRef}
+          className="client-row"
+          onMouseEnter={handleDesktopRowMouseEnter}
+          onMouseLeave={handleDesktopRowMouseLeave}
         >
           <FormControlLabel
-            value={PREVIEW_CLIENT.DESKTOP}
-            control={<Radio />}
+            control={
+              <Radio
+                checked={isDesktopClient}
+                onChange={handleClientSelect(PREVIEW_CLIENT.DESKTOP)}
+              />
+            }
             label={t('editor.header.actions.preview_options.client.desktop')}
           />
+          <ChevronRightIcon
+            className="arrow"
+            aria-hidden="true"
+          />
+          {showDesktopSubmenu && submenuAlign && (
+            <div className={cx('client-submenu', { 'align-left': submenuAlign === 'left' })}>
+              <FormGroup className="options">
+                <Tooltip
+                  title={
+                    terrainHiddenByScene
+                      ? t(
+                          'editor.header.actions.preview_options.landscape_terrain_disabled_by_scene',
+                        )
+                      : ''
+                  }
+                  placement="left"
+                >
+                  <div className="checkbox-row">
+                    <FormControlLabel
+                      control={
+                        <Checkbox
+                          checked={terrainHiddenByScene ? false : !!options.enableLandscapeTerrains}
+                          disabled={terrainHiddenByScene}
+                          onChange={handleChange({
+                            enableLandscapeTerrains: !options.enableLandscapeTerrains,
+                          })}
+                        />
+                      }
+                      label={t('editor.header.actions.preview_options.landscape_terrain_enabled')}
+                    />
+                  </div>
+                </Tooltip>
+                {supportsMultiInstance && (
+                  <div className="checkbox-row">
+                    <FormControlLabel
+                      control={
+                        <Checkbox
+                          checked={!!options.multiInstance}
+                          onChange={handleChange({ multiInstance: !options.multiInstance })}
+                        />
+                      }
+                      label={t('editor.header.actions.preview_options.multi_instance')}
+                    />
+                  </div>
+                )}
+                {supportsMcp && (
+                  <div className="checkbox-row">
+                    <FormControlLabel
+                      control={
+                        <Checkbox
+                          checked={!!options.mcp}
+                          onChange={handleChange({ mcp: !options.mcp })}
+                        />
+                      }
+                      label={t('editor.header.actions.preview_options.mcp')}
+                    />
+                  </div>
+                )}
+                {supportsOptimizedAssets && (
+                  <Tooltip
+                    title={t('editor.header.actions.preview_options.optimized_assets_tooltip')}
+                    placement="left"
+                  >
+                    <div className="checkbox-row">
+                      <FormControlLabel
+                        control={
+                          <Checkbox
+                            checked={!!options.optimizedAssets}
+                            onChange={handleChange({ optimizedAssets: !options.optimizedAssets })}
+                          />
+                        }
+                        label={t('editor.header.actions.preview_options.optimized_assets')}
+                      />
+                    </div>
+                  </Tooltip>
+                )}
+              </FormGroup>
+            </div>
+          )}
+        </div>
+        <div className="client-row">
           <FormControlLabel
-            value={PREVIEW_CLIENT.BEVY_WEB}
-            control={<Radio />}
+            control={
+              <Radio
+                checked={!isDesktopClient}
+                onChange={handleClientSelect(PREVIEW_CLIENT.BEVY_WEB)}
+              />
+            }
             label={t('editor.header.actions.preview_options.client.bevy_web')}
           />
-        </RadioGroup>
-      </FormControl>
+        </div>
+      </div>
       <Divider />
-      <FormGroup>
-        <FormControlLabel
-          control={
-            <Checkbox
-              data-testid="editor-page-preview-options-debugger"
-              checked={!!options.debugger}
-              onChange={handleChange({ debugger: !options.debugger })}
-            />
-          }
-          label={t('editor.header.actions.preview_options.debugger')}
-        />
-        <Tooltip
-          title={
-            terrainHiddenByScene
-              ? t('editor.header.actions.preview_options.landscape_terrain_disabled_by_scene')
-              : ''
-          }
-          placement="left"
-        >
-          <FormControlLabel
-            control={
-              <Checkbox
-                data-testid="editor-page-preview-options-landscape-terrain-enabled"
-                checked={terrainHiddenByScene ? false : !!options.enableLandscapeTerrains}
-                disabled={terrainHiddenByScene}
-                onChange={handleChange({
-                  enableLandscapeTerrains: !options.enableLandscapeTerrains,
-                })}
-              />
-            }
-            label={t('editor.header.actions.preview_options.landscape_terrain_enabled')}
-          />
-        </Tooltip>
-        {supportsMultiInstance && (
-          <FormControlLabel
-            control={
-              <Checkbox
-                data-testid="editor-page-preview-options-open-new-instance"
-                checked={!!options.multiInstance}
-                onChange={handleChange({ multiInstance: !options.multiInstance })}
-              />
-            }
-            label={t('editor.header.actions.preview_options.multi_instance')}
-          />
-        )}
-        {supportsMcp && (
-          <FormControlLabel
-            control={
-              <Checkbox
-                checked={!!options.mcp}
-                onChange={handleChange({ mcp: !options.mcp })}
-              />
-            }
-            label={t('editor.header.actions.preview_options.mcp')}
-          />
-        )}
-        {supportsOptimizedAssets && !isBevyWebClient && (
-          <Tooltip
-            title={t('editor.header.actions.preview_options.optimized_assets_tooltip')}
-            placement="left"
-          >
-            <FormControlLabel
-              control={
-                <Checkbox
-                  checked={!!options.optimizedAssets}
-                  onChange={handleChange({ optimizedAssets: !options.optimizedAssets })}
-                />
-              }
-              label={t('editor.header.actions.preview_options.optimized_assets')}
-            />
-          </Tooltip>
-        )}
-      </FormGroup>
-      <Divider />
-      <ListItemButton onClick={onShowMobileQR}>
-        <ListItemText primary={t('editor.header.actions.preview_options.mobile_preview')} />
-      </ListItemButton>
+      <div className="options">
+        <ListItemButton onClick={onShowMobileQR}>
+          <ListItemText primary={t('editor.header.actions.preview_options.mobile_preview')} />
+        </ListItemButton>
+      </div>
     </div>
   );
 }

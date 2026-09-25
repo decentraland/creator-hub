@@ -58,10 +58,10 @@
         "refresh": "Reload scene from disk",
         "preview_options": {
           "title": "Preview Options",
+          "menu_title": "Preview in",
           "client": {
-            "label": "Preview with",
             "desktop": "Desktop Client",
-            "bevy_web": "Bevy (Web)"
+            "bevy_web": "Web (Bevy)"
           },
           "debugger": "Open Debug Console",
           "skip_auth_screen": "Skip Auth Screen",
@@ -70,7 +70,7 @@
           "landscape_terrain_disabled_by_scene": "Landscape terrain is hidden by this scene's settings",
           "multi_instance": "Multi-Instance Preview",
           "mcp": "Enable MCP Server",
-          "optimized_assets": "Compress",
+          "optimized_assets": "Compress Assets",
           "optimized_assets_tooltip": "Preview the scene with assets compressed the same way they are in production",
           "mobile_preview": "Show QR Code for Mobile"
         },
