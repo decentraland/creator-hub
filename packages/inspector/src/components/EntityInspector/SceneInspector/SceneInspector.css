@@ -114,3 +114,40 @@
   text-wrap: wrap;
   width: 100%;
 }
+
+.Container.Scene .MultiplayerStatus {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--base-10);
+  text-wrap: wrap;
+}
+
+.Container.Scene .MultiplayerStatus.error {
+  color: var(--error-main);
+}
+
+.Container.Scene .LogsAccess {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.Container.Scene .LogsAccessHint {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--base-10);
+  text-wrap: wrap;
+}
+
+.Container.Scene .LogsAccessHint.error {
+  color: var(--error-main);
+}
+
+.Container.Scene .LogsAccessList {
+  display: flex;
+  flex-direction: column;
+}
+
+.Container.Scene .ProfileRow .Avatar {
+  cursor: default;
+}

@@ -1,0 +1,23 @@
+.Block.WalletList > .content {
+  flex-direction: column;
+  align-items: normal;
+}
+
+.Block.WalletList > .content .label-with-info {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.Block.WalletList > .content .row {
+  display: flex;
+  align-items: center;
+}
+
+.Block.WalletList > .content .row .Text.Field {
+  width: 100%;
+}
+
+.Block.WalletList > .content .row + .row {
+  margin-top: 4px;
+}

@@ -28,6 +28,7 @@ All tokens are CSS custom properties on `:root` in **`packages/inspector/src/the
 | `--ui-designer-panel-bg` | `--base-19` `#242129` | UI Designer panel frame (Figma `#25212a`, within 1/255) |
 | `--ui-designer-control-bg` | `#35333b` | Inputs/selects/textarea chrome, and UI Designer menus |
 | `--disabled-bg-color` | `#323036` | Disabled control fill |
+| `--row-hover-bg` | `rgba(255,255,255,.05)` | Hover fill on a list **row** (the Scene panel's Log Access rows). Deliberately a second near-identical white overlay beside `--ui-designer-control-hover-bg` (6%): that one is UI-Designer-scoped to a segmented cell, and this is a general role, so neither is a mistake — pick by subsystem, not by value |
 
 ### Foreground (text)
 

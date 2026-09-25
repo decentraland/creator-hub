@@ -249,6 +249,11 @@ const COMPONENT_REGISTRY = {
     {
       hideLandscapeTerrain: Schemas.Optional(Schemas.Boolean),
     },
+    // V6 - Added multiplayerServer + logsPermissions
+    {
+      multiplayerServer: Schemas.Optional(Schemas.Boolean),
+      logsPermissions: Schemas.Optional(Schemas.Array(Schemas.String)),
+    },
   ],
 } as const;
 

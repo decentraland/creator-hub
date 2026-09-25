@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import { useCallback } from 'react';
 import cx from 'classnames';
 
 import type { Entity, PBAvatarModifierArea } from '@dcl/ecs';
@@ -8,22 +8,12 @@ import { getComponentValue, useComponentValue } from '../../../hooks/sdk/useComp
 import { analytics, Event } from '../../../lib/logic/analytics';
 import { getAssetByModel } from '../../../lib/logic/catalog';
 import { Block } from '../../Block';
-import { Button } from '../../Button';
 import { Container } from '../../Container';
-import { Dropdown, Label } from '../../ui';
+import { Dropdown } from '../../ui';
 import { InfoTooltip } from '../../ui/InfoTooltip';
-import { WalletField } from '../../ui/WalletField';
-import { AddButton } from '../AddButton';
-import MoreOptionsMenu from '../MoreOptionsMenu';
+import { WalletList } from '../../ui/WalletList';
 import type { DropdownChangeEvent } from '../../ui/Dropdown/types';
-import {
-  MODIFIER_OPTIONS,
-  addExcludeId,
-  fromModifiers,
-  removeExcludeId,
-  toModifiers,
-  updateExcludeId,
-} from './utils';
+import { MODIFIER_OPTIONS, fromModifiers, toModifiers } from './utils';
 
 import './AvatarModifierAreaInspector.css';
 
@@ -44,30 +34,6 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
     (event: DropdownChangeEvent) => {
       const values = event.target.value as unknown as string[];
       setComponentValue({ ...componentValue, modifiers: toModifiers(values) });
-    },
-    [componentValue, setComponentValue],
-  );
-
-  const handleAddExcludeId = useCallback(() => {
-    setComponentValue({ ...componentValue, excludeIds: addExcludeId(componentValue.excludeIds) });
-  }, [componentValue, setComponentValue]);
-
-  const handleUpdateExcludeId = useCallback(
-    (index: number) => (event: React.ChangeEvent<HTMLInputElement>) => {
-      setComponentValue({
-        ...componentValue,
-        excludeIds: updateExcludeId(componentValue.excludeIds, index, event.target.value),
-      });
-    },
-    [componentValue, setComponentValue],
-  );
-
-  const handleRemoveExcludeId = useCallback(
-    (index: number) => () => {
-      setComponentValue({
-        ...componentValue,
-        excludeIds: removeExcludeId(componentValue.excludeIds, index),
-      });
     },
     [componentValue, setComponentValue],
   );
@@ -118,30 +84,14 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
           }
         />
       </Block>
-      <Block className="exclude-ids">
-        <div className="label-with-info">
-          <Label text="Exclude Player IDs" />
-          <InfoTooltip
-            text="Player IDs (wallet addresses) that remain unaffected while inside the area."
-            type="help"
-          />
-        </div>
-        {(componentValue.excludeIds ?? []).map((excludeId, index) => (
-          <div
-            className="row"
-            key={`${index}-${excludeId}`}
-          >
-            <WalletField
-              value={excludeId}
-              onChange={handleUpdateExcludeId(index)}
-            />
-            <MoreOptionsMenu>
-              <Button onClick={handleRemoveExcludeId(index)}>Remove Player ID</Button>
-            </MoreOptionsMenu>
-          </div>
-        ))}
-        <AddButton onClick={handleAddExcludeId}>Add Player ID</AddButton>
-      </Block>
+      <WalletList
+        label="Exclude Player IDs"
+        info="Player IDs (wallet addresses) that remain unaffected while inside the area."
+        addLabel="Add Player ID"
+        removeLabel="Remove Player ID"
+        value={componentValue.excludeIds ?? []}
+        onChange={excludeIds => setComponentValue({ ...componentValue, excludeIds })}
+      />
     </Container>
   );
 });

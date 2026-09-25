@@ -200,6 +200,16 @@ export const slice = createSlice({
           }),
         );
       })
+      .addCase(workspaceActions.installMultiplayerSdk.fulfilled, state => {
+        state.notifications = state.notifications.filter(
+          $ => $.requestId !== 'installMultiplayerSdk',
+        );
+        state.notifications.push(
+          createGenericNotification('success', t('snackbar.generic.multiplayer_sdk_installed'), {
+            requestId: 'installMultiplayerSdk',
+          }),
+        );
+      })
       .addCase(
         workspaceActions.updateAvailableDependencyUpdates.fulfilled,
         (state, { meta, payload: { project, strategy } }) => {

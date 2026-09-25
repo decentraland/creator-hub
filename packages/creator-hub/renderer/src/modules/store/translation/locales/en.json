@@ -892,6 +892,7 @@
       "delete_scene": "Deleting scene...",
       "delete_scene_failed": "Failed deleting scene",
       "dependencies_updated": "Scene dependencies were updated",
+      "multiplayer_sdk_installed": "Multiplayer Server SDK installed.",
       "installing_dependencies": "Installing dependencies...",
       "installing_dependencies_failed": "Failed installing dependencies",
       "invalid_scenes_folder": "Invalid Scenes Folder. Please configure a valid Scenes Folder in Settings before creating a scene.",
