@@ -156,7 +156,9 @@ class HierarchyPageObject {
       attempts++;
       try {
         const clickAt = Date.now();
-        await page.locator(rowSelector).first().click({ button: 'right', timeout: 3_000 });
+        const row = page.locator(rowSelector).first();
+        await row.waitFor({ state: 'visible', timeout: 3_000 });
+        await row.click({ button: 'right', timeout: 3_000, force: true });
         clickMs += Date.now() - clickAt;
         const menuAt = Date.now();
         await page.waitForSelector(itemSelector, { state: 'visible', timeout: 3_000 });
