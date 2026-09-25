@@ -436,7 +436,7 @@
   align-items: center;
   justify-content: center;
   width: 50px;
-  height: 16px;
+  height: 22px;
   padding: 0;
   background: transparent;
   border: none;
@@ -448,20 +448,38 @@
   font-variant-numeric: tabular-nums;
 }
 
+.ui-designer-canvas-zoom-level-input {
+  cursor: text;
+}
+
 .ui-designer-zoom-panel .ui-designer-canvas-zoom-btn {
+  width: 22px;
+  height: 22px;
   color: #a09ba8;
   font-size: 16px;
 }
 
-.ui-designer-canvas-zoom-btn:hover,
-.ui-designer-canvas-zoom-level:hover {
+.ui-designer-zoom-panel .ui-designer-canvas-zoom-btn:disabled {
+  color: #fcfcfc;
+}
+
+.ui-designer-canvas-zoom-btn:hover {
   background: rgba(255, 255, 255, 0.1);
 }
 
-.ui-designer-canvas-zoom-btn:focus-visible,
-.ui-designer-canvas-zoom-level:focus-visible {
+.ui-designer-canvas-zoom-btn:focus-visible {
   outline: 2px solid var(--border-focused);
   outline-offset: 1px;
+}
+
+.ui-designer-canvas-zoom-level:hover {
+  outline: 1px solid rgba(255, 255, 255, 0.4);
+  outline-offset: -1px;
+}
+
+.ui-designer-canvas-zoom-level:focus-visible {
+  outline: 1px solid #fcfcfc;
+  outline-offset: -1px;
 }
 
 .ui-designer-reorder-indicator {
@@ -488,8 +506,9 @@
 .ui-designer-preview-mode-panel {
   display: flex;
   align-items: center;
-  gap: 4px;
-  height: 20px;
+  gap: 8px;
+  width: 112px;
+  height: 26px;
   padding: 0 2px;
   background: #25212a;
   border-radius: 5px;
@@ -500,7 +519,7 @@
   align-items: center;
   justify-content: center;
   gap: 2px;
-  height: 20px;
+  height: 26px;
   padding: 2px;
   background: #25212a;
   border-radius: 5px;
@@ -509,12 +528,23 @@
 .ui-designer-toggles {
   display: flex;
   align-items: center;
-  gap: 2px;
+  gap: 4px;
+}
+
+.ui-designer-toggles .ui-designer-canvas-zoom-btn {
+  width: 22px;
+  height: 22px;
+  font-size: 19px;
+}
+
+.ui-designer-toggles .ui-designer-canvas-zoom-btn.active:hover {
+  background: #243852;
 }
 
 .ui-designer-canvas-zoom-btn:disabled:not(.locked) {
-  opacity: 0.35;
+  opacity: 0.2;
   cursor: default;
+  pointer-events: none;
 }
 
 .ui-designer-device-toggle {
@@ -529,10 +559,10 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 18px;
-  height: 16px;
+  width: 26px;
+  height: 22px;
   padding: 0;
-  font-size: 14px;
+  font-size: 19px;
   background: transparent;
   border: 1px solid transparent;
   color: #fcfcfc;
@@ -554,6 +584,10 @@
 .ui-designer-device-toggle-btn.active {
   background: #244b7d;
   color: #fcfcfc;
+}
+
+.ui-designer-device-toggle-btn:not(.active):hover {
+  background: rgba(255, 255, 255, 0.1);
 }
 
 .ui-designer-device-toggle-btn:focus-visible {
