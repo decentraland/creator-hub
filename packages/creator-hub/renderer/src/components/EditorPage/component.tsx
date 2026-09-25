@@ -225,6 +225,10 @@ export function EditorPage() {
   // "Reload scene from disk", so the hooks that push state into the inspector key on this
   // to re-apply it to the fresh iframe.
   const [inspectorReadyNonce, setInspectorReadyNonce] = useState(0);
+  // A "Reload scene from disk" or a renderer switch reloads the inspector iframe in place.
+  // The iframe paints black until its content boots (a long wait under Bevy, #1652), so we
+  // cover it with the loader until the inspector reports its scene RPC server ready again.
+  const [isReloadingInspector, setIsReloadingInspector] = useState(false);
 
   const isOffline = status === ConnectionStatus.OFFLINE;
   const showDebugPanel = settings.previewOptions.debugger;
@@ -270,10 +274,26 @@ export function EditorPage() {
     if (!rpc) return;
     const { iframe } = rpc;
     const { src } = iframe;
+    setIsReloadingInspector(true);
     rpc.dispose();
     iframeRef.current = undefined;
     iframe.src = src;
   }, []);
+
+  // Switching the renderer setting rebuilds the iframe URL, reloading it in place — cover the
+  // black frame with the loader the same way a manual reload does (Bevy→desktop, #1652).
+  const prevRendererRef = useRef(settings.renderer);
+  useEffect(() => {
+    if (prevRendererRef.current === settings.renderer) return;
+    prevRendererRef.current = settings.renderer;
+    setIsReloadingInspector(true);
+  }, [settings.renderer]);
+
+  // Clear the reload cover once the (re)loaded inspector reports its scene RPC ready. The
+  // nonce starts at 0 and first bumps to 1 on the initial load, which the guard ignores.
+  useEffect(() => {
+    if (inspectorReadyNonce > 0) setIsReloadingInspector(false);
+  }, [inspectorReadyNonce]);
 
   useEffect(() => {
     const rpc = iframeRef.current;
@@ -908,6 +928,11 @@ export function EditorPage() {
               // for the Babylon renderer.
               allow="cross-origin-isolated"
             ></iframe>
+            {isReloadingInspector && (
+              <div className="reload-overlay">
+                <Loader />
+              </div>
+            )}
             {aiChatEnabled && aiOpen && (
               <>
                 {aiResizing && <div className="ai-resize-overlay" />}

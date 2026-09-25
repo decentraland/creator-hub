@@ -177,7 +177,9 @@ export interface Ipc {
   'optimizer.installTools': (path: string) => Promise<OptimizeToolsInfo>;
   'metrics.request': (request: MetricsRequest) => Promise<MetricsResponse>;
   'inspector.start': () => Promise<number>;
-  'inspector.attachSceneDebugger': (path: string) => Promise<string>;
+  'inspector.attachSceneDebugger': (
+    path: string,
+  ) => Promise<{ eventName: string; backlog: string[] }>;
   'inspector.detachSceneDebugger': (path: string) => void;
   'bevyRealm.start': (path: string) => Promise<{ url: string; wsUrl: string }>;
   'bevyRealm.kill': (path: string) => Promise<void>;

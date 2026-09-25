@@ -261,6 +261,19 @@
   cursor: col-resize;
 }
 
+/* Covers the iframe while it reloads in place (manual "reload scene from disk", renderer
+   switch) so the user sees the loader instead of the black frame the iframe paints until it
+   boots — a long wait under Bevy (#1652). */
+.Editor .EditorBody .reload-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--bg-inspector);
+}
+
 .Editor .inspector {
   flex: 1 1 auto;
   border: none;
