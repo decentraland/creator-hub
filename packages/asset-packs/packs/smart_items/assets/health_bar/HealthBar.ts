@@ -1,4 +1,4 @@
-import { engine } from '@dcl/sdk/ecs';
+import { engine, Transform } from '@dcl/sdk/ecs';
 import type { Entity } from '@dcl/sdk/ecs';
 import { syncEntity } from '@dcl/sdk/network';
 import { getComponents } from '@dcl/asset-packs/dist/definitions';
@@ -37,6 +37,12 @@ export class HealthBar {
 
   start() {
     const { Counter, CounterBar } = getComponents(engine);
+    // This bar is the player's health, so attach it to the player. This is what makes it work —
+    // the shared damage/heal only reach a target whose root is the player, the Counter Bar only
+    // floats above the avatar when its parent is the player, and the damage radius check needs the
+    // bar's world position to track the player. So the creator just places it; no manual parenting.
+    const transform = Transform.getMutableOrNull(this.entity) ?? Transform.create(this.entity);
+    transform.parent = engine.PlayerEntity;
     if (!Counter.getOrNull(this.entity)) {
       Counter.create(this.entity, { id: this.entity, value: this.clamp(this.startHealth) });
     }
