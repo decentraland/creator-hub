@@ -55,6 +55,15 @@ const ENGINE_COMPONENT_NAMES: Record<string, string> = {
   'core::Animator': 'Animator',
   'core::VideoPlayer': 'VideoPlayer',
   'core::ParticleSystem': 'ParticleSystem',
+  'core::LightSource': 'LightSource',
+  'core::NftShape': 'NftShape',
+  'core::GltfNodeModifiers': 'GltfNodeModifiers',
+  'core::AvatarAttach': 'AvatarAttach',
+  'core::AvatarModifierArea': 'AvatarModifierArea',
+  'core::CameraModeArea': 'CameraModeArea',
+  'core::VirtualCamera': 'VirtualCamera',
+  'core::AudioSource': 'AudioSource',
+  'core::AudioStream': 'AudioStream',
 };
 
 // PBParticleSystem.PlaybackState: PS_PLAYING=0, PS_PAUSED=1 ("simulation frozen; no
@@ -133,6 +142,12 @@ export interface ForwardEditBridgeOptions {
    * state (#1382). Defaults to frozen (the editor boots static).
    */
   isFrozen?: () => boolean;
+  /**
+   * Whether scene audio is muted by the editor (#1569). When true, AudioSource /
+   * AudioStream are forwarded with volume 0 regardless of the run/freeze state, so a
+   * looping sound is silenced while editing. Defaults to unmuted.
+   */
+  isMuted?: () => boolean;
 }
 
 /**
@@ -167,12 +182,20 @@ export interface ForwardEditBridge {
    * re-`new_entity` → no id collision) and replays placeholder/visibility/pickable/
    * animation overrides so they survive the reload. */
   reconcileAfterReload(): void;
+  /** Silence (muted=true) or restore (false) scene audio by forwarding every
+   * AudioSource/AudioStream with volume 0, or the authored value (#1569). Driven by
+   * the mute toolbar toggle; composes with the freeze override. */
+  setAudioMuted(muted: boolean): void;
 }
 
 export function createForwardEditBridge(options: ForwardEditBridgeOptions): ForwardEditBridge {
   const { context, engineWindow } = options;
   // Default frozen — the editor boots static (see setAnimationsFrozen / #1382).
   const isFrozen = options.isFrozen ?? (() => true);
+  // Default unmuted — scene audio plays until the mute toggle silences it (#1569).
+  // Seeded from options (so a bridge rebuilt after an engine reboot inherits the
+  // current mute state) and updated by setAudioMuted.
+  let audioMuted = options.isMuted?.() ?? false;
   // Guard every send behind a disposed flag: once the bridge is disconnected (a
   // Bevy iframe reboot swaps `engineWindow`, or the renderer unmounts), queued
   // tasks that are still draining must NOT keep posting to the now-stale window.
@@ -248,8 +271,11 @@ export function createForwardEditBridge(options: ForwardEditBridgeOptions): Forw
     }
     // #1382: the editor boots frozen, but a scene loads with its Animator clips
     // playing — pause them to match the frozen state (setAnimationsFrozen forwards
-    // playing:false; the toolbar toggle later resumes/re-pauses).
+    // playing:false; the toolbar toggle later resumes/re-pauses). setAnimationsFrozen
+    // re-forwards audio too, so when frozen it already applies the mute; only re-apply
+    // separately when the mute is on while NOT frozen (#1569).
     if (isFrozen()) setAnimationsFrozen(true);
+    else if (audioMuted) setAudioMuted(true);
   };
 
   // Arm after a delay so the initial CRDT load burst is not forwarded (see
@@ -259,6 +285,12 @@ export function createForwardEditBridge(options: ForwardEditBridgeOptions): Forw
     ? null
     : setTimeout(() => {
         armed = true;
+        // Everything the load burst brought in exists in the engine already (it
+        // loaded the same composite), so the arm replays must not `/new_entity` it —
+        // that collides ("id N already live"), same as after a reload.
+        for (const [entity] of context.engine.getEntitiesWith(context.Name)) {
+          instantiated.add(entity);
+        }
         reconcileEditorOverridesOnArm();
       }, ARM_DELAY_MS);
   const shouldForward = options.shouldForward ?? (() => armed);
@@ -454,6 +486,21 @@ export function createForwardEditBridge(options: ForwardEditBridgeOptions): Forw
         return;
       }
 
+      // A Name DELETE marks an entity being torn down. Undo of an "add" reverts by
+      // deleting each of the entity's components individually and NEVER emits a
+      // DELETE_ENTITY (#1460), so without this the spawned GLTF mesh + gizmo linger in
+      // the Bevy viewport (Babylon tolerates per-component deletes; a mirrored engine
+      // needs the whole entity gone). Name is the entity's instantiation anchor
+      // (/new_entity, above), so its removal is the reliable "entity is gone" signal.
+      // The engine's own delete path (remove-entity.ts) additionally emits a
+      // DELETE_ENTITY, handled above — firing delete_entity here too is at worst a
+      // harmless no-op console command on an already-removed entity.
+      if (op === CrdtMessageType.DELETE_COMPONENT && component.componentName === NAME_COMPONENT) {
+        instantiated.delete(entity);
+        fire(`delete_entity ${entity}`, 'delete_entity', [String(entity)]);
+        return;
+      }
+
       // Editor `Hide` OR authored `VisibilityComponent` → the editor's effective
       // visibility (see forwardEditorVisibility). Both are re-derived there, so a
       // change to either just re-asserts the computed value.
@@ -495,9 +542,14 @@ export function createForwardEditBridge(options: ForwardEditBridgeOptions): Forw
       // which would resume playback a beat after the freeze (#1421: "animations run
       // for a couple frames after stop"); likewise a VideoPlayer (#1469) or
       // ParticleSystem (#1467) added/loaded while paused must not start playing.
-      // Route it through forwardFrozenOverride so a frozen scene stays paused.
-      if (isFrozen() && FROZEN_OVERRIDES.has(engineName)) {
-        forwardFrozenOverride(entity, engineName, current, true);
+      // Route it through forwardFrozenOverride so a frozen scene stays paused. A live
+      // AudioSource/AudioStream edit (e.g. a clip/volume change) while muted must also
+      // go through it so it's re-silenced to volume 0 instead of un-muting (#1569).
+      if (
+        (isFrozen() && FROZEN_OVERRIDES.has(engineName)) ||
+        (audioMuted && AUDIO_ENGINE_NAMES.has(engineName))
+      ) {
+        forwardFrozenOverride(entity, engineName, current, isFrozen());
         return;
       }
       // Serialize the forward so a component arriving before its entity's Name PUT
@@ -599,6 +651,9 @@ export function createForwardEditBridge(options: ForwardEditBridgeOptions): Forw
   //    force every state playing:false (a null Animator still pauses as {states:[]}).
   //  - VideoPlayer (#1469): a loaded video keeps playing — force playing:false.
   //  - ParticleSystem (#1467): emission/simulation keeps running — force PS_PAUSED.
+  //  - AudioSource / AudioStream: sound keeps playing — force playing:false.
+  const pausePlaying = (raw: unknown) =>
+    raw == null ? null : { ...(raw as Record<string, unknown>), playing: false };
   const FROZEN_OVERRIDES = new Map<string, (raw: unknown) => unknown>([
     [
       'Animator',
@@ -607,10 +662,9 @@ export function createForwardEditBridge(options: ForwardEditBridgeOptions): Forw
         return { states: (a?.states ?? []).map(s => ({ ...s, playing: false })) };
       },
     ],
-    [
-      'VideoPlayer',
-      raw => (raw == null ? null : { ...(raw as Record<string, unknown>), playing: false }),
-    ],
+    ['VideoPlayer', pausePlaying],
+    ['AudioSource', pausePlaying],
+    ['AudioStream', pausePlaying],
     [
       'ParticleSystem',
       raw =>
@@ -620,9 +674,19 @@ export function createForwardEditBridge(options: ForwardEditBridgeOptions): Forw
     ],
   ]);
 
+  // Audio the mute toggle silences (#1569). Muting forces volume 0 (rather than
+  // playing:false) so it composes with the freeze override and, unlike a pause, keeps
+  // the clip position advancing — a true mute. Applied whatever the run/freeze state,
+  // so a looping sound is silent while editing AND while the scene runs.
+  const AUDIO_ENGINE_NAMES = new Set(['AudioSource', 'AudioStream']);
+  const applyMute = (engineName: string, value: unknown) =>
+    audioMuted && value != null && AUDIO_ENGINE_NAMES.has(engineName)
+      ? { ...(value as Record<string, unknown>), volume: 0 }
+      : value;
+
   // Forward one time-based component honoring the freeze state: paused override while
-  // FROZEN, authored value while running. A null value (missing, or an override that
-  // opted out) is skipped.
+  // FROZEN, authored value while running, then muted (volume 0) if the mute toggle is
+  // on. A null value (missing, or an override that opted out) is skipped.
   const forwardFrozenOverride = (
     entity: Entity,
     engineName: string,
@@ -630,7 +694,7 @@ export function createForwardEditBridge(options: ForwardEditBridgeOptions): Forw
     frozen: boolean,
   ) => {
     const override = FROZEN_OVERRIDES.get(engineName);
-    const value = frozen && override ? override(raw) : raw;
+    const value = applyMute(engineName, frozen && override ? override(raw) : raw);
     if (value == null) return;
     enqueue(entity, async () => {
       await ensureInstantiated(entity);
@@ -647,6 +711,21 @@ export function createForwardEditBridge(options: ForwardEditBridgeOptions): Forw
       if (!component) continue;
       for (const [entity, value] of context.engine.getEntitiesWith(component)) {
         forwardFrozenOverride(entity, engineName, value, frozen);
+      }
+    }
+  };
+
+  // Silence/restore all scene audio with the mute toggle (#1569). Re-forwards every
+  // AudioSource/AudioStream so `applyMute` (which reads the now-current isMuted state)
+  // sets volume 0 or restores the authored value. Honors the freeze state so a
+  // muted+frozen source stays paused. Called by the toggle and on arm/reload.
+  const setAudioMuted = (muted: boolean) => {
+    audioMuted = muted;
+    for (const engineName of AUDIO_ENGINE_NAMES) {
+      const component = context.getForwardableComponent(`core::${engineName}`);
+      if (!component) continue;
+      for (const [entity, value] of context.engine.getEntitiesWith(component)) {
+        forwardFrozenOverride(entity, engineName, value, isFrozen());
       }
     }
   };
@@ -679,5 +758,6 @@ export function createForwardEditBridge(options: ForwardEditBridgeOptions): Forw
     },
     setAnimationsFrozen,
     reconcileAfterReload,
+    setAudioMuted,
   };
 }

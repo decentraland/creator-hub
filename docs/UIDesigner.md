@@ -4,13 +4,26 @@ The UI Designer is the inspector's 2D mode for authoring a scene's `@dcl/react-e
 
 Read this when working on the 2D toolbar, the canvas direct-manipulation, or the 2D/3D mode switch.
 
-## Availability (opt-in gate and SDK requirement)
+## Availability (SDK requirement and the embedder gate)
 
-The UI Designer is gated twice, and both gates arrive as **inspector config query params** (`InspectorConfig`, read once per session via `getConfig`) — the same mechanism as `renderer`, not the feature-flag channel. Creator Hub appends them to the iframe URL in `EditorPage`, so changing a setting rebuilds the URL and reloads the iframe with the new value. Its user-facing name is **UI Editor**; the internal code keeps the older `uiDesigner` name.
+Two **inspector config query params** (`InspectorConfig`, read once per session via `getConfig`) decide whether 2D mode is reachable — the same mechanism as `renderer`, not the feature-flag channel. Creator Hub appends them to the iframe URL in `EditorPage` (`buildInspectorUrl`, `renderer/src/components/EditorPage/inspectorUrl.ts`), so a change that rebuilds the URL reloads the iframe with the new value. Its user-facing name is **UI Editor**; the internal code keeps the older `uiDesigner` name.
 
-- **Feature opt-in** (`uiEditorEnabled`). It is an app setting, off by default: **Settings → Experimental → UI Editor** (`settings.guiEditor`, a toggle in the dedicated Experimental tab, alongside the Scene renderer picker). Creator Hub passes it as the `uiEditorEnabled` query param straight from `settings.guiEditor`. `ModeSwitcher` renders nothing when `getConfig().uiEditorEnabled` is false, so the 2D/3D tablist — the only entry into 2D — is absent, and `useRestorePersistedMode` never restores a persisted 2D mode. The standalone dev inspector has no Creator Hub to pass params, so `getConfig` defaults both to `INSPECTOR_DEV_PARSER` (on in dev builds).
+- **Embedder gate** (`uiEditorEnabled`). Creator Hub always passes `true` — the UI Editor is stable and has no setting. The param exists for *other* hosts: `@dcl/inspector` is published to npm with documented iframe and WebSocket embedding, and `getConfig` defaults it to `INSPECTOR_DEV_PARSER` — true in dev builds, false in production — because code-as-source needs a parser a production standalone build does not ship. The `@oxc-parser/wasm` fallback is compiled out under `--production`, and only Creator Hub's RPC bridge reaches main's native `oxc-parser`. `ModeSwitcher` renders nothing when the param is false, so the 2D/3D tablist — the only entry into 2D — is absent, and `useRestorePersistedMode` never restores a persisted 2D mode.
 
-- **SDK compatibility** (`uiEditorSupported`). The editor emits `ScreenInsetArea` / `InteractableArea` wrappers and relies on react-ecs' per-device default virtual screen, both of which exist only in `@dcl/sdk` 7.26.0+ (react-ecs 7.26.0). Below that, a generated `src/ui/index.tsx` fails to compile. Creator Hub derives `supportsUiDesigner` from the scene's installed SDK version (`shared/flags.ts`, `editor` slice) and passes it as the `uiEditorSupported` query param. When the feature is on but the scene is incompatible, the 2D tab stays available and entering it renders `SdkUpgradeNotice` (a full-cover dropout) instead of the canvas. **Update SDK** calls the `update_sdk` scene RPC, which runs the SAME canonical update as the "New dependencies version detected" toast (`updatePackages`, guarded by `editor.isInstallingProject` so the two can't double-install) then `fetchSdkCommandsVersion`; on success the inspector reloads itself (`window.location.reload()`) so the scene picks up the new dependency. **Maybe later** switches back to 3D (`togglePanel` off + `uiDesignerOpen: false`).
+- **SDK compatibility** (`uiEditorSupported`). The editor emits `ScreenInsetArea` / `InteractableArea` wrappers and relies on react-ecs' per-device default virtual screen, both of which exist only in `@dcl/sdk` 7.26.0+ (react-ecs 7.26.0). Below that, a generated `src/ui/index.tsx` fails to compile. Creator Hub derives `supportsUiDesigner` from the scene's installed SDK version (`shared/flags.ts`, `editor` slice) and passes it as the `uiEditorSupported` query param. When the scene's SDK is too old, the 2D tab stays available and entering it renders `SdkUpgradeNotice` (a full-cover dropout) instead of the canvas. **Update SDK** calls the `update_sdk` scene RPC, which runs the SAME canonical update as the "New dependencies version detected" toast (`updatePackages`, guarded by `editor.isInstallingProject` so the two can't double-install) then `fetchSdkCommandsVersion`; on success the inspector reloads itself (`window.location.reload()`) so the scene picks up the new dependency. **Maybe later** switches back to 3D (`togglePanel` off + `uiDesignerOpen: false`).
+
+`getConfigStorage` (`creator-hub/main/src/modules/config.ts`) deletes a `guiEditor` key from `mergedConfig.settings`: configs written while the UI Editor was an opt-in still carry it, and `mergeConfig` is `deepmerge(defaults, stored)`, so a stored key absent from the defaults survives every merge. The deletion targets `mergedConfig` rather than `existingConfig` on purpose — `existingConfig.settings` is what the `storedSettings` cast aliases, so mutating it there would make the `JSON.stringify(existingConfig) !== JSON.stringify(mergedConfig)` write guard see no change and the cleaned config would never reach disk. It works because `deepmerge` clones into a fresh tree instead of aliasing, which is the same reason the `previewOptions.optimizedAssets` reset and the `optimizedAssetsByPath` prune sit after the merge: mutate `mergedConfig` when the result must persist, `existingConfig` when it only has to be right in memory.
+
+## Inspector iframe config params
+
+The transport and asset params `buildInspectorUrl` (`creator-hub/renderer/src/components/EditorPage/inspectorUrl.ts`) appends. Several look redundant and are load-bearing — check this list before changing or dropping one. The analytics params (`segmentKey`, `segmentAppId`, `segmentUserId`), `projectId` and `uiDesignerOpen` are not listed here; `uiDesignerOpen` is covered under Mode persistence below.
+
+- **`renderer`** is always sent. Without it the inspector offers an independent, un-plumbed renderer picker in its own toolbar, and choosing Bevy there mounts the engine with no realm and boots the default world. The host owns renderer selection and supplies each renderer's config.
+- **`dataLayerRpcParentUrl`** is always sent, for *both* renderers. It carries the parent-window scene-RPC control channel — host-to-inspector feature flags, notifications, file/dir open. Babylon additionally uses it as its data-layer transport.
+- **`dataLayerRpcWsUrl`** and **`bevyRealm`** are sent only on the Bevy path, and the WS takes precedence over `dataLayerRpcParentUrl` *for the data layer*: sharing the realm's websocket keeps entity ids aligned with the engine so forwarded edits land on the right entities. It does not supersede the control channel, which is why `dataLayerRpcParentUrl` is still sent alongside it — drop it and host feature flags (`SceneMinimap`, for one) never arrive.
+- **`bevyPosition`** is the scene's real parcel base coord (`project.scene.base`), where the engine loads the scene.
+- **`bevySystemScene`** points at the super-user editor-agent portable experience (viewport pick and gizmo), a static realm at `inspector/public/bevy-agent` served same-origin by the inspector's http-server. The engine GETs `<systemScene>/about` and the realm export nests `<realmName>/about`, which is why the path segment is doubled (`/bevy-agent/bevy-agent`). `VITE_BEVY_SYSTEM_SCENE` overrides it to point at a dev server.
+- **`binIndexJsUrl`** and **`contentUrl`** exist for local `@dcl/asset-packs` development, or for pointing the inspector at another environment such as `.zone`. `binIndexJsUrl` defaults to the inspector's own `bin/index.js`; setting both `VITE_ASSET_PACKS_JS_PORT` and `VITE_ASSET_PACKS_JS_PATH` redirects it at a local content server, and `VITE_ASSET_PACKS_CONTENT_URL` adds `contentUrl`, which is otherwise left to the inspector's default.
 
 ## Testing the UI Designer
 
@@ -62,7 +75,7 @@ The subtlety is **run intent**. `sceneRun` exposes only a boolean `isRunning()`,
 - `useSyncSceneRunWithMode` freezes the scene when 2D opens (editing needs a static viewport, because the renderer is only CSS-hidden in 2D) and resumes it when 3D returns, but only if the intent was to run.
 - The 2D toolbar displays the intent, so switching to 2D while a scene runs shows **Pause** (it's still your running scene, just frozen), not Play as if it never ran.
 
-**Hot-reload suppression (`register.ts`).** `sdk-commands start` broadcasts `SCENE_UPDATE` on any file change, and under `--data-layer` mode that message carries no filename and also fires when the data-layer rewrites `main.crdt` for the inspector's own edits — so reloading on every one reloads on every gizmo drag (the #1391 regression). A short quiet window after any local edit suppresses those; only an update with no recent local edit (an external code save, #1419) reloads. "Local edit" comes from a shared beacon, not a timestamp stamped here, because there are two writers — CRDT edits and code mode (which writes `src/ui/*.tsx` through the storage bridge and never touches the CRDT).
+**Own source writes and the Bevy hot-reload (`register.ts`, `build-reload-bridge.ts`).** Under the Bevy renderer every rebuild of the scene bundle is reported to the inspector by the host (the realm bundler's `File <path> changed, rebuilding...` / `Bundle saved` lines, relayed as `notify_scene_build`), and a rebuild triggered by a source file reloads the engine scene so an IDE code save shows up (#1419). Code mode writes `src/ui/*.tsx` through the storage bridge, which would look exactly like such a save — so `writeToDisk` registers the path with `markOwnWrite` (`lib/logic/own-writes.ts`) first, and the bridge treats a rebuild it triggered like the editor's own autosave: no reload. Matched by path, not by a timing window.
 
 ## Multi-node move
 
@@ -90,7 +103,7 @@ Never add a member to an already-released `inspector::UIState` version in `versi
 
 ## App shell (mode toggle)
 
-- **`<Renderer />` stays mounted across mode toggles, hidden with CSS, never unmounted.** Babylon's engine/canvas refs don't survive unmount/remount — unmounting kills the GL context. Because it stays live under 2D, its document-level entity hotkeys (Delete / Cmd+D / copy-paste) must be guarded, and the bare camera keys (space/f/+/-) must be *unbound* via `useHotkey({ enabled })` while the designer is open — `useHotkey` preventDefaults before dispatch, so a callback-level guard is not enough (ref #1401).
+- **`<Renderer />` stays mounted across mode toggles, hidden with CSS, never unmounted.** Babylon's engine/canvas refs don't survive unmount/remount — unmounting kills the GL context. Because it stays live under 2D, its document-level entity hotkeys (Delete / Cmd+D / copy-paste) must be guarded, and the bare camera keys (space/f/+/-) must be _unbound_ via `useHotkey({ enabled })` while the designer is open — `useHotkey` preventDefaults before dispatch, so a callback-level guard is not enough (ref #1401).
 - **react-resizable-panels layout quirks (`App.tsx`).** The top `<Panel>` omits `defaultSize` — pinning it wouldn't sum to 100 once the bottom panel asks for its 2D height, and the library rescales any layout that doesn't total 100. The bottom panel's `id` switches between `palette` (2D) and `assets` (3D) because the library keys saved layout by `id` and only re-reads it on (un)register, so a shared id would leak one mode's height into the other.
 - **`isReady` doubles as the e2e readiness gate**, so it must include `modeResolved` — otherwise tests race the mode restore.
 
@@ -106,17 +119,150 @@ Persistence lives only in the aggregator source (the wrapper tags themselves). `
 
 The aggregator no longer writes `{ virtualWidth, virtualHeight }` into `setUiRenderer` — react-ecs defaults the design resolution per device (desktop / mobile 16:9), so a hardcoded desktop resolution no longer forces itself onto the mobile branch. The editor canvas frames against a fixed default (`DEFAULT_CANVAS_WIDTH/HEIGHT`, `shared/tree-model.ts`); `setUiRenderer`'s options arg is optional, so the single-arg emit typechecks against `@dcl/react-ecs`.
 
-Canvas: the active root's inset is drawn as a dashed guide (`Canvas.tsx`, reusing the `.ui-designer-safe-zone` overlay styling) from `insetRect(device, inset)` (`shared/safe-areas.ts`, where `deviceSafeArea` is desktop = full screen, mobile = inside the system bars). The guide shows only for a top-level root, mirroring the aggregator, and is hidden for a fixed-artboard root (see Canvas framing).
+Canvas: the active root's inset clips the root to `insetRect(device, inset)` (`shared/safe-areas.ts`), which returns `screenInsetArea` for `'device'`, `interactableArea` for `'interactable'`, and the full screen for `'none'`. The clip shows only for a top-level root, mirroring the aggregator, and is hidden for a fixed-artboard root (see Canvas framing). The safe-area outline + reference HUD is drawn by `SafeAreaOverlay` (see below).
+
+## Mobile safe-area preview model
+
+The mobile preview mirrors two react-ecs areas. **In-world these are runtime values** — the explorer reports `PBUiCanvasInformation.interactableArea` / `screenInsetArea` (a `BorderRect` of per-edge pixel indents; `(0,0,0,0)` on desktop), and `ScreenInsetArea`/`InteractableArea` position content against them each tick. The editor has no explorer, so `shared/safe-areas.ts` is a **static approximation** for the preview only — it does not affect emitted code. So a wrong preview is never a codegen bug; fix it in `safe-areas.ts` + `Canvas/SafeAreaOverlay/`, never the aggregator.
+
+Numbers are normalized `[0,1]`, derived as `native_inset / native_dimension` (scale-invariant) from the real client presets:
+
+- **`screenInsetArea`** (react-ecs `'device'`) — hardware insets. Mobile = iPhone 14 Pro landscape from [`godot-explorer safe_area_presets.gd@696ad8a`](https://github.com/decentraland/godot-explorer/blob/696ad8a3379ed7ca4cd98901e9f5679137cb131c/godot/assets/no-export/safe_area_presets.gd#L4): L=R=177/2556=0.069 → `x:[0.069,0.931]`, **86% wide** (matches the mobile-team reference). Vertically the preview uses a **6% top and bottom margin** (`y:[0.06,0.94]`) — a deliberate divergence from the preset (whose landscape `top` is 0, since the notch is a side inset), matching the ~5–8% top/bottom margin in the design guidelines. `interactableArea` carries the same `y` so it stays nested. Desktop = full screen. (Android/Motorola landscape there is L=128/2712=0.047 only — not currently wired.)
+- **`interactableArea`** (react-ecs `'interactable'`) — HUD-safe zone = the device area minus the **left** HUD column (chat/joystick/emotes); it **shares the right edge** with `screenInsetArea`, so the right action-button cluster sits *inside* it (the client draws those buttons over the interactable area by design). Mobile `x:[0.28,0.931] y:[0.06,0.94]`, **~65% wide** (matches the annotated 65% reference). Desktop `x:[0.25,1]` (client reserves ~left quarter).
+- **`hud: HudGuide[]`** — reference client controls (joystick, jump, F/E keys, emote, profile, chat, compass, counter, pointer) as non-interactive filled-disc guides positioned per the docs (left column + bottom-right cluster). Icons in `Canvas/SafeAreaOverlay/hud-icons.tsx`; drawn by `SafeAreaOverlay.tsx`. The `variant` prop chooses the outline (`'device'` → screen-inset, `'hud'` → interactable); separate **`showOutline`** and **`showHud`** props draw the outline and the guides independently. Guides scale with the previewed screen (they stand in for real on-screen elements). `Canvas.tsx` derives `hudVisible` from a tri-state `hudOverride` (`null` = mode default: visible in device/gameplay, hidden in full screen; an explicit toggle then wins), surfaced by the game-controller button in the canvas zoom pill (mobile only). So the HUD shows by default in the safe-area modes and on demand in full screen.
+
+Accepted approximation: the mobile frame stays `1600×720` (Android window size) while the insets are the iPhone reference — the preview was always a single-device approximation, and 86%/65% is what the mobile team specced.
+
+**Phone chrome + no letterbox.** The mobile design canvas is `MOBILE_CANVAS_WIDTH/HEIGHT` = `1600×720` (`shared/tree-model.ts`), matching react-ecs' `DEFAULT_MOBILE_VIRTUAL_SIZE`; desktop keeps `1920×1080`. Because the mobile canvas equals the default mobile screen, `fitScale` is 1 and the UI fills the phone with **no side letterbox** (the old `1920×1080` canvas letterboxed ~160 px each side — wider than the real 110 px inset, which made the safe-area line look like it sat in the bezel). The mobile frame is styled as a phone in `Canvas.css` `.ui-designer-device-frame`: a dark body with a small (12px) corner radius and a `::before` landscape **notch** pill seated in the left inset (where the physical notch sits). The body colour shows through wherever the screen is inset (device / gameplay), so the notch reads against it. The radius is kept small on purpose: the screen content fills the frame edge-to-edge (measured 0-delta on all sides in full-screen), so a large radius read as a phantom top/bottom margin.
+
+**Screen backdrop (three tones).** The clipped root (`.ui-designer-canvas-root`) is the *usable* area — under gameplay inset it fills only the ~64% interactable region. Without a backdrop the reserved HUD area would fall back to the phone-body colour and the screen looked shrunk. So `Canvas.tsx` paints a `.ui-designer-canvas-screenfill` div at the **full fitted screen** (`fsLeft…fsBottom`, i.e. the whole physical display — the notch is a cutout in the glass, not a border) *behind* the root, in a dimmer gray. The device-frame's `overflow: hidden` + radius clip it to the phone shape, so the display reads as almost-100% of the body. Result is three tones: phone **bezel** (thin rounded edge + notch) → **screen** (dim, reserved HUD area) → **usable** root (brightest, on top). The root stays clipped (accurate to how `<InteractableArea>` confines content in-world); only the perceived screen size is fixed.
+
+**Overflow is not clipped to the inset.** react-ecs `ScreenInsetArea` / `InteractableArea` are absolute containers at the inset margins with no `overflow: hidden` (Yoga defaults to visible), so an absolute node placed beyond the inset overflows into the reserved zone **in-world**. The editor matches this — content renders past the safe-area outline (clipped only to the phone body) as a placement warning, not hidden. **Don't** add `overflow: hidden` to the inset root; the overflow is the signal that a node would collide with the game HUD.
+
+## MobileHUD (mobile touch controls)
+
+**MobileHUD** lets creators customize the on-screen mobile gamepad
+(`TouchScreenControls`) without writing code. It appears as a fixed first row
+above the authored GUIs in the left rail once the scene has at least one GUI,
+and selecting it enters a read-only mode: the canvas shows the touch buttons +
+a center crosshair, the device-variant switch and node-adding are disabled, and
+the right rail becomes the MobileHUD editor.
+
+- **MobileHUD is not a react-ecs UI root.** It is a
+  `TouchScreenControls.createOrReplace(engine.RootEntity, { … })` setup call,
+  written to `src/mobile-hud.ts` (**outside `src/ui/`** so `refreshRoots` never
+  treats it as a GUI and imports it into the aggregator) and wired into
+  `src/index.ts` next to `setupUi()`. It therefore has its own selection flag
+  (`mobileHudSelected` in `redux/ui-designer`), its own RightPanel branch, and
+  its own store — it can't ride the parsed-`CodeUINode` path the GUI nodes use.
+- **Lazy write + auto-clean.** `MobileHud/mobile-hud-store.ts` writes the module
+  and the `src/index.ts` wiring only when the config leaves SDK defaults
+  (`isDefaultMobileHudConfig`); resetting every field deletes the module and
+  strips the wiring, so untouched scenes carry no no-op call. Code is the source
+  of truth — the store reads the config back from `src/mobile-hud.ts` on select
+  (`MobileHud/mobile-hud-emit.ts` parses its own generated format).
+- **Emit every required PB field, even at its default.** `TouchScreenControls` is a
+  raw protobuf component and `createOrReplace` takes the full `PBTouchScreenControls`,
+  not a `Partial` — so `hideJoystick`, `hideCrosshair`, `touchInputs`, and each
+  touch-input's `hide` must always be written (zero value included), or the scene's
+  `tsc` fails with `TS2741: Property … is missing`. This is the opposite of react-ecs
+  authoring props, where omitting a default is correct; don't carry the "only emit
+  non-defaults" habit into `mobile-hud-emit.ts`.
+- **Config model.** `MobileHud/mobile-hud-config.ts` holds the eight
+  configurable actions (`IA_JUMP`, `IA_POINTER`, `IA_PRIMARY`/E,
+  `IA_SECONDARY`/F, `IA_ACTION_3..6`/1-4), each with a `hide` flag and an
+  optional scene-image `icon`, plus `hideJoystick`, `hideCrosshair`, and
+  `mainAction`. "Hide Input Actions" is **derived** (every action hidden), not
+  stored — the SDK's `PBTouchScreenControls` has no such field, so a stored
+  boolean would not round-trip.
+- **No drag-reorder (v1).** The explorer renders the buttons in a fixed priority
+  order and only `mainAction` promotes one to the central slot, so the editor
+  exposes Main selection, per-button visibility, and custom icons only.
+- **Read-only preview, positioned inside a safe-area box.** `Canvas/MobileHudPreview/`
+  renders a container div at the mobile **device safe area**
+  (`SAFE_AREAS.mobile.screenInsetArea`) and places each button at a `HOME` slot in
+  **box coordinates** (0..1 of the box, not the screen) — derived from the HUD
+  Revamp Figma. Box-relative is deliberate: a button at box-x near 0 sits at the
+  left margin by construction, so the margins do the work and nothing is
+  re-verified against the screen. Layout: the 1-4 column + a static `+` at the
+  right edge, the F→E→pointer diagonal, the big central button bottom-right, and
+  the joystick bottom-left. Only `TouchScreenControls`'s own buttons are drawn —
+  no emote/profile/chat client chrome. It stays flat (the 1-4 are always shown,
+  not behind the `+`).
+- **The Main action drives the canvas (stack model, not a swap).** The visible
+  actions fill fixed slots in priority order (`MOBILE_ACTIONS`) with the Main
+  action pulled to the big central slot: `visible = [main, …rest].filter(!hide)`
+  then slot `i` = `HOME[MOBILE_ACTIONS[i]]` (`slotFor`). So making `IA_PRIMARY`
+  Main puts **E** in the big slot and **Jump lands in the first cluster slot**
+  (bottom-left, s1), not in E's old spot; and hiding buttons re-packs the rest
+  with no gaps (hide E/F/"2" → Pointer, 1, 3, 4 around Main). The `+` overflow
+  shows only when more than five buttons are visible (`showPlus`). The Main
+  button gets an accent ring; glyphs follow the action (`HOME[action].kind`), the
+  slot follows the packing. Custom icons resolve through `useAssetUrl`; hovering a
+  RightPanel row highlights its button via `mobileHudHighlightedAction`. The canvas forces the
+  mobile frame while MobileHUD is selected (preview shows even on an empty scene)
+  and draws the device safe-area outline, which shares the box's rect so the
+  buttons read as inside it.
+- **One preview component, two modes.** Both HUDs are `MobileHudPreview` (same
+  box-relative layout inside the Device Safe Area, so positions never differ). In
+  MobileHUD mode it renders the editable `TouchScreenControls` buttons alone; while
+  editing a GUI it renders with `reference` — the same buttons **plus** the
+  non-configurable client chrome (`CHROME`: profile + chat top-left, emote
+  bottom-left) so creators design around the real on-screen HUD. `SafeAreaOverlay`
+  is now only the safe-area outline (`showHud` is always false); its
+  `MOBILE_SAFE_AREA.hud` guide set is dormant.
+- **The editing canvas layers the reference HUD between the surface and the nodes.**
+  The usable-area fill moved out of `.ui-designer-canvas-root` into a separate
+  `.ui-designer-canvas-rootbg` backdrop; the reference `MobileHudPreview` sits at
+  `z-index: 890` and the now-transparent `canvas-root` at `z-index: 901` **above**
+  it — so the reference HUD reads over the empty canvas while authored nodes
+  occlude it (a single `z-index` on `canvas-root` couldn't do this: its fill and
+  its child nodes are one stacking box).
+- **Icons are scene images only.** The Custom Icon picker reuses
+  `FileUploadField` over `useAssetOptions(ACCEPTED_FILE_TYPES.image)` — the SDK
+  icon field is a scene-content texture `src`, so no external URL, avatar, or
+  video is offered.
+- **Custom icons re-resolve on catalog change.** A synchronously-published config
+  (unlike a react-ecs source round-trip, which re-mounts the node after the import
+  finishes) can reference a just-imported image before its bytes exist, so
+  `useAssetUrl` re-resolves when the asset lands in `selectAssetCatalog` —
+  otherwise the icon only appears after a hide/show remount.
 
 ## Canvas framing (artboard vs screen) and overflow
 
-The canvas frames the root two ways (`Canvas.tsx`, `fixedRoot`): a root whose width AND height are fixed px (`widthUnit/heightUnit === YGU_POINT`) is an **artboard** — the frame is the root's own box, drawn at true size (`fitScale = 1`, no device-screen letterbox), and the screen-relative overlays (safe-area, inset guide) are hidden. A **full-screen** root (%, auto or unset) keeps the previous behaviour: the fixed default design resolution (`DEFAULT_CANVAS_WIDTH/HEIGHT`) is letterboxed into the previewed device screen. Feeding a fixed 400×400 root into the old `min(screen/virtual)` fit blew it up to fill 1080px — the "canvas not resized to the root" symptom.
+The canvas frames the root two ways (`Canvas.tsx`, `fixedRoot`): a root whose width AND height are fixed px (`widthUnit/heightUnit === YGU_POINT`) is an **artboard** — the frame is the root's own box, drawn at true size (`fitScale = 1`, no device-screen letterbox), and the screen-relative overlays (safe-area, inset guide) are hidden. A **full-screen** root (%, auto or unset) is fitted into the previewed device screen: the design resolution is `DEFAULT_CANVAS_WIDTH/HEIGHT` (`1920×1080`) on desktop and `MOBILE_CANVAS_WIDTH/HEIGHT` (`1600×720`) on mobile. Since each matches its default screen, `fitScale` is 1 and there is no letterbox unless a non-default screen preset is chosen (see the mobile safe-area section). Feeding a fixed 400×400 root into the old `min(screen/virtual)` fit blew it up to fill 1080px — the "canvas not resized to the root" symptom.
+
+Artboard framing is suppressed while the **MobileHUD** is the selection (`computeCanvasGeometry`, `shared/canvas-geometry.ts`). Selecting the HUD clears the selected nodes but does not change the active code root, so without that exemption the HUD inherited the artboard box of whichever GUI happened to be open: a 200×100 root rendered the HUD into a 200×100 frame and dropped its screenfill backdrop, and switching between GUIs changed the HUD's size with them. The HUD is a device view — it always frames against the mobile screen.
 
 Overflow is shown, not clipped: the clip lived on `.ui-designer-canvas-screen` (`overflow: hidden`), which cut nodes at the frame edge. It is now `visible`, and `.ui-designer-canvas-stagewrap` too, so a child larger than the frame renders past it; the outer `.ui-designer-canvas-viewport` still clips at the panel boundary. The mobile `.ui-designer-device-frame` keeps its bezel clip.
 
+## Flow vs position: two orthogonal axes
+
+The Flow control and "Ignore Layout Flow" are **independent**, keyed on **different** `uiTransform` fields — do not conflate them (`flow.ts`, `RightPanel/PropertyPanel`):
+
+- **`positionType`** — how a node sits in _its own parent_: relative (in flow) vs absolute (free). This is the **"Ignore Layout Flow"** checkbox (`POSITION_MODE_FIELD`, `absolutePatch`/`inFlowPatch`).
+- **`flexDirection`** — how a node arranges _its children_: the **Flow** control (`FlowField`), cells = **Free** + four directions. **Free is the _absence_ of `flexDirection`** (`flowValue`/`isFreeFlow`: `flexDirection === undefined` ⇒ `'free'`). A node can be absolute itself _and_ flow its children (`Flow: Row`) — different fields.
+
+`'free'` is an **editor** reading, not a runtime property: react-ecs/Yoga has no free mode — a container with no `flexDirection` still flexes any _relative_ child (Yoga's default row). Free placement is realized by the _children_ being `positionType: absolute`, which the child-seeding rule and `spliceSetFreeFlow` guarantee; a relative child hand-authored into a free container will still flow.
+
+Rules, all keyed on the parent's `flexDirection` (never its `positionType`):
+
+- **Child seeding** (`store-splices.ts` `parentIsFree`): a dropped child is seeded `positionType: absolute` iff the parent has **no** `flexDirection`; a parent with one seeds relative children. Roots are always `positionType: absolute` (`spliceSetRootChild` seeds free).
+- **"Ignore Layout Flow" visibility** (`PropertyPanel.tsx`, `isFreeFlow`): a child shows the toggle only when its parent is **in flow** (has a `flexDirection`); hidden for children of a free parent and for **all roots** (`isGuiRoot`).
+- **Switching a container to Free** (`spliceSetFreeFlow`): clearing `flexDirection` alone is **not** enough — Yoga still flows relative children in its default direction, so each child must be pinned `positionType: absolute`. The op measures each child's `offsetInParent` and pins it there in one batched `applySourceEdits` (synthetic ids are positional per parse), so children don't collapse to 0,0.
+
+`resize-modes.ts` "Fill" is a **flow-only** concept and reads `positionType` directly, not the Flow control.
+
 ## Codegen & runtime gotchas
 
-- **Hotkeys are not built on the shared `useHotkey` hook** (`shared/useUINodeHotkeys.ts`). `useHotkey`'s cleanup unbinds keys *globally*, which would clobber the 3D Renderer's Ctrl+C/V/D/Delete. Undo/redo are also deliberately not handled here — the Toolbar owns Ctrl+Z/Y, and a second document-level listener would double-fire.
+- **An intermediate splice inside a relocating op must not reformat.** An op that finds a
+  moved/new node by byte offset (`expectedStart` over `state.parsed.spans`) breaks if an earlier
+  write reformats the file — offsets shift, the re-find returns nothing, and the trailing
+  `selectNode` is skipped (a reparent silently deselecting). Apply intermediate edits with
+  `applySourceEdits(edits, { format: false })` (or `pinEdits`) and call `formatActiveFile()` once
+  at the end. `writeUiTransformFields` formats by default, so don't reach for it mid-op.
+
+- **Hotkeys are not built on the shared `useHotkey` hook** (`shared/useUINodeHotkeys.ts`). `useHotkey`'s cleanup unbinds keys _globally_, which would clobber the 3D Renderer's Ctrl+C/V/D/Delete. Undo/redo are also deliberately not handled here — the Toolbar owns Ctrl+Z/Y, and a second document-level listener would double-fire.
 - **Scene files arrive as a plain `Uint8Array`, not a Node `Buffer`, over the iframe↔CH RPC** (`code/store.ts` disk read/write). The `Buffer` prototype is lost across the bridge, so `.toString('utf8')` yields a comma-joined byte string (`"47,42,…"`) instead of text. Decode/encode via `TextDecoder`/`TextEncoder` (matching `fs-composite-provider`).
 - **Enum string spellings must match react-ecs's own parser keys exactly** (`code/ecs-shape.ts` `ENUM_TO_STRING`) — `'nowrap'` not `'no-wrap'`, `'flex-start'` not `'start'`. A wrong spelling makes the runtime parser return `undefined` and silently fall back to its default, so the whole enum-prop group round-trips as a no-op with no error.
 - **Mixed-content binding chips are a trust boundary** (`RightPanel/PropertyPanel/MixedContentField`, `segments.ts`). A chip's `data-variable` is untrusted — a foreign paste/drop/IME node can carry an attacker-chosen value that would be spliced verbatim into a `${…}` template slot. `isSafeBindingExpr` (bare identifier or single-level member access only) gates every segment; paste inserts plain text via a `Range` and drop/dragover are rejected outright. Do not bypass the gate when adding segment sources.
@@ -124,4 +270,6 @@ Overflow is shown, not clipped: the clip lived on `.ui-designer-canvas-screen` (
 - **Override/interaction layers write an explicit value, never a removal.** An absent key in an override layer reads as "inherit from the Default layer", so clearing a field there means writing its explicit value, not deleting the key (recurs across `resize-modes.ts`, `flow.ts`, `overflow-flags.ts`, `visibleDisplayValue`). Going absolute also clears all four margins — Yoga adds a node's leading margin on top of an absolute inset, so a surviving margin holds the node off the very edge it is pinned to.
 - **`safeTextureUrl` is an output-sink allowlist, not input validation** (`Canvas.tsx`). The resolved texture URL is interpolated into a CSS `url("…")` context on the canvas, so emission rejects any value with a quote/paren/whitespace/backslash and permits only `blob:` / `http(s):` / `data:image/`. This is independent of the TextureField commit-path validation; a rejected value drops the image and the background colour still shows. Keep the allowlist when touching canvas background rendering.
 - **Canvas text markup is XSS-safe only because it builds React elements, never `innerHTML`** (`text-markup.tsx`). `PBUiText.value` is author-controlled and reaches the DOM verbatim; React's text-child escaping is the entire safety story, so anything unrecognized (including `<script>`) stays literal text. Never switch this to `dangerouslySetInnerHTML`.
-- **Reorder holds the drag translate until the source round-trips** (`Canvas.tsx` `heldOffset`), because a reorder changes the node's source *path*, not its offsets, so `optimisticPos` can't express the dropped state — releasing on mouseup snaps the node back to its old slot for a frame. Relatedly, the `optimisticPos` release check must read an *absent* margin as the `0` it means in Yoga (a cleared margin returns as absent, not `0`), or the hold never releases. (Extends the async direct-manipulation note in the root CLAUDE.md.)
+- **Reorder holds the drag translate until the source round-trips** (`Canvas.tsx` `heldOffset`), because a reorder changes the node's source _path_, not its offsets, so `optimisticPos` can't express the dropped state — releasing on mouseup snaps the node back to its old slot for a frame. Relatedly, the `optimisticPos` release check must read an _absent_ margin as the `0` it means in Yoga (a cleared margin returns as absent, not `0`), or the hold never releases. (Extends the async direct-manipulation note in the root CLAUDE.md.)
+- **Full-fill a node with `flexGrow: 1` + `alignSelf: 'stretch'`, not `width/height: '100%'`** (`code/store-splices.ts` `FULLSCREEN_TEMPLATE`, `RightPanel/PropertyPanel/resize-modes.ts`). `resizeMode` classifies `YGU_PERCENT → 'percent'` and a no-size + grow/stretch axis → `'fill'`, so a `100%` node reads back in the resize panel as **Percent**, not **Fill**. `flexGrow` also cooperates with Yoga free-space (siblings share the axis) where two `100%` children overflow. Emit _both_ props so it fills both axes regardless of the parent's `flexDirection` (Yoga defaults to `column`).
+- **The Full Screen preset is an invisible, pointer-transparent frame — no `uiBackground`, no handlers, no `pointerFilter`.** It exists to give children a full-canvas positioning context. A translucent fill there fogs the whole 3D view in-world, and any pointer handler or `pointerFilter: 'block'` on a full-screen rect swallows every click to the world and to other UI. A background alone does NOT block clicks on either explorer (Unity paints it via `generateVisualContent` on the same element and picks only on `PfmBlock`; Bevy sets `FocusPolicy::Pass` unless the node has interactors), and react-ecs already serializes `PFM_NONE` when `pointerFilter` is unset, so an explicit `'none'` in the template would be noise.

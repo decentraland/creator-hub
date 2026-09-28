@@ -1,6 +1,6 @@
 import mitt from 'mitt';
 import type { Emitter } from 'mitt';
-import type { Entity } from '@dcl/ecs';
+import type { DeepReadonlyObject, Entity } from '@dcl/ecs';
 import { Vector3 as DclVector3 } from '@dcl/ecs-math';
 import type { Vector3 } from '@dcl/ecs-math';
 
@@ -9,6 +9,7 @@ import type {
   GroundPlane,
   IRenderer,
   RendererAnimation,
+  RendererAudio,
   RendererCamera,
   RendererDebug,
   RendererEditorCamera,
@@ -28,11 +29,12 @@ import { VERSIONS_REGISTRY } from '../../sdk/components/versioning/registry';
 import { BevySceneContext } from './BevySceneContext';
 import { consoleCommand } from './console';
 import type { EngineWindow } from './console';
+import { createGltfAnimationsLookup } from './gltf-animations';
 import { createSpawnPointController } from './spawn-point-controller';
 import type { BevySpawnPointController } from './spawn-point-controller';
 
 /** A spawn-point coordinate resolves to a single value, or a range's midpoint. */
-function spawnCoordValue(coord: SceneSpawnPointCoord): number {
+function spawnCoordValue(coord: DeepReadonlyObject<SceneSpawnPointCoord>): number {
   if (coord.$case === 'range') {
     const [a, b] = coord.value;
     return b === undefined ? a : (a + b) / 2;
@@ -75,6 +77,7 @@ export class BevyRenderer implements IRenderer {
   readonly editorCamera: RendererEditorCamera;
   readonly sceneRun: RendererSceneRun;
   readonly interaction: RendererInteraction;
+  readonly audio: RendererAudio;
 
   // In-memory camera pose. No wasm camera yet; this exists so the pose getters
   // are coherent (setPose → getPose) as the contract requires.
@@ -91,10 +94,20 @@ export class BevyRenderer implements IRenderer {
   // `register` wires this to the drop-point bridge. Null until wired (and in the
   // conformance path) → getPointerWorldPoint falls back to null like the stub.
   #resolveDropPoint: ((ndc?: { x: number; y: number }) => Promise<Vector3 | null>) | null = null;
-  // Resolves an entity's GLTF animation clip names via the editor-agent (over the
-  // bus). Null until `register` wires it (and in the conformance path) →
-  // getEntityAnimations returns none.
-  #resolveAnimations: ((entity: Entity) => Promise<string[]>) | null = null;
+  // GLTF animation clip names, parsed from the model file via the mount
+  // context's asset loader (see gltf-animations.ts for why not the engine).
+  // Without a loader (conformance path) it resolves none.
+  #loadAsset: ((src: string) => Promise<Uint8Array | null>) | null = null;
+  readonly #animations = createGltfAnimationsLookup({
+    getSrc: entity => {
+      const gltf = this.context.getForwardableComponent('core::GltfContainer') as {
+        getOrNull?: (e: Entity) => unknown;
+      } | null;
+      const value = gltf?.getOrNull?.(entity) as { src?: string } | null | undefined;
+      return value?.src || null;
+    },
+    loadAsset: src => (this.#loadAsset ? this.#loadAsset(src) : Promise.resolve(null)),
+  });
   // Editor camera (avatar ⇄ free fly). The mode change is enacted by the agent
   // over the bus; `register` injects the poster. Mode state + subscribers live
   // here so the toolbar toggle reflects the current mode.
@@ -122,6 +135,13 @@ export class BevyRenderer implements IRenderer {
   #editingEnabled = true;
   #postEditingEnabled: ((enabled: boolean) => void) | null = null;
   #editingHandlers = new Set<(enabled: boolean) => void>();
+  // Scene audio mute (#1569). Default UNMUTED; the "Mute" toolbar toggle silences all
+  // scene audio while editing. Enacted host-side via the forward bridge (there's no
+  // engine volume/mute console command), so the poster injected by `register` calls
+  // forwardBridge.setAudioMuted rather than posting to the agent.
+  #muted = false;
+  #postMuted: ((muted: boolean) => void) | null = null;
+  #muteHandlers = new Set<(muted: boolean) => void>();
   // True from a Stop/reset until the agent signals `reset-complete` (the reloaded
   // scene is re-pinned + re-frozen). While resetting, Play is deferred: unfreezing
   // an unpinned scene silently no-ops, which is the "hit Play right after Stop and
@@ -164,6 +184,7 @@ export class BevyRenderer implements IRenderer {
     this.editorCamera = this.#createEditorCamera();
     this.sceneRun = this.#createSceneRun();
     this.interaction = this.#createInteraction();
+    this.audio = this.#createAudio();
     this.gizmos = this.#createGizmos();
     this.metrics = this.#createMetrics();
     this.viewport = this.#createViewport();
@@ -334,15 +355,6 @@ export class BevyRenderer implements IRenderer {
   }
 
   /**
-   * Wire the GLTF-animation-names lookup to the agent (over the bus). `register`
-   * calls this after mounting the engine; without it getEntityAnimations returns
-   * none (conformance path).
-   */
-  setAnimationsResolver(resolve: (entity: Entity) => Promise<string[]>): void {
-    this.#resolveAnimations = resolve;
-  }
-
-  /**
    * Wire the editor-camera mode change to the agent (over the bus). `register`
    * calls this after mounting the engine; without it (conformance path) the mode
    * toggle just tracks state locally with no effect.
@@ -359,6 +371,11 @@ export class BevyRenderer implements IRenderer {
   /** Wire the editing-enabled poster (forwards the Interact toggle to the agent). */
   setEditingEnabledPoster(post: (enabled: boolean) => void): void {
     this.#postEditingEnabled = post;
+  }
+
+  /** Wire the mute poster (silences/restores scene audio via the forward bridge; #1569). */
+  setMutedPoster(post: (muted: boolean) => void): void {
+    this.#postMuted = post;
   }
 
   /** Wire the scene resetter (Stop = reboot the engine to the scene's initial
@@ -487,6 +504,22 @@ export class BevyRenderer implements IRenderer {
     };
   }
 
+  #createAudio(): RendererAudio {
+    return {
+      isMuted: () => this.#muted,
+      setMuted: (muted: boolean) => {
+        if (muted === this.#muted) return;
+        this.#muted = muted;
+        this.#postMuted?.(muted);
+        for (const cb of this.#muteHandlers) cb(muted);
+      },
+      onMuteChange: (cb: (muted: boolean) => void): Unsubscribe => {
+        this.#muteHandlers.add(cb);
+        return () => this.#muteHandlers.delete(cb);
+      },
+    };
+  }
+
   /** Called by `register` when the agent posts `reset-complete`: the reloaded
    * scene is re-pinned + re-frozen (or the agent gave up). Clears the reset guard
    * and applies any Play the user requested while the reset was in flight (#1420). */
@@ -508,14 +541,16 @@ export class BevyRenderer implements IRenderer {
     return this.#resolveDropPoint ? this.#resolveDropPoint(ndc) : null;
   }
 
+  /** Wire the scene-file reader the clip-name lookup parses GLTFs with (`register`
+   * passes the mount context's `loadAsset`). */
+  setAssetLoader(loadAsset: (src: string) => Promise<Uint8Array | null>): void {
+    this.#loadAsset = loadAsset;
+  }
+
   async getEntityAnimations(entity: Entity): Promise<RendererAnimation[]> {
-    // The GLTF is loaded in the wasm engine; the editor-agent reads its clip names
-    // (GltfContainerLoadingState.animationNames) and replies over the bus. We only
-    // get names — per-clip GLTF-authored defaults aren't exposed — so weight/speed/
-    // loop are omitted and the inspector applies its defaults. Null resolver
-    // (conformance path) → no animations.
-    if (!this.#resolveAnimations) return [];
-    const names = await this.#resolveAnimations(entity);
+    // Names only — the file declares no per-clip playback defaults — so weight/
+    // speed/loop are omitted and the inspector applies its defaults.
+    const names = await this.#animations.query(entity);
     return names.map(name => ({ name }));
   }
 
@@ -557,6 +592,7 @@ export class BevyRenderer implements IRenderer {
 
   dispose(): void {
     this.#disposed = true;
+    this.#animations.dispose();
     this.#engineWindow = null;
     this.#gizmoChangeHandlers.clear();
     this.#metricsChangeHandlers.clear();

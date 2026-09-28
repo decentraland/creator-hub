@@ -1,4 +1,4 @@
-import type { Entity, IEngine } from '@dcl/ecs';
+import type { DeepReadonlyObject, Entity, IEngine } from '@dcl/ecs';
 import {
   Transform as TransformEngine,
   NetworkEntity as NetworkEntityEngine,
@@ -82,7 +82,7 @@ export function duplicateEntity(engine: IEngine) {
 }
 
 function resolveInsertAfter(
-  nodes: readonly Node[],
+  nodes: readonly DeepReadonlyObject<Node>[],
   parent: Entity,
   insertAfter: Entity | undefined,
   original: Entity,

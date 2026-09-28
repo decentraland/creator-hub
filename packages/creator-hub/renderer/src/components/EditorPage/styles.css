@@ -4,6 +4,10 @@
   flex-direction: column;
   width: 100%;
   height: 100vh;
+  /* Pin the editor to the viewport so only inner panels (the chat transcript) scroll —
+     without this a long AI conversation grew the body past 100vh and scrolled the whole
+     inspector, canvas and asset-packs view included (#1501). */
+  overflow: hidden;
 }
 
 .Editor .Header {
@@ -63,22 +67,128 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  gap: 10px;
 }
 
-.Editor .Header .actions > *:not(:last-child) {
-  margin-right: 6px;
+/* the shared Button sheet adds margin-left between adjacent buttons/groups; the title bar spaces
+   its controls with the flex gap above, so that margin would double up between two buttons */
+.Editor .Header .actions .MuiButton-root + .MuiButton-root,
+.Editor .Header .actions .MuiButton-root + .MuiButtonGroup-root,
+.Editor .Header .actions .MuiButtonGroup-root + .MuiButton-root,
+.Editor .Header .actions .MuiButtonGroup-root + .MuiButtonGroup-root {
+  margin-left: 0;
+}
+
+/* flat title bar: the ui2 theme raises a hovered contained button with an outset shadow (the
+   grouped ones already suppress it), which reads as the button growing next to its neighbours */
+.Editor .Header .actions .Button.MuiButton-root,
+.Editor .Header .actions .Button.MuiButton-root:hover {
+  box-shadow: none !important;
 }
 
 .Editor .Header .actions .MuiButtonGroup-root {
-  height: 34px;
+  height: 32px;
 }
 
 .Editor .Header .actions .MuiButtonGroup-root .MuiButton-root {
-  height: 34px;
+  height: 32px;
+}
+
+/* every title-bar control shares an 8px radius; a group rounds only its outer corners (the
+   shared Button sheet squares the inner edges where the main button meets its dropdown) */
+.Editor .Header .actions .Button.MuiButton-root:not(.MuiButtonGroup-grouped) {
+  border-radius: 8px;
+}
+
+.Editor .Header .actions .Button.MuiButton-root.MuiButtonGroup-grouped:not(.extra-button) {
+  border-top-left-radius: 8px;
+  border-bottom-left-radius: 8px;
+  border-right: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.Editor .Header .actions .Button.extra-button {
+  border-top-right-radius: 8px;
+  border-bottom-right-radius: 8px;
 }
 
 .Editor .Header .actions .preview-control {
   display: inline-flex;
+}
+
+/* AI Assistant toggle: the sparkle mark sits first in the toolbar. White when the chat is
+   closed; the icon itself paints the brand gradient when open (via the `active` state). */
+.Editor .Header .actions .ai-toggle {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border-radius: 8px;
+  color: var(--white);
+}
+
+/* flex-shrink:0 — the 32px button would otherwise squeeze the 24px mark */
+.Editor .Header .actions .ai-toggle svg {
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+}
+
+.Editor .Header .actions .ai-toggle:hover {
+  background-color: var(--title-bar-button);
+}
+
+.Editor .Header .actions .ai-toggle.active {
+  background-color: var(--ai-session-selected);
+}
+
+.Editor .Header .actions .ai-toggle.active:hover {
+  background-color: var(--ai-session-selected-hover);
+}
+
+/* Optimize / Code / Preview: the hover lays a 10% white overlay on the resting fill rather
+   than replacing it — over the black header a bare rgba(255,255,255,0.1) would read darker
+   than the idle state. A pseudo-element (not background-image) so it fades, and so the
+   grouped Preview buttons' own background rules can't cancel it. */
+.Editor .Header .actions .Button.MuiButton-colorSecondary {
+  background-color: var(--title-bar-button) !important;
+}
+
+.Editor .Header .actions .Button.MuiButton-colorSecondary::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background-color: rgba(255, 255, 255, 0.1);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s ease-in-out;
+}
+
+.Editor .Header .actions .Button.MuiButton-colorSecondary:hover::after {
+  opacity: 1;
+}
+
+.Editor .Header .actions .Button.MuiButton-colorPrimary:hover {
+  background-color: var(--dcl-hover) !important;
+}
+
+/* Title-bar design: Optimize / Code / Preview are square icon-only buttons whose label lives
+   in the tooltip. The icon is the button's content (not a startIcon) so MUI adds no gap. */
+.Editor .Header .actions .Button.icon-only,
+.Editor .Header .actions .Button.extra-button {
+  width: 32px;
+  min-width: 32px !important;
+  height: 32px;
+  padding: 0 !important;
+}
+
+.Editor .Header .actions .preview-control .Button.icon-only {
+  width: 38px;
+  min-width: 38px !important;
+}
+
+.Editor .Header .actions .Button.icon-only svg {
+  width: 20px;
+  height: 20px;
 }
 
 /* while optimizing, the Preview button and its dropdown look disabled (same opacity:0.5 the
@@ -99,8 +209,8 @@
   .actions
   .preview-control.optimizing
   .Button.MuiButton-root.MuiButtonGroup-grouped:not(.extra-button) {
-  border-top-right-radius: var(--mui-shape-borderRadius);
-  border-bottom-right-radius: var(--mui-shape-borderRadius);
+  border-top-right-radius: 8px;
+  border-bottom-right-radius: 8px;
   border-right: none;
 }
 
@@ -118,9 +228,71 @@
   color: inherit;
 }
 
+/* Horizontal row holding the inspector iframe and (when open) the AI chat panel.
+   flex-shrink must stay 1: shrink 0 let the row grow to its content's height and
+   overflow the viewport when the chat transcript got long (#1501). position:relative
+   anchors the resize overlay below. */
+.Editor .EditorBody {
+  display: flex;
+  flex: 1 1 auto;
+  min-height: 0;
+  position: relative;
+}
+
+/* Drag handle on the AI panel's left edge — resize the panel like the inspector's own. */
+.Editor .EditorBody .ai-resize-handle {
+  flex: 0 0 auto;
+  width: 5px;
+  cursor: col-resize;
+  background-color: var(--dark-gray, rgba(255, 255, 255, 0.12));
+  opacity: 0;
+  transition: opacity 0.15s ease-in-out;
+}
+
+.Editor .EditorBody .ai-resize-handle:hover {
+  opacity: 1;
+}
+
+/* Covers the iframe while dragging so it doesn't swallow the mouse-move events. */
+.Editor .EditorBody .ai-resize-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  cursor: col-resize;
+}
+
+/* Covers the iframe while it reloads in place (manual "reload scene from disk", renderer
+   switch) so the user sees the loader instead of the black frame the iframe paints until it
+   boots — a long wait under Bevy (#1652). */
+.Editor .EditorBody .reload-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--bg-inspector);
+}
+
+/* Shown inside the reload cover when a reload never becomes ready (#1652): a recoverable
+   Retry + Back instead of an endless spinner. */
+.Editor .EditorBody .reload-overlay .reload-overlay-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 0 24px;
+}
+
 .Editor .inspector {
-  flex: 1 0 auto;
+  flex: 1 1 auto;
   border: none;
+}
+
+/* Let the iframe shrink so the fixed-width chat panel fits beside it (needs the
+   flex-shrink:1 above — min-width:0 alone can't shrink a flex:...0... child). */
+.Editor .EditorBody .inspector {
+  min-width: 0;
 }
 
 .Editor .loading {
@@ -167,18 +339,121 @@
   gap: 12px;
 }
 
+/* Panel chrome (Figma "Menu" component: Neutrals/Onix bg, White 10% border) — the
+   flyout submenu below is a second instance of this exact same panel look. */
 .PreviewOptions {
-  padding: 20px;
   width: 300px;
   display: flex;
   flex-direction: column;
+  gap: 10px;
+  padding: 10px 0;
+  background: #35333b;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  box-shadow: 0px 4px 8px 0px rgba(0, 0, 0, 0.4);
+  box-sizing: border-box;
+}
+
+.PreviewOptions .options {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  width: 100%;
+  padding: 0 10px;
+  box-sizing: border-box;
+}
+
+.PreviewOptions .options .MuiFormControlLabel-root {
+  flex: 1;
+  margin: 0;
+  gap: 5px;
+}
+
+.PreviewOptions .options .MuiRadio-root,
+.PreviewOptions .options .MuiCheckbox-root {
+  padding: 0;
+}
+
+.PreviewOptions .options .MuiFormControlLabel-label {
+  font-size: 14px;
+  color: #fcfcfc;
+}
+
+.PreviewOptions .options .MuiListItemButton-root {
+  height: 38px;
+  min-height: 38px;
+  padding: 0 10px;
+  border-radius: 8px;
+}
+
+.PreviewOptions .options .MuiListItemText-primary {
+  font-size: 14px;
+  color: #fcfcfc;
+}
+
+.PreviewOptions .MuiDivider-root {
+  margin: 0;
+  border-color: rgba(255, 255, 255, 0.1);
 }
 
 .PreviewOptions .title {
-  font-size: 12px;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  padding: 0 10px;
+  font-size: 14px;
   color: var(--clear-divider);
-  margin: 0 0 10px 0;
   text-transform: uppercase;
+}
+
+.PreviewOptions .client-row,
+.PreviewOptions .checkbox-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 38px;
+  padding: 0 10px;
+  border-radius: 8px;
+  box-sizing: border-box;
+}
+
+.PreviewOptions .client-row:hover,
+.PreviewOptions .checkbox-row:hover {
+  background: var(--dark-gray);
+}
+
+.PreviewOptions .client-row .arrow {
+  width: 21px;
+  height: 21px;
+  color: var(--clear-divider);
+}
+
+.PreviewOptions .client-submenu {
+  position: absolute;
+  /* -10px cancels the panel's own padding-top, so the first checkbox row's content lines
+     up with "Desktop Client" instead of sitting one row-padding lower. */
+  top: -10px;
+  left: 100%;
+  margin-left: 8px;
+  width: 300px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 10px 0;
+  background: #35333b;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  box-shadow: 0px 4px 8px 0px rgba(0, 0, 0, 0.4);
+  box-sizing: border-box;
+  z-index: 1;
+}
+
+.PreviewOptions .client-submenu.align-left {
+  left: auto;
+  right: 100%;
+  margin-left: 0;
+  margin-right: 8px;
 }
 
 .PublishOptions {

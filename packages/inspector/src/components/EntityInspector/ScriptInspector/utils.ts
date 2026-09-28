@@ -72,12 +72,27 @@ export function mergeLayout(source: ScriptLayout, target: ScriptLayout): ScriptL
     const targetParam = target.params[name];
     if (!targetParam || value.type !== targetParam.type) {
       layout.params[name] = value; // keep source if param not in target or if param types are different
+    } else if (value.type === 'slider' && targetParam.type === 'slider') {
+      // min/max/step always come from the fresh parse; keep the stored value clamped to the new range
+      const storedValue = typeof targetParam.value === 'number' ? targetParam.value : value.value;
+      layout.params[name] = {
+        ...value,
+        value: Math.min(Math.max(storedValue, value.min), value.max),
+      };
+    } else if (value.type === 'enum' && targetParam.type === 'enum') {
+      // options always come from the fresh parse; keep the stored choice only if still valid
+      const storedValue =
+        typeof targetParam.value === 'string' && value.options.includes(targetParam.value)
+          ? targetParam.value
+          : value.value;
+      layout.params[name] = { ...value, value: storedValue };
     } else {
       layout.params[name] = { ...value, ...targetParam };
     }
   }
 
   layout.actions = source.actions;
+  layout.events = source.events;
   layout.error = source.error;
 
   return layout;

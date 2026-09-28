@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import ArrowBackIosIcon from '@mui/icons-material/ArrowBackIos';
 import PlayCircleIcon from '@mui/icons-material/PlayCircle';
 import CodeIcon from '@mui/icons-material/Code';
+import SpeedOutlinedIcon from '@mui/icons-material/SpeedOutlined';
 import PublicIcon from '@mui/icons-material/Public';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import CloseIcon from '@mui/icons-material/Close';
@@ -15,7 +16,9 @@ import { RENDERER } from '/shared/types/settings';
 import { isWorkspaceError } from '/shared/types/workspace';
 
 import { t } from '/@/modules/store/translation/utils';
-import { initRpc } from '/@/modules/rpc';
+import { captureViewportFallback, initRpc } from '/@/modules/rpc';
+import { resizeImage } from '/@/modules/image';
+import { actions as aiActions } from '/@/modules/store/ai';
 import { config } from '/@/config';
 import { useEditor } from '/@/hooks/useEditor';
 import { useSettings } from '/@/hooks/useSettings';
@@ -23,16 +26,22 @@ import { useWorkspace } from '/@/hooks/useWorkspace';
 import { useSceneCustomCode } from '/@/hooks/useSceneCustomCode';
 import { useDeploy } from '/@/hooks/useDeploy';
 import { useConnectionStatus } from '/@/hooks/useConnectionStatus';
+import { useBevyBuildForwarding } from '/@/hooks/useBevyBuildForwarding';
+import { useProjectAssetWatch } from '/@/hooks/useProjectAssetWatch';
 import { useDebugLogForwarding } from '/@/hooks/useDebugLogForwarding';
+import { useConsoleSession } from '/@/hooks/useConsoleSession';
 import { useMobileDebugForwarding } from '/@/hooks/useMobileDebugForwarding';
 import { ConnectionStatus } from '/@/lib/connection';
 
 import EditorPng from '/assets/images/editor.png';
 
+import { ai, analytics } from '#preload';
 import { useDispatch, useSelector } from '#store';
 import { useFeatureFlags } from '/@/hooks/useFeatureFlags';
+import { useAiSession } from '/@/hooks/useAiSession';
 import { actions as snackbarActions } from '/@/modules/store/snackbar';
 import { actions as editorActions } from '/@/modules/store/editor';
+import { actions as optimizerActions } from '/@/modules/store/optimizer';
 import { createGenericNotification } from '/@/modules/store/snackbar/utils';
 import { Button } from '../Button';
 import { Header } from '../Header';
@@ -40,14 +49,41 @@ import { Row } from '../Row';
 import { ButtonGroup } from '../Button';
 import { ConnectionStatusIndicator } from '../ConnectionStatusIndicator';
 import { MobileQRCode } from '../Modals/MobileQRCode';
+import { AssistantIcon } from '../Icons';
+import { AiChatPanel } from '../AiChatPanel';
+import { DetachedPlaceholder } from '../AiChatPanel/DetachedPlaceholder';
+import { OptimizeModal } from '../OptimizeModal';
+import type { ButtonGroupHandle } from '../Button';
 import { DeployModal } from './DeployModal';
 import { PreviewOptions, PublishOptions } from './MenuOptions';
 import { getPublishButtonText, getPublishOptions } from './utils';
+import { buildInspectorUrl } from './inspectorUrl';
 
 import type { ModalType, ModalState } from './DeployModal';
 import type { PreviewOptionsProps } from './MenuOptions';
 
 import './styles.css';
+
+// The AI panel is drag-resizable like the inspector's own panels; its width persists
+// across sessions (global, not per-scene). Bounds keep both the panel and the iframe usable.
+const AI_PANEL_WIDTH_KEY = 'creator-hub:ai-panel-width';
+const AI_PANEL_MIN = 320;
+const AI_PANEL_DEFAULT = 360;
+const AI_PANEL_IFRAME_MIN = 360; // never squeeze the editor below this
+
+function clampAiPanelWidth(px: number): number {
+  const max = Math.max(AI_PANEL_MIN, window.innerWidth - AI_PANEL_IFRAME_MIN);
+  return Math.min(Math.max(px, AI_PANEL_MIN), max);
+}
+function readAiPanelWidth(): number {
+  try {
+    const raw = localStorage.getItem(AI_PANEL_WIDTH_KEY);
+    const n = raw === null ? NaN : Number(raw);
+    return Number.isFinite(n) ? clampAiPanelWidth(n) : AI_PANEL_DEFAULT;
+  } catch {
+    return AI_PANEL_DEFAULT;
+  }
+}
 
 // The Bevy realm launches `sdk-commands start --no-client --data-layer`; an old
 // scene's local `@dcl/sdk-commands` predates those flags and fails with a raw CLI
@@ -63,6 +99,42 @@ function isOutdatedDepsError(message: string): boolean {
   const namesBevyFlag = /--(?:no-client|data-layer)/i.test(message);
   return rejectsOption && namesBevyFlag;
 }
+
+// Routes an AI scene-mutation op (from main) to the inspector SceneRpc client. One entry
+// per SceneRpc mutation method; add a line here + the matching client method + MCP tool as
+// Phase 2 grows (set_component, remove_entity, place_smart_item, …).
+type SceneClient = ReturnType<typeof initRpc>['scene'];
+const SCENE_OP_HANDLERS: Record<
+  string,
+  (scene: SceneClient, params: Record<string, unknown>) => Promise<unknown>
+> = {
+  create_entity: (scene, p) =>
+    scene.createEntity(p.name as string | undefined, p.parent as number | undefined),
+  remove_entity: (scene, p) => scene.removeEntity(p.entity as number),
+  set_parent: (scene, p) => scene.setParent(p.entity as number, p.parent as number),
+  set_component: (scene, p) =>
+    scene.setComponent(
+      p.entity as number,
+      p.component as string,
+      p.value as Record<string, unknown>,
+    ),
+  remove_component: (scene, p) => scene.removeComponent(p.entity as number, p.component as string),
+  attach_script: (scene, p) =>
+    scene.attachScript(p.entity as number, p.path as string, p.priority as number | undefined),
+  search_catalog: (scene, p) =>
+    scene.searchCatalog(p.query as string | undefined, p.limit as number | undefined),
+  place_smart_item: (scene, p) =>
+    scene.placeSmartItem(
+      p.assetId as string,
+      p.name as string | undefined,
+      p.position as { x: number; y: number; z: number } | undefined,
+    ),
+  undo: scene => scene.undo(),
+  get_scene_metrics: scene => scene.getSceneMetrics(),
+  get_selection: scene => scene.getSelection(),
+  get_scene_settings: scene => scene.getSceneSettings(),
+  set_scene_settings: (scene, p) => scene.setSceneSettings(p),
+};
 
 export function EditorPage() {
   const dispatch = useDispatch();
@@ -94,6 +166,7 @@ export function EditorPage() {
   const { settings, updateAppSettings } = useSettings();
   const { updatePackages } = useWorkspace();
   const { flags: featureFlags } = useFeatureFlags();
+  const aiChatEnabled = settings.aiAssistant;
   const { executeDeployment, getDeployment } = useDeploy();
   const deployment = project ? getDeployment(project.path) : undefined;
 
@@ -108,9 +181,35 @@ export function EditorPage() {
   const { detectCustomCode, isLoading: isDetectingCustomCode } = useSceneCustomCode(project);
   const { status } = useConnectionStatus();
   const iframeRef = useRef<ReturnType<typeof initRpc>>();
+  // Clear the AI selection chips: deselect everything in the inspector (only the renderer
+  // holds the iframe RPC). Optimistically empty the store so the chips vanish immediately;
+  // the next selection poll confirms. No-op under Bevy (no selection RPC).
+  const handleClearAiSelection = useCallback(() => {
+    void iframeRef.current?.scene.clearSelection().catch(() => undefined);
+    dispatch(aiActions.setSelection([]));
+  }, [dispatch]);
+  // The AI session engine + detached-window bridge (#1504). Runs whenever the assistant is
+  // on, independent of whether the chat is shown inline or popped out. It also relays the
+  // detached window's "clear selection" back to the inspector here.
+  const [aiOpen, setAiOpen] = useState(false);
+  const {
+    detachedOpen: aiDetached,
+    openDetached: openAiWindow,
+    closeDetached: closeAiWindow,
+  } = useAiSession(aiChatEnabled, project?.path, handleClearAiSelection, () => setAiOpen(false));
+  // A prompt seeded from the inspector (Trigger Area "describe a reaction"). Open the inline
+  // panel on it; ChatView copies the text into the composer and clears the draft.
+  const aiDraftPrompt = useSelector(state => state.ai.draftPrompt);
   const hydratedOptimizedAssetsPathRef = useRef<string | null>(null);
   const [modalState, setModalState] = useState<ModalState>({ type: undefined });
+  // Draggable width of the AI panel (like the inspector's own panels). Persisted globally.
+  const [aiPanelWidth, setAiPanelWidth] = useState(readAiPanelWidth);
+  const [aiResizing, setAiResizing] = useState(false);
   const [mobileQRData, setMobileQRData] = useState<{ url: string; qr: string } | null>(null);
+  // Lets handleShowMobileQR dismiss the Preview options menu itself — a Popper click stays
+  // "inside" as far as its own click-away close goes, so without this it stays open behind
+  // the QR modal and reappears once the modal closes.
+  const previewButtonGroupRef = useRef<ButtonGroupHandle>(null);
   // When the Bevy renderer is selected the engine loads from a headless
   // sdk-commands realm, and the inspector shares its data-layer WS. We start it
   // for the project and hold the URLs to thread into the iframe config below.
@@ -122,12 +221,39 @@ export function EditorPage() {
   // screen can offer Back + Open code + the error message (#1380).
   const [loadError, setLoadError] = useState<string | null>(null);
   const [loadTimedOut, setLoadTimedOut] = useState(false);
+  // Counts the inspector's "scene RPC ready" reports. The iframe ref is stable across
+  // "Reload scene from disk", so the hooks that push state into the inspector key on this
+  // to re-apply it to the fresh iframe.
+  const [inspectorReadyNonce, setInspectorReadyNonce] = useState(0);
+  // A "Reload scene from disk" or a renderer switch reloads the inspector iframe in place.
+  // The iframe paints black until its content boots (a long wait under Bevy, #1652), so we
+  // cover it with the loader until the inspector reports its scene RPC server ready again.
+  const [isReloadingInspector, setIsReloadingInspector] = useState(false);
+  // A reload that never reports ready (e.g. a scene that only loads under one renderer, #1652)
+  // would otherwise spin forever — isReady stays true so the initial-load timeout never fires.
+  // Back this path with its own timeout that offers Retry + Back instead of an endless cover.
+  const [reloadTimedOut, setReloadTimedOut] = useState(false);
+  // Bumped to force-remount the iframe when retrying a stuck reload — the reload may have left
+  // no RPC handle to reload in place, so we recreate the element from scratch.
+  const [iframeReloadKey, setIframeReloadKey] = useState(0);
 
   const isOffline = status === ConnectionStatus.OFFLINE;
   const showDebugPanel = settings.previewOptions.debugger;
 
-  useDebugLogForwarding(iframeRef, isPreviewRunning, showDebugPanel, project?.path);
-  useMobileDebugForwarding(iframeRef, isPreviewRunning, project?.path);
+  // The console can be popped out into its own window (#1272); while it is, the inspector's
+  // inline console tab shows a placeholder instead of the logs.
+  const { detachedOpen: consoleDetached } = useConsoleSession(showDebugPanel, isPreviewRunning);
+  useDebugLogForwarding(
+    iframeRef,
+    isPreviewRunning,
+    showDebugPanel,
+    project?.path,
+    consoleDetached,
+    inspectorReadyNonce,
+  );
+  useMobileDebugForwarding(iframeRef, isPreviewRunning, project?.path, inspectorReadyNonce);
+  useBevyBuildForwarding(iframeRef, useBevy ? project?.path : undefined);
+  useProjectAssetWatch(iframeRef, project?.path);
 
   const handleIframeRef = useCallback(
     (e: React.SyntheticEvent<HTMLIFrameElement, Event>) => {
@@ -137,9 +263,14 @@ export function EditorPage() {
           iframeRef.current.dispose();
           iframeRef.current = undefined;
         }
-        const rpc = initRpc(iframe, project, { writeFile: updateScene });
+        const rpc = initRpc(iframe, project, {
+          writeFile: updateScene,
+          onReady: ({ scene }) => {
+            void scene.setFeatureFlags(featureFlags).catch(console.error);
+            setInspectorReadyNonce(nonce => nonce + 1);
+          },
+        });
         iframeRef.current = rpc;
-        void rpc.scene.setFeatureFlags(featureFlags).catch(console.error);
       }
     },
     [project, updateScene, featureFlags],
@@ -150,10 +281,52 @@ export function EditorPage() {
     if (!rpc) return;
     const { iframe } = rpc;
     const { src } = iframe;
+    setIsReloadingInspector(true);
+    setReloadTimedOut(false);
     rpc.dispose();
     iframeRef.current = undefined;
     iframe.src = src;
   }, []);
+
+  // Retry a stuck reload. The prior attempt may have left no RPC handle (the iframe never
+  // reached onLoad), so recreate the element via its key rather than reloading in place.
+  const handleRetryReload = useCallback(() => {
+    setReloadTimedOut(false);
+    setIsReloadingInspector(true);
+    const rpc = iframeRef.current;
+    if (rpc) {
+      rpc.dispose();
+      iframeRef.current = undefined;
+    }
+    setIframeReloadKey(key => key + 1);
+  }, []);
+
+  // Switching the renderer setting rebuilds the iframe URL, reloading it in place — cover the
+  // black frame with the loader the same way a manual reload does (Bevy→desktop, #1652).
+  const prevRendererRef = useRef(settings.renderer);
+  useEffect(() => {
+    if (prevRendererRef.current === settings.renderer) return;
+    prevRendererRef.current = settings.renderer;
+    setIsReloadingInspector(true);
+    setReloadTimedOut(false);
+  }, [settings.renderer]);
+
+  // Clear the reload cover once the (re)loaded inspector reports its scene RPC ready. The
+  // nonce starts at 0 and first bumps to 1 on the initial load, which the guard ignores.
+  useEffect(() => {
+    if (inspectorReadyNonce > 0) setIsReloadingInspector(false);
+  }, [inspectorReadyNonce]);
+
+  // A reload that never becomes ready would cover the editor forever; surface Retry + Back
+  // after a grace period instead. Resets whenever the cover comes down (ready, or navigated).
+  useEffect(() => {
+    if (!isReloadingInspector) {
+      setReloadTimedOut(false);
+      return;
+    }
+    const timer = setTimeout(() => setReloadTimedOut(true), 45_000);
+    return () => clearTimeout(timer);
+  }, [isReloadingInspector]);
 
   useEffect(() => {
     const rpc = iframeRef.current;
@@ -161,6 +334,81 @@ export function EditorPage() {
       void rpc.scene.setFeatureFlags(featureFlags).catch(console.error);
     }
   }, [featureFlags]);
+
+  // Answer the AI assistant's `editor_screenshot` tool: main asks the renderer to capture
+  // the viewport (only the renderer can reach the inspector iframe). Babylon renders its own
+  // canvas via the scene RPC. That path returns null under Bevy (its wgpu canvas can't be
+  // read via toDataURL, and the engine's /screenshot command may be unavailable), so fall
+  // back to a compositor capture of just the viewport region: ask the inspector where the
+  // viewport is inside its (cross-origin) iframe, offset by the iframe's position in this
+  // window, and capturePage that rect in main — then downscale to the requested size (#1526).
+  useEffect(() => {
+    if (!aiChatEnabled) return;
+    const { cleanup } = ai.onScreenshotRequest(async req => {
+      const rpc = iframeRef.current;
+      let dataUrl: string | null = null;
+      try {
+        if (rpc) dataUrl = await rpc.scene.takeScreenshot(req.width, req.height);
+      } catch {
+        dataUrl = null;
+      }
+      if (dataUrl === null && rpc) {
+        const raw = await captureViewportFallback(rpc.iframe, rpc.scene);
+        dataUrl = raw !== null ? await resizeImage(raw, req.width, req.height) : null;
+      }
+      ai.screenshotResult(req.id, dataUrl);
+    });
+    return cleanup;
+  }, [aiChatEnabled]);
+
+  // Answer the AI assistant's scene-mutation ops (Phase 2): main asks the renderer to run
+  // an inspector SceneRpc mutation on the live engine, and we reply with the result. Only
+  // the renderer holds the iframe RPC handle. Ops are serialized on the main side.
+  useEffect(() => {
+    if (!aiChatEnabled) return;
+    const { cleanup } = ai.onSceneOpRequest(async req => {
+      const rpc = iframeRef.current;
+      const handler = SCENE_OP_HANDLERS[req.op];
+      if (!rpc) return ai.sceneOpResult(req.id, false, 'No scene is open.');
+      if (!handler) return ai.sceneOpResult(req.id, false, `Unknown scene op "${req.op}".`);
+      try {
+        const value = await handler(rpc.scene, req.params);
+        ai.sceneOpResult(req.id, true, value);
+      } catch (e) {
+        ai.sceneOpResult(req.id, false, e instanceof Error ? e.message : String(e));
+      }
+    });
+    return cleanup;
+  }, [aiChatEnabled]);
+
+  // While the AI panel is open, keep the assistant aware of the editor selection: poll the
+  // inspector for the selected entities and mirror them into the ai store (shown as a composer
+  // chip, attached as context on send). Cheap read; only runs while the panel is visible.
+  // Rejects harmlessly under the Bevy renderer (no selection RPC) — selection just stays empty.
+  useEffect(() => {
+    // Poll while the chat is visible anywhere — inline or in the detached window (#1504).
+    if (!aiOpen && !aiDetached) {
+      dispatch(aiActions.setSelection([]));
+      return;
+    }
+    let cancelled = false;
+    const poll = async () => {
+      const rpc = iframeRef.current;
+      if (!rpc) return;
+      try {
+        const { selected } = await rpc.scene.getSelection();
+        if (!cancelled) dispatch(aiActions.setSelection(selected));
+      } catch {
+        /* Bevy renderer, or a transient miss — leave the last known selection */
+      }
+    };
+    void poll();
+    const timer = setInterval(poll, 2000);
+    return () => {
+      cancelled = true;
+      clearInterval(timer);
+    };
+  }, [aiOpen, aiDetached, dispatch]);
 
   useEffect(() => {
     if (isWorkspaceError(error, 'PROJECT_NOT_FOUND') || isProjectError(error)) {
@@ -183,6 +431,23 @@ export function EditorPage() {
   // The iframe render is gated on the realm being ready when Bevy is selected, so
   // the inspector boots already pointed at the right data-layer + realm.
   const projectPath = project?.path;
+
+  // Usage analytics: fire once each time the inline AI chat panel is opened. Anonymous project
+  // id, matching the id space of the AI Turn events so "opened" and "used" correlate. Fires on
+  // the false→true transition only (aiOpen starts false).
+  useEffect(() => {
+    if (!aiOpen || projectPath === undefined) return;
+    void analytics
+      .getProjectId(projectPath)
+      .then(project_id => analytics.track('AI Chat Opened', { project_id }));
+  }, [aiOpen, projectPath]);
+
+  // Open the panel when the inspector seeds a prompt. The host RPC only sets a draft when the
+  // assistant is enabled, so no extra gate is needed here.
+  useEffect(() => {
+    if (aiDraftPrompt !== null && aiChatEnabled) setAiOpen(true);
+  }, [aiDraftPrompt?.nonce, aiChatEnabled]);
+
   useEffect(() => {
     if (!projectPath || !useBevy) {
       setBevyRealm(null);
@@ -251,9 +516,13 @@ export function EditorPage() {
     }
   }, [openPreview, settings.previewOptions]);
 
+  // The "code elements may only become visible once running" warning describes a
+  // Babylon limitation: it renders only the composite, so code-created entities are
+  // invisible until the scene runs. The Bevy editor runs the scene while editing and
+  // already shows them, so the warning would be false there.
   const handleActionWithWarningCheck = useCallback(
     async (action: () => void | Promise<void>) => {
-      if (!settings.previewOptions.showWarnings) {
+      if (!settings.previewOptions.showWarnings || useBevy) {
         await action();
         return;
       }
@@ -270,7 +539,7 @@ export function EditorPage() {
 
       await action();
     },
-    [settings.previewOptions.showWarnings, detectCustomCode],
+    [settings.previewOptions.showWarnings, useBevy, detectCustomCode],
   );
 
   const handleBack = useCallback(async () => {
@@ -355,6 +624,8 @@ export function EditorPage() {
   const handleShowMobileQR = useCallback(async () => {
     if (!project) return;
 
+    previewButtonGroupRef.current?.close();
+
     try {
       const data = await getMobileQR(settings.previewOptions);
       if (data) {
@@ -426,83 +697,38 @@ export function EditorPage() {
     [project, isDeploying, handlePublishScene, handleDeployWorld, handleDeployLand],
   );
 
-  // inspector url
-  const htmlUrl = `http://localhost:${import.meta.env.VITE_INSPECTOR_PORT || inspectorPort}`;
-  let binIndexJsUrl = `${htmlUrl}/bin/index.js`;
+  const iframeUrl = buildInspectorUrl({
+    inspectorPort,
+    useBevy,
+    supportsUiDesigner,
+    bevyRealm,
+    project,
+    userId,
+  });
 
-  // query params
-  const params = new URLSearchParams();
-
-  // Always tell the inspector which renderer to use, so IT doesn't offer an
-  // independent (un-plumbed) choice via its own toolbar picker — the host owns
-  // renderer selection and supplies each renderer's config. Without this, picking
-  // Bevy inside the inspector mounts the engine with no realm and boots the wrong
-  // (default) world.
-  params.append('renderer', useBevy ? RENDERER.BEVY : RENDERER.BABYLON);
-
-  params.append('uiEditorEnabled', String(settings.guiEditor));
-  params.append('uiEditorSupported', String(supportsUiDesigner));
-
-  // The parent-window scene-RPC control channel (host↔inspector feature flags,
-  // notifications, file/dir open) is wired whenever this is set — for BOTH
-  // renderers. Babylon also uses it as its data-layer transport; Bevy instead
-  // uses the realm WS (set below, which takes precedence), but still needs this
-  // channel or the host's feature flags never reach it (e.g. SceneMinimap).
-  params.append('dataLayerRpcParentUrl', window.location.origin);
-
-  if (useBevy && bevyRealm) {
-    // Bevy editor: the inspector shares the realm's data-layer WS so entity ids
-    // align with the engine (forward edits land on the right entities), and the
-    // engine loads the scene from the realm. `dataLayerRpcWsUrl` takes precedence
-    // over `dataLayerRpcParentUrl` in the inspector, so we set the WS instead of
-    // the parent-window data-layer here.
-    params.append('dataLayerRpcWsUrl', bevyRealm.wsUrl);
-    params.append('bevyRealm', bevyRealm.url);
-    if (project) {
-      // The engine loads the scene at its real parcel; the base coord is bevyPosition.
-      params.append('bevyPosition', project.scene.base);
-    }
-    // The super-user editor-agent portable experience (viewport pick + gizmo),
-    // shipped as a static realm at public/bevy-agent and served same-origin by the
-    // inspector http-server. The engine loads it as a realm (GETs
-    // `<systemScene>/about`); the export nests `<realmName>/about`, hence the
-    // doubled path segment. A dev server can override via VITE_BEVY_SYSTEM_SCENE.
-    params.append(
-      'bevySystemScene',
-      import.meta.env.VITE_BEVY_SYSTEM_SCENE || `${htmlUrl}/bevy-agent/bevy-agent`,
-    );
-  }
-
-  if (import.meta.env.VITE_ASSET_PACKS_CONTENT_URL) {
-    // this is for local development of the asset-packs repo, or to use a different environment like .zone
-    params.append('contentUrl', import.meta.env.VITE_ASSET_PACKS_CONTENT_URL);
-  }
-
-  if (import.meta.env.VITE_ASSET_PACKS_JS_PORT && import.meta.env.VITE_ASSET_PACKS_JS_PATH) {
-    // this is for local development of the asset-packs repo
-    const b64 = btoa(import.meta.env.VITE_ASSET_PACKS_JS_PATH);
-    binIndexJsUrl = `http://localhost:${import.meta.env.VITE_ASSET_PACKS_JS_PORT}/content/contents/b64-${b64}`;
-  }
-
-  // this is the asset-packs javascript file
-  params.append('binIndexJsUrl', binIndexJsUrl);
-
-  // these are analytics related
-  if (import.meta.env.VITE_SEGMENT_INSPECTOR_API_KEY) {
-    params.append('segmentKey', import.meta.env.VITE_SEGMENT_INSPECTOR_API_KEY);
-  }
-
-  // analytics
-  params.append('segmentAppId', 'creator-hub');
-  if (userId) {
-    params.append('segmentUserId', userId);
-  }
-  if (project) {
-    params.append('projectId', project.id);
-  }
-
-  // iframe src
-  const iframeUrl = `${htmlUrl}?${params}`;
+  // Drag the divider on the AI panel's left edge to resize it. A transparent overlay covers
+  // the iframe while dragging so it doesn't swallow the mouse-move events.
+  const startAiResize = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    setAiResizing(true);
+    const onMove = (ev: MouseEvent) =>
+      setAiPanelWidth(clampAiPanelWidth(window.innerWidth - ev.clientX));
+    const onUp = () => {
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup', onUp);
+      setAiResizing(false);
+      setAiPanelWidth(w => {
+        try {
+          localStorage.setItem(AI_PANEL_WIDTH_KEY, String(w));
+        } catch {
+          /* storage unavailable — non-fatal */
+        }
+        return w;
+      });
+    };
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+  }, []);
 
   const renderLoading = () => {
     // Recoverable stuck-load state (#1380): the realm failed to start (broken code)
@@ -565,6 +791,8 @@ export function EditorPage() {
     );
   };
 
+  const previewIcon = loadingPreview ? <Loader size={20} /> : <PlayCircleIcon />;
+
   return (
     <main className="Editor">
       {!isReady ? (
@@ -591,16 +819,46 @@ export function EditorPage() {
               </Tooltip>
             </>
             <div className="actions">
-              <Button
-                color="secondary"
-                onClick={openCode}
-                startIcon={<CodeIcon />}
-              >
-                {t('editor.header.actions.code')}
-              </Button>
+              {aiChatEnabled && (
+                <Tooltip title={aiOpen ? t('editor.ai.close') : t('editor.ai.open')}>
+                  <IconButton
+                    className={`ai-toggle${aiOpen ? ' active' : ''}`}
+                    aria-label={aiOpen ? t('editor.ai.close') : t('editor.ai.open')}
+                    onClick={() => setAiOpen(open => !open)}
+                  >
+                    <AssistantIcon gradient={!aiOpen} />
+                  </IconButton>
+                </Tooltip>
+              )}
+              <Tooltip title={t('editor.header.actions.optimize')}>
+                <Button
+                  className="icon-only"
+                  color="secondary"
+                  aria-label={t('editor.header.actions.optimize')}
+                  onClick={() => dispatch(optimizerActions.open())}
+                >
+                  <SpeedOutlinedIcon />
+                </Button>
+              </Tooltip>
+              <Tooltip title={t('editor.header.actions.code')}>
+                <Button
+                  className="icon-only"
+                  color="secondary"
+                  aria-label={t('editor.header.actions.code')}
+                  onClick={openCode}
+                >
+                  <CodeIcon />
+                </Button>
+              </Tooltip>
               <div className={isOptimizing ? 'preview-control optimizing' : 'preview-control'}>
                 <ButtonGroup
+                  ref={previewButtonGroupRef}
+                  className={isOptimizing ? undefined : 'icon-only'}
                   color="secondary"
+                  aria-label={t('editor.header.actions.preview')}
+                  tooltip={t('editor.header.actions.preview')}
+                  extraTooltip={t('editor.header.actions.preview_options.title')}
+                  popperOffset={10}
                   // Not natively disabled while optimizing (that would kill the inline ✕ too):
                   // the group is greyed and made inert via CSS, and only the ✕ stays clickable.
                   // aria-disabled flags the CSS-inert state to assistive tech, which the visual
@@ -613,7 +871,9 @@ export function EditorPage() {
                     isOffline
                   }
                   onClick={isOptimizing ? undefined : handleOpenPreview}
-                  startIcon={loadingPreview ? <Loader size={20} /> : <PlayCircleIcon />}
+                  // icon-only at rest (the icon IS the content); while optimizing the icon moves
+                  // to startIcon so the progress label can sit beside it
+                  startIcon={isOptimizing ? previewIcon : undefined}
                   extra={
                     <PreviewOptions
                       options={settings.previewOptions}
@@ -650,13 +910,14 @@ export function EditorPage() {
                       </Tooltip>
                     </span>
                   ) : (
-                    t('editor.header.actions.preview')
+                    previewIcon
                   )}
                 </ButtonGroup>
               </div>
               {publishOptions.length > 0 ? (
                 <ButtonGroup
                   color="primary"
+                  extraTooltip={t('editor.header.actions.publish_options.title')}
                   disabled={
                     loadingPublish || isInstallingProject || isDetectingCustomCode || isOffline
                   }
@@ -687,24 +948,82 @@ export function EditorPage() {
               <ConnectionStatusIndicator />
             </div>
           </Header>
-          <iframe
-            className="inspector"
-            src={iframeUrl}
-            onLoad={handleIframeRef}
-            // Grant cross-origin isolation to the inspector iframe so the Bevy
-            // engine (nested one level deeper) can use SharedArrayBuffer. The
-            // renderer document + inspector server carry COOP/COEP, but a
-            // cross-origin child frame only becomes crossOriginIsolated when the
-            // embedder explicitly delegates it via this Permissions-Policy. Inert
-            // for the Babylon renderer.
-            allow="cross-origin-isolated"
-          ></iframe>
+          <div className="EditorBody">
+            <iframe
+              key={iframeReloadKey}
+              className="inspector"
+              src={iframeUrl}
+              onLoad={handleIframeRef}
+              // Grant cross-origin isolation to the inspector iframe so the Bevy
+              // engine (nested one level deeper) can use SharedArrayBuffer. The
+              // renderer document + inspector server carry COOP/COEP, but a
+              // cross-origin child frame only becomes crossOriginIsolated when the
+              // embedder explicitly delegates it via this Permissions-Policy. Inert
+              // for the Babylon renderer.
+              allow="cross-origin-isolated"
+            ></iframe>
+            {isReloadingInspector && (
+              <div className="reload-overlay">
+                {reloadTimedOut ? (
+                  <div className="reload-overlay-error">
+                    <div className="loading-error-title">{t('editor.loading.failed.title')}</div>
+                    <div className="loading-error-message">
+                      {t('editor.loading.failed.timeout')}
+                    </div>
+                    <Row>
+                      <Button
+                        color="secondary"
+                        startIcon={<ArrowBackIosIcon />}
+                        onClick={handleBack}
+                      >
+                        {t('editor.loading.failed.back')}
+                      </Button>
+                      <Button
+                        color="primary"
+                        startIcon={<RefreshIcon />}
+                        onClick={handleRetryReload}
+                      >
+                        {t('editor.loading.failed.retry')}
+                      </Button>
+                    </Row>
+                  </div>
+                ) : (
+                  <Loader />
+                )}
+              </div>
+            )}
+            {aiChatEnabled && aiOpen && (
+              <>
+                {aiResizing && <div className="ai-resize-overlay" />}
+                <div
+                  className="ai-resize-handle"
+                  onMouseDown={startAiResize}
+                  role="separator"
+                  aria-orientation="vertical"
+                />
+                {aiDetached ? (
+                  <DetachedPlaceholder
+                    onDock={closeAiWindow}
+                    width={aiPanelWidth}
+                  />
+                ) : (
+                  <AiChatPanel
+                    onClose={() => setAiOpen(false)}
+                    onPopOut={openAiWindow}
+                    onClearSelection={handleClearAiSelection}
+                    width={aiPanelWidth}
+                  />
+                )}
+              </>
+            )}
+          </div>
           <DeployModal
             type={modalState.type}
             project={project}
             onClose={handleCloseModal}
             initialStep={modalState.initialStep}
           />
+          <OptimizeModal project={project} />
           {mobileQRData && (
             <MobileQRCode
               open={!!mobileQRData}

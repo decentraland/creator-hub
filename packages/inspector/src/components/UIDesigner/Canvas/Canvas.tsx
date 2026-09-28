@@ -10,14 +10,7 @@ import React, {
 import { createPortal } from 'react-dom';
 import { useDrop } from 'react-dnd';
 import { useStore } from 'react-redux';
-import {
-  IoAddOutline,
-  IoCopyOutline,
-  IoDesktopOutline,
-  IoPhoneLandscapeOutline,
-  IoScanOutline,
-  IoTrashOutline,
-} from 'react-icons/io5';
+import { IoAddOutline, IoCopyOutline, IoTrashOutline } from 'react-icons/io5';
 import cx from 'classnames';
 import type { Entity, PBUiTransform } from '@dcl/ecs';
 
@@ -29,6 +22,7 @@ import {
   getHiddenNodes,
   getInteractionLayer,
   getLockedNodes,
+  getMobileHudSelected,
   getPlatform,
   getScreens,
   getSelectedNode,
@@ -40,18 +34,13 @@ import {
 import { getUIDesignerSnapEnabled, getUIDesignerTool } from '../../../redux/ui';
 import { UIDesignerTool } from '../../../redux/ui/types';
 import { Button } from '../../Button';
-import { YGPT_ABSOLUTE, YGPT_RELATIVE, YGU_POINT } from '../../../lib/sdk/ui-transform-constants';
+import { YGPT_ABSOLUTE, YGPT_RELATIVE } from '../../../lib/sdk/ui-transform-constants';
 import { UI_DESIGNER_DND_TYPE, type UIDesignerDragItem } from '../shared/dnd';
 import { EmptyState, EmptyStateChip, GuiIcon } from '../EmptyState';
 import { WidgetPicker } from '../LeftPanel/WidgetPicker';
 import type { UiScreenInset } from '../code/aggregator';
 import { dragPinHold } from '../shared/align-presets';
-import {
-  DEFAULT_CANVAS_SCALE,
-  getCanvasScale,
-  offsetInParent,
-  setCanvasScale,
-} from '../shared/measure';
+import { getCanvasScale, offsetInParent, setCanvasScale } from '../shared/measure';
 import { insetRect } from '../shared/safe-areas';
 import { useUINodeActions } from '../shared/useUINodeActions';
 import { useUINodeTree } from '../shared/useUINodeTree';
@@ -65,22 +54,20 @@ import {
   useCodeState,
 } from '../code/store';
 import type { MoveAnchor } from '../code/store';
-import { buildResolveMap } from '../code/bindings';
+import { buildResolveMap, instanceResolveMap } from '../code/bindings';
 import { previewLayers, resolveInteractionPreview } from '../code/interaction-preview';
 import type { CodeUINode } from '../code/types';
 import { MixedContentField } from '../RightPanel/PropertyPanel/MixedContentField';
 import { seedSegments } from '../RightPanel/PropertyPanel/MixedContentField/segments';
-import {
-  DEFAULT_CANVAS_HEIGHT,
-  DEFAULT_CANVAS_WIDTH,
-  previewBoundText,
-} from '../shared/tree-model';
+import { previewBoundText } from '../shared/tree-model';
+import { computeCanvasGeometry, type RootTransform } from '../shared/canvas-geometry';
 import {
   clearNodeRegistry,
   getNodeElement,
   registerNodeElement,
   unregisterNodeElement,
 } from '../shared/node-registry';
+import { loadMobileHudConfig, useMobileHudConfig } from '../MobileHud/mobile-hud-store';
 import { applyCanvasDrop } from './drop';
 import {
   armGroupClickSuppression,
@@ -98,7 +85,9 @@ import type { Box, Flow, InsertionSlot } from './reorder';
 import { flowFrom, insertionSlot } from './reorder';
 import { hiddenStyle, nodeStyle, rendersText, TEXT_VALUE_FIELD, textureStyle } from './node-style';
 import { renderTextMarkup } from './text-markup';
+import { MobileHudPreview } from './MobileHudPreview';
 import { SafeAreaOverlay } from './SafeAreaOverlay';
+import { DesktopIcon, HudGuidesIcon, MobileIcon, SafeAreaFrameIcon } from './toolbar-icons';
 
 const ZOOM_MIN = 0.1;
 const ZOOM_MAX = 2;
@@ -326,7 +315,13 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ node, hidden }) => {
       collect: monitor => ({ isOver: monitor.isOver({ shallow: true }) }),
       drop: (item, monitor) => {
         if (monitor.didDrop()) return;
-        applyCanvasDrop(item, node.entity as unknown as number);
+        const p = monitor.getClientOffset();
+        const r = divRef.current?.getBoundingClientRect();
+        const pos =
+          p && r
+            ? { top: (p.y - r.top) / getCanvasScale(), left: (p.x - r.left) / getCanvasScale() }
+            : undefined;
+        applyCanvasDrop(item, node.entity as unknown as number, pos);
       },
     }),
     [node.entity],
@@ -1075,6 +1070,12 @@ const CanvasComponentRefNode: React.FC<{ node: CodeUINode; hidden?: boolean }> =
   );
   const name = node.componentRef?.name ?? node.name;
   const resolved = componentTrees[name] ?? null;
+  const resolveOuterVar = useContext(VarPreviewContext);
+  const instanceProps = node.componentRef?.props;
+  const resolveMap = useMemo(
+    () => instanceResolveMap(resolved?.resolveMap ?? {}, instanceProps ?? [], resolveOuterVar),
+    [resolved, instanceProps, resolveOuterVar],
+  );
   return (
     <div
       ref={setRef}
@@ -1090,7 +1091,7 @@ const CanvasComponentRefNode: React.FC<{ node: CodeUINode; hidden?: boolean }> =
       {resolved?.parsed ? (
         <CanvasReadonlyNode
           node={resolved.parsed.root}
-          resolveMap={resolved.resolveMap}
+          resolveMap={resolveMap}
           isRoot
         />
       ) : (
@@ -1186,12 +1187,31 @@ const CanvasComponent: React.FC = () => {
   const createRoot = useCallback(() => void createCodeRoot(), []);
   const selectedNode = useAppSelector(getSelectedNode);
   const [scale, setScale] = useState(getCanvasScale());
+  const [zoomInputValue, setZoomInputValue] = useState<string | null>(null);
   const dispatch = useAppDispatch();
-  const device = useAppSelector(getPlatform);
-  const screen = useAppSelector(getScreens)[device];
+  const platform = useAppSelector(getPlatform);
+  const mobileHudSelected = useAppSelector(getMobileHudSelected);
+  const mobileHudConfig = useMobileHudConfig();
+  const screens = useAppSelector(getScreens);
+  const {
+    device,
+    screen,
+    fixedRoot,
+    canvasWidth,
+    canvasHeight,
+    frameWidth,
+    frameHeight,
+    fitScale,
+  } = computeCanvasGeometry({
+    mobileHudSelected,
+    platform,
+    screens,
+    rootTransform: tree?.uiTransform as RootTransform | undefined,
+  });
   const activeRoot = roots.find(r => r.filename === filename);
   const activeInset: UiScreenInset = activeRoot?.topLevel ? activeRoot.screenInset : 'none';
   const [showSafeAreas, setShowSafeAreas] = useState(false);
+  const [hudOverride, setHudOverride] = useState<boolean | null>(null);
   const viewportRef = useRef<HTMLDivElement>(null);
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const panDragRef = useRef<{ startX: number; startY: number; panX: number; panY: number } | null>(
@@ -1217,22 +1237,10 @@ const CanvasComponent: React.FC = () => {
     });
   }, [selectedNode]);
 
-  const rootT = (tree?.uiTransform ?? {}) as Record<string, number | undefined>;
-  const rootFixedW = rootT.widthUnit === YGU_POINT ? rootT.width : undefined;
-  const rootFixedH = rootT.heightUnit === YGU_POINT ? rootT.height : undefined;
-  const fixedRoot = rootFixedW !== undefined && rootFixedH !== undefined;
-
-  const canvasWidth = fixedRoot ? (rootFixedW as number) : DEFAULT_CANVAS_WIDTH;
-  const canvasHeight = fixedRoot ? (rootFixedH as number) : DEFAULT_CANVAS_HEIGHT;
-
-  const frameWidth = fixedRoot ? canvasWidth : screen.width;
-  const frameHeight = fixedRoot ? canvasHeight : screen.height;
-
-  const fitScale = fixedRoot ? 1 : Math.min(frameWidth / canvasWidth, frameHeight / canvasHeight);
-
   const insetLocked = activeInset !== 'none' && !fixedRoot;
   const safeAreasVisible = insetLocked || showSafeAreas;
   const overlayVariant = activeInset === 'device' ? 'device' : 'hud';
+  const hudVisible = device === 'mobile' && !fixedRoot && (hudOverride ?? activeInset !== 'none');
 
   const insetR = insetLocked ? insetRect(device, activeInset) : null;
   const fsLeft = (frameWidth - canvasWidth * fitScale) / 2;
@@ -1257,11 +1265,23 @@ const CanvasComponent: React.FC = () => {
     top: rootClip.top,
   };
 
+  const screenFill: React.CSSProperties = {
+    position: 'absolute',
+    left: fsLeft,
+    top: fsTop,
+    width: fsRight - fsLeft,
+    height: fsBottom - fsTop,
+  };
+
   useEffect(() => {
     setCanvasScale(scale * fitScale);
   }, [scale, fitScale]);
 
   useEffect(() => () => clearNodeRegistry(), []);
+
+  useEffect(() => {
+    void loadMobileHudConfig();
+  }, []);
 
   useEffect(() => {
     const el = viewportRef.current;
@@ -1277,6 +1297,19 @@ const CanvasComponent: React.FC = () => {
     el.addEventListener('wheel', onWheel, { passive: false });
     return () => el.removeEventListener('wheel', onWheel);
   }, []);
+
+  const activateZoomEdit = useCallback(() => {
+    setZoomInputValue(String(Math.round(scale * 100)));
+  }, [scale]);
+
+  const commitZoomInput = useCallback(() => {
+    if (zoomInputValue === null) return;
+    const parsed = parseInt(zoomInputValue, 10);
+    if (!Number.isNaN(parsed)) {
+      setScale(clampZoom(parsed / 100));
+    }
+    setZoomInputValue(null);
+  }, [zoomInputValue]);
 
   const handlePanStart = useCallback(
     (e: React.MouseEvent) => {
@@ -1316,7 +1349,7 @@ const CanvasComponent: React.FC = () => {
         onContextMenu={e => e.preventDefault()}
       >
         <div className="ui-designer-canvas-stagewrap">
-          {tree ? (
+          {tree || mobileHudSelected ? (
             <>
               <div
                 className={cx('ui-designer-canvas-stage', {
@@ -1341,20 +1374,60 @@ const CanvasComponent: React.FC = () => {
                     } as React.CSSProperties
                   }
                 >
-                  <div
-                    className="ui-designer-canvas-root"
-                    style={rootStyle}
-                  >
-                    <CanvasNodeView node={tree} />
-                  </div>
-                  {safeAreasVisible && !fixedRoot ? (
-                    <SafeAreaOverlay
-                      width={screen.width}
-                      height={screen.height}
-                      device={device}
-                      variant={overlayVariant}
+                  {!fixedRoot ? (
+                    <div
+                      className="ui-designer-canvas-screenfill"
+                      style={screenFill}
                     />
                   ) : null}
+                  {mobileHudSelected ? (
+                    <>
+                      <SafeAreaOverlay
+                        width={frameWidth}
+                        height={frameHeight}
+                        device="mobile"
+                        variant="device"
+                        showOutline
+                        showHud={false}
+                      />
+                      <MobileHudPreview
+                        width={frameWidth}
+                        height={frameHeight}
+                        config={mobileHudConfig}
+                      />
+                    </>
+                  ) : (
+                    <>
+                      <div
+                        className="ui-designer-canvas-rootbg"
+                        style={rootStyle}
+                      />
+                      {hudVisible ? (
+                        <MobileHudPreview
+                          width={frameWidth}
+                          height={frameHeight}
+                          config={mobileHudConfig}
+                          reference
+                        />
+                      ) : null}
+                      {safeAreasVisible && !fixedRoot ? (
+                        <SafeAreaOverlay
+                          width={screen.width}
+                          height={screen.height}
+                          device={device}
+                          variant={overlayVariant}
+                          showOutline
+                          showHud={false}
+                        />
+                      ) : null}
+                      <div
+                        className="ui-designer-canvas-root"
+                        style={{ ...rootStyle, zIndex: 901 }}
+                      >
+                        {tree ? <CanvasNodeView node={tree} /> : null}
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
             </>
@@ -1384,78 +1457,142 @@ const CanvasComponent: React.FC = () => {
             </div>
           )}
         </div>
-        {tree ? (
+        {tree || mobileHudSelected ? (
           <div className="ui-designer-canvas-zoom">
-            <button
-              type="button"
-              className="ui-designer-canvas-zoom-btn"
-              onClick={() => setScale(s => clampZoom(s - ZOOM_STEP))}
-              aria-label="Zoom out"
-            >
-              −
-            </button>
-            <button
-              type="button"
-              className="ui-designer-canvas-zoom-level"
-              onClick={() => {
-                setScale(DEFAULT_CANVAS_SCALE);
-                setPan({ x: 0, y: 0 });
-              }}
-              title="Reset view"
-              aria-label="Reset view"
-              aria-live="polite"
-            >
-              {Math.round(scale * 100)}%
-            </button>
-            <button
-              type="button"
-              className="ui-designer-canvas-zoom-btn"
-              onClick={() => setScale(s => clampZoom(s + ZOOM_STEP))}
-              aria-label="Zoom in"
-            >
-              +
-            </button>
-            <span className="ui-designer-canvas-zoom-sep" />
-            <button
-              type="button"
-              className={cx('ui-designer-canvas-zoom-btn', { active: device === 'desktop' })}
-              onClick={() => dispatch(setPlatform({ platform: 'desktop' }))}
-              title="Desktop preview"
-              aria-label="Desktop preview"
-              aria-pressed={device === 'desktop'}
-            >
-              <IoDesktopOutline />
-            </button>
-            <button
-              type="button"
-              className={cx('ui-designer-canvas-zoom-btn', { active: device === 'mobile' })}
-              onClick={() => dispatch(setPlatform({ platform: 'mobile' }))}
-              title="Mobile preview"
-              aria-label="Mobile preview"
-              aria-pressed={device === 'mobile'}
-            >
-              <IoPhoneLandscapeOutline />
-            </button>
-            <button
-              type="button"
-              className={cx('ui-designer-canvas-zoom-btn', {
-                active: safeAreasVisible,
-                locked: insetLocked,
-              })}
-              onClick={() => {
-                if (!insetLocked) setShowSafeAreas(s => !s);
-              }}
-              disabled={insetLocked}
-              title={
-                insetLocked
-                  ? 'Safe-area guides follow the Scene Inset — change it to unlock'
-                  : 'Toggle safe-area guides'
-              }
-              aria-label="Toggle safe-area guides"
-              aria-pressed={safeAreasVisible}
-            >
-              <IoScanOutline />
-            </button>
+            {!mobileHudSelected ? (
+              <div className="ui-designer-preview-mode-panel">
+                <div className="ui-designer-toggles">
+                  <button
+                    type="button"
+                    className={cx('ui-designer-canvas-zoom-btn', { active: hudVisible })}
+                    onClick={() => setHudOverride(!hudVisible)}
+                    disabled={device === 'desktop'}
+                    title={
+                      device === 'desktop'
+                        ? 'The HUD only shows in the mobile preview'
+                        : 'Toggle mobile HUD guides'
+                    }
+                    aria-label="Toggle mobile HUD guides"
+                    aria-pressed={hudVisible}
+                  >
+                    <HudGuidesIcon />
+                  </button>
+                  <button
+                    type="button"
+                    className={cx('ui-designer-canvas-zoom-btn', {
+                      active: safeAreasVisible,
+                      locked: insetLocked,
+                    })}
+                    onClick={() => {
+                      if (!insetLocked) setShowSafeAreas(s => !s);
+                    }}
+                    disabled={insetLocked}
+                    title={
+                      insetLocked
+                        ? 'Safe-area guides follow the Scene Inset — change it to unlock'
+                        : 'Toggle safe-area guides'
+                    }
+                    aria-label="Toggle safe-area guides"
+                    aria-pressed={safeAreasVisible}
+                  >
+                    <SafeAreaFrameIcon />
+                  </button>
+                </div>
+                <div
+                  className="ui-designer-device-toggle"
+                  role="group"
+                  aria-label="Preview device"
+                >
+                  <button
+                    type="button"
+                    className={cx('ui-designer-device-toggle-btn', {
+                      active: device === 'desktop',
+                    })}
+                    onClick={() => dispatch(setPlatform({ platform: 'desktop' }))}
+                    title="Desktop preview"
+                    aria-label="Desktop preview"
+                    aria-pressed={device === 'desktop'}
+                  >
+                    <DesktopIcon />
+                  </button>
+                  <button
+                    type="button"
+                    className={cx('ui-designer-device-toggle-btn', {
+                      active: device === 'mobile',
+                    })}
+                    onClick={() => dispatch(setPlatform({ platform: 'mobile' }))}
+                    title="Mobile preview"
+                    aria-label="Mobile preview"
+                    aria-pressed={device === 'mobile'}
+                  >
+                    <MobileIcon />
+                  </button>
+                </div>
+              </div>
+            ) : null}
+            <div className="ui-designer-zoom-panel">
+              <button
+                type="button"
+                className="ui-designer-canvas-zoom-btn"
+                onClick={() => setScale(s => clampZoom(s - ZOOM_STEP))}
+                aria-label="Zoom out"
+              >
+                −
+              </button>
+              {zoomInputValue !== null ? (
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  className="ui-designer-canvas-zoom-level ui-designer-canvas-zoom-level-input"
+                  autoFocus
+                  maxLength={3}
+                  value={zoomInputValue}
+                  onChange={e => {
+                    const digits = e.target.value.replace(/\D/g, '');
+                    setZoomInputValue(
+                      digits === '' ? '' : String(Math.min(parseInt(digits, 10), 200)),
+                    );
+                  }}
+                  onFocus={e => e.currentTarget.select()}
+                  onBlur={commitZoomInput}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter') {
+                      e.currentTarget.blur();
+                    } else if (e.key === 'Escape') {
+                      setZoomInputValue(null);
+                    }
+                  }}
+                  aria-label="Set zoom percentage"
+                />
+              ) : (
+                <input
+                  type="text"
+                  readOnly
+                  className="ui-designer-canvas-zoom-level"
+                  value={`${Math.round(scale * 100)}%`}
+                  onClick={activateZoomEdit}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      activateZoomEdit();
+                    }
+                  }}
+                  title="Click to type a zoom percentage"
+                  aria-label="Zoom level, click to edit"
+                  aria-live="polite"
+                />
+              )}
+              <button
+                type="button"
+                className="ui-designer-canvas-zoom-btn"
+                onClick={() => setScale(s => clampZoom(s + ZOOM_STEP))}
+                disabled={scale >= ZOOM_MAX}
+                title={scale >= ZOOM_MAX ? 'Maximum zoom reached' : undefined}
+                aria-label="Zoom in"
+              >
+                +
+              </button>
+            </div>
           </div>
         ) : null}
       </div>

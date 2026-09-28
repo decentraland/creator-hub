@@ -2,6 +2,7 @@ import future from 'fp-future';
 import * as BABYLON from '@babylonjs/core';
 import { GLTFFileLoader, GLTFLoaderAnimationStartMode } from '@babylonjs/loaders';
 import type { GLTFLoader } from '@babylonjs/loaders/glTF/2.0';
+import { registerGLTFExtension } from '@babylonjs/loaders/glTF/2.0';
 import type { PBGltfContainer } from '@dcl/ecs';
 import { ComponentType } from '@dcl/ecs';
 
@@ -34,6 +35,65 @@ function incrementLoadVersion(entity: EcsEntity): number {
   return version;
 }
 
+// A scene file is handed to the loader as `<path>?sceneId=..&base=<dir>`, so every dependency
+// it asks for (textures, .bin buffers) can be resolved against the GLTF's own directory and
+// read back through the inspector's virtual file system.
+function getLoaderFile(loader: GLTFLoader): { gltfFilename: string; base: string } | null {
+  const file: string = (loader as any)._fileName;
+  const [gltfFilename, strParams] = file.split('?');
+  if (!strParams) return null;
+  return { gltfFilename, base: new URLSearchParams(strParams).get('base') || '' };
+}
+
+// Optimized GLBs point at the optimizer's shared texture folder, so their URIs climb out of the
+// model's directory (`../../../optimized-textures/x.png`). Collapse those segments — the data
+// layer keys files by their project-relative path and has no notion of `.`/`..`.
+function normalizeScenePath(path: string): string {
+  const segments: string[] = [];
+  for (const segment of path.split('/')) {
+    if (!segment || segment === '.') continue;
+    if (segment === '..') segments.pop();
+    else segments.push(segment);
+  }
+  return segments.join('/');
+}
+
+async function resolveGltfDependency(
+  gltfFilename: string,
+  base: string,
+  uri: string,
+): Promise<Uint8Array> {
+  const ctx = sceneContext?.deref();
+  const filePath = normalizeScenePath(`${base}/${uri}`);
+  const content = ctx ? await ctx.getFile(filePath) : null;
+  if (!content) throw new Error('Cannot resolve file ' + uri);
+
+  // This is a hack to get the resources loaded by the gltf file
+  if (!resourcesByPath.has(gltfFilename)) {
+    resourcesByPath.set(gltfFilename, new Set());
+  }
+  resourcesByPath.get(gltfFilename)!.add(filePath);
+  return content;
+}
+
+// Babylon's glTF loader rejects any URI containing `..` in `GLTFLoader._ValidateUri`, and it does
+// so BEFORE `preprocessUrlAsync` runs — so an optimized GLB's sidecar texture URIs would fail the
+// whole asset container and the model would never appear. `_loadUriAsync` on a loader extension is
+// consulted ahead of that validation, which makes it the only hook that can serve those files.
+const DCL_FILE_RESOLVER = 'DCL_file_resolver';
+
+registerGLTFExtension(DCL_FILE_RESOLVER, false, loader => ({
+  name: DCL_FILE_RESOLVER,
+  enabled: true,
+  dispose: () => {},
+  _loadUriAsync: (_context: string, _property: unknown, uri: string) => {
+    if (uri.startsWith('data:')) return null;
+    const file = getLoaderFile(loader);
+    if (!file) return null;
+    return resolveGltfDependency(file.gltfFilename, file.base, uri);
+  },
+}));
+
 BABYLON.SceneLoader.OnPluginActivatedObservable.add(function (plugin) {
   if (plugin instanceof GLTFFileLoader) {
     plugin.animationStartMode = GLTFLoaderAnimationStartMode.NONE;
@@ -50,29 +110,15 @@ BABYLON.SceneLoader.OnPluginActivatedObservable.add(function (plugin) {
       //  This Hack prevents the engine from caching the entire GLB/GLTF because
       //  query parameters are added to them. it is RECOMMENDED that the engine
       //  caches all the files by their name (CIDv1)
+      //
+      //  glTF 2.0 dependencies are served by the DCL_file_resolver extension above and never
+      //  reach this; it stays as the fallback for anything else the loader routes through it.
       const loader: GLTFLoader = (plugin as any)._loader;
-      const file: string = (loader as any)._fileName;
-      const [gltfFilename, strParams] = file.split('?');
-
-      if (strParams) {
-        const params = new URLSearchParams(strParams);
-        const base = params.get('base') || '';
-        const ctx = sceneContext.deref();
-        if (ctx) {
-          const filePath = base + '/' + url;
-          console.log(`Fetching ${filePath}`);
-          const content = await ctx.getFile(filePath);
-          if (content) {
-            // This is a hack to get the resources loaded by the gltf file
-            if (!resourcesByPath.has(gltfFilename)) {
-              resourcesByPath.set(gltfFilename, new Set());
-            }
-            const resources = resourcesByPath.get(gltfFilename)!;
-            resources.add(filePath);
-            // TODO: this works with File, but it doesn't match the types (it requires string)
-            return new File([content as BlobPart], gltfFilename) as any;
-          }
-        }
+      const file = getLoaderFile(loader);
+      if (file) {
+        const content = await resolveGltfDependency(file.gltfFilename, file.base, url);
+        // TODO: this works with File, but it doesn't match the types (it requires string)
+        return new File([content as BlobPart], file.gltfFilename) as any;
       }
       throw new Error('Cannot resolve file ' + url);
     };

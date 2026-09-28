@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 
 import { takeScreenshot as takeScreenshotRPC } from '/@/modules/rpc';
-import { resizeImage } from '/@/modules/image';
+import { cropImageToThumbnail } from '/@/modules/image';
 import { type SceneRpcClient } from '../modules/rpc/scene/client';
 
 type Screenshot = {
@@ -17,7 +17,9 @@ export function useInspector() {
     // unhandled rejection; a real failure is likewise non-fatal here.
     const screenshot = await takeScreenshotRPC(iframe, sceneRPC).catch(() => undefined);
     if (screenshot) {
-      const thumbnail = (await resizeImage(screenshot, 1024, 768)) ?? undefined;
+      // The capture has the viewport's shape; the platform wants 16:9 (and the
+      // Scene panel now refuses anything else), so crop rather than fit.
+      const thumbnail = (await cropImageToThumbnail(screenshot)) ?? undefined;
       return thumbnail;
     }
   }, []);

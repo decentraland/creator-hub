@@ -45,7 +45,7 @@ export const TriggerEvent = ({
       <div className="TriggerEventTitle">
         <span>Trigger Event</span>
         <div className="RightContent">
-          <MoreOptionsMenu>
+          <MoreOptionsMenu className="TriggerEventMenu">
             <Button
               className="AddTriggerConditionButton"
               onClick={onAddNewTriggerCondition}

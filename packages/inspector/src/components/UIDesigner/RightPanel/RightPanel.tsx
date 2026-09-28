@@ -1,11 +1,12 @@
 import React, { useMemo, useState } from 'react';
 
 import { useAppSelector } from '../../../redux/hooks';
-import { getSelectedNode } from '../../../redux/ui-designer';
+import { getMobileHudSelected, getSelectedNode } from '../../../redux/ui-designer';
 import { Box } from '../../Box';
 import { findCodeNode, useCodeState } from '../code/store';
 import type { CodeUINode } from '../code/types';
 import { GuiGridIcon } from '../shared/widget-icons';
+import { MobileHudPanel } from './MobileHudPanel';
 import { PropertyPanel } from './PropertyPanel';
 import { CodeVariablesPanel } from './LogicPanel/CodeVariablesPanel';
 import { CodePropsPanel } from './LogicPanel/CodePropsPanel';
@@ -20,6 +21,7 @@ type RightTab = 'properties' | 'logic';
 const RightPanel: React.FC = () => {
   const [tab, setTab] = useState<RightTab>('properties');
   const selected = useAppSelector(getSelectedNode);
+  const mobileHudSelected = useAppSelector(getMobileHudSelected);
   const codeState = useCodeState();
 
   const codeNode = useMemo(
@@ -38,6 +40,14 @@ const RightPanel: React.FC = () => {
     if (codeNode.componentRef) return [codeNode];
     return (codeNode.children ?? []).filter(child => child.componentRef);
   }, [codeNode]);
+
+  if (mobileHudSelected) {
+    return (
+      <Box className="ui-designer-right-rail">
+        <MobileHudPanel />
+      </Box>
+    );
+  }
 
   return (
     <Box className="ui-designer-right-rail">

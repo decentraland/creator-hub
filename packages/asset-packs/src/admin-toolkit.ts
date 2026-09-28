@@ -6,6 +6,7 @@ import { getComponents } from './definitions';
 import { createAdminToolkitUI } from './admin-toolkit-ui';
 
 let adminToolkitEntity: Entity | null = null;
+let adminToolkitUiRoot: Entity | null = null;
 
 // Create a system to manage the AdminToolkit
 export function createAdminToolkitSystem(
@@ -46,7 +47,7 @@ export function createAdminToolkitSystem(
     // Create admin toolkit UI if the smart item exists and UI hasn't been created
     if (hasAdminToolkit && !adminToolkitEntity) {
       adminToolkitEntity = adminToolkitEntities[0][0];
-      createAdminToolkitUI(
+      adminToolkitUiRoot = createAdminToolkitUI(
         engine,
         pointerEventsSystem,
         reactBasedUiSystem,
@@ -58,6 +59,11 @@ export function createAdminToolkitSystem(
     else if (!hasAdminToolkit && adminToolkitEntity) {
       engine.removeEntity(adminToolkitEntity);
       adminToolkitEntity = null;
+      if (adminToolkitUiRoot) {
+        reactBasedUiSystem.removeUiRenderer(adminToolkitUiRoot);
+        engine.removeEntity(adminToolkitUiRoot);
+        adminToolkitUiRoot = null;
+      }
     }
   };
 }

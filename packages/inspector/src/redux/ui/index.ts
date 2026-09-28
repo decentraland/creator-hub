@@ -13,6 +13,7 @@ export interface UiState {
   selectedSceneInspectorTab: SceneInspectorTab;
   hiddenSceneInspectorTabs: Partial<Record<SceneInspectorTab, boolean>>;
   debugConsoleEnabled: boolean;
+  debugConsoleDetached: boolean;
   mobileDebugSessionEnabled: boolean;
   uiDesignerTool: UIDesignerTool;
   uiDesignerSnapEnabled: boolean;
@@ -28,6 +29,7 @@ export const initialState: UiState = {
   selectedSceneInspectorTab: SceneInspectorTab.DETAILS,
   hiddenSceneInspectorTabs: {},
   debugConsoleEnabled: false,
+  debugConsoleDetached: false,
   mobileDebugSessionEnabled: false,
   uiDesignerTool: UIDesignerTool.FREE,
   uiDesignerSnapEnabled: true,
@@ -75,6 +77,9 @@ export const appState = createSlice({
     setDebugConsoleEnabled: (state, { payload }: PayloadAction<{ enabled: boolean }>) => {
       state.debugConsoleEnabled = payload.enabled;
     },
+    setDebugConsoleDetached: (state, { payload }: PayloadAction<{ detached: boolean }>) => {
+      state.debugConsoleDetached = payload.detached;
+    },
     setMobileDebugSessionEnabled: (state, { payload }: PayloadAction<{ enabled: boolean }>) => {
       if (payload.enabled) {
         state.mobileDebugSessionEnabled = true;
@@ -102,6 +107,7 @@ export const {
   selectSceneInspectorTab,
   toggleSceneInspectorTab,
   setDebugConsoleEnabled,
+  setDebugConsoleDetached,
   setMobileDebugSessionEnabled,
   setUIDesignerTool,
   setUIDesignerSnap,
@@ -120,6 +126,7 @@ export const getHiddenSceneInspectorTabs = (state: RootState) => state.ui.hidden
 export const areGizmosDisabled = (state: RootState) => state.ui.disableGizmos;
 export const isGroundGridDisabled = (state: RootState) => state.ui.disableGroundGrid;
 export const getDebugConsoleEnabled = (state: RootState) => state.ui.debugConsoleEnabled;
+export const getDebugConsoleDetached = (state: RootState) => state.ui.debugConsoleDetached;
 export const getMobileDebugSessionEnabled = (state: RootState) =>
   state.ui.mobileDebugSessionEnabled;
 export const getUIDesignerTool = (state: RootState): UIDesignerTool => state.ui.uiDesignerTool;

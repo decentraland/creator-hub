@@ -1,0 +1,22 @@
+.ui-designer-mobile-hud-preview {
+  z-index: 901;
+}
+
+.ui-designer-mobile-hud-preview--reference {
+  z-index: 890;
+}
+
+.ui-designer-mobile-hud-guide {
+  color: #dfd0ff;
+}
+
+.ui-designer-mobile-hud-guide.is-highlighted {
+  border-radius: 50%;
+  outline: 2px solid var(--ui-designer-control-accent, #4aa3ff);
+  outline-offset: 3px;
+}
+
+.ui-designer-mobile-hud-guide.is-main {
+  border-radius: 50%;
+  box-shadow: 0 0 0 2px var(--ui-designer-control-accent, #a68bff);
+}

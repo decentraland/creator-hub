@@ -1,6 +1,5 @@
 import React, { useCallback, useState } from 'react';
 
-import { useInspectorUIState } from '../../../hooks/sdk/useInspectorUIState';
 import { getSceneClient } from '../../../lib/rpc/scene';
 import { useAppDispatch } from '../../../redux/hooks';
 import { togglePanel } from '../../../redux/ui';
@@ -13,7 +12,6 @@ export const MIN_SDK_VERSION = '7.26.0';
 /** Full-cover UI Editor gate: update `@dcl/sdk` through the host, then reload the scene. */
 const SdkUpgradeNoticeComponent: React.FC = () => {
   const dispatch = useAppDispatch();
-  const [, updateUIState] = useInspectorUIState();
   const [updating, setUpdating] = useState(false);
   const [failed, setFailed] = useState(false);
 
@@ -37,8 +35,8 @@ const SdkUpgradeNoticeComponent: React.FC = () => {
 
   const handleMaybeLater = useCallback(() => {
     dispatch(togglePanel({ panel: PanelName.UI_DESIGNER, enabled: false }));
-    updateUIState({ uiDesignerOpen: false });
-  }, [dispatch, updateUIState]);
+    void getSceneClient()?.setUiDesignerMode(false).catch(console.error);
+  }, [dispatch]);
 
   return (
     <div className="ui-designer-sdk-notice">

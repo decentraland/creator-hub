@@ -1,8 +1,15 @@
 import React from 'react';
-import { IoEllipseOutline, IoImageOutline, IoSquareOutline } from 'react-icons/io5';
+import { IoScanOutline } from 'react-icons/io5';
 
-import type { UINodeType, WidgetKind } from './tree-model';
-import { DropdownFieldIcon, InputFieldIcon, LabelFieldIcon } from './widget-icons';
+import type { UINodeType, WidgetKind, WidgetPreset } from './tree-model';
+import {
+  ButtonIcon,
+  ContainerIcon,
+  DropdownFieldIcon,
+  ImageIcon,
+  InputFieldIcon,
+  LabelFieldIcon,
+} from './widget-icons';
 
 export interface WidgetDef {
   id: string;
@@ -10,7 +17,7 @@ export interface WidgetDef {
   label: string;
   icon: JSX.Element;
   keywords?: string[];
-  preset?: 'image';
+  preset?: WidgetPreset;
 }
 
 export interface WidgetCategory {
@@ -24,17 +31,25 @@ export const WIDGET_CATALOG: WidgetCategory[] = [
     category: 'Containers',
     items: [
       {
+        id: 'fullscreen',
+        type: 'UiEntity',
+        label: 'Full Screen',
+        icon: <IoScanOutline />,
+        preset: 'fullscreen',
+        keywords: ['root', 'wrapper', 'stretch', 'fill', 'screen', 'full'],
+      },
+      {
         id: 'UiEntity',
         type: 'UiEntity',
         label: 'Container',
-        icon: <IoSquareOutline />,
+        icon: <ContainerIcon />,
         keywords: ['box', 'panel', 'div', 'group', 'layout', 'flex'],
       },
       {
         id: 'image',
         type: 'UiEntity',
         label: 'Image',
-        icon: <IoImageOutline />,
+        icon: <ImageIcon />,
         preset: 'image',
         keywords: ['picture', 'texture', 'sprite', 'photo'],
       },
@@ -54,7 +69,7 @@ export const WIDGET_CATALOG: WidgetCategory[] = [
         id: 'Button',
         type: 'Button',
         label: 'Button',
-        icon: <IoEllipseOutline />,
+        icon: <ButtonIcon />,
         keywords: ['click', 'action', 'cta'],
       },
     ],

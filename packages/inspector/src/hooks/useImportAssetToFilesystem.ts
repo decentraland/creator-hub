@@ -12,6 +12,11 @@ const THUMBNAIL_PATH = 'thumbnail.png';
 
 const isAssetFile = (value: string): boolean => value.endsWith('.gltf') || value.endsWith('.glb');
 
+type ImportCatalogAssetOptions = {
+  // Leaves matching content files out of the import (the thumbnail is always kept).
+  skipContent?: (path: string) => boolean;
+};
+
 export function useImportAssetToFilesystem() {
   const dispatch = useAppDispatch();
   const config = getConfig();
@@ -26,7 +31,7 @@ export function useImportAssetToFilesystem() {
   );
 
   const importCatalogAssetToFilesystem = useCallback(
-    async (asset: Asset) => {
+    async (asset: Asset, { skipContent }: ImportCatalogAssetOptions = {}) => {
       const fileContent: Record<string, Uint8Array> = {};
       const destFolder = DIRECTORY.ASSET_PACKS;
       const assetPackageName = asset.name.trim().replaceAll(' ', '_').toLowerCase();
@@ -34,20 +39,22 @@ export function useImportAssetToFilesystem() {
       let thumbnail: Uint8Array | undefined;
 
       await Promise.all(
-        Object.entries(asset.contents).map(async ([path, contentHash]) => {
-          try {
-            const url = getContentFetchUrl(path, contentHash);
-            const response = await fetch(url);
-            const content = new Uint8Array(await response.arrayBuffer());
-            if (path.endsWith(THUMBNAIL_PATH)) {
-              thumbnail = content;
-            } else {
-              fileContent[path] = content;
+        Object.entries(asset.contents)
+          .filter(([path]) => path.endsWith(THUMBNAIL_PATH) || !skipContent?.(path))
+          .map(async ([path, contentHash]) => {
+            try {
+              const url = getContentFetchUrl(path, contentHash);
+              const response = await fetch(url);
+              const content = new Uint8Array(await response.arrayBuffer());
+              if (path.endsWith(THUMBNAIL_PATH)) {
+                thumbnail = content;
+              } else {
+                fileContent[path] = content;
+              }
+            } catch (err) {
+              console.error('Error fetching an asset import ' + path);
             }
-          } catch (err) {
-            console.error('Error fetching an asset import ' + path);
-          }
-        }),
+          }),
       );
 
       const content = new Map(Object.entries(fileContent));

@@ -1,5 +1,4 @@
-import { engine, GltfContainerLoadingState } from '@dcl/sdk/ecs';
-import type { Entity } from '@dcl/sdk/ecs';
+import { engine } from '@dcl/sdk/ecs';
 import { getPlayer } from '@dcl/sdk/players';
 
 import { bus } from './bus';
@@ -50,21 +49,19 @@ import { setBrokenAssets } from './broken-assets';
 let pinnedSceneHash: string | null = null;
 
 /**
- * Whether the engine auto-freezes an editor scene after main() runs once
- * (bevy-explorer #1015 — `refreeze_at_tick`). When true, the agent must NOT
- * force-freeze on boot/reset: the engine owns freezing, and an agent freeze would
- * race it (Stop lands on frame 0 instead of the deterministic "main ran once").
+ * The engine auto-freezes an editor scene after main() runs once (bevy-explorer
+ * #1015 — `refreeze_at_tick`), gated on the `editor: true` boot flag we pass in
+ * host-boot.js. So the agent must NOT force-freeze on boot/reset: the engine owns
+ * freezing, and an agent freeze would race it (Stop lands on frame 0 instead of
+ * the deterministic "main ran once").
  *
- * FALSE until #1015 is merged, republished, and the pin is bumped in
- * packages/inspector/package.json. On the current published engine there is NO
- * auto-freeze, so the agent MUST force-freeze — otherwise the inspected scene
- * just runs freely on load. Flip to `true` (or delete the gate) in the same
- * change that bumps the engine pin.
- *
- * When flipping it, keep the `else await setSceneUiVisible(false)` at both call
- * sites: the engine owns freezing, but hiding the scene's UI is still ours.
+ * TRUE since the engine pin was bumped to a build that includes #1015
+ * (packages/inspector/package.json). Both call sites keep the
+ * `else await setSceneUiVisible(false)` branch: the engine owns freezing, but
+ * hiding the scene's UI while frozen is still ours. The play/stop toggle still
+ * rides /freeze_scene · /unfreeze_scene.
  */
-const ENGINE_AUTO_FREEZES_EDITOR_SCENE = false;
+const ENGINE_AUTO_FREEZES_EDITOR_SCENE = true;
 
 export function main(): void {
   // Inspector → agent messages.
@@ -88,17 +85,6 @@ export function main(): void {
         kind: 'drop-point',
         id: msg.id,
         position: getGroundPointAtPointer(msg.ndc),
-      });
-      return;
-    }
-    // Animation clip names of an entity's loaded GLTF — read from the engine's
-    // GltfContainerLoadingState (a field the inspector's older @dcl/ecs can't
-    // decode, so it asks us). Empty if the entity has no GLTF / it isn't loaded.
-    if (msg.kind === 'query-animations') {
-      bus.postToPage({
-        kind: 'animations',
-        id: msg.id,
-        names: entityAnimationNames(msg.entity as Entity),
       });
       return;
     }
@@ -267,14 +253,12 @@ async function boot(): Promise<void> {
   // toolbar "reset view" action once the user is in the fly camera.
   void sceneLocalCenter;
   // Editor default: the inspected scene is FROZEN (static — no SDK7 systems /
-  // timers / onUpdate run), so it's a stable subject to edit. With the engine's
-  // editor auto-freeze (#1015) the engine owns this and the agent must stay out
-  // of its way; until that ships the agent force-freezes here, else the scene
-  // just runs on load. See ENGINE_AUTO_FREEZES_EDITOR_SCENE. The toolbar toggle
-  // still unfreezes to run live; the agent itself keeps ticking (super scene,
-  // exempt); freeze does NOT block avatar walking (bevy-editor walks while frozen).
-  // The `else` is not redundant: setSceneFrozen also hides the scene's UI, so
-  // once the engine owns freezing the agent still has to issue that half itself.
+  // timers / onUpdate run), so it's a stable subject to edit. The engine's editor
+  // auto-freeze (#1015) owns this now, so the agent stays out of its way and only
+  // hides the scene's UI (setSceneFrozen's other half). See
+  // ENGINE_AUTO_FREEZES_EDITOR_SCENE. The toolbar toggle still unfreezes to run
+  // live; the agent itself keeps ticking (super scene, exempt); freeze does NOT
+  // block avatar walking (bevy-editor walks while frozen).
   if (!ENGINE_AUTO_FREEZES_EDITOR_SCENE) await setSceneFrozen(true);
   else await setSceneUiVisible(false);
   // Freeze the day/night clock at noon so the skybox doesn't drift into night
@@ -301,23 +285,11 @@ function highlightEntities(entities: number[]): void {
 }
 
 /**
- * The animation clip names of an entity's loaded GLTF, from the engine's
- * GltfContainerLoadingState.animationNames. The agent shares the engine's ECS, so
- * this reads the same component the engine wrote when the GLTF finished loading.
- * Empty when the entity has no GltfContainer or it hasn't loaded yet (the
- * inspector re-queries as loading state changes).
- */
-function entityAnimationNames(entity: Entity): string[] {
-  const state = GltfContainerLoadingState.getOrNull(entity);
-  return state?.animationNames ?? [];
-}
-
-/**
  * Freeze (static) or run the pinned inspection scene, and keep its UI in step.
  *
  * Frozen ⇔ scene UI hidden is one invariant, owned here. A scene's react-ecs UI
- * is created by its first render pass, long before the agent's force-freeze
- * lands, and freezing stops the SDK7 tick — not entities that already exist. So
+ * is created by its first render pass, before the engine's auto-freeze lands, and
+ * freezing stops the SDK7 tick — not entities that already exist. So
  * without this the authored UI sits full-screen over the editor viewport (above
  * picking) the whole time you are editing. It should only appear on Play.
  */
@@ -449,8 +421,17 @@ async function resetScene(): Promise<void> {
         // A reloaded scene is a fresh instance: it ran main() again, so its UI is
         // back and visible. Re-hide it here (the `else` for the same reason as on
         // boot — setSceneFrozen owns both halves, auto-freeze owns only one).
-        if (!ENGINE_AUTO_FREEZES_EDITOR_SCENE) await setSceneFrozen(true);
-        else await setSceneUiVisible(false);
+        if (!ENGINE_AUTO_FREEZES_EDITOR_SCENE) {
+          await setSceneFrozen(true);
+        } else {
+          // `reset-complete` promises a re-FROZEN scene, and the host acts on it at
+          // once — a hot-reload of a running scene re-requests Play right here. The
+          // engine's auto-freeze only lands once the reloaded main() has run, which
+          // on a large bundle is well after the re-pin; an unfreeze sent before it
+          // gets overridden and the scene comes back paused. So wait for it.
+          await waitForEngineAutoFreeze();
+          await setSceneUiVisible(false);
+        }
         bus.postToPage({ kind: 'reset-complete', ok: true });
         return;
       }
@@ -462,6 +443,38 @@ async function resetScene(): Promise<void> {
   // block Play forever. Play may not work until the next reset, but a stuck
   // disabled button is worse.
   bus.postToPage({ kind: 'reset-complete', ok: false });
+}
+
+// `/scene_stats` reports `status: blocked({"frozen", "gltfs loading"})` — one set of
+// reasons — while frozen, and `status: running` otherwise (same reading as bevy-editor).
+function isFrozenStatus(stats: string): boolean {
+  const blocked = /status:\s*blocked\(([^)]*)\)/i.exec(stats);
+  return blocked !== null && /"frozen"/i.test(blocked[1]);
+}
+
+const AUTO_FREEZE_POLL_MS = 250;
+const AUTO_FREEZE_POLL_ATTEMPTS = 20;
+
+/**
+ * Block until the engine's editor auto-freeze (#1015) has landed on the pinned
+ * scene, bounded so a scene whose main() never finishes can't wedge Stop. An engine
+ * without `/scene_stats` returns at once — the host then races as before, no worse.
+ */
+async function waitForEngineAutoFreeze(): Promise<void> {
+  const api = getBevyApi();
+  if (!api) return;
+  for (let attempt = 0; attempt < AUTO_FREEZE_POLL_ATTEMPTS; attempt++) {
+    try {
+      const stats = await api.consoleCommand('scene_stats', []);
+      if (/unknown command/i.test(stats)) return;
+      if (isFrozenStatus(stats)) return;
+    } catch (e) {
+      // The scene may still be resolving right after the re-pin — keep polling.
+      console.log('[bevy-agent] scene_stats failed while waiting for auto-freeze:', e);
+    }
+    await new Promise<void>(resolve => setTimeout(() => resolve(), AUTO_FREEZE_POLL_MS));
+  }
+  console.log('[bevy-agent] reloaded scene did not report frozen in time; continuing');
 }
 
 /**

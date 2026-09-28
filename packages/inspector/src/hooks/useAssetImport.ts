@@ -13,7 +13,7 @@ import {
   convertAssetToBinary,
   buildAssetPath,
 } from '../components/ImportAsset/utils';
-import type { Asset } from '../components/ImportAsset/types';
+import type { Asset, ValidationError } from '../components/ImportAsset/types';
 
 export interface UseAssetImportOptions {
   /** Called after successful import with the imported asset paths */
@@ -26,6 +26,8 @@ export interface UseAssetImportOptions {
   multiple?: boolean;
   /** Filter function to accept only certain file types */
   acceptExtensions?: string[];
+  /** Extra per-file check; a returned error marks the asset invalid so the import is refused */
+  validateFile?: (file: File) => Promise<ValidationError>;
 }
 
 export interface UseAssetImportReturn {
@@ -50,7 +52,14 @@ export interface UseAssetImportReturn {
 }
 
 export function useAssetImport(options: UseAssetImportOptions = {}): UseAssetImportReturn {
-  const { onImportComplete, onImportError, onCancel, multiple = true, acceptExtensions } = options;
+  const {
+    onImportComplete,
+    onImportError,
+    onCancel,
+    multiple = true,
+    acceptExtensions,
+    validateFile,
+  } = options;
 
   const dispatch = useAppDispatch();
   const catalog = useAppSelector(selectAssetCatalog) ?? { basePath: '', assets: [] };
@@ -93,10 +102,17 @@ export function useAssetImport(options: UseAssetImportOptions = {}): UseAssetImp
       if (filesToProcess.length === 0) return;
 
       const processedAssets = await processAssets(filesToProcess);
-      setPendingAssets(processedAssets);
+      const validatedAssets = validateFile
+        ? await Promise.all(
+            processedAssets.map(async asset =>
+              asset.error ? asset : { ...asset, error: await validateFile(asset.blob) },
+            ),
+          )
+        : processedAssets;
+      setPendingAssets(validatedAssets);
       setIsModalOpen(true);
     },
-    [multiple, acceptExtensions],
+    [multiple, acceptExtensions, validateFile],
   );
 
   const submitImport = useCallback(

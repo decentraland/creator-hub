@@ -1,8 +1,10 @@
+import { AI_STREAM_EVENT } from '/shared/types/ipc';
 import { handle, handleSync } from './handle';
 import * as electron from './electron';
 import * as updater from './updater';
 import * as inspector from './inspector';
 import * as bevyRealm from './bevy-realm';
+import * as projectWatcher from './project-watcher';
 import * as cli from './cli';
 import * as bin from './bin';
 import * as code from './code';
@@ -12,6 +14,19 @@ import * as config from './config';
 import * as mobileDebug from './mobile-debug-server';
 import * as oxc from './oxc';
 import * as metrics from './metrics';
+import * as ai from './ai';
+import * as aiCli from './ai-cli';
+import * as aiWindow from './ai-window';
+import * as consoleWindow from './console-window';
+import {
+  captureViewport,
+  ensureSceneMcpServer,
+  resolveEditorScreenshot,
+  resolveSceneOp,
+  resolveUserPrompt,
+  revertTurn,
+} from './scene-mcp';
+import * as optimizer from './optimizer';
 
 interface InitIpcOptions {
   beforeQuitCleanup: () => Promise<void>;
@@ -45,12 +60,20 @@ export function initIpc({ beforeQuitCleanup }: InitIpcOptions) {
 
   // inspector
   handle('inspector.start', () => inspector.start());
-  handle('inspector.attachSceneDebugger', (_event, path) => inspector.attachSceneDebugger(path));
-  handle('inspector.detachSceneDebugger', (_event, path) => inspector.detachSceneDebugger(path));
+  handle('inspector.attachSceneDebugger', (event, path) =>
+    inspector.attachSceneDebugger(event.sender, path),
+  );
+  handle('inspector.detachSceneDebugger', (event, path) =>
+    inspector.detachSceneDebugger(event.sender, path),
+  );
 
   // bevy realm (headless sdk-commands server feeding the embedded Bevy editor engine)
   handle('bevyRealm.start', (_event, path) => bevyRealm.start(path));
   handle('bevyRealm.kill', (_event, path) => bevyRealm.kill(path));
+
+  // project asset watcher (auto-refresh the inspector catalog on out-of-editor file drops)
+  handle('projectWatcher.start', async (_event, path) => projectWatcher.startProjectWatcher(path));
+  handle('projectWatcher.stop', (_event, path) => projectWatcher.stopProjectWatcher(path));
 
   // cli
   handle('cli.init', (_event, path, repo) => cli.init(path, repo));
@@ -114,4 +137,57 @@ export function initIpc({ beforeQuitCleanup }: InitIpcOptions) {
   handle('npm.getContextFiles', (_event, path) => npm.getContextFiles(path));
 
   handle('oxc.parse', (_event, filename, source) => oxc.parse(filename, source));
+
+  // ai assistant — `ai.send` streams AiEvents back to the calling WebContents over
+  // AI_STREAM_EVENT; the returned turnId lets the renderer correlate the stream.
+  handle('ai.detectProviders', () => ai.detectProviders());
+  handle('ai.send', async (event, path, params) => {
+    const sender = event.sender;
+    return ai.aiSend(params, path, e => {
+      if (!sender.isDestroyed()) sender.send(AI_STREAM_EVENT, e);
+    });
+  });
+  handle('ai.stop', async () => ai.aiStop());
+  handle('ai.reset', async (_event, path) => ai.aiReset(path));
+  handle('ai.deleteSession', async (_event, path, sessionId) =>
+    ai.aiDeleteSession(path, sessionId),
+  );
+  handle('ai.isBusy', async () => ai.aiBusy());
+  // AI sign-in without a CLI (#1531): install the official CLI on demand + drive its
+  // subscription login; steps stream over AI_CLI_LOGIN_EVENTS.
+  handle('ai.signInCli', (_event, provider) => aiCli.signInCli(provider));
+  handle('ai.cancelSignInCli', () => aiCli.cancelSignInCli());
+  handle('ai.signOutCli', (_event, provider) => aiCli.signOutCli(provider));
+  handle('ai.getCliState', async () => aiCli.getCliState());
+  handle('ai.screenshotResult', (_event, id, dataUrl) => resolveEditorScreenshot(id, dataUrl));
+  handle('ai.captureViewport', (_event, rect) => captureViewport(rect));
+  handle('ai.sceneOpResult', (_event, id, ok, payload) => resolveSceneOp(id, ok, payload));
+  handle('ai.askResult', (_event, id, answer) => resolveUserPrompt(id, answer));
+  handle('ai.revertTurn', (_event, count) => revertTurn(count));
+  // Reveal the CH MCP server's URL + token so an external agent can register it (gated in
+  // the UI behind the exposeMcpServer setting). Starts the server if it isn't up yet.
+  handle('ai.getMcpServerInfo', async () => {
+    const { url, token } = await ensureSceneMcpServer();
+    return { url, token };
+  });
+  // Detached AI window (#1504): lifecycle + the mirror/command relay between the two
+  // renderer windows (see ai-window.ts).
+  handle('ai.openWindow', (_event, locale) => aiWindow.openAiWindow(locale));
+  handle('ai.closeWindow', async () => aiWindow.closeAiWindow());
+  handle('ai.isWindowOpen', async () => aiWindow.isAiWindowOpen());
+  handle('ai.mirrorPush', (_event, state) => aiWindow.pushMirrorState(state));
+  handle('ai.remoteCommand', (_event, command) => aiWindow.forwardRemoteCommand(command));
+  // Detached console window (#1272): lifecycle + the preview-running relay to it.
+  handle('console.openWindow', (_event, path, locale) =>
+    consoleWindow.openConsoleWindow(path, locale),
+  );
+  handle('console.closeWindow', async () => consoleWindow.closeConsoleWindow());
+  handle('console.isWindowOpen', async () => consoleWindow.isConsoleWindowOpen());
+  handle('console.mirrorPush', (_event, state) => consoleWindow.pushMirrorState(state));
+  // optimizer (model/texture optimization)
+  handle('optimizer.scan', (_event, path) => optimizer.scan(path));
+  handle('optimizer.run', (_event, path, options) => optimizer.run(path, options));
+  handle('optimizer.revert', (_event, path) => optimizer.revert(path));
+  handle('optimizer.tools', () => optimizer.tools());
+  handle('optimizer.installTools', (_event, path) => optimizer.installTools(path));
 }

@@ -62,48 +62,17 @@
       }
     },
     {
-      "name": "core-schema::Sync-Components",
+      "name": "asset-packs::Script",
       "data": {
         "513": {
           "json": {
-            "componentIds": ["core::Tween", "asset-packs::States", "core::AudioSource"]
-          }
-        }
-      }
-    },
-    {
-      "name": "core::Tween",
-      "data": {
-        "0": {
-          "json": {
-            "duration": 5000,
-            "easingFunction": 0,
-            "mode": {
-              "$case": "move",
-              "move": {
-                "start": {
-                  "x": 0,
-                  "y": 0,
-                  "z": 0
-                },
-                "end": {
-                  "x": 0,
-                  "y": 6,
-                  "z": 0
-                }
+            "value": [
+              {
+                "path": "{assetPath}/Platforms.ts",
+                "priority": 0,
+                "layout": "{\"params\":{\"offsetX\":{\"type\":\"number\",\"optional\":true,\"value\":0,\"tooltip\":\"Meters to travel along the X axis, relative to the platform's start position.\"},\"offsetY\":{\"type\":\"number\",\"optional\":true,\"value\":5,\"tooltip\":\"Meters to travel along the Y axis, relative to the platform's start position.\"},\"offsetZ\":{\"type\":\"number\",\"optional\":true,\"value\":0,\"tooltip\":\"Meters to travel along the Z axis, relative to the platform's start position.\"},\"duration\":{\"type\":\"number\",\"optional\":true,\"value\":5,\"tooltip\":\"Seconds it takes to travel from one end to the other.\"},\"autoStart\":{\"type\":\"boolean\",\"optional\":true,\"value\":false,\"tooltip\":\"If true, the platform starts moving when the scene loads.\"},\"loop\":{\"type\":\"boolean\",\"optional\":true,\"value\":false,\"tooltip\":\"If true, the platform keeps moving back and forth. If false, it stops at either end until Go to Start or Go to End is called.\"},\"sound\":{\"type\":\"string\",\"optional\":true,\"value\":\"RisingPillar.mp3\",\"tooltip\":\"Name of an audio file inside this smart item's folder (e.g. sound.mp3), played whenever the platform starts moving. Leave empty for no sound.\"},\"onReachEnd\":{\"type\":\"action\",\"optional\":true,\"value\":{\"entity\":0,\"action\":\"\"},\"tooltip\":\"Action triggered every time the platform reaches the end position.\"},\"onReachStart\":{\"type\":\"action\",\"optional\":true,\"value\":{\"entity\":0,\"action\":\"\"},\"tooltip\":\"Action triggered every time the platform reaches the start position.\"}},\"actions\":[{\"methodName\":\"goToEnd\",\"description\":\"Moves the platform towards the end position\",\"params\":{}},{\"methodName\":\"goToStart\",\"description\":\"Moves the platform back towards the start position\",\"params\":{}}]}"
               }
-            },
-            "playing": false
-          }
-        }
-      }
-    },
-    {
-      "name": "core::TweenSequence",
-      "data": {
-        "0": {
-          "json": {
-            "sequence": []
+            ]
           }
         }
       }
@@ -116,41 +85,14 @@
             "id": "{self}",
             "value": [
               {
-                "name": "Sink",
-                "type": "batch",
-                "jsonPayload": "{ \"actions\": [\"Going to Start\", \"Tween to Start\"] }",
-                "allowedInBasicView": true
+                "type": "call_script_method",
+                "name": "Go to Start",
+                "jsonPayload": "{\"scriptPath\":\"{assetPath}/Platforms.ts\",\"methodName\":\"goToStart\",\"params\":{}}"
               },
               {
-                "name": "Rise",
-                "type": "batch",
-                "jsonPayload": "{ \"actions\": [\"Going to End\", \"Tween to End\"] }",
-                "allowedInBasicView": true
-              },
-              {
-                "name": "Going to Start",
-                "type": "set_state",
-                "jsonPayload": "{ \"state\": \"GoingToStart\" }"
-              },
-              {
-                "name": "Going to End",
-                "type": "set_state",
-                "jsonPayload": "{ \"state\": \"GoingToEnd\" }"
-              },
-              {
-                "name": "Tween to Start",
-                "type": "start_tween",
-                "jsonPayload": "{\"type\":\"move_item\",\"end\":{\"x\":0,\"y\":-5,\"z\":0},\"relative\":true,\"interpolationType\":\"linear\",\"duration\":5}"
-              },
-              {
-                "name": "Tween to End",
-                "type": "start_tween",
-                "jsonPayload": "{\"type\":\"move_item\",\"end\":{\"x\":0,\"y\":5,\"z\":0},\"relative\":true,\"interpolationType\":\"linear\",\"duration\":5}"
-              },
-              {
-                "name": "Play Sound",
-                "type": "play_sound",
-                "jsonPayload": "{\"src\":\"{assetPath}/RisingPillar.mp3\"}"
+                "type": "call_script_method",
+                "name": "Go to End",
+                "jsonPayload": "{\"scriptPath\":\"{assetPath}/Platforms.ts\",\"methodName\":\"goToEnd\",\"params\":{}}"
               }
             ]
           }
@@ -158,99 +100,11 @@
       }
     },
     {
-      "name": "asset-packs::Triggers",
-      "data": {
-        "0": {
-          "json": {
-            "value": [
-              {
-                "type": "on_tween_end",
-                "conditions": [
-                  {
-                    "id": "{self:asset-packs::States}",
-                    "type": "when_state_is",
-                    "value": "GoingToEnd"
-                  }
-                ],
-                "actions": [
-                  {
-                    "id": "{self:asset-packs::Actions}",
-                    "name": "Going to Start"
-                  }
-                ],
-                "basicViewId": "trigger-when-end-reached"
-              },
-              {
-                "type": "on_tween_end",
-                "conditions": [
-                  {
-                    "id": "{self:asset-packs::States}",
-                    "type": "when_state_is",
-                    "value": "GoingToStart"
-                  }
-                ],
-                "actions": [
-                  {
-                    "id": "{self:asset-packs::Actions}",
-                    "name": "Going to End"
-                  }
-                ],
-                "basicViewId": "trigger-when-start-reached"
-              },
-              {
-                "type": "on_state_change",
-                "actions": [
-                  {
-                    "id": "{self:asset-packs::Actions}",
-                    "name": "Play Sound"
-                  }
-                ],
-                "conditions": []
-              }
-            ]
-          }
-        }
-      }
-    },
-    {
-      "name": "asset-packs::States",
+      "name": "core-schema::Sync-Components",
       "data": {
         "513": {
           "json": {
-            "id": "{self}",
-            "value": ["GoingToEnd", "GoingToStart"],
-            "defaultValue": "GoingToEnd"
-          }
-        }
-      }
-    },
-    {
-      "name": "inspector::Config",
-      "data": {
-        "513": {
-          "json": {
-            "isBasicViewEnabled": true,
-            "componentName": "Rising Pillar",
-            "fields": [
-              {
-                "name": "Tween",
-                "type": "core::Tween"
-              },
-              {
-                "name": "When End Reached",
-                "type": "asset-packs::Triggers",
-                "basicViewId": "trigger-when-end-reached"
-              },
-              {
-                "name": "When Start Reached",
-                "type": "asset-packs::Triggers",
-                "basicViewId": "trigger-when-start-reached"
-              }
-            ],
-            "helpTooltip": {
-              "text": "A pillar that rises up out of the ground. Players can use it to reach high places."
-            },
-            "version": 1
+            "value": ["core::Tween", "core::Transform"]
           }
         }
       }

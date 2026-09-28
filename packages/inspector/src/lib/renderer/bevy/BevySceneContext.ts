@@ -73,7 +73,8 @@ export class BevySceneContext {
     components.Animator(this.engine),
     // Area components: registered so their state decodes on this engine and the
     // reverse-channel gizmo commits (operations.updateValue on Transform) can
-    // mirror scale changes into their `area` field.
+    // mirror scale changes into their `area` field. Also forwarded live, like the
+    // other static components below.
     components.AvatarModifierArea(this.engine),
     components.CameraModeArea(this.engine),
     // VideoPlayer: forwarded so the freeze can pause video playback (#1469) — a
@@ -81,6 +82,20 @@ export class BevySceneContext {
     // the forward bridge sends playing:false while frozen and restores the authored
     // value on unfreeze.
     components.VideoPlayer(this.engine),
+    // Static visual components the inspector authors and the engine renders as-is.
+    // Nothing forwards them live otherwise, and now that the editor's own autosave
+    // no longer reloads the scene (build-reload-bridge), an unforwarded edit —
+    // a light's colour or intensity, say — would stay stale until Stop.
+    components.LightSource(this.engine),
+    components.NftShape(this.engine),
+    components.GltfNodeModifiers(this.engine),
+    components.AvatarAttach(this.engine),
+    components.VirtualCamera(this.engine),
+    // Audio: forwarded so an edited clip/volume plays on the next unfreeze, with the
+    // same paused override while frozen as VideoPlayer (the engine keeps playing
+    // sound through a freeze).
+    components.AudioSource(this.engine),
+    components.AudioStream(this.engine),
     // ParticleSystem (#1467): the engine renders it natively (proto id 1217), but
     // the inspector's @dcl/ecs lacks the native proto, so it's a schema component.
     // Define it here (same name/schema as the inspector's engine) so its CRDT stream
@@ -105,6 +120,12 @@ export class BevySceneContext {
   // components like Transform flow one-way and can't anchor an entity). Registered
   // here so it decodes off the CRDT stream and exposes its id + schema.
   readonly Name = components.Name(this.engine);
+
+  // PointerEvents (core::PointerEvents) — registered so it DECODES off the CRDT
+  // stream, giving the hover-hint bridge (#1476) read access to each entity's
+  // hoverText/InputAction. Deliberately NOT in #registeredComponents: it's read
+  // for the hint only, never forwarded to the engine (the scene authors it).
+  readonly PointerEvents = components.PointerEvents(this.engine);
 
   // Engine-bound operations + editor components, so the reverse-channel handler
   // can apply picks/edits against this renderer's engine just like Babylon and

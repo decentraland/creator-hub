@@ -4,6 +4,7 @@ import { AiOutlineInfoCircle as InfoIcon } from 'react-icons/ai';
 import cx from 'classnames';
 
 import { withSdk } from '../../../hoc/withSdk';
+import { getSceneClient } from '../../../lib/rpc/scene';
 import { selectSceneInfo } from '../../../redux/data-layer';
 import { useInspectorUIState } from '../../../hooks/sdk/useInspectorUIState';
 import { useAppSelector, useAppDispatch } from '../../../redux/hooks';
@@ -47,9 +48,9 @@ const UIDesignerToolbar = withSdk(({ sdk }) => {
   const handlePlay = useCallback(() => {
     dispatch(setSceneRunIntent({ running: true }));
     dispatch(togglePanel({ panel: PanelName.UI_DESIGNER, enabled: false }));
-    updateUIState({ uiDesignerOpen: false });
+    void getSceneClient()?.setUiDesignerMode(false).catch(console.error);
     sceneRun?.setRunning(true);
-  }, [dispatch, updateUIState, sceneRun]);
+  }, [dispatch, sceneRun]);
   const handlePause = useCallback(() => {
     dispatch(setSceneRunIntent({ running: false }));
     sceneRun?.setRunning(false);

@@ -130,7 +130,9 @@ export class BabylonRenderer implements IRenderer {
     const container = await node.onGltfContainerLoaded();
     return container.animationGroups.map(group => ({
       name: group.name,
-      weight: group.weight,
+      // Babylon reports -1 for a group whose weight was never set (its "unset"
+      // sentinel, not a real value) — omit it so the inspector default (1) applies.
+      weight: group.weight >= 0 ? group.weight : undefined,
       speed: group.speedRatio,
       loop: group.loopAnimation,
       playing: group.isPlaying,

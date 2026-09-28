@@ -223,7 +223,7 @@ export function getEntitiesSyncStatus(
     results[entity] = {
       hasSyncComponents,
       hasNetworkEntity,
-      syncComponentIds: syncComponentsValue?.componentIds || [],
+      syncComponentIds: [...(syncComponentsValue?.componentIds ?? [])],
     };
   });
 

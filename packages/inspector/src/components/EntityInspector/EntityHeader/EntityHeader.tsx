@@ -404,6 +404,7 @@ export default React.memo(
             {componentOptions.some(option => !option.header) && !isRoot(entity) ? (
               <Dropdown
                 className="AddComponent"
+                menuAlign="right"
                 options={componentOptions}
                 trigger={
                   <div className="AddComponentTrigger">
@@ -415,6 +416,7 @@ export default React.memo(
             ) : null}
             {!isRoot(entity) ? (
               <MoreOptionsMenu
+                className="EntityHeaderMenu"
                 options={[
                   {
                     label: 'Rename Entity',

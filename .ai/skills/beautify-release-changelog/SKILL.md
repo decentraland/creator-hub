@@ -1,6 +1,6 @@
 ---
 name: beautify-release-changelog
-description: Transforms raw GitHub release notes (What's Changed with PR links and @mentions) into a verbose, user-friendly, product-ready changelog with sections (New features, Fixes, Improvements). By default fetches each merged PR body and writes short, well-redacted summaries suitable for release notes and product marketing. Can fetch the latest creator-hub pre-release (tag x.y.z) via curl. Use when drafting or editing a release changelog, beautifying release notes, or when the user asks for the latest pre-release changelog.
+description: Transforms raw GitHub release notes (What's Changed with PR links and @mentions) into a verbose, user-friendly, product-ready changelog with emoji sections (✨ New & Improved, 🔧 Changes, 🐛 Fixes). By default fetches each merged PR body and writes short, well-redacted summaries suitable for release notes and product marketing. Can fetch the latest creator-hub pre-release (tag x.y.z) via curl. Use when drafting or editing a release changelog, beautifying release notes, or when the user asks for the latest pre-release changelog.
 ---
 
 # Beautify Release Changelog
@@ -31,42 +31,50 @@ No token is required for reading. Fetching uses curl only.
 Expect markdown list items of the form:
 
 - `* Title by @user in https://github.com/.../pull/N`
-- Optional prefixes: `fix:`, `feat:` (use these as hints for classification).
+- Optional prefixes: `fix:`, `feat:`, `chore:`, `style:` (use these as hints for classification).
 
-Strip PR URLs and @mentions when rewriting; do not include them in the beautified bullets. From each bullet extract the PR URL to fetch the PR body (default workflow below).
+Strip PR URLs and @mentions when rewriting; do not include them in the beautified output. From each bullet extract the PR URL to fetch the PR body (default workflow below).
 
 ## Classification rules
 
 Assign each item to one of:
 
-- **New features** — `feat:` prefix, or titles that describe new capabilities (e.g. multi-scene worlds, new component, new actions).
-- **Fixes** — `fix:` prefix, or titles that describe bug fixes or corrections (e.g. "trigger area activates only on your player", "Scale gizmo white center fix", "fix virtual camera component").
-- **Improvements** — UX or quality improvements that are not new features nor bugfixes (e.g. "remove save icon" as UI cleanup). Use an "Improvements" section; if there are very few items, you may merge into Fixes or omit the section.
+- **✨ New & Improved** — `feat:` prefix, titles that describe new capabilities (e.g. multi-scene worlds, new component, new actions), and user-visible UX or quality improvements (e.g. UI polish, a feature promoted to stable).
+- **🔧 Changes** — behavior or policy changes a creator should know about that add no capability and fix no bug: a removed step or warning, a changed default, runtime/tooling consistency (e.g. "every child process now resolves a single Node runtime").
+- **🐛 Fixes** — `fix:` prefix, or titles that describe correcting broken behavior (e.g. "trigger area activates only on your player", "fix virtual camera component").
 
-Output sections in this order: New features, Fixes, Improvements. Omit any section that has no items.
+Use the prefix as a hint, not a rule: a `fix:` PR whose effect is a behavior change (e.g. "stop gating publish completion on LOD generation") belongs in 🔧 Changes.
+
+Leave out repo-internal chores that do not change the app: CI workflows, PR templates, test infrastructure, release pipelines.
+
+Output sections in this order: ✨ New & Improved, 🔧 Changes, 🐛 Fixes. Omit any section that has no items. Use the headings exactly as written, emoji included.
 
 ## Output structure
 
 Use this template. Omit empty sections.
 
 ```markdown
-## New features
+## ✨ New & Improved
 
-- [Bullet in user-facing prose]
-- ...
+### [Feature name]
 
-## Fixes
+[1–3 sentences in user-facing prose.]
 
-- [Bullet in user-facing prose]
-- ...
+### [Feature name]
 
-## Improvements
+[...]
 
-- [Bullet in user-facing prose]
-- ...
+## 🔧 Changes
+
+- [One-line behavior change in user-facing prose]
+
+## 🐛 Fixes
+
+- **[Area]:** [What now works]
+- [Fix with no specific area]
 ```
 
-Optionally keep the "Full Changelog" compare URL at the end if it was in the input and the user did not ask to remove it.
+Optionally keep the "New Contributors" section and the "Full Changelog" compare URL at the end if they were in the input and the user did not ask to remove them.
 
 ## Default: verbose, user-friendly, product-ready output
 
@@ -78,16 +86,20 @@ Optionally keep the "Full Changelog" compare URL at the end if it was in the inp
 2. For each PR, fetch the PR body via GitHub API with **curl**:
    - `curl -s "https://api.github.com/repos/<owner>/<repo>/pulls/<number>"` (for merged PRs the pulls endpoint still returns the PR; use the same repo as in the release, typically `decentraland/creator-hub`).
    - From the JSON response, use the `body` field (and optionally `title`) to understand what the PR does.
-3. Write a **small summary** (1–3 sentences) per item that is:
+   - If the body is empty, read the issues it closes (`/issues/<n>`) and its changed files (`/pulls/<n>/files`) before falling back to the title.
+3. Write each item in its section's shape:
+   - **✨ New & Improved** — a `### Feature name` heading, then a 1–3 sentence paragraph. Prefix the name with its product area when that helps (`### AI Assistant — Cursor and Gemini providers`, `### Inspector — numeric transform entry`).
+   - **🔧 Changes** — one plain bullet per change.
+   - **🐛 Fixes** — one bullet per fix, prefixed with a bold area when it belongs to one (`**UI Designer:**`, `**Bevy editor:**`, `**AI Assistant:**`, `**Inspector:**`). Group small related fixes into one bullet ("Fixed five quality-of-life bugs: a, b, c, d, and e.").
+4. Keep the wording:
    - **User-focused**: Emphasize what the user can do or what improves for them, not implementation details.
    - **Well redacted**: Clear, welcoming language; avoid internal jargon, ticket refs, or raw technical terms unless helpful.
    - **Product-ready**: Suitable for release notes and product marketing; highlights benefits and is easy to read.
+   - Bold the names of UI controls, keys and providers (**Preview**, **F**, **Cursor**).
 
-**Example:** If the PR title is "fix: Devtools" and the body mentions "fixes the devtools panel for inspecting scene web traffic", write something like: "**Devtools** — The Devtools panel for inspecting your scene’s web traffic is working again, so you can debug network requests and preview behavior with confidence."
+**Example:** If the PR title is "fix: Devtools" and the body mentions "fixes the devtools panel for inspecting scene web traffic", write the 🐛 Fixes bullet: "- **Devtools:** The panel for inspecting your scene's web traffic works again, so you can debug network requests with confidence."
 
 **Rate limits:** Unauthenticated GitHub API requests are limited (e.g. 60/hour). If the release has many PRs, use an optional `Authorization: Bearer <token>` header (user can set `GITHUB_TOKEN`) to avoid hitting the limit.
-
-**Output:** Keep the same sections (New features, Fixes, Improvements) and classification rules. Use bold labels and short paragraphs (1–3 sentences) per item. You may use a format like "**Feature name** — Summary sentence."
 
 **Fallback:** If the user explicitly asks for a **short** or **concise** changelog, or if PR fetch fails (e.g. rate limit, network), use title-only rewriting as in "Short format (fallback)" below.
 
@@ -95,6 +107,7 @@ Optionally keep the "Full Changelog" compare URL at the end if it was in the inp
 
 Use only when the user asks for a short/concise changelog or when PR bodies cannot be fetched.
 
+- Keep the same three emoji headings, but write ✨ New & Improved items as bullets instead of `###` blocks.
 - Start bullets with a verb or clear noun phrase; use present or past tense as appropriate.
 - One clear idea per bullet. Merge related PRs into one bullet when they clearly belong together.
 - Grammatically correct and concise. No PR links or @mentions in the bullet text.
@@ -124,27 +137,35 @@ Fetching continues to use curl; only the update step uses `gh`.
 **Output (default: verbose, product-ready):**
 
 ```markdown
-## New features
+## ✨ New & Improved
 
-- **Multi-scene worlds** — You can now publish and manage worlds that contain multiple scenes. Assign collaborator permissions per world and build richer experiences.
+### Multi-scene worlds
 
-## Fixes
+You can now publish and manage worlds that contain multiple scenes. Assign collaborator permissions per world and build richer experiences.
 
-- **Devtools** — The Devtools panel for inspecting your scene’s web traffic is working again, so you can debug network requests with confidence.
-- **Save icon** — The unused "Save" icon has been removed from the top bar for a cleaner interface.
+## 🔧 Changes
+
+- The unused **Save** icon has been removed from the top bar for a cleaner interface.
+
+## 🐛 Fixes
+
+- **Devtools:** The panel for inspecting your scene's web traffic works again, so you can debug network requests with confidence.
 ```
 
 **Short format (fallback, when user asks for concise or PR fetch fails):**
 
 ```markdown
-## New features
+## ✨ New & Improved
 
 - Multi-scene worlds support
 
-## Fixes
+## 🔧 Changes
+
+- Remove unused "Save" icon from the top bar
+
+## 🐛 Fixes
 
 - Fix devtools for viewing scene web traffic
-- Remove unused "Save" icon from the top bar
 ```
 
 ## Additional resources

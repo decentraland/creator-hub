@@ -21,14 +21,6 @@ export function MobileQRCode({ open, onClose, url, qr }: Props) {
     return unsubscribe;
   }, [open]);
 
-  const handleClose = (
-    _event: React.MouseEvent<HTMLButtonElement>,
-    reason?: 'backdropClick' | 'escapeKeyDown',
-  ) => {
-    if (reason === 'backdropClick') return;
-    onClose();
-  };
-
   return (
     <Modal
       className="MobileQRCodeModal"
@@ -37,7 +29,7 @@ export function MobileQRCode({ open, onClose, url, qr }: Props) {
       title={t('modal.mobile_qr.title')}
       subtitle={t('modal.mobile_qr.description')}
       onBack={onBackNoop}
-      onClose={handleClose as any}
+      onClose={onClose}
     >
       <Box className="MobileQRCodeContent">
         <Box className="QRContainer">

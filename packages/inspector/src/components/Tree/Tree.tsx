@@ -49,6 +49,7 @@ type Props<T> = {
   onRemove: (value: T) => void;
   onDuplicate: (value: T, preferredGizmo?: GizmoType) => void;
   getDragContext?: () => unknown;
+  getDragItem?: (items: T[], context: unknown) => unknown;
   dndType?: string;
   externalDndTypes?: string[];
   onExternalDrop?: (item: unknown, target: T, dropType: DropType) => void;
@@ -101,6 +102,7 @@ export function Tree<T>() {
         onSetOpen,
         isRoot,
         getDragContext = () => ({}),
+        getDragItem,
         dndType = 'tree',
         externalDndTypes,
         onExternalDrop,
@@ -273,22 +275,14 @@ export function Tree<T>() {
           item: () => {
             const selectedItems = getSelectedItems ? getSelectedItems() : [];
             // if this item is selected and there are multiple selections, drag all selected items
-            if (
-              selectedItems.length > 1 &&
-              selectedItems.some(item => getId(item) === getId(value))
-            ) {
-              return {
-                items: selectedItems,
-                context: getDragContext(),
-              };
-            }
-            return {
-              items: [value],
-              context: getDragContext(),
-            };
+            const isPartOfSelection =
+              selectedItems.length > 1 && selectedItems.some(item => getId(item) === getId(value));
+            const items = isPartOfSelection ? selectedItems : [value];
+            const context = getDragContext();
+            return getDragItem ? getDragItem(items, context) : { items, context };
           },
         }),
-        [value, getSelectedItems, getId],
+        [value, getSelectedItems, getId, getDragItem],
       );
 
       const handleRemove = () => {

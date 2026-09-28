@@ -1,3 +1,10 @@
 .EditTree.Modal>div button {
   margin-right: 12px;
 }
+
+/* The confirmation previews the old and new name, so it must show them exactly as
+   they will be saved — collapsing consecutive spaces here makes a renamed entity
+   look like it lost them, even though the value is stored intact (#376). */
+.EditTree.Modal span {
+  white-space: pre-wrap;
+}

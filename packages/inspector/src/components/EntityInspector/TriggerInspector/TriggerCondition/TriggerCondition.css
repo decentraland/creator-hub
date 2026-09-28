@@ -55,6 +55,6 @@
   width: var(--right-menu-width);
 }
 
-.TriggerConditionsContainer > .TriggerCondition > .RightMenu > .MoreOptionsMenu .MoreOptionsContent {
+.MoreOptionsContent.TriggerConditionMenu {
   min-width: 205px;
 }

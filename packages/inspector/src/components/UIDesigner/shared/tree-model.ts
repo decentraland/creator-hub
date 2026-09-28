@@ -4,6 +4,9 @@ import type { CodeUINode } from '../code/types';
 
 export type UINodeType = 'UiEntity' | 'Label' | 'Button' | 'Input' | 'Dropdown';
 
+/** A UiEntity variant selected only by its initial template (not a distinct element type). */
+export type WidgetPreset = 'image' | 'fullscreen';
+
 /** Discriminator for a mixed-content text segment: literal text vs a variable binding. */
 export enum SegmentKind {
   LITERAL = 'literal',
@@ -13,6 +16,10 @@ export enum SegmentKind {
 /** The design resolution the editor canvas frames against; react-ecs defaults the in-world value per device. */
 export const DEFAULT_CANVAS_WIDTH = 1920;
 export const DEFAULT_CANVAS_HEIGHT = 1080;
+
+/** Mobile mirrors react-ecs' mobile virtual size (`DEFAULT_MOBILE_VIRTUAL_SIZE`), so the phone preview fills edge-to-edge with no letterbox. */
+export const MOBILE_CANVAS_WIDTH = 1600;
+export const MOBILE_CANVAS_HEIGHT = 720;
 
 export type CanvasSegment = { kind: string; value: string };
 export type CanvasBindingRow = { field: string; variable: string; segments?: CanvasSegment[] };

@@ -68,7 +68,7 @@
   mask-repeat: no-repeat;
 }
 
-.ui-designer-flow-cell[data-flow="absolute"]::before {
+.ui-designer-flow-cell[data-flow="free"]::before {
   mask-image: url("./icons/absolute.svg");
 }
 

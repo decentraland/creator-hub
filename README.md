@@ -125,6 +125,15 @@ Before starting, ensure you have the following installed:
      because it also installs + builds `packages/inspector/agents/bevy`, which is
      a separate SDK7 project with its own `node_modules`
 
+3. **(Optional, for AI agents) Install the third-party agent skills:**
+
+   ```bash
+   make install-skills
+   ```
+
+   This restores the skills pinned in `skills-lock.json` into `.agents/skills/`
+   and links them into `.claude/skills/`, where Claude Code loads them.
+
 ### Testing the Bevy renderer
 
 The inspector can render a scene with the **Bevy engine** as an alternative to
@@ -187,6 +196,7 @@ The project uses a Makefile to manage common development tasks:
 | `make init-submodules` | Initialize git submodules (devtools-frontend)                      |
 | `make protoc`          | Generate TypeScript definitions from `.proto` files                |
 | `make init`            | Complete project initialization (clean + install + protoc + build) |
+| `make install-skills`  | Install the agent skills pinned in `skills-lock.json`              |
 
 ### Build Commands
 

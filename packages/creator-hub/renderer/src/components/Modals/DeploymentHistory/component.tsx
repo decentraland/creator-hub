@@ -87,7 +87,7 @@ function Deployment({
   deployment: DeploymentType;
   isCurrent?: boolean;
 }) {
-  const { componentsStatus, lastUpdated, error, info } = deployment;
+  const { componentsStatus, lastUpdated, error } = deployment;
   const { deriveOverallStatus } = useDeploy();
   const overallStatus = deriveOverallStatus(deployment);
 
@@ -103,8 +103,8 @@ function Deployment({
   }, []);
 
   const steps: Step[] = useMemo(() => {
-    const { catalyst, assetBundle, lods } = componentsStatus;
-    const baseSteps = [
+    const { catalyst, assetBundle } = componentsStatus;
+    return [
       {
         bulletText: '1',
         name: t('modal.publish_project.deploy.deploying.step.uploading'),
@@ -118,18 +118,7 @@ function Deployment({
         state: assetBundle,
       },
     ];
-
-    if (!info.isWorld) {
-      baseSteps.push({
-        bulletText: '3',
-        name: t('modal.publish_project.deploy.deploying.step.optimizing'),
-        description: getStepDescription(lods),
-        state: lods,
-      });
-    }
-
-    return baseSteps;
-  }, [componentsStatus, getStepDescription, info.isWorld]);
+  }, [componentsStatus, getStepDescription]);
 
   const title = useMemo(() => {
     if (overallStatus === 'failed') return t('modal.publish_project.deploy.deploying.failed');

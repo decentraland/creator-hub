@@ -32,11 +32,40 @@ if ('serviceWorker' in navigator) {
   });
 }
 
+// boot.js (engine ≥ commit-7546497) reads these HOST-PROVIDED globals at module eval for its
+// URL sync; without them the module throws before defining __bevyLaunch and the frame stays
+// white. The react-web HUD derives them from its ?<service>= params. This editor host has no
+// such params, so mirror the engine's own rule — each service at its default host under the
+// base domain. They only decide which params the sync omits as "default".
+const BASE_DOMAIN = 'decentraland.org';
+const SERVICE_HOSTS = {
+  realmProvider: 'https://realm-provider-ea',
+  catalyst: 'https://peer',
+  worldsServer: 'https://worlds-content-server',
+  places: 'https://places',
+  commsGatekeeper: 'https://comms-gatekeeper',
+  previewGatekeeper: 'https://comms-gatekeeper-local',
+  assetBundleRegistry: 'https://asset-bundle-registry',
+  storage: 'https://storage',
+  ethereumRpc: 'wss://rpc',
+  socialRpc: 'wss://rpc-social-service-ea',
+  opensea: 'https://opensea',
+  reels: 'https://reels',
+};
+window.__defaultBaseDomain = () => BASE_DOMAIN;
+window.__serviceUrl = name => `${SERVICE_HOSTS[name] ?? `https://${name}`}.${BASE_DOMAIN}`;
+window.__defaultRealm = () => `${window.__serviceUrl('realmProvider')}/main`;
+
 // Boot contract, set BEFORE injecting boot.js (it reads these at module
 // eval). `PUBLIC_URL` is intentionally left UNSET so engine.js resolves its
 // `pkg/` wasm relative to its own module URL — i.e. the same-origin
 // `/bevy-engine/engine/` dir we serve — instead of a CDN.
-window.__bevyBootConfig = { systemScene, portables, preview };
+// `editor: true` tells the engine this is an editor session: it runs the scene's
+// main() once and then auto-freezes it at tick 3 (bevy-explorer #1015), the
+// deterministic "static subject to edit" state. Always true — this host page only
+// ever boots the embedded editor engine. The agent no longer force-freezes
+// (see ENGINE_AUTO_FREEZES_EDITOR_SCENE); play/stop still ride /freeze_scene.
+window.__bevyBootConfig = { systemScene, portables, preview, editor: true };
 
 // Load the engine's boot module as a runtime <script> (NOT an import): it
 // ships in the engine package under `/bevy-engine/engine/` and must load

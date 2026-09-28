@@ -15,6 +15,7 @@ import type { InspectorPreferences } from '../logic/preferences/types';
 import { SceneMetricsServer } from '../../lib/rpc/scene-metrics/server';
 import { SceneServer } from '../rpc/scene/server';
 import { createIframeScene, getSceneClient } from '../rpc/scene';
+import { createSceneTitleNotifier } from '../rpc/scene/scene-title-notifier';
 import { getConfig } from '../logic/config';
 import type { AssetPack } from '../logic/catalog';
 import { store } from '../../redux/store';
@@ -68,6 +69,13 @@ export async function createSdkContext(
   // create inspector engine context and components
   const { engine, components, events, dispose: disposeEngine } = createInspectorEngine();
 
+  // The operations layer + network-id allocator, created up front so the embedded
+  // scene-RPC server can drive scene-graph mutations (AI assistant) through the same code
+  // path the UI uses. `enumEntity` is needed by addAsset for Smart Items with sync
+  // components.
+  const operations = createOperations(engine);
+  const enumEntity = createEnumEntityId(engine);
+
   // Build the renderer chosen for this session through the open plugin registry.
   // The choice comes from the `renderer` config param (a host app like creator-hub
   // drives it), falling back to localStorage then the default — see
@@ -101,7 +109,15 @@ export async function createSdkContext(
     const transport = new MessageTransport(window, window.parent, config.dataLayerRpcParentUrl);
     const babylonInternals = asBabylonInternals(built.internals);
     const bevyInternals = asBevyInternals(built.internals);
-    new SceneServer(transport, store, babylonInternals?.babylon, bevyInternals?.takeScreenshot);
+    new SceneServer(
+      transport,
+      store,
+      babylonInternals?.babylon,
+      bevyInternals?.takeScreenshot,
+      operations,
+      engine,
+      enumEntity,
+    );
 
     // Ensure the scene-RPC CLIENT (host-bound) exists. It's normally set up by the
     // parent-window data-layer path, but a renderer whose data-layer is a WS (Bevy)
@@ -123,6 +139,21 @@ export async function createSdkContext(
         // push path still delivers flags, so this is a non-fatal best-effort pull.
       });
 
+    const stopTitleNotifier = createSceneTitleNotifier(events, engine.RootEntity, title =>
+      getSceneClient()?.notifySceneMetadata(title),
+    );
+    events.on('dispose', stopTitleNotifier);
+
+    // Let the host (re)apply everything it pushes to a fresh iframe — debug console
+    // state, selected tabs — now that the server can receive it. Matters most after
+    // the host's "reload scene" (a new iframe with a fresh store) while a preview is
+    // running: the host's own state didn't change, so nothing else would re-send.
+    void getSceneClient()
+      ?.notifyReady()
+      .catch(() => {
+        // Older hosts don't implement notify_ready; their initial pushes still apply.
+      });
+
     if (babylonInternals) {
       new SceneMetricsServer(transport, store);
     } else {
@@ -140,8 +171,8 @@ export async function createSdkContext(
     components,
     events,
     dispose,
-    operations: createOperations(engine),
-    enumEntity: createEnumEntityId(engine),
+    operations,
+    enumEntity,
     renderer: built.renderer,
     currentRendererId: built.id,
   };

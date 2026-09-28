@@ -62,7 +62,15 @@ jobs:
 
           if [[ "${{ github.ref }}" == "refs/heads/main" || ${{ inputs.inspector_changed }} == "false" ]]; then
             echo "Installing latest inspector version: ${{ inputs.inspector_version }}"
-            npm install @dcl/inspector@${{ inputs.inspector_version }}
+            # The inspector job published this version seconds ago and npm serves a CDN-cached
+            # packument for 300s, so resolution needs a forced revalidate and a wait longer than that.
+            for ((i = 1; i <= 10; i++)); do
+              npm install --prefer-online "@dcl/inspector@${{ inputs.inspector_version }}" && exit 0
+              echo "@dcl/inspector@${{ inputs.inspector_version }} not resolvable yet (attempt $i); retrying in 30s"
+              sleep 30
+            done
+            npm view @dcl/inspector versions --json | tail -5 || true
+            exit 1
           else
             echo "Installing inspector version from S3 bucket: ${{ inputs.inspector_s3_bucket_key }}"
             npm install ${{ secrets.SDK_TEAM_S3_BASE_URL }}/${{ inputs.inspector_s3_bucket_key }}
@@ -80,6 +88,33 @@ jobs:
           # Sentry AUTH Token
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
           VITE_SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
+
+      # macos-latest runners are arm64, so the install only pulls the host-arch oxc-parser
+      # native binding. electron-builder then packs BOTH the arm64 and x64 dmgs from that single
+      # node_modules, leaving the Intel build with no loadable parser ("Failed to load native
+      # binding"). Fetch the cross-arch binding straight from its tarball into node_modules
+      # (npm install --force would reconcile/prune the whole workspace right before packaging)
+      # so both dmgs ship a working parser.
+      - name: Provision cross-arch macOS oxc-parser binding
+        if: matrix.os == 'macos-latest'
+        run: |
+          set -euo pipefail
+          OXC=$(node -p "require('oxc-parser/package.json').version")
+          HOST=$(node -p process.arch)
+          OTHER=$([ "$HOST" = "arm64" ] && echo x64 || echo arm64)
+          DIR="node_modules/@oxc-parser/binding-darwin-$OTHER"
+          if [ ! -e "$DIR/parser.darwin-$OTHER.node" ]; then
+            echo "Host arch $HOST -> fetching @oxc-parser/binding-darwin-$OTHER@$OXC"
+            TMP=$(mktemp -d)
+            ( cd "$TMP" && npm pack "@oxc-parser/binding-darwin-$OTHER@$OXC" >/dev/null )
+            mkdir -p "$DIR"
+            tar -xzf "$TMP"/*.tgz -C "$DIR" --strip-components=1
+            rm -rf "$TMP"
+          fi
+          for A in arm64 x64; do
+            test -e "node_modules/@oxc-parser/binding-darwin-$A/parser.darwin-$A.node" \
+              || { echo "::error::missing @oxc-parser/binding-darwin-$A native binding"; exit 1; }
+          done
 
       - name: Bump release version
         id: version

@@ -7,6 +7,9 @@ import type { AssetNodeItem } from '../../ProjectAssetExplorer/types';
 import { isAssetNode } from '../../ProjectAssetExplorer/utils';
 import { ACCEPTED_FILE_TYPES } from '../../ui/FileUploadField/types';
 import { TransitionMode } from '../../../lib/sdk/components/SceneMetadata';
+import { getDataLayerInterface } from '../../../redux/data-layer';
+import { normalizePath } from '../../SceneInfoPanel/MarkdownRenderer/utils';
+import type { ValidationError } from '../../ImportAsset/types';
 import { fromSceneSpawnPoint, toSceneSpawnPoint } from '../PlayerInspector/utils';
 import type { SceneInput } from './types';
 
@@ -104,6 +107,89 @@ export const isImageFile = (value: string): boolean =>
 
 export const isImage = (node: TreeNode): node is AssetNodeItem =>
   isAssetNode(node) && isImageFile(node.name);
+
+export const THUMBNAIL_RECOMMENDED_WIDTH = 1920;
+export const THUMBNAIL_RECOMMENDED_HEIGHT = 1080;
+const THUMBNAIL_ASPECT_RATIO = THUMBNAIL_RECOMMENDED_WIDTH / THUMBNAIL_RECOMMENDED_HEIGHT;
+// A 16:9 thumbnail is not perfectly reproducible at every size once rounded to
+// whole pixels (1000x563 is as close as it gets), so allow a 1% deviation.
+const THUMBNAIL_ASPECT_TOLERANCE = 0.01;
+
+/**
+ * Fraction of the thumbnail's width hidden on EACH side wherever the platform
+ * shows the square crop (the central 1080x1080 of a 1920x1080 image). Sizes
+ * other than 16:9 get stretched to 16:9 first, so the fraction holds for them too.
+ */
+export const THUMBNAIL_SAFE_AREA_INSET =
+  (THUMBNAIL_RECOMMENDED_WIDTH - THUMBNAIL_RECOMMENDED_HEIGHT) / (2 * THUMBNAIL_RECOMMENDED_WIDTH);
+
+export type ThumbnailDimensions = { width: number; height: number };
+
+export function hasThumbnailAspectRatio(width: number, height: number): boolean {
+  if (width <= 0 || height <= 0) return false;
+  return (
+    Math.abs(width / height - THUMBNAIL_ASPECT_RATIO) <=
+    THUMBNAIL_ASPECT_RATIO * THUMBNAIL_ASPECT_TOLERANCE
+  );
+}
+
+export function getThumbnailWarnings(
+  path: string,
+  dimensions: ThumbnailDimensions | null,
+): string[] {
+  const warnings: string[] = [];
+  if (!isImageFile(path)) {
+    warnings.push('The thumbnail must be a .png or .jpg image.');
+  }
+  if (dimensions && !hasThumbnailAspectRatio(dimensions.width, dimensions.height)) {
+    warnings.push(
+      `The thumbnail is ${dimensions.width}×${dimensions.height}, not 16:9, so it may look stretched. ` +
+        `Use ${THUMBNAIL_RECOMMENDED_WIDTH}×${THUMBNAIL_RECOMMENDED_HEIGHT} or another 16:9 size.`,
+    );
+  }
+  return warnings;
+}
+
+async function getImageDimensions(blob: Blob): Promise<ThumbnailDimensions> {
+  const bitmap = await createImageBitmap(blob);
+  const dimensions = { width: bitmap.width, height: bitmap.height };
+  bitmap.close();
+  return dimensions;
+}
+
+export async function validateThumbnailFile(blob: Blob): Promise<ValidationError> {
+  let dimensions: ThumbnailDimensions;
+  try {
+    dimensions = await getImageDimensions(blob);
+  } catch {
+    return { type: 'dimensions', message: 'The file could not be read as an image.' };
+  }
+  if (hasThumbnailAspectRatio(dimensions.width, dimensions.height)) return undefined;
+  return {
+    type: 'dimensions',
+    message:
+      `${dimensions.width}×${dimensions.height} is not a supported thumbnail size. ` +
+      `Use a 16:9 image, ideally ${THUMBNAIL_RECOMMENDED_WIDTH}×${THUMBNAIL_RECOMMENDED_HEIGHT}.`,
+  };
+}
+
+/**
+ * Checks an existing scene file before it is set as the thumbnail. A file that
+ * cannot be read is a broken reference rather than a bad image, so it is let
+ * through and the preview reports it instead.
+ */
+export async function validateThumbnailPath(path: string): Promise<ValidationError> {
+  if (!path) return undefined;
+  const dataLayer = getDataLayerInterface();
+  if (!dataLayer) return undefined;
+  let content: Uint8Array;
+  try {
+    ({ content } = await dataLayer.getFile({ path: normalizePath(path) }));
+  } catch {
+    return undefined;
+  }
+  return validateThumbnailFile(new Blob([content as BlobPart]));
+}
 
 export const MIDDAY_SECONDS = 43200;
 export const MIDNIGHT_SECONDS = 86400;

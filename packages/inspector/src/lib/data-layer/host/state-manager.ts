@@ -69,7 +69,12 @@ export class StateManager {
   private pendingTransaction: Transaction | null = null;
   private transactionQueue: Transaction[] = [];
   private processing = false;
-  private readonly maxBatchSize = 200; // prevent oversized batches
+  // Engine changes are ignored only while an explicit transaction (undo/redo/import) mutates
+  // the engine itself: those are persisted by their caller and must not be re-captured. They
+  // are NOT ignored while the queue is being persisted — persisting awaits disk writes, and
+  // any edit that lands meanwhile (the next keystroke of a rename) has to be queued, or it is
+  // silently lost even though the engine already holds it.
+  private captureSuspended = false;
   private readonly fs: FileSystemInterface;
   private readonly engine: IEngine;
   private readonly getInspectorPreferences: () => InspectorPreferences;
@@ -97,7 +102,7 @@ export class StateManager {
 
   createOnChangeHandler(): OnChangeFunction {
     return (entity, operation, component, componentValue) => {
-      if (this.processing) return;
+      if (this.captureSuspended) return;
 
       const opType = this.determineOperationType(operation, component);
       const baseOp = {
@@ -182,10 +187,13 @@ export class StateManager {
 
     this.pendingTransaction.operations.push(operation);
 
-    // force commit if batch gets too large to prevent memory issues
-    if (this.pendingTransaction.operations.length >= this.maxBatchSize) {
-      this.commitPendingTransaction();
-    }
+    // NOTE: we deliberately do NOT force-commit mid-burst on a size cap. Committing splits a
+    // single synchronous change burst across more than one transaction, i.e. more than one undo
+    // entry — so a large operation (e.g. adding a multi-entity composite) is only partially
+    // undone by a single Ctrl+Z, leaving orphaned entities in the scene files/preview (#1460).
+    // The whole burst now lands in ONE transaction, committed together on the setTimeout(0)
+    // above, so the operation stays atomic. A burst is bounded by the size of one user
+    // operation; the initial scene-load burst is the only large one and it commits once too.
   }
 
   private async commitPendingTransaction(): Promise<void> {
@@ -266,10 +274,12 @@ export class StateManager {
 
     const wasProcessing = this.processing;
     this.processing = true;
+    this.captureSuspended = true;
 
     try {
       return await operations();
     } finally {
+      this.captureSuspended = false;
       this.processing = wasProcessing;
       await this.processTransactionQueue();
     }

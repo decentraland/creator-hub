@@ -4,7 +4,6 @@ import {
   YGU_POINT,
   YGU_UNDEFINED,
 } from '../../../../lib/sdk/ui-transform-constants';
-import { clearedCenterMargins } from '../../shared/align-presets';
 
 export const FLOW_DIRECTIONS = {
   row: 0,
@@ -14,7 +13,7 @@ export const FLOW_DIRECTIONS = {
 } as const;
 
 export type FlowDirection = keyof typeof FLOW_DIRECTIONS;
-export type FlowValue = 'absolute' | FlowDirection;
+export type FlowValue = 'free' | FlowDirection;
 
 export const YGW_NO_WRAP = 0;
 export const YGW_WRAP = 1;
@@ -22,15 +21,16 @@ export const YGW_WRAP_REVERSE = 2;
 
 const DIRECTION_NAMES = Object.keys(FLOW_DIRECTIONS) as FlowDirection[];
 
-/** The selector cell the current UiTransform reads as. */
+/** The selector cell the current UiTransform reads as: `free` when no flexDirection is set (children are placed absolutely), otherwise the flow direction. Independent of the node's own positionType. */
 export function flowValue(transform: Record<string, unknown> | null): FlowValue {
-  const t = transform ?? {};
-  if (((t.positionType as number | undefined) ?? YGPT_RELATIVE) === YGPT_ABSOLUTE) {
-    return 'absolute';
-  }
-  const direction = (t.flexDirection as number | undefined) ?? FLOW_DIRECTIONS.row;
+  const direction = (transform ?? {}).flexDirection as number | undefined;
+  if (direction === undefined) return 'free';
   return DIRECTION_NAMES.find(name => FLOW_DIRECTIONS[name] === direction) ?? 'row';
 }
+
+/** Whether the container lays its children out freely (absolute) rather than in a flow. */
+export const isFreeFlow = (transform: Record<string, unknown> | null | undefined): boolean =>
+  ((transform ?? {}).flexDirection as number | undefined) === undefined;
 
 /** → Absolute. Anchors the node to its parent's leading edges (Top/Left 0) and clears the opposite edges and all margins. */
 export function absolutePatch() {
@@ -70,19 +70,10 @@ export function inFlowPatch() {
   };
 }
 
-/** The patch for picking `next` in the Flow selector, or null when nothing changes. */
-export function flowPatch(
-  next: FlowValue,
-  current: FlowValue,
-  transform: Record<string, unknown> | null = null,
-): Record<string, unknown> | null {
+/** The patch for picking `next` in the Flow selector — sets (or clears, for `free`) only flexDirection; a node's own positionType is owned by the "Ignore Layout Flow" control. */
+export function flowPatch(next: FlowValue, current: FlowValue): Record<string, unknown> | null {
   if (next === current) return null;
-  if (next === 'absolute') return absolutePatch();
-  const patch: Record<string, unknown> = { flexDirection: FLOW_DIRECTIONS[next] };
-  if (current === 'absolute') {
-    Object.assign(patch, inFlowPatch(), clearedCenterMargins(transform));
-  }
-  return patch;
+  return { flexDirection: next === 'free' ? undefined : FLOW_DIRECTIONS[next] };
 }
 
 /** Wrap-reverse counts as wrapping, so the toggle reads any non-zero as on. */
@@ -92,11 +83,6 @@ export function isWrapping(transform: Record<string, unknown> | null): boolean {
 
 export function wrapPatch(on: boolean): Record<string, unknown> {
   return { flexWrap: on ? YGW_WRAP : YGW_NO_WRAP };
-}
-
-/** Whether the 5-way selector can DISPLAY the node's `flexDirection` (it cannot while the node is absolute). */
-export function directionIsRepresentable(transform: Record<string, unknown> | null): boolean {
-  return flowValue(transform) !== 'absolute';
 }
 
 /** Whether the wrap toggle can represent `flexWrap`. It is binary, so it cannot show `wrap-reverse`. */

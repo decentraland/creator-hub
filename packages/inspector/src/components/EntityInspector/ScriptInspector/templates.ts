@@ -6,6 +6,9 @@ export function getScriptTemplateClass(scriptName: string): string {
 import { engine, Entity } from '@dcl/sdk/ecs'
 import {} from '@dcl/sdk/math'
 
+// A number edited with a slider in the Creator Hub UI: Slider<min, max, step>
+type Slider<Min extends number, Max extends number, Step extends number = 1> = number
+
 export class ${className} {
   /**
    * Properties
@@ -17,7 +20,9 @@ export class ${className} {
   /**
    * Constructor / Inputs
    * Parameters declared here appear in the Script component UI in Creator Hub.
-   * Supported types: Entity, String, Number, Boolean, ActionCallback.
+   * Supported types: Entity, String, Number, Boolean, ActionCallback,
+   * and Slider for a number edited with a slider,
+   * e.g. \`public speed: Slider<0, 10, 0.5> = 1\` (min 0, max 10, step 0.5).
    *
    * Note: After editing this file, click the refresh icon in the Script component UI
    * to see updated inputs.

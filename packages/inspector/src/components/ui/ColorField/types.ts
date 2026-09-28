@@ -3,6 +3,8 @@ import type React from 'react';
 export type Props = React.InputHTMLAttributes<HTMLElement> & {
   label?: React.ReactNode;
   basic?: boolean;
+  // adds a "None" entry that emits '' so an optional colour can be unset again
+  clearable?: boolean;
 };
 
 export type ColorOptions = {

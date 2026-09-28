@@ -6,12 +6,18 @@ import {
   isExternalUrl,
   normalizePath,
 } from '../components/SceneInfoPanel/MarkdownRenderer/utils';
+import { useAppSelector } from '../redux/hooks';
+import { selectAssetCatalog } from '../redux/app';
 
-/** Resolves an external URL or scene-filesystem path to a URL usable in `src`, revoking any object URL on unmount. */
+/** Resolves an external URL or scene-fs path to a usable URL, re-resolving when the asset lands in the catalog. */
 export function useAssetUrl(src: string | undefined): string | undefined {
   const [assetUrl, setAssetUrl] = useState<string | undefined>(() =>
     src && isExternalUrl(src) ? src : undefined,
   );
+
+  const catalog = useAppSelector(selectAssetCatalog);
+  const path = src && !isExternalUrl(src) ? normalizePath(src) : undefined;
+  const inCatalog = !!path && !!catalog?.assets?.some(asset => normalizePath(asset.path) === path);
 
   useEffect(() => {
     if (!src) {
@@ -28,15 +34,15 @@ export function useAssetUrl(src: string | undefined): string | undefined {
 
     const loadAsset = async () => {
       try {
-        const path = normalizePath(src);
+        const resolved = normalizePath(src);
 
         const dataLayer = getDataLayerInterface();
         if (!dataLayer) return;
 
-        const response: GetFileResponse = await dataLayer.getFile({ path });
+        const response: GetFileResponse = await dataLayer.getFile({ path: resolved });
         if (cancelled) return;
 
-        const type = getMimeType(path);
+        const type = getMimeType(resolved);
         const blob = new Blob([response.content as BlobPart], { type });
 
         objectUrl = URL.createObjectURL(blob);
@@ -57,7 +63,7 @@ export function useAssetUrl(src: string | undefined): string | undefined {
       cancelled = true;
       if (objectUrl) URL.revokeObjectURL(objectUrl);
     };
-  }, [src]);
+  }, [src, inCatalog]);
 
   return assetUrl;
 }

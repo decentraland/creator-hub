@@ -6,6 +6,7 @@ Project-specific patterns for tests in this repo. See also: [coding-standards.md
 
 - Test framework: **Vitest** (not Jest, though patterns are similar). Tests use `describe`/`it`/`beforeEach`.
 - Structure tests with `describe("when ...", () => { ... })` for context, `it("should ...", () => { ... })` for behavior.
+  `shared/tests/flags.spec.ts` predates this and is flat — don't infer the convention from the nearest neighbour; `shared/tests/scene-parser.spec.ts` and `shared/tests/config.spec.ts` conform.
 - Scope mocks and test data to the specific `describe` block that needs them (not globally).
 - Variables and mocks go in `beforeEach`, cleanup in `afterEach`.
 - React: use `@testing-library/react` with accessible queries (`getByRole`, `getByLabelText`).
