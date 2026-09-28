@@ -853,10 +853,7 @@ export function EditorPage() {
               <div className={isOptimizing ? 'preview-control optimizing' : 'preview-control'}>
                 <ButtonGroup
                   ref={previewButtonGroupRef}
-                  className={isOptimizing ? undefined : 'icon-only'}
                   color="secondary"
-                  aria-label={t('editor.header.actions.preview')}
-                  tooltip={t('editor.header.actions.preview')}
                   extraTooltip={t('editor.header.actions.preview_options.title')}
                   popperOffset={10}
                   // Not natively disabled while optimizing (that would kill the inline ✕ too):
@@ -871,9 +868,7 @@ export function EditorPage() {
                     isOffline
                   }
                   onClick={isOptimizing ? undefined : handleOpenPreview}
-                  // icon-only at rest (the icon IS the content); while optimizing the icon moves
-                  // to startIcon so the progress label can sit beside it
-                  startIcon={isOptimizing ? previewIcon : undefined}
+                  startIcon={previewIcon}
                   extra={
                     <PreviewOptions
                       options={settings.previewOptions}
@@ -910,7 +905,7 @@ export function EditorPage() {
                       </Tooltip>
                     </span>
                   ) : (
-                    previewIcon
+                    t('editor.header.actions.play')
                   )}
                 </ButtonGroup>
               </div>

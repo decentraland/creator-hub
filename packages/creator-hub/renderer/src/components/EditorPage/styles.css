@@ -171,19 +171,14 @@
   background-color: var(--dcl-hover) !important;
 }
 
-/* Title-bar design: Optimize / Code / Preview are square icon-only buttons whose label lives
-   in the tooltip. The icon is the button's content (not a startIcon) so MUI adds no gap. */
+/* Title-bar design: Optimize / Code are square icon-only buttons whose label lives in the
+   tooltip. The icon is the button's content (not a startIcon) so MUI adds no gap. */
 .Editor .Header .actions .Button.icon-only,
 .Editor .Header .actions .Button.extra-button {
   width: 32px;
   min-width: 32px !important;
   height: 32px;
   padding: 0 !important;
-}
-
-.Editor .Header .actions .preview-control .Button.icon-only {
-  width: 38px;
-  min-width: 38px !important;
 }
 
 .Editor .Header .actions .Button.icon-only svg {
