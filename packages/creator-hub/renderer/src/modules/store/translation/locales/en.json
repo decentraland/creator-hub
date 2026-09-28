@@ -52,14 +52,13 @@
       "actions": {
         "code": "Code",
         "optimize": "Optimize",
-        "preview": "Preview",
+        "play": "Play",
         "optimizing": "Optimizing",
         "cancel_optimizing": "Cancel optimization",
         "publish": "Publish",
         "refresh": "Reload scene from disk",
         "preview_options": {
-          "title": "Preview Options",
-          "menu_title": "Preview in",
+          "title": "Play Options",
           "client": {
             "desktop": "Desktop Client",
             "bevy_web": "Web (Bevy)"

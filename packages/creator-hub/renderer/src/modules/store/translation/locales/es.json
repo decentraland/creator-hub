@@ -52,14 +52,13 @@
       "actions": {
         "code": "Código",
         "optimize": "Optimizar",
-        "preview": "Previsualizar",
+        "play": "Jugar",
         "optimizing": "Optimizando",
         "cancel_optimizing": "Cancelar la optimización",
         "publish": "Publicar",
         "refresh": "Recargar escena desde disco",
         "preview_options": {
-          "title": "Opciones de Previsualización",
-          "menu_title": "Vista previa en",
+          "title": "Opciones de Juego",
           "client": {
             "desktop": "Cliente de Escritorio",
             "bevy_web": "Web (Bevy)"

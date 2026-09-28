@@ -52,14 +52,13 @@
       "actions": {
         "code": "代码",
         "optimize": "优化",
-        "preview": "预览",
+        "play": "运行",
         "optimizing": "优化中",
         "cancel_optimizing": "取消优化",
         "publish": "发布",
         "refresh": "从磁盘重新加载场景",
         "preview_options": {
-          "title": "预览选项",
-          "menu_title": "预览方式",
+          "title": "运行选项",
           "client": {
             "desktop": "桌面客户端",
             "bevy_web": "网页（Bevy）"

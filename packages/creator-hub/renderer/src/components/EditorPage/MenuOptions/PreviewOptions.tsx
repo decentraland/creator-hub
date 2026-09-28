@@ -132,7 +132,7 @@ export function PreviewOptions({
   return (
     <div className="PreviewOptions">
       <div className="options">
-        <span className="title">{t('editor.header.actions.preview_options.menu_title')}</span>
+        <span className="title">{t('editor.header.actions.preview_options.title')}</span>
         <div
           ref={desktopRowRef}
           className="client-row"
