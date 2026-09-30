@@ -148,7 +148,7 @@ CI is orchestrated by `.github/workflows/ci.yml`, which calls reusable (`on: [wo
 ## Code Style
 
 - **ESLint**: `@typescript-eslint/consistent-type-imports` is enforced (use `import type` for type-only imports).
-- **Lint scope**: `make lint` / `npm run lint` runs `eslint . --ext js,cjs,ts` — it does **not** lint `.tsx` files. Real violations DO hide there, so lint touched `.tsx` explicitly before shipping (`npx eslint "packages/inspector/src/**/*.tsx"`). Two `import/order` errors survived on the UI Designer branch precisely because the gate skips them. For the same reason a standalone run surfaces violations that predate your branch — `OptimizeModal/component.tsx` carries two `import/order` errors on `main` as of #1642. Check `git status` before fixing one: repairing an untouched file drags it into your commit. A standalone `.tsx` run also reports two spurious errors to ignore: `consistent-type-imports` on the `@dcl/react-ecs` JSX-pragma default import (e.g. `ui-renderer.tsx`), and `react-hooks/exhaustive-deps` "Definition for rule … was not found" (the plugin isn't loaded for a standalone invocation).
+- **Lint scope**: `make lint` / `npm run lint` runs `eslint . --ext js,cjs,ts,tsx` — `.tsx` is covered, so no separate pass is needed before shipping. It was excluded until the gate was widened, by which point ~95 errors had accumulated behind it across 43 files; widening any gate here should be expected to surface a backlog rather than a clean run. Two traps that widening exposed are now handled in config, and both matter before you "fix" an apparent violation. Smart-item scene sources under `packages/asset-packs/packs/` compile JSX through an `@jsx ReactEcs.createElement` pragma that no loaded plugin can see, so the factory import reads as unused — an `.eslintrc.json` override scopes `varsIgnorePattern` for those files, and deleting the import breaks the build. And `eslint-plugin-react-hooks` is not installed at all, so a `react-hooks/*` disable directive suppresses nothing and is itself reported as an error.
 - **Prettier**: `.prettierrc` is the contract — follow it, don't infer style from surrounding code. Single quotes, semicolons, trailing commas, 100 char print width, `arrowParens: "avoid"`, and an override making `**/*.{css,scss,html}` use DOUBLE quotes. Note the `npm run format` glob is only `**/*.{js,ts,tsx,json}`: CSS is configured but never checked, so stylesheets drift and a passing `npm run format` says nothing about them.
 - **Import order**: ESLint enforced. React first, then `@dcl/*`, then `decentraland-*`, then MUI/internal, then relative.
 - **Component-directory barrels**: inspector component directories use a per-directory `index.ts` barrel (`export { X } from './X'`) — ~30/31 dirs follow this. Add one when creating a component; don't strip these barrels for file-count reduction — it breaks the established convention.
@@ -172,6 +172,10 @@ Files matching `*.styled.ts` / `*.styled.tsx` must follow these rules:
 ## Gotchas
 
 Hard-won traps that reading the code does not reveal. Testing-specific ones live in [`docs/testing-standards.md`](docs/testing-standards.md).
+
+### `packages/asset-packs/packs/**` is type-checked by nothing
+
+`tsconfig.lib.json` includes only `src`, so the smart-item scene sources under `packs/` sit outside every type gate — `make typecheck` and `make build-asset-packs` both pass without looking at them, and the build's `Type checking completed without errors` refers to `src` alone (`tsc --listFiles` confirms zero `packs/` files in the program). Verify an edit there by other means: a repo-wide reference count for anything removed, plus a standalone `tsc --noEmit --noResolve --jsx react --jsxFactory 'ReactEcs.createElement' <file>` parse.
 
 ### Changing a value in `DEFAULT_CONFIG` does nothing for existing installs
 

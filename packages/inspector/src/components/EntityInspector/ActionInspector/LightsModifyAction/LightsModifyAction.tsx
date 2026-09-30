@@ -1,10 +1,9 @@
 import React, { useCallback } from 'react';
-import { ActionPayload, ActionType } from '@dcl/asset-packs';
-import { Color3 } from '@dcl/ecs-math';
+import type { Color3 } from '@dcl/ecs-math';
 import { Block } from '../../../Block';
 import { CheckboxField, ColorField, TextField, InfoTooltip } from '../../../ui';
 import { toHex, toColor3 } from '../../../ui/ColorField/utils';
-import { Props } from './types';
+import type { Props } from './types';
 
 const LightsModifyAction: React.FC<Props> = ({ value, onUpdate }) => {
   const handleChangeActive = useCallback(

@@ -1,6 +1,6 @@
 import React from 'react';
 import { getContentsUrl } from '../../../lib/logic/catalog';
-import { Props } from './types';
+import type { Props } from './types';
 import './Themes.css';
 
 const Themes: React.FC<Props> = ({ catalog, onClick }) => {

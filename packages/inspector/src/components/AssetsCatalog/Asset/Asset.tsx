@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { useDrag, DragPreviewImage } from 'react-dnd';
-import cx from 'classnames';
 import { BsFillLightningChargeFill as SmartItemIcon } from 'react-icons/bs';
+import cx from 'classnames';
 
 import { getContentsUrl, isSmart, isGround } from '../../../lib/logic/catalog';
 import { Asset } from '../../../lib/logic/catalog';

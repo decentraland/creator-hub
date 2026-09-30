@@ -1,8 +1,9 @@
 import React, { useCallback } from 'react';
-import { Entity } from '@dcl/ecs';
 import { VscTrash as RemoveIcon } from 'react-icons/vsc';
+import type { Entity } from '@dcl/ecs';
 
-import { withSdk, WithSdkProps } from '../../../../hoc/withSdk';
+import type { WithSdkProps } from '../../../../hoc/withSdk';
+import { withSdk } from '../../../../hoc/withSdk';
 import { useComponentValue } from '../../../../hooks/sdk/useComponentValue';
 import { useComponentsWith } from '../../../../hooks/sdk/useComponentsWith';
 

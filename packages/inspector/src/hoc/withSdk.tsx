@@ -1,5 +1,5 @@
 import { useSdk } from '../hooks/sdk/useSdk';
-import { SdkContextValue } from '../lib/sdk/context';
+import type { SdkContextValue } from '../lib/sdk/context';
 
 export type WithSdkProps = {
   sdk: SdkContextValue;

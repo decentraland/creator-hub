@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 
-import { AssetPack } from '../../lib/logic/catalog';
+import type { AssetPack } from '../../lib/logic/catalog';
 import { analytics, Event } from '../../lib/logic/analytics';
 
 import { Header } from './Header';
@@ -8,7 +8,7 @@ import { Themes } from './Themes';
 import { Categories } from './Categories';
 import { Assets } from './Assets';
 
-import { Props } from './types';
+import type { Props } from './types';
 
 import './AssetsCatalog.css';
 

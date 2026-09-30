@@ -1,14 +1,11 @@
 import React, { useCallback, useEffect } from 'react';
 import { VscTrash as RemoveIcon } from 'react-icons/vsc';
-import { Entity } from '@dcl/ecs';
-import {
-  TriggerCondition,
-  TriggerConditionOperation,
-  TriggerConditionType,
-} from '@dcl/asset-packs';
+import type { Entity } from '@dcl/ecs';
+import type { TriggerCondition } from '@dcl/asset-packs';
+import { TriggerConditionOperation, TriggerConditionType } from '@dcl/asset-packs';
 import { useArrayState } from '../../../../hooks/useArrayState';
 import { useSdk } from '../../../../hooks/sdk/useSdk';
-import { Component } from '../../../../lib/sdk/components';
+import type { Component } from '../../../../lib/sdk/components';
 import { Button } from '../../../Button';
 import { AddButton } from '../../AddButton';
 import MoreOptionsMenu from '../../MoreOptionsMenu';

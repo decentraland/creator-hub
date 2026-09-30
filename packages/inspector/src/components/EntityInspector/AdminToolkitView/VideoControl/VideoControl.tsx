@@ -1,9 +1,10 @@
 import React, { useCallback } from 'react';
-import { Entity } from '@dcl/ecs';
 import { VscTrash as RemoveIcon } from 'react-icons/vsc';
 import { AiOutlineInfoCircle as InfoIcon } from 'react-icons/ai';
+import type { Entity } from '@dcl/ecs';
 
-import { withSdk, WithSdkProps } from '../../../../hoc/withSdk';
+import type { WithSdkProps } from '../../../../hoc/withSdk';
+import { withSdk } from '../../../../hoc/withSdk';
 import { useComponentValue } from '../../../../hooks/sdk/useComponentValue';
 import { useComponentsWith } from '../../../../hooks/sdk/useComponentsWith';
 import { CheckboxField, CheckboxGroup, TextField, Dropdown, Label } from '../../../ui';

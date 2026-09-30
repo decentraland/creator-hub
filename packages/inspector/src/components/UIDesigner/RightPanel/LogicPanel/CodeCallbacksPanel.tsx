@@ -43,7 +43,6 @@ const CallbackBodyEditor: React.FC<{ name: string; template: string; vars: BindV
 
   useEffect(() => {
     if (!focused && isValidTemplate(local)) setLocal(template);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [template, focused]);
 
   const matches =

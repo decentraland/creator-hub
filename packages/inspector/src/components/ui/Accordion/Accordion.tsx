@@ -1,6 +1,6 @@
 import React, { useCallback, useState } from 'react';
-import cx from 'classnames';
 import { IoIosArrowDown, IoIosArrowUp } from 'react-icons/io';
+import cx from 'classnames';
 import { CheckboxField } from '../CheckboxField';
 
 import './Accordion.css';
