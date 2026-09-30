@@ -5,6 +5,7 @@ import { Assets } from './pageObjects/Assets';
 import { Hierarchy } from './pageObjects/Hierarchy';
 import { Inspector } from './pageObjects/Inspector';
 import { installMouseHelper } from './utils/install-mouse-helper';
+import { expect, test } from './fixtures';
 
 declare const page: Page;
 
@@ -30,12 +31,12 @@ declare const page: Page;
  * smart-item BasicView never renders `.GltfInspector` / `.ActionInspector`
  * for a spawned entity, so any DOM-panel assertion would time out.
  */
-describe('Add builder asset as child', () => {
-  beforeAll(async () => {
+test.describe('Add builder asset as child', () => {
+  test.beforeAll(async () => {
     await installMouseHelper(page);
     await App.waitUntilReady();
     await Inspector.waitForEngineReady();
-  }, 60_000);
+  });
 
   test('Siren spawn substitutes {assetPath} in GltfContainer and script-method Action', async () => {
     await Assets.selectTab(AssetsTab.AssetsPack);
@@ -71,5 +72,5 @@ describe('Add builder asset as child', () => {
     expect(payload.scriptPath).toBeDefined();
     expect(payload.scriptPath).not.toContain('{assetPath}');
     expect(payload.scriptPath!.toLowerCase()).toContain('.ts');
-  }, 60_000);
+  });
 });

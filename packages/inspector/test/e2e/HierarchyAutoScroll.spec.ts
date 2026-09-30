@@ -2,14 +2,15 @@ import { type Page } from 'playwright';
 import { App } from './pageObjects/App';
 import { Hierarchy } from './pageObjects/Hierarchy';
 import { installMouseHelper } from './utils/install-mouse-helper';
+import { expect, test } from './fixtures';
 
 declare const page: Page;
 
 const ROOT = 0;
 const FILLER_COUNT = 10;
 
-describe('Hierarchy auto-scroll to selection', () => {
-  beforeAll(async () => {
+test.describe('Hierarchy auto-scroll to selection', () => {
+  test.beforeAll(async () => {
     await installMouseHelper(page);
     // Page is already navigated in setup
     await App.waitUntilReady();

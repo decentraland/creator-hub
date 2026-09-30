@@ -26,11 +26,20 @@ export enum NavbarItem {
   MORE = 'more',
 }
 
-function MenuItem(props: { item: NavbarItem; active: NavbarItem; disable?: boolean }) {
+function MenuItem(props: {
+  item: NavbarItem;
+  active: NavbarItem;
+  disable?: boolean;
+  // Declared and forwarded explicitly: this component does not spread its props, so a
+  // `data-testid` passed by a caller would otherwise be dropped without a type error —
+  // TypeScript exempts hyphenated JSX attributes from excess-property checks.
+  'data-testid'?: string;
+}) {
   return !props.disable ? (
     <Link
       to={`/${props.item}`}
       className={cx('menu-item', { active: props.active === props.item })}
+      data-testid={props['data-testid']}
     >
       {t(`navbar.menu.${props.item}`)}
     </Link>
@@ -80,15 +89,18 @@ export function Navbar(props: { active: NavbarItem }) {
         </div>
         <div className="menu">
           <MenuItem
+            data-testid="navbar-menu-home"
             item={NavbarItem.HOME}
             active={props.active}
           />
           <MenuItem
+            data-testid="navbar-menu-scenes"
             item={NavbarItem.SCENES}
             active={props.active}
           />
           {/* This page will be added in a future shape */}
           <MenuItem
+            data-testid="navbar-menu-collections"
             item={NavbarItem.COLLECTIONS}
             active={props.active}
             disable={true}
@@ -101,14 +113,17 @@ export function Navbar(props: { active: NavbarItem }) {
             disable={!isEnabled(FeatureFlag.ANALYTICS)}
           />
           <MenuItem
+            data-testid="navbar-menu-manage"
             item={NavbarItem.MANAGE}
             active={props.active}
           />
           <MenuItem
+            data-testid="navbar-menu-learn"
             item={NavbarItem.LEARN}
             active={props.active}
           />
           <MenuItem
+            data-testid="navbar-menu-more"
             item={NavbarItem.MORE}
             active={props.active}
           />

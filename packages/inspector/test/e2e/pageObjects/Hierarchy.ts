@@ -1,5 +1,6 @@
 import { type Page } from 'playwright';
 import { type Positions, dragAndDrop } from '../utils/drag-and-drop';
+import { actUntil } from '../utils/interactions';
 
 declare const page: Page;
 
@@ -149,7 +150,9 @@ class HierarchyPageObject {
     let lastError: unknown;
     while (!opened && Date.now() < deadline) {
       try {
-        await page.locator(rowSelector).first().click({ button: 'right', timeout: 3_000 });
+        const row = page.locator(rowSelector).first();
+        await row.waitFor({ state: 'visible', timeout: 3_000 });
+        await row.click({ button: 'right', timeout: 3_000, force: true });
         await page.waitForSelector(itemSelector, { state: 'visible', timeout: 3_000 });
         opened = true;
       } catch (error) {
@@ -165,9 +168,6 @@ class HierarchyPageObject {
       );
     }
 
-    // The menu is open and the item is present. Click it with a generous
-    // timeout: once the item is actionable, the click itself can still be slow
-    // under slowMo on a loaded CI runner — that's a reason to wait, not retry.
     await page.click(itemSelector, { timeout: 10_000 });
   }
 
@@ -360,20 +360,17 @@ class HierarchyPageObject {
   }
 
   async addComponent(entityId: number, componentName: string) {
-    const item = await this.getItem(entityId, this.getItemSelectorById);
-    await item.click({ button: 'right' });
-    const addComponent = await item.$('.contexify_item[itemid="add-component"]');
-    if (!addComponent) {
-      throw new Error(`Can't add components on entity with id=${entityId}`);
-    }
-    await addComponent.click();
-    const component = await addComponent.$(`.contexify_item[itemid="${componentName}"]`);
-    if (!component) {
-      throw new Error(
-        `Can't add component with componentName=${componentName} on entity with id=${entityId}`,
-      );
-    }
-    await component.click();
+    const rowSelector = this.getItemSelectorById(entityId);
+    const addComponent = page.locator('.contexify_item[itemid="add-component"]').first();
+    await actUntil(
+      () => page.locator(rowSelector).first().click({ button: 'right', timeout: 3_000 }),
+      () => addComponent.waitFor({ state: 'visible', timeout: 2_000 }),
+      { retries: 4 },
+    );
+    await addComponent.hover();
+    const component = addComponent.locator(`.contexify_item[itemid="${componentName}"]`);
+    await component.waitFor({ state: 'visible', timeout: 3_000 });
+    await component.click({ timeout: 5_000 });
   }
 }
 

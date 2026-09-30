@@ -794,7 +794,10 @@ export function EditorPage() {
   const previewIcon = loadingPreview ? <Loader size={20} /> : <PlayCircleIcon />;
 
   return (
-    <main className="Editor">
+    <main
+      className="Editor"
+      data-testid="editor-page"
+    >
       {!isReady ? (
         renderLoading()
       ) : (
@@ -803,6 +806,7 @@ export function EditorPage() {
             <>
               <div
                 className="back"
+                data-testid="editor-page-back-button"
                 onClick={handleBack}
               >
                 <ArrowBackIosIcon />
@@ -916,6 +920,7 @@ export function EditorPage() {
                   disabled={
                     loadingPublish || isInstallingProject || isDetectingCustomCode || isOffline
                   }
+                  data-testid="editor-page-publish-button"
                   onClick={() => {
                     if (deployment?.status === 'pending') {
                       openModal('publish', 'deploy');
@@ -934,6 +939,7 @@ export function EditorPage() {
                   disabled={
                     loadingPublish || isInstallingProject || isDetectingCustomCode || isOffline
                   }
+                  data-testid="editor-page-publish-button"
                   onClick={handlePublishScene}
                   startIcon={isDeploying ? <Loader size={20} /> : <PublicIcon />}
                 >
@@ -947,6 +953,7 @@ export function EditorPage() {
             <iframe
               key={iframeReloadKey}
               className="inspector"
+              data-testid="editor-page-iframe"
               src={iframeUrl}
               onLoad={handleIframeRef}
               // Grant cross-origin isolation to the inspector iframe so the Bevy

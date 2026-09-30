@@ -1,5 +1,13 @@
 name: E2E
-on: [ workflow_call ]
+on:
+  workflow_call:
+    secrets:
+      E2E_PRIVATE_KEY:
+        required: false
+      E2E_NAME:
+        required: false
+      E2E_LAND:
+        required: false
 
 permissions:
   contents: read
@@ -15,8 +23,11 @@ defaults:
 jobs:
   # Playwright + Chromium against the served bundle (no Electron). Kept separate
   # from the Electron suite so the two heavy suites get memory-isolated runners.
+  # ubuntu, not macos: nothing here is mac- or Electron-specific, and the Linux
+  # runner has 4 vCPU/16GB against macOS arm64's 3 vCPU/7GB at a tenth the
+  # billed minutes. Only e2e-creator-hub needs darwin, to package the .app.
   e2e-inspector:
-    runs-on: macos-latest
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
         with:
@@ -35,7 +46,7 @@ jobs:
 
       # chromium only: it is the sole engine the suite launches (test/e2e/setup.ts).
       - name: install Playwright browsers
-        run: npx playwright install chromium
+        run: npx playwright install --with-deps chromium
 
       # The UI Designer code-mode e2e needs the wasm parser that --production drops, so
       # e2e rebuilds a dev bundle (~74s) instead of reusing download-build's production
@@ -46,7 +57,7 @@ jobs:
       # complete output set — no hashed asset files to miss (unlike the past bundle.css bug).
       - name: Cache inspector dev bundle
         id: inspector-dev-bundle
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: |
             packages/inspector/public/bundle.js
@@ -65,16 +76,9 @@ jobs:
           npx http-server public -p 8000 --cors -a localhost &
           sleep 5
 
-      # Machine-level backstop: a re-run is clean (fresh forks + browser per spec
-      # file, in-page data layer) and a real regression fails both attempts.
       - name: e2e
-        uses: nick-fields/retry@ad984534de44a9489a53aefd81eb77f87c70dc60 # v4.0.0
-        with:
-          timeout_minutes: 20
-          max_attempts: 2
-          retry_on: error
-          shell: 'bash'
-          command: make test-inspector-e2e
+        timeout-minutes: 20
+        run: make test-inspector-e2e
         env:
           NODE_OPTIONS: "--max-old-space-size=8192"
           E2E_CONTENT_URL: https://builder-items.decentraland.zone
@@ -110,8 +114,33 @@ jobs:
         with:
           include-creator-hub: 'true'
 
+      - name: install playwright chromium
+        run: cd packages/creator-hub && npx playwright install chromium
+
       - name: e2e
         run: make test-creator-hub-e2e-ci
         env:
           NODE_OPTIONS: "--max-old-space-size=8192"
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
           E2E_CONTENT_URL: https://builder-items.decentraland.zone
+
+      - name: e2e live tier (post-merge and manual dispatch only; reuses the app packaged above)
+        if: github.event_name != 'pull_request'
+        run: make test-creator-hub-e2e-ci-live
+        env:
+          NODE_OPTIONS: "--max-old-space-size=8192"
+          E2E_CONTENT_URL: https://builder-items.decentraland.zone
+          E2E_PRIVATE_KEY: ${{ secrets.E2E_PRIVATE_KEY }}
+          E2E_NAME: ${{ secrets.E2E_NAME }}
+          E2E_LAND: ${{ secrets.E2E_LAND }}
+
+      - name: upload e2e diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: creator-hub-e2e-diagnostics
+          path: |
+            packages/creator-hub/test-results
+            packages/creator-hub/playwright-report
+          if-no-files-found: ignore
+          retention-days: 3

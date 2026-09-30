@@ -82,3 +82,11 @@ const CompTree = useMemo(() => Tree<T>(), []);
 ```
 
 Applied in `packages/inspector/src/components/Tree/Tree.tsx`.
+
+### Don't re-declare `error` on an `Async`-wrapped slice state
+
+A slice state wrapped in `Async<T>` already carries `error: string | null`. Adding a second,
+structured `error` field to `T` (e.g. `error: SomeErrorType | null`) intersects with that `string`
+to an uninhabitable type — only `null` is assignable — so the rejected reducer can only ever store
+`null` and the failure goes invisible to the UI with no type error. Keep the `Async` `error: string`
+and derive richer error info elsewhere. Seen in `modules/store/ens/slice.ts` (`ENSState`).
