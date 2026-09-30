@@ -6,7 +6,8 @@
       "data": {
         "0": {
           "json": {
-            "src": "{assetPath}/sword.glb"
+            "src": "{assetPath}/sword.glb",
+            "visibleMeshesCollisionMask": 1
           }
         }
       }

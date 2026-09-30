@@ -565,6 +565,10 @@
         "experimental": {
           "label": "实验性功能"
         },
+        "dev_asset_catalog": {
+          "toggle": "使用开发环境资源 CDN",
+          "help": "从开发环境 CDN（而非生产环境）加载智能物件，以便在合并前测试从 pull request 上传的资源。更改此项后请重启编辑器并重新添加物件。仅限开发版本。"
+        },
         "ai_assistant": {
           "label": "启用 AI 助手",
           "help": "使用你已安装的 Claude、Codex、Cursor 或 Gemini CLI 运行，拥有与终端相同的对你机器的完全访问权限。只有在你信任所要求的操作时才启用。"

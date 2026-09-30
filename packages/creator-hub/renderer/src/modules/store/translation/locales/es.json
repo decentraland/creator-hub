@@ -565,6 +565,10 @@
         "experimental": {
           "label": "Funciones experimentales"
         },
+        "dev_asset_catalog": {
+          "toggle": "Usar CDN de activos de desarrollo",
+          "help": "Carga los smart items desde el CDN de desarrollo en lugar del de producción, para probar activos subidos desde un pull request antes de publicarlos. Reinicia el editor y vuelve a agregar los items después de cambiar esto. Solo en compilaciones de desarrollo."
+        },
         "ai_assistant": {
           "label": "Activar el Asistente IA",
           "help": "Ejecuta tu CLI de Claude, Codex, Cursor o Gemini instalada con acceso total a tu equipo, el mismo alcance que tiene en tu terminal. Actívalo solo si confías en lo que le pides."
