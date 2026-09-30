@@ -1,12 +1,43 @@
 import { Animator, engine } from '@dcl/sdk/ecs';
 import type { Entity } from '@dcl/sdk/ecs';
+import { Vector3 } from '@dcl/sdk/math';
+import { getTriggerEvents } from '@dcl/asset-packs/dist/events';
+import { getExplorerComponents } from '@dcl/asset-packs/dist/components';
 import {
-  registerDamageTarget,
-  unregisterDamageTarget,
-  onDamage,
-  dealDamageInRadius,
-} from '@dcl/asset-packs/dist/combat';
-import type { ProximityLayer } from '@dcl/asset-packs/dist/definitions';
+  getWorldPosition,
+  getPlayerPosition,
+  getEntityParent,
+} from '@dcl/asset-packs/dist/helpers';
+import { TriggerType } from '@dcl/asset-packs/dist/definitions';
+import { damageTargets } from '@dcl/asset-packs/dist/triggers';
+
+// Deal damage to every registered target within `radius`, `hits` times each, honoring who to hit.
+// `damageTargets` is the shared registry every target adds itself to, so the blast reaches the same
+// targets as every other combat item.
+function dealDamage(
+  from: Entity,
+  radius: number,
+  hits: number,
+  target: 'all' | 'player' | 'non_player',
+) {
+  const { AvatarAttach } = getExplorerComponents(engine);
+  const origin = AvatarAttach.has(from) ? getPlayerPosition() : getWorldPosition(from);
+  for (const entity of damageTargets) {
+    if (entity === from) continue; // never damage ourselves
+    if (target !== 'all') {
+      let root = entity;
+      for (let parent = getEntityParent(root); parent; parent = getEntityParent(root))
+        root = parent;
+      const isPlayer = root === engine.PlayerEntity || root === engine.CameraEntity;
+      if (target === 'player' && !isPlayer) continue;
+      if (target === 'non_player' && isPlayer) continue;
+    }
+    if (Vector3.distance(origin, getWorldPosition(entity)) <= Math.max(radius, 0)) {
+      for (let i = 0; i < Math.max(hits, 1); i++)
+        getTriggerEvents(entity).emit(TriggerType.ON_DAMAGE);
+    }
+  }
+}
 
 export class Barrel {
   private remaining = -1;
@@ -43,8 +74,9 @@ export class Barrel {
   start() {
     this.remaining = this.health;
     if (!Animator.getOrNull(this.entity)) Animator.create(this.entity, { states: [] });
-    registerDamageTarget(this.entity);
-    onDamage(this.entity, () => this.hit());
+    // Join the shared damage registry so weapons (e.g. the Sword) can hit us, and react to each hit.
+    damageTargets.add(this.entity);
+    getTriggerEvents(this.entity).on(TriggerType.ON_DAMAGE, () => this.hit());
   }
 
   update(dt: number) {
@@ -69,13 +101,9 @@ export class Barrel {
   public explode() {
     if (this.exploded) return;
     this.exploded = true;
-    unregisterDamageTarget(this.entity); // don't damage ourselves in the blast
+    damageTargets.delete(this.entity); // don't damage ourselves in the blast
     this.playAnimation(this.animation);
-    dealDamageInRadius(engine, this.entity, {
-      radius: this.explosionRadius,
-      hits: this.explosionDamage,
-      layer: this.explosionTarget as ProximityLayer,
-    });
+    dealDamage(this.entity, this.explosionRadius, this.explosionDamage, this.explosionTarget);
     for (const fn of this.subs.exploded ?? []) fn();
     this.removeTimer = 0;
   }

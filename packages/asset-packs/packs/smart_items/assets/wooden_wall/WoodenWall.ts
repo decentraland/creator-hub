@@ -1,10 +1,8 @@
 import { Animator, AudioSource } from '@dcl/sdk/ecs';
 import type { Entity } from '@dcl/sdk/ecs';
-import {
-  registerDamageTarget,
-  unregisterDamageTarget,
-  onDamage,
-} from '@dcl/asset-packs/dist/combat';
+import { getTriggerEvents } from '@dcl/asset-packs/dist/events';
+import { TriggerType } from '@dcl/asset-packs/dist/definitions';
+import { damageTargets } from '@dcl/asset-packs/dist/triggers';
 
 export class WoodenWall {
   private remaining = -1;
@@ -36,8 +34,9 @@ export class WoodenWall {
   start() {
     this.remaining = this.health;
     if (!Animator.getOrNull(this.entity)) Animator.create(this.entity, { states: [] });
-    registerDamageTarget(this.entity);
-    onDamage(this.entity, () => this.hit());
+    // Join the shared damage registry so weapons (e.g. the Sword) can hit us, and react to each hit.
+    damageTargets.add(this.entity);
+    getTriggerEvents(this.entity).on(TriggerType.ON_DAMAGE, () => this.hit());
   }
 
   private hit() {
@@ -54,7 +53,7 @@ export class WoodenWall {
   public destroy() {
     if (this.destroyed) return;
     this.destroyed = true;
-    unregisterDamageTarget(this.entity);
+    damageTargets.delete(this.entity);
     this.playAnimation(this.fallAnimation);
     if (this.fallSound) AudioSource.playSound(this.entity, `${this.src}/${this.fallSound}`);
     for (const fn of this.subs.destroyed ?? []) fn();

@@ -1,6 +1,22 @@
 import { engine, InputAction, pointerEventsSystem } from '@dcl/sdk/ecs';
 import type { Entity } from '@dcl/sdk/ecs';
-import { dealHealToPlayers } from '@dcl/asset-packs/dist/combat';
+import { getTriggerEvents } from '@dcl/asset-packs/dist/events';
+import { getEntityParent } from '@dcl/asset-packs/dist/helpers';
+import { TriggerType } from '@dcl/asset-packs/dist/definitions';
+import { healTargets } from '@dcl/asset-packs/dist/triggers';
+
+// Heal every player-rooted target `points` times (each emit is +1 on the target's own health).
+// `healTargets` is the shared registry a player-parented Health Bar adds itself to, so this works
+// with both component-based and script-based Health Bars.
+function dealHeal(points: number) {
+  for (const entity of healTargets) {
+    let root = entity;
+    for (let parent = getEntityParent(root); parent; parent = getEntityParent(root)) root = parent;
+    if (root !== engine.PlayerEntity) continue;
+    for (let i = 0; i < Math.max(points, 1); i++)
+      getTriggerEvents(entity).emit(TriggerType.ON_HEAL_PLAYER);
+  }
+}
 
 export class FirstAid {
   // Reactions subscribe here (via getAllScriptInstances + onEvent); heal() fans out to them.
@@ -8,7 +24,7 @@ export class FirstAid {
 
   /**
    * A one-time first aid kit. Click it to restore the player's health (any Health Bar parented to
-   * the player), then it disappears. Heals through the shared combat contract, so it works with
+   * the player), then it disappears. Heals through the shared combat registry, so it works with
    * both component-based and script-based Health Bars.
    *
    * @event healed
@@ -40,7 +56,7 @@ export class FirstAid {
    * @action
    */
   public heal() {
-    dealHealToPlayers(engine, this.entity, { multiplier: this.healingPoints });
+    dealHeal(this.healingPoints);
     for (const fn of this.subs.healed ?? []) fn();
     if (this.removeOnUse) engine.removeEntity(this.entity);
   }

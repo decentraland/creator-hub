@@ -6,7 +6,23 @@ import {
   triggerAreaEventsSystem,
 } from '@dcl/sdk/ecs';
 import type { Entity } from '@dcl/sdk/ecs';
-import { dealHealToPlayers } from '@dcl/asset-packs/dist/combat';
+import { getTriggerEvents } from '@dcl/asset-packs/dist/events';
+import { getEntityParent } from '@dcl/asset-packs/dist/helpers';
+import { TriggerType } from '@dcl/asset-packs/dist/definitions';
+import { healTargets } from '@dcl/asset-packs/dist/triggers';
+
+// Heal every player-rooted target `points` times (each emit is +1 on the target's own health).
+// `healTargets` is the shared registry a player-parented Health Bar adds itself to, so this works
+// with both component-based and script-based Health Bars.
+function dealHeal(points: number) {
+  for (const entity of healTargets) {
+    let root = entity;
+    for (let parent = getEntityParent(root); parent; parent = getEntityParent(root)) root = parent;
+    if (root !== engine.PlayerEntity) continue;
+    for (let i = 0; i < Math.max(points, 1); i++)
+      getTriggerEvents(entity).emit(TriggerType.ON_HEAL_PLAYER);
+  }
+}
 
 export class HealingPad {
   private inside = false;
@@ -56,6 +72,6 @@ export class HealingPad {
    * @action
    */
   public heal() {
-    dealHealToPlayers(engine, this.entity, { multiplier: this.healPoints });
+    dealHeal(this.healPoints);
   }
 }
