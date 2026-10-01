@@ -3,6 +3,7 @@ import FolderIcon from '@mui/icons-material/Folder';
 import {
   Box,
   Button,
+  Checkbox,
   IconButton,
   FormControlLabel,
   Radio,
@@ -19,6 +20,8 @@ import type { ScenesTabProps } from '../../types';
 
 import './styles.css';
 
+// MARK: ScenesTab
+/** Renders the scene-related application preferences. */
 const ScenesTab: React.FC<ScenesTabProps> = ({
   settings,
   updateSettings,
@@ -44,6 +47,14 @@ const ScenesTab: React.FC<ScenesTabProps> = ({
         dependencyUpdateStrategy: event.target.value as DEPENDENCY_UPDATE_STRATEGY,
       };
       updateSettings(newSettings);
+    },
+    [settings, updateSettings],
+  );
+
+  // MARK: handleChangeShowTutorials
+  const handleChangeShowTutorials = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      updateSettings({ ...settings, showScenesTutorials: event.target.checked });
     },
     [settings, updateSettings],
   );
@@ -119,6 +130,18 @@ const ScenesTab: React.FC<ScenesTabProps> = ({
             label={t('modal.app_settings.fields.scene_editor_dependencies.options.do_nothing')}
           />
         </RadioGroup>
+      </FormGroup>
+      <FormGroup className="ScenesTabFormGroup">
+        <Typography variant="body1">{t('modal.app_settings.fields.scenes_tab.label')}</Typography>
+        <FormControlLabel
+          control={
+            <Checkbox
+              checked={settings.showScenesTutorials}
+              onChange={handleChangeShowTutorials}
+            />
+          }
+          label={t('modal.app_settings.fields.scenes_tab.show_tutorials')}
+        />
       </FormGroup>
     </Box>
   );

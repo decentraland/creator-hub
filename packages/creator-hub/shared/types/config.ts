@@ -35,6 +35,7 @@ export const DEFAULT_CONFIG: Config = {
   settings: {
     scenesPath: '', // Will be set with userDataPath + SCENES_DIRECTORY by main/preload
     dependencyUpdateStrategy: DEFAULT_DEPENDENCY_UPDATE_STRATEGY,
+    showScenesTutorials: true,
     previewOptions: {
       debugger: true,
       skipAuthScreen: true,
