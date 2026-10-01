@@ -566,6 +566,10 @@
         "experimental": {
           "label": "Experimental features"
         },
+        "dev_asset_catalog": {
+          "toggle": "Use development asset CDN",
+          "help": "Load smart items from the development CDN instead of production, so assets uploaded from a pull request can be tested before release. Restart the editor and re-add items after changing this. Development builds only."
+        },
         "ai_assistant": {
           "label": "Enable AI Assistant",
           "help": "Runs your installed Claude, Codex, Cursor, or Gemini CLI with full access to your machine, the same reach it has in your terminal. Only enable it if you trust what you ask it to do."

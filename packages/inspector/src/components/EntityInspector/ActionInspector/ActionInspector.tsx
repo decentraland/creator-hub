@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { VscTrash as RemoveIcon } from 'react-icons/vsc';
 import { AvatarAnchorPointType } from '@dcl/ecs';
 import type { Action, ActionPayload } from '@dcl/asset-packs';
@@ -32,6 +32,7 @@ import { InfoTooltip } from '../../ui/InfoTooltip';
 import type { ScriptAction } from '../ScriptInspector/types';
 import { parseLayout } from '../ScriptInspector/utils';
 import { ScriptParamField } from '../ScriptInspector/ScriptParamField/ScriptParamField';
+import { resolveParamUpdate } from '../ScriptInspector/ScriptParamField/update';
 import { truncateMiddle } from '../../ImportAsset/utils';
 import { PlaySoundAction } from './PlaySoundAction';
 import { TweenAction } from './TweenAction';
@@ -142,6 +143,10 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
   const [actions, addAction, modifyAction, removeAction] = useArrayState<Action>(
     componentValue === null ? [] : componentValue.value,
   );
+  // Always-current view of `actions` so a write can compose against the freshest action payload
+  // instead of a stale render closure (see the CALL_SCRIPT_METHOD editor below).
+  const actionsRef = useRef(actions);
+  actionsRef.current = actions;
   const [animations, setAnimations] = useState<string[]>([]);
   const [states, setStates] = useState<string[]>([...(States.getOrNull(entityId)?.value ?? [])]);
 
@@ -1307,8 +1312,16 @@ export default withSdk<Props>(({ sdk, entity: entityId, initialOpen = true }) =>
                 key={name}
                 name={name}
                 param={{ ...param, value: paramValues?.[name] ?? param.value }}
-                onUpdate={value => {
-                  const updatedParams = { ...paramValues, [name]: value };
+                onUpdate={update => {
+                  // Compose against the freshest params for this action (not the render-closure
+                  // copy) so editing one param doesn't revert a sibling edit. Leaves pass a plain
+                  // value; object/array editors pass a `(prev) => next` updater. (Full concurrency
+                  // parity with ScriptInspector would need useArrayState to accept functional
+                  // updates; the ref covers the realistic case.)
+                  const currentParams = (JSON.parse(actionsRef.current[idx]?.jsonPayload || '{}')
+                    .params ?? {}) as Record<string, any>;
+                  const value = resolveParamUpdate(update, currentParams[name] ?? param.value);
+                  const updatedParams = { ...currentParams, [name]: value };
                   handleChangeScriptAction({ scriptPath, methodName, params: updatedParams }, idx);
                 }}
               />

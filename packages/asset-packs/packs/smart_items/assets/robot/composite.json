@@ -12,6 +12,22 @@
       }
     },
     {
+      "name": "asset-packs::Script",
+      "data": {
+        "0": {
+          "json": {
+            "value": [
+              {
+                "path": "{assetPath}/Robot.ts",
+                "priority": 0,
+                "layout": "{\"params\":{\"health\":{\"type\":\"number\",\"value\":30,\"optional\":true,\"tooltip\":\"How many hits the robot takes before it's destroyed.\"},\"speed\":{\"type\":\"number\",\"value\":1,\"optional\":true,\"tooltip\":\"How fast it moves toward the player (units per second).\"},\"followDistance\":{\"type\":\"number\",\"value\":2,\"optional\":true,\"tooltip\":\"How close it gets before it stops moving in.\"},\"attackRadius\":{\"type\":\"number\",\"value\":3,\"optional\":true,\"tooltip\":\"How close the player must be to take damage.\"},\"attackDamage\":{\"type\":\"number\",\"value\":10,\"optional\":true,\"tooltip\":\"How much damage each attack deals.\"},\"attackInterval\":{\"type\":\"number\",\"value\":1,\"optional\":true,\"tooltip\":\"Seconds between attacks.\"},\"attackAnimation\":{\"type\":\"string\",\"value\":\"Attack\",\"optional\":true,\"tooltip\":\"Animation clip played when it attacks.\"},\"deathAnimation\":{\"type\":\"string\",\"value\":\"explode\",\"optional\":true,\"tooltip\":\"Animation clip played when it's destroyed.\"},\"removeAfter\":{\"type\":\"number\",\"value\":0.5,\"optional\":true,\"tooltip\":\"Seconds after dying before the robot is removed.\"}},\"actions\":[{\"methodName\":\"die\",\"description\":\"Destroys the robot: plays the death animation and removes it.\",\"params\":{}}],\"events\":[\"death\"]}"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
       "name": "asset-packs::Actions",
       "data": {
         "0": {
@@ -20,183 +36,10 @@
             "value": [
               {
                 "name": "Die",
-                "type": "batch",
-                "jsonPayload": "{ \"actions\": [\"Play Explosion Animation\", \"Stop Attack Loop\", \"Delay Remove\"] }",
-                "allowedInBasicView": true
-              },
-              {
-                "name": "Follow",
-                "type": "follow_player",
-                "jsonPayload": "{ \"speed\": 1, \"minDistance\": 2, \"x\": true, \"y\": false, \"z\": true }",
-                "basicViewId": "action-follow-player",
-                "allowedInBasicView": true
-              },
-              {
-                "name": "Stop Following Player",
-                "type": "stop_following_player",
-                "jsonPayload": "{ }",
-                "allowedInBasicView": true
-              },
-              {
-                "name": "Play Attack Animation",
-                "type": "play_animation",
-                "jsonPayload": "{ \"animation\": \"Attack\" }"
-              },
-              {
-                "name": "Attack",
-                "type": "damage",
-                "jsonPayload": "{ \"radius\": 3, \"hits\": 10, \"layer\": \"player\" }",
-                "basicViewId": "action-attack",
-                "allowedInBasicView": true
-              },
-              {
-                "name": "Attack Loop",
-                "type": "start_loop",
-                "jsonPayload": "{ \"actions\": [\"Attack\"], \"interval\": 1 }"
-              },
-              {
-                "name": "Damage",
-                "type": "decrease_counter",
-                "jsonPayload": "{ \"amount\": 1 }",
-                "allowedInBasicView": true
-              },
-              {
-                "name": "Remove",
-                "type": "remove_entity",
-                "jsonPayload": "{ }"
-              },
-              {
-                "name": "Delay Remove",
-                "type": "start_delay",
-                "jsonPayload": "{ \"actions\": [\"Remove\"], \"timeout\": 0.5 }"
-              },
-              {
-                "name": "Play Explosion Animation",
-                "type": "play_animation",
-                "jsonPayload": "{ \"animation\": \"explode\" }"
-              },
-              {
-                "name": "Stop Attack Loop",
-                "type": "stop_loop",
-                "jsonPayload": "{ \"action\": \"Damage\" }"
+                "type": "call_script_method",
+                "jsonPayload": "{\"scriptPath\":\"{assetPath}/Robot.ts\",\"methodName\":\"die\",\"params\":{}}"
               }
             ]
-          }
-        }
-      }
-    },
-    {
-      "name": "asset-packs::Triggers",
-      "data": {
-        "0": {
-          "json": {
-            "value": [
-              {
-                "type": "on_spawn",
-                "actions": [
-                  {
-                    "id": "{self:asset-packs::Actions}",
-                    "name": "Follow"
-                  },
-                  {
-                    "id": "{self:asset-packs::Actions}",
-                    "name": "Attack Loop"
-                  }
-                ]
-              },
-              {
-                "type": "on_loop",
-                "conditions": [
-                  {
-                    "id": "{self:asset-packs::Actions}",
-                    "type": "when_distance_to_player_less_than",
-                    "value": "3"
-                  }
-                ],
-                "actions": [
-                  {
-                    "id": "{self:asset-packs::Actions}",
-                    "name": "Play Attack Animation"
-                  }
-                ]
-              },
-              {
-                "type": "on_damage",
-                "conditions": [
-                  {
-                    "id": "{self:asset-packs::Counter}",
-                    "type": "when_counter_is_greater_than",
-                    "value": "0"
-                  }
-                ],
-                "actions": [
-                  {
-                    "id": "{self:asset-packs::Actions}",
-                    "name": "Damage"
-                  }
-                ]
-              },
-              {
-                "type": "on_counter_change",
-                "conditions": [
-                  {
-                    "id": "{self:asset-packs::Counter}",
-                    "type": "when_counter_is_less_than",
-                    "value": "1"
-                  }
-                ],
-                "actions": [
-                  {
-                    "id": "{self:asset-packs::Actions}",
-                    "name": "Die"
-                  }
-                ]
-              }
-            ]
-          }
-        }
-      }
-    },
-    {
-      "name": "asset-packs::Counter",
-      "data": {
-        "0": {
-          "json": {
-            "id": "{self}",
-            "value": 30
-          }
-        }
-      }
-    },
-    {
-      "name": "inspector::Config",
-      "data": {
-        "0": {
-          "json": {
-            "isBasicViewEnabled": true,
-            "componentName": "Robot Enemy",
-            "fields": [
-              {
-                "name": "Item Health Points",
-                "type": "asset-packs::Counter"
-              },
-              {
-                "name": "Attack Damage",
-                "type": "asset-packs::Actions",
-                "basicViewId": "action-attack",
-                "layout": "{\"radius\": { \"field\": \"TextField\", \"type\": \"number\", \"label\": \"Attack Radius\" }, \"hits\": { \"field\": \"TextField\", \"type\": \"number\", \"label\": \"Attack Damage Points\" }, \"layer\": { \"field\": \"Dropdown\", \"label\": \"Damage Target\" } }"
-              },
-              {
-                "name": "Speed",
-                "type": "asset-packs::Actions",
-                "basicViewId": "action-follow-player",
-                "layout": "{\"speed\": { \"field\": \"TextField\", \"type\": \"number\" } }"
-              }
-            ],
-            "helpTooltip": {
-              "text": "A robot that can chase the player and cause damage. It can also be destroyed by the player. Use it together with the health bar smart item."
-            },
-            "version": 1
           }
         }
       }
