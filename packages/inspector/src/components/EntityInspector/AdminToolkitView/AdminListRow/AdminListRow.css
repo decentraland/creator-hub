@@ -28,7 +28,6 @@
   padding-right: 32px;
 }
 
-.AdminListRow .FieldsContainer .EntityField,
 .AdminListRow .FieldsContainer .TextField,
 .AdminListRow .FieldsContainer .Dropdown {
   flex: 1;

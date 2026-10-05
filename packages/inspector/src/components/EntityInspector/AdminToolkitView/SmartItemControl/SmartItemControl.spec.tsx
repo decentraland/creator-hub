@@ -8,6 +8,7 @@ import SmartItemControl from './SmartItemControl';
 type FieldProps = {
   label: string;
   value?: string | number;
+  error?: string;
   options?: { value: string; label: string }[];
   onChange: React.ChangeEventHandler<HTMLInputElement & HTMLSelectElement>;
 };
@@ -16,6 +17,7 @@ const mocks = vi.hoisted(() => {
   const component = (componentId: number) => ({ componentId });
   return {
     admin: undefined as unknown,
+    removedEntities: new Set<number>(),
     setValue: vi.fn(),
     sync: vi.fn(),
     sdk: {
@@ -23,6 +25,7 @@ const mocks = vi.hoisted(() => {
         AdminTools: component(1),
         Actions: {
           componentId: 2,
+          has: (entity: number) => !mocks.removedEntities.has(entity),
           getOrNull: () => ({ value: [{ name: 'open' }, { name: 'close' }] }),
         },
         Animator: component(3),
@@ -39,9 +42,19 @@ const mocks = vi.hoisted(() => {
 
 vi.mock('../../../../hooks/sdk/useSdk', () => ({ useSdk: () => mocks.sdk }));
 vi.mock('../../../../hooks/sdk/useEntitiesWith', () => ({ useEntitiesWith: () => [] }));
-vi.mock('../../../../hooks/sdk/useComponentValue', () => ({
-  useComponentValue: () => [mocks.admin, mocks.setValue],
-}));
+vi.mock('../../../../hooks/sdk/useComponentValue', async () => {
+  const { useState } = await import('react');
+  return {
+    useComponentValue: () => {
+      const [value, setValue] = useState(mocks.admin);
+      const write = (next: unknown) => {
+        mocks.setValue(next);
+        setValue(next);
+      };
+      return [value, write];
+    },
+  };
+});
 vi.mock('../../../../lib/sdk/operations/entitySyncUtils', () => ({
   addSyncComponentsToEntities: mocks.sync,
 }));
@@ -50,17 +63,20 @@ vi.mock('../../MoreOptionsMenu', () => ({
 }));
 vi.mock('../../../ui', async importOriginal => ({
   ...((await importOriginal()) as object),
-  EntityField: ({ label, value, onChange }: FieldProps) => (
-    <select
-      aria-label={label}
-      value={value}
-      onChange={onChange}
-    >
-      <option value="0" />
-      <option value="512" />
-      <option value="600" />
-      <option value="700" />
-    </select>
+  EntityField: ({ label, value, error, onChange }: FieldProps) => (
+    <>
+      <select
+        aria-label={label}
+        value={value}
+        onChange={onChange}
+      >
+        <option value="0" />
+        <option value="512" />
+        <option value="600" />
+        <option value="700" />
+      </select>
+      {error ? <span>{error}</span> : null}
+    </>
   ),
   TextField: ({ label, value, onChange }: FieldProps) => (
     <input
@@ -97,27 +113,40 @@ function lastWrittenSmartItems() {
   return written.smartItemsControl.smartItems;
 }
 
+function lastSyncedEntities() {
+  return mocks.sync.mock.lastCall?.[1];
+}
+
 describe('SmartItemControl', () => {
   beforeEach(() => {
     mocks.admin = {
       smartItemsControl: { isEnabled: true, linkAllSmartItems: false, smartItems: [door, lamp] },
     };
-    render(<SmartItemControl entity={1 as Entity} />);
   });
 
   afterEach(() => {
     cleanup();
+    mocks.removedEntities.clear();
     vi.clearAllMocks();
   });
 
   describe('when mounted before the Actions entity list has loaded', () => {
+    beforeEach(() => {
+      render(<SmartItemControl entity={1 as Entity} />);
+    });
+
     it('should not write to the AdminTools component', () => {
       expect(mocks.setValue).not.toHaveBeenCalled();
+    });
+
+    it('should sync every picked smart item', () => {
+      expect(lastSyncedEntities()).toEqual([512, 600]);
     });
   });
 
   describe('when a smart item entity is picked', () => {
     beforeEach(() => {
+      render(<SmartItemControl entity={1 as Entity} />);
       fireEvent.change(screen.getAllByLabelText('Smart Item')[1], { target: { value: '700' } });
     });
 
@@ -126,17 +155,33 @@ describe('SmartItemControl', () => {
     });
 
     it('should sync the picked entity', () => {
-      expect(mocks.sync).toHaveBeenCalledWith(mocks.sdk, [700], expect.any(Array));
+      expect(lastSyncedEntities()).toEqual([512, 700]);
     });
   });
 
   describe('when a row is removed', () => {
     beforeEach(() => {
+      render(<SmartItemControl entity={1 as Entity} />);
       fireEvent.click(screen.getAllByText('Remove')[0]);
     });
 
     it('should drop that row and keep the others in order', () => {
       expect(lastWrittenSmartItems()).toEqual([lamp]);
+    });
+  });
+
+  describe("when a row's entity no longer has Actions", () => {
+    beforeEach(() => {
+      mocks.removedEntities.add(600);
+      render(<SmartItemControl entity={1 as Entity} />);
+    });
+
+    it('should flag that row as removed', () => {
+      expect(screen.getAllByText('Smart item was removed')).toHaveLength(1);
+    });
+
+    it('should keep the row instead of pruning it', () => {
+      expect(mocks.setValue).not.toHaveBeenCalled();
     });
   });
 });

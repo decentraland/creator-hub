@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import type { Entity } from '@dcl/ecs';
 import { withSdk, type WithSdkProps } from '../../../../hoc/withSdk';
 import { useEntitiesWith } from '../../../../hooks/sdk/useEntitiesWith';
@@ -35,28 +35,28 @@ const SmartItemControl: React.FC<WithSdkProps & Props> = ({ sdk, entity }) => {
   const [adminComponent, updateControl] = useAdminTools(entity, AdminTools);
   const entitiesWithAction: Entity[] = useEntitiesWith(components => components.Actions);
 
+  const smartItems = adminComponent?.smartItemsControl.smartItems ?? [];
+  const pickedEntities = smartItems.map(smartItem => smartItem.entity as Entity);
+
+  useEffect(() => {
+    addSyncComponentsToEntities(sdk, pickedEntities, [
+      AudioSource.componentId,
+      AudioStream.componentId,
+      Animator.componentId,
+      Transform.componentId,
+      Tween.componentId,
+      VideoPlayer.componentId,
+      VisibilityComponent.componentId,
+    ]);
+  }, [pickedEntities.join(), entitiesWithAction]);
+
   if (!adminComponent) return null;
 
-  const smartItems = adminComponent.smartItemsControl.smartItems ?? [];
   const setSmartItems = (next: SmartItems) =>
     updateControl('smartItemsControl', { smartItems: next });
 
-  const handlePickEntity = (idx: number, pickedEntity: Entity) => {
-    setSmartItems(smartItems.with(idx, { ...smartItems[idx], entity: pickedEntity }));
-    addSyncComponentsToEntities(
-      sdk,
-      [pickedEntity],
-      [
-        AudioSource.componentId,
-        AudioStream.componentId,
-        Animator.componentId,
-        Transform.componentId,
-        Tween.componentId,
-        VideoPlayer.componentId,
-        VisibilityComponent.componentId,
-      ],
-    );
-  };
+  const isRemoved = (smartItemEntity: number) =>
+    smartItemEntity !== 0 && !Actions.has(smartItemEntity as Entity);
 
   const actionOptions = (smartItemEntity: number) =>
     (Actions.getOrNull(smartItemEntity as Entity)?.value ?? []).map(({ name }) => ({
@@ -76,7 +76,10 @@ const SmartItemControl: React.FC<WithSdkProps & Props> = ({ sdk, entity }) => {
             label="Smart Item"
             components={[Actions] as Component[]}
             value={smartItem.entity}
-            onChange={e => handlePickEntity(idx, Number(e.target.value) as Entity)}
+            error={isRemoved(smartItem.entity) && 'Smart item was removed'}
+            onChange={e =>
+              setSmartItems(smartItems.with(idx, { ...smartItem, entity: Number(e.target.value) }))
+            }
           />
           <TextField
             label="Custom Name"
