@@ -82,3 +82,7 @@ const CompTree = useMemo(() => Tree<T>(), []);
 ```
 
 Applied in `packages/inspector/src/components/Tree/Tree.tsx`.
+
+### Hooks that load in an effect start empty — never write on mount from them
+
+`useEntitiesWith` (and anything else that fills its state from a `useSdk(cb)` effect) returns `[]` on the first render. A component effect that writes engine state derived from that list runs in the same commit, while the list is still empty. `SmartItemControl` once pruned every saved smart item whose entity was "missing" from it; `useComponentValue` then pushed the emptied list to the engine and autosave wrote it into `main.composite`, so every reopen of the Admin Toolkit wiped the user's selections. When a write depends on engine state, read it synchronously (`Component.has(entity)`, `getOrNull`). Better still, don't write from a view's mount at all: write in the handler of the user action that caused the change.
