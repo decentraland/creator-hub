@@ -33,7 +33,7 @@ const ENGINE_ENTITIES = new Set([engine.RootEntity, engine.PlayerEntity, engine.
 const EntityField: React.FC<WithSdkProps & Props> = ({ sdk, ...props }) => {
   const { engine } = sdk;
   const { Name, Nodes } = sdk.components;
-  const { className, components, disabled, label, value, onChange } = props;
+  const { className, components, disabled, error, label, value, onChange } = props;
   const selectedEntity = useSelectedEntity();
 
   const options: EntityOption[] = useMemo(() => {
@@ -113,6 +113,7 @@ const EntityField: React.FC<WithSdkProps & Props> = ({ sdk, ...props }) => {
       placeholder="Select Entity"
       empty={emptyMessage}
       disabled={disabled}
+      error={error}
       searchable={true}
       onChange={onChange}
     />
