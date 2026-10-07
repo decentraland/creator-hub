@@ -1,16 +1,14 @@
-import React, { useCallback } from 'react';
-import { Entity } from '@dcl/ecs';
-import { VscTrash as RemoveIcon } from 'react-icons/vsc';
+import React from 'react';
 import { AiOutlineInfoCircle as InfoIcon } from 'react-icons/ai';
+import type { Entity } from '@dcl/ecs';
 
-import { withSdk, WithSdkProps } from '../../../../hoc/withSdk';
-import { useComponentValue } from '../../../../hooks/sdk/useComponentValue';
+import { withSdk, type WithSdkProps } from '../../../../hoc/withSdk';
 import { useComponentsWith } from '../../../../hooks/sdk/useComponentsWith';
+import type { EditorComponentsTypes } from '../../../../lib/sdk/components';
 import { CheckboxField, CheckboxGroup, TextField, Dropdown, Label } from '../../../ui';
-import { Block } from '../../../Block';
-import { Button } from '../../../Button';
 import { AddButton } from '../../AddButton';
-import MoreOptionsMenu from '../../MoreOptionsMenu';
+import { AdminListRow } from '../AdminListRow';
+import { useAdminTools } from '../useAdminTools';
 
 import './VideoControl.css';
 
@@ -18,114 +16,32 @@ type Props = {
   entity: Entity;
 };
 
+type VideoPlayers = NonNullable<
+  EditorComponentsTypes['AdminTools']['videoControl']['videoPlayers']
+>;
+
 const VideoControl: React.FC<WithSdkProps & Props> = ({ sdk, entity }) => {
   const { AdminTools, Name } = sdk.components;
-  const [adminComponent, setAdminComponent] = useComponentValue(entity, AdminTools);
+  const [adminComponent, updateControl] = useAdminTools(entity, AdminTools);
   const [videoPlayerEntities] = useComponentsWith(components => components.VideoScreen);
-
-  const handleAddVideoPlayer = useCallback(() => {
-    if (!adminComponent) return;
-    setAdminComponent({
-      ...adminComponent,
-      videoControl: {
-        ...adminComponent.videoControl,
-        videoPlayers: [
-          ...(adminComponent.videoControl.videoPlayers || []),
-          { entity: 0, customName: '' },
-        ],
-      },
-    });
-  }, [adminComponent, setAdminComponent]);
-
-  const handleRemoveVideoPlayer = useCallback(
-    (idx: number) => {
-      if (!adminComponent) return;
-
-      const updatedVideoPlayers = adminComponent.videoControl.videoPlayers?.filter(
-        (_, index) => index !== idx,
-      );
-
-      setAdminComponent({
-        ...adminComponent,
-        videoControl: {
-          ...adminComponent.videoControl,
-          videoPlayers: updatedVideoPlayers,
-        },
-      });
-    },
-    [adminComponent, setAdminComponent],
-  );
-
-  const handleVideoPlayerChange = useCallback(
-    (idx: number, event: React.ChangeEvent<HTMLSelectElement>) => {
-      if (!adminComponent) return;
-
-      const updatedVideoPlayers =
-        adminComponent.videoControl.videoPlayers?.map((videoPlayer, index) =>
-          index === idx ? { ...videoPlayer, entity: Number(event.target.value) } : videoPlayer,
-        ) || [];
-
-      setAdminComponent({
-        ...adminComponent,
-        videoControl: {
-          ...adminComponent.videoControl,
-          videoPlayers: updatedVideoPlayers,
-        },
-      });
-    },
-    [adminComponent, setAdminComponent],
-  );
-
-  const handleVideoPlayerNameChange = useCallback(
-    (idx: number, event: React.ChangeEvent<HTMLInputElement>) => {
-      if (!adminComponent) return;
-
-      const updatedVideoPlayers =
-        adminComponent.videoControl.videoPlayers?.map((videoPlayer, index) =>
-          index === idx ? { ...videoPlayer, customName: event.target.value } : videoPlayer,
-        ) || [];
-
-      setAdminComponent({
-        ...adminComponent,
-        videoControl: {
-          ...adminComponent.videoControl,
-          videoPlayers: updatedVideoPlayers,
-        },
-      });
-    },
-    [adminComponent, setAdminComponent],
-  );
-
-  const handleBooleanChange = useCallback(
-    (field: keyof typeof adminComponent.videoControl) =>
-      (event: React.ChangeEvent<HTMLInputElement>) => {
-        if (!adminComponent) return;
-        setAdminComponent({
-          ...adminComponent,
-          videoControl: {
-            ...adminComponent.videoControl,
-            [field]: event.target.checked,
-          },
-        });
-      },
-    [adminComponent, setAdminComponent],
-  );
-
-  const getVideoPlayerOptions = useCallback(() => {
-    const selectedEntities = new Set(
-      adminComponent?.videoControl.videoPlayers?.map(videoPlayer => videoPlayer.entity) || [],
-    );
-
-    return videoPlayerEntities.map(videoPlayer => ({
-      value: videoPlayer.entity,
-      label: Name.getOrNull(videoPlayer.entity)?.value || `Screen ${videoPlayer.entity}`,
-      disabled: videoPlayer.entity !== 0 && selectedEntities.has(videoPlayer.entity),
-    }));
-  }, [videoPlayerEntities, adminComponent?.videoControl.videoPlayers, Name]);
 
   if (!adminComponent) return null;
 
   const { videoControl } = adminComponent;
+  const videoPlayers = videoControl.videoPlayers ?? [];
+  const setVideoPlayers = (next: VideoPlayers) =>
+    updateControl('videoControl', { videoPlayers: next });
+
+  const selectedEntities = new Set(videoPlayers.map(videoPlayer => videoPlayer.entity));
+  const optionsFor = (currentEntity: number) =>
+    videoPlayerEntities.map(videoPlayer => ({
+      value: videoPlayer.entity,
+      label: Name.getOrNull(videoPlayer.entity)?.value || `Screen ${videoPlayer.entity}`,
+      disabled:
+        videoPlayer.entity !== 0 &&
+        videoPlayer.entity !== currentEntity &&
+        selectedEntities.has(videoPlayer.entity),
+    }));
 
   return (
     <div className="VideoControl">
@@ -133,7 +49,9 @@ const VideoControl: React.FC<WithSdkProps & Props> = ({ sdk, entity }) => {
         <CheckboxField
           label="Disable sound (Only editable in Creator Hub)"
           checked={videoControl.disableVideoPlayersSound || false}
-          onChange={handleBooleanChange('disableVideoPlayersSound')}
+          onChange={e =>
+            updateControl('videoControl', { disableVideoPlayersSound: e.target.checked })
+          }
         />
       </CheckboxGroup>
       <Label
@@ -145,51 +63,37 @@ const VideoControl: React.FC<WithSdkProps & Props> = ({ sdk, entity }) => {
         <Label text="Use the 'Video Screen' Smart Item to add screens to your scene, then select them from the drop down below to manage them through the Admin Tools panel in-world." />
       </div>
 
-      {videoControl.videoPlayers?.map((videoPlayer, idx) => {
-        const options = getVideoPlayerOptions().map(option => ({
-          ...option,
-          disabled: option.disabled && option.value !== videoPlayer.entity,
-        }));
-
-        return (
-          <Block
-            key={`video-player-${idx}`}
-            className="VideoPlayerRow"
-          >
-            <div className="LeftColumn">
-              <span>{idx + 1}</span>
-            </div>
-            <div className="FieldsContainer">
-              <Dropdown
-                label={`Video Screen ${idx + 1}`}
-                value={videoPlayer.entity}
-                options={options}
-                onChange={e => handleVideoPlayerChange(idx, e)}
-              />
-              <TextField
-                label="Custom Name"
-                value={videoPlayer.customName}
-                onChange={e => handleVideoPlayerNameChange(idx, e)}
-              />
-            </div>
-            <div className="RightMenu">
-              <MoreOptionsMenu>
-                <Button
-                  className="RemoveButton"
-                  onClick={() => handleRemoveVideoPlayer(idx)}
-                >
-                  <RemoveIcon /> Remove
-                </Button>
-              </MoreOptionsMenu>
-            </div>
-          </Block>
-        );
-      })}
+      {videoPlayers.map((videoPlayer, idx) => (
+        <AdminListRow
+          key={idx}
+          index={idx}
+          onRemove={() => setVideoPlayers(videoPlayers.toSpliced(idx, 1))}
+        >
+          <Dropdown
+            label={`Video Screen ${idx + 1}`}
+            value={videoPlayer.entity}
+            options={optionsFor(videoPlayer.entity)}
+            onChange={e =>
+              setVideoPlayers(
+                videoPlayers.with(idx, { ...videoPlayer, entity: Number(e.target.value) }),
+              )
+            }
+          />
+          <TextField
+            label="Custom Name"
+            value={videoPlayer.customName}
+            onChange={e =>
+              setVideoPlayers(
+                videoPlayers.with(idx, { ...videoPlayer, customName: e.target.value }),
+              )
+            }
+          />
+        </AdminListRow>
+      ))}
       <AddButton
-        onClick={handleAddVideoPlayer}
+        onClick={() => setVideoPlayers([...videoPlayers, { entity: 0, customName: '' }])}
         disabled={
-          videoPlayerEntities.length === 0 ||
-          videoPlayerEntities.length === videoControl.videoPlayers?.length
+          videoPlayerEntities.length === 0 || videoPlayerEntities.length === videoPlayers.length
         }
       >
         Add a Screen
