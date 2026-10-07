@@ -11,6 +11,7 @@ type FieldProps = {
   error?: string;
   options?: { value: string; label: string }[];
   onChange: React.ChangeEventHandler<HTMLInputElement & HTMLSelectElement>;
+  onBlur?: React.FocusEventHandler<HTMLInputElement>;
 };
 
 const mocks = vi.hoisted(() => {
@@ -61,48 +62,58 @@ vi.mock('../../../../lib/sdk/operations/entitySyncUtils', () => ({
 vi.mock('../../MoreOptionsMenu', () => ({
   default: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));
-vi.mock('../../../ui', async importOriginal => ({
-  ...((await importOriginal()) as object),
-  EntityField: ({ label, value, error, onChange }: FieldProps) => (
-    <>
+vi.mock('../../../ui', async importOriginal => {
+  const { useState } = await import('react');
+  return {
+    ...((await importOriginal()) as object),
+    EntityField: ({ label, value, error, onChange }: FieldProps) => (
+      <>
+        <select
+          aria-label={label}
+          value={value}
+          onChange={onChange}
+        >
+          <option value="0" />
+          <option value="512" />
+          <option value="600" />
+          <option value="700" />
+        </select>
+        {error ? <span>{error}</span> : null}
+      </>
+    ),
+    TextField: ({ label, value, onChange, onBlur }: FieldProps) => {
+      const [buffered, setBuffered] = useState(value);
+      return (
+        <input
+          aria-label={label}
+          value={buffered}
+          onChange={event => {
+            setBuffered(event.target.value);
+            onChange?.(event as React.ChangeEvent<HTMLInputElement & HTMLSelectElement>);
+          }}
+          onBlur={onBlur}
+        />
+      );
+    },
+    Dropdown: ({ label, value, options = [], onChange }: FieldProps) => (
       <select
         aria-label={label}
         value={value}
         onChange={onChange}
       >
-        <option value="0" />
-        <option value="512" />
-        <option value="600" />
-        <option value="700" />
+        <option value="" />
+        {options.map(option => (
+          <option
+            key={option.value}
+            value={option.value}
+          >
+            {option.label}
+          </option>
+        ))}
       </select>
-      {error ? <span>{error}</span> : null}
-    </>
-  ),
-  TextField: ({ label, value, onChange }: FieldProps) => (
-    <input
-      aria-label={label}
-      value={value}
-      onChange={onChange}
-    />
-  ),
-  Dropdown: ({ label, value, options = [], onChange }: FieldProps) => (
-    <select
-      aria-label={label}
-      value={value}
-      onChange={onChange}
-    >
-      <option value="" />
-      {options.map(option => (
-        <option
-          key={option.value}
-          value={option.value}
-        >
-          {option.label}
-        </option>
-      ))}
-    </select>
-  ),
-}));
+    ),
+  };
+});
 
 const door = { entity: 512, defaultAction: 'open', customName: 'Door' };
 const lamp = { entity: 600, defaultAction: '', customName: 'Lamp' };
@@ -167,6 +178,50 @@ describe('SmartItemControl', () => {
 
     it('should drop that row and keep the others in order', () => {
       expect(lastWrittenSmartItems()).toEqual([lamp]);
+    });
+  });
+
+  describe('when a custom name is typed', () => {
+    let customName: HTMLElement;
+
+    beforeEach(() => {
+      render(<SmartItemControl entity={1 as Entity} />);
+      customName = screen.getAllByLabelText('Custom Name')[0];
+      fireEvent.change(customName, { target: { value: 'metalcase' } });
+    });
+
+    it('should not write to the AdminTools component on every keystroke', () => {
+      expect(mocks.setValue).not.toHaveBeenCalled();
+    });
+
+    it('should keep displaying what was typed', () => {
+      expect((customName as HTMLInputElement).value).toBe('metalcase');
+    });
+
+    describe('and the field is blurred', () => {
+      beforeEach(() => {
+        mocks.setValue.mockClear();
+        fireEvent.blur(customName);
+      });
+
+      it('should write the whole name exactly once', () => {
+        expect(mocks.setValue).toHaveBeenCalledTimes(1);
+      });
+
+      it("should change only that row's custom name", () => {
+        expect(lastWrittenSmartItems()).toEqual([{ ...door, customName: 'metalcase' }, lamp]);
+      });
+    });
+  });
+
+  describe('when a custom name is blurred without having been edited', () => {
+    beforeEach(() => {
+      render(<SmartItemControl entity={1 as Entity} />);
+      fireEvent.blur(screen.getAllByLabelText('Custom Name')[0]);
+    });
+
+    it('should not write to the AdminTools component', () => {
+      expect(mocks.setValue).not.toHaveBeenCalled();
     });
   });
 
