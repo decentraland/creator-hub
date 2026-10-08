@@ -22,6 +22,7 @@
   margin-right: 8px;
 }
 
-.AppSettingsModal .DependencyUpdateFormGroup {
+.AppSettingsModal .DependencyUpdateFormGroup,
+.AppSettingsModal .ScenesTabFormGroup {
   gap: 16px;
 }
