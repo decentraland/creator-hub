@@ -48,3 +48,8 @@
   gap: 4px;
   color: #ff2d55;
 }
+
+.SmartItemTooltip .SmartItemTooltipAuthor .dcl.logo {
+  width: 16px;
+  height: 16px;
+}
