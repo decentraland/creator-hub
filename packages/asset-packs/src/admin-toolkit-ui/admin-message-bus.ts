@@ -40,10 +40,22 @@ import { isPreview } from './fetch-utils';
 import type { SceneAdmin } from './ModerationControl';
 import { getVideoPlayers } from './VideoControl/utils';
 import { clearInterval, setInterval } from './utils';
+import type { VideoSyncClock } from './video-sync-clock';
+import {
+  clockFromElapsed,
+  createClock,
+  getElapsedSeconds,
+  pauseClock,
+  resumeClock,
+} from './video-sync-clock';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
 type VideoState = Pick<PBVideoPlayer, 'src' | 'playing' | 'volume' | 'loop'>;
+
+// Extra fields the admin video messages carry beyond PBVideoPlayer. `sync`
+// marks an activation as "play in sync for everyone"; older clients ignore it.
+export type VideoCommandExtras = { sync?: boolean };
 
 type AnnouncementState = {
   text: string;
@@ -52,7 +64,9 @@ type AnnouncementState = {
 };
 
 interface SyncStatePayload {
-  video: Array<{ entity: number } & VideoState>;
+  // `elapsed` (seconds, computed by the sender at send time) is present only
+  // for screens playing in synced mode.
+  video: Array<{ entity: number; elapsed?: number } & VideoState>;
   announcement: AnnouncementState | null;
 }
 
@@ -72,7 +86,8 @@ const MSG = {
 // ── Public interface ─────────────────────────────────────────────────────────
 
 export interface AdminMessageBusInstance {
-  emitSetVideo(entity: Entity, props: Partial<PBVideoPlayer>): void;
+  emitSetVideo(entity: Entity, props: Partial<PBVideoPlayer> & VideoCommandExtras): void;
+  isVideoSynced(entity: Entity): boolean;
   emitSetAnnouncement(text: string, author?: string, id?: string): void;
   emitClearAnnouncement(): void;
   emitSyncAdmins(): void;
@@ -83,6 +98,10 @@ let instance: AdminMessageBusInstance | null = null;
 
 export function getAdminMessageBus(): AdminMessageBusInstance {
   if (!instance) throw new Error('AdminMessageBus not initialized');
+  return instance;
+}
+
+export function getAdminMessageBusOrNull(): AdminMessageBusInstance | null {
   return instance;
 }
 
@@ -101,6 +120,13 @@ export function initAdminMessageBus(
   const { TextAnnouncements, VideoScreen } = getComponents(engine);
 
   const authoritativeVideo = new Map<Entity, VideoState>();
+  // Per-screen playback clocks for videos activated in synced mode. Absent
+  // entry = not synced. See video-sync-clock.ts for the skew-safe design.
+  const syncClocks = new Map<Entity, VideoSyncClock>();
+  // If a SYNC_STATE reply says the video is further from our own clock than
+  // this, we seek to match; within it we stay put to avoid pointless stutters
+  // (every reply is broadcast to all participants, not just the requester).
+  const SYNC_DRIFT_TOLERANCE_SECONDS = 3;
   let authoritativeAnnouncement: AnnouncementState | null = null;
   let adminHasActed = false;
   // True once we've applied authoritative state from a *remote* admin. Gates the
@@ -202,6 +228,25 @@ export function initAdminMessageBus(
     video.loop = updated.loop;
     if (payload.position !== undefined) video.position = payload.position;
 
+    // Sync-clock bookkeeping. `sync: true` (re)starts the clock; a source
+    // change without it is an unsynced video; play/pause/restart commands
+    // (they carry a boolean `playing`, unlike volume/loop updates) advance an
+    // existing clock. Elapsed time is derived from this client's own clock
+    // only, never from the sender's timestamp.
+    const now = Date.now();
+    if (payload.sync) {
+      syncClocks.set(entity, createClock(now, payload.position ?? 0));
+    } else if (payload.src !== undefined) {
+      syncClocks.delete(entity);
+    } else {
+      const clock = syncClocks.get(entity);
+      if (clock && typeof payload.playing === 'boolean') {
+        if (!payload.playing) syncClocks.set(entity, pauseClock(clock, now));
+        else if (payload.position === 0) syncClocks.set(entity, createClock(now));
+        else syncClocks.set(entity, resumeClock(clock, now));
+      }
+    }
+
     adminHasActed = true;
   });
 
@@ -239,7 +284,15 @@ export function initAdminMessageBus(
       const current = VideoPlayer.getOrNull(entity);
       if (!current) continue;
       if (current.src !== (screen?.defaultURL || '')) {
-        video.push({ entity: entity as number, ...current });
+        // Elapsed is computed here, at send time — this reply can be resent on
+        // the late-joiner retry, so capturing it earlier would hand out stale
+        // numbers.
+        const clock = syncClocks.get(entity);
+        video.push({
+          entity: entity as number,
+          ...current,
+          ...(clock ? { elapsed: getElapsedSeconds(clock, Date.now()) } : {}),
+        });
       }
     }
 
@@ -266,10 +319,29 @@ export function initAdminMessageBus(
       });
       const video = VideoPlayer.getMutableOrNull(entity);
       if (!video) continue;
+      const isNewSource = video.src !== vs.src;
       video.src = vs.src;
       if (vs.playing !== undefined) video.playing = vs.playing;
       if (vs.volume !== undefined) video.volume = vs.volume;
       if (vs.loop !== undefined) video.loop = vs.loop;
+
+      // Synced playback: jump to the sender's elapsed time. Skipped for our
+      // own broadcast ('self' also handles SYNC_STATE) and when our own clock
+      // is already within tolerance — replies are broadcast to everyone, so
+      // seeking unconditionally would stutter the whole audience each time
+      // someone joins.
+      if (sender === 'self') continue;
+      if (vs.elapsed === undefined || !Number.isFinite(vs.elapsed)) {
+        if (isNewSource) syncClocks.delete(entity);
+        continue;
+      }
+      const now = Date.now();
+      const local = isNewSource ? undefined : syncClocks.get(entity);
+      const drift = local ? Math.abs(getElapsedSeconds(local, now) - vs.elapsed) : Infinity;
+      if (drift > SYNC_DRIFT_TOLERANCE_SECONDS) {
+        video.position = vs.elapsed;
+        syncClocks.set(entity, clockFromElapsed(now, vs.elapsed, vs.playing ?? true));
+      }
     }
 
     if (payload.announcement?.id) {
@@ -361,8 +433,12 @@ export function initAdminMessageBus(
   // ── Instance ───────────────────────────────────────────────────────────────
 
   instance = {
-    emitSetVideo(entity: Entity, props: Partial<PBVideoPlayer>) {
+    emitSetVideo(entity: Entity, props: Partial<PBVideoPlayer> & VideoCommandExtras) {
       emitMessage(MSG.SET_VIDEO, { entity, ...props } as Record<string, unknown>);
+    },
+
+    isVideoSynced(entity: Entity) {
+      return syncClocks.has(entity);
     },
 
     emitSetAnnouncement(text: string, author?: string, id?: string) {
