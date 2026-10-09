@@ -28,8 +28,13 @@ type Params = {
   [Method.OPTIMIZE_SCENE]: Record<string, never>;
   [Method.PROMPT_ASSISTANT]: { text: string };
   [Method.SET_CONSOLE_WINDOW_OPEN]: { open: boolean };
-  [Method.NOTIFY_SCENE_METADATA]: { title: string };
+  [Method.NOTIFY_SCENE_METADATA]: SceneMetadataNotice;
   [Method.NOTIFY_READY]: Record<string, never>;
+};
+
+export type SceneMetadataNotice = {
+  title: string;
+  scene: { base: string; parcels: string[] };
 };
 
 type Result = {
@@ -100,9 +105,8 @@ export class SceneClient extends RPC<Method, Params, Result> {
     return this.request('set_console_window_open', { open });
   };
 
-  // The scene's display title as it is being edited, so the host header follows a rename live.
-  notifySceneMetadata = (title: string) => {
-    return this.request('notify_scene_metadata', { title });
+  notifySceneMetadata = (metadata: SceneMetadataNotice) => {
+    return this.request('notify_scene_metadata', metadata);
   };
 
   // Tell the host the scene RPC server is up and can take its pushes. A host push sent before
