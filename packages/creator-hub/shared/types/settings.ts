@@ -71,6 +71,11 @@ export type AppSettings = {
   // The creator ticked "don't show this again" on the Optimize tools disclosure. Per machine;
   // the install screen still says when tools are being downloaded.
   optimizerConsentAcknowledged?: boolean;
+  // Dev/QA only: point the inspector's smart-item catalog at the development CDN
+  // (builder-items.decentraland.zone) instead of production, so assets uploaded from a PR via
+  // `/upload-assets` can be tested before merge. The toggle is shown and honored ONLY in
+  // non-production builds (`!import.meta.env.PROD`); a production release ignores it entirely.
+  useDevAssetCatalog?: boolean;
 };
 
 export interface ReleaseNotes {
