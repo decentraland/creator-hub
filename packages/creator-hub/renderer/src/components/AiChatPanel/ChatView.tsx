@@ -32,9 +32,9 @@ import {
 } from 'decentraland-ui2';
 
 import type { AiAttachment, AiAttachmentKind, AiProvider } from '/shared/types/ai';
-import { AI_CLI_COMMANDS, MIN_CLAUDE_CLI_VERSION, isCliVersionOutdated } from '/shared/types/ai';
+import { MIN_CLAUDE_CLI_VERSION, cliSetup, isCliVersionOutdated } from '/shared/types/ai';
 
-import { ai as aiPreload } from '#preload';
+import { ai as aiPreload, misc } from '#preload';
 import { t } from '/@/modules/store/translation/utils';
 import { useCliSignIn } from '/@/hooks/useCliSignIn';
 
@@ -57,6 +57,7 @@ import {
   Composer,
   DropHint,
   ErrorRow,
+  GuideLink,
   HeaderActions,
   HeaderTitle,
   IntroMessage,
@@ -311,8 +312,8 @@ export interface ChatViewProps {
     available: boolean;
     reason?: string;
     version?: string;
-    // False when the CLI has no scriptable login (Gemini) — hides the in-app "Sign in" button.
     managedSignIn: boolean;
+    desktopInstalled?: boolean;
   }[];
   provider: AiProvider;
   messages: AiMessage[];
@@ -578,14 +579,15 @@ export function ChatView(props: ChatViewProps) {
   );
 
   const renderSetup = () => {
-    const cmds = AI_CLI_COMMANDS[provider];
+    const cmds = cliSetup(provider, navigator.userAgent.includes('Windows'));
     return (
       <SetupBox>
         <strong>{t('editor.ai.setup.title')}</strong>
         <span>{t('editor.ai.setup.description')}</span>
-        {/* Primary path (#1531): sign in with the subscription in-app — installs the
-            official CLI on demand and drives its browser OAuth. No terminal needed. Hidden for a
-            provider whose CLI has no scriptable login (Gemini): only the terminal path applies. */}
+        {currentProvider?.desktopInstalled === true && (
+          <span>{t('editor.ai.setup.desktop_detected')}</span>
+        )}
+        {provider === 'gemini' && <span>{t('editor.ai.setup.gemini_plan_note')}</span>}
         {currentProvider?.managedSignIn === true && (
           <>
             <Button
@@ -619,11 +621,19 @@ export function ChatView(props: ChatViewProps) {
             <SetupDivider />
           </>
         )}
-        {/* Fallback: run the CLI yourself in a terminal. */}
-        <span>{t('editor.ai.setup.manual_title')}</span>
+        {currentProvider?.managedSignIn === true && (
+          <span>{t('editor.ai.setup.manual_title')}</span>
+        )}
         <SetupStep>
           <span>{t('editor.ai.setup.install')}</span>
           <CommandLine>{cmds.install}</CommandLine>
+          <GuideLink
+            type="button"
+            onClick={() => void misc.openExternal(cmds.guideUrl)}
+          >
+            {t('editor.ai.setup.install_guide', { provider: currentProvider?.label ?? provider })}
+            <OpenInNewIcon fontSize="inherit" />
+          </GuideLink>
         </SetupStep>
         <SetupStep>
           <span>{t('editor.ai.setup.signin')}</span>

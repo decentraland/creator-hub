@@ -31,6 +31,7 @@ export interface AiProviderInfo {
   // False for a CLI with no scriptable login (Gemini authenticates from its own interactive CLI
   // or an API-key env var), so the UI shows the terminal command instead of an in-app button.
   managedSignIn: boolean;
+  desktopInstalled?: boolean;
 }
 
 // Newest Claude models (e.g. Fable) are gated on the CLI version: an older `claude`
@@ -38,14 +39,55 @@ export interface AiProviderInfo {
 // UI nudges users up to. Bump it as newer models raise the requirement.
 export const MIN_CLAUDE_CLI_VERSION = '2.1.251';
 
-// Install + sign-in commands per agent, shown on the chat setup card and the settings
-// "Connect" section. Obviously-safe public package names.
-export const AI_CLI_COMMANDS: Record<AiProvider, { install: string; signin: string }> = {
-  claude: { install: 'npm i -g @anthropic-ai/claude-code', signin: 'claude' },
-  codex: { install: 'npm i -g @openai/codex', signin: 'codex login' },
-  cursor: { install: 'npm i -g cursor-agent', signin: 'cursor-agent login' },
-  gemini: { install: 'npm i -g @google/gemini-cli', signin: 'gemini' },
+type CliCommands = {
+  install: string;
+  installWindows?: string;
+  signin: string;
+  guideUrl: string;
+  guideAnchors?: { windows: string; unix: string };
 };
+
+export const AI_CLI_COMMANDS: Record<AiProvider, CliCommands> = {
+  claude: {
+    install: 'curl -fsSL https://claude.ai/install.sh | bash',
+    installWindows: 'winget install Anthropic.ClaudeCode',
+    signin: 'claude',
+    guideUrl: 'https://code.claude.com/docs/en/terminal-guide',
+    guideAnchors: { windows: '#windows', unix: '#macos-and-linux' },
+  },
+  codex: {
+    install: 'curl -fsSL https://chatgpt.com/codex/install.sh | sh',
+    installWindows:
+      'powershell -ExecutionPolicy ByPass -c "irm https://chatgpt.com/codex/install.ps1 | iex"',
+    signin: 'codex login',
+    guideUrl: 'https://developers.openai.com/codex/cli',
+  },
+  cursor: {
+    install: 'curl https://cursor.com/install -fsS | bash',
+    installWindows: "irm 'https://cursor.com/install?win32=true' | iex",
+    signin: 'cursor-agent login',
+    guideUrl: 'https://cursor.com/docs/cli/installation',
+  },
+  gemini: {
+    install: 'npm install -g @google/gemini-cli',
+    signin: 'gemini',
+    guideUrl: 'https://www.geminicli.com/docs/get-started/installation',
+  },
+};
+
+/** The terminal install command, sign-in command and install-guide link for this OS. */
+export function cliSetup(
+  provider: AiProvider,
+  windows: boolean,
+): { install: string; signin: string; guideUrl: string } {
+  const cmds = AI_CLI_COMMANDS[provider];
+  const anchor = cmds.guideAnchors?.[windows ? 'windows' : 'unix'] ?? '';
+  return {
+    install: (windows ? cmds.installWindows : undefined) ?? cmds.install,
+    signin: cmds.signin,
+    guideUrl: cmds.guideUrl + anchor,
+  };
+}
 
 // True when `version` is a parseable semver strictly older than `min`. Unknown/absent
 // versions are treated as NOT outdated — we never nag when we couldn't read the version.

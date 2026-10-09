@@ -30,7 +30,10 @@ vi.mock('../src/modules/node-runtime', () => ({
 vi.mock('cross-spawn', () => ({
   default: Object.assign(vi.fn(), { sync: runtimeMocks.spawnSync }),
 }));
-vi.mock('../src/modules/electron', () => ({ getUserDataPath: () => '/tmp/creator-hub-test' }));
+vi.mock('../src/modules/electron', () => ({
+  getUserDataPath: () => '/tmp/creator-hub-test',
+  getAppDataPath: () => '/tmp/creator-hub-test-appdata',
+}));
 vi.mock('../src/modules/explorer-gateway', () => ({
   callExplorerTool: vi.fn(),
   explorerTools: () => [],
@@ -50,8 +53,10 @@ import {
   filterEnvForChild,
   friendlyCliError,
   getCliVersion,
+  isClaudeDesktopInstalled,
   nvmBinDirs,
   parseShellPath,
+  usableBin,
 } from '../src/modules/ai';
 
 const PROJECT = '/home/user/scene';
@@ -800,5 +805,51 @@ describe('when probing an AI CLI version', () => {
       ['--version'],
       expect.objectContaining({ env: { PATH: '/bundle/bin' } }),
     );
+  });
+});
+
+describe('when resolving which AI CLI binary to use', () => {
+  const managedBin = path.join('/tmp/creator-hub-test', 'ai-cli', 'node_modules', '.bin');
+
+  it('should ignore a leftover managed claude install, since its in-app sign-in never worked', () => {
+    expect(usableBin(path.join(managedBin, 'claude'), 'claude')).toBeNull();
+  });
+
+  it('should ignore a managed cursor-agent install, since that npm package is not Cursor’s', () => {
+    expect(usableBin(path.join(managedBin, 'cursor-agent'), 'cursor')).toBeNull();
+  });
+
+  it('should keep a managed codex install, whose in-app sign-in works', () => {
+    const bin = path.join(managedBin, 'codex');
+    expect(usableBin(bin, 'codex')).toBe(bin);
+  });
+
+  it('should keep a claude found on the PATH', () => {
+    expect(usableBin('/usr/local/bin/claude', 'claude')).toBe('/usr/local/bin/claude');
+  });
+
+  it('should pass a missing binary through as missing', () => {
+    expect(usableBin(null, 'claude')).toBeNull();
+  });
+});
+
+describe('when detecting Claude Desktop', () => {
+  let appData: string;
+
+  beforeEach(() => {
+    appData = fs.mkdtempSync(path.join(os.tmpdir(), 'ch-appdata-'));
+  });
+
+  afterEach(() => {
+    fs.rmSync(appData, { recursive: true, force: true });
+  });
+
+  it('should report it installed when its app-data folder exists', () => {
+    fs.mkdirSync(path.join(appData, 'Claude'));
+    expect(isClaudeDesktopInstalled(appData)).toBe(true);
+  });
+
+  it('should report it missing when there is no app-data folder', () => {
+    expect(isClaudeDesktopInstalled(appData)).toBe(false);
   });
 });

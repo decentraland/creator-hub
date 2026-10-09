@@ -14,9 +14,9 @@ import {
   Typography,
 } from 'decentraland-ui2';
 
-import { ai } from '#preload';
+import { ai, misc } from '#preload';
 
-import { AI_CLI_COMMANDS, type AiProviderInfo } from '/shared/types/ai';
+import { cliSetup, type AiProviderInfo } from '/shared/types/ai';
 import { t } from '/@/modules/store/translation/utils';
 import { useCliSignIn } from '/@/hooks/useCliSignIn';
 import type { BaseTabProps } from '../../types';
@@ -93,7 +93,7 @@ function CommandField({ label, value }: { label?: string; value: string }) {
 function AgentConnect({ info, onRecheck }: { info: AiProviderInfo; onRecheck: () => void }) {
   const { signIn, start, cancel } = useCliSignIn(info.id, onRecheck);
   const [terminalOpen, setTerminalOpen] = useState(false);
-  const cmds = AI_CLI_COMMANDS[info.id];
+  const cmds = cliSetup(info.id, navigator.userAgent.includes('Windows'));
 
   const handleSignOut = useCallback(() => {
     void ai.signOutCli(info.id).then(onRecheck);
@@ -152,6 +152,22 @@ function AgentConnect({ info, onRecheck }: { info: AiProviderInfo; onRecheck: ()
           {signIn.error}
         </Typography>
       )}
+      {info.desktopInstalled === true && (
+        <Typography
+          variant="caption"
+          color="text.secondary"
+        >
+          {t('editor.ai.setup.desktop_detected')}
+        </Typography>
+      )}
+      {info.id === 'gemini' && (
+        <Typography
+          variant="caption"
+          color="text.secondary"
+        >
+          {t('editor.ai.setup.gemini_plan_note')}
+        </Typography>
+      )}
       <Accordion
         title={t('modal.app_settings.fields.ai_connect.via_terminal')}
         expanded={terminalOpen}
@@ -165,6 +181,13 @@ function AgentConnect({ info, onRecheck }: { info: AiProviderInfo; onRecheck: ()
           label={t('modal.app_settings.fields.ai_connect.sign_in_label')}
           value={cmds.signin}
         />
+        <button
+          type="button"
+          className="AgentGuideLink"
+          onClick={() => void misc.openExternal(cmds.guideUrl)}
+        >
+          {t('editor.ai.setup.install_guide', { provider: info.label })}
+        </button>
       </Accordion>
     </Box>
   );

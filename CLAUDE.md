@@ -183,9 +183,13 @@ Any such fix-up must mutate **`mergedConfig.settings`**, never `existingConfig.s
 
 `Tabs/AiTab/component.tsx` defines its own chevron/title `Accordion` rather than importing MUI's. Pulling in a not-yet-bundled `@mui/material` module retriggers Vite's dependency optimizer mid-session. The same file's copy button carries an `'&&&&&&&': { color: 'var(--white)' }` `sx` rule for a related reason: `decentraland-ui2` pins secondary-text buttons to a grey `secondary.contrast` at high specificity, and the repeated `&` (0,7,0) is what out-specifies it.
 
-### The dev app's userData directory is `creator-hub`, not the product name
+### The userData directory is `creator-hub`, not the product name
 
-Electron derives `app.getPath('userData')` from the package `name` (`creator-hub`), so a `npm run start` dev run reads and writes `~/Library/Application Support/creator-hub/Settings/config.json` on macOS. Only a packaged build uses `~/Library/Application Support/Decentraland Creator Hub/…`, from `productName` in `electron-builder.cjs`. Verifying persisted-settings behaviour against the packaged path while running the dev app silently inspects a file the app never touched. `electron-log` follows the same name: `~/Library/Logs/creator-hub/main.log`.
+Electron derives `app.getPath('userData')` from the bundled `package.json`, which has a `name` (`creator-hub`) and no `productName`. `productName` in `electron-builder.cjs` names only the installer and app bundle; it never reaches that `package.json`. So dev runs and packaged builds alike use `creator-hub`:
+- Settings: `~/Library/Application Support/creator-hub/Settings/config.json` on macOS, `%APPDATA%\creator-hub\…` on Windows.
+- `electron-log`: `~/Library/Logs/creator-hub/main.log` on macOS, `%APPDATA%\creator-hub\logs\main.log` on Windows. Point Windows users there when asking for logs.
+
+Looking in a `Decentraland Creator Hub` folder inspects a directory the app never touches.
 
 ### Redux state freeze + in-place mutating helpers
 

@@ -154,7 +154,10 @@
         "alt_description": "Already signed into Claude Desktop, the VS Code extension, or another MCP-capable tool? Point it at this scene instead — no CLI needed. Add this to its MCP configuration:",
         "alt_copy": "Copy configuration",
         "alt_copied": "Copied",
-        "alt_note": "Localhost only. The URL and token change each time Creator Hub restarts."
+        "alt_note": "Localhost only. The URL and token change each time Creator Hub restarts.",
+        "install_guide": "If that doesn't work, follow the {provider} install guide",
+        "desktop_detected": "Claude Desktop is installed, but the assistant needs Claude Code — Anthropic's terminal tool. Desktop's sign-in isn't shared with it, so install Claude Code and sign in once:",
+        "gemini_plan_note": "Gemini CLI now works only with a paid Gemini API key or a Gemini Code Assist Standard/Enterprise license."
       }
     }
   },

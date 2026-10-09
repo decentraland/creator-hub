@@ -29,7 +29,7 @@ import type {
 } from '/shared/types/ai';
 import { DCL_SYSTEM_PROMPT } from './ai-prompt';
 import { CLI_SPECS, getManagedBinDir, isSignedIn as isManagedSignedIn } from './ai-cli-paths';
-import { getUserDataPath } from './electron';
+import { getAppDataPath, getUserDataPath } from './electron';
 import { getChildEnv, resolveNodeRuntime } from './node-runtime';
 import { getProjectId, track } from './analytics';
 import {
@@ -859,13 +859,22 @@ export const PROVIDERS: Record<AiProvider, ProviderDef> = {
   },
 };
 
+/** `bin`, or null when it is a managed install of a CLI the app no longer signs in to. */
+export function usableBin(bin: string | null, provider: AiProvider): string | null {
+  if (bin === null) return null;
+  if (!CLI_SPECS[provider].managedSignIn && bin.startsWith(getManagedBinDir())) return null;
+  return bin;
+}
+
+/** Whether Claude Desktop has run on this machine (it keeps its data in `<appData>/Claude`). */
+export function isClaudeDesktopInstalled(appDataDir: string): boolean {
+  return fs.existsSync(path.join(appDataDir, 'Claude'));
+}
+
 const scan = (): AiProviderInfo[] =>
   (Object.keys(PROVIDERS) as AiProvider[]).map(id => {
     const def = PROVIDERS[id];
-    const bin = findExecutable(def.binNames);
-    // A CLI we installed on demand (#1531) lives under the managed bin dir; unlike a
-    // user-PATH install (which we assume is already logged in), it's only usable once its
-    // subscription login completed, so gate its availability on the signed-in marker.
+    const bin = usableBin(findExecutable(def.binNames), id);
     const managed = bin !== null && bin.startsWith(getManagedBinDir());
     const signedIn = managed ? isManagedSignedIn(id) : true;
     const available = bin !== null && signedIn;
@@ -877,6 +886,8 @@ const scan = (): AiProviderInfo[] =>
       available,
       managedSignIn: CLI_SPECS[id].managedSignIn,
       version: bin !== null ? getCliVersion(bin) : undefined,
+      desktopInstalled:
+        id === 'claude' && !available ? isClaudeDesktopInstalled(getAppDataPath()) : undefined,
       reason: available
         ? undefined
         : bin === null
@@ -1184,7 +1195,7 @@ export async function aiSend(
     throw new Error('Open a scene before using the assistant.');
   const def = PROVIDERS[params.provider];
   if (def === undefined) throw new Error(`Unknown assistant "${params.provider}".`);
-  const bin = findExecutable(def.binNames);
+  const bin = usableBin(findExecutable(def.binNames), params.provider);
   if (bin === null) throw new Error(`${def.label} CLI not found — install it and sign in.`);
 
   // Link the Decentraland SDK7 skills into the project so the CLI finds them in its
