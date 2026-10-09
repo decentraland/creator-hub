@@ -50,9 +50,12 @@ export function useAiSession(
     // Interactive `ask_user` prompts arrive on their own channel (they block an MCP tool call,
     // not a stream token) — fold each into the transcript.
     const ask = aiPreload.onAskRequest(req => dispatch(aiActions.pushPrompt(req)));
+    // Main gave up waiting on a prompt: close it so it can't take an answer that goes nowhere.
+    const expired = aiPreload.onAskExpired(({ id }) => dispatch(aiActions.expirePrompt(id)));
     return () => {
       stream.cleanup();
       ask.cleanup();
+      expired.cleanup();
     };
   }, [enabled, dispatch]);
 

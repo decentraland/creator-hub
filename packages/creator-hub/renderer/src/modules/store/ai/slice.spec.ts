@@ -81,3 +81,38 @@ describe('applyEvent chronological parts', () => {
     expect(s.messages[0].parts).toEqual([{ kind: 'text', text: 'Hello' }]);
   });
 });
+
+// main gave up waiting on an `ask_user` prompt: the block must stop accepting answers.
+describe('expirePrompt', () => {
+  const prompt = {
+    id: 'q1',
+    question: 'Replace?',
+    options: [],
+    multiSelect: false,
+    allowOther: true,
+  };
+  const withPrompt = () => {
+    const started = reducer(undefined, {
+      type: 'ai/applyEvent',
+      payload: { kind: 'started', turnId: 't1' },
+    });
+    return reducer(started, { type: 'ai/pushPrompt', payload: prompt });
+  };
+  const promptOf = (state: ReturnType<typeof reducer>) =>
+    state.messages.flatMap(m => m.parts).find(p => p.kind === 'prompt');
+
+  it('marks an unanswered prompt as no longer active', () => {
+    const state = reducer(withPrompt(), { type: 'ai/expirePrompt', payload: 'q1' });
+    expect(promptOf(state)).toMatchObject({ prompt: { id: 'q1', dismissed: true } });
+  });
+
+  it('leaves an answered prompt as answered', () => {
+    const answered = reducer(withPrompt(), {
+      type: 'ai/resolvePrompt',
+      payload: { id: 'q1', answer: 'Yes' },
+    });
+    const state = reducer(answered, { type: 'ai/expirePrompt', payload: 'q1' });
+    expect(promptOf(state)).toMatchObject({ prompt: { answer: 'Yes' } });
+    expect(promptOf(state)).not.toMatchObject({ prompt: { dismissed: true } });
+  });
+});

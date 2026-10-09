@@ -52,6 +52,7 @@ import {
   getCliVersion,
   nvmBinDirs,
   parseShellPath,
+  turnOutcome,
 } from '../src/modules/ai';
 
 const PROJECT = '/home/user/scene';
@@ -800,5 +801,69 @@ describe('when probing an AI CLI version', () => {
       ['--version'],
       expect.objectContaining({ env: { PATH: '/bundle/bin' } }),
     );
+  });
+});
+
+describe('when a turn ends', () => {
+  const base = {
+    label: 'Claude',
+    turnId: 't3',
+    code: 0 as number | null,
+    signal: null as NodeJS.Signals | null,
+    durationMs: 12_345,
+    textCount: 0,
+    toolCount: 0,
+    imageCount: 0,
+    stderr: '',
+  };
+
+  describe('and the CLI exited cleanly after replying', () => {
+    it('should report success and log the code, duration and output counts', () => {
+      expect(turnOutcome({ ...base, textCount: 2, toolCount: 3 })).toEqual({
+        logLine:
+          '[AI] Claude turn t3 exited code=0 signal=none after 12.3s: 2 text, 3 tools, 0 images',
+        ok: true,
+      });
+    });
+  });
+
+  describe('and the CLI exited cleanly without producing anything', () => {
+    it('should report an error instead of leaving an empty reply', () => {
+      expect(turnOutcome(base)).toMatchObject({
+        ok: false,
+        message: expect.stringContaining('Claude finished without replying'),
+      });
+    });
+  });
+
+  describe('and the turn only showed an image', () => {
+    it('should count it as a reply', () => {
+      expect(turnOutcome({ ...base, imageCount: 1 }).ok).toBe(true);
+    });
+  });
+
+  describe('and the CLI failed with output on stderr', () => {
+    it('should report the stderr and log its tail on one line', () => {
+      const outcome = turnOutcome({
+        ...base,
+        code: 1,
+        stderr: 'Not logged in\n  Please run /login\n',
+      });
+      expect(outcome).toEqual({
+        logLine:
+          '[AI] Claude turn t3 exited code=1 signal=none after 12.3s: 0 text, 0 tools, 0 images; stderr: Not logged in Please run /login',
+        ok: false,
+        message: 'Not logged in\n  Please run /login',
+      });
+    });
+  });
+
+  describe('and a signal killed the CLI', () => {
+    it('should report an interruption', () => {
+      expect(turnOutcome({ ...base, code: null, signal: 'SIGKILL', textCount: 1 })).toMatchObject({
+        ok: false,
+        message: 'assistant was interrupted (SIGKILL)',
+      });
+    });
   });
 });

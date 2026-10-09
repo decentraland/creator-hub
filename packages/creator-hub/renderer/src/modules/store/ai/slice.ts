@@ -448,6 +448,17 @@ const slice = createSlice({
         });
       }
     },
+    // Main stopped waiting for a prompt (its timeout passed): mark it like a prompt of a stopped
+    // turn, so the block is disabled instead of taking an answer nothing is waiting for.
+    expirePrompt: (state, { payload }: PayloadAction<string>) => {
+      for (const msg of state.messages) {
+        const part = msg.parts.find(p => p.kind === 'prompt' && p.prompt.id === payload);
+        if (part?.kind === 'prompt' && part.prompt.answer === undefined) {
+          part.prompt.dismissed = true;
+          return;
+        }
+      }
+    },
     // The user answered a prompt: record it so the block shows the choice and the turn resumes.
     resolvePrompt: (state, { payload }: PayloadAction<{ id: string; answer: string }>) => {
       for (const msg of state.messages) {

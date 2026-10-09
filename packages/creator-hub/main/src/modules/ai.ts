@@ -971,6 +971,7 @@ export function aiStop(): void {
   current = null;
   if (!c.done) {
     c.done = true;
+    log.info(`[AI] Stopped turn ${c.turnId} before it finished`);
     killTree(c.child);
   }
 }
@@ -1172,6 +1173,46 @@ function resolveAttachments(attachments: AiSendParams['attachments']): ResolvedA
   return out;
 }
 
+// How a turn's CLI child ended, decided from what it produced. Exported for the tests.
+//  - logLine: one line for main.log, so a report of "the assistant doesn't answer" can be traced
+//    from the log alone (exit code or signal, duration, output counts, the tail of its stderr).
+//  - ok/message: what the turn reports to the chat. A clean exit that produced nothing would
+//    leave an empty bubble that reads as a hang, so it reports an error instead. A null code
+//    means a signal killed the child: an intentional aiStop() already marked the turn done (so
+//    finish() no-ops there), so reaching it means an unsolicited kill (OOM, external SIGKILL),
+//    reported as an interruption, never as a successful turn.
+export function turnOutcome(turn: {
+  label: string;
+  turnId: string;
+  code: number | null;
+  signal: NodeJS.Signals | null;
+  durationMs: number;
+  textCount: number;
+  toolCount: number;
+  imageCount: number;
+  stderr: string;
+}): { logLine: string; ok: boolean; message?: string } {
+  const { label, turnId, code, signal, textCount, toolCount, imageCount } = turn;
+  const stderr = turn.stderr.trim();
+  const tail = stderr.slice(-500).replace(/\s+/g, ' ');
+  const logLine =
+    `[AI] ${label} turn ${turnId} exited code=${code} signal=${signal ?? 'none'} after ` +
+    `${(turn.durationMs / 1000).toFixed(1)}s: ${textCount} text, ${toolCount} tools, ${imageCount} images` +
+    (tail !== '' ? `; stderr: ${tail}` : '');
+  if (code === 0 && textCount + toolCount + imageCount === 0) {
+    return {
+      logLine,
+      ok: false,
+      message: `${label} finished without replying. Try again; if it keeps happening, check that the ${label} CLI is signed in.`,
+    };
+  }
+  if (code === 0) return { logLine, ok: true };
+  if (code === null) {
+    return { logLine, ok: false, message: `assistant was interrupted (${signal ?? 'signal'})` };
+  }
+  return { logLine, ok: false, message: stderr || `assistant exited with code ${code}` };
+}
+
 // Spawn one turn and stream its events through `emit`. Returns as soon as the child is
 // running (with the turn id) — the conversation streams asynchronously; it does NOT
 // wait for the turn to finish.
@@ -1284,6 +1325,9 @@ export async function aiSend(
   // and reuse it for both the start and completion events.
   const startedAt = Date.now();
   let toolCount = 0;
+  // Text blocks and images shown; with toolCount, they tell a turn that replied from a silent one.
+  let textCount = 0;
+  let imageCount = 0;
   const projectIdPromise = getProjectId(projectDir).catch((): string => '');
   void projectIdPromise.then(project_id =>
     track('AI Turn Started', {
@@ -1322,12 +1366,18 @@ export async function aiSend(
   const onLine = (line: string): void => {
     if (line === '') return;
     const session = def.parseLine(line, projectDir, (text, tool, image) => {
-      if (text !== '') emit({ kind: 'text', turnId, text: friendlyCliError(text) });
+      if (text !== '') {
+        textCount++;
+        emit({ kind: 'text', turnId, text: friendlyCliError(text) });
+      }
       if (tool !== undefined) {
         toolCount++;
         emit({ kind: 'tool', turnId, tool: tool[0], detail: tool[1] });
       }
-      if (image !== undefined) emit({ kind: 'image', turnId, dataUrl: image });
+      if (image !== undefined) {
+        imageCount++;
+        emit({ kind: 'image', turnId, dataUrl: image });
+      }
     });
     if (session !== undefined) {
       const store = getSessions();
@@ -1353,12 +1403,20 @@ export async function aiSend(
   child.on('exit', (code, signal) => {
     buf += outDec.end();
     if (buf.trim() !== '') onLine(buf.trim()); // flush a trailing partial line
-    if (code === 0) finish(true);
-    // code === null means a signal killed the child. An intentional `aiStop()` already marked
-    // the turn done (so finish() no-ops there); reaching here means an UNsolicited kill (OOM,
-    // external SIGKILL) — report it as an interruption, never as a successful turn.
-    else if (code === null) finish(false, `assistant was interrupted (${signal ?? 'signal'})`);
-    else finish(false, (stderr + errDec.end()).trim() || `assistant exited with code ${code}`);
+    stderr += errDec.end();
+    const outcome = turnOutcome({
+      label: def.label,
+      turnId,
+      code,
+      signal,
+      durationMs: Date.now() - startedAt,
+      textCount,
+      toolCount,
+      imageCount,
+      stderr,
+    });
+    log.info(outcome.logLine);
+    finish(outcome.ok, outcome.message);
   });
 
   log.info(`[AI] Started ${def.label} turn ${turnId} in ${projectDir}`);
