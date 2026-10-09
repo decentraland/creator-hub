@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 
 import {
   MAX_SESSIONS,
@@ -144,6 +144,31 @@ describe('ai session transcripts', () => {
     expect(readSessionMessages('/scene/a', 's1', s)[0].parts).toEqual([
       { kind: 'text', text: 'ok' },
     ]);
+  });
+
+  describe('when the transcript outgrows the storage budget', () => {
+    const big = (id: string, role: 'user' | 'assistant'): AiMessage => ({
+      id,
+      role,
+      parts: [{ kind: 'text', text: `${id}:${'x'.repeat(400_000)}` }],
+      done: true,
+    });
+    const long = [big('u1', 'user'), big('t1', 'assistant'), big('u2', 'user')];
+    let s: ReturnType<typeof fakeStorage>;
+
+    beforeEach(() => {
+      s = fakeStorage();
+      writeSessionMessages('/scene/a', 's1', long, s);
+    });
+
+    it('should keep the newest messages instead of skipping the save', () => {
+      expect(readSessionMessages('/scene/a', 's1', s).map(m => m.id)).toEqual(['t1', 'u2']);
+    });
+
+    it('should stay within the storage budget', () => {
+      const [stored] = [...s._map.values()];
+      expect(stored.length).toBeLessThanOrEqual(1_000_000);
+    });
   });
 
   it('deleteSessionStorage removes only that session', () => {
