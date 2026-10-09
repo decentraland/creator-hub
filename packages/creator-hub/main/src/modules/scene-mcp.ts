@@ -18,9 +18,11 @@ import { type CallToolResult, isInitializeRequest } from '@modelcontextprotocol/
 import { z, type ZodRawShape, type ZodTypeAny } from 'zod';
 
 import {
+  AI_ASK_EXPIRED,
   AI_ASK_REQUEST,
   AI_SCENE_OP_REQUEST,
   AI_SCREENSHOT_REQUEST,
+  type AiAskExpired,
   type AiAskRequest,
 } from '/shared/types/ipc';
 import { MAIN_WINDOW_ID } from '../mainWindow';
@@ -219,7 +221,8 @@ const pendingAsks = new Map<
   { resolve: (v: string | null) => void; timer: NodeJS.Timeout }
 >();
 
-function requestUserPrompt(req: Omit<AiAskRequest, 'id'>): Promise<string | null> {
+// Exported for the tests (the timeout path).
+export function requestUserPrompt(req: Omit<AiAskRequest, 'id'>): Promise<string | null> {
   const win = getWindow(MAIN_WINDOW_ID);
   if (win === undefined || win.isDestroyed()) return Promise.resolve(null);
   const id = randomUUID();
@@ -227,6 +230,13 @@ function requestUserPrompt(req: Omit<AiAskRequest, 'id'>): Promise<string | null
     const timer = setTimeout(() => {
       pendingAsks.delete(id);
       resolve(null); // no answer in time — the tool reports a dismissal
+      log.info(`[AI] ask_user ${id} got no answer in ${ASK_TIMEOUT_MS / 60_000} min; closing it`);
+      // Close the prompt in the chat too, or it stays answerable with nothing waiting for it.
+      const target = getWindow(MAIN_WINDOW_ID);
+      if (target !== undefined && !target.isDestroyed()) {
+        const expired: AiAskExpired = { id };
+        target.webContents.send(AI_ASK_EXPIRED, expired);
+      }
     }, ASK_TIMEOUT_MS);
     pendingAsks.set(id, { resolve, timer });
     const payload: AiAskRequest = { id, ...req };
@@ -237,7 +247,10 @@ function requestUserPrompt(req: Omit<AiAskRequest, 'id'>): Promise<string | null
 // Called from the `ai.askResult` IPC handler when the user answers (null = dismissed).
 export function resolveUserPrompt(id: string, answer: string | null): void {
   const pending = pendingAsks.get(id);
-  if (pending === undefined) return;
+  if (pending === undefined) {
+    log.info(`[AI] ask_user ${id} was answered after it closed; the answer went nowhere`);
+    return;
+  }
   clearTimeout(pending.timer);
   pendingAsks.delete(id);
   pending.resolve(answer);

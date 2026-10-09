@@ -47,6 +47,18 @@ describe('linkSkillsIntoProject', () => {
     expect(fs.lstatSync(path.join(project, '.claude', 'skills')).isSymbolicLink()).toBe(true);
   });
 
+  it('repoints its own links on later runs without logging a failure', () => {
+    // linkSkillsIntoProject catches and logs, so "doesn't throw" can't see a failed relink.
+    const { cache, project } = setup();
+    const logged: string[] = [];
+    linkSkillsIntoProject(project, cache, msg => logged.push(msg));
+    linkSkillsIntoProject(project, cache, msg => logged.push(msg));
+    expect(logged.filter(msg => msg.startsWith('could not link'))).toEqual([]);
+    expect(
+      fs.readFileSync(path.join(project, '.claude', 'skills', 'skill-a', 'SKILL.md'), 'utf8'),
+    ).toBe('# a');
+  });
+
   it('merges into a user-owned real skills dir without touching their skills', () => {
     const { cache, project } = setup();
     // The user already keeps their own .claude/skills with a hand-written skill.

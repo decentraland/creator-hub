@@ -62,11 +62,15 @@ export const send = createAsyncThunk<void, { text: string; attachments?: AiAttac
     if (path === undefined || path === '')
       throw new Error('Open a scene before using the assistant.');
     const { provider, model, busy, selection } = state.ai;
-    if (busy) return; // one turn at a time
+    if (busy) return;
     const trimmed = text.trim();
     const files = attachments ?? [];
-    // Allow an attachments-only turn (a dropped file with no words), but never an empty one.
     if (trimmed === '' && files.length === 0) return;
+    if (await ai.isBusy()) {
+      dispatch(actions.setBusy(true));
+      dispatch(actions.setDraftPrompt(trimmed));
+      return;
+    }
     // Every turn belongs to a session (its transcript + the CLI resume id are keyed by it).
     // One should already exist from loadConversation; create one defensively if not.
     let sessionId = state.ai.currentSessionId;
@@ -446,6 +450,17 @@ const slice = createSlice({
           parts: [{ kind: 'prompt', prompt: payload }],
           done: true,
         });
+      }
+    },
+    // Main stopped waiting for a prompt (its timeout passed): mark it like a prompt of a stopped
+    // turn, so the block is disabled instead of taking an answer nothing is waiting for.
+    expirePrompt: (state, { payload }: PayloadAction<string>) => {
+      for (const msg of state.messages) {
+        const part = msg.parts.find(p => p.kind === 'prompt' && p.prompt.id === payload);
+        if (part?.kind === 'prompt' && part.prompt.answer === undefined) {
+          part.prompt.dismissed = true;
+          return;
+        }
       }
     },
     // The user answered a prompt: record it so the block shows the choice and the turn resumes.

@@ -1,6 +1,7 @@
 import { ipcRenderer, webUtils, type IpcRendererEvent } from 'electron';
 
 import {
+  AI_ASK_EXPIRED,
   AI_ASK_REQUEST,
   AI_CLI_LOGIN_EVENTS,
   AI_MIRROR_STATE,
@@ -9,6 +10,7 @@ import {
   AI_SCREENSHOT_REQUEST,
   AI_STREAM_EVENT,
   AI_WINDOW_STATE,
+  type AiAskExpired,
   type AiAskRequest,
   type AiCliLoginEvent,
   type AiCliState,
@@ -144,6 +146,13 @@ export function onAskRequest(cb: (req: AiAskRequest) => void): { cleanup: () => 
   const handler = (_: IpcRendererEvent, req: AiAskRequest) => cb(req);
   ipcRenderer.on(AI_ASK_REQUEST, handler);
   return { cleanup: () => ipcRenderer.off(AI_ASK_REQUEST, handler) };
+}
+
+// Main stopped waiting for a prompt's answer (its timeout passed); the chat panel closes it.
+export function onAskExpired(cb: (expired: AiAskExpired) => void): { cleanup: () => void } {
+  const handler = (_: IpcRendererEvent, expired: AiAskExpired) => cb(expired);
+  ipcRenderer.on(AI_ASK_EXPIRED, handler);
+  return { cleanup: () => ipcRenderer.off(AI_ASK_EXPIRED, handler) };
 }
 
 export function answerPrompt(id: string, answer: string | null): void {
