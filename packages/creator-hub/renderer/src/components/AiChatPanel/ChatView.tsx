@@ -438,11 +438,10 @@ export function ChatView(props: ChatViewProps) {
     cancel: handleCancelSignIn,
   } = useCliSignIn(provider, onRecheck);
 
-  // Keep the newest message in view as text streams in.
   useEffect(() => {
     const el = transcriptRef.current;
     if (el !== null) el.scrollTop = el.scrollHeight;
-  }, [messages]);
+  }, [messages, busy]);
 
   // No CLI installed? Reveal the scene's MCP server so a tool the user already has (Claude
   // Desktop, the VS Code extension, …) can connect to this scene instead (#1502). Fetch it
@@ -722,12 +721,6 @@ export function ChatView(props: ChatViewProps) {
               }
             }
           })}
-          {!msg.done && msg.parts.length === 0 && msg.error === undefined && (
-            <ThinkingRow>
-              <CircularProgress size={12} />
-              {t('editor.ai.thinking')}
-            </ThinkingRow>
-          )}
           {msg.error !== undefined && (
             <ErrorRow>
               {msg.error}
@@ -766,6 +759,12 @@ export function ChatView(props: ChatViewProps) {
       <>
         <IntroMessage>{t('editor.ai.empty')}</IntroMessage>
         {transcript}
+        {busy && (
+          <ThinkingRow role="status">
+            <CircularProgress size={12} />
+            {t('editor.ai.thinking')}
+          </ThinkingRow>
+        )}
       </>
     );
   };
