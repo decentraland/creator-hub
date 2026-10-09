@@ -156,7 +156,10 @@
         "alt_note": "仅限本地主机。每次 Creator Hub 重启时 URL 和令牌都会更改。",
         "install_guide": "如果无效，请按照 {provider} 安装指南操作",
         "desktop_detected": "已安装 Claude Desktop，但助手需要 Claude Code（Anthropic 的终端工具）。Desktop 的登录状态不会与其共享，因此请安装 Claude Code 并登录一次：",
-        "gemini_plan_note": "Gemini CLI 现在仅支持付费 Gemini API 密钥或 Gemini Code Assist Standard/Enterprise 许可证。"
+        "gemini_plan_note": "Gemini CLI 现在仅支持付费 Gemini API 密钥或 Gemini Code Assist Standard/Enterprise 许可证。",
+        "needs_login_status": "需要登录",
+        "needs_login_title": "{provider} 要求你登录",
+        "needs_login_help": "在终端中运行以下命令，并在浏览器中完成登录，然后重新发送你的消息："
       }
     }
   },

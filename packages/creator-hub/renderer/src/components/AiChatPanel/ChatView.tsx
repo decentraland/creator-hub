@@ -86,6 +86,7 @@ import {
   SetupBox,
   SetupDivider,
   SetupStep,
+  SignInHintBody,
   StopButton,
   ThinkingRow,
   Toolbar,
@@ -314,6 +315,7 @@ export interface ChatViewProps {
     version?: string;
     managedSignIn: boolean;
     desktopInstalled?: boolean;
+    needsLogin?: boolean;
   }[];
   provider: AiProvider;
   messages: AiMessage[];
@@ -429,6 +431,16 @@ export function ChatView(props: ChatViewProps) {
     [providers, provider],
   );
   const available = currentProvider?.available ?? false;
+  const cmds = cliSetup(provider, navigator.userAgent.includes('Windows'));
+  const guideLink = (
+    <GuideLink
+      type="button"
+      onClick={() => void misc.openExternal(cmds.guideUrl)}
+    >
+      {t('editor.ai.setup.install_guide', { provider: currentProvider?.label ?? provider })}
+      <OpenInNewIcon fontSize="inherit" />
+    </GuideLink>
+  );
 
   // In-app sign-in without a CLI (#1531): install the official CLI on demand + drive its
   // subscription login (browser OAuth), streaming steps here. On success we re-detect so
@@ -579,7 +591,6 @@ export function ChatView(props: ChatViewProps) {
   );
 
   const renderSetup = () => {
-    const cmds = cliSetup(provider, navigator.userAgent.includes('Windows'));
     return (
       <SetupBox>
         <strong>{t('editor.ai.setup.title')}</strong>
@@ -627,13 +638,7 @@ export function ChatView(props: ChatViewProps) {
         <SetupStep>
           <span>{t('editor.ai.setup.install')}</span>
           <CommandLine>{cmds.install}</CommandLine>
-          <GuideLink
-            type="button"
-            onClick={() => void misc.openExternal(cmds.guideUrl)}
-          >
-            {t('editor.ai.setup.install_guide', { provider: currentProvider?.label ?? provider })}
-            <OpenInNewIcon fontSize="inherit" />
-          </GuideLink>
+          {guideLink}
         </SetupStep>
         <SetupStep>
           <span>{t('editor.ai.setup.signin')}</span>
@@ -977,6 +982,20 @@ export function ChatView(props: ChatViewProps) {
               <span>{t('editor.ai.outdated', { version: currentProvider.version ?? '' })}</span>
             </OutdatedHint>
           )}
+
+        {available && currentProvider?.needsLogin === true && (
+          <OutdatedHint>
+            <WarningCircleIcon size={28} />
+            <SignInHintBody>
+              <strong>
+                {t('editor.ai.setup.needs_login_title', { provider: currentProvider.label })}
+              </strong>
+              <span>{t('editor.ai.setup.needs_login_help')}</span>
+              <CommandLine>{cmds.signin}</CommandLine>
+              {guideLink}
+            </SignInHintBody>
+          </OutdatedHint>
+        )}
 
         {available && !billingDismissed && (
           <BillingCard>

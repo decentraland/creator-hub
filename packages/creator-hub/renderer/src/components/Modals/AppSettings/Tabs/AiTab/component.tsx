@@ -92,7 +92,9 @@ function CommandField({ label, value }: { label?: string; value: string }) {
 /** One agent in the Connect section: status, in-app sign in/out and a Via Terminal fallback. */
 function AgentConnect({ info, onRecheck }: { info: AiProviderInfo; onRecheck: () => void }) {
   const { signIn, start, cancel } = useCliSignIn(info.id, onRecheck);
-  const [terminalOpen, setTerminalOpen] = useState(false);
+  const [terminalOpen, setTerminalOpen] = useState(
+    info.needsLogin === true || info.desktopInstalled === true,
+  );
   const cmds = cliSetup(info.id, navigator.userAgent.includes('Windows'));
 
   const handleSignOut = useCallback(() => {
@@ -103,7 +105,13 @@ function AgentConnect({ info, onRecheck }: { info: AiProviderInfo; onRecheck: ()
     <Box className="AgentConnect">
       <Box className="AgentConnectHeader">
         <span className="AgentName">{info.label}</span>
-        {info.available && (
+        {info.available && info.needsLogin === true && (
+          <span className="AgentStatus">
+            <span className="AgentStatusDot warning" />
+            {t('editor.ai.setup.needs_login_status')}
+          </span>
+        )}
+        {info.available && info.needsLogin !== true && (
           <span className="AgentStatus">
             <span className="AgentStatusDot" />
             {t('modal.app_settings.fields.ai_connect.connected')}
@@ -150,6 +158,14 @@ function AgentConnect({ info, onRecheck }: { info: AiProviderInfo; onRecheck: ()
           color="error"
         >
           {signIn.error}
+        </Typography>
+      )}
+      {info.needsLogin === true && (
+        <Typography
+          variant="caption"
+          color="text.secondary"
+        >
+          {t('editor.ai.setup.needs_login_help')}
         </Typography>
       )}
       {info.desktopInstalled === true && (

@@ -126,6 +126,10 @@
   background-color: var(--success);
 }
 
+.AgentStatusDot.warning {
+  background-color: var(--mui-palette-warning-main);
+}
+
 .AgentSignLink {
   margin-left: auto;
   padding: 0;

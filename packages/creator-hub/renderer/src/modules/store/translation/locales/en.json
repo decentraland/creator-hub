@@ -157,7 +157,10 @@
         "alt_note": "Localhost only. The URL and token change each time Creator Hub restarts.",
         "install_guide": "If that doesn't work, follow the {provider} install guide",
         "desktop_detected": "Claude Desktop is installed, but the assistant needs Claude Code — Anthropic's terminal tool. Desktop's sign-in isn't shared with it, so install Claude Code and sign in once:",
-        "gemini_plan_note": "Gemini CLI now works only with a paid Gemini API key or a Gemini Code Assist Standard/Enterprise license."
+        "gemini_plan_note": "Gemini CLI now works only with a paid Gemini API key or a Gemini Code Assist Standard/Enterprise license.",
+        "needs_login_status": "Sign-in needed",
+        "needs_login_title": "{provider} asked you to sign in",
+        "needs_login_help": "Run this in a terminal and finish signing in in your browser, then send your message again:"
       }
     }
   },

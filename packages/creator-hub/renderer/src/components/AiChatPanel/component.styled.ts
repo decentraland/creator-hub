@@ -579,6 +579,13 @@ const OutdatedHint = styled(Box)(({ theme }) => ({
   '& svg': { flexShrink: 0 },
 }));
 
+const SignInHintBody = styled(Box)(({ theme }) => ({
+  display: 'flex',
+  flexDirection: 'column',
+  gap: theme.spacing(0.75),
+  minWidth: 0,
+}));
+
 // Left inset matches a menu item's content start (mx:1 = 8px margin + MUI's 16px item padding),
 // so 'Chat History' lines up with the row icons above and below it (#1619).
 const MenuSectionLabel = styled('div')(({ theme }) => ({
@@ -657,6 +664,7 @@ export {
   SetupBox,
   SetupDivider,
   SetupStep,
+  SignInHintBody,
   StopButton,
   ThinkingRow,
   Toolbar,

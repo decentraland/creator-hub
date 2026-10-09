@@ -1,6 +1,10 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { ai } from '#preload';
 
-import { reducer, selectionContext, send } from './slice';
+import type { AiProviderInfo } from '/shared/types/ai';
+
+import { createTestStore } from '../../../../tests/utils/testStore';
+import { fetchProviders, recheckAfterTurn, reducer, selectionContext, send } from './slice';
 
 // The "[Editor context]" line attached to a turn from the current editor selection, so the
 // assistant can resolve "this" / "the selected entity" without the user spelling out ids.
@@ -79,5 +83,51 @@ describe('applyEvent chronological parts', () => {
     s = reducer(s, apply({ kind: 'text', turnId: 't1', text: 'Hel' }));
     s = reducer(s, apply({ kind: 'text', turnId: 't1', text: 'lo' }));
     expect(s.messages[0].parts).toEqual([{ kind: 'text', text: 'Hello' }]);
+  });
+});
+
+describe('when a turn ends', () => {
+  const claude = (needsLogin?: boolean): AiProviderInfo => ({
+    id: 'claude',
+    label: 'Claude',
+    available: true,
+    models: [],
+    defaultModel: 'default',
+    managedSignIn: false,
+    needsLogin,
+  });
+
+  const storeWith = async (info: AiProviderInfo) => {
+    const store = createTestStore();
+    vi.spyOn(ai, 'detectProviders').mockResolvedValueOnce([info]);
+    await store.dispatch(fetchProviders());
+    return store;
+  };
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('should re-detect agents after a failed turn, so a sign-in request shows up', async () => {
+    const store = await storeWith(claude());
+    const detect = vi.spyOn(ai, 'detectProviders').mockResolvedValue([claude(true)]);
+    await store.dispatch(recheckAfterTurn(false));
+    expect(detect).toHaveBeenCalledOnce();
+    expect(store.getState().ai.providers[0].needsLogin).toBe(true);
+  });
+
+  it('should re-detect after the successful turn that follows a sign-in request', async () => {
+    const store = await storeWith(claude(true));
+    const detect = vi.spyOn(ai, 'detectProviders').mockResolvedValue([claude()]);
+    await store.dispatch(recheckAfterTurn(true));
+    expect(detect).toHaveBeenCalledOnce();
+    expect(store.getState().ai.providers[0].needsLogin).toBeUndefined();
+  });
+
+  it('should not re-detect after an ordinary successful turn', async () => {
+    const store = await storeWith(claude());
+    const detect = vi.spyOn(ai, 'detectProviders');
+    await store.dispatch(recheckAfterTurn(true));
+    expect(detect).not.toHaveBeenCalled();
   });
 });

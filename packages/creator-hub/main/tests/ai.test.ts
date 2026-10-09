@@ -853,3 +853,61 @@ describe('when detecting Claude Desktop', () => {
     expect(isClaudeDesktopInstalled(appData)).toBe(false);
   });
 });
+
+describe('when telling whether an agent asked the user to sign in', () => {
+  it('should read Claude’s authentication_failed assistant event', () => {
+    const line = JSON.stringify({
+      type: 'assistant',
+      error: 'authentication_failed',
+      message: { content: [{ type: 'text', text: 'Not logged in · Please run /login' }] },
+    });
+    expect(PROVIDERS.claude.needsLogin(line)).toBe(true);
+  });
+
+  it('should not flag Claude text that merely talks about players not being logged in', () => {
+    const line = JSON.stringify({
+      type: 'assistant',
+      message: {
+        content: [{ type: 'text', text: 'Show the door only if the player is not logged in.' }],
+      },
+    });
+    expect(PROVIDERS.claude.needsLogin(line)).toBe(false);
+  });
+
+  it('should read Codex’s failed turn with a 401', () => {
+    const line = JSON.stringify({
+      type: 'turn.failed',
+      error: {
+        message:
+          'unexpected status 401 Unauthorized: Missing bearer or basic authentication in header',
+      },
+    });
+    expect(PROVIDERS.codex.needsLogin(line)).toBe(true);
+  });
+
+  it('should not flag a Codex turn that failed for another reason', () => {
+    const line = JSON.stringify({ type: 'turn.failed', error: { message: 'stream disconnected' } });
+    expect(PROVIDERS.codex.needsLogin(line)).toBe(false);
+  });
+
+  it('should read Gemini’s missing auth method message', () => {
+    expect(
+      PROVIDERS.gemini.needsLogin(
+        'Please set an Auth method in your /home/u/.gemini/settings.json or specify one of the following environment variables before running: GEMINI_API_KEY',
+      ),
+    ).toBe(true);
+  });
+
+  it('should read Cursor’s plain-text sign-in prompt but not its JSON assistant output', () => {
+    expect(
+      PROVIDERS.cursor.needsLogin(
+        "Authentication required. Please run 'cursor-agent login' first.",
+      ),
+    ).toBe(true);
+    const assistant = JSON.stringify({
+      type: 'assistant',
+      message: { content: [{ type: 'text', text: 'Run cursor-agent login to connect it.' }] },
+    });
+    expect(PROVIDERS.cursor.needsLogin(assistant)).toBe(false);
+  });
+});

@@ -32,6 +32,7 @@ export interface AiProviderInfo {
   // or an API-key env var), so the UI shows the terminal command instead of an in-app button.
   managedSignIn: boolean;
   desktopInstalled?: boolean;
+  needsLogin?: boolean;
 }
 
 // Newest Claude models (e.g. Fable) are gated on the CLI version: an older `claude`
