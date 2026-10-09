@@ -1,6 +1,54 @@
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { reducer, selectionContext, send } from './slice';
+import { actions, reducer, selectionContext, send } from './slice';
+
+const preloadAi = vi.hoisted(() => ({
+  isBusy: vi.fn(),
+  send: vi.fn(),
+}));
+
+vi.mock('#preload', async importOriginal => ({
+  ...(await importOriginal<object>()),
+  ai: preloadAi,
+}));
+
+describe('when sending while main is still running a turn', () => {
+  let dispatched: unknown[];
+
+  beforeEach(async () => {
+    vi.clearAllMocks();
+    preloadAi.isBusy.mockResolvedValue(true);
+    dispatched = [];
+    const dispatch = vi.fn((action: unknown) => {
+      dispatched.push(action);
+      return action;
+    });
+    const getState = () => ({
+      editor: { project: { path: '/scene' } },
+      ai: reducer(undefined, { type: 'init' }),
+      workspace: {},
+    });
+    await send({ text: 'hello' })(dispatch, getState as never, undefined);
+  });
+
+  it('should not send the message', () => {
+    expect(preloadAi.send).not.toHaveBeenCalled();
+  });
+
+  it('should mark the panel busy so the user can wait for the outcome or stop it', () => {
+    expect(dispatched).toContainEqual(actions.setBusy(true));
+  });
+
+  it('should put the text back in the composer instead of dropping it', () => {
+    expect(dispatched).toContainEqual(actions.setDraftPrompt('hello'));
+  });
+
+  it('should not add the message to the transcript', () => {
+    expect(dispatched).not.toContainEqual(
+      expect.objectContaining({ type: actions.pushUserMessage.type }),
+    );
+  });
+});
 
 // The "[Editor context]" line attached to a turn from the current editor selection, so the
 // assistant can resolve "this" / "the selected entity" without the user spelling out ids.

@@ -20,6 +20,7 @@ import type { ChildProcess } from 'child_process';
 // handles the `.cmd` + quoting correctly and is a transparent drop-in for spawn on macOS/Linux.
 import crossSpawn from 'cross-spawn';
 import log from 'electron-log/main';
+import treeKill from 'tree-kill';
 import type {
   AiAttachmentKind,
   AiEvent,
@@ -945,8 +946,8 @@ function killTree(child: ChildProcess): void {
   child.stderr?.removeAllListeners('data');
   if (child.pid === undefined) return;
   try {
-    if (process.platform === 'win32') child.kill();
-    else process.kill(-child.pid, 'SIGKILL'); // whole detached group
+    if (process.platform === 'win32') treeKill(child.pid, 'SIGKILL');
+    else process.kill(-child.pid, 'SIGKILL');
   } catch {
     try {
       child.kill('SIGKILL');
@@ -1249,7 +1250,10 @@ export async function aiSend(
     log.warn('[AI] MCP server unavailable, continuing without scene tools:', e);
   }
 
-  aiStop(); // supersede any in-flight turn
+  if (current !== null)
+    throw new Error(
+      'The assistant is still working on your previous message. Wait for it to finish, or stop it first.',
+    );
   resetTurnMutations(); // start counting this turn's scene-graph changes for "revert turn"
   const turnId = `t${++turnSeq}`;
   // Prepend editor context (when present) to the prompt so the assistant sees editor
@@ -1399,7 +1403,10 @@ export async function aiSend(
     stderr += errDec.write(d);
     if (stderr.length > MAX_STDERR_BYTES) stderr = stderr.slice(-MAX_STDERR_BYTES);
   });
-  child.on('error', e => finish(false, `assistant failed to start: ${e.message}`));
+  child.on('error', e => {
+    log.warn(`[AI] ${def.label} turn ${turnId} failed to start: ${e.message}`);
+    finish(false, `assistant failed to start: ${e.message}`);
+  });
   child.on('exit', (code, signal) => {
     buf += outDec.end();
     if (buf.trim() !== '') onLine(buf.trim()); // flush a trailing partial line
