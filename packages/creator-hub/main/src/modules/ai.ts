@@ -9,6 +9,7 @@
 // This is the raw-spawn transport (proven in the Bevy editor). It lives behind the
 // `ai.*` IPC surface so it can later be swapped for an ACP client without touching the
 // renderer panel or the IPC contract.
+import { randomUUID } from 'crypto';
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
@@ -85,6 +86,15 @@ const SHELL_PATH_TIMEOUT_MS = 5_000;
 // Keep only the tail of a child's stderr — enough to surface a real error, bounded so a chatty
 // process can't grow the buffer without limit.
 const MAX_STDERR_BYTES = 8_000;
+const RESULT_EXIT_GRACE_MS = 5_000;
+
+function isResultLine(line: string): boolean {
+  try {
+    return (JSON.parse(line) as { type?: unknown }).type === 'result';
+  } catch {
+    return false;
+  }
+}
 let shellDirs: string[] = [];
 let probing: Promise<void> | null = null;
 
@@ -899,9 +909,7 @@ export async function detectProviders(): Promise<AiProviderInfo[]> {
   return scan();
 }
 
-// One turn at a time.
 let current: { child: ChildProcess; turnId: string; done: boolean } | null = null;
-let turnSeq = 0;
 
 // Each provider's resume id, per project AND per local session, so consecutive turns chain
 // into one conversation, each saved session resumes its own CLI thread, and it all survives
@@ -1255,7 +1263,7 @@ export async function aiSend(
       'The assistant is still working on your previous message. Wait for it to finish, or stop it first.',
     );
   resetTurnMutations(); // start counting this turn's scene-graph changes for "revert turn"
-  const turnId = `t${++turnSeq}`;
+  const turnId = `t-${randomUUID()}`;
   // Prepend editor context (when present) to the prompt so the assistant sees editor
   // state without the user retyping it. Not shown in the chat bubble.
   let prompt =
@@ -1367,8 +1375,19 @@ export async function aiSend(
   // emoji/i18n text mid-stream.
   const outDec = new StringDecoder('utf8');
   const errDec = new StringDecoder('utf8');
+  let resultTimer: NodeJS.Timeout | undefined;
+  let killedAfterResult = false;
   const onLine = (line: string): void => {
     if (line === '') return;
+    if (resultTimer === undefined && isResultLine(line)) {
+      resultTimer = setTimeout(() => {
+        if (!turn.done) {
+          log.info(`[AI] ${def.label} turn ${turnId} still running after its result; killing it`);
+          killedAfterResult = true;
+          killTree(child);
+        }
+      }, RESULT_EXIT_GRACE_MS);
+    }
     const session = def.parseLine(line, projectDir, (text, tool, image) => {
       if (text !== '') {
         textCount++;
@@ -1408,14 +1427,15 @@ export async function aiSend(
     finish(false, `assistant failed to start: ${e.message}`);
   });
   child.on('exit', (code, signal) => {
+    clearTimeout(resultTimer);
     buf += outDec.end();
-    if (buf.trim() !== '') onLine(buf.trim()); // flush a trailing partial line
+    if (buf.trim() !== '') onLine(buf.trim());
     stderr += errDec.end();
     const outcome = turnOutcome({
       label: def.label,
       turnId,
-      code,
-      signal,
+      code: killedAfterResult ? 0 : code,
+      signal: killedAfterResult ? null : signal,
       durationMs: Date.now() - startedAt,
       textCount,
       toolCount,

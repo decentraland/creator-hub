@@ -34,6 +34,7 @@ vi.mock('../src/modules/scene-mcp', () => ({
 }));
 
 import log from 'electron-log/main';
+import type { AiEvent } from '/shared/types/ai';
 import { aiBusy, aiSend, aiStop } from '../src/modules/ai';
 
 type FakeChild = EventEmitter & {
@@ -102,8 +103,88 @@ describe('when running AI turns', () => {
       });
 
       it('should log that the turn ended, with its exit code', () => {
-        expect(log.info).toHaveBeenCalledWith(expect.stringMatching(/turn t\d+ exited code=0/));
+        expect(log.info).toHaveBeenCalledWith(
+          expect.stringMatching(/turn t-[0-9a-f-]+ exited code=0/),
+        );
       });
+    });
+  });
+
+  describe('and Claude writes its final result but keeps running a background task', () => {
+    let events: AiEvent[];
+    let killSpy: ReturnType<typeof vi.spyOn>;
+
+    beforeEach(async () => {
+      events = [];
+      killSpy = vi.spyOn(process, 'kill').mockImplementation(() => true);
+      await aiSend({ provider: 'claude', text: 'hi', sessionId: 's1' }, projectDir, e =>
+        events.push(e),
+      );
+      vi.useFakeTimers();
+      const assistant = {
+        type: 'assistant',
+        message: { content: [{ type: 'text', text: 'STARTED' }] },
+      };
+      const result = { type: 'result', subtype: 'success', is_error: false, session_id: 'cli-1' };
+      child.stdout.emit(
+        'data',
+        Buffer.from(`${JSON.stringify(assistant)}\n${JSON.stringify(result)}\n`),
+      );
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+      killSpy.mockRestore();
+    });
+
+    it('should not end the turn while the CLI may still be exiting on its own', () => {
+      expect(aiBusy()).toBe(true);
+      expect(killSpy).not.toHaveBeenCalled();
+    });
+
+    describe('and the CLI is still running after the grace period', () => {
+      beforeEach(() => {
+        vi.advanceTimersByTime(10_000);
+        child.emit('exit', null, 'SIGKILL');
+      });
+
+      it('should kill the CLI process tree', () => {
+        expect(killSpy).toHaveBeenCalledWith(-4242, 'SIGKILL');
+      });
+
+      it('should end the turn as a successful reply, not an interruption', () => {
+        expect(aiBusy()).toBe(false);
+        expect(events).toContainEqual(expect.objectContaining({ kind: 'done', ok: true }));
+        expect(events).not.toContainEqual(expect.objectContaining({ kind: 'error' }));
+      });
+    });
+  });
+
+  describe('and the app restarts between two turns', () => {
+    let firstId: string;
+    let secondId: string;
+
+    const launchAndSend = async (pid: number) => {
+      vi.resetModules();
+      const launched = await import('../src/modules/ai');
+      const spawned = fakeChild(pid);
+      mocks.crossSpawn.mockReturnValue(spawned);
+      const { turnId } = await launched.aiSend(
+        { provider: 'claude', text: 'hi', sessionId: 's1' },
+        projectDir,
+        () => {},
+      );
+      spawned.emit('exit', 0, null);
+      return turnId;
+    };
+
+    beforeEach(async () => {
+      firstId = await launchAndSend(4244);
+      secondId = await launchAndSend(4245);
+    });
+
+    it('should not reuse a turn id that a saved transcript may already hold', () => {
+      expect(secondId).not.toBe(firstId);
     });
   });
 
