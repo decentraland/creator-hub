@@ -15,7 +15,7 @@ import type { InspectorPreferences } from '../logic/preferences/types';
 import { SceneMetricsServer } from '../../lib/rpc/scene-metrics/server';
 import { SceneServer } from '../rpc/scene/server';
 import { createIframeScene, getSceneClient } from '../rpc/scene';
-import { createSceneTitleNotifier } from '../rpc/scene/scene-title-notifier';
+import { createSceneMetadataNotifier } from '../rpc/scene/scene-metadata-notifier';
 import { getConfig } from '../logic/config';
 import type { AssetPack } from '../logic/catalog';
 import { store } from '../../redux/store';
@@ -139,10 +139,10 @@ export async function createSdkContext(
         // push path still delivers flags, so this is a non-fatal best-effort pull.
       });
 
-    const stopTitleNotifier = createSceneTitleNotifier(events, engine.RootEntity, title =>
-      getSceneClient()?.notifySceneMetadata(title),
+    const stopMetadataNotifier = createSceneMetadataNotifier(events, engine.RootEntity, metadata =>
+      getSceneClient()?.notifySceneMetadata(metadata),
     );
-    events.on('dispose', stopTitleNotifier);
+    events.on('dispose', stopMetadataNotifier);
 
     // Let the host (re)apply everything it pushes to a fresh iframe — debug console
     // state, selected tabs — now that the server can receive it. Matters most after
