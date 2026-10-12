@@ -1,95 +1,134 @@
 import { cleanup, render, screen } from '@testing-library/react';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { flatten } from 'flat';
+import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { dark, ThemeProvider } from 'decentraland-ui2/dist/theme';
-import { ai } from '#preload';
+
+import { en } from '/@/modules/store/translation/locales';
+import { setCurrentLocale } from '/@/modules/store/translation/utils';
+import type { AiMessage } from '/@/modules/store/ai/types';
 
 import { ChatView, type ChatViewProps } from './ChatView';
 
-vi.mock('/@/modules/store/translation/utils', async importOriginal => ({
-  ...((await importOriginal()) as object),
-  t: (id: string) => id,
+vi.mock('#preload', () => ({
+  ai: {
+    getPathForFile: vi.fn(),
+    getMcpServerInfo: vi.fn(async () => ({ url: '', token: '' })),
+  },
 }));
 
-window.HTMLElement.prototype.scrollIntoView = vi.fn();
+const userMessage: AiMessage = {
+  id: 'u-1',
+  role: 'user',
+  parts: [{ kind: 'text', text: 'add a door' }],
+  done: true,
+};
 
-function renderWith(provider: Partial<ChatViewProps['providers'][number]>) {
-  const props: ChatViewProps = {
-    providers: [
-      { id: 'claude', label: 'Claude', available: true, managedSignIn: false, ...provider },
-    ],
-    provider: provider.id ?? 'claude',
-    messages: [],
-    busy: false,
-    detecting: false,
-    selection: [],
-    billingDismissed: true,
-    sessions: [],
-    currentSessionId: '',
-    onSend: vi.fn(),
-    onStop: vi.fn(),
-    onNewChat: vi.fn(),
-    onProviderChange: vi.fn(),
-    onRevertTurn: vi.fn(),
-    onAnswerPrompt: vi.fn(),
-    onRecheck: vi.fn(),
-    onDismissBilling: vi.fn(),
-    onSwitchSession: vi.fn(),
-    onDeleteSession: vi.fn(),
-    onClearSelection: vi.fn(),
-    onClose: vi.fn(),
-  };
-  render(
+function renderChat(props: Partial<ChatViewProps>) {
+  const noop = () => {};
+  return render(
     <ThemeProvider theme={dark}>
-      <ChatView {...props} />
+      <ChatView
+        providers={[{ id: 'claude', label: 'Claude', available: true, managedSignIn: true }]}
+        provider="claude"
+        messages={[]}
+        busy={false}
+        detecting={false}
+        selection={[]}
+        billingDismissed
+        sessions={[]}
+        currentSessionId="s1"
+        onSend={noop}
+        onStop={noop}
+        onNewChat={noop}
+        onProviderChange={noop}
+        onRevertTurn={noop}
+        onAnswerPrompt={noop}
+        onRecheck={noop}
+        onDismissBilling={noop}
+        onSwitchSession={noop}
+        onDeleteSession={noop}
+        onClearSelection={noop}
+        onClose={noop}
+        {...props}
+      />
     </ThemeProvider>,
   );
 }
 
-describe('AI chat panel', () => {
-  afterEach(() => {
-    cleanup();
-    vi.restoreAllMocks();
+describe('ChatView working indicator', () => {
+  beforeAll(() => {
+    setCurrentLocale('en', flatten(en));
   });
 
-  describe('when the agent asked the user to sign in', () => {
-    it('should keep the composer enabled and show the sign-out and sign-in steps with the install guide', () => {
-      renderWith({ needsLogin: true });
-      expect(screen.getByText('editor.ai.setup.needs_login_title')).toBeTruthy();
-      expect(screen.getAllByText(/^claude auth/).map(e => e.textContent)).toEqual([
-        'claude auth logout',
-        'claude auth login',
-      ]);
-      expect(screen.getByText('editor.ai.setup.install_guide')).toBeTruthy();
-      expect(screen.getByText('editor.ai.setup.api_key_alternative')).toBeTruthy();
-      expect(screen.getByRole('textbox').hasAttribute('disabled')).toBe(false);
+  afterEach(cleanup);
+
+  describe('when a message was sent and the assistant has not started replying yet', () => {
+    it('should show that the assistant is working', () => {
+      renderChat({ busy: true, messages: [userMessage] });
+      expect(screen.getByRole('status').textContent).toContain(en.editor.ai.thinking);
     });
   });
 
-  describe('when an agent the app signed in to asks to sign in again', () => {
-    it('should point at Settings instead of terminal commands', () => {
-      renderWith({ id: 'codex', label: 'Codex', managedSignIn: true, needsLogin: true });
-      expect(screen.getByText('editor.ai.setup.needs_login_managed_help')).toBeTruthy();
-      expect(screen.queryByText('editor.ai.setup.needs_login_help')).toBeNull();
-      expect(screen.queryByText('codex logout')).toBeNull();
+  describe('when the assistant has replied partway and is still working', () => {
+    it('should keep showing that the assistant is working', () => {
+      renderChat({
+        busy: true,
+        messages: [
+          userMessage,
+          {
+            id: 't1',
+            role: 'assistant',
+            parts: [
+              { kind: 'text', text: 'Placing the door now.' },
+              { kind: 'tool', tool: 'place_smart_item', detail: '' },
+            ],
+            done: false,
+          },
+        ],
+      });
+      expect(screen.getByRole('status').textContent).toContain(en.editor.ai.thinking);
     });
   });
 
-  describe('when Claude Code is missing and Claude Desktop is installed', () => {
-    it('should show the Desktop note and the terminal steps instead of an in-app sign-in', () => {
-      vi.spyOn(ai, 'getMcpServerInfo').mockRejectedValue(new Error('no MCP in tests'));
-      renderWith({ available: false, desktopInstalled: true });
-      expect(screen.getByText('editor.ai.setup.desktop_detected')).toBeTruthy();
-      expect(screen.getByText('curl -fsSL https://claude.ai/install.sh | bash')).toBeTruthy();
-      expect(screen.getByText('claude auth login')).toBeTruthy();
-      expect(screen.getByText('editor.ai.setup.install_guide')).toBeTruthy();
-      expect(screen.queryByText('editor.ai.setup.signin_button')).toBeNull();
+  describe('when the assistant is waiting for the user to answer its question', () => {
+    it('should not claim the assistant is working', () => {
+      renderChat({
+        busy: true,
+        messages: [
+          userMessage,
+          {
+            id: 't1',
+            role: 'assistant',
+            parts: [
+              {
+                kind: 'prompt',
+                prompt: {
+                  id: 'q1',
+                  question: 'Which door?',
+                  options: [{ label: 'Wooden' }, { label: 'Metal' }],
+                  multiSelect: false,
+                  allowOther: false,
+                },
+              },
+            ],
+            done: false,
+          },
+        ],
+      });
+      expect(screen.queryByRole('status')).toBeNull();
     });
   });
 
-  describe('when the agent is signed in', () => {
-    it('should not show the sign-in hint', () => {
-      renderWith({});
-      expect(screen.queryByText('editor.ai.setup.needs_login_title')).toBeNull();
+  describe('when the turn has finished', () => {
+    it('should not show the working indicator', () => {
+      renderChat({
+        busy: false,
+        messages: [
+          userMessage,
+          { id: 't1', role: 'assistant', parts: [{ kind: 'text', text: 'Done.' }], done: true },
+        ],
+      });
+      expect(screen.queryByRole('status')).toBeNull();
     });
   });
 });

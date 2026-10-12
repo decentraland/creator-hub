@@ -196,6 +196,14 @@ function linkDir(target: string, linkPath: string): void {
   fs.symlinkSync(target, linkPath, process.platform === 'win32' ? 'junction' : 'dir');
 }
 
+// Remove a link we made (a symlink, or a junction on Windows) without touching its target.
+// Not fs.rmSync: on Windows, the Node that Electron 40 ships (24.11.1) refuses a junction with
+// ERR_FS_EISDIR ("Path is a directory"), so every turn after the first failed to relink.
+// unlinkSync removes a symlink or a junction on every platform and Node version.
+function removeLink(p: string): void {
+  fs.unlinkSync(p);
+}
+
 function isSymlink(p: string): boolean {
   try {
     return fs.lstatSync(p).isSymbolicLink();
@@ -256,7 +264,7 @@ function linkAgentDir(
       logger(`${agentDir}/skills is a user-made symlink — leaving it alone`);
       return;
     }
-    fs.rmSync(skillsPath); // ours from a previous open — repoint in case the cache moved
+    removeLink(skillsPath); // ours from a previous open — repoint in case the cache moved
   }
   if (!fs.existsSync(skillsPath)) {
     fs.mkdirSync(dir, { recursive: true });
@@ -272,13 +280,13 @@ function linkAgentDir(
   for (const name of fs.readdirSync(skillsPath)) {
     const linkPath = path.join(skillsPath, name);
     if (!cacheNames.has(name) && isSymlink(linkPath) && isOwnedLink(linkPath, cacheSkillsDir))
-      fs.rmSync(linkPath);
+      removeLink(linkPath);
   }
   for (const name of cacheNames) {
     const linkPath = path.join(skillsPath, name);
     if (isSymlink(linkPath)) {
       if (!isOwnedLink(linkPath, cacheSkillsDir)) continue; // their symlink
-      fs.rmSync(linkPath);
+      removeLink(linkPath);
     } else if (fs.existsSync(linkPath)) {
       continue; // their own skill of the same name
     }
