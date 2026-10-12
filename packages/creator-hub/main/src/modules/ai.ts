@@ -965,7 +965,7 @@ function killTree(child: ChildProcess): void {
   };
   if (process.platform === 'win32') {
     treeKill(child.pid, 'SIGKILL', err => {
-      if (err === undefined) return;
+      if (!err) return;
       log.warn(`[AI] could not kill the CLI process tree: ${err.message}`);
       killChild();
     });

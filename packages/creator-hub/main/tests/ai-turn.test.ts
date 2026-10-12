@@ -212,6 +212,9 @@ describe('when running AI turns', () => {
 
     describe('and taskkill succeeds', () => {
       beforeEach(() => {
+        mocks.treeKill.mockImplementationOnce(
+          (_pid: number, _signal: string, done: (e: Error | null) => void) => done(null),
+        );
         aiStop();
       });
 
