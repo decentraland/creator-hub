@@ -27,11 +27,10 @@ export interface AiProviderInfo {
   // Absent when the binary isn't found or didn't report a parseable version. Used to
   // warn when the CLI is too old for the newest models (see isClaudeCliOutdated).
   version?: string;
-  // Whether the app can drive this CLI's sign-in itself (install-on-demand + scripted OAuth).
-  // False for a CLI with no scriptable login (Gemini authenticates from its own interactive CLI
-  // or an API-key env var), so the UI shows the terminal command instead of an in-app button.
+  /** Whether the app signs this CLI in and out: the vendor allows it and no terminal install is in use. */
   managedSignIn: boolean;
   desktopInstalled?: boolean;
+  needsLogin?: boolean;
 }
 
 // Newest Claude models (e.g. Fable) are gated on the CLI version: an older `claude`
@@ -43,6 +42,8 @@ type CliCommands = {
   install: string;
   installWindows?: string;
   signin: string;
+  relogin: string[];
+  apiKeyEnv: string;
   guideUrl: string;
   guideAnchors?: { windows: string; unix: string };
 };
@@ -51,7 +52,9 @@ export const AI_CLI_COMMANDS: Record<AiProvider, CliCommands> = {
   claude: {
     install: 'curl -fsSL https://claude.ai/install.sh | bash',
     installWindows: 'winget install Anthropic.ClaudeCode',
-    signin: 'claude',
+    signin: 'claude auth login',
+    relogin: ['claude auth logout', 'claude auth login'],
+    apiKeyEnv: 'ANTHROPIC_API_KEY',
     guideUrl: 'https://code.claude.com/docs/en/terminal-guide',
     guideAnchors: { windows: '#windows', unix: '#macos-and-linux' },
   },
@@ -60,6 +63,8 @@ export const AI_CLI_COMMANDS: Record<AiProvider, CliCommands> = {
     installWindows:
       'powershell -ExecutionPolicy ByPass -c "irm https://chatgpt.com/codex/install.ps1 | iex"',
     signin: 'codex login',
+    relogin: ['codex logout', 'codex login'],
+    apiKeyEnv: 'OPENAI_API_KEY',
     guideUrl: 'https://developers.openai.com/codex/cli',
   },
   cursor: {
@@ -67,25 +72,36 @@ export const AI_CLI_COMMANDS: Record<AiProvider, CliCommands> = {
     installWindows:
       'powershell -ExecutionPolicy ByPass -c "irm \'https://cursor.com/install?win32=true\' | iex"',
     signin: 'cursor-agent login',
+    relogin: ['cursor-agent logout', 'cursor-agent login'],
+    apiKeyEnv: 'CURSOR_API_KEY',
     guideUrl: 'https://cursor.com/docs/cli/installation',
   },
   gemini: {
     install: 'npm install -g @google/gemini-cli',
     signin: 'gemini',
+    relogin: ['gemini', '/auth logout', '/auth login'],
+    apiKeyEnv: 'GEMINI_API_KEY',
     guideUrl: 'https://www.geminicli.com/docs/get-started/installation',
   },
 };
 
-/** The terminal install command, sign-in command and install-guide link for this OS. */
+/** How to use this agent with an API key instead of a sign-in, completing "Or …". */
+export function apiKeyAlternative(provider: AiProvider): string {
+  return `set \`${AI_CLI_COMMANDS[provider].apiKeyEnv}\` and turn on "Bill this to an API key instead" in Settings → AI`;
+}
+
+/** The terminal install command, sign-in command, sign-out-then-in steps, API key name and install-guide link for this OS. */
 export function cliSetup(
   provider: AiProvider,
   windows: boolean,
-): { install: string; signin: string; guideUrl: string } {
+): { install: string; signin: string; relogin: string[]; apiKeyEnv: string; guideUrl: string } {
   const cmds = AI_CLI_COMMANDS[provider];
   const anchor = cmds.guideAnchors?.[windows ? 'windows' : 'unix'] ?? '';
   return {
     install: (windows ? cmds.installWindows : undefined) ?? cmds.install,
     signin: cmds.signin,
+    relogin: cmds.relogin,
+    apiKeyEnv: cmds.apiKeyEnv,
     guideUrl: cmds.guideUrl + anchor,
   };
 }

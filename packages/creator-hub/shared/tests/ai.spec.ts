@@ -34,17 +34,17 @@ describe('isCliVersionOutdated', () => {
 
 describe('when picking the terminal setup steps for an agent', () => {
   it('should give Windows users the winget install and the Windows section of the guide', () => {
-    expect(cliSetup('claude', true)).toEqual({
+    expect(cliSetup('claude', true)).toMatchObject({
       install: 'winget install Anthropic.ClaudeCode',
-      signin: 'claude',
+      signin: 'claude auth login',
       guideUrl: 'https://code.claude.com/docs/en/terminal-guide#windows',
     });
   });
 
   it('should give macOS and Linux users the install script and their section of the guide', () => {
-    expect(cliSetup('claude', false)).toEqual({
+    expect(cliSetup('claude', false)).toMatchObject({
       install: 'curl -fsSL https://claude.ai/install.sh | bash',
-      signin: 'claude',
+      signin: 'claude auth login',
       guideUrl: 'https://code.claude.com/docs/en/terminal-guide#macos-and-linux',
     });
   });

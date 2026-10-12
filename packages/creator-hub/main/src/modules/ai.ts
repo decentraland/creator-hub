@@ -20,6 +20,7 @@ import type { ChildProcess } from 'child_process';
 // handles the `.cmd` + quoting correctly and is a transparent drop-in for spawn on macOS/Linux.
 import crossSpawn from 'cross-spawn';
 import log from 'electron-log/main';
+import { AI_CLI_COMMANDS, apiKeyAlternative } from '/shared/types/ai';
 import type {
   AiAttachmentKind,
   AiEvent,
@@ -381,7 +382,21 @@ interface ProviderDef {
     projectDir: string,
     emit: (text: string, tool?: [string, string], image?: string) => void,
   ) => string | undefined;
+  needsLogin: (output: string) => boolean;
 }
+
+function jsonLine(line: string): Record<string, unknown> | null {
+  try {
+    const parsed: unknown = JSON.parse(line);
+    return typeof parsed === 'object' && parsed !== null
+      ? (parsed as Record<string, unknown>)
+      : null;
+  } catch {
+    return null;
+  }
+}
+
+const isPlainText = (line: string): boolean => !line.trimStart().startsWith('{');
 
 // Pull data-URL images out of a tool result's content blocks, for inline display in the
 // chat (#1506). Claude relays an MCP image result as an Anthropic image block
@@ -618,6 +633,10 @@ export const PROVIDERS: Record<AiProvider, ProviderDef> = {
       if (obj.type === 'result') return obj.session_id;
       return undefined;
     },
+    needsLogin: line => {
+      const obj = jsonLine(line);
+      return obj?.type === 'assistant' && obj.error === 'authentication_failed';
+    },
   },
   // Codex, wired against `codex exec --json` (its non-interactive JSONL mode). Resume is
   // a SUBCOMMAND (`codex exec resume <threadId>`), not a flag; the thread id comes from
@@ -722,6 +741,15 @@ export const PROVIDERS: Record<AiProvider, ProviderDef> = {
       }
       return undefined;
     },
+    needsLogin: line => {
+      const obj = jsonLine(line);
+      const error = obj?.error as { message?: unknown } | undefined;
+      return (
+        obj?.type === 'turn.failed' &&
+        typeof error?.message === 'string' &&
+        /\b401\b/.test(error.message)
+      );
+    },
   },
   // Cursor's CLI agent (`cursor-agent`), wired against `-p --output-format stream-json`. Very
   // close to claude's shape: `session_id` from the `system`/`init` and `result` events drives
@@ -799,6 +827,8 @@ export const PROVIDERS: Record<AiProvider, ProviderDef> = {
       if (obj.type === 'result') return obj.session_id;
       return undefined;
     },
+    needsLogin: line =>
+      isPlainText(line) && /agent login|not authenticated|authentication required/i.test(line),
   },
   // Google's Gemini CLI (`gemini`), wired against `-o stream-json`. Notable differences:
   //  - No login subcommand: auth is the CLI's own interactive Google sign-in or GEMINI_API_KEY
@@ -873,8 +903,40 @@ export const PROVIDERS: Record<AiProvider, ProviderDef> = {
       }
       return undefined;
     },
+    needsLogin: line => isPlainText(line) && /Please set an Auth method/.test(line),
   },
 };
+
+const providersNeedingLogin = new Set<AiProvider>();
+
+/** Forgets that `provider` asked the user to sign in, once the app has signed it in again. */
+export function clearNeedsLogin(provider: AiProvider): void {
+  providersNeedingLogin.delete(provider);
+}
+
+/** What to tell the user when `provider` rejected its credentials: a terminal sign-in, the app's own copy, or an API key. */
+export function signInRequiredMessage(
+  provider: AiProvider,
+  cause: 'signin' | 'managed' | 'apiKey',
+): string {
+  const { label } = PROVIDERS[provider];
+  const { apiKeyEnv, relogin } = AI_CLI_COMMANDS[provider];
+  if (cause === 'apiKey') {
+    return `${label} rejected the API key in \`${apiKeyEnv}\`. Check the key, or turn off "Bill this to an API key instead" in Settings → AI to use your sign-in.`;
+  }
+  if (cause === 'managed') {
+    return `${label} isn't signed in, or its sign-in expired. In Settings → AI, click Sign out, then Sign in, then send your message again.`;
+  }
+  const steps = relogin.map(step => `\`${step}\``).join(', then ');
+  return `${label} isn't signed in, or its sign-in expired. In a terminal, run ${steps}, then send your message again. Or ${apiKeyAlternative(provider)}.`;
+}
+
+/** `text` with anything that looks like an API key or bearer token masked, for the log. */
+export function redactSecrets(text: string): string {
+  return text
+    .replace(/\b(sk-|AIza)[\w-]{8,}/g, '$1<redacted>')
+    .replace(/(Bearer\s+)[\w.~+/=-]+/gi, '$1<redacted>');
+}
 
 /** `bin`, or null when it is a managed install of a CLI the app no longer signs in to. */
 export function usableBin(bin: string | null, provider: AiProvider): string | null {
@@ -901,10 +963,11 @@ const scan = (): AiProviderInfo[] =>
       models: def.models,
       defaultModel: def.defaultModel,
       available,
-      managedSignIn: CLI_SPECS[id].managedSignIn,
+      managedSignIn: CLI_SPECS[id].managedSignIn && (bin === null || managed),
       version: bin !== null ? getCliVersion(bin) : undefined,
       desktopInstalled:
         id === 'claude' && !available ? isClaudeDesktopInstalled(getAppDataPath()) : undefined,
+      needsLogin: providersNeedingLogin.has(id) || undefined,
       reason: available
         ? undefined
         : bin === null
@@ -1324,6 +1387,7 @@ export async function aiSend(
   const finish = (ok: boolean, message?: string): void => {
     if (turn.done) return;
     turn.done = true;
+    if (ok) providersNeedingLogin.delete(params.provider);
     if (message !== undefined) emit({ kind: 'error', turnId, message });
     emit({ kind: 'done', turnId, ok, mutations: getTurnMutations() });
     if (current === turn) current = null;
@@ -1342,6 +1406,7 @@ export async function aiSend(
 
   let stderr = '';
   let buf = '';
+  let loginRequested = false;
   // StringDecoder buffers a multibyte UTF-8 codepoint split across two stdout chunks; a
   // plain buf += d.toString() would decode each half alone and emit U+FFFD, corrupting
   // emoji/i18n text mid-stream.
@@ -1349,6 +1414,10 @@ export async function aiSend(
   const errDec = new StringDecoder('utf8');
   const onLine = (line: string): void => {
     if (line === '') return;
+    if (def.needsLogin(line)) {
+      loginRequested = true;
+      return;
+    }
     const session = def.parseLine(line, projectDir, (text, tool, image) => {
       if (text !== '') emit({ kind: 'text', turnId, text: friendlyCliError(text) });
       if (tool !== undefined) {
@@ -1380,15 +1449,30 @@ export async function aiSend(
   child.on('error', e => finish(false, `assistant failed to start: ${e.message}`));
   child.on('exit', (code, signal) => {
     buf += outDec.end();
-    if (buf.trim() !== '') onLine(buf.trim()); // flush a trailing partial line
-    if (code === 0) finish(true);
-    // code === null means a signal killed the child. An intentional `aiStop()` already marked
-    // the turn done (so finish() no-ops there); reaching here means an UNsolicited kill (OOM,
-    // external SIGKILL) — report it as an interruption, never as a successful turn.
-    else if (code === null) finish(false, `assistant was interrupted (${signal ?? 'signal'})`);
-    else finish(false, (stderr + errDec.end()).trim() || `assistant exited with code ${code}`);
+    if (buf.trim() !== '') onLine(buf.trim());
+    stderr += errDec.end();
+    if (turn.done) return;
+    if (code === 0 && !loginRequested) {
+      finish(true);
+      return;
+    }
+    log.warn(
+      `[AI] ${def.label} turn ${turnId} exited code=${code ?? signal}: ${redactSecrets(stderr.trim())}`,
+    );
+    if (loginRequested || stderr.split('\n').some(def.needsLogin)) {
+      providersNeedingLogin.add(params.provider);
+      const cause =
+        params.apiKeyFromEnv === true &&
+        (env[AI_CLI_COMMANDS[params.provider].apiKeyEnv] ?? '') !== ''
+          ? 'apiKey'
+          : bin.startsWith(getManagedBinDir())
+            ? 'managed'
+            : 'signin';
+      finish(false, signInRequiredMessage(params.provider, cause));
+    } else if (code === null) finish(false, `assistant was interrupted (${signal ?? 'signal'})`);
+    else finish(false, stderr.trim() || `assistant exited with code ${code}`);
   });
 
-  log.info(`[AI] Started ${def.label} turn ${turnId} in ${projectDir}`);
+  log.info(`[AI] Started ${def.label} turn ${turnId} with ${bin} in ${projectDir}`);
   return { turnId };
 }

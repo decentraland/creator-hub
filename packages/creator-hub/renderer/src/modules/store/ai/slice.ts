@@ -50,6 +50,15 @@ function savedSessions(sessions: AiSessionMeta[]): AiSessionMeta[] {
 // if something's missing — that cost lives in main.
 export const fetchProviders = createAsyncThunk('ai/fetchProviders', () => ai.detectProviders());
 
+export const recheckAfterTurn = createAsyncThunk(
+  'ai/recheckAfterTurn',
+  async (ok: boolean, { getState, dispatch }) => {
+    const { providers, provider } = getState().ai;
+    const needsLogin = providers.find(p => p.id === provider)?.needsLogin === true;
+    if (!ok || needsLogin) await dispatch(fetchProviders());
+  },
+);
+
 // Run one turn. Reads the selected provider/model and the open project's path from
 // state; the assistant bubble is created when the `started` event arrives on the stream
 // (the panel subscribes to it). The turn streams asynchronously — this resolves as soon
@@ -511,6 +520,7 @@ const slice = createSlice({
 export const actions = {
   ...slice.actions,
   fetchProviders,
+  recheckAfterTurn,
   send,
   stop,
   answerPrompt,

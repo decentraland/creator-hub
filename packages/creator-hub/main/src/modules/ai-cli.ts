@@ -22,7 +22,7 @@ import path from 'node:path';
 import * as pty from 'node-pty';
 import log from 'electron-log/main';
 
-import { AI_CLI_COMMANDS, type AiProvider } from '/shared/types/ai';
+import { AI_CLI_COMMANDS, apiKeyAlternative, type AiProvider } from '/shared/types/ai';
 import { AI_CLI_LOGIN_EVENTS, type AiCliLoginEvent } from '/shared/types/ipc';
 
 import { MAIN_WINDOW_ID } from '../mainWindow';
@@ -247,7 +247,7 @@ async function login(provider: AiProvider, onProgress: (message: string) => void
 export async function signInCli(provider: AiProvider): Promise<void> {
   if (!CLI_SPECS[provider].managedSignIn) {
     throw new Error(
-      `${provider} signs in from its own CLI. Run \`${AI_CLI_COMMANDS[provider].signin}\` in a terminal, then click Recheck.`,
+      `${provider} signs in from its own CLI. Run \`${AI_CLI_COMMANDS[provider].signin}\` in a terminal (or ${apiKeyAlternative(provider)}), then click Recheck.`,
     );
   }
   const onProgress = (message: string) => sendLoginEvent({ type: 'progress', message });
