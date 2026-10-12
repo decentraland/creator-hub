@@ -991,7 +991,9 @@ export function ChatView(props: ChatViewProps) {
                 {t('editor.ai.setup.needs_login_title', { provider: currentProvider.label })}
               </strong>
               <span>{t('editor.ai.setup.needs_login_help')}</span>
-              <CommandLine>{cmds.signin}</CommandLine>
+              {cmds.relogin.map(step => (
+                <CommandLine key={step}>{step}</CommandLine>
+              ))}
               {guideLink}
             </SignInHintBody>
           </OutdatedHint>

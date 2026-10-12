@@ -58,6 +58,8 @@ cd packages/inspector && npm run test:e2e          # Inspector E2E tests
 
 **Note:** the inspector's Playwright e2e needs the browser binaries installed once (`npx playwright install chromium`) and a dev server already running at `E2E_URL` (default `http://localhost:8000`) — `npm run start` in `packages/inspector` with `VITE_INSPECTOR_PORT` set serves one. Without the binary the suite fails at launch with `browserType.launch: Executable doesn't exist`, which reads like a code failure.
 
+**Note:** to check the AI assistant against a fake agent CLI in the built app (`npm run build`, then Playwright `_electron.launch` on `.` with a temp `HOME` and `--user-data-dir=<tmp>`), put the fake `claude` script first on `PATH` and the real Node bin folder (e.g. `~/.volta/tools/image/node/<version>/bin`) after it. Volta's shim stops resolving under a fake `HOME`, and the app then fails with an npm `package.json` error. Agents under `/opt/homebrew/bin` are still found with a stripped `PATH`, so a fake-agent run sees your real Codex too.
+
 ### Code Quality
 
 ```bash

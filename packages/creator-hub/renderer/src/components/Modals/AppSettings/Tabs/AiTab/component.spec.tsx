@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { dark, ThemeProvider } from 'decentraland-ui2/dist/theme';
 import { ai } from '#preload';
@@ -50,9 +50,15 @@ describe('AI settings agent card', () => {
       expect(screen.queryByText('modal.app_settings.fields.ai_connect.connected')).toBeNull();
     });
 
-    it('should show the sign-in command and the install guide without expanding anything', async () => {
-      expect(await screen.findByText('claude')).toBeTruthy();
+    it('should show the sign-out and sign-in steps and the install guide without expanding anything', async () => {
+      expect(await screen.findByText('claude auth logout')).toBeTruthy();
+      expect(screen.getByText('claude auth login')).toBeTruthy();
       expect(screen.getByText('editor.ai.setup.install_guide')).toBeTruthy();
+    });
+
+    it('should not offer an in-app sign out that leaves the terminal sign-in untouched', async () => {
+      await screen.findByText('claude auth logout');
+      expect(screen.queryByText('modal.app_settings.fields.ai_connect.sign_out')).toBeNull();
     });
   });
 
@@ -78,6 +84,40 @@ describe('AI settings agent card', () => {
       ).toBeTruthy();
       expect(screen.queryByText('editor.ai.setup.needs_login_status')).toBeNull();
       expect(screen.queryByText('claude')).toBeNull();
+    });
+  });
+
+  describe('when the user signs out of an agent the app signed in to', () => {
+    beforeEach(() => {
+      vi.spyOn(ai, 'signOutCli').mockReturnValue(new Promise(() => {}));
+      renderWith({ ...claude, id: 'codex', label: 'Codex', managedSignIn: true });
+    });
+
+    it('should show a spinner in the disabled button until the agent is re-checked', async () => {
+      const button = await screen.findByRole('button', {
+        name: 'modal.app_settings.fields.ai_connect.sign_out',
+      });
+      expect(screen.queryByRole('progressbar')).toBeNull();
+      fireEvent.click(button);
+      expect(await screen.findByRole('progressbar')).toBeTruthy();
+      expect(button.hasAttribute('disabled')).toBe(true);
+    });
+  });
+
+  describe('when the user signs in to an agent from the app', () => {
+    beforeEach(() => {
+      vi.spyOn(ai, 'signInCli').mockReturnValue(new Promise(() => {}));
+      renderWith({ ...claude, id: 'codex', label: 'Codex', available: false, managedSignIn: true });
+    });
+
+    it('should show a spinner in the button while the sign-in runs', async () => {
+      fireEvent.click(
+        await screen.findByRole('button', { name: 'modal.app_settings.fields.ai_connect.sign_in' }),
+      );
+      const cancel = await screen.findByRole('button', {
+        name: 'modal.app_settings.fields.ai_connect.cancel',
+      });
+      expect(cancel.querySelector('[role="progressbar"]')).toBeTruthy();
     });
   });
 });

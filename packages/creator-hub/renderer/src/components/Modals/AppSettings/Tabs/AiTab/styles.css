@@ -131,6 +131,9 @@
 }
 
 .AgentSignLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   margin-left: auto;
   padding: 0;
   border: none;
@@ -146,6 +149,10 @@
 
 .AgentSignLink.primary {
   color: var(--dcl);
+}
+
+.AgentSignLink:disabled {
+  cursor: default;
 }
 
 .AgentGuideLink {

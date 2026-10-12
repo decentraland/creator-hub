@@ -48,10 +48,13 @@ describe('AI chat panel', () => {
   afterEach(cleanup);
 
   describe('when the agent asked the user to sign in', () => {
-    it('should keep the composer enabled and show the sign-in command with the install guide', () => {
+    it('should keep the composer enabled and show the sign-out and sign-in steps with the install guide', () => {
       renderWith({ needsLogin: true });
       expect(screen.getByText('editor.ai.setup.needs_login_title')).toBeTruthy();
-      expect(screen.getByText('claude')).toBeTruthy();
+      expect(screen.getAllByText(/^claude auth/).map(e => e.textContent)).toEqual([
+        'claude auth logout',
+        'claude auth login',
+      ]);
       expect(screen.getByText('editor.ai.setup.install_guide')).toBeTruthy();
       expect(screen.getByRole('textbox').hasAttribute('disabled')).toBe(false);
     });

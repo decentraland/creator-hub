@@ -94,6 +94,13 @@ const binDir = fs.mkdtempSync(path.join(os.tmpdir(), 'ch-ai-bin-'));
 const project = fs.mkdtempSync(path.join(os.tmpdir(), 'ch-ai-project-'));
 const originalPath = process.env.PATH;
 
+afterAll(() => {
+  process.env.PATH = originalPath;
+  for (const dir of [binDir, project, mocks.userData]) {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});
+
 describe('when an agent answers a turn by asking the user to sign in', () => {
   beforeEach(() => {
     for (const name of ['claude', 'codex', 'cursor-agent', 'gemini']) {
@@ -104,19 +111,14 @@ describe('when an agent answers a turn by asking the user to sign in', () => {
     process.env.PATH = binDir;
   });
 
-  afterAll(() => {
-    process.env.PATH = originalPath;
-    for (const dir of [binDir, project, mocks.userData]) {
-      fs.rmSync(dir, { recursive: true, force: true });
-    }
-  });
-
   it('should fail the turn with sign-in steps instead of the raw CLI line', async () => {
     const events = await runTurn(SIGNED_OUT_LINES, 1);
     expect(events.filter(e => e.kind === 'text')).toEqual([]);
     const error = events.find(e => e.kind === 'error');
     expect(error).toMatchObject({ kind: 'error' });
-    expect(error?.kind === 'error' && error.message).toContain('`claude`');
+    expect(error?.kind === 'error' && error.message).toContain(
+      'run `claude auth logout`, then `claude auth login`',
+    );
     expect(events.find(e => e.kind === 'done')).toMatchObject({ ok: false });
   });
 
@@ -139,5 +141,19 @@ describe('when an agent answers a turn by asking the user to sign in', () => {
     );
     const claude = (await detectProviders()).find(p => p.id === 'claude');
     expect(claude?.needsLogin).toBeUndefined();
+  });
+});
+
+describe("when Codex comes from the user's own terminal install", () => {
+  beforeEach(() => {
+    const bin = path.join(binDir, 'codex');
+    fs.writeFileSync(bin, '#!/bin/sh\n');
+    fs.chmodSync(bin, 0o755);
+    process.env.PATH = binDir;
+  });
+
+  it("should not offer in-app sign-in or sign-out, which only reach the app's own copy", async () => {
+    const codex = (await detectProviders()).find(p => p.id === 'codex');
+    expect(codex).toMatchObject({ available: true, managedSignIn: false });
   });
 });
