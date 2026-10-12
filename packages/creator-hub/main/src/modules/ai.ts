@@ -159,9 +159,26 @@ function searchDirs(): string[] {
     const nvmRoot = path.join(process.env.NVM_DIR ?? path.join(HOME, '.nvm'), 'versions', 'node');
     // Include the app-managed CLI dir (#1531) so a CLI we installed on demand resolves
     // like a PATH install. Static path — fine to keep listed before anything is installed.
-    cachedDirs = [...shellDirs, ...EXTRA_BIN_DIRS, ...nvmBinDirs(nvmRoot), getManagedBinDir()];
+    cachedDirs = [
+      ...windowsInstallerDirs(),
+      ...shellDirs,
+      ...EXTRA_BIN_DIRS,
+      ...nvmBinDirs(nvmRoot),
+      getManagedBinDir(),
+    ];
   }
   return cachedDirs;
+}
+
+/** Folders the agents' Windows installers add to the user PATH, which a running app never sees. */
+function windowsInstallerDirs(): string[] {
+  if (process.platform !== 'win32') return [];
+  const localAppData = process.env.LOCALAPPDATA ?? path.join(HOME, 'AppData', 'Local');
+  return [
+    path.join(localAppData, 'Microsoft', 'WinGet', 'Links'),
+    path.join(localAppData, 'cursor-agent'),
+    path.join(localAppData, 'Programs', 'OpenAI', 'Codex', 'bin'),
+  ];
 }
 
 // Split on ':', not path.delimiter: this is a POSIX shell's $PATH, and the probe that

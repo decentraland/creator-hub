@@ -64,7 +64,8 @@ export const AI_CLI_COMMANDS: Record<AiProvider, CliCommands> = {
   },
   cursor: {
     install: 'curl https://cursor.com/install -fsS | bash',
-    installWindows: "irm 'https://cursor.com/install?win32=true' | iex",
+    installWindows:
+      'powershell -ExecutionPolicy ByPass -c "irm \'https://cursor.com/install?win32=true\' | iex"',
     signin: 'cursor-agent login',
     guideUrl: 'https://cursor.com/docs/cli/installation',
   },
