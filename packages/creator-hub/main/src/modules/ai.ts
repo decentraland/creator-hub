@@ -20,7 +20,7 @@ import type { ChildProcess } from 'child_process';
 // handles the `.cmd` + quoting correctly and is a transparent drop-in for spawn on macOS/Linux.
 import crossSpawn from 'cross-spawn';
 import log from 'electron-log/main';
-import { AI_CLI_COMMANDS } from '/shared/types/ai';
+import { AI_CLI_COMMANDS, apiKeyAlternative } from '/shared/types/ai';
 import type {
   AiAttachmentKind,
   AiEvent,
@@ -911,7 +911,7 @@ const providersNeedingLogin = new Set<AiProvider>();
 
 function signInRequiredMessage(provider: AiProvider): string {
   const steps = AI_CLI_COMMANDS[provider].relogin.map(step => `\`${step}\``).join(', then ');
-  return `${PROVIDERS[provider].label} isn't signed in, or its sign-in expired. In a terminal, run ${steps}, then send your message again.`;
+  return `${PROVIDERS[provider].label} isn't signed in, or its sign-in expired. In a terminal, run ${steps}, then send your message again. Or ${apiKeyAlternative(provider)}.`;
 }
 
 /** `bin`, or null when it is a managed install of a CLI the app no longer signs in to. */

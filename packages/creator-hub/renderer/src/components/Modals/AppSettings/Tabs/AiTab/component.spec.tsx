@@ -54,6 +54,7 @@ describe('AI settings agent card', () => {
       expect(await screen.findByText('claude auth logout')).toBeTruthy();
       expect(screen.getByText('claude auth login')).toBeTruthy();
       expect(screen.getByText('editor.ai.setup.install_guide')).toBeTruthy();
+      expect(screen.getByText('editor.ai.setup.api_key_alternative')).toBeTruthy();
     });
 
     it('should not offer an in-app sign out that leaves the terminal sign-in untouched', async () => {

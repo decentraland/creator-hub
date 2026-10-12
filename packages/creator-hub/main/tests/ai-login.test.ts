@@ -119,6 +119,9 @@ describe('when an agent answers a turn by asking the user to sign in', () => {
     expect(error?.kind === 'error' && error.message).toContain(
       'run `claude auth logout`, then `claude auth login`',
     );
+    expect(error?.kind === 'error' && error.message).toContain(
+      'Or set `ANTHROPIC_API_KEY` and turn on "Bill this to an API key instead" in Settings → AI.',
+    );
     expect(events.find(e => e.kind === 'done')).toMatchObject({ ok: false });
   });
 

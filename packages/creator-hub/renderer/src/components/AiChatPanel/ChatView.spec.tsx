@@ -56,6 +56,7 @@ describe('AI chat panel', () => {
         'claude auth login',
       ]);
       expect(screen.getByText('editor.ai.setup.install_guide')).toBeTruthy();
+      expect(screen.getByText('editor.ai.setup.api_key_alternative')).toBeTruthy();
       expect(screen.getByRole('textbox').hasAttribute('disabled')).toBe(false);
     });
   });

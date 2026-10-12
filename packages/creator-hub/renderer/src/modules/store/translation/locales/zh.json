@@ -159,7 +159,8 @@
         "gemini_plan_note": "Gemini CLI 现在仅支持付费 Gemini API 密钥或 Gemini Code Assist Standard/Enterprise 许可证。",
         "needs_login_status": "需要登录",
         "needs_login_title": "{provider} 要求你登录",
-        "needs_login_help": "即使显示为已连接，其保存的登录也可能已过期。请先退出再重新登录：在终端中逐条运行以下命令，并在浏览器中完成登录，然后重新发送你的消息："
+        "needs_login_help": "即使显示为已连接，其保存的登录也可能已过期。请先退出再重新登录：在终端中逐条运行以下命令，并在浏览器中完成登录，然后重新发送你的消息：",
+        "api_key_alternative": "或者使用 API 密钥：设置 {envVar}，并在“设置 → AI”中开启“{setting}”。"
       }
     }
   },

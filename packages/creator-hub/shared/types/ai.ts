@@ -43,6 +43,7 @@ type CliCommands = {
   installWindows?: string;
   signin: string;
   relogin: string[];
+  apiKeyEnv: string;
   guideUrl: string;
   guideAnchors?: { windows: string; unix: string };
 };
@@ -53,6 +54,7 @@ export const AI_CLI_COMMANDS: Record<AiProvider, CliCommands> = {
     installWindows: 'winget install Anthropic.ClaudeCode',
     signin: 'claude auth login',
     relogin: ['claude auth logout', 'claude auth login'],
+    apiKeyEnv: 'ANTHROPIC_API_KEY',
     guideUrl: 'https://code.claude.com/docs/en/terminal-guide',
     guideAnchors: { windows: '#windows', unix: '#macos-and-linux' },
   },
@@ -62,6 +64,7 @@ export const AI_CLI_COMMANDS: Record<AiProvider, CliCommands> = {
       'powershell -ExecutionPolicy ByPass -c "irm https://chatgpt.com/codex/install.ps1 | iex"',
     signin: 'codex login',
     relogin: ['codex logout', 'codex login'],
+    apiKeyEnv: 'OPENAI_API_KEY',
     guideUrl: 'https://developers.openai.com/codex/cli',
   },
   cursor: {
@@ -70,27 +73,35 @@ export const AI_CLI_COMMANDS: Record<AiProvider, CliCommands> = {
       'powershell -ExecutionPolicy ByPass -c "irm \'https://cursor.com/install?win32=true\' | iex"',
     signin: 'cursor-agent login',
     relogin: ['cursor-agent logout', 'cursor-agent login'],
+    apiKeyEnv: 'CURSOR_API_KEY',
     guideUrl: 'https://cursor.com/docs/cli/installation',
   },
   gemini: {
     install: 'npm install -g @google/gemini-cli',
     signin: 'gemini',
     relogin: ['gemini', '/auth logout', '/auth login'],
+    apiKeyEnv: 'GEMINI_API_KEY',
     guideUrl: 'https://www.geminicli.com/docs/get-started/installation',
   },
 };
 
-/** The terminal install command, sign-in command, sign-out-then-in steps and install-guide link for this OS. */
+/** How to use this agent with an API key instead of a sign-in, completing "Or …". */
+export function apiKeyAlternative(provider: AiProvider): string {
+  return `set \`${AI_CLI_COMMANDS[provider].apiKeyEnv}\` and turn on "Bill this to an API key instead" in Settings → AI`;
+}
+
+/** The terminal install command, sign-in command, sign-out-then-in steps, API key name and install-guide link for this OS. */
 export function cliSetup(
   provider: AiProvider,
   windows: boolean,
-): { install: string; signin: string; relogin: string[]; guideUrl: string } {
+): { install: string; signin: string; relogin: string[]; apiKeyEnv: string; guideUrl: string } {
   const cmds = AI_CLI_COMMANDS[provider];
   const anchor = cmds.guideAnchors?.[windows ? 'windows' : 'unix'] ?? '';
   return {
     install: (windows ? cmds.installWindows : undefined) ?? cmds.install,
     signin: cmds.signin,
     relogin: cmds.relogin,
+    apiKeyEnv: cmds.apiKeyEnv,
     guideUrl: cmds.guideUrl + anchor,
   };
 }

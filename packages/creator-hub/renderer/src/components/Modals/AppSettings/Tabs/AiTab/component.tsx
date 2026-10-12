@@ -233,6 +233,17 @@ function AgentConnect({
           {t('editor.ai.setup.install_guide', { provider: info.label })}
         </button>
       </Accordion>
+      {info.needsLogin === true && (
+        <Typography
+          variant="caption"
+          color="text.secondary"
+        >
+          {t('editor.ai.setup.api_key_alternative', {
+            envVar: cmds.apiKeyEnv,
+            setting: t('modal.app_settings.fields.ai_api_key.label'),
+          })}
+        </Typography>
+      )}
     </Box>
   );
 }

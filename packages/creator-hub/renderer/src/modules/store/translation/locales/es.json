@@ -159,7 +159,8 @@
         "gemini_plan_note": "Gemini CLI ahora solo funciona con una clave de API de Gemini de pago o una licencia de Gemini Code Assist Standard/Enterprise.",
         "needs_login_status": "Inicio de sesión necesario",
         "needs_login_title": "{provider} te pidió que inicies sesión",
-        "needs_login_help": "Puede que su sesión guardada haya caducado, aunque aparezca como conectado. Cierra sesión y vuelve a iniciarla: ejecuta esto en una terminal, un comando a la vez, y termina en tu navegador. Luego vuelve a enviar tu mensaje:"
+        "needs_login_help": "Puede que su sesión guardada haya caducado, aunque aparezca como conectado. Cierra sesión y vuelve a iniciarla: ejecuta esto en una terminal, un comando a la vez, y termina en tu navegador. Luego vuelve a enviar tu mensaje:",
+        "api_key_alternative": "O usa una clave de API: define {envVar} y activa \"{setting}\" en Configuración → IA."
       }
     }
   },

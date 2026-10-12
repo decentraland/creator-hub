@@ -994,6 +994,12 @@ export function ChatView(props: ChatViewProps) {
               {cmds.relogin.map(step => (
                 <CommandLine key={step}>{step}</CommandLine>
               ))}
+              <span>
+                {t('editor.ai.setup.api_key_alternative', {
+                  envVar: cmds.apiKeyEnv,
+                  setting: t('modal.app_settings.fields.ai_api_key.label'),
+                })}
+              </span>
               {guideLink}
             </SignInHintBody>
           </OutdatedHint>
