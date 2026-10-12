@@ -17,6 +17,7 @@ import { Navbar, NavbarItem } from '../Navbar';
 import './styles.css';
 
 const BUILDER_URL = 'https://decentraland.org/builder';
+const COLLECTIONS_URL = 'https://decentraland.org/create/collections';
 const NAMES_URL = 'https://decentraland.org/shop/items?category=names';
 
 const HorizontalCardWithImage: React.FC<{
@@ -94,7 +95,7 @@ export function MorePage() {
             <HorizontalCardWithImage
               title={t('more.cards.create.collections.title')}
               description={t('more.cards.create.collections.description')}
-              action={() => misc.openExternal(`${BUILDER_URL}/collections`)}
+              action={() => misc.openExternal(COLLECTIONS_URL)}
               image={CollectionsPng}
             />
           </Grid>
