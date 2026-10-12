@@ -1,6 +1,7 @@
 import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { dark, ThemeProvider } from 'decentraland-ui2/dist/theme';
+import { ai } from '#preload';
 
 import { ChatView, type ChatViewProps } from './ChatView';
 
@@ -45,7 +46,10 @@ function renderWith(provider: Partial<ChatViewProps['providers'][number]>) {
 }
 
 describe('AI chat panel', () => {
-  afterEach(cleanup);
+  afterEach(() => {
+    cleanup();
+    vi.restoreAllMocks();
+  });
 
   describe('when the agent asked the user to sign in', () => {
     it('should keep the composer enabled and show the sign-out and sign-in steps with the install guide', () => {
@@ -58,6 +62,18 @@ describe('AI chat panel', () => {
       expect(screen.getByText('editor.ai.setup.install_guide')).toBeTruthy();
       expect(screen.getByText('editor.ai.setup.api_key_alternative')).toBeTruthy();
       expect(screen.getByRole('textbox').hasAttribute('disabled')).toBe(false);
+    });
+  });
+
+  describe('when Claude Code is missing and Claude Desktop is installed', () => {
+    it('should show the Desktop note and the terminal steps instead of an in-app sign-in', () => {
+      vi.spyOn(ai, 'getMcpServerInfo').mockRejectedValue(new Error('no MCP in tests'));
+      renderWith({ available: false, desktopInstalled: true });
+      expect(screen.getByText('editor.ai.setup.desktop_detected')).toBeTruthy();
+      expect(screen.getByText('curl -fsSL https://claude.ai/install.sh | bash')).toBeTruthy();
+      expect(screen.getByText('claude auth login')).toBeTruthy();
+      expect(screen.getByText('editor.ai.setup.install_guide')).toBeTruthy();
+      expect(screen.queryByText('editor.ai.setup.signin_button')).toBeNull();
     });
   });
 
