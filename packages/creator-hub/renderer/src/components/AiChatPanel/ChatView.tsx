@@ -140,6 +140,14 @@ function messageText(msg: AiMessage): string {
   return msg.parts.map(p => (p.kind === 'text' ? p.text : '')).join('');
 }
 
+function isAwaitingAnswer(msg: AiMessage | undefined): boolean {
+  return (
+    msg?.parts.some(
+      p => p.kind === 'prompt' && p.prompt.answer === undefined && p.prompt.dismissed !== true,
+    ) ?? false
+  );
+}
+
 // Cap on how many files a single prompt carries (mirrors MAX_ATTACHMENTS in main/modules/ai.ts).
 const MAX_ATTACHMENTS = 8;
 
@@ -759,7 +767,7 @@ export function ChatView(props: ChatViewProps) {
       <>
         <IntroMessage>{t('editor.ai.empty')}</IntroMessage>
         {transcript}
-        {busy && (
+        {busy && !isAwaitingAnswer(messages.at(-1)) && (
           <ThinkingRow role="status">
             <CircularProgress size={12} />
             {t('editor.ai.thinking')}

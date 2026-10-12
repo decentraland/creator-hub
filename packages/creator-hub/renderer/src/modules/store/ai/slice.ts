@@ -66,8 +66,8 @@ export const send = createAsyncThunk<void, { text: string; attachments?: AiAttac
     const trimmed = text.trim();
     const files = attachments ?? [];
     if (trimmed === '' && files.length === 0) return;
+    dispatch(actions.setBusy(true));
     if (await ai.isBusy()) {
-      dispatch(actions.setBusy(true));
       dispatch(actions.setDraftPrompt(trimmed));
       return;
     }
@@ -86,7 +86,6 @@ export const send = createAsyncThunk<void, { text: string; attachments?: AiAttac
     }
     const attachmentMeta: AiAttachmentMeta[] = files.map(f => ({ name: f.name, kind: f.kind }));
     dispatch(actions.pushUserMessage({ text: trimmed, attachments: attachmentMeta }));
-    dispatch(actions.setBusy(true)); // optimistic; the `started` event confirms
     // Attach the current editor selection as context so the assistant can resolve "this"
     // without the user spelling out ids. Not shown in the chat bubble (main prepends it).
     const context = selectionContext(selection);
@@ -249,7 +248,7 @@ export const persistConversation = createAsyncThunk(
     writeSessionMessages(path, current, aiState.messages);
     const meta: AiSessionMeta = {
       id: current,
-      title: sessionTitle(aiState.messages),
+      title: aiState.sessions.find(s => s.id === current)?.title || sessionTitle(aiState.messages),
       updatedAt: Date.now(),
     };
     const sessions = [meta, ...savedSessions(aiState.sessions).filter(s => s.id !== current)];

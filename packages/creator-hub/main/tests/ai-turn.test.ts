@@ -7,6 +7,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 const mocks = vi.hoisted(() => ({
   crossSpawn: vi.fn(),
   treeKill: vi.fn(),
+  ensureSceneMcpServer: vi.fn(),
+  setSceneMcpProject: vi.fn(),
 }));
 
 vi.mock('cross-spawn', () => ({ default: Object.assign(mocks.crossSpawn, { sync: vi.fn() }) }));
@@ -24,12 +26,10 @@ vi.mock('../src/modules/electron', () => ({ getUserDataPath: () => os.tmpdir() }
 vi.mock('../src/modules/skills', () => ({ ensureSkillsLinked: vi.fn(async () => {}) }));
 vi.mock('../src/modules/scene-mcp', () => ({
   clearPendingAsks: vi.fn(),
-  ensureSceneMcpServer: vi.fn(async () => {
-    throw new Error('no MCP in tests');
-  }),
+  ensureSceneMcpServer: mocks.ensureSceneMcpServer,
   getTurnMutations: () => 0,
   resetTurnMutations: vi.fn(),
-  setSceneMcpProject: vi.fn(),
+  setSceneMcpProject: mocks.setSceneMcpProject,
   writeSceneMcpConfigFile: vi.fn(),
 }));
 
@@ -55,16 +55,32 @@ function fakeChild(pid: number): FakeChild {
   return child;
 }
 
-const send = (projectDir: string) =>
-  aiSend({ provider: 'claude', text: 'hi', sessionId: 's1' }, projectDir, () => {});
+const send = (projectDir: string, onEvent: (e: AiEvent) => void = () => {}) =>
+  aiSend({ provider: 'claude', text: 'hi', sessionId: 's1' }, projectDir, onEvent);
+
+const writeLines = (child: FakeChild, ...lines: object[]) =>
+  child.stdout.emit('data', Buffer.from(lines.map(l => `${JSON.stringify(l)}\n`).join('')));
+
+const exitAndClose = (child: FakeChild, code: number | null, signal: string | null = null) => {
+  child.emit('exit', code, signal);
+  child.emit('close', code, signal);
+};
+
+const assistantText = (text: string) => ({
+  type: 'assistant',
+  message: { content: [{ type: 'text', text }] },
+});
 
 describe('when running AI turns', () => {
   let projectDir: string;
   let binDir: string;
   let originalPath: string | undefined;
   let child: FakeChild;
+  let killSpy: ReturnType<typeof vi.spyOn>;
 
   beforeEach(() => {
+    killSpy = vi.spyOn(process, 'kill').mockImplementation(() => true);
+    mocks.ensureSceneMcpServer.mockRejectedValue(new Error('no MCP in tests'));
     projectDir = fs.mkdtempSync(path.join(os.tmpdir(), 'ai-turn-project-'));
     binDir = fs.mkdtempSync(path.join(os.tmpdir(), 'ai-turn-bin-'));
     const name = process.platform === 'win32' ? 'claude.cmd' : 'claude';
@@ -77,6 +93,7 @@ describe('when running AI turns', () => {
 
   afterEach(() => {
     aiStop();
+    killSpy.mockRestore();
     process.env.PATH = originalPath;
     vi.clearAllMocks();
   });
@@ -94,7 +111,7 @@ describe('when running AI turns', () => {
 
     describe('and the CLI exits', () => {
       beforeEach(() => {
-        child.emit('exit', 0, null);
+        exitAndClose(child, 0);
       });
 
       it('should accept the next message', async () => {
@@ -112,29 +129,21 @@ describe('when running AI turns', () => {
 
   describe('and Claude writes its final result but keeps running a background task', () => {
     let events: AiEvent[];
-    let killSpy: ReturnType<typeof vi.spyOn>;
 
     beforeEach(async () => {
       events = [];
-      killSpy = vi.spyOn(process, 'kill').mockImplementation(() => true);
-      await aiSend({ provider: 'claude', text: 'hi', sessionId: 's1' }, projectDir, e =>
-        events.push(e),
-      );
+      await send(projectDir, e => events.push(e));
       vi.useFakeTimers();
-      const assistant = {
-        type: 'assistant',
-        message: { content: [{ type: 'text', text: 'STARTED' }] },
-      };
-      const result = { type: 'result', subtype: 'success', is_error: false, session_id: 'cli-1' };
-      child.stdout.emit(
-        'data',
-        Buffer.from(`${JSON.stringify(assistant)}\n${JSON.stringify(result)}\n`),
-      );
+      writeLines(child, assistantText('STARTED'), {
+        type: 'result',
+        subtype: 'success',
+        is_error: false,
+        session_id: 'cli-1',
+      });
     });
 
     afterEach(() => {
       vi.useRealTimers();
-      killSpy.mockRestore();
     });
 
     it('should not end the turn while the CLI may still be exiting on its own', () => {
@@ -145,7 +154,7 @@ describe('when running AI turns', () => {
     describe('and the CLI is still running after the grace period', () => {
       beforeEach(() => {
         vi.advanceTimersByTime(10_000);
-        child.emit('exit', null, 'SIGKILL');
+        exitAndClose(child, null, 'SIGKILL');
       });
 
       it('should kill the CLI process tree', () => {
@@ -174,7 +183,7 @@ describe('when running AI turns', () => {
         projectDir,
         () => {},
       );
-      spawned.emit('exit', 0, null);
+      exitAndClose(spawned, 0);
       return turnId;
     };
 
@@ -195,16 +204,129 @@ describe('when running AI turns', () => {
       await send(projectDir);
       platform = Object.getOwnPropertyDescriptor(process, 'platform');
       Object.defineProperty(process, 'platform', { value: 'win32' });
-      aiStop();
     });
 
     afterEach(() => {
       if (platform !== undefined) Object.defineProperty(process, 'platform', platform);
     });
 
-    it('should kill the whole process tree, not just the cmd.exe wrapper', () => {
-      expect(mocks.treeKill).toHaveBeenCalledWith(4242, 'SIGKILL');
-      expect(child.kill).not.toHaveBeenCalled();
+    describe('and taskkill succeeds', () => {
+      beforeEach(() => {
+        aiStop();
+      });
+
+      it('should kill the whole process tree, not just the cmd.exe wrapper', () => {
+        expect(mocks.treeKill).toHaveBeenCalledWith(4242, 'SIGKILL', expect.any(Function));
+        expect(child.kill).not.toHaveBeenCalled();
+      });
+    });
+
+    describe('and taskkill fails', () => {
+      beforeEach(() => {
+        mocks.treeKill.mockImplementationOnce(
+          (_pid: number, _signal: string, done: (e?: Error) => void) =>
+            done(new Error('Access is denied.')),
+        );
+        aiStop();
+      });
+
+      it('should fall back to killing the CLI it spawned', () => {
+        expect(child.kill).toHaveBeenCalledWith('SIGKILL');
+      });
+
+      it('should log why the tree could not be killed', () => {
+        expect(log.warn).toHaveBeenCalledWith(expect.stringContaining('Access is denied.'));
+      });
+    });
+  });
+
+  describe('and a message for another scene arrives while a turn runs', () => {
+    let otherDir: string;
+
+    beforeEach(async () => {
+      mocks.ensureSceneMcpServer.mockResolvedValue({ url: 'http://127.0.0.1:1/mcp', token: 'x' });
+      otherDir = fs.mkdtempSync(path.join(os.tmpdir(), 'ai-turn-other-'));
+      await send(projectDir);
+      await send(otherDir).catch(() => {});
+    });
+
+    it("should keep the scene tools pointed at the running turn's scene", () => {
+      expect(mocks.setSceneMcpProject).not.toHaveBeenCalledWith(otherDir);
+    });
+  });
+
+  describe('and the CLI exits before its last output has been read', () => {
+    let events: AiEvent[];
+
+    beforeEach(async () => {
+      events = [];
+      await send(projectDir, e => events.push(e));
+      child.emit('exit', 0, null);
+      writeLines(child, assistantText('Done!'));
+    });
+
+    it('should still be waiting for the output', () => {
+      expect(aiBusy()).toBe(true);
+    });
+
+    describe('and the output closes', () => {
+      beforeEach(() => {
+        child.emit('close', 0, null);
+      });
+
+      it('should end the turn with the late reply instead of reporting a silent turn', () => {
+        expect(events).toContainEqual(expect.objectContaining({ kind: 'text', text: 'Done!' }));
+        expect(events).toContainEqual(expect.objectContaining({ kind: 'done', ok: true }));
+        expect(events).not.toContainEqual(expect.objectContaining({ kind: 'error' }));
+      });
+    });
+  });
+
+  describe('and a background task keeps the output open after the CLI exits', () => {
+    let events: AiEvent[];
+
+    beforeEach(async () => {
+      events = [];
+      await send(projectDir, e => events.push(e));
+      vi.useFakeTimers();
+      writeLines(child, assistantText('Started the server.'));
+      child.emit('exit', 0, null);
+      vi.advanceTimersByTime(5_000);
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it('should end the turn anyway', () => {
+      expect(aiBusy()).toBe(false);
+      expect(events).toContainEqual(expect.objectContaining({ kind: 'done', ok: true }));
+    });
+  });
+
+  describe('and Claude reports a failed result but keeps running', () => {
+    let events: AiEvent[];
+
+    beforeEach(async () => {
+      events = [];
+      await send(projectDir, e => events.push(e));
+      vi.useFakeTimers();
+      writeLines(child, assistantText('Reached the turn limit.'), {
+        type: 'result',
+        subtype: 'error_max_turns',
+        is_error: true,
+        session_id: 'cli-1',
+      });
+      vi.advanceTimersByTime(10_000);
+      exitAndClose(child, null, 'SIGKILL');
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it('should end the turn as a failure', () => {
+      expect(events).toContainEqual(expect.objectContaining({ kind: 'done', ok: false }));
     });
   });
 });

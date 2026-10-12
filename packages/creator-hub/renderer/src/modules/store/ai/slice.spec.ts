@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { actions, reducer, selectionContext, send } from './slice';
+import { actions, persistConversation, reducer, selectionContext, send } from './slice';
 
 const preloadAi = vi.hoisted(() => ({
   isBusy: vi.fn(),
@@ -50,8 +50,71 @@ describe('when sending while main is still running a turn', () => {
   });
 });
 
-// The "[Editor context]" line attached to a turn from the current editor selection, so the
-// assistant can resolve "this" / "the selected entity" without the user spelling out ids.
+describe('when the user sends twice before main says whether it is busy', () => {
+  let ai: ReturnType<typeof reducer>;
+
+  beforeEach(async () => {
+    vi.clearAllMocks();
+    preloadAi.isBusy.mockResolvedValue(false);
+    preloadAi.send.mockResolvedValue({ turnId: 't-1' });
+    ai = reducer(undefined, { type: 'init' });
+    const dispatch = vi.fn((action: { type: string }) => {
+      ai = reducer(ai, action);
+      return action;
+    });
+    const getState = () => ({ editor: { project: { path: '/scene' } }, ai, workspace: {} });
+    await Promise.all([
+      send({ text: 'hello' })(dispatch as never, getState as never, undefined),
+      send({ text: 'hello' })(dispatch as never, getState as never, undefined),
+    ]);
+  });
+
+  it('should send the message once', () => {
+    expect(preloadAi.send).toHaveBeenCalledTimes(1);
+  });
+
+  it('should add the message to the transcript once', () => {
+    expect(ai.messages.filter(m => m.role === 'user')).toHaveLength(1);
+  });
+});
+
+describe('when saving a session whose first prompt was trimmed from the transcript', () => {
+  let dispatched: Array<{ type: string; payload?: unknown }>;
+
+  beforeEach(async () => {
+    dispatched = [];
+    const ai = {
+      ...reducer(undefined, { type: 'init' }),
+      currentSessionId: 's1',
+      sessions: [{ id: 's1', title: 'Build a castle', updatedAt: 1 }],
+      messages: [
+        { id: 't-1', role: 'assistant' as const, parts: [], done: true },
+        {
+          id: 'u-2',
+          role: 'user' as const,
+          parts: [{ kind: 'text' as const, text: 'Add a moat' }],
+          done: true,
+        },
+      ],
+    };
+    const dispatch = vi.fn((action: { type: string }) => {
+      dispatched.push(action);
+      return action;
+    });
+    const getState = () => ({ editor: { project: { path: '/scene' } }, ai });
+    await persistConversation()(dispatch as never, getState as never, undefined);
+  });
+
+  it('should keep the title the session already has', () => {
+    expect(dispatched).toContainEqual(
+      actions.setSessions({
+        sessions: [{ id: 's1', title: 'Build a castle', updatedAt: expect.any(Number) }],
+        currentSessionId: 's1',
+      }),
+    );
+  });
+});
+
 describe('selectionContext', () => {
   it('is undefined when nothing is selected (so no context is attached)', () => {
     expect(selectionContext([])).toBeUndefined();

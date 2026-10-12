@@ -90,6 +90,35 @@ describe('ChatView working indicator', () => {
     });
   });
 
+  describe('when the assistant is waiting for the user to answer its question', () => {
+    it('should not claim the assistant is working', () => {
+      renderChat({
+        busy: true,
+        messages: [
+          userMessage,
+          {
+            id: 't1',
+            role: 'assistant',
+            parts: [
+              {
+                kind: 'prompt',
+                prompt: {
+                  id: 'q1',
+                  question: 'Which door?',
+                  options: [{ label: 'Wooden' }, { label: 'Metal' }],
+                  multiSelect: false,
+                  allowOther: false,
+                },
+              },
+            ],
+            done: false,
+          },
+        ],
+      });
+      expect(screen.queryByRole('status')).toBeNull();
+    });
+  });
+
   describe('when the turn has finished', () => {
     it('should not show the working indicator', () => {
       renderChat({

@@ -87,12 +87,15 @@ const SHELL_PATH_TIMEOUT_MS = 5_000;
 // process can't grow the buffer without limit.
 const MAX_STDERR_BYTES = 8_000;
 const RESULT_EXIT_GRACE_MS = 5_000;
+const OUTPUT_CLOSE_GRACE_MS = 2_000;
 
-function isResultLine(line: string): boolean {
+function parseResult(line: string): { failed: boolean } | undefined {
   try {
-    return (JSON.parse(line) as { type?: unknown }).type === 'result';
+    const obj = JSON.parse(line) as { type?: unknown; is_error?: unknown; status?: unknown };
+    if (obj.type !== 'result') return undefined;
+    return { failed: obj.is_error === true || obj.status === 'error' };
   } catch {
-    return false;
+    return undefined;
   }
 }
 let shellDirs: string[] = [];
@@ -953,15 +956,25 @@ function killTree(child: ChildProcess): void {
   child.stdout?.removeAllListeners('data');
   child.stderr?.removeAllListeners('data');
   if (child.pid === undefined) return;
-  try {
-    if (process.platform === 'win32') treeKill(child.pid, 'SIGKILL');
-    else process.kill(-child.pid, 'SIGKILL');
-  } catch {
+  const killChild = (): void => {
     try {
       child.kill('SIGKILL');
     } catch {
       /* already gone */
     }
+  };
+  if (process.platform === 'win32') {
+    treeKill(child.pid, 'SIGKILL', err => {
+      if (err === undefined) return;
+      log.warn(`[AI] could not kill the CLI process tree: ${err.message}`);
+      killChild();
+    });
+    return;
+  }
+  try {
+    process.kill(-child.pid, 'SIGKILL');
+  } catch {
+    killChild();
   }
 }
 
@@ -1253,7 +1266,6 @@ export async function aiSend(
   let mcp: SceneMcpInfo | undefined;
   try {
     mcp = await ensureSceneMcpServer();
-    setSceneMcpProject(projectDir);
   } catch (e) {
     log.warn('[AI] MCP server unavailable, continuing without scene tools:', e);
   }
@@ -1262,6 +1274,7 @@ export async function aiSend(
     throw new Error(
       'The assistant is still working on your previous message. Wait for it to finish, or stop it first.',
     );
+  if (mcp !== undefined) setSceneMcpProject(projectDir);
   resetTurnMutations(); // start counting this turn's scene-graph changes for "revert turn"
   const turnId = `t-${randomUUID()}`;
   // Prepend editor context (when present) to the prompt so the assistant sees editor
@@ -1376,10 +1389,13 @@ export async function aiSend(
   const outDec = new StringDecoder('utf8');
   const errDec = new StringDecoder('utf8');
   let resultTimer: NodeJS.Timeout | undefined;
+  let resultFailed = false;
   let killedAfterResult = false;
   const onLine = (line: string): void => {
     if (line === '') return;
-    if (resultTimer === undefined && isResultLine(line)) {
+    const result = resultTimer === undefined ? parseResult(line) : undefined;
+    if (result !== undefined) {
+      resultFailed = result.failed;
       resultTimer = setTimeout(() => {
         if (!turn.done) {
           log.info(`[AI] ${def.label} turn ${turnId} still running after its result; killing it`);
@@ -1426,15 +1442,20 @@ export async function aiSend(
     log.warn(`[AI] ${def.label} turn ${turnId} failed to start: ${e.message}`);
     finish(false, `assistant failed to start: ${e.message}`);
   });
-  child.on('exit', (code, signal) => {
+  let closeTimer: NodeJS.Timeout | undefined;
+  let settled = false;
+  const settle = (code: number | null, signal: NodeJS.Signals | null): void => {
+    if (settled) return;
+    settled = true;
     clearTimeout(resultTimer);
+    clearTimeout(closeTimer);
     buf += outDec.end();
     if (buf.trim() !== '') onLine(buf.trim());
     stderr += errDec.end();
     const outcome = turnOutcome({
       label: def.label,
       turnId,
-      code: killedAfterResult ? 0 : code,
+      code: killedAfterResult ? (resultFailed ? 1 : 0) : code,
       signal: killedAfterResult ? null : signal,
       durationMs: Date.now() - startedAt,
       textCount,
@@ -1444,7 +1465,11 @@ export async function aiSend(
     });
     log.info(outcome.logLine);
     finish(outcome.ok, outcome.message);
+  };
+  child.on('exit', (code, signal) => {
+    closeTimer = setTimeout(() => settle(code, signal), OUTPUT_CLOSE_GRACE_MS);
   });
+  child.on('close', settle);
 
   log.info(`[AI] Started ${def.label} turn ${turnId} in ${projectDir}`);
   return { turnId };
