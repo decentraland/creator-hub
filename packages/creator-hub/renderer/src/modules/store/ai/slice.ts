@@ -62,11 +62,15 @@ export const send = createAsyncThunk<void, { text: string; attachments?: AiAttac
     if (path === undefined || path === '')
       throw new Error('Open a scene before using the assistant.');
     const { provider, model, busy, selection } = state.ai;
-    if (busy) return; // one turn at a time
+    if (busy) return;
     const trimmed = text.trim();
     const files = attachments ?? [];
-    // Allow an attachments-only turn (a dropped file with no words), but never an empty one.
     if (trimmed === '' && files.length === 0) return;
+    dispatch(actions.setBusy(true));
+    if (await ai.isBusy()) {
+      dispatch(actions.setDraftPrompt(trimmed));
+      return;
+    }
     // Every turn belongs to a session (its transcript + the CLI resume id are keyed by it).
     // One should already exist from loadConversation; create one defensively if not.
     let sessionId = state.ai.currentSessionId;
@@ -82,7 +86,6 @@ export const send = createAsyncThunk<void, { text: string; attachments?: AiAttac
     }
     const attachmentMeta: AiAttachmentMeta[] = files.map(f => ({ name: f.name, kind: f.kind }));
     dispatch(actions.pushUserMessage({ text: trimmed, attachments: attachmentMeta }));
-    dispatch(actions.setBusy(true)); // optimistic; the `started` event confirms
     // Attach the current editor selection as context so the assistant can resolve "this"
     // without the user spelling out ids. Not shown in the chat bubble (main prepends it).
     const context = selectionContext(selection);
@@ -245,7 +248,7 @@ export const persistConversation = createAsyncThunk(
     writeSessionMessages(path, current, aiState.messages);
     const meta: AiSessionMeta = {
       id: current,
-      title: sessionTitle(aiState.messages),
+      title: aiState.sessions.find(s => s.id === current)?.title || sessionTitle(aiState.messages),
       updatedAt: Date.now(),
     };
     const sessions = [meta, ...savedSessions(aiState.sessions).filter(s => s.id !== current)];
@@ -446,6 +449,17 @@ const slice = createSlice({
           parts: [{ kind: 'prompt', prompt: payload }],
           done: true,
         });
+      }
+    },
+    // Main stopped waiting for a prompt (its timeout passed): mark it like a prompt of a stopped
+    // turn, so the block is disabled instead of taking an answer nothing is waiting for.
+    expirePrompt: (state, { payload }: PayloadAction<string>) => {
+      for (const msg of state.messages) {
+        const part = msg.parts.find(p => p.kind === 'prompt' && p.prompt.id === payload);
+        if (part?.kind === 'prompt' && part.prompt.answer === undefined) {
+          part.prompt.dismissed = true;
+          return;
+        }
       }
     },
     // The user answered a prompt: record it so the block shows the choice and the turn resumes.
