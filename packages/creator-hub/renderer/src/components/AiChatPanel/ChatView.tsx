@@ -990,10 +990,16 @@ export function ChatView(props: ChatViewProps) {
               <strong>
                 {t('editor.ai.setup.needs_login_title', { provider: currentProvider.label })}
               </strong>
-              <span>{t('editor.ai.setup.needs_login_help')}</span>
-              {cmds.relogin.map(step => (
-                <CommandLine key={step}>{step}</CommandLine>
-              ))}
+              {currentProvider.managedSignIn ? (
+                <span>{t('editor.ai.setup.needs_login_managed_help')}</span>
+              ) : (
+                <>
+                  <span>{t('editor.ai.setup.needs_login_help')}</span>
+                  {cmds.relogin.map(step => (
+                    <CommandLine key={step}>{step}</CommandLine>
+                  ))}
+                </>
+              )}
               <span>
                 {t('editor.ai.setup.api_key_alternative', {
                   envVar: cmds.apiKeyEnv,

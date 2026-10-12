@@ -13,7 +13,10 @@ vi.mock('../src/modules/analytics', () => ({
 }));
 vi.mock('../src/modules/node-runtime', () => ({
   resolveNodeRuntime: () => ({}),
-  getChildEnv: () => ({ PATH: process.env.PATH }),
+  getChildEnv: () => ({
+    PATH: process.env.PATH,
+    ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY,
+  }),
 }));
 vi.mock('cross-spawn', () => ({
   default: Object.assign(mocks.crossSpawn, { sync: () => ({ stdout: '', stderr: '' }) }),
@@ -42,9 +45,9 @@ vi.mock('../src/modules/scene-mcp', () => ({
 }));
 vi.mock('../src/modules/skills', () => ({ ensureSkillsLinked: vi.fn(async () => {}) }));
 
-import type { AiEvent } from '/shared/types/ai';
+import type { AiEvent, AiSendParams } from '/shared/types/ai';
 
-import { aiSend, detectProviders } from '../src/modules/ai';
+import { aiSend, clearNeedsLogin, detectProviders } from '../src/modules/ai';
 
 const SIGNED_OUT_LINES = [
   JSON.stringify({ type: 'system', subtype: 'init', session_id: 's1' }),
@@ -63,7 +66,7 @@ const SIGNED_OUT_LINES = [
   }),
 ];
 
-function fakeChild(lines: string[], code: number) {
+function fakeChild(lines: string[], code: number, stderr = '') {
   const child = Object.assign(new EventEmitter(), {
     stdout: new PassThrough(),
     stderr: new PassThrough(),
@@ -72,21 +75,31 @@ function fakeChild(lines: string[], code: number) {
   });
   setTimeout(() => {
     child.stdout.write(lines.map(l => `${l}\n`).join(''));
+    child.stderr.write(stderr);
     setTimeout(() => child.emit('exit', code, null), 5);
   }, 5);
   return child;
 }
 
-async function runTurn(lines: string[], code: number): Promise<AiEvent[]> {
-  mocks.crossSpawn.mockImplementationOnce(() => fakeChild(lines, code));
+async function runTurn(
+  lines: string[],
+  code: number,
+  { stderr = '', ...params }: Partial<AiSendParams> & { stderr?: string } = {},
+): Promise<AiEvent[]> {
+  mocks.crossSpawn.mockImplementationOnce(() => fakeChild(lines, code, stderr));
   const events: AiEvent[] = [];
   await new Promise<void>(resolve => {
-    void aiSend({ provider: 'claude', text: 'hi' }, project, e => {
+    void aiSend({ provider: 'claude', text: 'hi', ...params }, project, e => {
       events.push(e);
       if (e.kind === 'done') resolve();
     });
   });
   return events;
+}
+
+function errorOf(events: AiEvent[]): string | undefined {
+  const error = events.find(e => e.kind === 'error');
+  return error?.kind === 'error' ? error.message : undefined;
 }
 
 mocks.userData = fs.mkdtempSync(path.join(os.tmpdir(), 'ch-ai-login-'));
@@ -142,6 +155,41 @@ describe('when an agent answers a turn by asking the user to sign in', () => {
       ],
       0,
     );
+    const claude = (await detectProviders()).find(p => p.id === 'claude');
+    expect(claude?.needsLogin).toBeUndefined();
+  });
+
+  it('should still fail the turn when the agent exits 0 after asking to sign in', async () => {
+    const events = await runTurn(SIGNED_OUT_LINES, 0);
+    expect(errorOf(events)).toContain('run `claude auth logout`, then `claude auth login`');
+    expect(events.find(e => e.kind === 'done')).toMatchObject({ ok: false });
+    const claude = (await detectProviders()).find(p => p.id === 'claude');
+    expect(claude?.needsLogin).toBe(true);
+  });
+
+  it("should read Gemini's sign-in request from its error output", async () => {
+    const events = await runTurn([], 41, {
+      provider: 'gemini',
+      stderr: 'Please set an Auth method in your settings.json or specify GEMINI_API_KEY\n',
+    });
+    expect(errorOf(events)).toContain('run `gemini`, then `/auth logout`, then `/auth login`');
+  });
+
+  it('should say the API key was rejected when the turn billed to one', async () => {
+    process.env.ANTHROPIC_API_KEY = 'sk-example123';
+    try {
+      const events = await runTurn(SIGNED_OUT_LINES, 1, { apiKeyFromEnv: true });
+      expect(errorOf(events)).toBe(
+        'Claude rejected the API key in `ANTHROPIC_API_KEY`. Check the key, or turn off "Bill this to an API key instead" in Settings → AI to use your sign-in.',
+      );
+    } finally {
+      delete process.env.ANTHROPIC_API_KEY;
+    }
+  });
+
+  it('should clear the flag once the agent is signed in again from the app', async () => {
+    await runTurn(SIGNED_OUT_LINES, 1);
+    clearNeedsLogin('claude');
     const claude = (await detectProviders()).find(p => p.id === 'claude');
     expect(claude?.needsLogin).toBeUndefined();
   });

@@ -17,7 +17,7 @@ function renderWith(provider: Partial<ChatViewProps['providers'][number]>) {
     providers: [
       { id: 'claude', label: 'Claude', available: true, managedSignIn: false, ...provider },
     ],
-    provider: 'claude',
+    provider: provider.id ?? 'claude',
     messages: [],
     busy: false,
     detecting: false,
@@ -62,6 +62,15 @@ describe('AI chat panel', () => {
       expect(screen.getByText('editor.ai.setup.install_guide')).toBeTruthy();
       expect(screen.getByText('editor.ai.setup.api_key_alternative')).toBeTruthy();
       expect(screen.getByRole('textbox').hasAttribute('disabled')).toBe(false);
+    });
+  });
+
+  describe('when an agent the app signed in to asks to sign in again', () => {
+    it('should point at Settings instead of terminal commands', () => {
+      renderWith({ id: 'codex', label: 'Codex', managedSignIn: true, needsLogin: true });
+      expect(screen.getByText('editor.ai.setup.needs_login_managed_help')).toBeTruthy();
+      expect(screen.queryByText('editor.ai.setup.needs_login_help')).toBeNull();
+      expect(screen.queryByText('codex logout')).toBeNull();
     });
   });
 

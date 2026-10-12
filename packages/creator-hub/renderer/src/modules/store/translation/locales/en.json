@@ -161,6 +161,7 @@
         "needs_login_status": "Sign-in needed",
         "needs_login_title": "{provider} asked you to sign in",
         "needs_login_help": "Its saved sign-in may have expired, even if it showed as connected. Sign out and back in: run these in a terminal, one at a time, and finish in your browser. Then send your message again:",
+        "needs_login_managed_help": "Its saved sign-in may have expired, even if it showed as connected. In Settings → AI, click Sign out, then Sign in, then send your message again.",
         "api_key_alternative": "Or use an API key: set {envVar} and turn on \"{setting}\" in Settings → AI."
       }
     }

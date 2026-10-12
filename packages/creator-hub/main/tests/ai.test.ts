@@ -56,6 +56,8 @@ import {
   isClaudeDesktopInstalled,
   nvmBinDirs,
   parseShellPath,
+  redactSecrets,
+  signInRequiredMessage,
   usableBin,
 } from '../src/modules/ai';
 
@@ -909,5 +911,44 @@ describe('when telling whether an agent asked the user to sign in', () => {
       message: { content: [{ type: 'text', text: 'Run cursor-agent login to connect it.' }] },
     });
     expect(PROVIDERS.cursor.needsLogin(assistant)).toBe(false);
+  });
+
+  it('should not flag a Gemini reply that quotes the auth method message', () => {
+    const reply = JSON.stringify({
+      type: 'message',
+      role: 'assistant',
+      content: 'If Gemini says "Please set an Auth method", set GEMINI_API_KEY.',
+    });
+    expect(PROVIDERS.gemini.needsLogin(reply)).toBe(false);
+  });
+});
+
+describe('when telling the user how to sign an agent back in', () => {
+  it('should give the terminal sign-out and sign-in steps for a terminal install', () => {
+    expect(signInRequiredMessage('claude', 'signin')).toBe(
+      'Claude isn\'t signed in, or its sign-in expired. In a terminal, run `claude auth logout`, then `claude auth login`, then send your message again. Or set `ANTHROPIC_API_KEY` and turn on "Bill this to an API key instead" in Settings → AI.',
+    );
+  });
+
+  it('should point an in-app install at Settings, since its CLI is not on the PATH', () => {
+    expect(signInRequiredMessage('codex', 'managed')).toBe(
+      "Codex isn't signed in, or its sign-in expired. In Settings → AI, click Sign out, then Sign in, then send your message again.",
+    );
+  });
+
+  it('should say the API key was rejected when the turn billed to one', () => {
+    expect(signInRequiredMessage('claude', 'apiKey')).toBe(
+      'Claude rejected the API key in `ANTHROPIC_API_KEY`. Check the key, or turn off "Bill this to an API key instead" in Settings → AI to use your sign-in.',
+    );
+  });
+});
+
+describe('when writing CLI error output to the log', () => {
+  it('should hide API keys and bearer tokens', () => {
+    const out = redactSecrets(
+      'bad key sk-example1234567890 and AIzaExample1234567890abcdef; Authorization: Bearer example.token-123',
+    );
+    expect(out).not.toMatch(/sk-example1234567890|AIzaExample1234567890abcdef|example\.token-123/);
+    expect(out).toContain('bad key');
   });
 });

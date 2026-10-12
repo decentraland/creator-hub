@@ -104,8 +104,9 @@ function AgentConnect({
   }, []);
   const recheck = useCallback(() => track(onRecheck()), [track, onRecheck]);
   const { signIn, start, cancel } = useCliSignIn(info.id, recheck);
+  const reloginInTerminal = info.needsLogin === true && !info.managedSignIn;
   const [terminalOpen, setTerminalOpen] = useState(
-    info.needsLogin === true || info.desktopInstalled === true,
+    reloginInTerminal || info.desktopInstalled === true,
   );
   const cmds = cliSetup(info.id, navigator.userAgent.includes('Windows'));
 
@@ -190,7 +191,11 @@ function AgentConnect({
           variant="caption"
           color="text.secondary"
         >
-          {t('editor.ai.setup.needs_login_help')}
+          {t(
+            info.managedSignIn
+              ? 'editor.ai.setup.needs_login_managed_help'
+              : 'editor.ai.setup.needs_login_help',
+          )}
         </Typography>
       )}
       {info.desktopInstalled === true && (
@@ -218,7 +223,7 @@ function AgentConnect({
           label={t('modal.app_settings.fields.ai_connect.install')}
           value={cmds.install}
         />
-        {(info.needsLogin === true ? cmds.relogin : [cmds.signin]).map((cmd, i) => (
+        {(reloginInTerminal ? cmds.relogin : [cmds.signin]).map((cmd, i) => (
           <CommandField
             key={cmd}
             label={i === 0 ? t('modal.app_settings.fields.ai_connect.sign_in_label') : undefined}

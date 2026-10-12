@@ -903,15 +903,39 @@ export const PROVIDERS: Record<AiProvider, ProviderDef> = {
       }
       return undefined;
     },
-    needsLogin: line => /Please set an Auth method/.test(line),
+    needsLogin: line => isPlainText(line) && /Please set an Auth method/.test(line),
   },
 };
 
 const providersNeedingLogin = new Set<AiProvider>();
 
-function signInRequiredMessage(provider: AiProvider): string {
-  const steps = AI_CLI_COMMANDS[provider].relogin.map(step => `\`${step}\``).join(', then ');
-  return `${PROVIDERS[provider].label} isn't signed in, or its sign-in expired. In a terminal, run ${steps}, then send your message again. Or ${apiKeyAlternative(provider)}.`;
+/** Forgets that `provider` asked the user to sign in, once the app has signed it in again. */
+export function clearNeedsLogin(provider: AiProvider): void {
+  providersNeedingLogin.delete(provider);
+}
+
+/** What to tell the user when `provider` rejected its credentials: a terminal sign-in, the app's own copy, or an API key. */
+export function signInRequiredMessage(
+  provider: AiProvider,
+  cause: 'signin' | 'managed' | 'apiKey',
+): string {
+  const { label } = PROVIDERS[provider];
+  const { apiKeyEnv, relogin } = AI_CLI_COMMANDS[provider];
+  if (cause === 'apiKey') {
+    return `${label} rejected the API key in \`${apiKeyEnv}\`. Check the key, or turn off "Bill this to an API key instead" in Settings → AI to use your sign-in.`;
+  }
+  if (cause === 'managed') {
+    return `${label} isn't signed in, or its sign-in expired. In Settings → AI, click Sign out, then Sign in, then send your message again.`;
+  }
+  const steps = relogin.map(step => `\`${step}\``).join(', then ');
+  return `${label} isn't signed in, or its sign-in expired. In a terminal, run ${steps}, then send your message again. Or ${apiKeyAlternative(provider)}.`;
+}
+
+/** `text` with anything that looks like an API key or bearer token masked, for the log. */
+export function redactSecrets(text: string): string {
+  return text
+    .replace(/\b(sk-|AIza)[\w-]{8,}/g, '$1<redacted>')
+    .replace(/(Bearer\s+)[\w.~+/=-]+/gi, '$1<redacted>');
 }
 
 /** `bin`, or null when it is a managed install of a CLI the app no longer signs in to. */
@@ -1428,14 +1452,23 @@ export async function aiSend(
     if (buf.trim() !== '') onLine(buf.trim());
     stderr += errDec.end();
     if (turn.done) return;
-    if (code === 0) {
+    if (code === 0 && !loginRequested) {
       finish(true);
       return;
     }
-    log.warn(`[AI] ${def.label} turn ${turnId} exited code=${code ?? signal}: ${stderr.trim()}`);
+    log.warn(
+      `[AI] ${def.label} turn ${turnId} exited code=${code ?? signal}: ${redactSecrets(stderr.trim())}`,
+    );
     if (loginRequested || stderr.split('\n').some(def.needsLogin)) {
       providersNeedingLogin.add(params.provider);
-      finish(false, signInRequiredMessage(params.provider));
+      const cause =
+        params.apiKeyFromEnv === true &&
+        (env[AI_CLI_COMMANDS[params.provider].apiKeyEnv] ?? '') !== ''
+          ? 'apiKey'
+          : bin.startsWith(getManagedBinDir())
+            ? 'managed'
+            : 'signin';
+      finish(false, signInRequiredMessage(params.provider, cause));
     } else if (code === null) finish(false, `assistant was interrupted (${signal ?? 'signal'})`);
     else finish(false, stderr.trim() || `assistant exited with code ${code}`);
   });

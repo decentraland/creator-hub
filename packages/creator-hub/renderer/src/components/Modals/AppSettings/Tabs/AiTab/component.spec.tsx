@@ -63,6 +63,19 @@ describe('AI settings agent card', () => {
     });
   });
 
+  describe('when an agent the app signed in to asks to sign in again', () => {
+    beforeEach(() => {
+      renderWith({ ...claude, id: 'codex', label: 'Codex', managedSignIn: true, needsLogin: true });
+    });
+
+    it('should point at Sign out and Sign in instead of terminal commands', async () => {
+      expect(await screen.findByText('editor.ai.setup.needs_login_managed_help')).toBeTruthy();
+      expect(screen.queryByText('editor.ai.setup.needs_login_help')).toBeNull();
+      expect(screen.queryByText('codex logout')).toBeNull();
+      expect(screen.getByText('modal.app_settings.fields.ai_connect.sign_out')).toBeTruthy();
+    });
+  });
+
   describe('when Claude is missing but Claude Desktop is installed', () => {
     beforeEach(() => {
       renderWith({ ...claude, available: false, desktopInstalled: true });
