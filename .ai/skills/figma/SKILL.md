@@ -40,6 +40,7 @@ Before editing, confirm the Figma node maps to the **exact** app surface you are
 
 Before adding any CSS or a new control, prove it isn't already built:
 
+- **Creator Hub surfaces use a different token system.** The `vars.css` rules in this skill are inspector-only. For Creator Hub renderer UI, map each literal to the `decentraland-ui2` theme or `renderer/src/themes/theme.css`, and update the table in `docs/DESIGN.md` → "Creator Hub (renderer)". No token crosses the iframe.
 - **grep `theme/vars.css` for every literal in the spec** (hex, px, radius) before writing a rule — the value is often already a token (the spec's `#43404A` is `--gray-0`), so the "new" style is zero new CSS.
 - **check `components/ui/` for a component that already renders this control** — a plain box in the mock may already exist as e.g. `WalletField` (validates on blur, shows an error) that a bare `TextField` would silently drop.
 - **state the finding explicitly** — a mock can't express validation, focus order, or that a value is already a token, so "match the mock" silently becomes "re-implement what exists."
