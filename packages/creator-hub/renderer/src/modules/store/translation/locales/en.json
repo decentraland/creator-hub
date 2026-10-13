@@ -131,6 +131,8 @@
       "revert": "Undo AI changes",
       "selection": "Selection: {names}",
       "selection_clear": "Clear",
+      "asset_mention": "Asset: {name}",
+      "asset_mention_remove": "Remove",
       "provider": "Assistant",
       "provider_signin": "Sign in",
       "prompt": {

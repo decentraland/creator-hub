@@ -327,6 +327,8 @@ export interface ChatViewProps {
   busy: boolean;
   detecting: boolean;
   selection: { id: number; name: string }[];
+  // Local asset paths mentioned for the next prompt (double-clicked in the Local Assets panel).
+  assetMentions: string[];
   // The user dismissed the billing hint for this scene (#1505) — hide it.
   billingDismissed: boolean;
   // The scene's saved conversations (newest first) and which one is active, for the history menu.
@@ -354,6 +356,8 @@ export interface ChatViewProps {
   onDeleteSession: (id: string) => void;
   // Deselect all entities (clears the selection chips).
   onClearSelection: () => void;
+  // Drop one mentioned asset from the next prompt.
+  onRemoveAssetMention: (path: string) => void;
   // Open the detached window (inline only — omitted/no-op in the detached window).
   onPopOut?: () => void;
   // Inline: hide the panel. Detached: dock the chat back inline (close the window).
@@ -364,6 +368,27 @@ export interface ChatViewProps {
   onDraftConsumed?: () => void;
 }
 
+function ClearMentionButton({ label, onClick }: { label: string; onClick: () => void }) {
+  return (
+    <Tooltip title={label}>
+      <IconButton
+        size="small"
+        aria-label={label}
+        onClick={onClick}
+        sx={{
+          flexShrink: 0,
+          padding: 0.25,
+          color: 'text.primary',
+          backgroundColor: 'action.hover',
+          '&:hover': { backgroundColor: 'action.selected' },
+        }}
+      >
+        <CloseIcon sx={{ fontSize: 13 }} />
+      </IconButton>
+    </Tooltip>
+  );
+}
+
 export function ChatView(props: ChatViewProps) {
   const {
     providers,
@@ -372,6 +397,7 @@ export function ChatView(props: ChatViewProps) {
     busy,
     detecting,
     selection,
+    assetMentions,
     billingDismissed,
     sessions,
     currentSessionId,
@@ -389,6 +415,7 @@ export function ChatView(props: ChatViewProps) {
     onSwitchSession,
     onDeleteSession,
     onClearSelection,
+    onRemoveAssetMention,
     onPopOut,
     onClose,
     draftPrompt,
@@ -1009,24 +1036,26 @@ export function ChatView(props: ChatViewProps) {
                 names: selection.map(s => (s.name !== '' ? s.name : `#${s.id}`)).join(', '),
               })}
             </SelectionNames>
-            <Tooltip title={t('editor.ai.selection_clear')}>
-              <IconButton
-                size="small"
-                aria-label={t('editor.ai.selection_clear')}
-                onClick={onClearSelection}
-                sx={{
-                  flexShrink: 0,
-                  padding: 0.25,
-                  color: 'text.primary',
-                  backgroundColor: 'action.hover',
-                  '&:hover': { backgroundColor: 'action.selected' },
-                }}
-              >
-                <CloseIcon sx={{ fontSize: 13 }} />
-              </IconButton>
-            </Tooltip>
+            <ClearMentionButton
+              label={t('editor.ai.selection_clear')}
+              onClick={onClearSelection}
+            />
           </SelectionBar>
         )}
+
+        {available &&
+          assetMentions.map(path => (
+            <SelectionBar key={path}>
+              <InsertDriveFileOutlinedIcon fontSize="small" />
+              <SelectionNames title={path}>
+                {t('editor.ai.asset_mention', { name: path.split('/').pop() ?? path })}
+              </SelectionNames>
+              <ClearMentionButton
+                label={t('editor.ai.asset_mention_remove')}
+                onClick={() => onRemoveAssetMention(path)}
+              />
+            </SelectionBar>
+          ))}
 
         <Composer
           dragging={dragging}

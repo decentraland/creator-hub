@@ -24,6 +24,8 @@ const initialState: AiState = {
   busy: false,
   detecting: false,
   selection: [],
+  assetMentions: [],
+  chatVisible: false,
   billingDismissed: false,
   sessions: [],
   currentSessionId: '',
@@ -61,7 +63,7 @@ export const send = createAsyncThunk<void, { text: string; attachments?: AiAttac
     const path = state.editor.project?.path;
     if (path === undefined || path === '')
       throw new Error('Open a scene before using the assistant.');
-    const { provider, model, busy, selection } = state.ai;
+    const { provider, model, busy, selection, assetMentions } = state.ai;
     if (busy) return;
     const trimmed = text.trim();
     const files = attachments ?? [];
@@ -86,9 +88,11 @@ export const send = createAsyncThunk<void, { text: string; attachments?: AiAttac
     }
     const attachmentMeta: AiAttachmentMeta[] = files.map(f => ({ name: f.name, kind: f.kind }));
     dispatch(actions.pushUserMessage({ text: trimmed, attachments: attachmentMeta }));
-    // Attach the current editor selection as context so the assistant can resolve "this"
-    // without the user spelling out ids. Not shown in the chat bubble (main prepends it).
-    const context = selectionContext(selection);
+    // Attach the current editor selection and mentioned assets as context so the assistant can
+    // resolve "this" without the user spelling out ids or paths. Not shown in the chat bubble
+    // (main prepends it). Mentions belong to this prompt only; the selection is live state.
+    const context = editorContext(selection, assetMentions);
+    dispatch(actions.clearAssetMentions());
     const apiKeyFromEnv = state.workspace.settings?.useApiKeyFromEnv ?? false;
     await ai.send(path, {
       provider,
@@ -108,6 +112,24 @@ export function selectionContext(selection: AiState['selection']): string | unde
   if (selection.length === 0) return undefined;
   const names = selection.map(s => `${s.name || 'Entity'} (id ${s.id})`).join(', ');
   return `[Editor context] The user currently has selected: ${names}. If they say "this" or "the selected entity", they mean ${selection.length === 1 ? 'that entity' : 'those entities'}.`;
+}
+
+// One line naming the local assets the user mentioned, or undefined when there are none.
+// Exported for tests.
+export function assetMentionsContext(assetMentions: AiState['assetMentions']): string | undefined {
+  if (assetMentions.length === 0) return undefined;
+  const paths = assetMentions.join(', ');
+  return `[Editor context] The user is referring to ${assetMentions.length === 1 ? 'this scene asset file' : 'these scene asset files'}: ${paths}. If they say "this asset" or name one of them, they mean ${assetMentions.length === 1 ? 'that file' : 'those files'}.`;
+}
+
+function editorContext(
+  selection: AiState['selection'],
+  assetMentions: AiState['assetMentions'],
+): string | undefined {
+  const lines = [selectionContext(selection), assetMentionsContext(assetMentions)].filter(
+    (line): line is string => line !== undefined,
+  );
+  return lines.length > 0 ? lines.join('\n') : undefined;
 }
 
 // Kill the in-flight turn. Main suppresses the `done` event on an intentional stop, so
@@ -292,6 +314,20 @@ const slice = createSlice({
     },
     setSelection: (state, { payload }: PayloadAction<{ id: number; name: string }[]>) => {
       state.selection = payload;
+    },
+    setChatVisible: (state, { payload }: PayloadAction<boolean>) => {
+      state.chatVisible = payload;
+      if (!payload) state.assetMentions = [];
+    },
+    addAssetMention: (state, { payload }: PayloadAction<string>) => {
+      if (!state.chatVisible || state.assetMentions.includes(payload)) return;
+      state.assetMentions.push(payload);
+    },
+    removeAssetMention: (state, { payload }: PayloadAction<string>) => {
+      state.assetMentions = state.assetMentions.filter(path => path !== payload);
+    },
+    clearAssetMentions: state => {
+      state.assetMentions = [];
     },
     // Seed the composer from elsewhere in the editor (the Trigger Area "describe a reaction"
     // buttons). Bumps a nonce so clicking the same button twice re-seeds. EditorPage opens the

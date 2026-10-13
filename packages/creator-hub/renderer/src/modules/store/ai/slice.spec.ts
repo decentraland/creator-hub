@@ -1,6 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { actions, persistConversation, reducer, selectionContext, send } from './slice';
+import {
+  actions,
+  assetMentionsContext,
+  persistConversation,
+  reducer,
+  selectionContext,
+  send,
+} from './slice';
 
 const preloadAi = vi.hoisted(() => ({
   isBusy: vi.fn(),
@@ -112,6 +119,83 @@ describe('when saving a session whose first prompt was trimmed from the transcri
         currentSessionId: 's1',
       }),
     );
+  });
+});
+
+describe('when an asset is mentioned while the chat is hidden', () => {
+  it('should ignore the mention', () => {
+    const state = reducer(undefined, actions.addAssetMention('assets/a.glb'));
+    expect(state.assetMentions).toEqual([]);
+  });
+});
+
+describe('when assets are mentioned while the chat is visible', () => {
+  let state: ReturnType<typeof reducer>;
+
+  beforeEach(() => {
+    state = reducer(undefined, actions.setChatVisible(true));
+    state = reducer(state, actions.addAssetMention('assets/a.glb'));
+    state = reducer(state, actions.addAssetMention('assets/b.glb'));
+    state = reducer(state, actions.addAssetMention('assets/a.glb'));
+  });
+
+  it('should keep each asset once, in mention order', () => {
+    expect(state.assetMentions).toEqual(['assets/a.glb', 'assets/b.glb']);
+  });
+
+  it('should drop a single asset when it is removed', () => {
+    state = reducer(state, actions.removeAssetMention('assets/a.glb'));
+    expect(state.assetMentions).toEqual(['assets/b.glb']);
+  });
+
+  it('should drop every mention when the chat is hidden', () => {
+    state = reducer(state, actions.setChatVisible(false));
+    expect(state.assetMentions).toEqual([]);
+  });
+});
+
+describe('when sending with a selected entity and mentioned assets', () => {
+  let ai: ReturnType<typeof reducer>;
+
+  beforeEach(async () => {
+    vi.clearAllMocks();
+    preloadAi.isBusy.mockResolvedValue(false);
+    preloadAi.send.mockResolvedValue({ turnId: 't-1' });
+    ai = reducer(undefined, actions.setChatVisible(true));
+    ai = reducer(ai, actions.setSelection([{ id: 512, name: 'Front Door' }]));
+    ai = reducer(ai, actions.addAssetMention('assets/asset-packs/dance/Dance_emote.glb'));
+    ai = reducer(ai, actions.addAssetMention('assets/asset-packs/throw/Throw_emote.glb'));
+    const dispatch = vi.fn((action: { type: string }) => {
+      ai = reducer(ai, action);
+      return action;
+    });
+    const getState = () => ({ editor: { project: { path: '/scene' } }, ai, workspace: {} });
+    await send({ text: 'play these when the door opens' })(
+      dispatch as never,
+      getState as never,
+      undefined,
+    );
+  });
+
+  it('should attach both the selected entity and every mentioned asset as context', () => {
+    const { context } = preloadAi.send.mock.calls[0][1];
+    expect(context).toContain('Front Door (id 512)');
+    expect(context).toContain('assets/asset-packs/dance/Dance_emote.glb');
+    expect(context).toContain('assets/asset-packs/throw/Throw_emote.glb');
+  });
+
+  it('should clear the asset mentions for the next prompt', () => {
+    expect(ai.assetMentions).toEqual([]);
+  });
+
+  it('should keep the selection, which is live editor state', () => {
+    expect(ai.selection).toEqual([{ id: 512, name: 'Front Door' }]);
+  });
+});
+
+describe('assetMentionsContext', () => {
+  it('should be undefined when no asset is mentioned', () => {
+    expect(assetMentionsContext([])).toBeUndefined();
   });
 });
 

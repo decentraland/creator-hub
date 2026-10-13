@@ -76,6 +76,10 @@ export function AiChatWindow() {
     () => aiPreload.sendAiRemoteCommand({ type: 'clearSelection' }),
     [],
   );
+  const onRemoveAssetMention = useCallback(
+    (path: string) => aiPreload.sendAiRemoteCommand({ type: 'removeAssetMention', path }),
+    [],
+  );
   // The close button shuts the assistant entirely (window + inline panel), consistent with the
   // inline close — not a dock-back. The main window handles it (it owns the inline open flag).
   const onClose = useCallback(() => aiPreload.sendAiRemoteCommand({ type: 'closeAssistant' }), []);
@@ -99,6 +103,7 @@ export function AiChatWindow() {
       busy={mirror.busy}
       detecting={mirror.detecting}
       selection={mirror.selection}
+      assetMentions={mirror.assetMentions}
       billingDismissed={mirror.billingDismissed}
       sessions={mirror.sessions}
       currentSessionId={mirror.currentSessionId}
@@ -114,6 +119,7 @@ export function AiChatWindow() {
       onSwitchSession={onSwitchSession}
       onDeleteSession={onDeleteSession}
       onClearSelection={onClearSelection}
+      onRemoveAssetMention={onRemoveAssetMention}
       onClose={onClose}
     />
   );

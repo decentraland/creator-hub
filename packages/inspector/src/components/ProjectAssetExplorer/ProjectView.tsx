@@ -13,6 +13,7 @@ import { Button } from '../Button';
 import FolderIcon from '../Icons/Folder';
 import Search from '../Search';
 import { withAssetDir } from '../../lib/data-layer/host/fs-utils';
+import { getSceneClient } from '../../lib/rpc/scene';
 import { removeAsset } from '../../redux/data-layer';
 import { useAppDispatch } from '../../redux/hooks';
 import { determineAssetType, extractFileExtension } from '../ImportAsset/utils';
@@ -147,14 +148,25 @@ function ProjectView({ folders, thumbnails }: Props) {
 
   const handleModalClose = useCallback(() => setModal(undefined), []);
 
+  const mentionAsset = useCallback((path: string) => {
+    void getSceneClient()?.mentionAsset(withAssetDir(path)).catch(console.error);
+  }, []);
+
+  const handleDoubleSelect = useCallback(
+    (value: string) => {
+      if (tree.get(value)?.type === 'asset') mentionAsset(value);
+    },
+    [tree, mentionAsset],
+  );
+
   const handleClickFolder = useCallback(
     (node: TreeNode) => () => {
-      if (node.type === 'asset') return;
       const path = getFullNodePath(node).slice(1);
+      if (node.type === 'asset') return mentionAsset(path);
       open.add(path);
       setLastSelected(path);
     },
-    [setLastSelected],
+    [setLastSelected, mentionAsset],
   );
   const handleDragContext = useCallback(() => ({ tree }), [tree]);
   // Drop targets (renderer, video inputs) read a `value` like the Tile emits; the
@@ -240,7 +252,7 @@ function ProjectView({ folders, thumbnails }: Props) {
             onRemove={handleRemove}
             onRename={noop}
             onSelect={onSelect}
-            onDoubleSelect={noop}
+            onDoubleSelect={handleDoubleSelect}
             onSetOpen={onSetOpen}
             onDuplicate={noop}
             getId={(value: string) => value.toString()}

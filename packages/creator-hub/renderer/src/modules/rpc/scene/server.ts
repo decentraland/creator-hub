@@ -32,6 +32,7 @@ export enum Method {
   SET_UI_DESIGNER_MODE = 'set_ui_designer_mode',
   OPTIMIZE_SCENE = 'optimize_scene',
   PROMPT_ASSISTANT = 'prompt_assistant',
+  MENTION_ASSET = 'mention_asset',
   SET_CONSOLE_WINDOW_OPEN = 'set_console_window_open',
   NOTIFY_SCENE_METADATA = 'notify_scene_metadata',
   NOTIFY_READY = 'notify_ready',
@@ -47,6 +48,7 @@ export type Params = {
   [Method.SET_UI_DESIGNER_MODE]: { open: boolean };
   [Method.OPTIMIZE_SCENE]: Record<string, never>;
   [Method.PROMPT_ASSISTANT]: { text: string };
+  [Method.MENTION_ASSET]: { path: string };
   [Method.SET_CONSOLE_WINDOW_OPEN]: { open: boolean };
   [Method.NOTIFY_SCENE_METADATA]: { title: string; scene?: Project['scene'] };
   [Method.NOTIFY_READY]: Record<string, never>;
@@ -65,6 +67,7 @@ export type Result = {
   [Method.SET_UI_DESIGNER_MODE]: void;
   [Method.OPTIMIZE_SCENE]: void;
   [Method.PROMPT_ASSISTANT]: void;
+  [Method.MENTION_ASSET]: void;
   [Method.SET_CONSOLE_WINDOW_OPEN]: void;
   [Method.NOTIFY_SCENE_METADATA]: void;
   [Method.NOTIFY_READY]: void;
@@ -176,6 +179,13 @@ export class SceneRpcServer extends RPC<Method, Params, Result> {
         return;
       }
       store.dispatch(aiActions.setDraftPrompt(text));
+    });
+
+    // A double-click on a Local Assets entry. Only lands while the chat is visible (the reducer
+    // gates on it), so it never opens the assistant on its own.
+    this.handle('mention_asset', async ({ path }) => {
+      if (typeof path !== 'string' || path.trim() === '') return;
+      store.dispatch(aiActions.addAssetMention(path));
     });
 
     // The console's pop-out / dock-back controls live inside the inspector iframe (#1272).

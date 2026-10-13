@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { flatten } from 'flat';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { dark, ThemeProvider } from 'decentraland-ui2/dist/theme';
@@ -34,6 +34,7 @@ function renderChat(props: Partial<ChatViewProps>) {
         busy={false}
         detecting={false}
         selection={[]}
+        assetMentions={[]}
         billingDismissed
         sessions={[]}
         currentSessionId="s1"
@@ -48,6 +49,7 @@ function renderChat(props: Partial<ChatViewProps>) {
         onSwitchSession={noop}
         onDeleteSession={noop}
         onClearSelection={noop}
+        onRemoveAssetMention={noop}
         onClose={noop}
         {...props}
       />
@@ -129,6 +131,36 @@ describe('ChatView working indicator', () => {
         ],
       });
       expect(screen.queryByRole('status')).toBeNull();
+    });
+  });
+});
+
+describe('ChatView asset mentions', () => {
+  beforeAll(() => {
+    setCurrentLocale('en', flatten(en));
+  });
+
+  afterEach(() => {
+    cleanup();
+  });
+
+  describe('when two assets are mentioned', () => {
+    it('should show each asset by file name', () => {
+      renderChat({
+        assetMentions: ['assets/asset-packs/dance/Dance_emote.glb', 'assets/models/Throw.glb'],
+      });
+      expect(screen.getByText('Asset: Dance_emote.glb')).toBeTruthy();
+      expect(screen.getByText('Asset: Throw.glb')).toBeTruthy();
+    });
+
+    it('should remove only the asset whose remove button is clicked', () => {
+      const onRemoveAssetMention = vi.fn();
+      renderChat({
+        assetMentions: ['assets/asset-packs/dance/Dance_emote.glb', 'assets/models/Throw.glb'],
+        onRemoveAssetMention,
+      });
+      fireEvent.click(screen.getAllByRole('button', { name: 'Remove' })[1]);
+      expect(onRemoveAssetMention).toHaveBeenCalledWith('assets/models/Throw.glb');
     });
   });
 });
