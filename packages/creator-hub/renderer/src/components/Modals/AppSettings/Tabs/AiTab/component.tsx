@@ -57,7 +57,7 @@ function Accordion({
 function CommandField({ label, value }: { label?: string; value: string }) {
   const [copied, setCopied] = useState(false);
   const copy = useCallback(() => {
-    void navigator.clipboard.writeText(value).then(() => {
+    void misc.copyToClipboard(value).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
     });
@@ -329,7 +329,7 @@ const AiTab: React.FC<BaseTabProps> = ({ settings, updateSettings }) => {
 
   const handleCopyMcpConfig = useCallback(() => {
     if (mcpConfigSnippet === null || mcpConfigSnippet === undefined) return;
-    void navigator.clipboard.writeText(mcpConfigSnippet).then(() => {
+    void misc.copyToClipboard(mcpConfigSnippet).then(() => {
       setMcpCopied(true);
       setTimeout(() => setMcpCopied(false), 2000);
     });

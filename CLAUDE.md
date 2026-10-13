@@ -54,7 +54,9 @@ cd packages/inspector && npm run test:e2e          # Inspector E2E tests
 
 **Note:** run vitest from inside the package (`cd packages/<pkg> && npx vitest run`). Invoking `npx vitest run` from the repo root sweeps up every workspace's specs without their per-package configs/setup and reports mass failures that are pure cwd artifacts.
 
-**Note:** no spec file is type-checked. All three creator-hub tsconfigs carry `exclude: ["**/*.spec.ts", "**/*.test.ts"]`, and vitest transpiles without checking — so `npm run typecheck` says nothing about a test's own types. A wrong cast or a stale `Partial<…>` in a fixture is caught by neither the type gate nor the test run. The production code a spec imports *is* checked (tsc follows the import graph), so only the fixture is blind.
+**Note:** `.spec.ts` and `.test.ts` files are not type-checked, but `.spec.tsx` files are. All three creator-hub tsconfigs carry `exclude: ["**/*.spec.ts", "**/*.test.ts"]`, and vitest transpiles without checking — so `npm run typecheck` says nothing about a `.ts` test's own types, and a wrong cast or a stale `Partial<…>` in its fixture is caught by neither gate. The exclude does not match `.tsx`, so the renderer's component specs ARE checked: a fixture such as `mockResolvedValue(null)` against a non-null return fails `make typecheck`.
+
+**Note:** in main-process tests, setting `process.env.HOME` does not change `os.homedir()` (vitest runs them in worker threads). Mock `os` instead (`vi.mock('os', …)` returning a fake `homedir`, as in `main/tests/ai-detect.test.ts`). Any test that reaches agent detection must also set `SHELL=/usr/bin/true`: `ai.ts` asks your login shell for its PATH and would otherwise find your real CLIs.
 
 **Note:** `renderer/src/components/AnalyticsPage/atScale.spec.tsx` can time out in a full `npm run test:unit` run (it waits up to 15 s while every renderer suite runs in parallel). Rerun it alone before treating it as a regression.
 

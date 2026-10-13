@@ -1,7 +1,7 @@
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { dark, ThemeProvider } from 'decentraland-ui2/dist/theme';
-import { ai } from '#preload';
+import { ai, misc } from '#preload';
 
 import type { AiProviderInfo } from '/shared/types/ai';
 import type { AppSettings } from '/shared/types/settings';
@@ -60,6 +60,15 @@ describe('AI settings agent card', () => {
     it('should not offer an in-app sign out that leaves the terminal sign-in untouched', async () => {
       await screen.findByText('claude auth logout');
       expect(screen.queryByText('modal.app_settings.fields.ai_connect.sign_out')).toBeNull();
+    });
+
+    it('should copy a command through the app instead of the browser clipboard', async () => {
+      const copy = vi.spyOn(misc, 'copyToClipboard').mockResolvedValue();
+      const field = (await screen.findByText('claude auth logout')).parentElement as HTMLElement;
+      fireEvent.click(
+        within(field).getByRole('button', { name: 'modal.app_settings.fields.ai_connect.copy' }),
+      );
+      expect(copy).toHaveBeenCalledWith('claude auth logout');
     });
   });
 

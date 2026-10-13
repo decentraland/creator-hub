@@ -505,7 +505,7 @@ export function ChatView(props: ChatViewProps) {
 
   const handleCopyMcpConfig = useCallback(() => {
     if (mcpConfigSnippet === null) return;
-    void navigator.clipboard.writeText(mcpConfigSnippet).then(() => {
+    void misc.copyToClipboard(mcpConfigSnippet).then(() => {
       setMcpCopied(true);
       setTimeout(() => setMcpCopied(false), 2000);
     });
