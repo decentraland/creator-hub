@@ -81,7 +81,7 @@ function CommandField({ label, value }: { label?: string; value: string }) {
         >
           <ContentCopyIcon
             fontSize="small"
-            color={copied ? 'success' : 'inherit'}
+            color={copied ? 'primary' : 'inherit'}
           />
         </IconButton>
       </Box>
