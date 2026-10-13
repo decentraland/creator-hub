@@ -119,6 +119,12 @@ export function isSmart(asset: Partial<Asset>) {
   return false;
 }
 
+// An asset with nothing to spawn (e.g. an avatar animation): it is only ever used from scene
+// code at runtime, so placing it imports its files and leaves the composite untouched.
+export function isFileOnly(asset: Partial<Asset>) {
+  return (asset?.composite?.components ?? []).length === 0;
+}
+
 export function isGround(asset: Partial<Asset>) {
   return asset.category === 'ground';
 }

@@ -23,7 +23,7 @@ import { type EnumEntity } from '../../sdk/enum-entity';
 import { EditorComponentNames, type EditorComponents } from '../../sdk/components';
 import { resolveActiveSceneComponent } from '../../sdk/components/scene-metadata-version';
 import { getViewportRect, type ViewportRect } from '../../logic/viewport-rect';
-import { fetchLatestCatalog, getAssetById } from '../../logic/catalog';
+import { fetchLatestCatalog, getAssetById, isFileOnly } from '../../logic/catalog';
 import {
   getAssetCatalog,
   getDataLayerInterface,
@@ -469,6 +469,11 @@ export class SceneServer extends RPC<Method, Params, Result> {
           throw new Error(`No catalog asset with id "${assetId}". Use search_catalog first.`);
         }
         const asset = found;
+        if (isFileOnly(asset)) {
+          throw new Error(
+            `"${asset.name}" is a file-only asset (e.g. an avatar animation) with no entity to place. Ask the user to drag it into the scene, which adds its files to the local assets, then reference the file from scene code.`,
+          );
+        }
         const dataLayer = getDataLayerInterface();
         if (dataLayer === undefined) throw new Error('The data layer is not connected.');
 
