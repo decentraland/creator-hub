@@ -10,6 +10,7 @@ import type { Entity } from '@dcl/ecs';
 
 import { useSdk } from '../../hooks/sdk/useSdk';
 import { Tree } from '../Tree';
+import type { DropType } from '../Tree/utils';
 import { Modal } from '../Modal';
 import { Button } from '../Button';
 import FolderIcon from '../Icons/Folder';
@@ -20,7 +21,8 @@ import { selectThumbnailsLoaded } from '../../redux/app';
 import { useAppDispatch, useAppSelector } from '../../redux/hooks';
 import { useContextMenu } from '../../hooks/sdk/useContextMenu';
 import {
-  isPointerOverAssetExplorer,
+  isAssetExplorerActive,
+  setAssetExplorerFocused,
   setPointerOverAssetExplorer,
 } from '../../lib/utils/asset-explorer-region';
 import { determineAssetType, extractFileExtension } from '../ImportAsset/utils';
@@ -37,9 +39,11 @@ import {
   createPathMapper,
   getBaseName,
   getParentPath,
+  getRange,
   getUniqueCopyName,
   joinPath,
 } from './file-ops';
+import { forwardToViewport, isCameraKey, isViewportFocused } from './viewport-keys';
 
 export { TreeNode };
 
@@ -86,7 +90,7 @@ type Props = {
 
 interface ModalState {
   isOpen: boolean;
-  value: string;
+  values: string[];
   entities: Entity[];
 }
 
@@ -103,8 +107,11 @@ function ProjectView({ folders, thumbnails }: Props) {
   const [open, setOpen] = useState(new Set<string>());
   const [modal, setModal] = useState<ModalState | undefined>(undefined);
   const [lastSelected, setLastSelected] = useState<string>(ROOT);
-  // The card / tree row the keyboard shortcuts act on
-  const [selectedItem, setSelectedItem] = useState<string>('');
+  // Selected cards / tree rows, in the order they were picked
+  const [selection, setSelection] = useState<string[]>([]);
+  // The row the arrow keys move from, and the fixed end of a Shift range
+  const [focusItem, setFocusItem] = useState<string>('');
+  const [anchor, setAnchor] = useState<string>('');
   const [search, setSearch] = useState<string>('');
   const [filteredTree, setTree] = useState<Map<string, TreeNode>>(new Map());
   const [filters, setFilters] = useState<Filter[]>([]);
@@ -116,7 +123,8 @@ function ProjectView({ folders, thumbnails }: Props) {
     source: Props['thumbnails'];
     map: Map<string, Uint8Array>;
   } | null>(null);
-  const clipboard = useRef<string | null>(null);
+  const clipboard = useRef<{ paths: string[]; cut: boolean } | null>(null);
+  const pendingDrop = useRef<{ items: string[]; target: string } | null>(null);
 
   useEffect(() => {
     const { tree, filters } = generateAssetTree(folders, open, search, activeFilter);
@@ -147,18 +155,44 @@ function ProjectView({ folders, thumbnails }: Props) {
     [virtualFolders, realTree],
   );
 
+  const selectionSet = useMemo(() => new Set(selection), [selection]);
+  /** What an action on `path` applies to: the whole selection when `path` is part of it. */
+  const getTargets = useCallback(
+    (path: string) => (selectionSet.has(path) && selection.length > 1 ? selection : [path]),
+    [selection, selectionSet],
+  );
+
+  /**
+   * Selection
+   */
+
+  const selectOnly = useCallback((path: string) => {
+    setSelection(path ? [path] : []);
+    setFocusItem(path);
+    setAnchor(path);
+  }, []);
+
+  const toggleSelected = useCallback((path: string) => {
+    setSelection(current =>
+      current.includes(path) ? current.filter($ => $ !== path) : [...current, path],
+    );
+    setFocusItem(path);
+    setAnchor(path);
+  }, []);
+
+  const selectRange = useCallback(
+    (path: string, ordered: string[]) => {
+      setSelection(getRange(ordered, anchor || path, path));
+      setFocusItem(path);
+    },
+    [anchor],
+  );
+
+  const clearSelection = useCallback(() => selectOnly(''), [selectOnly]);
+
   /**
    * Callbacks
    */
-
-  const onSelect = useCallback(
-    (value: string) => {
-      open.add(value);
-      setLastSelected(value);
-      setSelectedItem(value);
-    },
-    [setLastSelected],
-  );
 
   const onSetOpen = useCallback(
     (value: string, isOpen: boolean) => {
@@ -215,35 +249,46 @@ function ProjectView({ folders, thumbnails }: Props) {
     [sdk, modal],
   );
 
-  const handleRemove = useCallback(
-    async (value: string) => {
-      const path = withAssetDir(getFullNodePath(tree.get(value)!).slice(1));
-      const entitiesWithAsset = getEntitiesWithAsset(path);
-      if (entitiesWithAsset.length) {
-        return setModal({ isOpen: true, value: path, entities: entitiesWithAsset });
+  /** Deletes the files among `values` (folders are skipped), asking first if the scene uses them. */
+  const handleRemoveMany = useCallback(
+    (values: string[]) => {
+      const paths = values
+        .filter(value => tree.get(value)?.type === 'asset')
+        .map(value => withAssetDir(getFullNodePath(tree.get(value)!).slice(1)));
+      if (!paths.length) return;
+      const entities = paths.flatMap(path => getEntitiesWithAsset(path));
+      if (entities.length) {
+        return setModal({ isOpen: true, values: paths, entities });
       }
-      dispatch(removeAsset({ path }));
+      paths.forEach(path => dispatch(removeAsset({ path })));
+      clearSelection();
     },
-    [tree, getEntitiesWithAsset],
+    [tree, getEntitiesWithAsset, clearSelection],
+  );
+
+  const handleRemove = useCallback(
+    (value: string) => handleRemoveMany(getTargets(value)),
+    [handleRemoveMany, getTargets],
   );
 
   const handleConfirm = useCallback(async () => {
     if (!modal) return;
-    dispatch(removeAsset({ path: modal.value }));
+    modal.values.forEach(path => dispatch(removeAsset({ path })));
     setModal(undefined);
-  }, [modal, setModal]);
+    clearSelection();
+  }, [modal, setModal, clearSelection]);
 
   const handleModalClose = useCallback(() => setModal(undefined), []);
 
-  const handleClickFolder = useCallback(
+  const handleOpenFolder = useCallback(
     (node: TreeNode) => () => {
       if (node.type === 'asset') return;
       const path = getFullNodePath(node).slice(1);
       open.add(path);
       setLastSelected(path);
-      setSelectedItem(path);
+      selectOnly(path);
     },
-    [setLastSelected],
+    [selectOnly],
   );
   const handleDragContext = useCallback(() => ({ tree }), [tree]);
   // Drop targets (renderer, video inputs) read a `value` like the Tile emits; the
@@ -253,6 +298,8 @@ function ProjectView({ folders, thumbnails }: Props) {
     (items: string[], context: unknown) => ({ items, value: items[0], context }),
     [],
   );
+  const getDragItems = useCallback((path: string) => getTargets(path), [getTargets]);
+  const getSelectedItems = useCallback(() => selection, [selection]);
   const isOpen = useCallback((val: string) => open.has(val), [open]);
 
   const getChildren = useCallback(
@@ -263,19 +310,44 @@ function ProjectView({ folders, thumbnails }: Props) {
     [tree, search, activeFilter],
   );
 
+  const getVisibleNodes = useCallback(() => {
+    const nodes: string[] = [];
+    const walk = (id: string) => {
+      for (const child of getChildren(id)) {
+        nodes.push(child);
+        if (open.has(child)) walk(child);
+      }
+    };
+    walk(ROOT);
+    return nodes;
+  }, [getChildren, open]);
+
+  const onSelect = useCallback(
+    (value: string, clickType: 'single' | 'ctrl' | 'shift' = 'single') => {
+      if (clickType === 'ctrl') return toggleSelected(value);
+      if (clickType === 'shift') return selectRange(value, getVisibleNodes());
+      open.add(value);
+      setLastSelected(value);
+      selectOnly(value);
+    },
+    [toggleSelected, selectRange, selectOnly, getVisibleNodes, open],
+  );
+
   const handleFilterClick = useCallback((type: Filter) => {
     setActiveFilter(type);
   }, []);
 
   /**
-   * File operations (rename, duplicate, copy, new folder)
+   * File operations (rename, duplicate, move, copy, new folder)
    */
 
   /** Keeps the selection, the open folders and the empty folders pointing at a renamed path. */
   const followRename = useCallback(
     (oldPath: string, newPath: string) => {
       const map = createPathMapper(oldPath, newPath);
-      setSelectedItem(current => map(current) ?? current);
+      setSelection(current => current.map(item => map(item) ?? item));
+      setFocusItem(current => map(current) ?? current);
+      setAnchor(current => map(current) ?? current);
       setLastSelected(current => map(current) ?? current);
       setVirtualFolders(current => current.map(folder => map(folder) ?? folder));
       const next = new Set<string>();
@@ -298,20 +370,77 @@ function ProjectView({ folders, thumbnails }: Props) {
     [operations, followRename, isVirtualFolder],
   );
 
+  /** Copies or moves `paths`; empty folders only exist in the explorer, so they move here. */
+  const transfer = useCallback(
+    async (paths: string[], options: { targetFolder?: string; move?: boolean }) => {
+      const created: string[] = [];
+      for (const path of paths.filter(isVirtualFolder)) {
+        const destination = options.targetFolder ?? getParentPath(path);
+        if (destination === path || destination.startsWith(path + '/')) continue;
+        const name = getUniqueCopyName(
+          getBaseName(path),
+          operations.getSiblingNames(destination),
+          true,
+        );
+        const newPath = joinPath(destination, options.move ? getBaseName(path) : name);
+        if (options.move) {
+          if (operations.getSiblingNames(destination).includes(getBaseName(path))) continue;
+          followRename(path, newPath);
+        } else {
+          setVirtualFolders(current => [...current, newPath]);
+        }
+        created.push(newPath);
+      }
+      const real = paths.filter(path => !isVirtualFolder(path));
+      created.push(...(await operations.transferMany(real, options)));
+      if (created.length) {
+        setSelection(created);
+        setFocusItem(created[created.length - 1]);
+        setAnchor(created[0]);
+      }
+      return created;
+    },
+    [operations, isVirtualFolder, followRename],
+  );
+
   const handleDuplicate = useCallback(
-    async (path: string) => {
-      if (isVirtualFolder(path)) {
-        const parent = getParentPath(path);
-        const name = getUniqueCopyName(getBaseName(path), operations.getSiblingNames(parent), true);
-        const newPath = joinPath(parent, name);
-        setVirtualFolders(current => [...current, newPath]);
-        setSelectedItem(newPath);
+    (path: string) => void transfer(getTargets(path), {}),
+    [transfer, getTargets],
+  );
+
+  const handleMove = useCallback(
+    async (items: string[], targetFolder: string) => {
+      if (!items.length) return;
+      await transfer(items, { targetFolder, move: true });
+      open.add(targetFolder);
+      setOpen(new Set(open));
+      setLastSelected(targetFolder);
+    },
+    [transfer, open],
+  );
+
+  // The tree calls onDrop once per dragged row; gather them so a multi-row drop moves as one batch
+  const handleTreeDrop = useCallback(
+    (source: string, target: string, dropType: DropType) => {
+      const node = tree.get(target);
+      if (!node) return;
+      const folder =
+        node.type === 'folder' && dropType === 'inside' ? target : getParentPath(target);
+      if (!folder) {
+        operations.notifyError('Drop the items on a folder to move them');
         return;
       }
-      const newPath = await operations.duplicate(path);
-      if (newPath) setSelectedItem(newPath);
+      if (!pendingDrop.current) {
+        pendingDrop.current = { items: [], target: folder };
+        setTimeout(() => {
+          const drop = pendingDrop.current;
+          pendingDrop.current = null;
+          if (drop) void handleMove(drop.items, drop.target);
+        }, 0);
+      }
+      pendingDrop.current.items.push(source);
     },
-    [operations, isVirtualFolder],
+    [tree, operations, handleMove],
   );
 
   const handleAddChild = useCallback(
@@ -323,172 +452,269 @@ function ProjectView({ folders, thumbnails }: Props) {
       open.add(newPath);
       setOpen(new Set(open));
       setLastSelected(newPath);
-      setSelectedItem(newPath);
+      selectOnly(newPath);
     },
-    [operations, open],
+    [operations, open, selectOnly],
   );
 
+  const getPasteTarget = useCallback(() => {
+    const reference = focusItem || lastSelected;
+    const node = tree.get(reference);
+    if (!node || reference === ROOT) return undefined;
+    return node.type === 'folder' ? reference : getParentPath(reference) || undefined;
+  }, [focusItem, lastSelected, tree]);
+
   const handlePaste = useCallback(async () => {
-    const source = clipboard.current;
-    if (!source) return;
-    if (!fullTree.has(source)) {
-      operations.notifyError('The copied item no longer exists');
+    const copied = clipboard.current;
+    if (!copied) return;
+    const paths = copied.paths.filter(path => fullTree.has(path));
+    if (!paths.length) {
+      operations.notifyError('The copied items no longer exist');
       clipboard.current = null;
       return;
     }
-    const reference = selectedItem || lastSelected;
-    const node = tree.get(reference);
-    const target =
-      !node || reference === ROOT
-        ? undefined
-        : node.type === 'folder'
-          ? reference
-          : getParentPath(reference);
+    const target = getPasteTarget();
     if (!target) {
       operations.notifyError('Select a folder to paste into');
       return;
     }
-    const newPath = await operations.duplicate(source, target);
-    if (newPath) {
+    if (copied.cut) {
+      clipboard.current = null;
+      await handleMove(paths, target);
+      return;
+    }
+    const created = await transfer(paths, { targetFolder: target });
+    if (created.length) {
       open.add(target);
       setOpen(new Set(open));
       setLastSelected(target);
-      setSelectedItem(newPath);
     }
-  }, [operations, fullTree, tree, selectedItem, lastSelected, open]);
+  }, [operations, fullTree, getPasteTarget, handleMove, transfer, open]);
 
-  const getExtraContextMenu = useCallback(
-    (val: string) => (
-      <>
-        <MenuItem
-          id="copy-relative-path"
-          onClick={handleAction(() => operations.copyRelativePath(val))}
-        >
-          <CopyPathIcon /> Copy relative path
-        </MenuItem>
-        <MenuItem
-          id="copy-file-name"
-          onClick={handleAction(() => operations.copyFileName(val))}
-        >
-          <CopyNameIcon /> Copy file name
-        </MenuItem>
-      </>
-    ),
-    [operations, handleAction],
+  const copyRelativePaths = useCallback(
+    (path: string) => operations.copyRelativePath(getTargets(path)),
+    [operations, getTargets],
+  );
+  const copyFileNames = useCallback(
+    (path: string) => operations.copyFileName(getTargets(path)),
+    [operations, getTargets],
   );
 
-  const canRenameNode = useCallback((val: string) => val !== ROOT && !!tree.get(val), [tree]);
+  const getExtraContextMenu = useCallback(
+    (val: string) => {
+      const isMultiple = getTargets(val).length > 1;
+      return (
+        <>
+          <MenuItem
+            id="copy-relative-path"
+            onClick={handleAction(() => copyRelativePaths(val))}
+          >
+            <CopyPathIcon />
+            {isMultiple ? 'Copy relative paths' : 'Copy relative path'}
+          </MenuItem>
+          <MenuItem
+            id="copy-file-name"
+            onClick={handleAction(() => copyFileNames(val))}
+          >
+            <CopyNameIcon />
+            {isMultiple ? 'Copy file names' : 'Copy file name'}
+          </MenuItem>
+        </>
+      );
+    },
+    [getTargets, copyRelativePaths, copyFileNames, handleAction],
+  );
+
+  const canRenameNode = useCallback(
+    (val: string) => val !== ROOT && !!tree.get(val) && getTargets(val).length === 1,
+    [tree, getTargets],
+  );
+  const canDuplicateNode = useCallback((val: string) => val !== ROOT && !!tree.get(val), [tree]);
   const isAssetNodeValue = useCallback((val: string) => tree.get(val)?.type === 'asset', [tree]);
+  const canRemoveNode = useCallback(
+    (val: string) => getTargets(val).some(target => tree.get(target)?.type === 'asset'),
+    [tree, getTargets],
+  );
   const canAddChild = useCallback(
     (val: string) => val !== ROOT && tree.get(val)?.type === 'folder',
     [tree],
   );
 
   /**
-   * Keyboard shortcuts. They only act while the pointer is over the explorer, which is how the
-   * scene shortcuts that share the same keys (Delete, Ctrl+C, Ctrl+V) know to step aside.
+   * Keyboard. The explorer owns the keyboard while the pointer is over it or its last click
+   * landed in it; that is how the scene shortcuts sharing the same keys (Delete, Ctrl+C,
+   * Ctrl+V) know to step aside. Only the arrows move along the tree: the camera keys are handed
+   * to the viewport, which lost the focus when the explorer was clicked.
    */
 
-  const selectNode = useCallback(
-    (path: string) => {
-      setSelectedItem(path);
+  const moveFocus = useCallback(
+    (path: string, extend: boolean) => {
       const node = tree.get(path);
       // keep the folder's cards on screen while moving through its files
       setLastSelected(node?.type === 'asset' ? getParentPath(path) || ROOT : path);
+      if (extend) selectRange(path, getVisibleNodes());
+      else selectOnly(path);
     },
-    [tree],
+    [tree, selectRange, selectOnly, getVisibleNodes],
   );
 
-  const getVisibleNodes = useCallback(() => {
-    const nodes: string[] = [];
-    const walk = (id: string) => {
-      for (const child of getChildren(id)) {
-        nodes.push(child);
-        if (open.has(child)) walk(child);
-      }
-    };
-    walk(ROOT);
-    return nodes;
-  }, [getChildren, open]);
+  const tiles = useMemo(
+    () => getTiles(lastSelected, tree, search, activeFilter),
+    [lastSelected, tree, search, activeFilter],
+  );
+  const tileIds = useMemo(() => tiles.map(node => getFullNodePath(node).slice(1)), [tiles]);
 
-  const handleKeyDown = (event: KeyboardEvent) => {
-    if (!containerRef.current || modal?.isOpen || event.defaultPrevented) return;
-    if (isEditableTarget(event.target) || event.altKey) return;
+  /** Returns true when the explorer handled the key. */
+  const handleKeyDown = (event: KeyboardEvent): boolean => {
+    if (!containerRef.current || modal?.isOpen) return false;
+    if (isEditableTarget(event.target) || event.altKey) return false;
     const withModifier = event.ctrlKey || event.metaKey;
     const key = event.key.toLowerCase();
-    const node = selectedItem ? tree.get(selectedItem) : undefined;
+    const node = focusItem ? tree.get(focusItem) : undefined;
 
-    if (withModifier && !event.shiftKey && (key === 'c' || key === 'v')) {
-      if (key === 'c') {
-        if (!selectedItem || !fullTree.has(selectedItem)) return;
-        clipboard.current = selectedItem;
-      } else {
-        void handlePaste();
+    if (withModifier && !event.shiftKey) {
+      if (key === 'c' || key === 'x') {
+        const paths = selection.filter(path => fullTree.has(path));
+        if (!paths.length) return false;
+        clipboard.current = { paths, cut: key === 'x' };
+        return true;
       }
-      return event.preventDefault();
+      if (key === 'v') {
+        void handlePaste();
+        return true;
+      }
+      if (key === 'd') {
+        if (!selection.length) return false;
+        void transfer(selection, {});
+        return true;
+      }
+      if (key === 'a') {
+        setSelection(tileIds);
+        setAnchor(tileIds[0] ?? '');
+        setFocusItem(tileIds[tileIds.length - 1] ?? '');
+        return true;
+      }
+      return false;
     }
-    if (withModifier || event.shiftKey) return;
+    if (withModifier) return false;
 
     if (key === 'delete' || key === 'backspace') {
-      if (node?.type !== 'asset') return;
-      event.preventDefault();
-      void handleRemove(selectedItem);
-      setSelectedItem('');
-      return;
+      if (!selection.some(path => tree.get(path)?.type === 'asset')) return false;
+      handleRemoveMany(selection);
+      return true;
+    }
+    if (key === 'escape' && selection.length) {
+      clearSelection();
+      return true;
     }
 
     const visible = getVisibleNodes();
-    const index = visible.indexOf(selectedItem);
+    const index = visible.indexOf(focusItem);
     if (key === 'arrowdown' || key === 'arrowup') {
-      event.preventDefault();
       const next =
         index === -1
           ? key === 'arrowdown'
             ? visible[0]
             : visible[visible.length - 1]
           : visible[index + (key === 'arrowdown' ? 1 : -1)];
-      if (next) selectNode(next);
-    } else if (key === 'arrowright' && node?.type === 'folder') {
-      event.preventDefault();
-      if (!open.has(selectedItem)) onSetOpen(selectedItem, true);
-      else if (node.children?.length) selectNode(node.children[0]);
-    } else if (key === 'arrowleft' && selectedItem) {
-      event.preventDefault();
-      if (node?.type === 'folder' && open.has(selectedItem)) onSetOpen(selectedItem, false);
-      else if (tree.has(getParentPath(selectedItem))) selectNode(getParentPath(selectedItem));
+      if (next) moveFocus(next, event.shiftKey);
+      return true;
     }
+    // Left/Right are always consumed so that no arrow moves the camera while the explorer is active
+    if (key === 'arrowright') {
+      if (node?.type === 'folder' && !event.shiftKey) {
+        if (!open.has(focusItem)) onSetOpen(focusItem, true);
+        else if (node.children?.length) moveFocus(node.children[0], false);
+      }
+      return true;
+    }
+    if (key === 'arrowleft') {
+      if (focusItem && !event.shiftKey) {
+        if (node?.type === 'folder' && open.has(focusItem)) onSetOpen(focusItem, false);
+        else if (tree.has(getParentPath(focusItem))) moveFocus(getParentPath(focusItem), false);
+      }
+      return true;
+    }
+    return false;
   };
   const keyDownRef = useRef(handleKeyDown);
   keyDownRef.current = handleKeyDown;
 
   useEffect(() => {
-    const listener = (event: KeyboardEvent) => {
-      if (isPointerOverAssetExplorer()) keyDownRef.current(event);
+    const forwardedKeys = new Set<number>();
+    const releaseForwardedKeys = () => {
+      forwardedKeys.forEach(keyCode => forwardToViewport('keyup', keyCode));
+      forwardedKeys.clear();
     };
-    document.addEventListener('keydown', listener);
+
+    // Capture phase: a handled key must not also reach the viewport (arrows move the camera)
+    // or the scene hotkeys bound on document.body.
+    const onKeyDown = (event: KeyboardEvent) => {
+      // the keys forwarded to the viewport travel back through this window: skip them
+      if (!event.isTrusted || !isAssetExplorerActive()) return;
+      if (keyDownRef.current(event)) {
+        event.preventDefault();
+        event.stopPropagation();
+        return;
+      }
+      if (
+        isCameraKey(event) &&
+        !isEditableTarget(event.target) &&
+        !isViewportFocused() &&
+        forwardToViewport('keydown', event.keyCode)
+      ) {
+        forwardedKeys.add(event.keyCode);
+      }
+    };
+    const onKeyUp = (event: KeyboardEvent) => {
+      if (!event.isTrusted || !forwardedKeys.delete(event.keyCode)) return;
+      forwardToViewport('keyup', event.keyCode);
+    };
+    const onPointerDown = (event: PointerEvent) => {
+      setAssetExplorerFocused(!!containerRef.current?.contains(event.target as Node));
+    };
+    const onWindowBlur = () => {
+      setAssetExplorerFocused(false);
+      releaseForwardedKeys();
+    };
+
+    window.addEventListener('keydown', onKeyDown, true);
+    window.addEventListener('keyup', onKeyUp, true);
+    window.addEventListener('pointerdown', onPointerDown, true);
+    window.addEventListener('blur', onWindowBlur);
     return () => {
-      document.removeEventListener('keydown', listener);
+      window.removeEventListener('keydown', onKeyDown, true);
+      window.removeEventListener('keyup', onKeyUp, true);
+      window.removeEventListener('pointerdown', onPointerDown, true);
+      window.removeEventListener('blur', onWindowBlur);
+      releaseForwardedKeys();
       setPointerOverAssetExplorer(false);
+      setAssetExplorerFocused(false);
     };
   }, []);
 
   useEffect(() => {
-    if (!selectedItem) return;
-    const escaped = selectedItem.replace(/["\\]/g, '\\$&');
+    if (!focusItem) return;
+    const escaped = focusItem.replace(/["\\]/g, '\\$&');
     containerRef.current
       ?.querySelector(`.Tree-View [data-test-id="${escaped}"]`)
       ?.scrollIntoView?.({ block: 'nearest' });
-  }, [selectedItem]);
+  }, [focusItem]);
+
+  const handleTileClick = useCallback(
+    (path: string) => (event: React.MouseEvent) => {
+      if (event.metaKey || event.ctrlKey) toggleSelected(path);
+      else if (event.shiftKey) selectRange(path, tileIds);
+      else selectOnly(path);
+    },
+    [toggleSelected, selectRange, selectOnly, tileIds],
+  );
 
   /**
    * Thumbnails: images are rendered by the tiles themselves; for 3D models we use the saved
    * thumbnail, and queue a background generation for the ones that don't have it yet.
    */
 
-  const tiles = useMemo(
-    () => getTiles(lastSelected, tree, search, activeFilter),
-    [lastSelected, tree, search, activeFilter],
-  );
   const modelSources = useMemo(
     () =>
       tiles
@@ -547,7 +773,10 @@ function ProjectView({ folders, thumbnails }: Props) {
         onRequestClose={handleModalClose}
         className="RemoveAsset"
       >
-        <h2>⚠️ Removing this asset will break some components</h2>
+        <h2>
+          ⚠️ Removing {modal && modal.values.length > 1 ? 'these assets' : 'this asset'} will break
+          some components
+        </h2>
         <div>
           <Button
             type="danger"
@@ -586,7 +815,7 @@ function ProjectView({ folders, thumbnails }: Props) {
             className="editor-assets-tree"
             value={ROOT}
             onAddChild={handleAddChild}
-            onDrop={noop}
+            onDrop={handleTreeDrop}
             onRemove={handleRemove}
             onRename={handleRename}
             onSelect={onSelect}
@@ -596,13 +825,14 @@ function ProjectView({ folders, thumbnails }: Props) {
             getId={(value: string) => value.toString()}
             getChildren={getChildren}
             getLabel={(val: string) => tree.get(val)?.name ?? val}
+            getSelectedItems={getSelectedItems}
             isOpen={isOpen}
-            isSelected={(val: string) => selectedItem === val}
+            isSelected={(val: string) => selectionSet.has(val)}
             isHidden={(val: string) => val === ROOT}
             canRename={canRenameNode}
             renameOnDoubleClick={isAssetNodeValue}
-            canRemove={isAssetNodeValue}
-            canDuplicate={canRenameNode}
+            canRemove={canRemoveNode}
+            canDuplicate={canDuplicateNode}
             canAddChild={canAddChild}
             addChildLabel="New folder"
             getExtraContextMenu={getExtraContextMenu}
@@ -613,8 +843,8 @@ function ProjectView({ folders, thumbnails }: Props) {
           />
         </div>
         <div className="FolderView">
-          {tiles.map(node => {
-            const valueId = getFullNodePath(node).slice(1);
+          {tiles.map((node, index) => {
+            const valueId = tileIds[index];
             const src = node.type === 'asset' ? (node as AssetNodeItem).asset.src : undefined;
             return (
               <Tile
@@ -622,14 +852,17 @@ function ProjectView({ folders, thumbnails }: Props) {
                 valueId={valueId}
                 value={node}
                 getDragContext={handleDragContext}
-                onClick={() => setSelectedItem(valueId)}
-                onSelect={handleClickFolder(node)}
+                getDragItems={getDragItems}
+                onDropItems={handleMove}
+                onClick={handleTileClick(valueId)}
+                onSelect={handleOpenFolder(node)}
                 onRemove={handleRemove}
                 onRename={handleRename}
                 onDuplicate={handleDuplicate}
-                onCopyRelativePath={operations.copyRelativePath}
-                onCopyFileName={operations.copyFileName}
-                selected={selectedItem === valueId}
+                onCopyRelativePath={copyRelativePaths}
+                onCopyFileName={copyFileNames}
+                selected={selectionSet.has(valueId)}
+                actionCount={getTargets(valueId).length}
                 thumbnail={src ? thumbnailMap?.get(src) : undefined}
                 thumbnailPending={!!src && thumbnailQueue.includes(src)}
                 dndType={DRAG_N_DROP_ASSET_KEY}

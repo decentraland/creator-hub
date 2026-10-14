@@ -15,6 +15,7 @@ import {
   getParentPath,
   getUniqueCopyName,
   joinPath,
+  pruneNestedPaths,
   replaceAssetReferences,
   validateName,
 } from './file-ops';
@@ -104,7 +105,13 @@ export function useAssetOperations({ tree, thumbnails, virtualFolders }: Options
    * the references in the scene are rewritten and the original files are removed afterwards.
    */
   const transfer = useCallback(
-    async (fromPath: string, toPath: string, isFolder: boolean, removeSource: boolean) => {
+    async (
+      fromPath: string,
+      toPath: string,
+      isFolder: boolean,
+      removeSource: boolean,
+      refreshCatalog = true,
+    ) => {
       const dataLayer = getDataLayerInterface();
       if (!dataLayer) throw new Error('Data layer is not available');
 
@@ -139,7 +146,7 @@ export function useAssetOperations({ tree, thumbnails, virtualFolders }: Options
         }
       }
 
-      dispatch(getAssetCatalog());
+      if (refreshCatalog) dispatch(getAssetCatalog());
     },
     [readEntries, copyThumbnail, updateSceneReferences, dispatch],
   );
@@ -177,47 +184,64 @@ export function useAssetOperations({ tree, thumbnails, virtualFolders }: Options
     [tree, getSiblingNames, transfer, notifyError],
   );
 
-  /** Copies `path` into `targetFolder` (its own folder when omitted) under a free name. */
-  const duplicate = useCallback(
+  /**
+   * Copies (or moves, with `move`) every path into `targetFolder`, or into each path's own folder
+   * when it is omitted. Names already taken in the destination get a "copy" suffix, including the
+   * ones taken earlier in the same batch. Returns the new paths of the items that made it.
+   */
+  const transferMany = useCallback(
     async (
-      path: string,
-      targetFolder: string = getParentPath(path),
-    ): Promise<string | undefined> => {
-      const node = tree.get(path);
-      if (!node) return undefined;
-      const isFolder = node.type !== 'asset';
-      if (isFolder && (targetFolder === path || targetFolder.startsWith(path + '/'))) {
-        notifyError('A folder cannot be pasted into itself');
-        return undefined;
+      paths: string[],
+      { targetFolder, move = false }: { targetFolder?: string; move?: boolean } = {},
+    ): Promise<string[]> => {
+      const created: string[] = [];
+      const takenByFolder = new Map<string, string[]>();
+      const failed: string[] = [];
+      for (const path of pruneNestedPaths(paths)) {
+        const node = tree.get(path);
+        if (!node) continue;
+        const isFolder = node.type !== 'asset';
+        const destination = targetFolder ?? getParentPath(path);
+        const name = getBaseName(path);
+        if (isFolder && (destination === path || destination.startsWith(path + '/'))) {
+          notifyError(`"${name}" cannot be placed inside itself`);
+          continue;
+        }
+        if (move && destination === getParentPath(path)) continue;
+        const taken = takenByFolder.get(destination) ?? getSiblingNames(destination);
+        const newName = taken.some($ => $.toLowerCase() === name.toLowerCase())
+          ? getUniqueCopyName(name, taken, isFolder)
+          : name;
+        const newPath = joinPath(destination, newName);
+        try {
+          await transfer(path, newPath, isFolder, move, false);
+          takenByFolder.set(destination, [...taken, newName]);
+          created.push(newPath);
+        } catch (e) {
+          console.error(`Failed to ${move ? 'move' : 'copy'} ${path}`, e);
+          failed.push(name);
+        }
       }
-      const siblings = getSiblingNames(targetFolder);
-      const name = getBaseName(path);
-      const newName = siblings.some($ => $.toLowerCase() === name.toLowerCase())
-        ? getUniqueCopyName(name, siblings, isFolder)
-        : name;
-      const newPath = joinPath(targetFolder, newName);
-      try {
-        await transfer(path, newPath, isFolder, false);
-      } catch (e) {
-        notifyError(`Failed to copy ${name}`, e);
-        return undefined;
+      if (failed.length) {
+        notifyError(`Failed to ${move ? 'move' : 'copy'} ${failed.join(', ')}`);
       }
-      return newPath;
+      if (created.length) dispatch(getAssetCatalog());
+      return created;
     },
-    [tree, getSiblingNames, transfer, notifyError],
+    [tree, getSiblingNames, transfer, notifyError, dispatch],
   );
 
   const copyRelativePath = useCallback(
-    async (path: string) => {
-      const ok = await copyTextToClipboard(withAssetDir(path));
+    async (paths: string[]) => {
+      const ok = await copyTextToClipboard(paths.map(path => withAssetDir(path)).join('\n'));
       if (!ok) notifyError('Could not copy the path to the clipboard');
     },
     [notifyError],
   );
 
   const copyFileName = useCallback(
-    async (path: string) => {
-      const ok = await copyTextToClipboard(getBaseName(path));
+    async (paths: string[]) => {
+      const ok = await copyTextToClipboard(paths.map(getBaseName).join('\n'));
       if (!ok) notifyError('Could not copy the name to the clipboard');
     },
     [notifyError],
@@ -239,7 +263,7 @@ export function useAssetOperations({ tree, thumbnails, virtualFolders }: Options
 
   return {
     rename,
-    duplicate,
+    transferMany,
     copyRelativePath,
     copyFileName,
     getNewFolderPath,

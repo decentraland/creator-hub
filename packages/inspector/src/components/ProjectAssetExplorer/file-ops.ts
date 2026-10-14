@@ -134,3 +134,18 @@ export async function copyTextToClipboard(text: string): Promise<boolean> {
     }
   }
 }
+
+/** Drops the paths that are inside another path of the list: the ancestor already covers them. */
+export function pruneNestedPaths(paths: string[]): string[] {
+  const unique = Array.from(new Set(paths));
+  return unique.filter(path => !unique.some($ => $ !== path && path.startsWith($ + '/')));
+}
+
+/** The items between `from` and `to` (both included) in `ordered`, in display order. */
+export function getRange(ordered: string[], from: string, to: string): string[] {
+  const start = ordered.indexOf(from);
+  const end = ordered.indexOf(to);
+  if (end === -1) return [];
+  if (start === -1) return [to];
+  return ordered.slice(Math.min(start, end), Math.max(start, end) + 1);
+}

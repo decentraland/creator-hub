@@ -14,7 +14,7 @@ import {
 } from 'react-icons/md';
 import { Item as MenuItem } from 'react-contexify';
 import { SiTypescript as ScriptIcon } from 'react-icons/si';
-import { useDrag } from 'react-dnd';
+import { useDrag, useDrop } from 'react-dnd';
 import cx from 'classnames';
 import { Loader } from 'decentraland-ui/dist/components/Loader/Loader';
 
@@ -76,6 +76,9 @@ export const Tile = withContextMenu<Props>(
     onDuplicate,
     onCopyRelativePath,
     onCopyFileName,
+    actionCount = 1,
+    getDragItems,
+    onDropItems,
     selected,
     contextMenuId,
     dndType,
@@ -99,8 +102,30 @@ export const Tile = withContextMenu<Props>(
     }, [valueId, isRemovingAsset]);
 
     const [, drag] = useDrag(
-      () => ({ type: dndType, item: { value: valueId, context: getDragContext() } }),
-      [valueId],
+      () => ({
+        type: dndType,
+        // `value` is what the viewport and the component inputs read; `items` lets the tree
+        // and the folder cards move the whole selection.
+        item: () => ({ value: valueId, items: getDragItems(valueId), context: getDragContext() }),
+      }),
+      [valueId, getDragItems, getDragContext],
+    );
+
+    const isFolder = value?.type === 'folder';
+    const [{ isDropTarget }, drop] = useDrop(
+      () => ({
+        accept: dndType,
+        canDrop: (item: { value?: string; items?: string[] }) => {
+          const items = item.items ?? (item.value ? [item.value] : []);
+          return isFolder && !items.includes(valueId);
+        },
+        drop: (item: { value?: string; items?: string[] }, monitor) => {
+          if (monitor.didDrop()) return;
+          onDropItems(item.items ?? (item.value ? [item.value] : []), valueId);
+        },
+        collect: monitor => ({ isDropTarget: monitor.isOver() && monitor.canDrop() }),
+      }),
+      [isFolder, valueId, onDropItems],
     );
 
     const handleRemove = useCallback(() => onRemove(valueId), [valueId, onRemove]);
@@ -121,6 +146,8 @@ export const Tile = withContextMenu<Props>(
     );
 
     if (!value) return null;
+
+    const isMultiple = actionCount > 1;
 
     const renderThumbnail = () => {
       if (value.type === 'folder') return <FolderIcon />;
@@ -161,43 +188,50 @@ export const Tile = withContextMenu<Props>(
     return (
       <>
         <Menu id={contextMenuId}>
-          <MenuItem
-            id="rename"
-            onClick={handleAction(handleStartRename)}
-          >
-            <RenameIcon /> Rename
-          </MenuItem>
+          {!isMultiple && (
+            <MenuItem
+              id="rename"
+              onClick={handleAction(handleStartRename)}
+            >
+              <RenameIcon />
+              Rename
+            </MenuItem>
+          )}
           <MenuItem
             id="duplicate"
             onClick={handleAction(handleDuplicate)}
           >
-            <DuplicateIcon /> Duplicate
+            <DuplicateIcon />
+            {isMultiple ? `Duplicate ${actionCount} items` : 'Duplicate'}
           </MenuItem>
           <MenuItem
             id="copy-relative-path"
             onClick={handleAction(handleCopyPath)}
           >
-            <CopyPathIcon /> Copy relative path
+            <CopyPathIcon />
+            {isMultiple ? 'Copy relative paths' : 'Copy relative path'}
           </MenuItem>
           <MenuItem
             id="copy-file-name"
             onClick={handleAction(handleCopyName)}
           >
-            <CopyNameIcon /> Copy file name
+            <CopyNameIcon />
+            {isMultiple ? 'Copy file names' : 'Copy file name'}
           </MenuItem>
           {/* TODO: support removing folders */}
-          {value.type === 'asset' && (
+          {(isMultiple || value.type === 'asset') && (
             <MenuItem
               id="delete"
               onClick={handleAction(handleRemove)}
             >
-              <DeleteIcon /> Delete
+              <DeleteIcon />
+              {isMultiple ? `Delete ${actionCount} items` : 'Delete'}
             </MenuItem>
           )}
         </Menu>
         <div
-          ref={drag}
-          className={cx('Tile', { selected })}
+          ref={node => drag(drop(node))}
+          className={cx('Tile', { selected, 'drop-target': isDropTarget })}
           key={value.name}
           onClick={onClick}
           onDoubleClick={onSelect}
