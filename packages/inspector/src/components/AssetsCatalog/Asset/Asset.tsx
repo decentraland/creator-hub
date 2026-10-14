@@ -1,9 +1,14 @@
 import React, { useEffect } from 'react';
 import { useDrag, DragPreviewImage } from 'react-dnd';
-import cx from 'classnames';
 import { BsFillLightningChargeFill as SmartItemIcon } from 'react-icons/bs';
+import cx from 'classnames';
 
-import { getContentsUrl, isSmart, isGround } from '../../../lib/logic/catalog';
+import {
+  getAnimatedPreviewUrl,
+  getContentsUrl,
+  isSmart,
+  isGround,
+} from '../../../lib/logic/catalog';
 import { Asset } from '../../../lib/logic/catalog';
 import { fetchImage, resizeImage } from '../../../lib/utils/img';
 import { useIsMounted } from '../../../hooks/useIsMounted';
@@ -21,6 +26,8 @@ const Asset = React.forwardRef<HTMLDivElement, AssetProps>(({ value, onAddToFile
   const isSmartItem = isSmart(value);
   const isGroundItem = isGround(value);
   const imgSrc = getContentsUrl(value.contents['thumbnail.png']);
+  const animatedSrc = getAnimatedPreviewUrl(value);
+  const [hovered, setHovered] = React.useState(false);
 
   // generate drag preview as a 60x60 data url image
   const [previewImg, setPreviewImg] = React.useState<string>();
@@ -53,9 +60,11 @@ const Asset = React.forwardRef<HTMLDivElement, AssetProps>(({ value, onAddToFile
         data-test-id={value.id}
         data-test-label={value.name}
         onContextMenu={handleContextMenu}
+        onMouseEnter={animatedSrc ? () => setHovered(true) : undefined}
+        onMouseLeave={animatedSrc ? () => setHovered(false) : undefined}
       >
         <img
-          src={imgSrc}
+          src={hovered && animatedSrc ? animatedSrc : imgSrc}
           alt={value.tags.join(', ')}
         />
         {isSmartItem && (

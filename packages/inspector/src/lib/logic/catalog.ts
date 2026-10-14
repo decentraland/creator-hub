@@ -88,6 +88,15 @@ export function getContentsUrl(hash: string) {
   return `${config.contentUrl}/contents/${hash}`;
 }
 
+// An optional looping animated thumbnail the catalog card plays on hover (e.g. avatar
+// animations). Like thumbnail.png it is catalog-only and never copied into a scene.
+export const ANIMATED_PREVIEW_PATH = 'preview.webp';
+
+export function getAnimatedPreviewUrl(asset: Asset): string | undefined {
+  const hash = asset.contents[ANIMATED_PREVIEW_PATH];
+  return hash ? getContentsUrl(hash) : undefined;
+}
+
 export function getAssetsByCategory(assets: Asset[]) {
   const categories = new Map<Asset['category'], Asset[]>(CATEGORIES.map($ => [$, []]));
   for (const asset of assets) {

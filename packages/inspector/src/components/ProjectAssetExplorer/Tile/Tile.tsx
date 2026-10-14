@@ -3,6 +3,7 @@ import { AiFillDelete as DeleteIcon, AiOutlineSound as AudioIcon } from 'react-i
 import { IoIosImage as ImageIcon } from 'react-icons/io';
 import { IoCubeOutline as ModelIcon, IoVideocamOutline as VideoIcon } from 'react-icons/io5';
 import { FaFile as OtherIcon } from 'react-icons/fa';
+import { MdOutlineEmojiPeople as EmoteIcon } from 'react-icons/md';
 import { Item as MenuItem } from 'react-contexify';
 import { SiTypescript as ScriptIcon } from 'react-icons/si';
 import { useDrag } from 'react-dnd';
@@ -20,6 +21,7 @@ import { withContextMenu } from '../../../hoc/withContextMenu';
 import { useContextMenu } from '../../../hooks/sdk/useContextMenu';
 import { determineAssetType, extractFileExtension } from '../../ImportAsset/utils';
 import type { AssetNodeItem } from '../types';
+import { isEmoteAsset } from '../utils';
 import type { Props } from './types';
 
 import './Tile.css';
@@ -34,8 +36,11 @@ export const Tile = withContextMenu<Props>(
     contextMenuId,
     dndType,
     getThumbnail,
+    getAnimatedThumbnail,
   }) => {
     const [thumbnail, setThumbnail] = useState<Uint8Array | null>(null);
+    const [animatedThumbnail, setAnimatedThumbnail] = useState<Uint8Array | null>(null);
+    const [hovered, setHovered] = useState(false);
     const { handleAction } = useContextMenu();
     const isRemovingAsset = useAppSelector(selectDataLayerRemovingAsset);
 
@@ -44,7 +49,12 @@ export const Tile = withContextMenu<Props>(
       if (value?.type === 'asset' && getThumbnail) {
         getThumbnail(value as AssetNodeItem).then(data => setThumbnail(data ? data : null));
       }
-    }, [value]);
+      if (value?.type === 'asset' && getAnimatedThumbnail) {
+        getAnimatedThumbnail(value as AssetNodeItem).then(data =>
+          setAnimatedThumbnail(data ? data : null),
+        );
+      }
+    }, [value, getThumbnail, getAnimatedThumbnail]);
 
     const isLoading = useMemo(() => {
       const path = withAssetDir(valueId);
@@ -64,6 +74,13 @@ export const Tile = withContextMenu<Props>(
 
     const renderThumbnail = useCallback(() => {
       if (value.type === 'folder') return <FolderIcon />;
+      if (hovered && animatedThumbnail)
+        return (
+          <img
+            src={transformBinaryToBase64Resource(animatedThumbnail, 'image/webp')}
+            alt={value.name}
+          />
+        );
       if (thumbnail)
         return (
           <img
@@ -71,6 +88,7 @@ export const Tile = withContextMenu<Props>(
             alt={value.name}
           />
         );
+      if (isEmoteAsset((value as AssetNodeItem).asset)) return <EmoteIcon />;
       const classification = determineAssetType(extractFileExtension(value.name)[1]);
       switch (classification) {
         case 'Models':
@@ -86,7 +104,7 @@ export const Tile = withContextMenu<Props>(
         case 'Other':
           return <OtherIcon />;
       }
-    }, [thumbnail, value]);
+    }, [thumbnail, animatedThumbnail, hovered, value]);
 
     const renderOverlayLoading = useCallback(() => {
       if (isLoading) {
@@ -118,6 +136,8 @@ export const Tile = withContextMenu<Props>(
           className="Tile"
           key={value.name}
           onDoubleClick={onSelect}
+          onMouseEnter={() => setHovered(true)}
+          onMouseLeave={() => setHovered(false)}
           title={value.name}
           data-test-id={valueId}
           data-test-label={value.name}

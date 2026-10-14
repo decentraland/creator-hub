@@ -83,6 +83,7 @@ export function isAssetNode(node: AssetNode | TreeNode): node is AssetNodeItem {
 export const DEFAULT_FILTERS: Filter[] = [Filter.All /* Filter.Recents */];
 export const FILTERS_IN_ORDER: Filter[] = [
   Filter.Models,
+  Filter.Emotes,
   Filter.Images,
   Filter.Audio,
   Filter.Video,
@@ -90,10 +91,16 @@ export const FILTERS_IN_ORDER: Filter[] = [
   Filter.Other,
 ];
 
-export function mapAssetTypeToFilter(type: IAsset['type']): Filter | undefined {
-  switch (type) {
+// Avatar animations are plain GLBs; the `_emote` suffix (which the import dialog appends to any
+// model it detects as an emote) is what tells them apart from scene models.
+export function isEmoteAsset(asset: IAsset): boolean {
+  return asset.type === 'gltf' && /_emote\.(glb|gltf)$/i.test(asset.src);
+}
+
+export function mapAssetTypeToFilter(asset: IAsset): Filter | undefined {
+  switch (asset.type) {
     case 'gltf':
-      return Filter.Models;
+      return isEmoteAsset(asset) ? Filter.Emotes : Filter.Models;
     case 'audio':
       return Filter.Audio;
     case 'image':

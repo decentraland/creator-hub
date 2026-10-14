@@ -23,7 +23,12 @@ import { type EnumEntity } from '../../sdk/enum-entity';
 import { EditorComponentNames, type EditorComponents } from '../../sdk/components';
 import { resolveActiveSceneComponent } from '../../sdk/components/scene-metadata-version';
 import { getViewportRect, type ViewportRect } from '../../logic/viewport-rect';
-import { fetchLatestCatalog, getAssetById, isFileOnly } from '../../logic/catalog';
+import {
+  ANIMATED_PREVIEW_PATH,
+  fetchLatestCatalog,
+  getAssetById,
+  isFileOnly,
+} from '../../logic/catalog';
 import {
   getAssetCatalog,
   getDataLayerInterface,
@@ -483,6 +488,7 @@ export class SceneServer extends RPC<Method, Params, Result> {
         const contentBase = getConfig().contentUrl;
         const content = new Map<string, Uint8Array>();
         for (const [rel, hash] of Object.entries(asset.contents)) {
+          if (rel === ANIMATED_PREVIEW_PATH) continue;
           const res = await fetch(`${contentBase}/contents/${hash}`);
           if (!res.ok) throw new Error(`Failed to fetch "${rel}" (HTTP ${res.status}).`);
           content.set(rel, new Uint8Array(await res.arrayBuffer()));
