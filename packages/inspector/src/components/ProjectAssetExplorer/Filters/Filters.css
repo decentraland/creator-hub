@@ -1,34 +1,40 @@
 .ProjectFilters {
   display: flex;
-  flex-direction: column;
-  flex-shrink: 0;
-  padding: 10px;
-  height: calc(100% - 30px);
-  overflow-y: auto;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 4px;
+  min-width: 0;
   user-select: none;
 }
 
 .ProjectFilters .filter {
-  display: flex;
-  flex-direction: column;
+  display: inline-flex;
   align-items: center;
-  padding: 10px;
+  gap: 5px;
+  height: 26px;
+  padding: 0 10px;
+  border-radius: 13px;
+  background: var(--base-17);
+  color: var(--neutral-grey-3);
+  font-size: 12px;
+  white-space: nowrap;
   cursor: pointer;
-  margin-bottom: 10px;
-  border-radius: 8px;
+  transition:
+    background-color 0.12s ease,
+    color 0.12s ease;
 }
 
-.ProjectFilters .filter:last-child {
-  margin: 0;
+.ProjectFilters .filter:hover {
+  background: var(--base-15);
+  color: var(--white-gray);
 }
 
-.ProjectFilters .filter:hover,
 .ProjectFilters .filter.active {
-  background-color: var(--selected-item);
+  background: var(--primary-main);
+  color: var(--white);
 }
 
 .ProjectFilters .filter svg {
-  width: 20px;
-  height: 20px;
-  margin-bottom: 4px;
+  width: 14px;
+  height: 14px;
 }

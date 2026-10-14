@@ -1,19 +1,15 @@
 import { useEffect, useRef, useState } from 'react';
 import { MdPause, MdPlayArrow, MdAutorenew } from 'react-icons/md';
 import { Engine } from '@babylonjs/core/Engines/engine';
-import { Scene } from '@babylonjs/core/scene';
 import { SceneLoader } from '@babylonjs/core/Loading/sceneLoader';
-import type { AbstractMesh } from '@babylonjs/core/Meshes/abstractMesh';
 import type { AssetContainer } from '@babylonjs/core/assetContainer';
 import type { AnimationGroup } from '@babylonjs/core/Animations/animationGroup';
-import { ArcRotateCamera } from '@babylonjs/core/Cameras/arcRotateCamera';
-import { HemisphericLight } from '@babylonjs/core/Lights/hemisphericLight';
-import { DirectionalLight } from '@babylonjs/core/Lights/directionalLight';
-import { Vector3 } from '@babylonjs/core/Maths/math.vector';
-import { Color4 } from '@babylonjs/core/Maths/math.color';
+import type { ArcRotateCamera } from '@babylonjs/core/Cameras/arcRotateCamera';
+import type { Scene } from '@babylonjs/core/scene';
 import '@babylonjs/loaders/glTF';
 
 import { isEmoteContainer } from '../AssetPreview/emote';
+import { createPreviewScene, frameCamera, isColliderMesh } from './modelScene';
 import { EmoteViewer } from './EmoteViewer';
 import type { PreviewSource } from './useAssetPreviewSource';
 
@@ -31,9 +27,6 @@ type Props = {
   onFailed: () => void;
 };
 
-// Same rule the scene renderer uses to tell collision proxies from visible geometry.
-const isColliderMesh = (mesh: AbstractMesh) => mesh.name.toLowerCase().includes('collider');
-
 function computeStats(container: AssetContainer): ModelStats {
   const visible = container.meshes.filter(mesh => !isColliderMesh(mesh));
   const triangles = visible.reduce((sum, mesh) => sum + mesh.getTotalIndices() / 3, 0);
@@ -44,20 +37,6 @@ function computeStats(container: AssetContainer): ModelStats {
     textures: container.textures.length,
     animations: container.animationGroups.length,
   };
-}
-
-function frameCamera(scene: Scene, camera: ArcRotateCamera) {
-  const { min, max } = scene.getWorldExtends(mesh => mesh.isVisible && mesh.isEnabled());
-  const center = min.add(max).scale(0.5);
-  const size = max.subtract(min);
-  const radius = Math.max(size.length(), 0.1);
-  camera.setTarget(center);
-  camera.radius = radius * 1.4;
-  camera.lowerRadiusLimit = radius * 0.2;
-  camera.upperRadiusLimit = radius * 6;
-  camera.minZ = radius / 100;
-  camera.maxZ = radius * 100;
-  camera.wheelPrecision = 50 / radius;
 }
 
 export function ModelViewer({ source, onStats, onFailed }: Props) {
@@ -77,22 +56,9 @@ export function ModelViewer({ source, onStats, onFailed }: Props) {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const engine = new Engine(canvas, true, { preserveDrawingBuffer: false, stencil: false });
-    const scene = new Scene(engine);
-    scene.clearColor = new Color4(0, 0, 0, 0);
-    const camera = new ArcRotateCamera(
-      'preview',
-      Math.PI / 4,
-      Math.PI / 3,
-      5,
-      Vector3.Zero(),
-      scene,
-    );
+    const { scene, camera } = createPreviewScene(engine);
     camera.attachControl(canvas, true);
     camera.useAutoRotationBehavior = true;
-    camera.panningSensibility = 0;
-    new HemisphericLight('ambient', new Vector3(0, 1, 0), scene).intensity = 0.9;
-    const key = new DirectionalLight('key', new Vector3(-1, -2, -1), scene);
-    key.intensity = 0.8;
 
     sceneRef.current = scene;
     cameraRef.current = camera;

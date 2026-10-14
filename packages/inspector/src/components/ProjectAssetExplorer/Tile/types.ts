@@ -8,5 +8,6 @@ export interface Props {
   onSelect: () => void;
   onRemove: (value: string) => void;
   dndType: string;
-  getThumbnail: (value: AssetNodeItem) => Promise<Uint8Array | undefined>;
+  getThumbnail: (value: AssetNodeItem) => Promise<string | undefined>;
+  layout?: 'grid' | 'list';
 }

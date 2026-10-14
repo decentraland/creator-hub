@@ -55,3 +55,64 @@
   position: relative;
   pointer-events: none;
 }
+
+.Tile.folder {
+  flex-direction: row;
+  justify-content: flex-start;
+  gap: 8px;
+  width: auto;
+  min-width: 140px;
+  max-width: 220px;
+  height: 36px;
+  margin: 0;
+  padding: 0 12px;
+}
+
+.Tile.folder svg {
+  flex: none;
+  width: 18px;
+  height: 18px;
+}
+
+.Tile.folder span {
+  width: auto;
+  padding: 0;
+  font-size: 12px;
+  text-align: left;
+}
+
+.Tile.row {
+  flex-direction: row;
+  justify-content: flex-start;
+  gap: 10px;
+  width: 100%;
+  height: 40px;
+  margin: 0;
+  padding: 0 10px;
+  border-radius: 8px;
+  background-color: transparent;
+}
+
+.Tile.row:hover {
+  background-color: var(--base-17);
+}
+
+.Tile.row.selected {
+  background-color: var(--base-15);
+}
+
+.Tile.row svg,
+.Tile.row img {
+  flex: none;
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
+}
+
+.Tile.row span {
+  width: auto;
+  flex: 1;
+  padding: 0;
+  font-size: 12px;
+  text-align: left;
+}

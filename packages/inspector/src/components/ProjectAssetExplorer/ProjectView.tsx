@@ -4,6 +4,13 @@ import { IoIosImage as ImageIcon } from 'react-icons/io';
 import { IoCubeOutline as ModelIcon, IoVideocamOutline as VideoIcon } from 'react-icons/io5';
 import { FaFile as OtherIcon } from 'react-icons/fa';
 import { SiTypescript as ScriptIcon } from 'react-icons/si';
+import {
+  MdChevronRight as ChevronIcon,
+  MdViewList as ListIcon,
+  MdGridView as GridIcon,
+} from 'react-icons/md';
+import { BsLayoutSidebarInset as TreeIcon } from 'react-icons/bs';
+import cx from 'classnames';
 import type { Entity } from '@dcl/ecs';
 
 import { useSdk } from '../../hooks/sdk/useSdk';
@@ -12,7 +19,7 @@ import { Modal } from '../Modal';
 import { Button } from '../Button';
 import FolderIcon from '../Icons/Folder';
 import Search from '../Search';
-import { withAssetDir } from '../../lib/data-layer/host/fs-utils';
+import { transformBinaryToBase64Resource, withAssetDir } from '../../lib/data-layer/host/fs-utils';
 import { removeAsset } from '../../redux/data-layer';
 import { useAppDispatch } from '../../redux/hooks';
 import { determineAssetType, extractFileExtension } from '../ImportAsset/utils';
@@ -21,6 +28,7 @@ import { useAssetSelection } from '../AssetBrowserPreview';
 import { getFilterFromTree, getFullNodePath } from './utils';
 import type { AssetNodeFolder, AssetNodeItem } from './types';
 import { Tile } from './Tile';
+import { getLocalThumbnail, invalidateLocalThumbnail } from './localThumbnails';
 import { generateAssetTree, getChildren as _getChildren, TreeNode, ROOT, getTiles } from './tree';
 import { Filters } from './Filters';
 import { Filter } from './Filters/types';
@@ -46,7 +54,9 @@ const FilesTree = Tree<string>();
 
 function ProjectView({ folders, thumbnails }: Props) {
   const sdk = useSdk();
-  const { select } = useAssetSelection();
+  const { selection, select } = useAssetSelection();
+  const [viewMode, setViewMode] = useState<ViewMode>(readViewMode);
+  const [showTree, setShowTree] = useState(true);
   const dispatch = useAppDispatch();
   const [open, setOpen] = useState(new Set<string>());
   const [modal, setModal] = useState<ModalState | undefined>(undefined);
@@ -69,10 +79,14 @@ function ProjectView({ folders, thumbnails }: Props) {
   const onSelect = useCallback(
     (value: string) => {
       open.add(value);
-      setLastSelected(value);
       const node = tree.get(value);
-      if (node?.type === 'asset')
+      if (node?.type === 'asset') {
+        // Keep the file's folder in view so its neighbours stay visible, and preview the file.
+        setLastSelected(value.includes('/') ? value.slice(0, value.lastIndexOf('/')) : ROOT);
         select({ source: 'local', id: value, name: node.name, path: value });
+        return;
+      }
+      setLastSelected(value);
     },
     [setLastSelected, tree, select],
   );
@@ -139,6 +153,7 @@ function ProjectView({ folders, thumbnails }: Props) {
       if (entitiesWithAsset.length) {
         return setModal({ isOpen: true, value: path, entities: entitiesWithAsset });
       }
+      invalidateLocalThumbnail(getFullNodePath(tree.get(value)!).slice(1));
       dispatch(removeAsset({ path }));
     },
     [tree, getEntitiesWithAsset],
@@ -147,6 +162,7 @@ function ProjectView({ folders, thumbnails }: Props) {
   const handleConfirm = useCallback(async () => {
     if (!modal) return;
     dispatch(removeAsset({ path: modal.value }));
+    invalidateLocalThumbnail(modal.value.replace(/^assets\//, ''));
     setModal(undefined);
   }, [modal, setModal]);
 
@@ -189,7 +205,9 @@ function ProjectView({ folders, thumbnails }: Props) {
         const [name] = value.name.split('.');
         thumbnail = thumbnails.find($ => $.path.endsWith(name + '.png'));
       }
-      if (thumbnail) return thumbnail.content;
+      if (thumbnail) return transformBinaryToBase64Resource(thumbnail.content);
+      // Nothing stored: images show themselves and models get rendered once.
+      return getLocalThumbnail(value.asset.src);
     },
     [thumbnails],
   );
@@ -199,6 +217,35 @@ function ProjectView({ folders, thumbnails }: Props) {
   }, []);
 
   const tiles = getTiles(lastSelected, tree, search, activeFilter);
+  const folderTiles = tiles.filter(node => node.type === 'folder');
+  const assetTiles = tiles.filter(node => node.type === 'asset');
+  const crumbs = getBreadcrumbs(lastSelected);
+
+  const handleViewMode = useCallback((mode: ViewMode) => {
+    setViewMode(mode);
+    try {
+      localStorage.setItem(VIEW_MODE_KEY, mode);
+    } catch {
+      // storage can be unavailable (private windows, blocked site data); the choice just won't stick
+    }
+  }, []);
+
+  const renderTile = (node: TreeNode) => {
+    const valueId = getFullNodePath(node).slice(1);
+    return (
+      <Tile
+        key={valueId}
+        valueId={valueId}
+        value={node}
+        layout={viewMode}
+        getDragContext={handleDragContext}
+        onSelect={handleClickFolder(node)}
+        onRemove={handleRemove}
+        getThumbnail={getThumbnail}
+        dndType={DRAG_N_DROP_ASSET_KEY}
+      />
+    );
+  };
 
   return (
     <>
@@ -225,18 +272,8 @@ function ProjectView({ folders, thumbnails }: Props) {
         </div>
       </Modal>
       <div className="ProjectView">
-        <Filters
-          filters={filters}
-          active={activeFilter}
-          onClick={handleFilterClick}
-        />
-        <div className="Tree-View">
-          <Search
-            value={search}
-            onChange={setSearch}
-            placeholder="Search local assets"
-            onCancel={() => setSearch('')}
-          />
+        <div className={cx('Tree-View', { collapsed: !showTree })}>
+          <div className="Tree-View-header">Folders</div>
           <FilesTree
             className="editor-assets-tree"
             value={ROOT}
@@ -252,7 +289,9 @@ function ProjectView({ folders, thumbnails }: Props) {
             getChildren={getChildren}
             getLabel={(val: string) => <span>{tree.get(val)?.name ?? val}</span>}
             isOpen={isOpen}
-            isSelected={(val: string) => lastSelected === val}
+            isSelected={(val: string) =>
+              lastSelected === val || (selection?.source === 'local' && selection.id === val)
+            }
             isHidden={(val: string) => val === ROOT}
             canRename={() => false}
             canRemove={val => tree.get(val)?.type === 'asset'}
@@ -264,26 +303,112 @@ function ProjectView({ folders, thumbnails }: Props) {
             dndType={DRAG_N_DROP_ASSET_KEY}
           />
         </div>
-        <div className="FolderView">
-          {tiles.map(node => {
-            const valueId = getFullNodePath(node).slice(1);
-            return (
-              <Tile
-                key={valueId}
-                valueId={valueId}
-                value={node}
-                getDragContext={handleDragContext}
-                onSelect={handleClickFolder(node)}
-                onRemove={handleRemove}
-                getThumbnail={getThumbnail}
-                dndType={DRAG_N_DROP_ASSET_KEY}
-              />
-            );
-          })}
+        <div className="ProjectView-main">
+          <div className="ProjectView-toolbar">
+            <button
+              className={cx('ProjectView-iconButton', { active: showTree })}
+              onClick={() => setShowTree(value => !value)}
+              title={showTree ? 'Hide folder tree' : 'Show folder tree'}
+              aria-label={showTree ? 'Hide folder tree' : 'Show folder tree'}
+              aria-pressed={showTree}
+            >
+              <TreeIcon />
+            </button>
+            <Search
+              value={search}
+              onChange={setSearch}
+              placeholder="Search local assets"
+              onCancel={() => setSearch('')}
+            />
+            <Filters
+              filters={filters}
+              active={activeFilter}
+              onClick={handleFilterClick}
+            />
+            <div
+              className="ProjectView-viewToggle"
+              role="group"
+              aria-label="View mode"
+            >
+              <button
+                className={cx('ProjectView-iconButton', { active: viewMode === 'grid' })}
+                onClick={() => handleViewMode('grid')}
+                title="Grid view"
+                aria-label="Grid view"
+                aria-pressed={viewMode === 'grid'}
+              >
+                <GridIcon />
+              </button>
+              <button
+                className={cx('ProjectView-iconButton', { active: viewMode === 'list' })}
+                onClick={() => handleViewMode('list')}
+                title="List view"
+                aria-label="List view"
+                aria-pressed={viewMode === 'list'}
+              >
+                <ListIcon />
+              </button>
+            </div>
+          </div>
+          <nav
+            className="ProjectView-breadcrumb"
+            aria-label="Folder path"
+          >
+            {crumbs.map((crumb, index) => (
+              <React.Fragment key={crumb.path}>
+                {index > 0 && <ChevronIcon />}
+                <button
+                  className={cx({ current: index === crumbs.length - 1 })}
+                  onClick={() => setLastSelected(crumb.path)}
+                >
+                  {crumb.label}
+                </button>
+              </React.Fragment>
+            ))}
+          </nav>
+          <div className="ProjectView-scroll">
+            {folderTiles.length > 0 && (
+              <div className="FolderView ProjectView-folders">{folderTiles.map(renderTile)}</div>
+            )}
+            {assetTiles.length > 0 && (
+              <div className={cx('FolderView', 'ProjectView-files', viewMode)}>
+                {assetTiles.map(renderTile)}
+              </div>
+            )}
+            {tiles.length === 0 && (
+              <div className="ProjectView-empty">
+                {search || activeFilter !== Filter.All
+                  ? 'No assets match your search.'
+                  : 'This folder is empty.'}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </>
   );
+}
+
+type ViewMode = 'grid' | 'list';
+
+const VIEW_MODE_KEY = 'inspector:local-assets-view';
+
+function readViewMode(): ViewMode {
+  try {
+    return localStorage.getItem(VIEW_MODE_KEY) === 'list' ? 'list' : 'grid';
+  } catch {
+    return 'grid';
+  }
+}
+
+function getBreadcrumbs(path: string): { label: string; path: string }[] {
+  const crumbs = [{ label: 'Assets', path: ROOT }];
+  if (path === ROOT) return crumbs;
+  const parts = path.split('/');
+  parts.forEach((part, index) =>
+    crumbs.push({ label: part, path: parts.slice(0, index + 1).join('/') }),
+  );
+  return crumbs;
 }
 
 function NodeIcon({ value }: { value?: TreeNode }) {

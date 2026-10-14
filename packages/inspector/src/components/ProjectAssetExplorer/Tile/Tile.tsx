@@ -9,10 +9,7 @@ import { useDrag } from 'react-dnd';
 import cx from 'classnames';
 import { Loader } from 'decentraland-ui/dist/components/Loader/Loader';
 
-import {
-  transformBinaryToBase64Resource,
-  withAssetDir,
-} from '../../../lib/data-layer/host/fs-utils';
+import { withAssetDir } from '../../../lib/data-layer/host/fs-utils';
 import { useAppSelector } from '../../../redux/hooks';
 import { selectDataLayerRemovingAsset } from '../../../redux/data-layer';
 import { ContextMenu as Menu } from '../../ContexMenu';
@@ -36,8 +33,9 @@ export const Tile = withContextMenu<Props>(
     contextMenuId,
     dndType,
     getThumbnail,
+    layout = 'grid',
   }) => {
-    const [thumbnail, setThumbnail] = useState<Uint8Array | null>(null);
+    const [thumbnail, setThumbnail] = useState<string | null>(null);
     const { handleAction } = useContextMenu();
     const isRemovingAsset = useAppSelector(selectDataLayerRemovingAsset);
     const { select } = useAssetSelection();
@@ -45,10 +43,15 @@ export const Tile = withContextMenu<Props>(
 
     // Load thumbnail when value changes
     useEffect(() => {
-      if (value?.type === 'asset' && getThumbnail) {
-        getThumbnail(value as AssetNodeItem).then(data => setThumbnail(data ? data : null));
-      }
-    }, [value]);
+      if (value?.type !== 'asset' || !getThumbnail) return;
+      let cancelled = false;
+      getThumbnail(value as AssetNodeItem).then(url => {
+        if (!cancelled) setThumbnail(url ?? null);
+      });
+      return () => {
+        cancelled = true;
+      };
+    }, [value, getThumbnail]);
 
     const isLoading = useMemo(() => {
       const path = withAssetDir(valueId);
@@ -76,7 +79,7 @@ export const Tile = withContextMenu<Props>(
       if (thumbnail)
         return (
           <img
-            src={transformBinaryToBase64Resource(thumbnail)}
+            src={thumbnail}
             alt={value.name}
           />
         );
@@ -124,7 +127,11 @@ export const Tile = withContextMenu<Props>(
         )}
         <div
           ref={drag}
-          className={cx('Tile', { selected: isSelected })}
+          className={cx('Tile', {
+            selected: isSelected,
+            folder: value.type === 'folder',
+            row: value.type === 'asset' && layout === 'list',
+          })}
           key={value.name}
           onClick={handleClick}
           onDoubleClick={onSelect}
