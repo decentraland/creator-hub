@@ -42,6 +42,7 @@ import {
   getRange,
   getUniqueCopyName,
   joinPath,
+  pruneNestedPaths,
 } from './file-ops';
 import { forwardToViewport, isCameraKey, isViewportFocused } from './viewport-keys';
 
@@ -249,13 +250,32 @@ function ProjectView({ folders, thumbnails }: Props) {
     [sdk, modal],
   );
 
-  /** Deletes the files among `values` (folders are skipped), asking first if the scene uses them. */
+  /** Every file at or below `path`, read from the unfiltered tree so a search can't spare any. */
+  const collectFiles = useCallback(
+    (path: string): string[] => {
+      const node = fullTree.get(path);
+      if (!node) return [];
+      if (node.type === 'asset') return [path];
+      return (node.children ?? []).flatMap(collectFiles);
+    },
+    [fullTree],
+  );
+
+  /**
+   * Deletes `values` and, for folders, every file inside them, asking first if the scene uses
+   * any of them. The host only removes files, so a folder goes away once it has none left.
+   */
   const handleRemoveMany = useCallback(
     (values: string[]) => {
-      const paths = values
-        .filter(value => tree.get(value)?.type === 'asset')
-        .map(value => withAssetDir(getFullNodePath(tree.get(value)!).slice(1)));
-      if (!paths.length) return;
+      const targets = pruneNestedPaths(values.filter(value => value !== ROOT));
+      const folders = targets.filter(value => fullTree.get(value)?.type === 'folder');
+      const paths = targets.flatMap(collectFiles).map(path => withAssetDir(path));
+      if (!paths.length && !folders.length) return;
+      if (folders.length) {
+        const isRemoved = (path: string) =>
+          folders.some(folder => path === folder || path.startsWith(folder + '/'));
+        setVirtualFolders(current => current.filter(path => !isRemoved(path)));
+      }
       const entities = paths.flatMap(path => getEntitiesWithAsset(path));
       if (entities.length) {
         return setModal({ isOpen: true, values: paths, entities });
@@ -263,7 +283,7 @@ function ProjectView({ folders, thumbnails }: Props) {
       paths.forEach(path => dispatch(removeAsset({ path })));
       clearSelection();
     },
-    [tree, getEntitiesWithAsset, clearSelection],
+    [fullTree, collectFiles, getEntitiesWithAsset, clearSelection],
   );
 
   const handleRemove = useCallback(
@@ -532,7 +552,7 @@ function ProjectView({ folders, thumbnails }: Props) {
   const canDuplicateNode = useCallback((val: string) => val !== ROOT && !!tree.get(val), [tree]);
   const isAssetNodeValue = useCallback((val: string) => tree.get(val)?.type === 'asset', [tree]);
   const canRemoveNode = useCallback(
-    (val: string) => getTargets(val).some(target => tree.get(target)?.type === 'asset'),
+    (val: string) => getTargets(val).some(target => target !== ROOT && tree.has(target)),
     [tree, getTargets],
   );
   const canAddChild = useCallback(
@@ -599,7 +619,7 @@ function ProjectView({ folders, thumbnails }: Props) {
     if (withModifier) return false;
 
     if (key === 'delete' || key === 'backspace') {
-      if (!selection.some(path => tree.get(path)?.type === 'asset')) return false;
+      if (!selection.some(path => path !== ROOT && tree.has(path))) return false;
       handleRemoveMany(selection);
       return true;
     }

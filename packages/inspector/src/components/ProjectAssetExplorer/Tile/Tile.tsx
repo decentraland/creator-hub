@@ -218,16 +218,13 @@ export const Tile = withContextMenu<Props>(
             <CopyNameIcon />
             {isMultiple ? 'Copy file names' : 'Copy file name'}
           </MenuItem>
-          {/* TODO: support removing folders */}
-          {(isMultiple || value.type === 'asset') && (
-            <MenuItem
-              id="delete"
-              onClick={handleAction(handleRemove)}
-            >
-              <DeleteIcon />
-              {isMultiple ? `Delete ${actionCount} items` : 'Delete'}
-            </MenuItem>
-          )}
+          <MenuItem
+            id="delete"
+            onClick={handleAction(handleRemove)}
+          >
+            <DeleteIcon />
+            {isMultiple ? `Delete ${actionCount} items` : 'Delete'}
+          </MenuItem>
         </Menu>
         <div
           ref={node => drag(drop(node))}
