@@ -821,17 +821,22 @@ describe('supportsDeployResource', () => {
     vi.clearAllMocks();
     path = `/scenes/scene-${++sceneCount}`;
     files = {};
-    mocks.readFile.mockImplementation(async (file: string) => {
+    const find = (file: string) => {
       const name = Object.keys(files).find(suffix => file.endsWith(suffix));
       if (name === undefined) throw new Error('ENOENT');
-      return files[name];
+      return name;
+    };
+    mocks.readFile.mockImplementation(async (file: string) => files[find(file)]);
+    mocks.stat.mockImplementation(async (file: string) => {
+      find(file);
+      return { mtimeMs: 1 };
     });
   });
 
-  describe('when the deploy routes advertise respond-async', () => {
+  describe('when the deploy command ships its routes module', () => {
     beforeEach(async () => {
       files['deploy/index.js'] = 'deploy command';
-      files['deploy/utils.js'] = "if (prefer === 'respond-async') {}";
+      files['deploy/routes.js'] = "router.delete('/api/deploy')";
       result = await supportsDeployResource(path);
     });
 
@@ -840,9 +845,9 @@ describe('supportsDeployResource', () => {
     });
   });
 
-  describe('when the deploy command itself advertises respond-async', () => {
+  describe('when the deploy command mentions respond-async', () => {
     beforeEach(async () => {
-      files['deploy/index.js'] = "const PREFER = 'respond-async'";
+      files['deploy/index.js'] = '--help: Prefer: respond-async';
       result = await supportsDeployResource(path);
     });
 
@@ -851,7 +856,7 @@ describe('supportsDeployResource', () => {
     });
   });
 
-  describe('when neither deploy file mentions respond-async', () => {
+  describe('when the deploy command has neither', () => {
     beforeEach(async () => {
       files['deploy/index.js'] = 'deploy command with --programmatic';
       files['deploy/utils.js'] = "router.post('/api/deploy')";

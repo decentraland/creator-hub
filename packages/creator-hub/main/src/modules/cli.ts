@@ -658,13 +658,17 @@ async function supportsMultiSceneDeploy(path: string) {
 // ############################################################################################
 
 // The deploy resource API (POST with `Prefer: respond-async`, GET to follow, DELETE to cancel)
-// is registered in the deploy command's utils, so both built files are checked.
+// ships with a `routes.js` beside the deploy command, whose help text mentions `respond-async`.
 export async function supportsDeployResource(path: string): Promise<boolean> {
   const dir = join(path, 'node_modules', '@dcl/sdk-commands/dist/commands/deploy');
-  const contents = await Promise.all(
-    ['index.js', 'utils.js'].map(file => fs.readFile(join(dir, file), 'utf-8').catch(() => '')),
-  );
-  return contents.some(content => content.includes('respond-async'));
+  const [index, hasRoutes] = await Promise.all([
+    fs.readFile(join(dir, 'index.js'), 'utf-8').catch(() => ''),
+    fs.stat(join(dir, 'routes.js')).then(
+      () => true,
+      () => false,
+    ),
+  ]);
+  return hasRoutes || index.includes('respond-async');
 }
 
 async function getComponents(path: string) {
