@@ -451,6 +451,7 @@
         "files": {
           "count": "{count} {count, plural, one {文件} other {文件}}",
           "size": "总大小 <b>{size}</b>",
+          "size_with_limit": "总大小 <b>{size} / {limit}</b>",
           "publish": "发布"
         },
         "deploying": {

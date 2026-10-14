@@ -221,6 +221,12 @@ export type WorldsWalletStats = {
   blockedSince?: string;
 };
 
+/** What the worlds server will enforce for a scene deployed on the given parcels. */
+export type WorldLimits = {
+  maxSceneSizeInBytes: number;
+  maxParcels: number;
+};
+
 export enum WorldPermissionType {
   Unrestricted = 'unrestricted',
   SharedSecret = 'shared-secret',
@@ -426,6 +432,25 @@ export class Worlds {
         return null;
       }
     } catch (error) {
+      return null;
+    }
+  };
+
+  public fetchWorldLimits = async (
+    worldName: string,
+    parcels: string[],
+  ): Promise<WorldLimits | null> => {
+    try {
+      const encodedWorldName = encodeURIComponent(worldName);
+      const query = new URLSearchParams(parcels.map(parcel => ['parcels', parcel]));
+      const result = await fetch(`${this.url}/world/${encodedWorldName}/limits?${query}`);
+      if (!result.ok) return null;
+      const { maxSceneSizeInBytes, maxParcels } = await result.json();
+      if (typeof maxSceneSizeInBytes !== 'string' || !/^\d+$/.test(maxSceneSizeInBytes)) {
+        return null;
+      }
+      return { maxSceneSizeInBytes: Number(maxSceneSizeInBytes), maxParcels };
+    } catch {
       return null;
     }
   };

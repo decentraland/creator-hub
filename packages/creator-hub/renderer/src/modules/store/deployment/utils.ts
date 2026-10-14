@@ -11,6 +11,7 @@ import { delay } from '/shared/utils';
 import { fetch } from '/shared/fetch';
 
 import { config } from '/@/config';
+import { Worlds } from '/@/lib/worlds';
 import { t } from '/@/modules/store/translation/utils';
 import {
   type Info,
@@ -23,7 +24,8 @@ import {
 } from '/@/lib/deploy';
 
 export const MAX_FILE_SIZE_BYTES = 50 * 1e6; // 50MB defined in sdk-commands...
-export const MAX_POINTER_SIZE_BYTES = 15 * 1e6; // 15MB validation in the content-server
+// @dcl/content-validator `entityParameters.scene.maxSizeInMB`, checked per pointer in binary units.
+export const MAX_POINTER_SIZE_BYTES = 15 * 1024 * 1024;
 
 const ASSET_BUNDLE_REGISTRY = config.get('ASSET_BUNDLE_REGISTRY_URL');
 const ASSET_BUNDLE_REGISTRY_ABGEN = config.get('ASSET_BUNDLE_REGISTRY_ABGEN_URL');
@@ -49,6 +51,26 @@ export const fetchInfo = async (url: string): Promise<Info> => {
 
 export function getInvalidFiles(files: File[]) {
   return files.filter(file => file.size > MAX_FILE_SIZE_BYTES).map(file => file.name);
+}
+
+export function getTotalSize(files: File[]) {
+  return files.reduce((total, file) => total + file.size, 0);
+}
+
+/**
+ * Resolves the size the target server will accept for the whole scene, or `null` when it cannot be
+ * known (a worlds server without the limits endpoint, or a failed request), in which case the
+ * server stays the only gate.
+ */
+export async function fetchSceneSizeLimit(target: {
+  isWorld: boolean;
+  worldName?: string;
+  parcels: string[];
+}): Promise<number | null> {
+  if (!target.isWorld) return target.parcels.length * MAX_POINTER_SIZE_BYTES;
+  if (!target.worldName) return null;
+  const limits = await new Worlds().fetchWorldLimits(target.worldName, target.parcels);
+  return limits?.maxSceneSizeInBytes ?? null;
 }
 
 export const deploy = async (

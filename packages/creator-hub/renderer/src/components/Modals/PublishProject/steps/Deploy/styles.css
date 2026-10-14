@@ -37,6 +37,10 @@
   flex: none;
 }
 
+.Deploy .scene .files .filters .size.invalid {
+  color: var(--error);
+}
+
 .Deploy .scene .files .list {
   flex: 1 1 auto;
   display: flex;

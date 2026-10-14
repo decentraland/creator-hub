@@ -451,6 +451,7 @@
         "files": {
           "count": "{count} {count, plural, one {archivo} other {archivos}}",
           "size": "Tamaño Total <b>{size}</b>",
+          "size_with_limit": "Tamaño Total <b>{size} / {limit}</b>",
           "publish": "Publicar"
         },
         "deploying": {
