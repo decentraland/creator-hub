@@ -329,7 +329,7 @@ function ProjectView({ folders, thumbnails }: Props) {
           <div className="Tree-View-header">
             <span>Folders</span>
             <button
-              className="ProjectView-iconButton small"
+              className="Assets-iconButton small"
               onClick={handleToggleAll}
               title={allExpanded ? 'Collapse all folders' : 'Expand all folders'}
               aria-label={allExpanded ? 'Collapse all folders' : 'Expand all folders'}
@@ -384,7 +384,7 @@ function ProjectView({ folders, thumbnails }: Props) {
         <div className="ProjectView-main">
           <div className="ProjectView-toolbar">
             <button
-              className={cx('ProjectView-iconButton', { active: showTree })}
+              className={cx('Assets-iconButton', { active: showTree })}
               onClick={() => setShowTree(value => !value)}
               title={showTree ? 'Hide folder tree' : 'Show folder tree'}
               aria-label={showTree ? 'Hide folder tree' : 'Show folder tree'}
@@ -409,7 +409,7 @@ function ProjectView({ folders, thumbnails }: Props) {
               aria-label="View mode"
             >
               <button
-                className={cx('ProjectView-iconButton', { active: viewMode === 'grid' })}
+                className={cx('Assets-iconButton', { active: viewMode === 'grid' })}
                 onClick={() => handleViewMode('grid')}
                 title="Grid view"
                 aria-label="Grid view"
@@ -418,7 +418,7 @@ function ProjectView({ folders, thumbnails }: Props) {
                 <GridIcon />
               </button>
               <button
-                className={cx('ProjectView-iconButton', { active: viewMode === 'list' })}
+                className={cx('Assets-iconButton', { active: viewMode === 'list' })}
                 onClick={() => handleViewMode('list')}
                 title="List view"
                 aria-label="List view"
@@ -429,7 +429,7 @@ function ProjectView({ folders, thumbnails }: Props) {
             </div>
           </div>
           {isFiltering ? (
-            <div className="ProjectView-breadcrumb ProjectView-scope">
+            <div className="Assets-crumbs Assets-crumbs-scope">
               <span>
                 {assetTiles.length} {assetTiles.length === 1 ? 'result' : 'results'} in all folders
               </span>
@@ -437,7 +437,7 @@ function ProjectView({ folders, thumbnails }: Props) {
             </div>
           ) : (
             <nav
-              className="ProjectView-breadcrumb"
+              className="Assets-crumbs"
               aria-label="Folder path"
             >
               {crumbs.map((crumb, index) => (

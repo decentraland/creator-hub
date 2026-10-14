@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { useDrag } from 'react-dnd';
 
 import './CustomAssets.css';
@@ -11,6 +11,7 @@ import { DropTypesEnum } from '../../lib/sdk/drag-drop';
 import { deleteCustomAsset, setAssetToRename } from '../../redux/data-layer';
 import { AssetsTab } from '../../redux/ui/types';
 import { selectAssetsTab } from '../../redux/ui';
+import { AssetSearchField } from '../AssetSearchField';
 import { useAssetSelection, useIsAssetSelected } from '../AssetBrowserPreview';
 import { openCustomAssetContextMenu } from './ContextMenu/ContextMenu';
 import { CustomAssetContextMenu } from './ContextMenu/CustomAssetContextMenu';
@@ -103,6 +104,7 @@ type CustomAssetsProps = {
 
 export function CustomAssets({ onAddToFilesystem }: CustomAssetsProps) {
   const customAssets = useAppSelector(selectCustomAssets);
+  const [search, setSearch] = useState('');
   const dispatch = useAppDispatch();
 
   const handleDelete = useCallback((assetId: string) => {
@@ -129,20 +131,49 @@ export function CustomAssets({ onAddToFilesystem }: CustomAssetsProps) {
     [customAssets, onAddToFilesystem],
   );
 
+  const visibleAssets = useMemo(() => {
+    const term = search.trim().toLowerCase();
+    return term
+      ? customAssets.filter(asset => asset.name.toLowerCase().includes(term))
+      : customAssets;
+  }, [customAssets, search]);
+
   if (customAssets.length === 0) return <EmptyCustomAssets />;
 
   return (
-    <div className="custom-assets">
-      <CustomAssetContextMenu />
-      {customAssets.map(asset => (
-        <CustomAssetItem
-          key={asset.id}
-          value={asset}
-          onDelete={handleDelete}
-          onRename={handleRename}
-          onAddToFilesystem={handleAddToFilesystem}
+    <div className="custom-assets-browser">
+      <div className="Assets-toolbar">
+        <AssetSearchField
+          value={search}
+          placeholder="Search custom items"
+          onChange={setSearch}
         />
-      ))}
+      </div>
+      <div className="Assets-crumbs">
+        <button
+          className="current"
+          disabled
+        >
+          {search ? `${visibleAssets.length} of ${customAssets.length} items` : 'Custom Items'}
+        </button>
+        {!search && <span className="Assets-crumbs-count">{customAssets.length}</span>}
+      </div>
+      {visibleAssets.length === 0 ? (
+        <div className="custom-assets-no-results">No custom items match your search.</div>
+      ) : (
+        <div className="custom-assets">
+          <CustomAssetContextMenu />
+          {visibleAssets.map(asset => (
+            <CustomAssetItem
+              key={asset.id}
+              value={asset}
+              onDelete={handleDelete}
+              onRename={handleRename}
+              onAddToFilesystem={handleAddToFilesystem}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 }

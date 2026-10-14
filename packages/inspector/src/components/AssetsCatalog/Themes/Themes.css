@@ -1,78 +1,77 @@
 .asset-catalog-themes {
   display: grid;
-  margin: 0 auto;
-  max-width: 1440px;
   width: 100%;
-  height: 100%;
-  grid-template-columns: repeat(6, 1fr);
-  grid-template-rows: max-content;
-  gap: 12px;
-}
-
-@media (max-width: 1300px) {
-  .asset-catalog-themes {
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  }
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  grid-auto-rows: max-content;
+  gap: 8px;
 }
 
 .asset-catalog-themes .theme {
   display: flex;
-  min-width: 200px;
-  padding: 4px 8px;
-  height: 68px;
-  gap: 8px;
-  align-items: center;
-  border-radius: 8px;
-  background: var(--list-item-bg-color);
-  cursor: pointer;
-  -webkit-user-select: none;
-  -moz-user-select: none;
-  user-select: none;
   position: relative;
+  align-items: center;
+  height: 56px;
+  padding: 0 10px 0 8px;
+  gap: 10px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  background: var(--base-17);
+  cursor: pointer;
+  user-select: none;
+  transition:
+    background-color 0.12s ease,
+    border-color 0.12s ease;
 }
 
 .asset-catalog-themes .theme:hover {
-  background: var(--list-item-hover-bg-color);
+  border-color: var(--base-13);
+  background: var(--base-15);
 }
 
 .asset-catalog-themes .theme img {
-  width: 48px;
-  height: 48px;
+  width: 40px;
+  height: 40px;
   border-radius: 8px;
+  object-fit: cover;
 }
 
 .asset-catalog-themes .theme .theme-info {
   display: flex;
+  min-width: 0;
   flex-direction: column;
   justify-content: center;
   align-items: flex-start;
-  gap: 4px;
+  gap: 2px;
 }
 
 .asset-catalog-themes .theme .theme-info h4.theme-info-name {
-  margin-top: 0;
-  margin-bottom: 0;
-  color: var(--base-01);
-  font-size: 15px;
-  font-style: normal;
+  margin: 0;
+  overflow: hidden;
+  max-width: 100%;
+  color: var(--white);
+  font-size: 13px;
   font-weight: 600;
   line-height: normal;
+  text-overflow: ellipsis;
   text-transform: capitalize;
+  white-space: nowrap;
 }
 
 .asset-catalog-themes .theme .theme-info .theme-info-items {
-  color: var(--base-06);
+  color: var(--neutral-grey-3);
   font-size: 11px;
-  font-style: normal;
   font-weight: 500;
   line-height: normal;
 }
 
-.asset-catalog-themes .theme::after {
-  content: '';
+.asset-catalog-themes .theme .theme-chevron {
+  flex: none;
   margin-left: auto;
-  background: url(https://cdn.decentraland.org/@dcl/builder-site/6.35.0/static/media/icons.5ff54946.svg)
-    41.666666666666664% 21.768707482993197% no-repeat;
-  width: 8px;
-  height: 14px;
+  width: 18px;
+  height: 18px;
+  color: var(--neutral-grey-4);
+}
+
+.asset-catalog-themes .theme:hover .theme-chevron {
+  color: var(--white);
 }

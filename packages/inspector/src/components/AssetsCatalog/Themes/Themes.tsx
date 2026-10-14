@@ -1,6 +1,7 @@
 import React from 'react';
+import { MdChevronRight as ChevronIcon } from 'react-icons/md';
 import { getContentsUrl } from '../../../lib/logic/catalog';
-import { Props } from './types';
+import type { Props } from './types';
 import './Themes.css';
 
 const Themes: React.FC<Props> = ({ catalog, onClick }) => {
@@ -22,6 +23,7 @@ const Themes: React.FC<Props> = ({ catalog, onClick }) => {
             <h4 className="theme-info-name">{value.name}</h4>
             <div className="theme-info-items">{value.assets.length} items</div>
           </div>
+          <ChevronIcon className="theme-chevron" />
         </div>
       ))}
     </div>

@@ -56,53 +56,20 @@
   min-height: 0;
 }
 
-.ProjectView-toolbar {
-  display: flex;
-  flex: none;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 10px 2px;
-}
-
-.ProjectView-toolbar .Search {
+.Assets-toolbar .Search {
   flex: 1 1 120px;
   max-width: 280px;
   padding: 0;
 }
 
-.ProjectView-toolbar .Search input {
+.Assets-toolbar .Search input {
   height: 28px;
   padding-left: 32px;
   border-radius: 8px;
 }
 
-.ProjectView-toolbar .ProjectFilters {
+.Assets-toolbar .ProjectFilters {
   flex: none;
-}
-
-.ProjectView-iconButton {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  padding: 0;
-  border: none;
-  border-radius: 8px;
-  background: transparent;
-  color: var(--base-08);
-  font-size: 17px;
-  cursor: pointer;
-}
-
-.ProjectView-iconButton:hover {
-  background: var(--base-17);
-  color: var(--white);
-}
-
-.ProjectView-iconButton.active {
-  background: var(--base-17);
-  color: var(--primary-main);
 }
 
 .ProjectView-viewToggle {
@@ -112,37 +79,6 @@
   padding: 2px;
   border-radius: 10px;
   background: var(--base-19);
-}
-
-.ProjectView-breadcrumb {
-  display: flex;
-  flex: none;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 0;
-  padding: 2px 10px 4px;
-  font-size: 11px;
-  color: var(--neutral-grey-3);
-}
-
-.ProjectView-breadcrumb button {
-  padding: 1px 5px;
-  border: none;
-  border-radius: 5px;
-  background: transparent;
-  color: inherit;
-  font: inherit;
-  cursor: pointer;
-}
-
-.ProjectView-breadcrumb button:hover {
-  background: var(--base-17);
-  color: var(--white);
-}
-
-.ProjectView-breadcrumb button.current {
-  color: var(--white);
-  font-weight: 600;
 }
 
 .ProjectView-scroll {
@@ -210,27 +146,12 @@
   margin-right: 12px;
 }
 
-.ProjectView-scope {
-  gap: 8px;
-}
-
-.ProjectView-scope button {
-  color: var(--primary-main);
-}
-
 .ProjectView .Tree-View .Tree .item {
   min-height: 24px;
 }
 
 .ProjectView .Tree-View-header span {
   flex: 1;
-}
-
-.ProjectView-iconButton.small {
-  width: 22px;
-  height: 22px;
-  border-radius: 6px;
-  font-size: 15px;
 }
 
 .ProjectView-resizer {
