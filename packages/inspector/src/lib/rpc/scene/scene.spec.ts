@@ -644,9 +644,10 @@ describe('SceneServer RPC get_selection', () => {
     });
   });
 
-  // #1507 / #1511: the reserved entities (Scene root / Player / Camera) carry no Name, so the
-  // chip used to show a bare "#id". Label them exactly as the entity tree does.
-  it('labels the reserved Scene / Player / Camera entities like the tree', async () => {
+  // #1507 / #1511: the reserved Player / Camera entities carry no Name, so the chip used to show
+  // a bare "#id". Label them exactly as the entity tree does. The Scene root is left out: it
+  // tells the assistant nothing, so selecting it is the same as selecting nothing.
+  it('labels Player / Camera like the tree and leaves out the Scene root', async () => {
     const p = new InMemoryTransport();
     const i = new InMemoryTransport();
     p.connect(i);
@@ -674,7 +675,6 @@ describe('SceneServer RPC get_selection', () => {
     const res = await localHost.request('get_selection', {});
     expect(res).toEqual({
       selected: [
-        { id: 0, name: 'Scene' },
         { id: 1, name: 'Player' },
         { id: 2, name: 'Camera' },
       ],

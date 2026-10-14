@@ -553,13 +553,15 @@ export class SceneServer extends RPC<Method, Params, Result> {
         ) as EditorComponents['Selection'];
         const Name = engine.getComponent(NameEngine.componentName) as typeof NameEngine;
         const label = (entity: Entity): string => {
-          if (entity === engine.RootEntity) return 'Scene';
           if (entity === engine.PlayerEntity) return 'Player';
           if (entity === engine.CameraEntity) return 'Camera';
           return Name.getOrNull(entity)?.value ?? '';
         };
         const selected: { id: number; name: string }[] = [];
         for (const [entity] of engine.getEntitiesWith(Selection)) {
+          // The scene root says nothing about what the user means, so selecting it counts as
+          // having nothing selected.
+          if (entity === engine.RootEntity) continue;
           selected.push({ id: entity as number, name: label(entity) });
         }
         return { selected };
