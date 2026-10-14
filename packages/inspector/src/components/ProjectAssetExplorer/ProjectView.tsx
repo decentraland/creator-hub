@@ -220,6 +220,13 @@ function ProjectView({ folders, thumbnails }: Props) {
   const folderTiles = tiles.filter(node => node.type === 'folder');
   const assetTiles = tiles.filter(node => node.type === 'asset');
   const crumbs = getBreadcrumbs(lastSelected);
+  // Search and type filters look through every folder, so results need their own context.
+  const isFiltering = !!search || (activeFilter !== Filter.All && activeFilter !== Filter.Recents);
+
+  const handleClearFilters = useCallback(() => {
+    setSearch('');
+    setActiveFilter(Filter.All);
+  }, []);
 
   const handleViewMode = useCallback((mode: ViewMode) => {
     setViewMode(mode);
@@ -238,6 +245,7 @@ function ProjectView({ folders, thumbnails }: Props) {
         valueId={valueId}
         value={node}
         layout={viewMode}
+        showPath={isFiltering}
         getDragContext={handleDragContext}
         onSelect={handleClickFolder(node)}
         onRemove={handleRemove}
@@ -350,22 +358,31 @@ function ProjectView({ folders, thumbnails }: Props) {
               </button>
             </div>
           </div>
-          <nav
-            className="ProjectView-breadcrumb"
-            aria-label="Folder path"
-          >
-            {crumbs.map((crumb, index) => (
-              <React.Fragment key={crumb.path}>
-                {index > 0 && <ChevronIcon />}
-                <button
-                  className={cx({ current: index === crumbs.length - 1 })}
-                  onClick={() => setLastSelected(crumb.path)}
-                >
-                  {crumb.label}
-                </button>
-              </React.Fragment>
-            ))}
-          </nav>
+          {isFiltering ? (
+            <div className="ProjectView-breadcrumb ProjectView-scope">
+              <span>
+                {assetTiles.length} {assetTiles.length === 1 ? 'result' : 'results'} in all folders
+              </span>
+              <button onClick={handleClearFilters}>Clear</button>
+            </div>
+          ) : (
+            <nav
+              className="ProjectView-breadcrumb"
+              aria-label="Folder path"
+            >
+              {crumbs.map((crumb, index) => (
+                <React.Fragment key={crumb.path}>
+                  {index > 0 && <ChevronIcon />}
+                  <button
+                    className={cx({ current: index === crumbs.length - 1 })}
+                    onClick={() => setLastSelected(crumb.path)}
+                  >
+                    {crumb.label}
+                  </button>
+                </React.Fragment>
+              ))}
+            </nav>
+          )}
           <div className="ProjectView-scroll">
             {folderTiles.length > 0 && (
               <div className="FolderView ProjectView-folders">{folderTiles.map(renderTile)}</div>

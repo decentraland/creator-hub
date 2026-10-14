@@ -10,4 +10,6 @@ export interface Props {
   dndType: string;
   getThumbnail: (value: AssetNodeItem) => Promise<string | undefined>;
   layout?: 'grid' | 'list';
+  /** Show which folder the asset lives in; used when results come from several folders. */
+  showPath?: boolean;
 }

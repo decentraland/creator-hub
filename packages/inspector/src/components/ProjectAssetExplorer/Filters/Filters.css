@@ -2,8 +2,11 @@
   display: flex;
   flex-direction: row;
   flex-wrap: wrap;
-  gap: 4px;
+  gap: 2px;
   min-width: 0;
+  padding: 2px;
+  border-radius: 10px;
+  background: var(--base-19);
   user-select: none;
 }
 
@@ -12,9 +15,9 @@
   align-items: center;
   gap: 5px;
   height: 26px;
-  padding: 0 10px;
-  border-radius: 13px;
-  background: var(--base-17);
+  padding: 0 7px;
+  border-radius: 8px;
+  background: transparent;
   color: var(--neutral-grey-3);
   font-size: 12px;
   white-space: nowrap;
@@ -25,7 +28,7 @@
 }
 
 .ProjectFilters .filter:hover {
-  background: var(--base-15);
+  background: var(--base-17);
   color: var(--white-gray);
 }
 
@@ -37,4 +40,16 @@
 .ProjectFilters .filter svg {
   width: 14px;
   height: 14px;
+}
+
+.ProjectFilters .filter .label {
+  display: none;
+}
+
+.ProjectFilters .filter.active {
+  padding: 0 10px 0 8px;
+}
+
+.ProjectFilters .filter.active .label {
+  display: inline;
 }

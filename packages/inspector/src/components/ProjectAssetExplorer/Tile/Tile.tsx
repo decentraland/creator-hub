@@ -34,6 +34,7 @@ export const Tile = withContextMenu<Props>(
     dndType,
     getThumbnail,
     layout = 'grid',
+    showPath = false,
   }) => {
     const [thumbnail, setThumbnail] = useState<string | null>(null);
     const { handleAction } = useContextMenu();
@@ -62,6 +63,8 @@ export const Tile = withContextMenu<Props>(
       () => ({ type: dndType, item: { value: valueId, context: getDragContext() } }),
       [valueId],
     );
+
+    const folderPath = valueId.includes('/') ? valueId.slice(0, valueId.lastIndexOf('/')) : '';
 
     const handleRemove = useCallback(() => {
       onRemove(valueId);
@@ -135,13 +138,16 @@ export const Tile = withContextMenu<Props>(
           key={value.name}
           onClick={handleClick}
           onDoubleClick={onSelect}
-          title={value.name}
+          title={showPath ? valueId : value.name}
           data-test-id={valueId}
           data-test-label={value.name}
         >
           {renderOverlayLoading()}
           {renderThumbnail()}
           <span>{value.name}</span>
+          {showPath && value.type === 'asset' && layout === 'list' && folderPath && (
+            <small className="Tile-path">{folderPath}</small>
+          )}
         </div>
       </>
     );
