@@ -231,12 +231,16 @@ function ProjectView({ folders, thumbnails }: Props) {
     setActiveFilter(Filter.All);
   }, []);
 
-  const handleExpandAll = useCallback(() => {
-    const folders = [...tree.entries()].filter(([, node]) => node.type === 'folder');
-    setOpen(new Set(folders.map(([id]) => id)));
-  }, [tree]);
+  const allFolderIds = useMemo(
+    () => [...tree.entries()].filter(([, node]) => node.type === 'folder').map(([id]) => id),
+    [tree],
+  );
+  const allExpanded = allFolderIds.every(id => open.has(id));
 
-  const handleCollapseAll = useCallback(() => setOpen(new Set([ROOT])), []);
+  const handleToggleAll = useCallback(
+    () => setOpen(new Set(allExpanded ? [ROOT] : allFolderIds)),
+    [allExpanded, allFolderIds],
+  );
 
   const handleResizeStart = useCallback(
     (event: React.PointerEvent<HTMLDivElement>) => {
@@ -326,19 +330,11 @@ function ProjectView({ folders, thumbnails }: Props) {
             <span>Folders</span>
             <button
               className="ProjectView-iconButton small"
-              onClick={handleExpandAll}
-              title="Expand all folders"
-              aria-label="Expand all folders"
+              onClick={handleToggleAll}
+              title={allExpanded ? 'Collapse all folders' : 'Expand all folders'}
+              aria-label={allExpanded ? 'Collapse all folders' : 'Expand all folders'}
             >
-              <ExpandAllIcon />
-            </button>
-            <button
-              className="ProjectView-iconButton small"
-              onClick={handleCollapseAll}
-              title="Collapse all folders"
-              aria-label="Collapse all folders"
-            >
-              <CollapseAllIcon />
+              {allExpanded ? <CollapseAllIcon /> : <ExpandAllIcon />}
             </button>
           </div>
           <FilesTree
