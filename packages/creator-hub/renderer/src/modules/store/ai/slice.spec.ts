@@ -1,10 +1,21 @@
+import { configureStore } from '@reduxjs/toolkit';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { actions, persistConversation, reducer, selectionContext, send } from './slice';
+import type { AiProviderInfo } from '/shared/types/ai';
+import {
+  actions,
+  fetchProviders,
+  persistConversation,
+  recheckAfterTurn,
+  reducer,
+  selectionContext,
+  send,
+} from './slice';
 
 const preloadAi = vi.hoisted(() => ({
   isBusy: vi.fn(),
   send: vi.fn(),
+  detectProviders: vi.fn(),
 }));
 
 vi.mock('#preload', async importOriginal => ({
@@ -225,5 +236,51 @@ describe('expirePrompt', () => {
     const state = reducer(answered, { type: 'ai/expirePrompt', payload: 'q1' });
     expect(promptOf(state)).toMatchObject({ prompt: { answer: 'Yes' } });
     expect(promptOf(state)).not.toMatchObject({ prompt: { dismissed: true } });
+  });
+});
+
+describe('when a turn ends', () => {
+  const claude = (needsLogin?: boolean): AiProviderInfo => ({
+    id: 'claude',
+    label: 'Claude',
+    available: true,
+    models: [],
+    defaultModel: 'default',
+    managedSignIn: false,
+    needsLogin,
+  });
+
+  const storeWith = async (info: AiProviderInfo) => {
+    const store = configureStore({ reducer: { ai: reducer } });
+    preloadAi.detectProviders.mockResolvedValueOnce([info]);
+    await store.dispatch(fetchProviders());
+    preloadAi.detectProviders.mockClear();
+    return store;
+  };
+
+  beforeEach(() => {
+    preloadAi.detectProviders.mockReset();
+  });
+
+  it('should re-detect agents after a failed turn, so a sign-in request shows up', async () => {
+    const store = await storeWith(claude());
+    preloadAi.detectProviders.mockResolvedValue([claude(true)]);
+    await store.dispatch(recheckAfterTurn(false));
+    expect(preloadAi.detectProviders).toHaveBeenCalledOnce();
+    expect(store.getState().ai.providers[0].needsLogin).toBe(true);
+  });
+
+  it('should re-detect after the successful turn that follows a sign-in request', async () => {
+    const store = await storeWith(claude(true));
+    preloadAi.detectProviders.mockResolvedValue([claude()]);
+    await store.dispatch(recheckAfterTurn(true));
+    expect(preloadAi.detectProviders).toHaveBeenCalledOnce();
+    expect(store.getState().ai.providers[0].needsLogin).toBeUndefined();
+  });
+
+  it('should not re-detect after an ordinary successful turn', async () => {
+    const store = await storeWith(claude());
+    await store.dispatch(recheckAfterTurn(true));
+    expect(preloadAi.detectProviders).not.toHaveBeenCalled();
   });
 });

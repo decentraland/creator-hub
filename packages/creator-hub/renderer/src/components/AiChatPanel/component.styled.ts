@@ -439,6 +439,22 @@ const CommandLine = styled('pre')(({ theme }) => ({
   whiteSpace: 'pre',
 }));
 
+const GuideLink = styled('button')(({ theme }) => ({
+  display: 'inline-flex',
+  alignItems: 'center',
+  alignSelf: 'flex-start',
+  gap: theme.spacing(0.5),
+  padding: 0,
+  border: 'none',
+  background: 'none',
+  color: theme.palette.primary.main,
+  font: 'inherit',
+  fontSize: theme.typography.caption.fontSize,
+  textAlign: 'left',
+  cursor: 'pointer',
+  '&:hover': { textDecoration: 'underline' },
+}));
+
 // The row of pill controls under the header: the chat/session picker on the left, the agent
 // picker on the right. No bottom border — the transcript flows straight under it.
 const Toolbar = styled(Box)(({ theme }) => ({
@@ -563,6 +579,13 @@ const OutdatedHint = styled(Box)(({ theme }) => ({
   '& svg': { flexShrink: 0 },
 }));
 
+const SignInHintBody = styled(Box)(({ theme }) => ({
+  display: 'flex',
+  flexDirection: 'column',
+  gap: theme.spacing(0.75),
+  minWidth: 0,
+}));
+
 // Left inset matches a menu item's content start (mx:1 = 8px margin + MUI's 16px item padding),
 // so 'Chat History' lines up with the row icons above and below it (#1619).
 const MenuSectionLabel = styled('div')(({ theme }) => ({
@@ -608,6 +631,7 @@ export {
   DropHint,
   EmptyState,
   ErrorRow,
+  GuideLink,
   HeaderActions,
   HeaderTitle,
   HistoryBar,
@@ -640,6 +664,7 @@ export {
   SetupBox,
   SetupDivider,
   SetupStep,
+  SignInHintBody,
   StopButton,
   ThinkingRow,
   Toolbar,
