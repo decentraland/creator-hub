@@ -382,7 +382,7 @@ function ProjectView({ folders, thumbnails }: Props) {
           />
         )}
         <div className="ProjectView-main">
-          <div className="ProjectView-toolbar">
+          <div className="Assets-toolbar">
             <button
               className={cx('Assets-iconButton', { active: showTree })}
               onClick={() => setShowTree(value => !value)}
