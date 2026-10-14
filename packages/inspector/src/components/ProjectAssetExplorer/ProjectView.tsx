@@ -1,9 +1,11 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AiOutlineSound as AudioIcon } from 'react-icons/ai';
 import { IoIosImage as ImageIcon } from 'react-icons/io';
 import { IoCubeOutline as ModelIcon, IoVideocamOutline as VideoIcon } from 'react-icons/io5';
 import { FaFile as OtherIcon } from 'react-icons/fa';
 import { SiTypescript as ScriptIcon } from 'react-icons/si';
+import { MdContentCopy as CopyNameIcon, MdOutlineLink as CopyPathIcon } from 'react-icons/md';
+import { Item as MenuItem } from 'react-contexify';
 import type { Entity } from '@dcl/ecs';
 
 import { useSdk } from '../../hooks/sdk/useSdk';
@@ -14,7 +16,13 @@ import FolderIcon from '../Icons/Folder';
 import Search from '../Search';
 import { withAssetDir } from '../../lib/data-layer/host/fs-utils';
 import { removeAsset } from '../../redux/data-layer';
-import { useAppDispatch } from '../../redux/hooks';
+import { selectThumbnailsLoaded } from '../../redux/app';
+import { useAppDispatch, useAppSelector } from '../../redux/hooks';
+import { useContextMenu } from '../../hooks/sdk/useContextMenu';
+import {
+  isPointerOverAssetExplorer,
+  setPointerOverAssetExplorer,
+} from '../../lib/utils/asset-explorer-region';
 import { determineAssetType, extractFileExtension } from '../ImportAsset/utils';
 import { getThumbnailHashNameForAsset } from '../../lib/utils/hash';
 import { getFilterFromTree, getFullNodePath } from './utils';
@@ -23,10 +31,53 @@ import { Tile } from './Tile';
 import { generateAssetTree, getChildren as _getChildren, TreeNode, ROOT, getTiles } from './tree';
 import { Filters } from './Filters';
 import { Filter } from './Filters/types';
+import { ThumbnailGenerator } from './ThumbnailGenerator';
+import { useAssetOperations } from './useAssetOperations';
+import {
+  createPathMapper,
+  getBaseName,
+  getParentPath,
+  getUniqueCopyName,
+  joinPath,
+} from './file-ops';
 
 export { TreeNode };
 
 function noop() {}
+
+const MAX_QUEUED_THUMBNAILS = 60;
+
+function isEditableTarget(target: EventTarget | null) {
+  const el = target as HTMLElement | null;
+  if (!el) return false;
+  return el.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(el.tagName);
+}
+
+/** Adds the folders that only exist in the explorer (still empty) to a generated tree. */
+function withVirtualFolders(tree: Map<string, TreeNode>, virtualFolders: string[]) {
+  if (!virtualFolders.length) return tree;
+  const next = new Map(tree);
+  for (const virtualPath of virtualFolders) {
+    let current = '';
+    for (const part of virtualPath.split('/')) {
+      const path = joinPath(current, part);
+      if (!next.has(path)) {
+        const parentKey = current || ROOT;
+        const parent = next.get(parentKey);
+        if (!parent) break;
+        next.set(path, {
+          type: 'folder',
+          name: part,
+          parent: current ? (next.get(current) as unknown as AssetNodeFolder) : null,
+          children: [],
+        });
+        next.set(parentKey, { ...parent, children: [...(parent.children ?? []), path] });
+      }
+      current = path;
+    }
+  }
+  return next;
+}
 
 type Props = {
   folders: AssetNodeFolder[];
@@ -46,19 +97,55 @@ const FilesTree = Tree<string>();
 function ProjectView({ folders, thumbnails }: Props) {
   const sdk = useSdk();
   const dispatch = useAppDispatch();
+  const thumbnailsLoaded = useAppSelector(selectThumbnailsLoaded);
+  const { handleAction } = useContextMenu();
+  const containerRef = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState(new Set<string>());
   const [modal, setModal] = useState<ModalState | undefined>(undefined);
   const [lastSelected, setLastSelected] = useState<string>(ROOT);
+  // The card / tree row the keyboard shortcuts act on
+  const [selectedItem, setSelectedItem] = useState<string>('');
   const [search, setSearch] = useState<string>('');
-  const [tree, setTree] = useState<Map<string, TreeNode>>(new Map());
+  const [filteredTree, setTree] = useState<Map<string, TreeNode>>(new Map());
   const [filters, setFilters] = useState<Filter[]>([]);
   const [activeFilter, setActiveFilter] = useState(Filter.All);
+  const [virtualFolders, setVirtualFolders] = useState<string[]>([]);
+  const [processedThumbnails, setProcessedThumbnails] = useState<Set<string>>(new Set());
+  const [thumbnailLookup, setThumbnailLookup] = useState<{
+    key: string;
+    source: Props['thumbnails'];
+    map: Map<string, Uint8Array>;
+  } | null>(null);
+  const clipboard = useRef<string | null>(null);
 
   useEffect(() => {
     const { tree, filters } = generateAssetTree(folders, open, search, activeFilter);
     setTree(tree);
     setFilters(getFilterFromTree(filters));
   }, [folders, search, activeFilter]);
+
+  // Empty folders created in the explorer are only shown in the unfiltered view
+  const tree = useMemo(
+    () =>
+      search || activeFilter !== Filter.All
+        ? filteredTree
+        : withVirtualFolders(filteredTree, virtualFolders),
+    [filteredTree, virtualFolders, search, activeFilter],
+  );
+  // The filters and the search hide nodes; the operations must still see all the siblings
+  const realTree = useMemo(
+    () => generateAssetTree(folders, new Set(), '', Filter.All).tree,
+    [folders],
+  );
+  const fullTree = useMemo(
+    () => withVirtualFolders(realTree, virtualFolders),
+    [realTree, virtualFolders],
+  );
+  const operations = useAssetOperations({ tree: fullTree, thumbnails, virtualFolders });
+  const isVirtualFolder = useCallback(
+    (path: string) => virtualFolders.includes(path) && !realTree.has(path),
+    [virtualFolders, realTree],
+  );
 
   /**
    * Callbacks
@@ -68,6 +155,7 @@ function ProjectView({ folders, thumbnails }: Props) {
     (value: string) => {
       open.add(value);
       setLastSelected(value);
+      setSelectedItem(value);
     },
     [setLastSelected],
   );
@@ -153,6 +241,7 @@ function ProjectView({ folders, thumbnails }: Props) {
       const path = getFullNodePath(node).slice(1);
       open.add(path);
       setLastSelected(path);
+      setSelectedItem(path);
     },
     [setLastSelected],
   );
@@ -174,26 +263,282 @@ function ProjectView({ folders, thumbnails }: Props) {
     [tree, search, activeFilter],
   );
 
-  const getThumbnail = useCallback(
-    async (value: AssetNodeItem) => {
-      // First try to find thumbnail using hash-based lookup
-      const hashedThumbnailName = await getThumbnailHashNameForAsset(value.asset.src);
-      let thumbnail = thumbnails.find($ => $.path.endsWith(hashedThumbnailName));
-      if (!thumbnail) {
-        // Fallback to legacy name-based lookup for backwards compatibility
-        const [name] = value.name.split('.');
-        thumbnail = thumbnails.find($ => $.path.endsWith(name + '.png'));
-      }
-      if (thumbnail) return thumbnail.content;
-    },
-    [thumbnails],
-  );
-
   const handleFilterClick = useCallback((type: Filter) => {
     setActiveFilter(type);
   }, []);
 
-  const tiles = getTiles(lastSelected, tree, search, activeFilter);
+  /**
+   * File operations (rename, duplicate, copy, new folder)
+   */
+
+  /** Keeps the selection, the open folders and the empty folders pointing at a renamed path. */
+  const followRename = useCallback(
+    (oldPath: string, newPath: string) => {
+      const map = createPathMapper(oldPath, newPath);
+      setSelectedItem(current => map(current) ?? current);
+      setLastSelected(current => map(current) ?? current);
+      setVirtualFolders(current => current.map(folder => map(folder) ?? folder));
+      const next = new Set<string>();
+      open.forEach(item => next.add(map(item) ?? item));
+      setOpen(next);
+    },
+    [open],
+  );
+
+  const handleRename = useCallback(
+    async (path: string, newName: string) => {
+      if (isVirtualFolder(path)) {
+        const newPath = operations.getNewFolderPath(getParentPath(path), newName);
+        if (newPath && newPath !== path) followRename(path, newPath);
+        return;
+      }
+      const newPath = await operations.rename(path, newName);
+      if (newPath) followRename(path, newPath);
+    },
+    [operations, followRename, isVirtualFolder],
+  );
+
+  const handleDuplicate = useCallback(
+    async (path: string) => {
+      if (isVirtualFolder(path)) {
+        const parent = getParentPath(path);
+        const name = getUniqueCopyName(getBaseName(path), operations.getSiblingNames(parent), true);
+        const newPath = joinPath(parent, name);
+        setVirtualFolders(current => [...current, newPath]);
+        setSelectedItem(newPath);
+        return;
+      }
+      const newPath = await operations.duplicate(path);
+      if (newPath) setSelectedItem(newPath);
+    },
+    [operations, isVirtualFolder],
+  );
+
+  const handleAddChild = useCallback(
+    (parentPath: string, name: string) => {
+      const newPath = operations.getNewFolderPath(parentPath, name);
+      if (!newPath) return;
+      setVirtualFolders(current => [...current, newPath]);
+      open.add(parentPath);
+      open.add(newPath);
+      setOpen(new Set(open));
+      setLastSelected(newPath);
+      setSelectedItem(newPath);
+    },
+    [operations, open],
+  );
+
+  const handlePaste = useCallback(async () => {
+    const source = clipboard.current;
+    if (!source) return;
+    if (!fullTree.has(source)) {
+      operations.notifyError('The copied item no longer exists');
+      clipboard.current = null;
+      return;
+    }
+    const reference = selectedItem || lastSelected;
+    const node = tree.get(reference);
+    const target =
+      !node || reference === ROOT
+        ? undefined
+        : node.type === 'folder'
+          ? reference
+          : getParentPath(reference);
+    if (!target) {
+      operations.notifyError('Select a folder to paste into');
+      return;
+    }
+    const newPath = await operations.duplicate(source, target);
+    if (newPath) {
+      open.add(target);
+      setOpen(new Set(open));
+      setLastSelected(target);
+      setSelectedItem(newPath);
+    }
+  }, [operations, fullTree, tree, selectedItem, lastSelected, open]);
+
+  const getExtraContextMenu = useCallback(
+    (val: string) => (
+      <>
+        <MenuItem
+          id="copy-relative-path"
+          onClick={handleAction(() => operations.copyRelativePath(val))}
+        >
+          <CopyPathIcon /> Copy relative path
+        </MenuItem>
+        <MenuItem
+          id="copy-file-name"
+          onClick={handleAction(() => operations.copyFileName(val))}
+        >
+          <CopyNameIcon /> Copy file name
+        </MenuItem>
+      </>
+    ),
+    [operations, handleAction],
+  );
+
+  const canRenameNode = useCallback((val: string) => val !== ROOT && !!tree.get(val), [tree]);
+  const isAssetNodeValue = useCallback((val: string) => tree.get(val)?.type === 'asset', [tree]);
+  const canAddChild = useCallback(
+    (val: string) => val !== ROOT && tree.get(val)?.type === 'folder',
+    [tree],
+  );
+
+  /**
+   * Keyboard shortcuts. They only act while the pointer is over the explorer, which is how the
+   * scene shortcuts that share the same keys (Delete, Ctrl+C, Ctrl+V) know to step aside.
+   */
+
+  const selectNode = useCallback(
+    (path: string) => {
+      setSelectedItem(path);
+      const node = tree.get(path);
+      // keep the folder's cards on screen while moving through its files
+      setLastSelected(node?.type === 'asset' ? getParentPath(path) || ROOT : path);
+    },
+    [tree],
+  );
+
+  const getVisibleNodes = useCallback(() => {
+    const nodes: string[] = [];
+    const walk = (id: string) => {
+      for (const child of getChildren(id)) {
+        nodes.push(child);
+        if (open.has(child)) walk(child);
+      }
+    };
+    walk(ROOT);
+    return nodes;
+  }, [getChildren, open]);
+
+  const handleKeyDown = (event: KeyboardEvent) => {
+    if (!containerRef.current || modal?.isOpen || event.defaultPrevented) return;
+    if (isEditableTarget(event.target) || event.altKey) return;
+    const withModifier = event.ctrlKey || event.metaKey;
+    const key = event.key.toLowerCase();
+    const node = selectedItem ? tree.get(selectedItem) : undefined;
+
+    if (withModifier && !event.shiftKey && (key === 'c' || key === 'v')) {
+      if (key === 'c') {
+        if (!selectedItem || !fullTree.has(selectedItem)) return;
+        clipboard.current = selectedItem;
+      } else {
+        void handlePaste();
+      }
+      return event.preventDefault();
+    }
+    if (withModifier || event.shiftKey) return;
+
+    if (key === 'delete' || key === 'backspace') {
+      if (node?.type !== 'asset') return;
+      event.preventDefault();
+      void handleRemove(selectedItem);
+      setSelectedItem('');
+      return;
+    }
+
+    const visible = getVisibleNodes();
+    const index = visible.indexOf(selectedItem);
+    if (key === 'arrowdown' || key === 'arrowup') {
+      event.preventDefault();
+      const next =
+        index === -1
+          ? key === 'arrowdown'
+            ? visible[0]
+            : visible[visible.length - 1]
+          : visible[index + (key === 'arrowdown' ? 1 : -1)];
+      if (next) selectNode(next);
+    } else if (key === 'arrowright' && node?.type === 'folder') {
+      event.preventDefault();
+      if (!open.has(selectedItem)) onSetOpen(selectedItem, true);
+      else if (node.children?.length) selectNode(node.children[0]);
+    } else if (key === 'arrowleft' && selectedItem) {
+      event.preventDefault();
+      if (node?.type === 'folder' && open.has(selectedItem)) onSetOpen(selectedItem, false);
+      else if (tree.has(getParentPath(selectedItem))) selectNode(getParentPath(selectedItem));
+    }
+  };
+  const keyDownRef = useRef(handleKeyDown);
+  keyDownRef.current = handleKeyDown;
+
+  useEffect(() => {
+    const listener = (event: KeyboardEvent) => {
+      if (isPointerOverAssetExplorer()) keyDownRef.current(event);
+    };
+    document.addEventListener('keydown', listener);
+    return () => {
+      document.removeEventListener('keydown', listener);
+      setPointerOverAssetExplorer(false);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!selectedItem) return;
+    const escaped = selectedItem.replace(/["\\]/g, '\\$&');
+    containerRef.current
+      ?.querySelector(`.Tree-View [data-test-id="${escaped}"]`)
+      ?.scrollIntoView?.({ block: 'nearest' });
+  }, [selectedItem]);
+
+  /**
+   * Thumbnails: images are rendered by the tiles themselves; for 3D models we use the saved
+   * thumbnail, and queue a background generation for the ones that don't have it yet.
+   */
+
+  const tiles = useMemo(
+    () => getTiles(lastSelected, tree, search, activeFilter),
+    [lastSelected, tree, search, activeFilter],
+  );
+  const modelSources = useMemo(
+    () =>
+      tiles
+        .filter(node => node.type === 'asset' && (node as AssetNodeItem).asset.type === 'gltf')
+        .map(node => (node as AssetNodeItem).asset.src),
+    [tiles],
+  );
+  const modelKey = modelSources.join('|');
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const map = new Map<string, Uint8Array>();
+      for (const src of modelSources) {
+        // First try to find thumbnail using hash-based lookup
+        const hashedThumbnailName = await getThumbnailHashNameForAsset(src);
+        let thumbnail = thumbnails.find($ => $.path.endsWith(hashedThumbnailName));
+        if (!thumbnail) {
+          // Fallback to legacy name-based lookup for backwards compatibility
+          const [name] = getBaseName(src).split('.');
+          thumbnail = thumbnails.find($ => $.path.endsWith(name + '.png'));
+        }
+        if (thumbnail) map.set(src, thumbnail.content);
+      }
+      if (!cancelled) setThumbnailLookup({ key: modelKey, source: thumbnails, map });
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [modelKey, thumbnails]);
+
+  const thumbnailMap =
+    thumbnailLookup && thumbnailLookup.key === modelKey && thumbnailLookup.source === thumbnails
+      ? thumbnailLookup.map
+      : undefined;
+  const thumbnailQueue = useMemo(
+    () =>
+      thumbnailsLoaded && thumbnailMap
+        ? modelSources
+            .filter(src => !thumbnailMap.has(src) && !processedThumbnails.has(src))
+            .slice(0, MAX_QUEUED_THUMBNAILS)
+        : [],
+    [thumbnailsLoaded, thumbnailMap, modelSources, processedThumbnails],
+  );
+  const handleThumbnailProcessed = useCallback((path: string) => {
+    setProcessedThumbnails(current => new Set(current).add(path));
+  }, []);
+
+  const pointerEnter = useCallback(() => setPointerOverAssetExplorer(true), []);
+  const pointerLeave = useCallback(() => setPointerOverAssetExplorer(false), []);
 
   return (
     <>
@@ -219,7 +564,12 @@ function ProjectView({ folders, thumbnails }: Props) {
           </Button>
         </div>
       </Modal>
-      <div className="ProjectView">
+      <div
+        className="ProjectView"
+        ref={containerRef}
+        onMouseEnter={pointerEnter}
+        onMouseLeave={pointerLeave}
+      >
         <Filters
           filters={filters}
           active={activeFilter}
@@ -235,24 +585,27 @@ function ProjectView({ folders, thumbnails }: Props) {
           <FilesTree
             className="editor-assets-tree"
             value={ROOT}
-            onAddChild={noop}
+            onAddChild={handleAddChild}
             onDrop={noop}
             onRemove={handleRemove}
-            onRename={noop}
+            onRename={handleRename}
             onSelect={onSelect}
             onDoubleSelect={noop}
             onSetOpen={onSetOpen}
-            onDuplicate={noop}
+            onDuplicate={handleDuplicate}
             getId={(value: string) => value.toString()}
             getChildren={getChildren}
-            getLabel={(val: string) => <span>{tree.get(val)?.name ?? val}</span>}
+            getLabel={(val: string) => tree.get(val)?.name ?? val}
             isOpen={isOpen}
-            isSelected={(val: string) => lastSelected === val}
+            isSelected={(val: string) => selectedItem === val}
             isHidden={(val: string) => val === ROOT}
-            canRename={() => false}
-            canRemove={val => tree.get(val)?.type === 'asset'}
-            canDuplicate={() => false}
-            canAddChild={() => false}
+            canRename={canRenameNode}
+            renameOnDoubleClick={isAssetNodeValue}
+            canRemove={isAssetNodeValue}
+            canDuplicate={canRenameNode}
+            canAddChild={canAddChild}
+            addChildLabel="New folder"
+            getExtraContextMenu={getExtraContextMenu}
             getIcon={val => <NodeIcon value={tree.get(val)} />}
             getDragContext={handleDragContext}
             getDragItem={handleDragItem}
@@ -262,21 +615,33 @@ function ProjectView({ folders, thumbnails }: Props) {
         <div className="FolderView">
           {tiles.map(node => {
             const valueId = getFullNodePath(node).slice(1);
+            const src = node.type === 'asset' ? (node as AssetNodeItem).asset.src : undefined;
             return (
               <Tile
                 key={valueId}
                 valueId={valueId}
                 value={node}
                 getDragContext={handleDragContext}
+                onClick={() => setSelectedItem(valueId)}
                 onSelect={handleClickFolder(node)}
                 onRemove={handleRemove}
-                getThumbnail={getThumbnail}
+                onRename={handleRename}
+                onDuplicate={handleDuplicate}
+                onCopyRelativePath={operations.copyRelativePath}
+                onCopyFileName={operations.copyFileName}
+                selected={selectedItem === valueId}
+                thumbnail={src ? thumbnailMap?.get(src) : undefined}
+                thumbnailPending={!!src && thumbnailQueue.includes(src)}
                 dndType={DRAG_N_DROP_ASSET_KEY}
               />
             );
           })}
         </div>
       </div>
+      <ThumbnailGenerator
+        queue={thumbnailQueue}
+        onProcessed={handleThumbnailProcessed}
+      />
     </>
   );
 }

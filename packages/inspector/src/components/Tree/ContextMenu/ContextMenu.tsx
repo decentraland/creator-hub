@@ -16,6 +16,7 @@ export interface Props {
   enableEdit?: boolean;
   enableRemove?: boolean;
   enableDuplicate?: boolean;
+  addChildLabel?: string;
   onAddChild: () => void;
   onEdit: () => void;
   onRemove: () => void;
@@ -29,6 +30,7 @@ function ContextMenu({
   enableEdit = true,
   enableRemove = true,
   enableDuplicate = true,
+  addChildLabel = 'Add child',
   onAddChild,
   onEdit,
   onRemove,
@@ -56,7 +58,7 @@ function ContextMenu({
         id="add-child"
         onClick={handleAction(onAddChild)}
       >
-        <AddChildIcon /> Add child
+        <AddChildIcon /> {addChildLabel}
       </Item>
       <Item
         hidden={!enableDuplicate}

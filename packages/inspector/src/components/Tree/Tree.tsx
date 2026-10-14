@@ -38,6 +38,9 @@ type Props<T> = {
   canAddChild?: (value: T) => boolean;
   canRemove?: (value: T) => boolean;
   canDuplicate?: (value: T) => boolean;
+  /** When it returns true, double clicking the item switches it to rename mode. */
+  renameOnDoubleClick?: (value: T) => boolean;
+  addChildLabel?: string;
   canDrag?: (value: T) => boolean;
   canReorder?: (source: T, target: T, type: DropType) => boolean;
   onSetOpen: (value: T, isOpen: boolean) => void;
@@ -92,6 +95,8 @@ export function Tree<T>() {
         canAddChild,
         canRemove,
         canDuplicate,
+        renameOnDoubleClick,
+        addChildLabel,
         canDrag,
         canReorder,
         onRename,
@@ -239,6 +244,7 @@ export function Tree<T>() {
 
         onSelect(value, clickType);
         if (isDoubleClick) onDoubleSelect(value);
+        if (event.detail === 2 && enableRename && renameOnDoubleClick?.(value)) setEditMode(true);
       };
 
       const handleOpen = (_: React.MouseEvent) => {
@@ -365,6 +371,7 @@ export function Tree<T>() {
           false,
         enableRemove,
         enableDuplicate,
+        addChildLabel,
         onAddChild: handleNewChild,
         onEdit: handleToggleEdit,
         onRemove: handleRemove,
