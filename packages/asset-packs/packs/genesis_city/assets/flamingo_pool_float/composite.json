@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core::GltfContainer",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/flamingo_pool_float/flamingo_pool_float.glb"
+          }
+        }
+      }
+    }
+  ]
+}
