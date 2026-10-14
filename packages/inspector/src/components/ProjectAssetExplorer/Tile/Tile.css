@@ -98,7 +98,9 @@
 }
 
 .Tile.row.selected {
+  border-color: transparent;
   background-color: var(--base-15);
+  box-shadow: inset 2px 0 0 var(--primary-main);
 }
 
 .Tile.row svg,

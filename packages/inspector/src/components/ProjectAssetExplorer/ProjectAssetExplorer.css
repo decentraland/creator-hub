@@ -24,8 +24,11 @@
 }
 
 .ProjectView .Tree-View-header {
+  display: flex;
   flex: none;
-  padding: 8px 12px 4px;
+  align-items: center;
+  gap: 2px;
+  padding: 6px 6px 4px 12px;
   color: var(--neutral-grey-4);
   font-size: 10px;
   font-weight: 600;
@@ -36,12 +39,13 @@
 .ProjectView > .Tree-View > .with-context-menu {
   flex: 1;
   min-height: 0;
+  overflow-x: hidden;
   overflow-y: auto;
 }
 
-.ProjectView > .Tree-View .editor-assets-tree {
-  overflow-y: auto;
-  padding: 0 8px 8px;
+/* Every nested node carries .editor-assets-tree too, so only the root may be padded. */
+.ProjectView > .Tree-View > .with-context-menu > .editor-assets-tree {
+  padding: 0 6px 8px;
 }
 
 .ProjectView-main {
@@ -216,4 +220,86 @@
 
 .ProjectView .Tree-View .Tree .item {
   min-height: 24px;
+}
+
+.ProjectView .Tree-View-header span {
+  flex: 1;
+}
+
+.ProjectView-iconButton.small {
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  font-size: 15px;
+}
+
+.ProjectView-resizer {
+  position: relative;
+  z-index: 1;
+  flex: none;
+  width: 5px;
+  margin: 0 -3px 0 -2px;
+  cursor: col-resize;
+  touch-action: none;
+}
+
+.ProjectView-resizer:hover,
+.ProjectView-resizer:active {
+  background: linear-gradient(
+    to right,
+    transparent 2px,
+    var(--primary-main) 2px,
+    var(--primary-main) 3px,
+    transparent 3px
+  );
+}
+
+.ProjectView .Tree-View .Tree .item {
+  min-height: 26px;
+  border-radius: 6px;
+}
+
+.ProjectView .Tree-View .Tree .item-area {
+  flex: 1;
+  min-width: 0;
+}
+
+.ProjectView .Tree-View .Tree .selectable-area {
+  min-width: 0;
+  overflow: hidden;
+}
+
+.ProjectView .Tree-View .Tree .item span {
+  overflow: hidden;
+  color: var(--white-gray);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ProjectView .Tree-View .Tree .item:hover:not(:has(input)) {
+  background-color: var(--base-17);
+}
+
+/* The folder being browsed: quiet tint and an accent icon, never a filled bar. */
+.ProjectView .Tree-View .Tree .item:has(.is-current) {
+  background-color: var(--base-17);
+}
+
+.ProjectView .Tree-View .Tree .item:has(.is-current) span {
+  color: var(--white);
+  font-weight: 600;
+}
+
+.ProjectView .Tree-View .Tree .item:has(.is-current) svg {
+  color: var(--primary-main);
+}
+
+/* The file shown in the preview pane: filled row with an accent edge. */
+.ProjectView .Tree-View .Tree .item.selected:not(:has(input)) {
+  background-color: var(--base-15);
+  box-shadow: inset 2px 0 0 var(--primary-main);
+}
+
+.ProjectView .Tree-View .Tree .item.selected span {
+  color: var(--white);
 }

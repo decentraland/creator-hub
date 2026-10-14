@@ -6,6 +6,8 @@ import { FaFile as OtherIcon } from 'react-icons/fa';
 import { SiTypescript as ScriptIcon } from 'react-icons/si';
 import {
   MdChevronRight as ChevronIcon,
+  MdUnfoldLess as CollapseAllIcon,
+  MdUnfoldMore as ExpandAllIcon,
   MdViewList as ListIcon,
   MdGridView as GridIcon,
 } from 'react-icons/md';
@@ -57,6 +59,7 @@ function ProjectView({ folders, thumbnails }: Props) {
   const { selection, select } = useAssetSelection();
   const [viewMode, setViewMode] = useState<ViewMode>(readViewMode);
   const [showTree, setShowTree] = useState(true);
+  const [treeWidth, setTreeWidth] = useState(readTreeWidth);
   const dispatch = useAppDispatch();
   const [open, setOpen] = useState(new Set<string>());
   const [modal, setModal] = useState<ModalState | undefined>(undefined);
@@ -228,6 +231,41 @@ function ProjectView({ folders, thumbnails }: Props) {
     setActiveFilter(Filter.All);
   }, []);
 
+  const handleExpandAll = useCallback(() => {
+    const folders = [...tree.entries()].filter(([, node]) => node.type === 'folder');
+    setOpen(new Set(folders.map(([id]) => id)));
+  }, [tree]);
+
+  const handleCollapseAll = useCallback(() => setOpen(new Set([ROOT])), []);
+
+  const handleResizeStart = useCallback(
+    (event: React.PointerEvent<HTMLDivElement>) => {
+      event.preventDefault();
+      const startX = event.clientX;
+      const startWidth = treeWidth;
+      let latest = startWidth;
+      const onMove = (move: PointerEvent) => {
+        latest = Math.min(
+          MAX_TREE_WIDTH,
+          Math.max(MIN_TREE_WIDTH, startWidth + move.clientX - startX),
+        );
+        setTreeWidth(latest);
+      };
+      const onUp = () => {
+        window.removeEventListener('pointermove', onMove);
+        window.removeEventListener('pointerup', onUp);
+        try {
+          localStorage.setItem(TREE_WIDTH_KEY, String(latest));
+        } catch {
+          // the width just won't be remembered
+        }
+      };
+      window.addEventListener('pointermove', onMove);
+      window.addEventListener('pointerup', onUp);
+    },
+    [treeWidth],
+  );
+
   const handleViewMode = useCallback((mode: ViewMode) => {
     setViewMode(mode);
     try {
@@ -280,8 +318,29 @@ function ProjectView({ folders, thumbnails }: Props) {
         </div>
       </Modal>
       <div className="ProjectView">
-        <div className={cx('Tree-View', { collapsed: !showTree })}>
-          <div className="Tree-View-header">Folders</div>
+        <div
+          className={cx('Tree-View', { collapsed: !showTree })}
+          style={{ width: treeWidth }}
+        >
+          <div className="Tree-View-header">
+            <span>Folders</span>
+            <button
+              className="ProjectView-iconButton small"
+              onClick={handleExpandAll}
+              title="Expand all folders"
+              aria-label="Expand all folders"
+            >
+              <ExpandAllIcon />
+            </button>
+            <button
+              className="ProjectView-iconButton small"
+              onClick={handleCollapseAll}
+              title="Collapse all folders"
+              aria-label="Collapse all folders"
+            >
+              <CollapseAllIcon />
+            </button>
+          </div>
           <FilesTree
             className="editor-assets-tree"
             value={ROOT}
@@ -295,11 +354,16 @@ function ProjectView({ folders, thumbnails }: Props) {
             onDuplicate={noop}
             getId={(value: string) => value.toString()}
             getChildren={getChildren}
-            getLabel={(val: string) => <span>{tree.get(val)?.name ?? val}</span>}
+            getLabel={(val: string) => (
+              <span
+                className={cx({ 'is-current': val === lastSelected })}
+                title={tree.get(val)?.name ?? val}
+              >
+                {tree.get(val)?.name ?? val}
+              </span>
+            )}
             isOpen={isOpen}
-            isSelected={(val: string) =>
-              lastSelected === val || (selection?.source === 'local' && selection.id === val)
-            }
+            isSelected={(val: string) => selection?.source === 'local' && selection.id === val}
             isHidden={(val: string) => val === ROOT}
             canRename={() => false}
             canRemove={val => tree.get(val)?.type === 'asset'}
@@ -311,6 +375,16 @@ function ProjectView({ folders, thumbnails }: Props) {
             dndType={DRAG_N_DROP_ASSET_KEY}
           />
         </div>
+        {showTree && (
+          <div
+            className="ProjectView-resizer"
+            role="separator"
+            aria-orientation="vertical"
+            aria-label="Resize folder tree"
+            onPointerDown={handleResizeStart}
+            onDoubleClick={() => setTreeWidth(DEFAULT_TREE_WIDTH)}
+          />
+        )}
         <div className="ProjectView-main">
           <div className="ProjectView-toolbar">
             <button
@@ -409,6 +483,20 @@ function ProjectView({ folders, thumbnails }: Props) {
 type ViewMode = 'grid' | 'list';
 
 const VIEW_MODE_KEY = 'inspector:local-assets-view';
+const TREE_WIDTH_KEY = 'inspector:local-assets-tree-width';
+const DEFAULT_TREE_WIDTH = 180;
+const MIN_TREE_WIDTH = 130;
+const MAX_TREE_WIDTH = 380;
+
+function readTreeWidth(): number {
+  try {
+    const stored = Number(localStorage.getItem(TREE_WIDTH_KEY));
+    if (stored >= MIN_TREE_WIDTH && stored <= MAX_TREE_WIDTH) return stored;
+  } catch {
+    // fall through to the default
+  }
+  return DEFAULT_TREE_WIDTH;
+}
 
 function readViewMode(): ViewMode {
   try {
