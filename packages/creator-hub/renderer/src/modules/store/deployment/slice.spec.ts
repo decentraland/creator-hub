@@ -1,10 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ChainId } from '@dcl/schemas';
 import { localStorageGetIdentity } from '@dcl/single-sign-on-client';
+import { editor } from '#preload';
 import { AuthServerProvider } from '../../../lib/auth';
 import { createTestStore } from '../../../../tests/utils/testStore';
 import { FeatureFlag, fetchFeatureFlags } from '../featureFlags';
-import { executeDeployment, initializeDeployment } from './slice';
+import { DeploymentError } from '../../../lib/deploy';
+import { cancelDeployment, executeDeployment, initializeDeployment } from './slice';
 
 const TEST_PATH = '/test/path';
 const TEST_WALLET = '0x123';
@@ -51,7 +53,15 @@ vi.mock('./utils', async () => {
   };
 });
 
+vi.mock('./deploy-api', async importOriginal => ({
+  ...((await importOriginal()) as object),
+  deployWithProgress: vi.fn(),
+  fetchDeployState: vi.fn(),
+  requestDeploymentCancel: vi.fn(),
+}));
+
 import { deploy, checkDeploymentStatus, fetchDeploymentStatus, fetchInfo } from './utils';
+import { deployWithProgress, fetchDeployState, requestDeploymentCancel } from './deploy-api';
 
 describe('deployment slice', () => {
   let store: ReturnType<typeof createTestStore>;
@@ -718,6 +728,192 @@ describe('deployment slice', () => {
 
         expect(history1?.length).toBe(1);
         expect(history2).toBeUndefined();
+      });
+    });
+  });
+
+  describe('deploy resource', () => {
+    const UPLOADING_STATE = {
+      phase: 'uploading' as const,
+      upload: {
+        stage: 'uploading' as const,
+        sentBytes: 25,
+        totalBytes: 100,
+        completedBatches: 1,
+        totalBatches: 4,
+      },
+      result: null,
+      error: null,
+    };
+
+    afterEach(() => {
+      vi.mocked(editor.supportsDeployResource).mockReset();
+      vi.mocked(fetchDeployState).mockReset();
+      vi.mocked(deployWithProgress).mockReset();
+    });
+
+    describe('when the installed sdk-commands supports it', () => {
+      beforeEach(async () => {
+        vi.mocked(editor.supportsDeployResource).mockResolvedValue(true);
+        store = await initDeploymentStore();
+      });
+
+      it('should flag the deployment as supporting it', () => {
+        expect(store.getState().deployment.deployments[TEST_PATH]?.supportsDeployResource).toBe(
+          true,
+        );
+      });
+    });
+
+    describe('when the installed sdk-commands cannot be inspected', () => {
+      beforeEach(async () => {
+        vi.mocked(editor.supportsDeployResource).mockRejectedValue(new Error('ENOENT'));
+        store = await initDeploymentStore();
+      });
+
+      it('should flag the deployment as not supporting it', () => {
+        expect(store.getState().deployment.deployments[TEST_PATH]?.supportsDeployResource).toBe(
+          false,
+        );
+      });
+    });
+
+    describe('when executing a deployment the CLI serves through the resource', () => {
+      let progressDuringUpload: unknown;
+
+      beforeEach(async () => {
+        vi.mocked(editor.supportsDeployResource).mockResolvedValue(true);
+        vi.mocked(fetchDeployState).mockResolvedValue({ ...UPLOADING_STATE, upload: null });
+        vi.mocked(deployWithProgress).mockImplementation(async (_url, _payload, onState) => {
+          onState(UPLOADING_STATE);
+          progressDuringUpload = store.getState().deployment.deployments[TEST_PATH]?.upload;
+        });
+        mockCheckStatus();
+        store = await initDeploymentStore();
+        await store.dispatch(executeDeployment(TEST_PATH));
+      });
+
+      it('should deploy through the resource instead of the blocking request', () => {
+        expect(deployWithProgress).toHaveBeenCalledWith(
+          `http://localhost:${TEST_PORT}/api`,
+          expect.objectContaining({ address: TEST_WALLET, chainId: TEST_CHAIN_ID }),
+          expect.any(Function),
+        );
+        expect(deploy).not.toHaveBeenCalled();
+      });
+
+      it('should store the reported upload progress', () => {
+        expect(progressDuringUpload).toEqual(UPLOADING_STATE.upload);
+      });
+
+      it('should go on polling the deployment status', () => {
+        expect(checkDeploymentStatus).toHaveBeenCalled();
+      });
+
+      it('should complete the deployment', () => {
+        expect(store.getState().deployment.deployments[TEST_PATH]?.status).toBe('complete');
+      });
+    });
+
+    describe('when the CLI answers 404 for the resource despite the static check', () => {
+      beforeEach(async () => {
+        vi.mocked(editor.supportsDeployResource).mockResolvedValue(true);
+        vi.mocked(fetchDeployState).mockResolvedValue(null);
+        mockDeploySuccess();
+        mockCheckStatus();
+        store = await initDeploymentStore();
+        await store.dispatch(executeDeployment(TEST_PATH));
+      });
+
+      it('should fall back to the blocking request', () => {
+        expect(deploy).toHaveBeenCalledTimes(1);
+        expect(deployWithProgress).not.toHaveBeenCalled();
+      });
+    });
+
+    describe('when the installed sdk-commands does not support it', () => {
+      beforeEach(async () => {
+        vi.mocked(editor.supportsDeployResource).mockResolvedValue(false);
+        mockDeploySuccess();
+        mockCheckStatus();
+        store = await initDeploymentStore();
+        await store.dispatch(executeDeployment(TEST_PATH));
+      });
+
+      it('should not probe the resource', () => {
+        expect(fetchDeployState).not.toHaveBeenCalled();
+      });
+
+      it('should use the blocking request', () => {
+        expect(deploy).toHaveBeenCalledTimes(1);
+      });
+    });
+
+    describe('when the user cancels the deployment', () => {
+      let result: Awaited<ReturnType<ReturnType<typeof executeDeployment>>>;
+
+      beforeEach(async () => {
+        vi.mocked(editor.supportsDeployResource).mockResolvedValue(true);
+        vi.mocked(fetchDeployState).mockResolvedValue(UPLOADING_STATE);
+        vi.mocked(deployWithProgress).mockImplementation(async (_url, _payload, onState) => {
+          onState(UPLOADING_STATE);
+          throw new DeploymentError('DEPLOYMENT_CANCELLED', {
+            catalyst: 'idle',
+            assetBundle: 'idle',
+          });
+        });
+        store = await initDeploymentStore();
+        result = await store.dispatch(executeDeployment(TEST_PATH));
+      });
+
+      it('should reject with a cancelled outcome', () => {
+        expect(result.error.name).toBe('DEPLOYMENT_CANCELLED');
+      });
+
+      it('should not retry against another catalyst', () => {
+        expect(deployWithProgress).toHaveBeenCalledTimes(1);
+      });
+
+      it('should mark the deployment as cancelled without an error', () => {
+        const deployment = store.getState().deployment.deployments[TEST_PATH];
+        expect(deployment?.status).toBe('cancelled');
+        expect(deployment?.error).toBeUndefined();
+        expect(deployment?.upload).toBeNull();
+      });
+
+      it('should not poll the deployment status', () => {
+        expect(checkDeploymentStatus).not.toHaveBeenCalled();
+      });
+
+      describe('and a new deployment starts', () => {
+        beforeEach(async () => {
+          await store
+            .dispatch(
+              initializeDeployment({
+                path: TEST_PATH,
+                port: TEST_PORT,
+                chainId: TEST_CHAIN_ID,
+                wallet: TEST_WALLET,
+              }),
+            )
+            .unwrap();
+        });
+
+        it('should leave the cancelled deployment out of the history', () => {
+          expect(store.getState().deployment.history[TEST_PATH]).toBeUndefined();
+        });
+      });
+    });
+
+    describe('when cancelling a deployment', () => {
+      beforeEach(async () => {
+        vi.mocked(requestDeploymentCancel).mockResolvedValue(undefined);
+        store = await initDeploymentStore();
+        await store.dispatch(cancelDeployment(TEST_PATH)).unwrap();
+      });
+
+      it('should ask the CLI serving the deployment to cancel it', () => {
+        expect(requestDeploymentCancel).toHaveBeenCalledWith(`http://localhost:${TEST_PORT}/api`);
       });
     });
   });

@@ -1,0 +1,24 @@
+.DeployProgress {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 16px;
+  margin-top: 24px;
+}
+
+.DeployProgress .upload {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.DeployProgress .details {
+  display: flex;
+  justify-content: space-between;
+  color: var(--dcl-silver);
+  font-size: 14px;
+}
+
+.DeployProgress .cancel {
+  align-self: flex-end;
+}

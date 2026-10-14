@@ -209,6 +209,7 @@ export interface Ipc {
   'cli.cancelPreview': (path: string) => Promise<void>;
   'cli.supportsAssetBundles': (path: string) => Promise<boolean>;
   'cli.deploy': (opts: DeployOptions) => Promise<number>;
+  'cli.supportsDeployResource': (path: string) => Promise<boolean>;
   'cli.killPreview': (path: string) => Promise<void>;
   'cli.getMobilePreview': (path: string) => Promise<{ url: string; qr: string } | null>;
   'analytics.track': <T extends keyof Events>(event: T, data?: Events[T]) => void;

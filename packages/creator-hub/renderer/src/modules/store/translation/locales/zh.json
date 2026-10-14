@@ -464,6 +464,12 @@
             "loading": "加载中...",
             "failed": "失败的"
           },
+          "progress": {
+            "checking": "正在准备上传...",
+            "uploading": "正在上传 {sent} / {total}",
+            "processing": "发布中...",
+            "batches": "已上传第 {completed} 批，共 {total} 批"
+          },
           "errors": {
             "details": "详细信息",
             "code_error": "你的场景代码包含一个或多个错误。\n请修复它们并重试。",
@@ -483,7 +489,9 @@
           },
           "actions": {
             "report_issue": "报告问题",
-            "retry": "重试"
+            "retry": "重试",
+            "cancel": "取消",
+            "cancelling": "正在取消..."
           },
           "redirect": {
             "sign_in": "您将在 {seconds} 秒后被重定向到登录步骤……"

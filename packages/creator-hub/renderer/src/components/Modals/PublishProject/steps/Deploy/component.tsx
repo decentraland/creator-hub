@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { type ReactNode, useCallback, useEffect, useMemo, useState } from 'react';
 import cx from 'classnames';
 import { Typography, Checkbox } from 'decentraland-ui2';
 
@@ -14,7 +14,8 @@ import { useSnackbar } from '/@/hooks/useSnackbar';
 import { useDeploy } from '/@/hooks/useDeploy';
 import { useCounter } from '/@/hooks/useCounter';
 
-import { type Deployment } from '/@/modules/store/deployment/slice';
+import { actions as deploymentActions, type Deployment } from '/@/modules/store/deployment/slice';
+import { isFinalPhase } from '/@/modules/store/deployment/deploy-api';
 import { getInvalidFiles, MAX_FILE_SIZE_BYTES } from '/@/modules/store/deployment/utils';
 import {
   actions as managementActions,
@@ -34,6 +35,7 @@ import { ExpandMore } from '/@/components/ExpandMore';
 import type { Step } from '/@/components/Step/types';
 import type { Props } from '/@/components/Modals/PublishProject/types';
 import { ProjectStepWrapper } from '/@/components/Modals/PublishProject/ProjectStepWrapper';
+import { DeployProgress } from './DeployProgress';
 
 import './styles.css';
 
@@ -63,6 +65,7 @@ export function Deploy(props: Props) {
   const [showWarning, setShowWarning] = useState(false);
   const [skipWarning, setSkipWarning] = useState(project.info.skipPublishWarning ?? false);
   const [undeployStatus, setUndeployStatus] = useState<Status>('idle');
+  const [cancelling, setCancelling] = useState(false);
   const deployment = getDeployment(project.path);
   const isWorld = previousStep === 'publish-to-world' || !!deployment?.info.isWorld;
   const dclEnv = useMemo(() => getDclEnv(), []);
@@ -116,6 +119,36 @@ export function Deploy(props: Props) {
     setShowWarning(false);
     setSkipWarning(false);
   }, []);
+
+  const canCancel =
+    !!deployment?.supportsDeployResource &&
+    deployment.status === 'pending' &&
+    !!deployment.phase &&
+    !isFinalPhase(deployment.phase);
+
+  const handleCancel = useCallback(async () => {
+    setCancelling(true);
+    try {
+      await dispatch(deploymentActions.cancelDeployment(project.path)).unwrap();
+    } catch {
+      setCancelling(false);
+    }
+  }, [dispatch, project.path]);
+
+  useEffect(() => {
+    setCancelling(false);
+  }, [deployment?.id]);
+
+  // A cancelled deployment leaves the CLI unable to deploy again, so leave this step: the
+  // previous step starts a fresh one.
+  useEffect(() => {
+    if (deployment?.status !== 'cancelled') return;
+    if (previousStep && onBack) {
+      onBack();
+    } else {
+      props.onClose();
+    }
+  }, [deployment?.status]);
 
   // jump in
   const jumpInUrl = useMemo(() => {
@@ -306,7 +339,14 @@ export function Deploy(props: Props) {
                   />
                 )}
                 {(deployment.status === 'pending' || undeployStatus === 'pending') && (
-                  <Deploying steps={steps} />
+                  <Deploying steps={steps}>
+                    <DeployProgress
+                      upload={deployment.upload}
+                      canCancel={canCancel}
+                      cancelling={cancelling}
+                      onCancel={handleCancel}
+                    />
+                  </Deploying>
                 )}
                 {deployment.status === 'complete' && (
                   <Success
@@ -389,9 +429,10 @@ function Idle({ files, error, onClick }: IdleProps) {
 
 type DeployingProps = {
   steps: Step[];
+  children?: ReactNode;
 };
 
-function Deploying({ steps }: DeployingProps) {
+function Deploying({ steps, children }: DeployingProps) {
   return (
     <div className="Deploying">
       <div className="header">
@@ -399,6 +440,7 @@ function Deploying({ steps }: DeployingProps) {
         <Typography variant="h5">{t('modal.publish_project.deploy.deploying.publish')}</Typography>
       </div>
       <ConnectedSteps steps={steps} />
+      {children}
     </div>
   );
 }

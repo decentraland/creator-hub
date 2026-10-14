@@ -464,6 +464,12 @@
             "loading": "En proceso...",
             "failed": "Error"
           },
+          "progress": {
+            "checking": "Preparando la subida...",
+            "uploading": "Subiendo {sent} de {total}",
+            "processing": "Publicando...",
+            "batches": "Lote {completed} de {total} subido"
+          },
           "errors": {
             "details": "Detalles",
             "code_error": "El código de tu escena contiene uno o más errores.\nPor favor corrígelos e inténtalo de nuevo.",
@@ -483,7 +489,9 @@
           },
           "actions": {
             "report_issue": "Informar un problema",
-            "retry": "Reintentar"
+            "retry": "Reintentar",
+            "cancel": "Cancelar",
+            "cancelling": "Cancelando..."
           },
           "redirect": {
             "sign_in": "Serás redirigido al inicio de sesión en {seconds} segundos..."

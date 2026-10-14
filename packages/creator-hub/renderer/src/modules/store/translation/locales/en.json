@@ -465,6 +465,12 @@
             "loading": "In process...",
             "failed": "Error"
           },
+          "progress": {
+            "checking": "Preparing the upload...",
+            "uploading": "Uploading {sent} of {total}",
+            "processing": "Publishing...",
+            "batches": "Batch {completed} of {total} uploaded"
+          },
           "errors": {
             "details": "Details",
             "code_error": "Your scene code contains one or more errors.\nPlease fix them and try again.",
@@ -484,7 +490,9 @@
           },
           "actions": {
             "report_issue": "Report an issue",
-            "retry": "Retry"
+            "retry": "Retry",
+            "cancel": "Cancel",
+            "cancelling": "Cancelling..."
           },
           "redirect": {
             "sign_in": "You will be redirected to Sign In step in {seconds} seconds..."

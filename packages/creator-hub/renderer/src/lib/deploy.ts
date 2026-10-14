@@ -21,6 +21,32 @@ export const STATUS_VALUES = ['idle', 'pending', 'complete', 'failed'] as const;
 
 export type Status = (typeof STATUS_VALUES)[number];
 
+export type DeploymentStatus = Status | 'cancelled';
+
+/** Phases of the sdk-commands local deploy resource (`/api/deploy`). */
+export type DeployPhase =
+  | 'awaiting-signature'
+  | 'undeploying'
+  | 'uploading'
+  | 'deployed'
+  | 'failed'
+  | 'cancelled';
+
+export type DeployUpload = {
+  stage: 'checking' | 'uploading' | 'processing';
+  sentBytes: number;
+  totalBytes: number;
+  completedBatches: number | null;
+  totalBatches: number | null;
+};
+
+export type DeployState = {
+  phase: DeployPhase;
+  upload: DeployUpload | null;
+  result: { entityId: string; message?: string } | null;
+  error: { code: string; message: string } | null;
+};
+
 export type DeploymentComponentsStatus = {
   catalyst: Status;
   assetBundle: Status;
@@ -47,7 +73,8 @@ export type ErrorName =
   | 'INVALID_IDENTITY'
   | 'MAX_FILE_SIZE_EXCEEDED'
   | 'MAX_POINTER_SIZE_EXCEEDED'
-  | 'INVALID_CREATOR_WALLET';
+  | 'INVALID_CREATOR_WALLET'
+  | 'DEPLOYMENT_CANCELLED';
 
 export class DeploymentError extends ErrorBase<ErrorName> {
   constructor(

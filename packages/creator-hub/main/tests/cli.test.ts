@@ -45,6 +45,7 @@ import {
   getPreview,
   start,
   supportsAssetBundles,
+  supportsDeployResource,
 } from '../src/modules/cli';
 
 const BASE_OPTS: PreviewOptions = {
@@ -807,6 +808,68 @@ describe('supportsAssetBundles', () => {
       mocks.stat.mockResolvedValue({ mtimeMs: 1000 });
       mocks.readFile.mockResolvedValue('args spec with "--asset-bundles" flag');
       await expect(supportsAssetBundles(path)).resolves.toBe(true);
+    });
+  });
+});
+
+describe('supportsDeployResource', () => {
+  let path: string;
+  let files: Record<string, string>;
+  let result: boolean;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    path = `/scenes/scene-${++sceneCount}`;
+    files = {};
+    mocks.readFile.mockImplementation(async (file: string) => {
+      const name = Object.keys(files).find(suffix => file.endsWith(suffix));
+      if (name === undefined) throw new Error('ENOENT');
+      return files[name];
+    });
+  });
+
+  describe('when the deploy routes advertise respond-async', () => {
+    beforeEach(async () => {
+      files['deploy/index.js'] = 'deploy command';
+      files['deploy/utils.js'] = "if (prefer === 'respond-async') {}";
+      result = await supportsDeployResource(path);
+    });
+
+    it('should report the resource api as supported', () => {
+      expect(result).toBe(true);
+    });
+  });
+
+  describe('when the deploy command itself advertises respond-async', () => {
+    beforeEach(async () => {
+      files['deploy/index.js'] = "const PREFER = 'respond-async'";
+      result = await supportsDeployResource(path);
+    });
+
+    it('should report the resource api as supported', () => {
+      expect(result).toBe(true);
+    });
+  });
+
+  describe('when neither deploy file mentions respond-async', () => {
+    beforeEach(async () => {
+      files['deploy/index.js'] = 'deploy command with --programmatic';
+      files['deploy/utils.js'] = "router.post('/api/deploy')";
+      result = await supportsDeployResource(path);
+    });
+
+    it('should report the resource api as unsupported', () => {
+      expect(result).toBe(false);
+    });
+  });
+
+  describe('when the sdk is not installed', () => {
+    beforeEach(async () => {
+      result = await supportsDeployResource(path);
+    });
+
+    it('should report the resource api as unsupported', () => {
+      expect(result).toBe(false);
     });
   });
 });
