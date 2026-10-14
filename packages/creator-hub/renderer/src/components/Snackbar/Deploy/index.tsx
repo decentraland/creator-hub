@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import CloseIcon from '@mui/icons-material/Close';
 import { Alert, Button, IconButton, CircularProgress as Loader } from 'decentraland-ui2';
 
@@ -18,13 +18,6 @@ export function Deploy({ path, onClose }: { path: string; onClose: () => void })
   }, [deployment]);
 
   const props = { path, title: sceneTitle, onClose };
-
-  // A cancelled deployment has nothing to report: drop the notification instead of leaving an
-  // empty one behind.
-  const isCancelled = deployment?.status === 'cancelled';
-  useEffect(() => {
-    if (isCancelled) onClose();
-  }, [isCancelled]);
 
   if (deployment?.status === 'pending') return <Pending {...props} />;
   if (deployment?.status === 'complete') return <Success {...props} />;

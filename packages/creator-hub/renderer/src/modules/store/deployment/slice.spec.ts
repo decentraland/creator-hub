@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ChainId } from '@dcl/schemas';
 import { localStorageGetIdentity } from '@dcl/single-sign-on-client';
 import { editor } from '#preload';
+import { FetchError } from '/shared/fetch';
 import { AuthServerProvider } from '../../../lib/auth';
 import { createTestStore } from '../../../../tests/utils/testStore';
 import { FeatureFlag, fetchFeatureFlags } from '../featureFlags';
@@ -56,12 +57,18 @@ vi.mock('./utils', async () => {
 vi.mock('./deploy-api', async importOriginal => ({
   ...((await importOriginal()) as object),
   deployWithProgress: vi.fn(),
-  fetchDeployState: vi.fn(),
+  isDeployResourceAvailable: vi.fn(),
   requestDeploymentCancel: vi.fn(),
+  setDeployToken: vi.fn(),
 }));
 
 import { deploy, checkDeploymentStatus, fetchDeploymentStatus, fetchInfo } from './utils';
-import { deployWithProgress, fetchDeployState, requestDeploymentCancel } from './deploy-api';
+import {
+  deployWithProgress,
+  isDeployResourceAvailable,
+  requestDeploymentCancel,
+  setDeployToken,
+} from './deploy-api';
 
 describe('deployment slice', () => {
   let store: ReturnType<typeof createTestStore>;
@@ -113,6 +120,7 @@ describe('deployment slice', () => {
     // Reset fetchInfo mock because some tests override it with mockRejectedValue
     // and those overrides persist across tests even after vi.clearAllMocks()
     vi.mocked(fetchInfo).mockResolvedValue(TEST_SCENE_INFO);
+    vi.mocked(editor.publishScene).mockResolvedValue({ port: TEST_PORT });
   });
 
   afterEach(() => {
@@ -746,16 +754,32 @@ describe('deployment slice', () => {
       error: null,
     };
 
+    const initResourceDeploymentStore = async (supportsDeployResource: boolean) => {
+      const store = createTestStore();
+      await store
+        .dispatch(
+          initializeDeployment({
+            path: TEST_PATH,
+            port: TEST_PORT,
+            supportsDeployResource,
+            chainId: TEST_CHAIN_ID,
+            wallet: TEST_WALLET,
+          }),
+        )
+        .unwrap();
+      return store;
+    };
+
     afterEach(() => {
-      vi.mocked(editor.supportsDeployResource).mockReset();
-      vi.mocked(fetchDeployState).mockReset();
+      vi.mocked(isDeployResourceAvailable).mockReset();
       vi.mocked(deployWithProgress).mockReset();
+      vi.mocked(deploy).mockReset();
+      vi.useRealTimers();
     });
 
-    describe('when the installed sdk-commands supports it', () => {
+    describe('when the CLI serves it', () => {
       beforeEach(async () => {
-        vi.mocked(editor.supportsDeployResource).mockResolvedValue(true);
-        store = await initDeploymentStore();
+        store = await initResourceDeploymentStore(true);
       });
 
       it('should flag the deployment as supporting it', () => {
@@ -765,9 +789,8 @@ describe('deployment slice', () => {
       });
     });
 
-    describe('when the installed sdk-commands cannot be inspected', () => {
+    describe('when the CLI support is not reported', () => {
       beforeEach(async () => {
-        vi.mocked(editor.supportsDeployResource).mockRejectedValue(new Error('ENOENT'));
         store = await initDeploymentStore();
       });
 
@@ -782,14 +805,13 @@ describe('deployment slice', () => {
       let progressDuringUpload: unknown;
 
       beforeEach(async () => {
-        vi.mocked(editor.supportsDeployResource).mockResolvedValue(true);
-        vi.mocked(fetchDeployState).mockResolvedValue({ ...UPLOADING_STATE, upload: null });
+        vi.mocked(isDeployResourceAvailable).mockResolvedValue(true);
         vi.mocked(deployWithProgress).mockImplementation(async (_url, _payload, onState) => {
           onState(UPLOADING_STATE);
           progressDuringUpload = store.getState().deployment.deployments[TEST_PATH]?.upload;
         });
         mockCheckStatus();
-        store = await initDeploymentStore();
+        store = await initResourceDeploymentStore(true);
         await store.dispatch(executeDeployment(TEST_PATH));
       });
 
@@ -815,13 +837,31 @@ describe('deployment slice', () => {
       });
     });
 
-    describe('when the CLI answers 404 for the resource despite the static check', () => {
+    describe('when the CLI reports a cancellation under way', () => {
+      let cancelRequested: unknown;
+
       beforeEach(async () => {
-        vi.mocked(editor.supportsDeployResource).mockResolvedValue(true);
-        vi.mocked(fetchDeployState).mockResolvedValue(null);
+        vi.mocked(isDeployResourceAvailable).mockResolvedValue(true);
+        vi.mocked(deployWithProgress).mockImplementation(async (_url, _payload, onState) => {
+          onState({ ...UPLOADING_STATE, cancelRequested: true });
+          cancelRequested = store.getState().deployment.deployments[TEST_PATH]?.cancelRequested;
+        });
+        mockCheckStatus();
+        store = await initResourceDeploymentStore(true);
+        await store.dispatch(executeDeployment(TEST_PATH));
+      });
+
+      it('should store it', () => {
+        expect(cancelRequested).toBe(true);
+      });
+    });
+
+    describe('when the probe finds the resource unavailable despite the static check', () => {
+      beforeEach(async () => {
+        vi.mocked(isDeployResourceAvailable).mockResolvedValue(false);
         mockDeploySuccess();
         mockCheckStatus();
-        store = await initDeploymentStore();
+        store = await initResourceDeploymentStore(true);
         await store.dispatch(executeDeployment(TEST_PATH));
       });
 
@@ -831,17 +871,16 @@ describe('deployment slice', () => {
       });
     });
 
-    describe('when the installed sdk-commands does not support it', () => {
+    describe('when the CLI does not serve it', () => {
       beforeEach(async () => {
-        vi.mocked(editor.supportsDeployResource).mockResolvedValue(false);
         mockDeploySuccess();
         mockCheckStatus();
-        store = await initDeploymentStore();
+        store = await initResourceDeploymentStore(false);
         await store.dispatch(executeDeployment(TEST_PATH));
       });
 
       it('should not probe the resource', () => {
-        expect(fetchDeployState).not.toHaveBeenCalled();
+        expect(isDeployResourceAvailable).not.toHaveBeenCalled();
       });
 
       it('should use the blocking request', () => {
@@ -849,12 +888,87 @@ describe('deployment slice', () => {
       });
     });
 
+    describe('when the deployment state is lost after the CLI accepted it', () => {
+      let result: Awaited<ReturnType<ReturnType<typeof executeDeployment>>>;
+
+      beforeEach(async () => {
+        vi.useFakeTimers();
+        vi.mocked(isDeployResourceAvailable).mockResolvedValue(true);
+        vi.mocked(deployWithProgress).mockRejectedValue(
+          new DeploymentError(
+            'DEPLOY_STATE_LOST',
+            { catalyst: 'idle', assetBundle: 'idle' },
+            new Error('Failed to fetch'),
+          ),
+        );
+        store = await initResourceDeploymentStore(true);
+        const running = store.dispatch(executeDeployment(TEST_PATH));
+        await advanceRetryTimers(3);
+        result = await running;
+      });
+
+      it('should reject with the lost state', () => {
+        expect(result.error.name).toBe('DEPLOY_STATE_LOST');
+      });
+
+      it('should not deploy again to another catalyst', () => {
+        expect(deployWithProgress).toHaveBeenCalledTimes(1);
+        expect(editor.publishScene).not.toHaveBeenCalled();
+      });
+    });
+
+    describe('when a regular failure is retried against a CLI that serves it', () => {
+      beforeEach(async () => {
+        vi.useFakeTimers();
+        vi.mocked(deploy).mockRejectedValue(new Error('Failed'));
+        vi.mocked(editor.publishScene).mockResolvedValue({
+          port: TEST_PORT + 1,
+          deployToken: 'token-example-123',
+        });
+        vi.mocked(isDeployResourceAvailable).mockResolvedValue(true);
+        vi.mocked(deployWithProgress).mockResolvedValue(undefined);
+        mockCheckStatus();
+        store = await initResourceDeploymentStore(false);
+        const running = store.dispatch(executeDeployment(TEST_PATH));
+        await advanceRetryTimers(1);
+        await running;
+      });
+
+      it('should deploy the retry through the resource of the new CLI', () => {
+        expect(deployWithProgress).toHaveBeenCalledWith(
+          `http://localhost:${TEST_PORT + 1}/api`,
+          expect.anything(),
+          expect.any(Function),
+        );
+      });
+
+      it('should hand the token of the new CLI to the cancel requests', () => {
+        expect(setDeployToken).toHaveBeenCalledWith(
+          `http://localhost:${TEST_PORT + 1}/api`,
+          'token-example-123',
+        );
+      });
+    });
+
+    describe('when the blocking request times out', () => {
+      let result: Awaited<ReturnType<ReturnType<typeof executeDeployment>>>;
+
+      beforeEach(async () => {
+        vi.mocked(deploy).mockRejectedValue(new FetchError('REQUEST_TIMEOUT'));
+        store = await initResourceDeploymentStore(false);
+        result = await store.dispatch(executeDeployment(TEST_PATH));
+      });
+
+      it('should reject with a timeout of the CLI, not of the connection', () => {
+        expect(result.error.name).toBe('DEPLOY_REQUEST_TIMEOUT');
+      });
+    });
+
     describe('when the user cancels the deployment', () => {
       let result: Awaited<ReturnType<ReturnType<typeof executeDeployment>>>;
 
       beforeEach(async () => {
-        vi.mocked(editor.supportsDeployResource).mockResolvedValue(true);
-        vi.mocked(fetchDeployState).mockResolvedValue(UPLOADING_STATE);
+        vi.mocked(isDeployResourceAvailable).mockResolvedValue(true);
         vi.mocked(deployWithProgress).mockImplementation(async (_url, _payload, onState) => {
           onState(UPLOADING_STATE);
           throw new DeploymentError('DEPLOYMENT_CANCELLED', {
@@ -862,7 +976,7 @@ describe('deployment slice', () => {
             assetBundle: 'idle',
           });
         });
-        store = await initDeploymentStore();
+        store = await initResourceDeploymentStore(true);
         result = await store.dispatch(executeDeployment(TEST_PATH));
       });
 
@@ -906,14 +1020,20 @@ describe('deployment slice', () => {
     });
 
     describe('when cancelling a deployment', () => {
+      let result: unknown;
+
       beforeEach(async () => {
-        vi.mocked(requestDeploymentCancel).mockResolvedValue(undefined);
+        vi.mocked(requestDeploymentCancel).mockResolvedValue('too-early');
         store = await initDeploymentStore();
-        await store.dispatch(cancelDeployment(TEST_PATH)).unwrap();
+        result = await store.dispatch(cancelDeployment(TEST_PATH)).unwrap();
       });
 
       it('should ask the CLI serving the deployment to cancel it', () => {
         expect(requestDeploymentCancel).toHaveBeenCalledWith(`http://localhost:${TEST_PORT}/api`);
+      });
+
+      it('should resolve with why the CLI turned it down', () => {
+        expect(result).toBe('too-early');
       });
     });
   });

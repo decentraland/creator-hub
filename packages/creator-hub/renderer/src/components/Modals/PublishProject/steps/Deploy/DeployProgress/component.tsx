@@ -12,6 +12,8 @@ type Props = {
   upload?: DeployUpload | null;
   canCancel: boolean;
   cancelling: boolean;
+  /** Why the last cancel request was turned down. */
+  cancelNotice?: string;
   onCancel: () => void;
 };
 
@@ -33,7 +35,7 @@ function getMessage(upload: DeployUpload) {
   }
 }
 
-export function DeployProgress({ upload, canCancel, cancelling, onCancel }: Props) {
+export function DeployProgress({ upload, canCancel, cancelling, cancelNotice, onCancel }: Props) {
   if (!upload && !canCancel) return null;
 
   const determinate = upload?.stage === 'uploading' && upload.totalBytes > 0;
@@ -61,18 +63,27 @@ export function DeployProgress({ upload, canCancel, cancelling, onCancel }: Prop
         </div>
       )}
       {canCancel && (
-        <Button
-          className="cancel"
-          size="medium"
-          variant="outlined"
-          color="secondary"
-          disabled={cancelling}
-          onClick={onCancel}
-        >
-          {cancelling
-            ? t('modal.publish_project.deploy.deploying.actions.cancelling')
-            : t('modal.publish_project.deploy.deploying.actions.cancel')}
-        </Button>
+        <div className="cancel">
+          {cancelNotice && (
+            <span
+              className="notice"
+              role="status"
+            >
+              {cancelNotice}
+            </span>
+          )}
+          <Button
+            size="medium"
+            variant="outlined"
+            color="secondary"
+            disabled={cancelling}
+            onClick={onCancel}
+          >
+            {cancelling
+              ? t('modal.publish_project.deploy.deploying.actions.cancelling')
+              : t('modal.publish_project.deploy.deploying.actions.cancel')}
+          </Button>
+        </div>
       )}
     </div>
   );

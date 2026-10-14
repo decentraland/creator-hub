@@ -1,4 +1,4 @@
-import { type ReactNode, useCallback, useEffect, useMemo, useState } from 'react';
+import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import cx from 'classnames';
 import { Typography, Checkbox } from 'decentraland-ui2';
 
@@ -15,7 +15,7 @@ import { useDeploy } from '/@/hooks/useDeploy';
 import { useCounter } from '/@/hooks/useCounter';
 
 import { actions as deploymentActions, type Deployment } from '/@/modules/store/deployment/slice';
-import { isFinalPhase } from '/@/modules/store/deployment/deploy-api';
+import { type CancelRejection, isFinalPhase } from '/@/modules/store/deployment/deploy-api';
 import { getInvalidFiles, MAX_FILE_SIZE_BYTES } from '/@/modules/store/deployment/utils';
 import {
   actions as managementActions,
@@ -66,6 +66,7 @@ export function Deploy(props: Props) {
   const [skipWarning, setSkipWarning] = useState(project.info.skipPublishWarning ?? false);
   const [undeployStatus, setUndeployStatus] = useState<Status>('idle');
   const [cancelling, setCancelling] = useState(false);
+  const [cancelRejection, setCancelRejection] = useState<CancelRejection | null>(null);
   const deployment = getDeployment(project.path);
   const isWorld = previousStep === 'publish-to-world' || !!deployment?.info.isWorld;
   const dclEnv = useMemo(() => getDclEnv(), []);
@@ -128,8 +129,13 @@ export function Deploy(props: Props) {
 
   const handleCancel = useCallback(async () => {
     setCancelling(true);
+    setCancelRejection(null);
     try {
-      await dispatch(deploymentActions.cancelDeployment(project.path)).unwrap();
+      const rejection = await dispatch(deploymentActions.cancelDeployment(project.path)).unwrap();
+      if (rejection) {
+        setCancelling(false);
+        setCancelRejection(rejection);
+      }
     } catch {
       setCancelling(false);
     }
@@ -137,12 +143,23 @@ export function Deploy(props: Props) {
 
   useEffect(() => {
     setCancelling(false);
+    setCancelRejection(null);
   }, [deployment?.id]);
 
+  const cancelNotice = cancelRejection
+    ? cancelRejection === 'too-early'
+      ? t('modal.publish_project.deploy.deploying.progress.cancel_too_early')
+      : t('modal.publish_project.deploy.deploying.progress.cancel_unauthorized')
+    : undefined;
+
   // A cancelled deployment leaves the CLI unable to deploy again, so leave this step: the
-  // previous step starts a fresh one.
+  // previous step starts a fresh one. Only on the transition, as a deployment cancelled
+  // earlier is still in the store when this step mounts again.
+  const previousStatus = useRef(deployment?.status);
   useEffect(() => {
-    if (deployment?.status !== 'cancelled') return;
+    const wasPending = previousStatus.current === 'pending';
+    previousStatus.current = deployment?.status;
+    if (!wasPending || deployment?.status !== 'cancelled') return;
     if (previousStep && onBack) {
       onBack();
     } else {
@@ -343,7 +360,8 @@ export function Deploy(props: Props) {
                     <DeployProgress
                       upload={deployment.upload}
                       canCancel={canCancel}
-                      cancelling={cancelling}
+                      cancelling={cancelling || !!deployment.cancelRequested}
+                      cancelNotice={cancelNotice}
                       onCancel={handleCancel}
                     />
                   </Deploying>

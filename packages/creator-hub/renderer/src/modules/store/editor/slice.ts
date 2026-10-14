@@ -12,6 +12,8 @@ import { isWorkspaceError } from '/shared/types/workspace';
 import { editor } from '#preload';
 
 import { actions as deploymentActions } from '../deployment';
+import { setDeployToken } from '../deployment/deploy-api';
+import { getDeploymentUrl } from '../deployment/utils';
 import { actions as workspaceActions } from '../workspace';
 
 // actions
@@ -45,8 +47,20 @@ export const publishScene = createAsyncThunk(
   'editor/publishScene',
   async (opts: DeployOptions, { dispatch, getState }) => {
     const { translation } = getState();
-    const port = await editor.publishScene({ ...opts, language: translation.locale });
-    const deployment = { path: opts.path, port, chainId: opts.chainId, wallet: opts.wallet };
+    const { port, deployToken } = await editor.publishScene({
+      ...opts,
+      language: translation.locale,
+    });
+    const url = getDeploymentUrl(port);
+    if (url) setDeployToken(url, deployToken);
+    const deployment = {
+      path: opts.path,
+      port,
+      // Main only hands out a token when the CLI it runs serves the deploy resource.
+      supportsDeployResource: !!deployToken,
+      chainId: opts.chainId,
+      wallet: opts.wallet,
+    };
     await dispatch(deploymentActions.initializeDeployment(deployment)).unwrap();
     return port;
   },

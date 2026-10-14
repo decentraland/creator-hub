@@ -468,7 +468,9 @@
             "checking": "Preparando la subida...",
             "uploading": "Subiendo {sent} de {total}",
             "processing": "Publicando...",
-            "batches": "Lote {completed} de {total} subido"
+            "batches": "Lote {completed} de {total} subido",
+            "cancel_too_early": "No se puede cancelar mientras se eliminan las escenas anteriores. Inténtalo de nuevo en un momento.",
+            "cancel_unauthorized": "No se pudo cancelar la publicación desde aquí. Cancélala desde la terminal que ejecuta el CLI."
           },
           "errors": {
             "details": "Detalles",
@@ -484,6 +486,8 @@
             "invalid_identity": "No se pudo validar su identidad.",
             "max_file_size_exceeded": "Uno o más activos exceden el límite permitido ({maxFileSizeInMb}MB).\nOptimiza o elimina archivos grandes y vuelve a intentarlo.",
             "max_scene_size_exceeded": "Tu escena excede el tamaño máximo permitido.\nReducí la cantidad o el tamaño de los assets e intentá de nuevo.",
+            "deploy_state_lost": "Se perdió el seguimiento de la publicación, que aún podría completarse.\nRevisa la salida del CLI de publicación antes de volver a publicar.",
+            "deploy_request_timeout": "La publicación no terminó en 60 minutos y aún podría estar en curso.\nRevisa la salida del CLI de publicación antes de volver a publicar.",
             "unknown": "Algo salió mal.\nPor favor, inténtalo de nuevo.",
             "invalid_creator_wallet": "El creador debe ser una dirección de billetera Ethereum válida."
           },

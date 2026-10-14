@@ -45,6 +45,8 @@ export type DeployState = {
   upload: DeployUpload | null;
   result: { entityId: string; message?: string } | null;
   error: { code: string; message: string } | null;
+  /** Whether a cancellation is under way; absent on CLIs that predate it. */
+  cancelRequested?: boolean;
 };
 
 export type DeploymentComponentsStatus = {
@@ -74,7 +76,9 @@ export type ErrorName =
   | 'MAX_FILE_SIZE_EXCEEDED'
   | 'MAX_POINTER_SIZE_EXCEEDED'
   | 'INVALID_CREATOR_WALLET'
-  | 'DEPLOYMENT_CANCELLED';
+  | 'DEPLOYMENT_CANCELLED'
+  | 'DEPLOY_STATE_LOST'
+  | 'DEPLOY_REQUEST_TIMEOUT';
 
 export class DeploymentError extends ErrorBase<ErrorName> {
   constructor(

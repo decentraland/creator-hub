@@ -1,3 +1,4 @@
+import { randomUUID } from 'crypto';
 import { join } from 'path';
 import fs from 'fs/promises';
 import log from 'electron-log/main';
@@ -12,7 +13,7 @@ import {
   CLIENT_NOT_INSTALLED_ERROR,
   isClientNotInstalledError,
 } from '/shared/types/client';
-import type { DeployOptions } from '/shared/types/deploy';
+import type { DeployOptions, DeployServer } from '/shared/types/deploy';
 import { dynamicImport } from '/shared/dynamic-import';
 
 import { MAIN_WINDOW_ID } from '../mainWindow';
@@ -661,14 +662,13 @@ async function supportsMultiSceneDeploy(path: string) {
 // ships with a `routes.js` beside the deploy command, whose help text mentions `respond-async`.
 export async function supportsDeployResource(path: string): Promise<boolean> {
   const dir = join(path, 'node_modules', '@dcl/sdk-commands/dist/commands/deploy');
-  const [index, hasRoutes] = await Promise.all([
-    fs.readFile(join(dir, 'index.js'), 'utf-8').catch(() => ''),
-    fs.stat(join(dir, 'routes.js')).then(
-      () => true,
-      () => false,
-    ),
-  ]);
-  return hasRoutes || index.includes('respond-async');
+  try {
+    await fs.stat(join(dir, 'routes.js'));
+    return true;
+  } catch {
+    const index = await fs.readFile(join(dir, 'index.js'), 'utf-8').catch(() => '');
+    return index.includes('respond-async');
+  }
 }
 
 async function getComponents(path: string) {
@@ -692,7 +692,7 @@ export async function deploy({
   language,
   chainId,
   wallet,
-}: DeployOptions): Promise<number> {
+}: DeployOptions): Promise<DeployServer> {
   if (deployServer) {
     await deployServer.stop();
   }
@@ -700,11 +700,13 @@ export async function deploy({
   const isLegacyDeploy = await shouldRunLegacyDeploy(path);
   if (isLegacyDeploy) {
     log.info('[CLI] Running legacy deploy');
-    return legacyDeploy({ path, target, targetContent, chainId, wallet });
+    return { port: await legacyDeploy({ path, target, targetContent, chainId, wallet }) };
   }
 
   const port = await getAvailablePort();
   const multiScene = await supportsMultiSceneDeploy(path);
+  // Only the holder of this token may cancel the deployment through the CLI's HTTP API.
+  const deployToken = (await supportsDeployResource(path)) ? randomUUID() : undefined;
 
   const { stop } = await runCommand(path, 'deploy', [
     '--dir',
@@ -718,9 +720,10 @@ export async function deploy({
     '--yes',
     ...(multiScene ? ['--multi-scene'] : []),
     ...(language ? ['--language', language] : []),
+    ...(deployToken ? ['--deploy-token', deployToken] : []),
   ]);
 
   deployServer = { stop };
 
-  return port;
+  return { port, deployToken };
 }

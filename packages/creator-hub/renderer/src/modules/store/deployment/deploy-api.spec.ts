@@ -16,12 +16,15 @@ vi.mock('@sentry/electron/renderer', () => ({ captureException: vi.fn() }));
 
 const {
   deployWithProgress,
-  fetchDeployState,
+  isDeployResourceAvailable,
   parseServerSentEvents,
   requestDeploymentCancel,
+  setDeployToken,
   MAX_POLL_FAILURES,
 } = await import('./deploy-api');
 const { isDeploymentError } = await import('/@/lib/deploy');
+const { FetchError } = await import('/shared/fetch');
+const { DEPLOY_REQUEST_TIMEOUT_MS } = await import('./utils');
 
 const URL = 'http://localhost:4000/api';
 const PAYLOAD = { address: '0xabc', authChain: [], chainId: ChainId.ETHEREUM_MAINNET };
@@ -63,6 +66,21 @@ const sseResponse = (chunks: string[]) =>
     { status: 200, headers: { 'Content-Type': 'text/event-stream' } },
   );
 
+/** An event stream that stays open after sending its chunks, as a silent server's does. */
+const openSseResponse = (chunks: string[]) =>
+  new Response(
+    new ReadableStream<Uint8Array>({
+      start(controller) {
+        const encoder = new TextEncoder();
+        for (const chunk of chunks) controller.enqueue(encoder.encode(chunk));
+      },
+    }),
+    { status: 200, headers: { 'Content-Type': 'text/event-stream' } },
+  );
+
+const countPolls = () =>
+  fetchMock.mock.calls.filter(([, init]) => init?.headers?.Accept === 'application/json').length;
+
 const sseEvent = (deployState: DeployState) =>
   `event: state\ndata: ${JSON.stringify(deployState)}\n\n`;
 
@@ -102,23 +120,62 @@ describe('parseServerSentEvents', () => {
       expect(result.rest).toBe('event: state\ndata: {"b"');
     });
   });
+
+  describe('when the buffer ends between the CR and the LF of a line break', () => {
+    beforeEach(() => {
+      result = parseServerSentEvents('event: state\r\ndata: {"a":1}\r');
+    });
+
+    it('should not end the event yet', () => {
+      expect(result.events).toEqual([]);
+    });
+
+    it('should keep the CR in the rest', () => {
+      expect(result.rest).toBe('event: state\ndata: {"a":1}\r');
+    });
+  });
 });
 
-describe('fetchDeployState', () => {
-  let result: DeployState | null;
+describe('isDeployResourceAvailable', () => {
+  let result: boolean | undefined;
+  let error: unknown;
+
+  beforeEach(() => {
+    result = undefined;
+    error = undefined;
+  });
 
   afterEach(() => {
     fetchMock.mockReset();
   });
 
-  describe('when the CLI predates the deploy resource', () => {
+  const run = async () => {
+    try {
+      result = await isDeployResourceAvailable(URL);
+    } catch (e) {
+      error = e;
+    }
+  };
+
+  describe.each([404, 405, 400])('when the CLI answers %i', status => {
     beforeEach(async () => {
-      mockServer({ 'GET application/json': [() => new Response('Not found', { status: 404 })] });
-      result = await fetchDeployState(URL);
+      mockServer({ 'GET application/json': [() => new Response('', { status })] });
+      await run();
     });
 
-    it('should return null', () => {
-      expect(result).toBeNull();
+    it('should report the resource as unavailable', () => {
+      expect(result).toBe(false);
+    });
+  });
+
+  describe('when the CLI does not answer in time', () => {
+    beforeEach(async () => {
+      fetchMock.mockRejectedValue(new FetchError('REQUEST_TIMEOUT'));
+      await run();
+    });
+
+    it('should report the resource as unavailable', () => {
+      expect(result).toBe(false);
     });
   });
 
@@ -127,11 +184,22 @@ describe('fetchDeployState', () => {
       mockServer({
         'GET application/json': [() => jsonResponse(200, state('awaiting-signature'))],
       });
-      result = await fetchDeployState(URL);
+      await run();
     });
 
-    it('should return the state', () => {
-      expect(result).toEqual(state('awaiting-signature'));
+    it('should report the resource as available', () => {
+      expect(result).toBe(true);
+    });
+  });
+
+  describe('when the CLI fails the request', () => {
+    beforeEach(async () => {
+      mockServer({ 'GET application/json': [() => new Response('', { status: 500 })] });
+      await run();
+    });
+
+    it('should throw', () => {
+      expect((error as Error).message).toBe('Failed to fetch the deployment state: HTTP 500');
     });
   });
 });
@@ -211,6 +279,96 @@ describe('deployWithProgress', () => {
 
     it('should report the reassembled state', () => {
       expect(onState).toHaveBeenLastCalledWith(state('deployed'));
+    });
+  });
+
+  describe('when a CRLF line break is split across chunks', () => {
+    beforeEach(async () => {
+      const event = `event: state\r\ndata: ${JSON.stringify(state('deployed'))}\r\n\r\n`;
+      const split = event.indexOf('\r\n\r\n') + 1;
+      mockServer({
+        POST: [() => jsonResponse(202, uploading(0))],
+        'GET text/event-stream': [() => sseResponse([event.slice(0, split), event.slice(split)])],
+      });
+      await run();
+    });
+
+    it('should report the state once', () => {
+      expect(onState.mock.calls.map(([s]) => s.phase)).toEqual(['uploading', 'deployed']);
+    });
+
+    it('should resolve', () => {
+      expect(error).toBeUndefined();
+    });
+  });
+
+  describe('when the stream goes silent', () => {
+    let pollsBeforeIdleTimeout: number;
+
+    beforeEach(async () => {
+      vi.useFakeTimers();
+      mockServer({
+        POST: [() => jsonResponse(202, uploading(0))],
+        'GET text/event-stream': [() => openSseResponse([sseEvent(uploading(30))])],
+        'GET application/json': [() => jsonResponse(200, state('deployed'))],
+      });
+      const running = run();
+      await vi.advanceTimersByTimeAsync(44_000);
+      pollsBeforeIdleTimeout = countPolls();
+      await vi.advanceTimersByTimeAsync(2_000);
+      await running;
+    });
+
+    it('should keep waiting for the stream until the idle timeout', () => {
+      expect(pollsBeforeIdleTimeout).toBe(0);
+    });
+
+    it('should then poll the state until it is final', () => {
+      expect(onState).toHaveBeenLastCalledWith(state('deployed'));
+    });
+
+    it('should resolve', () => {
+      expect(error).toBeUndefined();
+    });
+  });
+
+  describe('when the deployment never reaches a final state', () => {
+    beforeEach(async () => {
+      vi.useFakeTimers();
+      mockServer({
+        POST: [() => jsonResponse(202, uploading(0))],
+        'GET text/event-stream': [() => new Response('', { status: 500 })],
+        'GET application/json': [() => jsonResponse(200, uploading(50))],
+      });
+      const running = run();
+      await vi.advanceTimersByTimeAsync(DEPLOY_REQUEST_TIMEOUT_MS + 2_000);
+      await running;
+    });
+
+    it('should give up once the deployment deadline passes', () => {
+      expect(isDeploymentError(error, 'DEPLOY_STATE_LOST')).toBe(true);
+    });
+  });
+
+  describe('when the deployment state is no longer served while polling', () => {
+    beforeEach(async () => {
+      vi.useFakeTimers();
+      mockServer({
+        POST: [() => jsonResponse(202, uploading(0))],
+        'GET text/event-stream': [() => new Response('', { status: 500 })],
+        'GET application/json': [() => new Response('', { status: 404 })],
+      });
+      const running = run();
+      await vi.advanceTimersByTimeAsync(MAX_POLL_FAILURES * 1000);
+      await running;
+    });
+
+    it('should poll until it runs out of attempts', () => {
+      expect(countPolls()).toBe(MAX_POLL_FAILURES);
+    });
+
+    it('should throw an error that keeps the deployment from being retried', () => {
+      expect(isDeploymentError(error, 'DEPLOY_STATE_LOST')).toBe(true);
     });
   });
 
@@ -301,7 +459,11 @@ describe('deployWithProgress', () => {
       await running;
     });
 
-    it('should give up with the network error', () => {
+    it('should give up with an error that keeps the deployment from being retried', () => {
+      expect(isDeploymentError(error, 'DEPLOY_STATE_LOST')).toBe(true);
+    });
+
+    it('should keep the network error as the cause', () => {
       expect((error as Error).message).toBe('Failed to fetch');
     });
   });
@@ -349,9 +511,11 @@ describe('deployWithProgress', () => {
 });
 
 describe('requestDeploymentCancel', () => {
+  let result: Awaited<ReturnType<typeof requestDeploymentCancel>> | undefined;
   let error: unknown;
 
   beforeEach(() => {
+    result = undefined;
     error = undefined;
   });
 
@@ -361,7 +525,7 @@ describe('requestDeploymentCancel', () => {
 
   const run = async () => {
     try {
-      await requestDeploymentCancel(URL);
+      result = await requestDeploymentCancel(URL);
     } catch (e) {
       error = e;
     }
@@ -369,16 +533,24 @@ describe('requestDeploymentCancel', () => {
 
   describe('when the CLI accepts the cancellation', () => {
     beforeEach(async () => {
+      setDeployToken(URL, 'token-example-123');
       mockServer({ DELETE: [() => jsonResponse(202, uploading(10))] });
       await run();
     });
 
-    it('should send DELETE to the deployment', () => {
-      expect(fetchMock).toHaveBeenCalledWith(`${URL}/deploy`, { method: 'delete' });
+    afterEach(() => {
+      setDeployToken(URL, undefined);
     });
 
-    it('should resolve', () => {
-      expect(error).toBeUndefined();
+    it('should send DELETE to the deployment with its token', () => {
+      expect(fetchMock).toHaveBeenCalledWith(`${URL}/deploy`, {
+        method: 'delete',
+        headers: { 'X-Deploy-Token': 'token-example-123' },
+      });
+    });
+
+    it('should report no rejection', () => {
+      expect(result).toBeNull();
     });
   });
 
@@ -388,8 +560,32 @@ describe('requestDeploymentCancel', () => {
       await run();
     });
 
-    it('should resolve', () => {
-      expect(error).toBeUndefined();
+    it('should report no rejection', () => {
+      expect(result).toBeNull();
+    });
+  });
+
+  describe('when the CLI is still removing the previous scenes', () => {
+    beforeEach(async () => {
+      mockServer({ DELETE: [() => jsonResponse(409, state('undeploying'))] });
+      await run();
+    });
+
+    it('should report that it is too early to cancel', () => {
+      expect(result).toBe('too-early');
+    });
+  });
+
+  describe('when the CLI does not accept the token', () => {
+    beforeEach(async () => {
+      mockServer({
+        DELETE: [() => jsonResponse(403, { message: 'Invalid or missing deploy token' })],
+      });
+      await run();
+    });
+
+    it('should report the cancellation as unauthorized', () => {
+      expect(result).toBe('unauthorized');
     });
   });
 

@@ -100,6 +100,7 @@ export const deploy = async (url: string, payload: DeployPayload) => {
       url,
     });
   }
+  await resp.body?.cancel().catch(() => undefined);
 };
 
 export const getInitialDeploymentStatus = (): DeploymentComponentsStatus => ({
@@ -347,6 +348,10 @@ export function translateError(error: SerializedError) {
       return t('modal.publish_project.deploy.deploying.errors.invalid_creator_wallet');
     case 'MAX_POINTER_SIZE_EXCEEDED':
       return t('modal.publish_project.deploy.deploying.errors.max_scene_size_exceeded');
+    case 'DEPLOY_STATE_LOST':
+      return t('modal.publish_project.deploy.deploying.errors.deploy_state_lost');
+    case 'DEPLOY_REQUEST_TIMEOUT':
+      return t('modal.publish_project.deploy.deploying.errors.deploy_request_timeout');
     default:
       return t('modal.publish_project.deploy.deploying.errors.unknown');
   }
