@@ -1,9 +1,8 @@
 import { Engine } from '@babylonjs/core/Engines/engine';
-import { SceneLoader } from '@babylonjs/core/Loading/sceneLoader';
-import '@babylonjs/loaders/glTF';
 
 import { getDataLayerInterface } from '../../redux/data-layer';
 import { withAssetDir } from '../../lib/data-layer/host/fs-utils';
+import { createLocalResolver, loadModelContainer } from '../AssetBrowserPreview/gltfResolver';
 import { createPreviewScene, frameCamera, isColliderMesh } from '../AssetBrowserPreview/modelScene';
 import { extractFileExtension } from '../ImportAsset/utils';
 
@@ -52,37 +51,30 @@ let queue: Promise<unknown> = Promise.resolve();
 async function renderModelThumbnail(path: string): Promise<string | undefined> {
   const data = await readAsset(path);
   const extension = extractFileExtension(path)[1];
-  const file = new File([data as BlobPart], path.split('/').pop() ?? 'model.glb');
-  const url = URL.createObjectURL(file);
   renderer ??= createRenderer();
   const { canvas, scene, camera } = renderer;
-  try {
-    const container = await SceneLoader.LoadAssetContainerAsync(
-      '',
-      url,
-      scene,
-      undefined,
-      extension === 'gltf' ? '.gltf' : '.glb',
-    );
-    container.meshes.filter(isColliderMesh).forEach(mesh => (mesh.isVisible = false));
-    const hasGeometry = container.meshes.some(
-      mesh => !isColliderMesh(mesh) && mesh.getTotalVertices() > 0,
-    );
-    if (!hasGeometry) {
-      container.dispose();
-      return undefined;
-    }
-    container.addAllToScene();
-    container.animationGroups.forEach(group => group.stop());
-    frameCamera(scene, camera);
-    await scene.whenReadyAsync();
-    scene.render();
-    const thumbnail = canvas.toDataURL('image/png');
+  const container = await loadModelContainer(
+    scene,
+    data as BlobPart,
+    extension,
+    createLocalResolver(path),
+  );
+  container.meshes.filter(isColliderMesh).forEach(mesh => (mesh.isVisible = false));
+  const hasGeometry = container.meshes.some(
+    mesh => !isColliderMesh(mesh) && mesh.getTotalVertices() > 0,
+  );
+  if (!hasGeometry) {
     container.dispose();
-    return thumbnail;
-  } finally {
-    URL.revokeObjectURL(url);
+    return undefined;
   }
+  container.addAllToScene();
+  container.animationGroups.forEach(group => group.stop());
+  frameCamera(scene, camera);
+  await scene.whenReadyAsync();
+  scene.render();
+  const thumbnail = canvas.toDataURL('image/png');
+  container.dispose();
+  return thumbnail;
 }
 
 /**

@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { MdPause, MdPlayArrow, MdAutorenew } from 'react-icons/md';
 import { Engine } from '@babylonjs/core/Engines/engine';
-import { SceneLoader } from '@babylonjs/core/Loading/sceneLoader';
 import type { AssetContainer } from '@babylonjs/core/assetContainer';
 import type { AnimationGroup } from '@babylonjs/core/Animations/animationGroup';
 import type { ArcRotateCamera } from '@babylonjs/core/Cameras/arcRotateCamera';
@@ -9,6 +8,7 @@ import type { Scene } from '@babylonjs/core/scene';
 import '@babylonjs/loaders/glTF';
 
 import { isEmoteContainer } from '../AssetPreview/emote';
+import { loadModelContainer } from './gltfResolver';
 import { createPreviewScene, frameCamera, isColliderMesh } from './modelScene';
 import { EmoteViewer } from './EmoteViewer';
 import type { PreviewSource } from './useAssetPreviewSource';
@@ -37,6 +37,13 @@ function computeStats(container: AssetContainer): ModelStats {
     textures: container.textures.length,
     animations: container.animationGroups.length,
   };
+}
+
+async function loadBytes(source: PreviewSource): Promise<Blob> {
+  if (source.file) return source.file;
+  const response = await fetch(source.url!);
+  if (!response.ok) throw new Error(`Could not fetch ${source.name} (${response.status})`);
+  return response.blob();
 }
 
 export function ModelViewer({ source, onStats, onFailed }: Props) {
@@ -90,13 +97,8 @@ export function ModelViewer({ source, onStats, onFailed }: Props) {
     containerRef.current?.dispose();
     containerRef.current = undefined;
 
-    SceneLoader.LoadAssetContainerAsync(
-      '',
-      source.url,
-      scene,
-      undefined,
-      source.extension === 'gltf' ? '.gltf' : '.glb',
-    )
+    loadBytes(source)
+      .then(bytes => loadModelContainer(scene, bytes, source.extension, source.resolveDependency))
       .then(container => {
         if (cancelled) {
           container.dispose();

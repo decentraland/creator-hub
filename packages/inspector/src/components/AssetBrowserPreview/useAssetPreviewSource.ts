@@ -3,6 +3,11 @@ import { getContentsUrl } from '../../lib/logic/catalog';
 import { getDataLayerInterface } from '../../redux/data-layer';
 import { withAssetDir } from '../../lib/data-layer/host/fs-utils';
 import { determineAssetType, extractFileExtension } from '../ImportAsset/utils';
+import {
+  createCatalogResolver,
+  createLocalResolver,
+  type DependencyResolver,
+} from './gltfResolver';
 import type { AssetSelection } from './selection';
 
 export type PreviewKind = 'model' | 'image' | 'audio' | 'video' | 'script' | 'other';
@@ -18,6 +23,8 @@ export type PreviewSource = {
   /** Image shown when there is nothing live to render (custom items, failed models). */
   thumbnail?: string;
   size?: number;
+  /** How to fetch the textures and buffers a model refers to. */
+  resolveDependency?: DependencyResolver;
 };
 
 export type PreviewSourceState =
@@ -83,6 +90,7 @@ export function useAssetPreviewSource(selection?: AssetSelection): PreviewSource
           thumbnail: contents['thumbnail.png']
             ? getContentsUrl(contents['thumbnail.png'])
             : undefined,
+          resolveDependency: modelKey ? createCatalogResolver(contents, modelKey) : undefined,
         },
       });
       return;
@@ -130,6 +138,7 @@ export function useAssetPreviewSource(selection?: AssetSelection): PreviewSource
             url: objectUrl,
             file,
             size: data.byteLength,
+            resolveDependency: kind === 'model' ? createLocalResolver(selection.path) : undefined,
           },
         });
       })

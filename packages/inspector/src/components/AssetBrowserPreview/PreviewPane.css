@@ -268,3 +268,17 @@
   height: 100%;
   background: #000;
 }
+
+.PreviewPane-note {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  left: 8px;
+  padding: 3px 8px;
+  border-radius: 8px;
+  background: rgba(22, 21, 24, 0.75);
+  color: var(--neutral-grey-3);
+  font-size: 10px;
+  text-align: center;
+  pointer-events: none;
+}

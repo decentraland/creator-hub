@@ -90,10 +90,15 @@ function Viewer({
   }
   if (source.kind === 'model' || (source.kind === 'image' && !source.url)) {
     return source.thumbnail ? (
-      <ImageViewer
-        source={{ ...source, url: source.thumbnail }}
-        onDimensions={onDimensions}
-      />
+      <>
+        <ImageViewer
+          source={{ ...source, url: source.thumbnail }}
+          onDimensions={onDimensions}
+        />
+        {source.kind === 'model' && (
+          <span className="PreviewPane-note">3D preview unavailable, showing thumbnail</span>
+        )}
+      </>
     ) : (
       <div className="PreviewPane-placeholder">
         <KindIcon kind={source.kind} />
