@@ -1,0 +1,9 @@
+{
+  "id": "92dd7af2-69d7-410e-a3fc-a1f54491689d",
+  "name": "Knock Out",
+  "category": "built-in",
+  "tags": ["animation", "avatar", "built-in", "default", "emote", "knock", "out"],
+  "description": "Built-in avatar animation. Play it from scene code with triggerEmote({ predefinedEmote: 'knockOut' }).",
+  "author": "Decentraland Foundation",
+  "builtInEmote": "knockOut"
+}

@@ -1,0 +1,9 @@
+{
+  "id": "f0dbd206-b0d4-4103-90dc-4042d32e88cc",
+  "name": "Money",
+  "category": "built-in",
+  "tags": ["animation", "avatar", "built-in", "default", "emote", "money"],
+  "description": "Built-in avatar animation. Play it from scene code with triggerEmote({ predefinedEmote: 'money' }).",
+  "author": "Decentraland Foundation",
+  "builtInEmote": "money"
+}

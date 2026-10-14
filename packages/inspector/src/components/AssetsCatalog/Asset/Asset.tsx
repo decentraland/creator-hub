@@ -5,6 +5,7 @@ import cx from 'classnames';
 
 import {
   getAnimatedPreviewUrl,
+  getBuiltInEmote,
   getContentsUrl,
   isSmart,
   isGround,
@@ -22,7 +23,12 @@ type AssetProps = {
 };
 
 const Asset = React.forwardRef<HTMLDivElement, AssetProps>(({ value, onAddToFilesystem }, ref) => {
-  const [, drag, preview] = useDrag(() => ({ type: 'catalog-asset', item: { value } }), [value]);
+  const builtInEmote = getBuiltInEmote(value);
+  // A built-in animation is already in every scene, so there is nothing to drop.
+  const [, drag, preview] = useDrag(
+    () => ({ type: 'catalog-asset', item: { value }, canDrag: !builtInEmote }),
+    [value, builtInEmote],
+  );
   const isSmartItem = isSmart(value);
   const isGroundItem = isGround(value);
   const imgSrc = getContentsUrl(value.contents['thumbnail.png']);
@@ -39,7 +45,7 @@ const Asset = React.forwardRef<HTMLDivElement, AssetProps>(({ value, onAddToFile
   }, [imgSrc, setPreviewImg, isMounted]);
 
   const handleContextMenu = (event: React.MouseEvent) => {
-    if (!onAddToFilesystem) return;
+    if (!onAddToFilesystem && !builtInEmote) return;
     openCatalogAssetContextMenu(event, {
       asset: value,
       onAddToFilesystem,
@@ -55,7 +61,11 @@ const Asset = React.forwardRef<HTMLDivElement, AssetProps>(({ value, onAddToFile
         />
       )}
       <div
-        className={cx('assets-catalog-asset', { 'smart-item': isSmartItem, ground: isGroundItem })}
+        className={cx('assets-catalog-asset', {
+          'smart-item': isSmartItem,
+          ground: isGroundItem,
+          'built-in': !!builtInEmote,
+        })}
         ref={drag}
         data-test-id={value.id}
         data-test-label={value.name}
@@ -73,6 +83,7 @@ const Asset = React.forwardRef<HTMLDivElement, AssetProps>(({ value, onAddToFile
           </div>
         )}
         {isGroundItem && <div className="ground-badge item-badge"></div>}
+        {builtInEmote && <div className="built-in-badge">Built-in</div>}
       </div>
     </div>
   );

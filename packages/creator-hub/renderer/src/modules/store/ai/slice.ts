@@ -1,7 +1,14 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
 
 import { ai } from '#preload';
-import type { AiAttachment, AiAttachmentMeta, AiEvent, AiProvider } from '/shared/types/ai';
+import type {
+  AiAssetMention,
+  AiAttachment,
+  AiAttachmentMeta,
+  AiEvent,
+  AiProvider,
+} from '/shared/types/ai';
+import { assetMentionKey } from '/shared/types/ai';
 
 import { createAsyncThunk } from '/@/modules/store/thunk';
 import {
@@ -123,12 +130,23 @@ export function selectionContext(selection: AiState['selection']): string | unde
   return `[Editor context] The user currently has selected: ${names}. If they say "this" or "the selected entity", they mean ${selection.length === 1 ? 'that entity' : 'those entities'}.`;
 }
 
-// One line naming the local assets the user mentioned, or undefined when there are none.
-// Exported for tests.
+// The lines naming the local assets the user mentioned (files, then built-in animations), or
+// undefined when there are none. Exported for tests.
 export function assetMentionsContext(assetMentions: AiState['assetMentions']): string | undefined {
-  if (assetMentions.length === 0) return undefined;
-  const paths = assetMentions.join(', ');
-  return `[Editor context] The user is referring to ${assetMentions.length === 1 ? 'this scene asset file' : 'these scene asset files'}: ${paths}. If they say "this asset" or name one of them, they mean ${assetMentions.length === 1 ? 'that file' : 'those files'}.`;
+  const paths = assetMentions.flatMap(m => ('path' in m ? [m.path] : []));
+  const emotes = assetMentions.flatMap(m => ('builtInEmote' in m ? [m.builtInEmote] : []));
+  const lines: string[] = [];
+  if (paths.length > 0) {
+    lines.push(
+      `[Editor context] The user is referring to ${paths.length === 1 ? 'this scene asset file' : 'these scene asset files'}: ${paths.join(', ')}. If they say "this asset" or name one of them, they mean ${paths.length === 1 ? 'that file' : 'those files'}.`,
+    );
+  }
+  if (emotes.length > 0) {
+    lines.push(
+      `[Editor context] The user is referring to the built-in avatar ${emotes.length === 1 ? 'animation' : 'animations'} ${emotes.map(e => `"${e}"`).join(', ')}. Every scene can already play ${emotes.length === 1 ? 'it' : 'them'} by name, with no file to add: triggerEmote({ predefinedEmote: '${emotes[0]}' }) from '~system/RestrictedActions'.`,
+    );
+  }
+  return lines.length > 0 ? lines.join('\n') : undefined;
 }
 
 function editorContext(
@@ -328,12 +346,14 @@ const slice = createSlice({
       state.chatVisible = payload;
       if (!payload) state.assetMentions = [];
     },
-    addAssetMention: (state, { payload }: PayloadAction<string>) => {
-      if (!state.chatVisible || state.assetMentions.includes(payload)) return;
+    addAssetMention: (state, { payload }: PayloadAction<AiAssetMention>) => {
+      const key = assetMentionKey(payload);
+      if (!state.chatVisible || state.assetMentions.some(m => assetMentionKey(m) === key)) return;
       state.assetMentions.push(payload);
     },
-    removeAssetMention: (state, { payload }: PayloadAction<string>) => {
-      state.assetMentions = state.assetMentions.filter(path => path !== payload);
+    removeAssetMention: (state, { payload }: PayloadAction<AiAssetMention>) => {
+      const key = assetMentionKey(payload);
+      state.assetMentions = state.assetMentions.filter(m => assetMentionKey(m) !== key);
     },
     clearAssetMentions: state => {
       state.assetMentions = [];

@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
 
-import type { AiAttachment, AiProvider } from '/shared/types/ai';
+import type { AiAssetMention, AiAttachment, AiProvider } from '/shared/types/ai';
 
 import { useDispatch, useSelector } from '#store';
 import { actions as aiActions } from '/@/modules/store/ai';
@@ -66,7 +66,7 @@ export function AiChatPanel({ onClose, onPopOut, onClearSelection, width }: Prop
     [dispatch],
   );
   const onRemoveAssetMention = useCallback(
-    (path: string) => dispatch(aiActions.removeAssetMention(path)),
+    (mention: AiAssetMention) => dispatch(aiActions.removeAssetMention(mention)),
     [dispatch],
   );
   const onDraftConsumed = useCallback(() => dispatch(aiActions.consumeDraftPrompt()), [dispatch]);

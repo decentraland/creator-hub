@@ -31,8 +31,13 @@ import {
   Tooltip,
 } from 'decentraland-ui2';
 
-import type { AiAttachment, AiAttachmentKind, AiProvider } from '/shared/types/ai';
-import { MIN_CLAUDE_CLI_VERSION, cliSetup, isCliVersionOutdated } from '/shared/types/ai';
+import type { AiAssetMention, AiAttachment, AiAttachmentKind, AiProvider } from '/shared/types/ai';
+import {
+  MIN_CLAUDE_CLI_VERSION,
+  assetMentionKey,
+  cliSetup,
+  isCliVersionOutdated,
+} from '/shared/types/ai';
 
 import { ai as aiPreload, misc } from '#preload';
 import { t } from '/@/modules/store/translation/utils';
@@ -331,7 +336,7 @@ export interface ChatViewProps {
   detecting: boolean;
   selection: { id: number; name: string }[];
   // Local asset paths mentioned for the next prompt (double-clicked in the Local Assets panel).
-  assetMentions: string[];
+  assetMentions: AiAssetMention[];
   // The user dismissed the billing hint for this scene (#1505) — hide it.
   billingDismissed: boolean;
   // The scene's saved conversations (newest first) and which one is active, for the history menu.
@@ -360,7 +365,7 @@ export interface ChatViewProps {
   // Deselect all entities (clears the selection chips).
   onClearSelection: () => void;
   // Drop one mentioned asset from the next prompt.
-  onRemoveAssetMention: (path: string) => void;
+  onRemoveAssetMention: (mention: AiAssetMention) => void;
   // Open the detached window (inline only — omitted/no-op in the detached window).
   onPopOut?: () => void;
   // Inline: hide the panel. Detached: dock the chat back inline (close the window).
@@ -1087,15 +1092,23 @@ export function ChatView(props: ChatViewProps) {
         )}
 
         {available &&
-          assetMentions.map(path => (
-            <SelectionBar key={path}>
+          assetMentions.map(mention => (
+            <SelectionBar key={assetMentionKey(mention)}>
               <InsertDriveFileOutlinedIcon fontSize="small" />
-              <SelectionNames title={path}>
-                {t('editor.ai.asset_mention', { name: path.split('/').pop() ?? path })}
-              </SelectionNames>
+              {'path' in mention ? (
+                <SelectionNames title={mention.path}>
+                  {t('editor.ai.asset_mention', {
+                    name: mention.path.split('/').pop() ?? mention.path,
+                  })}
+                </SelectionNames>
+              ) : (
+                <SelectionNames>
+                  {t('editor.ai.asset_mention_built_in', { name: mention.builtInEmote })}
+                </SelectionNames>
+              )}
               <ClearMentionButton
                 label={t('editor.ai.asset_mention_remove')}
-                onClick={() => onRemoveAssetMention(path)}
+                onClick={() => onRemoveAssetMention(mention)}
               />
             </SelectionBar>
           ))}

@@ -131,7 +131,7 @@ export function useAiSession(
           latest.current.onClearSelection?.();
           break;
         case 'removeAssetMention':
-          dispatch(aiActions.removeAssetMention(command.path));
+          dispatch(aiActions.removeAssetMention(command.mention));
           break;
         case 'closeAssistant':
           void aiPreload.closeAiWindow();

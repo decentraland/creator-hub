@@ -132,6 +132,7 @@
       "selection": "Selection: {names}",
       "selection_clear": "Clear",
       "asset_mention": "Asset: {name}",
+      "asset_mention_built_in": "Built-in animation: {name}",
       "asset_mention_remove": "Remove",
       "provider": "Assistant",
       "provider_signin": "Sign in",

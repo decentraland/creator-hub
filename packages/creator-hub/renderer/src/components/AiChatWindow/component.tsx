@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Box, CircularProgress } from 'decentraland-ui2';
 
-import type { AiAttachment, AiMirrorState, AiProvider } from '/shared/types/ai';
+import type { AiAssetMention, AiAttachment, AiMirrorState, AiProvider } from '/shared/types/ai';
 
 import { ai as aiPreload } from '#preload';
 import { useDispatch } from '#store';
@@ -77,7 +77,8 @@ export function AiChatWindow() {
     [],
   );
   const onRemoveAssetMention = useCallback(
-    (path: string) => aiPreload.sendAiRemoteCommand({ type: 'removeAssetMention', path }),
+    (mention: AiAssetMention) =>
+      aiPreload.sendAiRemoteCommand({ type: 'removeAssetMention', mention }),
     [],
   );
   // The close button shuts the assistant entirely (window + inline panel), consistent with the

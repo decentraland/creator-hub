@@ -13,6 +13,7 @@ enum Method {
   OPTIMIZE_SCENE = 'optimize_scene',
   PROMPT_ASSISTANT = 'prompt_assistant',
   MENTION_ASSET = 'mention_asset',
+  COPY_TO_CLIPBOARD = 'copy_to_clipboard',
   SET_CONSOLE_WINDOW_OPEN = 'set_console_window_open',
   NOTIFY_SCENE_METADATA = 'notify_scene_metadata',
   NOTIFY_READY = 'notify_ready',
@@ -28,11 +29,15 @@ type Params = {
   [Method.SET_UI_DESIGNER_MODE]: { open: boolean };
   [Method.OPTIMIZE_SCENE]: Record<string, never>;
   [Method.PROMPT_ASSISTANT]: { text: string };
-  [Method.MENTION_ASSET]: { path: string };
+  [Method.MENTION_ASSET]: AssetMention;
+  [Method.COPY_TO_CLIPBOARD]: { text: string };
   [Method.SET_CONSOLE_WINDOW_OPEN]: { open: boolean };
   [Method.NOTIFY_SCENE_METADATA]: SceneMetadataNotice;
   [Method.NOTIFY_READY]: Record<string, never>;
 };
+
+// A scene file (scene-relative path) or a built-in avatar animation, which has no file.
+export type AssetMention = { path: string } | { builtInEmote: string };
 
 export type SceneMetadataNotice = {
   title: string;
@@ -53,6 +58,7 @@ type Result = {
   [Method.OPTIMIZE_SCENE]: void;
   [Method.PROMPT_ASSISTANT]: void;
   [Method.MENTION_ASSET]: void;
+  [Method.COPY_TO_CLIPBOARD]: void;
   [Method.SET_CONSOLE_WINDOW_OPEN]: void;
   [Method.NOTIFY_SCENE_METADATA]: void;
   [Method.NOTIFY_READY]: void;
@@ -127,9 +133,14 @@ export class SceneClient extends RPC<Method, Params, Result> {
     return this.request('prompt_assistant', { text });
   };
 
-  // Mention a local asset (scene-relative path) in the AI assistant's next prompt. The host
-  // ignores it unless the assistant is already open.
-  mentionAsset = (path: string) => {
-    return this.request('mention_asset', { path });
+  // Mention a local asset in the AI assistant's next prompt. The host ignores it unless the
+  // assistant is already open.
+  mentionAsset = (mention: AssetMention) => {
+    return this.request('mention_asset', mention);
+  };
+
+  // The browser clipboard API is denied inside the Electron host, so copies go through it.
+  copyToClipboard = (text: string) => {
+    return this.request('copy_to_clipboard', { text });
   };
 }

@@ -549,6 +549,22 @@ describe('SceneServer RPC catalog + script + smart item', () => {
     vi.unstubAllGlobals();
   });
 
+  it('place_smart_item: rejects a built-in animation and says how to play it', async () => {
+    vi.mocked(getAssetById).mockReturnValue({
+      id: 'wave',
+      name: 'Wave',
+      category: 'built-in',
+      tags: [],
+      contents: { 'thumbnail.png': 'hash1' },
+      composite: { version: 1, components: [] },
+      builtInEmote: 'wave',
+    } as any);
+    await expect(host.request('place_smart_item', { assetId: 'wave' })).rejects.toThrow(
+      "triggerEmote({ predefinedEmote: 'wave' })",
+    );
+    expect(ops.addAsset).not.toHaveBeenCalled();
+  });
+
   it('place_smart_item: rejects a file-only asset without importing or spawning anything', async () => {
     vi.mocked(getAssetById).mockReturnValue({
       id: 'dance',

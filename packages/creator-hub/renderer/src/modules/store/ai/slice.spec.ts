@@ -129,7 +129,7 @@ describe('when saving a session whose first prompt was trimmed from the transcri
 
 describe('when an asset is mentioned while the chat is hidden', () => {
   it('should ignore the mention', () => {
-    const state = reducer(undefined, actions.addAssetMention('assets/a.glb'));
+    const state = reducer(undefined, actions.addAssetMention({ path: 'assets/a.glb' }));
     expect(state.assetMentions).toEqual([]);
   });
 });
@@ -139,18 +139,18 @@ describe('when assets are mentioned while the chat is visible', () => {
 
   beforeEach(() => {
     state = reducer(undefined, actions.setChatVisible(true));
-    state = reducer(state, actions.addAssetMention('assets/a.glb'));
-    state = reducer(state, actions.addAssetMention('assets/b.glb'));
-    state = reducer(state, actions.addAssetMention('assets/a.glb'));
+    state = reducer(state, actions.addAssetMention({ path: 'assets/a.glb' }));
+    state = reducer(state, actions.addAssetMention({ path: 'assets/b.glb' }));
+    state = reducer(state, actions.addAssetMention({ path: 'assets/a.glb' }));
   });
 
   it('should keep each asset once, in mention order', () => {
-    expect(state.assetMentions).toEqual(['assets/a.glb', 'assets/b.glb']);
+    expect(state.assetMentions).toEqual([{ path: 'assets/a.glb' }, { path: 'assets/b.glb' }]);
   });
 
   it('should drop a single asset when it is removed', () => {
-    state = reducer(state, actions.removeAssetMention('assets/a.glb'));
-    expect(state.assetMentions).toEqual(['assets/b.glb']);
+    state = reducer(state, actions.removeAssetMention({ path: 'assets/a.glb' }));
+    expect(state.assetMentions).toEqual([{ path: 'assets/b.glb' }]);
   });
 
   it('should drop every mention when the chat is hidden', () => {
@@ -168,8 +168,8 @@ describe('when sending with a selected entity and mentioned assets', () => {
     preloadAi.send.mockResolvedValue({ turnId: 't-1' });
     ai = reducer(undefined, actions.setChatVisible(true));
     ai = reducer(ai, actions.setSelection([{ id: 512, name: 'Front Door' }]));
-    ai = reducer(ai, actions.addAssetMention('assets/asset-packs/dance/Dance_emote.glb'));
-    ai = reducer(ai, actions.addAssetMention('assets/asset-packs/throw/Throw_emote.glb'));
+    ai = reducer(ai, actions.addAssetMention({ path: 'assets/asset-packs/dance/Dance_emote.glb' }));
+    ai = reducer(ai, actions.addAssetMention({ path: 'assets/asset-packs/throw/Throw_emote.glb' }));
     const dispatch = vi.fn((action: { type: string }) => {
       ai = reducer(ai, action);
       return action;
@@ -201,6 +201,34 @@ describe('when sending with a selected entity and mentioned assets', () => {
 describe('assetMentionsContext', () => {
   it('should be undefined when no asset is mentioned', () => {
     expect(assetMentionsContext([])).toBeUndefined();
+  });
+
+  describe('when a built-in animation is mentioned', () => {
+    it('should tell the assistant to play it by name instead of looking for a file', () => {
+      const ctx = assetMentionsContext([{ builtInEmote: 'wave' }]);
+      expect(ctx).toContain('"wave"');
+      expect(ctx).toContain("triggerEmote({ predefinedEmote: 'wave' })");
+    });
+  });
+
+  describe('when a file and a built-in animation are mentioned together', () => {
+    it('should describe both', () => {
+      const ctx = assetMentionsContext([
+        { path: 'assets/models/Throw_emote.glb' },
+        { builtInEmote: 'robot' },
+      ]);
+      expect(ctx).toContain('assets/models/Throw_emote.glb');
+      expect(ctx).toContain('"robot"');
+    });
+  });
+});
+
+describe('when the same built-in animation is mentioned twice', () => {
+  it('should keep it once', () => {
+    let state = reducer(undefined, actions.setChatVisible(true));
+    state = reducer(state, actions.addAssetMention({ builtInEmote: 'wave' }));
+    state = reducer(state, actions.addAssetMention({ builtInEmote: 'wave' }));
+    expect(state.assetMentions).toEqual([{ builtInEmote: 'wave' }]);
   });
 });
 

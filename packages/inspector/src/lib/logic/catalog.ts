@@ -12,6 +12,7 @@ export type CustomAsset = AssetData & {
 
 // categories obtained from "builder-items.decentraland.org" catalog
 export const CATEGORIES = [
+  'built-in',
   'ground',
   'utils',
   'buttons',
@@ -132,6 +133,12 @@ export function isSmart(asset: Partial<Asset>) {
 // code at runtime, so placing it imports its files and leaves the composite untouched.
 export function isFileOnly(asset: Partial<Asset>) {
   return (asset?.composite?.components ?? []).length === 0;
+}
+
+// The name scene code plays a built-in avatar animation by, e.g. `triggerEmote({ predefinedEmote:
+// 'wave' })`. Such assets are catalog-only: nothing is ever copied into the scene.
+export function getBuiltInEmote(asset: Partial<Asset>): string | undefined {
+  return asset.builtInEmote;
 }
 
 export function isGround(asset: Partial<Asset>) {

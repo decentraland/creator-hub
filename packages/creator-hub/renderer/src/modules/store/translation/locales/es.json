@@ -131,6 +131,7 @@
       "selection": "Selección: {names}",
       "selection_clear": "Limpiar",
       "asset_mention": "Recurso: {name}",
+      "asset_mention_built_in": "Animación incluida: {name}",
       "asset_mention_remove": "Quitar",
       "provider": "Asistente",
       "provider_signin": "Iniciar sesión",

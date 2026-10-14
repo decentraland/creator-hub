@@ -1,5 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { AiFillDelete as DeleteIcon, AiOutlineSound as AudioIcon } from 'react-icons/ai';
+import {
+  AiFillDelete as DeleteIcon,
+  AiOutlineCopy as CopyIcon,
+  AiOutlineSound as AudioIcon,
+} from 'react-icons/ai';
 import { IoIosImage as ImageIcon } from 'react-icons/io';
 import { IoCubeOutline as ModelIcon, IoVideocamOutline as VideoIcon } from 'react-icons/io5';
 import { FaFile as OtherIcon } from 'react-icons/fa';
@@ -22,6 +26,7 @@ import { useContextMenu } from '../../../hooks/sdk/useContextMenu';
 import { determineAssetType, extractFileExtension } from '../../ImportAsset/utils';
 import type { AssetNodeItem } from '../types';
 import { isEmoteAsset } from '../utils';
+import { copyBuiltInEmoteName } from '../../../lib/logic/built-in-emotes';
 import type { Props } from './types';
 
 import './Tile.css';
@@ -61,9 +66,17 @@ export const Tile = withContextMenu<Props>(
       return !!isRemovingAsset[path];
     }, [valueId, isRemovingAsset]);
 
+    const builtInEmote =
+      value?.type === 'asset' ? (value as AssetNodeItem).asset.builtInEmote : undefined;
+
+    // Built-in animations have no file, so there is nothing to drop into the scene.
     const [, drag] = useDrag(
-      () => ({ type: dndType, item: { value: valueId, context: getDragContext() } }),
-      [valueId],
+      () => ({
+        type: dndType,
+        item: { value: valueId, context: getDragContext() },
+        canDrag: !builtInEmote,
+      }),
+      [valueId, builtInEmote],
     );
 
     const handleRemove = useCallback(() => {
@@ -74,6 +87,17 @@ export const Tile = withContextMenu<Props>(
 
     const renderThumbnail = useCallback(() => {
       if (value.type === 'folder') return <FolderIcon />;
+      if (builtInEmote)
+        return (
+          <img
+            src={
+              hovered && builtInEmote.previewUrl
+                ? builtInEmote.previewUrl
+                : builtInEmote.thumbnailUrl
+            }
+            alt={value.name}
+          />
+        );
       if (hovered && animatedThumbnail)
         return (
           <img
@@ -104,7 +128,7 @@ export const Tile = withContextMenu<Props>(
         case 'Other':
           return <OtherIcon />;
       }
-    }, [thumbnail, animatedThumbnail, hovered, value]);
+    }, [thumbnail, animatedThumbnail, hovered, value, builtInEmote]);
 
     const renderOverlayLoading = useCallback(() => {
       if (isLoading) {
@@ -123,12 +147,21 @@ export const Tile = withContextMenu<Props>(
         {/* TODO: support removing folders */}
         {value.type === 'asset' && (
           <Menu id={contextMenuId}>
-            <MenuItem
-              id="delete"
-              onClick={handleAction(handleRemove)}
-            >
-              <DeleteIcon /> Delete
-            </MenuItem>
+            {builtInEmote ? (
+              <MenuItem
+                id="copy-name"
+                onClick={handleAction(() => copyBuiltInEmoteName(builtInEmote.name))}
+              >
+                <CopyIcon /> Copy name
+              </MenuItem>
+            ) : (
+              <MenuItem
+                id="delete"
+                onClick={handleAction(handleRemove)}
+              >
+                <DeleteIcon /> Delete
+              </MenuItem>
+            )}
           </Menu>
         )}
         <div

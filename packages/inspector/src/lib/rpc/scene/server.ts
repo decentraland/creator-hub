@@ -27,6 +27,7 @@ import {
   ANIMATED_PREVIEW_PATH,
   fetchLatestCatalog,
   getAssetById,
+  getBuiltInEmote,
   isFileOnly,
 } from '../../logic/catalog';
 import {
@@ -84,7 +85,14 @@ enum Method {
 }
 
 // A row in the Smart Items catalog, as returned by search_catalog.
-type CatalogHit = { id: string; name: string; category: string; tags: string[] };
+// `builtInEmote` marks a built-in avatar animation: played by that name, never placed.
+type CatalogHit = {
+  id: string;
+  name: string;
+  category: string;
+  tags: string[];
+  builtInEmote?: string;
+};
 
 type Params = {
   [Method.TOGGLE_COMPONENT]: { component: string; enabled: boolean };
@@ -442,6 +450,7 @@ export class SceneServer extends RPC<Method, Params, Result> {
             name: a.name,
             category: a.category,
             tags: a.tags ?? [],
+            ...(a.builtInEmote ? { builtInEmote: a.builtInEmote } : {}),
           })),
         );
         const q = (query ?? '').trim().toLowerCase();
@@ -474,6 +483,12 @@ export class SceneServer extends RPC<Method, Params, Result> {
           throw new Error(`No catalog asset with id "${assetId}". Use search_catalog first.`);
         }
         const asset = found;
+        const builtInEmote = getBuiltInEmote(asset);
+        if (builtInEmote) {
+          throw new Error(
+            `"${asset.name}" is a built-in avatar animation that every scene can already play, so there is nothing to place. Play it from scene code with triggerEmote({ predefinedEmote: '${builtInEmote}' }) from '~system/RestrictedActions'.`,
+          );
+        }
         if (isFileOnly(asset)) {
           throw new Error(
             `"${asset.name}" is a file-only asset (e.g. an avatar animation) with no entity to place. Ask the user to drag it into the scene, which adds its files to the local assets, then reference the file from scene code.`,

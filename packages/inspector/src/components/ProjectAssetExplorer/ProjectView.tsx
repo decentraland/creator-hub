@@ -149,13 +149,19 @@ function ProjectView({ folders, thumbnails }: Props) {
 
   const handleModalClose = useCallback(() => setModal(undefined), []);
 
-  const mentionAsset = useCallback((path: string) => {
-    void getSceneClient()?.mentionAsset(withAssetDir(path)).catch(console.error);
+  const mentionAsset = useCallback((node: TreeNode, path: string) => {
+    const builtInEmote = (node as AssetNodeItem).asset.builtInEmote;
+    void getSceneClient()
+      ?.mentionAsset(
+        builtInEmote ? { builtInEmote: builtInEmote.name } : { path: withAssetDir(path) },
+      )
+      .catch(console.error);
   }, []);
 
   const handleDoubleSelect = useCallback(
     (value: string) => {
-      if (tree.get(value)?.type === 'asset') mentionAsset(value);
+      const node = tree.get(value);
+      if (node?.type === 'asset') mentionAsset(node, value);
     },
     [tree, mentionAsset],
   );
@@ -163,7 +169,7 @@ function ProjectView({ folders, thumbnails }: Props) {
   const handleClickFolder = useCallback(
     (node: TreeNode) => () => {
       const path = getFullNodePath(node).slice(1);
-      if (node.type === 'asset') return mentionAsset(path);
+      if (node.type === 'asset') return mentionAsset(node, path);
       open.add(path);
       setLastSelected(path);
     },
@@ -271,7 +277,8 @@ function ProjectView({ folders, thumbnails }: Props) {
             isSelected={(val: string) => lastSelected === val}
             isHidden={(val: string) => val === ROOT}
             canRename={() => false}
-            canRemove={val => tree.get(val)?.type === 'asset'}
+            canRemove={val => tree.get(val)?.type === 'asset' && !isBuiltInNode(tree.get(val))}
+            canDrag={val => !isBuiltInNode(tree.get(val))}
             canDuplicate={() => false}
             canAddChild={() => false}
             getIcon={val => <NodeIcon value={tree.get(val)} />}
@@ -301,6 +308,11 @@ function ProjectView({ folders, thumbnails }: Props) {
       </div>
     </>
   );
+}
+
+// Built-in animations have no file, so they can't be dragged into the scene or deleted.
+function isBuiltInNode(node?: TreeNode): boolean {
+  return node?.type === 'asset' && !!(node as AssetNodeItem).asset.builtInEmote;
 }
 
 function NodeIcon({ value }: { value?: TreeNode }) {

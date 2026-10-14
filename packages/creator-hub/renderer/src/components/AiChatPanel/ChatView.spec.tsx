@@ -147,7 +147,10 @@ describe('ChatView asset mentions', () => {
   describe('when two assets are mentioned', () => {
     it('should show each asset by file name', () => {
       renderChat({
-        assetMentions: ['assets/asset-packs/dance/Dance_emote.glb', 'assets/models/Throw.glb'],
+        assetMentions: [
+          { path: 'assets/asset-packs/dance/Dance_emote.glb' },
+          { path: 'assets/models/Throw.glb' },
+        ],
       });
       expect(screen.getByText('Asset: Dance_emote.glb')).toBeTruthy();
       expect(screen.getByText('Asset: Throw.glb')).toBeTruthy();
@@ -156,11 +159,21 @@ describe('ChatView asset mentions', () => {
     it('should remove only the asset whose remove button is clicked', () => {
       const onRemoveAssetMention = vi.fn();
       renderChat({
-        assetMentions: ['assets/asset-packs/dance/Dance_emote.glb', 'assets/models/Throw.glb'],
+        assetMentions: [
+          { path: 'assets/asset-packs/dance/Dance_emote.glb' },
+          { path: 'assets/models/Throw.glb' },
+        ],
         onRemoveAssetMention,
       });
       fireEvent.click(screen.getAllByRole('button', { name: 'Remove' })[1]);
-      expect(onRemoveAssetMention).toHaveBeenCalledWith('assets/models/Throw.glb');
+      expect(onRemoveAssetMention).toHaveBeenCalledWith({ path: 'assets/models/Throw.glb' });
+    });
+  });
+
+  describe('when a built-in animation is mentioned', () => {
+    it('should show it by its emote name', () => {
+      renderChat({ assetMentions: [{ builtInEmote: 'wave' }] });
+      expect(screen.getByText('Built-in animation: wave')).toBeTruthy();
     });
   });
 });

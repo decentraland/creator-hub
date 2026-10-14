@@ -1,0 +1,9 @@
+{
+  "id": "72319793-224e-415d-9340-053961ab6a13",
+  "name": "Hands Air",
+  "category": "built-in",
+  "tags": ["air", "animation", "avatar", "built-in", "default", "emote", "hands"],
+  "description": "Built-in avatar animation. Play it from scene code with triggerEmote({ predefinedEmote: 'handsair' }).",
+  "author": "Decentraland Foundation",
+  "builtInEmote": "handsair"
+}

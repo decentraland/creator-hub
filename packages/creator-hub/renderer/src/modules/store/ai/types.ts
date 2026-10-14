@@ -4,6 +4,7 @@ import type {
   AiPromptData,
   AiProvider,
   AiProviderInfo,
+  AiAssetMention,
 } from '/shared/types/ai';
 
 // The message content model (parts + prompt) is shared with the detached-window mirror, so it
@@ -66,7 +67,7 @@ export interface AiState {
   // Local assets (scene-relative paths) the user mentioned by double-clicking them in the
   // inspector's Local Assets panel. Shown beside the selection and attached as context to the
   // next turn only, then cleared.
-  assetMentions: string[];
+  assetMentions: AiAssetMention[];
   // Whether the chat is showing anywhere (inline panel or detached window). Mentions are only
   // accepted while it is, so a double-click with the assistant closed does nothing.
   chatVisible: boolean;
