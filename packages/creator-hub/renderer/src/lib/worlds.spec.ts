@@ -5,9 +5,14 @@ import type { WorldLimits } from './worlds';
 const WORLDS_SERVER = 'https://worlds-content-server.example.org';
 
 const fetchMock = vi.fn();
+const captureExceptionMock = vi.fn();
 
 vi.mock('/@/config', () => ({
   config: { get: () => WORLDS_SERVER },
+}));
+
+vi.mock('@sentry/electron/renderer', () => ({
+  captureException: (...args: unknown[]) => captureExceptionMock(...args),
 }));
 
 vi.mock('decentraland-crypto-fetch', () => ({
@@ -21,6 +26,7 @@ describe('Worlds.fetchWorldLimits', () => {
 
   beforeEach(() => {
     fetchMock.mockReset();
+    captureExceptionMock.mockReset();
   });
 
   describe('when the server reports the limits', () => {
@@ -38,19 +44,55 @@ describe('Worlds.fetchWorldLimits', () => {
       );
     });
 
-    it('should return the scene size limit as a number of bytes', () => {
-      expect(limits).toEqual({ maxSceneSizeInBytes: 524288000, maxParcels: 100 });
+    it('should return only the scene size limit, as a number of bytes', () => {
+      expect(limits).toEqual({ maxSceneSizeInBytes: 524288000 });
     });
   });
 
   describe('when the server does not know the endpoint or the name', () => {
+    let cancelBody: ReturnType<typeof vi.fn>;
+
     beforeEach(async () => {
-      fetchMock.mockResolvedValueOnce({ ok: false, status: 404 });
+      cancelBody = vi.fn().mockResolvedValue(undefined);
+      fetchMock.mockResolvedValueOnce({ ok: false, status: 404, body: { cancel: cancelBody } });
       limits = await new Worlds().fetchWorldLimits('name.dcl.eth', ['0,0']);
     });
 
     it('should return null', () => {
       expect(limits).toBeNull();
+    });
+
+    it('should release the response body', () => {
+      expect(cancelBody).toHaveBeenCalled();
+    });
+
+    it('should not report the response as an error', () => {
+      expect(captureExceptionMock).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('when the server rejects the request with an unexpected status', () => {
+    let cancelBody: ReturnType<typeof vi.fn>;
+
+    beforeEach(async () => {
+      cancelBody = vi.fn().mockResolvedValue(undefined);
+      fetchMock.mockResolvedValueOnce({ ok: false, status: 400, body: { cancel: cancelBody } });
+      limits = await new Worlds().fetchWorldLimits('name.dcl.eth', ['0,0']);
+    });
+
+    it('should return null', () => {
+      expect(limits).toBeNull();
+    });
+
+    it('should release the response body', () => {
+      expect(cancelBody).toHaveBeenCalled();
+    });
+
+    it('should report the status', () => {
+      expect(captureExceptionMock).toHaveBeenCalledWith(
+        expect.any(Error),
+        expect.objectContaining({ extra: expect.objectContaining({ status: 400 }) }),
+      );
     });
   });
 
@@ -65,6 +107,15 @@ describe('Worlds.fetchWorldLimits', () => {
 
     it('should return null', () => {
       expect(limits).toBeNull();
+    });
+
+    it('should report the invalid response', () => {
+      expect(captureExceptionMock).toHaveBeenCalledWith(
+        expect.any(Error),
+        expect.objectContaining({
+          extra: expect.objectContaining({ maxSceneSizeInBytes: 'unlimited' }),
+        }),
+      );
     });
   });
 

@@ -1,31 +1,53 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
-import { fetchSceneSizeLimit } from '/@/modules/store/deployment/utils';
+import {
+  fetchWorldSceneSizeLimit,
+  getGenesisCitySceneSizeLimit,
+} from '/@/modules/store/deployment/utils';
 
-/** The whole-scene size limit of the publish target, `null` while unknown. */
+export type SceneSizeLimit = {
+  /** The whole-scene size limit of the publish target, `null` when it is not known. */
+  limit: number | null;
+  /** True while the limit is being fetched, so publishing can wait for it. */
+  isLoading: boolean;
+};
+
 export function useSceneSizeLimit(target?: {
   isWorld: boolean;
   worldName?: string;
   parcels: string[];
-}): number | null {
-  const [limit, setLimit] = useState<number | null>(null);
+}): SceneSizeLimit {
   const isWorld = target?.isWorld;
   const worldName = target?.worldName;
+  const parcelCount = target?.parcels.length;
   const parcelsKey = target?.parcels.join(';');
+  const worldRequestKey =
+    isWorld && worldName && parcelsKey !== undefined ? `${worldName}|${parcelsKey}` : null;
+
+  // Tagged with the request it answers, so a stale result is never read as the current target's.
+  const [worldLimit, setWorldLimit] = useState<{ requestKey: string; limit: number | null }>();
 
   useEffect(() => {
-    setLimit(null);
-    if (isWorld === undefined || parcelsKey === undefined) return;
+    if (worldRequestKey === null || !worldName || parcelsKey === undefined) return;
 
     let cancelled = false;
     const parcels = parcelsKey ? parcelsKey.split(';') : [];
-    void fetchSceneSizeLimit({ isWorld, worldName, parcels }).then(value => {
-      if (!cancelled) setLimit(value);
-    });
+    void fetchWorldSceneSizeLimit(worldName, parcels)
+      .catch(() => null)
+      .then(limit => {
+        if (!cancelled) setWorldLimit({ requestKey: worldRequestKey, limit });
+      });
     return () => {
       cancelled = true;
     };
-  }, [isWorld, worldName, parcelsKey]);
+  }, [worldRequestKey, worldName, parcelsKey]);
 
-  return limit;
+  return useMemo(() => {
+    if (isWorld === false && parcelCount !== undefined) {
+      return { limit: getGenesisCitySceneSizeLimit(parcelCount), isLoading: false };
+    }
+    if (worldRequestKey === null) return { limit: null, isLoading: false };
+    if (worldLimit?.requestKey !== worldRequestKey) return { limit: null, isLoading: true };
+    return { limit: worldLimit.limit, isLoading: false };
+  }, [isWorld, parcelCount, worldRequestKey, worldLimit]);
 }

@@ -23,6 +23,7 @@ const SCENE_SIZE_EXCEEDED =
 describe('Idle', () => {
   let files: File[];
   let sceneSizeLimit: number | null;
+  let isSceneSizeLimitLoading: boolean;
   let onClick: () => void;
 
   const getSize = () => screen.getByText(/^Total Size/);
@@ -36,6 +37,7 @@ describe('Idle', () => {
       { name: 'models/house.glb', size: 20 * MiB },
       { name: 'textures/wall.png', size: 10 * MiB },
     ];
+    isSceneSizeLimitLoading = false;
     onClick = vi.fn();
   });
 
@@ -45,10 +47,27 @@ describe('Idle', () => {
         <Idle
           files={files}
           sceneSizeLimit={sceneSizeLimit}
+          isSceneSizeLimitLoading={isSceneSizeLimitLoading}
           onClick={onClick}
         />
       </ThemeProvider>,
     );
+
+  describe('when the scene size limit is being fetched', () => {
+    beforeEach(() => {
+      sceneSizeLimit = null;
+      isSceneSizeLimitLoading = true;
+      renderIdle();
+    });
+
+    it('should show that the limit is being checked next to the total size', () => {
+      expect(getSize().textContent).toBe('Total Size 30.00 MBChecking limit…');
+    });
+
+    it('should block publishing until the limit is known', () => {
+      expect((getPublishButton() as HTMLButtonElement).disabled).toBe(true);
+    });
+  });
 
   describe('when the scene size limit is unknown', () => {
     beforeEach(() => {
@@ -58,6 +77,10 @@ describe('Idle', () => {
 
     it('should show only the total size of the scene', () => {
       expect(getSize().textContent).toBe('Total Size 30.00 MB');
+    });
+
+    it('should not show that the limit is being checked', () => {
+      expect(screen.queryByRole('status')).toBeNull();
     });
 
     it('should let the scene be published', () => {

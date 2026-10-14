@@ -57,19 +57,20 @@ export function getTotalSize(files: File[]) {
   return files.reduce((total, file) => total + file.size, 0);
 }
 
+export function getGenesisCitySceneSizeLimit(parcelCount: number) {
+  return parcelCount * MAX_POINTER_SIZE_BYTES;
+}
+
 /**
- * Resolves the size the target server will accept for the whole scene, or `null` when it cannot be
- * known (a worlds server without the limits endpoint, or a failed request), in which case the
- * server stays the only gate.
+ * Resolves the size the worlds server will accept for the whole scene, or `null` when it cannot be
+ * known (a server without the limits endpoint, or a failed request), in which case the server
+ * stays the only gate.
  */
-export async function fetchSceneSizeLimit(target: {
-  isWorld: boolean;
-  worldName?: string;
-  parcels: string[];
-}): Promise<number | null> {
-  if (!target.isWorld) return target.parcels.length * MAX_POINTER_SIZE_BYTES;
-  if (!target.worldName) return null;
-  const limits = await new Worlds().fetchWorldLimits(target.worldName, target.parcels);
+export async function fetchWorldSceneSizeLimit(
+  worldName: string,
+  parcels: string[],
+): Promise<number | null> {
+  const limits = await new Worlds().fetchWorldLimits(worldName, parcels);
   return limits?.maxSceneSizeInBytes ?? null;
 }
 

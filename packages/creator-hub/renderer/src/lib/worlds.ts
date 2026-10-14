@@ -1,3 +1,4 @@
+import { captureException } from '@sentry/electron/renderer';
 import type { AuthIdentity, AuthChain } from '@dcl/crypto';
 import { localStorageGetIdentity } from '@dcl/single-sign-on-client';
 import type { Entity, IPFSv2 } from '@dcl/schemas';
@@ -224,7 +225,6 @@ export type WorldsWalletStats = {
 /** What the worlds server will enforce for a scene deployed on the given parcels. */
 export type WorldLimits = {
   maxSceneSizeInBytes: number;
-  maxParcels: number;
 };
 
 export enum WorldPermissionType {
@@ -440,17 +440,36 @@ export class Worlds {
     worldName: string,
     parcels: string[],
   ): Promise<WorldLimits | null> => {
+    const encodedWorldName = encodeURIComponent(worldName);
+    const query = new URLSearchParams(parcels.map(parcel => ['parcels', parcel]));
+    const sentryContext = {
+      tags: { source: 'worlds', event: 'fetch-world-limits' },
+      extra: { worldName, parcels },
+    };
     try {
-      const encodedWorldName = encodeURIComponent(worldName);
-      const query = new URLSearchParams(parcels.map(parcel => ['parcels', parcel]));
       const result = await fetch(`${this.url}/world/${encodedWorldName}/limits?${query}`);
-      if (!result.ok) return null;
-      const { maxSceneSizeInBytes, maxParcels } = await result.json();
-      if (typeof maxSceneSizeInBytes !== 'string' || !/^\d+$/.test(maxSceneSizeInBytes)) {
+      if (!result.ok) {
+        await result.body?.cancel().catch(() => undefined);
+        // 404 is expected: a server without the endpoint, or a name the server won't deploy to.
+        if (result.status !== 404) {
+          captureException(new Error(`Failed to fetch world limits: ${result.status}`), {
+            ...sentryContext,
+            extra: { ...sentryContext.extra, status: result.status },
+          });
+        }
         return null;
       }
-      return { maxSceneSizeInBytes: Number(maxSceneSizeInBytes), maxParcels };
-    } catch {
+      const { maxSceneSizeInBytes } = await result.json();
+      if (typeof maxSceneSizeInBytes !== 'string' || !/^\d+$/.test(maxSceneSizeInBytes)) {
+        captureException(new Error('Invalid world limits response'), {
+          ...sentryContext,
+          extra: { ...sentryContext.extra, maxSceneSizeInBytes },
+        });
+        return null;
+      }
+      return { maxSceneSizeInBytes: Number(maxSceneSizeInBytes) };
+    } catch (error) {
+      console.warn('Failed to fetch world limits', error);
       return null;
     }
   };

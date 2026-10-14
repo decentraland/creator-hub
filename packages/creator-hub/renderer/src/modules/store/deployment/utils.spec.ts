@@ -51,9 +51,12 @@ vi.mock('/@/lib/worlds', () => ({
 }));
 
 // Imported after the mocks: `utils` reads the registry hosts from config at module load.
-const { fetchDeploymentStatus, fetchSceneSizeLimit, getAvailableCatalystServer } = await import(
-  './utils'
-);
+const {
+  fetchDeploymentStatus,
+  fetchWorldSceneSizeLimit,
+  getAvailableCatalystServer,
+  getGenesisCitySceneSizeLimit,
+} = await import('./utils');
 
 describe('getAvailableCatalystServer', () => {
   it('should return a server for sepolia network', () => {
@@ -196,76 +199,46 @@ describe('fetchDeploymentStatus', () => {
   });
 });
 
-describe('fetchSceneSizeLimit', () => {
-  const MiB = 1024 * 1024;
+const MiB = 1024 * 1024;
+
+describe('getGenesisCitySceneSizeLimit', () => {
+  it('should allow 15 MiB per parcel', () => {
+    expect(getGenesisCitySceneSizeLimit(3)).toBe(3 * 15 * MiB);
+  });
+});
+
+describe('fetchWorldSceneSizeLimit', () => {
   const PARCELS = ['0,0', '0,1', '1,0'];
 
-  let target: Parameters<typeof fetchSceneSizeLimit>[0];
   let limit: number | null;
 
   beforeEach(() => {
     fetchWorldLimitsMock.mockReset();
   });
 
-  describe('when publishing to Genesis City', () => {
+  describe('when the worlds server reports its limits', () => {
     beforeEach(async () => {
-      target = { isWorld: false, parcels: PARCELS };
-      limit = await fetchSceneSizeLimit(target);
+      fetchWorldLimitsMock.mockResolvedValueOnce({ maxSceneSizeInBytes: 200 * MiB });
+      limit = await fetchWorldSceneSizeLimit('name.dcl.eth', PARCELS);
     });
 
-    it('should allow 15 MiB per parcel', () => {
-      expect(limit).toBe(3 * 15 * MiB);
+    it("should ask for the limits of the scene's world and parcels", () => {
+      expect(fetchWorldLimitsMock).toHaveBeenCalledWith('name.dcl.eth', PARCELS);
     });
 
-    it('should not ask the worlds server', () => {
-      expect(fetchWorldLimitsMock).not.toHaveBeenCalled();
+    it("should use the server's scene size limit", () => {
+      expect(limit).toBe(200 * MiB);
     });
   });
 
-  describe('when publishing to a world', () => {
-    beforeEach(() => {
-      target = { isWorld: true, worldName: 'name.dcl.eth', parcels: PARCELS };
+  describe('when the worlds server cannot report its limits', () => {
+    beforeEach(async () => {
+      fetchWorldLimitsMock.mockResolvedValueOnce(null);
+      limit = await fetchWorldSceneSizeLimit('name.dcl.eth', PARCELS);
     });
 
-    describe('and the worlds server reports its limits', () => {
-      beforeEach(async () => {
-        fetchWorldLimitsMock.mockResolvedValueOnce({
-          maxSceneSizeInBytes: 200 * MiB,
-          maxParcels: 100,
-        });
-        limit = await fetchSceneSizeLimit(target);
-      });
-
-      it("should ask for the limits of the scene's world and parcels", () => {
-        expect(fetchWorldLimitsMock).toHaveBeenCalledWith('name.dcl.eth', PARCELS);
-      });
-
-      it("should use the server's scene size limit", () => {
-        expect(limit).toBe(200 * MiB);
-      });
-    });
-
-    describe('and the worlds server cannot report its limits', () => {
-      beforeEach(async () => {
-        fetchWorldLimitsMock.mockResolvedValueOnce(null);
-        limit = await fetchSceneSizeLimit(target);
-      });
-
-      it('should report the limit as unknown', () => {
-        expect(limit).toBeNull();
-      });
-    });
-
-    describe('and the world has no name', () => {
-      beforeEach(async () => {
-        target = { isWorld: true, parcels: PARCELS };
-        limit = await fetchSceneSizeLimit(target);
-      });
-
-      it('should report the limit as unknown without asking the worlds server', () => {
-        expect(limit).toBeNull();
-        expect(fetchWorldLimitsMock).not.toHaveBeenCalled();
-      });
+    it('should report the limit as unknown', () => {
+      expect(limit).toBeNull();
     });
   });
 });

@@ -1,54 +1,193 @@
-import { renderHook, waitFor } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { act, renderHook, waitFor } from '@testing-library/react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type * as DeploymentUtils from '/@/modules/store/deployment/utils';
 
-import { useSceneSizeLimit } from './useSceneSizeLimit';
+import { type SceneSizeLimit, useSceneSizeLimit } from './useSceneSizeLimit';
 
-const fetchSceneSizeLimitMock = vi.fn();
+const fetchWorldSceneSizeLimitMock = vi.fn();
 
 vi.mock('/@/modules/store/deployment/utils', async importOriginal => ({
   ...(await importOriginal<typeof DeploymentUtils>()),
-  fetchSceneSizeLimit: (...args: unknown[]) => fetchSceneSizeLimitMock(...args),
+  fetchWorldSceneSizeLimit: (...args: unknown[]) => fetchWorldSceneSizeLimitMock(...args),
 }));
 
+type Target = Parameters<typeof useSceneSizeLimit>[0];
+
+const MiB = 1024 * 1024;
+
+function deferred<T>() {
+  let resolve!: (value: T) => void;
+  const promise = new Promise<T>(res => {
+    resolve = res;
+  });
+  return { promise, resolve };
+}
+
 describe('useSceneSizeLimit', () => {
-  let result: { current: number | null };
+  let result: { current: SceneSizeLimit };
+  let rerender: (props: { target: Target }) => void;
+  let unmount: () => void;
+
+  const renderWith = (target: Target) => {
+    ({ result, rerender, unmount } = renderHook(
+      ({ target }: { target: Target }) => useSceneSizeLimit(target),
+      { initialProps: { target } },
+    ));
+  };
 
   beforeEach(() => {
-    fetchSceneSizeLimitMock.mockReset();
+    fetchWorldSceneSizeLimitMock.mockReset();
   });
 
   describe('when there is no deployment yet', () => {
     beforeEach(() => {
-      ({ result } = renderHook(() => useSceneSizeLimit(undefined)));
+      renderWith(undefined);
     });
 
     it('should report no limit without fetching one', () => {
-      expect(result.current).toBeNull();
-      expect(fetchSceneSizeLimitMock).not.toHaveBeenCalled();
+      expect(result.current).toEqual({ limit: null, isLoading: false });
+      expect(fetchWorldSceneSizeLimitMock).not.toHaveBeenCalled();
     });
   });
 
-  describe('when there is a deployment', () => {
-    beforeEach(async () => {
-      fetchSceneSizeLimitMock.mockResolvedValueOnce(1000);
-      ({ result } = renderHook(() =>
-        useSceneSizeLimit({ isWorld: true, worldName: 'name.dcl.eth', parcels: ['0,0', '0,1'] }),
-      ));
-      await waitFor(() => expect(result.current).not.toBeNull());
+  describe('when publishing to Genesis City', () => {
+    beforeEach(() => {
+      renderWith({ isWorld: false, parcels: ['0,0', '0,1', '1,0'] });
     });
 
-    it("should fetch the limit for the deployment's target", () => {
-      expect(fetchSceneSizeLimitMock).toHaveBeenCalledWith({
-        isWorld: true,
-        worldName: 'name.dcl.eth',
-        parcels: ['0,0', '0,1'],
+    it('should report 15 MiB per parcel on the first render', () => {
+      expect(result.current).toEqual({ limit: 3 * 15 * MiB, isLoading: false });
+    });
+
+    it('should not ask the worlds server', () => {
+      expect(fetchWorldSceneSizeLimitMock).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('when publishing to a world without a name', () => {
+    beforeEach(() => {
+      renderWith({ isWorld: true, parcels: ['0,0'] });
+    });
+
+    it('should report no limit without fetching one', () => {
+      expect(result.current).toEqual({ limit: null, isLoading: false });
+      expect(fetchWorldSceneSizeLimitMock).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('when publishing to a world', () => {
+    let request: ReturnType<typeof deferred<number | null>>;
+
+    beforeEach(() => {
+      request = deferred<number | null>();
+      fetchWorldSceneSizeLimitMock.mockReturnValueOnce(request.promise);
+      renderWith({ isWorld: true, worldName: 'name.dcl.eth', parcels: ['0,0', '0,1'] });
+    });
+
+    it("should fetch the limit for the world and the deployment's parcels", () => {
+      expect(fetchWorldSceneSizeLimitMock).toHaveBeenCalledWith('name.dcl.eth', ['0,0', '0,1']);
+    });
+
+    it('should report the limit as loading while the request is in flight', () => {
+      expect(result.current).toEqual({ limit: null, isLoading: true });
+    });
+
+    describe('and the server reports the limit', () => {
+      beforeEach(async () => {
+        await act(async () => request.resolve(200 * MiB));
+      });
+
+      it('should report the fetched limit', () => {
+        expect(result.current).toEqual({ limit: 200 * MiB, isLoading: false });
       });
     });
 
-    it('should report the fetched limit', () => {
-      expect(result.current).toBe(1000);
+    describe('and the limit cannot be known', () => {
+      beforeEach(async () => {
+        await act(async () => request.resolve(null));
+      });
+
+      it('should stop loading and report no limit', () => {
+        expect(result.current).toEqual({ limit: null, isLoading: false });
+      });
+    });
+
+    describe('and the target changes after the limit arrived', () => {
+      let nextRequest: ReturnType<typeof deferred<number | null>>;
+
+      beforeEach(async () => {
+        await act(async () => request.resolve(200 * MiB));
+        nextRequest = deferred<number | null>();
+        fetchWorldSceneSizeLimitMock.mockReturnValueOnce(nextRequest.promise);
+        rerender({ target: { isWorld: true, worldName: 'other.dcl.eth', parcels: ['0,0'] } });
+      });
+
+      it('should drop the previous limit and report loading', () => {
+        expect(result.current).toEqual({ limit: null, isLoading: true });
+      });
+
+      it('should fetch the limit for the new target', () => {
+        expect(fetchWorldSceneSizeLimitMock).toHaveBeenLastCalledWith('other.dcl.eth', ['0,0']);
+      });
+
+      describe('and the new limit arrives', () => {
+        beforeEach(async () => {
+          await act(async () => nextRequest.resolve(100 * MiB));
+        });
+
+        it('should report the new limit', () => {
+          expect(result.current).toEqual({ limit: 100 * MiB, isLoading: false });
+        });
+      });
+    });
+
+    describe('and the target changes before the first response, which then arrives last', () => {
+      let nextRequest: ReturnType<typeof deferred<number | null>>;
+
+      beforeEach(async () => {
+        nextRequest = deferred<number | null>();
+        fetchWorldSceneSizeLimitMock.mockReturnValueOnce(nextRequest.promise);
+        rerender({ target: { isWorld: true, worldName: 'other.dcl.eth', parcels: ['0,0'] } });
+        await act(async () => nextRequest.resolve(100 * MiB));
+        await act(async () => request.resolve(200 * MiB));
+      });
+
+      it("should keep the current target's limit", () => {
+        expect(result.current).toEqual({ limit: 100 * MiB, isLoading: false });
+      });
+    });
+
+    describe('and the request fails', () => {
+      beforeEach(async () => {
+        fetchWorldSceneSizeLimitMock.mockReset();
+        fetchWorldSceneSizeLimitMock.mockRejectedValueOnce(new Error('Failed to fetch'));
+        rerender({ target: { isWorld: true, worldName: 'other.dcl.eth', parcels: ['0,0'] } });
+        await waitFor(() => expect(result.current.isLoading).toBe(false));
+      });
+
+      it('should stop loading and report no limit', () => {
+        expect(result.current).toEqual({ limit: null, isLoading: false });
+      });
+    });
+
+    describe('and the hook unmounts before the response arrives', () => {
+      let consoleError: ReturnType<typeof vi.spyOn>;
+
+      beforeEach(async () => {
+        consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+        unmount();
+        await act(async () => request.resolve(200 * MiB));
+      });
+
+      afterEach(() => {
+        consoleError.mockRestore();
+      });
+
+      it('should ignore the response', () => {
+        expect(consoleError).not.toHaveBeenCalled();
+        expect(result.current).toEqual({ limit: null, isLoading: true });
+      });
     });
   });
 });
