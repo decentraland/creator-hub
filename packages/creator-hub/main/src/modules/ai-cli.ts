@@ -22,7 +22,7 @@ import path from 'node:path';
 import * as pty from 'node-pty';
 import log from 'electron-log/main';
 
-import type { AiProvider } from '/shared/types/ai';
+import { AI_CLI_COMMANDS, apiKeyAlternative, type AiProvider } from '/shared/types/ai';
 import { AI_CLI_LOGIN_EVENTS, type AiCliLoginEvent } from '/shared/types/ipc';
 
 import { MAIN_WINDOW_ID } from '../mainWindow';
@@ -245,12 +245,9 @@ async function login(provider: AiProvider, onProgress: (message: string) => void
 }
 
 export async function signInCli(provider: AiProvider): Promise<void> {
-  // A CLI without a scriptable login (Gemini) can't be signed in through the PTY flow — its
-  // auth is an interactive TUI. The UI hides the in-app button for these (managedSignIn:false),
-  // but guard here too so a stray call fails fast with guidance instead of hanging on a TUI.
   if (!CLI_SPECS[provider].managedSignIn) {
     throw new Error(
-      `${provider} signs in from its own CLI. Run \`${provider}\` in a terminal (or set an API key), then click Recheck.`,
+      `${provider} signs in from its own CLI. Run \`${AI_CLI_COMMANDS[provider].signin}\` in a terminal (or ${apiKeyAlternative(provider)}), then click Recheck.`,
     );
   }
   const onProgress = (message: string) => sendLoginEvent({ type: 'progress', message });

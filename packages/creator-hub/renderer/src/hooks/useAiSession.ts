@@ -45,7 +45,10 @@ export function useAiSession(
     dispatch(aiActions.fetchProviders());
     const stream = aiPreload.subscribeAiStream(event => {
       dispatch(aiActions.applyEvent(event));
-      if (event.kind === 'done') dispatch(aiActions.persistConversation());
+      if (event.kind === 'done') {
+        dispatch(aiActions.persistConversation());
+        void dispatch(aiActions.recheckAfterTurn(event.ok));
+      }
     });
     // Interactive `ask_user` prompts arrive on their own channel (they block an MCP tool call,
     // not a stream token) — fold each into the transcript.

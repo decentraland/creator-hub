@@ -155,7 +155,15 @@
         "alt_description": "¿Ya iniciaste sesión en Claude Desktop, la extensión de VS Code u otra herramienta compatible con MCP? Apúntala a esta escena, sin necesidad de CLI. Agrega esto a su configuración MCP:",
         "alt_copy": "Copiar configuración",
         "alt_copied": "Copiado",
-        "alt_note": "Solo localhost. La URL y el token cambian cada vez que Creator Hub se reinicia."
+        "alt_note": "Solo localhost. La URL y el token cambian cada vez que Creator Hub se reinicia.",
+        "install_guide": "Si no funciona, sigue la guía de instalación de {provider}",
+        "desktop_detected": "Claude Desktop está instalado, pero el asistente necesita Claude Code, la herramienta de terminal de Anthropic. El inicio de sesión de Desktop no se comparte con ella, así que instala Claude Code e inicia sesión una vez:",
+        "gemini_plan_note": "Gemini CLI ahora solo funciona con una clave de API de Gemini de pago o una licencia de Gemini Code Assist Standard/Enterprise.",
+        "needs_login_status": "Inicio de sesión necesario",
+        "needs_login_title": "{provider} te pidió que inicies sesión",
+        "needs_login_help": "Puede que su sesión guardada haya caducado, aunque aparezca como conectado. Cierra sesión y vuelve a iniciarla: ejecuta esto en una terminal, un comando a la vez, y termina en tu navegador. Luego vuelve a enviar tu mensaje:",
+        "needs_login_managed_help": "Puede que su inicio de sesión guardado haya caducado, aunque apareciera como conectado. En Configuración → IA, haz clic en Cerrar sesión y luego en Iniciar sesión, y vuelve a enviar tu mensaje.",
+        "api_key_alternative": "O usa una clave de API: define {envVar} y activa \"{setting}\" en Configuración → IA."
       }
     }
   },

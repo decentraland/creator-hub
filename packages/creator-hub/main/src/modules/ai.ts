@@ -22,6 +22,7 @@ import type { ChildProcess } from 'child_process';
 import crossSpawn from 'cross-spawn';
 import log from 'electron-log/main';
 import treeKill from 'tree-kill';
+import { AI_CLI_COMMANDS, apiKeyAlternative } from '/shared/types/ai';
 import type {
   AiAttachmentKind,
   AiEvent,
@@ -31,7 +32,7 @@ import type {
 } from '/shared/types/ai';
 import { DCL_SYSTEM_PROMPT } from './ai-prompt';
 import { CLI_SPECS, getManagedBinDir, isSignedIn as isManagedSignedIn } from './ai-cli-paths';
-import { getUserDataPath } from './electron';
+import { getAppDataPath, getUserDataPath } from './electron';
 import { getChildEnv, resolveNodeRuntime } from './node-runtime';
 import { getProjectId, track } from './analytics';
 import {
@@ -173,9 +174,26 @@ function searchDirs(): string[] {
     const nvmRoot = path.join(process.env.NVM_DIR ?? path.join(HOME, '.nvm'), 'versions', 'node');
     // Include the app-managed CLI dir (#1531) so a CLI we installed on demand resolves
     // like a PATH install. Static path — fine to keep listed before anything is installed.
-    cachedDirs = [...shellDirs, ...EXTRA_BIN_DIRS, ...nvmBinDirs(nvmRoot), getManagedBinDir()];
+    cachedDirs = [
+      ...windowsInstallerDirs(),
+      ...shellDirs,
+      ...EXTRA_BIN_DIRS,
+      ...nvmBinDirs(nvmRoot),
+      getManagedBinDir(),
+    ];
   }
   return cachedDirs;
+}
+
+/** Folders the agents' Windows installers add to the user PATH, which a running app never sees. */
+function windowsInstallerDirs(): string[] {
+  if (process.platform !== 'win32') return [];
+  const localAppData = process.env.LOCALAPPDATA ?? path.join(HOME, 'AppData', 'Local');
+  return [
+    path.join(localAppData, 'Microsoft', 'WinGet', 'Links'),
+    path.join(localAppData, 'cursor-agent'),
+    path.join(localAppData, 'Programs', 'OpenAI', 'Codex', 'bin'),
+  ];
 }
 
 // Split on ':', not path.delimiter: this is a POSIX shell's $PATH, and the probe that
@@ -378,7 +396,21 @@ interface ProviderDef {
     projectDir: string,
     emit: (text: string, tool?: [string, string], image?: string) => void,
   ) => string | undefined;
+  needsLogin: (output: string) => boolean;
 }
+
+function jsonLine(line: string): Record<string, unknown> | null {
+  try {
+    const parsed: unknown = JSON.parse(line);
+    return typeof parsed === 'object' && parsed !== null
+      ? (parsed as Record<string, unknown>)
+      : null;
+  } catch {
+    return null;
+  }
+}
+
+const isPlainText = (line: string): boolean => !line.trimStart().startsWith('{');
 
 // Pull data-URL images out of a tool result's content blocks, for inline display in the
 // chat (#1506). Claude relays an MCP image result as an Anthropic image block
@@ -615,6 +647,10 @@ export const PROVIDERS: Record<AiProvider, ProviderDef> = {
       if (obj.type === 'result') return obj.session_id;
       return undefined;
     },
+    needsLogin: line => {
+      const obj = jsonLine(line);
+      return obj?.type === 'assistant' && obj.error === 'authentication_failed';
+    },
   },
   // Codex, wired against `codex exec --json` (its non-interactive JSONL mode). Resume is
   // a SUBCOMMAND (`codex exec resume <threadId>`), not a flag; the thread id comes from
@@ -719,6 +755,15 @@ export const PROVIDERS: Record<AiProvider, ProviderDef> = {
       }
       return undefined;
     },
+    needsLogin: line => {
+      const obj = jsonLine(line);
+      const error = obj?.error as { message?: unknown } | undefined;
+      return (
+        obj?.type === 'turn.failed' &&
+        typeof error?.message === 'string' &&
+        /\b401\b/.test(error.message)
+      );
+    },
   },
   // Cursor's CLI agent (`cursor-agent`), wired against `-p --output-format stream-json`. Very
   // close to claude's shape: `session_id` from the `system`/`init` and `result` events drives
@@ -796,6 +841,8 @@ export const PROVIDERS: Record<AiProvider, ProviderDef> = {
       if (obj.type === 'result') return obj.session_id;
       return undefined;
     },
+    needsLogin: line =>
+      isPlainText(line) && /agent login|not authenticated|authentication required/i.test(line),
   },
   // Google's Gemini CLI (`gemini`), wired against `-o stream-json`. Notable differences:
   //  - No login subcommand: auth is the CLI's own interactive Google sign-in or GEMINI_API_KEY
@@ -870,16 +917,57 @@ export const PROVIDERS: Record<AiProvider, ProviderDef> = {
       }
       return undefined;
     },
+    needsLogin: line => isPlainText(line) && /Please set an Auth method/.test(line),
   },
 };
+
+const providersNeedingLogin = new Set<AiProvider>();
+
+/** Forgets that `provider` asked the user to sign in, once the app has signed it in again. */
+export function clearNeedsLogin(provider: AiProvider): void {
+  providersNeedingLogin.delete(provider);
+}
+
+/** What to tell the user when `provider` rejected its credentials: a terminal sign-in, the app's own copy, or an API key. */
+export function signInRequiredMessage(
+  provider: AiProvider,
+  cause: 'signin' | 'managed' | 'apiKey',
+): string {
+  const { label } = PROVIDERS[provider];
+  const { apiKeyEnv, relogin } = AI_CLI_COMMANDS[provider];
+  if (cause === 'apiKey') {
+    return `${label} rejected the API key in \`${apiKeyEnv}\`. Check the key, or turn off "Bill this to an API key instead" in Settings → AI to use your sign-in.`;
+  }
+  if (cause === 'managed') {
+    return `${label} isn't signed in, or its sign-in expired. In Settings → AI, click Sign out, then Sign in, then send your message again.`;
+  }
+  const steps = relogin.map(step => `\`${step}\``).join(', then ');
+  return `${label} isn't signed in, or its sign-in expired. In a terminal, run ${steps}, then send your message again. Or ${apiKeyAlternative(provider)}.`;
+}
+
+/** `text` with anything that looks like an API key or bearer token masked, for the log. */
+export function redactSecrets(text: string): string {
+  return text
+    .replace(/\b(sk-|AIza)[\w-]{8,}/g, '$1<redacted>')
+    .replace(/(Bearer\s+)[\w.~+/=-]+/gi, '$1<redacted>');
+}
+
+/** `bin`, or null when it is a managed install of a CLI the app no longer signs in to. */
+export function usableBin(bin: string | null, provider: AiProvider): string | null {
+  if (bin === null) return null;
+  if (!CLI_SPECS[provider].managedSignIn && bin.startsWith(getManagedBinDir())) return null;
+  return bin;
+}
+
+/** Whether Claude Desktop has run on this machine (it keeps its data in `<appData>/Claude`). */
+export function isClaudeDesktopInstalled(appDataDir: string): boolean {
+  return fs.existsSync(path.join(appDataDir, 'Claude'));
+}
 
 const scan = (): AiProviderInfo[] =>
   (Object.keys(PROVIDERS) as AiProvider[]).map(id => {
     const def = PROVIDERS[id];
-    const bin = findExecutable(def.binNames);
-    // A CLI we installed on demand (#1531) lives under the managed bin dir; unlike a
-    // user-PATH install (which we assume is already logged in), it's only usable once its
-    // subscription login completed, so gate its availability on the signed-in marker.
+    const bin = usableBin(findExecutable(def.binNames), id);
     const managed = bin !== null && bin.startsWith(getManagedBinDir());
     const signedIn = managed ? isManagedSignedIn(id) : true;
     const available = bin !== null && signedIn;
@@ -889,8 +977,11 @@ const scan = (): AiProviderInfo[] =>
       models: def.models,
       defaultModel: def.defaultModel,
       available,
-      managedSignIn: CLI_SPECS[id].managedSignIn,
+      managedSignIn: CLI_SPECS[id].managedSignIn && (bin === null || managed),
       version: bin !== null ? getCliVersion(bin) : undefined,
+      desktopInstalled:
+        id === 'claude' && !available ? isClaudeDesktopInstalled(getAppDataPath()) : undefined,
+      needsLogin: providersNeedingLogin.has(id) || undefined,
       reason: available
         ? undefined
         : bin === null
@@ -1247,7 +1338,7 @@ export async function aiSend(
     throw new Error('Open a scene before using the assistant.');
   const def = PROVIDERS[params.provider];
   if (def === undefined) throw new Error(`Unknown assistant "${params.provider}".`);
-  const bin = findExecutable(def.binNames);
+  const bin = usableBin(findExecutable(def.binNames), params.provider);
   if (bin === null) throw new Error(`${def.label} CLI not found — install it and sign in.`);
 
   // Link the Decentraland SDK7 skills into the project so the CLI finds them in its
@@ -1365,6 +1456,7 @@ export async function aiSend(
   const finish = (ok: boolean, message?: string): void => {
     if (turn.done) return;
     turn.done = true;
+    if (ok) providersNeedingLogin.delete(params.provider);
     if (message !== undefined) emit({ kind: 'error', turnId, message });
     emit({ kind: 'done', turnId, ok, mutations: getTurnMutations() });
     if (current === turn) current = null;
@@ -1383,6 +1475,7 @@ export async function aiSend(
 
   let stderr = '';
   let buf = '';
+  let loginRequested = false;
   // StringDecoder buffers a multibyte UTF-8 codepoint split across two stdout chunks; a
   // plain buf += d.toString() would decode each half alone and emit U+FFFD, corrupting
   // emoji/i18n text mid-stream.
@@ -1403,6 +1496,10 @@ export async function aiSend(
           killTree(child);
         }
       }, RESULT_EXIT_GRACE_MS);
+    }
+    if (def.needsLogin(line)) {
+      loginRequested = true;
+      return;
     }
     const session = def.parseLine(line, projectDir, (text, tool, image) => {
       if (text !== '') {
@@ -1463,7 +1560,19 @@ export async function aiSend(
       imageCount,
       stderr,
     });
-    log.info(outcome.logLine);
+    log.info(redactSecrets(outcome.logLine));
+    if (loginRequested || (!outcome.ok && stderr.split('\n').some(def.needsLogin))) {
+      providersNeedingLogin.add(params.provider);
+      const cause =
+        params.apiKeyFromEnv === true &&
+        (env[AI_CLI_COMMANDS[params.provider].apiKeyEnv] ?? '') !== ''
+          ? 'apiKey'
+          : bin.startsWith(getManagedBinDir())
+            ? 'managed'
+            : 'signin';
+      finish(false, signInRequiredMessage(params.provider, cause));
+      return;
+    }
     finish(outcome.ok, outcome.message);
   };
   child.on('exit', (code, signal) => {
@@ -1471,6 +1580,6 @@ export async function aiSend(
   });
   child.on('close', settle);
 
-  log.info(`[AI] Started ${def.label} turn ${turnId} in ${projectDir}`);
+  log.info(`[AI] Started ${def.label} turn ${turnId} with ${bin} in ${projectDir}`);
   return { turnId };
 }
