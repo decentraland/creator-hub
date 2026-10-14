@@ -1,7 +1,14 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
 
 import { ai } from '#preload';
-import type { AiAttachment, AiAttachmentMeta, AiEvent, AiProvider } from '/shared/types/ai';
+import type {
+  AiAssetMention,
+  AiAttachment,
+  AiAttachmentMeta,
+  AiEvent,
+  AiProvider,
+} from '/shared/types/ai';
+import { assetMentionKey } from '/shared/types/ai';
 
 import { createAsyncThunk } from '/@/modules/store/thunk';
 import {
@@ -24,6 +31,8 @@ const initialState: AiState = {
   busy: false,
   detecting: false,
   selection: [],
+  assetMentions: [],
+  chatVisible: false,
   billingDismissed: false,
   sessions: [],
   currentSessionId: '',
@@ -70,7 +79,7 @@ export const send = createAsyncThunk<void, { text: string; attachments?: AiAttac
     const path = state.editor.project?.path;
     if (path === undefined || path === '')
       throw new Error('Open a scene before using the assistant.');
-    const { provider, model, busy, selection } = state.ai;
+    const { provider, model, busy, selection, assetMentions } = state.ai;
     if (busy) return;
     const trimmed = text.trim();
     const files = attachments ?? [];
@@ -95,9 +104,11 @@ export const send = createAsyncThunk<void, { text: string; attachments?: AiAttac
     }
     const attachmentMeta: AiAttachmentMeta[] = files.map(f => ({ name: f.name, kind: f.kind }));
     dispatch(actions.pushUserMessage({ text: trimmed, attachments: attachmentMeta }));
-    // Attach the current editor selection as context so the assistant can resolve "this"
-    // without the user spelling out ids. Not shown in the chat bubble (main prepends it).
-    const context = selectionContext(selection);
+    // Attach the current editor selection and mentioned assets as context so the assistant can
+    // resolve "this" without the user spelling out ids or paths. Not shown in the chat bubble
+    // (main prepends it). Mentions belong to this prompt only; the selection is live state.
+    const context = editorContext(selection, assetMentions);
+    dispatch(actions.clearAssetMentions());
     const apiKeyFromEnv = state.workspace.settings?.useApiKeyFromEnv ?? false;
     await ai.send(path, {
       provider,
@@ -117,6 +128,35 @@ export function selectionContext(selection: AiState['selection']): string | unde
   if (selection.length === 0) return undefined;
   const names = selection.map(s => `${s.name || 'Entity'} (id ${s.id})`).join(', ');
   return `[Editor context] The user currently has selected: ${names}. If they say "this" or "the selected entity", they mean ${selection.length === 1 ? 'that entity' : 'those entities'}.`;
+}
+
+// The lines naming the local assets the user mentioned (files, then built-in animations), or
+// undefined when there are none. Exported for tests.
+export function assetMentionsContext(assetMentions: AiState['assetMentions']): string | undefined {
+  const paths = assetMentions.flatMap(m => ('path' in m ? [m.path] : []));
+  const emotes = assetMentions.flatMap(m => ('builtInEmote' in m ? [m.builtInEmote] : []));
+  const lines: string[] = [];
+  if (paths.length > 0) {
+    lines.push(
+      `[Editor context] The user is referring to ${paths.length === 1 ? 'this scene asset file' : 'these scene asset files'}: ${paths.join(', ')}. If they say "this asset" or name one of them, they mean ${paths.length === 1 ? 'that file' : 'those files'}.`,
+    );
+  }
+  if (emotes.length > 0) {
+    lines.push(
+      `[Editor context] The user is referring to the built-in avatar ${emotes.length === 1 ? 'animation' : 'animations'} ${emotes.map(e => `"${e}"`).join(', ')}. Every scene can already play ${emotes.length === 1 ? 'it' : 'them'} by name, with no file to add: triggerEmote({ predefinedEmote: '${emotes[0]}' }) from '~system/RestrictedActions'.`,
+    );
+  }
+  return lines.length > 0 ? lines.join('\n') : undefined;
+}
+
+function editorContext(
+  selection: AiState['selection'],
+  assetMentions: AiState['assetMentions'],
+): string | undefined {
+  const lines = [selectionContext(selection), assetMentionsContext(assetMentions)].filter(
+    (line): line is string => line !== undefined,
+  );
+  return lines.length > 0 ? lines.join('\n') : undefined;
 }
 
 // Kill the in-flight turn. Main suppresses the `done` event on an intentional stop, so
@@ -301,6 +341,22 @@ const slice = createSlice({
     },
     setSelection: (state, { payload }: PayloadAction<{ id: number; name: string }[]>) => {
       state.selection = payload;
+    },
+    setChatVisible: (state, { payload }: PayloadAction<boolean>) => {
+      state.chatVisible = payload;
+      if (!payload) state.assetMentions = [];
+    },
+    addAssetMention: (state, { payload }: PayloadAction<AiAssetMention>) => {
+      const key = assetMentionKey(payload);
+      if (!state.chatVisible || state.assetMentions.some(m => assetMentionKey(m) === key)) return;
+      state.assetMentions.push(payload);
+    },
+    removeAssetMention: (state, { payload }: PayloadAction<AiAssetMention>) => {
+      const key = assetMentionKey(payload);
+      state.assetMentions = state.assetMentions.filter(m => assetMentionKey(m) !== key);
+    },
+    clearAssetMentions: state => {
+      state.assetMentions = [];
     },
     // Seed the composer from elsewhere in the editor (the Trigger Area "describe a reaction"
     // buttons). Bumps a nonce so clicking the same button twice re-seeds. EditorPage opens the

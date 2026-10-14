@@ -12,4 +12,5 @@ export interface Props {
   layout?: 'grid' | 'list';
   /** Show which folder the asset lives in; used when results come from several folders. */
   showPath?: boolean;
+  getAnimatedThumbnail?: (value: AssetNodeItem) => Promise<Uint8Array | undefined>;
 }

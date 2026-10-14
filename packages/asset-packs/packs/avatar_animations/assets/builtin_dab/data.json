@@ -1,0 +1,9 @@
+{
+  "id": "159e2610-93bb-4bca-9406-7ae38202dbd8",
+  "name": "Dab",
+  "category": "built-in",
+  "tags": ["animation", "avatar", "built-in", "dab", "default", "emote"],
+  "description": "Built-in avatar animation. Play it from scene code with triggerEmote({ predefinedEmote: 'dab' }).",
+  "author": "Decentraland Foundation",
+  "builtInEmote": "dab"
+}

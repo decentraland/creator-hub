@@ -1,0 +1,9 @@
+{
+  "id": "e1df8eca-7454-46d0-8b86-207ce5f58779",
+  "name": "Kiss",
+  "category": "built-in",
+  "tags": ["animation", "avatar", "built-in", "default", "emote", "kiss"],
+  "description": "Built-in avatar animation. Play it from scene code with triggerEmote({ predefinedEmote: 'kiss' }).",
+  "author": "Decentraland Foundation",
+  "builtInEmote": "kiss"
+}

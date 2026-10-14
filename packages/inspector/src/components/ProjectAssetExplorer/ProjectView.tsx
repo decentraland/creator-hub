@@ -3,6 +3,7 @@ import { AiOutlineSound as AudioIcon } from 'react-icons/ai';
 import { IoIosImage as ImageIcon } from 'react-icons/io';
 import { IoCubeOutline as ModelIcon, IoVideocamOutline as VideoIcon } from 'react-icons/io5';
 import { FaFile as OtherIcon } from 'react-icons/fa';
+import { MdOutlineEmojiPeople as EmoteIcon } from 'react-icons/md';
 import { SiTypescript as ScriptIcon } from 'react-icons/si';
 import {
   MdChevronRight as ChevronIcon,
@@ -22,12 +23,13 @@ import { Button } from '../Button';
 import FolderIcon from '../Icons/Folder';
 import Search from '../Search';
 import { transformBinaryToBase64Resource, withAssetDir } from '../../lib/data-layer/host/fs-utils';
+import { getSceneClient } from '../../lib/rpc/scene';
 import { removeAsset } from '../../redux/data-layer';
 import { useAppDispatch } from '../../redux/hooks';
 import { determineAssetType, extractFileExtension } from '../ImportAsset/utils';
 import { getThumbnailHashNameForAsset } from '../../lib/utils/hash';
 import { useAssetSelection } from '../AssetBrowserPreview';
-import { getFilterFromTree, getFullNodePath } from './utils';
+import { getFilterFromTree, getFullNodePath, isEmoteAsset } from './utils';
 import type { AssetNodeFolder, AssetNodeItem } from './types';
 import { Tile } from './Tile';
 import { getLocalThumbnail, invalidateLocalThumbnail } from './localThumbnails';
@@ -171,14 +173,31 @@ function ProjectView({ folders, thumbnails }: Props) {
 
   const handleModalClose = useCallback(() => setModal(undefined), []);
 
+  const mentionAsset = useCallback((node: TreeNode, path: string) => {
+    const builtInEmote = (node as AssetNodeItem).asset.builtInEmote;
+    void getSceneClient()
+      ?.mentionAsset(
+        builtInEmote ? { builtInEmote: builtInEmote.name } : { path: withAssetDir(path) },
+      )
+      .catch(console.error);
+  }, []);
+
+  const handleDoubleSelect = useCallback(
+    (value: string) => {
+      const node = tree.get(value);
+      if (node?.type === 'asset') mentionAsset(node, value);
+    },
+    [tree, mentionAsset],
+  );
+
   const handleClickFolder = useCallback(
     (node: TreeNode) => () => {
-      if (node.type === 'asset') return;
       const path = getFullNodePath(node).slice(1);
+      if (node.type === 'asset') return mentionAsset(node, path);
       open.add(path);
       setLastSelected(path);
     },
-    [setLastSelected],
+    [setLastSelected, mentionAsset],
   );
   const handleDragContext = useCallback(() => ({ tree }), [tree]);
   // Drop targets (renderer, video inputs) read a `value` like the Tile emits; the
@@ -211,6 +230,14 @@ function ProjectView({ folders, thumbnails }: Props) {
       if (thumbnail) return transformBinaryToBase64Resource(thumbnail.content);
       // Nothing stored: images show themselves and models get rendered once.
       return getLocalThumbnail(value.asset.src);
+    },
+    [thumbnails],
+  );
+
+  const getAnimatedThumbnail = useCallback(
+    async (value: AssetNodeItem) => {
+      const name = await getThumbnailHashNameForAsset(value.asset.src, 'webp');
+      return thumbnails.find($ => $.path.endsWith(name))?.content;
     },
     [thumbnails],
   );
@@ -292,6 +319,7 @@ function ProjectView({ folders, thumbnails }: Props) {
         onSelect={handleClickFolder(node)}
         onRemove={handleRemove}
         getThumbnail={getThumbnail}
+        getAnimatedThumbnail={getAnimatedThumbnail}
         dndType={DRAG_N_DROP_ASSET_KEY}
       />
     );
@@ -345,7 +373,7 @@ function ProjectView({ folders, thumbnails }: Props) {
             onRemove={handleRemove}
             onRename={noop}
             onSelect={onSelect}
-            onDoubleSelect={noop}
+            onDoubleSelect={handleDoubleSelect}
             onSetOpen={onSetOpen}
             onDuplicate={noop}
             getId={(value: string) => value.toString()}
@@ -362,7 +390,8 @@ function ProjectView({ folders, thumbnails }: Props) {
             isSelected={(val: string) => selection?.source === 'local' && selection.id === val}
             isHidden={(val: string) => val === ROOT}
             canRename={() => false}
-            canRemove={val => tree.get(val)?.type === 'asset'}
+            canRemove={val => tree.get(val)?.type === 'asset' && !isBuiltInNode(tree.get(val))}
+            canDrag={val => !isBuiltInNode(tree.get(val))}
             canDuplicate={() => false}
             canAddChild={() => false}
             getIcon={val => <NodeIcon value={tree.get(val)} />}
@@ -512,6 +541,11 @@ function getBreadcrumbs(path: string): { label: string; path: string }[] {
   return crumbs;
 }
 
+// Built-in animations have no file, so they can't be dragged into the scene or deleted.
+function isBuiltInNode(node?: TreeNode): boolean {
+  return node?.type === 'asset' && !!(node as AssetNodeItem).asset.builtInEmote;
+}
+
 function NodeIcon({ value }: { value?: TreeNode }) {
   if (!value) return null;
   if (value.type === 'folder') {
@@ -522,6 +556,7 @@ function NodeIcon({ value }: { value?: TreeNode }) {
     );
   } else {
     const Icon = useMemo(() => {
+      if (isEmoteAsset((value as AssetNodeItem).asset)) return EmoteIcon;
       const classification = determineAssetType(extractFileExtension(value.name)[1]);
       switch (classification) {
         case 'Models':

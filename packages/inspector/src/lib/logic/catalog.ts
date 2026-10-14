@@ -12,6 +12,7 @@ export type CustomAsset = AssetData & {
 
 // categories obtained from "builder-items.decentraland.org" catalog
 export const CATEGORIES = [
+  'built-in',
   'ground',
   'utils',
   'buttons',
@@ -88,6 +89,15 @@ export function getContentsUrl(hash: string) {
   return `${config.contentUrl}/contents/${hash}`;
 }
 
+// An optional looping animated thumbnail the catalog card plays on hover (e.g. avatar
+// animations). Like thumbnail.png it is catalog-only and never copied into a scene.
+export const ANIMATED_PREVIEW_PATH = 'preview.webp';
+
+export function getAnimatedPreviewUrl(asset: Asset): string | undefined {
+  const hash = asset.contents[ANIMATED_PREVIEW_PATH];
+  return hash ? getContentsUrl(hash) : undefined;
+}
+
 export function getAssetsByCategory(assets: Asset[]) {
   const categories = new Map<Asset['category'], Asset[]>(CATEGORIES.map($ => [$, []]));
   for (const asset of assets) {
@@ -117,6 +127,18 @@ export function isSmart(asset: Partial<Asset>) {
   }
   // when the item only has a GltfContainer then it's not smart
   return false;
+}
+
+// An asset with nothing to spawn (e.g. an avatar animation): it is only ever used from scene
+// code at runtime, so placing it imports its files and leaves the composite untouched.
+export function isFileOnly(asset: Partial<Asset>) {
+  return (asset?.composite?.components ?? []).length === 0;
+}
+
+// The name scene code plays a built-in avatar animation by, e.g. `triggerEmote({ predefinedEmote:
+// 'wave' })`. Such assets are catalog-only: nothing is ever copied into the scene.
+export function getBuiltInEmote(asset: Partial<Asset>): string | undefined {
+  return asset.builtInEmote;
 }
 
 export function isGround(asset: Partial<Asset>) {
