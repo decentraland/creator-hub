@@ -17,6 +17,7 @@ import { removeAsset } from '../../redux/data-layer';
 import { useAppDispatch } from '../../redux/hooks';
 import { determineAssetType, extractFileExtension } from '../ImportAsset/utils';
 import { getThumbnailHashNameForAsset } from '../../lib/utils/hash';
+import { useAssetSelection } from '../AssetBrowserPreview';
 import { getFilterFromTree, getFullNodePath } from './utils';
 import type { AssetNodeFolder, AssetNodeItem } from './types';
 import { Tile } from './Tile';
@@ -45,6 +46,7 @@ const FilesTree = Tree<string>();
 
 function ProjectView({ folders, thumbnails }: Props) {
   const sdk = useSdk();
+  const { select } = useAssetSelection();
   const dispatch = useAppDispatch();
   const [open, setOpen] = useState(new Set<string>());
   const [modal, setModal] = useState<ModalState | undefined>(undefined);
@@ -68,8 +70,11 @@ function ProjectView({ folders, thumbnails }: Props) {
     (value: string) => {
       open.add(value);
       setLastSelected(value);
+      const node = tree.get(value);
+      if (node?.type === 'asset')
+        select({ source: 'local', id: value, name: node.name, path: value });
     },
-    [setLastSelected],
+    [setLastSelected, tree, select],
   );
 
   const onSetOpen = useCallback(

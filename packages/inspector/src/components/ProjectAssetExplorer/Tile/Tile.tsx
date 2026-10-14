@@ -6,6 +6,7 @@ import { FaFile as OtherIcon } from 'react-icons/fa';
 import { Item as MenuItem } from 'react-contexify';
 import { SiTypescript as ScriptIcon } from 'react-icons/si';
 import { useDrag } from 'react-dnd';
+import cx from 'classnames';
 import { Loader } from 'decentraland-ui/dist/components/Loader/Loader';
 
 import {
@@ -19,6 +20,7 @@ import FolderIcon from '../../Icons/Folder';
 import { withContextMenu } from '../../../hoc/withContextMenu';
 import { useContextMenu } from '../../../hooks/sdk/useContextMenu';
 import { determineAssetType, extractFileExtension } from '../../ImportAsset/utils';
+import { useAssetSelection, useIsAssetSelected } from '../../AssetBrowserPreview';
 import type { AssetNodeItem } from '../types';
 import type { Props } from './types';
 
@@ -38,6 +40,8 @@ export const Tile = withContextMenu<Props>(
     const [thumbnail, setThumbnail] = useState<Uint8Array | null>(null);
     const { handleAction } = useContextMenu();
     const isRemovingAsset = useAppSelector(selectDataLayerRemovingAsset);
+    const { select } = useAssetSelection();
+    const isSelected = useIsAssetSelected('local', valueId);
 
     // Load thumbnail when value changes
     useEffect(() => {
@@ -59,6 +63,11 @@ export const Tile = withContextMenu<Props>(
     const handleRemove = useCallback(() => {
       onRemove(valueId);
     }, [valueId]);
+
+    const handleClick = useCallback(() => {
+      if (value?.type !== 'asset') return;
+      select({ source: 'local', id: valueId, name: value.name, path: valueId });
+    }, [select, value, valueId]);
 
     if (!value) return null;
 
@@ -115,8 +124,9 @@ export const Tile = withContextMenu<Props>(
         )}
         <div
           ref={drag}
-          className="Tile"
+          className={cx('Tile', { selected: isSelected })}
           key={value.name}
+          onClick={handleClick}
           onDoubleClick={onSelect}
           title={value.name}
           data-test-id={valueId}

@@ -7,119 +7,159 @@
   overflow: hidden;
 }
 
-.Assets .Assets-buttons span {
-  font-size: 14px;
-  line-height: 13px;
-  font-weight: 500;
-}
-
-.Assets .Assets-buttons {
-  padding-left: 8px;
+.Assets .Assets-bar {
   display: flex;
-  background: var(--tree-bg-color);
-  padding: 5px 0;
-  position: relative;
   align-items: center;
-  justify-content: center;
+  gap: 12px;
+  flex: none;
   min-height: 48px;
+  padding: 0 8px 0 12px;
+  background: var(--tree-bg-color);
+  border-bottom: 1px solid var(--base-17);
 }
 
-.Assets .Assets-buttons > div > div {
+.Assets .Assets-tabs {
   display: flex;
-  position: relative;
+  align-items: center;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 10px;
+  background: var(--base-19);
+  flex: none;
 }
 
-.Assets .Assets-buttons > div:hover > div::after,
-.Assets .Assets-buttons > div > div.underlined::after {
-  width: 100%;
+.Assets .Assets-tabs .tab {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 12px;
+  border-radius: 8px;
+  color: var(--neutral-grey-3);
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+  user-select: none;
+  transition:
+    background-color 0.12s ease,
+    color 0.12s ease;
 }
 
-.Assets .Assets-buttons .icon-custom-assets {
+.Assets .Assets-tabs .tab:hover {
+  background: var(--base-17);
+  color: var(--white-gray);
+}
+
+.Assets .Assets-tabs .tab.active {
+  background: var(--primary-main);
+  color: var(--white);
+}
+
+.Assets .Assets-tabs .tab svg {
+  width: 16px;
+  height: 16px;
+}
+
+.Assets .Assets-tabs .tab .icon-custom-assets {
   background-image: url("./custom-asset-icon.svg");
   background-size: 16px 16px;
   background-repeat: no-repeat;
   background-position: center;
   width: 16px;
-  height: 12px;
+  height: 16px;
 }
 
-.Assets .Assets-buttons > div > div::after {
-  content: "";
-  position: absolute;
-  bottom: -6px;
-  left: 0;
-  height: 2px;
-  background: var(--primary-main);
+.Assets .Assets-tabs-divider {
+  width: 1px;
+  height: 18px;
+  margin: 0 4px;
+  background: var(--base-13);
 }
 
-.Assets .Assets-buttons > div span {
-  margin-left: 4px;
-  margin-bottom: 4px;
-}
-
-.Assets .Assets-buttons > div {
+.Assets .Assets-actions {
   display: flex;
   align-items: center;
-  padding: 8px 12px;
-  cursor: pointer;
-  user-select: none;
+  gap: 4px;
+  margin-left: auto;
 }
 
-.Assets .Assets-buttons .Assets-buttons-left {
-  align-items: center;
-  padding: 8px 9px;
-  position: absolute;
-  left: 0;
-  gap: 12px;
-}
-
-.Assets .Assets-buttons .Assets-buttons-left button {
-  margin: 3px;
-  display: flex;
-  align-items: center;
-  padding: 8px 9px;
-  font-weight: 600;
-  border-radius: 6px;
-}
-
-.Assets .Assets-buttons .Assets-buttons-left .import-button svg {
-  margin-right: 5px;
-  stroke-width: 3;
-}
-
-.Assets .Assets-buttons .Assets-buttons-left .import-button:hover {
-  background-color: var(--base-19);
-}
-
-.Assets .Assets-buttons .Assets-buttons-left .icon-item {
-  width: 25px;
-  height: 25px;
-  padding: 5px;
-  border-radius: 6px;
-  color: var(--base-01);
-  cursor: pointer;
-}
-
-.Assets .Assets-buttons .Assets-buttons-left button.icon-item {
-  background-color: transparent;
-  border: none;
-  padding: 0;
+.Assets .Assets-actions .icon-item {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 5px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--base-08);
+  cursor: pointer;
 }
 
-.Assets .Assets-buttons .Assets-buttons-left .icon-item:hover {
-  background-color: var(--background-gray);
+.Assets .Assets-actions .icon-item svg {
+  width: 100%;
+  height: 100%;
 }
 
-.Assets .Assets-buttons .Assets-buttons-right {
+.Assets .Assets-actions .icon-item:hover {
+  background: var(--background-gray);
+  color: var(--white);
+}
+
+.Assets .Assets-actions .icon-item.active {
+  color: var(--primary-main);
+}
+
+.Assets .Assets-actions .import-button {
+  order: 10;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 30px;
+  margin: 0 0 0 8px;
+  padding: 0 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.Assets .Assets-actions .import-button svg {
+  stroke-width: 3;
+}
+
+.Assets .Assets-size {
+  display: flex;
+  align-items: center;
+  margin: 0 4px;
+}
+
+.Assets .Assets-size input[type="range"] {
+  width: 84px;
+  height: 4px;
+  accent-color: var(--primary-main);
+  cursor: pointer;
+}
+
+.Assets .visually-hidden {
   position: absolute;
-  right: 0;
-  padding: 8px 12px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
 }
 
-.Assets .Assets-buttons .Assets-buttons-right .collapse-toggle {
+.Assets .Assets-collapse {
+  display: flex;
+  flex: none;
+}
+
+.Assets:not(:has(.Assets-actions)) .Assets-collapse {
+  margin-left: auto;
+}
+
+.Assets .Assets-collapse .collapse-toggle {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -134,8 +174,24 @@
   cursor: pointer;
 }
 
-.Assets .Assets-buttons .Assets-buttons-right .collapse-toggle:hover {
+.Assets .Assets-collapse .collapse-toggle:hover {
   background-color: var(--background-gray);
+}
+
+.Assets .Assets-body {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  background: var(--tree-bg-color);
+}
+
+.Assets .Assets-body.Hide {
+  display: none;
+}
+
+.Assets .Assets-body > .Assets-content {
+  flex: 1;
+  min-width: 0;
 }
 
 .Assets .Assets-content {

@@ -2,6 +2,7 @@ import React, { useCallback } from 'react';
 import { useDrag } from 'react-dnd';
 
 import './CustomAssets.css';
+import cx from 'classnames';
 import type { CustomAsset } from '../../lib/logic/catalog';
 import CustomAssetIcon from '../Icons/CustomAsset';
 import { useAppDispatch, useAppSelector } from '../../redux/hooks';
@@ -10,6 +11,7 @@ import { DropTypesEnum } from '../../lib/sdk/drag-drop';
 import { deleteCustomAsset, setAssetToRename } from '../../redux/data-layer';
 import { AssetsTab } from '../../redux/ui/types';
 import { selectAssetsTab } from '../../redux/ui';
+import { useAssetSelection, useIsAssetSelected } from '../AssetBrowserPreview';
 import { openCustomAssetContextMenu } from './ContextMenu/ContextMenu';
 import { CustomAssetContextMenu } from './ContextMenu/CustomAssetContextMenu';
 
@@ -26,6 +28,8 @@ const CustomAssetItem: React.FC<CustomAssetItemProps> = ({
   onRename,
   onAddToFilesystem,
 }) => {
+  const { select } = useAssetSelection();
+  const isSelected = useIsAssetSelected('custom', value.id);
   const [, drag] = useDrag(
     () => ({
       type: DropTypesEnum.CustomAsset,
@@ -50,8 +54,9 @@ const CustomAssetItem: React.FC<CustomAssetItemProps> = ({
         onContextMenu={handleContextMenu}
       >
         <div
-          className="custom-asset-item-box"
+          className={cx('custom-asset-item-box', { selected: isSelected })}
           ref={drag}
+          onClick={() => select({ source: 'custom', id: value.id, name: value.name, asset: value })}
           title={value.name}
         >
           {value.thumbnail ? (

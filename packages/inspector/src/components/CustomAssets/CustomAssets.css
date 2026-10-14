@@ -1,6 +1,6 @@
 .custom-assets {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(calc(var(--tile-size, 80px) + 20px), 1fr));
   gap: 4px;
   padding: 8px;
   height: 100%;
@@ -15,15 +15,21 @@
 }
 
 .custom-asset-item-box {
-  width: 80px;
-  height: 80px;
+  width: var(--tile-size, 80px);
+  height: var(--tile-size, 80px);
   padding: 8px;
-  border-radius: 8px;
+  box-sizing: border-box;
+  border: 2px solid transparent;
+  border-radius: 10px;
   background: var(--list-item-bg-color);
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: grab;
+}
+
+.custom-asset-item-box.selected {
+  border-color: var(--primary-main);
 }
 
 .custom-asset-item-box:hover {

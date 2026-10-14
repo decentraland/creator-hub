@@ -3,12 +3,26 @@
   flex-direction: column;
   margin: 4px;
   align-items: center;
-  height: 72px;
-  width: 84px;
-  border-radius: 8px;
-  background-color: var(--gray-0);
+  height: calc(var(--tile-size, 80px) * 0.9);
+  width: var(--tile-size, 80px);
+  border-radius: 10px;
+  border: 2px solid transparent;
+  box-sizing: border-box;
+  background-color: var(--base-17);
   cursor: pointer;
   justify-content: space-evenly;
+  transition:
+    background-color 0.12s ease,
+    border-color 0.12s ease;
+}
+
+.Tile:hover {
+  background-color: var(--base-15);
+}
+
+.Tile.selected {
+  border-color: var(--primary-main);
+  background-color: var(--base-15);
 }
 
 .Tile span {
@@ -23,8 +37,9 @@
 
 .Tile svg,
 .Tile img {
-  width: 42px;
-  height: 42px;
+  width: calc(var(--tile-size, 80px) * 0.5);
+  height: calc(var(--tile-size, 80px) * 0.5);
+  object-fit: contain;
 }
 
 .Tile .overlay {
