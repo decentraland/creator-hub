@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { MdPause, MdPlayArrow, MdAutorenew } from 'react-icons/md';
+import { MdPause, MdPlayArrow, MdAutorenew, MdGridOn } from 'react-icons/md';
 import { Engine } from '@babylonjs/core/Engines/engine';
 import type { AssetContainer } from '@babylonjs/core/assetContainer';
 import type { AnimationGroup } from '@babylonjs/core/Animations/animationGroup';
@@ -56,7 +56,9 @@ export function ModelViewer({ source, onStats, onFailed }: Props) {
   const [playing, setPlaying] = useState(true);
   const [autoRotate, setAutoRotate] = useState(true);
   const [loading, setLoading] = useState(true);
-  const [emote, setEmote] = useState(false);
+  const [emoteFile, setEmoteFile] = useState<File | undefined>();
+  const [wireframe, setWireframe] = useState(false);
+  const wireframeRef = useRef(false);
 
   // One engine for the lifetime of the viewer; models are swapped in and out of its scene.
   useEffect(() => {
@@ -90,15 +92,19 @@ export function ModelViewer({ source, onStats, onFailed }: Props) {
 
     let cancelled = false;
     setLoading(true);
-    setEmote(false);
+    setEmoteFile(undefined);
     setClips([]);
     onStats(undefined);
 
     containerRef.current?.dispose();
     containerRef.current = undefined;
 
+    let bytes: Blob | undefined;
     loadBytes(source)
-      .then(bytes => loadModelContainer(scene, bytes, source.extension, source.resolveDependency))
+      .then(loaded => {
+        bytes = loaded;
+        return loadModelContainer(scene, loaded, source.extension, source.resolveDependency);
+      })
       .then(container => {
         if (cancelled) {
           container.dispose();
@@ -106,7 +112,8 @@ export function ModelViewer({ source, onStats, onFailed }: Props) {
         }
         if (isEmoteContainer(container)) {
           container.dispose();
-          setEmote(true);
+          // The avatar viewer takes a file; catalog emotes arrive as plain bytes.
+          setEmoteFile(source.file ?? new File([bytes!], `${source.name}.${source.extension}`));
           setLoading(false);
           return;
         }
@@ -114,6 +121,7 @@ export function ModelViewer({ source, onStats, onFailed }: Props) {
         container.addAllToScene();
         container.animationGroups.forEach(group => group.stop());
         containerRef.current = container;
+        container.materials.forEach(material => (material.wireframe = wireframeRef.current));
         frameCamera(scene, camera);
         setClips(container.animationGroups);
         setActiveClip(0);
@@ -136,6 +144,11 @@ export function ModelViewer({ source, onStats, onFailed }: Props) {
     if (cameraRef.current) cameraRef.current.useAutoRotationBehavior = autoRotate;
   }, [autoRotate]);
 
+  useEffect(() => {
+    wireframeRef.current = wireframe;
+    containerRef.current?.materials.forEach(material => (material.wireframe = wireframe));
+  }, [wireframe]);
+
   const selectClip = (index: number) => {
     clips.forEach(clip => clip.stop());
     setActiveClip(index);
@@ -151,7 +164,7 @@ export function ModelViewer({ source, onStats, onFailed }: Props) {
     setPlaying(!playing);
   };
 
-  if (emote && source.file) return <EmoteViewer file={source.file} />;
+  if (emoteFile) return <EmoteViewer file={emoteFile} />;
 
   return (
     <div className="ModelViewer">
@@ -168,6 +181,15 @@ export function ModelViewer({ source, onStats, onFailed }: Props) {
           aria-label="Toggle auto-rotate"
         >
           <MdAutorenew />
+        </button>
+        <button
+          className={wireframe ? 'active' : ''}
+          onClick={() => setWireframe(value => !value)}
+          title="Wireframe"
+          aria-label="Toggle wireframe"
+          aria-pressed={wireframe}
+        >
+          <MdGridOn />
         </button>
         {clips.length > 0 && (
           <>

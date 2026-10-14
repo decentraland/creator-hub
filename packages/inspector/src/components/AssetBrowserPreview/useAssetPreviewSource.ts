@@ -85,8 +85,11 @@ export function useAssetPreviewSource(selection?: AssetSelection): PreviewSource
         source: {
           kind: modelKey ? 'model' : 'image',
           name: selection.name,
-          extension: modelKey ? extractFileExtension(modelKey)[1] : 'png',
-          url: getContentsUrl(modelKey ? contents[modelKey] : contents['thumbnail.png']),
+          // File-less animations (built-ins) only ship an animated preview.
+          extension: modelKey ? extractFileExtension(modelKey)[1] : 'webp',
+          url: getContentsUrl(
+            modelKey ? contents[modelKey] : (contents['preview.webp'] ?? contents['thumbnail.png']),
+          ),
           thumbnail: contents['thumbnail.png']
             ? getContentsUrl(contents['thumbnail.png'])
             : undefined,
@@ -105,6 +108,21 @@ export function useAssetPreviewSource(selection?: AssetSelection): PreviewSource
           extension: 'png',
           url: selection.asset.thumbnail,
           thumbnail: selection.asset.thumbnail,
+        },
+      });
+      return;
+    }
+
+    if (selection.builtInEmote) {
+      const { thumbnailUrl, previewUrl } = selection.builtInEmote;
+      setState({
+        status: 'ready',
+        source: {
+          kind: 'image',
+          name: selection.name,
+          extension: 'webp',
+          url: previewUrl ?? thumbnailUrl,
+          thumbnail: thumbnailUrl,
         },
       });
       return;

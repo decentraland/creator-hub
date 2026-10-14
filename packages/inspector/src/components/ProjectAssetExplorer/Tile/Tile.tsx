@@ -100,8 +100,8 @@ export const Tile = withContextMenu<Props>(
 
     const handleClick = useCallback(() => {
       if (value?.type !== 'asset') return;
-      select({ source: 'local', id: valueId, name: value.name, path: valueId });
-    }, [select, value, valueId]);
+      select({ source: 'local', id: valueId, name: value.name, path: valueId, builtInEmote });
+    }, [select, value, valueId, builtInEmote]);
 
     if (!value) return null;
 

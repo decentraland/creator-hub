@@ -2,7 +2,14 @@ import React, { createContext, useCallback, useContext, useMemo, useState } from
 import type { Asset, CustomAsset } from '../../lib/logic/catalog';
 
 export type AssetSelection =
-  | { source: 'local'; id: string; name: string; path: string }
+  | {
+      source: 'local';
+      id: string;
+      name: string;
+      path: string;
+      /** Built-in animations are listed in the folder tree but have no file to read. */
+      builtInEmote?: { name: string; thumbnailUrl: string; previewUrl?: string };
+    }
   | { source: 'catalog'; id: string; name: string; asset: Asset }
   | { source: 'custom'; id: string; name: string; asset: CustomAsset };
 

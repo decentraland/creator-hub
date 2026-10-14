@@ -282,3 +282,38 @@
   text-align: center;
   pointer-events: none;
 }
+
+.PreviewPane-info.collapsed {
+  flex: none;
+  overflow: hidden;
+}
+
+.PreviewPane-info.collapsed > :not(h3) {
+  display: none;
+}
+
+.PreviewPane-info.collapsed h3 {
+  margin: 0;
+}
+
+.PreviewPane-infoToggle {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  margin-left: auto;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--neutral-grey-3);
+  font-size: 18px;
+  cursor: pointer;
+}
+
+.PreviewPane-infoToggle:hover {
+  background: var(--base-17);
+  color: var(--white);
+}

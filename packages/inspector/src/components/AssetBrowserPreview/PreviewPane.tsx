@@ -4,6 +4,8 @@ import { AiOutlineSound } from 'react-icons/ai';
 import { FaFile } from 'react-icons/fa';
 import { SiTypescript } from 'react-icons/si';
 import { BsFillLightningChargeFill } from 'react-icons/bs';
+import { MdKeyboardArrowDown, MdKeyboardArrowUp } from 'react-icons/md';
+import cx from 'classnames';
 
 import { isSmart } from '../../lib/logic/catalog';
 import { ModelViewer, type ModelStats } from './ModelViewer';
@@ -142,6 +144,17 @@ function Viewer({
   }
 }
 
+const INFO_OPEN_KEY = 'inspector:preview-info-open';
+
+// The choice outlives the selection: flipping between assets keeps the panel as the user left it.
+function readInfoOpen(): boolean {
+  try {
+    return localStorage.getItem(INFO_OPEN_KEY) !== 'false';
+  } catch {
+    return true;
+  }
+}
+
 function Row({ label, value }: { label: string; value?: React.ReactNode }) {
   if (value === undefined || value === '') return null;
   return (
@@ -157,6 +170,18 @@ function PreviewPane() {
   const state = useAssetPreviewSource(selection);
   const [stats, setStats] = useState<ModelStats | undefined>();
   const [dimensions, setDimensions] = useState<string | undefined>();
+  const [infoOpen, setInfoOpen] = useState(readInfoOpen);
+
+  const toggleInfo = () => {
+    setInfoOpen(open => {
+      try {
+        localStorage.setItem(INFO_OPEN_KEY, String(!open));
+      } catch {
+        // the choice just won't be remembered
+      }
+      return !open;
+    });
+  };
 
   useEffect(() => {
     setStats(undefined);
@@ -195,7 +220,7 @@ function PreviewPane() {
           />
         )}
       </div>
-      <div className="PreviewPane-info">
+      <div className={cx('PreviewPane-info', { collapsed: !infoOpen })}>
         <h3 title={selection.name}>
           {source && <KindIcon kind={source.kind} />}
           <span>{selection.name}</span>
@@ -205,8 +230,18 @@ function PreviewPane() {
               title="Smart item"
             />
           )}
+          <button
+            className="PreviewPane-infoToggle"
+            onClick={toggleInfo}
+            title={infoOpen ? 'Hide details' : 'Show details'}
+            aria-label={infoOpen ? 'Hide details' : 'Show details'}
+            aria-expanded={infoOpen}
+            data-test-id="preview-info-toggle"
+          >
+            {infoOpen ? <MdKeyboardArrowDown /> : <MdKeyboardArrowUp />}
+          </button>
         </h3>
-        {catalogAsset?.description && <p>{catalogAsset.description}</p>}
+        {infoOpen && catalogAsset?.description && <p>{catalogAsset.description}</p>}
         <Row
           label="Type"
           value={source ? KIND_LABEL[source.kind] : undefined}

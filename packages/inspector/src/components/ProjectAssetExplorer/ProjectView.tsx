@@ -88,7 +88,13 @@ function ProjectView({ folders, thumbnails }: Props) {
       if (node?.type === 'asset') {
         // Keep the file's folder in view so its neighbours stay visible, and preview the file.
         setLastSelected(value.includes('/') ? value.slice(0, value.lastIndexOf('/')) : ROOT);
-        select({ source: 'local', id: value, name: node.name, path: value });
+        select({
+          source: 'local',
+          id: value,
+          name: node.name,
+          path: value,
+          builtInEmote: (node as AssetNodeItem).asset.builtInEmote,
+        });
         return;
       }
       setLastSelected(value);
