@@ -2,18 +2,6 @@
   "version": 1,
   "components": [
     {
-      "name": "core::GltfContainer",
-      "data": {
-        "0": {
-          "json": {
-            "src": "{assetPath}/water_plane.glb",
-            "visibleMeshesCollisionMask": 0,
-            "invisibleMeshesCollisionMask": 0
-          }
-        }
-      }
-    },
-    {
       "name": "asset-packs::Script",
       "data": {
         "0": {
@@ -22,7 +10,7 @@
               {
                 "path": "{assetPath}/Water.ts",
                 "priority": 0,
-                "layout": "{\"params\":{\"activatedBy\":{\"type\":\"enum\",\"options\":[\"my player\",\"all players\"],\"optional\":true,\"tooltip\":\"Who makes it splash: 'my player' is just you; 'all players' is any avatar.\",\"value\":\"my player\"},\"surfaceHeight\":{\"type\":\"number\",\"optional\":true,\"value\":0.02,\"tooltip\":\"Height of the water surface above this item's origin, in the model's own size (before scaling).\"},\"depth\":{\"type\":\"number\",\"optional\":true,\"value\":2,\"tooltip\":\"How far below the surface the area reaches, in the model's own size (before scaling).\"},\"splashSize\":{\"type\":\"number\",\"optional\":true,\"value\":1,\"tooltip\":\"Size of the splash effect, in metres.\"},\"sound\":{\"type\":\"string\",\"optional\":true,\"value\":\"splash.mp3\",\"tooltip\":\"Name of an audio file inside this smart item's folder played on each splash. Leave empty for no sound.\"}},\"actions\":[{\"methodName\":\"splash\",\"description\":\"Plays a splash in the middle of the water\",\"params\":{}}],\"events\":[\"enter\",\"exit\"]}"
+                "layout": "{\"params\":{\"activatedBy\":{\"type\":\"enum\",\"options\":[\"my player\",\"all players\"],\"optional\":true,\"tooltip\":\"Who makes it splash: 'my player' is just you; 'all players' is any avatar.\",\"value\":\"my player\"},\"depth\":{\"type\":\"number\",\"optional\":true,\"value\":2,\"tooltip\":\"How far below the surface the area reaches, in metres before scaling. It never reaches past the bottom of a pool.\"},\"splashSize\":{\"type\":\"number\",\"optional\":true,\"value\":1,\"tooltip\":\"Size of the splash effect, in metres.\"},\"sound\":{\"type\":\"string\",\"optional\":true,\"value\":\"splash.mp3\",\"tooltip\":\"Name of an audio file inside this smart item's folder played on each splash. Leave empty for no sound.\"}},\"actions\":[{\"methodName\":\"splash\",\"description\":\"Plays a splash in the middle of the water\",\"params\":{}}],\"events\":[\"enter\",\"exit\"]}"
               }
             ]
           }
@@ -43,6 +31,102 @@
                 "default": true
               }
             ]
+          }
+        }
+      }
+    },
+    {
+      "name": "core::Transform",
+      "data": {
+        "513": {
+          "json": {
+            "position": {
+              "x": 0,
+              "y": 0.02,
+              "z": 0
+            },
+            "rotation": {
+              "x": 0.7071067811865476,
+              "y": 0,
+              "z": 0,
+              "w": 0.7071067811865476
+            },
+            "scale": {
+              "x": 16,
+              "y": 16,
+              "z": 1
+            },
+            "parent": 0
+          }
+        }
+      }
+    },
+    {
+      "name": "core::MeshRenderer",
+      "data": {
+        "513": {
+          "json": {
+            "mesh": {
+              "$case": "plane",
+              "plane": {
+                "uvs": []
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "core::Material",
+      "data": {
+        "513": {
+          "json": {
+            "material": {
+              "$case": "pbr",
+              "pbr": {
+                "albedoColor": {
+                  "r": 0.1765,
+                  "g": 0.4667,
+                  "b": 0.4431,
+                  "a": 0.5333
+                },
+                "metallic": 0.8,
+                "roughness": 0.0001,
+                "transparencyMode": 2,
+                "castShadows": false,
+                "specularIntensity": 1,
+                "directIntensity": 1,
+                "emissiveIntensity": 0,
+                "bumpTexture": {
+                  "tex": {
+                    "$case": "texture",
+                    "texture": {
+                      "src": "{assetPath}/PoolBake_normal.png",
+                      "wrapMode": 0,
+                      "filterMode": 1,
+                      "offset": {
+                        "x": 0,
+                        "y": 0
+                      },
+                      "tiling": {
+                        "x": 1.2,
+                        "y": 1.2
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "core-schema::Name",
+      "data": {
+        "513": {
+          "json": {
+            "value": "Water Surface"
           }
         }
       }

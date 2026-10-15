@@ -34,18 +34,19 @@ export class Water {
   private vertical: Splash[] = [];
   private ring: Splash[] = [];
   private inside = new Set<Entity>();
+  private area: Entity | undefined;
   private subs: Record<string, Array<(arg?: Entity) => void>> = {};
 
   /**
    * Water that splashes when a player jumps or walks into it: a vertical burst of spray, a
    * ring spreading on the surface and a splash sound, at the spot where the player entered.
-   * The trigger area follows this item's Transform, so resize the water with the scale gizmo.
+   * The water surface is a MeshRenderer child of this item; the trigger area tracks that
+   * surface every frame, so scaling either this item or the surface resizes both.
    *
    * @event enter
    * @event exit
    * @param activatedBy - Who makes it splash: only this player, or any player.
-   * @param surfaceHeight - Height of the water surface above this item's origin, in the model's own size (before scaling).
-   * @param depth - How far below the surface the area reaches, in the model's own size (before scaling).
+   * @param depth - How far below the surface the area reaches, in metres before scaling. It never reaches past the bottom of a pool.
    * @param splashSize - Size of the splash effect, in metres.
    * @param sound - Name of an audio file inside this smart item's folder played on each splash. Leave empty for no sound.
    */
@@ -53,7 +54,6 @@ export class Water {
     public src: string, // DO NOT REMOVE
     public entity: Entity, // DO NOT REMOVE
     public activatedBy: 'my player' | 'all players' = 'my player',
-    public surfaceHeight: number = 0.02,
     public depth: number = 2,
     public splashSize: number = 1,
     public sound: string = 'splash.mp3',
@@ -64,12 +64,9 @@ export class Water {
    */
   start() {
     const area = engine.addEntity();
-    // a 1 x 1 x 1 box, scaled in X and Z by this item's own Transform (it is a child)
-    Transform.create(area, {
-      parent: this.entity,
-      position: Vector3.create(0, this.surfaceHeight - this.depth / 2 + 0.25, 0),
-      scale: Vector3.create(this.footprint().x, this.depth + 0.5, this.footprint().z),
-    });
+    Transform.create(area, { parent: this.entity });
+    this.area = area;
+    this.fitArea();
     TriggerArea.setBox(area, ColliderLayer.CL_PLAYER);
     triggerAreaEventsSystem.onTriggerEnter(area, event =>
       this.entered(event.trigger?.entity, event.trigger?.position),
@@ -93,6 +90,7 @@ export class Water {
    * @param dt - Delta time since last frame (in seconds)
    */
   update(dt: number) {
+    this.fitArea();
     for (const s of [...this.vertical, ...this.ring]) {
       if (!s.playing) continue;
       if (s.delay > 0) {
@@ -120,7 +118,7 @@ export class Water {
   public splash() {
     const t = Transform.get(this.entity);
     this.splashAt(
-      Vector3.create(t.position.x, t.position.y + this.surfaceHeight * t.scale.y, t.position.z),
+      Vector3.create(t.position.x, t.position.y + this.surface().top * t.scale.y, t.position.z),
     );
   }
 
@@ -129,9 +127,35 @@ export class Water {
     (this.subs[name] ??= []).push(fn);
   }
 
-  // The plane is 16 x 16 m and the cylinder 8 m wide; read the size from the model name.
-  private footprint() {
-    return this.src.includes('cylinder') ? { x: 8, z: 8 } : { x: 16, z: 16 };
+  // The visible water: the MeshRenderer child of this item, or this item itself. Returns its
+  // centre, footprint, top and height in this item's local space. A plane primitive stands
+  // upright and is laid flat by its rotation, so its Y scale is the length; a cylinder is
+  // 1 tall and centred on its origin.
+  private surface() {
+    let e: Entity = this.entity;
+    for (const [child, t] of engine.getEntitiesWith(Transform, MeshRenderer)) {
+      if (t.parent === this.entity) {
+        e = child;
+        break;
+      }
+    }
+    const t = e === this.entity ? undefined : Transform.getOrNull(e);
+    const s = t ? t.scale : Vector3.One();
+    const p = t ? t.position : Vector3.Zero();
+    const flat = MeshRenderer.getOrNull(e)?.mesh?.$case === 'plane';
+    return flat
+      ? { x: p.x, z: p.z, width: s.x, length: s.y, top: p.y, height: 0 }
+      : { x: p.x, z: p.z, width: s.x, length: s.z, top: p.y + s.y / 2, height: s.y };
+  }
+
+  // Box from `depth` below the surface (never past the bottom of a pool) to 0.5 m above it.
+  private fitArea() {
+    if (this.area === undefined) return;
+    const w = this.surface();
+    const depth = w.height > 0 ? Math.min(this.depth, w.height) : this.depth;
+    const t = Transform.getMutable(this.area);
+    t.position = Vector3.create(w.x, w.top - depth / 2 + 0.25, w.z);
+    t.scale = Vector3.create(w.width, depth + 0.5, w.length);
   }
 
   private entered(raw?: number, at?: { x: number; y: number; z: number }) {
@@ -141,7 +165,7 @@ export class Water {
     if (this.inside.has(who)) return;
     this.inside.add(who);
     const t = Transform.get(this.entity);
-    const surface = t.position.y + this.surfaceHeight * t.scale.y;
+    const surface = t.position.y + this.surface().top * t.scale.y;
     const where = at ?? Transform.get(who).position;
     this.splashAt(Vector3.create(where.x, surface, where.z));
     for (const fn of this.subs.enter ?? []) fn(who);
