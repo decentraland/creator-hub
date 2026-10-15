@@ -12,7 +12,8 @@ export class PistonPlatform {
   /**
    * A platform on five pistons with three positions: fully down, fully up, or stepped
    * into a staircase. Its position is shared with other players.
-   * The model's clips are named <From>To<To>, for example DownToStairs.
+   * The model's transitions are named <From>To<To> (for example DownToStairs), plus a
+   * one-frame hold clip per position.
    *
    * @event down
    * @event up
@@ -37,21 +38,20 @@ export class PistonPlatform {
     }
     const initial = STATES.includes(this.startState) ? this.startState : 'Up';
     const { States } = getComponents(engine);
-    if (!States.getOrNull(this.entity)) {
-      States.create(this.entity, {
-        id: this.entity,
-        value: STATES,
-        defaultValue: initial,
-        currentValue: initial,
-      });
-    }
-    // The model rests fully up; snap to the start position without a sound.
-    this.lastState = 'Up';
-    const current = States.get(this.entity).currentValue ?? initial;
-    if (current !== 'Up') {
-      this.playAnimation(`UpTo${current}`);
-      this.lastState = current;
-    }
+    // Keep a valid synced position (another player already moved it); otherwise start fresh.
+    const synced = States.getOrNull(this.entity)?.currentValue;
+    const current = synced && STATES.includes(synced) ? synced : initial;
+    States.createOrReplace(this.entity, {
+      id: this.entity,
+      value: STATES,
+      defaultValue: initial,
+      currentValue: current,
+    });
+    // Pose the model to match: its rest pose is not guaranteed (an explorer may show the first
+    // clip instead), and the first transition must start from what the player sees. The model
+    // carries a one-frame hold clip per position ('Up', 'Down', 'Stairs').
+    this.playAnimation(current);
+    this.lastState = current;
   }
 
   /**
