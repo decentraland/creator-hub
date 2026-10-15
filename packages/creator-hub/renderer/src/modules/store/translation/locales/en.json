@@ -471,7 +471,8 @@
             "processing": "Publishing...",
             "batches": "Batch {completed} of {total} uploaded",
             "cancel_too_early": "Can't cancel while the previous scenes are being removed. Try again in a moment.",
-            "cancel_unauthorized": "Couldn't cancel the deployment from here. Cancel it from the terminal running the CLI."
+            "cancel_unauthorized": "Couldn't cancel the deployment from here. Cancel it from the terminal running the CLI.",
+            "cancel_unsupported": "Update the SDK of this scene to cancel deployments from here."
           },
           "errors": {
             "details": "Details",

@@ -47,7 +47,7 @@ export const publishScene = createAsyncThunk(
   'editor/publishScene',
   async (opts: DeployOptions, { dispatch, getState }) => {
     const { translation } = getState();
-    const { port, deployToken } = await editor.publishScene({
+    const { port, supportsDeployResource, deployToken } = await editor.publishScene({
       ...opts,
       language: translation.locale,
     });
@@ -56,8 +56,9 @@ export const publishScene = createAsyncThunk(
     const deployment = {
       path: opts.path,
       port,
-      // Main only hands out a token when the CLI it runs serves the deploy resource.
-      supportsDeployResource: !!deployToken,
+      supportsDeployResource,
+      // Main only hands out a token when the CLI it runs takes `--deploy-token`.
+      cancellable: !!deployToken,
       chainId: opts.chainId,
       wallet: opts.wallet,
     };

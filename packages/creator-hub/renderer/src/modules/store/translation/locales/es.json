@@ -470,7 +470,8 @@
             "processing": "Publicando...",
             "batches": "Lote {completed} de {total} subido",
             "cancel_too_early": "No se puede cancelar mientras se eliminan las escenas anteriores. Inténtalo de nuevo en un momento.",
-            "cancel_unauthorized": "No se pudo cancelar la publicación desde aquí. Cancélala desde la terminal que ejecuta el CLI."
+            "cancel_unauthorized": "No se pudo cancelar la publicación desde aquí. Cancélala desde la terminal que ejecuta el CLI.",
+            "cancel_unsupported": "Actualiza el SDK de esta escena para cancelar publicaciones desde aquí."
           },
           "errors": {
             "details": "Detalles",

@@ -22,9 +22,10 @@ export const MAX_POLL_FAILURES = 10;
 // whose actions and states redux-logger prints to the console.
 const deployTokens = new Map<string, string>();
 
+/** Records the token of a new deploy CLI. Main stops the previous one, so its token goes. */
 export function setDeployToken(url: string, token: string | undefined) {
+  deployTokens.clear();
   if (token) deployTokens.set(url, token);
-  else deployTokens.delete(url);
 }
 
 const FINAL_PHASES: DeployPhase[] = ['deployed', 'failed', 'cancelled'];
@@ -232,23 +233,28 @@ export async function deployWithProgress(
   payload: DeployPayload,
   onState: (state: DeployState) => void,
 ): Promise<void> {
-  const started = await startDeployment(url, payload);
-  if (!started) return;
-  onState(started);
+  try {
+    const started = await startDeployment(url, payload);
+    if (!started) return;
+    onState(started);
 
-  const final = isFinalPhase(started.phase)
-    ? started
-    : await followDeployment(url, onState).catch(error => {
-        throw new DeploymentError('DEPLOY_STATE_LOST', getInitialDeploymentStatus(), error);
-      });
-  if (final.phase === 'deployed') return;
-  if (final.phase === 'cancelled') {
-    throw new DeploymentError('DEPLOYMENT_CANCELLED', getInitialDeploymentStatus());
+    const final = isFinalPhase(started.phase)
+      ? started
+      : await followDeployment(url, onState).catch(error => {
+          throw new DeploymentError('DEPLOY_STATE_LOST', getInitialDeploymentStatus(), error);
+        });
+    if (final.phase === 'deployed') return;
+    if (final.phase === 'cancelled') {
+      throw new DeploymentError('DEPLOYMENT_CANCELLED', getInitialDeploymentStatus());
+    }
+    throw createDeployRequestError(final.error?.message ?? 'Deployment failed', {
+      code: final.error?.code,
+      url,
+    });
+  } finally {
+    // The deployment is over (or no longer followed), so there is nothing left to cancel.
+    deployTokens.delete(url);
   }
-  throw createDeployRequestError(final.error?.message ?? 'Deployment failed', {
-    code: final.error?.code,
-    url,
-  });
 }
 
 /** Why the CLI turned a cancellation down. */

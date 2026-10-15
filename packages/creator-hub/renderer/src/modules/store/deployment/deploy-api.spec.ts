@@ -599,4 +599,44 @@ describe('requestDeploymentCancel', () => {
       expect((error as Error).message).toBe('Failed to cancel the deployment: HTTP 500');
     });
   });
+
+  describe('when the deployment of that CLI already ended', () => {
+    beforeEach(async () => {
+      setDeployToken(URL, 'token-example-123');
+      mockServer({
+        POST: [() => jsonResponse(202, uploading(0))],
+        'GET text/event-stream': [() => sseResponse([sseEvent(state('cancelled'))])],
+        DELETE: [() => jsonResponse(409, state('cancelled'))],
+      });
+      await deployWithProgress(URL, PAYLOAD, vi.fn()).catch(() => undefined);
+      await run();
+    });
+
+    it('should no longer send its token', () => {
+      expect(fetchMock).toHaveBeenLastCalledWith(`${URL}/deploy`, {
+        method: 'delete',
+        headers: undefined,
+      });
+    });
+  });
+
+  describe('when another deploy CLI started after it', () => {
+    beforeEach(async () => {
+      setDeployToken(URL, 'token-example-123');
+      setDeployToken('http://localhost:4001/api', 'token-example-456');
+      mockServer({ DELETE: [() => jsonResponse(403, {})] });
+      await run();
+    });
+
+    afterEach(() => {
+      setDeployToken(URL, undefined);
+    });
+
+    it('should no longer send the token of the stopped CLI', () => {
+      expect(fetchMock).toHaveBeenCalledWith(`${URL}/deploy`, {
+        method: 'delete',
+        headers: undefined,
+      });
+    });
+  });
 });

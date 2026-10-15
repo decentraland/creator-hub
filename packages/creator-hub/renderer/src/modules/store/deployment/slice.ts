@@ -67,8 +67,10 @@ export interface Deployment {
   status: DeploymentStatus;
   error?: { name: ErrorName; message: string; cause?: string };
   componentsStatus: DeploymentComponentsStatus;
-  /** Whether the CLI serving `url` reports progress and can cancel (`/api/deploy` resource). */
+  /** Whether the CLI serving `url` reports progress (`/api/deploy` resource). */
   supportsDeployResource: boolean;
+  /** Whether the app holds the token the CLI requires to cancel the deployment. */
+  cancellable: boolean;
   phase?: DeployPhase;
   upload?: DeployUpload | null;
   cancelRequested?: boolean;
@@ -85,6 +87,7 @@ interface InitializeDeploymentPayload {
   path: string;
   port: number;
   supportsDeployResource?: boolean;
+  cancellable?: boolean;
   wallet: string;
   chainId: ChainId;
 }
@@ -124,6 +127,7 @@ export const initializeDeployment = createAsyncThunk(
       info,
       files,
       supportsDeployResource: !!payload.supportsDeployResource,
+      cancellable: !!payload.cancellable,
     };
   },
 );
@@ -137,7 +141,7 @@ const updateDeploymentTarget = createAsyncThunk(
     const { path, target, chainId, wallet } = payload;
     const { translation } = getState();
 
-    const { port, deployToken } = await editor.publishScene({
+    const { port, supportsDeployResource, deployToken } = await editor.publishScene({
       target,
       path,
       chainId,
@@ -153,7 +157,7 @@ const updateDeploymentTarget = createAsyncThunk(
     setDeployToken(url, deployToken);
     const [info, files] = await Promise.all([fetchInfo(url), fetchFiles(url)]);
 
-    return { path, url, info, files, supportsDeployResource: !!deployToken };
+    return { path, url, info, files, supportsDeployResource, cancellable: !!deployToken };
   },
 );
 
@@ -421,7 +425,8 @@ const deploymentSlice = createSlice({
   extraReducers: builder => {
     builder
       .addCase(initializeDeployment.fulfilled, (state, action) => {
-        const { path, url, info, wallet, chainId, files, supportsDeployResource } = action.payload;
+        const { path, url, info, wallet, chainId, files, supportsDeployResource, cancellable } =
+          action.payload;
         const existingDeployment = state.deployments[path];
 
         // Move the existing deployment to history before creating the new one, unless the
@@ -446,12 +451,13 @@ const deploymentSlice = createSlice({
           status: 'idle',
           componentsStatus: getInitialDeploymentStatus(),
           supportsDeployResource,
+          cancellable,
           createdAt: timestamp,
           lastUpdated: timestamp,
         };
       })
       .addCase(updateDeploymentTarget.fulfilled, (state, action) => {
-        const { path, url, info, files, supportsDeployResource } = action.payload;
+        const { path, url, info, files, supportsDeployResource, cancellable } = action.payload;
         const deployment = state.deployments[path];
         // we are preserving componentsStatus, status, and error
         if (deployment) {
@@ -459,6 +465,7 @@ const deploymentSlice = createSlice({
           deployment.info = info;
           deployment.files = files;
           deployment.supportsDeployResource = supportsDeployResource;
+          deployment.cancellable = cancellable;
           deployment.phase = undefined;
           deployment.upload = null;
           deployment.cancelRequested = false;
@@ -481,6 +488,7 @@ const deploymentSlice = createSlice({
           error: buildError(action),
           componentsStatus: getInitialDeploymentStatus(),
           supportsDeployResource: false,
+          cancellable: false,
           createdAt: existingDeployment?.createdAt ?? timestamp,
           lastUpdated: timestamp,
         };

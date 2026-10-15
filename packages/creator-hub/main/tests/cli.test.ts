@@ -49,6 +49,7 @@ import {
   start,
   supportsAssetBundles,
   supportsDeployResource,
+  supportsDeployToken,
   deploy,
 } from '../src/modules/cli';
 
@@ -887,6 +888,53 @@ describe('supportsDeployResource', () => {
   });
 });
 
+describe('supportsDeployToken', () => {
+  let files: Record<string, string>;
+  let result: boolean;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    files = {};
+    mocks.readFile.mockImplementation(async (file: string) => {
+      const name = Object.keys(files).find(suffix => file.endsWith(suffix));
+      if (name === undefined) throw new Error('ENOENT');
+      return files[name];
+    });
+  });
+
+  describe('when the deploy command declares the flag', () => {
+    beforeEach(async () => {
+      files['deploy/index.js'] = "const args = { '--deploy-token': String }";
+      result = await supportsDeployToken(`/scenes/scene-${++sceneCount}`);
+    });
+
+    it('should report the flag as supported', () => {
+      expect(result).toBe(true);
+    });
+  });
+
+  describe('when the deploy command does not declare the flag', () => {
+    beforeEach(async () => {
+      files['deploy/index.js'] = '--help: Prefer: respond-async';
+      result = await supportsDeployToken(`/scenes/scene-${++sceneCount}`);
+    });
+
+    it('should report the flag as unsupported', () => {
+      expect(result).toBe(false);
+    });
+  });
+
+  describe('when the sdk is not installed', () => {
+    beforeEach(async () => {
+      result = await supportsDeployToken(`/scenes/scene-${++sceneCount}`);
+    });
+
+    it('should report the flag as unsupported', () => {
+      expect(result).toBe(false);
+    });
+  });
+});
+
 describe('deploy', () => {
   let files: Record<string, string>;
   let result: Awaited<ReturnType<typeof deploy>>;
@@ -922,10 +970,16 @@ describe('deploy', () => {
     args = mocks.runSdkCommand.mock.calls[0][2];
   };
 
-  describe('when the CLI serves the deploy resource', () => {
+  describe('when the CLI serves the deploy resource and takes a deploy token', () => {
     beforeEach(async () => {
+      files['deploy/index.js'] =
+        "const args = { '--programmatic': Boolean, '--deploy-token': String }";
       files['deploy/routes.js'] = "router.delete('/api/deploy')";
       await run();
+    });
+
+    it('should report the deploy resource as supported', () => {
+      expect(result.supportsDeployResource).toBe(true);
     });
 
     it('should hand out a token for the deployment', () => {
@@ -944,13 +998,28 @@ describe('deploy', () => {
     });
   });
 
+  describe('when the CLI serves the deploy resource but takes no deploy token', () => {
+    beforeEach(async () => {
+      files['deploy/routes.js'] = "router.delete('/api/deploy')";
+      await run();
+    });
+
+    it('should report the deploy resource as supported without a token', () => {
+      expect(result).toEqual({ port: 4000, supportsDeployResource: true, deployToken: undefined });
+    });
+
+    it('should not pass a token to the CLI', () => {
+      expect(args).not.toContain('--deploy-token');
+    });
+  });
+
   describe('when the CLI predates the deploy resource', () => {
     beforeEach(async () => {
       await run();
     });
 
     it('should not hand out a token', () => {
-      expect(result).toEqual({ port: 4000, deployToken: undefined });
+      expect(result).toEqual({ port: 4000, supportsDeployResource: false, deployToken: undefined });
     });
 
     it('should not pass a token to the CLI', () => {

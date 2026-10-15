@@ -120,7 +120,10 @@ describe('deployment slice', () => {
     // Reset fetchInfo mock because some tests override it with mockRejectedValue
     // and those overrides persist across tests even after vi.clearAllMocks()
     vi.mocked(fetchInfo).mockResolvedValue(TEST_SCENE_INFO);
-    vi.mocked(editor.publishScene).mockResolvedValue({ port: TEST_PORT });
+    vi.mocked(editor.publishScene).mockResolvedValue({
+      port: TEST_PORT,
+      supportsDeployResource: false,
+    });
   });
 
   afterEach(() => {
@@ -923,6 +926,7 @@ describe('deployment slice', () => {
         vi.mocked(deploy).mockRejectedValue(new Error('Failed'));
         vi.mocked(editor.publishScene).mockResolvedValue({
           port: TEST_PORT + 1,
+          supportsDeployResource: true,
           deployToken: 'token-example-123',
         });
         vi.mocked(isDeployResourceAvailable).mockResolvedValue(true);
@@ -947,6 +951,10 @@ describe('deployment slice', () => {
           `http://localhost:${TEST_PORT + 1}/api`,
           'token-example-123',
         );
+      });
+
+      it('should flag the deployment on the new CLI as cancellable', () => {
+        expect(store.getState().deployment.deployments[TEST_PATH]?.cancellable).toBe(true);
       });
     });
 

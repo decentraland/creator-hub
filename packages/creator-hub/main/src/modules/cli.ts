@@ -671,6 +671,13 @@ export async function supportsDeployResource(path: string): Promise<boolean> {
   }
 }
 
+// `arg` rejects unknown flags, so only pass `--deploy-token` to a CLI whose deploy command
+// declares it; the token arrived after the deploy resource itself.
+export async function supportsDeployToken(path: string): Promise<boolean> {
+  const file = await readDeployCommandFile(path).catch(() => '');
+  return file.includes("'--deploy-token'");
+}
+
 async function getComponents(path: string) {
   const filePath = join(path, 'node_modules', '@dcl/sdk-commands/dist/components/index.js');
   const { initComponents } = await dynamicImport(filePath);
@@ -700,13 +707,18 @@ export async function deploy({
   const isLegacyDeploy = await shouldRunLegacyDeploy(path);
   if (isLegacyDeploy) {
     log.info('[CLI] Running legacy deploy');
-    return { port: await legacyDeploy({ path, target, targetContent, chainId, wallet }) };
+    return {
+      port: await legacyDeploy({ path, target, targetContent, chainId, wallet }),
+      supportsDeployResource: false,
+    };
   }
 
   const port = await getAvailablePort();
   const multiScene = await supportsMultiSceneDeploy(path);
+  const deployResource = await supportsDeployResource(path);
   // Only the holder of this token may cancel the deployment through the CLI's HTTP API.
-  const deployToken = (await supportsDeployResource(path)) ? randomUUID() : undefined;
+  const deployToken =
+    deployResource && (await supportsDeployToken(path)) ? randomUUID() : undefined;
 
   const { stop } = await runCommand(path, 'deploy', [
     '--dir',
@@ -725,5 +737,5 @@ export async function deploy({
 
   deployServer = { stop };
 
-  return { port, deployToken };
+  return { port, supportsDeployResource: deployResource, deployToken };
 }

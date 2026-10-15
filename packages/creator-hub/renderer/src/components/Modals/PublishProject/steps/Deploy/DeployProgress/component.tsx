@@ -12,7 +12,9 @@ type Props = {
   upload?: DeployUpload | null;
   canCancel: boolean;
   cancelling: boolean;
-  /** Why the last cancel request was turned down. */
+  /** Shows the cancel button without allowing it, as the CLI would turn the request down. */
+  cancelDisabled?: boolean;
+  /** Why cancelling is not possible, or why the last cancel request was turned down. */
   cancelNotice?: string;
   onCancel: () => void;
 };
@@ -35,7 +37,14 @@ function getMessage(upload: DeployUpload) {
   }
 }
 
-export function DeployProgress({ upload, canCancel, cancelling, cancelNotice, onCancel }: Props) {
+export function DeployProgress({
+  upload,
+  canCancel,
+  cancelling,
+  cancelDisabled,
+  cancelNotice,
+  onCancel,
+}: Props) {
   if (!upload && !canCancel) return null;
 
   const determinate = upload?.stage === 'uploading' && upload.totalBytes > 0;
@@ -76,7 +85,7 @@ export function DeployProgress({ upload, canCancel, cancelling, cancelNotice, on
             size="medium"
             variant="outlined"
             color="secondary"
-            disabled={cancelling}
+            disabled={cancelling || cancelDisabled}
             onClick={onCancel}
           >
             {cancelling

@@ -194,6 +194,7 @@ describe('editor slice publish', () => {
     beforeEach(async () => {
       vi.mocked(editor.publishScene).mockResolvedValue({
         port: 4100,
+        supportsDeployResource: true,
         deployToken: 'token-example-123',
       });
       await publish();
@@ -207,14 +208,39 @@ describe('editor slice publish', () => {
       expect(store.getState().deployment.deployments[TEST_PATH]?.supportsDeployResource).toBe(true);
     });
 
+    it('should flag the deployment as cancellable', () => {
+      expect(store.getState().deployment.deployments[TEST_PATH]?.cancellable).toBe(true);
+    });
+
     it('should keep the token out of the store', () => {
       expect(JSON.stringify(store.getState())).not.toContain('token-example-123');
     });
   });
 
+  describe('when the CLI serves the deploy resource but takes no deploy token', () => {
+    beforeEach(async () => {
+      vi.mocked(editor.publishScene).mockResolvedValue({
+        port: 4100,
+        supportsDeployResource: true,
+      });
+      await publish();
+    });
+
+    it('should flag the deployment as supporting the deploy resource', () => {
+      expect(store.getState().deployment.deployments[TEST_PATH]?.supportsDeployResource).toBe(true);
+    });
+
+    it('should flag the deployment as not cancellable', () => {
+      expect(store.getState().deployment.deployments[TEST_PATH]?.cancellable).toBe(false);
+    });
+  });
+
   describe('when the CLI predates the deploy resource', () => {
     beforeEach(async () => {
-      vi.mocked(editor.publishScene).mockResolvedValue({ port: 4100 });
+      vi.mocked(editor.publishScene).mockResolvedValue({
+        port: 4100,
+        supportsDeployResource: false,
+      });
       await publish();
     });
 

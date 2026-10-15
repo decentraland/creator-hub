@@ -61,6 +61,7 @@ const createDeployment = (overrides: Partial<Deployment> = {}): Deployment => ({
   status: 'pending',
   componentsStatus: { catalyst: 'pending', assetBundle: 'idle' },
   supportsDeployResource: true,
+  cancellable: true,
   phase: 'uploading',
   upload: null,
   createdAt: 0,
@@ -152,6 +153,26 @@ describe('Deploy step', () => {
         name: 'modal.publish_project.deploy.deploying.actions.cancelling',
       }) as HTMLButtonElement;
       expect(button.disabled).toBe(true);
+    });
+  });
+
+  describe('when the CLI follows the deployment but takes no deploy token', () => {
+    beforeEach(() => {
+      hooks.deployment = createDeployment({ cancellable: false });
+      mount();
+    });
+
+    it('should not allow cancelling', () => {
+      const button = screen.getByRole('button', {
+        name: 'modal.publish_project.deploy.deploying.actions.cancel',
+      }) as HTMLButtonElement;
+      expect(button.disabled).toBe(true);
+    });
+
+    it('should explain how to enable cancelling', () => {
+      expect(screen.getByRole('status').textContent).toBe(
+        'modal.publish_project.deploy.deploying.progress.cancel_unsupported',
+      );
     });
   });
 

@@ -146,11 +146,13 @@ export function Deploy(props: Props) {
     setCancelRejection(null);
   }, [deployment?.id]);
 
-  const cancelNotice = cancelRejection
-    ? cancelRejection === 'too-early'
-      ? t('modal.publish_project.deploy.deploying.progress.cancel_too_early')
-      : t('modal.publish_project.deploy.deploying.progress.cancel_unauthorized')
-    : undefined;
+  const cancelNotice = !deployment?.cancellable
+    ? t('modal.publish_project.deploy.deploying.progress.cancel_unsupported')
+    : cancelRejection
+      ? cancelRejection === 'too-early'
+        ? t('modal.publish_project.deploy.deploying.progress.cancel_too_early')
+        : t('modal.publish_project.deploy.deploying.progress.cancel_unauthorized')
+      : undefined;
 
   // A cancelled deployment leaves the CLI unable to deploy again, so leave this step: the
   // previous step starts a fresh one. Only on the transition, as a deployment cancelled
@@ -361,6 +363,7 @@ export function Deploy(props: Props) {
                       upload={deployment.upload}
                       canCancel={canCancel}
                       cancelling={cancelling || !!deployment.cancelRequested}
+                      cancelDisabled={!deployment.cancellable}
                       cancelNotice={cancelNotice}
                       onCancel={handleCancel}
                     />
