@@ -282,6 +282,8 @@ export type WorldParcelsResponse = {
 
 const WORLD_CONTENT_SERVER_URL = config.get('WORLDS_CONTENT_SERVER_URL');
 
+export const WORLD_LIMITS_TIMEOUT_MS = 5000;
+
 export class Worlds {
   private url = WORLD_CONTENT_SERVER_URL;
 
@@ -444,10 +446,15 @@ export class Worlds {
     const query = new URLSearchParams(parcels.map(parcel => ['parcels', parcel]));
     const sentryContext = {
       tags: { source: 'worlds', event: 'fetch-world-limits' },
-      extra: { worldName, parcels },
+      extra: { worldName, parcelCount: parcels.length },
     };
+    // Publish waits for this request, so a server that never answers must not block it.
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), WORLD_LIMITS_TIMEOUT_MS);
     try {
-      const result = await fetch(`${this.url}/world/${encodedWorldName}/limits?${query}`);
+      const result = await fetch(`${this.url}/world/${encodedWorldName}/limits?${query}`, {
+        signal: controller.signal,
+      });
       if (!result.ok) {
         await result.body?.cancel().catch(() => undefined);
         // 404 is expected: a server without the endpoint, or a name the server won't deploy to.
@@ -459,7 +466,15 @@ export class Worlds {
         }
         return null;
       }
-      const { maxSceneSizeInBytes } = await result.json();
+      let body: { maxSceneSizeInBytes?: unknown } | null;
+      try {
+        body = await result.json();
+      } catch (error) {
+        // A timed-out body read is not a malformed response.
+        if (!controller.signal.aborted) captureException(error, sentryContext);
+        return null;
+      }
+      const maxSceneSizeInBytes = body?.maxSceneSizeInBytes;
       if (typeof maxSceneSizeInBytes !== 'string' || !/^\d+$/.test(maxSceneSizeInBytes)) {
         captureException(new Error('Invalid world limits response'), {
           ...sentryContext,
@@ -471,6 +486,8 @@ export class Worlds {
     } catch (error) {
       console.warn('Failed to fetch world limits', error);
       return null;
+    } finally {
+      clearTimeout(timeout);
     }
   };
 

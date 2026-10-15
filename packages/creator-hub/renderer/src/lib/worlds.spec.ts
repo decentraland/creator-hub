@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { WorldLimits } from './worlds';
 
@@ -19,7 +19,14 @@ vi.mock('decentraland-crypto-fetch', () => ({
   default: (...args: unknown[]) => fetchMock(...args),
 }));
 
-const { Worlds } = await import('./worlds');
+const { Worlds, WORLD_LIMITS_TIMEOUT_MS } = await import('./worlds');
+
+/** A promise that only settles by rejecting once the signal aborts, like a request to a hung server. */
+function untilAborted(signal: AbortSignal) {
+  return new Promise<never>((_, reject) => {
+    signal.addEventListener('abort', () => reject(signal.reason));
+  });
+}
 
 describe('Worlds.fetchWorldLimits', () => {
   let limits: WorldLimits | null;
@@ -41,6 +48,7 @@ describe('Worlds.fetchWorldLimits', () => {
     it('should ask for the encoded world with one parcels param per parcel', () => {
       expect(fetchMock).toHaveBeenCalledWith(
         `${WORLDS_SERVER}/world/my%20name.dcl.eth/limits?parcels=0%2C0&parcels=-1%2C2`,
+        { signal: expect.any(AbortSignal) },
       );
     });
 
@@ -88,11 +96,11 @@ describe('Worlds.fetchWorldLimits', () => {
       expect(cancelBody).toHaveBeenCalled();
     });
 
-    it('should report the status', () => {
-      expect(captureExceptionMock).toHaveBeenCalledWith(
-        expect.any(Error),
-        expect.objectContaining({ extra: expect.objectContaining({ status: 400 }) }),
-      );
+    it('should report the status with the number of parcels, not the parcels', () => {
+      expect(captureExceptionMock).toHaveBeenCalledWith(expect.any(Error), {
+        tags: { source: 'worlds', event: 'fetch-world-limits' },
+        extra: { worldName: 'name.dcl.eth', parcelCount: 1, status: 400 },
+      });
     });
   });
 
@@ -116,6 +124,89 @@ describe('Worlds.fetchWorldLimits', () => {
           extra: expect.objectContaining({ maxSceneSizeInBytes: 'unlimited' }),
         }),
       );
+    });
+  });
+
+  describe('when the server answers with a body that is not JSON', () => {
+    let parseError: SyntaxError;
+
+    beforeEach(async () => {
+      parseError = new SyntaxError('Unexpected token < in JSON at position 0');
+      fetchMock.mockResolvedValueOnce({ ok: true, json: () => Promise.reject(parseError) });
+      limits = await new Worlds().fetchWorldLimits('name.dcl.eth', ['0,0', '0,1']);
+    });
+
+    it('should return null', () => {
+      expect(limits).toBeNull();
+    });
+
+    it('should report the parse failure with the number of parcels, not the parcels', () => {
+      expect(captureExceptionMock).toHaveBeenCalledWith(parseError, {
+        tags: { source: 'worlds', event: 'fetch-world-limits' },
+        extra: { worldName: 'name.dcl.eth', parcelCount: 2 },
+      });
+    });
+  });
+
+  describe('when the server never answers', () => {
+    let request: Promise<WorldLimits | null>;
+
+    beforeEach(() => {
+      vi.useFakeTimers();
+      fetchMock.mockImplementationOnce((_url: string, init: { signal: AbortSignal }) =>
+        untilAborted(init.signal),
+      );
+      request = new Worlds().fetchWorldLimits('name.dcl.eth', ['0,0']);
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    describe('and the timeout elapses', () => {
+      beforeEach(async () => {
+        await vi.advanceTimersByTimeAsync(WORLD_LIMITS_TIMEOUT_MS);
+        limits = await request;
+      });
+
+      it('should give up and return null', () => {
+        expect(limits).toBeNull();
+      });
+
+      it('should not report the timeout as an error', () => {
+        expect(captureExceptionMock).not.toHaveBeenCalled();
+      });
+    });
+  });
+
+  describe('when the server stops sending the body', () => {
+    let request: Promise<WorldLimits | null>;
+
+    beforeEach(() => {
+      vi.useFakeTimers();
+      fetchMock.mockImplementationOnce((_url: string, init: { signal: AbortSignal }) =>
+        Promise.resolve({ ok: true, json: () => untilAborted(init.signal) }),
+      );
+      request = new Worlds().fetchWorldLimits('name.dcl.eth', ['0,0']);
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    describe('and the timeout elapses', () => {
+      beforeEach(async () => {
+        await vi.advanceTimersByTimeAsync(WORLD_LIMITS_TIMEOUT_MS);
+        limits = await request;
+      });
+
+      it('should give up and return null', () => {
+        expect(limits).toBeNull();
+      });
+
+      it('should not report the timeout as a malformed response', () => {
+        expect(captureExceptionMock).not.toHaveBeenCalled();
+      });
     });
   });
 

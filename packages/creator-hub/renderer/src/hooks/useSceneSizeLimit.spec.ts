@@ -1,11 +1,17 @@
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { WORLD_LIMITS_TIMEOUT_MS } from '/@/lib/worlds';
 import type * as DeploymentUtils from '/@/modules/store/deployment/utils';
 
 import { type SceneSizeLimit, useSceneSizeLimit } from './useSceneSizeLimit';
 
 const fetchWorldSceneSizeLimitMock = vi.fn();
+const cryptoFetchMock = vi.fn();
+
+vi.mock('decentraland-crypto-fetch', () => ({
+  default: (...args: unknown[]) => cryptoFetchMock(...args),
+}));
 
 vi.mock('/@/modules/store/deployment/utils', async importOriginal => ({
   ...(await importOriginal<typeof DeploymentUtils>()),
@@ -187,6 +193,45 @@ describe('useSceneSizeLimit', () => {
       it('should ignore the response', () => {
         expect(consoleError).not.toHaveBeenCalled();
         expect(result.current).toEqual({ limit: null, isLoading: true });
+      });
+    });
+  });
+
+  describe('when publishing to a world whose server never answers', () => {
+    let consoleWarn: ReturnType<typeof vi.spyOn>;
+
+    beforeEach(async () => {
+      vi.useFakeTimers();
+      consoleWarn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+      const { fetchWorldSceneSizeLimit } = await vi.importActual<typeof DeploymentUtils>(
+        '/@/modules/store/deployment/utils',
+      );
+      fetchWorldSceneSizeLimitMock.mockImplementationOnce(fetchWorldSceneSizeLimit);
+      cryptoFetchMock.mockImplementationOnce(
+        (_url: string, init: { signal: AbortSignal }) =>
+          new Promise((_, reject) => {
+            init.signal.addEventListener('abort', () => reject(init.signal.reason));
+          }),
+      );
+      renderWith({ isWorld: true, worldName: 'name.dcl.eth', parcels: ['0,0'] });
+    });
+
+    afterEach(() => {
+      consoleWarn.mockRestore();
+      vi.useRealTimers();
+    });
+
+    it('should report the limit as loading before the timeout', () => {
+      expect(result.current).toEqual({ limit: null, isLoading: true });
+    });
+
+    describe('and the timeout elapses', () => {
+      beforeEach(async () => {
+        await act(() => vi.advanceTimersByTimeAsync(WORLD_LIMITS_TIMEOUT_MS));
+      });
+
+      it('should stop loading and report no limit, so publishing is not blocked', () => {
+        expect(result.current).toEqual({ limit: null, isLoading: false });
       });
     });
   });
