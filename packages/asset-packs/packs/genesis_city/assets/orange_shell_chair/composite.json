@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core::GltfContainer",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/orange_shell_chair/orange_shell_chair.glb"
+          }
+        }
+      }
+    }
+  ]
+}

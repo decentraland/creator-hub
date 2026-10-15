@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core::GltfContainer",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/shell_lamp_post/shell_lamp_post.glb"
+          }
+        }
+      }
+    }
+  ]
+}
