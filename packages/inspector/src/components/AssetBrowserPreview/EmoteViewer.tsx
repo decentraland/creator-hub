@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { MdPause, MdPlayArrow, MdRepeat } from 'react-icons/md';
-import { PreviewEmote } from '@dcl/schemas';
+import { PreviewEmote, PreviewEmoteEventType } from '@dcl/schemas';
 import { WearablePreview } from 'decentraland-ui';
 import { toEmoteWithBlobs } from '../AssetPreview/utils';
 
@@ -57,85 +57,98 @@ export function EmoteViewer({ file, previewEmote }: Props) {
   const controller = useRef<ReturnType<typeof WearablePreview.createController>>();
   const loopRef = useRef(loop);
   loopRef.current = loop;
-  // The preview never reports where the playhead is, so it is tracked from the play/pause events.
-  const clock = useRef({ base: 0, startedAt: 0 });
+  const lengthRef = useRef(0);
+  // The preview reports its exact playhead while playing; it is read once per frame, not per event.
+  const timeRef = useRef(0);
 
-  const startClock = useCallback((from: number) => {
-    clock.current = { base: from, startedAt: performance.now() };
+  const updateLength = useCallback((seconds: number) => {
+    lengthRef.current = seconds;
+    setLength(seconds);
   }, []);
 
   const handleLoad = useCallback(async () => {
     setLoaded(true);
     try {
       controller.current = WearablePreview.createController(id);
-      setLength(await controller.current.emote.getLength());
+      updateLength(await controller.current.emote.getLength());
+      setPlaying(await controller.current.emote.isPlaying());
     } catch (error) {
       // No timeline if the preview can't be controlled; the avatar still plays.
       console.warn('Could not control the emote preview:', error);
     }
-  }, [id]);
+  }, [id, updateLength]);
 
-  // The preview's play/pause events don't reliably reach us, so ask it a few times a second and
-  // keep our own playhead clock in between. Reaching the end of the clip is also detected here,
-  // which is what makes looping possible without reloading the avatar.
+  // Listen to the preview's own events: they carry the playhead and tell us when a clip ends.
   useEffect(() => {
-    if (!loaded || !length) return;
+    if (!loaded) return;
+    const iframe = document.getElementById(id) as HTMLIFrameElement | null;
+    const emote = controller.current?.emote;
     let cancelled = false;
-    let busy = false;
-    let wasPlaying = false;
+    let restartTimer: ReturnType<typeof setTimeout> | undefined;
 
-    const poll = async () => {
-      const emote = controller.current?.emote;
-      if (!emote || busy) return;
-      busy = true;
-      try {
-        const nowPlaying = await emote.isPlaying();
-        if (cancelled) return;
-        const clockNow = clock.current;
-        const elapsed = (performance.now() - clockNow.startedAt) / 1000;
-        if (nowPlaying && !wasPlaying) clockNow.startedAt = performance.now();
-        if (!nowPlaying && wasPlaying) {
-          const reached = Math.min(length, clockNow.base + elapsed);
-          clockNow.base = reached;
-          // Stopped on its own at the end of the clip (not paused by the user): loop it. The
-          // restart has to wait for the preview to finish stopping, or it would undo the restart.
-          if (loopRef.current && reached >= length - 0.5) {
-            clockNow.base = 0;
+    // The preview is still winding down when it reports the end, so give it a moment, restart,
+    // and check it took; seeking back first is the fallback if a bare play() didn't.
+    const restart = () => {
+      clearTimeout(restartTimer);
+      restartTimer = setTimeout(async () => {
+        if (cancelled || !emote || !loopRef.current) return;
+        try {
+          await emote.play();
+          await new Promise(resolve => setTimeout(resolve, 400));
+          if (!cancelled && !(await emote.isPlaying())) {
             await emote.goTo(0);
             await emote.play();
-            clockNow.startedAt = performance.now();
-            wasPlaying = true;
-            setPlaying(true);
-            return;
           }
+        } catch (error) {
+          console.warn('Could not loop the animation:', error);
         }
-        wasPlaying = nowPlaying;
-        setPlaying(nowPlaying);
-      } catch (error) {
-        console.warn('Could not read the emote state:', error);
-      } finally {
-        busy = false;
+      }, 150);
+    };
+
+    const onMessage = (event: MessageEvent) => {
+      if (event.source !== iframe?.contentWindow || event.data?.type !== 'emote_event') return;
+      const { type, payload } = event.data.payload ?? {};
+      switch (type) {
+        case PreviewEmoteEventType.ANIMATION_PLAYING:
+          if (typeof payload?.length === 'number') timeRef.current = payload.length;
+          break;
+        case PreviewEmoteEventType.ANIMATION_PLAY:
+          setPlaying(true);
+          void emote?.getLength().then(seconds => !cancelled && updateLength(seconds));
+          break;
+        case PreviewEmoteEventType.ANIMATION_PAUSE:
+          setPlaying(false);
+          setTime(timeRef.current);
+          break;
+        case PreviewEmoteEventType.ANIMATION_END: {
+          setPlaying(false);
+          // A stop the user asked for also ends the clip; only a clip that ran out loops.
+          const ranOut = timeRef.current >= lengthRef.current - 0.25;
+          setTime(ranOut ? lengthRef.current : timeRef.current);
+          if (ranOut && loopRef.current) restart();
+          break;
+        }
       }
     };
 
-    const timer = setInterval(poll, 200);
+    window.addEventListener('message', onMessage);
     return () => {
       cancelled = true;
-      clearInterval(timer);
+      clearTimeout(restartTimer);
+      window.removeEventListener('message', onMessage);
     };
-  }, [loaded, length]);
+  }, [loaded, id, updateLength]);
 
   useEffect(() => {
-    if (!playing || !length) return;
+    if (!playing) return;
     let frame = 0;
     const tick = () => {
-      const elapsed = (performance.now() - clock.current.startedAt) / 1000;
-      setTime(Math.min(length, clock.current.base + elapsed));
+      setTime(timeRef.current);
       frame = requestAnimationFrame(tick);
     };
     frame = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(frame);
-  }, [playing, length]);
+  }, [playing]);
 
   const togglePlay = async () => {
     const emote = controller.current?.emote;
@@ -143,18 +156,19 @@ export function EmoteViewer({ file, previewEmote }: Props) {
     if (playing) {
       await emote.pause();
     } else {
-      if (time >= length) {
-        startClock(0);
-        await emote.goTo(0);
-      }
+      // Seeking back first leaves an ended clip unable to play; a bare play() restarts it.
       await emote.play();
     }
   };
 
   const scrub = async (seconds: number) => {
+    const emote = controller.current?.emote;
+    timeRef.current = seconds;
     setTime(seconds);
-    startClock(seconds);
-    await controller.current?.emote.goTo(seconds);
+    if (!emote) return;
+    const wasPlaying = playing;
+    await emote.goTo(seconds);
+    if (wasPlaying) await emote.play();
   };
 
   const toggleLoop = () => {
@@ -176,6 +190,7 @@ export function EmoteViewer({ file, previewEmote }: Props) {
         emote={previewEmote}
         profile="default"
         disableBackground
+        disableAutoRotate
         wheelZoom={2}
         onLoad={handleLoad}
       />
@@ -195,13 +210,15 @@ export function EmoteViewer({ file, previewEmote }: Props) {
             min={0}
             max={length}
             step={0.01}
-            value={time}
+            value={Math.min(time, length)}
             onChange={event => scrub(Number(event.target.value))}
             aria-label="Animation position"
-            style={{ '--progress': `${(time / length) * 100}%` } as React.CSSProperties}
+            style={
+              { '--progress': `${(Math.min(time, length) / length) * 100}%` } as React.CSSProperties
+            }
           />
           <span className="EmoteViewer-time">
-            {formatSeconds(time)} / {formatSeconds(length)}
+            {formatSeconds(Math.min(time, length))} / {formatSeconds(length)}
           </span>
           <button
             className={loop ? 'active' : ''}
