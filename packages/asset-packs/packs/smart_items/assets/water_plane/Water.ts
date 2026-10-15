@@ -4,22 +4,31 @@ import {
   Billboard,
   BillboardMode,
   ColliderLayer,
+  EasingFunction,
   engine,
   Material,
   MaterialTransparencyMode,
   MeshRenderer,
+  TextureMovementType,
   Transform,
   TriggerArea,
   triggerAreaEventsSystem,
+  Tween,
+  TweenLoop,
+  TweenSequence,
   VisibilityComponent,
 } from '@dcl/sdk/ecs';
-import { Color4, Quaternion, Vector3 } from '@dcl/sdk/math';
+import { Color4, Quaternion, Vector2, Vector3 } from '@dcl/sdk/math';
 
 // Both splash sheets are 3 x 3 grids played frames 0..8 (fishing-islands' playSplash).
 const COLUMNS = 3;
 const ROWS = 3;
 const FRAMES = 9;
 const POOL = 4;
+// fishing-islands' layer turn directions (addWaterLayer YRotation), top layer first
+const LAYER_SPIN = [0, 90, -90, -90, 90];
+
+type Layer = { entity: Entity; x: number; y: number; z: number; flat: boolean };
 
 type Splash = {
   entity: Entity;
@@ -35,13 +44,15 @@ export class Water {
   private ring: Splash[] = [];
   private inside = new Set<Entity>();
   private area: Entity | undefined;
+  private layers: Layer[] = [];
   private subs: Record<string, Array<(arg?: Entity) => void>> = {};
 
   /**
    * Water that splashes when a player jumps or walks into it: a vertical burst of spray, a
    * ring spreading on the surface and a splash sound, at the spot where the player entered.
-   * The water surface is a MeshRenderer child of this item; the trigger area tracks that
-   * surface every frame, so scaling either this item or the surface resizes both.
+   * The water is a stack of translucent MeshRenderer layers (children of this item), each
+   * bobbing, turning and rippling like fishing-islands' sea. The trigger area tracks the top
+   * layer every frame, so scaling this item or the layers resizes both.
    *
    * @event enter
    * @event exit
@@ -63,6 +74,7 @@ export class Water {
    * Start function - called when the script is initialized
    */
   start() {
+    this.animateLayers();
     const area = engine.addEntity();
     Transform.create(area, { parent: this.entity });
     this.area = area;
@@ -127,25 +139,73 @@ export class Water {
     (this.subs[name] ??= []).push(fn);
   }
 
-  // The visible water: the MeshRenderer child of this item, or this item itself. Returns its
-  // centre, footprint, top and height in this item's local space. A plane primitive stands
-  // upright and is laid flat by its rotation, so its Y scale is the length; a cylinder is
-  // 1 tall and centred on its origin.
+  // The water's top layer, in this item's local space: centre, footprint, top and height. A
+  // plane primitive stands upright and is laid flat by its rotation, so its Y scale is the
+  // length; a cylinder is 1 tall and centred on its origin. Scale is read live from the layer,
+  // position from where it sat before animateLayers() moved it under its bob root.
   private surface() {
-    let e: Entity = this.entity;
-    for (const [child, t] of engine.getEntitiesWith(Transform, MeshRenderer)) {
-      if (t.parent === this.entity) {
-        e = child;
-        break;
-      }
+    let best = { x: 0, z: 0, width: 1, length: 1, top: 0, height: 0 };
+    for (const l of this.layers) {
+      const s = Transform.getOrNull(l.entity)?.scale ?? Vector3.One();
+      const w = l.flat
+        ? { x: l.x, z: l.z, width: s.x, length: s.y, top: l.y, height: 0 }
+        : { x: l.x, z: l.z, width: s.x, length: s.z, top: l.y + s.y / 2, height: s.y };
+      if (this.layers[0] === l || w.top > best.top) best = w;
     }
-    const t = e === this.entity ? undefined : Transform.getOrNull(e);
-    const s = t ? t.scale : Vector3.One();
-    const p = t ? t.position : Vector3.Zero();
-    const flat = MeshRenderer.getOrNull(e)?.mesh?.$case === 'plane';
-    return flat
-      ? { x: p.x, z: p.z, width: s.x, length: s.y, top: p.y, height: 0 }
-      : { x: p.x, z: p.z, width: s.x, length: s.z, top: p.y + s.y / 2, height: s.y };
+    return best;
+  }
+
+  // fishing-islands' addWaterLayer, per layer: a root bobbing 0.1 m every 5 s, a child root
+  // turning slowly (the top layer stays still), and the layer's normal map tiling breathing
+  // from 36 to 40 repeats per 512 m over 90 s.
+  private animateLayers() {
+    for (const [child, t] of engine.getEntitiesWith(Transform, MeshRenderer)) {
+      if (t.parent !== this.entity) continue;
+      const flat = MeshRenderer.get(child).mesh?.$case === 'plane';
+      this.layers.push({ entity: child, x: t.position.x, y: t.position.y, z: t.position.z, flat });
+    }
+    this.layers.sort((a, b) => b.y - a.y);
+    this.layers.forEach((layer, i) => {
+      const at = Vector3.create(layer.x, layer.y, layer.z);
+      const up = Vector3.create(layer.x, layer.y + 0.1, layer.z);
+      const level = engine.addEntity();
+      Transform.create(level, { parent: this.entity, position: at });
+      Tween.create(level, {
+        duration: 5000,
+        easingFunction: EasingFunction.EF_EASESINE,
+        mode: Tween.Mode.Move({ start: at, end: up }),
+      });
+      TweenSequence.create(level, {
+        sequence: [
+          {
+            duration: 5000,
+            easingFunction: EasingFunction.EF_EASESINE,
+            mode: Tween.Mode.Move({ start: up, end: at }),
+          },
+        ],
+        loop: TweenLoop.TL_RESTART,
+      });
+      const spin = engine.addEntity();
+      Transform.create(spin, { parent: level });
+      const turn = LAYER_SPIN[i % LAYER_SPIN.length];
+      if (turn !== 0) Tween.setRotateContinuous(spin, Quaternion.fromEulerDegrees(0, turn, 0), 0.4);
+
+      const t = Transform.getMutable(layer.entity);
+      t.parent = spin;
+      t.position = Vector3.Zero();
+      const k = t.scale.x / 512;
+      Tween.createOrReplace(layer.entity, {
+        duration: 90000,
+        easingFunction: EasingFunction.EF_EASESINE,
+        mode: Tween.Mode.TextureMove({
+          start: Vector2.create(36 * k, 36 * k),
+          end: Vector2.create(40 * k, 40 * k),
+          movementType: TextureMovementType.TMT_TILING,
+        }),
+        currentTime: Math.random(),
+      });
+      TweenSequence.createOrReplace(layer.entity, { sequence: [], loop: TweenLoop.TL_YOYO });
+    });
   }
 
   // Box from `depth` below the surface (never past the bottom of a pool) to 0.5 m above it.

@@ -42,14 +42,98 @@
           "json": {
             "position": {
               "x": 0,
-              "y": 0.02,
+              "y": 5.4,
               "z": 0
             },
             "rotation": {
-              "x": 0.7071067811865476,
-              "y": 0,
-              "z": 0,
-              "w": 0.7071067811865476
+              "x": 0.707107,
+              "y": 0.0,
+              "z": 0.0,
+              "w": 0.707107
+            },
+            "scale": {
+              "x": 16,
+              "y": 16,
+              "z": 1
+            },
+            "parent": 0
+          }
+        },
+        "514": {
+          "json": {
+            "position": {
+              "x": 0,
+              "y": 4.6,
+              "z": 0
+            },
+            "rotation": {
+              "x": 0.5,
+              "y": 0.5,
+              "z": -0.5,
+              "w": 0.5
+            },
+            "scale": {
+              "x": 16,
+              "y": 16,
+              "z": 1
+            },
+            "parent": 0
+          }
+        },
+        "515": {
+          "json": {
+            "position": {
+              "x": 0,
+              "y": 3.8,
+              "z": 0
+            },
+            "rotation": {
+              "x": 0.5,
+              "y": -0.5,
+              "z": 0.5,
+              "w": 0.5
+            },
+            "scale": {
+              "x": 16,
+              "y": 16,
+              "z": 1
+            },
+            "parent": 0
+          }
+        },
+        "516": {
+          "json": {
+            "position": {
+              "x": 0,
+              "y": 2.5,
+              "z": 0
+            },
+            "rotation": {
+              "x": 0.5,
+              "y": -0.5,
+              "z": 0.5,
+              "w": 0.5
+            },
+            "scale": {
+              "x": 16,
+              "y": 16,
+              "z": 1
+            },
+            "parent": 0
+          }
+        },
+        "517": {
+          "json": {
+            "position": {
+              "x": 0,
+              "y": 0.2,
+              "z": 0
+            },
+            "rotation": {
+              "x": 0.5,
+              "y": 0.5,
+              "z": -0.5,
+              "w": 0.5
             },
             "scale": {
               "x": 16,
@@ -65,6 +149,46 @@
       "name": "core::MeshRenderer",
       "data": {
         "513": {
+          "json": {
+            "mesh": {
+              "$case": "plane",
+              "plane": {
+                "uvs": []
+              }
+            }
+          }
+        },
+        "514": {
+          "json": {
+            "mesh": {
+              "$case": "plane",
+              "plane": {
+                "uvs": []
+              }
+            }
+          }
+        },
+        "515": {
+          "json": {
+            "mesh": {
+              "$case": "plane",
+              "plane": {
+                "uvs": []
+              }
+            }
+          }
+        },
+        "516": {
+          "json": {
+            "mesh": {
+              "$case": "plane",
+              "plane": {
+                "uvs": []
+              }
+            }
+          }
+        },
+        "517": {
           "json": {
             "mesh": {
               "$case": "plane",
@@ -109,8 +233,168 @@
                         "y": 0
                       },
                       "tiling": {
-                        "x": 1.2,
-                        "y": 1.2
+                        "x": 1.125,
+                        "y": 1.125
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "514": {
+          "json": {
+            "material": {
+              "$case": "pbr",
+              "pbr": {
+                "albedoColor": {
+                  "r": 0.1765,
+                  "g": 0.4667,
+                  "b": 0.4431,
+                  "a": 0.5333
+                },
+                "metallic": 0.8,
+                "roughness": 0.0001,
+                "transparencyMode": 2,
+                "castShadows": false,
+                "specularIntensity": 1,
+                "directIntensity": 1,
+                "emissiveIntensity": 0,
+                "bumpTexture": {
+                  "tex": {
+                    "$case": "texture",
+                    "texture": {
+                      "src": "{assetPath}/PoolBake_normal.png",
+                      "wrapMode": 0,
+                      "filterMode": 1,
+                      "offset": {
+                        "x": 0,
+                        "y": 0
+                      },
+                      "tiling": {
+                        "x": 1.125,
+                        "y": 1.125
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "515": {
+          "json": {
+            "material": {
+              "$case": "pbr",
+              "pbr": {
+                "albedoColor": {
+                  "r": 0.1765,
+                  "g": 0.4667,
+                  "b": 0.4431,
+                  "a": 0.5333
+                },
+                "metallic": 0.8,
+                "roughness": 0.0001,
+                "transparencyMode": 2,
+                "castShadows": false,
+                "specularIntensity": 1,
+                "directIntensity": 1,
+                "emissiveIntensity": 0,
+                "bumpTexture": {
+                  "tex": {
+                    "$case": "texture",
+                    "texture": {
+                      "src": "{assetPath}/PoolBake_normal.png",
+                      "wrapMode": 0,
+                      "filterMode": 1,
+                      "offset": {
+                        "x": 0,
+                        "y": 0
+                      },
+                      "tiling": {
+                        "x": 1.125,
+                        "y": 1.125
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "516": {
+          "json": {
+            "material": {
+              "$case": "pbr",
+              "pbr": {
+                "albedoColor": {
+                  "r": 0.1765,
+                  "g": 0.4667,
+                  "b": 0.4431,
+                  "a": 0.5333
+                },
+                "metallic": 0.8,
+                "roughness": 0.0001,
+                "transparencyMode": 2,
+                "castShadows": false,
+                "specularIntensity": 1,
+                "directIntensity": 1,
+                "emissiveIntensity": 0,
+                "bumpTexture": {
+                  "tex": {
+                    "$case": "texture",
+                    "texture": {
+                      "src": "{assetPath}/PoolBake_normal.png",
+                      "wrapMode": 0,
+                      "filterMode": 1,
+                      "offset": {
+                        "x": 0,
+                        "y": 0
+                      },
+                      "tiling": {
+                        "x": 1.125,
+                        "y": 1.125
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "517": {
+          "json": {
+            "material": {
+              "$case": "pbr",
+              "pbr": {
+                "albedoColor": {
+                  "r": 0.1765,
+                  "g": 0.4667,
+                  "b": 0.4431,
+                  "a": 0.5333
+                },
+                "metallic": 0.8,
+                "roughness": 0.0001,
+                "transparencyMode": 2,
+                "castShadows": false,
+                "specularIntensity": 1,
+                "directIntensity": 1,
+                "emissiveIntensity": 0,
+                "bumpTexture": {
+                  "tex": {
+                    "$case": "texture",
+                    "texture": {
+                      "src": "{assetPath}/PoolBake_normal.png",
+                      "wrapMode": 0,
+                      "filterMode": 1,
+                      "offset": {
+                        "x": 0,
+                        "y": 0
+                      },
+                      "tiling": {
+                        "x": 1.125,
+                        "y": 1.125
                       }
                     }
                   }
@@ -126,7 +410,27 @@
       "data": {
         "513": {
           "json": {
-            "value": "Water Surface"
+            "value": "Water Layer 1"
+          }
+        },
+        "514": {
+          "json": {
+            "value": "Water Layer 2"
+          }
+        },
+        "515": {
+          "json": {
+            "value": "Water Layer 3"
+          }
+        },
+        "516": {
+          "json": {
+            "value": "Water Layer 4"
+          }
+        },
+        "517": {
+          "json": {
+            "value": "Water Layer 5"
           }
         }
       }
