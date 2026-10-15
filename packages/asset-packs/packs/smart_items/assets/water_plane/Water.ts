@@ -25,8 +25,19 @@ const COLUMNS = 3;
 const ROWS = 3;
 const FRAMES = 9;
 const POOL = 4;
-// fishing-islands' layer turn directions (addWaterLayer YRotation), top layer first
-const LAYER_SPIN = [0, 90, -90, -90, 90];
+// Sideways drift of each layer's ripples, top layer first: fishing-islands turns its layers
+// in alternating directions, which reads as currents sliding past each other. Drifting the
+// texture gives that motion while keeping every layer's edges aligned.
+const LAYER_DRIFT = [
+  { x: 1, y: 0.35 },
+  { x: -0.55, y: 1 },
+  { x: 0.8, y: -0.6 },
+  { x: -1, y: -0.3 },
+  { x: 0.25, y: -1 },
+];
+// UV units per second; the texture repeats about every 13.5 m, so ~0.1 m/s on the surface
+const DRIFT_SPEED = 0.008;
+const BOB = 0.05;
 
 type Layer = { entity: Entity; x: number; y: number; z: number; flat: boolean };
 
@@ -65,7 +76,7 @@ export class Water {
     public src: string, // DO NOT REMOVE
     public entity: Entity, // DO NOT REMOVE
     public activatedBy: 'my player' | 'all players' = 'my player',
-    public depth: number = 2,
+    public depth: number = 1,
     public splashSize: number = 1,
     public sound: string = 'splash.mp3',
   ) {}
@@ -155,9 +166,8 @@ export class Water {
     return best;
   }
 
-  // fishing-islands' addWaterLayer, per layer: a root bobbing 0.1 m every 5 s, a child root
-  // turning slowly (the top layer stays still), and the layer's normal map tiling breathing
-  // from 36 to 40 repeats per 512 m over 90 s.
+  // Per layer, after fishing-islands' addWaterLayer: a root bobbing every 5 s (0.05 m, half the
+  // repo's, since the layers here are 1 m apart in total), and the normal map drifting sideways.
   private animateLayers() {
     for (const [child, t] of engine.getEntitiesWith(Transform, MeshRenderer)) {
       if (t.parent !== this.entity) continue;
@@ -167,7 +177,7 @@ export class Water {
     this.layers.sort((a, b) => b.y - a.y);
     this.layers.forEach((layer, i) => {
       const at = Vector3.create(layer.x, layer.y, layer.z);
-      const up = Vector3.create(layer.x, layer.y + 0.1, layer.z);
+      const up = Vector3.create(layer.x, layer.y + BOB, layer.z);
       const level = engine.addEntity();
       Transform.create(level, { parent: this.entity, position: at });
       Tween.create(level, {
@@ -185,26 +195,17 @@ export class Water {
         ],
         loop: TweenLoop.TL_RESTART,
       });
-      const spin = engine.addEntity();
-      Transform.create(spin, { parent: level });
-      const turn = LAYER_SPIN[i % LAYER_SPIN.length];
-      if (turn !== 0) Tween.setRotateContinuous(spin, Quaternion.fromEulerDegrees(0, turn, 0), 0.4);
-
       const t = Transform.getMutable(layer.entity);
-      t.parent = spin;
+      t.parent = level;
       t.position = Vector3.Zero();
-      const k = t.scale.x / 512;
-      Tween.createOrReplace(layer.entity, {
-        duration: 90000,
-        easingFunction: EasingFunction.EF_EASESINE,
-        mode: Tween.Mode.TextureMove({
-          start: Vector2.create(36 * k, 36 * k),
-          end: Vector2.create(40 * k, 40 * k),
-          movementType: TextureMovementType.TMT_TILING,
-        }),
-        currentTime: Math.random(),
-      });
-      TweenSequence.createOrReplace(layer.entity, { sequence: [], loop: TweenLoop.TL_YOYO });
+      const d = LAYER_DRIFT[i % LAYER_DRIFT.length];
+      const len = Math.hypot(d.x, d.y);
+      Tween.setTextureMoveContinuous(
+        layer.entity,
+        Vector2.create(d.x / len, d.y / len),
+        DRIFT_SPEED,
+        TextureMovementType.TMT_OFFSET,
+      );
     });
   }
 

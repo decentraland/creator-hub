@@ -10,7 +10,7 @@
               {
                 "path": "{assetPath}/Water.ts",
                 "priority": 0,
-                "layout": "{\"params\":{\"activatedBy\":{\"type\":\"enum\",\"options\":[\"my player\",\"all players\"],\"optional\":true,\"tooltip\":\"Who makes it splash: 'my player' is just you; 'all players' is any avatar.\",\"value\":\"my player\"},\"depth\":{\"type\":\"number\",\"optional\":true,\"value\":2,\"tooltip\":\"How far below the surface the area reaches, in metres before scaling. It never reaches past the bottom of a pool.\"},\"splashSize\":{\"type\":\"number\",\"optional\":true,\"value\":1,\"tooltip\":\"Size of the splash effect, in metres.\"},\"sound\":{\"type\":\"string\",\"optional\":true,\"value\":\"splash.mp3\",\"tooltip\":\"Name of an audio file inside this smart item's folder played on each splash. Leave empty for no sound.\"}},\"actions\":[{\"methodName\":\"splash\",\"description\":\"Plays a splash in the middle of the water\",\"params\":{}}],\"events\":[\"enter\",\"exit\"]}"
+                "layout": "{\"params\":{\"activatedBy\":{\"type\":\"enum\",\"options\":[\"my player\",\"all players\"],\"optional\":true,\"tooltip\":\"Who makes it splash: 'my player' is just you; 'all players' is any avatar.\",\"value\":\"my player\"},\"depth\":{\"type\":\"number\",\"optional\":true,\"value\":1,\"tooltip\":\"How far below the surface the area reaches, in metres before scaling. It never reaches past the bottom of a pool.\"},\"splashSize\":{\"type\":\"number\",\"optional\":true,\"value\":1,\"tooltip\":\"Size of the splash effect, in metres.\"},\"sound\":{\"type\":\"string\",\"optional\":true,\"value\":\"splash.mp3\",\"tooltip\":\"Name of an audio file inside this smart item's folder played on each splash. Leave empty for no sound.\"}},\"actions\":[{\"methodName\":\"splash\",\"description\":\"Plays a splash in the middle of the water\",\"params\":{}}],\"events\":[\"enter\",\"exit\"]}"
               }
             ]
           }
@@ -36,19 +36,29 @@
       }
     },
     {
+      "name": "asset-packs::Placeholder",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/water_plane_placeholder.glb"
+          }
+        }
+      }
+    },
+    {
       "name": "core::Transform",
       "data": {
         "513": {
           "json": {
             "position": {
               "x": 0,
-              "y": 5.4,
+              "y": 1.02,
               "z": 0
             },
             "rotation": {
               "x": 0.707107,
-              "y": 0.0,
-              "z": 0.0,
+              "y": 0,
+              "z": 0,
               "w": 0.707107
             },
             "scale": {
@@ -63,14 +73,14 @@
           "json": {
             "position": {
               "x": 0,
-              "y": 4.6,
+              "y": 0.866,
               "z": 0
             },
             "rotation": {
-              "x": 0.5,
-              "y": 0.5,
-              "z": -0.5,
-              "w": 0.5
+              "x": 0.707107,
+              "y": 0,
+              "z": 0,
+              "w": 0.707107
             },
             "scale": {
               "x": 16,
@@ -84,14 +94,14 @@
           "json": {
             "position": {
               "x": 0,
-              "y": 3.8,
+              "y": 0.712,
               "z": 0
             },
             "rotation": {
-              "x": 0.5,
-              "y": -0.5,
-              "z": 0.5,
-              "w": 0.5
+              "x": 0.707107,
+              "y": 0,
+              "z": 0,
+              "w": 0.707107
             },
             "scale": {
               "x": 16,
@@ -105,14 +115,14 @@
           "json": {
             "position": {
               "x": 0,
-              "y": 2.5,
+              "y": 0.462,
               "z": 0
             },
             "rotation": {
-              "x": 0.5,
-              "y": -0.5,
-              "z": 0.5,
-              "w": 0.5
+              "x": 0.707107,
+              "y": 0,
+              "z": 0,
+              "w": 0.707107
             },
             "scale": {
               "x": 16,
@@ -126,14 +136,14 @@
           "json": {
             "position": {
               "x": 0,
-              "y": 0.2,
+              "y": 0.02,
               "z": 0
             },
             "rotation": {
-              "x": 0.5,
-              "y": 0.5,
-              "z": -0.5,
-              "w": 0.5
+              "x": 0.707107,
+              "y": 0,
+              "z": 0,
+              "w": 0.707107
             },
             "scale": {
               "x": 16,
@@ -233,8 +243,8 @@
                         "y": 0
                       },
                       "tiling": {
-                        "x": 1.125,
-                        "y": 1.125
+                        "x": 1.1875,
+                        "y": 1.1875
                       }
                     }
                   }
@@ -273,8 +283,8 @@
                         "y": 0
                       },
                       "tiling": {
-                        "x": 1.125,
-                        "y": 1.125
+                        "x": 1.1875,
+                        "y": 1.1875
                       }
                     }
                   }
@@ -313,8 +323,8 @@
                         "y": 0
                       },
                       "tiling": {
-                        "x": 1.125,
-                        "y": 1.125
+                        "x": 1.1875,
+                        "y": 1.1875
                       }
                     }
                   }
@@ -353,8 +363,8 @@
                         "y": 0
                       },
                       "tiling": {
-                        "x": 1.125,
-                        "y": 1.125
+                        "x": 1.1875,
+                        "y": 1.1875
                       }
                     }
                   }
@@ -393,8 +403,8 @@
                         "y": 0
                       },
                       "tiling": {
-                        "x": 1.125,
-                        "y": 1.125
+                        "x": 1.1875,
+                        "y": 1.1875
                       }
                     }
                   }
