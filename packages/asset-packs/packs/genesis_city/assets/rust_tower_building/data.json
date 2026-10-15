@@ -1,8 +1,8 @@
 {
   "id": "bf5a9656-173c-52af-9e4b-3ae40d7cbbef",
   "name": "Rust Tower Building",
-  "category": "structures",
-  "tags": ["genesis", "city", "plaza", "structures", "building", "tower", "background"],
+  "category": "buildings",
+  "tags": ["genesis", "city", "plaza", "buildings", "building", "tower", "background"],
   "caption": "Rust-red background building with windows.",
   "author": "Decentraland Foundation"
 }

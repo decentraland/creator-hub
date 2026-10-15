@@ -1,8 +1,8 @@
 {
   "id": "30a474ca-e45f-5051-8de8-c0095c15bd2d",
   "name": "Art Gallery Building",
-  "category": "structures",
-  "tags": ["genesis", "city", "structures", "gallery", "building", "museum", "modern"],
+  "category": "buildings",
+  "tags": ["genesis", "city", "buildings", "gallery", "building", "museum", "modern"],
   "caption": "Modern two-storey glass art gallery.",
   "author": "Decentraland Foundation"
 }

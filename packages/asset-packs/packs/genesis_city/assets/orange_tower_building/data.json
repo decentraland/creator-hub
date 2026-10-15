@@ -1,8 +1,8 @@
 {
   "id": "ad89e7e2-0b3c-52d0-8cbd-1c7cb8be99b5",
   "name": "Orange Tower Building",
-  "category": "structures",
-  "tags": ["genesis", "city", "plaza", "structures", "building", "tower", "background"],
+  "category": "buildings",
+  "tags": ["genesis", "city", "plaza", "buildings", "building", "tower", "background"],
   "caption": "Tall orange background building.",
   "author": "Decentraland Foundation"
 }

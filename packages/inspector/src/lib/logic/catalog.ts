@@ -22,6 +22,7 @@ export const CATEGORIES = [
   'social',
   'decorations',
   'structures',
+  'buildings',
   'vehicles',
   'furniture',
   'appliances',

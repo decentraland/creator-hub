@@ -1,8 +1,8 @@
 {
   "id": "19a54579-30ec-5d84-aaac-08d7c5bf9021",
   "name": "Pink Garage Building",
-  "category": "structures",
-  "tags": ["genesis", "city", "plaza", "structures", "building", "tower", "garage"],
+  "category": "buildings",
+  "tags": ["genesis", "city", "plaza", "buildings", "building", "tower", "garage"],
   "caption": "Pink building over a ground-floor garage.",
   "author": "Decentraland Foundation"
 }

@@ -1,8 +1,8 @@
 {
   "id": "998c376c-96fc-52f6-bdf7-83aa58aef1da",
   "name": "Brown Tower Building",
-  "category": "structures",
-  "tags": ["genesis", "city", "plaza", "structures", "building", "tower", "background"],
+  "category": "buildings",
+  "tags": ["genesis", "city", "plaza", "buildings", "building", "tower", "background"],
   "caption": "Tall brown background building.",
   "author": "Decentraland Foundation"
 }
