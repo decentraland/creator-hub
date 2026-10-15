@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AiOutlineSound as AudioIcon } from 'react-icons/ai';
 import { IoIosImage as ImageIcon } from 'react-icons/io';
 import { IoCubeOutline as ModelIcon, IoVideocamOutline as VideoIcon } from 'react-icons/io5';
@@ -71,10 +71,23 @@ function ProjectView({ folders, thumbnails }: Props) {
   const [filters, setFilters] = useState<Filter[]>([]);
   const [activeFilter, setActiveFilter] = useState(Filter.All);
 
+  // Folders the user had open before a search or filter took over the tree.
+  const openBeforeFiltering = useRef<Set<string>>();
+
   useEffect(() => {
     const { tree, filters } = generateAssetTree(folders, open, search, activeFilter);
     setTree(tree);
     setFilters(getFilterFromTree(filters));
+    if (isFilteringBy(search, activeFilter)) {
+      // The tree is pruned to the folders that lead to a match; open them all so the matches are
+      // visible, and put the user's own open folders back once the filter is cleared.
+      openBeforeFiltering.current ??= new Set(open);
+      const folderIds = [...tree.entries()].filter(([, node]) => node.type === 'folder');
+      setOpen(new Set(folderIds.map(([id]) => id)));
+    } else if (openBeforeFiltering.current) {
+      setOpen(openBeforeFiltering.current);
+      openBeforeFiltering.current = undefined;
+    }
   }, [folders, search, activeFilter]);
 
   /**
@@ -215,13 +228,7 @@ function ProjectView({ folders, thumbnails }: Props) {
   );
   const isOpen = useCallback((val: string) => open.has(val), [open]);
 
-  const getChildren = useCallback(
-    (val: string) => {
-      const childs = _getChildren(val, tree, search, activeFilter);
-      return childs;
-    },
-    [tree, search, activeFilter],
-  );
+  const getChildren = useCallback((val: string) => _getChildren(val, tree), [tree]);
 
   const getThumbnail = useCallback(
     async (value: AssetNodeItem) => {
@@ -257,7 +264,7 @@ function ProjectView({ folders, thumbnails }: Props) {
   const assetTiles = tiles.filter(node => node.type === 'asset');
   const crumbs = getBreadcrumbs(lastSelected);
   // Search and type filters look through every folder, so results need their own context.
-  const isFiltering = !!search || (activeFilter !== Filter.All && activeFilter !== Filter.Recents);
+  const isFiltering = isFilteringBy(search, activeFilter);
 
   const handleClearFilters = useCallback(() => {
     setSearch('');
@@ -509,6 +516,11 @@ function ProjectView({ folders, thumbnails }: Props) {
       </div>
     </>
   );
+}
+
+// Search and type filters look through every folder, not just the one being browsed.
+function isFilteringBy(search: string, activeFilter: Filter): boolean {
+  return !!search || (activeFilter !== Filter.All && activeFilter !== Filter.Recents);
 }
 
 type ViewMode = 'grid' | 'list';

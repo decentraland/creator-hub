@@ -13,7 +13,15 @@ const hasSearchMatch = (name: string, searchTerm: string): boolean => {
   return !!(searchTerm && name.toLowerCase().includes(searchTerm.toLowerCase()));
 };
 
-const shouldIncludeAsset = (asset: IAsset, activeFilter: Filter): boolean => {
+const shouldIncludeAsset = (
+  asset: IAsset,
+  activeFilter: Filter,
+  path: string,
+  searchTerm: string,
+): boolean => {
+  // A search that matches nothing in this file's path leaves it (and, if it empties them, its
+  // folders) out of the tree, so what remains is the hierarchy leading to the matches.
+  if (searchTerm && !hasSearchMatch(path, searchTerm)) return false;
   if (activeFilter === Filter.All || activeFilter === Filter.Recents) {
     return true;
   }
@@ -78,7 +86,7 @@ export const generateAssetTree = (
         const filter = mapAssetTypeToFilter(assetNode.asset);
         if (filter) foundFilters.add(filter);
 
-        if (shouldIncludeAsset(assetNode.asset, activeFilter)) {
+        if (shouldIncludeAsset(assetNode.asset, activeFilter, childPath, searchTerm)) {
           validChildren.push(childPath);
           hasValidChildren = true;
           tree.set(childPath, {
@@ -122,56 +130,13 @@ export const generateAssetTree = (
   return { tree, filters: foundFilters };
 };
 
-export const getChildren = (
-  val: string,
-  tree: Map<string, TreeNode>,
-  searchTerm: string,
-  activeFilter: Filter,
-): string[] => {
-  const node = tree.get(val);
-  if (!node?.children?.length) return [];
-
-  // For 'all' or 'recents' filters with no search term, show complete structure
-  if ((activeFilter === Filter.All || activeFilter === Filter.Recents) && !searchTerm) {
-    return node.children;
-  }
-
-  // Helper to get all matching files considering both search and filter
-  const getAllMatchingFiles = (nodePath: string): string[] => {
-    const currentNode = tree.get(nodePath);
-    if (!currentNode?.children) return [];
-
-    return currentNode.children.reduce((matches: string[], childPath) => {
-      const childNode = tree.get(childPath);
-      if (!childNode) return matches;
-
-      if (childNode.type === 'asset') {
-        const childFilter = mapAssetTypeToFilter((childNode as AssetNodeItem).asset);
-        const matchesFilter =
-          activeFilter === Filter.All ||
-          activeFilter === Filter.Recents ||
-          childFilter === activeFilter;
-        const matchesSearch =
-          !searchTerm || childPath.toLowerCase().includes(searchTerm.toLowerCase());
-
-        if (matchesFilter && matchesSearch) {
-          matches.push(childPath);
-        }
-      } else if (childNode.type === 'folder' && childNode.children) {
-        matches.push(...getAllMatchingFiles(childPath));
-      }
-      return matches;
-    }, []);
-  };
-
-  // If searching or filtering, and this is ROOT, return all matching files
-  if (val === ROOT && (searchTerm || activeFilter !== 'all')) {
-    return getAllMatchingFiles(ROOT);
-  }
-
-  // For non-ROOT nodes when searching or filtering, return empty to skip folder structure
-  return [];
-};
+/**
+ * The children of a node in the folder tree. Searching and filtering are applied when the tree is
+ * generated, which prunes it down to the folders that lead to a match, so the hierarchy is always
+ * what gets listed here.
+ */
+export const getChildren = (val: string, tree: Map<string, TreeNode>): string[] =>
+  tree.get(val)?.children ?? [];
 
 export const getTiles = (
   nodeId: string,

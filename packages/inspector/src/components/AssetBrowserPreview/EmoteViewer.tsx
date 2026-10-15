@@ -46,13 +46,19 @@ const formatSeconds = (seconds: number) => `${seconds.toFixed(1)}s`;
  */
 export function EmoteViewer({ file, previewEmote }: Props) {
   const id = `emote-${file?.name ?? previewEmote}`;
-  const blob = useMemo(() => (file ? toEmoteWithBlobs(file) : undefined), [file]);
   // The avatar comes from an external service and can take a while to appear.
   const [loaded, setLoaded] = useState(false);
   const [length, setLength] = useState(0);
   const [time, setTime] = useState(0);
   const [playing, setPlaying] = useState(false);
   const [loop, setLoop] = useState(readLoop);
+  // Looping is part of the emote itself, so the preview wraps from the last frame to the first
+  // without any gap. Changing the flag updates the live preview.
+  const blob = useMemo(() => {
+    if (!file) return undefined;
+    const emote = toEmoteWithBlobs(file);
+    return { ...emote, emoteDataADR74: { ...emote.emoteDataADR74, loop } };
+  }, [file, loop]);
 
   const controller = useRef<ReturnType<typeof WearablePreview.createController>>();
   const loopRef = useRef(loop);
@@ -86,8 +92,9 @@ export function EmoteViewer({ file, previewEmote }: Props) {
     let cancelled = false;
     let restartTimer: ReturnType<typeof setTimeout> | undefined;
 
-    // The preview is still winding down when it reports the end, so give it a moment, restart,
-    // and check it took; seeking back first is the fallback if a bare play() didn't.
+    // Fallback for clips that stop at the end despite looping (built-ins have no emote file to flag
+    // as looping): the preview is still winding down when it reports the end, so give it a moment,
+    // restart, and check it took; seeking back first is the fallback if a bare play() didn't.
     const restart = () => {
       clearTimeout(restartTimer);
       restartTimer = setTimeout(async () => {

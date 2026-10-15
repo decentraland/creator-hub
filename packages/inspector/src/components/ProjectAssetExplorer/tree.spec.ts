@@ -1,6 +1,6 @@
 import { Filter } from './Filters/types';
 import { buildAssetTree, buildBuiltInAnimationsFolder } from './utils';
-import { generateAssetTree, getTiles, ROOT } from './tree';
+import { generateAssetTree, getChildren, getTiles, ROOT } from './tree';
 
 const folders = buildAssetTree(['asset-packs/dance/Avatar_Dance_emote.glb', 'models/chair.glb'])
   .children as Parameters<typeof generateAssetTree>[0];
@@ -58,5 +58,58 @@ describe('when the catalog has built-in animations', () => {
       'Wave',
       'Avatar_Dance_emote.glb',
     ]);
+  });
+});
+
+describe('when filtering or searching the folder tree', () => {
+  const nested = buildAssetTree([
+    'Models/example/model.glb',
+    'Models/other/chair.glb',
+    'scene/main.composite',
+    'scene/thumb.png',
+  ]).children as Parameters<typeof generateAssetTree>[0];
+
+  const describeTree = (search: string, filter: Filter) => {
+    const { tree } = generateAssetTree(nested, new Set(), search, filter);
+    const lines: string[] = [];
+    const walk = (id: string, depth: number) => {
+      getChildren(id, tree).forEach(child => {
+        lines.push(`${'  '.repeat(depth)}${tree.get(child)!.name}`);
+        walk(child, depth + 1);
+      });
+    };
+    walk(ROOT, 0);
+    return lines;
+  };
+
+  it('should keep every folder when nothing is filtered', () => {
+    expect(describeTree('', Filter.All)).toEqual([
+      'Models',
+      '  example',
+      '    model.glb',
+      '  other',
+      '    chair.glb',
+      'scene',
+      '  main.composite',
+      '  thumb.png',
+    ]);
+  });
+
+  it('should keep the folders leading to a type filter match, and drop the rest', () => {
+    expect(describeTree('', Filter.Models)).toEqual([
+      'Models',
+      '  example',
+      '    model.glb',
+      '  other',
+      '    chair.glb',
+    ]);
+  });
+
+  it('should keep the hierarchy of a search match, however deeply nested', () => {
+    expect(describeTree('chair', Filter.All)).toEqual(['Models', '  other', '    chair.glb']);
+  });
+
+  it('should show nothing when the search matches nothing', () => {
+    expect(describeTree('zzz', Filter.All)).toEqual([]);
   });
 });
