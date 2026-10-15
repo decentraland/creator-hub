@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState, useMemo, useRef } from 'react';
-import { MdImageSearch, MdKeyboardArrowDown, MdKeyboardArrowUp } from 'react-icons/md';
+import { MdImageSearch } from 'react-icons/md';
 import { FaBroom } from 'react-icons/fa';
 import { HiOutlinePlus } from 'react-icons/hi';
 import { HiOutlineRefresh as RefreshIcon } from 'react-icons/hi';
@@ -38,6 +38,7 @@ import { useScanAssets } from '../../hooks/useScanAssets';
 import { useImportAssetToFilesystem } from '../../hooks/useImportAssetToFilesystem';
 import { FolderOpen } from '../Icons/Folder';
 import CleanupIcon from '../Icons/Cleanup';
+import { ListChevronsDownUpIcon, ListChevronsUpDownIcon } from '../Icons/ListChevrons';
 import { AssetsCatalog } from '../AssetsCatalog';
 import { CatalogAssetContextMenu } from '../AssetsCatalog/Asset/ContextMenu/CatalogAssetContextMenu';
 import { ProjectAssetExplorer } from '../ProjectAssetExplorer';
@@ -411,7 +412,7 @@ function Assets({ isAssetsPanelCollapsed, onToggleCollapse }: Props) {
                 aria-expanded={!isAssetsPanelCollapsed}
                 data-test-id="assets-collapse-toggle"
               >
-                {isAssetsPanelCollapsed ? <MdKeyboardArrowUp /> : <MdKeyboardArrowDown />}
+                {isAssetsPanelCollapsed ? <ListChevronsUpDownIcon /> : <ListChevronsDownUpIcon />}
               </button>
             }
             openOnTriggerMouseEnter={true}
