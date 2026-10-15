@@ -8,6 +8,7 @@ import { MdKeyboardArrowDown, MdKeyboardArrowUp } from 'react-icons/md';
 import cx from 'classnames';
 
 import { isSmart } from '../../lib/logic/catalog';
+import { EmoteViewer, getBuiltInPreviewEmote } from './EmoteViewer';
 import { ModelViewer, type ModelStats } from './ModelViewer';
 import { useAssetSelection } from './selection';
 import {
@@ -78,8 +79,11 @@ function Viewer({
   onDimensions: (value: string) => void;
 }) {
   const [failed, setFailed] = useState(false);
+  const previewEmote = getBuiltInPreviewEmote(source.builtInEmote);
 
   useEffect(() => setFailed(false), [source.url]);
+
+  if (previewEmote) return <EmoteViewer previewEmote={previewEmote} />;
 
   if (source.kind === 'model' && !failed) {
     return (
@@ -111,10 +115,15 @@ function Viewer({
   switch (source.kind) {
     case 'image':
       return (
-        <ImageViewer
-          source={source}
-          onDimensions={onDimensions}
-        />
+        <>
+          <ImageViewer
+            source={source}
+            onDimensions={onDimensions}
+          />
+          {source.builtInEmote && (
+            <span className="PreviewPane-note">Built-in animation · animated preview</span>
+          )}
+        </>
       );
     case 'audio':
       return (

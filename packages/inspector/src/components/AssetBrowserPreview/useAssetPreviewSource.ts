@@ -23,6 +23,8 @@ export type PreviewSource = {
   /** Image shown when there is nothing live to render (custom items, failed models). */
   thumbnail?: string;
   size?: number;
+  /** A built-in animation the avatar preview can play by name. */
+  builtInEmote?: string;
   /** How to fetch the textures and buffers a model refers to. */
   resolveDependency?: DependencyResolver;
 };
@@ -94,6 +96,7 @@ export function useAssetPreviewSource(selection?: AssetSelection): PreviewSource
             ? getContentsUrl(contents['thumbnail.png'])
             : undefined,
           resolveDependency: modelKey ? createCatalogResolver(contents, modelKey) : undefined,
+          builtInEmote: selection.asset.builtInEmote,
         },
       });
       return;
@@ -123,6 +126,7 @@ export function useAssetPreviewSource(selection?: AssetSelection): PreviewSource
           extension: 'webp',
           url: previewUrl ?? thumbnailUrl,
           thumbnail: thumbnailUrl,
+          builtInEmote: selection.builtInEmote.name,
         },
       });
       return;
