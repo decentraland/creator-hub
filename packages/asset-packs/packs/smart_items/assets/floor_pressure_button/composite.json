@@ -1,0 +1,41 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core::GltfContainer",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/floor_pressure_button.glb"
+          }
+        }
+      }
+    },
+    {
+      "name": "asset-packs::Script",
+      "data": {
+        "0": {
+          "json": {
+            "value": [
+              {
+                "path": "{assetPath}/FloorButton.ts",
+                "priority": 0,
+                "layout": "{\"params\":{\"activatedBy\":{\"type\":\"enum\",\"options\":[\"my player\",\"all players\"],\"optional\":true,\"tooltip\":\"Who presses the button: 'my player' is just you; 'all players' is any avatar.\",\"value\":\"my player\"},\"onPress\":{\"type\":\"action\",\"optional\":true,\"value\":{\"entity\":0,\"action\":\"\"},\"tooltip\":\"Action triggered when the first player steps onto the button.\"},\"onRelease\":{\"type\":\"action\",\"optional\":true,\"value\":{\"entity\":0,\"action\":\"\"},\"tooltip\":\"Action triggered when the last player steps off the button.\"},\"sound\":{\"type\":\"string\",\"optional\":true,\"value\":\"sound.mp3\",\"tooltip\":\"Name of an audio file inside this smart item's folder (e.g. sound.mp3), played on press and release. Leave empty for no sound.\"},\"pressAnimation\":{\"type\":\"string\",\"optional\":true,\"value\":\"press\",\"tooltip\":\"Name of the animation clip in the button's model that plays when it is pressed.\"},\"releaseAnimation\":{\"type\":\"string\",\"optional\":true,\"value\":\"unpress\",\"tooltip\":\"Name of the animation clip in the button's model that plays when it is released.\"}},\"actions\":[{\"methodName\":\"press\",\"description\":\"Presses the button, as if a player stepped on it\",\"params\":{}},{\"methodName\":\"release\",\"description\":\"Releases the button, as if the last player stepped off it\",\"params\":{}}],\"events\":[\"press\",\"release\"]}"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "core-schema::Sync-Components",
+      "data": {
+        "0": {
+          "json": {
+            "value": ["core::Animator", "core::AudioSource"]
+          }
+        }
+      }
+    }
+  ]
+}
