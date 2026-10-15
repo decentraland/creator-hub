@@ -294,6 +294,7 @@ class SceneLookupError extends Error {
     readonly extra: Record<string, unknown> = {},
   ) {
     super(message);
+    this.name = 'SceneLookupError';
   }
 }
 
@@ -514,6 +515,11 @@ export class Worlds {
       tags: { source: 'worlds', event: 'fetch-replaced-scenes' },
       extra: { worldName, parcelCount: parcels.length },
     };
+    // Aborted with the deadline, or when a chunk fails so the others stop.
+    const lookup = new AbortController();
+    const abortLookup = () => lookup.abort();
+    signal.addEventListener('abort', abortLookup);
+    if (signal.aborted) lookup.abort();
     const fetchChunk = async (coordinates: string[]) => {
       const result = await fetch(
         `${this.url}/world/${encodedWorldName}/scenes?limit=${SCENE_LOOKUP_CHUNK_SIZE}`,
@@ -521,7 +527,7 @@ export class Worlds {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ coordinates }),
-          signal,
+          signal: lookup.signal,
         },
       );
       if (!result.ok) {
@@ -534,12 +540,17 @@ export class Worlds {
       try {
         page = await result.json();
       } catch (error) {
-        // A timed-out body read is not a malformed response.
-        if (signal.aborted) throw error;
+        // An aborted body read is not a malformed response.
+        if (lookup.signal.aborted) throw error;
         throw new SceneLookupError('World scenes response is not JSON');
       }
-      if (!Array.isArray(page?.scenes) || page.total !== page.scenes.length) {
+      if (!Array.isArray(page?.scenes) || typeof page.total !== 'number') {
         throw new SceneLookupError('Invalid world scenes response', { total: page?.total });
+      }
+      // Only a full page can be cut short; a smaller one lists every match even when the count,
+      // a separate query, saw a concurrent deploy.
+      if (page.scenes.length >= SCENE_LOOKUP_CHUNK_SIZE && page.total > page.scenes.length) {
+        throw new SceneLookupError('Truncated world scenes response', { total: page.total });
       }
       return page.scenes;
     };
@@ -555,6 +566,7 @@ export class Worlds {
       for (const scene of pages.flat()) replaced.set(scene.entityId, scene.parcels);
       return [...replaced.values()];
     } catch (error) {
+      lookup.abort();
       if (error instanceof SceneLookupError) {
         captureException(error, {
           ...sentryContext,
@@ -564,6 +576,8 @@ export class Worlds {
         console.warn('Failed to fetch the replaced scenes', error);
       }
       return null;
+    } finally {
+      signal.removeEventListener('abort', abortLookup);
     }
   };
 

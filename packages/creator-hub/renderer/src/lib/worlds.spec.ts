@@ -215,13 +215,13 @@ describe('Worlds.fetchReplacedScenesParcels', () => {
     ok: true,
     json: () => Promise.resolve({ scenes, total }),
   });
-  const lookupRequest = (coordinates: string[], signal: AbortSignal) => [
+  const lookupRequest = (coordinates: string[]) => [
     `${WORLDS_SERVER}/world/my%20name.dcl.eth/scenes?limit=100`,
     {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ coordinates }),
-      signal,
+      signal: expect.any(AbortSignal),
     },
   ];
 
@@ -252,8 +252,8 @@ describe('Worlds.fetchReplacedScenesParcels', () => {
       );
     });
 
-    it('should look up the scenes overlapping the parcels in a single request, under the given signal', () => {
-      expect(fetchMock.mock.calls).toEqual([lookupRequest(['0,1', '1,0'], controller.signal)]);
+    it('should look up the scenes overlapping the parcels in a single request', () => {
+      expect(fetchMock.mock.calls).toEqual([lookupRequest(['0,1', '1,0'])]);
     });
 
     it('should return the parcels of each scene', () => {
@@ -279,8 +279,8 @@ describe('Worlds.fetchReplacedScenesParcels', () => {
 
     it('should look them up in chunks of 100, each fitting in one page', () => {
       expect(fetchMock.mock.calls).toEqual([
-        lookupRequest(parcels.slice(0, 100), controller.signal),
-        lookupRequest(parcels.slice(100), controller.signal),
+        lookupRequest(parcels.slice(0, 100)),
+        lookupRequest(parcels.slice(100)),
       ]);
     });
 
@@ -289,7 +289,7 @@ describe('Worlds.fetchReplacedScenesParcels', () => {
     });
   });
 
-  describe('when the server reports more overlapping scenes than it listed', () => {
+  describe('when a page with room left counts more scenes than it lists', () => {
     beforeEach(async () => {
       fetchMock.mockResolvedValueOnce(
         scenesResponse([{ entityId: 'bafkreiexample1', parcels: ['0,0'] }], 2),
@@ -301,15 +301,76 @@ describe('Worlds.fetchReplacedScenesParcels', () => {
       );
     });
 
+    it('should return the listed scenes, as a deploy between the count and the list is harmless', () => {
+      expect(replaced).toEqual([['0,0']]);
+    });
+
+    it('should not report the response', () => {
+      expect(captureExceptionMock).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('when a full page counts more scenes than it lists', () => {
+    beforeEach(async () => {
+      const parcels = Array.from({ length: 100 }, (_, i) => `${i},0`);
+      const scenes = parcels.map((parcel, i) => ({
+        entityId: `bafkreiexample${i}`,
+        parcels: [parcel],
+      }));
+      fetchMock.mockResolvedValueOnce(scenesResponse(scenes, 101));
+      replaced = await new Worlds().fetchReplacedScenesParcels(
+        'name.dcl.eth',
+        parcels,
+        controller.signal,
+      );
+    });
+
     it('should return null rather than miss a replaced scene', () => {
       expect(replaced).toBeNull();
     });
 
-    it('should report the inconsistent response', () => {
-      expect(captureExceptionMock).toHaveBeenCalledWith(expect.any(Error), {
-        tags: { source: 'worlds', event: 'fetch-replaced-scenes' },
-        extra: { worldName: 'name.dcl.eth', parcelCount: 1, total: 2 },
-      });
+    it('should report the truncated response', () => {
+      expect(captureExceptionMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          name: 'SceneLookupError',
+          message: 'Truncated world scenes response',
+        }),
+        {
+          tags: { source: 'worlds', event: 'fetch-replaced-scenes' },
+          extra: { worldName: 'name.dcl.eth', parcelCount: 100, total: 101 },
+        },
+      );
+    });
+  });
+
+  describe('when one chunk fails while another is still in flight', () => {
+    let pendingSignal: AbortSignal;
+
+    beforeEach(async () => {
+      const cancelBody = vi.fn().mockResolvedValue(undefined);
+      fetchMock
+        .mockResolvedValueOnce({ ok: false, status: 500, body: { cancel: cancelBody } })
+        .mockImplementationOnce((_url: string, init: { signal: AbortSignal }) => {
+          pendingSignal = init.signal;
+          return untilAborted(init.signal);
+        });
+      replaced = await new Worlds().fetchReplacedScenesParcels(
+        'name.dcl.eth',
+        Array.from({ length: 101 }, (_, i) => `${i},0`),
+        controller.signal,
+      );
+    });
+
+    it('should return null', () => {
+      expect(replaced).toBeNull();
+    });
+
+    it('should abort the chunk still in flight', () => {
+      expect(pendingSignal.aborted).toBe(true);
+    });
+
+    it('should report the failure once', () => {
+      expect(captureExceptionMock).toHaveBeenCalledTimes(1);
     });
   });
 
