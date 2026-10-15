@@ -35,7 +35,9 @@ const LAYER_DRIFT = [
   { x: -1, y: -0.3 },
   { x: 0.25, y: -1 },
 ];
-// UV units per second; the texture repeats about every 13.5 m, so ~0.1 m/s on the surface
+// Metres per repeat of the ripple texture: fishing-islands' 38 repeats across 512 m of sea.
+const RIPPLE_SIZE = 512 / 38;
+// Texture repeats per second; at RIPPLE_SIZE that is ~0.1 m/s on the surface
 const DRIFT_SPEED = 0.008;
 const BOB = 0.05;
 
@@ -198,6 +200,7 @@ export class Water {
       const t = Transform.getMutable(layer.entity);
       t.parent = level;
       t.position = Vector3.Zero();
+      this.fitRipples(layer);
       const d = LAYER_DRIFT[i % LAYER_DRIFT.length];
       const len = Math.hypot(d.x, d.y);
       Tween.setTextureMoveContinuous(
@@ -207,6 +210,21 @@ export class Water {
         TextureMovementType.TMT_OFFSET,
       );
     });
+  }
+
+  // Keep each ripple RIPPLE_SIZE metres wide however the water is scaled: a primitive's UVs
+  // span the whole mesh, so the repeat count must follow its size in metres (this item's
+  // scale times the layer's). A plane's second UV axis is its local Y, laid flat onto Z.
+  private fitRipples(layer: Layer) {
+    const root = Transform.get(this.entity).scale;
+    const s = Transform.get(layer.entity).scale;
+    const across = (root.x * s.x) / RIPPLE_SIZE;
+    const along = (root.z * (layer.flat ? s.y : s.z)) / RIPPLE_SIZE;
+    const m = Material.getMutableOrNull(layer.entity);
+    if (m?.material?.$case !== 'pbr') return;
+    const tex = m.material.pbr.bumpTexture?.tex;
+    if (tex?.$case !== 'texture') return;
+    tex.texture.tiling = Vector2.create(across, along);
   }
 
   // Box from `depth` below the surface (never past the bottom of a pool) to 0.5 m above it.
