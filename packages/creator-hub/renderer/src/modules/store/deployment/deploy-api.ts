@@ -252,7 +252,8 @@ export async function deployWithProgress(
       url,
     });
   } finally {
-    // The deployment is over (or no longer followed), so there is nothing left to cancel.
+    // The deployment is over (or no longer followed), so there is nothing left to cancel. On
+    // DEPLOY_STATE_LOST the CLI may still publish, but the status leaves pending and Cancel hides.
     deployTokens.delete(url);
   }
 }

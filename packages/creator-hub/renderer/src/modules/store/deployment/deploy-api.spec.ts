@@ -606,7 +606,7 @@ describe('requestDeploymentCancel', () => {
       mockServer({
         POST: [() => jsonResponse(202, uploading(0))],
         'GET text/event-stream': [() => sseResponse([sseEvent(state('cancelled'))])],
-        DELETE: [() => jsonResponse(409, state('cancelled'))],
+        DELETE: [() => jsonResponse(403, { message: 'Invalid or missing deploy token' })],
       });
       await deployWithProgress(URL, PAYLOAD, vi.fn()).catch(() => undefined);
       await run();
@@ -617,6 +617,10 @@ describe('requestDeploymentCancel', () => {
         method: 'delete',
         headers: undefined,
       });
+    });
+
+    it('should report the cancellation as unauthorized', () => {
+      expect(result).toBe('unauthorized');
     });
   });
 
