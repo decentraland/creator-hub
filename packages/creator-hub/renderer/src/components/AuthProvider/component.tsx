@@ -38,6 +38,8 @@ function signInErrorMessage(error: unknown): string {
         return t('sign_in.errors.identity_expired');
       case 'network':
         return t('sign_in.errors.network_mismatch');
+      case 'verifier':
+        return t('sign_in.errors.verifier_mismatch');
     }
   }
   return t('sign_in.errors.failed');
@@ -50,6 +52,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const signInAttemptCountRef = useRef<number>(0);
   const deepLinkCleanupRef = useRef<(() => void) | null>(null);
   const requestIdRef = useRef<string | null>(null);
+  const verifierRef = useRef<string | null>(null);
 
   const [wallet, setWallet] = useState<string>();
   const [avatar, setAvatar] = useState<Avatar>();
@@ -74,11 +77,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   }, []);
 
   const finishSignIn = useCallback(
-    async (identityId: string) => {
+    async (identityId: string, verifier: string) => {
       // This only runs while a sign in is in progress (the listener is scoped to
       // the attempt), so we are always on the sign-in page here.
       try {
-        const signer = await AuthServerProvider.applyDeepLinkIdentity(identityId);
+        const signer = await AuthServerProvider.applyDeepLinkIdentity(identityId, verifier);
         setWallet(signer);
         setIsSignedIn(true);
         fetchAvatar(signer);
@@ -92,6 +95,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         pushGeneric('error', signInErrorMessage(error));
       } finally {
         requestIdRef.current = null;
+        verifierRef.current = null;
         setIsSigningIn(false);
         navigate(-1);
       }
@@ -120,8 +124,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
       // The id is generated before listening so the correlation check below always
       // has something to compare against, however fast the deep link arrives.
-      const requestId = AuthServerProvider.createSignInRequestId();
+      const { requestId, verifier } = await AuthServerProvider.createSignInRequest();
       requestIdRef.current = requestId;
+      verifierRef.current = verifier;
 
       // Listen for the deep link that completes this attempt. Scoped to the
       // attempt: it fires once, then unsubscribes (also on cancel/re-entry).
@@ -133,12 +138,16 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         // listener is up would sign the user into whatever identity it names. A
         // link that does not match is dropped with the listener left up, so it
         // can neither complete nor cancel this attempt.
-        if (!requestIdRef.current || authRequestId !== requestIdRef.current) {
+        if (
+          !requestIdRef.current ||
+          !verifierRef.current ||
+          authRequestId !== requestIdRef.current
+        ) {
           console.warn('Ignoring deep-link sign in: request id does not match the sign in started');
           return;
         }
         stopDeepLinkListener();
-        void finishSignIn(identityId);
+        void finishSignIn(identityId, verifierRef.current);
       });
       deepLinkCleanupRef.current = cleanup;
 
@@ -147,6 +156,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     } catch (error: any) {
       stopDeepLinkListener();
       requestIdRef.current = null;
+      verifierRef.current = null;
       captureException(error, {
         tags: { source: 'auth', event: 'signin-init' },
       });
@@ -159,6 +169,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const cancelSignIn = useCallback(() => {
     stopDeepLinkListener();
     requestIdRef.current = null;
+    verifierRef.current = null;
     setIsSigningIn(false);
   }, [stopDeepLinkListener]);
 
