@@ -1,7 +1,7 @@
 {
   "id": "3cd157b8-b6e4-47f5-951c-4fc81421315c",
   "name": "Lever",
-  "category": "built-in",
+  "category": "actions",
   "tags": ["animation", "avatar", "built-in", "default", "emote", "lever"],
   "description": "Built-in avatar animation. Play it from scene code with triggerEmote({ predefinedEmote: 'lever' }).",
   "author": "Decentraland Foundation",

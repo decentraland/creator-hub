@@ -1,7 +1,7 @@
 {
   "id": "a045d260-eb5e-46c8-af87-f42095332343",
   "name": "Open Chest",
-  "category": "built-in",
+  "category": "actions",
   "tags": ["animation", "avatar", "built-in", "chest", "default", "emote", "open"],
   "description": "Built-in avatar animation. Play it from scene code with triggerEmote({ predefinedEmote: 'openChest' }).",
   "author": "Decentraland Foundation",

@@ -12,7 +12,6 @@ export type CustomAsset = AssetData & {
 
 // categories obtained from "builder-items.decentraland.org" catalog
 export const CATEGORIES = [
-  'built-in',
   'ground',
   'utils',
   'buttons',

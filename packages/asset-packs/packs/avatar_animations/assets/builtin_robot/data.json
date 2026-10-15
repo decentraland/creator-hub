@@ -1,7 +1,7 @@
 {
   "id": "e37e4f99-69a4-412f-9820-9f5dafcdf0f7",
   "name": "Robot",
-  "category": "built-in",
+  "category": "expressions",
   "tags": ["animation", "avatar", "built-in", "default", "emote", "robot"],
   "description": "Built-in avatar animation. Play it from scene code with triggerEmote({ predefinedEmote: 'robot' }).",
   "author": "Decentraland Foundation",

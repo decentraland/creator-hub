@@ -1,7 +1,7 @@
 {
   "id": "8183b932-70b7-4f51-b5ca-477b69634bc8",
   "name": "Get Hit",
-  "category": "built-in",
+  "category": "actions",
   "tags": ["animation", "avatar", "built-in", "default", "emote", "get", "hit"],
   "description": "Built-in avatar animation. Play it from scene code with triggerEmote({ predefinedEmote: 'getHit' }).",
   "author": "Decentraland Foundation",

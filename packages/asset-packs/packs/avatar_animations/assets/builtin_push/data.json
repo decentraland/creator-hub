@@ -1,7 +1,7 @@
 {
   "id": "25d81a0d-bd47-47fd-b2f0-633fc6b6b05a",
   "name": "Push",
-  "category": "built-in",
+  "category": "actions",
   "tags": ["animation", "avatar", "built-in", "default", "emote", "push"],
   "description": "Built-in avatar animation. Play it from scene code with triggerEmote({ predefinedEmote: 'push' }).",
   "author": "Decentraland Foundation",

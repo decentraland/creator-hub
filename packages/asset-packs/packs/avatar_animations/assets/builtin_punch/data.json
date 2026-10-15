@@ -1,7 +1,7 @@
 {
   "id": "6e297bac-be82-4245-ae44-2ae6ee92a6ae",
   "name": "Punch",
-  "category": "built-in",
+  "category": "actions",
   "tags": ["animation", "avatar", "built-in", "default", "emote", "punch"],
   "description": "Built-in avatar animation. Play it from scene code with triggerEmote({ predefinedEmote: 'punch' }).",
   "author": "Decentraland Foundation",

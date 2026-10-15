@@ -1,7 +1,7 @@
 {
   "id": "45fd0668-522c-4410-b93b-643de07d78aa",
   "name": "Head Explode",
-  "category": "built-in",
+  "category": "expressions",
   "tags": ["animation", "avatar", "built-in", "default", "emote", "explode", "head"],
   "description": "Built-in avatar animation. Play it from scene code with triggerEmote({ predefinedEmote: 'headexplode' }).",
   "author": "Decentraland Foundation",

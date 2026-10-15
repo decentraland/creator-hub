@@ -1,7 +1,7 @@
 {
   "id": "85ba77d5-29e0-446f-9162-8b7feea76dba",
   "name": "Shrug",
-  "category": "built-in",
+  "category": "expressions",
   "tags": ["animation", "avatar", "built-in", "default", "emote", "shrug"],
   "description": "Built-in avatar animation. Play it from scene code with triggerEmote({ predefinedEmote: 'shrug' }).",
   "author": "Decentraland Foundation",

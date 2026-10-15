@@ -553,7 +553,7 @@ describe('SceneServer RPC catalog + script + smart item', () => {
     vi.mocked(getAssetById).mockReturnValue({
       id: 'wave',
       name: 'Wave',
-      category: 'built-in',
+      category: 'expressions',
       tags: [],
       contents: { 'thumbnail.png': 'hash1' },
       composite: { version: 1, components: [] },

@@ -13,6 +13,7 @@ import {
 import { Asset } from '../../../lib/logic/catalog';
 import { fetchImage, resizeImage } from '../../../lib/utils/img';
 import { useIsMounted } from '../../../hooks/useIsMounted';
+import { notifyBuiltInEmoteNotDraggable } from '../../../lib/logic/built-in-emotes';
 import { openCatalogAssetContextMenu } from './ContextMenu/ContextMenu';
 
 import './Asset.css';
@@ -70,6 +71,7 @@ const Asset = React.forwardRef<HTMLDivElement, AssetProps>(({ value, onAddToFile
         data-test-id={value.id}
         data-test-label={value.name}
         onContextMenu={handleContextMenu}
+        onDragStart={builtInEmote ? () => notifyBuiltInEmoteNotDraggable(value.name) : undefined}
         onMouseEnter={animatedSrc ? () => setHovered(true) : undefined}
         onMouseLeave={animatedSrc ? () => setHovered(false) : undefined}
       >

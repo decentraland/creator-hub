@@ -26,7 +26,10 @@ import { useContextMenu } from '../../../hooks/sdk/useContextMenu';
 import { determineAssetType, extractFileExtension } from '../../ImportAsset/utils';
 import type { AssetNodeItem } from '../types';
 import { isEmoteAsset } from '../utils';
-import { copyBuiltInEmoteName } from '../../../lib/logic/built-in-emotes';
+import {
+  copyBuiltInEmoteName,
+  notifyBuiltInEmoteNotDraggable,
+} from '../../../lib/logic/built-in-emotes';
 import type { Props } from './types';
 
 import './Tile.css';
@@ -169,6 +172,7 @@ export const Tile = withContextMenu<Props>(
           className="Tile"
           key={value.name}
           onDoubleClick={onSelect}
+          onDragStart={builtInEmote ? () => notifyBuiltInEmoteNotDraggable(value.name) : undefined}
           onMouseEnter={() => setHovered(true)}
           onMouseLeave={() => setHovered(false)}
           title={value.name}

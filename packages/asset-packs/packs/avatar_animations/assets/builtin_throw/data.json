@@ -1,7 +1,7 @@
 {
   "id": "0e3ed6fd-01b4-4813-b1b8-48b851fa3899",
   "name": "Throw",
-  "category": "built-in",
+  "category": "actions",
   "tags": ["animation", "avatar", "built-in", "default", "emote", "throw"],
   "description": "Built-in avatar animation. Play it from scene code with triggerEmote({ predefinedEmote: 'throw' }).",
   "author": "Decentraland Foundation",

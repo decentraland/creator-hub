@@ -1,7 +1,7 @@
 {
   "id": "42977525-125b-4a4f-8e7a-b6de7a775879",
   "name": "Button Down",
-  "category": "built-in",
+  "category": "actions",
   "tags": ["animation", "avatar", "built-in", "button", "default", "down", "emote"],
   "description": "Built-in avatar animation. Play it from scene code with triggerEmote({ predefinedEmote: 'buttonDown' }).",
   "author": "Decentraland Foundation",

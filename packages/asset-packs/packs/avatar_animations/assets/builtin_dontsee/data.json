@@ -1,7 +1,7 @@
 {
   "id": "988a894a-beda-4448-ac98-177b1f94c79c",
   "name": "Don't See",
-  "category": "built-in",
+  "category": "expressions",
   "tags": ["animation", "avatar", "built-in", "default", "don", "emote", "see", "t"],
   "description": "Built-in avatar animation. Play it from scene code with triggerEmote({ predefinedEmote: 'dontsee' }).",
   "author": "Decentraland Foundation",

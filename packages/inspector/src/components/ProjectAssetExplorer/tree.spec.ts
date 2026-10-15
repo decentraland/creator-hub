@@ -32,7 +32,7 @@ describe('when the catalog has built-in animations', () => {
     {
       id: 'wave',
       name: 'Wave',
-      category: 'built-in',
+      category: 'expressions',
       tags: [],
       composite: { version: 1, components: [] },
       contents: { 'thumbnail.png': 'hash-thumb', 'preview.webp': 'hash-preview' },

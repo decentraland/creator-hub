@@ -1,7 +1,7 @@
 {
   "id": "42e95892-a14e-4cb0-b4af-3acdb59fa790",
   "name": "Clap",
-  "category": "built-in",
+  "category": "expressions",
   "tags": ["animation", "avatar", "built-in", "clap", "default", "emote"],
   "description": "Built-in avatar animation. Play it from scene code with triggerEmote({ predefinedEmote: 'clap' }).",
   "author": "Decentraland Foundation",
