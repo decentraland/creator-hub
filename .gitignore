@@ -39,3 +39,10 @@ settings.local.json
 
 # Claude agent verification screenshots
 .claude/screenshots/
+
+# Local package tarballs from .ai/skills/local-package-chain
+.local-packages/
+
+# Third-party skills, installed per-developer and tracked in skills-lock.json
+.agents/skills/
+.claude/skills/

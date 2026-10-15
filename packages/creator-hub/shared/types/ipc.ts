@@ -88,6 +88,13 @@ export type AiSceneOpRequest = { id: string; op: string; params: Record<string, 
 // A null answer means the user dismissed it (or the turn was stopped before they chose).
 export const AI_ASK_REQUEST = 'ai.askRequest';
 
+// Main gave up waiting on an AI_ASK_REQUEST (its timeout passed, so the agent was told the
+// question was dismissed). The renderer closes that prompt so it can't take an answer that
+// nothing is waiting for any more.
+export const AI_ASK_EXPIRED = 'ai.askExpired';
+
+export type AiAskExpired = { id: string };
+
 export type AiAskOption = { label: string; description?: string };
 export type AiAskRequest = {
   id: string;
@@ -177,7 +184,9 @@ export interface Ipc {
   'optimizer.installTools': (path: string) => Promise<OptimizeToolsInfo>;
   'metrics.request': (request: MetricsRequest) => Promise<MetricsResponse>;
   'inspector.start': () => Promise<number>;
-  'inspector.attachSceneDebugger': (path: string) => Promise<string>;
+  'inspector.attachSceneDebugger': (
+    path: string,
+  ) => Promise<{ eventName: string; backlog: string[] }>;
   'inspector.detachSceneDebugger': (path: string) => void;
   'bevyRealm.start': (path: string) => Promise<{ url: string; wsUrl: string }>;
   'bevyRealm.kill': (path: string) => Promise<void>;

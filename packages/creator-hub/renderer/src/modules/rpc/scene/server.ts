@@ -33,6 +33,8 @@ export enum Method {
   OPTIMIZE_SCENE = 'optimize_scene',
   PROMPT_ASSISTANT = 'prompt_assistant',
   SET_CONSOLE_WINDOW_OPEN = 'set_console_window_open',
+  NOTIFY_SCENE_METADATA = 'notify_scene_metadata',
+  NOTIFY_READY = 'notify_ready',
 }
 
 export type Params = {
@@ -46,6 +48,8 @@ export type Params = {
   [Method.OPTIMIZE_SCENE]: Record<string, never>;
   [Method.PROMPT_ASSISTANT]: { text: string };
   [Method.SET_CONSOLE_WINDOW_OPEN]: { open: boolean };
+  [Method.NOTIFY_SCENE_METADATA]: { title: string; scene?: Project['scene'] };
+  [Method.NOTIFY_READY]: Record<string, never>;
 };
 
 export type Result = {
@@ -62,11 +66,34 @@ export type Result = {
   [Method.OPTIMIZE_SCENE]: void;
   [Method.PROMPT_ASSISTANT]: void;
   [Method.SET_CONSOLE_WINDOW_OPEN]: void;
+  [Method.NOTIFY_SCENE_METADATA]: void;
+  [Method.NOTIFY_READY]: void;
+};
+
+export type SceneRpcServerCallbacks = {
+  // The inspector's scene RPC server is up and can take pushes (fires again for every
+  // reloaded iframe).
+  onReady?: () => void;
 };
 
 export class SceneRpcServer extends RPC<Method, Params, Result> {
-  constructor(transport: Transport, project: Project) {
+  constructor(transport: Transport, project: Project, callbacks: SceneRpcServerCallbacks = {}) {
     super('SceneRpcOutbound', transport);
+
+    this.handle('notify_ready', async () => {
+      callbacks.onReady?.();
+    });
+
+    this.handle('notify_scene_metadata', async ({ title, scene }) => {
+      const current = store.getState().editor.project ?? project;
+      store.dispatch(
+        workspaceActions.updateProject({
+          ...current,
+          title: title || current.title,
+          scene: scene ?? current.scene,
+        }),
+      );
+    });
 
     this.handle('open_file', async ({ path }) => {
       const resolvedPath = await getPath(path, project);

@@ -43,6 +43,7 @@
         "title": "Loading failed",
         "timeout": "The scene is taking too long to load. It may have an error in its code.",
         "back": "Back to scenes",
+        "retry": "Retry",
         "outdated_deps": "This scene's dependencies are out of date and don't support the Bevy renderer. Update them to continue.",
         "update_deps": "Update dependencies"
       }
@@ -51,14 +52,13 @@
       "actions": {
         "code": "Code",
         "optimize": "Optimize",
-        "preview": "Preview",
+        "play": "Play",
         "optimizing": "Optimizing",
         "cancel_optimizing": "Cancel optimization",
         "publish": "Publish",
         "refresh": "Reload scene from disk",
         "preview_options": {
-          "title": "Preview Options",
-          "menu_title": "Preview in",
+          "title": "Play Options",
           "client": {
             "desktop": "Desktop Client",
             "bevy_web": "Web (Bevy)"
@@ -113,6 +113,11 @@
       "billing_dismiss": "Got It",
       "outdated": "Your Claude CLI (v{version}) is out of date — run \"claude update\" in a terminal to use the latest models.",
       "screenshot_alt": "Screenshot from the assistant",
+      "attach": {
+        "button": "Attach files",
+        "remove": "Remove",
+        "drop_hint": "Drop files to attach"
+      },
       "history": {
         "title": "Chat history",
         "empty": "No saved chats yet.",
@@ -149,7 +154,15 @@
         "alt_description": "Already signed into Claude Desktop, the VS Code extension, or another MCP-capable tool? Point it at this scene instead — no CLI needed. Add this to its MCP configuration:",
         "alt_copy": "Copy configuration",
         "alt_copied": "Copied",
-        "alt_note": "Localhost only. The URL and token change each time Creator Hub restarts."
+        "alt_note": "Localhost only. The URL and token change each time Creator Hub restarts.",
+        "install_guide": "If that doesn't work, follow the {provider} install guide",
+        "desktop_detected": "Claude Desktop is installed, but the assistant needs Claude Code — Anthropic's terminal tool. Desktop's sign-in isn't shared with it, so install Claude Code and sign in once:",
+        "gemini_plan_note": "Gemini CLI now works only with a paid Gemini API key or a Gemini Code Assist Standard/Enterprise license.",
+        "needs_login_status": "Sign-in needed",
+        "needs_login_title": "{provider} asked you to sign in",
+        "needs_login_help": "Its saved sign-in may have expired, even if it showed as connected. Sign out and back in: run these in a terminal, one at a time, and finish in your browser. Then send your message again:",
+        "needs_login_managed_help": "Its saved sign-in may have expired, even if it showed as connected. In Settings → AI, click Sign out, then Sign in, then send your message again.",
+        "api_key_alternative": "Or use an API key: set {envVar} and turn on \"{setting}\" in Settings → AI."
       }
     }
   },

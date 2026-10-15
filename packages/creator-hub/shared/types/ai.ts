@@ -27,10 +27,10 @@ export interface AiProviderInfo {
   // Absent when the binary isn't found or didn't report a parseable version. Used to
   // warn when the CLI is too old for the newest models (see isClaudeCliOutdated).
   version?: string;
-  // Whether the app can drive this CLI's sign-in itself (install-on-demand + scripted OAuth).
-  // False for a CLI with no scriptable login (Gemini authenticates from its own interactive CLI
-  // or an API-key env var), so the UI shows the terminal command instead of an in-app button.
+  /** Whether the app signs this CLI in and out: the vendor allows it and no terminal install is in use. */
   managedSignIn: boolean;
+  desktopInstalled?: boolean;
+  needsLogin?: boolean;
 }
 
 // Newest Claude models (e.g. Fable) are gated on the CLI version: an older `claude`
@@ -38,14 +38,73 @@ export interface AiProviderInfo {
 // UI nudges users up to. Bump it as newer models raise the requirement.
 export const MIN_CLAUDE_CLI_VERSION = '2.1.251';
 
-// Install + sign-in commands per agent, shown on the chat setup card and the settings
-// "Connect" section. Obviously-safe public package names.
-export const AI_CLI_COMMANDS: Record<AiProvider, { install: string; signin: string }> = {
-  claude: { install: 'npm i -g @anthropic-ai/claude-code', signin: 'claude' },
-  codex: { install: 'npm i -g @openai/codex', signin: 'codex login' },
-  cursor: { install: 'npm i -g cursor-agent', signin: 'cursor-agent login' },
-  gemini: { install: 'npm i -g @google/gemini-cli', signin: 'gemini' },
+type CliCommands = {
+  install: string;
+  installWindows?: string;
+  signin: string;
+  relogin: string[];
+  apiKeyEnv: string;
+  guideUrl: string;
+  guideAnchors?: { windows: string; unix: string };
 };
+
+export const AI_CLI_COMMANDS: Record<AiProvider, CliCommands> = {
+  claude: {
+    install: 'curl -fsSL https://claude.ai/install.sh | bash',
+    installWindows: 'winget install Anthropic.ClaudeCode',
+    signin: 'claude auth login',
+    relogin: ['claude auth logout', 'claude auth login'],
+    apiKeyEnv: 'ANTHROPIC_API_KEY',
+    guideUrl: 'https://code.claude.com/docs/en/terminal-guide',
+    guideAnchors: { windows: '#windows', unix: '#macos-and-linux' },
+  },
+  codex: {
+    install: 'curl -fsSL https://chatgpt.com/codex/install.sh | sh',
+    installWindows:
+      'powershell -ExecutionPolicy ByPass -c "irm https://chatgpt.com/codex/install.ps1 | iex"',
+    signin: 'codex login',
+    relogin: ['codex logout', 'codex login'],
+    apiKeyEnv: 'OPENAI_API_KEY',
+    guideUrl: 'https://developers.openai.com/codex/cli',
+  },
+  cursor: {
+    install: 'curl https://cursor.com/install -fsS | bash',
+    installWindows:
+      'powershell -ExecutionPolicy ByPass -c "irm \'https://cursor.com/install?win32=true\' | iex"',
+    signin: 'cursor-agent login',
+    relogin: ['cursor-agent logout', 'cursor-agent login'],
+    apiKeyEnv: 'CURSOR_API_KEY',
+    guideUrl: 'https://cursor.com/docs/cli/installation',
+  },
+  gemini: {
+    install: 'npm install -g @google/gemini-cli',
+    signin: 'gemini',
+    relogin: ['gemini', '/auth logout', '/auth login'],
+    apiKeyEnv: 'GEMINI_API_KEY',
+    guideUrl: 'https://www.geminicli.com/docs/get-started/installation',
+  },
+};
+
+/** How to use this agent with an API key instead of a sign-in, completing "Or …". */
+export function apiKeyAlternative(provider: AiProvider): string {
+  return `set \`${AI_CLI_COMMANDS[provider].apiKeyEnv}\` and turn on "Bill this to an API key instead" in Settings → AI`;
+}
+
+/** The terminal install command, sign-in command, sign-out-then-in steps, API key name and install-guide link for this OS. */
+export function cliSetup(
+  provider: AiProvider,
+  windows: boolean,
+): { install: string; signin: string; relogin: string[]; apiKeyEnv: string; guideUrl: string } {
+  const cmds = AI_CLI_COMMANDS[provider];
+  const anchor = cmds.guideAnchors?.[windows ? 'windows' : 'unix'] ?? '';
+  return {
+    install: (windows ? cmds.installWindows : undefined) ?? cmds.install,
+    signin: cmds.signin,
+    relogin: cmds.relogin,
+    apiKeyEnv: cmds.apiKeyEnv,
+    guideUrl: cmds.guideUrl + anchor,
+  };
+}
 
 // True when `version` is a parseable semver strictly older than `min`. Unknown/absent
 // versions are treated as NOT outdated — we never nag when we couldn't read the version.
@@ -65,11 +124,30 @@ export function isCliVersionOutdated(version: string | undefined, min: string): 
   return false;
 }
 
-// Pasted/attached images, as data URLs. Main writes them to temp files and hands the
-// CLI paths (claude reads them with its Read tool; codex takes -i).
-export interface AiImageAttachment {
+// A file the user attached to a prompt — an image, a 3D model, audio, or any other file.
+// How it reaches the CLI depends on where it came from:
+//   • Dropped/picked from disk → `path` (its real absolute path). Handed to the CLI as-is:
+//     no copy, no base64 round-trip, no size cap. Claude reads images with its Read tool and
+//     references models/audio/etc. by path when writing scene code; codex takes images via -i.
+//   • Pasted from the clipboard (no file on disk) → `dataUrl`. Main writes it to a temp file
+//     and hands over that path instead.
+// Exactly one of `path` / `dataUrl` is set. `kind` classifies it for the UI and for codex's
+// image-only -i flag; `mimeType` is best-effort (absent for some dropped files).
+export type AiAttachmentKind = 'image' | 'model' | 'audio' | 'file';
+
+export interface AiAttachment {
   name: string;
-  dataUrl: string;
+  kind: AiAttachmentKind;
+  mimeType?: string;
+  path?: string;
+  dataUrl?: string;
+}
+
+// The subset of an attachment kept on a persisted user message, for the transcript's chips —
+// just enough to label it. The bytes/paths themselves aren't stored in the transcript.
+export interface AiAttachmentMeta {
+  name: string;
+  kind: AiAttachmentKind;
 }
 
 // A single user turn to run. `text` is the prompt the user typed; `context` is editor
@@ -82,7 +160,7 @@ export interface AiSendParams {
   model?: string;
   text: string;
   context?: string;
-  images?: AiImageAttachment[];
+  attachments?: AiAttachment[];
   // When true, the assistant keeps the API key in its environment (bill via API key) instead
   // of stripping it to force subscription billing. From the `useApiKeyFromEnv` setting.
   apiKeyFromEnv?: boolean;
@@ -144,6 +222,8 @@ export interface AiMirrorMessage {
   error?: string;
   mutations?: number;
   reverted?: boolean;
+  // Files the user attached to this prompt (chips under the user bubble). Name + kind only.
+  attachments?: AiAttachmentMeta[];
 }
 
 export interface AiMirrorState {
@@ -164,7 +244,7 @@ export interface AiMirrorState {
 // A user action taken in the detached window, forwarded to the main window to run against
 // the single store. `sync` asks the main window to push the current state (on mount).
 export type AiRemoteCommand =
-  | { type: 'send'; text: string }
+  | { type: 'send'; text: string; attachments?: AiAttachment[] }
   | { type: 'stop' }
   | { type: 'newChat' }
   | { type: 'setProvider'; provider: AiProvider }

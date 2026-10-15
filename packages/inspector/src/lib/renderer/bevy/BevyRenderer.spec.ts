@@ -175,6 +175,47 @@ describe('BevyRenderer scene run/freeze', () => {
   });
 });
 
+describe('BevyRenderer audio mute (#1569)', () => {
+  let renderer: BevyRenderer;
+
+  beforeEach(() => {
+    renderer = new BevyRenderer();
+  });
+
+  afterEach(() => renderer.dispose());
+
+  it('should default to unmuted', () => {
+    expect(renderer.audio.isMuted()).toBe(false);
+  });
+
+  it('should post the mute state and notify subscribers on change', () => {
+    const posted: boolean[] = [];
+    renderer.setMutedPoster(muted => posted.push(muted));
+    const seen: boolean[] = [];
+    renderer.audio.onMuteChange(muted => seen.push(muted));
+
+    renderer.audio.setMuted(true);
+    expect(renderer.audio.isMuted()).toBe(true);
+    expect(posted).toEqual([true]);
+    expect(seen).toEqual([true]);
+  });
+
+  it('should ignore a no-op set to the current state', () => {
+    const posted: boolean[] = [];
+    renderer.setMutedPoster(muted => posted.push(muted));
+    renderer.audio.setMuted(false); // already unmuted
+    expect(posted).toEqual([]);
+  });
+
+  it('should stop notifying after unsubscribe', () => {
+    const seen: boolean[] = [];
+    const off = renderer.audio.onMuteChange(muted => seen.push(muted));
+    off();
+    renderer.audio.setMuted(true);
+    expect(seen).toEqual([]);
+  });
+});
+
 describe('BevyRenderer gizmo world alignment', () => {
   let renderer: BevyRenderer;
 

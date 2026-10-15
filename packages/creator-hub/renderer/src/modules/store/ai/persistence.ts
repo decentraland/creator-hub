@@ -17,9 +17,19 @@ const SESSION_PREFIX = 'creator-hub:ai-session:';
 // Per-project dismissal of the "uses your own account" billing hint (#1505). Kept apart
 // from the transcripts so clearing a chat doesn't bring the hint back.
 const BILLING_DISMISSED_PREFIX = 'creator-hub:ai-billing-dismissed:';
-// localStorage is ~5MB per origin; keep one transcript well under that. A transcript larger
-// than this just isn't persisted (the live one still works) rather than throwing.
 const MAX_BYTES = 1_000_000;
+const EMPTY_TRANSCRIPT_BYTES = JSON.stringify({ messages: [] }).length;
+
+function newestWithinBudget<T>(messages: T[]): T[] {
+  const sizes = messages.map(m => JSON.stringify(m).length);
+  let total = EMPTY_TRANSCRIPT_BYTES + sizes.reduce((sum, n) => sum + n + 1, 0) - 1;
+  let start = 0;
+  while (total > MAX_BYTES && start < messages.length) {
+    total -= sizes[start] + 1;
+    start++;
+  }
+  return messages.slice(start);
+}
 // Cap the history per scene so it can't grow without bound; oldest sessions fall off.
 export const MAX_SESSIONS = 20;
 
@@ -172,16 +182,13 @@ export function writeSessionMessages(
       storage.removeItem(sessionKey(path, id));
       return;
     }
-    // Drop ephemeral parts before persisting: inline screenshot images (#1506) would blow the
-    // size budget and evict the transcript, and interactive `ask_user` prompts belong to a live
-    // turn (they can't be answered after a reload). The text/tool history is what's worth keeping.
     const slim = messages.map(m => ({
       ...m,
       parts: m.parts.filter(p => p.kind !== 'image' && p.kind !== 'prompt'),
     }));
-    const raw = JSON.stringify({ messages: slim });
-    if (raw.length > MAX_BYTES) return; // too big to persist; skip rather than throw
-    storage.setItem(sessionKey(path, id), raw);
+    const kept = newestWithinBudget(slim);
+    if (kept.length === 0) return;
+    storage.setItem(sessionKey(path, id), JSON.stringify({ messages: kept }));
   } catch {
     /* quota exceeded or storage unavailable — non-fatal, the live transcript is intact */
   }

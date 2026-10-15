@@ -482,12 +482,12 @@ const VisibleRow: React.FC<{ visible: boolean; onToggle: (visible: boolean) => v
 
 const SCENE_INSET_OPTIONS: { value: UiScreenInset; label: string }[] = [
   { value: 'device', label: 'Device Safe Area' },
-  { value: 'interactable', label: 'Gameplay Safe Area' },
+  { value: 'interactable', label: 'Interactable Safe Area' },
   { value: 'none', label: 'Full Screen' },
 ];
 
 const SCENE_INSET_INFO =
-  'Which screen area this GUI is placed in. Full Screen uses the entire renderable screen. Gameplay Safe Area excludes game-native UI such as chat, minimap and HUD indicators. Device Safe Area (mobile only) excludes physical constraints such as the notch, Dynamic Island and system bars. Requires @dcl/react-ecs 7.26.0+ in your scene.';
+  'Which screen area this GUI is placed in. Full Screen uses the entire renderable screen. Interactable Safe Area excludes game-native UI such as chat, minimap and HUD indicators. Device Safe Area (mobile only) excludes physical constraints such as the notch, Dynamic Island and system bars. Requires @dcl/react-ecs 7.26.0+ in your scene.';
 
 /** Screen area the whole GUI is placed in — a root-only, per-scene-root choice. */
 const SceneInsetRow: React.FC<{

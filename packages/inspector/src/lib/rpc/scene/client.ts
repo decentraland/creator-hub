@@ -13,6 +13,8 @@ enum Method {
   OPTIMIZE_SCENE = 'optimize_scene',
   PROMPT_ASSISTANT = 'prompt_assistant',
   SET_CONSOLE_WINDOW_OPEN = 'set_console_window_open',
+  NOTIFY_SCENE_METADATA = 'notify_scene_metadata',
+  NOTIFY_READY = 'notify_ready',
 }
 
 type Params = {
@@ -26,6 +28,13 @@ type Params = {
   [Method.OPTIMIZE_SCENE]: Record<string, never>;
   [Method.PROMPT_ASSISTANT]: { text: string };
   [Method.SET_CONSOLE_WINDOW_OPEN]: { open: boolean };
+  [Method.NOTIFY_SCENE_METADATA]: SceneMetadataNotice;
+  [Method.NOTIFY_READY]: Record<string, never>;
+};
+
+export type SceneMetadataNotice = {
+  title: string;
+  scene: { base: string; parcels: string[] };
 };
 
 type Result = {
@@ -42,6 +51,8 @@ type Result = {
   [Method.OPTIMIZE_SCENE]: void;
   [Method.PROMPT_ASSISTANT]: void;
   [Method.SET_CONSOLE_WINDOW_OPEN]: void;
+  [Method.NOTIFY_SCENE_METADATA]: void;
+  [Method.NOTIFY_READY]: void;
 };
 
 export class SceneClient extends RPC<Method, Params, Result> {
@@ -92,6 +103,18 @@ export class SceneClient extends RPC<Method, Params, Result> {
   // (dock it back into the inline tab).
   setConsoleWindowOpen = (open: boolean) => {
     return this.request('set_console_window_open', { open });
+  };
+
+  notifySceneMetadata = (metadata: SceneMetadataNotice) => {
+    return this.request('notify_scene_metadata', metadata);
+  };
+
+  // Tell the host the scene RPC server is up and can take its pushes. A host push sent before
+  // this (e.g. right at the iframe's load event) times out on a slow-booting renderer, and the
+  // host has no other way to learn that a reloaded iframe needs its state (debug console,
+  // selected tabs) applied again.
+  notifyReady = () => {
+    return this.request('notify_ready', {});
   };
 
   // Open the AI assistant panel in the host and seed its composer with `text` (without

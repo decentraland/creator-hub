@@ -54,9 +54,15 @@ cd packages/inspector && npm run test:e2e          # Inspector E2E tests
 
 **Note:** run vitest from inside the package (`cd packages/<pkg> && npx vitest run`). Invoking `npx vitest run` from the repo root sweeps up every workspace's specs without their per-package configs/setup and reports mass failures that are pure cwd artifacts.
 
-**Note:** no spec file is type-checked. All three creator-hub tsconfigs carry `exclude: ["**/*.spec.ts", "**/*.test.ts"]`, and vitest transpiles without checking — so `npm run typecheck` says nothing about a test's own types. A wrong cast or a stale `Partial<…>` in a fixture is caught by neither the type gate nor the test run. The production code a spec imports *is* checked (tsc follows the import graph), so only the fixture is blind.
+**Note:** `.spec.ts` and `.test.ts` files are not type-checked, but `.spec.tsx` files are. All three creator-hub tsconfigs carry `exclude: ["**/*.spec.ts", "**/*.test.ts"]`, and vitest transpiles without checking — so `npm run typecheck` says nothing about a `.ts` test's own types, and a wrong cast or a stale `Partial<…>` in its fixture is caught by neither gate. The exclude does not match `.tsx`, so the renderer's component specs ARE checked: a fixture such as `mockResolvedValue(null)` against a non-null return fails `make typecheck`.
+
+**Note:** in main-process tests, setting `process.env.HOME` does not change `os.homedir()` (vitest runs them in worker threads). Mock `os` instead (`vi.mock('os', …)` returning a fake `homedir`, as in `main/tests/ai-detect.test.ts`). Any test that reaches agent detection must also set `SHELL=/usr/bin/true`: `ai.ts` asks your login shell for its PATH and would otherwise find your real CLIs.
+
+**Note:** `renderer/src/components/AnalyticsPage/atScale.spec.tsx` can time out in a full `npm run test:unit` run (it waits up to 15 s while every renderer suite runs in parallel). Rerun it alone before treating it as a regression.
 
 **Note:** the inspector's Playwright e2e needs the browser binaries installed once (`npx playwright install chromium`) and a dev server already running at `E2E_URL` (default `http://localhost:8000`) — `npm run start` in `packages/inspector` with `VITE_INSPECTOR_PORT` set serves one. Without the binary the suite fails at launch with `browserType.launch: Executable doesn't exist`, which reads like a code failure.
+
+**Note:** to check the AI assistant against a fake agent CLI in the built app (`npm run build`, then Playwright `_electron.launch` on `.` with a temp `HOME` and `--user-data-dir=<tmp>`), put the fake `claude` script first on `PATH` and the real Node bin folder (e.g. `~/.volta/tools/image/node/<version>/bin`) after it. Volta's shim stops resolving under a fake `HOME`, and the app then fails with an npm `package.json` error. Agents under `/opt/homebrew/bin` are still found with a stripped `PATH`, so a fake-agent run sees your real Codex too.
 
 ### Code Quality
 
@@ -183,9 +189,13 @@ Any such fix-up must mutate **`mergedConfig.settings`**, never `existingConfig.s
 
 `Tabs/AiTab/component.tsx` defines its own chevron/title `Accordion` rather than importing MUI's. Pulling in a not-yet-bundled `@mui/material` module retriggers Vite's dependency optimizer mid-session. The same file's copy button carries an `'&&&&&&&': { color: 'var(--white)' }` `sx` rule for a related reason: `decentraland-ui2` pins secondary-text buttons to a grey `secondary.contrast` at high specificity, and the repeated `&` (0,7,0) is what out-specifies it.
 
-### The dev app's userData directory is `creator-hub`, not the product name
+### The userData directory is `creator-hub`, not the product name
 
-Electron derives `app.getPath('userData')` from the package `name` (`creator-hub`), so a `npm run start` dev run reads and writes `~/Library/Application Support/creator-hub/Settings/config.json` on macOS. Only a packaged build uses `~/Library/Application Support/Decentraland Creator Hub/…`, from `productName` in `electron-builder.cjs`. Verifying persisted-settings behaviour against the packaged path while running the dev app silently inspects a file the app never touched. `electron-log` follows the same name: `~/Library/Logs/creator-hub/main.log`.
+Electron derives `app.getPath('userData')` from the bundled `package.json`, which has a `name` (`creator-hub`) and no `productName`. `productName` in `electron-builder.cjs` names only the installer and app bundle; it never reaches that `package.json`. So dev runs and packaged builds alike use `creator-hub`:
+- Settings: `~/Library/Application Support/creator-hub/Settings/config.json` on macOS, `%APPDATA%\creator-hub\…` on Windows.
+- `electron-log`: `~/Library/Logs/creator-hub/main.log` on macOS, `%APPDATA%\creator-hub\logs\main.log` on Windows. Point Windows users there when asking for logs.
+
+Looking in a `Decentraland Creator Hub` folder inspects a directory the app never touches.
 
 ### Redux state freeze + in-place mutating helpers
 
@@ -205,7 +215,7 @@ The optimizer's shared sidecar folder makes GLBs reference textures through `../
 
 ## Design handoff
 
-Design specs live in Figma ("📗️ Design System | Creator Hub"). The Figma MCP tools are capped on a View seat and then return `reached the Figma MCP tool call limit` for **every** call, `get_metadata` included — the cap is account-wide, not per-tool. When that happens, read the frame with the Claude-in-Chrome browser tools instead: open the `?node-id=` URL, select a variant in the Layers panel, `shift+2` to zoom to selection, then `computer`→`zoom` over viewport regions to read labels. A component's variants are enumerated in the Layers panel, which is the fastest way to learn every state a panel must cover.
+Design specs live in Figma ("📗️ Design System | Creator Tools", file key `5ecKgNHjChZEe05LUwKGku`; see [`docs/DESIGN.md`](docs/DESIGN.md) → "Figma source"). The Figma MCP tools are capped on a View seat and then return `reached the Figma MCP tool call limit` for **every** call, `get_metadata` included — the cap is account-wide, not per-tool. When that happens, read the frame with the Claude-in-Chrome browser tools instead: open the `?node-id=` URL, select a variant in the Layers panel, `shift+2` to zoom to selection, then `computer`→`zoom` over viewport regions to read labels. A component's variants are enumerated in the Layers panel, which is the fastest way to learn every state a panel must cover.
 
 ### Electron response headers must be overridden case-insensitively
 
@@ -213,7 +223,9 @@ Design specs live in Figma ("📗️ Design System | Creator Hub"). The Figma MC
 
 ## Skills
 
-Skills live in `.ai/skills/*/SKILL.md`. Read the relevant `SKILL.md` when a task matches a skill's domain.
+Skills live in `.ai/skills/*/SKILL.md`. Read the relevant `SKILL.md` when a task matches a skill's domain. Third-party skills are pinned in the committed `skills-lock.json`; on a fresh clone run `make install-skills`. It runs `npx skills@1.7.0 experimental_install` (pinned in the Makefile; bump it deliberately), which restores the lock only into `.agents/skills/` (a folder Claude Code does not read), then symlinks each skill into `.claude/skills/`. Both folders are gitignored. To add a skill, run `npx skills@1.7.0 add <source> --skill <name…> -a claude-code` (names space-separated; a comma-joined `a,b` matches nothing) and commit the updated lock. Install personal skills with `-g` so they stay out of the lock.
+
+**Figma / design work:** on any Figma cue (a `figma.com` URL or the word "figma"), read [`.ai/skills/figma/SKILL.md`](.ai/skills/figma/SKILL.md) FIRST — the project umbrella for Figma→code work (leaf skills, the browser fallback when the Figma MCP is capped, palette→`vars.css`/`DESIGN.md` sync, live verification, SVG/CSS gotchas), which makes the "Design handoff" note above actionable. A `UserPromptSubmit` hook (`.ai/hooks/figma/hook.py`) fires the reminder automatically. The shell `case` check in front of it in `.claude/settings.json` is the only way to skip starting Python on non-Figma prompts: `UserPromptSubmit` ignores `matcher`, and an `if` field stops the hook from running at all.
 
 ## Standards
 
@@ -221,5 +233,9 @@ Read the relevant standards doc when the task touches its domain:
 
 - [`docs/coding-standards.md`](docs/coding-standards.md) — React patterns and antipatterns (controlled-input prop-sync, memoized components built in render). Read when touching `TextField`, the tree `<Input>`, or building any component with a buffered value.
 - [`docs/testing-standards.md`](docs/testing-standards.md) — how to write a test here, plus every testing gotcha: Vitest conventions and mocking traps (`vi.mock` factories replacing whole modules, fake timers leaking across `describe`s), and E2E patterns (real keyboard input vs `fill()`, locators vs `ElementHandle`s, focus-actually-on-element gates, outcome waits vs fixed sleeps). Read before writing or debugging any test.
-- [`docs/DESIGN.md`](docs/DESIGN.md) — the inspector design system: `theme/vars.css` palette by role, the light→dark `--base-*` ramp gotcha + correct dark-surface pairing, spacing/fonts, and focus/contrast/motion/ARIA conventions. Read when writing or reviewing inspector CSS/`.tsx` styling (colors, focus states, accessibility). Note: `brand-guidelines` (Anthropic) does NOT apply here.
+- [`docs/DESIGN.md`](docs/DESIGN.md) — the design system for both UIs: the Figma source, the inspector's `theme/vars.css` palette by role (light→dark `--base-*` ramp gotcha + correct dark-surface pairing, spacing/fonts, focus/contrast/motion/ARIA conventions), and the Creator Hub renderer's `decentraland-ui2` + `theme.css` tokens. Read when writing or reviewing inspector or Creator Hub CSS/`.tsx` styling. Note: `brand-guidelines` (Anthropic) does NOT apply here.
 - [`docs/UIDesigner.md`](docs/UIDesigner.md) — the UI Designer (2D) mode: how to test it (standalone-vs-Creator-Hub limits, browser-automation traps), and the 2D toolbar, tool modes, scene-run intent, multi-node move, and mode-persistence architecture. Read when touching the 2D toolbar, the canvas direct-manipulation, or the 2D/3D switch.
+
+## Agents
+
+Cross-package work has a dedicated agent per layer in `.claude/agents/`. `dcl-ch-feature-architect` orchestrates a change that spans layers; start it as the session agent (`claude --agent dcl-ch-feature-architect`), since an @-mention leaves the parent session in control. The specialists — `dcl-asset-packs-specialist`, `dcl-inspector-specialist`, `dcl-creator-hub-specialist`, `dcl-sdk-toolchain-specialist` — also take single-layer work directly. Getting a local asset-packs/inspector build into js-sdk-toolchain and a Creator Hub-previewed scene follows one runbook, [`.ai/skills/local-package-chain/SKILL.md`](.ai/skills/local-package-chain/SKILL.md); change the procedure there, never inside an agent file. Each agent's "Traps" list is one-line reminders of gotchas documented in full above; when you change a gotcha here, update its reminder line in the agent file too.

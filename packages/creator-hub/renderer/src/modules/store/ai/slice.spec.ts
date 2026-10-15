@@ -1,9 +1,131 @@
-import { describe, expect, it } from 'vitest';
+import { configureStore } from '@reduxjs/toolkit';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { reducer, selectionContext, send } from './slice';
+import type { AiProviderInfo } from '/shared/types/ai';
+import {
+  actions,
+  fetchProviders,
+  persistConversation,
+  recheckAfterTurn,
+  reducer,
+  selectionContext,
+  send,
+} from './slice';
 
-// The "[Editor context]" line attached to a turn from the current editor selection, so the
-// assistant can resolve "this" / "the selected entity" without the user spelling out ids.
+const preloadAi = vi.hoisted(() => ({
+  isBusy: vi.fn(),
+  send: vi.fn(),
+  detectProviders: vi.fn(),
+}));
+
+vi.mock('#preload', async importOriginal => ({
+  ...(await importOriginal<object>()),
+  ai: preloadAi,
+}));
+
+describe('when sending while main is still running a turn', () => {
+  let dispatched: unknown[];
+
+  beforeEach(async () => {
+    vi.clearAllMocks();
+    preloadAi.isBusy.mockResolvedValue(true);
+    dispatched = [];
+    const dispatch = vi.fn((action: unknown) => {
+      dispatched.push(action);
+      return action;
+    });
+    const getState = () => ({
+      editor: { project: { path: '/scene' } },
+      ai: reducer(undefined, { type: 'init' }),
+      workspace: {},
+    });
+    await send({ text: 'hello' })(dispatch, getState as never, undefined);
+  });
+
+  it('should not send the message', () => {
+    expect(preloadAi.send).not.toHaveBeenCalled();
+  });
+
+  it('should mark the panel busy so the user can wait for the outcome or stop it', () => {
+    expect(dispatched).toContainEqual(actions.setBusy(true));
+  });
+
+  it('should put the text back in the composer instead of dropping it', () => {
+    expect(dispatched).toContainEqual(actions.setDraftPrompt('hello'));
+  });
+
+  it('should not add the message to the transcript', () => {
+    expect(dispatched).not.toContainEqual(
+      expect.objectContaining({ type: actions.pushUserMessage.type }),
+    );
+  });
+});
+
+describe('when the user sends twice before main says whether it is busy', () => {
+  let ai: ReturnType<typeof reducer>;
+
+  beforeEach(async () => {
+    vi.clearAllMocks();
+    preloadAi.isBusy.mockResolvedValue(false);
+    preloadAi.send.mockResolvedValue({ turnId: 't-1' });
+    ai = reducer(undefined, { type: 'init' });
+    const dispatch = vi.fn((action: { type: string }) => {
+      ai = reducer(ai, action);
+      return action;
+    });
+    const getState = () => ({ editor: { project: { path: '/scene' } }, ai, workspace: {} });
+    await Promise.all([
+      send({ text: 'hello' })(dispatch as never, getState as never, undefined),
+      send({ text: 'hello' })(dispatch as never, getState as never, undefined),
+    ]);
+  });
+
+  it('should send the message once', () => {
+    expect(preloadAi.send).toHaveBeenCalledTimes(1);
+  });
+
+  it('should add the message to the transcript once', () => {
+    expect(ai.messages.filter(m => m.role === 'user')).toHaveLength(1);
+  });
+});
+
+describe('when saving a session whose first prompt was trimmed from the transcript', () => {
+  let dispatched: Array<{ type: string; payload?: unknown }>;
+
+  beforeEach(async () => {
+    dispatched = [];
+    const ai = {
+      ...reducer(undefined, { type: 'init' }),
+      currentSessionId: 's1',
+      sessions: [{ id: 's1', title: 'Build a castle', updatedAt: 1 }],
+      messages: [
+        { id: 't-1', role: 'assistant' as const, parts: [], done: true },
+        {
+          id: 'u-2',
+          role: 'user' as const,
+          parts: [{ kind: 'text' as const, text: 'Add a moat' }],
+          done: true,
+        },
+      ],
+    };
+    const dispatch = vi.fn((action: { type: string }) => {
+      dispatched.push(action);
+      return action;
+    });
+    const getState = () => ({ editor: { project: { path: '/scene' } }, ai });
+    await persistConversation()(dispatch as never, getState as never, undefined);
+  });
+
+  it('should keep the title the session already has', () => {
+    expect(dispatched).toContainEqual(
+      actions.setSessions({
+        sessions: [{ id: 's1', title: 'Build a castle', updatedAt: expect.any(Number) }],
+        currentSessionId: 's1',
+      }),
+    );
+  });
+});
+
 describe('selectionContext', () => {
   it('is undefined when nothing is selected (so no context is attached)', () => {
     expect(selectionContext([])).toBeUndefined();
@@ -79,5 +201,86 @@ describe('applyEvent chronological parts', () => {
     s = reducer(s, apply({ kind: 'text', turnId: 't1', text: 'Hel' }));
     s = reducer(s, apply({ kind: 'text', turnId: 't1', text: 'lo' }));
     expect(s.messages[0].parts).toEqual([{ kind: 'text', text: 'Hello' }]);
+  });
+});
+
+// main gave up waiting on an `ask_user` prompt: the block must stop accepting answers.
+describe('expirePrompt', () => {
+  const prompt = {
+    id: 'q1',
+    question: 'Replace?',
+    options: [],
+    multiSelect: false,
+    allowOther: true,
+  };
+  const withPrompt = () => {
+    const started = reducer(undefined, {
+      type: 'ai/applyEvent',
+      payload: { kind: 'started', turnId: 't1' },
+    });
+    return reducer(started, { type: 'ai/pushPrompt', payload: prompt });
+  };
+  const promptOf = (state: ReturnType<typeof reducer>) =>
+    state.messages.flatMap(m => m.parts).find(p => p.kind === 'prompt');
+
+  it('marks an unanswered prompt as no longer active', () => {
+    const state = reducer(withPrompt(), { type: 'ai/expirePrompt', payload: 'q1' });
+    expect(promptOf(state)).toMatchObject({ prompt: { id: 'q1', dismissed: true } });
+  });
+
+  it('leaves an answered prompt as answered', () => {
+    const answered = reducer(withPrompt(), {
+      type: 'ai/resolvePrompt',
+      payload: { id: 'q1', answer: 'Yes' },
+    });
+    const state = reducer(answered, { type: 'ai/expirePrompt', payload: 'q1' });
+    expect(promptOf(state)).toMatchObject({ prompt: { answer: 'Yes' } });
+    expect(promptOf(state)).not.toMatchObject({ prompt: { dismissed: true } });
+  });
+});
+
+describe('when a turn ends', () => {
+  const claude = (needsLogin?: boolean): AiProviderInfo => ({
+    id: 'claude',
+    label: 'Claude',
+    available: true,
+    models: [],
+    defaultModel: 'default',
+    managedSignIn: false,
+    needsLogin,
+  });
+
+  const storeWith = async (info: AiProviderInfo) => {
+    const store = configureStore({ reducer: { ai: reducer } });
+    preloadAi.detectProviders.mockResolvedValueOnce([info]);
+    await store.dispatch(fetchProviders());
+    preloadAi.detectProviders.mockClear();
+    return store;
+  };
+
+  beforeEach(() => {
+    preloadAi.detectProviders.mockReset();
+  });
+
+  it('should re-detect agents after a failed turn, so a sign-in request shows up', async () => {
+    const store = await storeWith(claude());
+    preloadAi.detectProviders.mockResolvedValue([claude(true)]);
+    await store.dispatch(recheckAfterTurn(false));
+    expect(preloadAi.detectProviders).toHaveBeenCalledOnce();
+    expect(store.getState().ai.providers[0].needsLogin).toBe(true);
+  });
+
+  it('should re-detect after the successful turn that follows a sign-in request', async () => {
+    const store = await storeWith(claude(true));
+    preloadAi.detectProviders.mockResolvedValue([claude()]);
+    await store.dispatch(recheckAfterTurn(true));
+    expect(preloadAi.detectProviders).toHaveBeenCalledOnce();
+    expect(store.getState().ai.providers[0].needsLogin).toBeUndefined();
+  });
+
+  it('should not re-detect after an ordinary successful turn', async () => {
+    const store = await storeWith(claude());
+    await store.dispatch(recheckAfterTurn(true));
+    expect(preloadAi.detectProviders).not.toHaveBeenCalled();
   });
 });

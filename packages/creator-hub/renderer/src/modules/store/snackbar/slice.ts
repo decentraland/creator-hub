@@ -192,6 +192,12 @@ export const slice = createSlice({
           );
         }
       })
+      .addCase(workspaceActions.updatePackages.pending, state => {
+        // Dismiss the "new dependencies version detected" toast the moment an update starts,
+        // regardless of which trigger fired it (toast button, Loading Failed screen, or the
+        // update_sdk RPC). Otherwise it lingers through install and past the success toast (#1474).
+        state.notifications = state.notifications.filter($ => $.type !== 'new-dependency-version');
+      })
       .addCase(workspaceActions.updatePackages.fulfilled, state => {
         state.notifications = state.notifications.filter($ => $.requestId !== 'updatePackages');
         state.notifications.push(

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Box, CircularProgress } from 'decentraland-ui2';
 
-import type { AiMirrorState, AiProvider } from '/shared/types/ai';
+import type { AiAttachment, AiMirrorState, AiProvider } from '/shared/types/ai';
 
 import { ai as aiPreload } from '#preload';
 import { useDispatch } from '#store';
@@ -37,7 +37,8 @@ export function AiChatWindow() {
   }, []);
 
   const onSend = useCallback(
-    (text: string) => aiPreload.sendAiRemoteCommand({ type: 'send', text }),
+    (text: string, attachments?: AiAttachment[]) =>
+      aiPreload.sendAiRemoteCommand({ type: 'send', text, attachments }),
     [],
   );
   const onStop = useCallback(() => aiPreload.sendAiRemoteCommand({ type: 'stop' }), []);
