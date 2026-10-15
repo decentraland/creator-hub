@@ -221,3 +221,173 @@ describe('Worlds.fetchWorldLimits', () => {
     });
   });
 });
+
+describe('Worlds.fetchReplacedScenesParcels', () => {
+  const scenesResponse = (scenes: { entityId: string; parcels: string[] }[], total: number) => ({
+    ok: true,
+    json: () => Promise.resolve({ scenes, total }),
+  });
+  const lookupRequest = (offset: number, coordinates: string[]) => [
+    `${WORLDS_SERVER}/world/my%20name.dcl.eth/scenes?limit=100&offset=${offset}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ coordinates }),
+      signal: expect.any(AbortSignal),
+    },
+  ];
+
+  let replaced: string[][] | null;
+
+  beforeEach(() => {
+    fetchMock.mockReset();
+    captureExceptionMock.mockReset();
+  });
+
+  describe('when the parcels overlap deployed scenes', () => {
+    beforeEach(async () => {
+      fetchMock.mockResolvedValueOnce(
+        scenesResponse(
+          [
+            { entityId: 'bafkreiexample1', parcels: ['0,0', '0,1'] },
+            { entityId: 'bafkreiexample2', parcels: ['1,0'] },
+          ],
+          2,
+        ),
+      );
+      replaced = await new Worlds().fetchReplacedScenesParcels('my name.dcl.eth', ['0,1', '1,0']);
+    });
+
+    it('should look up the scenes overlapping the parcels in a single request', () => {
+      expect(fetchMock.mock.calls).toEqual([lookupRequest(0, ['0,1', '1,0'])]);
+    });
+
+    it('should return the parcels of each scene', () => {
+      expect(replaced).toEqual([['0,0', '0,1'], ['1,0']]);
+    });
+  });
+
+  describe('when the parcels exceed what a single request accepts', () => {
+    let parcels: string[];
+
+    beforeEach(async () => {
+      parcels = Array.from({ length: 501 }, (_, i) => `${i % 100},${Math.floor(i / 100)}`);
+      const spanningScene = { entityId: 'bafkreiexample1', parcels: ['99,4', '0,5'] };
+      fetchMock
+        .mockResolvedValueOnce(scenesResponse([spanningScene], 1))
+        .mockResolvedValueOnce(scenesResponse([spanningScene], 1));
+      replaced = await new Worlds().fetchReplacedScenesParcels('my name.dcl.eth', parcels);
+    });
+
+    it('should look them up in chunks of 500', () => {
+      expect(fetchMock.mock.calls).toEqual([
+        lookupRequest(0, parcels.slice(0, 500)),
+        lookupRequest(0, parcels.slice(500)),
+      ]);
+    });
+
+    it('should return a scene found by several chunks once', () => {
+      expect(replaced).toEqual([['99,4', '0,5']]);
+    });
+  });
+
+  describe('when more scenes overlap than fit in a page', () => {
+    beforeEach(async () => {
+      const scenes = Array.from({ length: 101 }, (_, i) => ({
+        entityId: `bafkreiexample${i}`,
+        parcels: [`${i},0`],
+      }));
+      fetchMock
+        .mockResolvedValueOnce(scenesResponse(scenes.slice(0, 100), 101))
+        .mockResolvedValueOnce(scenesResponse(scenes.slice(100), 101));
+      replaced = await new Worlds().fetchReplacedScenesParcels(
+        'my name.dcl.eth',
+        scenes.map(scene => scene.parcels[0]),
+      );
+    });
+
+    it('should request the next page', () => {
+      expect(fetchMock.mock.calls[1][0]).toBe(
+        `${WORLDS_SERVER}/world/my%20name.dcl.eth/scenes?limit=100&offset=100`,
+      );
+    });
+
+    it('should return the scenes of every page', () => {
+      expect(replaced).toHaveLength(101);
+    });
+  });
+
+  describe('when the server rejects the lookup', () => {
+    let cancelBody: ReturnType<typeof vi.fn>;
+
+    beforeEach(async () => {
+      cancelBody = vi.fn().mockResolvedValue(undefined);
+      fetchMock.mockResolvedValueOnce({ ok: false, status: 500, body: { cancel: cancelBody } });
+      replaced = await new Worlds().fetchReplacedScenesParcels('name.dcl.eth', ['0,0']);
+    });
+
+    it('should return null', () => {
+      expect(replaced).toBeNull();
+    });
+
+    it('should release the response body', () => {
+      expect(cancelBody).toHaveBeenCalled();
+    });
+
+    it('should report the status with the number of parcels, not the parcels', () => {
+      expect(captureExceptionMock).toHaveBeenCalledWith(expect.any(Error), {
+        tags: { source: 'worlds', event: 'fetch-replaced-scenes' },
+        extra: { worldName: 'name.dcl.eth', parcelCount: 1, status: 500 },
+      });
+    });
+  });
+
+  describe('when the server answers without a list of scenes', () => {
+    beforeEach(async () => {
+      fetchMock.mockResolvedValueOnce({ ok: true, json: () => Promise.resolve({ total: 1 }) });
+      replaced = await new Worlds().fetchReplacedScenesParcels('name.dcl.eth', ['0,0']);
+    });
+
+    it('should return null', () => {
+      expect(replaced).toBeNull();
+    });
+
+    it('should report the invalid response', () => {
+      expect(captureExceptionMock).toHaveBeenCalledWith(expect.any(Error), {
+        tags: { source: 'worlds', event: 'fetch-replaced-scenes' },
+        extra: { worldName: 'name.dcl.eth', parcelCount: 1 },
+      });
+    });
+  });
+
+  describe('when the server never answers', () => {
+    let request: Promise<string[][] | null>;
+
+    beforeEach(() => {
+      vi.useFakeTimers();
+      fetchMock.mockImplementationOnce((_url: string, init: { signal: AbortSignal }) =>
+        untilAborted(init.signal),
+      );
+      request = new Worlds().fetchReplacedScenesParcels('name.dcl.eth', ['0,0']);
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    describe('and the timeout elapses', () => {
+      beforeEach(async () => {
+        await vi.advanceTimersByTimeAsync(WORLD_LIMITS_TIMEOUT_MS);
+        replaced = await request;
+      });
+
+      it('should give up and return null', () => {
+        expect(replaced).toBeNull();
+      });
+
+      it('should not report the timeout as an error', () => {
+        expect(captureExceptionMock).not.toHaveBeenCalled();
+      });
+    });
+  });
+});

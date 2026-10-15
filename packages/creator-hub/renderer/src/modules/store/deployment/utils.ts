@@ -62,6 +62,22 @@ export function getGenesisCitySceneSizeLimit(parcelCount: number) {
 }
 
 /**
+ * Picks the parcels to ask the world limits for: one shared parcel per replaced scene, which
+ * credits back the same scenes as the whole list, or one of the scene's own when none is replaced.
+ * Keeps the request small, as the server caps how many parcels it takes.
+ */
+export function getWorldLimitsParcels(parcels: string[], replacedScenesParcels: string[][]) {
+  const sceneParcels = new Set(parcels);
+  const picked = new Set<string>();
+  for (const replacedParcels of replacedScenesParcels) {
+    const shared = replacedParcels.find(parcel => sceneParcels.has(parcel));
+    if (shared) picked.add(shared);
+  }
+  if (picked.size === 0 && parcels.length > 0) picked.add(parcels[0]);
+  return [...picked];
+}
+
+/**
  * Resolves the size the worlds server will accept for the whole scene, or `null` when it cannot be
  * known (a server without the limits endpoint, or a failed request), in which case the server
  * stays the only gate.
@@ -70,7 +86,13 @@ export async function fetchWorldSceneSizeLimit(
   worldName: string,
   parcels: string[],
 ): Promise<number | null> {
-  const limits = await new Worlds().fetchWorldLimits(worldName, parcels);
+  const worlds = new Worlds();
+  const replacedScenesParcels = await worlds.fetchReplacedScenesParcels(worldName, parcels);
+  if (!replacedScenesParcels) return null;
+  const limits = await worlds.fetchWorldLimits(
+    worldName,
+    getWorldLimitsParcels(parcels, replacedScenesParcels),
+  );
   return limits?.maxSceneSizeInBytes ?? null;
 }
 

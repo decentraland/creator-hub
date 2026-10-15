@@ -9,6 +9,7 @@ const ABGEN_REGISTRY = 'https://asset-bundle-registry-abgen.example.org';
 
 const fetchMock = vi.fn();
 const fetchWorldLimitsMock = vi.fn();
+const fetchReplacedScenesParcelsMock = vi.fn();
 
 vi.mock('/@/config', () => ({
   config: {
@@ -47,6 +48,7 @@ vi.mock('dcl-catalyst-client/dist/contracts-snapshots', () => ({
 vi.mock('/@/lib/worlds', () => ({
   Worlds: class {
     fetchWorldLimits = fetchWorldLimitsMock;
+    fetchReplacedScenesParcels = fetchReplacedScenesParcelsMock;
   },
 }));
 
@@ -208,22 +210,31 @@ describe('getGenesisCitySceneSizeLimit', () => {
 });
 
 describe('fetchWorldSceneSizeLimit', () => {
-  const PARCELS = ['0,0', '0,1', '1,0'];
+  const PARCELS = ['0,0', '0,1', '1,0', '1,1'];
 
   let limit: number | null;
 
   beforeEach(() => {
     fetchWorldLimitsMock.mockReset();
+    fetchReplacedScenesParcelsMock.mockReset();
   });
 
-  describe('when the worlds server reports its limits', () => {
+  describe('when the scene replaces deployed scenes', () => {
     beforeEach(async () => {
+      fetchReplacedScenesParcelsMock.mockResolvedValueOnce([
+        ['5,5', '0,1', '0,0'],
+        ['1,1', '2,1'],
+      ]);
       fetchWorldLimitsMock.mockResolvedValueOnce({ maxSceneSizeInBytes: 200 * MiB });
       limit = await fetchWorldSceneSizeLimit('name.dcl.eth', PARCELS);
     });
 
-    it("should ask for the limits of the scene's world and parcels", () => {
-      expect(fetchWorldLimitsMock).toHaveBeenCalledWith('name.dcl.eth', PARCELS);
+    it("should look up the scenes overlapping the scene's parcels", () => {
+      expect(fetchReplacedScenesParcelsMock).toHaveBeenCalledWith('name.dcl.eth', PARCELS);
+    });
+
+    it('should ask for the limits with one shared parcel per replaced scene', () => {
+      expect(fetchWorldLimitsMock).toHaveBeenCalledWith('name.dcl.eth', ['0,1', '1,1']);
     });
 
     it("should use the server's scene size limit", () => {
@@ -231,8 +242,36 @@ describe('fetchWorldSceneSizeLimit', () => {
     });
   });
 
+  describe('when the scene replaces no deployed scene', () => {
+    beforeEach(async () => {
+      fetchReplacedScenesParcelsMock.mockResolvedValueOnce([]);
+      fetchWorldLimitsMock.mockResolvedValueOnce({ maxSceneSizeInBytes: 200 * MiB });
+      limit = await fetchWorldSceneSizeLimit('name.dcl.eth', PARCELS);
+    });
+
+    it("should ask for the limits with one of the scene's parcels", () => {
+      expect(fetchWorldLimitsMock).toHaveBeenCalledWith('name.dcl.eth', ['0,0']);
+    });
+  });
+
+  describe('when the replaced scenes cannot be looked up', () => {
+    beforeEach(async () => {
+      fetchReplacedScenesParcelsMock.mockResolvedValueOnce(null);
+      limit = await fetchWorldSceneSizeLimit('name.dcl.eth', PARCELS);
+    });
+
+    it('should not ask for the limits', () => {
+      expect(fetchWorldLimitsMock).not.toHaveBeenCalled();
+    });
+
+    it('should report the limit as unknown', () => {
+      expect(limit).toBeNull();
+    });
+  });
+
   describe('when the worlds server cannot report its limits', () => {
     beforeEach(async () => {
+      fetchReplacedScenesParcelsMock.mockResolvedValueOnce([]);
       fetchWorldLimitsMock.mockResolvedValueOnce(null);
       limit = await fetchWorldSceneSizeLimit('name.dcl.eth', PARCELS);
     });
