@@ -1,0 +1,64 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core::GltfContainer",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/festival_lightstick.glb"
+          }
+        }
+      }
+    },
+    {
+      "name": "asset-packs::Script",
+      "data": {
+        "0": {
+          "json": {
+            "value": [
+              {
+                "path": "{assetPath}/AnimationPlayer.ts",
+                "priority": 0,
+                "layout": "{\"params\":{\"animation\":{\"type\":\"string\",\"optional\":true,\"value\":\"StarLightstick_Spin\",\"tooltip\":\"Name of the animation clip in the model to play.\"},\"loop\":{\"type\":\"boolean\",\"optional\":true,\"value\":true,\"tooltip\":\"If true, the animation repeats until it is stopped.\"},\"playOnStart\":{\"type\":\"boolean\",\"optional\":true,\"value\":false,\"tooltip\":\"If true, the animation starts playing as soon as the scene loads.\"}},\"actions\":[{\"methodName\":\"play\",\"description\":\"Plays the animation\",\"params\":{}},{\"methodName\":\"stop\",\"description\":\"Stops the animation\",\"params\":{}}]}"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "asset-packs::Actions",
+      "data": {
+        "0": {
+          "json": {
+            "id": "{self}",
+            "value": [
+              {
+                "type": "call_script_method",
+                "name": "Play Animation",
+                "jsonPayload": "{\"scriptPath\":\"{assetPath}/AnimationPlayer.ts\",\"methodName\":\"play\",\"params\":{}}",
+                "default": true
+              },
+              {
+                "type": "call_script_method",
+                "name": "Stop Animation",
+                "jsonPayload": "{\"scriptPath\":\"{assetPath}/AnimationPlayer.ts\",\"methodName\":\"stop\",\"params\":{}}"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "core-schema::Sync-Components",
+      "data": {
+        "0": {
+          "json": {
+            "componentIds": ["core::Animator"]
+          }
+        }
+      }
+    }
+  ]
+}
