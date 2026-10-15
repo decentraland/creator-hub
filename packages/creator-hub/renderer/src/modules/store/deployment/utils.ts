@@ -11,7 +11,7 @@ import { delay } from '/shared/utils';
 import { fetch } from '/shared/fetch';
 
 import { config } from '/@/config';
-import { Worlds } from '/@/lib/worlds';
+import { WORLD_LIMITS_TIMEOUT_MS, Worlds } from '/@/lib/worlds';
 import { t } from '/@/modules/store/translation/utils';
 import {
   type Info,
@@ -87,13 +87,25 @@ export async function fetchWorldSceneSizeLimit(
   parcels: string[],
 ): Promise<number | null> {
   const worlds = new Worlds();
-  const replacedScenesParcels = await worlds.fetchReplacedScenesParcels(worldName, parcels);
-  if (!replacedScenesParcels) return null;
-  const limits = await worlds.fetchWorldLimits(
-    worldName,
-    getWorldLimitsParcels(parcels, replacedScenesParcels),
-  );
-  return limits?.maxSceneSizeInBytes ?? null;
+  // Publish waits for both requests, so one deadline bounds them together.
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), WORLD_LIMITS_TIMEOUT_MS);
+  try {
+    const replacedScenesParcels = await worlds.fetchReplacedScenesParcels(
+      worldName,
+      parcels,
+      controller.signal,
+    );
+    if (!replacedScenesParcels) return null;
+    const limits = await worlds.fetchWorldLimits(
+      worldName,
+      getWorldLimitsParcels(parcels, replacedScenesParcels),
+      controller.signal,
+    );
+    return limits?.maxSceneSizeInBytes ?? null;
+  } finally {
+    clearTimeout(timeout);
+  }
 }
 
 export const deploy = async (

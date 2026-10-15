@@ -283,9 +283,19 @@ export type WorldParcelsResponse = {
 const WORLD_CONTENT_SERVER_URL = config.get('WORLDS_CONTENT_SERVER_URL');
 
 export const WORLD_LIMITS_TIMEOUT_MS = 5000;
-// Most coordinates POST /world/:name/scenes accepts, and its page size.
-const SCENE_LOOKUP_MAX_COORDINATES = 500;
-const SCENE_LOOKUP_PAGE_SIZE = 100;
+// POST /world/:name/scenes page size. Deployed scenes never share a parcel, so a chunk of this many
+// coordinates overlaps at most one page of scenes and needs no paging.
+const SCENE_LOOKUP_CHUNK_SIZE = 100;
+
+/** A replaced scenes lookup answer that can't be used; reported to Sentry. */
+class SceneLookupError extends Error {
+  constructor(
+    message: string,
+    readonly extra: Record<string, unknown> = {},
+  ) {
+    super(message);
+  }
+}
 
 export class Worlds {
   private url = WORLD_CONTENT_SERVER_URL;
@@ -444,6 +454,7 @@ export class Worlds {
   public fetchWorldLimits = async (
     worldName: string,
     parcels: string[],
+    signal: AbortSignal,
   ): Promise<WorldLimits | null> => {
     const encodedWorldName = encodeURIComponent(worldName);
     const query = new URLSearchParams(parcels.map(parcel => ['parcels', parcel]));
@@ -451,12 +462,9 @@ export class Worlds {
       tags: { source: 'worlds', event: 'fetch-world-limits' },
       extra: { worldName, parcelCount: parcels.length },
     };
-    // Publish waits for this request, so a server that never answers must not block it.
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), WORLD_LIMITS_TIMEOUT_MS);
     try {
       const result = await fetch(`${this.url}/world/${encodedWorldName}/limits?${query}`, {
-        signal: controller.signal,
+        signal,
       });
       if (!result.ok) {
         await result.body?.cancel().catch(() => undefined);
@@ -474,7 +482,7 @@ export class Worlds {
         body = await result.json();
       } catch (error) {
         // A timed-out body read is not a malformed response.
-        if (!controller.signal.aborted) captureException(error, sentryContext);
+        if (!signal.aborted) captureException(error, sentryContext);
         return null;
       }
       const maxSceneSizeInBytes = body?.maxSceneSizeInBytes;
@@ -489,64 +497,73 @@ export class Worlds {
     } catch (error) {
       console.warn('Failed to fetch world limits', error);
       return null;
-    } finally {
-      clearTimeout(timeout);
     }
   };
 
   /**
    * Resolves the parcels of each deployed scene of the world overlapping `parcels`, the scenes a
-   * deployment to them replaces, or `null` when they can't be looked up in time.
+   * deployment to them replaces, or `null` when they can't be looked up before `signal` aborts.
    */
   public fetchReplacedScenesParcels = async (
     worldName: string,
     parcels: string[],
+    signal: AbortSignal,
   ): Promise<string[][] | null> => {
     const encodedWorldName = encodeURIComponent(worldName);
     const sentryContext = {
       tags: { source: 'worlds', event: 'fetch-replaced-scenes' },
       extra: { worldName, parcelCount: parcels.length },
     };
-    const replaced = new Map<string, string[]>();
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), WORLD_LIMITS_TIMEOUT_MS);
-    try {
-      for (let start = 0; start < parcels.length; start += SCENE_LOOKUP_MAX_COORDINATES) {
-        const coordinates = parcels.slice(start, start + SCENE_LOOKUP_MAX_COORDINATES);
-        for (let offset = 0; ; offset += SCENE_LOOKUP_PAGE_SIZE) {
-          const result = await fetch(
-            `${this.url}/world/${encodedWorldName}/scenes?limit=${SCENE_LOOKUP_PAGE_SIZE}&offset=${offset}`,
-            {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ coordinates }),
-              signal: controller.signal,
-            },
-          );
-          if (!result.ok) {
-            await result.body?.cancel().catch(() => undefined);
-            captureException(new Error(`Failed to fetch the replaced scenes: ${result.status}`), {
-              ...sentryContext,
-              extra: { ...sentryContext.extra, status: result.status },
-            });
-            return null;
-          }
-          const page: Partial<WorldScenes> | null = await result.json();
-          if (!Array.isArray(page?.scenes) || typeof page.total !== 'number') {
-            captureException(new Error('Invalid world scenes response'), sentryContext);
-            return null;
-          }
-          // Scenes overlapping several chunks are listed once per chunk.
-          for (const scene of page.scenes) replaced.set(scene.entityId, scene.parcels);
-          if (page.scenes.length === 0 || offset + page.scenes.length >= page.total) break;
-        }
+    const fetchChunk = async (coordinates: string[]) => {
+      const result = await fetch(
+        `${this.url}/world/${encodedWorldName}/scenes?limit=${SCENE_LOOKUP_CHUNK_SIZE}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ coordinates }),
+          signal,
+        },
+      );
+      if (!result.ok) {
+        await result.body?.cancel().catch(() => undefined);
+        throw new SceneLookupError(`Failed to fetch the replaced scenes: ${result.status}`, {
+          status: result.status,
+        });
       }
+      let page: Partial<WorldScenes> | null;
+      try {
+        page = await result.json();
+      } catch (error) {
+        // A timed-out body read is not a malformed response.
+        if (signal.aborted) throw error;
+        throw new SceneLookupError('World scenes response is not JSON');
+      }
+      if (!Array.isArray(page?.scenes) || page.total !== page.scenes.length) {
+        throw new SceneLookupError('Invalid world scenes response', { total: page?.total });
+      }
+      return page.scenes;
+    };
+
+    try {
+      const chunks: string[][] = [];
+      for (let start = 0; start < parcels.length; start += SCENE_LOOKUP_CHUNK_SIZE) {
+        chunks.push(parcels.slice(start, start + SCENE_LOOKUP_CHUNK_SIZE));
+      }
+      const pages = await Promise.all(chunks.map(fetchChunk));
+      // A scene overlapping several chunks is listed once per chunk.
+      const replaced = new Map<string, string[]>();
+      for (const scene of pages.flat()) replaced.set(scene.entityId, scene.parcels);
       return [...replaced.values()];
     } catch (error) {
-      console.warn('Failed to fetch the replaced scenes', error);
+      if (error instanceof SceneLookupError) {
+        captureException(error, {
+          ...sentryContext,
+          extra: { ...sentryContext.extra, ...error.extra },
+        });
+      } else {
+        console.warn('Failed to fetch the replaced scenes', error);
+      }
       return null;
-    } finally {
-      clearTimeout(timeout);
     }
   };
 

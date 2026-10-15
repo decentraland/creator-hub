@@ -1,4 +1,4 @@
-import { beforeEach, describe, it, expect, vi } from 'vitest';
+import { afterEach, beforeEach, describe, it, expect, vi } from 'vitest';
 import { ChainId } from '@dcl/schemas';
 import type { AuthIdentity } from 'decentraland-crypto-fetch';
 import type * as SharedFetch from '/shared/fetch';
@@ -45,7 +45,10 @@ vi.mock('dcl-catalyst-client/dist/contracts-snapshots', () => ({
   }),
 }));
 
+const WORLD_LIMITS_TIMEOUT_MS = 5000;
+
 vi.mock('/@/lib/worlds', () => ({
+  WORLD_LIMITS_TIMEOUT_MS,
   Worlds: class {
     fetchWorldLimits = fetchWorldLimitsMock;
     fetchReplacedScenesParcels = fetchReplacedScenesParcelsMock;
@@ -230,11 +233,25 @@ describe('fetchWorldSceneSizeLimit', () => {
     });
 
     it("should look up the scenes overlapping the scene's parcels", () => {
-      expect(fetchReplacedScenesParcelsMock).toHaveBeenCalledWith('name.dcl.eth', PARCELS);
+      expect(fetchReplacedScenesParcelsMock).toHaveBeenCalledWith(
+        'name.dcl.eth',
+        PARCELS,
+        expect.any(AbortSignal),
+      );
     });
 
     it('should ask for the limits with one shared parcel per replaced scene', () => {
-      expect(fetchWorldLimitsMock).toHaveBeenCalledWith('name.dcl.eth', ['0,1', '1,1']);
+      expect(fetchWorldLimitsMock).toHaveBeenCalledWith(
+        'name.dcl.eth',
+        ['0,1', '1,1'],
+        expect.any(AbortSignal),
+      );
+    });
+
+    it('should bound both requests with the same deadline', () => {
+      expect(fetchWorldLimitsMock.mock.calls[0][2]).toBe(
+        fetchReplacedScenesParcelsMock.mock.calls[0][2],
+      );
     });
 
     it("should use the server's scene size limit", () => {
@@ -250,7 +267,11 @@ describe('fetchWorldSceneSizeLimit', () => {
     });
 
     it("should ask for the limits with one of the scene's parcels", () => {
-      expect(fetchWorldLimitsMock).toHaveBeenCalledWith('name.dcl.eth', ['0,0']);
+      expect(fetchWorldLimitsMock).toHaveBeenCalledWith(
+        'name.dcl.eth',
+        ['0,0'],
+        expect.any(AbortSignal),
+      );
     });
   });
 
@@ -278,6 +299,35 @@ describe('fetchWorldSceneSizeLimit', () => {
 
     it('should report the limit as unknown', () => {
       expect(limit).toBeNull();
+    });
+  });
+
+  describe('when the lookup uses most of the deadline and the limits request never answers', () => {
+    let limitsSignal: AbortSignal;
+    let request: Promise<number | null>;
+
+    beforeEach(async () => {
+      vi.useFakeTimers();
+      fetchReplacedScenesParcelsMock.mockImplementationOnce(
+        () => new Promise(resolve => setTimeout(() => resolve([]), WORLD_LIMITS_TIMEOUT_MS - 1000)),
+      );
+      fetchWorldLimitsMock.mockImplementationOnce(
+        (_worldName: string, _parcels: string[], signal: AbortSignal) => {
+          limitsSignal = signal;
+          return new Promise(resolve => signal.addEventListener('abort', () => resolve(null)));
+        },
+      );
+      request = fetchWorldSceneSizeLimit('name.dcl.eth', PARCELS);
+      await vi.advanceTimersByTimeAsync(WORLD_LIMITS_TIMEOUT_MS);
+      limit = await request;
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it('should abort the limits request when the shared deadline elapses, not 5 s after it started', () => {
+      expect({ aborted: limitsSignal.aborted, limit }).toEqual({ aborted: true, limit: null });
     });
   });
 });
