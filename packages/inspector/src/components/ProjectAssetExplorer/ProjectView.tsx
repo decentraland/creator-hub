@@ -33,7 +33,15 @@ import { getFilterFromTree, getFullNodePath, isEmoteAsset } from './utils';
 import type { AssetNodeFolder, AssetNodeItem } from './types';
 import { Tile } from './Tile';
 import { getLocalThumbnail, invalidateLocalThumbnail } from './localThumbnails';
-import { generateAssetTree, getChildren as _getChildren, TreeNode, ROOT, getTiles } from './tree';
+import {
+  countMatches,
+  generateAssetTree,
+  isMatch,
+  getChildren as _getChildren,
+  TreeNode,
+  ROOT,
+  getTiles,
+} from './tree';
 import { Filters } from './Filters';
 import { Filter } from './Filters/types';
 
@@ -71,24 +79,35 @@ function ProjectView({ folders, thumbnails }: Props) {
   const [filters, setFilters] = useState<Filter[]>([]);
   const [activeFilter, setActiveFilter] = useState(Filter.All);
 
-  // Folders the user had open before a search or filter took over the tree.
+  // Folders the user had open before a search or filter started opening them.
   const openBeforeFiltering = useRef<Set<string>>();
 
+  // The tree is a map of the whole project: searching and filtering never remove folders from it.
   useEffect(() => {
-    const { tree, filters } = generateAssetTree(folders, open, search, activeFilter);
+    const { tree, filters } = generateAssetTree(folders, open);
     setTree(tree);
     setFilters(getFilterFromTree(filters));
+  }, [folders]);
+
+  const matchCounts = useMemo(
+    () =>
+      isFilteringBy(search, activeFilter)
+        ? countMatches(tree, search, activeFilter)
+        : new Map<string, number>(),
+    [tree, search, activeFilter],
+  );
+
+  // While filtering, open the folders that hold results so they are easy to find; the user's own
+  // open folders come back once the filter is cleared.
+  useEffect(() => {
     if (isFilteringBy(search, activeFilter)) {
-      // The tree is pruned to the folders that lead to a match; open them all so the matches are
-      // visible, and put the user's own open folders back once the filter is cleared.
       openBeforeFiltering.current ??= new Set(open);
-      const folderIds = [...tree.entries()].filter(([, node]) => node.type === 'folder');
-      setOpen(new Set(folderIds.map(([id]) => id)));
+      setOpen(new Set([ROOT, ...matchCounts.keys()]));
     } else if (openBeforeFiltering.current) {
       setOpen(openBeforeFiltering.current);
       openBeforeFiltering.current = undefined;
     }
-  }, [folders, search, activeFilter]);
+  }, [matchCounts, search, activeFilter]);
 
   /**
    * Callbacks
@@ -391,14 +410,28 @@ function ProjectView({ folders, thumbnails }: Props) {
             onDuplicate={noop}
             getId={(value: string) => value.toString()}
             getChildren={getChildren}
-            getLabel={(val: string) => (
-              <span
-                className={cx({ 'is-current': val === lastSelected })}
-                title={tree.get(val)?.name ?? val}
-              >
-                {tree.get(val)?.name ?? val}
-              </span>
-            )}
+            getLabel={(val: string) => {
+              const name = tree.get(val)?.name ?? val;
+              const count = matchCounts.get(val);
+              const isFolder = tree.get(val)?.type === 'folder';
+              return (
+                <>
+                  <span
+                    className={cx({
+                      'is-current': val === lastSelected,
+                      // While filtering, folders with no results stay put but fade back.
+                      'is-dim':
+                        isFilteringBy(search, activeFilter) &&
+                        (isFolder ? !count : !isMatch(tree.get(val)!, search, activeFilter)),
+                    })}
+                    title={name}
+                  >
+                    {name}
+                  </span>
+                  {isFolder && !!count && <em className="Tree-count">{count}</em>}
+                </>
+              );
+            }}
             isOpen={isOpen}
             isSelected={(val: string) => selection?.source === 'local' && selection.id === val}
             isHidden={(val: string) => val === ROOT}
@@ -470,31 +503,31 @@ function ProjectView({ folders, thumbnails }: Props) {
               </button>
             </div>
           </div>
-          {isFiltering ? (
-            <div className="Assets-crumbs Assets-crumbs-scope">
-              <span>
-                {assetTiles.length} {assetTiles.length === 1 ? 'result' : 'results'} in all folders
+          <nav
+            className="Assets-crumbs"
+            aria-label="Folder path"
+          >
+            {crumbs.map((crumb, index) => (
+              <React.Fragment key={crumb.path}>
+                {index > 0 && <ChevronIcon />}
+                <button
+                  className={cx({ current: index === crumbs.length - 1 })}
+                  onClick={() => setLastSelected(crumb.path)}
+                >
+                  {crumb.label}
+                </button>
+              </React.Fragment>
+            ))}
+            {isFiltering && (
+              <span className="Assets-crumbs-results">
+                {assetTiles.length} {assetTiles.length === 1 ? 'result' : 'results'}
+                {lastSelected !== ROOT && (
+                  <button onClick={() => setLastSelected(ROOT)}>Search all folders</button>
+                )}
+                <button onClick={handleClearFilters}>Clear</button>
               </span>
-              <button onClick={handleClearFilters}>Clear</button>
-            </div>
-          ) : (
-            <nav
-              className="Assets-crumbs"
-              aria-label="Folder path"
-            >
-              {crumbs.map((crumb, index) => (
-                <React.Fragment key={crumb.path}>
-                  {index > 0 && <ChevronIcon />}
-                  <button
-                    className={cx({ current: index === crumbs.length - 1 })}
-                    onClick={() => setLastSelected(crumb.path)}
-                  >
-                    {crumb.label}
-                  </button>
-                </React.Fragment>
-              ))}
-            </nav>
-          )}
+            )}
+          </nav>
           <div className="ProjectView-scroll">
             {folderTiles.length > 0 && (
               <div className="FolderView ProjectView-folders">{folderTiles.map(renderTile)}</div>

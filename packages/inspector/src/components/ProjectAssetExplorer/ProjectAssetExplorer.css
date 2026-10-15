@@ -224,3 +224,23 @@
 .ProjectView .Tree-View .Tree .item.selected span {
   color: var(--white);
 }
+
+.ProjectView .Tree-View .Tree .item:has(.is-dim) {
+  opacity: 0.45;
+}
+
+.ProjectView .Tree-View .Tree .item:has(.is-dim):hover {
+  opacity: 1;
+}
+
+.Tree-count {
+  flex: none;
+  margin: 0 6px 0 auto;
+  padding: 0 6px;
+  border-radius: 8px;
+  background: var(--base-15);
+  color: var(--neutral-grey-3);
+  font-size: 10px;
+  font-style: normal;
+  line-height: 16px;
+}
