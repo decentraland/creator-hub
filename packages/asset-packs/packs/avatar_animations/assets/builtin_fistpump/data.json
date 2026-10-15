@@ -1,0 +1,9 @@
+{
+  "id": "222f8e03-4239-4775-9555-447aec36619f",
+  "name": "Fistpump",
+  "category": "built-in",
+  "tags": ["animation", "avatar", "built-in", "default", "emote", "fistpump"],
+  "description": "Built-in avatar animation. Play it from scene code with triggerEmote({ predefinedEmote: 'fistpump' }).",
+  "author": "Decentraland Foundation",
+  "builtInEmote": "fistpump"
+}

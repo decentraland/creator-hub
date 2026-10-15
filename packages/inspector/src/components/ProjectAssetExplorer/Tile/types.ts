@@ -8,5 +8,9 @@ export interface Props {
   onSelect: () => void;
   onRemove: (value: string) => void;
   dndType: string;
-  getThumbnail: (value: AssetNodeItem) => Promise<Uint8Array | undefined>;
+  getThumbnail: (value: AssetNodeItem) => Promise<string | undefined>;
+  layout?: 'grid' | 'list';
+  /** Show which folder the asset lives in; used when results come from several folders. */
+  showPath?: boolean;
+  getAnimatedThumbnail?: (value: AssetNodeItem) => Promise<Uint8Array | undefined>;
 }

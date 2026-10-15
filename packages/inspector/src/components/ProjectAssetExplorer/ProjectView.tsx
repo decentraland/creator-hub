@@ -1,9 +1,19 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AiOutlineSound as AudioIcon } from 'react-icons/ai';
 import { IoIosImage as ImageIcon } from 'react-icons/io';
 import { IoCubeOutline as ModelIcon, IoVideocamOutline as VideoIcon } from 'react-icons/io5';
 import { FaFile as OtherIcon } from 'react-icons/fa';
+import { MdOutlineEmojiPeople as EmoteIcon } from 'react-icons/md';
 import { SiTypescript as ScriptIcon } from 'react-icons/si';
+import {
+  MdChevronRight as ChevronIcon,
+  MdUnfoldLess as CollapseAllIcon,
+  MdUnfoldMore as ExpandAllIcon,
+  MdViewList as ListIcon,
+  MdGridView as GridIcon,
+} from 'react-icons/md';
+import { BsLayoutSidebarInset as TreeIcon } from 'react-icons/bs';
+import cx from 'classnames';
 import type { Entity } from '@dcl/ecs';
 
 import { useSdk } from '../../hooks/sdk/useSdk';
@@ -12,15 +22,26 @@ import { Modal } from '../Modal';
 import { Button } from '../Button';
 import FolderIcon from '../Icons/Folder';
 import Search from '../Search';
-import { withAssetDir } from '../../lib/data-layer/host/fs-utils';
+import { transformBinaryToBase64Resource, withAssetDir } from '../../lib/data-layer/host/fs-utils';
+import { getSceneClient } from '../../lib/rpc/scene';
 import { removeAsset } from '../../redux/data-layer';
 import { useAppDispatch } from '../../redux/hooks';
 import { determineAssetType, extractFileExtension } from '../ImportAsset/utils';
 import { getThumbnailHashNameForAsset } from '../../lib/utils/hash';
-import { getFilterFromTree, getFullNodePath } from './utils';
+import { useAssetSelection } from '../AssetBrowserPreview';
+import { getFilterFromTree, getFullNodePath, isEmoteAsset } from './utils';
 import type { AssetNodeFolder, AssetNodeItem } from './types';
 import { Tile } from './Tile';
-import { generateAssetTree, getChildren as _getChildren, TreeNode, ROOT, getTiles } from './tree';
+import { getLocalThumbnail, invalidateLocalThumbnail } from './localThumbnails';
+import {
+  countMatches,
+  generateAssetTree,
+  isMatch,
+  getChildren as _getChildren,
+  TreeNode,
+  ROOT,
+  getTiles,
+} from './tree';
 import { Filters } from './Filters';
 import { Filter } from './Filters/types';
 
@@ -45,6 +66,10 @@ const FilesTree = Tree<string>();
 
 function ProjectView({ folders, thumbnails }: Props) {
   const sdk = useSdk();
+  const { selection, select } = useAssetSelection();
+  const [viewMode, setViewMode] = useState<ViewMode>(readViewMode);
+  const [showTree, setShowTree] = useState(true);
+  const [treeWidth, setTreeWidth] = useState(readTreeWidth);
   const dispatch = useAppDispatch();
   const [open, setOpen] = useState(new Set<string>());
   const [modal, setModal] = useState<ModalState | undefined>(undefined);
@@ -54,11 +79,35 @@ function ProjectView({ folders, thumbnails }: Props) {
   const [filters, setFilters] = useState<Filter[]>([]);
   const [activeFilter, setActiveFilter] = useState(Filter.All);
 
+  // Folders the user had open before a search or filter started opening them.
+  const openBeforeFiltering = useRef<Set<string>>();
+
+  // The tree is a map of the whole project: searching and filtering never remove folders from it.
   useEffect(() => {
-    const { tree, filters } = generateAssetTree(folders, open, search, activeFilter);
+    const { tree, filters } = generateAssetTree(folders, open);
     setTree(tree);
     setFilters(getFilterFromTree(filters));
-  }, [folders, search, activeFilter]);
+  }, [folders]);
+
+  const matchCounts = useMemo(
+    () =>
+      isFilteringBy(search, activeFilter)
+        ? countMatches(tree, search, activeFilter)
+        : new Map<string, number>(),
+    [tree, search, activeFilter],
+  );
+
+  // While filtering, open the folders that hold results so they are easy to find; the user's own
+  // open folders come back once the filter is cleared.
+  useEffect(() => {
+    if (isFilteringBy(search, activeFilter)) {
+      openBeforeFiltering.current ??= new Set(open);
+      setOpen(new Set([ROOT, ...matchCounts.keys()]));
+    } else if (openBeforeFiltering.current) {
+      setOpen(openBeforeFiltering.current);
+      openBeforeFiltering.current = undefined;
+    }
+  }, [matchCounts, search, activeFilter]);
 
   /**
    * Callbacks
@@ -67,9 +116,22 @@ function ProjectView({ folders, thumbnails }: Props) {
   const onSelect = useCallback(
     (value: string) => {
       open.add(value);
+      const node = tree.get(value);
+      if (node?.type === 'asset') {
+        // Keep the file's folder in view so its neighbours stay visible, and preview the file.
+        setLastSelected(value.includes('/') ? value.slice(0, value.lastIndexOf('/')) : ROOT);
+        select({
+          source: 'local',
+          id: value,
+          name: node.name,
+          path: value,
+          builtInEmote: (node as AssetNodeItem).asset.builtInEmote,
+        });
+        return;
+      }
       setLastSelected(value);
     },
-    [setLastSelected],
+    [setLastSelected, tree, select],
   );
 
   const onSetOpen = useCallback(
@@ -134,6 +196,7 @@ function ProjectView({ folders, thumbnails }: Props) {
       if (entitiesWithAsset.length) {
         return setModal({ isOpen: true, value: path, entities: entitiesWithAsset });
       }
+      invalidateLocalThumbnail(getFullNodePath(tree.get(value)!).slice(1));
       dispatch(removeAsset({ path }));
     },
     [tree, getEntitiesWithAsset],
@@ -142,19 +205,37 @@ function ProjectView({ folders, thumbnails }: Props) {
   const handleConfirm = useCallback(async () => {
     if (!modal) return;
     dispatch(removeAsset({ path: modal.value }));
+    invalidateLocalThumbnail(modal.value.replace(/^assets\//, ''));
     setModal(undefined);
   }, [modal, setModal]);
 
   const handleModalClose = useCallback(() => setModal(undefined), []);
 
+  const mentionAsset = useCallback((node: TreeNode, path: string) => {
+    const builtInEmote = (node as AssetNodeItem).asset.builtInEmote;
+    void getSceneClient()
+      ?.mentionAsset(
+        builtInEmote ? { builtInEmote: builtInEmote.name } : { path: withAssetDir(path) },
+      )
+      .catch(console.error);
+  }, []);
+
+  const handleDoubleSelect = useCallback(
+    (value: string) => {
+      const node = tree.get(value);
+      if (node?.type === 'asset') mentionAsset(node, value);
+    },
+    [tree, mentionAsset],
+  );
+
   const handleClickFolder = useCallback(
     (node: TreeNode) => () => {
-      if (node.type === 'asset') return;
       const path = getFullNodePath(node).slice(1);
+      if (node.type === 'asset') return mentionAsset(node, path);
       open.add(path);
       setLastSelected(path);
     },
-    [setLastSelected],
+    [setLastSelected, mentionAsset],
   );
   const handleDragContext = useCallback(() => ({ tree }), [tree]);
   // Drop targets (renderer, video inputs) read a `value` like the Tile emits; the
@@ -166,13 +247,7 @@ function ProjectView({ folders, thumbnails }: Props) {
   );
   const isOpen = useCallback((val: string) => open.has(val), [open]);
 
-  const getChildren = useCallback(
-    (val: string) => {
-      const childs = _getChildren(val, tree, search, activeFilter);
-      return childs;
-    },
-    [tree, search, activeFilter],
-  );
+  const getChildren = useCallback((val: string) => _getChildren(val, tree), [tree]);
 
   const getThumbnail = useCallback(
     async (value: AssetNodeItem) => {
@@ -184,7 +259,17 @@ function ProjectView({ folders, thumbnails }: Props) {
         const [name] = value.name.split('.');
         thumbnail = thumbnails.find($ => $.path.endsWith(name + '.png'));
       }
-      if (thumbnail) return thumbnail.content;
+      if (thumbnail) return transformBinaryToBase64Resource(thumbnail.content);
+      // Nothing stored: images show themselves and models get rendered once.
+      return getLocalThumbnail(value.asset.src);
+    },
+    [thumbnails],
+  );
+
+  const getAnimatedThumbnail = useCallback(
+    async (value: AssetNodeItem) => {
+      const name = await getThumbnailHashNameForAsset(value.asset.src, 'webp');
+      return thumbnails.find($ => $.path.endsWith(name))?.content;
     },
     [thumbnails],
   );
@@ -194,6 +279,83 @@ function ProjectView({ folders, thumbnails }: Props) {
   }, []);
 
   const tiles = getTiles(lastSelected, tree, search, activeFilter);
+  const folderTiles = tiles.filter(node => node.type === 'folder');
+  const assetTiles = tiles.filter(node => node.type === 'asset');
+  const crumbs = getBreadcrumbs(lastSelected);
+  // Search and type filters look through every folder, so results need their own context.
+  const isFiltering = isFilteringBy(search, activeFilter);
+
+  const handleClearFilters = useCallback(() => {
+    setSearch('');
+    setActiveFilter(Filter.All);
+  }, []);
+
+  const allFolderIds = useMemo(
+    () => [...tree.entries()].filter(([, node]) => node.type === 'folder').map(([id]) => id),
+    [tree],
+  );
+  const allExpanded = allFolderIds.every(id => open.has(id));
+
+  const handleToggleAll = useCallback(
+    () => setOpen(new Set(allExpanded ? [ROOT] : allFolderIds)),
+    [allExpanded, allFolderIds],
+  );
+
+  const handleResizeStart = useCallback(
+    (event: React.PointerEvent<HTMLDivElement>) => {
+      event.preventDefault();
+      const startX = event.clientX;
+      const startWidth = treeWidth;
+      let latest = startWidth;
+      const onMove = (move: PointerEvent) => {
+        latest = Math.min(
+          MAX_TREE_WIDTH,
+          Math.max(MIN_TREE_WIDTH, startWidth + move.clientX - startX),
+        );
+        setTreeWidth(latest);
+      };
+      const onUp = () => {
+        window.removeEventListener('pointermove', onMove);
+        window.removeEventListener('pointerup', onUp);
+        try {
+          localStorage.setItem(TREE_WIDTH_KEY, String(latest));
+        } catch {
+          // the width just won't be remembered
+        }
+      };
+      window.addEventListener('pointermove', onMove);
+      window.addEventListener('pointerup', onUp);
+    },
+    [treeWidth],
+  );
+
+  const handleViewMode = useCallback((mode: ViewMode) => {
+    setViewMode(mode);
+    try {
+      localStorage.setItem(VIEW_MODE_KEY, mode);
+    } catch {
+      // storage can be unavailable (private windows, blocked site data); the choice just won't stick
+    }
+  }, []);
+
+  const renderTile = (node: TreeNode) => {
+    const valueId = getFullNodePath(node).slice(1);
+    return (
+      <Tile
+        key={valueId}
+        valueId={valueId}
+        value={node}
+        layout={viewMode}
+        showPath={isFiltering}
+        getDragContext={handleDragContext}
+        onSelect={handleClickFolder(node)}
+        onRemove={handleRemove}
+        getThumbnail={getThumbnail}
+        getAnimatedThumbnail={getAnimatedThumbnail}
+        dndType={DRAG_N_DROP_ASSET_KEY}
+      />
+    );
+  };
 
   return (
     <>
@@ -220,18 +382,21 @@ function ProjectView({ folders, thumbnails }: Props) {
         </div>
       </Modal>
       <div className="ProjectView">
-        <Filters
-          filters={filters}
-          active={activeFilter}
-          onClick={handleFilterClick}
-        />
-        <div className="Tree-View">
-          <Search
-            value={search}
-            onChange={setSearch}
-            placeholder="Search local assets"
-            onCancel={() => setSearch('')}
-          />
+        <div
+          className={cx('Tree-View', { collapsed: !showTree })}
+          style={{ width: treeWidth }}
+        >
+          <div className="Tree-View-header">
+            <span>Folders</span>
+            <button
+              className="Assets-iconButton small"
+              onClick={handleToggleAll}
+              title={allExpanded ? 'Collapse all folders' : 'Expand all folders'}
+              aria-label={allExpanded ? 'Collapse all folders' : 'Expand all folders'}
+            >
+              {allExpanded ? <CollapseAllIcon /> : <ExpandAllIcon />}
+            </button>
+          </div>
           <FilesTree
             className="editor-assets-tree"
             value={ROOT}
@@ -240,17 +405,39 @@ function ProjectView({ folders, thumbnails }: Props) {
             onRemove={handleRemove}
             onRename={noop}
             onSelect={onSelect}
-            onDoubleSelect={noop}
+            onDoubleSelect={handleDoubleSelect}
             onSetOpen={onSetOpen}
             onDuplicate={noop}
             getId={(value: string) => value.toString()}
             getChildren={getChildren}
-            getLabel={(val: string) => <span>{tree.get(val)?.name ?? val}</span>}
+            getLabel={(val: string) => {
+              const name = tree.get(val)?.name ?? val;
+              const count = matchCounts.get(val);
+              const isFolder = tree.get(val)?.type === 'folder';
+              return (
+                <>
+                  <span
+                    className={cx({
+                      'is-current': val === lastSelected,
+                      // While filtering, folders with no results stay put but fade back.
+                      'is-dim':
+                        isFilteringBy(search, activeFilter) &&
+                        (isFolder ? !count : !isMatch(tree.get(val)!, search, activeFilter)),
+                    })}
+                    title={name}
+                  >
+                    {name}
+                  </span>
+                  {isFolder && !!count && <em className="Tree-count">{count}</em>}
+                </>
+              );
+            }}
             isOpen={isOpen}
-            isSelected={(val: string) => lastSelected === val}
+            isSelected={(val: string) => selection?.source === 'local' && selection.id === val}
             isHidden={(val: string) => val === ROOT}
             canRename={() => false}
-            canRemove={val => tree.get(val)?.type === 'asset'}
+            canRemove={val => tree.get(val)?.type === 'asset' && !isBuiltInNode(tree.get(val))}
+            canDrag={val => !isBuiltInNode(tree.get(val))}
             canDuplicate={() => false}
             canAddChild={() => false}
             getIcon={val => <NodeIcon value={tree.get(val)} />}
@@ -259,26 +446,155 @@ function ProjectView({ folders, thumbnails }: Props) {
             dndType={DRAG_N_DROP_ASSET_KEY}
           />
         </div>
-        <div className="FolderView">
-          {tiles.map(node => {
-            const valueId = getFullNodePath(node).slice(1);
-            return (
-              <Tile
-                key={valueId}
-                valueId={valueId}
-                value={node}
-                getDragContext={handleDragContext}
-                onSelect={handleClickFolder(node)}
-                onRemove={handleRemove}
-                getThumbnail={getThumbnail}
-                dndType={DRAG_N_DROP_ASSET_KEY}
-              />
-            );
-          })}
+        {showTree && (
+          <div
+            className="ProjectView-resizer"
+            role="separator"
+            aria-orientation="vertical"
+            aria-label="Resize folder tree"
+            onPointerDown={handleResizeStart}
+            onDoubleClick={() => setTreeWidth(DEFAULT_TREE_WIDTH)}
+          />
+        )}
+        <div className="ProjectView-main">
+          <div className="Assets-toolbar">
+            <button
+              className={cx('Assets-iconButton', { active: showTree })}
+              onClick={() => setShowTree(value => !value)}
+              title={showTree ? 'Hide folder tree' : 'Show folder tree'}
+              aria-label={showTree ? 'Hide folder tree' : 'Show folder tree'}
+              aria-pressed={showTree}
+            >
+              <TreeIcon />
+            </button>
+            <Search
+              value={search}
+              onChange={setSearch}
+              placeholder="Search local assets"
+              onCancel={() => setSearch('')}
+            />
+            <Filters
+              filters={filters}
+              active={activeFilter}
+              onClick={handleFilterClick}
+            />
+            <div
+              className="ProjectView-viewToggle"
+              role="group"
+              aria-label="View mode"
+            >
+              <button
+                className={cx('Assets-iconButton', { active: viewMode === 'grid' })}
+                onClick={() => handleViewMode('grid')}
+                title="Grid view"
+                aria-label="Grid view"
+                aria-pressed={viewMode === 'grid'}
+              >
+                <GridIcon />
+              </button>
+              <button
+                className={cx('Assets-iconButton', { active: viewMode === 'list' })}
+                onClick={() => handleViewMode('list')}
+                title="List view"
+                aria-label="List view"
+                aria-pressed={viewMode === 'list'}
+              >
+                <ListIcon />
+              </button>
+            </div>
+          </div>
+          <nav
+            className="Assets-crumbs"
+            aria-label="Folder path"
+          >
+            {crumbs.map((crumb, index) => (
+              <React.Fragment key={crumb.path}>
+                {index > 0 && <ChevronIcon />}
+                <button
+                  className={cx({ current: index === crumbs.length - 1 })}
+                  onClick={() => setLastSelected(crumb.path)}
+                >
+                  {crumb.label}
+                </button>
+              </React.Fragment>
+            ))}
+            {isFiltering && (
+              <span className="Assets-crumbs-results">
+                {assetTiles.length} {assetTiles.length === 1 ? 'result' : 'results'}
+                {lastSelected !== ROOT && (
+                  <button onClick={() => setLastSelected(ROOT)}>Search all folders</button>
+                )}
+                <button onClick={handleClearFilters}>Clear</button>
+              </span>
+            )}
+          </nav>
+          <div className="ProjectView-scroll">
+            {folderTiles.length > 0 && (
+              <div className="FolderView ProjectView-folders">{folderTiles.map(renderTile)}</div>
+            )}
+            {assetTiles.length > 0 && (
+              <div className={cx('FolderView', 'ProjectView-files', viewMode)}>
+                {assetTiles.map(renderTile)}
+              </div>
+            )}
+            {tiles.length === 0 && (
+              <div className="ProjectView-empty">
+                {search || activeFilter !== Filter.All
+                  ? 'No assets match your search.'
+                  : 'This folder is empty.'}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </>
   );
+}
+
+// Search and type filters look through every folder, not just the one being browsed.
+function isFilteringBy(search: string, activeFilter: Filter): boolean {
+  return !!search || (activeFilter !== Filter.All && activeFilter !== Filter.Recents);
+}
+
+type ViewMode = 'grid' | 'list';
+
+const VIEW_MODE_KEY = 'inspector:local-assets-view';
+const TREE_WIDTH_KEY = 'inspector:local-assets-tree-width';
+const DEFAULT_TREE_WIDTH = 180;
+const MIN_TREE_WIDTH = 130;
+const MAX_TREE_WIDTH = 380;
+
+function readTreeWidth(): number {
+  try {
+    const stored = Number(localStorage.getItem(TREE_WIDTH_KEY));
+    if (stored >= MIN_TREE_WIDTH && stored <= MAX_TREE_WIDTH) return stored;
+  } catch {
+    // fall through to the default
+  }
+  return DEFAULT_TREE_WIDTH;
+}
+
+function readViewMode(): ViewMode {
+  try {
+    return localStorage.getItem(VIEW_MODE_KEY) === 'list' ? 'list' : 'grid';
+  } catch {
+    return 'grid';
+  }
+}
+
+function getBreadcrumbs(path: string): { label: string; path: string }[] {
+  const crumbs = [{ label: 'Assets', path: ROOT }];
+  if (path === ROOT) return crumbs;
+  const parts = path.split('/');
+  parts.forEach((part, index) =>
+    crumbs.push({ label: part, path: parts.slice(0, index + 1).join('/') }),
+  );
+  return crumbs;
+}
+
+// Built-in animations have no file, so they can't be dragged into the scene or deleted.
+function isBuiltInNode(node?: TreeNode): boolean {
+  return node?.type === 'asset' && !!(node as AssetNodeItem).asset.builtInEmote;
 }
 
 function NodeIcon({ value }: { value?: TreeNode }) {
@@ -291,6 +607,7 @@ function NodeIcon({ value }: { value?: TreeNode }) {
     );
   } else {
     const Icon = useMemo(() => {
+      if (isEmoteAsset((value as AssetNodeItem).asset)) return EmoteIcon;
       const classification = determineAssetType(extractFileExtension(value.name)[1]);
       switch (classification) {
         case 'Models':

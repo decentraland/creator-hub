@@ -1,0 +1,9 @@
+{
+  "id": "bd8074c7-2eeb-47c7-81e3-78932bc02bee",
+  "name": "Swing Weapon One Hand",
+  "category": "built-in",
+  "tags": ["animation", "avatar", "built-in", "default", "emote", "hand", "one", "swing", "weapon"],
+  "description": "Built-in avatar animation. Play it from scene code with triggerEmote({ predefinedEmote: 'swingWeaponOneHand' }).",
+  "author": "Decentraland Foundation",
+  "builtInEmote": "swingWeaponOneHand"
+}

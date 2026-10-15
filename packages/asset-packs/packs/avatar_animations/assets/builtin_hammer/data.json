@@ -1,0 +1,9 @@
+{
+  "id": "7650867c-0fc2-4600-a47b-52a04b324cab",
+  "name": "Hammer",
+  "category": "built-in",
+  "tags": ["animation", "avatar", "built-in", "default", "emote", "hammer"],
+  "description": "Built-in avatar animation. Play it from scene code with triggerEmote({ predefinedEmote: 'hammer' }).",
+  "author": "Decentraland Foundation",
+  "builtInEmote": "hammer"
+}

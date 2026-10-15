@@ -5,23 +5,23 @@
   overflow: scroll;
   overflow-y: auto;
   overflow-x: hidden;
-  padding: 0 24px 40px 0;
-  gap: 16px;
+  padding: 4px 10px 24px;
+  gap: 14px;
 }
 
 .assets-catalog-category {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 8px;
 }
 
 .assets-catalog-category h4.category-name {
   margin-top: 0;
   margin-bottom: 0;
-  color: var(--base-01);
-  font-size: 12px;
-  font-style: normal;
-  font-weight: 400;
+  color: var(--neutral-grey-4);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
   line-height: normal;
   text-transform: uppercase;
 }

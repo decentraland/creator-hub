@@ -1,0 +1,9 @@
+{
+  "id": "3d14d665-5af6-44c1-966d-01af30761799",
+  "name": "Open Door",
+  "category": "built-in",
+  "tags": ["animation", "avatar", "built-in", "default", "door", "emote", "open"],
+  "description": "Built-in avatar animation. Play it from scene code with triggerEmote({ predefinedEmote: 'openDoor' }).",
+  "author": "Decentraland Foundation",
+  "builtInEmote": "openDoor"
+}

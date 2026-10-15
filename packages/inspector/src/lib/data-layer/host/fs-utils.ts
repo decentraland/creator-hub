@@ -85,8 +85,11 @@ export function getCurrentCompositePath() {
   return withAssetDir(`${DIRECTORY.SCENE}/main.composite`);
 }
 
-export function transformBinaryToBase64Resource(content: Uint8Array): string {
-  return `data:image/png;base64,${Buffer.from(content).toString('base64')}`;
+export function transformBinaryToBase64Resource(
+  content: Uint8Array,
+  mimeType: 'image/png' | 'image/webp' = 'image/png',
+): string {
+  return `data:${mimeType};base64,${Buffer.from(content).toString('base64')}`;
 }
 
 export function transformBase64ResourceToBinary(base64Resource: string): Buffer {

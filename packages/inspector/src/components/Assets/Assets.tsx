@@ -1,5 +1,10 @@
 import React, { useCallback, useEffect, useState, useMemo, useRef } from 'react';
-import { MdImageSearch } from 'react-icons/md';
+import {
+  MdImageSearch,
+  MdKeyboardArrowDown,
+  MdKeyboardArrowUp,
+  MdVerticalSplit,
+} from 'react-icons/md';
 import { FaBroom } from 'react-icons/fa';
 import { HiOutlinePlus } from 'react-icons/hi';
 import { HiOutlineRefresh as RefreshIcon } from 'react-icons/hi';
@@ -46,6 +51,7 @@ import { CustomAssets } from '../CustomAssets';
 import { RenameAsset } from '../RenameAsset';
 import { CreateCustomAsset } from '../CreateCustomAsset';
 import { CleanAssets } from '../CleanAssets';
+import { AssetSelectionProvider, PreviewPane, useAssetSelection } from '../AssetBrowserPreview';
 import type { InputRef } from '../FileInput/FileInput';
 import { Button } from '../Button';
 import { InfoTooltip } from '../ui';
@@ -54,6 +60,10 @@ import MobileDebugSession from './MobileDebugSession/MobileDebugSession';
 
 import './Assets.css';
 
+const DEFAULT_TILE_SIZE = 80;
+const MIN_TILE_SIZE = 56;
+const MAX_TILE_SIZE = 140;
+
 function removeSmartItems(assetPack: AssetPack) {
   return {
     ...assetPack,
@@ -61,8 +71,16 @@ function removeSmartItems(assetPack: AssetPack) {
   };
 }
 
-function Assets({ isAssetsPanelCollapsed }: { isAssetsPanelCollapsed: boolean }) {
+type Props = {
+  isAssetsPanelCollapsed: boolean;
+  onToggleCollapse: () => void;
+};
+
+function AssetsInner({ isAssetsPanelCollapsed, onToggleCollapse }: Props) {
   const dispatch = useAppDispatch();
+  const { select } = useAssetSelection();
+  const [tileSize, setTileSize] = useState(DEFAULT_TILE_SIZE);
+  const [showPreview, setShowPreview] = useState(true);
   const tab = useAppSelector(getSelectedAssetsTab);
   const removedAssets = useAppSelector(selectRemovedFiles);
   const hasRecoverableFiles = useAppSelector(selectHasRecoverableFiles);
@@ -94,11 +112,22 @@ function Assets({ isAssetsPanelCollapsed }: { isAssetsPanelCollapsed: boolean })
     }
   }, [debugConsoleEnabled]);
 
+  useEffect(() => select(undefined), [tab, select]);
+
   const handleTabClick = useCallback(
     (tab: AssetsTab) => () => {
       dispatch(selectAssetsTab({ tab }));
     },
     [],
+  );
+
+  // A tab click on a collapsed panel means "show me this tab", so reopen it too.
+  const handleTabSelect = useCallback(
+    (tab: AssetsTab) => () => {
+      dispatch(selectAssetsTab({ tab }));
+      if (isAssetsPanelCollapsed) onToggleCollapse();
+    },
+    [isAssetsPanelCollapsed, onToggleCollapse],
   );
 
   const config = getConfig();
@@ -244,11 +273,76 @@ function Assets({ isAssetsPanelCollapsed }: { isAssetsPanelCollapsed: boolean })
     return `Open ${text} folder in Explorer`;
   }, [tab]);
 
+  const isBrowsing =
+    tab === AssetsTab.FileSystem || tab === AssetsTab.CustomAssets || tab === AssetsTab.AssetsPack;
+
   return (
     <div className="Assets">
-      <div className="Assets-buttons">
+      <div className="Assets-bar">
+        <div
+          className="Assets-tabs"
+          role="tablist"
+        >
+          <div
+            className={cx('tab', { active: tab === AssetsTab.FileSystem })}
+            onClick={handleTabSelect(AssetsTab.FileSystem)}
+            data-test-id={AssetsTab.FileSystem}
+            role="tab"
+            aria-selected={tab === AssetsTab.FileSystem}
+          >
+            <FolderOpen />
+            <span>Local Assets</span>
+          </div>
+          <div
+            className={cx('tab', { active: tab === AssetsTab.CustomAssets })}
+            onClick={handleTabSelect(AssetsTab.CustomAssets)}
+            data-test-id={AssetsTab.CustomAssets}
+            role="tab"
+            aria-selected={tab === AssetsTab.CustomAssets}
+          >
+            <i className="icon-custom-assets" />
+            <span>Custom Items</span>
+          </div>
+          <div
+            className={cx('tab', { active: tab === AssetsTab.AssetsPack })}
+            onClick={handleTabSelect(AssetsTab.AssetsPack)}
+            data-test-id={AssetsTab.AssetsPack}
+            role="tab"
+            aria-selected={tab === AssetsTab.AssetsPack}
+          >
+            <MdImageSearch />
+            <span>Asset Packs</span>
+          </div>
+          {(debugConsoleEnabled || mobileDebugSessionEnabled) && (
+            <span className="Assets-tabs-divider" />
+          )}
+          {debugConsoleEnabled && (
+            <div
+              className={cx('tab', { active: tab === AssetsTab.DebugConsole })}
+              onClick={handleTabSelect(AssetsTab.DebugConsole)}
+              data-test-id={AssetsTab.DebugConsole}
+              role="tab"
+              aria-selected={tab === AssetsTab.DebugConsole}
+            >
+              <VscTerminal />
+              <span>Console</span>
+            </div>
+          )}
+          {mobileDebugSessionEnabled && (
+            <div
+              className={cx('tab', { active: tab === AssetsTab.MobileDebugSession })}
+              onClick={handleTabSelect(AssetsTab.MobileDebugSession)}
+              data-test-id={AssetsTab.MobileDebugSession}
+              role="tab"
+              aria-selected={tab === AssetsTab.MobileDebugSession}
+            >
+              <VscTerminal />
+              <span>Mobile Debug</span>
+            </div>
+          )}
+        </div>
         {tab !== AssetsTab.DebugConsole && (
-          <div className="Assets-buttons-left">
+          <div className="Assets-actions">
             <Button
               className="import-button"
               onClick={handleImportClick}
@@ -328,62 +422,62 @@ function Assets({ isAssetsPanelCollapsed }: { isAssetsPanelCollapsed: boolean })
                 position="top center"
               />
             )}
+            {isBrowsing && (
+              <label className="Assets-size">
+                <span className="visually-hidden">Thumbnail size</span>
+                <input
+                  type="range"
+                  min={MIN_TILE_SIZE}
+                  max={MAX_TILE_SIZE}
+                  value={tileSize}
+                  onChange={event => setTileSize(Number(event.target.value))}
+                  aria-label="Thumbnail size"
+                  data-test-id="assets-tile-size"
+                />
+              </label>
+            )}
+            {isBrowsing && (
+              <InfoTooltip
+                text={showPreview ? 'Hide preview' : 'Show preview'}
+                trigger={
+                  <button
+                    className={cx('icon-item', { active: showPreview })}
+                    onClick={() => setShowPreview(value => !value)}
+                    aria-label={showPreview ? 'Hide preview panel' : 'Show preview panel'}
+                    aria-pressed={showPreview}
+                    data-test-id="assets-preview-toggle"
+                  >
+                    <MdVerticalSplit />
+                  </button>
+                }
+                openOnTriggerMouseEnter={true}
+                closeOnTriggerClick={true}
+                position="top center"
+              />
+            )}
           </div>
         )}
-        <div
-          className="tab"
-          onClick={handleTabClick(AssetsTab.FileSystem)}
-          data-test-id={AssetsTab.FileSystem}
-        >
-          <div className={cx({ underlined: tab === AssetsTab.FileSystem })}>
-            <FolderOpen />
-            <span>LOCAL ASSETS</span>
-          </div>
+        <div className="Assets-collapse">
+          <InfoTooltip
+            text={isAssetsPanelCollapsed ? 'Expand panel' : 'Collapse panel'}
+            trigger={
+              <button
+                className="collapse-toggle"
+                onClick={onToggleCollapse}
+                aria-label={
+                  isAssetsPanelCollapsed ? 'Expand assets panel' : 'Collapse assets panel'
+                }
+                aria-expanded={!isAssetsPanelCollapsed}
+                data-test-id="assets-collapse-toggle"
+              >
+                {isAssetsPanelCollapsed ? <MdKeyboardArrowUp /> : <MdKeyboardArrowDown />}
+              </button>
+            }
+            openOnTriggerMouseEnter={true}
+            closeOnTriggerClick={true}
+            position="top center"
+          />
         </div>
-        <div
-          className="tab"
-          onClick={handleTabClick(AssetsTab.CustomAssets)}
-          data-test-id={AssetsTab.CustomAssets}
-        >
-          <div className={cx({ underlined: tab === AssetsTab.CustomAssets })}>
-            <i className="icon-custom-assets" />
-            <span>CUSTOM ITEMS</span>
-          </div>
-        </div>
-        <div
-          className="tab"
-          onClick={handleTabClick(AssetsTab.AssetsPack)}
-          data-test-id={AssetsTab.AssetsPack}
-        >
-          <div className={cx({ underlined: tab === AssetsTab.AssetsPack })}>
-            <MdImageSearch />
-            <span>ASSET PACKS</span>
-          </div>
-        </div>
-        {debugConsoleEnabled && (
-          <div
-            className="tab"
-            onClick={handleTabClick(AssetsTab.DebugConsole)}
-            data-test-id={AssetsTab.DebugConsole}
-          >
-            <div className={cx({ underlined: tab === AssetsTab.DebugConsole })}>
-              <VscTerminal />
-              <span>CONSOLE</span>
-            </div>
-          </div>
-        )}
-        {mobileDebugSessionEnabled && (
-          <div
-            className="tab"
-            onClick={handleTabClick(AssetsTab.MobileDebugSession)}
-            data-test-id={AssetsTab.MobileDebugSession}
-          >
-            <div className={cx({ underlined: tab === AssetsTab.MobileDebugSession })}>
-              <VscTerminal />
-              <span>MOBILE DEBUG SESSION</span>
-            </div>
-          </div>
-        )}
       </div>
       {tab === AssetsTab.MobileDebugSession ? (
         <div className={cx('Assets-content', { Hide: isAssetsPanelCollapsed })}>
@@ -398,32 +492,38 @@ function Assets({ isAssetsPanelCollapsed }: { isAssetsPanelCollapsed: boolean })
           onSave={handleTabClick(AssetsTab.FileSystem)}
           ref={inputRef}
         >
-          <div className={cx('Assets-content', { Hide: isAssetsPanelCollapsed })}>
-            {tab === AssetsTab.AssetsPack &&
-              (catalogUnavailable ? (
-                <div className="AssetsCatalogUnavailable">
-                  <p>Asset Packs are unavailable.</p>
-                  <p>
-                    The content server could not be reached. Check your connection and try again.
-                  </p>
-                </div>
-              ) : (
-                <AssetsCatalog
-                  catalog={filteredCatalog}
-                  onAddToFilesystem={importCatalogAssetToFilesystem}
+          <div className={cx('Assets-body', { Hide: isAssetsPanelCollapsed })}>
+            <div
+              className="Assets-content"
+              style={{ '--tile-size': `${tileSize}px` } as React.CSSProperties}
+            >
+              {tab === AssetsTab.AssetsPack &&
+                (catalogUnavailable ? (
+                  <div className="AssetsCatalogUnavailable">
+                    <p>Asset Packs are unavailable.</p>
+                    <p>
+                      The content server could not be reached. Check your connection and try again.
+                    </p>
+                  </div>
+                ) : (
+                  <AssetsCatalog
+                    catalog={filteredCatalog}
+                    onAddToFilesystem={importCatalogAssetToFilesystem}
+                  />
+                ))}
+              {tab === AssetsTab.FileSystem && <ProjectAssetExplorer />}
+              {tab === AssetsTab.CustomAssets && (
+                <CustomAssets onAddToFilesystem={importCustomAssetToFilesystem} />
+              )}
+              {tab === AssetsTab.RenameAsset && assetToRename && (
+                <RenameAsset
+                  assetId={assetToRename.id}
+                  currentName={assetToRename.name}
                 />
-              ))}
-            {tab === AssetsTab.FileSystem && <ProjectAssetExplorer />}
-            {tab === AssetsTab.CustomAssets && (
-              <CustomAssets onAddToFilesystem={importCustomAssetToFilesystem} />
-            )}
-            {tab === AssetsTab.RenameAsset && assetToRename && (
-              <RenameAsset
-                assetId={assetToRename.id}
-                currentName={assetToRename.name}
-              />
-            )}
-            {tab === AssetsTab.CreateCustomAsset && stagedCustomAsset && <CreateCustomAsset />}
+              )}
+              {tab === AssetsTab.CreateCustomAsset && stagedCustomAsset && <CreateCustomAsset />}
+            </div>
+            {isBrowsing && showPreview && <PreviewPane />}
           </div>
         </ImportAsset>
       )}
@@ -439,6 +539,14 @@ function Assets({ isAssetsPanelCollapsed }: { isAssetsPanelCollapsed: boolean })
         onSelectAll={handleSelectAllCleanAssets}
       />
     </div>
+  );
+}
+
+function Assets(props: Props) {
+  return (
+    <AssetSelectionProvider>
+      <AssetsInner {...props} />
+    </AssetSelectionProvider>
   );
 }
 

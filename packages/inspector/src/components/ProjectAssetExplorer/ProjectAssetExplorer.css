@@ -1,19 +1,120 @@
 .ProjectView {
-  border-top: 0.1px solid;
-  border-color: var(--border-gray);
+  display: flex;
+  flex-direction: row;
+  height: 100%;
+  min-height: 0;
+}
+
+.ProjectView .with-context-menu {
+  height: auto;
 }
 
 .ProjectView > .Tree-View {
-  border-right: 0.1px solid var(--border-gray);
-  border-left: 0.1px solid var(--border-gray);
+  display: flex;
+  flex-direction: column;
+  flex: none;
+  width: 180px;
+  min-height: 0;
+  border-right: 1px solid var(--border-gray);
+  background: var(--base-19);
 }
 
-.ProjectView > .Tree-View > .with-context-menu > .editor-assets-tree {
+.ProjectView > .Tree-View.collapsed {
+  display: none;
+}
+
+.ProjectView .Tree-View-header {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 2px;
+  padding: 6px 6px 4px 12px;
+  color: var(--neutral-grey-4);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.ProjectView > .Tree-View > .with-context-menu {
+  flex: 1;
+  min-height: 0;
+  overflow-x: hidden;
   overflow-y: auto;
-  width: 260px;
-  /* Search height */
-  height: calc(100% - 34px);
-  padding: 0 8px 8px 8px;
+}
+
+/* Every nested node carries .editor-assets-tree too, so only the root may be padded. */
+.ProjectView > .Tree-View > .with-context-menu > .editor-assets-tree {
+  padding: 0 6px 8px;
+}
+
+.ProjectView-main {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+}
+
+.Assets-toolbar .Search {
+  flex: 1 1 120px;
+  max-width: 280px;
+  padding: 0;
+}
+
+.Assets-toolbar .Search input {
+  height: 28px;
+  padding-left: 32px;
+  border-radius: 8px;
+}
+
+.Assets-toolbar .ProjectFilters {
+  flex: none;
+}
+
+.ProjectView-viewToggle {
+  display: flex;
+  gap: 2px;
+  margin-left: auto;
+  padding: 2px;
+  border-radius: 10px;
+  background: var(--base-19);
+}
+
+.ProjectView-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 2px 10px 10px;
+}
+
+.ProjectView-empty {
+  padding: 32px 0;
+  color: var(--neutral-grey-3);
+  font-size: 13px;
+  text-align: center;
+}
+
+.ProjectView .FolderView {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  gap: 6px;
+}
+
+.ProjectView .ProjectView-folders {
+  margin-bottom: 8px;
+}
+
+.ProjectView .ProjectView-files.list {
+  flex-direction: column;
+  flex-wrap: nowrap;
+  gap: 2px;
+}
+
+.ProjectView .ProjectView-files.list .with-context-menu {
+  width: 100%;
 }
 
 .editor .editor-assets-tree .item > div {
@@ -41,29 +142,105 @@
   position: relative;
 }
 
-.ProjectView {
-  display: flex;
-  flex-direction: row;
-  height: 100%;
-}
-
-.ProjectView .with-context-menu {
-  height: 100%;
-}
-
 .RemoveAsset.Modal > div button {
   margin-right: 12px;
 }
 
-.ProjectView .FolderView {
-  display: flex;
-  flex-direction: row;
-  flex-wrap: wrap;
-  align-content: flex-start;
-  justify-content: left;
-  overflow-y: auto;
+.ProjectView .Tree-View .Tree .item {
+  min-height: 24px;
 }
 
-.ProjectView .FolderView .with-context-menu {
-  height: auto;
+.ProjectView .Tree-View-header span {
+  flex: 1;
+}
+
+.ProjectView-resizer {
+  position: relative;
+  z-index: 1;
+  flex: none;
+  width: 5px;
+  margin: 0 -3px 0 -2px;
+  cursor: col-resize;
+  touch-action: none;
+}
+
+.ProjectView-resizer:hover,
+.ProjectView-resizer:active {
+  background: linear-gradient(
+    to right,
+    transparent 2px,
+    var(--primary-main) 2px,
+    var(--primary-main) 3px,
+    transparent 3px
+  );
+}
+
+.ProjectView .Tree-View .Tree .item {
+  min-height: 26px;
+  border-radius: 6px;
+}
+
+.ProjectView .Tree-View .Tree .item-area {
+  flex: 1;
+  min-width: 0;
+}
+
+.ProjectView .Tree-View .Tree .selectable-area {
+  min-width: 0;
+  overflow: hidden;
+}
+
+.ProjectView .Tree-View .Tree .item span {
+  overflow: hidden;
+  color: var(--white-gray);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ProjectView .Tree-View .Tree .item:hover:not(:has(input)) {
+  background-color: var(--base-17);
+}
+
+/* The folder being browsed: quiet tint and an accent icon, never a filled bar. */
+.ProjectView .Tree-View .Tree .item:has(.is-current) {
+  background-color: var(--base-17);
+}
+
+.ProjectView .Tree-View .Tree .item:has(.is-current) span {
+  color: var(--white);
+  font-weight: 600;
+}
+
+.ProjectView .Tree-View .Tree .item:has(.is-current) svg {
+  color: var(--primary-main);
+}
+
+/* The file shown in the preview pane: filled row with an accent edge. */
+.ProjectView .Tree-View .Tree .item.selected:not(:has(input)) {
+  background-color: var(--base-15);
+  box-shadow: inset 2px 0 0 var(--primary-main);
+}
+
+.ProjectView .Tree-View .Tree .item.selected span {
+  color: var(--white);
+}
+
+.ProjectView .Tree-View .Tree .item:has(.is-dim) {
+  opacity: 0.45;
+}
+
+.ProjectView .Tree-View .Tree .item:has(.is-dim):hover {
+  opacity: 1;
+}
+
+.Tree-count {
+  flex: none;
+  margin: 0 6px 0 auto;
+  padding: 0 6px;
+  border-radius: 8px;
+  background: var(--base-15);
+  color: var(--neutral-grey-3);
+  font-size: 10px;
+  font-style: normal;
+  line-height: 16px;
 }

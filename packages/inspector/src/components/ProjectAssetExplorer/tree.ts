@@ -13,11 +13,11 @@ const hasSearchMatch = (name: string, searchTerm: string): boolean => {
   return !!(searchTerm && name.toLowerCase().includes(searchTerm.toLowerCase()));
 };
 
-const shouldIncludeAsset = (assetType: IAsset['type'], activeFilter: Filter): boolean => {
+const shouldIncludeAsset = (asset: IAsset, activeFilter: Filter): boolean => {
   if (activeFilter === Filter.All || activeFilter === Filter.Recents) {
     return true;
   }
-  const assetFilter = mapAssetTypeToFilter(assetType);
+  const assetFilter = mapAssetTypeToFilter(asset);
   return assetFilter === activeFilter;
 };
 
@@ -75,10 +75,10 @@ export const generateAssetTree = (
         }
       } else {
         const assetNode = child as AssetNodeItem;
-        const filter = mapAssetTypeToFilter(assetNode.asset.type);
+        const filter = mapAssetTypeToFilter(assetNode.asset);
         if (filter) foundFilters.add(filter);
 
-        if (shouldIncludeAsset(assetNode.asset.type, activeFilter)) {
+        if (shouldIncludeAsset(assetNode.asset, activeFilter)) {
           validChildren.push(childPath);
           hasValidChildren = true;
           tree.set(childPath, {
@@ -122,57 +122,29 @@ export const generateAssetTree = (
   return { tree, filters: foundFilters };
 };
 
-export const getChildren = (
-  val: string,
-  tree: Map<string, TreeNode>,
-  searchTerm: string,
-  activeFilter: Filter,
-): string[] => {
-  const node = tree.get(val);
-  if (!node?.children?.length) return [];
+/**
+ * The children of a node in the folder tree. Searching and filtering are applied when the tree is
+ * generated, which prunes it down to the folders that lead to a match, so the hierarchy is always
+ * what gets listed here.
+ */
+export const getChildren = (val: string, tree: Map<string, TreeNode>): string[] =>
+  tree.get(val)?.children ?? [];
 
-  // For 'all' or 'recents' filters with no search term, show complete structure
-  if ((activeFilter === Filter.All || activeFilter === Filter.Recents) && !searchTerm) {
-    return node.children;
-  }
-
-  // Helper to get all matching files considering both search and filter
-  const getAllMatchingFiles = (nodePath: string): string[] => {
-    const currentNode = tree.get(nodePath);
-    if (!currentNode?.children) return [];
-
-    return currentNode.children.reduce((matches: string[], childPath) => {
-      const childNode = tree.get(childPath);
-      if (!childNode) return matches;
-
-      if (childNode.type === 'asset') {
-        const childFilter = mapAssetTypeToFilter((childNode as AssetNodeItem).asset.type);
-        const matchesFilter =
-          activeFilter === Filter.All ||
-          activeFilter === Filter.Recents ||
-          childFilter === activeFilter;
-        const matchesSearch =
-          !searchTerm || childPath.toLowerCase().includes(searchTerm.toLowerCase());
-
-        if (matchesFilter && matchesSearch) {
-          matches.push(childPath);
-        }
-      } else if (childNode.type === 'folder' && childNode.children) {
-        matches.push(...getAllMatchingFiles(childPath));
-      }
-      return matches;
-    }, []);
-  };
-
-  // If searching or filtering, and this is ROOT, return all matching files
-  if (val === ROOT && (searchTerm || activeFilter !== 'all')) {
-    return getAllMatchingFiles(ROOT);
-  }
-
-  // For non-ROOT nodes when searching or filtering, return empty to skip folder structure
-  return [];
+// Whether a file belongs in the results of the current search and type filter.
+export const isMatch = (node: TreeNode, searchTerm: string, activeFilter: Filter): boolean => {
+  const matchesFilter =
+    activeFilter === Filter.All ||
+    activeFilter === Filter.Recents ||
+    mapAssetTypeToFilter((node as AssetNodeItem).asset) === activeFilter;
+  const matchesSearch = !searchTerm || node.name.toLowerCase().includes(searchTerm.toLowerCase());
+  return matchesFilter && matchesSearch;
 };
 
+/**
+ * What the file area lists for `nodeId`. Without a search or type filter that is the folder's own
+ * contents. With one, it is every matching file at or below the folder (the whole project when the
+ * root is selected), so a filter can be narrowed by picking a folder in the tree.
+ */
 export const getTiles = (
   nodeId: string,
   tree: Map<string, TreeNode>,
@@ -189,30 +161,37 @@ export const getTiles = (
     return children.map($ => tree.get($)!);
   }
 
-  // Helper to get all matching files from a node or its children
   const getAllMatchingFiles = (startNode: TreeNode): TreeNode[] => {
     if (startNode.type === 'asset') {
-      const assetFilter = mapAssetTypeToFilter((startNode as AssetNodeItem).asset.type);
-      const matchesFilter =
-        activeFilter === Filter.All ||
-        activeFilter === Filter.Recents ||
-        assetFilter === activeFilter;
-      const matchesSearch =
-        !searchTerm || startNode.name.toLowerCase().includes(searchTerm.toLowerCase());
-
-      return matchesFilter && matchesSearch ? [startNode] : [];
+      return isMatch(startNode, searchTerm, activeFilter) ? [startNode] : [];
     }
-
-    // If it's a folder, get matching files from children
-    const childrenIds = startNode.children || [];
-    return childrenIds.reduce((matches: TreeNode[], childId) => {
+    return (startNode.children || []).flatMap(childId => {
       const childNode = tree.get(childId);
-      if (childNode) {
-        matches.push(...getAllMatchingFiles(childNode));
-      }
-      return matches;
-    }, []);
+      return childNode ? getAllMatchingFiles(childNode) : [];
+    });
   };
 
-  return getAllMatchingFiles(tree.get(ROOT)!);
+  return getAllMatchingFiles(tree.get(nodeId) ?? tree.get(ROOT)!);
+};
+
+/**
+ * How many files under each folder match the current search and type filter. Folders with no
+ * matches are left out, so the tree can show where the results are without hiding anything.
+ */
+export const countMatches = (
+  tree: Map<string, TreeNode>,
+  searchTerm: string,
+  activeFilter: Filter,
+): Map<string, number> => {
+  const counts = new Map<string, number>();
+  const visit = (id: string): number => {
+    const node = tree.get(id);
+    if (!node) return 0;
+    if (node.type === 'asset') return isMatch(node, searchTerm, activeFilter) ? 1 : 0;
+    const total = (node.children ?? []).reduce((sum, childId) => sum + visit(childId), 0);
+    if (total > 0 && id !== ROOT) counts.set(id, total);
+    return total;
+  };
+  visit(ROOT);
+  return counts;
 };

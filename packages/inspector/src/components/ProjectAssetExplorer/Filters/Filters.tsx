@@ -4,6 +4,7 @@ import { IoIosImage as ImageIcon } from 'react-icons/io';
 import { IoCubeOutline as ModelIcon, IoVideocamOutline as VideoIcon } from 'react-icons/io5';
 import { FaFile as AssetIcon } from 'react-icons/fa';
 import { GoClock as RecentIcon } from 'react-icons/go';
+import { MdOutlineEmojiPeople as EmoteIcon } from 'react-icons/md';
 import { SiTypescript as ScriptIcon } from 'react-icons/si';
 import cx from 'classnames';
 
@@ -20,6 +21,8 @@ export function Filters({ filters, active, onClick }: PropTypes) {
         return { title: 'Recents', icon: RecentIcon };
       case Filter.Models:
         return { title: 'Models', icon: ModelIcon };
+      case Filter.Emotes:
+        return { title: 'Avatar Animations', icon: EmoteIcon };
       case Filter.Images:
         return { title: 'Images', icon: ImageIcon };
       case Filter.Audio:
@@ -44,9 +47,13 @@ export function Filters({ filters, active, onClick }: PropTypes) {
             key={_filter.title}
             className={cx('filter', { active: $ === active })}
             onClick={handleClick($)}
+            title={_filter.title}
+            role="button"
+            aria-label={_filter.title}
+            aria-pressed={$ === active}
           >
             {<_filter.icon />}
-            {_filter.title}
+            <span className="label">{_filter.title}</span>
           </div>
         );
       })}
