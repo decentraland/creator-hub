@@ -1,13 +1,9 @@
 import React from 'react';
 import { Item } from 'react-contexify';
-import { MdOutlineDriveFileRenameOutline as RenameIcon } from 'react-icons/md';
-import {
-  AiFillFileAdd as AddChildIcon,
-  AiFillDelete as DeleteIcon,
-  AiFillCopy as DuplicateIcon,
-} from 'react-icons/ai';
+import { AiFillFileAdd as AddChildIcon } from 'react-icons/ai';
 
 import { ContextMenu as Menu } from '../../ContexMenu';
+import { DeleteIcon, DuplicateIcon, RenameIcon } from '../../Icons/ContextMenu';
 import { useContextMenu } from '../../../hooks/sdk/useContextMenu';
 
 export interface Props {
@@ -17,6 +13,7 @@ export interface Props {
   enableRemove?: boolean;
   enableDuplicate?: boolean;
   addChildLabel?: string;
+  addChildIcon?: JSX.Element;
   onAddChild: () => void;
   onEdit: () => void;
   onRemove: () => void;
@@ -31,6 +28,7 @@ function ContextMenu({
   enableRemove = true,
   enableDuplicate = true,
   addChildLabel = 'Add child',
+  addChildIcon = <AddChildIcon />,
   onAddChild,
   onEdit,
   onRemove,
@@ -58,7 +56,7 @@ function ContextMenu({
         id="add-child"
         onClick={handleAction(onAddChild)}
       >
-        <AddChildIcon /> {addChildLabel}
+        {addChildIcon} {addChildLabel}
       </Item>
       <Item
         hidden={!enableDuplicate}

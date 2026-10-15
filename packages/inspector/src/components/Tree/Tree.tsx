@@ -41,6 +41,7 @@ type Props<T> = {
   /** When it returns true, double clicking the item switches it to rename mode. */
   renameOnDoubleClick?: (value: T) => boolean;
   addChildLabel?: string;
+  addChildIcon?: JSX.Element;
   canDrag?: (value: T) => boolean;
   canReorder?: (source: T, target: T, type: DropType) => boolean;
   onSetOpen: (value: T, isOpen: boolean) => void;
@@ -97,6 +98,7 @@ export function Tree<T>() {
         canDuplicate,
         renameOnDoubleClick,
         addChildLabel,
+        addChildIcon,
         canDrag,
         canReorder,
         onRename,
@@ -372,6 +374,7 @@ export function Tree<T>() {
         enableRemove,
         enableDuplicate,
         addChildLabel,
+        addChildIcon,
         onAddChild: handleNewChild,
         onEdit: handleToggleEdit,
         onRemove: handleRemove,

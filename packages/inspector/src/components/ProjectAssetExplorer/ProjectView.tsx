@@ -4,7 +4,7 @@ import { IoIosImage as ImageIcon } from 'react-icons/io';
 import { IoCubeOutline as ModelIcon, IoVideocamOutline as VideoIcon } from 'react-icons/io5';
 import { FaFile as OtherIcon } from 'react-icons/fa';
 import { SiTypescript as ScriptIcon } from 'react-icons/si';
-import { MdContentCopy as CopyNameIcon, MdOutlineLink as CopyPathIcon } from 'react-icons/md';
+import { MdContentCopy as CopyNameIcon } from 'react-icons/md';
 import { Item as MenuItem } from 'react-contexify';
 import type { Entity } from '@dcl/ecs';
 
@@ -14,6 +14,7 @@ import type { DropType } from '../Tree/utils';
 import { Modal } from '../Modal';
 import { Button } from '../Button';
 import FolderIcon from '../Icons/Folder';
+import { CopyPathIcon, NewFolderIcon } from '../Icons/ContextMenu';
 import Search from '../Search';
 import { withAssetDir } from '../../lib/data-layer/host/fs-utils';
 import { removeAsset } from '../../redux/data-layer';
@@ -530,13 +531,13 @@ function ProjectView({ folders, thumbnails }: Props) {
             onClick={handleAction(() => copyRelativePaths(val))}
           >
             <CopyPathIcon />
-            {isMultiple ? 'Copy relative paths' : 'Copy relative path'}
+            {isMultiple ? 'Copy Paths' : 'Copy Path'}
           </MenuItem>
           <MenuItem
             id="copy-file-name"
             onClick={handleAction(() => copyFileNames(val))}
           >
-            <CopyNameIcon />
+            <CopyNameIcon size={16} />
             {isMultiple ? 'Copy file names' : 'Copy file name'}
           </MenuItem>
         </>
@@ -855,6 +856,7 @@ function ProjectView({ folders, thumbnails }: Props) {
             canDuplicate={canDuplicateNode}
             canAddChild={canAddChild}
             addChildLabel="New folder"
+            addChildIcon={<NewFolderIcon />}
             getExtraContextMenu={getExtraContextMenu}
             getIcon={val => <NodeIcon value={tree.get(val)} />}
             getDragContext={handleDragContext}

@@ -1,17 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import {
-  AiFillCopy as DuplicateIcon,
-  AiFillDelete as DeleteIcon,
-  AiOutlineSound as AudioIcon,
-} from 'react-icons/ai';
+import { AiOutlineSound as AudioIcon } from 'react-icons/ai';
 import { IoIosImage as ImageIcon } from 'react-icons/io';
 import { IoCubeOutline as ModelIcon, IoVideocamOutline as VideoIcon } from 'react-icons/io5';
 import { FaFile as OtherIcon } from 'react-icons/fa';
-import {
-  MdContentCopy as CopyNameIcon,
-  MdOutlineDriveFileRenameOutline as RenameIcon,
-  MdOutlineLink as CopyPathIcon,
-} from 'react-icons/md';
+import { MdContentCopy as CopyNameIcon } from 'react-icons/md';
 import { Item as MenuItem } from 'react-contexify';
 import { SiTypescript as ScriptIcon } from 'react-icons/si';
 import { useDrag, useDrop } from 'react-dnd';
@@ -26,6 +18,7 @@ import { getDataLayerInterface, selectDataLayerRemovingAsset } from '../../../re
 import { useAppSelector } from '../../../redux/hooks';
 import { ContextMenu as Menu } from '../../ContexMenu';
 import FolderIcon from '../../Icons/Folder';
+import { CopyPathIcon, DeleteIcon, DuplicateIcon, RenameIcon } from '../../Icons/ContextMenu';
 import { Input } from '../../Input';
 import { withContextMenu } from '../../../hoc/withContextMenu';
 import { useContextMenu } from '../../../hooks/sdk/useContextMenu';
@@ -209,13 +202,13 @@ export const Tile = withContextMenu<Props>(
             onClick={handleAction(handleCopyPath)}
           >
             <CopyPathIcon />
-            {isMultiple ? 'Copy relative paths' : 'Copy relative path'}
+            {isMultiple ? 'Copy Paths' : 'Copy Path'}
           </MenuItem>
           <MenuItem
             id="copy-file-name"
             onClick={handleAction(handleCopyName)}
           >
-            <CopyNameIcon />
+            <CopyNameIcon size={16} />
             {isMultiple ? 'Copy file names' : 'Copy file name'}
           </MenuItem>
           <MenuItem
