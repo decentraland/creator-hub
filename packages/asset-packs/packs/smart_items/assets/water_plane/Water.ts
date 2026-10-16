@@ -37,11 +37,24 @@ const LAYER_DRIFT = [
 ];
 // Metres per repeat of the ripple texture: fishing-islands' 38 repeats across 512 m of sea.
 const RIPPLE_SIZE = 512 / 38;
+// Per-layer ripple size, within fishing-islands' 36..40-repeat range, so no two layers show the
+// same pattern at the same spot (there, each layer's tiling tween starts at a random point).
+const LAYER_RIPPLE = [38 / 38, 38 / 36, 38 / 40, 38 / 37, 38 / 39];
+// fishing-islands adds its layers 0, 2, 4, 6 and 7 s apart, so their bobs never sync up
+const LAYER_BOB_DELAY = [0, 2, 4, 6, 7];
 // Texture repeats per second; at RIPPLE_SIZE that is ~0.1 m/s on the surface
 const DRIFT_SPEED = 0.008;
 const BOB = 0.05;
 
-type Layer = { entity: Entity; x: number; y: number; z: number; flat: boolean };
+type Layer = {
+  entity: Entity;
+  x: number;
+  y: number;
+  z: number;
+  flat: boolean;
+  ripple: number;
+  bob?: { level: Entity; delay: number };
+};
 
 type Splash = {
   entity: Entity;
@@ -58,6 +71,7 @@ export class Water {
   private inside = new Set<Entity>();
   private area: Entity | undefined;
   private layers: Layer[] = [];
+  private elapsed = 0;
   private subs: Record<string, Array<(arg?: Entity) => void>> = {};
 
   /**
@@ -116,6 +130,7 @@ export class Water {
    */
   update(dt: number) {
     this.fitArea();
+    this.startBobs(dt);
     for (const s of [...this.vertical, ...this.ring]) {
       if (!s.playing) continue;
       if (s.delay > 0) {
@@ -169,34 +184,30 @@ export class Water {
   }
 
   // Per layer, after fishing-islands' addWaterLayer: a root bobbing every 5 s (0.05 m, half the
-  // repo's, since the layers here are 1 m apart in total), and the normal map drifting sideways.
+  // repo's, since the layers here are 1 m apart in total) started on the repo's stagger, and
+  // the normal map drifting sideways. The bob starts are scheduled in update().
   private animateLayers() {
     for (const [child, t] of engine.getEntitiesWith(Transform, MeshRenderer)) {
       if (t.parent !== this.entity) continue;
       const flat = MeshRenderer.get(child).mesh?.$case === 'plane';
-      this.layers.push({ entity: child, x: t.position.x, y: t.position.y, z: t.position.z, flat });
+      this.layers.push({
+        entity: child,
+        x: t.position.x,
+        y: t.position.y,
+        z: t.position.z,
+        flat,
+        ripple: 1,
+      });
     }
     this.layers.sort((a, b) => b.y - a.y);
     this.layers.forEach((layer, i) => {
-      const at = Vector3.create(layer.x, layer.y, layer.z);
-      const up = Vector3.create(layer.x, layer.y + BOB, layer.z);
+      layer.ripple = LAYER_RIPPLE[i % LAYER_RIPPLE.length];
       const level = engine.addEntity();
-      Transform.create(level, { parent: this.entity, position: at });
-      Tween.create(level, {
-        duration: 5000,
-        easingFunction: EasingFunction.EF_EASESINE,
-        mode: Tween.Mode.Move({ start: at, end: up }),
+      Transform.create(level, {
+        parent: this.entity,
+        position: Vector3.create(layer.x, layer.y, layer.z),
       });
-      TweenSequence.create(level, {
-        sequence: [
-          {
-            duration: 5000,
-            easingFunction: EasingFunction.EF_EASESINE,
-            mode: Tween.Mode.Move({ start: up, end: at }),
-          },
-        ],
-        loop: TweenLoop.TL_RESTART,
-      });
+      layer.bob = { level, delay: LAYER_BOB_DELAY[i % LAYER_BOB_DELAY.length] };
       const t = Transform.getMutable(layer.entity);
       t.parent = level;
       t.position = Vector3.Zero();
@@ -212,14 +223,47 @@ export class Water {
     });
   }
 
+  // Start each layer's bob once its stagger delay has passed (fishing-islands' timers).
+  private startBobs(dt: number) {
+    this.elapsed += dt;
+    for (const layer of this.layers) {
+      if (!layer.bob || this.elapsed < layer.bob.delay) continue;
+      const { level } = layer.bob;
+      layer.bob = undefined;
+      const at = Vector3.create(layer.x, layer.y, layer.z);
+      const up = Vector3.create(layer.x, layer.y + BOB, layer.z);
+      Tween.create(level, {
+        duration: 5000,
+        easingFunction: EasingFunction.EF_EASESINE,
+        mode: Tween.Mode.Move({ start: at, end: up }),
+      });
+      TweenSequence.create(level, {
+        sequence: [
+          {
+            duration: 5000,
+            easingFunction: EasingFunction.EF_EASESINE,
+            mode: Tween.Mode.Move({ start: up, end: at }),
+          },
+        ],
+        loop: TweenLoop.TL_RESTART,
+      });
+    }
+  }
+
   // Keep each ripple RIPPLE_SIZE metres wide however the water is scaled: a primitive's UVs
   // span the whole mesh, so the repeat count must follow its size in metres (this item's
   // scale times the layer's). A plane's second UV axis is its local Y, laid flat onto Z.
   private fitRipples(layer: Layer) {
     const root = Transform.get(this.entity).scale;
     const s = Transform.get(layer.entity).scale;
-    const across = (root.x * s.x) / RIPPLE_SIZE;
-    const along = (root.z * (layer.flat ? s.y : s.z)) / RIPPLE_SIZE;
+    const size = RIPPLE_SIZE * layer.ripple;
+    // a layer turned 90 degrees (like fishing-islands' layers) has its X along the item's Z
+    const q = Transform.get(layer.entity).rotation;
+    const xAxis = Vector3.rotate(Vector3.Right(), q);
+    const turned = Math.abs(xAxis.z) > Math.abs(xAxis.x);
+    const [rx, rz] = turned ? [root.z, root.x] : [root.x, root.z];
+    const across = (rx * s.x) / size;
+    const along = (rz * (layer.flat ? s.y : s.z)) / size;
     const m = Material.getMutableOrNull(layer.entity);
     if (m?.material?.$case !== 'pbr') return;
     const tex = m.material.pbr.bumpTexture?.tex;
