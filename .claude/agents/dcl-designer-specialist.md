@@ -22,7 +22,7 @@ You own `docs/DESIGN.md`, the `:root` token block of `packages/inspector/src/the
 
 ## Traps (details in `.ai/skills/figma/SKILL.md`, CLAUDE.md, and `docs/DESIGN.md`)
 
-- The Figma MCP serves any node by explicit id on any page; only the no-`nodeId` page listing is pinned to COVER. Harvest page ids in Chrome: the Pages list is virtualised (enumerate its rows with JavaScript, not `find`), and only a real `computer` click switches pages so the URL's `node-id=` can be read. Pass frame or set ids to `get_variable_defs`, which returns only the variables that subtree references; `get_metadata` on a component set lists its variants, so count from it.
+- The Figma MCP serves any node by explicit id on any page; only the no-`nodeId` page listing is pinned to COVER. Page ids are tabulated in `docs/DESIGN.md` → "Pages inventory"; to re-harvest, read Figma's client store (`store.getState().mirror.appModel.pagesList` via `javascript_tool`) rather than clicking the virtualised Pages panel, which resists every click method. Pass frame or set ids to `get_variable_defs`, which returns only the variables that subtree references; `get_metadata` on a component set lists its variants, so count from it.
 - `20420:50646` is the COVER page. Tokens live on the Tokens pages. Skip every page whose name contains `🟡 Outdated`.
 - The `--base-*` ramp runs light to dark. Two accent families, and alpha steps don't transfer across luminance: solve contrast, never copy an alpha.
 - `--ui-designer-panel-bg` reuses `--base-19` on purpose. Keep documented deviations.
