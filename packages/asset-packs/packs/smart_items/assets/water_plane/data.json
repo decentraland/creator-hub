@@ -1,7 +1,7 @@
 {
   "id": "b8fbdd59-976a-50e1-965f-20a88a62fd91",
   "name": "Water Plane",
-  "category": "nature",
+  "category": "materials",
   "tags": ["water", "pond", "pool", "sea", "lake", "splash", "swim"],
   "description": "A 16 x 16 m water surface that splashes when a player jumps or walks into it. Scale it to cover a pond or a sea.",
   "author": "Decentraland Foundation"

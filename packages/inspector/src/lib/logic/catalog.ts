@@ -28,6 +28,7 @@ export const CATEGORIES = [
   'appliances',
   'nature',
   'tiles',
+  'materials',
   'year of the pig',
   'health',
   'sounds',

@@ -1,7 +1,7 @@
 {
   "id": "6ecb6e9a-cf33-56cf-b185-a3c7dfb3173b",
   "name": "Water Cylinder",
-  "category": "nature",
+  "category": "materials",
   "tags": ["water", "pond", "pool", "sea", "lake", "splash", "swim"],
   "description": "An 8 m wide, 2 m deep round pool of water that splashes when a player jumps or walks into it.",
   "author": "Decentraland Foundation"
