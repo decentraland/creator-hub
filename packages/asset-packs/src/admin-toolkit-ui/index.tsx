@@ -39,6 +39,9 @@ import {
 } from './actions';
 import { COLORS, RADIUS, SPACING, TYPE } from './theme';
 import { IconTab, Divider } from './Primitives';
+import { getAdminConfig, getAdminEntityOrNull } from './config';
+
+export { setAdminConfig, getAdminConfig, getAdminEntityOrNull } from './config';
 
 // Mobile scaling: shrink the virtual canvas on
 // mobile so the SDK's global UI scale factor — min(screen/virtual), see
@@ -63,6 +66,15 @@ function getVirtualUiSize() {
 let sceneAdminsCache: SceneAdmin[] = [];
 let sceneBansCache: SceneBanUser[] = [];
 
+// Accessors so a custom (scene-side) admin panel can read the live admin/ban lists that this
+// module keeps and refreshes — see the editable panel in the admin_toolkit smart item.
+export function getSceneAdminsCache(): SceneAdmin[] {
+  return sceneAdminsCache;
+}
+export function getSceneBansCache(): SceneBanUser[] {
+  return sceneBansCache;
+}
+
 const ADMIN_ICONS = {
   get BTN_ADMIN_TOOLKIT_CONTROL() {
     return `${getContentUrl()}/admin_toolkit/assets/icons/admin-panel-control-button.png`;
@@ -76,13 +88,11 @@ const ADMIN_ICONS = {
 const ADMIN_TOOLS_ENTITY = 8000 as Entity;
 
 function getAdminToolkitEntity(engine: IEngine) {
-  const { AdminTools } = getComponents(engine);
-  return Array.from(engine.getEntitiesWith(AdminTools))[0][0];
+  return getAdminEntityOrNull(engine);
 }
 
 function getAdminToolkitComponent(engine: IEngine) {
-  const { AdminTools } = getComponents(engine);
-  return Array.from(engine.getEntitiesWith(AdminTools))[0][1];
+  return getAdminConfig(engine);
 }
 
 export async function fetchSceneAdmins() {
@@ -184,12 +194,23 @@ export async function initializeAdminData(
   }
 }
 
+// The panel renderer: takes the mount context and returns the react-ecs tree for the whole
+// admin overlay. Defaults to the built-in `uiComponent`; a scene-side smart item can pass its
+// own editable copy (see the admin_toolkit `AdminPanel.tsx`) to customize the panel freely.
+export type AdminPanelRenderer = (
+  engine: IEngine,
+  pointerEventsSystem: PointerEventsSystem,
+  sdkHelpers?: ISDKHelpers,
+  playersHelper?: IPlayersHelper,
+) => ReturnType<typeof uiComponent>;
+
 export function createAdminToolkitUI(
   engine: IEngine,
   pointerEventsSystem: PointerEventsSystem,
   reactBasedUiSystem: ReactBasedUiSystem,
   sdkHelpers?: ISDKHelpers,
   playersHelper?: IPlayersHelper,
+  renderPanel: AdminPanelRenderer = uiComponent,
 ): Entity {
   // The renderer is shared with the scene, so the toolkit registers as an
   // additional renderer keyed by its own entity: `setUiRenderer` here would
@@ -202,7 +223,7 @@ export function createAdminToolkitUI(
     console.log('createAdminToolkitUI - initialized');
     reactBasedUiSystem.addUiRenderer(
       uiRoot,
-      () => uiComponent(engine, pointerEventsSystem, sdkHelpers, playersHelper),
+      () => renderPanel(engine, pointerEventsSystem, sdkHelpers, playersHelper),
       { ...getVirtualUiSize(), zIndex: ADMIN_TOOLKIT_UI_Z_INDEX },
     );
 
@@ -219,7 +240,7 @@ export function createAdminToolkitUI(
   return uiRoot;
 }
 
-function isAllowedAdmin(
+export function isAllowedAdmin(
   _engine: IEngine,
   adminToolkitEntitie: ReturnType<typeof getAdminToolkitComponent>,
   player: GetPlayerDataRes | null | undefined,

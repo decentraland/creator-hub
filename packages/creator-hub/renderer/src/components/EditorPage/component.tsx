@@ -22,6 +22,7 @@ import { actions as aiActions } from '/@/modules/store/ai';
 import { config } from '/@/config';
 import { useEditor } from '/@/hooks/useEditor';
 import { useSettings } from '/@/hooks/useSettings';
+import { IS_NON_PRODUCTION_BUILD } from '/@/modules/buildMode';
 import { useWorkspace } from '/@/hooks/useWorkspace';
 import { useSceneCustomCode } from '/@/hooks/useSceneCustomCode';
 import { useDeploy } from '/@/hooks/useDeploy';
@@ -704,6 +705,8 @@ export function EditorPage() {
     bevyRealm,
     project,
     userId,
+    // Dev/QA only: never honor the dev-CDN toggle in a production release.
+    useDevAssetCatalog: IS_NON_PRODUCTION_BUILD && !!settings.useDevAssetCatalog,
   });
 
   // Drag the divider on the AI panel's left edge to resize it. A transparent overlay covers

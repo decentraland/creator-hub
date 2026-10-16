@@ -12,6 +12,22 @@
       }
     },
     {
+      "name": "asset-packs::Script",
+      "data": {
+        "0": {
+          "json": {
+            "value": [
+              {
+                "path": "{assetPath}/WoodenWall.ts",
+                "priority": 0,
+                "layout": "{\"params\":{\"health\":{\"type\":\"number\",\"value\":30,\"optional\":true,\"tooltip\":\"How many hits the fence takes before it falls.\"},\"hitAnimation\":{\"type\":\"string\",\"value\":\"Hit\",\"optional\":true,\"tooltip\":\"Animation clip played on each hit it survives.\"},\"fallAnimation\":{\"type\":\"string\",\"value\":\"Fall\",\"optional\":true,\"tooltip\":\"Animation clip played when it's destroyed.\"},\"fallSound\":{\"type\":\"string\",\"value\":\"fall.mp3\",\"optional\":true,\"tooltip\":\"Audio file played when it falls (e.g. fall.mp3). Empty for none.\"}},\"actions\":[{\"methodName\":\"destroy\",\"description\":\"Knocks the fence down: plays the fall animation and sound.\",\"params\":{}}],\"events\":[\"destroyed\"]}"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
       "name": "asset-packs::Actions",
       "data": {
         "0": {
@@ -19,130 +35,11 @@
             "id": "{self}",
             "value": [
               {
-                "name": "Play Hit Animation",
-                "type": "play_animation",
-                "jsonPayload": "{ \"animation\": \"Hit\" }"
-              },
-              {
-                "name": "Play Fall Animation",
-                "type": "play_animation",
-                "jsonPayload": "{ \"animation\": \"Fall\" }"
-              },
-              {
-                "name": "Play Fall Sound",
-                "type": "play_sound",
-                "jsonPayload": "{ \"src\": \"{assetPath}/fall.mp3\" }"
-              },
-              {
-                "name": "Damage",
-                "type": "decrease_counter",
-                "jsonPayload": "{ \"amount\": 1 }",
-                "allowedInBasicView": true
-              },
-              {
                 "name": "Destroy",
-                "type": "set_counter",
-                "jsonPayload": "{ \"counter\": 0 }",
-                "allowedInBasicView": true
-              },
-              {
-                "name": "Destroy Batch",
-                "type": "batch",
-                "jsonPayload": "{ \"actions\": [\"Play Fall Animation\", \"Play Fall Sound\"] }"
+                "type": "call_script_method",
+                "jsonPayload": "{\"scriptPath\":\"{assetPath}/WoodenWall.ts\",\"methodName\":\"destroy\",\"params\":{}}"
               }
             ]
-          }
-        }
-      }
-    },
-    {
-      "name": "asset-packs::Triggers",
-      "data": {
-        "0": {
-          "json": {
-            "value": [
-              {
-                "type": "on_damage",
-                "conditions": [
-                  {
-                    "id": "{self:asset-packs::Counter}",
-                    "type": "when_counter_is_greater_than",
-                    "value": "0"
-                  }
-                ],
-                "actions": [
-                  {
-                    "id": "{self:asset-packs::Actions}",
-                    "name": "Damage"
-                  }
-                ],
-                "basicViewId": "trigger-when-damaged"
-              },
-              {
-                "type": "on_counter_change",
-                "conditions": [
-                  {
-                    "id": "{self:asset-packs::Counter}",
-                    "type": "when_counter_is_greater_than",
-                    "value": "0"
-                  }
-                ],
-                "actions": [
-                  {
-                    "id": "{self:asset-packs::Actions}",
-                    "name": "Play Hit Animation"
-                  }
-                ]
-              },
-              {
-                "type": "on_counter_change",
-                "conditions": [
-                  {
-                    "id": "{self:asset-packs::Counter}",
-                    "type": "when_counter_is_less_than",
-                    "value": "1"
-                  }
-                ],
-                "actions": [
-                  {
-                    "id": "{self:asset-packs::Actions}",
-                    "name": "Destroy Batch"
-                  }
-                ]
-              }
-            ]
-          }
-        }
-      }
-    },
-    {
-      "name": "asset-packs::Counter",
-      "data": {
-        "0": {
-          "json": {
-            "id": "{self}",
-            "value": 30
-          }
-        }
-      }
-    },
-    {
-      "name": "inspector::Config",
-      "data": {
-        "0": {
-          "json": {
-            "isBasicViewEnabled": true,
-            "componentName": "Wooden Wall",
-            "fields": [
-              {
-                "name": "Item Health Points",
-                "type": "asset-packs::Counter"
-              }
-            ],
-            "helpTooltip": {
-              "text": "A pallet-like structure that can be used to reveal a passageway when broken with another smart item, such as the Sword. It can also be used as a wall to block players."
-            },
-            "version": 1
           }
         }
       }
