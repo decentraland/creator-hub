@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useState, useMemo, useRef } from 'react';
-import { MdImageSearch } from 'react-icons/md';
-import { FaBroom } from 'react-icons/fa';
+import { MdImageSearch, MdOutlineSpeed as OptimizeIcon } from 'react-icons/md';
 import { HiOutlinePlus } from 'react-icons/hi';
 import { HiOutlineRefresh as RefreshIcon } from 'react-icons/hi';
 import { IoIosFolderOpen, IoIosUndo } from 'react-icons/io';
@@ -300,13 +299,13 @@ function Assets({ isAssetsPanelCollapsed }: { isAssetsPanelCollapsed: boolean })
             )}
             {showOptimizeButton && (
               <InfoTooltip
-                text="Optimize models"
+                text="Optimize"
                 trigger={
                   <button
                     className="icon-item"
                     onClick={handleOptimizeClick}
                   >
-                    <FaBroom />
+                    <OptimizeIcon />
                   </button>
                 }
                 openOnTriggerMouseEnter={true}
