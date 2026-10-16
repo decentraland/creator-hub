@@ -71,11 +71,12 @@ const RewardsControl: React.FC<WithSdkProps & Props> = ({ sdk, ...props }) => {
     [adminComponent, setAdminComponent],
   );
 
-  const handleRewardItemNameChange = useCallback(
-    (idx: number, e: React.ChangeEvent<HTMLInputElement>) => {
-      const updatedRewardItems = adminComponent.rewardsControl.rewardItems?.map(
-        (rewardItem, index) =>
-          index === idx ? { ...rewardItem, customName: e.target.value } : rewardItem,
+  const handleRewardItemNameBlur = useCallback(
+    (idx: number, e: React.FocusEvent<HTMLInputElement>) => {
+      const rewardItems = adminComponent.rewardsControl.rewardItems;
+      if (rewardItems?.[idx]?.customName === e.target.value) return;
+      const updatedRewardItems = rewardItems?.map((rewardItem, index) =>
+        index === idx ? { ...rewardItem, customName: e.target.value } : rewardItem,
       );
       setAdminComponent({
         ...adminComponent,
@@ -126,7 +127,7 @@ const RewardsControl: React.FC<WithSdkProps & Props> = ({ sdk, ...props }) => {
               <TextField
                 label="Custom Name"
                 value={rewardItem.customName}
-                onChange={e => handleRewardItemNameChange(idx, e)}
+                onBlur={e => handleRewardItemNameBlur(idx, e)}
               />
             </div>
             <div className="RightMenu">
