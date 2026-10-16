@@ -2,6 +2,7 @@ export enum Filter {
   All = 'all',
   Recents = 'recents',
   Models = 'models',
+  Emotes = 'emotes',
   Images = 'images',
   Video = 'video',
   Audio = 'audio',

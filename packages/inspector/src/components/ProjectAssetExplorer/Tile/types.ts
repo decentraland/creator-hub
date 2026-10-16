@@ -9,4 +9,5 @@ export interface Props {
   onRemove: (value: string) => void;
   dndType: string;
   getThumbnail: (value: AssetNodeItem) => Promise<Uint8Array | undefined>;
+  getAnimatedThumbnail?: (value: AssetNodeItem) => Promise<Uint8Array | undefined>;
 }

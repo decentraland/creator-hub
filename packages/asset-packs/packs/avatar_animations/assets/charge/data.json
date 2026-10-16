@@ -1,0 +1,8 @@
+{
+  "id": "2a05eb22-1753-454d-861b-0ac0e9beb988",
+  "name": "Charge",
+  "category": "actions",
+  "tags": ["charge", "power", "energy", "emote", "animation", "avatar"],
+  "description": "Avatar performs a charging move.",
+  "author": "Decentraland Foundation"
+}

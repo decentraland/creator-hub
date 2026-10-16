@@ -22,6 +22,7 @@ function renderWith(provider: Partial<ChatViewProps['providers'][number]>) {
     busy: false,
     detecting: false,
     selection: [],
+    assetMentions: [],
     billingDismissed: true,
     sessions: [],
     currentSessionId: '',
@@ -36,6 +37,7 @@ function renderWith(provider: Partial<ChatViewProps['providers'][number]>) {
     onSwitchSession: vi.fn(),
     onDeleteSession: vi.fn(),
     onClearSelection: vi.fn(),
+    onRemoveAssetMention: vi.fn(),
     onClose: vi.fn(),
   };
   render(

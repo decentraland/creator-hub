@@ -1,0 +1,9 @@
+{
+  "id": "8b179669-d09b-461b-9661-7c3c2d8747ed",
+  "name": "Tik",
+  "category": "expressions",
+  "tags": ["animation", "avatar", "built-in", "default", "emote", "tik"],
+  "description": "Built-in avatar animation. Play it from scene code with triggerEmote({ predefinedEmote: 'tik' }).",
+  "author": "Decentraland Foundation",
+  "builtInEmote": "tik"
+}

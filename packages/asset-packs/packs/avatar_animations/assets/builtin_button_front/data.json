@@ -1,0 +1,9 @@
+{
+  "id": "c88a8471-4bb6-46ed-9f1b-e77d1c841928",
+  "name": "Button Front",
+  "category": "actions",
+  "tags": ["animation", "avatar", "built-in", "button", "default", "emote", "front"],
+  "description": "Built-in avatar animation. Play it from scene code with triggerEmote({ predefinedEmote: 'buttonFront' }).",
+  "author": "Decentraland Foundation",
+  "builtInEmote": "buttonFront"
+}

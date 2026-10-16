@@ -130,6 +130,9 @@ export function useAiSession(
         case 'clearSelection':
           latest.current.onClearSelection?.();
           break;
+        case 'removeAssetMention':
+          dispatch(aiActions.removeAssetMention(command.mention));
+          break;
         case 'closeAssistant':
           void aiPreload.closeAiWindow();
           latest.current.onCloseAssistant?.();
