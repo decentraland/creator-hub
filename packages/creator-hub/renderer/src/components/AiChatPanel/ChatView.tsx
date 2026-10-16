@@ -32,9 +32,9 @@ import {
 } from 'decentraland-ui2';
 
 import type { AiAttachment, AiAttachmentKind, AiProvider } from '/shared/types/ai';
-import { AI_CLI_COMMANDS, MIN_CLAUDE_CLI_VERSION, isCliVersionOutdated } from '/shared/types/ai';
+import { MIN_CLAUDE_CLI_VERSION, cliSetup, isCliVersionOutdated } from '/shared/types/ai';
 
-import { ai as aiPreload } from '#preload';
+import { ai as aiPreload, misc } from '#preload';
 import { t } from '/@/modules/store/translation/utils';
 import { useCliSignIn } from '/@/hooks/useCliSignIn';
 
@@ -57,6 +57,7 @@ import {
   Composer,
   DropHint,
   ErrorRow,
+  GuideLink,
   HeaderActions,
   HeaderTitle,
   IntroMessage,
@@ -85,6 +86,7 @@ import {
   SetupBox,
   SetupDivider,
   SetupStep,
+  SignInHintBody,
   StopButton,
   ThinkingRow,
   Toolbar,
@@ -319,8 +321,9 @@ export interface ChatViewProps {
     available: boolean;
     reason?: string;
     version?: string;
-    // False when the CLI has no scriptable login (Gemini) — hides the in-app "Sign in" button.
     managedSignIn: boolean;
+    desktopInstalled?: boolean;
+    needsLogin?: boolean;
   }[];
   provider: AiProvider;
   messages: AiMessage[];
@@ -436,6 +439,16 @@ export function ChatView(props: ChatViewProps) {
     [providers, provider],
   );
   const available = currentProvider?.available ?? false;
+  const cmds = cliSetup(provider, navigator.userAgent.includes('Windows'));
+  const guideLink = (
+    <GuideLink
+      type="button"
+      onClick={() => void misc.openExternal(cmds.guideUrl)}
+    >
+      {t('editor.ai.setup.install_guide', { provider: currentProvider?.label ?? provider })}
+      <OpenInNewIcon fontSize="inherit" />
+    </GuideLink>
+  );
 
   // In-app sign-in without a CLI (#1531): install the official CLI on demand + drive its
   // subscription login (browser OAuth), streaming steps here. On success we re-detect so
@@ -492,7 +505,7 @@ export function ChatView(props: ChatViewProps) {
 
   const handleCopyMcpConfig = useCallback(() => {
     if (mcpConfigSnippet === null) return;
-    void navigator.clipboard.writeText(mcpConfigSnippet).then(() => {
+    void misc.copyToClipboard(mcpConfigSnippet).then(() => {
       setMcpCopied(true);
       setTimeout(() => setMcpCopied(false), 2000);
     });
@@ -585,14 +598,14 @@ export function ChatView(props: ChatViewProps) {
   );
 
   const renderSetup = () => {
-    const cmds = AI_CLI_COMMANDS[provider];
     return (
       <SetupBox>
         <strong>{t('editor.ai.setup.title')}</strong>
         <span>{t('editor.ai.setup.description')}</span>
-        {/* Primary path (#1531): sign in with the subscription in-app — installs the
-            official CLI on demand and drives its browser OAuth. No terminal needed. Hidden for a
-            provider whose CLI has no scriptable login (Gemini): only the terminal path applies. */}
+        {currentProvider?.desktopInstalled === true && (
+          <span>{t('editor.ai.setup.desktop_detected')}</span>
+        )}
+        {provider === 'gemini' && <span>{t('editor.ai.setup.gemini_plan_note')}</span>}
         {currentProvider?.managedSignIn === true && (
           <>
             <Button
@@ -626,11 +639,13 @@ export function ChatView(props: ChatViewProps) {
             <SetupDivider />
           </>
         )}
-        {/* Fallback: run the CLI yourself in a terminal. */}
-        <span>{t('editor.ai.setup.manual_title')}</span>
+        {currentProvider?.managedSignIn === true && (
+          <span>{t('editor.ai.setup.manual_title')}</span>
+        )}
         <SetupStep>
           <span>{t('editor.ai.setup.install')}</span>
           <CommandLine>{cmds.install}</CommandLine>
+          {guideLink}
         </SetupStep>
         <SetupStep>
           <span>{t('editor.ai.setup.signin')}</span>
@@ -974,6 +989,34 @@ export function ChatView(props: ChatViewProps) {
               <span>{t('editor.ai.outdated', { version: currentProvider.version ?? '' })}</span>
             </OutdatedHint>
           )}
+
+        {available && currentProvider?.needsLogin === true && (
+          <OutdatedHint>
+            <WarningCircleIcon size={28} />
+            <SignInHintBody>
+              <strong>
+                {t('editor.ai.setup.needs_login_title', { provider: currentProvider.label })}
+              </strong>
+              {currentProvider.managedSignIn ? (
+                <span>{t('editor.ai.setup.needs_login_managed_help')}</span>
+              ) : (
+                <>
+                  <span>{t('editor.ai.setup.needs_login_help')}</span>
+                  {cmds.relogin.map(step => (
+                    <CommandLine key={step}>{step}</CommandLine>
+                  ))}
+                </>
+              )}
+              <span>
+                {t('editor.ai.setup.api_key_alternative', {
+                  envVar: cmds.apiKeyEnv,
+                  setting: t('modal.app_settings.fields.ai_api_key.label'),
+                })}
+              </span>
+              {guideLink}
+            </SignInHintBody>
+          </OutdatedHint>
+        )}
 
         {available && !billingDismissed && (
           <BillingCard>

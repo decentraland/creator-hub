@@ -54,11 +54,15 @@ cd packages/inspector && npm run test:e2e          # Inspector E2E tests
 
 **Note:** run vitest from inside the package (`cd packages/<pkg> && npx vitest run`). Invoking `npx vitest run` from the repo root sweeps up every workspace's specs without their per-package configs/setup and reports mass failures that are pure cwd artifacts.
 
-**Note:** no spec file is type-checked. All three creator-hub tsconfigs carry `exclude: ["**/*.spec.ts", "**/*.test.ts"]`, and vitest transpiles without checking — so `npm run typecheck` says nothing about a test's own types. A wrong cast or a stale `Partial<…>` in a fixture is caught by neither the type gate nor the test run. The production code a spec imports *is* checked (tsc follows the import graph), so only the fixture is blind.
+**Note:** `.spec.ts` and `.test.ts` files are not type-checked, but `.spec.tsx` files are. All three creator-hub tsconfigs carry `exclude: ["**/*.spec.ts", "**/*.test.ts"]`, and vitest transpiles without checking — so `npm run typecheck` says nothing about a `.ts` test's own types, and a wrong cast or a stale `Partial<…>` in its fixture is caught by neither gate. The exclude does not match `.tsx`, so the renderer's component specs ARE checked: a fixture such as `mockResolvedValue(null)` against a non-null return fails `make typecheck`.
+
+**Note:** in main-process tests, setting `process.env.HOME` does not change `os.homedir()` (vitest runs them in worker threads). Mock `os` instead (`vi.mock('os', …)` returning a fake `homedir`, as in `main/tests/ai-detect.test.ts`). Any test that reaches agent detection must also set `SHELL=/usr/bin/true`: `ai.ts` asks your login shell for its PATH and would otherwise find your real CLIs.
 
 **Note:** `renderer/src/components/AnalyticsPage/atScale.spec.tsx` can time out in a full `npm run test:unit` run (it waits up to 15 s while every renderer suite runs in parallel). Rerun it alone before treating it as a regression.
 
 **Note:** the inspector's Playwright e2e needs the browser binaries installed once (`npx playwright install chromium`) and a dev server already running at `E2E_URL` (default `http://localhost:8000`) — `npm run start` in `packages/inspector` with `VITE_INSPECTOR_PORT` set serves one. Without the binary the suite fails at launch with `browserType.launch: Executable doesn't exist`, which reads like a code failure.
+
+**Note:** to check the AI assistant against a fake agent CLI in the built app (`npm run build`, then Playwright `_electron.launch` on `.` with a temp `HOME` and `--user-data-dir=<tmp>`), put the fake `claude` script first on `PATH` and the real Node bin folder (e.g. `~/.volta/tools/image/node/<version>/bin`) after it. Volta's shim stops resolving under a fake `HOME`, and the app then fails with an npm `package.json` error. Agents under `/opt/homebrew/bin` are still found with a stripped `PATH`, so a fake-agent run sees your real Codex too.
 
 ### Code Quality
 
@@ -185,9 +189,13 @@ Any such fix-up must mutate **`mergedConfig.settings`**, never `existingConfig.s
 
 `Tabs/AiTab/component.tsx` defines its own chevron/title `Accordion` rather than importing MUI's. Pulling in a not-yet-bundled `@mui/material` module retriggers Vite's dependency optimizer mid-session. The same file's copy button carries an `'&&&&&&&': { color: 'var(--white)' }` `sx` rule for a related reason: `decentraland-ui2` pins secondary-text buttons to a grey `secondary.contrast` at high specificity, and the repeated `&` (0,7,0) is what out-specifies it.
 
-### The dev app's userData directory is `creator-hub`, not the product name
+### The userData directory is `creator-hub`, not the product name
 
-Electron derives `app.getPath('userData')` from the package `name` (`creator-hub`), so a `npm run start` dev run reads and writes `~/Library/Application Support/creator-hub/Settings/config.json` on macOS. Only a packaged build uses `~/Library/Application Support/Decentraland Creator Hub/…`, from `productName` in `electron-builder.cjs`. Verifying persisted-settings behaviour against the packaged path while running the dev app silently inspects a file the app never touched. `electron-log` follows the same name: `~/Library/Logs/creator-hub/main.log`.
+Electron derives `app.getPath('userData')` from the bundled `package.json`, which has a `name` (`creator-hub`) and no `productName`. `productName` in `electron-builder.cjs` names only the installer and app bundle; it never reaches that `package.json`. So dev runs and packaged builds alike use `creator-hub`:
+- Settings: `~/Library/Application Support/creator-hub/Settings/config.json` on macOS, `%APPDATA%\creator-hub\…` on Windows.
+- `electron-log`: `~/Library/Logs/creator-hub/main.log` on macOS, `%APPDATA%\creator-hub\logs\main.log` on Windows. Point Windows users there when asking for logs.
+
+Looking in a `Decentraland Creator Hub` folder inspects a directory the app never touches.
 
 ### Redux state freeze + in-place mutating helpers
 
