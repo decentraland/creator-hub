@@ -38,6 +38,7 @@ import { useScanAssets } from '../../hooks/useScanAssets';
 import { useImportAssetToFilesystem } from '../../hooks/useImportAssetToFilesystem';
 import { FolderOpen } from '../Icons/Folder';
 import CleanupIcon from '../Icons/Cleanup';
+import { ListChevronsDownUpIcon, ListChevronsUpDownIcon } from '../Icons/ListChevrons';
 import { AssetsCatalog } from '../AssetsCatalog';
 import { CatalogAssetContextMenu } from '../AssetsCatalog/Asset/ContextMenu/CatalogAssetContextMenu';
 import { ProjectAssetExplorer } from '../ProjectAssetExplorer';
@@ -61,7 +62,12 @@ function removeSmartItems(assetPack: AssetPack) {
   };
 }
 
-function Assets({ isAssetsPanelCollapsed }: { isAssetsPanelCollapsed: boolean }) {
+type Props = {
+  isAssetsPanelCollapsed: boolean;
+  onToggleCollapse: () => void;
+};
+
+function Assets({ isAssetsPanelCollapsed, onToggleCollapse }: Props) {
   const dispatch = useAppDispatch();
   const tab = useAppSelector(getSelectedAssetsTab);
   const removedAssets = useAppSelector(selectRemovedFiles);
@@ -99,6 +105,15 @@ function Assets({ isAssetsPanelCollapsed }: { isAssetsPanelCollapsed: boolean })
       dispatch(selectAssetsTab({ tab }));
     },
     [],
+  );
+
+  // A tab click on a collapsed panel means "show me this tab", so reopen it too.
+  const handleTabSelect = useCallback(
+    (tab: AssetsTab) => () => {
+      dispatch(selectAssetsTab({ tab }));
+      if (isAssetsPanelCollapsed) onToggleCollapse();
+    },
+    [isAssetsPanelCollapsed, onToggleCollapse],
   );
 
   const config = getConfig();
@@ -332,7 +347,7 @@ function Assets({ isAssetsPanelCollapsed }: { isAssetsPanelCollapsed: boolean })
         )}
         <div
           className="tab"
-          onClick={handleTabClick(AssetsTab.FileSystem)}
+          onClick={handleTabSelect(AssetsTab.FileSystem)}
           data-test-id={AssetsTab.FileSystem}
         >
           <div className={cx({ underlined: tab === AssetsTab.FileSystem })}>
@@ -342,7 +357,7 @@ function Assets({ isAssetsPanelCollapsed }: { isAssetsPanelCollapsed: boolean })
         </div>
         <div
           className="tab"
-          onClick={handleTabClick(AssetsTab.CustomAssets)}
+          onClick={handleTabSelect(AssetsTab.CustomAssets)}
           data-test-id={AssetsTab.CustomAssets}
         >
           <div className={cx({ underlined: tab === AssetsTab.CustomAssets })}>
@@ -352,7 +367,7 @@ function Assets({ isAssetsPanelCollapsed }: { isAssetsPanelCollapsed: boolean })
         </div>
         <div
           className="tab"
-          onClick={handleTabClick(AssetsTab.AssetsPack)}
+          onClick={handleTabSelect(AssetsTab.AssetsPack)}
           data-test-id={AssetsTab.AssetsPack}
         >
           <div className={cx({ underlined: tab === AssetsTab.AssetsPack })}>
@@ -363,7 +378,7 @@ function Assets({ isAssetsPanelCollapsed }: { isAssetsPanelCollapsed: boolean })
         {debugConsoleEnabled && (
           <div
             className="tab"
-            onClick={handleTabClick(AssetsTab.DebugConsole)}
+            onClick={handleTabSelect(AssetsTab.DebugConsole)}
             data-test-id={AssetsTab.DebugConsole}
           >
             <div className={cx({ underlined: tab === AssetsTab.DebugConsole })}>
@@ -375,7 +390,7 @@ function Assets({ isAssetsPanelCollapsed }: { isAssetsPanelCollapsed: boolean })
         {mobileDebugSessionEnabled && (
           <div
             className="tab"
-            onClick={handleTabClick(AssetsTab.MobileDebugSession)}
+            onClick={handleTabSelect(AssetsTab.MobileDebugSession)}
             data-test-id={AssetsTab.MobileDebugSession}
           >
             <div className={cx({ underlined: tab === AssetsTab.MobileDebugSession })}>
@@ -384,6 +399,27 @@ function Assets({ isAssetsPanelCollapsed }: { isAssetsPanelCollapsed: boolean })
             </div>
           </div>
         )}
+        <div className="Assets-buttons-right">
+          <InfoTooltip
+            text={isAssetsPanelCollapsed ? 'Expand panel' : 'Collapse panel'}
+            trigger={
+              <button
+                className="collapse-toggle"
+                onClick={onToggleCollapse}
+                aria-label={
+                  isAssetsPanelCollapsed ? 'Expand assets panel' : 'Collapse assets panel'
+                }
+                aria-expanded={!isAssetsPanelCollapsed}
+                data-test-id="assets-collapse-toggle"
+              >
+                {isAssetsPanelCollapsed ? <ListChevronsUpDownIcon /> : <ListChevronsDownUpIcon />}
+              </button>
+            }
+            openOnTriggerMouseEnter={true}
+            closeOnTriggerClick={true}
+            position="top center"
+          />
+        </div>
       </div>
       {tab === AssetsTab.MobileDebugSession ? (
         <div className={cx('Assets-content', { Hide: isAssetsPanelCollapsed })}>
