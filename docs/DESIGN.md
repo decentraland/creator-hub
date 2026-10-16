@@ -401,6 +401,68 @@ Set [`20819:309`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=2
 | Right | default | left of the container | 79.77 × 49 | same | same |
 | Left | default | right of the container | 79.77 × 49 | same | same |
 
+### Navigation tokens
+
+Every literal the Navigation pages use, mapped once; the variant tables below refer to these names. The Figma MCP seat capped mid-run, so `TabHorizontal` was read from the Figma web client's Properties panel (view seat) instead of `get_design_context`; its values are the panel's, not inferred from `TabVertical`.
+
+| Literal | Figma | Inspector (`vars.css`) | Creator Hub (`theme.css` / ui2) |
+| --- | --- | --- | --- |
+| `#FCFCFC` active tab label and underline, button text, logo disc | Neutrals/Snow | `--ui-designer-text` | ui2 `neutral.softWhite`; `theme.css` missing |
+| `#FF2D55` Create button fill, notification dot | Primary/Primary | `--primary-main` | `--primary`, `--dcl` · ui2 `palette.primary.main` |
+| `rgba(255,255,255,.4)` resting tab label, Sign-in border | Transparencies/White 40 | `--ui-designer-checkbox-border` | missing (`--transparent-gray-light` is .23) |
+| `rgba(255,255,255,.1)` tab hover fill | Transparencies/White 10 | `--ui-designer-control-selected-bg` (menu rows), `--ui-designer-control-border` | missing (`Navbar` paints `#ffffff0d`, White 5) |
+| `rgba(255,255,255,.2)` Create split divider | Transparencies/White 20 | `--ui-designer-control-border-strong` | missing (`CreateButton` carries the literal) |
+| `#A14BF3` avatar disc behind the placeholder snapshot | Rarities/Legendary | missing | missing; a wearable-rarity colour, not a navigation token — the real avatar decides |
+| 12px radius | — | `--ui-designer-radius-menu` | missing (`--mui-shape-borderRadius` is 6px; `CreateButton` and `UserMenu` carry the literal) |
+| 100px pill radius (logo, avatar, dot) | — | missing | missing |
+| 2px active indicator (bottom on horizontal, right on vertical) | — | literal | literal |
+| Inter 20 / 600 / 100% | `H4 Semi` | `--font-family` + literal size | `--font-family` + literal size or `Typography` |
+| Inter 16 / 600 / 100% uppercase | `H6 Semi Caps` | `--font-family` + literal size | `--font-family` + literal size or `Typography` |
+
+### Main Navigation (Header)
+
+Set [`10394:80156`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=10394-80156), 2 variants (`Signed In=On` / `Off`), no interaction states drawn on the bar itself; the tabs it embeds are TabHorizontal below, rendered 70 tall. Shared chrome: 1920 × 100, padding 0 / 32, `space-between`, no fill, border or shadow; left group gap 26 (logo disc, then the tab bar at gap 40); right group gap 10 (Create split button, a 37px vertical divider, the account control). Code: Creator Hub `Navbar` (`Header` + `LogoMenu` + `.menu-item` + `CreateButton` + `Header/UserMenu`); inspector none.
+
+| Part | Variant | Fill | Border | Radius | Typography | Size / spacing | Contrast | A11y |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Logo disc | both | Snow, logo glyph inset (SVG asset) | none | 100px | — | 40 × 40 | disc vs `#16141a` 17.81:1 | `<button aria-label>`; `LogoButton` matches at 40px, adds a 2px white hover outline and a `--dcl` focus ring Figma does not draw |
+| Tab bar | both | none | none | — | `H4 Semi`, White 40 at rest | 70 tall, gap 40, tab padding 0 / 4 | see TabHorizontal | `<nav>`; `Navbar` uses gap 8 and tab padding 19 / 16 / 17 — drift |
+| Create (label half) | both | Primary | none | 12px, on the outer row | `H6 Semi Caps` Snow, line-height 22 | 40 tall, padding 0 / 14, gap 6, icon 18 | Snow on Primary 3.55:1 — **fails 4.5:1** (16px / 600 is not large text); Primary Dark 1 4.08:1 also fails | `<button>`; `CreateButton` matches geometry and paints hover `#F70038` as a literal |
+| Create (menu half) | both | Primary | 1px White 20 left | 12px, on the outer row | chevron 8.5 × 5 Snow | 40 × 40 | divider on Primary 1.20:1, decorative; chevron 3.55:1 (≥ 3:1 non-text) | `aria-haspopup="menu"`, `aria-expanded`, `aria-label`; `CreateButton` matches |
+| Divider | both | — | 37px vertical hairline (SVG asset; stroke colour not exposed by the MCP) | — | — | 0 × 37 | — | `aria-hidden`; `Navbar` has none |
+| Account | Signed In=On | Legendary `#A14BF3` under the avatar snapshot | none | 100px | — | 40 × 40 | placeholder disc vs page 4.19:1; the real avatar decides | `<button aria-label>`; `UserMenu` renders the avatar at 44px — drift |
+| Account | Signed In=Off | none | 1.5px White 40 | 12px | `H6 Semi Caps` Snow, "sign in" | 40 tall, padding 12 / 24 | text 17.81:1; border 3.83:1 (≥ 3:1) | `<button>`; `UserMenu` paints 1px `--transparent-gray-light`, padding 7 / 16 — drift |
+| Create, Sign in | ✱ hover / press / focus / disabled | not drawn on this page; take them from Buttons (Inputs page) when it is extracted | — | — | — | — | — | — |
+
+### TabHorizontal (Tabs)
+
+Set [`10394:70307`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=10394-70307), 6 variants (Active × Hover × Notification, Menu `-`; the page labels Notification "UNUSED"). Shared: 48 Hug × 75 Fill, vertical flow, padding 0 / 4, label `H4 Semi` centred, no radius, no shadow. Code: Creator Hub `Navbar .menu-item` (20px / 500 `#716b7c` rest, `#ffffff0d` hover, `--text` + 2px white bottom border active — drift on weight, rest colour and hover alpha); inspector `ModeSwitcher` and `.ui-designer-right-rail-tab` (36px band, 12px / 11px labels, 50% white rest: a documented deviation, since at those sizes White 40 misses 4.5:1).
+
+| Variant | State | Fill | Border | Label | Badge | Contrast | A11y |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Active=False, Hover=False, Notification=False | default | none | none | White 40 | — | label 3.84:1 on `#161518`, 3.83:1 on `#16141a`, 3.74:1 on `#242129` — passes only as large text (20px / 600 ≥ 18.66px bold ⇒ 3:1); any smaller rendering needs ≥ 4.5:1 | `role="tab"` in a `role="tablist"`, or `<a aria-current="page">` for routes; hit target 48 × 75 |
+| Active=False, Hover=True, Notification=False | hover | White 10 | none | White 40 | — | label over the fill 3.53:1 on `#161518`, 3.29:1 on `#242129` — large-text pass; fill vs surface 1.31:1, the label carries the state | — |
+| Active=False, Hover=False, Notification=True | default | none | none | White 40 | 8 × 8 Primary dot, 100px, top ≈ 24 / right ≈ 0 (read off the canvas at 1:1, ±2px) | dot 4.99:1 (≥ 3:1 non-text) | the dot needs text: `aria-label="Scenes, 1 notification"` or a visually hidden count |
+| Active=True, Hover=False, Notification=False | active | none | 2px Snow bottom | Snow | — | label and underline 17.73:1 | `aria-selected="true"` or `aria-current="page"` |
+| Active=True, Hover=True, Notification=False | active + hover | White 10 | 2px Snow bottom | Snow | — | label over the fill 13.53:1 | — |
+| Active=True, Hover=False, Notification=True | active | none | 2px Snow bottom | Snow | 8 × 8 Primary dot as above | dot 4.99:1 | as above |
+| any | ✱ focus | — | — | — | — | ring on `#161518`: `--border-focused` 4.34:1, `--ui-designer-control-accent` 8.13:1; Creator Hub ui2 `palette.info.light` 8.13:1 (≥ 3:1) | `:focus-visible` outline 2px, offset −2px, as `ModeSwitcher` does |
+| any | ✱ disabled | — | — | — | — | — | not drawn; `Navbar` omits an unavailable entry instead of greying it — keep that, no disabled style |
+
+### TabVertical (Tabs)
+
+Set [`20902:5640`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=20902-5640), 6 variants, same axes as TabHorizontal. Shared: 80 × 75, column flow, `justify-content: center`, `align-items: flex-start`, padding 0 / 20, label `H4 Semi` left-aligned, no radius, no shadow; the active indicator moves to a 2px Snow right border and the badge sits at top 22 / right 9. Code: Creator Hub `Modals/TabsModal` (MUI `Tabs orientation="vertical"`; `.TabsModalTab` is 42px min-height, 600 uppercase, `--text-on-secondary` rest, `rgba(255,255,255,.8)` hover, selected `--dcl` text on `--darker-gray` with MUI's own indicator — drift: Figma selects with Snow and a right border, not Primary); inspector none.
+
+| Variant | State | Fill | Border | Label | Badge | Contrast | A11y |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Active=False, Hover=False, Notification=False | default | none | none | White 40 | — | as TabHorizontal: 3.84:1 / 3.74:1, large-text pass only | `role="tab"` in a vertical `role="tablist"` (`aria-orientation="vertical"`, Up/Down arrows); hit target 80 × 75 |
+| Active=False, Hover=True, Notification=False | hover | White 10 | none | White 40 | — | 3.53:1 / 3.29:1 over the fill, large-text pass | — |
+| Active=False, Hover=False, Notification=True | default | none | none | White 40 | 8 × 8 Primary dot, 100px, top 22 / right 9 | dot 4.99:1 | badge text as TabHorizontal |
+| Active=True, Hover=False, Notification=False | active | none | 2px Snow right | Snow | — | 17.73:1 | `aria-selected="true"` |
+| Active=True, Hover=True, Notification=False | active + hover | White 10 | 2px Snow right | Snow | — | 13.53:1 over the fill | — |
+| Active=True, Hover=False, Notification=True | active | none | 2px Snow right | Snow | 8 × 8 Primary dot as above | dot 4.99:1 | as above |
+| any | ✱ focus / disabled | as TabHorizontal | — | — | — | — | — |
+
 ---
 
 ## Pages inventory
