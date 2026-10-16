@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AuthServerProvider, SignInError } from './auth';
+import { deriveSignInRequestId } from './signInVerifier';
 
 const AUTH_SERVER_URL = 'https://auth-api.example.com';
 const IDENTITY_ID = 'f0963d93-f520-4612-9714-8d0d30f7ae6d';
@@ -50,5 +51,17 @@ describe('when fetching a deep-link sign in identity', () => {
         new SignInError('verifier', 'Sign in identity belongs to another sign in request'),
       );
     });
+  });
+});
+
+describe('when creating a deep-link sign in request', () => {
+  let request: { requestId: string; verifier: string };
+
+  beforeEach(async () => {
+    request = await AuthServerProvider.createSignInRequest();
+  });
+
+  it('should return a request id derived from the returned verifier', async () => {
+    expect(request.requestId).toBe(await deriveSignInRequestId(request.verifier));
   });
 });

@@ -143,7 +143,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           !verifierRef.current ||
           authRequestId !== requestIdRef.current
         ) {
-          console.warn('Ignoring deep-link sign in: request id does not match the sign in started');
+          console.warn('Ignoring deep-link sign in: it does not belong to the sign in in progress');
           return;
         }
         stopDeepLinkListener();
