@@ -981,7 +981,8 @@
       "init_failed": "No se pudo inicializar el inicio de sesión. Por favor, verifica tu conexión.",
       "identity_not_found": "No se pudo completar el inicio de sesión. Por favor, inténtalo de nuevo.",
       "identity_expired": "Tu solicitud de inicio de sesión expiró. Por favor, inténtalo de nuevo.",
-      "network_mismatch": "No se pudo completar el inicio de sesión. Desactiva cualquier VPN o relay privado del navegador e inténtalo de nuevo."
+      "network_mismatch": "No se pudo completar el inicio de sesión. Desactiva cualquier VPN o relay privado del navegador e inténtalo de nuevo.",
+      "verifier_mismatch": "No se pudo completar el inicio de sesión: se inició desde otra sesión. Por favor, inténtalo de nuevo."
     }
   },
   "more": {

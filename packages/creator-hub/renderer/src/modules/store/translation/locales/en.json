@@ -982,7 +982,8 @@
       "init_failed": "Failed to initialize signin. Please check your connection.",
       "identity_not_found": "Sign-in could not be completed. Please try signing in again.",
       "identity_expired": "Your sign-in request expired. Please try signing in again.",
-      "network_mismatch": "Couldn't complete sign-in. Disable any VPN or browser private relay and try again."
+      "network_mismatch": "Couldn't complete sign-in. Disable any VPN or browser private relay and try again.",
+      "verifier_mismatch": "Couldn't complete sign-in: it was started from another session. Please try signing in again."
     }
   },
   "more": {
