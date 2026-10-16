@@ -10,14 +10,16 @@ import { sortProjectsBy } from './utils';
 
 import './styles.css';
 
+// MARK: ScenesPage
+/** Renders the user's local scenes and the optional tutorials sidebar. */
 export function ScenesPage() {
-  const { isLoading, projects, sortBy, setSortBy } = useWorkspace();
+  const { isLoading, projects, settings, sortBy, setSortBy } = useWorkspace();
 
   return (
     <main className="ScenesPage">
       <Navbar active={NavbarItem.SCENES} />
       <Container>
-        <TutorialsWrapper>
+        <TutorialsWrapper showTutorials={settings.showScenesTutorials}>
           {isLoading ? (
             <Loader size={70} />
           ) : (

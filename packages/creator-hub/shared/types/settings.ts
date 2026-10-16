@@ -40,6 +40,7 @@ export const DEFAULT_RENDERER = RENDERER.BABYLON;
 export type AppSettings = {
   scenesPath: string;
   dependencyUpdateStrategy: DEPENDENCY_UPDATE_STRATEGY;
+  showScenesTutorials: boolean;
   previewOptions: PreviewOptions;
   // Marker for the one-time `previewOptions.debugger` promotion (the toolbar's "Open Debug
   // Console" checkbox was removed, so this is now the only way an existing install gets it
