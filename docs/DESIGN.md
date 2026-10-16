@@ -331,6 +331,78 @@ Everything not listed in the four tables above and present in `vars.css` is eith
 
 ---
 
+## Component specs
+
+Extracted per page with `get_metadata` (sets and variant counts), `get_design_context` and `get_variable_defs` on each set, and `get_screenshot` for reference. One subsection per component set, in page order. A row marked ✱ is a state Figma does not define, proposed here so implementers never invent it silently. Contrast is WCAG against the real surface it renders on: inspector `#161518`, Creator Hub `#16141a` page / `#242129` card. "Code" names the component that renders the role today; "none" is absence, not removal.
+
+### Feedback tokens
+
+Every literal the Feedback pages use, mapped once; the variant tables below refer to these names.
+
+| Literal | Figma | Inspector (`vars.css`) | Creator Hub (`theme.css` / ui2) |
+| --- | --- | --- | --- |
+| `#FCFCFC` text, glyphs, spinner track, progress border | Neutrals/Snow | `--ui-designer-text` | ui2 `neutral.softWhite`; `theme.css` missing |
+| `#FF2D55` action text, spinner arc | Primary/Primary | `--primary-main` | `--primary`, `--dcl` · ui2 `palette.primary.main` |
+| `#161518` snackbar fill | Neutrals/Shadow | `--base-20`, `--tree-bg-color` | `--black` · ui2 `neutral.softBlack1` |
+| `#35333B` tooltip fill | Neutrals/Onix (swatch) | `--ui-designer-control-bg` | missing |
+| `rgba(255,255,255,.1)` progress track | DCL/White10% | `--ui-designer-control-border` | missing |
+| Snow @ .3 spinner track | not a Figma step (ramp is 60/40/20/10) | missing | missing |
+| Ruby → Yellow progress fill | Brand/Flare, as an image fill | missing | missing (`--metaverse-gradient` differs) |
+| 12px radius | — | `--ui-designer-radius-menu` | missing (`--mui-shape-borderRadius` is 6px) |
+| 100px pill radius | — | missing | missing |
+| `0 2px 3px rgba(0,0,0,.25)` tooltip shadow | — | missing (`--contexify-menu-shadow` differs) | missing |
+| Inter 14 / 400 / 100% | `H7 Regular` | `--font-family` + literal size | `--font-family` + literal size or `Typography` |
+| Inter 14 / 600 / 100% uppercase | `H7 Semi Caps` | `--font-family` + literal size | `--font-family` + literal size or `Typography` |
+
+### Spinner Animation (Progress)
+
+Set [`10394:80291`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=10394-80291), 4 variants, all keyframes of one animation: a 225° Primary arc over a Snow @ .3 full-circle track, 48 × 48, stroke 4 round-capped, rotated per variant. The Snackbar Loading variant embeds it at 24 × 24, stroke 2. Code: inspector `components/Loading` (decentraland-ui `Loader`, Semantic UI's grey ring, not this arc); Creator Hub `components/Loader` and direct ui2 `CircularProgress` (MUI default, no ui2 override, 40px / 3.6 stroke).
+
+| Variant | State | Arc start → end | Fill / stroke | Size | Contrast | A11y |
+| --- | --- | --- | --- | --- | --- | --- |
+| Default | default | 137° → 272° | arc Primary, track Snow @ .3 | 48, stroke 4 | arc on `#161518` 4.99:1, on `#242129` 4.35:1 (≥ 3:1 non-text); track 2.65:1, decorative | `role="progressbar"` + `aria-label` ("Loading"), or `aria-busy` on the region |
+| Variant2 | default | 201° → 336° | same | same | same | same |
+| Variant3 | default | 332° → 107° | same | same | same | same |
+| Variant4 | default | 78° → 213° | same | same | same | same |
+| any | ✱ reduced motion | static Default keyframe | same | same | same | `prefers-reduced-motion`: no rotation |
+| any | ✱ 24px | as Default | arc Primary, track Snow @ .3 | 24, stroke 2 | same | inline in a 44px row (Snackbar Loading) |
+
+### ProgressBar (Progress)
+
+Component [`20827:581`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=20827-581), 1 variant, no states. Code: inspector none; Creator Hub `OptimizeModal` renders ui2 `LinearProgress` (MUI default: 4px tall, square, `primary` fill, no border).
+
+| Variant | State | Fill | Border | Radius | Spacing / size | Contrast | A11y |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ProgressBar | determinate | track White10; bar Ruby → Yellow (placeholder width 198/296 ≈ 67%) | 2px Snow | 100px pill (track and bar) | 300 × 16; bar inset 2px, 12 tall | border 17.73:1; bar vs track 3.81:1 at the Ruby end (≥ 3:1); track vs page 1.31:1, the border carries the edge | `role="progressbar"` with `aria-valuenow/min/max` and a visible or `aria-label` name |
+| ProgressBar | ✱ indeterminate | same chrome, bar animates | same | same | same | same | `role="progressbar"` without `aria-valuenow`; honour `prefers-reduced-motion` |
+
+### Snackbars (Snackbars)
+
+Set [`10394:276910`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=10394-276910), 4 variants, no interaction states drawn. Shared chrome: fill Shadow, 12px radius, 44 tall, padding 12 / 16 / 12 / 12 (top / right / bottom / left), 16px gap between content and action, 10px gap icon → text, no border, no shadow. Text `H7 Regular` Snow; action `H7 Semi Caps` Primary; glyphs Snow. Code: inspector none (`ui/Message` is an inline field message, not a snackbar); Creator Hub `components/Snackbar` (MUI `Snackbar` + ui2 `Alert`, MUI defaults): `styles.css` paints `--card` `#242129` and the ui2 `Paper` radius, action `--dcl` — drift from Shadow / 12px.
+
+| Variant | State | Leading | Text | Action | Size | Contrast | A11y |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Notification | default | `notification_important` 18px Snow | "Notification text" | `OK` Primary | 199 × 44 | text 17.73:1; action on Shadow 4.99:1 (≥ 4.5:1); on `#242129` 4.35:1 — fails, keep the Shadow fill | `role="status"`, `aria-live="polite"`; action is a `<button>` |
+| Warning | default | `warning` 18px Snow | "Warning text" | `OK` Primary | 177 × 44 | same | `role="alert"`; action is a `<button>` |
+| Notification_Action | default | `notification_important` 18px Snow | "Action required" | `ACTION` Primary + `Close` 20px Snow, 16px gap | 265 × 44 | same; close glyph 17.73:1 | close `<button aria-label="Dismiss">`; 20px glyph needs a ≥ 24px hit area |
+| Loading | default | Spinner 24px, stroke 2 | "Loading..." | none | 127 × 44 | text 17.73:1; arc 4.99:1 | `role="status"`, `aria-busy="true"` |
+| any with action | ✱ hover | — | — | keep Primary, add underline; Primary Dark 1 `#F70038` is not an option | — | `#F70038` on Shadow 4.34:1, below 4.5:1 text | — |
+| any with action | ✱ focus | — | — | `:focus-visible` ring `--border-focused` (inspector) / ui2 `palette.info.light` (Creator Hub), offset 2px | — | ring on `#161518`: `--border-focused` 4.34:1, `#63b4f6` 8.13:1 (≥ 3:1) | — |
+| any | ✱ surface | — | — | — | — | Shadow vs Creator Hub page `#16141a` 1.00:1 and inspector `#161518` 1.00:1: the snackbar does not separate from the page it floats over | needs the tooltip's `0 2px 3px rgba(0,0,0,.25)` shadow or a `--ui-designer-hairline` border; the user picks |
+
+### Tooltip (Tooltips)
+
+Set [`20819:309`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=20819-309), 4 variants (placement), no states. Shared: container fill Onix, 12px radius, padding 16 / 20, text `H7 Regular` Snow centred, `max-width: 300px`; peak a 26 × 26 Onix square, 5px radius, rotated 45°, overlapping the container by 26px so ~11px shows; drop shadow `0 2px 3px rgba(0,0,0,.25)` on the whole. Code: inspector `ui/InfoTooltip` (decentraland-ui `Popup`: `--gray-0` `#43404a` fill, 11px / 500 text, arrow hidden) and `Toolbar.css .CameraModeTooltip`; Creator Hub ui2 `Tooltip` (MUI default `rgba(97,97,97,.92)` fill, 11px, no ui2 override).
+
+| Variant | State | Peak | Size (with "Text") | Contrast | A11y |
+| --- | --- | --- | --- | --- | --- |
+| Top | default | below the container, centred | 69 × 59.77 | text 12.13:1; Onix vs `#161518` 1.46:1, vs `#242129` 1.27:1 — the shadow carries the edge | `role="tooltip"`, trigger `aria-describedby`; shows on hover and focus, dismisses on Escape |
+| Bottom | default | above the container | 69 × 59.77 | same | same |
+| Right | default | left of the container | 79.77 × 49 | same | same |
+| Left | default | right of the container | 79.77 × 49 | same | same |
+
+---
+
 ## Pages inventory
 
 Harvested October 16, 2026 from the Figma file's own page list (`store.getState().mirror.appModel.pagesList` in the web client; the ids were spot-checked against the URL after clicking into eight pages). 52 pages: 8 section headers, 1 cover, 35 in scope, 8 skipped. **Pages whose name contains `🟡 Outdated` are not sources.** Address a page as `?node-id=<id with : as ->`, or pass the id to `get_metadata` to list its frames; pass frame or set ids, never the page id, to `get_variable_defs`.
