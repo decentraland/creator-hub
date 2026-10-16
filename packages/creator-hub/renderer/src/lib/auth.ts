@@ -1,7 +1,7 @@
 import { createPublicClient, http } from 'viem';
 import { type Socket, io } from 'socket.io-client';
 import { ChainId, ProviderType } from '@dcl/schemas';
-import { type AuthIdentity, type AuthChain } from '@dcl/crypto';
+import { Authenticator, type AuthIdentity } from '@dcl/crypto';
 import * as sso from '@dcl/single-sign-on-client';
 import { analytics } from '#preload';
 
@@ -285,13 +285,19 @@ export class AuthServerProvider {
    */
   private static createRequest = async (
     socket: Socket,
-    payload: Payload & { authChain?: AuthChain },
+    payload: Payload & { identity?: AuthIdentity },
   ) => {
     // TODO: Also send the chain id for requests that are not dcl_personal_sign once supported on the auth server.
+    // The ephemeral key signs method, params and timestamp so the server can tell this request apart from a reused delegation.
+    const timestamp = Date.now();
+    const signedPayload = `${payload.method}:${JSON.stringify(payload.params)}:${timestamp}`.toLowerCase();
+    const signature = payload.identity
+      ? { timestamp, authChain: Authenticator.signPayload(payload.identity, signedPayload) }
+      : {};
     const response = await socket.emitWithAck('request', {
       method: payload.method,
       params: payload.params,
-      authChain: payload.authChain,
+      ...signature,
     });
 
     if (response.error) {
@@ -394,7 +400,7 @@ export class AuthServerProvider {
     const requestResponse = await AuthServerProvider.createRequest(socket, {
       method,
       params,
-      authChain: identity?.authChain,
+      identity: identity ?? undefined,
     });
 
     AuthServerProvider.openAuthDapp(requestResponse.requestId);
