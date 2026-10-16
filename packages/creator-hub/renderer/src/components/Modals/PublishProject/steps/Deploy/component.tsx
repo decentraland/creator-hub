@@ -13,9 +13,14 @@ import { useEditor } from '/@/hooks/useEditor';
 import { useSnackbar } from '/@/hooks/useSnackbar';
 import { useDeploy } from '/@/hooks/useDeploy';
 import { useCounter } from '/@/hooks/useCounter';
+import { useSceneSizeLimit } from '/@/hooks/useSceneSizeLimit';
 
 import { type Deployment } from '/@/modules/store/deployment/slice';
-import { getInvalidFiles, MAX_FILE_SIZE_BYTES } from '/@/modules/store/deployment/utils';
+import {
+  getInvalidFiles,
+  getTotalSize,
+  MAX_FILE_SIZE_BYTES,
+} from '/@/modules/store/deployment/utils';
 import {
   actions as managementActions,
   selectors as managementSelectors,
@@ -62,6 +67,13 @@ export function Deploy(props: Props) {
   const [undeployStatus, setUndeployStatus] = useState<Status>('idle');
   const deployment = getDeployment(project.path);
   const isWorld = previousStep === 'publish-to-world' || !!deployment?.info.isWorld;
+  const { limit: sceneSizeLimit, isLoading: isSceneSizeLimitLoading } = useSceneSizeLimit(
+    deployment && {
+      isWorld,
+      worldName: project.worldConfiguration?.name,
+      parcels: deployment.info.parcels,
+    },
+  );
 
   /** True if the project needs to undeploy existing world scenes before deploying the new one.
    * True when deploying to a single-scene world and there are existing scenes in the world that do not overlap with the project parcels. */
@@ -298,6 +310,8 @@ export function Deploy(props: Props) {
                   <Idle
                     files={deployment.files}
                     error={deployment.error}
+                    sceneSizeLimit={sceneSizeLimit}
+                    isSceneSizeLimitLoading={isSceneSizeLimitLoading}
                     onClick={() =>
                       skipWarning || !(isReplacingWorldContent || needsUndeploy)
                         ? handlePublish()
@@ -327,17 +341,29 @@ export function Deploy(props: Props) {
 type IdleProps = {
   files: File[];
   error?: Deployment['error'];
+  sceneSizeLimit: number | null;
+  isSceneSizeLimitLoading?: boolean;
   onClick: () => void;
 };
 
-function Idle({ files, error, onClick }: IdleProps) {
+export function Idle({
+  files,
+  error,
+  sceneSizeLimit,
+  isSceneSizeLimitLoading = false,
+  onClick,
+}: IdleProps) {
   const invalidFiles = getInvalidFiles(files);
+  const totalSize = getTotalSize(files);
+  const exceedsSceneSize = sceneSizeLimit !== null && totalSize > sceneSizeLimit;
   const errorMessage =
     invalidFiles.length > 0
       ? t('modal.publish_project.deploy.deploying.errors.max_file_size_exceeded', {
           maxFileSizeInMb: MAX_FILE_SIZE_BYTES / 1e6,
         })
-      : error?.message;
+      : exceedsSceneSize
+        ? t('modal.publish_project.deploy.deploying.errors.max_scene_size_exceeded')
+        : error?.message;
 
   return (
     <div className="files">
@@ -345,15 +371,25 @@ function Idle({ files, error, onClick }: IdleProps) {
         <div className="count">
           {t('modal.publish_project.deploy.files.count', { count: files.length })}
         </div>
-        <div className="size">
-          {t('modal.publish_project.deploy.files.size', {
-            size: formatSize(files.reduce((total, file) => total + file.size, 0)),
-            b: (child: string) => (
-              <b>
-                {child}/{MAX_FILE_SIZE_BYTES / 1e6}MB
-              </b>
-            ),
-          })}
+        <div className={cx('size', { invalid: exceedsSceneSize })}>
+          {sceneSizeLimit === null
+            ? t('modal.publish_project.deploy.files.size', {
+                size: formatSize(totalSize),
+                b: (child: string) => <b>{child}</b>,
+              })
+            : t('modal.publish_project.deploy.files.size_with_limit', {
+                size: formatSize(totalSize),
+                limit: formatSize(sceneSizeLimit),
+                b: (child: string) => <b>{child}</b>,
+              })}
+          {isSceneSizeLimitLoading && (
+            <span
+              className="limit-loading"
+              role="status"
+            >
+              {t('modal.publish_project.deploy.files.checking_limit')}
+            </span>
+          )}
         </div>
       </div>
       <div className="list">
@@ -377,7 +413,7 @@ function Idle({ files, error, onClick }: IdleProps) {
         <Button
           size="large"
           onClick={onClick}
-          disabled={!!error}
+          disabled={!!error || exceedsSceneSize || isSceneSizeLimitLoading}
         >
           {t('modal.publish_project.deploy.files.publish')}
           <i className="deploy-icon" />
