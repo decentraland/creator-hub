@@ -1,0 +1,8 @@
+{
+  "id": "566d4c1b-1291-5936-8e1f-714a9318bcde",
+  "name": "Floor Pressure Button",
+  "category": "buttons",
+  "tags": ["button", "pressure", "plate", "floor", "switch", "step", "scifi", "lab", "activate"],
+  "description": "A floor button that presses down while a player stands on it and triggers actions on other smart items when pressed and released.",
+  "author": "Decentraland Foundation"
+}

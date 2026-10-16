@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core::GltfContainer",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/black_chess_rook/black_chess_rook.glb"
+          }
+        }
+      }
+    }
+  ]
+}

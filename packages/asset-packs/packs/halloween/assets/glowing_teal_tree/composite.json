@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core::GltfContainer",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/glowing_teal_tree/glowing_teal_tree.glb"
+          }
+        }
+      }
+    }
+  ]
+}

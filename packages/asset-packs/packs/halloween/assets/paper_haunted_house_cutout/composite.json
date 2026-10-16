@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core::GltfContainer",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/paper_haunted_house_cutout/paper_haunted_house_cutout.glb"
+          }
+        }
+      }
+    }
+  ]
+}

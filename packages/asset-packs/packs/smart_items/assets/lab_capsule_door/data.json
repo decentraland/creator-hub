@@ -1,0 +1,8 @@
+{
+  "id": "ceb3191a-b0cb-5d99-bd16-f4325c12b6c7",
+  "name": "Lab Capsule Door",
+  "category": "doors",
+  "tags": ["capsule", "pod", "door", "scifi", "lab"],
+  "description": "A glass teleporter capsule whose doors open and close when clicked.",
+  "author": "Decentraland Foundation"
+}
