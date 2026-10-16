@@ -2,17 +2,7 @@
   "id": "37691abd-d433-5dea-89cd-98e4b895c759",
   "name": "Green Dumpster",
   "category": "decorations",
-  "tags": [
-    "genesis",
-    "city",
-    "plaza",
-    "decorations",
-    "dumpster",
-    "trash",
-    "garbage",
-    "container",
-    "street"
-  ],
+  "tags": ["genesis", "city", "decorations", "dumpster", "trash", "garbage", "container", "street"],
   "caption": "Large green wheeled dumpster with a black lid.",
   "author": "Decentraland Foundation"
 }

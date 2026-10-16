@@ -2,17 +2,7 @@
   "id": "1fc7875d-07bd-570d-b8a4-0b50100164a2",
   "name": "Rainbow Heart Ring",
   "category": "decorations",
-  "tags": [
-    "genesis",
-    "city",
-    "plaza",
-    "decorations",
-    "balloon",
-    "heart",
-    "rainbow",
-    "pride",
-    "party"
-  ],
+  "tags": ["genesis", "city", "decorations", "balloon", "heart", "rainbow", "pride", "party"],
   "caption": "Heart-shaped ring balloon with a rainbow gradient.",
   "author": "Decentraland Foundation"
 }

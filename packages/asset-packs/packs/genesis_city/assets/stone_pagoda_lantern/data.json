@@ -2,17 +2,7 @@
   "id": "26c4178e-15b2-5b5a-9157-85ac36e1c338",
   "name": "Stone Pagoda Lantern",
   "category": "structures",
-  "tags": [
-    "genesis",
-    "city",
-    "plaza",
-    "structures",
-    "lantern",
-    "stone",
-    "pagoda",
-    "asian",
-    "garden"
-  ],
+  "tags": ["genesis", "city", "structures", "lantern", "stone", "pagoda", "asian", "garden"],
   "caption": "Weathered stone pagoda lantern.",
   "author": "Decentraland Foundation"
 }

@@ -1,8 +1,8 @@
 {
   "id": "2c430728-f10b-53ef-8bef-5af89299b688",
   "name": "Unicycle",
-  "category": "decorations",
-  "tags": ["genesis", "city", "plaza", "decorations", "unicycle", "bike", "circus"],
+  "category": "vehicles",
+  "tags": ["genesis", "city", "vehicles", "unicycle", "bike", "circus"],
   "caption": "Red unicycle.",
   "author": "Decentraland Foundation"
 }

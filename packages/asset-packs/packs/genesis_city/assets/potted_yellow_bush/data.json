@@ -1,8 +1,8 @@
 {
   "id": "a9a57c8e-39e0-54c1-a964-088a87b9e86e",
   "name": "Potted Yellow Bush",
-  "category": "nature",
-  "tags": ["genesis", "city", "plaza", "nature", "bush", "plant", "pot", "planter"],
+  "category": "decorations",
+  "tags": ["genesis", "city", "decorations", "bush", "plant", "pot", "planter"],
   "caption": "Yellow leafy bush in a grey concrete pot.",
   "author": "Decentraland Foundation"
 }

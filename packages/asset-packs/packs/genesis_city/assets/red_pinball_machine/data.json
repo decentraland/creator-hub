@@ -1,8 +1,8 @@
 {
   "id": "f3af084a-0ebb-57c7-bb5d-3c2019b4d0e8",
   "name": "Red Pinball Machine",
-  "category": "appliances",
-  "tags": ["genesis", "city", "appliances", "pinball", "arcade", "game", "machine"],
+  "category": "furniture",
+  "tags": ["genesis", "city", "furniture", "pinball", "arcade", "game", "machine"],
   "caption": "Red pinball machine.",
   "author": "Decentraland Foundation"
 }

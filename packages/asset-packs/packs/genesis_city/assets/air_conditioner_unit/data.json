@@ -1,8 +1,8 @@
 {
   "id": "fb600f36-eb0b-56a2-bfa8-4614950a2305",
   "name": "Air Conditioner Unit",
-  "category": "appliances",
-  "tags": ["genesis", "city", "plaza", "appliances", "aircon", "rooftop", "machine", "urban"],
+  "category": "decorations",
+  "tags": ["genesis", "city", "decorations", "aircon", "rooftop", "machine", "urban"],
   "caption": "Outdoor air conditioner unit with a big fan grille.",
   "author": "Decentraland Foundation"
 }

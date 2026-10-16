@@ -2,17 +2,7 @@
   "id": "9caba13a-5f74-52aa-affe-9e24a99e4de2",
   "name": "Garden Gazebo",
   "category": "structures",
-  "tags": [
-    "genesis",
-    "city",
-    "plaza",
-    "structures",
-    "gazebo",
-    "pavilion",
-    "garden",
-    "plants",
-    "wood"
-  ],
+  "tags": ["genesis", "city", "structures", "gazebo", "pavilion", "garden", "plants", "wood"],
   "caption": "Wooden lattice gazebo covered in plants.",
   "author": "Decentraland Foundation"
 }

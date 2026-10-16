@@ -2,17 +2,7 @@
   "id": "acf91fae-9cdb-51bd-b4b7-54b1d6074b26",
   "name": "Brass Chandelier",
   "category": "decorations",
-  "tags": [
-    "genesis",
-    "city",
-    "plaza",
-    "decorations",
-    "chandelier",
-    "light",
-    "ceiling",
-    "lamp",
-    "classic"
-  ],
+  "tags": ["genesis", "city", "decorations", "chandelier", "light", "ceiling", "lamp", "classic"],
   "caption": "Five-arm brass chandelier.",
   "author": "Decentraland Foundation"
 }

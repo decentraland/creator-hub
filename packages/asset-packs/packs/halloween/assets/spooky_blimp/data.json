@@ -1,8 +1,8 @@
 {
   "id": "35901cfa-8de0-5271-8694-4a9409d6429d",
   "name": "Spooky Blimp",
-  "category": "decorations",
-  "tags": ["halloween", "spooky", "decorations", "blimp", "airship", "zeppelin", "sky"],
+  "category": "vehicles",
+  "tags": ["halloween", "spooky", "vehicles", "blimp", "airship", "zeppelin", "sky"],
   "caption": "Halloween airship with a jack-o-lantern emblem.",
   "author": "Decentraland Foundation"
 }

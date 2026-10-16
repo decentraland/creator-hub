@@ -1,8 +1,8 @@
 {
   "id": "75549389-d88e-5458-9333-3aec840fb621",
   "name": "Wall Air Vent",
-  "category": "appliances",
-  "tags": ["genesis", "city", "plaza", "appliances", "vent", "rooftop", "urban", "industrial"],
+  "category": "decorations",
+  "tags": ["genesis", "city", "decorations", "vent", "rooftop", "urban", "industrial"],
   "caption": "Wall-mounted ventilation unit with louvres.",
   "author": "Decentraland Foundation"
 }

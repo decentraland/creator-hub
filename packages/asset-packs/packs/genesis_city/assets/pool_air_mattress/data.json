@@ -2,17 +2,7 @@
   "id": "2309ecfa-6b3d-573d-9769-ea896037c74b",
   "name": "Pool Air Mattress",
   "category": "decorations",
-  "tags": [
-    "genesis",
-    "city",
-    "plaza",
-    "decorations",
-    "pool",
-    "float",
-    "inflatable",
-    "beach",
-    "summer"
-  ],
+  "tags": ["genesis", "city", "decorations", "pool", "float", "inflatable", "beach", "summer"],
   "caption": "Inflatable orange striped pool mattress.",
   "author": "Decentraland Foundation"
 }

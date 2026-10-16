@@ -1,18 +1,8 @@
 {
   "id": "5f0d394d-9831-5142-bbe4-4093b730c79a",
   "name": "Pellet Grill",
-  "category": "appliances",
-  "tags": [
-    "genesis",
-    "city",
-    "plaza",
-    "appliances",
-    "bbq",
-    "barbecue",
-    "grill",
-    "cooking",
-    "outdoor"
-  ],
+  "category": "furniture",
+  "tags": ["genesis", "city", "furniture", "bbq", "barbecue", "grill", "cooking", "outdoor"],
   "caption": "Barrel smoker grill with a wooden side shelf.",
   "author": "Decentraland Foundation"
 }

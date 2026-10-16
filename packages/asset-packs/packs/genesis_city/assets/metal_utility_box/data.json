@@ -1,18 +1,8 @@
 {
   "id": "8777b936-3e56-57e4-8f41-655158cf6b5f",
   "name": "Metal Utility Box",
-  "category": "appliances",
-  "tags": [
-    "genesis",
-    "city",
-    "plaza",
-    "appliances",
-    "electric",
-    "box",
-    "utility",
-    "urban",
-    "street"
-  ],
+  "category": "decorations",
+  "tags": ["genesis", "city", "decorations", "electric", "box", "utility", "urban", "street"],
   "caption": "Grey metal electrical box.",
   "author": "Decentraland Foundation"
 }
