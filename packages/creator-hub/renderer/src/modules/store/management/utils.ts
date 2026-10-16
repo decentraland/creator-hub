@@ -6,7 +6,7 @@ import { parseCoords } from '/@/lib/land';
 import type { WorldData, WorldScene, Worlds } from '/@/lib/worlds';
 import { WorldRoleType } from '/@/lib/worlds';
 
-import type { WorldPermissionsState, WorldSettingsState } from './slice';
+import type { ParcelsPermission, WorldPermissionsState, WorldSettingsState } from './slice';
 
 type SceneCoords = { x: number; y: number };
 
@@ -199,3 +199,7 @@ export const getWorldPermissionsInitialState = (): WorldPermissionsState => ({
   status: 'idle',
   error: null,
 });
+
+// World-wide permission is represented by a successfully fetched, empty parcels array.
+export const hasWorldWidePermission = (parcelsPermission?: ParcelsPermission): boolean =>
+  parcelsPermission?.status === 'succeeded' && parcelsPermission.parcels.length === 0;

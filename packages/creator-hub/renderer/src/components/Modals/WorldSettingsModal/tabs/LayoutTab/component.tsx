@@ -12,7 +12,7 @@ import type { WorldScene, WorldSettings } from '/@/lib/worlds';
 import { type Coords, idToCoords } from '/@/lib/land';
 import { t } from '/@/modules/store/translation/utils';
 import type { ParcelsPermission } from '/@/modules/store/management';
-import { actions as managementActions } from '/@/modules/store/management';
+import { actions as managementActions, hasWorldWidePermission } from '/@/modules/store/management';
 import { formatWorldSize, getWorldDimensions, MAX_COORDINATE } from '/@/modules/world';
 import { Dropdown, type Option } from '/@/components/Dropdown';
 import { Button } from '/@/components/Button';
@@ -73,17 +73,14 @@ const WorldScenesView: React.FC<{
 
   const getDropdownOptions = useCallback(
     (scene: WorldScene): Option[] => {
-      const hasWorldWidePermission =
-        isOwner ||
-        (userParcelsPermissions?.status === 'succeeded' &&
-          userParcelsPermissions.parcels.length === 0); // World-wide permission is represented by having an empty parcels array.
+      const canUnpublishAnyScene = isOwner || hasWorldWidePermission(userParcelsPermissions);
 
       return [
         {
           text: t('modal.world_settings.layout.actions.unpublish'),
           handler: () => onUnpublish(scene),
           visible:
-            hasWorldWidePermission ||
+            canUnpublishAnyScene ||
             scene.parcels?.some(parcel => userParcelsPermissions?.parcels?.includes(parcel)),
         },
       ].filter(option => option.visible);
