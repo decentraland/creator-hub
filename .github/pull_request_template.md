@@ -60,4 +60,4 @@ If so, add after the run above:
 
 ## Screenshots
 
-[Include before and after screenshots or videos if it's a UI feature/fix]
+[Required when the change touches `packages/inspector/src` or `packages/creator-hub/renderer`: a before/after pair for every affected surface. For a token or theme change, every surface that consumes the token. Delete this section only if no frontend file changed.]

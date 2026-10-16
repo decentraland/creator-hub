@@ -11,12 +11,14 @@ Any visual/design task tied to Figma: a figma.com URL, "figma", "design from fig
 
 Visual pixel-match is a render→adjust loop. Run it against the **source of truth** (Figma) and the **real render** (the running app) — never guess-and-check through the user. If you have neither, you become the spec sheet and the screen.
 
+`dcl-designer-specialist` (`.claude/agents/`) is the agent that owns this loop end to end: it turns a frame into a spec for the inspector and Creator Hub specialists, syncs Figma into `docs/DESIGN.md` and the token files, and validates the implemented render. This skill is the how-to it follows.
+
 ## Core spec→code flow → the installed leaf skills
 
 Delegate the mechanics to the OpenAI leaf skills (in `.claude/skills/`):
 
 - **figma-implement-design** — `get_design_context` → (`get_metadata` to drill if large) → `get_screenshot` → download assets → translate to this project's tokens/components → validate against the design.
-- **figma-create-design-system-rules** — generate/refresh design-system rules for this repo.
+- **figma-create-design-system-rules** — generate/refresh design-system rules for this repo. Its `create_design_system_rules` MCP tool isn't exposed by the Figma server configured here, so token and component extraction runs on `get_variable_defs`, `get_metadata`, `get_design_context`, and `get_screenshot` instead.
 
 They are third-party skills pinned in `skills-lock.json` (repo skills like this one live in `.ai/skills/`). If missing, run `make install-skills`, then `/reload-skills`.
 
@@ -27,7 +29,8 @@ They are third-party skills pinned in `skills-lock.json` (repo skills like this 
 Never hand-type values you can extract.
 
 - **Figma MCP first**: `get_design_context`, `get_variable_defs`, `get_screenshot`, `download_assets`. Extract every state and all tokens in one pass; ask for the frame/node link if not given.
-- **MCP unavailable / capped → Claude-in-Chrome (ALL of it).** The Figma MCP seat is View-tier and returns `reached the Figma MCP tool call limit` on _every_ call (`get_metadata` included — the cap is account-wide). Fall back to the browser: open the `?node-id=` URL in Chrome, enumerate the component's variants in the Layers panel, `shift+2` to zoom to selection, and read the **designs, colours, CSS values, and icon SVGs** directly. (This expands the CLAUDE.md "Design handoff" note into an actionable procedure.)
+- **Node-addressed MCP calls work on any page; only the page listing is pinned.** `get_metadata` with no `nodeId` lists only the COVER page whatever is open, but `get_metadata`, `get_design_context`, `get_variable_defs`, and `get_screenshot` on an explicit id serve any page (verified October 16, 2026 on the Buttons page with COVER open). `get_variable_defs` fails on a page id ("nothing selected") and works on a frame or set id, returning only the variables that subtree references; `get_metadata` on a component set lists its variants, so count from it. Page ids: every page is tabulated with its id in `docs/DESIGN.md` → "Pages inventory" — read that before touching the browser. To re-harvest, don't drive the Pages panel (it is virtualised, and synthetic clicks, real `computer` clicks, Enter, and Space all fail to switch pages reliably, while a micro `left_click_drag` lands one step late); read Figma's own client store instead: in `javascript_tool`, `store.getState().mirror.appModel.pagesList` lists every page with its id (web app, October 16, 2026). Skip every page whose name contains `🟡 Outdated`.
+- **MCP unavailable / capped → Claude-in-Chrome (ALL of it).** The Figma MCP seat is View-tier and can return `reached the Figma MCP tool call limit` on _every_ call (`get_metadata` included — the cap is account-wide; it worked on October 16, 2026). Fall back to the browser: open the `?node-id=` URL in Chrome, enumerate the component's variants in the Layers panel, `shift+2` to zoom to selection, and read the **designs, colours, CSS values, and icon SVGs** directly. (This expands the CLAUDE.md "Design handoff" note into an actionable procedure.)
 
 ### 2. Validate frame ↔ screen
 
