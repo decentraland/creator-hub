@@ -33,8 +33,8 @@ All tokens are CSS custom properties on `:root` in **`packages/inspector/src/the
 | `--main-bg-color` | `--vscode-editor-background` → `--background` | App/editor background |
 | `--tree-bg-color` | `--base-20` `#161518` | Panels, trees, **dropdown/popover surfaces** |
 | `--modal-content-bg-color` | `--tree-bg-color` | Modals |
-| `--ui-designer-panel-bg` | `--base-19` `#242129` | UI Designer panel frame (Figma `#25212a`, within 1/255) |
-| `--ui-designer-control-bg` | `#35333b` | Inputs/selects/textarea chrome, and UI Designer menus |
+| `--ui-designer-panel-bg` | `--base-19` `#242129` | UI Designer panel frame (Figma Neutrals/Charcoal `#25212a`, within 1/255) |
+| `--ui-designer-control-bg` | `#35333b` | Inputs/selects/textarea chrome, and UI Designer menus (Figma Neutrals/Onix) |
 | `--disabled-bg-color` | `#323036` | Disabled control fill |
 
 ### Foreground (text)
@@ -65,21 +65,23 @@ There is no single `--text` token — pick the foreground that matches the surfa
 | `--ui-designer-control-hover-bg` | `rgba(255,255,255,.06)` | Hover fill on a segmented cell |
 | `--ui-designer-control-selected-bg` | `rgba(255,255,255,.1)` | Hover/selected fill on a menu **row** |
 | `--ui-designer-control-active-bg` | `#63b4f6` (→ accent) | Fill of a selected/active **toggle** |
-| `--ui-designer-control-active-fg` | `#35333b` Charcoal | Glyph sitting on that accent fill |
+| `--ui-designer-control-active-fg` | `#35333b` Onix | Glyph sitting on that accent fill |
+
+Figma's Neutrals swatches name `#35333b` **Onix** and `#25212a` **Charcoal**. The `vars.css` comments call `#35333b` Charcoal; read "Charcoal" there as Onix until the comments are refreshed.
 
 #### Selected and active toggles are accent-blue
 
-Per the 08/26 Figma states matrix, a selected or active toggle takes a solid accent-blue fill with a dark Charcoal glyph — one treatment for both the segmented cells (Flow direction, Text alignment, Fill mode) and the standalone toggles (Flow wrap, the aspect lock). A checkbox is separate and carries its state on the tick alone (see `--ui-designer-checkbox-border`).
+Per the 08/26 Figma states matrix, a selected or active toggle takes a solid accent-blue fill with a dark Onix glyph — one treatment for both the segmented cells (Flow direction, Text alignment, Fill mode) and the standalone toggles (Flow wrap, the aspect lock). A checkbox is separate and carries its state on the tick alone (see `--ui-designer-checkbox-border`).
 
-- **Selected/active toggle:** `--ui-designer-control-active-bg` (accent-blue) fill with a `--ui-designer-control-active-fg` (Charcoal) glyph.
+- **Selected/active toggle:** `--ui-designer-control-active-bg` (accent-blue) fill with a `--ui-designer-control-active-fg` (Onix) glyph.
 - **Hover:** a faint `--ui-designer-control-hover-bg` white tint, never the accent.
 
 | Pairing                              | Contrast  |
 | ------------------------------------ | --------- |
-| Charcoal glyph on the accent fill    | **5.6:1** |
+| Onix glyph on the accent fill        | **5.6:1** |
 | Accent fill vs. the card (`#242129`) | **7.1:1** |
 
-A white glyph is deliberately **not** used on the accent fill — it lands ~2.2:1, below the 3:1 non-text minimum — so the glyph is Charcoal. Selection reads as a hue-and-luminance jump, never hue alone. Keep the Charcoal glyph if the fill value moves.
+A white glyph is deliberately **not** used on the accent fill — it lands ~2.2:1, below the 3:1 non-text minimum — so the glyph is Onix. Selection reads as a hue-and-luminance jump, never hue alone. Keep the Onix glyph if the fill value moves.
 
 Two assets ignore `color` because their white is baked in: the checkbox tick (a data-URI SVG with `fill="white"`) and the indeterminate dash (a solid block). Both are re-declared dark in `PropertyPanel.css`, scoped `:not(.disabled)` so the shared disabled styling still wins the specificity tie.
 
@@ -88,7 +90,7 @@ Two assets ignore `color` because their white is baked in: the checkbox tick (a 
 The UI Designer has **two** accent families. Picking the wrong one is a real bug, not a style preference:
 
 - **Canvas → cyan.** The canvas renders the _author's own UI_ in arbitrary colours. A selection ring in a brand colour disappears the moment they use that colour themselves — and `#ff2d55` is precisely what the palette encourages. Because the backdrop is unknowable, WCAG 1.4.11's ≥3:1 cannot be verified against it; a hue authors are unlikely to pick is the mitigation. Use for node selection/hover, resize handles, drop targets, reorder indicators.
-- **Panel → blue `#63b4f6`.** Panel chrome always sits on `--base-20` (`#161518`), a surface we control, so contrast is fixed and testable. Use for focus rings, active tab underlines, hover borders/fills, bind affordances, selected rows, selected/active toggle fills (with a Charcoal glyph — see above), and the Anchor row's pinned edge.
+- **Panel → blue `#63b4f6`.** Panel chrome always sits on `--base-20` (`#161518`), a surface we control, so contrast is fixed and testable. Use for focus rings, active tab underlines, hover borders/fills, bind affordances, selected rows, selected/active toggle fills (with an Onix glyph — see above), and the Anchor row's pinned edge. It is Figma's System/Blue Light 1.
 
   **Panel chrome is deliberately not pink.** `--primary-main` is reserved for CTAs and main buttons (`.Button.danger`, the event/variable menu `ADD` confirm). A panel control painted with it competes with the one thing on screen that should read as the action.
 
@@ -161,9 +163,29 @@ Give interactive controls a consistent height (define a local `--uid-control-hei
 
 Corners in the UI Designer come from two tokens, `--ui-designer-radius-field` (6px — inputs, dropdowns, segmented cells, the anchor preview) and `--ui-designer-radius-menu` (12px — option lists and popovers). The shared components hardcode 4px, so a panel-scoped override applies them.
 
-## Fonts
+## Typography
 
-`--font-family` → **Inter** (system-ui fallbacks). `--font-monospace` → **Inconsolata** (code/callback editors). Use `font-variant-numeric: tabular-nums` for numeric readouts (zoom %, counters).
+`--font-family` → **Inter** (system-ui fallbacks), the only family on Figma's Typography page. `--font-monospace` → **Inconsolata** (code/callback editors) has no Figma counterpart and is an intentional deviation. Use `font-variant-numeric: tabular-nums` for numeric readouts (zoom %, counters). Both worlds declare the same two font tokens, each in its own file.
+
+Figma's Font frame assigns weights by role: **titles** Inter Bold (700), **titles and buttons** Inter Semi Bold (600), **descriptions** Inter Regular (400).
+
+### Type scale
+
+From the Typography page's Size frame ([node `20717:350`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=20717-350)), labelled "Perfect Fourth (1,5)". Every step is Inter, line-height 100% (the 48px rows use Figma's `normal`), letter-spacing 0. Neither token file declares a size or weight token, so every size below is a literal in component CSS or an MUI `variant` today; the proposed tokens are listed in the handoff, not here.
+
+| Figma style | Size | Weight | Note |
+| --- | --- | --- | --- |
+| H1 Semi / H1 Regular (display) | 48px | 600 / 400 | Local styles only, not variables |
+| `H1 Semi` | 30px | 600 |  |
+| `H2 Semi` | 24px | 600 |  |
+| `H3 Semi` | 22px | 600 |  |
+| `H4 Semi` | 20px | 600 |  |
+| `H5 Semi` / `H5 Regular` | 18px | 600 / 400 |  |
+| `H6 Semi Caps` / `H6 Semi` / `H6 Regular` | 16px | 600 / 600 / 400 | Caps = uppercase |
+| `H7 Bold Caps` / `H7 Semi Caps` / `H7 Semi` / `H7 Regular` | 14px | 700 / 600 / 600 / 400 | Caps = uppercase |
+| `H8 Semi` / `H8 Regular` | 12px | 600 / 400 |  |
+
+Two text styles live outside the scale and carry MUI-style metrics: `Body/Body - 14` (14px, 400, line-height 1.43, letter-spacing 0.17px) and `Other/Overline` (12px, 400, line-height 2.66, letter-spacing 1px, uppercase). They are MUI's default `body2` and `overline` metrics, which ui2 keeps (its `theme/typography.js` only sets the family), so Creator Hub takes them from the `Typography` variant rather than declaring them.
 
 ---
 
@@ -213,6 +235,294 @@ The brand pink matches the inspector's `--primary-main`, but it's defined separa
 - Styled components follow CLAUDE.md → "Styled Components Conventions": import from `decentraland-ui2`, use object syntax, take values from the theme, and keep them in `Component.styled.ts`.
 - Reuse a component the renderer already imports, from `decentraland-ui2` or an existing `@mui/material` import, before you build one. Don't add an import of an MUI module the renderer doesn't use yet. Pulling a not-yet-bundled module into a running dev session retriggers Vite's dependency optimizer. When no imported component fits, hand-roll it, as the settings Accordion is.
 - ui2 pins secondary-text buttons to a grey `secondary.contrast` at high specificity. Overriding their color takes a repeated-`&` selector (see `Tabs/AiTab/component.tsx`), not `!important`.
+
+---
+
+## Figma variables → tokens
+
+Reconciled on October 16, 2026 from the Colors page ([node `20752:6024`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=20752-6024), frame "Colors Dark" `20755:6429`) with `get_variable_defs` on the frame plus `get_design_context` on the Neutrals, INFO, Transparencies and Gradients columns, whose swatches are not all bound to variables. Status: **match** (same value), **drift** (a token exists for the role but holds another value), **missing** (no token in that world), **deviation** (documented and kept on purpose). A `—` means the world has no token for it and needs none yet. ui2 paths name `decentraland-ui2`'s dark theme (`theme/colorSchemes.js`, `theme/colors.js`).
+
+### Brand and primary
+
+| Figma variable | Value | Inspector (`vars.css`) | Creator Hub (`theme.css` / ui2) | Status |
+| --- | --- | --- | --- | --- |
+| Primary/Primary · Brand/Ruby | `#FF2D55` | `--primary-main` | `--primary`, `--dcl` · ui2 `palette.primary.main` | match |
+| Primary/Primary Dark 1 | `#F70038` | `--primary-dark` | `--dcl-hover` · ui2 `palette.primary.dark` | match |
+| Primary/Primary Dark 2 | `#D80029` | — | ui2 `colors.primaryDark2` | missing in inspector |
+| Primary/Primary Light 1 | `#FF6280` | — | `--primary-hover` `#ff3d61` · ui2 `palette.primary.light` `#F70038` · ui2 `colors.primaryLight1` `#F8919D` | **drift**, three ways: Figma hover pink vs `theme.css` vs ui2 |
+| Primary/Primary Light 2 | `#FF93A8` | — | ui2 `colors.primaryLight2` `#FFC9D5` | drift (ui2 upstream) |
+| Primary Alt/Primary Alt · Brand/Orange | `#FF7439` | `--secondary-main` | — | match |
+| Primary Alt/Primary Alt Dark 1 | `#F45708` | `--secondary-dark` `#e65002` | — | drift |
+| Primary Alt/Primary Alt Dark 2 | `#D84900` | — | — | missing |
+| Primary Alt/Primary Alt Light 1 | `#FFAD8D` | `--secondary-light` `#ff8d5e` | — | drift |
+| Primary Alt/Primary Alt Light 2 | `#FFCDBA` | — | — | missing |
+| Brand/Yellow | `#FFC95B` | `--yellow`, `--warning-main` | — | match (`--warning-main` doubles as the status colour, see below) |
+| Brand/Melon | `#FFA25A` | `--melon` | — | match |
+| Brand/Lavender | `#C640CD` | `--lavender`, `--smart-item-icon-bg-color` | — | match |
+| Brand/Violet | `#A524B3` | `--violet` | — | match |
+| Brand/Purple | `#691FA9` | `--purple` | `--purple-banner` `#691ea9` | drift (1/255 in Creator Hub) |
+| Brand/Flare · Cerise · Amin | gradients: Ruby→Yellow, Ruby→Lavender, Lavender→Purple | — | `--metaverse-gradient` is a different gradient | missing (no consumer yet) |
+
+### Neutrals
+
+The Figma ramp has 13 swatches; 10 are variables and three (Onix, Onix Dark 1, Charcoal) are swatch fills only. ui2 mirrors the ramp as `colors.neutral` (`softWhite`, `gray5…gray0`, `softBlack2`, `softBlack1`).
+
+| Figma | Value | Inspector (`vars.css`) | Creator Hub (`theme.css` / ui2) | Status |
+| --- | --- | --- | --- | --- |
+| Neutrals/White | `#FFFFFF` | `--white`, `--base-01` | `--white`, `--text` · ui2 `neutral.white` | match |
+| Neutrals/Snow | `#FCFCFC` | `--ui-designer-text` | ui2 `neutral.softWhite` | match |
+| Neutrals/Pearl | `#ECEBED` | — | ui2 `neutral.gray5` | missing in inspector |
+| Neutrals/Gray | `#CFCDD4` | `--ui-designer-text-value` | ui2 `neutral.gray4` | match |
+| Neutrals/Silver | `#A09BA8` | `--ui-designer-text-muted`, `--neutral-grey-3` | `--dcl-silver`, `--clear-divider` · ui2 `neutral.gray3` | match |
+| Neutrals/Cloudy Sky | `#716B7C` | `--ui-designer-glyph` | `--dropdown` · ui2 `neutral.gray2` | match |
+| Neutrals/Graffito | `#5E5B67` | — | `--light-gray` · ui2 `neutral.gray1` | missing in inspector |
+| Neutrals/Pale Black | `#43404A` | `--gray-0` | `--dark-gray` · ui2 `neutral.gray0` | match |
+| Onix (swatch) | `#35333B` | `--ui-designer-control-bg`, `--ui-designer-control-active-fg` | — | match |
+| Onix Dark 1 (swatch) | `#2D2A33` | — | `--title-bar-button` | missing in inspector |
+| Charcoal (swatch) | `#25212A` | `--ui-designer-panel-bg` → `--base-19` `#242129` | `--card`, `--modal`, `--secondary`, `--darker-gray` `#242129` · ui2 `neutral.softBlack2` `#242129` | **deviation**: both worlds follow ui2's `#242129`, 1/255 from Figma; keep |
+| Neutrals/Shadow | `#161518` | `--base-20`, `--tree-bg-color` | `--black` · ui2 `neutral.softBlack1` | match; `--bg` `#16141a` and `--background` `#18141a` are near-misses (drift) |
+| Neutrals/Black | `#000000` | `--black`, `--base-21` | `--bg-inspector` · ui2 `neutral.black` | match |
+| — | `#676370` | `--neutral-grey-4` | `--secondary-text`, `--text-area-border`, `--popup`, and the `#676370xx` alpha family (`--divider`, `--secondary-on-modal`, `--card-on-modal`) | **not in Figma**; nearest is Graffito `#5E5B67` |
+
+The inspector's `--base-02 … --base-18` and `--accent-blue-*` ramps are VS Code's, not Figma's; they predate the design system and are kept for the embedded-webview theme. `--ui-designer-accent` (cyan) is the documented canvas deviation above.
+
+### System (status) and INFO
+
+ui2's dark theme carries Figma's System ramp verbatim (`palette.success` / `.warning` / `.error` / `.info`, each with `main`, `dark` = Dark 1, `light` = Light 1), so Creator Hub reads status colours from the theme. The inspector's status tokens are Material's defaults, not Figma's.
+
+| Figma variable | Value | Inspector (`vars.css`) | Creator Hub (`theme.css` / ui2) | Status |
+| --- | --- | --- | --- | --- |
+| System/Green | `#34CE77` | `--success-main` `#4caf50` | `--success` · ui2 `palette.success.main` | drift in inspector |
+| System/Green Dark 1 / Light 1 | `#00B453` / `#65D890` | `--success-dark` `#388e3c` / `--success-light` `#66bb6a` | ui2 `palette.success.dark` / `.light` | drift in inspector |
+| System/Green Dark 2 / Light 2 | `#00A146` / `#C1EECF` | — | — | missing |
+| System/Orange | `#FE9C2A` | `--warning-main` `#ffc95b` (= Brand/Yellow) | `--danger` `#ffa900` · ui2 `palette.warning.main` | drift in both `.css` files |
+| System/Orange Dark 1 / Light 1 | `#F38025` / `#FFB95B` | `--warning-dark` `#ef6c00` / — | ui2 `palette.warning.dark` / `.light` | drift in inspector |
+| System/Orange Dark 2 / Light 2 | `#EC7122` / `#FFCD88` | — | — | missing |
+| System/Red | `#FB3B3B` | `--error-main` `#f44336` | `--error` `#ff0000` · ui2 `palette.error.main` | drift in both `.css` files |
+| System/Red Dark 1 / Light 1 | `#EC303A` / `#E97177` | `--error-dark` `#d32f2f` / `--error-light` `#ef5350` | ui2 `palette.error.dark` / `.light` | drift in inspector |
+| System/Red Dark 2 / Light 2 | `#CC1D2C` / `#FFCDD4` | — | — | missing |
+| Blue (swatch) | `#2196F3` | — | ui2 `palette.info.main` | missing in inspector |
+| Blue Dark 1 (swatch) | `#1A75D2` fill; its label reads `#1F87E5` | — | ui2 `palette.info.dark` `#1A75D2` | missing in inspector; the Figma label is stale, the fill is the value |
+| Blue Dark 2 (swatch) | `#244B7D` fill; its label reads `#1764C0` | — | `--ai-session-selected` | match on the fill; Figma label stale |
+| Blue Dark 3 (swatch) | `#243852` | — | `--ai-session-selected-hover` | match |
+| System/Blue Light 1 | `#63B4F6` | `--ui-designer-control-accent` | ui2 `palette.info.light` | match |
+| Blue Light 2 (swatch) | `#BBDEFB` | — | — | missing |
+| — | `#214272` / `#2E4A7A` | — | `--ai-selected` / `--ai-selected-hover` | not in Figma |
+| — | `#127FD4` | `--border-focused` | — | not in Figma (VS Code focus blue); deviation, keep |
+
+### Transparencies
+
+Figma names four steps per base colour, Backdrop 60% · Blurry 40% · Soft 20% · Subtle 10%, plus the component-level `Transparencies/White 10` and `White 20`. The alpha is not in the variable value (`get_variable_defs` returns the opaque hex), so take it from the swatch label.
+
+| Figma | Value | Inspector (`vars.css`) | Creator Hub (`theme.css`) | Status |
+| --- | --- | --- | --- | --- |
+| White Subtle · White 10 | `rgba(255,255,255,.1)` | `--ui-designer-control-border`, `--ui-designer-control-selected-bg` | — | match |
+| White Soft · White 20 | `rgba(255,255,255,.2)` | `--ui-designer-control-border-strong` | — | match |
+| White Blurry · White 40 | `rgba(255,255,255,.4)` | `--ui-designer-checkbox-border` | — | match |
+| White Backdrop | `rgba(255,255,255,.6)` | — | — | missing (no consumer) |
+| Black Subtle · Black 10 | `rgba(0,0,0,.1)` | — | — | missing (no consumer) |
+| Black Soft | `rgba(0,0,0,.2)` | `--contexify-separator-color` | — | match |
+| Black Blurry | `rgba(0,0,0,.4)` | — | — | missing (no consumer) |
+| Black Backdrop | `rgba(0,0,0,.6)` | `--modal-overlay-bg-color` | — | match |
+| — | `.05` / `.06` / `.07` white | `--ui-designer-control-empty-bg`, `--ui-designer-control-hover-bg`, `--ui-designer-hairline` | `--transparent-gray-dark` `.05` | not Figma steps; deviation, keep (solved for contrast, see the accent note) |
+| — | `.23` white · `#ffffffb2` (70%) · `#000000dd` (87%) | — | `--transparent-gray-light`, `--text-on-secondary`, `--dimmer` | not Figma steps |
+
+Everything not listed in the four tables above and present in `vars.css` is either VS Code-derived (`--vscode-*` passthroughs, `--dropdown-*`, `--list-item-*`, `--accent-blue-*`) or a Smart Item colour (`--list-smart-item-*`, `--ground-icon-bg-color`) with no Figma counterpart. Value changes and new tokens arising from this table go to the user first (names are theirs), ship with before/after screenshots of every consumer, and land in the same commit as their row here.
+
+---
+
+## Component specs
+
+Extracted per page with `get_metadata` (sets and variant counts), `get_design_context` and `get_variable_defs` on each set, and `get_screenshot` for reference. One subsection per component set, in page order. A row marked ✱ is a state Figma does not define, proposed here so implementers never invent it silently. Contrast is WCAG against the real surface it renders on: inspector `#161518`, Creator Hub `#16141a` page / `#242129` card. "Code" names the component that renders the role today; "none" is absence, not removal.
+
+### Feedback tokens
+
+Every literal the Feedback pages use, mapped once; the variant tables below refer to these names.
+
+| Literal | Figma | Inspector (`vars.css`) | Creator Hub (`theme.css` / ui2) |
+| --- | --- | --- | --- |
+| `#FCFCFC` text, glyphs, spinner track, progress border | Neutrals/Snow | `--ui-designer-text` | ui2 `neutral.softWhite`; `theme.css` missing |
+| `#FF2D55` action text, spinner arc | Primary/Primary | `--primary-main` | `--primary`, `--dcl` · ui2 `palette.primary.main` |
+| `#161518` snackbar fill | Neutrals/Shadow | `--base-20`, `--tree-bg-color` | `--black` · ui2 `neutral.softBlack1` |
+| `#35333B` tooltip fill | Neutrals/Onix (swatch) | `--ui-designer-control-bg` | missing |
+| `rgba(255,255,255,.1)` progress track | DCL/White10% | `--ui-designer-control-border` | missing |
+| Snow @ .3 spinner track | not a Figma step (ramp is 60/40/20/10) | missing | missing |
+| Ruby → Yellow progress fill | Brand/Flare, as an image fill | missing | missing (`--metaverse-gradient` differs) |
+| 12px radius | — | `--ui-designer-radius-menu` | missing (`--mui-shape-borderRadius` is 6px) |
+| 100px pill radius | — | missing | missing |
+| `0 2px 3px rgba(0,0,0,.25)` tooltip shadow | — | missing (`--contexify-menu-shadow` differs) | missing |
+| Inter 14 / 400 / 100% | `H7 Regular` | `--font-family` + literal size | `--font-family` + literal size or `Typography` |
+| Inter 14 / 600 / 100% uppercase | `H7 Semi Caps` | `--font-family` + literal size | `--font-family` + literal size or `Typography` |
+
+### Spinner Animation (Progress)
+
+Set [`10394:80291`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=10394-80291), 4 variants, all keyframes of one animation: a 225° Primary arc over a Snow @ .3 full-circle track, 48 × 48, stroke 4 round-capped, rotated per variant. The Snackbar Loading variant embeds it at 24 × 24, stroke 2. Code: inspector `components/Loading` (decentraland-ui `Loader`, Semantic UI's grey ring, not this arc); Creator Hub `components/Loader` and direct ui2 `CircularProgress` (MUI default, no ui2 override, 40px / 3.6 stroke).
+
+| Variant | State | Arc start → end | Fill / stroke | Size | Contrast | A11y |
+| --- | --- | --- | --- | --- | --- | --- |
+| Default | default | 137° → 272° | arc Primary, track Snow @ .3 | 48, stroke 4 | arc on `#161518` 4.99:1, on `#242129` 4.35:1 (≥ 3:1 non-text); track 2.65:1, decorative | `role="progressbar"` + `aria-label` ("Loading"), or `aria-busy` on the region |
+| Variant2 | default | 201° → 336° | same | same | same | same |
+| Variant3 | default | 332° → 107° | same | same | same | same |
+| Variant4 | default | 78° → 213° | same | same | same | same |
+| any | ✱ reduced motion | static Default keyframe | same | same | same | `prefers-reduced-motion`: no rotation |
+| any | ✱ 24px | as Default | arc Primary, track Snow @ .3 | 24, stroke 2 | same | inline in a 44px row (Snackbar Loading) |
+
+### ProgressBar (Progress)
+
+Component [`20827:581`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=20827-581), 1 variant, no states. Code: inspector none; Creator Hub `OptimizeModal` renders ui2 `LinearProgress` (MUI default: 4px tall, square, `primary` fill, no border).
+
+| Variant | State | Fill | Border | Radius | Spacing / size | Contrast | A11y |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ProgressBar | determinate | track White10; bar Ruby → Yellow (placeholder width 198/296 ≈ 67%) | 2px Snow | 100px pill (track and bar) | 300 × 16; bar inset 2px, 12 tall | border 17.73:1; bar vs track 3.81:1 at the Ruby end (≥ 3:1); track vs page 1.31:1, the border carries the edge | `role="progressbar"` with `aria-valuenow/min/max` and a visible or `aria-label` name |
+| ProgressBar | ✱ indeterminate | same chrome, bar animates | same | same | same | same | `role="progressbar"` without `aria-valuenow`; honour `prefers-reduced-motion` |
+
+### Snackbars (Snackbars)
+
+Set [`10394:276910`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=10394-276910), 4 variants, no interaction states drawn. Shared chrome: fill Shadow, 12px radius, 44 tall, padding 12 / 16 / 12 / 12 (top / right / bottom / left), 16px gap between content and action, 10px gap icon → text, no border, no shadow. Text `H7 Regular` Snow; action `H7 Semi Caps` Primary; glyphs Snow. Code: inspector none (`ui/Message` is an inline field message, not a snackbar); Creator Hub `components/Snackbar` (MUI `Snackbar` + ui2 `Alert`, MUI defaults): `styles.css` paints `--card` `#242129` and the ui2 `Paper` radius, action `--dcl` — drift from Shadow / 12px.
+
+| Variant | State | Leading | Text | Action | Size | Contrast | A11y |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Notification | default | `notification_important` 18px Snow | "Notification text" | `OK` Primary | 199 × 44 | text 17.73:1; action on Shadow 4.99:1 (≥ 4.5:1); on `#242129` 4.35:1 — fails, keep the Shadow fill | `role="status"`, `aria-live="polite"`; action is a `<button>` |
+| Warning | default | `warning` 18px Snow | "Warning text" | `OK` Primary | 177 × 44 | same | `role="alert"`; action is a `<button>` |
+| Notification_Action | default | `notification_important` 18px Snow | "Action required" | `ACTION` Primary + `Close` 20px Snow, 16px gap | 265 × 44 | same; close glyph 17.73:1 | close `<button aria-label="Dismiss">`; 20px glyph needs a ≥ 24px hit area |
+| Loading | default | Spinner 24px, stroke 2 | "Loading..." | none | 127 × 44 | text 17.73:1; arc 4.99:1 | `role="status"`, `aria-busy="true"` |
+| any with action | ✱ hover | — | — | keep Primary, add underline; Primary Dark 1 `#F70038` is not an option | — | `#F70038` on Shadow 4.34:1, below 4.5:1 text | — |
+| any with action | ✱ focus | — | — | `:focus-visible` ring `--border-focused` (inspector) / ui2 `palette.info.light` (Creator Hub), offset 2px | — | ring on `#161518`: `--border-focused` 4.34:1, `#63b4f6` 8.13:1 (≥ 3:1) | — |
+| any | ✱ surface | — | — | — | — | Shadow vs Creator Hub page `#16141a` 1.00:1 and inspector `#161518` 1.00:1: the snackbar does not separate from the page it floats over | needs the tooltip's `0 2px 3px rgba(0,0,0,.25)` shadow or a `--ui-designer-hairline` border; the user picks |
+
+### Tooltip (Tooltips)
+
+Set [`20819:309`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=20819-309), 4 variants (placement), no states. Shared: container fill Onix, 12px radius, padding 16 / 20, text `H7 Regular` Snow centred, `max-width: 300px`; peak a 26 × 26 Onix square, 5px radius, rotated 45°, overlapping the container by 26px so ~11px shows; drop shadow `0 2px 3px rgba(0,0,0,.25)` on the whole. Code: inspector `ui/InfoTooltip` (decentraland-ui `Popup`: `--gray-0` `#43404a` fill, 11px / 500 text, arrow hidden) and `Toolbar.css .CameraModeTooltip`; Creator Hub ui2 `Tooltip` (MUI default `rgba(97,97,97,.92)` fill, 11px, no ui2 override).
+
+| Variant | State | Peak | Size (with "Text") | Contrast | A11y |
+| --- | --- | --- | --- | --- | --- |
+| Top | default | below the container, centred | 69 × 59.77 | text 12.13:1; Onix vs `#161518` 1.46:1, vs `#242129` 1.27:1 — the shadow carries the edge | `role="tooltip"`, trigger `aria-describedby`; shows on hover and focus, dismisses on Escape |
+| Bottom | default | above the container | 69 × 59.77 | same | same |
+| Right | default | left of the container | 79.77 × 49 | same | same |
+| Left | default | right of the container | 79.77 × 49 | same | same |
+
+### Navigation tokens
+
+Every literal the Navigation pages use, mapped once; the variant tables below refer to these names. The Figma MCP seat capped mid-run, so `TabHorizontal` was read from the Figma web client's Properties panel (view seat) instead of `get_design_context`; its values are the panel's, not inferred from `TabVertical`.
+
+| Literal | Figma | Inspector (`vars.css`) | Creator Hub (`theme.css` / ui2) |
+| --- | --- | --- | --- |
+| `#FCFCFC` active tab label and underline, button text, logo disc | Neutrals/Snow | `--ui-designer-text` | ui2 `neutral.softWhite`; `theme.css` missing |
+| `#FF2D55` Create button fill, notification dot | Primary/Primary | `--primary-main` | `--primary`, `--dcl` · ui2 `palette.primary.main` |
+| `rgba(255,255,255,.4)` resting tab label, Sign-in border | Transparencies/White 40 | `--ui-designer-checkbox-border` | missing (`--transparent-gray-light` is .23) |
+| `rgba(255,255,255,.1)` tab hover fill | Transparencies/White 10 | `--ui-designer-control-selected-bg` (menu rows), `--ui-designer-control-border` | missing (`Navbar` paints `#ffffff0d`, White 5) |
+| `rgba(255,255,255,.2)` Create split divider | Transparencies/White 20 | `--ui-designer-control-border-strong` | missing (`CreateButton` carries the literal) |
+| `#A14BF3` avatar disc behind the placeholder snapshot | Rarities/Legendary | missing | missing; a wearable-rarity colour, not a navigation token — the real avatar decides |
+| 12px radius | — | `--ui-designer-radius-menu` | missing (`--mui-shape-borderRadius` is 6px; `CreateButton` and `UserMenu` carry the literal) |
+| 100px pill radius (logo, avatar, dot) | — | missing | missing |
+| 2px active indicator (bottom on horizontal, right on vertical) | — | literal | literal |
+| Inter 20 / 600 / 100% | `H4 Semi` | `--font-family` + literal size | `--font-family` + literal size or `Typography` |
+| Inter 16 / 600 / 100% uppercase | `H6 Semi Caps` | `--font-family` + literal size | `--font-family` + literal size or `Typography` |
+
+### Main Navigation (Header)
+
+Set [`10394:80156`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=10394-80156), 2 variants (`Signed In=On` / `Off`), no interaction states drawn on the bar itself; the tabs it embeds are TabHorizontal below, rendered 70 tall. Shared chrome: 1920 × 100, padding 0 / 32, `space-between`, no fill, border or shadow; left group gap 26 (logo disc, then the tab bar at gap 40); right group gap 10 (Create split button, a 37px vertical divider, the account control). Code: Creator Hub `Navbar` (`Header` + `LogoMenu` + `.menu-item` + `CreateButton` + `Header/UserMenu`); inspector none.
+
+| Part | Variant | Fill | Border | Radius | Typography | Size / spacing | Contrast | A11y |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Logo disc | both | Snow, logo glyph inset (SVG asset) | none | 100px | — | 40 × 40 | disc vs `#16141a` 17.81:1 | `<button aria-label>`; `LogoButton` matches at 40px, adds a 2px white hover outline and a `--dcl` focus ring Figma does not draw |
+| Tab bar | both | none | none | — | `H4 Semi`, White 40 at rest | 70 tall, gap 40, tab padding 0 / 4 | see TabHorizontal | `<nav>`; `Navbar` uses gap 8 and tab padding 19 / 16 / 17 — drift |
+| Create (label half) | both | Primary | none | 12px, on the outer row | `H6 Semi Caps` Snow, line-height 22 | 40 tall, padding 0 / 14, gap 6, icon 18 | Snow on Primary 3.55:1 — **fails 4.5:1** (16px / 600 is not large text); Primary Dark 1 4.08:1 also fails | `<button>`; `CreateButton` matches geometry and paints hover `#F70038` as a literal |
+| Create (menu half) | both | Primary | 1px White 20 left | 12px, on the outer row | chevron 8.5 × 5 Snow | 40 × 40 | divider on Primary 1.20:1, decorative; chevron 3.55:1 (≥ 3:1 non-text) | `aria-haspopup="menu"`, `aria-expanded`, `aria-label`; `CreateButton` matches |
+| Divider | both | — | 37px vertical hairline (SVG asset; stroke colour not exposed by the MCP) | — | — | 0 × 37 | — | `aria-hidden`; `Navbar` has none |
+| Account | Signed In=On | Legendary `#A14BF3` under the avatar snapshot | none | 100px | — | 40 × 40 | placeholder disc vs page 4.19:1; the real avatar decides | `<button aria-label>`; `UserMenu` renders the avatar at 44px — drift |
+| Account | Signed In=Off | none | 1.5px White 40 | 12px | `H6 Semi Caps` Snow, "sign in" | 40 tall, padding 12 / 24 | text 17.81:1; border 3.83:1 (≥ 3:1) | `<button>`; `UserMenu` paints 1px `--transparent-gray-light`, padding 7 / 16 — drift |
+| Create, Sign in | ✱ hover / press / focus / disabled | not drawn on this page; take them from Buttons (Inputs page) when it is extracted | — | — | — | — | — | — |
+
+### TabHorizontal (Tabs)
+
+Set [`10394:70307`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=10394-70307), 6 variants (Active × Hover × Notification, Menu `-`; the page labels Notification "UNUSED"). Shared: 48 Hug × 75 Fill, vertical flow, padding 0 / 4, label `H4 Semi` centred, no radius, no shadow. Code: Creator Hub `Navbar .menu-item` (20px / 500 `#716b7c` rest, `#ffffff0d` hover, `--text` + 2px white bottom border active — drift on weight, rest colour and hover alpha); inspector `ModeSwitcher` and `.ui-designer-right-rail-tab` (36px band, 12px / 11px labels, 50% white rest: a documented deviation, since at those sizes White 40 misses 4.5:1).
+
+| Variant | State | Fill | Border | Label | Badge | Contrast | A11y |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Active=False, Hover=False, Notification=False | default | none | none | White 40 | — | label 3.84:1 on `#161518`, 3.83:1 on `#16141a`, 3.74:1 on `#242129` — passes only as large text (20px / 600 ≥ 18.66px bold ⇒ 3:1); any smaller rendering needs ≥ 4.5:1 | `role="tab"` in a `role="tablist"`, or `<a aria-current="page">` for routes; hit target 48 × 75 |
+| Active=False, Hover=True, Notification=False | hover | White 10 | none | White 40 | — | label over the fill 3.53:1 on `#161518`, 3.29:1 on `#242129` — large-text pass; fill vs surface 1.31:1, the label carries the state | — |
+| Active=False, Hover=False, Notification=True | default | none | none | White 40 | 8 × 8 Primary dot, 100px, top ≈ 24 / right ≈ 0 (read off the canvas at 1:1, ±2px) | dot 4.99:1 (≥ 3:1 non-text) | the dot needs text: `aria-label="Scenes, 1 notification"` or a visually hidden count |
+| Active=True, Hover=False, Notification=False | active | none | 2px Snow bottom | Snow | — | label and underline 17.73:1 | `aria-selected="true"` or `aria-current="page"` |
+| Active=True, Hover=True, Notification=False | active + hover | White 10 | 2px Snow bottom | Snow | — | label over the fill 13.53:1 | — |
+| Active=True, Hover=False, Notification=True | active | none | 2px Snow bottom | Snow | 8 × 8 Primary dot as above | dot 4.99:1 | as above |
+| any | ✱ focus | — | — | — | — | ring on `#161518`: `--border-focused` 4.34:1, `--ui-designer-control-accent` 8.13:1; Creator Hub ui2 `palette.info.light` 8.13:1 (≥ 3:1) | `:focus-visible` outline 2px, offset −2px, as `ModeSwitcher` does |
+| any | ✱ disabled | — | — | — | — | — | not drawn; `Navbar` omits an unavailable entry instead of greying it — keep that, no disabled style |
+
+### TabVertical (Tabs)
+
+Set [`20902:5640`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=20902-5640), 6 variants, same axes as TabHorizontal. Shared: 80 × 75, column flow, `justify-content: center`, `align-items: flex-start`, padding 0 / 20, label `H4 Semi` left-aligned, no radius, no shadow; the active indicator moves to a 2px Snow right border and the badge sits at top 22 / right 9. Code: Creator Hub `Modals/TabsModal` (MUI `Tabs orientation="vertical"`; `.TabsModalTab` is 42px min-height, 600 uppercase, `--text-on-secondary` rest, `rgba(255,255,255,.8)` hover, selected `--dcl` text on `--darker-gray` with MUI's own indicator — drift: Figma selects with Snow and a right border, not Primary); inspector none.
+
+| Variant | State | Fill | Border | Label | Badge | Contrast | A11y |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Active=False, Hover=False, Notification=False | default | none | none | White 40 | — | as TabHorizontal: 3.84:1 / 3.74:1, large-text pass only | `role="tab"` in a vertical `role="tablist"` (`aria-orientation="vertical"`, Up/Down arrows); hit target 80 × 75 |
+| Active=False, Hover=True, Notification=False | hover | White 10 | none | White 40 | — | 3.53:1 / 3.29:1 over the fill, large-text pass | — |
+| Active=False, Hover=False, Notification=True | default | none | none | White 40 | 8 × 8 Primary dot, 100px, top 22 / right 9 | dot 4.99:1 | badge text as TabHorizontal |
+| Active=True, Hover=False, Notification=False | active | none | 2px Snow right | Snow | — | 17.73:1 | `aria-selected="true"` |
+| Active=True, Hover=True, Notification=False | active + hover | White 10 | 2px Snow right | Snow | — | 13.53:1 over the fill | — |
+| Active=True, Hover=False, Notification=True | active | none | 2px Snow right | Snow | 8 × 8 Primary dot as above | dot 4.99:1 | as above |
+| any | ✱ focus / disabled | as TabHorizontal | — | — | — | — | — |
+
+---
+
+## Pages inventory
+
+Harvested October 16, 2026 from the Figma file's own page list (`store.getState().mirror.appModel.pagesList` in the web client; the ids were spot-checked against the URL after clicking into eight pages). 52 pages: 8 section headers, 1 cover, 35 in scope, 8 skipped. **Pages whose name contains `🟡 Outdated` are not sources.** Address a page as `?node-id=<id with : as ->`, or pass the id to `get_metadata` to list its frames; pass frame or set ids, never the page id, to `get_variable_defs`.
+
+| Page | Section | Node id | Status |
+| --- | --- | --- | --- |
+| COVER | — | `20420:50646` | cover |
+| ↓ Tokens | Tokens | `20717:461` | section header |
+| Colors | Tokens | `20752:6024` | in scope (tokens, synced above) |
+| Typography | Tokens | `20717:313` | in scope (tokens, synced above) |
+| Tags / Labels | Tokens | `20755:7456` | in scope (component page: Place, Privacy Public/Private, Role tag Owner/Collaborator/Tenant; references Snow, Silver, Pale Black, White 10, System/Orange, System/Blue Light 1, `H6 Regular`; defines no token) |
+| ↓ Feedback | Feedback | `20762:23667` | section header |
+| Progress | Feedback | `20450:17811` | in scope |
+| Snackbars | Feedback | `20450:17639` | in scope |
+| Tooltips | Feedback | `20819:271` | in scope |
+| ↓ Navigation | Navigation | `20757:439` | section header |
+| Header | Navigation | `20448:15582` | in scope |
+| Tabs | Navigation | `20757:522` | in scope |
+| ↓ Surfaces | Surfaces | `20762:23670` | section header |
+| Accordion | Surfaces | `20932:5254` | in scope |
+| Background | Surfaces | `20759:13588` | in scope |
+| Cards | Surfaces | `20910:7505` | in scope |
+| Cards 🟡 Outdated | Surfaces | `21457:1660` | skipped: outdated |
+| Menu | Surfaces | `20747:59496` | in scope |
+| Icons | Surfaces | `20450:15495` | in scope |
+| Modals | Surfaces | `20423:75560` | in scope |
+| Modals 🟡 Outdated | Surfaces | `21457:14856` | skipped: outdated |
+| Scrollbar | Surfaces | `20937:5631` | in scope |
+| Sections Titles | Surfaces | `20448:15585` | in scope |
+| TitleBar | Surfaces | `20530:79669` | in scope |
+| Profile Snapshot | Surfaces | `20772:841` | in scope |
+| ↓ Inputs | Inputs | `20705:10838` | section header |
+| Buttons | Inputs | `20705:10837` | in scope |
+| Checkbox | Inputs | `20932:3958` | in scope |
+| Dropdown | Inputs | `20780:6256` | in scope |
+| Filter / Sort / Search bar | Inputs | `20448:15583` | in scope |
+| Radio | Inputs | `20932:3959` | in scope |
+| Search Bar | Inputs | `20768:1310` | in scope |
+| Switch | Inputs | `20907:5707` | in scope |
+| Text Field | Inputs | `20810:667` | in scope |
+| ↓ Graphic Assets | Graphic Assets | `20423:75578` | section header |
+| Avatars | Graphic Assets | `21232:42259` | in scope |
+| Cards Thumbnails 🟡 Outdated | Graphic Assets | `21457:18423` | skipped: outdated |
+| Download 🟡 Outdated | Graphic Assets | `21457:18035` | skipped: outdated |
+| Logo | Graphic Assets | `21454:39192` | in scope |
+| Scene's Thumbnails | Graphic Assets | `21454:39301` | in scope |
+| Section | Graphic Assets | `21457:18415` | in scope |
+| ↓ Settings | Settings | `20423:51482` | section header |
+| App Settings | Settings | `21454:39027` | in scope |
+| Settings 🟡 Outdated | Settings | `21454:13370` | skipped: outdated |
+| Editor | Editor | `20421:50640` | section header |
+| AI Assistant | Editor | `21206:31202` | in scope |
+| Cleanup wizard 🟡 Outdated | Editor | `21023:15344` | skipped: outdated |
+| Scene Editor 🟡 Outdated | Editor | `20533:81937` | skipped: outdated |
+| UI Editor | Editor | `21028:15887` | in scope |
+| Viewport | Editor | `20506:34918` | in scope |
+| Toolbar | Editor | `21023:11034` | in scope |
+| Publish (WIP) 🟡 Outdated | Editor | `20423:50468` | skipped: outdated |
 
 ---
 
