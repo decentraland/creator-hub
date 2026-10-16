@@ -8,7 +8,16 @@ import { AuthServerProvider } from '/@/lib/auth';
 import { editor } from '#preload';
 import { delay } from '/shared/utils';
 import { isFetchError } from '/shared/fetch';
-import type { DeploymentComponentsStatus, Info, Status, File, ErrorName } from '/@/lib/deploy';
+import type {
+  DeploymentComponentsStatus,
+  DeploymentStatus,
+  DeployPhase,
+  DeployState,
+  DeployUpload,
+  Info,
+  File,
+  ErrorName,
+} from '/@/lib/deploy';
 import { DeploymentError, isDeploymentError } from '/@/lib/deploy';
 import { FeatureFlag } from '/@/modules/store/featureFlags';
 import { actions as managementActions } from '/@/modules/store/management';
@@ -31,6 +40,12 @@ import {
   isMaxPointerSizeExceededError,
   isInvalidCreatorWalletError,
 } from './utils';
+import {
+  deployWithProgress,
+  isDeployResourceAvailable,
+  requestDeploymentCancel,
+  setDeployToken,
+} from './deploy-api';
 
 function buildError(action: any): Deployment['error'] {
   const error = isRejectedWithValue(action) ? action.payload : action.error;
@@ -49,9 +64,16 @@ export interface Deployment {
   files: File[];
   wallet: string;
   chainId: ChainId;
-  status: Status;
+  status: DeploymentStatus;
   error?: { name: ErrorName; message: string; cause?: string };
   componentsStatus: DeploymentComponentsStatus;
+  /** Whether the CLI serving `url` reports progress (`/api/deploy` resource). */
+  supportsDeployResource: boolean;
+  /** Whether the app holds the token the CLI requires to cancel the deployment. */
+  cancellable: boolean;
+  phase?: DeployPhase;
+  upload?: DeployUpload | null;
+  cancelRequested?: boolean;
   createdAt: number;
   lastUpdated: number;
 }
@@ -64,8 +86,16 @@ export interface DeploymentState {
 interface InitializeDeploymentPayload {
   path: string;
   port: number;
+  supportsDeployResource?: boolean;
+  cancellable?: boolean;
   wallet: string;
   chainId: ChainId;
+}
+
+interface UpdateDeploymentProgressPayload {
+  path: string;
+  deploymentId: string;
+  state: DeployState;
 }
 
 interface UpdateDeploymentStatusPayload {
@@ -91,7 +121,14 @@ export const initializeDeployment = createAsyncThunk(
 
     const [info, files] = await Promise.all([fetchInfo(url), fetchFiles(url)]);
 
-    return { ...payload, url, info, files };
+    return {
+      ...payload,
+      url,
+      info,
+      files,
+      supportsDeployResource: !!payload.supportsDeployResource,
+      cancellable: !!payload.cancellable,
+    };
   },
 );
 
@@ -104,7 +141,7 @@ const updateDeploymentTarget = createAsyncThunk(
     const { path, target, chainId, wallet } = payload;
     const { translation } = getState();
 
-    const port = await editor.publishScene({
+    const { port, supportsDeployResource, deployToken } = await editor.publishScene({
       target,
       path,
       chainId,
@@ -117,9 +154,10 @@ const updateDeploymentTarget = createAsyncThunk(
       return rejectWithValue(new DeploymentError('INVALID_URL', getInitialDeploymentStatus()));
     }
 
+    setDeployToken(url, deployToken);
     const [info, files] = await Promise.all([fetchInfo(url), fetchFiles(url)]);
 
-    return { path, url, info, files };
+    return { path, url, info, files, supportsDeployResource, cancellable: !!deployToken };
   },
 );
 
@@ -129,17 +167,28 @@ export const deploy = createAsyncThunk(
     { identity, deployment }: { identity: AuthIdentity; deployment: Deployment },
     { dispatch, getState, rejectWithValue },
   ) => {
-    const { path, info, wallet, chainId } = deployment;
+    const { id: deploymentId, path, info, wallet, chainId } = deployment;
     const triedServers = new Set<string>();
     let retries = info.isWorld ? 1 : getCatalystServers(chainId).length;
     const delayMs = 1000;
+
+    const onState = (state: DeployState) =>
+      dispatch(actions.updateDeploymentProgress({ path, deploymentId, state }));
 
     let currentUrl = deployment.url;
     let currentInfo = info;
     while (retries > 0) {
       try {
         const authChain = Authenticator.signPayload(identity, currentInfo.rootCID);
-        await deployFn(currentUrl, { address: wallet, authChain, chainId });
+        const payload = { address: wallet, authChain, chainId };
+        // Each retry runs a new CLI, so read its support from the state. The static check can
+        // be wrong (a hand-patched CLI), so the resource is also probed before using it.
+        const { supportsDeployResource } = getState().deployment.deployments[path];
+        if (supportsDeployResource && (await isDeployResourceAvailable(currentUrl))) {
+          await deployWithProgress(currentUrl, payload, onState);
+        } else {
+          await deployFn(currentUrl, payload);
+        }
         // Retrying against another catalyst rebuilds the scene and yields a new rootCID,
         // so the caller must poll the status of the entity that actually got deployed.
         return { info: currentInfo };
@@ -147,10 +196,24 @@ export const deploy = createAsyncThunk(
         retries--;
 
         const currentDeployment = getState().deployment.deployments[path];
+        if (isDeploymentError(error, 'DEPLOYMENT_CANCELLED')) {
+          return rejectWithValue(
+            new DeploymentError('DEPLOYMENT_CANCELLED', currentDeployment.componentsStatus),
+          );
+        }
+
         const componentsStatus: DeploymentComponentsStatus = {
           ...currentDeployment.componentsStatus,
           catalyst: 'failed',
         };
+
+        // The CLI accepted the deployment and may still publish it: deploying again, to this
+        // or another catalyst, could publish the scene twice.
+        if (isDeploymentError(error, 'DEPLOY_STATE_LOST')) {
+          return rejectWithValue(
+            new DeploymentError('DEPLOY_STATE_LOST', componentsStatus, error.error),
+          );
+        }
 
         if (isInvalidCreatorWalletError(error)) {
           return rejectWithValue(
@@ -164,9 +227,10 @@ export const deploy = createAsyncThunk(
           );
         }
 
+        // Only the local CLI is requested here, so a timeout is the CLI not finishing in time.
         if (isFetchError(error, 'REQUEST_TIMEOUT')) {
           return rejectWithValue(
-            new DeploymentError('FETCH_TIMEOUT_ERROR', componentsStatus, error),
+            new DeploymentError('DEPLOY_REQUEST_TIMEOUT', componentsStatus, error),
           );
         }
 
@@ -283,14 +347,16 @@ export const executeDeployment = createAsyncThunk(
       return { info, componentsStatus };
     } catch (error: any) {
       if (isDeploymentError(error, '*')) {
-        captureException(error.error || error, {
-          tags: {
-            source: 'deployment',
-            event: error.name,
-            errorType: error.name,
-          },
-          fingerprint: ['deployment-error', error.name],
-        });
+        if (error.name !== 'DEPLOYMENT_CANCELLED') {
+          captureException(error.error || error, {
+            tags: {
+              source: 'deployment',
+              event: error.name,
+              errorType: error.name,
+            },
+            fingerprint: ['deployment-error', error.name],
+          });
+        }
         dispatch(
           actions.updateDeploymentStatus({
             path,
@@ -301,6 +367,16 @@ export const executeDeployment = createAsyncThunk(
       }
       throw error;
     }
+  },
+);
+
+/** Resolves with why the CLI turned the cancellation down, or `null` when it took it. */
+export const cancelDeployment = createAsyncThunk(
+  'deployment/cancel',
+  async (path: string, { getState }) => {
+    const deployment = getState().deployment.deployments[path];
+    if (!deployment?.url) return null;
+    return requestDeploymentCancel(deployment.url);
   },
 );
 
@@ -328,6 +404,16 @@ const deploymentSlice = createSlice({
         }
       }
     },
+    updateDeploymentProgress: (state, action: PayloadAction<UpdateDeploymentProgressPayload>) => {
+      const { path, deploymentId, state: deployState } = action.payload;
+      const deployment = state.deployments[path];
+      if (deployment && deployment.id === deploymentId) {
+        deployment.phase = deployState.phase;
+        deployment.upload = deployState.upload;
+        deployment.cancelRequested = deployState.cancelRequested ?? false;
+        deployment.lastUpdated = Date.now();
+      }
+    },
     removeDeployment: (state, action: PayloadAction<{ path: string }>) => {
       const { path } = action.payload;
       delete state.deployments[path];
@@ -339,11 +425,13 @@ const deploymentSlice = createSlice({
   extraReducers: builder => {
     builder
       .addCase(initializeDeployment.fulfilled, (state, action) => {
-        const { path, url, info, wallet, chainId, files } = action.payload;
+        const { path, url, info, wallet, chainId, files, supportsDeployResource, cancellable } =
+          action.payload;
         const existingDeployment = state.deployments[path];
 
-        // Always move existing deployment to history before creating new one
-        if (existingDeployment) {
+        // Move the existing deployment to history before creating the new one, unless the
+        // user cancelled it: nothing got published.
+        if (existingDeployment && existingDeployment.status !== 'cancelled') {
           if (!state.history[path]) {
             state.history[path] = [];
           }
@@ -362,18 +450,25 @@ const deploymentSlice = createSlice({
           chainId,
           status: 'idle',
           componentsStatus: getInitialDeploymentStatus(),
+          supportsDeployResource,
+          cancellable,
           createdAt: timestamp,
           lastUpdated: timestamp,
         };
       })
       .addCase(updateDeploymentTarget.fulfilled, (state, action) => {
-        const { path, url, info, files } = action.payload;
+        const { path, url, info, files, supportsDeployResource, cancellable } = action.payload;
         const deployment = state.deployments[path];
         // we are preserving componentsStatus, status, and error
         if (deployment) {
           deployment.url = url;
           deployment.info = info;
           deployment.files = files;
+          deployment.supportsDeployResource = supportsDeployResource;
+          deployment.cancellable = cancellable;
+          deployment.phase = undefined;
+          deployment.upload = null;
+          deployment.cancelRequested = false;
           deployment.lastUpdated = Date.now();
         }
       })
@@ -392,6 +487,8 @@ const deploymentSlice = createSlice({
           status: 'failed',
           error: buildError(action),
           componentsStatus: getInitialDeploymentStatus(),
+          supportsDeployResource: false,
+          cancellable: false,
           createdAt: existingDeployment?.createdAt ?? timestamp,
           lastUpdated: timestamp,
         };
@@ -401,6 +498,9 @@ const deploymentSlice = createSlice({
         const deployment = state.deployments[path];
         if (deployment) {
           deployment.status = 'pending';
+          deployment.phase = undefined;
+          deployment.upload = null;
+          deployment.cancelRequested = false;
         }
       })
       .addCase(executeDeployment.fulfilled, (state, action) => {
@@ -419,9 +519,17 @@ const deploymentSlice = createSlice({
         const path = action.meta.arg;
         const deployment = state.deployments[path];
         if (deployment) {
-          deployment.status = 'failed';
-          deployment.error = buildError(action);
+          const error = buildError(action);
+          deployment.upload = null;
+          deployment.cancelRequested = false;
           deployment.lastUpdated = Date.now();
+          if (error?.name === 'DEPLOYMENT_CANCELLED') {
+            deployment.status = 'cancelled';
+            deployment.error = undefined;
+          } else {
+            deployment.status = 'failed';
+            deployment.error = error;
+          }
         }
       });
   },
@@ -431,6 +539,7 @@ export const actions = {
   ...deploymentSlice.actions,
   initializeDeployment,
   executeDeployment,
+  cancelDeployment,
 };
 
 export const reducer = deploymentSlice.reducer;

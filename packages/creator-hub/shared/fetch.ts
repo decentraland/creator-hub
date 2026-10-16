@@ -64,7 +64,9 @@ export async function fetch(
     return response;
   } catch (error: any) {
     clearTimeout(timeoutId);
-    if (error.name === 'AbortError') {
+    // Only the timer aborts this controller. fetch rejects with the abort reason (a plain
+    // Error), not an AbortError, so check the signal rather than the error name.
+    if (controller.signal.aborted) {
       throw new FetchError('REQUEST_TIMEOUT', error);
     }
     throw error;

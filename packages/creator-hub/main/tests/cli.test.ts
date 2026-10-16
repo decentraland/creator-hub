@@ -12,6 +12,8 @@ const mocks = vi.hoisted(() => ({
   send: vi.fn(),
   openExternal: vi.fn(),
   startMobileDebugServer: vi.fn(),
+  dynamicImport: vi.fn(),
+  runSdkCommand: vi.fn(),
 }));
 
 vi.mock('electron', () => ({
@@ -38,6 +40,7 @@ vi.mock('../src/modules/mobile-debug-server', () => ({
   startMobileDebugServer: mocks.startMobileDebugServer,
 }));
 vi.mock('../src/modules/network', () => ({ getLanIp: vi.fn(() => '192.168.0.10') }));
+vi.mock('/shared/dynamic-import', () => ({ dynamicImport: mocks.dynamicImport }));
 
 import {
   cancelPreview,
@@ -45,6 +48,9 @@ import {
   getPreview,
   start,
   supportsAssetBundles,
+  supportsDeployResource,
+  supportsDeployToken,
+  deploy,
 } from '../src/modules/cli';
 
 const BASE_OPTS: PreviewOptions = {
@@ -807,6 +813,217 @@ describe('supportsAssetBundles', () => {
       mocks.stat.mockResolvedValue({ mtimeMs: 1000 });
       mocks.readFile.mockResolvedValue('args spec with "--asset-bundles" flag');
       await expect(supportsAssetBundles(path)).resolves.toBe(true);
+    });
+  });
+});
+
+describe('supportsDeployResource', () => {
+  let path: string;
+  let files: Record<string, string>;
+  let result: boolean;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    path = `/scenes/scene-${++sceneCount}`;
+    files = {};
+    const find = (file: string) => {
+      const name = Object.keys(files).find(suffix => file.endsWith(suffix));
+      if (name === undefined) throw new Error('ENOENT');
+      return name;
+    };
+    mocks.readFile.mockImplementation(async (file: string) => files[find(file)]);
+    mocks.stat.mockImplementation(async (file: string) => {
+      find(file);
+      return { mtimeMs: 1 };
+    });
+  });
+
+  describe('when the deploy command ships its routes module', () => {
+    beforeEach(async () => {
+      files['deploy/index.js'] = 'deploy command';
+      files['deploy/routes.js'] = "router.delete('/api/deploy')";
+      result = await supportsDeployResource(path);
+    });
+
+    it('should report the resource api as supported', () => {
+      expect(result).toBe(true);
+    });
+
+    it('should not read the deploy command', () => {
+      expect(mocks.readFile).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('when the deploy command mentions respond-async', () => {
+    beforeEach(async () => {
+      files['deploy/index.js'] = '--help: Prefer: respond-async';
+      result = await supportsDeployResource(path);
+    });
+
+    it('should report the resource api as supported', () => {
+      expect(result).toBe(true);
+    });
+  });
+
+  describe('when the deploy command has neither', () => {
+    beforeEach(async () => {
+      files['deploy/index.js'] = 'deploy command with --programmatic';
+      files['deploy/utils.js'] = "router.post('/api/deploy')";
+      result = await supportsDeployResource(path);
+    });
+
+    it('should report the resource api as unsupported', () => {
+      expect(result).toBe(false);
+    });
+  });
+
+  describe('when the sdk is not installed', () => {
+    beforeEach(async () => {
+      result = await supportsDeployResource(path);
+    });
+
+    it('should report the resource api as unsupported', () => {
+      expect(result).toBe(false);
+    });
+  });
+});
+
+describe('supportsDeployToken', () => {
+  let files: Record<string, string>;
+  let result: boolean;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    files = {};
+    mocks.readFile.mockImplementation(async (file: string) => {
+      const name = Object.keys(files).find(suffix => file.endsWith(suffix));
+      if (name === undefined) throw new Error('ENOENT');
+      return files[name];
+    });
+  });
+
+  describe('when the deploy command declares the flag', () => {
+    beforeEach(async () => {
+      files['deploy/index.js'] = "const args = { '--deploy-token': String }";
+      result = await supportsDeployToken(`/scenes/scene-${++sceneCount}`);
+    });
+
+    it('should report the flag as supported', () => {
+      expect(result).toBe(true);
+    });
+  });
+
+  describe('when the deploy command does not declare the flag', () => {
+    beforeEach(async () => {
+      files['deploy/index.js'] = '--help: Prefer: respond-async';
+      result = await supportsDeployToken(`/scenes/scene-${++sceneCount}`);
+    });
+
+    it('should report the flag as unsupported', () => {
+      expect(result).toBe(false);
+    });
+  });
+
+  describe('when the sdk is not installed', () => {
+    beforeEach(async () => {
+      result = await supportsDeployToken(`/scenes/scene-${++sceneCount}`);
+    });
+
+    it('should report the flag as unsupported', () => {
+      expect(result).toBe(false);
+    });
+  });
+});
+
+describe('deploy', () => {
+  let files: Record<string, string>;
+  let result: Awaited<ReturnType<typeof deploy>>;
+  let args: string[];
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    files = { 'deploy/index.js': 'deploy command with --programmatic' };
+    const find = (file: string) => {
+      const name = Object.keys(files).find(suffix => file.endsWith(suffix));
+      if (name === undefined) throw new Error('ENOENT');
+      return name;
+    };
+    mocks.readFile.mockImplementation(async (file: string) => files[find(file)]);
+    mocks.stat.mockImplementation(async (file: string) => {
+      find(file);
+      return { mtimeMs: 1 };
+    });
+    mocks.runSdkCommand.mockResolvedValue({ stop: vi.fn() });
+    mocks.dynamicImport.mockImplementation(async (file: string) =>
+      file.endsWith('run-command.js')
+        ? { runSdkCommand: mocks.runSdkCommand }
+        : { initComponents: vi.fn(async () => ({})) },
+    );
+  });
+
+  const run = async () => {
+    result = await deploy({
+      path: `/scenes/scene-${++sceneCount}`,
+      chainId: 1,
+      wallet: '0xabc',
+    });
+    args = mocks.runSdkCommand.mock.calls[0][2];
+  };
+
+  describe('when the CLI serves the deploy resource and takes a deploy token', () => {
+    beforeEach(async () => {
+      files['deploy/index.js'] =
+        "const args = { '--programmatic': Boolean, '--deploy-token': String }";
+      files['deploy/routes.js'] = "router.delete('/api/deploy')";
+      await run();
+    });
+
+    it('should report the deploy resource as supported', () => {
+      expect(result.supportsDeployResource).toBe(true);
+    });
+
+    it('should hand out a token for the deployment', () => {
+      expect(result.deployToken).toMatch(/^[0-9a-f-]{36}$/);
+    });
+
+    it('should pass the token to the CLI', () => {
+      expect(args.slice(args.indexOf('--deploy-token'))).toEqual([
+        '--deploy-token',
+        result.deployToken,
+      ]);
+    });
+
+    it('should return the port the CLI serves', () => {
+      expect(result.port).toBe(4000);
+    });
+  });
+
+  describe('when the CLI serves the deploy resource but takes no deploy token', () => {
+    beforeEach(async () => {
+      files['deploy/routes.js'] = "router.delete('/api/deploy')";
+      await run();
+    });
+
+    it('should report the deploy resource as supported without a token', () => {
+      expect(result).toEqual({ port: 4000, supportsDeployResource: true, deployToken: undefined });
+    });
+
+    it('should not pass a token to the CLI', () => {
+      expect(args).not.toContain('--deploy-token');
+    });
+  });
+
+  describe('when the CLI predates the deploy resource', () => {
+    beforeEach(async () => {
+      await run();
+    });
+
+    it('should not hand out a token', () => {
+      expect(result).toEqual({ port: 4000, supportsDeployResource: false, deployToken: undefined });
+    });
+
+    it('should not pass a token to the CLI', () => {
+      expect(args).not.toContain('--deploy-token');
     });
   });
 });

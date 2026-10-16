@@ -5,7 +5,19 @@ import type { PreviewOptions } from '/shared/types/settings';
 import { editor } from '#preload';
 
 import { createTestStore } from '../../../../tests/utils/testStore';
-import { cancelPreview, runScene, setPreviewProgress } from './slice';
+import { setDeployToken } from '../deployment/deploy-api';
+import { cancelPreview, publishScene, runScene, setPreviewProgress } from './slice';
+
+vi.mock('../deployment/deploy-api', async importOriginal => ({
+  ...((await importOriginal()) as object),
+  setDeployToken: vi.fn(),
+}));
+
+vi.mock('../deployment/utils', async importOriginal => ({
+  ...((await importOriginal()) as object),
+  fetchInfo: vi.fn(async () => ({ isWorld: false, rootCID: 'bafy' })),
+  fetchFiles: vi.fn(async () => []),
+}));
 
 const TEST_PATH = '/test/scene';
 const PREVIEW_OPTS: PreviewOptions = {
@@ -163,6 +175,83 @@ describe('editor slice preview state', () => {
       store.dispatch(setPreviewProgress(null));
 
       expect(store.getState().editor.previewProgress).toBeNull();
+    });
+  });
+});
+
+describe('editor slice publish', () => {
+  let store: ReturnType<typeof createTestStore>;
+
+  const publish = () =>
+    store.dispatch(publishScene({ path: TEST_PATH, chainId: 1, wallet: '0xabc' })).unwrap();
+
+  beforeEach(() => {
+    store = createTestStore();
+    vi.mocked(setDeployToken).mockClear();
+  });
+
+  describe('when the CLI hands out a deploy token', () => {
+    beforeEach(async () => {
+      vi.mocked(editor.publishScene).mockResolvedValue({
+        port: 4100,
+        supportsDeployResource: true,
+        deployToken: 'token-example-123',
+      });
+      await publish();
+    });
+
+    it('should keep the token for the cancel requests to that CLI', () => {
+      expect(setDeployToken).toHaveBeenCalledWith('http://localhost:4100/api', 'token-example-123');
+    });
+
+    it('should flag the deployment as supporting the deploy resource', () => {
+      expect(store.getState().deployment.deployments[TEST_PATH]?.supportsDeployResource).toBe(true);
+    });
+
+    it('should flag the deployment as cancellable', () => {
+      expect(store.getState().deployment.deployments[TEST_PATH]?.cancellable).toBe(true);
+    });
+
+    it('should keep the token out of the store', () => {
+      expect(JSON.stringify(store.getState())).not.toContain('token-example-123');
+    });
+  });
+
+  describe('when the CLI serves the deploy resource but takes no deploy token', () => {
+    beforeEach(async () => {
+      vi.mocked(editor.publishScene).mockResolvedValue({
+        port: 4100,
+        supportsDeployResource: true,
+      });
+      await publish();
+    });
+
+    it('should flag the deployment as supporting the deploy resource', () => {
+      expect(store.getState().deployment.deployments[TEST_PATH]?.supportsDeployResource).toBe(true);
+    });
+
+    it('should flag the deployment as not cancellable', () => {
+      expect(store.getState().deployment.deployments[TEST_PATH]?.cancellable).toBe(false);
+    });
+  });
+
+  describe('when the CLI predates the deploy resource', () => {
+    beforeEach(async () => {
+      vi.mocked(editor.publishScene).mockResolvedValue({
+        port: 4100,
+        supportsDeployResource: false,
+      });
+      await publish();
+    });
+
+    it('should drop any token kept for that url', () => {
+      expect(setDeployToken).toHaveBeenCalledWith('http://localhost:4100/api', undefined);
+    });
+
+    it('should flag the deployment as not supporting the deploy resource', () => {
+      expect(store.getState().deployment.deployments[TEST_PATH]?.supportsDeployResource).toBe(
+        false,
+      );
     });
   });
 });

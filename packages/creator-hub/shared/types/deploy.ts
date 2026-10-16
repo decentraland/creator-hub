@@ -9,3 +9,12 @@ export type DeployOptions = {
   chainId: ChainId;
   wallet: string;
 };
+
+/** The CLI serving a deployment. */
+export type DeployServer = {
+  port: number;
+  /** Whether the CLI serves the deploy resource (progress and cancel). */
+  supportsDeployResource: boolean;
+  /** Authorizes cancelling the deployment; absent when the CLI does not take `--deploy-token`. */
+  deployToken?: string;
+};
