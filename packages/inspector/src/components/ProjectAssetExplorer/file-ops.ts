@@ -3,6 +3,17 @@
  * Paths here are relative to the `assets/` directory, e.g. `my-pack/model.glb`.
  */
 
+import { DIRECTORY } from '../../lib/data-layer/host/fs-utils';
+
+/**
+ * The scene's own folder (`assets/scene`, holding `main.composite`) is listed like any other
+ * because `.composite` is a catalogued extension, but the build and the preview read it from
+ * that fixed path: it must never be renamed, moved or deleted from the explorer.
+ */
+export function isProtectedPath(path: string): boolean {
+  return path === DIRECTORY.SCENE || path.startsWith(DIRECTORY.SCENE + '/');
+}
+
 export function getBaseName(path: string): string {
   const idx = path.lastIndexOf('/');
   return idx === -1 ? path : path.slice(idx + 1);
@@ -15,6 +26,38 @@ export function getParentPath(path: string): string {
 
 export function joinPath(parent: string, name: string): string {
   return parent ? `${parent}/${name}` : name;
+}
+
+/**
+ * Resolves `.` and `..` segments. Segments that climb above the start are kept (`../x`), so a
+ * caller can tell that the path escapes the assets folder.
+ */
+export function normalizePath(path: string): string {
+  const parts: string[] = [];
+  for (const part of path.split('/')) {
+    if (!part || part === '.') continue;
+    if (part === '..' && parts.length && parts[parts.length - 1] !== '..') parts.pop();
+    else parts.push(part);
+  }
+  return parts.join('/');
+}
+
+/**
+ * The files a `.gltf` references by a relative URI (its buffers and images), relative to the
+ * model's own folder. A `.glb` embeds them, and remote or inline data needs no file.
+ */
+export function getGltfResourceUris(content: Uint8Array): string[] {
+  try {
+    const json = JSON.parse(new TextDecoder().decode(content));
+    const uris: unknown[] = [...(json.buffers ?? []), ...(json.images ?? [])].map(
+      (item: { uri?: unknown }) => item?.uri,
+    );
+    return uris
+      .filter((uri): uri is string => typeof uri === 'string' && !/^(data:|https?:)/i.test(uri))
+      .map(uri => decodeURIComponent(uri));
+  } catch {
+    return [];
+  }
 }
 
 /** Splits `model.final.glb` into `{ base: 'model.final', ext: '.glb' }`. Folders pass `isFolder`. */
@@ -66,11 +109,23 @@ export function createPathMapper(from: string, to: string) {
   };
 }
 
-const REFERENCE_KEYS = new Set(['src', 'audioClipUrl', 'path']);
+// `scriptPath` is the CALL_SCRIPT_METHOD action's copy of a Script component `path`.
+const REFERENCE_KEYS = new Set(['src', 'audioClipUrl', 'path', 'scriptPath']);
+// asset-packs Actions keep their per-action payload as a JSON string; the paths are inside it.
+const JSON_PAYLOAD_KEY = 'jsonPayload';
+
+function parseJsonPayload(payload: string): unknown {
+  try {
+    return JSON.parse(payload);
+  } catch {
+    return undefined;
+  }
+}
 
 /**
  * Deep-walks a component value replacing the string fields that hold asset paths
- * (`src`, `audioClipUrl`, `path`) through `map`. Returns the same reference when nothing changed.
+ * (`src`, `audioClipUrl`, `path`, `scriptPath`, also inside an Action's `jsonPayload`) through
+ * `map`. Returns the same reference when nothing changed.
  */
 export function replaceAssetReferences<T>(value: T, map: (path: string) => string | undefined): T {
   if (Array.isArray(value)) {
@@ -89,6 +144,12 @@ export function replaceAssetReferences<T>(value: T, map: (path: string) => strin
       let replaced: unknown = child;
       if (REFERENCE_KEYS.has(key) && typeof child === 'string') {
         replaced = map(child) ?? child;
+      } else if (key === JSON_PAYLOAD_KEY && typeof child === 'string') {
+        const payload = parseJsonPayload(child);
+        const replacedPayload = replaceAssetReferences(payload, map);
+        if (payload !== undefined && replacedPayload !== payload) {
+          replaced = JSON.stringify(replacedPayload);
+        }
       } else {
         replaced = replaceAssetReferences(child, map);
       }
@@ -98,6 +159,21 @@ export function replaceAssetReferences<T>(value: T, map: (path: string) => strin
     return (changed ? next : value) as T;
   }
   return value;
+}
+
+/** Every asset path a component value references, read from the same fields `replaceAssetReferences` rewrites. */
+export function collectAssetReferences(value: unknown, into: string[] = []): string[] {
+  if (Array.isArray(value)) {
+    for (const item of value) collectAssetReferences(item, into);
+  } else if (value && typeof value === 'object' && !(value instanceof Uint8Array)) {
+    for (const [key, child] of Object.entries(value as Record<string, unknown>)) {
+      if (REFERENCE_KEYS.has(key) && typeof child === 'string') into.push(child);
+      else if (key === JSON_PAYLOAD_KEY && typeof child === 'string') {
+        collectAssetReferences(parseJsonPayload(child), into);
+      } else collectAssetReferences(child, into);
+    }
+  }
+  return into;
 }
 
 export function guessMimeType(name: string): string {

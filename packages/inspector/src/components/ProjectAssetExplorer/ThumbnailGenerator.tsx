@@ -4,7 +4,7 @@ import { AssetPreview } from '../AssetPreview';
 import { getDataLayerInterface, saveThumbnail } from '../../redux/data-layer';
 import { useAppDispatch } from '../../redux/hooks';
 import { transformBase64ResourceToBinary, withAssetDir } from '../../lib/data-layer/host/fs-utils';
-import { getBaseName, getParentPath, joinPath } from './file-ops';
+import { getBaseName, getGltfResourceUris, getParentPath, joinPath } from './file-ops';
 
 type Props = {
   /** Model paths (relative to `assets/`) that have no thumbnail yet, in priority order. */
@@ -18,15 +18,7 @@ type Job = { path: string; file: File; resources: File[] };
 /** Files a .gltf references by relative URI (buffers and images); a .glb is self contained. */
 function getGltfResourcePaths(path: string, content: Uint8Array): string[] {
   if (!path.toLowerCase().endsWith('.gltf')) return [];
-  try {
-    const json = JSON.parse(new TextDecoder().decode(content));
-    const uris: string[] = [...(json.buffers ?? []), ...(json.images ?? [])]
-      .map((item: { uri?: string }) => item?.uri)
-      .filter((uri?: string): uri is string => !!uri && !/^(data:|https?:)/i.test(uri));
-    return uris.map(uri => joinPath(getParentPath(path), decodeURIComponent(uri)));
-  } catch {
-    return [];
-  }
+  return getGltfResourceUris(content).map(uri => joinPath(getParentPath(path), uri));
 }
 
 async function loadJob(path: string): Promise<Job> {

@@ -20,7 +20,7 @@ import Search from '../Search';
 import { withAssetDir } from '../../lib/data-layer/host/fs-utils';
 import { getSceneClient } from '../../lib/rpc/scene';
 import { copyBuiltInEmoteName } from '../../lib/logic/built-in-emotes';
-import { removeAsset } from '../../redux/data-layer';
+import { removeAssets } from '../../redux/data-layer';
 import { selectThumbnailsLoaded } from '../../redux/app';
 import { useAppDispatch, useAppSelector } from '../../redux/hooks';
 import { useContextMenu } from '../../hooks/sdk/useContextMenu';
@@ -31,7 +31,13 @@ import {
 } from '../../lib/utils/asset-explorer-region';
 import { determineAssetType, extractFileExtension } from '../ImportAsset/utils';
 import { getThumbnailHashNameForAsset } from '../../lib/utils/hash';
-import { getFilterFromTree, getFullNodePath, isBuiltInPath, isEmoteAsset } from './utils';
+import {
+  getFilterFromTree,
+  getFullNodePath,
+  isBuiltInPath,
+  isEmoteAsset,
+  isReadOnlyPath,
+} from './utils';
 import type { AssetNodeFolder, AssetNodeItem } from './types';
 import { Tile } from './Tile';
 import { generateAssetTree, getChildren as _getChildren, TreeNode, ROOT, getTiles } from './tree';
@@ -40,6 +46,7 @@ import { Filter } from './Filters/types';
 import { ThumbnailGenerator } from './ThumbnailGenerator';
 import { useAssetOperations } from './useAssetOperations';
 import {
+  collectAssetReferences,
   createPathMapper,
   getBaseName,
   getParentPath,
@@ -53,11 +60,6 @@ import { forwardToViewport, isCameraKey, isViewportFocused } from './viewport-ke
 export { TreeNode };
 
 const MAX_QUEUED_THUMBNAILS = 60;
-
-/** Paths the explorer never renames, moves, duplicates or deletes. */
-function isReadOnlyPath(path: string) {
-  return isBuiltInPath(path);
-}
 
 function isEditableTarget(target: EventTarget | null) {
   const el = target as HTMLElement | null;
@@ -100,6 +102,8 @@ interface ModalState {
   isOpen: boolean;
   values: string[];
   entities: Entity[];
+  /** Deleted folders, so the empty ones that only exist in the explorer go away on confirm. */
+  folders: string[];
 }
 
 export const DRAG_N_DROP_ASSET_KEY = 'local-asset';
@@ -218,39 +222,21 @@ function ProjectView({ folders, thumbnails }: Props) {
     (assetPath: string): Entity[] => {
       if (!sdk || modal?.isOpen) return [];
       const entitiesWithAsset = new Set<Entity>();
-
-      const checks = [
-        { component: sdk.components.GltfContainer, matcher: (v: any) => v.src === assetPath },
-        {
-          component: sdk.components.Script,
-          matcher: (v: any) => v.value?.some((s: any) => s.path === assetPath),
-        },
-        {
-          component: sdk.components.AudioSource,
-          matcher: (v: any) => v.audioClipUrl === assetPath,
-        },
-        { component: sdk.components.VideoPlayer, matcher: (v: any) => v.src === assetPath },
-        {
-          component: sdk.components.Material,
-          matcher: (v: any) => {
-            const material = v.material?.$case === 'pbr' ? v.material.pbr : null;
-            return !!(
-              material?.texture?.tex?.src === assetPath ||
-              material?.alphaTexture?.tex?.src === assetPath ||
-              material?.emissiveTexture?.tex?.src === assetPath ||
-              material?.bumpTexture?.tex?.src === assetPath
-            );
-          },
-        },
+      const { components } = sdk;
+      // The same fields a rename rewrites, Actions payloads (PLAY_SOUND, SHOW_IMAGE…) included
+      const referencing = [
+        components.GltfContainer,
+        components.Script,
+        components.AudioSource,
+        components.VideoPlayer,
+        components.Material,
+        components.Actions,
       ];
-
-      checks.forEach(({ component, matcher }) => {
+      for (const component of referencing) {
         for (const [entity, value] of sdk.engine.getEntitiesWith(component)) {
-          if (matcher(value)) {
-            entitiesWithAsset.add(entity);
-          }
+          if (collectAssetReferences(value).includes(assetPath)) entitiesWithAsset.add(entity);
         }
-      });
+      }
 
       return Array.from(entitiesWithAsset);
     },
@@ -272,27 +258,41 @@ function ProjectView({ folders, thumbnails }: Props) {
    * Deletes `values` and, for folders, every file inside them, asking first if the scene uses
    * any of them. The host only removes files, so a folder goes away once it has none left.
    */
+  const removeVirtualFolders = useCallback((folders: string[]) => {
+    if (!folders.length) return;
+    const isRemoved = (path: string) =>
+      folders.some(folder => path === folder || path.startsWith(folder + '/'));
+    setVirtualFolders(current => current.filter(path => !isRemoved(path)));
+  }, []);
+
   const handleRemoveMany = useCallback(
     (values: string[]) => {
-      const targets = pruneNestedPaths(
-        values.filter(value => value !== ROOT && !isReadOnlyPath(value)),
-      );
+      const candidates = values.filter(value => value !== ROOT);
+      const targets = pruneNestedPaths(candidates.filter(value => !isReadOnlyPath(value)));
+      if (!targets.length) {
+        if (candidates.length) {
+          operations.notifyError("The scene folder and the built-in animations can't be deleted");
+        }
+        return;
+      }
       const folders = targets.filter(value => fullTree.get(value)?.type === 'folder');
       const paths = targets.flatMap(collectFiles).map(path => withAssetDir(path));
-      if (!paths.length && !folders.length) return;
-      if (folders.length) {
-        const isRemoved = (path: string) =>
-          folders.some(folder => path === folder || path.startsWith(folder + '/'));
-        setVirtualFolders(current => current.filter(path => !isRemoved(path)));
-      }
       const entities = paths.flatMap(path => getEntitiesWithAsset(path));
       if (entities.length) {
-        return setModal({ isOpen: true, values: paths, entities });
+        return setModal({ isOpen: true, values: paths, entities, folders });
       }
-      paths.forEach(path => dispatch(removeAsset({ path })));
+      removeVirtualFolders(folders);
+      if (paths.length) dispatch(removeAssets({ paths }));
       clearSelection();
     },
-    [fullTree, collectFiles, getEntitiesWithAsset, clearSelection],
+    [
+      fullTree,
+      operations,
+      collectFiles,
+      getEntitiesWithAsset,
+      removeVirtualFolders,
+      clearSelection,
+    ],
   );
 
   const handleRemove = useCallback(
@@ -302,10 +302,11 @@ function ProjectView({ folders, thumbnails }: Props) {
 
   const handleConfirm = useCallback(async () => {
     if (!modal) return;
-    modal.values.forEach(path => dispatch(removeAsset({ path })));
+    removeVirtualFolders(modal.folders);
+    dispatch(removeAssets({ paths: modal.values }));
     setModal(undefined);
     clearSelection();
-  }, [modal, setModal, clearSelection]);
+  }, [modal, setModal, removeVirtualFolders, clearSelection]);
 
   const handleModalClose = useCallback(() => setModal(undefined), []);
 
@@ -485,6 +486,10 @@ function ProjectView({ folders, thumbnails }: Props) {
         operations.notifyError('Drop the items on a folder to move them');
         return;
       }
+      if (isReadOnlyPath(folder)) {
+        operations.notifyError(`Nothing can be moved into "${getBaseName(folder)}"`);
+        return;
+      }
       if (!pendingDrop.current) {
         pendingDrop.current = { items: [], target: folder };
         setTimeout(() => {
@@ -646,7 +651,7 @@ function ProjectView({ folders, thumbnails }: Props) {
 
     if (withModifier && !event.shiftKey) {
       if (key === 'c' || key === 'x') {
-        const paths = selection.filter(path => fullTree.has(path));
+        const paths = selection.filter(path => fullTree.has(path) && !isReadOnlyPath(path));
         if (!paths.length) return false;
         clipboard.current = { paths, cut: key === 'x' };
         return true;

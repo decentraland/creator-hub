@@ -1,9 +1,13 @@
 import {
+  collectAssetReferences,
   createPathMapper,
   getBaseName,
+  getGltfResourceUris,
   getRange,
   getParentPath,
   getUniqueCopyName,
+  isProtectedPath,
+  normalizePath,
   pruneNestedPaths,
   replaceAssetReferences,
   splitName,
@@ -101,6 +105,88 @@ describe('ProjectAssetExplorer/file-ops', () => {
     it('should fall back to the clicked item when the anchor is not visible', () => {
       expect(getRange(ordered, 'z', 'c')).toEqual(['c']);
       expect(getRange(ordered, 'a', 'z')).toEqual([]);
+    });
+  });
+
+  describe('isProtectedPath', () => {
+    it('should protect the scene folder and everything inside it', () => {
+      expect(isProtectedPath('scene')).toBe(true);
+      expect(isProtectedPath('scene/main.composite')).toBe(true);
+      expect(isProtectedPath('scenery')).toBe(false);
+      expect(isProtectedPath('Models/scene/a.glb')).toBe(false);
+    });
+  });
+
+  describe('normalizePath', () => {
+    it('should resolve dot segments and keep the ones that escape', () => {
+      expect(normalizePath('Models/./a/../b.bin')).toBe('Models/b.bin');
+      expect(normalizePath('Models/../textures/t.png')).toBe('textures/t.png');
+      expect(normalizePath('Models/../../t.png')).toBe('../t.png');
+      expect(normalizePath('a//b')).toBe('a/b');
+    });
+  });
+
+  describe('getGltfResourceUris', () => {
+    const encode = (value: unknown) => new TextEncoder().encode(JSON.stringify(value));
+    it('should list relative buffer and image uris, decoded', () => {
+      const content = encode({
+        buffers: [{ uri: 'model.bin' }, { uri: 'data:application/octet-stream;base64,AAA' }],
+        images: [{ uri: '../textures/my%20tex.png' }, { uri: 'https://cdn/x.png' }, {}],
+      });
+      expect(getGltfResourceUris(content)).toEqual(['model.bin', '../textures/my tex.png']);
+    });
+    it('should return nothing for binary or invalid content', () => {
+      expect(getGltfResourceUris(new Uint8Array([0x67, 0x6c, 0x54, 0x46]))).toEqual([]);
+      expect(getGltfResourceUris(encode({ asset: {} }))).toEqual([]);
+    });
+  });
+
+  describe('Actions payloads', () => {
+    const map = createPathMapper('assets/old', 'assets/new');
+    const actions = {
+      value: [
+        { name: 'play', type: 'play_sound', jsonPayload: '{"src":"assets/old/a.mp3","loop":true}' },
+        {
+          name: 'call',
+          type: 'call_script_method',
+          jsonPayload: '{"scriptPath":"assets/old/s.ts","methodName":"go"}',
+        },
+        { name: 'stream', type: 'play_audio_stream', jsonPayload: '{"url":"https://radio/x"}' },
+        { name: 'broken', type: 'show_image', jsonPayload: '{not json' },
+      ],
+    };
+
+    it('should rewrite the paths inside jsonPayload and leave the rest untouched', () => {
+      const next = replaceAssetReferences(actions, map);
+      expect(next).not.toBe(actions);
+      expect(JSON.parse(next.value[0].jsonPayload)).toEqual({
+        src: 'assets/new/a.mp3',
+        loop: true,
+      });
+      expect(JSON.parse(next.value[1].jsonPayload)).toEqual({
+        scriptPath: 'assets/new/s.ts',
+        methodName: 'go',
+      });
+      expect(next.value[2]).toBe(actions.value[2]);
+      expect(next.value[3]).toBe(actions.value[3]);
+    });
+
+    it('should keep the same reference when no payload points at the renamed path', () => {
+      expect(replaceAssetReferences(actions, createPathMapper('assets/x', 'assets/y'))).toBe(
+        actions,
+      );
+    });
+
+    it('should collect the paths referenced through payloads and plain fields', () => {
+      expect(collectAssetReferences(actions)).toEqual(['assets/old/a.mp3', 'assets/old/s.ts']);
+      const material = {
+        material: {
+          $case: 'pbr',
+          pbr: { texture: { tex: { $case: 'texture', texture: { src: 'assets/t.png' } } } },
+        },
+      };
+      expect(collectAssetReferences(material)).toEqual(['assets/t.png']);
+      expect(collectAssetReferences({ value: [{ path: 'assets/s.ts' }] })).toEqual(['assets/s.ts']);
     });
   });
 });

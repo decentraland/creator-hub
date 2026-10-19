@@ -5,16 +5,20 @@ import { useSnackbar } from '../../hooks/useSnackbar';
 import { useAppDispatch } from '../../redux/hooks';
 import { getAssetCatalog, getDataLayerInterface, saveThumbnail } from '../../redux/data-layer';
 import { withAssetDir } from '../../lib/data-layer/host/fs-utils';
+import { removeAssetFiles } from '../../lib/data-layer/remove-assets';
 import { getThumbnailHashNameForAsset } from '../../lib/utils/hash';
 import type { TreeNode } from './tree';
 import { ROOT } from './tree';
+import { isReadOnlyPath } from './utils';
 import {
   copyTextToClipboard,
   createPathMapper,
   getBaseName,
+  getGltfResourceUris,
   getParentPath,
   getUniqueCopyName,
   joinPath,
+  normalizePath,
   pruneNestedPaths,
   replaceAssetReferences,
   validateName,
@@ -29,6 +33,11 @@ type Options = {
   /** Empty folders that only exist in the explorer until something is put inside. */
   virtualFolders: string[];
 };
+
+/** A transfer refused for a reason the user can act on; its message is shown as is. */
+class TransferError extends Error {}
+
+const READ_ONLY_HINT = 'the scene folder and the built-in animations are read only';
 
 /** File and folder operations of the Local Assets tab. Paths are relative to `assets/`. */
 export function useAssetOperations({ tree, thumbnails, virtualFolders }: Options) {
@@ -65,6 +74,41 @@ export function useAssetOperations({ tree, thumbnails, virtualFolders }: Options
     return entries;
   }, []);
 
+  /** The file at `path` (relative to `assets/`), or undefined when there is none. */
+  const readIfExists = useCallback(async (path: string): Promise<Uint8Array | undefined> => {
+    const dataLayer = getDataLayerInterface();
+    if (!dataLayer) throw new Error('Data layer is not available');
+    const { files } = await dataLayer.getFilesList({ paths: [withAssetDir(path)] });
+    const file = files[0];
+    return file?.success ? file.content : undefined;
+  }, []);
+
+  /**
+   * A `.gltf` finds its buffers and textures through relative URIs, so one that lands in another
+   * folder needs the files those URIs point to there as well. They are copied (never moved: another
+   * model may share them) unless the URI already resolves to a file in the destination.
+   */
+  const addGltfResources = useCallback(
+    async (files: { from: string; to: string }[], content: Map<string, Uint8Array>) => {
+      for (const { from, to } of files) {
+        if (!to.toLowerCase().endsWith('.gltf')) continue;
+        for (const uri of getGltfResourceUris(content.get(to)!)) {
+          const target = normalizePath(joinPath(getParentPath(to), uri));
+          if (content.has(target)) continue;
+          if (!target || target.startsWith('..')) {
+            throw new TransferError(
+              `"${getBaseName(to)}" references "${uri}", which would end up outside the assets folder`,
+            );
+          }
+          if (await readIfExists(target)) continue;
+          const resource = await readIfExists(normalizePath(joinPath(getParentPath(from), uri)));
+          if (resource) content.set(target, resource);
+        }
+      }
+    },
+    [readIfExists],
+  );
+
   const copyThumbnail = useCallback(
     async (fromSrc: string, toSrc: string) => {
       const fromHash = await getThumbnailHashNameForAsset(fromSrc);
@@ -84,6 +128,7 @@ export function useAssetOperations({ tree, thumbnails, virtualFolders }: Options
         components.VideoPlayer,
         components.Material,
         components.Script,
+        components.Actions,
       ];
       let changed = false;
       for (const component of referencing) {
@@ -121,34 +166,28 @@ export function useAssetOperations({ tree, thumbnails, virtualFolders }: Options
       const toName = getBaseName(toPath);
       const files: { from: string; to: string }[] = [];
       for (const [relative, bytes] of sourceEntries) {
-        const target = toName + relative.slice(fromName.length);
-        content.set(target, bytes);
-        files.push({
-          from: joinPath(getParentPath(fromPath), relative),
-          to: joinPath(getParentPath(toPath), target),
-        });
+        const to = joinPath(getParentPath(toPath), toName + relative.slice(fromName.length));
+        content.set(to, bytes);
+        files.push({ from: joinPath(getParentPath(fromPath), relative), to });
       }
+      await addGltfResources(files, content);
 
-      await dataLayer.importAsset({
-        content,
-        basePath: withAssetDir(getParentPath(toPath)),
-        assetPackageName: '',
-      });
+      await dataLayer.importAsset({ content, basePath: withAssetDir(), assetPackageName: '' });
 
       for (const { from, to } of files) void copyThumbnail(from, to);
 
       if (removeSource) {
         const map = createPathMapper(withAssetDir(fromPath), withAssetDir(toPath));
         await updateSceneReferences(map);
-        // one by one so that every removal is recorded in the undo history
-        for (const { from } of files) {
-          await dataLayer.removeAsset({ path: withAssetDir(from) });
-        }
+        await removeAssetFiles(
+          dataLayer,
+          files.map(({ from }) => withAssetDir(from)),
+        );
       }
 
       if (refreshCatalog) dispatch(getAssetCatalog());
     },
-    [readEntries, copyThumbnail, updateSceneReferences, dispatch],
+    [readEntries, addGltfResources, copyThumbnail, updateSceneReferences, dispatch],
   );
 
   const notifyError = useCallback(
@@ -164,6 +203,10 @@ export function useAssetOperations({ tree, thumbnails, virtualFolders }: Options
     async (path: string, newName: string): Promise<string | undefined> => {
       const node = tree.get(path);
       if (!node) return undefined;
+      if (isReadOnlyPath(path)) {
+        notifyError(`"${getBaseName(path)}" can't be renamed: ${READ_ONLY_HINT}`);
+        return undefined;
+      }
       const isFolder = node.type !== 'asset';
       const trimmed = newName.trim();
       const error = validateName(trimmed, getSiblingNames(getParentPath(path)), getBaseName(path));
@@ -176,7 +219,8 @@ export function useAssetOperations({ tree, thumbnails, virtualFolders }: Options
       try {
         await transfer(path, newPath, isFolder, true);
       } catch (e) {
-        notifyError(`Failed to rename ${getBaseName(path)}`, e);
+        if (e instanceof TransferError) notifyError(e.message);
+        else notifyError(`Failed to rename ${getBaseName(path)}`, e);
         return undefined;
       }
       return newPath;
@@ -194,15 +238,27 @@ export function useAssetOperations({ tree, thumbnails, virtualFolders }: Options
       paths: string[],
       { targetFolder, move = false }: { targetFolder?: string; move?: boolean } = {},
     ): Promise<string[]> => {
+      const verb = move ? 'move' : 'copy';
+      if (targetFolder !== undefined && isReadOnlyPath(targetFolder)) {
+        notifyError(
+          `Nothing can be ${move ? 'moved' : 'copied'} into "${getBaseName(targetFolder)}": ${READ_ONLY_HINT}`,
+        );
+        return [];
+      }
       const created: string[] = [];
       const takenByFolder = new Map<string, string[]>();
       const failed: string[] = [];
+      const readOnly: string[] = [];
       for (const path of pruneNestedPaths(paths)) {
         const node = tree.get(path);
         if (!node) continue;
+        const name = getBaseName(path);
+        if (isReadOnlyPath(path)) {
+          readOnly.push(name);
+          continue;
+        }
         const isFolder = node.type !== 'asset';
         const destination = targetFolder ?? getParentPath(path);
-        const name = getBaseName(path);
         if (isFolder && (destination === path || destination.startsWith(path + '/'))) {
           notifyError(`"${name}" cannot be placed inside itself`);
           continue;
@@ -218,12 +274,20 @@ export function useAssetOperations({ tree, thumbnails, virtualFolders }: Options
           takenByFolder.set(destination, [...taken, newName]);
           created.push(newPath);
         } catch (e) {
-          console.error(`Failed to ${move ? 'move' : 'copy'} ${path}`, e);
-          failed.push(name);
+          if (e instanceof TransferError) notifyError(e.message);
+          else {
+            console.error(`Failed to ${verb} ${path}`, e);
+            failed.push(name);
+          }
         }
       }
+      if (readOnly.length) {
+        notifyError(
+          `${readOnly.join(', ')} can't be ${move ? 'moved' : 'copied'}: ${READ_ONLY_HINT}`,
+        );
+      }
       if (failed.length) {
-        notifyError(`Failed to ${move ? 'move' : 'copy'} ${failed.join(', ')}`);
+        notifyError(`Failed to ${verb} ${failed.join(', ')}`);
       }
       if (created.length) dispatch(getAssetCatalog());
       return created;
