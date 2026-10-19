@@ -1202,6 +1202,340 @@ Set [`21160:787`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=2
 
 Settings is named by its content: the `Experimental / Custom` frame shows the AI tab (sidebar item AI selected), so there is no Figma variant for the Experimental tab in a non-default state, and no "AI / Default". Body copy and field labels were not read singly (canvas only: section headings in a 600 weight above 14px rows); read them from the variant's text layers before implementing.
 
+### Editor tokens
+
+The Editor pages run on the UI Designer's own surface (`--ui-designer-panel-bg` `#242129`, Figma Charcoal `#25212A`) and on the Creator Hub's AI panel. Literals read this run and where they land:
+
+| Figma swatch | Value | Inspector (UI Designer) | Creator Hub | Status |
+| --- | --- | --- | --- | --- |
+| Neutrals/Charcoal | `#25212A` | `--ui-designer-panel-bg` (`#242129`, deviation within 1/255) | AI panel `palette.background.paper` (value not verified) | match / documented deviation |
+| Neutrals/Onix | `#35333B` | `--ui-designer-control-bg` | — | match |
+| Neutrals/Onix Dark 1 | `#2D2A33` | missing | `--title-bar-button` | missing in inspector — fills `InputAction`, the 2D `Viewport` and the `ChatInput` container |
+| Neutrals/Pale Black | `#43404A` | `--gray-0` | `--dark-gray` | match — `InputAction` hover fill |
+| Neutrals/Cloudy Sky | `#716B7C` | `--ui-designer-glyph`, `--ui-designer-text-muted` is Silver | `--dropdown` | match — idle glyphs and the `Position` / `Size` icons |
+| System/Blue Dark 2 | `#244B7D` | `--selected-item` override in `UIDesigner.css` | `--ai-session-selected` | match, no named inspector token |
+| System/Blue Dark 3 | `#243852` | missing | `--ai-session-selected-hover` | missing in inspector — the tree row, selected-hover and `On` + hover toggle fill |
+| White 5 / 10 / 20 | `rgba(255,255,255,.05 / .1 / .2)` | `--ui-designer-control-empty-bg` / `--ui-designer-control-selected-bg` · `--ui-designer-control-border` / `--ui-designer-control-border-strong` | — | match in value; **hover is White 5 in Figma and `--ui-designer-control-hover-bg` is 6%** — drift |
+| System/Orange | `#FE9C2A` | `--warning-main` `#ffc95b` | `--ai-warning-bg` `rgba(244,130,33,.16)` | drift (Figma banner is `#FE9C2A` at 10%) |
+| System/Blue · Rarities/Epic Light | `#2196F3` · `#81E1FF` | missing | ui2 `palette.info.main` | missing — pinned-edge colours in `ConstraintsIcons` |
+| Brand/Lavender | `#C640CD` | — | `--lavender` | demo colour in `ColourPanel` and `AspectRatio/Colour`, not a UI token |
+| Figma chrome | `#8A38F5` | — | — | the dashed frame around every set — never a token |
+
+PROPOSED (names are the user's call, nothing changed): an inspector token for Blue Dark 3 `#243852`, one for Onix Dark 1 `#2D2A33`, and a decision on the hover fill (6% in code, 5% in Figma).
+
+### ChatInput (AI Assistant)
+
+Page `21206:31202`. The page is a screen plus a component row, not a library: board `Frame 3112` `21206:31203` holds the title "AI Chat", `<AIAssistantPanel>` with the `AiChat` instance `21206:31298` (Fixed 342 × 1028, vertical, fill Charcoal; a component with a `Messages` = Default property) and `<Components>` `21206:31533` with `Menu` `21206:31885` (chat history), `Header`, `TitleBar` and the `ChatInput` set. Set [`21206:31455`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=21206-31455), 2 variants (`Property 1` = Default `21206:31453` / Input `21206:31454`), 701 × 110, dashed `#8A38F5` chrome. Both are 310 × 70 with a 1px White 10 top rule; `Container` is Fixed 310 × Hug 40, 10px radius, fill Onix Dark 1, 1px Snow border, padding 6 / 10 / 6 / 10 (Input: right 8), gap 187; the text is `H8 Regular` 12 / 100%; the send button is `Button-Contained-Icon` 26 × 26, 100px radius, padding 12, Primary; the `Selection` row (310 × 30, 12px radius, padding 9, gap 6) carries `highlight_alt` + "Selection: Player" `Inter` 400 10 White 60 + `Close-Button` (Search Bar). Parts of the panel, all instances and nothing new to spec: `TitleBar` (Fill 342 × 36, Shadow, padding 10, gap 10, "AI Assistant" 12 / 600 uppercase Snow, `Open` + `Close-Button`), `Header` (Fill 342 × 39, padding 6 / 10, gap 10, 1px White 10 bottom rule; two dropdowns Fill 156 × 26, 6px radius, padding 6 / 8, Onix, "New Chat" `H8` Gray), the intro message (310 × 60, `H8` `#FFFFFF`), the usage card (322 wide, 12px radius, padding 20, gap 16, Onix; "About AI usage" `H7 Semi` 14 + body `H8` + a `Button-Contained-Text` Secondary 72 × 32, 8px radius, White 10) and the outdated-CLI banner (322 × Hug 65, 12px radius, padding 10 / 20, gap 16, `#FE9C2A` at 10%, `ErrorOutline` + `H8` text in System/Orange). Code: Creator Hub `components/AiChatPanel` (`component.styled.ts` `Panel`, `PanelHeader`, `IntroMessage`, `ErrorRow`, `Composer`, `AttachmentChip`; `ChatView.tsx`) and `AiChatWindow` (the detached window); inspector none.
+
+| Variant | State | Container | Text | Send button | Contrast (on `#25212A`) | A11y |
+| --- | --- | --- | --- | --- | --- | --- |
+| Default | empty | Onix Dark 1, 1px Snow border | "Ask Assistant" Silver | Primary 26 × 26 | border 15.39:1; placeholder 5.20:1 on the container; send glyph Snow on Primary 3.55:1 (non-text ≥ 3:1) | `<textarea aria-label="Ask Assistant">`; send `<button aria-label="Send">`, disabled while empty ✱ |
+| Input | typed | same, padding R 8 | typed text Snow | same | text 13.73:1; Primary vs container 3.86:1 | `Enter` sends, `Shift+Enter` newline ✱ |
+| any | `Selection` row present | — | "Selection: Player" White 60 | — | chip text 6.54:1; Onix vs panel 1.27:1 | the chip is removable by `Close-Button` named "Remove selection" ✱ |
+| any | ✱ focus / disabled / sending | — | — | — | ring `--ui-designer-control-accent` 8.15:1 on Charcoal (the Snow border is a rest state) | not drawn; the page shows no streaming or error state either |
+
+Messages are `#FFFFFF` (not Snow) at 15.79:1; the usage card body is 12.44:1 on Onix; the banner text is 6.27:1 on its tint, and the tint is 1.20:1 against the panel — the icon and the words carry the warning. The hex typed into the page copy ("Claude CLI v…") is placeholder, not spec.
+
+### UI Editor (page lead)
+
+Page `21028:15887`, two boards. **Panels** `21028:34519` holds the screens: `LeftPanel2D` `21028:34521` (Fixed 312 × Hug 712, vertical, Charcoal, padding-bottom 100), `RightPanel2D` `21028:34544` (Hug 4068 × 1742, 24px radius, padding 20, gap 20: about fourteen right-panel states laid side by side) and the two sets below. **Components** `21028:30543` holds eight sub-boards, each 24px radius, fill Black 40, 1px White 20: `Components` `21028:15991` (956 × 958), `UI Editor Buttons` `21028:16485` (710 × 407), `Icons` `21028:16123` (1477 × 448), `PropertiesSections` `21028:30544` (2648 × 781), `PropertiesSubsections` `21028:30545`, `Variables&EventsMenus` `21032:43793`, `ColourPanel` `21032:44145` (621 × 513) and `InputActions` `21301:5375` (1662 × 336). Every control below maps to the inspector's UI Designer (`components/UIDesigner`; see [`UIDesigner.md`](UIDesigner.md)) — mapped by directory, not line by line. Existing specs reused, never duplicated: `ToolbarButton`, `IconContainedToggle`, `Menu`, `Menu-Entry`, `Close-Button`, `Switch`, `CheckboxFill`, `Tooltip`. Each state fill is read from the variant's own panel; child glyph and label colours come from the "N Selected" aggregate or the canvas (±2px) and say so.
+
+### HierarchySections (UI Editor — Components)
+
+Set [`21078:34715`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=21078-34715), 3 variants (`HoverContainer` × `HoverPlus`). Fixed 312 × 28, horizontal, space-between, padding 4 / 10, 1px White 10 top and bottom; label "GUIS" and a `+` chip. Code: `LeftPanel/NodeTree.tsx` section header — inspector tokens `--ui-designer-control-border`, `--ui-designer-control-empty-bg`.
+
+| Variant | State | Fill | Border | Contrast (on `#242129`) | A11y |
+| --- | --- | --- | --- | --- | --- |
+| Off / Off (`21028:16106`) | default | none | White 10 top + bottom | Snow label 15.45:1 | section header, `<button aria-expanded>` ✱ |
+| On / Off (`21078:34716`) | row hover | `#FFFFFF` 5% | same | fill vs panel 1.16:1; Snow on it 13.37:1 | hover is a tint, not the only cue ✱ |
+| On / On (`21083:34730`) | row hover + plus hover | `#FFFFFF` 5%; the `+` gets a lifted chip (canvas) | same | — | `+` named "Add GUI" ✱, ≥ 24px hit target needs a larger box than the 28px row's glyph |
+| any | ✱ focus / press / disabled | — | — | ring `--ui-designer-control-accent` | not drawn |
+
+### PropertiesSections (UI Editor — Components)
+
+Set [`21028:16116`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=21028-16116), 2 variants (`Hover` Off `21028:16117` / On `21028:16120`). Fixed 70 × 28, padding 2, gap 10, 1px White 10 top and bottom; chevron + "Text". Code: `RightPanel/PropertyPanel/PropertyPanel.tsx` section titles.
+
+| Variant | Fill | Contrast | A11y |
+| --- | --- | --- | --- |
+| Hover = Off | none | Snow on panel 15.45:1 | `<button aria-expanded>` per section |
+| Hover = On | `#FFFFFF` 5% | fill vs panel 1.16:1; Snow 13.37:1 | ✱ focus ring as `HierarchySections` |
+
+### TabBar (UI Editor — Components)
+
+Set [`21028:16109`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=21028-16109), 2 variants (`Property 1` = Hierarchy `21028:16113`, the 2D | 3D pair / Properties `21028:16110`, the PROPERTIES | LOGIC pair). Fixed 312 × 36, horizontal, fill Shadow `#161518`, 1px White 10 bottom rule; the active tab carries an underline (canvas). Code: `Toolbar/UIDesignerToolbar.tsx` mode tabs and the `RightPanel` tab strip (`role="tablist"`).
+
+| Variant | State | Fill | Contrast | A11y |
+| --- | --- | --- | --- | --- |
+| Hierarchy / Properties | active tab | Shadow | Snow label 17.73:1; Shadow vs panel 1.15:1 — the underline is the cue (colour not panel-read) | `role="tab" aria-selected`; arrow keys move |
+| both | inactive tab | Shadow | Silver 6.71:1 (canvas colour) | — |
+| both | ✱ hover / focus | — | — | not drawn |
+
+### GUI (UI Editor — Components)
+
+Set [`21085:34793`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=21085-34793), 3 variants (`Property 1` = Default `21085:34794` / Hover `21085:34941` / Selected `21085:34947`). Fill 223 × Fixed 30, horizontal, gap 10, padding L / R 10; glyph + "GUI". Code: `LeftPanel/CodeRootsList.tsx` row.
+
+| Variant | Padding T / B | Fill | Contrast (on `#242129`) | A11y |
+| --- | --- | --- | --- | --- |
+| Default | 4 | none | Snow 15.45:1 | `role="treeitem"` ✱ |
+| Hover | 3 | `#FFFFFF` 5% | Snow 13.37:1 | — |
+| Selected | 3 | White 10 | fill vs panel 1.36:1; Snow 11.40:1 | `aria-selected="true"`; **Selected here is White 10, `NodeTypeHierarchy` selected is Blue Dark 3 — the two tree rows disagree** |
+
+### NodeTypeHierarchy (UI Editor — Components)
+
+Set [`21028:16022`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=21028-16022), 9 variants (`Property 1`): Default `16027`, Hover `16073`, Selected `16094`, SelectedHover `16099`, InvisibleDefault `16031`, InvisibleHover `16038`, InvisibleSelected `16066`, InvisibleSelectedHover `16059`, PropertiesHeader `16023`. Fill 223 × Fixed 30 (PropertiesHeader Fixed 20), horizontal, gap 10, padding L / R 10; caret + node glyph + "Image"; Hover and Selected add lock and eye glyphs (canvas). Code: `LeftPanel/NodeTree.tsx` (+ `NodeTree.css`), `shared/tree-model.ts`.
+
+| Variant | Padding T / B | Fill | Contrast (on `#242129`) | A11y |
+| --- | --- | --- | --- | --- |
+| Default / InvisibleDefault | 4 | none | Snow 15.45:1; the Invisible label is dimmed (opacity not panel-read) | `role="treeitem" aria-expanded` |
+| Hover / InvisibleHover | 3 | `#FFFFFF` 5% | 13.37:1 | lock + eye appear on hover — keyboard users need them on focus ✱ |
+| Selected / InvisibleSelected | 3 | Blue Dark 3 `#243852` | Snow 11.61:1; fill vs panel 1.33:1 — below 3:1, the label weight and the glyphs carry it | `aria-selected="true"` |
+| SelectedHover / InvisibleSelectedHover | 3 | Blue Dark 3 `#243852` | **identical to Selected — no visible hover on a selected row** | Figma defect candidate |
+| PropertiesHeader | — (Fixed 20; padding R 16 L 10, gap 8) | none | column header over the tree | `role="columnheader"` ✱ |
+| any | ✱ focus / press / disabled | — | ring `--ui-designer-control-accent` | not drawn |
+
+### Input (UI Editor — Components)
+
+Set [`21028:16003`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=21028-16003), 5 variants (`Property 1`): Single `16016`, SingleBlocked `16019`, Dropdown `16012`, Icon `16004`, IconBlocked `16008`. All Fixed 128 × 26, horizontal, gap 8, 6px radius, fill Onix `#35333B`, padding T / B 6. Padding L / R: Single 8 / 24, SingleBlocked 8 / 4, Dropdown 8 / 8, Icon 8 / 24, IconBlocked 8 / 8; the value reads "100" with a scrub glyph, a leading glyph (Icon) or a chevron (Dropdown); Blocked values are dimmer (canvas). Code: `RightPanel/PropertyPanel` fields (`FieldRow`, `LengthVecField`, `BoxModelField`) over `--ui-designer-control-bg`, `--ui-designer-radius-field`, `--ui-designer-text-value`.
+
+| Variant | State | Fill | Contrast (on Onix) | A11y |
+| --- | --- | --- | --- | --- |
+| Single / Icon | editable | Onix | value Gray 7.90:1; Onix vs panel 1.27:1 | `<input inputmode="numeric" aria-label="<field>">`; the unit glyph is `aria-hidden` |
+| SingleBlocked / IconBlocked | blocked (value is bound or inherited) | Onix | dimmed value (colour not panel-read) | `aria-disabled` + a bound-value tooltip ✱; `Blocked` is a state, not a mode |
+| Dropdown | opens a list | Onix | chevron Silver 4.59:1 | `role="combobox"` |
+| any | ✱ focus / hover / error | — | ring `--ui-designer-control-accent` | not drawn |
+
+### ToggleTabs (UI Editor — Components)
+
+Component `21028:16000`, one definition with two `Slot` instances (`21028:16001`, `21028:16002`, each with a `Slot` = Default property). Slot: Fill 142 × Fill 27, 6px radius, fill Charcoal `#25212A`, 1px Onix border — an empty segmented-control frame that the `ToggleTab` buttons drop into. Code: `PropertyPanel/FlowField`, `ResizeField` (segmented groups). Border Onix vs Charcoal 1.27:1; the frame is a container, the child cell carries the state.
+
+### Subtitle (UI Editor — Components)
+
+Component `21028:15992` with `Text` `21028:15993` (Fill 93 × Hug 15, gap 6: checkbox + "Text" + info glyph, canvas) and `DeleteCTA` `21028:15998` (26 × 16). Code: `BindableField` label row. Label `H8` colours were not read singly; `DeleteCTA` states are in the next section.
+
+### DeleteCTA (UI Editor Buttons)
+
+Set [`21107:37893`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=21107-37893), 2 variants (`Hover` Yes `37894` / No `37892`). 16 × 16 glyph; Hover = Yes adds a 4px radius White 10 fill. Code: delete affordances in `PropertyPanel` / `LogicPanel` rows; hover fill `--ui-designer-control-selected-bg`.
+
+| Variant | Fill | Contrast | A11y |
+| --- | --- | --- | --- |
+| Hover = No | none | glyph colour not panel-read (canvas Silver family) | `<button aria-label="Delete <item>">` |
+| Hover = Yes | White 10, 4px radius | Snow on it 11.40:1 | 16px is **below the 24px target** — pad the hit area ✱ |
+
+### HelpCTA (UI Editor Buttons)
+
+Set [`21107:37499`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=21107-37499), 2 variants (`Hover` Yes `37500` / No `37498`). 12 × 12 circle, 100px radius, 1px border: No = Cloudy Sky `#716B7C`, Yes = Snow `#FCFCFC`; glyph "?". Code: the `?` tooltip anchors beside field labels in `PropertyPanel`.
+
+| Variant | Border | Contrast (on `#242129`) | A11y |
+| --- | --- | --- | --- |
+| Hover = No | Cloudy Sky | 3.09:1 — passes 3:1 non-text barely | `<button aria-label="Help: <field>">`, tooltip text via `aria-describedby` |
+| Hover = Yes | Snow | 15.45:1 | 12px is far below 24px — hit box must be larger ✱ |
+
+### LockLayerToggle (UI Editor Buttons)
+
+Set [`21068:32238`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=21068-32238), 6 variants (`Parent` × `Active` × `Hover`): No/Off/No `21086:34988`, No/On/No `21086:34979`, Yes/Off/No `21068:32241`, Yes/Off/Yes `21107:37482`, Yes/On/Yes `21107:37478`, Yes/On/No `21068:32239`. `Parent` = No is 14 × 14 (a small dot-sized state), `Parent` = Yes is 16 × 16; Hover = Yes adds a 4px radius White 10 fill; Active toggles the closed / open lock glyph (canvas). No Parent = No / Hover = Yes variant exists. Code: lock affordance in `LeftPanel/NodeTree.tsx`.
+
+| Parent | Active | Hover | Size | Fill | Contrast / A11y |
+| --- | --- | --- | --- | --- | --- |
+| No | Off / On | No | 14 × 14 | none | inherited lock, display only; `aria-hidden` ✱ |
+| Yes | Off | No / Yes | 16 × 16 | none / White 10 | Cloudy Sky glyph 3.09:1, **2.28:1 on the White 10 hover fill** unless the glyph brightens (not panel-read) |
+| Yes | On | No / Yes | 16 × 16 | none / White 10 | `aria-pressed="true"`, name "Lock <node>" |
+| No | any | Yes | — | ✱ not drawn | — |
+
+### VisibilityToggle (UI Editor Buttons)
+
+Set [`21028:16532`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=21028-16532), 4 variants (`Visible` × `Hover`): No/Yes `21107:37466`, No/No `21028:16535`, Yes/Yes `21107:37461`, Yes/No `21028:16533`. 16 × 16, 4px radius, Hover = Yes adds White 10; Visible = No swaps the eye for an eye-off glyph. Code: eye affordance in `NodeTree.tsx`.
+
+| Visible | Hover | Fill | Contrast / A11y |
+| --- | --- | --- | --- |
+| Yes | No / Yes | none / White 10 | `aria-pressed="false"`, name "Hide <node>"; idle glyph on White 10 2.28:1 — brighten the glyph on hover ✱ |
+| No | No / Yes | none / White 10 | `aria-pressed="true"`, name "Show <node>" |
+
+### AddVariant (UI Editor Buttons)
+
+Set [`21028:16516`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=21028-16516), 2 variants (`Hover` No `16519` / Yes `16517`). 18 × 18 diamond-plus glyph; no fill in either; hover changes only the glyph colour (canvas). Code: `RightPanel/DiamondPlus.tsx` and `BindIcon.tsx`.
+
+| Variant | Fill | Contrast | A11y |
+| --- | --- | --- | --- |
+| Hover = No | none | glyph not panel-read | `<button aria-label="Add variant">`; 18px is below the 24px target ✱ |
+| Hover = Yes | none | glyph not panel-read | — |
+
+### ViewModeToggle (UI Editor Buttons)
+
+Set [`21028:16511`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=21028-16511), 4 variants (`Selected` × `Hover`): Off/No `16512`, Off/Yes `21096:37105`, On/No `16514`, On/Yes `21096:37108`. 16 × 16, 4px radius. Code: the Desktop / Mobile `Devices` toggle in `PropertyPanel` (`useRestorePersistedMode` is a different control).
+
+| Selected | Hover | Fill | Contrast (on `#242129`) | A11y |
+| --- | --- | --- | --- | --- |
+| Off | No | none | glyph not panel-read | `role="radio"` / `aria-pressed` |
+| Off | Yes | White 10 | Snow 11.40:1 | — |
+| On | No | Blue Dark 2 `#244B7D` | fill vs panel 1.79:1; Snow glyph 8.61:1 | `aria-pressed="true"` |
+| On | Yes | Blue Dark 3 `#243852` | fill vs panel 1.33:1; Snow 11.61:1 | **hover on a selected toggle is darker than rest** — as `ToolbarButton` |
+
+### ToggleTab (UI Editor Buttons)
+
+Set [`21028:16506`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=21028-16506), 4 variants (`Selected` × `Hover`): Off/No `16507`, Off/Yes `21096:37090`, On/No `16509`, On/Yes `21096:37093`. Fixed 39 × 26; Off variants have a 1px Onix `#35333B` border; Off + hover adds White 10; On fills Blue Dark 2 (rest) / Blue Dark 3 (hover). Code: segmented groups in `PropertyPanel` (`FlowField`, `ResizeField`, `TextAlignField`).
+
+| Selected | Hover | Fill | Border | Contrast | A11y |
+| --- | --- | --- | --- | --- | --- |
+| Off | No | none | 1px Onix | border vs panel 1.27:1 | `role="radio"` in a `radiogroup` |
+| Off | Yes | White 10 | 1px Onix | Snow 11.40:1 | — |
+| On | No | `#244B7D` | not read | Snow 8.61:1 | `aria-checked="true"` |
+| On | Yes | `#243852` | not read | Snow 11.61:1; darker than rest | as `ViewModeToggle` |
+
+### WrapToggle (UI Editor Buttons)
+
+Set [`21028:16499`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=21028-16499), 5 variants (`Selected` × `Hover` × `Blocked`): Off/No/No `16500`, Off/Yes/No `21096:37082`, On/No/No `16502`, On/Yes/No `21096:37086`, Off/No/Yes `16504`. 26 × 26, 6px radius; fills as `ScaleToggle` (none, White 10, Blue Dark 2, Blue Dark 3); Blocked = no fill, dimmed glyph. Code: wrap control in `FlowField`.
+
+| Variant | Fill | A11y |
+| --- | --- | --- |
+| Off / No / No | none | `aria-pressed="false"`, name "Wrap" |
+| Off / Yes / No | White 10 | — |
+| On / No / No · On / Yes / No | Blue Dark 2 · Blue Dark 3 | `aria-pressed="true"`; Snow 8.61:1 · 11.61:1 |
+| Off / No / Yes | none, dimmed glyph | `aria-disabled="true"` with the reason (no flex flow) ✱; Blocked has no hover / selected variant — **✱ proposal: Blocked × Selected is not drawn** |
+
+### ScaleToggle (UI Editor Buttons)
+
+Set [`21028:16486`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=21028-16486), 4 variants (`Selected` × `Hover`): Off/No `16487`, Off/Yes `21096:37036`, On/No `16492`, On/Yes `21096:37041`. 26 × 26, 6px radius; fills none / White 10 / `#244B7D` / `#243852`. Code: `ResizeField` (the scale-with-parent toggle).
+
+| Selected | Hover    | Fill                      | Contrast / A11y                               |
+| -------- | -------- | ------------------------- | --------------------------------------------- |
+| Off      | No / Yes | none / White 10           | `aria-pressed="false"`, name "Scale children" |
+| On       | No / Yes | Blue Dark 2 / Blue Dark 3 | Snow 8.61:1 / 11.61:1; hover darker than rest |
+
+### Properties (UI Editor — PropertiesSections)
+
+Set [`21028:16539`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=21028-16539), 1 variant (`Default` `21028:16540`): the assembled right panel as seven section frames — `Layout` `16566`, `Style` `16605`, `Text` `16621`, `Input` `16664`, `Dropdown` `16730`, `MouseEvents` `16781`, `Logic` `16787` — plus a `Variables` column; three slot properties (`Input`, `Input2`, `Input3`) = Default. Each section is built from the Components and PropertiesSubsections sets here. Code: `RightPanel/PropertyPanel/PropertyPanel.tsx` with `field-configs.groups.ts` (section grouping) and `LogicPanel`. No state of its own.
+
+### AddAction (UI Editor — PropertiesSubsections)
+
+Set `21281:45569` ([link](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=21281-45569)), 2 variants (`AddAction`, `NoMoreActions`). Colours in the aggregate: Gray `#CFCDD4`, White 10, Silver `#A09BA8`. An "ADD ACTION" row with a `+` and a "No more actions to add" empty line. Code: `LogicPanel/CodeCallbacksPanel.tsx`. A11y: the `+` is `<button aria-label="Add action">`; the empty line is plain text.
+
+### LogicInputs (UI Editor — PropertiesSubsections)
+
+Set [`21032:44190`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=21032-44190), 4 variants (`Property 1`): Empty `44189` (95 × 15 text), Variables `44191`, Inputs `44335` (both Fill 290 × Hug 26, 8px radius, gap 6), Events `44353` (vertical, Fill 290 × Hug 72, gap 2). Aggregate colours: Gray, Silver, Onix, Cloudy Sky. Code: `LogicPanel/CodeVariablesPanel.tsx`, `CodePropsPanel.tsx`.
+
+### AddLogicInputs (UI Editor — PropertiesSubsections)
+
+Set [`21028:16940`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=21028-16940), 3 variants (`Variants` `16941`, `Inputs` `16946`, `Events` `16950`). Fixed 292 × 26 (Variants Hug 26), horizontal, 8px radius, padding L / R 10, gap 6; Name / type (`string`) / Value fields. Aggregate colours: Onix, Silver, Cloudy Sky, Gray. Code: `LogicPanel/CodeVariablesPanel.tsx`, `VariablePicker/`.
+
+### EventTag (UI Editor — PropertiesSubsections)
+
+Set [`21028:16933`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=21028-16933), 2 variants (`Default` `16937`, `Hover` `16934`). Fixed 186 × 22 pill, 100px radius, padding 6 / 4 / 6 / 8, gap 8, fill White 10 in both; a handler name chip with a remove `×`. Hover differs in glyph colour (aggregate shows Snow and a White 5 tint). Code: `PropertyPanel/CallbackField`.
+
+| Variant | Fill | Contrast (on `#242129`) | A11y |
+| --- | --- | --- | --- |
+| Default | White 10 | Snow 11.40:1 on the chip; chip vs panel 1.36:1 | `<span>` with a `<button aria-label="Remove <handler>">` |
+| Hover | White 10 | hover cue is the glyph only | 22px chip, `×` hit box below 24px ✱ |
+
+### EventHandler (UI Editor — PropertiesSubsections)
+
+Set [`21028:16916`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=21028-16916), 4 variants (`Default` `16917`, `DefaultHover` `16922`, `Defined` `16927`, `DefinedHover` `16930`). Fixed 292 × Hug 22, horizontal, padding L / R 10, gap 6; "Title" + a "Bind an event handler" field (Default) or an `EventTag` chip (Defined). Aggregate colours: Gray, Snow, White 10, Silver, Cloudy Sky +2. Code: `PropertyPanel/CallbackField`, `edit-event.ts`.
+
+| Variant | Content | A11y |
+| --- | --- | --- |
+| Default / DefaultHover | empty bind field (placeholder Silver) | `<input aria-label="<event> handler">`; hover changes field border / fill — values not panel-read |
+| Defined / DefinedHover | `EventTag` chip | chip removal returns to Default |
+
+### Border (UI Editor — PropertiesSubsections)
+
+Set [`21028:16901`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=21028-16901), 2 variants (`Off` `16902`: Fixed 292 × Hug 20, horizontal, padding R 14 L 10, gap 10 — a header with a `+`; `On` `16905`: vertical, Fixed 290 × Hug 104, padding L / R 10, gap 10 — colour field + weight). Aggregate colours: Cloudy Sky, Gray, Onix, Silver, White 20 +1. Code: `PropertyPanel/BoxModelField`, `FillField` (colour row).
+
+### Fill (UI Editor — PropertiesSubsections)
+
+Set [`21028:16839`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=21028-16839), 4 variants (`Property 1` = Paint `16840`, Image `16857`, Avatar `16877`, None `16890`). Fill 290, padding L / R 10: Paint vertical Hug 52 gap 6; Image vertical Hug 111 gap 12 (adds scale type and image source); Avatar Hug 52 gap 6 (user id); None horizontal Hug 20 gap 10. Aggregate colours: Onix `#35333B`, Silver, Cloudy Sky, Gray, Charcoal +5. **No video variant — the react-ecs authoring type has none** (see CLAUDE.md). Code: `PropertyPanel/FillField` (Colour / Image / Avatar).
+
+### Devices (UI Editor — PropertiesSubsections)
+
+Set [`21028:16830`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=21028-16830), 2 variants (`Off` `16836`: Fixed 292 × Hug 20, horizontal, padding R 14 L 10, gap 10; `On` `16831`: vertical, Fixed 292 × Hug 45, padding L / R 10, gap 4 — a Desktop / Mobile `ViewModeToggle` pair). Aggregate colours: Cloudy Sky, Silver, Gray, Snow, White +1. Code: the device-variant section of `PropertyPanel` (platform variants are a recognised construct — see CLAUDE.md).
+
+### Interactions (UI Editor — PropertiesSubsections)
+
+Set [`21028:16819`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=21028-16819), 2 variants (`Off` `16827`, `On` `16820`: Fixed 292 × Hug 45, vertical, gap 4, a Default / Hover / Pressed / Selected chip row with the active chip in Blue Dark 3 `#243852`). Aggregate colours: Silver, Cloudy Sky, Gray, Snow, Blue Dark 3. Code: the `useInteraction({ base, hover, press, active })` construct (`code/interaction-convention.ts`) through `PropertyPanel`.
+
+### MinMaxSize (UI Editor — PropertiesSubsections)
+
+Set [`21028:16810`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=21028-16810), 2 variants (`Off` `16816`, `On` `16811`: Fixed 292 × Hug 47, vertical, gap 6, a W / H `Input` pair). Aggregate colours: Cloudy Sky, Gray, Silver, Onix. Code: `PropertyPanel/LengthVecField`, `BoxModelField`.
+
+### LogicError and Header (UI Editor — PropertiesSubsections)
+
+Not sets. `LogicError` `21124:5300` is an `ErrorOutline` glyph + a one-line message, both `#FF2D55` Primary — **Primary on `#242129` is 4.35:1, below 4.5:1 for 12px text**; keep a distinct error token ✱ (the Creator Hub error red is `#FB3B3B`, 5.04:1). `Header` `21067:22621` is a frame of three instances (`NodeTypeHierarchy` PropertiesHeader, `Toggles`, `Dropdown` `21180:30481`). Code: `LogicPanel` error text; `PropertyPanel` header.
+
+### ConstraintsIcons — 25 (UI Editor — Icons)
+
+Set [`21028:16247`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=21028-16247), 25 variants (pin edges and scaling: `Scale`, `L`, `R`, `C`, `L+R`, `T`, `B`, `T+B` with `ScaleVertically` / `ScaleHorizontally` suffixes, combinations such as `L+T`, `L+T+B`, `L+C`). 16 × 16 cells on the Icons board. The pinned edge is System/Blue `#2196F3`; the rest White, White 40 and White 20, with Rarities/Epic Light `#81E1FF` in the aggregate. Code: `PropertyPanel/AnchorPresetField` and `icons/`. A second set [`21028:16124`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=21028-16124) `ConstraintsIcons` has 2 variants (`L+R`, `T+B`, white) — same name, different set.
+
+### Icons — layout and box model (UI Editor — Icons)
+
+| Set | Id | Variants | Glyph colour |
+| --- | --- | --- | --- |
+| LayoutIcons | `21028:16226` | 5 (`Free`, `ColumnDown`, `ColumnUp`, `RowRight`, `RowLeft`) | White |
+| MarginsIcons | `21028:16135` | 4 (`Bottom`, `Top`, `Right`, `Left`) | White |
+| PaddingIcons | `21028:16201` | 4 (`Bottom`, `Top`, `Right`, `Left`) | White |
+| Spacing | `21028:16192` | 2 (`Vertical`, `Horizontal`) | White |
+| TextAlign | `21028:16163` | 6 (`Middle`, `Bottom`, `Top`, `Left`, `Center`, `Right`) | White |
+| Position | `21028:16219` | 2 (`Y`, `X`) | Cloudy Sky `#716B7C` |
+| Size | `21028:16214` | 2 (`Height`, `Width`) | Cloudy Sky |
+
+Each set is its own `###`-sized unit in Figma; they share one spec: 16 × 16 cells, filled vector glyphs, `fill="currentColor"`, no states. White on `#242129` 15.45:1; Cloudy Sky 3.09:1. Not sets: `AspectRatio/Colour` `21028:16224` (one `Rectangle` 16 × 16, 4px radius, 1px White 20, Lavender `#C640CD`) and `LayoutIcons/ViewMode/Align` `21028:16435` (three frames of nine align glyphs; Snow, White 40, White 0). Code: `PropertyPanel/icons/`, `Canvas/toolbar-icons.tsx`, `RightPanel/PropertyPanel/alignment-presets.ts` — the Figma names above are not the repo's file names. The icon cells carry no `aria-label`; the control around each names it.
+
+### VariableMenu (UI Editor — Variables&EventsMenus)
+
+Set [`21032:43818`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=21032-43818), 3 variants (`Property 1`): NewVariable `43819` (Hug 202 × Hug 90), NewAction `43825` (Hug 202 × Hug 163), AddNewAction `43834` (Hug 202 × Hug 235). Vertical, 1px White 10 border; aggregate colours Snow, White 10, Silver, Onix, White +1. A popover of `Menu-Entry` rows with a name field and a danger action (canvas). Code: `LogicPanel/VariablePicker/`. Reuse `Menu` / `Menu-Entry` for the rows; spec only the three compositions.
+
+### EventsMenu (UI Editor — Variables&EventsMenus)
+
+Set [`21032:43794`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=21032-43794), 3 variants (`Property 1`): NewVariable `43795` (Hug 202 × 90), NewAction `43801` (Hug 202 × 139), AddNewAction `43809` (Hug 202 × 211). Same anatomy as `VariableMenu`, shorter (no extra row). Code: `LogicPanel/CodeCallbacksPanel.tsx`. A11y for both: `role="menu"`, the name field is auto-focused, Escape closes and returns focus to the opener.
+
+### Slider (UI Editor — ColourPanel)
+
+Set [`21032:44146`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=21032-44146), 2 variants (`Property 1` = Colour `44147` / Transparency `44150`). Fixed 170 × 20, 100px radius; Colour is the rainbow track, Transparency the checkered alpha ramp tinted to the current colour (canvas); the thumb is a white-ringed disc. `HUE` `21032:44154` is the 170 × 170, 6px-radius saturation / value square (linear gradient white → black over the hue); `ColourPanel` `21032:44156` assembles them: Fixed 193 × 296, 12px radius, padding 12 / 11, gap 12, fill Onix, 1px White 10, shadow `0 4px 10px #000 25%`, and a hex row ("C640CD" placeholder, "100%"). Code: the colour popover of `PropertyPanel/FillField`. A11y: sliders are `role="slider"` with `aria-valuemin/max/now` and arrow-key steps ✱; the square is a 2D slider with a hex field as the keyboard path. Onix vs panel 1.27:1 — the 1px White 10 border and the shadow carry the popover edge.
+
+### InputAction (UI Editor — InputActions)
+
+Set [`21301:5373`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=21301-5373), 4 variants (`InputAction`): Default `5372`, Hover `5371`, Hiden `5370`, HidenHover `5369` (sic — "Hiden"). All Fixed 348 × Hug 96, vertical, 6px radius, 1px top border, padding 4 / 10 / 12 / 10, gap 2: a drag handle, the action name, a "Main" radio, an eye toggle (active tint in the Hiden variants) and a "Custom Icon" dropdown with link and folder buttons. Code: `MobileHud/` (the MobileHUD input-action rows) in `components/UIDesigner`.
+
+| Variant | State | Fill | Contrast (on `#242129`) | A11y |
+| --- | --- | --- | --- | --- |
+| Default | rest | Onix Dark 1 `#2D2A33` | fill vs panel 1.13:1; Gray 8.95:1; Silver 5.20:1 | row is a `role="group"` named by the action |
+| Hover | pointer over | Pale Black `#43404A` | fill vs panel 1.56:1; Gray 6.44:1; **Silver 3.74:1 — fails 4.5:1 for 12px text** | hover must not be the only cue ✱ |
+| Hiden | hidden action | Onix Dark 1 | as Default | eye `aria-pressed` |
+| HidenHover | hidden + hover | Pale Black | as Hover | — |
+| any | ✱ focus / disabled / dragging | — | ring `--ui-designer-control-accent` | not drawn |
+
+### BottomPanel2D (UI Editor — Panels)
+
+Set [`21221:41852`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=21221-41852), 2 variants (`Blocked` `21221:41853`, `Default` `21138:18798`), 1960 × 635, dashed `#8A38F5` chrome; the logic / code panel docked under the canvas. Aggregate colours: Gray, White 10, White 20, Charcoal, Silver +3. Code: `RightPanel/LogicPanel/` (`CodeCallbacksPanel.css`, `CodeVariablesPanel.css`) — the code has no bottom dock today (absence is not removal). Fill and border per variant were not panel-read.
+
+### Tooltip (UI Editor — Panels)
+
+Component `21151:7716` (`Property 1` = Top; the frame lists one variant; direction variants are not drawn): Hug 340 × Hug 87.77, vertical; `Container` `21551:3941` Onix `#35333B` with Snow text and a `Peak` `21551:3943`; shadow `0 2px 6px #000 25%`. This is a wider, shadowed copy of the shared Tooltip (Tooltips) — **a second tooltip spec: confirm with design whether the UI Editor tooltip replaces it** ✱. Snow on Onix 12.13:1. Code: help tooltips in `PropertyPanel`; the inspector has no shared tooltip component listed in this doc.
+
+### Viewport (Viewport)
+
+Page `20506:34918`; board `Frame 1` `21221:39035` (title "Viewport" `21221:39108`) holding one set [`21032:43255`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=21032-43255), 2 variants (`Property 1` = 2D `21032:43254` / 3D `21032:43256`), dashed chrome, 1332 × 2100. Both are Fixed 1292 × 1020, vertical, with a nested `Viewport` Default instance; 2D fills Onix Dark 1 `#2D2A33`; 3D (gap 954) holds a pasted scene screenshot — a fixture, never spec. Overlaid are the viewport `Toolbar` (next page) and bottom-right zoom / camera controls ("100%"); in 3D a camera menu lists Free, Player and Insert Camera Position (canvas reading). Aggregate colours: Onix, Shadow, Gray, Snow, Silver +8. Code: inspector `Canvas/` (2D, `Canvas.tsx`) and the Babylon / Bevy viewport; Creator Hub none (it iframes the inspector).
+
+| Variant | Fill | A11y |
+| --- | --- | --- |
+| 2D | Onix Dark 1 `#2D2A33` | canvas `role="application"` with a text alternative via the node tree; zoom keyboard shortcuts documented |
+| 3D | renderer surface | the viewport is the one place where contrast is not enforced — overlay controls carry their own fills |
+
+### Toolbar (Viewport Toolbar)
+
+Page `21023:11034`; board `EditorHeader` `21028:42719` (title "Viewport Toolbar") with `<Toolbar>`, a camera menu and `<RuntimeControls>`. Set [`21028:42986`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=21028-42986), 2 variants (`Property 1` = 2D `21028:42987` / 3D), 1332 × 132 with dashed chrome. A 2D variant is Fixed 1292 × 36, fill Shadow `#161518`, 1px Onix bottom border; `LeftSide` / `RigthSide` (sic) tool groups of `ToolbarButton` instances (undo, redo, select, move, rotate, scale, …), the centred `RuntimeControls`, and `Edit`, `Save`, a divider and `Kebab` on the right. 3D adds the camera tools and a "Player" dropdown whose menu is `Menu` + `Menu-Entry` (Free ✓ / Player / rule / "Invert Camera Rotation" checkbox). The `ToolbarButton` (Buttons) states apply unchanged (26 × 26; `Active` × `Selected`, `Disabled`). Code: inspector `UIDesigner/Toolbar/UIDesignerToolbar.tsx` and `Tools.tsx` (the 2D toolbar) and `components/Toolbar` (3D) — the 36px height and Shadow fill are the open check.
+
+| Variant | Fill | Border | Contrast | A11y |
+| --- | --- | --- | --- | --- |
+| 2D | Shadow `#161518` | 1px Onix bottom | Snow 17.73:1; border 1.46:1 | `role="toolbar"` with arrow-key roving focus |
+| 3D | Shadow (as 2D; not panel-read) | as 2D | camera dropdown label Snow | the camera menu: `aria-haspopup="menu"` |
+
+### RuntimeControls (Viewport Toolbar)
+
+Set [`21028:16521`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=21028-16521), 2 variants (`Preview` Off / On), 93 × 109 with dashed chrome. A Hug 55 × 26 row, gap 3, of two `ToolbarButton` instances (Play, Pause): each is 26 × 26 with `Active` and `Selected` properties, and the Pause button in the Off state is drawn `Disabled` (`Active` = Off, `Disabled` = true). Aggregate colours: Onix, Shadow, Gray, Snow, White +1. Code: the Play / Pause run controls in `UIDesignerToolbar.tsx` (scene-run intent — see [`UIDesigner.md`](UIDesigner.md)).
+
+| Preview | Play | Pause | A11y |
+| --- | --- | --- | --- |
+| Off | `Active` On, `Selected` Off | `Active` Off, `Disabled` | Play `aria-label="Play scene"`; Pause `aria-disabled="true"` |
+| On | scene running (Selected, canvas blue fill — `#244B7D`) | enabled | Pause `aria-pressed`; Play becomes the stop state ✱ — the Figma name for it is not read |
+
 ---
 
 ## Pages inventory
