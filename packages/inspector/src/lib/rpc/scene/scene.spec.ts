@@ -11,7 +11,11 @@ import { SceneServer } from './server';
 
 // Mock the catalog / data-layer / config modules the smart-item + catalog handlers use.
 // (vi.mock is hoisted above the imports by vitest regardless of position here.)
-vi.mock('../../logic/catalog', () => ({ fetchLatestCatalog: vi.fn(), getAssetById: vi.fn() }));
+vi.mock('../../logic/catalog', async orig => ({
+  ...(await (orig as () => Promise<Record<string, unknown>>)()),
+  fetchLatestCatalog: vi.fn(),
+  getAssetById: vi.fn(),
+}));
 vi.mock('../../../redux/data-layer', () => ({
   getAssetCatalog: vi.fn(() => ({ type: 'data-layer/getAssetCatalog' })),
   getDataLayerInterface: vi.fn(),
@@ -514,7 +518,7 @@ describe('SceneServer RPC catalog + script + smart item', () => {
       category: 'decorations',
       tags: [],
       contents: { 'model.glb': 'hash1' },
-      composite: { version: 1, components: [] },
+      composite: { version: 1, components: [{ name: 'core::GltfContainer', data: {} }] },
     } as any);
     const importAsset = vi.fn().mockResolvedValue(undefined);
     vi.mocked(getDataLayerInterface).mockReturnValue({ importAsset } as any);
@@ -537,12 +541,46 @@ describe('SceneServer RPC catalog + script + smart item', () => {
       { x: 1, y: 0, z: 2 },
       expect.stringContaining('asset-packs/wooden_door'),
       enumEntity,
-      { version: 1, components: [] },
+      { version: 1, components: [{ name: 'core::GltfContainer', data: {} }] },
       'door',
       false,
     );
     expect(result).toEqual({ entity: 600, name: 'My Door' });
     vi.unstubAllGlobals();
+  });
+
+  it('place_smart_item: rejects a built-in animation and says how to play it', async () => {
+    vi.mocked(getAssetById).mockReturnValue({
+      id: 'wave',
+      name: 'Wave',
+      category: 'expressions',
+      tags: [],
+      contents: { 'thumbnail.png': 'hash1' },
+      composite: { version: 1, components: [] },
+      builtInEmote: 'wave',
+    } as any);
+    await expect(host.request('place_smart_item', { assetId: 'wave' })).rejects.toThrow(
+      "triggerEmote({ predefinedEmote: 'wave' })",
+    );
+    expect(ops.addAsset).not.toHaveBeenCalled();
+  });
+
+  it('place_smart_item: rejects a file-only asset without importing or spawning anything', async () => {
+    vi.mocked(getAssetById).mockReturnValue({
+      id: 'dance',
+      name: 'Dance',
+      category: 'expressions',
+      tags: [],
+      contents: { 'Dance_emote.glb': 'hash1' },
+      composite: { version: 1, components: [] },
+    } as any);
+    const importAsset = vi.fn();
+    vi.mocked(getDataLayerInterface).mockReturnValue({ importAsset } as any);
+    await expect(host.request('place_smart_item', { assetId: 'dance' })).rejects.toThrow(
+      'file-only asset',
+    );
+    expect(importAsset).not.toHaveBeenCalled();
+    expect(ops.addAsset).not.toHaveBeenCalled();
   });
 
   it('place_smart_item: rejects an unknown asset id', async () => {
@@ -606,9 +644,10 @@ describe('SceneServer RPC get_selection', () => {
     });
   });
 
-  // #1507 / #1511: the reserved entities (Scene root / Player / Camera) carry no Name, so the
-  // chip used to show a bare "#id". Label them exactly as the entity tree does.
-  it('labels the reserved Scene / Player / Camera entities like the tree', async () => {
+  // #1507 / #1511: the reserved Player / Camera entities carry no Name, so the chip used to show
+  // a bare "#id". Label them exactly as the entity tree does. The Scene root is left out: it
+  // tells the assistant nothing, so selecting it is the same as selecting nothing.
+  it('labels Player / Camera like the tree and leaves out the Scene root', async () => {
     const p = new InMemoryTransport();
     const i = new InMemoryTransport();
     p.connect(i);
@@ -636,7 +675,6 @@ describe('SceneServer RPC get_selection', () => {
     const res = await localHost.request('get_selection', {});
     expect(res).toEqual({
       selected: [
-        { id: 0, name: 'Scene' },
         { id: 1, name: 'Player' },
         { id: 2, name: 'Camera' },
       ],

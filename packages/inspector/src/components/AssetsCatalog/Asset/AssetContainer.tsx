@@ -2,7 +2,12 @@ import React, { useEffect, useCallback, useMemo, useState, useRef } from 'react'
 
 import { Logo, Popup, PopupContent } from 'decentraland-ui';
 
-import { getContentsUrl, isSmart, type Asset as AssetType } from '../../../lib/logic/catalog';
+import {
+  getBuiltInEmote,
+  getContentsUrl,
+  isSmart,
+  type Asset as AssetType,
+} from '../../../lib/logic/catalog';
 import { getConfig } from '../../../lib/logic/config';
 import { InfoTooltip } from '../../ui';
 import Asset from './Asset';
@@ -247,7 +252,17 @@ const AssetContainer: React.FC<AssetContainerProps> = ({ value, onAddToFilesyste
   return (
     <>
       <InfoTooltip
-        text={value.name}
+        text={
+          getBuiltInEmote(value) ? (
+            <>
+              {value.name}
+              <br />
+              Built-in: available in every scene.
+            </>
+          ) : (
+            value.name
+          )
+        }
         onOpen={handleInfoTooltipOpen}
         onClose={handleInfoTooltipClose}
         trigger={assetElement}

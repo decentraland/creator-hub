@@ -20,8 +20,9 @@ import { setViewportElement } from '../../lib/logic/viewport-rect';
 import { snapPositionValue } from '../../lib/babylon/decentraland/snap-manager';
 import { ROOT } from '../../lib/sdk/tree';
 import type { CustomAsset } from '../../lib/logic/catalog';
-import { getAssetById, isGround, isSmart, type Asset } from '../../lib/logic/catalog';
+import { getAssetById, isFileOnly, isGround, isSmart, type Asset } from '../../lib/logic/catalog';
 import { useImportAssetToFilesystem } from '../../hooks/useImportAssetToFilesystem';
+import { useSnackbar } from '../../hooks/useSnackbar';
 import { areGizmosDisabled, getHiddenPanels, isGroundGridDisabled } from '../../redux/ui';
 import { PanelName } from '../../redux/ui/types';
 import type { AssetNodeItem } from '../ProjectAssetExplorer/types';
@@ -92,6 +93,7 @@ const Renderer: React.FC = () => {
   const sdk = useSdk();
   const [isLoading, setIsLoading] = useState(false);
   const isMounted = useIsMounted();
+  const { pushNotification } = useSnackbar();
   const { importCatalogAssetToFilesystem, importCustomAssetToFilesystem } =
     useImportAssetToFilesystem();
   const gizmosDisabled = useAppSelector(areGizmosDisabled);
@@ -325,6 +327,15 @@ const Renderer: React.FC = () => {
         });
         return;
       }
+    }
+
+    if (isFileOnly(asset)) {
+      setIsLoading(true);
+      await importCatalogAssetToFilesystem(asset);
+      if (!isMounted()) return;
+      setIsLoading(false);
+      void pushNotification('success', `Added "${asset.name}" to the local assets`);
+      return;
     }
 
     const position = await getDropPosition();

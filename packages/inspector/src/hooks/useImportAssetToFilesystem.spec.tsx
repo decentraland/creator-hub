@@ -14,6 +14,7 @@ vi.mock('../redux/data-layer', () => ({
   getDataLayerInterface: () => ({ importAsset: mocks.importAsset }),
   getAssetCatalog: () => ({ type: 'getAssetCatalog' }),
   saveThumbnail: (payload: unknown) => ({ type: 'saveThumbnail', payload }),
+  saveAnimatedThumbnail: (payload: unknown) => ({ type: 'saveAnimatedThumbnail', payload }),
 }));
 vi.mock('../redux/hooks', () => ({ useAppDispatch: () => mocks.dispatch }));
 vi.mock('../lib/logic/config', () => ({
@@ -63,6 +64,31 @@ describe('useImportAssetToFilesystem', () => {
       expect(fetchedHashes().sort()).toEqual(
         ['hash-composite', 'hash-glb', 'hash-mp3', 'hash-thumbnail'].sort(),
       );
+    });
+  });
+
+  describe('when the catalog asset has an animated preview', () => {
+    beforeEach(async () => {
+      const { result } = renderHook(() => useImportAssetToFilesystem());
+      await result.current.importCatalogAssetToFilesystem({
+        ...asset,
+        contents: { 'Dance_emote.glb': 'hash-glb', 'preview.webp': 'hash-preview' },
+      } as unknown as Asset);
+    });
+
+    it('should keep the preview out of the scene files', () => {
+      const { content } = mocks.importAsset.mock.calls[0][0];
+      expect([...content.keys()]).toEqual(['Dance_emote.glb']);
+    });
+
+    it('should save the preview as the animated thumbnail of the imported model', () => {
+      expect(mocks.dispatch).toHaveBeenCalledWith({
+        type: 'saveAnimatedThumbnail',
+        payload: {
+          content: expect.any(Uint8Array),
+          path: 'asset-packs/ambient_sound_-_forest_birds/Dance_emote.glb',
+        },
+      });
     });
   });
 
