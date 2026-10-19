@@ -463,6 +463,158 @@ Set [`20902:5640`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=
 | Active=True, Hover=False, Notification=True | active | none | 2px Snow right | Snow | 8 × 8 Primary dot as above | dot 4.99:1 | as above |
 | any | ✱ focus / disabled | as TabHorizontal | — | — | — | — | — |
 
+### Surfaces tokens
+
+Every literal the Surfaces pages use (Accordion, Background, Cards, Menu, Icons; the other five Surfaces pages extend this table), mapped once. The Figma MCP seat was spent, so every value here is the Figma web client's Properties panel read through the DOM (October 19, 2026); the only canvas measurements are labelled as such. Contrast is against inspector `#161518`, Creator Hub page `#16141a`, or the fill named in the row.
+
+| Literal | Figma | Inspector (`vars.css`) | Creator Hub (`theme.css` / ui2) |
+| --- | --- | --- | --- |
+| `#FCFCFC` titles, labels, values, button text | Neutrals/Snow | `--ui-designer-text` | ui2 `neutral.softWhite`; `theme.css` missing |
+| `#CFCDD4` accordion body, thumbnail fallback | Neutrals/Gray | `--ui-designer-text-value` | ui2 `neutral.gray4`; `theme.css` missing |
+| `#A09BA8` card meta, menu glyphs, section label | Neutrals/Silver | `--ui-designer-text-muted`, `--neutral-grey-3` | `--dcl-silver`, `--clear-divider` · ui2 `neutral.gray3` |
+| `#FFFFFF` icon glyphs | Neutrals/White | `--white` | `--white`, `--text` |
+| `#43404A` menu row hover | Neutrals/Pale Black | `--gray-0` | `--dark-gray` · ui2 `neutral.gray0` |
+| `#35333B` menu fill | Neutrals/Onix (swatch) | `--ui-designer-control-bg` | missing |
+| `#FF2D55` primary button, D7 retention value | Primary/Primary | `--primary-main` | `--primary`, `--dcl` · ui2 `palette.primary.main` |
+| `#C640CD` smart-item icon disc | Brand/Lavender | `--lavender`, `--smart-item-icon-bg-color` | missing |
+| `rgba(255,255,255,.05)` card and accordion-row rest fill | not a Figma step (unnamed `#FFFFFF` 5%) | `--ui-designer-control-empty-bg` | `--transparent-gray-dark` |
+| `rgba(255,255,255,.1)` card border, accordion rules, menu border and rule, secondary button fill | Transparencies/White 10 | `--ui-designer-control-border`, `--ui-designer-control-selected-bg` | missing (`PublishedProjectCard` paints `--transparent-gray-dark`, White 5) |
+| `rgba(255,255,255,.15)` card hover fill | not a Figma step (unnamed `#FFFFFF` 15%) | missing | missing (`Tutorials` hovers with `.1`) |
+| `rgba(255,255,255,.2)` location divider | Transparencies/White 20 | `--ui-designer-control-border-strong` | missing |
+| `rgba(255,255,255,.4)` chevrons, kebab glyph, group label | Transparencies/White 40 | `--ui-designer-checkbox-border` | missing (`--transparent-gray-light` is .23) |
+| Ruby → Lavender favourite star | Gradients/Cerise | missing | missing |
+| `#6141A6 → #6C84FF` credits coin (+ white drop shadow, `#5600FF` 50% inner shadow) | — (illustration, not a variable) | missing; ship as an SVG asset | missing; ship as an SVG asset |
+| `#302C37` page boards | — (Figma presentation only) | not a surface | not a surface |
+| 8px radius (menu row) | — | missing (`--ui-designer-radius-field` is 6px) | missing (`--mui-shape-borderRadius` is 6px; `SceneList` carries the literal) |
+| 12px radius (menu, published thumbnail, CTA buttons, grouped accordion) | — | `--ui-designer-radius-menu` | missing (`UserMenu` carries the literal) |
+| 16px radius (cards, card thumbnails) | — | missing | missing (`Tutorials` carries the literal) |
+| 100px pill (kebab button) | — | missing | missing |
+| `0 4px 8px rgba(0,0,0,.4)` menu shadow | — | missing (`--contexify-menu-shadow` is `2px 2px 10px rgba(0,0,0,.5)`) | missing (ui2 `MuiPaper` elevation) |
+| Inter 20 / 600 / 100% | `H4 Semi` | `--font-family` + literal size | `--font-family` + literal size or `Typography` |
+| Inter 16 / 600 / 100% uppercase | `H6 Semi Caps` | `--font-family` + literal size | same |
+| Inter 14 / 600 / 100% | `H7 Semi` (the CTA label is the same face uppercase, unnamed) | `--font-family` + literal size | same |
+| Inter 14 / 400 / 100% | `H7 Regular` | `--font-family` + literal size | same |
+| Inter 14 / 400 / 150%, cap-height trim | unnamed (location and privacy meta) | `--font-family` + literal size | same |
+| Inter 12 / 400 / 100% | `H8 Regular` (the section label is the same face uppercase, unnamed) | `--font-family` + literal size | same |
+
+### AccordionEntry (Accordion)
+
+Set [`20932:3939`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=20932-3939), 3 variants (`Property 1` = Default / Hover / Expanded). Shared: Fill width (596 in the set), header row 50 tall, padding 0 / 20, gap 20, chevron 12.25 box (Vector 11.23 × 6.63 White 40, rotated −90° closed, 180° open), label `H7 Semi` Snow, 1px White 10 bottom rule, no radius, no shadow. Code: inspector `ui/Accordion` (4px radius, padding 12 / 8, 12px / 500 uppercase label on `--text-light`, which no stylesheet defines (it resolves to the inherited colour), `--base-14` border, open header rule `--base-12` — drift on every value); Creator Hub `Modals/AppSettings/Tabs/AiTab` hand-rolled `SettingsAccordion` (MUI-generated `--mui-palette-divider` top rule, 13px title; no ui2 `Accordion` in use) — drift.
+
+| Variant | State | Fill | Border | Chevron | Body | Size | Contrast | A11y |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Default | collapsed | none | 1px White 10 bottom | right (−90°), White 40 | — | 596 × 50 | label 17.73:1 on `#161518`, 17.81:1 on `#16141a`; chevron 3.83:1 (≥ 3:1 non-text); rule 1.32:1, decorative | header is a `<button aria-expanded="false" aria-controls>`; hit target 50 tall, full width |
+| Hover | collapsed + hover | White 5 (unnamed) | 1px White 10 bottom | right, White 40 | — | 596 × 50 | fill vs surface 1.13:1 — the fill alone does not announce the state; label over it 15.67:1 | — |
+| Expanded | open | none | 1px White 10 bottom, on the Description row | down (180°), White 40 | `Description` row: Fill × Hug 37, padding 0 / 20 / 20, `H7 Regular` Gray, 17 tall | 596 × 88 (50 + 37 + rule) | body 11.55:1 / 11.61:1 | `aria-expanded="true"`; body is `role="region" aria-labelledby` the header |
+| any | ✱ expanded + hover | White 5 on the header row only | — | — | — | — | as Hover | — |
+| any | ✱ focus | — | — | — | — | — | ring on `#161518`: `--border-focused` 4.34:1, `--ui-designer-control-accent` 8.13:1; Creator Hub ui2 `palette.info.light` 8.13:1 | `:focus-visible` outline 2px, offset −2px, on the header button |
+| any | ✱ disabled | — | — | White 20 chevron | — | — | not drawn; `ui/Accordion` dims to `opacity: .7` — keep that until Figma draws one | `aria-disabled="true"`, still focusable |
+
+### LabelAccordion (Accordion)
+
+Component [`20932:5388`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=20932-5388), 1 variant: a group label over a bordered stack of AccordionEntry instances. Column, 638 wide, gap 10. Code: inspector none; Creator Hub none (`DocsPage` lists FAQ-style links without a disclosure).
+
+| Part | State | Fill | Border | Radius | Typography | Size / spacing | Contrast | A11y |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Label (`create`) | default | none | none | — | `H6 Semi Caps` White 40 | 638 × 19 | **3.83:1 on `#161518` and `#16141a` — fails 4.5:1** (16px / 600 is not large text); Silver would pass at 6.71:1 — the user picks | `<h3>` or the group's `aria-labelledby` target |
+| Questions (group) | default | none | 1px White 10 all sides | 12px | — | Fill × Hug 139; entries inside are AccordionEntry at 638 wide (header text 563.75) | border 1.32:1, decorative | `role="group"`; entries keep their own button semantics |
+| Entries | collapsed / open | as AccordionEntry | last entry keeps its 1px bottom rule inside the 12px frame | — | header `H7 Semi` Snow, body `H7 Regular` Gray | header 50 tall | as AccordionEntry | as AccordionEntry |
+
+### Background (Background)
+
+Component [`20506:31427`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=20506-31427), 1 variant and no component set: the page has only this frame plus its title. Code: Creator Hub `theme.css` `.Main` paints `assets/images/background.png` over `#242129` with `background-blend-mode: overlay` — the same raster role, a different overlay; inspector none (the editor paints `--base-20`).
+
+| Name | Fill | Overlay | Size | Usage | Contrast |
+| --- | --- | --- | --- | --- | --- |
+| Background | raster `image.png` — a near-black field with a violet glow bottom-left and a dark-blue glow left (no gradient stops: it is a bitmap, not a Figma gradient) | solid `#000000` 20% | 1720 × 1080, no radius | the app canvas behind cards and pages | text is specified against the solid page colours above; the raster's darkest region reads as `#0a0712`-ish and its glow as `#1d1033`-ish (canvas measurement, ±8 per channel) — treat `#16141a` as the design surface and keep Snow / Silver text ≥ 4.5:1 there |
+| ✱ Page board | `#302C37`, 64px radius, padding 100 | — | 1920 × Hug | Figma presentation frame on every Surfaces page, not a product surface | — |
+
+### Scene-Card (Cards)
+
+Set [`20910:7527`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=20910-7527), 2 variants (Default / Hover). Shared: column, 416 × 383, 16px radius; `Thumbnail` 416 × 273, 16px radius, image fill; `Text` block Fill × 110, padding 20, gap 10; title `H4 Semi` Snow (376 × 24); `Parcels` row 316.25 × 32, gap 10, a 16px `layout` glyph (Vector 12 × 12 Silver) and `N Parcels` `H7 Regular` Silver. Code: Creator Hub `SceneCard` (`#313131` literal fill, 10px radius, 260 tall, 18px / 600 title, 14px meta — drift on fill, radius, size and type) and `ProjectCard` (`--secondary` fill, 10px radius, 2px white hover border, `#a09ba8` meta literal — drift); inspector none.
+
+| Variant | State | Fill | Border | Kebab | Contrast | A11y |
+| --- | --- | --- | --- | --- | --- | --- |
+| Default | default | White 5 (unnamed) | 1px White 10 all sides | — | title over the fill 15.77:1 on `#16141a`; meta 5.97:1 (≥ 4.5:1); glyph 5.97:1; fill vs page 1.13:1 and border 1.31:1 — the card edge is weak, the thumbnail carries it | the whole card is one `<a>` / `<button>` named by the title; hit target 416 × 383 |
+| Hover | hover | White 15 (unnamed) | none | `rounded-button-contained` 40 × 40, 100px, no fill, `Kebab` 24 box, Vector 4 × 20 White 40, top-right of the Text block | title 11.43:1; **meta 4.33:1 — fails 4.5:1 on hover** (Silver 14px / 400 over White 15); kebab 3.29:1 (≥ 3:1 non-text) | kebab is a separate `<button aria-label="Scene options" aria-haspopup="menu">`, 40px hit target, must also appear on focus-within, not only on hover |
+| any | ✱ focus | as Hover | — | — | ring ui2 `palette.info.light` 8.13:1 | `:focus-visible` outline 2px on the card; kebab gets its own ring |
+| any | ✱ press | White 10 | — | — | — | — |
+| any | ✱ disabled | — | — | — | not drawn; keep cards enabled or omit them | — |
+
+### Template-Card (Cards)
+
+Set [`20910:7545`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=20910-7545), 2 variants (Default / Hover). Identical to Scene-Card except the meta line is a subtitle (`H7 Regular` Silver, 376 × 36, "Start your own scene from scratch") and the hover button carries `CodeBash` (Vector 21.2 × 10.45 White). Code: Creator Hub `TemplatesPage` → `ProjectCard` (drift as above); inspector none.
+
+| Variant | State | Fill | Border | Button | Contrast | A11y |
+| --- | --- | --- | --- | --- | --- | --- |
+| Default | default | White 5 | 1px White 10 | — | title 15.77:1; subtitle 5.97:1 | card is one link / button |
+| Hover | hover | White 15 | none | 40 × 40 pill, `CodeBash` glyph White | subtitle 4.33:1 — fails 4.5:1 on hover, as Scene-Card; glyph 11.43:1 | `<button aria-label="Open in code">`, 40px hit target, visible on focus-within |
+| any | ✱ focus / press / disabled | as Scene-Card | — | — | — | — |
+
+### Learn-Video-Card (Cards)
+
+Set [`20910:7560`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=20910-7560), 2 variants (Default / Hover). Same chrome as Scene-Card; thumbnail is the video poster (`Flag Tag.png` placeholder); title `H4 Semi` Snow "Video Tutorial"; subtitle two lines `H7 Regular` Silver (376 × 36); no hover button. Code: Creator Hub `VideosPage` → `Tutorials` (`.Tutorial`: 16px radius, transparent rest, hover `rgba(255,255,255,.1)`, padding 12, 2px `--transparent-gray-light` poster border, 16px / 500 title, `#a09ba8` literal — drift on rest fill, hover alpha, padding and type); inspector none.
+
+| Variant | State | Fill | Border | Contrast | A11y |
+| --- | --- | --- | --- | --- | --- |
+| Default | default | White 5 | 1px White 10 | title 15.77:1; subtitle 5.97:1 | card is one `<a>` to the video, named by the title |
+| Hover | hover | White 15 | none | subtitle 4.33:1 — fails 4.5:1 on hover | — |
+| any | ✱ focus / press | as Scene-Card | — | — | — |
+
+### Learn-Doc-Card (Cards)
+
+Set [`20910:7636`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=20910-7636), 2 variants (Default / Hover). Column, 416 × 210, 16px radius; `Thumbnail` 100 tall (210 − the 110 Text block; derived, not read) with a centred `Favorite` star (Vector 41.13 × 41.13, fill Gradients/Cerise Ruby → Lavender); title `H4 Semi` Snow "Doc Title"; subtitle one line `H7 Regular` Silver. Code: Creator Hub `DocsPage` (link list, no card); inspector none.
+
+| Variant | State | Fill | Border | Star | Contrast | A11y |
+| --- | --- | --- | --- | --- | --- | --- |
+| Default | default | White 5 | 1px White 10 | Cerise gradient | title 15.77:1; subtitle 5.97:1; star Ruby end 4.44:1, Lavender end 3.86:1 over the fill (≥ 3:1, and decorative) | card is one `<a>` named by the title; star `aria-hidden` |
+| Hover | hover | White 15 | none | same | subtitle 4.33:1 — fails 4.5:1 on hover | — |
+| any | ✱ focus / press | as Scene-Card | — | — | — | — |
+
+### Published-Scene-Card (Cards)
+
+Set [`20964:6705`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=20964-6705), 2 variants (Default / Hover), under the page's `<Analytics>` label. Shared: column, 852 × 214, 16px radius, gap 20; `Information` padding 20, gap 20; `Header` row gap 20: `Thumbnail` 100 × 100, 12px radius, Gray fallback fill under a Snow `Img` placeholder, then a column (padding-right 280, gap 6) with `Scene's Name` `H4 Semi` Snow and a `Location` row (gap 4, 6px radius): `MapPin` 16 box (Vector 10.5 × 12.83 Silver) + `worldname` Inter 14 / 400 / 150% Silver, a `Div` 1px White 20 vertical 14 tall, `Private` lock (same Vector) + "Private" Inter 14 / 400 / 150% Silver (padding 5 / 0). `Analytics` row gap 20: five `Fill × 54` columns (gap 6) of label `H7 Regular` Silver over value `H4 Semi` Snow — Concurrent Users, Daily Active Users, D7 Retention (value Primary), Revenue (`credits-icon` 24 box + value), Avg. Playtime ("min"). Code: Creator Hub `ManagePage/PublishedProjectCard` (10px radius, `--transparent-gray-dark` White 5 fill, padding 8 / 8 / 8 / 16, 14px `--light-gray` meta — drift on radius, padding and meta colour) and `AnalyticsPage`; inspector none.
+
+| Variant | State | Fill | Border | CTAs | Contrast | A11y |
+| --- | --- | --- | --- | --- | --- | --- |
+| Default | default | White 5 | 1px White 10 all sides | — | name 15.77:1; labels and location 5.97:1; D7 value Primary 4.44:1 (20px / 600 ⇒ large text, ≥ 3:1); divider 1.87:1, decorative; thumbnail fallback Gray vs fill 10.27:1 | `<article aria-labelledby>` the name; stats as a `<dl>`; "0%" in Primary needs a text cue, not colour alone |
+| Hover | hover | White 15 | 1px White 10 all sides (kept, unlike the home cards) | `CTAs` 257 × 40, gap 10, top-right: `Button-Contained-Text` Secondary 98.5 × 40, 12px, padding 11.5 / 24, White 10 fill, "DETAILS" Inter 14 / 600 uppercase Snow; Primary same with Primary fill, "EDIT"; kebab pill 40 × 40, Vector 4 × 20 White 40 | labels 4.33:1 — fails 4.5:1 on hover; DETAILS 8.38:1; **EDIT Snow on Primary 3.55:1 — fails 4.5:1** (same finding as the Create button); D7 value 3.22:1 large-text pass; kebab 3.29:1 | CTAs are `<button>`s, 40px tall, visible on focus-within; kebab `aria-label` + `aria-haspopup="menu"` |
+| any | ✱ focus / press | as Scene-Card | — | — | — | — |
+
+### Menu-Entry (Menu)
+
+Set [`20749:790`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=20749-790), 4 variants (`Property 1` = Default / Hover / Section / Div). Shared: row, Fill × 38 (240 in the set, 180 inside Menu), 8px radius, padding 0 / 10, gap 10. Code: inspector `Hierarchy/ContextMenu`, `CustomAssets/ContextMenu` and `hoc/withContextMenu` (react-contexify on `--contexify-*`: VS Code `--dropdown-bg-color` `#d8d8d8` light fill, 2px radius, 6px item padding, `--contexify-activeItem-radius` 4px — drift on every value, it is the embedded-webview theme) and the UI Designer menus (`--ui-designer-control-bg` Onix, `--ui-designer-control-selected-bg` White 10 rows, `--ui-designer-radius-menu` 12px — closest); Creator Hub `Dropdown` and `Header/UserMenu` (ui2 `Menu` / `MenuItem`, MUI defaults, 200px list, glyphs `--text-on-secondary`) — drift.
+
+| Variant | State | Fill | Leading | Label | Trailing | Size | Contrast (on Onix) | A11y |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Default | default | none | `Info` 16 box, Vector Silver | `H8 Regular` Snow (174 × 15) | `arrow-right` 10 box, Vector 9.17 × 5.42 White 40 | 240 × 38 | label 12.13:1; glyph 4.59:1 (≥ 3:1); chevron 3.38:1 | `role="menuitem"` in a `role="menu"`; 38px hit target; submenu chevron ⇒ `aria-haspopup="menu"` |
+| Hover | hover / keyboard active | Pale Black | same | same | same | 240 × 38 | fill vs Onix 1.23:1 — weak; label over it 9.88:1, glyph 3.74:1, chevron 3.06:1 (≥ 3:1) | the keyboard-active item uses the same fill plus the focus ring below |
+| Section | — | none | — | Inter 12 / 400 uppercase Silver (220 × 15), gap 16 | — | 240 × 38 | 4.59:1 (≥ 4.5:1, barely; 12px / 400 is small text) | `role="presentation"` heading or `aria-label` on the group; not focusable |
+| Div | — | White 10, 1px tall | — | — | — | 240 × 1 (padding 7 / 10 ⇒ 15px of rhythm) | 1.37:1, decorative | `role="separator"` |
+| Default | ✱ focus | Pale Black | — | — | — | — | ring `--border-focused` 2.97:1 on Onix and 2.42:1 on the Pale Black row — **below 3:1**; `--ui-designer-control-accent` 5.56:1 / 4.53:1 passes; Creator Hub ui2 `palette.info.light` 5.56:1 / 4.53:1 | `:focus-visible` outline 2px, offset −2px, inside the row |
+| Default | ✱ press | White 10 over Pale Black | — | — | — | — | — | — |
+| Default | ✱ disabled | none | Silver @ .4 | White 40 label | — | — | label 3.38:1, glyph 1.92:1 — disabled content is exempt from the minimums | `aria-disabled="true"`, stays in the tab order of the menu |
+
+### Menu (Menu)
+
+Component [`20749:386`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=20749-386), 1 variant, two `Options` / `Options2` slots (each Fill × Hug, padding 0 / 10, holding Menu-Entry instances) around a Div entry. Code: as Menu-Entry — inspector react-contexify (`--contexify-menu-shadow` `2px 2px 10px rgba(0,0,0,.5)`, `--contexify-menu-padding` 6px) and the UI Designer popovers; Creator Hub ui2 `Menu` (MUI `Paper` elevation on `background.paper`).
+
+| Part | State | Fill | Border | Radius | Shadow | Size / spacing | Contrast | A11y |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Container | open | Onix | 1px White 10 all sides | 12px | `0 4px 8px rgba(0,0,0,.4)` | 200 × Hug (117 with one entry per slot), padding 10 / 0, gap 10 | Onix vs `#161518` 1.46:1, vs `#242129` 1.27:1 — the shadow and border carry the edge | `role="menu"` with `aria-labelledby` the trigger; Escape closes, arrows move, focus returns to the trigger |
+| Options / Options2 | — | none | none | — | — | Fill × Hug, padding 0 / 10 | — | `role="group"` when a Section labels it |
+| Div | — | as Menu-Entry Div | — | — | — | between the slots | — | `role="separator"` |
+
+### Icon system (Icons)
+
+Three frames, no component sets: `General` [`20450:16492`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=20450-16492), `Editor` [`20798:7431`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=20798-7431), `Component Icons` [`20798:7736`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=20798-7736); each is a Pale Black board (64px radius, 2px White 10 border, padding 100, gap 50) holding one wrapping row of icon components. Every glyph is a filled vector (no strokes), so `fill="currentColor"` carries the colour and the skill's viewBox gotcha applies: crop each export to its 24px frame, never to the glyph bounds, or the 4px inset is lost and the icon renders ~30% larger than its neighbours. Code: Creator Hub `components/Icons` (3 custom: `AssistantIcon`, `ChevronDownIcon`, `WarningCircleIcon`) plus `@mui/icons-material` (124 distinct icons across 52 files) and `assets/images/*.svg`; inspector `components/Icons` (`Cleanup`, `CustomAsset`, `Folder`, `ListChevrons`, `Search`) plus `react-icons` (72 files; `vsc`, `io5`, `ai` sets) and per-panel `icons/` folders (Hierarchy, Toolbar/Gizmos, AssetsCatalog, SceneInspector, UIDesigner PropertyPanel). Figma names already in the repo: `Cleanup`, `Search`, `CustomItem` (inspector `CustomAsset`), `BrowseFolder` (inspector `Folder`); everything else is Material or react-icons today.
+
+| Set | Count | Frame | Glyph | Colour | Naming | Row layout | Contrast |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| General | 82 — Windows, Apple, LocalAssets, CustomItem, Synch, BrowseFolder, Cleanup, Cloud, Reload, Warning, bug, help, settings, Info, Search, Expand, Grid, magnet, player-location, zoom-out, zoom-in, keyboard, templates, Tip, podium, no-connection, Import-Download, Export-Upload, MapPin, Public, Private, Close, Likes, Create-Event, Edit, Link, LinkAlt, Cut, Copy, Paste, Duplicate, Favorite, Pin, Minus, plus, layout, layout-outline, Scenes, Kebab, ArrowUp, arrow-down, arrow-left, arrow-right, learn, code, DeleteFilled, Delete, Storage, Transfer, Code, Preview, CheckCompleted, Videos, Documents, Attach, DevWorkflow, BuildMetaverse, CodeBash, Cube, Leave, SceneStats, VariableBig, Hide, Show, Unlock, Lock, NewChat, Open, AiAgent, Optimize, CollapseVertically, ExpandVertically | 24 × 24 | 16 × 16 live area at 4 / 4 (Windows); tall glyphs reach 18 × 22 at 3 / 1 (MapPin) | Neutrals/White `#FFFFFF` → `--white` / `--white` | mixed PascalCase and kebab-case (`ArrowUp` beside `arrow-down`); `Edit` carries a `Vector (Stroke)` layer, `CollapseVertically` / `ExpandVertically` are 5-vector stacks | `Group 3163` 874 wide, wrap, gap 24 | White on `#161518` 18.19:1, on `#16141a` 18.28:1, on Pale Black 10.14:1 (≥ 3:1 non-text everywhere) |
+| Editor | 17 — list-all, CameraHierarchy, Layers, search-cloud, Save, Camera, undo, redo, move, translation, rotate, scale, more-options, snap, AlignToWorld, Joystick, Edit | 24 × 24 | 12–14px glyphs off-centre by design (list-all `menu` 12 × 13.22 at 6 / 5.39; redo 10 × 9.38 at 7 / 7.31) | Neutrals/White | kebab-case verbs, PascalCase nouns | `Frame 3163` 831 wide, gap 10 | as General |
+| Component Icons | 3 — smat-item (sic), Credits, JumpIn | smart-item 16 × 16, 5px radius; Credits 24 box; JumpIn 24 × 24, 8px radius | smart-item: Lavender disc under a White `Union` 8.4 × 12 (0.59 stroke); Credits: `#6141A6 → #6C84FF` coin at 80% with a white drop shadow and a `#5600FF` 50% inner shadow (an illustration); JumpIn: Vector 13.19 × 12 Snow | Lavender → `--lavender`, `--smart-item-icon-bg-color` / missing; Snow → `--ui-designer-text` / ui2 `neutral.softWhite` | product nouns | — | Lavender disc vs `#161518` 4.34:1, vs `#242129` 3.79:1 (≥ 3:1); White glyph on Lavender 4.19:1 (≥ 3:1 non-text) |
+
 ---
 
 ## Pages inventory
