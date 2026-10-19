@@ -71,6 +71,8 @@ export class Water {
   private inside = new Set<Entity>();
   private area: Entity | undefined;
   private layers: Layer[] = [];
+  // Last seen scale of this item and of each layer (x, y, z per entity), to refit on a change
+  private scales: number[] = [];
   private elapsed = 0;
   private subs: Record<string, Array<(arg?: Entity) => void>> = {};
 
@@ -78,8 +80,8 @@ export class Water {
    * Water that splashes when a player jumps or walks into it: a vertical burst of spray, a
    * ring spreading on the surface and a splash sound, at the spot where the player entered.
    * The water is a stack of translucent MeshRenderer layers (children of this item), each
-   * bobbing, turning and rippling like fishing-islands' sea. The trigger area tracks the top
-   * layer every frame, so scaling this item or the layers resizes both.
+   * bobbing and rippling like fishing-islands' sea. The trigger area and the ripples follow
+   * the top layer, so scaling this item or the layers resizes both.
    *
    * @event enter
    * @event exit
@@ -105,7 +107,7 @@ export class Water {
     const area = engine.addEntity();
     Transform.create(area, { parent: this.entity });
     this.area = area;
-    this.fitArea();
+    this.refit();
     TriggerArea.setBox(area, ColliderLayer.CL_PLAYER);
     triggerAreaEventsSystem.onTriggerEnter(area, event =>
       this.entered(event.trigger?.entity, event.trigger?.position),
@@ -129,26 +131,10 @@ export class Water {
    * @param dt - Delta time since last frame (in seconds)
    */
   update(dt: number) {
-    this.fitArea();
+    this.refit();
     this.startBobs(dt);
-    for (const s of [...this.vertical, ...this.ring]) {
-      if (!s.playing) continue;
-      if (s.delay > 0) {
-        s.delay -= dt;
-        if (s.delay <= 0) VisibilityComponent.getMutable(s.entity).visible = true;
-        continue;
-      }
-      s.elapsed += dt;
-      if (s.elapsed < 1 / s.fps) continue;
-      s.elapsed = 0;
-      s.frame++;
-      if (s.frame >= FRAMES) {
-        s.playing = false;
-        VisibilityComponent.getMutable(s.entity).visible = false;
-        continue;
-      }
-      MeshRenderer.setPlane(s.entity, uvs(s.frame));
-    }
+    for (const s of this.vertical) step(s, dt);
+    for (const s of this.ring) step(s, dt);
   }
 
   /**
@@ -156,10 +142,8 @@ export class Water {
    * @action
    */
   public splash() {
-    const t = Transform.get(this.entity);
-    this.splashAt(
-      Vector3.create(t.position.x, t.position.y + this.surface().top * t.scale.y, t.position.z),
-    );
+    const w = this.surface();
+    this.splashAt(this.toWorld(Vector3.create(w.x, w.top, w.z)));
   }
 
   /** Subscribe a reaction to this item's events ('enter' / 'exit'). */
@@ -168,28 +152,65 @@ export class Water {
   }
 
   // The water's top layer, in this item's local space: centre, footprint, top and height. A
-  // plane primitive stands upright and is laid flat by its rotation, so its Y scale is the
-  // length; a cylinder is 1 tall and centred on its origin. Scale is read live from the layer,
-  // position from where it sat before animateLayers() moved it under its bob root.
+  // plane primitive is flat in its own XY and laid down by its rotation; a cylinder is 1 tall
+  // and centred on its origin. The footprint is the box around the layer as it is turned, so
+  // a layer turned 90 degrees swaps its width and length. Scale and rotation are read live
+  // from the layer, position from where it sat before animateLayers() moved it under its bob
+  // root.
   private surface() {
     let best = { x: 0, z: 0, width: 1, length: 1, top: 0, height: 0 };
     for (const l of this.layers) {
-      const s = Transform.getOrNull(l.entity)?.scale ?? Vector3.One();
-      const w = l.flat
-        ? { x: l.x, z: l.z, width: s.x, length: s.y, top: l.y, height: 0 }
-        : { x: l.x, z: l.z, width: s.x, length: s.z, top: l.y + s.y / 2, height: s.y };
+      const t = Transform.getOrNull(l.entity);
+      const s = t?.scale ?? Vector3.One();
+      const q = t?.rotation ?? Quaternion.Identity();
+      const ax = Vector3.rotate(Vector3.create(s.x / 2, 0, 0), q);
+      const ay = Vector3.rotate(Vector3.create(0, s.y / 2, 0), q);
+      const az = Vector3.rotate(Vector3.create(0, 0, l.flat ? 0 : s.z / 2), q);
+      const half = {
+        x: Math.abs(ax.x) + Math.abs(ay.x) + Math.abs(az.x),
+        y: Math.abs(ax.y) + Math.abs(ay.y) + Math.abs(az.y),
+        z: Math.abs(ax.z) + Math.abs(ay.z) + Math.abs(az.z),
+      };
+      const w = {
+        x: l.x,
+        z: l.z,
+        width: 2 * half.x,
+        length: 2 * half.z,
+        top: l.flat ? l.y : l.y + half.y,
+        height: l.flat ? 0 : 2 * half.y,
+      };
       if (this.layers[0] === l || w.top > best.top) best = w;
     }
     return best;
+  }
+
+  // A point in this item's local space, in scene coordinates: through the item's own Transform
+  // and every parent above it, since the splash sprites live at the scene root.
+  private toWorld(local: Vector3) {
+    let p = local;
+    let e: Entity | undefined = this.entity;
+    for (let depth = 0; e !== undefined && e !== engine.RootEntity && depth < 32; depth++) {
+      const t = Transform.getOrNull(e);
+      if (!t) break;
+      p = Vector3.add(
+        Vector3.rotate(
+          Vector3.create(p.x * t.scale.x, p.y * t.scale.y, p.z * t.scale.z),
+          t.rotation,
+        ),
+        t.position,
+      );
+      e = t.parent;
+    }
+    return p;
   }
 
   // Per layer, after fishing-islands' addWaterLayer: a root bobbing every 5 s (0.05 m, half the
   // repo's, since the layers here are 1 m apart in total) started on the repo's stagger, and
   // the normal map drifting sideways. The bob starts are scheduled in update().
   private animateLayers() {
-    for (const [child, t] of engine.getEntitiesWith(Transform, MeshRenderer)) {
-      if (t.parent !== this.entity) continue;
-      const flat = MeshRenderer.get(child).mesh?.$case === 'plane';
+    for (const [child, t, renderer] of engine.getEntitiesWith(Transform, MeshRenderer)) {
+      if (t.parent !== this.entity || !isWaterLayer(child, renderer.mesh?.$case)) continue;
+      const flat = renderer.mesh?.$case === 'plane';
       this.layers.push({
         entity: child,
         x: t.position.x,
@@ -211,7 +232,6 @@ export class Water {
       const t = Transform.getMutable(layer.entity);
       t.parent = level;
       t.position = Vector3.Zero();
-      this.fitRipples(layer);
       const d = LAYER_DRIFT[i % LAYER_DRIFT.length];
       const len = Math.hypot(d.x, d.y);
       Tween.setTextureMoveContinuous(
@@ -271,6 +291,29 @@ export class Water {
     tex.texture.tiling = Vector2.create(across, along);
   }
 
+  // Refit the ripples and the trigger area when this item or a layer has been rescaled (on the
+  // first call too), so a frame where nothing changed writes nothing. Layers are only scaled
+  // in the editor; a script that turns a layer at runtime should rescale it to refit.
+  private refit() {
+    let changed = false;
+    for (let i = 0; i <= this.layers.length; i++) {
+      const entity = i === 0 ? this.entity : this.layers[i - 1].entity;
+      const s = Transform.getOrNull(entity)?.scale;
+      if (!s) continue;
+      const k = i * 3;
+      if (this.scales[k] === s.x && this.scales[k + 1] === s.y && this.scales[k + 2] === s.z) {
+        continue;
+      }
+      this.scales[k] = s.x;
+      this.scales[k + 1] = s.y;
+      this.scales[k + 2] = s.z;
+      changed = true;
+    }
+    if (!changed) return;
+    for (const layer of this.layers) this.fitRipples(layer);
+    this.fitArea();
+  }
+
   // Box from `depth` below the surface (never past the bottom of a pool) to 0.5 m above it.
   private fitArea() {
     if (this.area === undefined) return;
@@ -287,8 +330,8 @@ export class Water {
     if (this.activatedBy === 'my player' && who !== engine.PlayerEntity) return;
     if (this.inside.has(who)) return;
     this.inside.add(who);
-    const t = Transform.get(this.entity);
-    const surface = t.position.y + this.surface().top * t.scale.y;
+    const w = this.surface();
+    const surface = this.toWorld(Vector3.create(w.x, w.top, w.z)).y;
     const where = at ?? Transform.get(who).position;
     this.splashAt(Vector3.create(where.x, surface, where.z));
     for (const fn of this.subs.enter ?? []) fn(who);
@@ -362,6 +405,34 @@ export class Water {
     VisibilityComponent.create(entity, { visible: false });
     return { entity, frame: 0, elapsed: 0, delay: 0, fps: 24, playing: false };
   }
+}
+
+// Only the water's own layers: primitive planes or cylinders with the water's normal-mapped PBR
+// material. Any other mesh a creator parents under the water is left alone.
+function isWaterLayer(entity: Entity, mesh: string | undefined) {
+  if (mesh !== 'plane' && mesh !== 'cylinder') return false;
+  const material = Material.getOrNull(entity)?.material;
+  return material?.$case === 'pbr' && material.pbr.bumpTexture?.tex?.$case === 'texture';
+}
+
+// Steps a playing splash sprite through its sheet.
+function step(s: Splash, dt: number) {
+  if (!s.playing) return;
+  if (s.delay > 0) {
+    s.delay -= dt;
+    if (s.delay <= 0) VisibilityComponent.getMutable(s.entity).visible = true;
+    return;
+  }
+  s.elapsed += dt;
+  if (s.elapsed < 1 / s.fps) return;
+  s.elapsed = 0;
+  s.frame++;
+  if (s.frame >= FRAMES) {
+    s.playing = false;
+    VisibilityComponent.getMutable(s.entity).visible = false;
+    return;
+  }
+  MeshRenderer.setPlane(s.entity, uvs(s.frame));
 }
 
 // UVs of one cell of the 3 x 3 sheet, counting cells left-to-right, top-to-bottom, in the

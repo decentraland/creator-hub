@@ -2,7 +2,7 @@ import type { Entity } from '@dcl/sdk/ecs';
 import { Animator, AudioSource, engine } from '@dcl/sdk/ecs';
 import { getComponents } from '@dcl/asset-packs/dist/definitions';
 
-const STATES = ['Down', 'Up', 'Stairs'];
+const STATES: string[] = ['Down', 'Up', 'Stairs'];
 
 export class PistonPlatform {
   private lastState: string = '';
@@ -11,7 +11,8 @@ export class PistonPlatform {
 
   /**
    * A platform on five pistons with three positions: fully down, fully up, or stepped
-   * into a staircase. Its position is shared with other players.
+   * into a staircase. Its position is shared with other players; each client plays the
+   * animation and sound itself when the shared position changes.
    * The model's transitions are named <From>To<To> (for example DownToStairs), plus a
    * one-frame hold clip per position.
    *
@@ -25,7 +26,7 @@ export class PistonPlatform {
   constructor(
     public src: string, // DO NOT REMOVE
     public entity: Entity, // DO NOT REMOVE
-    public startState: string = 'Up',
+    public startState: 'Down' | 'Up' | 'Stairs' = 'Up',
     public sound: string = 'sound.mp3',
   ) {}
 

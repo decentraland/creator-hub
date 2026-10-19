@@ -20,7 +20,7 @@
               {
                 "path": "{assetPath}/PistonPlatform.ts",
                 "priority": 0,
-                "layout": "{\"params\":{\"startState\":{\"type\":\"string\",\"optional\":true,\"value\":\"Up\",\"tooltip\":\"Position when the scene loads: Down, Up or Stairs.\"},\"sound\":{\"type\":\"string\",\"optional\":true,\"value\":\"sound.mp3\",\"tooltip\":\"Name of an audio file inside this smart item's folder, played on every move. Leave empty for no sound.\"}},\"actions\":[{\"methodName\":\"lower\",\"description\":\"Lowers every piston fully\",\"params\":{}},{\"methodName\":\"raise\",\"description\":\"Raises every piston fully\",\"params\":{}},{\"methodName\":\"makeStairs\",\"description\":\"Sets the pistons at stepped heights, forming a staircase\",\"params\":{}},{\"methodName\":\"cycle\",\"description\":\"Moves to the next position: Down, Up, Stairs, then back to Down\",\"params\":{}}],\"events\":[\"down\",\"up\",\"stairs\"]}"
+                "layout": "{\"params\":{\"startState\":{\"type\":\"enum\",\"options\":[\"Down\",\"Up\",\"Stairs\"],\"optional\":true,\"tooltip\":\"Position when the scene loads: Down, Up or Stairs.\",\"value\":\"Up\"},\"sound\":{\"type\":\"string\",\"optional\":true,\"value\":\"sound.mp3\",\"tooltip\":\"Name of an audio file inside this smart item's folder, played on every move. Leave empty for no sound.\"}},\"actions\":[{\"methodName\":\"lower\",\"description\":\"Lowers every piston fully\",\"params\":{}},{\"methodName\":\"raise\",\"description\":\"Raises every piston fully\",\"params\":{}},{\"methodName\":\"makeStairs\",\"description\":\"Sets the pistons at stepped heights, forming a staircase\",\"params\":{}},{\"methodName\":\"cycle\",\"description\":\"Moves to the next position: Down, Up, Stairs, then back to Down\",\"params\":{}}],\"events\":[\"down\",\"up\",\"stairs\"]}"
               }
             ]
           }
@@ -65,7 +65,7 @@
       "data": {
         "0": {
           "json": {
-            "componentIds": ["asset-packs::States", "core::Animator", "core::AudioSource"]
+            "componentIds": ["asset-packs::States"]
           }
         }
       }
