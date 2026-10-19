@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core::GltfContainer",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/round_stone_table/round_stone_table.glb"
+          }
+        }
+      }
+    }
+  ]
+}

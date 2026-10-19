@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core::GltfContainer",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/framed_moon_print/framed_moon_print.glb"
+          }
+        }
+      }
+    }
+  ]
+}

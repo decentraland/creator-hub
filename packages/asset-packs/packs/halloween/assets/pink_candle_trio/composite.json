@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core::GltfContainer",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/pink_candle_trio/pink_candle_trio.glb"
+          }
+        }
+      }
+    }
+  ]
+}

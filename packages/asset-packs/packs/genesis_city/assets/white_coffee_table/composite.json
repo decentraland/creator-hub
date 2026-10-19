@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core::GltfContainer",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/white_coffee_table/white_coffee_table.glb"
+          }
+        }
+      }
+    }
+  ]
+}

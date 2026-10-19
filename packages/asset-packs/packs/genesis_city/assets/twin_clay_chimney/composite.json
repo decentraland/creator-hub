@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core::GltfContainer",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/twin_clay_chimney/twin_clay_chimney.glb"
+          }
+        }
+      }
+    }
+  ]
+}

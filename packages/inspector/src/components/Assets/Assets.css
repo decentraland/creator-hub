@@ -113,6 +113,31 @@
   background-color: var(--background-gray);
 }
 
+.Assets .Assets-buttons .Assets-buttons-right {
+  position: absolute;
+  right: 0;
+  padding: 8px 12px;
+}
+
+.Assets .Assets-buttons .Assets-buttons-right .collapse-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  background-color: transparent;
+  color: var(--base-01);
+  font-size: 22px;
+  cursor: pointer;
+}
+
+.Assets .Assets-buttons .Assets-buttons-right .collapse-toggle:hover {
+  background-color: var(--background-gray);
+}
+
 .Assets .Assets-content {
   background: var(--tree-bg-color) !important;
   flex: 1;
@@ -147,4 +172,3 @@
   font-weight: 600;
   color: var(--text);
 }
-
