@@ -799,6 +799,183 @@ Set [`20772:856`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=2
 | 32 / 28 | blocked (hidden layer) | Lavender | `DCL/Red` 3px (32) / 2px (28) replaces the White 40 ring | same | — | — | **Red vs Lavender 1.05:1 — the blocked ring is invisible against the fill; Red vs page 4.57:1 is what you see at the outer edge**; pair it with an icon or text | `aria-label` carries "blocked" |
 | any | ✱ hover / focus | — | ✱ White 60 ring | — | — | — | ring ui2 `palette.info.light` 8.13:1 on `#16141a` | `:focus-visible` 2px outline, offset 2px, when the avatar is a button |
 
+### Inputs tokens
+
+Literals the Buttons page (Inputs section) adds to the Surfaces table above; the Snow, Gray, Silver, White, Pale Black, Primary, Primary Light 1, White 10 / 20 / 40 / 60, Black 40, Onix Dark 1, Charcoal, Blue Dark 2 / 3 and 8 / 12 / 100px entries are mapped there and not repeated. Values are the Figma web client's Properties panel read through the DOM (October 19, 2026); the Figma MCP seat was spent. Contrast is against inspector `#161518`, Creator Hub page `#16141a`, or the fill named in the row. Run 5b extends this table.
+
+| Literal | Figma | Inspector (`vars.css`) | Creator Hub (`theme.css` / ui2) |
+| --- | --- | --- | --- |
+| `#FF2D55` Switch On track | DCL/Ruby (legacy collection; same value as Primary/Primary) | `--primary-main` | `--primary`, `--dcl` |
+| `#FCFCFC` Switch knob | DCL/Snow (legacy collection; same value as Neutrals/Snow) | `--ui-designer-text` | ui2 `neutral.softWhite`; `theme.css` missing |
+| `#161518` ToolbarButton rest rectangle | DCL/Shadow | `--tree-bg-color` (`--base-20`) | missing (`--bg-inspector` is `#000`) |
+| 1.5px border | — | missing (`--ui-designer-control-border` paints 1px) | missing |
+| 46px button height | — | missing | missing (`Button` is MUI default) |
+| 10px radius (ButtonContainedVertical 20) | — | missing | missing |
+| 6px radius (ToggleLabel) | — | `--ui-designer-radius-field` | `--mui-shape-borderRadius` |
+| 58.82px radius (Switch track and knob) | — | missing; a pill, use 100px | missing |
+| 20% opacity (blocked) | — (node opacity, not a variable) | missing | missing |
+| Inter 16 / 700 / 22px uppercase | unnamed (JumpInCTA label) | `--font-family` + literal size | same |
+| `#8A38F5` dashed 1px, 5px radius | — (Figma set frame chrome, not spec) | not a surface | not a surface |
+
+### Button-Contained-Text (Buttons)
+
+Set [`20705:11927`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=20705-11927), 9 variants (verified by Enter on the set: 9 Selected; Primary, Terciary, PrimaryBlocked, Secondary read singly, the rest from the aggregate). Hug 90 × 46, 12px radius, padding 12 / 24, label Inter 600 16 / 22 uppercase Snow. Code: inspector `components/Button` (danger / default / dark, 4px radius, 16px padding) — drift on radius and size; Creator Hub `components/Button` (ui2 `Button`: `colorPrimary` `--dcl`, hover `--dcl-dark`, secondary `--dark-gray`, `info` outlined 1px white) — matches the Primary fill, drift on hover and Secondary fill.
+
+| Variant | State | Fill | Border | Label | Contrast | A11y |
+| --- | --- | --- | --- | --- | --- | --- |
+| Primary | default | Primary | — | Snow | **Snow on Primary 3.55:1 — fails 4.5:1** (16px / 600 is not large text); Primary vs `#161518` 4.99:1, vs `#16141a` 5.01:1, vs card `#242129` 4.35:1 | `<button>`; 46px target |
+| Primary | hover | Primary Light 1 (`#FF6280`, read on the Icon set) | — | Snow | **Snow on Primary Light 1 2.80:1 — fails**; fill vs `#161518` 6.33:1 | — |
+| PrimaryBlocked | blocked | Primary, node opacity 20% | — | Snow | disabled, exempt; the 20% fill reads 14.35:1 against Snow on `#161518` | `aria-disabled="true"` |
+| Secondary | default | White 10 | — | Snow | 13.53:1 on `#161518` (13.50 on `#16141a`) | — |
+| Secondary | hover | White 20 | — | Snow | 9.44:1 | — |
+| Terciary | default | none | 1.5px White 40 | Snow | border 3.84:1 on `#161518` (3.83 on `#16141a`), passes 3:1 | — |
+| Terciary | hover | none | 1.5px Snow | Snow | border 17.73:1 | — |
+| Quaternary | default | Black 40 | — | Snow | fill is near-invisible on `#161518`; the label carries it | — |
+| Quaternary | hover | White 10 | — | Snow | 13.53:1 | — |
+| any | ✱ press / focus | ✱ press one step darker than hover | ✱ focus ring | — | ring `--ui-designer-control-accent` `#63B4F6` / ui2 `palette.info.light`, ≥ 3:1 | not drawn; `:focus-visible` 2px outline, offset 2px |
+
+Variant names `Terciary` and `Quaternary` are Figma's spelling; keep them in the component API only if the user approves (see open risks).
+
+### Button-Contained-Text-Icon (Buttons)
+
+Set [`20735:1190`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=20735-1190), 8 variants (Primary, Secondary, Terciary, Quaternary × default / Hover; the Properties panel shows 8 Selected). Hug 118 × 46, 12px radius, padding 12 / 24, gap 10; `settings` icon 18 × 18 White, label Inter 600 16 / 22 uppercase Snow (42 × 22). Fills and borders match Button-Contained-Text; the Secondary / Terciary / Quaternary defaults are inferred from the aggregate and that set. The ReportBug Attach instance overrides to Hug 257 × 30, 6px radius, padding 6 / 10. Code: as Button-Contained-Text; Creator Hub `Button` with `startIcon`.
+
+| Variant | State | Fill | Border | Content | Contrast | A11y |
+| --- | --- | --- | --- | --- | --- | --- |
+| Primary | default | Primary | — | icon White + label Snow | label 3.55:1 — **fails 4.5:1**; icon White on Primary ≥ 3.55:1 passes non-text | visible label names the control; icon `aria-hidden` |
+| Primary | hover | Primary Light 1 | — | same | label 2.80:1 — **fails** | — |
+| Secondary | default / hover | White 10 / White 20 | — | same | 13.53:1 / 9.44:1 | — |
+| Terciary | default / hover | none | 1.5px White 40 / 1.5px Snow | same | 3.84:1 / 17.73:1 border | — |
+| Quaternary | default / hover | Black 40 / White 10 | — | same | 13.53:1 on hover | — |
+| any | ✱ blocked / press / focus | ✱ as Button-Contained-Text | — | — | — | not drawn; follow Button-Contained-Text |
+
+### PillIconText (Buttons)
+
+Set [`20705:11942`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=20705-11942), 4 variants (`Idle`, `Hover`, `Selected`, `SelectedHover`). Hug 99 × 36, 100px pill, padding 8 / 16, gap 10; icon 20 × 20 (opacity 60% at rest), label Inter 600 14 / 100% uppercase. Code: inspector `ui/Pill` is a removable chip (`--base-02` fill, 13px / 500), not this toggle pill; Creator Hub ui2 `Chip` (`PublishedProjectCard`, `WorldPermissionsItem`) — drift; no toggle-pill exists.
+
+| Variant | State | Fill | Border | Icon / label | Contrast | A11y |
+| --- | --- | --- | --- | --- | --- | --- |
+| Idle | default | none | 1.5px White 10 | icon 60%, label White 60 | label 7.07:1 on `#161518` (7.10 on `#16141a`); border 1.31:1 — sub-threshold, the label carries it | `<button aria-pressed="false">` |
+| Hover | hover | none | 1.5px White 40 | same | border 3.84:1 | — |
+| Selected | selected | White 10 | none | icon White, label Snow | 13.53:1 | `aria-pressed="true"` |
+| SelectedHover | selected + hover | White 20 | none | same | 9.44:1 | — |
+| any | ✱ focus / disabled | — | ✱ focus ring | — | — | not drawn; 36px target clears 24px |
+
+### rounded-button-contained (Buttons)
+
+Set [`20705:12363`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=20705-12363), 5 variants (`State` Default / Hover / Blocked × `Hover Style` False / Tooltip Top / Tooltip Bottom; Hover / Tooltip Bottom read by analogy with Top). 40 × 40, 100px pill, no fill; `settings` glyph 24 × 24 White at 8 / 8; tooltip fill Onix Dark 1 with Snow text. Code: Creator Hub `EditorPage` `.actions` `IconButton` 32 × 32 on `--title-bar-button` at 8px radius (the title-bar instance overrides the 40 pill, see Editor Toolbar buttons); inspector none.
+
+| Variant | State | Fill | Glyph | Contrast | A11y |
+| --- | --- | --- | --- | --- | --- |
+| Default / False | default | none | White | White vs `#161518` ≥ 17.73:1 | `<button aria-label>` |
+| Hover / Default | hover | White 10 | White | fill vs `#161518` 1.31:1 — the hover boundary is faint, nothing else changes | — |
+| Hover / Tooltip Top, Bottom | hover | White 10 + tooltip | White | tooltip Snow on Onix Dark 1 13.73:1 | tooltip `role="tooltip"`, `aria-describedby` |
+| Blocked / False | blocked | none, node opacity 20% | White at 20% | disabled, exempt | `aria-disabled="true"` |
+
+### BackTitle (Buttons)
+
+Set [`20762:22781`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=20762-22781), 2 variants (Default / Hover). 40 × 40, 100px pill; `arrow-left` 24 × 24 Primary at 8 / 6. Code: Creator Hub `EditorPage .Header .back` (32 circle, 1px `--dark-gray` border, `ArrowBackIos` 14) — drift on size, border and glyph; inspector none.
+
+| Variant | State | Fill | Glyph | Contrast | A11y |
+| --- | --- | --- | --- | --- | --- |
+| Default | default | none | Primary | 4.99:1 on `#161518`, 5.01:1 on `#16141a`, 4.35:1 on card `#242129` (≥ 3:1 non-text) | `<button aria-label="Back">` |
+| Hover | hover | White 10 | Primary | fill vs `#161518` 1.31:1 | — |
+| any | ✱ focus / press | ✱ focus ring | — | — | not drawn |
+
+### Button-Multiple-Options (Buttons)
+
+Set [`20794:2456`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=20794-2456), 3 variants (`Property 1` Default / HoverLeft / HoverRight). Hug 155 × Fixed 40, 12px radius, no frame fill; Left Hug 115 × Fill 40, padding 0 / 14, gap 6, Primary, icon 18 × 18 + label Inter 600 16 / 22 uppercase Snow (63 × 22); Right 40 × 40 Primary with a 1px White 20 left border. Code: Creator Hub `CreateButton` (`StyledLabelButton` 130 × 40, 16 / 600 uppercase, 12px radius, Primary; toggle 40 × 40 with a 1px `rgba(255,255,255,.2)` left border) and `Button` `ButtonGroup` + `extra-button` — matches geometry; hover drifts (code `#F70038` `--dcl-hover` vs Figma Primary Light 1 `#FF6280`); inspector none.
+
+| Variant | State | Fill | Contrast | A11y |
+| --- | --- | --- | --- | --- |
+| Default | default | Primary both segments | label 3.55:1 — **fails 4.5:1**; divider White 20 over Primary 1.20:1, decorative | `<button>` + `<button aria-haspopup="menu" aria-label>` in one frame |
+| HoverLeft | hover left | frame fill Primary Light 1 | **label 2.80:1 — fails** | — |
+| HoverRight | hover right | frame fill Primary Light 1 | chevron Snow on Primary Light 1 2.80:1 — **fails 3:1 non-text** | — |
+| any | ✱ blocked / focus | — | — | not drawn |
+
+### ButtonContainedVertical (24 Caps) (Buttons)
+
+Set [`20925:148`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=20925-148), 2 variants (`Hover` Off / On; the set's child `Default hover` is `20925:165`). Fixed 112 × Hug 85, 12px radius, padding 20 / 10 / 10 / 10, gap 16; `Create-Event` icon 24 × 24 and label Inter 400 12 / 100% uppercase centred, both Gray (92 × 15). Code: none (Create-Event tile) — Creator Hub none; inspector none.
+
+| Variant | State | Fill | Content | Contrast | A11y |
+| --- | --- | --- | --- | --- | --- |
+| Off | default | none | Gray | 11.55:1 on `#161518` | `<button>` with the visible label |
+| On | hover | White 10 | Snow (inferred from the aggregate) | Gray on White 10 8.82:1; Snow 13.53:1 | — |
+| any | ✱ focus / press / disabled | — | — | — | not drawn |
+
+### ButtonContainedVertical (20) (Buttons)
+
+Set [`21076:34691`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=21076-34691), 3 variants (`Hover` × `Blocked`: Off/No, On/No, Off/Yes). Fixed 80 × 70, 10px radius, 1px White 10 border, padding 20 / 10, gap 10; `NodeType/Container` icon 20 × 20, label Inter 400 12 / 100% centred (no case) Gray (60 × 15). Code: inspector UIDesigner `Palette` `.ui-designer-palette-card` (row layout, 1px `--ui-designer-control-border`, 4px radius, padding 6 / 8, gap 8, disabled opacity .4) — drift on orientation, size and radius; Creator Hub none.
+
+| Variant | State | Fill | Border | Content | Contrast | A11y |
+| --- | --- | --- | --- | --- | --- | --- |
+| Off / No | default | none | 1px White 10 | Gray | 11.55:1; border 1.31:1, the label carries it | `<button>` |
+| On / No | hover | White 10 | 1px White 60 | Gray (Snow inferred) | Gray on White 10 8.82:1; border 7.07:1 | — |
+| Off / Yes | blocked | none | 1px White 10, no opacity | icon and label White 20 | 1.88:1 — disabled, exempt | `aria-disabled="true"` |
+| any | ✱ focus / press | — | ✱ focus ring | — | — | not drawn |
+
+### JumpInCTA (Buttons)
+
+Set [`20926:242`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=20926-242), 2 variants (Default / Hover). Hug 300 × Fixed 46, 12px radius, padding 0 / 100, gap 10, Primary; `CTABtnIcn/JumpIn` 25 × 25 (a PNG raster, not a vector), "JUMP IN" Inter 700 16 / 22 uppercase Snow (66 × 22), `Icn/JumpIn` 24 × 24 with an 8px radius and 1.5px White 20 border (a keycap). Code: Creator Hub `ManagePage/PublishedProjectCard` `handleJumpIn` (ui2 `Button`; styling unchecked); inspector none.
+
+| Variant | State | Fill | Contrast | A11y |
+| --- | --- | --- | --- | --- |
+| Default | default | Primary | **Snow on Primary 3.55:1 — fails 4.5:1** (700 / 16px is not large text) | `<button>`; ship the raster icon with `alt=""` |
+| Hover | hover | Primary Light 1 | **2.80:1 — fails** | — |
+| any | ✱ focus / press / disabled | — | — | not drawn |
+
+### ToggleLabel (Buttons)
+
+Set [`21004:3194`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=21004-3194), 2 variants (`Active` On / Off; an `Icon` boolean property is also exposed). Hug 55 × Fixed 20, 6px radius, padding 2 / 6, gap 2; icon 16 × 16 + label "Text" Inter 400 12 / 100% centred, no case (25 × 15). Code: none (20px chip) — Creator Hub none; inspector none.
+
+| Variant | State | Fill | Content | Contrast | A11y |
+| --- | --- | --- | --- | --- | --- |
+| On | selected | Blue Dark 3 (`#243852`) | Snow (the Off label is Silver per the aggregate) | Snow on Blue Dark 3 11.61:1; fill vs `#161518` 1.53:1 | `aria-pressed="true"` |
+| Off | default | none | Silver | 6.71:1 on `#161518`, 6.74:1 on `#16141a`, 5.85:1 on card | `aria-pressed="false"` |
+| any | ✱ hit target | — | — | **20px tall is below the 24px floor** — add 2px vertical hit padding | — |
+
+### ToolbarButton (Buttons)
+
+Set [`21005:3408`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=21005-3408), 3 variants (`Active` × `Selected`, plus a `Disabled` boolean property). 26 × 26, no radius; `Icon` 24 × 24 at 1 / 1 over a `Rectangle` 26 × 26. Code: inspector `Toolbar/ToolbarButton` (min-width 32, height 30, `--gray-0` fill, 4px radius, hover `--base-19`, active `--selected-item`; the UI Designer toolbar overrides `--selected-item` to `#244B7D` in `UIDesigner.css`, which is Blue Dark 2) — matches the selected colour, drift on size, radius and fill; Creator Hub none.
+
+| Variant | State | Rectangle | Icon | Contrast | A11y |
+| --- | --- | --- | --- | --- | --- |
+| Off / Off | disabled | Shadow `#161518` | Pale Black | 1.79:1 — disabled, exempt | `aria-disabled="true"` |
+| On / Off | default | Shadow | Gray | 11.55:1 | `<button aria-pressed="false" aria-label>` |
+| On / On | selected | Blue Dark 2 (`#244B7D`) | Snow | Snow on Blue Dark 2 8.61:1; fill vs Shadow 2.06:1 — below 3:1, the glyph colour change carries it | `aria-pressed="true"` |
+| any | ✱ hover / focus | — | — | — | not drawn; 26px target clears 24px |
+
+### Switch (Buttons)
+
+Set [`21167:30101`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=21167-30101), 2 variants (Switch On / Off), built on the legacy `DCL/Snow` and `DCL/Ruby` collection. 41 × 24; track 40 × 24, 58.82px radius, left 0.4; knob 19.53 × 19.53 at 2.23 / 2.53, `DCL/Snow`. Code: Creator Hub ui2 `Switch` (`OptimizeModal`, MUI default sizing) — drift on size and track colour; inspector none.
+
+| Variant | State | Track | Knob | Contrast | A11y |
+| --- | --- | --- | --- | --- | --- |
+| Off | default | White 20 | Snow, left | **track vs `#161518` 1.88:1 (1.87 on `#16141a`, 1.91 on card) — fails 3:1 non-text**; knob on track 9.44:1 | `<input role="switch" aria-checked="false">` |
+| On | selected | Ruby `#FF2D55` | Snow, right | track vs `#161518` 4.99:1; knob on track 3.55:1 (passes 3:1 non-text) | `aria-checked="true"`; knob position and colour both change |
+| any | ✱ hover / focus / disabled | — | — | — | not drawn; 24px tall meets the floor |
+
+### IconContainedToggle (Buttons)
+
+Set [`21206:31700`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=21206-31700), 4 variants (`Selected` × `Hover`; the main of `AIToggle`). 32 × 32, 8px radius; single `Icon` 24 × 24 at 4 / 4, a gradient sparkle at rest and Snow when selected. Code: Creator Hub `EditorPage .ai-toggle` (32 × 32; hover `--title-bar-button` `#2D2A33` vs Figma Charcoal `#25212A`; active `--ai-session-selected` `#244B7D`; active hover `--ai-session-selected-hover` `#243852`) — selected colours match, hover drifts; inspector none.
+
+| Variant | State | Fill | Contrast | A11y |
+| --- | --- | --- | --- | --- |
+| No / No | default | none | gradient ends per Editor Toolbar buttons | `<button aria-pressed="false">` |
+| No / Yes | hover | Charcoal `#25212A` | fill vs `#161518` 1.15:1 — near-invisible | — |
+| Yes / No | selected | Blue Dark 2 | Snow 8.61:1; fill vs `#161518` 2.06:1 | `aria-pressed="true"` |
+| Yes / Yes | selected + hover | Blue Dark 3 | Snow 11.61:1; fill 1.53:1 | — |
+
+### TextureContainedRoundedButton (Buttons)
+
+Set [`21232:42111`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=21232-42111), 2 variants (`Hover` No / Yes; Hug 132 × 82 dashed `#8A38F5` set frame is Figma chrome). 40 × 40, 100px pill; one `Texture` child 40 × 40, 100px, Snow-coloured (an image or fill slot; its type was not distinguishable in the panel); the set aggregate also lists Primary, Onix Dark 1 and White, so the instances on the page carry a tooltip like rounded-button-contained. Code: none found — Creator Hub none; inspector none.
+
+| Variant | State | Fill | Contrast | A11y |
+| --- | --- | --- | --- | --- |
+| Hover=No | default | none; `Texture` child | texture image decides; ring not drawn | `<button aria-label>`, image `alt=""` |
+| Hover=Yes | hover | White 10 | fill vs `#161518` 1.31:1 — faint | — |
+| any | ✱ focus / press / disabled | — | — | not drawn |
+
 ---
 
 ## Pages inventory
