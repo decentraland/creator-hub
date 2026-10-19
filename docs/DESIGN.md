@@ -234,15 +234,35 @@ Creator Hub's own chrome (home, scenes list, editor shell, settings, and modals)
 
 | Role | Tokens |
 | --- | --- |
-| Surfaces | `--bg` `#16141a`, `--background` `#18141a`, `--card` / `--modal` / `--secondary` `#242129`, `--darker-gray` `#242129`, `--toast` `#3d3b43`, `--dimmer` `#000000dd` |
+| Surfaces | `--bg` `#161518`, `--background` `#161518`, `--card` / `--modal` / `--secondary` `#242129`, `--darker-gray` `#242129`, `--toast` `#3d3b43`, `--dimmer` `#000000dd` |
 | Text | `--text` `#ffffff`, `--text-on-secondary` `#ffffffb2`, `--secondary-text` `#676370`, `--dcl-silver` `#a09ba8` |
-| Brand and actions | `--primary` / `--dcl` `#ff2d55`, `--primary-hover` `#ff3d61`, `--dcl-hover` `#f70038`, `--dcl-dark` `#9c1c34` |
-| Status | `--success` `#34ce77`, `--danger` `#ffa900`, `--error` `#ff0000` |
+| Brand and actions | `--primary` / `--dcl` `#ff2d55`, `--primary-hover` `#ff6280` (no consumer), `--dcl-hover` `#f70038`, `--dcl-dark` `#9c1c34` |
+| Status | `--success` `#34ce77`, `--danger` `#fe9c2a`, `--error` `#fb3b3b` |
 | Lines | `--divider` `#67637033`, `--text-area-border` `#676370`, `--clear-divider` `#a09ba8` |
 | AI assistant | `--ai-selected`, `--ai-menu-bg`, `--ai-input-bg`, `--ai-session-selected` and their `-hover` steps |
 | ui2 overrides | `--mui-shape-borderRadius` `6px`, `--mui-palette-action-disabled`, `--mui-palette-secondary-contrast` |
 
 The brand pink matches the inspector's `--primary-main`, but it's defined separately on each side of the iframe. Change both, or neither.
+
+**Figma alignment of the status, surface, and hover tokens.** `--error`, `--danger`, `--background`, `--bg`, `--primary-hover` and `--purple-banner` carry Figma's System/Red, System/Orange, Neutrals/Shadow, Primary Light 1 and Brand/Purple values. Names are unchanged.
+
+- `--primary-hover` has no consumer. The hover users see on Creator Hub buttons comes from ui2 `palette.primary.dark` (`#F70038`) and from components using `--dcl-hover`, so it does not move with this token. White-ish text on `#ff6280` measures 2.80:1 (Snow `#fcfcfc`); the value is the user's pick from Figma and a known trade-off, not a pass.
+- `--bg` and `--purple-banner` also have no consumer.
+- `--background` paints cards on the page (`HeroStat`, `StatsRow`, `EngagementTab .SocialChart`) and the `Deploy` error-detail block; `--danger` and `--error` paint text, icons and one border.
+
+| Pair (consumer) | Old | New | Threshold |
+| --- | --- | --- | --- |
+| `--error` text on modal paper `#1d1c20` (`CreateProject`, `RenameFolder`, `AppSettings` Scenes, `DeleteProject`, `Deploy`, `AlternativeServers`, `AddUserForm` CSV, `DeploymentHistory`, `RangeField`) | 4.24 | 4.67 | 4.5 text: old failed, new passes |
+| `--error` icon on `#1d1c20` (`ConnectionModal`) | 4.24 | 4.67 | 3 non-text: passes |
+| `--error` on page `#16141a` (`ConnectionStatusIndicator` icon) | 4.57 | 5.04 | 3 non-text: passes |
+| `--error` delta text and icon on its card (`HeroStat`) | 4.55 on `#18141a` | 5.02 on `#161518` | 4.5 text: passes |
+| `--danger` border and icon on `#1d1c20` (`WorldPermissionsAccessTab`, `ConnectionModal`, `ConnectionStatusIndicator`) | 8.82 | 8.07 | 3 non-text: passes |
+| `--danger` icon on `#4f3020` (`#ec7122` at 24% over `#1d1c20`, `LayoutTab` warning) | 6.15 | 5.63 | 3 non-text: passes |
+| `--danger` icon on `#4a2b1a` (`ConfirmationPanel` warning) | 6.62 | 6.06 | 3 non-text: passes |
+| `--dcl-silver` `#a09ba8` text on its `--background` card (`Deploy` error detail) | 6.72 | 6.71 | 4.5 text: passes |
+| Card `--background` vs modal paper `#1d1c20` | 1.07 | 1.07 | decorative, unchanged |
+
+No pair that passed now fails.
 
 ### Conventions
 
@@ -263,7 +283,7 @@ Reconciled on October 16, 2026 from the Colors page ([node `20752:6024`](https:/
 | Primary/Primary · Brand/Ruby | `#FF2D55` | `--primary-main` | `--primary`, `--dcl` · ui2 `palette.primary.main` | match |
 | Primary/Primary Dark 1 | `#F70038` | `--primary-dark` | `--dcl-hover` · ui2 `palette.primary.dark` | match |
 | Primary/Primary Dark 2 | `#D80029` | — | ui2 `colors.primaryDark2` | missing in inspector |
-| Primary/Primary Light 1 | `#FF6280` | — | `--primary-hover` `#ff3d61` · ui2 `palette.primary.light` `#F26276` (dark scheme; `#F8919D` from ui2 3.23.8) · ui2 `colors.primaryLight1` `#F8919D` | **drift**, three ways: Figma hover pink vs `theme.css` vs ui2 |
+| Primary/Primary Light 1 | `#FF6280` | — | `--primary-hover` `#ff6280` (unused) · ui2 `palette.primary.light` `#F26276` (dark scheme; `#F8919D` from ui2 3.23.8) · ui2 `colors.primaryLight1` `#F8919D` | match in `theme.css` (value only, no consumer); **drift** in ui2 `palette.primary.light` and `colors.primaryLight1` (upstream) |
 | Primary/Primary Light 2 | `#FF93A8` | — | ui2 `colors.primaryLight2` `#FFC9D5` | drift (ui2 upstream) |
 | Primary Alt/Primary Alt · Brand/Orange | `#FF7439` | `--secondary-main` | — | match |
 | Primary Alt/Primary Alt Dark 1 | `#F45708` | `--secondary-dark` `#f45708` | — | match |
@@ -274,7 +294,7 @@ Reconciled on October 16, 2026 from the Colors page ([node `20752:6024`](https:/
 | Brand/Melon | `#FFA25A` | `--melon` | — | match |
 | Brand/Lavender | `#C640CD` | `--lavender`, `--smart-item-icon-bg-color` | — | match |
 | Brand/Violet | `#A524B3` | `--violet` | — | match |
-| Brand/Purple | `#691FA9` | `--purple` | `--purple-banner` `#691ea9` | drift (1/255 in Creator Hub) |
+| Brand/Purple | `#691FA9` | `--purple` | `--purple-banner` `#691fa9` | match in `theme.css` (no consumer) |
 | Brand/Flare · Cerise · Amin | gradients: Ruby→Yellow, Ruby→Lavender, Lavender→Purple | — | `--metaverse-gradient` is a different gradient | missing (no consumer yet) |
 
 ### Neutrals
@@ -294,7 +314,7 @@ The Figma ramp has 13 swatches; 10 are variables and three (Onix, Onix Dark 1, C
 | Onix (swatch) | `#35333B` | `--ui-designer-control-bg`, `--ui-designer-control-active-fg` | — | match |
 | Onix Dark 1 (swatch) | `#2D2A33` | — | `--title-bar-button` | missing in inspector |
 | Charcoal (swatch) | `#25212A` | `--ui-designer-panel-bg` → `--base-19` `#242129` | `--card`, `--modal`, `--secondary`, `--darker-gray` `#242129` · ui2 `neutral.softBlack2` `#242129` | **deviation**: both worlds follow ui2's `#242129`, 1/255 from Figma; keep |
-| Neutrals/Shadow | `#161518` | `--base-20`, `--tree-bg-color` | `--black` · ui2 `neutral.softBlack1` | match; `--bg` `#16141a` and `--background` `#18141a` are near-misses (drift) |
+| Neutrals/Shadow | `#161518` | `--base-20`, `--tree-bg-color` | `--black` · ui2 `neutral.softBlack1` | match; `--bg` and `--background` are `#161518` in `theme.css` too (match) |
 | Neutrals/Black | `#000000` | `--black`, `--base-21` | `--bg-inspector` · ui2 `neutral.black` | match |
 | — | `#676370` | `--neutral-grey-4` | `--secondary-text`, `--text-area-border`, `--popup`, and the `#676370xx` alpha family (`--divider`, `--secondary-on-modal`, `--card-on-modal`) | **not in Figma**; nearest is Graffito `#5E5B67` |
 
@@ -309,10 +329,10 @@ ui2's dark theme carries Figma's System ramp verbatim (`palette.success` / `.war
 | System/Green | `#34CE77` | `--success-main` `#34ce77` | `--success` · ui2 `palette.success.main` | match in inspector |
 | System/Green Dark 1 / Light 1 | `#00B453` / `#65D890` | `--success-dark` `#00b453` / `--success-light` `#65d890` | ui2 `palette.success.dark` / `.light` | match in inspector |
 | System/Green Dark 2 / Light 2 | `#00A146` / `#C1EECF` | — | — | missing |
-| System/Orange | `#FE9C2A` | `--warning-main` `#fe9c2a` | `--danger` `#ffa900` · ui2 `palette.warning.main` | match in inspector; drift in `theme.css` |
+| System/Orange | `#FE9C2A` | `--warning-main` `#fe9c2a` | `--danger` `#fe9c2a` · ui2 `palette.warning.main` | match in inspector and `theme.css` |
 | System/Orange Dark 1 / Light 1 | `#F38025` / `#FFB95B` | `--warning-dark` `#f38025` / — | ui2 `palette.warning.dark` / `.light` | match in inspector (Light 1 missing) |
 | System/Orange Dark 2 / Light 2 | `#EC7122` / `#FFCD88` | — | — | missing |
-| System/Red | `#FB3B3B` | `--error-main` `#fb3b3b` | `--error` `#ff0000` · ui2 `palette.error.main` | match in inspector; drift in `theme.css` |
+| System/Red | `#FB3B3B` | `--error-main` `#fb3b3b` | `--error` `#fb3b3b` · ui2 `palette.error.main` | match in inspector and `theme.css` |
 | System/Red Dark 1 / Light 1 | `#EC303A` / `#E97177` | `--error-dark` `#ec303a` / `--error-light` `#e97177` | ui2 `palette.error.dark` / `.light` | match in inspector |
 | System/Red Dark 2 / Light 2 | `#CC1D2C` / `#FFCDD4` | — | — | missing |
 | Blue (swatch) | `#2196F3` | — | ui2 `palette.info.main` | missing in inspector |
@@ -535,12 +555,12 @@ Every literal the Surfaces pages use (Accordion, Background, Cards, Menu, Icons,
 | `#25212A` AI-toggle hover, button-table board | Neutrals/Charcoal | `--ui-designer-panel-bg` is `#242129` — documented deviation (1/255) | `--darker-gray`, `--card`, `--modal` `#242129` — same 1/255 deviation |
 | `#244B7D` AI-toggle selected | System/Blue Dark 2 | missing | `--ai-session-selected` |
 | `#243852` AI-toggle selected + hover | System/Blue Dark 3 | missing | `--ai-session-selected-hover` |
-| `#FF6280` publish split-button hover | Primary/Primary Light 1 | missing | missing (`--primary-hover` is `#ff3d61`, `--dcl-hover` `#f70038`) |
+| `#FF6280` publish split-button hover | Primary/Primary Light 1 | missing | `--primary-hover` `#ff6280` (same value, unused; the visible hover is ui2 `palette.primary.dark` `#F70038` / `--dcl-hover`) |
 | `#5E5B67` `.dcl.eth` suffix | Neutrals/Graffito | missing | `--light-gray` |
 | `#34CE77` online dot | System/Green | `--success-main` `#34ce77` (same value) | `--success` |
-| `#FE9C2A` away dot | System/Orange | missing | missing (`--danger` is `#ffa900`) |
+| `#FE9C2A` away dot | System/Orange | missing | `--danger` `#fe9c2a` (same value) |
 | `#28AC00` online dot on the 28px avatar only | DCL/Grass (a legacy-library variable, shown with `?` in the panel) | missing | missing — Figma drift, see ProfilePic |
-| `#FF0000` blocked ring | DCL/Red (legacy) | `--error-main` is `#fb3b3b`, not the legacy `#FF0000` | `--error` |
+| `#FF0000` blocked ring | DCL/Red (legacy) | `--error-main` is `#fb3b3b`, not the legacy `#FF0000` | `--error` `#fb3b3b` |
 | `#FF4BED` @ 30% + layer blur 500 modal glow | DCL/Rarities/Mythic (legacy) | missing | missing |
 | `#FFD079 → #DA36FF` AI sparkle gradient | — (raw linear gradient) | missing | missing (`components/Icons/AssistantIcon` paints its own gradient) |
 | `rgba(0,0,0,.2)` modal title-bar fill | Transparencies/Black 20 | `--contexify-separator-color` (same value, a react-contexify role) | missing |
