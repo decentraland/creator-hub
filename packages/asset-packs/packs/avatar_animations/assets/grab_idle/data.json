@@ -1,0 +1,8 @@
+{
+  "id": "8caf5bec-0423-470c-8999-6c849986bd9b",
+  "name": "Grab Idle",
+  "category": "actions",
+  "tags": ["grab", "hold", "idle", "emote", "animation", "avatar"],
+  "description": "Avatar stands holding an object with both hands.",
+  "author": "Decentraland Foundation"
+}

@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core::GltfContainer",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/arc_reading_lamp/arc_reading_lamp.glb"
+          }
+        }
+      }
+    }
+  ]
+}

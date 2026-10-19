@@ -3,6 +3,7 @@ import { AiOutlineSound as AudioIcon } from 'react-icons/ai';
 import { IoIosImage as ImageIcon } from 'react-icons/io';
 import { IoCubeOutline as ModelIcon, IoVideocamOutline as VideoIcon } from 'react-icons/io5';
 import { FaFile as OtherIcon } from 'react-icons/fa';
+import { MdOutlineEmojiPeople as EmoteIcon } from 'react-icons/md';
 import { SiTypescript as ScriptIcon } from 'react-icons/si';
 import { MdContentCopy as CopyNameIcon } from 'react-icons/md';
 import { Item as MenuItem } from 'react-contexify';
@@ -17,6 +18,8 @@ import FolderIcon from '../Icons/Folder';
 import { CopyPathIcon, NewFolderIcon } from '../Icons/ContextMenu';
 import Search from '../Search';
 import { withAssetDir } from '../../lib/data-layer/host/fs-utils';
+import { getSceneClient } from '../../lib/rpc/scene';
+import { copyBuiltInEmoteName } from '../../lib/logic/built-in-emotes';
 import { removeAsset } from '../../redux/data-layer';
 import { selectThumbnailsLoaded } from '../../redux/app';
 import { useAppDispatch, useAppSelector } from '../../redux/hooks';
@@ -28,7 +31,7 @@ import {
 } from '../../lib/utils/asset-explorer-region';
 import { determineAssetType, extractFileExtension } from '../ImportAsset/utils';
 import { getThumbnailHashNameForAsset } from '../../lib/utils/hash';
-import { getFilterFromTree, getFullNodePath } from './utils';
+import { getFilterFromTree, getFullNodePath, isBuiltInPath, isEmoteAsset } from './utils';
 import type { AssetNodeFolder, AssetNodeItem } from './types';
 import { Tile } from './Tile';
 import { generateAssetTree, getChildren as _getChildren, TreeNode, ROOT, getTiles } from './tree';
@@ -49,9 +52,12 @@ import { forwardToViewport, isCameraKey, isViewportFocused } from './viewport-ke
 
 export { TreeNode };
 
-function noop() {}
-
 const MAX_QUEUED_THUMBNAILS = 60;
+
+/** Paths the explorer never renames, moves, duplicates or deletes. */
+function isReadOnlyPath(path: string) {
+  return isBuiltInPath(path);
+}
 
 function isEditableTarget(target: EventTarget | null) {
   const el = target as HTMLElement | null;
@@ -268,7 +274,9 @@ function ProjectView({ folders, thumbnails }: Props) {
    */
   const handleRemoveMany = useCallback(
     (values: string[]) => {
-      const targets = pruneNestedPaths(values.filter(value => value !== ROOT));
+      const targets = pruneNestedPaths(
+        values.filter(value => value !== ROOT && !isReadOnlyPath(value)),
+      );
       const folders = targets.filter(value => fullTree.get(value)?.type === 'folder');
       const paths = targets.flatMap(collectFiles).map(path => withAssetDir(path));
       if (!paths.length && !folders.length) return;
@@ -301,15 +309,33 @@ function ProjectView({ folders, thumbnails }: Props) {
 
   const handleModalClose = useCallback(() => setModal(undefined), []);
 
+  const mentionAsset = useCallback((node: TreeNode, path: string) => {
+    const builtInEmote = (node as AssetNodeItem).asset.builtInEmote;
+    void getSceneClient()
+      ?.mentionAsset(
+        builtInEmote ? { builtInEmote: builtInEmote.name } : { path: withAssetDir(path) },
+      )
+      .catch(console.error);
+  }, []);
+
+  const handleDoubleSelect = useCallback(
+    (value: string) => {
+      const node = tree.get(value);
+      if (node?.type === 'asset') mentionAsset(node, value);
+    },
+    [tree, mentionAsset],
+  );
+
+  /** Double click on a card: opens a folder, mentions a file in the AI assistant. */
   const handleOpenFolder = useCallback(
     (node: TreeNode) => () => {
-      if (node.type === 'asset') return;
       const path = getFullNodePath(node).slice(1);
+      if (node.type === 'asset') return mentionAsset(node, path);
       open.add(path);
       setLastSelected(path);
       selectOnly(path);
     },
-    [selectOnly],
+    [selectOnly, mentionAsset],
   );
   const handleDragContext = useCallback(() => ({ tree }), [tree]);
   // Drop targets (renderer, video inputs) read a `value` like the Tile emits; the
@@ -352,6 +378,14 @@ function ProjectView({ folders, thumbnails }: Props) {
       selectOnly(value);
     },
     [toggleSelected, selectRange, selectOnly, getVisibleNodes, open],
+  );
+
+  const getAnimatedThumbnail = useCallback(
+    async (value: AssetNodeItem) => {
+      const name = await getThumbnailHashNameForAsset(value.asset.src, 'webp');
+      return thumbnails.find($ => $.path.endsWith(name))?.content;
+    },
+    [thumbnails],
   );
 
   const handleFilterClick = useCallback((type: Filter) => {
@@ -523,6 +557,19 @@ function ProjectView({ folders, thumbnails }: Props) {
 
   const getExtraContextMenu = useCallback(
     (val: string) => {
+      if (isBuiltInPath(val)) {
+        const emote = (tree.get(val) as AssetNodeItem | undefined)?.asset?.builtInEmote;
+        if (!emote) return null;
+        return (
+          <MenuItem
+            id="copy-name"
+            onClick={handleAction(() => copyBuiltInEmoteName(emote.name))}
+          >
+            <CopyNameIcon size={16} />
+            Copy name
+          </MenuItem>
+        );
+      }
       const isMultiple = getTargets(val).length > 1;
       return (
         <>
@@ -543,22 +590,26 @@ function ProjectView({ folders, thumbnails }: Props) {
         </>
       );
     },
-    [getTargets, copyRelativePaths, copyFileNames, handleAction],
+    [tree, getTargets, copyRelativePaths, copyFileNames, handleAction],
   );
 
-  const canRenameNode = useCallback(
-    (val: string) => val !== ROOT && !!tree.get(val) && getTargets(val).length === 1,
-    [tree, getTargets],
+  const isEditableNode = useCallback(
+    (val: string) => val !== ROOT && !isReadOnlyPath(val) && tree.has(val),
+    [tree],
   );
-  const canDuplicateNode = useCallback((val: string) => val !== ROOT && !!tree.get(val), [tree]);
-  const isAssetNodeValue = useCallback((val: string) => tree.get(val)?.type === 'asset', [tree]);
+  const canRenameNode = useCallback(
+    (val: string) => isEditableNode(val) && getTargets(val).length === 1,
+    [isEditableNode, getTargets],
+  );
+  const canDuplicateNode = isEditableNode;
+  const canDragNode = isEditableNode;
   const canRemoveNode = useCallback(
-    (val: string) => getTargets(val).some(target => target !== ROOT && tree.has(target)),
-    [tree, getTargets],
+    (val: string) => getTargets(val).some(isEditableNode),
+    [isEditableNode, getTargets],
   );
   const canAddChild = useCallback(
-    (val: string) => val !== ROOT && tree.get(val)?.type === 'folder',
-    [tree],
+    (val: string) => isEditableNode(val) && tree.get(val)?.type === 'folder',
+    [isEditableNode, tree],
   );
 
   /**
@@ -840,7 +891,7 @@ function ProjectView({ folders, thumbnails }: Props) {
             onRemove={handleRemove}
             onRename={handleRename}
             onSelect={onSelect}
-            onDoubleSelect={noop}
+            onDoubleSelect={handleDoubleSelect}
             onSetOpen={onSetOpen}
             onDuplicate={handleDuplicate}
             getId={(value: string) => value.toString()}
@@ -851,8 +902,8 @@ function ProjectView({ folders, thumbnails }: Props) {
             isSelected={(val: string) => selectionSet.has(val)}
             isHidden={(val: string) => val === ROOT}
             canRename={canRenameNode}
-            renameOnDoubleClick={isAssetNodeValue}
             canRemove={canRemoveNode}
+            canDrag={canDragNode}
             canDuplicate={canDuplicateNode}
             canAddChild={canAddChild}
             addChildLabel="New folder"
@@ -884,9 +935,11 @@ function ProjectView({ folders, thumbnails }: Props) {
                 onCopyRelativePath={copyRelativePaths}
                 onCopyFileName={copyFileNames}
                 selected={selectionSet.has(valueId)}
+                readOnly={isReadOnlyPath(valueId)}
                 actionCount={getTargets(valueId).length}
                 thumbnail={src ? thumbnailMap?.get(src) : undefined}
                 thumbnailPending={!!src && thumbnailQueue.includes(src)}
+                getAnimatedThumbnail={getAnimatedThumbnail}
                 dndType={DRAG_N_DROP_ASSET_KEY}
               />
             );
@@ -911,6 +964,7 @@ function NodeIcon({ value }: { value?: TreeNode }) {
     );
   } else {
     const Icon = useMemo(() => {
+      if (isEmoteAsset((value as AssetNodeItem).asset)) return EmoteIcon;
       const classification = determineAssetType(extractFileExtension(value.name)[1]);
       switch (classification) {
         case 'Models':

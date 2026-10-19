@@ -1,3 +1,5 @@
+import type { Asset } from '../../lib/logic/catalog';
+import { getAnimatedPreviewUrl, getBuiltInEmote, getContentsUrl } from '../../lib/logic/catalog';
 import { Filter } from './Filters/types';
 import type { TreeNode } from './ProjectView';
 import type { AssetNode, AssetNodeFolder, AssetNodeItem, IAsset } from './types';
@@ -83,6 +85,7 @@ export function isAssetNode(node: AssetNode | TreeNode): node is AssetNodeItem {
 export const DEFAULT_FILTERS: Filter[] = [Filter.All /* Filter.Recents */];
 export const FILTERS_IN_ORDER: Filter[] = [
   Filter.Models,
+  Filter.Emotes,
   Filter.Images,
   Filter.Audio,
   Filter.Video,
@@ -90,10 +93,17 @@ export const FILTERS_IN_ORDER: Filter[] = [
   Filter.Other,
 ];
 
-export function mapAssetTypeToFilter(type: IAsset['type']): Filter | undefined {
-  switch (type) {
+// Avatar animations are plain GLBs; the `_emote` suffix (which the import dialog appends to any
+// model it detects as an emote) is what tells them apart from scene models.
+export function isEmoteAsset(asset: IAsset): boolean {
+  if (asset.builtInEmote) return true;
+  return asset.type === 'gltf' && /_emote\.(glb|gltf)$/i.test(asset.src);
+}
+
+export function mapAssetTypeToFilter(asset: IAsset): Filter | undefined {
+  switch (asset.type) {
     case 'gltf':
-      return Filter.Models;
+      return isEmoteAsset(asset) ? Filter.Emotes : Filter.Models;
     case 'audio':
       return Filter.Audio;
     case 'image':
@@ -109,4 +119,40 @@ export function mapAssetTypeToFilter(type: IAsset['type']): Filter | undefined {
 
 export function getFilterFromTree(filters: Set<Filter>): Filter[] {
   return [...DEFAULT_FILTERS, ...FILTERS_IN_ORDER.filter($ => filters.has($))];
+}
+
+export const BUILT_IN_ANIMATIONS_FOLDER = 'Built-in animations';
+
+/** The built-in animations folder and its entries, which exist only in the explorer. */
+export function isBuiltInPath(path: string): boolean {
+  return path === BUILT_IN_ANIMATIONS_FOLDER || path.startsWith(BUILT_IN_ANIMATIONS_FOLDER + '/');
+}
+
+// A read-only folder listing the built-in avatar animations from the catalog, so creators see
+// what every scene can already play. Nothing in it exists on disk.
+export function buildBuiltInAnimationsFolder(assets: Asset[]): AssetNodeFolder {
+  const folder: AssetNodeFolder = {
+    name: BUILT_IN_ANIMATIONS_FOLDER,
+    parent: null,
+    type: 'folder',
+    children: [],
+  };
+  folder.children = assets
+    .filter(asset => getBuiltInEmote(asset))
+    .sort((a, b) => a.name.localeCompare(b.name))
+    .map(asset => ({
+      name: asset.name,
+      parent: folder,
+      type: 'asset',
+      asset: {
+        src: `${BUILT_IN_ANIMATIONS_FOLDER}/${asset.name}`,
+        type: 'gltf',
+        builtInEmote: {
+          name: getBuiltInEmote(asset)!,
+          thumbnailUrl: getContentsUrl(asset.contents['thumbnail.png']),
+          previewUrl: getAnimatedPreviewUrl(asset),
+        },
+      },
+    }));
+  return folder;
 }

@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core::GltfContainer",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/lab_vent_grille/lab_vent_grille.glb"
+          }
+        }
+      }
+    }
+  ]
+}

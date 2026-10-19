@@ -1,0 +1,8 @@
+{
+  "id": "2a60ffee-79d7-58ec-81b6-065633540b19",
+  "name": "Piston Platform",
+  "category": "platforms",
+  "tags": ["platform", "piston", "stairs", "staircase", "elevator", "scifi", "lab"],
+  "description": "A platform on five pistons that can lower fully, rise fully, or step into a staircase.",
+  "author": "Decentraland Foundation"
+}

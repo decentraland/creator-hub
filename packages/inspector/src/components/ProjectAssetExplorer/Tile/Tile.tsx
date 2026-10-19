@@ -3,7 +3,7 @@ import { AiOutlineSound as AudioIcon } from 'react-icons/ai';
 import { IoIosImage as ImageIcon } from 'react-icons/io';
 import { IoCubeOutline as ModelIcon, IoVideocamOutline as VideoIcon } from 'react-icons/io5';
 import { FaFile as OtherIcon } from 'react-icons/fa';
-import { MdContentCopy as CopyNameIcon } from 'react-icons/md';
+import { MdContentCopy as CopyNameIcon, MdOutlineEmojiPeople as EmoteIcon } from 'react-icons/md';
 import { Item as MenuItem } from 'react-contexify';
 import { SiTypescript as ScriptIcon } from 'react-icons/si';
 import { useDrag, useDrop } from 'react-dnd';
@@ -14,6 +14,10 @@ import {
   transformBinaryToBase64Resource,
   withAssetDir,
 } from '../../../lib/data-layer/host/fs-utils';
+import {
+  copyBuiltInEmoteName,
+  notifyBuiltInEmoteNotDraggable,
+} from '../../../lib/logic/built-in-emotes';
 import { getDataLayerInterface, selectDataLayerRemovingAsset } from '../../../redux/data-layer';
 import { useAppSelector } from '../../../redux/hooks';
 import { ContextMenu as Menu } from '../../ContexMenu';
@@ -23,6 +27,8 @@ import { Input } from '../../Input';
 import { withContextMenu } from '../../../hoc/withContextMenu';
 import { useContextMenu } from '../../../hooks/sdk/useContextMenu';
 import { determineAssetType, extractFileExtension } from '../../ImportAsset/utils';
+import type { AssetNodeItem } from '../types';
+import { isEmoteAsset } from '../utils';
 import { guessMimeType } from '../file-ops';
 import type { Props } from './types';
 
@@ -73,12 +79,16 @@ export const Tile = withContextMenu<Props>(
     getDragItems,
     onDropItems,
     selected,
+    readOnly,
     contextMenuId,
     dndType,
     thumbnail,
     thumbnailPending,
+    getAnimatedThumbnail,
   }) => {
     const [editing, setEditing] = useState(false);
+    const [animatedThumbnail, setAnimatedThumbnail] = useState<Uint8Array | null>(null);
+    const [hovered, setHovered] = useState(false);
     const { handleAction } = useContextMenu();
     const isRemovingAsset = useAppSelector(selectDataLayerRemovingAsset);
 
@@ -89,19 +99,32 @@ export const Tile = withContextMenu<Props>(
     );
     const imageUrl = useImageUrl(valueId, classification === 'Images');
 
+    useEffect(() => {
+      if (value?.type === 'asset' && getAnimatedThumbnail) {
+        getAnimatedThumbnail(value as AssetNodeItem).then(data =>
+          setAnimatedThumbnail(data ? data : null),
+        );
+      }
+    }, [value, getAnimatedThumbnail]);
+
     const isLoading = useMemo(() => {
       const path = withAssetDir(valueId);
       return !!isRemovingAsset[path];
     }, [valueId, isRemovingAsset]);
 
+    const builtInEmote =
+      value?.type === 'asset' ? (value as AssetNodeItem).asset.builtInEmote : undefined;
+    const canMove = !readOnly && !builtInEmote;
+
     const [, drag] = useDrag(
       () => ({
         type: dndType,
+        canDrag: canMove,
         // `value` is what the viewport and the component inputs read; `items` lets the tree
         // and the folder cards move the whole selection.
         item: () => ({ value: valueId, items: getDragItems(valueId), context: getDragContext() }),
       }),
-      [valueId, getDragItems, getDragContext],
+      [valueId, canMove, getDragItems, getDragContext],
     );
 
     const isFolder = value?.type === 'folder';
@@ -110,7 +133,7 @@ export const Tile = withContextMenu<Props>(
         accept: dndType,
         canDrop: (item: { value?: string; items?: string[] }) => {
           const items = item.items ?? (item.value ? [item.value] : []);
-          return isFolder && !items.includes(valueId);
+          return isFolder && !readOnly && !items.includes(valueId);
         },
         drop: (item: { value?: string; items?: string[] }, monitor) => {
           if (monitor.didDrop()) return;
@@ -118,7 +141,7 @@ export const Tile = withContextMenu<Props>(
         },
         collect: monitor => ({ isDropTarget: monitor.isOver() && monitor.canDrop() }),
       }),
-      [isFolder, valueId, onDropItems],
+      [isFolder, readOnly, valueId, onDropItems],
     );
 
     const handleRemove = useCallback(() => onRemove(valueId), [valueId, onRemove]);
@@ -144,10 +167,32 @@ export const Tile = withContextMenu<Props>(
 
     const renderThumbnail = () => {
       if (value.type === 'folder') return <FolderIcon />;
+      if (builtInEmote) {
+        return (
+          <img
+            src={
+              hovered && builtInEmote.previewUrl
+                ? builtInEmote.previewUrl
+                : builtInEmote.thumbnailUrl
+            }
+            alt={value.name}
+            draggable={false}
+          />
+        );
+      }
       if (imageUrl) {
         return (
           <img
             src={imageUrl}
+            alt={value.name}
+            draggable={false}
+          />
+        );
+      }
+      if (hovered && animatedThumbnail) {
+        return (
+          <img
+            src={transformBinaryToBase64Resource(animatedThumbnail, 'image/webp')}
             alt={value.name}
             draggable={false}
           />
@@ -162,6 +207,7 @@ export const Tile = withContextMenu<Props>(
           />
         );
       }
+      if (isEmoteAsset((value as AssetNodeItem).asset)) return <EmoteIcon />;
       switch (classification) {
         case 'Models':
           return <ModelIcon className={cx({ 'thumbnail-pending': thumbnailPending })} />;
@@ -178,10 +224,21 @@ export const Tile = withContextMenu<Props>(
       }
     };
 
-    return (
-      <>
-        <Menu id={contextMenuId}>
-          {!isMultiple && (
+    const renderMenu = () => {
+      if (builtInEmote) {
+        return (
+          <MenuItem
+            id="copy-name"
+            onClick={handleAction(() => copyBuiltInEmoteName(builtInEmote.name))}
+          >
+            <CopyNameIcon size={16} />
+            Copy name
+          </MenuItem>
+        );
+      }
+      return (
+        <>
+          {!readOnly && !isMultiple && (
             <MenuItem
               id="rename"
               onClick={handleAction(handleStartRename)}
@@ -190,13 +247,15 @@ export const Tile = withContextMenu<Props>(
               Rename
             </MenuItem>
           )}
-          <MenuItem
-            id="duplicate"
-            onClick={handleAction(handleDuplicate)}
-          >
-            <DuplicateIcon />
-            {isMultiple ? `Duplicate ${actionCount} items` : 'Duplicate'}
-          </MenuItem>
+          {!readOnly && (
+            <MenuItem
+              id="duplicate"
+              onClick={handleAction(handleDuplicate)}
+            >
+              <DuplicateIcon />
+              {isMultiple ? `Duplicate ${actionCount} items` : 'Duplicate'}
+            </MenuItem>
+          )}
           <MenuItem
             id="copy-relative-path"
             onClick={handleAction(handleCopyPath)}
@@ -211,20 +270,31 @@ export const Tile = withContextMenu<Props>(
             <CopyNameIcon size={16} />
             {isMultiple ? 'Copy file names' : 'Copy file name'}
           </MenuItem>
-          <MenuItem
-            id="delete"
-            onClick={handleAction(handleRemove)}
-          >
-            <DeleteIcon />
-            {isMultiple ? `Delete ${actionCount} items` : 'Delete'}
-          </MenuItem>
-        </Menu>
+          {!readOnly && (
+            <MenuItem
+              id="delete"
+              onClick={handleAction(handleRemove)}
+            >
+              <DeleteIcon />
+              {isMultiple ? `Delete ${actionCount} items` : 'Delete'}
+            </MenuItem>
+          )}
+        </>
+      );
+    };
+
+    return (
+      <>
+        <Menu id={contextMenuId}>{renderMenu()}</Menu>
         <div
           ref={node => drag(drop(node))}
           className={cx('Tile', { selected, 'drop-target': isDropTarget })}
           key={value.name}
           onClick={onClick}
           onDoubleClick={onSelect}
+          onDragStart={builtInEmote ? () => notifyBuiltInEmoteNotDraggable(value.name) : undefined}
+          onMouseEnter={() => setHovered(true)}
+          onMouseLeave={() => setHovered(false)}
           title={value.name}
           data-test-id={valueId}
           data-test-label={value.name}

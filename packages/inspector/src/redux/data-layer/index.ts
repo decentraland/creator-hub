@@ -115,6 +115,8 @@ export const dataLayer = createSlice({
       delete state.removingAsset[payload.payload.path];
     },
     saveThumbnail: (_state, _payload: PayloadAction<SaveFileRequest>) => {},
+    // A looping animated preview (WebP) kept beside the asset's still PNG thumbnail.
+    saveAnimatedThumbnail: (_state, _payload: PayloadAction<SaveFileRequest>) => {},
     getThumbnails: () => {},
     createCustomAsset: (
       _state,
@@ -182,6 +184,7 @@ export const {
   removeAsset,
   clearRemoveAsset,
   saveThumbnail,
+  saveAnimatedThumbnail,
   getThumbnails,
   createCustomAsset,
   deleteCustomAsset,

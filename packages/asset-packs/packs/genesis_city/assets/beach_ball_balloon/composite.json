@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core::GltfContainer",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/beach_ball_balloon/beach_ball_balloon.glb"
+          }
+        }
+      }
+    }
+  ]
+}
