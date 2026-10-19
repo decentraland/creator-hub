@@ -3,6 +3,6 @@
   "name": "Lab Capsule Door",
   "category": "doors",
   "tags": ["capsule", "pod", "door", "scifi", "lab"],
-  "description": "A glass teleporter capsule whose doors open and close when clicked.",
+  "description": "A glass capsule whose doors open and close when clicked.",
   "author": "Decentraland Foundation"
 }
