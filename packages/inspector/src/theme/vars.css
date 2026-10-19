@@ -25,7 +25,7 @@
   --primary-main: #ff2d55;
   --primary-dark: #f70038;
   --secondary-main: #ff7439;
-  --secondary-dark: #e65002;
+  --secondary-dark: #f45708;
   /* Color definitions */
   --white: #ffffff;
   --white-gray: #e7e7e7;
@@ -82,15 +82,15 @@
   --accent-blue-10: #062f4a;
 
   /* Status Colors */
-  --success-main: #4caf50;
-  --success-dark: #388e3c;
-  --success-light: #66bb6a;
-  --error-main: #f44336;
-  --error-dark: #d32f2f;
-  --error-light: #ef5350;
-  --warning-main: #ffc95b;
-  --warning-dark: #ef6c00;
-  --secondary-light: #ff8d5e;
+  --success-main: #34ce77;
+  --success-dark: #00b453;
+  --success-light: #65d890;
+  --error-main: #fb3b3b;
+  --error-dark: #ec303a;
+  --error-light: #e97177;
+  --warning-main: #fe9c2a;
+  --warning-dark: #f38025;
+  --secondary-light: #ffad8d;
 
   /* Context menu */
   --contexify-zIndex: 999;
@@ -171,14 +171,14 @@
   --ui-designer-control-empty-bg: rgba(255, 255, 255, 0.05); /* placeholder / unbound field fill */
   --ui-designer-control-selected-bg: rgba(255, 255, 255, 0.1); /* White 10 · menu rows */
   --ui-designer-control-active-bg: var(--ui-designer-control-accent); /* toggle fill */
-  --ui-designer-control-active-fg: #35333b; /* Charcoal · glyph on accent fill */
+  --ui-designer-control-active-fg: #35333b;
   /* Panel surfaces, foreground and glyphs — the Figma's own Neutrals ramp
      (PropertiesFull 1492:1939). The panel frame reuses --base-19 rather than
      declaring the design's #25212a: the two differ by 1/255, and the group cards
      (Container.css) already paint --base-19, so borrowing it keeps frame and card
      identical instead of near-miss different. */
   --ui-designer-panel-bg: var(--base-19);
-  --ui-designer-control-bg: #35333b; /* Neutrals/Charcoal */
+  --ui-designer-control-bg: #35333b;
   --ui-designer-text: #fcfcfc; /* Neutrals/Snow — labels, group titles */
   --ui-designer-text-value: #cfcdd4; /* Neutrals/Gray — value inside a field */
   --ui-designer-text-muted: #a09ba8; /* Neutrals/Silver — hints, secondary */

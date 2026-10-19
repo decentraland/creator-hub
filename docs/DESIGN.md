@@ -67,7 +67,7 @@ There is no single `--text` token — pick the foreground that matches the surfa
 | `--ui-designer-control-active-bg` | `#63b4f6` (→ accent) | Fill of a selected/active **toggle** |
 | `--ui-designer-control-active-fg` | `#35333b` Onix | Glyph sitting on that accent fill |
 
-Figma's Neutrals swatches name `#35333b` **Onix** and `#25212a` **Charcoal**. The `vars.css` comments call `#35333b` Charcoal; read "Charcoal" there as Onix until the comments are refreshed.
+Figma's Neutrals swatches name `#35333b` **Onix** and `#25212a` **Charcoal**. The two `vars.css` trailing comments that called `#35333b` Charcoal are deleted; the two block comments above the UI Designer control tokens still say Charcoal for it — read Onix.
 
 #### Selected and active toggles are accent-blue
 
@@ -111,7 +111,21 @@ Adding a step means solving for its contrast, not guessing an alpha.
 | --- | --- | --- |
 | `--primary-main` / `--primary-dark` | `#ff2d55` / `#f70038` | Brand pink — **CTAs and main buttons only**, plus the "armed/active tool" signal. Not for panel chrome (that's `--ui-designer-control-accent`); don't use it for field errors. |
 | `--secondary-main` | `#ff7439` | Brand orange |
-| `--success-main` / `--error-main` / `--warning-main` | `#4caf50` / `#f44336` / `#ffc95b` | Status |
+| `--success-main` / `--error-main` / `--warning-main` | `#34ce77` / `#fb3b3b` / `#fe9c2a` | Status (Figma System/Green, Red, Orange) |
+| `--success-dark` / `--success-light` | `#00b453` / `#65d890` | Status shades (no consumers yet) |
+| `--error-dark` / `--error-light` | `#ec303a` / `#e97177` | Error shades; `--error-light` is the hover/focus border and the 10–13px error text |
+| `--warning-dark` | `#f38025` | Warning shade (no consumers yet) |
+| `--secondary-dark` / `--secondary-light` | `#f45708` / `#ffad8d` | Brand orange shades (no consumers yet) |
+
+Contrast of the status text and icon colours (old → new) on the surfaces they sit on: `#161518` inspector page, `#242129` card, modal and UI Designer panel, `#35333b` Onix.
+
+| Token            | on `#161518` | on `#242129` | on `#35333b` |
+| ---------------- | ------------ | ------------ | ------------ |
+| `--error-main`   | 4.94 → 5.02  | 4.31 → 4.37  | 3.38 → 3.43  |
+| `--error-light`  | 5.22 → 6.14  | 4.55 → 5.36  | 3.57 → 4.20  |
+| `--warning-main` | 11.92 → 8.66 | 10.39 → 7.55 | 8.15 → 5.93  |
+
+No pair that passed 4.5:1 now fails. `--error-main` text on `#242129` (the `CallbackField` add-name error, 11px, and the `CreateScriptModal` error, 12px) was 4.31 and is 4.37: still under 4.5:1, a gap the alignment does not close (use `--error-light` there if it is fixed). As a border (`TextField`, `TextArea`, `Dropdown`, `CheckboxField`, the callback textarea) every value clears 3:1.
 
 ---
 
@@ -252,11 +266,11 @@ Reconciled on October 16, 2026 from the Colors page ([node `20752:6024`](https:/
 | Primary/Primary Light 1 | `#FF6280` | — | `--primary-hover` `#ff3d61` · ui2 `palette.primary.light` `#F26276` (dark scheme; `#F8919D` from ui2 3.23.8) · ui2 `colors.primaryLight1` `#F8919D` | **drift**, three ways: Figma hover pink vs `theme.css` vs ui2 |
 | Primary/Primary Light 2 | `#FF93A8` | — | ui2 `colors.primaryLight2` `#FFC9D5` | drift (ui2 upstream) |
 | Primary Alt/Primary Alt · Brand/Orange | `#FF7439` | `--secondary-main` | — | match |
-| Primary Alt/Primary Alt Dark 1 | `#F45708` | `--secondary-dark` `#e65002` | — | drift |
+| Primary Alt/Primary Alt Dark 1 | `#F45708` | `--secondary-dark` `#f45708` | — | match |
 | Primary Alt/Primary Alt Dark 2 | `#D84900` | — | — | missing |
-| Primary Alt/Primary Alt Light 1 | `#FFAD8D` | `--secondary-light` `#ff8d5e` | — | drift |
+| Primary Alt/Primary Alt Light 1 | `#FFAD8D` | `--secondary-light` `#ffad8d` | — | match |
 | Primary Alt/Primary Alt Light 2 | `#FFCDBA` | — | — | missing |
-| Brand/Yellow | `#FFC95B` | `--yellow`, `--warning-main` | — | match (`--warning-main` doubles as the status colour, see below) |
+| Brand/Yellow | `#FFC95B` | `--yellow` | — | match (`--warning-main` no longer shares it: it is System/Orange, see below) |
 | Brand/Melon | `#FFA25A` | `--melon` | — | match |
 | Brand/Lavender | `#C640CD` | `--lavender`, `--smart-item-icon-bg-color` | — | match |
 | Brand/Violet | `#A524B3` | `--violet` | — | match |
@@ -288,18 +302,18 @@ The inspector's `--base-02 … --base-18` and `--accent-blue-*` ramps are VS Cod
 
 ### System (status) and INFO
 
-ui2's dark theme carries Figma's System ramp verbatim (`palette.success` / `.warning` / `.error` / `.info`, each with `main`, `dark` = Dark 1, `light` = Light 1), so Creator Hub reads status colours from the theme. The inspector's status tokens are Material's defaults, not Figma's.
+ui2's dark theme carries Figma's System ramp verbatim (`palette.success` / `.warning` / `.error` / `.info`, each with `main`, `dark` = Dark 1, `light` = Light 1), so Creator Hub reads status colours from the theme. The inspector's status tokens now carry the same values.
 
 | Figma variable | Value | Inspector (`vars.css`) | Creator Hub (`theme.css` / ui2) | Status |
 | --- | --- | --- | --- | --- |
-| System/Green | `#34CE77` | `--success-main` `#4caf50` | `--success` · ui2 `palette.success.main` | drift in inspector |
-| System/Green Dark 1 / Light 1 | `#00B453` / `#65D890` | `--success-dark` `#388e3c` / `--success-light` `#66bb6a` | ui2 `palette.success.dark` / `.light` | drift in inspector |
+| System/Green | `#34CE77` | `--success-main` `#34ce77` | `--success` · ui2 `palette.success.main` | match in inspector |
+| System/Green Dark 1 / Light 1 | `#00B453` / `#65D890` | `--success-dark` `#00b453` / `--success-light` `#65d890` | ui2 `palette.success.dark` / `.light` | match in inspector |
 | System/Green Dark 2 / Light 2 | `#00A146` / `#C1EECF` | — | — | missing |
-| System/Orange | `#FE9C2A` | `--warning-main` `#ffc95b` (= Brand/Yellow) | `--danger` `#ffa900` · ui2 `palette.warning.main` | drift in both `.css` files |
-| System/Orange Dark 1 / Light 1 | `#F38025` / `#FFB95B` | `--warning-dark` `#ef6c00` / — | ui2 `palette.warning.dark` / `.light` | drift in inspector |
+| System/Orange | `#FE9C2A` | `--warning-main` `#fe9c2a` | `--danger` `#ffa900` · ui2 `palette.warning.main` | match in inspector; drift in `theme.css` |
+| System/Orange Dark 1 / Light 1 | `#F38025` / `#FFB95B` | `--warning-dark` `#f38025` / — | ui2 `palette.warning.dark` / `.light` | match in inspector (Light 1 missing) |
 | System/Orange Dark 2 / Light 2 | `#EC7122` / `#FFCD88` | — | — | missing |
-| System/Red | `#FB3B3B` | `--error-main` `#f44336` | `--error` `#ff0000` · ui2 `palette.error.main` | drift in both `.css` files |
-| System/Red Dark 1 / Light 1 | `#EC303A` / `#E97177` | `--error-dark` `#d32f2f` / `--error-light` `#ef5350` | ui2 `palette.error.dark` / `.light` | drift in inspector |
+| System/Red | `#FB3B3B` | `--error-main` `#fb3b3b` | `--error` `#ff0000` · ui2 `palette.error.main` | match in inspector; drift in `theme.css` |
+| System/Red Dark 1 / Light 1 | `#EC303A` / `#E97177` | `--error-dark` `#ec303a` / `--error-light` `#e97177` | ui2 `palette.error.dark` / `.light` | match in inspector |
 | System/Red Dark 2 / Light 2 | `#CC1D2C` / `#FFCDD4` | — | — | missing |
 | Blue (swatch) | `#2196F3` | — | ui2 `palette.info.main` | missing in inspector |
 | Blue Dark 1 (swatch) | `#1A75D2` fill; its label reads `#1F87E5` | — | ui2 `palette.info.dark` `#1A75D2` | missing in inspector; the Figma label is stale, the fill is the value |
@@ -523,10 +537,10 @@ Every literal the Surfaces pages use (Accordion, Background, Cards, Menu, Icons,
 | `#243852` AI-toggle selected + hover | System/Blue Dark 3 | missing | `--ai-session-selected-hover` |
 | `#FF6280` publish split-button hover | Primary/Primary Light 1 | missing | missing (`--primary-hover` is `#ff3d61`, `--dcl-hover` `#f70038`) |
 | `#5E5B67` `.dcl.eth` suffix | Neutrals/Graffito | missing | `--light-gray` |
-| `#34CE77` online dot | System/Green | missing (`--success-main` is `#4caf50`) | `--success` |
+| `#34CE77` online dot | System/Green | `--success-main` `#34ce77` (same value) | `--success` |
 | `#FE9C2A` away dot | System/Orange | missing | missing (`--danger` is `#ffa900`) |
 | `#28AC00` online dot on the 28px avatar only | DCL/Grass (a legacy-library variable, shown with `?` in the panel) | missing | missing — Figma drift, see ProfilePic |
-| `#FF0000` blocked ring | DCL/Red (legacy) | missing (`--error-main` is `#f44336`) | `--error` |
+| `#FF0000` blocked ring | DCL/Red (legacy) | `--error-main` is `#fb3b3b`, not the legacy `#FF0000` | `--error` |
 | `#FF4BED` @ 30% + layer blur 500 modal glow | DCL/Rarities/Mythic (legacy) | missing | missing |
 | `#FFD079 → #DA36FF` AI sparkle gradient | — (raw linear gradient) | missing | missing (`components/Icons/AssistantIcon` paints its own gradient) |
 | `rgba(0,0,0,.2)` modal title-bar fill | Transparencies/Black 20 | `--contexify-separator-color` (same value, a react-contexify role) | missing |
@@ -1235,7 +1249,7 @@ The Editor pages run on the UI Designer's own surface (`--ui-designer-panel-bg` 
 | System/Blue Dark 2 | `#244B7D` | `--selected-item` override in `UIDesigner.css` | `--ai-session-selected` | match, no named inspector token |
 | System/Blue Dark 3 | `#243852` | missing | `--ai-session-selected-hover` | missing in inspector — the tree row, selected-hover and `On` + hover toggle fill |
 | White 5 / 10 / 20 | `rgba(255,255,255,.05 / .1 / .2)` | `--ui-designer-control-empty-bg` / `--ui-designer-control-selected-bg` · `--ui-designer-control-border` / `--ui-designer-control-border-strong` | — | match in value; **hover is White 5 in Figma and `--ui-designer-control-hover-bg` is 6%** — drift |
-| System/Orange | `#FE9C2A` | `--warning-main` `#ffc95b` | `--ai-warning-bg` `rgba(244,130,33,.16)` | drift (Figma banner is `#FE9C2A` at 10%) |
+| System/Orange | `#FE9C2A` | `--warning-main` `#fe9c2a` | `--ai-warning-bg` `rgba(244,130,33,.16)` | drift (Figma banner is `#FE9C2A` at 10%); the inspector token now matches the Figma colour |
 | System/Blue · Rarities/Epic Light | `#2196F3` · `#81E1FF` | missing | ui2 `palette.info.main` | missing — pinned-edge colours in `ConstraintsIcons` |
 | Brand/Lavender | `#C640CD` | — | `--lavender` | demo colour in `ColourPanel` and `AspectRatio/Colour`, not a UI token |
 | Figma chrome | `#8A38F5` | — | — | the dashed frame around every set — never a token |
