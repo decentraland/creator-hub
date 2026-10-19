@@ -801,7 +801,7 @@ Set [`20772:856`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=2
 
 ### Inputs tokens
 
-Literals the Buttons page (Inputs section) adds to the Surfaces table above; the Snow, Gray, Silver, White, Pale Black, Primary, Primary Light 1, White 10 / 20 / 40 / 60, Black 40, Onix Dark 1, Charcoal, Blue Dark 2 / 3 and 8 / 12 / 100px entries are mapped there and not repeated. Values are the Figma web client's Properties panel read through the DOM (October 19, 2026); the Figma MCP seat was spent. Contrast is against inspector `#161518`, Creator Hub page `#16141a`, or the fill named in the row. Run 5b extends this table.
+Literals the Buttons page (Inputs section) adds to the Surfaces table above; the Snow, Gray, Silver, White, Pale Black, Primary, Primary Light 1, White 10 / 20 / 40 / 60, Black 40, Onix Dark 1, Charcoal, Blue Dark 2 / 3 and 8 / 12 / 100px entries are mapped there and not repeated. Values are the Figma web client's Properties panel read through the DOM (October 19, 2026); the Figma MCP seat was spent. Contrast is against inspector `#161518`, Creator Hub page `#16141a`, or the fill named in the row. The last rows come from the Checkbox, Dropdown, Filter and Radio pages.
 
 | Literal | Figma | Inspector (`vars.css`) | Creator Hub (`theme.css` / ui2) |
 | --- | --- | --- | --- |
@@ -816,6 +816,19 @@ Literals the Buttons page (Inputs section) adds to the Surfaces table above; the
 | 20% opacity (blocked) | — (node opacity, not a variable) | missing | missing |
 | Inter 16 / 700 / 22px uppercase | unnamed (JumpInCTA label) | `--font-family` + literal size | same |
 | `#8A38F5` dashed 1px, 5px radius | — (Figma set frame chrome, not spec) | not a surface | not a surface |
+| `#A14BF3` dashed 1px (`Rarities/Legendary`) | Figma set frame chrome on Checkbox and Radio | not a surface | not a surface |
+| 5px radius, 20 × 20 box (Checkbox) | — | missing (`CheckboxField` is 18 × 18, 3px) | missing |
+| 100px radius, 20 × 20 ring and 10 × 10 dot (Radio) | — | missing | missing |
+| 32 × 32 halo at −6 / −6 | — | missing | missing |
+| `#FF2D55` @ 20% halo (Checkbox), @ 10% (Radio) | unnamed fill, not a variable | missing (`--primary-main` is opaque) | missing |
+| White 40 / 60 border steps | `Transparencies/White 40`, `White 60` | `--ui-designer-checkbox-border` (40); 60 missing | missing |
+| `#161518` tick on Primary (CheckboxFill) | Neutrals/Shadow | `--tree-bg-color` (`--base-20`) | missing |
+| `#FCFCFC` named `DCL/White` (Description, help) | legacy collection; value is Snow, not `#FFFFFF` | `--ui-designer-text` | ui2 `neutral.softWhite` |
+| `#FFFFFF` Dropdown Title | unnamed solid white | `--white` | `--white` |
+| 9999px / 999px pill radius (Sort-By, Filter bar) | — | missing; use 100px | missing |
+| 12px field radius, 46px height, 16px side padding (Dropdown container) | — | missing (`--ui-designer-radius-menu` is 12px) | missing |
+| 56px bar, 300px Search-Bar, 30 / 10px bar padding | — | missing | missing |
+| Inter 14 / 400 / 100%, 16 / 400 / 100%, 16 / 600 / 100% | `H7 Regular`, `H6 Regular`, `H6 Semi` | `--font-family` + literal size | same |
 
 ### Button-Contained-Text (Buttons)
 
@@ -975,6 +988,95 @@ Set [`21232:42111`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id
 | Hover=No | default | none; `Texture` child | texture image decides; ring not drawn | `<button aria-label>`, image `alt=""` |
 | Hover=Yes | hover | White 10 | fill vs `#161518` 1.31:1 — faint | — |
 | any | ✱ focus / press / disabled | — | — | not drawn |
+
+### CheckboxOutline (Checkbox)
+
+Set [`20849:724`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=20849-724), 4 variants (`Property 1` Off / Hover / On / HoverSelected; verified from the layer tree, each read singly). 20 × 20 box, 5px radius, no fill, 1px White 40 border; checkmark `Checkmark (Stroke)` 12 × 10 at 4 / 5; hover and selected-hover add a 32 × 32 halo at −6 / −6, 100px radius, behind the box. The dashed `#A14BF3` frame is Figma chrome. Code: inspector `components/ui/CheckboxField` (18 × 18, 3px radius, 1px `--gray-0` border and fill, hover border `--base-09`, checked fill `--base-12`; the visible `Label` is a sibling with no `htmlFor`, so `aria-label` is the input's only accessible name) — drift on size, radius, fill and the missing halo, and the checked fill is grey where Figma keeps the box open and draws a Primary tick; Creator Hub ui2 `Checkbox` inside `FormControlLabel` (`AppSettings` `EditorTab`, `OptimizeModal`, `PreviewOptions`; MUI defaults).
+
+| Variant | State | Box | Mark | Halo | Contrast | A11y |
+| --- | --- | --- | --- | --- | --- | --- |
+| Off | default | 1px White 40, no fill | — | — | border 3.84:1 on `#161518` (3.83 on `#16141a`, 3.74 on card), passes 3:1 non-text | `<input type="checkbox">`, 24px label row |
+| Hover | hover | 1px White 40 | — | White 10 | halo vs `#161518` 1.31:1 — faint | — |
+| On | selected | 1px White 40 | tick Primary | — | tick 4.99:1 on `#161518` (4.35 on card); border 3.84:1 | `checked`; label and tick both change |
+| HoverSelected | selected + hover | 1px White 40 | tick Primary | `#FF2D55` @ 20% | halo vs `#161518` 1.24:1 | — |
+| any | ✱ focus / disabled | — | — | ✱ focus ring | ring `--ui-designer-control-accent` `#63B4F6` / ui2 `palette.info.light`, ≥ 3:1 | not drawn; 20px box sits inside a ≥ 24px row; ✱ indeterminate is not drawn |
+
+### CheckboxFill (Checkbox)
+
+Set [`21170:30118`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=21170-30118), 4 variants (same four `Property 1` values). 20 × 20, 5px radius; the selected variants fill Primary and draw the tick in `Neutrals/Shadow` `#161518`. Code: as CheckboxOutline — the filled style is the closest to a checked MUI `Checkbox` with `color="primary"`; no inspector control paints it.
+
+| Variant | State | Box | Mark | Halo | Contrast | A11y |
+| --- | --- | --- | --- | --- | --- | --- |
+| Off | default | 1px White 40, no fill | — | — | 3.84:1 on `#161518` | as CheckboxOutline |
+| Hover | hover | 1px White 40 | — | White 10 | 1.31:1 | — |
+| On | selected | fill Primary, no border | `#161518` | — | fill 4.99:1 on `#161518` (4.35 on card); tick on Primary 4.99:1 | `checked` |
+| HoverSelected | selected + hover | fill Primary | `#161518` | `#FF2D55` @ 20% | halo 1.24:1 | — |
+| any | ✱ focus / disabled | — | — | ✱ focus ring | — | not drawn |
+
+### End (Checkbox)
+
+Set [`20932:5479`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=20932-5479), 2 variants (`Property 1` En / Start; "En" is Figma's spelling of End; the set is the `<FormControlLabel>` placement example). Each Hug 199 × 20, gap 10: `CheckboxOutline` Off, label "Open Debug Console" Inter 400 14 / 100% (`H7 Regular`) `DCL/Snow` `#FCFCFC` (141 × 17), `help` icon 18 × 18. En puts the box first, Start puts it last. Code: Creator Hub ui2 `FormControlLabel` `labelPlacement` `end` / `start`; inspector `CheckboxField` renders box then label only.
+
+| Variant | Order | Label | Contrast | A11y |
+| --- | --- | --- | --- | --- |
+| En | box · label · help | Snow | 17.73:1 on `#161518` (17.81 on `#16141a`) | `<label>` wraps the input, so the name is the visible text; `help` needs its own `aria-label` or `aria-describedby` |
+| Start | label · help · box | Snow | same | same |
+
+### Sort-By (Dropdown)
+
+Set [`20785:59388`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=20785-59388), 2 variants (`Property 1` Vertical / Horizontal; orientation only, no states). Vertical Hug 71 × 40, gap 4; Horizontal Hug 164 × Fixed 48, padding 8 / 0, gap 10; both 9999px radius, no fill or border. Inside: "Sort by" Inter 400 16 / 100% (`H6 Regular`) `Neutrals/Silver` (56 × 19); an `Input` row (gap 10; 6px radius and 10px padding on the Horizontal one) holding "Newest" Snow (Vertical Inter 400 14, Horizontal Inter 400 16) and an `arrow-down` 10 × 10. Code: Creator Hub `ManagePage` (`Typography` "Sort by" + `components/Select`, ui2 `Select` `variant="standard"`, 8px radius, White 10 hover fill, 12px / 2px padding) — drift on label size and the chevron; inspector none.
+
+| Variant | State | Label | Value | Contrast | A11y |
+| --- | --- | --- | --- | --- | --- |
+| Vertical | default | Silver 16 | Snow 14, chevron 10 | Silver 6.71:1 on `#161518` (6.74 on `#16141a`); Snow 17.73:1 | the visible "Sort by" labels the control: `aria-labelledby` |
+| Horizontal | default | Silver 16 | Snow 16, chevron 10 | same | same; 48px row target |
+| any | ✱ hover / focus / open / disabled | — | — | — | not drawn; open uses the Dropdown-Input Selected menu |
+
+### Dropdown-Input (Dropdown)
+
+Set [`20898:5394`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=20898-5394), 3 variants (`Property 1` Default / Hover / Selected). Fixed 500 wide, vertical, gap 10: `Title` Inter 600 16 / 100% (`H6 Semi`) `#FFFFFF` (500 × 19); `Description` Inter 400 14 / 100% (`H7 Regular`) `DCL/White` `#FCFCFC` (500 × 17); `Container` Fill × Fixed 46, 12px radius, 1px border, padding 0 / 16, gap 10, no fill, holding the value "Text" Inter 400 16 / 100% (`H6 Regular`) Snow (444 × 19) and a 14 × 14 chevron. Selected is the open state: Hug 229, chevron `ArrowUp`, and a `Menu` instance (Fill × Hug 117) under the container — the documented Menu (Onix `#35333B`, 1px White 10, 12px radius, `0 4px 8px` Black 40) with a Menu-Entry `Checkmark` on the chosen row. Code: inspector `components/ui/Dropdown` (24px field, 4px radius, `--gray-0` fill and border, hover border `--base-09`, focus `--base-01`) — drift on height, radius, fill and border; Creator Hub `components/Select` + `components/Dropdown` (ui2 `Select` standard, MUI `Menu`) — drift.
+
+| Variant | State | Container border | Chevron | Contrast | A11y |
+| --- | --- | --- | --- | --- | --- |
+| Default | default | 1px White 40 | down 14 | border 3.84:1 on `#161518` (3.83 on `#16141a`); Title 17.73:1; Snow value 17.73:1 | `role="combobox"` `aria-haspopup="listbox"` `aria-expanded="false"`, name from Title (`aria-labelledby`), `aria-describedby` the Description |
+| Hover | hover | 1px White 60 | down 14 | border 7.07:1 | — |
+| Selected | open | 1px Snow | up 14 | border 17.73:1; menu fill vs `#161518` 1.46:1 — border and shadow carry the edge | `aria-expanded="true"`; Menu as documented, `role="listbox"` options, `aria-selected` on the Checkmark row; Escape closes, focus returns to the field |
+| any | ✱ focus / disabled / error | ✱ focus ring | — | ring `--ui-designer-control-accent` / ui2 `palette.info.light` | not drawn; 46px target. The `Text` inner frame carries a 1px left border weight with no stroke colour — treat as none |
+
+### Filter (Filter / Sort / Search bar)
+
+Component [`20768:61659`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=20768-61659), 1 variant (`Slot` Default; the page frame is `20461:3770`). Fill × Fixed 56, horizontal, 999px radius, padding 0 / 10 / 0 / 30, gap 16, fill White 10. Left: `ResultsNumber` "N Text" Inter 400 16 / 100% (`H6 Regular`) Silver (345 × 19). Right `Slot` (Hug 751 × 51, gap 30): `Filter` group (gap 16: "Filter by" Silver 16, `Pills` gap 12 holding two PillIconText instances in `Idle`, Hug 69 × 33, 8 / 16 padding, 1.5px White 10 border, 100px radius, icon `Videos`), a Sort-By Horizontal instance, and a `Search-Bar` instance (`Property 1` Default, Fixed 300 × Hug 51, padding 6 / 0; its `Container` Fill × 39, 100px radius, 1px White 40 border, padding 10 / 40 / 10 / 10, gap 10, a 19 × 19 `Search` icon and "Search" Inter 400 16 / 100% White 40). Only the Default Search-Bar is on this page; its other states are not drawn. Code: Creator Hub `ManagePage` row (`FiltersBar` left / right `Row`, a `Chip` filter set, `Typography` "Sort by", `components/Select`, `components/Search` — 40px, 1px `--transparent-gray-light` border, 12px padding, 600 weight) — drift on bar fill, 56 height, pill geometry and the 600 weight; inspector `components/Search` (14px icon, 5px padding, red icon colour) is a tree filter, not this bar.
+
+| Part | State | Fill / border | Text | Contrast | A11y |
+| --- | --- | --- | --- | --- | --- |
+| Bar | default | White 10 (`#2D2C31` over `#16141A`, `#2D2C2F` over `#161518`), no border | — | bar vs page 1.32:1, decorative | `role="search"` on the form, or a labelled `role="toolbar"` |
+| ResultsNumber | default | — | Silver 16 | 5.11:1 on the bar | `aria-live="polite"` for the count |
+| Filter by | default | — | Silver 16 | 5.11:1 on the bar | labels the pill group (`role="group"`, `aria-labelledby`) |
+| Pill (Idle) | default | 1.5px White 10 | per PillIconText | border 1.31:1, the label carries it | `aria-pressed` |
+| Sort-By | default | none | Silver label, Snow value | Snow 13.50:1 on the bar | as Sort-By |
+| Search-Bar | default | 1px White 40 | placeholder White 40 | **placeholder 3.53:1 on the bar — fails 4.5:1** (the border passes 3:1); typed text should be Snow 13.50:1 | `<input type="search">` with an `aria-label`; ✱ the Figma placeholder doubles as the only label |
+| Search-Bar | ✱ hover / focus / filled / clear | ✱ White 60 / ring / — | — | ring ≥ 3:1 | not drawn |
+
+### Radio (Radio)
+
+Set [`20903:5661`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=20903-5661), 4 variants (`Property 1` Off / Hove / On / OnHover; "Hove" is Figma's spelling; verified from the layer tree, each read singly). 20 × 20 ring, 100px radius, no fill; selected adds a 10 × 10 dot at 5 / 5 in Primary; hover and on-hover add a 32 × 32 halo at −6 / −6. Code: Creator Hub ui2 `Radio` / `RadioGroup` (`PreviewOptions`, `AppSettings` `ScenesTab`; MUI defaults); inspector none.
+
+| Variant | State | Ring | Dot | Halo | Contrast | A11y |
+| --- | --- | --- | --- | --- | --- | --- |
+| Off | default | 1px White 40 | — | — | 3.84:1 on `#161518` (3.83 on `#16141a`) | `<input type="radio">` in a `role="radiogroup"` |
+| Hove | hover | **1px White 60** (Checkbox hover keeps White 40) | — | White 10 | ring 7.07:1; halo 1.31:1 | — |
+| On | selected | 1px White 40 | Primary 10 | — | dot 4.99:1 on `#161518` (4.35 on card) | `checked`; arrow keys move within the group |
+| OnHover | selected + hover | 1px White 40 | Primary 10 | `#FF2D55` @ **10%** (Checkbox HoverSelected is 20%) | halo 1.09:1 | — |
+| any | ✱ focus / disabled | ✱ focus ring | — | — | ring ≥ 3:1 | not drawn |
+
+### End (Radio)
+
+Set [`21028:42345`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=21028-42345), 2 variants (`Property 1` End / Start), identical to the Checkbox `End` set with a Radio Off in place of the box: Hug 199 × 20, gap 10, label "Open Debug Console" Inter 400 14 / 100% Snow (141 × 17), `help` 18 × 18. Code: ui2 `FormControlLabel` with `Radio`.
+
+| Variant | Order | Label | Contrast | A11y |
+| --- | --- | --- | --- | --- |
+| End | radio · label · help | Snow | 17.73:1 on `#161518` | label wraps the input; the group needs a visible or `aria-label` name |
+| Start | label · help · radio | Snow | same | same |
 
 ---
 
