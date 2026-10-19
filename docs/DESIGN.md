@@ -801,7 +801,7 @@ Set [`20772:856`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=2
 
 ### Inputs tokens
 
-Literals the Buttons page (Inputs section) adds to the Surfaces table above; the Snow, Gray, Silver, White, Pale Black, Primary, Primary Light 1, White 10 / 20 / 40 / 60, Black 40, Onix Dark 1, Charcoal, Blue Dark 2 / 3 and 8 / 12 / 100px entries are mapped there and not repeated. Values are the Figma web client's Properties panel read through the DOM (October 19, 2026); the Figma MCP seat was spent. Contrast is against inspector `#161518`, Creator Hub page `#16141a`, or the fill named in the row. The last rows come from the Checkbox, Dropdown, Filter and Radio pages.
+Literals the Buttons page (Inputs section) adds to the Surfaces table above; the Snow, Gray, Silver, White, Pale Black, Primary, Primary Light 1, White 10 / 20 / 40 / 60, Black 40, Onix Dark 1, Charcoal, Blue Dark 2 / 3 and 8 / 12 / 100px entries are mapped there and not repeated. Values are the Figma web client's Properties panel read through the DOM (October 19, 2026); the Figma MCP seat was spent. Contrast is against inspector `#161518`, Creator Hub page `#16141a`, or the fill named in the row. The last rows come from the Checkbox, Dropdown, Filter, Radio, Search Bar, Switch and Text Field pages.
 
 | Literal | Figma | Inspector (`vars.css`) | Creator Hub (`theme.css` / ui2) |
 | --- | --- | --- | --- |
@@ -829,6 +829,15 @@ Literals the Buttons page (Inputs section) adds to the Surfaces table above; the
 | 12px field radius, 46px height, 16px side padding (Dropdown container) | — | missing (`--ui-designer-radius-menu` is 12px) | missing |
 | 56px bar, 300px Search-Bar, 30 / 10px bar padding | — | missing | missing |
 | Inter 14 / 400 / 100%, 16 / 400 / 100%, 16 / 600 / 100% | `H7 Regular`, `H6 Regular`, `H6 Semi` | `--font-family` + literal size | same |
+| 52 × 30 Switch, track 50.21 × 30, knob 25.1 × 25.1 at 3.05 / 2.45 (Off) and 22.52 / 2.45 (On), radius 58.82px | — | missing; a pill, use 100px | missing |
+| 50% node opacity (Switch `Default`) | — (node opacity, not a variable) | missing | missing |
+| `#FFFFFF` @ 5% Close-Button fill | unnamed fill, not a variable | missing | missing |
+| 24 × 24 Close-Button (19 × 19 inside the bar), 16 × 16 glyph, 100px radius | — | missing | missing |
+| 12px field radius, 14 / 16px padding, 1px and 1.5px borders (Text Field container) | — | missing (`TextField` is 24px, 4px radius) | missing |
+| 1.5px Snow left or right edge, or 18px × 1px `#FFFFFF` line rotated −90° (drawn caret) | — | not a surface; the native caret | not a surface; the native caret |
+| 19 × 19 Search glyph, 20 × 20 `LocalAssets` folder glyph | — | missing | missing |
+| `#FFFFFF` Title (Text Field) | unnamed solid white | `--white` | `--white` |
+| `#D9D9D9` 179 × 18 `Gap` spacer (Search-Bar Completed) | unnamed default fill | not a surface | not a surface |
 
 ### Button-Contained-Text (Buttons)
 
@@ -1077,6 +1086,53 @@ Set [`21028:42345`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id
 | --- | --- | --- | --- | --- |
 | End | radio · label · help | Snow | 17.73:1 on `#161518` | label wraps the input; the group needs a visible or `aria-label` name |
 | Start | label · help · radio | Snow | same | same |
+
+### Search-Bar (Search Bar)
+
+Set [`20768:1462`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=20768-1462), 4 variants (`Property 1` Default / Hover / Selected / Completed; verified from the layer tree, each read singly). Fixed 300 × Hug 39, gap 10. `Container` Fill × Fill 39, 12px radius, 1px border, no fill, padding 10 / 40 / 10 / 10 (Completed: 10 all round), gap 10; a 19 × 19 `Search` glyph (Snow) then a `Text` frame Hug × 19 holding Inter 400 16 / 100% (`H6 Regular`). The Selected caret is a 1.5px Snow left edge on that frame; the Completed caret a Snow right edge. Completed adds a `Close-Button` and a `Gap` spacer (below). The Filter page's instance is Hug 51 with padding 6 / 0 and a 100px radius: those are that instance's overrides, the set's own radius is 12px. Code: inspector `components/Search` (tree filter: 14px icon, 5px padding, red icon colour, 13px text) — drift on every value; Creator Hub `components/Search` (`SearchInput` 220 × 40, 1px `--transparent-gray-light`, 12px input padding, 600 weight, clickable `svg`) — drift on width, border colour, radius and weight.
+
+| Variant | State | Border | Placeholder / value | Glyph | Contrast | A11y |
+| --- | --- | --- | --- | --- | --- | --- |
+| Default | default | 1px White 40 | "Search" White 40 | Snow | border 3.84:1 on `#161518` (3.83 on `#16141a`, 3.74 on card), passes 3:1; **placeholder 3.84:1 — fails 4.5:1 as text** | `<input type="search">` with an `aria-label`; the placeholder is not a label |
+| Hover | hover | 1px Snow | "Search" White 40 | Snow | border 17.73:1 | — |
+| Selected | focus, empty | 1px Snow + 1.5px Snow caret | "Search" **White 20** | Snow | **placeholder 1.88:1 on `#161518` — fails 4.5:1** (dimmer than Default); border 17.73:1 | the Snow border is the focus indication, 3:1 passes; ✱ still add `:focus-visible` ring `--ui-designer-control-accent` `#63B4F6` / ui2 `palette.info.light` if the border is not kept |
+| Completed | filled | 1px Snow | "Text" Snow, caret on the right | Snow | text 17.73:1; the Close-Button fill is Snow on White 5 15.61:1 | clear button `<button aria-label="Clear search">`; Escape clears |
+| any | ✱ disabled / error | — | — | — | — | not drawn |
+
+### Close-Button (Search Bar)
+
+Set [`20768:59567`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=20768-59567), 2 variants (`Hover` Off / On; verified from the layer tree). 24 × 24, 100px radius; `Close` 16 × 16 at 4 / 4 holding a 9.33 × 9.33 vector at 3.33 / 3.33, Snow fill plus a 0.2px outside Snow stroke. In the Search-Bar Completed variant it is a 19 × 19 instance (glyph 12.67, vector 7.39), so the glyph scales with the instance. Code: none (Creator Hub `Search` has a clickable `svg`, no clear button); inspector none.
+
+| Variant | State | Fill | Glyph | Contrast | A11y |
+| --- | --- | --- | --- | --- | --- |
+| Hover=Off | default | White 5 (`#FFFFFF` @ 5%, unnamed) | Snow | fill vs `#161518` 1.14:1 — nearly invisible; glyph 15.61:1 | `<button aria-label>`; **19px instance is below the 24px floor — keep 24px or pad the hit area** |
+| Hover=On | hover | White 10 | Snow | fill 1.31:1; glyph 13.53:1 | — |
+| any | ✱ focus / press / disabled | — | — | ✱ ring ≥ 3:1 | not drawn |
+
+### Switch (Switch)
+
+Set [`20907:6053`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=20907-6053), 3 variants (`Property 1` Default / On / Off; verified from the layer tree). A different set from the Buttons page's `Switch` `21167:30101` (41 × 24, legacy `DCL/Snow` · `DCL/Ruby`): this one is Fixed 52 × 30, built on `Neutrals/Graffito`, `Neutrals/Snow` and `Primary/Primary`. Track 50.21 × 30 at left 0.47, 58.82px radius; knob 25.1 × 25.1, 58.82px radius, 2.45 from the top, left 3.05 (Off, Default) or 22.52 (On). The page's dashed `#8A38F5` frame is Figma chrome. Code: Creator Hub ui2 `Switch` (`OptimizeModal`, MUI default sizing) — drift on size and colours; inspector none. The two Figma sets disagree on size (41 × 24 vs 52 × 30) and colours: the user picks one.
+
+| Variant | State | Track | Knob | Contrast | A11y |
+| --- | --- | --- | --- | --- | --- |
+| Off | default | Graffito `#5E5B67` | Snow, left | **track vs `#161518` 2.74:1 (2.76 on `#16141a`, 2.39 on card) — fails 3:1 non-text**; knob on track 6.46:1 | `<input role="switch" aria-checked="false">` |
+| On | selected | Primary `#FF2D55` | Snow, right | track 4.99:1 on `#161518` (5.01, 4.35 on card); knob on track 3.55:1, passes 3:1 | `aria-checked="true"`; position and colour both change |
+| Default | disabled look | Graffito, whole node at 50% opacity | Snow, left | track vs `#161518` 1.58:1, knob on track 3.30:1 — disabled, exempt | `aria-disabled="true"`; ✱ "Default" is Figma's name for what reads as a disabled Off |
+| any | ✱ hover / focus / disabled On | — | — | ring ≥ 3:1 | not drawn; 30px tall clears 24px |
+
+### Text-Input (Text Field)
+
+Set [`20815:1961`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=20815-1961), 6 variants (`Property 1` Default / Hover / Selected / Editing / Completed / Error; verified from the layer tree, each read singly; Title and Description read on Default, Hover and Error and are the same in all). Fill 500 × Fixed 102 (Error 146), vertical, gap 10. `Title` Inter 600 16 / 100% (`H6 Semi`) `#FFFFFF`; `Description` Inter 400 14 / 100% (`H7 Regular`) `DCL/White` `#FCFCFC` (legacy name, value is Snow); `Container` Fill × 46, 12px radius, no fill, padding 14 / 16, gap 10, holding the value (Inter 400 16 / 100%, `H6 Regular`, 438 wide) and a 20 × 20 `LocalAssets` folder glyph (18.33 × 13.33 vector, Silver `#A09BA8`; no button state drawn). Selected and Editing draw a caret (1.5px Snow left edge, or an 18px × 1px `#FFFFFF` `Line 1` rotated −90°). Error adds a message under the container, 500 × 34, Inter 400 14 / 100% `System/Red` `#FB3B3B`, wrapping to two lines. The dashed `#8A38F5` frame is Figma chrome. Code: inspector `components/ui/TextField` (24px, 4px radius, 1px `--gray-0`, hover `--base-09`, focus `--base-01`, error `--error-main` and `--error-light`, 13px) with `FileUploadField` for the folder glyph — drift on height, radius, size and colours; Creator Hub ui2 `TextField` inside `InputLabel` (`DetailsTab`, MUI default) — drift.
+
+| Variant | State | Container border | Value | Contrast | A11y |
+| --- | --- | --- | --- | --- | --- |
+| Default | default | 1px White 40 | "Text" White 40 (placeholder) | border 3.84:1 on `#161518` (3.83 on `#16141a`), passes 3:1; **placeholder 3.84:1 — fails 4.5:1 as text**; Title 18.19:1; Description 17.73:1; folder glyph 6.71:1 | `<label>` wraps the Title; `aria-describedby` the Description |
+| Hover | hover | 1px White 60 | White 40 | border 7.07:1 | — |
+| Selected | focus, empty | **1.5px** Snow | "Text" **White 20** + 1.5px Snow caret | border 17.73:1; **placeholder 1.88:1 — fails 4.5:1** | the Snow border is the focus indication; ✱ keep a `:focus-visible` ring if it is dropped |
+| Editing | typing | 1.5px Snow | "Text" Snow + `Line 1` caret | text 17.73:1 | `Container` is Fixed 46 while the variant is Hug 102 — treat as the same box |
+| Completed | filled, idle | 1px White 60 | "Text" Snow | border 7.07:1; text 17.73:1 | the White 60 border is the only cue that a value is set |
+| Error | error | 1.5px `System/Red` `#FB3B3B` | "Text" Snow + caret | border 5.02:1 on `#161518` (5.04 on `#16141a`, **4.37 on card**); message 5.02:1 on `#161518` (**4.37 on card — fails 4.5:1**) | `aria-invalid="true"`, message linked by `aria-describedby`, `role="alert"` on change; colour alone is not the cue, the message text is |
+| any | ✱ disabled / read-only | — | — | — | not drawn; 46px target |
 
 ---
 
