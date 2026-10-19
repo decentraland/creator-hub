@@ -1134,6 +1134,74 @@ Set [`20815:1961`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=
 | Error | error | 1.5px `System/Red` `#FB3B3B` | "Text" Snow + caret | border 5.02:1 on `#161518` (5.04 on `#16141a`, **4.37 on card**); message 5.02:1 on `#161518` (**4.37 on card — fails 4.5:1**) | `aria-invalid="true"`, message linked by `aria-describedby`, `role="alert"` on change; colour alone is not the cue, the message text is |
 | any | ✱ disabled / read-only | — | — | — | not drawn; 46px target |
 
+### AvatarSnapshot (Avatars)
+
+Set [`21232:42261`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=21232-42261), 24 variants (`AvatarSnapshot` = `DefaultProfileThumbnail`, `001` … `023`; "24 Selected" in the Layers panel), inside the board `Cards&Items` `21232:42260` (vertical, Hug 1822.78 × 826.79, 64px radius, 100 padding, gap 10, Pale Black). The set frame is the dashed `#9747FF` Figma chrome (1622.78 × 626.79, 3.62px radius). Every variant is a 180 × 180 raster on a 200px grid (`001` at left 200 / top 14, so a 20px gutter); no radius, border, fill or state is drawn on a variant. `DefaultProfileThumbnail` is a white person silhouette on a transparent ground; `001` – `023` are avatar snapshots. This is the source asset for the `AvatarSnapshot` inside `ProfilePic` (Profile Snapshot), which owns the circle, ring and sizes (28 / 32 / 40 / 60) — see that subsection, nothing is respecified here. Code: Creator Hub `Header/UserMenu` renders the signed-in avatar through ui2 `AvatarFace` (a profile snapshot fetched at runtime, never one of these fixtures) — no consumer of the 24 rasters; inspector none.
+
+| Variant | State | Content | Size | Contrast | A11y |
+| --- | --- | --- | --- | --- | --- |
+| DefaultProfileThumbnail | default | white silhouette, transparent ground | 180 × 180 | silhouette (White) vs page `#16141a` 18.28:1; vs Lavender (the `ProfilePic` fill) not computed | the fallback when no snapshot resolves; `alt` comes from the owner's name, never the file name |
+| `001` – `023` | default | full-colour avatar render | 180 × 180 | raster: no token, no contrast to enforce | decorative inside a named control (`alt=""`), otherwise `alt="<name>"`; ids are filenames, not copy |
+| any | ✱ hover / focus / disabled / loading | — | — | — | not drawn; the states belong to the host control (`ProfilePic` ✱ ring), not to the raster |
+
+### Logo (Logo)
+
+The page defines no component set: it is a specimen board of one library instance, `Icon/Explorer` (`10394:257174`, 128 × 128 round Decentraland mark, white sails and sun on a gradient disc), titled "Decentraland Logo" (`app-icons` `21454:39193`, Inter, Hug 899 × 119, Snow), and an "Icon Sizes" ramp (`ch-icon` `21454:39197`; title Inter 600 98 / 100%, Snow; ramp frame `Frame 1000001123` `21454:39200`, Hug 1064 × 2378, vertical, padding 20, gap 51, 1px dashed `#9747FF` chrome). No safe area, padding, minimum size, clear space or export format is drawn; the one asset system the page defines is the size ramp.
+
+| Size (px) | Label frame   | Label       | Notes                                     |
+| --------- | ------------- | ----------- | ----------------------------------------- |
+| 16        | `21454:39208` | `16x16`     | smallest cut                              |
+| 32        | `21454:39209` | `32x32`     | —                                         |
+| 64        | `21454:39210` | `64x64`     | —                                         |
+| 128       | `21454:39211` | `128x128`   | same size as the `Icon/Explorer` instance |
+| 256       | `21454:39212` | `256x256`   | —                                         |
+| 512       | `21454:39213` | `512x512`   | —                                         |
+| 1024      | `21454:39214` | `1024x1024` | the largest cut                           |
+
+Labels are Inter 600 16 / 100%, uppercase, right-aligned, `Neutrals/Soft White` `#FCFCFC` (a third legacy name for Snow). Mark colours as the panel lists them (not a token set): `Linear Gradient` `#A524B3` → `#FF2D55` → `#FFC95B`, `#FC9965`, `#FFBC5B`, glyph `#FFFFFF`; `#FF2D55` is Primary (`--primary-main` inspector), the rest are brand-art literals with no token in either world. Code: Creator Hub `buildResources/icon.png`, `icon.icns`, `icon.ico` (the app icon; `IconAssets.iconset` holds the cut ramp) and `Navbar/LogoMenu` (the in-app mark) — the ramp above is the size list for those files, not verified against them; inspector none (no logo asset).
+
+### Thumbnail (Scene's Thumbnails)
+
+Set [`20506:34728`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=20506-34728), 2 variants (`Property 1` = Default / Custom; verified from the expanded Layers tree), in the frame `thumbnails` `21454:39405` under a "Thumbnails" title (Snow). The set frame is dashed `#8A38F5` Figma chrome. Both variants are 640 × 360 (16 : 9) rasters stacked at left 21, Default at top 20 and Custom at top 400; no radius, border, overlay or state is drawn. Default is the empty-scene placeholder (a perspective grid on a grey ground); Custom is a sample user-supplied image (a night landscape). Code: Creator Hub `SceneCard` and `ProjectCard` (`.thumbnail`, a fixed 260px card with a 10px top radius and a cover-fit image) and `EditorPage` `OptionBox` — drift on ratio (the card crops to its own box, not 16 : 9) and radius (the raster has none); inspector none.
+
+| Variant | State | Content | Size | Contrast | A11y |
+| --- | --- | --- | --- | --- | --- |
+| Default | default | grid placeholder (no scene image set) | 640 × 360, 16 : 9 | raster: none to enforce; the grid lines are low-contrast by design | `alt=""` — the card title names the scene |
+| Custom | default | the scene's own image | 640 × 360, 16 : 9 | raster | `alt=""`; the user's file is arbitrary, so any text over it needs its own scrim ✱ |
+| any | ✱ hover / loading / error | — | — | — | not drawn |
+
+### SectionImages (Section)
+
+Set [`10525:291176`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=10525-291176), 6 variants (`Image` = Scenes / Learn / Videos / Documents / Links / Image6; "6 Selected"), in the frame `images` `21457:18416` under a "Section Images" title (Snow). The set frame is dashed `#9747FF` chrome. Each is a PNG-export raster (`Export file type PNG` on all six) of a 3D-rendered icon in an orange → purple gradient; the page caption credits the open-source 3dicons library. Sizes: Scenes 300 × 300 and Image6 331 × 300 read singly; Learn, Videos, Documents and Links were not read singly and are 300 × 300 by canvas measurement (±2px). On the canvas the order is laptop (Scenes), book (Learn), camera (Videos), document (Documents), chain (Links) and a hand-and-gems render (`Image6`, canvas reading — its name does not say what it is). Code: none for the six renders — Creator Hub `Navbar` and `MorePage` carry the section names (Scenes, Learn, Videos, Docs) as text and glyphs only; inspector none.
+
+| Variant | State | Content | Size | Contrast | A11y |
+| --- | --- | --- | --- | --- | --- |
+| Scenes | default | laptop render | 300 × 300 | raster | decorative `alt=""` beside the section name |
+| Learn | default | book render | 300 × 300 (canvas) | raster | as above |
+| Videos | default | camera render | 300 × 300 (canvas) | raster | as above |
+| Documents | default | document render | 300 × 300 (canvas) | raster | as above |
+| Links | default | chain render | 300 × 300 (canvas) | raster | as above |
+| Image6 | default | hand-and-gems render | 331 × 300 — the only non-square cut | raster | as above |
+| any | ✱ hover / focus / disabled | — | — | — | not drawn; the host card owns the states |
+
+Caption `21457:18419`: "Some assets are part of the 3dicons open sourcelibrary" — Inter 600 32 / 100%, right-aligned, `Neutrals/Gray 3` `#A09BA8` (Silver), with the span "3dicons" underlined (solid, a link). Contrast `#A09BA8` on Pale Black 3.74:1 — passes only as large text (32px / 600). The missing space in "sourcelibrary" is a Figma typo; keep the credit wherever the renders ship.
+
+### Settings (App Settings)
+
+Set [`21160:787`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=21160-787), 5 variants (`Tab` × `State`, `Content` = Default on all; "5 Selected" in the Layers panel): Scenes / Default `21160:786`, Editor / Default `21160:784`, Editor / Dropdown `21220:16040`, Experimental / Custom `21176:30197`, Experimental / Default `21160:785`. The page is a screen, not a control library; the screen is recorded here as an inventory note. Boards: **App Settings** `21454:39028` (Hug 4510 × 1562, vertical, 64px radius, 2px White 10 border, padding 102 / 82, gap 35, Pale Black) holds the set; **Panel Components** `21454:39030` (Hug 1064 × 925, same chrome, gap 100) holds the two parts the modal is built from — a `TitleBar` instance (`21454:39034`: "Settings" Snow with a circular close button; specced in `TitleBar` above) and a `Sidebar` instance (`21454:39042`, parent component `Sidebar`, Fixed 180 wide × Fill height, 1px right border), whose `Options` frame holds four `TabVertical` instances (SCENES active, EDITOR, AI, EXPERIMENTAL; specced in `TabVertical` above). Neither is a new set. Every variant is Fixed 800 × 700 (Experimental / Custom is Hug 800 × 1158), 24px radius, fill `#181225`, 1px White 10 border, a vertical stack of `TitleBar` `21220:15180` then `Content` `21160:629` (horizontal, Fill 798 × Fill 648: the sidebar beside the pane) with a `Glow` `21160:647` (798 × 257.5, `DCL/Rarities/Mythic` `#FF4BED` at 30%, layer blur 500, decorative). Fill, border, radius and glow are the Modals `#181225` entries in "Surfaces tokens". Code: Creator Hub `Modals/AppSettings` over `Modals/TabsModal` (625 × 680 paper, `--black`, `#0000001a` body, 160px-min tab column, 8px header padding with a 1px `--light-gray` rule; tabs Scenes, Editor, AI, Experimental, About) — drift on size, radius, fill, border and glow, and the code has an About tab Figma does not draw (absence is not removal); inspector none.
+
+| Variant | State | Pane content | Controls (existing spec) | Contrast | A11y |
+| --- | --- | --- | --- | --- | --- |
+| Scenes / Default | default | "Scene Folder" label + a path field with a folder glyph; "Scene Dependencies" with three radios (Auto-update all my scenes, Notify me of new version updates — selected, Do nothing) | `Text-Input` (container, folder glyph), `Radio` (On) | Snow 17.77:1 on `#181225`; Primary radio dot 5.00:1; inactive tab labels White 40 3.82:1 (large text, 20px / 600, passes 3:1) | `role="dialog" aria-modal` named by the title; tabs `role="tab"` in a vertical `tablist`; the path value is user data, never a fixture |
+| Editor / Default | default | "Code Editor of Choice" dropdown ("Visual Studio Code"); "Preview Options" checkboxes (Open Debug Console off, Enable Landscape Terrains on); "App Warnings" checkbox on, with a two-line label | `Dropdown-Input`, `CheckboxFill` | as Scenes; checked fill Primary 5.00:1 | native `<select>` or `role="combobox"`; each checkbox named by its label |
+| Editor / Dropdown | open menu | as Editor / Default with the dropdown open: "Visual Studio Code" (check mark) and "Choose from your device…" under a rule | `Dropdown-Input` open menu, `Menu` items | menu rows Snow on the lifted fill; the check mark is the selected cue, not colour alone | `role="listbox"`, `aria-activedescendant`; Escape closes and returns focus |
+| Experimental / Default | default | two switches, both off: "Enable Bevy Scene Renderer", "Enable UI Editor" + a description under the second | `Switch` (the 52 × 30 set, Off) | Off track vs the modal ≈ 2.7:1 — the `Switch` spec's 3:1 non-text fail applies | `role="switch"`, description via `aria-describedby`; a restart or reload note is ✱ missing |
+| Experimental / Custom | **shows the AI tab, not Experimental** | AI Assistant: "Enable AI Assistant" switch (on), a "Bill this to an API key instead" checkbox, a "Connect" accordion with two agent rows (a connected state and a sign-in action, each with install / sign-in command boxes), an "Expose AI assistant MCP server" accordion with a config code block (placeholder credentials, not copied) | `Switch` On, `CheckboxFill`, `Accordion`, `Button-Contained-Text` | Snow 10.90:1 and Primary 3.07:1 at the brightest point of the glow (`#5D2361`, computed) — the glow sits at the bottom, keep the controls above it | code blocks need a copy button named "Copy" and `font-family: monospace`; the command text is selectable |
+| any | ✱ focus / disabled | — | — | ring `--ui-designer-control-accent` 8.15:1 on `#181225` (as Modals) | `:focus-visible` 2px, first focus on the active tab; Escape closes |
+| any | ✱ About tab | — | — | — | not drawn; the code ships it — add a fifth `TabVertical` and a variant |
+
+Settings is named by its content: the `Experimental / Custom` frame shows the AI tab (sidebar item AI selected), so there is no Figma variant for the Experimental tab in a non-default state, and no "AI / Default". Body copy and field labels were not read singly (canvas only: section headings in a 600 weight above 14px rows); read them from the variant's text layers before implementing.
+
 ---
 
 ## Pages inventory
