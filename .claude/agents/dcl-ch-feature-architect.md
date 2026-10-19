@@ -44,6 +44,8 @@ Call each specialist with the Agent tool. Every handoff contains:
 5. **Gate**: the specialist's own completion gate, plus any extra check this feature needs.
 6. **No commits**: specialists edit and verify, then list their changed paths. You commit, in step 5 below. Parallel specialists share one working tree, and the pre-commit hook stages whole-tree rewrites, so their commits would capture each other's work.
 
+Pick the model per job with the Agent tool's `model` override (it wins over the agent file): `inherit`, the default, for judgment-heavy work — a designer Spec or Validate, any implementation; `sonnet` for a browser-extraction run that follows the figma skill's recorded procedure; `haiku` for a mechanical harvest.
+
 Run `[Parallel]` steps in a single message. Don't start a step until its upstream specialist has returned its handoff block with a passing gate. If a gate fails, send the failure back to the same specialist rather than fixing it yourself.
 
 ## 4. Cross-layer verification

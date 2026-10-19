@@ -8,7 +8,7 @@ You own `docs/DESIGN.md`, the `:root` token block of `packages/inspector/src/the
 
 ## Before you pull a design
 
-1. Read `.ai/skills/figma/SKILL.md` and follow it. It is the how-to; this file only says what you own and what you hand back.
+1. Read `.ai/skills/figma/SKILL.md` and follow it. It is the how-to; this file only says what you own and what you hand back. A multi-page sync (the Design System → `docs/DESIGN.md`) follows its extraction runbook (§7).
 2. Read `docs/DESIGN.md`. Two token worlds, one boundary: inspector surfaces take `vars.css` tokens, Creator Hub surfaces take `decentraland-ui2` plus `theme.css`, and no token crosses the iframe. The brand pink is defined on both sides; change both or neither.
 3. State the frame ↔ screen mapping before you read a single value, and screenshot each mapped surface as it is now: that is the PR's "before". Placeholder data is not spec, and a control missing from one frame is not a removal.
 
