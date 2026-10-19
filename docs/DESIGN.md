@@ -465,7 +465,7 @@ Set [`20902:5640`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=
 
 ### Surfaces tokens
 
-Every literal the Surfaces pages use (Accordion, Background, Cards, Menu, Icons; the other five Surfaces pages extend this table), mapped once. The Figma MCP seat was spent, so every value here is the Figma web client's Properties panel read through the DOM (October 19, 2026); the only canvas measurements are labelled as such. Contrast is against inspector `#161518`, Creator Hub page `#16141a`, or the fill named in the row.
+Every literal the Surfaces pages use (Accordion, Background, Cards, Menu, Icons, Modals, Scrollbar, Sections Titles, TitleBar, Profile Snapshot), mapped once. The Figma MCP seat was spent, so every value here is the Figma web client's Properties panel read through the DOM (October 19, 2026); the only canvas measurements are labelled as such. Contrast is against inspector `#161518`, Creator Hub page `#16141a`, or the fill named in the row.
 
 | Literal | Figma | Inspector (`vars.css`) | Creator Hub (`theme.css` / ui2) |
 | --- | --- | --- | --- |
@@ -496,6 +496,40 @@ Every literal the Surfaces pages use (Accordion, Background, Cards, Menu, Icons;
 | Inter 14 / 400 / 100% | `H7 Regular` | `--font-family` + literal size | same |
 | Inter 14 / 400 / 150%, cap-height trim | unnamed (location and privacy meta) | `--font-family` + literal size | same |
 | Inter 12 / 400 / 100% | `H8 Regular` (the section label is the same face uppercase, unnamed) | `--font-family` + literal size | same |
+| `#181225` modal fill | — (a raw hex on every modal, not a variable) | missing (`--modal-content-bg-color` resolves to `--tree-bg-color` `#161518`) | missing (`--modal` `#242129`, the ui2 `Modal` paper) |
+| `#000000` title-bar fill | Neutrals/Black | `--black`, `--base-21` | `--bg-inspector` |
+| `#2D2A33` toolbar icon and split buttons, toolbar tooltip | Neutrals/Onix Dark 1 | missing | `--title-bar-button` |
+| `#25212A` AI-toggle hover, button-table board | Neutrals/Charcoal | `--ui-designer-panel-bg` is `#242129` — documented deviation (1/255) | `--darker-gray`, `--card`, `--modal` `#242129` — same 1/255 deviation |
+| `#244B7D` AI-toggle selected | System/Blue Dark 2 | missing | `--ai-session-selected` |
+| `#243852` AI-toggle selected + hover | System/Blue Dark 3 | missing | `--ai-session-selected-hover` |
+| `#FF6280` publish split-button hover | Primary/Primary Light 1 | missing | missing (`--primary-hover` is `#ff3d61`, `--dcl-hover` `#f70038`) |
+| `#5E5B67` `.dcl.eth` suffix | Neutrals/Graffito | missing | `--light-gray` |
+| `#34CE77` online dot | System/Green | missing (`--success-main` is `#4caf50`) | `--success` |
+| `#FE9C2A` away dot | System/Orange | missing | missing (`--danger` is `#ffa900`) |
+| `#28AC00` online dot on the 28px avatar only | DCL/Grass (a legacy-library variable, shown with `?` in the panel) | missing | missing — Figma drift, see ProfilePic |
+| `#FF0000` blocked ring | DCL/Red (legacy) | missing (`--error-main` is `#f44336`) | `--error` |
+| `#FF4BED` @ 30% + layer blur 500 modal glow | DCL/Rarities/Mythic (legacy) | missing | missing |
+| `#FFD079 → #DA36FF` AI sparkle gradient | — (raw linear gradient) | missing | missing (`components/Icons/AssistantIcon` paints its own gradient) |
+| `rgba(0,0,0,.2)` modal title-bar fill | Transparencies/Black 20 | `--contexify-separator-color` (same value, a react-contexify role) | missing |
+| `rgba(0,0,0,.4)` scrollbar handle | Transparencies/Black 40 | missing | missing |
+| `rgba(0,0,0,.6)` modal close button | Transparencies/Black 60 | `--modal-overlay-bg-color` (same value, the overlay role) | missing (`--dimmer` is `#000000dd`) |
+| `rgba(255,255,255,.6)` scrollbar handle border, verification expiry text | Transparencies/White 60 | missing | missing |
+| 24px radius (modals) | — | missing | missing (ui2 `Modal` paper is 12px) |
+| 100px pill (modal close, radio, avatar ring, scrollbar handle) and 9999px (BackCTA, title Tag) | — | missing | missing (`EditorPage` and `Title` carry `100%`) |
+| 34px pill (scene status chip) | — | missing | missing |
+| 5px radius (16px checkbox) | — | missing | missing |
+| 6px radius (attach button) | — | `--ui-designer-radius-field` | `--mui-shape-borderRadius` |
+| `0 4px 4px rgba(0,0,0,.1)` toolbar tooltip shadow | — | missing | missing (ui2 `Tooltip`) |
+| Inter 100 / 600 / 100% | unnamed (sign-in verification number) | `--font-family` + literal size | same |
+| Inter 48 / 600 / 100% | `H0 Semi` | `--font-family` + literal size | same |
+| Inter 48 / 400 / 117% | `typography/h3` (legacy name; `.dcl.eth`) | `--font-family` + literal size | same |
+| Inter 24 / 600 / 100% | `H2 Semi` | `--font-family` + literal size | same |
+| Inter 18 / 400 / 100% | `H5 Regular` | `--font-family` + literal size | same |
+| Inter 16 / 600 / 100% | `H6 Semi` | `--font-family` + literal size | same |
+| Inter 16 / 400 / 100% | `H6 Regular` | `--font-family` + literal size | same |
+| Inter 16 / 600 / 22px uppercase | unnamed (modal and section-title CTA labels) | `--font-family` + literal size | same |
+| Inter 14 / 600 / 100% uppercase | `H7 Semi Caps` (snackbar action) | `--font-family` + literal size | same |
+| Inter 13 / 600 / 24px, 0.46px tracking, uppercase | `button/small` (legacy; toolbar split buttons) | `--font-family` + literal size | same |
 
 ### AccordionEntry (Accordion)
 
@@ -614,6 +648,156 @@ Three frames, no component sets: `General` [`20450:16492`](https://www.figma.com
 | General | 82 — Windows, Apple, LocalAssets, CustomItem, Synch, BrowseFolder, Cleanup, Cloud, Reload, Warning, bug, help, settings, Info, Search, Expand, Grid, magnet, player-location, zoom-out, zoom-in, keyboard, templates, Tip, podium, no-connection, Import-Download, Export-Upload, MapPin, Public, Private, Close, Likes, Create-Event, Edit, Link, LinkAlt, Cut, Copy, Paste, Duplicate, Favorite, Pin, Minus, plus, layout, layout-outline, Scenes, Kebab, ArrowUp, arrow-down, arrow-left, arrow-right, learn, code, DeleteFilled, Delete, Storage, Transfer, Code, Preview, CheckCompleted, Videos, Documents, Attach, DevWorkflow, BuildMetaverse, CodeBash, Cube, Leave, SceneStats, VariableBig, Hide, Show, Unlock, Lock, NewChat, Open, AiAgent, Optimize, CollapseVertically, ExpandVertically | 24 × 24 | 16 × 16 live area at 4 / 4 (Windows); tall glyphs reach 18 × 22 at 3 / 1 (MapPin) | Neutrals/White `#FFFFFF` → `--white` / `--white` | mixed PascalCase and kebab-case (`ArrowUp` beside `arrow-down`); `Edit` carries a `Vector (Stroke)` layer, `CollapseVertically` / `ExpandVertically` are 5-vector stacks | `Group 3163` 874 wide, wrap, gap 24 | White on `#161518` 18.19:1, on `#16141a` 18.28:1, on Pale Black 10.14:1 (≥ 3:1 non-text everywhere) |
 | Editor | 17 — list-all, CameraHierarchy, Layers, search-cloud, Save, Camera, undo, redo, move, translation, rotate, scale, more-options, snap, AlignToWorld, Joystick, Edit | 24 × 24 | 12–14px glyphs off-centre by design (list-all `menu` 12 × 13.22 at 6 / 5.39; redo 10 × 9.38 at 7 / 7.31) | Neutrals/White | kebab-case verbs, PascalCase nouns | `Frame 3163` 831 wide, gap 10 | as General |
 | Component Icons | 3 — smat-item (sic), Credits, JumpIn | smart-item 16 × 16, 5px radius; Credits 24 box; JumpIn 24 × 24, 8px radius | smart-item: Lavender disc under a White `Union` 8.4 × 12 (0.59 stroke); Credits: `#6141A6 → #6C84FF` coin at 80% with a white drop shadow and a `#5600FF` 50% inner shadow (an illustration); JumpIn: Vector 13.19 × 12 Snow | Lavender → `--lavender`, `--smart-item-icon-bg-color` / missing; Snow → `--ui-designer-text` / ui2 `neutral.softWhite` | product nouns | — | Lavender disc vs `#161518` 4.34:1, vs `#242129` 3.79:1 (≥ 3:1); White glyph on Lavender 4.19:1 (≥ 3:1 non-text) |
+
+### DefaultModal (Modals)
+
+Two instances, [`21183:30733`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=21183-30733) (horizontal CTAs) and [`21196:31147`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=21196-31147) (vertical CTAs), both named `DefaultModalButtonsHorizontal` under the labels `<DefaultModal> | Horizontal Stack Buttons` / `| Vertical Stack Buttons`; the main component is not on this page (the Modals page holds no component set). Shared: row, Hug 700 × Hug (413 horizontal, 479 vertical), fill `#181225`, 1px White 10 border, 24px radius, padding 100, gap 100; `Glow` 1037 × 513 Mythic @ 30% with layer blur 500 (decorative); `Content` column Fixed 500 × Hug, gap 50: title `H2 Semi` Snow (500 × 29), body `H6 Regular` Gray (500 × 38), `CTAs` gap 20 of two `Button-Contained-Text` 46 tall, 12px radius, padding 12 / 24, label Inter 16 / 600 / 22 uppercase Snow; `close-button` 46 × 46, 100px pill, Black 60 (`State` Default, `Hover Style` False) holding `Close` 27.6 box at 9.2 / 9.2 with a 16.1 Vector in Gray and a 0.3px Snow stroke. Code: Creator Hub `Modals/index.ts` `Modal` = ui2 `Modal` (paper `--modal` `#242129`, 12px radius, padding 24, widths 540 / 720 / 900, no border, no glow) and `Modals/WarningModal` (centred `--dcl-silver` message, 150px-min buttons, gap 16) — drift on fill, radius, border, padding and button size; inspector `components/Modal` (`--modal-content-bg-color` → `#161518`, `--tree-border-color` border, 3px radius, padding 20, min 500 × 200, overlay `--modal-overlay-bg-color`) — drift.
+
+| Variant | State | Fill | Border | CTAs | Close | Contrast | A11y |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Horizontal | default | `#181225` + glow | 1px White 10 | row, gap 20: `Secondary` (White 10 fill) "CANCEL" then `PrimaryBlocked` (Primary fill) "DELETE MOBILE", each Fill 240 × 46 | Black 60 pill, Gray glyph | title 17.77:1, body 11.58:1 on `#181225`; CANCEL 13.51:1 over White 10; **DELETE 3.55:1 Snow on Primary — fails 4.5:1** (16px / 600 is not large text); modal vs page `#16141a` 1.00:1 — only the 1.32:1 border and the glow separate it; close glyph 12.70:1, pill vs modal 1.10:1 | `role="dialog" aria-modal="true" aria-labelledby` the title, `aria-describedby` the body; focus trapped, Escape closes; close is `<button aria-label="Close">`, 46px target; Cancel first in DOM order |
+| Vertical | default | same | same | column, gap 20: `PrimaryBlocked` "DELETE MOBILE" above `Secondary` "CANCEL", each Fill 500 × 46 | same | as Horizontal | primary action first in DOM order here — one order per platform, the user picks |
+| any | ✱ hover / press | — | — | per the Buttons page | ✱ `Hover Style` True is drawn nowhere on this page — propose White 10 over Black 60 | — | — |
+| any | ✱ focus | — | — | — | — | ring on `#181225`: `--ui-designer-control-accent` 8.15:1, `--border-focused` 4.35:1; Creator Hub ui2 `palette.info.light` 8.15:1 | `:focus-visible` outline 2px on every button; initial focus on Cancel |
+
+### Help & Support Modal (Modals)
+
+Component `Modal` [`20915:8417`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=20915-8417), 1 variant (`Scrollview` Default), under the label `<Help&Support>`. Column, Fixed 800 × Hug 1049, fill `#181225`, 1px White 10, 24px radius, gap 50; `TitleBar` Fill 798 × 50, Black 20 fill, 1px White 10 bottom rule, padding 10 / 20 ("Help & Support" + `close-button`); `Glow` 824 × 257.5 Mythic @ 30% blur 500; `Scrollview` Fill × Hug 947, padding 0 / 80 / 50, gap 50, holding three `LabelAccordion` instances (GENERAL, CREATE, SUPPORT UPDATES), a `Frame 3220` row (Fill 638 × 17, gap 10, right-aligned) and a `Scrollbar` instance (14 × 860, Handle 14 × 560). Code: Creator Hub `Navbar/LogoMenu` lists Help and Report-bug items that open external links — no in-app modal; inspector none.
+
+| Part | State | Fill | Border | Typography | Size / spacing | Contrast | A11y |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| TitleBar | default | Black 20 | 1px White 10 bottom | title `H6 Semi` Snow | 798 × 50, padding 10 / 20 | title 18.45:1 on the Black 20 composite `#130e1e`; fill vs modal 1.04:1, decorative | `<h2 id>` referenced by the dialog |
+| Scrollview | default | none | none | per LabelAccordion | padding 0 / 80 / 50, gap 50 | per LabelAccordion (group label White 40 3.82:1 on `#181225` — fails 4.5:1, as on the Accordion page) | `overflow: auto` region; keyboard-scrollable (`tabindex="0"`) when the content overflows |
+| Don't see your question above? | default | — | — | Inter 14 / 400 / 100% Snow, right-aligned | 314 × 17 | 17.77:1 | plain text |
+| Speak with the Support Team | default | — | — | Inter 14 / 400 / 100% Primary, underline solid | 314 × 17 | **5.00:1 (≥ 4.5:1)** | `<a>` opening the support channel; the underline keeps it identifiable without colour |
+| Scrollbar | default | as Scrollbar (Scrollbar) at 14 wide | — | — | 14 × 860, padding-bottom 300 | as Scrollbar | — |
+
+### ReportBug (Modals)
+
+Component `ReportBug` [`21196:31035`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=21196-31035), 1 variant (`Scrollview` Modified), under the label `<ReportBug>`. Column, Fixed 800 × 700, fill `#181225`, 1px White 10, 24px radius, gap 50; `TitleBar` as Help & Support (title "Help & Support" — placeholder copy, not spec); `Glow`; `Scrollview` Fill 798 × Hug 590, padding 0 / 80 / 50, gap 50. Inputs belong to the Inputs run; their instance props are recorded here. Code: Creator Hub `Navbar/LogoMenu` report-bug item opens an external link — no in-app form; inspector none.
+
+| Part | State | Component | Fill | Size / spacing | Typography | Contrast | A11y |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Dropdown-Input | `Property 1` Default | Inputs page | — | Fill 638 × Hug 102, gap 10 | title `H6 Semi` Snow "Issue Type", description | 17.77:1 | `<label for>` + `<select>` or listbox |
+| Description | — | column of Text-Input + Button-Contained-Text-Icon | — | Hug 638 × 222, gap 10 | — | — | — |
+| Text-Input | `Property 1` Default | Inputs page | — | Fixed 638 × 182, gap 10 | — | — | `<textarea aria-describedby>` |
+| Button-Contained-Text-Icon (Attach) | `Property 1` Secondary | Buttons page | — | Hug 257 × 30, 6px radius, padding 6 / 10, gap 10, `Attach` glyph | — | — | `<button>` with a visible label; 30px tall clears the 24px floor |
+| Checkmark | `Property 1` On | CheckboxOutline 20 box + consent text | — | Fill 638 × 20, gap 10 | `H7 Regular` Snow, right-aligned | text 17.77:1; check Primary 5.00:1, ring White 40 3.82:1 (≥ 3:1) | `<input type="checkbox">` with the sentence as its `<label>` |
+| CTAs | — | row, gap 20 | — | Fill 638 × 46 | — | — | — |
+| CANCEL | `Secondary` | Button-Contained-Text | White 10 | Fill 309 × 46, 12px, padding 12 / 24 | Inter 16 / 600 / 22 uppercase Snow | 13.51:1 | — |
+| SUBMIT (disabled) | `PrimaryBlocked` @ 20% opacity | Button-Contained-Text | Primary at 20% | Fill 309 × 46 | same | fill vs modal 1.24:1; label 14.37:1 over the composite — the dim state reads as disabled by opacity alone | `disabled` + `aria-disabled`; the 20% opacity is the only disabled cue drawn, add a tooltip or helper text saying why |
+
+### Secure-Sign-In (Modals)
+
+Component [`20808:605`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=20808-605), 1 variant. Row, Hug 1115 × Hug 650, fill `#181225`, 1px White 10, 24px radius, padding 100, gap 100; `Glow` 1037 × 513 Mythic @ 30% blur 500; `Text` column Fixed 500 × Hug 373, gap 40; `Image` 315 × 450 holding `padlock.png` (292 × 463 rotated −19°); `close-button` 46 pill Black 60 as DefaultModal. Code: Creator Hub `SignInPage` (a full page over `genesis_plaza.webp` with a `#491975` gradient, ui2 `Typography` h3 / h6 / body1, `--dcl-silver` reopen link; no verification-number view) — drift: the design is a modal with the code, the app is a page without it; inspector none.
+
+| Part | State | Typography | Colour | Size | Contrast | A11y |
+| --- | --- | --- | --- | --- | --- | --- |
+| Secure Sign-in | default | `H0 Semi` 48 / 600 | Snow | 500 × 58 | 17.77:1 | `<h1>` / dialog label |
+| A browser window should open… | default | `H5 Regular` 18 / 400 | Snow | 500 × 52 | 17.77:1 | — |
+| 29 (verification number) | default | Inter 100 / 600 / 100% (unnamed) | Snow | 500 × 121 | 17.77:1 | `aria-live="polite"` region; read as digits |
+| Expiration Counter | default | `H5 Regular` 18 / 400 "Verification number will expire in 08:25" + `Info` 20 box | White 60 | Hug 359 × 22, gap 9 | 7.08:1 (≥ 4.5:1) | the countdown is `aria-live="off"` with a static `aria-label` (a ticking live region would announce every second); `Info` is a `<button aria-label>` or decorative |
+| Image | default | — | padlock raster, PNG export | 315 × 450 | — | `alt=""` |
+| any | ✱ expired | — | ✱ Primary text "Verification number expired" + a retry link | — | Primary 5.00:1 | not drawn — the user decides the copy |
+
+### Scrollbar (Scrollbar)
+
+Component [`20931:3935`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=20931-3935), 1 variant and no component set: a 16 × 860 row (gap 10, no track fill) holding `Handle` 16 × 860, 100px pill, Black 40 fill, 1px White 60 inner border. The Help & Support modal places it at 14 × 860 with a 560-tall handle and 300 bottom padding (the thumb proportion is placeholder, not spec). Code: Creator Hub `theme.css` global `::-webkit-scrollbar` (8px wide, track `--black`, thumb `--dcl-silver`, 4px radius) — drift on width, track, thumb colour and radius; inspector `UIDesigner.css` `.ui-designer-right-rail-tabpanel::-webkit-scrollbar` (8px, transparent track, thumb White 12 / hover White 22, 4px radius) — drift.
+
+| Part | State | Fill | Border | Radius | Size | Contrast | A11y |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Track | default | none | none | — | 16 wide | — | native scrollbar; no ARIA |
+| Handle | default | Black 40 | 1px White 60, inner | 100px | 16 wide × content ratio | fill vs `#181225` 1.07:1, vs `#16141a` 1.07:1 — the border carries it: White 60 7.08:1 on the modal, 7.10:1 on the page, 7.56:1 against the handle fill (≥ 3:1 non-text) | — |
+| Handle | ✱ hover / drag | ✱ Black 60 | ✱ White 60 | — | — | — | not drawn; `::-webkit-scrollbar-thumb:hover` |
+| any | ✱ 8px variant | — | — | — | — | — | not drawn — the editor's side rails use 8px today; the user decides whether 16px is the only width |
+
+### TitleBar (Sections Titles)
+
+Set [`10394:80020`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=10394-80020), 3 variants (`Property 1` = Main Section / Sub-Section / Sub-Section+), under the `section-titles` board on the Sections Titles page. **Name collision:** the TitleBar page's set is the editor toolbar (`Editor Toolbar` below) and the modal header is also a `TitleBar` instance — this one is the page-section header; the user picks the code name. Shared: row, Fixed 1724 × Hug 58, title `H0 Semi` 48 / 600 Snow (102 × 58 for "Text"), `CTAs` Hug 298 × 40, gap 20: `Button-Contained-Text-Icon` `Terciary` (Hug 139 × 40, 12px radius, 1.5px White 40 border, padding 8 / 24, gap 10, `settings` 18 box White Vector + "ACTION" Inter 16 / 600 / 22 uppercase Snow) and `Primary` (same, Primary fill, no border). Code: Creator Hub `Title` (`.header` gap 16, `back.svg` 45 × 45, hover `--transparent-gray-dark` circle; title via ui2 `Typography`) and `EditableTitle` — drift on back-button size, chevron colour and title scale; `Subtitle-Navigation` below; inspector none.
+
+| Variant | State | Leading | Title | Trailing | Size / spacing | Contrast (on `#16141a`) | A11y |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Main Section | default | — | `H0 Semi` Snow "Text" | CTAs | 1724 × 58, gap 32 | title 17.81:1; ACTION on Terciary 17.81:1, border White 40 3.83:1 (≥ 3:1); **ACTION on Primary 3.55:1 — fails 4.5:1**; glyph White 18.28:1 | `<h1>` or `<h2>` per page depth; CTAs are `<button>`s 40 tall |
+| Sub-Section | default | `BackTitle` 40 × 40, 100px pill, no fill, `arrow-left` 18 box, Vector 16.5 × 9.75 Primary (0.5px Primary stroke) rotated 90° | `H0 Semi` Snow | CTAs | 1724 × 58, gap 16 | chevron Primary 5.01:1 (≥ 3:1 non-text) | back is `<button aria-label="Back">` (or `<a>` to the parent), 40px target |
+| Sub-Section+ | default | BackTitle as above | `Label` row Hug 316 × 58: `H0 Semi` Snow "Text" + `.dcl.eth` `typography/h3` 48 / 400 / 117% Graffito (180 × 56) | `Copy` 34 box (Vector 27.63 White) then CTAs | 1724 × 58, gap 16 | **`.dcl.eth` Graffito 2.76:1 on `#16141a`, 2.39:1 on `#242129` — fails even the 3:1 large-text floor**; Silver would give 5.97:1 — the user picks; Copy glyph 18.28:1 | the suffix is part of the heading text, not `aria-hidden`; Copy is `<button aria-label="Copy name">`, 34px target, announces "Copied" via a live region |
+| any | ✱ BackTitle hover / press | ✱ White 10 / White 20 pill | — | — | — | — | not drawn (`BackTitle` `Property 1` has only Default here); Creator Hub `Title` hovers with `--transparent-gray-dark` today |
+| any | ✱ focus | — | — | — | — | ring ui2 `palette.info.light` 8.13:1 on `#16141a` | `:focus-visible` 2px on back, Copy and each CTA |
+
+### Subtitle-Navigation (Sections Titles)
+
+Component [`20735:711`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=20735-711), 1 variant, under the `SUBTITLE` label. Row, Fixed 1724 × 40, padding 3 / 0, gap 10: `Title` `H2 Semi` 24 / 600 Snow (52 × 29), `BackTitle` 30 × 30 pill rotated −180° (a forward chevron: Vector 16.5 × 9.75 Primary), `CTAs` as TitleBar (Terciary + Primary, 40 tall). Code: Creator Hub none (page sub-headers are ad-hoc `Typography`); inspector none.
+
+| Part | State | Typography | Colour | Size | Contrast | A11y |
+| --- | --- | --- | --- | --- | --- | --- |
+| Title | default | `H2 Semi` 24 / 600 | Snow | 52 × 29 | 17.81:1 | `<h2>` / `<h3>` |
+| Forward chevron | default | — | Primary | 30 × 30 pill, glyph 16.5 × 9.75 | 5.01:1 | `<a>` / `<button aria-label="Open <title>">`; **30px target is above the 24px floor but below the 40px used by TitleBar** — one size, the user picks |
+| CTAs | default | as TitleBar | — | 298 × 40 | as TitleBar | — |
+
+### Editor Toolbar (TitleBar)
+
+Set [`21028:42468`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=21028-42468), 2 variants (`Property 1` = Default / Snackbar), under `<TitleBar>` on the TitleBar page. Shared: 1920 × 50, fill Black; `BackCTA` Hug 24 × 24 at 17 / 13, 9999px pill, no fill, 0.5px Pale Black border, padding 2 / 3 / 2 / 1, `ChevronLeftFilled` 20 box with a 6.17 × 10 Snow Vector; `Title` row Hug 97 × 22 at 49 / 14, gap 8: "Scene Title" Snow + `Tag` chip (Hug 100 × 15, 9999px, padding 2 / 8, fill `secondary/secondary/dark` Gray — hidden in the frame); `Actions` row Hug 383 × 32 at 1521 / 9, gap 10: `AIToggle`, two `rounded-button-contained` (Optimize, Code), `status/scenes/builder` chip (`status` draft, Hug 111 × 22, 34px pill, Pale Black, padding 2 / 8 — hidden), `Button-Multiple-Options` Preview (Hug 112 × 32, Onix Dark 1) and Publish (Hug 135 × 32, Primary). Code: Creator Hub `EditorPage` `.Header` (56 tall on `--bg-inspector`; `.back` 32 circle with a 1px `--dark-gray` border and a 14px `ArrowBackIosIcon`; `.actions` 32-tall buttons at 8px radius, split groups with a 1px `rgba(255,255,255,.2)` divider, `--title-bar-button` fill, `.ai-toggle` 32 × 32 with `--ai-session-selected` / `-hover`) — matches on action sizing, radius, divider and the three fills; drift on bar height (56 vs 50), back button (32 / 1px / 14px glyph vs 24 / 0.5px / 6 × 10) and the AI glyph colour (see Editor Toolbar buttons); inspector none (the inspector's own toolbar is the 3D/2D `Toolbar`).
+
+| Variant | State | Fill | Left | Centre | Right | Contrast (on Black) | A11y |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Default | default | Black | BackCTA 24 pill + "Scene Title" Snow | — | Actions 383 × 32 | title 20.47:1; back glyph 20.47:1, 0.5px Pale Black ring 2.07:1 — the pill edge is sub-threshold, the glyph carries the control; Tag Gray fill 13.34:1 | `<header role="banner">`; back `<button aria-label="Back to scenes">` — **24px is the floor, not a comfortable target; the app's 32px is the better size**; title `<h1>`; Actions is a `role="toolbar"` with arrow-key focus |
+| Snackbar | default | Black | same | `Snackbars` `Property 1` Notification, Hug 199 × 44 at 860.5 / 3, 12px radius, fill Shadow `#161518`, padding 12 / 16 / 12 / 12, gap 16: `notification_important` 18 box + "Notification text" `H7 Regular` Snow, then "OK" `H7 Semi Caps` Primary (and a hidden "Update" `H7 Semi` in `DCL/Ruby`) | same | snackbar vs Black 1.15:1 — the 12px radius and the gap carry it; text 17.73:1 on Shadow; OK Primary 4.99:1 (≥ 4.5:1, barely) | `role="status"`; see Snackbars (Snackbars) — same component, placed inside the bar |
+| any | ✱ title overflow | — | — | — | — | — | not drawn; truncate the title with an ellipsis and a `title` attribute, never wrap the 50px bar |
+
+### Editor Toolbar buttons (TitleBar)
+
+Frame `<Buttons> | Title Bar` [`21310:15793`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=21310-15793): a Charcoal board (24px radius, 1px White 10) tabulating 9 controls × 3 columns (Default / Hover / Selected); a `Fill/None` 16px glyph marks a state the control does not have. Four components back the table — `BackCTA`, `AIToggle` (`Selected` Yes/No × `Hover` Yes/No), `rounded-button-contained` (`State` Default/Hover, `Hover Style` False/Tooltip Bottom) and `Button-Multiple-Options` (`Property 1` Default/HoverLeft/HoverRight) — whose mains live on the Buttons page; this table is the title-bar usage matrix. Hover cells carry a `Toast` tooltip (Hug 112 × 27, 8px radius, Onix Dark 1, padding 6 / 10, gap 16, shadow `0 4px 4px rgba(0,0,0,.1)`, `H7 Regular` Snow: "AI Assistant", "Close AI Assistant", "Optimize", "Code", "Play Options", "Publish Options") — the Tooltip (Tooltips) component. Code: Creator Hub `EditorPage` (`.ai-toggle` colour `--white` closed, gradient open — **inverted against Figma, where the gradient is the rest state and Snow the selected one**; `rounded-button-contained` ≈ `IconButton` on `--title-bar-button`; `Button-Multiple-Options` ≈ `ButtonGroup` + `extra-button` with the White 20 divider; MUI icons `SpeedOutlined`, `Code`, `PlayCircle`, `Public` stand in for Figma `Optimize`, `Code`, `Icon` glyphs); inspector none.
+
+| Control | Default | Hover | Selected | Size | Contrast (on Black) | A11y |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| `<Back>` BackCTA | no fill, 0.5px Pale Black ring, Snow chevron 6.17 × 10 | White 10 fill, same ring | — | 24 × 24, 9999px | glyph 20.47:1; hover fill 1.21:1 — the hover is near-invisible on Black, the tooltip is absent; ✱ raise to White 20 (1.66:1) or add a ring change | `<button aria-label="Back">` |
+| `<AiAssistantOff>` AIToggle | no fill; `Icon` 24 box, sparkle 18.88 × 20.66 linear gradient `#FFD079 → #DA36FF` | Charcoal fill (`Hover` Yes); "AI Assistant" tooltip | Blue Dark 2 fill, Snow sparkle | 32 × 32, 8px | gradient ends 14.55:1 / 5.95:1 on Black; Charcoal hover vs Black 1.33:1 — weak, the tooltip announces the hover; Blue Dark 2 vs Black 2.38:1 (below 3:1 for a state boundary — the glyph colour change carries it); Snow on Blue Dark 2 8.61:1 | `<button aria-pressed="false" aria-label="AI Assistant">`; the state is colour-and-glyph, announce it with `aria-pressed` |
+| `<AiAssistantOn>` AIToggle | Blue Dark 2 fill, Snow sparkle (`Selected` Yes) | Blue Dark 3 fill (`Selected` Yes, `Hover` Yes); "Close AI Assistant" tooltip | no fill, gradient sparkle (toggles back) | 32 × 32, 8px | Snow on Blue Dark 3 11.61:1; Blue Dark 3 vs Black 1.76:1 | `aria-pressed="true"` |
+| `<Optimize>` rounded-button-contained | Onix Dark 1 fill; `Optimize` 19.2 box, Vector 14.64 × 11.71 Snow | White 10 fill (`State` Hover, `Hover Style` Tooltip Bottom); "Optimize" tooltip | — | 32 × 32, 8px | Onix Dark 1 vs Black 1.49:1; glyph 13.73:1 on it; hover White 10 vs Black 1.21:1 — **the hover is darker than rest** (`#1a1a1a` vs `#2d2a33`), confirm with the designer whether hover was meant as White 10 _over_ Onix Dark 1 | `<button aria-label="Optimize assets">` |
+| `<Code>` rounded-button-contained | as Optimize, `Code` glyph | as Optimize; "Code" tooltip | — | 32 × 32, 8px | as Optimize | `<button aria-label="Open in code editor">` |
+| `<Preview>` Button-Multiple-Options | Onix Dark 1; `Left` Hug 111 × 32, padding 0 / 14, gap 6: `Icon` 18 + "PLAY" `button/small` 13 / 600 / 24 / 0.46 uppercase Snow; `Right` 32 × 32, 1px White 20 left border, chevron 8.5 × 5 Snow | `HoverLeft`: left segment hovers (White 10 over the fill) | — | Hug 113 × 32, 8px | label 13.73:1; divider 1.20:1 on Onix Dark 1, decorative | split control: `<button>Play</button>` + `<button aria-label="Play options" aria-haspopup="menu">` sharing one 8px frame; the right segment is 32 × 32 |
+| `<PreviewOptions>` Button-Multiple-Options | as Preview | `HoverRight`: right segment hovers; "Play Options" tooltip | — | same | as Preview | — |
+| `<Publish>` Button-Multiple-Options | Primary fill; "PUBLISH" `button/small` Snow + `Icon` 18; Right chevron Snow, 1px White 20 divider | `HoverLeft` | — | Hug 143 × 32, 8px | Primary vs Black 5.76:1; **"PUBLISH" Snow on Primary 3.55:1 — fails 4.5:1** (13px / 600); divider 1.20:1 | `<button>Publish</button>` + options button |
+| `<PublishOptions>` Button-Multiple-Options | as Publish | `HoverRight`: right segment Primary Light 1; "Publish Options" tooltip | — | same | **Snow chevron on Primary Light 1 2.80:1 — fails 3:1 non-text**; Primary Light 1 vs Black 7.31:1 | — |
+| any | ✱ press / focus / disabled | — | — | — | — | not drawn; focus ring `--ui-designer-control-accent` / ui2 `palette.info.light` 9.39:1 on Black; disabled = 20% opacity as the ReportBug SUBMIT, plus `aria-disabled` | — |
+
+### Play Options menus (TitleBar)
+
+Frame `<Menu> | Title Bar` [`21372:16356`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=21372-16356): two `Menu` (Menu) instances at Fixed 300 wide (Onix, 1px White 10, 12px radius, padding 10 / 0, gap 10, shadow `0 4px 8px rgba(0,0,0,.4)`), their `Options` / `Options2` slots filled with `Menu-Entry` (Menu) instances carrying `Radio` and `CheckboxOutline` leads. Code: Creator Hub `EditorPage/MenuOptions` `PreviewOptions` / `PublishOptions` (ui2 `Menu` with MUI `Radio`, `Checkbox`, `Divider`) and `EditorPage/OptionBox` (340 wide, `--dark-gray`, 8px radius, padding 10 / 30) — drift on width, fill and entry anatomy; inspector none.
+
+| Menu | Entry | Variant | Lead | Label | Trailing | Size | Contrast (on Onix) | A11y |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Play Options | PLAY OPTIONS | `Section` | — | Inter 12 / 400 uppercase Silver | — | Fill 280 × 38, 8px, padding 0 / 10, gap 16 | 4.59:1 | group heading, not focusable |
+| Play Options | Desktop Client | `Hover` (drawn as the active row) | `Radio` `On` 20 box: 1px White 40 ring + Primary dot | `H7 Regular` Snow (210 wide) | `arrow-right` 10 box (submenu) | Fill 280 × 38, Pale Black fill | label 9.88:1 on Pale Black; **Primary dot 2.78:1 and White 40 ring 3.05:1 on the Pale Black row — the dot fails 3:1 while hovered**; on Onix at rest: dot 3.41:1, ring 3.39:1 | `role="menuitemradio" aria-checked="true" aria-haspopup="menu"` |
+| Play Options | Web (Bevy) | `Default` | `Radio` `Off`: 20 box, 1px White 40 ring, 100px | `H7 Regular` Snow | `arrow-right` (hidden) | Fill 280 × 38 | label 12.13:1; ring 3.39:1 (≥ 3:1) | `role="menuitemradio" aria-checked="false"` |
+| Play Options | — | `Div` | — | — | — | Fill 300 × 1, White 10, padding 7 / 10 | 1.37:1, decorative | `role="separator"` |
+| Play Options | Show QR Code for Mobile | `Default` | `Info` 16 box (hidden) | `H7 Regular` Snow | `arrow-right` (hidden) | Fill 280 × 38 | 12.13:1 | `role="menuitem"` |
+| Submenu | Enable Landscape Terrains / Enable MCP Server / Compress Assets | `Default` | `CheckboxOutline` `On` 16 box, 5px radius: White 40 ring + `Checkmark (Stroke)` 9.6 × 8 Primary | `H7 Regular` Snow | — | Fill 280 × 38, gap 10 | check Primary 3.41:1, ring 3.39:1 (≥ 3:1) | `role="menuitemcheckbox" aria-checked="true"` |
+| Submenu | Multi-Instance Preview | `Default` | `CheckboxOutline` `Off`: 16 box, 5px radius, 1px White 40 ring | `H7 Regular` Snow | — | same | ring 3.39:1 | `aria-checked="false"` |
+| any | ✱ keyboard-active checkbox row | `Hover` | — | — | — | Pale Black | as Desktop Client — the Primary check falls to 2.78:1 | arrow keys move, Space toggles without closing |
+
+### ConnectionStatus (Profile Snapshot)
+
+Set [`20772:851`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=20772-851), 2 variants (`Property 1` = Online / Away). A 10 × 10 dot with a 2px Shadow `#161518` outer border; placed on `ProfilePic` at 10 (60px avatar) or 6 × 6 (40 / 32 / 28). Code: Creator Hub none (`Header/UserMenu` shows no presence); inspector none.
+
+| Variant | Fill | Border | Size | Contrast | A11y |
+| --- | --- | --- | --- | --- | --- |
+| Online | System/Green `#34CE77` | 2px Shadow, outer | 10 × 10 (6 × 6 on small avatars) | Green vs page 8.91:1; Shadow ring vs Green 8.87:1, vs Lavender 4.34:1 — the ring is what separates the dot from the avatar | not a control; the avatar's accessible name carries "online" |
+| Away | System/Orange `#FE9C2A` | same | same | Orange vs page 8.71:1; ring vs Orange 8.66:1 | **Green vs Orange 1.02:1 — status is colour-only; the name must say "away"** |
+| ✱ Offline | — | — | — | — | not drawn (the `DisconnectedOverlay` below is the offline treatment) |
+
+### ProfilePic (Profile Snapshot)
+
+Set [`20772:856`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=20772-856), 4 variants (`Property 1` = 60 / 40 / 32 / 28). Circle, fill Brand/Lavender, White 40 inner ring (3px at 60, 2px below), `AvatarSnapshot` (`AvatarSnapshot` 004, an `image.png` raster) inset by the ring, `ConnectionStatus` at top-right, plus two hidden layers on the 40 / 32 / 28 variants: `DisconnectedOverlay` (full circle, `#000000` 60%) and `Blocked` (3px at 32, 2px at 28, `DCL/Red` ring). Code: Creator Hub `Header/UserMenu` `.AvatarButton` (MUI `Avatar` 44 × 44 at 8px radius inside a 12px-radius frame with a 1px `--transparent-gray-light` border, hover `--text` border) — drift on shape (rounded square vs circle), size, ring and fill; inspector none.
+
+| Variant | State | Fill | Ring | Avatar | Status dot | Size | Contrast | A11y |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 60 | default | Lavender | 3px White 40, inner | 54 × 54 at 3 / 3, 100px | 10 × 10 at 45 / 5, Online | 60 × 60 | Lavender vs page 4.37:1, vs card 3.79:1, vs Black 5.02:1 (≥ 3:1); ring vs Lavender 1.78:1 — decorative, the raster carries the edge | `<img alt="<name>, online">` or a `<button>` named the same when it opens the menu; 60px target |
+| 40 | default | Lavender | 2px White 40 | 36 × 36 at 2 / 2 | 6 × 6 at 30 / 3, Green (`Property 1` unset) | 40 × 40 | as 60 | 40px target |
+| 32 | default | Lavender | 2px White 40 | 28 × 28 at 2 / 2 | 6 × 6 at 24 / 2, Green | 32 × 32 | as 60 | 32px target (≥ 24) |
+| 28 | default | Lavender | 2px White 40 | 24 × 24 at 2 / 2 | 6 × 6 at 19 / 1, **`DCL/Grass` `#28AC00` with a `DCL/Shadow` ring — the only variant off System/Green; Figma drift, treat as Green** | 28 × 28 | Grass vs page 6.08:1; ring vs Grass 6.06:1 | 28px target |
+| 40 / 32 / 28 | disconnected (hidden layer) | Lavender under `#000000` 60% | same | dimmed | — | — | the overlay dims the raster; add "offline" to the name | `aria-label` carries the state |
+| 32 / 28 | blocked (hidden layer) | Lavender | `DCL/Red` 3px (32) / 2px (28) replaces the White 40 ring | same | — | — | **Red vs Lavender 1.05:1 — the blocked ring is invisible against the fill; Red vs page 4.57:1 is what you see at the outer edge**; pair it with an icon or text | `aria-label` carries "blocked" |
+| any | ✱ hover / focus | — | ✱ White 60 ring | — | — | — | ring ui2 `palette.info.light` 8.13:1 on `#16141a` | `:focus-visible` 2px outline, offset 2px, when the avatar is a button |
 
 ---
 
