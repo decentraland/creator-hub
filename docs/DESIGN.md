@@ -249,7 +249,7 @@ Reconciled on October 16, 2026 from the Colors page ([node `20752:6024`](https:/
 | Primary/Primary · Brand/Ruby | `#FF2D55` | `--primary-main` | `--primary`, `--dcl` · ui2 `palette.primary.main` | match |
 | Primary/Primary Dark 1 | `#F70038` | `--primary-dark` | `--dcl-hover` · ui2 `palette.primary.dark` | match |
 | Primary/Primary Dark 2 | `#D80029` | — | ui2 `colors.primaryDark2` | missing in inspector |
-| Primary/Primary Light 1 | `#FF6280` | — | `--primary-hover` `#ff3d61` · ui2 `palette.primary.light` `#F70038` · ui2 `colors.primaryLight1` `#F8919D` | **drift**, three ways: Figma hover pink vs `theme.css` vs ui2 |
+| Primary/Primary Light 1 | `#FF6280` | — | `--primary-hover` `#ff3d61` · ui2 `palette.primary.light` `#F26276` (dark scheme; `#F8919D` from ui2 3.23.8) · ui2 `colors.primaryLight1` `#F8919D` | **drift**, three ways: Figma hover pink vs `theme.css` vs ui2 |
 | Primary/Primary Light 2 | `#FF93A8` | — | ui2 `colors.primaryLight2` `#FFC9D5` | drift (ui2 upstream) |
 | Primary Alt/Primary Alt · Brand/Orange | `#FF7439` | `--secondary-main` | — | match |
 | Primary Alt/Primary Alt Dark 1 | `#F45708` | `--secondary-dark` `#e65002` | — | drift |
