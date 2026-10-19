@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core::GltfContainer",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/glowing_cross_tombstone/glowing_cross_tombstone.glb"
+          }
+        }
+      }
+    }
+  ]
+}
