@@ -43,7 +43,7 @@ make build-inspector
 npx eslint <every touched .tsx>    # make lint skips .tsx
 ```
 
-For any behavior or UI change, verify it in a browser with Playwright against the standalone inspector (`npm run start` with `VITE_INSPECTOR_PORT` set; see `docs/UIDesigner.md` and `docs/testing-standards.md`). Screenshot each surface you'll touch before you edit it, and again after; include the pairs in your reply, compared against the Figma frame for UI work. They go in the PR's Screenshots section, never into the repo.
+For any behavior or UI change, verify it in a browser with Playwright against the standalone inspector (`npm run start` with `VITE_INSPECTOR_PORT` set; see `docs/UIDesigner.md` and `docs/testing-standards.md`). Screenshot each surface you'll touch before you edit it, and again after; include the pairs in your reply, compared against the Figma frame for UI work. They go in the PR's Screenshots section, never into the repo, and carry fixture data only: never a signed-in profile's wallet, email, or scene names.
 
 When js-sdk-toolchain consumes this change, follow `.ai/skills/local-package-chain/SKILL.md` steps 1 and 2, and report the inspector tarball path that step 2 prints as its last line. Step 1 only builds and packs asset-packs without editing it, so run it even for an inspector-only change. Skip it only when the architect hands you an asset-packs tarball that's newer than any asset-packs edit.
 

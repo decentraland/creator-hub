@@ -60,4 +60,4 @@ If so, add after the run above:
 
 ## Screenshots
 
-[Required when the change touches `packages/inspector/src` or `packages/creator-hub/renderer`: a before/after pair for every affected surface. For a token or theme change, every surface that consumes the token. Delete this section only if no frontend file changed.]
+[Required when the change touches `packages/inspector/src` or `packages/creator-hub/renderer`: a before/after pair for every affected surface. For a token or theme change, every surface that consumes the token. Fixture data only: no wallet addresses, emails, usernames, or real scene names in a screenshot — use the dev fixtures or redact before attaching. Delete this section only if no frontend file changed.]

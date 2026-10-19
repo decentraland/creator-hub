@@ -34,7 +34,7 @@ npx eslint <every touched .tsx>    # make lint skips .tsx
 
 If `atScale.spec.tsx` times out in the full run, rerun it alone before you call it a regression.
 
-For any behavior or UI change, launch the app (`npm run start` in `packages/creator-hub`, or the `run` skill) and exercise the change. Screenshot each surface you'll touch before you edit it, and again after; include the pairs in your reply, compared against the Figma frame for UI work. They go in the PR's Screenshots section, never into the repo.
+For any behavior or UI change, launch the app (`npm run start` in `packages/creator-hub`, or the `run` skill) and exercise the change. Screenshot each surface you'll touch before you edit it, and again after; include the pairs in your reply, compared against the Figma frame for UI work. They go in the PR's Screenshots section, never into the repo, and carry fixture data only: never a signed-in profile's wallet, email, or scene names.
 
 Running alone: before you commit, also run the repo gate from the root (`make format`, `npm run lint`). Then commit only your paths (`git add -- <paths>`, never `-A`), push, and open the PR. Under the architect: **don't commit**. List your changed paths in the handoff, and the architect commits each layer in turn. The pre-commit hook rewrites and stages the whole tree, so two specialists committing in one working tree sweep up each other's files. No AI attribution in commits or PRs.
 
