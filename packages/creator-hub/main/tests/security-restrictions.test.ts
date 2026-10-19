@@ -4,7 +4,6 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 // electron surface it touches has to exist before the module body runs.
 const mocks = vi.hoisted(() => ({
   appOn: vi.fn(),
-  onBeforeSendHeaders: vi.fn(),
   onHeadersReceived: vi.fn(),
 }));
 
@@ -14,7 +13,6 @@ vi.mock('electron', () => ({
   session: {
     defaultSession: {
       webRequest: {
-        onBeforeSendHeaders: mocks.onBeforeSendHeaders,
         onHeadersReceived: mocks.onHeadersReceived,
       },
     },
@@ -129,22 +127,6 @@ describe('response header rules', () => {
           'cross-origin-embedder-policy': ['unsafe-none'],
         }),
       ).toEqual(['credentialless']);
-    });
-  });
-
-  describe('when the request is for the studios admin API', () => {
-    const url = 'https://studios.decentraland.org/api/scenes';
-
-    it('should allow the app to read it when the response sent no origin of its own', () => {
-      expect(subject.valuesFor(url, 'Access-Control-Allow-Origin')).toEqual(['*']);
-    });
-
-    it('should not add a second allowed origin when the response already sent one, since two are rejected outright and would block the request this is meant to allow', () => {
-      expect(
-        subject.valuesFor(url, 'Access-Control-Allow-Origin', {
-          'access-control-allow-origin': ['*'],
-        }),
-      ).toEqual(['*']);
     });
   });
 

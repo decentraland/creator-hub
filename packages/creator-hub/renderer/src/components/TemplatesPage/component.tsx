@@ -2,12 +2,10 @@ import { useCallback, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MenuItem, type SelectChangeEvent, Chip, Typography } from 'decentraland-ui2';
 
-import type { Template } from '/shared/types/workspace';
-import { STUDIOS_ADMIN_URL } from '/shared/urls';
-
 import { useWorkspace } from '/@/hooks/useWorkspace';
 import { ProjectCard } from '/@/components/ProjectCard';
 import { t } from '/@/modules/store/translation/utils';
+import { TEMPLATES, Difficulty, type Template } from '/@/modules/templates';
 
 import NewScenePng from '/assets/images/new-scene.png';
 
@@ -20,16 +18,16 @@ import { Title } from '../Title';
 import { TutorialsWrapper } from '../Tutorials';
 import { CreateProject } from '../Modals/CreateProject';
 
-import { SortBy, Difficulty, type ModalType, type CreateProjectValue } from './types';
+import { SortBy, type ModalType, type CreateProjectValue } from './types';
 import { sortTemplatesBy } from './utils';
 
 import './styles.css';
 
 export function TemplatesPage() {
   const navigate = useNavigate();
-  const { createProject, templates: _templates, getAvailableProject } = useWorkspace();
+  const { createProject, getAvailableProject } = useWorkspace();
   const [openModal, setOpenModal] = useState<ModalType | undefined>();
-  const [templates, setTemplates] = useState(_templates);
+  const [templates, setTemplates] = useState(TEMPLATES);
   const [sortBy, setSortBy] = useState(SortBy.DEFAULT);
   const [difficulty, setDifficulty] = useState<Difficulty | undefined>();
 
@@ -62,36 +60,32 @@ export function TemplatesPage() {
   );
 
   const handlePreviewTemplate = useCallback(
-    ({ play_link: link }: Template) =>
+    ({ playUrl }: Template) =>
       () => {
-        if (link) misc.openExternal(link);
+        if (playUrl) misc.openExternal(playUrl);
       },
     [],
   );
 
   const handleViewCode = useCallback(
-    ({ github_link: link }: Template) =>
+    ({ repo }: Template) =>
       () => {
-        misc.openExternal(link);
+        misc.openExternal(repo);
       },
     [],
   );
 
-  const handleClickDifficulty = useCallback(
-    (value?: Difficulty) => {
-      const templates = value ? _templates.filter($ => $.difficulty_level === value) : _templates;
-      setDifficulty(value);
-      setTemplates(templates);
-    },
-    [_templates],
-  );
+  const handleClickDifficulty = useCallback((value?: Difficulty) => {
+    setDifficulty(value);
+    setTemplates(value ? TEMPLATES.filter($ => $.difficulty === value) : TEMPLATES);
+  }, []);
 
   const handleSort = useCallback((value: SortBy) => {
     setSortBy(value);
   }, []);
 
   const dropdownOptions = useCallback((template: Template) => {
-    const previewOption = template.play_link
+    const previewOption = template.playUrl
       ? [
           {
             text: t('templates.actions.preview'),
@@ -108,16 +102,6 @@ export function TemplatesPage() {
       },
     ];
   }, []);
-
-  const getTemplateThumbnailUrl = useCallback(
-    ({ image_1: imageUrl, video_1: videoUrl }: Template) => {
-      const assetId = videoUrl || imageUrl;
-      if (!assetId) return undefined;
-      const url = `${STUDIOS_ADMIN_URL}/assets/${assetId}`;
-      return videoUrl ? { videoUrl: url } : { imageUrl: url };
-    },
-    [],
-  );
 
   const count = templates.length + 1; // +1 for empty scene...
 
@@ -157,12 +141,13 @@ export function TemplatesPage() {
                 key={template.id}
                 title={template.title}
                 description={template.description}
-                {...getTemplateThumbnailUrl(template)}
+                imageUrl={template.imageUrl}
+                videoUrl={template.videoUrl}
                 dropdownOptions={dropdownOptions(template)}
                 width={300}
                 height={480}
-                onClick={handleClickTemplate(template.github_link)}
-                content={(template.tags || []).map($ => (
+                onClick={handleClickTemplate(template.repo)}
+                content={template.tags.map($ => (
                   <Chip
                     key={$}
                     label={$}
