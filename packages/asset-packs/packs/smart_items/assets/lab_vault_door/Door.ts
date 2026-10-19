@@ -1,15 +1,22 @@
 import type { Entity } from '@dcl/sdk/ecs';
 import { Animator, AudioSource, engine, InputAction, pointerEventsSystem } from '@dcl/sdk/ecs';
+import { isStateSyncronized } from '@dcl/sdk/network';
 import { getComponents } from '@dcl/asset-packs/dist/definitions';
+
+const SETTLE_SECONDS = 1;
+const JUMP_TO_END_SPEED = 1000;
 
 export class Door {
   private lastState: string = '';
+  private movedHere = false;
+  private syncedFor = 0;
   // Reactions subscribe here (via getAllScriptInstances + onEvent); update() fans out to them.
   private subs: Record<string, Array<(arg?: Entity) => void>> = {};
 
   /**
    * A door that can be opened and closed by clicking it or by other smart items.
-   * Its state is shared with other players, so everyone sees it open and close.
+   * Its state is shared with other players, so everyone sees it open and close. A player who
+   * joins later sees it already open or closed, with no animation, sound or events.
    *
    * @event open
    * @event close
@@ -32,18 +39,11 @@ export class Door {
     public idleAnimation: string = '',
   ) {}
 
-  /**
-   * Start function - called when the script is initialized
-   */
   start() {
     if (!Animator.getOrNull(this.entity)) {
       Animator.create(this.entity, { states: [] });
     }
 
-    // The open/closed state lives in a synced component so other players see it
-    // change. Every client reacts to the change inside update(), so the animation
-    // and sound play the same way whether this player, another smart item, or a
-    // remote player caused it.
     const { States } = getComponents(engine);
     if (!States.getOrNull(this.entity)) {
       States.create(this.entity, {
@@ -57,6 +57,9 @@ export class Door {
 
     if (this.idleAnimation) {
       this.playAnimation(this.idleAnimation);
+    }
+    if (this.lastState === 'Open') {
+      this.playAnimation(this.openAnimation, JUMP_TO_END_SPEED);
     }
 
     pointerEventsSystem.onPointerDown(
@@ -72,22 +75,23 @@ export class Door {
     );
   }
 
-  /**
-   * Update function - called every frame
-   * @param dt - Delta time since last frame (in seconds)
-   */
-  update(_dt: number) {
+  update(dt: number) {
+    const settled = this.syncedFor >= SETTLE_SECONDS;
+    this.syncedFor = isStateSyncronized() ? this.syncedFor + dt : 0;
     const states = getComponents(engine).States.getOrNull(this.entity);
     if (!states) return;
     const current = states.currentValue ?? 'Closed';
     if (current === this.lastState) return;
     this.lastState = current;
+    const animate = settled || this.movedHere;
+    this.movedHere = false;
 
     const isOpen = current === 'Open';
-    this.playAnimation(isOpen ? this.openAnimation : this.closeAnimation);
+    const clip = isOpen ? this.openAnimation : this.closeAnimation;
+    this.playAnimation(clip, animate ? 1 : JUMP_TO_END_SPEED);
+    if (!animate) return;
     const sound = isOpen ? this.openSound : this.closeSound;
     if (sound) {
-      // playSound resets currentTime so the sound replays from the start
       AudioSource.playSound(this.entity, `${this.src}/${sound}`);
     }
     for (const fn of this.subs[isOpen ? 'open' : 'close'] ?? []) fn();
@@ -129,13 +133,17 @@ export class Door {
     const states = States.getMutable(this.entity);
     states.previousValue = states.currentValue;
     states.currentValue = next;
+    this.movedHere = true;
   }
 
-  private playAnimation(clip: string) {
+  private playAnimation(clip: string, speed = 1) {
     if (!clip) return;
     const animator = Animator.getMutable(this.entity);
-    if (!animator.states.some((s: { clip: string }) => s.clip === clip)) {
-      animator.states = [...animator.states, { clip, playing: false, loop: false }];
+    const state = animator.states.find((s: { clip: string }) => s.clip === clip);
+    if (state) {
+      state.speed = speed;
+    } else {
+      animator.states = [...animator.states, { clip, playing: false, loop: false, speed }];
     }
     Animator.playSingleAnimation(this.entity, clip);
   }

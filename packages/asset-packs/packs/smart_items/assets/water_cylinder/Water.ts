@@ -71,8 +71,8 @@ export class Water {
   private inside = new Set<Entity>();
   private area: Entity | undefined;
   private layers: Layer[] = [];
-  // Last seen scale of this item and of each layer (x, y, z per entity), to refit on a change
   private scales: number[] = [];
+  private sceneScale = { x: 1, y: 1, z: 1 };
   private elapsed = 0;
   private subs: Record<string, Array<(arg?: Entity) => void>> = {};
 
@@ -270,14 +270,10 @@ export class Water {
     }
   }
 
-  // Keep each ripple RIPPLE_SIZE metres wide however the water is scaled: a primitive's UVs
-  // span the whole mesh, so the repeat count must follow its size in metres (this item's
-  // scale times the layer's). A plane's second UV axis is its local Y, laid flat onto Z.
   private fitRipples(layer: Layer) {
-    const root = Transform.get(this.entity).scale;
+    const root = this.sceneScale;
     const s = Transform.get(layer.entity).scale;
     const size = RIPPLE_SIZE * layer.ripple;
-    // a layer turned 90 degrees (like fishing-islands' layers) has its X along the item's Z
     const q = Transform.get(layer.entity).rotation;
     const xAxis = Vector3.rotate(Vector3.Right(), q);
     const turned = Math.abs(xAxis.z) > Math.abs(xAxis.x);
@@ -291,14 +287,29 @@ export class Water {
     tex.texture.tiling = Vector2.create(across, along);
   }
 
-  // Refit the ripples and the trigger area when this item or a layer has been rescaled (on the
-  // first call too), so a frame where nothing changed writes nothing. Layers are only scaled
-  // in the editor; a script that turns a layer at runtime should rescale it to refit.
+  private measureSceneScale() {
+    let x = 1;
+    let y = 1;
+    let z = 1;
+    let e: Entity | undefined = this.entity;
+    for (let depth = 0; e !== undefined && e !== engine.RootEntity && depth < 32; depth++) {
+      const t = Transform.getOrNull(e);
+      if (!t) break;
+      x *= t.scale.x;
+      y *= t.scale.y;
+      z *= t.scale.z;
+      e = t.parent;
+    }
+    this.sceneScale.x = x;
+    this.sceneScale.y = y;
+    this.sceneScale.z = z;
+  }
+
   private refit() {
+    this.measureSceneScale();
     let changed = false;
     for (let i = 0; i <= this.layers.length; i++) {
-      const entity = i === 0 ? this.entity : this.layers[i - 1].entity;
-      const s = Transform.getOrNull(entity)?.scale;
+      const s = i === 0 ? this.sceneScale : Transform.getOrNull(this.layers[i - 1].entity)?.scale;
       if (!s) continue;
       const k = i * 3;
       if (this.scales[k] === s.x && this.scales[k + 1] === s.y && this.scales[k + 2] === s.z) {

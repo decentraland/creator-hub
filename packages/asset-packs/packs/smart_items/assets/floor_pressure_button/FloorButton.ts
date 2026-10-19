@@ -12,20 +12,20 @@ import {
 import { getComponents } from '@dcl/asset-packs/dist/definitions';
 import type { ActionCallback } from '~sdk/script-utils';
 
-// The pressable disc of floor_pressure_button.glb is ~2 m wide with its top at 0.3 m. The area
-// covers the disc and the avatar standing on it. It is a child of the button, so scaling the
-// button in the editor scales the area with it.
 const AREA_SIZE = { x: 2, y: 1, z: 2 };
 const AREA_CENTER = { x: 0, y: 0.7, z: 0 };
+const SETTLE_SECONDS = 1;
+
+type Value = 'Released' | 'Pressed' | 'Held';
+const VALUES: Value[] = ['Released', 'Pressed', 'Held'];
 
 export class FloorButton {
-  // Avatars standing on the button, as this client sees them
   private inside = new Set<Entity>();
-  // Whether this client currently shows the button pressed
+  private unidentified = new Map<Entity, number>();
   private shown = false;
-  // The press()/release() hold in 'my player' mode (in 'all players' mode it is the synced States)
-  private localHold = false;
-  // Reactions subscribe here (via getAllScriptInstances + onEvent); refresh() fans out.
+  private localValue: Value = 'Released';
+  private leftPressed = false;
+  private disagreeFor = 0;
   private subs: Record<string, Array<(arg?: Entity) => void>> = {};
 
   /**
@@ -34,8 +34,9 @@ export class FloorButton {
    * its press and release events.
    *
    * With 'all players' the button is shared: it stays down while anyone stands on it, every
-   * player sees it, and its actions run on the client of the player who pressed or released
-   * it, not on every client.
+   * player sees it, and its actions run once, on the client of the player who pressed or
+   * released it. When players step on or off within a moment of each other, an action can
+   * run twice, or up to a second late.
    * With 'my player' every player has their own button: it reacts only to them, and only
    * they see it move and run its actions.
    *
@@ -59,12 +60,7 @@ export class FloorButton {
     public releaseAnimation: string = 'unpress',
   ) {}
 
-  /**
-   * Start function - called when the script is initialized
-   */
   start() {
-    // Animation and sound stay local: every client derives them from who it sees on the
-    // button plus the synced hold, so nothing here needs to be sent over the network.
     Animator.createOrReplace(this.entity, {
       states: [this.pressAnimation, this.releaseAnimation]
         .filter(Boolean)
@@ -77,19 +73,18 @@ export class FloorButton {
       });
     }
 
-    // The press()/release() hold of a shared button is shared too, like a door's state.
     if (this.shared()) {
       const { States } = getComponents(engine);
       if (!States.getOrNull(this.entity)) {
         States.create(this.entity, {
           id: this.entity,
-          value: ['Released', 'Pressed'],
+          value: VALUES,
           defaultValue: 'Released',
           currentValue: 'Released',
         });
       }
     }
-    if (this.held()) {
+    if (this.value() !== 'Released') {
       this.shown = true;
       if (this.pressAnimation) Animator.playSingleAnimation(this.entity, this.pressAnimation);
     }
@@ -98,33 +93,32 @@ export class FloorButton {
     Transform.create(area, { parent: this.entity, position: AREA_CENTER, scale: AREA_SIZE });
     TriggerArea.setBox(area, ColliderLayer.CL_PLAYER);
     triggerAreaEventsSystem.onTriggerEnter(area, event => this.seen(event.trigger?.entity));
-    // Stay only backs up a missed enter for this player. The SDK keeps replaying stay for a
-    // remote avatar that left without an exit event, and its id can later belong to another
-    // player anywhere in the scene, so remote avatars count from their enter event only.
     triggerAreaEventsSystem.onTriggerStay(area, event => {
       if (event.trigger?.entity === engine.PlayerEntity) this.seen(engine.PlayerEntity);
     });
     triggerAreaEventsSystem.onTriggerExit(area, event => this.gone(event.trigger?.entity));
   }
 
-  /**
-   * Update function - catches changes this client did not cause
-   * @param _dt - Delta time since last frame (in seconds)
-   */
-  update(_dt: number) {
-    // A player who disconnects or teleports away while on the button may never send an
-    // exit event, so drop avatars that are no longer in the scene.
+  update(dt: number) {
+    for (const [who, waited] of this.unidentified) {
+      if (PlayerIdentityData.has(who)) {
+        this.unidentified.delete(who);
+        this.seen(who);
+      } else if (waited > SETTLE_SECONDS) {
+        this.unidentified.delete(who);
+      } else {
+        this.unidentified.set(who, waited + dt);
+      }
+    }
     let pruned = false;
     for (const who of this.inside) {
       if (who === engine.PlayerEntity || PlayerIdentityData.has(who)) continue;
       this.inside.delete(who);
       pruned = true;
     }
-    // Nobody stepped off on this client, so if that released the button one client still has
-    // to run On Release: the player with the lowest address, the same choice on every client.
-    // Otherwise this picks up a hold set or cleared by another player, which only moves the
-    // button here: that player's client ran the actions.
-    this.refresh(pruned && this.lowestAddress());
+    if (pruned && this.lowestAddress()) this.settle();
+    this.reconcile(dt);
+    this.show();
   }
 
   /**
@@ -132,7 +126,7 @@ export class FloorButton {
    * @action
    */
   public press() {
-    this.hold(true);
+    this.change('Held');
   }
 
   /**
@@ -140,7 +134,7 @@ export class FloorButton {
    * @action
    */
   public release() {
-    this.hold(false);
+    if (this.value() === 'Held') this.change(this.occupied() ? 'Pressed' : 'Released');
   }
 
   /** Subscribe a reaction to this item's events ('press' / 'release'). */
@@ -152,62 +146,78 @@ export class FloorButton {
     return this.activatedBy !== 'my player';
   }
 
-  private held() {
-    if (!this.shared()) return this.localHold;
-    return getComponents(engine).States.getOrNull(this.entity)?.currentValue === 'Pressed';
+  private occupied() {
+    return this.inside.size > 0;
   }
 
-  private hold(on: boolean) {
+  private value(): Value {
+    if (!this.shared()) return this.localValue;
+    const current = getComponents(engine).States.getOrNull(this.entity)?.currentValue;
+    return (current as Value | undefined) ?? 'Released';
+  }
+
+  private settle() {
+    if (this.value() !== 'Held') this.change(this.occupied() ? 'Pressed' : 'Released');
+  }
+
+  private change(next: Value) {
+    const previous = this.value();
+    if (previous === next) return;
     if (this.shared()) {
-      const { States } = getComponents(engine);
-      const next = on ? 'Pressed' : 'Released';
-      const current = States.getOrNull(this.entity);
-      if (current && current.currentValue !== next) {
-        const states = States.getMutable(this.entity);
-        states.previousValue = states.currentValue;
-        states.currentValue = next;
-      }
+      const states = getComponents(engine).States.getMutableOrNull(this.entity);
+      if (!states) return;
+      states.previousValue = states.currentValue;
+      states.currentValue = next;
     } else {
-      this.localHold = on;
+      this.localValue = next;
     }
-    this.refresh(true);
-  }
-
-  // Show the button as it now is. Only the client that caused the change (`byMe`) runs the
-  // actions and events, so they don't multiply with the number of players in the scene.
-  private refresh(byMe: boolean) {
-    const pressed = this.inside.size > 0 || this.held();
-    if (pressed === this.shown) return;
-    this.shown = pressed;
-    this.feedback(pressed ? this.pressAnimation : this.releaseAnimation);
-    if (!byMe) return;
+    const pressed = next !== 'Released';
+    if (pressed === (previous !== 'Released')) return;
     const action = pressed ? this.onPress : this.onRelease;
     if (action) action();
     for (const fn of this.subs[pressed ? 'press' : 'release'] ?? []) fn();
   }
 
-  // The trigger result carries a raw entity id. Count this player, and in a shared button any
-  // other player in the scene; skip ids that are not a known avatar (0 is the scene root, and
-  // the explorer reports an avatar it cannot resolve with an id outside the player range).
-  private avatar(raw?: number): Entity | undefined {
-    if (raw === undefined || raw === 0) return undefined;
-    const who = raw as Entity;
-    if (who === engine.PlayerEntity) return who;
-    return this.shared() && PlayerIdentityData.has(who) ? who : undefined;
+  private reconcile(dt: number) {
+    const value = this.value();
+    if (value === 'Released') this.leftPressed = false;
+    const agrees = value === 'Held' || this.occupied() === (value === 'Pressed');
+    const involved = this.leftPressed || this.inside.has(engine.PlayerEntity);
+    this.disagreeFor = agrees || !involved ? 0 : this.disagreeFor + dt;
+    if (this.disagreeFor >= SETTLE_SECONDS) this.settle();
+  }
+
+  private show() {
+    const pressed = this.value() !== 'Released' || this.occupied();
+    if (pressed === this.shown) return;
+    this.shown = pressed;
+    const clip = pressed ? this.pressAnimation : this.releaseAnimation;
+    if (clip) Animator.playSingleAnimation(this.entity, clip);
+    if (this.sound) AudioSource.playSound(this.entity, `${this.src}/${this.sound}`);
   }
 
   private seen(raw?: number) {
-    const who = this.avatar(raw);
-    if (who === undefined || this.inside.has(who)) return;
+    if (raw === undefined || raw === 0) return;
+    const who = raw as Entity;
+    if (this.inside.has(who)) return;
+    if (who !== engine.PlayerEntity) {
+      if (!this.shared()) return;
+      if (!PlayerIdentityData.has(who)) {
+        if (!this.unidentified.has(who)) this.unidentified.set(who, 0);
+        return;
+      }
+    }
     this.inside.add(who);
-    this.refresh(who === engine.PlayerEntity);
+    if (who === engine.PlayerEntity) this.settle();
   }
 
   private gone(raw?: number) {
     if (raw === undefined) return;
     const who = raw as Entity;
-    if (!this.inside.delete(who)) return;
-    this.refresh(who === engine.PlayerEntity);
+    this.unidentified.delete(who);
+    if (!this.inside.delete(who) || who !== engine.PlayerEntity) return;
+    this.settle();
+    this.leftPressed = this.value() !== 'Released';
   }
 
   private lowestAddress() {
@@ -217,10 +227,5 @@ export class FloorButton {
       if (player.address.toLowerCase() < mine) return false;
     }
     return true;
-  }
-
-  private feedback(clip: string) {
-    if (clip) Animator.playSingleAnimation(this.entity, clip);
-    if (this.sound) AudioSource.playSound(this.entity, `${this.src}/${this.sound}`);
   }
 }

@@ -3,6 +3,6 @@
   "name": "Water Cylinder",
   "category": "materials",
   "tags": ["water", "pond", "pool", "sea", "lake", "splash", "swim"],
-  "description": "An 8 m wide, 2 m deep round pool of water that splashes when a player jumps or walks into it.",
+  "description": "An 8 m wide, 2 m deep round pool of water that splashes when a player jumps or walks into it. Each water layer needs its normal map: a layer without one stops being water, and with none left the splash area shrinks to 1 x 1 m.",
   "author": "Decentraland Foundation"
 }
