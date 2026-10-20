@@ -23,6 +23,7 @@ export enum ErrorType {
   Redo = 'redo',
   ImportAsset = 'import-asset',
   RemoveAsset = 'remove-asset',
+  PartialRemoveAsset = 'partial-remove-asset',
   SaveThumbnail = 'save-thumbnail',
   GetThumbnails = 'get-thumbnails',
   CreateCustomAsset = 'create-custom-asset',
