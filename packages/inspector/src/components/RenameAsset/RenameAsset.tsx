@@ -42,6 +42,7 @@ const RenameAsset: React.FC<PropTypes> = ({ assetId, currentName }) => {
           <div className="column">
             <Block label="Item name">
               <TextField
+                size="large"
                 autoSelect
                 value={name}
                 onChange={handleNameChange}

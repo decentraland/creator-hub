@@ -37,6 +37,7 @@ const TextField = React.forwardRef<HTMLInputElement, Props>((props, ref) => {
     autoSelect,
     placeholder,
     type = 'text',
+    size = 'dense',
     ...rest
   } = props;
   const [inputValue, setInputValue] = useState(value);
@@ -156,7 +157,7 @@ const TextField = React.forwardRef<HTMLInputElement, Props>((props, ref) => {
   }, [rightLabel, rightIcon]);
 
   return (
-    <div className={cx('Text Field', className, type)}>
+    <div className={cx('Text Field', className, type, size)}>
       <Label text={label} />
       <div
         className={cx('InputContainer', {
@@ -164,6 +165,7 @@ const TextField = React.forwardRef<HTMLInputElement, Props>((props, ref) => {
           focused: isFocused,
           disabled: disabled,
           error: !!error,
+          filled: inputValue !== undefined && inputValue !== '',
         })}
       >
         {renderLeftContent()}
@@ -183,6 +185,7 @@ const TextField = React.forwardRef<HTMLInputElement, Props>((props, ref) => {
           spellCheck={false}
           autoCorrect="off"
           autoCapitalize="off"
+          aria-invalid={error ? true : undefined}
           {...rest}
         />
         {renderRightContent()}

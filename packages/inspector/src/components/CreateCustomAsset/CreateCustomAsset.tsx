@@ -143,6 +143,7 @@ const CreateCustomAsset: React.FC = () => {
           <div className="column">
             <Block label="Item name">
               <TextField
+                size="large"
                 autoSelect
                 autoFocus
                 value={name}

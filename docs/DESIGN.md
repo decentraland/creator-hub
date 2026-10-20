@@ -66,6 +66,10 @@ There is no single `--text` token — pick the foreground that matches the surfa
 | `--ui-designer-control-selected-bg` | `rgba(255,255,255,.1)` | Hover/selected fill on a menu **row** |
 | `--ui-designer-control-active-bg` | `#63b4f6` (→ accent) | Fill of a selected/active **toggle** |
 | `--ui-designer-control-active-fg` | `#35333b` Onix | Glyph sitting on that accent fill |
+| `--palette-whiteTransparent-subtle` | `rgba(255,255,255,.1)` | Figma White Subtle · White 10: checkbox hover halo; `--ui-designer-control-border` aliases it (ui2 theme-path name) |
+| `--palette-whiteTransparent-soft` | `rgba(255,255,255,.2)` | Figma White Soft · White 20: disabled checkbox and large-field border; `--ui-designer-control-border-strong` aliases it (ui2 theme-path name) |
+| `--palette-whiteTransparent-blurry` | `rgba(255,255,255,.4)` | Figma White Blurry · White 40: checkbox and large-field border; `--ui-designer-checkbox-border` aliases it (ui2 theme-path name) |
+| `--palette-whiteTransparent-backdrop` | `rgba(255,255,255,.6)` | Figma White Backdrop · White 60: large-field hover and filled border (ui2 theme-path name) |
 
 Figma's Neutrals swatches name `#35333b` **Onix** and `#25212a` **Charcoal**. The two `vars.css` trailing comments that called `#35333b` Charcoal are deleted; the two block comments above the UI Designer control tokens still say Charcoal for it — read Onix.
 
@@ -110,6 +114,7 @@ Adding a step means solving for its contrast, not guessing an alpha.
 | Token | Value | Use |
 | --- | --- | --- |
 | `--primary-main` / `--primary-dark` | `#ff2d55` / `#f70038` | Brand pink — **CTAs and main buttons only**, plus the "armed/active tool" signal. Not for panel chrome (that's `--ui-designer-control-accent`); don't use it for field errors. |
+| `--palette-primary-light` | `#ff6280` | Figma Primary Light 1: `.Button.danger` hover and active fill (ui2 theme-path name) |
 | `--secondary-main` | `#ff7439` | Brand orange |
 | `--success-main` / `--error-main` / `--warning-main` | `#34ce77` / `#fb3b3b` / `#fe9c2a` | Status (Figma System/Green, Red, Orange) |
 | `--success-dark` / `--success-light` | `#00b453` / `#65d890` | Status shades (no consumers yet) |
@@ -172,6 +177,14 @@ No pair that passed 4.5:1 now fails. `--error-main` text on `#242129` (the `Call
 4px scale — use it instead of ad-hoc px:
 
 `--uid-space-1: 4px` · `2: 8px` · `3: 12px` · `4: 16px` · `5: 20px` · `6: 24px`
+
+| Token | Value | Use |
+| --- | --- | --- |
+| `--controlHeight-small` | `26px` | Dense `TextField` / `Dropdown` height, the default (Figma UI Editor `Input`; ui2 theme-path name) |
+| `--controlHeight-large` | `46px` | `TextField size="large"` and `Button size="big"` height (Figma Text-Input, Button-Contained-Text; ui2 theme-path name) |
+| `--shape-borderRadius` | `6px` | Dense field, dropdown and textarea corners; `--ui-designer-radius-field` aliases it (ui2 theme-path name) |
+| `--shape-borderRadiusLarge` | `12px` | Large field and `.Button.big` corners; `--ui-designer-radius-menu` aliases it (ui2 theme-path name) |
+| `--borderWidth-strong` | `1.5px` | Large-field focus and error border (ui2 theme-path name) |
 
 Give interactive controls a consistent height (define a local `--uid-control-height`, ~28px, per panel) so rows align. Interactive hit targets should be ≥24px.
 
