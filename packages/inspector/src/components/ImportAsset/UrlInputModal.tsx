@@ -60,6 +60,7 @@ export function UrlInputModal({
       <div className="UrlInputModalContent">
         <h3>Enter URL</h3>
         <TextField
+          size="large"
           label="URL"
           placeholder="https://..."
           value={urlValue}

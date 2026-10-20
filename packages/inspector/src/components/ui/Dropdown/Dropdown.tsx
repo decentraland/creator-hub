@@ -215,6 +215,7 @@ const Dropdown = React.forwardRef<HTMLInputElement, Props>((props, parentRef) =>
         ref={setContainerRef}
         role="combobox"
         aria-expanded={showOptions}
+        aria-haspopup="listbox"
         aria-label={props['aria-label']}
       >
         {isField ? renderPlaceholder() : trigger}

@@ -1,7 +1,8 @@
 import type React from 'react';
 
-export type Props = React.InputHTMLAttributes<HTMLInputElement> & {
+export type Props = Omit<React.InputHTMLAttributes<HTMLInputElement>, 'size'> & {
   type?: 'text' | 'password' | 'email' | 'number';
+  size?: 'dense' | 'large';
   label?: React.ReactNode;
   leftLabel?: React.ReactNode;
   leftIcon?: React.ReactNode;

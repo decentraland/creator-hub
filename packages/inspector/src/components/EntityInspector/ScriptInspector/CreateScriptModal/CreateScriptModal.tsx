@@ -60,6 +60,7 @@ export const CreateScriptModal: React.FC<Props> = ({ isOpen, onClose, onCreate, 
             <CodeIcon size={64} />
           </div>
           <TextField
+            size="large"
             value={scriptName}
             onChange={handleChange}
             error={!!error}

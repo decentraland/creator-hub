@@ -356,12 +356,6 @@
   border-color: var(--ui-designer-control-border);
 }
 
-.ui-designer-property-panel .Text.Field .InputContainer,
-.ui-designer-property-panel .Dropdown.Field .DropdownContainer,
-.ui-designer-property-panel .TextArea.Field textarea {
-  border-radius: var(--ui-designer-radius-field);
-}
-
 .ui-designer-property-panel .Text.Field .InputContainer:not(.disabled) .input,
 .ui-designer-property-panel .TextArea.Field textarea {
   color: var(--ui-designer-text-value);
@@ -384,6 +378,7 @@
   border-radius: 4px;
   background-color: transparent;
   border-color: var(--ui-designer-checkbox-border);
+  box-shadow: none;
 }
 
 .ui-designer-property-panel
