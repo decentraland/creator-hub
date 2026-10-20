@@ -168,7 +168,7 @@
 }
 
 .Editor .Header .actions .Button.MuiButton-colorPrimary:hover {
-  background-color: var(--dcl-hover) !important;
+  background-color: var(--primary-hover) !important;
 }
 
 /* Title-bar design: Optimize / Code are square icon-only buttons whose label lives in the

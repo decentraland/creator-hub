@@ -497,7 +497,6 @@ const ToolbarPillLabel = styled('span')({
   whiteSpace: 'nowrap',
 });
 
-// The circular accent send button in the composer (red with a white up-arrow).
 const SendButton = styled(IconButton)(({ theme }) => ({
   flexShrink: 0,
   width: theme.spacing(3.5),
@@ -505,7 +504,7 @@ const SendButton = styled(IconButton)(({ theme }) => ({
   borderRadius: '50%',
   backgroundColor: theme.palette.primary.main,
   color: theme.palette.primary.contrastText,
-  '&:hover': { backgroundColor: theme.palette.primary.dark },
+  '&:hover': { backgroundColor: 'var(--primary-hover)' },
   '&.Mui-disabled': { backgroundColor: theme.palette.action.disabledBackground },
 }));
 
