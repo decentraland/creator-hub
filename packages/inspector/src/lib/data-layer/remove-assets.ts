@@ -2,67 +2,43 @@ import type { DataLayerRpcClient } from './types';
 
 type RemoveAssetsClient = Pick<DataLayerRpcClient, 'removeAssets' | 'removeAsset'>;
 
-/** A removal that left some files in place; `removed` lists the paths that are gone. */
-export class PartialRemovalError extends Error {
-  constructor(
-    readonly removed: string[],
-    readonly cause: unknown,
-  ) {
-    super(`Removed ${removed.length} file(s) before failing`);
-  }
-}
+/** The paths a removal deleted, its error when it fell short, and whether it ran as one batch. */
+export type RemovalResult = { removed: string[]; error?: unknown; batched: boolean };
 
 const isMissingMethod = (error: unknown) =>
   error instanceof Error && /not implemented in server port/.test(error.message);
 
-async function removeOneByOne(dataLayer: RemoveAssetsClient, paths: string[]) {
+async function removeOneByOne(
+  dataLayer: RemoveAssetsClient,
+  paths: string[],
+): Promise<RemovalResult> {
   const removed: string[] = [];
   for (const path of paths) {
     try {
       await dataLayer.removeAsset({ path });
     } catch (error) {
-      throw new PartialRemovalError(removed, error);
+      return { removed, error, batched: false };
     }
     removed.push(path);
   }
-  return removed;
+  return { removed, batched: false };
 }
 
-/**
- * Removes `paths` in one undoable batch, or one by one on hosts that predate the batch method.
- * @returns the removed paths
- * @throws PartialRemovalError when some files could not be removed
- */
+/** Removes `paths` in one undoable batch, or one by one on hosts that predate the batch method. */
 export async function removeAssetFiles(
   dataLayer: RemoveAssetsClient,
   paths: string[],
-): Promise<string[]> {
-  if (!paths.length) return [];
+): Promise<RemovalResult> {
+  if (!paths.length) return { removed: [], batched: true };
   let result: { success: string[]; failed: string[] };
   try {
     result = await dataLayer.removeAssets({ paths });
   } catch (error) {
-    if (!isMissingMethod(error)) throw error;
+    if (!isMissingMethod(error)) return { removed: [], error, batched: true };
     console.warn('Batch asset removal is not available, removing the files one by one', error);
     return removeOneByOne(dataLayer, paths);
   }
-  if (result.failed.length) {
-    throw new PartialRemovalError(
-      result.success,
-      new Error(`Could not remove ${result.failed.join(', ')}`),
-    );
-  }
-  return result.success;
-}
-
-/** `removeAssetFiles` that never throws: the paths that are gone, plus the error when it failed. */
-export async function removeAssetFilesSettled(
-  dataLayer: RemoveAssetsClient,
-  paths: string[],
-): Promise<{ removed: string[]; error?: unknown }> {
-  try {
-    return { removed: await removeAssetFiles(dataLayer, paths) };
-  } catch (error) {
-    return { removed: error instanceof PartialRemovalError ? error.removed : [], error };
-  }
+  if (!result.failed.length) return { removed: result.success, batched: true };
+  const error = new Error(`Could not remove ${result.failed.join(', ')}`);
+  return { removed: result.success, error, batched: true };
 }

@@ -96,12 +96,16 @@ function Assets({ isAssetsPanelCollapsed, onToggleCollapse }: Props) {
   ]);
 
   useEffect(() => {
-    if (!hasRecoverableFiles) return;
+    if (!removedAssets.length) return;
+    const pending = new Set(removedAssets.map(file => file.path));
     getDataLayerInterface()
       ?.getFilesSizes({ path: DIRECTORY.ASSETS, ignore: [] })
-      .then(({ files }) => dispatch(dropRestoredFiles(files.map(file => file.path))))
+      .then(({ files }) => {
+        const restored = files.map(file => file.path).filter(path => pending.has(path));
+        if (restored.length) dispatch(dropRestoredFiles(restored));
+      })
       .catch(error => console.warn('Could not check the recoverable files:', error));
-  }, [assetCatalog, hasRecoverableFiles, dispatch]);
+  }, [assetCatalog, removedAssets, dispatch]);
 
   useEffect(() => {
     if (debugConsoleEnabled) {

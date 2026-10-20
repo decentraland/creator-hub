@@ -1,8 +1,10 @@
 import { renderHook, act } from '@testing-library/react';
 
+import { setAssetExplorerActive } from '../../redux/ui';
 import { useAssetExplorerActive } from './useAssetExplorerActive';
 
-vi.mock('../../redux/hooks', () => ({ useAppDispatch: () => vi.fn() }));
+const { dispatch } = vi.hoisted(() => ({ dispatch: vi.fn() }));
+vi.mock('../../redux/hooks', () => ({ useAppDispatch: () => dispatch }));
 
 describe('useAssetExplorerActive', () => {
   const pointerDown = (target: Element) =>
@@ -26,6 +28,7 @@ describe('useAssetExplorerActive', () => {
 
   afterEach(() => {
     document.body.innerHTML = '';
+    document.body.className = '';
   });
 
   describe('when the last click landed inside the explorer', () => {
@@ -39,6 +42,22 @@ describe('useAssetExplorerActive', () => {
       const { result } = renderHook(() => useAssetExplorerActive({ current: container }));
       pointerDown(container);
       pointerDown(modal);
+      expect(result.current).toBe(true);
+    });
+  });
+
+  describe('when a modal is open', () => {
+    it('should not be active until the modal closes', async () => {
+      const { result } = renderHook(() => useAssetExplorerActive({ current: container }));
+      pointerDown(container);
+      await act(async () => {
+        document.body.classList.add('ReactModal__Body--open');
+      });
+      expect(result.current).toBe(false);
+      expect(dispatch).toHaveBeenLastCalledWith(setAssetExplorerActive({ active: true }));
+      await act(async () => {
+        document.body.classList.remove('ReactModal__Body--open');
+      });
       expect(result.current).toBe(true);
     });
   });

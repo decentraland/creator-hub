@@ -272,7 +272,6 @@ export async function initRpcMethods(
       });
     },
 
-    // One undo entry for the whole batch, and the folders left empty go away with their files.
     async removeAssets(req) {
       return stateManager.executeTransaction('external', async () => {
         const undoAcc: FileOperation[] = [];

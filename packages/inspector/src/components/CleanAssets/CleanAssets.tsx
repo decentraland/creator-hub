@@ -3,7 +3,7 @@ import { IoClose } from 'react-icons/io5';
 import { FiAlertTriangle } from 'react-icons/fi';
 import cx from 'classnames';
 import { useSnackbar } from '../../hooks/useSnackbar';
-import { removeAssetFilesSettled } from '../../lib/data-layer/remove-assets';
+import { removeAssetFiles } from '../../lib/data-layer/remove-assets';
 import { DEFAULT_UNDO_MAX_SIZE } from '../../lib/data-layer/host/utils/undo-redo-array';
 import { setRemovedFiles } from '../../redux/clean-assets';
 import { getAssetCatalog, getDataLayerInterface } from '../../redux/data-layer';
@@ -91,7 +91,7 @@ const CleanAssets: React.FC<Props> = ({
     try {
       const filePaths = Array.from(selectedAssets.values());
       const filesBackup = await dataLayer.getFilesList({ paths: filePaths });
-      const { removed, error } = await removeAssetFilesSettled(dataLayer, filePaths);
+      const { removed, error, batched } = await removeAssetFiles(dataLayer, filePaths);
       const backups = filesBackup.files
         .filter(file => file.success && file.content && removed.includes(file.path))
         .map(file => ({ path: file.path, content: file.content }));
@@ -102,7 +102,7 @@ const CleanAssets: React.FC<Props> = ({
           .filter(asset => removed.includes(asset.path))
           .reduce((total, asset) => total + asset.size, 0);
         const undoHint =
-          removedBytes < DEFAULT_UNDO_MAX_SIZE ? ' Press Ctrl+Z (Cmd+Z) to undo.' : '';
+          batched && removedBytes < DEFAULT_UNDO_MAX_SIZE ? ' Press Ctrl+Z (Cmd+Z) to undo.' : '';
         pushNotification(
           'success',
           `${removed.length} ${removed.length === 1 ? 'file has' : 'files have'} been removed.${undoHint}`,

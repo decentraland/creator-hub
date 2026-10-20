@@ -9,17 +9,18 @@ import {
   getDataLayerInterface,
   removeAssets,
 } from '..';
-import { removeAssetFilesSettled } from '../../../lib/data-layer/remove-assets';
+import type { RemovalResult } from '../../../lib/data-layer/remove-assets';
+import { removeAssetFiles } from '../../../lib/data-layer/remove-assets';
 import { removeAssetsSaga } from './remove-assets';
 
 describe('removeAssetsSaga', () => {
   const paths = ['assets/a.glb', 'assets/b.glb'];
   const action = removeAssets({ paths });
   const dataLayer = {} as IDataLayer;
-  const run = (result: { removed: string[]; error?: unknown }) =>
+  const run = (result: Omit<RemovalResult, 'batched'>) =>
     expectSaga(removeAssetsSaga, action).provide([
       [matchers.call.fn(getDataLayerInterface), dataLayer],
-      [matchers.call.fn(removeAssetFilesSettled), result],
+      [matchers.call.fn(removeAssetFiles), { ...result, batched: true }],
     ]);
 
   describe('when every file is removed', () => {

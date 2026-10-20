@@ -141,6 +141,7 @@ function ProjectView({ folders, thumbnails }: Props) {
   const [processedThumbnails, setProcessedThumbnails] = useState<Set<string>>(new Set());
   const [thumbnailLookup, setThumbnailLookup] = useState<{
     key: string;
+    loaded: boolean;
     map: Map<string, Uint8Array>;
   } | null>(null);
   const clipboard = useRef<{ paths: string[]; cut: boolean } | null>(null);
@@ -257,6 +258,7 @@ function ProjectView({ folders, thumbnails }: Props) {
       const dataLayer = getDataLayerInterface();
       if (!realTree.has(path) || !dataLayer) return [];
       const { files } = await dataLayer.getFilesSizes({ path: withAssetDir(path), ignore: [] });
+      if (!files.length) throw new Error(`Could not list the files of ${path}`);
       return files.map(file => file.path);
     },
     [fullTree, realTree],
@@ -632,10 +634,6 @@ function ProjectView({ folders, thumbnails }: Props) {
     [isEditableNode, tree],
   );
 
-  /**
-   * Keyboard
-   */
-
   const moveFocus = useCallback(
     (path: string, extend: boolean) => {
       const node = tree.get(path);
@@ -653,7 +651,7 @@ function ProjectView({ folders, thumbnails }: Props) {
   const tileIds = useMemo(() => tiles.map(node => getFullNodePath(node).slice(1)), [tiles]);
 
   const explorerActive = useAssetExplorerActive(containerRef);
-  const explorerKeys = { enabled: explorerActive && !modal?.isOpen };
+  const explorerKeys = { enabled: explorerActive };
   const selectionKeys = { enabled: explorerKeys.enabled && selection.length > 0 };
 
   const copySelection = (cut: boolean) => {
@@ -733,11 +731,6 @@ function ProjectView({ folders, thumbnails }: Props) {
     [toggleSelected, selectRange, selectOnly, tileIds],
   );
 
-  /**
-   * Thumbnails: images are rendered by the tiles themselves; for 3D models we use the saved
-   * thumbnail, and queue a background generation for the ones that don't have it yet.
-   */
-
   const modelSources = useMemo(
     () =>
       tiles
@@ -761,14 +754,17 @@ function ProjectView({ folders, thumbnails }: Props) {
           thumbnails.find($ => $.path.endsWith(legacyName));
         if (thumbnail) map.set(src, thumbnail.content);
       });
-      if (!cancelled) setThumbnailLookup({ key: modelKey, map });
+      if (!cancelled) setThumbnailLookup({ key: modelKey, loaded: thumbnailsLoaded, map });
     })();
     return () => {
       cancelled = true;
     };
-  }, [modelKey, thumbnails]);
+  }, [modelKey, thumbnails, thumbnailsLoaded]);
 
-  const thumbnailMap = thumbnailLookup?.key === modelKey ? thumbnailLookup.map : undefined;
+  const thumbnailMap =
+    thumbnailLookup?.key === modelKey && (thumbnailLookup.loaded || !thumbnailsLoaded)
+      ? thumbnailLookup.map
+      : undefined;
   const thumbnailQueue = useMemo(
     () =>
       thumbnailsLoaded && thumbnailMap

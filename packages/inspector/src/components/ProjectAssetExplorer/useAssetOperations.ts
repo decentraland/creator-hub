@@ -5,7 +5,7 @@ import { useSnackbar } from '../../hooks/useSnackbar';
 import { useAppDispatch } from '../../redux/hooks';
 import { getAssetCatalog, getDataLayerInterface, saveThumbnail } from '../../redux/data-layer';
 import { withAssetDir } from '../../lib/data-layer/host/fs-utils';
-import { removeAssetFilesSettled } from '../../lib/data-layer/remove-assets';
+import { removeAssetFiles } from '../../lib/data-layer/remove-assets';
 import { copyToClipboard } from '../../lib/utils/clipboard';
 import { getGltfResourceUris } from '../../lib/utils/gltf';
 import { getThumbnailHashNameForAsset } from '../../lib/utils/hash';
@@ -182,7 +182,7 @@ export function useAssetOperations({ tree, thumbnails, virtualFolders }: Options
       };
       if (removeSource) {
         const sources = files.map(({ from }) => withAssetDir(from));
-        const { removed, error } = await removeAssetFilesSettled(dataLayer, sources);
+        const { removed, error } = await removeAssetFiles(dataLayer, sources);
         if (error) console.error(`Failed to remove the sources of ${fromPath}`, error);
         outcome.leftBehind = sources.filter(source => !removed.includes(source));
         try {
