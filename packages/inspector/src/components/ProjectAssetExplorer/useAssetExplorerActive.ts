@@ -4,14 +4,19 @@ import type { RefObject } from 'react';
 import { useAppDispatch } from '../../redux/hooks';
 import { setAssetExplorerActive } from '../../redux/ui';
 
+const MODAL_PORTAL = '.ReactModalPortal';
+
 /** Whether the last click landed in `containerRef` and the window kept the focus, mirrored to the store. */
 export function useAssetExplorerActive(containerRef: RefObject<HTMLElement>): boolean {
   const dispatch = useAppDispatch();
   const [active, setActive] = useState(false);
 
   useEffect(() => {
-    const onPointerDown = (event: PointerEvent) =>
-      setActive(!!containerRef.current?.contains(event.target as Node));
+    const onPointerDown = (event: PointerEvent) => {
+      const target = event.target as Element | null;
+      if (target?.closest?.(MODAL_PORTAL)) return;
+      setActive(!!containerRef.current?.contains(target));
+    };
     const onWindowBlur = () => setActive(false);
     window.addEventListener('pointerdown', onPointerDown, true);
     window.addEventListener('blur', onWindowBlur);

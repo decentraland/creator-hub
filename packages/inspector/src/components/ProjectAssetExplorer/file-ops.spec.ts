@@ -6,6 +6,7 @@ import {
   getParentPath,
   getUniqueCopyName,
   isOutsideAssets,
+  namesBelow,
   isProtectedPath,
   normalizePath,
   pruneNestedPaths,
@@ -126,6 +127,10 @@ describe('ProjectAssetExplorer/file-ops', () => {
       expect(normalizePath('Models/../../t.png')).toBe('../t.png');
       expect(normalizePath('a//b')).toBe('a/b');
     });
+    it('should treat backslashes as separators', () => {
+      expect(normalizePath('Models/..\\..\\.env')).toBe('../.env');
+      expect(normalizePath('Models\\tex\\t.png')).toBe('Models/tex/t.png');
+    });
   });
 
   describe('isOutsideAssets', () => {
@@ -135,6 +140,19 @@ describe('ProjectAssetExplorer/file-ops', () => {
       expect(isOutsideAssets('../.env')).toBe(true);
       expect(isOutsideAssets('models/tree.bin')).toBe(false);
       expect(isOutsideAssets('..hidden/tree.bin')).toBe(false);
+    });
+    it('should flag drive-qualified paths', () => {
+      expect(isOutsideAssets('C:/Users/me/.env')).toBe(true);
+      expect(isOutsideAssets('models/c:t.png')).toBe(true);
+    });
+  });
+
+  describe('namesBelow', () => {
+    it('should list the names the written paths take directly inside a folder', () => {
+      expect(
+        namesBelow('b', ['b/m.gltf', 'b/t.png', 'b/textures/w.png', 'bb/x.png', 'c/t.png']),
+      ).toEqual(['m.gltf', 't.png', 'textures']);
+      expect(namesBelow('', ['m.gltf', 'textures/w.png'])).toEqual(['m.gltf', 'textures']);
     });
   });
 

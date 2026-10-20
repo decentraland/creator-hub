@@ -19,6 +19,7 @@ import {
   getUniqueCopyName,
   isOutsideAssets,
   joinPath,
+  namesBelow,
   normalizePath,
   pruneNestedPaths,
   replaceAssetReferences,
@@ -38,8 +39,8 @@ type Options = {
 /** A transfer refused for a reason the user can act on; its message is shown as is. */
 class TransferError extends Error {}
 
-/** What went wrong after a transfer's files were written: sources not removed, references not updated. */
-type TransferOutcome = { leftBehind: string[]; staleReferences: boolean };
+/** A transfer's written paths, plus what went wrong after: sources not removed, references not updated. */
+type TransferOutcome = { written: string[]; leftBehind: string[]; staleReferences: boolean };
 
 const READ_ONLY_HINT = 'the scene folder and the built-in animations are read only';
 
@@ -174,7 +175,11 @@ export function useAssetOperations({ tree, thumbnails, virtualFolders }: Options
 
       for (const { from, to } of files) void copyThumbnail(from, to);
 
-      const outcome: TransferOutcome = { leftBehind: [], staleReferences: false };
+      const outcome: TransferOutcome = {
+        written: Array.from(content.keys()),
+        leftBehind: [],
+        staleReferences: false,
+      };
       if (removeSource) {
         const sources = files.map(({ from }) => withAssetDir(from));
         const { removed, error } = await removeAssetFilesSettled(dataLayer, sources);
@@ -287,7 +292,11 @@ export function useAssetOperations({ tree, thumbnails, virtualFolders }: Options
           const outcome = await transfer(path, newPath, isFolder, move, false);
           leftBehind.push(...outcome.leftBehind);
           staleReferences ||= outcome.staleReferences;
-          takenByFolder.set(destination, [...taken, newName]);
+          takenByFolder.set(destination, [
+            ...taken,
+            newName,
+            ...namesBelow(destination, outcome.written),
+          ]);
           created.push(newPath);
         } catch (e) {
           if (e instanceof TransferError) notifyError(e.message);

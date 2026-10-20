@@ -34,7 +34,7 @@ export function joinPath(parent: string, name: string): string {
  */
 export function normalizePath(path: string): string {
   const parts: string[] = [];
-  for (const part of path.split('/')) {
+  for (const part of path.split(/[\\/]/)) {
     if (!part || part === '.') continue;
     if (part === '..' && parts.length && parts[parts.length - 1] !== '..') parts.pop();
     else parts.push(part);
@@ -42,9 +42,18 @@ export function normalizePath(path: string): string {
   return parts.join('/');
 }
 
-/** Whether a `normalizePath` result is empty or climbs above the assets folder. */
+/** Whether a `normalizePath` result is empty, climbs above the assets folder or names a drive. */
 export function isOutsideAssets(path: string): boolean {
-  return !path || path === '..' || path.startsWith('../');
+  return !path || path === '..' || path.startsWith('../') || path.includes(':');
+}
+
+/** The names `paths` take directly inside `folder` (a file, or the first folder on the way). */
+export function namesBelow(folder: string, paths: string[]): string[] {
+  const prefix = folder ? folder + '/' : '';
+  const names = paths
+    .filter(path => path.startsWith(prefix))
+    .map(path => path.slice(prefix.length).split('/')[0]);
+  return Array.from(new Set(names));
 }
 
 /** Splits `model.final.glb` into `{ base: 'model.final', ext: '.glb' }`. Folders pass `isFolder`. */

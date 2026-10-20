@@ -4,6 +4,7 @@ import { FiAlertTriangle } from 'react-icons/fi';
 import cx from 'classnames';
 import { useSnackbar } from '../../hooks/useSnackbar';
 import { removeAssetFilesSettled } from '../../lib/data-layer/remove-assets';
+import { DEFAULT_UNDO_MAX_SIZE } from '../../lib/data-layer/host/utils/undo-redo-array';
 import { setRemovedFiles } from '../../redux/clean-assets';
 import { getAssetCatalog, getDataLayerInterface } from '../../redux/data-layer';
 import { useAppDispatch } from '../../redux/hooks';
@@ -94,12 +95,17 @@ const CleanAssets: React.FC<Props> = ({
       const backups = filesBackup.files
         .filter(file => file.success && file.content && removed.includes(file.path))
         .map(file => ({ path: file.path, content: file.content }));
-      dispatch(setRemovedFiles(backups));
+      if (removed.length) dispatch(setRemovedFiles(backups));
 
       if (!error) {
+        const removedBytes = assets
+          .filter(asset => removed.includes(asset.path))
+          .reduce((total, asset) => total + asset.size, 0);
+        const undoHint =
+          removedBytes < DEFAULT_UNDO_MAX_SIZE ? ' Press Ctrl+Z (Cmd+Z) to undo.' : '';
         pushNotification(
           'success',
-          `${removed.length} ${removed.length === 1 ? 'file has' : 'files have'} been removed. Press Ctrl+Z (Cmd+Z) to undo.`,
+          `${removed.length} ${removed.length === 1 ? 'file has' : 'files have'} been removed.${undoHint}`,
         );
         setShowConfirmation(false);
       } else if (removed.length) {
@@ -121,7 +127,7 @@ const CleanAssets: React.FC<Props> = ({
       onClose();
       setIsRemoving(false);
     }
-  }, [selectedAssets, onClose, pushNotification, dispatch]);
+  }, [assets, selectedAssets, onClose, pushNotification, dispatch]);
 
   const validateRemove = useCallback(() => {
     if (selectedAssets.size === 0) return;

@@ -654,6 +654,7 @@ function ProjectView({ folders, thumbnails }: Props) {
 
   const explorerActive = useAssetExplorerActive(containerRef);
   const explorerKeys = { enabled: explorerActive && !modal?.isOpen };
+  const selectionKeys = { enabled: explorerKeys.enabled && selection.length > 0 };
 
   const copySelection = (cut: boolean) => {
     const paths = selection.filter(path => fullTree.has(path) && !isReadOnlyPath(path));
@@ -690,8 +691,8 @@ function ProjectView({ folders, thumbnails }: Props) {
     }
   };
 
-  useHotkey([COPY, COPY_ALT], () => copySelection(false), document.body, explorerKeys);
-  useHotkey([CUT, CUT_ALT], () => copySelection(true), document.body, explorerKeys);
+  useHotkey([COPY, COPY_ALT], () => copySelection(false), document.body, selectionKeys);
+  useHotkey([CUT, CUT_ALT], () => copySelection(true), document.body, selectionKeys);
   useHotkey([PASTE, PASTE_ALT], () => void handlePaste(), document.body, explorerKeys);
   useHotkey(
     [DUPLICATE, DUPLICATE_ALT],
