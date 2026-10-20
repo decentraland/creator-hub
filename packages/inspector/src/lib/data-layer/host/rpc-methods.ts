@@ -276,17 +276,28 @@ export async function initRpcMethods(
     async removeAssets(req) {
       return stateManager.executeTransaction('external', async () => {
         const undoAcc: FileOperation[] = [];
-        for (const filePath of req.paths) {
-          if (!(await fs.existFile(filePath))) continue;
-          const prevValue = await fs.readFile(filePath);
-          await fs.rm(filePath);
-          undoAcc.push({ prevValue, newValue: null, path: filePath });
-          await removeEmptyDirectoryRecursive(fs, fs.dirname(filePath));
+        const success: string[] = [];
+        const failed: string[] = [];
+        try {
+          for (const filePath of req.paths) {
+            try {
+              if (await fs.existFile(filePath)) {
+                const prevValue = await fs.readFile(filePath);
+                await fs.rm(filePath);
+                undoAcc.push({ prevValue, newValue: null, path: filePath });
+              }
+            } catch (e) {
+              console.error(`Failed to delete ${filePath}:`, e);
+              failed.push(filePath);
+              continue;
+            }
+            success.push(filePath);
+            await removeEmptyDirectoryRecursive(fs, fs.dirname(filePath));
+          }
+        } finally {
+          if (undoAcc.length > 0) undoRedoProvider.addUndoFile(undoAcc);
         }
-        if (undoAcc.length > 0) {
-          undoRedoProvider.addUndoFile(undoAcc);
-        }
-        return {};
+        return { success, failed };
       });
     },
 

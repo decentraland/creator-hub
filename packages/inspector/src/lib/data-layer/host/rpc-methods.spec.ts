@@ -118,6 +118,31 @@ describe('Init RPC Methods', () => {
       expect(await mocked.fs.existFile('assets/Batch/sub/b.glb')).toBe(true);
     });
 
+    it('should report the files it could not remove and keep the rest undoable', async () => {
+      const mocked = await mockedRpcInit();
+      const rm = mocked.fs.rm;
+      mocked.fs.rm = async (path: string) =>
+        path.endsWith('sub/b.glb') ? Promise.reject(new Error('EBUSY')) : rm(path);
+      const methods = await initRpcMethods(mocked.fs, mocked.engine, mocked.addEngineListener);
+      await importBatch(methods);
+      await settle();
+
+      const result = await methods.removeAssets({
+        paths: ['assets/Batch/a.glb', 'assets/Batch/sub/b.glb', 'assets/Batch/missing.glb'],
+      });
+      await settle();
+
+      expect(result).toEqual({
+        success: ['assets/Batch/a.glb', 'assets/Batch/missing.glb'],
+        failed: ['assets/Batch/sub/b.glb'],
+      });
+      expect(await mocked.fs.existFile('assets/Batch/a.glb')).toBe(false);
+      expect(await mocked.fs.existFile('assets/Batch/sub/b.glb')).toBe(true);
+
+      await methods.undo({});
+      expect(await mocked.fs.existFile('assets/Batch/a.glb')).toBe(true);
+    });
+
     it('should undo a move (import followed by removal) as a single step', async () => {
       const mocked = await mockedRpcInit();
       const methods = await initRpcMethods(mocked.fs, mocked.engine, mocked.addEngineListener);
