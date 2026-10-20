@@ -5,6 +5,7 @@ import {
   getRange,
   getParentPath,
   getUniqueCopyName,
+  isOutsideAssets,
   isProtectedPath,
   normalizePath,
   pruneNestedPaths,
@@ -124,6 +125,16 @@ describe('ProjectAssetExplorer/file-ops', () => {
       expect(normalizePath('Models/../textures/t.png')).toBe('textures/t.png');
       expect(normalizePath('Models/../../t.png')).toBe('../t.png');
       expect(normalizePath('a//b')).toBe('a/b');
+    });
+  });
+
+  describe('isOutsideAssets', () => {
+    it('should flag normalized paths that climb above the assets folder', () => {
+      expect(isOutsideAssets('')).toBe(true);
+      expect(isOutsideAssets('..')).toBe(true);
+      expect(isOutsideAssets('../.env')).toBe(true);
+      expect(isOutsideAssets('models/tree.bin')).toBe(false);
+      expect(isOutsideAssets('..hidden/tree.bin')).toBe(false);
     });
   });
 

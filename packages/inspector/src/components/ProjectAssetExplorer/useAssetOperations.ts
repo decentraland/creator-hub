@@ -17,6 +17,7 @@ import {
   getBaseName,
   getParentPath,
   getUniqueCopyName,
+  isOutsideAssets,
   joinPath,
   normalizePath,
   pruneNestedPaths,
@@ -90,14 +91,15 @@ export function useAssetOperations({ tree, thumbnails, virtualFolders }: Options
         if (!/\.(gltf|glb)$/i.test(to)) continue;
         for (const uri of getGltfResourceUris(content.get(to)!)) {
           const target = normalizePath(joinPath(getParentPath(to), uri));
+          const source = normalizePath(joinPath(getParentPath(from), uri));
           if (content.has(target)) continue;
-          if (!target || target.startsWith('..')) {
+          if (isOutsideAssets(target) || isOutsideAssets(source)) {
             throw new TransferError(
-              `"${getBaseName(to)}" references "${uri}", which would end up outside the assets folder`,
+              `"${getBaseName(to)}" references "${uri}", which is outside the assets folder`,
             );
           }
           if (await readIfExists(target)) continue;
-          const resource = await readIfExists(normalizePath(joinPath(getParentPath(from), uri)));
+          const resource = await readIfExists(source);
           if (resource) content.set(target, resource);
         }
       }

@@ -42,6 +42,11 @@ export function normalizePath(path: string): string {
   return parts.join('/');
 }
 
+/** Whether a `normalizePath` result is empty or climbs above the assets folder. */
+export function isOutsideAssets(path: string): boolean {
+  return !path || path === '..' || path.startsWith('../');
+}
+
 /** Splits `model.final.glb` into `{ base: 'model.final', ext: '.glb' }`. Folders pass `isFolder`. */
 export function splitName(name: string, isFolder = false): { base: string; ext: string } {
   if (isFolder) return { base: name, ext: '' };

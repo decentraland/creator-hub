@@ -5,7 +5,7 @@ import { getDataLayerInterface, saveThumbnail } from '../../redux/data-layer';
 import { useAppDispatch } from '../../redux/hooks';
 import { transformBase64ResourceToBinary, withAssetDir } from '../../lib/data-layer/host/fs-utils';
 import { getGltfResourceUris } from '../../lib/utils/gltf';
-import { getBaseName, getParentPath, joinPath, normalizePath } from './file-ops';
+import { getBaseName, getParentPath, isOutsideAssets, joinPath, normalizePath } from './file-ops';
 
 type Props = {
   /** Model paths (relative to `assets/`) that have no thumbnail yet, in priority order. */
@@ -23,6 +23,7 @@ async function loadJob(path: string): Promise<Job> {
   const resources: File[] = [];
   for (const uri of getGltfResourceUris(content)) {
     const resourcePath = normalizePath(joinPath(getParentPath(path), uri));
+    if (isOutsideAssets(resourcePath)) continue;
     const resource = await dataLayer.getFile({ path: withAssetDir(resourcePath) });
     resources.push(new File([resource.content], uri));
   }
