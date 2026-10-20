@@ -72,6 +72,7 @@ Preferred: run the Creator Hub app and navigate to the inspector, rather than sp
 - Reach 2D: the toolbar **ModeSwitcher "2D"** tab (needs scene `@dcl/sdk` ≥ 7.26.0).
 - **Tradeoff:** CH is an Electron window that Chrome automation can't attach to. For pure 2D visual checks (canvas, panels, toolbar layout — no Bevy run controls, no persistence), the **standalone inspector dev server** (`cd packages/inspector && npm run start`, set `VITE_INSPECTOR_PORT` for a fixed port) is the browser-automatable surface — Babylon-only, non-persistent fixture. Use CH for anything touching Bevy scene-run or mode persistence.
 - **Screenshots are ground truth.** `getComputedStyle` over CDP is unreliable for `:hover` / `:focus-within`.
+- **An element screenshot of a panel taller than its scroll area lies.** Playwright captures the element's whole box: the part clipped by the scroll container comes out as a dark band, and whatever is painted over the rest (the docked asset panel) lands in the image — it reads as a layout overlap that isn't there. Before shooting a tall panel, raise the viewport until the element sits entirely inside every `overflow` ancestor, check that in the page, and refuse the shot otherwise; shoot the base and the head at that same viewport. An all-dark shot of a panel is this artifact, not a design.
 
 ### 6. SVG / CSS gotchas (learned on the UI Designer toolbar)
 
