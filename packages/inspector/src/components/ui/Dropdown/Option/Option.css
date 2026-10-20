@@ -42,7 +42,8 @@
   color: var(--neutral-grey-3);
 }
 
-.OptionContainer:not(.SelectedOption):not(.DropdownPlaceholder):hover {
+.OptionContainer:not(.SelectedOption):not(.DropdownPlaceholder):not(.OptionList *):hover,
+.OptionContainer.active {
   background: var(--primary-main);
 }
 
@@ -121,7 +122,7 @@
 }
 
 .OptionContainer.header::after {
-  content: '';
+  content: "";
   height: 1px;
   background: var(--base-12);
   margin-top: 4px;

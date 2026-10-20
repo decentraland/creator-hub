@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import { VscSearch as SearchIcon } from 'react-icons/vsc';
 import cx from 'classnames';
 import { TextField } from '../../TextField';
@@ -6,7 +6,13 @@ import { InfoTooltip } from '../../InfoTooltip';
 import type { Props as TooltipProps } from '../../InfoTooltip/types';
 import { Option } from '../Option';
 import type { Props as OptionProp } from '../Option/types';
-import { isMultipleOptionSelected, isOptionSelected } from '../utils';
+import {
+  isMultipleOptionSelected,
+  isNavigable,
+  isOptionSelected,
+  matchesSearch,
+  optionId,
+} from '../utils';
 import type { Props } from './types';
 import './OptionList.css';
 
@@ -30,25 +36,22 @@ const OptionList = React.forwardRef<HTMLDivElement, Props>((props, ref) => {
     className,
     style,
     scope,
+    id,
+    activeIndex,
+    search,
+    onSearchChange,
+    searchInputProps,
+    onActiveChange,
     onChange,
   } = props;
-  const [search, setSearch] = useState('');
 
-  const filterOptions = useCallback(
-    (option: OptionProp) => {
-      if (searchable && search) {
-        const value = option.label?.toLowerCase() ?? option.value?.toString().toLowerCase() ?? '';
-        return value.includes(search.toLowerCase());
-      }
-
-      return true;
-    },
-    [searchable, search],
+  const filteredOptions = useMemo(
+    () =>
+      options.flatMap((option, index) =>
+        matchesSearch(option, search) ? [{ option, index }] : [],
+      ),
+    [options, search],
   );
-
-  const filteredOptions = useMemo(() => {
-    return options.filter(filterOptions);
-  }, [options, filterOptions]);
 
   const isSelected = useCallback(
     (option: OptionProp) => {
@@ -64,9 +67,9 @@ const OptionList = React.forwardRef<HTMLDivElement, Props>((props, ref) => {
 
   const handleSearchChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
-      setSearch(e.target.value);
+      onSearchChange(e.target.value);
     },
-    [setSearch],
+    [onSearchChange],
   );
 
   const handleSearchClick = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
@@ -111,11 +114,14 @@ const OptionList = React.forwardRef<HTMLDivElement, Props>((props, ref) => {
   }, [empty, options, filteredOptions]);
 
   const renderOption = useCallback(
-    (key: React.Key, optionProps: OptionProp) => {
+    (index: number, optionProps: OptionProp) => {
       return (
         <Option
-          key={key}
+          key={index}
           {...optionProps}
+          id={optionId(id, index)}
+          active={index === activeIndex}
+          onMouseEnter={isNavigable(optionProps) ? () => onActiveChange(index) : undefined}
           onClick={optionProps.onClick ?? handleSelectOption}
           selected={isSelected(optionProps)}
           isField={isField}
@@ -123,15 +129,19 @@ const OptionList = React.forwardRef<HTMLDivElement, Props>((props, ref) => {
         />
       );
     },
-    [minWidth, isField, isSelected, handleSelectOption],
+    [id, activeIndex, minWidth, isField, isSelected, handleSelectOption, onActiveChange],
   );
 
   return (
     <div
       ref={ref}
+      id={id}
+      role="listbox"
+      aria-multiselectable={multiple || undefined}
       className={cx('OptionList', className, { searchable })}
       style={style}
       data-dropdown-scope={scope}
+      onMouseLeave={() => onActiveChange(-1)}
     >
       {searchable && options.length > 0 ? (
         <TextField
@@ -141,19 +151,20 @@ const OptionList = React.forwardRef<HTMLDivElement, Props>((props, ref) => {
           onChange={handleSearchChange}
           onClick={handleSearchClick}
           autoSelect
+          {...searchInputProps}
         />
       ) : null}
       {filteredOptions.length > 0 ? (
-        filteredOptions.map((option, idx) =>
+        filteredOptions.map(({ option, index }) =>
           option.tooltip ? (
             <InfoTooltip
-              key={idx}
-              trigger={renderOption(idx, option)}
+              key={index}
+              trigger={renderOption(index, option)}
               position="left center"
               {...(isTooltipText(option.tooltip) ? { text: option.tooltip } : option.tooltip)}
             />
           ) : (
-            renderOption(idx, option)
+            renderOption(index, option)
           ),
         )
       ) : (
