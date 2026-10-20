@@ -5,7 +5,7 @@ import { useSnackbar } from '../../hooks/useSnackbar';
 import { useAppDispatch } from '../../redux/hooks';
 import { getAssetCatalog, getDataLayerInterface, saveThumbnail } from '../../redux/data-layer';
 import { withAssetDir } from '../../lib/data-layer/host/fs-utils';
-import { removeAssetFiles } from '../../lib/data-layer/remove-assets';
+import { removeAssetFilesSettled } from '../../lib/data-layer/remove-assets';
 import { copyToClipboard } from '../../lib/utils/clipboard';
 import { getGltfResourceUris } from '../../lib/utils/gltf';
 import { getThumbnailHashNameForAsset } from '../../lib/utils/hash';
@@ -37,6 +37,9 @@ type Options = {
 
 /** A transfer refused for a reason the user can act on; its message is shown as is. */
 class TransferError extends Error {}
+
+/** What went wrong after a transfer's files were written: sources not removed, references not updated. */
+type TransferOutcome = { leftBehind: string[]; staleReferences: boolean };
 
 const READ_ONLY_HINT = 'the scene folder and the built-in animations are read only';
 
@@ -143,7 +146,7 @@ export function useAssetOperations({ tree, thumbnails, virtualFolders }: Options
     [sdk],
   );
 
-  /** Copies `fromPath` to `toPath`, or moves it with `removeSource`; returns the sources left behind. */
+  /** Copies `fromPath` to `toPath`, or moves it with `removeSource`. */
   const transfer = useCallback(
     async (
       fromPath: string,
@@ -151,7 +154,7 @@ export function useAssetOperations({ tree, thumbnails, virtualFolders }: Options
       isFolder: boolean,
       removeSource: boolean,
       refreshCatalog = true,
-    ) => {
+    ): Promise<TransferOutcome> => {
       const dataLayer = getDataLayerInterface();
       if (!dataLayer) throw new Error('Data layer is not available');
 
@@ -171,21 +174,24 @@ export function useAssetOperations({ tree, thumbnails, virtualFolders }: Options
 
       for (const { from, to } of files) void copyThumbnail(from, to);
 
-      let leftBehind: string[] = [];
+      const outcome: TransferOutcome = { leftBehind: [], staleReferences: false };
       if (removeSource) {
         const sources = files.map(({ from }) => withAssetDir(from));
-        leftBehind = await removeAssetFiles(dataLayer, sources).then(
-          () => [],
-          error => {
-            console.error(`Failed to remove the sources of ${fromPath}`, error);
-            return [fromPath];
-          },
-        );
-        await updateSceneReferences(createPathMapper(withAssetDir(fromPath), withAssetDir(toPath)));
+        const { removed, error } = await removeAssetFilesSettled(dataLayer, sources);
+        if (error) console.error(`Failed to remove the sources of ${fromPath}`, error);
+        outcome.leftBehind = sources.filter(source => !removed.includes(source));
+        try {
+          await updateSceneReferences(
+            createPathMapper(withAssetDir(fromPath), withAssetDir(toPath)),
+          );
+        } catch (referencesError) {
+          console.error(`Failed to update the scene references to ${fromPath}`, referencesError);
+          outcome.staleReferences = true;
+        }
       }
 
       if (refreshCatalog) dispatch(getAssetCatalog());
-      return leftBehind;
+      return outcome;
     },
     [readEntries, addGltfResources, copyThumbnail, updateSceneReferences, dispatch],
   );
@@ -221,8 +227,9 @@ export function useAssetOperations({ tree, thumbnails, virtualFolders }: Options
       }
       const newPath = joinPath(getParentPath(path), trimmed);
       try {
-        const leftBehind = await transfer(path, newPath, isFolder, true);
+        const { leftBehind, staleReferences } = await transfer(path, newPath, isFolder, true);
         if (leftBehind.length) notifyError(`Renamed, but could not remove ${getBaseName(path)}`);
+        if (staleReferences) notifyError('Renamed, but some scene references could not be updated');
       } catch (e) {
         if (e instanceof TransferError) notifyError(e.message);
         else notifyError(`Failed to rename ${getBaseName(path)}`, e);
@@ -254,6 +261,7 @@ export function useAssetOperations({ tree, thumbnails, virtualFolders }: Options
       const takenByFolder = new Map<string, string[]>();
       const failed: string[] = [];
       const leftBehind: string[] = [];
+      let staleReferences = false;
       const readOnly: string[] = [];
       for (const path of pruneNestedPaths(paths)) {
         const node = tree.get(path);
@@ -276,7 +284,9 @@ export function useAssetOperations({ tree, thumbnails, virtualFolders }: Options
           : name;
         const newPath = joinPath(destination, newName);
         try {
-          leftBehind.push(...(await transfer(path, newPath, isFolder, move, false)));
+          const outcome = await transfer(path, newPath, isFolder, move, false);
+          leftBehind.push(...outcome.leftBehind);
+          staleReferences ||= outcome.staleReferences;
           takenByFolder.set(destination, [...taken, newName]);
           created.push(newPath);
         } catch (e) {
@@ -298,6 +308,7 @@ export function useAssetOperations({ tree, thumbnails, virtualFolders }: Options
       if (leftBehind.length) {
         notifyError(`Moved, but could not remove ${leftBehind.map(getBaseName).join(', ')}`);
       }
+      if (staleReferences) notifyError('Moved, but some scene references could not be updated');
       if (created.length) dispatch(getAssetCatalog());
       return created;
     },

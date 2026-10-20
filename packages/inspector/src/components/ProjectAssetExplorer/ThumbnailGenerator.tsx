@@ -24,8 +24,12 @@ async function loadJob(path: string): Promise<Job> {
   for (const uri of getGltfResourceUris(content)) {
     const resourcePath = normalizePath(joinPath(getParentPath(path), uri));
     if (isOutsideAssets(resourcePath)) continue;
-    const resource = await dataLayer.getFile({ path: withAssetDir(resourcePath) });
-    resources.push(new File([resource.content], uri));
+    try {
+      const resource = await dataLayer.getFile({ path: withAssetDir(resourcePath) });
+      resources.push(new File([resource.content], uri));
+    } catch (error) {
+      console.warn(`Could not read ${resourcePath} for the thumbnail of ${path}:`, error);
+    }
   }
   return { path, file: new File([content], getBaseName(path)), resources };
 }

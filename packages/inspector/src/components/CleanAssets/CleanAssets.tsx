@@ -3,7 +3,7 @@ import { IoClose } from 'react-icons/io5';
 import { FiAlertTriangle } from 'react-icons/fi';
 import cx from 'classnames';
 import { useSnackbar } from '../../hooks/useSnackbar';
-import { removeAssetFiles } from '../../lib/data-layer/remove-assets';
+import { removeAssetFilesSettled } from '../../lib/data-layer/remove-assets';
 import { setRemovedFiles } from '../../redux/clean-assets';
 import { getAssetCatalog, getDataLayerInterface } from '../../redux/data-layer';
 import { useAppDispatch } from '../../redux/hooks';
@@ -90,25 +90,34 @@ const CleanAssets: React.FC<Props> = ({
     try {
       const filePaths = Array.from(selectedAssets.values());
       const filesBackup = await dataLayer.getFilesList({ paths: filePaths });
-      const successfulBackups = filesBackup.files
-        .filter(file => file.success && file.content)
+      const { removed, error } = await removeAssetFilesSettled(dataLayer, filePaths);
+      const backups = filesBackup.files
+        .filter(file => file.success && file.content && removed.includes(file.path))
         .map(file => ({ path: file.path, content: file.content }));
+      dispatch(setRemovedFiles(backups));
 
-      await removeAssetFiles(dataLayer, filePaths);
-      if (successfulBackups.length > 0) dispatch(setRemovedFiles(successfulBackups));
-
-      pushNotification(
-        'success',
-        `${filePaths.length} ${filePaths.length === 1 ? 'file has' : 'files have'} been removed. Press Ctrl+Z (Cmd+Z) to undo.`,
-      );
-
-      // Refresh asset catalog and reset state
-      dispatch(getAssetCatalog());
-      setShowConfirmation(false);
+      if (!error) {
+        pushNotification(
+          'success',
+          `${removed.length} ${removed.length === 1 ? 'file has' : 'files have'} been removed. Press Ctrl+Z (Cmd+Z) to undo.`,
+        );
+        setShowConfirmation(false);
+      } else if (removed.length) {
+        console.error('Failed to remove some files:', error);
+        const failed = filePaths.length - removed.length;
+        pushNotification(
+          'error',
+          `${removed.length} ${removed.length === 1 ? 'file has' : 'files have'} been removed. ${failed} ${failed === 1 ? 'file' : 'files'} could not be removed.`,
+        );
+      } else {
+        console.error('Failed to remove files:', error);
+        pushNotification('error', 'Failed to remove files. Please try again.');
+      }
     } catch (error) {
-      console.error('Failed to remove files:', error);
+      console.error('Failed to read the files to remove:', error);
       pushNotification('error', 'Failed to remove files. Please try again.');
     } finally {
+      dispatch(getAssetCatalog());
       onClose();
       setIsRemoving(false);
     }
