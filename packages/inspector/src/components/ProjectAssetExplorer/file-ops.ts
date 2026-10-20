@@ -42,24 +42,6 @@ export function normalizePath(path: string): string {
   return parts.join('/');
 }
 
-/**
- * The files a `.gltf` references by a relative URI (its buffers and images), relative to the
- * model's own folder. A `.glb` embeds them, and remote or inline data needs no file.
- */
-export function getGltfResourceUris(content: Uint8Array): string[] {
-  try {
-    const json = JSON.parse(new TextDecoder().decode(content));
-    const uris: unknown[] = [...(json.buffers ?? []), ...(json.images ?? [])].map(
-      (item: { uri?: unknown }) => item?.uri,
-    );
-    return uris
-      .filter((uri): uri is string => typeof uri === 'string' && !/^(data:|https?:)/i.test(uri))
-      .map(uri => decodeURIComponent(uri));
-  } catch {
-    return [];
-  }
-}
-
 /** Splits `model.final.glb` into `{ base: 'model.final', ext: '.glb' }`. Folders pass `isFolder`. */
 export function splitName(name: string, isFolder = false): { base: string; ext: string } {
   if (isFolder) return { base: name, ext: '' };
@@ -76,7 +58,7 @@ export function validateName(name: string, siblings: Iterable<string>, current?:
   if (/[\\/:*?"<>|]/.test(trimmed)) return 'The name contains invalid characters';
   if (trimmed !== current) {
     for (const sibling of siblings) {
-      if (sibling.toLowerCase() === trimmed.toLowerCase()) {
+      if (sibling !== current && sibling.toLowerCase() === trimmed.toLowerCase()) {
         return `"${trimmed}" already exists in this folder`;
       }
     }
@@ -174,41 +156,6 @@ export function collectAssetReferences(value: unknown, into: string[] = []): str
     }
   }
   return into;
-}
-
-export function guessMimeType(name: string): string {
-  const ext = splitName(name).ext.toLowerCase();
-  switch (ext) {
-    case '.png':
-      return 'image/png';
-    case '.jpg':
-    case '.jpeg':
-      return 'image/jpeg';
-    default:
-      return 'application/octet-stream';
-  }
-}
-
-/** Copies text to the clipboard, falling back to a hidden textarea where the async API is blocked. */
-export async function copyTextToClipboard(text: string): Promise<boolean> {
-  try {
-    await navigator.clipboard.writeText(text);
-    return true;
-  } catch {
-    try {
-      const textarea = document.createElement('textarea');
-      textarea.value = text;
-      textarea.style.position = 'fixed';
-      textarea.style.opacity = '0';
-      document.body.appendChild(textarea);
-      textarea.select();
-      const ok = document.execCommand('copy');
-      document.body.removeChild(textarea);
-      return ok;
-    } catch {
-      return false;
-    }
-  }
 }
 
 /** Drops the paths that are inside another path of the list: the ancestor already covers them. */

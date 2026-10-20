@@ -6,15 +6,15 @@ import { useAppDispatch } from '../../redux/hooks';
 import { getAssetCatalog, getDataLayerInterface, saveThumbnail } from '../../redux/data-layer';
 import { withAssetDir } from '../../lib/data-layer/host/fs-utils';
 import { removeAssetFiles } from '../../lib/data-layer/remove-assets';
+import { copyToClipboard } from '../../lib/utils/clipboard';
+import { getGltfResourceUris } from '../../lib/utils/gltf';
 import { getThumbnailHashNameForAsset } from '../../lib/utils/hash';
 import type { TreeNode } from './tree';
 import { ROOT } from './tree';
 import { isReadOnlyPath } from './utils';
 import {
-  copyTextToClipboard,
   createPathMapper,
   getBaseName,
-  getGltfResourceUris,
   getParentPath,
   getUniqueCopyName,
   joinPath,
@@ -83,15 +83,11 @@ export function useAssetOperations({ tree, thumbnails, virtualFolders }: Options
     return file?.success ? file.content : undefined;
   }, []);
 
-  /**
-   * A `.gltf` finds its buffers and textures through relative URIs, so one that lands in another
-   * folder needs the files those URIs point to there as well. They are copied (never moved: another
-   * model may share them) unless the URI already resolves to a file in the destination.
-   */
+  /** Adds copies of the files transferred models load by relative URI, where they will look. */
   const addGltfResources = useCallback(
     async (files: { from: string; to: string }[], content: Map<string, Uint8Array>) => {
       for (const { from, to } of files) {
-        if (!to.toLowerCase().endsWith('.gltf')) continue;
+        if (!/\.(gltf|glb)$/i.test(to)) continue;
         for (const uri of getGltfResourceUris(content.get(to)!)) {
           const target = normalizePath(joinPath(getParentPath(to), uri));
           if (content.has(target)) continue;
@@ -145,10 +141,7 @@ export function useAssetOperations({ tree, thumbnails, virtualFolders }: Options
     [sdk],
   );
 
-  /**
-   * Copies `fromPath` (file or folder) to `toPath`. When `removeSource` is set it is a move/rename:
-   * the references in the scene are rewritten and the original files are removed afterwards.
-   */
+  /** Copies `fromPath` to `toPath`, or moves it with `removeSource`; returns the sources left behind. */
   const transfer = useCallback(
     async (
       fromPath: string,
@@ -176,16 +169,21 @@ export function useAssetOperations({ tree, thumbnails, virtualFolders }: Options
 
       for (const { from, to } of files) void copyThumbnail(from, to);
 
+      let leftBehind: string[] = [];
       if (removeSource) {
-        const map = createPathMapper(withAssetDir(fromPath), withAssetDir(toPath));
-        await updateSceneReferences(map);
-        await removeAssetFiles(
-          dataLayer,
-          files.map(({ from }) => withAssetDir(from)),
+        const sources = files.map(({ from }) => withAssetDir(from));
+        leftBehind = await removeAssetFiles(dataLayer, sources).then(
+          () => [],
+          error => {
+            console.error(`Failed to remove the sources of ${fromPath}`, error);
+            return [fromPath];
+          },
         );
+        await updateSceneReferences(createPathMapper(withAssetDir(fromPath), withAssetDir(toPath)));
       }
 
       if (refreshCatalog) dispatch(getAssetCatalog());
+      return leftBehind;
     },
     [readEntries, addGltfResources, copyThumbnail, updateSceneReferences, dispatch],
   );
@@ -215,9 +213,14 @@ export function useAssetOperations({ tree, thumbnails, virtualFolders }: Options
         return undefined;
       }
       if (trimmed === getBaseName(path)) return undefined;
+      if (trimmed.toLowerCase() === getBaseName(path).toLowerCase()) {
+        notifyError('Changing only the letter case is not supported; pick a different name');
+        return undefined;
+      }
       const newPath = joinPath(getParentPath(path), trimmed);
       try {
-        await transfer(path, newPath, isFolder, true);
+        const leftBehind = await transfer(path, newPath, isFolder, true);
+        if (leftBehind.length) notifyError(`Renamed, but could not remove ${getBaseName(path)}`);
       } catch (e) {
         if (e instanceof TransferError) notifyError(e.message);
         else notifyError(`Failed to rename ${getBaseName(path)}`, e);
@@ -248,6 +251,7 @@ export function useAssetOperations({ tree, thumbnails, virtualFolders }: Options
       const created: string[] = [];
       const takenByFolder = new Map<string, string[]>();
       const failed: string[] = [];
+      const leftBehind: string[] = [];
       const readOnly: string[] = [];
       for (const path of pruneNestedPaths(paths)) {
         const node = tree.get(path);
@@ -270,7 +274,7 @@ export function useAssetOperations({ tree, thumbnails, virtualFolders }: Options
           : name;
         const newPath = joinPath(destination, newName);
         try {
-          await transfer(path, newPath, isFolder, move, false);
+          leftBehind.push(...(await transfer(path, newPath, isFolder, move, false)));
           takenByFolder.set(destination, [...taken, newName]);
           created.push(newPath);
         } catch (e) {
@@ -289,33 +293,38 @@ export function useAssetOperations({ tree, thumbnails, virtualFolders }: Options
       if (failed.length) {
         notifyError(`Failed to ${verb} ${failed.join(', ')}`);
       }
+      if (leftBehind.length) {
+        notifyError(`Moved, but could not remove ${leftBehind.map(getBaseName).join(', ')}`);
+      }
       if (created.length) dispatch(getAssetCatalog());
       return created;
     },
     [tree, getSiblingNames, transfer, notifyError, dispatch],
   );
 
-  const copyRelativePath = useCallback(
-    async (paths: string[]) => {
-      const ok = await copyTextToClipboard(paths.map(path => withAssetDir(path)).join('\n'));
-      if (!ok) notifyError('Could not copy the path to the clipboard');
-    },
+  const copyLines = useCallback(
+    (lines: string[]) =>
+      copyToClipboard(lines.join('\n')).catch(error =>
+        notifyError('Could not copy to the clipboard', error),
+      ),
     [notifyError],
+  );
+
+  const copyRelativePath = useCallback(
+    (paths: string[]) => copyLines(paths.map(path => withAssetDir(path))),
+    [copyLines],
   );
 
   const copyFileName = useCallback(
-    async (paths: string[]) => {
-      const ok = await copyTextToClipboard(paths.map(getBaseName).join('\n'));
-      if (!ok) notifyError('Could not copy the name to the clipboard');
-    },
-    [notifyError],
+    (paths: string[]) => copyLines(paths.map(getBaseName)),
+    [copyLines],
   );
 
-  /** Validates the name of a new folder, returning the new path when it is free to use. */
+  /** Validates a folder name in `parentPath` (`current` when renaming); returns the path when free. */
   const getNewFolderPath = useCallback(
-    (parentPath: string, name: string): string | undefined => {
+    (parentPath: string, name: string, current?: string): string | undefined => {
       const trimmed = name.trim();
-      const error = validateName(trimmed, getSiblingNames(parentPath));
+      const error = validateName(trimmed, getSiblingNames(parentPath), current);
       if (error) {
         notifyError(error);
         return undefined;

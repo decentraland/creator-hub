@@ -3,6 +3,7 @@ import { IoClose } from 'react-icons/io5';
 import { FiAlertTriangle } from 'react-icons/fi';
 import cx from 'classnames';
 import { useSnackbar } from '../../hooks/useSnackbar';
+import { removeAssetFiles } from '../../lib/data-layer/remove-assets';
 import { setRemovedFiles } from '../../redux/clean-assets';
 import { getAssetCatalog, getDataLayerInterface } from '../../redux/data-layer';
 import { useAppDispatch } from '../../redux/hooks';
@@ -93,20 +94,13 @@ const CleanAssets: React.FC<Props> = ({
         .filter(file => file.success && file.content)
         .map(file => ({ path: file.path, content: file.content }));
 
-      const removedFiles = await dataLayer.removeFiles({ filePaths });
+      await removeAssetFiles(dataLayer, filePaths);
+      if (successfulBackups.length > 0) dispatch(setRemovedFiles(successfulBackups));
 
-      if (removedFiles.success.length > 0) {
-        const recoveryData = successfulBackups.filter(backup =>
-          removedFiles.success.includes(backup.path),
-        );
-        dispatch(setRemovedFiles(recoveryData));
-      }
-
-      let message = `${removedFiles.success.length} ${removedFiles.success.length === 1 ? 'file' : 'files'} have been successfully removed.`;
-      if (removedFiles.failed.length > 0) {
-        message += ` ${removedFiles.failed.length} ${removedFiles.failed.length === 1 ? 'file' : 'files'} could not be removed.`;
-      }
-      pushNotification('success', message);
+      pushNotification(
+        'success',
+        `${filePaths.length} ${filePaths.length === 1 ? 'file has' : 'files have'} been removed. Press Ctrl+Z (Cmd+Z) to undo.`,
+      );
 
       // Refresh asset catalog and reset state
       dispatch(getAssetCatalog());

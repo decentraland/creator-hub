@@ -23,7 +23,12 @@ import type { CustomAsset } from '../../lib/logic/catalog';
 import { getAssetById, isFileOnly, isGround, isSmart, type Asset } from '../../lib/logic/catalog';
 import { useImportAssetToFilesystem } from '../../hooks/useImportAssetToFilesystem';
 import { useSnackbar } from '../../hooks/useSnackbar';
-import { areGizmosDisabled, getHiddenPanels, isGroundGridDisabled } from '../../redux/ui';
+import {
+  areGizmosDisabled,
+  getHiddenPanels,
+  isAssetExplorerActive,
+  isGroundGridDisabled,
+} from '../../redux/ui';
 import { PanelName } from '../../redux/ui/types';
 import type { AssetNodeItem } from '../ProjectAssetExplorer/types';
 import type { TreeNode } from '../ProjectAssetExplorer/ProjectView';
@@ -58,7 +63,6 @@ import { checkAssetCompatibility } from '../../lib/sdk/operations/add-asset/comp
 import type { IncompatibleComponent } from '../../lib/sdk/operations/add-asset/compatibility';
 import { IncompatibleAssetModal } from '../IncompatibleAssetModal';
 import { Warnings } from '../Warnings';
-import { isAssetExplorerActive } from '../../lib/utils/asset-explorer-region';
 import { CameraSpeed } from './CameraSpeed';
 import { Shortcuts } from './Shortcuts';
 import { TransformInput } from './TransformInput';
@@ -122,17 +126,17 @@ const Renderer: React.FC = () => {
   }, [sdk, groundGridDisabled]);
 
   const isUIDesignerOpen = !hiddenPanels[PanelName.UI_DESIGNER];
+  const assetExplorerActive = useAppSelector(isAssetExplorerActive);
 
   const deleteSelectedEntities = useCallback(() => {
-    // Delete/copy/paste belong to the Local Assets tab while it is active
-    if (!sdk || isUIDesignerOpen || isAssetExplorerActive()) return;
+    if (!sdk || isUIDesignerOpen) return;
     const selectedEntitites = sdk.operations.getSelectedEntities();
     selectedEntitites.forEach(entity => sdk.operations.removeEntity(entity));
     void sdk.operations.dispatch();
   }, [sdk, isUIDesignerOpen]);
 
   const duplicateSelectedEntities = useCallback(() => {
-    if (!sdk || isUIDesignerOpen || isAssetExplorerActive()) return;
+    if (!sdk || isUIDesignerOpen) return;
     sdk.renderer.camera.setControlEnabled(false);
     const selectedEntitites = sdk.operations.getSelectedEntities();
     const preferredGizmo =
@@ -153,13 +157,13 @@ const Renderer: React.FC = () => {
   }, [sdk, isUIDesignerOpen]);
 
   const copySelectedEntities = useCallback(() => {
-    if (!sdk || isUIDesignerOpen || isAssetExplorerActive()) return;
+    if (!sdk || isUIDesignerOpen) return;
     const selectedEntitites = sdk.operations.getSelectedEntities();
     setCopyEntities([...selectedEntitites]);
   }, [sdk, setCopyEntities, isUIDesignerOpen]);
 
   const pasteSelectedEntities = useCallback(() => {
-    if (!sdk || isUIDesignerOpen || isAssetExplorerActive()) return;
+    if (!sdk || isUIDesignerOpen) return;
     const selectedEntities = sdk.operations.getSelectedEntities();
     const preferredGizmo =
       selectedEntities.length > 0
@@ -198,10 +202,11 @@ const Renderer: React.FC = () => {
     }
   }, [sdk]);
 
-  useHotkey([DELETE, BACKSPACE], deleteSelectedEntities, document.body);
-  useHotkey([COPY, COPY_ALT], copySelectedEntities, document.body);
-  useHotkey([PASTE, PASTE_ALT], pasteSelectedEntities, document.body);
-  useHotkey([DUPLICATE, DUPLICATE_ALT], duplicateSelectedEntities, document.body);
+  const entityKeys = { enabled: !assetExplorerActive };
+  useHotkey([DELETE, BACKSPACE], deleteSelectedEntities, document.body, entityKeys);
+  useHotkey([COPY, COPY_ALT], copySelectedEntities, document.body, entityKeys);
+  useHotkey([PASTE, PASTE_ALT], pasteSelectedEntities, document.body, entityKeys);
+  useHotkey([DUPLICATE, DUPLICATE_ALT], duplicateSelectedEntities, document.body, entityKeys);
   const cameraKeys = { enabled: !isUIDesignerOpen };
   useHotkey([ZOOM_IN, ZOOM_IN_ALT], zoomIn, document.body, cameraKeys);
   useHotkey([ZOOM_OUT, ZOOM_OUT_ALT], zoomOut, document.body, cameraKeys);

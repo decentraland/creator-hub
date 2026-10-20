@@ -2,7 +2,6 @@ import {
   collectAssetReferences,
   createPathMapper,
   getBaseName,
-  getGltfResourceUris,
   getRange,
   getParentPath,
   getUniqueCopyName,
@@ -39,6 +38,8 @@ describe('ProjectAssetExplorer/file-ops', () => {
     it('should accept the current name and free names', () => {
       expect(validateName('a.glb', ['a.glb'], 'a.glb')).toBeUndefined();
       expect(validateName('b.glb', ['a.glb'], 'a.glb')).toBeUndefined();
+      expect(validateName('tree.glb', ['Tree.glb', 'b.glb'], 'Tree.glb')).toBeUndefined();
+      expect(validateName('B.glb', ['Tree.glb', 'b.glb'], 'Tree.glb')).toBeDefined();
     });
   });
 
@@ -123,21 +124,6 @@ describe('ProjectAssetExplorer/file-ops', () => {
       expect(normalizePath('Models/../textures/t.png')).toBe('textures/t.png');
       expect(normalizePath('Models/../../t.png')).toBe('../t.png');
       expect(normalizePath('a//b')).toBe('a/b');
-    });
-  });
-
-  describe('getGltfResourceUris', () => {
-    const encode = (value: unknown) => new TextEncoder().encode(JSON.stringify(value));
-    it('should list relative buffer and image uris, decoded', () => {
-      const content = encode({
-        buffers: [{ uri: 'model.bin' }, { uri: 'data:application/octet-stream;base64,AAA' }],
-        images: [{ uri: '../textures/my%20tex.png' }, { uri: 'https://cdn/x.png' }, {}],
-      });
-      expect(getGltfResourceUris(content)).toEqual(['model.bin', '../textures/my tex.png']);
-    });
-    it('should return nothing for binary or invalid content', () => {
-      expect(getGltfResourceUris(new Uint8Array([0x67, 0x6c, 0x54, 0x46]))).toEqual([]);
-      expect(getGltfResourceUris(encode({ asset: {} }))).toEqual([]);
     });
   });
 

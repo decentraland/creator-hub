@@ -109,14 +109,12 @@ function isSupersededRender(error: unknown) {
   return error instanceof Error && /newer render/i.test(error.message);
 }
 
-/**
- * Sends the model to the preview frame once it is ready, and reports whether it has been sent.
- *
- * `WearablePreview` (decentraland-ui 6.24.0) loses a `blob` it receives before its frame is ready:
- * it queues it under `pendingPreviewOptions` but flushes `pendingOptions` on READY. The model
- * then only arrives with a later re-render, and a preview nothing re-renders (the explorer's
- * offscreen thumbnail generator) loads an empty scene and screenshots that.
- */
+/** The load the frame reports for its initial empty scene, before the model arrives. */
+async function isPlaceholderSceneLoad(wp: ReturnType<typeof WearablePreview.createController>) {
+  return (await wp.scene.getMetrics()).triangles === 0;
+}
+
+/** Resends `blob` on the preview frame's READY message; returns whether it was sent. */
 function useSendModelWhenReady(
   containerRef: RefObject<HTMLDivElement>,
   blob: WearableWithBlobs | EmoteWithBlobs,
@@ -154,10 +152,7 @@ function GltfPreview({ value, resources, onScreenshot, onLoad, isEmote }: Props)
       if (isEmote) {
         const middleOfEmote = (await wp.emote.getLength()) * 0.5;
         await wp.emote.goTo(middleOfEmote);
-      } else if ((await wp.scene.getMetrics()).triangles === 0) {
-        // The frame first renders the empty scene from its URL and reports it loaded too; the
-        // model's own load follows. Whether that first render gets superseded before it can be
-        // screenshotted is a race, so it is recognized by its content instead.
+      } else if (await isPlaceholderSceneLoad(wp)) {
         return;
       }
       onLoad?.();
