@@ -5,7 +5,7 @@ import { useSnackbar } from '../../hooks/useSnackbar';
 import { useAppDispatch } from '../../redux/hooks';
 import { getAssetCatalog, getDataLayerInterface, saveThumbnail } from '../../redux/data-layer';
 import { withAssetDir } from '../../lib/data-layer/host/fs-utils';
-import { removeAssetFiles } from '../../lib/data-layer/remove-assets';
+import { removeAssetFiles, waitForLegacyUndoCommit } from '../../lib/data-layer/remove-assets';
 import { copyToClipboard } from '../../lib/utils/clipboard';
 import { getGltfResourceUris } from '../../lib/utils/gltf';
 import { getThumbnailHashNameForAsset } from '../../lib/utils/hash';
@@ -268,6 +268,7 @@ export function useAssetOperations({ tree, thumbnails, virtualFolders }: Options
       const leftBehind: string[] = [];
       let staleReferences = false;
       const readOnly: string[] = [];
+      let transferStarted = false;
       for (const path of pruneNestedPaths(paths)) {
         const node = tree.get(path);
         if (!node) continue;
@@ -289,6 +290,9 @@ export function useAssetOperations({ tree, thumbnails, virtualFolders }: Options
           : name;
         const newPath = joinPath(destination, newName);
         try {
+          const dataLayer = getDataLayerInterface();
+          if (transferStarted && dataLayer) await waitForLegacyUndoCommit(dataLayer);
+          transferStarted = true;
           const outcome = await transfer(path, newPath, isFolder, move, false);
           leftBehind.push(...outcome.leftBehind);
           staleReferences ||= outcome.staleReferences;

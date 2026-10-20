@@ -1,4 +1,4 @@
-import { removeAssetFiles } from './remove-assets';
+import { removeAssetFiles, waitForLegacyUndoCommit } from './remove-assets';
 
 const MISSING_METHOD = new Error('Method RemoveAssets not implemented in server port');
 
@@ -52,12 +52,38 @@ describe('removeAssetFiles', () => {
   });
 
   describe('when the host predates batch removal', () => {
-    it('should remove the files one by one', async () => {
+    beforeEach(() => {
+      vi.useFakeTimers();
+    });
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it('should leave each removal its own undo window, the first included', async () => {
       const removeAsset = vi.fn().mockResolvedValue({});
-      const result = await removeAssetFiles(
+      const removal = removeAssetFiles(
         { removeAssets: vi.fn().mockRejectedValue(MISSING_METHOD), removeAsset },
         ['assets/a.glb', 'assets/b.glb'],
       );
+      await vi.advanceTimersByTimeAsync(149);
+      expect(removeAsset).not.toHaveBeenCalled();
+      await vi.advanceTimersByTimeAsync(1);
+      expect(removeAsset).toHaveBeenCalledTimes(1);
+      await vi.advanceTimersByTimeAsync(149);
+      expect(removeAsset).toHaveBeenCalledTimes(1);
+      await vi.advanceTimersByTimeAsync(1);
+      expect(removeAsset).toHaveBeenCalledTimes(2);
+      await removal;
+    });
+
+    it('should remove the files one by one', async () => {
+      const removeAsset = vi.fn().mockResolvedValue({});
+      const removal = removeAssetFiles(
+        { removeAssets: vi.fn().mockRejectedValue(MISSING_METHOD), removeAsset },
+        ['assets/a.glb', 'assets/b.glb'],
+      );
+      await vi.runAllTimersAsync();
+      const result = await removal;
       expect(result).toEqual({ removed: ['assets/a.glb', 'assets/b.glb'], batched: false });
       expect(removeAsset).toHaveBeenNthCalledWith(1, { path: 'assets/a.glb' });
       expect(removeAsset).toHaveBeenNthCalledWith(2, { path: 'assets/b.glb' });
@@ -66,10 +92,12 @@ describe('removeAssetFiles', () => {
     it('should report the files removed before one failed', async () => {
       const failure = new Error('EBUSY');
       const removeAsset = vi.fn().mockResolvedValueOnce({}).mockRejectedValueOnce(failure);
-      const result = await removeAssetFiles(
+      const removal = removeAssetFiles(
         { removeAssets: vi.fn().mockRejectedValue(MISSING_METHOD), removeAsset },
         ['assets/a.glb', 'assets/b.glb', 'assets/c.glb'],
       );
+      await vi.runAllTimersAsync();
+      const result = await removal;
       expect(result).toEqual({ removed: ['assets/a.glb'], batched: false, error: failure });
       expect(removeAsset).toHaveBeenCalledTimes(2);
     });
@@ -84,5 +112,37 @@ describe('removeAssetFiles', () => {
     });
     expect(removeAssets).not.toHaveBeenCalled();
     expect(removeAsset).not.toHaveBeenCalled();
+  });
+
+  describe('waitForLegacyUndoCommit', () => {
+    beforeEach(() => {
+      vi.useFakeTimers();
+    });
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    const settled = vi.fn();
+    const track = (promise: Promise<void>) => promise.then(settled);
+
+    beforeEach(() => settled.mockClear());
+
+    it('should wait past the undo window on a host without batch removal', async () => {
+      const removeAssets = vi.fn().mockRejectedValue(MISSING_METHOD);
+      void track(waitForLegacyUndoCommit({ removeAssets, removeAsset: vi.fn() }));
+      await vi.advanceTimersByTimeAsync(149);
+      expect(settled).not.toHaveBeenCalled();
+      await vi.advanceTimersByTimeAsync(1);
+      expect(settled).toHaveBeenCalled();
+    });
+
+    it('should not wait on a host with batch removal, and probe it only once', async () => {
+      const removeAssets = vi.fn().mockResolvedValue({ success: [], failed: [] });
+      const dataLayer = { removeAssets, removeAsset: vi.fn() };
+      await waitForLegacyUndoCommit(dataLayer);
+      await waitForLegacyUndoCommit(dataLayer);
+      expect(removeAssets).toHaveBeenCalledTimes(1);
+      expect(removeAssets).toHaveBeenCalledWith({ paths: [] });
+    });
   });
 });

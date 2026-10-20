@@ -5,6 +5,10 @@ type RemoveAssetsClient = Pick<DataLayerRpcClient, 'removeAssets' | 'removeAsset
 /** The paths a removal deleted, its error when it fell short, and whether it ran as one batch. */
 export type RemovalResult = { removed: string[]; error?: unknown; batched: boolean };
 
+const PAST_LEGACY_UNDO_WINDOW_MS = 150;
+
+const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
 const isMissingMethod = (error: unknown) =>
   error instanceof Error && /not implemented in server port/.test(error.message);
 
@@ -14,6 +18,7 @@ async function removeOneByOne(
 ): Promise<RemovalResult> {
   const removed: string[] = [];
   for (const path of paths) {
+    await wait(PAST_LEGACY_UNDO_WINDOW_MS);
     try {
       await dataLayer.removeAsset({ path });
     } catch (error) {
@@ -41,4 +46,23 @@ export async function removeAssetFiles(
   if (!result.failed.length) return { removed: result.success, batched: true };
   const error = new Error(`Could not remove ${result.failed.join(', ')}`);
   return { removed: result.success, error, batched: true };
+}
+
+const batchRemovalSupport = new WeakMap<RemoveAssetsClient, Promise<boolean>>();
+
+function supportsBatchRemoval(dataLayer: RemoveAssetsClient): Promise<boolean> {
+  let support = batchRemovalSupport.get(dataLayer);
+  if (!support) {
+    support = dataLayer.removeAssets({ paths: [] }).then(
+      () => true,
+      error => !isMissingMethod(error),
+    );
+    batchRemovalSupport.set(dataLayer, support);
+  }
+  return support;
+}
+
+/** On hosts without batch removal, waits until their pending file undo entry is committed. */
+export async function waitForLegacyUndoCommit(dataLayer: RemoveAssetsClient): Promise<void> {
+  if (!(await supportsBatchRemoval(dataLayer))) await wait(PAST_LEGACY_UNDO_WINDOW_MS);
 }
