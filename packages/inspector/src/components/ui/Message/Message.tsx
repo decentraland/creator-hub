@@ -9,7 +9,13 @@ import { type Props, MessageType } from './types';
 
 import './Message.css';
 
-const Message: React.FC<Props> = ({ className, text, type = MessageType.INFO, icon = true }) => {
+const Message: React.FC<Props> = ({
+  className,
+  text,
+  type = MessageType.INFO,
+  icon = true,
+  id,
+}) => {
   if (!text || typeof text === 'boolean') {
     return null;
   }
@@ -49,7 +55,10 @@ const Message: React.FC<Props> = ({ className, text, type = MessageType.INFO, ic
   }, [type]);
 
   return (
-    <p className={cx('Message', className, type)}>
+    <p
+      id={id}
+      className={cx('Message', className, type)}
+    >
       {icon && renderIcon()}
       <span>{text}</span>
     </p>

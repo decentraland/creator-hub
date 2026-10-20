@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useId, useRef, useState } from 'react';
 import cx from 'classnames';
 
 import { debounce } from '../../../lib/utils/debounce';
@@ -38,12 +38,17 @@ const TextField = React.forwardRef<HTMLInputElement, Props>((props, ref) => {
     placeholder,
     type = 'text',
     size = 'dense',
+    id: idProp,
     ...rest
   } = props;
+  const generatedId = useId();
+  const id = idProp ?? generatedId;
   const [inputValue, setInputValue] = useState(value);
   const [isHovered, setHovered] = useState(false);
   const [isFocused, setFocused] = useState(false);
   const lastValueRef = useRef(value);
+  const errorId = useId();
+  const hasErrorText = !!error && typeof error !== 'boolean';
 
   // Adopt the `value` prop into local state only when it changes from an
   // EXTERNAL source, and never while focused.
@@ -158,7 +163,10 @@ const TextField = React.forwardRef<HTMLInputElement, Props>((props, ref) => {
 
   return (
     <div className={cx('Text Field', className, type, size)}>
-      <Label text={label} />
+      <Label
+        text={label}
+        htmlFor={id}
+      />
       <div
         className={cx('InputContainer', {
           hovered: isHovered,
@@ -170,6 +178,7 @@ const TextField = React.forwardRef<HTMLInputElement, Props>((props, ref) => {
       >
         {renderLeftContent()}
         <input
+          id={id}
           className="input"
           ref={ref}
           type={inputValue === '--' ? 'text' : type}
@@ -186,11 +195,13 @@ const TextField = React.forwardRef<HTMLInputElement, Props>((props, ref) => {
           autoCorrect="off"
           autoCapitalize="off"
           aria-invalid={error ? true : undefined}
+          aria-describedby={hasErrorText ? errorId : undefined}
           {...rest}
         />
         {renderRightContent()}
       </div>
       <Message
+        id={errorId}
         text={error}
         type={MessageType.ERROR}
       />

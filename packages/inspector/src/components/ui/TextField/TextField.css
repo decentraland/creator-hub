@@ -133,15 +133,15 @@
 }
 
 .Text.Field.large .InputContainer.focused {
-  border-width: var(--borderWidth-strong);
   border-color: var(--ui-designer-text);
+  box-shadow: inset 0 0 0 0.5px var(--ui-designer-text);
 }
 
 .Text.Field.large .InputContainer.error,
 .Text.Field.large .InputContainer.hovered.error,
 .Text.Field.large .InputContainer.focused.error {
-  border-width: var(--borderWidth-strong);
   border-color: var(--error-main);
+  box-shadow: inset 0 0 0 0.5px var(--error-main);
 }
 
 .Text.Field.large .InputContainer.disabled {

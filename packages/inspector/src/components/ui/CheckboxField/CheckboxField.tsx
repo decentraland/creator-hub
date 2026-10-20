@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo } from 'react';
+import React, { useCallback, useId, useMemo } from 'react';
 import cx from 'classnames';
 import { Message, MessageType } from '../Message';
 import { Label } from '../Label';
@@ -17,8 +17,11 @@ const CheckboxField = React.forwardRef<HTMLInputElement, Props>((props, forwarde
     onChange,
     type = 'checkbox',
     value,
+    id: idProp,
     ...rest
   } = props;
+  const generatedId = useId();
+  const id = idProp ?? generatedId;
 
   // Detect indeterminate state from mixed value
   const isIndeterminate = useMemo(() => isMixedValue(value), [value]);
@@ -48,6 +51,7 @@ const CheckboxField = React.forwardRef<HTMLInputElement, Props>((props, forwarde
         })}
       >
         <input
+          id={id}
           type={type}
           ref={setRef}
           checked={isIndeterminate ? false : !!checked}
@@ -55,7 +59,10 @@ const CheckboxField = React.forwardRef<HTMLInputElement, Props>((props, forwarde
           disabled={disabled}
           {...rest}
         />
-        <Label text={label} />
+        <Label
+          text={label}
+          htmlFor={id}
+        />
       </div>
       <Message
         text={error}

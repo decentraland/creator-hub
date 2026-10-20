@@ -370,7 +370,7 @@
   border-radius: var(--ui-designer-radius-menu);
 }
 
-.ui-designer-property-panel .Checkbox.Field .InputContainer input[type="checkbox"] {
+.ui-designer-right-rail .Checkbox.Field .InputContainer input[type="checkbox"] {
   box-sizing: border-box;
   width: 14px;
   height: 14px;
@@ -381,29 +381,29 @@
   box-shadow: none;
 }
 
-.ui-designer-property-panel
+.ui-designer-right-rail
   .Checkbox.Field
   .InputContainer:not(.error):not(.disabled)
   input[type="checkbox"]:hover:not(:focus) {
   border-color: var(--ui-designer-text-value);
 }
 
-.ui-designer-property-panel .Checkbox.Field .InputContainer input[type="checkbox"]::before,
-.ui-designer-property-panel
+.ui-designer-right-rail .Checkbox.Field .InputContainer input[type="checkbox"]::before,
+.ui-designer-right-rail
   .Checkbox.Field
   .InputContainer.disabled
   input[type="checkbox"]:checked::before {
   content: none;
 }
 
-.ui-designer-property-panel .Checkbox.Field .InputContainer input[type="checkbox"]:checked {
+.ui-designer-right-rail .Checkbox.Field .InputContainer input[type="checkbox"]:checked {
   background-image: url('data:image/svg+xml;utf8,<svg width="12" height="10" viewBox="0 0 12 10" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M11.6467 0.893333L4.22667 9.66667L3.52667 9.62L0.586667 5.46667L1.28667 4.95333L3.9 8.64L10.9467 0.333333L11.6467 0.893333Z" fill="%23cfcdd4"/></svg>');
   background-repeat: no-repeat;
   background-position: center;
   background-size: 8.4px 7px;
 }
 
-.ui-designer-property-panel
+.ui-designer-right-rail
   .Checkbox.Field
   .InputContainer
   input[type="checkbox"]:indeterminate::before {
@@ -414,15 +414,12 @@
   background-color: var(--ui-designer-text-value);
 }
 
-.ui-designer-property-panel .Checkbox.Field .InputContainer input[type="checkbox"]:focus-visible {
+.ui-designer-right-rail .Checkbox.Field .InputContainer input[type="checkbox"]:focus-visible {
   outline: 2px solid var(--border-focused);
   outline-offset: 1px;
 }
 
-.ui-designer-property-panel
-  .Checkbox.Field
-  .InputContainer.disabled
-  input[type="checkbox"]:checked {
+.ui-designer-right-rail .Checkbox.Field .InputContainer.disabled input[type="checkbox"]:checked {
   background-image: url('data:image/svg+xml;utf8,<svg width="12" height="10" viewBox="0 0 12 10" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M11.6467 0.893333L4.22667 9.66667L3.52667 9.62L0.586667 5.46667L1.28667 4.95333L3.9 8.64L10.9467 0.333333L11.6467 0.893333Z" fill="gray"/></svg>');
   background-color: var(--base-12);
   border-color: var(--base-12);
