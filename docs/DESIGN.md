@@ -186,9 +186,9 @@ No pair that passed 4.5:1 now fails. `--error-main` text on `#242129` (the `Call
 | `--shape-borderRadiusLarge` | `12px` | Large field and `.Button.big` corners; `--ui-designer-radius-menu` aliases it (ui2 theme-path name) |
 | `--borderWidth-strong` | `1.5px` | Large-field focus and error border (ui2 theme-path name) |
 
-Give interactive controls a consistent height (define a local `--uid-control-height`, ~28px, per panel) so rows align. Interactive hit targets should be ≥24px.
+Give interactive controls a consistent height so rows align: fields take `--controlHeight-small` (dense, the default) or `--controlHeight-large` (forms). Interactive hit targets should be ≥24px.
 
-Corners in the UI Designer come from two tokens, `--ui-designer-radius-field` (6px — inputs, dropdowns, segmented cells, the anchor preview) and `--ui-designer-radius-menu` (12px — option lists and popovers). The shared components hardcode 4px, so a panel-scoped override applies them.
+Corners in the UI Designer come from two tokens, `--ui-designer-radius-field` (6px — inputs, dropdowns, segmented cells, the anchor preview) and `--ui-designer-radius-menu` (12px — option lists and popovers), which alias `--shape-borderRadius` and `--shape-borderRadiusLarge`. The shared `TextField`, `Dropdown` and `TextArea` take 6px by default, so the panel needs no radius override for them; the shared `CheckboxField` and the small `Button` still hardcode their own (5px and 4px).
 
 ## Typography
 
@@ -249,7 +249,7 @@ Creator Hub's own chrome (home, scenes list, editor shell, settings, and modals)
 | --- | --- |
 | Surfaces | `--bg` `#161518`, `--background` `#161518`, `--card` / `--modal` / `--secondary` `#242129`, `--darker-gray` `#242129`, `--toast` `#3d3b43`, `--dimmer` `#000000dd` |
 | Text | `--text` `#ffffff`, `--text-on-secondary` `#ffffffb2`, `--secondary-text` `#676370`, `--dcl-silver` `#a09ba8` |
-| Brand and actions | `--primary` / `--dcl` `#ff2d55`, `--primary-hover` `#ff6280` (no consumer), `--dcl-hover` `#f70038`, `--dcl-dark` `#9c1c34` |
+| Brand and actions | `--primary` / `--dcl` `#ff2d55`, `--primary-hover` `#ff6280` (the primary hover), `--dcl-hover` `#f70038` and `--dcl-dark` `#9c1c34` (no consumers) |
 | Status | `--success` `#34ce77`, `--danger` `#fe9c2a`, `--error` `#fb3b3b` |
 | Lines | `--divider` `#67637033`, `--text-area-border` `#676370`, `--clear-divider` `#a09ba8` |
 | AI assistant | `--ai-selected`, `--ai-menu-bg`, `--ai-input-bg`, `--ai-session-selected` and their `-hover` steps |
@@ -259,7 +259,7 @@ The brand pink matches the inspector's `--primary-main`, but it's defined separa
 
 **Figma alignment of the status, surface, and hover tokens.** `--error`, `--danger`, `--background`, `--bg`, `--primary-hover` and `--purple-banner` carry Figma's System/Red, System/Orange, Neutrals/Shadow, Primary Light 1 and Brand/Purple values. Names are unchanged.
 
-- `--primary-hover` has no consumer. The hover users see on Creator Hub buttons comes from ui2 `palette.primary.dark` (`#F70038`) and from components using `--dcl-hover`, so it does not move with this token. White-ish text on `#ff6280` measures 2.80:1 (Snow `#fcfcfc`); the value is the user's pick from Figma and a known trade-off, not a pass.
+- `--primary-hover` is the primary-button hover at five sites: the wrapper `components/Button` (`.Button.MuiButton-colorPrimary:hover`), the editor header actions (`EditorPage/styles.css`), both `CreateButton` segments, and the AI `SendButton`. Raw ui2 contained-primary `Button`s (`SignInPage`, `UpdateAvailable`, `WarningModal` and others) still hover to ui2 `palette.primary.dark` `#F70038`. `--dcl-hover` and `--dcl-dark` have no consumers left; removing them is a naming decision for the user. White text on `#ff6280` measures 2.87:1 (Snow `#fcfcfc` 2.80:1); the value is the user's pick from Figma and a known trade-off, not a pass. The fill itself is 6.36:1 against the page.
 - `--bg` and `--purple-banner` also have no consumer.
 - `--background` paints cards on the page (`HeroStat`, `StatsRow`, `EngagementTab .SocialChart`) and the `Deploy` error-detail block; `--danger` and `--error` paint text, icons and one border.
 
@@ -282,6 +282,7 @@ No pair that passed now fails.
 - Styled components follow CLAUDE.md → "Styled Components Conventions": import from `decentraland-ui2`, use object syntax, take values from the theme, and keep them in `Component.styled.ts`.
 - Reuse a component the renderer already imports, from `decentraland-ui2` or an existing `@mui/material` import, before you build one. Don't add an import of an MUI module the renderer doesn't use yet. Pulling a not-yet-bundled module into a running dev session retriggers Vite's dependency optimizer. When no imported component fits, hand-roll it, as the settings Accordion is.
 - ui2 pins secondary-text buttons to a grey `secondary.contrast` at high specificity. Overriding their color takes a repeated-`&` selector (see `Tabs/AiTab/component.tsx`), not `!important`.
+- ui2 styles a contained-primary `Button` through a 3-class compound selector (`.css-hash.MuiButton-sizeMedium.MuiButton-containedPrimary`), adds a 10px gap between any two adjacent buttons through a global `.MuiButton-root + .MuiButton-root` rule, and sets the hover through `.css-hash.MuiButton-sizeMedium.MuiButton-containedPrimary:not(.Mui-disabled):not(.Mui-focusVisible):hover`. A single-class override loses to all three, so a styled override needs `&&&` for the base styles and `&&&&&&:hover` for the hover (see `CreateButton/component.styled.ts`).
 
 ---
 
@@ -294,9 +295,9 @@ Reconciled on October 16, 2026 from the Colors page ([node `20752:6024`](https:/
 | Figma variable | Value | Inspector (`vars.css`) | Creator Hub (`theme.css` / ui2) | Status |
 | --- | --- | --- | --- | --- |
 | Primary/Primary · Brand/Ruby | `#FF2D55` | `--primary-main` | `--primary`, `--dcl` · ui2 `palette.primary.main` | match |
-| Primary/Primary Dark 1 | `#F70038` | `--primary-dark` | `--dcl-hover` · ui2 `palette.primary.dark` | match |
+| Primary/Primary Dark 1 | `#F70038` | `--primary-dark` | `--dcl-hover` (no consumer) · ui2 `palette.primary.dark` | match |
 | Primary/Primary Dark 2 | `#D80029` | — | ui2 `colors.primaryDark2` | missing in inspector |
-| Primary/Primary Light 1 | `#FF6280` | — | `--primary-hover` `#ff6280` (unused) · ui2 `palette.primary.light` `#F26276` (dark scheme; `#F8919D` from ui2 3.23.8) · ui2 `colors.primaryLight1` `#F8919D` | match in `theme.css` (value only, no consumer); **drift** in ui2 `palette.primary.light` and `colors.primaryLight1` (upstream) |
+| Primary/Primary Light 1 | `#FF6280` | `--palette-primary-light` `#ff6280` | `--primary-hover` `#ff6280` · ui2 `palette.primary.light` `#F26276` (dark scheme; `#F8919D` from ui2 3.23.8) · ui2 `colors.primaryLight1` `#F8919D` | match in inspector and `theme.css`; **drift** in ui2 `palette.primary.light` and `colors.primaryLight1` (upstream) |
 | Primary/Primary Light 2 | `#FF93A8` | — | ui2 `colors.primaryLight2` `#FFC9D5` | drift (ui2 upstream) |
 | Primary Alt/Primary Alt · Brand/Orange | `#FF7439` | `--secondary-main` | — | match |
 | Primary Alt/Primary Alt Dark 1 | `#F45708` | `--secondary-dark` `#f45708` | — | match |
@@ -363,10 +364,10 @@ Figma names four steps per base colour, Backdrop 60% · Blurry 40% · Soft 20% �
 
 | Figma | Value | Inspector (`vars.css`) | Creator Hub (`theme.css`) | Status |
 | --- | --- | --- | --- | --- |
-| White Subtle · White 10 | `rgba(255,255,255,.1)` | `--ui-designer-control-border`, `--ui-designer-control-selected-bg` | — | match |
-| White Soft · White 20 | `rgba(255,255,255,.2)` | `--ui-designer-control-border-strong` | — | match |
-| White Blurry · White 40 | `rgba(255,255,255,.4)` | `--ui-designer-checkbox-border` | — | match |
-| White Backdrop | `rgba(255,255,255,.6)` | — | — | missing (no consumer) |
+| White Subtle · White 10 | `rgba(255,255,255,.1)` | `--palette-whiteTransparent-subtle` (aliased by `--ui-designer-control-border`), `--ui-designer-control-selected-bg` | — | match |
+| White Soft · White 20 | `rgba(255,255,255,.2)` | `--palette-whiteTransparent-soft` (aliased by `--ui-designer-control-border-strong`) | — | match |
+| White Blurry · White 40 | `rgba(255,255,255,.4)` | `--palette-whiteTransparent-blurry` (aliased by `--ui-designer-checkbox-border`) | — | match |
+| White Backdrop · White 60 | `rgba(255,255,255,.6)` | `--palette-whiteTransparent-backdrop` | — | match |
 | Black Subtle · Black 10 | `rgba(0,0,0,.1)` | — | — | missing (no consumer) |
 | Black Soft | `rgba(0,0,0,.2)` | `--contexify-separator-color` | — | match |
 | Black Blurry | `rgba(0,0,0,.4)` | — | — | missing (no consumer) |
@@ -568,7 +569,7 @@ Every literal the Surfaces pages use (Accordion, Background, Cards, Menu, Icons,
 | `#25212A` AI-toggle hover, button-table board | Neutrals/Charcoal | `--ui-designer-panel-bg` is `#242129` — documented deviation (1/255) | `--darker-gray`, `--card`, `--modal` `#242129` — same 1/255 deviation |
 | `#244B7D` AI-toggle selected | System/Blue Dark 2 | missing | `--ai-session-selected` |
 | `#243852` AI-toggle selected + hover | System/Blue Dark 3 | missing | `--ai-session-selected-hover` |
-| `#FF6280` publish split-button hover | Primary/Primary Light 1 | missing | `--primary-hover` `#ff6280` (same value, unused; the visible hover is ui2 `palette.primary.dark` `#F70038` / `--dcl-hover`) |
+| `#FF6280` publish split-button hover | Primary/Primary Light 1 | `--palette-primary-light` | `--primary-hover` `#ff6280` (the editor header actions hover to it) |
 | `#5E5B67` `.dcl.eth` suffix | Neutrals/Graffito | missing | `--light-gray` |
 | `#34CE77` online dot | System/Green | `--success-main` `#34ce77` (same value) | `--success` |
 | `#FE9C2A` away dot | System/Orange | missing | `--danger` `#fe9c2a` (same value) |
@@ -874,32 +875,32 @@ Literals the Buttons page (Inputs section) adds to the Surfaces table above; the
 | `#FF2D55` Switch On track | DCL/Ruby (legacy collection; same value as Primary/Primary) | `--primary-main` | `--primary`, `--dcl` |
 | `#FCFCFC` Switch knob | DCL/Snow (legacy collection; same value as Neutrals/Snow) | `--ui-designer-text` | ui2 `neutral.softWhite`; `theme.css` missing |
 | `#161518` ToolbarButton rest rectangle | DCL/Shadow | `--tree-bg-color` (`--base-20`) | missing (`--bg-inspector` is `#000`) |
-| 1.5px border | — | missing (`--ui-designer-control-border` paints 1px) | missing |
-| 46px button height | — | missing | missing (`Button` is MUI default) |
+| 1.5px border | — | `--borderWidth-strong` (Chromium floors it to 1px; see Text-Input) | missing |
+| 46px button height | — | `--controlHeight-large` | missing (`Button` is MUI default) |
 | 10px radius (ButtonContainedVertical 20) | — | missing | missing |
-| 6px radius (ToggleLabel) | — | `--ui-designer-radius-field` | `--mui-shape-borderRadius` |
+| 6px radius (ToggleLabel) | — | `--shape-borderRadius` (aliased by `--ui-designer-radius-field`) | `--mui-shape-borderRadius` |
 | 58.82px radius (Switch track and knob) | — | missing; a pill, use 100px | missing |
 | 20% opacity (blocked) | — (node opacity, not a variable) | missing | missing |
 | Inter 16 / 700 / 22px uppercase | unnamed (JumpInCTA label) | `--font-family` + literal size | same |
 | `#8A38F5` dashed 1px, 5px radius | — (Figma set frame chrome, not spec) | not a surface | not a surface |
 | `#A14BF3` dashed 1px (`Rarities/Legendary`) | Figma set frame chrome on Checkbox and Radio | not a surface | not a surface |
-| 5px radius, 20 × 20 box (Checkbox) | — | missing (`CheckboxField` is 18 × 18, 3px) | missing |
+| 5px radius, 20 × 20 box (Checkbox) | — | literals in `CheckboxField.css` (single use) | missing |
 | 100px radius, 20 × 20 ring and 10 × 10 dot (Radio) | — | missing | missing |
-| 32 × 32 halo at −6 / −6 | — | missing | missing |
+| 32 × 32 halo at −6 / −6 | — | `box-shadow: 0 0 0 6px` literal in `CheckboxField.css`, a rounded square rather than Figma's circle | missing |
 | `#FF2D55` @ 20% halo (Checkbox), @ 10% (Radio) | unnamed fill, not a variable | missing (`--primary-main` is opaque) | missing |
-| White 40 / 60 border steps | `Transparencies/White 40`, `White 60` | `--ui-designer-checkbox-border` (40); 60 missing | missing |
+| White 40 / 60 border steps | `Transparencies/White 40`, `White 60` | `--palette-whiteTransparent-blurry` / `--palette-whiteTransparent-backdrop` | missing |
 | `#161518` tick on Primary (CheckboxFill) | Neutrals/Shadow | `--tree-bg-color` (`--base-20`) | missing |
 | `#FCFCFC` named `DCL/White` (Description, help) | legacy collection; value is Snow, not `#FFFFFF` | `--ui-designer-text` | ui2 `neutral.softWhite` |
 | `#FFFFFF` Dropdown Title | unnamed solid white | `--white` | `--white` |
 | 9999px / 999px pill radius (Sort-By, Filter bar) | — | missing; use 100px | missing |
-| 12px field radius, 46px height, 16px side padding (Dropdown container) | — | missing (`--ui-designer-radius-menu` is 12px) | missing |
+| 12px field radius, 46px height, 16px side padding (Dropdown container) | — | `--shape-borderRadiusLarge`, `--controlHeight-large`, `--uid-space-4`; `Dropdown` has no large size yet | missing |
 | 56px bar, 300px Search-Bar, 30 / 10px bar padding | — | missing | missing |
 | Inter 14 / 400 / 100%, 16 / 400 / 100%, 16 / 600 / 100% | `H7 Regular`, `H6 Regular`, `H6 Semi` | `--font-family` + literal size | same |
 | 52 × 30 Switch, track 50.21 × 30, knob 25.1 × 25.1 at 3.05 / 2.45 (Off) and 22.52 / 2.45 (On), radius 58.82px | — | missing; a pill, use 100px | missing |
 | 50% node opacity (Switch `Default`) | — (node opacity, not a variable) | missing | missing |
 | `#FFFFFF` @ 5% Close-Button fill | unnamed fill, not a variable | missing | missing |
 | 24 × 24 Close-Button (19 × 19 inside the bar), 16 × 16 glyph, 100px radius | — | missing | missing |
-| 12px field radius, 14 / 16px padding, 1px and 1.5px borders (Text Field container) | — | missing (`TextField` is 24px, 4px radius) | missing |
+| 12px field radius, 14 / 16px padding, 1px and 1.5px borders (Text Field container) | — | `TextField size="large"`: `--shape-borderRadiusLarge`, padding 0 / `--uid-space-4` at the fixed `--controlHeight-large`, `--borderWidth-strong` | missing |
 | 1.5px Snow left or right edge, or 18px × 1px `#FFFFFF` line rotated −90° (drawn caret) | — | not a surface; the native caret | not a surface; the native caret |
 | 19 × 19 Search glyph, 20 × 20 `LocalAssets` folder glyph | — | missing | missing |
 | `#FFFFFF` Title (Text Field) | unnamed solid white | `--white` | `--white` |
@@ -907,7 +908,7 @@ Literals the Buttons page (Inputs section) adds to the Surfaces table above; the
 
 ### Button-Contained-Text (Buttons)
 
-Set [`20705:11927`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=20705-11927), 9 variants (verified by Enter on the set: 9 Selected; Primary, Terciary, PrimaryBlocked, Secondary read singly, the rest from the aggregate). Hug 90 × 46, 12px radius, padding 12 / 24, label Inter 600 16 / 22 uppercase Snow. Code: inspector `components/Button` (danger / default / dark, 4px radius, 16px padding) — drift on radius and size; Creator Hub `components/Button` (ui2 `Button`: `colorPrimary` `--dcl`, hover `--dcl-dark`, secondary `--dark-gray`, `info` outlined 1px white) — matches the Primary fill, drift on hover and Secondary fill.
+Set [`20705:11927`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=20705-11927), 9 variants (verified by Enter on the set: 9 Selected; Primary, Terciary, PrimaryBlocked, Secondary read singly, the rest from the aggregate). Hug 90 × 46, 12px radius, padding 12 / 24, label Inter 600 16 / 22 uppercase Snow. Code: inspector `components/Button` `size="big"` (46px `--controlHeight-large`, 12px `--shape-borderRadiusLarge`, padding 12 / 24 `--uid-space-3` / `--uid-space-6`, Inter 600 16 / 22 uppercase; `type="danger"` paints `--primary-main` and hovers to `--palette-primary-light`; the default `#4b4852` / `#6c6974` and `dark` fills are unchanged; disabled is opacity .5) — matches geometry, label and the Primary states, drift on Secondary and Terciary fills and on the blocked opacity. Every `.Button` draws a 2px `--ui-designer-control-accent` `:focus-visible` ring at a 2px offset; small buttons keep their 4px radius and 6px padding. Creator Hub `components/Button` (ui2 `Button`: `colorPrimary` `--dcl`, hover `--primary-hover`, secondary `--dark-gray`, `info` outlined 1px white) — matches the Primary fill and hover, drift on the Secondary fill.
 
 | Variant | State | Fill | Border | Label | Contrast | A11y |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -972,7 +973,7 @@ Set [`20762:22781`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id
 
 ### Button-Multiple-Options (Buttons)
 
-Set [`20794:2456`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=20794-2456), 3 variants (`Property 1` Default / HoverLeft / HoverRight). Hug 155 × Fixed 40, 12px radius, no frame fill; Left Hug 115 × Fill 40, padding 0 / 14, gap 6, Primary, icon 18 × 18 + label Inter 600 16 / 22 uppercase Snow (63 × 22); Right 40 × 40 Primary with a 1px White 20 left border. Code: Creator Hub `CreateButton` (`StyledLabelButton` 130 × 40, 16 / 600 uppercase, 12px radius, Primary; toggle 40 × 40 with a 1px `rgba(255,255,255,.2)` left border) and `Button` `ButtonGroup` + `extra-button` — matches geometry; hover drifts (code `#F70038` `--dcl-hover` vs Figma Primary Light 1 `#FF6280`); inspector none.
+Set [`20794:2456`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=20794-2456), 3 variants (`Property 1` Default / HoverLeft / HoverRight). Hug 155 × Fixed 40, 12px radius, no frame fill; Left Hug 115 × Fill 40, padding 0 / 14, gap 6, Primary, icon 18 × 18 + label Inter 600 16 / 22 uppercase Snow (63 × 22); Right 40 × 40 Primary with a 1px White 20 left border. Code: Creator Hub `CreateButton` (`StyledLabelButton` 130 × 40, 16 / 600 uppercase, 12px radius, Primary; toggle 40 × 40 with a 1px `rgba(255,255,255,.2)` left border) and `Button` `ButtonGroup` + `extra-button` — matches geometry; both segments hover to `--primary-hover` `#FF6280` (Primary Light 1), matching; inspector none.
 
 | Variant | State | Fill | Contrast | A11y |
 | --- | --- | --- | --- | --- |
@@ -1066,7 +1067,7 @@ Set [`21232:42111`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id
 
 ### CheckboxOutline (Checkbox)
 
-Set [`20849:724`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=20849-724), 4 variants (`Property 1` Off / Hover / On / HoverSelected; verified from the layer tree, each read singly). 20 × 20 box, 5px radius, no fill, 1px White 40 border; checkmark `Checkmark (Stroke)` 12 × 10 at 4 / 5; hover and selected-hover add a 32 × 32 halo at −6 / −6, 100px radius, behind the box. The dashed `#A14BF3` frame is Figma chrome. Code: inspector `components/ui/CheckboxField` (18 × 18, 3px radius, 1px `--gray-0` border and fill, hover border `--base-09`, checked fill `--base-12`; the visible `Label` is a sibling with no `htmlFor`, so `aria-label` is the input's only accessible name) — drift on size, radius, fill and the missing halo, and the checked fill is grey where Figma keeps the box open and draws a Primary tick; Creator Hub ui2 `Checkbox` inside `FormControlLabel` (`AppSettings` `EditorTab`, `OptimizeModal`, `PreviewOptions`; MUI defaults).
+Set [`20849:724`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=20849-724), 4 variants (`Property 1` Off / Hover / On / HoverSelected; verified from the layer tree, each read singly). 20 × 20 box, 5px radius, no fill, 1px White 40 border; checkmark `Checkmark (Stroke)` 12 × 10 at 4 / 5; hover and selected-hover add a 32 × 32 halo at −6 / −6, 100px radius, behind the box. The dashed `#A14BF3` frame is Figma chrome. Code: inspector `components/ui/CheckboxField` (20 × 20, 5px radius, no fill, 1px `--palette-whiteTransparent-blurry` border; hover adds a 6px `--palette-whiteTransparent-subtle` `box-shadow` halo; checked keeps the box open with a white tick; disabled border `--palette-whiteTransparent-soft`; `:focus-visible` 2px `--ui-designer-control-accent` ring at a 2px offset) — matches size, radius, border and halo. The halo follows the 5px radius instead of Figma's circle, and the tick stays white where Figma draws Primary (panel chrome is not pink); both are kept on purpose. The UI Designer panel keeps its own 14 × 14 override with no halo. The visible `Label` is a sibling with no `htmlFor`, so `aria-label` is the input's only accessible name, and most call sites pass none (AudioSource's three checkboxes have no name); Creator Hub ui2 `Checkbox` inside `FormControlLabel` (`AppSettings` `EditorTab`, `OptimizeModal`, `PreviewOptions`; MUI defaults).
 
 | Variant | State | Box | Mark | Halo | Contrast | A11y |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -1109,7 +1110,7 @@ Set [`20785:59388`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id
 
 ### Dropdown-Input (Dropdown)
 
-Set [`20898:5394`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=20898-5394), 3 variants (`Property 1` Default / Hover / Selected). Fixed 500 wide, vertical, gap 10: `Title` Inter 600 16 / 100% (`H6 Semi`) `#FFFFFF` (500 × 19); `Description` Inter 400 14 / 100% (`H7 Regular`) `DCL/White` `#FCFCFC` (500 × 17); `Container` Fill × Fixed 46, 12px radius, 1px border, padding 0 / 16, gap 10, no fill, holding the value "Text" Inter 400 16 / 100% (`H6 Regular`) Snow (444 × 19) and a 14 × 14 chevron. Selected is the open state: Hug 229, chevron `ArrowUp`, and a `Menu` instance (Fill × Hug 117) under the container — the documented Menu (Onix `#35333B`, 1px White 10, 12px radius, `0 4px 8px` Black 40) with a Menu-Entry `Checkmark` on the chosen row. Code: inspector `components/ui/Dropdown` (24px field, 4px radius, `--gray-0` fill and border, hover border `--base-09`, focus `--base-01`) — drift on height, radius, fill and border; Creator Hub `components/Select` + `components/Dropdown` (ui2 `Select` standard, MUI `Menu`) — drift.
+Set [`20898:5394`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=20898-5394), 3 variants (`Property 1` Default / Hover / Selected). Fixed 500 wide, vertical, gap 10: `Title` Inter 600 16 / 100% (`H6 Semi`) `#FFFFFF` (500 × 19); `Description` Inter 400 14 / 100% (`H7 Regular`) `DCL/White` `#FCFCFC` (500 × 17); `Container` Fill × Fixed 46, 12px radius, 1px border, padding 0 / 16, gap 10, no fill, holding the value "Text" Inter 400 16 / 100% (`H6 Regular`) Snow (444 × 19) and a 14 × 14 chevron. Selected is the open state: Hug 229, chevron `ArrowUp`, and a `Menu` instance (Fill × Hug 117) under the container — the documented Menu (Onix `#35333B`, 1px White 10, 12px radius, `0 4px 8px` Black 40) with a Menu-Entry `Checkmark` on the chosen row. Code: inspector `components/ui/Dropdown`, dense only (26px `--controlHeight-small`, 6px `--shape-borderRadius`, padding 0 / 8, `--gray-0` fill and border, hover border `--base-09`, open `--base-01`, `aria-haspopup="listbox"`). It has no large size, and its `role="combobox"` container takes no keyboard focus, so the `:focus-visible` ring in `Dropdown.css` never shows — drift on height, radius, fill and border against this 46px frame; Creator Hub `components/Select` + `components/Dropdown` (ui2 `Select` standard, MUI `Menu`) — drift.
 
 | Variant | State | Container border | Chevron | Contrast | A11y |
 | --- | --- | --- | --- | --- | --- |
@@ -1188,7 +1189,7 @@ Set [`20907:6053`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=
 
 ### Text-Input (Text Field)
 
-Set [`20815:1961`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=20815-1961), 6 variants (`Property 1` Default / Hover / Selected / Editing / Completed / Error; verified from the layer tree, each read singly; Title and Description read on Default, Hover and Error and are the same in all). Fill 500 × Fixed 102 (Error 146), vertical, gap 10. `Title` Inter 600 16 / 100% (`H6 Semi`) `#FFFFFF`; `Description` Inter 400 14 / 100% (`H7 Regular`) `DCL/White` `#FCFCFC` (legacy name, value is Snow); `Container` Fill × 46, 12px radius, no fill, padding 14 / 16, gap 10, holding the value (Inter 400 16 / 100%, `H6 Regular`, 438 wide) and a 20 × 20 `LocalAssets` folder glyph (18.33 × 13.33 vector, Silver `#A09BA8`; no button state drawn). Selected and Editing draw a caret (1.5px Snow left edge, or an 18px × 1px `#FFFFFF` `Line 1` rotated −90°). Error adds a message under the container, 500 × 34, Inter 400 14 / 100% `System/Red` `#FB3B3B`, wrapping to two lines. The dashed `#8A38F5` frame is Figma chrome. Code: inspector `components/ui/TextField` (24px, 4px radius, 1px `--gray-0`, hover `--base-09`, focus `--base-01`, error `--error-main` and `--error-light`, 13px) with `FileUploadField` for the folder glyph — drift on height, radius, size and colours; Creator Hub ui2 `TextField` inside `InputLabel` (`DetailsTab`, MUI default) — drift.
+Set [`20815:1961`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=20815-1961), 6 variants (`Property 1` Default / Hover / Selected / Editing / Completed / Error; verified from the layer tree, each read singly; Title and Description read on Default, Hover and Error and are the same in all). Fill 500 × Fixed 102 (Error 146), vertical, gap 10. `Title` Inter 600 16 / 100% (`H6 Semi`) `#FFFFFF`; `Description` Inter 400 14 / 100% (`H7 Regular`) `DCL/White` `#FCFCFC` (legacy name, value is Snow); `Container` Fill × 46, 12px radius, no fill, padding 14 / 16, gap 10, holding the value (Inter 400 16 / 100%, `H6 Regular`, 438 wide) and a 20 × 20 `LocalAssets` folder glyph (18.33 × 13.33 vector, Silver `#A09BA8`; no button state drawn). Selected and Editing draw a caret (1.5px Snow left edge, or an 18px × 1px `#FFFFFF` `Line 1` rotated −90°). Error adds a message under the container, 500 × 34, Inter 400 14 / 100% `System/Red` `#FB3B3B`, wrapping to two lines. The dashed `#8A38F5` frame is Figma chrome. Code: inspector `components/ui/TextField` `size="large"` on the five form sites (`UrlInputModal`, `CreateScriptModal`, `CreateEditTagModal`, `CreateCustomAsset`, `RenameAsset`): 46px `--controlHeight-large`, 12px `--shape-borderRadiusLarge`, padding 0 / 16, no fill, 1px `--palette-whiteTransparent-blurry`, hover and filled `--palette-whiteTransparent-backdrop`, focus `--ui-designer-text` (Snow) and error `--error-main` at `--borderWidth-strong`, disabled `--palette-whiteTransparent-soft`; value Inter 400 16 Snow, placeholder `--ui-designer-text-muted` (Silver, 6.71:1, where Figma's White 40 is 3.84:1), label Inter 600 16. Error sets `aria-invalid`; the message is not linked by `aria-describedby`. Chromium floors a 1.5px border to 1px at DPR 1 and 2 alike, so focus and error render at 1px. Every other site takes the dense default (26px `--controlHeight-small`, 6px `--shape-borderRadius`, padding 0 / 8, 1px `--gray-0`, hover `--base-09`, focus `--base-01`, error `--error-main` and `--error-light`, 13px), and `TextArea` shares its 6px radius. `FileUploadField` draws the folder glyph — matches on the large size except the rendered border weight; Creator Hub ui2 `TextField` inside `InputLabel` (`DetailsTab`, MUI default) — drift.
 
 | Variant | State | Container border | Value | Contrast | A11y |
 | --- | --- | --- | --- | --- | --- |
