@@ -4,6 +4,49 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { InfoTooltip } from '../InfoTooltip';
 import { CheckboxField } from '.';
 
+describe('CheckboxField color', () => {
+  function rootClasses(container: HTMLElement) {
+    return [...(container.querySelector('.Checkbox.Field')?.classList ?? [])];
+  }
+
+  describe('when no color is passed', () => {
+    it('should add no color class to the root', () => {
+      const { container } = render(<CheckboxField label="Loop" />);
+      expect(rootClasses(container)).not.toContain('secondary');
+      expect(rootClasses(container)).not.toContain('tertiary');
+    });
+
+    it('should not put a color attribute on the input', () => {
+      render(<CheckboxField label="Loop" />);
+      expect(screen.getByRole('checkbox', { name: 'Loop' }).hasAttribute('color')).toBe(false);
+    });
+  });
+
+  describe.each(['secondary', 'tertiary'] as const)('when the color is %s', color => {
+    it(`should mark the root as ${color} only`, () => {
+      const { container } = render(
+        <CheckboxField
+          label="Loop"
+          color={color}
+        />,
+      );
+      const other = color === 'secondary' ? 'tertiary' : 'secondary';
+      expect(rootClasses(container)).toContain(color);
+      expect(rootClasses(container)).not.toContain(other);
+    });
+
+    it('should not put a color attribute on the input', () => {
+      render(
+        <CheckboxField
+          label="Loop"
+          color={color}
+        />,
+      );
+      expect(screen.getByRole('checkbox', { name: 'Loop' }).hasAttribute('color')).toBe(false);
+    });
+  });
+});
+
 describe('CheckboxField accessible name', () => {
   describe('when it has a label', () => {
     it('should be named by the label', () => {

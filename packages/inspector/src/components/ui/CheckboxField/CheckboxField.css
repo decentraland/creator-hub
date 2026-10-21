@@ -83,6 +83,52 @@
   border-color: var(--error-main);
 }
 
+.Checkbox.Field:is(.secondary, .tertiary)
+  .InputContainer
+  input[type="checkbox"]:is(:checked, :indeterminate) {
+  background-color: var(--transparent);
+  border-color: var(--palette-whiteTransparent-blurry);
+}
+
+.Checkbox.Field.secondary
+  .InputContainer
+  input[type="checkbox"]:is(:checked, :indeterminate)::before {
+  background-color: var(--primary-main);
+}
+
+.Checkbox.Field.tertiary
+  .InputContainer
+  input[type="checkbox"]:is(:checked, :indeterminate)::before {
+  background-color: var(--ui-designer-text);
+}
+
+:where(.Checkbox.Field.tertiary .InputContainer:not(.error):not(.disabled))
+  input[type="checkbox"]:is(:checked, :indeterminate):hover {
+  box-shadow: 0 0 0 6px var(--palette-whiteTransparent-subtle);
+}
+
+.Checkbox.Field:is(.secondary, .tertiary)
+  .InputContainer.disabled
+  input[type="checkbox"]:is(:checked, :indeterminate) {
+  border-color: var(--palette-whiteTransparent-soft);
+}
+
+.Checkbox.Field.secondary
+  .InputContainer.disabled
+  input[type="checkbox"]:is(:checked, :indeterminate)::before {
+  background-color: var(--base-09);
+}
+
+.Checkbox.Field.tertiary
+  .InputContainer.disabled
+  input[type="checkbox"]:is(:checked, :indeterminate)::before {
+  background-color: var(--ui-designer-text-muted);
+}
+
+.Checkbox.Field:is(.secondary, .tertiary) .InputContainer.error input[type="checkbox"] {
+  border-color: var(--error-main);
+}
+
 .Checkbox.Field .InputContainer .Label {
   text-wrap: wrap;
 }

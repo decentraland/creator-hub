@@ -472,6 +472,7 @@ const VisibleRow: React.FC<{ visible: boolean; onToggle: (visible: boolean) => v
       info="Off removes the node from the scene entirely — it stops rendering and stops taking up layout space. The eye above only hides it on the canvas."
     >
       <CheckboxField
+        color="tertiary"
         checked={visible}
         aria-label="Visibility is Active"
         onChange={e => onToggle(e.target.checked)}
