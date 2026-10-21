@@ -50,6 +50,7 @@ const CodeVariableRow: React.FC<{ v: BindVariable }> = ({ v }) => {
       />
       {v.type === 'boolean' ? (
         <CheckboxField
+          color="tertiary"
           aria-label={`Default of ${v.name}`}
           checked={v.value === true || v.value === 'true'}
           onChange={e =>

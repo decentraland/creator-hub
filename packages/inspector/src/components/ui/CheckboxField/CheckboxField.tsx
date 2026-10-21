@@ -16,6 +16,7 @@ const CheckboxField = React.forwardRef<HTMLInputElement, Props>((props, forwarde
     disabled,
     onChange,
     type = 'checkbox',
+    color = 'primary',
     value,
     id: idProp,
     ...rest
@@ -23,10 +24,8 @@ const CheckboxField = React.forwardRef<HTMLInputElement, Props>((props, forwarde
   const generatedId = useId();
   const id = idProp ?? generatedId;
 
-  // Detect indeterminate state from mixed value
   const isIndeterminate = useMemo(() => isMixedValue(value), [value]);
 
-  // Set ref and indeterminate property in a single callback
   const setRef = useCallback(
     (node: HTMLInputElement | null) => {
       if (node) {
@@ -42,7 +41,7 @@ const CheckboxField = React.forwardRef<HTMLInputElement, Props>((props, forwarde
   );
 
   return (
-    <div className={cx('Checkbox Field', className, { disabled: disabled })}>
+    <div className={cx('Checkbox Field', className, { disabled }, color !== 'primary' && color)}>
       <div
         className={cx('InputContainer', {
           disabled: disabled,

@@ -371,8 +371,6 @@
   height: 14px;
   margin-right: 0;
   border-radius: 4px;
-  background-color: transparent;
-  border-color: var(--ui-designer-checkbox-border);
 }
 
 .ui-designer-right-rail
@@ -380,19 +378,6 @@
   .InputContainer:not(.error):not(.disabled)
   input[type="checkbox"]:hover {
   box-shadow: 0 0 0 4px var(--palette-whiteTransparent-subtle);
-}
-
-.ui-designer-right-rail
-  .Checkbox.Field
-  .InputContainer:not(.error):not(.disabled)
-  input[type="checkbox"]:is(:checked, :indeterminate):hover {
-  box-shadow: 0 0 0 4px color-mix(in srgb, var(--primary-main) 20%, transparent);
-}
-
-.ui-designer-right-rail .Checkbox.Field .InputContainer input[type="checkbox"]:checked,
-.ui-designer-right-rail .Checkbox.Field .InputContainer input[type="checkbox"]:indeterminate {
-  background-color: var(--primary-main);
-  border-color: var(--primary-main);
 }
 
 .ui-designer-right-rail .Checkbox.Field .InputContainer input[type="checkbox"]:checked::before {
@@ -415,14 +400,6 @@
 .ui-designer-right-rail .Checkbox.Field .InputContainer input[type="checkbox"]:focus-visible {
   outline: 2px solid var(--ui-designer-control-accent);
   outline-offset: 1px;
-}
-
-.ui-designer-right-rail
-  .Checkbox.Field
-  .InputContainer.disabled
-  input[type="checkbox"]:is(:checked, :indeterminate) {
-  background-color: var(--base-12);
-  border-color: var(--base-12);
 }
 
 .ui-designer-property-panel .Block > .content:has(> .ui-designer-bindable-subfield) {

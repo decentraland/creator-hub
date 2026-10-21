@@ -89,6 +89,7 @@ const InstancePropRow: React.FC<{
         </em>
       ) : prop.type === 'boolean' ? (
         <CheckboxField
+          color="tertiary"
           aria-label={prop.name}
           checked={current?.value === true || current?.value === 'true'}
           onChange={e =>
