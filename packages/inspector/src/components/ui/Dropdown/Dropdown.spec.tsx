@@ -167,6 +167,38 @@ describe('when the list is open', () => {
     expect(activeOption(trigger)?.textContent).toBe('Alpha');
   });
 
+  describe('and the active option is drawn', () => {
+    it('should mark the list as keyboard-driven after ArrowDown', () => {
+      const { trigger } = renderDropdown();
+      fireEvent.click(trigger);
+      fireEvent.keyDown(trigger, { key: 'ArrowDown' });
+
+      const listbox = screen.getByRole('listbox', { hidden: true });
+      expect(listbox.getAttribute('data-active-source')).toBe('keyboard');
+    });
+
+    it('should mark the list as pointer-driven after hovering an option', () => {
+      const { trigger } = renderDropdown();
+      fireEvent.keyDown(trigger, { key: 'Enter' });
+      const listbox = screen.getByRole('listbox', { hidden: true });
+
+      fireEvent.mouseEnter(within(listbox).getByText('Gamma'));
+
+      expect(listbox.getAttribute('data-active-source')).toBe('pointer');
+    });
+
+    it('should switch back to keyboard-driven when ArrowDown follows a hover', () => {
+      const { trigger } = renderDropdown();
+      fireEvent.click(trigger);
+      const listbox = screen.getByRole('listbox', { hidden: true });
+      fireEvent.mouseEnter(within(listbox).getByText('Alpha'));
+
+      fireEvent.keyDown(trigger, { key: 'ArrowDown' });
+
+      expect(listbox.getAttribute('data-active-source')).toBe('keyboard');
+    });
+  });
+
   it('should keep the mouse toggle working', () => {
     const { trigger } = renderDropdown();
     fireEvent.click(trigger);

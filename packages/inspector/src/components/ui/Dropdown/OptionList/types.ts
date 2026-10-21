@@ -1,5 +1,7 @@
 import type { Props as Option } from '../Option/types';
 
+export type ActiveSource = 'keyboard' | 'pointer';
+
 export type SearchInputProps = Omit<React.InputHTMLAttributes<HTMLInputElement>, 'size' | 'type'>;
 
 export interface Props {
@@ -16,8 +18,10 @@ export interface Props {
   scope?: string;
   /** Listbox id; each option's id derives from it. */
   id: string;
-  /** Index into `options` of the keyboard-active option, or -1. */
+  /** Index into `options` of the active option, or -1. */
   activeIndex: number;
+  /** Whether the keyboard or the pointer last set the active option. */
+  activeSource: ActiveSource;
   search: string;
   onSearchChange: (search: string) => void;
   /** Combobox semantics and focus tracking for the search input. */

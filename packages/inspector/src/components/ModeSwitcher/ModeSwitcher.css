@@ -30,7 +30,9 @@
   text-transform: uppercase;
   cursor: pointer;
   touch-action: manipulation;
-  transition: color 80ms linear, border-color 80ms linear;
+  transition:
+    color 80ms linear,
+    border-color 80ms linear;
 }
 
 .ModeSwitcher-tab:hover {
@@ -44,6 +46,6 @@
 }
 
 .ModeSwitcher-tab:focus-visible {
-  outline: 2px solid var(--border-focused);
+  outline: 2px solid var(--focus-ring);
   outline-offset: -2px;
 }

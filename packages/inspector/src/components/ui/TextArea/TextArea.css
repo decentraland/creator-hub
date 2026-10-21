@@ -46,7 +46,7 @@
 }
 
 .TextArea.Field.focused textarea {
-  border-color: var(--base-01);
+  border-color: var(--focus-ring);
 }
 
 .TextArea.Field.hovered:not(.focused):not(.error) textarea {

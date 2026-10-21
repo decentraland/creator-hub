@@ -32,7 +32,7 @@
 }
 
 .Text.Field .InputContainer.focused {
-  border-color: var(--base-01);
+  border-color: var(--focus-ring);
 }
 
 .Text.Field .InputContainer.hovered:not(.focused):not(.error) {
@@ -133,8 +133,8 @@
 }
 
 .Text.Field.large .InputContainer.focused {
-  border-color: var(--ui-designer-text);
-  box-shadow: inset 0 0 0 0.5px var(--ui-designer-text);
+  border-color: var(--focus-ring);
+  box-shadow: inset 0 0 0 0.5px var(--focus-ring);
 }
 
 .Text.Field.large .InputContainer.error,
