@@ -55,8 +55,12 @@
 }
 
 .ui-designer-flow-cell:focus-visible {
-  outline: 2px solid var(--border-focused);
+  outline: 2px solid var(--ui-designer-control-accent);
   outline-offset: -2px;
+}
+
+.ui-designer-flow-cell.selected:focus-visible {
+  outline-color: var(--ui-designer-control-active-fg);
 }
 
 .ui-designer-flow-cell::before {

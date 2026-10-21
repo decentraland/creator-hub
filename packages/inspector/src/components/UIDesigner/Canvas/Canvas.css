@@ -336,7 +336,7 @@
 }
 
 .ui-designer-canvas-emptyroot-add:focus-visible {
-  outline: 2px solid var(--border-focused);
+  outline: 2px solid var(--ui-designer-control-accent);
   outline-offset: 2px;
 }
 
@@ -468,7 +468,7 @@
 }
 
 .ui-designer-canvas-zoom-btn:focus-visible {
-  outline: 2px solid var(--border-focused);
+  outline: 2px solid var(--ui-designer-control-accent);
   outline-offset: 1px;
 }
 
@@ -592,7 +592,7 @@
 
 .ui-designer-device-toggle-btn:focus-visible {
   position: relative;
-  outline: 2px solid var(--border-focused);
+  outline: 2px solid var(--ui-designer-control-accent);
   outline-offset: 1px;
   z-index: 1;
 }
