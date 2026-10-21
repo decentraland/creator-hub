@@ -19,6 +19,12 @@ input[type="number"] {
   appearance: none;
 }
 
+input::selection,
+textarea::selection {
+  color: var(--ui-designer-text);
+  background: var(--palette-system-blueDark2);
+}
+
 .ui.popup,
 .ui.inverted.popup {
   height: auto;

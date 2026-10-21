@@ -38,6 +38,7 @@ const OptionList = React.forwardRef<HTMLDivElement, Props>((props, ref) => {
     scope,
     id,
     activeIndex,
+    activeSource,
     search,
     onSearchChange,
     searchInputProps,
@@ -141,6 +142,7 @@ const OptionList = React.forwardRef<HTMLDivElement, Props>((props, ref) => {
       className={cx('OptionList', className, { searchable })}
       style={style}
       data-dropdown-scope={scope}
+      data-active-source={activeSource}
       onMouseLeave={() => onActiveChange(-1)}
     >
       {searchable && options.length > 0 ? (

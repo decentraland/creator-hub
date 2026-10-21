@@ -23,7 +23,7 @@ import {
   MIXED_VALUE_LABEL,
   optionId,
 } from './utils';
-import type { SearchInputProps } from './OptionList/types';
+import type { ActiveSource, SearchInputProps } from './OptionList/types';
 import type { Props } from './types';
 import './Dropdown.css';
 
@@ -51,6 +51,7 @@ const Dropdown = React.forwardRef<HTMLInputElement, Props>((props, parentRef) =>
   const [menuScope, setMenuScope] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [activeIndex, setActiveIndex] = useState(-1);
+  const [activeSource, setActiveSource] = useState<ActiveSource>('keyboard');
   const [searchFocused, setSearchFocused] = useState(false);
   const scrollToActive = useRef(false);
   const listId = useId();
@@ -76,6 +77,7 @@ const Dropdown = React.forwardRef<HTMLInputElement, Props>((props, parentRef) =>
     setSearchFocused(false);
     scrollToActive.current = true;
     setActiveIndex(initialActiveIndex);
+    setActiveSource('keyboard');
     setShowOptions(true);
   }, []);
 
@@ -97,6 +99,11 @@ const Dropdown = React.forwardRef<HTMLInputElement, Props>((props, parentRef) =>
     setShowOptions(false);
     setFocus(false);
   }, [setShowOptions, setFocus]);
+
+  const handlePointerActive = useCallback((index: number) => {
+    setActiveIndex(index);
+    setActiveSource('pointer');
+  }, []);
 
   const handleSearchChange = useCallback((nextSearch: string) => {
     setSearch(nextSearch);
@@ -162,6 +169,7 @@ const Dropdown = React.forwardRef<HTMLInputElement, Props>((props, parentRef) =>
       const next = pos === -1 ? (step === 1 ? 0 : last) : Math.min(last, Math.max(0, pos + step));
       scrollToActive.current = true;
       setActiveIndex(navigableIndexes[next]);
+      setActiveSource('keyboard');
     },
     [navigableIndexes, activeIndex],
   );
@@ -337,10 +345,11 @@ const Dropdown = React.forwardRef<HTMLInputElement, Props>((props, parentRef) =>
                 ref={optionListRef}
                 id={listId}
                 activeIndex={activeIndex}
+                activeSource={activeSource}
                 search={search}
                 onSearchChange={handleSearchChange}
                 searchInputProps={searchInputProps}
-                onActiveChange={setActiveIndex}
+                onActiveChange={handlePointerActive}
                 className={className}
                 scope={menuScope ?? undefined}
                 style={{

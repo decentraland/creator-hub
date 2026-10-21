@@ -365,11 +365,6 @@
   color: var(--ui-designer-text-muted);
 }
 
-.OptionList[data-dropdown-scope="ui-designer"] {
-  border: 1px solid var(--ui-designer-control-border);
-  border-radius: var(--ui-designer-radius-menu);
-}
-
 .ui-designer-right-rail .Checkbox.Field .InputContainer input[type="checkbox"] {
   box-sizing: border-box;
   width: 14px;
