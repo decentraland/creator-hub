@@ -45,7 +45,7 @@ All tokens are CSS custom properties on `:root` in **`packages/inspector/src/the
 | `--sub-text`     | `#ffffffcf` | Secondary text on dark            |
 | `--text-primary` | `#000000de` | Text **on light surfaces**        |
 
-The UI Designer names its own three steps, from the Figma's Neutrals ramp: `--ui-designer-text` `#fcfcfc` (labels, group titles), `--ui-designer-text-value` `#cfcdd4` (the value inside a field), `--ui-designer-text-muted` `#a09ba8` (hints, secondary). Glyphs take `--ui-designer-glyph` `#716b7c`, or `--ui-designer-glyph-on-control` when they sit on a field fill instead of the frame — see the contrast note in `vars.css`.
+The UI Designer names its own three steps, from the Figma's Neutrals ramp: `--ui-designer-text` `#fcfcfc` (labels, group titles), `--ui-designer-text-value` `#cfcdd4` (the value inside a field), `--ui-designer-text-muted` `#a09ba8` (hints, secondary). Glyphs take `--ui-designer-glyph` (an alias of `--palette-neutral-gray2` `#716b7c`), or `--ui-designer-glyph-on-control` when they sit on a field fill instead of the frame — see the contrast note in `vars.css`.
 
 `UIDesigner.css` repoints `--gray-0`, `--title` and `--sub-text` to those tokens **inside** `.ui-designer` / the two rails, so every shared control in the designer takes the design's surface and foreground without per-selector overrides. The 3D EntityInspector keeps the global values.
 
@@ -57,7 +57,8 @@ There is no single `--text` token — pick the foreground that matches the surfa
 | --- | --- | --- |
 | `--ui-designer-control-border` | `rgba(255,255,255,.1)` | Control borders (Figma White 10) |
 | `--ui-designer-hairline` | `rgba(255,255,255,.07)` | Subtle dividers |
-| `--border-focused` | `#127fd4` | Focus ring (VS Code blue) |
+| `--focus-ring` | `--ui-designer-text` `#fcfcfc` (Snow) | Keyboard focus on the shared controls: the `:focus-visible` ring of `Button`, the `Dropdown` trigger, `CheckboxField`, `ModeSwitcher` and the `RangeField` thumb, and the focus border of `TextField` and `TextArea`. 17.73:1 on `#161518`, 15.45 on `#242129`, 12.13 on Onix, 9.88 on `--gray-0`. A ring on a light surface takes `--text-primary` instead: the `Pill` remove button sits on the `--base-02` `#f0f0f0` pill, where Snow is 1.11:1 and `--text-primary` about 15:1. That ring draws inside the 11px button (`outline-offset: -2px`), because any outer offset covers the end of the pill's label. UI Designer panels keep `--ui-designer-control-accent` |
+| `--border-focused` | `#127fd4` | VS Code blue: `Tree` drop indicators and older UI Designer rules. Not a focus ring: 2.97:1 on Onix, 2.42 on `--gray-0` |
 | `--ui-designer-accent` | `rgb(80,200,255)` | **Canvas** selection cyan |
 | `--ui-designer-accent-80/-40/-12/-08/-05` | cyan @ .8/.4/.12/.08/.05 | Canvas hover/selection fills, drop targets |
 | `--ui-designer-control-accent` | `#63b4f6` | **Panel** focus rings, the Anchor pin, bind affordances, selected rows |
@@ -70,6 +71,8 @@ There is no single `--text` token — pick the foreground that matches the surfa
 | `--palette-whiteTransparent-soft` | `rgba(255,255,255,.2)` | Figma White Soft · White 20: disabled checkbox and large-field border; `--ui-designer-control-border-strong` aliases it (ui2 theme-path name) |
 | `--palette-whiteTransparent-blurry` | `rgba(255,255,255,.4)` | Figma White Blurry · White 40: checkbox and large-field border; `--ui-designer-checkbox-border` aliases it (ui2 theme-path name) |
 | `--palette-whiteTransparent-backdrop` | `rgba(255,255,255,.6)` | Figma White Backdrop · White 60: large-field hover and filled border (ui2 theme-path name) |
+| `--palette-system-blueDark2` | `#244b7d` | Figma System/Blue Dark 2: the text-selection highlight of every `input` and `textarea`, under Snow text (8.61:1) |
+| `--palette-neutral-gray2` | `#716b7c` | Figma Neutrals/Cloudy Sky (ui2 `neutral.gray2`): the `RangeField` track; `--ui-designer-glyph` aliases it |
 
 Figma's Neutrals swatches name `#35333b` **Onix** and `#25212a` **Charcoal**. The two `vars.css` trailing comments that called `#35333b` Charcoal are deleted; the two block comments above the UI Designer control tokens still say Charcoal for it — read Onix.
 
@@ -220,7 +223,7 @@ Two text styles live outside the scale and carry MUI-style metrics: `Body/Body -
 
 Derived from the Vercel Web Interface Guidelines (`web-design-guidelines` skill) and applied throughout the inspector:
 
-- **Focus:** every interactive element has a visible `:focus-visible` ring — `--border-focused` or `--ui-designer-control-accent` in panels, `--ui-designer-accent` on the canvas. Prefer `:focus-visible` over `:focus`. **Never** `outline: none` without a replacement ring.
+- **Focus:** every interactive element has a visible `:focus-visible` ring — `--focus-ring` (Snow) on the shared controls, `--ui-designer-control-accent` in UI Designer panels, `--ui-designer-accent` on the canvas. Text fields show focus as a `--focus-ring` border instead of a ring. Prefer `:focus-visible` over `:focus`. **Never** `outline: none` without a replacement ring.
 - **Contrast (WCAG AA):** text ≥ **4.5:1**, non-text/UI (borders, focus rings, canvas markers, icons) ≥ **3:1** against their background.
 - **ARIA/semantics:** icon-only buttons need `aria-label`; use `<button>` for actions and `<a>`/`<Link>` for navigation (never `<div onClick>`); tie every input to a `<label>` or `aria-label`; async updates use `aria-live="polite"`.
 - **Motion:** honor `prefers-reduced-motion` (reduced/none variant); animate only `transform`/`opacity`; **never** `transition: all` — list properties.
@@ -324,7 +327,7 @@ The Figma ramp has 13 swatches; 10 are variables and three (Onix, Onix Dark 1, C
 | Neutrals/Pearl | `#ECEBED` | — | ui2 `neutral.gray5` | missing in inspector |
 | Neutrals/Gray | `#CFCDD4` | `--ui-designer-text-value` | ui2 `neutral.gray4` | match |
 | Neutrals/Silver | `#A09BA8` | `--ui-designer-text-muted`, `--neutral-grey-3` | `--dcl-silver`, `--clear-divider` · ui2 `neutral.gray3` | match |
-| Neutrals/Cloudy Sky | `#716B7C` | `--ui-designer-glyph` | `--dropdown` · ui2 `neutral.gray2` | match |
+| Neutrals/Cloudy Sky | `#716B7C` | `--palette-neutral-gray2` (aliased by `--ui-designer-glyph`) | `--dropdown` · ui2 `neutral.gray2` | match |
 | Neutrals/Graffito | `#5E5B67` | — | `--light-gray` · ui2 `neutral.gray1` | missing in inspector |
 | Neutrals/Pale Black | `#43404A` | `--gray-0` | `--dark-gray` · ui2 `neutral.gray0` | match |
 | Onix (swatch) | `#35333B` | `--ui-designer-control-bg`, `--ui-designer-control-active-fg` | — | match |
@@ -353,7 +356,7 @@ ui2's dark theme carries Figma's System ramp verbatim (`palette.success` / `.war
 | System/Red Dark 2 / Light 2 | `#CC1D2C` / `#FFCDD4` | — | — | missing |
 | Blue (swatch) | `#2196F3` | — | ui2 `palette.info.main` | missing in inspector |
 | Blue Dark 1 (swatch) | `#1A75D2` fill; its label reads `#1F87E5` | — | ui2 `palette.info.dark` `#1A75D2` | missing in inspector; the Figma label is stale, the fill is the value |
-| Blue Dark 2 (swatch) | `#244B7D` fill; its label reads `#1764C0` | — | `--ai-session-selected` | match on the fill; Figma label stale |
+| Blue Dark 2 (swatch) | `#244B7D` fill; its label reads `#1764C0` | `--palette-system-blueDark2` | `--ai-session-selected` | match on the fill; Figma label stale |
 | Blue Dark 3 (swatch) | `#243852` | — | `--ai-session-selected-hover` | match |
 | System/Blue Light 1 | `#63B4F6` | `--ui-designer-control-accent` | ui2 `palette.info.light` | match |
 | Blue Light 2 (swatch) | `#BBDEFB` | — | — | missing |
@@ -907,6 +910,11 @@ Literals the Buttons page (Inputs section) adds to the Surfaces table above; the
 | 19 × 19 Search glyph, 20 × 20 `LocalAssets` folder glyph | — | missing | missing |
 | `#FFFFFF` Title (Text Field) | unnamed solid white | `--white` | `--white` |
 | `#D9D9D9` 179 × 18 `Gap` spacer (Search-Bar Completed) | unnamed default fill | not a surface | not a surface |
+| `#244B7D` text-selection highlight (Text-Input Input Highlighted) | System/Blue Dark 2 | `--palette-system-blueDark2`; `UIDesigner.css` still paints the same value as two literals | `--ai-session-selected` |
+| `#716B7C` slider track (Slider) | Neutrals/Cloudy Sky | `--palette-neutral-gray2` (ui2 `neutral.gray2`; `--ui-designer-glyph` aliases it) | `--dropdown` · ui2 `neutral.gray2` |
+| `#FF2D55` slider fill and handle (Slider) | Primary/Primary (fill), `Primary Base/Primary` (handle: a second collection, same value) | `--primary-main` | `--primary` · ui2 `palette.primary.main` |
+| 6px track, 14 × 14 handle, 100px radius (Slider) | — | literals; a pill, use 100px | missing |
+| 8px menu-row radius, 10px row inset (Dropdown menu) | — | missing; the dense list takes `--shape-borderRadius` and `--uid-space-1` | missing |
 
 ### Button-Contained-Text (Buttons)
 
@@ -1112,14 +1120,15 @@ Set [`20785:59388`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id
 
 ### Dropdown-Input (Dropdown)
 
-Set [`20898:5394`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=20898-5394), 3 variants (`Property 1` Default / Hover / Selected). Fixed 500 wide, vertical, gap 10: `Title` Inter 600 16 / 100% (`H6 Semi`) `#FFFFFF` (500 × 19); `Description` Inter 400 14 / 100% (`H7 Regular`) `DCL/White` `#FCFCFC` (500 × 17); `Container` Fill × Fixed 46, 12px radius, 1px border, padding 0 / 16, gap 10, no fill, holding the value "Text" Inter 400 16 / 100% (`H6 Regular`) Snow (444 × 19) and a 14 × 14 chevron. Selected is the open state: Hug 229, chevron `ArrowUp`, and a `Menu` instance (Fill × Hug 117) under the container — the documented Menu (Onix `#35333B`, 1px White 10, 12px radius, `0 4px 8px` Black 40) with a Menu-Entry `Checkmark` on the chosen row. Code: inspector `components/ui/Dropdown`, dense only (26px `--controlHeight-small`, 6px `--shape-borderRadius`, padding 0 / 8, `--gray-0` fill and border, hover border `--base-09`, open `--base-01`, `aria-haspopup="listbox"`). It has no large size, and its `role="combobox"` container takes no keyboard focus, so the `:focus-visible` ring in `Dropdown.css` never shows — drift on height, radius, fill and border against this 46px frame; Creator Hub `components/Select` + `components/Dropdown` (ui2 `Select` standard, MUI `Menu`) — drift.
+Set [`20898:5394`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=20898-5394), 3 variants (`Property 1` Default `20898:5395` / Hover `20898:5400` / Selected `21220:16635`). Fixed 500 wide, vertical, gap 10: `Title` Inter 600 16 / 100% (`H6 Semi`) `#FFFFFF` (500 × 19); `Description` Inter 400 14 / 100% (`H7 Regular`) `DCL/White` `#FCFCFC` (500 × 17); `Container` Fill × Fixed 46, 12px radius, 1px border, padding 0 / 16, gap 10, no fill, holding the value "Text" Inter 400 16 / 100% (`H6 Regular`) Snow (444 × 19) and a 14 × 14 chevron. Selected is the open state: Hug 229, chevron `ArrowUp`, and a `Menu` instance (Fill 500 × Hug 117) under the container — the documented Menu (Onix `#35333B`, 1px White 10, 12px radius, `0 4px 8px` Black 40, padding 10 / 0, gap 10). Its two slots (`Options`, `Options2`) are padded 0 / 10, so every row sits inset 10px from both menu edges; the first slot holds a Menu-Entry **Hover** (Fill 480 × 38, 8px radius, padding 0 / 10, gap 10, fill Pale Black `#43404A`) carrying the 16px `Checkmark` and the label in `menu/itemDefault` (Inter 400 16 / 150%, 0.15px tracking, Snow), the second a Menu-Entry Default (same box, no fill), with a Div between them (re-read October 20, 2026). Code: inspector `components/ui/Dropdown`, dense only (26px `--controlHeight-small`, 6px `--shape-borderRadius`, padding 0 / 8, `--gray-0` fill and border, hover border `--base-09`, open `--base-01`, keyboard focus a 2px `--ui-designer-control-accent` outline at 2px offset). Its open list (`OptionList`, portalled to `body`) is a `--gray-0` Pale Black panel with a 4px radius and no border or side inset, and the hovered or keyboard-active row is a full-width `--primary-main` band — drift on the menu fill, radius, border, inset and row fill; the UI Designer's lists add the White 10 border and 12px radius (`PropertyPanel.css`, `data-dropdown-scope="ui-designer"`). Creator Hub `components/Select` + `components/Dropdown` (ui2 `Select` standard, MUI `Menu`) — drift.
 
 | Variant | State | Container border | Chevron | Contrast | A11y |
 | --- | --- | --- | --- | --- | --- |
 | Default | default | 1px White 40 | down 14 | border 3.84:1 on `#161518` (3.83 on `#16141a`); Title 17.73:1; Snow value 17.73:1 | `role="combobox"` `aria-haspopup="listbox"` `aria-expanded="false"`, name from Title (`aria-labelledby`), `aria-describedby` the Description |
 | Hover | hover | 1px White 60 | down 14 | border 7.07:1 | — |
-| Selected | open | 1px Snow | up 14 | border 17.73:1; menu fill vs `#161518` 1.46:1 — border and shadow carry the edge | `aria-expanded="true"`; Menu as documented, `role="listbox"` options, `aria-selected` on the Checkmark row; Escape closes, focus returns to the field |
-| any | ✱ focus / disabled / error | ✱ focus ring | — | ring `--ui-designer-control-accent` / ui2 `palette.info.light` | not drawn; 46px target. The `Text` inner frame carries a 1px left border weight with no stroke colour — treat as none |
+| Selected | open | 1px Snow | up 14 | border 17.73:1; menu fill vs `#161518` 1.46:1 — border and shadow carry the edge; hovered row Pale Black vs the Onix menu **1.23:1**, Snow label on it 9.88:1 | `aria-expanded="true"`; Menu as documented, `role="listbox"` options, `aria-selected` on the Checkmark row; Escape closes, focus returns to the field. The row fill alone is under 3:1, so ✱ a row the arrow keys make active also draws a 1px inset `--focus-ring` (9.88:1 on the row); a hovered row keeps the fill alone, as Figma |
+| any | ✱ focus / disabled / error | ✱ focus ring | — | `--focus-ring` Snow (17.73:1 on `#161518`, 15.45 on `#242129`), per the design review | not drawn; 46px target. The `Text` inner frame carries a 1px left border weight with no stroke colour — treat as none |
+| Selected | ✱ section header in the list | divider inset with the rows (`--uid-space-1` each side) | — | accepted deviation (user, October 21, 2026): Figma draws the Div inset in the Menu-Entry set `20749:790` but full-bleed in every composed menu (`20749:386`, this Selected variant); the inspector keeps it inset | the header is not focusable; the divider is decorative |
 
 ### Filter (Filter / Sort / Search bar)
 
@@ -1178,6 +1187,17 @@ Set [`20768:59567`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id
 | Hover=On | hover | White 10 | Snow | fill 1.31:1; glyph 13.53:1 | — |
 | any | ✱ focus / press / disabled | — | — | ✱ ring ≥ 3:1 | not drawn |
 
+### Slider (Slider)
+
+Component [`21625:15070`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=21625-15070) on the Slider page, 1 variant (a single component, no states; added October 20, 2026; structure from `get_metadata`, values from the Properties panel). Fixed 250 × Hug 6. `Bar` `21625:15072` Fill 250 × Hug 6, 100px radius, fill `Neutrals/Cloudy Sky` `#716B7C`, padding right 200 (the unfilled share in this instance); inside it `Fill&Handle` `21625:15075` Fill 50 × Hug 6, 100px radius, fill `Primary/Primary` `#FF2D55`, and the `Handle` `21625:15076`, a 14 × 14 ellipse filled `Primary Base/Primary` `#FF2D55`, absolutely placed at 36 / −4 so it ends flush with the fill and centres on the bar. Both ends of the track and of the fill are fully round; nothing sits beyond them. No stroke, no shadow. Code: inspector `ui/RangeField` (8px square-ended track, `--primary-main` fill over `--base-10`, a 10px `::before` / `::after` dot at each end — the "ellipses" — and a 20px thumb; `outline: none` on focus, a 1px `--base-01` thumb border in WebKit only), restyled with hardcoded `#ff2d55` / `#808080` in `SmartItemBasicView.css`; `ui/RangeHourField` (the skybox time, a sky gradient on a 4px-radius 8px track, white thumb, `#361c75` end dots, all `!important`); the UI Designer colour popover's hue and alpha bars are `react-colorful` (24px, square or bottom-only rounded ends) and follow the ColourPanel `Slider` set instead; Creator Hub `OptimizeModal` texture quality is ui2 / MUI `Slider` (round rail ends already).
+
+| Part | State | Fill | Size | Radius | Contrast | A11y |
+| --- | --- | --- | --- | --- | --- | --- |
+| Bar (track) | default | Cloudy Sky `#716B7C` | 250 × 6 | 100px | 3.55:1 on `#161518`, 3.09 on `#242129` — passes 3:1 | `<input type="range">`, named by its label; ✱ the input box stays ≥ 24px tall, the bar is drawn inside it |
+| Fill&Handle (value) | default | Primary `#FF2D55` | value share × 6 | 100px | 4.99:1 on `#161518`, 4.35 on `#242129`; vs the bar 1.41:1 — the handle and its value field carry the value | — |
+| Handle (thumb) | default | Primary `#FF2D55` | 14 × 14 | 50% | 4.35:1 on `#242129`; vs the bar 1.41:1 | 14px is under 24px: the thumb is not the hit target, the input is |
+| any | ✱ hover / focus / disabled | — | — | — | focus: a 2px `--focus-ring` ring on the thumb (15.45:1 on `#242129`) | not drawn; disabled keeps today's `--base-12` / `--base-11` and is exempt |
+
 ### Switch (Switch)
 
 Set [`20907:6053`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=20907-6053), 3 variants (`Property 1` Default / On / Off; verified from the layer tree). A different set from the Buttons page's `Switch` `21167:30101` (41 × 24, legacy `DCL/Snow` · `DCL/Ruby`): this one is Fixed 52 × 30, built on `Neutrals/Graffito`, `Neutrals/Snow` and `Primary/Primary`. Track 50.21 × 30 at left 0.47, 58.82px radius; knob 25.1 × 25.1, 58.82px radius, 2.45 from the top, left 3.05 (Off, Default) or 22.52 (On). The page's dashed `#8A38F5` frame is Figma chrome. Code: Creator Hub ui2 `Switch` (`OptimizeModal`, MUI default sizing) — drift on size and colours; inspector none. The two Figma sets disagree on size (41 × 24 vs 52 × 30) and colours: the user picks one.
@@ -1191,7 +1211,7 @@ Set [`20907:6053`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=
 
 ### Text-Input (Text Field)
 
-Set [`20815:1961`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=20815-1961), 6 variants (`Property 1` Default / Hover / Selected / Editing / Completed / Error; verified from the layer tree, each read singly; Title and Description read on Default, Hover and Error and are the same in all). Fill 500 × Fixed 102 (Error 146), vertical, gap 10. `Title` Inter 600 16 / 100% (`H6 Semi`) `#FFFFFF`; `Description` Inter 400 14 / 100% (`H7 Regular`) `DCL/White` `#FCFCFC` (legacy name, value is Snow); `Container` Fill × 46, 12px radius, no fill, padding 14 / 16, gap 10, holding the value (Inter 400 16 / 100%, `H6 Regular`, 438 wide) and a 20 × 20 `LocalAssets` folder glyph (18.33 × 13.33 vector, Silver `#A09BA8`; no button state drawn). Selected and Editing draw a caret (1.5px Snow left edge, or an 18px × 1px `#FFFFFF` `Line 1` rotated −90°). Error adds a message under the container, 500 × 34, Inter 400 14 / 100% `System/Red` `#FB3B3B`, wrapping to two lines. The dashed `#8A38F5` frame is Figma chrome. Code: inspector `components/ui/TextField` `size="large"` on the five form sites (`UrlInputModal`, `CreateScriptModal`, `CreateEditTagModal`, `CreateCustomAsset`, `RenameAsset`): 46px `--controlHeight-large`, 12px `--shape-borderRadiusLarge`, padding 0 / 16, no fill, 1px `--palette-whiteTransparent-blurry`, hover and filled `--palette-whiteTransparent-backdrop`, focus `--ui-designer-text` (Snow) and error `--error-main` as a 1px border plus `box-shadow: inset 0 0 0 0.5px` in the same colour (a true 1.5px; Chromium floors a 1.5px border to 1px at DPR 1 and 2 alike), disabled `--palette-whiteTransparent-soft`; value Inter 400 16 Snow, placeholder `--ui-designer-text-muted` (Silver, 6.71:1, where Figma's White 40 is 3.84:1), label Inter 600 16. The visible label names the input (`htmlFor`, a `useId()` id; a caller's `id` wins). Error sets `aria-invalid` and links the message with `aria-describedby`; `UrlInputModal` and `CreateScriptModal` draw their own message and link it the same way. Every other site takes the dense default (26px `--controlHeight-small`, 6px `--shape-borderRadius`, padding 0 / 8, 1px `--gray-0`, hover `--base-09`, focus `--base-01`, error `--error-main` and `--error-light`, 13px), and `TextArea` shares its 6px radius. `FileUploadField` draws the folder glyph — matches on the large size; Creator Hub ui2 `TextField` inside `InputLabel` (`DetailsTab`, MUI default) — drift.
+Set [`20815:1961`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=20815-1961), 7 variants (`Status` Default `20815:1960` / Hover `20815:1962` / Selected `20815:2015` / Editing `20815:1967` / Input Highlighted `21626:15139` / Filled `20820:683` / Error `20817:977`; verified from the layer tree, each read singly; Title and Description read on Default, Hover and Error and are the same in all). Design renamed the property from `Property 1` to `Status` and `Completed` to `Filled`, and added Input Highlighted, on October 20, 2026. Fill 500 × Fixed 102 (Error 146), vertical, gap 10. `Title` Inter 600 16 / 100% (`H6 Semi`) `#FFFFFF`; `Description` Inter 400 14 / 100% (`H7 Regular`) `DCL/White` `#FCFCFC` (legacy name, value is Snow); `Container` Fill × 46, 12px radius, no fill, padding 14 / 16, gap 10, holding the value (Inter 400 16 / 100%, `H6 Regular`, 438 wide) and a 20 × 20 `LocalAssets` folder glyph (18.33 × 13.33 vector, Silver `#A09BA8`; no button state drawn). Selected and Editing draw a caret (1.5px Snow left edge, or an 18px × 1px `#FFFFFF` `Line 1` rotated −90°). Error adds a message under the container, 500 × 34, Inter 400 14 / 100% `System/Red` `#FB3B3B`, wrapping to two lines. The dashed `#8A38F5` frame is Figma chrome. Code: inspector `components/ui/TextField` `size="large"` on the five form sites (`UrlInputModal`, `CreateScriptModal`, `CreateEditTagModal`, `CreateCustomAsset`, `RenameAsset`): 46px `--controlHeight-large`, 12px `--shape-borderRadiusLarge`, padding 0 / 16, no fill, 1px `--palette-whiteTransparent-blurry`, hover and filled `--palette-whiteTransparent-backdrop`, focus `--ui-designer-text` (Snow) and error `--error-main` as a 1px border plus `box-shadow: inset 0 0 0 0.5px` in the same colour (a true 1.5px; Chromium floors a 1.5px border to 1px at DPR 1 and 2 alike), disabled `--palette-whiteTransparent-soft`; value Inter 400 16 Snow, placeholder `--ui-designer-text-muted` (Silver, 6.71:1, where Figma's White 40 is 3.84:1), label Inter 600 16. The visible label names the input (`htmlFor`, a `useId()` id; a caller's `id` wins). Error sets `aria-invalid` and links the message with `aria-describedby`; `UrlInputModal` and `CreateScriptModal` draw their own message and link it the same way. Every other site takes the dense default (26px `--controlHeight-small`, 6px `--shape-borderRadius`, padding 0 / 8, 1px `--gray-0`, hover `--base-09`, focus `--base-01`, error `--error-main` and `--error-light`, 13px), and `TextArea` shares its 6px radius. `FileUploadField` draws the folder glyph — matches on the large size; Creator Hub ui2 `TextField` inside `InputLabel` (`DetailsTab`, MUI default) — drift.
 
 | Variant | State | Container border | Value | Contrast | A11y |
 | --- | --- | --- | --- | --- | --- |
@@ -1199,7 +1219,8 @@ Set [`20815:1961`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=
 | Hover | hover | 1px White 60 | White 40 | border 7.07:1 | — |
 | Selected | focus, empty | **1.5px** Snow | "Text" **White 20** + 1.5px Snow caret | border 17.73:1; **placeholder 1.88:1 — fails 4.5:1** | the Snow border is the focus indication; ✱ keep a `:focus-visible` ring if it is dropped |
 | Editing | typing | 1.5px Snow | "Text" Snow + `Line 1` caret | text 17.73:1 | `Container` is Fixed 46 while the variant is Hug 102 — treat as the same box |
-| Completed | filled, idle | 1px White 60 | "Text" Snow | border 7.07:1; text 17.73:1 | the White 60 border is the only cue that a value is set |
+| Input Highlighted | focus, text selected | 1.5px Snow | "Text" Snow (`H6 Regular`) on a `TxtInput` box Hug × 20 filled `System/Blue Dark 2` `#244B7D` (its 1px right border weight has no colour — treat as none) | selected text 8.61:1 on Blue Dark 2; the highlight vs the field's surface 2.06:1 on `#161518`, 1.79 on `#242129` — and on the dense fills only 1.15:1 (`--gray-0`) and 1.41 (Onix) | the text's own `::selection`; selection is not the focus indicator, the Snow border is |
+| Filled | filled, idle | 1px White 60 | "Text" Snow | border 7.07:1; text 17.73:1 | the White 60 border is the only cue that a value is set |
 | Error | error | 1.5px `System/Red` `#FB3B3B` | "Text" Snow + caret | border 5.02:1 on `#161518` (5.04 on `#16141a`, **4.37 on card**); message 5.02:1 on `#161518` (**4.37 on card — fails 4.5:1**) | `aria-invalid="true"`, message linked by `aria-describedby`, `role="alert"` on change; colour alone is not the cue, the message text is |
 | any | ✱ disabled / read-only | — | — | — | not drawn; 46px target |
 
@@ -1616,7 +1637,7 @@ Set [`21028:16521`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id
 
 ## Pages inventory
 
-Harvested October 16, 2026 from the Figma file's own page list (`store.getState().mirror.appModel.pagesList` in the web client; the ids were spot-checked against the URL after clicking into eight pages). 52 pages: 8 section headers, 1 cover, 35 in scope, 8 skipped. **Pages whose name contains `🟡 Outdated` are not sources.** Address a page as `?node-id=<id with : as ->`, or pass the id to `get_metadata` to list its frames; pass frame or set ids, never the page id, to `get_variable_defs`.
+Harvested October 16, 2026 from the Figma file's own page list (`store.getState().mirror.appModel.pagesList` in the web client; the ids were spot-checked against the URL after clicking into eight pages); the Slider page was added October 20, 2026. 53 pages: 8 section headers, 1 cover, 36 in scope, 8 skipped. **Pages whose name contains `🟡 Outdated` are not sources.** Address a page as `?node-id=<id with : as ->`, or pass the id to `get_metadata` to list its frames; pass frame or set ids, never the page id, to `get_variable_defs`.
 
 | Page | Section | Node id | Status |
 | --- | --- | --- | --- |
@@ -1652,6 +1673,7 @@ Harvested October 16, 2026 from the Figma file's own page list (`store.getState(
 | Filter / Sort / Search bar | Inputs | `20448:15583` | in scope |
 | Radio | Inputs | `20932:3959` | in scope |
 | Search Bar | Inputs | `20768:1310` | in scope |
+| Slider | Inputs | `21625:14984` | in scope (added October 20, 2026) |
 | Switch | Inputs | `20907:5707` | in scope |
 | Text Field | Inputs | `20810:667` | in scope |
 | ↓ Graphic Assets | Graphic Assets | `20423:75578` | section header |

@@ -31,6 +31,9 @@
   --palette-whiteTransparent-blurry: rgba(255, 255, 255, 0.4);
   --palette-whiteTransparent-backdrop: rgba(255, 255, 255, 0.6);
   --palette-primary-light: #ff6280;
+  --palette-neutral-gray2: #716b7c;
+  --palette-system-blueDark2: #244b7d;
+  --focus-ring: var(--ui-designer-text);
 
   /* DCL Colors */
   --primary-main: #ff2d55;
@@ -212,7 +215,7 @@
      fill (2.43:1) — and the box-model edge ticks are in-input prefixes whose whole
      job is to say WHICH edge. Those lift to Silver (4.6:1 on the fill); everything
      sitting on the frame keeps the design's value. */
-  --ui-designer-glyph: #716b7c; /* Neutrals/Cloudy Sky */
+  --ui-designer-glyph: var(--palette-neutral-gray2);
   --ui-designer-glyph-on-control: var(--ui-designer-text-muted);
 
   /* Field and menu corners, per the Figma's Input (rx 6) and Menu (rx 12). */
