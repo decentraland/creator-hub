@@ -144,7 +144,7 @@
 }
 
 .ui-designer-panel-header-eye:focus-visible {
-  outline: 2px solid var(--border-focused);
+  outline: 2px solid var(--ui-designer-control-accent);
   outline-offset: 1px;
 }
 
@@ -214,7 +214,7 @@
 
 .ui-designer-prop-remove:focus-visible {
   opacity: 1;
-  outline: 2px solid var(--border-focused);
+  outline: 2px solid var(--ui-designer-control-accent);
   outline-offset: 1px;
 }
 
@@ -249,7 +249,7 @@
 }
 
 .ui-designer-add-prop-trigger:focus-visible {
-  outline: 2px solid var(--border-focused);
+  outline: 2px solid var(--ui-designer-control-accent);
   outline-offset: 1px;
 }
 
@@ -334,7 +334,7 @@
 }
 
 .ui-designer-vec-lock:focus-visible {
-  outline: 2px solid var(--border-focused);
+  outline: 2px solid var(--ui-designer-control-accent);
   outline-offset: 1px;
 }
 
@@ -373,49 +373,54 @@
   border-radius: 4px;
   background-color: transparent;
   border-color: var(--ui-designer-checkbox-border);
-  box-shadow: none;
 }
 
 .ui-designer-right-rail
   .Checkbox.Field
   .InputContainer:not(.error):not(.disabled)
-  input[type="checkbox"]:hover:not(:focus) {
-  border-color: var(--ui-designer-text-value);
+  input[type="checkbox"]:hover {
+  box-shadow: 0 0 0 4px var(--palette-whiteTransparent-subtle);
 }
 
-.ui-designer-right-rail .Checkbox.Field .InputContainer input[type="checkbox"]::before,
 .ui-designer-right-rail
   .Checkbox.Field
-  .InputContainer.disabled
-  input[type="checkbox"]:checked::before {
-  content: none;
+  .InputContainer:not(.error):not(.disabled)
+  input[type="checkbox"]:is(:checked, :indeterminate):hover {
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--primary-main) 20%, transparent);
 }
 
-.ui-designer-right-rail .Checkbox.Field .InputContainer input[type="checkbox"]:checked {
-  background-image: url('data:image/svg+xml;utf8,<svg width="12" height="10" viewBox="0 0 12 10" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M11.6467 0.893333L4.22667 9.66667L3.52667 9.62L0.586667 5.46667L1.28667 4.95333L3.9 8.64L10.9467 0.333333L11.6467 0.893333Z" fill="%23cfcdd4"/></svg>');
-  background-repeat: no-repeat;
-  background-position: center;
-  background-size: 8.4px 7px;
+.ui-designer-right-rail .Checkbox.Field .InputContainer input[type="checkbox"]:checked,
+.ui-designer-right-rail .Checkbox.Field .InputContainer input[type="checkbox"]:indeterminate {
+  background-color: var(--primary-main);
+  border-color: var(--primary-main);
+}
+
+.ui-designer-right-rail .Checkbox.Field .InputContainer input[type="checkbox"]:checked::before {
+  left: 1.8px;
+  top: 2.5px;
+  width: 8.4px;
+  height: 7px;
+  mask-size: 8.4px 7px;
 }
 
 .ui-designer-right-rail
   .Checkbox.Field
   .InputContainer
   input[type="checkbox"]:indeterminate::before {
-  content: "";
   width: 8px;
   left: 2px;
   top: 5px;
-  background-color: var(--ui-designer-text-value);
 }
 
 .ui-designer-right-rail .Checkbox.Field .InputContainer input[type="checkbox"]:focus-visible {
-  outline: 2px solid var(--border-focused);
+  outline: 2px solid var(--ui-designer-control-accent);
   outline-offset: 1px;
 }
 
-.ui-designer-right-rail .Checkbox.Field .InputContainer.disabled input[type="checkbox"]:checked {
-  background-image: url('data:image/svg+xml;utf8,<svg width="12" height="10" viewBox="0 0 12 10" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M11.6467 0.893333L4.22667 9.66667L3.52667 9.62L0.586667 5.46667L1.28667 4.95333L3.9 8.64L10.9467 0.333333L11.6467 0.893333Z" fill="gray"/></svg>');
+.ui-designer-right-rail
+  .Checkbox.Field
+  .InputContainer.disabled
+  input[type="checkbox"]:is(:checked, :indeterminate) {
   background-color: var(--base-12);
   border-color: var(--base-12);
 }
@@ -509,7 +514,7 @@
 }
 
 .ui-designer-states-tab:focus-visible {
-  outline: 2px solid var(--border-focused);
+  outline: 2px solid var(--ui-designer-control-accent);
   outline-offset: 1px;
 }
 
@@ -610,7 +615,7 @@
 }
 
 .ui-designer-prop-add:focus-visible {
-  outline: 2px solid var(--border-focused);
+  outline: 2px solid var(--ui-designer-control-accent);
   outline-offset: 1px;
 }
 
