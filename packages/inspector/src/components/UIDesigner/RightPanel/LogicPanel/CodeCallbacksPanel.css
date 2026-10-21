@@ -71,7 +71,7 @@
 }
 
 .ui-designer-callback-delete:focus-visible {
-  outline: 2px solid var(--border-focused);
+  outline: 2px solid var(--ui-designer-control-accent);
   outline-offset: 1px;
 }
 
@@ -98,9 +98,9 @@
 }
 
 .ui-designer-callback-textarea:focus-visible {
-  outline: 2px solid var(--border-focused);
+  outline: 2px solid var(--ui-designer-control-accent);
   outline-offset: -1px;
-  border-color: var(--border-focused);
+  border-color: var(--ui-designer-control-accent);
 }
 
 .ui-designer-callback-textarea.is-invalid {
@@ -151,7 +151,7 @@
 }
 
 .ui-designer-callback-autocomplete-row:focus-visible {
-  outline: 2px solid var(--border-focused);
+  outline: 2px solid var(--ui-designer-control-accent);
   outline-offset: -2px;
 }
 
