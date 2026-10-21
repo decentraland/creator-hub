@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState, useMemo, useRef } from 'react';
-import { MdImageSearch, MdOutlineSpeed as OptimizeIcon } from 'react-icons/md';
+import { MdImageSearch, MdOutlineSpeed as OptimizeIcon, MdVerticalSplit } from 'react-icons/md';
 import { HiOutlinePlus } from 'react-icons/hi';
 import { HiOutlineRefresh as RefreshIcon } from 'react-icons/hi';
 import { IoIosFolderOpen, IoIosUndo } from 'react-icons/io';
@@ -46,6 +46,7 @@ import { CustomAssets } from '../CustomAssets';
 import { RenameAsset } from '../RenameAsset';
 import { CreateCustomAsset } from '../CreateCustomAsset';
 import { CleanAssets } from '../CleanAssets';
+import { AssetSelectionProvider, PreviewPane, useAssetSelection } from '../AssetBrowserPreview';
 import type { InputRef } from '../FileInput/FileInput';
 import { Button } from '../Button';
 import { InfoTooltip } from '../ui';
@@ -53,6 +54,10 @@ import DebugConsole from './DebugConsole';
 import MobileDebugSession from './MobileDebugSession/MobileDebugSession';
 
 import './Assets.css';
+
+const DEFAULT_TILE_SIZE = 80;
+const MIN_TILE_SIZE = 56;
+const MAX_TILE_SIZE = 140;
 
 function removeSmartItems(assetPack: AssetPack) {
   return {
@@ -66,8 +71,11 @@ type Props = {
   onToggleCollapse: () => void;
 };
 
-function Assets({ isAssetsPanelCollapsed, onToggleCollapse }: Props) {
+function AssetsInner({ isAssetsPanelCollapsed, onToggleCollapse }: Props) {
   const dispatch = useAppDispatch();
+  const { select } = useAssetSelection();
+  const [tileSize, setTileSize] = useState(DEFAULT_TILE_SIZE);
+  const [showPreview, setShowPreview] = useState(true);
   const tab = useAppSelector(getSelectedAssetsTab);
   const removedAssets = useAppSelector(selectRemovedFiles);
   const hasRecoverableFiles = useAppSelector(selectHasRecoverableFiles);
@@ -98,6 +106,9 @@ function Assets({ isAssetsPanelCollapsed, onToggleCollapse }: Props) {
       dispatch(selectAssetsTab({ tab: AssetsTab.AssetsPack }));
     }
   }, [debugConsoleEnabled]);
+
+  // A selection belongs to the tab it was made in.
+  useEffect(() => select(undefined), [tab, select]);
 
   const handleTabClick = useCallback(
     (tab: AssetsTab) => () => {
@@ -258,6 +269,9 @@ function Assets({ isAssetsPanelCollapsed, onToggleCollapse }: Props) {
     return `Open ${text} folder in Explorer`;
   }, [tab]);
 
+  const isBrowsing =
+    tab === AssetsTab.FileSystem || tab === AssetsTab.CustomAssets || tab === AssetsTab.AssetsPack;
+
   return (
     <div className="Assets">
       <div className="Assets-buttons">
@@ -399,6 +413,40 @@ function Assets({ isAssetsPanelCollapsed, onToggleCollapse }: Props) {
           </div>
         )}
         <div className="Assets-buttons-right">
+          {isBrowsing && !isAssetsPanelCollapsed && (
+            <label className="Assets-size">
+              <span className="visually-hidden">Thumbnail size</span>
+              <input
+                type="range"
+                min={MIN_TILE_SIZE}
+                max={MAX_TILE_SIZE}
+                value={tileSize}
+                onChange={event => setTileSize(Number(event.target.value))}
+                aria-label="Thumbnail size"
+                title="Thumbnail size"
+                data-test-id="assets-tile-size"
+              />
+            </label>
+          )}
+          {isBrowsing && !isAssetsPanelCollapsed && (
+            <InfoTooltip
+              text={showPreview ? 'Hide preview' : 'Show preview'}
+              trigger={
+                <button
+                  className={cx('icon-item', { active: showPreview })}
+                  onClick={() => setShowPreview(value => !value)}
+                  aria-label={showPreview ? 'Hide preview panel' : 'Show preview panel'}
+                  aria-pressed={showPreview}
+                  data-test-id="assets-preview-toggle"
+                >
+                  <MdVerticalSplit />
+                </button>
+              }
+              openOnTriggerMouseEnter={true}
+              closeOnTriggerClick={true}
+              position="top center"
+            />
+          )}
           <InfoTooltip
             text={isAssetsPanelCollapsed ? 'Expand panel' : 'Collapse panel'}
             trigger={
@@ -433,32 +481,38 @@ function Assets({ isAssetsPanelCollapsed, onToggleCollapse }: Props) {
           onSave={handleTabClick(AssetsTab.FileSystem)}
           ref={inputRef}
         >
-          <div className={cx('Assets-content', { Hide: isAssetsPanelCollapsed })}>
-            {tab === AssetsTab.AssetsPack &&
-              (catalogUnavailable ? (
-                <div className="AssetsCatalogUnavailable">
-                  <p>Asset Packs are unavailable.</p>
-                  <p>
-                    The content server could not be reached. Check your connection and try again.
-                  </p>
-                </div>
-              ) : (
-                <AssetsCatalog
-                  catalog={filteredCatalog}
-                  onAddToFilesystem={importCatalogAssetToFilesystem}
+          <div className={cx('Assets-body', { Hide: isAssetsPanelCollapsed })}>
+            <div
+              className="Assets-content"
+              style={{ '--tile-size': `${tileSize}px` } as React.CSSProperties}
+            >
+              {tab === AssetsTab.AssetsPack &&
+                (catalogUnavailable ? (
+                  <div className="AssetsCatalogUnavailable">
+                    <p>Asset Packs are unavailable.</p>
+                    <p>
+                      The content server could not be reached. Check your connection and try again.
+                    </p>
+                  </div>
+                ) : (
+                  <AssetsCatalog
+                    catalog={filteredCatalog}
+                    onAddToFilesystem={importCatalogAssetToFilesystem}
+                  />
+                ))}
+              {tab === AssetsTab.FileSystem && <ProjectAssetExplorer />}
+              {tab === AssetsTab.CustomAssets && (
+                <CustomAssets onAddToFilesystem={importCustomAssetToFilesystem} />
+              )}
+              {tab === AssetsTab.RenameAsset && assetToRename && (
+                <RenameAsset
+                  assetId={assetToRename.id}
+                  currentName={assetToRename.name}
                 />
-              ))}
-            {tab === AssetsTab.FileSystem && <ProjectAssetExplorer />}
-            {tab === AssetsTab.CustomAssets && (
-              <CustomAssets onAddToFilesystem={importCustomAssetToFilesystem} />
-            )}
-            {tab === AssetsTab.RenameAsset && assetToRename && (
-              <RenameAsset
-                assetId={assetToRename.id}
-                currentName={assetToRename.name}
-              />
-            )}
-            {tab === AssetsTab.CreateCustomAsset && stagedCustomAsset && <CreateCustomAsset />}
+              )}
+              {tab === AssetsTab.CreateCustomAsset && stagedCustomAsset && <CreateCustomAsset />}
+            </div>
+            {isBrowsing && showPreview && <PreviewPane />}
           </div>
         </ImportAsset>
       )}
@@ -474,6 +528,14 @@ function Assets({ isAssetsPanelCollapsed, onToggleCollapse }: Props) {
         onSelectAll={handleSelectAllCleanAssets}
       />
     </div>
+  );
+}
+
+function Assets(props: Props) {
+  return (
+    <AssetSelectionProvider>
+      <AssetsInner {...props} />
+    </AssetSelectionProvider>
   );
 }
 

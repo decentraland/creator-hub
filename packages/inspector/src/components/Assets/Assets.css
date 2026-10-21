@@ -116,7 +116,58 @@
 .Assets .Assets-buttons .Assets-buttons-right {
   position: absolute;
   right: 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
   padding: 8px 12px;
+}
+
+.Assets .Assets-buttons .Assets-buttons-right .icon-item {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 5px;
+  border: none;
+  border-radius: 6px;
+  background-color: transparent;
+  color: var(--base-01);
+  cursor: pointer;
+}
+
+.Assets .Assets-buttons .Assets-buttons-right .icon-item svg {
+  width: 100%;
+  height: 100%;
+}
+
+.Assets .Assets-buttons .Assets-buttons-right .icon-item:hover {
+  background-color: var(--background-gray);
+}
+
+.Assets .Assets-buttons .Assets-buttons-right .icon-item.active {
+  color: var(--primary-main);
+}
+
+.Assets .Assets-size {
+  display: flex;
+  align-items: center;
+  margin: 0 4px;
+}
+
+.Assets .Assets-size input[type="range"] {
+  width: 84px;
+  height: 4px;
+  accent-color: var(--primary-main);
+  cursor: pointer;
+}
+
+.Assets .visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
 }
 
 .Assets .Assets-buttons .Assets-buttons-right .collapse-toggle {
@@ -138,10 +189,22 @@
   background-color: var(--background-gray);
 }
 
+.Assets .Assets-body {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  background: var(--tree-bg-color);
+}
+
+.Assets .Assets-body.Hide {
+  display: none;
+}
+
 .Assets .Assets-content {
   background: var(--tree-bg-color) !important;
   flex: 1;
   overflow: hidden;
+  min-width: 0;
   min-height: 0;
 }
 
@@ -171,4 +234,180 @@
   font-size: 16px;
   font-weight: 600;
   color: var(--text);
+}
+
+/* Toolbar, breadcrumb and search field shared by the three asset browsers. */
+
+.Assets-toolbar {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px 2px;
+}
+
+.Assets-iconButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--base-08);
+  font-size: 17px;
+  cursor: pointer;
+}
+
+.Assets-iconButton:hover {
+  background: var(--base-17);
+  color: var(--white);
+}
+
+.Assets-iconButton.active {
+  background: var(--base-17);
+  color: var(--primary-main);
+}
+
+.Assets-iconButton.small {
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  font-size: 15px;
+}
+
+.Assets-crumbs {
+  display: flex;
+  flex: none;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0;
+  padding: 2px 10px 4px;
+  font-size: 11px;
+  color: var(--neutral-grey-3);
+}
+
+/* On a toolbar with room to spare the breadcrumb shares the row with the search field. */
+.Assets-crumbs.inline {
+  padding: 0 4px;
+}
+
+.Assets-crumbs button {
+  padding: 1px 5px;
+  border: none;
+  border-radius: 5px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.Assets-crumbs button:hover {
+  background: var(--base-17);
+  color: var(--white);
+}
+
+.Assets-crumbs button.current {
+  color: var(--white);
+  font-weight: 600;
+}
+
+.Assets-crumbs button:disabled {
+  cursor: default;
+}
+
+.Assets-crumbs button:disabled:hover {
+  background: transparent;
+  color: inherit;
+}
+
+.Assets-crumbs button.current:disabled:hover {
+  color: var(--white);
+}
+
+.Assets-crumbs svg {
+  flex: none;
+}
+
+.Assets-crumbs-count {
+  margin-left: 6px;
+  padding: 0 7px;
+  border-radius: 9px;
+  background: var(--base-17);
+  color: var(--neutral-grey-3);
+  font-size: 10px;
+  line-height: 16px;
+}
+
+.Assets-crumbs-results {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+  color: var(--neutral-grey-3);
+}
+
+.Assets-crumbs-results button {
+  color: var(--primary-main);
+}
+
+.Assets-search {
+  position: relative;
+  display: flex;
+  flex: 1 1 120px;
+  align-items: center;
+  max-width: 280px;
+}
+
+.Assets-search > svg:first-child {
+  position: absolute;
+  left: 10px;
+  width: 14px;
+  height: 14px;
+  color: var(--base-08);
+  pointer-events: none;
+}
+
+.Assets-search input {
+  width: 100%;
+  height: 28px;
+  padding: 0 28px 0 32px;
+  border: none;
+  border-radius: 8px;
+  outline: none;
+  background-color: var(--gray-0);
+  color: var(--white-gray);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.Assets-search input::placeholder {
+  color: var(--base-08);
+}
+
+.Assets-search input:focus {
+  box-shadow: 0 0 0 1px var(--primary-main);
+}
+
+.Assets-search-clear {
+  position: absolute;
+  right: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: none;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--base-08);
+  cursor: pointer;
+}
+
+.Assets-search-clear:hover {
+  background: var(--base-15);
+  color: var(--white);
 }
