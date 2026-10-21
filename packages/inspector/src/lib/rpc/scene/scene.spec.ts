@@ -1,10 +1,13 @@
 import { FreeCamera, NullEngine, Scene, Vector3, ScreenshotTools } from '@babylonjs/core';
 import { EntityState, Name as NameEngine } from '@dcl/ecs';
+import { ReadWriteByteBuffer } from '@dcl/ecs/dist/serialization/ByteBuffer';
 import { InMemoryTransport, RPC } from '@dcl/mini-rpc';
 import type { Store } from '../../../redux/store';
 import { fetchLatestCatalog, getAssetById } from '../../logic/catalog';
 import { getAssetCatalog, getDataLayerInterface } from '../../../redux/data-layer';
-import { EditorComponentNames } from '../../sdk/components';
+import { EditorComponentNames, type SceneSpawnPoint } from '../../sdk/components';
+import { resolveActiveSceneComponent } from '../../sdk/components/scene-metadata-version';
+import { BevySceneContext } from '../../renderer/bevy/BevySceneContext';
 import { onSceneBuildEvent, type SceneBuildEvent } from '../../logic/scene-build-events';
 import { SceneClient } from './client';
 import { SceneServer } from './server';
@@ -21,6 +24,7 @@ vi.mock('../../../redux/data-layer', () => ({
   getDataLayerInterface: vi.fn(),
   refreshUndoRedoState: vi.fn(() => ({ type: 'data-layer/refreshUndoRedoState' })),
 }));
+vi.mock('../../../redux/store', () => ({ store: { dispatch: vi.fn() } }));
 vi.mock('../../logic/config', async orig => ({
   ...(await (orig as () => Promise<Record<string, unknown>>)()),
   getConfig: () => ({ contentUrl: 'https://content.test' }),
@@ -767,5 +771,133 @@ describe('SceneServer RPC scene settings', () => {
       layout: { base: { x: 0, y: 0 }, parcels: [{ x: 0, y: 0 }] },
     });
     expect(operations.dispatch).toHaveBeenCalled();
+  });
+});
+
+describe('SceneServer RPC scene settings spawn points', () => {
+  let ctx: BevySceneContext;
+  let host: RPC;
+
+  const rangeSpawnPoint = {
+    name: 'A',
+    default: true,
+    position: { x: [31.8, 32.2], y: [0.3, 0.3], z: [1.6, 2.4] },
+    cameraTarget: { x: 32, y: 1, z: 12 },
+  };
+
+  const storedValue = () =>
+    resolveActiveSceneComponent(ctx.engine).getOrNull(ctx.engine.RootEntity) as Record<
+      string,
+      unknown
+    >;
+
+  const roundTripPosition = () => {
+    const component = resolveActiveSceneComponent(ctx.engine);
+    const buffer = new ReadWriteByteBuffer();
+    component.schema.serialize(component.get(ctx.engine.RootEntity), buffer);
+    const decoded = component.schema.deserialize(buffer) as { spawnPoints: SceneSpawnPoint[] };
+    return decoded.spawnPoints[0].position;
+  };
+
+  const closeTo = (values: number[]) => values.map(v => expect.closeTo(v, 5));
+
+  beforeEach(() => {
+    ctx = new BevySceneContext();
+    resolveActiveSceneComponent(ctx.engine).createOrReplace(ctx.engine.RootEntity, {
+      name: 's',
+      layout: { base: { x: 0, y: 0 }, parcels: [{ x: 0, y: 0 }] },
+    });
+    const parent = new InMemoryTransport();
+    const iframe = new InMemoryTransport();
+    parent.connect(iframe);
+    iframe.connect(parent);
+    const store = { dispatch: vi.fn(), getState: vi.fn(), subscribe: vi.fn() } as any as Store;
+    new SceneServer(iframe, store, undefined, undefined, ctx.operations, ctx.engine);
+    host = new RPC('SceneRpcInbound', parent);
+  });
+
+  afterEach(() => {
+    ctx.dispose();
+  });
+
+  describe('when the spawn point axes are [min, max] ranges', () => {
+    it('should store range cases and return the ranges', async () => {
+      const set = await host.request('set_scene_settings', { spawnPoints: [rangeSpawnPoint] });
+
+      expect(roundTripPosition()).toEqual({
+        x: { $case: 'range', value: closeTo([31.8, 32.2]) },
+        y: { $case: 'range', value: closeTo([0.3, 0.3]) },
+        z: { $case: 'range', value: closeTo([1.6, 2.4]) },
+      });
+      const expected = {
+        name: 'A',
+        default: true,
+        position: { x: closeTo([31.8, 32.2]), y: closeTo([0.3, 0.3]), z: closeTo([1.6, 2.4]) },
+        cameraTarget: { x: 32, y: 1, z: 12 },
+      };
+      expect(set.settings.spawnPoints).toEqual([expected]);
+      const got = await host.request('get_scene_settings', {});
+      expect(got.settings.spawnPoints).toEqual([expected]);
+    });
+  });
+
+  describe('when the spawn point axes are single numbers', () => {
+    it('should store single cases and return the numbers', async () => {
+      await host.request('set_scene_settings', {
+        spawnPoints: [{ name: 'B', position: { x: 8, y: 0, z: 8 } }],
+      });
+
+      expect(roundTripPosition()).toEqual({
+        x: { $case: 'single', value: 8 },
+        y: { $case: 'single', value: 0 },
+        z: { $case: 'single', value: 8 },
+      });
+      const got = await host.request('get_scene_settings', {});
+      expect((got.settings.spawnPoints as { position: unknown }[])[0].position).toEqual({
+        x: 8,
+        y: 0,
+        z: 8,
+      });
+    });
+  });
+
+  describe('when a spawn point axis is not a number', () => {
+    it('should reject naming the axis and leave the component unchanged', async () => {
+      const before = structuredClone(storedValue());
+
+      await expect(
+        host.request('set_scene_settings', {
+          spawnPoints: [{ name: 'C', position: { x: 'a', y: 0, z: 0 } }],
+        }),
+      ).rejects.toThrow('spawnPoints[0].position.x');
+      expect(storedValue()).toEqual(before);
+    });
+  });
+
+  describe('when a spawn point axis is an array that is not a pair', () => {
+    it('should reject naming the axis and leave the component unchanged', async () => {
+      const before = structuredClone(storedValue());
+
+      await expect(
+        host.request('set_scene_settings', {
+          spawnPoints: [{ name: 'D', position: { x: [1, 2, 3], y: 0, z: 0 } }],
+        }),
+      ).rejects.toThrow('spawnPoints[0].position.x');
+      expect(storedValue()).toEqual(before);
+    });
+  });
+
+  describe('when another field is patched after a ranges write', () => {
+    it('should keep the stored spawn points as range cases', async () => {
+      await host.request('set_scene_settings', { spawnPoints: [rangeSpawnPoint] });
+      await host.request('set_scene_settings', { name: 'New' });
+
+      expect(storedValue().name).toBe('New');
+      expect(roundTripPosition()).toEqual({
+        x: { $case: 'range', value: closeTo([31.8, 32.2]) },
+        y: { $case: 'range', value: closeTo([0.3, 0.3]) },
+        z: { $case: 'range', value: closeTo([1.6, 2.4]) },
+      });
+    });
   });
 });
