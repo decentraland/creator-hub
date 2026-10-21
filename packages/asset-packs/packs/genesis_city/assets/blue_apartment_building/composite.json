@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core::GltfContainer",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/blue_apartment_building/blue_apartment_building.glb"
+          }
+        }
+      }
+    }
+  ]
+}

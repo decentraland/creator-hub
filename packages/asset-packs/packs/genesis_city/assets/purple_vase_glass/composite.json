@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core::GltfContainer",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/purple_vase_glass/purple_vase_glass.glb"
+          }
+        }
+      }
+    }
+  ]
+}

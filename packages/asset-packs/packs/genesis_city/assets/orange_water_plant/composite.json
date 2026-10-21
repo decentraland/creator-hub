@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "name": "core::GltfContainer",
+      "data": {
+        "0": {
+          "json": {
+            "src": "{assetPath}/orange_water_plant/orange_water_plant.glb"
+          }
+        }
+      }
+    }
+  ]
+}
