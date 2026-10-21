@@ -78,7 +78,7 @@ Figma's Neutrals swatches name `#35333b` **Onix** and `#25212a` **Charcoal**. Th
 
 #### Selected and active toggles are accent-blue
 
-Per the 08/26 Figma states matrix, a selected or active toggle takes a solid accent-blue fill with a dark Onix glyph — one treatment for both the segmented cells (Flow direction, Text alignment, Fill mode) and the standalone toggles (Flow wrap, the aspect lock). A checkbox is separate: it is a CheckboxFill (Primary fill, Shadow tick) in the rails as in the 3D panels, see CheckboxFill.
+Per the 08/26 Figma states matrix, a selected or active toggle takes a solid accent-blue fill with a dark Onix glyph — one treatment for both the segmented cells (Flow direction, Text alignment, Fill mode) and the standalone toggles (Flow wrap, the aspect lock). A checkbox is separate. The UI Designer rails and the MobileHUD panel draw Checkbox Terciary: an outline box with a Snow tick and no fill (`CheckboxField color="tertiary"`), see Checkbox Terciary. The 3D panels draw Checkbox Primary (`color="primary"`, the default).
 
 - **Selected/active toggle:** `--ui-designer-control-active-bg` (accent-blue) fill with a `--ui-designer-control-active-fg` (Onix) glyph.
 - **Hover:** a faint `--ui-designer-control-hover-bg` white tint, never the accent.
@@ -100,7 +100,7 @@ The UI Designer has **two** accent families. Picking the wrong one is a real bug
 - **Canvas → cyan.** The canvas renders the _author's own UI_ in arbitrary colours. A selection ring in a brand colour disappears the moment they use that colour themselves — and `#ff2d55` is precisely what the palette encourages. Because the backdrop is unknowable, WCAG 1.4.11's ≥3:1 cannot be verified against it; a hue authors are unlikely to pick is the mitigation. Use for node selection/hover, resize handles, drop targets, reorder indicators.
 - **Panel → blue `#63b4f6`.** Panel chrome always sits on `--base-20` (`#161518`), a surface we control, so contrast is fixed and testable. Use for focus rings, active tab underlines, hover borders/fills, bind affordances, selected rows, selected/active toggle fills (with an Onix glyph — see above), and the Anchor row's pinned edge. It is Figma's System/Blue Light 1.
 
-  **UI Designer panel chrome is deliberately not pink.** Its focus rings, selection, toggles and bind affordances take the blue. `--primary-main` belongs to CTAs and main buttons (`.Button.danger`, the event/variable menu `ADD` confirm) and to the value marks Figma draws in Primary, in both modes and in the rails too: the checked or indeterminate checkbox box (CheckboxFill: Primary fill, Shadow tick) and the `RangeField` fill and thumb (Slider). A mark that carries a value is not chrome; a ring, a row highlight or a toggle fill painted pink would compete with the one thing on screen that should read as the action.
+  **UI Designer panel chrome is deliberately not pink.** Its focus rings, selection, toggles and bind affordances take the blue. `--primary-main` belongs to CTAs and main buttons (`.Button.danger`, the event/variable menu `ADD` confirm) and to the value marks Figma draws in Primary: the `RangeField` fill and thumb (Slider) and the MobileHUD "Main" radio. The UI Designer checkbox is not one of them. Figma draws it as Checkbox Terciary ([`21650:4570`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=21650-4570)), a Snow tick on no fill, so a checked rail checkbox carries no pink. A mark that carries a value is not chrome; a ring, a row highlight or a toggle fill painted pink would compete with the one thing on screen that should read as the action.
 
 **Do not copy alpha steps between the two families.** The panel blue's relative luminance is `0.419` against cyan's `0.502`, so the same alpha composites differently. The steps are solved for this surface and named for their true alpha (`-62`, not `-40`) so nothing lies:
 
@@ -393,13 +393,14 @@ Extracted per page with `get_metadata` (sets and variant counts), `get_design_co
 
 | Figma name | Code name | Where it appears |
 | --- | --- | --- |
-| `Terciary` | `tertiary` | Button-Contained-Text, Button-Contained-Text-Icon, TitleBar |
+| `Terciary` | `tertiary` | Button-Contained-Text, Button-Contained-Text-Icon, TitleBar, Checkbox Terciary |
+| `Checkbox Primary` (`21170:30118`), `Checkbox Secondary` (`20849:724`), `Checkbox Terciary` (`21650:4570`) | `CheckboxField` `color` `primary` (default), `secondary`, `tertiary` | Checkbox |
 | `Quaternary` | `quaternary` | Button-Contained-Text-Icon |
 | `Idle` | `default` | PillIconText, Filter (Pill) |
 | `Blocked`, `PrimaryBlocked`, `SingleBlocked`, `IconBlocked` | `disabled` (`PrimaryBlocked` → `primary` + `disabled`) | rounded-button-contained, ButtonContainedVertical (20), Button-Contained-Text, ProfilePic, Dropdown-Input, Filter, Input, WrapToggle, BottomPanel2D |
 | `En` | `end` | End (Checkbox) |
 | `Hove` | `hover` | Radio |
-| `OnHover`, `HoverSelected`, `SelectedHover` | `hoverSelected` | Radio, CheckboxOutline, PillIconText, NodeTypeHierarchy |
+| `OnHover`, `HoverSelected`, `SelectedHover` | `hoverSelected` | Radio, Checkbox Secondary, PillIconText, NodeTypeHierarchy |
 | `Invisible…` (`InvisibleDefault`, `InvisibleHover`, `InvisibleSelected`, `InvisibleSelectedHover`) | `hidden`, `hiddenHover`, `hiddenSelected`, `hiddenHoverSelected` | NodeTypeHierarchy |
 | `Hiden`, `HidenHover` | `hidden`, `hiddenHover` | InputAction |
 | `RigthSide` | `rightSide` | Toolbar |
@@ -755,7 +756,7 @@ Component `ReportBug` [`21196:31035`](https://www.figma.com/design/5ecKgNHjChZEe
 | Description | — | column of Text-Input + Button-Contained-Text-Icon | — | Hug 638 × 222, gap 10 | — | — | — |
 | Text-Input | `Property 1` Default | Inputs page | — | Fixed 638 × 182, gap 10 | — | — | `<textarea aria-describedby>` |
 | Button-Contained-Text-Icon (Attach) | `Property 1` Secondary | Buttons page | — | Hug 257 × 30, 6px radius, padding 6 / 10, gap 10, `Attach` glyph | — | — | `<button>` with a visible label; 30px tall clears the 24px floor |
-| Checkmark | `Property 1` On | CheckboxOutline 20 box + consent text | — | Fill 638 × 20, gap 10 | `H7 Regular` Snow, right-aligned | text 17.77:1; check Primary 5.00:1, ring White 40 3.82:1 (≥ 3:1) | `<input type="checkbox">` with the sentence as its `<label>` |
+| Checkmark | `Property 1` On | Checkbox Secondary 20 box + consent text | — | Fill 638 × 20, gap 10 | `H7 Regular` Snow, right-aligned | text 17.77:1; check Primary 5.00:1, ring White 40 3.82:1 (≥ 3:1) | `<input type="checkbox">` with the sentence as its `<label>` |
 | CTAs | — | row, gap 20 | — | Fill 638 × 46 | — | — | — |
 | CANCEL | `Secondary` | Button-Contained-Text | White 10 | Fill 309 × 46, 12px, padding 12 / 24 | Inter 16 / 600 / 22 uppercase Snow | 13.51:1 | — |
 | SUBMIT (disabled) | `PrimaryBlocked` @ 20% opacity | Button-Contained-Text | Primary at 20% | Fill 309 × 46 | same | fill vs modal 1.24:1; label 14.37:1 over the composite — the dim state reads as disabled by opacity alone | `disabled` + `aria-disabled`; the 20% opacity is the only disabled cue drawn, add a tooltip or helper text saying why |
@@ -835,7 +836,7 @@ Frame `<Buttons> | Title Bar` [`21310:15793`](https://www.figma.com/design/5ecKg
 
 ### Play Options menus (TitleBar)
 
-Frame `<Menu> | Title Bar` [`21372:16356`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=21372-16356): two `Menu` (Menu) instances at Fixed 300 wide (Onix, 1px White 10, 12px radius, padding 10 / 0, gap 10, shadow `0 4px 8px rgba(0,0,0,.4)`), their `Options` / `Options2` slots filled with `Menu-Entry` (Menu) instances carrying `Radio` and `CheckboxOutline` leads. Code: Creator Hub `EditorPage/MenuOptions` `PreviewOptions` / `PublishOptions` (ui2 `Menu` with MUI `Radio`, `Checkbox`, `Divider`) and `EditorPage/OptionBox` (340 wide, `--dark-gray`, 8px radius, padding 10 / 30) — drift on width, fill and entry anatomy; inspector none.
+Frame `<Menu> | Title Bar` [`21372:16356`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=21372-16356): two `Menu` (Menu) instances at Fixed 300 wide (Onix, 1px White 10, 12px radius, padding 10 / 0, gap 10, shadow `0 4px 8px rgba(0,0,0,.4)`), their `Options` / `Options2` slots filled with `Menu-Entry` (Menu) instances carrying `Radio` and `Checkbox Secondary` leads. Code: Creator Hub `EditorPage/MenuOptions` `PreviewOptions` / `PublishOptions` (ui2 `Menu` with MUI `Radio`, `Checkbox`, `Divider`) and `EditorPage/OptionBox` (340 wide, `--dark-gray`, 8px radius, padding 10 / 30) — drift on width, fill and entry anatomy; inspector none.
 
 | Menu | Entry | Variant | Lead | Label | Trailing | Size | Contrast (on Onix) | A11y |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -844,8 +845,8 @@ Frame `<Menu> | Title Bar` [`21372:16356`](https://www.figma.com/design/5ecKgNHj
 | Play Options | Web (Bevy) | `Default` | `Radio` `Off`: 20 box, 1px White 40 ring, 100px | `H7 Regular` Snow | `arrow-right` (hidden) | Fill 280 × 38 | label 12.13:1; ring 3.39:1 (≥ 3:1) | `role="menuitemradio" aria-checked="false"` |
 | Play Options | — | `Div` | — | — | — | Fill 300 × 1, White 10, padding 7 / 10 | 1.37:1, decorative | `role="separator"` |
 | Play Options | Show QR Code for Mobile | `Default` | `Info` 16 box (hidden) | `H7 Regular` Snow | `arrow-right` (hidden) | Fill 280 × 38 | 12.13:1 | `role="menuitem"` |
-| Submenu | Enable Landscape Terrains / Enable MCP Server / Compress Assets | `Default` | `CheckboxOutline` `On` 16 box, 5px radius: White 40 ring + `Checkmark (Stroke)` 9.6 × 8 Primary | `H7 Regular` Snow | — | Fill 280 × 38, gap 10 | check Primary 3.41:1, ring 3.39:1 (≥ 3:1) | `role="menuitemcheckbox" aria-checked="true"` |
-| Submenu | Multi-Instance Preview | `Default` | `CheckboxOutline` `Off`: 16 box, 5px radius, 1px White 40 ring | `H7 Regular` Snow | — | same | ring 3.39:1 | `aria-checked="false"` |
+| Submenu | Enable Landscape Terrains / Enable MCP Server / Compress Assets | `Default` | `Checkbox Secondary` `On` 16 box, 5px radius: White 40 ring + `Checkmark (Stroke)` 9.6 × 8 Primary | `H7 Regular` Snow | — | Fill 280 × 38, gap 10 | check Primary 3.41:1, ring 3.39:1 (≥ 3:1) | `role="menuitemcheckbox" aria-checked="true"` |
+| Submenu | Multi-Instance Preview | `Default` | `Checkbox Secondary` `Off`: 16 box, 5px radius, 1px White 40 ring | `H7 Regular` Snow | — | same | ring 3.39:1 | `aria-checked="false"` |
 | any | ✱ keyboard-active checkbox row | `Hover` | — | — | — | Pale Black | as Desktop Client — the Primary check falls to 2.78:1 | arrow keys move, Space toggles without closing |
 
 ### ConnectionStatus (Profile Snapshot)
@@ -895,7 +896,7 @@ Literals the Buttons page (Inputs section) adds to the Surfaces table above; the
 | 32 × 32 halo at −6 / −6 | — | `box-shadow: 0 0 0 6px` literal in `CheckboxField.css`, a rounded square rather than Figma's circle | missing |
 | `#FF2D55` @ 20% halo (Checkbox), @ 10% (Radio) | unnamed fill, not a variable | missing (`--primary-main` is opaque) | missing |
 | White 40 / 60 border steps | `Transparencies/White 40`, `White 60` | `--palette-whiteTransparent-blurry` / `--palette-whiteTransparent-backdrop` | missing |
-| `#161518` tick on Primary (CheckboxFill) | Neutrals/Shadow | `--tree-bg-color` (`--base-20`) | missing |
+| `#161518` tick on Primary (Checkbox Primary) | Neutrals/Shadow | `--tree-bg-color` (`--base-20`) | missing |
 | `#FCFCFC` named `DCL/White` (Description, help) | legacy collection; value is Snow, not `#FFFFFF` | `--ui-designer-text` | ui2 `neutral.softWhite` |
 | `#FFFFFF` Dropdown Title | unnamed solid white | `--white` | `--white` |
 | 9999px / 999px pill radius (Sort-By, Filter bar) | — | missing; use 100px | missing |
@@ -1076,9 +1077,9 @@ Set [`21232:42111`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id
 | Hover=Yes | hover | White 10 | fill vs `#161518` 1.31:1 — faint | — |
 | any | ✱ focus / press / disabled | — | — | not drawn |
 
-### CheckboxOutline (Checkbox)
+### Checkbox Secondary (Checkbox)
 
-Set [`20849:724`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=20849-724), 4 variants (`Property 1` Off / Hover / On / HoverSelected; verified from the layer tree, each read singly). 20 × 20 box, 5px radius, no fill, 1px White 40 border; checkmark `Checkmark (Stroke)` 12 × 10 at 4 / 5; hover and selected-hover add a 32 × 32 halo at −6 / −6, 100px radius, behind the box. The dashed `#A14BF3` frame is Figma chrome. Code: none in the inspector (its checkbox is CheckboxFill, below); Creator Hub ui2 `Checkbox` inside `FormControlLabel` (`AppSettings` `EditorTab`, `OptimizeModal`, `PreviewOptions`; MUI defaults).
+Set [`20849:724`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=20849-724), 4 variants (`Property 1` Off / Hover / On / HoverSelected; verified from the layer tree, each read singly). 20 × 20 box, 5px radius, no fill, 1px White 40 border; checkmark `Checkmark (Stroke)` 12 × 10 at 4 / 5; hover and selected-hover add a 32 × 32 halo at −6 / −6, 100px radius, behind the box. The dashed `#A14BF3` frame is Figma chrome. Code: `components/ui/CheckboxField` `color="secondary"` is this set as drawn (Primary tick, no caller yet), and `color="tertiary"` is Checkbox Terciary, below; Creator Hub ui2 `Checkbox` inside `FormControlLabel` (`AppSettings` `EditorTab`, `OptimizeModal`, `PreviewOptions`; MUI defaults).
 
 | Variant | State | Box | Mark | Halo | Contrast | A11y |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -1086,26 +1087,44 @@ Set [`20849:724`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=2
 | Hover | hover | 1px White 40 | — | White 10 | halo vs `#161518` 1.31:1 — faint | — |
 | On | selected | 1px White 40 | tick Primary | — | tick 4.99:1 on `#161518` (4.35 on card); border 3.84:1 | `checked`; label and tick both change |
 | HoverSelected | selected + hover | 1px White 40 | tick Primary | `#FF2D55` @ 20% | halo vs `#161518` 1.24:1 | — |
-| any | ✱ focus / disabled | — | — | ✱ focus ring | ring `--focus-ring` / ui2 `palette.info.light`, ≥ 3:1 | not drawn; 20px box sits inside a ≥ 24px row |
+| any | ✱ indeterminate | 1px White 40 | Primary dash (`color="secondary"`) | as On / HoverSelected | dash 4.99:1 on `#161518`, 4.35 on card and panel | announced as mixed |
+| any | ✱ disabled | 1px White 20 | `--base-09` mark when checked (`color="secondary"`; the disabled label's colour) | none | exempt (mark 6.06:1 on panel, 6.96 on `#161518`) | `disabled` |
+| any | ✱ focus | — | — | ✱ focus ring | ring `--focus-ring` / ui2 `palette.info.light`, ≥ 3:1 | not drawn; 20px box sits inside a ≥ 24px row |
 
-### CheckboxFill (Checkbox)
+### Checkbox Primary (Checkbox)
 
-Set [`21170:30118`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=21170-30118), 4 variants (same four `Property 1` values). 20 × 20, 5px radius; the selected variants fill Primary and draw the tick in `Neutrals/Shadow` `#161518`. The tick is `Checkmark (Stroke)` `21170:30126`, 12 × 10 at 4 / 5: one round-capped, round-joined stroke about 1.8px wide, from 0.9 / 5.2 through 4.4 / 9.1 to 10.9 / 0.9 in its box (canvas measurement, ±0.2px). Code: the inspector's checkbox in both modes (user decision, October 21, 2026). The 3D panels use `components/ui/CheckboxField` at 20 × 20 with a 6px halo. The UI Designer right rail (Properties and Logic tabs, `PropertyPanel.css`) and the MobileHUD panel (`MobileHudPanel.css`) use 14 × 14, the size the UI Editor page draws (`Text` `21028:15993`), with a 4px radius and a 4px halo. Unchecked: 1px `--palette-whiteTransparent-blurry` (aliased `--ui-designer-checkbox-border`), no fill. Checked and indeterminate: fill and border `--primary-main`; the border takes the fill colour, so the box reads borderless without changing size. The tick and the indeterminate dash are `--base-20` (Neutrals/Shadow), drawn as a CSS mask over a token background, so no colour is baked into an SVG. The mask is that stroke (`stroke-width="1.8"`), not the old hairline tick glyph. With an error on a checked box the `--error-main` border sits on the Primary fill at 1.01:1; the error message, not the border, is the cue there. Halo: `--palette-whiteTransparent-subtle` on hover, and on checked + hover `--primary-main` at 20% via `color-mix`, with no new token; it follows the box radius instead of Figma's circle. The focus ring is `--focus-ring` in the 3D panels and `--ui-designer-control-accent` in the UI Designer rails, which sits on the panel 1px from the box. The visible `Label` is linked with `htmlFor` (a `useId()` id; a caller's `id` or `aria-label` wins), so every call site is named by its label and clicking the label toggles the box; an `InfoTooltip` icon inside the label cancels its click, so it opens the tooltip without toggling. Creator Hub: the filled style is a checked MUI `Checkbox` with `color="primary"`.
+Set [`21170:30118`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=21170-30118), 4 variants (same four `Property 1` values). 20 × 20, 5px radius; the selected variants fill Primary and draw the tick in `Neutrals/Shadow` `#161518`. The tick is `Checkmark (Stroke)` `21170:30126`, 12 × 10 at 4 / 5: one round-capped, round-joined stroke about 1.8px wide, from 0.9 / 5.2 through 4.4 / 9.1 to 10.9 / 0.9 in its box (canvas measurement, ±0.2px). Code: the inspector's 3D-panel checkbox, `components/ui/CheckboxField` with `color="primary"` (the default), at 20 × 20 with a 6px halo. `color="secondary"` is Checkbox Secondary, above, and `color="tertiary"` is Checkbox Terciary, the UI Designer's checkbox, below. Unchecked: 1px `--palette-whiteTransparent-blurry` (aliased `--ui-designer-checkbox-border`), no fill. Checked and indeterminate: fill and border `--primary-main`; the border takes the fill colour, so the box reads borderless without changing size. The tick and the indeterminate dash are `--base-20` (Neutrals/Shadow), drawn as a CSS mask over a token background, so no colour is baked into an SVG. The mask is that stroke (`stroke-width="1.8"`), not the old hairline tick glyph. With an error on a checked box the `--error-main` border sits on the Primary fill at 1.01:1; the error message, not the border, is the cue there. Halo: `--palette-whiteTransparent-subtle` on hover, and on checked + hover `--primary-main` at 20% via `color-mix`, with no new token; it follows the box radius instead of Figma's circle. The focus ring is `--focus-ring`, offset 2px. The visible `Label` is linked with `htmlFor` (a `useId()` id; a caller's `id` or `aria-label` wins), so every call site is named by its label and clicking the label toggles the box; an `InfoTooltip` icon inside the label cancels its click, so it opens the tooltip without toggling. Creator Hub: the filled style is a checked MUI `Checkbox` with `color="primary"`.
 
 | Variant | State | Box | Mark | Halo | Contrast | A11y |
 | --- | --- | --- | --- | --- | --- | --- |
 | Off | default | 1px White 40, no fill | — | — | 3.84:1 on `#161518`, 3.74 on card | `<input type="checkbox">`, ≥ 24px label row |
 | Hover | hover | 1px White 40 | — | White 10 | 1.31:1, decorative | — |
-| On | selected | fill Primary, border Primary | `#161518` tick | — | fill 4.99:1 on `#161518` (4.35 on card and UI Designer panel); tick on Primary 4.99:1 | `checked` |
+| On | selected | fill Primary, border Primary | `#161518` tick | — | fill 4.99:1 on `#161518` (4.35 on card); tick on Primary 4.99:1 | `checked` |
 | HoverSelected | selected + hover | fill Primary | `#161518` | `#FF2D55` @ 20% | halo 1.24:1, decorative | — |
-| any | ✱ indeterminate | fill Primary, border Primary | ✱ `#161518` dash (10 × 2; 8 × 2 at 14px) | as On / HoverSelected | dash on Primary 4.99:1 | `indeterminate`; announced as mixed |
+| any | ✱ indeterminate | fill Primary, border Primary | ✱ `#161518` dash (10 × 2) | as On / HoverSelected | dash on Primary 4.99:1 | `indeterminate`; announced as mixed |
 | any | ✱ disabled, unchecked | 1px White 20, no fill | — | none | exempt | `disabled` |
 | any | ✱ disabled, checked or indeterminate | fill and border `--base-12` | `--base-20` mark | none | exempt (fill 2.52:1 on card, mark 2.89:1 on the fill) | `disabled` |
-| any | ✱ focus | as its state | as its state | — | `--focus-ring` 15.45:1 on card (3D, offset 2px); `--ui-designer-control-accent` 7.09:1 on the panel (rails, offset 1px; 1.63:1 against the Primary fill, separated by the 1px gap) | not drawn |
+| any | ✱ focus | as its state | as its state | — | `--focus-ring` 15.45:1 on card (offset 2px) | not drawn |
+
+### Checkbox Terciary (Checkbox)
+
+Set [`21650:4570`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=21650-4570), 4 variants (`Property 1` Off `21650:4571` / Hover `21650:4573` / On `21650:4576` / HoverSelected `21650:4579`; read singly). 20 × 20 box, 5px radius, no fill, 1px inside border Transparencies/White 40 in every variant; tick `Checkmark (Stroke)` 12 × 10 at 4 / 5 in **Neutrals/Snow `#FCFCFC`** on On and HoverSelected; Hover and HoverSelected both add a **White 10** halo, 32 × 32 at −6 / −6, 100px radius. No indeterminate, disabled or focus variant (✱ below). Code: `components/ui/CheckboxField` `color="tertiary"`, the UI Designer's checkbox: the right rail's Properties and Logic tabs, and the MobileHUD panel's raw checkboxes (same colours in `MobileHudPanel.css`). The rails draw it at 14 × 14 with a 4px radius, a 4px halo, an 8.4 × 7 tick (the 12 × 10 stroke scaled 0.7, about 1.26px wide) and the `--ui-designer-control-accent` focus ring at a 1px offset: that is rail geometry (`PropertyPanel.css`, `MobileHudPanel.css`), and the colours are the variant (`CheckboxField.css`). The UI Editor panel frame `Header` [`21067:24647`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=21067-24647) still draws its 14px instances (`21645:2360` On, `21645:2369` Off) as `Checkbox Secondary` with a Neutrals/Gray `#CFCDD4` tick override; the set wins, so the code tick is Snow ✱ (Figma-side: swap the frame's instances to this set). The MobileHUD frame `21281:45188` draws its three global toggles as the same outline boxes, all Off.
+
+| Variant | State | Box | Mark | Halo | Token | Contrast on the panel `#242129` (on `#161518`) |
+| --- | --- | --- | --- | --- | --- | --- |
+| Off | default | 1px White 40, no fill | — | — | `--palette-whiteTransparent-blurry` (the shared box; the rails' `--ui-designer-checkbox-border` is its alias) | border 3.74:1 (3.84) |
+| Hover | hover | as Off | — | White 10 | `--palette-whiteTransparent-subtle` | 1.36:1, decorative (1.31) |
+| On | selected | 1px White 40, no fill | Snow tick (Checkmark stroke mask) | — | tick `--ui-designer-text` | tick 15.45:1 (17.73); border 3.74:1 |
+| HoverSelected | selected + hover | as On | as On | White 10 | `--palette-whiteTransparent-subtle` | 1.36:1, decorative; the border on the halo stays 3.29:1 |
+| any | ✱ indeterminate | as On | Snow dash (10 × 2; rails 8 × 2) | as On / HoverSelected | `--ui-designer-text` | dash 15.45:1 |
+| any | ✱ disabled, Off | 1px White 20, no fill | — | none | `--palette-whiteTransparent-soft` | exempt (1.91:1) |
+| any | ✱ disabled, On or indeterminate | 1px White 20, no fill | Silver mark | none | `--palette-whiteTransparent-soft`, mark `--ui-designer-text-muted` | exempt (mark 5.85:1) |
+| any | ✱ error | `--error-main` border | as its state | as its state | `--error-main` | the message is the cue |
+| any | ✱ focus | as its state | as its state | — | `--focus-ring` 2px, offset 2px; rails `--ui-designer-control-accent` 2px, offset 1px | 15.45:1; accent 7.09:1 |
 
 ### End (Checkbox)
 
-Set [`20932:5479`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=20932-5479), 2 variants (`Property 1` En / Start; "En" is Figma's spelling of End; the set is the `<FormControlLabel>` placement example). Each Hug 199 × 20, gap 10: `CheckboxOutline` Off, label "Open Debug Console" Inter 400 14 / 100% (`H7 Regular`) `DCL/Snow` `#FCFCFC` (141 × 17), `help` icon 18 × 18. En puts the box first, Start puts it last. Code: Creator Hub ui2 `FormControlLabel` `labelPlacement` `end` / `start`; inspector `CheckboxField` renders box then label only.
+Set [`20932:5479`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=20932-5479), 2 variants (`Property 1` En / Start; "En" is Figma's spelling of End; the set is the `<FormControlLabel>` placement example). Each Hug 199 × 20, gap 10: `Checkbox Secondary` Off, label "Open Debug Console" Inter 400 14 / 100% (`H7 Regular`) `DCL/Snow` `#FCFCFC` (141 × 17), `help` icon 18 × 18. En puts the box first, Start puts it last. Code: Creator Hub ui2 `FormControlLabel` `labelPlacement` `end` / `start`; inspector `CheckboxField` renders box then label only.
 
 | Variant | Order | Label | Contrast | A11y |
 | --- | --- | --- | --- | --- |
@@ -1287,10 +1306,10 @@ Set [`21160:787`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=2
 | Variant | State | Pane content | Controls (existing spec) | Contrast | A11y |
 | --- | --- | --- | --- | --- | --- |
 | Scenes / Default | default | "Scene Folder" label + a path field with a folder glyph; "Scene Dependencies" with three radios (Auto-update all my scenes, Notify me of new version updates — selected, Do nothing) | `Text-Input` (container, folder glyph), `Radio` (On) | Snow 17.77:1 on `#181225`; Primary radio dot 5.00:1; inactive tab labels White 40 3.82:1 (large text, 20px / 600, passes 3:1) | `role="dialog" aria-modal` named by the title; tabs `role="tab"` in a vertical `tablist`; the path value is user data, never a fixture |
-| Editor / Default | default | "Code Editor of Choice" dropdown ("Visual Studio Code"); "Preview Options" checkboxes (Open Debug Console off, Enable Landscape Terrains on); "App Warnings" checkbox on, with a two-line label | `Dropdown-Input`, `CheckboxFill` | as Scenes; checked fill Primary 5.00:1 | native `<select>` or `role="combobox"`; each checkbox named by its label |
+| Editor / Default | default | "Code Editor of Choice" dropdown ("Visual Studio Code"); "Preview Options" checkboxes (Open Debug Console off, Enable Landscape Terrains on); "App Warnings" checkbox on, with a two-line label | `Dropdown-Input`, `Checkbox Primary` | as Scenes; checked fill Primary 5.00:1 | native `<select>` or `role="combobox"`; each checkbox named by its label |
 | Editor / Dropdown | open menu | as Editor / Default with the dropdown open: "Visual Studio Code" (check mark) and "Choose from your device…" under a rule | `Dropdown-Input` open menu, `Menu` items | menu rows Snow on the lifted fill; the check mark is the selected cue, not colour alone | `role="listbox"`, `aria-activedescendant`; Escape closes and returns focus |
 | Experimental / Default | default | two switches, both off: "Enable Bevy Scene Renderer", "Enable UI Editor" + a description under the second | `Switch` (the 52 × 30 set, Off) | Off track vs the modal ≈ 2.7:1 — the `Switch` spec's 3:1 non-text fail applies | `role="switch"`, description via `aria-describedby`; a restart or reload note is ✱ missing |
-| Experimental / Custom | **shows the AI tab, not Experimental** | AI Assistant: "Enable AI Assistant" switch (on), a "Bill this to an API key instead" checkbox, a "Connect" accordion with two agent rows (a connected state and a sign-in action, each with install / sign-in command boxes), an "Expose AI assistant MCP server" accordion with a config code block (placeholder credentials, not copied) | `Switch` On, `CheckboxFill`, `Accordion`, `Button-Contained-Text` | Snow 10.90:1 and Primary 3.07:1 at the brightest point of the glow (`#5D2361`, computed) — the glow sits at the bottom, keep the controls above it | code blocks need a copy button named "Copy" and `font-family: monospace`; the command text is selectable |
+| Experimental / Custom | **shows the AI tab, not Experimental** | AI Assistant: "Enable AI Assistant" switch (on), a "Bill this to an API key instead" checkbox, a "Connect" accordion with two agent rows (a connected state and a sign-in action, each with install / sign-in command boxes), an "Expose AI assistant MCP server" accordion with a config code block (placeholder credentials, not copied) | `Switch` On, `Checkbox Primary`, `Accordion`, `Button-Contained-Text` | Snow 10.90:1 and Primary 3.07:1 at the brightest point of the glow (`#5D2361`, computed) — the glow sits at the bottom, keep the controls above it | code blocks need a copy button named "Copy" and `font-family: monospace`; the command text is selectable |
 | any | ✱ focus / disabled | — | — | ring `--ui-designer-control-accent` 8.15:1 on `#181225` (as Modals) | `:focus-visible` 2px, first focus on the active tab; Escape closes |
 | any | ✱ About tab | — | — | — | not drawn; the code ships it — add a fifth `TabVertical` and a variant |
 
@@ -1332,7 +1351,7 @@ Messages are `#FFFFFF` (not Snow) at 15.79:1; the usage card body is 12.44:1 on 
 
 ### UI Editor (page lead)
 
-Page `21028:15887`, two boards. **Panels** `21028:34519` holds the screens: `LeftPanel2D` `21028:34521` (Fixed 312 × Hug 712, vertical, Charcoal, padding-bottom 100), `RightPanel2D` `21028:34544` (Hug 4068 × 1742, 24px radius, padding 20, gap 20: about fourteen right-panel states laid side by side) and the two sets below. **Components** `21028:30543` holds eight sub-boards, each 24px radius, fill Black 40, 1px White 20: `Components` `21028:15991` (956 × 958), `UI Editor Buttons` `21028:16485` (710 × 407), `Icons` `21028:16123` (1477 × 448), `PropertiesSections` `21028:30544` (2648 × 781), `PropertiesSubsections` `21028:30545`, `Variables&EventsMenus` `21032:43793`, `ColourPanel` `21032:44145` (621 × 513) and `InputActions` `21301:5375` (1662 × 336). Every control below maps to the inspector's UI Designer (`components/UIDesigner`; see [`UIDesigner.md`](UIDesigner.md)) — mapped by directory, not line by line. Existing specs reused, never duplicated: `ToolbarButton`, `IconContainedToggle`, `Menu`, `Menu-Entry`, `Close-Button`, `Switch`, `CheckboxFill`, `Tooltip`. Each state fill and each child glyph or label colour is read from the layer's own panel (nested glyphs singly; where a variant has two child layers the colour is the "2 Selected" aggregate, which lists one colour, and says so). Body copy and field labels are content, not spec.
+Page `21028:15887`, two boards. **Panels** `21028:34519` holds the screens: `LeftPanel2D` `21028:34521` (Fixed 312 × Hug 712, vertical, Charcoal, padding-bottom 100), `RightPanel2D` `21028:34544` (Hug 4068 × 1742, 24px radius, padding 20, gap 20: about fourteen right-panel states laid side by side) and the two sets below. **Components** `21028:30543` holds eight sub-boards, each 24px radius, fill Black 40, 1px White 20: `Components` `21028:15991` (956 × 958), `UI Editor Buttons` `21028:16485` (710 × 407), `Icons` `21028:16123` (1477 × 448), `PropertiesSections` `21028:30544` (2648 × 781), `PropertiesSubsections` `21028:30545`, `Variables&EventsMenus` `21032:43793`, `ColourPanel` `21032:44145` (621 × 513) and `InputActions` `21301:5375` (1662 × 336). Every control below maps to the inspector's UI Designer (`components/UIDesigner`; see [`UIDesigner.md`](UIDesigner.md)) — mapped by directory, not line by line. Existing specs reused, never duplicated: `ToolbarButton`, `IconContainedToggle`, `Menu`, `Menu-Entry`, `Close-Button`, `Switch`, `Checkbox Terciary`, `Tooltip`. Each state fill and each child glyph or label colour is read from the layer's own panel (nested glyphs singly; where a variant has two child layers the colour is the "2 Selected" aggregate, which lists one colour, and says so). Body copy and field labels are content, not spec.
 
 ### HierarchySections (UI Editor — Components)
 
@@ -1404,7 +1423,7 @@ Component `21028:16000`, one definition with two `Slot` instances (`21028:16001`
 
 ### Subtitle (UI Editor — Components)
 
-Component `21028:15992` with `Text` `21028:15993` (Fill 93 × Hug 15, gap 6: a `CheckboxOutline` On instance 14 × 14, the label "Text" `Inter` 400 12 / 100% Gray `#CFCDD4` (25 × 15, 10.07:1 on panel), and a `HelpCTA` Hover = No instance 12 × 12) and `DeleteCTA` `21028:15998` (26 × 16). Code: `BindableField` label row. `DeleteCTA` and `HelpCTA` states are in the next sections.
+Component `21028:15992` with `Text` `21028:15993` (Fill 93 × Hug 15, gap 6: a `Checkbox Secondary` On instance 14 × 14 drawn with a Gray tick override; code follows Checkbox Terciary (Snow tick), the label "Text" `Inter` 400 12 / 100% Gray `#CFCDD4` (25 × 15, 10.07:1 on panel), and a `HelpCTA` Hover = No instance 12 × 12) and `DeleteCTA` `21028:15998` (26 × 16). Code: `BindableField` label row. `DeleteCTA` and `HelpCTA` states are in the next sections.
 
 ### DeleteCTA (UI Editor Buttons)
 
