@@ -26,21 +26,23 @@
   cursor: pointer;
 }
 
-.Checkbox.Field .InputContainer input[type="checkbox"]:checked {
+.Checkbox.Field .InputContainer input[type="checkbox"]:checked,
+.Checkbox.Field .InputContainer input[type="checkbox"]:indeterminate {
   position: relative;
+  background-color: var(--primary-main);
+  border-color: var(--primary-main);
 }
 
 .Checkbox.Field .InputContainer input[type="checkbox"]:checked::before {
-  content: url('data:image/svg+xml;utf8,<svg width="12" height="10" viewBox="0 0 12 10" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M11.6467 0.893333L4.22667 9.66667L3.52667 9.62L0.586667 5.46667L1.28667 4.95333L3.9 8.64L10.9467 0.333333L11.6467 0.893333Z" fill="white"/></svg>');
-  font-size: 14px;
-  color: var(--base-01);
+  content: "";
   position: absolute;
   left: 3px;
-  top: 0;
-}
-
-.Checkbox.Field .InputContainer input[type="checkbox"]:indeterminate {
-  position: relative;
+  top: 4px;
+  width: 12px;
+  height: 10px;
+  background-color: var(--base-20);
+  mask: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 10"><path d="M0.9 5.2 4.4 9.1 10.9 0.9" fill="none" stroke="black" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>')
+    center / 12px 10px no-repeat;
 }
 
 .Checkbox.Field .InputContainer input[type="checkbox"]:indeterminate::before {
@@ -50,7 +52,7 @@
   top: 8px;
   width: 10px;
   height: 2px;
-  background-color: white;
+  background-color: var(--base-20);
 }
 
 .Checkbox.Field .InputContainer input[type="checkbox"]:focus-visible {
@@ -62,13 +64,23 @@
   box-shadow: 0 0 0 6px var(--palette-whiteTransparent-subtle);
 }
 
+:where(.Checkbox.Field .InputContainer:not(.error):not(.disabled))
+  input[type="checkbox"]:is(:checked, :indeterminate):hover {
+  box-shadow: 0 0 0 6px color-mix(in srgb, var(--primary-main) 20%, transparent);
+}
+
 .Checkbox.Field .InputContainer.disabled input[type="checkbox"] {
   background: var(--transparent);
   border-color: var(--palette-whiteTransparent-soft);
 }
 
-.Checkbox.Field .InputContainer.disabled input[type="checkbox"]:checked::before {
-  content: url('data:image/svg+xml;utf8,<svg width="12" height="10" viewBox="0 0 12 10" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M11.6467 0.893333L4.22667 9.66667L3.52667 9.62L0.586667 5.46667L1.28667 4.95333L3.9 8.64L10.9467 0.333333L11.6467 0.893333Z" fill="gray"/></svg>');
+.Checkbox.Field .InputContainer.disabled input[type="checkbox"]:is(:checked, :indeterminate) {
+  background-color: var(--base-12);
+  border-color: var(--base-12);
+}
+
+.Checkbox.Field .InputContainer.error input[type="checkbox"] {
+  border-color: var(--error-main);
 }
 
 .Checkbox.Field .InputContainer .Label {
@@ -77,8 +89,4 @@
 
 .Checkbox.Field .InputContainer.disabled .Label {
   color: var(--base-09);
-}
-
-.Checkbox.Field .InputContainer.error input[type="checkbox"] {
-  border-color: var(--error-main);
 }
