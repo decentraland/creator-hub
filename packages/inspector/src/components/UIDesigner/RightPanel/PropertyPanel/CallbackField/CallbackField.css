@@ -59,35 +59,6 @@
   white-space: nowrap;
 }
 
-.ui-designer-callback-clear {
-  display: inline-flex;
-  flex: 0 0 auto;
-  align-items: center;
-  justify-content: center;
-  width: 22px;
-  height: 22px;
-  padding: 0;
-  border: none;
-  border-radius: 999px;
-  background: transparent;
-  color: var(--ui-designer-text-muted);
-  cursor: pointer;
-}
-
-.ui-designer-callback-clear:hover {
-  color: var(--ui-designer-text);
-}
-
-.ui-designer-callback-clear:focus-visible {
-  outline: 2px solid var(--ui-designer-control-accent);
-  outline-offset: 1px;
-}
-
-.ui-designer-callback-clear svg {
-  width: 13px;
-  height: 13px;
-}
-
 .ui-designer-callback-menu {
   max-height: 260px;
   overflow-y: auto;

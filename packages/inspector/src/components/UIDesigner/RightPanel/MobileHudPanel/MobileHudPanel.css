@@ -146,23 +146,3 @@
   cursor: pointer;
   color: var(--ui-designer-text-muted);
 }
-
-.ui-designer-mobile-hud-eye {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 2px;
-  border: none;
-  background: transparent;
-  color: var(--ui-designer-glyph);
-  cursor: pointer;
-  flex-shrink: 0;
-}
-
-.ui-designer-mobile-hud-eye:hover {
-  color: var(--ui-designer-control-accent);
-}
-
-.ui-designer-mobile-hud-eye.is-hidden {
-  color: var(--ui-designer-text-muted);
-}

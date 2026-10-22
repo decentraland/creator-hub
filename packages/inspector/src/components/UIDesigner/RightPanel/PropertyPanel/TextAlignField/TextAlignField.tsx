@@ -7,7 +7,6 @@ import {
   MdVerticalAlignCenter,
   MdVerticalAlignTop,
 } from 'react-icons/md';
-import cx from 'classnames';
 
 import { radioGroupKeyDown, radioTabIndex } from '../radio-group';
 import { TEXT_ALIGN_MODES, splitTextAlign, textAlignMode } from '../text-align';
@@ -43,7 +42,7 @@ function AxisGroup<T extends string>({
 }) {
   return (
     <div
-      className="ui-designer-text-align-group"
+      className="ui-designer-text-align-group ui-designer-segmented"
       role="radiogroup"
       aria-label={label}
       onKeyDown={radioGroupKeyDown(keys, current, onPick)}
@@ -57,7 +56,7 @@ function AxisGroup<T extends string>({
           aria-label={capitalize(key)}
           title={`${label}: ${key}`}
           tabIndex={radioTabIndex(keys, current, index)}
-          className={cx('ui-designer-text-align-cell', { selected: key === current })}
+          className="ui-designer-text-align-cell ui-designer-toggle"
           onClick={() => onPick(key)}
         >
           {ICONS[key]}

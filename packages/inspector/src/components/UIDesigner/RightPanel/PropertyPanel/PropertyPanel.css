@@ -119,41 +119,6 @@
   opacity: 0.55;
 }
 
-.ui-designer-panel-header-eye {
-  flex: 0 0 auto;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 22px;
-  height: 22px;
-  padding: 0;
-  border: none;
-  border-radius: 4px;
-  background: transparent;
-  color: var(--sub-text);
-  cursor: pointer;
-}
-
-.ui-designer-panel-header-eye:hover {
-  background: var(--ui-designer-control-accent-15);
-  color: var(--title);
-}
-
-.ui-designer-panel-header-eye[aria-pressed="true"] {
-  color: var(--ui-designer-control-accent);
-}
-
-.ui-designer-panel-header-eye:focus-visible {
-  outline: 2px solid var(--ui-designer-control-accent);
-  outline-offset: 1px;
-}
-
-.ui-designer-panel-header-eye svg {
-  display: block;
-  width: 14px;
-  height: 14px;
-}
-
 .ui-designer-property-row {
   position: relative;
 }
@@ -183,21 +148,10 @@
   padding-right: 0;
 }
 
-.ui-designer-prop-remove {
+.ui-designer-property-row .ui-designer-prop-remove {
   position: absolute;
-  top: var(--uid-space-1);
-  right: 0;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 18px;
-  height: 18px;
-  padding: 0;
-  border: none;
-  border-radius: 3px;
-  background: transparent;
-  color: var(--sub-text);
-  cursor: pointer;
+  top: calc(var(--uid-space-1) - 3px);
+  right: -3px;
   opacity: 0;
   transition: opacity 60ms linear;
 }
@@ -207,20 +161,8 @@
   opacity: 1;
 }
 
-.ui-designer-prop-remove:hover {
-  background: var(--ui-designer-control-accent-21);
-  color: var(--title);
-}
-
-.ui-designer-prop-remove:focus-visible {
+.ui-designer-property-row .ui-designer-prop-remove:focus-visible {
   opacity: 1;
-  outline: 2px solid var(--ui-designer-control-accent);
-  outline-offset: 1px;
-}
-
-.ui-designer-prop-remove svg {
-  width: 13px;
-  height: 13px;
 }
 
 .ui-designer-add-prop {
@@ -301,11 +243,7 @@
   align-items: center;
   justify-content: center;
   padding: 3px;
-  background: transparent;
-  border: 1px solid var(--ui-designer-control-border);
   border-radius: var(--ui-designer-radius-field);
-  color: var(--ui-designer-glyph);
-  cursor: pointer;
 }
 
 .ui-designer-vec-lock::before {
@@ -318,24 +256,8 @@
   mask-repeat: no-repeat;
 }
 
-.ui-designer-vec-lock.active::before {
+.ui-designer-vec-lock[aria-pressed="true"]::before {
   mask-image: url("./icons/aspect-linked.svg");
-}
-
-.ui-designer-vec-lock:hover {
-  color: var(--title);
-  border-color: var(--ui-designer-control-border-strong);
-}
-
-.ui-designer-vec-lock.active {
-  background: var(--ui-designer-control-active-bg);
-  border-color: var(--ui-designer-control-active-bg);
-  color: var(--ui-designer-control-active-fg);
-}
-
-.ui-designer-vec-lock:focus-visible {
-  outline: 2px solid var(--ui-designer-control-accent);
-  outline-offset: 1px;
 }
 
 .ui-designer-string-array textarea {
@@ -471,28 +393,13 @@
   align-items: center;
   gap: 3px;
   padding: 3px 8px;
-  border: 1px solid transparent;
   border-radius: 4px;
-  background: transparent;
-  color: var(--sub-text);
   font-size: 11px;
-  cursor: pointer;
 }
 
-.ui-designer-states-tab:hover {
-  background: var(--ui-designer-control-accent-15);
-  color: var(--title);
-}
-
-.ui-designer-states-tab.selected {
-  background: var(--ui-designer-control-accent-21);
-  border-color: var(--ui-designer-control-accent-62);
-  color: var(--ui-designer-control-accent);
-}
-
-.ui-designer-states-tab:focus-visible {
-  outline: 2px solid var(--ui-designer-control-accent);
-  outline-offset: 1px;
+.ui-designer-states-tabs.ui-designer-segmented {
+  --ui-designer-segmented-radius: 4px;
+  gap: 0;
 }
 
 .ui-designer-states-tab svg {
@@ -501,7 +408,9 @@
 }
 
 .ui-designer-section-header .ui-designer-prop-remove {
-  position: static;
+  position: relative;
+  top: auto;
+  right: auto;
   opacity: 1;
 }
 
@@ -573,29 +482,6 @@
   flex: 0 0 auto;
 }
 
-.ui-designer-prop-add {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 18px;
-  height: 18px;
-  padding: 0;
-  border: none;
-  border-radius: 3px;
-  background: transparent;
-  color: var(--ui-designer-control-accent);
-  cursor: pointer;
-}
-
-.ui-designer-prop-add:hover {
-  background: var(--ui-designer-control-accent-21);
-}
-
-.ui-designer-prop-add:focus-visible {
-  outline: 2px solid var(--ui-designer-control-accent);
-  outline-offset: 1px;
-}
-
 .ui-designer-prop-add svg {
   width: 13px;
   height: 13px;
@@ -610,14 +496,6 @@
 
 .ui-designer-property-row.checkbox .Block > .content {
   flex: 0 0 auto;
-}
-
-.ui-designer-states-tab.absent {
-  color: var(--ui-designer-glyph);
-}
-
-.ui-designer-states-tab.absent:hover {
-  color: var(--ui-designer-control-accent);
 }
 
 .ui-designer-section-header > .Block-label-row,

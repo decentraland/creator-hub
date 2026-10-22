@@ -1,12 +1,12 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useDrag } from 'react-dnd';
-import { IoEyeOffOutline, IoEyeOutline, IoTrashOutline } from 'react-icons/io5';
 import cx from 'classnames';
 
 import { useAppDispatch, useAppSelector } from '../../../redux/hooks';
 import { getMobileHudSelected, selectMobileHud, selectNode } from '../../../redux/ui-designer';
 import { UI_DESIGNER_DND_TYPE, type UIDesignerDragItem } from '../shared/dnd';
 import { GuiGridIcon, MobileHudIcon } from '../shared/widget-icons';
+import { EyeIcon, EyeOffIcon, TrashIcon } from '../icons';
 import {
   type CodeRoot,
   removeRoot,
@@ -132,7 +132,7 @@ const RootRow: React.FC<{
       <div className="ui-designer-code-root-actions">
         <button
           type="button"
-          className={cx('ui-designer-code-root-toplevel', { 'is-on': root.topLevel })}
+          className="ui-designer-code-root-toplevel ui-designer-toggle ui-designer-compact"
           title={
             root.topLevel
               ? 'Top-level: rendered on its own. Click to make it a nested-only component.'
@@ -145,23 +145,16 @@ const RootRow: React.FC<{
             void toggleTopLevel(root.filename);
           }}
         >
-          {root.topLevel ? (
-            <IoEyeOutline aria-hidden="true" />
-          ) : (
-            <IoEyeOffOutline
-              className="is-off"
-              aria-hidden="true"
-            />
-          )}
+          {root.topLevel ? <EyeIcon /> : <EyeOffIcon />}
         </button>
         <button
           type="button"
-          className="ui-designer-code-root-remove"
+          className="ui-designer-code-root-remove ui-designer-icon-btn ui-designer-compact"
           title={`Delete ${root.name}`}
           aria-label={`Delete ${root.name}`}
           onClick={onRemove}
         >
-          <IoTrashOutline aria-hidden="true" />
+          <TrashIcon />
         </button>
       </div>
     </div>

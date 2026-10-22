@@ -119,7 +119,7 @@ export const ResizeField: React.FC<ResizeFieldProps> = ({
       {field.aspectLockable ? (
         <button
           type="button"
-          className={`ui-designer-vec-lock${aspectLocked ? ' active' : ''}`}
+          className="ui-designer-vec-lock ui-designer-toggle"
           aria-pressed={aspectLocked}
           aria-label={aspectLocked ? 'Unlock aspect ratio' : 'Lock aspect ratio'}
           title={aspectLocked ? 'Unlock aspect ratio' : 'Lock aspect ratio'}
