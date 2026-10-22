@@ -296,7 +296,9 @@ function ProjectView({ folders, thumbnails }: Props) {
         return;
       }
       removeVirtualFolders(folders);
-      if (paths.length) dispatch(removeAssets({ paths }));
+      if (paths.length || folders.length) {
+        dispatch(removeAssets({ paths, folders: folders.map(folder => withAssetDir(folder)) }));
+      }
       clearSelection();
     },
     [
@@ -317,7 +319,12 @@ function ProjectView({ folders, thumbnails }: Props) {
   const handleConfirm = useCallback(async () => {
     if (!modal) return;
     removeVirtualFolders(modal.folders);
-    dispatch(removeAssets({ paths: modal.values }));
+    dispatch(
+      removeAssets({
+        paths: modal.values,
+        folders: modal.folders.map(folder => withAssetDir(folder)),
+      }),
+    );
     setModal(undefined);
     clearSelection();
   }, [modal, setModal, removeVirtualFolders, clearSelection]);

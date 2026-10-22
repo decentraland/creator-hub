@@ -115,7 +115,7 @@ export const dataLayer = createSlice({
     clearRemoveAsset: (state, payload: PayloadAction<Asset>) => {
       delete state.removingAsset[payload.payload.path];
     },
-    removeAssets: (state, payload: PayloadAction<{ paths: string[] }>) => {
+    removeAssets: (state, payload: PayloadAction<{ paths: string[]; folders?: string[] }>) => {
       for (const path of payload.payload.paths) state.removingAsset[path] = true;
     },
     clearRemoveAssets: (state, payload: PayloadAction<{ paths: string[] }>) => {

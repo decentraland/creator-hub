@@ -1,4 +1,4 @@
-import { removeAssetFiles, waitForLegacyUndoCommit } from './remove-assets';
+import { removeAssetFiles, removeEmptyFolders, waitForLegacyUndoCommit } from './remove-assets';
 
 const MISSING_METHOD = new Error('Method RemoveAssets not implemented in server port');
 
@@ -143,6 +143,72 @@ describe('removeAssetFiles', () => {
       await waitForLegacyUndoCommit(dataLayer);
       expect(removeAssets).toHaveBeenCalledTimes(1);
       expect(removeAssets).toHaveBeenCalledWith({ paths: [] });
+    });
+  });
+});
+
+describe('removeEmptyFolders', () => {
+  let folders: Set<string>;
+  let files: Set<string>;
+  let storage: Parameters<typeof removeEmptyFolders>[0];
+
+  const childrenOf = (path: string) =>
+    [...folders, ...files].filter(
+      entry => entry.startsWith(path + '/') && !entry.slice(path.length + 1).includes('/'),
+    );
+
+  beforeEach(() => {
+    folders = new Set(['assets', 'assets/props']);
+    files = new Set();
+    storage = {
+      list: vi.fn(async (path: string) => {
+        if (!folders.has(path)) throw new Error(`ENOENT: ${path}`);
+        return childrenOf(path).map(entry => ({
+          name: entry.slice(path.length + 1),
+          isDirectory: folders.has(entry),
+        }));
+      }),
+      rmdir: vi.fn(async (path: string) => {
+        if (!folders.has(path)) throw new Error(`ENOENT: ${path}`);
+        if (childrenOf(path).length) throw new Error(`ENOTEMPTY: ${path}`);
+        folders.delete(path);
+      }),
+    };
+  });
+
+  describe('when the folder holds only empty folders', () => {
+    beforeEach(() => {
+      folders.add('assets/props/trees');
+      folders.add('assets/props/trees/pine');
+      folders.add('assets/props/rocks');
+    });
+
+    it('should remove the folder and every folder below it', async () => {
+      await removeEmptyFolders(storage, ['assets/props']);
+      expect([...folders]).toEqual(['assets']);
+    });
+  });
+
+  describe('when a folder below it still holds a file', () => {
+    beforeEach(() => {
+      folders.add('assets/props/trees');
+      folders.add('assets/props/rocks');
+      files.add('assets/props/rocks/boulder.glb');
+    });
+
+    it('should remove only the folders left empty', async () => {
+      await removeEmptyFolders(storage, ['assets/props']);
+      expect([...folders]).toEqual(['assets', 'assets/props', 'assets/props/rocks']);
+    });
+  });
+
+  describe('when the folder is no longer on disk', () => {
+    beforeEach(() => {
+      folders.delete('assets/props');
+    });
+
+    it('should resolve without removing anything', async () => {
+      await expect(removeEmptyFolders(storage, ['assets/props'])).resolves.toBeUndefined();
     });
   });
 });

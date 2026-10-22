@@ -1,3 +1,4 @@
+import type { Storage } from '../logic/storage/types';
 import type { DataLayerRpcClient } from './types';
 
 type RemoveAssetsClient = Pick<DataLayerRpcClient, 'removeAssets' | 'removeAsset'>;
@@ -65,4 +66,25 @@ function supportsBatchRemoval(dataLayer: RemoveAssetsClient): Promise<boolean> {
 /** On hosts without batch removal, waits until their pending file undo entry is committed. */
 export async function waitForLegacyUndoCommit(dataLayer: RemoveAssetsClient): Promise<void> {
   if (!(await supportsBatchRemoval(dataLayer))) await wait(PAST_LEGACY_UNDO_WINDOW_MS);
+}
+
+type FolderStorage = Pick<Storage, 'list' | 'rmdir'>;
+
+async function listFoldersDeepestFirst(storage: FolderStorage, path: string): Promise<string[]> {
+  const entries = await storage.list(path).catch(() => []);
+  const below = await Promise.all(
+    entries
+      .filter(entry => entry.isDirectory)
+      .map(entry => listFoldersDeepestFirst(storage, `${path}/${entry.name}`)),
+  );
+  return [...below.flat(), path];
+}
+
+/** Removes each of `folders` and the folders below them, keeping any that still hold a file. */
+export async function removeEmptyFolders(storage: FolderStorage, folders: string[]): Promise<void> {
+  for (const folder of folders) {
+    for (const path of await listFoldersDeepestFirst(storage, folder)) {
+      await storage.rmdir(path).catch(() => undefined);
+    }
+  }
 }

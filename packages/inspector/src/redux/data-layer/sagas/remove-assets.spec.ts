@@ -10,7 +10,9 @@ import {
   removeAssets,
 } from '..';
 import type { RemovalResult } from '../../../lib/data-layer/remove-assets';
-import { removeAssetFiles } from '../../../lib/data-layer/remove-assets';
+import { removeAssetFiles, removeEmptyFolders } from '../../../lib/data-layer/remove-assets';
+import { getStorage } from '../../../lib/data-layer/client/storage';
+import type { Storage } from '../../../lib/logic/storage/types';
 import { removeAssetsSaga } from './remove-assets';
 
 describe('removeAssetsSaga', () => {
@@ -48,5 +50,31 @@ describe('removeAssetsSaga', () => {
         .put(error({ error: ErrorType.RemoveAsset }))
         .put(clearRemoveAssets({ paths }))
         .run());
+  });
+
+  describe('when the removal includes folders', () => {
+    const folders = ['assets/props'];
+    const folderAction = removeAssets({ paths, folders });
+    const storage = {} as Storage;
+    const runWithStorage = (provided: Storage | undefined) =>
+      expectSaga(removeAssetsSaga, folderAction).provide([
+        [matchers.call.fn(getDataLayerInterface), dataLayer],
+        [matchers.call.fn(removeAssetFiles), { removed: paths, batched: true }],
+        [matchers.call.fn(getStorage), provided],
+        [matchers.call.fn(removeEmptyFolders), undefined],
+      ]);
+
+    describe('and the editor storage is available', () => {
+      it('should remove the folders left empty before reloading the asset catalog', () =>
+        runWithStorage(storage)
+          .call(removeEmptyFolders, storage, folders)
+          .put(getAssetCatalog())
+          .run());
+    });
+
+    describe('and there is no editor storage', () => {
+      it('should not try to remove the folders', () =>
+        runWithStorage(undefined).not.call.fn(removeEmptyFolders).run());
+    });
   });
 });
