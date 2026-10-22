@@ -10,10 +10,7 @@ import {
   MdChevronRight as ChevronIcon,
   MdUnfoldLess as CollapseAllIcon,
   MdUnfoldMore as ExpandAllIcon,
-  MdViewList as ListIcon,
-  MdGridView as GridIcon,
 } from 'react-icons/md';
-import { BsLayoutSidebarInset as TreeIcon } from 'react-icons/bs';
 import { Item as MenuItem } from 'react-contexify';
 import cx from 'classnames';
 import type { Entity } from '@dcl/ecs';
@@ -24,6 +21,7 @@ import type { DropType } from '../Tree/utils';
 import { Modal } from '../Modal';
 import { Button } from '../Button';
 import FolderIcon from '../Icons/Folder';
+import { PanelToggleIcon } from '../Icons/AssetsPanel';
 import { CopyPathIcon, NewFolderIcon } from '../Icons/ContextMenu';
 import { AssetSearchField } from '../AssetSearchField';
 import { withAssetDir } from '../../lib/data-layer/host/fs-utils';
@@ -111,9 +109,6 @@ function withVirtualFolders(tree: Map<string, TreeNode>, virtualFolders: string[
   return next;
 }
 
-type ViewMode = 'grid' | 'list';
-
-const VIEW_MODE_KEY = 'inspector:local-assets-view';
 const TREE_WIDTH_KEY = 'inspector:local-assets-tree-width';
 const DEFAULT_TREE_WIDTH = 220;
 const MIN_TREE_WIDTH = 130;
@@ -127,14 +122,6 @@ function readTreeWidth(): number {
     // fall through to the default
   }
   return DEFAULT_TREE_WIDTH;
-}
-
-function readViewMode(): ViewMode {
-  try {
-    return localStorage.getItem(VIEW_MODE_KEY) === 'list' ? 'list' : 'grid';
-  } catch {
-    return 'grid';
-  }
 }
 
 // Search and type filters look through every folder, not just the one being browsed.
@@ -176,7 +163,6 @@ function ProjectView({ folders, thumbnails }: Props) {
   const { handleAction } = useContextMenu();
   const containerRef = useRef<HTMLDivElement>(null);
   const { select: selectPreview } = useAssetSelection();
-  const [viewMode, setViewMode] = useState<ViewMode>(readViewMode);
   const [showTree, setShowTree] = useState(true);
   const [treeWidth, setTreeWidth] = useState(readTreeWidth);
   const [open, setOpen] = useState(new Set<string>([ROOT]));
@@ -978,15 +964,6 @@ function ProjectView({ folders, thumbnails }: Props) {
     [treeWidth],
   );
 
-  const handleViewMode = useCallback((mode: ViewMode) => {
-    setViewMode(mode);
-    try {
-      localStorage.setItem(VIEW_MODE_KEY, mode);
-    } catch {
-      // storage can be unavailable (private windows, blocked site data); the choice just won't stick
-    }
-  }, []);
-
   // While filtering, folders show how many results they hold and nodes without any fade back.
   const renderTreeDecoration = (val: string) => {
     if (!isFiltering) return null;
@@ -1095,13 +1072,13 @@ function ProjectView({ folders, thumbnails }: Props) {
         <div className="ProjectView-main">
           <div className="Assets-toolbar">
             <button
-              className={cx('Assets-iconButton', { active: showTree })}
+              className={cx('Assets-toggle', { active: showTree })}
               onClick={() => setShowTree(value => !value)}
               title={showTree ? 'Hide folder tree' : 'Show folder tree'}
               aria-label={showTree ? 'Hide folder tree' : 'Show folder tree'}
               aria-pressed={showTree}
             >
-              <TreeIcon />
+              <PanelToggleIcon mirrored={showTree} />
             </button>
             <AssetSearchField
               value={search}
@@ -1113,30 +1090,6 @@ function ProjectView({ folders, thumbnails }: Props) {
               active={activeFilter}
               onClick={handleFilterClick}
             />
-            <div
-              className="ProjectView-viewToggle"
-              role="group"
-              aria-label="View mode"
-            >
-              <button
-                className={cx('Assets-iconButton', { active: viewMode === 'grid' })}
-                onClick={() => handleViewMode('grid')}
-                title="Card view"
-                aria-label="Card view"
-                aria-pressed={viewMode === 'grid'}
-              >
-                <GridIcon />
-              </button>
-              <button
-                className={cx('Assets-iconButton', { active: viewMode === 'list' })}
-                onClick={() => handleViewMode('list')}
-                title="List view"
-                aria-label="List view"
-                aria-pressed={viewMode === 'list'}
-              >
-                <ListIcon />
-              </button>
-            </div>
           </div>
           {/* The path only earns its row inside a subfolder; at the root it would be a dead pill. */}
           {(lastSelected !== ROOT || isFiltering) && (
@@ -1173,7 +1126,7 @@ function ProjectView({ folders, thumbnails }: Props) {
                 {isFiltering ? 'No assets match your search.' : 'This folder is empty.'}
               </div>
             )}
-            <div className={cx('FolderView', viewMode)}>
+            <div className="FolderView">
               {tiles.map((node, index) => {
                 const valueId = tileIds[index];
                 const src = node.type === 'asset' ? (node as AssetNodeItem).asset.src : undefined;
@@ -1182,8 +1135,6 @@ function ProjectView({ folders, thumbnails }: Props) {
                     key={valueId}
                     valueId={valueId}
                     value={node}
-                    layout={viewMode}
-                    showPath={isFiltering}
                     getDragContext={handleDragContext}
                     getDragItems={getDragItems}
                     onDropItems={handleMove}

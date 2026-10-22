@@ -68,8 +68,8 @@
   background: linear-gradient(
     to right,
     transparent 2px,
-    var(--primary-main) 2px,
-    var(--primary-main) 3px,
+    var(--border-focused) 2px,
+    var(--border-focused) 3px,
     transparent 3px
   );
 }
@@ -84,15 +84,6 @@
 
 .ProjectView .Assets-toolbar .ProjectFilters {
   flex: none;
-}
-
-.ProjectView-viewToggle {
-  display: flex;
-  gap: 2px;
-  margin-left: auto;
-  padding: 2px;
-  border-radius: 10px;
-  background: var(--base-19);
 }
 
 .ProjectView-scroll {
@@ -115,16 +106,6 @@
   flex-wrap: wrap;
   align-content: flex-start;
   justify-content: left;
-}
-
-.ProjectView .FolderView.list {
-  flex-direction: column;
-  flex-wrap: nowrap;
-  gap: 2px;
-}
-
-.ProjectView .FolderView.list .with-context-menu {
-  width: 100%;
 }
 
 .editor .editor-assets-tree .item > div {

@@ -29,7 +29,7 @@
 }
 
 .assets-catalog-asset.selected {
-  border-color: var(--primary-main);
+  border-color: var(--border-focused);
 }
 
 .assets-catalog-asset img {

@@ -85,8 +85,6 @@ export const Tile = withContextMenu<Props>(
     thumbnail,
     thumbnailPending,
     getAnimatedThumbnail,
-    layout = 'grid',
-    showPath = false,
   }) => {
     const [editing, setEditing] = useState(false);
     const [animatedThumbnail, setAnimatedThumbnail] = useState<Uint8Array | null>(null);
@@ -166,7 +164,6 @@ export const Tile = withContextMenu<Props>(
     if (!value) return null;
 
     const isMultiple = actionCount > 1;
-    const folderPath = valueId.includes('/') ? valueId.slice(0, valueId.lastIndexOf('/')) : '';
 
     const renderThumbnail = () => {
       if (value.type === 'folder') return <FolderIcon />;
@@ -291,14 +288,14 @@ export const Tile = withContextMenu<Props>(
         <Menu id={contextMenuId}>{renderMenu()}</Menu>
         <div
           ref={node => drag(drop(node))}
-          className={cx('Tile', { selected, 'drop-target': isDropTarget, row: layout === 'list' })}
+          className={cx('Tile', { selected, 'drop-target': isDropTarget })}
           key={value.name}
           onClick={onClick}
           onDoubleClick={onSelect}
           onDragStart={builtInEmote ? () => notifyBuiltInEmoteNotDraggable(value.name) : undefined}
           onMouseEnter={() => setHovered(true)}
           onMouseLeave={() => setHovered(false)}
-          title={showPath ? valueId : value.name}
+          title={value.name}
           data-test-id={valueId}
           data-test-label={value.name}
         >
@@ -323,9 +320,6 @@ export const Tile = withContextMenu<Props>(
             </div>
           ) : (
             <span>{value.name}</span>
-          )}
-          {showPath && value.type === 'asset' && layout === 'list' && folderPath && (
-            <small className="Tile-path">{folderPath}</small>
           )}
         </div>
       </>

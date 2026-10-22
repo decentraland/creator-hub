@@ -46,7 +46,7 @@
 }
 
 .custom-asset-item-box.selected {
-  border-color: var(--primary-main);
+  border-color: var(--border-focused);
 }
 
 .custom-asset-item-box:hover {

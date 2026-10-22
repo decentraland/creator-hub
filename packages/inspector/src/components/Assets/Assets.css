@@ -122,33 +122,44 @@
   padding: 8px 12px;
 }
 
-.Assets .Assets-buttons .Assets-buttons-right .icon-item {
+/* The 32px panel toggles (preview pane, folder tree), per the Figma PreviewToggle and
+   Collapse/Expand Panel states: Silver glyph at rest, a White 10 tint on hover, Blue Dark 2 with a
+   Snow glyph while on and Blue Dark 3 when that is hovered. */
+.Assets-toggle {
   display: inline-flex;
+  flex: none;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
-  padding: 5px;
+  width: 32px;
+  height: 32px;
+  padding: 4px;
   border: none;
-  border-radius: 6px;
-  background-color: transparent;
-  color: var(--base-01);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--neutral-grey-3);
   cursor: pointer;
 }
 
-.Assets .Assets-buttons .Assets-buttons-right .icon-item svg {
-  width: 100%;
-  height: 100%;
+.Assets-toggle:hover {
+  background: var(--ui-designer-control-selected-bg);
+  color: var(--white);
 }
 
-.Assets .Assets-buttons .Assets-buttons-right .icon-item:hover {
-  background-color: var(--background-gray);
+.Assets-toggle.active {
+  background: var(--selected-item);
+  color: var(--white);
 }
 
-.Assets .Assets-buttons .Assets-buttons-right .icon-item.active {
-  color: var(--primary-main);
+.Assets-toggle.active:hover {
+  background: var(--selected-row);
 }
 
+.Assets-toggle svg {
+  width: 24px;
+  height: 24px;
+}
+
+/* Thumbnail-size slider, per the Figma Scale Slider: a 4px White 20 track with a 10px handle. */
 .Assets .Assets-size {
   display: flex;
   align-items: center;
@@ -156,10 +167,25 @@
 }
 
 .Assets .Assets-size input[type="range"] {
-  width: 84px;
+  width: 60px;
   height: 4px;
-  accent-color: var(--primary-main);
+  appearance: none;
+  border-radius: 100px;
+  background: var(--ui-designer-control-border-strong);
   cursor: pointer;
+}
+
+.Assets .Assets-size input[type="range"]::-webkit-slider-thumb {
+  width: 10px;
+  height: 10px;
+  appearance: none;
+  border-radius: 50%;
+  background: var(--neutral-grey-3);
+}
+
+.Assets .Assets-size input[type="range"]:hover::-webkit-slider-thumb,
+.Assets .Assets-size input[type="range"]:active::-webkit-slider-thumb {
+  background: var(--white);
 }
 
 .Assets .visually-hidden {
@@ -174,19 +200,23 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
-  padding: 0;
+  width: 32px;
+  height: 32px;
+  padding: 4px;
   border: none;
-  border-radius: 6px;
+  border-radius: 8px;
   background-color: transparent;
-  color: var(--base-01);
-  font-size: 22px;
+  color: var(--white);
   cursor: pointer;
 }
 
 .Assets .Assets-buttons .Assets-buttons-right .collapse-toggle:hover {
-  background-color: var(--background-gray);
+  background-color: var(--ui-designer-control-selected-bg);
+}
+
+.Assets .Assets-buttons .Assets-buttons-right .collapse-toggle svg {
+  width: 24px;
+  height: 24px;
 }
 
 .Assets .Assets-body {
@@ -267,8 +297,8 @@
 }
 
 .Assets-iconButton.active {
-  background: var(--base-17);
-  color: var(--primary-main);
+  background: var(--selected-item);
+  color: var(--white);
 }
 
 .Assets-iconButton.small {
@@ -350,7 +380,8 @@
 }
 
 .Assets-crumbs-results button {
-  color: var(--primary-main);
+  color: var(--white-gray);
+  text-decoration: underline;
 }
 
 .Assets-search {
@@ -388,7 +419,7 @@
 }
 
 .Assets-search input:focus {
-  box-shadow: 0 0 0 1px var(--primary-main);
+  box-shadow: 0 0 0 1px var(--border-focused);
 }
 
 .Assets-search-clear {

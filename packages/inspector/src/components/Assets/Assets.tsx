@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState, useMemo, useRef } from 'react';
-import { MdOutlineSpeed as OptimizeIcon, MdVerticalSplit } from 'react-icons/md';
+import { MdOutlineSpeed as OptimizeIcon } from 'react-icons/md';
 import { HiOutlinePlus } from 'react-icons/hi';
 import { HiOutlineRefresh as RefreshIcon } from 'react-icons/hi';
 import { IoIosFolderOpen, IoIosUndo } from 'react-icons/io';
@@ -37,7 +37,11 @@ import { useScanAssets } from '../../hooks/useScanAssets';
 import { useImportAssetToFilesystem } from '../../hooks/useImportAssetToFilesystem';
 import { AssetPacksIcon, CustomItemsIcon, LocalAssetsIcon } from '../Icons/AssetsTabs';
 import CleanupIcon from '../Icons/Cleanup';
-import { ListChevronsDownUpIcon, ListChevronsUpDownIcon } from '../Icons/ListChevrons';
+import {
+  CollapseVerticallyIcon,
+  PreviewHiddenIcon,
+  PreviewVisibleIcon,
+} from '../Icons/AssetsPanel';
 import { AssetsCatalog } from '../AssetsCatalog';
 import { CatalogAssetContextMenu } from '../AssetsCatalog/Asset/ContextMenu/CatalogAssetContextMenu';
 import { ProjectAssetExplorer } from '../ProjectAssetExplorer';
@@ -433,13 +437,13 @@ function AssetsInner({ isAssetsPanelCollapsed, onToggleCollapse }: Props) {
               text={showPreview ? 'Hide preview' : 'Show preview'}
               trigger={
                 <button
-                  className={cx('icon-item', { active: showPreview })}
+                  className={cx('Assets-toggle', { active: showPreview })}
                   onClick={() => setShowPreview(value => !value)}
                   aria-label={showPreview ? 'Hide preview panel' : 'Show preview panel'}
                   aria-pressed={showPreview}
                   data-test-id="assets-preview-toggle"
                 >
-                  <MdVerticalSplit />
+                  {showPreview ? <PreviewVisibleIcon /> : <PreviewHiddenIcon />}
                 </button>
               }
               openOnTriggerMouseEnter={true}
@@ -459,7 +463,7 @@ function AssetsInner({ isAssetsPanelCollapsed, onToggleCollapse }: Props) {
                 aria-expanded={!isAssetsPanelCollapsed}
                 data-test-id="assets-collapse-toggle"
               >
-                {isAssetsPanelCollapsed ? <ListChevronsUpDownIcon /> : <ListChevronsDownUpIcon />}
+                <CollapseVerticallyIcon />
               </button>
             }
             openOnTriggerMouseEnter={true}

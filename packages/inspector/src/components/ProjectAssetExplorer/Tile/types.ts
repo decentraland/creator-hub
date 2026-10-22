@@ -29,8 +29,5 @@ export interface Props {
   thumbnail?: Uint8Array | null;
   /** True while a thumbnail for this model is still being generated. */
   thumbnailPending?: boolean;
-  layout?: 'grid' | 'list';
-  /** Show which folder the asset lives in; used when results come from several folders. */
-  showPath?: boolean;
   getAnimatedThumbnail?: (value: AssetNodeItem) => Promise<Uint8Array | undefined>;
 }
