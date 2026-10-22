@@ -78,14 +78,17 @@ export function UrlInputModal({
         )}
         <div className="UrlInputModalActions">
           <Button
+            variant="contained"
+            color="secondary"
+            size="large"
             onClick={handleClose}
-            size="big"
           >
             Cancel
           </Button>
           <Button
-            type="danger"
-            size="big"
+            variant="contained"
+            color="primary"
+            size="large"
             onClick={handleAccept}
             disabled={!urlValue || !!error}
           >

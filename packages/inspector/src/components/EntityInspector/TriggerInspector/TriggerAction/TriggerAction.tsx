@@ -106,6 +106,9 @@ const TriggerActionContainer: React.FC<WithSdkProps & Props> = ({ sdk, ...props 
             <div className="RightMenu">
               <MoreOptionsMenu className="TriggerActionMenu">
                 <Button
+                  variant="contained"
+                  color="secondary"
+                  size="small"
                   className="RemoveButton"
                   onClick={e => handleRemoveAction(e, idx)}
                 >

@@ -136,7 +136,14 @@ export default withSdk<Props>(({ sdk, entity, initialOpen = true }) => {
               onChange={handleUpdateExcludeId(index)}
             />
             <MoreOptionsMenu>
-              <Button onClick={handleRemoveExcludeId(index)}>Remove Player ID</Button>
+              <Button
+                variant="contained"
+                color="secondary"
+                size="small"
+                onClick={handleRemoveExcludeId(index)}
+              >
+                Remove Player ID
+              </Button>
             </MoreOptionsMenu>
           </div>
         ))}
