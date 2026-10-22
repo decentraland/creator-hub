@@ -24,8 +24,7 @@ export enum NavbarItem {
   LEARN = 'learn',
   MANAGE = 'manage',
   MORE = 'more',
-  /** Has no menu entry yet: reached from the Home banner, Manage and Analytics. */
-  CREATOR_FUND = 'creator-fund',
+  PAYOUTS = 'payouts',
 }
 
 function MenuItem(props: { item: NavbarItem; active: NavbarItem; disable?: boolean }) {
@@ -104,6 +103,10 @@ export function Navbar(props: { active: NavbarItem }) {
           />
           <MenuItem
             item={NavbarItem.MANAGE}
+            active={props.active}
+          />
+          <MenuItem
+            item={NavbarItem.PAYOUTS}
             active={props.active}
           />
           <MenuItem

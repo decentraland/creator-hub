@@ -76,16 +76,16 @@ export type Enrollment = {
   terms_version: string;
 };
 
+/** Where payouts go. The lock beside it in Creator Hub is UI only: it guards against stray edits. */
 export type PayoutWallet = {
   address: string;
-  locked: boolean;
   updated_at: string;
 };
 
 export enum PayoutStatus {
   PAID = 'paid',
   PROCESSING = 'processing',
-  /** Earned something, but under the $5 minimum. */
+  /** Earned something, but under the minimum payout. */
   BELOW_MINIMUM = 'below_minimum',
   /** No place reached the payout's player minimum. */
   NOT_QUALIFIED = 'not_qualified',
@@ -96,7 +96,8 @@ export type Payout = {
   start_date: string;
   end_date: string;
   status: PayoutStatus;
-  amount_usd: number;
+  /** Paid in USDC. */
+  amount_usdc: number;
   qualified_places: number;
   wallet: string | null;
   tx_hash: string | null;

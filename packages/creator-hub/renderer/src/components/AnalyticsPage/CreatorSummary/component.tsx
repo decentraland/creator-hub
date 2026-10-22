@@ -50,7 +50,7 @@ export function CreatorSummary({ places }: Props) {
           variant="text"
           color="secondary"
           endIcon={<ChevronRightIcon />}
-          onClick={() => navigate('/creator-fund')}
+          onClick={() => navigate('/payouts')}
         >
           {t('analytics.creator_summary.link')}
         </Button>

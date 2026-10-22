@@ -92,8 +92,8 @@ export const fetchCreatorPlaces = createAsyncThunk(
 
 export const savePayoutWallet = createAsyncThunk(
   'creatorFund/savePayoutWallet',
-  async ({ address, wallet, locked }: { address: string; wallet: string; locked: boolean }) =>
-    creatorFundApi.setPayoutWallet(address, wallet, locked),
+  async ({ address, wallet }: { address: string; wallet: string }) =>
+    creatorFundApi.setPayoutWallet(address, wallet),
 );
 
 export const fetchPayouts = createAsyncThunk(

@@ -302,7 +302,7 @@
       "manage": "Manage",
       "learn": "Learn",
       "more": "More",
-      "creator-fund": "Creator Fund"
+      "payouts": "Payouts"
     },
     "feedback": "Submit feedback",
     "report_an_issue": "Report an Issue",
@@ -1431,12 +1431,10 @@
       "title": "Get paid for the players you bring",
       "description": "Join the <b>Creator Fund</b> and earn a share of a {pool} pool every half-month, based on the new players your scenes bring and keep.",
       "cta": "Learn more",
-      "enrolled_title": "You're in the Creator Fund",
-      "enrolled_description": "See this cycle's numbers and choose where your payouts go.",
-      "enrolled_cta": "View payouts",
       "close": "Dismiss"
     },
     "page": {
+      "title": "Payouts",
       "description": "Earn from a fixed pool every half-month, based on the players your scenes bring to Decentraland and bring back.",
       "join": "Join Creator Fund",
       "enrolled_since": "Enrolled since {date}",
@@ -1482,8 +1480,6 @@
           "internal_account": "Foundation and Regenesis Labs accounts can't join the Creator Fund.",
           "suspended": "This account can't take part in the Creator Fund right now."
         },
-        "help": "If you think this is a mistake, our support team can review your account.",
-        "contact_support": "Contact Support",
         "close": "Close"
       },
       "terms": {
@@ -1529,24 +1525,17 @@
       "hours": "{value} h"
     },
     "payouts": {
-      "title": "Payouts",
-      "support": "Payout support",
+      "title": "Wallet & history",
       "wallet": {
         "title": "Payout wallet",
-        "description": "Each cycle is paid to the wallet that's locked when the cycle closes.",
+        "description": "Each cycle is paid to the wallet saved here when the cycle closes.",
         "placeholder": "0x…",
         "invalid": "Enter a valid wallet address",
         "use_connected": "Use connected wallet",
         "lock": "Lock payout wallet",
         "unlock": "Unlock to edit",
         "locked": "Locked. Payouts go to this wallet.",
-        "unlocked": "Lock the wallet to receive payouts.",
-        "unlock_confirm": {
-          "title": "Unlock your payout wallet?",
-          "description": "This cycle closes on {date}. Lock a wallet again before then, or this cycle has nowhere to be paid.",
-          "confirm": "Unlock",
-          "cancel": "Cancel"
-        }
+        "unlocked": "Lock the wallet to save it."
       },
       "history": {
         "title": "Past payouts",
@@ -1561,7 +1550,7 @@
         "status": {
           "paid": "Paid",
           "processing": "Processing",
-          "below_minimum": "Below $5 minimum",
+          "below_minimum": "Below {minPayout} minimum",
           "not_qualified": "Not qualified"
         },
         "view_transaction": "View transaction",

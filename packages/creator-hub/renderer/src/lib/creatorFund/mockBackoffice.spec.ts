@@ -24,7 +24,7 @@ describe('mockControls.reset', () => {
     beforeEach(async () => {
       mockControls.setSimulatedCreator(SimulatedCreator.NOT_ELIGIBLE);
       await settle(mockBackoffice.enroll(ADDRESS, '2026-10-beta'));
-      await settle(mockBackoffice.setPayoutWallet(ADDRESS, ADDRESS, true));
+      await settle(mockBackoffice.setPayoutWallet(ADDRESS, ADDRESS));
     });
 
     it('should leave the fund and clear the wallet', async () => {

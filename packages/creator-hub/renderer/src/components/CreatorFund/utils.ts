@@ -1,14 +1,6 @@
-const usd = new Intl.NumberFormat('en-US', {
-  style: 'currency',
-  currency: 'USD',
-  maximumFractionDigits: 2,
-});
-
-const wholeUsd = new Intl.NumberFormat('en-US', {
-  style: 'currency',
-  currency: 'USD',
-  maximumFractionDigits: 0,
-});
+/** USDC is not an ISO 4217 code, so Intl can't format it as a currency: append the ticker. */
+const usdc = new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const wholeUsdc = new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 });
 
 /** Cycle dates are UTC calendar days; formatting them in local time would shift them. */
 const day = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' });
@@ -19,10 +11,11 @@ const dayWithYear = new Intl.DateTimeFormat('en-US', {
   timeZone: 'UTC',
 });
 
-export const formatUsd = (value: number) => usd.format(value);
+/** "389.40 USDC". */
+export const formatUsdc = (value: number) => `${usdc.format(value)} USDC`;
 
-/** "$10,000", for program constants that are always whole dollars. */
-export const formatWholeUsd = (value: number) => wholeUsd.format(value);
+/** "10,000 USDC", for program constants that are always whole amounts. */
+export const formatWholeUsdc = (value: number) => `${wholeUsdc.format(value)} USDC`;
 
 /** `2026-10-15` → "Oct 15, 2026". */
 export const formatCycleDate = (isoDate: string) => dayWithYear.format(new Date(isoDate));

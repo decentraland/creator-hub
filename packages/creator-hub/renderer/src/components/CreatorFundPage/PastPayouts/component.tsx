@@ -15,14 +15,15 @@ import {
 
 import { misc } from '#preload';
 import type { Payout } from '/@/lib/creatorFund';
-import { CURRENT_CYCLE, PayoutStatus } from '/@/lib/creatorFund';
+import { CURRENT_CYCLE, PROGRAM, PayoutStatus } from '/@/lib/creatorFund';
 import { t } from '/@/modules/store/translation/utils';
 
 import { Loader } from '../../Loader';
 import {
   formatCycleDate,
   formatCycleRange,
-  formatUsd,
+  formatWholeUsdc,
+  formatUsdc,
   shortAddress,
   txUrl,
 } from '../../CreatorFund/utils';
@@ -86,7 +87,9 @@ export function PastPayouts({ payouts, isLoading, isFailed }: Props) {
                 size="small"
                 variant="outlined"
                 className={cx('PayoutStatus', payout.status)}
-                label={t(`creator_fund.payouts.history.status.${payout.status}`)}
+                label={t(`creator_fund.payouts.history.status.${payout.status}`, {
+                  minPayout: formatWholeUsdc(PROGRAM.minPayoutUsdc),
+                })}
               />
             </TableCell>
             <TableCell>{payout.qualified_places}</TableCell>
@@ -94,7 +97,7 @@ export function PastPayouts({ payouts, isLoading, isFailed }: Props) {
               align="right"
               className={cx('Amount', { Zero: payout.status !== PayoutStatus.PAID })}
             >
-              {formatUsd(payout.amount_usd)}
+              {formatUsdc(payout.amount_usdc)}
             </TableCell>
             <TableCell className="Wallet">
               {payout.wallet ? shortAddress(payout.wallet) : '-'}

@@ -3,18 +3,15 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import GroupAddOutlinedIcon from '@mui/icons-material/GroupAddOutlined';
 import ReplayIcon from '@mui/icons-material/Replay';
-import SupportAgentIcon from '@mui/icons-material/SupportAgent';
 import TimerOutlinedIcon from '@mui/icons-material/TimerOutlined';
-import { Box, Chip, IconButton, Tooltip, Typography } from 'decentraland-ui2';
+import { Box, Chip, Typography } from 'decentraland-ui2';
 
-import { misc } from '#preload';
 import { useDispatch } from '#store';
 import { useCreatorFund } from '/@/hooks/useCreatorFund';
 import { useAuth } from '/@/hooks/useAuth';
 import { PROGRAM } from '/@/lib/creatorFund';
 import { actions } from '/@/modules/store/creatorFund';
 import { t } from '/@/modules/store/translation/utils';
-import { CONTACT_SUPPORT_URL } from '/@/modules/utils';
 
 import { Button } from '../Button';
 import { Container } from '../Container';
@@ -23,7 +20,7 @@ import { Navbar, NavbarItem } from '../Navbar';
 import { SignInCard } from '../ManagePage/SignInCard';
 import type { CreatorFundLocationState } from '../CreatorFund/Banner';
 import { JoinModal } from '../CreatorFund/JoinModal';
-import { formatCycleDate, formatWholeUsd } from '../CreatorFund/utils';
+import { formatCycleDate, formatWholeUsdc } from '../CreatorFund/utils';
 
 import { CycleSummary } from './CycleSummary';
 import { FundPlaces } from './FundPlaces';
@@ -84,21 +81,12 @@ export function CreatorFundPage() {
     }, FOCUS_AFTER_MODAL_MS);
   }, [handleCloseModal]);
 
-  const handleSupport = useCallback(() => {
-    void misc.openExternal(CONTACT_SUPPORT_URL);
-  }, []);
-
   return (
     <main className="CreatorFundPage">
-      <Navbar active={NavbarItem.CREATOR_FUND} />
+      <Navbar active={NavbarItem.PAYOUTS} />
       <Container>
         <Box className="PageHeader">
-          <Typography variant="h3">{t('creator_fund.title')}</Typography>
-          <Chip
-            size="small"
-            label={t('creator_fund.beta')}
-            className="BetaChip"
-          />
+          <Typography variant="h3">{t('creator_fund.page.title')}</Typography>
           {enrollment && (
             <Chip
               size="small"
@@ -114,6 +102,14 @@ export function CreatorFundPage() {
         </Box>
 
         <Box className="Hero">
+          <Box className="HeroHeading">
+            <Typography variant="h5">{t('creator_fund.title')}</Typography>
+            <Chip
+              size="small"
+              label={t('creator_fund.beta')}
+              className="BetaChip"
+            />
+          </Box>
           <Typography
             variant="body1"
             className="Lead"
@@ -125,9 +121,9 @@ export function CreatorFundPage() {
             className="Rules"
           >
             {t('creator_fund.page.rules', {
-              pool: formatWholeUsd(PROGRAM.poolUsd),
+              pool: formatWholeUsdc(PROGRAM.poolUsdc),
               minPlayers: PROGRAM.minPlayers,
-              minPayout: formatWholeUsd(PROGRAM.minPayoutUsd),
+              minPayout: formatWholeUsdc(PROGRAM.minPayoutUsdc),
             })}
           </Typography>
           <Box className="Pillars">
@@ -173,21 +169,7 @@ export function CreatorFundPage() {
               <>
                 <CycleSummary address={wallet} />
                 <Box className="Payouts">
-                  <Box className="SectionHeader">
-                    <Typography variant="h5">{t('creator_fund.payouts.title')}</Typography>
-                    <Tooltip
-                      title={t('creator_fund.payouts.support')}
-                      placement="top"
-                      arrow
-                    >
-                      <IconButton
-                        aria-label={t('creator_fund.payouts.support')}
-                        onClick={handleSupport}
-                      >
-                        <SupportAgentIcon />
-                      </IconButton>
-                    </Tooltip>
-                  </Box>
+                  <Typography variant="h5">{t('creator_fund.payouts.title')}</Typography>
                   <PayoutWallet
                     key={fund.payoutWallet?.updated_at ?? 'none'}
                     ref={walletInputRef}

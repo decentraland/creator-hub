@@ -51,6 +51,16 @@
     radial-gradient(circle at 100% 0%, rgba(105, 30, 169, 0.55), transparent 55%), var(--card);
 }
 
+.CreatorFundPage .HeroHeading {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.CreatorFundPage .HeroHeading .MuiTypography-h5 {
+  font-weight: 700;
+}
+
 .CreatorFundPage .Hero .Lead {
   max-width: 720px;
   font-size: 18px;
@@ -101,13 +111,7 @@
   background-color: var(--card);
 }
 
-.CreatorFundPage .Payouts .SectionHeader {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.CreatorFundPage .Payouts .SectionHeader .MuiTypography-h5,
+.CreatorFundPage .Payouts > .MuiTypography-h5,
 .CreatorFundPage .Payouts .History .MuiTypography-subtitle1 {
   font-weight: 700;
 }

@@ -38,13 +38,13 @@ export const TERMS_SECTIONS: TermsSection[] = [
     paragraphs: [
       'The Program runs in half-month cycles (the 1st to the 15th, and the 16th to the end of the month, UTC), each with a fixed pool. A cycle closes three days after its last day so that returning players can be counted.',
       'Payouts are based on three metrics measured over qualifying players only: new players, credited to the scene they played most on their first day; AFK-free playtime; and new players who return within one to three days. A qualifying player spends more than five AFK-free minutes in scenes during the cycle, plays on a production realm, and is not classified as automated.',
-      'A scene is paid for a cycle only if it has at least ten qualifying players in that cycle. Amounts under five US dollars are not paid. The exact formula is not disclosed; the component metrics are shown to you in Creator Hub.',
+      'A scene is paid for a cycle only if it has at least ten qualifying players in that cycle. Amounts under 5 USDC are not paid. The exact formula is not disclosed; the component metrics are shown to you in Creator Hub.',
     ],
   },
   {
     heading: '5. Payout Wallet and Payments',
     paragraphs: [
-      'You must set and lock a payout wallet in Creator Hub. Each cycle is paid to the wallet that is locked when the cycle closes. You are responsible for the wallet address you provide; payments sent to it are final.',
+      'Payouts are made in USDC. You must set a payout wallet in Creator Hub; each cycle is paid to the wallet saved there when the cycle closes. You are responsible for the wallet address you provide; payments sent to it are final.',
       'Payments are made within thirty days of a cycle closing. You are responsible for any taxes on amounts you receive, and the Foundation may ask for tax or identity information before paying you.',
     ],
   },

@@ -4,18 +4,16 @@ import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import { Box, Checkbox, CircularProgress, FormControlLabel, Typography } from 'decentraland-ui2';
 
-import { misc } from '#preload';
 import { useDispatch, useSelector } from '#store';
 import { useCreatorFund } from '/@/hooks/useCreatorFund';
 import { PROGRAM, fundKeyOfLocation } from '/@/lib/creatorFund';
 import { TERMS_SECTIONS, TERMS_TITLE, TERMS_UPDATED } from '/@/lib/creatorFund/terms';
 import { actions } from '/@/modules/store/creatorFund';
-import { CONTACT_SUPPORT_URL } from '/@/modules/utils';
 import { t } from '/@/modules/store/translation/utils';
 
 import { Button } from '../../Button';
 import { Modal } from '../../Modals';
-import { formatWholeUsd } from '../utils';
+import { formatWholeUsdc } from '../utils';
 
 import './styles.css';
 
@@ -106,10 +104,6 @@ export function JoinModal({ open, initialStep, onClose, onSetUpWallet }: Props) 
     }
   }, [failedAction, checkEligibility, dispatch]);
 
-  const handleContactSupport = useCallback(() => {
-    void misc.openExternal(CONTACT_SUPPORT_URL);
-  }, []);
-
   const enrolledScenes = useMemo(
     () =>
       creatorPlaces.filter(place => places[fundKeyOfLocation(place.location)]?.opt_in.eligible)
@@ -145,20 +139,12 @@ export function JoinModal({ open, initialStep, onClose, onSetUpWallet }: Props) 
             </>
           )}
           {step === 'not_eligible' && (
-            <>
-              <Button
-                color="secondary"
-                onClick={handleContactSupport}
-              >
-                {t('creator_fund.modal.not_eligible.contact_support')}
-              </Button>
-              <Button
-                variant="contained"
-                onClick={onClose}
-              >
-                {t('creator_fund.modal.not_eligible.close')}
-              </Button>
-            </>
+            <Button
+              variant="contained"
+              onClick={onClose}
+            >
+              {t('creator_fund.modal.not_eligible.close')}
+            </Button>
           )}
           {step === 'terms' && (
             <>
@@ -220,7 +206,7 @@ export function JoinModal({ open, initialStep, onClose, onSetUpWallet }: Props) 
             <ul className="Points">
               <li>
                 {t('creator_fund.modal.intro.points.pool', {
-                  pool: formatWholeUsd(PROGRAM.poolUsd),
+                  pool: formatWholeUsdc(PROGRAM.poolUsdc),
                 })}
               </li>
               <li>{t('creator_fund.modal.intro.points.metrics')}</li>
@@ -258,12 +244,6 @@ export function JoinModal({ open, initialStep, onClose, onSetUpWallet }: Props) 
                 {t(`creator_fund.modal.not_eligible.reasons.${reason}`)}
               </Typography>
             ))}
-            <Typography
-              variant="body2"
-              className="Muted"
-            >
-              {t('creator_fund.modal.not_eligible.help')}
-            </Typography>
           </Box>
         )}
 

@@ -144,7 +144,7 @@ if (isAiChatWindow || isConsoleWindow) {
                       element={<ManagePage />}
                     />
                     <Route
-                      path="/creator-fund"
+                      path="/payouts"
                       element={<CreatorFundPage />}
                     />
                     <Route

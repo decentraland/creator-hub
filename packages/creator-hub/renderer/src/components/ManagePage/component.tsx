@@ -112,7 +112,7 @@ export function ManagePage() {
     dispatch(creatorFundActions.setShowInFundOnly(!showInFundOnly));
   }, [dispatch, showInFundOnly]);
 
-  const handleOpenCreatorFund = useCallback(() => navigate('/creator-fund'), [navigate]);
+  const handleOpenCreatorFund = useCallback(() => navigate('/payouts'), [navigate]);
 
   const handleSortDropdownChange = useCallback((e: SelectChangeEvent<SortBy>) => {
     dispatch(managementActions.setSortBy(e.target.value as SortBy));

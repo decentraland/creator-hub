@@ -11,29 +11,35 @@ import { t } from '/@/modules/store/translation/utils';
 import InfluencePng from '/assets/images/influence.png';
 
 import { Button } from '../../Button';
-import { formatWholeUsd } from '../utils';
+import { formatWholeUsdc } from '../utils';
 
 import './styles.css';
 
 /** Where the banner sends the creator. `explain` opens the intro modal on arrival. */
 export type CreatorFundLocationState = { explain?: boolean };
 
-/** The Home header slot for the program — the Figma "Tutorial Banner" pattern. */
+/**
+ * The Home header slot for the program — the Figma "Tutorial Banner" pattern.
+ *
+ * It recruits, so it goes away for good once the creator has opted in. A
+ * signed-in creator sees nothing until their enrollment is known, or an
+ * enrolled one would get a flash of the pitch on every visit.
+ */
 export function CreatorFundBanner() {
-  const { bannerDismissed, isEnrolled } = useCreatorFund();
+  const { bannerDismissed, isEnrolled, isSignedIn, isLoaded } = useCreatorFund();
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
   const handleOpen = useCallback(() => {
-    const state: CreatorFundLocationState = { explain: !isEnrolled };
-    navigate('/creator-fund', { state });
-  }, [navigate, isEnrolled]);
+    const state: CreatorFundLocationState = { explain: true };
+    navigate('/payouts', { state });
+  }, [navigate]);
 
   const handleDismiss = useCallback(() => {
     dispatch(actions.dismissBanner());
   }, [dispatch]);
 
-  if (bannerDismissed) return null;
+  if (bannerDismissed || isEnrolled || (isSignedIn && !isLoaded)) return null;
 
   return (
     <section
@@ -51,25 +57,23 @@ export function CreatorFundBanner() {
           variant="h4"
           className="Title"
         >
-          {isEnrolled ? t('creator_fund.banner.enrolled_title') : t('creator_fund.banner.title')}
+          {t('creator_fund.banner.title')}
         </Typography>
         <Typography
           variant="body1"
           className="Description"
         >
-          {isEnrolled
-            ? t('creator_fund.banner.enrolled_description')
-            : t('creator_fund.banner.description', {
-                pool: formatWholeUsd(PROGRAM.poolUsd),
-                b: (chunks: string) => <b>{chunks}</b>,
-              })}
+          {t('creator_fund.banner.description', {
+            pool: formatWholeUsdc(PROGRAM.poolUsdc),
+            b: (chunks: string) => <b>{chunks}</b>,
+          })}
         </Typography>
         <Button
           variant="contained"
           className="Cta"
           onClick={handleOpen}
         >
-          {isEnrolled ? t('creator_fund.banner.enrolled_cta') : t('creator_fund.banner.cta')}
+          {t('creator_fund.banner.cta')}
         </Button>
       </div>
       <img

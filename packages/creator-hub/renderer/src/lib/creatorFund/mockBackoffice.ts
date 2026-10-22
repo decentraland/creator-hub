@@ -157,8 +157,8 @@ function payoutsFor(address: string, wallet: string | null): Payout[] {
       start_date: cycle.start_date,
       end_date: cycle.end_date,
       status,
-      // Under the $5 minimum a cycle pays $0; the status says why.
-      amount_usd: paid ? amount : 0,
+      // Under the minimum a cycle pays 0; the status says why.
+      amount_usdc: paid ? amount : 0,
       qualified_places: amount === 0 ? 0 : 1 + Math.floor(roll * 3),
       wallet: paid ? (wallet ?? address) : null,
       tx_hash: paid ? mockTxHash(`${address}:${cycle.id}`) : null,
@@ -175,7 +175,7 @@ export type CreatorFundApi = {
     places: Array<{ key: FundPlaceKey; title: string | null }>,
   ): Promise<PlaceEligibility[]>;
   getPayoutWallet(address: string): Promise<PayoutWallet | null>;
-  setPayoutWallet(address: string, wallet: string, locked: boolean): Promise<PayoutWallet>;
+  setPayoutWallet(address: string, wallet: string): Promise<PayoutWallet>;
   getPayouts(address: string): Promise<Payout[]>;
   getCurrentCycle(): Promise<Cycle>;
 };
@@ -219,11 +219,10 @@ export const mockBackoffice: CreatorFundApi = {
     return recordOf(address).payoutWallet;
   },
 
-  async setPayoutWallet(address, wallet, locked) {
+  async setPayoutWallet(address, wallet) {
     await delay(700);
     const payoutWallet: PayoutWallet = {
       address: wallet,
-      locked,
       updated_at: new Date().toISOString(),
     };
     updateRecord(address, record => ({ ...record, payoutWallet }));
