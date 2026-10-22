@@ -204,4 +204,83 @@ describe('ProjectAssetExplorer/file-ops', () => {
       expect(collectAssetReferences({ value: [{ path: 'assets/s.ts' }] })).toEqual(['assets/s.ts']);
     });
   });
+
+  describe('Script parameters', () => {
+    const script = {
+      value: [
+        {
+          path: 'assets/chest/Chest.ts',
+          priority: 0,
+          layout: JSON.stringify({
+            params: {
+              openSound: { type: 'string', optional: true, value: 'open.mp3' },
+              closeSound: { type: 'string', value: 'sounds/close.mp3' },
+              hoverText: { type: 'string', value: 'Open / Close' },
+              idleAnimation: { type: 'string', value: '' },
+              speed: { type: 'number', value: 2 },
+            },
+            actions: [{ methodName: 'open', params: {} }],
+          }),
+        },
+      ],
+    };
+    const paramsOf = (value: typeof script) => JSON.parse(value.value[0].layout).params;
+
+    describe('when a file a string parameter names is renamed in place', () => {
+      it('should write the new name and leave the other parameters untouched', () => {
+        const next = replaceAssetReferences(
+          script,
+          createPathMapper('assets/chest/open.mp3', 'assets/chest/open12345.mp3'),
+        );
+        expect(paramsOf(next)).toEqual({
+          ...paramsOf(script),
+          openSound: { type: 'string', optional: true, value: 'open12345.mp3' },
+        });
+      });
+    });
+
+    describe('when the file moves to a subfolder of the script', () => {
+      it('should write the path relative to the script folder', () => {
+        const next = replaceAssetReferences(
+          script,
+          createPathMapper('assets/chest/sounds', 'assets/chest/audio'),
+        );
+        expect(paramsOf(next).closeSound.value).toBe('audio/close.mp3');
+      });
+    });
+
+    describe('when the file moves outside the script folder', () => {
+      it('should write a path that climbs out of the script folder', () => {
+        const next = replaceAssetReferences(
+          script,
+          createPathMapper('assets/chest/open.mp3', 'assets/sfx/open.mp3'),
+        );
+        expect(paramsOf(next).openSound.value).toBe('../sfx/open.mp3');
+      });
+    });
+
+    describe('when the whole smart item folder is renamed', () => {
+      it('should move the script path and keep the names relative to it', () => {
+        const next = replaceAssetReferences(script, createPathMapper('assets/chest', 'assets/box'));
+        expect(next.value[0].path).toBe('assets/box/Chest.ts');
+        expect(paramsOf(next)).toEqual(paramsOf(script));
+      });
+    });
+
+    describe('when no parameter names the renamed file', () => {
+      it('should keep the same reference', () => {
+        expect(
+          replaceAssetReferences(script, createPathMapper('assets/chest/x.mp3', 'assets/y.mp3')),
+        ).toBe(script);
+      });
+    });
+
+    describe('when collecting the files a script uses', () => {
+      it('should include the files its string parameters name', () => {
+        expect(collectAssetReferences(script)).toEqual(
+          expect.arrayContaining(['assets/chest/open.mp3', 'assets/chest/sounds/close.mp3']),
+        );
+      });
+    });
+  });
 });

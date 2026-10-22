@@ -3,7 +3,7 @@
  * Paths here are relative to the `assets/` directory, e.g. `my-pack/model.glb`.
  */
 
-import { DIRECTORY } from '../../lib/data-layer/host/fs-utils';
+import { DIRECTORY, getParentPath } from '../../lib/data-layer/host/fs-utils';
 
 export { getParentPath } from '../../lib/data-layer/host/fs-utils';
 
@@ -115,10 +115,63 @@ function parseJsonPayload(payload: string): unknown {
   }
 }
 
+const SCRIPT_LAYOUT_KEY = 'layout';
+
+type ScriptParam = { type?: unknown; value?: unknown };
+type ScriptLayout = { params?: Record<string, ScriptParam> };
+
+function isScriptLayout(
+  key: string,
+  child: unknown,
+  owner: Record<string, unknown>,
+): child is string {
+  return key === SCRIPT_LAYOUT_KEY && typeof child === 'string' && typeof owner.path === 'string';
+}
+
+function getFileParams(layout: string): [name: string, value: string][] {
+  const { params } = (parseJsonPayload(layout) ?? {}) as ScriptLayout;
+  return Object.entries(params ?? {}).flatMap(([name, param]) =>
+    param?.type === 'string' && typeof param.value === 'string' && param.value
+      ? [[name, param.value] as [string, string]]
+      : [],
+  );
+}
+
+function getRelativePath(folder: string, to: string): string {
+  const from = folder.split('/');
+  const target = to.split('/');
+  let common = 0;
+  while (common < from.length && common < target.length - 1 && from[common] === target[common]) {
+    common++;
+  }
+  return [...from.slice(common).map(() => '..'), ...target.slice(common)].join('/');
+}
+
+function replaceScriptParams(
+  layout: string,
+  scriptPath: string,
+  map: (path: string) => string | undefined,
+): string {
+  const folder = getParentPath(scriptPath);
+  const newFolder = getParentPath(map(scriptPath) ?? scriptPath);
+  const values: Record<string, string> = {};
+  for (const [name, value] of getFileParams(layout)) {
+    const moved = map(normalizePath(joinPath(folder, value)));
+    const next = moved && getRelativePath(newFolder, moved);
+    if (next && next !== value) values[name] = next;
+  }
+  if (!Object.keys(values).length) return layout;
+  const parsed = parseJsonPayload(layout) as ScriptLayout;
+  const params = { ...parsed.params };
+  for (const [name, value] of Object.entries(values)) params[name] = { ...params[name], value };
+  return JSON.stringify({ ...parsed, params });
+}
+
 /**
  * Deep-walks a component value replacing the string fields that hold asset paths
  * (`src`, `audioClipUrl`, `path`, `scriptPath`, also inside an Action's `jsonPayload`) through
- * `map`. Returns the same reference when nothing changed.
+ * `map`, and the file names a Script's string parameters give relative to its folder.
+ * Returns the same reference when nothing changed.
  */
 export function replaceAssetReferences<T>(value: T, map: (path: string) => string | undefined): T {
   if (Array.isArray(value)) {
@@ -133,10 +186,13 @@ export function replaceAssetReferences<T>(value: T, map: (path: string) => strin
   if (value && typeof value === 'object' && !(value instanceof Uint8Array)) {
     let changed = false;
     const next: Record<string, unknown> = {};
-    for (const [key, child] of Object.entries(value as Record<string, unknown>)) {
+    const owner = value as Record<string, unknown>;
+    for (const [key, child] of Object.entries(owner)) {
       let replaced: unknown = child;
       if (REFERENCE_KEYS.has(key) && typeof child === 'string') {
         replaced = map(child) ?? child;
+      } else if (isScriptLayout(key, child, owner)) {
+        replaced = replaceScriptParams(child, owner.path as string, map);
       } else if (key === JSON_PAYLOAD_KEY && typeof child === 'string') {
         const payload = parseJsonPayload(child);
         const replacedPayload = replaceAssetReferences(payload, map);
@@ -159,9 +215,14 @@ export function collectAssetReferences(value: unknown, into: string[] = []): str
   if (Array.isArray(value)) {
     for (const item of value) collectAssetReferences(item, into);
   } else if (value && typeof value === 'object' && !(value instanceof Uint8Array)) {
-    for (const [key, child] of Object.entries(value as Record<string, unknown>)) {
+    const owner = value as Record<string, unknown>;
+    for (const [key, child] of Object.entries(owner)) {
       if (REFERENCE_KEYS.has(key) && typeof child === 'string') into.push(child);
-      else if (key === JSON_PAYLOAD_KEY && typeof child === 'string') {
+      else if (isScriptLayout(key, child, owner)) {
+        const folder = getParentPath(owner.path as string);
+        for (const [, file] of getFileParams(child))
+          into.push(normalizePath(joinPath(folder, file)));
+      } else if (key === JSON_PAYLOAD_KEY && typeof child === 'string') {
         collectAssetReferences(parseJsonPayload(child), into);
       } else collectAssetReferences(child, into);
     }
