@@ -18,6 +18,7 @@
   justify-content: center;
   gap: 20px;
   min-height: 54px;
+  border-bottom: 1px solid var(--base-17);
 }
 
 .Assets .Assets-buttons > div {
@@ -91,13 +92,19 @@
   background-color: var(--base-19);
 }
 
+/* 32px buttons with a 20px glyph, per the Figma header (icon inset 20%), whatever the icon source. */
 .Assets .Assets-buttons .Assets-buttons-left .icon-item {
-  width: 25px;
-  height: 25px;
-  padding: 5px;
-  border-radius: 6px;
+  width: 32px;
+  height: 32px;
+  padding: 6px;
+  border-radius: 8px;
   color: var(--base-01);
   cursor: pointer;
+}
+
+.Assets .Assets-buttons .Assets-buttons-left button.icon-item svg {
+  width: 20px;
+  height: 20px;
 }
 
 .Assets .Assets-buttons .Assets-buttons-left button.icon-item {
@@ -374,9 +381,13 @@
 .Assets-crumbs-results {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  margin-left: auto;
+  gap: 8px;
+  margin-left: 8px;
   color: var(--neutral-grey-3);
+}
+
+.Assets-crumbs-results:first-child {
+  margin-left: 0;
 }
 
 .Assets-crumbs-results button {

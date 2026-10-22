@@ -1,5 +1,9 @@
 import React, { useCallback, useEffect, useState, useMemo, useRef } from 'react';
-import { MdOutlineSpeed as OptimizeIcon } from 'react-icons/md';
+import {
+  MdKeyboardArrowDown,
+  MdKeyboardArrowUp,
+  MdOutlineSpeed as OptimizeIcon,
+} from 'react-icons/md';
 import { HiOutlinePlus } from 'react-icons/hi';
 import { HiOutlineRefresh as RefreshIcon } from 'react-icons/hi';
 import { IoIosFolderOpen, IoIosUndo } from 'react-icons/io';
@@ -37,11 +41,7 @@ import { useScanAssets } from '../../hooks/useScanAssets';
 import { useImportAssetToFilesystem } from '../../hooks/useImportAssetToFilesystem';
 import { AssetPacksIcon, CustomItemsIcon, LocalAssetsIcon } from '../Icons/AssetsTabs';
 import CleanupIcon from '../Icons/Cleanup';
-import {
-  CollapseVerticallyIcon,
-  PreviewHiddenIcon,
-  PreviewVisibleIcon,
-} from '../Icons/AssetsPanel';
+import { PreviewHiddenIcon, PreviewVisibleIcon } from '../Icons/AssetsPanel';
 import { AssetsCatalog } from '../AssetsCatalog';
 import { CatalogAssetContextMenu } from '../AssetsCatalog/Asset/ContextMenu/CatalogAssetContextMenu';
 import { ProjectAssetExplorer } from '../ProjectAssetExplorer';
@@ -463,7 +463,7 @@ function AssetsInner({ isAssetsPanelCollapsed, onToggleCollapse }: Props) {
                 aria-expanded={!isAssetsPanelCollapsed}
                 data-test-id="assets-collapse-toggle"
               >
-                <CollapseVerticallyIcon />
+                {isAssetsPanelCollapsed ? <MdKeyboardArrowUp /> : <MdKeyboardArrowDown />}
               </button>
             }
             openOnTriggerMouseEnter={true}

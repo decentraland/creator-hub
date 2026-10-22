@@ -1,50 +1,43 @@
+/* The type filters as the Figma "PillIconText": outlined pills with the label always visible,
+   the active one filled White 20 with a Snow label. */
 .ProjectFilters {
   display: flex;
   flex-direction: row;
   flex-wrap: wrap;
-  gap: 2px;
+  gap: 10px;
   min-width: 0;
-  padding: 2px;
-  border-radius: 10px;
-  background: var(--base-19);
   user-select: none;
 }
 
 .ProjectFilters .filter {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  height: 26px;
-  padding: 0 7px;
-  border-radius: 8px;
+  gap: 8px;
+  height: 32px;
+  padding: 0 12px;
+  box-sizing: border-box;
+  border: 1.5px solid var(--ui-designer-control-border);
+  border-radius: 100px;
   background: transparent;
-  color: var(--neutral-grey-3);
+  color: var(--text-dim);
   font-size: 12px;
+  font-weight: 600;
   white-space: nowrap;
   cursor: pointer;
 }
 
 .ProjectFilters .filter:hover {
-  background: var(--base-17);
-  color: var(--white-gray);
-}
-
-.ProjectFilters .filter.active {
-  padding: 0 10px 0 8px;
-  background: var(--selected-item);
+  background: var(--hover-row);
   color: var(--white);
 }
 
+.ProjectFilters .filter.active {
+  border-color: transparent;
+  background: var(--ui-designer-control-border-strong);
+  color: var(--ui-designer-text);
+}
+
 .ProjectFilters .filter svg {
-  width: 14px;
-  height: 14px;
-}
-
-/* Only the active chip spells out its type; the rest stay icon-only so the row fits. */
-.ProjectFilters .filter .label {
-  display: none;
-}
-
-.ProjectFilters .filter.active .label {
-  display: inline;
+  width: 16px;
+  height: 16px;
 }

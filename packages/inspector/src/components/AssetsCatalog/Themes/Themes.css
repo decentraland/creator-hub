@@ -3,10 +3,11 @@
   margin: 0 auto;
   max-width: 1440px;
   width: 100%;
-  height: 100%;
-  /* Sized by the panel, not the window: the preview pane narrows the browser on wide windows. */
+  /* Sized by the panel, not the window: the preview pane narrows the browser on wide windows.
+     Rows keep their own height; a stretched grid opened a gap between the last two rows. */
   grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  grid-template-rows: max-content;
+  grid-auto-rows: max-content;
+  align-content: start;
   gap: 12px;
 }
 

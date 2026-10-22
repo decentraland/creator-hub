@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { IoCubeOutline, IoImageOutline, IoVideocamOutline } from 'react-icons/io5';
+import { IoIosImage } from 'react-icons/io';
+import { IoCubeOutline, IoVideocamOutline } from 'react-icons/io5';
 import { AiOutlineSound } from 'react-icons/ai';
 import { FaFile } from 'react-icons/fa';
 import { SiTypescript } from 'react-icons/si';
@@ -39,7 +40,7 @@ function KindIcon({ kind }: { kind: PreviewKind }) {
     case 'model':
       return <IoCubeOutline />;
     case 'image':
-      return <IoImageOutline />;
+      return <IoIosImage />;
     case 'audio':
       return <AiOutlineSound />;
     case 'video':

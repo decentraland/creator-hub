@@ -1111,7 +1111,7 @@ function ProjectView({ folders, thumbnails }: Props) {
                 ))}
               {isFiltering && (
                 <span className="Assets-crumbs-results">
-                  {resultCount} {resultCount === 1 ? 'result' : 'results'}
+                  {resultCount} {resultCount === 1 ? 'Result' : 'Results'}
                   {lastSelected !== ROOT && (
                     <button onClick={() => setLastSelected(ROOT)}>Search all folders</button>
                   )}
