@@ -63,33 +63,42 @@ There is no single `--text` token — pick the foreground that matches the surfa
 | `--ui-designer-accent-80/-40/-12/-08/-05` | cyan @ .8/.4/.12/.08/.05 | Canvas hover/selection fills, drop targets |
 | `--ui-designer-control-accent` | `#63b4f6` | **Panel** focus rings, the Anchor pin, bind affordances, selected rows |
 | `--ui-designer-control-accent-62/-21/-15` | blue @ .62/.21/.15 | Panel hover borders and fills |
-| `--ui-designer-control-hover-bg` | `rgba(255,255,255,.06)` | Hover fill on a segmented cell |
 | `--ui-designer-control-selected-bg` | `rgba(255,255,255,.1)` | Hover/selected fill on a menu **row** |
-| `--ui-designer-control-active-bg` | `#63b4f6` (→ accent) | Fill of a selected/active **toggle** |
-| `--ui-designer-control-active-fg` | `#35333b` Onix | Glyph sitting on that accent fill |
+| `--ui-designer-control-active-bg` | `#244b7d` (→ `--palette-system-blueDark2`) | Fill of a selected/active **toggle** |
+| `--ui-designer-control-active-fg` | `#fcfcfc` (→ `--ui-designer-text`, Snow) | Glyph on that fill: 8.61:1 |
 | `--palette-whiteTransparent-subtle` | `rgba(255,255,255,.1)` | Figma White Subtle · White 10: checkbox hover halo; `--ui-designer-control-border` aliases it (ui2 theme-path name) |
 | `--palette-whiteTransparent-soft` | `rgba(255,255,255,.2)` | Figma White Soft · White 20: disabled checkbox and large-field border; `--ui-designer-control-border-strong` aliases it (ui2 theme-path name) |
 | `--palette-whiteTransparent-blurry` | `rgba(255,255,255,.4)` | Figma White Blurry · White 40: checkbox and large-field border; `--ui-designer-checkbox-border` aliases it (ui2 theme-path name) |
 | `--palette-whiteTransparent-backdrop` | `rgba(255,255,255,.6)` | Figma White Backdrop · White 60: large-field hover and filled border (ui2 theme-path name) |
-| `--palette-system-blueDark2` | `#244b7d` | Figma System/Blue Dark 2: the text-selection highlight of every `input` and `textarea`, under Snow text (8.61:1) |
+| `--palette-system-blueDark2` | `#244b7d` | Figma System/Blue Dark 2: the text-selection highlight of every `input` and `textarea`, under Snow text (8.61:1); the selected toggle fill through `--ui-designer-control-active-bg` |
+| `--palette-system-blueDark3` | `#243852` | Figma System/Blue Dark 3: the fill of a selected toggle under the pointer (Snow glyph 11.61:1). Darker than Blue Dark 2 on purpose, as Figma draws it |
 | `--palette-neutral-gray2` | `#716b7c` | Figma Neutrals/Cloudy Sky (ui2 `neutral.gray2`): the `RangeField` track; `--ui-designer-glyph` aliases it |
+| `--palette-neutral-onyx` | `#35333b` | Figma Neutrals/Onyx: the 1px border of an unselected UI Designer toggle, at rest and on hover (1.27:1 against the panel: an edge, not the state cue) |
 
 Figma's Neutrals swatches name `#35333b` **Onix** and `#25212a` **Charcoal**. The two `vars.css` trailing comments that called `#35333b` Charcoal are deleted; the two block comments above the UI Designer control tokens still say Charcoal for it — read Onix.
 
-#### Selected and active toggles are accent-blue
+#### Icon buttons and toggles
 
-Per the 08/26 Figma states matrix, a selected or active toggle takes a solid accent-blue fill with a dark Onix glyph — one treatment for both the segmented cells (Flow direction, Text alignment, Fill mode) and the standalone toggles (Flow wrap, the aspect lock). A checkbox is separate. The UI Designer rails and the MobileHUD panel draw Checkbox Terciary: an outline box with a Snow tick and no fill (`CheckboxField color="tertiary"`), see Checkbox Terciary. The 3D panels draw Checkbox Primary (`color="primary"`, the default).
+Every icon control in the UI Designer, toolbar included, takes one of two rules (user decision, October 22, 2026; it overrides the `UI Editor Buttons` sets where they differ, see the ✱ deviations in that section under Component specs). Each control keeps its own size, padding, radius and border; the rules own colour and fill. Glyphs paint `currentColor`. A checkbox is separate. The UI Designer rails and the MobileHUD panel draw Checkbox Terciary: an outline box with a Snow tick and no fill (`CheckboxField color="tertiary"`), see Checkbox Terciary. The 3D panels draw Checkbox Primary (`color="primary"`, the default).
 
-- **Selected/active toggle:** `--ui-designer-control-active-bg` (accent-blue) fill with a `--ui-designer-control-active-fg` (Onix) glyph.
-- **Hover:** a faint `--ui-designer-control-hover-bg` white tint, never the accent.
-- **Focus on a selected toggle:** a ring drawn inside the cell (`outline-offset: -2px`, the segmented cells) sits on the accent fill, so it takes `--ui-designer-control-active-fg` (Onix, 5.56:1 on the fill); an accent ring there is 1:1. A ring drawn outside (the `FillField` mode buttons, offset 1px) sits on the panel and keeps the accent (7.09:1 on `#242129`); Onix there would be 1.27:1.
+- **Icon button** (any icon control that is not a toggle: trash, help, bind link, add, copy, the toolbar's save / undo / redo): Silver `--ui-designer-text-muted` glyph and no container at rest; on hover a Snow `--ui-designer-text` glyph on a White 10 `--palette-whiteTransparent-subtle` container, 4px radius.
+- **Toggle** (anything with `aria-pressed`, `aria-checked` or `aria-selected`: wrap, aspect lock, alignment and flow cells, fill modes, interaction-state and device tabs, the canvas HUD / safe-area / device toggles, the node-tree lock and eye, the toolbar run / info / gizmos): unselected is a Silver glyph, no fill and a 1px `--palette-neutral-onyx` border; unselected + hover is Snow on White 10 with the same Onyx border; selected is a Snow glyph on `--ui-designer-control-active-bg` (Blue Dark 2); selected + hover is Snow on `--palette-system-blueDark3`. A selected toggle shows no Onyx: its 1px border takes the fill colour, so the box never changes size. The state hook is the ARIA attribute, never a class.
+- **Segmented group** (alignment, flow, the canvas device pair, the device-variant tabs, the 2D toolbar gizmos): each cell draws its own 1px border and every cell after the first overlaps its neighbour by `margin-left: -1px`, so a seam is one pixel, never two. The first cell carries the group's left radii and the last its right radii, at the radius the group already had: `--ui-designer-radius-field` (6px) for alignment and flow, 4px for the canvas device pair, the device-variant tabs and the gizmos. The wrapper draws no border of its own. A selected cell (and the hovered one) sits above its neighbours (`z-index: 1`), so the shared seam shows its colour, not Onyx.
+- **Focus:** one 2px `--ui-designer-control-accent` ring in every state, offset 1px on a standalone control and −2px inside a segmented cell.
+- **Disabled:** WrapToggle's Blocked look for every icon control: White 20 `--palette-whiteTransparent-soft` glyph, no fill, no hover. No separate pressed state.
+- **Hit target:** a control drawn smaller than 24px is a 24 × 24 transparent button whose Figma-size container is its `::before`. Its focus ring hugs that container (1px outside it, concentric corners), not the 24px box.
 
-| Pairing                              | Contrast  |
-| ------------------------------------ | --------- |
-| Onix glyph on the accent fill        | **5.6:1** |
-| Accent fill vs. the card (`#242129`) | **7.1:1** |
+| Pairing (on `#242129`) | Contrast |
+| --- | --- |
+| Silver glyph at rest | **5.85:1** |
+| Snow glyph on the White 10 hover container | **11.40:1** |
+| Onyx toggle border vs. panel | 1.27:1 (an edge; the glyph and fill carry the state) |
+| Snow glyph on Blue Dark 2 / Blue Dark 3 | **8.61:1** / **11.61:1** |
+| Blue Dark 2 / Blue Dark 3 fill vs. panel | 1.79:1 / 1.33:1 (the glyph colour carries the state) |
+| Accent ring on panel / White 10 / Blue Dark 2 / Blue Dark 3 | 7.09 / 5.23 / **3.95** / 5.33:1 |
+| White 20 disabled glyph | 1.91:1 (disabled, exempt) |
 
-A white glyph is deliberately **not** used on the accent fill — it lands ~2.2:1, below the 3:1 non-text minimum — so the glyph is Onix. Selection reads as a hue-and-luminance jump, never hue alone. Keep the Onix glyph if the fill value moves.
+An Onix ring on a selected cell would be 1.41:1 on Blue Dark 2, so no selected-state ring override exists. The fills alone are under 3:1 against the panel, so selection is never colour-of-fill alone: the glyph turns Snow.
 
 The checkbox tick and the indeterminate dash ignore `color`: the tick is a mask over `background-color`, the dash a solid block. Recolour them with `background-color`, never with a baked SVG fill.
 
@@ -98,9 +107,9 @@ The checkbox tick and the indeterminate dash ignore `color`: the tick is a mask 
 The UI Designer has **two** accent families. Picking the wrong one is a real bug, not a style preference:
 
 - **Canvas → cyan.** The canvas renders the _author's own UI_ in arbitrary colours. A selection ring in a brand colour disappears the moment they use that colour themselves — and `#ff2d55` is precisely what the palette encourages. Because the backdrop is unknowable, WCAG 1.4.11's ≥3:1 cannot be verified against it; a hue authors are unlikely to pick is the mitigation. Use for node selection/hover, resize handles, drop targets, reorder indicators.
-- **Panel → blue `#63b4f6`.** Panel chrome always sits on `--base-20` (`#161518`), a surface we control, so contrast is fixed and testable. Use for focus rings, active tab underlines, hover borders/fills, bind affordances, selected rows, selected/active toggle fills (with an Onix glyph — see above), and the Anchor row's pinned edge. It is Figma's System/Blue Light 1.
+- **Panel → blue `#63b4f6`.** Panel chrome always sits on `--base-20` (`#161518`), a surface we control, so contrast is fixed and testable. Use for focus rings, active tab underlines, hover borders/fills, selected rows, and the Anchor row's pinned edge. Toggle fills are Blue Dark 2 / 3 and the bind affordance is Silver / Snow (see "Icon buttons and toggles"). It is Figma's System/Blue Light 1.
 
-  **UI Designer panel chrome is deliberately not pink.** Its focus rings, selection, toggles and bind affordances take the blue. `--primary-main` belongs to CTAs and main buttons (`.Button.danger`, the event/variable menu `ADD` confirm) and to the value marks Figma draws in Primary: the `RangeField` fill and thumb (Slider) and the MobileHUD "Main" radio. The UI Designer checkbox is not one of them. Figma draws it as Checkbox Terciary ([`21650:4570`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=21650-4570)), a Snow tick on no fill, so a checked rail checkbox carries no pink. A mark that carries a value is not chrome; a ring, a row highlight or a toggle fill painted pink would compete with the one thing on screen that should read as the action.
+  **UI Designer panel chrome is deliberately not pink.** Its focus rings and selection take the accent blue, and its toggles the Blue Dark 2 / 3 fills. `--primary-main` belongs to CTAs and main buttons (`.Button.danger`, the event/variable menu `ADD` confirm) and to the value marks Figma draws in Primary: the `RangeField` fill and thumb (Slider) and the MobileHUD "Main" radio. The UI Designer checkbox is not one of them. Figma draws it as Checkbox Terciary ([`21650:4570`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=21650-4570)), a Snow tick on no fill, so a checked rail checkbox carries no pink. A mark that carries a value is not chrome; a ring, a row highlight or a toggle fill painted pink would compete with the one thing on screen that should read as the action.
 
 **Do not copy alpha steps between the two families.** The panel blue's relative luminance is `0.419` against cyan's `0.502`, so the same alpha composites differently. The steps are solved for this surface and named for their true alpha (`-62`, not `-40`) so nothing lies:
 
@@ -331,7 +340,7 @@ The Figma ramp has 13 swatches; 10 are variables and three (Onix, Onix Dark 1, C
 | Neutrals/Cloudy Sky | `#716B7C` | `--palette-neutral-gray2` (aliased by `--ui-designer-glyph`) | `--dropdown` · ui2 `neutral.gray2` | match |
 | Neutrals/Graffito | `#5E5B67` | — | `--light-gray` · ui2 `neutral.gray1` | missing in inspector |
 | Neutrals/Pale Black | `#43404A` | `--gray-0` | `--dark-gray` · ui2 `neutral.gray0` | match |
-| Onix (swatch) | `#35333B` | `--ui-designer-control-bg`, `--ui-designer-control-active-fg` | — | match |
+| Onix (swatch) | `#35333B` | `--ui-designer-control-bg` | — | match |
 | Onix Dark 1 (swatch) | `#2D2A33` | — | `--title-bar-button` | missing in inspector |
 | Charcoal (swatch) | `#25212A` | `--ui-designer-panel-bg` → `--base-19` `#242129` | `--card`, `--modal`, `--secondary`, `--darker-gray` `#242129` · ui2 `neutral.softBlack2` `#242129` | **deviation**: both worlds follow ui2's `#242129`, 1/255 from Figma; keep |
 | Neutrals/Shadow | `#161518` | `--base-20`, `--tree-bg-color` | `--black` · ui2 `neutral.softBlack1` | match; `--bg` and `--background` are `#161518` in `theme.css` too (match) |
@@ -358,7 +367,7 @@ ui2's dark theme carries Figma's System ramp verbatim (`palette.success` / `.war
 | Blue (swatch) | `#2196F3` | — | ui2 `palette.info.main` | missing in inspector |
 | Blue Dark 1 (swatch) | `#1A75D2` fill; its label reads `#1F87E5` | — | ui2 `palette.info.dark` `#1A75D2` | missing in inspector; the Figma label is stale, the fill is the value |
 | Blue Dark 2 (swatch) | `#244B7D` fill; its label reads `#1764C0` | `--palette-system-blueDark2` | `--ai-session-selected` | match on the fill; Figma label stale |
-| Blue Dark 3 (swatch) | `#243852` | — | `--ai-session-selected-hover` | match |
+| Blue Dark 3 (swatch) | `#243852` | `--palette-system-blueDark3` | `--ai-session-selected-hover` | match |
 | System/Blue Light 1 | `#63B4F6` | `--ui-designer-control-accent` | ui2 `palette.info.light` | match |
 | Blue Light 2 (swatch) | `#BBDEFB` | — | — | missing |
 | — | `#214272` / `#2E4A7A` | — | `--ai-selected` / `--ai-selected-hover` | not in Figma |
@@ -378,7 +387,7 @@ Figma names four steps per base colour, Backdrop 60% · Blurry 40% · Soft 20% �
 | Black Soft | `rgba(0,0,0,.2)` | `--contexify-separator-color` | — | match |
 | Black Blurry | `rgba(0,0,0,.4)` | — | — | missing (no consumer) |
 | Black Backdrop | `rgba(0,0,0,.6)` | `--modal-overlay-bg-color` | — | match |
-| — | `.05` / `.06` / `.07` white | `--ui-designer-control-empty-bg`, `--ui-designer-control-hover-bg`, `--ui-designer-hairline` | `--transparent-gray-dark` `.05` | not Figma steps; deviation, keep (solved for contrast, see the accent note) |
+| — | `.05` / `.07` white | `--ui-designer-control-empty-bg`, `--ui-designer-hairline` | `--transparent-gray-dark` `.05` | not Figma steps; deviation, keep (solved for contrast, see the accent note) |
 | — | `.23` white · `#ffffffb2` (70%) · `#000000dd` (87%) | — | `--transparent-gray-light`, `--text-on-secondary`, `--dimmer` | not Figma steps |
 
 Everything not listed in the four tables above and present in `vars.css` is either VS Code-derived (`--vscode-*` passthroughs, `--dropdown-*`, `--list-item-*`, `--accent-blue-*`) or a Smart Item colour (`--list-smart-item-*`, `--ground-icon-bg-color`) with no Figma counterpart. Value changes and new tokens arising from this table go to the user first (names are theirs), ship with before/after screenshots of every consumer, and land in the same commit as their row here.
@@ -574,8 +583,8 @@ Every literal the Surfaces pages use (Accordion, Background, Cards, Menu, Icons,
 | `#000000` title-bar fill | Neutrals/Black | `--black`, `--base-21` | `--bg-inspector` |
 | `#2D2A33` toolbar icon and split buttons, toolbar tooltip | Neutrals/Onix Dark 1 | missing | `--title-bar-button` |
 | `#25212A` AI-toggle hover, button-table board | Neutrals/Charcoal | `--ui-designer-panel-bg` is `#242129` — documented deviation (1/255) | `--darker-gray`, `--card`, `--modal` `#242129` — same 1/255 deviation |
-| `#244B7D` AI-toggle selected | System/Blue Dark 2 | missing | `--ai-session-selected` |
-| `#243852` AI-toggle selected + hover | System/Blue Dark 3 | missing | `--ai-session-selected-hover` |
+| `#244B7D` AI-toggle selected | System/Blue Dark 2 | `--palette-system-blueDark2` | `--ai-session-selected` |
+| `#243852` AI-toggle selected + hover | System/Blue Dark 3 | `--palette-system-blueDark3` | `--ai-session-selected-hover` |
 | `#FF6280` publish split-button hover | Primary/Primary Light 1 | `--palette-primary-light` | `--primary-hover` `#ff6280` (the editor header actions hover to it) |
 | `#5E5B67` `.dcl.eth` suffix | Neutrals/Graffito | missing | `--light-gray` |
 | `#34CE77` online dot | System/Green | `--success-main` `#34ce77` (same value) | `--success` |
@@ -1037,7 +1046,7 @@ Set [`21004:3194`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=
 
 ### ToolbarButton (Buttons)
 
-Set [`21005:3408`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=21005-3408), 3 variants (`Active` × `Selected`, plus a `Disabled` boolean property). 26 × 26, no radius; `Icon` 24 × 24 at 1 / 1 over a `Rectangle` 26 × 26. Code: inspector `Toolbar/ToolbarButton` (min-width 32, height 30, `--gray-0` fill, 4px radius, hover `--base-19`, active `--selected-item`; the UI Designer toolbar overrides `--selected-item` to `#244B7D` in `UIDesigner.css`, which is Blue Dark 2) — matches the selected colour, drift on size, radius and fill; Creator Hub none.
+Set [`21005:3408`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=21005-3408), 3 variants (`Active` × `Selected`, plus a `Disabled` boolean property). 26 × 26, no radius; `Icon` 24 × 24 at 1 / 1 over a `Rectangle` 26 × 26. Code: inspector `Toolbar/ToolbarButton` (min-width 32, height 30, `--gray-0` fill, 4px radius, hover `--base-19`, active `--selected-item`; the UI Designer toolbar overrides `--selected-item` to `#244B7D` in `UIDesigner.css`, which is Blue Dark 2) — matches the selected colour, drift on size, radius and fill; Creator Hub none. The UI Designer 2D toolbar deviates (✱, user decision October 22, 2026; see UI Editor Buttons): no rest container, the icon-button and toggle rules scoped under `.ui-designer-toolbar`; the 3D toolbar keeps this set.
 
 | Variant | State | Rectangle | Icon | Contrast | A11y |
 | --- | --- | --- | --- | --- | --- |
@@ -1326,15 +1335,15 @@ The Editor pages run on the UI Designer's own surface (`--ui-designer-panel-bg` 
 | Neutrals/Onix Dark 1 | `#2D2A33` | missing | `--title-bar-button` | missing in inspector — fills `InputAction`, the 2D `Viewport` and the `ChatInput` container |
 | Neutrals/Pale Black | `#43404A` | `--gray-0` | `--dark-gray` | match — `InputAction` hover fill |
 | Neutrals/Cloudy Sky | `#716B7C` | `--ui-designer-glyph`, `--ui-designer-text-muted` is Silver | `--dropdown` | match — idle glyphs and the `Position` / `Size` icons |
-| System/Blue Dark 2 | `#244B7D` | `--selected-item` override in `UIDesigner.css` | `--ai-session-selected` | match, no named inspector token |
-| System/Blue Dark 3 | `#243852` | missing | `--ai-session-selected-hover` | missing in inspector — the tree row, selected-hover and `On` + hover toggle fill |
-| White 5 / 10 / 20 | `rgba(255,255,255,.05 / .1 / .2)` | `--ui-designer-control-empty-bg` / `--ui-designer-control-selected-bg` · `--ui-designer-control-border` / `--ui-designer-control-border-strong` | — | match in value; **hover is White 5 in Figma and `--ui-designer-control-hover-bg` is 6%** — drift |
+| System/Blue Dark 2 | `#244B7D` | `--palette-system-blueDark2` (`--ui-designer-control-active-bg`; the `UIDesigner.css` `--selected-item` override) | `--ai-session-selected` | match |
+| System/Blue Dark 3 | `#243852` | `--palette-system-blueDark3` | `--ai-session-selected-hover` | match — the tree row, selected-hover and `On` + hover toggle fill |
+| White 5 / 10 / 20 | `rgba(255,255,255,.05 / .1 / .2)` | `--ui-designer-control-empty-bg` / `--ui-designer-control-selected-bg` · `--ui-designer-control-border` / `--ui-designer-control-border-strong` | — | match; the row hover is White 5 in Figma, the toggle and icon-button hover White 10 |
 | System/Orange | `#FE9C2A` | `--warning-main` `#fe9c2a` | `--ai-warning-bg` `rgba(244,130,33,.16)` | drift (Figma banner is `#FE9C2A` at 10%); the inspector token now matches the Figma colour |
 | System/Blue · Rarities/Epic Light | `#2196F3` · `#81E1FF` | missing | ui2 `palette.info.main` | missing — pinned-edge colours in `ConstraintsIcons` |
 | Brand/Lavender | `#C640CD` | — | `--lavender` | demo colour in `ColourPanel` and `AspectRatio/Colour`, not a UI token |
 | Figma chrome | `#8A38F5` | — | — | the dashed frame around every set — never a token |
 
-PROPOSED (names are the user's call, nothing changed): an inspector token for Blue Dark 3 `#243852`, one for Onix Dark 1 `#2D2A33`, and a decision on the hover fill (6% in code, 5% in Figma).
+PROPOSED (names are the user's call, nothing changed): an inspector token for Onix Dark 1 `#2D2A33`, and a decision on the row hover fill (`--ui-designer-control-empty-bg` 5% matches Figma's White 5 rows; the toggle hover is White 10 per `UI Editor Buttons`).
 
 ### ChatInput (AI Assistant)
 
@@ -1425,18 +1434,46 @@ Component `21028:16000`, one definition with two `Slot` instances (`21028:16001`
 
 Component `21028:15992` with `Text` `21028:15993` (Fill 93 × Hug 15, gap 6: a `Checkbox Secondary` On instance 14 × 14 drawn with a Gray tick override; code follows Checkbox Terciary (Snow tick), the label "Text" `Inter` 400 12 / 100% Gray `#CFCDD4` (25 × 15, 10.07:1 on panel), and a `HelpCTA` Hover = No instance 12 × 12) and `DeleteCTA` `21028:15998` (26 × 16). Code: `BindableField` label row. `DeleteCTA` and `HelpCTA` states are in the next sections.
 
+### UI Editor Buttons (Buttons)
+
+Section [`21671:45251`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=21671-45251) on the Buttons page `20705:10837`, 9 sets, 33 variants: a copy of the `UI Editor Buttons` board `21028:16485` (UI Editor page), identical in every value read on October 22, 2026, and the reference the design review points to. Copy ids: DeleteCTA `21671:45338`, HelpCTA `45333`, LockLayerToggle `45320`, VisibilityToggle `45311`, AddVariant `45306`, ScaleToggle `45252`, WrapToggle `45277`, ToggleTab `45288`, ViewModeToggle `45297`. Code: every icon control in `components/UIDesigner`, the 2D toolbar included, through two shared rules (see "Icon buttons and toggles" under Palette by role); the Figma glyphs live in `components/UIDesigner/icons.tsx` (trash, eye, eye-off, lock, unlock, monitor) and in the existing mask assets (aspect lock, wrap, flow Free, bind).
+
+| Kind | Sets (and code) | Rest | Hover | Selected | Selected + hover | Focus | Disabled |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Icon button | DeleteCTA, HelpCTA, AddVariant (bind link); add, copy, clear, the toolbar's save / undo / redo | Silver `--ui-designer-text-muted`, no container (5.85:1) | Snow `--ui-designer-text` on White 10 `--palette-whiteTransparent-subtle`, 4px (11.40:1) | — | — | 2px `--ui-designer-control-accent`, offset 1px (7.09:1) | White 20 `--palette-whiteTransparent-soft` glyph, no fill (exempt) |
+| Toggle | WrapToggle, ScaleToggle, ViewModeToggle, LockLayerToggle, VisibilityToggle; toolbar run / info / gizmos | Silver, no fill, 1px `--palette-neutral-onyx` border | Snow on White 10, 1px Onyx border (11.40:1) | Snow on `--ui-designer-control-active-bg` Blue Dark 2, border in the fill colour (8.61:1) | Snow on `--palette-system-blueDark3`, border in the fill colour (11.61:1) | accent ring; 3.95:1 on Blue Dark 2, 5.33:1 on Blue Dark 3 | as above |
+| Segmented cell | ToggleTab; alignment, flow, fill mode, interaction-state and device tabs | as Toggle; cells overlap by 1px (one-pixel seams), outer radii on the first and last cell | as Toggle | as Toggle, raised over its neighbours | as Toggle | accent ring, offset −2px | as above |
+
+A control drawn smaller than 24px is a 24 × 24 transparent button whose Figma-size container is its `::before`; for a toggle the container carries the border too. Lock and eye are toggles: a locked node's lock, a hidden node's eye and a top-level GUI's eye are selected (Blue Dark 2).
+
+✱ Deviations from the Figma sets, decided by the user on October 22, 2026 (Validate does not flag these):
+
+| ✱ | Figma | Code |
+| --- | --- | --- |
+| Unselected toggle hover glyph | ToggleTab, WrapToggle, ScaleToggle, ViewModeToggle Off + Hover: **Silver** glyph | **Snow** glyph; the White 10 fill matches Figma |
+| Unselected toggle border | WrapToggle, ScaleToggle, ViewModeToggle, LockLayerToggle, VisibilityToggle draw no border (ToggleTab's 1px Onix Off border matches) | 1px `--palette-neutral-onyx` at rest and on hover on every toggle; selected states take a fill-coloured border |
+| Segmented seams | `ToggleTabs` slot: a Charcoal frame with a 1px Onix border around unjoined `ToggleTab` cells | cells overlap by 1px (one-pixel seams), outer radii on the first and last cell, no wrapper border |
+| Lock and eye | Gray `#CFCDD4` glyph in every state, White 10 hover; no selected fill | toggle rule: Silver with an Onyx border at rest, Snow on White 10 on hover, Snow on Blue Dark 2 when pressed, Blue Dark 3 when pressed + hover |
+| Interaction-state chip | `Interactions` set: active chip Blue Dark 3 `#243852` | Blue Dark 2, Blue Dark 3 on hover |
+| UI Designer toolbar | `ToolbarButton` / `RuntimeControls`: a filled rest container | no rest container (icon-button and toggle rules, scoped under `.ui-designer-toolbar`; the 3D toolbar keeps the set) |
+| Help and bind link hover | HelpCTA and AddVariant draw no container; HelpCTA rests Cloudy Sky | White 10 container on hover; Help rests Silver |
+| DeleteCTA hover glyph | `Neutrals/White` `#FFFFFF` | Snow `#FCFCFC` (3/255) |
+| Canvas node-bar Delete hover | — (DeleteCTA) | the red danger hover is dropped |
+| Focus, disabled, pressed | not drawn | accent ring in every state; WrapToggle Blocked for every disabled control; no pressed state |
+| Hit target | 12–18px boxes | 24 × 24 button, Figma-size `::before` container |
+
 ### DeleteCTA (UI Editor Buttons)
 
-Set [`21107:37893`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=21107-37893), 2 variants (`Hover` Yes `37894` / No `37892`). 16 × 16 glyph; Hover = Yes adds a 4px radius White 10 fill. Code: delete affordances in `PropertyPanel` / `LogicPanel` rows; hover fill `--ui-designer-control-selected-bg`.
+Set [`21107:37893`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=21107-37893) (copy `21671:45338`), 2 variants (`Hover` Yes `37894` / No `37892`). 16 × 16 glyph; Hover = Yes adds a 4px radius White 10 fill. Code: every trash / remove / clear in `components/UIDesigner` (Canvas node bar, CodeRootsList, NodeTree, PropertyPanel rows, CallbackField, the Logic panels) through the icon-button rule; glyph `TrashIcon` in `icons.tsx`.
 
 | Variant | Fill | Contrast | A11y |
 | --- | --- | --- | --- |
 | Hover = No | none | glyph Silver `#A09BA8` (a 12 × 12 `Delete` instance inset 2px), 5.85:1 on panel | `<button aria-label="Delete <item>">` |
-| Hover = Yes | White 10, 4px radius | glyph White `#FFFFFF` 11.69:1 on the fill | 16px is **below the 24px target** — pad the hit area ✱ |
+| Hover = Yes | White 10, 4px radius | glyph White `#FFFFFF` 11.69:1 on the fill; code paints Snow (11.40:1), a 3/255 deviation | 16px is **below the 24px target**: a 24px button with the 16px container as `::before` ✱ |
 
 ### HelpCTA (UI Editor Buttons)
 
-Set [`21107:37499`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=21107-37499), 2 variants (`Hover` Yes `37500` / No `37498`). 12 × 12 circle, 100px radius, 1px border: No = Cloudy Sky `#716B7C`, Yes = Snow `#FCFCFC`; the "?" glyph (3.34 × 5.94) takes the same colour as the border. Code: the `?` tooltip anchors beside field labels in `PropertyPanel`.
+Set [`21107:37499`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=21107-37499) (copy `21671:45333`), 2 variants (`Hover` Yes `37500` / No `37498`). 12 × 12 circle, 100px radius, 1px border: No = Cloudy Sky `#716B7C`, Yes = Snow `#FCFCFC`; the "?" glyph (3.34 × 5.94) takes the same colour as the border. Code: the shared `ui/InfoTooltip` trigger beside UI Designer labels and in the MobileHUD header; its `VscQuestion` glyph is kept (the component is shared with the 3D panels) and the colours are scoped under the UI Designer rails. Code deviates from this set (✱, user decision October 22, 2026; see UI Editor Buttons): Silver at rest, Snow on a White 10 container on hover.
 
 | Variant | Border | Contrast (on `#242129`) | A11y |
 | --- | --- | --- | --- |
@@ -1445,7 +1482,7 @@ Set [`21107:37499`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id
 
 ### LockLayerToggle (UI Editor Buttons)
 
-Set [`21068:32238`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=21068-32238), 6 variants (`Parent` × `Active` × `Hover`): No/Off/No `21086:34988`, No/On/No `21086:34979`, Yes/Off/No `21068:32241`, Yes/Off/Yes `21107:37482`, Yes/On/Yes `21107:37478`, Yes/On/No `21068:32239`. `Parent` = No is 14 × 14 (a small dot-sized state), `Parent` = Yes is 16 × 16; Hover = Yes adds a 4px radius White 10 fill; Active toggles the closed / open lock glyph (shape only). Every variant's glyph is Gray `#CFCDD4` (Parent = Yes: 9.14 × 12; Parent = No: a 2 × 2 dot). No Parent = No / Hover = Yes variant exists. Code: lock affordance in `LeftPanel/NodeTree.tsx`.
+Set [`21068:32238`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=21068-32238), 6 variants (`Parent` × `Active` × `Hover`): No/Off/No `21086:34988`, No/On/No `21086:34979`, Yes/Off/No `21068:32241`, Yes/Off/Yes `21107:37482`, Yes/On/Yes `21107:37478`, Yes/On/No `21068:32239`. `Parent` = No is 14 × 14 (a small dot-sized state), `Parent` = Yes is 16 × 16; Hover = Yes adds a 4px radius White 10 fill; Active toggles the closed / open lock glyph (shape only). Every variant's glyph is Gray `#CFCDD4` (Parent = Yes: 9.14 × 12; Parent = No: a 2 × 2 dot). No Parent = No / Hover = Yes variant exists. Copy `21671:45320`. Code: lock in `LeftPanel/NodeTree.tsx`, a `<button aria-pressed>` with `LockIcon` / `UnlockIcon` from `icons.tsx`; the code draws no inherited-lock dot. Code deviates from this set (✱, user decision October 22, 2026; see UI Editor Buttons): toggle rule, Silver with a 1px Onyx border at rest, Snow on White 10 on hover, Snow on Blue Dark 2 / 3 when locked.
 
 | Parent | Active | Hover | Size | Fill | Contrast / A11y |
 | --- | --- | --- | --- | --- | --- |
@@ -1456,7 +1493,7 @@ Set [`21068:32238`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id
 
 ### VisibilityToggle (UI Editor Buttons)
 
-Set [`21028:16532`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=21028-16532), 4 variants (`Visible` × `Hover`): No/Yes `21107:37466`, No/No `21028:16535`, Yes/Yes `21107:37461`, Yes/No `21028:16533`. 16 × 16, 4px radius, Hover = Yes adds White 10; Visible = No swaps the eye for an eye-off glyph; every variant's glyph is Gray `#CFCDD4` inside a 14 × 14 instance inset 1px (eye 13.13 × 8.75, eye-off 13.13 × 10.49). Code: eye affordance in `NodeTree.tsx`.
+Set [`21028:16532`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=21028-16532), 4 variants (`Visible` × `Hover`): No/Yes `21107:37466`, No/No `21028:16535`, Yes/Yes `21107:37461`, Yes/No `21028:16533`. 16 × 16, 4px radius, Hover = Yes adds White 10; Visible = No swaps the eye for an eye-off glyph; every variant's glyph is Gray `#CFCDD4` inside a 14 × 14 instance inset 1px (eye 13.13 × 8.75, eye-off 13.13 × 10.49). Figma names the eye `Hide` and the eye-off `Show` (the action). Copy `21671:45311`. Code: every eye toggle in the UI Designer (`NodeTree.tsx`, `CodeRootsList.tsx`, the `PropertyPanel` header, `MobileHudPanel.tsx`) with `EyeIcon` / `EyeOffIcon` from `icons.tsx`. Code deviates from this set (✱, user decision October 22, 2026; see UI Editor Buttons): toggle rule, Silver with a 1px Onyx border at rest, Snow on White 10 on hover, Snow on Blue Dark 2 / 3 when pressed.
 
 | Visible | Hover | Fill | Contrast / A11y |
 | --- | --- | --- | --- |
@@ -1465,16 +1502,16 @@ Set [`21028:16532`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id
 
 ### AddVariant (UI Editor Buttons)
 
-Set [`21028:16516`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=21028-16516), 2 variants (`Hover` No `16519` / Yes `16517`). 18 × 18 `VariableSmall` diamond-plus glyph (10.32 × 10.32, inset 3.84px); no fill in either; hover changes only the glyph colour, and it dims: Hover = No Snow `#FCFCFC`, Hover = Yes Silver `#A09BA8`. Code: `RightPanel/DiamondPlus.tsx` and `BindIcon.tsx`.
+Set [`21028:16516`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=21028-16516), 2 variants (`Hover` No `16519` / Yes `16517`). 18 × 18 `VariableSmall` diamond-plus glyph (10.32 × 10.32, inset 3.84px); no fill in either; hover changes only the glyph colour. The variant names are inverted in Figma (the layer named `Hover=Yes` is the Silver rest look, re-read October 22, 2026); code follows the design review: Silver at rest, Snow on hover. Copy `21671:45306`. Code: the bind affordance (`BindAffordance.tsx`, `.ui-designer-bindable-link`, the `bind.svg` mask) and `BindIcon.tsx`, whose paths are this glyph exactly; `DiamondPlus.tsx` is a stroked redraw for the menu rows. Code deviates from this set (✱, user decision October 22, 2026; see UI Editor Buttons): hover adds a White 10 container.
 
-| Variant | Fill | Contrast | A11y |
+| Look | Fill | Contrast | A11y |
 | --- | --- | --- | --- |
-| Hover = No | none | Snow glyph 15.45:1 | `<button aria-label="Add variant">`; 18px is below the 24px target ✱ |
-| Hover = Yes | none | Silver glyph 5.85:1 — **the hover state is dimmer than rest** | — |
+| rest (Figma `Hover=Yes`) | none | Silver glyph 5.85:1 | `<button aria-label="Bind to variable">`; 18px is below the 24px target ✱ |
+| hover (Figma `Hover=No`) | none | Snow glyph 15.45:1 | — |
 
 ### ViewModeToggle (UI Editor Buttons)
 
-Set [`21028:16511`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=21028-16511), 4 variants (`Selected` × `Hover`): Off/No `16512`, Off/Yes `21096:37105`, On/No `16514`, On/Yes `21096:37108`. 16 × 16, 4px radius; an `Icon` instance 14 × 14 inset 1px (vector 10.66 × 8.98). Code: the Desktop / Mobile `Devices` toggle in `PropertyPanel` (`useRestorePersistedMode` is a different control).
+Set [`21028:16511`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=21028-16511), 4 variants (`Selected` × `Hover`): Off/No `16512`, Off/Yes `21096:37105`, On/No `16514`, On/Yes `21096:37108`. 16 × 16, 4px radius; an `Icon` instance 14 × 14 inset 1px (vector 10.66 × 8.98, a monitor). Copy `21671:45297`. Code: the Canvas preview toggles (HUD guides, safe area) and the Desktop / Mobile device pair (`Canvas.tsx`, `.ui-designer-canvas-zoom-btn`, `.ui-designer-device-toggle-btn`) and the `PropertyPanel` device-variant tabs; the monitor is `DesktopIcon` in `icons.tsx`, and the mobile, HUD and safe-area glyphs have no Figma counterpart yet (`useRestorePersistedMode` is a different control). Code deviates from this set (✱, user decision October 22, 2026; see UI Editor Buttons): a 1px Onyx border at rest and on hover; Off + hover glyph Snow.
 
 | Selected | Hover | Fill | Contrast (on `#242129`) | A11y |
 | --- | --- | --- | --- | --- |
@@ -1485,7 +1522,7 @@ Set [`21028:16511`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id
 
 ### ToggleTab (UI Editor Buttons)
 
-Set [`21028:16506`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=21028-16506), 4 variants (`Selected` × `Hover`): Off/No `16507`, Off/Yes `21096:37090`, On/No `16509`, On/Yes `21096:37093`. Fixed 39 × 26; Off variants have a 1px Onix `#35333B` border; Off + hover adds White 10; On fills Blue Dark 2 (rest) / Blue Dark 3 (hover) with no border. The glyph is a `LayoutIcons` instance (18 × 18, vector 14 × 14): Silver `#A09BA8` Off, Snow `#FCFCFC` On. Code: segmented groups in `PropertyPanel` (`FlowField`, `ResizeField`, `TextAlignField`).
+Set [`21028:16506`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=21028-16506), 4 variants (`Selected` × `Hover`): Off/No `16507`, Off/Yes `21096:37090`, On/No `16509`, On/Yes `21096:37093`. Fixed 39 × 26; Off variants have a 1px Onix `#35333B` border; Off + hover adds White 10; On fills Blue Dark 2 (rest) / Blue Dark 3 (hover) with no border. The glyph is a `LayoutIcons` instance (18 × 18, vector 14 × 14; Free is the code's `FlowField/icons/absolute.svg`): Silver `#A09BA8` Off, Snow `#FCFCFC` On. Copy `21671:45288`. Code: every segmented cell in `PropertyPanel` (`TextAlignField`, `FlowField`, `FillField` modes, the interaction-state and device-variant tabs) through the toggle rule, keyed on `aria-checked` / `aria-selected`. Code deviates from this set (✱, user decision October 22, 2026; see UI Editor Buttons): Off + hover glyph Snow (the Onix Off border matches).
 
 | Selected | Hover | Fill | Border | Contrast | A11y |
 | --- | --- | --- | --- | --- | --- |
@@ -1496,7 +1533,7 @@ Set [`21028:16506`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id
 
 ### WrapToggle (UI Editor Buttons)
 
-Set [`21028:16499`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=21028-16499), 5 variants (`Selected` × `Hover` × `Blocked`): Off/No/No `16500`, Off/Yes/No `21096:37082`, On/No/No `16502`, On/Yes/No `21096:37086`, Off/No/Yes `16504`. 26 × 26, 6px radius; fills as `ScaleToggle` (none, White 10, Blue Dark 2, Blue Dark 3); Blocked = no fill, glyph White 20. The glyph (12.71 × 11.72) is Silver Off and Snow On. Code: wrap control in `FlowField`.
+Set [`21028:16499`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=21028-16499), 5 variants (`Selected` × `Hover` × `Blocked`): Off/No/No `16500`, Off/Yes/No `21096:37082`, On/No/No `16502`, On/Yes/No `21096:37086`, Off/No/Yes `16504`. 26 × 26, 6px radius; fills as `ScaleToggle` (none, White 10, Blue Dark 2, Blue Dark 3); Blocked = no fill, glyph White 20. The glyph (12.71 × 11.72) is Silver Off and Snow On, and is the code's `FlowField/icons/wrap.svg`. Copy `21671:45277`. Code: the wrap toggle in `FlowField` (`aria-pressed`); Blocked is the disabled look of every UI Designer icon control. Code deviates from this set (✱, user decision October 22, 2026; see UI Editor Buttons): a 1px Onyx border at rest and on hover; Off + hover glyph Snow.
 
 | Variant | Fill | A11y |
 | --- | --- | --- |
@@ -1507,11 +1544,11 @@ Set [`21028:16499`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id
 
 ### ScaleToggle (UI Editor Buttons)
 
-Set [`21028:16486`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=21028-16486), 4 variants (`Selected` × `Hover`): Off/No `16487`, Off/Yes `21096:37036`, On/No `16492`, On/Yes `21096:37041`. 26 × 26, 6px radius; fills none / White 10 / `#244B7D` / `#243852`; two outline child layers, glyph Silver `#A09BA8` Off and Snow `#FCFCFC` On (the "2 Selected" aggregate lists a single colour). Code: `ResizeField` (the scale-with-parent toggle).
+Set [`21028:16486`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=21028-16486), 4 variants (`Selected` × `Hover`): Off/No `16487`, Off/Yes `21096:37036`, On/No `16492`, On/Yes `21096:37041`. 26 × 26, 6px radius; fills none / White 10 / `#244B7D` / `#243852`; a 16 × 16 outline glyph at 5 / 5, Silver `#A09BA8` Off and Snow `#FCFCFC` On, plus a hidden `link` layer. The Off glyph (square and corner brackets) is the code's `PropertyPanel/icons/aspect-unlinked.svg`; the On glyph adds a dashed diagonal (0.5px ticks) and replaces `aspect-linked.svg`. Copy `21671:45252`. Code: the aspect lock in `LengthVecField` and `ResizeField` (`.ui-designer-vec-lock`, `aria-pressed`). Code deviates from this set (✱, user decision October 22, 2026; see UI Editor Buttons): a 1px Onyx border at rest and on hover; Off + hover glyph Snow.
 
 | Selected | Hover | Fill | Contrast / A11y |
 | --- | --- | --- | --- |
-| Off | No / Yes | none / White 10 | Silver 5.85:1 / 4.31:1; `aria-pressed="false"`, name "Scale children" |
+| Off | No / Yes | none / White 10 | Silver 5.85:1 / 4.31:1; `aria-pressed="false"`, name "Lock aspect ratio" (pressed: "Unlock aspect ratio") |
 | On | No / Yes | Blue Dark 2 / Blue Dark 3 | Snow 8.61:1 / 11.61:1; hover darker than rest |
 
 ### Properties (UI Editor — PropertiesSections)
@@ -1564,7 +1601,7 @@ Set [`21028:16830`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id
 
 ### Interactions (UI Editor — PropertiesSubsections)
 
-Set [`21028:16819`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=21028-16819), 2 variants (`Off` `16827`, `On` `16820`: Fixed 292 × Hug 45, vertical, gap 4, a Default / Hover / Pressed / Selected chip row with the active chip in Blue Dark 3 `#243852`). Aggregate colours: Silver, Cloudy Sky, Gray, Snow, Blue Dark 3. Code: the `useInteraction({ base, hover, press, active })` construct (`code/interaction-convention.ts`) through `PropertyPanel`.
+Set [`21028:16819`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=21028-16819), 2 variants (`Off` `16827`, `On` `16820`: Fixed 292 × Hug 45, vertical, gap 4, a Default / Hover / Pressed / Selected chip row with the active chip in Blue Dark 3 `#243852`); code paints the active chip Blue Dark 2 and Blue Dark 3 on hover, ✱ user decision October 22, 2026, see UI Editor Buttons). Aggregate colours: Silver, Cloudy Sky, Gray, Snow, Blue Dark 3. Code: the `useInteraction({ base, hover, press, active })` construct (`code/interaction-convention.ts`) through `PropertyPanel`.
 
 ### MinMaxSize (UI Editor — PropertiesSubsections)
 

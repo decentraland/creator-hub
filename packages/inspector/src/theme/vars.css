@@ -32,7 +32,9 @@
   --palette-whiteTransparent-backdrop: rgba(255, 255, 255, 0.6);
   --palette-primary-light: #ff6280;
   --palette-neutral-gray2: #716b7c;
+  --palette-neutral-onyx: #35333b;
   --palette-system-blueDark2: #244b7d;
+  --palette-system-blueDark3: #243852;
   --focus-ring: var(--ui-designer-text);
 
   /* DCL Colors */
@@ -169,23 +171,10 @@
   --ui-designer-control-accent-21: rgba(99, 180, 246, 0.21);
   --ui-designer-control-accent-15: rgba(99, 180, 246, 0.15);
 
-  /* Selected / active controls, per the Figma 08/26 states matrix. A selected
-     segmented cell (Flow, Text alignment, Fill mode) and an active standalone
-     toggle (Flow wrap, the aspect lock) share ONE treatment: a solid accent-blue
-     fill with a dark Charcoal glyph. A checkbox is separate — see
-     --ui-designer-checkbox-border.
-
-     Charcoal on the accent fill measures ~5.9:1 (clears both the ≥3:1 non-text and
-     ≥4.5:1 text minimums), and the accent reads as a strong hue+luminance jump
-     against the resting glyph — so a white glyph is deliberately NOT used here (it
-     lands ~2.2:1 on this blue). Hover stays a faint white tint; selection is the
-     accent fill. --ui-designer-control-selected-bg is retained as the subtle
-     hover/selected fill for menu ROWS only, not toggles. */
-  --ui-designer-control-hover-bg: rgba(255, 255, 255, 0.06);
   --ui-designer-control-empty-bg: rgba(255, 255, 255, 0.05); /* placeholder / unbound field fill */
   --ui-designer-control-selected-bg: rgba(255, 255, 255, 0.1); /* White 10 · menu rows */
-  --ui-designer-control-active-bg: var(--ui-designer-control-accent); /* toggle fill */
-  --ui-designer-control-active-fg: #35333b;
+  --ui-designer-control-active-bg: var(--palette-system-blueDark2);
+  --ui-designer-control-active-fg: var(--ui-designer-text);
   /* Panel surfaces, foreground and glyphs — the Figma's own Neutrals ramp
      (PropertiesFull 1492:1939). The panel frame reuses --base-19 rather than
      declaring the design's #25212a: the two differ by 1/255, and the group cards
