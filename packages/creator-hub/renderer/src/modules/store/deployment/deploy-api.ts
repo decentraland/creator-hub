@@ -44,6 +44,12 @@ const FINAL_PHASES: DeployPhase[] = ['deployed', 'failed', 'cancelled'];
 
 export const isFinalPhase = (phase: DeployPhase) => FINAL_PHASES.includes(phase);
 
+const isDeployState = (value: unknown): value is DeployState =>
+  typeof value === 'object' &&
+  value !== null &&
+  'phase' in value &&
+  typeof value.phase === 'string';
+
 type ServerSentEvent = { event: string; data: string };
 
 /**
@@ -122,9 +128,17 @@ async function startDeployment(url: string, payload: DeployPayload): Promise<Dep
   // 409: this CLI run already started its deployment, so follow that one. The CLI has it from
   // here on, so failing to read the state must not deploy again.
   if (resp.status === 202 || resp.status === 409) {
-    return resp.json().catch(error => {
+    const state: unknown = await resp.json().catch(error => {
       throw new DeploymentError('DEPLOY_STATE_LOST', getInitialDeploymentStatus(), error);
     });
+    if (!isDeployState(state)) {
+      throw new DeploymentError(
+        'DEPLOY_STATE_LOST',
+        getInitialDeploymentStatus(),
+        new Error('The CLI answered without a deployment state'),
+      );
+    }
+    return state;
   }
 
   if (resp.ok) {

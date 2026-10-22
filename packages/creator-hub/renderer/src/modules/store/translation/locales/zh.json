@@ -473,7 +473,7 @@
             "processing": "发布中...",
             "batches": "已上传第 {completed} 批，共 {total} 批",
             "cancel_too_early": "正在移除之前的场景，暂时无法取消。请稍后再试。",
-            "cancel_unauthorized": "无法在此处取消发布。关闭 Creator Hub 即可停止。",
+            "cancel_unauthorized": "无法在此处取消发布。退出 Creator Hub 即可停止。",
             "cancel_unsupported": "请更新此场景的 SDK 以在此处取消发布。"
           },
           "errors": {

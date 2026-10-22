@@ -474,7 +474,7 @@
             "processing": "Publishing...",
             "batches": "Batch {completed} of {total} uploaded",
             "cancel_too_early": "Can't cancel while the previous scenes are being removed. Try again in a moment.",
-            "cancel_unauthorized": "Couldn't cancel the deployment from here. Close Creator Hub to stop it.",
+            "cancel_unauthorized": "Couldn't cancel the deployment from here. Quit Creator Hub to stop it.",
             "cancel_unsupported": "Update the SDK of this scene to cancel deployments from here."
           },
           "errors": {

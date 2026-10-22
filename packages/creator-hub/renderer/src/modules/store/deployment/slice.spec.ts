@@ -1122,6 +1122,106 @@ describe('deployment slice', () => {
       });
     });
 
+    describe('when the answer to a cancel arrives while the next CLI is being built', () => {
+      let result: Awaited<ReturnType<ReturnType<typeof executeDeployment>>>;
+
+      beforeEach(async () => {
+        vi.useFakeTimers();
+        vi.mocked(requestDeploymentCancel).mockResolvedValue(null);
+        vi.mocked(isDeployResourceAvailable).mockResolvedValue(true);
+        vi.mocked(deployWithProgress).mockRejectedValue(new Error('Deployment failed'));
+        vi.mocked(editor.publishScene).mockImplementation(async () => {
+          await store.dispatch(cancelDeployment(TEST_PATH));
+          return { port: TEST_PORT + 1, supportsDeployResource: true, deployToken: 'token-2' };
+        });
+        store = await initResourceDeploymentStore(true);
+        const running = store.dispatch(executeDeployment(TEST_PATH));
+        await advanceRetryTimers(1);
+        result = await running;
+      });
+
+      it('should reject with a cancelled outcome', () => {
+        expect(result.error.name).toBe('DEPLOYMENT_CANCELLED');
+      });
+
+      it('should not deploy through the new CLI', () => {
+        expect(deployWithProgress).toHaveBeenCalledTimes(1);
+      });
+    });
+
+    describe('when the user publishes again while a retry is building its CLI', () => {
+      let newDeploymentId: string | undefined;
+
+      beforeEach(async () => {
+        vi.useFakeTimers();
+        vi.mocked(isDeployResourceAvailable).mockResolvedValue(true);
+        vi.mocked(deployWithProgress).mockRejectedValue(new Error('Deployment failed'));
+        vi.mocked(editor.publishScene).mockImplementation(async () => {
+          await store
+            .dispatch(
+              initializeDeployment({
+                path: TEST_PATH,
+                port: TEST_PORT + 2,
+                supportsDeployResource: true,
+                hasCancelToken: true,
+                chainId: TEST_CHAIN_ID,
+                wallet: TEST_WALLET,
+              }),
+            )
+            .unwrap();
+          newDeploymentId = store.getState().deployment.deployments[TEST_PATH]?.id;
+          return { port: TEST_PORT + 1, supportsDeployResource: true, deployToken: 'token-old' };
+        });
+        store = await initResourceDeploymentStore(true);
+        const running = store.dispatch(executeDeployment(TEST_PATH));
+        await advanceRetryTimers(1);
+        await running;
+      });
+
+      it('should leave the newer deployment on its own CLI', () => {
+        const deployment = store.getState().deployment.deployments[TEST_PATH];
+        expect({ id: deployment?.id, url: deployment?.url, status: deployment?.status }).toEqual({
+          id: newDeploymentId,
+          url: `http://localhost:${TEST_PORT + 2}/api`,
+          status: 'idle',
+        });
+      });
+    });
+
+    describe('when cancelling a deployment that has no CLI', () => {
+      let result: unknown;
+
+      beforeEach(async () => {
+        vi.mocked(fetchInfo).mockRejectedValueOnce(new Error('CLI unreachable'));
+        store = createTestStore();
+        await store.dispatch(
+          initializeDeployment({
+            path: TEST_PATH,
+            port: TEST_PORT,
+            supportsDeployResource: true,
+            hasCancelToken: true,
+            chainId: TEST_CHAIN_ID,
+            wallet: TEST_WALLET,
+          }),
+        );
+        result = await store.dispatch(cancelDeployment(TEST_PATH)).unwrap();
+      });
+
+      it('should turn the cancellation down without asking any CLI', () => {
+        expect({ result, asked: vi.mocked(requestDeploymentCancel).mock.calls.length }).toEqual({
+          result: {
+            deploymentId: store.getState().deployment.deployments[TEST_PATH]?.id,
+            rejection: 'unauthorized',
+          },
+          asked: 0,
+        });
+      });
+
+      it('should not mark the cancel as accepted', () => {
+        expect(store.getState().deployment.deployments[TEST_PATH]?.cancelAccepted).toBeFalsy();
+      });
+    });
+
     describe('when the user publishes again while an earlier run is still following its CLI', () => {
       let failEarlierRun: (error: Error) => void;
       let earlierRun: Promise<unknown>;

@@ -133,15 +133,32 @@ export const initializeDeployment = createAsyncThunk(
 const updateDeploymentTarget = createAsyncThunk(
   'deployment/updateTarget',
   async (
-    payload: { path: string; target: string; chainId: ChainId; wallet: string },
+    payload: {
+      path: string;
+      deploymentId: string;
+      target: string;
+      chainId: ChainId;
+      wallet: string;
+    },
     { rejectWithValue, getState },
   ) => {
-    const { path, target, chainId, wallet } = payload;
+    const { path, deploymentId, target, chainId, wallet } = payload;
     const { translation } = getState();
 
-    const { url, supportsDeployResource, hasCancelToken } = registerDeployServer(
-      await editor.publishScene({ target, path, chainId, wallet, language: translation.locale }),
-    );
+    const server = await editor.publishScene({
+      target,
+      path,
+      chainId,
+      wallet,
+      language: translation.locale,
+    });
+    // The user published again meanwhile: the token and target belong to the newer deployment.
+    if (getState().deployment.deployments[path]?.id !== deploymentId) {
+      return rejectWithValue(
+        new DeploymentError('DEPLOYMENT_NOT_FOUND', getInitialDeploymentStatus()),
+      );
+    }
+    const { url, supportsDeployResource, hasCancelToken } = registerDeployServer(server);
 
     if (!url) {
       return rejectWithValue(new DeploymentError('INVALID_URL', getInitialDeploymentStatus()));
@@ -166,6 +183,13 @@ export const deploy = createAsyncThunk(
 
     const onState = (state: DeployState) =>
       dispatch(actions.updateDeploymentProgress({ path, deploymentId, state }));
+
+    // Whether the loop must stop retrying, read again after every await of the retry path.
+    const getStopReason = () => {
+      const current = getState().deployment.deployments[path];
+      if (current?.id !== deploymentId) return { superseded: true as const };
+      return current.cancelAccepted ? { cancelled: current.componentsStatus } : null;
+    };
 
     let currentUrl = deployment.url;
     let currentInfo = info;
@@ -245,14 +269,13 @@ export const deploy = createAsyncThunk(
 
         await delay(delayMs);
 
-        const deploymentAfterDelay = getState().deployment.deployments[path];
-        if (deploymentAfterDelay?.id !== deploymentId) {
-          return rejectWithValue(error);
-        }
         // The answer to a cancel sent just before the failure may only arrive now.
-        if (deploymentAfterDelay.cancelAccepted) {
+        const stopAfterDelay = getStopReason();
+        if (stopAfterDelay) {
           return rejectWithValue(
-            new DeploymentError('DEPLOYMENT_CANCELLED', currentDeployment.componentsStatus),
+            'superseded' in stopAfterDelay
+              ? error
+              : new DeploymentError('DEPLOYMENT_CANCELLED', stopAfterDelay.cancelled),
           );
         }
 
@@ -260,8 +283,18 @@ export const deploy = createAsyncThunk(
         triedServers.add(selectedServer);
 
         const result = await dispatch(
-          updateDeploymentTarget({ path, target: selectedServer, chainId, wallet }),
+          updateDeploymentTarget({ path, deploymentId, target: selectedServer, chainId, wallet }),
         ).unwrap();
+
+        // Or while the next CLI was being built.
+        const stopAfterTarget = getStopReason();
+        if (stopAfterTarget) {
+          return rejectWithValue(
+            'superseded' in stopAfterTarget
+              ? error
+              : new DeploymentError('DEPLOYMENT_CANCELLED', stopAfterTarget.cancelled),
+          );
+        }
 
         currentUrl = result.url;
         currentInfo = result.info;
@@ -383,7 +416,10 @@ export const cancelDeployment = createAsyncThunk(
   'deployment/cancel',
   async (path: string, { getState }) => {
     const deployment = getState().deployment.deployments[path];
-    if (!deployment?.url) return { deploymentId: deployment?.id, rejection: null };
+    // No CLI to ask, so nothing can take the request.
+    if (!deployment?.url) {
+      return { deploymentId: deployment?.id, rejection: 'unauthorized' as const };
+    }
     const rejection = await requestDeploymentCancel(deployment.url);
     return { deploymentId: deployment.id, rejection };
   },
@@ -476,7 +512,7 @@ const deploymentSlice = createSlice({
         const { path, url, info, files, supportsDeployResource, hasCancelToken } = action.payload;
         const deployment = state.deployments[path];
         // we are preserving componentsStatus, status, and error
-        if (deployment) {
+        if (deployment?.id === action.meta.arg.deploymentId) {
           deployment.url = url;
           deployment.info = info;
           deployment.files = files;

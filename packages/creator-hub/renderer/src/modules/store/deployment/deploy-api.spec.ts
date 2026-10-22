@@ -552,6 +552,17 @@ describe('deployWithProgress', () => {
     });
   });
 
+  describe('when the CLI accepts the deployment but answers without a state', () => {
+    beforeEach(async () => {
+      mockServer({ POST: [() => jsonResponse(202, null)] });
+      await run();
+    });
+
+    it('should throw an error that keeps the deployment from being retried', () => {
+      expect(isDeploymentError(error, 'DEPLOY_STATE_LOST')).toBe(true);
+    });
+  });
+
   describe('when the CLI accepts the deployment but its answer cannot be read', () => {
     beforeEach(async () => {
       mockServer({ POST: [() => new Response('{"phase": "upl', { status: 202 })] });

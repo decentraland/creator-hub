@@ -473,7 +473,7 @@
             "processing": "Publicando...",
             "batches": "Lote {completed} de {total} subido",
             "cancel_too_early": "No se puede cancelar mientras se eliminan las escenas anteriores. Inténtalo de nuevo en un momento.",
-            "cancel_unauthorized": "No se pudo cancelar la publicación desde aquí. Cierra Creator Hub para detenerla.",
+            "cancel_unauthorized": "No se pudo cancelar la publicación desde aquí. Sal de Creator Hub para detenerla.",
             "cancel_unsupported": "Actualiza el SDK de esta escena para cancelar publicaciones desde aquí."
           },
           "errors": {

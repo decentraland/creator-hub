@@ -195,7 +195,7 @@ async function fetchEntityStatus(
   if (!response.ok) {
     // A publish polls this until the deployment event reaches the registry, so the 404 branch
     // can run hundreds of times: release the body instead of leaving it to the collector.
-    await response.body?.cancel().catch(() => undefined);
+    await discardBody(response);
     throw new Error(`Error fetching deployment status: ${response.status}`);
   }
 
