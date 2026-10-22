@@ -14,6 +14,7 @@ import { Asset } from '../../../lib/logic/catalog';
 import { fetchImage, resizeImage } from '../../../lib/utils/img';
 import { useIsMounted } from '../../../hooks/useIsMounted';
 import { notifyBuiltInEmoteNotDraggable } from '../../../lib/logic/built-in-emotes';
+import { useAssetSelection, useIsAssetSelected } from '../../AssetBrowserPreview';
 import { openCatalogAssetContextMenu } from './ContextMenu/ContextMenu';
 
 import './Asset.css';
@@ -24,6 +25,8 @@ type AssetProps = {
 };
 
 const Asset = React.forwardRef<HTMLDivElement, AssetProps>(({ value, onAddToFilesystem }, ref) => {
+  const { select } = useAssetSelection();
+  const isSelected = useIsAssetSelected('catalog', value.id);
   const builtInEmote = getBuiltInEmote(value);
   // A built-in animation is already in every scene, so there is nothing to drop.
   const [, drag, preview] = useDrag(
@@ -65,9 +68,11 @@ const Asset = React.forwardRef<HTMLDivElement, AssetProps>(({ value, onAddToFile
         className={cx('assets-catalog-asset', {
           'smart-item': isSmartItem,
           ground: isGroundItem,
+          selected: isSelected,
           'built-in': !!builtInEmote,
         })}
         ref={drag}
+        onClick={() => select({ source: 'catalog', id: value.id, name: value.name, asset: value })}
         data-test-id={value.id}
         data-test-label={value.name}
         onContextMenu={handleContextMenu}

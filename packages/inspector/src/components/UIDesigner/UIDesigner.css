@@ -15,11 +15,7 @@
 }
 
 .ui-designer-toolbar {
-  --selected-item: #244b7d;
-}
-
-.ui-designer-toolbar.Toolbar .scene-info.active {
-  background-color: #244b7d !important;
+  --selected-item: var(--system-blue-dark-2);
 }
 
 .ui-designer {

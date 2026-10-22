@@ -1,34 +1,43 @@
+/* The type filters as the Figma "PillIconText": outlined pills with the label always visible,
+   the active one filled White 20 with a Snow label. */
 .ProjectFilters {
   display: flex;
-  flex-direction: column;
-  flex-shrink: 0;
-  padding: 10px;
-  height: calc(100% - 30px);
-  overflow-y: auto;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 10px;
+  min-width: 0;
   user-select: none;
 }
 
 .ProjectFilters .filter {
-  display: flex;
-  flex-direction: column;
+  display: inline-flex;
   align-items: center;
-  padding: 10px;
+  gap: 8px;
+  height: 32px;
+  padding: 0 12px;
+  box-sizing: border-box;
+  border: 1.5px solid var(--ui-designer-control-border);
+  border-radius: 100px;
+  background: transparent;
+  color: var(--text-dim);
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
   cursor: pointer;
-  margin-bottom: 10px;
-  border-radius: 8px;
 }
 
-.ProjectFilters .filter:last-child {
-  margin: 0;
+.ProjectFilters .filter:hover {
+  background: var(--hover-row);
+  color: var(--white);
 }
 
-.ProjectFilters .filter:hover,
 .ProjectFilters .filter.active {
-  background-color: var(--selected-item);
+  border-color: transparent;
+  background: var(--ui-designer-control-border-strong);
+  color: var(--ui-designer-text);
 }
 
 .ProjectFilters .filter svg {
-  width: 20px;
-  height: 20px;
-  margin-bottom: 4px;
+  width: 16px;
+  height: 16px;
 }
