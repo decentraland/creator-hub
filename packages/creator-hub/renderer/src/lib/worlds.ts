@@ -4,6 +4,8 @@ import type { Entity, IPFSv2 } from '@dcl/schemas';
 import fetch from 'decentraland-crypto-fetch';
 
 import { config } from '/@/config';
+import { demoWorldScenes, demoWorlds } from '/@/lib/creatorFund/demo';
+import { isDemoDataOn } from '/@/lib/creatorFund/preferences';
 import type { ContributableDomain } from '/@/modules/store/ens/types';
 import { formatQueryParams, fromCamelToSnake, fromSnakeToCamel } from '../modules/api';
 
@@ -302,6 +304,10 @@ export class Worlds {
       has_deployed_scenes?: boolean;
     } = { limit: 100, offset: 0 },
   ): Promise<WorldDataResponse | null> {
+    // Creator Fund POC: a creator's own Worlds come from the demo set while it's on.
+    if (isDemoDataOn() && params.authorized_deployer) {
+      return demoWorlds({ ...params, authorized_deployer: params.authorized_deployer });
+    }
     const queryString = formatQueryParams(params);
     const result = await fetch(`${this.url}/worlds?${queryString}`);
     if (result.ok) {
@@ -323,6 +329,8 @@ export class Worlds {
       y2?: number;
     } = { limit: 100, offset: 0 },
   ) {
+    const demo = isDemoDataOn() ? demoWorldScenes(worldName) : null;
+    if (demo) return demo;
     try {
       const queryString = formatQueryParams(params);
       const encodedWorldName = encodeURIComponent(worldName);

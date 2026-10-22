@@ -4,7 +4,7 @@ import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import { Chip, Divider, ListItemIcon, Menu, MenuItem } from 'decentraland-ui2';
 
 import { useDispatch, useSelector } from '#store';
-import { SimulatedCreator } from '/@/lib/creatorFund';
+import { SimulatedCreator, isDemoDataOn, setDemoDataOn } from '/@/lib/creatorFund';
 import { actions } from '/@/modules/store/creatorFund';
 import { t } from '/@/modules/store/translation/utils';
 
@@ -30,6 +30,13 @@ export function PocMenu({ address }: Props) {
     },
     [close, dispatch],
   );
+
+  /** Every list was fetched with the old setting; a reload refetches all of them at once. */
+  const handleToggleDemoData = useCallback(() => {
+    close();
+    setDemoDataOn(!isDemoDataOn());
+    window.location.reload();
+  }, [close]);
 
   const handleReset = useCallback(async () => {
     close();
@@ -71,6 +78,11 @@ export function PocMenu({ address }: Props) {
             {option.label}
           </MenuItem>
         ))}
+        <Divider />
+        <MenuItem onClick={handleToggleDemoData}>
+          <ListItemIcon>{isDemoDataOn() && <CheckIcon fontSize="small" />}</ListItemIcon>
+          {t('creator_fund.poc.demo_data')}
+        </MenuItem>
         <Divider />
         <MenuItem onClick={handleReset}>
           <ListItemIcon />

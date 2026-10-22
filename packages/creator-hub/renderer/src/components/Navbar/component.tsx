@@ -5,6 +5,7 @@ import { Box } from 'decentraland-ui2';
 import { useDispatch, useSelector } from '#store';
 import { useFeatureFlags } from '/@/hooks/useFeatureFlags';
 import { FeatureFlag } from '/@/modules/store/featureFlags';
+import { isDemoDataOn } from '/@/lib/creatorFund/preferences';
 import type { AppState } from '#store';
 import { useEditor } from '/@/hooks/useEditor';
 import { t } from '/@/modules/store/translation/utils';
@@ -99,7 +100,8 @@ export function Navbar(props: { active: NavbarItem }) {
           <MenuItem
             item={NavbarItem.ANALYTICS}
             active={props.active}
-            disable={!isEnabled(FeatureFlag.ANALYTICS)}
+            // Creator Fund POC: demo data brings its own analytics, so the tab shows with it.
+            disable={!isEnabled(FeatureFlag.ANALYTICS) && !isDemoDataOn()}
           />
           <MenuItem
             item={NavbarItem.MANAGE}

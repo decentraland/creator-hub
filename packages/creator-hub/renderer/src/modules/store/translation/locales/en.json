@@ -1583,6 +1583,7 @@
       "label": "POC · Mock data",
       "simulate_eligible": "Simulate an eligible creator",
       "simulate_not_eligible": "Simulate a not eligible creator",
+      "demo_data": "Demo Worlds & analytics",
       "reset": "Reset demo"
     },
     "leaderboard": {

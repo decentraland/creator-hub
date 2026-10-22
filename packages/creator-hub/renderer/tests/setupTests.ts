@@ -1,4 +1,4 @@
-import { afterEach, vi } from 'vitest';
+import { afterEach, beforeEach, vi } from 'vitest';
 
 // Mock preload modules
 vi.mock('#preload', async () => {
@@ -22,6 +22,12 @@ vi.mock('#preload', async () => {
   };
 
   return deepMockObject(actual);
+});
+
+// The Creator Fund POC's demo Worlds and metrics default on in the app; specs stub
+// the real clients, so they run with it off. A spec about demo data turns it on.
+beforeEach(() => {
+  localStorage.setItem('creator-hub:creator-fund-demo-data', 'off');
 });
 
 afterEach(() => {

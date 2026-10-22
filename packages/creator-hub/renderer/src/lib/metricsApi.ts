@@ -8,6 +8,8 @@ import { metrics } from '#preload';
 import { config } from '/@/config';
 
 import { AuthServerProvider } from './auth';
+import { demoMetricsBatch } from './creatorFund/demo';
+import { isDemoDataOn } from './creatorFund/preferences';
 
 const METRICS_API_URL = config.get('METRICS_API_URL');
 
@@ -106,6 +108,8 @@ function readPositionally(
  * sees the response.
  */
 export async function fetchMetrics(locations: MetricLocation[]): Promise<MetricsBatch> {
+  // Creator Fund POC: generated metrics while demo data is on.
+  if (isDemoDataOn()) return demoMetricsBatch(locations);
   const batches = await Promise.all(
     chunk(locations, MAX_LOCATIONS_PER_REQUEST).map(async group => {
       const response = await metrics.request<MetricsBatch>({
