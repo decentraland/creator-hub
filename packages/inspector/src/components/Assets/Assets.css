@@ -7,62 +7,62 @@
   overflow: hidden;
 }
 
-.Assets .Assets-buttons span {
-  font-size: 14px;
-  line-height: 13px;
-  font-weight: 500;
-}
-
+/* The three browser tabs, per the Figma "3D Editor Bottom Panel" header: a 54px bar, tabs
+   20px apart with a 24px glyph and an uppercase semibold label, the current one in Snow with a
+   2px Snow underline on the bar's edge and the rest in Silver. */
 .Assets .Assets-buttons {
-  padding-left: 8px;
   display: flex;
   background: var(--tree-bg-color);
-  padding: 5px 0;
   position: relative;
   align-items: center;
   justify-content: center;
-  min-height: 48px;
-}
-
-.Assets .Assets-buttons > div > div {
-  display: flex;
-  position: relative;
-}
-
-.Assets .Assets-buttons > div:hover > div::after,
-.Assets .Assets-buttons > div > div.underlined::after {
-  width: 100%;
-}
-
-.Assets .Assets-buttons .icon-custom-assets {
-  background-image: url("./custom-asset-icon.svg");
-  background-size: 16px 16px;
-  background-repeat: no-repeat;
-  background-position: center;
-  width: 16px;
-  height: 12px;
-}
-
-.Assets .Assets-buttons > div > div::after {
-  content: "";
-  position: absolute;
-  bottom: -6px;
-  left: 0;
-  height: 2px;
-  background: var(--primary-main);
-}
-
-.Assets .Assets-buttons > div span {
-  margin-left: 4px;
-  margin-bottom: 4px;
+  gap: 20px;
+  min-height: 54px;
 }
 
 .Assets .Assets-buttons > div {
   display: flex;
   align-items: center;
-  padding: 8px 12px;
   cursor: pointer;
   user-select: none;
+}
+
+.Assets .Assets-buttons > .tab {
+  align-self: stretch;
+}
+
+.Assets .Assets-buttons > .tab > div {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 100%;
+  padding: 10px 4px;
+  box-sizing: border-box;
+  border-bottom: 2px solid transparent;
+  color: var(--neutral-grey-3);
+}
+
+.Assets .Assets-buttons > .tab:hover > div {
+  color: var(--white);
+}
+
+.Assets .Assets-buttons > .tab > div.underlined {
+  border-bottom-color: var(--white);
+  color: var(--white);
+}
+
+.Assets .Assets-buttons > .tab svg {
+  width: 24px;
+  height: 24px;
+  flex: none;
+}
+
+.Assets .Assets-buttons > .tab span {
+  font-size: 14px;
+  font-weight: 600;
+  line-height: normal;
+  text-transform: uppercase;
+  white-space: nowrap;
 }
 
 .Assets .Assets-buttons .Assets-buttons-left {

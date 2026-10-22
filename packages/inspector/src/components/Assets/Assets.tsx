@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState, useMemo, useRef } from 'react';
-import { MdImageSearch, MdOutlineSpeed as OptimizeIcon, MdVerticalSplit } from 'react-icons/md';
+import { MdOutlineSpeed as OptimizeIcon, MdVerticalSplit } from 'react-icons/md';
 import { HiOutlinePlus } from 'react-icons/hi';
 import { HiOutlineRefresh as RefreshIcon } from 'react-icons/hi';
 import { IoIosFolderOpen, IoIosUndo } from 'react-icons/io';
@@ -35,7 +35,7 @@ import {
 import { AssetsTab } from '../../redux/ui/types';
 import { useScanAssets } from '../../hooks/useScanAssets';
 import { useImportAssetToFilesystem } from '../../hooks/useImportAssetToFilesystem';
-import { FolderOpen } from '../Icons/Folder';
+import { AssetPacksIcon, CustomItemsIcon, LocalAssetsIcon } from '../Icons/AssetsTabs';
 import CleanupIcon from '../Icons/Cleanup';
 import { ListChevronsDownUpIcon, ListChevronsUpDownIcon } from '../Icons/ListChevrons';
 import { AssetsCatalog } from '../AssetsCatalog';
@@ -364,7 +364,7 @@ function AssetsInner({ isAssetsPanelCollapsed, onToggleCollapse }: Props) {
           data-test-id={AssetsTab.FileSystem}
         >
           <div className={cx({ underlined: tab === AssetsTab.FileSystem })}>
-            <FolderOpen />
+            <LocalAssetsIcon />
             <span>LOCAL ASSETS</span>
           </div>
         </div>
@@ -374,7 +374,7 @@ function AssetsInner({ isAssetsPanelCollapsed, onToggleCollapse }: Props) {
           data-test-id={AssetsTab.CustomAssets}
         >
           <div className={cx({ underlined: tab === AssetsTab.CustomAssets })}>
-            <i className="icon-custom-assets" />
+            <CustomItemsIcon />
             <span>CUSTOM ITEMS</span>
           </div>
         </div>
@@ -384,7 +384,7 @@ function AssetsInner({ isAssetsPanelCollapsed, onToggleCollapse }: Props) {
           data-test-id={AssetsTab.AssetsPack}
         >
           <div className={cx({ underlined: tab === AssetsTab.AssetsPack })}>
-            <MdImageSearch />
+            <AssetPacksIcon />
             <span>ASSET PACKS</span>
           </div>
         </div>

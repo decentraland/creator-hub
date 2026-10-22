@@ -20,7 +20,14 @@
   --text-primary: #000000de;
   --sub-text: #ffffffcf;
   --border-focused: #127fd4;
-  --selected-item: #731f30;
+  /* Selection blues, the Figma's System/Blue Dark 2 and 3. Dark 2 is the active tool / selected
+     card fill (Snow on it 8.4:1); Dark 3 is the quieter selected row in the entity and folder
+     trees. The pink they replaced is reserved for CTAs, see docs/DESIGN.md. */
+  --system-blue-dark-2: #244b7d;
+  --system-blue-dark-3: #243852;
+  --selected-item: var(--system-blue-dark-2);
+  --selected-row: var(--system-blue-dark-3);
+  --hover-row: rgba(255, 255, 255, 0.05); /* Transparencies/White 5 */
   --header-hover-bg-color: #38222d;
   --disabled-bg-color: #323036;
 
