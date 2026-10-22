@@ -66,10 +66,10 @@ There is no single `--text` token — pick the foreground that matches the surfa
 | `--ui-designer-control-selected-bg` | `rgba(255,255,255,.1)` | Hover/selected fill on a menu **row** |
 | `--ui-designer-control-active-bg` | `#244b7d` (→ `--palette-system-blueDark2`) | Fill of a selected/active **toggle** |
 | `--ui-designer-control-active-fg` | `#fcfcfc` (→ `--ui-designer-text`, Snow) | Glyph on that fill: 8.61:1 |
-| `--palette-whiteTransparent-subtle` | `rgba(255,255,255,.1)` | Figma White Subtle · White 10: checkbox hover halo; `--ui-designer-control-border` aliases it (ui2 theme-path name) |
-| `--palette-whiteTransparent-soft` | `rgba(255,255,255,.2)` | Figma White Soft · White 20: disabled checkbox and large-field border; `--ui-designer-control-border-strong` aliases it (ui2 theme-path name) |
-| `--palette-whiteTransparent-blurry` | `rgba(255,255,255,.4)` | Figma White Blurry · White 40: checkbox and large-field border; `--ui-designer-checkbox-border` aliases it (ui2 theme-path name) |
-| `--palette-whiteTransparent-backdrop` | `rgba(255,255,255,.6)` | Figma White Backdrop · White 60: large-field hover and filled border (ui2 theme-path name) |
+| `--palette-whiteTransparent-subtle` | `rgba(255,255,255,.1)` | Figma White Subtle · White 10: checkbox hover halo; `Button` Secondary fill (contained + secondary) and its pressed state; `--ui-designer-control-border` aliases it (ui2 theme-path name) |
+| `--palette-whiteTransparent-soft` | `rgba(255,255,255,.2)` | Figma White Soft · White 20: disabled checkbox and large-field border; `Button` Secondary hover and `.active`; `--ui-designer-control-border-strong` aliases it (ui2 theme-path name) |
+| `--palette-whiteTransparent-blurry` | `rgba(255,255,255,.4)` | Figma White Blurry · White 40: checkbox and large-field border; `Button variant="outlined"` outline; `--ui-designer-checkbox-border` aliases it (ui2 theme-path name) |
+| `--palette-whiteTransparent-backdrop` | `rgba(255,255,255,.6)` | Figma White Backdrop · White 60: large-field hover and filled border; `outlined` pressed outline and `text` pressed label (ui2 theme-path name) |
 | `--palette-system-blueDark2` | `#244b7d` | Figma System/Blue Dark 2: the text-selection highlight of every `input` and `textarea`, under Snow text (8.61:1); the selected toggle fill through `--ui-designer-control-active-bg` |
 | `--palette-system-blueDark3` | `#243852` | Figma System/Blue Dark 3: the fill of a selected toggle under the pointer (Snow glyph 11.61:1). Darker than Blue Dark 2 on purpose, as Figma draws it |
 | `--palette-neutral-gray2` | `#716b7c` | Figma Neutrals/Cloudy Sky (ui2 `neutral.gray2`): the `RangeField` track; `--ui-designer-glyph` aliases it |
@@ -111,7 +111,7 @@ The UI Designer has **two** accent families. Picking the wrong one is a real bug
 - **Canvas → cyan.** The canvas renders the _author's own UI_ in arbitrary colours. A selection ring in a brand colour disappears the moment they use that colour themselves — and `#ff2d55` is precisely what the palette encourages. Because the backdrop is unknowable, WCAG 1.4.11's ≥3:1 cannot be verified against it; a hue authors are unlikely to pick is the mitigation. Use for node selection/hover, resize handles, drop targets, reorder indicators.
 - **Panel → blue `#63b4f6`.** Panel chrome always sits on `--base-20` (`#161518`), a surface we control, so contrast is fixed and testable. Use for focus rings, active tab underlines, hover borders/fills, selected rows, and the Anchor row's pinned edge. Toggle fills are Blue Dark 2 / 3 and the bind affordance is Silver / Snow (see "Icon buttons and toggles"). It is Figma's System/Blue Light 1.
 
-  **UI Designer panel chrome is deliberately not pink.** Its focus rings and selection take the accent blue, and its toggles the Blue Dark 2 / 3 fills. `--primary-main` belongs to CTAs and main buttons (`.Button.danger`, the event/variable menu `ADD` confirm) and to the value marks Figma draws in Primary: the `RangeField` fill and thumb (Slider) and the MobileHUD "Main" radio. The UI Designer checkbox is not one of them. Figma draws it as Checkbox Terciary ([`21650:4570`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=21650-4570)), a Snow tick on no fill, so a checked rail checkbox carries no pink. A mark that carries a value is not chrome; a ring, a row highlight or a toggle fill painted pink would compete with the one thing on screen that should read as the action.
+  **UI Designer panel chrome is deliberately not pink.** Its focus rings and selection take the accent blue, and its toggles the Blue Dark 2 / 3 fills. `--primary-main` belongs to CTAs and main buttons (`Button color="primary"`, the event/variable menu `ADD` confirm) and to the value marks Figma draws in Primary: the `RangeField` fill and thumb (Slider) and the MobileHUD "Main" radio. The UI Designer checkbox is not one of them. Figma draws it as Checkbox Terciary ([`21650:4570`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=21650-4570)), a Snow tick on no fill, so a checked rail checkbox carries no pink. A mark that carries a value is not chrome; a ring, a row highlight or a toggle fill painted pink would compete with the one thing on screen that should read as the action.
 
 **Do not copy alpha steps between the two families.** The panel blue's relative luminance is `0.419` against cyan's `0.502`, so the same alpha composites differently. The steps are solved for this surface and named for their true alpha (`-62`, not `-40`) so nothing lies:
 
@@ -128,8 +128,8 @@ Adding a step means solving for its contrast, not guessing an alpha.
 
 | Token | Value | Use |
 | --- | --- | --- |
-| `--primary-main` / `--primary-dark` | `#ff2d55` / `#f70038` | Brand pink — **CTAs and main buttons only**, plus the "armed/active tool" signal. Not for panel chrome (that's `--ui-designer-control-accent`); don't use it for field errors. |
-| `--palette-primary-light` | `#ff6280` | Figma Primary Light 1: `.Button.danger` hover and active fill (ui2 theme-path name) |
+| `--primary-main` / `--primary-dark` | `#ff2d55` / `#f70038` | Brand pink — **CTAs and main buttons only**, plus the "armed/active tool" signal. Main: the `.Button.primary` fill and the `text` + `primary` label. Dark: `.Button.primary` pressed. Not for panel chrome (that's `--ui-designer-control-accent`); don't use it for field errors. |
+| `--palette-primary-light` | `#ff6280` | Figma Primary Light 1: `.Button.primary` hover and active fill, and the `text` + `primary` hover label (ui2 theme-path name) |
 | `--secondary-main` | `#ff7439` | Brand orange |
 | `--success-main` / `--error-main` / `--warning-main` | `#34ce77` / `#fb3b3b` / `#fe9c2a` | Status (Figma System/Green, Red, Orange) |
 | `--success-dark` / `--success-light` | `#00b453` / `#65d890` | Status shades (no consumers yet) |
@@ -196,10 +196,11 @@ No pair that passed 4.5:1 now fails. `--error-main` text on `#242129` (the `Call
 | Token | Value | Use |
 | --- | --- | --- |
 | `--controlHeight-small` | `26px` | Dense `TextField` / `Dropdown` height, the default (Figma UI Editor `Input`; ui2 theme-path name) |
-| `--controlHeight-large` | `46px` | `TextField size="large"` and `Button size="big"` height (Figma Text-Input, Button-Contained-Text; ui2 theme-path name) |
+| `--controlHeight-medium` | `40px` | `Button size="medium"` height (Figma TitleBar CTA, Button-Contained-Text-Icon Hug × 40; ui2 theme-path name) |
+| `--controlHeight-large` | `46px` | `TextField size="large"` and `Button size="large"` height (Figma Text-Input, Button-Contained-Text; ui2 theme-path name) |
 | `--shape-borderRadius` | `6px` | Dense field, dropdown and textarea corners; `--ui-designer-radius-field` aliases it (ui2 theme-path name) |
-| `--shape-borderRadiusLarge` | `12px` | Large field and `.Button.big` corners; `--ui-designer-radius-menu` aliases it (ui2 theme-path name) |
-| `--borderWidth-strong` | `1.5px` | Kept as the ui2 theme-path name; unused, because Chromium floors a fractional border width — large fields draw 1.5px as a 1px border plus `box-shadow: inset 0 0 0 0.5px` |
+| `--shape-borderRadiusLarge` | `12px` | Large field, `.Button.medium` and `.Button.large` corners; `--ui-designer-radius-menu` aliases it (ui2 theme-path name) |
+| `--borderWidth-strong` | `1.5px` | Kept as the ui2 theme-path name; unused, because Chromium floors a fractional border width — large fields draw 1.5px as a 1px border plus `box-shadow: inset 0 0 0 0.5px`, and `Button variant="outlined"` draws it as `box-shadow: inset 0 0 0 1.5px` with no border, so the outline takes no box |
 
 Give interactive controls a consistent height so rows align: fields take `--controlHeight-small` (dense, the default) or `--controlHeight-large` (forms). Interactive hit targets should be ≥24px.
 
@@ -241,7 +242,7 @@ Derived from the Vercel Web Interface Guidelines (`web-design-guidelines` skill)
 - **Motion:** honor `prefers-reduced-motion` (reduced/none variant); animate only `transform`/`opacity`; **never** `transition: all` — list properties.
 - **During drag:** `user-select: none` + `touch-action: manipulation`.
 - **Content:** truncate/clamp long text (flex children need `min-width: 0`); handle empty states; placeholders end with `…`.
-- **Color:** tokens only — no new hardcoded hex.
+- **Color:** tokens only — no new hardcoded hex. A translucent state of a token, such as the `CheckboxField` checked hover halo at 20%, is `color-mix(in srgb, var(--token) 20%, transparent)`; that is styling with tokens, so it needs no new token name. A disabled control is dimmed with `opacity`, not with a translucent token (`Button`: the whole node at 0.2).
 - **A background on a `<Box>` root does nothing.** `Box.css` paints `--main-bg-color` on the `.content` div it wraps children in, which covers the root. Put panel surfaces on `<yourClass> > .content`.
 - **Pickers and bound values.** Popover pickers (event, variable) are a raised `--ui-designer-control-bg` card at the 12px menu radius: rows highlight on `--ui-designer-control-accent-21`, the selected row carries a leading checkmark, and a diamond-plus `Add New …` row reveals a `Description` field and an auto-width `--primary-main` `ADD` confirm (dimmed to 40% until the name is valid). Event fields are horizontal — a left label and a full-width rounded pill: `--ui-designer-control-bg` when a handler is bound (with the name and an inline clear) and a fainter fill reading `Bind an event handler` in `--ui-designer-text-muted` when empty. The pill is neutral, not accent — an event is not a bound-variable field.
 - **Portalled menus take a scope, not a descendant selector.** A `Dropdown`'s option list renders into `document.body`, so a panel rule like `.my-panel .OptionList` can never reach it. The panel declares `data-dropdown-scope="<name>"` on an ancestor; on open the `Dropdown` finds it with `closest()` and sets the same attribute on its `OptionList`, so the panel styles `.OptionList[data-dropdown-scope="<name>"]` (the UI Designer uses `ui-designer`, `PropertyPanel.tsx` / `PropertyPanel.css`).
@@ -349,7 +350,7 @@ The Figma ramp has 13 swatches; 10 are variables and three (Onix, Onix Dark 1, C
 | Neutrals/Black | `#000000` | `--black`, `--base-21` | `--bg-inspector` · ui2 `neutral.black` | match |
 | — | `#676370` | `--neutral-grey-4` | `--secondary-text`, `--text-area-border`, `--popup`, and the `#676370xx` alpha family (`--divider`, `--secondary-on-modal`, `--card-on-modal`) | **not in Figma**; nearest is Graffito `#5E5B67` |
 
-The inspector's `--base-02 … --base-18` and `--accent-blue-*` ramps are VS Code's, not Figma's; they predate the design system and are kept for the embedded-webview theme. `--ui-designer-accent` (cyan) is the documented canvas deviation above.
+The inspector's `--base-02 … --base-18` and `--accent-blue-*` ramps are VS Code's, not Figma's; they predate the design system and are kept for the embedded-webview theme. `--accent-blue-05` / `-07` / `-08` are also `Button color="info"`'s fill / hover / pressed, a colour with no Figma counterpart. `--ui-designer-accent` (cyan) is the documented canvas deviation above.
 
 ### System (status) and INFO
 
@@ -404,11 +405,14 @@ Extracted per page with `get_metadata` (sets and variant counts), `get_design_co
 
 | Figma name | Code name | Where it appears |
 | --- | --- | --- |
-| `Terciary` | `tertiary` | Button-Contained-Text, Button-Contained-Text-Icon, TitleBar, Checkbox Terciary |
+| `Terciary` (Button-Contained-Text, Button-Contained-Text-Icon, TitleBar CTAs) | `Button variant="outlined" color="secondary"` | Button-Contained-Text, Button-Contained-Text-Icon, TitleBar. `Button` has a shape axis (`variant`) and `CheckboxField` does not, so Figma's one word has two code spellings (gap G27) |
+| `Terciary` (Checkbox) | `CheckboxField color="tertiary"` | Checkbox Terciary |
+| `Primary`, `Secondary` (Button-Contained-Text / -Icon) | `Button variant="contained"` + `color="primary"` / `color="secondary"` | Button-Contained-Text, Button-Contained-Text-Icon. `Button`'s TypeScript defaults are MUI's (`text` / `primary` / `medium`), so every call site writes `variant`, `color` and `size` |
+| Attach Hug × 30 / TitleBar CTA Hug × 40 / Hug 46 | `Button size="small"` / `"medium"` / `"large"` | ReportBug Attach, TitleBar, Button-Contained-Text |
 | `Checkbox Primary` (`21170:30118`), `Checkbox Secondary` (`20849:724`), `Checkbox Terciary` (`21650:4570`) | `CheckboxField` `color` `primary` (default), `secondary`, `tertiary` | Checkbox |
-| `Quaternary` | `quaternary` | Button-Contained-Text-Icon |
+| `Quaternary` | not implemented until a caller exists (the Figma spec below is kept) | Button-Contained-Text-Icon |
 | `Idle` | `default` | PillIconText, Filter (Pill) |
-| `Blocked`, `PrimaryBlocked`, `SingleBlocked`, `IconBlocked` | `disabled` (`PrimaryBlocked` → `primary` + `disabled`) | rounded-button-contained, ButtonContainedVertical (20), Button-Contained-Text, ProfilePic, Dropdown-Input, Filter, Input, WrapToggle, BottomPanel2D |
+| `Blocked`, `PrimaryBlocked`, `SingleBlocked`, `IconBlocked` | `disabled` (`PrimaryBlocked` → `Button color="primary"` + `disabled`) | rounded-button-contained, ButtonContainedVertical (20), Button-Contained-Text, ProfilePic, Dropdown-Input, Filter, Input, WrapToggle, BottomPanel2D |
 | `En` | `end` | End (Checkbox) |
 | `Hove` | `hover` | Radio |
 | `OnHover`, `HoverSelected`, `SelectedHover` | `hoverSelected` | Radio, Checkbox Secondary, PillIconText, NodeTypeHierarchy |
@@ -766,11 +770,11 @@ Component `ReportBug` [`21196:31035`](https://www.figma.com/design/5ecKgNHjChZEe
 | Dropdown-Input | `Property 1` Default | Inputs page | — | Fill 638 × Hug 102, gap 10 | title `H6 Semi` Snow "Issue Type", description | 17.77:1 | `<label for>` + `<select>` or listbox |
 | Description | — | column of Text-Input + Button-Contained-Text-Icon | — | Hug 638 × 222, gap 10 | — | — | — |
 | Text-Input | `Property 1` Default | Inputs page | — | Fixed 638 × 182, gap 10 | — | — | `<textarea aria-describedby>` |
-| Button-Contained-Text-Icon (Attach) | `Property 1` Secondary | Buttons page | — | Hug 257 × 30, 6px radius, padding 6 / 10, gap 10, `Attach` glyph | — | — | `<button>` with a visible label; 30px tall clears the 24px floor |
+| Button-Contained-Text-Icon (Attach) | `Property 1` Secondary, with overrides | Buttons page | **none** (Secondary's White 10 fill is overridden off) | Hug 257 × 30, 6px radius, padding 6 / 10, gap 10; `Attach` glyph 18 × 18, a 1.5px Transparencies/White 60 stroke | label "Paste, drop, or click to add files", `H7 Regular` Inter 14 / 400 / 100%, sentence case, Transparencies/White 60 | label 7.08:1 on `#181225` | `<button>` with a visible label; 30px tall clears the 24px floor. A dropzone affordance, not a styled Secondary button: code takes only its box for `Button size="small"` and keeps the Secondary paint and today's 13px white label (read in the browser, October 21, 2026) |
 | Checkmark | `Property 1` On | Checkbox Secondary 20 box + consent text | — | Fill 638 × 20, gap 10 | `H7 Regular` Snow, right-aligned | text 17.77:1; check Primary 5.00:1, ring White 40 3.82:1 (≥ 3:1) | `<input type="checkbox">` with the sentence as its `<label>` |
 | CTAs | — | row, gap 20 | — | Fill 638 × 46 | — | — | — |
 | CANCEL | `Secondary` | Button-Contained-Text | White 10 | Fill 309 × 46, 12px, padding 12 / 24 | Inter 16 / 600 / 22 uppercase Snow | 13.51:1 | — |
-| SUBMIT (disabled) | `PrimaryBlocked` @ 20% opacity | Button-Contained-Text | Primary at 20% | Fill 309 × 46 | same | fill vs modal 1.24:1; label 14.37:1 over the composite — the dim state reads as disabled by opacity alone | `disabled` + `aria-disabled`; the 20% opacity is the only disabled cue drawn, add a tooltip or helper text saying why |
+| SUBMIT (disabled) | `PrimaryBlocked` @ 20% opacity | Button-Contained-Text | Primary at 20% | Fill 309 × 46 | same | fill vs modal 1.24:1; node opacity dims the label too: Snow at 20% composites to about `#464150`, 1.50:1 on the fill, 1.85:1 on the modal (browser capture, October 21, 2026) — the dim state reads as disabled by opacity alone | `disabled` + `aria-disabled`; the 20% opacity is the only disabled cue drawn, add a tooltip or helper text saying why |
 
 ### Secure-Sign-In (Modals)
 
@@ -931,22 +935,25 @@ Literals the Buttons page (Inputs section) adds to the Surfaces table above; the
 
 ### Button-Contained-Text (Buttons)
 
-Set [`20705:11927`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=20705-11927), 9 variants (verified by Enter on the set: 9 Selected; Primary, Terciary, PrimaryBlocked, Secondary read singly, the rest from the aggregate). Hug 90 × 46, 12px radius, padding 12 / 24, label Inter 600 16 / 22 uppercase Snow. Code: inspector `components/Button` `size="big"` (46px `--controlHeight-large`, 12px `--shape-borderRadiusLarge`, padding 12 / 24 `--uid-space-3` / `--uid-space-6`, Inter 600 16 / 22 uppercase; `type="danger"` paints `--primary-main` and hovers to `--palette-primary-light`; the default `#4b4852` / `#6c6974` and `dark` fills are unchanged; disabled is opacity .5) — matches geometry, label and the Primary states, drift on Secondary and Terciary fills and on the blocked opacity. Every `.Button` draws a 2px `--focus-ring` `:focus-visible` ring at a 2px offset; small buttons keep their 4px radius and 6px padding. A `Button` beside a 46px field is `size="big"`: the five large-field forms (`UrlInputModal`, `CreateScriptModal`, `CreateEditTagModal`, `CreateCustomAsset`, `RenameAsset`), each with its CTA in Primary (`type="danger"` until layer 2 renames the API) and Cancel in the default fill. Creator Hub `components/Button` (ui2 `Button`: `colorPrimary` `--dcl`, hover `--primary-hover`, secondary `--dark-gray`, `info` outlined 1px white) — matches the Primary fill and hover, drift on the Secondary fill.
+Set [`20705:11927`](https://www.figma.com/design/5ecKgNHjChZEe05LUwKGku/?node-id=20705-11927), 9 variants (verified by Enter on the set: 9 Selected; Primary, Terciary, PrimaryBlocked, Secondary read singly, the rest from the aggregate). Hug 90 × 46, 12px radius, padding 12 / 24, label Inter 600 16 / 22 uppercase Snow. Code: inspector `components/Button` with MUI's axes: `variant` contained | outlined | text, `color` primary | secondary | info, `size` small | medium | large (TypeScript defaults text / primary / medium, so every call site writes all three). Each prop emits a class only where it differs from the CSS baseline on bare `.Button`, which is contained + secondary + small. Large is 46px `--controlHeight-large`, 12px `--shape-borderRadiusLarge`, padding 12 / 24 `--uid-space-3` / `--uid-space-6`, Inter 600 16 / 22 uppercase; medium is the same at `--controlHeight-medium` 40px with padding 8 / 24; small is the Attach box (padding 6 / 10, 6px `--shape-borderRadius`, Hug 30 from an 18px line). Primary paints `--primary-main` and hovers to `--palette-primary-light`; Secondary is White 10 / White 20; Terciary is `variant="outlined"`, a 1.5px White 40 inset outline that turns Snow on hover. Disabled is Figma's PrimaryBlocked on every variant: the whole node at `opacity: 0.2`, with each variant's rest paint (a hovered disabled button never shows its hover paint). Pressed is defined per variant (✱ row below). Exceptions: MoreOptions items and the CreateScriptModal create keep a .5 opacity. Every `.Button` draws a 2px `--focus-ring` `:focus-visible` ring at a 2px offset. The large-field forms put their CTA in `color="primary"` and Cancel in the default Secondary, at `size="large"`: `UrlInputModal`, `CreateEditTagModal`, `CreateCustomAsset`, `RenameAsset`. `CreateScriptModal` has a large field but hand-styled 13px buttons (`.cancel-button` / `.create-button`). It matches geometry, label, Primary and Secondary fills and Terciary; Quaternary is not implemented. Creator Hub `components/Button` (ui2 `Button`: `colorPrimary` `--dcl`, hover `--primary-hover`, secondary `--dark-gray`, `info` outlined 1px white) — matches the Primary fill and hover, drift on the Secondary fill.
 
 | Variant | State | Fill | Border | Label | Contrast | A11y |
 | --- | --- | --- | --- | --- | --- | --- |
 | Primary | default | Primary | — | Snow | **Snow on Primary 3.55:1 — fails 4.5:1** (16px / 600 is not large text); Primary vs `#161518` 4.99:1, vs `#16141a` 5.01:1, vs card `#242129` 4.35:1 | `<button>`; 46px target |
 | Primary | hover | Primary Light 1 (`#FF6280`, read on the Icon set) | — | Snow | **Snow on Primary Light 1 2.80:1 — fails**; fill vs `#161518` 6.33:1 | — |
-| PrimaryBlocked | blocked | Primary, node opacity 20% | — | Snow | disabled, exempt; the 20% fill reads 14.35:1 against Snow on `#161518` | `aria-disabled="true"` |
+| PrimaryBlocked | blocked | Primary, node opacity 20% (fill **and** label: sampled fill a = 0.21, label Snow at 20%) | — | Snow at 20% | disabled, exempt; label 1.50:1 on the 20% fill, 1.85:1 on `#161518`. Code matches: `.Button:disabled { opacity: 0.2 }` dims the whole node, on every variant. | `aria-disabled="true"` |
 | Secondary | default | White 10 | — | Snow | 13.53:1 on `#161518` (13.50 on `#16141a`) | — |
 | Secondary | hover | White 20 | — | Snow | 9.44:1 | — |
 | Terciary | default | none | 1.5px White 40 | Snow | border 3.84:1 on `#161518` (3.83 on `#16141a`), passes 3:1 | — |
 | Terciary | hover | none | 1.5px Snow | Snow | border 17.73:1 | — |
 | Quaternary | default | Black 40 | — | Snow | fill is near-invisible on `#161518`; the label carries it | — |
 | Quaternary | hover | White 10 | — | Snow | 13.53:1 | — |
-| any | ✱ press / focus | ✱ press one step darker than hover | ✱ focus ring | — | ring `--focus-ring` Snow 17.73:1 on `#161518` / ui2 `palette.info.light` | not drawn; `:focus-visible` 2px outline, offset 2px |
+| any | ✱ press / focus | ✱ press one step darker than hover; code: Secondary W10 (= rest), Primary `--primary-dark`, info `--accent-blue-08`, outlined White 60 outline, text White 60 label | ✱ focus ring | — | ring `--focus-ring` Snow 17.73:1 on `#161518` / ui2 `palette.info.light`; pressed Primary label 4.19:1 | not drawn; `:focus-visible` 2px outline, offset 2px |
+| text + primary | ✱ the bare `<Button>` default (no Figma text button) | none | — | `--primary-main`, hover `--palette-primary-light`, pressed `--primary-main` | ✱ 4.99:1 on `#161518`, 4.51 on canvas, **4.35 on card `#242129`** (accepted) | no caller |
+| text (any colour) | ✱ disabled | none | — | the rest label at the whole-node opacity 0.2 | 1.87:1 on `#161518` (exempt) | `disabled`; no Figma text button, so the Figma blocked treatment is extended to it |
+| small / medium | ✱ sizes | as the variant | — | as the variant | — | small = Attach box (padding 6 / 10, radius 6, Hug 30 from an 18px line); medium = TitleBar CTA, fixed 40px (Figma's 8 + 22 + 8 = 38 inside a Hug 40 frame; the frame wins) |
 
-Variant names `Terciary` and `Quaternary` are Figma's spelling; keep them in the component API only if the user approves (see open risks).
+Variant names `Terciary` and `Quaternary` are Figma's spelling; the component API uses MUI's names (`variant="outlined" color="secondary"` for Terciary), and Quaternary is deferred until a caller exists.
 
 ### Button-Contained-Text-Icon (Buttons)
 
